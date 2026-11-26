@@ -744,6 +744,68 @@ lemma cycle_of_regular_pair {V : Type*} [DecidableEq V] (G : SimpleGraph V)
   rw [← (show l.length + 2 = 2 * r + 4 by omega)]
   exact cycle_of_closed_chain G (by omega : 0 < l.length) hsimple hchain hxy.symm
 
+/-- Quantitative fixed-endpoint path embedding (Benevides, thesis, Lemma 3.3,
+in the small-density range used for the reduced graph). The largeness
+condition is explicit. Here length counts edges. -/
+lemma regular_pair_path_length_range {V : Type*} [DecidableEq V] (G : SimpleGraph V)
+    [DecidableRel G.Adj] {S T : Finset V} {ε α : ℚ} {n l : ℕ}
+    (hS : S.card = n) (hT : T.card = n) (hst : Disjoint S T)
+    (hreg : G.IsUniform ε S T) (hd : α / 4 ≤ G.edgeDensity S T)
+    (ha : 0 < α) (ha' : α ≤ 1/2) (he : 0 < ε) (he' : ε ≤ α / 100)
+    (hlarge : 100 ≤ (n : ℚ) * ε)
+    {x y : V} (hx : x ∈ S) (hy : y ∈ T)
+    (hxdeg : α * n / 5 ≤ ((T.filter (G.Adj x)).card : ℚ))
+    (hydeg : α * n / 5 ≤ ((S.filter (G.Adj y)).card : ℚ))
+    (hl : 1 ≤ l) (hrange : (l : ℚ) + 5 * ((n : ℚ) * ε / α) ≤ n) :
+    ∃ p : G.Walk x y, p.IsPath ∧ p.length = 2 * l + 1 ∧
+      ∀ z ∈ p.support, z ∈ S ∨ z ∈ T := by
+  let t : ℚ := n * ε / α
+  let k : ℕ := ⌈(n : ℚ) * ε⌉₊
+  let m : ℕ := ⌈43 / 10 * t⌉₊
+  have ht0 : 0 ≤ t := div_nonneg (mul_nonneg (Nat.cast_nonneg _) he.le) ha.le
+  have ht : t * α = n * ε := div_mul_cancel₀ _ ha.ne'
+  have hhalf : t * α ≤ t / 2 := by nlinarith [mul_nonneg (sub_nonneg.mpr ha') ht0]
+  have htlarge : 100 ≤ t := by linarith
+  have hklo : n * ε ≤ (k : ℚ) := Nat.le_ceil _
+  have hkhi : (k : ℚ) < n * ε + 1 := Nat.ceil_lt_add_one (by positivity)
+  have hmlo : 43 / 10 * t ≤ (m : ℚ) := Nat.le_ceil _
+  have hmhi : (m : ℚ) < 43 / 10 * t + 1 := Nat.ceil_lt_add_one (by positivity)
+  have hkm : k ≤ m := by exact_mod_cast (show (k : ℚ) ≤ m by linarith)
+  have hd' : ε ≤ G.edgeDensity S T := by linarith
+  have hdegree : (k : ℚ) ≤ (G.edgeDensity S T - ε) * m := by
+    have hd0 : 6 / 25 * α ≤ G.edgeDensity S T - ε := by linarith
+    have hmul := mul_le_mul hd0 hmlo (show 0 ≤ 43 / 10 * t by positivity)
+      (by linarith : 0 ≤ G.edgeDensity S T - ε)
+    nlinarith [hmul]
+  have hbudget : k + m + l ≤ n := by
+    exact_mod_cast (show (k : ℚ) + m + l ≤ n by change (l : ℚ) + 5 * t ≤ n at hrange; linarith)
+  have hend : (k : ℚ) < α * n / 5 := by
+    nlinarith [mul_le_mul_of_nonneg_left he' (Nat.cast_nonneg (R := ℚ) n)]
+  let r := l - 1
+  have hrl : r + 1 = l := by dsimp [r]; omega
+  obtain ⟨L, hlen, hnodup, hchain, hpool⟩ := regular_pair_path_between G hreg hd' hst k m r
+    (hS ▸ hklo) (hT ▸ hklo) hkm hdegree (by omega) (by omega) hx hy
+    (by exact_mod_cast hend.trans_le hxdeg) (by exact_mod_cast hend.trans_le hydeg)
+  let W := (x :: L) ++ [y]
+  have hn : W ≠ [] := by simp [W]
+  let w := Walk.ofSupport W hn hchain
+  have hw : w.support = W := Walk.support_ofSupport hn hchain
+  have hwlen : w.length = W.length - 1 := Walk.length_ofSupport hn hchain
+  have hend' : W.getLast hn = y := by simp [W]
+  refine ⟨w.copy rfl hend', ?_, ?_, ?_⟩
+  · apply Walk.IsPath.mk'
+    rw [Walk.support_copy, hw]
+    exact hnodup
+  · rw [Walk.length_copy, hwlen]
+    simp [W, hlen]; omega
+  · rw [Walk.support_copy, hw]
+    intro z hz
+    simp [W] at hz
+    rcases hz with rfl | h | rfl
+    · exact Or.inl hx
+    · exact hpool _ h
+    · exact Or.inr hy
+
 section ReducedColours
 
 open Finset
