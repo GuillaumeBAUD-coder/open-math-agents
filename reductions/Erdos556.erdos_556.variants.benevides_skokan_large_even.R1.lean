@@ -1,5 +1,6 @@
 import FormalConjectures.ErdosProblems.«556»
 import Mathlib.Combinatorics.Hall.Finite
+import Mathlib.Combinatorics.SimpleGraph.Regularity.Uniform
 import Mathlib.Combinatorics.Pigeonhole
 
 /-! A four-block lower bound and cycle-embedding lemmas for large even cycles. -/
@@ -493,6 +494,51 @@ lemma even_cycle_lower_bound (n : ℕ) (hfour : 4 ≤ n) (heven : Even n) :
   obtain ⟨u, v, huv, hdiff⟩ := hbad n hfour heven (fun u => (copy u).val)
     (Fin.val_injective.comp copy.injective) (fun u => by have := (copy u).isLt; omega) i
   exact hdiff (copy.toHom.map_adj huv).2
+
+section RegularPairs
+
+open Finset
+
+variable {V : Type*} [DecidableEq V] (G : SimpleGraph V) [DecidableRel G.Adj]
+  {S T : Finset V} {ε : ℚ}
+
+/-- In any two sufficiently large subclusters of a regular pair, one can choose
+a vertex in the first with the expected number of neighbours in the second. -/
+lemma regular_pair_choose {A B : Finset V} (hreg : G.IsUniform ε S T)
+    (hd : ε ≤ G.edgeDensity S T) (hA : A ⊆ S) (hB : B ⊆ T)
+    (hsizeA : (S.card : ℚ) * ε ≤ A.card) (hsizeB : (T.card : ℚ) * ε ≤ B.card) :
+    ∃ a ∈ A, (G.edgeDensity S T - ε) * B.card < ((B.filter (G.Adj a)).card : ℚ) := by
+  classical
+  by_contra! hall
+  have hu := (abs_lt.mp (hreg hA hB hsizeA hsizeB)).1
+  have hsum : ((G.interedges A B).card : ℚ) ≤
+      (A.card : ℚ) * ((G.edgeDensity S T - ε) * B.card) := by
+    calc
+      ((G.interedges A B).card : ℚ) ≤ ∑ a ∈ A, ((B.filter (G.Adj a)).card : ℚ) := by
+        change ((Rel.interedges G.Adj A B).card : ℚ) ≤ _
+        rw [Rel.interedges_eq_biUnion]
+        exact_mod_cast (show _ ≤ ∑ a ∈ A, (B.filter (G.Adj a)).card from
+          (card_biUnion_le).trans_eq (by simp))
+      _ ≤ _ := by simpa using (sum_le_sum hall)
+  have hden : G.edgeDensity A B ≤ G.edgeDensity S T - ε := by
+    rw [edgeDensity_def]
+    apply div_le_of_le_mul₀ (by positivity) (sub_nonneg.mpr hd)
+    linarith only [hsum, show (A.card : ℚ) * ((G.edgeDensity S T - ε) * B.card) =
+        (G.edgeDensity S T - ε) * (A.card * B.card) by ring]
+  linarith
+
+/-- A regular pair joins any two eligible subclusters by an edge. -/
+lemma regular_pair_edge {A B : Finset V} (hreg : G.IsUniform ε S T)
+    (hd : ε ≤ G.edgeDensity S T) (hA : A ⊆ S) (hB : B ⊆ T)
+    (hsizeA : (S.card : ℚ) * ε ≤ A.card) (hsizeB : (T.card : ℚ) * ε ≤ B.card) :
+    ∃ a ∈ A, ∃ b ∈ B, G.Adj a b := by
+  obtain ⟨a, ha, h⟩ := regular_pair_choose G hreg hd hA hB hsizeA hsizeB
+  have hpos : (0 : ℚ) < (B.filter (G.Adj a)).card :=
+    lt_of_le_of_lt (mul_nonneg (sub_nonneg.mpr hd) (Nat.cast_nonneg _)) h
+  obtain ⟨b, hb⟩ := Finset.card_pos.mp (show 0 < (B.filter (G.Adj a)).card by exact_mod_cast hpos)
+  exact ⟨a, ha, b, (mem_filter.mp hb).1, (mem_filter.mp hb).2⟩
+
+end RegularPairs
 
 theorem main : H1 → H2 → type_of% @Erdos556.erdos_556.variants.benevides_skokan_large_even := by
   intro _ hforce
