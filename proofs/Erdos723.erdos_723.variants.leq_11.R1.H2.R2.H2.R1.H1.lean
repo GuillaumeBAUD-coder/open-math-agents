@@ -1734,6 +1734,8 @@ theorem fifteen_point_configuration_has_star_cover (incidence : Fin 111 → Fin 
 
 end OrderTenCaseShapes
 
+-- The line counts force the six heavy lines to determine the labels for the
+-- medium and exterior lines. Each light line then gives one star.
 theorem OMA.solution : OMA.R_Erdos723_erdos_723_variants_leq_11_R1_H2_R2_H2_R1.H1 := by
   intro incidence rowSize columnSize rowPairs columnPairs
   dsimp only
