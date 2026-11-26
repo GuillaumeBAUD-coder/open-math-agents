@@ -929,7 +929,155 @@ lemma lift_regular_circuit {V : Type*} [DecidableEq V] (G : SimpleGraph V)
     List.nodup_cons.mpr ⟨by simp only [List.mem_cons, not_or]; exact ⟨hax.ne,haL⟩,hs⟩
   have hchain : (a :: x :: (L' ++ [y])).IsChain G.Adj := List.isChain_cons_cons.mpr ⟨hax,hc⟩
   have hcopy := cycle_of_closed_chain (l := x :: L') G (by simp) hsimple hchain (hlast y hy)
-  simpa [hlen', Nat.add_assoc] using hcopy
+  rw [← (show (x :: L').length + 2 = r + 3 by simp; omega)]
+  exact hcopy
+
+/-- Every sufficiently well populated closed walk through dense regular
+pairs lifts to a cycle of the same length in the original colour. No
+distinctness of the cluster visits is required. -/
+lemma cycle_of_regular_closed_walk {V : Type*} [DecidableEq V] (G : SimpleGraph V)
+    [DecidableRel G.Adj] {ε d : ℚ} (hd : ε ≤ d) (k m r : ℕ) (hk : 0 < k) (hkm : k ≤ m)
+    (hdegree : (k : ℚ) ≤ (d - ε) * m) (C : ℕ → Finset V)
+    (hthreshold : ∀ i ≤ r+2, ((C i).card : ℚ) * ε ≤ k)
+    (hroot : 2*k ≤ (C 0).card)
+    (hsize : ∀ i ≤ r+2, m+r+2 ≤ (C i).card)
+    (hattach : ∀ i ≤ r+2, ((m+r+1 : ℕ) : ℚ) ≤ (d-ε) * (C i).card)
+    (hpairs : ∀ i < r+2, G.IsUniform ε (C i) (C (i+1)) ∧ d ≤ G.edgeDensity (C i) (C (i+1)))
+    (hclose : G.IsUniform ε (C 0) (C (r+2)) ∧ d ≤ G.edgeDensity (C 0) (C (r+2))) :
+    (cycleGraph (r+3)).IsContained G := by
+  classical
+  obtain ⟨hreg, hden⟩ := hpairs 0 (by omega)
+  have hth (i) (hi : i ≤ r+2) : ((C i).card : ℚ) * ε ≤ (C i).card :=
+    (hthreshold i hi).trans (by exact_mod_cast (show k ≤ (C i).card by have := hsize i hi; omega))
+  have h0 : 2 * ((C 0).card : ℚ) * ε ≤ (C 0).card := by
+    have h := hthreshold 0 (by omega)
+    have h' : (2 : ℚ) * k ≤ (C 0).card := by exact_mod_cast hroot
+    linarith
+  obtain ⟨a, _, hn1, hn2⟩ := regular_pair_two_targets G hreg hclose.1 (hd.trans hden) (hd.trans hclose.2)
+    (Finset.Subset.refl _) (Finset.Subset.refl _) (hth 1 (by omega)) (hth _ le_rfl)
+    (Finset.Subset.refl _) h0
+  have degree {T : Finset V} (h : d ≤ G.edgeDensity (C 0) T)
+      (hlo : ((m+r+1 : ℕ) : ℚ) ≤ (d-ε) * T.card)
+      (hn : (G.edgeDensity (C 0) T - ε) * T.card < ((T.filter (G.Adj a)).card : ℚ)) :
+      m+r+1 ≤ (T.filter (G.Adj a)).card := by
+    exact_mod_cast (hlo.trans (mul_le_mul_of_nonneg_right (sub_le_sub_right h ε) (Nat.cast_nonneg _))).trans hn.le
+  have h1 := degree hden (hattach 1 (by omega)) hn1
+  have h2 := degree hclose.2 (hattach _ le_rfl) hn2
+  let P (i : ℕ) := if i = r then (C (r+2)).filter (G.Adj a) else (C (i+2)).erase a
+  apply lift_regular_circuit G hd k m hk hkm hdegree r (fun i => C (i+1)) P
+    ((C 1).filter (G.Adj a)) (Finset.filter_subset _ _) (by omega) (fun i hi => hthreshold _ (by omega))
+    _ (fun i hi => hpairs _ (by omega)) a
+  · intro i hi
+    by_cases eq : i = r
+    · subst i
+      exact ⟨by simpa [P] using (Finset.filter_subset (G.Adj a) (C (r+2))),
+        by simpa [P, Nat.add_assoc] using h2⟩
+    · have hb := hsize (i+2) (by omega)
+      have hc : (C (i+2)).card - 1 ≤ ((C (i+2)).erase a).card := Finset.pred_card_le_card_erase
+      simp only [P, if_neg eq]
+      exact ⟨Finset.erase_subset _ _, by omega⟩
+  · intro i hi
+    by_cases eq : i = r <;> simp [P, eq]
+  · intro x hx
+    exact (Finset.mem_filter.mp hx).2
+  · intro y hy
+    have hy' : y ∈ (C (r+2)).filter (G.Adj a) := by simpa [P] using hy
+    exact (Finset.mem_filter.mp hy').2.symm
+
+/-- Concatenate path segments lying in disjoint vertex pools, with one
+connecting edge between successive segments. The order is exactly the sum
+of the segment orders. -/
+lemma join_disjoint_path_segments {V : Type*} [DecidableEq V] (G : SimpleGraph V)
+    (a b : ℕ → V) (pool : ℕ → Finset V) (len : ℕ → ℕ) (t : ℕ)
+    (hseg : ∀ i ≤ t, ∃ l : List V, l.length = len i ∧
+      (a i :: (l ++ [b i])).Nodup ∧ (a i :: (l ++ [b i])).IsChain G.Adj ∧
+      ∀ z ∈ a i :: (l ++ [b i]), z ∈ pool i)
+    (hlinks : ∀ i < t, G.Adj (b i) (a (i+1)))
+    (hdis : ∀ i j, i < j → j ≤ t → Disjoint (pool i) (pool j)) :
+    ∃ L : List V, L.length + 2 = ∑ i ∈ Finset.range (t+1), (len i + 2) ∧
+      (a 0 :: (L ++ [b t])).Nodup ∧ (a 0 :: (L ++ [b t])).IsChain G.Adj ∧
+      ∀ z ∈ a 0 :: (L ++ [b t]), ∃ i ≤ t, z ∈ pool i := by
+  induction t with
+  | zero =>
+    obtain ⟨l, hl, hs, hc, hp⟩ := hseg 0 le_rfl
+    exact ⟨l, by simp [hl], hs, hc, fun z hz => ⟨0, le_rfl, hp z hz⟩⟩
+  | succ t ih =>
+    obtain ⟨l, hl, hs, hc, hp⟩ := ih (fun i hi => hseg i (by omega))
+      (fun i hi => hlinks i (by omega)) (fun i j hij hj => hdis i j hij (by omega))
+    obtain ⟨l', hl', hs', hc', hp'⟩ := hseg (t+1) le_rfl
+    let X := a 0 :: (l ++ [b t])
+    let Y := a (t+1) :: (l' ++ [b (t+1)])
+    have hsep : X.Disjoint Y := by
+      intro z hz hz'
+      obtain ⟨i, hi, h⟩ := hp z hz
+      exact Finset.disjoint_left.mp (hdis i (t+1) (by omega) le_rfl) h (hp' z hz')
+    have hsimple : (X ++ Y).Nodup := List.nodup_append'.mpr ⟨hs,hs',hsep⟩
+    have hchain : (X ++ Y).IsChain G.Adj := by
+      apply hc.append hc'
+      intro u hu v hv
+      have hu' : b t = u := by simpa [← List.cons_append] using hu
+      have hv' : a (t+1) = v := by simpa using hv
+      exact hu' ▸ hv' ▸ hlinks t (by omega)
+    let L := l ++ [b t, a (t+1)] ++ l'
+    have heq : a 0 :: (L ++ [b (t+1)]) = X ++ Y := by simp [L,X,Y,List.append_assoc]
+    refine ⟨L, ?_, heq ▸ hsimple, heq ▸ hchain, ?_⟩
+    · rw [Finset.sum_range_succ, ← hl]
+      simp [L,hl']; omega
+    · rw [heq]
+      intro z hz
+      rcases List.mem_append.mp hz with h | h
+      · obtain ⟨i, hi, h⟩ := hp z h
+        exact ⟨i, by omega, h⟩
+      · exact ⟨_, le_rfl, hp' z h⟩
+
+/-- Distribute any requested even increment among the matched pairs, up to
+their combined capacity. -/
+lemma allocate_cycle_length (t : ℕ) (cap : ℕ → ℕ) (q : ℕ)
+    (h : q ≤ ∑ i ∈ Finset.range t, cap i) :
+    ∃ use : ℕ → ℕ, (∀ i < t, use i ≤ cap i) ∧ ∑ i ∈ Finset.range t, use i = q := by
+  induction t generalizing q with
+  | zero =>
+    simp at h
+    exact ⟨fun _ => 0, by simp, by simp [h]⟩
+  | succ t ih =>
+    rw [Finset.sum_range_succ] at h
+    obtain ⟨f, hf, hsum⟩ := ih (q - cap t) (by omega)
+    let use (i : ℕ) := if i = t then min q (cap t) else f i
+    refine ⟨use, ?_, ?_⟩
+    · intro i hi
+      by_cases e : i = t
+      · simp [use,e]
+      · simpa [use,e] using hf i (by omega)
+    · have hold : ∑ i ∈ Finset.range t, use i = ∑ i ∈ Finset.range t, f i := by
+        apply Finset.sum_congr rfl
+        intro i hi
+        simp [use, (Finset.mem_range.mp hi).ne]
+      rw [Finset.sum_range_succ, hold, hsum]
+      simp [use]; omega
+
+/-- In a cyclic arrangement of disjoint path segments, independently
+extensible segments realize every admissible total order of the correct
+parity. Segments of zero capacity serve as fixed connectors. -/
+lemma cycle_of_flexible_segments {V : Type*} [DecidableEq V] (G : SimpleGraph V)
+    (t : ℕ) (a b : ℕ → V) (pool : ℕ → Finset V) (base cap : ℕ → ℕ)
+    (hseg : ∀ i ≤ t, ∀ j ≤ cap i, ∃ l : List V, l.length = base i + 2*j ∧
+      (a i :: (l ++ [b i])).Nodup ∧ (a i :: (l ++ [b i])).IsChain G.Adj ∧
+      ∀ z ∈ a i :: (l ++ [b i]), z ∈ pool i)
+    (hlinks : ∀ i < t, G.Adj (b i) (a (i+1))) (hclose : G.Adj (b t) (a 0))
+    (hdis : ∀ i j, i < j → j ≤ t → Disjoint (pool i) (pool j))
+    (n q : ℕ) (hn : 3 ≤ n) (hcap : q ≤ ∑ i ∈ Finset.range (t+1), cap i)
+    (horder : n = (∑ i ∈ Finset.range (t+1), (base i + 2)) + 2*q) :
+    (cycleGraph n).IsContained G := by
+  obtain ⟨f,hf,hsum⟩ := allocate_cycle_length (t+1) cap q hcap
+  obtain ⟨L,hL,hs,hc,_⟩ := join_disjoint_path_segments G a b pool (fun i => base i + 2*f i) t
+    (fun i hi => hseg i hi (f i) (hf i (by omega))) hlinks hdis
+  have hlen : L.length + 2 = n := by
+    rw [hL, horder, ← hsum, Finset.mul_sum, ← Finset.sum_add_distrib]
+    apply Finset.sum_congr rfl
+    intro i _
+    omega
+  rw [← hlen]
+  exact cycle_of_closed_chain G (by omega) hs hc hclose
 
 section ReducedColours
 
@@ -1185,6 +1333,50 @@ lemma two_colour_large_component {V : Type*} [DecidableEq V]
   rw [Finset.card_union_of_disjoint (hAB.mono_right hdB)] at hc
   have hD : B.card ≤ D.card + k := blue _ haA
   omega
+
+/-- Splitting both sides of a pair increases its size-weighted mean square
+density by exactly the variance of the subpair densities. In particular a
+refinement chosen to repair one colour cannot cost energy in another. -/
+lemma cluster_refinement_variance {V : Type*} [DecidableEq V] (G : SimpleGraph V)
+    [DecidableRel G.Adj] {S T : Finset V} (hS : S.Nonempty) (hT : T.Nonempty)
+    (P : Finpartition S) (Q : Finpartition T) :
+    let blocks := P.parts ×ˢ Q.parts
+    let weight := fun z : Finset V × Finset V => (z.1.card : ℚ) * z.2.card
+    let d := fun z : Finset V × Finset V => G.edgeDensity z.1 z.2
+    (∑ z ∈ blocks, weight z * (d z)^2) =
+      (S.card : ℚ) * T.card * (G.edgeDensity S T)^2 +
+      ∑ z ∈ blocks, weight z * (d z - G.edgeDensity S T)^2 := by
+  classical
+  let blocks := P.parts ×ˢ Q.parts
+  let w (z : Finset V × Finset V) : ℚ := z.1.card * z.2.card
+  let f (z : Finset V × Finset V) := G.edgeDensity z.1 z.2
+  let D := G.edgeDensity S T
+  change (∑ z ∈ blocks, w z * (f z)^2) =
+    (S.card : ℚ) * T.card * D^2 + ∑ z ∈ blocks, w z * (f z-D)^2
+  have hweight : ∑ z ∈ blocks, w z = (S.card : ℚ) * T.card := by
+    change (∑ z ∈ P.parts ×ˢ Q.parts, (z.1.card : ℚ) * z.2.card) = _
+    rw [Finset.sum_product]
+    simp_rw [← Finset.mul_sum]
+    rw [← Finset.sum_mul]
+    exact_mod_cast congrArg₂ (· * ·) P.sum_card_parts Q.sum_card_parts
+  have hmass {A B : Finset V} (ha : A.Nonempty) (hb : B.Nonempty) :
+      ((A.card : ℚ) * B.card) * G.edgeDensity A B = (G.interedges A B).card := by
+    rw [G.edgeDensity_def]
+    field_simp [show (A.card : ℚ) ≠ 0 by exact_mod_cast ha.card_pos.ne',
+      show (B.card : ℚ) ≠ 0 by exact_mod_cast hb.card_pos.ne']
+  have hmean : ∑ z ∈ blocks, w z * f z = ((S.card : ℚ) * T.card) * D := by
+    rw [show (S.card : ℚ) * T.card * D = (G.interedges S T).card from hmass hS hT]
+    calc
+      _ = ∑ z ∈ blocks, ((G.interedges z.1 z.2).card : ℚ) := by
+        apply Finset.sum_congr rfl
+        intro z hz
+        obtain ⟨ha,hb⟩ := Finset.mem_product.mp hz
+        exact hmass (P.nonempty_of_mem_parts ha) (Q.nonempty_of_mem_parts hb)
+      _ = _ := by exact_mod_cast (Rel.card_interedges_finpartition G.Adj P Q).symm
+  have expand (z) : w z * (f z - D)^2 = w z * (f z)^2 - (w z * f z) * (2*D) + w z * D^2 := by ring
+  simp_rw [expand]
+  rw [Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.sum_mul, ← Finset.sum_mul, hmean, hweight]
+  ring
 
 theorem main : H1 → H2 → type_of% @Erdos556.erdos_556.variants.benevides_skokan_large_even := by
   intro _ hforce
