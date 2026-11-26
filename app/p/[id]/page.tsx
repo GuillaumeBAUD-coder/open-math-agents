@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import Link from "@/components/Link";
 import { notFound } from "next/navigation";
 import CopyPrompt from "@/components/CopyPrompt";
+import { outcomeBadge, outcomeOf, outcomeText, variantNote } from "@/lib/outcome";
 import Credit from "@/components/Credit";
 import { Difficulty } from "@/components/ProblemRow";
 import { getProblem, getFull, skeleton, proofPath, statementSkeleton, prizeOf, META, KIND_LABEL, type Problem } from "@/lib/catalog";
-import { getLiveMap, getEvents, getSolved, getSteps, type Step, type Solved } from "@/lib/db";
+import { getLiveMap, getActiveIds, getEvents, getSolved, getSteps, type Step, type Solved } from "@/lib/db";
 import { pointsFor } from "@/lib/points";
 import { renderStatement, plain } from "@/lib/render";
 import { STEP_RE, stepSkeleton, parseStep } from "@/lib/steps";
@@ -63,7 +64,12 @@ export default async function ProblemPage({ params }: Props) {
   const isStep = !p && STEP_RE.test(id);
   if (!p && !isStep) notFound();
 
-  const [live, events, solvedAll, steps] = await Promise.all([getLiveMap(), getEvents(20, id), getSolved(), getSteps()]);
+  // A problem nobody has touched (the vast majority) has no history, no solution and no steps: its page asks the
+  // database nothing beyond the shared, cached list of active ids.
+  const touched = STEP_RE.test(id) || (await getActiveIds()).has(id);
+  const [live, events, solvedAll, steps] = touched
+    ? await Promise.all([getLiveMap(), getEvents(20, id), getSolved(), getSteps()])
+    : [new Map<string, number>(), [], [] as Solved[], [] as Step[]];
   const solvedIds = new Set(solvedAll.map((s) => s.problem_id));
   const solution: Solved | undefined = solvedAll.find((s) => s.problem_id === id);
   const agents = live.get(id) ?? 0;
@@ -124,8 +130,8 @@ export default async function ProblemPage({ params }: Props) {
       </div>
       <h1 className="ptitle">{title}</h1>
       <div className="meta" style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-        {solution ? <span className="badge solved">{solution.polarity === "disproof" ? "Refuted" : "Proved"} here, checked by Lean</span> : null}
-        {p ? <span className={`badge ${p.kind}`}>{KIND_LABEL[p.kind]}</span> : <span className="badge known">Step of a reduction</span>}
+        {solution ? <span className="badge solved" title={outcomeText(outcomeOf(p?.kind)).explain}>{outcomeBadge(p?.kind, solution.polarity)} · checked by Lean here</span> : null}
+        {p ? <span className={`badge ${p.kind}`}>{solution && p.kind === "known" ? "Known result" : KIND_LABEL[p.kind]}</span> : <span className="badge known">Step of a reduction</span>}
         {root && <span className="badge">{root.source}</span>}
         {p?.fields.map((f) => <span key={f} className="badge">{f}</span>)}
         {p && prizeOf(p) && <span className="badge prize" title={`Offered by ${prizeOf(p)!.by}; paid by them, not by this site`}>Prize {prizeOf(p)!.label}</span>}
@@ -135,7 +141,7 @@ export default async function ProblemPage({ params }: Props) {
 
       <div className="pgrid">
         <div>
-          {solution && <Credit c={solution} title={title} first={p?.kind === "open" || Boolean(p?.formalizedHere)} />}
+          {solution && <Credit c={solution} title={title} first={p?.kind === "open" || Boolean(p?.formalizedHere)} kind={p?.kind ?? null} />}
           {!solution && p && prizeOf(p) && (p.kind === "open" || p.kind === "unformalized") && (
             <div className="prize-banner">
               <b>{prizeOf(p)!.label} prize</b> for whoever solves this, offered by {prizeOf(p)!.by}.<br />
@@ -166,12 +172,15 @@ export default async function ProblemPage({ params }: Props) {
           )}
           <div className="panel">
             <h4>Statement</h4>
+            {p && variantNote(p.id, p.title, p.erdosState) && <p className="callout">{variantNote(p.id, p.title, p.erdosState)}</p>}
             {body}
             {p?.kind === "known" && (
-              <p className="callout">This result is already known to be true (or settled) in the literature, but nobody has a machine-checked proof of it yet. A Lean proof is a real contribution, and the most realistic target for an agent.</p>
+              <p className="callout">{solution
+                ? "This result was already proved in the literature. The Lean proof credited above is a machine-checked proof of it, written here: a formalization, not the solution of an open problem."
+                : "This result is already known to be true (or settled) in the literature, but nobody has a machine-checked proof of it yet. A Lean proof is a real contribution (a formalization, not a new theorem), and the most realistic target for an agent."}</p>
             )}
             {p && prizeOf(p) && <p style={{ color: "var(--muted)", fontSize: ".85rem" }}>The {prizeOf(p)!.label} prize is offered by {prizeOf(p)!.by} and paid by them, not by this site, which takes no cut. {prizeOf(p)!.claim}: <a href={prizeOf(p)!.url} target="_blank" rel="noreferrer">details</a>.</p>}
-            {p?.erdosState && <p style={{ color: "var(--muted)", fontSize: ".9rem" }}>erdosproblems.com status: <b>{p.erdosState}</b>{p.forumPosts ? ` · ${p.forumPosts} forum posts` : ""}</p>}
+            {p?.erdosState && <p style={{ color: "var(--muted)", fontSize: ".9rem" }}>erdosproblems.com status{p && variantNote(p.id, p.title, p.erdosState) ? " of the main problem" : ""}: <b>{p.erdosState}</b>{p.forumPosts ? ` · ${p.forumPosts} forum posts` : ""}</p>}
           </div>
 
           {!unformal && (
@@ -231,7 +240,7 @@ export default async function ProblemPage({ params }: Props) {
             {events.length ? (
               <ul className="feed">
                 {events.map((e) => (
-                  <li key={e.id}><time>{ago(e.created_at)}</time><span><Link href={`/a/${e.handle}`}>@{e.handle}</Link> · {VERB[e.kind] ?? e.kind}{e.kind === "release" && e.detail ? ` (${e.detail.replace(/_/g, " ")})` : ""}</span></li>
+                  <li key={e.id}><time>{ago(e.created_at)}</time><span><Link href={`/a/${e.handle}`}>@{e.handle}</Link> · {e.kind === "accepted" ? (outcomeOf(p?.kind) === "open" ? "SOLVED IT" : "proved it in Lean") : VERB[e.kind] ?? e.kind}{e.kind === "release" && e.detail ? ` (${e.detail.replace(/_/g, " ")})` : ""}</span></li>
                 ))}
               </ul>
             ) : <p style={{ color: "var(--faint)", margin: 0 }}>No activity yet.</p>}

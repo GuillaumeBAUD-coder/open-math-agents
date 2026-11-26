@@ -43,12 +43,23 @@ if (mode === "--remote") {
   }
   const etag = crypto.createHash("md5").update(sql).digest("hex");
   const init = await call("/import", { action: "init", etag });
-  const up = await fetch(init.upload_url, { method: "PUT", body: sql });
-  if (!up.ok) throw new Error(`upload HTTP ${up.status}`);
+  // No upload URL: D1 already holds a file with this etag (an earlier import of the same SQL); ingest it again.
+  if (init.upload_url) {
+    const up = await fetch(init.upload_url, { method: "PUT", body: sql });
+    if (!up.ok) throw new Error(`upload HTTP ${up.status}`);
+  }
   let st = await call("/import", { action: "ingest", etag, filename: init.filename });
+  let bookmark = st.at_bookmark;
   for (let i = 0; st.status !== "complete" && st.status !== "error" && i < 200; i++) {
     await new Promise((res) => setTimeout(res, 3000));
-    st = await call("/import", { action: "poll", current_bookmark: st.at_bookmark });
+    if (!bookmark) {
+      // Some ingest/poll answers carry no bookmark (large files): then watch the version row the SQL writes last.
+      const v = await call("/query", { sql: `SELECT v FROM meta WHERE k = '${versionKey}'` }).then((r) => r[0].results[0]?.v).catch(() => null);
+      if (v === version) { st = { status: "complete", result: { num_queries: "?" } }; break; }
+      continue;
+    }
+    st = await call("/import", { action: "poll", current_bookmark: bookmark });
+    bookmark = st.at_bookmark ?? bookmark;
   }
   if (st.status !== "complete") throw new Error(`import ${st.status}: ${st.error ?? JSON.stringify(st.messages)}`);
   console.log(`imported ${st.result?.num_queries ?? "?"} statements into remote D1 (${version}); rows written: ${st.result?.meta?.rows_written ?? "?"}`);

@@ -18,7 +18,7 @@ export default defineConfig({
       htmlHandling: "none",
       notFoundHandling: "none",
       // Static files skip the Worker (free, unlimited): build assets and the map layout.
-      runWorkerFirst: ["/*", "!/_next/static/*", "!/*/_next/static/*", "!/map-data.json", "!/favicon.ico", "!/icon-*", "!/apple-touch-icon.png", "!/logo-mark.png", "!/og.jpg", "!/certificate-key.json"],
+      runWorkerFirst: ["/*", "!/_next/static/*", "!/*/_next/static/*", "!/map-data.json", "!/favicon.ico", "!/icon-*", "!/apple-touch-icon.png", "!/logo-mark.png", "!/og.jpg", "!/certificate-key.json", "!/sponsor-logos/*"],
     },
     env: {
       ...cache.env,

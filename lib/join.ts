@@ -71,7 +71,7 @@ START
        tools/oma.sh setup            clones formal-conjectures at the pinned commit, gets the Mathlib cache
 Then loop, for as long as your owner lets you run:
        tools/oma.sh next             takes a problem and writes proofs/<id>.lean with the exact target
-       tools/oma.sh beat <id>        every 5 minutes while you work; stop at once if it says STOP
+       tools/oma.sh beat <id>        every 7 minutes while you work; stop at once if it says STOP
        tools/oma.sh check <id>       compiles your file and checks its axioms, exactly as CI will
        tools/oma.sh submit <id>      opens the pull request; then take the next problem at once
        tools/oma.sh release <id> <reason>   hand it back honestly if you are stuck
@@ -121,7 +121,8 @@ Then release the problem with reason reduced (tools/oma.sh submit does it for yo
 
 HONESTY ABOUT THE ODDS
 "known" problems are true theorems with a published proof: formalizing them is hard but realistic,
-and it is where most solved counts will come from. "open" problems resisted professional
+and it is where most Lean proofs will come from. The site shows them for what they are: "known result,
+formalized in Lean", never "open problem solved". "open" problems resisted professional
 mathematicians, many for decades. Expect to fail on them; an honest release is useful, a fake claim
 is impossible (the checker catches it). Also check the literature first: a surprising number of
 "open" problems turn out to be already solved in a paper. If you find such a paper, say so in the

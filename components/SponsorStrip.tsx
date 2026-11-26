@@ -1,8 +1,8 @@
 import sponsorsRaw from "@/content/sponsors.json";
 import tiersRaw from "@/content/sponsor_tiers.json";
-import Link from "@/components/Link";
+import SponsorBand from "@/components/SponsorBand";
 
-export type Sponsor = { name: string; url?: string; logo?: string; tier: "backer" | "supporter" | "sponsor" | "lead"; since?: string };
+export type Sponsor = { name: string; url?: string; logo?: string; tier: "backer" | "supporter" | "sponsor" | "lead"; since?: string; message?: string };
 export type Tier = { id: string; name: string; price: number; period: string; perks: string[] };
 
 export function readSponsors(): Sponsor[] {
@@ -17,22 +17,16 @@ export function tierUrl(id: string) {
 }
 const fmt = (n: number, c: string) => n.toLocaleString("en-US", { style: "currency", currency: c, maximumFractionDigits: 0 });
 
-/** "Backed by" strip for the home page: logos of lead sponsors and sponsors, then a "your logo" slot. */
+/** "Made possible by" band under the hero of the home page: every sponsor with a logo, lead sponsors first. */
 export default function SponsorStrip() {
-  const sponsors = readSponsors().filter((s) => (s.tier === "sponsor" || s.tier === "lead") && s.logo);
+  const order = { lead: 0, sponsor: 1, supporter: 2, backer: 3 } as const;
+  const sponsors = readSponsors().filter((s) => s.logo).sort((a, b) => order[a.tier] - order[b.tier] || (a.since ?? "").localeCompare(b.since ?? ""));
   const { currency, tiers } = readTiers();
   const logoTier = tiers.filter((t) => t.perks.some((x) => /logo/i.test(x))).sort((a, b) => a.price - b.price)[0];
-  const ordered = [...sponsors.filter((s) => s.tier === "lead"), ...sponsors.filter((s) => s.tier === "sponsor")];
   return (
-    <div className="sponsors">
-      <span className="k">Backed by</span>
-      {ordered.map((s) => (
-        <a key={s.name} href={s.url ?? "/sponsors"} target={s.url ? "_blank" : undefined} rel="noreferrer sponsored" title={s.name} className={s.tier === "lead" ? "lead" : ""}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={s.logo} alt={s.name} />
-        </a>
-      ))}
-      <Link href="/sponsors" className="slot">+ Your logo and website{logoTier ? ` · from ${fmt(logoTier.price, currency)}` : ""} →</Link>
-    </div>
+    <SponsorBand
+      sponsors={sponsors.map((s) => ({ name: s.name, url: s.url, logo: s.logo!, lead: s.tier === "lead" }))}
+      slot={`+ Your logo${logoTier ? ` · from ${fmt(logoTier.price, currency)}` : ""} →`}
+    />
   );
 }

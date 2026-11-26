@@ -1,3 +1,4 @@
+import { outcomeOf, outcomeText, outcomeCounts, outcomeSummary, outcomeBadge } from "@/lib/outcome";
 import type { Metadata } from "next";
 import Link from "@/components/Link";
 import { notFound } from "next/navigation";
@@ -78,7 +79,7 @@ export default async function Person({ params }: Props) {
   const url = `${SITE}/a/${encodeURIComponent(h)}`;
   const summary = !active ? "No activity yet on this site."
     : proofs.length
-      ? `Proved ${proofs.length} problem${proofs.length > 1 ? "s" : ""}${mainField ? ` in ${mainField}` : ""} between ${utc(proofs[0].created_at)} and ${utc(proofs[proofs.length - 1].created_at)}. Each one passed the Lean checker.`
+      ? `${proofs.length} Lean proof${proofs.length > 1 ? "s" : ""}${mainField ? ` in ${mainField}` : ""} between ${utc(proofs[0].created_at)} and ${utc(proofs[proofs.length - 1].created_at)}, each one passed the Lean checker: ${outcomeSummary(outcomeCounts(proofs.map((s) => prob(s.problem_id)?.kind)))}.`
       : `Took ${p!.claims} problem${p!.claims === 1 ? "" : "s"}${mainField ? ` in ${mainField}` : ""} since ${p!.firstSeen ? utc(p!.firstSeen) : "—"}. No proof checked yet.`;
 
   return (
@@ -113,7 +114,8 @@ export default async function Person({ params }: Props) {
           )}
           <div className="rankkpis">
             <div><b>{p?.points ?? me?.points ?? 0}</b><span>points</span></div>
-            <div><b>{proofs.length}</b><span>proved</span></div>
+            <div><b>{proofs.filter((s) => outcomeOf(prob(s.problem_id)?.kind) === "open").length}</b><span>open problems solved</span></div>
+            <div><b>{proofs.length}</b><span>Lean proofs</span></div>
             <div><b>{ev.length > 1 ? span(ev[0].created_at, ev[ev.length - 1].created_at) : "—"}</b><span>first to latest</span></div>
             <div><b>{firstProof ? day(firstProof) : "—"}</b><span>first proof</span></div>
           </div>
@@ -142,14 +144,14 @@ export default async function Person({ params }: Props) {
 
         <div className="pcols">
           <div>
-            <div className="h2"><h2>{proofs.length} proved</h2><span>oldest first · all checked by Lean</span></div>
+            <div className="h2"><h2>{proofs.length} Lean proof{proofs.length === 1 ? "" : "s"}</h2><span>oldest first · all checked by Lean · {outcomeSummary(outcomeCounts(proofs.map((s) => prob(s.problem_id)?.kind)))}</span></div>
             {proofs.length === 0 ? <p className="callout">No checked proof yet.</p> : (
               <div className="plist">
                 {proofs.map((s) => (
                   <Link key={s.pr_url} href={`/p/${encodeURIComponent(s.problem_id)}`} className="pitem">
                     <span className="chk ok">✓ Checked</span>
                     <code>{s.problem_id.length > 28 ? s.problem_id.slice(0, 27) + "…" : s.problem_id}</code>
-                    <span className="pt">{s.polarity === "disproof" ? "Refuted: " : ""}{title(s.problem_id)}</span>
+                    <span className="pt">{s.polarity === "disproof" ? "Refuted: " : ""}{title(s.problem_id)}<small style={{ display: "block", color: "var(--faint)" }}>{outcomeBadge(prob(s.problem_id)?.kind, s.polarity)}</small></span>
                     <time>{day(s.created_at)} {new Date(s.created_at).toISOString().slice(11, 16)}</time>
                   </Link>
                 ))}
@@ -198,7 +200,7 @@ export default async function Person({ params }: Props) {
                   <Link key={e.id} href={`/p/${encodeURIComponent(e.problem_id)}`} className="pitem">
                     <span className={`chk ${cls}`}>{label}</span>
                     <code>{e.problem_id.length > 28 ? e.problem_id.slice(0, 27) + "…" : e.problem_id}</code>
-                    <span className="pt">{VERB[e.kind] ?? e.kind} {title(e.problem_id)}{e.kind === "release" && e.detail ? ` (${e.detail.replace(/_/g, " ")})` : ""}</span>
+                    <span className="pt">{e.kind === "accepted" ? `${outcomeOf(prob(e.problem_id)?.kind) === "open" ? "Solved the open problem" : outcomeOf(prob(e.problem_id)?.kind) === "known" ? "Formalized in Lean (known result)" : outcomeOf(prob(e.problem_id)?.kind) === "warmup" ? "Did the warm-up" : "Proved a step:"}` : VERB[e.kind] ?? e.kind} {title(e.problem_id)}{e.kind === "release" && e.detail ? ` (${e.detail.replace(/_/g, " ")})` : ""}</span>
                     <time>{day(e.created_at)} {new Date(e.created_at).toISOString().slice(11, 16)}</time>
                   </Link>
                 );
