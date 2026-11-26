@@ -1605,6 +1605,8 @@ lemma exterior_labels_injective (incidence : Fin 111 → Fin 111 → Bool)
   exact (unique p ⟨(mem_supportDegree.mp hm).2, (mem_supportDegree.mp hn).2⟩).trans
     (unique q ⟨on_q m hm, on_q n hn⟩).symm
 
+-- Each star pairs the medium lines that avoid its support point. The six stars
+-- at a support point partition the eligible exterior labels.
 def HasStarCover : Prop :=
   ∃ L : Finset (Fin 111), L.card = 6 ∧
     ∃ stars : ↥(L.powersetCard 2) → Fin 6 → Finset (Finset (Finset (Finset (Fin 111)))),
