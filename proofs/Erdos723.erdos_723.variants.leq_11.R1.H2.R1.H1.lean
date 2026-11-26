@@ -731,7 +731,8 @@ def evaluationCoefficients : Fin 18 → Count :=
 
 def delta (w i : Fin 56) : Count := if i = w then 1 else 0
 
--- A certificate found by elimination modulo 113 and checked in the kernel.
+-- Evaluate the paired weight identity at 18 points and take a linear combination.
+-- The resulting certificate is checked modulo 113 in the kernel.
 set_option maxHeartbeats 2000000 in
 set_option maxRecDepth 10000 in
 lemma weight_certificate (i : Fin 56) (h : admissibleWeight i) :
