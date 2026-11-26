@@ -1,5 +1,7 @@
 import FormalConjectures.ErdosProblems.«878»
 
+/-! Formalizes Barreto's counterexample at x = 210 for Erdős Problem 878. -/
+
 -- Credit: @aspher1
 -- Formalizes Barreto's counterexample at x = 210, recorded in the upstream statement.
 
