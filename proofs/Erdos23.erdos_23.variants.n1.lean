@@ -1,46 +1,63 @@
 import FormalConjectures.ErdosProblems.«23»
 
+/-! # Bipartizing a triangle-free graph on five vertices -/
 -- Credit: @steveDOTdigital
+
+open SimpleGraph Finset
+
 namespace OMA.FiveVertices
 
-def colorOf (C : Finset (Fin 5)) (x : Fin 5) : Fin 2 :=
-  if x ∈ C then 0 else 1
-
--- Enumerate the subsets of the ten possible edges. For triangle-free inputs
--- the certificate supplies a cut with at most one edge on the same side.
-set_option maxRecDepth 65536 in
-set_option maxHeartbeats 1600000 in
-theorem cut_exists :
-    ∀ E ∈ ((Finset.univ : Finset (Sym2 (Fin 5))).filter (fun e => ¬e.IsDiag)).powerset,
-      (∀ x y z : Fin 5, s(x,y) ∈ E → s(x,z) ∈ E → s(y,z) ∉ E) →
-      ∃ C ∈ (Finset.univ : Finset (Fin 5)).powerset,
-        (E.filter (fun e => (e.map (colorOf C)).IsDiag)).card ≤ 1 := by
-  decide +kernel
+private theorem matching_bipartite (G : SimpleGraph (Fin 5))
+    (unique : ∀ v x y, G.Adj v x → G.Adj v y → x = y) : G.IsBipartite := by
+  classical
+  let c (x : Fin 5) : Fin 2 := if ∃ z < x, G.Adj x z then 1 else 0
+  have oriented {x y : Fin 5} (h : G.Adj x y) (lt : x < y) : c x ≠ c y := by
+    have hy : ∃ z < y, G.Adj y z := ⟨x, lt, h.symm⟩
+    have hx : ¬ ∃ z < x, G.Adj x z := by
+      rintro ⟨z, hzx, hxz⟩
+      exact lt.asymm ((unique x z y hxz h) ▸ hzx)
+    simp [c, hx, hy]
+  refine ⟨Coloring.mk c (fun {x y} h => ?_)⟩
+  rcases lt_or_gt_of_ne h.ne with lt | lt
+  · exact oriented h lt
+  · exact (oriented h.symm lt).symm
 
 end OMA.FiveVertices
-
-open SimpleGraph OMA.FiveVertices
 
 theorem OMA.solution : type_of% @Erdos23.erdos_23.variants.n1 := by
   classical
   intro G hfree
-  have hedges : G.edgeFinset ∈
-      ((Finset.univ : Finset (Sym2 (Fin 5))).filter (fun e => ¬e.IsDiag)).powerset :=
-    Finset.mem_powerset.mpr fun e he =>
-      Finset.mem_filter.mpr ⟨Finset.mem_univ e, G.not_isDiag_of_mem_edgeFinset he⟩
-  obtain ⟨C, _, hcard⟩ := cut_exists G.edgeFinset hedges (by
-    intro x y z hxy hxz hyz
-    exact hfree {x,y,z} (is3Clique_triple_iff.mpr
-      ⟨mem_edgeFinset.mp hxy, mem_edgeFinset.mp hxz, mem_edgeFinset.mp hyz⟩))
-  let H := G ⊓ (⊤ : SimpleGraph (Fin 2)).comap (colorOf C)
-  refine ⟨H, inf_le_left, ⟨Coloring.mk (colorOf C) (fun h => h.2)⟩, ?_⟩
-  apply le_trans (Finset.card_le_card ?_) hcard
-  intro e
-  induction e using Sym2.ind with
-  | _ x y =>
-    intro he
-    obtain ⟨hg, hn⟩ := Finset.mem_sdiff.mp he
-    refine Finset.mem_filter.mpr ⟨hg, ?_⟩
-    change colorOf C x = colorOf C y
-    by_contra hne
-    exact hn (mem_edgeFinset.mpr (show H.Adj x y from ⟨mem_edgeFinset.mp hg, hne⟩))
+  by_cases fork : ∃ v x y, G.Adj v x ∧ G.Adj v y ∧ x ≠ y
+  · obtain ⟨v, x, y, hvx, hvy, hxy⟩ := fork
+    -- The neighbors of v are independent. A same-color edge can use only
+    -- the two vertices outside {v,x,y}.
+    let c (z : Fin 5) : Fin 2 := if G.Adj v z then 1 else 0
+    let H := G ⊓ (⊤ : SimpleGraph (Fin 2)).comap c
+    let R : Finset (Fin 5) := ({v,x,y} : Finset (Fin 5))ᶜ
+    have hR : R.card = 2 := by simp [R, card_compl, hvx.ne, hvy.ne, hxy]
+    refine ⟨H, inf_le_left, ⟨Coloring.mk c (fun h => h.2)⟩, ?_⟩
+    have endpoints {u w : Fin 5} (huw : G.Adj u w) (same : c u = c w) : u ∈ R := by
+      have iff_adj : G.Adj v u ↔ G.Adj v w := by
+        by_cases hu : G.Adj v u <;> by_cases hw : G.Adj v w <;> simp_all [c]
+      have hu : ¬ G.Adj v u := fun h => hfree {v,u,w}
+        (is3Clique_triple_iff.mpr ⟨h, iff_adj.mp h, huw⟩)
+      have huv : u ≠ v := by rintro rfl; exact hu (iff_adj.mpr huw)
+      have hux : u ≠ x := fun e => hu (e ▸ hvx)
+      have huy : u ≠ y := fun e => hu (e ▸ hvy)
+      simp [R, huv, hux, huy]
+    have used {e : Sym2 (Fin 5)} (hg : e ∈ G.edgeSet) (hn : e ∉ H.edgeSet) : e.toFinset = R := by
+      apply eq_of_subset_of_card_le _ (by rw [hR, G.card_toFinset_mem_edgeFinset ⟨e,mem_edgeFinset.mpr hg⟩])
+      induction e using Sym2.ind with
+      | _ u w =>
+        have hadj : G.Adj u w := hg
+        have same : c u = c w := by
+          by_contra ne
+          exact hn (show H.Adj u w from ⟨hadj, ne⟩)
+        rw [Sym2.toFinset_mk_eq]
+        exact insert_subset (endpoints hadj same) (singleton_subset_iff.mpr (endpoints hadj.symm same.symm))
+    refine Finset.card_le_one_iff.2 fun he hf => Sym2.ext fun z => ?_
+    simp only [mem_sdiff, mem_edgeFinset] at he hf
+    rw [← Sym2.mem_toFinset, ← Sym2.mem_toFinset, used he.1 he.2, used hf.1 hf.2]
+  · refine ⟨G, le_rfl, OMA.FiveVertices.matching_bipartite G ?_, by simp⟩
+    intro v x y hx hy
+    exact Classical.byContradiction fun h => fork ⟨v,x,y,hx,hy,h⟩
