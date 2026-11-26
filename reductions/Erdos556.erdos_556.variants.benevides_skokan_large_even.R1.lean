@@ -780,7 +780,7 @@ lemma regular_pair_path_length_range {V : Type*} [DecidableEq V] (G : SimpleGrap
   have hbudget : k + m + l ≤ n := by
     exact_mod_cast (show (k : ℚ) + m + l ≤ n by change (l : ℚ) + 5 * t ≤ n at hrange; linarith)
   have hend : (k : ℚ) < α * n / 5 := by
-    nlinarith [mul_le_mul_of_nonneg_left he' (Nat.cast_nonneg (R := ℚ) n)]
+    nlinarith [mul_le_mul_of_nonneg_left he' (show 0 ≤ (n : ℚ) by positivity)]
   let r := l - 1
   have hrl : r + 1 = l := by dsimp [r]; omega
   obtain ⟨L, hlen, hnodup, hchain, hpool⟩ := regular_pair_path_between G hreg hd' hst k m r
@@ -792,7 +792,8 @@ lemma regular_pair_path_length_range {V : Type*} [DecidableEq V] (G : SimpleGrap
   have hw : w.support = W := Walk.support_ofSupport hn hchain
   have hwlen : w.length = W.length - 1 := Walk.length_ofSupport hn hchain
   have hend' : W.getLast hn = y := by simp [W]
-  refine ⟨w.copy rfl hend', ?_, ?_, ?_⟩
+  have hstart : W.head hn = x := rfl
+  refine ⟨w.copy hstart hend', ?_, ?_, ?_⟩
   · apply Walk.IsPath.mk'
     rw [Walk.support_copy, hw]
     exact hnodup
@@ -805,6 +806,42 @@ lemma regular_pair_path_length_range {V : Type*} [DecidableEq V] (G : SimpleGrap
     · exact Or.inl hx
     · exact hpool _ h
     · exact Or.inr hy
+
+/-- Benevides, Proposition 3.2, with an arbitrary eligible target subset.
+The forbidden set may therefore be recomputed after vertices have been used. -/
+lemma regular_pair_few_bad {V : Type*} [DecidableEq V] (G : SimpleGraph V)
+    [DecidableRel G.Adj] {S T B : Finset V} {ε : ℚ} (hreg : G.IsUniform ε S T)
+    (hd : ε ≤ G.edgeDensity S T) (hB : B ⊆ T) (hsize : (T.card : ℚ) * ε ≤ B.card) :
+    ((S.filter fun x => ((B.filter (G.Adj x)).card : ℚ) ≤
+      (G.edgeDensity S T - ε) * B.card).card : ℚ) < S.card * ε := by
+  by_contra! h
+  obtain ⟨a, ha, hdeg⟩ := regular_pair_choose G hreg hd (Finset.filter_subset _ _) hB h hsize
+  exact (not_lt_of_ge (Finset.mem_filter.mp ha).2) hdeg
+
+/-- Choose a single attachment vertex typical toward two different clusters
+in the same colour. The candidate pool may already exclude used vertices. -/
+lemma regular_pair_two_targets {V : Type*} [DecidableEq V] (G : SimpleGraph V)
+    [DecidableRel G.Adj] {S T U B C X : Finset V} {ε : ℚ}
+    (ht : G.IsUniform ε S T) (hu : G.IsUniform ε S U)
+    (hdt : ε ≤ G.edgeDensity S T) (hdu : ε ≤ G.edgeDensity S U)
+    (hB : B ⊆ T) (hC : C ⊆ U) (hsizeB : (T.card : ℚ) * ε ≤ B.card)
+    (hsizeC : (U.card : ℚ) * ε ≤ C.card) (hX : X ⊆ S) (hsizeX : 2 * S.card * ε ≤ X.card) :
+    ∃ x ∈ X, (G.edgeDensity S T - ε) * B.card < ((B.filter (G.Adj x)).card : ℚ) ∧
+      (G.edgeDensity S U - ε) * C.card < ((C.filter (G.Adj x)).card : ℚ) := by
+  classical
+  let badT := S.filter fun x => ((B.filter (G.Adj x)).card : ℚ) ≤ (G.edgeDensity S T - ε) * B.card
+  let badU := S.filter fun x => ((C.filter (G.Adj x)).card : ℚ) ≤ (G.edgeDensity S U - ε) * C.card
+  have ht' : (badT.card : ℚ) < S.card * ε := regular_pair_few_bad G ht hdt hB hsizeB
+  have hu' : (badU.card : ℚ) < S.card * ε := regular_pair_few_bad G hu hdu hC hsizeC
+  by_contra! hnone
+  have hsub : X ⊆ badT ∪ badU := by
+    intro x hx
+    by_cases h : ((B.filter (G.Adj x)).card : ℚ) ≤ (G.edgeDensity S T - ε) * B.card
+    · exact Finset.mem_union_left _ (Finset.mem_filter.mpr ⟨hX hx, h⟩)
+    · exact Finset.mem_union_right _ (Finset.mem_filter.mpr ⟨hX hx, hnone x hx (lt_of_not_ge h)⟩)
+  have htot : (X.card : ℚ) ≤ badT.card + badU.card := by
+    exact_mod_cast (Finset.card_le_card hsub).trans (Finset.card_union_le _ _)
+  linarith
 
 section ReducedColours
 
