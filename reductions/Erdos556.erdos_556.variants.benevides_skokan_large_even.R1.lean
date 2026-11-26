@@ -1,4 +1,5 @@
 import FormalConjectures.ErdosProblems.«556»
+import Mathlib.Combinatorics.Hall.Finite
 
 open SimpleGraph Filter
 
@@ -70,19 +71,19 @@ lemma lowerColouringAvoidsCycle : H1 := by
       (hc : colour x y = i) : 3 ≤ x ∧ 3 ≤ y ∧ key i x = key i y := by
     by_cases hs : min x y < 3
     · have hv := congrArg Fin.val hc
-      simp [colour, hs, Nat.mod_eq_of_lt hs] at hv
+      simp only [colour, if_pos hs, Nat.mod_eq_of_lt hs] at hv
       rw [min_def] at hv
       split at hv <;> contradiction
     · have hx3 : 3 ≤ x := le_trans (Nat.le_of_not_lt hs) (min_le_left _ _)
       have hy3 : 3 ≤ y := le_trans (Nat.le_of_not_lt hs) (min_le_right _ _)
       refine ⟨hx3, hy3, ?_⟩
       by_cases hp : x % 2 = y % 2
-      · have hi : (0 : Fin 3) = i := by simpa [colour, hs, hp] using hc
+      · have hi : (0 : Fin 3) = i := by simpa only [colour, if_neg hs, if_pos hp] using hc
         simpa [← hi, key] using hp
       · by_cases hb : x / 2 % 2 = y / 2 % 2
-        · have hi : (1 : Fin 3) = i := by simpa [colour, hs, hp, hb] using hc
+        · have hi : (1 : Fin 3) = i := by simpa only [colour, if_neg hs, if_neg hp, if_pos hb] using hc
           simpa [← hi, key] using hb
-        · have hi : (2 : Fin 3) = i := by simpa [colour, hs, hp, hb] using hc
+        · have hi : (2 : Fin 3) = i := by simpa only [colour, if_neg hs, if_neg hp, if_neg hb] using hc
           rw [← hi]
           simp only [key, show (2 : Fin 3) ≠ 0 by decide, show (2 : Fin 3) ≠ 1 by decide, if_false]
           split_ifs <;> omega
@@ -108,7 +109,20 @@ lemma lowerColouringAvoidsCycle : H1 := by
     have heq := (same u).2.trans (same v).2.symm
     have hu := (same u).1
     have hv := (same v).1
-    fin_cases i <;> simp [key, bit] at heq hc <;> (try split_ifs at heq) <;> omega
+    have bit_lt (x : ℕ) : bit i x < 2 := by dsimp [bit]; split <;> omega
+    have bu := bit_lt (g u)
+    have bv := bit_lt (g v)
+    have row : (g u - 3) / 4 = (g v - 3) / 4 := by omega
+    have lastBit : bit i (g u) = bit i (g v) := by omega
+    have digits (x : ℕ) : x % 4 = x % 2 + 2 * (x / 2 % 2) := by
+      have hd : x / 2 / 2 = x / 4 := Nat.div_div_eq_div_mul _ _ _
+      omega
+    have low : g u % 4 = g v % 4 := by
+      rw [digits (g u), digits (g v)]
+      fin_cases i <;> simp [key, bit] at heq lastBit <;> (try split_ifs at heq) <;> omega
+    have xu := Nat.mod_add_div (g u) 4
+    have xv := Nat.mod_add_div (g v) 4
+    omega
   have impossible := Fintype.card_le_of_injective code inj
   simp only [Fintype.card_fin] at impossible
   omega
@@ -137,6 +151,7 @@ lemma cycle_of_complete_pair {V : Type*} (G : SimpleGraph V) (k : ℕ)
     dsimp only [place]
     split_ifs <;> first | exact cross _ _ | exact (cross _ _).symm | exfalso; omega
   · intro a b h
+    change place a = place b at h
     dsimp only [place] at h
     split_ifs at h
     · have hh := congrArg Fin.val (left.injective h)
@@ -148,9 +163,164 @@ lemma cycle_of_complete_pair {V : Type*} (G : SimpleGraph V) (k : ℕ)
       change a.val / 2 = b.val / 2 at hh
       exact Fin.ext (by omega)
 
+-- The right vertices are candidates for the gaps between successive left
+-- vertices. Half-degree on both sides of this auxiliary graph gives Hall.
+lemma matching_of_half_degrees {k : ℕ} (cand : Fin k → Finset (Fin k))
+    (rows : ∀ j, k ≤ 2 * (cand j).card)
+    (cols : ∀ v, k ≤ 2 * (Finset.univ.filter (fun j => v ∈ cand j)).card) :
+    ∃ pick : Fin k → Fin k, Function.Injective pick ∧ ∀ j, pick j ∈ cand j := by
+  apply (Finset.all_card_le_biUnion_card_iff_existsInjective' cand).mp
+  intro s
+  by_cases small : 2 * s.card ≤ k
+  · by_cases hs : s.Nonempty
+    · obtain ⟨j, hj⟩ := hs
+      have hsub : cand j ⊆ s.biUnion cand :=
+        fun v hv => Finset.mem_biUnion.mpr ⟨j, hj, hv⟩
+      have := Finset.card_le_card hsub
+      have := rows j
+      omega
+    · simp [Finset.not_nonempty_iff_eq_empty.mp hs]
+  · have hall : s.biUnion cand = Finset.univ := by
+      apply Finset.eq_univ_of_forall
+      intro v
+      by_contra hv
+      have hsub : Finset.univ.filter (fun j => v ∈ cand j) ⊆ sᶜ := by
+        intro j hj
+        apply Finset.mem_compl.mpr
+        intro hjs
+        exact hv (Finset.mem_biUnion.mpr ⟨j, hjs, (Finset.mem_filter.mp hj).2⟩)
+      have hcard := Finset.card_le_card hsub
+      rw [Finset.card_compl, Fintype.card_fin] at hcard
+      have := cols v
+      have hsk : s.card ≤ k := by simpa using Finset.card_le_univ s
+      omega
+    rw [hall]
+    exact Finset.card_le_univ s
+
+-- A candidate for an odd cycle position must join each of its two even
+-- neighbours. The relation allows unrelated cross-edges to be absent.
+lemma cycle_from_gap_matching {V : Type*} (G : SimpleGraph V) (k : ℕ)
+    (left right : Fin k ↪ V) (apart : ∀ a b, left a ≠ right b)
+    (pick : Fin k → Fin k) (hinj : Function.Injective pick)
+    (fits : ∀ (a b : Fin (2 * k)) (u v : Fin k),
+      a.val % 2 = 0 → b.val % 2 ≠ 0 → (cycleGraph (2 * k)).Adj a b →
+      u.val = a.val / 2 → v.val = b.val / 2 → G.Adj (left u) (right (pick v))) :
+    (cycleGraph (2 * k)).IsContained G := by
+  let half (u : Fin (2 * k)) : Fin k := ⟨u.val / 2, by have := u.isLt; omega⟩
+  let place (u : Fin (2 * k)) :=
+    if u.val % 2 = 0 then left (half u) else right (pick (half u))
+  have flip {a b : Fin (2 * k)} (h : (a - b).val = 1) : a.val % 2 ≠ b.val % 2 := by
+    by_cases hle : b ≤ a
+    · rw [Fin.sub_val_of_le hle] at h
+      omega
+    · rw [Fin.coe_sub_iff_lt.mpr (lt_of_not_ge hle)] at h
+      have := b.isLt
+      omega
+  refine ⟨⟨⟨place, ?_⟩, ?_⟩⟩
+  · intro a b hab
+    have hop : a.val % 2 ≠ b.val % 2 :=
+      (cycleGraph_adj'.mp hab).elim flip (fun h => Ne.symm (flip h))
+    dsimp only [place]
+    by_cases ha : a.val % 2 = 0
+    · have hb : b.val % 2 ≠ 0 := by omega
+      rw [if_pos ha, if_neg hb]
+      exact fits a b (half a) (half b) ha hb hab rfl rfl
+    · have hb : b.val % 2 = 0 := by omega
+      rw [if_neg ha, if_pos hb]
+      exact (fits b a (half b) (half a) hb ha hab.symm rfl rfl).symm
+  · intro a b h
+    change place a = place b at h
+    dsimp only [place] at h
+    split_ifs at h
+    · have hh := congrArg Fin.val (left.injective h)
+      change a.val / 2 = b.val / 2 at hh
+      exact Fin.ext (by omega)
+    · exact (apart _ _ h).elim
+    · exact (apart _ _ h.symm).elim
+    · have hh := congrArg Fin.val (hinj (right.injective h))
+      change a.val / 2 = b.val / 2 at hh
+      exact Fin.ext (by omega)
+
+-- Consecutive rows with at least three quarters of the opposite vertices
+-- in each neighbourhood have at least half in common. Applying the same
+-- count to each column verifies the other side of Hall's condition.
+lemma consecutive_common_representatives {k : ℕ} (next : Equiv.Perm (Fin k))
+    (nb : Fin k → Finset (Fin k))
+    (rows : ∀ j, 3 * k ≤ 4 * (nb j).card)
+    (cols : ∀ v, 3 * k ≤ 4 * (Finset.univ.filter (fun j => v ∈ nb j)).card) :
+    ∃ pick : Fin k → Fin k, Function.Injective pick ∧
+      ∀ j, pick j ∈ nb j ∧ pick j ∈ nb (next j) := by
+  classical
+  have half {s t : Finset (Fin k)} (hs : 3 * k ≤ 4 * s.card) (ht : 3 * k ≤ 4 * t.card) :
+      k ≤ 2 * (s ∩ t).card := by
+    have h := Finset.card_union_add_card_inter s t
+    have hmax : (s ∪ t).card ≤ k := by simpa using Finset.card_le_univ (s ∪ t)
+    omega
+  let cand (j : Fin k) := nb j ∩ nb (next j)
+  have col (v : Fin k) : k ≤ 2 * (Finset.univ.filter (fun j => v ∈ cand j)).card := by
+    let s := Finset.univ.filter (fun j => v ∈ nb j)
+    let t := s.map next.symm.toEmbedding
+    have ht (j : Fin k) : j ∈ t ↔ v ∈ nb (next j) := by
+      change j ∈ s.map next.symm.toEmbedding ↔ _
+      constructor
+      · intro hj
+        obtain ⟨x, hx, rfl⟩ := Finset.mem_map.mp hj
+        simpa [s] using hx
+      · intro hj
+        exact Finset.mem_map.mpr ⟨next j, Finset.mem_filter.mpr ⟨Finset.mem_univ _, hj⟩,
+          next.symm_apply_apply j⟩
+    have heq : Finset.univ.filter (fun j => v ∈ cand j) = s ∩ t := by
+      ext j
+      simp [s, cand, ht]
+    rw [heq]
+    apply half (cols v)
+    simpa [t] using cols v
+  obtain ⟨p, hp, hmem⟩ := matching_of_half_degrees cand
+    (fun j => half (rows j) (rows (next j))) col
+  exact ⟨p, hp, fun j => Finset.mem_inter.mp (hmem j)⟩
+
+-- With at most one quarter of the cross-edges missing at each vertex,
+-- use distinct common neighbours to close the prescribed cyclic left order.
+lemma cycle_of_three_quarter_pair {V : Type*} (G : SimpleGraph V) (k : ℕ)
+    (left right : Fin (k + 1) ↪ V) (apart : ∀ a b, left a ≠ right b)
+    (nb : Fin (k + 1) → Finset (Fin (k + 1)))
+    (sound : ∀ a b, b ∈ nb a → G.Adj (left a) (right b))
+    (rows : ∀ j, 3 * (k + 1) ≤ 4 * (nb j).card)
+    (cols : ∀ v, 3 * (k + 1) ≤ 4 * (Finset.univ.filter (fun j => v ∈ nb j)).card) :
+    (cycleGraph (2 * (k + 1))).IsContained G := by
+  let next := Equiv.addRight (1 : Fin (k + 1))
+  obtain ⟨pick, hinj, sides⟩ := consecutive_common_representatives next nb rows cols
+  apply cycle_from_gap_matching G (k + 1) left right apart pick hinj
+  intro a b u v ha hb hab hu hv
+  have adjacent : u = v ∨ u = next v := by
+    have ha' := a.isLt
+    have hb' := b.isLt
+    have hv' := v.isLt
+    have hn : (next v).val = if v.val = k then 0 else v.val + 1 := by
+      change (v + 1).val = _
+      rw [Fin.val_add_one]
+      simp only [Fin.ext_iff, Fin.val_last]
+    simp only [Fin.ext_iff]
+    rw [hn]
+    rcases cycleGraph_adj'.mp hab with h | h
+    · by_cases hle : b ≤ a
+      · rw [Fin.sub_val_of_le hle] at h
+        split_ifs <;> omega
+      · rw [Fin.coe_sub_iff_lt.mpr (lt_of_not_ge hle)] at h
+        split_ifs <;> omega
+    · by_cases hle : a ≤ b
+      · rw [Fin.sub_val_of_le hle] at h
+        split_ifs <;> omega
+      · rw [Fin.coe_sub_iff_lt.mpr (lt_of_not_ge hle)] at h
+        split_ifs <;> omega
+  rcases adjacent with h | h
+  · rw [h]; exact sound _ _ (sides v).1
+  · rw [h]; exact sound _ _ (sides v).2
+
 theorem main : H1 → H2 → type_of% @Erdos556.erdos_556.variants.benevides_skokan_large_even := by
   classical
-  intro hbad hforce
+  intro _ hforce
+  have hbad := lowerColouringAvoidsCycle
   unfold H2 at hforce
   filter_upwards [hforce, eventually_ge_atTop 4] with n hn hfour
   intro heven
@@ -167,8 +337,8 @@ theorem main : H1 → H2 → type_of% @Erdos556.erdos_556.variants.benevides_sko
     else if (x / 2) % 2 = (y / 2) % 2 then 1 else 2
   have sym (x y : ℕ) : colour x y = colour y x := by
     unfold colour
-    rw [min_comm y x, eq_comm (y % 2) (x % 2),
-      eq_comm (y / 2 % 2) (x / 2 % 2)]
+    rw [min_comm y x, (eq_comm : y % 2 = x % 2 ↔ _),
+      (eq_comm : y / 2 % 2 = x / 2 % 2 ↔ _)]
   let c (i : Fin 3) : SimpleGraph (Fin N) :=
     { Adj := fun x y => x ≠ y ∧ colour x.val y.val = i
       symm := ⟨fun x y h => ⟨h.1.symm, (sym x.val y.val).symm.trans h.2⟩⟩
