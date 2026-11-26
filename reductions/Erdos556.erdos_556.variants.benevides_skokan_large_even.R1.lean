@@ -843,6 +843,59 @@ lemma regular_pair_two_targets {V : Type*} [DecidableEq V] (G : SimpleGraph V)
     exact_mod_cast (Finset.card_le_card hsub).trans (Finset.card_union_le _ _)
   linarith
 
+/-- Lift a finite walk through regular pairs to a simple path. The same cluster
+may occur several times. Each step deletes its chosen vertex from all future
+pools, and the output records the pool used at every position. -/
+lemma lift_regular_chain {V : Type*} [DecidableEq V] (G : SimpleGraph V)
+    [DecidableRel G.Adj] {ε d : ℚ} (hd : ε ≤ d) (k m : ℕ) (hk : 0 < k) (hkm : k ≤ m)
+    (hdegree : (k : ℚ) ≤ (d - ε) * m) (r : ℕ) (C P : ℕ → Finset V) (A : Finset V)
+    (hA : A ⊆ C 0) (hstart : k ≤ A.card)
+    (hthreshold : ∀ i ≤ r, ((C i).card : ℚ) * ε ≤ k)
+    (hpools : ∀ i < r, P i ⊆ C (i+1) ∧ m + r ≤ (P i).card)
+    (hpairs : ∀ i < r, G.IsUniform ε (C i) (C (i+1)) ∧ d ≤ G.edgeDensity (C i) (C (i+1))) :
+    ∃ x ∈ A, ∃ L : List V, L.length = r ∧ (x :: L).Nodup ∧ (x :: L).IsChain G.Adj ∧
+      ∀ i (hi : i < L.length), L[i] ∈ P i := by
+  classical
+  induction r generalizing C P A with
+  | zero =>
+    obtain ⟨x, hx⟩ := Finset.card_pos.mp (hk.trans_le hstart)
+    exact ⟨x, hx, [], rfl, by simp, .singleton _, fun i hi => by simp at hi⟩
+  | succ r ih =>
+    obtain ⟨hreg, hden⟩ := hpairs 0 (by omega)
+    obtain ⟨hsub, hcard⟩ := hpools 0 (by omega)
+    obtain ⟨x, hx, hdeg⟩ := regular_pair_choose G hreg (hd.trans hden) hA hsub
+      ((hthreshold 0 (by omega)).trans (by exact_mod_cast hstart))
+      ((hthreshold 1 (by omega)).trans (by exact_mod_cast (show k ≤ (P 0).card by omega)))
+    let A' := (P 0).filter (G.Adj x)
+    have hA' : k ≤ A'.card := by
+      have low : (k : ℚ) ≤ (G.edgeDensity (C 0) (C 1) - ε) * (P 0).card :=
+        hdegree.trans (mul_le_mul (sub_le_sub_right hden ε)
+          (by exact_mod_cast (show m ≤ (P 0).card by omega)) (Nat.cast_nonneg _) (by linarith))
+      exact_mod_cast low.trans hdeg.le
+    let P' (i : ℕ) := (P (i+1)).erase x
+    have hpools' (i) (hi : i < r) : P' i ⊆ C (i+1+1) ∧ m + r ≤ (P' i).card := by
+      obtain ⟨hsi, hci⟩ := hpools (i+1) (by omega)
+      refine ⟨(Finset.erase_subset _ _).trans hsi, ?_⟩
+      have h : (P (i+1)).card - 1 ≤ (P' i).card := Finset.pred_card_le_card_erase
+      omega
+    obtain ⟨y, hy, L, hlen, hs, hc, hpos⟩ := ih (fun i => C (i+1)) P' A'
+      ((Finset.filter_subset _ _).trans hsub) hA' (fun i hi => hthreshold _ (by omega)) hpools'
+      (fun i hi => hpairs _ (by omega))
+    obtain ⟨hyP, hxy⟩ := Finset.mem_filter.mp hy
+    have hxL : x ∉ L := by
+      intro hit
+      obtain ⟨i, hi, hix⟩ := List.mem_iff_getElem.mp hit
+      have h := hpos i hi
+      rw [hix] at h
+      exact Finset.notMem_erase _ _ h
+    refine ⟨x, hx, y :: L, by simp [hlen], ?_, List.isChain_cons_cons.mpr ⟨hxy,hc⟩, ?_⟩
+    · exact List.nodup_cons.mpr ⟨by simp [hxy.ne, hxL], hs⟩
+    · intro i hi
+      cases i with
+      | zero => exact hyP
+      | succ j =>
+        exact Finset.erase_subset _ _ (hpos j (by simpa using hi))
+
 section ReducedColours
 
 open Finset
@@ -948,6 +1001,43 @@ lemma simultaneously_irregular_count {V : Type*} [DecidableEq V]
             ((P.parts.card * (P.parts.card - 1) : ℕ) : ℚ) * ε := h i
         linarith [h' 0, h' 1, h' 2]
 
+/-- Delete high-defect clusters before the stability argument (the counting
+step in Benevides, Lemma 4.4). Within the remaining cluster set every row
+has at most k missing ordered pairs. -/
+lemma clean_reduced_pairs {I : Type*} [DecidableEq I] (U : Finset I)
+    (bad : Finset (I × I)) (hoff : bad ⊆ U.offDiag)
+    (b k : ℕ) (hbudget : bad.card < (b + 1) * (k + 1)) :
+    ∃ good ⊆ U, U.card ≤ good.card + b ∧
+      ∀ x ∈ good, (good.filter fun y => (x,y) ∈ bad).card ≤ k := by
+  classical
+  let deg (x : I) := (bad.filter (fun p => p.1 = x)).card
+  let high := U.filter fun x => k < deg x
+  have hsum : bad.card = ∑ x ∈ U, deg x :=
+    Finset.card_eq_sum_card_fiberwise (f := Prod.fst) (fun p hp => (Finset.mem_offDiag.mp (hoff hp)).1)
+  have hcount : high.card * (k + 1) ≤ bad.card := by
+    calc
+      _ = ∑ _x ∈ high, (k + 1) := by simp
+      _ ≤ ∑ x ∈ high, deg x := Finset.sum_le_sum fun x hx => (Finset.mem_filter.mp hx).2
+      _ ≤ ∑ x ∈ U, deg x := Finset.sum_le_sum_of_subset (Finset.filter_subset _ _)
+      _ = _ := hsum.symm
+  have hfew : high.card ≤ b := by
+    by_contra! h
+    exact (not_le_of_gt hbudget) ((Nat.mul_le_mul_right (k+1) h).trans hcount)
+  let good := U \ high
+  have hhigh : high ⊆ U := Finset.filter_subset _ _
+  refine ⟨good, Finset.sdiff_subset, ?_, ?_⟩
+  · have h : good.card + high.card = U.card := Finset.card_sdiff_add_card_eq_card hhigh
+    omega
+  · intro x hx
+    obtain ⟨hxU, hxH⟩ := Finset.mem_sdiff.mp hx
+    have hd : deg x ≤ k := le_of_not_gt (fun h => hxH (Finset.mem_filter.mpr ⟨hxU,h⟩))
+    apply le_trans _ hd
+    apply Finset.card_le_card_of_injOn (fun y => (x,y))
+    · intro y hy
+      exact Finset.mem_filter.mpr ⟨(Finset.mem_filter.mp hy).2,rfl⟩
+    · intro y _ z _ h
+      exact congrArg Prod.snd h
+
 section Stability
 
 open Finset
@@ -1012,6 +1102,54 @@ lemma dense_pair_connected_matching {V : Type*} [DecidableEq V]
       exact (mem_filter.mp (hf x)).1)
 
 end Stability
+
+/-- Benevides, Lemma 4.8. If each vertex misses at most k pairs in a
+two-coloured graph on U, a monochromatic component covers all but 2k
+vertices. The large component can be chosen to contain a prescribed root. -/
+lemma two_colour_large_component {V : Type*} [DecidableEq V]
+    (G H : SimpleGraph V) [DecidableRel G.Adj] [DecidableRel H.Adj]
+    [DecidableRel G.Reachable] [DecidableRel H.Reachable]
+    (U : Finset V) (k : ℕ) (hm : ∀ x ∈ U,
+      (U.filter fun y => y ≠ x ∧ ¬ G.Adj x y ∧ ¬ H.Adj x y).card ≤ k)
+    (a : V) (ha : a ∈ U) :
+    U.card ≤ (U.filter (G.Reachable a)).card + 2 * k ∨
+    U.card ≤ (U.filter (H.Reachable a)).card + k := by
+  classical
+  let A := U.filter (G.Reachable a)
+  let B := U \ A
+  have hAU : A ⊆ U := Finset.filter_subset _ _
+  have hBU : B ⊆ U := Finset.sdiff_subset
+  have haA : a ∈ A := Finset.mem_filter.mpr ⟨ha, Reachable.refl _⟩
+  have hAB : Disjoint A B := Finset.disjoint_left.mpr fun _ hx hy => (Finset.mem_sdiff.mp hy).2 hx
+  have hcount : B.card + A.card = U.card := Finset.card_sdiff_add_card_eq_card hAU
+  by_cases hB : B.card ≤ 2 * k
+  · left; change U.card ≤ A.card + 2 * k; omega
+  right
+  have blue (x) (hx : x ∈ A) : B.card ≤ (B.filter (H.Adj x)).card + k := by
+    have hsub : B.filter (fun y => ¬ H.Adj x y) ⊆
+        U.filter (fun y => y ≠ x ∧ ¬ G.Adj x y ∧ ¬ H.Adj x y) := by
+      intro y hy
+      obtain ⟨hyB, hxy⟩ := Finset.mem_filter.mp hy
+      have hyU := hBU hyB
+      have hyA := (Finset.mem_sdiff.mp hyB).2
+      refine Finset.mem_filter.mpr ⟨hyU, (fun e => hyA (e ▸ hx)), ?_, hxy⟩
+      intro hg
+      exact hyA (Finset.mem_filter.mpr ⟨hyU, (Finset.mem_filter.mp hx).2.trans hg.reachable⟩)
+    have small := (Finset.card_le_card hsub).trans (hm x (hAU hx))
+    have add := Finset.card_filter_add_card_filter_not (s := B) (H.Adj x)
+    omega
+  have hleft (x) (hx : x ∈ A) := dense_pair_left_reachable H A B k blue (by omega) haA hx
+  let D := B.filter (H.Adj a)
+  have hdB : D ⊆ B := Finset.filter_subset _ _
+  have sub : A ∪ D ⊆ U.filter (H.Reachable a) := by
+    intro x hx
+    rcases Finset.mem_union.mp hx with h | h
+    · exact Finset.mem_filter.mpr ⟨hAU h, hleft x h⟩
+    · exact Finset.mem_filter.mpr ⟨hBU (hdB h), (Finset.mem_filter.mp h).2.reachable⟩
+  have hc := Finset.card_le_card sub
+  rw [Finset.card_union_of_disjoint (hAB.mono_right hdB)] at hc
+  have hD : B.card ≤ D.card + k := blue _ haA
+  omega
 
 theorem main : H1 → H2 → type_of% @Erdos556.erdos_556.variants.benevides_skokan_large_even := by
   intro _ hforce
