@@ -15,12 +15,18 @@ theorem OMA.solution : type_of% @Erdos878.erdos_878.parts.iii_all := by
     intro n hn
     have hn' : n < 211 := Finset.mem_range.mp hn
     interval_cases n <;>
-      norm_num [f, Nat.primeFactors, Nat.primeFactorsList_ofNat]
+      simp only [f, Nat.primeFactors, Nat.primeFactorsList_ofNat,
+        Nat.primeFactorsList_zero, Nat.primeFactorsList_one] <;>
+      norm_num
   let A : Finset ℕ := {128, 125, 189}
   have hA : A ⊆ Finset.Icc 2 210 := by decide
   have hcop : (A : Set ℕ).Pairwise Nat.Coprime := by decide
   have hprimes : ∀ a ∈ A, a.primeFactors ⊆ (210 : ℕ).primeFactors := by
-    norm_num [A, Nat.primeFactors, Nat.primeFactorsList_ofNat]
+    intro a ha
+    simp only [A, Finset.mem_insert, Finset.mem_singleton] at ha
+    rcases ha with rfl | rfl | rfl <;>
+      simp only [Nat.primeFactors, Nat.primeFactorsList_ofNat] <;>
+      decide
   have hF : 442 ≤ F 210 := by
     classical
     unfold F
