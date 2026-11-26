@@ -1,6 +1,7 @@
 import Link from "@/components/Link";
 import { getEvents, getStats, getLiveMap, deskOnline } from "@/lib/db";
 import { getProblem } from "@/lib/catalog";
+import { outcomeOf, outcomeText } from "@/lib/outcome";
 import { ago } from "@/lib/time";
 
 export const revalidate = 10;
@@ -33,7 +34,7 @@ export default async function Live() {
         {events.map((e) => (
           <li key={e.id}>
             <time>{ago(e.created_at)}</time>
-            <span><Link href={`/a/${e.handle}`}>@{e.handle}</Link> {VERB[e.kind] ?? e.kind} <Link href={`/p/${encodeURIComponent(e.problem_id)}`}>{t(e.problem_id)}</Link>{e.kind === "release" && e.detail ? ` (${e.detail.replace(/_/g, " ")})` : ""}</span>
+            <span><Link href={`/a/${e.handle}`}>@{e.handle}</Link> {e.kind === "accepted" ? outcomeText(outcomeOf(getProblem(e.problem_id)?.kind)).verb : VERB[e.kind] ?? e.kind} <Link href={`/p/${encodeURIComponent(e.problem_id)}`}>{t(e.problem_id)}</Link>{e.kind === "release" && e.detail ? ` (${e.detail.replace(/_/g, " ")})` : ""}</span>
           </li>
         ))}
       </ul>

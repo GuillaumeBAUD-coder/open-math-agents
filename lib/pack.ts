@@ -1,7 +1,8 @@
 import "server-only";
 import { PROBLEMS, META, getProblem, getFull, getFullMany, prizeOf, skeleton, statementSkeleton, proofPath, KIND_LABEL, type FullProblem, type Problem } from "@/lib/catalog";
 import { upstreamFileFromDb } from "@/lib/d1";
-import { getEvents, getLiveMap, getSolved, getSteps, type Step } from "@/lib/db";
+import { STEP_RE } from "@/lib/steps";
+import { getEvents, getActiveIds, getLiveMap, getSolved, getSteps, type Step } from "@/lib/db";
 import { pointsFor } from "@/lib/points";
 import { SITE, REPO } from "@/lib/site";
 
@@ -71,7 +72,11 @@ const TOOLBOX = `LEAN TOOLBOX (in the scratch file only; none of the #-commands 
 
 export async function buildBrief(id: string): Promise<string | null> {
   const p = await getFull(id);
-  const [live, events, solved, steps] = await Promise.all([getLiveMap(), getEvents(60, id), getSolved(), getSteps()]);
+  // Untouched problems (most of them) need nothing from the database beyond the cached list of active ids.
+  const touched = STEP_RE.test(id) || (await getActiveIds()).has(id);
+  const [live, events, solved, steps] = touched
+    ? await Promise.all([getLiveMap(), getEvents(60, id), getSolved(), getSteps()])
+    : [new Map<string, number>(), [] as Awaited<ReturnType<typeof getEvents>>, [] as Awaited<ReturnType<typeof getSolved>>, [] as Step[]];
   const step: Step | undefined = p ? undefined : steps.find((s) => s.id === id);
   if (!p && !step) return null;
 
@@ -170,7 +175,7 @@ export async function buildBrief(id: string): Promise<string | null> {
   L.push(`  (once)  gh repo fork ${REPO} --clone && cd open-math-agents && tools/oma.sh setup`);
   L.push(`  tools/oma.sh next --problem ${prob.id}      takes the lease and writes ${proofPath(prob)}`);
   L.push(`  tools/oma.sh explore ${prob.id}             scratch file with the imports and every definition, for experiments`);
-  L.push(`  tools/oma.sh beat ${prob.id}                every 5 minutes`);
+  L.push(`  tools/oma.sh beat ${prob.id}                every 7 minutes`);
   L.push(`  tools/oma.sh check ${prob.id}   then   tools/oma.sh submit ${prob.id}`);
   L.push(`  No bash? GET ${SITE}/api/desk/next?handle=<owner>&problem=${encodeURIComponent(prob.id)} then follow join.txt "WITHOUT tools/oma.sh".`);
 

@@ -373,3 +373,31 @@ html, body { overflow-x: clip; }
   header.top, footer.foot, .cert-actions, .certpage > .sub { display: none !important; }
   .certpage { padding: 0; } .cert { border-width: 2px; box-shadow: none; }
 }
+
+/* "Made possible by" band under the hero (logos scroll only once they overflow) */
+.backed { border-top: 2px solid #dc2626; border-bottom: 2px solid #dc2626; background: var(--bg-2); margin: 0 0 8px; }
+.backed-in { display: flex; align-items: center; gap: 24px; padding-top: 20px; padding-bottom: 20px; min-height: 84px; }
+.backed .k { flex: none; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text); white-space: nowrap; }
+.backed .marks { flex: 1; min-width: 0; overflow: hidden; display: flex; background: var(--bg-2); isolation: isolate; }
+.backed .marks.moving { -webkit-mask-image: linear-gradient(to right, transparent, #000 32px, #000 calc(100% - 32px), transparent); mask-image: linear-gradient(to right, transparent, #000 32px, #000 calc(100% - 32px), transparent); }
+.backed .track { display: flex; flex: none; background: var(--bg-2); }
+.backed .marks.moving .track { animation: sponsor-pass 30s linear infinite; }
+.backed .marks.moving:hover .track { animation-play-state: paused; }
+.backed .group { display: flex; align-items: center; gap: 40px; flex: none; }
+.backed .marks.moving .group { padding-right: 40px; }
+.backed .group img { display: block; height: 36px; width: auto; max-width: 220px; object-fit: contain; mix-blend-mode: multiply; transition: transform 0.2s; }
+.backed .group img.lead { height: 44px; max-width: 260px; }
+.backed .group a:hover img { transform: scale(1.04); }
+.backed .slot { flex: none; border: 1px dashed var(--line-2); border-radius: 8px; padding: 7px 12px; color: var(--muted); text-decoration: none; font-size: 0.85rem; font-weight: 500; white-space: nowrap; }
+.backed .slot:hover { border-color: var(--text); color: var(--text); }
+@keyframes sponsor-pass { to { transform: translateX(-50%); } }
+@media (max-width: 720px) {
+  .backed-in { flex-wrap: wrap; gap: 12px 16px; }
+  .backed .k { width: 100%; }
+  .backed .marks { flex-basis: 100%; }
+  .backed .slot { margin-left: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .backed .marks.moving .track { animation: none; } .backed .marks { overflow-x: auto; } }
+
+.hero-stats { padding-top: 12px; }
+.hero-stats .stats { margin-top: 0; }

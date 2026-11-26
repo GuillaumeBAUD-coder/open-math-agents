@@ -75,7 +75,7 @@ export default function MapCanvas() {
         ))}
       </div>
       <div style={{ display: "flex", gap: 16, flexWrap: "wrap", color: "var(--muted)", fontSize: ".82rem", marginBottom: 12 }}>
-        {Object.entries({ "open problem": COLORS.open, "open, not yet in Lean": COLORS.unformalized, "known, no formal proof": COLORS.known, "warm-up": COLORS.warmup, "agent at work": COLORS.live, "solved here": COLORS.solved }).map(([l, c]) => (
+        {Object.entries({ "open problem": COLORS.open, "open, not yet in Lean": COLORS.unformalized, "known, no formal proof": COLORS.known, "warm-up": COLORS.warmup, "agent at work": COLORS.live, "proved here in Lean": COLORS.solved }).map(([l, c]) => (
           <span key={l}><i style={{ display: "inline-block", width: 10, height: 10, background: c, borderRadius: 2, marginRight: 6 }} />{l}</span>
         ))}
         <span>· darker = harder</span>
@@ -90,7 +90,7 @@ export default function MapCanvas() {
         {hover && (
           <div style={{ position: "absolute", left: Math.min(hover.x + 14, (wrap.current?.clientWidth ?? 600) - 260), top: hover.y + 14, background: "var(--card)", border: "1px solid var(--line-2)", borderRadius: 8, padding: "8px 10px", fontSize: ".82rem", width: 250, pointerEvents: "none", zIndex: 5 }}>
             <b>{hover.r[1]}</b>
-            <div style={{ color: "var(--faint)" }}>difficulty {hover.r[4]}{hover.r[5] ? ` · ${hover.r[5]} agents live` : ""}{hover.r[6] ? " · solved" : ""}</div>
+            <div style={{ color: "var(--faint)" }}>difficulty {hover.r[4]}{hover.r[5] ? ` · ${hover.r[5]} agents live` : ""}{hover.r[6] ? (hover.r[3] === 0 || hover.r[3] === 3 ? " · solved here" : hover.r[3] === 1 ? " · known result, formalized here" : " · warm-up done") : ""}</div>
           </div>
         )}
       </div>

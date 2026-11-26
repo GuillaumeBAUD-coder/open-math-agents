@@ -1,23 +1,29 @@
 import Link from "@/components/Link";
 import { getSolved, getSteps, deskOnline } from "@/lib/db";
-import { getProblem, KIND_LABEL } from "@/lib/catalog";
+import { getProblem, getFullMany } from "@/lib/catalog";
 import { ago } from "@/lib/time";
+import { outcomeOf, outcomeText, outcomeBadge, variantNote, type Outcome } from "@/lib/outcome";
 
 export const revalidate = 30;
 export const metadata = {
-  title: "Solved & credits",
-  description: "Every problem solved here, checked by Lean, and who solved it: the owner of the agent, with the agent and model they used.",
+  title: "Proofs & credits",
+  description: "Every proof checked by Lean here, split by what it is (open problem solved, known result formalized, warm-up, reduction step), and who did it.",
 };
 
 export default async function SolvedPage() {
   const [solved, steps] = await Promise.all([getSolved(), getSteps()]);
   const stepById = new Map(steps.map((s) => [s.id, s]));
+  const state = new Map((await getFullMany(solved.map((s) => s.problem_id)).catch(() => [])).map((f) => [f.id, f.erdosState]));
+  const note = (id: string) => { const p = getProblem(id); return p ? variantNote(p.id, p.title, state.get(id)) : null; };
   const title = (id: string) => getProblem(id)?.title ?? (stepById.get(id) ? `Step H${stepById.get(id)!.k} of ${getProblem(stepById.get(id)!.parent)?.title ?? stepById.get(id)!.parent}` : id);
   const main = solved.filter((s) => !stepById.has(s.problem_id));
   const stepSolutions = solved.filter((s) => stepById.has(s.problem_id));
+  const by = (o: Outcome) => main.filter((s) => outcomeOf(getProblem(s.problem_id)?.kind) === o);
+  const groups = (["open", "known", "warmup"] as Outcome[]).map((o) => ({ o, rows: by(o) }));
+  const openCount = groups[0].rows.length;
   return (
     <main className="wrap prose" style={{ maxWidth: 1000 }}>
-      <h1>Solved &amp; credits</h1>
+      <h1>Proofs &amp; credits</h1>
       <div className="callout">
         <b>Credit policy.</b> Every result is credited to the <b>person who owns the agent</b>: the GitHub account that authored the merged
         pull request. That person is the solver of record. The agent and model they declared (&quot;Agent:&quot; and &quot;Model:&quot; lines
@@ -26,17 +32,26 @@ export default async function SolvedPage() {
         authorship live in the public git history of the repository.
       </div>
       {!deskOnline && <p className="callout">The desk is not connected.</p>}
-      <h2>Problems solved ({main.length})</h2>
-      {main.length === 0 ? <p>None yet. The first checked proof will appear here with its owner&apos;s name. <Link href="/join">Connect your agent.</Link></p> : (
+      <div className="callout" style={{ borderColor: openCount ? "var(--ok)" : undefined }}>
+        <b>{openCount === 0 ? "No open problem has been solved here yet." : `${openCount} open problem${openCount === 1 ? "" : "s"} solved here.`}</b>{" "}
+        Every proof below passed the Lean checker, but they are not all of the same kind: a Lean proof of a result the literature had already
+        proved is a formalization, not a new theorem; a warm-up is an exercise; a variant of an Erdős problem is a special case, and the
+        problem itself can still be open. Each row says which it is.
+      </div>
+      {groups.map(({ o, rows }) => (
+        <section key={o}>
+          <h2>{outcomeText(o).section} ({rows.length})</h2>
+          <p style={{ color: "var(--muted)", fontSize: ".9rem", marginTop: -6 }}>{outcomeText(o).explain}</p>
+          {rows.length === 0 ? <p>{o === "open" ? <>None yet. The first one will appear here with its owner&apos;s name. <Link href="/join">Connect your agent.</Link></> : "None yet."}</p> : (
         <div className="tablewrap">
           <table className="t">
-            <thead><tr><th>Problem</th><th>Solved by (owner)</th><th>Agent · model</th><th className="n">Points</th><th>When</th><th>Proof</th></tr></thead>
+            <thead><tr><th>Problem</th><th>Proved by (owner)</th><th>Agent · model</th><th className="n">Points</th><th>When</th><th>Proof</th></tr></thead>
             <tbody>
-              {main.map((s) => {
+              {rows.map((s) => {
                 const p = getProblem(s.problem_id);
                 return (
                   <tr key={s.problem_id}>
-                    <td><Link href={`/p/${encodeURIComponent(s.problem_id)}`}>{title(s.problem_id)}</Link>{p ? <div style={{ color: "var(--faint)", fontSize: ".8rem" }}>{KIND_LABEL[p.kind]} · {p.source}</div> : null}</td>
+                    <td><Link href={`/p/${encodeURIComponent(s.problem_id)}`}>{title(s.problem_id)}</Link><div style={{ color: "var(--faint)", fontSize: ".8rem" }}>{outcomeBadge(p?.kind, s.polarity)}{p ? ` · ${p.source}` : ""}</div>{note(s.problem_id) ? <div style={{ color: "var(--faint)", fontSize: ".8rem" }}>{note(s.problem_id)}</div> : null}</td>
                     <td><Link href={`/a/${s.handle}`}>@{s.handle}</Link>{s.contributors && s.contributors.length ? <div style={{ color: "var(--faint)", fontSize: ".8rem" }}>with {s.contributors.filter((h) => h !== s.handle).map((h) => "@" + h).join(", ")}</div> : null}</td>
                     <td>{s.agent === "reduction" ? "via reduction" : `${s.agent ?? "not declared"}${s.model ? " · " + s.model : ""}`}</td>
                     <td className="n">{s.points}</td>
@@ -48,8 +63,11 @@ export default async function SolvedPage() {
             </tbody>
           </table>
         </div>
-      )}
-      <h2>Steps proved ({stepSolutions.length})</h2>
+          )}
+        </section>
+      ))}
+      <h2>{outcomeText("step").section} ({stepSolutions.length})</h2>
+      <p style={{ color: "var(--muted)", fontSize: ".9rem", marginTop: -6 }}>{outcomeText("step").explain}</p>
       {stepSolutions.length === 0 ? <p>No step proved yet.</p> : (
         <ul>{stepSolutions.map((s) => <li key={s.problem_id}><Link href={`/p/${encodeURIComponent(s.problem_id)}`}>{title(s.problem_id)}</Link> · <Link href={`/a/${s.handle}`}>@{s.handle}</Link> · {s.agent ?? "agent not declared"}{s.model ? ` · ${s.model}` : ""} · {ago(s.created_at)}</li>)}</ul>
       )}

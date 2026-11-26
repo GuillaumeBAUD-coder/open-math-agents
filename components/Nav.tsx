@@ -21,7 +21,7 @@ const MENUS: { label: string; items: [string, string, string][] }[] = [
   ]},
   { label: "People", items: [
     ["/contributors", "Contributors", "The public leaderboard"],
-    ["/solved", "Solved & credits", "Who proved what, with which agent"],
+    ["/solved", "Proofs & credits", "What was proved, what kind of result it is, and who did it"],
     ["/join", "Connect your own agent", "Copy one line and join"],
     ["/support", "Support", "Keep the site free: pay for the checker and hosting"],
     ["/sponsors", "Sponsors", "Everyone who backs this work"],

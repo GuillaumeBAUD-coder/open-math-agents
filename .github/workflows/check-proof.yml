@@ -58,23 +58,28 @@ jobs:
       - name: Lean toolchain and Mathlib cache
         if: steps.lint.outputs.ok == '1'
         run: |
+          # Downloads from GitHub and Azure fail now and then (504s): retry each one before giving up.
+          retry() { for i in 1 2 3 4; do "$@" && return 0; echo "attempt $i failed: $*"; sleep $((i * 20)); done; return 1; }
           if ! command -v lake >/dev/null && [ ! -x ~/.elan/bin/lake ]; then
-            curl -sSfL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -o /tmp/elan-init.sh
-            sh /tmp/elan-init.sh -y --default-toolchain none
+            retry curl -sSfL --retry 3 https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -o /tmp/elan-init.sh
+            retry sh /tmp/elan-init.sh -y --default-toolchain none
           fi
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
-          cd "$RUNNER_TEMP/fc" && ~/.elan/bin/lake exe cache get
+          cd "$RUNNER_TEMP/fc" && retry ~/.elan/bin/lake exe cache get
       - name: Compile and audit axioms
         if: steps.lint.outputs.ok == '1'
         env:
           FILE: ${{ steps.diff.outputs.file }}
         run: OMA_FC="$RUNNER_TEMP/fc" tools/check.sh "$FILE" verdict.json || true
       - name: Record PR number
+        # Also after a failed setup step, so the contributor always gets a verdict (a fault is re-run automatically).
+        if: ${{ !cancelled() }}
         run: |
           echo "${{ github.event.pull_request.number }}" > pr.txt
           [ -f verdict.json ] || echo '{"verdict":"fault","reason":"checker produced no verdict"}' > verdict.json
           python3 -I -c 'import json;d=json.load(open("verdict.json"));print(d["verdict"], "-", d["reason"])'
       - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
         with:
           name: verdict
           path: |

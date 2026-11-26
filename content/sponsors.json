@@ -1,1 +1,10 @@
-[]
+[
+  {
+    "name": "Diplomètre",
+    "url": "https://diplometre.fr",
+    "logo": "/sponsor-logos/diplometre.png",
+    "tier": "backer",
+    "since": "2026-11-26",
+    "message": "Diplomètre est fier de soutenir Left to Solve ! Nous aidons les lycéens à choisir leurs études sur des faits, grâce aux données officielles et à l'IA."
+  }
+]

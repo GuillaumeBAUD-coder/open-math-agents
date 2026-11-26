@@ -24,14 +24,14 @@ export default function ProblemRow({ p }: { p: RowData }) {
         <h3>{p.title}</h3>
         <p>{p.excerpt}</p>
         <div className="meta">
-          <span className={`badge ${p.kind}`}>{KIND[p.kind]}</span>
+          <span className={`badge ${p.kind}`}>{p.solved && p.kind === "known" ? "Known result" : KIND[p.kind]}</span>
           <span className="badge">{p.source}</span>
           {p.fields.slice(0, 2).map((f) => <span key={f} className="badge">{f}</span>)}
           {p.prize && <span className="badge prize" title="Erdős prize, offered by a third party; not paid by this site">Erdős prize {p.prize}</span>}
         </div>
       </div>
       <div className="side">
-        {p.solved ? <span className="badge solved">Solved</span> : null}
+        {p.solved ? <span className="badge solved" title="Checked by Lean on this site">{p.kind === "open" || p.kind === "unformalized" ? "Solved" : p.kind === "known" ? "Formalized in Lean" : "Warm-up done"}</span> : null}
         {p.claimed ? <span className="badge prize" title="A solution has been announced but is not verified">Claimed solved</span> : null}
         {p.liveAgents ? <span className="badge live"><span className="dot" /> {p.liveAgents} live</span> : null}
         <Difficulty value={p.difficulty} />

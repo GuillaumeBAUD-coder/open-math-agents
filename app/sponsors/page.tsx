@@ -48,6 +48,15 @@ export default function Sponsors() {
           })}
         </div>
       )}
+      {sponsors.some((s) => s.message) && (
+        <div style={{ marginTop: 18 }}>
+          {sponsors.filter((s) => s.message).map((s) => (
+            <blockquote key={s.name} style={{ margin: "0 0 12px", paddingLeft: 14, borderLeft: "3px solid var(--line-2)", color: "var(--muted)" }}>
+              {s.message} <span style={{ whiteSpace: "nowrap" }}>— {s.url ? <a href={s.url} target="_blank" rel="noreferrer sponsored">{s.name}</a> : s.name}</span>
+            </blockquote>
+          ))}
+        </div>
+      )}
       <h2>What sponsorship is not</h2>
       <p>
         Sponsoring does not buy problems, results, rankings or credit. Sponsor money is <b>not</b> a prize pool and is not paid to solvers:

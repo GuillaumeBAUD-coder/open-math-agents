@@ -1,24 +1,27 @@
 import Link from "@/components/Link";
 import { SITE } from "@/lib/site";
+import { outcomeBadge, outcomeOf, outcomeText } from "@/lib/outcome";
 
 export type CreditData = {
   problem_id: string; handle: string; agent: string | null; model: string | null; polarity: string;
   pr_url: string; points: number; contributors: string[] | null; created_at: string;
 };
 
-export function citation(c: CreditData, title: string) {
+export function citation(c: CreditData, title: string, kind: string | null = null) {
+  const o = outcomeOf(kind);
   const tool = [c.agent && c.agent !== "reduction" ? c.agent : null, c.model].filter(Boolean).join(", ");
   const others = (c.contributors ?? []).filter((h) => h !== c.handle);
   return `@${c.handle}${tool ? ` (AI agent: ${tool})` : ""}${others.length ? `, with ${others.map((h) => "@" + h).join(", ")}` : ""}. ` +
-    `${c.polarity === "disproof" ? "Refutation" : "Proof"} of "${title}", checked by the Lean 4 kernel. ` +
+    `${o === "known" ? "Lean formalization of the known result" : o === "warmup" ? "Warm-up" : c.polarity === "disproof" ? "Refutation of" : o === "open" ? "Solution of the open problem" : "Proof of"} "${title}", checked by the Lean 4 kernel. ` +
     `Left to Solve, ${c.created_at.slice(0, 10)}. ${c.pr_url.replace(/#closed$/, "")} · ${SITE}/p/${encodeURIComponent(c.problem_id)}`;
 }
 
-export default function Credit({ c, title, first = false }: { c: CreditData; title: string; first?: boolean }) {
+export default function Credit({ c, title, first = false, kind = null }: { c: CreditData; title: string; first?: boolean; kind?: string | null }) {
   const others = (c.contributors ?? []).filter((h) => h !== c.handle);
   return (
     <div className="panel" style={{ borderColor: "var(--ok)" }}>
-      <h4 style={{ color: "var(--warmup)" }}>{first ? (c.polarity === "disproof" ? "Refuted for the first time" : "Solved for the first time") : (c.polarity === "disproof" ? "Refuted" : "Proved")} · credited to the owner of the agent</h4>
+      <h4 style={{ color: "var(--warmup)" }}>{first ? (c.polarity === "disproof" ? "Refuted for the first time" : "Solved for the first time") : outcomeBadge(kind, c.polarity)} · credited to the owner of the agent</h4>
+      {!first && <p style={{ margin: "0 0 12px", color: "var(--muted)", fontSize: ".9rem" }}>{outcomeText(outcomeOf(kind)).explain}</p>}
       {first && <p style={{ margin: "0 0 12px", fontWeight: 600 }}>An open problem nobody had solved before. On the record, @{c.handle} is the person who solved it.</p>}
       <div className="credit">
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -42,7 +45,7 @@ export default function Credit({ c, title, first = false }: { c: CreditData; tit
         {" "}<span style={{ color: "var(--faint)" }}>(share of each contributor, verifiable at <Link href="/verify">/verify</Link>)</span>
       </p>
       <p style={{ color: "var(--faint)", fontSize: ".82rem", margin: "12px 0 6px" }}>Cite this result:</p>
-      <div className="cite">{citation(c, title)}</div>
+      <div className="cite">{citation(c, title, kind)}</div>
     </div>
   );
 }

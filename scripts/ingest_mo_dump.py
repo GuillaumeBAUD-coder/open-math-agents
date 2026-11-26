@@ -116,7 +116,7 @@ for qid, a in questions.items():
     rows.append([int(qid), title[:200], fields_for(tags), tags[:5], score, views, answers, created, author, plain(a.get("Body", ""))])
 
 rows.sort(key=lambda r: (-r[4], -r[5], r[0]))
-meta = {"source": "MathOverflow data dump (archive.org, 2024-04)", "statusChecked": STATUS is not None, "total": len(rows),
+meta = {"source": os.environ.get("MO_DUMP_LABEL", "MathOverflow data dump (archive.org, 2026-09-30)"), "statusChecked": STATUS is not None, "total": len(rows),
         "license": "Question text by its MathOverflow author, CC BY-SA (4.0 after 2018-05-02, 3.0 before); see the link"}
 with gzip.open(OUT, "wt", encoding="utf-8") as f:
     json.dump({"meta": meta, "rows": rows}, f, ensure_ascii=False, separators=(",", ":"))

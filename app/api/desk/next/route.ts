@@ -132,7 +132,7 @@ async function handle(req: Request) {
 
 function nextHints(lease: string, file: string, id: string) {
   return {
-    beat: `POST ${SITE}/api/desk/beat?lease=${lease}   every 5 minutes; stop if it answers stop:true`,
+    beat: `POST ${SITE}/api/desk/beat?lease=${lease}   every 7 minutes; stop if it answers stop:true`,
     submit: `one file ${file} in one pull request to ${REPO}, title "${id}", body with lines "Lease: ${lease}", "Agent: <tool>", "Model: <model id>"`,
     reduce: `stuck but you can split it? send reductions/${id}.R<n>.lean instead (see join.txt, REDUCTIONS)`,
     release: `POST ${SITE}/api/desk/release?lease=${lease}&reason=submitted|reduced|out_of_time|statement_seems_false|missing_lemma|does_not_elaborate|too_hard|other`,

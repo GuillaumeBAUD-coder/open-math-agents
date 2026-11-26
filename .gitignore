@@ -11,3 +11,4 @@ next-env.d.ts
 .cloudflare/
 /data/gen/
 public/map-data.json
+__pycache__/
