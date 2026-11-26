@@ -540,6 +540,109 @@ lemma regular_pair_edge {A B : Finset V} (hreg : G.IsUniform ε S T)
 
 end RegularPairs
 
+section RegularPaths
+
+open Finset
+
+/-- Grow a path two vertices at a time in a regular pair, leaving a set of
+neighbours of the far endpoint untouched for the closing edge. The internal
+vertices stay in the supplied pools, so vertices of an existing embedding
+can be excluded in advance. -/
+lemma regular_pair_odd_path {V : Type*} [DecidableEq V]
+    (G : SimpleGraph V) [DecidableRel G.Adj] {S T : Finset V} {ε : ℚ}
+    (hreg : G.IsUniform ε S T) (hd : ε ≤ G.edgeDensity S T) (hst : Disjoint S T)
+    (k m : ℕ) (hs : (S.card : ℚ) * ε ≤ k) (ht : (T.card : ℚ) * ε ≤ k)
+    (hkm : k ≤ m) (hdegree : (k : ℚ) ≤ (G.edgeDensity S T - ε) * m)
+    {R : Finset V} {y : V} (hR : R ⊆ S) (hrsize : k ≤ R.card) (hy : y ∈ T)
+    (hRy : ∀ z ∈ R, G.Adj z y)
+    (r : ℕ) (A B : Finset V) (x : V) (ha : A ⊆ S) (hb : B ⊆ T)
+    (har : Disjoint A R) (hx : x ∈ S) (hxa : x ∉ A) (hxr : x ∉ R) (hyb : y ∉ B)
+    (hA : m + r ≤ A.card) (hB : m + r ≤ B.card)
+    (hxB : k ≤ (B.filter (G.Adj x)).card) :
+    ∃ l : List V, l.length = 2 * r + 2 ∧
+      (x :: (l ++ [y])).Nodup ∧ (x :: (l ++ [y])).IsChain G.Adj ∧
+      ∀ z ∈ l, z ∈ A ∨ z ∈ B ∨ z ∈ R := by
+  classical
+  have separate : ∀ {u v}, u ∈ S → v ∈ T → u ≠ v := by
+    rintro u v hu hv rfl
+    exact Finset.disjoint_left.mp hst hu hv
+  induction r generalizing A B x with
+  | zero =>
+    obtain ⟨a, haR, b, hbN, hab⟩ := regular_pair_edge G hreg hd hR
+      ((filter_subset _ _).trans hb) (hs.trans (by exact_mod_cast hrsize))
+      (ht.trans (by exact_mod_cast hxB))
+    obtain ⟨hbin, hxb⟩ := mem_filter.mp hbN
+    have hxb' := separate hx (hb hbin)
+    have hxy := separate hx hy
+    have hab' := separate (hR haR) (hb hbin)
+    have hay := separate (hR haR) hy
+    have hxa' : x ≠ a := fun e => hxr (e ▸ haR)
+    have hby : b ≠ y := fun e => hyb (e ▸ hbin)
+    refine ⟨[b, a], by simp, ?_, ?_, ?_⟩
+    · simp [hxb', hxa', hxy, hab'.symm, hby, hay]
+    · simp [List.isChain_cons_cons, hxb, hab.symm, hRy a haR]
+    · intro z hz
+      simp only [List.mem_cons, List.mem_singleton] at hz
+      rcases hz with rfl | rfl <;> tauto
+  | succ r ih =>
+    have size {U : Finset V} (hu : m ≤ U.card) :
+        (k : ℚ) ≤ (G.edgeDensity S T - ε) * U.card :=
+      hdegree.trans (mul_le_mul_of_nonneg_left (by exact_mod_cast hu) (sub_nonneg.mpr hd))
+    have hswap : ε ≤ G.edgeDensity T S := by rwa [G.edgeDensity_comm T S]
+    obtain ⟨b, hbN, hbn⟩ := regular_pair_choose G hreg.symm hswap
+      ((filter_subset _ _).trans hb) ha (ht.trans (by exact_mod_cast hxB))
+      (hs.trans (by exact_mod_cast (show k ≤ A.card by omega)))
+    obtain ⟨hbin, hxb⟩ := mem_filter.mp hbN
+    rw [G.edgeDensity_comm T S] at hbn
+    have hbA : (k : ℚ) ≤ (A.filter (G.Adj b)).card :=
+      (size (by omega : m ≤ A.card)).trans hbn.le
+    have hBerase : m + r ≤ (B.erase b).card := by rw [card_erase_of_mem hbin]; omega
+    obtain ⟨a, haN, han⟩ := regular_pair_choose G hreg hd
+      ((filter_subset _ _).trans ha) ((erase_subset _ _).trans hb)
+      (hs.trans hbA) (ht.trans (by exact_mod_cast (show k ≤ (B.erase b).card by omega)))
+    obtain ⟨hain, hba⟩ := mem_filter.mp haN
+    have hax : k ≤ ((B.erase b).filter (G.Adj a)).card := by
+      exact_mod_cast (size (by omega : m ≤ (B.erase b).card)).trans han.le
+    have hAerase : m + r ≤ (A.erase a).card := by rw [card_erase_of_mem hain]; omega
+    have haR := Finset.disjoint_left.mp har hain
+    obtain ⟨l, hl, hsimple, hchain, hpool⟩ := ih (A.erase a) (B.erase b) a
+      ((erase_subset _ _).trans ha) ((erase_subset _ _).trans hb)
+      (har.mono_left (erase_subset _ _)) (ha hain) (notMem_erase _ _) haR
+      (fun h => hyb (erase_subset _ _ h)) hAerase hBerase hax
+    have hxl : x ∉ l := by
+      intro h
+      rcases hpool x h with h | h | h
+      · exact hxa (erase_subset _ _ h)
+      · exact separate hx (hb (erase_subset _ _ h)) rfl
+      · exact hxr h
+    have hbl : b ∉ l := by
+      intro h
+      rcases hpool b h with h | h | h
+      · exact separate (ha (erase_subset _ _ h)) (hb hbin) rfl
+      · exact notMem_erase _ _ h
+      · exact separate (hR h) (hb hbin) rfl
+    have hxa' : x ≠ a := fun e => hxa (e ▸ hain)
+    have hby : b ≠ y := fun e => hyb (e ▸ hbin)
+    have hxb' := separate hx (hb hbin)
+    have hba' := (separate (ha hain) (hb hbin)).symm
+    have hxy := separate hx hy
+    refine ⟨b :: a :: l, by simp [hl]; omega, ?_, ?_, ?_⟩
+    · change (x :: b :: a :: (l ++ [y])).Nodup
+      exact List.nodup_cons.mpr ⟨by simp [hxb', hxa', hxl, hxy],
+        List.nodup_cons.mpr ⟨by simp [hba', hbl, hby], hsimple⟩⟩
+    · exact List.isChain_cons_cons.mpr ⟨hxb, List.isChain_cons_cons.mpr ⟨hba, hchain⟩⟩
+    · intro z hz
+      rcases List.mem_cons.mp hz with rfl | hz
+      · exact Or.inr (Or.inl hbin)
+      rcases List.mem_cons.mp hz with rfl | hz
+      · exact Or.inl hain
+      rcases hpool z hz with h | h | h
+      · exact Or.inl (erase_subset _ _ h)
+      · exact Or.inr (Or.inl (erase_subset _ _ h))
+      · exact Or.inr (Or.inr h)
+
+end RegularPaths
+
 theorem main : H1 → H2 → type_of% @Erdos556.erdos_556.variants.benevides_skokan_large_even := by
   intro _ hforce
   unfold H2 at hforce
