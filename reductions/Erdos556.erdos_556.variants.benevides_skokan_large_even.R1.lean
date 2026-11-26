@@ -654,13 +654,16 @@ lemma cycle_of_closed_chain {V : Type*} (G : SimpleGraph V) {x y : V} {l : List 
   let p := Walk.ofSupport L hn hchain
   have hlast : L.getLast hn = y := by simp [L]
   have hedge : G.Adj (L.getLast hn) (L.head hn) := hlast ▸ hclose
-  have hp : p.IsPath := Walk.IsPath.mk' (by simpa [p] using hpath)
-  have hlen' : p.length = l.length + 1 := by simp [p, L, Walk.length_ofSupport]
+  have hp : p.IsPath := Walk.IsPath.mk' ((Walk.support_ofSupport hn hchain).symm ▸ (show L.Nodup from hpath))
+  have hlen' : p.length = l.length + 1 := by
+    calc
+      p.length = L.length - 1 := Walk.length_ofSupport hn hchain
+      _ = _ := by simp [L]
   apply (cycleGraph_isContained_iff (by omega)).mpr
   refine ⟨_, Walk.cons hedge p, Walk.isCycle_iff_isPath_tail_and_le_length.mpr ⟨?_, ?_⟩, ?_⟩
   · simpa using hp
-  · rw [Walk.length_cons, hlen']; omega
-  · rw [Walk.length_cons, hlen']; omega
+  · rw [Walk.length_cons, hlen'] <;> omega
+  · rw [Walk.length_cons, hlen'] <;> omega
 
 /-- A single regular dense pair contains every even cycle length allowed by
 the unused-vertex budget. Both endpoints and the reserved neighbourhood are
@@ -701,7 +704,7 @@ lemma cycle_of_regular_pair {V : Type*} [DecidableEq V] (G : SimpleGraph V)
   let B := T.erase y
   have hAsub : A ⊆ S.erase x := Finset.sdiff_subset
   have hAsize : m + r ≤ A.card := by
-    have h := Finset.le_card_sdiff (S.erase x) R
+    have h := Finset.le_card_sdiff R (S.erase x)
     rw [Finset.card_erase_of_mem hx, hRcard] at h
     change m + r ≤ ((S.erase x) \ R).card
     omega
@@ -709,13 +712,14 @@ lemma cycle_of_regular_pair {V : Type*} [DecidableEq V] (G : SimpleGraph V)
     dsimp [B]; rw [Finset.card_erase_of_mem hy]; omega
   have hNB : k ≤ (B.filter (G.Adj x)).card := by
     have heq : B.filter (G.Adj x) = (T.filter (G.Adj x)).erase y := by
-      ext z; simp [B, and_assoc, and_left_comm, and_comm]
+      ext z; simp [B, and_assoc]
     rw [heq, Finset.card_erase_of_mem hyN]; omega
   obtain ⟨l, hl, hsimple, hchain, _⟩ := regular_pair_odd_path G hreg hd hst k m hs ht hkm hdegree
     hRS hRcard.ge hy hRy r A B x (hAsub.trans (Finset.erase_subset _ _)) (Finset.erase_subset _ _)
     (Finset.disjoint_left.mpr (fun _ ha hr => (Finset.mem_sdiff.mp ha).2 hr))
     hx (fun h => Finset.notMem_erase _ _ (hAsub h)) hxR (Finset.notMem_erase _ _) hAsize hBsize hNB
-  simpa [hl, Nat.add_assoc] using cycle_of_closed_chain G (by omega : 0 < l.length) hsimple hchain hxy.symm
+  rw [← (show l.length + 2 = 2 * r + 4 by omega)]
+  exact cycle_of_closed_chain G (by omega : 0 < l.length) hsimple hchain hxy.symm
 
 section ReducedColours
 
@@ -723,6 +727,8 @@ open Finset
 
 variable {V : Type*} [DecidableEq V] (c : Fin 3 → SimpleGraph V)
   [∀ i, DecidableRel (c i).Adj] (hc : (⊤ : SimpleGraph V).IsEdgeColouring c)
+
+include hc
 
 /-- The three densities of a cluster pair in a complete edge-colouring sum to one. -/
 lemma cluster_colour_densities {S T : Finset V} (hst : Disjoint S T)
@@ -734,20 +740,20 @@ lemma cluster_colour_densities {S T : Finset V} (hst : Disjoint S T)
     constructor
     · intro hp
       obtain ⟨i, _, hi⟩ := mem_biUnion.mp hp
-      exact mem_product.mpr ⟨(mem_interedges_iff.mp hi).1, (mem_interedges_iff.mp hi).2.1⟩
+      exact mem_product.mpr ⟨(((c i).mem_interedges_iff).mp hi).1, (((c i).mem_interedges_iff).mp hi).2.1⟩
     · intro hp
       obtain ⟨ha, hb⟩ := mem_product.mp hp
       have hne : p.1 ≠ p.2 := fun h => Finset.disjoint_left.mp hst (h ▸ ha) hb
       have hed : (⨆ i, c i).Adj p.1 p.2 := by rw [← hc.1]; exact (top_adj _ _).mpr hne
       obtain ⟨i, hi⟩ := iSup_adj.mp hed
-      exact mem_biUnion.mpr ⟨i, mem_univ _, mem_interedges_iff.mpr ⟨ha, hb, hi⟩⟩
+      exact mem_biUnion.mpr ⟨i, mem_univ _, ((c i).mem_interedges_iff).mpr ⟨ha, hb, hi⟩⟩
   have hcount : ∑ i, (E i).card = S.card * T.card := by
     rw [← card_product, ← cover, card_biUnion]
     intro i _ j _ hij
     apply Finset.disjoint_left.mpr
     intro p hi hj
     exact (disjoint_iff_inf_le.mp (hc.2 hij) (show (c i ⊓ c j).Adj p.1 p.2 from
-      ⟨(mem_interedges_iff.mp hi).2.2, (mem_interedges_iff.mp hj).2.2⟩)).elim
+      ⟨(((c i).mem_interedges_iff).mp hi).2.2, (((c j).mem_interedges_iff).mp hj).2.2⟩)).elim
   simp_rw [edgeDensity_def]
   rw [← Finset.sum_div, div_eq_one_iff_eq]
   · exact_mod_cast hcount
@@ -791,6 +797,31 @@ lemma reduced_colour_graphs {I : Type*} (C : I → Finset V)
     · linarith [small 0 (by decide), small 1 (by decide)]
 
 end ReducedColours
+
+/-- The pairs discarded by simultaneous three-colour regularity occupy at
+most three times the one-colour error budget. Pairs are counted in both orders. -/
+lemma simultaneously_irregular_count {V : Type*} [DecidableEq V]
+    {U : Finset V} (P : Finpartition U) (c : Fin 3 → SimpleGraph V)
+    [∀ i, DecidableRel (c i).Adj] (ε : ℚ) (h : ∀ i, P.IsUniform (c i) ε) :
+    ∃ bad : Finset (Finset V × Finset V),
+      (∀ S T, (S,T) ∈ bad ↔ S ∈ P.parts ∧ T ∈ P.parts ∧ S ≠ T ∧
+          ¬ ∀ i, (c i).IsUniform ε S T) ∧
+      (bad.card : ℚ) ≤ (P.parts.card * (P.parts.card - 1) : ℕ) * (3 * ε) := by
+  classical
+  let bad := Finset.univ.biUnion (fun i => P.nonUniforms (c i) ε)
+  refine ⟨bad, ?_, ?_⟩
+  · intro S T
+    simp only [bad, Finset.mem_biUnion, Finset.mem_univ, true_and, Finpartition.mk_mem_nonUniforms]
+    push_neg
+    aesop
+  · calc
+      (bad.card : ℚ) ≤ ∑ i : Fin 3, ((P.nonUniforms (c i) ε).card : ℚ) := by
+        exact_mod_cast (Finset.card_biUnion_le : bad.card ≤ ∑ i : Fin 3, (P.nonUniforms (c i) ε).card)
+      _ ≤ _ := by
+        rw [Fin.sum_univ_three]
+        have h' (i : Fin 3) : ((P.nonUniforms (c i) ε).card : ℚ) ≤
+            ((P.parts.card * (P.parts.card - 1) : ℕ) : ℚ) * ε := h i
+        linarith [h' 0, h' 1, h' 2]
 
 theorem main : H1 → H2 → type_of% @Erdos556.erdos_556.variants.benevides_skokan_large_even := by
   intro _ hforce
