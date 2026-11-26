@@ -1,5 +1,6 @@
 import FormalConjectures.ErdosProblems.«556»
 import Mathlib.Combinatorics.Hall.Finite
+import Mathlib.Combinatorics.Pigeonhole
 
 /-! A four-block lower bound and cycle-embedding lemmas for large even cycles. -/
 
@@ -334,8 +335,8 @@ lemma select_low_defect (q r t : ℕ) (defect : Fin (q + r) → ℕ)
       _ ≤ ∑ x, defect x := Finset.sum_le_sum_of_subset (Finset.subset_univ _)
   have few : bad.card ≤ r := by
     by_contra! hr
-    have := Nat.mul_le_mul_right (t + 1) hr
-    omega
+    have hmul : (r + 1) * (t + 1) ≤ bad.card * (t + 1) := Nat.mul_le_mul_right _ hr
+    exact (not_lt_of_ge (hmul.trans total)) budget
   have hc : q ≤ Fintype.card ↥(badᶜ : Finset (Fin (q+r))) := by
     simp only [Fintype.card_coe, Finset.card_compl, Fintype.card_fin]
     omega
@@ -389,6 +390,57 @@ lemma cycle_of_sparse_missing_edges {V : Type*} (G : SimpleGraph V) (k r : ℕ)
     have := hR b
     change 3 * (k + 1) ≤ 4 * neighbours.card
     omega
+
+-- An unconditional, coarse host bound. Group the right vertices by
+-- their entire colour pattern towards 3q left vertices. Two applications
+-- of pigeonhole yield a monochromatic complete q-by-q bipartite graph.
+lemma constant_subsequence {A B : Type*} [Fintype A] [Fintype B] [Nonempty B]
+    (f : A → B) (q : ℕ) (hsize : Fintype.card B * q ≤ Fintype.card A) :
+    ∃ b : B, ∃ e : Fin q ↪ A, ∀ j, f (e j) = b := by
+  classical
+  obtain ⟨b, hb⟩ := Fintype.exists_le_card_fiber_of_mul_le_card f hsize
+  let s := Finset.univ.filter fun a => f a = b
+  obtain ⟨e⟩ : Nonempty (Fin q ↪ ↥s) :=
+    Function.Embedding.nonempty_of_card_le (by simpa [s] using hb)
+  exact ⟨b, ⟨fun j => (e j).val, Subtype.val_injective.comp e.injective⟩,
+    fun j => (Finset.mem_filter.mp (e j).property).2⟩
+
+lemma even_cycle_global_upper (q : ℕ) :
+    multicolourRamsey (cycleGraph (2 * q)) 3 ≤ 3 * q + 3 ^ (3 * q) * q := by
+  classical
+  let l := 3 * q
+  let r := 3 ^ l * q
+  apply Nat.sInf_le
+  intro c hc
+  let L : Fin l ↪ Fin (l + r) :=
+    ⟨fun a => ⟨a.val, by have := a.isLt; omega⟩,
+      fun a b h => Fin.ext (congrArg Fin.val h)⟩
+  let R : Fin r ↪ Fin (l + r) :=
+    ⟨fun b => ⟨l + b.val, by have := b.isLt; omega⟩, by
+      intro a b h
+      apply Fin.ext
+      exact Nat.add_left_cancel (congrArg Fin.val h)⟩
+  have apart (a : Fin l) (b : Fin r) : L a ≠ R b := by
+    intro h
+    have heq := congrArg Fin.val h
+    change a.val = l + b.val at heq
+    have := a.isLt
+    omega
+  have covered (b : Fin r) (a : Fin l) : ∃ i, (c i).Adj (L a) (R b) := by
+    apply iSup_adj.mp
+    rw [← hc.1]
+    exact (top_adj _ _).mpr (apart _ _)
+  let pattern (b : Fin r) (a : Fin l) : Fin 3 := (covered b a).choose
+  obtain ⟨word, cols, hcols⟩ := constant_subsequence pattern q
+    (by simp [Fintype.card_fun, r])
+  obtain ⟨i, rows, hrows⟩ := constant_subsequence word q (by simp [l])
+  refine ⟨i, cycle_of_complete_pair (c i) q (rows.trans L) (cols.trans R)
+    (fun a b => apart _ _) ?_⟩
+  intro a b
+  have he := (covered (cols b) (rows a)).choose_spec
+  change (c (pattern (cols b) (rows a))).Adj (L (rows a)) (R (cols b)) at he
+  rw [hcols b, hrows a] at he
+  exact he
 
 theorem main : H1 → H2 → type_of% @Erdos556.erdos_556.variants.benevides_skokan_large_even := by
   classical
