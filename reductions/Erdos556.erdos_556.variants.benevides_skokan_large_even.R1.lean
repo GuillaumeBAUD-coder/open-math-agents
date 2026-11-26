@@ -1,6 +1,8 @@
 import FormalConjectures.ErdosProblems.«556»
 import Mathlib.Combinatorics.Hall.Finite
 
+/-! A four-block lower bound and cycle-embedding lemmas for large even cycles. -/
+
 open SimpleGraph Filter
 
 namespace OMA.R_Erdos556_erdos_556_variants_benevides_skokan_large_even_R1
@@ -337,8 +339,12 @@ theorem main : H1 → H2 → type_of% @Erdos556.erdos_556.variants.benevides_sko
     else if (x / 2) % 2 = (y / 2) % 2 then 1 else 2
   have sym (x y : ℕ) : colour x y = colour y x := by
     unfold colour
-    rw [min_comm y x, (eq_comm : y % 2 = x % 2 ↔ _),
-      (eq_comm : y / 2 % 2 = x / 2 % 2 ↔ _)]
+    rw [min_comm y x]
+    by_cases hp : x % 2 = y % 2
+    · simp only [if_pos hp, if_pos hp.symm]
+    · by_cases hb : x / 2 % 2 = y / 2 % 2
+      · simp only [if_neg hp, if_neg (Ne.symm hp), if_pos hb, if_pos hb.symm]
+      · simp only [if_neg hp, if_neg (Ne.symm hp), if_neg hb, if_neg (Ne.symm hb)]
   let c (i : Fin 3) : SimpleGraph (Fin N) :=
     { Adj := fun x y => x ≠ y ∧ colour x.val y.val = i
       symm := ⟨fun x y h => ⟨h.1.symm, (sym x.val y.val).symm.trans h.2⟩⟩
