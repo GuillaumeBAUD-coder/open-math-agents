@@ -1,5 +1,7 @@
 import OMAReductions.R_Erdos91_erdos_91_test_wheelSeven_optimal_R1
 
+/-! A planar set with at most two pairwise distances has at most six points. -/
+
 open EuclideanGeometry
 
 namespace WheelBound
