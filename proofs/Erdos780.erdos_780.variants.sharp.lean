@@ -20,7 +20,7 @@ def g (k r t : ℕ) (ht : 1 ≤ t) (v : Fin (k * r - 1 + (t - 1) * (k - 1))) : F
   else ⟨((v : ℕ) - (k * r - 1)) / (k - 1) + 1, by
     have hv := v.isLt
     rcases Nat.eq_zero_or_pos (k - 1) with h0 | h0
-    · rw [h0, Nat.mul_zero, Nat.add_zero] at hv
+    · have h1 : (t - 1) * (k - 1) = 0 := by rw [h0, Nat.mul_zero]
       omega
     · have : ((v : ℕ) - (k * r - 1)) / (k - 1) < t - 1 := by
         rw [Nat.div_lt_iff_lt_mul h0]
@@ -57,15 +57,18 @@ theorem OMA.solution : type_of% @Erdos780.erdos_780.variants.sharp := by
       intro j v hv
       have h1 := hxg j
       have h2 : (v : ℕ) ≤ (x j : ℕ) := Fin.le_iff_val_le_val.mp (hxle j v hv)
-      split_ifs at h1 with h3
+      by_cases h3 : (x j : ℕ) < k * r - 1
       · omega
-      · omega
+      · rw [if_neg h3] at h1
+        generalize ((x j : ℕ) - (k * r - 1)) / (k - 1) = q at h1
+        omega
     have hce : ∀ j ∈ (Finset.univ : Finset (Fin k)), (e j).1.card = r := fun j _ => (e j).2
     have hcard : (Finset.univ.biUnion fun j => (e j).1).card = k * r := by
       rw [Finset.card_biUnion (by intro a _ b _ hab; exact hdisj hab), Finset.sum_const_nat hce]
       simp
     have hle : (Finset.univ.biUnion fun j => (e j).1).card ≤ (Finset.range (k * r - 1)).card := by
-      apply Finset.card_le_card_of_injOn (fun v => (v : ℕ))
+      refine Finset.card_le_card_of_injOn
+        (fun v : Fin (k * r - 1 + (t - 1) * (k - 1)) => (v : ℕ)) ?_ ?_
       · intro v hv
         simp only [Finset.coe_biUnion, Finset.coe_univ, Set.mem_univ, Set.iUnion_true,
           Set.mem_iUnion, Finset.mem_coe] at hv
@@ -81,14 +84,16 @@ theorem OMA.solution : type_of% @Erdos780.erdos_780.variants.sharp := by
         ((x j : ℕ) - (k * r - 1)) / (k - 1) + 1 = (i : ℕ) := by
       intro j
       have h1 := hxg j
-      split_ifs at h1 with h3
-      · omega
-      · exact ⟨h3, h1⟩
+      by_cases h3 : (x j : ℕ) < k * r - 1
+      · rw [if_pos h3] at h1
+        omega
+      · rw [if_neg h3] at h1
+        exact ⟨h3, h1⟩
     have j0 : Fin k := ⟨0, by omega⟩
     have hk1 : 0 < k - 1 := by
       rcases Nat.eq_zero_or_pos (k - 1) with h0 | h0
       · have hv := (x j0).isLt
-        rw [h0, Nat.mul_zero, Nat.add_zero] at hv
+        have h1 : (t - 1) * (k - 1) = 0 := by rw [h0, Nat.mul_zero]
         have := (hbig j0).1
         omega
       · exact h0
@@ -98,8 +103,10 @@ theorem OMA.solution : type_of% @Erdos780.erdos_780.variants.sharp := by
     have hmod : ((x a : ℕ) - (k * r - 1)) % (k - 1) = ((x b : ℕ) - (k * r - 1)) % (k - 1) :=
       congrArg Fin.val hφ
     have hq : ((x a : ℕ) - (k * r - 1)) / (k - 1) = ((x b : ℕ) - (k * r - 1)) / (k - 1) := by
-      have := (hbig a).2
-      have := (hbig b).2
+      have ha := (hbig a).2
+      have hb := (hbig b).2
+      generalize ((x a : ℕ) - (k * r - 1)) / (k - 1) = qa at ha ⊢
+      generalize ((x b : ℕ) - (k * r - 1)) / (k - 1) = qb at hb ⊢
       omega
     have ha := Nat.div_add_mod ((x a : ℕ) - (k * r - 1)) (k - 1)
     have hb := Nat.div_add_mod ((x b : ℕ) - (k * r - 1)) (k - 1)
@@ -108,5 +115,8 @@ theorem OMA.solution : type_of% @Erdos780.erdos_780.variants.sharp := by
       apply Fin.ext
       have := (hbig a).1
       have := (hbig b).1
+      generalize (k - 1) * (((x b : ℕ) - (k * r - 1)) / (k - 1)) = P at ha hb
+      generalize ((x a : ℕ) - (k * r - 1)) % (k - 1) = ra at ha hmod
+      generalize ((x b : ℕ) - (k * r - 1)) % (k - 1) = rb at hb hmod
       omega
     exact Finset.disjoint_left.mp (hdisj hab) (hxmem a) (by rw [hxab]; exact hxmem b)
