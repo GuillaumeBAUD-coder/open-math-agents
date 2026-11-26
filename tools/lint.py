@@ -27,6 +27,11 @@ out = {"file": rel}
 
 cat = json.load(open(catalog_path, encoding="utf-8"))
 PROBLEMS = {p["id"]: p for p in cat["problems"]}
+# formal-conjectures can lag behind erdosproblems.com: a main statement (not a variant) still tagged "research open"
+# whose Erdős problem is proved, disproved or solved is a known result. Same rule in scripts/build_data.mjs.
+for _p in PROBLEMS.values():
+    if _p["kind"] == "open" and re.match(r"(proved|disproved|solved)\b", _p.get("erdosState") or "") and not re.search(r"\.variants?\.", _p["id"]):
+        _p["kind"] = "known"
 _extra_path = os.path.join(os.path.dirname(os.path.abspath(catalog_path)), "extra.json")
 EXTRA = {p["id"]: p for p in json.load(open(_extra_path, encoding="utf-8"))["problems"]} if os.path.exists(_extra_path) else {}
 # The long tail waits for statements too: OEIS / MathOverflow / Math.SE / curated (extra2.json) and the MathOverflow

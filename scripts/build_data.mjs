@@ -22,6 +22,15 @@ const e3 = JSON.parse(zlib.gunzipSync(fs.readFileSync(path.join(ROOT, "data", "e
 
 const lg = (x) => Math.log10(1 + x);
 const prizeUsd = (p) => { const m = (p ?? "").replace(/,/g, "").match(/[$£](\d+)/); return m ? Number(m[1]) : 0; };
+// formal-conjectures can lag behind erdosproblems.com: a statement still tagged "research open" upstream whose Erdős
+// problem is already proved, disproved or solved is a known result, not an open problem. Main statements and their
+// parts only: for a variant, the status describes the main problem, not the variant. Same rule in tools/lint.py.
+const SETTLED_STATE = /^(proved|disproved|solved)\b/;
+function settledUpstream(p) {
+  if (p.kind !== "open" || !SETTLED_STATE.test(p.erdosState ?? "") || /\.variants?\./.test(p.id)) return p;
+  return { ...p, kind: "known", category: "research solved (per erdosproblems.com)" };
+}
+
 function fameOf(p) {
   const base = {
     "Millennium Prize": 100, "Hilbert's Problems": 95, "Wikipedia": 85, "Green's 100 Open Problems": 78, "Kourovka Notebook": 60,
@@ -43,7 +52,7 @@ const formalized = (p) => {
 };
 
 const core = [
-  ...catalog.problems.map((p) => ({ ...p, fame: fameOf(p) })),
+  ...catalog.problems.map((p) => ({ ...settledUpstream(p), fame: fameOf(p) })),
   ...extra.problems.map((p) => formalized({ ...p, fame: fameOf(p) })),
   ...e2.rows.map(([id, title, si, fields, statement, ref, authors, fame, difficulty, tags, area, posts]) => formalized({
     id, title, source: e2.sources[si], kind: "unformalized", category: "unformalized", fields, tags, statement, ref, authors, fame, difficulty,
