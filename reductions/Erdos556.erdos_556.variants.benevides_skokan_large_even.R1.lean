@@ -896,6 +896,41 @@ lemma lift_regular_chain {V : Type*} [DecidableEq V] (G : SimpleGraph V)
       | succ j =>
         exact Finset.erase_subset _ _ (hpos j (by simpa using hi))
 
+/-- Close a lifted chain at a vertex reserved outside its pools. The first
+and last pools lie in the neighbourhood of that vertex. Intermediate
+clusters may repeat along the reduced walk. -/
+lemma lift_regular_circuit {V : Type*} [DecidableEq V] (G : SimpleGraph V)
+    [DecidableRel G.Adj] {ε d : ℚ} (hd : ε ≤ d) (k m : ℕ) (hk : 0 < k) (hkm : k ≤ m)
+    (hdegree : (k : ℚ) ≤ (d - ε) * m) (r : ℕ) (C P : ℕ → Finset V) (A : Finset V)
+    (hA : A ⊆ C 0) (hstart : k ≤ A.card)
+    (hthreshold : ∀ i ≤ r + 1, ((C i).card : ℚ) * ε ≤ k)
+    (hpools : ∀ i < r + 1, P i ⊆ C (i+1) ∧ m + (r+1) ≤ (P i).card)
+    (hpairs : ∀ i < r + 1, G.IsUniform ε (C i) (C (i+1)) ∧ d ≤ G.edgeDensity (C i) (C (i+1)))
+    (a : V) (havoid : ∀ i < r + 1, a ∉ P i)
+    (hfirst : ∀ x ∈ A, G.Adj a x) (hlast : ∀ y ∈ P r, G.Adj y a) :
+    (cycleGraph (r+3)).IsContained G := by
+  obtain ⟨x, hx, L, hlen, hs, hc, hpos⟩ := lift_regular_chain G hd k m hk hkm hdegree (r+1)
+    C P A hA hstart hthreshold hpools hpairs
+  have hax := hfirst x hx
+  have haL : a ∉ L := by
+    intro ha
+    obtain ⟨i, hi, hia⟩ := List.mem_iff_getElem.mp ha
+    have h := hpos i hi
+    rw [hia] at h
+    exact havoid _ (by omega) h
+  have hne : L ≠ [] := by intro e; simp [e] at hlen
+  obtain ⟨L', y, heq⟩ : ∃ L' y, L = L' ++ [y] :=
+    ⟨L.dropLast, L.getLast hne, (List.dropLast_concat_getLast hne).symm⟩
+  subst L
+  have hlen' : L'.length = r := by simpa using hlen
+  have hlastmem := hpos L'.length (by simp)
+  have hy : y ∈ P r := by simpa [hlen'] using hlastmem
+  have hsimple : (a :: x :: (L' ++ [y])).Nodup :=
+    List.nodup_cons.mpr ⟨by simp only [List.mem_cons, not_or]; exact ⟨hax.ne,haL⟩,hs⟩
+  have hchain : (a :: x :: (L' ++ [y])).IsChain G.Adj := List.isChain_cons_cons.mpr ⟨hax,hc⟩
+  have hcopy := cycle_of_closed_chain (l := x :: L') G (by simp) hsimple hchain (hlast y hy)
+  simpa [hlen', Nat.add_assoc] using hcopy
+
 section ReducedColours
 
 open Finset
