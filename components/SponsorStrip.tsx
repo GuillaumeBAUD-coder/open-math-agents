@@ -2,7 +2,7 @@ import sponsorsRaw from "@/content/sponsors.json";
 import tiersRaw from "@/content/sponsor_tiers.json";
 import Link from "@/components/Link";
 
-export type Sponsor = { name: string; url?: string; logo?: string; tier: "backer" | "supporter" | "sponsor" | "lead"; since?: string };
+export type Sponsor = { name: string; url?: string; logo?: string; tier: "backer" | "supporter" | "sponsor" | "lead"; since?: string; message?: string };
 export type Tier = { id: string; name: string; price: number; period: string; perks: string[] };
 
 export function readSponsors(): Sponsor[] {
