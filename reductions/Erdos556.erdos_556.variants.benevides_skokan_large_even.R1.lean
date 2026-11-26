@@ -319,6 +319,77 @@ lemma cycle_of_three_quarter_pair {V : Type*} (G : SimpleGraph V) (k : ℕ)
   · rw [h]; exact sound _ _ (sides v).1
   · rw [h]; exact sound _ _ (sides v).2
 
+-- From a budget of missing cross-edges, choose q rows each with at most
+-- t missing edges. This can be applied on the two sides independently.
+lemma select_low_defect (q r t : ℕ) (defect : Fin (q + r) → ℕ)
+    (budget : ∑ x, defect x < (r + 1) * (t + 1)) :
+    ∃ e : Fin q ↪ Fin (q + r), ∀ a, defect (e a) ≤ t := by
+  classical
+  let bad := Finset.univ.filter fun x => t < defect x
+  have total : bad.card * (t + 1) ≤ ∑ x, defect x := by
+    calc
+      bad.card * (t + 1) = ∑ _x ∈ bad, (t + 1) := by simp
+      _ ≤ ∑ x ∈ bad, defect x := Finset.sum_le_sum fun x hx =>
+        Nat.succ_le_of_lt (Finset.mem_filter.mp hx).2
+      _ ≤ ∑ x, defect x := Finset.sum_le_sum_of_subset (Finset.subset_univ _)
+  have few : bad.card ≤ r := by
+    by_contra! hr
+    have := Nat.mul_le_mul_right (t + 1) hr
+    omega
+  have hc : q ≤ Fintype.card ↥(badᶜ : Finset (Fin (q+r))) := by
+    simp only [Fintype.card_coe, Finset.card_compl, Fintype.card_fin]
+    omega
+  obtain ⟨f⟩ : Nonempty (Fin q ↪ ↥(badᶜ : Finset (Fin (q+r)))) :=
+    Function.Embedding.nonempty_of_card_le (by simpa using hc)
+  refine ⟨⟨fun a => (f a).val, Subtype.val_injective.comp f.injective⟩, ?_⟩
+  intro a
+  have ha := (f a).property
+  simpa [bad] using ha
+
+-- Each missing cross-edge contributes once to the row total and once to
+-- the column total. With r spare vertices on either side, discard rows
+-- and columns of excessive defect, then apply the three-quarter lemma.
+lemma cycle_of_sparse_missing_edges {V : Type*} (G : SimpleGraph V) (k r : ℕ)
+    (left right : Fin (k + 1 + r) ↪ V) (apart : ∀ a b, left a ≠ right b)
+    (miss : Fin (k + 1 + r) → Finset (Fin (k + 1 + r)))
+    (sound : ∀ a b, b ∉ miss a → G.Adj (left a) (right b))
+    (budget : ∑ a, (miss a).card < (r + 1) * ((k + 1) / 4 + 1)) :
+    (cycleGraph (2 * (k + 1))).IsContained G := by
+  classical
+  let col (b : Fin (k + 1 + r)) := Finset.univ.filter fun a => b ∈ miss a
+  have eqtotal : ∑ b, (col b).card = ∑ a, (miss a).card := by
+    calc
+      _ = ∑ b, ∑ a : Fin (k + 1 + r), if b ∈ miss a then 1 else 0 := by
+        simp [col, Finset.sum_boole]
+      _ = ∑ a, ∑ b : Fin (k + 1 + r), if b ∈ miss a then 1 else 0 := Finset.sum_comm
+      _ = _ := by simp [Finset.sum_boole]
+  obtain ⟨L, hL⟩ := select_low_defect (k + 1) r ((k + 1) / 4) (fun a => (miss a).card) budget
+  obtain ⟨R, hR⟩ := select_low_defect (k + 1) r ((k + 1) / 4) (fun b => (col b).card)
+    (by rw [eqtotal]; exact budget)
+  let nb (a : Fin (k + 1)) := Finset.univ.filter fun b : Fin (k + 1) => R b ∉ miss (L a)
+  apply cycle_of_three_quarter_pair G k (L.trans left) (R.trans right)
+    (fun a b => apart (L a) (R b)) nb
+  · intro a b hb
+    exact sound _ _ (Finset.mem_filter.mp hb).2
+  · intro a
+    have sub : ((nb a)ᶜ).card ≤ (miss (L a)).card := by
+      apply Finset.card_le_card_of_injOn R _ R.injective.injOn
+      intro b hb
+      simpa [nb] using hb
+    rw [Finset.card_compl, Fintype.card_fin] at sub
+    have := hL a
+    omega
+  · intro b
+    let neighbours := Finset.univ.filter (fun a => b ∈ nb a)
+    have sub : (neighboursᶜ).card ≤ (col (R b)).card := by
+      apply Finset.card_le_card_of_injOn L _ L.injective.injOn
+      intro a ha
+      simpa [col, neighbours, nb] using ha
+    rw [Finset.card_compl, Fintype.card_fin] at sub
+    have := hR b
+    change 3 * (k + 1) ≤ 4 * neighbours.card
+    omega
+
 theorem main : H1 → H2 → type_of% @Erdos556.erdos_556.variants.benevides_skokan_large_even := by
   classical
   intro _ hforce
