@@ -12,7 +12,7 @@ theorem OMA.solution : type_of% @Constant6a.c6a_upper_bound := by
   · intro c hc
     obtain ⟨i, hi⟩ := hc ({∅, {0}} : Finset (Finset ℕ)) (by decide) (by decide)
     by_cases hi0 : i = 0
-    · simp [hi0] at hi
+    · simp [Finset.filter_insert, Finset.filter_singleton, hi0] at hi
       linarith
-    · simp [hi0] at hi
+    · simp [Finset.filter_insert, Finset.filter_singleton, hi0] at hi
       linarith
