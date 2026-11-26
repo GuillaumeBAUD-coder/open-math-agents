@@ -113,6 +113,41 @@ lemma lowerColouringAvoidsCycle : H1 := by
   simp only [Fintype.card_fin] at impossible
   omega
 
+-- A sufficient embedding condition for an even cycle in one colour:
+-- alternate two disjoint sets of k vertices across a complete bipartite pair.
+lemma cycle_of_complete_pair {V : Type*} (G : SimpleGraph V) (k : ℕ)
+    (left right : Fin k ↪ V) (apart : ∀ a b, left a ≠ right b)
+    (cross : ∀ a b, G.Adj (left a) (right b)) :
+    (cycleGraph (2 * k)).IsContained G := by
+  let half (u : Fin (2 * k)) : Fin k := ⟨u.val / 2, by have := u.isLt; omega⟩
+  let place (u : Fin (2 * k)) := if u.val % 2 = 0 then left (half u) else right (half u)
+  have opposite {a b : Fin (2 * k)} (h : (a - b).val = 1) : a.val % 2 ≠ b.val % 2 := by
+    by_cases hle : b ≤ a
+    · rw [Fin.sub_val_of_le hle] at h
+      omega
+    · rw [Fin.coe_sub_iff_lt.mpr (lt_of_not_ge hle)] at h
+      have := b.isLt
+      omega
+  refine ⟨⟨⟨place, ?_⟩, ?_⟩⟩
+  · intro a b hab
+    have hop : a.val % 2 ≠ b.val % 2 := by
+      rcases cycleGraph_adj'.mp hab with h | h
+      · exact opposite h
+      · exact Ne.symm (opposite h)
+    dsimp only [place]
+    split_ifs <;> first | exact cross _ _ | exact (cross _ _).symm | exfalso; omega
+  · intro a b h
+    dsimp only [place] at h
+    split_ifs at h
+    · have hh := congrArg Fin.val (left.injective h)
+      change a.val / 2 = b.val / 2 at hh
+      exact Fin.ext (by omega)
+    · exact (apart _ _ h).elim
+    · exact (apart _ _ h.symm).elim
+    · have hh := congrArg Fin.val (right.injective h)
+      change a.val / 2 = b.val / 2 at hh
+      exact Fin.ext (by omega)
+
 theorem main : H1 → H2 → type_of% @Erdos556.erdos_556.variants.benevides_skokan_large_even := by
   classical
   intro hbad hforce
