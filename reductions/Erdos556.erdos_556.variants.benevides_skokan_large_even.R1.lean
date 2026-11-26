@@ -662,8 +662,55 @@ lemma cycle_of_closed_chain {V : Type*} (G : SimpleGraph V) {x y : V} {l : List 
   apply (cycleGraph_isContained_iff (by omega)).mpr
   refine ⟨_, Walk.cons hedge p, Walk.isCycle_iff_isPath_tail_and_le_length.mpr ⟨?_, ?_⟩, ?_⟩
   · simpa using hp
-  · rw [Walk.length_cons, hlen'] <;> omega
-  · rw [Walk.length_cons, hlen'] <;> omega
+  · rw [Walk.length_cons, hlen']; omega
+  · rw [Walk.length_cons, hlen']
+
+
+/-- The endpoint form of the regular-pair path lemma. Either endpoint may be
+prescribed, even when the endpoints have no edge between them. -/
+lemma regular_pair_path_between {V : Type*} [DecidableEq V] (G : SimpleGraph V)
+    [DecidableRel G.Adj] {S T : Finset V} {ε : ℚ}
+    (hreg : G.IsUniform ε S T) (hd : ε ≤ G.edgeDensity S T) (hst : Disjoint S T)
+    (k m r : ℕ) (hs : (S.card : ℚ) * ε ≤ k) (ht : (T.card : ℚ) * ε ≤ k)
+    (hkm : k ≤ m) (hdegree : (k : ℚ) ≤ (G.edgeDensity S T - ε) * m)
+    (hA : m + r + k + 1 ≤ S.card) (hB : m + r + 1 ≤ T.card)
+    {x y : V} (hx : x ∈ S) (hy : y ∈ T)
+    (hxdeg : k < (T.filter (G.Adj x)).card) (hycard : k < (S.filter (G.Adj y)).card) :
+    ∃ l : List V, l.length = 2 * r + 2 ∧ (x :: (l ++ [y])).Nodup ∧
+      (x :: (l ++ [y])).IsChain G.Adj ∧ ∀ z ∈ l, z ∈ S ∨ z ∈ T := by
+  classical
+  have herase : k ≤ ((S.filter (G.Adj y)).erase x).card := by
+    exact (show k ≤ (S.filter (G.Adj y)).card - 1 by omega).trans Finset.pred_card_le_card_erase
+  obtain ⟨R, hR, hRcard⟩ := Finset.exists_subset_card_eq herase
+  have hRS : R ⊆ S := hR.trans ((Finset.erase_subset _ _).trans (Finset.filter_subset _ _))
+  have hxR : x ∉ R := fun h => Finset.notMem_erase _ _ (hR h)
+  have hRy : ∀ z ∈ R, G.Adj z y := fun z hz =>
+    (Finset.mem_filter.mp (Finset.erase_subset _ _ (hR hz))).2.symm
+  let A := (S.erase x) \ R
+  let B := T.erase y
+  have hAsub : A ⊆ S.erase x := Finset.sdiff_subset
+  have hAsize : m + r ≤ A.card := by
+    have h := Finset.le_card_sdiff R (S.erase x)
+    rw [Finset.card_erase_of_mem hx, hRcard] at h
+    change m + r ≤ ((S.erase x) \ R).card
+    omega
+  have hBsize : m + r ≤ B.card := by
+    dsimp [B]; rw [Finset.card_erase_of_mem hy]; omega
+  have hNB : k ≤ (B.filter (G.Adj x)).card := by
+    have heq : B.filter (G.Adj x) = (T.filter (G.Adj x)).erase y := by
+      ext z; simp [B, and_assoc]
+    rw [heq]
+    exact (show k ≤ (T.filter (G.Adj x)).card - 1 by omega).trans Finset.pred_card_le_card_erase
+  obtain ⟨l, hl, hsimple, hchain, hpool⟩ := regular_pair_odd_path G hreg hd hst k m hs ht hkm hdegree
+    hRS hRcard.ge hy hRy r A B x (hAsub.trans (Finset.erase_subset _ _)) (Finset.erase_subset _ _)
+    (Finset.disjoint_left.mpr (fun _ ha hr => (Finset.mem_sdiff.mp ha).2 hr))
+    hx (fun h => Finset.notMem_erase _ _ (hAsub h)) hxR (Finset.notMem_erase _ _) hAsize hBsize hNB
+  refine ⟨l, hl, hsimple, hchain, ?_⟩
+  intro z hz
+  rcases hpool z hz with h | h | h
+  · exact Or.inl (Finset.erase_subset _ _ (hAsub h))
+  · exact Or.inr (Finset.erase_subset _ _ h)
+  · exact Or.inl (hRS h)
 
 /-- A single regular dense pair contains every even cycle length allowed by
 the unused-vertex budget. Both endpoints and the reserved neighbourhood are
@@ -692,32 +739,8 @@ lemma cycle_of_regular_pair {V : Type*} [DecidableEq V] (G : SimpleGraph V)
   obtain ⟨hy, hxy⟩ := Finset.mem_filter.mp hyN
   have hycard : k < (S.filter (G.Adj y)).card := by
     exact_mod_cast (size (by omega : m ≤ S.card)).trans_lt hydeg
-  have hxNy : x ∈ S.filter (G.Adj y) := Finset.mem_filter.mpr ⟨hx, hxy.symm⟩
-  have herase : k ≤ ((S.filter (G.Adj y)).erase x).card := by
-    rw [Finset.card_erase_of_mem hxNy]; omega
-  obtain ⟨R, hR, hRcard⟩ := Finset.exists_subset_card_eq herase
-  have hRS : R ⊆ S := hR.trans ((Finset.erase_subset _ _).trans (Finset.filter_subset _ _))
-  have hxR : x ∉ R := fun h => Finset.notMem_erase _ _ (hR h)
-  have hRy : ∀ z ∈ R, G.Adj z y := fun z hz =>
-    (Finset.mem_filter.mp (Finset.erase_subset _ _ (hR hz))).2.symm
-  let A := (S.erase x) \ R
-  let B := T.erase y
-  have hAsub : A ⊆ S.erase x := Finset.sdiff_subset
-  have hAsize : m + r ≤ A.card := by
-    have h := Finset.le_card_sdiff R (S.erase x)
-    rw [Finset.card_erase_of_mem hx, hRcard] at h
-    change m + r ≤ ((S.erase x) \ R).card
-    omega
-  have hBsize : m + r ≤ B.card := by
-    dsimp [B]; rw [Finset.card_erase_of_mem hy]; omega
-  have hNB : k ≤ (B.filter (G.Adj x)).card := by
-    have heq : B.filter (G.Adj x) = (T.filter (G.Adj x)).erase y := by
-      ext z; simp [B, and_assoc]
-    rw [heq, Finset.card_erase_of_mem hyN]; omega
-  obtain ⟨l, hl, hsimple, hchain, _⟩ := regular_pair_odd_path G hreg hd hst k m hs ht hkm hdegree
-    hRS hRcard.ge hy hRy r A B x (hAsub.trans (Finset.erase_subset _ _)) (Finset.erase_subset _ _)
-    (Finset.disjoint_left.mpr (fun _ ha hr => (Finset.mem_sdiff.mp ha).2 hr))
-    hx (fun h => Finset.notMem_erase _ _ (hAsub h)) hxR (Finset.notMem_erase _ _) hAsize hBsize hNB
+  obtain ⟨l, hl, hsimple, hchain, _⟩ := regular_pair_path_between G hreg hd hst k m r hs ht hkm hdegree
+    hA hB hx hy hxdeg hycard
   rw [← (show l.length + 2 = 2 * r + 4 by omega)]
   exact cycle_of_closed_chain G (by omega : 0 < l.length) hsimple hchain hxy.symm
 
@@ -752,7 +775,7 @@ lemma cluster_colour_densities {S T : Finset V} (hst : Disjoint S T)
     intro i _ j _ hij
     apply Finset.disjoint_left.mpr
     intro p hi hj
-    exact (disjoint_iff_inf_le.mp (hc.2 hij) (show (c i ⊓ c j).Adj p.1 p.2 from
+    exact (disjoint_iff_inf_le.mp (hc.2 i j hij) (show (c i ⊓ c j).Adj p.1 p.2 from
       ⟨(((c i).mem_interedges_iff).mp hi).2.2, (((c j).mem_interedges_iff).mp hj).2.2⟩)).elim
   simp_rw [edgeDensity_def]
   rw [← Finset.sum_div, div_eq_one_iff_eq]
@@ -792,9 +815,12 @@ lemma reduced_colour_graphs {I : Type*} (C : I → Finset V)
     have small (j : Fin 3) (hj : j ≠ i) : (c j).edgeDensity (C u) (C v) < δ :=
       lt_of_not_ge fun hd => honly j hj ⟨huv, hreg, hd⟩
     fin_cases i
-    · linarith [small 1 (by decide), small 2 (by decide)]
-    · linarith [small 0 (by decide), small 2 (by decide)]
-    · linarith [small 0 (by decide), small 1 (by decide)]
+    · change 1 - 2 * δ < (c 0).edgeDensity (C u) (C v)
+      linarith [small 1 (by decide), small 2 (by decide)]
+    · change 1 - 2 * δ < (c 1).edgeDensity (C u) (C v)
+      linarith [small 0 (by decide), small 2 (by decide)]
+    · change 1 - 2 * δ < (c 2).edgeDensity (C u) (C v)
+      linarith [small 0 (by decide), small 1 (by decide)]
 
 end ReducedColours
 
@@ -812,7 +838,7 @@ lemma simultaneously_irregular_count {V : Type*} [DecidableEq V]
   refine ⟨bad, ?_, ?_⟩
   · intro S T
     simp only [bad, Finset.mem_biUnion, Finset.mem_univ, true_and, Finpartition.mk_mem_nonUniforms]
-    push_neg
+    push Not
     aesop
   · calc
       (bad.card : ℚ) ≤ ∑ i : Fin 3, ((P.nonUniforms (c i) ε).card : ℚ) := by
@@ -822,6 +848,71 @@ lemma simultaneously_irregular_count {V : Type*} [DecidableEq V]
         have h' (i : Fin 3) : ((P.nonUniforms (c i) ε).card : ℚ) ≤
             ((P.parts.card * (P.parts.card - 1) : ℕ) : ℚ) * ε := h i
         linarith [h' 0, h' 1, h' 2]
+
+section Stability
+
+open Finset
+
+/-- The common-neighbour step of Benevides's thesis, Lemma 4.5. Every
+left vertex is in one component as soon as twice the missing-degree bound
+is smaller than the right side. -/
+lemma dense_pair_left_reachable {V : Type*} [DecidableEq V]
+    (G : SimpleGraph V) [DecidableRel G.Adj] (A B : Finset V) (k : ℕ)
+    (hmiss : ∀ x ∈ A, B.card ≤ (B.filter (G.Adj x)).card + k) (hB : 2 * k < B.card)
+    {x z : V} (hx : x ∈ A) (hz : z ∈ A) : G.Reachable x z := by
+  let X := B.filter (G.Adj x)
+  let Z := B.filter (G.Adj z)
+  have hU : X ∪ Z ⊆ B := union_subset (filter_subset _ _) (filter_subset _ _)
+  have hcard := card_le_card hU
+  have hsum := card_union_add_card_inter X Z
+  have hx' : B.card ≤ X.card + k := hmiss x hx
+  have hz' : B.card ≤ Z.card + k := hmiss z hz
+  obtain ⟨b, hb⟩ := card_pos.mp (by omega : 0 < (X ∩ Z).card)
+  obtain ⟨hbX, hbZ⟩ := mem_inter.mp hb
+  exact (mem_filter.mp hbX).2.reachable.trans (mem_filter.mp hbZ).2.symm.reachable
+
+/-- The connected matching conclusion of Lemma 4.5. A and B can have
+different sizes. The edges indexed by D have distinct endpoints on each
+side and every vertex in the pair belongs to their component. -/
+lemma dense_pair_connected_matching {V : Type*} [DecidableEq V]
+    (G : SimpleGraph V) [DecidableRel G.Adj] (A B : Finset V) (k : ℕ)
+    (hab : Disjoint A B) (hsize : A.card ≤ B.card) (hA : k < A.card) (hB : 2 * k < B.card)
+    (hl : ∀ x ∈ A, B.card ≤ (B.filter (G.Adj x)).card + k)
+    (hr : ∀ y ∈ B, A.card ≤ (A.filter (G.Adj y)).card + k) :
+    ∃ a ∈ A, (∀ v ∈ A ∪ B, G.Reachable a v) ∧
+      ∃ D ⊆ A, D.card = A.card - k ∧ ∃ f : D ↪ V,
+        (∀ x, f x ∈ B ∧ G.Adj x.val (f x)) ∧ Disjoint D (univ.image f) := by
+  classical
+  obtain ⟨a, ha⟩ := card_pos.mp (by omega : 0 < A.card)
+  refine ⟨a, ha, ?_, ?_⟩
+  · intro v hv
+    rcases mem_union.mp hv with hv | hv
+    · exact dense_pair_left_reachable G A B k hl hB ha hv
+    · have hd := hr v hv
+      obtain ⟨u, hu⟩ := card_pos.mp (by omega : 0 < (A.filter (G.Adj v)).card)
+      obtain ⟨huA, hvu⟩ := mem_filter.mp hu
+      exact (dense_pair_left_reachable G A B k hl hB ha huA).trans hvu.symm.reachable
+  · obtain ⟨D, hD, hcard⟩ := exists_subset_card_eq (Nat.sub_le A.card k)
+    let cand (x : D) := B.filter (G.Adj x.val)
+    obtain ⟨f, hfinj, hf⟩ : ∃ f : D → V, Function.Injective f ∧ ∀ x, f x ∈ cand x := by
+      apply (all_card_le_biUnion_card_iff_existsInjective' cand).mp
+      intro s
+      by_cases h : s.Nonempty
+      · obtain ⟨x, hx⟩ := h
+        have hsub : cand x ⊆ s.biUnion cand := fun z hz => mem_biUnion.mpr ⟨x, hx, hz⟩
+        have hc := card_le_card hsub
+        have hs : s.card ≤ D.card := by simpa using card_le_univ s
+        have hv : B.card ≤ (cand x).card + k := hl _ (hD x.property)
+        omega
+      · simp [not_nonempty_iff_eq_empty.mp h]
+    let emb : D ↪ V := ⟨f, hfinj⟩
+    refine ⟨D, hD, hcard, emb, fun x => mem_filter.mp (hf x), ?_⟩
+    exact hab.mono hD (by
+      intro z hz
+      obtain ⟨x, _, rfl⟩ := mem_image.mp hz
+      exact (mem_filter.mp (hf x)).1)
+
+end Stability
 
 theorem main : H1 → H2 → type_of% @Erdos556.erdos_556.variants.benevides_skokan_large_even := by
   intro _ hforce
