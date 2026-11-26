@@ -7,6 +7,21 @@ import FormalConjectures.OEIS.«183129»
 
 open PowerSeries
 
+/-- For a series `L` with zero constant term, `[x^m] exp(L)` is a finite sum over `d ≤ m`. -/
+lemma coeff_subst_exp_eq_sum {L : ℚ⟦X⟧} (hL : constantCoeff L = 0) (m : ℕ) :
+    coeff m (subst L (exp ℚ)) =
+      ∑ d ∈ Finset.range (m + 1), coeff d (exp ℚ) * coeff m (L ^ d) := by
+  rw [coeff_subst' (HasSubst.of_constantCoeff_zero' hL),
+    finsum_eq_sum_of_support_subset _ (s := Finset.range (m + 1)) ?_]
+  · simp [smul_eq_mul]
+  · intro d hd
+    simp only [Function.mem_support] at hd
+    simp only [Finset.coe_range, Set.mem_Iio]
+    by_contra h
+    apply hd
+    obtain ⟨g, hg⟩ : X ∣ L := X_dvd_iff.mpr hL
+    rw [hg, mul_pow, coeff_X_pow_mul', if_neg (by omega), smul_zero]
+
 theorem OMA.solution : type_of% @OeisA183129.a_2 := by
   -- Every Hanna logarithm has zero constant term.
   have hL : ∀ f : ℕ → ℕ → ℤ, constantCoeff (OeisA183129.hannaLog f) = 0 := by
