@@ -510,7 +510,8 @@ lemma regular_pair_choose {A B : Finset V} (hreg : G.IsUniform ε S T)
     ∃ a ∈ A, (G.edgeDensity S T - ε) * B.card < ((B.filter (G.Adj a)).card : ℚ) := by
   classical
   by_contra! hall
-  have hu := (abs_lt.mp (hreg hA hB hsizeA hsizeB)).1
+  have hu : -ε < G.edgeDensity A B - G.edgeDensity S T := by
+    simpa using (abs_lt.mp (hreg hA hB hsizeA hsizeB)).1
   have hsum : ((G.interedges A B).card : ℚ) ≤
       (A.card : ℚ) * ((G.edgeDensity S T - ε) * B.card) := by
     calc
@@ -582,7 +583,7 @@ lemma regular_pair_odd_path {V : Type*} [DecidableEq V]
     · simp [hxb', hxa', hxy, hab'.symm, hby, hay]
     · simp [List.isChain_cons_cons, hxb, hab.symm, hRy a haR]
     · intro z hz
-      simp only [List.mem_cons, List.mem_singleton] at hz
+      simp at hz
       rcases hz with rfl | rfl <;> tauto
   | succ r ih =>
     have size {U : Finset V} (hu : m ≤ U.card) :
@@ -642,6 +643,154 @@ lemma regular_pair_odd_path {V : Type*} [DecidableEq V]
       · exact Or.inr (Or.inr h)
 
 end RegularPaths
+
+/-- Close an embedded simple path with an edge between its endpoints. -/
+lemma cycle_of_closed_chain {V : Type*} (G : SimpleGraph V) {x y : V} {l : List V}
+    (hlen : 0 < l.length) (hpath : (x :: (l ++ [y])).Nodup)
+    (hchain : (x :: (l ++ [y])).IsChain G.Adj) (hclose : G.Adj y x) :
+    (cycleGraph (l.length + 2)).IsContained G := by
+  let L := (x :: l) ++ [y]
+  have hn : L ≠ [] := by simp [L]
+  let p := Walk.ofSupport L hn hchain
+  have hlast : L.getLast hn = y := by simp [L]
+  have hedge : G.Adj (L.getLast hn) (L.head hn) := hlast ▸ hclose
+  have hp : p.IsPath := Walk.IsPath.mk' (by simpa [p] using hpath)
+  have hlen' : p.length = l.length + 1 := by simp [p, L, Walk.length_ofSupport]
+  apply (cycleGraph_isContained_iff (by omega)).mpr
+  refine ⟨_, Walk.cons hedge p, Walk.isCycle_iff_isPath_tail_and_le_length.mpr ⟨?_, ?_⟩, ?_⟩
+  · simpa using hp
+  · rw [Walk.length_cons, hlen']; omega
+  · rw [Walk.length_cons, hlen']; omega
+
+/-- A single regular dense pair contains every even cycle length allowed by
+the unused-vertex budget. Both endpoints and the reserved neighbourhood are
+chosen inside the pair. -/
+lemma cycle_of_regular_pair {V : Type*} [DecidableEq V] (G : SimpleGraph V)
+    [DecidableRel G.Adj] {S T : Finset V} {ε : ℚ}
+    (hreg : G.IsUniform ε S T) (hd : ε ≤ G.edgeDensity S T) (hst : Disjoint S T)
+    (k m r : ℕ) (hs : (S.card : ℚ) * ε ≤ k) (ht : (T.card : ℚ) * ε ≤ k)
+    (hkm : k ≤ m) (hdegree : (k : ℚ) ≤ (G.edgeDensity S T - ε) * m)
+    (hA : m + r + k + 1 ≤ S.card) (hB : m + r + 1 ≤ T.card) :
+    (cycleGraph (2 * r + 4)).IsContained G := by
+  classical
+  have size {U : Finset V} (hu : m ≤ U.card) :
+      (k : ℚ) ≤ (G.edgeDensity S T - ε) * U.card :=
+    hdegree.trans (mul_le_mul_of_nonneg_left (by exact_mod_cast hu) (sub_nonneg.mpr hd))
+  obtain ⟨x, hx, hxN⟩ := regular_pair_choose G hreg hd (Finset.Subset.refl S) (Finset.Subset.refl T)
+    (hs.trans (by exact_mod_cast (show k ≤ S.card by omega)))
+    (ht.trans (by exact_mod_cast (show k ≤ T.card by omega)))
+  have hxdeg : k < (T.filter (G.Adj x)).card := by
+    exact_mod_cast (size (by omega : m ≤ T.card)).trans_lt hxN
+  have hswap : ε ≤ G.edgeDensity T S := by rwa [G.edgeDensity_comm T S]
+  obtain ⟨y, hyN, hydeg⟩ := regular_pair_choose G hreg.symm hswap
+    (Finset.filter_subset _ _) (Finset.Subset.refl S) (ht.trans (by exact_mod_cast hxdeg.le))
+    (hs.trans (by exact_mod_cast (show k ≤ S.card by omega)))
+  rw [G.edgeDensity_comm T S] at hydeg
+  obtain ⟨hy, hxy⟩ := Finset.mem_filter.mp hyN
+  have hycard : k < (S.filter (G.Adj y)).card := by
+    exact_mod_cast (size (by omega : m ≤ S.card)).trans_lt hydeg
+  have hxNy : x ∈ S.filter (G.Adj y) := Finset.mem_filter.mpr ⟨hx, hxy.symm⟩
+  have herase : k ≤ ((S.filter (G.Adj y)).erase x).card := by
+    rw [Finset.card_erase_of_mem hxNy]; omega
+  obtain ⟨R, hR, hRcard⟩ := Finset.exists_subset_card_eq herase
+  have hRS : R ⊆ S := hR.trans ((Finset.erase_subset _ _).trans (Finset.filter_subset _ _))
+  have hxR : x ∉ R := fun h => Finset.notMem_erase _ _ (hR h)
+  have hRy : ∀ z ∈ R, G.Adj z y := fun z hz =>
+    (Finset.mem_filter.mp (Finset.erase_subset _ _ (hR hz))).2.symm
+  let A := (S.erase x) \ R
+  let B := T.erase y
+  have hAsub : A ⊆ S.erase x := Finset.sdiff_subset
+  have hAsize : m + r ≤ A.card := by
+    have h := Finset.le_card_sdiff (S.erase x) R
+    rw [Finset.card_erase_of_mem hx, hRcard] at h
+    change m + r ≤ ((S.erase x) \ R).card
+    omega
+  have hBsize : m + r ≤ B.card := by
+    dsimp [B]; rw [Finset.card_erase_of_mem hy]; omega
+  have hNB : k ≤ (B.filter (G.Adj x)).card := by
+    have heq : B.filter (G.Adj x) = (T.filter (G.Adj x)).erase y := by
+      ext z; simp [B, and_assoc, and_left_comm, and_comm]
+    rw [heq, Finset.card_erase_of_mem hyN]; omega
+  obtain ⟨l, hl, hsimple, hchain, _⟩ := regular_pair_odd_path G hreg hd hst k m hs ht hkm hdegree
+    hRS hRcard.ge hy hRy r A B x (hAsub.trans (Finset.erase_subset _ _)) (Finset.erase_subset _ _)
+    (Finset.disjoint_left.mpr (fun _ ha hr => (Finset.mem_sdiff.mp ha).2 hr))
+    hx (fun h => Finset.notMem_erase _ _ (hAsub h)) hxR (Finset.notMem_erase _ _) hAsize hBsize hNB
+  simpa [hl, Nat.add_assoc] using cycle_of_closed_chain G (by omega : 0 < l.length) hsimple hchain hxy.symm
+
+section ReducedColours
+
+open Finset
+
+variable {V : Type*} [DecidableEq V] (c : Fin 3 → SimpleGraph V)
+  [∀ i, DecidableRel (c i).Adj] (hc : (⊤ : SimpleGraph V).IsEdgeColouring c)
+
+/-- The three densities of a cluster pair in a complete edge-colouring sum to one. -/
+lemma cluster_colour_densities {S T : Finset V} (hst : Disjoint S T)
+    (hs : S.Nonempty) (ht : T.Nonempty) : ∑ i, (c i).edgeDensity S T = 1 := by
+  classical
+  let E (i : Fin 3) := (c i).interedges S T
+  have cover : (univ.biUnion E) = S ×ˢ T := by
+    ext p
+    constructor
+    · intro hp
+      obtain ⟨i, _, hi⟩ := mem_biUnion.mp hp
+      exact mem_product.mpr ⟨(mem_interedges_iff.mp hi).1, (mem_interedges_iff.mp hi).2.1⟩
+    · intro hp
+      obtain ⟨ha, hb⟩ := mem_product.mp hp
+      have hne : p.1 ≠ p.2 := fun h => Finset.disjoint_left.mp hst (h ▸ ha) hb
+      have hed : (⨆ i, c i).Adj p.1 p.2 := by rw [← hc.1]; exact (top_adj _ _).mpr hne
+      obtain ⟨i, hi⟩ := iSup_adj.mp hed
+      exact mem_biUnion.mpr ⟨i, mem_univ _, mem_interedges_iff.mpr ⟨ha, hb, hi⟩⟩
+  have hcount : ∑ i, (E i).card = S.card * T.card := by
+    rw [← card_product, ← cover, card_biUnion]
+    intro i _ j _ hij
+    apply Finset.disjoint_left.mpr
+    intro p hi hj
+    exact (disjoint_iff_inf_le.mp (hc.2 hij) (show (c i ⊓ c j).Adj p.1 p.2 from
+      ⟨(mem_interedges_iff.mp hi).2.2, (mem_interedges_iff.mp hj).2.2⟩)).elim
+  simp_rw [edgeDensity_def]
+  rw [← Finset.sum_div, div_eq_one_iff_eq]
+  · exact_mod_cast hcount
+  · exact (mul_pos (by exact_mod_cast hs.card_pos) (by exact_mod_cast ht.card_pos)).ne'
+
+/-- Use every sufficiently dense colour of a simultaneously regular pair.
+A uniquely labelled pair is almost monochromatic in the original graph. -/
+lemma reduced_colour_graphs {I : Type*} (C : I → Finset V)
+    (hne : ∀ u, (C u).Nonempty) (hdis : ∀ u v, u ≠ v → Disjoint (C u) (C v))
+    (ε δ : ℚ) (hδ : δ ≤ 1/3) :
+    ∃ red : Fin 3 → SimpleGraph I,
+      (∀ i u v, (red i).Adj u v ↔ u ≠ v ∧
+        (∀ j, (c j).IsUniform ε (C u) (C v)) ∧ δ ≤ (c i).edgeDensity (C u) (C v)) ∧
+      (∀ u v, u ≠ v → (∀ j, (c j).IsUniform ε (C u) (C v)) → ∃ i, (red i).Adj u v) ∧
+      ∀ i u v, (red i).Adj u v → (∀ j, j ≠ i → ¬ (red j).Adj u v) →
+        1 - 2 * δ < (c i).edgeDensity (C u) (C v) := by
+  classical
+  let red (i : Fin 3) : SimpleGraph I :=
+    { Adj := fun u v => u ≠ v ∧ (∀ j, (c j).IsUniform ε (C u) (C v)) ∧
+          δ ≤ (c i).edgeDensity (C u) (C v)
+      symm := ⟨fun u v h => ⟨h.1.symm, fun j => (h.2.1 j).symm,
+        ((c i).edgeDensity_comm (C u) (C v)) ▸ h.2.2⟩⟩
+      loopless := ⟨fun _ h => h.1 rfl⟩ }
+  refine ⟨red, fun _ _ _ => Iff.rfl, ?_, ?_⟩
+  · intro u v huv hreg
+    have htotal := cluster_colour_densities c hc (hdis u v huv) (hne u) (hne v)
+    rw [Fin.sum_univ_three] at htotal
+    by_contra! h
+    have small (i : Fin 3) : (c i).edgeDensity (C u) (C v) < δ :=
+      lt_of_not_ge fun hi => h i ⟨huv, hreg, hi⟩
+    linarith [small 0, small 1, small 2]
+  · intro i u v hi honly
+    obtain ⟨huv, hreg, _⟩ := hi
+    have htotal := cluster_colour_densities c hc (hdis u v huv) (hne u) (hne v)
+    rw [Fin.sum_univ_three] at htotal
+    have small (j : Fin 3) (hj : j ≠ i) : (c j).edgeDensity (C u) (C v) < δ :=
+      lt_of_not_ge fun hd => honly j hj ⟨huv, hreg, hd⟩
+    fin_cases i
+    · linarith [small 1 (by decide), small 2 (by decide)]
+    · linarith [small 0 (by decide), small 2 (by decide)]
+    · linarith [small 0 (by decide), small 1 (by decide)]
+
+end ReducedColours
 
 theorem main : H1 → H2 → type_of% @Erdos556.erdos_556.variants.benevides_skokan_large_even := by
   intro _ hforce
