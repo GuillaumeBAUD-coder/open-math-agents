@@ -363,7 +363,7 @@ lemma cycle_of_sparse_missing_edges {V : Type*} (G : SimpleGraph V) (k r : ℕ)
       _ = ∑ b, ∑ a : Fin (k + 1 + r), if b ∈ miss a then 1 else 0 := by
         simp [col, Finset.sum_boole]
       _ = ∑ a, ∑ b : Fin (k + 1 + r), if b ∈ miss a then 1 else 0 := Finset.sum_comm
-      _ = _ := by simp [Finset.sum_boole]
+      _ = _ := by simp
   obtain ⟨L, hL⟩ := select_low_defect (k + 1) r ((k + 1) / 4) (fun a => (miss a).card) budget
   obtain ⟨R, hR⟩ := select_low_defect (k + 1) r ((k + 1) / 4) (fun b => (col b).card)
     (by rw [eqtotal]; exact budget)
@@ -401,20 +401,20 @@ lemma constant_subsequence {A B : Type*} [Fintype A] [Fintype B] [Nonempty B]
   obtain ⟨b, hb⟩ := Fintype.exists_le_card_fiber_of_mul_le_card f hsize
   let s := Finset.univ.filter fun a => f a = b
   obtain ⟨e⟩ : Nonempty (Fin q ↪ ↥s) :=
-    Function.Embedding.nonempty_of_card_le (by simpa [s] using hb)
+    Function.Embedding.nonempty_of_card_le (by rw [Fintype.card_fin, Fintype.card_coe]; exact hb)
   exact ⟨b, ⟨fun j => (e j).val, Subtype.val_injective.comp e.injective⟩,
     fun j => (Finset.mem_filter.mp (e j).property).2⟩
 
-lemma even_cycle_global_upper (q : ℕ) :
-    multicolourRamsey (cycleGraph (2 * q)) 3 ≤ 3 * q + 3 ^ (3 * q) * q := by
+lemma even_cycle_forcing_host (q : ℕ) :
+    ∀ c : Fin 3 → SimpleGraph (Fin (3 * q + 3 ^ (3 * q) * q)),
+      (⊤ : SimpleGraph _).IsEdgeColouring c → ∃ i, (cycleGraph (2 * q)).IsContained (c i) := by
   classical
   let l := 3 * q
   let r := 3 ^ l * q
-  apply Nat.sInf_le
   intro c hc
   let L : Fin l ↪ Fin (l + r) :=
     ⟨fun a => ⟨a.val, by have := a.isLt; omega⟩,
-      fun a b h => Fin.ext (congrArg Fin.val h)⟩
+      fun a b h => Fin.ext (congrArg (fun z : Fin (l + r) => z.val) h)⟩
   let R : Fin r ↪ Fin (l + r) :=
     ⟨fun b => ⟨l + b.val, by have := b.isLt; omega⟩, by
       intro a b h
@@ -432,7 +432,7 @@ lemma even_cycle_global_upper (q : ℕ) :
     exact (top_adj _ _).mpr (apart _ _)
   let pattern (b : Fin r) (a : Fin l) : Fin 3 := (covered b a).choose
   obtain ⟨word, cols, hcols⟩ := constant_subsequence pattern q
-    (by simp [Fintype.card_fun, r])
+    (by simp [r])
   obtain ⟨i, rows, hrows⟩ := constant_subsequence word q (by simp [l])
   refine ⟨i, cycle_of_complete_pair (c i) q (rows.trans L) (cols.trans R)
     (fun a b => apart _ _) ?_⟩
@@ -442,18 +442,26 @@ lemma even_cycle_global_upper (q : ℕ) :
   rw [hcols b, hrows a] at he
   exact he
 
-theorem main : H1 → H2 → type_of% @Erdos556.erdos_556.variants.benevides_skokan_large_even := by
+lemma even_cycle_global_upper (q : ℕ) :
+    multicolourRamsey (cycleGraph (2 * q)) 3 ≤ 3 * q + 3 ^ (3 * q) * q := by
+  apply Nat.sInf_le
+  exact even_cycle_forcing_host q
+
+lemma even_cycle_lower_bound (n : ℕ) (hfour : 4 ≤ n) (heven : Even n) :
+    2 * n ≤ multicolourRamsey (cycleGraph n) 3 := by
   classical
-  intro _ hforce
   have hbad := lowerColouringAvoidsCycle
-  unfold H2 at hforce
-  filter_upwards [hforce, eventually_ge_atTop 4] with n hn hfour
-  intro heven
   let S : Set ℕ := {N | ∀ c : Fin 3 → SimpleGraph (Fin N),
     (⊤ : SimpleGraph (Fin N)).IsEdgeColouring c → ∃ i, (cycleGraph n).IsContained (c i)}
-  change sInf S = 2 * n
-  have hgood : 2 * n ∈ S := hn heven
-  refine le_antisymm (Nat.sInf_le hgood) (le_csInf ⟨_, hgood⟩ ?_)
+  change 2 * n ≤ sInf S
+  have hne : S.Nonempty := by
+    obtain ⟨q, hq⟩ := heven
+    have h : n = 2 * q := by omega
+    refine ⟨3 * q + 3 ^ (3 * q) * q, ?_⟩
+    dsimp only [S, Set.mem_setOf_eq]
+    rw [h]
+    exact even_cycle_forcing_host q
+  refine le_csInf hne ?_
   intro N hN
   by_contra! hsmall
   let colour (x y : ℕ) : Fin 3 :=
@@ -485,5 +493,14 @@ theorem main : H1 → H2 → type_of% @Erdos556.erdos_556.variants.benevides_sko
   obtain ⟨u, v, huv, hdiff⟩ := hbad n hfour heven (fun u => (copy u).val)
     (Fin.val_injective.comp copy.injective) (fun u => by have := (copy u).isLt; omega) i
   exact hdiff (copy.toHom.map_adj huv).2
+
+theorem main : H1 → H2 → type_of% @Erdos556.erdos_556.variants.benevides_skokan_large_even := by
+  intro _ hforce
+  unfold H2 at hforce
+  filter_upwards [hforce, eventually_ge_atTop 4] with n hn hfour
+  intro heven
+  refine le_antisymm ?_ (even_cycle_lower_bound n hfour heven)
+  apply Nat.sInf_le
+  exact hn heven
 
 end OMA.R_Erdos556_erdos_556_variants_benevides_skokan_large_even_R1
