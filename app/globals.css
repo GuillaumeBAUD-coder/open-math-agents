@@ -375,7 +375,7 @@ html, body { overflow-x: clip; }
 }
 
 /* "Made possible by" band under the hero (logos scroll only once they overflow) */
-.backed { border-top: 1px solid var(--line-2); border-bottom: 1px solid var(--line-2); background: var(--bg-2); margin: 0 0 8px; }
+.backed { border-top: 2px solid #dc2626; border-bottom: 2px solid #dc2626; background: var(--bg-2); margin: 0 0 8px; }
 .backed-in { display: flex; align-items: center; gap: 24px; padding-top: 20px; padding-bottom: 20px; min-height: 84px; }
 .backed .k { flex: none; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text); white-space: nowrap; }
 .backed .marks { flex: 1; min-width: 0; overflow: hidden; display: flex; background: var(--bg-2); isolation: isolate; }

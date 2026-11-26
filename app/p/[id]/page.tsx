@@ -6,7 +6,7 @@ import { outcomeBadge, outcomeOf, outcomeText, variantNote } from "@/lib/outcome
 import Credit from "@/components/Credit";
 import { Difficulty } from "@/components/ProblemRow";
 import { getProblem, getFull, skeleton, proofPath, statementSkeleton, prizeOf, META, KIND_LABEL, type Problem } from "@/lib/catalog";
-import { getLiveMap, getEvents, getSolved, getSteps, type Step, type Solved } from "@/lib/db";
+import { getLiveMap, getActiveIds, getEvents, getSolved, getSteps, type Step, type Solved } from "@/lib/db";
 import { pointsFor } from "@/lib/points";
 import { renderStatement, plain } from "@/lib/render";
 import { STEP_RE, stepSkeleton, parseStep } from "@/lib/steps";
@@ -64,7 +64,12 @@ export default async function ProblemPage({ params }: Props) {
   const isStep = !p && STEP_RE.test(id);
   if (!p && !isStep) notFound();
 
-  const [live, events, solvedAll, steps] = await Promise.all([getLiveMap(), getEvents(20, id), getSolved(), getSteps()]);
+  // A problem nobody has touched (the vast majority) has no history, no solution and no steps: its page asks the
+  // database nothing beyond the shared, cached list of active ids.
+  const touched = STEP_RE.test(id) || (await getActiveIds()).has(id);
+  const [live, events, solvedAll, steps] = touched
+    ? await Promise.all([getLiveMap(), getEvents(20, id), getSolved(), getSteps()])
+    : [new Map<string, number>(), [], [] as Solved[], [] as Step[]];
   const solvedIds = new Set(solvedAll.map((s) => s.problem_id));
   const solution: Solved | undefined = solvedAll.find((s) => s.problem_id === id);
   const agents = live.get(id) ?? 0;

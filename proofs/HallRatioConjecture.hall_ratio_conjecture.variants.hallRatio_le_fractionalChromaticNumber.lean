@@ -1,0 +1,61 @@
+import FormalConjectures.Paper.HallRatioConjecture
+
+-- Problem: The Hall ratio is a lower bound for the fractional chromatic number.
+-- Upstream: formal-conjectures FormalConjectures/Paper/HallRatioConjecture.lean:72 (declaration HallRatioConjecture.hall_ratio_conjecture.variants.hallRatio_le_fractionalChromaticNumber)
+-- Credit: @LordMike (the owner of the agent is credited as the solver)
+-- Prove EXACTLY this target. No sorry, no axiom, no native_decide.
+
+namespace OMA
+
+open SimpleGraph
+
+lemma inter_card_le {V : Type} [Fintype V] [DecidableEq V] (G : SimpleGraph V)
+    (S I : Finset V) (hI : G.IsIndepSet (I : Set V)) :
+    (I.filter (fun v => v ∈ S)).card ≤ (G.induce (S : Set V)).indepNum := by
+  classical
+  rw [← Finset.card_subtype]
+  apply IsIndepSet.card_le_indepNum
+  intro x hx y hy hxy
+  simp only [Finset.mem_coe, Finset.mem_subtype] at hx hy
+  have := hI (Finset.mem_coe.mpr hx) (Finset.mem_coe.mpr hy) (fun h => hxy (Subtype.ext h))
+  simpa using this
+
+lemma key {V : Type} [Fintype V] [DecidableEq V] (G : SimpleGraph V)
+    (S : Finset V) (w : Finset V → ℝ) (hw : G.IsFractionalColoring w) :
+    (S.card : ℝ) ≤ (∑ I, w I) * ((G.induce (S : Set V)).indepNum : ℝ) := by
+  classical
+  set α := (G.induce (S : Set V)).indepNum
+  calc (S.card : ℝ) = ∑ v ∈ S, (1 : ℝ) := by simp
+    _ ≤ ∑ v ∈ S, ∑ I ∈ (Finset.univ : Finset (Finset V)).filter (fun I => v ∈ I), w I :=
+        Finset.sum_le_sum fun v _ => hw.cover v
+    _ = ∑ v ∈ S, ∑ I, if v ∈ I then w I else 0 := by
+        simp only [Finset.sum_filter]
+    _ = ∑ I, ∑ v ∈ S, if v ∈ I then w I else 0 := Finset.sum_comm
+    _ = ∑ I, w I * ((I.filter (fun v => v ∈ S)).card : ℝ) := by
+        refine Finset.sum_congr rfl fun I _ => ?_
+        rw [← Finset.sum_filter, Finset.sum_const, nsmul_eq_mul, mul_comm]
+        congr 3
+        ext v; simp [and_comm]
+    _ ≤ ∑ I, w I * (α : ℝ) := by
+        refine Finset.sum_le_sum fun I _ => ?_
+        by_cases h : w I = 0
+        · simp [h]
+        · exact mul_le_mul_of_nonneg_left (by exact_mod_cast inter_card_le G S I (hw.indep I h))
+            (hw.nonneg I)
+    _ = (∑ I, w I) * (α : ℝ) := by rw [Finset.sum_mul]
+
+end OMA
+
+theorem OMA.solution : type_of% @HallRatioConjecture.hall_ratio_conjecture.variants.hallRatio_le_fractionalChromaticNumber := by
+  intro V _ _ G
+  unfold HallRatioConjecture.hallRatio
+  apply Real.sSup_le _ G.fractionalChromaticNumber_nonneg
+  rintro r ⟨S, hS, rfl⟩
+  apply le_csInf G.fractionalColoringWeights_nonempty
+  rintro t ⟨w, hw, rfl⟩
+  have hk := OMA.key G S w hw
+  have ht : 0 ≤ ∑ I, w I := Finset.sum_nonneg fun I _ => hw.nonneg I
+  rcases Nat.eq_zero_or_pos (G.induce (S : Set V)).indepNum with h0 | hpos
+  · rw [h0]; simpa using ht
+  · rw [div_le_iff₀ (by exact_mod_cast hpos)]
+    exact hk
