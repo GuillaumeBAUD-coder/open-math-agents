@@ -6,6 +6,8 @@ import Mathlib
 Source: https://oeis.org/A035337
 Credit: @ivillar
 
+Status: known result: the entry records that the formula is correct (Aug 31 2017 comment).
+
 The Wythoff array W(n,k) (rows n ≥ 1, columns k ≥ 1) has first column
 W(n,1) = floor(floor(n*phi)*phi), second column W(n,2) = floor(floor(n*phi)*phi^2), and
 W(n,k) = W(n,k-1) + W(n,k-2) for k ≥ 3, where phi = (1+sqrt(5))/2. A035337 is its third column;
