@@ -270,6 +270,38 @@ lemma mem_after_restriction {S T : Finset ℝ²} (hTS : T ⊆ S) {L : AffineSubs
   rw [hinter]
   exact hcard
 
+/-- Removing k points destroys at most k times (n−1)/3 four-point lines.
+This also controls configurations with a small exceptional set off a curve. -/
+lemma delete_points_bound {S T : Finset ℝ²} (hTS : T ⊆ S) :
+    3 * (linesWithPointsFor 4 (S : Set ℝ²)).ncard ≤
+      3 * (linesWithPointsFor 4 (T : Set ℝ²)).ncard + (S \ T).card * (S.card - 1) := by
+  let A := (four_lines_finite S).toFinset
+  let B := (four_lines_finite T).toFinset
+  let through := fun p : ℝ² => A.filter (fun L => p ∈ L)
+  have hA : ∀ L ∈ A, L ∈ linesWithPointsFor 4 (S : Set ℝ²) :=
+    fun _ hL => (four_lines_finite S).mem_toFinset.mp hL
+  have cover : A ⊆ B ∪ (S \ T).biUnion through := by
+    intro L hL
+    by_cases hkeep : ∀ p ∈ S, p ∈ L → p ∈ T
+    · exact Finset.mem_union_left _ ((four_lines_finite T).mem_toFinset.mpr
+        (mem_after_restriction hTS (hA L hL) hkeep))
+    · push Not at hkeep
+      obtain ⟨p, hp, hpL, hdel⟩ := hkeep
+      exact Finset.mem_union_right _ (Finset.mem_biUnion.mpr
+        ⟨p, Finset.mem_sdiff.mpr ⟨hp, hdel⟩, Finset.mem_filter.mpr ⟨hL, hpL⟩⟩)
+  have hsum : 3 * (∑ p ∈ S \ T, (through p).card) ≤ (S \ T).card * (S.card - 1) := by
+    rw [Finset.mul_sum]
+    calc
+      _ ≤ ∑ _p ∈ S \ T, (S.card - 1) :=
+        Finset.sum_le_sum fun p hp => pencil_bound hA (Finset.mem_sdiff.mp hp).1
+      _ = _ := by simp
+  have hcount := (Finset.card_le_card cover).trans
+    ((Finset.card_union_le ..).trans (Nat.add_le_add_left (Finset.card_biUnion_le ..) B.card))
+  rw [Set.ncard_eq_toFinset_card _ (four_lines_finite S),
+    Set.ncard_eq_toFinset_card _ (four_lines_finite T)]
+  change 3 * A.card ≤ 3 * B.card + (S \ T).card * (S.card - 1)
+  omega
+
 /-- The unconditional pair bound on the precise supremum in the problem. -/
 lemma max_pair_bound (n : ℕ) : 12 * Erdos101.numLinesWithFourPointMax n ≤ n * (n - 1) := by
   rw [mul_comm 12, ← Nat.le_div_iff_mul_le (by decide : 0 < 12)]
