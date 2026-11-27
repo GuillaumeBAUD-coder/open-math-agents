@@ -135,8 +135,11 @@ def file_refs(text):
 def parse_file(path, rel):
     text = open(path, encoding="utf-8").read()
     lines = text.splitlines()
+    # A path segment that is not a bare Lean identifier needs guillemets: one that starts with a digit (ErdosProblems/142)
+    # and one that contains a dot (the pre-2007 arXiv directories, Arxiv/math.0608009).
     module = "FormalConjectures." + ".".join(
-        "«%s»" % p if re.match(r"^\d", p) else p for p in rel[len("FormalConjectures/"):-5].split("/")
+        p if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_']*", p) else "«%s»" % p
+        for p in rel[len("FormalConjectures/"):-5].split("/")
     )
     title = file_title(text)
     refs = file_refs(text)
