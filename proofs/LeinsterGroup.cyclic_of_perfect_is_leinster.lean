@@ -5,13 +5,9 @@ import FormalConjectures.Wikipedia.LeinsterGroup
 -- Credit: @ldy985 (the owner of the agent is credited as the solver)
 -- Prove EXACTLY this target. No sorry, no axiom, no native_decide.
 
-namespace OMA.P6
+open scoped IsMulCommutative
 
-theorem comm_of_cyclic {G : Type*} [Group G] [IsCyclic G] (a b : G) : a * b = b * a := by
-  obtain ⟨g, hg⟩ := IsCyclic.exists_generator (α := G)
-  obtain ⟨m, rfl⟩ := Subgroup.mem_zpowers_iff.mp (hg a)
-  obtain ⟨k, rfl⟩ := Subgroup.mem_zpowers_iff.mp (hg b)
-  rw [← zpow_add, ← zpow_add, add_comm]
+namespace OMA.P6
 
 theorem subset_pow_eq_one {G : Type*} [Group G] (H : Subgroup G) [Finite H] :
     ((H : Set G)) ⊆ {a : G | a ^ Nat.card H = 1} := by
@@ -74,10 +70,7 @@ theorem OMA.solution : type_of% @LeinsterGroup.cyclic_of_perfect_is_leinster := 
       exact htot
     obtain ⟨a, ha⟩ := Finset.card_pos.1 hne
     simp only [Finset.mem_filter, Finset.mem_univ, true_and] at ha
-    have hnorm : (Subgroup.zpowers a).Normal :=
-      ⟨fun n hn g => by
-        rw [OMA.P6.comm_of_cyclic g n, mul_inv_cancel_right]
-        exact hn⟩
+    have hnorm : (Subgroup.zpowers a).Normal := inferInstance
     refine ⟨⟨Subgroup.zpowers a, hnorm⟩, Finset.mem_univ _, ?_⟩
     show Nat.card (Subgroup.zpowers a) = d
     rw [Nat.card_zpowers, ha]
