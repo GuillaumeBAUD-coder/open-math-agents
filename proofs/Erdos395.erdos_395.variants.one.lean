@@ -13,11 +13,12 @@ theorem OMA.solution : type_of% @Erdos395.erdos_395.variants.one := by
   have hempty : {ε : Fin 2 → ℤ | (∀ i, ε i = -1 ∨ ε i = 1) ∧
       ‖∑ i, (ε i : ℂ) * (![(1:ℂ), Complex.I] : Fin 2 → ℂ) i‖ ≤ 1} = ∅ := by
     ext ε
-    simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false]
+    simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false]
     rintro ⟨hε, hle⟩
+    have hεsq (i : Fin 2) : (ε i : ℝ) ^ 2 = 1 := by
+      exact_mod_cast (sq_eq_one_iff.mpr (Or.symm (hε i)))
     have hsq : ‖∑ i, (ε i : ℂ) * (![(1:ℂ), Complex.I] : Fin 2 → ℂ) i‖ ^ 2 = 2 := by
-      rcases hε 0 with h0 | h0 <;> rcases hε 1 with h1 | h1 <;>
-        norm_num [Fin.sum_univ_two, h0, h1, Complex.sq_norm, Complex.normSq_apply]
+      norm_num [Fin.sum_univ_two, Complex.sq_norm, Complex.normSq_apply, ← sq, hεsq]
     have hn : ‖∑ i, (ε i : ℂ) * (![(1:ℂ), Complex.I] : Fin 2 → ℂ) i‖ ^ 2 ≤ 1 := by
       nlinarith [norm_nonneg (∑ i, (ε i : ℂ) * (![(1:ℂ), Complex.I] : Fin 2 → ℂ) i)]
     linarith
