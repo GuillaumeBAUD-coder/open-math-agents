@@ -896,6 +896,143 @@ lemma lift_regular_chain {V : Type*} [DecidableEq V] (G : SimpleGraph V)
       | succ j =>
         exact Finset.erase_subset _ _ (hpos j (by simpa using hi))
 
+/-- Embed one reduced connector with separately prescribed pools for its
+two ends, avoiding all vertices already used by other connectors. -/
+lemma route_regular_chain {V : Type*} [DecidableEq V] (G : SimpleGraph V)
+    [DecidableRel G.Adj] {ε d : ℚ} (hd : ε ≤ d) (k m : ℕ) (hk : 0 < k) (hkm : k ≤ m)
+    (hdegree : (k : ℚ) ≤ (d-ε)*m) (r : ℕ) (C : ℕ → Finset V) (A Z F : Finset V)
+    (hA : A ⊆ C 0) (hZ : Z ⊆ C (r+1))
+    (hstart : k + F.card ≤ A.card) (hend : m + (r+1) + F.card ≤ Z.card)
+    (hth : ∀ i ≤ r+1, ((C i).card : ℚ)*ε ≤ k)
+    (hsize : ∀ i < r, m + (r+1) + F.card ≤ (C (i+1)).card)
+    (hpair : ∀ i < r+1, G.IsUniform ε (C i) (C (i+1)) ∧ d ≤ G.edgeDensity (C i) (C (i+1))) :
+    ∃ x ∈ A, ∃ y ∈ Z, ∃ J : List V, J.length = r ∧
+      (x :: (J ++ [y])).Nodup ∧ (x :: (J ++ [y])).IsChain G.Adj ∧
+      ∀ z ∈ x :: (J ++ [y]), z ∉ F := by
+  classical
+  let P (i : ℕ) := (if i = r then Z else C (i+1)) \ F
+  have hcard (U : Finset V) (n : ℕ) (hn : n + F.card ≤ U.card) : n ≤ (U \ F).card :=
+    (show n ≤ U.card - F.card by omega).trans (Finset.le_card_sdiff F U)
+  have hp (i) (hi : i < r+1) : P i ⊆ C (i+1) ∧ m+(r+1) ≤ (P i).card := by
+    by_cases h : i = r
+    · subst i
+      simpa [P] using And.intro (Finset.sdiff_subset.trans hZ : Z \ F ⊆ C (r+1)) (hcard _ _ hend)
+    · simpa [P,h] using And.intro (Finset.sdiff_subset : C (i+1) \ F ⊆ C (i+1))
+          (hcard _ _ (hsize i (by omega)))
+  obtain ⟨x,hx,L,hL,hs,hc,hpos⟩ := lift_regular_chain G hd k m hk hkm hdegree (r+1)
+    C P (A \ F) (Finset.sdiff_subset.trans hA) (hcard _ _ hstart) hth hp hpair
+  have hne : L ≠ [] := by intro e; simp [e] at hL
+  obtain ⟨J,y,heq⟩ : ∃ J y, L = J ++ [y] :=
+    ⟨L.dropLast,L.getLast hne,(List.dropLast_concat_getLast hne).symm⟩
+  subst L
+  have hlen : J.length = r := by simpa using hL
+  have hy := hpos J.length (by simp)
+  have hyZ : y ∈ Z \ F := by simpa [P,hlen] using hy
+  refine ⟨x,(Finset.mem_sdiff.mp hx).1,y,(Finset.mem_sdiff.mp hyZ).1,J,hlen,hs,hc,?_⟩
+  intro z hz
+  rcases List.mem_cons.mp hz with rfl | h
+  · exact (Finset.mem_sdiff.mp hx).2
+  obtain ⟨i,hi,heq⟩ := List.mem_iff_getElem.mp h
+  have hz' := hpos i hi
+  rw [heq] at hz'
+  exact (Finset.mem_sdiff.mp hz').2
+
+/-- Greedily realize a finite family of bounded routes. At stage i the
+earlier routes have used at most iM vertices. The witness set records
+the whole reservation for later expansion of the matching. -/
+lemma disjoint_routes_of_avoidance {V : Type*} [DecidableEq V] (q M : ℕ)
+    (P : ℕ → List V → Prop)
+    (step : ∀ i < q, ∀ F : Finset V, F.card ≤ i*M →
+      ∃ L : List V, P i L ∧ L.length ≤ M ∧ ∀ v ∈ L, v ∉ F) :
+    ∃ f : ℕ → List V, ∃ used : Finset V, used.card ≤ q*M ∧
+      (∀ i < q, P i (f i) ∧ ∀ z ∈ f i, z ∈ used) ∧
+      ∀ i j, i < j → j < q → (f i).Disjoint (f j) := by
+  classical
+  induction q with
+  | zero => exact ⟨fun _ => [],∅,by simp,by simp,by simp⟩
+  | succ q ih =>
+    obtain ⟨f,F,hcard,hf,hdis⟩ := ih (fun i hi => step i (by omega))
+    obtain ⟨L,hL,hlen,havoid⟩ := step q (by omega) F hcard
+    let new (i : ℕ) := if i = q then L else f i
+    let U := F ∪ L.toFinset
+    have hU : U.card ≤ (q+1)*M := by
+      have hc := Finset.card_union_le F L.toFinset
+      have hlen' := List.toFinset_card_le L
+      dsimp [U]; rw [Nat.succ_mul]; omega
+    refine ⟨new,U,hU,?_,?_⟩
+    · intro i hi
+      by_cases e : i = q
+      · subst i
+        exact ⟨by simpa [new] using hL, fun z hz => Finset.mem_union_right _ (by simpa [new] using hz)⟩
+      · obtain ⟨hprop,hin⟩ := hf i (by omega)
+        exact ⟨by simpa [new,e] using hprop, fun z hz => Finset.mem_union_left _
+          (hin z (by simpa [new,e] using hz))⟩
+    · intro i j hij hj
+      have hi : i < q := by omega
+      by_cases eq : j = q
+      · subst j
+        simp only [new, if_neg hi.ne, if_pos rfl]
+        exact fun z hz hz' => havoid z hz' ((hf i hi).2 z hz)
+      · simpa [new,hi.ne,eq] using hdis i j hij (by omega)
+
+/-- Select disjoint connectors along any specified family of reduced paths.
+The start and end pools can impose the degree requirements of the matched
+edges without requiring the reduced paths themselves to be disjoint. -/
+lemma disjoint_regular_routes {V : Type*} [DecidableEq V] (G : SimpleGraph V)
+    [DecidableRel G.Adj] {ε d : ℚ} (hd : ε ≤ d) (k m : ℕ) (hk : 0 < k) (hkm : k ≤ m)
+    (hdegree : (k : ℚ) ≤ (d-ε)*m) (q M : ℕ) (r : ℕ → ℕ)
+    (C : ℕ → ℕ → Finset V) (A Z : ℕ → Finset V)
+    (hbound : ∀ i < q, r i + 2 ≤ M)
+    (hends : ∀ i < q, A i ⊆ C i 0 ∧ Z i ⊆ C i (r i+1))
+    (hstart : ∀ i < q, k + i*M ≤ (A i).card)
+    (hend : ∀ i < q, m + (r i+1) + i*M ≤ (Z i).card)
+    (hth : ∀ i < q, ∀ j ≤ r i+1, ((C i j).card : ℚ)*ε ≤ k)
+    (hsize : ∀ i < q, ∀ j < r i, m + (r i+1) + i*M ≤ (C i (j+1)).card)
+    (hpairs : ∀ i < q, ∀ j < r i+1, G.IsUniform ε (C i j) (C i (j+1)) ∧
+      d ≤ G.edgeDensity (C i j) (C i (j+1))) :
+    ∃ f : ℕ → List V, ∃ used : Finset V, used.card ≤ q*M ∧
+      (∀ i < q, (∃ x ∈ A i, ∃ y ∈ Z i, ∃ J : List V,
+        f i = x :: (J ++ [y]) ∧ J.length = r i ∧ (f i).Nodup ∧ (f i).IsChain G.Adj) ∧
+        ∀ z ∈ f i, z ∈ used) ∧ ∀ i j, i < j → j < q → (f i).Disjoint (f j) := by
+  apply disjoint_routes_of_avoidance
+  intro i hi F hF
+  have hA := hstart i hi
+  have hZ := hend i hi
+  obtain ⟨x,hx,y,hy,J,hlen,hs,hc,ha⟩ := route_regular_chain G hd k m hk hkm hdegree (r i)
+    (C i) (A i) (Z i) F (hends i hi).1 (hends i hi).2 (by omega) (by omega)
+    (hth i hi) (fun j hj => by have h := hsize i hi j hj; omega) (hpairs i hi)
+  exact ⟨x :: (J ++ [y]),⟨x,hx,y,hy,J,rfl,hlen,hs,hc⟩,by simpa [hlen] using hbound i hi,ha⟩
+
+/-- Reserve exactly the interiors of disjoint connector paths. Their
+endpoints remain available to start and end the paths in matched pairs. -/
+lemma reserve_route_interiors {V I : Type*} [DecidableEq V] (used : Finset V)
+    (x y : I → V) (J : I → List V) (hs : ∀ i, (x i :: (J i ++ [y i])).Nodup)
+    (hdis : ∀ i j, i ≠ j → (x i :: (J i ++ [y i])).Disjoint (x j :: (J j ++ [y j])))
+    (hu : ∀ i z, z ∈ J i → z ∈ used) :
+    ∃ F ⊆ used, (∀ z, z ∈ F ↔ ∃ i, z ∈ J i) ∧ ∀ i, x i ∉ F ∧ y i ∉ F := by
+  classical
+  let F := used.filter fun z => ∃ i, z ∈ J i
+  have hf (z) : z ∈ F ↔ ∃ i, z ∈ J i := by
+    constructor
+    · exact fun h => (Finset.mem_filter.mp h).2
+    · rintro ⟨i,hi⟩
+      exact Finset.mem_filter.mpr ⟨hu i z hi, i, hi⟩
+  refine ⟨F,Finset.filter_subset _ _,hf,?_⟩
+  intro i
+  constructor
+  · intro hit
+    obtain ⟨j,hj⟩ := (hf _).mp hit
+    by_cases e : i = j
+    · subst j
+      exact (List.nodup_cons.mp (hs i)).1 (List.mem_append_left _ hj)
+    · exact hdis i j e (by simp) (List.mem_cons_of_mem _ (List.mem_append_left _ hj))
+  · intro hit
+    obtain ⟨j,hj⟩ := (hf _).mp hit
+    by_cases e : i = j
+    · subst j
+      exact (List.nodup_append'.mp (List.nodup_cons.mp (hs i)).2).2.2 hj (by simp)
+    · exact hdis i j e (by simp) (List.mem_cons_of_mem _ (List.mem_append_left _ hj))
+
 /-- Close a lifted chain at a vertex reserved outside its pools. The first
 and last pools lie in the neighbourhood of that vertex. Intermediate
 clusters may repeat along the reduced walk. -/
@@ -1501,6 +1638,33 @@ lemma bounded_tour_of_reachable_edges {I : Type*} [Fintype I] (H : SimpleGraph I
       · have hmem : s(u i,v i) ∈ leg.edges := by simp [leg,e,Walk.edges_append,Walk.edges_cons]
         simp only [Walk.edges_append, List.mem_append]
         exact Or.inr (Or.inl hmem)
+
+/-- Routes from the exit of one matched edge to the entry of the next.
+The closed tour obtained by inserting the marked edges has even length.
+Each connector has at least one edge even if a shortest route passes back
+over the marked edge. -/
+lemma connected_matching_routes {I D : Type*} [Fintype I] [Fintype D] (H : SimpleGraph I)
+    (root : I) (a b : D → I) (next : Equiv.Perm D)
+    (hr : ∀ i, H.Reachable root (a i)) (he : ∀ i, H.Adj (a i) (b i)) :
+    ∃ w : ∀ i, H.Walk (b i) (a (next i)),
+      (∀ i, 0 < (w i).length ∧ (w i).length < 2*Fintype.card I) ∧
+      Even (Fintype.card D + ∑ i, (w i).length) := by
+  classical
+  let walk (i : D) : H.Walk root (a i) := Classical.choice (hr i)
+  let p (i : D) := (walk i).bypass
+  let w (i : D) : H.Walk (b i) (a (next i)) := .cons (he i).symm ((p i).reverse.append (p (next i)))
+  have len (i) : (w i).length = (p i).length + (p (next i)).length + 1 := by
+    simp [w,Walk.length_append]
+  refine ⟨w,?_,?_⟩
+  · intro i
+    have hi : (p i).length < Fintype.card I := (walk i).bypass_isPath.length_lt
+    have hj : (p (next i)).length < Fintype.card I := (walk (next i)).bypass_isPath.length_lt
+    rw [len]; omega
+  · have perm : (∑ i, (p (next i)).length) = ∑ i, (p i).length :=
+      next.sum_comp (fun i => (p i).length)
+    refine ⟨Fintype.card D + ∑ i, (p i).length, ?_⟩
+    simp_rw [len, Finset.sum_add_distrib, perm]
+    simp; omega
 
 /-- Construct the alternating path in the proof of Benevides, Lemma 5.7(a).
 Its vertices on the first side may be specified in any simple order. Only
