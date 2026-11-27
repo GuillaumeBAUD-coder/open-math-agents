@@ -2,7 +2,7 @@ import FormalConjectures.ErdosProblems.«1074»
 
 -- Problem: Erdős Problem 1074 — EHSNumbers init
 -- Upstream: formal-conjectures FormalConjectures/ErdosProblems/1074.lean:122 (declaration Erdos1074.erdos_1074.variants.EHSNumbers_init)
--- Credit: @Slayzkami (the owner of the agent is credited as the solver)
+-- Original proof: @Slayzkami
 -- Prove EXACTLY this target. No sorry, no axiom, no native_decide.
 
 
@@ -29,16 +29,15 @@ lemma n2 : 2 ∉ EHSNumbers := not_mem 2 (fun p hp hd => by
 lemma n3 : 3 ∉ EHSNumbers := not_mem 3 (fun p hp hd => by
   have : p = 7 := eq_of_dvd_prime hp (by norm_num) (by simpa [Nat.factorial] using hd)
   subst this; norm_num)
-lemma n4 : 4 ∉ EHSNumbers := not_mem 4 (fun p hp hd => by
-  have hd' : p ∣ 5 * 5 := by simpa [Nat.factorial] using hd
-  rcases (Nat.Prime.dvd_mul hp).1 hd' with h | h <;>
-  · have : p = 5 := eq_of_dvd_prime hp (by norm_num) h
-    subst this; norm_num)
-lemma n5 : 5 ∉ EHSNumbers := not_mem 5 (fun p hp hd => by
-  have hd' : p ∣ 11 * 11 := by simpa [Nat.factorial] using hd
-  rcases (Nat.Prime.dvd_mul hp).1 hd' with h | h <;>
-  · have : p = 11 := eq_of_dvd_prime hp (by norm_num) h
-    subst this; norm_num)
+lemma not_mem_square (m q : ℕ) (hq : q.Prime) (hfac : m ! + 1 = q * q)
+    (hmod : q % m = 1 % m) : m ∉ EHSNumbers := not_mem m (fun p hp hd => by
+  rw [hfac] at hd
+  obtain h | h := (Nat.Prime.dvd_mul hp).1 hd <;> simpa only [eq_of_dvd_prime hp hq h] using hmod)
+
+lemma n4 : 4 ∉ EHSNumbers := not_mem_square 4 5 (by norm_num)
+  (by norm_num [Nat.factorial]) (by norm_num)
+lemma n5 : 5 ∉ EHSNumbers := not_mem_square 5 11 (by norm_num)
+  (by norm_num [Nat.factorial]) (by norm_num)
 lemma n6 : 6 ∉ EHSNumbers := not_mem 6 (fun p hp hd => by
   have hd' : p ∣ 7 * 103 := by simpa [Nat.factorial] using hd
   rcases (Nat.Prime.dvd_mul hp).1 hd' with h | h
@@ -46,11 +45,8 @@ lemma n6 : 6 ∉ EHSNumbers := not_mem 6 (fun p hp hd => by
     subst this; norm_num
   · have : p = 103 := eq_of_dvd_prime hp (by norm_num) h
     subst this; norm_num)
-lemma n7 : 7 ∉ EHSNumbers := not_mem 7 (fun p hp hd => by
-  have hd' : p ∣ 71 * 71 := by simpa [Nat.factorial] using hd
-  rcases (Nat.Prime.dvd_mul hp).1 hd' with h | h <;>
-  · have : p = 71 := eq_of_dvd_prime hp (by norm_num) h
-    subst this; norm_num)
+lemma n7 : 7 ∉ EHSNumbers := not_mem_square 7 71 (by norm_num)
+  (by norm_num [Nat.factorial]) (by norm_num)
 lemma n10 : 10 ∉ EHSNumbers := not_mem 10 (fun p hp hd => by
   have hd' : p ∣ 11 * 329891 := by simpa [Nat.factorial] using hd
   rcases (Nat.Prime.dvd_mul hp).1 hd' with h | h
@@ -89,25 +85,11 @@ def P : ℕ → Prop := fun n => n ∈ EHSNumbers
 
 lemma counts [DecidablePred P] : count P 8 = 0 ∧ count P 9 = 1 ∧ count P 13 = 2 ∧
     count P 14 = 3 ∧ count P 15 = 4 ∧ count P 16 = 5 ∧ count P 17 = 6 := by
-  have q0 : ¬ P 0 := n0
-  have q1 : ¬ P 1 := n1
-  have q2 : ¬ P 2 := n2
-  have q3 : ¬ P 3 := n3
-  have q4 : ¬ P 4 := n4
-  have q5 : ¬ P 5 := n5
-  have q6 : ¬ P 6 := n6
-  have q7 : ¬ P 7 := n7
-  have q8 : P 8 := m8
-  have q9 : P 9 := m9
-  have q10 : ¬ P 10 := n10
-  have q11 : ¬ P 11 := n11
-  have q12 : ¬ P 12 := n12
-  have q13 : P 13 := m13
-  have q14 : P 14 := m14
-  have q15 : P 15 := m15
-  have q16 : P 16 := m16
-  simp [Nat.count_succ, q0, q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12, q13, q14,
-    q15, q16]
+  simp [Nat.count_succ, show ¬ P 0 from n0, show ¬ P 1 from n1, show ¬ P 2 from n2,
+    show ¬ P 3 from n3, show ¬ P 4 from n4, show ¬ P 5 from n5, show ¬ P 6 from n6,
+    show ¬ P 7 from n7, show P 8 from m8, show P 9 from m9, show ¬ P 10 from n10,
+    show ¬ P 11 from n11, show ¬ P 12 from n12, show P 13 from m13, show P 14 from m14,
+    show P 15 from m15, show P 16 from m16]
 
 end OMA.E1074
 
@@ -128,11 +110,5 @@ theorem OMA.solution : type_of% @Erdos1074.erdos_1074.variants.EHSNumbers_init :
   constructor
   · rintro ⟨k, ⟨-, hk⟩, rfl⟩
     interval_cases k <;> simp [h0, h1, h2, h3, h4, h5, h6]
-  · rintro (rfl | rfl | rfl | rfl | rfl | rfl | rfl)
-    · exact ⟨0, by norm_num, h0⟩
-    · exact ⟨1, by norm_num, h1⟩
-    · exact ⟨2, by norm_num, h2⟩
-    · exact ⟨3, by norm_num, h3⟩
-    · exact ⟨4, by norm_num, h4⟩
-    · exact ⟨5, by norm_num, h5⟩
-    · exact ⟨6, by norm_num, h6⟩
+  · rintro (rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;>
+      refine ⟨_, ?_, by assumption⟩ <;> norm_num
