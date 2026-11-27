@@ -74,12 +74,19 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a267921.main := by
     have h42 : (4 : ℤ) ^ (k + 3) = 4 * (4 : ℤ) ^ (k + 2) := by rw [pow_succ']
     linarith
   refine ⟨hrec, ?_⟩
+  have hC4 : (4 : PowerSeries ℤ) = PowerSeries.C (4 : ℤ) := by
+    rw [← Nat.cast_ofNat, ← map_natCast (PowerSeries.C (R := ℤ)), Nat.cast_ofNat]
+  have hC5 : (5 : PowerSeries ℤ) = PowerSeries.C (5 : ℤ) := by
+    rw [← Nat.cast_ofNat, ← map_natCast (PowerSeries.C (R := ℤ)), Nat.cast_ofNat]
+  have hC8 : (8 : PowerSeries ℤ) = PowerSeries.C (8 : ℤ) := by
+    rw [← Nat.cast_ofNat, ← map_natCast (PowerSeries.C (R := ℤ)), Nat.cast_ofNat]
   have hpoly : OMA.S_oeis_a267921.series *
       ((1 - PowerSeries.X) * (1 - 4 * PowerSeries.X)) =
-      OMA.S_oeis_a267921.series - 5 * (PowerSeries.X * OMA.S_oeis_a267921.series) +
-        4 * (PowerSeries.X * (PowerSeries.X * OMA.S_oeis_a267921.series)) := by
+      OMA.S_oeis_a267921.series - PowerSeries.C 5 * (PowerSeries.X * OMA.S_oeis_a267921.series) +
+        PowerSeries.C 4 * (PowerSeries.X * (PowerSeries.X * OMA.S_oeis_a267921.series)) := by
+    rw [← hC4, ← hC5]
     ring
-  rw [hpoly]
+  rw [hpoly, hC8]
   ext m
   have ha0 : (OMA.S_oeis_a267921.a 0 : ℤ) = 1 := rfl
   have ha1 : (OMA.S_oeis_a267921.a 1 : ℤ) = 5 := by
@@ -88,20 +95,28 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a267921.main := by
   have ha2 : (OMA.S_oeis_a267921.a 2 : ℤ) = 29 := by
     rw [a_eq 2 (by omega)]
     norm_num
+  rw [map_add, map_sub, PowerSeries.coeff_C_mul, PowerSeries.coeff_C_mul,
+    map_add, PowerSeries.coeff_C_mul, PowerSeries.coeff_one, PowerSeries.coeff_X_pow]
   by_cases hm0 : m = 0
   · subst hm0
-    simp [OMA.S_oeis_a267921.series, ha0]
+    rw [PowerSeries.coeff_zero_X_mul, PowerSeries.coeff_zero_X_mul]
+    simp only [OMA.S_oeis_a267921.series, PowerSeries.coeff_mk, ha0]
+    norm_num
   · by_cases hm1 : m = 1
     · subst hm1
-      simp [OMA.S_oeis_a267921.series, ha0, ha1]
+      rw [PowerSeries.coeff_succ_X_mul, PowerSeries.coeff_succ_X_mul, PowerSeries.coeff_zero_X_mul]
+      simp only [OMA.S_oeis_a267921.series, PowerSeries.coeff_mk, ha0, ha1]
+      norm_num
     · by_cases hm2 : m = 2
       · subst hm2
-        simp [OMA.S_oeis_a267921.series, ha0, ha1, ha2]
+        rw [PowerSeries.coeff_succ_X_mul, PowerSeries.coeff_succ_X_mul, PowerSeries.coeff_succ_X_mul]
+        simp only [OMA.S_oeis_a267921.series, PowerSeries.coeff_mk, ha0, ha1, ha2]
+        norm_num
       · obtain ⟨k, rfl⟩ : ∃ k, m = k + 3 := ⟨m - 3, by omega⟩
         have hr := hrec (k + 3) (by omega)
         simp only [show k + 3 - 1 = k + 2 by omega, show k + 3 - 2 = k + 1 by omega] at hr
-        simp only [map_add, map_sub, PowerSeries.coeff_ofNat_mul, PowerSeries.coeff_succ_X_mul,
-          PowerSeries.coeff_one, PowerSeries.coeff_X_pow,
-          show k + 3 ≠ 0 by omega, show k + 3 ≠ 2 by omega,
-          ite_false, OMA.S_oeis_a267921.series, PowerSeries.coeff_mk]
+        rw [PowerSeries.coeff_succ_X_mul, PowerSeries.coeff_succ_X_mul, PowerSeries.coeff_succ_X_mul]
+        have hne0 : k + 3 ≠ 0 := by omega
+        have hne2 : k + 3 ≠ 2 := by omega
+        simp only [hne0, hne2, ↓reduceIte, OMA.S_oeis_a267921.series, PowerSeries.coeff_mk]
         linarith
