@@ -30,7 +30,7 @@ namespace OMA.S_mo_100712
 noncomputable def qPoch (n : ℕ) : RatFunc ℚ :=
   ∏ i ∈ Finset.range n, (1 - (RatFunc.X : RatFunc ℚ) ^ (i + 1))
 
-theorem main (a b : ℕ) :
+theorem main : ∀ a b : ℕ,
     ∑ᶠ (p : ℕ × ℕ × ℕ) (_ : p.1 + p.2.1 = a ∧ p.2.1 + p.2.2 = b),
         (RatFunc.X : RatFunc ℚ) ^ (p.1 ^ 2 + p.1 * p.2.1 + p.2.1 ^ 2 + p.2.1 * p.2.2 + p.2.2 ^ 2) /
           (qPoch p.1 * qPoch p.2.1 * qPoch p.2.2)
