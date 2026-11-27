@@ -200,5 +200,3 @@ end OMA.FirstUnitFiltration
 
 theorem OMA.solution : OMA.R_CongruentNumber_Tunnell_even_R1_H2_R1_H2_R1_H2_R1_H2_R1_H2_R1_H1_R1.H2 :=
   OMA.FirstUnitFiltration.detection
-
-#print axioms OMA.solution
