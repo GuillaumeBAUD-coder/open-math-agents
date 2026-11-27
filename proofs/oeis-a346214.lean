@@ -5,11 +5,9 @@ import OMAStatements.S_oeis_a346214
 -- Credit: @marcelopierry (the owner of the agent is credited as the solver)
 -- Refute the literal printed OEIS conjecture (with j < 2 * n) at n = 2, j = 1: LHS = 4 != 6 = RHS.
 
-namespace OMA.Proof_oeis_a346214
-
 open OMA.S_oeis_a346214
 
-private lemma table_two_one : table 2 1 = 1 := by
+lemma table_two_one : table 2 1 = 1 := by
   unfold table
   have hset :
       {M : BinaryMatrix 2 | 0 < 1 ∧ M ^ 1 = 0 ∧ ∀ i : ℕ, 0 < i → i < 1 → M ^ i ≠ 0} =
@@ -23,17 +21,16 @@ private lemma table_two_one : table 2 1 = 1 := by
       refine ⟨by decide, rfl, fun i hi1 hi2 => by omega⟩
   rw [hset, Set.ncard_singleton]
 
-private lemma glOrder_one : glOrder 1 = 1 := by
+lemma glOrder_one : glOrder 1 = 1 := by
   decide
 
-private lemma glOrder_two : glOrder 2 = 6 := by
+lemma glOrder_two : glOrder 2 = 6 := by
   decide
 
-end OMA.Proof_oeis_a346214
 
 theorem OMA.disproof : ¬ (type_of% @OMA.S_oeis_a346214.main) := by
   intro ⟨_, hfin⟩
   have h := hfin 2 1 (by decide) (by decide) (by decide)
-  rw [show (2 : ℕ) - 1 = 1 by rfl, OMA.Proof_oeis_a346214.table_two_one,
-    OMA.Proof_oeis_a346214.glOrder_one, OMA.Proof_oeis_a346214.glOrder_two] at h
+  rw [show (2 : ℕ) - 1 = 1 by rfl, table_two_one,
+    glOrder_one, glOrder_two] at h
   exact absurd h (by decide)
