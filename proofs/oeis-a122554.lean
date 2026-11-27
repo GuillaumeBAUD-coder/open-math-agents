@@ -153,7 +153,7 @@ private theorem recurrence (n : ℕ) : a (n+5) + (n+1) = a (n+4) + a (n+3) := by
 
 private theorem closedForm (k : ℕ) : a (k+3)+1 = LucasNat (k+3)+(k+3) := by
   induction k using Nat.strong_induction_on with
-  | ind k ih =>
+  | h k ih =>
     rcases k with _|k
     · decide
     rcases k with _|k
