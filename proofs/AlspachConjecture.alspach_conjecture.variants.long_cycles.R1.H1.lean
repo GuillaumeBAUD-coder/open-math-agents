@@ -265,7 +265,6 @@ private lemma mem_wCycle_edges_pair {k : ℕ} (hk : 2 ≤ k) (r : Fin k)
     · simp [hm]
     · intro i hi₁ hi₂
       rw [List.getElem_ofFn, List.getElem_ofFn]
-      rfl
   rw [wCycle, mkCycle_edges, hofFn, mem_arcs_ofFn]
   have hf0 : (f ⟨0, Nat.zero_lt_succ _⟩).val = r.val := z_zero hk r.isLt
   have hflast : (f ⟨2 * k - 1, Nat.lt_succ_self _⟩).val = r.val + k := z_last hk r.isLt
