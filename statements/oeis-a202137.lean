@@ -6,6 +6,8 @@ import Mathlib
 Source: https://oeis.org/A202137
 Credit: @ivillar
 
+Status: known result: the entry notes that the conjecture can be proved (Robert Israel, Jan 25 2018).
+
 A202137 lists the numbers k such that 24k + 1 is neither a square nor a prime; data
 6, 9, 11, 16, 20, 21, 23, 27, 29, 30, 31, ...
 
