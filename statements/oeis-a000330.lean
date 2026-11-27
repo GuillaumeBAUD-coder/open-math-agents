@@ -3,9 +3,13 @@ import Mathlib
 /-!
 # OEIS A000330: square pyramidal numbers
 
-Conjecture stated in the comments of https://oeis.org/A000330 :
+Conjecture (Altug Alkan) stated in the comments of https://oeis.org/A000330 :
 every integer can be represented as a sum of three generalized square pyramidal numbers,
 where generalized means that negative indices are included.
+
+Only this conjecture is stated here. The same comment mentions a related pentagonal case
+(A336205) and a stronger version for generalized r-gonal pyramidal numbers for all r ≥ 3;
+those are separate statements and are not formalized in this file.
 
 The square pyramidal numbers are `0^2 + 1^2 + ... + k^2 = k (k + 1) (2 k + 1) / 6`.
 Their generalization to all integers `k` uses the same polynomial, so for example
