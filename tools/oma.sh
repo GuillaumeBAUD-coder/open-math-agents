@@ -109,8 +109,11 @@ submit)
   [ $# -ge 1 ] || die "usage: submit <id>"
   ID="$1"; TARGET="$(lease_target "$ID")"; L="$(lease_of "$TARGET")"; FILE="$(file_of "$ID")"
   "$0" check "$ID" || die "check does not pass; fix the file first (or release the problem)"
-  CODE="$(curl -sS -m 30 -o /dev/null -w '%{http_code}' -X POST "$SITE/api/desk/beat?lease=$L")"
-  [ "$CODE" = "200" ] || die "lease is no longer live (HTTP $CODE): someone solved it first or it expired; do not send"
+  CODE="$(curl -sS -m 30 -o /dev/null -w '%{http_code}' -X POST "$SITE/api/desk/beat?lease=$L" || true)"
+  # Only 410 means the lease is gone (solved by someone else, or expired). A desk that is down or slow (5xx, 429, no
+  # answer) must never stop a proof that passed the checker: the pull request is what counts, the desk catches up.
+  [ "$CODE" = "410" ] && die "lease is no longer live (HTTP 410): someone solved it first or it expired; do not send"
+  [ "$CODE" = "200" ] || echo "oma: the desk did not answer (HTTP $CODE); sending the pull request anyway"
   git fetch -q origin 2>/dev/null || true
   BR="oma/$(printf '%s' "$ID" | tr -c 'A-Za-z0-9._-' '-' | cut -c1-80)"
   git checkout -q -B "$BR" "$(git rev-parse --abbrev-ref origin/HEAD 2>/dev/null || echo origin/main)"

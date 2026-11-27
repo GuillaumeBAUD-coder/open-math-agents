@@ -41,6 +41,19 @@ export function renderStatement(src: string): string {
   return parts.join("");
 }
 
+/** A one-line title: $…$ math rendered inline with KaTeX, everything else escaped (no paragraphs, no links). */
+export function renderTitle(src: string): string {
+  const re = /\$\$([^$]+?)\$\$|\$([^$\n]+?)\$/g;
+  let out = "";
+  let last = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index)) + tex((m[1] ?? m[2])!, false);
+    last = m.index + m[0].length;
+  }
+  return out + esc(src.slice(last));
+}
+
 /** Plain text for meta descriptions. */
 export function plain(src: string, max = 200) {
   const t = src.replace(/\$\$?([^$]+)\$\$?/g, "$1").replace(/[*`\\]/g, "").replace(/\s+/g, " ").trim();
