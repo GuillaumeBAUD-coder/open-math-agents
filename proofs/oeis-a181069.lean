@@ -1647,7 +1647,7 @@ private theorem complete_sum (p s : ℕ) (hp : p.Prime) (hp5 : 5 ≤ p)
   have hv : (v : ZMod (p^s)) = 3 := by simp [v]
   let S := ∑ x : ZMod (p^s), weight (p^s) x
   have hperm : (∑ x : ZMod (p^s), weight (p^s) ((u : ZMod (p^s)) * x)) = S :=
-    u.mulLeft.sum_comp (weight (p^s))
+    Equiv.sum_comp u.mulLeft (weight (p^s))
   have hmul : (2 : ZMod (p^s))^2 * S = S := calc
     _ = (u : ZMod (p^s))^2 *
         ∑ x : ZMod (p^s), weight (p^s) ((u : ZMod (p^s)) * x) := by rw [hperm, hu]
@@ -1686,7 +1686,14 @@ theorem inverse_squares_range (p s start : ℕ) (hp : p.Prime) (hp5 : 5 ≤ p)
       (Fin.sum_univ_eq_sum_range _ _).symm
     _ = ∑ x : ZMod (p^s), weight (p^s) x := by
       let e := (residueEquiv (p^s)).trans (Equiv.addLeft (start : ZMod (p^s)))
-      simpa only [Nat.cast_add] using e.sum_comp (weight (p^s))
+      calc
+        _ = ∑ j : Fin (p^s), weight (p^s) (e j) := by
+          apply Finset.sum_congr rfl
+          intro j _
+          change weight (p^s) ((start+j.val : ℕ) : ZMod (p^s)) =
+            weight (p^s) ((start : ZMod (p^s)) + (j.val : ZMod (p^s)))
+          rw [Nat.cast_add]
+        _ = _ := Equiv.sum_comp e (weight (p^s))
     _ = 0 := complete_sum p s hp hp5
 
 /-- The same congruence with the original integer as the summation index. -/
@@ -1995,13 +2002,19 @@ theorem unaligned_transfer_of_terms (p r N : ℕ) (hp : p.Prime) (hp5 : 5 ≤ p)
   have vanish : 3 * (N:U)^2 * X = 0 := by
     obtain ⟨m,hm⟩ := hdiv
     have hmU : (N:U) = (p:U)^r * (m:U) := by
-      simpa only [Nat.cast_mul,Nat.cast_pow] using congrArg (fun n : ℕ => (n:U)) hm
+      calc
+        (N:U) = ((p^r*m : ℕ) : U) := congrArg (fun n : ℕ => (n:U)) hm
+        _ = (p:U)^r * (m:U) := by rw [Nat.cast_mul, Nat.cast_pow]
     have hzero : (p:U)^(3*r)=0 := by
       simpa only [Nat.cast_pow] using
         (ZMod.natCast_eq_zero_iff (p^(3*r)) (p^(3*r))).mpr dvd_rfl
+    have cubePower (x : U) : x^(3*r) = x^r*x^r*x^r := by
+      calc
+        x^(3*r) = x^((r+r)+r) := congrArg (fun e : ℕ => x^e) (show 3*r=(r+r)+r by omega)
+        _ = x^r*x^r*x^r := by rw [pow_add, pow_add]
     calc
       3 * (N:U)^2 * X = (p:U)^(3*r) * (3*(m:U)^2*z) := by
-        rw [hmU,hz,show 3*r=(r+r)+r by omega,pow_add,pow_add]
+        rw [hmU, hz, cubePower (p:U)]
         ring
       _ = 0 := by rw [hzero,zero_mul]
   have hF0 : F 0 = 0 := by simp [F,Prefix.unitInvSq]
@@ -2061,7 +2074,10 @@ theorem unaligned_term_eq (p r N j : ℕ) (hp : p.Prime) (hN : 0 < N)
   have hrow : (N.choose j : R) = ((N-1).choose (N-j) : R) + ((N-1).choose j : R) := by
     simpa only [Nat.cast_add] using congrArg (fun a : ℕ => (a:R)) hrowNat
   have hweight : (j:R) * (N.choose j : R) = (N:R) * ((N-1).choose (N-j) : R) := by
-    simpa only [Nat.cast_mul] using congrArg (fun a : ℕ => (a:R)) hweightNat.symm
+    calc
+      (j:R) * (N.choose j : R) = ((j * N.choose j : ℕ) : R) := (Nat.cast_mul _ _).symm
+      _ = ((N * (N-1).choose (N-j) : ℕ) : R) := congrArg (fun a : ℕ => (a:R)) hweightNat.symm
+      _ = (N:R) * ((N-1).choose (N-j) : R) := Nat.cast_mul _ _
   have hnil : (N:R)^3 = 0 := by
     rw [← Nat.cast_pow, ZMod.natCast_eq_zero_iff]
     obtain ⟨w, hw⟩ := hrN
