@@ -7,6 +7,7 @@ import { SITE, REPO } from "@/lib/site";
 import { teamFields } from "@/lib/collab";
 import EVENT from "@/content/event.json";
 import IMPACT from "@/content/impact.json";
+import { getPending, pendingError } from "@/lib/pendingprs";
 
 const IMPACT_IDS = IMPACT.groups.flatMap((g) => g.items.map((i) => i.id));
 /** True while the live event runs (content/event.json): agents that ask for nothing specific work on its problems. */
@@ -34,8 +35,12 @@ async function handle(req: Request) {
   }
   if (!deskOnline) return json({ error: "desk_offline", hint: "Coordination is not configured yet; the catalogue is still at /api/problems." }, 503);
 
-  const [live, stats] = await Promise.all([getLiveMap(), getStats()]);
+  const [live, stats, pending] = await Promise.all([getLiveMap(), getStats(), getPending()]);
   const solved = new Set(stats.solved.map((s) => s.problem_id));
+  // a problem with a proof waiting for its verdict is not handed out (lib/pending.ts); asking for it by name answers
+  // proof_pending unless force=1
+  const force = get("force") === "1";
+  const free = (id: string) => !solved.has(id) && !pending.has(id);
   let wanted = get("problem");
   let kind = get("kind") || "known";
   // kind=impact: the problems most useful beyond mathematics (content/impact.json). During the live event, agents that
@@ -44,10 +49,10 @@ async function handle(req: Request) {
   let event: { title: string; end: string } | null = null;
   const routeEvent = eventOn() && get("event") !== "0" && ["", "known", "any", "open"].includes(get("kind"));
   if (!wanted && (kind === "impact" || routeEvent)) {
-    const openOnly = (id: string) => !solved.has(id) && ["open", "unformalized"].includes(getProblem(id)?.kind ?? "");
+    const openOnly = (id: string) => free(id) && ["open", "unformalized"].includes(getProblem(id)?.kind ?? "");
     let cands = (kind === "impact" ? IMPACT_IDS : EVENT.problems).filter(openOnly);
     if (kind !== "impact") {
-      const st = (await getSteps(undefined, true)).filter((s) => !s.solved && !solved.has(s.id) && s.id.startsWith(EVENT.stepsOf));
+      const st = (await getSteps(undefined, true)).filter((s) => !s.solved && free(s.id) && s.id.startsWith(EVENT.stepsOf));
       cands = cands.concat(st.map((s) => s.id));
       event = { title: EVENT.title, end: EVENT.end };
     }
@@ -60,7 +65,8 @@ async function handle(req: Request) {
 
   // Steps (hypotheses of accepted reductions) live in the database, not in the static catalogue.
   if (kind === "step" || STEP_RE.test(wanted)) {
-    const steps = (await getSteps(undefined, true)).filter((s) => !s.solved && !solved.has(s.id));
+    if (wanted && !force && pending.has(wanted)) return json(pendingError(wanted, pending.get(wanted)!, REPO), 409);
+    const steps = (await getSteps(undefined, true)).filter((s) => !s.solved && !solved.has(s.id) && (s.id === wanted || !pending.has(s.id)));
     const picked: Step | null | undefined = wanted ? steps.find((x) => x.id === wanted) : pick(steps, live);
     // The full list carries no statements (size): read the chosen step's own record.
     const s: Step | null | undefined = picked ? ((await getSteps(picked.id, true)).find((x) => x.id === picked.id) ?? picked) : picked;
@@ -88,7 +94,8 @@ async function handle(req: Request) {
   // Problems with no Lean statement yet: the task is to state them, not to prove them.
   const formalize = kind === "formalize" || kind === "unformalized" || (wanted && getProblem(wanted)?.kind === "unformalized");
   if (formalize) {
-    const cands = PROBLEMS.filter((x) => x.kind === "unformalized" && !x.claim && (!get("source") || x.source === get("source")) && (!get("field") || x.fields.includes(get("field"))));
+    if (wanted && !force && pending.has(wanted)) return json(pendingError(wanted, pending.get(wanted)!, REPO), 409);
+    const cands = PROBLEMS.filter((x) => x.kind === "unformalized" && !x.claim && !pending.has(x.id) && (!get("source") || x.source === get("source")) && (!get("field") || x.fields.includes(get("field"))));
     // most famous first: among the least crowded, take from the 25 best known still waiting
     const minLive = Math.min(...cands.map((x) => live.get(x.id) ?? 0));
     const top = cands.filter((x) => (live.get(x.id) ?? 0) === minLive).sort((a, b) => b.fame - a.fame).slice(0, 25);
@@ -122,13 +129,14 @@ async function handle(req: Request) {
     p = getProblem(wanted);
     if (!p) return json({ error: "not_found" }, 404);
     if (solved.has(p.id)) return json({ error: "already_solved" }, 409);
+    if (!force && pending.has(p.id)) return json(pendingError(p.id, pending.get(p.id)!, REPO), 409);
   } else {
     const [lo, hi] = LEVELS[get("level")] ?? [0, 101];
     const source = get("source");
     const field = get("field");
     const cands = PROBLEMS.filter(
       (x) =>
-        !solved.has(x.id) &&
+        free(x.id) &&
         x.kind !== "unformalized" &&
         !x.claim &&
         (kind === "any" || x.kind === kind) &&

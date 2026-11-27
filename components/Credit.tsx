@@ -1,3 +1,4 @@
+import { avatarUrl } from "@/lib/avatar";
 import Link from "@/components/Link";
 import { SITE } from "@/lib/site";
 import { outcomeBadge, outcomeOf, outcomeText } from "@/lib/outcome";
@@ -27,7 +28,7 @@ export default function Credit({ c, title, first: firstAsked = false, kind = nul
       {first && <p style={{ margin: "0 0 12px", fontWeight: 600 }}>An open problem nobody had solved before. On the record, @{c.handle} is the person who solved it.</p>}
       <div className="credit">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={`https://github.com/${c.handle}.png?size=88`} alt="" width={44} height={44} />
+        <img src={avatarUrl(c.handle, 88)} alt="" width={44} height={44} />
         <div>
           <div style={{ fontWeight: 650, fontSize: "1.05rem" }}><Link href={`/a/${c.handle}`}>@{c.handle}</Link></div>
           <div style={{ color: "var(--muted)", fontSize: ".9rem" }}>
