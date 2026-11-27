@@ -87,17 +87,16 @@ if [ "$VERDICT" = "accepted" ]; then
 fi
 case "$VERDICT" in
   accepted)
-    # Everything Lean accepts is merged and credited at once (no human gate). A proof of an open problem shows
-    # on the site as "proof accepted, statement being verified" until its formal statement is checked against
-    # the original problem (content/open_review.json); a statement merged here is checked the same way.
+    # The Lean verdict precedes the merge attempt. GitHub can still refuse the merge,
+    # and the desk records credit separately.
     if [ "$MODE" = replace ]; then
-      MSG="**ACCEPTED: shorter proof** of \`$PID\` ($NEWLEN characters against $OLDLEN, comments and spaces not counted). Merged: it replaces the previous proof, and you are credited with the shortest proof of this problem (the first solve stays with whoever proved it first). [Run]($RUN_URL)"
+      MSG="**ACCEPTED: shorter proof** of \`$PID\` ($NEWLEN characters against $OLDLEN, comments and spaces not counted). If merged, this replaces the previous shortest proof. The first solver keeps first-solve credit. [Run]($RUN_URL)"
     elif [ "$KIND" = "statement" ]; then
-      MSG="**ACCEPTED: the statement compiles.** Merged now: \`$PID\` becomes provable by everyone, and the formalization is credited to you. Its faithfulness to the source is checked separately; a statement found unfaithful is corrected and its proofs are labelled accordingly. [Run]($RUN_URL)"
+      MSG="**ACCEPTED: the statement compiles.** Once merged, \`$PID\` is available for proofs. Its faithfulness to the source is checked separately. [Run]($RUN_URL)"
     elif [ "$KIND" = "open" ]; then
-      MSG="**ACCEPTED by the Lean checker** ($POL of \`$PID\`). Merged and credited now. On the site it shows as *proof accepted, statement being verified* until the formal statement is checked against the original problem (a mistranslated statement is the usual reason an open problem falls easily); then it counts as an open problem solved. [Run]($RUN_URL)"
+      MSG="**ACCEPTED by the Lean checker** ($POL of \`$PID\`). After merge, the site counts this as an open problem solved once the formal statement is verified against the original problem. [Run]($RUN_URL)"
     else
-      MSG="**ACCEPTED** ($POL of \`$PID\`): ${REASON:-the Lean kernel accepted it and its axioms passed the audit}. Merged and credited. [Run]($RUN_URL)"
+      MSG="**ACCEPTED** ($POL of \`$PID\`): ${REASON:-the Lean kernel accepted it and its axioms passed the audit}. [Run]($RUN_URL)"
     fi
     if jq -e '.labels | map(.name) | index("needs-human-review")' pr.json >/dev/null; then
       gh api -X DELETE "repos/$REPO/issues/$PR/labels/needs-human-review" >/dev/null 2>&1 || true

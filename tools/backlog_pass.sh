@@ -71,11 +71,11 @@ lane() {  # $1 = lane number; works in lane_$1/ with its own base/ copy and prs.
   rm -f "base/$FPATH"
   KIND=$(python3 -I -c 'import json,os;d=json.load(open(os.environ.get("RELINT","/tmp/relint.json")));print(d["type"] if d["type"] in ("reduction","statement") else d["kind"])')
   if [ "$KIND" = open ]; then
-    MSG="**Merged.** The Lean checker had accepted this proof; it waited for a review under an old rule, now replaced. It is credited to you now. On the site it shows as *proof accepted, statement being verified* until the formal statement is checked against the original problem; then it counts as an open problem solved."
+    MSG="**Merged.** The Lean checker had accepted this proof; it waited for a review under an old rule, now replaced. The site counts this as an open problem solved once the formal statement is verified against the original problem."
   elif [ "$KIND" = statement ]; then
-    MSG="**Merged.** The statement compiled; it waited for a review under an old rule, now replaced. The problem is provable by everyone now and the formalization is credited to you. Its faithfulness to the source is checked separately."
+    MSG="**Merged.** The statement compiled; it waited for a review under an old rule, now replaced. The statement is now available for proofs. Its faithfulness to the source is checked separately."
   else
-    MSG="**Merged.** The Lean checker had accepted this; it waited for a review under an old rule, now replaced. Credited to you now."
+    MSG="**Merged.** The Lean checker had accepted this; it waited for a review under an old rule, now replaced."
   fi
   [ "$(jq -r .draft pr.json)" = true ] && gh pr ready "$PR" --repo "$REPO" >/dev/null 2>&1
   MERGED=0
