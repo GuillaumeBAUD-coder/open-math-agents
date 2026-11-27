@@ -1,8 +1,8 @@
 import OMAReductions.R_OeisA245212_conjecture_R1_H1_R1
 
 -- Credit: @jatin6
--- For any odd, non-prime-power n with sigma(n) at most 2n,
--- the gap between A245212(n) and sigma(n) is at least n/3.
+/-! For any odd, non-prime-power n with sigma(n) at most 2n,
+the gap between A245212(n) and sigma(n) is at least n/3. -/
 namespace OMA.A245212DivisorBound
 
 open Finset ArithmeticFunction
@@ -55,7 +55,8 @@ private lemma rearrange (n : ℕ) :
       _ = _ := by simp [Nat.mul_comm]
   have hIz : ArithmeticFunction.zeta * I = σ 1 := by
     ext m
-    simp [zeta_mul_apply, sigma_one_apply, I]
+    change (ArithmeticFunction.zeta * I) m = σ 1 m
+    rw [zeta_mul_apply, sigma_one_apply] <;> rfl
   have hassoc : (I * I) * ArithmeticFunction.zeta = (ArithmeticFunction.zeta * I) * I := by
     ac_rfl
   calc
@@ -81,7 +82,7 @@ private lemma scale_sigma {n d : ℕ} (hd : d ∈ n.divisors) :
     simpa only [hnd] using Nat.mul_dvd_mul_left (n / d) (Nat.dvd_of_mem_divisors hx)
   rw [sigma_one_apply, sigma_one_apply, mul_sum]
   calc
-    _ = ∑ v ∈ d.divisors.map e, v := by simp [e]
+    _ = ∑ v ∈ d.divisors.map e, v := by rw [sum_map] <;> rfl
     _ ≤ ∑ v ∈ n.divisors, v := sum_le_sum_of_subset hsub
 
 private lemma small_prime_term {n p : ℕ} (hp : p.Prime) (hd : p ∣ n) (h3 : 3 ≤ p) :
@@ -126,10 +127,11 @@ private lemma moment_bound {n : ℕ} (hn : 1 < n) (ho : Odd n)
     · have h := (scale_sigma hd).trans hs
       simp [term, h1, hep, heq] <;> omega
   have hsum := sum_le_sum hpoint
+  simp only [sum_add_distrib, sum_ite_eq', if_pos h1m, if_pos hpm, if_pos hqm] at hsum
+  rw [← mul_sum, sum_const, nsmul_eq_mul] at hsum
   rw [rearrange]
-  simp [sum_add_distrib, ← mul_sum, h1m, hpm, hqm, term, Nat.mul_comm,
-    Nat.mul_left_comm, Nat.mul_assoc] at hsum ⊢
-  omega
+  change 3 * (∑ d ∈ n.divisors, term d) + 7 * n ≤ 6 * (n * n.divisors.card)
+  nlinarith only [hsum]
 
 theorem gap {n : ℕ} (hn : 1 < n) (ho : Odd n) (hnp : ¬ IsPrimePow n)
     (hs : σ 1 n ≤ 2 * n) : (n : ℤ) ≤ 3 * (OeisA245212.a n - (σ 1 n : ℤ)) := by
