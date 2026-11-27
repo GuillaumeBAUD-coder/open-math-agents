@@ -21,8 +21,15 @@ Conventions:
   `a(1) = ... = a(4) = 0`.
 * `a(n) = -T(n,3)` in `ℤ`. The closed form is stated in `ℚ` (so `n - 1`, ..., `n - 4` and the
   division by `45360` are the usual ones) for every `n >= 1` (the offset is 1).
-* The closed form is a polynomial of degree 9 in `n` that vanishes at `n = 0, ..., 4`, and the
-  stated g.f. is the g.f. of exactly this polynomial, so the closed form states both conjectures.
+* Why the closed form also states the g.f. conjecture. Since `(x - 1)^10 = (1 - x)^10` and
+  `1/(1 - x)^10 = Sum_{m >= 0} binomial(m + 9, 9) x^m`, the coefficient of `x^n` in
+  `x^5*(225 + 54*x + x^2)/(x - 1)^10` is
+  `225*binomial(n + 4, 9) + 54*binomial(n + 3, 9) + binomial(n + 2, 9)`,
+  with `binomial(m, 9) = 0` for `m < 9`. This vanishes for `n < 5`, as the closed form does.
+  For `n >= 5` the three binomials have the common factor
+  `(n + 2)(n + 1) n (n - 1)(n - 2)(n - 3)(n - 4)`, and the sum factors as
+  `n(n-1)(n-2)(n-3)(n-4)(n+2)(n+1)(35n^2 + 182n + 240)/45360`, which is the polynomial in `main`.
+  So the two conjectures are equivalent for `n >= 1`, and `main` states the closed form.
 -/
 
 namespace OMA.S_oeis_a184878
