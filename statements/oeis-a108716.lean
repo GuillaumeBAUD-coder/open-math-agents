@@ -13,6 +13,10 @@ Conjecture (Colin Barker, Jun 01 2013): a(n) = 21*a(n-1)-35*a(n-2)+7*a(n-3).
 G.f.: -(35*x^2-42*x+3) / (7*x^3-35*x^2+21*x-1).
 The recurrence is stated for n ≥ 3 (all indices at least the offset 0); the g.f. is that of
 Sum_{n ≥ 0} a(n) x^n, as a power series over ℝ.
+
+Status: known result. Robert Israel verified it in 2015 (see the OEIS entry): the numbers
+1/tan(θ)^2 for θ = π/14, 3π/14, 5π/14 are the roots of t^3 - 21t^2 + 35t - 7, so their power
+sums satisfy this recurrence with initial values 3, 21, 371, which also gives the g.f.
 -/
 
 namespace OMA.S_oeis_a108716
