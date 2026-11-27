@@ -2721,7 +2721,9 @@ theorem at_most_ten {n : ℕ} (G : SimpleGraph (Fin n))
   have separated : Disjoint (C.neighborFinset v) A := by
     apply Finset.disjoint_left.mpr
     intro x hx hxA
-    exact (Finset.mem_compl.mp (outside hxA)) (Finset.mem_insert_of_mem hx)
+    have h := outside hxA
+    simp only [Finset.mem_compl, Finset.mem_insert] at h
+    exact h (Or.inr hx)
   rcases sides with eight | nine
   · rw [eight] at count
     obtain ⟨x,hx,y,hy,ne,nonedge⟩ := exists_independent_pair G h4 (A := A) (by omega)
