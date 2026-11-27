@@ -7,13 +7,12 @@ import Mathlib
 The nonbipartite case remains H1. In the bipartite case, count incidences and apply Hall's
 marriage theorem three times to split the edges into perfect matchings. Identify the two sides
 along the first matching. The other two matchings now give permutations of the same set, and H2
-asks only about pairs that do not commute.
+requires the permutations to disagree in their order of application on at least one third of the points.
 
-For a commuting pair, the orbit of a vertex is the image of the abelian group ℤ² modulo its
-stabilizer. Three distinct translations between two copies of an abelian group always give a
-4-, 8-, or 16-cycle. The 16-step word 0101012010201212 closes before passing to the quotient;
-if vertices on the same side coincide, their coordinate difference supplies a relation and one
-of the shorter words applies. The case lemmas give the words and check the coordinate identities.
+Four local commuting squares around a point force a 4-, 8-, or 16-cycle. The finite
+certificate handles repeated vertex labels; reversing the two directions and interchanging
+them covers all four orientations. Double-counting visits to the exceptional set gives the
+one-third threshold. The global commuting and abelian-group cases follow as corollaries.
 
 The parent bridge decomposition is due to @JamesSlash (PR #592). Ghaffari and Mostaghim,
 Aequationes Math. 92 (2018), studied the Erdős–Gyárfás conjecture for dihedral and other Cayley
@@ -30,521 +29,1179 @@ def H1 : Prop :=
     (∀ ⦃a b⦄, G.Adj a b → ¬ G.IsBridge s(a,b)) → ¬ G.IsBipartite →
     ∃ (k : ℕ) (v : V) (c : G.Walk v v), 2 ≤ k ∧ c.IsCycle ∧ c.length = 2 ^ k
 
-/-- The normalized bipartite matching problem for noncommuting permutations. -/
+/-- The normalized bipartite matching problem with a lower bound on the number of failures of commutation. -/
 def H2 : Prop :=
   ∀ (X : Type) [Fintype X] [Nonempty X] (p q : Equiv.Perm X),
-    (∀ x, p x ≠ x ∧ q x ≠ x ∧ p x ≠ q x) → ¬ Commute p q →
+    (∀ x, p x ≠ x ∧ q x ≠ x ∧ p x ≠ q x) →
+    Fintype.card X ≤ 3 * {x : X | p (q x) ≠ q (p x)}.ncard →
     ∃ k : ℕ, 2 ≤ k ∧ cycleGraph (2^k) ⊑ SimpleGraph.fromRel (fun a b : Bool × X =>
       a.1 = false ∧ b.1 = true ∧ (b.2 = a.2 ∨ b.2 = p a.2 ∨ b.2 = q a.2))
 
+
+namespace LocalCommutation
+open SimpleGraph
+lemma route {X : Type*} (G : SimpleGraph (Bool × X)) (x : (Fin 10) → X)
+    {n : ℕ} (hn : n=4 ∨ n=8 ∨ n=16) (w : Fin n → Bool × (Fin 10))
+    (edges collisions : List (Fin 10 × Fin 10))
+    (hwalk : ∀ i j, (cycleGraph n).Adj i j → (if (w i).1 == (w j).1 then false else if (w i).1 then edges.contains ((w j).2,(w i).2) else edges.contains ((w i).2,(w j).2)))
+    (hpair : ∀ i j, i<j → (w i).1=(w j).1 →
+      ((w i).2,(w j).2) ∈ collisions ∨ ((w j).2,(w i).2) ∈ collisions)
+    (adj : ∀ e ∈ edges, G.Adj (false,x e.1) (true,x e.2))
+    (recur : ∀ e ∈ collisions, x e.1 = x e.2 → (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G)) : (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
+  let f (i : Fin n) : Bool × X := ((w i).1,x (w i).2)
+  have edge {a b : Bool × (Fin 10)} (h : (if a.1 == b.1 then false else if a.1 then edges.contains (b.2,a.2) else edges.contains (a.2,b.2))) : G.Adj (a.1,x a.2) (b.1,x b.2) := by
+    obtain ⟨i,a⟩ := a; obtain ⟨j,b⟩ := b
+    cases i <;> cases j <;> simp at h
+    · exact adj _ h
+    · exact (adj _ h).symm
+  let g : cycleGraph n →g G := ⟨f, fun h => edge (hwalk _ _ h)⟩
+  by_cases hi : Function.Injective g
+  · have hs : cycleGraph n ⊑ G := ⟨g.toCopy hi⟩
+    rcases hn with rfl|rfl|rfl
+    · exact Or.inl hs
+    · exact Or.inr (Or.inl hs)
+    · exact Or.inr (Or.inr hs)
+  · obtain ⟨i,j,h,hn'⟩ := Function.not_injective_iff.mp hi
+    have bad (a b : Fin n) (lt : a<b) (e : g a = g b) : (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
+      have s := congrArg Prod.fst e
+      have r : x (w a).2 = x (w b).2 := congrArg Prod.snd e
+      rcases hpair a b lt s with h | h
+      · exact recur _ h r
+      · exact recur _ h r.symm
+    rcases lt_or_gt_of_ne hn' with hlt|hlt
+    · exact bad i j hlt h
+    · exact bad j i hlt h.symm
+
+/-- Ten vertices of four oriented squares. A node identifies vertices whose labels
+coincide. Identity, horizontal and vertical edges give an explicit closed walk;
+if it repeats a vertex, congruence or injectivity forces a smaller quotient. -/
+theorem shape0 {X : Type*} (G : SimpleGraph (Bool × X)) (p q : Equiv.Perm X)
+    (sep : ∀ x, p x ≠ x ∧ q x ≠ x ∧ p x ≠ q x)
+    (idAdj : ∀ u, G.Adj (false,u) (true,u))
+    (pAdj : ∀ u, G.Adj (false,u) (true,p u))
+    (qAdj : ∀ u, G.Adj (false,u) (true,q u)) (x : (Fin 10) → X)
+    (edge0 : p (x 0) = x 4)
+    (edge1 : q (x 0) = x 1)
+    (edge2 : p (x 1) = x 5)
+    (edge3 : q (x 1) = x 2)
+    (edge4 : p (x 2) = x 6)
+    (edge5 : q (x 2) = x 3)
+    (edge6 : p (x 3) = x 7)
+    (edge7 : q (x 4) = x 5)
+    (edge8 : p (x 5) = x 8)
+    (edge9 : q (x 5) = x 6)
+    (edge10 : p (x 6) = x 9)
+    (edge11 : q (x 6) = x 7)
+    (edge12 : q (x 8) = x 9)
+    : (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
+  have node0 (eq1 : x 1 = x 0) (eq2 : x 2 = x 0) (eq3 : x 3 = x 0) (eq4 : x 4 = x 0) (eq5 : x 5 = x 0) (eq6 : x 6 = x 0) (eq7 : x 7 = x 0) (eq8 : x 8 = x 0) (eq9 : x 9 = x 0) : (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
+    have hx : id (x 0) = x 0 := rfl
+    have hy : p (x 0) = x 0 := (edge0.trans eq4)
+    exact False.elim ((sep (x 0)).1 (hy.trans hx.symm))
+  have node1 (eq2 : x 2 = x 0) (eq3 : x 3 = x 1) (eq4 : x 4 = x 0) (eq5 : x 5 = x 1) (eq6 : x 6 = x 0) (eq7 : x 7 = x 1) (eq8 : x 8 = x 1) (eq9 : x 9 = x 0) : (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
+    have hx : id (x 0) = x 0 := rfl
+    have hy : p (x 0) = x 0 := (edge0.trans eq4)
+    exact False.elim ((sep (x 0)).1 (hy.trans hx.symm))
+  have node2 (eq1 : x 1 = x 0) (eq2 : x 2 = x 0) (eq3 : x 3 = x 0) (eq5 : x 5 = x 4) (eq6 : x 6 = x 4) (eq7 : x 7 = x 4) (eq8 : x 8 = x 0) (eq9 : x 9 = x 0) : (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
+    have hx : id (x 0) = x 0 := rfl
+    have hy : q (x 0) = x 0 := (edge1.trans eq1)
+    exact False.elim ((sep (x 0)).2.1 (hy.trans hx.symm))
+  have node3 (eq2 : x 2 = x 0) (eq3 : x 3 = x 1) (eq4 : x 4 = x 1) (eq5 : x 5 = x 0) (eq6 : x 6 = x 1) (eq7 : x 7 = x 0) (eq8 : x 8 = x 1) (eq9 : x 9 = x 0) : (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
+    have hx : p (x 0) = x 1 := (edge0.trans eq4)
+    have hy : q (x 0) = x 1 := edge1
+    exact False.elim ((sep (x 0)).2.2 (hx.trans hy.symm))
+  have node4 (eq1 : x 1 = x 0) (eq2 : x 2 = x 0) (eq3 : x 3 = x 0) (eq5 : x 5 = x 4) (eq6 : x 6 = x 4) (eq7 : x 7 = x 4) (eq9 : x 9 = x 8) : (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
+    have hx : id (x 0) = x 0 := rfl
+    have hy : q (x 0) = x 0 := (edge1.trans eq1)
+    exact False.elim ((sep (x 0)).2.1 (hy.trans hx.symm))
+  have node5 (eq3 : x 3 = x 0) (eq4 : x 4 = x 0) (eq5 : x 5 = x 1) (eq6 : x 6 = x 2) (eq7 : x 7 = x 0) (eq8 : x 8 = x 1) (eq9 : x 9 = x 2) : (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
+    have hx : id (x 0) = x 0 := rfl
+    have hy : p (x 0) = x 0 := (edge0.trans eq4)
+    exact False.elim ((sep (x 0)).1 (hy.trans hx.symm))
+  have node6 (eq3 : x 3 = x 0) (eq4 : x 4 = x 2) (eq5 : x 5 = x 0) (eq6 : x 6 = x 1) (eq7 : x 7 = x 2) (eq8 : x 8 = x 2) (eq9 : x 9 = x 0) : (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
+    apply route G x (n:=4) (by decide) ![(false,0), (true,0), (false,1), (true,1)]
+      [(0,0), (1,0), (1,1), (0,1)] [(0,1)] (by decide) (by decide)
+    · intro e he
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at he
+      rcases he with rfl | rfl | rfl | rfl
+      · exact idAdj _
+      · have e : p (x 1) = x 0 := (edge2.trans eq5)
+        exact e ▸ pAdj (x 1)
+      · exact idAdj _
+      · have e : q (x 0) = x 1 := edge1
+        exact e ▸ qAdj (x 0)
+    · intro e he hit
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at he
+      rcases he with rfl
+      have t0 : x 4 = x 5 := (edge0.symm.trans ((congrArg p hit).trans edge2))
+      exact node0 hit.symm ((eq4.symm.trans t0).trans eq5) eq3 (t0.trans eq5) eq5 (eq6.trans hit.symm) (((eq7.trans eq4.symm).trans t0).trans eq5) (((eq8.trans eq4.symm).trans t0).trans eq5) eq9
+  have node7 (eq3 : x 3 = x 0) (eq4 : x 4 = x 1) (eq5 : x 5 = x 2) (eq6 : x 6 = x 0) (eq7 : x 7 = x 1) (eq8 : x 8 = x 0) (eq9 : x 9 = x 1) : (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
+    have hx : p (x 0) = x 1 := (edge0.trans eq4)
+    have hy : q (x 0) = x 1 := edge1
+    exact False.elim ((sep (x 0)).2.2 (hx.trans hy.symm))
+  have node8 (eq4 : x 4 = x 2) (eq5 : x 5 = x 3) (eq6 : x 6 = x 0) (eq7 : x 7 = x 1) (eq8 : x 8 = x 1) (eq9 : x 9 = x 2) : (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
+    apply route G x (n:=4) (by decide) ![(false,0), (true,0), (false,2), (true,2)]
+      [(0,0), (2,0), (2,2), (0,2)] [(0,2)] (by decide) (by decide)
+    · intro e he
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at he
+      rcases he with rfl | rfl | rfl | rfl
+      · exact idAdj _
+      · have e : p (x 2) = x 0 := (edge4.trans eq6)
+        exact e ▸ pAdj (x 2)
+      · exact idAdj _
+      · have e : p (x 0) = x 2 := (edge0.trans eq4)
+        exact e ▸ pAdj (x 0)
+    · intro e he hit
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at he
+      rcases he with rfl
+      have t0 : x 1 = x 3 := (edge1.symm.trans ((congrArg q hit).trans edge5))
+      exact node1 hit.symm t0.symm (eq4.trans hit.symm) (eq5.trans t0.symm) eq6 eq7 eq8 (eq9.trans hit.symm)
+  have node9 (eq2 : x 2 = x 0) (eq3 : x 3 = x 1) (eq6 : x 6 = x 4) (eq7 : x 7 = x 5) (eq8 : x 8 = x 0) (eq9 : x 9 = x 1) : (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
+    apply route G x (n:=4) (by decide) ![(false,0), (true,0), (false,1), (true,1)]
+      [(0,0), (1,0), (1,1), (0,1)] [(0,1)] (by decide) (by decide)
+    · intro e he
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at he
+      rcases he with rfl | rfl | rfl | rfl
+      · exact idAdj _
+      · have e : q (x 1) = x 0 := (edge3.trans eq2)
+        exact e ▸ qAdj (x 1)
+      · exact idAdj _
+      · have e : q (x 0) = x 1 := edge1
+        exact e ▸ qAdj (x 0)
+    · intro e he hit
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at he
+      rcases he with rfl
+      have t0 : x 4 = x 5 := (edge0.symm.trans ((congrArg p hit).trans edge2))
+      exact node2 hit.symm eq2 (eq3.trans hit.symm) t0.symm eq6 (eq7.trans t0.symm) eq8 (eq9.trans hit.symm)
+  have node10 (eq4 : x 4 = x 0) (eq5 : x 5 = x 1) (eq6 : x 6 = x 2) (eq7 : x 7 = x 3) (eq8 : x 8 = x 1) (eq9 : x 9 = x 2) : (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
+    have hx : id (x 0) = x 0 := rfl
+    have hy : p (x 0) = x 0 := (edge0.trans eq4)
+    exact False.elim ((sep (x 0)).1 (hy.trans hx.symm))
+  have node11 (eq4 : x 4 = x 3) (eq5 : x 5 = x 0) (eq6 : x 6 = x 1) (eq7 : x 7 = x 2) (eq8 : x 8 = x 3) (eq9 : x 9 = x 0) : (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
+    apply route G x (n:=4) (by decide) ![(false,0), (true,0), (false,1), (true,1)]
+      [(0,0), (1,0), (1,1), (0,1)] [(0,1)] (by decide) (by decide)
+    · intro e he
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at he
+      rcases he with rfl | rfl | rfl | rfl
+      · exact idAdj _
+      · have e : p (x 1) = x 0 := (edge2.trans eq5)
+        exact e ▸ pAdj (x 1)
+      · exact idAdj _
+      · have e : q (x 0) = x 1 := edge1
+        exact e ▸ qAdj (x 0)
+    · intro e he hit
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at he
+      rcases he with rfl
+      have t0 : x 4 = x 5 := (edge0.symm.trans ((congrArg p hit).trans edge2))
+      have t1 : x 0 = x 2 := (p.injective (edge0.trans ((((t0.trans eq5).trans hit).trans eq6.symm).trans edge4.symm)))
+      exact node0 hit.symm t1.symm ((eq4.symm.trans t0).trans eq5) (t0.trans eq5) eq5 (eq6.trans hit.symm) (eq7.trans t1.symm) (((eq8.trans eq4.symm).trans t0).trans eq5) eq9
+  have node12 (eq5 : x 5 = x 0) (eq6 : x 6 = x 1) (eq7 : x 7 = x 2) (eq8 : x 8 = x 4) (eq9 : x 9 = x 0) : (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
+    apply route G x (n:=4) (by decide) ![(false,0), (true,0), (false,1), (true,1)]
+      [(0,0), (1,0), (1,1), (0,1)] [(0,1)] (by decide) (by decide)
+    · intro e he
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at he
+      rcases he with rfl | rfl | rfl | rfl
+      · exact idAdj _
+      · have e : p (x 1) = x 0 := (edge2.trans eq5)
+        exact e ▸ pAdj (x 1)
+      · exact idAdj _
+      · have e : q (x 0) = x 1 := edge1
+        exact e ▸ qAdj (x 0)
+    · intro e he hit
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at he
+      rcases he with rfl
+      have t0 : x 4 = x 5 := (edge0.symm.trans ((congrArg p hit).trans edge2))
+      have t1 : x 0 = x 2 := (p.injective (edge0.trans ((((t0.trans eq5).trans hit).trans eq6.symm).trans edge4.symm)))
+      have t2 : x 0 = x 3 := (p.injective (edge0.trans ((((t0.trans eq5).trans t1).trans eq7.symm).trans edge6.symm)))
+      exact node0 hit.symm t1.symm t2.symm (t0.trans eq5) eq5 (eq6.trans hit.symm) (eq7.trans t1.symm) ((eq8.trans t0).trans eq5) eq9
+  have node13 (eq4 : x 4 = x 1) (eq5 : x 5 = x 2) (eq6 : x 6 = x 3) (eq8 : x 8 = x 3) (eq9 : x 9 = x 7) : (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
+    have hx : p (x 0) = x 1 := (edge0.trans eq4)
+    have hy : q (x 0) = x 1 := edge1
+    exact False.elim ((sep (x 0)).2.2 (hx.trans hy.symm))
+  have node14 (eq2 : x 2 = x 0) (eq3 : x 3 = x 1) (eq6 : x 6 = x 4) (eq7 : x 7 = x 5) : (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
+    apply route G x (n:=4) (by decide) ![(false,0), (true,0), (false,1), (true,1)]
+      [(0,0), (1,0), (1,1), (0,1)] [(0,1)] (by decide) (by decide)
+    · intro e he
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at he
+      rcases he with rfl | rfl | rfl | rfl
+      · exact idAdj _
+      · have e : q (x 1) = x 0 := (edge3.trans eq2)
+        exact e ▸ qAdj (x 1)
+      · exact idAdj _
+      · have e : q (x 0) = x 1 := edge1
+        exact e ▸ qAdj (x 0)
+    · intro e he hit
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at he
+      rcases he with rfl
+      have t0 : x 4 = x 5 := (edge0.symm.trans ((congrArg p hit).trans edge2))
+      have t1 : x 8 = x 9 := (edge8.symm.trans ((congrArg p (t0.symm.trans eq6.symm)).trans edge10))
+      exact node4 hit.symm eq2 (eq3.trans hit.symm) t0.symm eq6 (eq7.trans t0.symm) t1.symm
+  have node15 (eq6 : x 6 = x 0) (eq7 : x 7 = x 1) (eq9 : x 9 = x 4) : (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
+    apply route G x (n:=8) (by decide) ![(false,0), (true,0), (false,2), (true,2), (false,1), (true,5), (false,4), (true,4)]
+      [(0,0), (2,0), (2,2), (1,2), (1,5), (4,5), (4,4), (0,4)] [(0,1), (0,2), (0,4), (0,5), (1,2), (1,4), (2,4), (2,5), (4,5)] (by decide) (by decide)
+    · intro e he
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at he
+      rcases he with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      · exact idAdj _
+      · have e : p (x 2) = x 0 := (edge4.trans eq6)
+        exact e ▸ pAdj (x 2)
+      · exact idAdj _
+      · have e : q (x 1) = x 2 := edge3
+        exact e ▸ qAdj (x 1)
+      · have e : p (x 1) = x 5 := edge2
+        exact e ▸ pAdj (x 1)
+      · have e : q (x 4) = x 5 := edge7
+        exact e ▸ qAdj (x 4)
+      · exact idAdj _
+      · have e : p (x 0) = x 4 := edge0
+        exact e ▸ pAdj (x 0)
+    · intro e he hit
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at he
+      rcases he with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      · have t0 : x 4 = x 5 := (edge0.symm.trans ((congrArg p hit).trans edge2))
+        have t1 : x 1 = x 2 := (edge1.symm.trans ((congrArg q hit).trans edge3))
+        have t2 : x 1 = x 3 := (edge1.symm.trans ((congrArg q (hit.trans t1)).trans edge5))
+        have t3 : x 0 = x 5 := (q.injective (edge1.trans ((hit.symm.trans eq6.symm).trans edge9.symm)))
+        have t4 : x 0 = x 8 := (q.injective (edge1.trans ((((hit.symm.trans t3).trans t0.symm).trans eq9.symm).trans edge12.symm)))
+        exact node0 hit.symm (t1.symm.trans hit.symm) (t2.symm.trans hit.symm) (t0.trans t3.symm) t3.symm eq6 (eq7.trans hit.symm) t4.symm ((eq9.trans t0).trans t3.symm)
+      · have t0 : x 4 = x 6 := (edge0.symm.trans ((congrArg p hit).trans edge4))
+        have t1 : x 1 = x 3 := (edge1.symm.trans ((congrArg q hit).trans edge5))
+        have t2 : x 1 = x 5 := (edge1.symm.trans ((congrArg q (eq6.symm.trans t0.symm)).trans edge7))
+        have t3 : x 5 = x 8 := (edge2.symm.trans ((congrArg p t2).trans edge8))
+        exact node1 hit.symm t1.symm (t0.trans eq6) t2.symm eq6 eq7 (t3.symm.trans t2.symm) ((eq9.trans t0).trans eq6)
+      · have t0 : x 0 = x 2 := (p.injective (edge0.trans ((hit.symm.trans eq6.symm).trans edge4.symm)))
+        have t1 : x 1 = x 3 := (edge1.symm.trans ((congrArg q t0).trans edge5))
+        have t2 : x 1 = x 5 := (edge1.symm.trans ((congrArg q hit).trans edge7))
+        have t3 : x 5 = x 8 := (edge2.symm.trans ((congrArg p t2).trans edge8))
+        exact node1 t0.symm t1.symm hit.symm t2.symm eq6 eq7 (t3.symm.trans t2.symm) (eq9.trans hit.symm)
+      · have t0 : x 4 = x 8 := (edge0.symm.trans ((congrArg p hit).trans edge8))
+        have t1 : x 1 = x 6 := (edge1.symm.trans ((congrArg q hit).trans edge9))
+        have t2 : x 1 = x 2 := (p.injective (edge2.trans ((hit.symm.trans eq6.symm).trans edge4.symm)))
+        have t3 : x 1 = x 3 := (p.injective (edge2.trans ((((hit.symm.trans eq6.symm).trans t1.symm).trans eq7.symm).trans edge6.symm)))
+        have t4 : x 5 = x 8 := (edge2.symm.trans ((congrArg p ((t1.trans eq6).trans hit)).trans edge8))
+        exact node0 (t1.trans eq6) ((t2.symm.trans t1).trans eq6) ((t3.symm.trans t1).trans eq6) ((t0.trans t4.symm).trans hit.symm) hit.symm eq6 ((eq7.trans t1).trans eq6) (t4.symm.trans hit.symm) (((eq9.trans t0).trans t4.symm).trans hit.symm)
+      · have t0 : x 0 = x 1 := (q.injective (edge1.trans (hit.trans edge3.symm)))
+        have t1 : x 1 = x 3 := (edge1.symm.trans ((congrArg q (t0.trans hit)).trans edge5))
+        have t2 : x 0 = x 5 := (q.injective (edge1.trans ((t0.symm.trans eq6.symm).trans edge9.symm)))
+        have t3 : x 5 = x 8 := (edge2.symm.trans ((congrArg p (t0.symm.trans t2)).trans edge8))
+        have t4 : x 5 = x 9 := (edge2.symm.trans ((congrArg p (t0.symm.trans eq6.symm)).trans edge10))
+        exact node0 t0.symm (hit.symm.trans t0.symm) (t1.symm.trans t0.symm) ((eq9.symm.trans t4.symm).trans t2.symm) t2.symm eq6 (eq7.trans t0.symm) (t3.symm.trans t2.symm) (t4.symm.trans t2.symm)
+      · have t0 : x 0 = x 3 := (p.injective (edge0.trans ((hit.symm.trans eq7.symm).trans edge6.symm)))
+        have t1 : x 0 = x 8 := (q.injective (edge1.trans ((hit.trans eq9.symm).trans edge12.symm)))
+        have t2 : x 2 = x 5 := (edge3.symm.trans ((congrArg q hit).trans edge7))
+        exact node7 t0.symm hit.symm t2.symm eq6 eq7 t1.symm (eq9.trans hit.symm)
+      · have t0 : x 1 = x 8 := (q.injective (edge3.trans ((hit.trans eq9.symm).trans edge12.symm)))
+        have t1 : x 3 = x 5 := (edge5.symm.trans ((congrArg q hit).trans edge7))
+        exact node8 hit.symm t1.symm eq6 eq7 t0.symm (eq9.trans hit.symm)
+      · have t0 : x 1 = x 4 := (q.injective (edge3.trans (hit.trans edge7.symm)))
+        have t1 : x 6 = x 8 := (edge4.symm.trans ((congrArg p hit).trans edge8))
+        have t2 : x 3 = x 6 := (edge5.symm.trans ((congrArg q hit).trans edge9))
+        exact node7 (t2.trans eq6) t0.symm hit.symm eq6 eq7 (t1.symm.trans eq6) (eq9.trans t0.symm)
+      · have t0 : x 0 = x 1 := (p.injective (edge0.trans (hit.trans edge2.symm)))
+        have t1 : x 1 = x 2 := (edge1.symm.trans ((congrArg q t0).trans edge3))
+        have t2 : x 1 = x 3 := (edge1.symm.trans ((congrArg q (t0.trans t1)).trans edge5))
+        have t3 : x 0 = x 5 := (q.injective (edge1.trans ((t0.symm.trans eq6.symm).trans edge9.symm)))
+        have t4 : x 0 = x 8 := (q.injective (edge1.trans ((((t0.symm.trans t3).trans hit.symm).trans eq9.symm).trans edge12.symm)))
+        exact node0 t0.symm (t1.symm.trans t0.symm) (t2.symm.trans t0.symm) (hit.trans t3.symm) t3.symm eq6 (eq7.trans t0.symm) t4.symm ((eq9.trans hit).trans t3.symm)
+  have node16 (eq4 : x 4 = x 2) (eq5 : x 5 = x 3) (eq8 : x 8 = x 7) : (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
+    apply route G x (n:=4) (by decide) ![(false,0), (true,1), (false,1), (true,2)]
+      [(0,1), (1,1), (1,2), (0,2)] [(0,1), (1,2)] (by decide) (by decide)
+    · intro e he
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at he
+      rcases he with rfl | rfl | rfl | rfl
+      · have e : q (x 0) = x 1 := edge1
+        exact e ▸ qAdj (x 0)
+      · exact idAdj _
+      · have e : q (x 1) = x 2 := edge3
+        exact e ▸ qAdj (x 1)
+      · have e : p (x 0) = x 2 := (edge0.trans eq4)
+        exact e ▸ pAdj (x 0)
+    · intro e he hit
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at he
+      rcases he with rfl | rfl
+      · have t0 : x 4 = x 5 := (edge0.symm.trans ((congrArg p hit).trans edge2))
+        have t1 : x 1 = x 2 := (edge1.symm.trans ((congrArg q hit).trans edge3))
+        have t2 : x 1 = x 6 := (edge1.symm.trans ((congrArg q (((hit.trans t1).trans eq4.symm).trans t0)).trans edge9))
+        have t3 : x 1 = x 7 := (edge1.symm.trans ((congrArg q (hit.trans t2)).trans edge11))
+        have t4 : x 1 = x 9 := (edge1.symm.trans ((congrArg q ((hit.trans t3).trans eq8.symm)).trans edge12))
+        exact node0 hit.symm (t1.symm.trans hit.symm) ((((eq5.symm.trans t0.symm).trans eq4).trans t1.symm).trans hit.symm) ((eq4.trans t1.symm).trans hit.symm) (((t0.symm.trans eq4).trans t1.symm).trans hit.symm) (t2.symm.trans hit.symm) (t3.symm.trans hit.symm) ((eq8.trans t3.symm).trans hit.symm) (t4.symm.trans hit.symm)
+      · have t0 : x 0 = x 1 := (q.injective (edge1.trans (hit.trans edge3.symm)))
+        have t1 : x 1 = x 3 := (edge1.symm.trans ((congrArg q (t0.trans hit)).trans edge5))
+        have t2 : x 1 = x 6 := (edge1.symm.trans ((congrArg q ((t0.trans t1).trans eq5.symm)).trans edge9))
+        have t3 : x 1 = x 7 := (edge1.symm.trans ((congrArg q (t0.trans t2)).trans edge11))
+        have t4 : x 1 = x 9 := (edge1.symm.trans ((congrArg q ((t0.trans t3).trans eq8.symm)).trans edge12))
+        exact node0 t0.symm (hit.symm.trans t0.symm) (t1.symm.trans t0.symm) ((eq4.trans hit.symm).trans t0.symm) ((eq5.trans t1.symm).trans t0.symm) (t2.symm.trans t0.symm) (t3.symm.trans t0.symm) ((eq8.trans t3.symm).trans t0.symm) (t4.symm.trans t0.symm)
+  have node17 (eq3 : x 3 = x 0) (eq7 : x 7 = x 4) : (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
+    apply route G x (n:=8) (by decide) ![(false,0), (true,0), (false,2), (true,2), (false,1), (true,5), (false,4), (true,4)]
+      [(0,0), (2,0), (2,2), (1,2), (1,5), (4,5), (4,4), (0,4)] [(0,1), (0,2), (0,4), (0,5), (1,2), (1,4), (2,4), (2,5), (4,5)] (by decide) (by decide)
+    · intro e he
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at he
+      rcases he with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      · exact idAdj _
+      · have e : q (x 2) = x 0 := (edge5.trans eq3)
+        exact e ▸ qAdj (x 2)
+      · exact idAdj _
+      · have e : q (x 1) = x 2 := edge3
+        exact e ▸ qAdj (x 1)
+      · have e : p (x 1) = x 5 := edge2
+        exact e ▸ pAdj (x 1)
+      · have e : q (x 4) = x 5 := edge7
+        exact e ▸ qAdj (x 4)
+      · exact idAdj _
+      · have e : p (x 0) = x 4 := edge0
+        exact e ▸ pAdj (x 0)
+    · intro e he hit
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at he
+      rcases he with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      · have t0 : x 4 = x 5 := (edge0.symm.trans ((congrArg p hit).trans edge2))
+        have t1 : x 1 = x 2 := (edge1.symm.trans ((congrArg q hit).trans edge3))
+        have t2 : x 5 = x 6 := (edge2.symm.trans ((congrArg p t1).trans edge4))
+        have t3 : x 8 = x 9 := (edge8.symm.trans ((congrArg p t2).trans edge10))
+        exact node4 hit.symm (t1.symm.trans hit.symm) eq3 t0.symm (t2.symm.trans t0.symm) eq7 t3.symm
+      · have t0 : x 4 = x 6 := (edge0.symm.trans ((congrArg p hit).trans edge4))
+        have t1 : x 1 = x 3 := (edge1.symm.trans ((congrArg q hit).trans edge5))
+        have t2 : x 5 = x 6 := (edge2.symm.trans ((congrArg p ((t1.trans eq3).trans hit)).trans edge4))
+        have t3 : x 8 = x 9 := (edge8.symm.trans ((congrArg p t2).trans edge10))
+        exact node4 (t1.trans eq3) hit.symm eq3 (t2.trans t0.symm) t0.symm eq7 t3.symm
+      · have t0 : x 1 = x 5 := (edge1.symm.trans ((congrArg q hit).trans edge7))
+        have t1 : x 5 = x 8 := (edge2.symm.trans ((congrArg p t0).trans edge8))
+        have t2 : x 2 = x 6 := (edge3.symm.trans ((congrArg q t0).trans edge9))
+        have t3 : x 2 = x 9 := (edge3.symm.trans ((congrArg q (t0.trans t1)).trans edge12))
+        exact node5 eq3 hit.symm t0.symm t2.symm (eq7.trans hit.symm) (t1.symm.trans t0.symm) t3.symm
+      · have t0 : x 4 = x 8 := (edge0.symm.trans ((congrArg p hit).trans edge8))
+        have t1 : x 1 = x 6 := (edge1.symm.trans ((congrArg q hit).trans edge9))
+        have t2 : x 5 = x 9 := (edge2.symm.trans ((congrArg p t1).trans edge10))
+        have t3 : x 2 = x 7 := (edge3.symm.trans ((congrArg q t1).trans edge11))
+        exact node6 eq3 (eq7.symm.trans t3.symm) hit.symm t1.symm t3.symm ((t0.symm.trans eq7.symm).trans t3.symm) (t2.symm.trans hit.symm)
+      · have t0 : x 0 = x 1 := (q.injective (edge1.trans (hit.trans edge3.symm)))
+        have t1 : x 5 = x 6 := (edge2.symm.trans ((congrArg p hit).trans edge4))
+        have t2 : x 5 = x 7 := (edge2.symm.trans ((congrArg p (t0.symm.trans eq3.symm)).trans edge6))
+        have t3 : x 8 = x 9 := (edge8.symm.trans ((congrArg p t1).trans edge10))
+        exact node4 t0.symm (hit.symm.trans t0.symm) eq3 (t2.trans eq7) ((t1.symm.trans t2).trans eq7) eq7 t3.symm
+      · have t0 : x 0 = x 6 := (q.injective (edge1.trans ((hit.trans eq7.symm).trans edge11.symm)))
+        have t1 : x 2 = x 5 := (edge3.symm.trans ((congrArg q hit).trans edge7))
+        have t2 : x 6 = x 8 := (edge4.symm.trans ((congrArg p t1).trans edge8))
+        have t3 : x 7 = x 9 := (edge6.symm.trans ((congrArg p (eq3.trans t0)).trans edge10))
+        exact node7 eq3 hit.symm t1.symm t0.symm (eq7.trans hit.symm) (t2.symm.trans t0.symm) ((t3.symm.trans eq7).trans hit.symm)
+      · have t0 : x 1 = x 6 := (q.injective (edge3.trans ((hit.trans eq7.symm).trans edge11.symm)))
+        have t1 : x 3 = x 5 := (edge5.symm.trans ((congrArg q hit).trans edge7))
+        have t2 : x 7 = x 8 := (edge6.symm.trans ((congrArg p t1).trans edge8))
+        have t3 : x 5 = x 9 := (edge7.symm.trans ((congrArg q (eq7.symm.trans t2)).trans edge12))
+        exact node6 eq3 hit.symm (t1.symm.trans eq3) t0.symm (eq7.trans hit.symm) ((t2.symm.trans eq7).trans hit.symm) ((t3.symm.trans t1.symm).trans eq3)
+      · have t0 : x 1 = x 4 := (q.injective (edge3.trans (hit.trans edge7.symm)))
+        have t1 : x 6 = x 8 := (edge4.symm.trans ((congrArg p hit).trans edge8))
+        have t2 : x 3 = x 6 := (edge5.symm.trans ((congrArg q hit).trans edge9))
+        have t3 : x 7 = x 9 := (edge6.symm.trans ((congrArg p t2).trans edge10))
+        exact node7 eq3 t0.symm hit.symm (t2.symm.trans eq3) (eq7.trans t0.symm) ((t1.symm.trans t2.symm).trans eq3) ((t3.symm.trans eq7).trans t0.symm)
+      · have t0 : x 0 = x 1 := (p.injective (edge0.trans (hit.trans edge2.symm)))
+        have t1 : x 1 = x 2 := (edge1.symm.trans ((congrArg q t0).trans edge3))
+        have t2 : x 5 = x 6 := (edge2.symm.trans ((congrArg p t1).trans edge4))
+        have t3 : x 8 = x 9 := (edge8.symm.trans ((congrArg p t2).trans edge10))
+        exact node4 t0.symm (t1.symm.trans t0.symm) eq3 hit.symm (t2.symm.trans hit.symm) eq7 t3.symm
+  have node18 (eq8 : x 8 = x 0) (eq9 : x 9 = x 1) : (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
+    apply route G x (n:=8) (by decide) ![(false,0), (true,0), (false,5), (true,6), (false,2), (true,2), (false,1), (true,1)]
+      [(0,0), (5,0), (5,6), (2,6), (2,2), (1,2), (1,1), (0,1)] [(0,1), (0,2), (0,5), (0,6), (1,2), (1,5), (1,6), (2,5), (2,6)] (by decide) (by decide)
+    · intro e he
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at he
+      rcases he with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      · exact idAdj _
+      · have e : p (x 5) = x 0 := (edge8.trans eq8)
+        exact e ▸ pAdj (x 5)
+      · have e : q (x 5) = x 6 := edge9
+        exact e ▸ qAdj (x 5)
+      · have e : p (x 2) = x 6 := edge4
+        exact e ▸ pAdj (x 2)
+      · exact idAdj _
+      · have e : q (x 1) = x 2 := edge3
+        exact e ▸ qAdj (x 1)
+      · exact idAdj _
+      · have e : q (x 0) = x 1 := edge1
+        exact e ▸ qAdj (x 0)
+    · intro e he hit
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at he
+      rcases he with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      · have t0 : x 4 = x 5 := (edge0.symm.trans ((congrArg p hit).trans edge2))
+        have t1 : x 1 = x 2 := (edge1.symm.trans ((congrArg q hit).trans edge3))
+        have t2 : x 1 = x 3 := (edge1.symm.trans ((congrArg q (hit.trans t1)).trans edge5))
+        have t3 : x 5 = x 6 := (edge2.symm.trans ((congrArg p t1).trans edge4))
+        have t4 : x 5 = x 7 := (edge2.symm.trans ((congrArg p t2).trans edge6))
+        exact node2 hit.symm (t1.symm.trans hit.symm) (t2.symm.trans hit.symm) t0.symm (t3.symm.trans t0.symm) (t4.symm.trans t0.symm) eq8 (eq9.trans hit.symm)
+      · have t0 : x 4 = x 6 := (edge0.symm.trans ((congrArg p hit).trans edge4))
+        have t1 : x 1 = x 3 := (edge1.symm.trans ((congrArg q hit).trans edge5))
+        have t2 : x 5 = x 7 := (edge2.symm.trans ((congrArg p t1).trans edge6))
+        exact node9 hit.symm t1.symm t0.symm t2.symm eq8 eq9
+      · have t0 : x 4 = x 8 := (edge0.symm.trans ((congrArg p hit).trans edge8))
+        have t1 : x 1 = x 5 := (edge1.symm.trans ((congrArg q (eq8.symm.trans t0.symm)).trans edge7))
+        have t2 : x 1 = x 6 := (edge1.symm.trans ((congrArg q hit).trans edge9))
+        have t3 : x 1 = x 7 := (edge1.symm.trans ((congrArg q ((hit.trans t1.symm).trans t2)).trans edge11))
+        have t4 : x 1 = x 2 := (p.injective (edge2.trans ((t1.symm.trans t2).trans edge4.symm)))
+        have t5 : x 1 = x 3 := (p.injective (edge2.trans ((t1.symm.trans t3).trans edge6.symm)))
+        exact node0 (t1.trans hit.symm) ((t4.symm.trans t1).trans hit.symm) ((t5.symm.trans t1).trans hit.symm) (t0.trans eq8) hit.symm ((t2.symm.trans t1).trans hit.symm) ((t3.symm.trans t1).trans hit.symm) eq8 ((eq9.trans t1).trans hit.symm)
+      · have t0 : x 4 = x 9 := (edge0.symm.trans ((congrArg p hit).trans edge10))
+        have t1 : x 1 = x 7 := (edge1.symm.trans ((congrArg q hit).trans edge11))
+        have t2 : x 2 = x 5 := (edge3.symm.trans ((congrArg q (eq9.symm.trans t0.symm)).trans edge7))
+        have t3 : x 3 = x 6 := (edge5.symm.trans ((congrArg q t2).trans edge9))
+        exact node7 (t3.trans hit.symm) (t0.trans eq9) t2.symm hit.symm t1.symm eq8 eq9
+      · have t0 : x 0 = x 1 := (q.injective (edge1.trans (hit.trans edge3.symm)))
+        have t1 : x 1 = x 3 := (edge1.symm.trans ((congrArg q (t0.trans hit)).trans edge5))
+        have t2 : x 5 = x 6 := (edge2.symm.trans ((congrArg p hit).trans edge4))
+        have t3 : x 5 = x 7 := (edge2.symm.trans ((congrArg p t1).trans edge6))
+        have t4 : x 4 = x 5 := (q.injective (edge7.trans (t2.trans edge9.symm)))
+        exact node2 t0.symm (hit.symm.trans t0.symm) (t1.symm.trans t0.symm) t4.symm (t2.symm.trans t4.symm) (t3.symm.trans t4.symm) eq8 (eq9.trans t0.symm)
+      · have t0 : x 0 = x 4 := (q.injective (edge1.trans (hit.trans edge7.symm)))
+        have t1 : x 5 = x 8 := (edge2.symm.trans ((congrArg p hit).trans edge8))
+        have t2 : x 1 = x 6 := (p.injective (edge2.trans ((hit.symm.trans eq9.symm).trans edge10.symm)))
+        have t3 : x 2 = x 5 := (edge3.symm.trans ((congrArg q (((hit.trans t1).trans eq8).trans t0)).trans edge7))
+        have t4 : x 2 = x 7 := (edge3.symm.trans ((congrArg q t2).trans edge11))
+        have t5 : x 2 = x 3 := (p.injective (edge4.trans ((((t2.symm.trans hit).trans t3.symm).trans t4).trans edge6.symm)))
+        exact node0 ((hit.trans t1).trans eq8) ((t3.trans t1).trans eq8) (((t5.symm.trans t3).trans t1).trans eq8) t0.symm (t1.trans eq8) (((t2.symm.trans hit).trans t1).trans eq8) (((t4.symm.trans t3).trans t1).trans eq8) eq8 (((eq9.trans hit).trans t1).trans eq8)
+      · have t0 : x 0 = x 5 := (q.injective (edge1.trans (hit.trans edge9.symm)))
+        have t1 : x 1 = x 5 := (p.injective (edge2.trans ((t0.symm.trans eq8.symm).trans edge8.symm)))
+        have t2 : x 2 = x 6 := (edge3.symm.trans ((congrArg q t1).trans edge9))
+        have t3 : x 2 = x 7 := (edge3.symm.trans ((congrArg q hit).trans edge11))
+        have t4 : x 2 = x 3 := (p.injective (edge4.trans ((t2.symm.trans t3).trans edge6.symm)))
+        have t5 : x 2 = x 4 := (q.injective (edge5.trans ((((t4.symm.trans t2).trans hit.symm).trans t1).trans edge7.symm)))
+        exact node0 (t1.trans t0.symm) (((t2.trans hit.symm).trans t1).trans t0.symm) ((((t4.symm.trans t2).trans hit.symm).trans t1).trans t0.symm) ((((t5.symm.trans t2).trans hit.symm).trans t1).trans t0.symm) t0.symm ((hit.symm.trans t1).trans t0.symm) ((((t3.symm.trans t2).trans hit.symm).trans t1).trans t0.symm) eq8 ((eq9.trans t1).trans t0.symm)
+      · have t0 : x 1 = x 4 := (q.injective (edge3.trans (hit.trans edge7.symm)))
+        have t1 : x 6 = x 8 := (edge4.symm.trans ((congrArg p hit).trans edge8))
+        have t2 : x 3 = x 6 := (edge5.symm.trans ((congrArg q hit).trans edge9))
+        have t3 : x 7 = x 9 := (edge6.symm.trans ((congrArg p t2).trans edge10))
+        exact node7 ((t2.trans t1).trans eq8) t0.symm hit.symm (t1.trans eq8) (t3.trans eq9) eq8 eq9
+      · have t0 : x 1 = x 5 := (q.injective (edge3.trans (hit.trans edge9.symm)))
+        have t1 : x 6 = x 9 := (edge4.symm.trans ((congrArg p hit).trans edge10))
+        have t2 : x 3 = x 6 := (edge5.symm.trans ((congrArg q (((hit.trans t1).trans eq9).trans t0)).trans edge9))
+        have t3 : x 3 = x 7 := (edge5.symm.trans ((congrArg q hit).trans edge11))
+        have t4 : x 2 = x 8 := (q.injective (edge5.trans ((t2.trans t1).trans edge12.symm)))
+        have t5 : x 4 = x 5 := (q.injective (edge7.trans (((t0.symm.trans eq9.symm).trans t1.symm).trans edge9.symm)))
+        exact node0 ((((eq9.symm.trans t1.symm).trans hit.symm).trans t4).trans eq8) (t4.trans eq8) (((t2.trans hit.symm).trans t4).trans eq8) ((((((t5.trans t0.symm).trans eq9.symm).trans t1.symm).trans hit.symm).trans t4).trans eq8) (((((t0.symm.trans eq9.symm).trans t1.symm).trans hit.symm).trans t4).trans eq8) ((hit.symm.trans t4).trans eq8) ((((t3.symm.trans t2).trans hit.symm).trans t4).trans eq8) eq8 (((t1.symm.trans hit.symm).trans t4).trans eq8)
+  have node19 (eq8 : x 8 = x 1) (eq9 : x 9 = x 2) : (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
+    apply route G x (n:=4) (by decide) ![(false,1), (true,1), (false,5), (true,5)]
+      [(1,1), (5,1), (5,5), (1,5)] [(1,5)] (by decide) (by decide)
+    · intro e he
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at he
+      rcases he with rfl | rfl | rfl | rfl
+      · exact idAdj _
+      · have e : p (x 5) = x 1 := (edge8.trans eq8)
+        exact e ▸ pAdj (x 5)
+      · exact idAdj _
+      · have e : p (x 1) = x 5 := edge2
+        exact e ▸ pAdj (x 1)
+    · intro e he hit
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at he
+      rcases he with rfl
+      have t0 : x 0 = x 4 := (q.injective (edge1.trans (hit.trans edge7.symm)))
+      have t1 : x 2 = x 6 := (edge3.symm.trans ((congrArg q hit).trans edge9))
+      have t2 : x 3 = x 7 := (edge5.symm.trans ((congrArg q t1).trans edge11))
+      exact node10 t0.symm hit.symm t1.symm t2.symm eq8 eq9
+  have node20 (eq8 : x 8 = x 2) (eq9 : x 9 = x 3) : (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
+    apply route G x (n:=4) (by decide) ![(false,1), (true,2), (false,5), (true,5)]
+      [(1,2), (5,2), (5,5), (1,5)] [(1,5), (2,5)] (by decide) (by decide)
+    · intro e he
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at he
+      rcases he with rfl | rfl | rfl | rfl
+      · have e : q (x 1) = x 2 := edge3
+        exact e ▸ qAdj (x 1)
+      · have e : p (x 5) = x 2 := (edge8.trans eq8)
+        exact e ▸ pAdj (x 5)
+      · exact idAdj _
+      · have e : p (x 1) = x 5 := edge2
+        exact e ▸ pAdj (x 1)
+    · intro e he hit
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at he
+      rcases he with rfl | rfl
+      · have t0 : x 0 = x 4 := (q.injective (edge1.trans (hit.trans edge7.symm)))
+        have t1 : x 5 = x 8 := (edge2.symm.trans ((congrArg p hit).trans edge8))
+        have t2 : x 2 = x 3 := (edge3.symm.trans ((congrArg q ((hit.trans t1).trans eq8)).trans edge5))
+        have t3 : x 1 = x 4 := (q.injective (edge3.trans ((eq8.symm.trans t1.symm).trans edge7.symm)))
+        have t4 : x 2 = x 6 := (edge3.symm.trans ((congrArg q hit).trans edge9))
+        have t5 : x 2 = x 7 := (edge3.symm.trans ((congrArg q (((hit.trans t1).trans eq8).trans t4)).trans edge11))
+        exact node0 (t3.trans t0.symm) ((((eq8.symm.trans t1.symm).trans hit.symm).trans t3).trans t0.symm) (((((t2.symm.trans eq8.symm).trans t1.symm).trans hit.symm).trans t3).trans t0.symm) t0.symm ((hit.symm.trans t3).trans t0.symm) (((((t4.symm.trans eq8.symm).trans t1.symm).trans hit.symm).trans t3).trans t0.symm) (((((t5.symm.trans eq8.symm).trans t1.symm).trans hit.symm).trans t3).trans t0.symm) (((t1.symm.trans hit.symm).trans t3).trans t0.symm) ((((((eq9.trans t2.symm).trans eq8.symm).trans t1.symm).trans hit.symm).trans t3).trans t0.symm)
+      · have t0 : x 1 = x 5 := (p.injective (edge2.trans ((hit.symm.trans eq8.symm).trans edge8.symm)))
+        have t1 : x 2 = x 3 := (edge3.symm.trans ((congrArg q (t0.trans hit.symm)).trans edge5))
+        have t2 : x 1 = x 4 := (q.injective (edge3.trans (hit.trans edge7.symm)))
+        have t3 : x 2 = x 6 := (edge3.symm.trans ((congrArg q t0).trans edge9))
+        have t4 : x 2 = x 7 := (edge3.symm.trans ((congrArg q ((t0.trans hit.symm).trans t3)).trans edge11))
+        have t5 : x 0 = x 1 := (p.injective (edge0.trans ((t2.symm.trans t0).trans edge2.symm)))
+        exact node0 t5.symm ((hit.trans t0.symm).trans t5.symm) (((t1.symm.trans hit).trans t0.symm).trans t5.symm) (t2.symm.trans t5.symm) (t0.symm.trans t5.symm) (((t3.symm.trans hit).trans t0.symm).trans t5.symm) (((t4.symm.trans hit).trans t0.symm).trans t5.symm) (((eq8.trans hit).trans t0.symm).trans t5.symm) ((((eq9.trans t1.symm).trans hit).trans t0.symm).trans t5.symm)
+  have node21 (eq8 : x 8 = x 3) : (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
+    apply route G x (n:=4) (by decide) ![(false,2), (true,3), (false,5), (true,6)]
+      [(2,3), (5,3), (5,6), (2,6)] [(2,5), (3,6)] (by decide) (by decide)
+    · intro e he
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at he
+      rcases he with rfl | rfl | rfl | rfl
+      · have e : q (x 2) = x 3 := edge5
+        exact e ▸ qAdj (x 2)
+      · have e : p (x 5) = x 3 := (edge8.trans eq8)
+        exact e ▸ pAdj (x 5)
+      · have e : q (x 5) = x 6 := edge9
+        exact e ▸ qAdj (x 5)
+      · have e : p (x 2) = x 6 := edge4
+        exact e ▸ pAdj (x 2)
+    · intro e he hit
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at he
+      rcases he with rfl | rfl
+      · have t0 : x 1 = x 4 := (q.injective (edge3.trans (hit.trans edge7.symm)))
+        have t1 : x 6 = x 8 := (edge4.symm.trans ((congrArg p hit).trans edge8))
+        have t2 : x 7 = x 9 := (edge6.symm.trans ((congrArg p (eq8.symm.trans t1.symm)).trans edge10))
+        exact node13 t0.symm hit.symm (t1.trans eq8) eq8 t2.symm
+      · have t0 : x 2 = x 5 := (p.injective (edge4.trans ((hit.symm.trans eq8.symm).trans edge8.symm)))
+        have t1 : x 7 = x 9 := (edge6.symm.trans ((congrArg p hit).trans edge10))
+        have t2 : x 1 = x 4 := (q.injective (edge3.trans (t0.trans edge7.symm)))
+        exact node13 t2.symm t0.symm hit.symm eq8 t1.symm
+  have node22 (eq4 : x 4 = x 3) : (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
+    apply route G x (n:=8) (by decide) ![(false,0), (true,1), (false,1), (true,5), (false,5), (true,6), (false,2), (true,3)]
+      [(0,1), (1,1), (1,5), (5,5), (5,6), (2,6), (2,3), (0,3)] [(0,1), (0,2), (0,5), (1,2), (1,3), (1,5), (1,6), (2,5), (3,5), (3,6), (5,6)] (by decide) (by decide)
+    · intro e he
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at he
+      rcases he with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      · have e : q (x 0) = x 1 := edge1
+        exact e ▸ qAdj (x 0)
+      · exact idAdj _
+      · have e : p (x 1) = x 5 := edge2
+        exact e ▸ pAdj (x 1)
+      · exact idAdj _
+      · have e : q (x 5) = x 6 := edge9
+        exact e ▸ qAdj (x 5)
+      · have e : p (x 2) = x 6 := edge4
+        exact e ▸ pAdj (x 2)
+      · have e : q (x 2) = x 3 := edge5
+        exact e ▸ qAdj (x 2)
+      · have e : p (x 0) = x 3 := (edge0.trans eq4)
+        exact e ▸ pAdj (x 0)
+    · intro e he hit
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at he
+      rcases he with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      · have t0 : x 4 = x 5 := (edge0.symm.trans ((congrArg p hit).trans edge2))
+        have t1 : x 1 = x 2 := (edge1.symm.trans ((congrArg q hit).trans edge3))
+        have t2 : x 1 = x 3 := (edge1.symm.trans ((congrArg q (hit.trans t1)).trans edge5))
+        have t3 : x 1 = x 6 := (edge1.symm.trans ((congrArg q (((hit.trans t2).trans eq4.symm).trans t0)).trans edge9))
+        have t4 : x 1 = x 7 := (edge1.symm.trans ((congrArg q (hit.trans t3)).trans edge11))
+        have t5 : x 5 = x 8 := (edge2.symm.trans ((congrArg p ((t2.trans eq4.symm).trans t0)).trans edge8))
+        have t6 : x 5 = x 9 := (edge2.symm.trans ((congrArg p t3).trans edge10))
+        exact node0 hit.symm (t1.symm.trans hit.symm) (t2.symm.trans hit.symm) ((eq4.trans t2.symm).trans hit.symm) (((t0.symm.trans eq4).trans t2.symm).trans hit.symm) (t3.symm.trans hit.symm) (t4.symm.trans hit.symm) ((((t5.symm.trans t0.symm).trans eq4).trans t2.symm).trans hit.symm) ((((t6.symm.trans t0.symm).trans eq4).trans t2.symm).trans hit.symm)
+      · have t0 : x 4 = x 6 := (edge0.symm.trans ((congrArg p hit).trans edge4))
+        have t1 : x 1 = x 3 := (edge1.symm.trans ((congrArg q hit).trans edge5))
+        have t2 : x 0 = x 5 := (q.injective (edge1.trans (((t1.trans eq4.symm).trans t0).trans edge9.symm)))
+        have t3 : x 5 = x 7 := (edge2.symm.trans ((congrArg p t1).trans edge6))
+        have t4 : x 5 = x 9 := (edge2.symm.trans ((congrArg p ((t1.trans eq4.symm).trans t0)).trans edge10))
+        have t5 : x 1 = x 8 := (q.injective (edge3.trans (((hit.symm.trans t2).trans t4).trans edge12.symm)))
+        exact node3 hit.symm t1.symm (eq4.trans t1.symm) t2.symm ((t0.symm.trans eq4).trans t1.symm) (t3.symm.trans t2.symm) t5.symm (t4.symm.trans t2.symm)
+      · have t0 : x 4 = x 8 := (edge0.symm.trans ((congrArg p hit).trans edge8))
+        have t1 : x 1 = x 6 := (edge1.symm.trans ((congrArg q hit).trans edge9))
+        have t2 : x 5 = x 9 := (edge2.symm.trans ((congrArg p t1).trans edge10))
+        have t3 : x 2 = x 7 := (edge3.symm.trans ((congrArg q t1).trans edge11))
+        exact node11 eq4 hit.symm t1.symm t3.symm (t0.symm.trans eq4) (t2.symm.trans hit.symm)
+      · have t0 : x 0 = x 1 := (q.injective (edge1.trans (hit.trans edge3.symm)))
+        have t1 : x 1 = x 3 := (edge1.symm.trans ((congrArg q (t0.trans hit)).trans edge5))
+        have t2 : x 1 = x 5 := (edge1.symm.trans ((congrArg q ((t0.trans t1).trans eq4.symm)).trans edge7))
+        have t3 : x 1 = x 6 := (edge1.symm.trans ((congrArg q (t0.trans t2)).trans edge9))
+        have t4 : x 1 = x 7 := (edge1.symm.trans ((congrArg q (t0.trans t3)).trans edge11))
+        have t5 : x 5 = x 8 := (edge2.symm.trans ((congrArg p t2).trans edge8))
+        have t6 : x 5 = x 9 := (edge2.symm.trans ((congrArg p t3).trans edge10))
+        exact node0 t0.symm (hit.symm.trans t0.symm) (t1.symm.trans t0.symm) ((eq4.trans t1.symm).trans t0.symm) (t2.symm.trans t0.symm) (t3.symm.trans t0.symm) (t4.symm.trans t0.symm) ((t5.symm.trans t2.symm).trans t0.symm) ((t6.symm.trans t2.symm).trans t0.symm)
+      · have t0 : x 0 = x 2 := (q.injective (edge1.trans (hit.trans edge5.symm)))
+        have t1 : x 5 = x 7 := (edge2.symm.trans ((congrArg p hit).trans edge6))
+        have t2 : x 2 = x 5 := (edge3.symm.trans ((congrArg q (hit.trans eq4.symm)).trans edge7))
+        have t3 : x 1 = x 6 := (q.injective (edge3.trans ((t2.trans t1).trans edge11.symm)))
+        have t4 : x 6 = x 8 := (edge4.symm.trans ((congrArg p t2).trans edge8))
+        have t5 : x 7 = x 9 := (edge6.symm.trans ((congrArg p (hit.symm.trans t3)).trans edge10))
+        exact node3 t0.symm hit.symm (eq4.trans hit.symm) (t2.symm.trans t0.symm) t3.symm ((t1.symm.trans t2.symm).trans t0.symm) (t4.symm.trans t3.symm) (((t5.symm.trans t1.symm).trans t2.symm).trans t0.symm)
+      · have t0 : x 0 = x 4 := (q.injective (edge1.trans (hit.trans edge7.symm)))
+        have t1 : x 5 = x 8 := (edge2.symm.trans ((congrArg p hit).trans edge8))
+        have t2 : x 2 = x 6 := (edge3.symm.trans ((congrArg q hit).trans edge9))
+        have t3 : x 2 = x 9 := (edge3.symm.trans ((congrArg q (hit.trans t1)).trans edge12))
+        have t4 : x 3 = x 7 := (edge5.symm.trans ((congrArg q t2).trans edge11))
+        exact node5 (eq4.symm.trans t0.symm) t0.symm hit.symm t2.symm ((t4.symm.trans eq4.symm).trans t0.symm) (t1.symm.trans hit.symm) t3.symm
+      · have t0 : x 0 = x 5 := (q.injective (edge1.trans (hit.trans edge9.symm)))
+        have t1 : x 5 = x 9 := (edge2.symm.trans ((congrArg p hit).trans edge10))
+        have t2 : x 2 = x 7 := (edge3.symm.trans ((congrArg q hit).trans edge11))
+        have t3 : x 4 = x 8 := (q.injective (edge7.trans (t1.trans edge12.symm)))
+        exact node11 eq4 t0.symm hit.symm t2.symm (t3.symm.trans eq4) (t1.symm.trans t0.symm)
+      · have t0 : x 1 = x 4 := (q.injective (edge3.trans (hit.trans edge7.symm)))
+        have t1 : x 6 = x 8 := (edge4.symm.trans ((congrArg p hit).trans edge8))
+        have t2 : x 3 = x 6 := (edge5.symm.trans ((congrArg q hit).trans edge9))
+        have t3 : x 7 = x 9 := (edge6.symm.trans ((congrArg p t2).trans edge10))
+        have t4 : x 5 = x 7 := (edge7.symm.trans ((congrArg q (eq4.trans t2)).trans edge11))
+        have t5 : x 0 = x 2 := (p.injective (edge0.trans ((eq4.trans t2).trans edge4.symm)))
+        exact node3 t5.symm (eq4.symm.trans t0.symm) t0.symm (hit.symm.trans t5.symm) ((t2.symm.trans eq4.symm).trans t0.symm) ((t4.symm.trans hit.symm).trans t5.symm) (((t1.symm.trans t2.symm).trans eq4.symm).trans t0.symm) (((t3.symm.trans t4.symm).trans hit.symm).trans t5.symm)
+      · have t0 : x 0 = x 1 := (p.injective (edge0.trans ((eq4.trans hit).trans edge2.symm)))
+        have t1 : x 1 = x 2 := (edge1.symm.trans ((congrArg q t0).trans edge3))
+        have t2 : x 1 = x 3 := (edge1.symm.trans ((congrArg q (t0.trans t1)).trans edge5))
+        have t3 : x 1 = x 6 := (edge1.symm.trans ((congrArg q ((t0.trans t2).trans hit)).trans edge9))
+        have t4 : x 1 = x 7 := (edge1.symm.trans ((congrArg q (t0.trans t3)).trans edge11))
+        have t5 : x 5 = x 8 := (edge2.symm.trans ((congrArg p (t2.trans hit)).trans edge8))
+        have t6 : x 5 = x 9 := (edge2.symm.trans ((congrArg p t3).trans edge10))
+        exact node0 t0.symm (t1.symm.trans t0.symm) (t2.symm.trans t0.symm) ((eq4.trans t2.symm).trans t0.symm) ((hit.symm.trans t2.symm).trans t0.symm) (t3.symm.trans t0.symm) (t4.symm.trans t0.symm) (((t5.symm.trans hit.symm).trans t2.symm).trans t0.symm) (((t6.symm.trans hit.symm).trans t2.symm).trans t0.symm)
+      · have t0 : x 0 = x 2 := (p.injective (edge0.trans ((eq4.trans hit).trans edge4.symm)))
+        have t1 : x 1 = x 3 := (edge1.symm.trans ((congrArg q t0).trans edge5))
+        have t2 : x 0 = x 5 := (q.injective (edge1.trans ((t1.trans hit).trans edge9.symm)))
+        have t3 : x 5 = x 7 := (edge2.symm.trans ((congrArg p t1).trans edge6))
+        have t4 : x 5 = x 9 := (edge2.symm.trans ((congrArg p (t1.trans hit)).trans edge10))
+        have t5 : x 1 = x 8 := (q.injective (edge3.trans (((t0.symm.trans t2).trans t4).trans edge12.symm)))
+        exact node3 t0.symm t1.symm (eq4.trans t1.symm) t2.symm (hit.symm.trans t1.symm) (t3.symm.trans t2.symm) t5.symm (t4.symm.trans t2.symm)
+      · have t0 : x 1 = x 2 := (p.injective (edge2.trans (hit.trans edge4.symm)))
+        have t1 : x 2 = x 3 := (edge3.symm.trans ((congrArg q t0).trans edge5))
+        have t2 : x 2 = x 5 := (edge3.symm.trans ((congrArg q ((t0.trans t1).trans eq4.symm)).trans edge7))
+        have t3 : x 2 = x 7 := (edge3.symm.trans ((congrArg q ((t0.trans t2).trans hit)).trans edge11))
+        have t4 : x 6 = x 8 := (edge4.symm.trans ((congrArg p t2).trans edge8))
+        have t5 : x 6 = x 9 := (edge4.symm.trans ((congrArg p (t2.trans hit)).trans edge10))
+        have t6 : x 0 = x 1 := (p.injective (edge0.trans (((eq4.trans t1.symm).trans t2).trans edge2.symm)))
+        exact node0 t6.symm (t0.symm.trans t6.symm) ((t1.symm.trans t0.symm).trans t6.symm) (((eq4.trans t1.symm).trans t0.symm).trans t6.symm) ((t2.symm.trans t0.symm).trans t6.symm) (((hit.symm.trans t2.symm).trans t0.symm).trans t6.symm) ((t3.symm.trans t0.symm).trans t6.symm) ((((t4.symm.trans hit.symm).trans t2.symm).trans t0.symm).trans t6.symm) ((((t5.symm.trans hit.symm).trans t2.symm).trans t0.symm).trans t6.symm)
+  have node23 : (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
+    apply route G x (n:=16) (by decide) ![(false,0), (true,1), (false,1), (true,2), (false,2), (true,3), (false,3), (true,7), (false,6), (true,9), (false,8), (true,8), (false,5), (true,5), (false,4), (true,4)]
+      [(0,1), (1,1), (1,2), (2,2), (2,3), (3,3), (3,7), (6,7), (6,9), (8,9), (8,8), (5,8), (5,5), (4,5), (4,4), (0,4)] [(0,1), (0,2), (0,3), (0,4), (0,5), (0,6), (0,8), (1,2), (1,3), (1,4), (1,5), (1,6), (1,7), (1,8), (1,9), (2,3), (2,4), (2,5), (2,6), (2,7), (2,8), (2,9), (3,4), (3,5), (3,6), (3,7), (3,8), (3,9), (4,5), (4,6), (4,7), (4,8), (4,9), (5,6), (5,7), (5,8), (5,9), (6,8), (7,8), (7,9), (8,9)] (by decide) (by decide)
+    · intro e he
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at he
+      rcases he with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      · have e : q (x 0) = x 1 := edge1
+        exact e ▸ qAdj (x 0)
+      · exact idAdj _
+      · have e : q (x 1) = x 2 := edge3
+        exact e ▸ qAdj (x 1)
+      · exact idAdj _
+      · have e : q (x 2) = x 3 := edge5
+        exact e ▸ qAdj (x 2)
+      · exact idAdj _
+      · have e : p (x 3) = x 7 := edge6
+        exact e ▸ pAdj (x 3)
+      · have e : q (x 6) = x 7 := edge11
+        exact e ▸ qAdj (x 6)
+      · have e : p (x 6) = x 9 := edge10
+        exact e ▸ pAdj (x 6)
+      · have e : q (x 8) = x 9 := edge12
+        exact e ▸ qAdj (x 8)
+      · exact idAdj _
+      · have e : p (x 5) = x 8 := edge8
+        exact e ▸ pAdj (x 5)
+      · exact idAdj _
+      · have e : q (x 4) = x 5 := edge7
+        exact e ▸ qAdj (x 4)
+      · exact idAdj _
+      · have e : p (x 0) = x 4 := edge0
+        exact e ▸ pAdj (x 0)
+    · intro e he hit
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at he
+      rcases he with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      · have t0 : x 4 = x 5 := (edge0.symm.trans ((congrArg p hit).trans edge2))
+        have t1 : x 1 = x 2 := (edge1.symm.trans ((congrArg q hit).trans edge3))
+        have t2 : x 1 = x 3 := (edge1.symm.trans ((congrArg q (hit.trans t1)).trans edge5))
+        have t3 : x 5 = x 6 := (edge2.symm.trans ((congrArg p t1).trans edge4))
+        have t4 : x 5 = x 7 := (edge2.symm.trans ((congrArg p t2).trans edge6))
+        have t5 : x 8 = x 9 := (edge8.symm.trans ((congrArg p t3).trans edge10))
+        exact node4 hit.symm (t1.symm.trans hit.symm) (t2.symm.trans hit.symm) t0.symm (t3.symm.trans t0.symm) (t4.symm.trans t0.symm) t5.symm
+      · have t0 : x 4 = x 6 := (edge0.symm.trans ((congrArg p hit).trans edge4))
+        have t1 : x 1 = x 3 := (edge1.symm.trans ((congrArg q hit).trans edge5))
+        have t2 : x 5 = x 7 := (edge2.symm.trans ((congrArg p t1).trans edge6))
+        exact node14 hit.symm t1.symm t0.symm t2.symm
+      · have t0 : x 4 = x 7 := (edge0.symm.trans ((congrArg p hit).trans edge6))
+        exact node17 hit.symm t0.symm
+      · have t0 : x 1 = x 5 := (edge1.symm.trans ((congrArg q hit).trans edge7))
+        have t1 : x 5 = x 8 := (edge2.symm.trans ((congrArg p t0).trans edge8))
+        have t2 : x 2 = x 6 := (edge3.symm.trans ((congrArg q t0).trans edge9))
+        have t3 : x 2 = x 9 := (edge3.symm.trans ((congrArg q (t0.trans t1)).trans edge12))
+        have t4 : x 3 = x 7 := (edge5.symm.trans ((congrArg q t2).trans edge11))
+        exact node10 hit.symm t0.symm t2.symm t4.symm (t1.symm.trans t0.symm) t3.symm
+      · have t0 : x 4 = x 8 := (edge0.symm.trans ((congrArg p hit).trans edge8))
+        have t1 : x 1 = x 6 := (edge1.symm.trans ((congrArg q hit).trans edge9))
+        have t2 : x 5 = x 9 := (edge2.symm.trans ((congrArg p t1).trans edge10))
+        have t3 : x 2 = x 7 := (edge3.symm.trans ((congrArg q t1).trans edge11))
+        exact node12 hit.symm t1.symm t3.symm t0.symm (t2.symm.trans hit.symm)
+      · have t0 : x 4 = x 9 := (edge0.symm.trans ((congrArg p hit).trans edge10))
+        have t1 : x 1 = x 7 := (edge1.symm.trans ((congrArg q hit).trans edge11))
+        exact node15 hit.symm t1.symm t0.symm
+      · have t0 : x 1 = x 9 := (edge1.symm.trans ((congrArg q hit).trans edge12))
+        exact node18 hit.symm t0.symm
+      · have t0 : x 0 = x 1 := (q.injective (edge1.trans (hit.trans edge3.symm)))
+        have t1 : x 1 = x 3 := (edge1.symm.trans ((congrArg q (t0.trans hit)).trans edge5))
+        have t2 : x 5 = x 6 := (edge2.symm.trans ((congrArg p hit).trans edge4))
+        have t3 : x 5 = x 7 := (edge2.symm.trans ((congrArg p t1).trans edge6))
+        have t4 : x 4 = x 5 := (q.injective (edge7.trans (t2.trans edge9.symm)))
+        have t5 : x 8 = x 9 := (edge8.symm.trans ((congrArg p t2).trans edge10))
+        exact node4 t0.symm (hit.symm.trans t0.symm) (t1.symm.trans t0.symm) t4.symm (t2.symm.trans t4.symm) (t3.symm.trans t4.symm) t5.symm
+      · have t0 : x 0 = x 2 := (q.injective (edge1.trans (hit.trans edge5.symm)))
+        have t1 : x 5 = x 7 := (edge2.symm.trans ((congrArg p hit).trans edge6))
+        have t2 : x 4 = x 6 := (q.injective (edge7.trans (t1.trans edge11.symm)))
+        exact node14 t0.symm hit.symm t2.symm t1.symm
+      · have t0 : x 2 = x 5 := (edge3.symm.trans ((congrArg q hit).trans edge7))
+        have t1 : x 6 = x 8 := (edge4.symm.trans ((congrArg p t0).trans edge8))
+        have t2 : x 3 = x 6 := (edge5.symm.trans ((congrArg q t0).trans edge9))
+        have t3 : x 7 = x 9 := (edge6.symm.trans ((congrArg p t2).trans edge10))
+        exact node13 hit.symm t0.symm t2.symm (t1.symm.trans t2.symm) t3.symm
+      · have t0 : x 0 = x 4 := (q.injective (edge1.trans (hit.trans edge7.symm)))
+        have t1 : x 5 = x 8 := (edge2.symm.trans ((congrArg p hit).trans edge8))
+        have t2 : x 2 = x 6 := (edge3.symm.trans ((congrArg q hit).trans edge9))
+        have t3 : x 2 = x 9 := (edge3.symm.trans ((congrArg q (hit.trans t1)).trans edge12))
+        have t4 : x 3 = x 7 := (edge5.symm.trans ((congrArg q t2).trans edge11))
+        exact node10 t0.symm hit.symm t2.symm t4.symm (t1.symm.trans hit.symm) t3.symm
+      · have t0 : x 0 = x 5 := (q.injective (edge1.trans (hit.trans edge9.symm)))
+        have t1 : x 5 = x 9 := (edge2.symm.trans ((congrArg p hit).trans edge10))
+        have t2 : x 2 = x 7 := (edge3.symm.trans ((congrArg q hit).trans edge11))
+        have t3 : x 4 = x 8 := (q.injective (edge7.trans (t1.trans edge12.symm)))
+        exact node12 t0.symm hit.symm t2.symm t3.symm (t1.symm.trans t0.symm)
+      · have t0 : x 0 = x 6 := (q.injective (edge1.trans (hit.trans edge11.symm)))
+        have t1 : x 4 = x 9 := (edge0.symm.trans ((congrArg p t0).trans edge10))
+        exact node15 t0.symm hit.symm t1.symm
+      · have t0 : x 2 = x 9 := (edge3.symm.trans ((congrArg q hit).trans edge12))
+        exact node19 hit.symm t0.symm
+      · have t0 : x 0 = x 8 := (q.injective (edge1.trans (hit.trans edge12.symm)))
+        exact node18 t0.symm hit.symm
+      · have t0 : x 1 = x 2 := (q.injective (edge3.trans (hit.trans edge5.symm)))
+        have t1 : x 6 = x 7 := (edge4.symm.trans ((congrArg p hit).trans edge6))
+        have t2 : x 5 = x 6 := (q.injective (edge9.trans (t1.trans edge11.symm)))
+        have t3 : x 0 = x 1 := (q.injective (edge1.trans (t0.trans edge3.symm)))
+        have t4 : x 4 = x 5 := (q.injective (edge7.trans (t2.trans edge9.symm)))
+        have t5 : x 8 = x 9 := (edge8.symm.trans ((congrArg p t2).trans edge10))
+        exact node4 t3.symm (t0.symm.trans t3.symm) ((hit.symm.trans t0.symm).trans t3.symm) t4.symm (t2.symm.trans t4.symm) ((t1.symm.trans t2.symm).trans t4.symm) t5.symm
+      · have t0 : x 3 = x 5 := (edge5.symm.trans ((congrArg q hit).trans edge7))
+        have t1 : x 7 = x 8 := (edge6.symm.trans ((congrArg p t0).trans edge8))
+        exact node16 hit.symm t0.symm t1.symm
+      · have t0 : x 1 = x 4 := (q.injective (edge3.trans (hit.trans edge7.symm)))
+        have t1 : x 6 = x 8 := (edge4.symm.trans ((congrArg p hit).trans edge8))
+        have t2 : x 3 = x 6 := (edge5.symm.trans ((congrArg q hit).trans edge9))
+        have t3 : x 7 = x 9 := (edge6.symm.trans ((congrArg p t2).trans edge10))
+        exact node13 t0.symm hit.symm t2.symm (t1.symm.trans t2.symm) t3.symm
+      · have t0 : x 1 = x 5 := (q.injective (edge3.trans (hit.trans edge9.symm)))
+        have t1 : x 6 = x 9 := (edge4.symm.trans ((congrArg p hit).trans edge10))
+        have t2 : x 3 = x 7 := (edge5.symm.trans ((congrArg q hit).trans edge11))
+        have t3 : x 5 = x 8 := (q.injective (edge9.trans (t1.trans edge12.symm)))
+        have t4 : x 0 = x 4 := (q.injective (edge1.trans (t0.trans edge7.symm)))
+        exact node10 t4.symm t0.symm hit.symm t2.symm (t3.symm.trans t0.symm) (t1.symm.trans hit.symm)
+      · have t0 : x 1 = x 6 := (q.injective (edge3.trans (hit.trans edge11.symm)))
+        have t1 : x 0 = x 5 := (q.injective (edge1.trans (t0.trans edge9.symm)))
+        have t2 : x 5 = x 9 := (edge2.symm.trans ((congrArg p t0).trans edge10))
+        have t3 : x 4 = x 8 := (q.injective (edge7.trans (t2.trans edge12.symm)))
+        exact node12 t1.symm t0.symm hit.symm t3.symm (t2.symm.trans t1.symm)
+      · have t0 : x 3 = x 9 := (edge5.symm.trans ((congrArg q hit).trans edge12))
+        exact node20 hit.symm t0.symm
+      · have t0 : x 1 = x 8 := (q.injective (edge3.trans (hit.trans edge12.symm)))
+        exact node19 t0.symm hit.symm
+      · exact node22 hit.symm
+      · have t0 : x 2 = x 4 := (q.injective (edge5.trans (hit.trans edge7.symm)))
+        have t1 : x 7 = x 8 := (edge6.symm.trans ((congrArg p hit).trans edge8))
+        exact node16 t0.symm hit.symm t1.symm
+      · have t0 : x 2 = x 5 := (q.injective (edge5.trans (hit.trans edge9.symm)))
+        have t1 : x 7 = x 9 := (edge6.symm.trans ((congrArg p hit).trans edge10))
+        have t2 : x 6 = x 8 := (q.injective (edge11.trans (t1.trans edge12.symm)))
+        have t3 : x 1 = x 4 := (q.injective (edge3.trans (t0.trans edge7.symm)))
+        exact node13 t3.symm t0.symm hit.symm (t2.symm.trans hit.symm) t1.symm
+      · have t0 : x 2 = x 6 := (q.injective (edge5.trans (hit.trans edge11.symm)))
+        have t1 : x 1 = x 5 := (q.injective (edge3.trans (t0.trans edge9.symm)))
+        have t2 : x 6 = x 9 := (edge4.symm.trans ((congrArg p t0).trans edge10))
+        have t3 : x 5 = x 8 := (q.injective (edge9.trans (t2.trans edge12.symm)))
+        have t4 : x 0 = x 4 := (q.injective (edge1.trans (t1.trans edge7.symm)))
+        exact node10 t4.symm t1.symm t0.symm hit.symm (t3.symm.trans t1.symm) (t2.symm.trans t0.symm)
+      · exact node21 hit.symm
+      · have t0 : x 2 = x 8 := (q.injective (edge5.trans (hit.trans edge12.symm)))
+        exact node20 t0.symm hit.symm
+      · have t0 : x 0 = x 1 := (p.injective (edge0.trans (hit.trans edge2.symm)))
+        have t1 : x 1 = x 2 := (edge1.symm.trans ((congrArg q t0).trans edge3))
+        have t2 : x 1 = x 3 := (edge1.symm.trans ((congrArg q (t0.trans t1)).trans edge5))
+        have t3 : x 5 = x 6 := (edge2.symm.trans ((congrArg p t1).trans edge4))
+        have t4 : x 5 = x 7 := (edge2.symm.trans ((congrArg p t2).trans edge6))
+        have t5 : x 8 = x 9 := (edge8.symm.trans ((congrArg p t3).trans edge10))
+        exact node4 t0.symm (t1.symm.trans t0.symm) (t2.symm.trans t0.symm) hit.symm (t3.symm.trans hit.symm) (t4.symm.trans hit.symm) t5.symm
+      · have t0 : x 0 = x 2 := (p.injective (edge0.trans (hit.trans edge4.symm)))
+        have t1 : x 1 = x 3 := (edge1.symm.trans ((congrArg q t0).trans edge5))
+        have t2 : x 5 = x 7 := (edge2.symm.trans ((congrArg p t1).trans edge6))
+        exact node14 t0.symm t1.symm hit.symm t2.symm
+      · have t0 : x 0 = x 3 := (p.injective (edge0.trans (hit.trans edge6.symm)))
+        exact node17 t0.symm hit.symm
+      · have t0 : x 0 = x 5 := (p.injective (edge0.trans (hit.trans edge8.symm)))
+        have t1 : x 1 = x 6 := (edge1.symm.trans ((congrArg q t0).trans edge9))
+        have t2 : x 5 = x 9 := (edge2.symm.trans ((congrArg p t1).trans edge10))
+        have t3 : x 2 = x 7 := (edge3.symm.trans ((congrArg q t1).trans edge11))
+        exact node12 t0.symm t1.symm t3.symm hit.symm (t2.symm.trans t0.symm)
+      · have t0 : x 0 = x 6 := (p.injective (edge0.trans (hit.trans edge10.symm)))
+        have t1 : x 1 = x 7 := (edge1.symm.trans ((congrArg q t0).trans edge11))
+        exact node15 t0.symm t1.symm hit.symm
+      · have t0 : x 1 = x 2 := (p.injective (edge2.trans (hit.trans edge4.symm)))
+        have t1 : x 2 = x 3 := (edge3.symm.trans ((congrArg q t0).trans edge5))
+        have t2 : x 6 = x 7 := (edge4.symm.trans ((congrArg p t1).trans edge6))
+        have t3 : x 4 = x 5 := (q.injective (edge7.trans (hit.trans edge9.symm)))
+        have t4 : x 8 = x 9 := (edge8.symm.trans ((congrArg p hit).trans edge10))
+        have t5 : x 0 = x 1 := (p.injective (edge0.trans (t3.trans edge2.symm)))
+        exact node4 t5.symm (t0.symm.trans t5.symm) ((t1.symm.trans t0.symm).trans t5.symm) t3.symm (hit.symm.trans t3.symm) ((t2.symm.trans hit.symm).trans t3.symm) t4.symm
+      · have t0 : x 1 = x 3 := (p.injective (edge2.trans (hit.trans edge6.symm)))
+        have t1 : x 4 = x 6 := (q.injective (edge7.trans (hit.trans edge11.symm)))
+        have t2 : x 0 = x 2 := (p.injective (edge0.trans (t1.trans edge4.symm)))
+        exact node14 t2.symm t0.symm t1.symm hit.symm
+      · have t0 : x 1 = x 5 := (p.injective (edge2.trans (hit.trans edge8.symm)))
+        have t1 : x 2 = x 6 := (edge3.symm.trans ((congrArg q t0).trans edge9))
+        have t2 : x 2 = x 9 := (edge3.symm.trans ((congrArg q (t0.trans hit)).trans edge12))
+        have t3 : x 3 = x 7 := (edge5.symm.trans ((congrArg q t1).trans edge11))
+        have t4 : x 0 = x 4 := (q.injective (edge1.trans (t0.trans edge7.symm)))
+        exact node10 t4.symm t0.symm t1.symm t3.symm (hit.symm.trans t0.symm) t2.symm
+      · have t0 : x 1 = x 6 := (p.injective (edge2.trans (hit.trans edge10.symm)))
+        have t1 : x 2 = x 7 := (edge3.symm.trans ((congrArg q t0).trans edge11))
+        have t2 : x 4 = x 8 := (q.injective (edge7.trans (hit.trans edge12.symm)))
+        have t3 : x 0 = x 5 := (p.injective (edge0.trans (t2.trans edge8.symm)))
+        exact node12 t3.symm t0.symm t1.symm t2.symm (hit.symm.trans t3.symm)
+      · have t0 : x 2 = x 5 := (p.injective (edge4.trans (hit.trans edge8.symm)))
+        have t1 : x 3 = x 6 := (edge5.symm.trans ((congrArg q t0).trans edge9))
+        have t2 : x 7 = x 9 := (edge6.symm.trans ((congrArg p t1).trans edge10))
+        have t3 : x 1 = x 4 := (q.injective (edge3.trans (t0.trans edge7.symm)))
+        exact node13 t3.symm t0.symm t1.symm (hit.symm.trans t1.symm) t2.symm
+      · have t0 : x 3 = x 5 := (p.injective (edge6.trans (hit.trans edge8.symm)))
+        have t1 : x 2 = x 4 := (q.injective (edge5.trans (t0.trans edge7.symm)))
+        exact node16 t1.symm t0.symm hit.symm
+      · have t0 : x 3 = x 6 := (p.injective (edge6.trans (hit.trans edge10.symm)))
+        have t1 : x 6 = x 8 := (q.injective (edge11.trans (hit.trans edge12.symm)))
+        have t2 : x 2 = x 5 := (p.injective (edge4.trans (t1.trans edge8.symm)))
+        have t3 : x 1 = x 4 := (q.injective (edge3.trans (t2.trans edge7.symm)))
+        exact node13 t3.symm t2.symm t0.symm (t1.symm.trans t0.symm) hit.symm
+      · have t0 : x 5 = x 6 := (p.injective (edge8.trans (hit.trans edge10.symm)))
+        have t1 : x 6 = x 7 := (edge9.symm.trans ((congrArg q t0).trans edge11))
+        have t2 : x 1 = x 2 := (p.injective (edge2.trans (t0.trans edge4.symm)))
+        have t3 : x 1 = x 3 := (p.injective (edge2.trans ((t0.trans t1).trans edge6.symm)))
+        have t4 : x 4 = x 5 := (q.injective (edge7.trans (t0.trans edge9.symm)))
+        have t5 : x 0 = x 1 := (p.injective (edge0.trans (t4.trans edge2.symm)))
+        exact node4 t5.symm (t2.symm.trans t5.symm) (t3.symm.trans t5.symm) t4.symm (t0.symm.trans t4.symm) ((t1.symm.trans t0.symm).trans t4.symm) hit.symm
+  exact node23
+
+/-- Exchanging sides reverses every matching edge. -/
+private theorem unflip {X : Type*} (G : SimpleGraph (Bool × X))
+    (h : cycleGraph 4 ⊑ (G.comap (fun a : Bool × X => (!a.1,a.2))) ∨ cycleGraph 8 ⊑ (G.comap (fun a : Bool × X => (!a.1,a.2))) ∨ cycleGraph 16 ⊑ (G.comap (fun a : Bool × X => (!a.1,a.2)))) : (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
+  let flip : Bool × X ↪ Bool × X := ⟨(fun a : Bool × X => (!a.1,a.2)), fun a b h => by
+    simpa using congrArg (fun a : Bool × X => (!a.1,a.2)) h⟩
+  have sub : G.comap flip ⊑ G := isContained_iff_exists_le_comap.mpr ⟨flip,le_rfl⟩
+  rcases h with h|h|h
+  · exact Or.inl (h.trans sub)
+  · exact Or.inr (Or.inl (h.trans sub))
+  · exact Or.inr (Or.inr (h.trans sub))
+
+private theorem inverseSep {X : Type*} (p q : Equiv.Perm X)
+    (sep : ∀ x, p x ≠ x ∧ q x ≠ x ∧ p x ≠ q x) (x : X) :
+    p.symm x ≠ x ∧ q.symm x ≠ x ∧ p.symm x ≠ q.symm x := by
+  refine ⟨fun h => (sep x).1 (p.symm_apply_eq.mp h).symm, fun h => (sep x).2.1 (q.symm_apply_eq.mp h).symm, ?_⟩
+  intro h
+  exact (sep (p.symm x)).2.2 (by rw [p.apply_symm_apply, h, q.apply_symm_apply])
+
+theorem shape1 {X : Type*} (G : SimpleGraph (Bool × X)) (p q : Equiv.Perm X)
+    (sep : ∀ x, p x ≠ x ∧ q x ≠ x ∧ p x ≠ q x)
+    (idAdj : ∀ u, G.Adj (false,u) (true,u))
+    (pAdj : ∀ u, G.Adj (false,u) (true,p u))
+    (qAdj : ∀ u, G.Adj (false,u) (true,q u)) (x : (Fin 10) → X)
+    (edge0 : p (x 0) = x 3)
+    (edge1 : q (x 0) = x 1)
+    (edge2 : p (x 1) = x 4)
+    (edge3 : p (x 2) = x 6)
+    (edge4 : q (x 2) = x 3)
+    (edge5 : p (x 3) = x 7)
+    (edge6 : q (x 3) = x 4)
+    (edge7 : p (x 4) = x 8)
+    (edge8 : q (x 4) = x 5)
+    (edge9 : p (x 5) = x 9)
+    (edge10 : q (x 6) = x 7)
+    (edge11 : q (x 7) = x 8)
+    (edge12 : q (x 8) = x 9)
+    : (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
+  apply unflip G
+  apply shape0 (G.comap (fun a : Bool × X => (!a.1,a.2))) p.symm q.symm (inverseSep p q sep)
+    (fun t => (idAdj t).symm)
+    (fun t => by change G.Adj (true,t) (false,p.symm t); simpa using (pAdj (p.symm t)).symm)
+    (fun t => by change G.Adj (true,t) (false,q.symm t); simpa using (qAdj (q.symm t)).symm) ![x 9, x 8, x 7, x 6, x 5, x 4, x 3, x 2, x 1, x 0]
+  · exact p.symm_apply_eq.mpr edge9.symm
+  · exact q.symm_apply_eq.mpr edge12.symm
+  · exact p.symm_apply_eq.mpr edge7.symm
+  · exact q.symm_apply_eq.mpr edge11.symm
+  · exact p.symm_apply_eq.mpr edge5.symm
+  · exact q.symm_apply_eq.mpr edge10.symm
+  · exact p.symm_apply_eq.mpr edge3.symm
+  · exact q.symm_apply_eq.mpr edge8.symm
+  · exact p.symm_apply_eq.mpr edge2.symm
+  · exact q.symm_apply_eq.mpr edge6.symm
+  · exact p.symm_apply_eq.mpr edge0.symm
+  · exact q.symm_apply_eq.mpr edge4.symm
+  · exact q.symm_apply_eq.mpr edge1.symm
+
+theorem shape2 {X : Type*} (G : SimpleGraph (Bool × X)) (p q : Equiv.Perm X)
+    (sep : ∀ x, p x ≠ x ∧ q x ≠ x ∧ p x ≠ q x)
+    (idAdj : ∀ u, G.Adj (false,u) (true,u))
+    (pAdj : ∀ u, G.Adj (false,u) (true,p u))
+    (qAdj : ∀ u, G.Adj (false,u) (true,q u)) (x : (Fin 10) → X)
+    (edge0 : p (x 0) = x 2)
+    (edge1 : q (x 0) = x 1)
+    (edge2 : p (x 1) = x 3)
+    (edge3 : p (x 2) = x 5)
+    (edge4 : q (x 2) = x 3)
+    (edge5 : p (x 3) = x 6)
+    (edge6 : q (x 3) = x 4)
+    (edge7 : p (x 4) = x 7)
+    (edge8 : p (x 5) = x 8)
+    (edge9 : q (x 5) = x 6)
+    (edge10 : p (x 6) = x 9)
+    (edge11 : q (x 6) = x 7)
+    (edge12 : q (x 8) = x 9)
+    : (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
+  apply shape0 G q p (fun u => ⟨(sep u).2.1,(sep u).1,(sep u).2.2.symm⟩) idAdj qAdj pAdj ![x 0, x 2, x 5, x 8, x 1, x 3, x 6, x 9, x 4, x 7]
+  · exact edge1
+  · exact edge0
+  · exact edge4
+  · exact edge3
+  · exact edge9
+  · exact edge8
+  · exact edge12
+  · exact edge2
+  · exact edge6
+  · exact edge5
+  · exact edge11
+  · exact edge10
+  · exact edge7
+
+theorem shape3 {X : Type*} (G : SimpleGraph (Bool × X)) (p q : Equiv.Perm X)
+    (sep : ∀ x, p x ≠ x ∧ q x ≠ x ∧ p x ≠ q x)
+    (idAdj : ∀ u, G.Adj (false,u) (true,u))
+    (pAdj : ∀ u, G.Adj (false,u) (true,p u))
+    (qAdj : ∀ u, G.Adj (false,u) (true,q u)) (x : (Fin 10) → X)
+    (edge0 : p (x 0) = x 3)
+    (edge1 : q (x 0) = x 1)
+    (edge2 : p (x 1) = x 4)
+    (edge3 : p (x 2) = x 5)
+    (edge4 : q (x 2) = x 3)
+    (edge5 : p (x 3) = x 6)
+    (edge6 : q (x 3) = x 4)
+    (edge7 : p (x 4) = x 7)
+    (edge8 : q (x 5) = x 6)
+    (edge9 : p (x 6) = x 8)
+    (edge10 : q (x 6) = x 7)
+    (edge11 : p (x 7) = x 9)
+    (edge12 : q (x 8) = x 9)
+    : (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
+  apply unflip G
+  apply shape0 (G.comap (fun a : Bool × X => (!a.1,a.2))) q.symm p.symm (inverseSep q p (fun u => ⟨(sep u).2.1,(sep u).1,(sep u).2.2.symm⟩))
+    (fun t => (idAdj t).symm)
+    (fun t => by change G.Adj (true,t) (false,q.symm t); simpa using (qAdj (q.symm t)).symm)
+    (fun t => by change G.Adj (true,t) (false,p.symm t); simpa using (pAdj (p.symm t)).symm) ![x 9, x 7, x 4, x 1, x 8, x 6, x 3, x 0, x 5, x 2]
+  · exact q.symm_apply_eq.mpr edge12.symm
+  · exact p.symm_apply_eq.mpr edge11.symm
+  · exact q.symm_apply_eq.mpr edge10.symm
+  · exact p.symm_apply_eq.mpr edge7.symm
+  · exact q.symm_apply_eq.mpr edge6.symm
+  · exact p.symm_apply_eq.mpr edge2.symm
+  · exact q.symm_apply_eq.mpr edge1.symm
+  · exact p.symm_apply_eq.mpr edge9.symm
+  · exact q.symm_apply_eq.mpr edge8.symm
+  · exact p.symm_apply_eq.mpr edge5.symm
+  · exact q.symm_apply_eq.mpr edge4.symm
+  · exact p.symm_apply_eq.mpr edge0.symm
+  · exact p.symm_apply_eq.mpr edge3.symm
+
+theorem near0 {X : Type*} (G : SimpleGraph (Bool × X)) (p q : Equiv.Perm X)
+    (sep : ∀ x, p x ≠ x ∧ q x ≠ x ∧ p x ≠ q x)
+    (idAdj : ∀ u, G.Adj (false,u) (true,u))
+    (pAdj : ∀ u, G.Adj (false,u) (true,p u))
+    (qAdj : ∀ u, G.Adj (false,u) (true,q u)) (z : X)
+    (center : p (q (z)) = q (p (z)))
+    (c1 : p (q (p z)) = q (p (p z)))
+    (c2 : p (q (q.symm z)) = q (p (q.symm z)))
+    (c3 : p (q (q z)) = q (p (q z)))
+    : (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
+  let labels : (Fin 10) → X := ![q.symm z, z, q (z), q (q z), p (q.symm z), p (z), p (q (z)), p (q (q z)), p (p z), p (q (p z))]
+  apply shape0 G p q sep idAdj pAdj qAdj labels
+  · change p (q.symm z) = p (q.symm z)
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change q (q.symm z) = z
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change p (z) = p (z)
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change q (z) = q (z)
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change p (q (z)) = p (q (z))
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change q (q (z)) = q (q z)
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change p (q (q z)) = p (q (q z))
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change q (p (q.symm z)) = p (z)
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change p (p (z)) = p (p z)
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change q (p (z)) = p (q (z))
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change p (p (q (z))) = p (q (p z))
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change q (p (q (z))) = p (q (q z))
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change q (p (p z)) = p (q (p z))
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+theorem near1 {X : Type*} (G : SimpleGraph (Bool × X)) (p q : Equiv.Perm X)
+    (sep : ∀ x, p x ≠ x ∧ q x ≠ x ∧ p x ≠ q x)
+    (idAdj : ∀ u, G.Adj (false,u) (true,u))
+    (pAdj : ∀ u, G.Adj (false,u) (true,p u))
+    (qAdj : ∀ u, G.Adj (false,u) (true,q u)) (z : X)
+    (center : p (q (z)) = q (p (z)))
+    (c0 : p (q (p.symm z)) = q (p (p.symm z)))
+    (c2 : p (q (q.symm z)) = q (p (q.symm z)))
+    (c3 : p (q (q z)) = q (p (q z)))
+    : (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
+  let labels : (Fin 10) → X := ![p.symm z, q (p.symm z), q.symm z, z, q (z), q (q z), p (q.symm z), p (z), p (q (z)), p (q (q z))]
+  apply shape1 G p q sep idAdj pAdj qAdj labels
+  · change p (p.symm z) = z
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change q (p.symm z) = q (p.symm z)
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change p (q (p.symm z)) = q (z)
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change p (q.symm z) = p (q.symm z)
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change q (q.symm z) = z
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change p (z) = p (z)
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change q (z) = q (z)
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change p (q (z)) = p (q (z))
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change q (q (z)) = q (q z)
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change p (q (q z)) = p (q (q z))
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change q (p (q.symm z)) = p (z)
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change q (p (z)) = p (q (z))
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change q (p (q (z))) = p (q (q z))
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+theorem near2 {X : Type*} (G : SimpleGraph (Bool × X)) (p q : Equiv.Perm X)
+    (sep : ∀ x, p x ≠ x ∧ q x ≠ x ∧ p x ≠ q x)
+    (idAdj : ∀ u, G.Adj (false,u) (true,u))
+    (pAdj : ∀ u, G.Adj (false,u) (true,p u))
+    (qAdj : ∀ u, G.Adj (false,u) (true,q u)) (z : X)
+    (center : p (q (z)) = q (p (z)))
+    (c0 : p (q (p.symm z)) = q (p (p.symm z)))
+    (c1 : p (q (p z)) = q (p (p z)))
+    (c3 : p (q (q z)) = q (p (q z)))
+    : (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
+  let labels : (Fin 10) → X := ![p.symm z, q (p.symm z), z, q (z), q (q z), p (z), p (q (z)), p (q (q z)), p (p z), p (q (p z))]
+  apply shape2 G p q sep idAdj pAdj qAdj labels
+  · change p (p.symm z) = z
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change q (p.symm z) = q (p.symm z)
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change p (q (p.symm z)) = q (z)
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change p (z) = p (z)
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change q (z) = q (z)
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change p (q (z)) = p (q (z))
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change q (q (z)) = q (q z)
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change p (q (q z)) = p (q (q z))
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change p (p (z)) = p (p z)
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change q (p (z)) = p (q (z))
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change p (p (q (z))) = p (q (p z))
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change q (p (q (z))) = p (q (q z))
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change q (p (p z)) = p (q (p z))
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+theorem near3 {X : Type*} (G : SimpleGraph (Bool × X)) (p q : Equiv.Perm X)
+    (sep : ∀ x, p x ≠ x ∧ q x ≠ x ∧ p x ≠ q x)
+    (idAdj : ∀ u, G.Adj (false,u) (true,u))
+    (pAdj : ∀ u, G.Adj (false,u) (true,p u))
+    (qAdj : ∀ u, G.Adj (false,u) (true,q u)) (z : X)
+    (center : p (q (z)) = q (p (z)))
+    (c0 : p (q (p.symm z)) = q (p (p.symm z)))
+    (c1 : p (q (p z)) = q (p (p z)))
+    (c2 : p (q (q.symm z)) = q (p (q.symm z)))
+    : (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
+  let labels : (Fin 10) → X := ![p.symm z, q (p.symm z), q.symm z, z, q (z), p (q.symm z), p (z), p (q (z)), p (p z), p (q (p z))]
+  apply shape3 G p q sep idAdj pAdj qAdj labels
+  · change p (p.symm z) = z
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change q (p.symm z) = q (p.symm z)
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change p (q (p.symm z)) = q (z)
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change p (q.symm z) = p (q.symm z)
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change q (q.symm z) = z
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change p (z) = p (z)
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change q (z) = q (z)
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change p (q (z)) = p (q (z))
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change q (p (q.symm z)) = p (z)
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change p (p (z)) = p (p z)
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change q (p (z)) = p (q (z))
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change p (p (q (z))) = p (q (p z))
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+  · change q (p (p z)) = p (q (p z))
+    simp only [Equiv.apply_symm_apply] at * <;> grind
+end LocalCommutation
+
+
+namespace CommutationDensity
+open Finset
+
+/-- Count visits to a set at the four positions p x, p⁻¹ x, q x, q⁻¹ x with
+multiplicity. Permutations preserve the total number of visits in each slot. -/
+theorem one_third {X : Type*} [Fintype X] [DecidableEq X] (D : Finset X) (p q : Equiv.Perm X)
+    (hit : ∀ x ∉ D, 2 ≤ (if p x ∈ D then 1 else 0 : ℕ) +
+      (if p.symm x ∈ D then 1 else 0) + (if q x ∈ D then 1 else 0) +
+      (if q.symm x ∈ D then 1 else 0)) :
+    Fintype.card X ≤ 3 * D.card := by
+  classical
+  let w (x : X) : ℕ := if x ∈ D then 1 else 0
+  have base : ∑ x, w x = D.card := by simp [w]
+  have total (f : Equiv.Perm X) : ∑ x, w (f x) = D.card := (Equiv.sum_comp f w).trans base
+  have localBound (x : X) : 2 ≤ 2*w x + w (p x) + w (p.symm x) + w (q x) + w (q.symm x) := by
+    by_cases h : x ∈ D
+    · have : w x = 1 := if_pos h; omega
+    · have : w x = 0 := if_neg h
+      simpa only [this,Nat.mul_zero,Nat.zero_add] using (show 2 ≤ w (p x) + w (p.symm x) + w (q x) + w (q.symm x) from hit x h)
+  have h := Finset.sum_le_sum (s := Finset.univ) (fun x _ => localBound x)
+  simp only [Finset.sum_add_distrib, ← Finset.mul_sum, base,total, Finset.sum_const, Finset.card_univ, smul_eq_mul] at h
+  omega
+
+end CommutationDensity
+
+
+namespace LocalCommutation
+open SimpleGraph Finset
+/-- In the matching presentation of a bipartite graph, the absence of 4-, 8- and
+16-cycles forces the two relative permutations to fail to commute on at least a third of X. -/
+theorem defectDensity {X : Type*} [Fintype X] [DecidableEq X] (G : SimpleGraph (Bool × X)) (p q : Equiv.Perm X)
+    (sep : ∀ x, p x ≠ x ∧ q x ≠ x ∧ p x ≠ q x)
+    (idAdj : ∀ u, G.Adj (false,u) (true,u))
+    (pAdj : ∀ u, G.Adj (false,u) (true,p u))
+    (qAdj : ∀ u, G.Adj (false,u) (true,q u)) (noCycle : ¬ (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G)) :
+    Fintype.card X ≤ 3 * (Finset.univ.filter fun x => p (q x) ≠ q (p x)).card := by
+  classical
+  let D := Finset.univ.filter fun x => p (q x) ≠ q (p x)
+  change Fintype.card X ≤ 3 * D.card
+  apply CommutationDensity.one_third D p q
+  intro z hz
+  have center : p (q z) = q (p z) := by simpa [D] using hz
+  have impossible0 : (p (q (p z)) = q (p (p z)) ∧ p (q (q.symm z)) = q (p (q.symm z)) ∧ p (q (q z)) = q (p (q z))) → False :=
+    fun h => noCycle (near0 G p q sep idAdj pAdj qAdj z center h.1 h.2.1 h.2.2)
+  have impossible1 : (p (q (p.symm z)) = q (p (p.symm z)) ∧ p (q (q.symm z)) = q (p (q.symm z)) ∧ p (q (q z)) = q (p (q z))) → False :=
+    fun h => noCycle (near1 G p q sep idAdj pAdj qAdj z center h.1 h.2.1 h.2.2)
+  have impossible2 : (p (q (p.symm z)) = q (p (p.symm z)) ∧ p (q (p z)) = q (p (p z)) ∧ p (q (q z)) = q (p (q z))) → False :=
+    fun h => noCycle (near2 G p q sep idAdj pAdj qAdj z center h.1 h.2.1 h.2.2)
+  have impossible3 : (p (q (p.symm z)) = q (p (p.symm z)) ∧ p (q (p z)) = q (p (p z)) ∧ p (q (q.symm z)) = q (p (q.symm z))) → False :=
+    fun h => noCycle (near3 G p q sep idAdj pAdj qAdj z center h.1 h.2.1 h.2.2)
+  by_cases c0 : p (q (p.symm z)) = q (p (p.symm z)) <;>
+  by_cases c1 : p (q (p z)) = q (p (p z)) <;>
+  by_cases c2 : p (q (q.symm z)) = q (p (q.symm z)) <;>
+  by_cases c3 : p (q (q z)) = q (p (q z)) <;>
+  simp_all [D]
+
+end LocalCommutation
+
 namespace HaarShort
 open SimpleGraph
-
-variable {A : Type*} [AddCommGroup A] (φ : (ℤ × ℤ) →+ A)
-variable (G : SimpleGraph (Bool × A))
-
-lemma forward_sound (edges : (∀ (x : A) (d : (ℤ × ℤ)), d ∈ ([(0,0), (1,0), (0,1)] : List (ℤ × ℤ)) → G.Adj (false,x) (true,x + φ d))) (r : List (ℤ × ℤ)) (hr : ∀ x ∈ r, φ x = 0)
-    (x y : (ℤ × ℤ)) (h : ([(0,0), (1,0), (0,1)] : List (ℤ × ℤ)).any (fun d => r.contains (y-x-d))) : G.Adj (false,φ x) (true,φ y) := by
-  obtain ⟨d,hd,hm⟩ := List.any_eq_true.mp h
-  have hz := hr _ (List.contains_iff_mem.mp hm)
-  simp only [map_sub, sub_eq_zero] at hz
-  rw [sub_eq_iff_eq_add.mp hz, add_comm]
-  exact edges _ _ hd
-
-lemma edge_sound (edges : (∀ (x : A) (d : (ℤ × ℤ)), d ∈ ([(0,0), (1,0), (0,1)] : List (ℤ × ℤ)) → G.Adj (false,x) (true,x + φ d))) (r : List (ℤ × ℤ)) (hr : ∀ x ∈ r, φ x = 0)
-    (x y : Bool × (ℤ × ℤ)) (h : (if x.1 = y.1 then false else if x.1 then ([(0,0), (1,0), (0,1)] : List (ℤ × ℤ)).any (fun d => r.contains (x.2-y.2-d)) else ([(0,0), (1,0), (0,1)] : List (ℤ × ℤ)).any (fun d => r.contains (y.2-x.2-d)))) : G.Adj ((x.1,φ x.2)) ((y.1,φ y.2)) := by
-  obtain ⟨b,x⟩ := x; obtain ⟨c,y⟩ := y
-  cases b <;> cases c <;> simp at h
-  · exact forward_sound φ G edges r hr x y (by simpa using h)
-  · exact (forward_sound φ G edges r hr y x (by simpa using h)).symm
-
-lemma word (edges : (∀ (x : A) (d : (ℤ × ℤ)), d ∈ ([(0,0), (1,0), (0,1)] : List (ℤ × ℤ)) → G.Adj (false,x) (true,x + φ d))) {n : ℕ} (hn : n=4 ∨ n=8 ∨ n=16)
-    (p : Fin n → Bool × (ℤ × ℤ)) (rels bad : List (ℤ × ℤ)) (hr : ∀ v ∈ rels, φ v=0)
-    (he : ∀ i j, (SimpleGraph.cycleGraph n).Adj i j → (if (p i).1 = (p j).1 then false else if (p i).1 then ([(0,0), (1,0), (0,1)] : List (ℤ × ℤ)).any (fun d => rels.contains ((p i).2-(p j).2-d)) else ([(0,0), (1,0), (0,1)] : List (ℤ × ℤ)).any (fun d => rels.contains ((p j).2-(p i).2-d))))
-    (hd : ∀ i j, i < j → (p i).1=(p j).1 → (p i).2-(p j).2 ∈ bad)
-    (branch : ∀ v ∈ bad, φ v=0 → (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G)) : (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
-  classical
-  let f : SimpleGraph.cycleGraph n →g G := ⟨fun i => ((p i).1,φ (p i).2), fun {i j} h =>
-    edge_sound φ G edges rels hr _ _ (he i j h)⟩
-  by_cases inj : Function.Injective f
-  · have hh : SimpleGraph.cycleGraph n ⊑ G := ⟨f.toCopy inj⟩
-    rcases hn with rfl | rfl | rfl
-    · exact Or.inl hh
-    · exact Or.inr (Or.inl hh)
-    · exact Or.inr (Or.inr hh)
-  · obtain ⟨i,j,heq,hne⟩ := Function.not_injective_iff.mp inj
-    have go (a b : Fin n) (ab : a < b) (eq : f a = f b) : (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
-      have e₁ := congrArg Prod.fst eq
-      have e₂ := congrArg Prod.snd eq
-      refine branch _ (hd a b ab e₁) ?_
-      simpa [map_sub] using (sub_eq_zero.mpr (show φ (p a).2 = φ (p b).2 from e₂))
-    rcases lt_or_gt_of_ne hne with h | h
-    · exact go i j h heq
-    · exact go j i h heq.symm
-
-lemma sumZero (v w : (ℤ × ℤ)) (i j : ℤ) (hv : φ v=0) (hw : φ w=0) : φ (i • v + j • w)=0 := by rw [map_add, map_zsmul, map_zsmul, hv, hw, zsmul_zero, zsmul_zero, add_zero]
-
-lemma relation {v w z : (ℤ × ℤ)} (hv : φ v = 0) (hw : φ w = 0) (i j : ℤ)
-    (eqn : z = i • v + j • w) : φ z = 0 := by
-  rw [eqn]; exact sumZero φ v w i j hv hw
-
-/-- Each case name records the integer relation vectors as successive coordinate pairs. -/
-theorem case_3_0_2_1
-    (edges : (∀ (x : A) (d : (ℤ × ℤ)), d ∈ ([(0,0), (1,0), (0,1)] : List (ℤ × ℤ)) → G.Adj (false,x) (true,x + φ d)))
-    (sep : ∀ v ∈ ([(1,0),(0,1),(1,-1)] : List (ℤ × ℤ)), φ v ≠ 0)
-    (h0 : φ (3,0)=0) (h1 : φ (2,1)=0) :
-    (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
-  exact False.elim (sep (1,-1) (by decide) (relation φ h0 h1 (1) (-1) (by decide)))
-
-theorem case_1_0
-    (edges : (∀ (x : A) (d : (ℤ × ℤ)), d ∈ ([(0,0), (1,0), (0,1)] : List (ℤ × ℤ)) → G.Adj (false,x) (true,x + φ d)))
-    (sep : ∀ v ∈ ([(1,0),(0,1),(1,-1)] : List (ℤ × ℤ)), φ v ≠ 0)
-    (h0 : φ (1,0)=0) :
-    (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
-  exact False.elim (sep (1,0) (by decide) h0)
-
-theorem case_1_0_0_1
-    (edges : (∀ (x : A) (d : (ℤ × ℤ)), d ∈ ([(0,0), (1,0), (0,1)] : List (ℤ × ℤ)) → G.Adj (false,x) (true,x + φ d)))
-    (sep : ∀ v ∈ ([(1,0),(0,1),(1,-1)] : List (ℤ × ℤ)), φ v ≠ 0)
-    (h0 : φ (1,0)=0) (h1 : φ (0,1)=0) :
-    (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
-  exact False.elim (sep (1,0) (by decide) h0)
-
-theorem case_3_0_1_1
-    (edges : (∀ (x : A) (d : (ℤ × ℤ)), d ∈ ([(0,0), (1,0), (0,1)] : List (ℤ × ℤ)) → G.Adj (false,x) (true,x + φ d)))
-    (sep : ∀ v ∈ ([(1,0),(0,1),(1,-1)] : List (ℤ × ℤ)), φ v ≠ 0)
-    (h0 : φ (3,0)=0) (h1 : φ (1,1)=0) :
-    (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
-  apply word φ G edges (n := 4) (by decide)
-    ![(false,(0,0)), (true,(0,0)), (false,(-1,0)), (true,(-1,0))]
-    [(0,0), (-1,-1)] [(1,0)]
-  · intro v hv
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
-    rcases hv with rfl | rfl
-    · exact (map_zero φ)
-    · exact (relation φ h1 (map_zero φ : φ (0:(ℤ × ℤ)) = 0) (-1) (0) (by decide))
-  · decide
-  · decide
-  · intro v hv
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
-    rcases hv with rfl
-    intro h2
-    exact case_1_0_0_1 φ G edges sep h2 (relation φ h1 h2 (1) (-1) (by decide))
-
-theorem case_3_0_0_1
-    (edges : (∀ (x : A) (d : (ℤ × ℤ)), d ∈ ([(0,0), (1,0), (0,1)] : List (ℤ × ℤ)) → G.Adj (false,x) (true,x + φ d)))
-    (sep : ∀ v ∈ ([(1,0),(0,1),(1,-1)] : List (ℤ × ℤ)), φ v ≠ 0)
-    (h0 : φ (3,0)=0) (h1 : φ (0,1)=0) :
-    (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
-  exact False.elim (sep (0,1) (by decide) h1)
-
-theorem case_3_0
-    (edges : (∀ (x : A) (d : (ℤ × ℤ)), d ∈ ([(0,0), (1,0), (0,1)] : List (ℤ × ℤ)) → G.Adj (false,x) (true,x + φ d)))
-    (sep : ∀ v ∈ ([(1,0),(0,1),(1,-1)] : List (ℤ × ℤ)), φ v ≠ 0)
-    (h0 : φ (3,0)=0) :
-    (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
-  apply word φ G edges (n := 8) (by decide)
-    ![(false,(0,0)), (true,(0,0)), (false,(-1,0)), (true,(-1,0)), (false,(-2,0)), (true,(-2,1)),
-      (false,(-3,1)), (true,(-3,1))]
-    [(0,0), (-3,0)] [(1,-1), (1,0), (2,-1), (2,0), (3,-1)]
-  · intro v hv
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
-    rcases hv with rfl | rfl
-    · exact (map_zero φ)
-    · exact (relation φ h0 (map_zero φ : φ (0:(ℤ × ℤ)) = 0) (-1) (0) (by decide))
-  · decide
-  · decide
-  · intro v hv
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
-    rcases hv with rfl | rfl | rfl | rfl | rfl
-    · intro h1
-      exact case_3_0_2_1 φ G edges sep h0 (relation φ h0 h1 (1) (-1) (by decide))
-    · intro h1
-      exact case_1_0 φ G edges sep h1
-    · intro h1
-      exact case_3_0_1_1 φ G edges sep h0 (relation φ h0 h1 (1) (-1) (by decide))
-    · intro h1
-      exact case_1_0 φ G edges sep (relation φ h0 h1 (1) (-1) (by decide))
-    · intro h1
-      exact case_3_0_0_1 φ G edges sep h0 (relation φ h0 h1 (1) (-1) (by decide))
-
-theorem case_2_0_0_1
-    (edges : (∀ (x : A) (d : (ℤ × ℤ)), d ∈ ([(0,0), (1,0), (0,1)] : List (ℤ × ℤ)) → G.Adj (false,x) (true,x + φ d)))
-    (sep : ∀ v ∈ ([(1,0),(0,1),(1,-1)] : List (ℤ × ℤ)), φ v ≠ 0)
-    (h0 : φ (2,0)=0) (h1 : φ (0,1)=0) :
-    (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
-  exact False.elim (sep (0,1) (by decide) h1)
-
-theorem case_4_0_2_1
-    (edges : (∀ (x : A) (d : (ℤ × ℤ)), d ∈ ([(0,0), (1,0), (0,1)] : List (ℤ × ℤ)) → G.Adj (false,x) (true,x + φ d)))
-    (sep : ∀ v ∈ ([(1,0),(0,1),(1,-1)] : List (ℤ × ℤ)), φ v ≠ 0)
-    (h0 : φ (4,0)=0) (h1 : φ (2,1)=0) :
-    (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
-  apply word φ G edges (n := 4) (by decide)
-    ![(false,(0,0)), (true,(0,0)), (false,(-1,0)), (true,(-1,1))]
-    [(0,0), (-2,1)] [(1,-1), (1,0)]
-  · intro v hv
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
-    rcases hv with rfl | rfl
-    · exact (map_zero φ)
-    · exact (relation φ h0 h1 (-1) (1) (by decide))
-  · decide
-  · decide
-  · intro v hv
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
-    rcases hv with rfl | rfl
-    · intro h2
-      exact case_1_0_0_1 φ G edges sep (relation φ (show φ (2,-1)=0 from (relation φ h0 h1 (1) (-1) (by decide))) h2 1 (-1) (by decide)) (relation φ (show φ (2,-1)=0 from (relation φ h0 h1 (1) (-1) (by decide))) h2 1 (-2) (by decide))
-    · intro h2
-      exact case_1_0_0_1 φ G edges sep h2 (relation φ (show φ (-2,1)=0 from (relation φ h0 h1 (-1) (1) (by decide))) h2 1 (2) (by decide))
-
-theorem case_2_1
-    (edges : (∀ (x : A) (d : (ℤ × ℤ)), d ∈ ([(0,0), (1,0), (0,1)] : List (ℤ × ℤ)) → G.Adj (false,x) (true,x + φ d)))
-    (sep : ∀ v ∈ ([(1,0),(0,1),(1,-1)] : List (ℤ × ℤ)), φ v ≠ 0)
-    (h0 : φ (2,1)=0) :
-    (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
-  apply word φ G edges (n := 8) (by decide)
-    ![(false,(0,0)), (true,(0,0)), (false,(-1,0)), (true,(-1,1)), (false,(-2,1)), (true,(-2,1)),
-      (false,(-2,0)), (true,(-2,0))]
-    [(0,0), (-2,-1)] [(0,1), (1,-1), (1,0), (1,1), (2,-1), (2,0)]
-  · intro v hv
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
-    rcases hv with rfl | rfl
-    · exact (map_zero φ)
-    · exact (relation φ h0 (map_zero φ : φ (0:(ℤ × ℤ)) = 0) (-1) (0) (by decide))
-  · decide
-  · decide
-  · intro v hv
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
-    rcases hv with rfl | rfl | rfl | rfl | rfl | rfl
-    · intro h1
-      exact case_2_0_0_1 φ G edges sep (relation φ h0 h1 (1) (-1) (by decide)) h1
-    · intro h1
-      exact case_3_0_2_1 φ G edges sep (relation φ h0 h1 (1) (1) (by decide)) h0
-    · intro h1
-      exact case_1_0_0_1 φ G edges sep h1 (relation φ h0 h1 (1) (-2) (by decide))
-    · intro h1
-      exact case_1_0_0_1 φ G edges sep (relation φ h0 h1 (1) (-1) (by decide)) (relation φ h0 h1 (-1) (2) (by decide))
-    · intro h1
-      exact case_4_0_2_1 φ G edges sep (relation φ h0 h1 (1) (1) (by decide)) h0
-    · intro h1
-      exact case_2_0_0_1 φ G edges sep h1 (relation φ h0 h1 (1) (-1) (by decide))
-
-theorem case_2_0
-    (edges : (∀ (x : A) (d : (ℤ × ℤ)), d ∈ ([(0,0), (1,0), (0,1)] : List (ℤ × ℤ)) → G.Adj (false,x) (true,x + φ d)))
-    (sep : ∀ v ∈ ([(1,0),(0,1),(1,-1)] : List (ℤ × ℤ)), φ v ≠ 0)
-    (h0 : φ (2,0)=0) :
-    (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
-  apply word φ G edges (n := 4) (by decide)
-    ![(false,(0,0)), (true,(0,0)), (false,(-1,0)), (true,(-1,0))]
-    [(0,0), (-2,0)] [(1,0)]
-  · intro v hv
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
-    rcases hv with rfl | rfl
-    · exact (map_zero φ)
-    · exact (relation φ h0 (map_zero φ : φ (0:(ℤ × ℤ)) = 0) (-1) (0) (by decide))
-  · decide
-  · decide
-  · intro v hv
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
-    rcases hv with rfl
-    intro h1
-    exact case_1_0 φ G edges sep h1
-
-theorem case_m2_1
-    (edges : (∀ (x : A) (d : (ℤ × ℤ)), d ∈ ([(0,0), (1,0), (0,1)] : List (ℤ × ℤ)) → G.Adj (false,x) (true,x + φ d)))
-    (sep : ∀ v ∈ ([(1,0),(0,1),(1,-1)] : List (ℤ × ℤ)), φ v ≠ 0)
-    (h0 : φ (-2,1)=0) :
-    (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
-  apply word φ G edges (n := 4) (by decide)
-    ![(false,(0,0)), (true,(0,0)), (false,(-1,0)), (true,(-1,1))]
-    [(0,0), (-2,1)] [(1,-1), (1,0)]
-  · intro v hv
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
-    rcases hv with rfl | rfl
-    · exact (map_zero φ)
-    · exact h0
-  · decide
-  · decide
-  · intro v hv
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
-    rcases hv with rfl | rfl
-    · intro h1
-      exact case_1_0_0_1 φ G edges sep (relation φ h0 h1 (-1) (-1) (by decide)) (relation φ h0 h1 (-1) (-2) (by decide))
-    · intro h1
-      exact case_1_0_0_1 φ G edges sep h1 (relation φ h0 h1 (1) (2) (by decide))
-
-theorem case_1_0_0_2
-    (edges : (∀ (x : A) (d : (ℤ × ℤ)), d ∈ ([(0,0), (1,0), (0,1)] : List (ℤ × ℤ)) → G.Adj (false,x) (true,x + φ d)))
-    (sep : ∀ v ∈ ([(1,0),(0,1),(1,-1)] : List (ℤ × ℤ)), φ v ≠ 0)
-    (h0 : φ (1,0)=0) (h1 : φ (0,2)=0) :
-    (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
-  exact False.elim (sep (1,0) (by decide) h0)
-
-theorem case_2_0_1_2
-    (edges : (∀ (x : A) (d : (ℤ × ℤ)), d ∈ ([(0,0), (1,0), (0,1)] : List (ℤ × ℤ)) → G.Adj (false,x) (true,x + φ d)))
-    (sep : ∀ v ∈ ([(1,0),(0,1),(1,-1)] : List (ℤ × ℤ)), φ v ≠ 0)
-    (h0 : φ (2,0)=0) (h1 : φ (1,2)=0) :
-    (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
-  apply word φ G edges (n := 4) (by decide)
-    ![(false,(0,0)), (true,(0,0)), (false,(-1,0)), (true,(-1,0))]
-    [(0,0), (-2,0)] [(1,0)]
-  · intro v hv
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
-    rcases hv with rfl | rfl
-    · exact (map_zero φ)
-    · exact (relation φ h0 (map_zero φ : φ (0:(ℤ × ℤ)) = 0) (-1) (0) (by decide))
-  · decide
-  · decide
-  · intro v hv
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
-    rcases hv with rfl
-    intro h2
-    exact case_1_0_0_2 φ G edges sep h2 (relation φ (show φ (-1,2)=0 from (relation φ h0 h1 (-1) (1) (by decide))) h2 1 (1) (by decide))
-
-theorem case_1_2
-    (edges : (∀ (x : A) (d : (ℤ × ℤ)), d ∈ ([(0,0), (1,0), (0,1)] : List (ℤ × ℤ)) → G.Adj (false,x) (true,x + φ d)))
-    (sep : ∀ v ∈ ([(1,0),(0,1),(1,-1)] : List (ℤ × ℤ)), φ v ≠ 0)
-    (h0 : φ (1,2)=0) :
-    (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
-  apply word φ G edges (n := 8) (by decide)
-    ![(false,(0,0)), (true,(0,0)), (false,(-1,0)), (true,(-1,0)), (false,(-2,0)), (true,(-2,0)),
-      (false,(-2,-1)), (true,(-1,-1))]
-    [(0,0), (-1,-2)] [(-1,1), (0,1), (1,0), (1,1), (2,0), (2,1)]
-  · intro v hv
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
-    rcases hv with rfl | rfl
-    · exact (map_zero φ)
-    · exact (relation φ h0 (map_zero φ : φ (0:(ℤ × ℤ)) = 0) (-1) (0) (by decide))
-  · decide
-  · decide
-  · intro v hv
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
-    rcases hv with rfl | rfl | rfl | rfl | rfl | rfl
-    · intro h1
-      exact case_3_0_2_1 φ G edges sep (relation φ h0 h1 (1) (-2) (by decide)) (relation φ h0 h1 (1) (-1) (by decide))
-    · intro h1
-      exact case_1_0_0_1 φ G edges sep (relation φ h0 h1 (1) (-2) (by decide)) h1
-    · intro h1
-      exact case_1_0_0_2 φ G edges sep h1 (relation φ h0 h1 (1) (-1) (by decide))
-    · intro h1
-      exact case_1_0_0_1 φ G edges sep (relation φ h0 h1 (-1) (2) (by decide)) (relation φ h0 h1 (1) (-1) (by decide))
-    · intro h1
-      exact case_2_0_1_2 φ G edges sep h1 h0
-    · intro h1
-      exact case_3_0_2_1 φ G edges sep (relation φ h0 h1 (-1) (2) (by decide)) h1
-
-theorem case_1_1
-    (edges : (∀ (x : A) (d : (ℤ × ℤ)), d ∈ ([(0,0), (1,0), (0,1)] : List (ℤ × ℤ)) → G.Adj (false,x) (true,x + φ d)))
-    (sep : ∀ v ∈ ([(1,0),(0,1),(1,-1)] : List (ℤ × ℤ)), φ v ≠ 0)
-    (h0 : φ (1,1)=0) :
-    (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
-  apply word φ G edges (n := 4) (by decide)
-    ![(false,(0,0)), (true,(0,0)), (false,(-1,0)), (true,(-1,0))]
-    [(0,0), (-1,-1)] [(1,0)]
-  · intro v hv
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
-    rcases hv with rfl | rfl
-    · exact (map_zero φ)
-    · exact (relation φ h0 (map_zero φ : φ (0:(ℤ × ℤ)) = 0) (-1) (0) (by decide))
-  · decide
-  · decide
-  · intro v hv
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
-    rcases hv with rfl
-    intro h1
-    exact case_1_0_0_1 φ G edges sep h1 (relation φ h0 h1 (1) (-1) (by decide))
-
-theorem case_m1_1
-    (edges : (∀ (x : A) (d : (ℤ × ℤ)), d ∈ ([(0,0), (1,0), (0,1)] : List (ℤ × ℤ)) → G.Adj (false,x) (true,x + φ d)))
-    (sep : ∀ v ∈ ([(1,0),(0,1),(1,-1)] : List (ℤ × ℤ)), φ v ≠ 0)
-    (h0 : φ (-1,1)=0) :
-    (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
-  exact False.elim (sep (1,-1) (by decide) (relation φ h0 (map_zero φ : φ (0:(ℤ × ℤ)) = 0) (-1) (0) (by decide)))
-
-theorem case_0_1
-    (edges : (∀ (x : A) (d : (ℤ × ℤ)), d ∈ ([(0,0), (1,0), (0,1)] : List (ℤ × ℤ)) → G.Adj (false,x) (true,x + φ d)))
-    (sep : ∀ v ∈ ([(1,0),(0,1),(1,-1)] : List (ℤ × ℤ)), φ v ≠ 0)
-    (h0 : φ (0,1)=0) :
-    (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
-  exact False.elim (sep (0,1) (by decide) h0)
-
-theorem case_0_2
-    (edges : (∀ (x : A) (d : (ℤ × ℤ)), d ∈ ([(0,0), (1,0), (0,1)] : List (ℤ × ℤ)) → G.Adj (false,x) (true,x + φ d)))
-    (sep : ∀ v ∈ ([(1,0),(0,1),(1,-1)] : List (ℤ × ℤ)), φ v ≠ 0)
-    (h0 : φ (0,2)=0) :
-    (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
-  apply word φ G edges (n := 4) (by decide)
-    ![(false,(0,0)), (true,(0,0)), (false,(0,-1)), (true,(0,-1))]
-    [(0,0), (0,-2)] [(0,1)]
-  · intro v hv
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
-    rcases hv with rfl | rfl
-    · exact (map_zero φ)
-    · exact (relation φ h0 (map_zero φ : φ (0:(ℤ × ℤ)) = 0) (-1) (0) (by decide))
-  · decide
-  · decide
-  · intro v hv
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
-    rcases hv with rfl
-    intro h1
-    exact case_0_1 φ G edges sep h1
-
-theorem case_m1_2
-    (edges : (∀ (x : A) (d : (ℤ × ℤ)), d ∈ ([(0,0), (1,0), (0,1)] : List (ℤ × ℤ)) → G.Adj (false,x) (true,x + φ d)))
-    (sep : ∀ v ∈ ([(1,0),(0,1),(1,-1)] : List (ℤ × ℤ)), φ v ≠ 0)
-    (h0 : φ (-1,2)=0) :
-    (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
-  apply word φ G edges (n := 4) (by decide)
-    ![(false,(0,0)), (true,(0,0)), (false,(0,-1)), (true,(1,-1))]
-    [(0,0), (1,-2)] [(-1,1), (0,1)]
-  · intro v hv
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
-    rcases hv with rfl | rfl
-    · exact (map_zero φ)
-    · exact (relation φ h0 (map_zero φ : φ (0:(ℤ × ℤ)) = 0) (-1) (0) (by decide))
-  · decide
-  · decide
-  · intro v hv
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
-    rcases hv with rfl | rfl
-    · intro h1
-      exact case_1_0_0_1 φ G edges sep (relation φ h0 h1 (1) (-2) (by decide)) (relation φ h0 h1 (1) (-1) (by decide))
-    · intro h1
-      exact case_1_0_0_1 φ G edges sep (relation φ h0 h1 (-1) (2) (by decide)) h1
-
-theorem case_m2_2
-    (edges : (∀ (x : A) (d : (ℤ × ℤ)), d ∈ ([(0,0), (1,0), (0,1)] : List (ℤ × ℤ)) → G.Adj (false,x) (true,x + φ d)))
-    (sep : ∀ v ∈ ([(1,0),(0,1),(1,-1)] : List (ℤ × ℤ)), φ v ≠ 0)
-    (h0 : φ (-2,2)=0) :
-    (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
-  apply word φ G edges (n := 4) (by decide)
-    ![(false,(0,0)), (true,(1,0)), (false,(1,-1)), (true,(2,-1))]
-    [(0,0), (2,-2)] [(-1,1)]
-  · intro v hv
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
-    rcases hv with rfl | rfl
-    · exact (map_zero φ)
-    · exact (relation φ h0 (map_zero φ : φ (0:(ℤ × ℤ)) = 0) (-1) (0) (by decide))
-  · decide
-  · decide
-  · intro v hv
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
-    rcases hv with rfl
-    intro h1
-    exact case_m1_1 φ G edges sep h1
-
-theorem case_2_0_1_1
-    (edges : (∀ (x : A) (d : (ℤ × ℤ)), d ∈ ([(0,0), (1,0), (0,1)] : List (ℤ × ℤ)) → G.Adj (false,x) (true,x + φ d)))
-    (sep : ∀ v ∈ ([(1,0),(0,1),(1,-1)] : List (ℤ × ℤ)), φ v ≠ 0)
-    (h0 : φ (2,0)=0) (h1 : φ (1,1)=0) :
-    (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
-  exact False.elim (sep (1,-1) (by decide) (relation φ h0 h1 (1) (-1) (by decide)))
-
-theorem case_4_0_1_1
-    (edges : (∀ (x : A) (d : (ℤ × ℤ)), d ∈ ([(0,0), (1,0), (0,1)] : List (ℤ × ℤ)) → G.Adj (false,x) (true,x + φ d)))
-    (sep : ∀ v ∈ ([(1,0),(0,1),(1,-1)] : List (ℤ × ℤ)), φ v ≠ 0)
-    (h0 : φ (4,0)=0) (h1 : φ (1,1)=0) :
-    (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
-  apply word φ G edges (n := 4) (by decide)
-    ![(false,(0,0)), (true,(0,0)), (false,(-1,0)), (true,(-1,0))]
-    [(0,0), (-1,-1)] [(1,0)]
-  · intro v hv
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
-    rcases hv with rfl | rfl
-    · exact (map_zero φ)
-    · exact (relation φ h1 (map_zero φ : φ (0:(ℤ × ℤ)) = 0) (-1) (0) (by decide))
-  · decide
-  · decide
-  · intro v hv
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
-    rcases hv with rfl
-    intro h2
-    exact case_1_0_0_1 φ G edges sep h2 (relation φ h1 h2 (1) (-1) (by decide))
-
-theorem case_m3_1
-    (edges : (∀ (x : A) (d : (ℤ × ℤ)), d ∈ ([(0,0), (1,0), (0,1)] : List (ℤ × ℤ)) → G.Adj (false,x) (true,x + φ d)))
-    (sep : ∀ v ∈ ([(1,0),(0,1),(1,-1)] : List (ℤ × ℤ)), φ v ≠ 0)
-    (h0 : φ (-3,1)=0) :
-    (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
-  apply word φ G edges (n := 8) (by decide)
-    ![(false,(0,0)), (true,(0,0)), (false,(-1,0)), (true,(-1,1)), (false,(-2,1)), (true,(-2,2)),
-      (false,(-3,2)), (true,(-3,2))]
-    [(0,0), (-3,1)] [(1,-1), (1,0), (2,-2), (2,-1), (3,-2)]
-  · intro v hv
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
-    rcases hv with rfl | rfl
-    · exact (map_zero φ)
-    · exact h0
-  · decide
-  · decide
-  · intro v hv
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
-    rcases hv with rfl | rfl | rfl | rfl | rfl
-    · intro h1
-      exact case_2_0_1_1 φ G edges sep (relation φ h0 h1 (-1) (-1) (by decide)) (relation φ h0 h1 (-1) (-2) (by decide))
-    · intro h1
-      exact case_1_0_0_1 φ G edges sep h1 (relation φ h0 h1 (1) (3) (by decide))
-    · intro h1
-      exact case_4_0_1_1 φ G edges sep (relation φ h0 h1 (-2) (-1) (by decide)) (relation φ h0 h1 (-1) (-1) (by decide))
-    · intro h1
-      exact case_1_0_0_1 φ G edges sep (relation φ h0 h1 (-1) (-1) (by decide)) (relation φ h0 h1 (-2) (-3) (by decide))
-    · intro h1
-      exact case_3_0_0_1 φ G edges sep (relation φ h0 h1 (-2) (-1) (by decide)) (relation φ h0 h1 (-1) (-1) (by decide))
-
-theorem case_free
-    (edges : (∀ (x : A) (d : (ℤ × ℤ)), d ∈ ([(0,0), (1,0), (0,1)] : List (ℤ × ℤ)) → G.Adj (false,x) (true,x + φ d)))
-    (sep : ∀ v ∈ ([(1,0),(0,1),(1,-1)] : List (ℤ × ℤ)), φ v ≠ 0)  :
-    (cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G) := by
-  apply word φ G edges (n := 16) (by decide)
-    ![(false,(0,0)), (true,(0,0)), (false,(-1,0)), (true,(-1,0)), (false,(-2,0)), (true,(-2,0)),
-      (false,(-3,0)), (true,(-3,1)), (false,(-3,1)), (true,(-2,1)), (false,(-2,1)), (true,(-2,2)), (false,(-2,2)), (true,(-1,2)), (false,(-1,1)), (true,(0,1))]
-    [(0,0)] [(-3,0), (-2,-1), (-2,0), (-2,1), (-1,-2), (-1,-1), (-1,0), (-1,1), (0,-2), (0,-1), (1,-2), (1,-1), (1,0), (2,-2), (2,-1), (2,0), (3,-1), (3,0)]
-  · intro v hv
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
-    rcases hv with rfl
-    exact (map_zero φ)
-  · decide
-  · decide
-  · intro v hv
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
-    rcases hv with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    · intro h0
-      exact case_3_0 φ G edges sep (relation φ h0 (map_zero φ : φ (0:(ℤ × ℤ)) = 0) (-1) (0) (by decide))
-    · intro h0
-      exact case_2_1 φ G edges sep (relation φ h0 (map_zero φ : φ (0:(ℤ × ℤ)) = 0) (-1) (0) (by decide))
-    · intro h0
-      exact case_2_0 φ G edges sep (relation φ h0 (map_zero φ : φ (0:(ℤ × ℤ)) = 0) (-1) (0) (by decide))
-    · intro h0
-      exact case_m2_1 φ G edges sep h0
-    · intro h0
-      exact case_1_2 φ G edges sep (relation φ h0 (map_zero φ : φ (0:(ℤ × ℤ)) = 0) (-1) (0) (by decide))
-    · intro h0
-      exact case_1_1 φ G edges sep (relation φ h0 (map_zero φ : φ (0:(ℤ × ℤ)) = 0) (-1) (0) (by decide))
-    · intro h0
-      exact case_1_0 φ G edges sep (relation φ h0 (map_zero φ : φ (0:(ℤ × ℤ)) = 0) (-1) (0) (by decide))
-    · intro h0
-      exact case_m1_1 φ G edges sep h0
-    · intro h0
-      exact case_0_2 φ G edges sep (relation φ h0 (map_zero φ : φ (0:(ℤ × ℤ)) = 0) (-1) (0) (by decide))
-    · intro h0
-      exact case_0_1 φ G edges sep (relation φ h0 (map_zero φ : φ (0:(ℤ × ℤ)) = 0) (-1) (0) (by decide))
-    · intro h0
-      exact case_m1_2 φ G edges sep (relation φ h0 (map_zero φ : φ (0:(ℤ × ℤ)) = 0) (-1) (0) (by decide))
-    · intro h0
-      exact case_m1_1 φ G edges sep (relation φ h0 (map_zero φ : φ (0:(ℤ × ℤ)) = 0) (-1) (0) (by decide))
-    · intro h0
-      exact case_1_0 φ G edges sep h0
-    · intro h0
-      exact case_m2_2 φ G edges sep (relation φ h0 (map_zero φ : φ (0:(ℤ × ℤ)) = 0) (-1) (0) (by decide))
-    · intro h0
-      exact case_m2_1 φ G edges sep (relation φ h0 (map_zero φ : φ (0:(ℤ × ℤ)) = 0) (-1) (0) (by decide))
-    · intro h0
-      exact case_2_0 φ G edges sep h0
-    · intro h0
-      exact case_m3_1 φ G edges sep (relation φ h0 (map_zero φ : φ (0:(ℤ × ℤ)) = 0) (-1) (0) (by decide))
-    · intro h0
-      exact case_3_0 φ G edges sep h0
+variable {A : Type*} [AddCommGroup A]
 
 /-- An abelian Haar graph with three distinct shifts contains a 4-, 8-, or
 16-cycle. Translate the right part to normalize one of the shifts to zero. -/
@@ -554,24 +1211,11 @@ theorem haar_short_cycle (G : SimpleGraph (Bool × A)) (u v : A)
     (h1 : ∀ x, G.Adj (false, x) (true, x + u))
     (h2 : ∀ x, G.Adj (false, x) (true, x + v)) :
     SimpleGraph.cycleGraph 4 ⊑ G ∨ SimpleGraph.cycleGraph 8 ⊑ G ∨ SimpleGraph.cycleGraph 16 ⊑ G := by
-  let ψ : (ℤ × ℤ) →+ A := {
-    toFun := fun w => w.1 • u + w.2 • v
-    map_zero' := by simp
-    map_add' := by intro x y; simp [add_zsmul]; abel }
-  apply case_free ψ G
-  · intro x d hd
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
-    rcases hd with rfl | rfl | rfl
-    · simpa [ψ] using h0 x
-    · simpa [ψ] using h1 x
-    · simpa [ψ] using h2 x
-  · intro w hw
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-    rcases hw with rfl | rfl | rfl
-    · simpa [ψ] using hu
-    · simpa [ψ] using hv
-    · simpa [ψ, ← sub_eq_add_neg] using (sub_ne_zero.mpr huv)
-
+  let p : Equiv.Perm A := Equiv.addRight u
+  let q : Equiv.Perm A := Equiv.addRight v
+  have sep (x : A) : p x ≠ x ∧ q x ≠ x ∧ p x ≠ q x := by simpa [p,q] using And.intro hu (And.intro hv huv)
+  have comm (x : A) : p (q x) = q (p x) := by change x+v+u=x+u+v; abel
+  exact LocalCommutation.near0 G p q sep h0 h1 h2 0 (comm _) (comm _) (comm _) (comm _)
 
 end HaarShort
 namespace HaarTransfer
@@ -762,14 +1406,18 @@ theorem main : H1 → H2 → OMA.R_Erdos64_erdos_64_R1_H1_R1.H1 := by
         2 < 2^2 := by decide
         _ ≤ 2^k := Nat.pow_le_pow_right (by decide) hk)).mp hc
       exact ⟨k,v,c,hk,hc',hl⟩
-    by_cases comm : Commute p q
-    · let z := Classical.choice inh
-      rcases HaarTransfer.commuting_matchings G p q comm z (h z).1.1 (h z).1.2.1 (h z).1.2.2
-        f (fun x => (h x).2.1) (fun x => (h x).2.2.1) (fun x => (h x).2.2.2) with a | a | a
-      · exact solve 2 (by decide) a
-      · exact solve 3 (by decide) a
-      · exact solve 4 (by decide) a
-    · obtain ⟨k,hk,hkG⟩ := noncomm X p q (fun x => (h x).1) comm
+    let J := G.comap f
+    have sub : J ⊑ G := isContained_iff_exists_le_comap.mpr ⟨f, le_rfl⟩
+    by_cases short : cycleGraph 4 ⊑ J ∨ cycleGraph 8 ⊑ J ∨ cycleGraph 16 ⊑ J
+    · rcases short with a | a | a
+      · exact solve 2 (by decide) (a.trans sub)
+      · exact solve 3 (by decide) (a.trans sub)
+      · exact solve 4 (by decide) (a.trans sub)
+    · have bound := LocalCommutation.defectDensity J p q (fun x => (h x).1)
+        (fun x => (h x).2.1) (fun x => (h x).2.2.1) (fun x => (h x).2.2.2) short
+      have count : (Finset.univ.filter (fun x => p (q x) ≠ q (p x))).card =
+          {x : X | p (q x) ≠ q (p x)}.ncard := by rw [← Set.ncard_coe_finset]; congr 1; ext; simp
+      obtain ⟨k,hk,hkG⟩ := noncomm X p q (fun x => (h x).1) (count ▸ bound)
       apply solve k hk (hkG.trans _)
       refine isContained_iff_exists_le_comap.mpr ⟨f,?_⟩
       have forward (a b : Bool × X) (ha : a.1 = false) (hb : b.1 = true)
