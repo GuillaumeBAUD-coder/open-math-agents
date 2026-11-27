@@ -119,6 +119,7 @@ export default async function ProblemPage({ params }: Props) {
     );
   }
 
+  const blocked = p?.blocked ?? root?.blocked;
   const upstream = p && !unformal && !p.formalizedHere ? `${META.upstream}/blob/${META.upstreamCommit}/${p.file}#L${p.line}` : null;
   const hasTree = steps.some((s) => s.parent === id);
 
@@ -132,23 +133,24 @@ export default async function ProblemPage({ params }: Props) {
       <div className="meta" style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
         {solution ? <span className="badge solved" title={outcomeText(outcomeOf(p?.kind)).explain}>{outcomeBadge(p?.kind, solution.polarity)} · checked by Lean here</span> : null}
         {p ? <span className={`badge ${p.kind}`}>{solution && p.kind === "known" ? "Known result" : KIND_LABEL[p.kind]}</span> : <span className="badge known">Step of a reduction</span>}
+        {blocked && <span className="badge">Unavailable for submissions</span>}
         {root && <span className="badge">{root.source}</span>}
         {p?.fields.map((f) => <span key={f} className="badge">{f}</span>)}
-        {p && prizeOf(p) && <span className="badge prize" title={`Offered by ${prizeOf(p)!.by}; paid by them, not by this site`}>Prize {prizeOf(p)!.label}</span>}
-        {!unformal && <span className="badge prize">{points} points</span>}
+        {p && !blocked && prizeOf(p) && <span className="badge prize" title={`Offered by ${prizeOf(p)!.by}; paid by them, not by this site`}>Prize {prizeOf(p)!.label}</span>}
+        {!unformal && !blocked && <span className="badge prize">{points} points</span>}
         {p && <Difficulty value={p.difficulty} />}
       </div>
 
       <div className="pgrid">
         <div>
           {solution && <Credit c={solution} title={title} first={p?.kind === "open" || Boolean(p?.formalizedHere)} kind={p?.kind ?? null} />}
-          {!solution && p && prizeOf(p) && (p.kind === "open" || p.kind === "unformalized") && (
+          {!solution && !blocked && p && prizeOf(p) && (p.kind === "open" || p.kind === "unformalized") && (
             <div className="prize-banner">
               <b>{prizeOf(p)!.label} prize</b> for whoever solves this, offered by {prizeOf(p)!.by}.<br />
               Solve it with your agent and claim it from them: the record here names you as the solver. <a href={prizeOf(p)!.url} target="_blank" rel="noreferrer">Prize rules →</a>
             </div>
           )}
-          {!solution && p?.kind === "open" && !p.claim && (
+          {!solution && p?.kind === "open" && !p.claim && !blocked && (
             <div className="first-banner">
               <b>Nobody has ever solved this.</b> The first proof checked here goes on the record under your name, forever: you will be the person who solved it.
             </div>
@@ -160,6 +162,15 @@ export default async function ProblemPage({ params }: Props) {
               <p style={{ margin: 0, fontSize: ".85rem", color: "var(--muted)" }}>
                 {p.claim.date} · {p.claim.sources.map((s, i) => <span key={s}>{i ? " · " : ""}<a href={s} target="_blank" rel="noreferrer">source {i + 1}</a></span>)}
                 {" "}· Agents can still work on it: checking, formalizing or refuting the claim is valuable. <Link href="/status">All recent claims</Link>
+              </p>
+            </div>
+          )}
+          {blocked && (
+            <div className="panel" role="alert" style={{ borderColor: "var(--text)" }}>
+              <h4>Unavailable for proof submissions</h4>
+              <p style={{ margin: "0 0 8px" }}>{blocked.summary}</p>
+              <p style={{ margin: 0, fontSize: ".85rem", color: "var(--muted)" }}>
+                {blocked.sources.map((s, i) => <span key={s}>{i ? " · " : "Sources: "}<a href={s} target="_blank" rel="noreferrer">source {i + 1}</a></span>)}
               </p>
             </div>
           )}
@@ -179,7 +190,7 @@ export default async function ProblemPage({ params }: Props) {
                 ? "This result was already proved in the literature. The Lean proof credited above is a machine-checked proof of it, written here: a formalization, not the solution of an open problem."
                 : "This result is already known to be true (or settled) in the literature, but nobody has a machine-checked proof of it yet. A Lean proof is a real contribution (a formalization, not a new theorem), and the most realistic target for an agent."}</p>
             )}
-            {p && prizeOf(p) && <p style={{ color: "var(--muted)", fontSize: ".85rem" }}>The {prizeOf(p)!.label} prize is offered by {prizeOf(p)!.by} and paid by them, not by this site, which takes no cut. {prizeOf(p)!.claim}: <a href={prizeOf(p)!.url} target="_blank" rel="noreferrer">details</a>.</p>}
+            {p && !blocked && prizeOf(p) && <p style={{ color: "var(--muted)", fontSize: ".85rem" }}>The {prizeOf(p)!.label} prize is offered by {prizeOf(p)!.by} and paid by them, not by this site, which takes no cut. {prizeOf(p)!.claim}: <a href={prizeOf(p)!.url} target="_blank" rel="noreferrer">details</a>.</p>}
             {p?.erdosState && <p style={{ color: "var(--muted)", fontSize: ".9rem" }}>erdosproblems.com status{p && variantNote(p.id, p.title, p.erdosState) ? " of the main problem" : ""}: <b>{p.erdosState}</b>{p.forumPosts ? ` · ${p.forumPosts} forum posts` : ""}</p>}
           </div>
 
@@ -198,7 +209,7 @@ export default async function ProblemPage({ params }: Props) {
             </div>
           )}
 
-          {!solution && (
+          {!solution && !blocked && (
             <div className="panel">
               <h4>{unformal ? "Step 1: state it in Lean. The file your agent writes:" : "The file your agent fills in:"} {file}</h4>
               <pre className="lean">{sk}</pre>
@@ -213,15 +224,15 @@ export default async function ProblemPage({ params }: Props) {
 
         <aside>
           <div className="panel">
-            <h4>Put your agent on this problem</h4>
+            <h4>{blocked ? "Submission disabled" : "Put your agent on this problem"}</h4>
             <p style={{ color: "var(--muted)", fontSize: ".88rem", marginTop: 0 }}>
-              Copy this line into your agent. The <a href={`/p/${encodeURIComponent(id)}/agent.txt`}>agent brief</a> holds everything known
-              about this problem (exact target, definitions, reusable lemmas, references, what others tried), so it starts working at once.
+              {blocked ? "The proof desk will not lease this target until the pinned upstream theorem type is corrected." : <>Copy this line into your agent. The <a href={`/p/${encodeURIComponent(id)}/agent.txt`}>agent brief</a> holds everything known
+              about this problem (exact target, definitions, reusable lemmas, references, what others tried), so it starts working at once.</>}
             </p>
-            {!solution && <CopyPrompt text={prompt} label="Copy" />}
+            {!solution && !blocked && <CopyPrompt text={prompt} label="Copy" />}
             <h4 style={{ marginTop: 18 }}>Agents on it now</h4>
             <div className="bignum">{agents}</div>
-            <p style={{ color: "var(--muted)", fontSize: ".9rem", marginBottom: 0 }}>{solution ? "Solved. Pick another one." : agents ? "Others are working; you can still join, the first checked proof wins." : "Nobody yet. Be first."}</p>
+            <p style={{ color: "var(--muted)", fontSize: ".9rem", marginBottom: 0 }}>{blocked ? "Unavailable until the upstream target is repaired." : solution ? "Solved. Pick another one." : agents ? "Others are working; you can still join, the first checked proof wins." : "Nobody yet. Be first."}</p>
           </div>
           <div className="panel">
             <h4>Details</h4>
@@ -232,7 +243,7 @@ export default async function ProblemPage({ params }: Props) {
               {p && (<><dt>Category</dt><dd>{p.category}</dd></>)}
               {p && unformal && (<><dt>Source</dt><dd>{p.source}</dd></>)}
               {step && (<><dt>Module</dt><dd><code>{step.module}</code></dd></>)}
-              {!unformal && <><dt>Points</dt><dd>{points} (frozen when an agent takes it)</dd></>}
+              {!unformal && !blocked && <><dt>Points</dt><dd>{points} (frozen when an agent takes it)</dd></>}
             </dl>
           </div>
           <div className="panel">

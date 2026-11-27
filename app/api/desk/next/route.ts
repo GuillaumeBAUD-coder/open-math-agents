@@ -35,7 +35,25 @@ async function handle(req: Request) {
 
   // Steps (hypotheses of accepted reductions) live in the database, not in the static catalogue.
   if (kind === "step" || STEP_RE.test(wanted)) {
-    const steps = (await getSteps(undefined, true)).filter((s) => !s.solved && !solved.has(s.id));
+    const allSteps = await getSteps(undefined, true);
+    const byId = new Map(allSteps.map((s) => [s.id, s]));
+    const blockedParent = (step: Step) => {
+      let parent = step.parent;
+      const seen = new Set<string>();
+      while (!seen.has(parent)) {
+        seen.add(parent);
+        const problem = getProblem(parent);
+        if (problem) return problem.blocked ? problem : undefined;
+        const ancestor = byId.get(parent);
+        if (!ancestor) return undefined;
+        parent = ancestor.parent;
+      }
+      return undefined;
+    };
+    const requestedStep = wanted ? byId.get(wanted) : undefined;
+    const blocked = requestedStep && blockedParent(requestedStep);
+    if (blocked) return json({ error: "blocked_target", reason: blocked.blocked?.summary }, 409);
+    const steps = allSteps.filter((s) => !s.solved && !solved.has(s.id) && !blockedParent(s));
     const s: Step | null | undefined = wanted ? steps.find((x) => x.id === wanted) : pick(steps, live);
     if (!s) return json({ error: wanted ? "not_found_or_solved" : "nothing_matches", hint: "No open step right now. Try --kind known." }, 404);
     const r = await claim2(s.id, handleName, agent, hashIp(clientIp(req)), s.points);
@@ -59,11 +77,12 @@ async function handle(req: Request) {
   // Problems with no Lean statement yet: the task is to state them, not to prove them.
   const formalize = kind === "formalize" || kind === "unformalized" || (wanted && getProblem(wanted)?.kind === "unformalized");
   if (formalize) {
-    const cands = PROBLEMS.filter((x) => x.kind === "unformalized" && !x.claim && (!get("source") || x.source === get("source")) && (!get("field") || x.fields.includes(get("field"))));
+    const cands = PROBLEMS.filter((x) => x.kind === "unformalized" && !x.claim && !x.blocked && (!get("source") || x.source === get("source")) && (!get("field") || x.fields.includes(get("field"))));
     // most famous first: among the least crowded, take from the 25 best known still waiting
     const minLive = Math.min(...cands.map((x) => live.get(x.id) ?? 0));
     const top = cands.filter((x) => (live.get(x.id) ?? 0) === minLive).sort((a, b) => b.fame - a.fame).slice(0, 25);
     const pick0 = wanted ? getProblem(wanted) : top[Math.floor(Math.random() * top.length)];
+    if (pick0?.blocked) return json({ error: "blocked_target", reason: pick0.blocked.summary }, 409);
     const fp = pick0 ? await getFull(pick0.id) : undefined;
     if (!fp || fp.kind !== "unformalized") return json({ error: wanted ? "not_found_or_already_formalized" : "nothing_matches" }, 404);
     const r = await claim2(fp.id, handleName, agent, hashIp(clientIp(req)), 0);
@@ -90,6 +109,7 @@ async function handle(req: Request) {
   if (wanted) {
     p = getProblem(wanted);
     if (!p) return json({ error: "not_found" }, 404);
+    if (p.blocked) return json({ error: "blocked_target", reason: p.blocked.summary }, 409);
     if (solved.has(p.id)) return json({ error: "already_solved" }, 409);
   } else {
     const [lo, hi] = LEVELS[get("level")] ?? [0, 101];
@@ -99,6 +119,7 @@ async function handle(req: Request) {
       (x) =>
         !solved.has(x.id) &&
         x.kind !== "unformalized" &&
+        !x.blocked &&
         !x.claim &&
         (kind === "any" || x.kind === kind) &&
         x.difficulty >= lo && x.difficulty < hi &&

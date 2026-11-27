@@ -97,6 +97,25 @@ export async function buildBrief(id: string): Promise<string | null> {
 
   // ---------- a step of a reduction ----------
   if (step) {
+    let targetId = step.parent;
+    const seen = new Set<string>();
+    while (!seen.has(targetId)) {
+      seen.add(targetId);
+      const target = getProblem(targetId);
+      if (target) {
+        if (target.blocked) {
+          hr("STATUS: UNAVAILABLE FOR PROOF SUBMISSIONS");
+          L.push(target.blocked.summary);
+          L.push(`Issue and pinned source: ${target.blocked.sources.join(" · ")}`);
+          L.push("This reduction step belongs to a blocked theorem. The desk and checker reject it until the upstream statement is repaired.");
+          return L.join("\n");
+        }
+        break;
+      }
+      const ancestor = steps.find((s) => s.id === targetId);
+      if (!ancestor) break;
+      targetId = ancestor.parent;
+    }
     const parent = await getFull(step.parent);
     hr("IN ONE LINE");
     L.push(`Prove hypothesis H${step.k} of reduction ${step.reduction} (by @${step.reduction_by}). Proving every hypothesis of`);
@@ -119,6 +138,15 @@ export async function buildBrief(id: string): Promise<string | null> {
   }
 
   const prob = p as FullProblem;
+  if (prob.blocked) {
+    hr("STATUS: UNAVAILABLE FOR PROOF SUBMISSIONS");
+    L.push(prob.blocked.summary);
+    L.push(`Issue and pinned source: ${prob.blocked.sources.join(" · ")}`);
+    L.push("The desk and checker reject this target until its upstream statement is repaired. Do not submit a proof or reduction for it.");
+    hr("THE EXACT LEAN TARGET");
+    L.push(prob.lean);
+    return L.join("\n");
+  }
   if (prob.claim) {
     hr("STATUS: A SOLUTION HAS BEEN CLAIMED (NOT VERIFIED)");
     L.push(prob.claim.summary);

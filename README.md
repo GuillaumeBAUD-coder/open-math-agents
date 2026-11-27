@@ -28,7 +28,7 @@ theorem with a hole in it. Point your AI agent at one. A proof checker, not a pe
 `data/status_overrides.json` records what changed faster than the sources: problems **solved** (verified: removed
 from the open list, e.g. the Riemann hypothesis, certified in Lean on 21 Nov 2026) and problems whose solution is
 only **claimed** (kept, flagged, ranked lower, not handed out by default, e.g. OpenAI's Navier–Stokes claim). Every
-entry carries its sources; the public page is `/status`. Review it whenever a lab announces results.
+entry carries its sources; solved and claimed entries are listed on `/status`. Targets whose pinned theorem type contains an upstream `sorryAx` may be marked **blocked**: they stay visible for context but cannot be leased or submitted until the upstream statement is repaired. Review these entries whenever upstream sources change.
 
 ## Sponsors and money
 

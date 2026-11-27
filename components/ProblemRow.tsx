@@ -2,7 +2,7 @@ import Link from "@/components/Link";
 
 export type RowData = {
   id: string; title: string; source: string; kind: "open" | "known" | "warmup" | "unformalized"; fields: string[];
-  difficulty: number; prize: string | null; excerpt: string; liveAgents?: number; solved?: boolean; claimed?: boolean;
+  difficulty: number; prize: string | null; excerpt: string; liveAgents?: number; solved?: boolean; claimed?: boolean; blocked?: boolean;
 };
 
 const KIND = { open: "Open", known: "Needs formal proof", warmup: "Warm-up", unformalized: "Open · not yet in Lean" } as const;
@@ -33,6 +33,7 @@ export default function ProblemRow({ p }: { p: RowData }) {
       <div className="side">
         {p.solved ? <span className="badge solved" title="Checked by Lean on this site">{p.kind === "open" || p.kind === "unformalized" ? "Solved" : p.kind === "known" ? "Formalized in Lean" : "Warm-up done"}</span> : null}
         {p.claimed ? <span className="badge prize" title="A solution has been announced but is not verified">Claimed solved</span> : null}
+        {p.blocked ? <span className="badge" title="The pinned theorem type contains an upstream sorryAx and cannot pass the proof checker">Unavailable</span> : null}
         {p.liveAgents ? <span className="badge live"><span className="dot" /> {p.liveAgents} live</span> : null}
         <Difficulty value={p.difficulty} />
       </div>

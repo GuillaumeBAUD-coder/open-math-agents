@@ -34,6 +34,9 @@ for _p in PROBLEMS.values():
         _p["kind"] = "known"
 _extra_path = os.path.join(os.path.dirname(os.path.abspath(catalog_path)), "extra.json")
 EXTRA = {p["id"]: p for p in json.load(open(_extra_path, encoding="utf-8"))["problems"]} if os.path.exists(_extra_path) else {}
+_overrides_path = os.path.join(os.path.dirname(os.path.abspath(catalog_path)), "status_overrides.json")
+_overrides = json.load(open(_overrides_path, encoding="utf-8"))["entries"] if os.path.exists(_overrides_path) else []
+BLOCKED = {entry["id"]: entry for entry in _overrides if entry.get("status") == "blocked"}
 # The long tail waits for statements too: OEIS / MathOverflow / Math.SE / curated (extra2.json) and the MathOverflow
 # dump (extra3.json.gz). Only their ids matter here.
 _data_dir = os.path.dirname(os.path.abspath(catalog_path))
@@ -45,6 +48,19 @@ if os.path.exists(os.path.join(_data_dir, "extra3.json.gz")):
     for _r in json.load(gzip.open(os.path.join(_data_dir, "extra3.json.gz"), "rt", encoding="utf-8"))["rows"]:
         EXTRA.setdefault(f"mo-{_r[0]}", {"id": f"mo-{_r[0]}"})
 STEP_RE = re.compile(r"^(.+)\.R(\d{1,2})\.H([1-4])$")
+
+
+def blocked_target_id(tid):
+    """Return the blocked root target behind a problem, reduction or nested step id."""
+    if tid in BLOCKED:
+        return tid
+    m = STEP_RE.match(tid)
+    if m:
+        return blocked_target_id(m.group(1))
+    m = re.fullmatch(r"(.+)\.R\d{1,2}", tid)
+    if m:
+        return blocked_target_id(m.group(1))
+    return None
 
 
 def san(rid):
@@ -102,6 +118,8 @@ def read_code(p):
 
 def describe_target(tid):
     """What a reduction or a step may target: a catalogue problem, or a step of a merged reduction."""
+    if blocked_target_id(tid):
+        return None
     if tid in PROBLEMS:
         p = PROBLEMS[tid]
         return {"kind": p["kind"], "import": p["module"], "statement": f"type_of% @{p['decl']}", "decl": p["decl"]}
@@ -139,20 +157,26 @@ if ms:
         errors.append(f"{pid} is not a problem waiting for a statement")
 elif mp:
     pid = mp.group(1)
-    target = describe_target(pid)
+    blocked = blocked_target_id(pid)
+    target = None if blocked else describe_target(pid)
     ftype = "proof" if (pid in PROBLEMS or pid in EXTRA) else "step"
     if target is None:
-        if pid in EXTRA:
+        if blocked:
+            errors.append(f"{pid} is blocked: {BLOCKED[blocked]['summary']}")
+        elif pid in EXTRA:
             errors.append(f"{pid} has no Lean statement yet: send statements/{pid}.lean first (it must be reviewed and merged)")
         else:
             errors.append(f"unknown problem or step id {pid} (a step needs its reduction merged first)")
 elif mr:
     pid = f"{mr.group(1)}.R{mr.group(2)}"
     ftype = "reduction"
-    target = describe_target(mr.group(1))
+    blocked = blocked_target_id(mr.group(1))
+    target = None if blocked else describe_target(mr.group(1))
     if not 1 <= int(mr.group(2)) <= 99:
         errors.append("reduction number must be 1..99")
-    if target is None:
+    if blocked:
+        errors.append(f"cannot split a blocked target {blocked}: {BLOCKED[blocked]['summary']}")
+    elif target is None:
         errors.append(f"unknown reduction target {mr.group(1)}")
 else:
     print(json.dumps({"ok": False, "file": rel, "errors": ["file must be proofs/<id>.lean, reductions/<id>.R<n>.lean or statements/<id>.lean (letters, digits, _ . ' - only)"]}))

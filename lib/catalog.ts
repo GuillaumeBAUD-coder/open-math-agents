@@ -29,6 +29,8 @@ export type Problem = {
   shard: number;
   /** A solution has been announced but is not verified (or is disputed). */
   claim?: { summary: string; date: string; sources: string[] };
+  /** The pinned target type contains an upstream sorryAx and cannot pass the proof checker. */
+  blocked?: { summary: string; date: string; sources: string[] };
   /** Editorial note (e.g. why a related result does not settle this one). */
   note?: { summary: string; sources: string[] };
 };
@@ -50,7 +52,7 @@ export type FullProblem = Problem & {
   formalizedHere?: boolean;
 };
 
-export type Override = { id: string; status: "solved" | "claimed" | "open"; title?: string; summary: string; date: string; sources: string[] };
+export type Override = { id: string; status: "solved" | "claimed" | "open" | "blocked"; title?: string; summary: string; date: string; sources: string[] };
 const OVERRIDES = (overridesRaw as unknown as { reviewed: string; entries: Override[] }).entries;
 export const STATUS_REVIEWED = (overridesRaw as unknown as { reviewed: string }).reviewed;
 const OV = new Map(OVERRIDES.map((o) => [o.id, o]));
@@ -82,6 +84,7 @@ export const CLAIMED: Override[] = OVERRIDES.filter((o) => o.status === "claimed
 export const PROBLEMS: Problem[] = ALL.filter((p) => OV.get(p.id)?.status !== "solved").map((p) => {
   const o = OV.get(p.id);
   if (!o) return p;
+  if (o.status === "blocked") return { ...p, blocked: { summary: o.summary, date: o.date, sources: o.sources } };
   if (o.status === "claimed") return { ...p, fame: Math.max(1, p.fame - 30), claim: { summary: o.summary, date: o.date, sources: o.sources } };
   return { ...p, title: o.title ?? p.title, note: { summary: o.summary, sources: o.sources } };
 });
@@ -254,6 +257,7 @@ export function texPlain(s: string) {
 export function toCard(p: Problem, excerpt = "") {
   return {
     claimed: Boolean(p.claim),
+    blocked: Boolean(p.blocked),
     id: p.id,
     title: p.title,
     source: p.source,

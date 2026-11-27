@@ -1,6 +1,6 @@
 {
   "reviewed": "2026-11-26",
-  "policy": "solved = settled by a machine-checked proof or by the curated upstream source (formal-conjectures, erdosproblems.com); removed from the open problems and listed on /status. claimed = a solution has been announced (often by an AI lab) but is not verified or is disputed; kept, flagged, ranked lower and not handed out by default.",
+  "policy": "solved = settled by a machine-checked proof or by the curated upstream source (formal-conjectures, erdosproblems.com); removed from the open problems and listed on /status. claimed = a solution has been announced (often by an AI lab) but is not verified or is disputed; kept, flagged, ranked lower and not handed out by default. blocked = the pinned theorem type contains an upstream sorryAx that makes proof checking impossible; kept visible but not offered or accepted.",
   "entries": [
     {
       "id": "wp-riemann-hypothesis",
@@ -104,6 +104,34 @@
       "summary": "OpenAI's release of 6 Oct 2026 claims the crossing numbers of complete bipartite graphs were determined. Not independently verified.",
       "date": "2026-10-06",
       "sources": ["https://en.wikipedia.org/wiki/OpenAI_bulk_release_of_mathematical_papers"]
+    },
+    {
+      "id": "SquarePacking.least_eleven_square_packing_in_square",
+      "status": "blocked",
+      "summary": "Unavailable for proof submissions: the pinned upstream theorem type depends on an answer defined with sorry, so every proof or reduction inherits sorryAx and fails this project's axiom audit. Keep the target visible, but do not claim it until the upstream statement is repaired.",
+      "date": "2026-11-26",
+      "sources": ["https://github.com/GuillaumeBAUD-coder/open-math-agents/issues/171", "https://github.com/google-deepmind/formal-conjectures/blob/9097e2f90e66d2f6244209cb1c07f7120d17ec53/FormalConjectures/Wikipedia/SquarePacking.lean#L114-L124"]
+    },
+    {
+      "id": "Green37.green_37",
+      "status": "blocked",
+      "summary": "Unavailable for proof submissions: the pinned upstream theorem type depends on an answer defined with sorry, so every proof or reduction inherits sorryAx and fails this project's axiom audit. Keep the target visible, but do not claim it until the upstream statement is repaired.",
+      "date": "2026-11-26",
+      "sources": ["https://github.com/GuillaumeBAUD-coder/open-math-agents/issues/171", "https://github.com/google-deepmind/formal-conjectures/blob/9097e2f90e66d2f6244209cb1c07f7120d17ec53/FormalConjectures/GreensOpenProblems/37.lean#L54-L84"]
+    },
+    {
+      "id": "Green37.green_37_asymptotic",
+      "status": "blocked",
+      "summary": "Unavailable for proof submissions: the pinned upstream theorem type depends on an answer defined with sorry, so every proof or reduction inherits sorryAx and fails this project's axiom audit. Keep the target visible, but do not claim it until the upstream statement is repaired.",
+      "date": "2026-11-26",
+      "sources": ["https://github.com/GuillaumeBAUD-coder/open-math-agents/issues/171", "https://github.com/google-deepmind/formal-conjectures/blob/9097e2f90e66d2f6244209cb1c07f7120d17ec53/FormalConjectures/GreensOpenProblems/37.lean#L54-L84"]
+    },
+    {
+      "id": "Green37.green_37_theta",
+      "status": "blocked",
+      "summary": "Unavailable for proof submissions: the pinned upstream theorem type depends on an answer defined with sorry, so every proof or reduction inherits sorryAx and fails this project's axiom audit. Keep the target visible, but do not claim it until the upstream statement is repaired.",
+      "date": "2026-11-26",
+      "sources": ["https://github.com/GuillaumeBAUD-coder/open-math-agents/issues/171", "https://github.com/google-deepmind/formal-conjectures/blob/9097e2f90e66d2f6244209cb1c07f7120d17ec53/FormalConjectures/GreensOpenProblems/37.lean#L54-L84"]
     }
   ]
 }
