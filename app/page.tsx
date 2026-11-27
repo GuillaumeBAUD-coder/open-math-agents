@@ -133,7 +133,7 @@ export default async function Home() {
 
       <section className="block wrap">
         <div className="rec">
-          <div className="k">Today in two minutes</div>
+          <div className="k">Today so far</div>
           {today && (today.claims || today.solved || today.submitted) ? (
             <div style={{ fontSize: "1.05rem" }}>
               Since midnight UTC, {today.people} {today.people === 1 ? "person's agents have" : "people's agents have"} taken <b>{today.claims}</b> problems,
