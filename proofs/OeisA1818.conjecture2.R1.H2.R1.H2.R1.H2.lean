@@ -378,12 +378,16 @@ theorem spectrum_1818 : OMA.R_OeisA1818_conjecture2_R1_H2_R1_H2_R1.H2 := by
           have h1 : y r = 1 := by
             rw [← ha, hinv_y, ha0, hy0]
             exact ZMod.inv_eq_of_mul_eq_one _ (by rw [mul_one])
+          haveI : Nontrivial R := ZMod.nontrivial_iff.mpr (by have := hp.two_le; nlinarith)
           have hsub := y_sub_isUnit hp (Finset.mem_erase.mp hr).1
           change IsUnit (y r - y zeroFin) at hsub
           rw [h1, hy0, sub_self] at hsub
           exact not_isUnit_zero hsub
         · intro r _
-          rw [hinv_y]
+          have hinv_inv : (y r)⁻¹⁻¹ = y r := by
+            apply ZMod.inv_eq_of_mul_eq_one
+            rw [mul_comm, ZMod.mul_inv_of_unit _ (y_isUnit hp r)]
+          rw [hinv_y, hinv_inv]
       have hpair : ∀ r ∈ univ.erase zeroFin, (1 - y r)⁻¹ + (1 - (y r)⁻¹)⁻¹ = 1 := by
         intro r hr
         have hyu := y_isUnit hp r
@@ -396,8 +400,8 @@ theorem spectrum_1818 : OMA.R_OeisA1818_conjecture2_R1_H2_R1_H2_R1.H2 := by
         rw [mul_one, mul_add, ZMod.mul_inv_of_unit _ h1u]
         have hmul : (1 - y r) * (1 - (y r)⁻¹)⁻¹ = -y r := by
           have h1yr : 1 - y r = -y r * (1 - (y r)⁻¹) := by
-            linear_combination -(y r) * hyi
-          rw [h1yr, mul_assoc, mul_comm (1 - (y r)⁻¹), ZMod.mul_inv_of_unit _ h1ui, mul_one]
+            linear_combination -hyi
+          rw [h1yr, mul_assoc, ZMod.mul_inv_of_unit _ h1ui, mul_one]
         rw [hmul]
         ring
       calc 2 * ∑ r ∈ univ.erase zeroFin, (1 - y r)⁻¹
@@ -409,7 +413,7 @@ theorem spectrum_1818 : OMA.R_OeisA1818_conjecture2_R1_H2_R1_H2_R1.H2 := by
         _ = (2 * m : R) - 1 := by
             rw [Finset.card_erase_of_mem (Finset.mem_univ zeroFin), Finset.card_univ, Fintype.card_fin]
             rw [Nat.cast_sub hm_pos]
-            simp only [Nat.cast_mul, Nat.cast_ofNat]
+            push_cast
             ring
     have hS_val : ∀ k : ℕ, 1 ≤ k → k ≤ 2 * m → 2 * S k = 2 * (k : R) - 1 - 2 * m := by
       intro k hk1 hk2
@@ -419,7 +423,7 @@ theorem spectrum_1818 : OMA.R_OeisA1818_conjecture2_R1_H2_R1_H2_R1.H2 := by
         have hk2m : k = 2 * m := by omega
         subst hk2m
         rw [hS_top]
-        simp only [Nat.cast_mul, Nat.cast_ofNat]
+        push_cast
         ring
       | succ d ih =>
         have hklt : k < 2 * m := by omega
