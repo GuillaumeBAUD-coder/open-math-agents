@@ -4,10 +4,10 @@ import Mathlib
 /-!
 Assume a cubic graph admits a locally bijective four-coloring. Match the
 color fibers along the star at color 0. Three permutations then describe
-the remaining edges. If they restrict to translations on an abelian orbit,
+the remaining edges. If they restrict to translations or reflected translations on an abelian sheet orbit,
 the integer-relation certificate below embeds a 4-, 8-, or 16-cycle.
 The two residual questions concern graphs with no such coloring and
-connected nonbipartite tetrahedral lifts with noncommuting permutations.
+connected nonbipartite tetrahedral lifts with no such orbit.
 
 Credit: @ubuwaits. The parent reduction is due to @mejiasd3v, building on
 the cubic bridge reduction by @JamesSlash.
@@ -50,12 +50,12 @@ private theorem consequences {A : Type*} [AddCommGroup A] {φ : (ℤ × ℤ × �
   exact consequence h c hc
 
 private theorem testWord {A V : Type*} [AddCommGroup A] (G : SimpleGraph V)
-    (φ : (ℤ × ℤ × ℤ) →+ A) (e : Fin 4 × A ↪ V) (δ : Fin 4 → Fin 4 → ℤ × ℤ × ℤ)
-    (neighbors : ∀ i j, i ≠ j → ∀ x, G.Adj (e (i, x)) (e (j, x + φ (δ i j))))
+    (φ : (ℤ × ℤ × ℤ) →+ A) (e : Fin 4 × A ↪ V) (move : Fin 4 → Fin 4 → (ℤ × ℤ × ℤ) → ℤ × ℤ × ℤ)
+    (neighbors : ∀ i j, i ≠ j → ∀ x, G.Adj (e (i, φ x)) (e (j, φ (move i j x))))
     {n : ℕ} [NeZero n] (allowed : n = 4 ∨ n = 8 ∨ n = 16)
     (p : Fin n → Fin 4 × (ℤ × ℤ × ℤ)) (total : ℤ × ℤ × ℤ) (collisions : List (ℤ × ℤ × ℤ))
     (edges : ∀ i, let a := p i; let b := p (i+1)
-      a.1 ≠ b.1 ∧ (a.2 + δ a.1 b.1 - b.2 = 0 ∨ a.2 + δ a.1 b.1 - b.2 = total))
+      a.1 ≠ b.1 ∧ (move a.1 b.1 a.2 - b.2 = 0 ∨ move a.1 b.1 a.2 - b.2 = total))
     (pairs : ∀ i j, i ≠ j → (p i).1 = (p j).1 →
       (p j).2 - (p i).2 ∈ collisions ∨ -((p j).2 - (p i).2) ∈ collisions)
     (closed : φ total = 0)
@@ -66,11 +66,11 @@ private theorem testWord {A V : Type*} [AddCommGroup A] (G : SimpleGraph V)
   by_cases injective : Injective label
   · have side (i : Fin n) : G.Adj (label i) (label (i+1)) := by
       obtain ⟨hne, hz⟩ := edges i
-      have h : φ ((p i).2 + δ (p i).1 (p (i+1)).1 - (p (i+1)).2) = 0 := by
+      have h : φ (move (p i).1 (p (i+1)).1 (p i).2 - (p (i+1)).2) = 0 := by
         rcases hz with hz | hz <;> simp [hz,closed]
-      have replace : φ (p i).2 + φ (δ (p i).1 (p (i+1)).1) = φ (p (i+1)).2 := by
+      have replace : φ (move (p i).1 (p (i+1)).1 (p i).2) = φ (p (i+1)).2 := by
         simpa only [map_sub, map_add, sub_eq_zero] using h
-      simpa only [label, replace] using neighbors _ _ hne (φ (p i).2)
+      simpa only [label, replace] using neighbors _ _ hne (p i).2
     have contains : cycleGraph n ⊑ G := by
       refine ⟨⟨⟨label, ?_⟩, injective⟩⟩
       intro i j hij
@@ -130,6 +130,9 @@ theorem abelianTetrahedron {A V : Type*} [AddCommGroup A] (G : SimpleGraph V)
     | simpa [δ, φ, sub_eq_add_neg] using (twelve (x-a)).symm
     | simpa [δ, φ, sub_eq_add_neg] using (twentythree (x-b)).symm
     | simpa [δ, φ, sub_eq_add_neg] using (thirtyone (x-c)).symm
+  have latticeEdge (i j : Fin 4) (h : i ≠ j) (z : ℤ × ℤ × ℤ) :
+      G.Adj (e (i,φ z)) (e (j,φ (z + δ i j))) := by
+    simpa only [map_add] using neighbors i j h (φ z)
   let good := cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G
   -- Projected color words and their successive sheet displacements, relative
   -- to the three chord generators. The final closing vertex is implicit.
@@ -184,21 +187,21 @@ theorem abelianTetrahedron {A V : Type*} [AddCommGroup A] (G : SimpleGraph V)
       (0, -2, 0, -2), (2, -2, 0, -2), (1, -3, 0, -2), (3, -3, 0, -3),
       (0, -3, 0, -3), (2, -3, 0, -3), (1, -4, 0, -3), (3, -4, 0, -4)]
   have case0 (h : ∀ v ∈ ([(0, 1, 0), (0, 0, 1)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
-    apply testWord G φ e δ neighbors (n := 4) (by decide)
+    apply testWord G φ e (fun i j z => z + δ i j) latticeEdge (n := 4) (by decide)
       word0132 (0, -1, -1) []
       (by dsimp only [δ, word0132]; decide) (by dsimp only [word0132]; decide)
       (consequence h [-1, -1] (by decide))
     intro d hd hz
     simp at hd
   have case1 (h : ∀ v ∈ ([(1, 0, 0), (0, 1, 0), (0, 0, 1)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
-    apply testWord G φ e δ neighbors (n := 4) (by decide)
+    apply testWord G φ e (fun i j z => z + δ i j) latticeEdge (n := 4) (by decide)
       word0123 (1, 1, 0) []
       (by dsimp only [δ, word0123]; decide) (by dsimp only [word0123]; decide)
       (consequence h [1, 1, 0] (by decide))
     intro d hd hz
     simp at hd
   have case2 (h : ∀ v ∈ ([(1, -1, 0), (0, 0, 1)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
-    apply testWord G φ e δ neighbors (n := 8) (by decide)
+    apply testWord G φ e (fun i j z => z + δ i j) latticeEdge (n := 8) (by decide)
       word01320312 (1, -1, 0) [(0, 1, 0), (0, 1, 1), (1, 0, 1)]
       (by dsimp only [δ, word01320312]; decide) (by dsimp only [word01320312]; decide)
       (consequence h [1, 0] (by decide))
@@ -209,21 +212,21 @@ theorem abelianTetrahedron {A V : Type*} [AddCommGroup A] (G : SimpleGraph V)
     · exact case1 (consequences (addRelation hz h) [[1, 1, -1], [1, 0, -1], [0, 0, 1]] (by decide))
     · exact case1 (consequences (addRelation hz h) [[1, 0, -1], [1, -1, -1], [0, 0, 1]] (by decide))
   have case3 (h : ∀ v ∈ ([(1, 0, 0), (0, 0, 1)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
-    apply testWord G φ e δ neighbors (n := 4) (by decide)
+    apply testWord G φ e (fun i j z => z + δ i j) latticeEdge (n := 4) (by decide)
       word0213 (-1, 0, -1) []
       (by dsimp only [δ, word0213]; decide) (by dsimp only [word0213]; decide)
       (consequence h [-1, -1] (by decide))
     intro d hd hz
     simp at hd
   have case4 (h : ∀ v ∈ ([(1, 1, 0), (0, 0, 1)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
-    apply testWord G φ e δ neighbors (n := 4) (by decide)
+    apply testWord G φ e (fun i j z => z + δ i j) latticeEdge (n := 4) (by decide)
       word0123 (1, 1, 0) []
       (by dsimp only [δ, word0123]; decide) (by dsimp only [word0123]; decide)
       (consequence h [1, 0] (by decide))
     intro d hd hz
     simp at hd
   have case5 (h : ∀ v ∈ ([(2, 0, 0), (0, 0, 1)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
-    apply testWord G φ e δ neighbors (n := 8) (by decide)
+    apply testWord G φ e (fun i j z => z + δ i j) latticeEdge (n := 8) (by decide)
       word02130213 (-2, 0, -2) [(1, 0, 1)]
       (by dsimp only [δ, word02130213]; decide) (by dsimp only [word02130213]; decide)
       (consequence h [-1, -2] (by decide))
@@ -232,7 +235,7 @@ theorem abelianTetrahedron {A V : Type*} [AddCommGroup A] (G : SimpleGraph V)
     subst d
     exact case3 (consequences (addRelation hz h) [[1, 0, -1], [0, 0, 1]] (by decide))
   have case6 (h : ∀ v ∈ ([(2, 1, 0), (0, 0, 1)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
-    apply testWord G φ e δ neighbors (n := 8) (by decide)
+    apply testWord G φ e (fun i j z => z + δ i j) latticeEdge (n := 8) (by decide)
       word01203123 (2, 1, 1) [(1, 0, 0), (1, 0, 1), (1, 1, 1)]
       (by dsimp only [δ, word01203123]; decide) (by dsimp only [word01203123]; decide)
       (consequence h [1, 1] (by decide))
@@ -243,7 +246,7 @@ theorem abelianTetrahedron {A V : Type*} [AddCommGroup A] (G : SimpleGraph V)
     · exact case1 (consequences (addRelation hz h) [[1, 0, -1], [-2, 1, 2], [0, 0, 1]] (by decide))
     · exact case1 (consequences (addRelation hz h) [[-1, 1, 1], [2, -1, -2], [0, 0, 1]] (by decide))
   have case7 (h : ∀ v ∈ ([(0, 0, 1)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
-    apply testWord G φ e δ neighbors (n := 16) (by decide)
+    apply testWord G φ e (fun i j z => z + δ i j) latticeEdge (n := 16) (by decide)
       word0120120321021023 (0, 0, 0) [(0, 1, 0), (1, -1, 0), (1, 0, 0), (1, 1, 0), (2, 0, 0), (2, 1, 0)]
       (by dsimp only [δ, word0120120321021023]; decide) (by dsimp only [word0120120321021023]; decide)
       (consequence h [0] (by decide))
@@ -257,14 +260,14 @@ theorem abelianTetrahedron {A V : Type*} [AddCommGroup A] (G : SimpleGraph V)
     · exact case5 (consequences (addRelation hz h) [[1, 0], [0, 1]] (by decide))
     · exact case6 (consequences (addRelation hz h) [[1, 0], [0, 1]] (by decide))
   have case8 (h : ∀ v ∈ ([(1, 0, -1), (0, 1, 1)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
-    apply testWord G φ e δ neighbors (n := 4) (by decide)
+    apply testWord G φ e (fun i j z => z + δ i j) latticeEdge (n := 4) (by decide)
       word0123 (1, 1, 0) []
       (by dsimp only [δ, word0123]; decide) (by dsimp only [word0123]; decide)
       (consequence h [1, 1] (by decide))
     intro d hd hz
     simp at hd
   have case9 (h : ∀ v ∈ ([(1, 0, -1)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
-    apply testWord G φ e δ neighbors (n := 8) (by decide)
+    apply testWord G φ e (fun i j z => z + δ i j) latticeEdge (n := 8) (by decide)
       word01230132 (1, 0, -1) [(0, 0, 1), (1, 1, 0)]
       (by dsimp only [δ, word01230132]; decide) (by dsimp only [word01230132]; decide)
       (consequence h [1] (by decide))
@@ -274,7 +277,7 @@ theorem abelianTetrahedron {A V : Type*} [AddCommGroup A] (G : SimpleGraph V)
     · exact case3 (consequences (addRelation hz h) [[1, 1], [1, 0]] (by decide))
     · exact case8 (consequences (addRelation hz h) [[0, 1], [1, -1]] (by decide))
   have case10 (h : ∀ v ∈ ([(1, 0, 0), (0, 0, 2)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
-    apply testWord G φ e δ neighbors (n := 8) (by decide)
+    apply testWord G φ e (fun i j z => z + δ i j) latticeEdge (n := 8) (by decide)
       word02130213 (-2, 0, -2) [(1, 0, 1)]
       (by dsimp only [δ, word02130213]; decide) (by dsimp only [word02130213]; decide)
       (consequence h [-2, -1] (by decide))
@@ -283,7 +286,7 @@ theorem abelianTetrahedron {A V : Type*} [AddCommGroup A] (G : SimpleGraph V)
     subst d
     exact case3 (consequences (addRelation hz h) [[0, 1, 0], [1, -1, 0]] (by decide))
   have case11 (h : ∀ v ∈ ([(1, 0, 0), (0, 1, -1)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
-    apply testWord G φ e δ neighbors (n := 8) (by decide)
+    apply testWord G φ e (fun i j z => z + δ i j) latticeEdge (n := 8) (by decide)
       word01230213 (0, 1, -1) [(0, 1, 0), (1, 0, 1), (1, 1, 0)]
       (by dsimp only [δ, word01230213]; decide) (by dsimp only [word01230213]; decide)
       (consequence h [0, 1] (by decide))
@@ -294,21 +297,21 @@ theorem abelianTetrahedron {A V : Type*} [AddCommGroup A] (G : SimpleGraph V)
     · exact case1 (consequences (addRelation hz h) [[0, 1, 0], [1, -1, 1], [1, -1, 0]] (by decide))
     · exact case1 (consequences (addRelation hz h) [[0, 1, 0], [1, -1, 0], [1, -1, -1]] (by decide))
   have case12 (h : ∀ v ∈ ([(1, 0, 0), (0, 1, 0)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
-    apply testWord G φ e δ neighbors (n := 4) (by decide)
+    apply testWord G φ e (fun i j z => z + δ i j) latticeEdge (n := 4) (by decide)
       word0123 (1, 1, 0) []
       (by dsimp only [δ, word0123]; decide) (by dsimp only [word0123]; decide)
       (consequence h [1, 1] (by decide))
     intro d hd hz
     simp at hd
   have case13 (h : ∀ v ∈ ([(1, 0, 0), (0, 1, 1)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
-    apply testWord G φ e δ neighbors (n := 4) (by decide)
+    apply testWord G φ e (fun i j z => z + δ i j) latticeEdge (n := 4) (by decide)
       word0132 (0, -1, -1) []
       (by dsimp only [δ, word0132]; decide) (by dsimp only [word0132]; decide)
       (consequence h [0, -1] (by decide))
     intro d hd hz
     simp at hd
   have case14 (h : ∀ v ∈ ([(1, 0, 0), (0, 1, 2)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
-    apply testWord G φ e δ neighbors (n := 8) (by decide)
+    apply testWord G φ e (fun i j z => z + δ i j) latticeEdge (n := 8) (by decide)
       word01302132 (-1, -1, -2) [(0, 0, 1), (1, 0, 1), (1, 1, 1)]
       (by dsimp only [δ, word01302132]; decide) (by dsimp only [word01302132]; decide)
       (consequence h [-1, -1] (by decide))
@@ -319,7 +322,7 @@ theorem abelianTetrahedron {A V : Type*} [AddCommGroup A] (G : SimpleGraph V)
     · exact case1 (consequences (addRelation hz h) [[0, 1, 0], [-2, 2, 1], [1, -1, 0]] (by decide))
     · exact case1 (consequences (addRelation hz h) [[0, 1, 0], [2, -2, -1], [-1, 1, 1]] (by decide))
   have case15 (h : ∀ v ∈ ([(1, 0, 0)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
-    apply testWord G φ e δ neighbors (n := 16) (by decide)
+    apply testWord G φ e (fun i j z => z + δ i j) latticeEdge (n := 16) (by decide)
       word0123103103213013 (0, 0, 0) [(0, 0, 1), (0, 0, 2), (1, 1, -1), (1, 1, 0), (1, 1, 1), (1, 1, 2)]
       (by dsimp only [δ, word0123103103213013]; decide) (by dsimp only [word0123103103213013]; decide)
       (consequence h [0] (by decide))
@@ -333,21 +336,21 @@ theorem abelianTetrahedron {A V : Type*} [AddCommGroup A] (G : SimpleGraph V)
     · exact case13 (consequences (addRelation hz h) [[0, 1], [1, -1]] (by decide))
     · exact case14 (consequences (addRelation hz h) [[0, 1], [1, -1]] (by decide))
   have case16 (h : ∀ v ∈ ([(1, 0, 1)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
-    apply testWord G φ e δ neighbors (n := 4) (by decide)
+    apply testWord G φ e (fun i j z => z + δ i j) latticeEdge (n := 4) (by decide)
       word0213 (-1, 0, -1) []
       (by dsimp only [δ, word0213]; decide) (by dsimp only [word0213]; decide)
       (consequence h [-1] (by decide))
     intro d hd hz
     simp at hd
   have case17 (h : ∀ v ∈ ([(1, 0, 1), (0, 0, 2)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
-    apply testWord G φ e δ neighbors (n := 4) (by decide)
+    apply testWord G φ e (fun i j z => z + δ i j) latticeEdge (n := 4) (by decide)
       word0213 (-1, 0, -1) []
       (by dsimp only [δ, word0213]; decide) (by dsimp only [word0213]; decide)
       (consequence h [-1, 0] (by decide))
     intro d hd hz
     simp at hd
   have case18 (h : ∀ v ∈ ([(2, 0, 0), (0, 0, 2)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
-    apply testWord G φ e δ neighbors (n := 8) (by decide)
+    apply testWord G φ e (fun i j z => z + δ i j) latticeEdge (n := 8) (by decide)
       word02130213 (-2, 0, -2) [(1, 0, 1)]
       (by dsimp only [δ, word02130213]; decide) (by dsimp only [word02130213]; decide)
       (consequence h [-1, -1] (by decide))
@@ -356,7 +359,7 @@ theorem abelianTetrahedron {A V : Type*} [AddCommGroup A] (G : SimpleGraph V)
     subst d
     exact case17 (consequences (addRelation hz h) [[1, 0, 0], [2, -1, 0]] (by decide))
   have case19 (h : ∀ v ∈ ([(1, 0, 2), (0, 0, 4)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
-    apply testWord G φ e δ neighbors (n := 16) (by decide)
+    apply testWord G φ e (fun i j z => z + δ i j) latticeEdge (n := 16) (by decide)
       word0213021302130213 (-4, 0, -4) [(1, 0, 1), (2, 0, 2), (3, 0, 3)]
       (by dsimp only [δ, word0213021302130213]; decide) (by dsimp only [word0213021302130213]; decide)
       (consequence h [-4, 1] (by decide))
@@ -367,7 +370,7 @@ theorem abelianTetrahedron {A V : Type*} [AddCommGroup A] (G : SimpleGraph V)
     · exact case10 (consequences (addRelation hz h) [[1, -1, 0], [-1, 2, 0]] (by decide))
     · exact case3 (consequences (addRelation hz h) [[-2, 7, -2], [1, -3, 1]] (by decide))
   have case20 (h : ∀ v ∈ ([(2, 0, 0)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
-    apply testWord G φ e δ neighbors (n := 16) (by decide)
+    apply testWord G φ e (fun i j z => z + δ i j) latticeEdge (n := 16) (by decide)
       word0120310310213013 (0, 0, 0) [(0, 0, 1), (0, 0, 2), (1, 0, -1), (1, 0, 0), (1, 0, 1), (1, 0, 2)]
       (by dsimp only [δ, word0120310310213013]; decide) (by dsimp only [word0120310310213013]; decide)
       (consequence h [0] (by decide))
@@ -381,7 +384,7 @@ theorem abelianTetrahedron {A V : Type*} [AddCommGroup A] (G : SimpleGraph V)
     · exact case17 (consequences (addRelation hz h) [[1, 0], [2, -1]] (by decide))
     · exact case19 (consequences (addRelation hz h) [[1, 0], [2, -1]] (by decide))
   have case21 (h : ∀ v ∈ ([(2, 0, 1), (0, 0, 2)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
-    apply testWord G φ e δ neighbors (n := 16) (by decide)
+    apply testWord G φ e (fun i j z => z + δ i j) latticeEdge (n := 16) (by decide)
       word0213021302130213 (-4, 0, -4) [(1, 0, 1), (2, 0, 2), (3, 0, 3)]
       (by dsimp only [δ, word0213021302130213]; decide) (by dsimp only [word0213021302130213]; decide)
       (consequence h [-2, -1] (by decide))
@@ -392,14 +395,14 @@ theorem abelianTetrahedron {A V : Type*} [AddCommGroup A] (G : SimpleGraph V)
     · exact case5 (consequences (addRelation hz h) [[-1, 2, 0], [1, -1, 0]] (by decide))
     · exact case3 (consequences (addRelation hz h) [[5, -7, -4], [-2, 3, 2]] (by decide))
   have case22 (h : ∀ v ∈ ([(1, 0, 2), (0, 1, 1), (0, 0, 3)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
-    apply testWord G φ e δ neighbors (n := 4) (by decide)
+    apply testWord G φ e (fun i j z => z + δ i j) latticeEdge (n := 4) (by decide)
       word0123 (1, 1, 0) []
       (by dsimp only [δ, word0123]; decide) (by dsimp only [word0123]; decide)
       (consequence h [1, 1, -1] (by decide))
     intro d hd hz
     simp at hd
   have case23 (h : ∀ v ∈ ([(1, 0, 2), (0, 0, 3)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
-    apply testWord G φ e δ neighbors (n := 8) (by decide)
+    apply testWord G φ e (fun i j z => z + δ i j) latticeEdge (n := 8) (by decide)
       word01230132 (1, 0, -1) [(0, 0, 1), (1, 1, 0)]
       (by dsimp only [δ, word01230132]; decide) (by dsimp only [word01230132]; decide)
       (consequence h [1, -1] (by decide))
@@ -409,7 +412,7 @@ theorem abelianTetrahedron {A V : Type*} [AddCommGroup A] (G : SimpleGraph V)
     · exact case3 (consequences (addRelation hz h) [[-2, 1, 0], [1, 0, 0]] (by decide))
     · exact case22 (consequences (addRelation hz h) [[0, 1, 0], [1, -1, 1], [0, 0, 1]] (by decide))
   have case24 (h : ∀ v ∈ ([(2, 0, 1)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
-    apply testWord G φ e δ neighbors (n := 16) (by decide)
+    apply testWord G φ e (fun i j z => z + δ i j) latticeEdge (n := 16) (by decide)
       word0120310310213013 (0, 0, 0) [(0, 0, 1), (0, 0, 2), (1, 0, -1), (1, 0, 0), (1, 0, 1), (1, 0, 2)]
       (by dsimp only [δ, word0120310310213013]; decide) (by dsimp only [word0120310310213013]; decide)
       (consequence h [0] (by decide))
@@ -423,7 +426,7 @@ theorem abelianTetrahedron {A V : Type*} [AddCommGroup A] (G : SimpleGraph V)
     · exact case3 (consequences (addRelation hz h) [[-1, 1], [2, -1]] (by decide))
     · exact case23 (consequences (addRelation hz h) [[1, 0], [2, -1]] (by decide))
   have case25 (h : ∀ v ∈ ([] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
-    apply testWord G φ e δ neighbors (n := 16) (by decide)
+    apply testWord G φ e (fun i j z => z + δ i j) latticeEdge (n := 16) (by decide)
       word0120120310210213 (0, 0, 0) [(0, 0, 1), (1, 0, -1), (1, 0, 0), (1, 0, 1), (2, 0, 0), (2, 0, 1)]
       (by dsimp only [δ, word0120120310210213]; decide) (by dsimp only [word0120120310210213]; decide)
       (consequence h [] (by decide))
@@ -437,6 +440,632 @@ theorem abelianTetrahedron {A V : Type*} [AddCommGroup A] (G : SimpleGraph V)
     · exact case20 (consequences (addRelation hz h) [[1]] (by decide))
     · exact case24 (consequences (addRelation hz h) [[1]] (by decide))
   exact case25 (by simp)
+
+set_option maxHeartbeats 10000000 in
+set_option maxRecDepth 8192 in
+/-- The three chord maps may also negate the sheet before translating it.
+In the six mixed sign cases a lifted Hamilton cycle closes after two laps.
+The all-negative case uses a separate integer-relation certificate. -/
+theorem affineTetrahedron {A V : Type*} [AddCommGroup A] (G : SimpleGraph V)
+    (e : Fin 4 × A ↪ V) (s t u : Bool) (a b c : A)
+    (star : ∀ j : Fin 4, j ≠ 0 → ∀ x, G.Adj (e (0,x)) (e (j,x)))
+    (twelve : ∀ x, G.Adj (e (1,x)) (e (2,(if s then -x else x)+a)))
+    (twentythree : ∀ x, G.Adj (e (2,x)) (e (3,(if t then -x else x)+b)))
+    (thirtyone : ∀ x, G.Adj (e (3,x)) (e (1,(if u then -x else x)+c))) :
+    cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G := by
+  let φ : (ℤ × ℤ × ℤ) →+ A := {
+    toFun := fun z => z.1 • a + z.2.1 • b + z.2.2 • c
+    map_zero' := by simp
+    map_add' := by intro x y; simp only [Prod.fst_add, Prod.snd_add, add_zsmul]; abel }
+  let flip (i j : Fin 4) : Bool :=
+    match i.val, j.val with
+    | 1, 2 | 2, 1 => s
+    | 2, 3 | 3, 2 => t
+    | 3, 1 | 1, 3 => u
+    | _, _ => false
+  let δ (i j : Fin 4) : ℤ × ℤ × ℤ :=
+    match i.val, j.val with
+    | 1, 2 => (1, 0, 0)
+    | 2, 3 => (0, 1, 0)
+    | 3, 1 => (0, 0, 1)
+    | 2, 1 => if s then (1, 0, 0) else (-1, 0, 0)
+    | 3, 2 => if t then (0, 1, 0) else (0, -1, 0)
+    | 1, 3 => if u then (0, 0, 1) else (0, 0, -1)
+    | _, _ => 0
+  let move (i j : Fin 4) (z : ℤ × ℤ × ℤ) := (if flip i j then -z else z) + δ i j
+  have moveMap (i j : Fin 4) (z : ℤ × ℤ × ℤ) : φ (move i j z) =
+      (if flip i j then -φ z else φ z) + φ (δ i j) := by
+    dsimp only [move]
+    split <;> simp
+  have neighbors (i j : Fin 4) (hne : i ≠ j) (z : ℤ × ℤ × ℤ) :
+      G.Adj (e (i,φ z)) (e (j,φ (move i j z))) := by
+    rw [moveMap]
+    fin_cases i <;> fin_cases j <;> first
+    | exact (hne rfl).elim
+    | simpa [flip, δ, φ] using star _ (by decide) (φ z)
+    | simpa [flip, δ, φ] using (star _ (by decide) (φ z)).symm
+    | simpa [flip, δ, φ] using twelve (φ z)
+    | simpa [flip, δ, φ] using twentythree (φ z)
+    | simpa [flip, δ, φ] using thirtyone (φ z)
+    | (cases s <;> first
+        | simpa [flip, δ, φ, sub_eq_add_neg] using (twelve (φ z - a)).symm
+        | simpa [flip, δ, φ] using (twelve (-φ z + a)).symm)
+    | (cases t <;> first
+        | simpa [flip, δ, φ, sub_eq_add_neg] using (twentythree (φ z - b)).symm
+        | simpa [flip, δ, φ] using (twentythree (-φ z + b)).symm)
+    | (cases u <;> first
+        | simpa [flip, δ, φ, sub_eq_add_neg] using (thirtyone (φ z - c)).symm
+        | simpa [flip, δ, φ] using (thirtyone (-φ z + c)).symm)
+  let good := cycleGraph 4 ⊑ G ∨ cycleGraph 8 ⊑ G ∨ cycleGraph 16 ⊑ G
+  cases s <;> cases t <;> cases u
+  · exact abelianTetrahedron G e a b c star twelve twentythree thirtyone
+  · let word0132 : Fin 4 → Fin 4 × (ℤ × ℤ × ℤ) :=
+      ![(0, 0, 0, 0), (1, 0, 0, 0), (3, 0, 0, 1), (2, 0, -1, 1)]
+    let word01320132 : Fin 8 → Fin 4 × (ℤ × ℤ × ℤ) :=
+      ![(0, 0, 0, 0), (1, 0, 0, 0), (3, 0, 0, 1), (2, 0, -1, 1),
+        (0, 0, -1, 1), (1, 0, -1, 1), (3, 0, 1, 0), (2, 0, 0, 0)]
+    have case0 (h : ∀ v ∈ ([(0, 1, -1)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 4) (by decide)
+        word0132 (0, -1, 1) []
+        (by dsimp only [move, flip, δ, word0132]; decide) (by dsimp only [word0132]; decide)
+        (consequence h [-1] (by decide))
+      intro d hd hz
+      simp at hd
+    have case1 (h : ∀ v ∈ ([] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 8) (by decide)
+        word01320132 (0, 0, 0) [(0, 1, -1)]
+        (by dsimp only [move, flip, δ, word01320132]; decide) (by dsimp only [word01320132]; decide)
+        (consequence h [] (by decide))
+      intro d hd hz
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+      subst d
+      exact case0 (consequences (addRelation hz h) [[1]] (by decide))
+    exact case1 (by simp)
+  · let word0123 : Fin 4 → Fin 4 × (ℤ × ℤ × ℤ) :=
+      ![(0, 0, 0, 0), (1, 0, 0, 0), (2, 1, 0, 0), (3, -1, 1, 0)]
+    let word01230123 : Fin 8 → Fin 4 × (ℤ × ℤ × ℤ) :=
+      ![(0, 0, 0, 0), (1, 0, 0, 0), (2, 1, 0, 0), (3, -1, 1, 0),
+        (0, -1, 1, 0), (1, -1, 1, 0), (2, 0, 1, 0), (3, 0, 0, 0)]
+    have case0 (h : ∀ v ∈ ([(1, -1, 0)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 4) (by decide)
+        word0123 (-1, 1, 0) []
+        (by dsimp only [move, flip, δ, word0123]; decide) (by dsimp only [word0123]; decide)
+        (consequence h [-1] (by decide))
+      intro d hd hz
+      simp at hd
+    have case1 (h : ∀ v ∈ ([] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 8) (by decide)
+        word01230123 (0, 0, 0) [(1, -1, 0)]
+        (by dsimp only [move, flip, δ, word01230123]; decide) (by dsimp only [word01230123]; decide)
+        (consequence h [] (by decide))
+      intro d hd hz
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+      subst d
+      exact case0 (consequences (addRelation hz h) [[1]] (by decide))
+    exact case1 (by simp)
+  · let word0123 : Fin 4 → Fin 4 × (ℤ × ℤ × ℤ) :=
+      ![(0, 0, 0, 0), (1, 0, 0, 0), (2, 1, 0, 0), (3, -1, 1, 0)]
+    let word01230123 : Fin 8 → Fin 4 × (ℤ × ℤ × ℤ) :=
+      ![(0, 0, 0, 0), (1, 0, 0, 0), (2, 1, 0, 0), (3, -1, 1, 0),
+        (0, -1, 1, 0), (1, -1, 1, 0), (2, 0, 1, 0), (3, 0, 0, 0)]
+    have case0 (h : ∀ v ∈ ([(1, -1, 0)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 4) (by decide)
+        word0123 (-1, 1, 0) []
+        (by dsimp only [move, flip, δ, word0123]; decide) (by dsimp only [word0123]; decide)
+        (consequence h [-1] (by decide))
+      intro d hd hz
+      simp at hd
+    have case1 (h : ∀ v ∈ ([] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 8) (by decide)
+        word01230123 (0, 0, 0) [(1, -1, 0)]
+        (by dsimp only [move, flip, δ, word01230123]; decide) (by dsimp only [word01230123]; decide)
+        (consequence h [] (by decide))
+      intro d hd hz
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+      subst d
+      exact case0 (consequences (addRelation hz h) [[1]] (by decide))
+    exact case1 (by simp)
+  · let word0123 : Fin 4 → Fin 4 × (ℤ × ℤ × ℤ) :=
+      ![(0, 0, 0, 0), (1, 0, 0, 0), (2, 1, 0, 0), (3, 1, 1, 0)]
+    let word01230123 : Fin 8 → Fin 4 × (ℤ × ℤ × ℤ) :=
+      ![(0, 0, 0, 0), (1, 0, 0, 0), (2, 1, 0, 0), (3, 1, 1, 0),
+        (0, 1, 1, 0), (1, 1, 1, 0), (2, 0, -1, 0), (3, 0, 0, 0)]
+    have case0 (h : ∀ v ∈ ([(1, 1, 0)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 4) (by decide)
+        word0123 (1, 1, 0) []
+        (by dsimp only [move, flip, δ, word0123]; decide) (by dsimp only [word0123]; decide)
+        (consequence h [1] (by decide))
+      intro d hd hz
+      simp at hd
+    have case1 (h : ∀ v ∈ ([] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 8) (by decide)
+        word01230123 (0, 0, 0) [(1, 1, 0)]
+        (by dsimp only [move, flip, δ, word01230123]; decide) (by dsimp only [word01230123]; decide)
+        (consequence h [] (by decide))
+      intro d hd hz
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+      subst d
+      exact case0 (consequences (addRelation hz h) [[1]] (by decide))
+    exact case1 (by simp)
+  · let word0123 : Fin 4 → Fin 4 × (ℤ × ℤ × ℤ) :=
+      ![(0, 0, 0, 0), (1, 0, 0, 0), (2, 1, 0, 0), (3, 1, 1, 0)]
+    let word01230123 : Fin 8 → Fin 4 × (ℤ × ℤ × ℤ) :=
+      ![(0, 0, 0, 0), (1, 0, 0, 0), (2, 1, 0, 0), (3, 1, 1, 0),
+        (0, 1, 1, 0), (1, 1, 1, 0), (2, 0, -1, 0), (3, 0, 0, 0)]
+    have case0 (h : ∀ v ∈ ([(1, 1, 0)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 4) (by decide)
+        word0123 (1, 1, 0) []
+        (by dsimp only [move, flip, δ, word0123]; decide) (by dsimp only [word0123]; decide)
+        (consequence h [1] (by decide))
+      intro d hd hz
+      simp at hd
+    have case1 (h : ∀ v ∈ ([] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 8) (by decide)
+        word01230123 (0, 0, 0) [(1, 1, 0)]
+        (by dsimp only [move, flip, δ, word01230123]; decide) (by dsimp only [word01230123]; decide)
+        (consequence h [] (by decide))
+      intro d hd hz
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+      subst d
+      exact case0 (consequences (addRelation hz h) [[1]] (by decide))
+    exact case1 (by simp)
+  · let word0132 : Fin 4 → Fin 4 × (ℤ × ℤ × ℤ) :=
+      ![(0, 0, 0, 0), (1, 0, 0, 0), (3, 0, 0, -1), (2, 0, 1, 1)]
+    let word01320132 : Fin 8 → Fin 4 × (ℤ × ℤ × ℤ) :=
+      ![(0, 0, 0, 0), (1, 0, 0, 0), (3, 0, 0, -1), (2, 0, 1, 1),
+        (0, 0, 1, 1), (1, 0, 1, 1), (3, 0, 1, 0), (2, 0, 0, 0)]
+    have case0 (h : ∀ v ∈ ([(0, 1, 1)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 4) (by decide)
+        word0132 (0, 1, 1) []
+        (by dsimp only [move, flip, δ, word0132]; decide) (by dsimp only [word0132]; decide)
+        (consequence h [1] (by decide))
+      intro d hd hz
+      simp at hd
+    have case1 (h : ∀ v ∈ ([] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 8) (by decide)
+        word01320132 (0, 0, 0) [(0, 1, 1)]
+        (by dsimp only [move, flip, δ, word01320132]; decide) (by dsimp only [word01320132]; decide)
+        (consequence h [] (by decide))
+      intro d hd hz
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+      subst d
+      exact case0 (consequences (addRelation hz h) [[1]] (by decide))
+    exact case1 (by simp)
+  · let word0123 : Fin 4 → Fin 4 × (ℤ × ℤ × ℤ) :=
+      ![(0, 0, 0, 0), (1, 0, 0, 0), (2, 1, 0, 0), (3, -1, 1, 0)]
+    let word0132 : Fin 4 → Fin 4 × (ℤ × ℤ × ℤ) :=
+      ![(0, 0, 0, 0), (1, 0, 0, 0), (3, 0, 0, 1), (2, 0, 1, -1)]
+    let word0213 : Fin 4 → Fin 4 × (ℤ × ℤ × ℤ) :=
+      ![(0, 0, 0, 0), (2, 0, 0, 0), (1, 1, 0, 0), (3, -1, 0, 1)]
+    let word01203123 : Fin 8 → Fin 4 × (ℤ × ℤ × ℤ) :=
+      ![(0, 0, 0, 0), (1, 0, 0, 0), (2, 1, 0, 0), (0, 1, 0, 0),
+        (3, 1, 0, 0), (1, -1, 0, 1), (2, 2, 0, -1), (3, -2, 1, 1)]
+    let word01230123 : Fin 8 → Fin 4 × (ℤ × ℤ × ℤ) :=
+      ![(0, 0, 0, 0), (1, 0, 0, 0), (2, 1, 0, 0), (3, -1, 1, 0),
+        (0, -1, 1, 0), (1, -1, 1, 0), (2, 2, -1, 0), (3, -2, 2, 0)]
+    let word01230213 : Fin 8 → Fin 4 × (ℤ × ℤ × ℤ) :=
+      ![(0, 0, 0, 0), (1, 0, 0, 0), (2, 1, 0, 0), (3, -1, 1, 0),
+        (0, -1, 1, 0), (2, -1, 1, 0), (1, 2, -1, 0), (3, -2, 1, 1)]
+    let word01231023 : Fin 8 → Fin 4 × (ℤ × ℤ × ℤ) :=
+      ![(0, 0, 0, 0), (1, 0, 0, 0), (2, 1, 0, 0), (3, -1, 1, 0),
+        (1, 1, -1, 1), (0, 1, -1, 1), (2, 1, -1, 1), (3, -1, 2, -1)]
+    let word01302132 : Fin 8 → Fin 4 × (ℤ × ℤ × ℤ) :=
+      ![(0, 0, 0, 0), (1, 0, 0, 0), (3, 0, 0, 1), (0, 0, 0, 1),
+        (2, 0, 0, 1), (1, 1, 0, -1), (3, -1, 0, 2), (2, 1, 1, -2)]
+    let word01320132 : Fin 8 → Fin 4 × (ℤ × ℤ × ℤ) :=
+      ![(0, 0, 0, 0), (1, 0, 0, 0), (3, 0, 0, 1), (2, 0, 1, -1),
+        (0, 0, 1, -1), (1, 0, 1, -1), (3, 0, -1, 2), (2, 0, 2, -2)]
+    let word01320312 : Fin 8 → Fin 4 × (ℤ × ℤ × ℤ) :=
+      ![(0, 0, 0, 0), (1, 0, 0, 0), (3, 0, 0, 1), (2, 0, 1, -1),
+        (0, 0, 1, -1), (3, 0, 1, -1), (1, 0, -1, 2), (2, 1, 1, -2)]
+    let word02130213 : Fin 8 → Fin 4 × (ℤ × ℤ × ℤ) :=
+      ![(0, 0, 0, 0), (2, 0, 0, 0), (1, 1, 0, 0), (3, -1, 0, 1),
+        (0, -1, 0, 1), (2, -1, 0, 1), (1, 2, 0, -1), (3, -2, 0, 2)]
+    let word0120123012013213 : Fin 16 → Fin 4 × (ℤ × ℤ × ℤ) :=
+      ![(0, 0, 0, 0), (1, 0, 0, 0), (2, 1, 0, 0), (0, 1, 0, 0),
+        (1, 1, 0, 0), (2, 0, 0, 0), (3, 0, 1, 0), (0, 0, 1, 0),
+        (1, 0, 1, 0), (2, 1, -1, 0), (0, 1, -1, 0), (1, 1, -1, 0),
+        (3, -1, 1, 1), (2, 1, 0, -1), (1, 0, 0, 1), (3, 0, 0, 0)]
+    let word0120123103120123 : Fin 16 → Fin 4 × (ℤ × ℤ × ℤ) :=
+      ![(0, 0, 0, 0), (1, 0, 0, 0), (2, 1, 0, 0), (0, 1, 0, 0),
+        (1, 1, 0, 0), (2, 0, 0, 0), (3, 0, 1, 0), (1, 0, -1, 1),
+        (0, 0, -1, 1), (3, 0, -1, 1), (1, 0, 1, 0), (2, 1, -1, 0),
+        (0, 1, -1, 0), (1, 1, -1, 0), (2, 0, 1, 0), (3, 0, 0, 0)]
+    let word0120130230120132 : Fin 16 → Fin 4 × (ℤ × ℤ × ℤ) :=
+      ![(0, 0, 0, 0), (1, 0, 0, 0), (2, 1, 0, 0), (0, 1, 0, 0),
+        (1, 1, 0, 0), (3, -1, 0, 1), (0, -1, 0, 1), (2, -1, 0, 1),
+        (3, 1, 1, -1), (0, 1, 1, -1), (1, 1, 1, -1), (2, 0, -1, 1),
+        (0, 0, -1, 1), (1, 0, -1, 1), (3, 0, 1, 0), (2, 0, 0, 0)]
+    let word0120132012031023 : Fin 16 → Fin 4 × (ℤ × ℤ × ℤ) :=
+      ![(0, 0, 0, 0), (1, 0, 0, 0), (2, 1, 0, 0), (0, 1, 0, 0),
+        (1, 1, 0, 0), (3, -1, 0, 1), (2, 1, 1, -1), (0, 1, 1, -1),
+        (1, 1, 1, -1), (2, 0, -1, 1), (0, 0, -1, 1), (3, 0, -1, 1),
+        (1, 0, 1, 0), (0, 0, 1, 0), (2, 0, 1, 0), (3, 0, 0, 0)]
+    let word0123102130132013 : Fin 16 → Fin 4 × (ℤ × ℤ × ℤ) :=
+      ![(0, 0, 0, 0), (1, 0, 0, 0), (2, 1, 0, 0), (3, -1, 1, 0),
+        (1, 1, -1, 1), (0, 1, -1, 1), (2, 1, -1, 1), (1, 0, 1, -1),
+        (3, 0, -1, 2), (0, 0, -1, 2), (1, 0, -1, 2), (3, 0, 1, -1),
+        (2, 0, 0, 1), (0, 0, 0, 1), (1, 0, 0, 1), (3, 0, 0, 0)]
+    let word0123120312310213 : Fin 16 → Fin 4 × (ℤ × ℤ × ℤ) :=
+      ![(0, 0, 0, 0), (1, 0, 0, 0), (2, 1, 0, 0), (3, -1, 1, 0),
+        (1, 1, -1, 1), (2, 0, 1, -1), (0, 0, 1, -1), (3, 0, 1, -1),
+        (1, 0, -1, 2), (2, 1, 1, -2), (3, -1, 0, 2), (1, 1, 0, -1),
+        (0, 1, 0, -1), (2, 1, 0, -1), (1, 0, 0, 1), (3, 0, 0, 0)]
+    have case0 (h : ∀ v ∈ ([(0, 1, 0), (0, 0, 1)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 4) (by decide)
+        word0132 (0, 1, -1) []
+        (by dsimp only [move, flip, δ, word0132]; decide) (by dsimp only [word0132]; decide)
+        (consequence h [1, -1] (by decide))
+      intro d hd hz
+      simp at hd
+    have case1 (h : ∀ v ∈ ([(0, 2, 0), (0, 0, 1)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 8) (by decide)
+        word01320132 (0, 2, -2) [(0, 1, -1)]
+        (by dsimp only [move, flip, δ, word01320132]; decide) (by dsimp only [word01320132]; decide)
+        (consequence h [1, -2] (by decide))
+      intro d hd hz
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+      subst d
+      exact case0 (consequences (addRelation hz h) [[1, 0, 1], [0, 0, 1]] (by decide))
+    have case2 (h : ∀ v ∈ ([(1, 0, 0), (0, 1, 0), (0, 0, 1)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 4) (by decide)
+        word0123 (-1, 1, 0) []
+        (by dsimp only [move, flip, δ, word0123]; decide) (by dsimp only [word0123]; decide)
+        (consequence h [-1, 1, 0] (by decide))
+      intro d hd hz
+      simp at hd
+    have case3 (h : ∀ v ∈ ([(1, -2, 0), (0, 0, 1)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 8) (by decide)
+        word01231023 (-1, 2, -1) [(0, 1, -1), (1, -1, 1)]
+        (by dsimp only [move, flip, δ, word01231023]; decide) (by dsimp only [word01231023]; decide)
+        (consequence h [-1, -1] (by decide))
+      intro d hd hz
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+      rcases hd with rfl | rfl
+      · exact case2 (consequences (addRelation hz h) [[2, 1, 2], [1, 0, 1], [0, 0, 1]] (by decide))
+      · exact case2 (consequences (addRelation hz h) [[2, -1, -2], [1, -1, -1], [0, 0, 1]] (by decide))
+    have case4 (h : ∀ v ∈ ([(1, -1, 0), (0, 0, 1)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 4) (by decide)
+        word0123 (-1, 1, 0) []
+        (by dsimp only [move, flip, δ, word0123]; decide) (by dsimp only [word0123]; decide)
+        (consequence h [-1, 0] (by decide))
+      intro d hd hz
+      simp at hd
+    have case5 (h : ∀ v ∈ ([(1, 0, 0), (0, 0, 1)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 4) (by decide)
+        word0213 (-1, 0, 1) []
+        (by dsimp only [move, flip, δ, word0213]; decide) (by dsimp only [word0213]; decide)
+        (consequence h [-1, 1] (by decide))
+      intro d hd hz
+      simp at hd
+    have case6 (h : ∀ v ∈ ([(1, 1, 0), (0, 0, 1)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 8) (by decide)
+        word01320312 (1, 1, -2) [(0, 1, -2), (0, 1, -1), (1, 0, -1)]
+        (by dsimp only [move, flip, δ, word01320312]; decide) (by dsimp only [word01320312]; decide)
+        (consequence h [1, -2] (by decide))
+      intro d hd hz
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+      rcases hd with rfl | rfl | rfl
+      · exact case2 (consequences (addRelation hz h) [[-1, 1, -2], [1, 0, 2], [0, 0, 1]] (by decide))
+      · exact case2 (consequences (addRelation hz h) [[-1, 1, -1], [1, 0, 1], [0, 0, 1]] (by decide))
+      · exact case2 (consequences (addRelation hz h) [[1, 0, 1], [-1, 1, -1], [0, 0, 1]] (by decide))
+    have case7 (h : ∀ v ∈ ([(0, 0, 1)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 16) (by decide)
+        word0120123103120123 (0, 0, 0) [(0, 1, -1), (0, 1, 0), (0, 2, -1), (1, -2, 0), (1, -1, 0), (1, 0, -1), (1, 0, 0), (1, 1, -1)]
+        (by dsimp only [move, flip, δ, word0120123103120123]; decide) (by dsimp only [word0120123103120123]; decide)
+        (consequence h [0] (by decide))
+      intro d hd hz
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+      rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      · exact case0 (consequences (addRelation hz h) [[1, 1], [0, 1]] (by decide))
+      · exact case0 (consequences (addRelation hz h) [[1, 0], [0, 1]] (by decide))
+      · exact case1 (consequences (addRelation hz h) [[1, 1], [0, 1]] (by decide))
+      · exact case3 (consequences (addRelation hz h) [[1, 0], [0, 1]] (by decide))
+      · exact case4 (consequences (addRelation hz h) [[1, 0], [0, 1]] (by decide))
+      · exact case5 (consequences (addRelation hz h) [[1, 1], [0, 1]] (by decide))
+      · exact case5 (consequences (addRelation hz h) [[1, 0], [0, 1]] (by decide))
+      · exact case6 (consequences (addRelation hz h) [[1, 1], [0, 1]] (by decide))
+    have case8 (h : ∀ v ∈ ([(0, 1, -1)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 4) (by decide)
+        word0132 (0, 1, -1) []
+        (by dsimp only [move, flip, δ, word0132]; decide) (by dsimp only [word0132]; decide)
+        (consequence h [1] (by decide))
+      intro d hd hz
+      simp at hd
+    have case9 (h : ∀ v ∈ ([(1, 0, 0), (0, 1, 0)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 4) (by decide)
+        word0123 (-1, 1, 0) []
+        (by dsimp only [move, flip, δ, word0123]; decide) (by dsimp only [word0123]; decide)
+        (consequence h [-1, 1] (by decide))
+      intro d hd hz
+      simp at hd
+    have case10 (h : ∀ v ∈ ([(1, 0, -1), (0, 1, 0)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 4) (by decide)
+        word0213 (-1, 0, 1) []
+        (by dsimp only [move, flip, δ, word0213]; decide) (by dsimp only [word0213]; decide)
+        (consequence h [-1, 0] (by decide))
+      intro d hd hz
+      simp at hd
+    have case11 (h : ∀ v ∈ ([(1, 0, -2), (0, 1, 0)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 8) (by decide)
+        word01302132 (1, 1, -2) [(0, 0, 1), (1, 0, -1), (1, 1, -3)]
+        (by dsimp only [move, flip, δ, word01302132]; decide) (by dsimp only [word01302132]; decide)
+        (consequence h [1, 1] (by decide))
+      intro d hd hz
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+      rcases hd with rfl | rfl | rfl
+      · exact case2 (consequences (addRelation hz h) [[2, 1, 0], [0, 0, 1], [1, 0, 0]] (by decide))
+      · exact case2 (consequences (addRelation hz h) [[2, -1, 0], [0, 0, 1], [1, -1, 0]] (by decide))
+      · exact case2 (consequences (addRelation hz h) [[-2, 3, 2], [0, 0, 1], [-1, 1, 1]] (by decide))
+    have case12 (h : ∀ v ∈ ([(2, 0, -1), (0, 1, 0)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 8) (by decide)
+        word01203123 (-2, 1, 1) [(1, 0, -1), (1, 0, 0), (3, -1, -1)]
+        (by dsimp only [move, flip, δ, word01203123]; decide) (by dsimp only [word01203123]; decide)
+        (consequence h [-1, 1] (by decide))
+      intro d hd hz
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+      rcases hd with rfl | rfl | rfl
+      · exact case2 (consequences (addRelation hz h) [[-1, 1, 0], [0, 0, 1], [-2, 1, 0]] (by decide))
+      · exact case2 (consequences (addRelation hz h) [[1, 0, 0], [0, 0, 1], [2, -1, 0]] (by decide))
+      · exact case2 (consequences (addRelation hz h) [[1, -1, 1], [0, 0, 1], [2, -3, 2]] (by decide))
+    have case13 (h : ∀ v ∈ ([(2, 0, -2), (0, 1, 0)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 8) (by decide)
+        word02130213 (-2, 0, 2) [(1, 0, -1)]
+        (by dsimp only [move, flip, δ, word02130213]; decide) (by dsimp only [word02130213]; decide)
+        (consequence h [-1, 0] (by decide))
+      intro d hd hz
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+      subst d
+      exact case10 (consequences (addRelation hz h) [[1, 0, 0], [0, 0, 1]] (by decide))
+    have case14 (h : ∀ v ∈ ([(0, 1, 0)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 16) (by decide)
+        word0120130230120132 (0, 0, 0) [(0, 1, -1), (1, -1, 0), (1, 0, -1), (1, 0, 0), (1, 1, -1), (1, 2, -2), (2, 0, -1), (2, 1, -2)]
+        (by dsimp only [move, flip, δ, word0120130230120132]; decide) (by dsimp only [word0120130230120132]; decide)
+        (consequence h [0] (by decide))
+      intro d hd hz
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+      rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      · exact case0 (consequences (addRelation hz h) [[0, 1], [-1, 1]] (by decide))
+      · exact case9 (consequences (addRelation hz h) [[1, 1], [0, 1]] (by decide))
+      · exact case10 (consequences (addRelation hz h) [[1, 0], [0, 1]] (by decide))
+      · exact case9 (consequences (addRelation hz h) [[1, 0], [0, 1]] (by decide))
+      · exact case10 (consequences (addRelation hz h) [[1, -1], [0, 1]] (by decide))
+      · exact case11 (consequences (addRelation hz h) [[1, -2], [0, 1]] (by decide))
+      · exact case12 (consequences (addRelation hz h) [[1, 0], [0, 1]] (by decide))
+      · exact case13 (consequences (addRelation hz h) [[1, -1], [0, 1]] (by decide))
+    have case15 (h : ∀ v ∈ ([(1, 0, -2), (0, 1, -1)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 4) (by decide)
+        word0132 (0, 1, -1) []
+        (by dsimp only [move, flip, δ, word0132]; decide) (by dsimp only [word0132]; decide)
+        (consequence h [0, 1] (by decide))
+      intro d hd hz
+      simp at hd
+    have case16 (h : ∀ v ∈ ([(1, 0, -1), (0, 2, -1)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 4) (by decide)
+        word0213 (-1, 0, 1) []
+        (by dsimp only [move, flip, δ, word0213]; decide) (by dsimp only [word0213]; decide)
+        (consequence h [-1, 0] (by decide))
+      intro d hd hz
+      simp at hd
+    have case17 (h : ∀ v ∈ ([(1, 0, 0), (0, 2, 0)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 8) (by decide)
+        word01230123 (-2, 2, 0) [(1, -1, 0)]
+        (by dsimp only [move, flip, δ, word01230123]; decide) (by dsimp only [word01230123]; decide)
+        (consequence h [-2, 1] (by decide))
+      intro d hd hz
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+      subst d
+      exact case9 (consequences (addRelation hz h) [[0, 1, 0], [-1, 1, 0]] (by decide))
+    have case18 (h : ∀ v ∈ ([(1, 0, 0), (0, 1, 1), (0, 0, 2)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 4) (by decide)
+        word0132 (0, 1, -1) []
+        (by dsimp only [move, flip, δ, word0132]; decide) (by dsimp only [word0132]; decide)
+        (consequence h [0, 1, -1] (by decide))
+      intro d hd hz
+      simp at hd
+    have case19 (h : ∀ v ∈ ([(1, 1, -1), (0, 3, -1)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 8) (by decide)
+        word01203123 (-2, 1, 1) [(1, 0, -1), (1, 0, 0), (3, -1, -1)]
+        (by dsimp only [move, flip, δ, word01203123]; decide) (by dsimp only [word01203123]; decide)
+        (consequence h [-2, 1] (by decide))
+      intro d hd hz
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+      rcases hd with rfl | rfl | rfl
+      · exact case2 (consequences (addRelation hz h) [[-2, 3, -1], [-1, 1, 0], [-3, 3, -1]] (by decide))
+      · exact case18 (consequences (addRelation hz h) [[1, 0, 0], [2, -2, 1], [3, -3, 1]] (by decide))
+      · exact case18 (consequences (addRelation hz h) [[1, -2, 1], [2, -6, 3], [3, -9, 4]] (by decide))
+    have case20 (h : ∀ v ∈ ([(1, 2, -2), (0, 4, -2)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 8) (by decide)
+        word02130213 (-2, 0, 2) [(1, 0, -1)]
+        (by dsimp only [move, flip, δ, word02130213]; decide) (by dsimp only [word02130213]; decide)
+        (consequence h [-2, 1] (by decide))
+      intro d hd hz
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+      subst d
+      exact case16 (consequences (addRelation hz h) [[1, 0, 0], [-1, 1, 0]] (by decide))
+    have case21 (h : ∀ v ∈ ([(1, -2, 0)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 16) (by decide)
+        word0120132012031023 (0, 0, 0) [(0, 1, -1), (0, 1, 0), (0, 2, -1), (1, -1, 0), (1, 0, -1), (1, 0, 0), (1, 1, -1), (1, 2, -2)]
+        (by dsimp only [move, flip, δ, word0120132012031023]; decide) (by dsimp only [word0120132012031023]; decide)
+        (consequence h [0] (by decide))
+      intro d hd hz
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+      rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      · exact case15 (consequences (addRelation hz h) [[2, 1], [1, 0]] (by decide))
+      · exact case9 (consequences (addRelation hz h) [[2, 1], [1, 0]] (by decide))
+      · exact case16 (consequences (addRelation hz h) [[1, 1], [1, 0]] (by decide))
+      · exact case9 (consequences (addRelation hz h) [[2, -1], [1, -1]] (by decide))
+      · exact case16 (consequences (addRelation hz h) [[1, 0], [1, -1]] (by decide))
+      · exact case17 (consequences (addRelation hz h) [[1, 0], [1, -1]] (by decide))
+      · exact case19 (consequences (addRelation hz h) [[1, 0], [1, -1]] (by decide))
+      · exact case20 (consequences (addRelation hz h) [[1, 0], [1, -1]] (by decide))
+    have case22 (h : ∀ v ∈ ([(1, 1, 0), (0, 2, 0), (0, 0, 1)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 4) (by decide)
+        word0123 (-1, 1, 0) []
+        (by dsimp only [move, flip, δ, word0123]; decide) (by dsimp only [word0123]; decide)
+        (consequence h [-1, 1, 0] (by decide))
+      intro d hd hz
+      simp at hd
+    have case23 (h : ∀ v ∈ ([(1, 1, -2), (0, 2, -1)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 8) (by decide)
+        word01302132 (1, 1, -2) [(0, 0, 1), (1, 0, -1), (1, 1, -3)]
+        (by dsimp only [move, flip, δ, word01302132]; decide) (by dsimp only [word01302132]; decide)
+        (consequence h [1, 0] (by decide))
+      intro d hd hz
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+      rcases hd with rfl | rfl | rfl
+      · exact case22 (consequences (addRelation hz h) [[2, 1, 0], [1, 0, 1], [1, 0, 0]] (by decide))
+      · exact case2 (consequences (addRelation hz h) [[3, -2, 1], [1, -1, 1], [2, -2, 1]] (by decide))
+      · exact case22 (consequences (addRelation hz h) [[-2, 3, 0], [-1, 1, 1], [-1, 1, 0]] (by decide))
+    have case24 (h : ∀ v ∈ ([(1, 0, 0), (0, 1, 1)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 8) (by decide)
+        word01230213 (-2, 1, 1) [(1, -1, 0), (1, 0, -1), (2, -1, 0)]
+        (by dsimp only [move, flip, δ, word01230213]; decide) (by dsimp only [word01230213]; decide)
+        (consequence h [-2, 1] (by decide))
+      intro d hd hz
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+      rcases hd with rfl | rfl | rfl
+      · exact case2 (consequences (addRelation hz h) [[0, 1, 0], [-1, 1, 0], [1, -1, 1]] (by decide))
+      · exact case2 (consequences (addRelation hz h) [[0, 1, 0], [1, -1, 1], [-1, 1, 0]] (by decide))
+      · exact case2 (consequences (addRelation hz h) [[0, 1, 0], [-1, 2, 0], [1, -2, 1]] (by decide))
+    have case25 (h : ∀ v ∈ ([(1, 1, -1), (0, 2, 0)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 8) (by decide)
+        word02130213 (-2, 0, 2) [(1, 0, -1)]
+        (by dsimp only [move, flip, δ, word02130213]; decide) (by dsimp only [word02130213]; decide)
+        (consequence h [-2, 1] (by decide))
+      intro d hd hz
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+      subst d
+      exact case10 (consequences (addRelation hz h) [[1, 0, 0], [-1, 1, 0]] (by decide))
+    have case26 (h : ∀ v ∈ ([(1, -1, -1)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 16) (by decide)
+        word0120123103120123 (0, 0, 0) [(0, 1, -1), (0, 1, 0), (0, 2, -1), (1, -2, 0), (1, -1, 0), (1, 0, -1), (1, 0, 0), (1, 1, -1)]
+        (by dsimp only [move, flip, δ, word0120123103120123]; decide) (by dsimp only [word0120123103120123]; decide)
+        (consequence h [0] (by decide))
+      intro d hd hz
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+      rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      · exact case15 (consequences (addRelation hz h) [[1, 1], [1, 0]] (by decide))
+      · exact case10 (consequences (addRelation hz h) [[1, 1], [1, 0]] (by decide))
+      · exact case23 (consequences (addRelation hz h) [[1, 1], [1, 0]] (by decide))
+      · exact case15 (consequences (addRelation hz h) [[-1, 2], [-1, 1]] (by decide))
+      · exact case4 (consequences (addRelation hz h) [[1, 0], [1, -1]] (by decide))
+      · exact case10 (consequences (addRelation hz h) [[1, 0], [1, -1]] (by decide))
+      · exact case24 (consequences (addRelation hz h) [[1, 0], [1, -1]] (by decide))
+      · exact case25 (consequences (addRelation hz h) [[1, 0], [1, -1]] (by decide))
+    have case27 (h : ∀ v ∈ ([(1, -1, 0)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 4) (by decide)
+        word0123 (-1, 1, 0) []
+        (by dsimp only [move, flip, δ, word0123]; decide) (by dsimp only [word0123]; decide)
+        (consequence h [-1] (by decide))
+      intro d hd hz
+      simp at hd
+    have case28 (h : ∀ v ∈ ([(1, 0, -1)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 4) (by decide)
+        word0213 (-1, 0, 1) []
+        (by dsimp only [move, flip, δ, word0213]; decide) (by dsimp only [word0213]; decide)
+        (consequence h [-1] (by decide))
+      intro d hd hz
+      simp at hd
+    have case29 (h : ∀ v ∈ ([(1, 0, 0), (0, 1, -2)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 8) (by decide)
+        word01302132 (1, 1, -2) [(0, 0, 1), (1, 0, -1), (1, 1, -3)]
+        (by dsimp only [move, flip, δ, word01302132]; decide) (by dsimp only [word01302132]; decide)
+        (consequence h [1, 1] (by decide))
+      intro d hd hz
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+      rcases hd with rfl | rfl | rfl
+      · exact case2 (consequences (addRelation hz h) [[0, 1, 0], [2, 0, 1], [1, 0, 0]] (by decide))
+      · exact case2 (consequences (addRelation hz h) [[0, 1, 0], [-2, 2, 1], [-1, 1, 0]] (by decide))
+      · exact case2 (consequences (addRelation hz h) [[0, 1, 0], [-2, 2, 3], [-1, 1, 1]] (by decide))
+    have case30 (h : ∀ v ∈ ([(1, 0, 0), (0, 1, -1)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 4) (by decide)
+        word0132 (0, 1, -1) []
+        (by dsimp only [move, flip, δ, word0132]; decide) (by dsimp only [word0132]; decide)
+        (consequence h [0, 1] (by decide))
+      intro d hd hz
+      simp at hd
+    have case31 (h : ∀ v ∈ ([(1, 0, 0), (0, 2, 0), (0, 0, 1)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 4) (by decide)
+        word0213 (-1, 0, 1) []
+        (by dsimp only [move, flip, δ, word0213]; decide) (by dsimp only [word0213]; decide)
+        (consequence h [-1, 0, 1] (by decide))
+      intro d hd hz
+      simp at hd
+    have case32 (h : ∀ v ∈ ([(1, 0, 0), (0, 1, 0), (0, 0, 3)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 4) (by decide)
+        word0123 (-1, 1, 0) []
+        (by dsimp only [move, flip, δ, word0123]; decide) (by dsimp only [word0123]; decide)
+        (consequence h [-1, 1, 0] (by decide))
+      intro d hd hz
+      simp at hd
+    have case33 (h : ∀ v ∈ ([(1, 0, 0), (0, 2, 1), (0, 0, 2)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 8) (by decide)
+        word02130213 (-2, 0, 2) [(1, 0, -1)]
+        (by dsimp only [move, flip, δ, word02130213]; decide) (by dsimp only [word02130213]; decide)
+        (consequence h [-2, 0, 1] (by decide))
+      intro d hd hz
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+      subst d
+      exact case31 (consequences (addRelation hz h) [[0, 1, 0, 0], [1, -1, 1, 0], [-1, 1, 0, 0]] (by decide))
+    have case34 (h : ∀ v ∈ ([(1, 0, 0), (0, 2, -3)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 16) (by decide)
+        word0123120312310213 (0, 0, 0) [(0, 0, 1), (0, 1, -2), (0, 1, -1), (1, -1, 0), (1, -1, 1), (1, 0, -2), (1, 0, -1), (1, 1, -3)]
+        (by dsimp only [move, flip, δ, word0123120312310213]; decide) (by dsimp only [word0123120312310213]; decide)
+        (consequence h [0, 0] (by decide))
+      intro d hd hz
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+      rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      · exact case31 (consequences (addRelation hz h) [[0, 1, 0], [3, 0, 1], [1, 0, 0]] (by decide))
+      · exact case2 (consequences (addRelation hz h) [[0, 1, 0], [-3, 0, 2], [-2, 0, 1]] (by decide))
+      · exact case2 (consequences (addRelation hz h) [[0, 1, 0], [3, 0, -1], [2, 0, -1]] (by decide))
+      · exact case32 (consequences (addRelation hz h) [[0, 1, 0], [-1, 1, 0], [-2, 2, -1]] (by decide))
+      · exact case2 (consequences (addRelation hz h) [[0, 1, 0], [-3, 3, -1], [-2, 2, -1]] (by decide))
+      · exact case33 (consequences (addRelation hz h) [[0, 1, 0], [-2, 2, 1], [-1, 1, 0]] (by decide))
+      · exact case31 (consequences (addRelation hz h) [[0, 1, 0], [-3, 3, 1], [-1, 1, 0]] (by decide))
+      · exact case32 (consequences (addRelation hz h) [[0, 1, 0], [-1, 1, 1], [-2, 2, 1]] (by decide))
+    have case35 (h : ∀ v ∈ ([(1, 0, 0), (0, 2, -2)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 8) (by decide)
+        word01320132 (0, 2, -2) [(0, 1, -1)]
+        (by dsimp only [move, flip, δ, word01320132]; decide) (by dsimp only [word01320132]; decide)
+        (consequence h [0, 1] (by decide))
+      intro d hd hz
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+      subst d
+      exact case30 (consequences (addRelation hz h) [[0, 1, 0], [1, 0, 0]] (by decide))
+    have case36 (h : ∀ v ∈ ([(1, 0, 0)] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 16) (by decide)
+        word0123102130132013 (0, 0, 0) [(0, 0, 1), (0, 1, -2), (0, 1, -1), (0, 2, -3), (1, -2, 2), (1, -1, 0), (1, -1, 1), (1, 0, -1)]
+        (by dsimp only [move, flip, δ, word0123102130132013]; decide) (by dsimp only [word0123102130132013]; decide)
+        (consequence h [0] (by decide))
+      intro d hd hz
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+      rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      · exact case5 (consequences (addRelation hz h) [[0, 1], [1, 0]] (by decide))
+      · exact case29 (consequences (addRelation hz h) [[0, 1], [1, 0]] (by decide))
+      · exact case30 (consequences (addRelation hz h) [[0, 1], [1, 0]] (by decide))
+      · exact case34 (consequences (addRelation hz h) [[0, 1], [1, 0]] (by decide))
+      · exact case35 (consequences (addRelation hz h) [[0, 1], [-1, 1]] (by decide))
+      · exact case9 (consequences (addRelation hz h) [[0, 1], [-1, 1]] (by decide))
+      · exact case30 (consequences (addRelation hz h) [[0, 1], [-1, 1]] (by decide))
+      · exact case5 (consequences (addRelation hz h) [[0, 1], [-1, 1]] (by decide))
+    have case37 (h : ∀ v ∈ ([] : List (ℤ × ℤ × ℤ)), φ v = 0) : good := by
+      apply testWord G φ e move neighbors (n := 16) (by decide)
+        word0120123012013213 (0, 0, 0) [(0, 0, 1), (0, 1, -1), (0, 1, 0), (1, -2, 0), (1, -1, -1), (1, -1, 0), (1, 0, -1), (1, 0, 0)]
+        (by dsimp only [move, flip, δ, word0120123012013213]; decide) (by dsimp only [word0120123012013213]; decide)
+        (consequence h [] (by decide))
+      intro d hd hz
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
+      rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+      · exact case7 (consequences (addRelation hz h) [[1]] (by decide))
+      · exact case8 (consequences (addRelation hz h) [[1]] (by decide))
+      · exact case14 (consequences (addRelation hz h) [[1]] (by decide))
+      · exact case21 (consequences (addRelation hz h) [[1]] (by decide))
+      · exact case26 (consequences (addRelation hz h) [[1]] (by decide))
+      · exact case27 (consequences (addRelation hz h) [[1]] (by decide))
+      · exact case28 (consequences (addRelation hz h) [[1]] (by decide))
+      · exact case36 (consequences (addRelation hz h) [[1]] (by decide))
+    exact case37 (by simp)
 
 /-- Along each edge of K4 the covering induces a bijection of its fibers.
 Using the three maps out of color zero as coordinates makes those maps
@@ -549,11 +1178,15 @@ def H1 : Prop := ∀ (V : Type) (G : SimpleGraph V) [Fintype V] [DecidableRel G.
     ∀ x j, j ≠ color x → ∃! y, G.Adj x y ∧ color y = j) →
   ∃ (k : ℕ) (v : V) (c : G.Walk v v), 2 ≤ k ∧ c.IsCycle ∧ c.length = 2 ^ k
 
-/-- Connected nonbipartite tetrahedral lifts with noncommuting chord permutations.
+/-- Connected nonbipartite tetrahedral lifts with a noncommuting pair of chord
+permutations and no orbit on which all three act by signed affine maps.
 The edges from color 0 preserve the sheet. The edges 12, 23 and 31 use p, q
 and r, respectively. -/
 def H2 : Prop := ∀ (X : Type) [Fintype X] [Nonempty X] (p q r : Equiv.Perm X),
   ¬ (Commute p q ∧ Commute q r ∧ Commute r p) →
+  (¬ ∃ (A : Type) (_ : AddCommGroup A) (f : A ↪ X) (s t u : Bool) (a b c : A),
+      ∀ x, p (f x) = f ((if s then -x else x)+a) ∧
+        q (f x) = f ((if t then -x else x)+b) ∧ r (f x) = f ((if u then -x else x)+c)) →
   let K := SimpleGraph.fromRel (fun u v : Fin 4 × X =>
     (u.1 = 0 ∧ v.1 ≠ 0 ∧ v.2 = u.2) ∨
     (u.1 = 1 ∧ v.1 = 2 ∧ v.2 = p u.2) ∨
@@ -576,21 +1209,24 @@ theorem main : H1 → H2 → OMA.R_Erdos64_erdos_64_R1_H1_R1_H1_R1.H1 := by
       have h : 4 ≤ 2 ^ k := Nat.pow_le_pow_right (by decide : 0 < 2) hk
       obtain ⟨v,c,cyc,length⟩ := (cycleGraph_isContained_iff (by omega : 2 < 2^k)).mp hc
       exact ⟨k,v,c,hk,cyc,length⟩
-    by_cases ab : ∃ (A : Type) (_ : AddCommGroup A) (f : A ↪ X) (a b c : A),
-        ∀ x, p (f x) = f (x+a) ∧ q (f x) = f (x+b) ∧ r (f x) = f (x+c)
-    · obtain ⟨A, ia, f, a, b, c, shifts⟩ := ab
+    by_cases ab : ∃ (A : Type) (_ : AddCommGroup A) (f : A ↪ X) (s t u : Bool) (a b c : A),
+      ∀ x, p (f x) = f ((if s then -x else x)+a) ∧
+        q (f x) = f ((if t then -x else x)+b) ∧ r (f x) = f ((if u then -x else x)+c)
+    · obtain ⟨A, ia, f, s, t, u, a, b, c, shifts⟩ := ab
       let e : Fin 4 × A ↪ V := (Function.Embedding.prodMap (Function.Embedding.refl _) f).trans label
-      have short := TetrahedralReduction.abelianTetrahedron G e a b c
+      have short := TetrahedralReduction.affineTetrahedron G e s t u a b c
         (fun j hj x => star j hj (f x))
-        (fun x => by change G.Adj (label (1,f x)) (label (2,f (x+a))); rw [← (shifts x).1]; exact oneTwo _)
-        (fun x => by change G.Adj (label (2,f x)) (label (3,f (x+b))); rw [← (shifts x).2.1]; exact twoThree _)
-        (fun x => by change G.Adj (label (3,f x)) (label (1,f (x+c))); rw [← (shifts x).2.2]; exact threeOne _)
+        (fun x => by change G.Adj (label (1,f x)) (label (2,f ((if s then -x else x)+a))); rw [← (shifts x).1]; exact oneTwo _)
+        (fun x => by change G.Adj (label (2,f x)) (label (3,f ((if t then -x else x)+b))); rw [← (shifts x).2.1]; exact twoThree _)
+        (fun x => by change G.Adj (label (3,f x)) (label (1,f ((if u then -x else x)+c))); rw [← (shifts x).2.2]; exact threeOne _)
       rcases short with h | h | h
       · exact solve (k := 2) (by decide) h
       · exact solve (k := 3) (by decide) h
       · exact solve (k := 4) (by decide) h
-    · have nc : ¬ (Commute p q ∧ Commute q r ∧ Commute r p) :=
-        fun h => ab (TetrahedralReduction.commutingOrbit p q r h.1 h.2.1 h.2.2)
+    · have nc : ¬ (Commute p q ∧ Commute q r ∧ Commute r p)  := by
+        intro h
+        obtain ⟨A,iA,f,a,b,c,hf⟩ := TetrahedralReduction.commutingOrbit p q r h.1 h.2.1 h.2.2
+        exact ab ⟨A,iA,f,false,false,false,a,b,c,hf⟩
       let rel (u v : Fin 4 × X) :=
         (u.1 = 0 ∧ v.1 ≠ 0 ∧ v.2 = u.2) ∨
         (u.1 = 1 ∧ v.1 = 2 ∧ v.2 = p u.2) ∨
@@ -634,7 +1270,7 @@ theorem main : H1 → H2 → OMA.R_Erdos64_erdos_64_R1_H1_R1_H1_R1.H1 := by
         rwa [label.injective same] at edge
       let iso : K ≃g G := ⟨Equiv.ofBijective label ⟨label.injective,onto⟩, ⟨reverse,edges⟩⟩
       have nb : ¬ K.IsBipartite := fun h => nonbipartite (SimpleGraph.Colorable.of_hom iso.symm.toHom h)
-      obtain ⟨k,hk,hc⟩ := nonAbelian X p q r nc (iso.connected_iff.mpr connected) nb
+      obtain ⟨k,hk,hc⟩ := nonAbelian X p q r nc ab (iso.connected_iff.mpr connected) nb
       exact solve hk (hc.trans ⟨⟨⟨label,fun h => edges h⟩,label.injective⟩⟩)
   · exact noColor V G connected cubic bridgeless nonbipartite colors
 
