@@ -14,7 +14,8 @@ c(n,m) = Nat.stirlingFirst n m the unsigned one. It reproduces the listed terms.
 
 Conjecture (R. J. Mathar, Jun 09 2018):
 a(n) + 3*(-n-3)*a(n-1) + (3*n^2 + 15*n + 19)*a(n-2) - (n+2)^3*a(n-3)=0.
-(Petros Hadjicostas, Jun 11 2020, derives this recurrence in the entry.)
+Status: known result: Petros Hadjicostas (Jun 11 2020) derives this recurrence in the entry,
+from R_{n+2}^2(a=-3,b=-1) = R_{n+1}^1(a=-3,b=-1) + (n+4)*R_{n+1}^2(a=-3,b=-1).
 It is stated for n ≥ 3 (all indices at least the offset 0), over the integers.
 -/
 
