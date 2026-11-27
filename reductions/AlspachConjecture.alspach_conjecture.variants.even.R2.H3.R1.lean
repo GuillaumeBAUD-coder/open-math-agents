@@ -1100,7 +1100,7 @@ private theorem supports_of_listings {m r : ℕ} (hm : 3 ≤ m) :
     by_cases last : a.val+1=m
     · rw [last,Nat.mod_self,Nat.zero_add,Nat.mod_eq_of_lt (by omega)] at eq
       omega
-    · rw [Nat.mod_eq_of_lt (by omega : a.val+1<m)] at eq
+    · rw [Nat.mod_eq_of_lt (by omega : a.val+1< m)] at eq
       by_cases penult : a.val+1+1=m
       · rw [penult,Nat.mod_self] at eq
         omega
@@ -1345,9 +1345,9 @@ theorem liftPair_any {m : ℕ} {V : Type} (large : 3 ≤ m)
     have eq := congrArg Fin.val h
     change (((i.val+1)%m)+1)%m=i.val at eq
     have hi := i.isLt
-    by_cases small : i.val+1<m
+    by_cases small : i.val+1< m
     · rw [Nat.mod_eq_of_lt small] at eq
-      by_cases small' : i.val+1+1<m
+      by_cases small' : i.val+1+1< m
       · rw [Nat.mod_eq_of_lt small'] at eq; omega
       · rw [show i.val+1+1=m by omega,Nat.mod_self] at eq; omega
     · rw [show i.val+1=m by omega,Nat.mod_self] at eq
@@ -1444,7 +1444,7 @@ theorem liftPair_any {m : ℕ} {V : Type} (large : 3 ≤ m)
     change (i.val+1)%m=0 ↔ _
     by_cases h : i.val+1=m
     · simp [h]
-    · rw [Nat.mod_eq_of_lt (show i.val+1<m by omega)]
+    · rw [Nat.mod_eq_of_lt (show i.val+1< m by omega)]
       omega
 
   have interParity {m : ℕ} (i : Fin m) (h : (next i).val ≠ 0) : parity (next i) = !(parity i) := by
@@ -1452,7 +1452,7 @@ theorem liftPair_any {m : ℕ} {V : Type} (large : 3 ≤ m)
     have hn : i.val+1 ≠ m := fun w => h ((next_zero_iff i).mpr w)
     unfold parity
     change decide (((i.val+1)%m)%2=1) = _
-    rw [Nat.mod_eq_of_lt (show i.val+1<m by omega)]
+    rw [Nat.mod_eq_of_lt (show i.val+1< m by omega)]
     by_cases bit : i.val%2=1
     · simp [bit,show (i.val+1)%2≠1 by omega]
     · simp [bit,show (i.val+1)%2=1 by omega]
@@ -1776,7 +1776,7 @@ theorem classify_paired_lengths_any {m : ℕ} (hm : 3 ≤ m) (L : Multiset ℕ)
     obtain ⟨k,rfl⟩ := Nat.exists_eq_succ_of_ne_zero (show m≠0 by omega)
     simpa [Nat.mul_comm] using (Nat.add_one_mul_choose_eq k 1).symm
   have mul : m*(2*r) ≤ m*(m-1) := by rw [← base,sum]; nlinarith
-  have le := Nat.le_of_mul_le_mul_left mul (show 0<m by omega)
+  have le := Nat.le_of_mul_le_mul_left mul (show 0< m by omega)
   refine ⟨r,by omega,?_⟩
   rw [sum, Nat.add_sub_cancel_left, ←split]
 
@@ -1987,11 +1987,11 @@ theorem ladder_cycle {m : ℕ} {V : Type} (hm : 2 ≤ m) (f : (Fin m × Bool) �
     have hi := i.isLt
     have hj := j.isLt
     cases b <;> cases c
-    · by_cases a : i.val+1<m <;> by_cases b : j.val+1<m <;>
+    · by_cases a : i.val+1< m <;> by_cases b : j.val+1< m <;>
         simp [E,forward,a,b,Fin.ext_iff] <;> omega
-    · by_cases a : i.val+1<m <;> by_cases b : j.val=0 <;>
+    · by_cases a : i.val+1< m <;> by_cases b : j.val=0 <;>
         simp [E,forward,a,b,Fin.ext_iff] <;> omega
-    · by_cases a : i.val=0 <;> by_cases b : j.val+1<m <;>
+    · by_cases a : i.val=0 <;> by_cases b : j.val+1< m <;>
         simp [E,forward,a,b,Fin.ext_iff] <;> omega
     · by_cases a : i.val=0 <;> by_cases b : j.val=0 <;>
         simp [E,forward,a,b,Fin.ext_iff] <;> omega
@@ -2026,7 +2026,7 @@ open Finset SimpleGraph AlspachConjecture
 open scoped Classical
 
 /-- The spanning ladder and its inter-block squares partition the edges lying in one row or between consecutive rows. -/
-theorem seed_family {m n : ℕ} (hm : 4≤m) (even : Even m) (f : (Fin m × Bool) ≃ Fin n)
+theorem seed_family {m n : ℕ} (hm : 4≤ m) (even : Even m) (f : (Fin m × Bool) ≃ Fin n)
     (G : SimpleGraph (Fin n)) (adj : ∀ i a j b, G.Adj (f (i,a)) (f (j,b)) ↔
     (i≠j ∨ a≠b) ∧ ¬(((i.val%2=0 ∧ i.val+1=j.val) ∨ (j.val%2=0 ∧ j.val+1=i.val)) ∧ a≠b)) :
     ∃ (q : ℕ) (C : Multiset (Cycle G)), lengths C = {2*m}+Multiset.replicate q 4 ∧
@@ -2051,7 +2051,7 @@ theorem seed_family {m n : ℕ} (hm : 4≤m) (even : Even m) (f : (Fin m × Bool
     change s(f (x,a),f (y,b)) ∈ [s(f (i,false),f (i,true)),s(f (i,true),f (j,false)),
       s(f (j,false),f (j,true)),s(f (j,true),f (i,false))] ↔ _
     cases a <;> cases b <;> simp <;> grind
-  let Band (m : ℕ) := {t : Fin m // t.val%2=1 ∧ t.val+1<m}
+  let Band (m : ℕ) := {t : Fin m // t.val%2=1 ∧ t.val+1< m}
   let bandNext {m : ℕ} (t : Band m) : Fin m := ⟨t.val.val+1,t.property.2⟩
   let InBand {m : ℕ} (t : Band m) (x : Fin m) : Prop := x=t.val ∨ x=bandNext t
   have inBand_iff {m} (t : Band m) (x : Fin m) :
@@ -2065,13 +2065,13 @@ theorem seed_family {m n : ℕ} (hm : 4≤m) (even : Even m) (f : (Fin m × Bool
     apply Subtype.ext
     apply Fin.ext
     omega
-  have interior_band {m} (even : Even m) (x : Fin m) (interior : 0<x.val ∧ x.val+1<m) :
+  have interior_band {m} (even : Even m) (x : Fin m) (interior : 0<x.val ∧ x.val+1< m) :
       ∃ t : Band m, InBand t x := by
     obtain ⟨k,hk⟩ := even
     by_cases odd : x.val%2=1
     · exact ⟨⟨x,odd,interior.2⟩,Or.inl rfl⟩
     · let p : Fin m := ⟨x.val-1, by have := x.isLt; omega⟩
-      have hp : p.val%2=1 ∧ p.val+1<m := by dsimp [p]; omega
+      have hp : p.val%2=1 ∧ p.val+1< m := by dsimp [p]; omega
       exact ⟨⟨p,hp⟩,Or.inr (Fin.ext (by dsimp [bandNext,p]; omega))⟩
   let RowAdj {m} (i : Fin m) (a : Bool) (j : Fin m) (b : Bool) : Prop :=
     (i≠j ∨ a≠b) ∧ ¬(((i.val%2=0 ∧ i.val+1=j.val) ∨ (j.val%2=0 ∧ j.val+1=i.val)) ∧ a≠b)
@@ -2086,7 +2086,7 @@ theorem seed_family {m n : ℕ} (hm : 4≤m) (even : Even m) (f : (Fin m × Bool
     refine ⟨Or.inr (by decide),?_⟩
     rintro ⟨(h | h),_⟩ <;> omega
   have interior_of_band {m} (even : Even m) (t : Band m) (x : Fin m) (hx : InBand t x) :
-      0<x.val ∧ x.val+1<m := by
+      0<x.val ∧ x.val+1< m := by
     obtain ⟨k,hk⟩ := even
     have ht := t.property
     rw [inBand_iff] at hx
@@ -2194,7 +2194,7 @@ theorem seed_family {m n : ℕ} (hm : 4≤m) (even : Even m) (f : (Fin m × Bool
         apply if_congr _ rfl rfl
         exact ⟨fun h => local_of_seed (Or.inr h),
           fun h => (seed_on even ((adj i a j b).mp he) h).resolve_left rail⟩
-  obtain ⟨c,length,edges⟩ := ladder_cycle (by omega : 2≤m) f G (by
+  obtain ⟨c,length,edges⟩ := ladder_cycle (by omega : 2≤ m) f G (by
     rintro ⟨i,a⟩ ⟨j,b⟩ (⟨ab,h⟩ | ⟨ij,ab,_⟩)
     · apply (adj i a j b).mpr
       change a=b at ab
@@ -2492,7 +2492,7 @@ theorem off_path_region {m n r : ℕ} (large : 3 ≤ m) (f : (Fin m × Bool) ≃
   · simp [show i≠j ∧ i.val+1≠j.val ∧ j.val+1≠i.val by tauto]
 /-- One ladder cycle covers the rails and caps. Its accompanying band squares
 and the two-cycle lifts cover disjoint complementary parts of the row graph. -/
-theorem odd_row_decomposition {m n r : ℕ} (large : 4≤m) (even : Even m) (limit : r≤m/2-2)
+theorem odd_row_decomposition {m n r : ℕ} (large : 4≤ m) (even : Even m) (limit : r≤ m/2-2)
     (f : (Fin m × Bool) ≃ Fin n) (G : SimpleGraph (Fin n)) [DecidableRel G.Adj]
     (adj : ∀ i a j b, G.Adj (f (i,a)) (f (j,b)) ↔
       (i≠j ∨ a≠b) ∧ ¬(((i.val%2=0 ∧ i.val+1=j.val) ∨ (j.val%2=0 ∧ j.val+1=i.val)) ∧ a≠b)) :
@@ -2501,7 +2501,7 @@ theorem odd_row_decomposition {m n r : ℕ} (large : 4≤m) (even : Even m) (lim
   classical
   obtain ⟨σ,_,_,disj,avoid⟩ := AlspachPaired.path_avoiding_family (r:=r) even large limit
   obtain ⟨q₁,S,ls,seed⟩ := seed_family large even f G adj
-  obtain ⟨q₂,T,lt,away⟩ := off_path_region (by omega : 3≤m) f G σ disj avoid
+  obtain ⟨q₂,T,lt,away⟩ := off_path_region (by omega : 3≤ m) f G σ disj avoid
     (fun i j ne fwd bwd a b => (adj i a j b).mpr ⟨Or.inl ne,fun ⟨band,_⟩ =>
       band.elim (fun h => fwd h.2) (fun h => bwd h.2)⟩)
   refine ⟨q₁+q₂,S+T,?_,?_⟩
@@ -2523,7 +2523,7 @@ theorem odd_row_decomposition {m n r : ℕ} (large : 4≤m) (even : Even m) (lim
 
 /-- Choose the diagonal matching and decompose its complement into an odd
 number of Hamilton cycles and squares. -/
-theorem odd_hamilton_and_squares {m n r : ℕ} (large : 4≤m) (even : Even m) (limit : r≤m/2-2)
+theorem odd_hamilton_and_squares {m n r : ℕ} (large : 4≤ m) (even : Even m) (limit : r≤ m/2-2)
     (f : (Fin m × Bool) ≃ Fin n) :
     ∃ J : (completeGraph (Fin n)).Subgraph, J.IsPerfectMatching ∧
       ∃ (q : ℕ) (C : Multiset (Cycle (completeGraph (Fin n) \ J.spanningCoe))),
@@ -2956,7 +2956,7 @@ open scoped Classical
 
 /-- A Steiner triple system supplies any prescribed number of triple supports,
 up to its full block count. Distinct selected blocks have disjoint edge sets. -/
-theorem triangle_packing (m t : ℕ) (residue : m%6=1 ∨ m%6=3) (ht : t≤m.choose 2/3) :
+theorem triangle_packing (m t : ℕ) (residue : m%6=1 ∨ m%6=3) (ht : t≤ m.choose 2/3) :
     ∃ B : Fin t → Finset (Fin m), (∀ i,(B i).card=3) ∧
       Pairwise (fun i j => Disjoint
         ((⊤ : SimpleGraph (Fin m)).edgeFinset.filter (fun e => e.toFinset ⊆ B i))
@@ -2984,7 +2984,7 @@ end AlspachTrades
 namespace AlspachTrades
 
 /-- In a square/triangle list for order 2m, triangles occur in multiples of four. -/
-theorem classify_trades (m : ℕ) (hm : 0<m) (L : Multiset ℕ)
+theorem classify_trades (m : ℕ) (hm : 0< m) (L : Multiset ℕ)
     (shape : ∀a∈L,a=3 ∨ a=4) (budget : L.sum=(2*m).choose 2-(2*m)/2) :
     ∃ t, t ≤ m.choose 2/3 ∧ L = Multiset.replicate (4*t) 3+Multiset.replicate (m.choose 2-3*t) 4 := by
   have filt : L.filter (fun a => ¬a=3) = Multiset.replicate (L.count 4) 4 := by
@@ -3058,7 +3058,7 @@ theorem glue_triangles {n m t : ℕ} (f : (Fin m × Bool) ≃ Fin n)
 
 /-- A packing of t base triples prescribes four triangles per chosen triple;
 every edge outside the packing is covered by a four-cycle. -/
-theorem realize_from_packing {m : ℕ} (hm : 0<m) (L : Multiset ℕ)
+theorem realize_from_packing {m : ℕ} (hm : 0< m) (L : Multiset ℕ)
     (shape : ∀a∈L,a=3 ∨ a=4) (budget : L.sum=(2*m).choose 2-(2*m)/2)
     (packing : ∀ t ≤ m.choose 2/3, ∃ B : Fin t → Finset (Fin m),
       (∀ i, (B i).card=3) ∧ Pairwise (fun i j => Disjoint
@@ -3107,7 +3107,7 @@ theorem triangle_square_lists (n : ℕ) (residue : n%12=2 ∨ n%12=6)
     (shape : ∀a∈L,a=3 ∨ a=4) (budget : L.sum=n.choose 2-n/2) :
     ∃ C : Multiset (Cycle (completeGraph (Fin n) \ I.spanningCoe)),
       IsCycleDecomposition _ C ∧ lengths C=L := by
-  obtain ⟨m,hm,rfl,hr⟩ : ∃ m, 0<m ∧ n=2*m ∧ (m%6=1 ∨ m%6=3) :=
+  obtain ⟨m,hm,rfl,hr⟩ : ∃ m, 0< m ∧ n=2*m ∧ (m%6=1 ∨ m%6=3) :=
     ⟨n/2,by omega,by omega,by omega⟩
   obtain ⟨J,hJ,C,hC,hL⟩ := realize_from_packing hm L shape budget (triangle_packing m · hr ·)
   obtain ⟨f⟩ := OMA.R_AlspachConjecture_alspach_conjecture_variants_even_R2.matchings_complements_iso J I hJ hI
@@ -3119,9 +3119,9 @@ namespace AlspachTrades
 open Finset SimpleGraph
 open scoped Classical
 
-/-- Embed a Steiner system on d≤m points in the first d ambient rows.
+/-- Embed a Steiner system on d≤ m points in the first d ambient rows.
 Deleting unused blocks allows any prescribed count up to the design size. -/
-theorem triangle_packing_suborder {d m t : ℕ} (hd : d≤m) (hr : d%6=1 ∨ d%6=3)
+theorem triangle_packing_suborder {d m t : ℕ} (hd : d≤ m) (hr : d%6=1 ∨ d%6=3)
     (lim : t≤d.choose 2/3) :
     ∃ B : Fin t → Finset (Fin m), (∀ i,(B i).card=3) ∧
       Pairwise (fun i j => Disjoint
@@ -3370,7 +3370,7 @@ open scoped Classical
 
 /-- A bound on uncovered base edges translates into a bound on the number
 of squares in the requested list. -/
-theorem enough_squares {m leave : ℕ} (hm : 0<m) (L : Multiset ℕ)
+theorem enough_squares {m leave : ℕ} (hm : 0< m) (L : Multiset ℕ)
     (shape : ∀ a∈L,a=3 ∨ a=4) (budget : L.sum=(2*m).choose 2-(2*m)/2)
     (enough : leave ≤ L.count 4) : L.count 3/4 ≤ (m.choose 2-leave)/3 := by
   obtain ⟨t,lim,eq⟩ := classify_trades m hm L shape budget
@@ -3390,7 +3390,7 @@ theorem triangle_packing_four {m t : ℕ} (four : m%6=4) (lim : t ≤ (m.choose 
       simpa only [Nat.choose_one_right] using Nat.choose_succ_succ k 1
     rw [step,Nat.add_sub_cancel,Nat.add_sub_cancel_left]
   rw [h] at lim
-  exact triangle_packing_suborder (show m-1≤m by omega) (Or.inr (by omega)) lim
+  exact triangle_packing_suborder (show m-1≤ m by omega) (Or.inr (by omega)) lim
 
 end AlspachTrades
 
@@ -3400,7 +3400,7 @@ open scoped Classical
 
 /-- A packing of t base triples prescribes four triangles per chosen triple;
 every edge outside the packing is covered by a four-cycle. -/
-theorem realize_from_packing_count {m : ℕ} (hm : 0<m) (L : Multiset ℕ)
+theorem realize_from_packing_count {m : ℕ} (hm : 0< m) (L : Multiset ℕ)
     (shape : ∀a∈L,a=3 ∨ a=4) (budget : L.sum=(2*m).choose 2-(2*m)/2)
     (packing : ∃ B : Fin (L.count 3/4) → Finset (Fin m),
       (∀ i, (B i).card=3) ∧ Pairwise (fun i j => Disjoint
@@ -3448,7 +3448,7 @@ open scoped Classical
 
 /-- A Steiner design or its puncturing gives a triangle/square decomposition
 once the requested squares cover its leave. -/
-theorem triangle_square_leave_lists {m : ℕ} (hm : 0<m)
+theorem triangle_square_leave_lists {m : ℕ} (hm : 0< m)
     (I : (completeGraph (Fin (2*m))).Subgraph) (hI : I.IsPerfectMatching) (L : Multiset ℕ)
     (shape : ∀a∈L,a=3 ∨ a=4) (budget : L.sum=(2*m).choose 2-(2*m)/2)
     (enough : (if m%6=1 ∨ m%6=3 then 0 else if m%6=0 ∨ m%6=2 then m/2 else m-1) ≤ L.count 4) :
@@ -3474,7 +3474,7 @@ theorem triangle_square_leave_lists {m : ℕ} (hm : 0<m)
   exact OMA.R_AlspachConjecture_alspach_conjecture_variants_even_R2.iso_decomposition f dec len
 
 /-- At every even order 2m, m−1 squares suffice for every triangle/square list. -/
-theorem triangle_square_with_squares {m : ℕ} (hm : 0<m)
+theorem triangle_square_with_squares {m : ℕ} (hm : 0< m)
     (I : (completeGraph (Fin (2*m))).Subgraph) (hI : I.IsPerfectMatching) (L : Multiset ℕ)
     (shape : ∀a∈L,a=3 ∨ a=4) (budget : L.sum=(2*m).choose 2-(2*m)/2) (enough : m-1≤L.count 4) :
     ∃ C : Multiset (Cycle (completeGraph (Fin (2*m)) \ I.spanningCoe)),
@@ -3493,7 +3493,7 @@ four triangles, and each unselected triple yields three squares. -/
 theorem tripartite_trades {s : ℕ} {V : Type*} [DecidableEq V]
     (f : ((Fin 3 × Fin s) × Bool) ≃ V) (G : SimpleGraph V)
     (across : ∀ (i j : Fin 3 × Fin s) (a b : Bool), i.1≠j.1 → G.Adj (f (i,a)) (f (j,b)))
-    (t : ℕ) (ht : t≤s*s) :
+    (t : ℕ) (ht : t≤ s*s) :
     ∃ C : Multiset (Cycle G), lengths C = Multiset.replicate (4*t) 3 + Multiset.replicate (3*(s*s-t)) 4 ∧
       ∀ x y : V, (C.filter fun c => s(x,y)∈c.edges).card =
         if (f.symm x).1.1≠(f.symm y).1.1 then 1 else 0 := by
@@ -3726,7 +3726,7 @@ theorem tripartite_trades {s : ℕ} {V : Type*} [DecidableEq V]
 theorem complete_tripartite_trades {s : ℕ} {V : Type*} [Fintype V] [DecidableEq V]
     (f : ((Fin 3 × Fin s) × Bool) ≃ V) (G : SimpleGraph V) [DecidableRel G.Adj]
     (adj : ∀ x y : V, G.Adj x y ↔ (f.symm x).1.1≠(f.symm y).1.1)
-    (t : ℕ) (ht : t≤s*s) :
+    (t : ℕ) (ht : t≤ s*s) :
     ∃ C : Multiset (Cycle G), IsCycleDecomposition G C ∧
       lengths C = Multiset.replicate (4*t) 3 + Multiset.replicate (3*(s*s-t)) 4 := by
   classical
@@ -3933,9 +3933,9 @@ theorem match_list {L : Multiset ℕ} (shape : ∀ a∈L,a=3 ∨ a=4) {a q : ℕ
 /-- Up to the leave threshold, the cross-group octahedra supply every eligible
 square count. -/
 theorem small_cross_square {s q : ℕ} (hs : 0<s) (small : q < (3*s)/2)
-    (three : 3∣q) : ∃ t, t≤s*s ∧ 3*(s*s-t)=q := by
+    (three : 3∣q) : ∃ t, t≤ s*s ∧ 3*(s*s-t)=q := by
   obtain ⟨k,rfl⟩ := three
-  have h1 : s≤s*s := by simpa only [Nat.mul_one] using Nat.mul_le_mul_left s hs
+  have h1 : s≤ s*s := by simpa only [Nat.mul_one] using Nat.mul_le_mul_left s hs
   exact ⟨s*s-k,by omega,by omega⟩
 
 end AlspachTripartite
@@ -3953,7 +3953,7 @@ theorem join_three {s n : ℕ} (f : ((Fin 3 × Fin s) × Bool) ≃ Fin n)
     (inside : ∀ x y, G.Adj x y → (inner.filter fun c => s(x,y)∈c.edges).card =
       if (f.symm x).1.1=(f.symm y).1.1 then 1 else 0)
     (L : Multiset ℕ) (shape : ∀ a∈L,a=3 ∨ a=4) (budget : L.sum=G.edgeFinset.card)
-    {t : ℕ} (ht : t≤s*s) (target : 3*(s*s-t)=L.count 4) :
+    {t : ℕ} (ht : t≤ s*s) (target : 3*(s*s-t)=L.count 4) :
     ∃ C : Multiset (Cycle G), IsCycleDecomposition G C ∧ lengths C=L := by
   obtain ⟨outer,outLengths,outside⟩ := tripartite_trades f G (fun i j a b ne =>
     across _ _ (by simpa using ne)) t ht
@@ -5323,12 +5323,12 @@ theorem recursive_designs :
       ∃ e : Fin (2*u) ≃ (Fin u × Bool), ∀ x y, (e x).1=(e y).1 ↔ x=y ∨ mate x=y := by
     classical
     have twice (x) : mate (mate x)=x := inv x
-    let R := {x : Fin (2*u) // x<mate x}
+    let R := {x : Fin (2*u) // x< mate x}
     let make (z : R × Bool) := if z.2 then mate z.1.val else z.1.val
-    have hi (x) (h : ¬x<mate x) : mate x<mate (mate x) := by rw [inv]; exact lt_of_le_of_ne (not_lt.mp h) (free x)
-    let split (x : Fin (2*u)) : R × Bool := if h : x<mate x then (⟨x,h⟩,false) else (⟨mate x,hi x h⟩,true)
+    have hi (x) (h : ¬x< mate x) : mate x< mate (mate x) := by rw [inv]; exact lt_of_le_of_ne (not_lt.mp h) (free x)
+    let split (x : Fin (2*u)) : R × Bool := if h : x< mate x then (⟨x,h⟩,false) else (⟨mate x,hi x h⟩,true)
     have left (x) : make (split x)=x := by
-      by_cases h : x<mate x <;> simp [make,split,h,twice]
+      by_cases h : x< mate x <;> simp [make,split,h,twice]
     have right (v : R × Bool) : split (make v)=v := by
       obtain ⟨⟨x,hx⟩,b⟩ := v
       cases b <;> simp [make,split,hx,twice,not_lt.mpr hx.le]
@@ -6438,7 +6438,7 @@ theorem join_with_inner_squares {s n : ℕ} (f : ((Fin 3 × Fin s) × Bool) ≃ 
     (inside : ∀ x y, G.Adj x y → (inner.filter fun c => s(x,y)∈c.edges).card =
       if (f.symm x).1.1=(f.symm y).1.1 then 1 else 0)
     (L : Multiset ℕ) (shape : ∀ a∈L,a=3 ∨ a=4) (budget : L.sum=G.edgeFinset.card)
-    {t : ℕ} (ht : t≤s*s) (target : k+3*(s*s-t)=L.count 4) :
+    {t : ℕ} (ht : t≤ s*s) (target : k+3*(s*s-t)=L.count 4) :
     ∃ C : Multiset (Cycle G), IsCycleDecomposition G C ∧ lengths C=L := by
   obtain ⟨outer,outLengths,outside⟩ := tripartite_trades f G (fun i j a b ne =>
     across _ _ (by simpa using ne)) t ht
@@ -6542,7 +6542,7 @@ theorem triangle_square_four_mod_six (n : ℕ) (residue : n%6=4)
   obtain ⟨u,rfl⟩ : ∃ u, n=6*u+4 := ⟨n/6,by omega⟩
   let m := 3*u+2
   have evenOrder : 6*u+4=2*m := by dsimp [m]; omega
-  have hm : 0<m := by dsimp [m]; omega
+  have hm : 0< m := by dsimp [m]; omega
   let leave := if m%6=1 ∨ m%6=3 then 0 else if m%6=0 ∨ m%6=2 then m/2 else m-1
   by_cases enough : leave ≤ L.count 4
   · have realize (N : ℕ) (order : N=2*m) (K : (completeGraph (Fin N)).Subgraph)
@@ -6778,7 +6778,7 @@ open scoped Classical
 
 /-- Double each base vertex. A Hamilton support contributes two Hamilton cycles;
 an octahedron over a base triangle contributes four triangles. -/
-theorem double_design {m r h : ℕ} (hm : 3≤m) (σ : Fin r → (Fin m ≃ Fin m))
+theorem double_design {m r h : ℕ} (hm : 3≤ m) (σ : Fin r → (Fin m ≃ Fin m))
     (B : Fin h → Finset (Fin m)) (three : ∀ i,(B i).card=3) :
     let next (i : Fin m) : Fin m := ⟨(i.val+1)%m, Nat.mod_lt _ (Nat.zero_lt_of_lt i.isLt)⟩
     let H (i : Fin r) := univ.image fun z => s(σ i z,σ i (next z))
@@ -6806,7 +6806,7 @@ theorem double_design {m r h : ℕ} (hm : 3≤m) (σ : Fin r → (Fin m ≃ Fin 
     have q := congrArg Fin.val eq
     change x.val=(x.val+1)%m at q
     have hi := x.isLt
-    by_cases lt : x.val+1<m
+    by_cases lt : x.val+1< m
     · rw [Nat.mod_eq_of_lt lt] at q; omega
     · have equal : x.val+1=m := by omega
       rw [equal,Nat.mod_self] at q
@@ -6838,7 +6838,7 @@ theorem double_design {m r h : ℕ} (hm : 3≤m) (σ : Fin r → (Fin m ≃ Fin 
 
 /-- Lift any disjoint selection of Hamilton and triangle supports, then cover
 every unused base edge by the square joining its two pairs of vertices. -/
-theorem double_partial {m r h : ℕ} (hm : 3≤m) (σ : Fin r → (Fin m ≃ Fin m))
+theorem double_partial {m r h : ℕ} (hm : 3≤ m) (σ : Fin r → (Fin m ≃ Fin m))
     (B : Fin h → Finset (Fin m)) (three : ∀ i,(B i).card=3) :
     let next (i : Fin m) : Fin m := ⟨(i.val+1)%m, Nat.mod_lt _ (Nat.zero_lt_of_lt i.isLt)⟩
     let H (i : Fin r) := univ.image fun z => s(σ i z,σ i (next z))
@@ -6866,7 +6866,7 @@ theorem double_partial {m r h : ℕ} (hm : 3≤m) (σ : Fin r → (Fin m ≃ Fin
     have q := congrArg Fin.val eq
     change x.val=(x.val+1)%m at q
     have hi := x.isLt
-    by_cases lt : x.val+1<m
+    by_cases lt : x.val+1< m
     · rw [Nat.mod_eq_of_lt lt] at q; omega
     · have equal : x.val+1=m := by omega
       rw [equal,Nat.mod_self] at q
@@ -6929,7 +6929,7 @@ theorem double_partial {m r h : ℕ} (hm : 3≤m) (σ : Fin r → (Fin m ≃ Fin
   nlinarith only [exactsum]
 
 
-theorem classify_mixed {m r h : ℕ} (hm : 3≤m) (cells : m*r+3*h=m.choose 2)
+theorem classify_mixed {m r h : ℕ} (hm : 3≤ m) (cells : m*r+3*h=m.choose 2)
     (L : Multiset ℕ) (shape : ∀ a∈L, a=3 ∨ a=4 ∨ a=2*m)
     (budget : L.sum=(2*m).choose 2-(2*m)/2) (ham : L.count (2*m)=2*r) :
     ∃ t, t≤h ∧ L.count 3=4*t ∧ L.count 4=3*(h-t) ∧
@@ -6960,7 +6960,7 @@ theorem classify_mixed {m r h : ℕ} (hm : 3≤m) (cells : m*r+3*h=m.choose 2)
 
 /-- Each complete Hamilton/triangle partition of the base realizes every
 admissible mixture of 3, 4 and 2m with the prescribed number of Hamilton cycles. -/
-theorem double_lists {m r h : ℕ} (hm : 3≤m) (σ : Fin r → (Fin m ≃ Fin m))
+theorem double_lists {m r h : ℕ} (hm : 3≤ m) (σ : Fin r → (Fin m ≃ Fin m))
     (B : Fin h → Finset (Fin m)) (three : ∀ i,(B i).card=3) :
     let next (i : Fin m) : Fin m := ⟨(i.val+1)%m, Nat.mod_lt _ (Nat.zero_lt_of_lt i.isLt)⟩
     let H (i : Fin r) := univ.image fun z => s(σ i z,σ i (next z))
@@ -7209,7 +7209,7 @@ theorem cross_triangle_region {V : Type*} [DecidableEq V] {m : ℕ} (f : (Fin m 
 /-- Double a partition of the cross-color edges into cyclic listings and triples.
 Each listing gives two Hamilton cycles. Each triple independently gives four
 triangles or three squares, while no edge within a color is used. -/
-theorem double_cross {m s h k : ℕ} (hm : 3≤m) (hk : k≤h) {V K : Type}
+theorem double_cross {m s h k : ℕ} (hm : 3≤ m) (hk : k≤h) {V K : Type}
     [DecidableEq V] [DecidableEq K] (f : (Fin m × Bool) ≃ V) (G : SimpleGraph V)
     (g : Fin m → K) (adj : ∀ i a j b, g i ≠ g j → G.Adj (f (i,a)) (f (j,b)))
     (σ : Fin s → (Fin m ≃ Fin m)) (B : Fin h → Finset (Fin m)) (three : ∀ i,(B i).card=3) :
@@ -7695,7 +7695,7 @@ open scoped Classical
 
 /-- The selected triangle factors partition into one Hamilton circuit per shift.
 The middle transition permutes the shifts, preserving its occupied edges. -/
-theorem selected_listings {t s : ℕ} [NeZero t] (odd : Odd t) (small : 2≤s) (lim : s≤t) :
+theorem selected_listings {t s : ℕ} [NeZero t] (odd : Odd t) (small : 2≤ s) (lim : s≤t) :
     let V := Fin 3 × Fin t
     let next (i : Fin (3*t)) : Fin (3*t) := ⟨(i.val+1)%(3*t), Nat.mod_lt _ (Nat.zero_lt_of_lt i.isLt)⟩
     let face (a i : Fin t) : Finset V := {(0,i),(1,i+a),(2,i+a+a)}
@@ -7951,7 +7951,7 @@ open scoped Classical
 
 /-- An arbitrary initial segment of at least two shifts can be replaced by
 disjoint cyclic orders, even when it has odd cardinality. -/
-theorem cross_base_selected {t s : ℕ} [NeZero t] (odd : Odd t) (small : 2≤s) (lim : s≤t)
+theorem cross_base_selected {t s : ℕ} [NeZero t] (odd : Odd t) (small : 2≤ s) (lim : s≤t)
     (e : Fin (3*t) ≃ Fin 3 × Fin t) :
     let next (i : Fin (3*t)) : Fin (3*t) := ⟨(i.val+1)%(3*t),Nat.mod_lt _ (Nat.zero_lt_of_lt i.isLt)⟩
     ∃ (order : Fin s → (Fin (3*t) ≃ Fin (3*t))) (B : Fin (t*(t-s)) → Finset (Fin (3*t))),
@@ -8061,13 +8061,13 @@ theorem hamilton_support {m : ℕ} {G : SimpleGraph (Fin m)} (c : Cycle G) (len 
     apply Fin.ext
     have hi := i.isLt
     have hj := j.isLt
-    exact c.isCycle.getVert_injOn' (by change i.val≤c.walk.length-1; omega)
-      (by change j.val≤c.walk.length-1; omega) ij
+    exact c.isCycle.getVert_injOn' (by change i.val≤ c.walk.length-1; omega)
+      (by change j.val≤ c.walk.length-1; omega) ij
   let σ := Equiv.ofBijective a ⟨inj, Finite.injective_iff_surjective.mp inj⟩
   have atNext (i : Fin m) : σ (next i)=c.walk.getVert (i.val+1) := by
     change c.walk.getVert ((i.val+1)%m) = _
     have hi := i.isLt
-    by_cases h : i.val+1<m
+    by_cases h : i.val+1< m
     · rw [Nat.mod_eq_of_lt h]
     · rw [show i.val+1=m by omega,Nat.mod_self]
       calc c.walk.getVert 0 = c.walk.getVert c.walk.length := by rw [Walk.getVert_length,Walk.getVert_zero]
@@ -8103,8 +8103,8 @@ theorem triangle_support {m : ℕ} {G : SimpleGraph (Fin m)} (c : Cycle G) (len 
   let b := c.walk.getVert 1
   let d := c.walk.getVert 2
   have inj {i j : ℕ} (hi : i<3) (hj : j<3) (eq : c.walk.getVert i=c.walk.getVert j) : i=j :=
-    c.isCycle.getVert_injOn' (by change i≤c.walk.length-1; omega)
-      (by change j≤c.walk.length-1; omega) eq
+    c.isCycle.getVert_injOn' (by change i≤ c.walk.length-1; omega)
+      (by change j≤ c.walk.length-1; omega) eq
   have ab : a≠b := fun eq => Nat.zero_ne_one (inj (i:=0) (j:=1) (by decide) (by decide) eq)
   have ad : a≠d := fun eq => (by decide : (0:ℕ)≠2) (inj (i:=0) (j:=2) (by decide) (by decide) eq)
   have bd : b≠d := fun eq => (by decide : (1:ℕ)≠2) (inj (i:=1) (j:=2) (by decide) (by decide) eq)
@@ -8184,7 +8184,7 @@ theorem extract_supports {m r h : ℕ} (different : m≠3) {G : SimpleGraph (Fin
 /-- Doubling a decomposition replaces selected Hamilton cycles by two
 Hamilton cycles each and selected triangular faces by four triangles each.
 All remaining base pairs become squares. -/
-theorem double_selected {m r h : ℕ} (hm : 4≤m) {G : SimpleGraph (Fin m)} [DecidableRel G.Adj]
+theorem double_selected {m r h : ℕ} (hm : 4≤ m) {G : SimpleGraph (Fin m)} [DecidableRel G.Adj]
     (C : Multiset (Cycle G)) (dec : IsCycleDecomposition G C)
     (hr : r≤(lengths C).count m) (ht : h≤(lengths C).count 3)
     (I : (completeGraph (Fin (2*m))).Subgraph) (hI : I.IsPerfectMatching) :
@@ -8193,7 +8193,7 @@ theorem double_selected {m r h : ℕ} (hm : 4≤m) {G : SimpleGraph (Fin m)} [De
       lengths D=Multiset.replicate (2*r) (2*m)+Multiset.replicate (4*h) 3+Multiset.replicate q 4 ∧
       q+m*r+3*h=m.choose 2 := by
   obtain ⟨σ,B,three,hs,ts,dj⟩ := extract_supports (by omega : m≠3) C dec hr ht
-  obtain ⟨J,hJ,q,A,da,la,eq⟩ := AlspachTriangleHamilton.double_partial (by omega : 3≤m) σ B three hs ts dj
+  obtain ⟨J,hJ,q,A,da,la,eq⟩ := AlspachTriangleHamilton.double_partial (by omega : 3≤ m) σ B three hs ts dj
   obtain ⟨iso⟩ := OMA.R_AlspachConjecture_alspach_conjecture_variants_even_R2.matchings_complements_iso J I hJ hI
   obtain ⟨D,dd,ld⟩ := OMA.R_AlspachConjecture_alspach_conjecture_variants_even_R2.iso_decomposition iso da la
   exact ⟨q,D,dd,ld,eq⟩
@@ -8204,7 +8204,7 @@ namespace AlspachIterated
 
 /-- When every unused base edge lifts to a square, the only numerical
 restriction on the lifted list is the number of unavoidable squares. -/
-theorem classify_leave {m r a u : ℕ} (hm : 3≤m)
+theorem classify_leave {m r a u : ℕ} (hm : 3≤ m)
     (base : m*r+3*a+u=m.choose 2) (L : Multiset ℕ)
     (shape : ∀ x∈L,x=3 ∨ x=4 ∨ x=2*m) (budget : L.sum=(2*m).choose 2-(2*m)/2)
     (ham : L.count (2*m)=2*r) (squares : u≤L.count 4) :
@@ -8238,7 +8238,7 @@ namespace AlspachIterated
 open SimpleGraph AlspachConjecture
 open scoped Classical
 
-theorem double_family {m r a u : ℕ} (hm : 4≤m) {G : SimpleGraph (Fin m)} [DecidableRel G.Adj]
+theorem double_family {m r a u : ℕ} (hm : 4≤ m) {G : SimpleGraph (Fin m)} [DecidableRel G.Adj]
     (C : Multiset (Cycle G)) (dec : IsCycleDecomposition G C)
     (hr : r≤(lengths C).count m) (ha : a≤(lengths C).count 3)
     (base : m*r+3*a+u=m.choose 2)
@@ -8253,15 +8253,15 @@ theorem double_family {m r a u : ℕ} (hm : 4≤m) {G : SimpleGraph (Fin m)} [De
 
 /-- A complete matched base supported on three lengths leaves one unused base
 edge per matching edge and four unused base edges per unselected square. -/
-theorem base_counts {m r a q : ℕ} (hm : 5≤m)
+theorem base_counts {m r a q : ℕ} (hm : 5≤ m)
     (budget : (Multiset.replicate r m+Multiset.replicate a 3+Multiset.replicate q 4).sum=m.choose 2-m/2) :
     m*r+3*a+(m/2+4*q)=m.choose 2 := by
   simp only [Multiset.sum_add,Multiset.sum_replicate,smul_eq_mul] at budget
   have twice : 2*m.choose 2=m*(m-1) := by
     obtain ⟨j,rfl⟩ : ∃ j, m=j+1 := ⟨m-1,by omega⟩
     simpa [Nat.mul_comm] using (Nat.add_one_mul_choose_eq j 1).symm
-  have bound : m*2≤m*(m-1) := Nat.mul_le_mul_left m (by omega)
-  have enough : m/2≤m.choose 2 := by omega
+  have bound : m*2≤ m*(m-1) := Nat.mul_le_mul_left m (by omega)
+  have enough : m/2≤ m.choose 2 := by omega
   rw [Nat.mul_comm m r,Nat.mul_comm 3 a,Nat.mul_comm 4 q]
   omega
 end AlspachIterated
@@ -8270,7 +8270,7 @@ namespace AlspachIterated
 open SimpleGraph AlspachConjecture Finset
 open scoped Classical
 
-theorem matched_budget {m r a q : ℕ} (hm : 5≤m) (J : (completeGraph (Fin m)).Subgraph)
+theorem matched_budget {m r a q : ℕ} (hm : 5≤ m) (J : (completeGraph (Fin m)).Subgraph)
     (perf : J.IsPerfectMatching) (C : Multiset (Cycle (completeGraph (Fin m) \ J.spanningCoe)))
     (dec : IsCycleDecomposition _ C)
     (lens : lengths C=Multiset.replicate r m+Multiset.replicate a 3+Multiset.replicate q 4) :
@@ -8284,7 +8284,7 @@ theorem matched_budget {m r a q : ℕ} (hm : 5≤m) (J : (completeGraph (Fin m))
   ext edge
   simp only [mem_edgeFinset]
 
-theorem seed_step {m r a q : ℕ} (hm : 5≤m)
+theorem seed_step {m r a q : ℕ} (hm : 5≤ m)
     (seed : ∃ J : (completeGraph (Fin m)).Subgraph, J.IsPerfectMatching ∧
       ∃ C : Multiset (Cycle (completeGraph (Fin m) \ J.spanningCoe)), IsCycleDecomposition _ C ∧
         lengths C=Multiset.replicate r m+Multiset.replicate a 3+Multiset.replicate q 4) :
@@ -8325,7 +8325,7 @@ theorem square_step {m : ℕ} (even : Even m) (q e : ℕ) :
 
 /-- After e doublings an original square gives 4^e squares. The matching
 edges of all intermediate orders give an additional binomial coefficient. -/
-theorem iterated_seed {m r a q : ℕ} (hm : 5≤m) (even : Even m)
+theorem iterated_seed {m r a q : ℕ} (hm : 5≤ m) (even : Even m)
     (seed : ∃ J : (completeGraph (Fin m)).Subgraph, J.IsPerfectMatching ∧
       ∃ C : Multiset (Cycle (completeGraph (Fin m) \ J.spanningCoe)), IsCycleDecomposition _ C ∧
         lengths C=Multiset.replicate r m+Multiset.replicate a 3+Multiset.replicate q 4) (e : ℕ) :
@@ -8351,7 +8351,7 @@ theorem iterated_seed {m r a q : ℕ} (hm : 5≤m) (even : Even m)
 /-- Repeated doubling realizes every target list above the square threshold,
 starting from any one matched decomposition using triangles, squares and
 Hamilton cycles. -/
-theorem iterated_lists {m r a q : ℕ} (hm : 5≤m) (even : Even m)
+theorem iterated_lists {m r a q : ℕ} (hm : 5≤ m) (even : Even m)
     (seed : ∃ J : (completeGraph (Fin m)).Subgraph, J.IsPerfectMatching ∧
       ∃ C : Multiset (Cycle (completeGraph (Fin m) \ J.spanningCoe)), IsCycleDecomposition _ C ∧
         lengths C=Multiset.replicate r m+Multiset.replicate a 3+Multiset.replicate q 4)
@@ -8395,7 +8395,7 @@ theorem odd_minimum_budget {t s : ℕ} (positive : 0<t) (hi : s≤t) :
 
 /-- On six times an odd order, attain the minimum square count from the
 three internal groups, with any permitted even Hamilton count. -/
-theorem odd_minimum_seed {t s : ℕ} (odd : Odd t) (large : 3≤t) (lo : 2≤s) (hi : s≤t) :
+theorem odd_minimum_seed {t s : ℕ} (odd : Odd t) (large : 3≤t) (lo : 2≤ s) (hi : s≤t) :
     ∃ J : (completeGraph (Fin (6*t))).Subgraph, J.IsPerfectMatching ∧
       ∃ C : Multiset (Cycle (completeGraph (Fin (6*t)) \ J.spanningCoe)),
         IsCycleDecomposition _ C ∧ lengths C =
@@ -8430,7 +8430,7 @@ theorem odd_minimum_seed {t s : ℕ} (odd : Odd t) (large : 3≤t) (lo : 2≤s) 
 /-- Write the target order as 6td, with t odd and d a positive power of two
 greater than one. The starting complement has 2s Hamilton cycles. At each
 doubling, unused edges of the base matching contribute one square each. -/
-theorem tripartite_doublings {t s : ℕ} (odd : Odd t) (large : 3≤t) (lo : 2≤s) (hi : s≤t)
+theorem tripartite_doublings {t s : ℕ} (odd : Odd t) (large : 3≤t) (lo : 2≤ s) (hi : s≤t)
     (e n : ℕ) (order : n=2^(e+1)*(6*t)) (I : (completeGraph (Fin n)).Subgraph) (hI : I.IsPerfectMatching)
     (L : Multiset ℕ) (shape : ∀ x∈L,x=3 ∨ x=4 ∨ x=n) (budget : L.sum=n.choose 2-n/2)
     (ham : L.count n=2^(e+1)*(2*s))
@@ -8448,20 +8448,20 @@ open Fin.NatCast
 /-- A positive cyclic step of less than half the order determines both its
 length and starting point from its unordered endpoints. -/
 theorem segment_unique {m a b : ℕ} [NeZero m] (x y : Fin m)
-    (ha : 0<a ∧ 2*a<m) (hb : 0<b ∧ 2*b<m)
+    (ha : 0<a ∧ 2*a< m) (hb : 0<b ∧ 2*b< m)
     (eq : s(x,x+(a : Fin m))=s(y,y+(b : Fin m))) : x=y ∧ a=b := by
   rcases Sym2.eq_iff.mp eq with ⟨rfl,forward⟩ | ⟨back,forward⟩
   · have same := add_left_cancel forward
     have vals := congrArg Fin.val same
     refine ⟨rfl,?_⟩
-    simpa [Fin.val_natCast,Nat.mod_eq_of_lt (show a<m by omega),Nat.mod_eq_of_lt (show b<m by omega)] using vals
+    simpa [Fin.val_natCast,Nat.mod_eq_of_lt (show a< m by omega),Nat.mod_eq_of_lt (show b< m by omega)] using vals
   · have none : (a+b : Fin m)=0 := by
       apply add_left_cancel (a:=x)
       calc x+((a : Fin m)+b) = (x+a)+b := (add_assoc ..).symm
            _ = x := by rw [forward,←back]
            _ = x+0 := (add_zero x).symm
     have vals := congrArg Fin.val none
-    rw [←Nat.cast_add,Fin.val_natCast,Nat.mod_eq_of_lt (show a+b<m by omega)] at vals
+    rw [←Nat.cast_add,Fin.val_natCast,Nat.mod_eq_of_lt (show a+b< m by omega)] at vals
     change a+b=0 at vals
     omega
 
@@ -8498,11 +8498,11 @@ theorem signed_difference_blocks {k : ℕ} (d : Fin k → Fin 3 → ℕ)
     if j=0 then 0 else if j=1 then A i else if d i 0+d i 1=d i 2 then 0 else A i+V i
   let B (z : Fin k × Fin m) := ({z.2,z.2+A z.1,z.2+(A z.1+V z.1)} : Finset (Fin m))
   let T (z : Fin k × Fin m) := (⊤ : SimpleGraph (Fin m)).edgeFinset.filter fun e => e.toFinset ⊆ B z
-  have short (i : Fin k) (j : Fin 3) : 0<d i j ∧ 2*d i j<m := by
+  have short (i : Fin k) (j : Fin 3) : 0<d i j ∧ 2*d i j< m := by
     have := bounds i j
     dsimp [m]
     omega
-  have positive {a : ℕ} (lo : 0<a) (hi : a<m) : (a : Fin m)≠0 := by
+  have positive {a : ℕ} (lo : 0<a) (hi : a< m) : (a : Fin m)≠0 := by
     intro h
     have v := congrArg Fin.val h
     rw [Fin.val_cast_of_lt hi] at v
@@ -8579,7 +8579,7 @@ theorem complete_inventory (k : ℕ) :
       (⊤ : SimpleGraph (Fin m)).edgeFinset ⊆ H ∪ univ.biUnion T := by
   classical
   intro m next B H T three disjoint away
-  have large : 3≤m := by dsimp [m]; omega
+  have large : 3≤ m := by dsimp [m]; omega
   have advance (a : Fin m) : (next a).val=if a.val+1=m then 0 else a.val+1 := by
     change (a.val+1)%m=_
     have := a.isLt
@@ -8651,7 +8651,7 @@ open scoped Classical
 
 /-- Double one cyclic Hamilton ordering and a complete family of translated
 triangle supports, with any incidence-preserving indexing of the blocks. -/
-theorem lists_from_inventory {m : ℕ} (hm : 3≤m) {A : Type} [Fintype A] [DecidableEq A]
+theorem lists_from_inventory {m : ℕ} (hm : 3≤ m) {A : Type} [Fintype A] [DecidableEq A]
     (B : A → Finset (Fin m)) (three : ∀ i,(B i).card=3) :
     let next (i : Fin m) : Fin m := ⟨(i.val+1)%m,Nat.mod_lt _ (Nat.zero_lt_of_lt i.isLt)⟩
     let H := univ.image fun z => s(z,next z)
@@ -8811,7 +8811,7 @@ theorem position_differences {k : ℕ} (hk : 0<k) (hole : ℕ)
       omega
 
 /-- Affine run construction for Langford order 4*r. -/
-theorem affine_zero (r : ℕ) (large : 2≤r) :
+theorem affine_zero (r : ℕ) (large : 2≤ r) :
     let k := 4*r
     ∃ hole, (hole=2*k-1 ∨ hole=2*k) ∧ ∃ owner : ℕ → ℕ,
       ∀ x : ℕ, 1≤x → x≤k → ∃ p : ℕ,
@@ -8895,7 +8895,7 @@ theorem affine_zero (r : ℕ) (large : 2≤r) :
   omega
 
 /-- Affine run construction for Langford order 4*r+1. -/
-theorem affine_one (r : ℕ) (large : 2≤r) :
+theorem affine_one (r : ℕ) (large : 2≤ r) :
     let k := 4*r+1
     ∃ hole, (hole=2*k-1 ∨ hole=2*k) ∧ ∃ owner : ℕ → ℕ,
       ∀ x : ℕ, 1≤x → x≤k → ∃ p : ℕ,
@@ -8989,7 +8989,7 @@ theorem affine_one (r : ℕ) (large : 2≤r) :
   omega
 
 /-- Affine run construction for Langford order 4*r+2. -/
-theorem affine_two (r : ℕ) (large : 2≤r) :
+theorem affine_two (r : ℕ) (large : 2≤ r) :
     let k := 4*r+2
     ∃ hole, (hole=2*k-1 ∨ hole=2*k) ∧ ∃ owner : ℕ → ℕ,
       ∀ x : ℕ, 1≤x → x≤k → ∃ p : ℕ,
@@ -9074,7 +9074,7 @@ theorem affine_two (r : ℕ) (large : 2≤r) :
   omega
 
 /-- Affine run construction for Langford order 4*r-1. -/
-theorem affine_three (r : ℕ) (large : 2≤r) :
+theorem affine_three (r : ℕ) (large : 2≤ r) :
     let k := 4*r-1
     ∃ hole, (hole=2*k-1 ∨ hole=2*k) ∧ ∃ owner : ℕ → ℕ,
       ∀ x : ℕ, 1≤x → x≤k → ∃ p : ℕ,
@@ -9164,15 +9164,15 @@ theorem all_differences (k : ℕ) :
       ∀ x : ℕ, 1≤x → x≤k → ∃ p : ℕ,
       p+x+1≤2*k ∧ p≠hole ∧ p+x+1≠hole ∧ owner p=x ∧ owner (p+x+1)=x := by
     by_cases z : k%4=0
-    · obtain ⟨r,rfl,hr⟩ : ∃ r,k=4*r ∧ 2≤r := ⟨k/4,by omega,by omega⟩
+    · obtain ⟨r,rfl,hr⟩ : ∃ r,k=4*r ∧ 2≤ r := ⟨k/4,by omega,by omega⟩
       exact affine_zero r hr
     by_cases o : k%4=1
-    · obtain ⟨r,rfl,hr⟩ : ∃ r,k=4*r+1 ∧ 2≤r := ⟨k/4,by omega,by omega⟩
+    · obtain ⟨r,rfl,hr⟩ : ∃ r,k=4*r+1 ∧ 2≤ r := ⟨k/4,by omega,by omega⟩
       exact affine_one r hr
     by_cases t : k%4=2
-    · obtain ⟨r,rfl,hr⟩ : ∃ r,k=4*r+2 ∧ 2≤r := ⟨k/4,by omega,by omega⟩
+    · obtain ⟨r,rfl,hr⟩ : ∃ r,k=4*r+2 ∧ 2≤ r := ⟨k/4,by omega,by omega⟩
       exact affine_two r hr
-    obtain ⟨r,rfl,hr⟩ : ∃ r,k=4*r-1 ∧ 2≤r := ⟨(k+1)/4,by omega,by omega⟩
+    obtain ⟨r,rfl,hr⟩ : ∃ r,k=4*r-1 ∧ 2≤ r := ⟨(k+1)/4,by omega,by omega⟩
     exact affine_three r hr
   obtain ⟨hole,endhole,owner,cert⟩ := pairs
   exact position_differences (by omega) hole endhole owner cert
@@ -9205,7 +9205,7 @@ open scoped Classical
 /-- Each unselected Hamilton cycle in the final base is replaced by one
 square on each of its edges. This permits every smaller even Hamilton count
 when the requested square count covers the unused edges. -/
-theorem iterated_subcounts {m r a q : ℕ} (hm : 5≤m) (even : Even m)
+theorem iterated_subcounts {m r a q : ℕ} (hm : 5≤ m) (even : Even m)
     (seed : ∃ J : (completeGraph (Fin m)).Subgraph, J.IsPerfectMatching ∧
       ∃ C : Multiset (Cycle (completeGraph (Fin m) \ J.spanningCoe)), IsCycleDecomposition _ C ∧
         lengths C=Multiset.replicate r m+Multiset.replicate a 3+Multiset.replicate q 4)
@@ -9235,7 +9235,7 @@ theorem iterated_subcounts {m r a q : ℕ} (hm : 5≤m) (even : Even m)
   exact double_family (by omega) C dc (limit.trans cr) ca account I hI L shape budget ham squares
 /-- Prescribe any smaller even number of spanning cycles after repeated
 doubling, with one additional square per dropped base-cycle edge. -/
-theorem tripartite_subcounts {t s : ℕ} (odd : Odd t) (large : 3≤t) (lo : 2≤s) (hi : s≤t)
+theorem tripartite_subcounts {t s : ℕ} (odd : Odd t) (large : 3≤t) (lo : 2≤ s) (hi : s≤t)
     (e n j : ℕ) (limit : j≤2^e*(2*s)) (order : n=2^(e+1)*(6*t))
     (I : (completeGraph (Fin n)).Subgraph) (hI : I.IsPerfectMatching)
     (L : Multiset ℕ) (shape : ∀ x∈L,x=3 ∨ x=4 ∨ x=n) (budget : L.sum=n.choose 2-n/2)
@@ -9342,7 +9342,7 @@ open scoped Classical
 
 /-- Choose edge-disjoint Hamilton rings and reserve k edge-disjoint triangles
 avoiding the rings, allowing one discarded triangle for each ring edge. -/
-theorem avoiding_packing {m r k : ℕ} (large : 3≤m) (limit : r≤(m-1)/2) :
+theorem avoiding_packing {m r k : ℕ} (large : 3≤ m) (limit : r≤(m-1)/2) :
     let leave := if m%6=1 ∨ m%6=3 then 0 else if m%6=0 ∨ m%6=2 then m/2 else m-1
     k+m*r≤(m.choose 2-leave)/3 →
     let next (i : Fin m) : Fin m := ⟨(i.val+1)%m,Nat.mod_lt _ (Nat.zero_lt_of_lt i.isLt)⟩
@@ -9383,7 +9383,7 @@ end AlspachAvoid
 
 namespace AlspachAvoid
 
-theorem counts_for_packing {m r : ℕ} (hm : 3≤m) (L : Multiset ℕ)
+theorem counts_for_packing {m r : ℕ} (hm : 3≤ m) (L : Multiset ℕ)
     (shape : ∀ x∈L,x=3 ∨ x=4 ∨ x=2*m) (budget : L.sum=(2*m).choose 2-(2*m)/2)
     (ham : L.count (2*m)=2*r) :
     ∃ k, r≤(m-1)/2 ∧ m*r+3*k+L.count 4=m.choose 2 ∧
@@ -9410,8 +9410,8 @@ theorem counts_for_packing {m r : ℕ} (hm : 3≤m) (L : Multiset ℕ)
   have twice : 2*m.choose 2=m*(m-1) := by
     obtain ⟨z,rfl⟩ : ∃ z, m=z+1 := ⟨m-1,by omega⟩
     simpa [Nat.mul_comm] using (Nat.add_one_mul_choose_eq z 1).symm
-  have limit : m*(2*r)≤m*(m-1) := by nlinarith only [twice,equation]
-  have le : 2*r≤m-1 := Nat.le_of_mul_le_mul_left limit (by omega)
+  have limit : m*(2*r)≤ m*(m-1) := by nlinarith only [twice,equation]
+  have le : 2*r≤ m-1 := Nat.le_of_mul_le_mul_left limit (by omega)
   exact ⟨k,by omega,by omega,by rwa [triangles] at split⟩
 
 end AlspachAvoid
@@ -9423,7 +9423,7 @@ open scoped Classical
 /-- Avoid all edges of the selected Walecki cycles in a large base triangle
 packing. Each removed base triangle contributes at most two additional squares
 for each forbidden edge. -/
-theorem square_rich_every_even {m r : ℕ} (hm : 3≤m)
+theorem square_rich_every_even {m r : ℕ} (hm : 3≤ m)
     (I : (completeGraph (Fin (2*m))).Subgraph) (hI : I.IsPerfectMatching) (L : Multiset ℕ)
     (shape : ∀ x∈L,x=3 ∨ x=4 ∨ x=2*m) (budget : L.sum=(2*m).choose 2-(2*m)/2)
     (ham : L.count (2*m)=2*r)
@@ -9457,7 +9457,7 @@ open scoped Classical
 
 /-- From disjoint base Hamilton cycles and triangle supports, realize every
 mixed doubled list whose square count covers all the unused base edges. -/
-theorem partial_lists {m r : ℕ} (hm : 3≤m) {A : Type} [Fintype A] [DecidableEq A]
+theorem partial_lists {m r : ℕ} (hm : 3≤ m) {A : Type} [Fintype A] [DecidableEq A]
     (σ : Fin r → (Fin m ≃ Fin m)) (B : A → Finset (Fin m)) (three : ∀ i,(B i).card=3) :
     let next (i : Fin m) : Fin m := ⟨(i.val+1)%m,Nat.mod_lt _ (Nat.zero_lt_of_lt i.isLt)⟩
     let H (i : Fin r) := univ.image fun z => s(σ i z,σ i (next z))
@@ -9495,7 +9495,7 @@ theorem partial_lists {m r : ℕ} (hm : 3≤m) {A : Type} [Fintype A] [Decidable
 
 /-- For the identity cyclic listing, two Hamilton cycles can be retained and
 every unused triangle support contributes three squares. -/
-theorem lists_from_partial_inventory {m : ℕ} (hm : 3≤m) {A : Type} [Fintype A] [DecidableEq A]
+theorem lists_from_partial_inventory {m : ℕ} (hm : 3≤ m) {A : Type} [Fintype A] [DecidableEq A]
     (B : A → Finset (Fin m)) (three : ∀ i,(B i).card=3) :
     let next (i : Fin m) : Fin m := ⟨(i.val+1)%m,Nat.mod_lt _ (Nat.zero_lt_of_lt i.isLt)⟩
     let H := univ.image fun z => s(z,next z)
@@ -9518,7 +9518,7 @@ theorem lists_from_partial_inventory {m : ℕ} (hm : 3≤m) {A : Type} [Fintype 
 
 /-- Enlarging the standard cyclic ordering preserves every old triangle
 whose edges avoid the smaller ordering. -/
-theorem stretch_inventory {v m : ℕ} (le : v≤m) {A : Type}
+theorem stretch_inventory {v m : ℕ} (le : v≤ m) {A : Type}
     (B : A → Finset (Fin v)) (three : ∀ i,(B i).card=3) :
     let next {n : ℕ} (i : Fin n) : Fin n := ⟨(i.val+1)%n,Nat.mod_lt _ (Nat.zero_lt_of_lt i.isLt)⟩
     let H (n : ℕ) := univ.image fun z : Fin n => s(z,next z)
@@ -9578,7 +9578,7 @@ theorem stretch_inventory {v m : ℕ} (le : v≤m) {A : Type}
 
 /-- Prescribe exactly two Hamilton cycles at any even order by embedding a
 cyclic difference design on its largest suborder congruent to three modulo six. -/
-theorem two_hamilton_suborder (m : ℕ) (hm : 3≤m)
+theorem two_hamilton_suborder (m : ℕ) (hm : 3≤ m)
     (I : (completeGraph (Fin (2*m))).Subgraph) (hI : I.IsPerfectMatching)
     (L : Multiset ℕ) (shape : ∀ a∈L,a=3 ∨ a=4 ∨ a=2*m)
     (budget : L.sum=(2*m).choose 2-(2*m)/2) (two : L.count (2*m)=2) :
@@ -9587,7 +9587,7 @@ theorem two_hamilton_suborder (m : ℕ) (hm : 3≤m)
     m.choose 2-m-3*(k*v)≤L.count 4 →
     ∃ C : Multiset (Cycle (completeGraph (Fin (2*m)) \ I.spanningCoe)), IsCycleDecomposition _ C ∧ lengths C=L := by
   intro k v squares
-  have le : v≤m := by dsimp [v,k]; omega
+  have le : v≤ m := by dsimp [v,k]; omega
   obtain ⟨d,bounds,distinct,law⟩ := all_differences k
   obtain ⟨B,three,pair,away⟩ := signed_difference_blocks d bounds distinct law
   obtain ⟨F,sz,df,sf⟩ := stretch_inventory (v:=v) le B three pair away
@@ -9596,14 +9596,14 @@ theorem two_hamilton_suborder (m : ℕ) (hm : 3≤m)
 
 /-- If e vertices extend the suborder, the minimum required square count is
 e times the sum of the two orders minus three, divided by two. -/
-theorem suborder_square_threshold (m : ℕ) (hm : 3≤m) :
+theorem suborder_square_threshold (m : ℕ) (hm : 3≤ m) :
     let k := (m-3)/6
     let v := 6*k+3
     let q := m.choose 2-m-3*(k*v)
     2*q=(m-v)*(m+v-3) ∧ q≤5*m := by
   intro k v q
   have low : 3≤v := by dsimp [v]; omega
-  have le : v≤m := by dsimp [v,k]; omega
+  have le : v≤ m := by dsimp [v,k]; omega
   have close : m-v≤5 := by dsimp [v,k]; omega
   have pair : 2*m.choose 2=m*(m-1) := by
     obtain ⟨j,h⟩ : ∃ j,m=j+1 := ⟨m-1,by omega⟩
@@ -9613,8 +9613,8 @@ theorem suborder_square_threshold (m : ℕ) (hm : 3≤m) :
   let e := m-v
   have ev : e+v=m := split
   have div : 2*m.choose 2 = 2*(m+3*(k*v)) + e*(m+v-3) := by
-    have a := Nat.sub_add_cancel (show 1≤m by omega)
-    have b := Nat.sub_add_cancel (show 3≤m+v by omega)
+    have a := Nat.sub_add_cancel (show 1≤ m by omega)
+    have b := Nat.sub_add_cancel (show 3≤ m+v by omega)
     rw [pair]
     dsimp [v] at ev b ⊢
     nlinarith only [congrArg (m*·) a,congrArg (e*·) b,
@@ -9648,7 +9648,7 @@ open scoped Classical
 
 /-- Reserve the canonical cyclic order along with the selected Hamilton cycles.
 At most one triangle in the packing is lost for each edge of these cycles. -/
-theorem off_path_packing {m r k : ℕ} (even : Even m) (large : 4≤m) (limit : r≤m/2-2) :
+theorem off_path_packing {m r k : ℕ} (even : Even m) (large : 4≤ m) (limit : r≤ m/2-2) :
     let leave := if m%6=1 ∨ m%6=3 then 0 else if m%6=0 ∨ m%6=2 then m/2 else m-1
     k+m*(r+1)≤(m.choose 2-leave)/3 →
     let next (i : Fin m) : Fin m := ⟨(i.val+1)%m,Nat.mod_lt _ (Nat.zero_lt_of_lt i.isLt)⟩
@@ -9680,10 +9680,10 @@ theorem off_path_packing {m r k : ℕ} (even : Even m) (large : 4≤m) (limit : 
   have total : (univ.biUnion H).card=m*r := by
     rw [card_biUnion disj]
     simp only [sizeH,sum_const,card_univ,Fintype.card_fin,smul_eq_mul,Nat.mul_comm r m]
-  have ring : R.card≤m := calc
+  have ring : R.card≤ m := calc
     _ ≤ (univ : Finset (Fin m)).card := card_image_le
     _ = m := by simp
-  have capacity : (univ.biUnion H ∪ R).card≤m*(r+1) := calc
+  have capacity : (univ.biUnion H ∪ R).card≤ m*(r+1) := calc
     _ ≤ (univ.biUnion H).card+R.card := card_union_le ..
     _ ≤ m*r+m := by omega
     _ = _ := (Nat.mul_succ m r).symm
@@ -9696,9 +9696,9 @@ theorem off_path_packing {m r k : ℕ} (even : Even m) (large : 4≤m) (limit : 
 
 /-- Choose triangles avoiding the reserved ring first. Each triangle then
 excludes at most three cycles in an edge-disjoint Hamilton family. -/
-theorem off_path_packing_reverse {m r k : ℕ} (even : Even m) (large : 4≤m) :
+theorem off_path_packing_reverse {m r k : ℕ} (even : Even m) (large : 4≤ m) :
     let leave := if m%6=1 ∨ m%6=3 then 0 else if m%6=0 ∨ m%6=2 then m/2 else m-1
-    (k+m≤(m.choose 2-leave)/3 ∧ r+3*k≤m/2-2) →
+    (k+m≤(m.choose 2-leave)/3 ∧ r+3*k≤ m/2-2) →
     let next (i : Fin m) : Fin m := ⟨(i.val+1)%m,Nat.mod_lt _ (Nat.zero_lt_of_lt i.isLt)⟩
     let R := univ.image fun z => s(z,next z)
     ∃ (σ : Fin r → (Fin m ≃ Fin m)) (B : Fin k → Finset (Fin m)),
@@ -9872,13 +9872,13 @@ theorem off_path_trades {m n r k : ℕ} (large : 3 ≤ m) (f : (Fin m × Bool) �
   · simp [show i≠j ∧ i.val+1≠j.val ∧ j.val+1≠i.val by tauto]
 /-- One ladder cycle covers the rails and caps. Its accompanying band squares
 and the two-cycle lifts cover disjoint complementary parts of the row graph. -/
-theorem odd_row_trades_either {m n r k : ℕ} (large : 4≤m) (even : Even m) (limit : r≤m/2-2)
+theorem odd_row_trades_either {m n r k : ℕ} (large : 4≤ m) (even : Even m) (limit : r≤ m/2-2)
     (f : (Fin m × Bool) ≃ Fin n) (G : SimpleGraph (Fin n)) [DecidableRel G.Adj]
     (adj : ∀ i a j b, G.Adj (f (i,a)) (f (j,b)) ↔
       (i≠j ∨ a≠b) ∧ ¬(((i.val%2=0 ∧ i.val+1=j.val) ∨ (j.val%2=0 ∧ j.val+1=i.val)) ∧ a≠b)) :
     let leave := if m%6=1 ∨ m%6=3 then 0 else if m%6=0 ∨ m%6=2 then m/2 else m-1
     (k+m*(r+1)≤(m.choose 2-leave)/3 ∨
-      k+m≤(m.choose 2-leave)/3 ∧ r+3*k≤m/2-2) →
+      k+m≤(m.choose 2-leave)/3 ∧ r+3*k≤ m/2-2) →
     ∃ (q : ℕ) (C : Multiset (Cycle G)), IsCycleDecomposition G C ∧
       lengths C=Multiset.replicate (2*r+1) (2*m) + Multiset.replicate (4*k) 3 + Multiset.replicate q 4 := by
   classical
@@ -9886,7 +9886,7 @@ theorem odd_row_trades_either {m n r k : ℕ} (large : 4≤m) (even : Even m) (l
   obtain ⟨σ,B,three,disj,avoid,ts,sep⟩ := cap.elim
     (AlspachAvoid.off_path_packing even large limit) (AlspachAvoid.off_path_packing_reverse even large)
   obtain ⟨q₁,S,ls,seed⟩ := seed_family large even f G adj
-  obtain ⟨q₂,T,lt,away⟩ := off_path_trades (by omega : 3≤m) f G σ B three disj avoid ts sep
+  obtain ⟨q₂,T,lt,away⟩ := off_path_trades (by omega : 3≤ m) f G σ B three disj avoid ts sep
     (fun i j ne fwd bwd a b => (adj i a j b).mpr ⟨Or.inl ne,fun ⟨band,_⟩ =>
       band.elim (fun h => fwd h.2) (fun h => bwd h.2)⟩)
   refine ⟨q₁+q₂,S+T,?_,?_⟩
@@ -9907,10 +9907,10 @@ theorem odd_row_trades_either {m n r k : ℕ} (large : 4≤m) (even : Even m) (l
     ac_rfl
 
 /-- The ladder realizes an odd Hamilton count with selected groups of four triangles. -/
-theorem odd_hamilton_trade_build_either {m r k : ℕ} (large : 4≤m) (even : Even m) (limit : r≤m/2-2) :
+theorem odd_hamilton_trade_build_either {m r k : ℕ} (large : 4≤ m) (even : Even m) (limit : r≤ m/2-2) :
     let leave := if m%6=1 ∨ m%6=3 then 0 else if m%6=0 ∨ m%6=2 then m/2 else m-1
     (k+m*(r+1)≤(m.choose 2-leave)/3 ∨
-      k+m≤(m.choose 2-leave)/3 ∧ r+3*k≤m/2-2) →
+      k+m≤(m.choose 2-leave)/3 ∧ r+3*k≤ m/2-2) →
     ∃ J : (completeGraph (Fin (2*m))).Subgraph, J.IsPerfectMatching ∧
       ∃ (q : ℕ) (C : Multiset (Cycle (completeGraph (Fin (2*m)) \ J.spanningCoe))),
         IsCycleDecomposition _ C ∧ lengths C=Multiset.replicate (2*r+1) (2*m) +
@@ -9929,7 +9929,7 @@ open scoped Classical
 
 /-- Matching the edge budgets recovers the requested triangle and square
 multiplicities from a construction with the prescribed odd Hamilton count. -/
-theorem odd_trade_lists_of_build {m r : ℕ} (large : 3≤m)
+theorem odd_trade_lists_of_build {m r : ℕ} (large : 3≤ m)
     (I : (completeGraph (Fin (2*m))).Subgraph) (hI : I.IsPerfectMatching)
     (L : Multiset ℕ) (shape : ∀ a∈L,a=3 ∨ a=4 ∨ a=2*m) (budget : L.sum=(2*m).choose 2-(2*m)/2)
     (ham : L.count (2*m)=2*r+1)
@@ -9972,13 +9972,13 @@ theorem odd_trade_lists_of_build {m r : ℕ} (large : 3≤m)
 
 /-- At even base order, leave the ladder free and place triangle trades in
 the remaining rows. The resulting odd Hamilton count is prescribed. -/
-theorem odd_hamilton_trades {m r : ℕ} (large : 4≤m) (even : Even m) (limit : r≤m/2-2)
+theorem odd_hamilton_trades {m r : ℕ} (large : 4≤ m) (even : Even m) (limit : r≤ m/2-2)
     (I : (completeGraph (Fin (2*m))).Subgraph) (hI : I.IsPerfectMatching)
     (L : Multiset ℕ) (shape : ∀ a∈L,a=3 ∨ a=4 ∨ a=2*m) (budget : L.sum=(2*m).choose 2-(2*m)/2)
     (ham : L.count (2*m)=2*r+1) :
     let leave := if m%6=1 ∨ m%6=3 then 0 else if m%6=0 ∨ m%6=2 then m/2 else m-1
     let k := L.count 3/4
-    (k+m*(r+1)≤(m.choose 2-leave)/3 ∨ k+m≤(m.choose 2-leave)/3 ∧ r+3*k≤m/2-2) →
+    (k+m*(r+1)≤(m.choose 2-leave)/3 ∨ k+m≤(m.choose 2-leave)/3 ∧ r+3*k≤ m/2-2) →
     ∃ C : Multiset (Cycle (completeGraph (Fin (2*m)) \ I.spanningCoe)), IsCycleDecomposition _ C ∧ lengths C=L := by
   intro leave k cap
   exact odd_trade_lists_of_build (by omega) I hI L shape budget ham
@@ -9990,7 +9990,7 @@ namespace AlspachZero
 open Finset SimpleGraph AlspachConjecture
 open scoped Classical
 
-theorem lists_of_ownership {m s h : ℕ} (large : 3≤m) (cells : m*s+3*h=m.choose 2)
+theorem lists_of_ownership {m s h : ℕ} (large : 3≤ m) (cells : m*s+3*h=m.choose 2)
     (rows inv : Fin s → Fin m → Fin m) (undo : ∀ i z,inv i (rows i z)=z)
     (B : Fin h → Fin 3 → Fin m) (three : ∀ j,Function.Injective (B j))
     (owner : Fin m → Fin m → ℕ) (symm : ∀ x y,owner x y=owner y x) :
