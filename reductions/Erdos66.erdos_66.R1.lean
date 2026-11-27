@@ -158,7 +158,7 @@ theorem compact_counts (P : ℕ → ℕ → Prop)
       congr 1
       ext ij
       simp only [Finset.mem_filter]
-      by_cases hij : ij ∈ Finset.antidiagonal n
+      by_cases hij : ij ∈ _root_.Finset.HasAntidiagonal.antidiagonal n
       · have hs := Finset.HasAntidiagonal.mem_antidiagonal.mp hij
         simp only [hij, true_and, Set.mem_ofPred_eq]
         rw [heq _ (by omega : ij.1 ≤ n), heq _ (by omega : ij.2 ≤ n)]
