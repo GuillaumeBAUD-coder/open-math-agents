@@ -2520,7 +2520,8 @@ lemma simultaneous_three_colour_regularity (ε : ℚ) (he : 0 < ε) (he1 : ε �
   let bound (j : ℕ) := (SzemerediRegularity.stepBound^[j]) start
   let B := bound rounds
   have grow (j) : bound j ≤ bound (j+1) := by
-    dsimp [bound]; rw [Function.iterate_succ_apply']; exact SzemerediRegularity.le_stepBound _
+    change bound j ≤ (SzemerediRegularity.stepBound^[j+1]) start
+    rw [Function.iterate_succ_apply']; exact SzemerediRegularity.le_stepBound _
   have mono : Monotone bound := monotone_nat_of_le_succ grow
   have startle : start ≤ B := mono (Nat.zero_le rounds)
   have hb : 0 < b := Nat.succ_pos _
@@ -2544,8 +2545,9 @@ lemma simultaneous_three_colour_regularity (ε : ℚ) (he : 0 < ε) (he1 : ε �
         P.parts.card ≤ bound j ∧ ((∀ i, P.IsUniform (c i) (ε : ℝ)) ∨ ε^5/8*j ≤ ∑ i, P.energy (c i)) := by
     induction j with
     | zero =>
-      exact ⟨P₀,heq₀,hcnt₀.ge,hcnt₀.le,Or.inr (by simpa using Finset.sum_nonneg
-        (s := Finset.univ) (fun i _ => P₀.energy_nonneg (c i)))⟩
+      refine ⟨P₀,heq₀,hcnt₀.ge,hcnt₀.le,Or.inr ?_⟩
+      rw [Nat.cast_zero,mul_zero]
+      exact Finset.sum_nonneg (fun i _ => P₀.energy_nonneg (c i))
     | succ j ih =>
       obtain ⟨P,heq,hlo,hhi,halt⟩ := ih (by omega)
       by_cases uniform : ∀ i, P.IsUniform (c i) (ε : ℝ)
@@ -2578,6 +2580,143 @@ lemma simultaneous_three_colour_regularity (ε : ℚ) (he : 0 < ε) (he1 : ε �
   have uniform := hend.resolve_right (fun h => (not_le_of_gt largel) (h.trans maxE))
   exact ⟨P,hP,(le_max_left l b).trans (hstart.trans hlo),hhi,
     fun i => uniform_partition_rat_of_real (c i) P ε (uniform i)⟩
+
+/-- The reduced multigraph supplied to the stability argument. At most
+floor(ηp) clusters are removed and every surviving cluster has at most
+floor(ηp) other surviving clusters with no colour, where p is the original
+cluster count. A unique reduced colour has density greater than 1−2δ. -/
+lemma three_colour_reduced_partition (η δ : ℚ) (hη : 0 < η) (hη1 : η ≤ 1)
+    (hδ : δ ≤ 1/3) (l : ℕ) :
+    ∃ B N₀ : ℕ, ∀ N ≥ N₀, ∀ c : Fin 3 → SimpleGraph (Fin N), ∀ [inst : ∀ i, DecidableRel (c i).Adj],
+      (⊤ : SimpleGraph (Fin N)).IsEdgeColouring c →
+      ∃ P : Finpartition (Finset.univ : Finset (Fin N)), P.IsEquipartition ∧ l ≤ P.parts.card ∧
+        P.parts.card ≤ B ∧ ∃ good ⊆ P.parts, P.parts.card ≤ good.card + ⌊η * P.parts.card⌋₊ ∧
+        ∃ red : Fin 3 → SimpleGraph good,
+          (∀ i u v, (red i).Adj u v ↔ u ≠ v ∧
+            (∀ j, (c j).IsUniform (η^2/3) u.val v.val) ∧ δ ≤ (c i).edgeDensity u.val v.val) ∧
+          (∀ u : good, ∀ X : Finset good, (∀ v ∈ X, u ≠ v ∧ ∀ i, ¬(red i).Adj u v) →
+            X.card ≤ ⌊η * P.parts.card⌋₊) ∧
+          ∀ i u v, (red i).Adj u v → (∀ j, j ≠ i → ¬(red j).Adj u v) →
+            1 - 2*δ < (c i).edgeDensity u.val v.val := by
+  classical
+  let ε := η^2/3
+  have hε : 0 < ε := by dsimp [ε]; positivity
+  have hε1 : ε ≤ 1 := by dsimp [ε]; nlinarith [mul_nonneg hη.le (sub_nonneg.mpr hη1)]
+  obtain ⟨B,N₀,h⟩ := simultaneous_three_colour_regularity ε hε hε1 l
+  refine ⟨B,N₀,?_⟩
+  intro N hN c inst hc
+  obtain ⟨P,hP,hl,hB,hu⟩ := h N hN c
+  obtain ⟨bad,hbad,hcnt⟩ := simultaneously_irregular_count P c ε hu
+  let p := P.parts.card
+  let d := ⌊η * p⌋₊
+  have hoff : bad ⊆ P.parts.offDiag := by
+    intro ⟨u,v⟩ hv
+    obtain ⟨hu,hv,hne,_⟩ := (hbad _ _).mp hv
+    exact Finset.mem_offDiag.mpr ⟨hu,hv,hne⟩
+  have hbudget : bad.card < (d+1)*(d+1) := by
+    have hbase : (p*(p-1) : ℕ) ≤ p*p := Nat.mul_le_mul_left _ (Nat.sub_le ..)
+    have hc' : (bad.card : ℚ) ≤ (η * p)^2 := by
+      calc
+        _ ≤ ((p*(p-1) : ℕ) : ℚ)*(3*ε) := hcnt
+        _ ≤ ((p*p : ℕ) : ℚ)*(3*ε) := mul_le_mul_of_nonneg_right (by exact_mod_cast hbase) (by positivity)
+        _ = _ := by push_cast; dsimp [ε]; ring
+    have hlt : η*(p : ℚ) < (d : ℚ)+1 := Nat.lt_floor_add_one _
+    have hs := mul_self_lt_mul_self (by positivity : 0 ≤ η*(p : ℚ)) hlt
+    rw [sq] at hc'
+    exact_mod_cast hc'.trans_lt hs
+  obtain ⟨good,hsub,hcount,hdeg⟩ := clean_reduced_pairs P.parts bad hoff d d hbudget
+  obtain ⟨red,hred,hcover,hunique⟩ := reduced_colour_graphs c hc (fun u : good => u.val)
+    (fun u => P.nonempty_of_mem_parts (hsub u.property))
+    (fun u v huv => P.disjoint (hsub u.property) (hsub v.property) (fun e => huv (Subtype.ext e))) ε δ hδ
+  refine ⟨P,hP,hl,hB,good,hsub,hcount,red,hred,?_,hunique⟩
+  intro u X hX
+  apply le_trans _ (hdeg u.val u.property)
+  apply Finset.card_le_card_of_injOn (fun v : good => v.val)
+  · intro v hv
+    obtain ⟨hne,habs⟩ := hX v hv
+    refine Finset.mem_filter.mpr ⟨v.property,(hbad _ _).mpr
+      ⟨hsub u.property,hsub v.property,fun e => hne (Subtype.ext e),?_⟩⟩
+    intro hreg
+    obtain ⟨i,hi⟩ := hcover u v hne hreg
+    exact habs i hi
+  · exact fun _ _ _ _ eqn => Subtype.ext eqn
+
+/-- Benevides's strong endpoints lemma (4.3). The uncovered vertices of a
+maximum matching are independent, and each matched edge has an endpoint
+with at most one neighbour among the uncovered vertices. -/
+lemma maximum_matching_strong_endpoints {V : Type*} [DecidableEq V] [Fintype V]
+    (G : SimpleGraph V) [DecidableRel G.Adj] (M : Finset (Finset V)) :
+    let matching (T : Finset (Finset V)) := (∀ e ∈ T, ∃ a b, G.Adj a b ∧ e = {a,b}) ∧
+      ∀ e ∈ T, ∀ f ∈ T, e ≠ f → Disjoint e f
+    let U := Finset.univ \ M.biUnion id
+    matching M → (∀ T, matching T → T.card ≤ M.card) →
+      (∀ a ∈ U, ∀ b ∈ U, ¬G.Adj a b) ∧
+      (∀ e ∈ M, ∃ a ∈ e, (U.filter (G.Adj a)).card ≤ 1) := by
+  classical
+  intro matching U hM hmax
+  have free (a) (ha : a ∈ U) (e) (he : e ∈ M) : a ∉ e := by
+    intro hae
+    exact (Finset.mem_sdiff.mp ha).2 (Finset.mem_biUnion.mpr ⟨e,he,hae⟩)
+  have addEdge (T : Finset (Finset V)) (hT : matching T) (a b : V) (hab : G.Adj a b)
+      (hf : ∀ e ∈ T, a ∉ e ∧ b ∉ e) : matching (insert {a,b} T) ∧ ({a,b} : Finset V) ∉ T := by
+    have hd (e) (he : e ∈ T) : Disjoint ({a,b} : Finset V) e := by
+      refine Finset.disjoint_left.mpr ?_
+      intro x hx
+      simp only [Finset.mem_insert,Finset.mem_singleton] at hx
+      rcases hx with rfl | rfl
+      · exact (hf e he).1
+      · exact (hf e he).2
+    refine ⟨⟨?_,?_⟩,fun h => (hf _ h).1 (by simp)⟩
+    · intro e he
+      rcases Finset.mem_insert.mp he with rfl | he
+      · exact ⟨a,b,hab,rfl⟩
+      · exact hT.1 e he
+    · intro e he f hf' hne
+      rcases Finset.mem_insert.mp he with rfl | he <;> rcases Finset.mem_insert.mp hf' with rfl | hf'
+      · exact (hne rfl).elim
+      · exact hd _ hf'
+      · exact (hd _ he).symm
+      · exact hT.2 _ he _ hf' hne
+  constructor
+  · intro a ha b hb hab
+    obtain ⟨ok,hn⟩ := addEdge M hM a b hab (fun e he => ⟨free _ ha _ he, free _ hb _ he⟩)
+    have hc := hmax _ ok
+    rw [Finset.card_insert_of_notMem hn] at hc
+    omega
+  intro e he
+  obtain ⟨a,b,hab,rfl⟩ := hM.1 e he
+  by_cases small : (U.filter (G.Adj a)).card ≤ 1
+  · exact ⟨a,by simp,small⟩
+  refine ⟨b,by simp,?_⟩
+  by_contra! many
+  obtain ⟨y,hy⟩ := Finset.card_pos.mp (by omega : 0 < (U.filter (G.Adj b)).card)
+  obtain ⟨hyU,hby⟩ := Finset.mem_filter.mp hy
+  obtain ⟨x,hx,hxy⟩ : ∃ x ∈ U.filter (G.Adj a), x ≠ y := by
+    by_contra! h
+    have sub : U.filter (G.Adj a) ⊆ {y} := fun z hz => Finset.mem_singleton.mpr (h z hz)
+    have := Finset.card_le_card sub
+    simp at this
+    omega
+  obtain ⟨hxU,hax⟩ := Finset.mem_filter.mp hx
+  let T := M.erase {a,b}
+  have ht : T ⊆ M := Finset.erase_subset _ _
+  have hT : matching T := ⟨fun f hf => hM.1 _ (ht hf),
+    fun f hf g hg hfg => hM.2 _ (ht hf) _ (ht hg) hfg⟩
+  have old (f) (hf : f ∈ T) : a ∉ f ∧ b ∉ f := by
+    have hd := Finset.disjoint_left.mp (hM.2 _ he _ (ht hf) (Finset.mem_erase.mp hf).1.symm)
+    exact ⟨hd (by simp),hd (by simp)⟩
+  obtain ⟨first,hn₁⟩ := addEdge T hT a x hax (fun f hf => ⟨(old f hf).1,free _ hxU _ (ht hf)⟩)
+  obtain ⟨second,hn₂⟩ := addEdge _ first b y hby (by
+    intro f hf
+    rcases Finset.mem_insert.mp hf with rfl | hf
+    · have hbx : x ≠ b := fun h => free _ hxU _ he (by simp [h])
+      have hya : y ≠ a := fun h => free _ hyU _ he (by simp [h])
+      simp [Ne.symm hab.ne,Ne.symm hbx,hya,Ne.symm hxy]
+    · exact ⟨(old _ hf).2,free _ hyU _ (ht hf)⟩)
+  have hc := hmax _ second
+  rw [Finset.card_insert_of_notMem hn₂,Finset.card_insert_of_notMem hn₁] at hc
+  have htcard : T.card + 1 = M.card := Finset.card_erase_add_one he
+  omega
 
 theorem main : H1 → H2 → type_of% @Erdos556.erdos_556.variants.benevides_skokan_large_even := by
   intro _ hforce
