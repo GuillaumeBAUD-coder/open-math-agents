@@ -6,6 +6,8 @@ import Mathlib
 Source: https://oeis.org/A346508
 Credit: @ivillar
 
+Status: known result: the entry records that the conjecture is true (Stefano Spezia).
+
 A346508 (offset 1) lists the positive integers k such that 10*k + 1 is equal to the product of
 two integers greater than 1 and ending with 1; data 12, 23, 34, 44, 45, 56, 65, 67, 78, ...
 (for example 107 is a term because 21*51 = 1071 = 107*10 + 1).
