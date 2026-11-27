@@ -100,8 +100,10 @@ theorem obstruction_of_degree_bound (g D : ℕ) (hg : 2 ≤ g)
       refine le_trans ?_ (le_trans (Finset.card_le_two (a := (d, n-d)) (b := (n-d, d))) hg)
       apply Finset.card_le_card
       rintro ⟨a, b⟩ hp
-      simp only [Finset.mem_filter, Finset.mem_antidiagonal, Finset.mem_coe] at hp
-      obtain ⟨hsum', ha, hb⟩ := hp
+      have hpair : (a,b) ∈ (Finset.antidiagonal n).filter
+          (fun q : ℕ × ℕ => q.1 ∈ T ∧ q.2 ∈ T) := hp
+      have hsum : a+b=n := Finset.mem_antidiagonal.mp (Finset.mem_filter.mp hpair).1
+      obtain ⟨ha,hb⟩ := (Finset.mem_filter.mp hpair).2
       have hsplit : a = d ∨ b = d := by
         rcases ht a ha with h | h
         · rcases ht b hb with j | j
