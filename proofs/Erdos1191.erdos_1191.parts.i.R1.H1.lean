@@ -599,19 +599,17 @@ theorem OMA.solution : OMA.R_Erdos1191_erdos_1191_parts_i_R1.H1 := by
       linarith [Real.log_le_sub_one_of_pos (by norm_num : (0 : ℝ) < 2)]
     have hmul := mul_le_mul_of_nonneg_left hlog2 (Nat.cast_nonneg (α := ℝ) R)
     linarith
-  have h10 : 10 * (r : ℝ) ^ 2 * Real.log (r : ℝ) ≤ 10 * (r : ℝ) ^ 2 * (R : ℝ) := by
-    calc 10 * (r : ℝ) ^ 2 * Real.log (r : ℝ)
-        ≤ 10 * (r : ℝ) ^ 2 * (R : ℝ) :=
-          mul_le_mul_of_nonneg_left hlogr (by positivity)
-  have hr2_pos : 0 < (r : ℝ) ^ 2 := by
-    have : (0 : ℝ) < r := Nat.cast_pos.mpr hr1
+  have h10 : 10 * (r : ℝ) ^ 2 * Real.log (r : ℝ) ≤ 10 * (r : ℝ) ^ 2 * (R : ℝ) :=
+    mul_le_mul_of_nonneg_left hlogr (by positivity)
+  have hr2R_pos : 0 < (r : ℝ) ^ 2 * (R : ℝ) := by
+    have hr_pos : (0 : ℝ) < r := Nat.cast_pos.mpr hr1
+    have hR_pos : (0 : ℝ) < R := Nat.cast_pos.mpr (by omega)
     positivity
-  have hR_pos : (0 : ℝ) < (R : ℝ) := Nat.cast_pos.mpr (by omega)
-  have h10_lt : 10 * (r : ℝ) ^ 2 * (R : ℝ) < (169 / 16 : ℝ) * (r : ℝ) ^ 2 * (R : ℝ) := by
-    have hr2R_pos : 0 < (r : ℝ) ^ 2 * (R : ℝ) := mul_pos hr2_pos hR_pos
-    calc 10 * (r : ℝ) ^ 2 * (R : ℝ)
-        = 10 * ((r : ℝ) ^ 2 * (R : ℝ)) := by ring
-      _ < (169 / 16 : ℝ) * ((r : ℝ) ^ 2 * (R : ℝ)) :=
-          mul_lt_mul_of_pos_right (by norm_num) hr2R_pos
-      _ = (169 / 16 : ℝ) * (r : ℝ) ^ 2 * (R : ℝ) := by ring
-  linarith [hCS, hLHS_sq, hRHS_le, h10, h10_lt]
+  have hfinal : (169 / 16 : ℝ) * (r : ℝ) ^ 2 * (R : ℝ) ≤ 10 * (r : ℝ) ^ 2 * (R : ℝ) :=
+    hLHS_sq.trans (hCS.trans (hRHS_le.trans h10))
+  have hlt : 10 * (r : ℝ) ^ 2 * (R : ℝ) < (169 / 16 : ℝ) * (r : ℝ) ^ 2 * (R : ℝ) := by
+    have h1 : 10 * ((r : ℝ) ^ 2 * (R : ℝ)) < (169 / 16 : ℝ) * ((r : ℝ) ^ 2 * (R : ℝ)) :=
+      mul_lt_mul_of_pos_right (by norm_num) hr2R_pos
+    rw [← mul_assoc, ← mul_assoc] at h1
+    exact h1
+  exact not_le_of_gt hlt hfinal
