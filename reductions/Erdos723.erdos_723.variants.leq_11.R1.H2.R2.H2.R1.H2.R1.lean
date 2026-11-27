@@ -1,0 +1,50 @@
+import OMAReductions.R_Erdos723_erdos_723_variants_leq_11_R1_H2_R2_H2_R1
+
+/-! Index the weight-fifteen search by its fifteen matchings and sixty exterior lines. -/
+
+namespace OMA.R_Erdos723_erdos_723_variants_leq_11_R1_H2_R2_H2_R1_H2_R1
+
+open Finset
+
+-- Every incidence pattern produces a solution of the explicit finite constraints.
+def H1 : Prop :=
+  (let matchings := fun (L : Finset (Fin 111)) (M : Finset (Finset (Fin 111))) =>
+    M.card = 3∧(∀ e∈M, e ⊆ L∧e.card = 2)∧∀ l∈L, ∃! e, e∈M∧l∈e
+    let E := fun (L : Finset (Fin 111)) (C : Finset (Finset (Finset (Fin 111)))) =>
+    C.card = 2∧(∀ M∈C, matchings L M)∧∀ M∈C, ∀ N∈C, M ≠ N→Disjoint M N
+    ∃ L : Finset (Fin 111), L.card = 6 ∧
+    ∃ s : ↥(L.powersetCard 2)→Fin 6→Finset (Finset (Finset (Finset (Fin 111)))),
+    (∀ e i C, C∈s e i→E L C∧∀ M∈C, e.val∉M) ∧
+    (∀ e i M, matchings L M→e.val∉M→∃! C, C∈s e i∧M∈C) ∧
+    (∀ e C, E L C→(∀ M∈C, e.val∉M)→∃! i, C∈s e i) ∧
+    ∀ e f, e ≠ f→∀ i j, (s e i ∩ s f j).card ≤ 1) →
+  (
+    let allowed (g : Fin 15) (p : Fin 60) := (0xfffc3ef80fafa00f3bbfb03bed00eeaeefc0bef00bdbdcf43b5efe00e7db781eef77db7007715f55fdd75f5f003c3740d75d7ddf5d5c1dd01e7d77fa4b5ea76c0beee5fa2a83ababebbbaf00cccf3cf3f3f3f033333cf3cfcfcffc003cf3cf3f3f3ffffc0000fcfcfcfffffffff000000:Nat).testBit (60 * g.val + p.val) = true
+    let required (g m : Fin 15) := (0x1fedbef6efdbf6f77bf5bff76df7edf6fdf6df8fffe3fff8fffe3fff8:Nat).testBit (15 * g.val + m.val) = true
+    let endpoint (p : Fin 60) (m : Fin 15) := (0x5000600220014008400880208011000a000c01040108011000a0202020401080110201020200840088005000604020404040804100220014200410081010082008400888008801040202040208011000a000c80044008401040201040108011000a400240042008201020202040108011:Nat).testBit (15 * p.val + m.val) = true
+    ∃ s : Fin 15 → Fin 6 → Finset (Fin 60),
+      (∀ g i p,p ∈ s g i → allowed g p) ∧
+      (∀ g i m,required g m → ∃! p, p ∈ s g i ∧ endpoint p m) ∧
+      (∀ g p,allowed g p → ∃! i, p ∈ s g i) ∧
+      ∀ g h i j, g ≠ h → (s g i ∩ s h j).card ≤ 1)
+
+-- Bit rows are stored consecutively. Each exterior line has two endpoints among
+-- the fifteen matchings. A star pairs the required matchings and the six stars
+-- for one secant partition its allowed exterior lines.
+-- The indexed constraints admit no solution.
+def H2 : Prop :=
+  ¬ (
+    let allowed (g : Fin 15) (p : Fin 60) := (0xfffc3ef80fafa00f3bbfb03bed00eeaeefc0bef00bdbdcf43b5efe00e7db781eef77db7007715f55fdd75f5f003c3740d75d7ddf5d5c1dd01e7d77fa4b5ea76c0beee5fa2a83ababebbbaf00cccf3cf3f3f3f033333cf3cfcfcffc003cf3cf3f3f3ffffc0000fcfcfcfffffffff000000:Nat).testBit (60 * g.val + p.val) = true
+    let required (g m : Fin 15) := (0x1fedbef6efdbf6f77bf5bff76df7edf6fdf6df8fffe3fff8fffe3fff8:Nat).testBit (15 * g.val + m.val) = true
+    let endpoint (p : Fin 60) (m : Fin 15) := (0x5000600220014008400880208011000a000c01040108011000a0202020401080110201020200840088005000604020404040804100220014200410081010082008400888008801040202040208011000a000c80044008401040201040108011000a400240042008201020202040108011:Nat).testBit (15 * p.val + m.val) = true
+    ∃ s : Fin 15 → Fin 6 → Finset (Fin 60),
+      (∀ g i p,p ∈ s g i → allowed g p) ∧
+      (∀ g i m,required g m → ∃! p, p ∈ s g i ∧ endpoint p m) ∧
+      (∀ g p,allowed g p → ∃! i, p ∈ s g i) ∧
+      ∀ g h i j, g ≠ h → (s g i ∩ s h j).card ≤ 1)
+
+theorem main : H1 → H2 → OMA.R_Erdos723_erdos_723_variants_leq_11_R1_H2_R2_H2_R1.H2 := by
+  intro encode impossible cover
+  exact impossible (encode cover)
+
+end OMA.R_Erdos723_erdos_723_variants_leq_11_R1_H2_R2_H2_R1_H2_R1
