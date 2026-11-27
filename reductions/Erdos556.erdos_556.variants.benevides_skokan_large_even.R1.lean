@@ -1,6 +1,6 @@
 import FormalConjectures.ErdosProblems.«556»
 import Mathlib.Combinatorics.Hall.Finite
-import Mathlib.Combinatorics.SimpleGraph.Regularity.Uniform
+import Mathlib.Combinatorics.SimpleGraph.Regularity.Lemma
 import Mathlib.Combinatorics.Pigeonhole
 
 /-! A four-block lower bound and cycle-embedding lemmas for large even cycles. -/
@@ -2298,6 +2298,137 @@ lemma weighted_energy_mono_bind {V : Type*} [DecidableEq V] (G : SimpleGraph V)
     _ = ∑ X ∈ (P.bind Q).parts, ∑ Y ∈ (P.bind Q).parts, F X Y := by
       rw [bind_sum (fun X => ∑ Y ∈ (P.bind Q).parts, F X Y)]
       simp_rw [bind_sum (F _)]
+
+/-- Compare the refinement-monotone weighted energy with Mathlib's
+off-diagonal energy on an equipartition. This includes the contribution of
+the diagonal cells and the rounding in the part sizes. -/
+lemma equipartition_weighted_energy_bounds {V : Type*} [DecidableEq V] (G : SimpleGraph V)
+    [DecidableRel G.Adj] {U : Finset V} (P : Finpartition U) (hP : P.IsEquipartition)
+    (hne : P.parts.Nonempty) :
+    let p : ℚ := P.parts.card
+    let m : ℚ := (U.card / P.parts.card : ℕ)
+    let W := ∑ z ∈ P.parts ×ˢ P.parts, (z.1.card : ℚ)*z.2.card*(G.edgeDensity z.1 z.2)^2
+    m^2*(p^2 * P.energy G) ≤ W ∧ W ≤ (m+1)^2*(p^2 * P.energy G + p) := by
+  classical
+  let p : ℚ := P.parts.card
+  let m : ℚ := (U.card / P.parts.card : ℕ)
+  let f (z : Finset V × Finset V) := (G.edgeDensity z.1 z.2)^2
+  let w (z : Finset V × Finset V) := (z.1.card : ℚ)*z.2.card
+  let Z := P.parts ×ˢ P.parts
+  have hpow : (∑ z ∈ P.parts.offDiag, f z) = p^2 * P.energy G := by
+    have hp : p ≠ 0 := by exact_mod_cast hne.card_pos.ne'
+    unfold Finpartition.energy
+    change _ = p^2 * ((∑ z ∈ P.parts.offDiag, f z) / p^2)
+    field_simp
+  have hsize (A) (hA : A ∈ P.parts) : m ≤ A.card ∧ (A.card : ℚ) ≤ m+1 := by
+    rcases Finpartition.isEquipartition_iff_card_parts_eq_average.mp hP A hA with h | h
+    · simp [h,m]
+    · simp [h,m]
+  have limits (z) (hz : z ∈ Z) : m^2 ≤ w z ∧ w z ≤ (m+1)^2 := by
+    obtain ⟨ha,hb⟩ := Finset.mem_product.mp hz
+    obtain ⟨h1,h2⟩ := hsize _ ha
+    obtain ⟨h3,h4⟩ := hsize _ hb
+    have hm : 0 ≤ m := Nat.cast_nonneg _
+    exact ⟨by simpa [w,pow_two] using mul_le_mul h1 h3 hm (Nat.cast_nonneg z.1.card),
+      by simpa [w,pow_two] using mul_le_mul h2 h4 (Nat.cast_nonneg z.2.card) (by linarith : 0 ≤ m+1)⟩
+  have spl : ∑ z ∈ Z, f z = ∑ z ∈ P.parts.diag, f z + ∑ z ∈ P.parts.offDiag, f z := by
+    dsimp [Z]; rw [← Finset.diag_union_offDiag, Finset.sum_union Finset.disjoint_diag_offDiag]
+  have diaglo : 0 ≤ ∑ z ∈ P.parts.diag, f z := Finset.sum_nonneg (fun z _ => sq_nonneg _)
+  have diaghi : ∑ z ∈ P.parts.diag, f z ≤ p := by
+    calc
+      _ ≤ ∑ _z ∈ P.parts.diag, (1 : ℚ) := Finset.sum_le_sum fun z _ =>
+        (sq_le_one_iff₀ (G.edgeDensity_nonneg _ _)).mpr (G.edgeDensity_le_one _ _)
+      _ = _ := by simp [p,Finset.diag_card]
+  change (m^2*(p^2 * P.energy G) ≤ ∑ z ∈ Z, w z * f z) ∧ _
+  constructor
+  · calc
+      _ ≤ m^2*(∑ z ∈ Z, f z) := by rw [spl,← hpow]; gcongr; linarith
+      _ = ∑ z ∈ Z, m^2*f z := Finset.mul_sum ..
+      _ ≤ _ := Finset.sum_le_sum fun z hz => mul_le_mul_of_nonneg_right (limits z hz).1 (sq_nonneg _)
+  · calc
+      (∑ z ∈ Z, w z * f z) ≤ ∑ z ∈ Z, (m+1)^2*f z :=
+        Finset.sum_le_sum fun z hz => mul_le_mul_of_nonneg_right (limits z hz).2 (sq_nonneg _)
+      _ = (m+1)^2*(∑ z ∈ Z, f z) := (Finset.mul_sum ..).symm
+      _ ≤ (m+1)^2*(p^2 * P.energy G + p) := by rw [spl,← hpow]; gcongr; linarith
+
+/-- Convert the integral equipartition bounds into a uniform additive
+error for the normalized index. The size conditions apply both to the
+number of clusters and to the minimum cluster size. -/
+lemma normalized_weighted_index_error (m p N W E x : ℚ)
+    (hm : 1 ≤ m) (hp : 1 ≤ p) (hNlo : m*p ≤ N) (hNhi : N ≤ (m+1)*p)
+    (hE : 0 ≤ E) (hE1 : E ≤ 1) (hx : 0 ≤ x)
+    (hmx : 128 ≤ m*x) (hpx : 128 ≤ p*x)
+    (hlo : m^2*(p^2*E) ≤ W) (hhi : W ≤ (m+1)^2*(p^2*E+p)) :
+    N^2*(E - x/16) ≤ W ∧ W ≤ N^2*(E + x/16) := by
+  have hm0 : 0 ≤ m := by linarith
+  have hp0 : 0 ≤ p := by linarith
+  have hN0 := (mul_nonneg hm0 hp0).trans hNlo
+  have nsq := pow_le_pow_left₀ (mul_nonneg hm0 hp0) hNlo 2
+  have nupper := pow_le_pow_left₀ hN0 hNhi 2
+  have loss1 : (2*m+1)*p^2*E ≤ 3*m*p^2 := by
+    calc
+      _ ≤ (2*m+1)*p^2*1 := mul_le_mul_of_nonneg_left hE1 (by positivity)
+      _ ≤ _ := by nlinarith [mul_nonneg (sub_nonneg.mpr hm) (sq_nonneg p)]
+  have loss2 : (m+1)^2*p ≤ 4*m^2*p := by
+    have h := pow_le_pow_left₀ (show 0 ≤ m+1 by linarith) (show m+1 ≤ 2*m by linarith) 2
+    nlinarith [mul_le_mul_of_nonneg_right h hp0]
+  have err1 : 128*(m*p^2) ≤ (m*p)^2*x := by
+    nlinarith only [mul_le_mul_of_nonneg_right hmx (mul_nonneg hm0 (sq_nonneg p))]
+  have err2 : 128*(m^2*p) ≤ (m*p)^2*x := by
+    nlinarith only [mul_le_mul_of_nonneg_right hpx (mul_nonneg (sq_nonneg m) hp0)]
+  have err := mul_le_mul_of_nonneg_right nsq hx
+  constructor
+  · nlinarith only [mul_le_mul_of_nonneg_right nupper hE, loss1, hlo, err1, err,
+      mul_nonneg (sq_nonneg N) hx]
+  · nlinarith only [mul_le_mul_of_nonneg_right nsq hE, loss1, loss2, hhi, err1, err2, err,
+      mul_nonneg (sq_nonneg N) hx]
+
+/-- On a sufficiently fine equipartition with sufficiently large parts,
+the size-weighted index and Mathlib's index agree up to x/16. -/
+lemma equipartition_index_approximation {V : Type*} [DecidableEq V] (G : SimpleGraph V)
+    [DecidableRel G.Adj] {U : Finset V} (P : Finpartition U) (hP : P.IsEquipartition)
+    (hne : P.parts.Nonempty) (x : ℚ) (hx : 0 ≤ x)
+    (hm : 1 ≤ U.card / P.parts.card)
+    (hmx : 128 ≤ ((U.card / P.parts.card : ℕ) : ℚ)*x)
+    (hpx : 128 ≤ (P.parts.card : ℚ)*x) :
+    let W := ∑ z ∈ P.parts ×ˢ P.parts, (z.1.card : ℚ)*z.2.card*(G.edgeDensity z.1 z.2)^2
+    (U.card : ℚ)^2*(P.energy G-x/16) ≤ W ∧ W ≤ (U.card : ℚ)^2*(P.energy G+x/16) := by
+  let p := P.parts.card
+  let m := U.card / p
+  have hpos : 0 < p := hne.card_pos
+  have hlo : m*p ≤ U.card := Nat.div_mul_le_self _ _
+  have hhi : U.card ≤ (m+1)*p := by
+    have h := Nat.mod_add_div U.card p
+    rw [Nat.mul_comm p _] at h
+    have hmod := Nat.mod_lt U.card hpos
+    change U.card % p + m*p = U.card at h
+    rw [Nat.add_mul]; omega
+  obtain ⟨hl,hh⟩ := equipartition_weighted_energy_bounds G P hP hne
+  exact normalized_weighted_index_error (m : ℚ) (p : ℚ) U.card _ (P.energy G) x
+    (by exact_mod_cast hm) (by exact_mod_cast (show 1 ≤ p from hpos)) (by exact_mod_cast hlo) (by exact_mod_cast hhi)
+    (P.energy_nonneg G) (P.energy_le_one G) hx hmx hpx hl hh
+
+/-- Changing a partition to repair a different colour costs at most x/8 in
+this colour's unweighted index. The underlying weighted index is monotone. -/
+lemma equipartition_refinement_energy_loss {V : Type*} [DecidableEq V] (G : SimpleGraph V)
+    [DecidableRel G.Adj] {U : Finset V} (hU : U.Nonempty)
+    (P : Finpartition U) (Q : ∀ A ∈ P.parts, Finpartition A)
+    (hP : P.IsEquipartition) (hQ : (P.bind Q).IsEquipartition)
+    (x : ℚ) (hx : 0 ≤ x)
+    (hgood : ∀ R ∈ ({P, P.bind Q} : Finset (Finpartition U)), R.parts.Nonempty ∧
+      1 ≤ U.card / R.parts.card ∧ 128 ≤ ((U.card / R.parts.card : ℕ) : ℚ)*x ∧
+      128 ≤ (R.parts.card : ℚ)*x) :
+    P.energy G ≤ (P.bind Q).energy G + x/8 := by
+  classical
+  obtain ⟨hp0,hm0,hmx0,hpx0⟩ := hgood P (by simp)
+  obtain ⟨hp1,hm1,hmx1,hpx1⟩ := hgood (P.bind Q) (by simp)
+  have hlo := (equipartition_index_approximation G P hP hp0 x hx hm0 hmx0 hpx0).1
+  have hhi := (equipartition_index_approximation G (P.bind Q) hQ hp1 x hx hm1 hmx1 hpx1).2
+  simp only [Finset.sum_product] at hlo hhi
+  have comp := hlo.trans ((weighted_energy_mono_bind G P Q).trans hhi)
+  have hpos : 0 < (U.card : ℚ)^2 := pow_pos (by exact_mod_cast hU.card_pos) _
+  have := le_of_mul_le_mul_left comp hpos
+  linarith
 
 theorem main : H1 → H2 → type_of% @Erdos556.erdos_556.variants.benevides_skokan_large_even := by
   intro _ hforce
