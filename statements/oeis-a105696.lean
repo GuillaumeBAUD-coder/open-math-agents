@@ -6,6 +6,8 @@ import Mathlib
 Source: https://oeis.org/A105696
 Credit: @ivillar
 
+Status: known result: the entry records a verification through a differential equation for the g.f. (Robert Israel, Jun 05 2026).
+
 A105696 (offset 0): expansion of (1-x)/sqrt((1-3*x)/(1+x));
 data 1, 1, 2, 6, 16, 44, 122, 342, 966, 2746, ...
 
