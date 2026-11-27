@@ -8,13 +8,15 @@ import FormalConjectures.Paper.CatchUpConjecture
 -- independent guarantees, one per player, both stated after the forced first move:
 --   H1: the first player draws by opening with 1. After p1 takes 1, the position is
 --       valueAux ((Icc 1 N).erase 1) 0 1 false from the point of view of p2, and p2 cannot win.
---   H2: the second player draws against every opening x: after p1 takes x, p2 cannot lose.
+--   H2: the second player never loses: whatever x p1 opens with, p2 cannot lose.
 -- main unfolds the first move of valueAux, handles N = 0 and combines the two halves through
 -- elementary facts about Outcome.best and Outcome.neg.
 --
--- Evidence: an exact port of valueAux, evaluated exhaustively, shows that for every N with
--- T_N even and N up to 24, every opening x (in particular x = 1) leads to a draw,
--- so both H1 and H2 hold in that range.
+-- Evidence: an exact port of valueAux, evaluated exhaustively for every N with T_N even
+-- and N up to 24, shows that opening with 1 always draws (H1) and that no opening wins for
+-- the first player (H2). Not every opening draws: some lose for the first player, namely
+-- x = 2 for N = 3; x = 3, 4 for N = 4; x = 5, 6, 7 for N = 7; and x = 10 for N = 11.
+-- From N = 12 to N = 24, every opening draws.
 
 namespace OMA.R_CatchUp_value_of_even_mul_succ_self_div_two_R1
 
