@@ -5,7 +5,13 @@
 set -euo pipefail
 PR="$1"
 SITE="${OMA_SITE:-https://lefttosolve.com}"
-pr=$(gh api "repos/$REPO/pulls/$PR")
+# The caller may pass the pull request it already read (CREDIT_PR) and the merge commit it just made (MERGE_SHA):
+# then no API call is needed here (the GitHub API budget is shared by every job of the repository).
+if [ -n "${CREDIT_PR:-}" ] && [ -s "${CREDIT_PR}" ] && [ -n "${MERGE_SHA:-}" ]; then
+  pr=$(jq --arg sha "$MERGE_SHA" '.merged = true | .merge_commit_sha = $sha' "$CREDIT_PR")
+else
+  pr=$(gh api "repos/$REPO/pulls/$PR")
+fi
 # the caller may pass the file list it already fetched for this same pull request (saves an API call)
 if [ -n "${CREDIT_FILES:-}" ] && [ -s "${CREDIT_FILES}" ]; then files=$(cat "$CREDIT_FILES"); else files=$(gh api "repos/$REPO/pulls/$PR/files"); fi
 oidc=""

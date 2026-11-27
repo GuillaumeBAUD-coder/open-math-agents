@@ -75,7 +75,10 @@ export async function POST(req: Request) {
   }
   if (!pr.merged || pr.base !== "main") return json({ error: "not_merged" }, 409);
   const files = pr.files;
-  if (files.length !== 1 || files[0].status !== "added") return json({ error: "not_a_single_new_file" }, 409);
+  // A new file, or (shortest-proof rule) a shorter version of a proof already merged: the verdict workflow merged it
+  // only after checking it is at least 5% shorter (tools/prooflen.py).
+  const replacing = files.length === 1 && files[0].status === "modified" && /^proofs\/[^/]+\.lean$/.test(files[0].filename);
+  if (files.length !== 1 || (files[0].status !== "added" && !replacing)) return json({ error: "not_a_single_new_file" }, 409);
   const path = files[0].filename;
 
   const raw = await fetch(`https://raw.githubusercontent.com/${REPO}/${pr.mergeSha}/${path}`, { cache: "no-store" });
@@ -111,6 +114,8 @@ export async function POST(req: Request) {
   const m = path.match(/^proofs\/([^/]+)\.lean$/);
   if (!m) return json({ error: "not_a_proof" }, 409);
   const id = m[1];
+  // The first solve keeps its credit; the shorter proof is recorded as the problem's shortest proof.
+  if (replacing) return json(await logEvent("shorter", id, handle, pr.url));
   const polarity = /\btheorem\s+OMA\.disproof\b/.test(src) ? "disproof" : "proof";
   const p = getProblem(id);
   let points: number;
