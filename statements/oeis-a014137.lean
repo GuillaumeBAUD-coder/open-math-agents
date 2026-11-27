@@ -6,6 +6,8 @@ import Mathlib
 Source: https://oeis.org/A014137
 Credit: @ivillar
 
+Status: known result (Peter J. Taylor, Mar 23 2015, cited below, shows the conjecture is true).
+
 A014137 (offset 0) is a(n) = Sum_{k=0..n} C(k), the partial sums of the Catalan numbers
 A000108, with data 1, 2, 4, 9, 23, 65, 197, ...
 R. J. Mathar (Dec 14 2011) gave the recurrence
