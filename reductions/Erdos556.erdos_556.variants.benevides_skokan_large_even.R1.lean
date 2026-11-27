@@ -961,7 +961,7 @@ lemma cycle_of_regular_closed_walk {V : Type*} [DecidableEq V] (G : SimpleGraph 
       (hn : (G.edgeDensity (C 0) T - ε) * T.card < ((T.filter (G.Adj a)).card : ℚ)) :
       m+r+1 ≤ (T.filter (G.Adj a)).card := by
     exact_mod_cast (hlo.trans (mul_le_mul_of_nonneg_right (sub_le_sub_right h ε) (Nat.cast_nonneg _))).trans hn.le
-  have h1 := degree hden (hattach 1 (by omega)) hn1
+  have h1 : m+r+1 ≤ ((C 1).filter (G.Adj a)).card := degree hden (hattach 1 (by omega)) hn1
   have h2 := degree hclose.2 (hattach _ le_rfl) hn2
   let P (i : ℕ) := if i = r then (C (r+2)).filter (G.Adj a) else (C (i+2)).erase a
   refine lift_regular_circuit G hd k m hk hkm hdegree r (fun i => C (i+1)) P
@@ -1017,6 +1017,7 @@ lemma join_disjoint_path_segments {V : Type*} [DecidableEq V] (G : SimpleGraph V
       intro u hu v hv
       have hu' : b t = u := by
         change u ∈ ((a 0 :: l) ++ [b t]).getLast? at hu
+        rw [List.getLast?_append_of_ne_nil _ (by simp)] at hu
         simpa using hu
       have hv' : a (t+1) = v := by simpa using hv
       exact hu' ▸ hv' ▸ hlinks t (by omega)
@@ -1080,6 +1081,135 @@ lemma cycle_of_flexible_segments {V : Type*} [DecidableEq V] (G : SimpleGraph V)
     omega
   rw [← hlen]
   exact cycle_of_closed_chain G (by omega) hs hc hclose
+
+/-- Replace every distinguished edge of a cyclic arrangement of regular
+pairs by a path. Disjointness of the pairs allows independent choices of
+the path lengths. The edges between successive pairs are fixed. -/
+lemma cycle_from_regular_pairs {V : Type*} [DecidableEq V] (G : SimpleGraph V)
+    [DecidableRel G.Adj] (t : ℕ) (S T : ℕ → Finset V) (a b : ℕ → V)
+    (ε : ℚ) (k m : ℕ) (hkm : k ≤ m) (cap : ℕ → ℕ)
+    (hreg : ∀ i ≤ t, G.IsUniform ε (S i) (T i))
+    (hd : ∀ i ≤ t, ε ≤ G.edgeDensity (S i) (T i))
+    (hst : ∀ i ≤ t, Disjoint (S i) (T i))
+    (hsep : ∀ i j, i < j → j ≤ t → Disjoint (S i ∪ T i) (S j ∪ T j))
+    (hthS : ∀ i ≤ t, ((S i).card : ℚ) * ε ≤ k)
+    (hthT : ∀ i ≤ t, ((T i).card : ℚ) * ε ≤ k)
+    (hden : ∀ i ≤ t, (k : ℚ) ≤ (G.edgeDensity (S i) (T i) - ε) * m)
+    (hS : ∀ i ≤ t, m + cap i + k + 1 ≤ (S i).card)
+    (hT : ∀ i ≤ t, m + cap i + 1 ≤ (T i).card)
+    (ha : ∀ i ≤ t, a i ∈ S i) (hb : ∀ i ≤ t, b i ∈ T i)
+    (hdegA : ∀ i ≤ t, k < ((T i).filter (G.Adj (a i))).card)
+    (hdegB : ∀ i ≤ t, k < ((S i).filter (G.Adj (b i))).card)
+    (hlink : ∀ i < t, G.Adj (b i) (a (i+1))) (hclose : G.Adj (b t) (a 0))
+    (q : ℕ) (hq : q ≤ ∑ i ∈ Finset.range (t+1), cap i) :
+    (cycleGraph (4*(t+1) + 2*q)).IsContained G := by
+  refine cycle_of_flexible_segments G t a b (fun i => S i ∪ T i) (fun _ => 2) cap
+    ?_ hlink hclose hsep _ q (by omega) hq ?_
+  · intro i hi j hj
+    have hs := hS i hi
+    have ht := hT i hi
+    obtain ⟨L,hL,hsimp,hchain,hpool⟩ := regular_pair_path_between G (hreg i hi) (hd i hi)
+      (hst i hi) k m j (hthS i hi) (hthT i hi) hkm (hden i hi) (by omega) (by omega)
+      (ha i hi) (hb i hi) (hdegA i hi) (hdegB i hi)
+    refine ⟨L, by omega, hsimp, hchain, ?_⟩
+    intro z hz
+    simp only [List.mem_cons, List.mem_append, List.mem_singleton] at hz
+    rcases hz with rfl | h | rfl
+    · exact Finset.mem_union_left _ (ha _ hi)
+    · exact Finset.mem_union.mpr (hpool z h)
+    · exact Finset.mem_union_right _ (hb _ hi)
+  · simp [Nat.mul_comm]
+
+/-- Typical endpoints in a matched cluster pair occupy enough of the cluster
+to apply regularity on a neighbouring pair. -/
+lemma regular_pair_eligible_endpoints {V : Type*} [DecidableEq V] (G : SimpleGraph V)
+    [DecidableRel G.Adj] {S T : Finset V} {ε : ℚ} (hreg : G.IsUniform ε S T)
+    (hd : ε ≤ G.edgeDensity S T) (k : ℕ)
+    (hs : (S.card : ℚ) * ε ≤ k) (ht : (T.card : ℚ) * ε ≤ T.card)
+    (hden : (k : ℚ) ≤ (G.edgeDensity S T - ε) * T.card) (hsize : 2*k ≤ S.card) :
+    k ≤ (S.filter fun x => k < (T.filter (G.Adj x)).card).card := by
+  classical
+  let N (x : V) := (T.filter (G.Adj x)).card
+  let bad := S.filter fun x => (N x : ℚ) ≤ (G.edgeDensity S T - ε) * T.card
+  have hbad : (bad.card : ℚ) < S.card * ε :=
+    regular_pair_few_bad G hreg hd (Finset.Subset.refl _) ht
+  have sub : S.filter (fun x => ¬ k < N x) ⊆ bad := by
+    intro x hx
+    obtain ⟨hS, h⟩ := Finset.mem_filter.mp hx
+    exact Finset.mem_filter.mpr ⟨hS,(show (N x : ℚ) ≤ k by exact_mod_cast le_of_not_gt h).trans hden⟩
+  have hc : (S.filter (fun x => ¬ k < N x)).card < k := by
+    have hsmall : bad.card < k := by exact_mod_cast hbad.trans_le hs
+    exact (Finset.card_le_card sub).trans_lt hsmall
+  have hsum := Finset.card_filter_add_card_filter_not (s := S) (fun x => k < N x)
+  change k ≤ (S.filter fun x => k < N x).card
+  omega
+
+/-- An exact range of even cycles forced by a monochromatic cyclic sequence
+of regular pairs in the reduced graph. The connecting edges and endpoints
+in the host graph are chosen as part of the proof. -/
+lemma cycle_from_regular_cluster_ring {V : Type*} [DecidableEq V] (G : SimpleGraph V)
+    [DecidableRel G.Adj] (t : ℕ) (S T : ℕ → Finset V)
+    (ε : ℚ) (k m : ℕ) (hkm : k ≤ m) (cap : ℕ → ℕ)
+    (hreg : ∀ i ≤ t, G.IsUniform ε (S i) (T i))
+    (hd : ∀ i ≤ t, ε ≤ G.edgeDensity (S i) (T i))
+    (hst : ∀ i ≤ t, Disjoint (S i) (T i))
+    (hsep : ∀ i j, i < j → j ≤ t → Disjoint (S i ∪ T i) (S j ∪ T j))
+    (hthS : ∀ i ≤ t, ((S i).card : ℚ) * ε ≤ k)
+    (hthT : ∀ i ≤ t, ((T i).card : ℚ) * ε ≤ k)
+    (hden : ∀ i ≤ t, (k : ℚ) ≤ (G.edgeDensity (S i) (T i) - ε) * m)
+    (hS : ∀ i ≤ t, m + cap i + k + 1 ≤ (S i).card)
+    (hT : ∀ i ≤ t, max (2*k) (m + cap i + 1) ≤ (T i).card)
+    (hlink : ∀ i < t, G.IsUniform ε (T i) (S (i+1)) ∧ ε ≤ G.edgeDensity (T i) (S (i+1)))
+    (hwrap : G.IsUniform ε (T t) (S 0) ∧ ε ≤ G.edgeDensity (T t) (S 0))
+    (q : ℕ) (hq : q ≤ ∑ i ∈ Finset.range (t+1), cap i) :
+    (cycleGraph (4*(t+1) + 2*q)).IsContained G := by
+  classical
+  let A (i : ℕ) := (S i).filter fun x => k < ((T i).filter (G.Adj x)).card
+  let B (i : ℕ) := (T i).filter fun y => k < ((S i).filter (G.Adj y)).card
+  have good (i) (hi : i ≤ t) : k ≤ (A i).card ∧ k ≤ (B i).card := by
+    have hs := hS i hi
+    have ht₁ := (le_max_left _ _).trans (hT i hi)
+    have ht₂ := (le_max_right _ _).trans (hT i hi)
+    have hdpos := sub_nonneg.mpr (hd i hi)
+    constructor
+    · apply regular_pair_eligible_endpoints G (hreg i hi) (hd i hi) k (hthS i hi)
+      · exact (hthT i hi).trans (by exact_mod_cast (show k ≤ (T i).card by omega))
+      · exact (hden i hi).trans (mul_le_mul_of_nonneg_left
+          (by exact_mod_cast (show m ≤ (T i).card by omega)) hdpos)
+      · omega
+    · apply regular_pair_eligible_endpoints G (hreg i hi).symm
+        (by rw [G.edgeDensity_comm (T i)]; exact hd i hi) k (hthT i hi)
+      · exact (hthS i hi).trans (by exact_mod_cast (show k ≤ (S i).card by omega))
+      · rw [G.edgeDensity_comm (T i)]
+        exact (hden i hi).trans (mul_le_mul_of_nonneg_left
+          (by exact_mod_cast (show m ≤ (S i).card by omega)) hdpos)
+      · exact ht₁
+  have connector (i j) (hi : i ≤ t) (hj : j ≤ t)
+      (h : G.IsUniform ε (T i) (S j) ∧ ε ≤ G.edgeDensity (T i) (S j)) :
+      ∃ x ∈ B i, ∃ y ∈ A j, G.Adj x y :=
+    regular_pair_edge G h.1 h.2 (Finset.filter_subset _ _) (Finset.filter_subset _ _)
+      ((hthT i hi).trans (by exact_mod_cast (good i hi).2))
+      ((hthS j hj).trans (by exact_mod_cast (good j hj).1))
+  obtain ⟨last, hlast, first, hfirst, hclose⟩ := connector t 0 le_rfl (Nat.zero_le _) hwrap
+  have internal (i : Fin t) := connector i.val (i.val+1) i.isLt.le i.isLt (hlink i i.isLt)
+  choose left hleft right hright hed using internal
+  let a : ℕ → V
+    | 0 => first
+    | i+1 => if h : i < t then right ⟨i,h⟩ else first
+  let b (i : ℕ) := if h : i < t then left ⟨i,h⟩ else last
+  have ha (i) (hi : i ≤ t) : a i ∈ A i := by
+    cases i with
+    | zero => exact hfirst
+    | succ j => simpa [a, show j < t by omega] using hright ⟨j,by omega⟩
+  have hb (i) (hi : i ≤ t) : b i ∈ B i := by
+    rcases lt_or_eq_of_le hi with hl | rfl
+    · simpa [b, hl] using hleft ⟨i,hl⟩
+    · simpa [b] using hlast
+  exact cycle_from_regular_pairs G t S T a b ε k m hkm cap hreg hd hst hsep hthS hthT hden hS
+    (fun i hi => (le_max_right _ _).trans (hT i hi))
+    (fun i hi => (Finset.mem_filter.mp (ha i hi)).1) (fun i hi => (Finset.mem_filter.mp (hb i hi)).1)
+    (fun i hi => (Finset.mem_filter.mp (ha i hi)).2) (fun i hi => (Finset.mem_filter.mp (hb i hi)).2)
+    (fun i hi => by simpa [a,b,hi] using hed ⟨i,hi⟩) (by simpa [a,b] using hclose) q hq
 
 section ReducedColours
 
