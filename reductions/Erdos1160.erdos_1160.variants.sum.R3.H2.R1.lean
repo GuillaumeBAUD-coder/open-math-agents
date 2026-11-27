@@ -54,8 +54,8 @@ theorem main : H1 → H2 → OMA.R_Erdos1160_erdos_1160_variants_sum_R3.H2 := by
     have data (i : F b) : ∃ S : GroupExtension (N b) (rep i.val) (H b),
         ∀ h, ∃ e : rep i.val, ∃ n : N b, S.rightHom e = h ∧
           MulAut.conj n * S.conjAct e = action b h := by
-      rw [← i.property]
-      obtain ⟨S, _, hs⟩ := (assign i.val).choose_spec
+      obtain ⟨z, rfl⟩ := i
+      obtain ⟨S, _, hs⟩ := (assign z).choose_spec
       exact ⟨S,hs⟩
     choose seq hseq using data
     apply henc (N b) (H b) (F b) (fun i => rep i.val) seq (action b) hseq
@@ -66,7 +66,7 @@ theorem main : H1 → H2 → OMA.R_Erdos1160_erdos_1160_variants_sum_R3.H2 := by
     rw [← (spec i.val).2, ← (spec t.val).2]
     exact Quotient.sound ⟨InducedCategory.isoMk (F := FiniteGrp.toGrp)
       (MulEquiv.toGrpIso (X := (rep i.val).toGrp) (Y := (rep t.val).toGrp) e.toMulEquiv)⟩
-  letI (b : Fin B) : Finite (F b) := Finite.of_injective _ (encode b).some.injective
+  let (b : Fin B) : Finite (F b) := Finite.of_injective _ (encode b).some.injective
   apply le_trans (Nat.mul_le_mul_left _ ?_) budget
   calc
     g (2 ^ k * q) = Nat.card C := rfl
