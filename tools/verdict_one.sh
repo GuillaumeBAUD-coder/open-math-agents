@@ -7,6 +7,7 @@ set -euo pipefail
 # The merger (backlog.yml, tools/merger_loop.sh v2) is the only caller now; an older merger still running from before
 # tools/merger.v2 existed must not report twice, so it does nothing here.
 if [ -e base/tools/merger.v2 ] && [ -z "${MERGER_V2:-}" ]; then exit 0; fi
+if [ -e base/tools/merger.v3 ] && [ -z "${MERGER_V3:-}" ]; then exit 0; fi   # the v3 merger has taken over
 PR=$(head -c 12 artifact/pr.txt | tr -cd '0-9')
 [ -n "$PR" ] || exit 0
 gh api "repos/$REPO/pulls/$PR" > pr.json
@@ -90,7 +91,7 @@ case "$VERDICT" in
     elif [ "$KIND" = "open" ]; then
       MSG="**ACCEPTED by the Lean checker** ($POL of \`$PID\`). Merged and credited now. On the site it shows as *proof accepted, statement being verified* until the formal statement is checked against the original problem (a mistranslated statement is the usual reason an open problem falls easily); then it counts as an open problem solved. [Run]($RUN_URL)"
     else
-      MSG="**ACCEPTED** ($POL of \`$PID\`): $REASON. Merging. [Run]($RUN_URL)"
+      MSG="**ACCEPTED** ($POL of \`$PID\`): ${REASON:-the Lean kernel accepted it and its axioms passed the audit}. Merged and credited. [Run]($RUN_URL)"
     fi
     if jq -e '.labels | map(.name) | index("needs-human-review")' pr.json >/dev/null; then
       gh pr edit "$PR" --repo "$REPO" --remove-label needs-human-review >/dev/null 2>&1 || true

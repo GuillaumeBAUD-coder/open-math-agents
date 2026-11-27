@@ -1,6 +1,8 @@
 # Untrusted stage: compiles a submitted proof. No secrets, read-only token.
 # The trusted stage (verdict.yml) re-checks the diff itself before believing this verdict.
 name: check-proof
+# The pull request number in the run's title lets the merger find it without downloading the artifact.
+run-name: "check-proof #${{ github.event.pull_request.number }}"
 on:
   pull_request:
     paths: ["proofs/**", "reductions/**", "statements/**"]
@@ -108,3 +110,7 @@ jobs:
           path: |
             verdict.json
             pr.txt
+      - name: Fail unless accepted
+        # A green run means accepted (the merger then needs no artifact download); anything else is red on the PR.
+        if: ${{ !cancelled() }}
+        run: python3 -I -c 'import json,sys; sys.exit(0 if json.load(open("verdict.json")).get("verdict") == "accepted" else 1)'
