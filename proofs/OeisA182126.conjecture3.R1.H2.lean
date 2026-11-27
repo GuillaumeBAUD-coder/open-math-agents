@@ -1,0 +1,77 @@
+import OMAReductions.R_OeisA182126_conjecture3_R1
+
+/-! Check the first sixty-one residues using kernel-certified prime indices. -/
+
+-- Credit: @DeepDuke
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 1000000 in
+theorem OMA.solution : OMA.R_OeisA182126_conjecture3_R1.H2 := by
+  intro n hn h61 hp
+  have p0 : Nat.nth Nat.Prime 0 = 2 := Nat.nth_count (by decide : Nat.Prime 2)
+  have p1 : Nat.nth Nat.Prime 1 = 3 := Nat.nth_count (by decide : Nat.Prime 3)
+  have p2 : Nat.nth Nat.Prime 2 = 5 := Nat.nth_count (by decide : Nat.Prime 5)
+  have p3 : Nat.nth Nat.Prime 3 = 7 := Nat.nth_count (by decide : Nat.Prime 7)
+  have p4 : Nat.nth Nat.Prime 4 = 11 := Nat.nth_count (by decide : Nat.Prime 11)
+  have p5 : Nat.nth Nat.Prime 5 = 13 := Nat.nth_count (by decide : Nat.Prime 13)
+  have p6 : Nat.nth Nat.Prime 6 = 17 := Nat.nth_count (by decide : Nat.Prime 17)
+  have p7 : Nat.nth Nat.Prime 7 = 19 := Nat.nth_count (by decide : Nat.Prime 19)
+  have p8 : Nat.nth Nat.Prime 8 = 23 := Nat.nth_count (by decide : Nat.Prime 23)
+  have p9 : Nat.nth Nat.Prime 9 = 29 := Nat.nth_count (by decide : Nat.Prime 29)
+  have p10 : Nat.nth Nat.Prime 10 = 31 := Nat.nth_count (by decide : Nat.Prime 31)
+  have p11 : Nat.nth Nat.Prime 11 = 37 := Nat.nth_count (by decide : Nat.Prime 37)
+  have p12 : Nat.nth Nat.Prime 12 = 41 := Nat.nth_count (by decide : Nat.Prime 41)
+  have p13 : Nat.nth Nat.Prime 13 = 43 := Nat.nth_count (by decide : Nat.Prime 43)
+  have p14 : Nat.nth Nat.Prime 14 = 47 := Nat.nth_count (by decide : Nat.Prime 47)
+  have p15 : Nat.nth Nat.Prime 15 = 53 := Nat.nth_count (by decide : Nat.Prime 53)
+  have p16 : Nat.nth Nat.Prime 16 = 59 := Nat.nth_count (by decide : Nat.Prime 59)
+  have p17 : Nat.nth Nat.Prime 17 = 61 := Nat.nth_count (by decide : Nat.Prime 61)
+  have p18 : Nat.nth Nat.Prime 18 = 67 := Nat.nth_count (by decide : Nat.Prime 67)
+  have p19 : Nat.nth Nat.Prime 19 = 71 := Nat.nth_count (by decide : Nat.Prime 71)
+  have p20 : Nat.nth Nat.Prime 20 = 73 := Nat.nth_count (by decide : Nat.Prime 73)
+  have p21 : Nat.nth Nat.Prime 21 = 79 := Nat.nth_count (by decide : Nat.Prime 79)
+  have p22 : Nat.nth Nat.Prime 22 = 83 := Nat.nth_count (by decide : Nat.Prime 83)
+  have p23 : Nat.nth Nat.Prime 23 = 89 := Nat.nth_count (by decide : Nat.Prime 89)
+  have p24 : Nat.nth Nat.Prime 24 = 97 := Nat.nth_count (by decide : Nat.Prime 97)
+  have p25 : Nat.nth Nat.Prime 25 = 101 := Nat.nth_count (by decide : Nat.Prime 101)
+  have p26 : Nat.nth Nat.Prime 26 = 103 := Nat.nth_count (by decide : Nat.Prime 103)
+  have p27 : Nat.nth Nat.Prime 27 = 107 := Nat.nth_count (by decide : Nat.Prime 107)
+  have p28 : Nat.nth Nat.Prime 28 = 109 := Nat.nth_count (by decide : Nat.Prime 109)
+  have p29 : Nat.nth Nat.Prime 29 = 113 := Nat.nth_count (by decide : Nat.Prime 113)
+  have p30 : Nat.nth Nat.Prime 30 = 127 := Nat.nth_count (by decide : Nat.Prime 127)
+  have p31 : Nat.nth Nat.Prime 31 = 131 := Nat.nth_count (by decide : Nat.Prime 131)
+  have p32 : Nat.nth Nat.Prime 32 = 137 := Nat.nth_count (by decide : Nat.Prime 137)
+  have p33 : Nat.nth Nat.Prime 33 = 139 := Nat.nth_count (by decide : Nat.Prime 139)
+  have p34 : Nat.nth Nat.Prime 34 = 149 := Nat.nth_count (by decide : Nat.Prime 149)
+  have p35 : Nat.nth Nat.Prime 35 = 151 := Nat.nth_count (by decide : Nat.Prime 151)
+  have p36 : Nat.nth Nat.Prime 36 = 157 := Nat.nth_count (by decide : Nat.Prime 157)
+  have p37 : Nat.nth Nat.Prime 37 = 163 := Nat.nth_count (by decide : Nat.Prime 163)
+  have p38 : Nat.nth Nat.Prime 38 = 167 := Nat.nth_count (by decide : Nat.Prime 167)
+  have p39 : Nat.nth Nat.Prime 39 = 173 := Nat.nth_count (by decide : Nat.Prime 173)
+  have p40 : Nat.nth Nat.Prime 40 = 179 := Nat.nth_count (by decide : Nat.Prime 179)
+  have p41 : Nat.nth Nat.Prime 41 = 181 := Nat.nth_count (by decide : Nat.Prime 181)
+  have p42 : Nat.nth Nat.Prime 42 = 191 := Nat.nth_count (by decide : Nat.Prime 191)
+  have p43 : Nat.nth Nat.Prime 43 = 193 := Nat.nth_count (by decide : Nat.Prime 193)
+  have p44 : Nat.nth Nat.Prime 44 = 197 := Nat.nth_count (by decide : Nat.Prime 197)
+  have p45 : Nat.nth Nat.Prime 45 = 199 := Nat.nth_count (by decide : Nat.Prime 199)
+  have p46 : Nat.nth Nat.Prime 46 = 211 := Nat.nth_count (by decide : Nat.Prime 211)
+  have p47 : Nat.nth Nat.Prime 47 = 223 := Nat.nth_count (by decide : Nat.Prime 223)
+  have p48 : Nat.nth Nat.Prime 48 = 227 := Nat.nth_count (by decide : Nat.Prime 227)
+  have p49 : Nat.nth Nat.Prime 49 = 229 := Nat.nth_count (by decide : Nat.Prime 229)
+  have p50 : Nat.nth Nat.Prime 50 = 233 := Nat.nth_count (by decide : Nat.Prime 233)
+  have p51 : Nat.nth Nat.Prime 51 = 239 := Nat.nth_count (by decide : Nat.Prime 239)
+  have p52 : Nat.nth Nat.Prime 52 = 241 := Nat.nth_count (by decide : Nat.Prime 241)
+  have p53 : Nat.nth Nat.Prime 53 = 251 := Nat.nth_count (by decide : Nat.Prime 251)
+  have p54 : Nat.nth Nat.Prime 54 = 257 := Nat.nth_count (by decide : Nat.Prime 257)
+  have p55 : Nat.nth Nat.Prime 55 = 263 := Nat.nth_count (by decide : Nat.Prime 263)
+  have p56 : Nat.nth Nat.Prime 56 = 269 := Nat.nth_count (by decide : Nat.Prime 269)
+  have p57 : Nat.nth Nat.Prime 57 = 271 := Nat.nth_count (by decide : Nat.Prime 271)
+  have p58 : Nat.nth Nat.Prime 58 = 277 := Nat.nth_count (by decide : Nat.Prime 277)
+  have p59 : Nat.nth Nat.Prime 59 = 281 := Nat.nth_count (by decide : Nat.Prime 281)
+  have p60 : Nat.nth Nat.Prime 60 = 283 := Nat.nth_count (by decide : Nat.Prime 283)
+  have p61 : Nat.nth Nat.Prime 61 = 293 := Nat.nth_count (by decide : Nat.Prime 293)
+  have p62 : Nat.nth Nat.Prime 62 = 307 := Nat.nth_count (by decide : Nat.Prime 307)
+  interval_cases n <;>
+    first
+    | solve | norm_num [OeisA182126.a, OeisA182126.prime, p0, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20, p21, p22, p23, p24, p25, p26, p27, p28, p29, p30, p31, p32, p33, p34, p35, p36, p37, p38, p39, p40, p41, p42, p43, p44, p45, p46, p47, p48, p49, p50, p51, p52, p53, p54, p55, p56, p57, p58, p59, p60, p61, p62] at hp
+    | norm_num [OeisA182126.a, OeisA182126.prime, p0, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20, p21, p22, p23, p24, p25, p26, p27, p28, p29, p30, p31, p32, p33, p34, p35, p36, p37, p38, p39, p40, p41, p42, p43, p44, p45, p46, p47, p48, p49, p50, p51, p52, p53, p54, p55, p56, p57, p58, p59, p60, p61, p62]
