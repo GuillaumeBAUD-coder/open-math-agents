@@ -19,28 +19,9 @@ namespace OMA.R_ReconstructionConjecture_reconstruction_conjecture_R1
 
 open SimpleGraph ReconstructionConjecture
 
-/-- Intersection graphs of nonempty closed intervals, with loops excluded. -/
-def HasIntervalModel {V : Type*} (G : SimpleGraph V) : Prop :=
-  ∃ left right : V → ℝ, (∀ v, left v ≤ right v) ∧
-    ∀ x y, G.Adj x y ↔ x ≠ y ∧ left x ≤ right y ∧ left y ≤ right x
-
-/-- Theorem 1 of Heinrich–Kiyomi–Otachi–Schweitzer. -/
-def H1 : Prop :=
-  ∀ {V W : Type} [Fintype V] [Fintype W],
-    3 ≤ Fintype.card V → ∀ (G : SimpleGraph V) (H : SimpleGraph W),
-      HasIntervalModel G → Hypomorphic G H → Nonempty (G ≃g H)
-
-/-- Remaining pairs after exploiting deck symmetry and complementation. -/
-def H2 : Prop :=
-  ∀ {V W : Type} [Fintype V] [Fintype W],
-    3 ≤ Fintype.card V → ∀ (G : SimpleGraph V) (H : SimpleGraph W),
-      ¬ HasIntervalModel G → ¬ HasIntervalModel Gᶜ →
-      ¬ HasIntervalModel H → ¬ HasIntervalModel Hᶜ →
-      Hypomorphic G H → Nonempty (G ≃g H)
-
-private def complementIso {V W : Type*} {G : SimpleGraph V} {H : SimpleGraph W}
-    (f : G ≃g H) : Gᶜ ≃g Hᶜ := by
-  refine ⟨f.toEquiv, ?_⟩
+private theorem complement_iso {V W : Type*} {G : SimpleGraph V} {H : SimpleGraph W}
+    (f : G ≃g H) : Nonempty (Gᶜ ≃g Hᶜ) := by
+  refine ⟨⟨f.toEquiv, ?_⟩⟩
   intro a b
   change (f a ≠ f b ∧ ¬ H.Adj (f a) (f b)) ↔ (a ≠ b ∧ ¬ G.Adj a b)
   exact and_congr (not_congr f.injective.eq_iff) (not_congr f.map_rel_iff)
@@ -58,7 +39,7 @@ theorem complement_hypomorphic {V W : Type*} {G : SimpleGraph V} {H : SimpleGrap
   refine ⟨σ, fun v => ?_⟩
   obtain ⟨f⟩ := cards v
   rw [induce_complement, induce_complement]
-  exact ⟨complementIso f⟩
+  exact complement_iso f
 
 private theorem swap_decks {V W : Type*} {G : SimpleGraph V} {H : SimpleGraph W}
     (h : Hypomorphic G H) : Hypomorphic H G := by
@@ -70,24 +51,43 @@ private theorem swap_decks {V W : Type*} {G : SimpleGraph V} {H : SimpleGraph W}
   obtain ⟨f⟩ := cards v
   exact ⟨f.symm⟩
 
-private theorem interval_or_complement (known : H1)
-    {V W : Type} [Fintype V] [Fintype W] (n : 3 ≤ Fintype.card V)
-    {G : SimpleGraph V} {H : SimpleGraph W} (h : Hypomorphic G H)
-    (model : HasIntervalModel G ∨ HasIntervalModel Gᶜ) : Nonempty (G ≃g H) := by
-  rcases model with direct | dual
-  · exact known n G H direct h
-  · obtain ⟨f⟩ := known n Gᶜ Hᶜ dual (complement_hypomorphic h)
-    exact ⟨by simpa only [compl_compl] using complementIso f⟩
+/-- Theorem 1 of Heinrich–Kiyomi–Otachi–Schweitzer. An interval model uses
+nonempty closed intervals, and adjacency excludes loops. -/
+def H1 : Prop :=
+  ∀ {V W : Type} [Fintype V] [Fintype W],
+    3 ≤ Fintype.card V → ∀ (G : SimpleGraph V) (H : SimpleGraph W),
+      (∃ left right : V → ℝ, (∀ v, left v ≤ right v) ∧
+        ∀ x y, G.Adj x y ↔ x ≠ y ∧ left x ≤ right y ∧ left y ≤ right x) →
+      Hypomorphic G H → Nonempty (G ≃g H)
+
+/-- Remaining pairs after exploiting deck symmetry and complementation. -/
+def H2 : Prop :=
+  let interval {X : Type} (K : SimpleGraph X) : Prop :=
+    ∃ left right : X → ℝ, (∀ v, left v ≤ right v) ∧
+      ∀ x y, K.Adj x y ↔ x ≠ y ∧ left x ≤ right y ∧ left y ≤ right x
+  ∀ {V W : Type} [Fintype V] [Fintype W],
+    3 ≤ Fintype.card V → ∀ (G : SimpleGraph V) (H : SimpleGraph W),
+      ¬ interval G → ¬ interval Gᶜ → ¬ interval H → ¬ interval Hᶜ →
+      Hypomorphic G H → Nonempty (G ≃g H)
 
 theorem main : H1 → H2 → type_of% @ReconstructionConjecture.reconstruction_conjecture := by
   intro known remaining V W _ _ n G H h
-  by_cases g : HasIntervalModel G ∨ HasIntervalModel Gᶜ
-  · exact interval_or_complement known n h g
-  by_cases k : HasIntervalModel H ∨ HasIntervalModel Hᶜ
-  · have n' : 3 ≤ Fintype.card W := h.card_eq ▸ n
-    obtain ⟨f⟩ := interval_or_complement known n' (swap_decks h) k
+  let interval {X : Type} (K : SimpleGraph X) : Prop :=
+    ∃ left right : X → ℝ, (∀ v, left v ≤ right v) ∧
+      ∀ x y, K.Adj x y ↔ x ≠ y ∧ left x ≤ right y ∧ left y ≤ right x
+  by_cases g : interval G
+  · exact known n G H g h
+  by_cases gc : interval Gᶜ
+  · obtain ⟨f⟩ := known n Gᶜ Hᶜ gc (complement_hypomorphic h)
+    simpa only [compl_compl] using complement_iso f
+  have n' : 3 ≤ Fintype.card W := h.card_eq ▸ n
+  have back := swap_decks h
+  by_cases k : interval H
+  · obtain ⟨f⟩ := known n' H G k back
     exact ⟨f.symm⟩
-  exact remaining n G H (fun i => g (Or.inl i)) (fun i => g (Or.inr i))
-    (fun i => k (Or.inl i)) (fun i => k (Or.inr i)) h
+  by_cases kc : interval Hᶜ
+  · obtain ⟨f⟩ := known n' Hᶜ Gᶜ kc (complement_hypomorphic back)
+    simpa only [compl_compl] using complement_iso f.symm
+  exact remaining n G H g gc k kc h
 
 end OMA.R_ReconstructionConjecture_reconstruction_conjecture_R1
