@@ -218,13 +218,14 @@ private lemma faulhaber_mod_p (p : ℕ) [Fact p.Prime] (k : ℕ) (hk2 : 2 ≤ k)
   have hp : p.Prime := Fact.out
   have hp5 : 5 ≤ p := by omega
   let S : ℕ := ∑ a ∈ Finset.Ico 1 p, a ^ k
+  let Q : ℕ := S / p
   have hcastS : (S : ℚ) = ∑ a ∈ Finset.range p, (a : ℚ) ^ k := by
     rw [Finset.sum_range_eq_add_Ico _ hp.pos, Nat.cast_zero, zero_pow (by omega), zero_add]
     simp [S]
   let R : ℚ := ∑ j ∈ Finset.range k, bernoulli j * ((k + 1).choose j : ℚ) * (p : ℚ) ^ (k - 1 - j)
-  have hfaul : ((k + 1 : ℕ) : ℚ) * ((S / p : ℕ) : ℚ) - ((k + 1 : ℕ) : ℚ) * bernoulli k =
+  have hfaul : ((k + 1 : ℕ) : ℚ) * (Q : ℚ) - ((k + 1 : ℕ) : ℚ) * bernoulli k =
       (p : ℚ) * R := by
-    have hSp : (S : ℚ) = (p : ℚ) * ((S / p : ℕ) : ℚ) := by
+    have hSp : (S : ℚ) = (p : ℚ) * (Q : ℚ) := by
       exact_mod_cast (Nat.mul_div_cancel' hdiv).symm
     have hpq : (p : ℚ) ≠ 0 := by exact_mod_cast hp.ne_zero
     have hk1q : (k : ℚ) + 1 ≠ 0 := by positivity
@@ -232,7 +233,8 @@ private lemma faulhaber_mod_p (p : ℕ) [Fact p.Prime] (k : ℕ) (hk2 : 2 ≤ k)
         (∑ j ∈ Finset.range k, bernoulli j * ((k + 1).choose j : ℚ) * (p : ℚ) ^ (k + 1 - j)) +
           bernoulli k * ((k + 1).choose k : ℚ) * (p : ℚ) ^ (k + 1 - k) := by
       rw [hcastS, sum_range_pow, show ((k + 1 : ℕ) : ℚ) = (k : ℚ) + 1 by push_cast; rfl,
-        div_mul_cancel₀ _ hk1q, Finset.sum_range_succ]
+        Finset.sum_mul]
+      rw [Finset.sum_congr rfl fun i _ => div_mul_cancel₀ _ hk1q, Finset.sum_range_succ]
     have h2 : ∑ j ∈ Finset.range k, bernoulli j * ((k + 1).choose j : ℚ) * (p : ℚ) ^ (k + 1 - j) =
         (p : ℚ) * (p : ℚ) * R := by
       dsimp only [R]
@@ -262,7 +264,7 @@ private lemma faulhaber_mod_p (p : ℕ) [Fact p.Prime] (k : ℕ) (hk2 : 2 ≤ k)
   have hBden : ((bernoulli k).den : ℚ) ≠ 0 := by exact_mod_cast (bernoulli k).den_nz
   have hRden : (R.den : ℚ) ≠ 0 := by exact_mod_cast R.den_nz
   have hintQ :
-      ((((k + 1 : ℕ) : ℤ) * (((S / p : ℕ) : ℤ) * ((bernoulli k).den : ℤ) - (bernoulli k).num) *
+      ((((k + 1 : ℕ) : ℤ) * ((Q : ℤ) * ((bernoulli k).den : ℤ) - (bernoulli k).num) *
         (R.den : ℤ) : ℤ) : ℚ) =
       (((p : ℤ) * R.num * ((bernoulli k).den : ℤ) : ℤ) : ℚ) := by
     have h1 := congrArg (fun x : ℚ => x * ((bernoulli k).den : ℚ) * (R.den : ℚ)) hfaul
@@ -276,7 +278,7 @@ private lemma faulhaber_mod_p (p : ℕ) [Fact p.Prime] (k : ℕ) (hk2 : 2 ≤ k)
     linear_combination h1 + ((k + 1 : ℚ) * (R.den : ℚ)) * hBq +
       (p : ℚ) * ((bernoulli k).den : ℚ) * hRq
   have hint :
-      ((k + 1 : ℕ) : ℤ) * (((S / p : ℕ) : ℤ) * ((bernoulli k).den : ℤ) - (bernoulli k).num) *
+      ((k + 1 : ℕ) : ℤ) * ((Q : ℤ) * ((bernoulli k).den : ℤ) - (bernoulli k).num) *
         (R.den : ℤ) =
       (p : ℤ) * R.num * ((bernoulli k).den : ℤ) :=
     Int.cast_injective hintQ
@@ -292,9 +294,9 @@ private lemma faulhaber_mod_p (p : ℕ) [Fact p.Prime] (k : ℕ) (hk2 : 2 ≤ k)
       ((ZMod.natCast_eq_zero_iff (k + 1) p).mp h)
   have hk1_ne' : ((k : ZMod p) + 1) ≠ 0 := by simpa using hk1_ne
   have hzero1 : ((k : ZMod p) + 1) *
-      (((S / p : ℕ) : ZMod p) * ((bernoulli k).den : ZMod p) - ((bernoulli k).num : ZMod p)) = 0 :=
+      ((Q : ZMod p) * ((bernoulli k).den : ZMod p) - ((bernoulli k).num : ZMod p)) = 0 :=
     (mul_eq_zero.mp hz).resolve_right hRden_ne
-  have hzero2 : ((S / p : ℕ) : ZMod p) * ((bernoulli k).den : ZMod p) -
+  have hzero2 : (Q : ZMod p) * ((bernoulli k).den : ZMod p) -
       ((bernoulli k).num : ZMod p) = 0 :=
     (mul_eq_zero.mp hzero1).resolve_left hk1_ne'
   exact sub_eq_zero.mp hzero2
