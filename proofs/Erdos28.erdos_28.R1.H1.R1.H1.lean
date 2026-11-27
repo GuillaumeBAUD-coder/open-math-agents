@@ -390,7 +390,7 @@ namespace OMA.Erdos28Five
 
 theorem five_lt_count (S : Finset Nat)
     (cov : ∀ n ≤ 70, ∃ a ∈ S, ∃ b ∈ S, a+b=n) :
-    ∃ n ≤ 70, 5 < ((Finset.antidiagonal n).filter (fun p => p.1 ∈ S ∧ p.2 ∈ S)).card := by
+    ∃ n ≤ 70, 5 < ((Finset.HasAntidiagonal.antidiagonal n).filter (fun p => p.1 ∈ S ∧ p.2 ∈ S)).card := by
   obtain ⟨n,hn,l,hl,hd,hw⟩ := six_of_cover (fun a => a ∈ S) (by
     intro n hn
     obtain ⟨a,ha,b,hb,he⟩ := cov n hn
@@ -399,12 +399,12 @@ theorem five_lt_count (S : Finset Nat)
   have fi : Function.Injective f := fun _ _ h => congrArg Prod.fst h
   have card := Finset.card_image_of_injective l.toFinset fi
   rw [List.toFinset_card_of_nodup hd, hl] at card
-  have sub : l.toFinset.image f ⊆ (Finset.antidiagonal n).filter (fun p => p.1 ∈ S ∧ p.2 ∈ S) := by
+  have sub : l.toFinset.image f ⊆ (Finset.HasAntidiagonal.antidiagonal n).filter (fun p => p.1 ∈ S ∧ p.2 ∈ S) := by
     intro p hp
     obtain ⟨a, ha, rfl⟩ := Finset.mem_image.mp hp
     obtain ⟨b, h₁, h₂, he⟩ := hw a (List.mem_toFinset.mp ha)
     have hb : n-a=b := by omega
-    exact Finset.mem_filter.mpr ⟨Finset.mem_antidiagonal.mpr (by change a+(n-a)=n; omega),
+    exact Finset.mem_filter.mpr ⟨Finset.HasAntidiagonal.mem_antidiagonal.mpr (by change a+(n-a)=n; omega),
       h₁, by change n-a ∈ S; simpa only [hb] using h₂⟩
   have hb := Finset.card_le_card sub
   exact ⟨n,hn,by omega⟩
@@ -418,7 +418,7 @@ def lastCover : Finset ℕ :=
   {0, 1, 3, 4, 5, 6, 10, 15, 17, 23, 31, 39, 47, 55, 63}
 
 def countAt (n : ℕ) : ℕ :=
-  ((Finset.antidiagonal n).filter (fun p => p.1 ∈ lastCover ∧ p.2 ∈ lastCover)).card
+  ((Finset.HasAntidiagonal.antidiagonal n).filter (fun p => p.1 ∈ lastCover ∧ p.2 ∈ lastCover)).card
 
 set_option maxRecDepth 8000 in
 set_option maxHeartbeats 9000000 in
@@ -430,11 +430,11 @@ theorem last_subset : lastCover ⊆ Finset.Iic 69 := by decide
 theorem last_covers (n : ℕ) (hn : n ≤ 69) :
     ∃ a ∈ lastCover, ∃ b ∈ lastCover, a+b=n := by
   have h := (last_counts ⟨n, by omega⟩).1
-  change 0 < ((Finset.antidiagonal n).filter
+  change 0 < ((Finset.HasAntidiagonal.antidiagonal n).filter
     (fun p => p.1 ∈ lastCover ∧ p.2 ∈ lastCover)).card at h
   obtain ⟨p,hp⟩ := Finset.card_pos.mp h
   obtain ⟨hs, ha, hb⟩ := Finset.mem_filter.mp hp
-  exact ⟨p.1, ha, p.2, hb, Finset.mem_antidiagonal.mp hs⟩
+  exact ⟨p.1, ha, p.2, hb, Finset.HasAntidiagonal.mem_antidiagonal.mp hs⟩
 
 end OMA.Erdos28Endpoint
 
