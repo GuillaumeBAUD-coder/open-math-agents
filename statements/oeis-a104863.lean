@@ -14,6 +14,10 @@ Formalization notes.
 * For a natural number m, floor(sqrt(m)) is Mathlib's `Nat.sqrt m`.
 * The sequence starts at n = 1; the value `a 0` is a placeholder (0) that the recurrence for
   n ≥ 3 never uses, and the conjecture only involves indices n - 4 ≥ 13.
+
+Status: the conjecture is false as stated. It fails at its first index: a(17) = 935, while
+a(15) + a(13) + 1 = 578 + 358 + 1 = 937. `main` is the literal statement, kept as the target
+of a disproof.
 -/
 
 namespace OMA.S_oeis_a104863
