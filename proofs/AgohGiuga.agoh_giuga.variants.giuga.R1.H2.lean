@@ -48,7 +48,11 @@ theorem OMA.solution : OMA.R_AgohGiuga_agoh_giuga_variants_giuga_R1.H2 := by
       refine Finset.sum_congr rfl fun r _ => ?_
       push_cast
       simp
-    simp_rw [hinner, Finset.sum_const, Finset.card_range, nsmul_eq_mul]
+    calc ∑ k ∈ Finset.range q, ∑ r ∈ Finset.range p, ((k * p + r : ℕ) : ZMod p) ^ (n - 1)
+        = ∑ _k ∈ Finset.range q, ∑ r ∈ Finset.Ioo 0 p, (r : ZMod p) ^ (n - 1) :=
+          Finset.sum_congr rfl fun k _ => hinner k
+      _ = (q : ZMod p) * ∑ r ∈ Finset.Ioo 0 p, (r : ZMod p) ^ (n - 1) := by
+          rw [Finset.sum_const, Finset.card_range, nsmul_eq_mul]
   rw [hrange, hblocks] at hsum_zmod
   have hbij : ∑ r ∈ Finset.Ioo 0 p, (r : ZMod p) ^ (n - 1) =
       ∑ u : (ZMod p)ˣ, (u : ZMod p) ^ (n - 1) := by
