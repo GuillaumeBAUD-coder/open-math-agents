@@ -12,7 +12,11 @@ def H2 : Prop := ∀ n p q : ℕ, 20 ≤ n → p.Prime → q.Prime → p ≤ q �
 
 /-- The remaining converse in Hasler's divisibility test, with x = n - 1. -/
 def H3 : Prop := ∀ x : ℕ, 4 < x → 4 ∣ x → ¬ (x - 1).Prime →
-    (¬ ∃ s : ℕ, x = 2 ^ s) → ¬ (x ^ 4 - 1 ∣ 2 ^ x - 1)
+    (¬ ∃ s : ℕ, x = 2 ^ s) →
+    (∀ p k : ℕ, p.Prime → p ≠ 2 → k ≠ 0 →
+      x ≠ 4 * p ^ k ∧ (x = 8 * p ^ k → p = 3 ∧ k % 4 = 3) ∧
+      (x = 12 * p ^ k → p = 7 ∨ p = 11 ∨ p = 19)) →
+    ¬ (x ^ 4 - 1 ∣ 2 ^ x - 1)
 
 lemma first_primes {n : ℕ} (hn : n ≤ 4) : (2 ^ (2 ^ n) + 1).Prime := by
   interval_cases n <;> norm_num
@@ -189,6 +193,354 @@ lemma four_dvd_of_test (x : ℕ) (big : 4 < x) (even : Even x)
     _ = a ^ 2 * (4 * z) := by dsimp [z]; ring
     _ = (a * L) * (a * L) := by rw [← hl]; ring
 
+-- Apart from p itself, every prime divisor of this geometric sum is 1 modulo p.
+lemma geom_prime (b p k q : ℕ) (hp : p.Prime) (hq : q.Prime) (hne : q ≠ p)
+    (hd : q ∣ ∑ i ∈ Finset.range (p ^ k), b ^ i) : q ≡ 1 [MOD p] := by
+  let _ : Fact q.Prime := ⟨hq⟩
+  have hsum := (ZMod.natCast_eq_zero_iff _ _).mpr hd
+  push_cast at hsum
+  by_cases hb : (b : ZMod q) = 1
+  · simp [hb] at hsum
+    have hqp : q ∣ p ^ k := (ZMod.natCast_eq_zero_iff _ _).mp (by simpa using hsum)
+    exact (hne ((Nat.prime_dvd_prime_iff_eq hq hp).mp (hq.dvd_of_dvd_pow hqp))).elim
+  have hbpow : (b : ZMod q) ^ (p ^ k) = 1 := by
+    have h := geom_sum_mul (b : ZMod q) (p ^ k)
+    rw [hsum, zero_mul] at h
+    exact sub_eq_zero.mp h.symm
+  let o := orderOf (b : ZMod q)
+  have hdiv : o ∣ p ^ k := orderOf_dvd_of_pow_eq_one hbpow
+  obtain ⟨e, _, he⟩ := (Nat.dvd_prime_pow hp).mp hdiv
+  have he0 : e ≠ 0 := by rintro rfl; exact hb (orderOf_eq_one_iff.mp (by simpa [o] using he))
+  have hb0 : (b : ZMod q) ≠ 0 := by
+    intro h; simp [h, hp.ne_zero] at hbpow
+  have card : o ∣ q - 1 := ZMod.orderOf_dvd_card_sub_one hb0
+  exact ((Nat.modEq_iff_dvd' hq.one_le).mpr ((he ▸ dvd_pow_self p he0).trans card)).symm
+
+lemma geom_divisor (b p k v : ℕ) (hp : p.Prime) (hn : ¬ p ∣ v)
+    (hd : v ∣ ∑ i ∈ Finset.range (p ^ k), b ^ i) : v ≡ 1 [MOD p] := by
+  induction v using Nat.recOnMul with
+  | zero => simp at hn
+  | one => rfl
+  | prime q hq => exact geom_prime b p k q hp hq (by rintro rfl; exact hn dvd_rfl) hd
+  | mul a b' ia ib =>
+    have da : a ∣ a * b' := dvd_mul_right _ _
+    have db : b' ∣ a * b' := dvd_mul_left _ _
+    simpa using (ia (fun h => hn (h.trans da)) (da.trans hd)).mul
+      (ib (fun h => hn (h.trans db)) (db.trans hd))
+
+-- For a fixed cofactor t, the possible residues are controlled by 2^t-1.
+lemma small_divisor (t p k v : ℕ) (hp : p.Prime) (hn : ¬ p ∣ v)
+    (hd : v ∣ 2 ^ (t * p ^ k) - 1) :
+    ∃ d : ℕ, d ∣ 2 ^ t - 1 ∧ d ∣ v ∧ v ≡ d [MOD p] := by
+  let G := ∑ i ∈ Finset.range (p ^ k), (2 ^ t) ^ i
+  have hG : G * (2 ^ t - 1) = 2 ^ (t * p ^ k) - 1 := by
+    rw [pow_mul]
+    exact geom_sum_mul_of_one_le Nat.one_le_two_pow _
+  obtain ⟨r, d, hr, hdBase, h⟩ := exists_dvd_and_dvd_of_dvd_mul (hG.symm ▸ hd : v ∣ G * (2 ^ t - 1))
+  have dr : r ∣ v := ⟨d, h⟩
+  refine ⟨d, hdBase, ⟨r, by rw [h, Nat.mul_comm]⟩, ?_⟩
+  have h1 := geom_divisor (2 ^ t) p k r hp (fun h => hn (h.trans dr)) hr
+  simpa only [h, one_mul] using h1.mul_right d
+
+lemma divisor_before (t p k : ℕ) (ht : 0 < t) (hp : p.Prime) (hk : k ≠ 0)
+    (div : (t * p ^ k) ^ 4 - 1 ∣ 2 ^ (t * p ^ k) - 1) :
+    ∃ d : ℕ, d ∣ 2 ^ t - 1 ∧ d ∣ t * p ^ k - 1 ∧ p ∣ d + 1 := by
+  let x := t * p ^ k
+  have hx : 1 ≤ x := by change 0 < t * p ^ k; exact Nat.mul_pos ht (Nat.pow_pos hp.pos)
+  have px : p ∣ x := dvd_mul_of_dvd_right (dvd_pow_self p hk) t
+  have pn : ¬ p ∣ x - 1 := by
+    intro h
+    have h' : p ∣ x - (x - 1) := Nat.dvd_sub px h
+    rw [show x - (x - 1) = 1 by omega] at h'; exact hp.not_dvd_one h'
+  obtain ⟨d, hd, dh, hm⟩ := small_divisor t p k (x - 1) hp pn
+    ((Nat.sub_one_dvd_pow_sub_one x 4).trans div)
+  have hx0 : x ≡ 0 [MOD p] := Nat.modEq_zero_iff_dvd.mpr px
+  have h1 := hm.add_right 1
+  rw [Nat.sub_add_cancel hx] at h1
+  have plus : p ∣ d + 1 := Nat.modEq_zero_iff_dvd.mp (h1.symm.trans hx0)
+  exact ⟨d, hd, dh, plus⟩
+
+-- Apply the cofactor test to x - 1. Its residue modulo p is -1.
+lemma force_three (p k : ℕ) (hp : p.Prime) (odd : p ≠ 2) (hk : k ≠ 0)
+    (div : (4 * p ^ k) ^ 4 - 1 ∣ 2 ^ (4 * p ^ k) - 1) :
+    p = 3 ∧ 5 ∣ 4 * p ^ k - 1 := by
+  obtain ⟨d, hd, dh, plus⟩ := divisor_before 4 p k (by decide) hp hk div
+  have hdle := Nat.le_of_dvd (by decide : 0 < 15) hd
+  have ple := Nat.le_of_dvd (by omega : 0 < d + 1) plus
+  have cert : ∀ d : Fin 16, ∀ p : Fin 17, d.val ∣ 15 → p.val.Prime →
+      p.val ≠ 2 → p.val ∣ d.val + 1 → p.val = 3 ∧ d.val = 5 := by decide +kernel
+  obtain ⟨h3, rfl⟩ := cert ⟨d, by omega⟩ ⟨p, by omega⟩ hd hp odd plus
+  exact ⟨h3, dh⟩
+
+-- Reciprocity swaps x + 1 with x² + 1; the latter is 2 modulo x + 1.
+lemma symbol_obstruction (x : ℕ) (hx : x % 8 = 4) :
+    jacobiSym (x + 1 : ℕ) (x ^ 2 + 1) = -1 := by
+  have xm : (x ^ 2 + 1) % 4 = 1 := by
+    rw [Nat.add_mod, Nat.pow_mod]; have : x % 4 = 0 := by omega
+    simp [this]
+  have odd : Odd (x + 1) := Nat.odd_iff.mpr (by omega)
+  have hmod : (x ^ 2 + 1) % (x + 1) = 2 % (x + 1) := by
+    have eq : x ^ 2 + 1 = (x - 1) * (x + 1) + 2 := by
+      have hpos : 1 ≤ x := by omega
+      zify [hpos]; ring
+    rw [eq, Nat.mul_add_mod_self_right]
+  rw [jacobiSym.quadratic_reciprocity_one_mod_four' odd xm]
+  have red : jacobiSym (x ^ 2 + 1 : ℕ) (x + 1) = jacobiSym 2 (x + 1) := by
+    apply jacobiSym.mod_left'
+    exact_mod_cast hmod
+  rw [red, jacobiSym.at_two odd, ZMod.χ₈_nat_eq_if_mod_eight]
+  simp [show (x + 1) % 8 = 5 by omega, show (x + 1) % 2 = 1 by omega]
+
+lemma primitive_eight {q : ℕ} [Fact q.Prime] (hq : q ≠ 2) (y : ZMod q)
+    (hy : y ^ 4 = -1) : IsPrimitiveRoot y 8 := by
+  have h8 : y ^ 8 = 1 := by rw [show 8 = 4 * 2 by decide, pow_mul, hy]; ring
+  have h4 : y ^ 4 ≠ 1 := by
+    rw [hy]; intro h
+    have two : (2 : ZMod q) = 0 := by linear_combination - h
+    exact hq ((Nat.prime_dvd_prime_iff_eq Fact.out Nat.prime_two).mp
+      ((ZMod.natCast_eq_zero_iff 2 q).mp (by simpa using two)))
+  have od := orderOf_dvd_of_pow_eq_one h8
+  have ond : ¬orderOf y ∣ 4 := fun h => h4 (orderOf_dvd_iff_pow_eq_one.mp h)
+  apply IsPrimitiveRoot.iff_orderOf.mpr
+  have bound := Nat.le_of_dvd (by decide : 0 < 8) od
+  generalize orderOf y = a at *
+  interval_cases a <;> norm_num at *
+
+-- If y is a square, all eighth roots of unity are squares, since y generates them.
+lemma local_square {q : ℕ} [Fact q.Prime] (hq : q ≠ 2) (y : ZMod q) (r : ℕ)
+    (odd : Odd r) (hy : y ^ 4 = -1) (ysq : IsSquare y) (test : (2 : ZMod q) ^ (4 * r) = 1) :
+    IsSquare (y ^ 2 + 1) := by
+  have prim := primitive_eight hq y hy
+  have yn : y ≠ 0 := by intro h; simp [h] at hy
+  let s := (y ^ 2 + 1) / y
+  have ss : s ^ 2 = 2 := by
+    dsimp [s]; field_simp
+    linear_combination hy
+  have sunit : s ≠ 0 := by
+    intro h
+    have zero : (2 : ZMod q) = 0 := by simpa [h] using ss.symm
+    exact hq ((Nat.prime_dvd_prime_iff_eq Fact.out Nat.prime_two).mp
+      ((ZMod.natCast_eq_zero_iff 2 q).mp (by simpa using zero)))
+  have h8 : (s ^ r) ^ 8 = 1 := by
+    rw [← pow_mul, show r * 8 = 2 * (4 * r) by omega, pow_mul, ss, test]
+  obtain ⟨i, _, hi⟩ := prim.eq_pow_of_pow_eq_one h8
+  have hsr : IsSquare (s ^ r) := hi ▸ ysq.pow i
+  obtain ⟨j, hj⟩ := odd
+  have hs : IsSquare s := by
+    have key : (s ^ (j + 1)) ^ 2 / s ^ r = s := by
+      rw [← pow_mul, show (j + 1) * 2 = r + 1 by omega, pow_succ]
+      field_simp
+    exact key ▸ (IsSquare.sq _).div hsr
+  have key : s * y = y ^ 2 + 1 := div_mul_cancel₀ _ yn
+  exact key ▸ hs.mul ysq
+
+lemma three_pow_mod_five (k : ℕ) : (3 : ZMod 5) ^ k = 3 ^ (k % 4) := by
+  calc
+    _ = (3 : ZMod 5) ^ (4 * (k / 4) + k % 4) := by rw [Nat.div_add_mod]
+    _ = _ := by rw [pow_add, pow_mul, show (3 : ZMod 5) ^ 4 = 1 by decide, one_pow, one_mul]
+
+lemma even_three_exponent (k : ℕ) (hd : 5 ∣ 4 * 3 ^ k - 1) : Even k := by
+  have hm : 1 ≡ 4 * 3 ^ k [MOD 5] := (Nat.modEq_iff_dvd' (show 0 < 4 * 3 ^ k by positivity)).mpr hd
+  have hh := (ZMod.natCast_eq_natCast_iff _ _ _).mpr hm
+  push_cast at hh
+  rw [three_pow_mod_five] at hh
+  have bound := Nat.mod_lt k (by decide : 0 < 4)
+  have ek : k % 4 = 2 := by
+    have cert : ∀ t : Fin 4, (1 : ZMod 5) = 4 * 3 ^ t.val → t.val = 2 := by decide +kernel
+    exact cert ⟨_, bound⟩ hh
+  exact Nat.even_iff.mpr (by omega)
+
+/-- No x = 4*p^k, with p an odd prime and k positive, passes Hasler's test. -/
+theorem four_prime_power (p k : ℕ) (hp : p.Prime) (odd : p ≠ 2) (hk : k ≠ 0) :
+    ¬ ((4 * p ^ k) ^ 4 - 1 ∣ 2 ^ (4 * p ^ k) - 1) := by
+  intro test
+  obtain ⟨rfl, h5⟩ := force_three p k hp odd hk test
+  obtain ⟨j, hj⟩ := even_three_exponent k h5
+  let r := 3 ^ k
+  let x := 4 * r
+  let y := 2 * 3 ^ j
+  have rodd : Odd r := (by decide : Odd (3 : ℕ)).pow
+  have hx8 : x % 8 = 4 := by obtain ⟨i, hi⟩ := rodd; dsimp [x]; omega
+  have xy : x = y ^ 2 := by dsimp [x, r, y]; rw [hj, pow_add]; ring
+  let m := x ^ 2 + 1
+  have xm : m ∣ x ^ 4 - 1 := by
+    refine ⟨x ^ 2 - 1, ?_⟩
+    dsimp [m]
+    have hx2 : 1 ≤ x ^ 2 := Nat.pow_pos (by omega)
+    have hx4 : 1 ≤ x ^ 4 := Nat.pow_pos (by omega)
+    zify [hx2, hx4]; ring
+  -- A negative Jacobi symbol supplies a prime where x + 1 is a nonsquare.
+  obtain ⟨q, hq, qm, neg⟩ := jacobiSym.eq_neg_one_at_prime_divisor_of_eq_neg_one
+    (symbol_obstruction x hx8)
+  let _ : Fact q.Prime := ⟨hq⟩
+  have z := (ZMod.natCast_eq_zero_iff _ _).mpr qm
+  push_cast at z
+  have z4 : (y : ZMod q) ^ 4 = -1 := by
+    rw [xy] at z
+    push_cast at z
+    linear_combination z
+  have q2 : q ≠ 2 := by
+    rintro rfl
+    have h : (x ^ 2 + 1) % 2 = 1 := by rw [Nat.add_mod, Nat.pow_mod]; simp [show x % 2 = 0 by omega]
+    omega
+  have prim := primitive_eight q2 _ z4
+  have yn : (y : ZMod q) ≠ 0 := by intro h; simp [h] at z4
+  have q8 : 8 ∣ q - 1 := prim.eq_orderOf ▸ ZMod.orderOf_dvd_card_sub_one yn
+  have top : q ∣ 2 ^ x - 1 := (qm.trans xm).trans test
+  have q3 : q ≠ 3 := by omega
+  have hn : ¬ 3 ∣ q := fun h => q3 ((Nat.prime_dvd_prime_iff_eq Nat.prime_three hq).mp h).symm
+  obtain ⟨d, hd, dq, cong⟩ := small_divisor 4 3 k q Nat.prime_three hn top
+  have d1 : d = 1 := (Nat.dvd_prime hq).mp dq |>.resolve_right (by
+    intro deq
+    rw [deq] at hd
+    have qq := Nat.le_of_dvd (by decide : 0 < 15) hd
+    interval_cases q <;> norm_num at *)
+  have qr3 : q % 3 = 1 := by simpa [Nat.ModEq, d1] using cong
+  have sq3 : IsSquare (3 : ZMod q) := by
+    have sym : jacobiSym 3 q = 1 := by
+      change jacobiSym ((3 : ℕ) : ℤ) q = 1
+      rw [jacobiSym.quadratic_reciprocity_one_mod_four' (by decide : Odd (3 : ℕ))
+        (show q % 4 = 1 by have := hq.two_le; omega)]
+      have h : jacobiSym (q : ℤ) 3 = jacobiSym 1 3 := by
+        apply jacobiSym.mod_left'; exact_mod_cast qr3
+      rw [h, jacobiSym.one_left]
+    simpa using ZMod.isSquare_of_jacobiSym_eq_one sym
+  have sq2 : IsSquare (2 : ZMod q) := (ZMod.exists_sq_eq_two_iff q2).mpr
+    (Or.inl (by have := hq.two_le; omega))
+  have ysq : IsSquare (y : ZMod q) := by simpa [y] using sq2.mul (sq3.pow j)
+  have hm : (2 : ZMod q) ^ x = 1 := by
+    have h := (Nat.modEq_iff_dvd' (Nat.one_le_two_pow (n := x))).mpr top
+    simpa using (ZMod.natCast_eq_natCast_iff _ _ _).mpr h.symm
+  have sq := local_square q2 _ r rodd z4 ysq hm
+  apply ZMod.nonsquare_of_jacobiSym_eq_neg_one neg
+  simpa [xy] using sq
+
+/-- In the adjacent family x = 8*p^k, the only possible odd prime is 3. -/
+lemma eight_prime_power (p k : ℕ) (hp : p.Prime) (odd : p ≠ 2) (hk : k ≠ 0)
+    (test : (8 * p ^ k) ^ 4 - 1 ∣ 2 ^ (8 * p ^ k) - 1) : p = 3 := by
+  obtain ⟨d, hd, _, plus⟩ := divisor_before 8 p k (by decide) hp hk test
+  have hdle := Nat.le_of_dvd (by decide : 0 < 255) hd
+  have ple := Nat.le_of_dvd (by omega : 0 < d + 1) plus
+  have cert : ∀ d : Fin 256, d.val ∣ 255 → ∀ p : Fin 257, p.val.Prime →
+      p.val ≠ 2 → p.val ∣ d.val + 1 → p.val = 3 ∨ p.val = 13 ∨ p.val = 43 := by decide +kernel
+  rcases cert ⟨d, by omega⟩ hd ⟨p, by omega⟩ hp odd plus with done | h
+  · exact done
+  exfalso
+  have a : (p : ZMod 7) ^ 4 = 1 := by rcases h with rfl | rfl <;> decide
+  have x4 : ((8 * p ^ k : ℕ) : ZMod 7) ^ 4 = 1 := by
+    push_cast
+    rw [mul_pow, ← pow_mul, Nat.mul_comm k 4, pow_mul, a, one_pow, mul_one]
+    decide
+  have xt : 1 ≡ (8 * p ^ k) ^ 4 [MOD 7] := (ZMod.natCast_eq_natCast_iff _ _ _).mp (by
+    simpa using x4.symm)
+  have pos : 0 < (8 * p ^ k) ^ 4 := Nat.pow_pos (Nat.mul_pos (by decide) (Nat.pow_pos hp.pos))
+  have seven := ((Nat.modEq_iff_dvd' pos).mp xt).trans test
+  have hm : (2 : ZMod 7) ^ (8 * p ^ k) = 1 := by
+    have m := (Nat.modEq_iff_dvd' Nat.one_le_two_pow).mpr seven
+    simpa using (ZMod.natCast_eq_natCast_iff _ _ _).mpr m.symm
+  have order : orderOf (2 : ZMod 7) = 3 := by
+    have h3 := orderOf_dvd_of_pow_eq_one (by decide : (2 : ZMod 7) ^ 3 = 1)
+    exact ((Nat.dvd_prime Nat.prime_three).mp h3).resolve_left (fun h =>
+      (by decide : (2 : ZMod 7) ≠ 1) (orderOf_eq_one_iff.mp h))
+  have three := orderOf_dvd_of_pow_eq_one hm
+  rw [order] at three
+  have p3 := Nat.prime_three.dvd_of_dvd_pow ((Nat.prime_three.dvd_mul.mp three).resolve_left (by decide))
+  rcases h with rfl | rfl <;> norm_num at p3
+
+-- If 5 and 17 both divided x^4-1, removing 85 would leave a divisor of the
+-- geometric sum that is 2 modulo 3. Every such divisor coprime to 3 is 1 modulo 3.
+lemma eight_three_exponent (k : ℕ) (hk : k ≠ 0)
+    (test : (8 * 3 ^ k) ^ 4 - 1 ∣ 2 ^ (8 * 3 ^ k) - 1) : k % 4 = 3 := by
+  let x := 8 * 3 ^ k
+  let V := x ^ 4 - 1
+  have x3 : 3 ∣ x := dvd_mul_of_dvd_right (dvd_pow_self 3 hk) 8
+  have xv : 0 < x ^ 4 := Nat.pow_pos (Nat.mul_pos (by decide) (Nat.pow_pos (by decide : 0 < 3)))
+  have v3 : V % 3 = 2 := by
+    have h : 3 ∣ x ^ 4 := x3.trans (dvd_pow_self x (by decide))
+    dsimp [V]; omega
+  have five : 5 ∣ V := by
+    have h : (8 : ZMod 5) ^ 4 * ((3 : ZMod 5) ^ 4) ^ k = 1 := by
+      rw [show (3 : ZMod 5) ^ 4 = 1 by decide, one_pow, mul_one]; decide
+    have eq : 1 ≡ x ^ 4 [MOD 5] := (ZMod.natCast_eq_natCast_iff _ _ _).mp (by
+      dsimp [x]; push_cast; rw [mul_pow, ← pow_mul, Nat.mul_comm k 4, pow_mul]; exact h.symm)
+    exact (Nat.modEq_iff_dvd' xv).mp eq
+  have no85 : ¬ 85 ∣ V := by
+    rintro ⟨w, hw⟩
+    let G := ∑ i ∈ Finset.range (3 ^ k), (256 : ℕ) ^ i
+    have hG : G * 255 = 2 ^ x - 1 := by
+      dsimp [x]; rw [pow_mul]; exact geom_sum_mul_of_one_le (by decide : 1 ≤ (256 : ℕ)) _
+    have wdiv : 85 * w ∣ 85 * (3 * G) := by
+      rw [← hw, show 85 * (3 * G) = G * 255 by ring, hG]; exact test
+    have w3 : w % 3 = 2 := by omega
+    have dw : w ∣ 3 * G := Nat.dvd_of_mul_dvd_mul_left (by decide) wdiv
+    have cw : w.Coprime 3 := Nat.prime_three.coprime_iff_not_dvd.mpr (by omega) |>.symm
+    have h1 := geom_divisor 256 3 k w Nat.prime_three (by omega) (cw.dvd_of_dvd_mul_left dw)
+    change w % 3 = 1 % 3 at h1; omega
+  have no17 : ¬ 17 ∣ x - 1 := by
+    intro h
+    exact no85 ((by decide : Nat.Coprime 5 17).mul_dvd_of_dvd_of_dvd five
+      (h.trans (Nat.sub_one_dvd_pow_sub_one x 4)))
+  obtain ⟨d, hd, dh, plus⟩ := divisor_before 8 3 k (by decide) Nat.prime_three hk test
+  have hdle := Nat.le_of_dvd (by decide : 0 < 255) hd
+  have d17 : ¬ 17 ∣ d := fun h => no17 (h.trans dh)
+  have cert : ∀ d : Fin 256, d.val ∣ 255 → 3 ∣ d.val + 1 → ¬ 17 ∣ d.val → d.val = 5 := by decide +kernel
+  have deq := cert ⟨d, by omega⟩ hd plus d17
+  change d = 5 at deq
+  rw [deq] at dh
+  have hm := (Nat.modEq_iff_dvd' (show 0 < 8 * 3 ^ k by positivity)).mpr dh
+  have hz := (ZMod.natCast_eq_natCast_iff _ _ _).mpr hm
+  push_cast at hz
+  rw [three_pow_mod_five] at hz
+  have last : ∀ t : Fin 4, (1 : ZMod 5) = 8 * 3 ^ t.val → t.val = 3 := by decide +kernel
+  exact last ⟨k % 4, Nat.mod_lt _ (by decide)⟩ hz
+
+/-- This cofactor already allows two distinct odd primes in x. -/
+lemma twelve_prime_power (p k : ℕ) (hp : p.Prime) (odd : p ≠ 2) (hk : k ≠ 0)
+    (test : (12 * p ^ k) ^ 4 - 1 ∣ 2 ^ (12 * p ^ k) - 1) : p = 7 ∨ p = 11 ∨ p = 19 := by
+  obtain ⟨d, hd, dh, plus⟩ := divisor_before 12 p k (by decide) hp hk test
+  have pos : 0 < 12 * p ^ k := Nat.mul_pos (by decide) (Nat.pow_pos hp.pos)
+  have three : 3 ∣ 12 * p ^ k := dvd_mul_of_dvd_left (by decide) _
+  have d3 : ¬ 3 ∣ d := by intro h; have := h.trans dh; omega
+  have cop : d.Coprime (3 ^ 2) := (Nat.prime_three.coprime_iff_not_dvd.mpr d3).symm.pow_right 2
+  have cut : d ∣ 455 := cop.dvd_of_dvd_mul_left (show d ∣ 3 ^ 2 * 455 from hd)
+  have bound := Nat.le_of_dvd (by decide : 0 < 455) cut
+  have ple := Nat.le_of_dvd (by omega : 0 < d + 1) plus
+  have table : ∀ d : Fin 456, d.val ∣ 455 → ∀ p : Fin 457, p.val.Prime →
+      p.val ≠ 2 → p.val ∣ d.val + 1 →
+      p.val = 3 ∨ p.val = 23 ∨ p.val = 7 ∨ p.val = 11 ∨ p.val = 19 := by decide +kernel
+  rcases table ⟨d, by omega⟩ cut ⟨p, by omega⟩ hp odd plus with h | h | h
+  · change p = 3 at h
+    subst p
+    have no := four_prime_power 3 (k + 1) Nat.prime_three (by decide) (by omega)
+    rw [pow_succ 3 k, show 4 * (3 ^ k * 3) = 12 * 3 ^ k by ring] at no
+    exact (no test).elim
+  · change p = 23 at h
+    subst p
+    have hx : 1 ≡ 12 * 23 ^ k [MOD 11] := (ZMod.natCast_eq_natCast_iff _ _ _).mp (by
+      push_cast
+      rw [show (23 : ZMod 11) = 1 by decide, one_pow, mul_one]
+      decide)
+    have eleven := ((Nat.modEq_iff_dvd' pos).mp hx).trans
+      ((Nat.sub_one_dvd_pow_sub_one (12 * 23 ^ k) 4).trans test)
+    have modpow := (Nat.modEq_iff_dvd' Nat.one_le_two_pow).mpr eleven
+    have powone : (2 : ZMod 11) ^ (12 * 23 ^ k) = 1 := by
+      simpa using (ZMod.natCast_eq_natCast_iff _ _ _).mpr modpow.symm
+    have ord := orderOf_dvd_of_pow_eq_one (by decide : (2 : ZMod 11) ^ 10 = 1)
+    have n2 : ¬ orderOf (2 : ZMod 11) ∣ 2 := fun h =>
+      (by decide : (2 : ZMod 11) ^ 2 ≠ 1) (orderOf_dvd_iff_pow_eq_one.mp h)
+    have n5 : ¬ orderOf (2 : ZMod 11) ∣ 5 := fun h =>
+      (by decide : (2 : ZMod 11) ^ 5 ≠ 1) (orderOf_dvd_iff_pow_eq_one.mp h)
+    have order : orderOf (2 : ZMod 11) = 10 := by
+      have le := Nat.le_of_dvd (by decide : 0 < 10) ord
+      generalize orderOf (2 : ZMod 11) = o at *
+      interval_cases o <;> norm_num at *
+    have ten := orderOf_dvd_of_pow_eq_one powone
+    rw [order] at ten
+    have five := (show 5 ∣ 10 by decide).trans ten
+    have h23 := Nat.prime_five.dvd_of_dvd_pow ((Nat.prime_five.dvd_mul.mp five).resolve_left (by decide))
+    norm_num at h23
+  · exact h
+
 theorem main : H1 → H2 → H3 → type_of% @OMA.S_oeis_a000215.main := by
   intro tail semiprime mixed
   refine ⟨?_, ?_, ?_⟩
@@ -219,6 +571,19 @@ theorem main : H1 → H2 → H3 → type_of% @OMA.S_oeis_a000215.main := by
         rw [eq] at big div
         obtain ⟨k, hk, val⟩ := power_two_converse s big div
         exact ⟨k, hk, by omega⟩
-      exact (mixed (n - 1) big (four_dvd_of_test _ big res.1 div) res.2 power div).elim
+      apply (mixed (n - 1) big (four_dvd_of_test _ big res.1 div) res.2 power ?_ div).elim
+      intro p k hp odd hk
+      constructor
+      · intro h
+        rw [h] at div
+        exact four_prime_power p k hp odd hk div
+      · constructor
+        · intro h
+          rw [h] at div
+          obtain rfl := eight_prime_power p k hp odd hk div
+          exact ⟨rfl, eight_three_exponent k hk div⟩
+        · intro h
+          rw [h] at div
+          exact twelve_prime_power p k hp odd hk div
 
 end OMA.R_oeis_a000215_R1
