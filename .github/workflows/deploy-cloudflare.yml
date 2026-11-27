@@ -18,6 +18,9 @@ env:
   NEXT_PUBLIC_SITE_URL: https://lefttosolve.com
   NEXT_PUBLIC_SUPPORT_URL: https://ko-fi.com/guillaumebaud
   NEXT_PUBLIC_SPONSOR_URL: https://ko-fi.com/guillaumebaud
+  # Optional, set as repository variables once live: a Stripe Payment Link (card, any country) and the GitHub Sponsors page.
+  NEXT_PUBLIC_CARD_URL: ${{ vars.CARD_URL }}
+  NEXT_PUBLIC_GITHUB_SPONSORS_URL: ${{ vars.GITHUB_SPONSORS_URL }}
 jobs:
   deploy:
     runs-on: ubuntu-latest
