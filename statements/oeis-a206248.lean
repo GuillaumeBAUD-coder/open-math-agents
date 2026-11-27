@@ -15,6 +15,8 @@ a(n) = 4*a(n-1) +12*a(n-2) -27*a(n-3) (stated for n ≥ 4, all indices at least 
 G.f.: x*(49 + 165*x - 432*x^2) / ((1 + 3*x)*(1 - 7*x + 9*x^2)) (of Sum_{n ≥ 1} a(n) x^n, over ℚ);
 a(n) = 2^(-n)*((-1)^n*2^(1+n)*3^(3+n) + (77-20*sqrt(13))*(7-sqrt(13))^n
   + (7+sqrt(13))^n*(77+20*sqrt(13))) / 13 (n ≥ 1, over ℝ).
+Status: known result: Sela Fried (Feb 13 2026) records in the entry that Barker's conjectures are
+true (see the Fried link there).
 -/
 
 namespace OMA.S_oeis_a206248
