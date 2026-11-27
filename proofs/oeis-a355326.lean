@@ -218,12 +218,54 @@ private lemma matM3_eval_det (x : ℚ) :
   have hev : (matM 3).det.eval x = ((evalRingHom x).mapMatrix (matM 3)).det := by
     change evalRingHom x (matM 3).det = _
     exact RingHom.map_det (evalRingHom x) (matM 3)
-  rw [hev, Matrix.det_succ_row_zero, Fin.sum_univ_four]
-  simp only [Matrix.det_fin_three, Matrix.submatrix_apply, RingHom.mapMatrix_apply,
-    Matrix.map_apply, coe_evalRingHom, Fin.succ_zero_eq_one, Fin.succ_one_eq_two]
-  simp only [matM, eval_add, apply_ite (Polynomial.eval x), eval_one, eval_zero, eval_mul, eval_C]
-  norm_num [Fin.succAbove]
-  simp only [faulh_eval_0, faulh_eval_1, faulh_eval_2, faulh_eval_3, faulh_eval_4, faulh_eval_5,
+  set M : Matrix (Fin 4) (Fin 4) ℚ := (evalRingHom x).mapMatrix (matM 3)
+  have hM (r s : Fin 4) : M r s = (if r = s then (1 : ℚ) else 0) +
+      (-1 : ℚ) ^ (3 - r.val) * (Nat.choose 3 s.val : ℚ) * (faulh (3 - r.val + s.val)).eval x := by
+    simp only [M, RingHom.mapMatrix_apply, Matrix.map_apply, coe_evalRingHom, matM,
+      eval_add, apply_ite (Polynomial.eval x), eval_one, eval_zero, eval_mul, eval_C]
+  have e00 : M 0 0 = 1 - (faulh 3).eval x := by rw [hM]; norm_num [Nat.choose]; ring
+  have e01 : M 0 1 = -3 * (faulh 4).eval x := by rw [hM]; norm_num [Nat.choose]
+  have e02 : M 0 2 = -3 * (faulh 5).eval x := by rw [hM]; norm_num [Nat.choose]
+  have e03 : M 0 3 = -(faulh 6).eval x := by rw [hM]; norm_num [Nat.choose]
+  have e10 : M 1 0 = (faulh 2).eval x := by rw [hM]; norm_num [Nat.choose]
+  have e11 : M 1 1 = 1 + 3 * (faulh 3).eval x := by rw [hM]; norm_num [Nat.choose]
+  have e12 : M 1 2 = 3 * (faulh 4).eval x := by rw [hM]; norm_num [Nat.choose]
+  have e13 : M 1 3 = (faulh 5).eval x := by rw [hM]; norm_num [Nat.choose]
+  have e20 : M 2 0 = -(faulh 1).eval x := by rw [hM]; norm_num [Nat.choose]
+  have e21 : M 2 1 = -3 * (faulh 2).eval x := by rw [hM]; norm_num [Nat.choose]
+  have e22 : M 2 2 = 1 - 3 * (faulh 3).eval x := by rw [hM]; norm_num [Nat.choose]; ring
+  have e23 : M 2 3 = -(faulh 4).eval x := by rw [hM]; norm_num [Nat.choose]
+  have e30 : M 3 0 = (faulh 0).eval x := by rw [hM]; norm_num [Nat.choose]
+  have e31 : M 3 1 = 3 * (faulh 1).eval x := by rw [hM]; norm_num [Nat.choose]
+  have e32 : M 3 2 = 3 * (faulh 2).eval x := by rw [hM]; norm_num [Nat.choose]
+  have e33 : M 3 3 = 1 + (faulh 3).eval x := by rw [hM]; norm_num [Nat.choose]
+  have sa00 : (0 : Fin 4).succAbove 0 = 1 := rfl
+  have sa01 : (0 : Fin 4).succAbove 1 = 2 := rfl
+  have sa02 : (0 : Fin 4).succAbove 2 = 3 := rfl
+  have sa10 : (1 : Fin 4).succAbove 0 = 0 := rfl
+  have sa11 : (1 : Fin 4).succAbove 1 = 2 := rfl
+  have sa12 : (1 : Fin 4).succAbove 2 = 3 := rfl
+  have sa20 : (2 : Fin 4).succAbove 0 = 0 := rfl
+  have sa21 : (2 : Fin 4).succAbove 1 = 1 := rfl
+  have sa22 : (2 : Fin 4).succAbove 2 = 3 := rfl
+  have sa30 : (3 : Fin 4).succAbove 0 = 0 := rfl
+  have sa31 : (3 : Fin 4).succAbove 1 = 1 := rfl
+  have sa32 : (3 : Fin 4).succAbove 2 = 2 := rfl
+  have hs0 : Fin.succ (0 : Fin 3) = 1 := rfl
+  have hs1 : Fin.succ (1 : Fin 3) = 2 := rfl
+  have hs2 : Fin.succ (2 : Fin 3) = 3 := rfl
+  have hv0 : ((0 : Fin 4) : ℕ) = 0 := rfl
+  have hv1 : ((1 : Fin 4) : ℕ) = 1 := rfl
+  have hv2 : ((2 : Fin 4) : ℕ) = 2 := rfl
+  have hv3 : ((3 : Fin 4) : ℕ) = 3 := rfl
+  rw [hev]
+  change M.det = _
+  rw [Matrix.det_succ_row_zero, Fin.sum_univ_four]
+  simp only [Matrix.det_fin_three, Matrix.submatrix_apply]
+  rw [sa00, sa01, sa02, sa10, sa11, sa12, sa20, sa21, sa22, sa30, sa31, sa32,
+    hs0, hs1, hs2, hv0, hv1, hv2, hv3,
+    e00, e01, e02, e03, e10, e11, e12, e13, e20, e21, e22, e23, e30, e31, e32, e33,
+    faulh_eval_0, faulh_eval_1, faulh_eval_2, faulh_eval_3, faulh_eval_4, faulh_eval_5,
     faulh_eval_6, cubicQuotient]
   ring
 
