@@ -35,7 +35,7 @@ async function handle(req: Request) {
 
   // Steps (hypotheses of accepted reductions) live in the database, not in the static catalogue.
   if (kind === "step" || STEP_RE.test(wanted)) {
-    const steps = (await getSteps(undefined, true)).filter((s) => !s.solved && !solved.has(s.id));
+    const steps = (await getSteps(wanted || undefined, true)).filter((s) => !s.solved && !solved.has(s.id));
     const s: Step | null | undefined = wanted ? steps.find((x) => x.id === wanted) : pick(steps, live);
     if (!s) return json({ error: wanted ? "not_found_or_solved" : "nothing_matches", hint: "No open step right now. Try --kind known." }, 404);
     const r = await claim2(s.id, handleName, agent, hashIp(clientIp(req)), s.points);
