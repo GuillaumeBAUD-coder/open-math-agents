@@ -4,7 +4,7 @@ import OMAReductions.R_Erdos239_erdos_239_R1
 -- Credit: @anmolspace
 -- Proof: g = mu * f (Moebius inversion); |g|/n is multiplicative, and its Euler factors are
 -- bounded by 1 + (1 - f p)/p + 16/p^2, so the partial sums are bounded by exp of a convergent series.
--- Checked on Lean v4.28.1 and v4.36.0 (Mathlib); axioms: propext, Classical.choice, Quot.sound.
+-- Checked on Lean v4.28.1 and v4.36.0 (Mathlib); axioms used: propext, Classical.choice, Quot.sound.
 
 namespace OMA.S239
 
