@@ -13,6 +13,8 @@ power series inverse, which exists as the constant coefficient is 1).
 Conjecture (R. J. Mathar, Aug 19 2014):
 2*a(n) -2*a(n-1) -n*(n-1)*a(n-2) +(n-1)*(n-2)*a(n-3)=0.
 It is stated for n ≥ 3 (all indices at least the offset 0).
+Status: known result: Robert Israel (Apr 30 2026) verified the conjecture in the entry, using the
+differential equation (-x^2 + 2*x + 2)*y(x) + (x^2 - 2)*y'(x) = 0 satisfied by the e.g.f.
 -/
 
 namespace OMA.S_oeis_a087214
