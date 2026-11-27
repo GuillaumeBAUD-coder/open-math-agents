@@ -11,9 +11,9 @@ private lemma card_coprime_Ico_three (q : ℕ) (hq : 0 < q) :
     ((Finset.Ico (-(q : ℤ)) (2 * (q : ℤ))).filter (fun p : ℤ => Int.gcd p q = 1)).card ≤
       3 * Nat.totient q := by
   let coprime := (Finset.range q).filter (fun k : ℕ => Nat.Coprime q k)
-  let left := coprime.image (fun k => (k : ℤ) - (q : ℤ))
-  let center := coprime.image (fun k => (k : ℤ))
-  let right := coprime.image (fun k => (k : ℤ) + (q : ℤ))
+  let left := coprime.image (fun k : ℕ => (k : ℤ) - (q : ℤ))
+  let center := coprime.image (fun k : ℕ => (k : ℤ))
+  let right := coprime.image (fun k : ℕ => (k : ℤ) + (q : ℤ))
   have hsub : (Finset.Ico (-(q : ℤ)) (2 * (q : ℤ))).filter (fun p : ℤ => Int.gcd p q = 1) ⊆
       left ∪ center ∪ right := by
     intro p hp
