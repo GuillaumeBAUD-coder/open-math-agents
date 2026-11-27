@@ -28,9 +28,9 @@ private lemma zmod_sq_pow_add_mul (p : ℕ) (r q : ZMod (p ^ 2)) : ∀ n : ℕ, 
   | succ n ih =>
     rcases Nat.eq_zero_or_pos n with rfl | hn'
     · simp
-    · rw [pow_succ, ih hn', Nat.add_sub_cancel]
+    · rw [pow_succ (r + (p : ZMod (p ^ 2)) * q) n, pow_succ r n, ih hn', Nat.add_sub_cancel]
       have hr : r ^ (n - 1) * r = r ^ n := by
-        rw [← pow_succ, Nat.sub_add_cancel hn']
+        rw [← pow_succ r (n - 1), Nat.sub_add_cancel hn']
       push_cast
       linear_combination (n : ZMod (p ^ 2)) * r ^ (n - 1) * q ^ 2 * hp2 +
         (n : ZMod (p ^ 2)) * (p : ZMod (p ^ 2)) * q * hr
@@ -54,11 +54,13 @@ private lemma bernoulli_den_coprime_prime (p : ℕ) [Fact p.Prime] (hp5 : 5 ≤ 
     (j : ℕ) (hj : j ≤ p - 3) : p.Coprime (bernoulli j).den := by
   have hp : p.Prime := Fact.out
   rcases eq_or_ne j 0 with rfl | hj0
-  · have hden : (bernoulli 0).den = 1 := by rw [bernoulli_zero]; decide
+  · have hden : (bernoulli 0).den = 1 := by rw [bernoulli_zero]; simp
     rw [hden]
     exact Nat.coprime_one_right p
   rcases eq_or_ne j 1 with rfl | hj1
-  · have hden : (bernoulli 1).den = 2 := by rw [bernoulli_one]; decide
+  · have hden : (bernoulli 1).den = 2 := by
+      rw [bernoulli_one, show (-1 / 2 : ℚ) = -(1 / 2 : ℚ) by ring]
+      norm_num [one_div, Rat.inv_ofNat_den]
     rw [hden]
     exact (Nat.coprime_primes hp Nat.prime_two).mpr (by omega)
   rcases Nat.even_or_odd j with he | ho
@@ -124,6 +126,7 @@ private lemma voronoi_congruence (p : ℕ) [Fact p.Prime] {c n : ℕ}
       obtain ⟨ha1, hap⟩ := Finset.mem_Ico.mp ha
       refine Finset.mem_Ico.mpr ⟨?_, Nat.mod_lt _ hp.pos⟩
       by_contra h0
+      dsimp only [r] at h0
       have hmod : (c * a) % p = 0 := by omega
       have hd : p ∣ c * a := Nat.dvd_of_mod_eq_zero hmod
       rcases hp.dvd_mul.mp hd with hdc | hda
@@ -186,9 +189,7 @@ private lemma voronoi_congruence (p : ℕ) [Fact p.Prime] {c n : ℕ}
     congr 1
     · rw [← hperm, Nat.cast_sum]
       exact Finset.sum_congr rfl fun a _ => by push_cast; rfl
-    · rw [← Finset.mul_sum]
-      push_cast
-      rw [Finset.mul_sum, Finset.mul_sum]
+    · simp only [Nat.cast_mul, Nat.cast_sum, Nat.cast_pow, Finset.mul_sum]
       exact Finset.sum_congr rfl fun a _ => by ring
   have hc1_le : 1 ≤ c ^ n := Nat.one_le_pow n c (by omega)
   have hmul_eq : ((p * ((c ^ n - 1) * (S / p)) : ℕ) : ZMod (p ^ 2)) =
@@ -203,7 +204,7 @@ private lemma voronoi_congruence (p : ℕ) [Fact p.Prime] {c n : ℕ}
         _ = (c ^ n - 1) * S + S := by rw [hS]
         _ = (c ^ n - 1 + 1) * S := by ring
         _ = c ^ n * S := by rw [Nat.sub_add_cancel hc1_le]
-    linear_combination hsq - hsub
+    linear_combination hsub + hsq
   have hmodp := zmod_eq_of_mul_eq_zmod_sq hp.pos hmul_eq
   rw [Nat.cast_mul, Nat.cast_sub hc1_le, Nat.cast_pow, Nat.cast_one] at hmodp
   rw [hmodp]
@@ -230,9 +231,8 @@ private lemma faulhaber_mod_p (p : ℕ) [Fact p.Prime] (k : ℕ) (hk2 : 2 ≤ k)
     have h1 : (S : ℚ) * ((k + 1 : ℕ) : ℚ) =
         (∑ j ∈ Finset.range k, bernoulli j * ((k + 1).choose j : ℚ) * (p : ℚ) ^ (k + 1 - j)) +
           bernoulli k * ((k + 1).choose k : ℚ) * (p : ℚ) ^ (k + 1 - k) := by
-      rw [hcastS, sum_range_pow, Finset.sum_range_succ]
-      push_cast
-      field_simp [hk1q]
+      rw [hcastS, sum_range_pow, show ((k + 1 : ℕ) : ℚ) = (k : ℚ) + 1 by push_cast; rfl,
+        div_mul_cancel₀ _ hk1q, Finset.sum_range_succ]
     have h2 : ∑ j ∈ Finset.range k, bernoulli j * ((k + 1).choose j : ℚ) * (p : ℚ) ^ (k + 1 - j) =
         (p : ℚ) * (p : ℚ) * R := by
       dsimp only [R]
@@ -257,9 +257,7 @@ private lemma faulhaber_mod_p (p : ℕ) [Fact p.Prime] (k : ℕ) (hk2 : 2 ≤ k)
       hbj.of_dvd_right (by simpa using Rat.mul_den_dvd (bernoulli j) ((k + 1).choose j : ℚ))
     have hmul2 : p.Coprime
         (bernoulli j * ((k + 1).choose j : ℚ) * ((p ^ (k - 1 - j) : ℕ) : ℚ)).den :=
-      hmul1.of_dvd_right
-        (by simpa using Rat.mul_den_dvd (bernoulli j * ((k + 1).choose j : ℚ))
-          ((p ^ (k - 1 - j) : ℕ) : ℚ))
+      hmul1.of_dvd_right (by simpa using Rat.mul_den_dvd (bernoulli j * ((k + 1).choose j : ℚ)) ((p ^ (k - 1 - j) : ℕ) : ℚ))
     simpa [Nat.cast_pow] using hmul2
   have hBden : ((bernoulli k).den : ℚ) ≠ 0 := by exact_mod_cast (bernoulli k).den_nz
   have hRden : (R.den : ℚ) ≠ 0 := by exact_mod_cast R.den_nz
