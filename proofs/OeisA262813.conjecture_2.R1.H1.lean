@@ -18,10 +18,11 @@ theorem a262813_triangular_mono {a b : ℕ} (h : a ≤ b) : Nat.triangular a ≤
   exact Nat.div_le_div_right (Nat.mul_le_mul h (Nat.add_le_add_right h 1))
 
 /-- Truncation of the three sums defining `OeisA262813.a`. -/
-theorem a262813_trunc (n X Y Z : ℕ) (hX : X ≤ n + 1) (hY : Y ≤ n + 1) (hZ1 : 1 ≤ Z)
-    (hZ : Z ≤ n + 1) (hx : n < X ^ 3) (hy : n < Y ^ 2) (hz : n < Nat.triangular Z) :
+theorem a262813_trunc (n X Y Z : ℕ) (h : X ≤ n + 1 ∧ Y ≤ n + 1 ∧ 1 ≤ Z ∧
+    Z ≤ n + 1 ∧ n < X ^ 3 ∧ n < Y ^ 2 ∧ n < Nat.triangular Z) :
     OeisA262813.a n = ∑ x ∈ Finset.range X, ∑ y ∈ Finset.range Y, ∑ z ∈ Finset.Ico 1 Z,
         (if x ^ 3 + y ^ 2 + Nat.triangular z == n then 1 else 0) := by
+  obtain ⟨hX, hY, hZ1, hZ, hx, hy, hz⟩ := h
   unfold OeisA262813.a
   rw [← Finset.sum_range_add_sum_Ico _ hX]
   have h1 : ∑ x ∈ Finset.Ico X (n + 1), ∑ y ∈ Finset.range (n + 1), ∑ z ∈ Finset.Ico 1 (n + 1),
@@ -70,24 +71,17 @@ theorem OMA.solution : OMA.R_OeisA262813_conjecture_2_R1.H1 := by
   intro n hn
   simp only [Finset.mem_insert, Finset.mem_singleton] at hn
   rcases hn with h | h | h | h | h | h | h <;> subst h
-  · rw [OMA.Helpers.a262813_trunc 1 2 2 2 (by norm_num) (by norm_num) (by norm_num)
-      (by norm_num) (by norm_num) (by norm_num) (by decide)]
+  · rw [OMA.Helpers.a262813_trunc 1 2 2 2 (by decide)]
     decide +kernel
-  · rw [OMA.Helpers.a262813_trunc 9 3 4 4 (by norm_num) (by norm_num) (by norm_num)
-      (by norm_num) (by norm_num) (by norm_num) (by decide)]
+  · rw [OMA.Helpers.a262813_trunc 9 3 4 4 (by decide)]
     decide +kernel
-  · rw [OMA.Helpers.a262813_trunc 21 3 5 7 (by norm_num) (by norm_num) (by norm_num)
-      (by norm_num) (by norm_num) (by norm_num) (by decide)]
+  · rw [OMA.Helpers.a262813_trunc 21 3 5 7 (by decide)]
     decide +kernel
-  · rw [OMA.Helpers.a262813_trunc 35 4 6 8 (by norm_num) (by norm_num) (by norm_num)
-      (by norm_num) (by norm_num) (by norm_num) (by decide)]
+  · rw [OMA.Helpers.a262813_trunc 35 4 6 8 (by decide)]
     decide +kernel
-  · rw [OMA.Helpers.a262813_trunc 98 5 10 14 (by norm_num) (by norm_num) (by norm_num)
-      (by norm_num) (by norm_num) (by norm_num) (by decide)]
+  · rw [OMA.Helpers.a262813_trunc 98 5 10 14 (by decide)]
     decide +kernel
-  · rw [OMA.Helpers.a262813_trunc 152 6 13 17 (by norm_num) (by norm_num) (by norm_num)
-      (by norm_num) (by norm_num) (by norm_num) (by decide)]
+  · rw [OMA.Helpers.a262813_trunc 152 6 13 17 (by decide)]
     decide +kernel
-  · rw [OMA.Helpers.a262813_trunc 306 7 18 25 (by norm_num) (by norm_num) (by norm_num)
-      (by norm_num) (by norm_num) (by norm_num) (by decide)]
+  · rw [OMA.Helpers.a262813_trunc 306 7 18 25 (by decide)]
     decide +kernel
