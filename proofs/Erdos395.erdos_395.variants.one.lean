@@ -15,15 +15,9 @@ theorem OMA.solution : type_of% @Erdos395.erdos_395.variants.one := by
     ext ε
     simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false]
     rintro ⟨hε, hle⟩
-    have hre : (∑ i, (ε i : ℂ) * (![(1:ℂ), Complex.I] : Fin 2 → ℂ) i).re = (ε 0 : ℝ) := by
-      rw [Fin.sum_univ_two]; simp
-    have him : (∑ i, (ε i : ℂ) * (![(1:ℂ), Complex.I] : Fin 2 → ℂ) i).im = (ε 1 : ℝ) := by
-      rw [Fin.sum_univ_two]; simp
-    have hsq : ‖∑ i, (ε i : ℂ) * (![(1:ℂ), Complex.I] : Fin 2 → ℂ) i‖ ^ 2
-        = (ε 0 : ℝ) ^ 2 + (ε 1 : ℝ) ^ 2 := by
-      rw [Complex.sq_norm, Complex.normSq_apply, hre, him]; ring
-    have h2 : (ε 0 : ℝ) ^ 2 + (ε 1 : ℝ) ^ 2 = 2 := by
-      rcases hε 0 with h0 | h0 <;> rcases hε 1 with h1 | h1 <;> norm_num [h0, h1]
+    have hsq : ‖∑ i, (ε i : ℂ) * (![(1:ℂ), Complex.I] : Fin 2 → ℂ) i‖ ^ 2 = 2 := by
+      rcases hε 0 with h0 | h0 <;> rcases hε 1 with h1 | h1 <;>
+        norm_num [Fin.sum_univ_two, h0, h1, Complex.sq_norm, Complex.normSq_apply]
     have hn : ‖∑ i, (ε i : ℂ) * (![(1:ℂ), Complex.I] : Fin 2 → ℂ) i‖ ^ 2 ≤ 1 := by
       nlinarith [norm_nonneg (∑ i, (ε i : ℂ) * (![(1:ℂ), Complex.I] : Fin 2 → ℂ) i)]
     linarith
