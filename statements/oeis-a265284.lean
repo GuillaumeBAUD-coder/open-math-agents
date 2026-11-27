@@ -1,4 +1,4 @@
-import Mathlib.Data.Int.Basic
+import Mathlib.Algebra.Ring.Parity
 
 /-!
 # OEIS A265284
