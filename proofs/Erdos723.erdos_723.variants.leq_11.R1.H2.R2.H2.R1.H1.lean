@@ -40,13 +40,6 @@ lemma incidence_gram (incidence : Fin n → Fin n → Bool) (size : ℕ)
           exact ⟨unique candidate, fun equal => equal ▸ onBoth⟩
         simp [filter_eq, hij]
 
-lemma incidence_row_sum (incidence : Fin n → Fin n → Bool) (size : ℕ)
-    (rowSize : ∀ i, (Finset.univ.filter fun j => incidence i j = true).card = size) (i : Fin n) :
-    ∑ j, incidenceMatrix incidence i j = (size : ℤ) := by
-  change ∑ j, (if incidence i j = true then (1 : ℤ) else 0) = _
-  rw [← Finset.sum_filter]
-  simp [rowSize]
-
 end OrderSix
 
 open Matrix Finset
@@ -283,70 +276,6 @@ lemma even_intersections_large_support (incidence : Fin 111 → Fin 111 → Bool
   rw [Finset.card_erase_of_mem hp] at bound
   change (Finset.univ.filter fun l => incidence l p = true).card ≤ S.card - 1 at bound
   rw [columnSize] at bound
-  omega
-
-lemma odd_intersections_eleven_is_line (incidence : Fin 111 → Fin 111 → Bool)
-    (rowSize : ∀ l, (Finset.univ.filter fun p => incidence l p = true).card = 11)
-    (columnSize : ∀ p, (Finset.univ.filter fun l => incidence l p = true).card = 11)
-    (columnPairs : ∀ p q, p ≠ q → ∃! l, incidence l p = true ∧ incidence l q = true)
-    (S : Finset (Fin 111)) (size : S.card = 11)
-    (oddLines : ∀ l, (pointsOnLine incidence S l).card % 2 = 1) :
-    ∃ l, S = Finset.univ.filter fun p => incidence l p = true := by
-  classical
-  have two_points : 1 < S.card := by rw [size]; decide
-  obtain ⟨p, hp, q, hq, distinct⟩ := Finset.one_lt_card.mp two_points
-  obtain ⟨l, ⟨on_p, on_q⟩, _⟩ := columnPairs p q distinct
-  let L := Finset.univ.filter fun p => incidence l p = true
-  let T := pointsOnLine incidence S l
-  have at_least_two : 2 ≤ T.card := by
-    have subset : ({p, q} : Finset (Fin 111)) ⊆ T := by
-      intro x hx
-      rcases Finset.mem_insert.mp hx with rfl | hx
-      · exact Finset.mem_filter.mpr ⟨hp, on_p⟩
-      · have same := Finset.mem_singleton.mp hx
-        subst x
-        exact Finset.mem_filter.mpr ⟨hq, on_q⟩
-    simpa [distinct] using Finset.card_le_card subset
-  have odd_T : T.card % 2 = 1 := oddLines l
-  have at_least_three : 3 ≤ T.card := by omega
-  by_cases sameLine : S = L
-  · exact ⟨l, sameLine⟩
-  have not_subset : ¬ L ⊆ S := by
-    intro sub
-    have cardL : L.card = 11 := rowSize l
-    exact sameLine (Finset.eq_of_subset_of_card_le sub (by rw [size, cardL])).symm
-  obtain ⟨x, in_L, not_in_S⟩ := Finset.not_subset.mp not_subset
-  have l_through : incidence l x = true := (Finset.mem_filter.mp in_L).2
-  let K := (Finset.univ.filter fun k => incidence k x = true).erase l
-  have contains_x (k : Fin 111) (hk : k ∈ K) : incidence k x = true :=
-    (Finset.mem_filter.mp (Finset.mem_erase.mp hk).2).2
-  have meets (k : Fin 111) (hk : k ∈ K) : ∃ p ∈ S \ L, incidence k p = true := by
-    have positive : 0 < (pointsOnLine incidence S k).card := by
-      have := oddLines k
-      omega
-    obtain ⟨y, hy⟩ := Finset.card_pos.mp positive
-    obtain ⟨in_S, on_k⟩ := Finset.mem_filter.mp hy
-    have not_on_l : y ∉ L := by
-      intro in_L_y
-      have ne : x ≠ y := fun eq => not_in_S (eq.symm ▸ in_S)
-      have on_l_y : incidence l y = true := (Finset.mem_filter.mp in_L_y).2
-      obtain ⟨line, _, unique⟩ := columnPairs x y ne
-      exact (Finset.mem_erase.mp hk).1 ((unique k ⟨contains_x k hk, on_k⟩).trans
-        (unique l ⟨l_through, on_l_y⟩).symm)
-    exact ⟨y, Finset.mem_sdiff.mpr ⟨in_S, not_on_l⟩, on_k⟩
-  have outside_ten := pencil_bound incidence columnPairs x K (S \ L)
-    (fun mem => not_in_S (Finset.mem_sdiff.mp mem).1) contains_x meets
-  have card_K : K.card = 10 := by
-    change ((Finset.univ.filter fun k => incidence k x = true).erase l).card = _
-    have member : l ∈ (Finset.univ.filter fun k => incidence k x = true) :=
-      Finset.mem_filter.mpr ⟨Finset.mem_univ _, l_through⟩
-    rw [Finset.card_erase_of_mem member, columnSize]
-  have inter : S ∩ L = T := by
-    ext y
-    simp [L, T, pointsOnLine]
-  have partition := Finset.card_sdiff_add_card_inter S L
-  rw [inter, size] at partition
-  rw [card_K] at outside_ten
   omega
 
 -- A nonzero word in the extended incidence code has weight at least twelve.
@@ -866,43 +795,6 @@ def outsideHeavyPoints (incidence : Fin 111 → Fin 111 → Bool) (S : Finset (F
     Finset (Fin 111) :=
   (Finset.univ \ S).filter fun p =>
     (OrderTen.pointsOnLine (Function.swap incidence) (linesWithIntersection incidence S 5) p).card = 1
-
-lemma fifteen_point_heavy_outside_count (incidence : Fin 111 → Fin 111 → Bool)
-    (rowSize : ∀ l, (Finset.univ.filter fun p => incidence l p = true).card = 11)
-    (rowPairs : ∀ l m, l ≠ m → ∃! p, incidence l p = true ∧ incidence m p = true)
-    (columnSize : ∀ p, (atPoint incidence p).card = 11)
-    (columnPairs : ∀ p q, p ≠ q → ∃! l, incidence l p = true ∧ incidence l q = true)
-    (S : Finset (Fin 111)) (size : S.card = 15)
-    (lineCases : ∀ l, let k := (OrderTen.pointsOnLine incidence S l).card
-      k = 1 ∨ k = 3 ∨ k = 5) :
-    (outsideHeavyPoints incidence S).card = 36 := by
-  let L := linesWithIntersection incidence S 5
-  let X : Finset (Fin 111) := Finset.univ \ S
-  let d := fun p => (OrderTen.pointsOnLine (Function.swap incidence) L p).card
-  have each_point (p : Fin 111) (hp : p ∈ X) : d p = if d p = 1 then 1 else 0 := by
-    have le := outside_fifteen_point_heavy_incidence incidence rowPairs columnSize columnPairs
-      S size lineCases p (Finset.mem_sdiff.mp hp).2
-    change d p ≤ 1 at le
-    split_ifs <;> omega
-  have counted : (outsideHeavyPoints incidence S).card = ∑ p ∈ X, d p := by
-    rw [Finset.sum_congr rfl each_point]
-    exact (Finset.sum_boole (fun p => d p = 1) X).symm
-  have each_line (l : Fin 111) (hl : l ∈ L) :
-      (OrderTen.pointsOnLine incidence X l).card = 6 := by
-    let M := Finset.univ.filter fun p => incidence l p = true
-    have on_X : OrderTen.pointsOnLine incidence X l = M \ OrderTen.pointsOnLine incidence S l := by
-      ext p
-      by_cases bit : incidence l p = true <;> simp [OrderTen.pointsOnLine, X, M, bit]
-    have subset : OrderTen.pointsOnLine incidence S l ⊆ M :=
-      fun p hp => Finset.mem_filter.mpr ⟨Finset.mem_univ _, (Finset.mem_filter.mp hp).2⟩
-    have M_size : M.card = 11 := rowSize l
-    have heavy : (OrderTen.pointsOnLine incidence S l).card = 5 := (Finset.mem_filter.mp hl).2
-    rw [on_X, Finset.card_sdiff_of_subset subset, M_size, heavy]
-  have six : L.card = 6 := (fifteen_point_line_counts incidence columnSize columnPairs S size lineCases).2.2
-  change (outsideHeavyPoints incidence S).card =
-    ∑ p ∈ X, (OrderTen.pointsOnLine (Function.swap incidence) L p).card at counted
-  rw [counted, sum_restricted_incidence, Finset.sum_congr rfl each_line]
-  simp [six]
 
 -- A light line has four outside heavy points, a medium line has none,
 -- and a heavy line has six.
