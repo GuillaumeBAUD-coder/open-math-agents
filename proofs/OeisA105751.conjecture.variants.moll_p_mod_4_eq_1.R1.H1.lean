@@ -123,12 +123,14 @@ private lemma P_eval_mod (m : ℤ) (r : ℤ) (hr : r ^ 2 + 1 ≡ 0 [ZMOD m]) (n 
       rw [h1]
       have h2 := hr2.mul_left ((n + 1 : ℤ) * (P n).2)
       have h3 := h2.add_left ((P n).1 + (P n).2 * r + (n + 1 : ℤ) * (P n).1 * r)
-      convert h3.symm using 2 <;> ring
+      rw [show ((P n).1 - (n + 1 : ℤ) * (P n).2) + ((P n).2 + (n + 1 : ℤ) * (P n).1) * r =
+          (P n).1 + (P n).2 * r + (n + 1 : ℤ) * (P n).1 * r + (n + 1 : ℤ) * (P n).2 * (-1) by ring]
+      exact h3.symm
     exact hstep.trans (ih.mul_right _)
 
 private lemma card_filter_dvd_ge (p : ℕ) (hp : p.Prime) (r : ℤ) (hpr : ¬ (p : ℤ) ∣ r)
     (n j : ℕ) (hj : 1 ≤ j) :
-    n / p ^ j ≤ ((Finset.Icc 1 n).filter (fun k => (p : ℤ) ^ j ∣ 1 + (k : ℤ) * r)).card := by
+    n / p ^ j ≤ ((Finset.Icc (1 : ℕ) n).filter (fun k : ℕ => (p : ℤ) ^ j ∣ 1 + (k : ℤ) * r)).card := by
   haveI : NeZero (p ^ j) := ⟨pow_ne_zero j hp.ne_zero⟩
   have hr_unit : IsUnit (r : ZMod (p ^ j)) := by
     have hcop : Nat.Coprime r.natAbs (p ^ j) := by
@@ -136,12 +138,11 @@ private lemma card_filter_dvd_ge (p : ℕ) (hp : p.Prime) (r : ℤ) (hpr : ¬ (p
       refine (hp.coprime_iff_not_dvd.mpr ?_).symm
       intro hd
       exact hpr (Int.natCast_dvd.mpr hd)
-    rw [← Int.cast_natAbs] at *
     have : IsUnit ((r.natAbs : ℕ) : ZMod (p ^ j)) := (ZMod.isUnit_iff_coprime _ _).mpr hcop
     rcases Int.natAbs_eq r with hr_eq | hr_eq
-    · rwa [← hr_eq] at this
+    · simpa [← hr_eq] using this
     · rw [hr_eq, Int.cast_neg]
-      exact this.neg
+      simpa using this.neg
   let u0 : ZMod (p ^ j) := -(r : ZMod (p ^ j))⁻¹
   have hu0_ne : u0 ≠ 0 := by
     intro h
@@ -149,13 +150,13 @@ private lemma card_filter_dvd_ge (p : ℕ) (hp : p.Prime) (r : ℤ) (hpr : ¬ (p
       dsimp [u0]
       rw [mul_neg, ZMod.mul_inv_of_unit _ hr_unit]
     rw [h, mul_zero] at h1
-    have h2 : (1 : ZMod (p ^ j)) = 0 := by linear_combination -h1
+    have h2 : (1 : ZMod (p ^ j)) = 0 := by linear_combination h1
     have hlt1 : 1 < p ^ j := one_lt_pow₀ hp.one_lt (by omega)
     haveI : Nontrivial (ZMod (p ^ j)) := ZMod.nontrivial_iff.mpr hlt1.ne'
     exact one_ne_zero h2
   let u : ℕ := u0.val
   have hu_pos : 0 < u := Nat.pos_of_ne_zero fun h =>
-    hu0_ne (by rw [← ZMod.natCast_zmod_val u0]; exact (congrArg Nat.cast h).trans rfl)
+    hu0_ne (by rw [← ZMod.natCast_zmod_val u0, h]; rfl)
   have hu_lt : u < p ^ j := ZMod.val_lt u0
   have hu_mod : (1 + (u : ℤ) * r : ZMod (p ^ j)) = 0 := by
     push_cast
@@ -173,10 +174,11 @@ private lemma card_filter_dvd_ge (p : ℕ) (hp : p.Prime) (r : ℤ) (hpr : ¬ (p
     dsimp [f] at h
     have := congrArg (· / p ^ j) h
     have hpj_pos : 0 < p ^ j := pow_pos hp.pos j
-    rwa [Nat.mul_add_div hpj_pos, Nat.mul_add_div hpj_pos, Nat.div_eq_of_lt hu_lt, add_zero,
-      add_zero] at this
+    rwa [add_comm (m₁ * p ^ j) u, add_comm (m₂ * p ^ j) u,
+      Nat.add_mul_div_right _ _ hpj_pos, Nat.add_mul_div_right _ _ hpj_pos,
+      Nat.div_eq_of_lt hu_lt, zero_add, zero_add] at this
   calc n / p ^ j = (Finset.range (n / p ^ j)).card := (Finset.card_range _).symm
-    _ ≤ ((Finset.Icc 1 n).filter (fun k => (p : ℤ) ^ j ∣ 1 + (k : ℤ) * r)).card := by
+    _ ≤ ((Finset.Icc (1 : ℕ) n).filter (fun k : ℕ => (p : ℤ) ^ j ∣ 1 + (k : ℤ) * r)).card := by
         refine Finset.card_le_card_of_injOn f ?_ (fun _ _ _ _ h => hf_inj h)
         intro m hm
         rw [Finset.mem_coe, Finset.mem_range] at hm
@@ -200,8 +202,11 @@ private lemma pow_padicVal_factorial_dvd_prod (p : ℕ) (hp : p.Prime) (r : ℤ)
     (p : ℤ) ^ padicValNat p n.factorial ∣ ∏ k ∈ Finset.range (n + 1), (1 + (k : ℤ) * r) := by
   have hprod_eq : ∏ k ∈ Finset.range (n + 1), (1 + (k : ℤ) * r) =
       ∏ k ∈ Finset.Icc 1 n, (1 + (k : ℤ) * r) := by
-    rw [Finset.range_eq_Ico, ← Finset.mul_prod_Ico_eq_prod_Ico_succ (by omega : 0 < n + 1)]
-    simp [Nat.Ico_succ_left]
+    have hsplit : Finset.range (n + 1) = insert 0 (Finset.Icc 1 n) := by
+      ext x
+      simp only [Finset.mem_range, Finset.mem_insert, Finset.mem_Icc]
+      omega
+    rw [hsplit, Finset.prod_insert (by simp), Nat.cast_zero, zero_mul, add_zero, one_mul]
   rw [hprod_eq]
   by_cases hz : (∏ k ∈ Finset.Icc 1 n, (1 + (k : ℤ) * r)) = 0
   · rw [hz]
@@ -211,7 +216,7 @@ private lemma pow_padicVal_factorial_dvd_prod (p : ℕ) (hp : p.Prime) (r : ℤ)
     apply hz
     exact Finset.prod_eq_zero hk h0
   haveI : Fact p.Prime := ⟨hp⟩
-  rw [← padicValInt_dvd_iff _ hz]
+  rw [← padicValInt_dvd_iff (p := p)]
   right
   have hfact : padicValNat p n.factorial =
       ∑ j ∈ Finset.Ico 1 (Nat.log p n + 2), n / p ^ j := by
@@ -260,28 +265,26 @@ theorem moll_h1 : OMA.R_OeisA105751_conjecture_variants_moll_p_mod_4_eq_1_R1.H1 
   intro p hp hmod n
   rw [a_eq_P]
   let e := padicValNat p n.factorial
+  by_cases he : e = 0
+  · simp [e, he]
   obtain ⟨r, hr⟩ := exists_sq_neg_one_mod p hp hmod e
   have hpr : ¬ (p : ℤ) ∣ r := by
     intro h
-    by_cases he : e = 0
-    · omega
-    · have hp_dvd : (p : ℤ) ∣ r ^ 2 + 1 :=
-        dvd_trans (dvd_pow_self (p : ℤ) he) (Int.modEq_zero_iff_dvd.mp hr)
-      have hp_dvd1 : (p : ℤ) ∣ 1 := (Int.dvd_add_right (dvd_trans h (dvd_pow_self r (by omega)))).mp hp_dvd
-      have : (p : ℤ) ≤ 1 := Int.le_of_dvd one_pos hp_dvd1
-      exact absurd (by omega : p ≤ 1) (not_le_of_gt hp.one_lt)
-  by_cases he : e = 0
-  · simp [e, he]
+    have hp_dvd : (p : ℤ) ∣ r ^ 2 + 1 :=
+      dvd_trans (dvd_pow_self (p : ℤ) he) (Int.modEq_zero_iff_dvd.mp hr)
+    have hp_dvd1 : (p : ℤ) ∣ 1 := (Int.dvd_add_right (dvd_trans h (dvd_pow_self r (by omega)))).mp hp_dvd
+    have : (p : ℤ) ≤ 1 := Int.le_of_dvd one_pos hp_dvd1
+    exact absurd (by omega : p ≤ 1) (not_le_of_gt hp.one_lt)
   have hnr : ¬ (p : ℤ) ∣ -r := fun h => hpr (dvd_neg.mp h)
   have hr_neg : (-r) ^ 2 + 1 ≡ 0 [ZMOD ((p : ℕ) ^ e : ℕ)] := by simpa using hr
   have h1 : ((p : ℤ) ^ e) ∣ (P n).1 + (P n).2 * r := by
     have hev := P_eval_mod ((p : ℕ) ^ e : ℕ) r hr n
     have hd := pow_padicVal_factorial_dvd_prod p hp r hpr n
-    exact Int.dvd_trans (by simpa [e] using hd) (Int.dvd_of_modEq_zero (hev.trans (Int.modEq_zero_iff_dvd.mpr (by simpa [e] using hd))))
+    exact Int.dvd_trans (by simpa [e] using hd) (Int.modEq_zero_iff_dvd.mp (hev.trans (Int.modEq_zero_iff_dvd.mpr (by simpa [e] using hd))))
   have h2 : ((p : ℤ) ^ e) ∣ (P n).1 + (P n).2 * (-r) := by
     have hev := P_eval_mod ((p : ℕ) ^ e : ℕ) (-r) hr_neg n
     have hd := pow_padicVal_factorial_dvd_prod p hp (-r) hnr n
-    exact Int.dvd_trans (by simpa [e] using hd) (Int.dvd_of_modEq_zero (hev.trans (Int.modEq_zero_iff_dvd.mpr (by simpa [e] using hd))))
+    exact Int.dvd_trans (by simpa [e] using hd) (Int.modEq_zero_iff_dvd.mp (hev.trans (Int.modEq_zero_iff_dvd.mpr (by simpa [e] using hd))))
   have hdiff : ((p : ℤ) ^ e) ∣ 2 * r * (P n).2 := by
     have : 2 * r * (P n).2 = ((P n).1 + (P n).2 * r) - ((P n).1 + (P n).2 * (-r)) := by ring
     rw [this]
@@ -297,7 +300,7 @@ theorem moll_h1 : OMA.R_OeisA105751_conjecture_variants_moll_p_mod_4_eq_1_R1.H1 
       have h2z : (p : ℤ) ∣ 2 * r := Int.natCast_dvd.mpr h2g
       rcases (Nat.prime_iff_prime_int.mp hp).dvd_or_dvd h2z with hp2 | hpr2
       · have : p ∣ 2 := by exact_mod_cast hp2
-        rcases hp.eq_one_or_self_of_dvd 2 this with h' | h' <;> omega
+        rcases (Nat.dvd_prime Nat.prime_two).mp this with h' | h' <;> omega
       · exact hpr hpr2
   exact hcop.symm.dvd_of_dvd_mul_left hdiff
 
