@@ -6,6 +6,8 @@ import Mathlib
 Source: https://oeis.org/A325269
 Credit: @ivillar
 
+Status: known result: the entry records a proof (Vladeta Jovovic, Nov 14 2026).
+
 A325269 (offset 0): a(n) is the number of integer partitions of n with 2 distinct parts or at
 least 3 parts; data 0, 0, 0, 2, 3, 6, 9, 14, 20, 29, 40, 55, ...
 (for n = 4 the partitions are 3+1, 2+1+1 and 1+1+1+1).
