@@ -1,5 +1,6 @@
 import FormalConjectures.ErdosProblems.«427»
 
+-- Reduction of Shiu’s theorem. Contributor: @Hennyrick.
 namespace OMA.R_Erdos427_erdos_427_variants_shiu_R1
 
 /-- Arbitrarily far out, the primes in a finite interval have a sufficiently
