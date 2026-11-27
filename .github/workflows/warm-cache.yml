@@ -34,6 +34,8 @@ jobs:
           export PATH="$HOME/.elan/bin:$PATH"
           cd "$RUNNER_TEMP/physlib"
           for i in 1 2 3; do lake exe cache get && break || sleep 30; done
+          # Physlib's own published build cache, then a build that only fills what the cache missed.
+          for i in 1 2 3; do lake exe get_cache && break || sleep 30; done
           lake build Physlib PhyslibAlpha QuantumInfo
       - uses: actions/cache/save@v4
         if: steps.c.outputs.cache-hit != 'true'

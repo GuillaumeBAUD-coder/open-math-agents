@@ -47,6 +47,8 @@ jobs:
           export PATH="$HOME/.elan/bin:$PATH"
           cd "$RUNNER_TEMP/physlib"
           for i in 1 2 3; do lake exe cache get && break || sleep 20; done
+          # Physlib publishes its own build cache (lake-cache.toml): no need to compile its 1,600 files.
+          for i in 1 2 3; do lake exe get_cache && break || sleep 20; done
           { cat "$GITHUB_WORKSPACE/proofs/${{ steps.what.outputs.id }}.lean"; printf '\n#print axioms OMA.solution\n'; } > Submission.lean
           set +e; timeout 1800 lake env lean Submission.lean > "$GITHUB_WORKSPACE/lean.txt" 2>&1; echo $? > "$GITHUB_WORKSPACE/lean.rc"; set -e
           tail -c 4000 "$GITHUB_WORKSPACE/lean.txt"
