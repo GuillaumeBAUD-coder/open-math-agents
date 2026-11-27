@@ -1,39 +1,50 @@
 import OMAReductions.R_Erdos672_erdos_672_variants_oblath_R1
 import Mathlib
 
--- Step Erdos672.erdos_672.variants.oblath.R1.H4: hypothesis H4 of reduction
--- Erdos672.erdos_672.variants.oblath.R1
+-- Reduction Erdos672.erdos_672.variants.oblath.R1.H4.R1 of step Erdos672.erdos_672.variants.oblath.R1.H4
 --
--- `Erdos672.Erdos672With 3 5`: for positive `n`, `d` with `gcd n d = 1`, the product
--- `n * (n + d) * (n + 2 * d)` is never a perfect fifth power.
+-- H4 is `Erdos672.Erdos672With 3 5`: for positive `n`, `d` with `gcd n d = 1` the product
+-- `n * (n + d) * (n + 2 * d)` is never a perfect fifth power. Writing `n * (n + d) * (n + 2 * d)
+-- = q ^ 5`, the two gcds `gcd n (n + d)` and `gcd (n + d) (n + 2 * d)` are `1` and the outer
+-- gcd divides `2`, so the parity of `n` decides the shape of the problem:
 --
--- The reduction below is unconditional. It splits on the parity of `n` and produces
---   `H1`  : the odd branch, `x ^ 5 + y ^ 5 = 2 * z ^ 5` has no nontrivial solution
---                (no three distinct fifth powers in arithmetic progression),
---   `H2` : the even branch, `g ^ 5 + 8 * b ^ 5 = s ^ 5` has no solution with `b`, `g`
---                positive.
--- The theorem `h4_of_cores` derives `Erdos672With 3 5` from those two propositions.
+--   H1: `x ^ 5 + y ^ 5 = 2 * z ^ 5` has no solution with `x ≠ y` and `z ≠ 0`, that is, there
+--       are no three distinct fifth powers in arithmetic progression. This is the odd branch,
+--       where `n`, `n + d`, `n + 2 * d` are pairwise coprime and hence all fifth powers.
+--   H2: `g ^ 5 + 8 * b ^ 5 = s ^ 5` has no solution with `b` and `g` positive. This is the even
+--       branch, where `n = 2 * A`, `C = A + d` and the pairwise coprime numbers `4 * A`, `C`,
+--       `A + C` multiply to `q ^ 5`.
+--
+-- Both hypotheses are classical fifth power statements; `main` proves `H1 → H2 → H4`.
 
 /-!
-# H4 of Erdős 672 (Obláth), `k = 3`, `l = 5`
+# H4 of Erdős 672 (Obláth), `k = 3`, `l = 5`, split into two fifth power statements
+
+The product of a three term arithmetic progression with coprime first term and difference is
+never a perfect fifth power, assuming there are no three distinct fifth powers in arithmetic
+progression and no solution of the primitive equation `g ^ 5 + 8 * b ^ 5 = s ^ 5`.
 
 Suppose `n * (n + d) * (n + 2 * d) = q ^ 5` with `n`, `d` positive and `gcd n d = 1`.
 
-The three terms have small pairwise gcds: `gcd n (n + d)` and `gcd (n + d) (n + 2 * d)` are `1`,
-and `gcd n (n + 2 * d)` divides `2`.
-
-* `n` odd: all three terms are odd, so they are pairwise coprime and each of them is a fifth
-  power, say `n = a ^ 5`, `n + d = b ^ 5`, `n + 2 * d = c ^ 5`. Then `a ^ 5 + c ^ 5 = 2 * b ^ 5`
-  with `a ≠ c` and `b ≠ 0`, which is `H1`.
+* `n` odd: the three terms are odd, hence pairwise coprime, hence each is a fifth power: say
+  `n = a ^ 5`, `n + d = b ^ 5`, `n + 2 * d = c ^ 5`. Then `a ^ 5 + c ^ 5 = 2 * b ^ 5` with
+  `a ≠ c` and `b ≠ 0`, contradicting `H1`.
 * `n` even: then `d` is odd and `gcd n (n + 2 * d) = 2`. Write `n = 2 * A` and `C = A + d`, so
   `n + d = A + C` and `n + 2 * d = 2 * C`. Exactly one of `A`, `C` is even, so the three
   pairwise coprime numbers `4 * A`, `C`, `A + C` multiply to `q ^ 5` (the factor `4` sits on the
-  even one, and `A + C` is odd). Each is a fifth power; `4 * A = y ^ 5` forces `A = 8 * b ^ 5`,
-  `C = g ^ 5` and `A + C = s ^ 5` give `g ^ 5 + 8 * b ^ 5 = s ^ 5` with `b`, `g` positive, which
-  is `H2`.
+  even one and `A + C` is odd). Each is a fifth power; `4 * A = y ^ 5` forces `A = 8 * b ^ 5`,
+  and `C = g ^ 5`, `A + C = s ^ 5` give `g ^ 5 + 8 * b ^ 5 = s ^ 5` with `b`, `g` positive,
+  contradicting `H2`.
 -/
 
 namespace OMA.R_Erdos672_erdos_672_variants_oblath_R1_H4_R1
+
+/-- No three distinct fifth powers are in arithmetic progression, in the integral form
+`x ^ 5 + y ^ 5 = 2 * z ^ 5`. -/
+def H1 : Prop := ∀ x y z : ℤ, x ^ 5 + y ^ 5 = 2 * z ^ 5 → x = y ∨ z = 0
+
+/-- The shifted equation `g ^ 5 + 8 * b ^ 5 = s ^ 5` has no solution with `b`, `g` positive. -/
+def H2 : Prop := ∀ b g s : ℕ, 0 < b → 0 < g → g ^ 5 + 8 * b ^ 5 ≠ s ^ 5
 
 /- ## Splitting coprime products of fifth powers -/
 
@@ -84,15 +95,6 @@ lemma coprime_n_n2d_of_odd {n d : ℕ} (hnd : n.gcd d = 1) (hodd : Odd n) :
   rw [Nat.coprime_self_add_right]
   exact hodd.coprime_two_right.mul_right hnd
 
-/- ## The two remaining classical statements -/
-
-/-- No three distinct fifth powers are in arithmetic progression, in the integral form
-`x ^ 5 + y ^ 5 = 2 * z ^ 5`. -/
-def H1 : Prop := ∀ x y z : ℤ, x ^ 5 + y ^ 5 = 2 * z ^ 5 → x = y ∨ z = 0
-
-/-- The shifted equation `g ^ 5 + 8 * b ^ 5 = s ^ 5` has no solution with `b`, `g` positive. -/
-def H2 : Prop := ∀ b g s : ℕ, 0 < b → 0 < g → g ^ 5 + 8 * b ^ 5 ≠ s ^ 5
-
 /- ## The odd branch -/
 
 /-- If `n` is odd and `n * (n + d) * (n + 2 * d)` is a fifth power, then the three terms are
@@ -120,12 +122,12 @@ theorem odd_branch {n d q : ℕ} (hn : 0 < n) (hd : 0 < d) (hnd : n.gcd d = 1)
     omega
 
 /-- On the odd branch, `H1` gives a contradiction. -/
-theorem false_of_odd (hcore : H1) {n d q : ℕ} (hn : 0 < n) (hd : 0 < d)
+theorem false_of_odd (h1 : H1) {n d q : ℕ} (hn : 0 < n) (hd : 0 < d)
     (hnd : n.gcd d = 1) (hodd : Odd n) (hq : n * ((n + d) * (n + 2 * d)) = q ^ 5) : False := by
   obtain ⟨a, b, c, ha, hb, hc, hsum, hac, hb0⟩ := odd_branch hn hd hnd hodd hq
   have hkey : ((a : ℤ)) ^ 5 + ((c : ℤ)) ^ 5 = 2 * ((b : ℤ)) ^ 5 := by
     exact_mod_cast hsum
-  rcases hcore a c b hkey with h | h
+  rcases h1 a c b hkey with h | h
   · exact hac (by exact_mod_cast h)
   · exact hb0 (by exact_mod_cast h)
 
@@ -254,25 +256,24 @@ theorem even_branch {n d q : ℕ} (hn : 0 < n) (hd : 0 < d) (hnd : n.gcd d = 1)
   exact exists_eight_of_even hApos (by omega) hAC hoddAC hq'
 
 /-- On the even branch, `H2` gives a contradiction. -/
-theorem false_of_even (hcore : H2) {n d q : ℕ} (hn : 0 < n) (hd : 0 < d)
+theorem false_of_even (h2 : H2) {n d q : ℕ} (hn : 0 < n) (hd : 0 < d)
     (hnd : n.gcd d = 1) (hev : Even n) (hq : n * ((n + d) * (n + 2 * d)) = q ^ 5) : False := by
   obtain ⟨b, g, s, hb0, hg0, heq⟩ := even_branch hn hd hnd hev hq
-  exact hcore b g s hb0 hg0 heq
+  exact h2 b g s hb0 hg0 heq
 
 /- ## The arithmetic progression -/
 
 /-- The product of a three term arithmetic progression with coprime first term and difference is
-never a perfect fifth power, assuming the two fifth power cores. -/
-theorem ap3_ne_pow5 (ho : H1) (he : H2) {n d q : ℕ} (hn : 0 < n) (hd : 0 < d)
+never a perfect fifth power. -/
+theorem ap3_ne_pow5 (h1 : H1) (h2 : H2) {n d q : ℕ} (hn : 0 < n) (hd : 0 < d)
     (hnd : n.gcd d = 1) : n * ((n + d) * (n + 2 * d)) ≠ q ^ 5 := by
   intro hq
   rcases Nat.even_or_odd n with hev | hodd
-  · exact false_of_even he hn hd hnd hev hq
-  · exact false_of_odd ho hn hd hnd hodd hq
+  · exact false_of_even h2 hn hd hnd hev hq
+  · exact false_of_odd h1 hn hd hnd hodd hq
 
-/-- `Erdos672With 3 5` follows from the two fifth power cores. -/
-theorem h4_of_cores (ho : H1) (he : H2) : Erdos672.Erdos672With 3 5 := by
-  intro s hs n hn d hd hnd hap q hq
+theorem main : H1 → H2 → OMA.R_Erdos672_erdos_672_variants_oblath_R1.H4 := by
+  intro h1 h2 s hs n hn d hd hnd hap q hq
   have hset := hap.2
   have hs' : s = {n, n + d, n + 2 * d} := by
     apply Finset.coe_injective
@@ -289,17 +290,13 @@ theorem h4_of_cores (ho : H1) (he : H2) : Erdos672.Erdos672With 3 5 := by
       · exact ⟨1, by norm_num, by simp⟩
       · exact ⟨2, by norm_num, by ring⟩
   rw [hs'] at hq
-  have h1 : n ∉ ({n + d, n + 2 * d} : Finset ℕ) := by
+  have h1' : n ∉ ({n + d, n + 2 * d} : Finset ℕ) := by
     simp only [Finset.mem_insert, Finset.mem_singleton, not_or]
     omega
-  have h2 : n + d ∉ ({n + 2 * d} : Finset ℕ) := by
+  have h2' : n + d ∉ ({n + 2 * d} : Finset ℕ) := by
     simp only [Finset.mem_singleton]
     omega
-  rw [Finset.prod_insert h1, Finset.prod_insert h2, Finset.prod_singleton] at hq
-  exact ap3_ne_pow5 ho he hn hd hnd hq
-
-/-- The same statement in the shape of the step statement `H4` of the reduction. -/
-theorem main : H1 → H2 → OMA.R_Erdos672_erdos_672_variants_oblath_R1.H4 :=
-  h4_of_cores
+  rw [Finset.prod_insert h1', Finset.prod_insert h2', Finset.prod_singleton] at hq
+  exact ap3_ne_pow5 h1 h2 hn hd hnd hq
 
 end OMA.R_Erdos672_erdos_672_variants_oblath_R1_H4_R1
