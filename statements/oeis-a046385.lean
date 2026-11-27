@@ -28,7 +28,8 @@ def knownTerms : Finset (ℕ × ℕ) :=
     (8, 2112), (9, 4224), (10, 8448), (11, 236989632), (12, 48384), (13, 2977792),
     (15, 405504), (16, 40955904), (20, 677707776)}
 
-theorem main : ∀ n k : ℕ, IsLeast (palindromesWithFactorCount n) k ↔ (n, k) ∈ knownTerms := by
+theorem main : ∀ n k : ℕ,
+    IsLeast (palindromesWithFactorCount n) k ↔ (n, k) ∈ knownTerms := by
   sorry
 
 end OMA.S_oeis_a046385
