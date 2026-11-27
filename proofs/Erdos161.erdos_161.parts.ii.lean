@@ -1501,7 +1501,7 @@ private theorem choose_lower (m t : ℕ) (h : 2*t ≤ m) :
        _ = _ := by ring
 
 private theorem succ_cutoff (q : ℕ) (hq : 0<q) (κ : ℝ) (hκ : 0<κ) :
-    ∃ C : ℝ, 0<C ∧ ∀ᶠ n : ℕ in atTop, ∃ m : ℕ, q+1≤m ∧ m≤n ∧
+    ∃ C : ℝ, 0<C ∧ ∀ᶠ n : ℕ in atTop, ∃ m : ℕ, q+1 ≤ m ∧ m≤n ∧
       (m:ℝ)≤C*(Real.log n)^(q:ℝ)⁻¹ ∧
       2*(n.choose m:ℝ)*Real.exp (-κ*(m.choose (q+1):ℝ)) < 1 := by
   let A := (2:ℝ)^(q+1)*(q+1).factorial
@@ -1532,7 +1532,7 @@ private theorem succ_cutoff (q : ℕ) (hq : 0<q) (κ : ℝ) (hκ : 0<κ) :
   have bot : K*f n ≤ (m:ℝ) := Nat.le_ceil _
   have top : (m:ℝ) < K*f n+1 := Nat.ceil_lt_add_one (mul_nonneg Kpos.le fnon)
   have fk : f n ≤ K*f n := by nlinarith only [mul_nonneg (sub_nonneg.mpr Kone) fnon]
-  have mt : 2*(q+1)≤m := by
+  have mt : 2*(q+1) ≤ m := by
     exact_mod_cast hbig.trans (fk.trans bot)
   have mw : m≤n := by
     have small2 := mul_le_mul_of_nonneg_left hs Kpos.le
@@ -1543,7 +1543,7 @@ private theorem succ_cutoff (q : ℕ) (hq : 0<q) (κ : ℝ) (hκ : 0<κ) :
   refine ⟨m,by omega,mw,?_,?_⟩
   · change (m:ℝ)≤ (K+1)*f n
     nlinarith only [top,f1]
-  · have mpos : 0<(m:ℝ) := by exact_mod_cast (by omega : 0<m)
+  · have mpos : 0<(m:ℝ) := by exact_mod_cast (by omega : 0 < m)
     have klow : 4*A ≤ κ*K := by
       dsimp only [K]
       have : 4*A/κ*κ=4*A := div_mul_cancel₀ _ hκ.ne'
@@ -1562,7 +1562,7 @@ private theorem succ_cutoff (q : ℕ) (hq : 0<q) (κ : ℝ) (hκ : 0<κ) :
     have energy : 4*(m:ℝ)*L n ≤ κ*(m.choose (q+1):ℝ) := by
       apply (le_of_mul_le_mul_left (a:=A) _ Apos)
       nlinarith only [mul_le_mul_of_nonneg_right main mpos.le,mul_le_mul_of_nonneg_left ch hκ.le]
-    have m1 : (1:ℝ)≤m := by exact_mod_cast (by omega : 1≤m)
+    have m1 : (1:ℝ) ≤ m := by exact_mod_cast (by omega : 1 ≤ m)
     have xm : L n ≤ (m:ℝ)*L n := by nlinarith only [mul_nonneg (sub_nonneg.mpr m1) Lpos.le]
     have H : 2*(n:ℝ)^m*Real.exp (-κ*(m.choose (q+1):ℝ)) < 1 := by
       have npos : 0<(n:ℝ) := by linarith
@@ -1576,7 +1576,7 @@ private theorem succ_cutoff (q : ℕ) (hq : 0<q) (κ : ℝ) (hκ : 0<κ) :
       (Real.exp_pos _).le) H
 
 theorem exists_cutoff (t : ℕ) (ht : 2≤t) (κ : ℝ) (hκ : 0<κ) :
-    ∃ C : ℝ, 0<C ∧ ∀ᶠ n : ℕ in atTop, ∃ m : ℕ, t≤m ∧ m≤n ∧
+    ∃ C : ℝ, 0<C ∧ ∀ᶠ n : ℕ in atTop, ∃ m : ℕ, t ≤ m ∧ m≤n ∧
       (m:ℝ)≤C*(Real.log n)^(((t:ℝ)-1)⁻¹) ∧
       2*(n.choose m:ℝ)*Real.exp (-κ*(m.choose t:ℝ)) < 1 := by
   obtain ⟨q,rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : t≠0)
@@ -1594,7 +1594,7 @@ open Filter
 
 /-- Convert the fair-coin finite coloring criterion into the eventual threshold upper bound. -/
 theorem upper_from_cutoff {t : ℕ} (ht : 3≤t) {α : ℝ} (hα : 0<α) (hα' : α<1/2)
-    (cert : ∀ {n m : ℕ}, t≤m →
+    (cert : ∀ {n m : ℕ}, t ≤ m →
       2*(n.choose m:ℝ)*Real.exp (-((1-2*α)^2/2)*(m.choose t:ℝ))<1 →
       Hypergraph.balancedColoringThreshold n t α ≤ m) : Upper t α := by
   have gap : 0<1-2*α := by linarith
@@ -1736,7 +1736,7 @@ theorem erase_edge_count {V : Type*} [DecidableEq V] (P : Finset V → Prop) [De
       simp [B,Nat.mul_comm]
 
 theorem extend_density {V : Type*} [DecidableEq V] (P : Finset V → Prop) [DecidablePred P]
-    (α : ℝ) {m t : ℕ} (htm : t≤m)
+    (α : ℝ) {m t : ℕ} (htm : t ≤ m)
     (base : ∀ X : Finset V, X.card=m →
       α*(X.card.choose t:ℝ) ≤ (((X.powersetCard t).filter P).card:ℝ))
     (S : Finset V) (large : m≤S.card) :
@@ -1774,7 +1774,7 @@ section
 
 namespace Erdos161Union
 
-theorem threshold_le_exact {n t m : ℕ} {α : ℝ} (ha : 0<α) (htm : t≤m)
+theorem threshold_le_exact {n t m : ℕ} {α : ℝ} (ha : 0<α) (htm : t ≤ m)
     (c : Finset (Fin n) → Bool)
     (exactm : ∀ Z : Finset (Fin n), Z.card=m → ∀ b : Bool,
       α*(Z.card.choose t:ℝ) ≤ (((Z.powersetCard t).filter (fun e => c e=b)).card:ℝ)) :
@@ -1869,7 +1869,7 @@ namespace Erdos161Union
 open Finset
 
 theorem threshold_le_of_cutoff {n t m : ℕ} (α : ℝ) (ha : 0<α) (ha' : α<1/2)
-    (htm : t≤m)
+    (htm : t ≤ m)
     (cut : 2*(n.choose m:ℝ)*Real.exp (-((1-2*α)^2/2)*(m.choose t:ℝ)) < 1) :
     Hypergraph.balancedColoringThreshold n t α ≤ m := by
   classical
@@ -1979,7 +1979,7 @@ theorem minority_pairs (ht : 2≤t) (htd : t≤d) (V : Fin d → Finset (Fin n))
     have Pe : P⊆e := Psub.trans inter_subset_left
     exact mem_biUnion.mpr ⟨i,mem_univ _,mem_biUnion.mpr
       ⟨P,mem_powersetCard.mpr ⟨PV,sz⟩,mem_filter.mpr ⟨eX,Pe⟩⟩⟩
-  have row (i : Fin d) : (W i).card≤s.choose 2*((X.card-2).choose (t-2)) := by
+  have row (i : Fin d) : (W i).card ≤ s.choose 2*((X.card-2).choose (t-2)) := by
     calc
       _ ≤ ∑ P∈(V i).powersetCard 2,(F P).card := card_biUnion_le
       _ = ∑ _P∈(V i).powersetCard 2,(X.card-2).choose (t-2) := by
@@ -2003,12 +2003,12 @@ theorem minority_pairs (ht : 2≤t) (htd : t≤d) (V : Fin d → Finset (Fin n))
     _ ≤ (X.card.choose 2)*((X.card-2).choose (t-2)) := Nat.mul_le_mul_right _ pair
     _ = _ := (Nat.choose_mul ht).symm
 
-theorem minority_witness (ht : 2≤t) (htd : t≤d) (hs : 1≤s)
+theorem minority_witness (ht : 2≤t) (htd : t≤d) (hs : 1 ≤ s)
     (V : Fin d → Finset (Fin n)) (size : ∀i,(V i).card=s)
     (disj : ∀i j,i≠j → Disjoint (V i) (V j)) (col : Finset (Fin n) → Bool) (b : Bool)
     (cross : ∀ e : Finset (Fin n), e.card=t → (∀a∈e, ∃i,a∈V i) →
       (∀i,(e∩V i).card≤1) → col e=b)
-    (α B : ℝ) (hdα : (t.choose 2 : ℝ)<α*d) (hB : B≤s) :
+    (α B : ℝ) (hdα : (t.choose 2 : ℝ)<α*d) (hB : B ≤ s) :
     ∃ X : Finset (Fin n), B≤X.card ∧ ∃ q : Bool,
       (((X.powersetCard t).filter (fun e=>col e=q)).card:ℝ) < α*(X.card.choose t : ℝ) := by
   let X := univ.biUnion V
