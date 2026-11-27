@@ -36,16 +36,18 @@ theorem OMA.solution : OMA.R_AgohGiuga_agoh_giuga_variants_giuga_R1.H2 := by
     have hinner : ∀ k : ℕ, ∑ r ∈ Finset.range p, ((k * p + r : ℕ) : ZMod p) ^ (n - 1) =
         ∑ r ∈ Finset.Ioo 0 p, (r : ZMod p) ^ (n - 1) := by
       intro k
+      have hp0 : 0 < p := hp.pos
       have hsplit : Finset.range p = insert 0 (Finset.Ioo 0 p) := by
         ext x
         simp only [Finset.mem_range, Finset.mem_insert, Finset.mem_Ioo]
         omega
       rw [hsplit, Finset.sum_insert (by simp)]
       have h0 : ((k * p + 0 : ℕ) : ZMod p) ^ (n - 1) = 0 := by
-        simp [ZMod.natCast_self, Nat.sub_ne_zero_of_lt hn1]
+        simp [Nat.sub_ne_zero_of_lt hn1]
       rw [h0, zero_add]
       refine Finset.sum_congr rfl fun r _ => ?_
-      simp [Nat.cast_add, Nat.cast_mul, ZMod.natCast_self]
+      push_cast
+      simp
     simp_rw [hinner, Finset.sum_const, Finset.card_range, nsmul_eq_mul]
   rw [hrange, hblocks] at hsum_zmod
   have hbij : ∑ r ∈ Finset.Ioo 0 p, (r : ZMod p) ^ (n - 1) =
