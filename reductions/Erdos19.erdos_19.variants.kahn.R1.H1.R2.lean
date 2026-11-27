@@ -150,7 +150,7 @@ private theorem augment {r D : ℕ} (hr : 2 ≤ r) (H : Finset (Finset V))
     · rintro rfl
       exact mem_map.mpr ⟨i,mem_univ _,rfl⟩
   let old := (univ : Finset (Fin r)).biUnion (fun j => H.map (Finset.mapEmbedding (side j)).toEmbedding)
-  let deficient := univ.filter (fun v => (H.filter (fun A => v∈A)).card<D)
+  let deficient := univ.filter (fun v => (H.filter (fun A => v∈A)).card < D)
   let added := deficient.image line
   let K := old ∪ added
   let z : Fin r := ⟨0,by omega⟩
@@ -269,7 +269,7 @@ private theorem rounds (r D : ℕ) (hr : 2 ≤ r) (k t : ℕ) :
 
 /-- Extend a rank-bounded linear hypergraph to an exactly uniform and regular linear
 hypergraph, preserving the incidence of the original vertices and edges. -/
-theorem regular_uniform_embedding (r D n : ℕ) (hr : 2 ≤ r) (hD : 0<D)
+theorem regular_uniform_embedding (r D n : ℕ) (hr : 2 ≤ r) (hD : 0 < D)
     (H : Finset (Finset (Fin n)))
     (hlin : ∀ A ∈ H, ∀ B ∈ H, A ≠ B → (A ∩ B).card ≤ 1)
     (hsize : ∀ A ∈ H, A.card ≤ r) (hdeg : ∀ i, (H.filter (fun A => i∈A)).card ≤ D) :
@@ -315,7 +315,7 @@ theorem regular_uniform_embedding (r D n : ℕ) (hr : 2 ≤ r) (hD : 0<D)
 
 /-- A list-colouring theorem for regular uniform hypergraphs transfers to all
 linear hypergraphs with the same upper bounds. -/
-theorem list_coloring_of_uniform (r D n m b : ℕ) (hr : 2 ≤ r) (hD : 0<D) (hm : 0<m)
+theorem list_coloring_of_uniform (r D n m b : ℕ) (hr : 2 ≤ r) (hD : 0 < D) (hm : 0 < m)
     (H : Finset (Finset (Fin n))) (L : Finset (Fin n) → Finset (Fin m))
     (hlin : ∀ A ∈ H, ∀ B ∈ H, A ≠ B → (A ∩ B).card ≤ 1)
     (hsize : ∀ A ∈ H, A.card ≤ r) (hdeg : ∀ i, (H.filter (fun A => i∈A)).card ≤ D)
