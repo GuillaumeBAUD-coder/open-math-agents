@@ -19,6 +19,11 @@ finite edge type `E`, and for each edge `e` two ends `src e` and `tgt e`.
 * The multigraph is `n`-edge-connected if it stays connected after deleting any set of fewer
   than `n` edges.
 * `k` is a positive integer (for `k = 1` this is Tutte's 3-flow conjecture).
+
+Scope: the statement is made for `k ∈ {1, 2}`, the cases that are still open. For every `k ≥ 3`
+the conjecture is false: M. Han, J. Li, Y. Wu and C.-Q. Zhang, Counterexamples to Jaeger's
+circular flow conjecture, J. Combin. Theory Ser. B 131 (2018) 1-11, construct `4k`-edge-connected
+graphs with no modular `(2k+1)`-orientation.
 -/
 
 namespace OMA.S_opg_jaegers_modular_orientation_conjecture
@@ -41,10 +46,10 @@ def head {V E : Type*} (src tgt : E → V) (o : E → Bool) (e : E) : V :=
 def tail {V E : Type*} (src tgt : E → V) (o : E → Bool) (e : E) : V :=
   if o e then src e else tgt e
 
-/-- **Jaeger's modular orientation conjecture.** For every positive integer `k`, every finite
-`4k`-edge-connected multigraph has an orientation with
+/-- **Jaeger's modular orientation conjecture (open cases `k = 1, 2`).** For `k ∈ {1, 2}`,
+every finite `4k`-edge-connected multigraph has an orientation with
 `indegree(v) - outdegree(v) ≡ 0 (mod 2k+1)` at every vertex. -/
-theorem main : ∀ (k : ℕ), 1 ≤ k → ∀ (V E : Type) [Fintype V] [DecidableEq V] [Fintype E]
+theorem main : ∀ (k : ℕ), (k = 1 ∨ k = 2) → ∀ (V E : Type) [Fintype V] [DecidableEq V] [Fintype E]
     (src tgt : E → V), IsEdgeConnected src tgt (4 * k) →
       ∃ o : E → Bool, ∀ v : V,
         ((Finset.univ.filter fun e => head src tgt o e = v).card : ℤ) -
