@@ -179,7 +179,9 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a049425.main := by
       OMA.S_oeis_a049425.series + 2 * (X * OMA.S_oeis_a049425.series) +
         X * (X * OMA.S_oeis_a049425.series) := by
     ring
-  rw [hrhs, map_add, map_add, coeff_ofNat_mul, coeff_succ_X_mul,
+  have hC2 : (2 : PowerSeries ℚ) = C (2 : ℚ) := by
+    rw [← Nat.cast_ofNat, ← map_natCast C, Nat.cast_ofNat]
+  rw [hrhs, map_add, map_add, hC2, coeff_C_mul, coeff_succ_X_mul,
     coeff_succ_X_mul, coeff_succ_X_mul] at hcoeff
   have hmul := congrArg (((n + 2).factorial : ℚ) * ·) hcoeff
   have hf (m : ℕ) : ((m + 1).factorial : ℚ) = ((m : ℚ) + 1) * (m.factorial : ℚ) := by
