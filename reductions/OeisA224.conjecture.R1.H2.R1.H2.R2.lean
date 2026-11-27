@@ -334,7 +334,8 @@ theorem main : H1 → H2 → OMA.R_OeisA224_conjecture_R1_H2_R1.H2 := by
       have hcancel := Nat.mul_div_cancel' hmd
       have hprod : d*((m^2-1)/d+4*m^2*(d-1)) = (m*p)^2-1 := by
         have hback : (m^2-1)+1 = m^2 := Nat.sub_add_cancel (Nat.succ_le_of_lt (by positivity))
-        have hpback : ((m*p)^2-1)+1 = (m*p)^2 := Nat.sub_add_cancel (Nat.succ_le_of_lt (by positivity))
+        have hpback : ((m*p)^2-1)+1 = (m*p)^2 :=
+          Nat.sub_add_cancel (Nat.succ_le_of_lt (pow_pos (Nat.mul_pos hm hp.pos) 2))
         obtain ⟨k,hk⟩ := Nat.exists_eq_succ_of_ne_zero (show d≠0 by omega)
         have hpred : d-1=k := by omega
         have hpk : p=2*k+1 := by omega
@@ -355,6 +356,8 @@ theorem main : H1 → H2 → OMA.R_OeisA224_conjecture_R1_H2_R1.H2 := by
         (dvd_pow_self p he.ne').trans (dvd_mul_left _ _))
       apply Nat.coprime_of_mul_modEq_one (m*p^e)
       simpa only [← sq] using ht.of_dvd (dvd_mul_left _ _)
-    exact hhigher m p e hmo hmc hp hpodd hcp hmax (by omega) hb hcop hloc hdvd (by push_cast at hother; exact hother)
+    apply hhigher m p e hmo hmc hp hpodd hcp hmax (by omega) hb hcop hloc hdvd
+    by_cases parity : Even e <;> simp only [parity, if_true, if_false] at hother ⊢ <;>
+      push_cast at hother ⊢ <;> exact hother
 
 end OMA.R_OeisA224_conjecture_R1_H2_R1_H2_R2
