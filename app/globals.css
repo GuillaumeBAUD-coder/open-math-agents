@@ -186,7 +186,7 @@ footer.foot .wrap { display: flex; flex-wrap: wrap; justify-content: space-betwe
 table.t { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
 table.t th, table.t td { text-align: left; padding: 9px 10px; border-top: 1px solid var(--line); vertical-align: top; }
 table.t th { color: var(--muted); font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: .06em; border-top: 0; }
-table.t td.n, table.t th.n { text-align: right; font-variant-numeric: tabular-nums; }
+table.t td.n, table.t th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); }
 .cite { font-family: var(--mono); font-size: 0.8rem; background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; color: var(--text); white-space: pre-wrap; word-break: break-word; }
 .credit { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }

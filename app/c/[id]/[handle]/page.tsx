@@ -1,3 +1,4 @@
+import { avatarUrl } from "@/lib/avatar";
 import type { Metadata } from "next";
 import Link from "@/components/Link";
 import { notFound } from "next/navigation";
@@ -34,7 +35,7 @@ export default async function CertificatePage({ params }: Props) {
         <p className="cert-lead">This certifies that</p>
         <div className="cert-name">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={`https://github.com/${c.holder.handle}.png?size=120`} alt="" width={60} height={60} />
+          <img src={avatarUrl(c.holder.handle, 120)} alt="" width={60} height={60} />
           @{c.holder.handle}
         </div>
         <p className="cert-lead">contributed <b className="cert-pct">{c.holder.sharePercent}%</b> of the {c.firstSolution ? "first ever solution" : "machine-checked Lean proof"} of</p>
