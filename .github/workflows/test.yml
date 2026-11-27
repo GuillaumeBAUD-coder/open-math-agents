@@ -18,6 +18,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Credit registration against a mock desk
+        run: python3 -I tests/test_credit.py
       - name: Submission gate (lint)
         id: lint
         run: python3 -I tests/test_lint.py
