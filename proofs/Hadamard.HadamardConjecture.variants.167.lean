@@ -3032,9 +3032,11 @@ private theorem viaRows (n : ℕ) (row : ℕ → ℕ) (hlen : n < 1023) (h : Row
 
 
 set_option maxRecDepth 16000 in
-private def c2_0 : RowRange 2 hadRow2 0 2 := viaCheck (by decide +kernel)
+/- Each row interval is checked as a data declaration. Projecting its proof below
+keeps the kernel checks in order when elaborating a large family of intervals. -/
+private def c2_0 : PLift (RowRange 2 hadRow2 0 2) := ⟨viaCheck (by decide +kernel)⟩
 
-private theorem g2 : gramWitness 2 := viaRows _ _ (by decide) c2_0
+private theorem g2 : gramWitness 2 := viaRows _ _ (by decide) c2_0.down
 
 private theorem g4 : gramWitness 4 := gram_product (by decide) (by decide) g2 g2
 
@@ -3081,42 +3083,42 @@ private theorem g84 : gramWitness 84 := fromColumns (PaleyHadamard.typeI 83 ((is
 private theorem g88 : gramWitness 88 := gram_product (by decide) (by decide) g2 g44
 
 set_option maxRecDepth 16000 in
-private def c92_0 : RowRange 92 hadRow92 0 8 := viaCheck (by decide +kernel)
+private def c92_0 : PLift (RowRange 92 hadRow92 0 8) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c92_8 : RowRange 92 hadRow92 8 16 := viaCheck (by decide +kernel)
+private def c92_8 : PLift (RowRange 92 hadRow92 8 16) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c92_16 : RowRange 92 hadRow92 16 24 := viaCheck (by decide +kernel)
+private def c92_16 : PLift (RowRange 92 hadRow92 16 24) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c92_24 : RowRange 92 hadRow92 24 32 := viaCheck (by decide +kernel)
+private def c92_24 : PLift (RowRange 92 hadRow92 24 32) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c92_32 : RowRange 92 hadRow92 32 40 := viaCheck (by decide +kernel)
+private def c92_32 : PLift (RowRange 92 hadRow92 32 40) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c92_40 : RowRange 92 hadRow92 40 48 := viaCheck (by decide +kernel)
+private def c92_40 : PLift (RowRange 92 hadRow92 40 48) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c92_48 : RowRange 92 hadRow92 48 56 := viaCheck (by decide +kernel)
+private def c92_48 : PLift (RowRange 92 hadRow92 48 56) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c92_56 : RowRange 92 hadRow92 56 64 := viaCheck (by decide +kernel)
+private def c92_56 : PLift (RowRange 92 hadRow92 56 64) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c92_64 : RowRange 92 hadRow92 64 72 := viaCheck (by decide +kernel)
+private def c92_64 : PLift (RowRange 92 hadRow92 64 72) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c92_72 : RowRange 92 hadRow92 72 80 := viaCheck (by decide +kernel)
+private def c92_72 : PLift (RowRange 92 hadRow92 72 80) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c92_80 : RowRange 92 hadRow92 80 88 := viaCheck (by decide +kernel)
+private def c92_80 : PLift (RowRange 92 hadRow92 80 88) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c92_88 : RowRange 92 hadRow92 88 92 := viaCheck (by decide +kernel)
+private def c92_88 : PLift (RowRange 92 hadRow92 88 92) := ⟨viaCheck (by decide +kernel)⟩
 
-private theorem g92 : gramWitness 92 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit c92_0 c92_8) (viaSplit c92_16 c92_24)) (viaSplit (viaSplit c92_32 c92_40) (viaSplit c92_48 c92_56))) (viaSplit (viaSplit c92_64 c92_72) (viaSplit c92_80 c92_88)))
+private theorem g92 : gramWitness 92 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit c92_0.down c92_8.down) (viaSplit c92_16.down c92_24.down)) (viaSplit (viaSplit c92_32.down c92_40.down) (viaSplit c92_48.down c92_56.down))) (viaSplit (viaSplit c92_64.down c92_72.down) (viaSplit c92_80.down c92_88.down)))
 
 private theorem g96 : gramWitness 96 := gram_product (by decide) (by decide) g2 g48
 
@@ -3129,51 +3131,51 @@ private theorem g108 : gramWitness 108 := fromColumns (PaleyHadamard.typeI 107 (
 private theorem g112 : gramWitness 112 := gram_product (by decide) (by decide) g2 g56
 
 set_option maxRecDepth 16000 in
-private def c116_0 : RowRange 116 hadRow116 0 8 := viaCheck (by decide +kernel)
+private def c116_0 : PLift (RowRange 116 hadRow116 0 8) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c116_8 : RowRange 116 hadRow116 8 16 := viaCheck (by decide +kernel)
+private def c116_8 : PLift (RowRange 116 hadRow116 8 16) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c116_16 : RowRange 116 hadRow116 16 24 := viaCheck (by decide +kernel)
+private def c116_16 : PLift (RowRange 116 hadRow116 16 24) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c116_24 : RowRange 116 hadRow116 24 32 := viaCheck (by decide +kernel)
+private def c116_24 : PLift (RowRange 116 hadRow116 24 32) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c116_32 : RowRange 116 hadRow116 32 40 := viaCheck (by decide +kernel)
+private def c116_32 : PLift (RowRange 116 hadRow116 32 40) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c116_40 : RowRange 116 hadRow116 40 48 := viaCheck (by decide +kernel)
+private def c116_40 : PLift (RowRange 116 hadRow116 40 48) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c116_48 : RowRange 116 hadRow116 48 56 := viaCheck (by decide +kernel)
+private def c116_48 : PLift (RowRange 116 hadRow116 48 56) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c116_56 : RowRange 116 hadRow116 56 64 := viaCheck (by decide +kernel)
+private def c116_56 : PLift (RowRange 116 hadRow116 56 64) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c116_64 : RowRange 116 hadRow116 64 72 := viaCheck (by decide +kernel)
+private def c116_64 : PLift (RowRange 116 hadRow116 64 72) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c116_72 : RowRange 116 hadRow116 72 80 := viaCheck (by decide +kernel)
+private def c116_72 : PLift (RowRange 116 hadRow116 72 80) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c116_80 : RowRange 116 hadRow116 80 88 := viaCheck (by decide +kernel)
+private def c116_80 : PLift (RowRange 116 hadRow116 80 88) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c116_88 : RowRange 116 hadRow116 88 96 := viaCheck (by decide +kernel)
+private def c116_88 : PLift (RowRange 116 hadRow116 88 96) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c116_96 : RowRange 116 hadRow116 96 104 := viaCheck (by decide +kernel)
+private def c116_96 : PLift (RowRange 116 hadRow116 96 104) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c116_104 : RowRange 116 hadRow116 104 112 := viaCheck (by decide +kernel)
+private def c116_104 : PLift (RowRange 116 hadRow116 104 112) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c116_112 : RowRange 116 hadRow116 112 116 := viaCheck (by decide +kernel)
+private def c116_112 : PLift (RowRange 116 hadRow116 112 116) := ⟨viaCheck (by decide +kernel)⟩
 
-private theorem g116 : gramWitness 116 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit c116_0 c116_8) (viaSplit c116_16 c116_24)) (viaSplit (viaSplit c116_32 c116_40) (viaSplit c116_48 c116_56))) (viaSplit (viaSplit (viaSplit c116_64 c116_72) (viaSplit c116_80 c116_88)) (viaSplit (viaSplit c116_96 c116_104) c116_112)))
+private theorem g116 : gramWitness 116 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit c116_0.down c116_8.down) (viaSplit c116_16.down c116_24.down)) (viaSplit (viaSplit c116_32.down c116_40.down) (viaSplit c116_48.down c116_56.down))) (viaSplit (viaSplit (viaSplit c116_64.down c116_72.down) (viaSplit c116_80.down c116_88.down)) (viaSplit (viaSplit c116_96.down c116_104.down) c116_112.down)))
 
 private theorem g120 : gramWitness 120 := gram_product (by decide) (by decide) g2 g60
 
@@ -3194,66 +3196,66 @@ private theorem g148 : gramWitness 148 := fromColumns (PaleyHadamard.typeII 73 (
 private theorem g152 : gramWitness 152 := gram_product (by decide) (by decide) g2 g76
 
 set_option maxRecDepth 16000 in
-private def c156_0 : RowRange 156 hadRow156 0 8 := viaCheck (by decide +kernel)
+private def c156_0 : PLift (RowRange 156 hadRow156 0 8) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c156_8 : RowRange 156 hadRow156 8 16 := viaCheck (by decide +kernel)
+private def c156_8 : PLift (RowRange 156 hadRow156 8 16) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c156_16 : RowRange 156 hadRow156 16 24 := viaCheck (by decide +kernel)
+private def c156_16 : PLift (RowRange 156 hadRow156 16 24) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c156_24 : RowRange 156 hadRow156 24 32 := viaCheck (by decide +kernel)
+private def c156_24 : PLift (RowRange 156 hadRow156 24 32) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c156_32 : RowRange 156 hadRow156 32 40 := viaCheck (by decide +kernel)
+private def c156_32 : PLift (RowRange 156 hadRow156 32 40) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c156_40 : RowRange 156 hadRow156 40 48 := viaCheck (by decide +kernel)
+private def c156_40 : PLift (RowRange 156 hadRow156 40 48) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c156_48 : RowRange 156 hadRow156 48 56 := viaCheck (by decide +kernel)
+private def c156_48 : PLift (RowRange 156 hadRow156 48 56) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c156_56 : RowRange 156 hadRow156 56 64 := viaCheck (by decide +kernel)
+private def c156_56 : PLift (RowRange 156 hadRow156 56 64) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c156_64 : RowRange 156 hadRow156 64 72 := viaCheck (by decide +kernel)
+private def c156_64 : PLift (RowRange 156 hadRow156 64 72) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c156_72 : RowRange 156 hadRow156 72 80 := viaCheck (by decide +kernel)
+private def c156_72 : PLift (RowRange 156 hadRow156 72 80) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c156_80 : RowRange 156 hadRow156 80 88 := viaCheck (by decide +kernel)
+private def c156_80 : PLift (RowRange 156 hadRow156 80 88) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c156_88 : RowRange 156 hadRow156 88 96 := viaCheck (by decide +kernel)
+private def c156_88 : PLift (RowRange 156 hadRow156 88 96) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c156_96 : RowRange 156 hadRow156 96 104 := viaCheck (by decide +kernel)
+private def c156_96 : PLift (RowRange 156 hadRow156 96 104) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c156_104 : RowRange 156 hadRow156 104 112 := viaCheck (by decide +kernel)
+private def c156_104 : PLift (RowRange 156 hadRow156 104 112) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c156_112 : RowRange 156 hadRow156 112 120 := viaCheck (by decide +kernel)
+private def c156_112 : PLift (RowRange 156 hadRow156 112 120) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c156_120 : RowRange 156 hadRow156 120 128 := viaCheck (by decide +kernel)
+private def c156_120 : PLift (RowRange 156 hadRow156 120 128) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c156_128 : RowRange 156 hadRow156 128 136 := viaCheck (by decide +kernel)
+private def c156_128 : PLift (RowRange 156 hadRow156 128 136) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c156_136 : RowRange 156 hadRow156 136 144 := viaCheck (by decide +kernel)
+private def c156_136 : PLift (RowRange 156 hadRow156 136 144) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c156_144 : RowRange 156 hadRow156 144 152 := viaCheck (by decide +kernel)
+private def c156_144 : PLift (RowRange 156 hadRow156 144 152) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c156_152 : RowRange 156 hadRow156 152 156 := viaCheck (by decide +kernel)
+private def c156_152 : PLift (RowRange 156 hadRow156 152 156) := ⟨viaCheck (by decide +kernel)⟩
 
-private theorem g156 : gramWitness 156 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c156_0 c156_8) (viaSplit c156_16 c156_24)) (viaSplit (viaSplit c156_32 c156_40) (viaSplit c156_48 c156_56))) (viaSplit (viaSplit (viaSplit c156_64 c156_72) (viaSplit c156_80 c156_88)) (viaSplit (viaSplit c156_96 c156_104) (viaSplit c156_112 c156_120)))) (viaSplit (viaSplit c156_128 c156_136) (viaSplit c156_144 c156_152)))
+private theorem g156 : gramWitness 156 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c156_0.down c156_8.down) (viaSplit c156_16.down c156_24.down)) (viaSplit (viaSplit c156_32.down c156_40.down) (viaSplit c156_48.down c156_56.down))) (viaSplit (viaSplit (viaSplit c156_64.down c156_72.down) (viaSplit c156_80.down c156_88.down)) (viaSplit (viaSplit c156_96.down c156_104.down) (viaSplit c156_112.down c156_120.down)))) (viaSplit (viaSplit c156_128.down c156_136.down) (viaSplit c156_144.down c156_152.down)))
 
 private theorem g160 : gramWitness 160 := gram_product (by decide) (by decide) g2 g80
 
@@ -3262,72 +3264,72 @@ private theorem g164 : gramWitness 164 := fromColumns (PaleyHadamard.typeI 163 (
 private theorem g168 : gramWitness 168 := gram_product (by decide) (by decide) g2 g84
 
 set_option maxRecDepth 16000 in
-private def c172_0 : RowRange 172 hadRow172 0 8 := viaCheck (by decide +kernel)
+private def c172_0 : PLift (RowRange 172 hadRow172 0 8) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c172_8 : RowRange 172 hadRow172 8 16 := viaCheck (by decide +kernel)
+private def c172_8 : PLift (RowRange 172 hadRow172 8 16) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c172_16 : RowRange 172 hadRow172 16 24 := viaCheck (by decide +kernel)
+private def c172_16 : PLift (RowRange 172 hadRow172 16 24) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c172_24 : RowRange 172 hadRow172 24 32 := viaCheck (by decide +kernel)
+private def c172_24 : PLift (RowRange 172 hadRow172 24 32) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c172_32 : RowRange 172 hadRow172 32 40 := viaCheck (by decide +kernel)
+private def c172_32 : PLift (RowRange 172 hadRow172 32 40) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c172_40 : RowRange 172 hadRow172 40 48 := viaCheck (by decide +kernel)
+private def c172_40 : PLift (RowRange 172 hadRow172 40 48) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c172_48 : RowRange 172 hadRow172 48 56 := viaCheck (by decide +kernel)
+private def c172_48 : PLift (RowRange 172 hadRow172 48 56) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c172_56 : RowRange 172 hadRow172 56 64 := viaCheck (by decide +kernel)
+private def c172_56 : PLift (RowRange 172 hadRow172 56 64) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c172_64 : RowRange 172 hadRow172 64 72 := viaCheck (by decide +kernel)
+private def c172_64 : PLift (RowRange 172 hadRow172 64 72) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c172_72 : RowRange 172 hadRow172 72 80 := viaCheck (by decide +kernel)
+private def c172_72 : PLift (RowRange 172 hadRow172 72 80) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c172_80 : RowRange 172 hadRow172 80 88 := viaCheck (by decide +kernel)
+private def c172_80 : PLift (RowRange 172 hadRow172 80 88) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c172_88 : RowRange 172 hadRow172 88 96 := viaCheck (by decide +kernel)
+private def c172_88 : PLift (RowRange 172 hadRow172 88 96) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c172_96 : RowRange 172 hadRow172 96 104 := viaCheck (by decide +kernel)
+private def c172_96 : PLift (RowRange 172 hadRow172 96 104) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c172_104 : RowRange 172 hadRow172 104 112 := viaCheck (by decide +kernel)
+private def c172_104 : PLift (RowRange 172 hadRow172 104 112) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c172_112 : RowRange 172 hadRow172 112 120 := viaCheck (by decide +kernel)
+private def c172_112 : PLift (RowRange 172 hadRow172 112 120) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c172_120 : RowRange 172 hadRow172 120 128 := viaCheck (by decide +kernel)
+private def c172_120 : PLift (RowRange 172 hadRow172 120 128) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c172_128 : RowRange 172 hadRow172 128 136 := viaCheck (by decide +kernel)
+private def c172_128 : PLift (RowRange 172 hadRow172 128 136) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c172_136 : RowRange 172 hadRow172 136 144 := viaCheck (by decide +kernel)
+private def c172_136 : PLift (RowRange 172 hadRow172 136 144) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c172_144 : RowRange 172 hadRow172 144 152 := viaCheck (by decide +kernel)
+private def c172_144 : PLift (RowRange 172 hadRow172 144 152) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c172_152 : RowRange 172 hadRow172 152 160 := viaCheck (by decide +kernel)
+private def c172_152 : PLift (RowRange 172 hadRow172 152 160) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c172_160 : RowRange 172 hadRow172 160 168 := viaCheck (by decide +kernel)
+private def c172_160 : PLift (RowRange 172 hadRow172 160 168) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c172_168 : RowRange 172 hadRow172 168 172 := viaCheck (by decide +kernel)
+private def c172_168 : PLift (RowRange 172 hadRow172 168 172) := ⟨viaCheck (by decide +kernel)⟩
 
-private theorem g172 : gramWitness 172 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c172_0 c172_8) (viaSplit c172_16 c172_24)) (viaSplit (viaSplit c172_32 c172_40) (viaSplit c172_48 c172_56))) (viaSplit (viaSplit (viaSplit c172_64 c172_72) (viaSplit c172_80 c172_88)) (viaSplit (viaSplit c172_96 c172_104) (viaSplit c172_112 c172_120)))) (viaSplit (viaSplit (viaSplit c172_128 c172_136) (viaSplit c172_144 c172_152)) (viaSplit c172_160 c172_168)))
+private theorem g172 : gramWitness 172 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c172_0.down c172_8.down) (viaSplit c172_16.down c172_24.down)) (viaSplit (viaSplit c172_32.down c172_40.down) (viaSplit c172_48.down c172_56.down))) (viaSplit (viaSplit (viaSplit c172_64.down c172_72.down) (viaSplit c172_80.down c172_88.down)) (viaSplit (viaSplit c172_96.down c172_104.down) (viaSplit c172_112.down c172_120.down)))) (viaSplit (viaSplit (viaSplit c172_128.down c172_136.down) (viaSplit c172_144.down c172_152.down)) (viaSplit c172_160.down c172_168.down)))
 
 private theorem g176 : gramWitness 176 := gram_product (by decide) (by decide) g2 g88
 
@@ -3336,78 +3338,78 @@ private theorem g180 : gramWitness 180 := fromColumns (PaleyHadamard.typeI 179 (
 private theorem g184 : gramWitness 184 := gram_product (by decide) (by decide) g2 g92
 
 set_option maxRecDepth 16000 in
-private def c188_0 : RowRange 188 hadRow188 0 8 := viaCheck (by decide +kernel)
+private def c188_0 : PLift (RowRange 188 hadRow188 0 8) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c188_8 : RowRange 188 hadRow188 8 16 := viaCheck (by decide +kernel)
+private def c188_8 : PLift (RowRange 188 hadRow188 8 16) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c188_16 : RowRange 188 hadRow188 16 24 := viaCheck (by decide +kernel)
+private def c188_16 : PLift (RowRange 188 hadRow188 16 24) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c188_24 : RowRange 188 hadRow188 24 32 := viaCheck (by decide +kernel)
+private def c188_24 : PLift (RowRange 188 hadRow188 24 32) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c188_32 : RowRange 188 hadRow188 32 40 := viaCheck (by decide +kernel)
+private def c188_32 : PLift (RowRange 188 hadRow188 32 40) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c188_40 : RowRange 188 hadRow188 40 48 := viaCheck (by decide +kernel)
+private def c188_40 : PLift (RowRange 188 hadRow188 40 48) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c188_48 : RowRange 188 hadRow188 48 56 := viaCheck (by decide +kernel)
+private def c188_48 : PLift (RowRange 188 hadRow188 48 56) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c188_56 : RowRange 188 hadRow188 56 64 := viaCheck (by decide +kernel)
+private def c188_56 : PLift (RowRange 188 hadRow188 56 64) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c188_64 : RowRange 188 hadRow188 64 72 := viaCheck (by decide +kernel)
+private def c188_64 : PLift (RowRange 188 hadRow188 64 72) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c188_72 : RowRange 188 hadRow188 72 80 := viaCheck (by decide +kernel)
+private def c188_72 : PLift (RowRange 188 hadRow188 72 80) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c188_80 : RowRange 188 hadRow188 80 88 := viaCheck (by decide +kernel)
+private def c188_80 : PLift (RowRange 188 hadRow188 80 88) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c188_88 : RowRange 188 hadRow188 88 96 := viaCheck (by decide +kernel)
+private def c188_88 : PLift (RowRange 188 hadRow188 88 96) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c188_96 : RowRange 188 hadRow188 96 104 := viaCheck (by decide +kernel)
+private def c188_96 : PLift (RowRange 188 hadRow188 96 104) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c188_104 : RowRange 188 hadRow188 104 112 := viaCheck (by decide +kernel)
+private def c188_104 : PLift (RowRange 188 hadRow188 104 112) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c188_112 : RowRange 188 hadRow188 112 120 := viaCheck (by decide +kernel)
+private def c188_112 : PLift (RowRange 188 hadRow188 112 120) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c188_120 : RowRange 188 hadRow188 120 128 := viaCheck (by decide +kernel)
+private def c188_120 : PLift (RowRange 188 hadRow188 120 128) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c188_128 : RowRange 188 hadRow188 128 136 := viaCheck (by decide +kernel)
+private def c188_128 : PLift (RowRange 188 hadRow188 128 136) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c188_136 : RowRange 188 hadRow188 136 144 := viaCheck (by decide +kernel)
+private def c188_136 : PLift (RowRange 188 hadRow188 136 144) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c188_144 : RowRange 188 hadRow188 144 152 := viaCheck (by decide +kernel)
+private def c188_144 : PLift (RowRange 188 hadRow188 144 152) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c188_152 : RowRange 188 hadRow188 152 160 := viaCheck (by decide +kernel)
+private def c188_152 : PLift (RowRange 188 hadRow188 152 160) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c188_160 : RowRange 188 hadRow188 160 168 := viaCheck (by decide +kernel)
+private def c188_160 : PLift (RowRange 188 hadRow188 160 168) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c188_168 : RowRange 188 hadRow188 168 176 := viaCheck (by decide +kernel)
+private def c188_168 : PLift (RowRange 188 hadRow188 168 176) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c188_176 : RowRange 188 hadRow188 176 184 := viaCheck (by decide +kernel)
+private def c188_176 : PLift (RowRange 188 hadRow188 176 184) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c188_184 : RowRange 188 hadRow188 184 188 := viaCheck (by decide +kernel)
+private def c188_184 : PLift (RowRange 188 hadRow188 184 188) := ⟨viaCheck (by decide +kernel)⟩
 
-private theorem g188 : gramWitness 188 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c188_0 c188_8) (viaSplit c188_16 c188_24)) (viaSplit (viaSplit c188_32 c188_40) (viaSplit c188_48 c188_56))) (viaSplit (viaSplit (viaSplit c188_64 c188_72) (viaSplit c188_80 c188_88)) (viaSplit (viaSplit c188_96 c188_104) (viaSplit c188_112 c188_120)))) (viaSplit (viaSplit (viaSplit c188_128 c188_136) (viaSplit c188_144 c188_152)) (viaSplit (viaSplit c188_160 c188_168) (viaSplit c188_176 c188_184))))
+private theorem g188 : gramWitness 188 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c188_0.down c188_8.down) (viaSplit c188_16.down c188_24.down)) (viaSplit (viaSplit c188_32.down c188_40.down) (viaSplit c188_48.down c188_56.down))) (viaSplit (viaSplit (viaSplit c188_64.down c188_72.down) (viaSplit c188_80.down c188_88.down)) (viaSplit (viaSplit c188_96.down c188_104.down) (viaSplit c188_112.down c188_120.down)))) (viaSplit (viaSplit (viaSplit c188_128.down c188_136.down) (viaSplit c188_144.down c188_152.down)) (viaSplit (viaSplit c188_160.down c188_168.down) (viaSplit c188_176.down c188_184.down))))
 
 private theorem g192 : gramWitness 192 := gram_product (by decide) (by decide) g2 g96
 
@@ -3432,96 +3434,96 @@ private theorem g228 : gramWitness 228 := fromColumns (PaleyHadamard.typeI 227 (
 private theorem g232 : gramWitness 232 := gram_product (by decide) (by decide) g2 g116
 
 set_option maxRecDepth 16000 in
-private def c236_0 : RowRange 236 hadRow236 0 8 := viaCheck (by decide +kernel)
+private def c236_0 : PLift (RowRange 236 hadRow236 0 8) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c236_8 : RowRange 236 hadRow236 8 16 := viaCheck (by decide +kernel)
+private def c236_8 : PLift (RowRange 236 hadRow236 8 16) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c236_16 : RowRange 236 hadRow236 16 24 := viaCheck (by decide +kernel)
+private def c236_16 : PLift (RowRange 236 hadRow236 16 24) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c236_24 : RowRange 236 hadRow236 24 32 := viaCheck (by decide +kernel)
+private def c236_24 : PLift (RowRange 236 hadRow236 24 32) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c236_32 : RowRange 236 hadRow236 32 40 := viaCheck (by decide +kernel)
+private def c236_32 : PLift (RowRange 236 hadRow236 32 40) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c236_40 : RowRange 236 hadRow236 40 48 := viaCheck (by decide +kernel)
+private def c236_40 : PLift (RowRange 236 hadRow236 40 48) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c236_48 : RowRange 236 hadRow236 48 56 := viaCheck (by decide +kernel)
+private def c236_48 : PLift (RowRange 236 hadRow236 48 56) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c236_56 : RowRange 236 hadRow236 56 64 := viaCheck (by decide +kernel)
+private def c236_56 : PLift (RowRange 236 hadRow236 56 64) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c236_64 : RowRange 236 hadRow236 64 72 := viaCheck (by decide +kernel)
+private def c236_64 : PLift (RowRange 236 hadRow236 64 72) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c236_72 : RowRange 236 hadRow236 72 80 := viaCheck (by decide +kernel)
+private def c236_72 : PLift (RowRange 236 hadRow236 72 80) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c236_80 : RowRange 236 hadRow236 80 88 := viaCheck (by decide +kernel)
+private def c236_80 : PLift (RowRange 236 hadRow236 80 88) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c236_88 : RowRange 236 hadRow236 88 96 := viaCheck (by decide +kernel)
+private def c236_88 : PLift (RowRange 236 hadRow236 88 96) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c236_96 : RowRange 236 hadRow236 96 104 := viaCheck (by decide +kernel)
+private def c236_96 : PLift (RowRange 236 hadRow236 96 104) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c236_104 : RowRange 236 hadRow236 104 112 := viaCheck (by decide +kernel)
+private def c236_104 : PLift (RowRange 236 hadRow236 104 112) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c236_112 : RowRange 236 hadRow236 112 120 := viaCheck (by decide +kernel)
+private def c236_112 : PLift (RowRange 236 hadRow236 112 120) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c236_120 : RowRange 236 hadRow236 120 128 := viaCheck (by decide +kernel)
+private def c236_120 : PLift (RowRange 236 hadRow236 120 128) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c236_128 : RowRange 236 hadRow236 128 136 := viaCheck (by decide +kernel)
+private def c236_128 : PLift (RowRange 236 hadRow236 128 136) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c236_136 : RowRange 236 hadRow236 136 144 := viaCheck (by decide +kernel)
+private def c236_136 : PLift (RowRange 236 hadRow236 136 144) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c236_144 : RowRange 236 hadRow236 144 152 := viaCheck (by decide +kernel)
+private def c236_144 : PLift (RowRange 236 hadRow236 144 152) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c236_152 : RowRange 236 hadRow236 152 160 := viaCheck (by decide +kernel)
+private def c236_152 : PLift (RowRange 236 hadRow236 152 160) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c236_160 : RowRange 236 hadRow236 160 168 := viaCheck (by decide +kernel)
+private def c236_160 : PLift (RowRange 236 hadRow236 160 168) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c236_168 : RowRange 236 hadRow236 168 176 := viaCheck (by decide +kernel)
+private def c236_168 : PLift (RowRange 236 hadRow236 168 176) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c236_176 : RowRange 236 hadRow236 176 184 := viaCheck (by decide +kernel)
+private def c236_176 : PLift (RowRange 236 hadRow236 176 184) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c236_184 : RowRange 236 hadRow236 184 192 := viaCheck (by decide +kernel)
+private def c236_184 : PLift (RowRange 236 hadRow236 184 192) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c236_192 : RowRange 236 hadRow236 192 200 := viaCheck (by decide +kernel)
+private def c236_192 : PLift (RowRange 236 hadRow236 192 200) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c236_200 : RowRange 236 hadRow236 200 208 := viaCheck (by decide +kernel)
+private def c236_200 : PLift (RowRange 236 hadRow236 200 208) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c236_208 : RowRange 236 hadRow236 208 216 := viaCheck (by decide +kernel)
+private def c236_208 : PLift (RowRange 236 hadRow236 208 216) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c236_216 : RowRange 236 hadRow236 216 224 := viaCheck (by decide +kernel)
+private def c236_216 : PLift (RowRange 236 hadRow236 216 224) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c236_224 : RowRange 236 hadRow236 224 232 := viaCheck (by decide +kernel)
+private def c236_224 : PLift (RowRange 236 hadRow236 224 232) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c236_232 : RowRange 236 hadRow236 232 236 := viaCheck (by decide +kernel)
+private def c236_232 : PLift (RowRange 236 hadRow236 232 236) := ⟨viaCheck (by decide +kernel)⟩
 
-private theorem g236 : gramWitness 236 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c236_0 c236_8) (viaSplit c236_16 c236_24)) (viaSplit (viaSplit c236_32 c236_40) (viaSplit c236_48 c236_56))) (viaSplit (viaSplit (viaSplit c236_64 c236_72) (viaSplit c236_80 c236_88)) (viaSplit (viaSplit c236_96 c236_104) (viaSplit c236_112 c236_120)))) (viaSplit (viaSplit (viaSplit (viaSplit c236_128 c236_136) (viaSplit c236_144 c236_152)) (viaSplit (viaSplit c236_160 c236_168) (viaSplit c236_176 c236_184))) (viaSplit (viaSplit (viaSplit c236_192 c236_200) (viaSplit c236_208 c236_216)) (viaSplit c236_224 c236_232))))
+private theorem g236 : gramWitness 236 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c236_0.down c236_8.down) (viaSplit c236_16.down c236_24.down)) (viaSplit (viaSplit c236_32.down c236_40.down) (viaSplit c236_48.down c236_56.down))) (viaSplit (viaSplit (viaSplit c236_64.down c236_72.down) (viaSplit c236_80.down c236_88.down)) (viaSplit (viaSplit c236_96.down c236_104.down) (viaSplit c236_112.down c236_120.down)))) (viaSplit (viaSplit (viaSplit (viaSplit c236_128.down c236_136.down) (viaSplit c236_144.down c236_152.down)) (viaSplit (viaSplit c236_160.down c236_168.down) (viaSplit c236_176.down c236_184.down))) (viaSplit (viaSplit (viaSplit c236_192.down c236_200.down) (viaSplit c236_208.down c236_216.down)) (viaSplit c236_224.down c236_232.down))))
 
 private theorem g240 : gramWitness 240 := gram_product (by decide) (by decide) g2 g120
 
@@ -3534,211 +3536,211 @@ private theorem g252 : gramWitness 252 := fromColumns (PaleyHadamard.typeI 251 (
 private theorem g256 : gramWitness 256 := gram_product (by decide) (by decide) g2 g128
 
 set_option maxRecDepth 16000 in
-private def c260_0 : RowRange 260 hadRow260 0 8 := viaCheck (by decide +kernel)
+private def c260_0 : PLift (RowRange 260 hadRow260 0 8) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c260_8 : RowRange 260 hadRow260 8 16 := viaCheck (by decide +kernel)
+private def c260_8 : PLift (RowRange 260 hadRow260 8 16) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c260_16 : RowRange 260 hadRow260 16 24 := viaCheck (by decide +kernel)
+private def c260_16 : PLift (RowRange 260 hadRow260 16 24) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c260_24 : RowRange 260 hadRow260 24 32 := viaCheck (by decide +kernel)
+private def c260_24 : PLift (RowRange 260 hadRow260 24 32) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c260_32 : RowRange 260 hadRow260 32 40 := viaCheck (by decide +kernel)
+private def c260_32 : PLift (RowRange 260 hadRow260 32 40) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c260_40 : RowRange 260 hadRow260 40 48 := viaCheck (by decide +kernel)
+private def c260_40 : PLift (RowRange 260 hadRow260 40 48) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c260_48 : RowRange 260 hadRow260 48 56 := viaCheck (by decide +kernel)
+private def c260_48 : PLift (RowRange 260 hadRow260 48 56) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c260_56 : RowRange 260 hadRow260 56 64 := viaCheck (by decide +kernel)
+private def c260_56 : PLift (RowRange 260 hadRow260 56 64) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c260_64 : RowRange 260 hadRow260 64 72 := viaCheck (by decide +kernel)
+private def c260_64 : PLift (RowRange 260 hadRow260 64 72) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c260_72 : RowRange 260 hadRow260 72 80 := viaCheck (by decide +kernel)
+private def c260_72 : PLift (RowRange 260 hadRow260 72 80) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c260_80 : RowRange 260 hadRow260 80 88 := viaCheck (by decide +kernel)
+private def c260_80 : PLift (RowRange 260 hadRow260 80 88) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c260_88 : RowRange 260 hadRow260 88 96 := viaCheck (by decide +kernel)
+private def c260_88 : PLift (RowRange 260 hadRow260 88 96) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c260_96 : RowRange 260 hadRow260 96 104 := viaCheck (by decide +kernel)
+private def c260_96 : PLift (RowRange 260 hadRow260 96 104) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c260_104 : RowRange 260 hadRow260 104 112 := viaCheck (by decide +kernel)
+private def c260_104 : PLift (RowRange 260 hadRow260 104 112) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c260_112 : RowRange 260 hadRow260 112 120 := viaCheck (by decide +kernel)
+private def c260_112 : PLift (RowRange 260 hadRow260 112 120) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c260_120 : RowRange 260 hadRow260 120 128 := viaCheck (by decide +kernel)
+private def c260_120 : PLift (RowRange 260 hadRow260 120 128) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c260_128 : RowRange 260 hadRow260 128 136 := viaCheck (by decide +kernel)
+private def c260_128 : PLift (RowRange 260 hadRow260 128 136) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c260_136 : RowRange 260 hadRow260 136 144 := viaCheck (by decide +kernel)
+private def c260_136 : PLift (RowRange 260 hadRow260 136 144) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c260_144 : RowRange 260 hadRow260 144 152 := viaCheck (by decide +kernel)
+private def c260_144 : PLift (RowRange 260 hadRow260 144 152) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c260_152 : RowRange 260 hadRow260 152 160 := viaCheck (by decide +kernel)
+private def c260_152 : PLift (RowRange 260 hadRow260 152 160) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c260_160 : RowRange 260 hadRow260 160 168 := viaCheck (by decide +kernel)
+private def c260_160 : PLift (RowRange 260 hadRow260 160 168) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c260_168 : RowRange 260 hadRow260 168 176 := viaCheck (by decide +kernel)
+private def c260_168 : PLift (RowRange 260 hadRow260 168 176) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c260_176 : RowRange 260 hadRow260 176 184 := viaCheck (by decide +kernel)
+private def c260_176 : PLift (RowRange 260 hadRow260 176 184) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c260_184 : RowRange 260 hadRow260 184 192 := viaCheck (by decide +kernel)
+private def c260_184 : PLift (RowRange 260 hadRow260 184 192) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c260_192 : RowRange 260 hadRow260 192 200 := viaCheck (by decide +kernel)
+private def c260_192 : PLift (RowRange 260 hadRow260 192 200) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c260_200 : RowRange 260 hadRow260 200 208 := viaCheck (by decide +kernel)
+private def c260_200 : PLift (RowRange 260 hadRow260 200 208) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c260_208 : RowRange 260 hadRow260 208 216 := viaCheck (by decide +kernel)
+private def c260_208 : PLift (RowRange 260 hadRow260 208 216) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c260_216 : RowRange 260 hadRow260 216 224 := viaCheck (by decide +kernel)
+private def c260_216 : PLift (RowRange 260 hadRow260 216 224) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c260_224 : RowRange 260 hadRow260 224 232 := viaCheck (by decide +kernel)
+private def c260_224 : PLift (RowRange 260 hadRow260 224 232) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c260_232 : RowRange 260 hadRow260 232 240 := viaCheck (by decide +kernel)
+private def c260_232 : PLift (RowRange 260 hadRow260 232 240) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c260_240 : RowRange 260 hadRow260 240 248 := viaCheck (by decide +kernel)
+private def c260_240 : PLift (RowRange 260 hadRow260 240 248) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c260_248 : RowRange 260 hadRow260 248 256 := viaCheck (by decide +kernel)
+private def c260_248 : PLift (RowRange 260 hadRow260 248 256) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c260_256 : RowRange 260 hadRow260 256 260 := viaCheck (by decide +kernel)
+private def c260_256 : PLift (RowRange 260 hadRow260 256 260) := ⟨viaCheck (by decide +kernel)⟩
 
-private theorem g260 : gramWitness 260 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c260_0 c260_8) (viaSplit c260_16 c260_24)) (viaSplit (viaSplit c260_32 c260_40) (viaSplit c260_48 c260_56))) (viaSplit (viaSplit (viaSplit c260_64 c260_72) (viaSplit c260_80 c260_88)) (viaSplit (viaSplit c260_96 c260_104) (viaSplit c260_112 c260_120)))) (viaSplit (viaSplit (viaSplit (viaSplit c260_128 c260_136) (viaSplit c260_144 c260_152)) (viaSplit (viaSplit c260_160 c260_168) (viaSplit c260_176 c260_184))) (viaSplit (viaSplit (viaSplit c260_192 c260_200) (viaSplit c260_208 c260_216)) (viaSplit (viaSplit c260_224 c260_232) (viaSplit c260_240 c260_248))))) c260_256)
+private theorem g260 : gramWitness 260 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c260_0.down c260_8.down) (viaSplit c260_16.down c260_24.down)) (viaSplit (viaSplit c260_32.down c260_40.down) (viaSplit c260_48.down c260_56.down))) (viaSplit (viaSplit (viaSplit c260_64.down c260_72.down) (viaSplit c260_80.down c260_88.down)) (viaSplit (viaSplit c260_96.down c260_104.down) (viaSplit c260_112.down c260_120.down)))) (viaSplit (viaSplit (viaSplit (viaSplit c260_128.down c260_136.down) (viaSplit c260_144.down c260_152.down)) (viaSplit (viaSplit c260_160.down c260_168.down) (viaSplit c260_176.down c260_184.down))) (viaSplit (viaSplit (viaSplit c260_192.down c260_200.down) (viaSplit c260_208.down c260_216.down)) (viaSplit (viaSplit c260_224.down c260_232.down) (viaSplit c260_240.down c260_248.down))))) c260_256.down)
 
 private theorem g264 : gramWitness 264 := gram_product (by decide) (by decide) g2 g132
 
 set_option maxRecDepth 16000 in
-private def c268_0 : RowRange 268 hadRow268 0 8 := viaCheck (by decide +kernel)
+private def c268_0 : PLift (RowRange 268 hadRow268 0 8) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c268_8 : RowRange 268 hadRow268 8 16 := viaCheck (by decide +kernel)
+private def c268_8 : PLift (RowRange 268 hadRow268 8 16) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c268_16 : RowRange 268 hadRow268 16 24 := viaCheck (by decide +kernel)
+private def c268_16 : PLift (RowRange 268 hadRow268 16 24) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c268_24 : RowRange 268 hadRow268 24 32 := viaCheck (by decide +kernel)
+private def c268_24 : PLift (RowRange 268 hadRow268 24 32) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c268_32 : RowRange 268 hadRow268 32 40 := viaCheck (by decide +kernel)
+private def c268_32 : PLift (RowRange 268 hadRow268 32 40) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c268_40 : RowRange 268 hadRow268 40 48 := viaCheck (by decide +kernel)
+private def c268_40 : PLift (RowRange 268 hadRow268 40 48) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c268_48 : RowRange 268 hadRow268 48 56 := viaCheck (by decide +kernel)
+private def c268_48 : PLift (RowRange 268 hadRow268 48 56) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c268_56 : RowRange 268 hadRow268 56 64 := viaCheck (by decide +kernel)
+private def c268_56 : PLift (RowRange 268 hadRow268 56 64) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c268_64 : RowRange 268 hadRow268 64 72 := viaCheck (by decide +kernel)
+private def c268_64 : PLift (RowRange 268 hadRow268 64 72) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c268_72 : RowRange 268 hadRow268 72 80 := viaCheck (by decide +kernel)
+private def c268_72 : PLift (RowRange 268 hadRow268 72 80) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c268_80 : RowRange 268 hadRow268 80 88 := viaCheck (by decide +kernel)
+private def c268_80 : PLift (RowRange 268 hadRow268 80 88) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c268_88 : RowRange 268 hadRow268 88 96 := viaCheck (by decide +kernel)
+private def c268_88 : PLift (RowRange 268 hadRow268 88 96) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c268_96 : RowRange 268 hadRow268 96 104 := viaCheck (by decide +kernel)
+private def c268_96 : PLift (RowRange 268 hadRow268 96 104) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c268_104 : RowRange 268 hadRow268 104 112 := viaCheck (by decide +kernel)
+private def c268_104 : PLift (RowRange 268 hadRow268 104 112) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c268_112 : RowRange 268 hadRow268 112 120 := viaCheck (by decide +kernel)
+private def c268_112 : PLift (RowRange 268 hadRow268 112 120) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c268_120 : RowRange 268 hadRow268 120 128 := viaCheck (by decide +kernel)
+private def c268_120 : PLift (RowRange 268 hadRow268 120 128) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c268_128 : RowRange 268 hadRow268 128 136 := viaCheck (by decide +kernel)
+private def c268_128 : PLift (RowRange 268 hadRow268 128 136) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c268_136 : RowRange 268 hadRow268 136 144 := viaCheck (by decide +kernel)
+private def c268_136 : PLift (RowRange 268 hadRow268 136 144) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c268_144 : RowRange 268 hadRow268 144 152 := viaCheck (by decide +kernel)
+private def c268_144 : PLift (RowRange 268 hadRow268 144 152) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c268_152 : RowRange 268 hadRow268 152 160 := viaCheck (by decide +kernel)
+private def c268_152 : PLift (RowRange 268 hadRow268 152 160) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c268_160 : RowRange 268 hadRow268 160 168 := viaCheck (by decide +kernel)
+private def c268_160 : PLift (RowRange 268 hadRow268 160 168) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c268_168 : RowRange 268 hadRow268 168 176 := viaCheck (by decide +kernel)
+private def c268_168 : PLift (RowRange 268 hadRow268 168 176) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c268_176 : RowRange 268 hadRow268 176 184 := viaCheck (by decide +kernel)
+private def c268_176 : PLift (RowRange 268 hadRow268 176 184) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c268_184 : RowRange 268 hadRow268 184 192 := viaCheck (by decide +kernel)
+private def c268_184 : PLift (RowRange 268 hadRow268 184 192) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c268_192 : RowRange 268 hadRow268 192 200 := viaCheck (by decide +kernel)
+private def c268_192 : PLift (RowRange 268 hadRow268 192 200) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c268_200 : RowRange 268 hadRow268 200 208 := viaCheck (by decide +kernel)
+private def c268_200 : PLift (RowRange 268 hadRow268 200 208) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c268_208 : RowRange 268 hadRow268 208 216 := viaCheck (by decide +kernel)
+private def c268_208 : PLift (RowRange 268 hadRow268 208 216) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c268_216 : RowRange 268 hadRow268 216 224 := viaCheck (by decide +kernel)
+private def c268_216 : PLift (RowRange 268 hadRow268 216 224) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c268_224 : RowRange 268 hadRow268 224 232 := viaCheck (by decide +kernel)
+private def c268_224 : PLift (RowRange 268 hadRow268 224 232) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c268_232 : RowRange 268 hadRow268 232 240 := viaCheck (by decide +kernel)
+private def c268_232 : PLift (RowRange 268 hadRow268 232 240) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c268_240 : RowRange 268 hadRow268 240 248 := viaCheck (by decide +kernel)
+private def c268_240 : PLift (RowRange 268 hadRow268 240 248) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c268_248 : RowRange 268 hadRow268 248 256 := viaCheck (by decide +kernel)
+private def c268_248 : PLift (RowRange 268 hadRow268 248 256) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c268_256 : RowRange 268 hadRow268 256 264 := viaCheck (by decide +kernel)
+private def c268_256 : PLift (RowRange 268 hadRow268 256 264) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c268_264 : RowRange 268 hadRow268 264 268 := viaCheck (by decide +kernel)
+private def c268_264 : PLift (RowRange 268 hadRow268 264 268) := ⟨viaCheck (by decide +kernel)⟩
 
-private theorem g268 : gramWitness 268 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c268_0 c268_8) (viaSplit c268_16 c268_24)) (viaSplit (viaSplit c268_32 c268_40) (viaSplit c268_48 c268_56))) (viaSplit (viaSplit (viaSplit c268_64 c268_72) (viaSplit c268_80 c268_88)) (viaSplit (viaSplit c268_96 c268_104) (viaSplit c268_112 c268_120)))) (viaSplit (viaSplit (viaSplit (viaSplit c268_128 c268_136) (viaSplit c268_144 c268_152)) (viaSplit (viaSplit c268_160 c268_168) (viaSplit c268_176 c268_184))) (viaSplit (viaSplit (viaSplit c268_192 c268_200) (viaSplit c268_208 c268_216)) (viaSplit (viaSplit c268_224 c268_232) (viaSplit c268_240 c268_248))))) (viaSplit c268_256 c268_264))
+private theorem g268 : gramWitness 268 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c268_0.down c268_8.down) (viaSplit c268_16.down c268_24.down)) (viaSplit (viaSplit c268_32.down c268_40.down) (viaSplit c268_48.down c268_56.down))) (viaSplit (viaSplit (viaSplit c268_64.down c268_72.down) (viaSplit c268_80.down c268_88.down)) (viaSplit (viaSplit c268_96.down c268_104.down) (viaSplit c268_112.down c268_120.down)))) (viaSplit (viaSplit (viaSplit (viaSplit c268_128.down c268_136.down) (viaSplit c268_144.down c268_152.down)) (viaSplit (viaSplit c268_160.down c268_168.down) (viaSplit c268_176.down c268_184.down))) (viaSplit (viaSplit (viaSplit c268_192.down c268_200.down) (viaSplit c268_208.down c268_216.down)) (viaSplit (viaSplit c268_224.down c268_232.down) (viaSplit c268_240.down c268_248.down))))) (viaSplit c268_256.down c268_264.down))
 
 private theorem g272 : gramWitness 272 := gram_product (by decide) (by decide) g2 g136
 
@@ -3751,117 +3753,117 @@ private theorem g284 : gramWitness 284 := fromColumns (PaleyHadamard.typeI 283 (
 private theorem g288 : gramWitness 288 := gram_product (by decide) (by decide) g2 g144
 
 set_option maxRecDepth 16000 in
-private def c292_0 : RowRange 292 hadRow292 0 8 := viaCheck (by decide +kernel)
+private def c292_0 : PLift (RowRange 292 hadRow292 0 8) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c292_8 : RowRange 292 hadRow292 8 16 := viaCheck (by decide +kernel)
+private def c292_8 : PLift (RowRange 292 hadRow292 8 16) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c292_16 : RowRange 292 hadRow292 16 24 := viaCheck (by decide +kernel)
+private def c292_16 : PLift (RowRange 292 hadRow292 16 24) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c292_24 : RowRange 292 hadRow292 24 32 := viaCheck (by decide +kernel)
+private def c292_24 : PLift (RowRange 292 hadRow292 24 32) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c292_32 : RowRange 292 hadRow292 32 40 := viaCheck (by decide +kernel)
+private def c292_32 : PLift (RowRange 292 hadRow292 32 40) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c292_40 : RowRange 292 hadRow292 40 48 := viaCheck (by decide +kernel)
+private def c292_40 : PLift (RowRange 292 hadRow292 40 48) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c292_48 : RowRange 292 hadRow292 48 56 := viaCheck (by decide +kernel)
+private def c292_48 : PLift (RowRange 292 hadRow292 48 56) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c292_56 : RowRange 292 hadRow292 56 64 := viaCheck (by decide +kernel)
+private def c292_56 : PLift (RowRange 292 hadRow292 56 64) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c292_64 : RowRange 292 hadRow292 64 72 := viaCheck (by decide +kernel)
+private def c292_64 : PLift (RowRange 292 hadRow292 64 72) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c292_72 : RowRange 292 hadRow292 72 80 := viaCheck (by decide +kernel)
+private def c292_72 : PLift (RowRange 292 hadRow292 72 80) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c292_80 : RowRange 292 hadRow292 80 88 := viaCheck (by decide +kernel)
+private def c292_80 : PLift (RowRange 292 hadRow292 80 88) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c292_88 : RowRange 292 hadRow292 88 96 := viaCheck (by decide +kernel)
+private def c292_88 : PLift (RowRange 292 hadRow292 88 96) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c292_96 : RowRange 292 hadRow292 96 104 := viaCheck (by decide +kernel)
+private def c292_96 : PLift (RowRange 292 hadRow292 96 104) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c292_104 : RowRange 292 hadRow292 104 112 := viaCheck (by decide +kernel)
+private def c292_104 : PLift (RowRange 292 hadRow292 104 112) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c292_112 : RowRange 292 hadRow292 112 120 := viaCheck (by decide +kernel)
+private def c292_112 : PLift (RowRange 292 hadRow292 112 120) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c292_120 : RowRange 292 hadRow292 120 128 := viaCheck (by decide +kernel)
+private def c292_120 : PLift (RowRange 292 hadRow292 120 128) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c292_128 : RowRange 292 hadRow292 128 136 := viaCheck (by decide +kernel)
+private def c292_128 : PLift (RowRange 292 hadRow292 128 136) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c292_136 : RowRange 292 hadRow292 136 144 := viaCheck (by decide +kernel)
+private def c292_136 : PLift (RowRange 292 hadRow292 136 144) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c292_144 : RowRange 292 hadRow292 144 152 := viaCheck (by decide +kernel)
+private def c292_144 : PLift (RowRange 292 hadRow292 144 152) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c292_152 : RowRange 292 hadRow292 152 160 := viaCheck (by decide +kernel)
+private def c292_152 : PLift (RowRange 292 hadRow292 152 160) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c292_160 : RowRange 292 hadRow292 160 168 := viaCheck (by decide +kernel)
+private def c292_160 : PLift (RowRange 292 hadRow292 160 168) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c292_168 : RowRange 292 hadRow292 168 176 := viaCheck (by decide +kernel)
+private def c292_168 : PLift (RowRange 292 hadRow292 168 176) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c292_176 : RowRange 292 hadRow292 176 184 := viaCheck (by decide +kernel)
+private def c292_176 : PLift (RowRange 292 hadRow292 176 184) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c292_184 : RowRange 292 hadRow292 184 192 := viaCheck (by decide +kernel)
+private def c292_184 : PLift (RowRange 292 hadRow292 184 192) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c292_192 : RowRange 292 hadRow292 192 200 := viaCheck (by decide +kernel)
+private def c292_192 : PLift (RowRange 292 hadRow292 192 200) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c292_200 : RowRange 292 hadRow292 200 208 := viaCheck (by decide +kernel)
+private def c292_200 : PLift (RowRange 292 hadRow292 200 208) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c292_208 : RowRange 292 hadRow292 208 216 := viaCheck (by decide +kernel)
+private def c292_208 : PLift (RowRange 292 hadRow292 208 216) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c292_216 : RowRange 292 hadRow292 216 224 := viaCheck (by decide +kernel)
+private def c292_216 : PLift (RowRange 292 hadRow292 216 224) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c292_224 : RowRange 292 hadRow292 224 232 := viaCheck (by decide +kernel)
+private def c292_224 : PLift (RowRange 292 hadRow292 224 232) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c292_232 : RowRange 292 hadRow292 232 240 := viaCheck (by decide +kernel)
+private def c292_232 : PLift (RowRange 292 hadRow292 232 240) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c292_240 : RowRange 292 hadRow292 240 248 := viaCheck (by decide +kernel)
+private def c292_240 : PLift (RowRange 292 hadRow292 240 248) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c292_248 : RowRange 292 hadRow292 248 256 := viaCheck (by decide +kernel)
+private def c292_248 : PLift (RowRange 292 hadRow292 248 256) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c292_256 : RowRange 292 hadRow292 256 264 := viaCheck (by decide +kernel)
+private def c292_256 : PLift (RowRange 292 hadRow292 256 264) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c292_264 : RowRange 292 hadRow292 264 272 := viaCheck (by decide +kernel)
+private def c292_264 : PLift (RowRange 292 hadRow292 264 272) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c292_272 : RowRange 292 hadRow292 272 280 := viaCheck (by decide +kernel)
+private def c292_272 : PLift (RowRange 292 hadRow292 272 280) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c292_280 : RowRange 292 hadRow292 280 288 := viaCheck (by decide +kernel)
+private def c292_280 : PLift (RowRange 292 hadRow292 280 288) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c292_288 : RowRange 292 hadRow292 288 292 := viaCheck (by decide +kernel)
+private def c292_288 : PLift (RowRange 292 hadRow292 288 292) := ⟨viaCheck (by decide +kernel)⟩
 
-private theorem g292 : gramWitness 292 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c292_0 c292_8) (viaSplit c292_16 c292_24)) (viaSplit (viaSplit c292_32 c292_40) (viaSplit c292_48 c292_56))) (viaSplit (viaSplit (viaSplit c292_64 c292_72) (viaSplit c292_80 c292_88)) (viaSplit (viaSplit c292_96 c292_104) (viaSplit c292_112 c292_120)))) (viaSplit (viaSplit (viaSplit (viaSplit c292_128 c292_136) (viaSplit c292_144 c292_152)) (viaSplit (viaSplit c292_160 c292_168) (viaSplit c292_176 c292_184))) (viaSplit (viaSplit (viaSplit c292_192 c292_200) (viaSplit c292_208 c292_216)) (viaSplit (viaSplit c292_224 c292_232) (viaSplit c292_240 c292_248))))) (viaSplit (viaSplit (viaSplit c292_256 c292_264) (viaSplit c292_272 c292_280)) c292_288))
+private theorem g292 : gramWitness 292 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c292_0.down c292_8.down) (viaSplit c292_16.down c292_24.down)) (viaSplit (viaSplit c292_32.down c292_40.down) (viaSplit c292_48.down c292_56.down))) (viaSplit (viaSplit (viaSplit c292_64.down c292_72.down) (viaSplit c292_80.down c292_88.down)) (viaSplit (viaSplit c292_96.down c292_104.down) (viaSplit c292_112.down c292_120.down)))) (viaSplit (viaSplit (viaSplit (viaSplit c292_128.down c292_136.down) (viaSplit c292_144.down c292_152.down)) (viaSplit (viaSplit c292_160.down c292_168.down) (viaSplit c292_176.down c292_184.down))) (viaSplit (viaSplit (viaSplit c292_192.down c292_200.down) (viaSplit c292_208.down c292_216.down)) (viaSplit (viaSplit c292_224.down c292_232.down) (viaSplit c292_240.down c292_248.down))))) (viaSplit (viaSplit (viaSplit c292_256.down c292_264.down) (viaSplit c292_272.down c292_280.down)) c292_288.down))
 
 private theorem g296 : gramWitness 296 := gram_product (by decide) (by decide) g2 g148
 
@@ -3878,129 +3880,129 @@ private theorem g316 : gramWitness 316 := fromColumns (PaleyHadamard.typeII 157 
 private theorem g320 : gramWitness 320 := gram_product (by decide) (by decide) g2 g160
 
 set_option maxRecDepth 16000 in
-private def c324_0 : RowRange 324 hadRow324 0 8 := viaCheck (by decide +kernel)
+private def c324_0 : PLift (RowRange 324 hadRow324 0 8) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c324_8 : RowRange 324 hadRow324 8 16 := viaCheck (by decide +kernel)
+private def c324_8 : PLift (RowRange 324 hadRow324 8 16) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c324_16 : RowRange 324 hadRow324 16 24 := viaCheck (by decide +kernel)
+private def c324_16 : PLift (RowRange 324 hadRow324 16 24) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c324_24 : RowRange 324 hadRow324 24 32 := viaCheck (by decide +kernel)
+private def c324_24 : PLift (RowRange 324 hadRow324 24 32) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c324_32 : RowRange 324 hadRow324 32 40 := viaCheck (by decide +kernel)
+private def c324_32 : PLift (RowRange 324 hadRow324 32 40) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c324_40 : RowRange 324 hadRow324 40 48 := viaCheck (by decide +kernel)
+private def c324_40 : PLift (RowRange 324 hadRow324 40 48) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c324_48 : RowRange 324 hadRow324 48 56 := viaCheck (by decide +kernel)
+private def c324_48 : PLift (RowRange 324 hadRow324 48 56) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c324_56 : RowRange 324 hadRow324 56 64 := viaCheck (by decide +kernel)
+private def c324_56 : PLift (RowRange 324 hadRow324 56 64) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c324_64 : RowRange 324 hadRow324 64 72 := viaCheck (by decide +kernel)
+private def c324_64 : PLift (RowRange 324 hadRow324 64 72) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c324_72 : RowRange 324 hadRow324 72 80 := viaCheck (by decide +kernel)
+private def c324_72 : PLift (RowRange 324 hadRow324 72 80) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c324_80 : RowRange 324 hadRow324 80 88 := viaCheck (by decide +kernel)
+private def c324_80 : PLift (RowRange 324 hadRow324 80 88) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c324_88 : RowRange 324 hadRow324 88 96 := viaCheck (by decide +kernel)
+private def c324_88 : PLift (RowRange 324 hadRow324 88 96) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c324_96 : RowRange 324 hadRow324 96 104 := viaCheck (by decide +kernel)
+private def c324_96 : PLift (RowRange 324 hadRow324 96 104) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c324_104 : RowRange 324 hadRow324 104 112 := viaCheck (by decide +kernel)
+private def c324_104 : PLift (RowRange 324 hadRow324 104 112) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c324_112 : RowRange 324 hadRow324 112 120 := viaCheck (by decide +kernel)
+private def c324_112 : PLift (RowRange 324 hadRow324 112 120) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c324_120 : RowRange 324 hadRow324 120 128 := viaCheck (by decide +kernel)
+private def c324_120 : PLift (RowRange 324 hadRow324 120 128) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c324_128 : RowRange 324 hadRow324 128 136 := viaCheck (by decide +kernel)
+private def c324_128 : PLift (RowRange 324 hadRow324 128 136) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c324_136 : RowRange 324 hadRow324 136 144 := viaCheck (by decide +kernel)
+private def c324_136 : PLift (RowRange 324 hadRow324 136 144) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c324_144 : RowRange 324 hadRow324 144 152 := viaCheck (by decide +kernel)
+private def c324_144 : PLift (RowRange 324 hadRow324 144 152) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c324_152 : RowRange 324 hadRow324 152 160 := viaCheck (by decide +kernel)
+private def c324_152 : PLift (RowRange 324 hadRow324 152 160) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c324_160 : RowRange 324 hadRow324 160 168 := viaCheck (by decide +kernel)
+private def c324_160 : PLift (RowRange 324 hadRow324 160 168) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c324_168 : RowRange 324 hadRow324 168 176 := viaCheck (by decide +kernel)
+private def c324_168 : PLift (RowRange 324 hadRow324 168 176) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c324_176 : RowRange 324 hadRow324 176 184 := viaCheck (by decide +kernel)
+private def c324_176 : PLift (RowRange 324 hadRow324 176 184) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c324_184 : RowRange 324 hadRow324 184 192 := viaCheck (by decide +kernel)
+private def c324_184 : PLift (RowRange 324 hadRow324 184 192) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c324_192 : RowRange 324 hadRow324 192 200 := viaCheck (by decide +kernel)
+private def c324_192 : PLift (RowRange 324 hadRow324 192 200) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c324_200 : RowRange 324 hadRow324 200 208 := viaCheck (by decide +kernel)
+private def c324_200 : PLift (RowRange 324 hadRow324 200 208) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c324_208 : RowRange 324 hadRow324 208 216 := viaCheck (by decide +kernel)
+private def c324_208 : PLift (RowRange 324 hadRow324 208 216) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c324_216 : RowRange 324 hadRow324 216 224 := viaCheck (by decide +kernel)
+private def c324_216 : PLift (RowRange 324 hadRow324 216 224) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c324_224 : RowRange 324 hadRow324 224 232 := viaCheck (by decide +kernel)
+private def c324_224 : PLift (RowRange 324 hadRow324 224 232) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c324_232 : RowRange 324 hadRow324 232 240 := viaCheck (by decide +kernel)
+private def c324_232 : PLift (RowRange 324 hadRow324 232 240) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c324_240 : RowRange 324 hadRow324 240 248 := viaCheck (by decide +kernel)
+private def c324_240 : PLift (RowRange 324 hadRow324 240 248) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c324_248 : RowRange 324 hadRow324 248 256 := viaCheck (by decide +kernel)
+private def c324_248 : PLift (RowRange 324 hadRow324 248 256) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c324_256 : RowRange 324 hadRow324 256 264 := viaCheck (by decide +kernel)
+private def c324_256 : PLift (RowRange 324 hadRow324 256 264) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c324_264 : RowRange 324 hadRow324 264 272 := viaCheck (by decide +kernel)
+private def c324_264 : PLift (RowRange 324 hadRow324 264 272) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c324_272 : RowRange 324 hadRow324 272 280 := viaCheck (by decide +kernel)
+private def c324_272 : PLift (RowRange 324 hadRow324 272 280) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c324_280 : RowRange 324 hadRow324 280 288 := viaCheck (by decide +kernel)
+private def c324_280 : PLift (RowRange 324 hadRow324 280 288) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c324_288 : RowRange 324 hadRow324 288 296 := viaCheck (by decide +kernel)
+private def c324_288 : PLift (RowRange 324 hadRow324 288 296) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c324_296 : RowRange 324 hadRow324 296 304 := viaCheck (by decide +kernel)
+private def c324_296 : PLift (RowRange 324 hadRow324 296 304) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c324_304 : RowRange 324 hadRow324 304 312 := viaCheck (by decide +kernel)
+private def c324_304 : PLift (RowRange 324 hadRow324 304 312) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c324_312 : RowRange 324 hadRow324 312 320 := viaCheck (by decide +kernel)
+private def c324_312 : PLift (RowRange 324 hadRow324 312 320) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c324_320 : RowRange 324 hadRow324 320 324 := viaCheck (by decide +kernel)
+private def c324_320 : PLift (RowRange 324 hadRow324 320 324) := ⟨viaCheck (by decide +kernel)⟩
 
-private theorem g324 : gramWitness 324 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c324_0 c324_8) (viaSplit c324_16 c324_24)) (viaSplit (viaSplit c324_32 c324_40) (viaSplit c324_48 c324_56))) (viaSplit (viaSplit (viaSplit c324_64 c324_72) (viaSplit c324_80 c324_88)) (viaSplit (viaSplit c324_96 c324_104) (viaSplit c324_112 c324_120)))) (viaSplit (viaSplit (viaSplit (viaSplit c324_128 c324_136) (viaSplit c324_144 c324_152)) (viaSplit (viaSplit c324_160 c324_168) (viaSplit c324_176 c324_184))) (viaSplit (viaSplit (viaSplit c324_192 c324_200) (viaSplit c324_208 c324_216)) (viaSplit (viaSplit c324_224 c324_232) (viaSplit c324_240 c324_248))))) (viaSplit (viaSplit (viaSplit (viaSplit c324_256 c324_264) (viaSplit c324_272 c324_280)) (viaSplit (viaSplit c324_288 c324_296) (viaSplit c324_304 c324_312))) c324_320))
+private theorem g324 : gramWitness 324 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c324_0.down c324_8.down) (viaSplit c324_16.down c324_24.down)) (viaSplit (viaSplit c324_32.down c324_40.down) (viaSplit c324_48.down c324_56.down))) (viaSplit (viaSplit (viaSplit c324_64.down c324_72.down) (viaSplit c324_80.down c324_88.down)) (viaSplit (viaSplit c324_96.down c324_104.down) (viaSplit c324_112.down c324_120.down)))) (viaSplit (viaSplit (viaSplit (viaSplit c324_128.down c324_136.down) (viaSplit c324_144.down c324_152.down)) (viaSplit (viaSplit c324_160.down c324_168.down) (viaSplit c324_176.down c324_184.down))) (viaSplit (viaSplit (viaSplit c324_192.down c324_200.down) (viaSplit c324_208.down c324_216.down)) (viaSplit (viaSplit c324_224.down c324_232.down) (viaSplit c324_240.down c324_248.down))))) (viaSplit (viaSplit (viaSplit (viaSplit c324_256.down c324_264.down) (viaSplit c324_272.down c324_280.down)) (viaSplit (viaSplit c324_288.down c324_296.down) (viaSplit c324_304.down c324_312.down))) c324_320.down))
 
 private theorem g328 : gramWitness 328 := gram_product (by decide) (by decide) g2 g164
 
@@ -4017,141 +4019,141 @@ private theorem g348 : gramWitness 348 := fromColumns (PaleyHadamard.typeI 347 (
 private theorem g352 : gramWitness 352 := gram_product (by decide) (by decide) g2 g176
 
 set_option maxRecDepth 16000 in
-private def c356_0 : RowRange 356 hadRow356 0 8 := viaCheck (by decide +kernel)
+private def c356_0 : PLift (RowRange 356 hadRow356 0 8) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c356_8 : RowRange 356 hadRow356 8 16 := viaCheck (by decide +kernel)
+private def c356_8 : PLift (RowRange 356 hadRow356 8 16) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c356_16 : RowRange 356 hadRow356 16 24 := viaCheck (by decide +kernel)
+private def c356_16 : PLift (RowRange 356 hadRow356 16 24) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c356_24 : RowRange 356 hadRow356 24 32 := viaCheck (by decide +kernel)
+private def c356_24 : PLift (RowRange 356 hadRow356 24 32) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c356_32 : RowRange 356 hadRow356 32 40 := viaCheck (by decide +kernel)
+private def c356_32 : PLift (RowRange 356 hadRow356 32 40) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c356_40 : RowRange 356 hadRow356 40 48 := viaCheck (by decide +kernel)
+private def c356_40 : PLift (RowRange 356 hadRow356 40 48) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c356_48 : RowRange 356 hadRow356 48 56 := viaCheck (by decide +kernel)
+private def c356_48 : PLift (RowRange 356 hadRow356 48 56) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c356_56 : RowRange 356 hadRow356 56 64 := viaCheck (by decide +kernel)
+private def c356_56 : PLift (RowRange 356 hadRow356 56 64) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c356_64 : RowRange 356 hadRow356 64 72 := viaCheck (by decide +kernel)
+private def c356_64 : PLift (RowRange 356 hadRow356 64 72) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c356_72 : RowRange 356 hadRow356 72 80 := viaCheck (by decide +kernel)
+private def c356_72 : PLift (RowRange 356 hadRow356 72 80) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c356_80 : RowRange 356 hadRow356 80 88 := viaCheck (by decide +kernel)
+private def c356_80 : PLift (RowRange 356 hadRow356 80 88) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c356_88 : RowRange 356 hadRow356 88 96 := viaCheck (by decide +kernel)
+private def c356_88 : PLift (RowRange 356 hadRow356 88 96) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c356_96 : RowRange 356 hadRow356 96 104 := viaCheck (by decide +kernel)
+private def c356_96 : PLift (RowRange 356 hadRow356 96 104) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c356_104 : RowRange 356 hadRow356 104 112 := viaCheck (by decide +kernel)
+private def c356_104 : PLift (RowRange 356 hadRow356 104 112) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c356_112 : RowRange 356 hadRow356 112 120 := viaCheck (by decide +kernel)
+private def c356_112 : PLift (RowRange 356 hadRow356 112 120) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c356_120 : RowRange 356 hadRow356 120 128 := viaCheck (by decide +kernel)
+private def c356_120 : PLift (RowRange 356 hadRow356 120 128) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c356_128 : RowRange 356 hadRow356 128 136 := viaCheck (by decide +kernel)
+private def c356_128 : PLift (RowRange 356 hadRow356 128 136) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c356_136 : RowRange 356 hadRow356 136 144 := viaCheck (by decide +kernel)
+private def c356_136 : PLift (RowRange 356 hadRow356 136 144) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c356_144 : RowRange 356 hadRow356 144 152 := viaCheck (by decide +kernel)
+private def c356_144 : PLift (RowRange 356 hadRow356 144 152) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c356_152 : RowRange 356 hadRow356 152 160 := viaCheck (by decide +kernel)
+private def c356_152 : PLift (RowRange 356 hadRow356 152 160) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c356_160 : RowRange 356 hadRow356 160 168 := viaCheck (by decide +kernel)
+private def c356_160 : PLift (RowRange 356 hadRow356 160 168) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c356_168 : RowRange 356 hadRow356 168 176 := viaCheck (by decide +kernel)
+private def c356_168 : PLift (RowRange 356 hadRow356 168 176) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c356_176 : RowRange 356 hadRow356 176 184 := viaCheck (by decide +kernel)
+private def c356_176 : PLift (RowRange 356 hadRow356 176 184) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c356_184 : RowRange 356 hadRow356 184 192 := viaCheck (by decide +kernel)
+private def c356_184 : PLift (RowRange 356 hadRow356 184 192) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c356_192 : RowRange 356 hadRow356 192 200 := viaCheck (by decide +kernel)
+private def c356_192 : PLift (RowRange 356 hadRow356 192 200) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c356_200 : RowRange 356 hadRow356 200 208 := viaCheck (by decide +kernel)
+private def c356_200 : PLift (RowRange 356 hadRow356 200 208) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c356_208 : RowRange 356 hadRow356 208 216 := viaCheck (by decide +kernel)
+private def c356_208 : PLift (RowRange 356 hadRow356 208 216) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c356_216 : RowRange 356 hadRow356 216 224 := viaCheck (by decide +kernel)
+private def c356_216 : PLift (RowRange 356 hadRow356 216 224) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c356_224 : RowRange 356 hadRow356 224 232 := viaCheck (by decide +kernel)
+private def c356_224 : PLift (RowRange 356 hadRow356 224 232) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c356_232 : RowRange 356 hadRow356 232 240 := viaCheck (by decide +kernel)
+private def c356_232 : PLift (RowRange 356 hadRow356 232 240) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c356_240 : RowRange 356 hadRow356 240 248 := viaCheck (by decide +kernel)
+private def c356_240 : PLift (RowRange 356 hadRow356 240 248) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c356_248 : RowRange 356 hadRow356 248 256 := viaCheck (by decide +kernel)
+private def c356_248 : PLift (RowRange 356 hadRow356 248 256) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c356_256 : RowRange 356 hadRow356 256 264 := viaCheck (by decide +kernel)
+private def c356_256 : PLift (RowRange 356 hadRow356 256 264) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c356_264 : RowRange 356 hadRow356 264 272 := viaCheck (by decide +kernel)
+private def c356_264 : PLift (RowRange 356 hadRow356 264 272) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c356_272 : RowRange 356 hadRow356 272 280 := viaCheck (by decide +kernel)
+private def c356_272 : PLift (RowRange 356 hadRow356 272 280) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c356_280 : RowRange 356 hadRow356 280 288 := viaCheck (by decide +kernel)
+private def c356_280 : PLift (RowRange 356 hadRow356 280 288) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c356_288 : RowRange 356 hadRow356 288 296 := viaCheck (by decide +kernel)
+private def c356_288 : PLift (RowRange 356 hadRow356 288 296) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c356_296 : RowRange 356 hadRow356 296 304 := viaCheck (by decide +kernel)
+private def c356_296 : PLift (RowRange 356 hadRow356 296 304) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c356_304 : RowRange 356 hadRow356 304 312 := viaCheck (by decide +kernel)
+private def c356_304 : PLift (RowRange 356 hadRow356 304 312) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c356_312 : RowRange 356 hadRow356 312 320 := viaCheck (by decide +kernel)
+private def c356_312 : PLift (RowRange 356 hadRow356 312 320) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c356_320 : RowRange 356 hadRow356 320 328 := viaCheck (by decide +kernel)
+private def c356_320 : PLift (RowRange 356 hadRow356 320 328) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c356_328 : RowRange 356 hadRow356 328 336 := viaCheck (by decide +kernel)
+private def c356_328 : PLift (RowRange 356 hadRow356 328 336) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c356_336 : RowRange 356 hadRow356 336 344 := viaCheck (by decide +kernel)
+private def c356_336 : PLift (RowRange 356 hadRow356 336 344) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c356_344 : RowRange 356 hadRow356 344 352 := viaCheck (by decide +kernel)
+private def c356_344 : PLift (RowRange 356 hadRow356 344 352) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c356_352 : RowRange 356 hadRow356 352 356 := viaCheck (by decide +kernel)
+private def c356_352 : PLift (RowRange 356 hadRow356 352 356) := ⟨viaCheck (by decide +kernel)⟩
 
-private theorem g356 : gramWitness 356 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c356_0 c356_8) (viaSplit c356_16 c356_24)) (viaSplit (viaSplit c356_32 c356_40) (viaSplit c356_48 c356_56))) (viaSplit (viaSplit (viaSplit c356_64 c356_72) (viaSplit c356_80 c356_88)) (viaSplit (viaSplit c356_96 c356_104) (viaSplit c356_112 c356_120)))) (viaSplit (viaSplit (viaSplit (viaSplit c356_128 c356_136) (viaSplit c356_144 c356_152)) (viaSplit (viaSplit c356_160 c356_168) (viaSplit c356_176 c356_184))) (viaSplit (viaSplit (viaSplit c356_192 c356_200) (viaSplit c356_208 c356_216)) (viaSplit (viaSplit c356_224 c356_232) (viaSplit c356_240 c356_248))))) (viaSplit (viaSplit (viaSplit (viaSplit c356_256 c356_264) (viaSplit c356_272 c356_280)) (viaSplit (viaSplit c356_288 c356_296) (viaSplit c356_304 c356_312))) (viaSplit (viaSplit (viaSplit c356_320 c356_328) (viaSplit c356_336 c356_344)) c356_352)))
+private theorem g356 : gramWitness 356 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c356_0.down c356_8.down) (viaSplit c356_16.down c356_24.down)) (viaSplit (viaSplit c356_32.down c356_40.down) (viaSplit c356_48.down c356_56.down))) (viaSplit (viaSplit (viaSplit c356_64.down c356_72.down) (viaSplit c356_80.down c356_88.down)) (viaSplit (viaSplit c356_96.down c356_104.down) (viaSplit c356_112.down c356_120.down)))) (viaSplit (viaSplit (viaSplit (viaSplit c356_128.down c356_136.down) (viaSplit c356_144.down c356_152.down)) (viaSplit (viaSplit c356_160.down c356_168.down) (viaSplit c356_176.down c356_184.down))) (viaSplit (viaSplit (viaSplit c356_192.down c356_200.down) (viaSplit c356_208.down c356_216.down)) (viaSplit (viaSplit c356_224.down c356_232.down) (viaSplit c356_240.down c356_248.down))))) (viaSplit (viaSplit (viaSplit (viaSplit c356_256.down c356_264.down) (viaSplit c356_272.down c356_280.down)) (viaSplit (viaSplit c356_288.down c356_296.down) (viaSplit c356_304.down c356_312.down))) (viaSplit (viaSplit (viaSplit c356_320.down c356_328.down) (viaSplit c356_336.down c356_344.down)) c356_352.down)))
 
 private theorem g360 : gramWitness 360 := gram_product (by decide) (by decide) g2 g180
 
@@ -4160,147 +4162,147 @@ private theorem g364 : gramWitness 364 := fromColumns (PaleyHadamard.typeII 181 
 private theorem g368 : gramWitness 368 := gram_product (by decide) (by decide) g2 g184
 
 set_option maxRecDepth 16000 in
-private def c372_0 : RowRange 372 hadRow372 0 8 := viaCheck (by decide +kernel)
+private def c372_0 : PLift (RowRange 372 hadRow372 0 8) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_8 : RowRange 372 hadRow372 8 16 := viaCheck (by decide +kernel)
+private def c372_8 : PLift (RowRange 372 hadRow372 8 16) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_16 : RowRange 372 hadRow372 16 24 := viaCheck (by decide +kernel)
+private def c372_16 : PLift (RowRange 372 hadRow372 16 24) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_24 : RowRange 372 hadRow372 24 32 := viaCheck (by decide +kernel)
+private def c372_24 : PLift (RowRange 372 hadRow372 24 32) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_32 : RowRange 372 hadRow372 32 40 := viaCheck (by decide +kernel)
+private def c372_32 : PLift (RowRange 372 hadRow372 32 40) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_40 : RowRange 372 hadRow372 40 48 := viaCheck (by decide +kernel)
+private def c372_40 : PLift (RowRange 372 hadRow372 40 48) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_48 : RowRange 372 hadRow372 48 56 := viaCheck (by decide +kernel)
+private def c372_48 : PLift (RowRange 372 hadRow372 48 56) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_56 : RowRange 372 hadRow372 56 64 := viaCheck (by decide +kernel)
+private def c372_56 : PLift (RowRange 372 hadRow372 56 64) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_64 : RowRange 372 hadRow372 64 72 := viaCheck (by decide +kernel)
+private def c372_64 : PLift (RowRange 372 hadRow372 64 72) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_72 : RowRange 372 hadRow372 72 80 := viaCheck (by decide +kernel)
+private def c372_72 : PLift (RowRange 372 hadRow372 72 80) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_80 : RowRange 372 hadRow372 80 88 := viaCheck (by decide +kernel)
+private def c372_80 : PLift (RowRange 372 hadRow372 80 88) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_88 : RowRange 372 hadRow372 88 96 := viaCheck (by decide +kernel)
+private def c372_88 : PLift (RowRange 372 hadRow372 88 96) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_96 : RowRange 372 hadRow372 96 104 := viaCheck (by decide +kernel)
+private def c372_96 : PLift (RowRange 372 hadRow372 96 104) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_104 : RowRange 372 hadRow372 104 112 := viaCheck (by decide +kernel)
+private def c372_104 : PLift (RowRange 372 hadRow372 104 112) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_112 : RowRange 372 hadRow372 112 120 := viaCheck (by decide +kernel)
+private def c372_112 : PLift (RowRange 372 hadRow372 112 120) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_120 : RowRange 372 hadRow372 120 128 := viaCheck (by decide +kernel)
+private def c372_120 : PLift (RowRange 372 hadRow372 120 128) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_128 : RowRange 372 hadRow372 128 136 := viaCheck (by decide +kernel)
+private def c372_128 : PLift (RowRange 372 hadRow372 128 136) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_136 : RowRange 372 hadRow372 136 144 := viaCheck (by decide +kernel)
+private def c372_136 : PLift (RowRange 372 hadRow372 136 144) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_144 : RowRange 372 hadRow372 144 152 := viaCheck (by decide +kernel)
+private def c372_144 : PLift (RowRange 372 hadRow372 144 152) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_152 : RowRange 372 hadRow372 152 160 := viaCheck (by decide +kernel)
+private def c372_152 : PLift (RowRange 372 hadRow372 152 160) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_160 : RowRange 372 hadRow372 160 168 := viaCheck (by decide +kernel)
+private def c372_160 : PLift (RowRange 372 hadRow372 160 168) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_168 : RowRange 372 hadRow372 168 176 := viaCheck (by decide +kernel)
+private def c372_168 : PLift (RowRange 372 hadRow372 168 176) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_176 : RowRange 372 hadRow372 176 184 := viaCheck (by decide +kernel)
+private def c372_176 : PLift (RowRange 372 hadRow372 176 184) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_184 : RowRange 372 hadRow372 184 192 := viaCheck (by decide +kernel)
+private def c372_184 : PLift (RowRange 372 hadRow372 184 192) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_192 : RowRange 372 hadRow372 192 200 := viaCheck (by decide +kernel)
+private def c372_192 : PLift (RowRange 372 hadRow372 192 200) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_200 : RowRange 372 hadRow372 200 208 := viaCheck (by decide +kernel)
+private def c372_200 : PLift (RowRange 372 hadRow372 200 208) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_208 : RowRange 372 hadRow372 208 216 := viaCheck (by decide +kernel)
+private def c372_208 : PLift (RowRange 372 hadRow372 208 216) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_216 : RowRange 372 hadRow372 216 224 := viaCheck (by decide +kernel)
+private def c372_216 : PLift (RowRange 372 hadRow372 216 224) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_224 : RowRange 372 hadRow372 224 232 := viaCheck (by decide +kernel)
+private def c372_224 : PLift (RowRange 372 hadRow372 224 232) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_232 : RowRange 372 hadRow372 232 240 := viaCheck (by decide +kernel)
+private def c372_232 : PLift (RowRange 372 hadRow372 232 240) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_240 : RowRange 372 hadRow372 240 248 := viaCheck (by decide +kernel)
+private def c372_240 : PLift (RowRange 372 hadRow372 240 248) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_248 : RowRange 372 hadRow372 248 256 := viaCheck (by decide +kernel)
+private def c372_248 : PLift (RowRange 372 hadRow372 248 256) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_256 : RowRange 372 hadRow372 256 264 := viaCheck (by decide +kernel)
+private def c372_256 : PLift (RowRange 372 hadRow372 256 264) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_264 : RowRange 372 hadRow372 264 272 := viaCheck (by decide +kernel)
+private def c372_264 : PLift (RowRange 372 hadRow372 264 272) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_272 : RowRange 372 hadRow372 272 280 := viaCheck (by decide +kernel)
+private def c372_272 : PLift (RowRange 372 hadRow372 272 280) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_280 : RowRange 372 hadRow372 280 288 := viaCheck (by decide +kernel)
+private def c372_280 : PLift (RowRange 372 hadRow372 280 288) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_288 : RowRange 372 hadRow372 288 296 := viaCheck (by decide +kernel)
+private def c372_288 : PLift (RowRange 372 hadRow372 288 296) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_296 : RowRange 372 hadRow372 296 304 := viaCheck (by decide +kernel)
+private def c372_296 : PLift (RowRange 372 hadRow372 296 304) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_304 : RowRange 372 hadRow372 304 312 := viaCheck (by decide +kernel)
+private def c372_304 : PLift (RowRange 372 hadRow372 304 312) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_312 : RowRange 372 hadRow372 312 320 := viaCheck (by decide +kernel)
+private def c372_312 : PLift (RowRange 372 hadRow372 312 320) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_320 : RowRange 372 hadRow372 320 328 := viaCheck (by decide +kernel)
+private def c372_320 : PLift (RowRange 372 hadRow372 320 328) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_328 : RowRange 372 hadRow372 328 336 := viaCheck (by decide +kernel)
+private def c372_328 : PLift (RowRange 372 hadRow372 328 336) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_336 : RowRange 372 hadRow372 336 344 := viaCheck (by decide +kernel)
+private def c372_336 : PLift (RowRange 372 hadRow372 336 344) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_344 : RowRange 372 hadRow372 344 352 := viaCheck (by decide +kernel)
+private def c372_344 : PLift (RowRange 372 hadRow372 344 352) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_352 : RowRange 372 hadRow372 352 360 := viaCheck (by decide +kernel)
+private def c372_352 : PLift (RowRange 372 hadRow372 352 360) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_360 : RowRange 372 hadRow372 360 368 := viaCheck (by decide +kernel)
+private def c372_360 : PLift (RowRange 372 hadRow372 360 368) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c372_368 : RowRange 372 hadRow372 368 372 := viaCheck (by decide +kernel)
+private def c372_368 : PLift (RowRange 372 hadRow372 368 372) := ⟨viaCheck (by decide +kernel)⟩
 
-private theorem g372 : gramWitness 372 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c372_0 c372_8) (viaSplit c372_16 c372_24)) (viaSplit (viaSplit c372_32 c372_40) (viaSplit c372_48 c372_56))) (viaSplit (viaSplit (viaSplit c372_64 c372_72) (viaSplit c372_80 c372_88)) (viaSplit (viaSplit c372_96 c372_104) (viaSplit c372_112 c372_120)))) (viaSplit (viaSplit (viaSplit (viaSplit c372_128 c372_136) (viaSplit c372_144 c372_152)) (viaSplit (viaSplit c372_160 c372_168) (viaSplit c372_176 c372_184))) (viaSplit (viaSplit (viaSplit c372_192 c372_200) (viaSplit c372_208 c372_216)) (viaSplit (viaSplit c372_224 c372_232) (viaSplit c372_240 c372_248))))) (viaSplit (viaSplit (viaSplit (viaSplit c372_256 c372_264) (viaSplit c372_272 c372_280)) (viaSplit (viaSplit c372_288 c372_296) (viaSplit c372_304 c372_312))) (viaSplit (viaSplit (viaSplit c372_320 c372_328) (viaSplit c372_336 c372_344)) (viaSplit (viaSplit c372_352 c372_360) c372_368))))
+private theorem g372 : gramWitness 372 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c372_0.down c372_8.down) (viaSplit c372_16.down c372_24.down)) (viaSplit (viaSplit c372_32.down c372_40.down) (viaSplit c372_48.down c372_56.down))) (viaSplit (viaSplit (viaSplit c372_64.down c372_72.down) (viaSplit c372_80.down c372_88.down)) (viaSplit (viaSplit c372_96.down c372_104.down) (viaSplit c372_112.down c372_120.down)))) (viaSplit (viaSplit (viaSplit (viaSplit c372_128.down c372_136.down) (viaSplit c372_144.down c372_152.down)) (viaSplit (viaSplit c372_160.down c372_168.down) (viaSplit c372_176.down c372_184.down))) (viaSplit (viaSplit (viaSplit c372_192.down c372_200.down) (viaSplit c372_208.down c372_216.down)) (viaSplit (viaSplit c372_224.down c372_232.down) (viaSplit c372_240.down c372_248.down))))) (viaSplit (viaSplit (viaSplit (viaSplit c372_256.down c372_264.down) (viaSplit c372_272.down c372_280.down)) (viaSplit (viaSplit c372_288.down c372_296.down) (viaSplit c372_304.down c372_312.down))) (viaSplit (viaSplit (viaSplit c372_320.down c372_328.down) (viaSplit c372_336.down c372_344.down)) (viaSplit (viaSplit c372_352.down c372_360.down) c372_368.down))))
 
 private theorem g376 : gramWitness 376 := gram_product (by decide) (by decide) g2 g188
 
@@ -4317,319 +4319,319 @@ private theorem g396 : gramWitness 396 := fromColumns (PaleyHadamard.typeII 197 
 private theorem g400 : gramWitness 400 := gram_product (by decide) (by decide) g2 g200
 
 set_option maxRecDepth 16000 in
-private def c404_0 : RowRange 404 hadRow404 0 8 := viaCheck (by decide +kernel)
+private def c404_0 : PLift (RowRange 404 hadRow404 0 8) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_8 : RowRange 404 hadRow404 8 16 := viaCheck (by decide +kernel)
+private def c404_8 : PLift (RowRange 404 hadRow404 8 16) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_16 : RowRange 404 hadRow404 16 24 := viaCheck (by decide +kernel)
+private def c404_16 : PLift (RowRange 404 hadRow404 16 24) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_24 : RowRange 404 hadRow404 24 32 := viaCheck (by decide +kernel)
+private def c404_24 : PLift (RowRange 404 hadRow404 24 32) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_32 : RowRange 404 hadRow404 32 40 := viaCheck (by decide +kernel)
+private def c404_32 : PLift (RowRange 404 hadRow404 32 40) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_40 : RowRange 404 hadRow404 40 48 := viaCheck (by decide +kernel)
+private def c404_40 : PLift (RowRange 404 hadRow404 40 48) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_48 : RowRange 404 hadRow404 48 56 := viaCheck (by decide +kernel)
+private def c404_48 : PLift (RowRange 404 hadRow404 48 56) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_56 : RowRange 404 hadRow404 56 64 := viaCheck (by decide +kernel)
+private def c404_56 : PLift (RowRange 404 hadRow404 56 64) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_64 : RowRange 404 hadRow404 64 72 := viaCheck (by decide +kernel)
+private def c404_64 : PLift (RowRange 404 hadRow404 64 72) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_72 : RowRange 404 hadRow404 72 80 := viaCheck (by decide +kernel)
+private def c404_72 : PLift (RowRange 404 hadRow404 72 80) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_80 : RowRange 404 hadRow404 80 88 := viaCheck (by decide +kernel)
+private def c404_80 : PLift (RowRange 404 hadRow404 80 88) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_88 : RowRange 404 hadRow404 88 96 := viaCheck (by decide +kernel)
+private def c404_88 : PLift (RowRange 404 hadRow404 88 96) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_96 : RowRange 404 hadRow404 96 104 := viaCheck (by decide +kernel)
+private def c404_96 : PLift (RowRange 404 hadRow404 96 104) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_104 : RowRange 404 hadRow404 104 112 := viaCheck (by decide +kernel)
+private def c404_104 : PLift (RowRange 404 hadRow404 104 112) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_112 : RowRange 404 hadRow404 112 120 := viaCheck (by decide +kernel)
+private def c404_112 : PLift (RowRange 404 hadRow404 112 120) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_120 : RowRange 404 hadRow404 120 128 := viaCheck (by decide +kernel)
+private def c404_120 : PLift (RowRange 404 hadRow404 120 128) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_128 : RowRange 404 hadRow404 128 136 := viaCheck (by decide +kernel)
+private def c404_128 : PLift (RowRange 404 hadRow404 128 136) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_136 : RowRange 404 hadRow404 136 144 := viaCheck (by decide +kernel)
+private def c404_136 : PLift (RowRange 404 hadRow404 136 144) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_144 : RowRange 404 hadRow404 144 152 := viaCheck (by decide +kernel)
+private def c404_144 : PLift (RowRange 404 hadRow404 144 152) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_152 : RowRange 404 hadRow404 152 160 := viaCheck (by decide +kernel)
+private def c404_152 : PLift (RowRange 404 hadRow404 152 160) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_160 : RowRange 404 hadRow404 160 168 := viaCheck (by decide +kernel)
+private def c404_160 : PLift (RowRange 404 hadRow404 160 168) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_168 : RowRange 404 hadRow404 168 176 := viaCheck (by decide +kernel)
+private def c404_168 : PLift (RowRange 404 hadRow404 168 176) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_176 : RowRange 404 hadRow404 176 184 := viaCheck (by decide +kernel)
+private def c404_176 : PLift (RowRange 404 hadRow404 176 184) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_184 : RowRange 404 hadRow404 184 192 := viaCheck (by decide +kernel)
+private def c404_184 : PLift (RowRange 404 hadRow404 184 192) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_192 : RowRange 404 hadRow404 192 200 := viaCheck (by decide +kernel)
+private def c404_192 : PLift (RowRange 404 hadRow404 192 200) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_200 : RowRange 404 hadRow404 200 208 := viaCheck (by decide +kernel)
+private def c404_200 : PLift (RowRange 404 hadRow404 200 208) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_208 : RowRange 404 hadRow404 208 216 := viaCheck (by decide +kernel)
+private def c404_208 : PLift (RowRange 404 hadRow404 208 216) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_216 : RowRange 404 hadRow404 216 224 := viaCheck (by decide +kernel)
+private def c404_216 : PLift (RowRange 404 hadRow404 216 224) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_224 : RowRange 404 hadRow404 224 232 := viaCheck (by decide +kernel)
+private def c404_224 : PLift (RowRange 404 hadRow404 224 232) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_232 : RowRange 404 hadRow404 232 240 := viaCheck (by decide +kernel)
+private def c404_232 : PLift (RowRange 404 hadRow404 232 240) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_240 : RowRange 404 hadRow404 240 248 := viaCheck (by decide +kernel)
+private def c404_240 : PLift (RowRange 404 hadRow404 240 248) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_248 : RowRange 404 hadRow404 248 256 := viaCheck (by decide +kernel)
+private def c404_248 : PLift (RowRange 404 hadRow404 248 256) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_256 : RowRange 404 hadRow404 256 264 := viaCheck (by decide +kernel)
+private def c404_256 : PLift (RowRange 404 hadRow404 256 264) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_264 : RowRange 404 hadRow404 264 272 := viaCheck (by decide +kernel)
+private def c404_264 : PLift (RowRange 404 hadRow404 264 272) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_272 : RowRange 404 hadRow404 272 280 := viaCheck (by decide +kernel)
+private def c404_272 : PLift (RowRange 404 hadRow404 272 280) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_280 : RowRange 404 hadRow404 280 288 := viaCheck (by decide +kernel)
+private def c404_280 : PLift (RowRange 404 hadRow404 280 288) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_288 : RowRange 404 hadRow404 288 296 := viaCheck (by decide +kernel)
+private def c404_288 : PLift (RowRange 404 hadRow404 288 296) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_296 : RowRange 404 hadRow404 296 304 := viaCheck (by decide +kernel)
+private def c404_296 : PLift (RowRange 404 hadRow404 296 304) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_304 : RowRange 404 hadRow404 304 312 := viaCheck (by decide +kernel)
+private def c404_304 : PLift (RowRange 404 hadRow404 304 312) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_312 : RowRange 404 hadRow404 312 320 := viaCheck (by decide +kernel)
+private def c404_312 : PLift (RowRange 404 hadRow404 312 320) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_320 : RowRange 404 hadRow404 320 328 := viaCheck (by decide +kernel)
+private def c404_320 : PLift (RowRange 404 hadRow404 320 328) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_328 : RowRange 404 hadRow404 328 336 := viaCheck (by decide +kernel)
+private def c404_328 : PLift (RowRange 404 hadRow404 328 336) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_336 : RowRange 404 hadRow404 336 344 := viaCheck (by decide +kernel)
+private def c404_336 : PLift (RowRange 404 hadRow404 336 344) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_344 : RowRange 404 hadRow404 344 352 := viaCheck (by decide +kernel)
+private def c404_344 : PLift (RowRange 404 hadRow404 344 352) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_352 : RowRange 404 hadRow404 352 360 := viaCheck (by decide +kernel)
+private def c404_352 : PLift (RowRange 404 hadRow404 352 360) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_360 : RowRange 404 hadRow404 360 368 := viaCheck (by decide +kernel)
+private def c404_360 : PLift (RowRange 404 hadRow404 360 368) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_368 : RowRange 404 hadRow404 368 376 := viaCheck (by decide +kernel)
+private def c404_368 : PLift (RowRange 404 hadRow404 368 376) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_376 : RowRange 404 hadRow404 376 384 := viaCheck (by decide +kernel)
+private def c404_376 : PLift (RowRange 404 hadRow404 376 384) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_384 : RowRange 404 hadRow404 384 392 := viaCheck (by decide +kernel)
+private def c404_384 : PLift (RowRange 404 hadRow404 384 392) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_392 : RowRange 404 hadRow404 392 400 := viaCheck (by decide +kernel)
+private def c404_392 : PLift (RowRange 404 hadRow404 392 400) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c404_400 : RowRange 404 hadRow404 400 404 := viaCheck (by decide +kernel)
+private def c404_400 : PLift (RowRange 404 hadRow404 400 404) := ⟨viaCheck (by decide +kernel)⟩
 
-private theorem g404 : gramWitness 404 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c404_0 c404_8) (viaSplit c404_16 c404_24)) (viaSplit (viaSplit c404_32 c404_40) (viaSplit c404_48 c404_56))) (viaSplit (viaSplit (viaSplit c404_64 c404_72) (viaSplit c404_80 c404_88)) (viaSplit (viaSplit c404_96 c404_104) (viaSplit c404_112 c404_120)))) (viaSplit (viaSplit (viaSplit (viaSplit c404_128 c404_136) (viaSplit c404_144 c404_152)) (viaSplit (viaSplit c404_160 c404_168) (viaSplit c404_176 c404_184))) (viaSplit (viaSplit (viaSplit c404_192 c404_200) (viaSplit c404_208 c404_216)) (viaSplit (viaSplit c404_224 c404_232) (viaSplit c404_240 c404_248))))) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c404_256 c404_264) (viaSplit c404_272 c404_280)) (viaSplit (viaSplit c404_288 c404_296) (viaSplit c404_304 c404_312))) (viaSplit (viaSplit (viaSplit c404_320 c404_328) (viaSplit c404_336 c404_344)) (viaSplit (viaSplit c404_352 c404_360) (viaSplit c404_368 c404_376)))) (viaSplit (viaSplit c404_384 c404_392) c404_400)))
+private theorem g404 : gramWitness 404 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c404_0.down c404_8.down) (viaSplit c404_16.down c404_24.down)) (viaSplit (viaSplit c404_32.down c404_40.down) (viaSplit c404_48.down c404_56.down))) (viaSplit (viaSplit (viaSplit c404_64.down c404_72.down) (viaSplit c404_80.down c404_88.down)) (viaSplit (viaSplit c404_96.down c404_104.down) (viaSplit c404_112.down c404_120.down)))) (viaSplit (viaSplit (viaSplit (viaSplit c404_128.down c404_136.down) (viaSplit c404_144.down c404_152.down)) (viaSplit (viaSplit c404_160.down c404_168.down) (viaSplit c404_176.down c404_184.down))) (viaSplit (viaSplit (viaSplit c404_192.down c404_200.down) (viaSplit c404_208.down c404_216.down)) (viaSplit (viaSplit c404_224.down c404_232.down) (viaSplit c404_240.down c404_248.down))))) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c404_256.down c404_264.down) (viaSplit c404_272.down c404_280.down)) (viaSplit (viaSplit c404_288.down c404_296.down) (viaSplit c404_304.down c404_312.down))) (viaSplit (viaSplit (viaSplit c404_320.down c404_328.down) (viaSplit c404_336.down c404_344.down)) (viaSplit (viaSplit c404_352.down c404_360.down) (viaSplit c404_368.down c404_376.down)))) (viaSplit (viaSplit c404_384.down c404_392.down) c404_400.down)))
 
 private theorem g408 : gramWitness 408 := gram_product (by decide) (by decide) g2 g204
 
 set_option maxRecDepth 16000 in
-private def c412_0 : RowRange 412 hadRow412 0 8 := viaCheck (by decide +kernel)
+private def c412_0 : PLift (RowRange 412 hadRow412 0 8) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_8 : RowRange 412 hadRow412 8 16 := viaCheck (by decide +kernel)
+private def c412_8 : PLift (RowRange 412 hadRow412 8 16) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_16 : RowRange 412 hadRow412 16 24 := viaCheck (by decide +kernel)
+private def c412_16 : PLift (RowRange 412 hadRow412 16 24) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_24 : RowRange 412 hadRow412 24 32 := viaCheck (by decide +kernel)
+private def c412_24 : PLift (RowRange 412 hadRow412 24 32) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_32 : RowRange 412 hadRow412 32 40 := viaCheck (by decide +kernel)
+private def c412_32 : PLift (RowRange 412 hadRow412 32 40) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_40 : RowRange 412 hadRow412 40 48 := viaCheck (by decide +kernel)
+private def c412_40 : PLift (RowRange 412 hadRow412 40 48) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_48 : RowRange 412 hadRow412 48 56 := viaCheck (by decide +kernel)
+private def c412_48 : PLift (RowRange 412 hadRow412 48 56) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_56 : RowRange 412 hadRow412 56 64 := viaCheck (by decide +kernel)
+private def c412_56 : PLift (RowRange 412 hadRow412 56 64) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_64 : RowRange 412 hadRow412 64 72 := viaCheck (by decide +kernel)
+private def c412_64 : PLift (RowRange 412 hadRow412 64 72) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_72 : RowRange 412 hadRow412 72 80 := viaCheck (by decide +kernel)
+private def c412_72 : PLift (RowRange 412 hadRow412 72 80) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_80 : RowRange 412 hadRow412 80 88 := viaCheck (by decide +kernel)
+private def c412_80 : PLift (RowRange 412 hadRow412 80 88) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_88 : RowRange 412 hadRow412 88 96 := viaCheck (by decide +kernel)
+private def c412_88 : PLift (RowRange 412 hadRow412 88 96) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_96 : RowRange 412 hadRow412 96 104 := viaCheck (by decide +kernel)
+private def c412_96 : PLift (RowRange 412 hadRow412 96 104) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_104 : RowRange 412 hadRow412 104 112 := viaCheck (by decide +kernel)
+private def c412_104 : PLift (RowRange 412 hadRow412 104 112) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_112 : RowRange 412 hadRow412 112 120 := viaCheck (by decide +kernel)
+private def c412_112 : PLift (RowRange 412 hadRow412 112 120) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_120 : RowRange 412 hadRow412 120 128 := viaCheck (by decide +kernel)
+private def c412_120 : PLift (RowRange 412 hadRow412 120 128) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_128 : RowRange 412 hadRow412 128 136 := viaCheck (by decide +kernel)
+private def c412_128 : PLift (RowRange 412 hadRow412 128 136) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_136 : RowRange 412 hadRow412 136 144 := viaCheck (by decide +kernel)
+private def c412_136 : PLift (RowRange 412 hadRow412 136 144) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_144 : RowRange 412 hadRow412 144 152 := viaCheck (by decide +kernel)
+private def c412_144 : PLift (RowRange 412 hadRow412 144 152) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_152 : RowRange 412 hadRow412 152 160 := viaCheck (by decide +kernel)
+private def c412_152 : PLift (RowRange 412 hadRow412 152 160) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_160 : RowRange 412 hadRow412 160 168 := viaCheck (by decide +kernel)
+private def c412_160 : PLift (RowRange 412 hadRow412 160 168) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_168 : RowRange 412 hadRow412 168 176 := viaCheck (by decide +kernel)
+private def c412_168 : PLift (RowRange 412 hadRow412 168 176) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_176 : RowRange 412 hadRow412 176 184 := viaCheck (by decide +kernel)
+private def c412_176 : PLift (RowRange 412 hadRow412 176 184) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_184 : RowRange 412 hadRow412 184 192 := viaCheck (by decide +kernel)
+private def c412_184 : PLift (RowRange 412 hadRow412 184 192) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_192 : RowRange 412 hadRow412 192 200 := viaCheck (by decide +kernel)
+private def c412_192 : PLift (RowRange 412 hadRow412 192 200) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_200 : RowRange 412 hadRow412 200 208 := viaCheck (by decide +kernel)
+private def c412_200 : PLift (RowRange 412 hadRow412 200 208) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_208 : RowRange 412 hadRow412 208 216 := viaCheck (by decide +kernel)
+private def c412_208 : PLift (RowRange 412 hadRow412 208 216) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_216 : RowRange 412 hadRow412 216 224 := viaCheck (by decide +kernel)
+private def c412_216 : PLift (RowRange 412 hadRow412 216 224) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_224 : RowRange 412 hadRow412 224 232 := viaCheck (by decide +kernel)
+private def c412_224 : PLift (RowRange 412 hadRow412 224 232) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_232 : RowRange 412 hadRow412 232 240 := viaCheck (by decide +kernel)
+private def c412_232 : PLift (RowRange 412 hadRow412 232 240) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_240 : RowRange 412 hadRow412 240 248 := viaCheck (by decide +kernel)
+private def c412_240 : PLift (RowRange 412 hadRow412 240 248) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_248 : RowRange 412 hadRow412 248 256 := viaCheck (by decide +kernel)
+private def c412_248 : PLift (RowRange 412 hadRow412 248 256) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_256 : RowRange 412 hadRow412 256 264 := viaCheck (by decide +kernel)
+private def c412_256 : PLift (RowRange 412 hadRow412 256 264) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_264 : RowRange 412 hadRow412 264 272 := viaCheck (by decide +kernel)
+private def c412_264 : PLift (RowRange 412 hadRow412 264 272) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_272 : RowRange 412 hadRow412 272 280 := viaCheck (by decide +kernel)
+private def c412_272 : PLift (RowRange 412 hadRow412 272 280) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_280 : RowRange 412 hadRow412 280 288 := viaCheck (by decide +kernel)
+private def c412_280 : PLift (RowRange 412 hadRow412 280 288) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_288 : RowRange 412 hadRow412 288 296 := viaCheck (by decide +kernel)
+private def c412_288 : PLift (RowRange 412 hadRow412 288 296) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_296 : RowRange 412 hadRow412 296 304 := viaCheck (by decide +kernel)
+private def c412_296 : PLift (RowRange 412 hadRow412 296 304) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_304 : RowRange 412 hadRow412 304 312 := viaCheck (by decide +kernel)
+private def c412_304 : PLift (RowRange 412 hadRow412 304 312) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_312 : RowRange 412 hadRow412 312 320 := viaCheck (by decide +kernel)
+private def c412_312 : PLift (RowRange 412 hadRow412 312 320) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_320 : RowRange 412 hadRow412 320 328 := viaCheck (by decide +kernel)
+private def c412_320 : PLift (RowRange 412 hadRow412 320 328) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_328 : RowRange 412 hadRow412 328 336 := viaCheck (by decide +kernel)
+private def c412_328 : PLift (RowRange 412 hadRow412 328 336) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_336 : RowRange 412 hadRow412 336 344 := viaCheck (by decide +kernel)
+private def c412_336 : PLift (RowRange 412 hadRow412 336 344) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_344 : RowRange 412 hadRow412 344 352 := viaCheck (by decide +kernel)
+private def c412_344 : PLift (RowRange 412 hadRow412 344 352) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_352 : RowRange 412 hadRow412 352 360 := viaCheck (by decide +kernel)
+private def c412_352 : PLift (RowRange 412 hadRow412 352 360) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_360 : RowRange 412 hadRow412 360 368 := viaCheck (by decide +kernel)
+private def c412_360 : PLift (RowRange 412 hadRow412 360 368) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_368 : RowRange 412 hadRow412 368 376 := viaCheck (by decide +kernel)
+private def c412_368 : PLift (RowRange 412 hadRow412 368 376) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_376 : RowRange 412 hadRow412 376 384 := viaCheck (by decide +kernel)
+private def c412_376 : PLift (RowRange 412 hadRow412 376 384) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_384 : RowRange 412 hadRow412 384 392 := viaCheck (by decide +kernel)
+private def c412_384 : PLift (RowRange 412 hadRow412 384 392) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_392 : RowRange 412 hadRow412 392 400 := viaCheck (by decide +kernel)
+private def c412_392 : PLift (RowRange 412 hadRow412 392 400) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_400 : RowRange 412 hadRow412 400 408 := viaCheck (by decide +kernel)
+private def c412_400 : PLift (RowRange 412 hadRow412 400 408) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c412_408 : RowRange 412 hadRow412 408 412 := viaCheck (by decide +kernel)
+private def c412_408 : PLift (RowRange 412 hadRow412 408 412) := ⟨viaCheck (by decide +kernel)⟩
 
-private theorem g412 : gramWitness 412 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c412_0 c412_8) (viaSplit c412_16 c412_24)) (viaSplit (viaSplit c412_32 c412_40) (viaSplit c412_48 c412_56))) (viaSplit (viaSplit (viaSplit c412_64 c412_72) (viaSplit c412_80 c412_88)) (viaSplit (viaSplit c412_96 c412_104) (viaSplit c412_112 c412_120)))) (viaSplit (viaSplit (viaSplit (viaSplit c412_128 c412_136) (viaSplit c412_144 c412_152)) (viaSplit (viaSplit c412_160 c412_168) (viaSplit c412_176 c412_184))) (viaSplit (viaSplit (viaSplit c412_192 c412_200) (viaSplit c412_208 c412_216)) (viaSplit (viaSplit c412_224 c412_232) (viaSplit c412_240 c412_248))))) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c412_256 c412_264) (viaSplit c412_272 c412_280)) (viaSplit (viaSplit c412_288 c412_296) (viaSplit c412_304 c412_312))) (viaSplit (viaSplit (viaSplit c412_320 c412_328) (viaSplit c412_336 c412_344)) (viaSplit (viaSplit c412_352 c412_360) (viaSplit c412_368 c412_376)))) (viaSplit (viaSplit c412_384 c412_392) (viaSplit c412_400 c412_408))))
+private theorem g412 : gramWitness 412 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c412_0.down c412_8.down) (viaSplit c412_16.down c412_24.down)) (viaSplit (viaSplit c412_32.down c412_40.down) (viaSplit c412_48.down c412_56.down))) (viaSplit (viaSplit (viaSplit c412_64.down c412_72.down) (viaSplit c412_80.down c412_88.down)) (viaSplit (viaSplit c412_96.down c412_104.down) (viaSplit c412_112.down c412_120.down)))) (viaSplit (viaSplit (viaSplit (viaSplit c412_128.down c412_136.down) (viaSplit c412_144.down c412_152.down)) (viaSplit (viaSplit c412_160.down c412_168.down) (viaSplit c412_176.down c412_184.down))) (viaSplit (viaSplit (viaSplit c412_192.down c412_200.down) (viaSplit c412_208.down c412_216.down)) (viaSplit (viaSplit c412_224.down c412_232.down) (viaSplit c412_240.down c412_248.down))))) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c412_256.down c412_264.down) (viaSplit c412_272.down c412_280.down)) (viaSplit (viaSplit c412_288.down c412_296.down) (viaSplit c412_304.down c412_312.down))) (viaSplit (viaSplit (viaSplit c412_320.down c412_328.down) (viaSplit c412_336.down c412_344.down)) (viaSplit (viaSplit c412_352.down c412_360.down) (viaSplit c412_368.down c412_376.down)))) (viaSplit (viaSplit c412_384.down c412_392.down) (viaSplit c412_400.down c412_408.down))))
 
 private theorem g416 : gramWitness 416 := gram_product (by decide) (by decide) g2 g208
 
@@ -4638,337 +4640,337 @@ private theorem g420 : gramWitness 420 := fromColumns (PaleyHadamard.typeI 419 (
 private theorem g424 : gramWitness 424 := gram_product (by decide) (by decide) g2 g212
 
 set_option maxRecDepth 16000 in
-private def c428_0 : RowRange 428 hadRow428 0 8 := viaCheck (by decide +kernel)
+private def c428_0 : PLift (RowRange 428 hadRow428 0 8) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_8 : RowRange 428 hadRow428 8 16 := viaCheck (by decide +kernel)
+private def c428_8 : PLift (RowRange 428 hadRow428 8 16) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_16 : RowRange 428 hadRow428 16 24 := viaCheck (by decide +kernel)
+private def c428_16 : PLift (RowRange 428 hadRow428 16 24) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_24 : RowRange 428 hadRow428 24 32 := viaCheck (by decide +kernel)
+private def c428_24 : PLift (RowRange 428 hadRow428 24 32) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_32 : RowRange 428 hadRow428 32 40 := viaCheck (by decide +kernel)
+private def c428_32 : PLift (RowRange 428 hadRow428 32 40) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_40 : RowRange 428 hadRow428 40 48 := viaCheck (by decide +kernel)
+private def c428_40 : PLift (RowRange 428 hadRow428 40 48) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_48 : RowRange 428 hadRow428 48 56 := viaCheck (by decide +kernel)
+private def c428_48 : PLift (RowRange 428 hadRow428 48 56) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_56 : RowRange 428 hadRow428 56 64 := viaCheck (by decide +kernel)
+private def c428_56 : PLift (RowRange 428 hadRow428 56 64) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_64 : RowRange 428 hadRow428 64 72 := viaCheck (by decide +kernel)
+private def c428_64 : PLift (RowRange 428 hadRow428 64 72) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_72 : RowRange 428 hadRow428 72 80 := viaCheck (by decide +kernel)
+private def c428_72 : PLift (RowRange 428 hadRow428 72 80) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_80 : RowRange 428 hadRow428 80 88 := viaCheck (by decide +kernel)
+private def c428_80 : PLift (RowRange 428 hadRow428 80 88) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_88 : RowRange 428 hadRow428 88 96 := viaCheck (by decide +kernel)
+private def c428_88 : PLift (RowRange 428 hadRow428 88 96) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_96 : RowRange 428 hadRow428 96 104 := viaCheck (by decide +kernel)
+private def c428_96 : PLift (RowRange 428 hadRow428 96 104) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_104 : RowRange 428 hadRow428 104 112 := viaCheck (by decide +kernel)
+private def c428_104 : PLift (RowRange 428 hadRow428 104 112) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_112 : RowRange 428 hadRow428 112 120 := viaCheck (by decide +kernel)
+private def c428_112 : PLift (RowRange 428 hadRow428 112 120) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_120 : RowRange 428 hadRow428 120 128 := viaCheck (by decide +kernel)
+private def c428_120 : PLift (RowRange 428 hadRow428 120 128) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_128 : RowRange 428 hadRow428 128 136 := viaCheck (by decide +kernel)
+private def c428_128 : PLift (RowRange 428 hadRow428 128 136) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_136 : RowRange 428 hadRow428 136 144 := viaCheck (by decide +kernel)
+private def c428_136 : PLift (RowRange 428 hadRow428 136 144) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_144 : RowRange 428 hadRow428 144 152 := viaCheck (by decide +kernel)
+private def c428_144 : PLift (RowRange 428 hadRow428 144 152) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_152 : RowRange 428 hadRow428 152 160 := viaCheck (by decide +kernel)
+private def c428_152 : PLift (RowRange 428 hadRow428 152 160) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_160 : RowRange 428 hadRow428 160 168 := viaCheck (by decide +kernel)
+private def c428_160 : PLift (RowRange 428 hadRow428 160 168) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_168 : RowRange 428 hadRow428 168 176 := viaCheck (by decide +kernel)
+private def c428_168 : PLift (RowRange 428 hadRow428 168 176) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_176 : RowRange 428 hadRow428 176 184 := viaCheck (by decide +kernel)
+private def c428_176 : PLift (RowRange 428 hadRow428 176 184) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_184 : RowRange 428 hadRow428 184 192 := viaCheck (by decide +kernel)
+private def c428_184 : PLift (RowRange 428 hadRow428 184 192) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_192 : RowRange 428 hadRow428 192 200 := viaCheck (by decide +kernel)
+private def c428_192 : PLift (RowRange 428 hadRow428 192 200) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_200 : RowRange 428 hadRow428 200 208 := viaCheck (by decide +kernel)
+private def c428_200 : PLift (RowRange 428 hadRow428 200 208) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_208 : RowRange 428 hadRow428 208 216 := viaCheck (by decide +kernel)
+private def c428_208 : PLift (RowRange 428 hadRow428 208 216) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_216 : RowRange 428 hadRow428 216 224 := viaCheck (by decide +kernel)
+private def c428_216 : PLift (RowRange 428 hadRow428 216 224) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_224 : RowRange 428 hadRow428 224 232 := viaCheck (by decide +kernel)
+private def c428_224 : PLift (RowRange 428 hadRow428 224 232) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_232 : RowRange 428 hadRow428 232 240 := viaCheck (by decide +kernel)
+private def c428_232 : PLift (RowRange 428 hadRow428 232 240) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_240 : RowRange 428 hadRow428 240 248 := viaCheck (by decide +kernel)
+private def c428_240 : PLift (RowRange 428 hadRow428 240 248) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_248 : RowRange 428 hadRow428 248 256 := viaCheck (by decide +kernel)
+private def c428_248 : PLift (RowRange 428 hadRow428 248 256) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_256 : RowRange 428 hadRow428 256 264 := viaCheck (by decide +kernel)
+private def c428_256 : PLift (RowRange 428 hadRow428 256 264) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_264 : RowRange 428 hadRow428 264 272 := viaCheck (by decide +kernel)
+private def c428_264 : PLift (RowRange 428 hadRow428 264 272) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_272 : RowRange 428 hadRow428 272 280 := viaCheck (by decide +kernel)
+private def c428_272 : PLift (RowRange 428 hadRow428 272 280) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_280 : RowRange 428 hadRow428 280 288 := viaCheck (by decide +kernel)
+private def c428_280 : PLift (RowRange 428 hadRow428 280 288) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_288 : RowRange 428 hadRow428 288 296 := viaCheck (by decide +kernel)
+private def c428_288 : PLift (RowRange 428 hadRow428 288 296) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_296 : RowRange 428 hadRow428 296 304 := viaCheck (by decide +kernel)
+private def c428_296 : PLift (RowRange 428 hadRow428 296 304) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_304 : RowRange 428 hadRow428 304 312 := viaCheck (by decide +kernel)
+private def c428_304 : PLift (RowRange 428 hadRow428 304 312) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_312 : RowRange 428 hadRow428 312 320 := viaCheck (by decide +kernel)
+private def c428_312 : PLift (RowRange 428 hadRow428 312 320) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_320 : RowRange 428 hadRow428 320 328 := viaCheck (by decide +kernel)
+private def c428_320 : PLift (RowRange 428 hadRow428 320 328) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_328 : RowRange 428 hadRow428 328 336 := viaCheck (by decide +kernel)
+private def c428_328 : PLift (RowRange 428 hadRow428 328 336) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_336 : RowRange 428 hadRow428 336 344 := viaCheck (by decide +kernel)
+private def c428_336 : PLift (RowRange 428 hadRow428 336 344) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_344 : RowRange 428 hadRow428 344 352 := viaCheck (by decide +kernel)
+private def c428_344 : PLift (RowRange 428 hadRow428 344 352) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_352 : RowRange 428 hadRow428 352 360 := viaCheck (by decide +kernel)
+private def c428_352 : PLift (RowRange 428 hadRow428 352 360) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_360 : RowRange 428 hadRow428 360 368 := viaCheck (by decide +kernel)
+private def c428_360 : PLift (RowRange 428 hadRow428 360 368) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_368 : RowRange 428 hadRow428 368 376 := viaCheck (by decide +kernel)
+private def c428_368 : PLift (RowRange 428 hadRow428 368 376) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_376 : RowRange 428 hadRow428 376 384 := viaCheck (by decide +kernel)
+private def c428_376 : PLift (RowRange 428 hadRow428 376 384) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_384 : RowRange 428 hadRow428 384 392 := viaCheck (by decide +kernel)
+private def c428_384 : PLift (RowRange 428 hadRow428 384 392) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_392 : RowRange 428 hadRow428 392 400 := viaCheck (by decide +kernel)
+private def c428_392 : PLift (RowRange 428 hadRow428 392 400) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_400 : RowRange 428 hadRow428 400 408 := viaCheck (by decide +kernel)
+private def c428_400 : PLift (RowRange 428 hadRow428 400 408) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_408 : RowRange 428 hadRow428 408 416 := viaCheck (by decide +kernel)
+private def c428_408 : PLift (RowRange 428 hadRow428 408 416) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_416 : RowRange 428 hadRow428 416 424 := viaCheck (by decide +kernel)
+private def c428_416 : PLift (RowRange 428 hadRow428 416 424) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c428_424 : RowRange 428 hadRow428 424 428 := viaCheck (by decide +kernel)
+private def c428_424 : PLift (RowRange 428 hadRow428 424 428) := ⟨viaCheck (by decide +kernel)⟩
 
-private theorem g428 : gramWitness 428 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c428_0 c428_8) (viaSplit c428_16 c428_24)) (viaSplit (viaSplit c428_32 c428_40) (viaSplit c428_48 c428_56))) (viaSplit (viaSplit (viaSplit c428_64 c428_72) (viaSplit c428_80 c428_88)) (viaSplit (viaSplit c428_96 c428_104) (viaSplit c428_112 c428_120)))) (viaSplit (viaSplit (viaSplit (viaSplit c428_128 c428_136) (viaSplit c428_144 c428_152)) (viaSplit (viaSplit c428_160 c428_168) (viaSplit c428_176 c428_184))) (viaSplit (viaSplit (viaSplit c428_192 c428_200) (viaSplit c428_208 c428_216)) (viaSplit (viaSplit c428_224 c428_232) (viaSplit c428_240 c428_248))))) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c428_256 c428_264) (viaSplit c428_272 c428_280)) (viaSplit (viaSplit c428_288 c428_296) (viaSplit c428_304 c428_312))) (viaSplit (viaSplit (viaSplit c428_320 c428_328) (viaSplit c428_336 c428_344)) (viaSplit (viaSplit c428_352 c428_360) (viaSplit c428_368 c428_376)))) (viaSplit (viaSplit (viaSplit c428_384 c428_392) (viaSplit c428_400 c428_408)) (viaSplit c428_416 c428_424))))
+private theorem g428 : gramWitness 428 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c428_0.down c428_8.down) (viaSplit c428_16.down c428_24.down)) (viaSplit (viaSplit c428_32.down c428_40.down) (viaSplit c428_48.down c428_56.down))) (viaSplit (viaSplit (viaSplit c428_64.down c428_72.down) (viaSplit c428_80.down c428_88.down)) (viaSplit (viaSplit c428_96.down c428_104.down) (viaSplit c428_112.down c428_120.down)))) (viaSplit (viaSplit (viaSplit (viaSplit c428_128.down c428_136.down) (viaSplit c428_144.down c428_152.down)) (viaSplit (viaSplit c428_160.down c428_168.down) (viaSplit c428_176.down c428_184.down))) (viaSplit (viaSplit (viaSplit c428_192.down c428_200.down) (viaSplit c428_208.down c428_216.down)) (viaSplit (viaSplit c428_224.down c428_232.down) (viaSplit c428_240.down c428_248.down))))) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c428_256.down c428_264.down) (viaSplit c428_272.down c428_280.down)) (viaSplit (viaSplit c428_288.down c428_296.down) (viaSplit c428_304.down c428_312.down))) (viaSplit (viaSplit (viaSplit c428_320.down c428_328.down) (viaSplit c428_336.down c428_344.down)) (viaSplit (viaSplit c428_352.down c428_360.down) (viaSplit c428_368.down c428_376.down)))) (viaSplit (viaSplit (viaSplit c428_384.down c428_392.down) (viaSplit c428_400.down c428_408.down)) (viaSplit c428_416.down c428_424.down))))
 
 private theorem g432 : gramWitness 432 := gram_product (by decide) (by decide) g2 g216
 
 set_option maxRecDepth 16000 in
-private def c436_0 : RowRange 436 hadRow436 0 8 := viaCheck (by decide +kernel)
+private def c436_0 : PLift (RowRange 436 hadRow436 0 8) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_8 : RowRange 436 hadRow436 8 16 := viaCheck (by decide +kernel)
+private def c436_8 : PLift (RowRange 436 hadRow436 8 16) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_16 : RowRange 436 hadRow436 16 24 := viaCheck (by decide +kernel)
+private def c436_16 : PLift (RowRange 436 hadRow436 16 24) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_24 : RowRange 436 hadRow436 24 32 := viaCheck (by decide +kernel)
+private def c436_24 : PLift (RowRange 436 hadRow436 24 32) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_32 : RowRange 436 hadRow436 32 40 := viaCheck (by decide +kernel)
+private def c436_32 : PLift (RowRange 436 hadRow436 32 40) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_40 : RowRange 436 hadRow436 40 48 := viaCheck (by decide +kernel)
+private def c436_40 : PLift (RowRange 436 hadRow436 40 48) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_48 : RowRange 436 hadRow436 48 56 := viaCheck (by decide +kernel)
+private def c436_48 : PLift (RowRange 436 hadRow436 48 56) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_56 : RowRange 436 hadRow436 56 64 := viaCheck (by decide +kernel)
+private def c436_56 : PLift (RowRange 436 hadRow436 56 64) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_64 : RowRange 436 hadRow436 64 72 := viaCheck (by decide +kernel)
+private def c436_64 : PLift (RowRange 436 hadRow436 64 72) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_72 : RowRange 436 hadRow436 72 80 := viaCheck (by decide +kernel)
+private def c436_72 : PLift (RowRange 436 hadRow436 72 80) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_80 : RowRange 436 hadRow436 80 88 := viaCheck (by decide +kernel)
+private def c436_80 : PLift (RowRange 436 hadRow436 80 88) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_88 : RowRange 436 hadRow436 88 96 := viaCheck (by decide +kernel)
+private def c436_88 : PLift (RowRange 436 hadRow436 88 96) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_96 : RowRange 436 hadRow436 96 104 := viaCheck (by decide +kernel)
+private def c436_96 : PLift (RowRange 436 hadRow436 96 104) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_104 : RowRange 436 hadRow436 104 112 := viaCheck (by decide +kernel)
+private def c436_104 : PLift (RowRange 436 hadRow436 104 112) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_112 : RowRange 436 hadRow436 112 120 := viaCheck (by decide +kernel)
+private def c436_112 : PLift (RowRange 436 hadRow436 112 120) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_120 : RowRange 436 hadRow436 120 128 := viaCheck (by decide +kernel)
+private def c436_120 : PLift (RowRange 436 hadRow436 120 128) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_128 : RowRange 436 hadRow436 128 136 := viaCheck (by decide +kernel)
+private def c436_128 : PLift (RowRange 436 hadRow436 128 136) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_136 : RowRange 436 hadRow436 136 144 := viaCheck (by decide +kernel)
+private def c436_136 : PLift (RowRange 436 hadRow436 136 144) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_144 : RowRange 436 hadRow436 144 152 := viaCheck (by decide +kernel)
+private def c436_144 : PLift (RowRange 436 hadRow436 144 152) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_152 : RowRange 436 hadRow436 152 160 := viaCheck (by decide +kernel)
+private def c436_152 : PLift (RowRange 436 hadRow436 152 160) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_160 : RowRange 436 hadRow436 160 168 := viaCheck (by decide +kernel)
+private def c436_160 : PLift (RowRange 436 hadRow436 160 168) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_168 : RowRange 436 hadRow436 168 176 := viaCheck (by decide +kernel)
+private def c436_168 : PLift (RowRange 436 hadRow436 168 176) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_176 : RowRange 436 hadRow436 176 184 := viaCheck (by decide +kernel)
+private def c436_176 : PLift (RowRange 436 hadRow436 176 184) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_184 : RowRange 436 hadRow436 184 192 := viaCheck (by decide +kernel)
+private def c436_184 : PLift (RowRange 436 hadRow436 184 192) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_192 : RowRange 436 hadRow436 192 200 := viaCheck (by decide +kernel)
+private def c436_192 : PLift (RowRange 436 hadRow436 192 200) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_200 : RowRange 436 hadRow436 200 208 := viaCheck (by decide +kernel)
+private def c436_200 : PLift (RowRange 436 hadRow436 200 208) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_208 : RowRange 436 hadRow436 208 216 := viaCheck (by decide +kernel)
+private def c436_208 : PLift (RowRange 436 hadRow436 208 216) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_216 : RowRange 436 hadRow436 216 224 := viaCheck (by decide +kernel)
+private def c436_216 : PLift (RowRange 436 hadRow436 216 224) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_224 : RowRange 436 hadRow436 224 232 := viaCheck (by decide +kernel)
+private def c436_224 : PLift (RowRange 436 hadRow436 224 232) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_232 : RowRange 436 hadRow436 232 240 := viaCheck (by decide +kernel)
+private def c436_232 : PLift (RowRange 436 hadRow436 232 240) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_240 : RowRange 436 hadRow436 240 248 := viaCheck (by decide +kernel)
+private def c436_240 : PLift (RowRange 436 hadRow436 240 248) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_248 : RowRange 436 hadRow436 248 256 := viaCheck (by decide +kernel)
+private def c436_248 : PLift (RowRange 436 hadRow436 248 256) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_256 : RowRange 436 hadRow436 256 264 := viaCheck (by decide +kernel)
+private def c436_256 : PLift (RowRange 436 hadRow436 256 264) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_264 : RowRange 436 hadRow436 264 272 := viaCheck (by decide +kernel)
+private def c436_264 : PLift (RowRange 436 hadRow436 264 272) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_272 : RowRange 436 hadRow436 272 280 := viaCheck (by decide +kernel)
+private def c436_272 : PLift (RowRange 436 hadRow436 272 280) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_280 : RowRange 436 hadRow436 280 288 := viaCheck (by decide +kernel)
+private def c436_280 : PLift (RowRange 436 hadRow436 280 288) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_288 : RowRange 436 hadRow436 288 296 := viaCheck (by decide +kernel)
+private def c436_288 : PLift (RowRange 436 hadRow436 288 296) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_296 : RowRange 436 hadRow436 296 304 := viaCheck (by decide +kernel)
+private def c436_296 : PLift (RowRange 436 hadRow436 296 304) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_304 : RowRange 436 hadRow436 304 312 := viaCheck (by decide +kernel)
+private def c436_304 : PLift (RowRange 436 hadRow436 304 312) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_312 : RowRange 436 hadRow436 312 320 := viaCheck (by decide +kernel)
+private def c436_312 : PLift (RowRange 436 hadRow436 312 320) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_320 : RowRange 436 hadRow436 320 328 := viaCheck (by decide +kernel)
+private def c436_320 : PLift (RowRange 436 hadRow436 320 328) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_328 : RowRange 436 hadRow436 328 336 := viaCheck (by decide +kernel)
+private def c436_328 : PLift (RowRange 436 hadRow436 328 336) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_336 : RowRange 436 hadRow436 336 344 := viaCheck (by decide +kernel)
+private def c436_336 : PLift (RowRange 436 hadRow436 336 344) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_344 : RowRange 436 hadRow436 344 352 := viaCheck (by decide +kernel)
+private def c436_344 : PLift (RowRange 436 hadRow436 344 352) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_352 : RowRange 436 hadRow436 352 360 := viaCheck (by decide +kernel)
+private def c436_352 : PLift (RowRange 436 hadRow436 352 360) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_360 : RowRange 436 hadRow436 360 368 := viaCheck (by decide +kernel)
+private def c436_360 : PLift (RowRange 436 hadRow436 360 368) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_368 : RowRange 436 hadRow436 368 376 := viaCheck (by decide +kernel)
+private def c436_368 : PLift (RowRange 436 hadRow436 368 376) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_376 : RowRange 436 hadRow436 376 384 := viaCheck (by decide +kernel)
+private def c436_376 : PLift (RowRange 436 hadRow436 376 384) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_384 : RowRange 436 hadRow436 384 392 := viaCheck (by decide +kernel)
+private def c436_384 : PLift (RowRange 436 hadRow436 384 392) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_392 : RowRange 436 hadRow436 392 400 := viaCheck (by decide +kernel)
+private def c436_392 : PLift (RowRange 436 hadRow436 392 400) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_400 : RowRange 436 hadRow436 400 408 := viaCheck (by decide +kernel)
+private def c436_400 : PLift (RowRange 436 hadRow436 400 408) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_408 : RowRange 436 hadRow436 408 416 := viaCheck (by decide +kernel)
+private def c436_408 : PLift (RowRange 436 hadRow436 408 416) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_416 : RowRange 436 hadRow436 416 424 := viaCheck (by decide +kernel)
+private def c436_416 : PLift (RowRange 436 hadRow436 416 424) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_424 : RowRange 436 hadRow436 424 432 := viaCheck (by decide +kernel)
+private def c436_424 : PLift (RowRange 436 hadRow436 424 432) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c436_432 : RowRange 436 hadRow436 432 436 := viaCheck (by decide +kernel)
+private def c436_432 : PLift (RowRange 436 hadRow436 432 436) := ⟨viaCheck (by decide +kernel)⟩
 
-private theorem g436 : gramWitness 436 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c436_0 c436_8) (viaSplit c436_16 c436_24)) (viaSplit (viaSplit c436_32 c436_40) (viaSplit c436_48 c436_56))) (viaSplit (viaSplit (viaSplit c436_64 c436_72) (viaSplit c436_80 c436_88)) (viaSplit (viaSplit c436_96 c436_104) (viaSplit c436_112 c436_120)))) (viaSplit (viaSplit (viaSplit (viaSplit c436_128 c436_136) (viaSplit c436_144 c436_152)) (viaSplit (viaSplit c436_160 c436_168) (viaSplit c436_176 c436_184))) (viaSplit (viaSplit (viaSplit c436_192 c436_200) (viaSplit c436_208 c436_216)) (viaSplit (viaSplit c436_224 c436_232) (viaSplit c436_240 c436_248))))) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c436_256 c436_264) (viaSplit c436_272 c436_280)) (viaSplit (viaSplit c436_288 c436_296) (viaSplit c436_304 c436_312))) (viaSplit (viaSplit (viaSplit c436_320 c436_328) (viaSplit c436_336 c436_344)) (viaSplit (viaSplit c436_352 c436_360) (viaSplit c436_368 c436_376)))) (viaSplit (viaSplit (viaSplit c436_384 c436_392) (viaSplit c436_400 c436_408)) (viaSplit (viaSplit c436_416 c436_424) c436_432))))
+private theorem g436 : gramWitness 436 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c436_0.down c436_8.down) (viaSplit c436_16.down c436_24.down)) (viaSplit (viaSplit c436_32.down c436_40.down) (viaSplit c436_48.down c436_56.down))) (viaSplit (viaSplit (viaSplit c436_64.down c436_72.down) (viaSplit c436_80.down c436_88.down)) (viaSplit (viaSplit c436_96.down c436_104.down) (viaSplit c436_112.down c436_120.down)))) (viaSplit (viaSplit (viaSplit (viaSplit c436_128.down c436_136.down) (viaSplit c436_144.down c436_152.down)) (viaSplit (viaSplit c436_160.down c436_168.down) (viaSplit c436_176.down c436_184.down))) (viaSplit (viaSplit (viaSplit c436_192.down c436_200.down) (viaSplit c436_208.down c436_216.down)) (viaSplit (viaSplit c436_224.down c436_232.down) (viaSplit c436_240.down c436_248.down))))) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c436_256.down c436_264.down) (viaSplit c436_272.down c436_280.down)) (viaSplit (viaSplit c436_288.down c436_296.down) (viaSplit c436_304.down c436_312.down))) (viaSplit (viaSplit (viaSplit c436_320.down c436_328.down) (viaSplit c436_336.down c436_344.down)) (viaSplit (viaSplit c436_352.down c436_360.down) (viaSplit c436_368.down c436_376.down)))) (viaSplit (viaSplit (viaSplit c436_384.down c436_392.down) (viaSplit c436_400.down c436_408.down)) (viaSplit (viaSplit c436_416.down c436_424.down) c436_432.down))))
 
 private theorem g440 : gramWitness 440 := gram_product (by decide) (by decide) g2 g220
 
@@ -4977,177 +4979,177 @@ private theorem g444 : gramWitness 444 := fromColumns (PaleyHadamard.typeI 443 (
 private theorem g448 : gramWitness 448 := gram_product (by decide) (by decide) g2 g224
 
 set_option maxRecDepth 16000 in
-private def c452_0 : RowRange 452 hadRow452 0 8 := viaCheck (by decide +kernel)
+private def c452_0 : PLift (RowRange 452 hadRow452 0 8) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_8 : RowRange 452 hadRow452 8 16 := viaCheck (by decide +kernel)
+private def c452_8 : PLift (RowRange 452 hadRow452 8 16) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_16 : RowRange 452 hadRow452 16 24 := viaCheck (by decide +kernel)
+private def c452_16 : PLift (RowRange 452 hadRow452 16 24) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_24 : RowRange 452 hadRow452 24 32 := viaCheck (by decide +kernel)
+private def c452_24 : PLift (RowRange 452 hadRow452 24 32) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_32 : RowRange 452 hadRow452 32 40 := viaCheck (by decide +kernel)
+private def c452_32 : PLift (RowRange 452 hadRow452 32 40) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_40 : RowRange 452 hadRow452 40 48 := viaCheck (by decide +kernel)
+private def c452_40 : PLift (RowRange 452 hadRow452 40 48) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_48 : RowRange 452 hadRow452 48 56 := viaCheck (by decide +kernel)
+private def c452_48 : PLift (RowRange 452 hadRow452 48 56) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_56 : RowRange 452 hadRow452 56 64 := viaCheck (by decide +kernel)
+private def c452_56 : PLift (RowRange 452 hadRow452 56 64) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_64 : RowRange 452 hadRow452 64 72 := viaCheck (by decide +kernel)
+private def c452_64 : PLift (RowRange 452 hadRow452 64 72) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_72 : RowRange 452 hadRow452 72 80 := viaCheck (by decide +kernel)
+private def c452_72 : PLift (RowRange 452 hadRow452 72 80) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_80 : RowRange 452 hadRow452 80 88 := viaCheck (by decide +kernel)
+private def c452_80 : PLift (RowRange 452 hadRow452 80 88) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_88 : RowRange 452 hadRow452 88 96 := viaCheck (by decide +kernel)
+private def c452_88 : PLift (RowRange 452 hadRow452 88 96) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_96 : RowRange 452 hadRow452 96 104 := viaCheck (by decide +kernel)
+private def c452_96 : PLift (RowRange 452 hadRow452 96 104) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_104 : RowRange 452 hadRow452 104 112 := viaCheck (by decide +kernel)
+private def c452_104 : PLift (RowRange 452 hadRow452 104 112) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_112 : RowRange 452 hadRow452 112 120 := viaCheck (by decide +kernel)
+private def c452_112 : PLift (RowRange 452 hadRow452 112 120) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_120 : RowRange 452 hadRow452 120 128 := viaCheck (by decide +kernel)
+private def c452_120 : PLift (RowRange 452 hadRow452 120 128) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_128 : RowRange 452 hadRow452 128 136 := viaCheck (by decide +kernel)
+private def c452_128 : PLift (RowRange 452 hadRow452 128 136) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_136 : RowRange 452 hadRow452 136 144 := viaCheck (by decide +kernel)
+private def c452_136 : PLift (RowRange 452 hadRow452 136 144) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_144 : RowRange 452 hadRow452 144 152 := viaCheck (by decide +kernel)
+private def c452_144 : PLift (RowRange 452 hadRow452 144 152) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_152 : RowRange 452 hadRow452 152 160 := viaCheck (by decide +kernel)
+private def c452_152 : PLift (RowRange 452 hadRow452 152 160) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_160 : RowRange 452 hadRow452 160 168 := viaCheck (by decide +kernel)
+private def c452_160 : PLift (RowRange 452 hadRow452 160 168) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_168 : RowRange 452 hadRow452 168 176 := viaCheck (by decide +kernel)
+private def c452_168 : PLift (RowRange 452 hadRow452 168 176) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_176 : RowRange 452 hadRow452 176 184 := viaCheck (by decide +kernel)
+private def c452_176 : PLift (RowRange 452 hadRow452 176 184) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_184 : RowRange 452 hadRow452 184 192 := viaCheck (by decide +kernel)
+private def c452_184 : PLift (RowRange 452 hadRow452 184 192) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_192 : RowRange 452 hadRow452 192 200 := viaCheck (by decide +kernel)
+private def c452_192 : PLift (RowRange 452 hadRow452 192 200) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_200 : RowRange 452 hadRow452 200 208 := viaCheck (by decide +kernel)
+private def c452_200 : PLift (RowRange 452 hadRow452 200 208) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_208 : RowRange 452 hadRow452 208 216 := viaCheck (by decide +kernel)
+private def c452_208 : PLift (RowRange 452 hadRow452 208 216) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_216 : RowRange 452 hadRow452 216 224 := viaCheck (by decide +kernel)
+private def c452_216 : PLift (RowRange 452 hadRow452 216 224) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_224 : RowRange 452 hadRow452 224 232 := viaCheck (by decide +kernel)
+private def c452_224 : PLift (RowRange 452 hadRow452 224 232) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_232 : RowRange 452 hadRow452 232 240 := viaCheck (by decide +kernel)
+private def c452_232 : PLift (RowRange 452 hadRow452 232 240) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_240 : RowRange 452 hadRow452 240 248 := viaCheck (by decide +kernel)
+private def c452_240 : PLift (RowRange 452 hadRow452 240 248) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_248 : RowRange 452 hadRow452 248 256 := viaCheck (by decide +kernel)
+private def c452_248 : PLift (RowRange 452 hadRow452 248 256) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_256 : RowRange 452 hadRow452 256 264 := viaCheck (by decide +kernel)
+private def c452_256 : PLift (RowRange 452 hadRow452 256 264) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_264 : RowRange 452 hadRow452 264 272 := viaCheck (by decide +kernel)
+private def c452_264 : PLift (RowRange 452 hadRow452 264 272) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_272 : RowRange 452 hadRow452 272 280 := viaCheck (by decide +kernel)
+private def c452_272 : PLift (RowRange 452 hadRow452 272 280) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_280 : RowRange 452 hadRow452 280 288 := viaCheck (by decide +kernel)
+private def c452_280 : PLift (RowRange 452 hadRow452 280 288) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_288 : RowRange 452 hadRow452 288 296 := viaCheck (by decide +kernel)
+private def c452_288 : PLift (RowRange 452 hadRow452 288 296) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_296 : RowRange 452 hadRow452 296 304 := viaCheck (by decide +kernel)
+private def c452_296 : PLift (RowRange 452 hadRow452 296 304) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_304 : RowRange 452 hadRow452 304 312 := viaCheck (by decide +kernel)
+private def c452_304 : PLift (RowRange 452 hadRow452 304 312) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_312 : RowRange 452 hadRow452 312 320 := viaCheck (by decide +kernel)
+private def c452_312 : PLift (RowRange 452 hadRow452 312 320) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_320 : RowRange 452 hadRow452 320 328 := viaCheck (by decide +kernel)
+private def c452_320 : PLift (RowRange 452 hadRow452 320 328) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_328 : RowRange 452 hadRow452 328 336 := viaCheck (by decide +kernel)
+private def c452_328 : PLift (RowRange 452 hadRow452 328 336) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_336 : RowRange 452 hadRow452 336 344 := viaCheck (by decide +kernel)
+private def c452_336 : PLift (RowRange 452 hadRow452 336 344) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_344 : RowRange 452 hadRow452 344 352 := viaCheck (by decide +kernel)
+private def c452_344 : PLift (RowRange 452 hadRow452 344 352) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_352 : RowRange 452 hadRow452 352 360 := viaCheck (by decide +kernel)
+private def c452_352 : PLift (RowRange 452 hadRow452 352 360) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_360 : RowRange 452 hadRow452 360 368 := viaCheck (by decide +kernel)
+private def c452_360 : PLift (RowRange 452 hadRow452 360 368) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_368 : RowRange 452 hadRow452 368 376 := viaCheck (by decide +kernel)
+private def c452_368 : PLift (RowRange 452 hadRow452 368 376) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_376 : RowRange 452 hadRow452 376 384 := viaCheck (by decide +kernel)
+private def c452_376 : PLift (RowRange 452 hadRow452 376 384) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_384 : RowRange 452 hadRow452 384 392 := viaCheck (by decide +kernel)
+private def c452_384 : PLift (RowRange 452 hadRow452 384 392) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_392 : RowRange 452 hadRow452 392 400 := viaCheck (by decide +kernel)
+private def c452_392 : PLift (RowRange 452 hadRow452 392 400) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_400 : RowRange 452 hadRow452 400 408 := viaCheck (by decide +kernel)
+private def c452_400 : PLift (RowRange 452 hadRow452 400 408) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_408 : RowRange 452 hadRow452 408 416 := viaCheck (by decide +kernel)
+private def c452_408 : PLift (RowRange 452 hadRow452 408 416) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_416 : RowRange 452 hadRow452 416 424 := viaCheck (by decide +kernel)
+private def c452_416 : PLift (RowRange 452 hadRow452 416 424) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_424 : RowRange 452 hadRow452 424 432 := viaCheck (by decide +kernel)
+private def c452_424 : PLift (RowRange 452 hadRow452 424 432) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_432 : RowRange 452 hadRow452 432 440 := viaCheck (by decide +kernel)
+private def c452_432 : PLift (RowRange 452 hadRow452 432 440) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_440 : RowRange 452 hadRow452 440 448 := viaCheck (by decide +kernel)
+private def c452_440 : PLift (RowRange 452 hadRow452 440 448) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c452_448 : RowRange 452 hadRow452 448 452 := viaCheck (by decide +kernel)
+private def c452_448 : PLift (RowRange 452 hadRow452 448 452) := ⟨viaCheck (by decide +kernel)⟩
 
-private theorem g452 : gramWitness 452 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c452_0 c452_8) (viaSplit c452_16 c452_24)) (viaSplit (viaSplit c452_32 c452_40) (viaSplit c452_48 c452_56))) (viaSplit (viaSplit (viaSplit c452_64 c452_72) (viaSplit c452_80 c452_88)) (viaSplit (viaSplit c452_96 c452_104) (viaSplit c452_112 c452_120)))) (viaSplit (viaSplit (viaSplit (viaSplit c452_128 c452_136) (viaSplit c452_144 c452_152)) (viaSplit (viaSplit c452_160 c452_168) (viaSplit c452_176 c452_184))) (viaSplit (viaSplit (viaSplit c452_192 c452_200) (viaSplit c452_208 c452_216)) (viaSplit (viaSplit c452_224 c452_232) (viaSplit c452_240 c452_248))))) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c452_256 c452_264) (viaSplit c452_272 c452_280)) (viaSplit (viaSplit c452_288 c452_296) (viaSplit c452_304 c452_312))) (viaSplit (viaSplit (viaSplit c452_320 c452_328) (viaSplit c452_336 c452_344)) (viaSplit (viaSplit c452_352 c452_360) (viaSplit c452_368 c452_376)))) (viaSplit (viaSplit (viaSplit (viaSplit c452_384 c452_392) (viaSplit c452_400 c452_408)) (viaSplit (viaSplit c452_416 c452_424) (viaSplit c452_432 c452_440))) c452_448)))
+private theorem g452 : gramWitness 452 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c452_0.down c452_8.down) (viaSplit c452_16.down c452_24.down)) (viaSplit (viaSplit c452_32.down c452_40.down) (viaSplit c452_48.down c452_56.down))) (viaSplit (viaSplit (viaSplit c452_64.down c452_72.down) (viaSplit c452_80.down c452_88.down)) (viaSplit (viaSplit c452_96.down c452_104.down) (viaSplit c452_112.down c452_120.down)))) (viaSplit (viaSplit (viaSplit (viaSplit c452_128.down c452_136.down) (viaSplit c452_144.down c452_152.down)) (viaSplit (viaSplit c452_160.down c452_168.down) (viaSplit c452_176.down c452_184.down))) (viaSplit (viaSplit (viaSplit c452_192.down c452_200.down) (viaSplit c452_208.down c452_216.down)) (viaSplit (viaSplit c452_224.down c452_232.down) (viaSplit c452_240.down c452_248.down))))) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c452_256.down c452_264.down) (viaSplit c452_272.down c452_280.down)) (viaSplit (viaSplit c452_288.down c452_296.down) (viaSplit c452_304.down c452_312.down))) (viaSplit (viaSplit (viaSplit c452_320.down c452_328.down) (viaSplit c452_336.down c452_344.down)) (viaSplit (viaSplit c452_352.down c452_360.down) (viaSplit c452_368.down c452_376.down)))) (viaSplit (viaSplit (viaSplit (viaSplit c452_384.down c452_392.down) (viaSplit c452_400.down c452_408.down)) (viaSplit (viaSplit c452_416.down c452_424.down) (viaSplit c452_432.down c452_440.down))) c452_448.down)))
 
 private theorem g456 : gramWitness 456 := gram_product (by decide) (by decide) g2 g228
 
@@ -5160,186 +5162,186 @@ private theorem g468 : gramWitness 468 := fromColumns (PaleyHadamard.typeI 467 (
 private theorem g472 : gramWitness 472 := gram_product (by decide) (by decide) g2 g236
 
 set_option maxRecDepth 16000 in
-private def c476_0 : RowRange 476 hadRow476 0 8 := viaCheck (by decide +kernel)
+private def c476_0 : PLift (RowRange 476 hadRow476 0 8) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_8 : RowRange 476 hadRow476 8 16 := viaCheck (by decide +kernel)
+private def c476_8 : PLift (RowRange 476 hadRow476 8 16) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_16 : RowRange 476 hadRow476 16 24 := viaCheck (by decide +kernel)
+private def c476_16 : PLift (RowRange 476 hadRow476 16 24) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_24 : RowRange 476 hadRow476 24 32 := viaCheck (by decide +kernel)
+private def c476_24 : PLift (RowRange 476 hadRow476 24 32) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_32 : RowRange 476 hadRow476 32 40 := viaCheck (by decide +kernel)
+private def c476_32 : PLift (RowRange 476 hadRow476 32 40) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_40 : RowRange 476 hadRow476 40 48 := viaCheck (by decide +kernel)
+private def c476_40 : PLift (RowRange 476 hadRow476 40 48) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_48 : RowRange 476 hadRow476 48 56 := viaCheck (by decide +kernel)
+private def c476_48 : PLift (RowRange 476 hadRow476 48 56) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_56 : RowRange 476 hadRow476 56 64 := viaCheck (by decide +kernel)
+private def c476_56 : PLift (RowRange 476 hadRow476 56 64) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_64 : RowRange 476 hadRow476 64 72 := viaCheck (by decide +kernel)
+private def c476_64 : PLift (RowRange 476 hadRow476 64 72) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_72 : RowRange 476 hadRow476 72 80 := viaCheck (by decide +kernel)
+private def c476_72 : PLift (RowRange 476 hadRow476 72 80) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_80 : RowRange 476 hadRow476 80 88 := viaCheck (by decide +kernel)
+private def c476_80 : PLift (RowRange 476 hadRow476 80 88) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_88 : RowRange 476 hadRow476 88 96 := viaCheck (by decide +kernel)
+private def c476_88 : PLift (RowRange 476 hadRow476 88 96) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_96 : RowRange 476 hadRow476 96 104 := viaCheck (by decide +kernel)
+private def c476_96 : PLift (RowRange 476 hadRow476 96 104) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_104 : RowRange 476 hadRow476 104 112 := viaCheck (by decide +kernel)
+private def c476_104 : PLift (RowRange 476 hadRow476 104 112) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_112 : RowRange 476 hadRow476 112 120 := viaCheck (by decide +kernel)
+private def c476_112 : PLift (RowRange 476 hadRow476 112 120) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_120 : RowRange 476 hadRow476 120 128 := viaCheck (by decide +kernel)
+private def c476_120 : PLift (RowRange 476 hadRow476 120 128) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_128 : RowRange 476 hadRow476 128 136 := viaCheck (by decide +kernel)
+private def c476_128 : PLift (RowRange 476 hadRow476 128 136) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_136 : RowRange 476 hadRow476 136 144 := viaCheck (by decide +kernel)
+private def c476_136 : PLift (RowRange 476 hadRow476 136 144) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_144 : RowRange 476 hadRow476 144 152 := viaCheck (by decide +kernel)
+private def c476_144 : PLift (RowRange 476 hadRow476 144 152) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_152 : RowRange 476 hadRow476 152 160 := viaCheck (by decide +kernel)
+private def c476_152 : PLift (RowRange 476 hadRow476 152 160) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_160 : RowRange 476 hadRow476 160 168 := viaCheck (by decide +kernel)
+private def c476_160 : PLift (RowRange 476 hadRow476 160 168) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_168 : RowRange 476 hadRow476 168 176 := viaCheck (by decide +kernel)
+private def c476_168 : PLift (RowRange 476 hadRow476 168 176) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_176 : RowRange 476 hadRow476 176 184 := viaCheck (by decide +kernel)
+private def c476_176 : PLift (RowRange 476 hadRow476 176 184) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_184 : RowRange 476 hadRow476 184 192 := viaCheck (by decide +kernel)
+private def c476_184 : PLift (RowRange 476 hadRow476 184 192) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_192 : RowRange 476 hadRow476 192 200 := viaCheck (by decide +kernel)
+private def c476_192 : PLift (RowRange 476 hadRow476 192 200) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_200 : RowRange 476 hadRow476 200 208 := viaCheck (by decide +kernel)
+private def c476_200 : PLift (RowRange 476 hadRow476 200 208) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_208 : RowRange 476 hadRow476 208 216 := viaCheck (by decide +kernel)
+private def c476_208 : PLift (RowRange 476 hadRow476 208 216) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_216 : RowRange 476 hadRow476 216 224 := viaCheck (by decide +kernel)
+private def c476_216 : PLift (RowRange 476 hadRow476 216 224) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_224 : RowRange 476 hadRow476 224 232 := viaCheck (by decide +kernel)
+private def c476_224 : PLift (RowRange 476 hadRow476 224 232) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_232 : RowRange 476 hadRow476 232 240 := viaCheck (by decide +kernel)
+private def c476_232 : PLift (RowRange 476 hadRow476 232 240) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_240 : RowRange 476 hadRow476 240 248 := viaCheck (by decide +kernel)
+private def c476_240 : PLift (RowRange 476 hadRow476 240 248) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_248 : RowRange 476 hadRow476 248 256 := viaCheck (by decide +kernel)
+private def c476_248 : PLift (RowRange 476 hadRow476 248 256) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_256 : RowRange 476 hadRow476 256 264 := viaCheck (by decide +kernel)
+private def c476_256 : PLift (RowRange 476 hadRow476 256 264) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_264 : RowRange 476 hadRow476 264 272 := viaCheck (by decide +kernel)
+private def c476_264 : PLift (RowRange 476 hadRow476 264 272) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_272 : RowRange 476 hadRow476 272 280 := viaCheck (by decide +kernel)
+private def c476_272 : PLift (RowRange 476 hadRow476 272 280) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_280 : RowRange 476 hadRow476 280 288 := viaCheck (by decide +kernel)
+private def c476_280 : PLift (RowRange 476 hadRow476 280 288) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_288 : RowRange 476 hadRow476 288 296 := viaCheck (by decide +kernel)
+private def c476_288 : PLift (RowRange 476 hadRow476 288 296) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_296 : RowRange 476 hadRow476 296 304 := viaCheck (by decide +kernel)
+private def c476_296 : PLift (RowRange 476 hadRow476 296 304) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_304 : RowRange 476 hadRow476 304 312 := viaCheck (by decide +kernel)
+private def c476_304 : PLift (RowRange 476 hadRow476 304 312) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_312 : RowRange 476 hadRow476 312 320 := viaCheck (by decide +kernel)
+private def c476_312 : PLift (RowRange 476 hadRow476 312 320) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_320 : RowRange 476 hadRow476 320 328 := viaCheck (by decide +kernel)
+private def c476_320 : PLift (RowRange 476 hadRow476 320 328) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_328 : RowRange 476 hadRow476 328 336 := viaCheck (by decide +kernel)
+private def c476_328 : PLift (RowRange 476 hadRow476 328 336) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_336 : RowRange 476 hadRow476 336 344 := viaCheck (by decide +kernel)
+private def c476_336 : PLift (RowRange 476 hadRow476 336 344) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_344 : RowRange 476 hadRow476 344 352 := viaCheck (by decide +kernel)
+private def c476_344 : PLift (RowRange 476 hadRow476 344 352) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_352 : RowRange 476 hadRow476 352 360 := viaCheck (by decide +kernel)
+private def c476_352 : PLift (RowRange 476 hadRow476 352 360) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_360 : RowRange 476 hadRow476 360 368 := viaCheck (by decide +kernel)
+private def c476_360 : PLift (RowRange 476 hadRow476 360 368) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_368 : RowRange 476 hadRow476 368 376 := viaCheck (by decide +kernel)
+private def c476_368 : PLift (RowRange 476 hadRow476 368 376) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_376 : RowRange 476 hadRow476 376 384 := viaCheck (by decide +kernel)
+private def c476_376 : PLift (RowRange 476 hadRow476 376 384) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_384 : RowRange 476 hadRow476 384 392 := viaCheck (by decide +kernel)
+private def c476_384 : PLift (RowRange 476 hadRow476 384 392) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_392 : RowRange 476 hadRow476 392 400 := viaCheck (by decide +kernel)
+private def c476_392 : PLift (RowRange 476 hadRow476 392 400) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_400 : RowRange 476 hadRow476 400 408 := viaCheck (by decide +kernel)
+private def c476_400 : PLift (RowRange 476 hadRow476 400 408) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_408 : RowRange 476 hadRow476 408 416 := viaCheck (by decide +kernel)
+private def c476_408 : PLift (RowRange 476 hadRow476 408 416) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_416 : RowRange 476 hadRow476 416 424 := viaCheck (by decide +kernel)
+private def c476_416 : PLift (RowRange 476 hadRow476 416 424) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_424 : RowRange 476 hadRow476 424 432 := viaCheck (by decide +kernel)
+private def c476_424 : PLift (RowRange 476 hadRow476 424 432) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_432 : RowRange 476 hadRow476 432 440 := viaCheck (by decide +kernel)
+private def c476_432 : PLift (RowRange 476 hadRow476 432 440) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_440 : RowRange 476 hadRow476 440 448 := viaCheck (by decide +kernel)
+private def c476_440 : PLift (RowRange 476 hadRow476 440 448) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_448 : RowRange 476 hadRow476 448 456 := viaCheck (by decide +kernel)
+private def c476_448 : PLift (RowRange 476 hadRow476 448 456) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_456 : RowRange 476 hadRow476 456 464 := viaCheck (by decide +kernel)
+private def c476_456 : PLift (RowRange 476 hadRow476 456 464) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_464 : RowRange 476 hadRow476 464 472 := viaCheck (by decide +kernel)
+private def c476_464 : PLift (RowRange 476 hadRow476 464 472) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c476_472 : RowRange 476 hadRow476 472 476 := viaCheck (by decide +kernel)
+private def c476_472 : PLift (RowRange 476 hadRow476 472 476) := ⟨viaCheck (by decide +kernel)⟩
 
-private theorem g476 : gramWitness 476 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c476_0 c476_8) (viaSplit c476_16 c476_24)) (viaSplit (viaSplit c476_32 c476_40) (viaSplit c476_48 c476_56))) (viaSplit (viaSplit (viaSplit c476_64 c476_72) (viaSplit c476_80 c476_88)) (viaSplit (viaSplit c476_96 c476_104) (viaSplit c476_112 c476_120)))) (viaSplit (viaSplit (viaSplit (viaSplit c476_128 c476_136) (viaSplit c476_144 c476_152)) (viaSplit (viaSplit c476_160 c476_168) (viaSplit c476_176 c476_184))) (viaSplit (viaSplit (viaSplit c476_192 c476_200) (viaSplit c476_208 c476_216)) (viaSplit (viaSplit c476_224 c476_232) (viaSplit c476_240 c476_248))))) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c476_256 c476_264) (viaSplit c476_272 c476_280)) (viaSplit (viaSplit c476_288 c476_296) (viaSplit c476_304 c476_312))) (viaSplit (viaSplit (viaSplit c476_320 c476_328) (viaSplit c476_336 c476_344)) (viaSplit (viaSplit c476_352 c476_360) (viaSplit c476_368 c476_376)))) (viaSplit (viaSplit (viaSplit (viaSplit c476_384 c476_392) (viaSplit c476_400 c476_408)) (viaSplit (viaSplit c476_416 c476_424) (viaSplit c476_432 c476_440))) (viaSplit (viaSplit c476_448 c476_456) (viaSplit c476_464 c476_472)))))
+private theorem g476 : gramWitness 476 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c476_0.down c476_8.down) (viaSplit c476_16.down c476_24.down)) (viaSplit (viaSplit c476_32.down c476_40.down) (viaSplit c476_48.down c476_56.down))) (viaSplit (viaSplit (viaSplit c476_64.down c476_72.down) (viaSplit c476_80.down c476_88.down)) (viaSplit (viaSplit c476_96.down c476_104.down) (viaSplit c476_112.down c476_120.down)))) (viaSplit (viaSplit (viaSplit (viaSplit c476_128.down c476_136.down) (viaSplit c476_144.down c476_152.down)) (viaSplit (viaSplit c476_160.down c476_168.down) (viaSplit c476_176.down c476_184.down))) (viaSplit (viaSplit (viaSplit c476_192.down c476_200.down) (viaSplit c476_208.down c476_216.down)) (viaSplit (viaSplit c476_224.down c476_232.down) (viaSplit c476_240.down c476_248.down))))) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c476_256.down c476_264.down) (viaSplit c476_272.down c476_280.down)) (viaSplit (viaSplit c476_288.down c476_296.down) (viaSplit c476_304.down c476_312.down))) (viaSplit (viaSplit (viaSplit c476_320.down c476_328.down) (viaSplit c476_336.down c476_344.down)) (viaSplit (viaSplit c476_352.down c476_360.down) (viaSplit c476_368.down c476_376.down)))) (viaSplit (viaSplit (viaSplit (viaSplit c476_384.down c476_392.down) (viaSplit c476_400.down c476_408.down)) (viaSplit (viaSplit c476_416.down c476_424.down) (viaSplit c476_432.down c476_440.down))) (viaSplit (viaSplit c476_448.down c476_456.down) (viaSplit c476_464.down c476_472.down)))))
 
 private theorem g480 : gramWitness 480 := gram_product (by decide) (by decide) g2 g240
 
@@ -5356,198 +5358,198 @@ private theorem g500 : gramWitness 500 := fromColumns (PaleyHadamard.typeI 499 (
 private theorem g504 : gramWitness 504 := gram_product (by decide) (by decide) g2 g252
 
 set_option maxRecDepth 16000 in
-private def c508_0 : RowRange 508 hadRow508 0 8 := viaCheck (by decide +kernel)
+private def c508_0 : PLift (RowRange 508 hadRow508 0 8) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_8 : RowRange 508 hadRow508 8 16 := viaCheck (by decide +kernel)
+private def c508_8 : PLift (RowRange 508 hadRow508 8 16) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_16 : RowRange 508 hadRow508 16 24 := viaCheck (by decide +kernel)
+private def c508_16 : PLift (RowRange 508 hadRow508 16 24) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_24 : RowRange 508 hadRow508 24 32 := viaCheck (by decide +kernel)
+private def c508_24 : PLift (RowRange 508 hadRow508 24 32) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_32 : RowRange 508 hadRow508 32 40 := viaCheck (by decide +kernel)
+private def c508_32 : PLift (RowRange 508 hadRow508 32 40) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_40 : RowRange 508 hadRow508 40 48 := viaCheck (by decide +kernel)
+private def c508_40 : PLift (RowRange 508 hadRow508 40 48) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_48 : RowRange 508 hadRow508 48 56 := viaCheck (by decide +kernel)
+private def c508_48 : PLift (RowRange 508 hadRow508 48 56) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_56 : RowRange 508 hadRow508 56 64 := viaCheck (by decide +kernel)
+private def c508_56 : PLift (RowRange 508 hadRow508 56 64) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_64 : RowRange 508 hadRow508 64 72 := viaCheck (by decide +kernel)
+private def c508_64 : PLift (RowRange 508 hadRow508 64 72) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_72 : RowRange 508 hadRow508 72 80 := viaCheck (by decide +kernel)
+private def c508_72 : PLift (RowRange 508 hadRow508 72 80) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_80 : RowRange 508 hadRow508 80 88 := viaCheck (by decide +kernel)
+private def c508_80 : PLift (RowRange 508 hadRow508 80 88) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_88 : RowRange 508 hadRow508 88 96 := viaCheck (by decide +kernel)
+private def c508_88 : PLift (RowRange 508 hadRow508 88 96) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_96 : RowRange 508 hadRow508 96 104 := viaCheck (by decide +kernel)
+private def c508_96 : PLift (RowRange 508 hadRow508 96 104) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_104 : RowRange 508 hadRow508 104 112 := viaCheck (by decide +kernel)
+private def c508_104 : PLift (RowRange 508 hadRow508 104 112) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_112 : RowRange 508 hadRow508 112 120 := viaCheck (by decide +kernel)
+private def c508_112 : PLift (RowRange 508 hadRow508 112 120) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_120 : RowRange 508 hadRow508 120 128 := viaCheck (by decide +kernel)
+private def c508_120 : PLift (RowRange 508 hadRow508 120 128) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_128 : RowRange 508 hadRow508 128 136 := viaCheck (by decide +kernel)
+private def c508_128 : PLift (RowRange 508 hadRow508 128 136) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_136 : RowRange 508 hadRow508 136 144 := viaCheck (by decide +kernel)
+private def c508_136 : PLift (RowRange 508 hadRow508 136 144) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_144 : RowRange 508 hadRow508 144 152 := viaCheck (by decide +kernel)
+private def c508_144 : PLift (RowRange 508 hadRow508 144 152) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_152 : RowRange 508 hadRow508 152 160 := viaCheck (by decide +kernel)
+private def c508_152 : PLift (RowRange 508 hadRow508 152 160) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_160 : RowRange 508 hadRow508 160 168 := viaCheck (by decide +kernel)
+private def c508_160 : PLift (RowRange 508 hadRow508 160 168) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_168 : RowRange 508 hadRow508 168 176 := viaCheck (by decide +kernel)
+private def c508_168 : PLift (RowRange 508 hadRow508 168 176) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_176 : RowRange 508 hadRow508 176 184 := viaCheck (by decide +kernel)
+private def c508_176 : PLift (RowRange 508 hadRow508 176 184) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_184 : RowRange 508 hadRow508 184 192 := viaCheck (by decide +kernel)
+private def c508_184 : PLift (RowRange 508 hadRow508 184 192) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_192 : RowRange 508 hadRow508 192 200 := viaCheck (by decide +kernel)
+private def c508_192 : PLift (RowRange 508 hadRow508 192 200) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_200 : RowRange 508 hadRow508 200 208 := viaCheck (by decide +kernel)
+private def c508_200 : PLift (RowRange 508 hadRow508 200 208) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_208 : RowRange 508 hadRow508 208 216 := viaCheck (by decide +kernel)
+private def c508_208 : PLift (RowRange 508 hadRow508 208 216) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_216 : RowRange 508 hadRow508 216 224 := viaCheck (by decide +kernel)
+private def c508_216 : PLift (RowRange 508 hadRow508 216 224) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_224 : RowRange 508 hadRow508 224 232 := viaCheck (by decide +kernel)
+private def c508_224 : PLift (RowRange 508 hadRow508 224 232) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_232 : RowRange 508 hadRow508 232 240 := viaCheck (by decide +kernel)
+private def c508_232 : PLift (RowRange 508 hadRow508 232 240) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_240 : RowRange 508 hadRow508 240 248 := viaCheck (by decide +kernel)
+private def c508_240 : PLift (RowRange 508 hadRow508 240 248) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_248 : RowRange 508 hadRow508 248 256 := viaCheck (by decide +kernel)
+private def c508_248 : PLift (RowRange 508 hadRow508 248 256) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_256 : RowRange 508 hadRow508 256 264 := viaCheck (by decide +kernel)
+private def c508_256 : PLift (RowRange 508 hadRow508 256 264) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_264 : RowRange 508 hadRow508 264 272 := viaCheck (by decide +kernel)
+private def c508_264 : PLift (RowRange 508 hadRow508 264 272) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_272 : RowRange 508 hadRow508 272 280 := viaCheck (by decide +kernel)
+private def c508_272 : PLift (RowRange 508 hadRow508 272 280) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_280 : RowRange 508 hadRow508 280 288 := viaCheck (by decide +kernel)
+private def c508_280 : PLift (RowRange 508 hadRow508 280 288) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_288 : RowRange 508 hadRow508 288 296 := viaCheck (by decide +kernel)
+private def c508_288 : PLift (RowRange 508 hadRow508 288 296) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_296 : RowRange 508 hadRow508 296 304 := viaCheck (by decide +kernel)
+private def c508_296 : PLift (RowRange 508 hadRow508 296 304) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_304 : RowRange 508 hadRow508 304 312 := viaCheck (by decide +kernel)
+private def c508_304 : PLift (RowRange 508 hadRow508 304 312) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_312 : RowRange 508 hadRow508 312 320 := viaCheck (by decide +kernel)
+private def c508_312 : PLift (RowRange 508 hadRow508 312 320) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_320 : RowRange 508 hadRow508 320 328 := viaCheck (by decide +kernel)
+private def c508_320 : PLift (RowRange 508 hadRow508 320 328) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_328 : RowRange 508 hadRow508 328 336 := viaCheck (by decide +kernel)
+private def c508_328 : PLift (RowRange 508 hadRow508 328 336) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_336 : RowRange 508 hadRow508 336 344 := viaCheck (by decide +kernel)
+private def c508_336 : PLift (RowRange 508 hadRow508 336 344) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_344 : RowRange 508 hadRow508 344 352 := viaCheck (by decide +kernel)
+private def c508_344 : PLift (RowRange 508 hadRow508 344 352) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_352 : RowRange 508 hadRow508 352 360 := viaCheck (by decide +kernel)
+private def c508_352 : PLift (RowRange 508 hadRow508 352 360) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_360 : RowRange 508 hadRow508 360 368 := viaCheck (by decide +kernel)
+private def c508_360 : PLift (RowRange 508 hadRow508 360 368) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_368 : RowRange 508 hadRow508 368 376 := viaCheck (by decide +kernel)
+private def c508_368 : PLift (RowRange 508 hadRow508 368 376) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_376 : RowRange 508 hadRow508 376 384 := viaCheck (by decide +kernel)
+private def c508_376 : PLift (RowRange 508 hadRow508 376 384) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_384 : RowRange 508 hadRow508 384 392 := viaCheck (by decide +kernel)
+private def c508_384 : PLift (RowRange 508 hadRow508 384 392) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_392 : RowRange 508 hadRow508 392 400 := viaCheck (by decide +kernel)
+private def c508_392 : PLift (RowRange 508 hadRow508 392 400) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_400 : RowRange 508 hadRow508 400 408 := viaCheck (by decide +kernel)
+private def c508_400 : PLift (RowRange 508 hadRow508 400 408) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_408 : RowRange 508 hadRow508 408 416 := viaCheck (by decide +kernel)
+private def c508_408 : PLift (RowRange 508 hadRow508 408 416) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_416 : RowRange 508 hadRow508 416 424 := viaCheck (by decide +kernel)
+private def c508_416 : PLift (RowRange 508 hadRow508 416 424) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_424 : RowRange 508 hadRow508 424 432 := viaCheck (by decide +kernel)
+private def c508_424 : PLift (RowRange 508 hadRow508 424 432) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_432 : RowRange 508 hadRow508 432 440 := viaCheck (by decide +kernel)
+private def c508_432 : PLift (RowRange 508 hadRow508 432 440) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_440 : RowRange 508 hadRow508 440 448 := viaCheck (by decide +kernel)
+private def c508_440 : PLift (RowRange 508 hadRow508 440 448) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_448 : RowRange 508 hadRow508 448 456 := viaCheck (by decide +kernel)
+private def c508_448 : PLift (RowRange 508 hadRow508 448 456) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_456 : RowRange 508 hadRow508 456 464 := viaCheck (by decide +kernel)
+private def c508_456 : PLift (RowRange 508 hadRow508 456 464) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_464 : RowRange 508 hadRow508 464 472 := viaCheck (by decide +kernel)
+private def c508_464 : PLift (RowRange 508 hadRow508 464 472) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_472 : RowRange 508 hadRow508 472 480 := viaCheck (by decide +kernel)
+private def c508_472 : PLift (RowRange 508 hadRow508 472 480) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_480 : RowRange 508 hadRow508 480 488 := viaCheck (by decide +kernel)
+private def c508_480 : PLift (RowRange 508 hadRow508 480 488) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_488 : RowRange 508 hadRow508 488 496 := viaCheck (by decide +kernel)
+private def c508_488 : PLift (RowRange 508 hadRow508 488 496) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_496 : RowRange 508 hadRow508 496 504 := viaCheck (by decide +kernel)
+private def c508_496 : PLift (RowRange 508 hadRow508 496 504) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c508_504 : RowRange 508 hadRow508 504 508 := viaCheck (by decide +kernel)
+private def c508_504 : PLift (RowRange 508 hadRow508 504 508) := ⟨viaCheck (by decide +kernel)⟩
 
-private theorem g508 : gramWitness 508 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c508_0 c508_8) (viaSplit c508_16 c508_24)) (viaSplit (viaSplit c508_32 c508_40) (viaSplit c508_48 c508_56))) (viaSplit (viaSplit (viaSplit c508_64 c508_72) (viaSplit c508_80 c508_88)) (viaSplit (viaSplit c508_96 c508_104) (viaSplit c508_112 c508_120)))) (viaSplit (viaSplit (viaSplit (viaSplit c508_128 c508_136) (viaSplit c508_144 c508_152)) (viaSplit (viaSplit c508_160 c508_168) (viaSplit c508_176 c508_184))) (viaSplit (viaSplit (viaSplit c508_192 c508_200) (viaSplit c508_208 c508_216)) (viaSplit (viaSplit c508_224 c508_232) (viaSplit c508_240 c508_248))))) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c508_256 c508_264) (viaSplit c508_272 c508_280)) (viaSplit (viaSplit c508_288 c508_296) (viaSplit c508_304 c508_312))) (viaSplit (viaSplit (viaSplit c508_320 c508_328) (viaSplit c508_336 c508_344)) (viaSplit (viaSplit c508_352 c508_360) (viaSplit c508_368 c508_376)))) (viaSplit (viaSplit (viaSplit (viaSplit c508_384 c508_392) (viaSplit c508_400 c508_408)) (viaSplit (viaSplit c508_416 c508_424) (viaSplit c508_432 c508_440))) (viaSplit (viaSplit (viaSplit c508_448 c508_456) (viaSplit c508_464 c508_472)) (viaSplit (viaSplit c508_480 c508_488) (viaSplit c508_496 c508_504))))))
+private theorem g508 : gramWitness 508 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c508_0.down c508_8.down) (viaSplit c508_16.down c508_24.down)) (viaSplit (viaSplit c508_32.down c508_40.down) (viaSplit c508_48.down c508_56.down))) (viaSplit (viaSplit (viaSplit c508_64.down c508_72.down) (viaSplit c508_80.down c508_88.down)) (viaSplit (viaSplit c508_96.down c508_104.down) (viaSplit c508_112.down c508_120.down)))) (viaSplit (viaSplit (viaSplit (viaSplit c508_128.down c508_136.down) (viaSplit c508_144.down c508_152.down)) (viaSplit (viaSplit c508_160.down c508_168.down) (viaSplit c508_176.down c508_184.down))) (viaSplit (viaSplit (viaSplit c508_192.down c508_200.down) (viaSplit c508_208.down c508_216.down)) (viaSplit (viaSplit c508_224.down c508_232.down) (viaSplit c508_240.down c508_248.down))))) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c508_256.down c508_264.down) (viaSplit c508_272.down c508_280.down)) (viaSplit (viaSplit c508_288.down c508_296.down) (viaSplit c508_304.down c508_312.down))) (viaSplit (viaSplit (viaSplit c508_320.down c508_328.down) (viaSplit c508_336.down c508_344.down)) (viaSplit (viaSplit c508_352.down c508_360.down) (viaSplit c508_368.down c508_376.down)))) (viaSplit (viaSplit (viaSplit (viaSplit c508_384.down c508_392.down) (viaSplit c508_400.down c508_408.down)) (viaSplit (viaSplit c508_416.down c508_424.down) (viaSplit c508_432.down c508_440.down))) (viaSplit (viaSplit (viaSplit c508_448.down c508_456.down) (viaSplit c508_464.down c508_472.down)) (viaSplit (viaSplit c508_480.down c508_488.down) (viaSplit c508_496.down c508_504.down))))))
 
 private theorem g512 : gramWitness 512 := gram_product (by decide) (by decide) g2 g256
 
@@ -5560,207 +5562,207 @@ private theorem g524 : gramWitness 524 := fromColumns (PaleyHadamard.typeI 523 (
 private theorem g528 : gramWitness 528 := gram_product (by decide) (by decide) g2 g264
 
 set_option maxRecDepth 16000 in
-private def c532_0 : RowRange 532 hadRow532 0 8 := viaCheck (by decide +kernel)
+private def c532_0 : PLift (RowRange 532 hadRow532 0 8) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_8 : RowRange 532 hadRow532 8 16 := viaCheck (by decide +kernel)
+private def c532_8 : PLift (RowRange 532 hadRow532 8 16) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_16 : RowRange 532 hadRow532 16 24 := viaCheck (by decide +kernel)
+private def c532_16 : PLift (RowRange 532 hadRow532 16 24) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_24 : RowRange 532 hadRow532 24 32 := viaCheck (by decide +kernel)
+private def c532_24 : PLift (RowRange 532 hadRow532 24 32) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_32 : RowRange 532 hadRow532 32 40 := viaCheck (by decide +kernel)
+private def c532_32 : PLift (RowRange 532 hadRow532 32 40) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_40 : RowRange 532 hadRow532 40 48 := viaCheck (by decide +kernel)
+private def c532_40 : PLift (RowRange 532 hadRow532 40 48) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_48 : RowRange 532 hadRow532 48 56 := viaCheck (by decide +kernel)
+private def c532_48 : PLift (RowRange 532 hadRow532 48 56) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_56 : RowRange 532 hadRow532 56 64 := viaCheck (by decide +kernel)
+private def c532_56 : PLift (RowRange 532 hadRow532 56 64) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_64 : RowRange 532 hadRow532 64 72 := viaCheck (by decide +kernel)
+private def c532_64 : PLift (RowRange 532 hadRow532 64 72) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_72 : RowRange 532 hadRow532 72 80 := viaCheck (by decide +kernel)
+private def c532_72 : PLift (RowRange 532 hadRow532 72 80) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_80 : RowRange 532 hadRow532 80 88 := viaCheck (by decide +kernel)
+private def c532_80 : PLift (RowRange 532 hadRow532 80 88) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_88 : RowRange 532 hadRow532 88 96 := viaCheck (by decide +kernel)
+private def c532_88 : PLift (RowRange 532 hadRow532 88 96) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_96 : RowRange 532 hadRow532 96 104 := viaCheck (by decide +kernel)
+private def c532_96 : PLift (RowRange 532 hadRow532 96 104) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_104 : RowRange 532 hadRow532 104 112 := viaCheck (by decide +kernel)
+private def c532_104 : PLift (RowRange 532 hadRow532 104 112) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_112 : RowRange 532 hadRow532 112 120 := viaCheck (by decide +kernel)
+private def c532_112 : PLift (RowRange 532 hadRow532 112 120) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_120 : RowRange 532 hadRow532 120 128 := viaCheck (by decide +kernel)
+private def c532_120 : PLift (RowRange 532 hadRow532 120 128) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_128 : RowRange 532 hadRow532 128 136 := viaCheck (by decide +kernel)
+private def c532_128 : PLift (RowRange 532 hadRow532 128 136) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_136 : RowRange 532 hadRow532 136 144 := viaCheck (by decide +kernel)
+private def c532_136 : PLift (RowRange 532 hadRow532 136 144) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_144 : RowRange 532 hadRow532 144 152 := viaCheck (by decide +kernel)
+private def c532_144 : PLift (RowRange 532 hadRow532 144 152) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_152 : RowRange 532 hadRow532 152 160 := viaCheck (by decide +kernel)
+private def c532_152 : PLift (RowRange 532 hadRow532 152 160) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_160 : RowRange 532 hadRow532 160 168 := viaCheck (by decide +kernel)
+private def c532_160 : PLift (RowRange 532 hadRow532 160 168) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_168 : RowRange 532 hadRow532 168 176 := viaCheck (by decide +kernel)
+private def c532_168 : PLift (RowRange 532 hadRow532 168 176) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_176 : RowRange 532 hadRow532 176 184 := viaCheck (by decide +kernel)
+private def c532_176 : PLift (RowRange 532 hadRow532 176 184) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_184 : RowRange 532 hadRow532 184 192 := viaCheck (by decide +kernel)
+private def c532_184 : PLift (RowRange 532 hadRow532 184 192) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_192 : RowRange 532 hadRow532 192 200 := viaCheck (by decide +kernel)
+private def c532_192 : PLift (RowRange 532 hadRow532 192 200) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_200 : RowRange 532 hadRow532 200 208 := viaCheck (by decide +kernel)
+private def c532_200 : PLift (RowRange 532 hadRow532 200 208) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_208 : RowRange 532 hadRow532 208 216 := viaCheck (by decide +kernel)
+private def c532_208 : PLift (RowRange 532 hadRow532 208 216) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_216 : RowRange 532 hadRow532 216 224 := viaCheck (by decide +kernel)
+private def c532_216 : PLift (RowRange 532 hadRow532 216 224) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_224 : RowRange 532 hadRow532 224 232 := viaCheck (by decide +kernel)
+private def c532_224 : PLift (RowRange 532 hadRow532 224 232) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_232 : RowRange 532 hadRow532 232 240 := viaCheck (by decide +kernel)
+private def c532_232 : PLift (RowRange 532 hadRow532 232 240) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_240 : RowRange 532 hadRow532 240 248 := viaCheck (by decide +kernel)
+private def c532_240 : PLift (RowRange 532 hadRow532 240 248) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_248 : RowRange 532 hadRow532 248 256 := viaCheck (by decide +kernel)
+private def c532_248 : PLift (RowRange 532 hadRow532 248 256) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_256 : RowRange 532 hadRow532 256 264 := viaCheck (by decide +kernel)
+private def c532_256 : PLift (RowRange 532 hadRow532 256 264) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_264 : RowRange 532 hadRow532 264 272 := viaCheck (by decide +kernel)
+private def c532_264 : PLift (RowRange 532 hadRow532 264 272) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_272 : RowRange 532 hadRow532 272 280 := viaCheck (by decide +kernel)
+private def c532_272 : PLift (RowRange 532 hadRow532 272 280) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_280 : RowRange 532 hadRow532 280 288 := viaCheck (by decide +kernel)
+private def c532_280 : PLift (RowRange 532 hadRow532 280 288) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_288 : RowRange 532 hadRow532 288 296 := viaCheck (by decide +kernel)
+private def c532_288 : PLift (RowRange 532 hadRow532 288 296) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_296 : RowRange 532 hadRow532 296 304 := viaCheck (by decide +kernel)
+private def c532_296 : PLift (RowRange 532 hadRow532 296 304) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_304 : RowRange 532 hadRow532 304 312 := viaCheck (by decide +kernel)
+private def c532_304 : PLift (RowRange 532 hadRow532 304 312) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_312 : RowRange 532 hadRow532 312 320 := viaCheck (by decide +kernel)
+private def c532_312 : PLift (RowRange 532 hadRow532 312 320) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_320 : RowRange 532 hadRow532 320 328 := viaCheck (by decide +kernel)
+private def c532_320 : PLift (RowRange 532 hadRow532 320 328) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_328 : RowRange 532 hadRow532 328 336 := viaCheck (by decide +kernel)
+private def c532_328 : PLift (RowRange 532 hadRow532 328 336) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_336 : RowRange 532 hadRow532 336 344 := viaCheck (by decide +kernel)
+private def c532_336 : PLift (RowRange 532 hadRow532 336 344) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_344 : RowRange 532 hadRow532 344 352 := viaCheck (by decide +kernel)
+private def c532_344 : PLift (RowRange 532 hadRow532 344 352) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_352 : RowRange 532 hadRow532 352 360 := viaCheck (by decide +kernel)
+private def c532_352 : PLift (RowRange 532 hadRow532 352 360) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_360 : RowRange 532 hadRow532 360 368 := viaCheck (by decide +kernel)
+private def c532_360 : PLift (RowRange 532 hadRow532 360 368) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_368 : RowRange 532 hadRow532 368 376 := viaCheck (by decide +kernel)
+private def c532_368 : PLift (RowRange 532 hadRow532 368 376) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_376 : RowRange 532 hadRow532 376 384 := viaCheck (by decide +kernel)
+private def c532_376 : PLift (RowRange 532 hadRow532 376 384) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_384 : RowRange 532 hadRow532 384 392 := viaCheck (by decide +kernel)
+private def c532_384 : PLift (RowRange 532 hadRow532 384 392) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_392 : RowRange 532 hadRow532 392 400 := viaCheck (by decide +kernel)
+private def c532_392 : PLift (RowRange 532 hadRow532 392 400) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_400 : RowRange 532 hadRow532 400 408 := viaCheck (by decide +kernel)
+private def c532_400 : PLift (RowRange 532 hadRow532 400 408) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_408 : RowRange 532 hadRow532 408 416 := viaCheck (by decide +kernel)
+private def c532_408 : PLift (RowRange 532 hadRow532 408 416) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_416 : RowRange 532 hadRow532 416 424 := viaCheck (by decide +kernel)
+private def c532_416 : PLift (RowRange 532 hadRow532 416 424) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_424 : RowRange 532 hadRow532 424 432 := viaCheck (by decide +kernel)
+private def c532_424 : PLift (RowRange 532 hadRow532 424 432) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_432 : RowRange 532 hadRow532 432 440 := viaCheck (by decide +kernel)
+private def c532_432 : PLift (RowRange 532 hadRow532 432 440) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_440 : RowRange 532 hadRow532 440 448 := viaCheck (by decide +kernel)
+private def c532_440 : PLift (RowRange 532 hadRow532 440 448) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_448 : RowRange 532 hadRow532 448 456 := viaCheck (by decide +kernel)
+private def c532_448 : PLift (RowRange 532 hadRow532 448 456) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_456 : RowRange 532 hadRow532 456 464 := viaCheck (by decide +kernel)
+private def c532_456 : PLift (RowRange 532 hadRow532 456 464) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_464 : RowRange 532 hadRow532 464 472 := viaCheck (by decide +kernel)
+private def c532_464 : PLift (RowRange 532 hadRow532 464 472) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_472 : RowRange 532 hadRow532 472 480 := viaCheck (by decide +kernel)
+private def c532_472 : PLift (RowRange 532 hadRow532 472 480) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_480 : RowRange 532 hadRow532 480 488 := viaCheck (by decide +kernel)
+private def c532_480 : PLift (RowRange 532 hadRow532 480 488) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_488 : RowRange 532 hadRow532 488 496 := viaCheck (by decide +kernel)
+private def c532_488 : PLift (RowRange 532 hadRow532 488 496) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_496 : RowRange 532 hadRow532 496 504 := viaCheck (by decide +kernel)
+private def c532_496 : PLift (RowRange 532 hadRow532 496 504) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_504 : RowRange 532 hadRow532 504 512 := viaCheck (by decide +kernel)
+private def c532_504 : PLift (RowRange 532 hadRow532 504 512) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_512 : RowRange 532 hadRow532 512 520 := viaCheck (by decide +kernel)
+private def c532_512 : PLift (RowRange 532 hadRow532 512 520) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_520 : RowRange 532 hadRow532 520 528 := viaCheck (by decide +kernel)
+private def c532_520 : PLift (RowRange 532 hadRow532 520 528) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c532_528 : RowRange 532 hadRow532 528 532 := viaCheck (by decide +kernel)
+private def c532_528 : PLift (RowRange 532 hadRow532 528 532) := ⟨viaCheck (by decide +kernel)⟩
 
-private theorem g532 : gramWitness 532 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c532_0 c532_8) (viaSplit c532_16 c532_24)) (viaSplit (viaSplit c532_32 c532_40) (viaSplit c532_48 c532_56))) (viaSplit (viaSplit (viaSplit c532_64 c532_72) (viaSplit c532_80 c532_88)) (viaSplit (viaSplit c532_96 c532_104) (viaSplit c532_112 c532_120)))) (viaSplit (viaSplit (viaSplit (viaSplit c532_128 c532_136) (viaSplit c532_144 c532_152)) (viaSplit (viaSplit c532_160 c532_168) (viaSplit c532_176 c532_184))) (viaSplit (viaSplit (viaSplit c532_192 c532_200) (viaSplit c532_208 c532_216)) (viaSplit (viaSplit c532_224 c532_232) (viaSplit c532_240 c532_248))))) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c532_256 c532_264) (viaSplit c532_272 c532_280)) (viaSplit (viaSplit c532_288 c532_296) (viaSplit c532_304 c532_312))) (viaSplit (viaSplit (viaSplit c532_320 c532_328) (viaSplit c532_336 c532_344)) (viaSplit (viaSplit c532_352 c532_360) (viaSplit c532_368 c532_376)))) (viaSplit (viaSplit (viaSplit (viaSplit c532_384 c532_392) (viaSplit c532_400 c532_408)) (viaSplit (viaSplit c532_416 c532_424) (viaSplit c532_432 c532_440))) (viaSplit (viaSplit (viaSplit c532_448 c532_456) (viaSplit c532_464 c532_472)) (viaSplit (viaSplit c532_480 c532_488) (viaSplit c532_496 c532_504)))))) (viaSplit (viaSplit c532_512 c532_520) c532_528))
+private theorem g532 : gramWitness 532 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c532_0.down c532_8.down) (viaSplit c532_16.down c532_24.down)) (viaSplit (viaSplit c532_32.down c532_40.down) (viaSplit c532_48.down c532_56.down))) (viaSplit (viaSplit (viaSplit c532_64.down c532_72.down) (viaSplit c532_80.down c532_88.down)) (viaSplit (viaSplit c532_96.down c532_104.down) (viaSplit c532_112.down c532_120.down)))) (viaSplit (viaSplit (viaSplit (viaSplit c532_128.down c532_136.down) (viaSplit c532_144.down c532_152.down)) (viaSplit (viaSplit c532_160.down c532_168.down) (viaSplit c532_176.down c532_184.down))) (viaSplit (viaSplit (viaSplit c532_192.down c532_200.down) (viaSplit c532_208.down c532_216.down)) (viaSplit (viaSplit c532_224.down c532_232.down) (viaSplit c532_240.down c532_248.down))))) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c532_256.down c532_264.down) (viaSplit c532_272.down c532_280.down)) (viaSplit (viaSplit c532_288.down c532_296.down) (viaSplit c532_304.down c532_312.down))) (viaSplit (viaSplit (viaSplit c532_320.down c532_328.down) (viaSplit c532_336.down c532_344.down)) (viaSplit (viaSplit c532_352.down c532_360.down) (viaSplit c532_368.down c532_376.down)))) (viaSplit (viaSplit (viaSplit (viaSplit c532_384.down c532_392.down) (viaSplit c532_400.down c532_408.down)) (viaSplit (viaSplit c532_416.down c532_424.down) (viaSplit c532_432.down c532_440.down))) (viaSplit (viaSplit (viaSplit c532_448.down c532_456.down) (viaSplit c532_464.down c532_472.down)) (viaSplit (viaSplit c532_480.down c532_488.down) (viaSplit c532_496.down c532_504.down)))))) (viaSplit (viaSplit c532_512.down c532_520.down) c532_528.down))
 
 private theorem g536 : gramWitness 536 := gram_product (by decide) (by decide) g2 g268
 
@@ -5793,698 +5795,698 @@ private theorem g588 : gramWitness 588 := fromColumns (PaleyHadamard.typeI 587 (
 private theorem g592 : gramWitness 592 := gram_product (by decide) (by decide) g2 g296
 
 set_option maxRecDepth 16000 in
-private def c596_0 : RowRange 596 hadRow596 0 8 := viaCheck (by decide +kernel)
+private def c596_0 : PLift (RowRange 596 hadRow596 0 8) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_8 : RowRange 596 hadRow596 8 16 := viaCheck (by decide +kernel)
+private def c596_8 : PLift (RowRange 596 hadRow596 8 16) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_16 : RowRange 596 hadRow596 16 24 := viaCheck (by decide +kernel)
+private def c596_16 : PLift (RowRange 596 hadRow596 16 24) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_24 : RowRange 596 hadRow596 24 32 := viaCheck (by decide +kernel)
+private def c596_24 : PLift (RowRange 596 hadRow596 24 32) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_32 : RowRange 596 hadRow596 32 40 := viaCheck (by decide +kernel)
+private def c596_32 : PLift (RowRange 596 hadRow596 32 40) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_40 : RowRange 596 hadRow596 40 48 := viaCheck (by decide +kernel)
+private def c596_40 : PLift (RowRange 596 hadRow596 40 48) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_48 : RowRange 596 hadRow596 48 56 := viaCheck (by decide +kernel)
+private def c596_48 : PLift (RowRange 596 hadRow596 48 56) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_56 : RowRange 596 hadRow596 56 64 := viaCheck (by decide +kernel)
+private def c596_56 : PLift (RowRange 596 hadRow596 56 64) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_64 : RowRange 596 hadRow596 64 72 := viaCheck (by decide +kernel)
+private def c596_64 : PLift (RowRange 596 hadRow596 64 72) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_72 : RowRange 596 hadRow596 72 80 := viaCheck (by decide +kernel)
+private def c596_72 : PLift (RowRange 596 hadRow596 72 80) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_80 : RowRange 596 hadRow596 80 88 := viaCheck (by decide +kernel)
+private def c596_80 : PLift (RowRange 596 hadRow596 80 88) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_88 : RowRange 596 hadRow596 88 96 := viaCheck (by decide +kernel)
+private def c596_88 : PLift (RowRange 596 hadRow596 88 96) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_96 : RowRange 596 hadRow596 96 104 := viaCheck (by decide +kernel)
+private def c596_96 : PLift (RowRange 596 hadRow596 96 104) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_104 : RowRange 596 hadRow596 104 112 := viaCheck (by decide +kernel)
+private def c596_104 : PLift (RowRange 596 hadRow596 104 112) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_112 : RowRange 596 hadRow596 112 120 := viaCheck (by decide +kernel)
+private def c596_112 : PLift (RowRange 596 hadRow596 112 120) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_120 : RowRange 596 hadRow596 120 128 := viaCheck (by decide +kernel)
+private def c596_120 : PLift (RowRange 596 hadRow596 120 128) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_128 : RowRange 596 hadRow596 128 136 := viaCheck (by decide +kernel)
+private def c596_128 : PLift (RowRange 596 hadRow596 128 136) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_136 : RowRange 596 hadRow596 136 144 := viaCheck (by decide +kernel)
+private def c596_136 : PLift (RowRange 596 hadRow596 136 144) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_144 : RowRange 596 hadRow596 144 152 := viaCheck (by decide +kernel)
+private def c596_144 : PLift (RowRange 596 hadRow596 144 152) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_152 : RowRange 596 hadRow596 152 160 := viaCheck (by decide +kernel)
+private def c596_152 : PLift (RowRange 596 hadRow596 152 160) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_160 : RowRange 596 hadRow596 160 168 := viaCheck (by decide +kernel)
+private def c596_160 : PLift (RowRange 596 hadRow596 160 168) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_168 : RowRange 596 hadRow596 168 176 := viaCheck (by decide +kernel)
+private def c596_168 : PLift (RowRange 596 hadRow596 168 176) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_176 : RowRange 596 hadRow596 176 184 := viaCheck (by decide +kernel)
+private def c596_176 : PLift (RowRange 596 hadRow596 176 184) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_184 : RowRange 596 hadRow596 184 192 := viaCheck (by decide +kernel)
+private def c596_184 : PLift (RowRange 596 hadRow596 184 192) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_192 : RowRange 596 hadRow596 192 200 := viaCheck (by decide +kernel)
+private def c596_192 : PLift (RowRange 596 hadRow596 192 200) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_200 : RowRange 596 hadRow596 200 208 := viaCheck (by decide +kernel)
+private def c596_200 : PLift (RowRange 596 hadRow596 200 208) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_208 : RowRange 596 hadRow596 208 216 := viaCheck (by decide +kernel)
+private def c596_208 : PLift (RowRange 596 hadRow596 208 216) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_216 : RowRange 596 hadRow596 216 224 := viaCheck (by decide +kernel)
+private def c596_216 : PLift (RowRange 596 hadRow596 216 224) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_224 : RowRange 596 hadRow596 224 232 := viaCheck (by decide +kernel)
+private def c596_224 : PLift (RowRange 596 hadRow596 224 232) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_232 : RowRange 596 hadRow596 232 240 := viaCheck (by decide +kernel)
+private def c596_232 : PLift (RowRange 596 hadRow596 232 240) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_240 : RowRange 596 hadRow596 240 248 := viaCheck (by decide +kernel)
+private def c596_240 : PLift (RowRange 596 hadRow596 240 248) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_248 : RowRange 596 hadRow596 248 256 := viaCheck (by decide +kernel)
+private def c596_248 : PLift (RowRange 596 hadRow596 248 256) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_256 : RowRange 596 hadRow596 256 264 := viaCheck (by decide +kernel)
+private def c596_256 : PLift (RowRange 596 hadRow596 256 264) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_264 : RowRange 596 hadRow596 264 272 := viaCheck (by decide +kernel)
+private def c596_264 : PLift (RowRange 596 hadRow596 264 272) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_272 : RowRange 596 hadRow596 272 280 := viaCheck (by decide +kernel)
+private def c596_272 : PLift (RowRange 596 hadRow596 272 280) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_280 : RowRange 596 hadRow596 280 288 := viaCheck (by decide +kernel)
+private def c596_280 : PLift (RowRange 596 hadRow596 280 288) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_288 : RowRange 596 hadRow596 288 296 := viaCheck (by decide +kernel)
+private def c596_288 : PLift (RowRange 596 hadRow596 288 296) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_296 : RowRange 596 hadRow596 296 304 := viaCheck (by decide +kernel)
+private def c596_296 : PLift (RowRange 596 hadRow596 296 304) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_304 : RowRange 596 hadRow596 304 312 := viaCheck (by decide +kernel)
+private def c596_304 : PLift (RowRange 596 hadRow596 304 312) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_312 : RowRange 596 hadRow596 312 320 := viaCheck (by decide +kernel)
+private def c596_312 : PLift (RowRange 596 hadRow596 312 320) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_320 : RowRange 596 hadRow596 320 328 := viaCheck (by decide +kernel)
+private def c596_320 : PLift (RowRange 596 hadRow596 320 328) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_328 : RowRange 596 hadRow596 328 336 := viaCheck (by decide +kernel)
+private def c596_328 : PLift (RowRange 596 hadRow596 328 336) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_336 : RowRange 596 hadRow596 336 344 := viaCheck (by decide +kernel)
+private def c596_336 : PLift (RowRange 596 hadRow596 336 344) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_344 : RowRange 596 hadRow596 344 352 := viaCheck (by decide +kernel)
+private def c596_344 : PLift (RowRange 596 hadRow596 344 352) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_352 : RowRange 596 hadRow596 352 360 := viaCheck (by decide +kernel)
+private def c596_352 : PLift (RowRange 596 hadRow596 352 360) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_360 : RowRange 596 hadRow596 360 368 := viaCheck (by decide +kernel)
+private def c596_360 : PLift (RowRange 596 hadRow596 360 368) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_368 : RowRange 596 hadRow596 368 376 := viaCheck (by decide +kernel)
+private def c596_368 : PLift (RowRange 596 hadRow596 368 376) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_376 : RowRange 596 hadRow596 376 384 := viaCheck (by decide +kernel)
+private def c596_376 : PLift (RowRange 596 hadRow596 376 384) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_384 : RowRange 596 hadRow596 384 392 := viaCheck (by decide +kernel)
+private def c596_384 : PLift (RowRange 596 hadRow596 384 392) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_392 : RowRange 596 hadRow596 392 400 := viaCheck (by decide +kernel)
+private def c596_392 : PLift (RowRange 596 hadRow596 392 400) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_400 : RowRange 596 hadRow596 400 408 := viaCheck (by decide +kernel)
+private def c596_400 : PLift (RowRange 596 hadRow596 400 408) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_408 : RowRange 596 hadRow596 408 416 := viaCheck (by decide +kernel)
+private def c596_408 : PLift (RowRange 596 hadRow596 408 416) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_416 : RowRange 596 hadRow596 416 424 := viaCheck (by decide +kernel)
+private def c596_416 : PLift (RowRange 596 hadRow596 416 424) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_424 : RowRange 596 hadRow596 424 432 := viaCheck (by decide +kernel)
+private def c596_424 : PLift (RowRange 596 hadRow596 424 432) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_432 : RowRange 596 hadRow596 432 440 := viaCheck (by decide +kernel)
+private def c596_432 : PLift (RowRange 596 hadRow596 432 440) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_440 : RowRange 596 hadRow596 440 448 := viaCheck (by decide +kernel)
+private def c596_440 : PLift (RowRange 596 hadRow596 440 448) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_448 : RowRange 596 hadRow596 448 456 := viaCheck (by decide +kernel)
+private def c596_448 : PLift (RowRange 596 hadRow596 448 456) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_456 : RowRange 596 hadRow596 456 464 := viaCheck (by decide +kernel)
+private def c596_456 : PLift (RowRange 596 hadRow596 456 464) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_464 : RowRange 596 hadRow596 464 472 := viaCheck (by decide +kernel)
+private def c596_464 : PLift (RowRange 596 hadRow596 464 472) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_472 : RowRange 596 hadRow596 472 480 := viaCheck (by decide +kernel)
+private def c596_472 : PLift (RowRange 596 hadRow596 472 480) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_480 : RowRange 596 hadRow596 480 488 := viaCheck (by decide +kernel)
+private def c596_480 : PLift (RowRange 596 hadRow596 480 488) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_488 : RowRange 596 hadRow596 488 496 := viaCheck (by decide +kernel)
+private def c596_488 : PLift (RowRange 596 hadRow596 488 496) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_496 : RowRange 596 hadRow596 496 504 := viaCheck (by decide +kernel)
+private def c596_496 : PLift (RowRange 596 hadRow596 496 504) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_504 : RowRange 596 hadRow596 504 512 := viaCheck (by decide +kernel)
+private def c596_504 : PLift (RowRange 596 hadRow596 504 512) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_512 : RowRange 596 hadRow596 512 520 := viaCheck (by decide +kernel)
+private def c596_512 : PLift (RowRange 596 hadRow596 512 520) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_520 : RowRange 596 hadRow596 520 528 := viaCheck (by decide +kernel)
+private def c596_520 : PLift (RowRange 596 hadRow596 520 528) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_528 : RowRange 596 hadRow596 528 536 := viaCheck (by decide +kernel)
+private def c596_528 : PLift (RowRange 596 hadRow596 528 536) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_536 : RowRange 596 hadRow596 536 544 := viaCheck (by decide +kernel)
+private def c596_536 : PLift (RowRange 596 hadRow596 536 544) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_544 : RowRange 596 hadRow596 544 552 := viaCheck (by decide +kernel)
+private def c596_544 : PLift (RowRange 596 hadRow596 544 552) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_552 : RowRange 596 hadRow596 552 560 := viaCheck (by decide +kernel)
+private def c596_552 : PLift (RowRange 596 hadRow596 552 560) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_560 : RowRange 596 hadRow596 560 568 := viaCheck (by decide +kernel)
+private def c596_560 : PLift (RowRange 596 hadRow596 560 568) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_568 : RowRange 596 hadRow596 568 576 := viaCheck (by decide +kernel)
+private def c596_568 : PLift (RowRange 596 hadRow596 568 576) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_576 : RowRange 596 hadRow596 576 584 := viaCheck (by decide +kernel)
+private def c596_576 : PLift (RowRange 596 hadRow596 576 584) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_584 : RowRange 596 hadRow596 584 592 := viaCheck (by decide +kernel)
+private def c596_584 : PLift (RowRange 596 hadRow596 584 592) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c596_592 : RowRange 596 hadRow596 592 596 := viaCheck (by decide +kernel)
+private def c596_592 : PLift (RowRange 596 hadRow596 592 596) := ⟨viaCheck (by decide +kernel)⟩
 
-private theorem g596 : gramWitness 596 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c596_0 c596_8) (viaSplit c596_16 c596_24)) (viaSplit (viaSplit c596_32 c596_40) (viaSplit c596_48 c596_56))) (viaSplit (viaSplit (viaSplit c596_64 c596_72) (viaSplit c596_80 c596_88)) (viaSplit (viaSplit c596_96 c596_104) (viaSplit c596_112 c596_120)))) (viaSplit (viaSplit (viaSplit (viaSplit c596_128 c596_136) (viaSplit c596_144 c596_152)) (viaSplit (viaSplit c596_160 c596_168) (viaSplit c596_176 c596_184))) (viaSplit (viaSplit (viaSplit c596_192 c596_200) (viaSplit c596_208 c596_216)) (viaSplit (viaSplit c596_224 c596_232) (viaSplit c596_240 c596_248))))) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c596_256 c596_264) (viaSplit c596_272 c596_280)) (viaSplit (viaSplit c596_288 c596_296) (viaSplit c596_304 c596_312))) (viaSplit (viaSplit (viaSplit c596_320 c596_328) (viaSplit c596_336 c596_344)) (viaSplit (viaSplit c596_352 c596_360) (viaSplit c596_368 c596_376)))) (viaSplit (viaSplit (viaSplit (viaSplit c596_384 c596_392) (viaSplit c596_400 c596_408)) (viaSplit (viaSplit c596_416 c596_424) (viaSplit c596_432 c596_440))) (viaSplit (viaSplit (viaSplit c596_448 c596_456) (viaSplit c596_464 c596_472)) (viaSplit (viaSplit c596_480 c596_488) (viaSplit c596_496 c596_504)))))) (viaSplit (viaSplit (viaSplit (viaSplit c596_512 c596_520) (viaSplit c596_528 c596_536)) (viaSplit (viaSplit c596_544 c596_552) (viaSplit c596_560 c596_568))) (viaSplit (viaSplit c596_576 c596_584) c596_592)))
+private theorem g596 : gramWitness 596 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c596_0.down c596_8.down) (viaSplit c596_16.down c596_24.down)) (viaSplit (viaSplit c596_32.down c596_40.down) (viaSplit c596_48.down c596_56.down))) (viaSplit (viaSplit (viaSplit c596_64.down c596_72.down) (viaSplit c596_80.down c596_88.down)) (viaSplit (viaSplit c596_96.down c596_104.down) (viaSplit c596_112.down c596_120.down)))) (viaSplit (viaSplit (viaSplit (viaSplit c596_128.down c596_136.down) (viaSplit c596_144.down c596_152.down)) (viaSplit (viaSplit c596_160.down c596_168.down) (viaSplit c596_176.down c596_184.down))) (viaSplit (viaSplit (viaSplit c596_192.down c596_200.down) (viaSplit c596_208.down c596_216.down)) (viaSplit (viaSplit c596_224.down c596_232.down) (viaSplit c596_240.down c596_248.down))))) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c596_256.down c596_264.down) (viaSplit c596_272.down c596_280.down)) (viaSplit (viaSplit c596_288.down c596_296.down) (viaSplit c596_304.down c596_312.down))) (viaSplit (viaSplit (viaSplit c596_320.down c596_328.down) (viaSplit c596_336.down c596_344.down)) (viaSplit (viaSplit c596_352.down c596_360.down) (viaSplit c596_368.down c596_376.down)))) (viaSplit (viaSplit (viaSplit (viaSplit c596_384.down c596_392.down) (viaSplit c596_400.down c596_408.down)) (viaSplit (viaSplit c596_416.down c596_424.down) (viaSplit c596_432.down c596_440.down))) (viaSplit (viaSplit (viaSplit c596_448.down c596_456.down) (viaSplit c596_464.down c596_472.down)) (viaSplit (viaSplit c596_480.down c596_488.down) (viaSplit c596_496.down c596_504.down)))))) (viaSplit (viaSplit (viaSplit (viaSplit c596_512.down c596_520.down) (viaSplit c596_528.down c596_536.down)) (viaSplit (viaSplit c596_544.down c596_552.down) (viaSplit c596_560.down c596_568.down))) (viaSplit (viaSplit c596_576.down c596_584.down) c596_592.down)))
 
 private theorem g600 : gramWitness 600 := gram_product (by decide) (by decide) g2 g300
 
 set_option maxRecDepth 16000 in
-private def c604_0 : RowRange 604 hadRow604 0 8 := viaCheck (by decide +kernel)
+private def c604_0 : PLift (RowRange 604 hadRow604 0 8) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_8 : RowRange 604 hadRow604 8 16 := viaCheck (by decide +kernel)
+private def c604_8 : PLift (RowRange 604 hadRow604 8 16) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_16 : RowRange 604 hadRow604 16 24 := viaCheck (by decide +kernel)
+private def c604_16 : PLift (RowRange 604 hadRow604 16 24) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_24 : RowRange 604 hadRow604 24 32 := viaCheck (by decide +kernel)
+private def c604_24 : PLift (RowRange 604 hadRow604 24 32) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_32 : RowRange 604 hadRow604 32 40 := viaCheck (by decide +kernel)
+private def c604_32 : PLift (RowRange 604 hadRow604 32 40) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_40 : RowRange 604 hadRow604 40 48 := viaCheck (by decide +kernel)
+private def c604_40 : PLift (RowRange 604 hadRow604 40 48) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_48 : RowRange 604 hadRow604 48 56 := viaCheck (by decide +kernel)
+private def c604_48 : PLift (RowRange 604 hadRow604 48 56) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_56 : RowRange 604 hadRow604 56 64 := viaCheck (by decide +kernel)
+private def c604_56 : PLift (RowRange 604 hadRow604 56 64) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_64 : RowRange 604 hadRow604 64 72 := viaCheck (by decide +kernel)
+private def c604_64 : PLift (RowRange 604 hadRow604 64 72) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_72 : RowRange 604 hadRow604 72 80 := viaCheck (by decide +kernel)
+private def c604_72 : PLift (RowRange 604 hadRow604 72 80) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_80 : RowRange 604 hadRow604 80 88 := viaCheck (by decide +kernel)
+private def c604_80 : PLift (RowRange 604 hadRow604 80 88) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_88 : RowRange 604 hadRow604 88 96 := viaCheck (by decide +kernel)
+private def c604_88 : PLift (RowRange 604 hadRow604 88 96) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_96 : RowRange 604 hadRow604 96 104 := viaCheck (by decide +kernel)
+private def c604_96 : PLift (RowRange 604 hadRow604 96 104) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_104 : RowRange 604 hadRow604 104 112 := viaCheck (by decide +kernel)
+private def c604_104 : PLift (RowRange 604 hadRow604 104 112) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_112 : RowRange 604 hadRow604 112 120 := viaCheck (by decide +kernel)
+private def c604_112 : PLift (RowRange 604 hadRow604 112 120) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_120 : RowRange 604 hadRow604 120 128 := viaCheck (by decide +kernel)
+private def c604_120 : PLift (RowRange 604 hadRow604 120 128) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_128 : RowRange 604 hadRow604 128 136 := viaCheck (by decide +kernel)
+private def c604_128 : PLift (RowRange 604 hadRow604 128 136) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_136 : RowRange 604 hadRow604 136 144 := viaCheck (by decide +kernel)
+private def c604_136 : PLift (RowRange 604 hadRow604 136 144) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_144 : RowRange 604 hadRow604 144 152 := viaCheck (by decide +kernel)
+private def c604_144 : PLift (RowRange 604 hadRow604 144 152) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_152 : RowRange 604 hadRow604 152 160 := viaCheck (by decide +kernel)
+private def c604_152 : PLift (RowRange 604 hadRow604 152 160) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_160 : RowRange 604 hadRow604 160 168 := viaCheck (by decide +kernel)
+private def c604_160 : PLift (RowRange 604 hadRow604 160 168) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_168 : RowRange 604 hadRow604 168 176 := viaCheck (by decide +kernel)
+private def c604_168 : PLift (RowRange 604 hadRow604 168 176) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_176 : RowRange 604 hadRow604 176 184 := viaCheck (by decide +kernel)
+private def c604_176 : PLift (RowRange 604 hadRow604 176 184) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_184 : RowRange 604 hadRow604 184 192 := viaCheck (by decide +kernel)
+private def c604_184 : PLift (RowRange 604 hadRow604 184 192) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_192 : RowRange 604 hadRow604 192 200 := viaCheck (by decide +kernel)
+private def c604_192 : PLift (RowRange 604 hadRow604 192 200) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_200 : RowRange 604 hadRow604 200 208 := viaCheck (by decide +kernel)
+private def c604_200 : PLift (RowRange 604 hadRow604 200 208) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_208 : RowRange 604 hadRow604 208 216 := viaCheck (by decide +kernel)
+private def c604_208 : PLift (RowRange 604 hadRow604 208 216) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_216 : RowRange 604 hadRow604 216 224 := viaCheck (by decide +kernel)
+private def c604_216 : PLift (RowRange 604 hadRow604 216 224) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_224 : RowRange 604 hadRow604 224 232 := viaCheck (by decide +kernel)
+private def c604_224 : PLift (RowRange 604 hadRow604 224 232) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_232 : RowRange 604 hadRow604 232 240 := viaCheck (by decide +kernel)
+private def c604_232 : PLift (RowRange 604 hadRow604 232 240) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_240 : RowRange 604 hadRow604 240 248 := viaCheck (by decide +kernel)
+private def c604_240 : PLift (RowRange 604 hadRow604 240 248) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_248 : RowRange 604 hadRow604 248 256 := viaCheck (by decide +kernel)
+private def c604_248 : PLift (RowRange 604 hadRow604 248 256) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_256 : RowRange 604 hadRow604 256 264 := viaCheck (by decide +kernel)
+private def c604_256 : PLift (RowRange 604 hadRow604 256 264) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_264 : RowRange 604 hadRow604 264 272 := viaCheck (by decide +kernel)
+private def c604_264 : PLift (RowRange 604 hadRow604 264 272) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_272 : RowRange 604 hadRow604 272 280 := viaCheck (by decide +kernel)
+private def c604_272 : PLift (RowRange 604 hadRow604 272 280) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_280 : RowRange 604 hadRow604 280 288 := viaCheck (by decide +kernel)
+private def c604_280 : PLift (RowRange 604 hadRow604 280 288) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_288 : RowRange 604 hadRow604 288 296 := viaCheck (by decide +kernel)
+private def c604_288 : PLift (RowRange 604 hadRow604 288 296) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_296 : RowRange 604 hadRow604 296 304 := viaCheck (by decide +kernel)
+private def c604_296 : PLift (RowRange 604 hadRow604 296 304) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_304 : RowRange 604 hadRow604 304 312 := viaCheck (by decide +kernel)
+private def c604_304 : PLift (RowRange 604 hadRow604 304 312) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_312 : RowRange 604 hadRow604 312 320 := viaCheck (by decide +kernel)
+private def c604_312 : PLift (RowRange 604 hadRow604 312 320) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_320 : RowRange 604 hadRow604 320 328 := viaCheck (by decide +kernel)
+private def c604_320 : PLift (RowRange 604 hadRow604 320 328) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_328 : RowRange 604 hadRow604 328 336 := viaCheck (by decide +kernel)
+private def c604_328 : PLift (RowRange 604 hadRow604 328 336) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_336 : RowRange 604 hadRow604 336 344 := viaCheck (by decide +kernel)
+private def c604_336 : PLift (RowRange 604 hadRow604 336 344) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_344 : RowRange 604 hadRow604 344 352 := viaCheck (by decide +kernel)
+private def c604_344 : PLift (RowRange 604 hadRow604 344 352) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_352 : RowRange 604 hadRow604 352 360 := viaCheck (by decide +kernel)
+private def c604_352 : PLift (RowRange 604 hadRow604 352 360) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_360 : RowRange 604 hadRow604 360 368 := viaCheck (by decide +kernel)
+private def c604_360 : PLift (RowRange 604 hadRow604 360 368) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_368 : RowRange 604 hadRow604 368 376 := viaCheck (by decide +kernel)
+private def c604_368 : PLift (RowRange 604 hadRow604 368 376) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_376 : RowRange 604 hadRow604 376 384 := viaCheck (by decide +kernel)
+private def c604_376 : PLift (RowRange 604 hadRow604 376 384) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_384 : RowRange 604 hadRow604 384 392 := viaCheck (by decide +kernel)
+private def c604_384 : PLift (RowRange 604 hadRow604 384 392) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_392 : RowRange 604 hadRow604 392 400 := viaCheck (by decide +kernel)
+private def c604_392 : PLift (RowRange 604 hadRow604 392 400) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_400 : RowRange 604 hadRow604 400 408 := viaCheck (by decide +kernel)
+private def c604_400 : PLift (RowRange 604 hadRow604 400 408) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_408 : RowRange 604 hadRow604 408 416 := viaCheck (by decide +kernel)
+private def c604_408 : PLift (RowRange 604 hadRow604 408 416) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_416 : RowRange 604 hadRow604 416 424 := viaCheck (by decide +kernel)
+private def c604_416 : PLift (RowRange 604 hadRow604 416 424) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_424 : RowRange 604 hadRow604 424 432 := viaCheck (by decide +kernel)
+private def c604_424 : PLift (RowRange 604 hadRow604 424 432) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_432 : RowRange 604 hadRow604 432 440 := viaCheck (by decide +kernel)
+private def c604_432 : PLift (RowRange 604 hadRow604 432 440) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_440 : RowRange 604 hadRow604 440 448 := viaCheck (by decide +kernel)
+private def c604_440 : PLift (RowRange 604 hadRow604 440 448) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_448 : RowRange 604 hadRow604 448 456 := viaCheck (by decide +kernel)
+private def c604_448 : PLift (RowRange 604 hadRow604 448 456) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_456 : RowRange 604 hadRow604 456 464 := viaCheck (by decide +kernel)
+private def c604_456 : PLift (RowRange 604 hadRow604 456 464) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_464 : RowRange 604 hadRow604 464 472 := viaCheck (by decide +kernel)
+private def c604_464 : PLift (RowRange 604 hadRow604 464 472) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_472 : RowRange 604 hadRow604 472 480 := viaCheck (by decide +kernel)
+private def c604_472 : PLift (RowRange 604 hadRow604 472 480) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_480 : RowRange 604 hadRow604 480 488 := viaCheck (by decide +kernel)
+private def c604_480 : PLift (RowRange 604 hadRow604 480 488) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_488 : RowRange 604 hadRow604 488 496 := viaCheck (by decide +kernel)
+private def c604_488 : PLift (RowRange 604 hadRow604 488 496) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_496 : RowRange 604 hadRow604 496 504 := viaCheck (by decide +kernel)
+private def c604_496 : PLift (RowRange 604 hadRow604 496 504) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_504 : RowRange 604 hadRow604 504 512 := viaCheck (by decide +kernel)
+private def c604_504 : PLift (RowRange 604 hadRow604 504 512) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_512 : RowRange 604 hadRow604 512 520 := viaCheck (by decide +kernel)
+private def c604_512 : PLift (RowRange 604 hadRow604 512 520) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_520 : RowRange 604 hadRow604 520 528 := viaCheck (by decide +kernel)
+private def c604_520 : PLift (RowRange 604 hadRow604 520 528) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_528 : RowRange 604 hadRow604 528 536 := viaCheck (by decide +kernel)
+private def c604_528 : PLift (RowRange 604 hadRow604 528 536) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_536 : RowRange 604 hadRow604 536 544 := viaCheck (by decide +kernel)
+private def c604_536 : PLift (RowRange 604 hadRow604 536 544) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_544 : RowRange 604 hadRow604 544 552 := viaCheck (by decide +kernel)
+private def c604_544 : PLift (RowRange 604 hadRow604 544 552) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_552 : RowRange 604 hadRow604 552 560 := viaCheck (by decide +kernel)
+private def c604_552 : PLift (RowRange 604 hadRow604 552 560) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_560 : RowRange 604 hadRow604 560 568 := viaCheck (by decide +kernel)
+private def c604_560 : PLift (RowRange 604 hadRow604 560 568) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_568 : RowRange 604 hadRow604 568 576 := viaCheck (by decide +kernel)
+private def c604_568 : PLift (RowRange 604 hadRow604 568 576) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_576 : RowRange 604 hadRow604 576 584 := viaCheck (by decide +kernel)
+private def c604_576 : PLift (RowRange 604 hadRow604 576 584) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_584 : RowRange 604 hadRow604 584 592 := viaCheck (by decide +kernel)
+private def c604_584 : PLift (RowRange 604 hadRow604 584 592) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_592 : RowRange 604 hadRow604 592 600 := viaCheck (by decide +kernel)
+private def c604_592 : PLift (RowRange 604 hadRow604 592 600) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c604_600 : RowRange 604 hadRow604 600 604 := viaCheck (by decide +kernel)
+private def c604_600 : PLift (RowRange 604 hadRow604 600 604) := ⟨viaCheck (by decide +kernel)⟩
 
-private theorem g604 : gramWitness 604 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c604_0 c604_8) (viaSplit c604_16 c604_24)) (viaSplit (viaSplit c604_32 c604_40) (viaSplit c604_48 c604_56))) (viaSplit (viaSplit (viaSplit c604_64 c604_72) (viaSplit c604_80 c604_88)) (viaSplit (viaSplit c604_96 c604_104) (viaSplit c604_112 c604_120)))) (viaSplit (viaSplit (viaSplit (viaSplit c604_128 c604_136) (viaSplit c604_144 c604_152)) (viaSplit (viaSplit c604_160 c604_168) (viaSplit c604_176 c604_184))) (viaSplit (viaSplit (viaSplit c604_192 c604_200) (viaSplit c604_208 c604_216)) (viaSplit (viaSplit c604_224 c604_232) (viaSplit c604_240 c604_248))))) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c604_256 c604_264) (viaSplit c604_272 c604_280)) (viaSplit (viaSplit c604_288 c604_296) (viaSplit c604_304 c604_312))) (viaSplit (viaSplit (viaSplit c604_320 c604_328) (viaSplit c604_336 c604_344)) (viaSplit (viaSplit c604_352 c604_360) (viaSplit c604_368 c604_376)))) (viaSplit (viaSplit (viaSplit (viaSplit c604_384 c604_392) (viaSplit c604_400 c604_408)) (viaSplit (viaSplit c604_416 c604_424) (viaSplit c604_432 c604_440))) (viaSplit (viaSplit (viaSplit c604_448 c604_456) (viaSplit c604_464 c604_472)) (viaSplit (viaSplit c604_480 c604_488) (viaSplit c604_496 c604_504)))))) (viaSplit (viaSplit (viaSplit (viaSplit c604_512 c604_520) (viaSplit c604_528 c604_536)) (viaSplit (viaSplit c604_544 c604_552) (viaSplit c604_560 c604_568))) (viaSplit (viaSplit c604_576 c604_584) (viaSplit c604_592 c604_600))))
+private theorem g604 : gramWitness 604 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c604_0.down c604_8.down) (viaSplit c604_16.down c604_24.down)) (viaSplit (viaSplit c604_32.down c604_40.down) (viaSplit c604_48.down c604_56.down))) (viaSplit (viaSplit (viaSplit c604_64.down c604_72.down) (viaSplit c604_80.down c604_88.down)) (viaSplit (viaSplit c604_96.down c604_104.down) (viaSplit c604_112.down c604_120.down)))) (viaSplit (viaSplit (viaSplit (viaSplit c604_128.down c604_136.down) (viaSplit c604_144.down c604_152.down)) (viaSplit (viaSplit c604_160.down c604_168.down) (viaSplit c604_176.down c604_184.down))) (viaSplit (viaSplit (viaSplit c604_192.down c604_200.down) (viaSplit c604_208.down c604_216.down)) (viaSplit (viaSplit c604_224.down c604_232.down) (viaSplit c604_240.down c604_248.down))))) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c604_256.down c604_264.down) (viaSplit c604_272.down c604_280.down)) (viaSplit (viaSplit c604_288.down c604_296.down) (viaSplit c604_304.down c604_312.down))) (viaSplit (viaSplit (viaSplit c604_320.down c604_328.down) (viaSplit c604_336.down c604_344.down)) (viaSplit (viaSplit c604_352.down c604_360.down) (viaSplit c604_368.down c604_376.down)))) (viaSplit (viaSplit (viaSplit (viaSplit c604_384.down c604_392.down) (viaSplit c604_400.down c604_408.down)) (viaSplit (viaSplit c604_416.down c604_424.down) (viaSplit c604_432.down c604_440.down))) (viaSplit (viaSplit (viaSplit c604_448.down c604_456.down) (viaSplit c604_464.down c604_472.down)) (viaSplit (viaSplit c604_480.down c604_488.down) (viaSplit c604_496.down c604_504.down)))))) (viaSplit (viaSplit (viaSplit (viaSplit c604_512.down c604_520.down) (viaSplit c604_528.down c604_536.down)) (viaSplit (viaSplit c604_544.down c604_552.down) (viaSplit c604_560.down c604_568.down))) (viaSplit (viaSplit c604_576.down c604_584.down) (viaSplit c604_592.down c604_600.down))))
 
 private theorem g608 : gramWitness 608 := gram_product (by decide) (by decide) g2 g304
 
 set_option maxRecDepth 16000 in
-private def c612_0 : RowRange 612 hadRow612 0 8 := viaCheck (by decide +kernel)
+private def c612_0 : PLift (RowRange 612 hadRow612 0 8) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_8 : RowRange 612 hadRow612 8 16 := viaCheck (by decide +kernel)
+private def c612_8 : PLift (RowRange 612 hadRow612 8 16) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_16 : RowRange 612 hadRow612 16 24 := viaCheck (by decide +kernel)
+private def c612_16 : PLift (RowRange 612 hadRow612 16 24) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_24 : RowRange 612 hadRow612 24 32 := viaCheck (by decide +kernel)
+private def c612_24 : PLift (RowRange 612 hadRow612 24 32) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_32 : RowRange 612 hadRow612 32 40 := viaCheck (by decide +kernel)
+private def c612_32 : PLift (RowRange 612 hadRow612 32 40) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_40 : RowRange 612 hadRow612 40 48 := viaCheck (by decide +kernel)
+private def c612_40 : PLift (RowRange 612 hadRow612 40 48) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_48 : RowRange 612 hadRow612 48 56 := viaCheck (by decide +kernel)
+private def c612_48 : PLift (RowRange 612 hadRow612 48 56) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_56 : RowRange 612 hadRow612 56 64 := viaCheck (by decide +kernel)
+private def c612_56 : PLift (RowRange 612 hadRow612 56 64) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_64 : RowRange 612 hadRow612 64 72 := viaCheck (by decide +kernel)
+private def c612_64 : PLift (RowRange 612 hadRow612 64 72) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_72 : RowRange 612 hadRow612 72 80 := viaCheck (by decide +kernel)
+private def c612_72 : PLift (RowRange 612 hadRow612 72 80) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_80 : RowRange 612 hadRow612 80 88 := viaCheck (by decide +kernel)
+private def c612_80 : PLift (RowRange 612 hadRow612 80 88) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_88 : RowRange 612 hadRow612 88 96 := viaCheck (by decide +kernel)
+private def c612_88 : PLift (RowRange 612 hadRow612 88 96) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_96 : RowRange 612 hadRow612 96 104 := viaCheck (by decide +kernel)
+private def c612_96 : PLift (RowRange 612 hadRow612 96 104) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_104 : RowRange 612 hadRow612 104 112 := viaCheck (by decide +kernel)
+private def c612_104 : PLift (RowRange 612 hadRow612 104 112) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_112 : RowRange 612 hadRow612 112 120 := viaCheck (by decide +kernel)
+private def c612_112 : PLift (RowRange 612 hadRow612 112 120) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_120 : RowRange 612 hadRow612 120 128 := viaCheck (by decide +kernel)
+private def c612_120 : PLift (RowRange 612 hadRow612 120 128) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_128 : RowRange 612 hadRow612 128 136 := viaCheck (by decide +kernel)
+private def c612_128 : PLift (RowRange 612 hadRow612 128 136) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_136 : RowRange 612 hadRow612 136 144 := viaCheck (by decide +kernel)
+private def c612_136 : PLift (RowRange 612 hadRow612 136 144) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_144 : RowRange 612 hadRow612 144 152 := viaCheck (by decide +kernel)
+private def c612_144 : PLift (RowRange 612 hadRow612 144 152) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_152 : RowRange 612 hadRow612 152 160 := viaCheck (by decide +kernel)
+private def c612_152 : PLift (RowRange 612 hadRow612 152 160) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_160 : RowRange 612 hadRow612 160 168 := viaCheck (by decide +kernel)
+private def c612_160 : PLift (RowRange 612 hadRow612 160 168) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_168 : RowRange 612 hadRow612 168 176 := viaCheck (by decide +kernel)
+private def c612_168 : PLift (RowRange 612 hadRow612 168 176) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_176 : RowRange 612 hadRow612 176 184 := viaCheck (by decide +kernel)
+private def c612_176 : PLift (RowRange 612 hadRow612 176 184) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_184 : RowRange 612 hadRow612 184 192 := viaCheck (by decide +kernel)
+private def c612_184 : PLift (RowRange 612 hadRow612 184 192) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_192 : RowRange 612 hadRow612 192 200 := viaCheck (by decide +kernel)
+private def c612_192 : PLift (RowRange 612 hadRow612 192 200) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_200 : RowRange 612 hadRow612 200 208 := viaCheck (by decide +kernel)
+private def c612_200 : PLift (RowRange 612 hadRow612 200 208) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_208 : RowRange 612 hadRow612 208 216 := viaCheck (by decide +kernel)
+private def c612_208 : PLift (RowRange 612 hadRow612 208 216) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_216 : RowRange 612 hadRow612 216 224 := viaCheck (by decide +kernel)
+private def c612_216 : PLift (RowRange 612 hadRow612 216 224) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_224 : RowRange 612 hadRow612 224 232 := viaCheck (by decide +kernel)
+private def c612_224 : PLift (RowRange 612 hadRow612 224 232) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_232 : RowRange 612 hadRow612 232 240 := viaCheck (by decide +kernel)
+private def c612_232 : PLift (RowRange 612 hadRow612 232 240) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_240 : RowRange 612 hadRow612 240 248 := viaCheck (by decide +kernel)
+private def c612_240 : PLift (RowRange 612 hadRow612 240 248) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_248 : RowRange 612 hadRow612 248 256 := viaCheck (by decide +kernel)
+private def c612_248 : PLift (RowRange 612 hadRow612 248 256) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_256 : RowRange 612 hadRow612 256 264 := viaCheck (by decide +kernel)
+private def c612_256 : PLift (RowRange 612 hadRow612 256 264) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_264 : RowRange 612 hadRow612 264 272 := viaCheck (by decide +kernel)
+private def c612_264 : PLift (RowRange 612 hadRow612 264 272) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_272 : RowRange 612 hadRow612 272 280 := viaCheck (by decide +kernel)
+private def c612_272 : PLift (RowRange 612 hadRow612 272 280) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_280 : RowRange 612 hadRow612 280 288 := viaCheck (by decide +kernel)
+private def c612_280 : PLift (RowRange 612 hadRow612 280 288) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_288 : RowRange 612 hadRow612 288 296 := viaCheck (by decide +kernel)
+private def c612_288 : PLift (RowRange 612 hadRow612 288 296) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_296 : RowRange 612 hadRow612 296 304 := viaCheck (by decide +kernel)
+private def c612_296 : PLift (RowRange 612 hadRow612 296 304) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_304 : RowRange 612 hadRow612 304 312 := viaCheck (by decide +kernel)
+private def c612_304 : PLift (RowRange 612 hadRow612 304 312) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_312 : RowRange 612 hadRow612 312 320 := viaCheck (by decide +kernel)
+private def c612_312 : PLift (RowRange 612 hadRow612 312 320) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_320 : RowRange 612 hadRow612 320 328 := viaCheck (by decide +kernel)
+private def c612_320 : PLift (RowRange 612 hadRow612 320 328) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_328 : RowRange 612 hadRow612 328 336 := viaCheck (by decide +kernel)
+private def c612_328 : PLift (RowRange 612 hadRow612 328 336) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_336 : RowRange 612 hadRow612 336 344 := viaCheck (by decide +kernel)
+private def c612_336 : PLift (RowRange 612 hadRow612 336 344) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_344 : RowRange 612 hadRow612 344 352 := viaCheck (by decide +kernel)
+private def c612_344 : PLift (RowRange 612 hadRow612 344 352) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_352 : RowRange 612 hadRow612 352 360 := viaCheck (by decide +kernel)
+private def c612_352 : PLift (RowRange 612 hadRow612 352 360) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_360 : RowRange 612 hadRow612 360 368 := viaCheck (by decide +kernel)
+private def c612_360 : PLift (RowRange 612 hadRow612 360 368) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_368 : RowRange 612 hadRow612 368 376 := viaCheck (by decide +kernel)
+private def c612_368 : PLift (RowRange 612 hadRow612 368 376) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_376 : RowRange 612 hadRow612 376 384 := viaCheck (by decide +kernel)
+private def c612_376 : PLift (RowRange 612 hadRow612 376 384) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_384 : RowRange 612 hadRow612 384 392 := viaCheck (by decide +kernel)
+private def c612_384 : PLift (RowRange 612 hadRow612 384 392) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_392 : RowRange 612 hadRow612 392 400 := viaCheck (by decide +kernel)
+private def c612_392 : PLift (RowRange 612 hadRow612 392 400) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_400 : RowRange 612 hadRow612 400 408 := viaCheck (by decide +kernel)
+private def c612_400 : PLift (RowRange 612 hadRow612 400 408) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_408 : RowRange 612 hadRow612 408 416 := viaCheck (by decide +kernel)
+private def c612_408 : PLift (RowRange 612 hadRow612 408 416) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_416 : RowRange 612 hadRow612 416 424 := viaCheck (by decide +kernel)
+private def c612_416 : PLift (RowRange 612 hadRow612 416 424) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_424 : RowRange 612 hadRow612 424 432 := viaCheck (by decide +kernel)
+private def c612_424 : PLift (RowRange 612 hadRow612 424 432) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_432 : RowRange 612 hadRow612 432 440 := viaCheck (by decide +kernel)
+private def c612_432 : PLift (RowRange 612 hadRow612 432 440) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_440 : RowRange 612 hadRow612 440 448 := viaCheck (by decide +kernel)
+private def c612_440 : PLift (RowRange 612 hadRow612 440 448) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_448 : RowRange 612 hadRow612 448 456 := viaCheck (by decide +kernel)
+private def c612_448 : PLift (RowRange 612 hadRow612 448 456) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_456 : RowRange 612 hadRow612 456 464 := viaCheck (by decide +kernel)
+private def c612_456 : PLift (RowRange 612 hadRow612 456 464) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_464 : RowRange 612 hadRow612 464 472 := viaCheck (by decide +kernel)
+private def c612_464 : PLift (RowRange 612 hadRow612 464 472) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_472 : RowRange 612 hadRow612 472 480 := viaCheck (by decide +kernel)
+private def c612_472 : PLift (RowRange 612 hadRow612 472 480) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_480 : RowRange 612 hadRow612 480 488 := viaCheck (by decide +kernel)
+private def c612_480 : PLift (RowRange 612 hadRow612 480 488) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_488 : RowRange 612 hadRow612 488 496 := viaCheck (by decide +kernel)
+private def c612_488 : PLift (RowRange 612 hadRow612 488 496) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_496 : RowRange 612 hadRow612 496 504 := viaCheck (by decide +kernel)
+private def c612_496 : PLift (RowRange 612 hadRow612 496 504) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_504 : RowRange 612 hadRow612 504 512 := viaCheck (by decide +kernel)
+private def c612_504 : PLift (RowRange 612 hadRow612 504 512) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_512 : RowRange 612 hadRow612 512 520 := viaCheck (by decide +kernel)
+private def c612_512 : PLift (RowRange 612 hadRow612 512 520) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_520 : RowRange 612 hadRow612 520 528 := viaCheck (by decide +kernel)
+private def c612_520 : PLift (RowRange 612 hadRow612 520 528) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_528 : RowRange 612 hadRow612 528 536 := viaCheck (by decide +kernel)
+private def c612_528 : PLift (RowRange 612 hadRow612 528 536) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_536 : RowRange 612 hadRow612 536 544 := viaCheck (by decide +kernel)
+private def c612_536 : PLift (RowRange 612 hadRow612 536 544) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_544 : RowRange 612 hadRow612 544 552 := viaCheck (by decide +kernel)
+private def c612_544 : PLift (RowRange 612 hadRow612 544 552) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_552 : RowRange 612 hadRow612 552 560 := viaCheck (by decide +kernel)
+private def c612_552 : PLift (RowRange 612 hadRow612 552 560) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_560 : RowRange 612 hadRow612 560 568 := viaCheck (by decide +kernel)
+private def c612_560 : PLift (RowRange 612 hadRow612 560 568) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_568 : RowRange 612 hadRow612 568 576 := viaCheck (by decide +kernel)
+private def c612_568 : PLift (RowRange 612 hadRow612 568 576) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_576 : RowRange 612 hadRow612 576 584 := viaCheck (by decide +kernel)
+private def c612_576 : PLift (RowRange 612 hadRow612 576 584) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_584 : RowRange 612 hadRow612 584 592 := viaCheck (by decide +kernel)
+private def c612_584 : PLift (RowRange 612 hadRow612 584 592) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_592 : RowRange 612 hadRow612 592 600 := viaCheck (by decide +kernel)
+private def c612_592 : PLift (RowRange 612 hadRow612 592 600) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_600 : RowRange 612 hadRow612 600 608 := viaCheck (by decide +kernel)
+private def c612_600 : PLift (RowRange 612 hadRow612 600 608) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c612_608 : RowRange 612 hadRow612 608 612 := viaCheck (by decide +kernel)
+private def c612_608 : PLift (RowRange 612 hadRow612 608 612) := ⟨viaCheck (by decide +kernel)⟩
 
-private theorem g612 : gramWitness 612 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c612_0 c612_8) (viaSplit c612_16 c612_24)) (viaSplit (viaSplit c612_32 c612_40) (viaSplit c612_48 c612_56))) (viaSplit (viaSplit (viaSplit c612_64 c612_72) (viaSplit c612_80 c612_88)) (viaSplit (viaSplit c612_96 c612_104) (viaSplit c612_112 c612_120)))) (viaSplit (viaSplit (viaSplit (viaSplit c612_128 c612_136) (viaSplit c612_144 c612_152)) (viaSplit (viaSplit c612_160 c612_168) (viaSplit c612_176 c612_184))) (viaSplit (viaSplit (viaSplit c612_192 c612_200) (viaSplit c612_208 c612_216)) (viaSplit (viaSplit c612_224 c612_232) (viaSplit c612_240 c612_248))))) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c612_256 c612_264) (viaSplit c612_272 c612_280)) (viaSplit (viaSplit c612_288 c612_296) (viaSplit c612_304 c612_312))) (viaSplit (viaSplit (viaSplit c612_320 c612_328) (viaSplit c612_336 c612_344)) (viaSplit (viaSplit c612_352 c612_360) (viaSplit c612_368 c612_376)))) (viaSplit (viaSplit (viaSplit (viaSplit c612_384 c612_392) (viaSplit c612_400 c612_408)) (viaSplit (viaSplit c612_416 c612_424) (viaSplit c612_432 c612_440))) (viaSplit (viaSplit (viaSplit c612_448 c612_456) (viaSplit c612_464 c612_472)) (viaSplit (viaSplit c612_480 c612_488) (viaSplit c612_496 c612_504)))))) (viaSplit (viaSplit (viaSplit (viaSplit c612_512 c612_520) (viaSplit c612_528 c612_536)) (viaSplit (viaSplit c612_544 c612_552) (viaSplit c612_560 c612_568))) (viaSplit (viaSplit (viaSplit c612_576 c612_584) (viaSplit c612_592 c612_600)) c612_608)))
+private theorem g612 : gramWitness 612 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c612_0.down c612_8.down) (viaSplit c612_16.down c612_24.down)) (viaSplit (viaSplit c612_32.down c612_40.down) (viaSplit c612_48.down c612_56.down))) (viaSplit (viaSplit (viaSplit c612_64.down c612_72.down) (viaSplit c612_80.down c612_88.down)) (viaSplit (viaSplit c612_96.down c612_104.down) (viaSplit c612_112.down c612_120.down)))) (viaSplit (viaSplit (viaSplit (viaSplit c612_128.down c612_136.down) (viaSplit c612_144.down c612_152.down)) (viaSplit (viaSplit c612_160.down c612_168.down) (viaSplit c612_176.down c612_184.down))) (viaSplit (viaSplit (viaSplit c612_192.down c612_200.down) (viaSplit c612_208.down c612_216.down)) (viaSplit (viaSplit c612_224.down c612_232.down) (viaSplit c612_240.down c612_248.down))))) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c612_256.down c612_264.down) (viaSplit c612_272.down c612_280.down)) (viaSplit (viaSplit c612_288.down c612_296.down) (viaSplit c612_304.down c612_312.down))) (viaSplit (viaSplit (viaSplit c612_320.down c612_328.down) (viaSplit c612_336.down c612_344.down)) (viaSplit (viaSplit c612_352.down c612_360.down) (viaSplit c612_368.down c612_376.down)))) (viaSplit (viaSplit (viaSplit (viaSplit c612_384.down c612_392.down) (viaSplit c612_400.down c612_408.down)) (viaSplit (viaSplit c612_416.down c612_424.down) (viaSplit c612_432.down c612_440.down))) (viaSplit (viaSplit (viaSplit c612_448.down c612_456.down) (viaSplit c612_464.down c612_472.down)) (viaSplit (viaSplit c612_480.down c612_488.down) (viaSplit c612_496.down c612_504.down)))))) (viaSplit (viaSplit (viaSplit (viaSplit c612_512.down c612_520.down) (viaSplit c612_528.down c612_536.down)) (viaSplit (viaSplit c612_544.down c612_552.down) (viaSplit c612_560.down c612_568.down))) (viaSplit (viaSplit (viaSplit c612_576.down c612_584.down) (viaSplit c612_592.down c612_600.down)) c612_608.down)))
 
 private theorem g616 : gramWitness 616 := gram_product (by decide) (by decide) g2 g308
 
@@ -6505,252 +6507,252 @@ private theorem g644 : gramWitness 644 := fromColumns (PaleyHadamard.typeI 643 (
 private theorem g648 : gramWitness 648 := gram_product (by decide) (by decide) g2 g324
 
 set_option maxRecDepth 16000 in
-private def c652_0 : RowRange 652 hadRow652 0 8 := viaCheck (by decide +kernel)
+private def c652_0 : PLift (RowRange 652 hadRow652 0 8) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_8 : RowRange 652 hadRow652 8 16 := viaCheck (by decide +kernel)
+private def c652_8 : PLift (RowRange 652 hadRow652 8 16) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_16 : RowRange 652 hadRow652 16 24 := viaCheck (by decide +kernel)
+private def c652_16 : PLift (RowRange 652 hadRow652 16 24) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_24 : RowRange 652 hadRow652 24 32 := viaCheck (by decide +kernel)
+private def c652_24 : PLift (RowRange 652 hadRow652 24 32) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_32 : RowRange 652 hadRow652 32 40 := viaCheck (by decide +kernel)
+private def c652_32 : PLift (RowRange 652 hadRow652 32 40) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_40 : RowRange 652 hadRow652 40 48 := viaCheck (by decide +kernel)
+private def c652_40 : PLift (RowRange 652 hadRow652 40 48) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_48 : RowRange 652 hadRow652 48 56 := viaCheck (by decide +kernel)
+private def c652_48 : PLift (RowRange 652 hadRow652 48 56) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_56 : RowRange 652 hadRow652 56 64 := viaCheck (by decide +kernel)
+private def c652_56 : PLift (RowRange 652 hadRow652 56 64) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_64 : RowRange 652 hadRow652 64 72 := viaCheck (by decide +kernel)
+private def c652_64 : PLift (RowRange 652 hadRow652 64 72) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_72 : RowRange 652 hadRow652 72 80 := viaCheck (by decide +kernel)
+private def c652_72 : PLift (RowRange 652 hadRow652 72 80) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_80 : RowRange 652 hadRow652 80 88 := viaCheck (by decide +kernel)
+private def c652_80 : PLift (RowRange 652 hadRow652 80 88) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_88 : RowRange 652 hadRow652 88 96 := viaCheck (by decide +kernel)
+private def c652_88 : PLift (RowRange 652 hadRow652 88 96) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_96 : RowRange 652 hadRow652 96 104 := viaCheck (by decide +kernel)
+private def c652_96 : PLift (RowRange 652 hadRow652 96 104) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_104 : RowRange 652 hadRow652 104 112 := viaCheck (by decide +kernel)
+private def c652_104 : PLift (RowRange 652 hadRow652 104 112) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_112 : RowRange 652 hadRow652 112 120 := viaCheck (by decide +kernel)
+private def c652_112 : PLift (RowRange 652 hadRow652 112 120) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_120 : RowRange 652 hadRow652 120 128 := viaCheck (by decide +kernel)
+private def c652_120 : PLift (RowRange 652 hadRow652 120 128) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_128 : RowRange 652 hadRow652 128 136 := viaCheck (by decide +kernel)
+private def c652_128 : PLift (RowRange 652 hadRow652 128 136) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_136 : RowRange 652 hadRow652 136 144 := viaCheck (by decide +kernel)
+private def c652_136 : PLift (RowRange 652 hadRow652 136 144) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_144 : RowRange 652 hadRow652 144 152 := viaCheck (by decide +kernel)
+private def c652_144 : PLift (RowRange 652 hadRow652 144 152) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_152 : RowRange 652 hadRow652 152 160 := viaCheck (by decide +kernel)
+private def c652_152 : PLift (RowRange 652 hadRow652 152 160) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_160 : RowRange 652 hadRow652 160 168 := viaCheck (by decide +kernel)
+private def c652_160 : PLift (RowRange 652 hadRow652 160 168) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_168 : RowRange 652 hadRow652 168 176 := viaCheck (by decide +kernel)
+private def c652_168 : PLift (RowRange 652 hadRow652 168 176) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_176 : RowRange 652 hadRow652 176 184 := viaCheck (by decide +kernel)
+private def c652_176 : PLift (RowRange 652 hadRow652 176 184) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_184 : RowRange 652 hadRow652 184 192 := viaCheck (by decide +kernel)
+private def c652_184 : PLift (RowRange 652 hadRow652 184 192) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_192 : RowRange 652 hadRow652 192 200 := viaCheck (by decide +kernel)
+private def c652_192 : PLift (RowRange 652 hadRow652 192 200) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_200 : RowRange 652 hadRow652 200 208 := viaCheck (by decide +kernel)
+private def c652_200 : PLift (RowRange 652 hadRow652 200 208) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_208 : RowRange 652 hadRow652 208 216 := viaCheck (by decide +kernel)
+private def c652_208 : PLift (RowRange 652 hadRow652 208 216) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_216 : RowRange 652 hadRow652 216 224 := viaCheck (by decide +kernel)
+private def c652_216 : PLift (RowRange 652 hadRow652 216 224) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_224 : RowRange 652 hadRow652 224 232 := viaCheck (by decide +kernel)
+private def c652_224 : PLift (RowRange 652 hadRow652 224 232) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_232 : RowRange 652 hadRow652 232 240 := viaCheck (by decide +kernel)
+private def c652_232 : PLift (RowRange 652 hadRow652 232 240) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_240 : RowRange 652 hadRow652 240 248 := viaCheck (by decide +kernel)
+private def c652_240 : PLift (RowRange 652 hadRow652 240 248) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_248 : RowRange 652 hadRow652 248 256 := viaCheck (by decide +kernel)
+private def c652_248 : PLift (RowRange 652 hadRow652 248 256) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_256 : RowRange 652 hadRow652 256 264 := viaCheck (by decide +kernel)
+private def c652_256 : PLift (RowRange 652 hadRow652 256 264) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_264 : RowRange 652 hadRow652 264 272 := viaCheck (by decide +kernel)
+private def c652_264 : PLift (RowRange 652 hadRow652 264 272) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_272 : RowRange 652 hadRow652 272 280 := viaCheck (by decide +kernel)
+private def c652_272 : PLift (RowRange 652 hadRow652 272 280) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_280 : RowRange 652 hadRow652 280 288 := viaCheck (by decide +kernel)
+private def c652_280 : PLift (RowRange 652 hadRow652 280 288) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_288 : RowRange 652 hadRow652 288 296 := viaCheck (by decide +kernel)
+private def c652_288 : PLift (RowRange 652 hadRow652 288 296) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_296 : RowRange 652 hadRow652 296 304 := viaCheck (by decide +kernel)
+private def c652_296 : PLift (RowRange 652 hadRow652 296 304) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_304 : RowRange 652 hadRow652 304 312 := viaCheck (by decide +kernel)
+private def c652_304 : PLift (RowRange 652 hadRow652 304 312) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_312 : RowRange 652 hadRow652 312 320 := viaCheck (by decide +kernel)
+private def c652_312 : PLift (RowRange 652 hadRow652 312 320) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_320 : RowRange 652 hadRow652 320 328 := viaCheck (by decide +kernel)
+private def c652_320 : PLift (RowRange 652 hadRow652 320 328) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_328 : RowRange 652 hadRow652 328 336 := viaCheck (by decide +kernel)
+private def c652_328 : PLift (RowRange 652 hadRow652 328 336) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_336 : RowRange 652 hadRow652 336 344 := viaCheck (by decide +kernel)
+private def c652_336 : PLift (RowRange 652 hadRow652 336 344) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_344 : RowRange 652 hadRow652 344 352 := viaCheck (by decide +kernel)
+private def c652_344 : PLift (RowRange 652 hadRow652 344 352) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_352 : RowRange 652 hadRow652 352 360 := viaCheck (by decide +kernel)
+private def c652_352 : PLift (RowRange 652 hadRow652 352 360) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_360 : RowRange 652 hadRow652 360 368 := viaCheck (by decide +kernel)
+private def c652_360 : PLift (RowRange 652 hadRow652 360 368) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_368 : RowRange 652 hadRow652 368 376 := viaCheck (by decide +kernel)
+private def c652_368 : PLift (RowRange 652 hadRow652 368 376) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_376 : RowRange 652 hadRow652 376 384 := viaCheck (by decide +kernel)
+private def c652_376 : PLift (RowRange 652 hadRow652 376 384) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_384 : RowRange 652 hadRow652 384 392 := viaCheck (by decide +kernel)
+private def c652_384 : PLift (RowRange 652 hadRow652 384 392) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_392 : RowRange 652 hadRow652 392 400 := viaCheck (by decide +kernel)
+private def c652_392 : PLift (RowRange 652 hadRow652 392 400) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_400 : RowRange 652 hadRow652 400 408 := viaCheck (by decide +kernel)
+private def c652_400 : PLift (RowRange 652 hadRow652 400 408) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_408 : RowRange 652 hadRow652 408 416 := viaCheck (by decide +kernel)
+private def c652_408 : PLift (RowRange 652 hadRow652 408 416) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_416 : RowRange 652 hadRow652 416 424 := viaCheck (by decide +kernel)
+private def c652_416 : PLift (RowRange 652 hadRow652 416 424) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_424 : RowRange 652 hadRow652 424 432 := viaCheck (by decide +kernel)
+private def c652_424 : PLift (RowRange 652 hadRow652 424 432) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_432 : RowRange 652 hadRow652 432 440 := viaCheck (by decide +kernel)
+private def c652_432 : PLift (RowRange 652 hadRow652 432 440) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_440 : RowRange 652 hadRow652 440 448 := viaCheck (by decide +kernel)
+private def c652_440 : PLift (RowRange 652 hadRow652 440 448) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_448 : RowRange 652 hadRow652 448 456 := viaCheck (by decide +kernel)
+private def c652_448 : PLift (RowRange 652 hadRow652 448 456) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_456 : RowRange 652 hadRow652 456 464 := viaCheck (by decide +kernel)
+private def c652_456 : PLift (RowRange 652 hadRow652 456 464) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_464 : RowRange 652 hadRow652 464 472 := viaCheck (by decide +kernel)
+private def c652_464 : PLift (RowRange 652 hadRow652 464 472) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_472 : RowRange 652 hadRow652 472 480 := viaCheck (by decide +kernel)
+private def c652_472 : PLift (RowRange 652 hadRow652 472 480) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_480 : RowRange 652 hadRow652 480 488 := viaCheck (by decide +kernel)
+private def c652_480 : PLift (RowRange 652 hadRow652 480 488) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_488 : RowRange 652 hadRow652 488 496 := viaCheck (by decide +kernel)
+private def c652_488 : PLift (RowRange 652 hadRow652 488 496) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_496 : RowRange 652 hadRow652 496 504 := viaCheck (by decide +kernel)
+private def c652_496 : PLift (RowRange 652 hadRow652 496 504) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_504 : RowRange 652 hadRow652 504 512 := viaCheck (by decide +kernel)
+private def c652_504 : PLift (RowRange 652 hadRow652 504 512) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_512 : RowRange 652 hadRow652 512 520 := viaCheck (by decide +kernel)
+private def c652_512 : PLift (RowRange 652 hadRow652 512 520) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_520 : RowRange 652 hadRow652 520 528 := viaCheck (by decide +kernel)
+private def c652_520 : PLift (RowRange 652 hadRow652 520 528) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_528 : RowRange 652 hadRow652 528 536 := viaCheck (by decide +kernel)
+private def c652_528 : PLift (RowRange 652 hadRow652 528 536) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_536 : RowRange 652 hadRow652 536 544 := viaCheck (by decide +kernel)
+private def c652_536 : PLift (RowRange 652 hadRow652 536 544) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_544 : RowRange 652 hadRow652 544 552 := viaCheck (by decide +kernel)
+private def c652_544 : PLift (RowRange 652 hadRow652 544 552) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_552 : RowRange 652 hadRow652 552 560 := viaCheck (by decide +kernel)
+private def c652_552 : PLift (RowRange 652 hadRow652 552 560) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_560 : RowRange 652 hadRow652 560 568 := viaCheck (by decide +kernel)
+private def c652_560 : PLift (RowRange 652 hadRow652 560 568) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_568 : RowRange 652 hadRow652 568 576 := viaCheck (by decide +kernel)
+private def c652_568 : PLift (RowRange 652 hadRow652 568 576) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_576 : RowRange 652 hadRow652 576 584 := viaCheck (by decide +kernel)
+private def c652_576 : PLift (RowRange 652 hadRow652 576 584) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_584 : RowRange 652 hadRow652 584 592 := viaCheck (by decide +kernel)
+private def c652_584 : PLift (RowRange 652 hadRow652 584 592) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_592 : RowRange 652 hadRow652 592 600 := viaCheck (by decide +kernel)
+private def c652_592 : PLift (RowRange 652 hadRow652 592 600) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_600 : RowRange 652 hadRow652 600 608 := viaCheck (by decide +kernel)
+private def c652_600 : PLift (RowRange 652 hadRow652 600 608) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_608 : RowRange 652 hadRow652 608 616 := viaCheck (by decide +kernel)
+private def c652_608 : PLift (RowRange 652 hadRow652 608 616) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_616 : RowRange 652 hadRow652 616 624 := viaCheck (by decide +kernel)
+private def c652_616 : PLift (RowRange 652 hadRow652 616 624) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_624 : RowRange 652 hadRow652 624 632 := viaCheck (by decide +kernel)
+private def c652_624 : PLift (RowRange 652 hadRow652 624 632) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_632 : RowRange 652 hadRow652 632 640 := viaCheck (by decide +kernel)
+private def c652_632 : PLift (RowRange 652 hadRow652 632 640) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_640 : RowRange 652 hadRow652 640 648 := viaCheck (by decide +kernel)
+private def c652_640 : PLift (RowRange 652 hadRow652 640 648) := ⟨viaCheck (by decide +kernel)⟩
 
 set_option maxRecDepth 16000 in
-private def c652_648 : RowRange 652 hadRow652 648 652 := viaCheck (by decide +kernel)
+private def c652_648 : PLift (RowRange 652 hadRow652 648 652) := ⟨viaCheck (by decide +kernel)⟩
 
-private theorem g652 : gramWitness 652 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c652_0 c652_8) (viaSplit c652_16 c652_24)) (viaSplit (viaSplit c652_32 c652_40) (viaSplit c652_48 c652_56))) (viaSplit (viaSplit (viaSplit c652_64 c652_72) (viaSplit c652_80 c652_88)) (viaSplit (viaSplit c652_96 c652_104) (viaSplit c652_112 c652_120)))) (viaSplit (viaSplit (viaSplit (viaSplit c652_128 c652_136) (viaSplit c652_144 c652_152)) (viaSplit (viaSplit c652_160 c652_168) (viaSplit c652_176 c652_184))) (viaSplit (viaSplit (viaSplit c652_192 c652_200) (viaSplit c652_208 c652_216)) (viaSplit (viaSplit c652_224 c652_232) (viaSplit c652_240 c652_248))))) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c652_256 c652_264) (viaSplit c652_272 c652_280)) (viaSplit (viaSplit c652_288 c652_296) (viaSplit c652_304 c652_312))) (viaSplit (viaSplit (viaSplit c652_320 c652_328) (viaSplit c652_336 c652_344)) (viaSplit (viaSplit c652_352 c652_360) (viaSplit c652_368 c652_376)))) (viaSplit (viaSplit (viaSplit (viaSplit c652_384 c652_392) (viaSplit c652_400 c652_408)) (viaSplit (viaSplit c652_416 c652_424) (viaSplit c652_432 c652_440))) (viaSplit (viaSplit (viaSplit c652_448 c652_456) (viaSplit c652_464 c652_472)) (viaSplit (viaSplit c652_480 c652_488) (viaSplit c652_496 c652_504)))))) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c652_512 c652_520) (viaSplit c652_528 c652_536)) (viaSplit (viaSplit c652_544 c652_552) (viaSplit c652_560 c652_568))) (viaSplit (viaSplit (viaSplit c652_576 c652_584) (viaSplit c652_592 c652_600)) (viaSplit (viaSplit c652_608 c652_616) (viaSplit c652_624 c652_632)))) (viaSplit c652_640 c652_648)))
+private theorem g652 : gramWitness 652 := viaRows _ _ (by decide) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c652_0.down c652_8.down) (viaSplit c652_16.down c652_24.down)) (viaSplit (viaSplit c652_32.down c652_40.down) (viaSplit c652_48.down c652_56.down))) (viaSplit (viaSplit (viaSplit c652_64.down c652_72.down) (viaSplit c652_80.down c652_88.down)) (viaSplit (viaSplit c652_96.down c652_104.down) (viaSplit c652_112.down c652_120.down)))) (viaSplit (viaSplit (viaSplit (viaSplit c652_128.down c652_136.down) (viaSplit c652_144.down c652_152.down)) (viaSplit (viaSplit c652_160.down c652_168.down) (viaSplit c652_176.down c652_184.down))) (viaSplit (viaSplit (viaSplit c652_192.down c652_200.down) (viaSplit c652_208.down c652_216.down)) (viaSplit (viaSplit c652_224.down c652_232.down) (viaSplit c652_240.down c652_248.down))))) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c652_256.down c652_264.down) (viaSplit c652_272.down c652_280.down)) (viaSplit (viaSplit c652_288.down c652_296.down) (viaSplit c652_304.down c652_312.down))) (viaSplit (viaSplit (viaSplit c652_320.down c652_328.down) (viaSplit c652_336.down c652_344.down)) (viaSplit (viaSplit c652_352.down c652_360.down) (viaSplit c652_368.down c652_376.down)))) (viaSplit (viaSplit (viaSplit (viaSplit c652_384.down c652_392.down) (viaSplit c652_400.down c652_408.down)) (viaSplit (viaSplit c652_416.down c652_424.down) (viaSplit c652_432.down c652_440.down))) (viaSplit (viaSplit (viaSplit c652_448.down c652_456.down) (viaSplit c652_464.down c652_472.down)) (viaSplit (viaSplit c652_480.down c652_488.down) (viaSplit c652_496.down c652_504.down)))))) (viaSplit (viaSplit (viaSplit (viaSplit (viaSplit c652_512.down c652_520.down) (viaSplit c652_528.down c652_536.down)) (viaSplit (viaSplit c652_544.down c652_552.down) (viaSplit c652_560.down c652_568.down))) (viaSplit (viaSplit (viaSplit c652_576.down c652_584.down) (viaSplit c652_592.down c652_600.down)) (viaSplit (viaSplit c652_608.down c652_616.down) (viaSplit c652_624.down c652_632.down)))) (viaSplit c652_640.down c652_648.down)))
 
 private theorem g656 : gramWitness 656 := gram_product (by decide) (by decide) g2 g328
 
