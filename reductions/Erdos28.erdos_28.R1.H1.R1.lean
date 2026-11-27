@@ -69,7 +69,7 @@ private theorem two_when_each_pair_uses (A : Set ℕ) (d n : ℕ)
   apply Finset.card_le_card
   rintro ⟨a,b⟩ hp
   obtain ⟨diag,ha,hb⟩ := Finset.mem_filter.mp hp
-  have hs : a+b=n := Finset.mem_antidiagonal.mp diag
+  have hs : a+b=n := Finset.HasAntidiagonal.mem_antidiagonal.mp diag
   rcases uses a ha b hb hs with h | h
   · have eqb : b=n-d := by omega
     simp [h,eqb]
