@@ -26,16 +26,24 @@ private theorem two_mul_sq_lt_two_pow : ∀ n : ℕ, 7 ≤ n → 2 * n ^ 2 < 2 ^
     have h2 : 2 * (k + 1) ^ 2 = 2 * (k * k) + (4 * k + 2) := by ring
     have h3 : 2 * (2 * k ^ 2) = 2 * (k * k) + 2 * (k * k) := by ring
     have hsq : 2 * (k + 1) ^ 2 < 2 * (2 * k ^ 2) := by omega
-    rw [Nat.pow_succ]
-    omega
+    have htwice : 2 * (2 * k ^ 2) < 2 * 2 ^ k :=
+      Nat.mul_lt_mul_of_pos_left ih Nat.two_pos
+    have hexp : 2 * 2 ^ k = 2 ^ (k + 1) := by
+      rw [Nat.pow_succ 2 k, Nat.mul_comm]
+    calc
+      2 * (k + 1) ^ 2 < 2 * (2 * k ^ 2) := hsq
+      _ < 2 * 2 ^ k := htwice
+      _ = 2 ^ (k + 1) := hexp
 
 private theorem binary_sq_sum_eq_self (r : ℕ) (hr : 0 < r)
     (hsum : (Nat.digits 2 (r ^ 2)).sum = r) : r = 1 := by
   have hle : r ≤ (Nat.digits 2 (r ^ 2)).length := by
-    rw [← hsum]
-    exact sum_le_length_of_le_one _ fun d hd => by
-      have hlt := Nat.digits_lt_base (by decide : 1 < 2) hd
-      omega
+    calc
+      r = (Nat.digits 2 (r ^ 2)).sum := hsum.symm
+      _ ≤ (Nat.digits 2 (r ^ 2)).length :=
+        sum_le_length_of_le_one (Nat.digits 2 (r ^ 2)) fun d hd => by
+          have hlt := Nat.digits_lt_base (by decide : 1 < 2) hd
+          omega
   have hr2 : r ^ 2 ≠ 0 := by
     have : 0 < r ^ 2 := Nat.pow_pos hr
     omega
@@ -64,7 +72,7 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a226224.main := by
     by_contra hb2
     obtain ⟨c, rfl⟩ : ∃ c : ℕ, b = c + 3 := ⟨b - 3, by omega⟩
     have hmem : (c + 2) ^ 2 ∈ OMA.S_oeis_a226224.solutions (c + 3) := by
-      simp only [OMA.S_oeis_a226224.solutions, Set.mem_setOf_eq]
+      simp only [OMA.S_oeis_a226224.solutions, Set.mem_ofPred_eq]
       refine ⟨Nat.pow_pos (by omega), c + 2, rfl, ?_⟩
       have hdigits : Nat.digits (c + 3) ((c + 2) ^ 2) = [1, c + 1] := by
         rw [show (c + 2) ^ 2 = 1 + (c + 3) * (c + 1) by ring]
@@ -80,12 +88,12 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a226224.main := by
     omega
   · rintro rfl
     refine ⟨?_, ?_⟩
-    · simp only [OMA.S_oeis_a226224.solutions, Set.mem_setOf_eq]
+    · simp only [OMA.S_oeis_a226224.solutions, Set.mem_ofPred_eq]
       refine ⟨by decide, 1, by norm_num, ?_⟩
       rw [Nat.digits_of_lt 2 1 (by decide) (by decide)]
       simp only [List.sum_cons, List.sum_nil, add_zero]
     · intro k hk
-      simp only [OMA.S_oeis_a226224.solutions, Set.mem_setOf_eq] at hk
+      simp only [OMA.S_oeis_a226224.solutions, Set.mem_ofPred_eq] at hk
       rcases hk with ⟨hk_pos, r, rfl, hsum⟩
       rcases Nat.eq_zero_or_pos r with rfl | hr_pos
       · norm_num at hk_pos
