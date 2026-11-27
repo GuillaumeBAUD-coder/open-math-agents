@@ -20,11 +20,14 @@ also covers the small-excess classification used in the semiprime step.
 
 A possible counterexample has at least three prime factors counted with multiplicity
 at both endpoints, and some prime repeats at one of them. The equalities exclude
-both three-versus-three and three-versus-four. The last three-versus-four case
+three-versus-three, three-versus-four, and four-versus-four. The last three-versus-four case
 is reduced to an exact discriminant certificate for the elementary symmetric
-functions of two primes.
+functions of two primes. The four-versus-four proof first removes the cube-times-prime
+shapes. Odd survivors have totients divisible by eight. For even survivors divisible
+by four, the divisor sums are divisible by seven. Removing a single factor of two
+from the other even cases gives odd three-factor cores with shifted jump equations.
 
-H1 leaves both multiplicity counts at least four. H2 leaves exactly three
+H1 leaves both multiplicity counts at least four, with at least one at least five. H2 leaves exactly three
 at one endpoint and at least five at the other. Each residual hypothesis also
 records the necessary bounds on the numbers of odd primes with odd exponents.
 -/
@@ -2880,6 +2883,1202 @@ theorem no_odd_square_prime_square_two_primes_pair {p q r s t : ℕ}
 end A056777OddRepeatedFourDiscriminant
 end
 
+section
+open Nat
+
+namespace A056777CubePrimeFourFour
+
+private theorem totient_defect_cube_mul_prime {p q : ℕ}
+    (hp : p.Prime) (hq : q.Prime) (hne : p ≠ q) :
+    (p^3*q).totient + p^2*(p+q-1) = p^3*q := by
+  have hc := ((Nat.coprime_primes hp hq).mpr hne).pow_left 3
+  rw [Nat.totient_mul hc, show (p^3).totient=p^2*(p-1) from Nat.totient_prime_pow_succ hp 2,
+    Nat.totient_prime hq]
+  have hp₁ := hp.pos
+  have hq₁ := hq.pos
+  have hpq₁ : 1 ≤ p+q := by omega
+  zify [hp₁,hq₁,hpq₁]
+  ring
+
+private theorem no_ordered_cube_prime_pair {p q r s : ℕ}
+    (hp : p.Prime) (hq : q.Prime) (hr : r.Prime) (hs : s.Prime)
+    (hpq : p ≠ q) (hrs : r ≠ s) (hpr : p < r)
+    (hgap : p^3*q+12 = r^3*s ∨ r^3*s+12 = p^3*q)
+    (hφ : (p^3*q).totient+r^3*s = (r^3*s).totient+p^3*q) : False := by
+  let F := p^2*(p+q-1)
+  have hF : F=r^2*(r+s-1) := by
+    dsimp [F]
+    have h₁ := totient_defect_cube_mul_prime hp hq hpq
+    have h₂ := totient_defect_cube_mul_prime hr hs hrs
+    omega
+  have hpD : p^2 ∣ F := dvd_mul_right _ _
+  have hrD : r^2 ∣ F := hF ▸ dvd_mul_right _ _
+  have hc := (((Nat.coprime_primes hp hr).mpr hpr.ne).pow_left 2).pow_right 2
+  have hFD : p^2*r^2 ∣ F := hc.mul_dvd_of_dvd_of_dvd hpD hrD
+  have hFpos : 0 < F := by
+    have hpq' : 0 < p+q-1 := by have := hp.two_le; have := hq.two_le; omega
+    dsimp [F]
+    exact mul_pos (pow_pos hp.pos _) hpq'
+  have hFlow := Nat.le_of_dvd hFpos hFD
+  have hp₁ := hp.pos
+  have hr₁ := hr.pos
+  have hq₁ := hq.pos
+  have hs₁ := hs.pos
+  have hpq₁ : 1 ≤ p+q := by omega
+  have hrs₁ : 1 ≤ r+s := by omega
+  have hF₁ : F=p^2*(p+q-1) := rfl
+  zify [hp₁,hr₁,hq₁,hs₁,hpq₁,hrs₁] at hF hF₁ hgap hFlow hpr
+  let D : ℤ := (r:ℤ)^3*s-(p:ℤ)^3*q
+  let K : ℤ := (r:ℤ)^3+(r:ℤ)^2*p+(r:ℤ)*p^2+(p:ℤ)^3-
+    ((r:ℤ)^2+(r:ℤ)*p+(p:ℤ)^2)
+  have hD : D=12 ∨ D=-12 := by dsimp [D]; omega
+  have he : D=((r:ℤ)-p)*((F:ℤ)-K) := by
+    dsimp only [D,K]
+    linear_combination -(r:ℤ)*hF+(p:ℤ)*hF₁
+  have hd : (r:ℤ)-p ∣ (12:ℤ) := by
+    rcases hD with h | h
+    · exact ⟨(F:ℤ)-K,h.symm.trans he⟩
+    · refine ⟨-((F:ℤ)-K),?_⟩
+      linear_combination h-he
+  have hdiff_le : (r:ℤ)-p ≤ 12 := Int.le_of_dvd (by decide) hd
+  have hKle : K ≤ 4*(r:ℤ)^3 := by
+    have hp0 : (0:ℤ) ≤ p := by positivity
+    have hr0 : (0:ℤ) ≤ r := by positivity
+    have hpr' : (p:ℤ) ≤ r := hpr.le
+    have hq2 := mul_le_mul hpr' hpr' hp0 hr0
+    have h₁ := mul_le_mul_of_nonneg_left hpr' (sq_nonneg (r:ℤ))
+    have h₂ := mul_le_mul_of_nonneg_left hq2 hr0
+    have h₃ := mul_le_mul hq2 hpr' hp0 (mul_nonneg hr0 hr0)
+    dsimp only [K]
+    nlinarith only [h₁,h₂,h₃,sq_nonneg (r:ℤ),sq_nonneg (p:ℤ),mul_nonneg hr0 hp0]
+  have hFup : (F:ℤ) ≤ 4*(r:ℤ)^3+12 := by
+    have hsmall : (F:ℤ)-K ≤ 12 := by
+      by_contra! h
+      have hh := mul_le_mul_of_nonneg_right (show (1:ℤ) ≤ (r:ℤ)-p by omega)
+        (show (0:ℤ) ≤ (F:ℤ)-K by omega)
+      nlinarith only [hh,he,show D ≤ 12 by omega,h]
+    omega
+  have hp10 : p ≤ 10 := by
+    by_contra! h
+    have h11 : (11:ℤ) ≤ p := by exact_mod_cast h
+    have h5 : 5*(r:ℤ) ≤ (p:ℤ)^2 := by
+      have hh := mul_nonneg (show 0 ≤ (p:ℤ)-11 by omega) (show 0 ≤ (p:ℤ)+6 by omega)
+      nlinarith only [hh,hdiff_le]
+    have hh := mul_le_mul_of_nonneg_right h5 (sq_nonneg (r:ℤ))
+    have hr3 : (3:ℤ) ≤ r := by omega
+    have hr9 : 9 ≤ (r:ℤ)^2 := by
+      have := mul_le_mul hr3 hr3 (by decide : (0:ℤ) ≤ 3) (show 0 ≤ (r:ℤ) by omega)
+      nlinarith only [this]
+    have hr27 : 27 ≤ (r:ℤ)^3 := by
+      have := mul_le_mul hr9 hr3 (by decide : (0:ℤ) ≤ 3) (sq_nonneg (r:ℤ))
+      nlinarith only [this]
+    nlinarith only [hFlow,hFup,hh,hr27]
+  have hr22 : r ≤ 22 := by omega
+  have pchoices : p=2 ∨ p=3 ∨ p=5 ∨ p=7 := by
+    interval_cases p <;> first | decide | (exfalso; exact (by decide : ¬Nat.Prime _) hp)
+  have rchoices : r=2 ∨ r=3 ∨ r=5 ∨ r=7 ∨ r=11 ∨ r=13 ∨ r=17 ∨ r=19 := by
+    interval_cases r <;> first | decide | (exfalso; exact (by decide : ¬Nat.Prime _) hr)
+  rcases pchoices with rp|rp|rp|rp <;> rcases rchoices with rr|rr|rr|rr|rr|rr|rr|rr <;>
+    subst p <;> subst r <;> norm_num [K] at he hFD hpr <;> omega
+
+/-- Both orientations of a twelve-step between cube-times-prime four-factor
+endpoints are impossible. The totient equation by itself suffices. -/
+theorem no_cube_prime_cube_prime_gap_twelve {p q r s : ℕ}
+    (hp : p.Prime) (hq : q.Prime) (hr : r.Prime) (hs : s.Prime)
+    (hpq : p ≠ q) (hrs : r ≠ s)
+    (hgap : p^3*q+12 = r^3*s ∨ r^3*s+12 = p^3*q)
+    (hφ : (p^3*q).totient+r^3*s = (r^3*s).totient+p^3*q) : False := by
+  rcases lt_trichotomy p r with h | h | h
+  · exact no_ordered_cube_prime_pair hp hq hr hs hpq hrs h hgap hφ
+  · subst r
+    have h₁ := totient_defect_cube_mul_prime hp hq hpq
+    have h₂ := totient_defect_cube_mul_prime hp hs hrs
+    have he : p^2*(p+q-1) = p^2*(p+s-1) := by omega
+    have he' := Nat.eq_of_mul_eq_mul_left (pow_pos hp.pos _) he
+    have hqs : q=s := by have := hp.pos; omega
+    subst s
+    omega
+  · refine no_ordered_cube_prime_pair hr hs hp hq hrs hpq h ?_ hφ.symm
+    exact hgap.symm
+
+end A056777CubePrimeFourFour
+end
+
+section
+open scoped ArithmeticFunction.sigma
+open Nat ArithmeticFunction
+
+namespace A056777CubePrimeSquarefreeFour
+
+private theorem fourth_newton (r s t u : ℤ) :
+    8*(r*s+r*t+r*u+s*t+s*u+t*u)*(r*s*t*u) ≤
+      3*(r*s*t+r*s*u+r*t*u+s*t*u)^2 := by
+  let a := r*s*t
+  let b := r*s*u
+  let c := r*t*u
+  let d := s*t*u
+  have h : 8*(a*b+a*c+a*d+b*c+b*d+c*d) ≤ 3*(a+b+c+d)^2 := by
+    nlinarith only [sq_nonneg (a-b),sq_nonneg (a-c),sq_nonneg (a-d),
+      sq_nonneg (b-c),sq_nonneg (b-d),sq_nonneg (c-d)]
+  dsimp [a,b,c,d] at h
+  nlinarith only [h]
+
+private theorem middle_newton (r s t u : ℤ) :
+    9*(r+s+t+u)*(r*s*t+r*s*u+r*t*u+s*t*u) ≤
+      4*(r*s+r*t+r*u+s*t+s*u+t*u)^2 := by
+  -- The shared-edge squares carry weight one, and the complementary ones weight four.
+  nlinarith only [sq_nonneg (r*s-r*t),sq_nonneg (r*s-r*u),
+    sq_nonneg (r*s-s*t),sq_nonneg (r*s-s*u),
+    sq_nonneg (r*t-r*u),sq_nonneg (r*t-s*t),sq_nonneg (r*t-t*u),
+    sq_nonneg (r*u-s*u),sq_nonneg (r*u-t*u),sq_nonneg (s*t-s*u),
+    sq_nonneg (s*t-t*u),sq_nonneg (s*u-t*u),
+    sq_nonneg (r*s-t*u),sq_nonneg (r*t-s*u),sq_nonneg (r*u-s*t)]
+
+private theorem pair_cube_bound (r s t u : ℤ)
+    (hr : 0 < r) (hs : 0 < s) (ht : 0 < t) (hu : 0 < u) :
+    27*(r*s*t+r*s*u+r*t*u+s*t*u)^2 ≤
+      2*(r*s+r*t+r*u+s*t+s*u+t*u)^3 := by
+  let a := r+s+t+u
+  let x := r*s+r*t+r*u+s*t+s*u+t*u
+  let y := r*s*t+r*s*u+r*t*u+s*t*u
+  have ha : 0 < a := by dsimp [a]; positivity
+  have hx : 0 < x := by dsimp [x]; positivity
+  have hy : 0 < y := by dsimp [y]; positivity
+  have h₁ : 8*x ≤ 3*a^2 := by
+    dsimp [x,a]
+    nlinarith only [sq_nonneg (r-s),sq_nonneg (r-t),sq_nonneg (r-u),
+      sq_nonneg (s-t),sq_nonneg (s-u),sq_nonneg (t-u)]
+  have h₂ : 9*a*y ≤ 4*x^2 := middle_newton r s t u
+  have h₂' := pow_le_pow_left₀ (show 0 ≤ 9*a*y by positivity) h₂ 2
+  have h₁' := mul_le_mul_of_nonneg_right h₁ (show 0 ≤ 27*y^2 by positivity)
+  change 27*y^2 ≤ 2*x^3
+  by_contra! h
+  have h' := mul_pos (show 0 < 27*y^2-2*x^3 by omega) hx
+  nlinarith only [h₂',h₁',h']
+
+private theorem positive_newton_margin (p q : ℤ) (hp : 3 ≤ p) (hq : 4*p+1 ≤ q) :
+    let L := (p+1)*(q+1)+2*p^2-2
+    0 < 16*L*(p^3*q-12)-3*(2*p^2*(p+q-1)+L)^2 := by
+  let a := p-3
+  let b := q-4*p-1
+  have ha : 0 ≤ a := by dsimp [a]; omega
+  have hb : 0 ≤ b := by dsimp [b]; omega
+  let P := 4*a^4+52*a^3+237*a^2+444*a+276
+  let Q := 40*a^5+644*a^4+3976*a^3+11736*a^2+16188*a+7656
+  let R := 84*a^6+1632*a^5+12768*a^4+51480*a^3+111168*a^2+116352*a+39636
+  have hpos : 0 < P*b^2+Q*b+R := by dsimp [P,Q,R]; positivity
+  dsimp only
+  have he : 16*((p+1)*(q+1)+2*p^2-2)*(p^3*q-12)-
+      3*(2*p^2*(p+q-1)+((p+1)*(q+1)+2*p^2-2))^2 = P*b^2+Q*b+R := by
+    dsimp [P,Q,R,a,b]
+    ring
+  rw [he]
+  exact hpos
+
+private theorem inconsistent_moments (p q x y z : ℤ)
+    (hp : 3 ≤ p) (hq : 2 ≤ q) (hx : 0 < x) (hy : 0 < y)
+    (hX : 2*x=(p+1)*(q+1)+2*p^2-2)
+    (hYlow : p^2*(p+q-1) ≤ y) (hYhigh : y ≤ p^2*(p+q-1)+x)
+    (hZ : p^3*q-12 ≤ z)
+    (hNewton : 8*x*z ≤ 3*y^2) (hMac : 27*y^2 ≤ 2*x^3) : False := by
+  by_cases hqsmall : q ≤ 4*p
+  · let S := p+q
+    have hp0 : 0 ≤ p := by omega
+    have hS : 5 ≤ S := by dsimp [S]; omega
+    have hS5 : S ≤ 5*p := by dsimp [S]; omega
+    have hxup : x ≤ p*S := by
+      dsimp [S]
+      have hh := mul_nonneg (show 0 ≤ p-1 by omega) (show 0 ≤ q-1 by omega)
+      nlinarith only [hh,hX]
+    have hx3 := pow_le_pow_left₀ hx.le hxup 3
+    have hupper := mul_le_mul_of_nonneg_left hS5 (show 0 ≤ p^3*S^2 by positivity)
+    have hSq : 4*S ≤ 5*(S-1) := by omega
+    have hSq2 := pow_le_pow_left₀ (show 0 ≤ 4*S by omega) hSq 2
+    have hmid := mul_le_mul_of_nonneg_left hSq2 (show 0 ≤ p^4 by positivity)
+    have hy2 := pow_le_pow_left₀ (mul_nonneg (sq_nonneg p) (show 0 ≤ S-1 by omega)) hYlow 2
+    nlinarith only [hx3,hupper,hmid,hy2,hMac,sq_pos_of_pos hy]
+  · have hlarge : 4*p+1 ≤ q := by omega
+    have h := positive_newton_margin p q hp hlarge
+    dsimp only at h
+    rw [← hX] at h
+    have hZ' := mul_le_mul_of_nonneg_left hZ (show 0 ≤ 8*x by omega)
+    have hY' := pow_le_pow_left₀ hy.le hYhigh 2
+    nlinarith only [h,hZ',hY',hNewton]
+
+/-- Cube-times-prime and a squarefree product of four primes cannot be
+twelve apart and satisfy both jump conditions. -/
+theorem no_cube_prime_squarefree_four_gap_twelve {p q r s t u : ℕ}
+    (hp : p.Prime) (hq : q.Prime) (hr : r.Prime) (hs : s.Prime) (ht : t.Prime) (hu : u.Prime)
+    (hpq : p ≠ q) (hrs : r ≠ s) (hrt : r ≠ t) (hru : r ≠ u) (hst : s ≠ t)
+    (hsu : s ≠ u) (htu : t ≠ u)
+    (hgap : p^3*q+12 = r*s*t*u ∨ r*s*t*u+12 = p^3*q)
+    (hφ : (p^3*q).totient + r*s*t*u = (r*s*t*u).totient + p^3*q)
+    (hσ : σ 1 (p^3*q) + r*s*t*u = σ 1 (r*s*t*u) + p^3*q) : False := by
+  have hc₁ := (Nat.coprime_primes hr hs).mpr hrs
+  have hc₂ := ((Nat.coprime_primes hr ht).mpr hrt).mul_left ((Nat.coprime_primes hs ht).mpr hst)
+  have hc₃ := (((Nat.coprime_primes hr hu).mpr hru).mul_left
+    ((Nat.coprime_primes hs hu).mpr hsu)).mul_left ((Nat.coprime_primes ht hu).mpr htu)
+  by_cases hp2 : p = 2
+  · subst p
+    have hsq : Squarefree (r*s*t*u) :=
+      Nat.squarefree_mul_iff.mpr ⟨hc₃, Nat.squarefree_mul_iff.mpr
+        ⟨hc₂, Nat.squarefree_mul_iff.mpr ⟨hc₁,hr.squarefree,hs.squarefree⟩,ht.squarefree⟩,
+        hu.squarefree⟩
+    have hdiv : 2*2 ∣ r*s*t*u := by norm_num at hgap ⊢; omega
+    exact (Nat.squarefree_iff_prime_squarefree.mp hsq 2 Nat.prime_two) hdiv
+  have hp3 : 3 ≤ p := by have := hp.two_le; omega
+  have hcp := ((Nat.coprime_primes hp hq).mpr hpq).pow_left 3
+  have hσp {a : ℕ} (ha : a.Prime) : σ 1 a = a+1 := by
+    simpa using sigma_one_apply_prime_pow (i := 1) ha
+  have hσpp : σ 1 (p^3) = 1+p+p^2+p^3 := by
+    simp only [sigma_one_apply_prime_pow hp, Finset.sum_range_succ, Finset.sum_range_zero,
+      pow_zero,pow_one,zero_add]
+  have hφpp : (p^3).totient = p^2*(p-1) := Nat.totient_prime_pow_succ hp 2
+  rw [Nat.totient_mul hcp,hφpp,Nat.totient_prime hq,Nat.totient_mul hc₃,Nat.totient_mul hc₂,
+    Nat.totient_mul hc₁,Nat.totient_prime hr,Nat.totient_prime hs,Nat.totient_prime ht,
+    Nat.totient_prime hu] at hφ
+  rw [isMultiplicative_sigma.map_mul_of_coprime hcp,hσpp,hσp hq,
+    isMultiplicative_sigma.map_mul_of_coprime hc₃,isMultiplicative_sigma.map_mul_of_coprime hc₂,
+    isMultiplicative_sigma.map_mul_of_coprime hc₁,hσp hr,hσp hs,hσp ht,hσp hu] at hσ
+  have hpr := hp.pos
+  have hqr := hq.pos
+  have hrr := hr.pos
+  have hsr := hs.pos
+  have htr := ht.pos
+  have hur := hu.pos
+  have hq2 := hq.two_le
+  have hr2 := hr.two_le
+  have hs2 := hs.two_le
+  have ht2 := ht.two_le
+  have hu2 := hu.two_le
+  have hg : p^3*q ≤ r*s*t*u+12 := by omega
+  zify [hpr,hqr,hrr,hsr,htr,hur] at hp3 hq2 hr2 hs2 ht2 hu2 hg hφ hσ
+  let a : ℤ := r+s+t+u
+  let x : ℤ := r*s+r*t+r*u+s*t+s*u+t*u
+  let y : ℤ := r*s*t+r*s*u+r*t*u+s*t*u
+  let z : ℤ := r*s*t*u
+  have hX : 2*x=((p:ℤ)+1)*(q+1)+2*(p:ℤ)^2-2 := by dsimp [x]; nlinarith only [hφ,hσ]
+  have hY : y=(p:ℤ)^2*(p+q-1)+x-a+1 := by dsimp [a,x,y]; nlinarith only [hφ]
+  have ha1 : 1 ≤ a := by dsimp [a]; omega
+  have hax : a ≤ x := by
+    dsimp [a,x]
+    have h₁ := mul_nonneg (show 0 ≤ (r:ℤ)-2 by omega) (show 0 ≤ (s:ℤ)-1 by omega)
+    have h₂ := mul_nonneg (show 0 ≤ (t:ℤ)-2 by omega) (show 0 ≤ (u:ℤ)-1 by omega)
+    have h₃ : 0 ≤ (r:ℤ)*t+(r:ℤ)*u+(s:ℤ)*t+(s:ℤ)*u := by positivity
+    nlinarith only [h₁,h₂,h₃,hs2,hu2]
+  have hx : 0 < x := by
+    dsimp [x]
+    have hrr' : (0:ℤ)<r := by omega
+    have hss' : (0:ℤ)<s := by omega
+    have htt' : (0:ℤ)<t := by omega
+    have huu' : (0:ℤ)<u := by omega
+    positivity
+  have hy : 0 < y := by
+    dsimp [y]
+    have hrr' : (0:ℤ)<r := by omega
+    have hss' : (0:ℤ)<s := by omega
+    have htt' : (0:ℤ)<t := by omega
+    have huu' : (0:ℤ)<u := by omega
+    positivity
+  exact inconsistent_moments p q x y z hp3 hq2 hx hy hX (by omega) (by omega)
+    (by dsimp [z]; omega) (fourth_newton r s t u)
+    (pair_cube_bound r s t u (by omega) (by omega) (by omega) (by omega))
+
+end A056777CubePrimeSquarefreeFour
+end
+
+section
+open scoped ArithmeticFunction.sigma
+open Nat
+
+/-- The only remaining four-factor partner for p³q is r²st with three distinct
+prime bases on the partner side. Either endpoint can be smaller. -/
+theorem A056777.cube_prime_four_partner_shape {p q m : ℕ}
+    (hp : p.Prime) (hq : q.Prime) (hpq : p ≠ q)
+    (hm : m.primeFactorsList.length = 4)
+    (hgap : p^3*q+12=m ∨ m+12=p^3*q)
+    (hφ : (p^3*q).totient+m=m.totient+p^3*q)
+    (hσ : σ 1 (p^3*q)+m = σ 1 m+p^3*q) :
+    ∃ r s t : ℕ, r.Prime ∧ s.Prime ∧ t.Prime ∧
+      r ≠ s ∧ r ≠ t ∧ s ≠ t ∧ m = r^2*s*t := by
+  rcases A056777CubeFour.four_factor_shape hm with ⟨k,hk⟩ | ⟨r,s,hr,hs,hrs,hm'⟩ |
+    h | ⟨r,s,t,u,hr,hs,ht,hu,hrs,hrt,hru,hst,hsu,htu,hm'⟩
+  · exfalso
+    rcases hgap with he | he
+    · have hste : σ 1 (p^3*q+12)=σ 1 (p^3*q)+12 := by rw [he]; omega
+      have hn0 : p^3*q ≠ 0 := mul_ne_zero (pow_ne_zero _ hp.ne_zero) hq.ne_zero
+      exact (A056777Parity.no_square_shapes_of_sigma_step hn0 hste).2 (Or.inl ⟨k,he.trans hk⟩)
+    · have hste : σ 1 (m+12)=σ 1 m+12 := by rw [he]; omega
+      have hm0 : m ≠ 0 := by rintro rfl; simp at hm
+      exact (A056777Parity.no_square_shapes_of_sigma_step hm0 hste).1 (Or.inl ⟨k,hk⟩)
+  · rw [hm'] at hgap hφ
+    exact (A056777CubePrimeFourFour.no_cube_prime_cube_prime_gap_twelve hp hq hr hs
+      hpq hrs hgap hφ).elim
+  · exact h
+  · rw [hm'] at hgap hφ hσ
+    exact (A056777CubePrimeSquarefreeFour.no_cube_prime_squarefree_four_gap_twelve hp hq hr hs ht hu
+      hpq hrs hrt hru hst hsu htu hgap hφ hσ).elim
+end
+
+section
+open scoped ArithmeticFunction.sigma
+open Nat ArithmeticFunction
+
+namespace A056777CubePrimeRepeatedFour
+
+private theorem moment_equations (p q r A B D : ℤ)
+    (hK : (p+1)*(q+1)+2*p^2-(B+(2*r+1)*A+2*r^2+1)=0)
+    (hF : p^2*(p+q-1)-r*B-r*(r-1)*(A-1)=0)
+    (hG : r^2*B-p^3*q-D=0) :
+    (r*(p^3*r+2*p^3-2*p^2*r^2-p^2*r+p*r^3-p*r^2+r^3-r^2)) * A = (p^2*r*(p-r)*(p+2*p^2-2*r^2)-(p^3-p*r^2-r^2)*(p^2*(p-1)+r*(r-1))+(p^2-p*r-r)*D) ∧
+      (r*(p^3*r+2*p^3-2*p^2*r^2-p^2*r+p*r^3-p*r^2+r^3-r^2)) * B = (-p^3*r*(r-1)*(p+2*p^2-2*r^2)+p^3*(2*r+1)*(p^2*(p-1)+r*(r-1))+(-2*p^2*r-p^2+p*r^2-p*r+r^2-r)*D) := by
+  constructor
+  ·     linear_combination (-p^2*r*(p-r))*hK+(p^3-p*r^2-r^2)*hF+(p^2-p*r-r)*hG
+  ·     linear_combination (p^3*r*(r-1))*hK+(-p^3*(2*r+1))*hF+
+      (-2*p^2*r-p^2+p*r^2-p*r+r^2-r)*hG
+
+/- The following five certificates are Horner decompositions after shifting the
+two repeated bases into the appropriate nonnegative quadrant. The ring tactic
+verifies each displayed polynomial identity over the integers. -/
+private theorem negative_disc_positive_gap (U V : ℤ) (hU : 0 ≤ U) (hV : 0 ≤ V) :
+    (((U+3)^2*(U+3+V)*((U+3)-(U+3+V))*((U+3)+2*(U+3)^2-2*(U+3+V)^2)-((U+3)^3-(U+3)*(U+3+V)^2-(U+3+V)^2)*((U+3)^2*((U+3)-1)+(U+3+V)*((U+3+V)-1))+((U+3)^2-(U+3)*(U+3+V)-(U+3+V))*(12))^2-4*(-(U+3)^3*(U+3+V)*((U+3+V)-1)*((U+3)+2*(U+3)^2-2*(U+3+V)^2)+(U+3)^3*(2*(U+3+V)+1)*((U+3)^2*((U+3)-1)+(U+3+V)*((U+3+V)-1))+(-2*(U+3)^2*(U+3+V)-(U+3)^2+(U+3)*(U+3+V)^2-(U+3)*(U+3+V)+(U+3+V)^2-(U+3+V))*(12))*((U+3+V)*((U+3)^3*(U+3+V)+2*(U+3)^3-2*(U+3)^2*(U+3+V)^2-(U+3)^2*(U+3+V)+(U+3)*(U+3+V)^3-(U+3)*(U+3+V)^2+(U+3+V)^3-(U+3+V)^2))) < 0 := by
+  let c0 : ℤ := 741312+U*(3034368+U*(5533776+U*(5968800+U*(4246287+U*(2097558+U*(735569+U*(183388+U*(31889+U*(3686+U*(255+U*(8)))))))))))
+  let c1 : ℤ := 644544+U*(2369664+U*(3961800+U*(3934572+U*(2556642+U*(1132638+U*(346120+U*(72040+U*(9778+U*(782+U*(28))))))))))
+  let c2 : ℤ := 597744+U*(2113488+U*(3307176+U*(3006378+U*(1751721+U*(680794+U*(177738+U*(30506+U*(3241+U*(186+U*(4))))))))))
+  let c3 : ℤ := 472464+U*(1543200+U*(2191140+U*(1775044+U*(903130+U*(298728+U*(64052+U*(8544+U*(638+U*(20)))))))))
+  let c4 : ℤ := 322764+U*(904620+U*(1104219+U*(760428+U*(321462+U*(85138+U*(13758+U*(1236+U*(47))))))))
+  let c5 : ℤ := 163944+U*(390672+U*(398602+U*(223550+U*(74040+U*(14440+U*(1532+U*(68)))))))
+  let c6 : ℤ := 47684+U*(96252+U*(80257+U*(35180+U*(8528+U*(1082+U*(56))))))
+  let c7 : ℤ := 6920+U*(11600+U*(7622+U*(2456+U*(388+U*(24)))))
+  let c8 : ℤ := 380+U*(508+U*(247+U*(52+U*(4))))
+  have hpos : 0 < c0+V*(c1+V*(c2+V*(c3+V*(c4+V*(c5+V*(c6+V*(c7+V*(c8)))))))) := by
+    dsimp [c0, c1, c2, c3, c4, c5, c6, c7, c8]
+    positivity
+  have he : -((((U+3)^2*(U+3+V)*((U+3)-(U+3+V))*((U+3)+2*(U+3)^2-2*(U+3+V)^2)-((U+3)^3-(U+3)*(U+3+V)^2-(U+3+V)^2)*((U+3)^2*((U+3)-1)+(U+3+V)*((U+3+V)-1))+((U+3)^2-(U+3)*(U+3+V)-(U+3+V))*(12))^2-4*(-(U+3)^3*(U+3+V)*((U+3+V)-1)*((U+3)+2*(U+3)^2-2*(U+3+V)^2)+(U+3)^3*(2*(U+3+V)+1)*((U+3)^2*((U+3)-1)+(U+3+V)*((U+3+V)-1))+(-2*(U+3)^2*(U+3+V)-(U+3)^2+(U+3)*(U+3+V)^2-(U+3)*(U+3+V)+(U+3+V)^2-(U+3+V))*(12))*((U+3+V)*((U+3)^3*(U+3+V)+2*(U+3)^3-2*(U+3)^2*(U+3+V)^2-(U+3)^2*(U+3+V)+(U+3)*(U+3+V)^3-(U+3)*(U+3+V)^2+(U+3+V)^3-(U+3+V)^2)))) = c0+V*(c1+V*(c2+V*(c3+V*(c4+V*(c5+V*(c6+V*(c7+V*(c8)))))))) := by
+    dsimp [c0, c1, c2, c3, c4, c5, c6, c7, c8]
+    ring
+  rw [← he] at hpos
+  exact neg_pos.mp hpos
+
+private theorem negative_sum_positive_gap (U V : ℤ) (hU : 0 ≤ U) (hV : 0 ≤ V) :
+    ((U+3+1+V)^2*(U+3)*((U+3+1+V)-(U+3))*((U+3+1+V)+2*(U+3+1+V)^2-2*(U+3)^2)-((U+3+1+V)^3-(U+3+1+V)*(U+3)^2-(U+3)^2)*((U+3+1+V)^2*((U+3+1+V)-1)+(U+3)*((U+3)-1))+((U+3+1+V)^2-(U+3+1+V)*(U+3)-(U+3))*(12)) < 0 := by
+  let c0 : ℤ := 150+U*(381+U*(289+U*(99+U*(16+U*(1)))))
+  let c1 : ℤ := 694+U*(1289+U*(830+U*(250+U*(36+U*(2)))))
+  let c2 : ℤ := 599+U*(745+U*(340+U*(68+U*(5))))
+  let c3 : ℤ := 325+U*(249+U*(66+U*(6)))
+  let c4 : ℤ := 106+U*(50+U*(6))
+  let c5 : ℤ := 17+U*(4)
+  let c6 : ℤ := 1
+  have hpos : 0 < c0+V*(c1+V*(c2+V*(c3+V*(c4+V*(c5+V*(c6)))))) := by
+    dsimp [c0, c1, c2, c3, c4, c5, c6]
+    positivity
+  have he : -(((U+3+1+V)^2*(U+3)*((U+3+1+V)-(U+3))*((U+3+1+V)+2*(U+3+1+V)^2-2*(U+3)^2)-((U+3+1+V)^3-(U+3+1+V)*(U+3)^2-(U+3)^2)*((U+3+1+V)^2*((U+3+1+V)-1)+(U+3)*((U+3)-1))+((U+3+1+V)^2-(U+3+1+V)*(U+3)-(U+3))*(12))) = c0+V*(c1+V*(c2+V*(c3+V*(c4+V*(c5+V*(c6)))))) := by
+    dsimp [c0, c1, c2, c3, c4, c5, c6]
+    ring
+  rw [← he] at hpos
+  exact neg_pos.mp hpos
+
+private theorem negative_disc_negative_gap (U V : ℤ) (hU : 0 ≤ U) (hV : 0 ≤ V) :
+    (((U+3)^2*(U+3+V)*((U+3)-(U+3+V))*((U+3)+2*(U+3)^2-2*(U+3+V)^2)-((U+3)^3-(U+3)*(U+3+V)^2-(U+3+V)^2)*((U+3)^2*((U+3)-1)+(U+3+V)*((U+3+V)-1))+((U+3)^2-(U+3)*(U+3+V)-(U+3+V))*(-12))^2-4*(-(U+3)^3*(U+3+V)*((U+3+V)-1)*((U+3)+2*(U+3)^2-2*(U+3+V)^2)+(U+3)^3*(2*(U+3+V)+1)*((U+3)^2*((U+3)-1)+(U+3+V)*((U+3+V)-1))+(-2*(U+3)^2*(U+3+V)-(U+3)^2+(U+3)*(U+3+V)^2-(U+3)*(U+3+V)+(U+3+V)^2-(U+3+V))*(-12))*((U+3+V)*((U+3)^3*(U+3+V)+2*(U+3)^3-2*(U+3)^2*(U+3+V)^2-(U+3)^2*(U+3+V)+(U+3)*(U+3+V)^3-(U+3)*(U+3+V)^2+(U+3+V)^3-(U+3+V)^2))) < 0 := by
+  let c0 : ℤ := 912384+U*(3449088+U*(5962752+U*(6214464+U*(4330479+U*(2114838+U*(737537+U*(183484+U*(31889+U*(3686+U*(255+U*(8)))))))))))
+  let c1 : ℤ := 514944+U*(2144160+U*(3800664+U*(3874476+U*(2544450+U*(1131390+U*(346072+U*(72040+U*(9778+U*(782+U*(28))))))))))
+  let c2 : ℤ := 532944+U*(2009376+U*(3240792+U*(2985498+U*(1748505+U*(680602+U*(177738+U*(30506+U*(3241+U*(186+U*(4))))))))))
+  let c3 : ℤ := 433008+U*(1482096+U*(2155716+U*(1765540+U*(901978+U*(298680+U*(64052+U*(8544+U*(638+U*(20)))))))))
+  let c4 : ℤ := 276204+U*(849660+U*(1080699+U*(756108+U*(321174+U*(85138+U*(13758+U*(1236+U*(47))))))))
+  let c5 : ℤ := 148968+U*(378288+U*(395290+U*(223262+U*(74040+U*(14440+U*(1532+U*(68)))))))
+  let c6 : ℤ := 46148+U*(95484+U*(80161+U*(35180+U*(8528+U*(1082+U*(56))))))
+  let c7 : ℤ := 6920+U*(11600+U*(7622+U*(2456+U*(388+U*(24)))))
+  let c8 : ℤ := 380+U*(508+U*(247+U*(52+U*(4))))
+  have hpos : 0 < c0+V*(c1+V*(c2+V*(c3+V*(c4+V*(c5+V*(c6+V*(c7+V*(c8)))))))) := by
+    dsimp [c0, c1, c2, c3, c4, c5, c6, c7, c8]
+    positivity
+  have he : -((((U+3)^2*(U+3+V)*((U+3)-(U+3+V))*((U+3)+2*(U+3)^2-2*(U+3+V)^2)-((U+3)^3-(U+3)*(U+3+V)^2-(U+3+V)^2)*((U+3)^2*((U+3)-1)+(U+3+V)*((U+3+V)-1))+((U+3)^2-(U+3)*(U+3+V)-(U+3+V))*(-12))^2-4*(-(U+3)^3*(U+3+V)*((U+3+V)-1)*((U+3)+2*(U+3)^2-2*(U+3+V)^2)+(U+3)^3*(2*(U+3+V)+1)*((U+3)^2*((U+3)-1)+(U+3+V)*((U+3+V)-1))+(-2*(U+3)^2*(U+3+V)-(U+3)^2+(U+3)*(U+3+V)^2-(U+3)*(U+3+V)+(U+3+V)^2-(U+3+V))*(-12))*((U+3+V)*((U+3)^3*(U+3+V)+2*(U+3)^3-2*(U+3)^2*(U+3+V)^2-(U+3)^2*(U+3+V)+(U+3)*(U+3+V)^3-(U+3)*(U+3+V)^2+(U+3+V)^3-(U+3+V)^2)))) = c0+V*(c1+V*(c2+V*(c3+V*(c4+V*(c5+V*(c6+V*(c7+V*(c8)))))))) := by
+    dsimp [c0, c1, c2, c3, c4, c5, c6, c7, c8]
+    ring
+  rw [← he] at hpos
+  exact neg_pos.mp hpos
+
+private theorem negative_sum_negative_gap (U V : ℤ) (hU : 0 ≤ U) (hV : 0 ≤ V) :
+    ((U+3+1+V)^2*(U+3)*((U+3+1+V)-(U+3))*((U+3+1+V)+2*(U+3+1+V)^2-2*(U+3)^2)-((U+3+1+V)^3-(U+3+1+V)*(U+3)^2-(U+3)^2)*((U+3+1+V)^2*((U+3+1+V)-1)+(U+3)*((U+3)-1))+((U+3+1+V)^2-(U+3+1+V)*(U+3)-(U+3))*(-12)) < 0 := by
+  let c0 : ℤ := 174+U*(381+U*(289+U*(99+U*(16+U*(1)))))
+  let c1 : ℤ := 814+U*(1313+U*(830+U*(250+U*(36+U*(2)))))
+  let c2 : ℤ := 623+U*(745+U*(340+U*(68+U*(5))))
+  let c3 : ℤ := 325+U*(249+U*(66+U*(6)))
+  let c4 : ℤ := 106+U*(50+U*(6))
+  let c5 : ℤ := 17+U*(4)
+  let c6 : ℤ := 1
+  have hpos : 0 < c0+V*(c1+V*(c2+V*(c3+V*(c4+V*(c5+V*(c6)))))) := by
+    dsimp [c0, c1, c2, c3, c4, c5, c6]
+    positivity
+  have he : -(((U+3+1+V)^2*(U+3)*((U+3+1+V)-(U+3))*((U+3+1+V)+2*(U+3+1+V)^2-2*(U+3)^2)-((U+3+1+V)^3-(U+3+1+V)*(U+3)^2-(U+3)^2)*((U+3+1+V)^2*((U+3+1+V)-1)+(U+3)*((U+3)-1))+((U+3+1+V)^2-(U+3+1+V)*(U+3)-(U+3))*(-12))) = c0+V*(c1+V*(c2+V*(c3+V*(c4+V*(c5+V*(c6)))))) := by
+    dsimp [c0, c1, c2, c3, c4, c5, c6]
+    ring
+  rw [← he] at hpos
+  exact neg_pos.mp hpos
+
+private theorem positive_determinant (U V : ℤ) (hU : 0 ≤ U) (hV : 0 ≤ V) :
+    0 < ((U+3)*((U+3+1+V)^3*(U+3)+2*(U+3+1+V)^3-2*(U+3+1+V)^2*(U+3)^2-(U+3+1+V)^2*(U+3)+(U+3+1+V)*(U+3)^3-(U+3+1+V)*(U+3)^2+(U+3)^3-(U+3)^2)) := by
+  let c0 : ℤ := 222+U*(227+U*(87+U*(15+U*(1))))
+  let c1 : ℤ := 270+U*(219+U*(58+U*(5)))
+  let c2 : ℤ := 117+U*(81+U*(17+U*(1)))
+  let c3 : ℤ := 15+U*(8+U*(1))
+  have hpos : 0 < c0+V*(c1+V*(c2+V*(c3))) := by
+    dsimp [c0, c1, c2, c3]
+    positivity
+  have he : ((U+3)*((U+3+1+V)^3*(U+3)+2*(U+3+1+V)^3-2*(U+3+1+V)^2*(U+3)^2-(U+3+1+V)^2*(U+3)+(U+3+1+V)*(U+3)^3-(U+3+1+V)*(U+3)^2+(U+3)^3-(U+3)^2)) = c0+V*(c1+V*(c2+V*(c3))) := by
+    dsimp [c0, c1, c2, c3]
+    ring
+  rw [← he] at hpos
+  exact hpos
+
+private theorem impossible_moments (p q r A B D : ℤ)
+    (hp : 3 ≤ p) (hr : 3 ≤ r) (hA : 0 ≤ A) (hdisc : 4*B ≤ A^2)
+    (hD : D=12 ∨ D=-12)
+    (hK : (p+1)*(q+1)+2*p^2-(B+(2*r+1)*A+2*r^2+1)=0)
+    (hF : p^2*(p+q-1)-r*B-r*(r-1)*(A-1)=0)
+    (hG : r^2*B-p^3*q-D=0) : False := by
+  obtain ⟨hS,hP⟩ := moment_equations p q r A B D hK hF hG
+  by_cases hpr : p ≤ r
+  · let U := p-3
+    let V := r-p
+    have hU : 0 ≤ U := by dsimp [U]; omega
+    have hV : 0 ≤ V := by dsimp [V]; omega
+    have hbase : U+3=p := by dsimp [U]; omega
+    have hbase' : U+3+V=r := by dsimp [U,V]; omega
+    have hneg : ((p^2*r*(p-r)*(p+2*p^2-2*r^2)-(p^3-p*r^2-r^2)*(p^2*(p-1)+r*(r-1))+(p^2-p*r-r)*D)^2-4*(-p^3*r*(r-1)*(p+2*p^2-2*r^2)+p^3*(2*r+1)*(p^2*(p-1)+r*(r-1))+(-2*p^2*r-p^2+p*r^2-p*r+r^2-r)*D)*(r*(p^3*r+2*p^3-2*p^2*r^2-p^2*r+p*r^3-p*r^2+r^3-r^2))) < 0 := by
+      rcases hD with rfl | rfl
+      · have h := negative_disc_positive_gap U V hU hV
+        rw [hbase',hbase] at h
+        exact h
+      · have h := negative_disc_negative_gap U V hU hV
+        rw [hbase',hbase] at h
+        exact h
+    have hnneg : 0 ≤ ((p^2*r*(p-r)*(p+2*p^2-2*r^2)-(p^3-p*r^2-r^2)*(p^2*(p-1)+r*(r-1))+(p^2-p*r-r)*D)^2-4*(-p^3*r*(r-1)*(p+2*p^2-2*r^2)+p^3*(2*r+1)*(p^2*(p-1)+r*(r-1))+(-2*p^2*r-p^2+p*r^2-p*r+r^2-r)*D)*(r*(p^3*r+2*p^3-2*p^2*r^2-p^2*r+p*r^3-p*r^2+r^3-r^2))) := by
+      rw [← hS,← hP]
+      have he : ((r*(p^3*r+2*p^3-2*p^2*r^2-p^2*r+p*r^3-p*r^2+r^3-r^2))*A)^2-4*((r*(p^3*r+2*p^3-2*p^2*r^2-p^2*r+p*r^3-p*r^2+r^3-r^2))*B)*(r*(p^3*r+2*p^3-2*p^2*r^2-p^2*r+p*r^3-p*r^2+r^3-r^2)) =
+          ((r*(p^3*r+2*p^3-2*p^2*r^2-p^2*r+p*r^3-p*r^2+r^3-r^2)))^2*(A^2-4*B) := by ring
+      rw [he]
+      exact mul_nonneg (sq_nonneg _) (sub_nonneg.mpr hdisc)
+    exact (not_lt_of_ge hnneg) hneg
+  · let U := r-3
+    let V := p-r-1
+    have hU : 0 ≤ U := by dsimp [U]; omega
+    have hV : 0 ≤ V := by dsimp [V]; omega
+    have hbase : U+3=r := by dsimp [U]; omega
+    have hbase' : U+3+1+V=p := by dsimp [U,V]; omega
+    have hpos := positive_determinant U V hU hV
+    rw [hbase',hbase] at hpos
+    have hneg : (p^2*r*(p-r)*(p+2*p^2-2*r^2)-(p^3-p*r^2-r^2)*(p^2*(p-1)+r*(r-1))+(p^2-p*r-r)*D) < 0 := by
+      rcases hD with rfl | rfl
+      · have h := negative_sum_positive_gap U V hU hV
+        rw [hbase',hbase] at h
+        exact h
+      · have h := negative_sum_negative_gap U V hU hV
+        rw [hbase',hbase] at h
+        exact h
+    exact (not_lt_of_ge ((hS ▸ mul_nonneg hpos.le hA) : 0 ≤ (p^2*r*(p-r)*(p+2*p^2-2*r^2)-(p^3-p*r^2-r^2)*(p^2*(p-1)+r*(r-1))+(p^2-p*r-r)*D))) hneg
+
+private theorem exclude_two_bases {q s t : ℕ} (hq : q.Prime) (hs : s.Prime) (ht : t.Prime)
+    (hq2 : q ≠ 2) (hs2 : s ≠ 2) (ht2 : t ≠ 2) (hst : s ≠ t)
+    (hgap : 2^3*q+12=2^2*s*t ∨ 2^2*s*t+12=2^3*q)
+    (hφ : (2^3*q).totient+2^2*s*t = (2^2*s*t).totient+2^3*q) : False := by
+  have hcq := ((Nat.coprime_primes Nat.prime_two hq).mpr hq2.symm).pow_left 3
+  have hcs := ((Nat.coprime_primes Nat.prime_two hs).mpr hs2.symm).pow_left 2
+  have hct := (((Nat.coprime_primes Nat.prime_two ht).mpr ht2.symm).pow_left 2).mul_left
+    ((Nat.coprime_primes hs ht).mpr hst)
+  rw [Nat.totient_mul hcq,Nat.totient_mul hct,Nat.totient_mul hcs,
+    show ((2:ℕ)^3).totient=4 by decide,show ((2:ℕ)^2).totient=2 by decide,
+    Nat.totient_prime hq,Nat.totient_prime hs,Nat.totient_prime ht] at hφ
+  have hq1 := hq.pos
+  have hs1 := hs.pos
+  have ht1 := ht.pos
+  have hs3 : 3 ≤ s := by have := hs.two_le; omega
+  have ht3 : 3 ≤ t := by have := ht.two_le; omega
+  zify [hq1,hs1,ht1] at hφ hgap hs3 ht3
+  norm_num at hφ hgap
+  have he : (s:ℤ)+t ≤ 6 := by
+    rcases hgap with h | h <;> nlinarith only [hφ,h]
+  omega
+
+/-- The last cube-times-prime versus four-factor shape is impossible.
+Both orientations of the twelve-step are covered. -/
+theorem no_cube_prime_square_two_primes_gap_twelve {p q r s t : ℕ}
+    (hp : p.Prime) (hq : q.Prime) (hr : r.Prime) (hs : s.Prime) (ht : t.Prime)
+    (hpq : p ≠ q) (hrs : r ≠ s) (hrt : r ≠ t) (hst : s ≠ t)
+    (hgap : p^3*q+12=r^2*s*t ∨ r^2*s*t+12=p^3*q)
+    (hφ : (p^3*q).totient+r^2*s*t = (r^2*s*t).totient+p^3*q)
+    (hσ : σ 1 (p^3*q)+r^2*s*t = σ 1 (r^2*s*t)+p^3*q) : False := by
+  by_cases hp2 : p=2
+  · subst p
+    by_cases hr2 : r=2
+    · subst r
+      exact exclude_two_bases hq hs ht hpq.symm hrs.symm hrt.symm hst hgap hφ
+    · have hd : 4 ∣ r^2*(s*t) := by
+        rw [← mul_assoc]
+        norm_num at hgap
+        omega
+      have hcop := (((Nat.coprime_primes Nat.prime_two hr).mpr (Ne.symm hr2)).pow_left 2).pow_right 2
+      have hd' : 4 ∣ s*t := hcop.dvd_of_dvd_mul_left hd
+      have hsfree : Squarefree (s*t) :=
+        Nat.squarefree_mul_iff.mpr ⟨(Nat.coprime_primes hs ht).mpr hst,hs.squarefree,ht.squarefree⟩
+      exact (Nat.squarefree_iff_prime_squarefree.mp hsfree 2 Nat.prime_two) hd'
+  by_cases hr2 : r=2
+  · subst r
+    have hd : 4 ∣ p^3*q := by
+      norm_num at hgap
+      simp only [mul_assoc] at hgap
+      omega
+    have hcop := (((Nat.coprime_primes Nat.prime_two hp).mpr (Ne.symm hp2)).pow_left 2).pow_right 3
+    have hd' : 4 ∣ q := hcop.dvd_of_dvd_mul_left hd
+    rcases (Nat.dvd_prime hq).mp hd' with h | h
+    · omega
+    · have hn : ¬ Nat.Prime 4 := by decide
+      exact hn (h.symm ▸ hq)
+  have hp3 : 3 ≤ p := by have := hp.two_le; omega
+  have hr3 : 3 ≤ r := by have := hr.two_le; omega
+  have hcp := ((Nat.coprime_primes hp hq).mpr hpq).pow_left 3
+  have hcrs := ((Nat.coprime_primes hr hs).mpr hrs).pow_left 2
+  have hcrt := (((Nat.coprime_primes hr ht).mpr hrt).pow_left 2).mul_left
+    ((Nat.coprime_primes hs ht).mpr hst)
+  have hSigma {a : ℕ} (ha : a.Prime) : σ 1 a = a+1 := by
+    simpa using sigma_one_apply_prime_pow (i := 1) ha
+  have hSigma2 : σ 1 (r^2) = 1+r+r^2 := by
+    simp only [sigma_one_apply_prime_pow hr,Finset.sum_range_succ,Finset.sum_range_zero,
+      pow_zero,pow_one,zero_add]
+  have hSigma3 : σ 1 (p^3) = 1+p+p^2+p^3 := by
+    simp only [sigma_one_apply_prime_pow hp,Finset.sum_range_succ,Finset.sum_range_zero,
+      pow_zero,pow_one,zero_add]
+  have hPhi2 : (r^2).totient = r*(r-1) := by simpa using Nat.totient_prime_pow_succ hr 1
+  have hPhi3 : (p^3).totient = p^2*(p-1) := Nat.totient_prime_pow_succ hp 2
+  rw [Nat.totient_mul hcp,Nat.totient_mul hcrt,Nat.totient_mul hcrs,hPhi3,hPhi2,
+    Nat.totient_prime hq,Nat.totient_prime hs,Nat.totient_prime ht] at hφ
+  rw [isMultiplicative_sigma.map_mul_of_coprime hcp,isMultiplicative_sigma.map_mul_of_coprime hcrt,
+    isMultiplicative_sigma.map_mul_of_coprime hcrs,hSigma3,hSigma2,hSigma hq,hSigma hs,hSigma ht] at hσ
+  have hp1 := hp.pos
+  have hq1 := hq.pos
+  have hr1 := hr.pos
+  have hs1 := hs.pos
+  have ht1 := ht.pos
+  zify [hp1,hq1,hr1,hs1,ht1] at hp3 hr3 hφ hσ hgap
+  let D : ℤ := (r:ℤ)^2*s*t-(p:ℤ)^3*q
+  have hD : D=12 ∨ D=-12 := by dsimp [D]; omega
+  exact impossible_moments p q r (s+t) (s*t) D hp3 hr3 (by positivity)
+    (by nlinarith only [sq_nonneg ((s:ℤ)-t)]) hD
+    (by nlinarith only [hφ,hσ]) (by nlinarith only [hφ]) (by dsimp [D]; ring)
+
+end A056777CubePrimeRepeatedFour
+end
+
+section
+open scoped ArithmeticFunction.sigma
+
+/-- A cube-times-prime endpoint cannot satisfy the A056777 jump conditions
+with any endpoint having exactly four prime factors counted with multiplicity.
+Either endpoint can be smaller. -/
+theorem A056777.no_cube_prime_four_partner {p q m : ℕ}
+    (hp : p.Prime) (hq : q.Prime) (hpq : p ≠ q)
+    (hm : m.primeFactorsList.length = 4)
+    (hgap : p^3*q+12=m ∨ m+12=p^3*q)
+    (hφ : (p^3*q).totient+m=m.totient+p^3*q)
+    (hσ : σ 1 (p^3*q)+m=σ 1 m+p^3*q) : False := by
+  obtain ⟨r,s,t,hr,hs,ht,hrs,hrt,hst,hm'⟩ :=
+    A056777.cube_prime_four_partner_shape hp hq hpq hm hgap hφ hσ
+  rw [hm'] at hgap hφ hσ
+  exact A056777CubePrimeRepeatedFour.no_cube_prime_square_two_primes_gap_twelve
+    hp hq hr hs ht hpq hrs hrt hst hgap hφ hσ
+end
+
+section
+open scoped ArithmeticFunction.sigma
+
+namespace A056777FourFour
+
+theorem repeated_not_squarefree {n : ℕ} (h : (∃ p q r : ℕ, p.Prime ∧ q.Prime ∧ r.Prime ∧ p ≠ q ∧ p ≠ r ∧ q ≠ r ∧ n = p^2*q*r)) : ¬Squarefree n := by
+  obtain ⟨p,q,r,hp,_,_,_,_,_,rfl⟩ := h
+  intro hsq
+  exact (Nat.squarefree_iff_prime_squarefree.mp hsq p hp) ⟨q*r,by ring⟩
+
+private theorem squarefree_or_repeated {n m : ℕ}
+    (hn : n.primeFactorsList.length = 4) (hm : m.primeFactorsList.length = 4)
+    (hgap : n+12=m ∨ m+12=n)
+    (hφ : n.totient+m=m.totient+n) (hσ : σ 1 n+m = σ 1 m+n) :
+    Squarefree n ∨ (∃ p q r : ℕ, p.Prime ∧ q.Prime ∧ r.Prime ∧ p ≠ q ∧ p ≠ r ∧ q ≠ r ∧ n = p^2*q*r) := by
+  rcases A056777CubeFour.four_factor_shape hn with ⟨k,hk⟩ | ⟨p,q,hp,hq,hpq,hn'⟩ |
+    h | ⟨p,q,r,s,hp,hq,hr,hs,hpq,hpr,hps,hqr,hqs,hrs,hn'⟩
+  · have hn0 : n ≠ 0 := by rintro rfl; simp at hn
+    have hm0 : m ≠ 0 := by rintro rfl; simp at hm
+    exfalso
+    rcases hgap with he | he
+    · have hstep : σ 1 (n+12)=σ 1 n+12 := by rw [he]; omega
+      exact (A056777Parity.no_square_shapes_of_sigma_step hn0 hstep).1 (Or.inl ⟨k,hk⟩)
+    · have hstep : σ 1 (m+12)=σ 1 m+12 := by rw [he]; omega
+      exact (A056777Parity.no_square_shapes_of_sigma_step hm0 hstep).2
+        (Or.inl ⟨k,he.trans hk⟩)
+  · exfalso
+    rw [hn'] at hgap hφ hσ
+    exact A056777.no_cube_prime_four_partner hp hq hpq hm hgap hφ hσ
+  · exact Or.inr h
+  · left
+    rw [hn']
+    have hc₁ := (Nat.coprime_primes hp hq).mpr hpq
+    have hc₂ := ((Nat.coprime_primes hp hr).mpr hpr).mul_left
+      ((Nat.coprime_primes hq hr).mpr hqr)
+    have hc₃ := (((Nat.coprime_primes hp hs).mpr hps).mul_left
+      ((Nat.coprime_primes hq hs).mpr hqs)).mul_left ((Nat.coprime_primes hr hs).mpr hrs)
+    exact Nat.squarefree_mul_iff.mpr ⟨hc₃,Nat.squarefree_mul_iff.mpr
+      ⟨hc₂,Nat.squarefree_mul_iff.mpr ⟨hc₁,hp.squarefree,hq.squarefree⟩,hr.squarefree⟩,
+      hs.squarefree⟩
+
+private theorem no_squarefree_squarefree {n : ℕ}
+    (hn : n.primeFactorsList.length = 4) (h₁ : Squarefree n) (h₂ : Squarefree (n+12))
+    (hφ : (n+12).totient=n.totient+12) (hσ : σ 1 (n+12)=σ 1 n+12) : False := by
+  have hn' : 1 < n := by
+    by_contra! h
+    interval_cases n <;> simp at hn
+  have hnnp : ¬n.Prime := by intro hp; simp [Nat.primeFactorsList_prime hp] at hn
+  obtain ⟨p,hp,_,_,hp',he⟩ :=
+    A056777Squarefree.prime_quadruple_of_squarefree_pair hn' hnnp h₁ h₂ hφ hσ
+  have hh := (Nat.perm_primeFactorsList_mul hp.ne_zero hp'.ne_zero).length_eq
+  rw [← he,Nat.primeFactorsList_prime hp,Nat.primeFactorsList_prime hp'] at hh
+  simp [hn] at hh
+
+/-- Both endpoints have one of the two stated factorization shapes, and at least one is
+a square times two other distinct primes. This is the unrestricted 4×4 shape reduction. -/
+theorem remaining_four_four_shapes {n m : ℕ}
+    (hn : n.primeFactorsList.length = 4) (hm : m.primeFactorsList.length = 4)
+    (hgap : n+12=m ∨ m+12=n)
+    (hφ : n.totient+m=m.totient+n) (hσ : σ 1 n+m = σ 1 m+n) :
+    ((∃ p q r : ℕ, p.Prime ∧ q.Prime ∧ r.Prime ∧ p ≠ q ∧ p ≠ r ∧ q ≠ r ∧ n = p^2*q*r) ∧ (∃ p q r : ℕ, p.Prime ∧ q.Prime ∧ r.Prime ∧ p ≠ q ∧ p ≠ r ∧ q ≠ r ∧ m = p^2*q*r)) ∨
+      ((∃ p q r : ℕ, p.Prime ∧ q.Prime ∧ r.Prime ∧ p ≠ q ∧ p ≠ r ∧ q ≠ r ∧ n = p^2*q*r) ∧ Squarefree m) ∨ (Squarefree n ∧ (∃ p q r : ℕ, p.Prime ∧ q.Prime ∧ r.Prime ∧ p ≠ q ∧ p ≠ r ∧ q ≠ r ∧ m = p^2*q*r)) := by
+  rcases squarefree_or_repeated hn hm hgap hφ hσ with hn' | hn' <;>
+    rcases squarefree_or_repeated hm hn hgap.symm hφ.symm hσ.symm with hm' | hm'
+  · exfalso
+    rcases hgap with h | h
+    · rw [← h] at hm' hφ hσ
+      exact no_squarefree_squarefree hn hn' hm' (by omega) (by omega)
+    · rw [← h] at hn' hφ hσ
+      exact no_squarefree_squarefree hm hm' hn' (by omega) (by omega)
+  · exact Or.inr (Or.inr ⟨hn',hm'⟩)
+  · exact Or.inr (Or.inl ⟨hn',hm'⟩)
+  · exact Or.inl ⟨hn',hm'⟩
+
+end A056777FourFour
+end
+
+section
+open scoped ArithmeticFunction.sigma
+open Nat ArithmeticFunction
+
+namespace A056777EvenFourFour
+
+theorem square_prime_formulas {p q : ℕ} (hp : p.Prime) (hq : q.Prime) (hpq : p ≠ q) :
+    (p^2*q).totient + p*(p+q-1) = p^2*q ∧
+    σ 1 (p^2*q) + (p^2*q).totient = 2*(p^2*q)+q+2*p+1 := by
+  have hc := ((Nat.coprime_primes hp hq).mpr hpq).pow_left 2
+  have hφ : (p^2).totient=p*(p-1) := by simpa using Nat.totient_prime_pow_succ hp 1
+  have hσ : σ 1 (p^2)=1+p+p^2 := by
+    simp only [sigma_one_apply_prime_pow hp,Finset.sum_range_succ,Finset.sum_range_zero,
+      pow_zero,pow_one,zero_add]
+  have hσq : σ 1 q=q+1 := by simpa using sigma_one_apply_prime_pow (i:=1) hq
+  rw [Nat.totient_mul hc,hφ,Nat.totient_prime hq,
+    isMultiplicative_sigma.map_mul_of_coprime hc,hσ,hσq]
+  have hp1 := hp.pos
+  have hq1 := hq.pos
+  have hpq1 : 1 ≤ p+q := by omega
+  zify [hp1,hq1,hpq1]
+  constructor <;> ring
+
+private theorem no_repeated_moments (p q r s : ℤ)
+    (hq : 3 ≤ q) (hr : 3 ≤ r) (hs : 3 ≤ s)
+    (hop : p%2=1) (hor : r%2=1)
+    (hK : s+2*r=q+2*p+4)
+    (hF : p*(p+q-1)=r*(r+s-1)+6)
+    (hG : r^2*s=p^2*q+6) : False := by
+  let d := p-r
+  have hp' : p=r+d := by dsimp [d]; ring
+  have hs' : s=q+2*d+4 := by dsimp [d]; omega
+  have hF' : d*(d+q-1)=4*r+6 := by
+    rw [hp',hs'] at hF
+    nlinarith only [hF]
+  have hG' : r^2*(2*d+4)-(2*r*d+d^2)*q=6 := by
+    rw [hp',hs'] at hG
+    nlinarith only [hG]
+  have hdpos : 0 < d := by
+    by_contra! h
+    have hn : 0 ≤ d+q-1 := by
+      by_cases he : d=0
+      · omega
+      · have hd2 : d ≤ -2 := by dsimp [d] at *; omega
+        omega
+    have hneg := mul_nonpos_of_nonpos_of_nonneg h hn
+    nlinarith only [hneg,hF',hr]
+  have hd2 : 2 ≤ d := by dsimp [d] at *; omega
+  have hpoly : d^3+2*d^2*r-d^2+2*d*r^2-6*d*r-6*d-4*r^2-12*r-6=0 := by
+    linear_combination hG'+(2*r+d)*hF'
+  by_cases hd : d=2
+  · rw [hd] at hpoly
+    nlinarith only [hpoly,hr]
+  · let U := d-4
+    let V := r-3
+    have hU : 0 ≤ U := by
+      dsimp [U,d] at *
+      omega
+    have hV : 0 ≤ V := by dsimp [V]; omega
+    have hpos : 0 < U^3+2*U^2*V+17*U^2+2*U*V^2+22*U*V+82*U+
+        4*V^2+20*V+42 := by positivity
+    have he : d^3+2*d^2*r-d^2+2*d*r^2-6*d*r-6*d-4*r^2-12*r-6 =
+        U^3+2*U^2*V+17*U^2+2*U*V^2+22*U*V+82*U+4*V^2+20*V+42 := by
+      dsimp [U,V]
+      ring
+    rw [← he,hpoly] at hpos
+    omega
+
+/-- After removing one factor of two, two repeated-prime length-three cores cannot
+satisfy the shifted totient and divisor-sum equations. -/
+theorem no_odd_repeated_cores {p q r s : ℕ}
+    (hp : p.Prime) (hq : q.Prime) (hr : r.Prime) (hs : s.Prime)
+    (hpq : p ≠ q) (hrs : r ≠ s)
+    (hop : Odd p) (hoq : Odd q) (hor : Odd r) (hos : Odd s)
+    (hg : p^2*q+6=r^2*s)
+    (hφ : (r^2*s).totient=(p^2*q).totient+12)
+    (hσ : σ 1 (r^2*s)=σ 1 (p^2*q)+4) : False := by
+  have ⟨hFp,hKp⟩ := square_prime_formulas hp hq hpq
+  have ⟨hFr,hKr⟩ := square_prime_formulas hr hs hrs
+  have hK : s+2*r=q+2*p+4 := by omega
+  have hF : p*(p+q-1)=r*(r+s-1)+6 := by omega
+  have hq3 : 3 ≤ q := by have := hq.two_le; have := Nat.odd_iff.mp hoq; omega
+  have hr3 : 3 ≤ r := by have := hr.two_le; have := Nat.odd_iff.mp hor; omega
+  have hs3 : 3 ≤ s := by have := hs.two_le; have := Nat.odd_iff.mp hos; omega
+  have hpp := Nat.odd_iff.mp hop
+  have hrr := Nat.odd_iff.mp hor
+  have hpq1 : 1 ≤ p+q := by have := hp.pos; omega
+  have hrs1 : 1 ≤ r+s := by omega
+  zify [hpq1,hrs1] at hK hF hg hq3 hr3 hs3 hpp hrr
+  exact no_repeated_moments p q r s hq3 hr3 hs3 hpp hrr hK hF hg.symm
+
+end A056777EvenFourFour
+end
+
+section
+open scoped ArithmeticFunction.sigma
+open Nat ArithmeticFunction
+
+namespace A056777EvenFourFour
+
+private theorem triple_formulas {r s t : ℕ} (hr : r.Prime) (hs : s.Prime) (ht : t.Prime)
+    (hrs : r ≠ s) (hrt : r ≠ t) (hst : s ≠ t) :
+    (r*s*t).totient+(r*s+r*t+s*t)+1=r*s*t+(r+s+t) ∧
+    σ 1 (r*s*t)+(r*s*t).totient=2*(r*s*t)+2*(r+s+t) := by
+  have hc₁ := (Nat.coprime_primes hr hs).mpr hrs
+  have hc₂ := ((Nat.coprime_primes hr ht).mpr hrt).mul_left ((Nat.coprime_primes hs ht).mpr hst)
+  have hσ {p : ℕ} (hp : p.Prime) : σ 1 p=p+1 := by
+    simpa using sigma_one_apply_prime_pow (i:=1) hp
+  rw [Nat.totient_mul hc₂,Nat.totient_mul hc₁,Nat.totient_prime hr,
+    Nat.totient_prime hs,Nat.totient_prime ht,isMultiplicative_sigma.map_mul_of_coprime hc₂,
+    isMultiplicative_sigma.map_mul_of_coprime hc₁,hσ hr,hσ hs,hσ ht]
+  have hr1 := hr.pos
+  have hs1 := hs.pos
+  have ht1 := ht.pos
+  zify [hr1,hs1,ht1]
+  constructor <;> ring
+
+private theorem first_newton (r s t : ℤ) : 3*(r*s+r*t+s*t) ≤ (r+s+t)^2 := by
+  nlinarith only [sq_nonneg (r-s),sq_nonneg (r-t),sq_nonneg (s-t)]
+
+private theorem second_newton (r s t : ℤ) :
+    3*(r+s+t)*(r*s*t) ≤ (r*s+r*t+s*t)^2 := by
+  nlinarith only [sq_nonneg (r*s-r*t),sq_nonneg (r*s-s*t),sq_nonneg (r*t-s*t)]
+
+private theorem large_margin_plus (p S : ℤ) (hp : 11 ≤ p) (hS : 5*p+4 ≤ S) :
+    0 < 3*S*(p^2*(2*S-2*p-1-4*(1))+6*(1))-
+      ((2*p+1)*S-(p+1)^2-(4*p+6)*(1))^2 := by
+  let U := p-11
+  let V := S-5*p-4
+  have hU : 0 ≤ U := by dsimp [U]; omega
+  have hV : 0 ≤ V := by dsimp [V]; omega
+  let P := 39*U^4+18*U^3*V^1+1731*U^3+2*U^2*V^2+581*U^2*V^1+28850*U^2+40*U^1*V^2+6246*U^1*V^1+214115*U^1+197*V^2+22387*V^1+597440
+  have hpos : 0 < P := by dsimp [P]; positivity
+  have he : 3*S*(p^2*(2*S-2*p-1-4*(1))+6*(1))-
+      ((2*p+1)*S-(p+1)^2-(4*p+6)*(1))^2 = P := by
+    dsimp [P,U,V]
+    ring
+  rw [he]
+  exact hpos
+
+private theorem large_margin_minus (p S : ℤ) (hp : 11 ≤ p) (hS : 5*p+4 ≤ S) :
+    0 < 3*S*(p^2*(2*S-2*p-1-4*(-1))+6*(-1))-
+      ((2*p+1)*S-(p+1)^2-(4*p+6)*(-1))^2 := by
+  let U := p-11
+  let V := S-5*p-4
+  have hU : 0 ≤ U := by dsimp [U]; omega
+  have hV : 0 ≤ V := by dsimp [V]; omega
+  let P := 39*U^4+18*U^3*V^1+1707*U^3+2*U^2*V^2+573*U^2*V^1+27762*U^2+40*U^1*V^2+6006*U^1*V^1+198399*U^1+197*V^2+20655*V^1+524052
+  have hpos : 0 < P := by dsimp [P]; positivity
+  have he : 3*S*(p^2*(2*S-2*p-1-4*(-1))+6*(-1))-
+      ((2*p+1)*S-(p+1)^2-(4*p+6)*(-1))^2 = P := by
+    dsimp [P,U,V]
+    ring
+  rw [he]
+  exact hpos
+
+private theorem shifted_moments_impossible (p q S x z e : ℤ)
+    (hq : 3 ≤ q) (hS : 15 ≤ S) (hp : p=5 ∨ p=7 ∨ 11≤p) (he : e=1 ∨ e=-1)
+    (hQ : q=2*S-2*p-1-4*e)
+    (hX : x=(2*p+1)*S-(p+1)^2-(4*p+6)*e)
+    (hZ : z=p^2*q+6*e)
+    (hN₁ : 3*x≤S^2) (hN₂ : 3*S*z≤x^2) : False := by
+  have hZ' : z=p^2*(2*S-2*p-1-4*e)+6*e := by rw [hZ,hQ]
+  rw [hX] at hN₁ hN₂
+  rw [hZ'] at hN₂
+  rcases hp with rfl | rfl | hp
+  · have hS26 : 26≤S := by
+      by_contra! h
+      have hh := mul_nonneg (show 0≤S-15 by omega) (show 0≤25-S by omega)
+      rcases he with rfl|rfl <;> nlinarith only [hh,hN₁,h]
+    have hn := mul_nonneg (show 0≤S-26 by omega) (show 0≤29*S+431 by omega)
+    rcases he with rfl|rfl <;> nlinarith only [hn,hN₂,hS26]
+  · have hS38 : 38≤S := by
+      by_contra! h
+      have hh := mul_nonneg (show 0≤S-15 by omega) (show 0≤37-S by omega)
+      rcases he with rfl|rfl <;> nlinarith only [hh,hN₁,h]
+    have hn := mul_nonneg (show 0≤S-38 by omega) (show 0≤69*S+1887 by omega)
+    rcases he with rfl|rfl <;> nlinarith only [hn,hN₂,hS38]
+  · have hS' : 5*p+4 ≤ S := by
+      by_contra! h
+      let w := 2*(S-p)
+      have hw : 0≤w := by dsimp [w]; rcases he with rfl|rfl <;> omega
+      have hh := mul_nonneg hw (show 0≤8*p+6-w by dsimp [w]; omega)
+      have hpp := mul_nonneg (show 0≤p-11 by omega) (show 0≤8*p+28 by omega)
+      dsimp [w] at hh
+      rcases he with rfl|rfl <;> nlinarith only [hh,hpp,hN₁,hp]
+    rcases he with rfl|rfl
+    · have hh := large_margin_plus p S hp hS'
+      linarith only [hh,hN₂]
+    · have hh := large_margin_minus p S hp hS'
+      linarith only [hh,hN₂]
+
+private theorem three_core_pair_impossible {q s t : ℕ}
+    (hq : q.Prime) (hs : s.Prime) (ht : t.Prime)
+    (hq3 : q ≠ 3) (hs3 : s ≠ 3) (ht3 : t ≠ 3) (hst : s ≠ t)
+    (hos : Odd s) (hot : Odd t)
+    (h : ((3^2*q+6=3*(s*t)) ∧ (3*(s*t)).totient=(3^2*q).totient+12) ∨
+      ((3*(s*t)+6=3^2*q) ∧ (3^2*q).totient=(3*(s*t)).totient+12)) : False := by
+  have hprime := Nat.prime_three
+  have hcq := ((Nat.coprime_primes hprime hq).mpr hq3.symm).pow_left 2
+  have hcst := (Nat.coprime_primes hs ht).mpr hst
+  have hc := ((Nat.coprime_primes hprime hs).mpr hs3.symm).mul_right
+    ((Nat.coprime_primes hprime ht).mpr ht3.symm)
+  rw [Nat.totient_mul hcq,Nat.totient_mul hc,Nat.totient_mul hcst,
+    show ((3:ℕ)^2).totient=6 by decide,Nat.totient_prime hprime,
+    Nat.totient_prime hq,Nat.totient_prime hs,Nat.totient_prime ht] at h
+  have hq1 := hq.pos
+  have hs1 := hs.pos
+  have ht1 := ht.pos
+  have hs5 : 5≤s := by have := hs.two_le; have := Nat.odd_iff.mp hos; omega
+  have ht5 : 5≤t := by have := ht.two_le; have := Nat.odd_iff.mp hot; omega
+  zify [hq1,hs1,ht1] at h hs5 ht5
+  norm_num at h
+  rcases h with ⟨hg,hφ⟩ | ⟨hg,hφ⟩ <;> nlinarith only [hg,hφ,hs5,ht5]
+
+/-- A repeated-prime odd core and a squarefree odd core cannot have the step of six
+with totient step twelve and divisor-sum step four induced by dividing even endpoints by two. -/
+theorem no_odd_mixed_cores {p q r s t : ℕ}
+    (hp : p.Prime) (hq : q.Prime) (hr : r.Prime) (hs : s.Prime) (ht : t.Prime)
+    (hpq : p ≠ q) (hrs : r ≠ s) (hrt : r ≠ t) (hst : s ≠ t)
+    (hop : Odd p) (hoq : Odd q) (hor : Odd r) (hos : Odd s) (hot : Odd t)
+    (hstep : (p^2*q+6=r*s*t ∧ (r*s*t).totient=(p^2*q).totient+12 ∧
+      σ 1 (r*s*t)=σ 1 (p^2*q)+4) ∨
+      (r*s*t+6=p^2*q ∧ (p^2*q).totient=(r*s*t).totient+12 ∧
+      σ 1 (p^2*q)=σ 1 (r*s*t)+4)) : False := by
+  by_cases hp3 : p=3
+  · subst p
+    have hg := hstep.imp And.left And.left
+    have hd : 3 ∣ r*s*t := by norm_num at hg; omega
+    simp only [Nat.prime_three.dvd_mul] at hd
+    have eq_three {a : ℕ} (ha : a.Prime) (h : 3 ∣ a) : a=3 := by
+      rcases (Nat.dvd_prime ha).mp h with h | h
+      · omega
+      · exact h.symm
+    rcases hd with (hd|hd)|hd
+    · obtain rfl := eq_three hr hd
+      rw [show 3*s*t=3*(s*t) by ring] at hstep
+      exact three_core_pair_impossible hq hs ht hpq.symm hrs.symm hrt.symm hst hos hot
+        (hstep.imp (fun h => ⟨h.1,h.2.1⟩) (fun h => ⟨h.1,h.2.1⟩))
+    · obtain rfl := eq_three hs hd
+      rw [show r*3*t=3*(r*t) by ring] at hstep
+      exact three_core_pair_impossible hq hr ht hpq.symm hrs hst.symm hrt hor hot
+        (hstep.imp (fun h => ⟨h.1,h.2.1⟩) (fun h => ⟨h.1,h.2.1⟩))
+    · obtain rfl := eq_three ht hd
+      rw [show r*s*3=3*(r*s) by ring] at hstep
+      exact three_core_pair_impossible hq hr hs hpq.symm hrt hst hrs hor hos
+        (hstep.imp (fun h => ⟨h.1,h.2.1⟩) (fun h => ⟨h.1,h.2.1⟩))
+  have hpclass : p=5 ∨ p=7 ∨ 11≤p := by
+    have hp2 := hp.two_le
+    have hpo := Nat.odd_iff.mp hop
+    have hp9 : p ≠ 9 := fun he => (by decide : ¬Nat.Prime 9) (he ▸ hp)
+    omega
+  have hq3 : 3≤q := by have := hq.two_le; have := Nat.odd_iff.mp hoq; omega
+  have hS : 15≤r+s+t := by
+    have := hr.two_le
+    have := hs.two_le
+    have := ht.two_le
+    have := Nat.odd_iff.mp hor
+    have := Nat.odd_iff.mp hos
+    have := Nat.odd_iff.mp hot
+    omega
+  have ⟨hF,hK⟩ := square_prime_formulas hp hq hpq
+  have ⟨hF',hK'⟩ := triple_formulas hr hs ht hrs hrt hst
+  have hp1 := hp.pos
+  have hq1 := hq.pos
+  have hpq1 : 1 ≤ p+q := by omega
+  zify [hp1,hq1,hpq1] at hpclass hq3 hS hF hK hF' hK' hstep
+  let S : ℤ := r+s+t
+  let x : ℤ := r*s+r*t+s*t
+  let z : ℤ := r*s*t
+  have hN₁ : 3*x≤S^2 := first_newton r s t
+  have hN₂ : 3*S*z≤x^2 := second_newton r s t
+  rcases hstep with ⟨hg,hφ,hσ⟩|⟨hg,hφ,hσ⟩
+  · have he : (1:ℤ)=1 ∨ (1:ℤ)=-1 := Or.inl rfl
+    exact shifted_moments_impossible p q S x z 1 hq3 hS hpclass he
+      (by dsimp [S]; omega) (by dsimp [x,S]; nlinarith only [hF,hK,hF',hK',hg,hφ,hσ])
+      (by dsimp [z]; omega) hN₁ hN₂
+  · have he : (-1:ℤ)=1 ∨ (-1:ℤ)=-1 := Or.inr rfl
+    exact shifted_moments_impossible p q S x z (-1) hq3 hS hpclass he
+      (by dsimp [S]; omega) (by dsimp [x,S]; nlinarith only [hF,hK,hF',hK',hg,hφ,hσ])
+      (by dsimp [z]; omega) hN₁ hN₂
+
+end A056777EvenFourFour
+end
+
+section
+open scoped ArithmeticFunction.sigma
+open Nat ArithmeticFunction
+
+namespace A056777EvenFourFour
+
+private theorem seven_dvd_sigma_of_four_dvd {n : ℕ}
+    (h : Squarefree n ∨ (∃ p q r : ℕ, p.Prime ∧ q.Prime ∧ r.Prime ∧ p ≠ q ∧ p ≠ r ∧ q ≠ r ∧ n = p^2*q*r)) (hd : 4 ∣ n) : 7 ∣ σ 1 n := by
+  rcases h with hs | ⟨p,q,r,hp,hq,hr,hpq,hpr,hqr,rfl⟩
+  · exact ((Nat.squarefree_iff_prime_squarefree.mp hs 2 Nat.prime_two) hd).elim
+  have hp2 : p=2 := by
+    by_contra hne
+    have hc := (((Nat.coprime_primes Nat.prime_two hp).mpr (Ne.symm hne)).pow_left 2).pow_right 2
+    rw [mul_assoc] at hd
+    have hd' : 4 ∣ q*r := hc.dvd_of_dvd_mul_left hd
+    have hs : Squarefree (q*r) := Nat.squarefree_mul_iff.mpr
+      ⟨(Nat.coprime_primes hq hr).mpr hqr,hq.squarefree,hr.squarefree⟩
+    exact (Nat.squarefree_iff_prime_squarefree.mp hs 2 Nat.prime_two) hd'
+  subst p
+  have hc := (((Nat.coprime_primes Nat.prime_two hq).mpr hpq).mul_right
+    ((Nat.coprime_primes Nat.prime_two hr).mpr hpr)).pow_left 2
+  rw [mul_assoc,isMultiplicative_sigma.map_mul_of_coprime hc,show σ 1 ((2:ℕ)^2)=7 by decide]
+  exact dvd_mul_right _ _
+
+private theorem length_mul_two {n : ℕ} (hn : n ≠ 0) :
+    (2*n).primeFactorsList.length=1+n.primeFactorsList.length := by
+  have hh := (Nat.perm_primeFactorsList_mul (by decide : (2:ℕ)≠0) hn).length_eq
+  rwa [Nat.primeFactorsList_two,List.length_append,List.length_singleton] at hh
+
+private theorem core_nonsquarefree {a : ℕ}
+    (ha : Odd a) (h : (∃ p q r : ℕ, p.Prime ∧ q.Prime ∧ r.Prime ∧ p ≠ q ∧ p ≠ r ∧ q ≠ r ∧ (2*a) = p^2*q*r)) : ¬Squarefree a := by
+  intro hs
+  exact A056777FourFour.repeated_not_squarefree h ((Nat.squarefree_mul ha.coprime_two_left).mpr ⟨Nat.prime_two.squarefree,hs⟩)
+
+private theorem core_repeated_shape {a m : ℕ}
+    (ha : Odd a) (hlen : a.primeFactorsList.length=3) (hns : ¬Squarefree a)
+    (hm : m.primeFactorsList.length=4)
+    (hgap : 2*a+12=m ∨ m+12=2*a)
+    (hφ : (2*a).totient+m=m.totient+2*a) (hσ : σ 1 (2*a)+m=σ 1 m+2*a) :
+    ∃ p q : ℕ, p.Prime ∧ q.Prime ∧ p≠q ∧ Odd p ∧ Odd q ∧ a=p^2*q := by
+  obtain ⟨p,q,hp,hq,hn⟩ :=
+    A056777RepeatedTriple.pow_two_mul_of_nonsquarefree_length_three hlen hns
+  have hos := ha
+  rw [hn] at hos
+  simp only [pow_two,Nat.odd_mul] at hos
+  have hpq : p ≠ q := by
+    rintro rfl
+    have h2p : p ≠ 2 := by have := Nat.odd_iff.mp hos.1.1; omega
+    have hh : 2*a=p^3*2 := by rw [hn]; ring
+    rw [hh] at hgap hφ hσ
+    exact A056777.no_cube_prime_four_partner hp Nat.prime_two h2p hm hgap hφ hσ
+  exact ⟨p,q,hp,hq,hpq,hos.1.1,hos.2,hn⟩
+
+private theorem core_squarefree_shape {a : ℕ}
+    (ha : Odd a) (hlen : a.primeFactorsList.length=3) (hs : Squarefree a) :
+    ∃ r s t : ℕ, r.Prime ∧ s.Prime ∧ t.Prime ∧
+      r≠s ∧ r≠t ∧ s≠t ∧ Odd r ∧ Odd s ∧ Odd t ∧ a=r*s*t := by
+  have hprod := Nat.prod_primeFactorsList hs.ne_zero
+  have hnd := hs.nodup_primeFactorsList
+  obtain ⟨r,s,t,heq⟩ : ∃ r s t, a.primeFactorsList=[r,s,t] := by
+    generalize hl : a.primeFactorsList = l at hlen ⊢
+    rcases l with _ | ⟨r,l⟩
+    · simp at hlen
+    rcases l with _ | ⟨s,l⟩
+    · simp at hlen
+    rcases l with _ | ⟨t,l⟩
+    · simp at hlen
+    rcases l with _ | ⟨k,l⟩
+    · exact ⟨r,s,t,rfl⟩
+    · simp at hlen
+  have hr := Nat.prime_of_mem_primeFactorsList (n:=a) (p:=r) (by simp [heq])
+  have hsp := Nat.prime_of_mem_primeFactorsList (n:=a) (p:=s) (by simp [heq])
+  have ht := Nat.prime_of_mem_primeFactorsList (n:=a) (p:=t) (by simp [heq])
+  simp only [heq,List.nodup_cons,List.mem_cons,not_or,List.not_mem_nil,not_false_eq_true,
+    List.nodup_nil,and_true] at hnd
+  have hform : a=r*s*t := by simpa [heq,mul_assoc] using hprod.symm
+  rw [hform] at ha
+  simp only [Nat.odd_mul] at ha
+  exact ⟨r,s,t,hr,hsp,ht,hnd.1.1,hnd.1.2,hnd.2,ha.1.1,ha.1.2,ha.2,hform⟩
+
+/-- No even endpoints with four prime factors each can satisfy the A056777 jump conditions. -/
+theorem no_even_four_four_pair {n m : ℕ} (he : Even n)
+    (hn : n.primeFactorsList.length=4) (hm : m.primeFactorsList.length=4)
+    (hgap : n+12=m ∨ m+12=n)
+    (hφ : n.totient+m=m.totient+n) (hσ : σ 1 n+m=σ 1 m+n) : False := by
+  by_cases hn4 : 4 ∣ n
+  · have hm4 : 4 ∣ m := by omega
+    have hs := A056777FourFour.remaining_four_four_shapes hn hm hgap hφ hσ
+    have han : Squarefree n ∨ (∃ p q r : ℕ, p.Prime ∧ q.Prime ∧ r.Prime ∧ p ≠ q ∧ p ≠ r ∧ q ≠ r ∧ n = p^2*q*r) := by
+      rcases hs with h|h|h
+      · exact Or.inr h.1
+      · exact Or.inr h.1
+      · exact Or.inl h.1
+    have ham : Squarefree m ∨ (∃ p q r : ℕ, p.Prime ∧ q.Prime ∧ r.Prime ∧ p ≠ q ∧ p ≠ r ∧ q ≠ r ∧ m = p^2*q*r) := by
+      rcases hs with h|h|h
+      · exact Or.inr h.2
+      · exact Or.inl h.2
+      · exact Or.inr h.2
+    have hsn := seven_dvd_sigma_of_four_dvd han hn4
+    have hsm := seven_dvd_sigma_of_four_dvd ham hm4
+    clear hs han ham
+    omega
+  have hme : Even m := Nat.even_iff.mpr (by have := Nat.even_iff.mp he; omega)
+  obtain ⟨a,ha⟩ := he
+  obtain ⟨b,hb⟩ := hme
+  have hna : n=2*a := by omega
+  have hmb : m=2*b := by omega
+  have hoa : Odd a := Nat.odd_iff.mpr (by omega)
+  have hob : Odd b := Nat.odd_iff.mpr (by omega)
+  have ha0 : a≠0 := by have := Nat.odd_iff.mp hoa; omega
+  have hb0 : b≠0 := by have := Nat.odd_iff.mp hob; omega
+  have hal : a.primeFactorsList.length=3 := by
+    rw [hna,length_mul_two ha0] at hn
+    omega
+  have hbl : b.primeFactorsList.length=3 := by
+    rw [hmb,length_mul_two hb0] at hm
+    omega
+  have hcore :
+      (a+6=b ∧ b.totient=a.totient+12 ∧ σ 1 b=σ 1 a+4) ∨
+      (b+6=a ∧ a.totient=b.totient+12 ∧ σ 1 a=σ 1 b+4) := by
+    have hca := hoa.coprime_two_left
+    have hcb := hob.coprime_two_left
+    rw [hna,hmb,Nat.totient_mul hca,Nat.totient_mul hcb,Nat.totient_prime Nat.prime_two] at hφ
+    norm_num at hφ
+    rw [hna,hmb,isMultiplicative_sigma.map_mul_of_coprime hca,
+      isMultiplicative_sigma.map_mul_of_coprime hcb,show σ 1 2=3 by decide] at hσ
+    omega
+  have har (h : (∃ p q r : ℕ, p.Prime ∧ q.Prime ∧ r.Prime ∧ p ≠ q ∧ p ≠ r ∧ q ≠ r ∧ n = p^2*q*r)) :=
+    core_repeated_shape hoa hal (core_nonsquarefree hoa (hna ▸ h)) hm
+      (hna ▸ hgap) (hna ▸ hφ) (hna ▸ hσ)
+  have hbr (h : (∃ p q r : ℕ, p.Prime ∧ q.Prime ∧ r.Prime ∧ p ≠ q ∧ p ≠ r ∧ q ≠ r ∧ m = p^2*q*r)) :=
+    core_repeated_shape hob hbl (core_nonsquarefree hob (hmb ▸ h)) hn
+      (hmb ▸ hgap.symm) (hmb ▸ hφ.symm) (hmb ▸ hσ.symm)
+  have hs := A056777FourFour.remaining_four_four_shapes hn hm hgap hφ hσ
+  rcases hs with ⟨han,hbn⟩ | ⟨han,hbn⟩ | ⟨han,hbn⟩
+  · obtain ⟨p,q,hp,hq,hpq,hop,hoq,ha'⟩ := har han
+    obtain ⟨r,s,hr,hs,hrs,hor,hos,hb'⟩ := hbr hbn
+    rw [ha',hb'] at hcore
+    rcases hcore with ⟨hg,hφ',hσ'⟩ | ⟨hg,hφ',hσ'⟩
+    · exact no_odd_repeated_cores hp hq hr hs hpq hrs hop hoq hor hos hg hφ' hσ'
+    · exact no_odd_repeated_cores hr hs hp hq hrs hpq hor hos hop hoq hg hφ' hσ'
+  · obtain ⟨p,q,hp,hq,hpq,hop,hoq,ha'⟩ := har han
+    have hfree : Squarefree b := (hmb ▸ hbn).squarefree_of_dvd (dvd_mul_left b 2)
+    obtain ⟨r,s,t,hr,hs,ht,hrs,hrt,hst,hor,hos,hot,hb'⟩ :=
+      core_squarefree_shape hob hbl hfree
+    rw [ha',hb'] at hcore
+    exact no_odd_mixed_cores hp hq hr hs ht hpq hrs hrt hst hop hoq hor hos hot hcore
+  · obtain ⟨p,q,hp,hq,hpq,hop,hoq,hb'⟩ := hbr hbn
+    have hfree : Squarefree a := (hna ▸ han).squarefree_of_dvd (dvd_mul_left a 2)
+    obtain ⟨r,s,t,hr,hs,ht,hrs,hrt,hst,hor,hos,hot,ha'⟩ :=
+      core_squarefree_shape hoa hal hfree
+    rw [ha',hb'] at hcore
+    exact no_odd_mixed_cores hp hq hr hs ht hpq hrs hrt hst hop hoq hor hos hot hcore.symm
+
+/-- Every remaining 4×4 candidate is odd at both endpoints, and at least one endpoint is
+a square times two other distinct primes. -/
+theorem odd_four_four_residual {n m : ℕ}
+    (hn : n.primeFactorsList.length=4) (hm : m.primeFactorsList.length=4)
+    (hgap : n+12=m ∨ m+12=n)
+    (hφ : n.totient+m=m.totient+n) (hσ : σ 1 n+m=σ 1 m+n) :
+    Odd n ∧ Odd m ∧
+      (((∃ p q r : ℕ, p.Prime ∧ q.Prime ∧ r.Prime ∧ p ≠ q ∧ p ≠ r ∧ q ≠ r ∧ n = p^2*q*r) ∧ (∃ p q r : ℕ, p.Prime ∧ q.Prime ∧ r.Prime ∧ p ≠ q ∧ p ≠ r ∧ q ≠ r ∧ m = p^2*q*r)) ∨
+        ((∃ p q r : ℕ, p.Prime ∧ q.Prime ∧ r.Prime ∧ p ≠ q ∧ p ≠ r ∧ q ≠ r ∧ n = p^2*q*r) ∧ Squarefree m) ∨
+        (Squarefree n ∧ (∃ p q r : ℕ, p.Prime ∧ q.Prime ∧ r.Prime ∧ p ≠ q ∧ p ≠ r ∧ q ≠ r ∧ m = p^2*q*r))) := by
+  have hnodd := Nat.not_even_iff_odd.mp
+    (fun he => no_even_four_four_pair he hn hm hgap hφ hσ)
+  have hmod := Nat.odd_iff.mp hnodd
+  exact ⟨hnodd,Nat.odd_iff.mpr (by omega),
+    A056777FourFour.remaining_four_four_shapes hn hm hgap hφ hσ⟩
+
+end A056777EvenFourFour
+end
+
+section
+open scoped ArithmeticFunction.sigma
+
+namespace A056777FourFour
+
+private theorem repeated_distinct_count {n : ℕ} (h : (∃ p q r : ℕ, p.Prime ∧ q.Prime ∧ r.Prime ∧ p ≠ q ∧ p ≠ r ∧ q ≠ r ∧ n = p^2*q*r)) :
+    3 ≤ n.primeFactors.card := by
+  obtain ⟨p,q,r,hp,hq,hr,hpq,hpr,hqr,rfl⟩ := h
+  have hz : p^2*q*r ≠ 0 := by
+    exact mul_ne_zero (mul_ne_zero (pow_ne_zero _ hp.ne_zero) hq.ne_zero) hr.ne_zero
+  have hset : ({p,q,r} : Finset ℕ) ⊆ (p^2*q*r).primeFactors := by
+    intro a ha
+    simp only [Finset.mem_insert,Finset.mem_singleton] at ha
+    rcases ha with h|h|h <;> subst a
+    · exact Nat.mem_primeFactors.mpr ⟨hp,⟨p*q*r,by ring⟩,hz⟩
+    · exact Nat.mem_primeFactors.mpr ⟨hq,⟨p^2*r,by ring⟩,hz⟩
+    · exact Nat.mem_primeFactors.mpr ⟨hr,⟨p^2*q,by ring⟩,hz⟩
+  have hl := Finset.card_le_card hset
+  simpa [hpq,hpr,hqr] using hl
+
+private theorem squarefree_distinct_count {n : ℕ} (hn : n.primeFactorsList.length=4)
+    (hs : Squarefree n) : 3 ≤ n.primeFactors.card := by
+  rw [← Nat.toFinset_factors,List.toFinset_card_of_nodup hs.nodup_primeFactorsList,hn]
+  decide
+
+/-- If both endpoints are odd and each has at least three distinct prime factors,
+their totients cannot have a step of twelve when the arguments do. -/
+theorem no_odd_three_distinct_pair {n m : ℕ} (hn : Odd n) (hm : Odd m)
+    (hcn : 3 ≤ n.primeFactors.card) (hcm : 3 ≤ m.primeFactors.card)
+    (hgap : n+12=m ∨ m+12=n) (hφ : n.totient+m=m.totient+n) : False := by
+  have hnd : 8 ∣ n.totient :=
+    (pow_dvd_pow 2 hcn).trans (A056777OddFour.two_pow_card_dvd_totient hn)
+  have hmd : 8 ∣ m.totient :=
+    (pow_dvd_pow 2 hcm).trans (A056777OddFour.two_pow_card_dvd_totient hm)
+  omega
+
+end A056777FourFour
+
+/-- The A056777 jump conditions exclude every pair of endpoints with exactly
+four prime factors each, counted with multiplicity. Either endpoint can be smaller. -/
+theorem A056777.no_four_four_pair {n m : ℕ}
+    (hn : n.primeFactorsList.length=4) (hm : m.primeFactorsList.length=4)
+    (hgap : n+12=m ∨ m+12=n)
+    (hφ : n.totient+m=m.totient+n) (hσ : σ 1 n+m=σ 1 m+n) : False := by
+  obtain ⟨ho,ho',hshape⟩ := A056777EvenFourFour.odd_four_four_residual hn hm hgap hφ hσ
+  apply A056777FourFour.no_odd_three_distinct_pair ho ho' _ _ hgap hφ
+  · rcases hshape with h|h|h
+    · exact A056777FourFour.repeated_distinct_count h.1
+    · exact A056777FourFour.repeated_distinct_count h.1
+    · exact A056777FourFour.squarefree_distinct_count hn h.1
+  · rcases hshape with h|h|h
+    · exact A056777FourFour.repeated_distinct_count h.2
+    · exact A056777FourFour.squarefree_distinct_count hm h.2
+    · exact A056777FourFour.repeated_distinct_count h.2
+end
+
 open scoped ArithmeticFunction.sigma
 open Nat Finset ArithmeticFunction OeisA56777
 
@@ -2921,6 +4120,7 @@ def H1 : Prop :=
   ∀ n : ℕ, A n →
     4 ≤ n.primeFactorsList.length →
     4 ≤ (n + 12).primeFactorsList.length →
+    (5 ≤ n.primeFactorsList.length ∨ 5 ≤ (n + 12).primeFactorsList.length) →
     (¬ Squarefree n ∨ ¬ Squarefree (n + 12)) →
     1 ≤ (n.primeFactors.filter fun p => p ≠ 2 ∧ Odd (n.factorization p)).card →
     1 ≤ ((n + 12).primeFactors.filter fun p =>
@@ -2968,6 +4168,10 @@ theorem main : H1 → H2 → type_of% @OeisA56777.comesFromPrimeQuadruple_of_a :
     · by_cases h₄ : n.primeFactorsList.length = 4
       · exact no_three_four_pair h₃ h₄ (Or.inr rfl) (by omega) (by omega)
       exact h2 n ha (Or.inr ⟨h₃,by omega⟩) hrepeat hc₁ hc₂ hsupport
-    exact h1 n ha (by omega) (by omega) hrepeat hc₁ hc₂ hsupport
+    by_cases hlarge : 5 ≤ n.primeFactorsList.length ∨ 5 ≤ (n + 12).primeFactorsList.length
+    · exact h1 n ha (by omega) (by omega) hlarge hrepeat hc₁ hc₂ hsupport
+    have hn4 : n.primeFactorsList.length = 4 := by omega
+    have hm4 : (n + 12).primeFactorsList.length = 4 := by omega
+    exact A056777.no_four_four_pair hn4 hm4 (Or.inl rfl) (by omega) (by omega)
 
 end OMA.R_OeisA56777_comesFromPrimeQuadruple_of_a_R2
