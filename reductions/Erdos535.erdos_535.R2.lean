@@ -12,7 +12,7 @@ Erdős's 1964 prime-power reduction of Problem 535.
 `K = ⌊4 log N / log log N⌋` gives `f r N ≤ N ^ ((4 + 4 log C) / log log N)`.
 -/
 
-namespace OMA.R_Erdos535_erdos_535_R1
+namespace OMA.R_Erdos535_erdos_535_R2
 
 open Erdos535 Filter Real
 
@@ -237,4 +237,4 @@ theorem main : H1 → H2 → type_of% @Erdos535.erdos_535 := by
     _ ≤ 4 * x / log x + (4 * x / log x) * log (C : ℝ) := add_le_add hsmall hbig
     _ = _ := by ring
 
-end OMA.R_Erdos535_erdos_535_R1
+end OMA.R_Erdos535_erdos_535_R2
