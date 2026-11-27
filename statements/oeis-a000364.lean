@@ -4,23 +4,27 @@ import Mathlib
 # A000364: Periodicity of the secant numbers
 
 Source: https://oeis.org/A000364, conjecture by Peter Bala (May 8, 2023).
-The counting definition uses David Callan's description of A000364 on the same page.
+The definition uses the recurrence credited to Ralf Stephan in the same entry.
+See https://www.trureturing.org/research/oeis-a000364-secant-number-pure-period-refutation/
+for the published counterexample modulo 27.
 -/
+
+open scoped BigOperators
 
 namespace OMA.S_oeis_a000364
 
-/-- Count the down-up permutations of `2 * n` elements, starting with a descent. -/
-def secantNumber (n : ℕ) : ℕ :=
-  (Finset.univ.filter fun σ : Equiv.Perm (Fin (2 * n)) =>
-    ∀ i : Fin (2 * n),
-      if h : i.val + 1 < 2 * n then
-        if Even i.val then σ ⟨i.val + 1, h⟩ < σ i else σ i < σ ⟨i.val + 1, h⟩
-      else True).card
+/-- The secant numbers, indexed from zero. -/
+def secantNumber : ℕ → ℤ
+  | 0 => 1
+  | n + 1 => ∑ j : Fin (n + 1),
+      (-1 : ℤ) ^ (j.val + 2) * ((2 * (n + 1)).choose (2 * (j.val + 1)) : ℤ) *
+        secantNumber (n - j.val)
+termination_by n => n
 
-/-- For each positive modulus, A000364 from index one has a period dividing the totient. -/
+/-- Bala's original conjecture. Modulus 27 is a counterexample. -/
 theorem main :
     ∀ k : ℕ, 0 < k → ∃ p : ℕ, 0 < p ∧ p ∣ k.totient ∧
-      ∀ n : ℕ, 1 ≤ n → Nat.ModEq k (secantNumber (n + p)) (secantNumber n) := by
+      ∀ n : ℕ, 1 ≤ n → Int.ModEq k (secantNumber (n + p)) (secantNumber n) := by
   sorry
 
 end OMA.S_oeis_a000364
