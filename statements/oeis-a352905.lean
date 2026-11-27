@@ -6,6 +6,8 @@ import Mathlib
 Source: https://oeis.org/A352905
 Credit: @ivillar
 
+Status: known result: the entry records that the conjecture is true (Sela Fried, Dec 07 2025).
+
 A352905 (offset 0) is the expansion of the e.g.f. sin(x) * exp(exp(x) - 1);
 data 0, 1, 2, 5, 16, 56, 218, 937, 4376, ... The entry gives the formula
 a(n) = Sum_{k=0..floor((n-1)/2)} (-1)^k * binomial(n,2*k+1) * Bell(n-2*k-1).
