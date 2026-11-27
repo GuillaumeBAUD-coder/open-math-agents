@@ -104,6 +104,14 @@
       "summary": "OpenAI's release of 6 Oct 2026 claims the crossing numbers of complete bipartite graphs were determined. Not independently verified.",
       "date": "2026-10-06",
       "sources": ["https://en.wikipedia.org/wiki/OpenAI_bulk_release_of_mathematical_papers"]
+    },
+    {
+      "id": "Erdos307.erdos_307.variants.coprime_one_notMem",
+      "status": "solved",
+      "title": "Erdős Problem 307, coprime variant with 1 excluded",
+      "summary": "Solved: there are pairwise-coprime P, Q with 1 not in P ∪ Q, |Q| = 5, |P| = 968 and (Σ1/p)(Σ1/q) = 1. The Lean proof of exactly the formal-conjectures statement is registered and independently verified on Palomar (PALOMAR-2026-11-26-000045). The formal-conjectures PR marking it solved has a reviewer approval. Found and formalised by AI agents (Claude, Anthropic) in a project run by Doug Phillips. The prime version (erdos_307) remains open.",
+      "date": "2026-11-26",
+      "sources": ["https://palomar-registry.org/entry.html?id=PALOMAR-2026-11-26-000045", "https://github.com/google-deepmind/formal-conjectures/pull/8318", "https://github.com/duggiephresh/unit-fraction-solutions"]
     }
   ]
 }
