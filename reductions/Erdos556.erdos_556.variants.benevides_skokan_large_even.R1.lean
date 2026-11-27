@@ -1669,7 +1669,7 @@ lemma append_reserved_connector {V : Type*} (G : SimpleGraph V) {a b : V} (L J :
   have heq : Q.dropLast ++ [e] = b :: J := List.dropLast_concat_getLast hQ
   let M := L ++ Q.dropLast
   have hjoin : a :: (M ++ [e]) = (a :: (L ++ [b])) ++ J := by
-    simp only [M,List.append_assoc,heq,List.cons_append,List.singleton_append]
+    simp only [M,List.append_assoc,heq,List.cons_append,List.nil_append]
   refine ⟨M, ?_, ?_, ?_, ?_⟩
   · simp [M,Q]
   · rw [hjoin]
