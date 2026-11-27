@@ -46,29 +46,28 @@ lemma OMA.petersen_five_le_length {a : PetersenVertex} (w : petersenGraph.Walk a
     omega
 
 theorem OMA.solution : type_of% @WrittenOnTheWallII.Test.petersen_girth := by
-  have hcyc : (Walk.cons
-      (show petersenGraph.Adj (⟨{0, 1}, by decide⟩ : PetersenVertex) ⟨{2, 3}, by decide⟩ by decide)
-      (Walk.cons
-      (show petersenGraph.Adj (⟨{2, 3}, by decide⟩ : PetersenVertex) ⟨{0, 4}, by decide⟩ by decide)
-      (Walk.cons
-      (show petersenGraph.Adj (⟨{0, 4}, by decide⟩ : PetersenVertex) ⟨{1, 2}, by decide⟩ by decide)
-      (Walk.cons
-      (show petersenGraph.Adj (⟨{1, 2}, by decide⟩ : PetersenVertex) ⟨{3, 4}, by decide⟩ by decide)
-      (Walk.cons
-      (show petersenGraph.Adj (⟨{3, 4}, by decide⟩ : PetersenVertex) ⟨{0, 1}, by decide⟩ by decide)
-      Walk.nil))))).IsCycle := by
+  let a : PetersenVertex := ⟨{0, 1}, by decide⟩
+  let b : PetersenVertex := ⟨{2, 3}, by decide⟩
+  let c : PetersenVertex := ⟨{0, 4}, by decide⟩
+  let d : PetersenVertex := ⟨{1, 2}, by decide⟩
+  let e : PetersenVertex := ⟨{3, 4}, by decide⟩
+  let cycle : petersenGraph.Walk a a :=
+    .cons (show petersenGraph.Adj a b by decide) <|
+    .cons (show petersenGraph.Adj b c by decide) <|
+    .cons (show petersenGraph.Adj c d by decide) <|
+    .cons (show petersenGraph.Adj d e by decide) <|
+    .cons (show petersenGraph.Adj e a by decide) .nil
+  have hcycle : cycle.IsCycle := by
     rw [Walk.isCycle_def]
     refine ⟨?_, ?_, ?_⟩
-    · rw [Walk.isTrail_def]; decide
-    · simp
+    · rw [Walk.isTrail_def]
+      decide
+    · simp [cycle]
     · decide
-  have hle : petersenGraph.egirth ≤ 5 := by
-    simpa using egirth_le_length hcyc
-  have hge : (5 : ℕ∞) ≤ petersenGraph.egirth := by
+  have hg : petersenGraph.egirth = 5 := by
+    refine le_antisymm (egirth_le_length hcycle) ?_
     rw [le_egirth]
-    intro a w hw
-    exact_mod_cast OMA.petersen_five_le_length w hw
-  have heq : petersenGraph.egirth = 5 := le_antisymm hle hge
-  show petersenGraph.girth = 5
-  rw [girth, heq]
+    exact fun a w hw => by exact_mod_cast OMA.petersen_five_le_length w hw
+  change petersenGraph.girth = 5
+  rw [girth, hg]
   rfl
