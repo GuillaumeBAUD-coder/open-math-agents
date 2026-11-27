@@ -58,6 +58,7 @@ private lemma bound_small_step {p a0 : ℕ} (hp : 0 < p)
     rw [div_le_div_iff₀ (pow_pos hp0 a) (pow_pos hp0 a0)]
     norm_cast
     have ha' : a0 ≤ a := le_of_lt ha
+    clear ha
     induction a, ha' using Nat.le_induction with
     | base => exact le_rfl
     | succ k hk ih =>
@@ -95,7 +96,7 @@ private lemma prime_bound (p : ℕ) (hp : p.Prime) (a : ℕ) :
   unfold c
   split_ifs with h2 h3 h5 h7 h11 h64
   · subst h2
-    refine bound_small_step (p := 2) (a0 := 8) (by decide) (fun k hk => ?_) (fun k hk => ?_) a
+    refine (bound_small_step (p := 2) (a0 := 8) (by decide) (fun k hk => ?_) (fun k hk => ?_) a).trans (by norm_num)
     · zify
       have h : (2 : ℤ) * ((k : ℤ) + 1) ^ 6 = ((k : ℤ) + 2) ^ 6 +
           ((k : ℤ) ^ 6 - 6 * (k : ℤ) ^ 5 - 45 * (k : ℤ) ^ 4 - 120 * (k : ℤ) ^ 3 -
@@ -104,7 +105,7 @@ private lemma prime_bound (p : ℕ) (hp : p.Prime) (a : ℕ) :
       nlinarith [sq_nonneg ((k : ℤ) - 8)]
     · interval_cases k <;> norm_num
   · subst h3
-    refine bound_small_step (p := 3) (a0 := 4) (by decide) (fun k hk => ?_) (fun k hk => ?_) a
+    refine (bound_small_step (p := 3) (a0 := 4) (by decide) (fun k hk => ?_) (fun k hk => ?_) a).trans (by norm_num)
     · zify
       have hk4 : (4 : ℤ) ≤ k := by exact_mod_cast hk
       have h : (3 : ℤ) * ((k : ℤ) + 1) ^ 6 - ((k : ℤ) + 2) ^ 6 =
@@ -113,7 +114,7 @@ private lemma prime_bound (p : ℕ) (hp : p.Prime) (a : ℕ) :
       nlinarith [sq_nonneg ((k : ℤ) - 4)]
     · interval_cases k <;> norm_num
   · subst h5
-    refine bound_small_step (p := 5) (a0 := 3) (by decide) (fun k hk => ?_) (fun k hk => ?_) a
+    refine (bound_small_step (p := 5) (a0 := 3) (by decide) (fun k hk => ?_) (fun k hk => ?_) a).trans (by norm_num)
     · zify
       have hk3 : (3 : ℤ) ≤ k := by exact_mod_cast hk
       have h : (5 : ℤ) * ((k : ℤ) + 1) ^ 6 - ((k : ℤ) + 2) ^ 6 =
@@ -122,7 +123,7 @@ private lemma prime_bound (p : ℕ) (hp : p.Prime) (a : ℕ) :
       nlinarith [sq_nonneg ((k : ℤ) - 3)]
     · interval_cases k <;> norm_num
   · subst h7
-    refine bound_small_step (p := 7) (a0 := 2) (by decide) (fun k hk => ?_) (fun k hk => ?_) a
+    refine (bound_small_step (p := 7) (a0 := 2) (by decide) (fun k hk => ?_) (fun k hk => ?_) a).trans (by norm_num)
     · zify
       have hk2 : (2 : ℤ) ≤ k := by exact_mod_cast hk
       have h : (7 : ℤ) * ((k : ℤ) + 1) ^ 6 - ((k : ℤ) + 2) ^ 6 =
@@ -131,7 +132,7 @@ private lemma prime_bound (p : ℕ) (hp : p.Prime) (a : ℕ) :
       nlinarith [sq_nonneg ((k : ℤ) - 2)]
     · interval_cases k <;> norm_num
   · subst h11
-    refine bound_small_step (p := 11) (a0 := 2) (by decide) (fun k hk => ?_) (fun k hk => ?_) a
+    refine (bound_small_step (p := 11) (a0 := 2) (by decide) (fun k hk => ?_) (fun k hk => ?_) a).trans (by norm_num)
     · zify
       have hk2 : (2 : ℤ) ≤ k := by exact_mod_cast hk
       have h : (11 : ℤ) * ((k : ℤ) + 1) ^ 6 - ((k : ℤ) + 2) ^ 6 =
@@ -142,7 +143,7 @@ private lemma prime_bound (p : ℕ) (hp : p.Prime) (a : ℕ) :
   · have hp13 : 13 ≤ p := by
       by_contra hlt
       have hlt' : p < 13 := Nat.lt_of_not_le hlt
-      interval_cases p <;> simp_all [Nat.Prime]
+      interval_cases p <;> exact absurd hp (by decide)
     exact bound_ge_13 hp13 h64 a
   · exact bound_ge_64 (by omega) a
 
@@ -151,20 +152,20 @@ theorem OMA.solution : OMA.R_Erdos647_erdos_647_R1.H1 := by
   rcases eq_or_ne m 0 with rfl | hm
   · simp
   · have hm_pos : (0 : ℚ) < m := by exact_mod_cast Nat.pos_of_ne_zero hm
-    have hsigma : σ 0 m = ∏ p ∈ m.primeFactors, (m.factorization p + 1) := by
+    have hsigma : ArithmeticFunction.sigma 0 m = ∏ p ∈ m.primeFactors, (m.factorization p + 1) := by
       rw [isMultiplicative_sigma.multiplicative_factorization _ hm]
       refine Finset.prod_congr rfl fun p hp => ?_
       exact sigma_zero_apply_prime_pow (Nat.prime_of_mem_primeFactors hp)
     have hfac : m = ∏ p ∈ m.primeFactors, p ^ m.factorization p := by
       conv_lhs => rw [← Nat.factorization_prod_pow_eq_self hm]
       rfl
-    have hdiv : ((σ 0 m : ℚ) ^ 6) / (m : ℚ) =
+    have hdiv : ((ArithmeticFunction.sigma 0 m : ℚ) ^ 6) / (m : ℚ) =
         ∏ p ∈ m.primeFactors, ((m.factorization p + 1 : ℚ) ^ 6) / (p : ℚ) ^ m.factorization p := by
       rw [hsigma]
       conv_lhs => rhs; rw [hfac]
       push_cast
       rw [Finset.prod_pow, ← Finset.prod_div_distrib]
-    have hprod_le : ((σ 0 m : ℚ) ^ 6) / (m : ℚ) ≤ ∏ p ∈ m.primeFactors, c p := by
+    have hprod_le : ((ArithmeticFunction.sigma 0 m : ℚ) ^ 6) / (m : ℚ) ≤ ∏ p ∈ m.primeFactors, c p := by
       rw [hdiv]
       refine Finset.prod_le_prod (fun p _ => by positivity) (fun p hp => ?_)
       exact prime_bound p (Nat.prime_of_mem_primeFactors hp) (m.factorization p)
@@ -172,14 +173,20 @@ theorem OMA.solution : OMA.R_Erdos647_erdos_647_R1.H1 := by
         ∏ p ∈ (Finset.range 64).filter Nat.Prime, c p := by
       let S := m.primeFactors ∪ (Finset.range 64).filter Nat.Prime
       have h1 : ∏ p ∈ m.primeFactors, c p ≤ ∏ p ∈ S, c p := by
-        rw [← Finset.prod_sdiff (Finset.subset_union_left (s₁ := m.primeFactors) (s₂ := (Finset.range 64).filter Nat.Prime))]
-        refine le_mul_of_one_le_left (Finset.prod_nonneg fun p hp => ?_) ?_
-        · exact (zero_le_one.trans (c_ge_one p (Nat.prime_of_mem_primeFactors hp)))
-        · refine Finset.one_le_prod' fun p hpS => ?_
+        have hprod_nonneg : 0 ≤ ∏ p ∈ m.primeFactors, c p :=
+          Finset.prod_nonneg fun p hp => zero_le_one.trans (c_ge_one p (Nat.prime_of_mem_primeFactors hp))
+        have hone_le : 1 ≤ ∏ p ∈ S \ m.primeFactors, c p := by
+          refine Finset.one_le_prod' fun p hpS => ?_
           rw [Finset.mem_sdiff] at hpS
           rcases Finset.mem_union.mp hpS.1 with hp | hp
           · exact False.elim (hpS.2 hp)
           · exact c_ge_one p (Finset.mem_filter.mp hp).2
+        calc ∏ p ∈ m.primeFactors, c p
+            = 1 * ∏ p ∈ m.primeFactors, c p := (one_mul _).symm
+          _ ≤ (∏ p ∈ S \ m.primeFactors, c p) * ∏ p ∈ m.primeFactors, c p :=
+              mul_le_mul_of_nonneg_right hone_le hprod_nonneg
+          _ = ∏ p ∈ S, c p :=
+              Finset.prod_sdiff (Finset.subset_union_left (s₁ := m.primeFactors) (s₂ := (Finset.range 64).filter Nat.Prime))
       have h2 : ∏ p ∈ S, c p = ∏ p ∈ (Finset.range 64).filter Nat.Prime, c p := by
         refine (Finset.prod_subset Finset.subset_union_right fun p hpS hnot => ?_).symm
         have hp_prime : p.Prime := by
@@ -194,6 +201,6 @@ theorem OMA.solution : OMA.R_Erdos647_erdos_647_R1.H1 := by
       exact h1.trans_eq h2
     have hnum : ∏ p ∈ (Finset.range 64).filter Nat.Prime, c p ≤ (139 : ℚ) ^ 6 := by
       norm_num [c, Finset.prod_filter, Finset.prod_range_succ]
-    have hfinal : ((σ 0 m : ℚ) ^ 6) / (m : ℚ) ≤ (139 : ℚ) ^ 6 := hprod_le.trans (hsub.trans hnum)
+    have hfinal : ((ArithmeticFunction.sigma 0 m : ℚ) ^ 6) / (m : ℚ) ≤ (139 : ℚ) ^ 6 := hprod_le.trans (hsub.trans hnum)
     rw [div_le_iff₀ hm_pos] at hfinal
     exact_mod_cast hfinal
