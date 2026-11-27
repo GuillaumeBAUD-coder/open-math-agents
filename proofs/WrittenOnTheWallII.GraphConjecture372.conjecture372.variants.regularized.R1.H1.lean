@@ -6,7 +6,7 @@ import OMAReductions.R_WrittenOnTheWallII_GraphConjecture372_conjecture372_varia
 
 open SimpleGraph
 
-/-! ### Section 1: Arm predicate and total-domination lower bound -/
+/- ### Section 1: Arm predicate and total-domination lower bound -/
 
 private def IsArm {α : Type*} (T : SimpleGraph α) : α → List α → Prop
   | _, [] => True
@@ -156,7 +156,7 @@ private lemma arm_bound {α : Type*} [DecidableEq α] (T : SimpleGraph α) (D : 
           have := ih2 hmod' hx₁
           simp only [hcard, if_pos haD, List.length_cons]; omega
 
-/-! ### Section 2: Explicit vertex cover on an arm -/
+/- ### Section 2: Explicit vertex cover on an arm -/
 
 private def armVC {α : Type*} [DecidableEq α] : List α → Finset α
   | [] => ∅
@@ -229,7 +229,7 @@ private lemma armVC_covers {α : Type*} [DecidableEq α] {T : SimpleGraph α} :
           · exact Or.inr (Or.inl (hvc ▸ Finset.mem_insert_of_mem hy'))
           · exact Or.inr (Or.inl (hvc ▸ Finset.mem_insert_self x₁ _))
 
-/-! ### Section 3: Tree path-cover decomposition into 4 arms -/
+/- ### Section 3: Tree path-cover decomposition into 4 arms -/
 
 private lemma walk_support_eq_cons {α : Type*} {T : SimpleGraph α} {u b : α} (q : T.Walk u b) :
     q.support = u :: q.support.tail := by
@@ -244,11 +244,12 @@ private lemma isArm_support_tail_of_path {α : Type*} {T : SimpleGraph α} (hT :
       simp only [Walk.support_cons, Walk.support_nil, List.tail_cons] at hclosed ⊢
       refine ⟨huv.ne', fun y hy => ?_⟩
       have hmem := hclosed _ (List.mem_singleton_self _) y hy
-      simp only [List.mem_cons, List.mem_singleton] at hmem
-      rcases hmem with rfl | rfl
+      simp only [List.mem_cons] at hmem
+      rcases hmem with rfl | rfl | hfalse
       · rfl
       · exact False.elim (hy.ne rfl)
-  | u, _, @Walk.cons _ _ _ v _ huv (@Walk.cons _ _ _ w _ hvw q'), hq, hclosed => by
+      · cases hfalse
+  | _, _, @Walk.cons _ _ u v _ huv (@Walk.cons _ _ _ w _ hvw q'), hq, hclosed => by
       have hnd : (u :: (Walk.cons hvw q').support).Nodup := by
         simpa only [Walk.support_cons] using hq.support_nodup
       obtain ⟨hu_not, hv_nd⟩ := List.nodup_cons.mp hnd
@@ -256,14 +257,14 @@ private lemma isArm_support_tail_of_path {α : Type*} {T : SimpleGraph α} (hT :
       have hq'_supp : q'.support = w :: q'.support.tail := walk_support_eq_cons q'
       have htail_eq : (Walk.cons huv (Walk.cons hvw q')).support.tail =
           v :: w :: q'.support.tail := by
-        simp only [Walk.support_cons, List.tail_cons, hq'_supp]
+        rw [Walk.support_cons, List.tail_cons, Walk.support_cons, hq'_supp]
       rw [htail_eq]
       refine ⟨?_, ?_, ?_⟩
-      · simpa only [Walk.support_cons, hq'_supp] using hu_not
+      · rw [Walk.support_cons, hq'_supp] at hu_not
+        exact hu_not
       · intro y hy
         have hv_mem : v ∈ (Walk.cons huv (Walk.cons hvw q')).support.tail := by
-          simp only [Walk.support_cons, List.tail_cons, List.mem_cons]
-          exact Or.inl rfl
+          simp [Walk.support_cons]
         have hy_mem := hclosed v hv_mem y hy
         simp only [Walk.support_cons, List.mem_cons] at hy_mem
         rcases hy_mem with rfl | hy_rest
@@ -271,7 +272,7 @@ private lemma isArm_support_tail_of_path {α : Type*} {T : SimpleGraph α} (hT :
         · right
           have hy_supp : y ∈ (Walk.cons hvw q').support := by
             simpa only [Walk.support_cons, List.mem_cons] using hy_rest
-          exact hT.isAcyclic.eq_snd_of_adj_start hq' hy hy_supp
+          simpa using hT.isAcyclic.eq_snd_of_adj_start hq' hy hy_supp
       · have hclosed' : ∀ x ∈ (Walk.cons hvw q').support.tail, ∀ y,
             T.Adj x y → y ∈ (Walk.cons hvw q').support := by
           intro x hx y hxy
@@ -284,15 +285,16 @@ private lemma isArm_support_tail_of_path {α : Type*} {T : SimpleGraph α} (hT :
           · have hx_supp : x ∈ (Walk.cons huv (Walk.cons hvw q')).support := by
               rw [walk_support_eq_cons]
               exact List.mem_cons_of_mem u hx_in
-            have hxv : x = (Walk.cons huv (Walk.cons hvw q')).snd :=
-              hT.isAcyclic.eq_snd_of_adj_start hq hxy.symm hx_supp
+            have hxv : x = v := by
+              simpa using hT.isAcyclic.eq_snd_of_adj_start hq hxy.symm hx_supp
             have hv_not : v ∉ (Walk.cons hvw q').support.tail := by
               simp only [Walk.support_cons, List.nodup_cons] at hv_nd
               simpa only [Walk.support_cons, List.tail_cons] using hv_nd.1
             exact False.elim (hv_not (hxv ▸ hx))
           · simpa only [Walk.support_cons, List.mem_cons] using hy_rest
         have ih := isArm_support_tail_of_path hT (Walk.cons hvw q') hq' hclosed'
-        simpa only [Walk.support_cons, List.tail_cons, hq'_supp] using ih
+        rw [Walk.support_cons, List.tail_cons, hq'_supp] at ih
+        exact ih
 
 private lemma walk_support_tail_eq_cons_of_adj {α : Type*} {T : SimpleGraph α} (hT : T.IsTree)
     {u a y : α} (p : T.Walk u a) (hp : p.IsPath)
@@ -304,9 +306,11 @@ private lemma walk_support_tail_eq_cons_of_adj {α : Type*} {T : SimpleGraph α}
     have hy_supp : y ∈ (Walk.cons huv p').support := by
       rw [Walk.support_cons]
       exact List.mem_cons_of_mem u hy
-    have hyv : y = v := hT.isAcyclic.eq_snd_of_adj_start hp huy hy_supp
+    have hyv : y = v := by
+      simpa using hT.isAcyclic.eq_snd_of_adj_start hp huy hy_supp
     refine ⟨p'.support.tail, ?_⟩
-    rw [Walk.support_cons, List.tail_cons, walk_support_eq_cons p', hyv]
+    rw [Walk.support_cons, List.tail_cons, hyv]
+    exact walk_support_eq_cons p'
 
 private lemma exists_subpath_of_mem_support {α : Type*} {T : SimpleGraph α}
     {a b x y : α} {p : T.Walk a b} (hp : p.IsPath)
@@ -357,10 +361,10 @@ private lemma cross_adj_unique {α : Type*} {T : SimpleGraph α} (hT : T.IsTree)
     Subtype.mk.inj ((hT.isAcyclic.subsingleton_path u y).elim ⟨_, hw₁⟩ ⟨_, hw₂⟩)
   cases r₁ with
   | nil =>
-    have hsnd := congrArg Walk.snd heq
+    have hsnd : y = v := by simpa using congrArg Walk.snd heq
     exact ⟨rfl, hsnd⟩
   | @cons _ z _ hadj r₁' =>
-    have hsnd : z = v := congrArg Walk.snd heq
+    have hsnd : z = v := by simpa using congrArg Walk.snd heq
     have hz1 : z ∈ p₁.support := hr₁_sub z (by simp [Walk.support_cons])
     exact False.elim (hdisj z hz1 (hsnd ▸ hv))
 
@@ -398,7 +402,7 @@ private lemma no_adj_between_tails {α : Type*} {T : SimpleGraph α} (hT : T.IsT
     cases sy with
     | nil => exact hy_ne rfl
     | @cons _ vy _ hvy sy_rest =>
-      have hv_eq : vx = vy := congrArg Walk.snd heq
+      have hv_eq : vx = vy := by simpa using congrArg Walk.snd heq
       have hvx_a : vx ∈ pa.support := hsx_sub vx (by simp [Walk.support_cons])
       rw [hpa_eq, List.mem_cons] at hvx_a
       have hvx_tail : vx ∈ pa.support.tail := hvx_a.resolve_left hvx.ne'
@@ -428,11 +432,11 @@ private lemma exists_two_paths_cover {α : Type*} [Fintype α] [DecidableEq α]
       obtain ⟨v, _, rfl⟩ := Finset.mem_image.mp hs
       exact ⟨v, v, Walk.nil, Walk.IsPath.nil, by simp⟩
   obtain ⟨Pcov, hPcard, hPdisj, hPcov, hPpath⟩ := Nat.sInf_mem hne
-  have hcard_le : Pcov.card ≤ 2 := hPcard.trans hp
+  have hcard_le : Pcov.card ≤ 2 := hPcard.le.trans hp
   have hcard_cases : Pcov.card = 0 ∨ Pcov.card = 1 ∨ Pcov.card = 2 := by omega
   rcases hcard_cases with h0 | h1 | h2
   · have hPempty : Pcov = ∅ := Finset.card_eq_zero.mp h0
-    haveI : Nonempty α := Fintype.card_pos_iff.mp (by omega)
+    have : Nonempty α := Fintype.card_pos_iff.mp (by omega)
     obtain ⟨v⟩ := ‹Nonempty α›
     have hv := hPcov (Finset.mem_univ v)
     simp [hPempty] at hv
@@ -440,9 +444,11 @@ private lemma exists_two_paths_cover {α : Type*} [Fintype α] [DecidableEq α]
     obtain ⟨a, b, p, hp_path, hs_eq⟩ := hPpath s (Finset.mem_singleton_self s)
     have hcov_p : ∀ x : α, x ∈ p.support := by
       intro x
-      have hx := hPcov (Finset.mem_univ x)
-      simp only [Finset.biUnion_singleton, id, hs_eq, List.mem_toFinset] at hx
-      exact hx
+      obtain ⟨t, ht, hxt⟩ := Finset.mem_biUnion.mp (hPcov (Finset.mem_univ x))
+      rw [Finset.mem_singleton] at ht
+      subst ht
+      rw [id, hs_eq, List.mem_toFinset] at hxt
+      exact hxt
     cases p with
     | nil =>
       have hle1 : Fintype.card α ≤ 1 := by
@@ -476,15 +482,16 @@ private lemma exists_two_paths_cover {α : Type*} [Fintype α] [DecidableEq α]
       have h2' : z ∈ s₂ := hs₂ ▸ List.mem_toFinset.mpr hz2
       exact Finset.disjoint_left.mp hd h1' h2'
     · intro x
-      have hx := hPcov (Finset.mem_univ x)
-      simp only [Finset.biUnion_insert, Finset.biUnion_singleton, id, Finset.mem_union,
-        hs₁, hs₂, List.mem_toFinset] at hx
-      exact hx
+      obtain ⟨t, ht, hxt⟩ := Finset.mem_biUnion.mp (hPcov (Finset.mem_univ x))
+      rw [Finset.mem_insert, Finset.mem_singleton] at ht
+      rcases ht with rfl | rfl
+      · exact Or.inl (List.mem_toFinset.mp (hs₁ ▸ hxt))
+      · exact Or.inr (List.mem_toFinset.mp (hs₂ ▸ hxt))
 
 private lemma exists_min_totalDominating {α : Type*} [Fintype α] [DecidableEq α]
     (T : SimpleGraph α) (hT : T.IsTree) (hn : 2 ≤ Fintype.card α) :
     ∃ D : Finset α, T.IsTotalDominating (D : Set α) ∧ D.card = T.totalDominationNumber := by
-  haveI : Nontrivial α := Fintype.one_lt_card_iff_nontrivial.mp (by omega)
+  have : Nontrivial α := Fintype.one_lt_card_iff_nontrivial.mp (by omega)
   have huniv : T.IsTotalDominating ((Finset.univ : Finset α) : Set α) := by
     intro v
     obtain ⟨x, hxv⟩ := exists_ne v
@@ -496,8 +503,9 @@ private lemma exists_min_totalDominating {α : Type*} [Fintype α] [DecidableEq 
   obtain ⟨D, hD⟩ := Nat.sInf_mem hne
   exact ⟨D, hD.isTotalDominating, hD.card_eq⟩
 
-/-! ### Section 4: Main theorem (`R1.H1`) -/
+/- ### Section 4: Main theorem (`R1.H1`) -/
 
+set_option maxHeartbeats 800000 in
 theorem OMA.solution : OMA.R_WrittenOnTheWallII_GraphConjecture372_conjecture372_variants_regularized_R1.H1 := by
   intro α _ _ T hT hn hp
   classical
@@ -540,7 +548,16 @@ theorem OMA.solution : OMA.R_WrittenOnTheWallII_GraphConjecture372_conjecture372
     have hr₁_iff : z ∈ r₁.support ↔ z = u ∨ z ∈ B := by
       rw [show r₁.support = pb.support from rfl, hpb_supp, List.mem_cons]
     rw [hq₁_iff, hr₁_iff]
-    tauto
+    constructor
+    · rintro ((rfl | h) | (rfl | h))
+      · exact Or.inl rfl
+      · exact Or.inr (Or.inl h)
+      · exact Or.inl rfl
+      · exact Or.inr (Or.inr h)
+    · rintro (rfl | h | h)
+      · exact Or.inl (Or.inl rfl)
+      · exact Or.inl (Or.inr h)
+      · exact Or.inr (Or.inr h)
   have hp₂_mem : ∀ z, z ∈ p₂.support ↔ z = v ∨ z ∈ C ∨ z ∈ E := by
     intro z
     rw [hp₂_eq, Walk.mem_support_append_iff]
@@ -551,7 +568,16 @@ theorem OMA.solution : OMA.R_WrittenOnTheWallII_GraphConjecture372_conjecture372
     have hr₂_iff : z ∈ r₂.support ↔ z = v ∨ z ∈ E := by
       rw [show r₂.support = pe.support from rfl, hpe_supp, List.mem_cons]
     rw [hq₂_iff, hr₂_iff]
-    tauto
+    constructor
+    · rintro ((rfl | h) | (rfl | h))
+      · exact Or.inl rfl
+      · exact Or.inr (Or.inl h)
+      · exact Or.inl rfl
+      · exact Or.inr (Or.inr h)
+    · rintro (rfl | h | h)
+      · exact Or.inl (Or.inl rfl)
+      · exact Or.inl (Or.inr h)
+      · exact Or.inr (Or.inr h)
   have hu_notA : u ∉ A := (List.nodup_cons.mp (hpa_supp ▸ hpa.support_nodup)).1
   have hu_notB : u ∉ B := (List.nodup_cons.mp (hpb_supp ▸ hpb.support_nodup)).1
   have hv_notC : v ∉ C := (List.nodup_cons.mp (hpc_supp ▸ hpc.support_nodup)).1
@@ -662,12 +688,24 @@ theorem OMA.solution : OMA.R_WrittenOnTheWallII_GraphConjecture372_conjecture372
     intro x y hxy
     have hx_all : x = u ∨ x = v ∨ x ∈ A ∨ x ∈ B ∨ x ∈ C ∨ x ∈ E := by
       rcases hcov12 x with h1 | h2
-      · rcases (hp₁_mem x).mp h1 with rfl | h | h <;> tauto
-      · rcases (hp₂_mem x).mp h2 with rfl | h | h <;> tauto
+      · rcases (hp₁_mem x).mp h1 with rfl | h | h
+        · exact Or.inl rfl
+        · exact Or.inr (Or.inr (Or.inl h))
+        · exact Or.inr (Or.inr (Or.inr (Or.inl h)))
+      · rcases (hp₂_mem x).mp h2 with rfl | h | h
+        · exact Or.inr (Or.inl rfl)
+        · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl h))))
+        · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr h))))
     have hy_all : y = u ∨ y = v ∨ y ∈ A ∨ y ∈ B ∨ y ∈ C ∨ y ∈ E := by
       rcases hcov12 y with h1 | h2
-      · rcases (hp₁_mem y).mp h1 with rfl | h | h <;> tauto
-      · rcases (hp₂_mem y).mp h2 with rfl | h | h <;> tauto
+      · rcases (hp₁_mem y).mp h1 with rfl | h | h
+        · exact Or.inl rfl
+        · exact Or.inr (Or.inr (Or.inl h))
+        · exact Or.inr (Or.inr (Or.inr (Or.inl h)))
+      · rcases (hp₂_mem y).mp h2 with rfl | h | h
+        · exact Or.inr (Or.inl rfl)
+        · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl h))))
+        · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr h))))
     rcases hx_all with rfl | rfl | hxarm
     · rcases hy_all with rfl | rfl | hyarm
       · exact False.elim (hxy.ne rfl)
@@ -788,7 +826,7 @@ theorem OMA.solution : OMA.R_WrittenOnTheWallII_GraphConjecture372_conjecture372
     have hsub : Suv ∪ SA ∪ SB ∪ SC ∪ SE ⊆ D := by
       intro z hz
       simp only [Suv, SA, SB, SC, SE, Finset.mem_union, Finset.mem_inter] at hz
-      tauto
+      rcases hz with (((⟨_, h⟩ | ⟨_, h⟩) | ⟨_, h⟩) | ⟨_, h⟩) | ⟨_, h⟩ <;> exact h
     have hle := Finset.card_le_card hsub
     rw [Finset.card_union_of_disjoint hd_uvABC_E,
         Finset.card_union_of_disjoint hd_uvAB_C,
