@@ -35,7 +35,10 @@ export async function POST(req: Request) {
   // Optional trusted path for maintainers (manual corrections).
   const secret = process.env.OMA_VERDICT_SECRET ?? "";
   const got = req.headers.get("x-oma-secret") ?? "";
-  if (secret && got && got.length === secret.length && timingSafeEqual(Buffer.from(got), Buffer.from(secret))) {
+  const maintainer = Boolean(secret && got && got.length === secret.length && timingSafeEqual(Buffer.from(got), Buffer.from(secret)));
+  // A maintainer replaying a merged pull request (after an outage) sends the same payload as the verdict workflow and
+  // goes through the same checks below, reductions and statements included.
+  if (maintainer && !Array.isArray(b.files)) {
     if (typeof b.problem !== "string" || !/^https:\/\/github\.com\//.test(b.pr ?? "") || !["accepted", "rejected", "fault"].includes(b.verdict)) {
       return json({ error: "bad_request" }, 400);
     }
@@ -54,7 +57,7 @@ export async function POST(req: Request) {
   // from (the workflow read it with its own token), or else asked from the GitHub API here.
   type PR = { merged: boolean; base: string; handle: string; body: string; mergeSha: string; url: string; files: { filename: string; status: string }[] };
   let pr: PR;
-  if (b.oidc && (await verifyWorkflowToken(b.oidc)) && Array.isArray(b.files) && b.pr === n) {
+  if (((maintainer && Array.isArray(b.files)) || (b.oidc && (await verifyWorkflowToken(b.oidc)))) && Array.isArray(b.files) && b.pr === n) {
     pr = {
       merged: b.merged === true, base: String(b.base), handle: String(b.handle ?? "unknown"), body: String(b.body ?? ""),
       mergeSha: String(b.mergeSha ?? ""), url: String(b.url ?? ""),
@@ -72,7 +75,10 @@ export async function POST(req: Request) {
   }
   if (!pr.merged || pr.base !== "main") return json({ error: "not_merged" }, 409);
   const files = pr.files;
-  if (files.length !== 1 || files[0].status !== "added") return json({ error: "not_a_single_new_file" }, 409);
+  // A new file, or (shortest-proof rule) a shorter version of a proof already merged: the verdict workflow merged it
+  // only after checking it is at least 5% shorter (tools/prooflen.py).
+  const replacing = files.length === 1 && files[0].status === "modified" && /^proofs\/[^/]+\.lean$/.test(files[0].filename);
+  if (files.length !== 1 || (files[0].status !== "added" && !replacing)) return json({ error: "not_a_single_new_file" }, 409);
   const path = files[0].filename;
 
   const raw = await fetch(`https://raw.githubusercontent.com/${REPO}/${pr.mergeSha}/${path}`, { cache: "no-store" });
@@ -108,6 +114,8 @@ export async function POST(req: Request) {
   const m = path.match(/^proofs\/([^/]+)\.lean$/);
   if (!m) return json({ error: "not_a_proof" }, 409);
   const id = m[1];
+  // The first solve keeps its credit; the shorter proof is recorded as the problem's shortest proof.
+  if (replacing) return json(await logEvent("shorter", id, handle, pr.url));
   const polarity = /\btheorem\s+OMA\.disproof\b/.test(src) ? "disproof" : "proof";
   const p = getProblem(id);
   let points: number;

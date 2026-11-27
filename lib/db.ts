@@ -1,5 +1,7 @@
 import "server-only";
 import { createHash } from "node:crypto";
+import { env as cfEnv } from "cloudflare:workers";
+import type { Mate, TeamNote } from "@/lib/collab";
 
 /** Coordination desk client. Every call goes through one Postgres function, oma_api, which checks
  * OMA_DB_SECRET server-side (see supabase/migrations/002_api_gate.sql). The Supabase key only
@@ -11,12 +13,29 @@ const SECRET = process.env.OMA_DB_SECRET;
 
 export const deskOnline = Boolean(URL_ && KEY && SECRET);
 
-async function rpc<T>(fn: string, args: Record<string, unknown>): Promise<T> {
+// Circuit breaker: after a timeout or a 5xx, this Worker instance stops calling the database for 2 min, so an overloaded
+// database gets room to recover instead of a pile of waiting requests, and pages answer at once (cached or empty values).
+let downUntil = 0;
+export const deskDown = () => Date.now() < downUntil;
+
+async function rpc<T>(fn: string, args: Record<string, unknown>, timeoutMs = 8000): Promise<T> {
+  if (Date.now() < downUntil) throw new Error("desk_unavailable");
+  try {
+    return await rpcOnce<T>(fn, args, timeoutMs);
+  } catch (e) {
+    downUntil = Date.now() + 120_000;
+    throw e;
+  }
+}
+
+async function rpcOnce<T>(fn: string, args: Record<string, unknown>, timeoutMs: number): Promise<T> {
+  // Never let a slow database hang the site: reads give up after 4 s (and fall back to the last good value), writes after 8 s.
   const res = await fetch(`${URL_}/rest/v1/rpc/oma_api`, {
     method: "POST",
     headers: { apikey: KEY!, "Content-Type": "application/json" },
     body: JSON.stringify({ p_secret: SECRET, p_fn: fn, p_args: args }),
     cache: "no-store",
+    signal: AbortSignal.timeout(timeoutMs),
   });
   if (!res.ok) throw new Error(`oma_api ${fn} ${res.status}: ${(await res.text()).slice(0, 200)}`);
   return (await res.json()) as T;
@@ -38,6 +57,18 @@ function edgeCache(): Cache | null {
   }
 }
 
+// Reads shared by every page (no per-problem or per-person argument): also kept in Workers KV, one copy for the whole
+// network, so Supabase answers them about once per time-to-live worldwide instead of once per data centre.
+const GLOBAL_FNS = new Set(["stats", "live", "active_ids", "steps", "solved", "leaderboard", "leaderboard2", "calendar", "graveyard"]);
+type KV = { get(k: string, o: { type: "json"; cacheTtl?: number }): Promise<unknown>; put(k: string, v: string, o?: { expirationTtl?: number }): Promise<void> };
+function kv(): KV | null {
+  try {
+    return ((cfEnv as unknown as { DESK_KV?: KV }).DESK_KV) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 async function api<T>(fn: string, args: Record<string, unknown> = {}, revalidate?: number): Promise<T> {
   if (!deskOnline) throw new Error("desk_offline");
   if (!revalidate) return rpc<T>(fn, args);
@@ -45,6 +76,8 @@ async function api<T>(fn: string, args: Record<string, unknown> = {}, revalidate
   const ttl = revalidate * 1000;
   const m = MEM.get(key);
   if (m && Date.now() - m.at < ttl) return m.value as T;
+  // Reads are cached twice as long as asked while the database is under load (STALE_FACTOR), and a failed refresh
+  // serves the last good value instead of an empty page.
   const running = INFLIGHT.get(key);
   if (running) return running as Promise<T>;
   const p = (async () => {
@@ -60,13 +93,46 @@ async function api<T>(fn: string, args: Record<string, unknown> = {}, revalidate
         }
       }
     }
-    const value = await rpc<T>(fn, args);
+    // Global copy (KV). Fresh: use it. A little stale: most callers still use it and only ~15% refresh it, so the
+    // data centres that notice at the same moment do not all call the database.
+    const store = GLOBAL_FNS.has(fn) && !("parent" in args) ? kv() : null;
+    let kvStale: { at: number; value: T } | null = null;
+    if (store) {
+      const got = (await store.get(`v1:${key}`, { type: "json", cacheTtl: 30 }).catch(() => null)) as { at: number; value: T } | null;
+      if (got) {
+        const age = Date.now() - got.at;
+        if (age < ttl || (age < 3 * ttl && Math.random() > 0.15)) {
+          MEM.set(key, got);
+          if (cache) {
+            await cache
+              .put(req, new Response(JSON.stringify(got), { headers: { "Content-Type": "application/json", "Cache-Control": `public, max-age=${Math.max(10, Math.round((ttl - Math.min(age, ttl)) / 1000) || 10)}` } }))
+              .catch(() => undefined);
+          }
+          return got.value;
+        }
+        kvStale = got;
+      }
+    }
+    let value: T;
+    try {
+      value = await rpc<T>(fn, args, 1000);
+    } catch (e) {
+      const stale = MEM.get(key) ?? kvStale ?? (cache ? await cache.match(new Request(`${CACHE_ORIGIN}/__desk_stale/${encodeURIComponent(key)}`)).then((r) => (r ? r.json() : null)).catch(() => null) : null);
+      if (stale) return (stale as { value: T }).value;
+      throw e;
+    }
     const at = Date.now();
     if (MEM.size > 2000) MEM.clear();
     MEM.set(key, { at, value });
+    // One write per key per refresh; kept a day so it also serves as the last good value when the database fails.
+    if (store) await store.put(`v1:${key}`, JSON.stringify({ at, value }), { expirationTtl: 86400 }).catch(() => undefined);
     if (cache) {
       await cache
         .put(req, new Response(JSON.stringify({ at, value }), { headers: { "Content-Type": "application/json", "Cache-Control": `public, max-age=${revalidate}` } }))
+        .catch(() => undefined);
+      // A longer-lived copy, used only when the database fails.
+      await cache
+        .put(new Request(`${CACHE_ORIGIN}/__desk_stale/${encodeURIComponent(key)}`), new Response(JSON.stringify({ at, value }), { headers: { "Content-Type": "application/json", "Cache-Control": "public, max-age=86400" } }))
         .catch(() => undefined);
     }
     return value;
@@ -91,7 +157,7 @@ const EMPTY: Stats = { liveAgents: 0, liveProblems: 0, top: [], solved: [], solv
 export async function getStats(): Promise<Stats> {
   if (!deskOnline) return EMPTY;
   try {
-    return await api<Stats>("stats", {}, 60);
+    return await api<Stats>("stats", {}, 120);
   } catch (e) {
     console.error(e);
     return EMPTY;
@@ -101,7 +167,7 @@ export async function getStats(): Promise<Stats> {
 export async function getLiveMap(): Promise<Map<string, number>> {
   if (!deskOnline) return new Map();
   try {
-    const rows = await api<{ problem_id: string; agents: number }[]>("live", {}, 30);
+    const rows = await api<{ problem_id: string; agents: number }[]>("live", {}, 45);
     return new Map(rows.map((r) => [r.problem_id, r.agents]));
   } catch (e) {
     console.error(e);
@@ -114,7 +180,7 @@ export type Event = { id: number; kind: string; problem_id: string; handle: stri
 export async function getEvents(limit = 60, problem?: string, kind?: string, before?: number): Promise<Event[]> {
   if (!deskOnline) return [];
   try {
-    return await api<Event[]>("events", { limit, ...(problem ? { problem } : {}), ...(kind ? { kind } : {}), ...(before ? { before } : {}) }, problem ? 60 : 30);
+    return await api<Event[]>("events", { limit, ...(problem ? { problem } : {}), ...(kind ? { kind } : {}), ...(before ? { before } : {}) }, problem ? 180 : 60);
   } catch (e) {
     console.error(e);
     return [];
@@ -123,7 +189,11 @@ export async function getEvents(limit = 60, problem?: string, kind?: string, bef
 
 export const claim = (problem: string, handle: string, agent: string, ipHash: string | null) =>
   api<{ lease?: string; error?: string }>("claim", { problem, handle, agent, ip_hash: ipHash });
-export const beat = (lease: string) => api<{ ok?: boolean; stop?: boolean; status?: string; error?: string }>("beat", { lease });
+/** Heartbeat. Also answers with the agent's role, its teammates on the problem and the notes posted after note id `since`. */
+export const beat = (lease: string, since = 0) =>
+  api<{ ok?: boolean; stop?: boolean; status?: string; error?: string; role?: string; team?: Mate[]; notes?: TeamNote[]; last_note?: number | null }>("beat2", { lease, since });
+/** A note for the agents that take this problem next (approaches, partial lemmas, dead ends, references). */
+export const addNote = (lease: string, note: string) => api<{ ok?: boolean; error?: string; problem?: string }>("note", { lease, note: note.slice(0, 4000) });
 export const release = (lease: string, reason: string) => api<{ ok?: boolean; error?: string }>("release", { lease, reason });
 export const verdict = (problem: string, handle: string, pr: string, v: string, polarity: string) =>
   api<{ ok?: boolean }>("verdict", { problem, handle, pr, verdict: v, polarity });
@@ -157,7 +227,7 @@ export type Profile = {
 export async function getProfile(handle: string): Promise<Profile | null> {
   if (!deskOnline) return null;
   try {
-    return await api<Profile>("profile", { handle }, 60);
+    return await api<Profile>("profile", { handle }, 300);
   } catch (e) {
     console.error(e);
     return null;
@@ -180,7 +250,7 @@ export async function getGraveyard(): Promise<Graveyard> {
 }
 
 export const claim2 = (problem: string, handle: string, agent: string, ipHash: string | null, points: number) =>
-  api<{ lease?: string; error?: string }>("claim2", { problem, handle, agent, ip_hash: ipHash, points });
+  api<{ lease?: string; error?: string; role?: string; team?: Mate[]; notes?: TeamNote[]; last_note?: number | null }>("claim2", { problem, handle, agent, ip_hash: ipHash, points });
 export const verdict2 = (a: { problem: string; handle: string; pr: string; verdict: string; polarity: string; agent: string | null; model: string | null; points: number }) =>
   api<{ ok?: boolean }>("verdict2", a);
 export const registerReduction = (a: { id: string; problem: string; handle: string; pr: string; module: string; statements: string[]; points: number }) =>
@@ -197,17 +267,17 @@ async function safe<T>(fn: string, args: Record<string, unknown>, fallback: T, r
 }
 
 export type Leader2 = Leader & { points: number; agent: string | null; model: string | null };
-export const getLeaderboard2 = (minutes?: number) => safe<Leader2[]>("leaderboard2", minutes ? { minutes } : {}, [], 120);
+export const getLeaderboard2 = (minutes?: number) => safe<Leader2[]>("leaderboard2", minutes ? { minutes } : {}, [], 600);
 
 export type Solved = { problem_id: string; handle: string; agent: string | null; model: string | null; polarity: string; pr_url: string; points: number; contributors: string[] | null; created_at: string };
-export const getSolved = (limit = 2000) => safe<Solved[]>("solved", { limit }, [], 60);
+export const getSolved = (limit = 2000) => safe<Solved[]>("solved", { limit }, [], 600);
 
 export type Day = { day: string; claims: number; released: number; submitted: number; solved: number; reduced: number; people: number };
 export const getCalendar = (days = 90) => safe<Day[]>("calendar", { days }, [], 600);
 
 export type Step = { id: string; reduction: string; parent: string; k: number; statement: string; module: string; points: number; created_at: string; solved: boolean; reduction_pr: string; reduction_by: string };
 /** Steps of accepted reductions. Pages: 60 s cache. The desk (fresh=true): 15 s; a step solved meanwhile is refused at claim time (already_solved). */
-export const getSteps = (parent?: string, fresh = false) => safe<Step[]>("steps", parent ? { parent } : {}, [], fresh ? 15 : 60);
+export const getSteps = (parent?: string, fresh = false) => safe<Step[]>("steps", parent ? { parent } : {}, [], fresh ? 60 : 600);
 
 export const logEvent = (kind: string, problem: string, handle: string, detail: string) =>
   api<{ ok?: boolean; error?: string }>("log", { kind, problem, handle, detail });
@@ -222,7 +292,7 @@ export const getContributions = (problem: string) => safe<Contribution[]>("contr
 export async function getActiveIds(): Promise<Set<string>> {
   if (!deskOnline) return new Set();
   try {
-    return new Set(await api<string[]>("active_ids", {}, 60));
+    return new Set(await api<string[]>("active_ids", {}, 600));
   } catch (e) {
     console.error(e);
     return new Set();

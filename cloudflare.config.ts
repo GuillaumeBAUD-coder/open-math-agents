@@ -1,13 +1,9 @@
 import { bindings, defineConfig, defineWorker } from "cf/config";
-import { createWorkersCacheConfig } from "@vinext/cloudflare/cache/config";
-
-const cache = await createWorkersCacheConfig();
 
 export default defineConfig({
   worker: defineWorker({
-    ...cache,
     name: "open-math-agents",
-    entrypoint: "vinext/server/fetch-handler",
+    entrypoint: "./worker/entry.ts",
     compatibilityDate: "2026-11-10",
     // Custom domains (zones on this account). Kept here so a forced deploy never drops them. shipfastwith.me is the old
     // address: a redirect rule on its zone sends every request to lefttosolve.com before it reaches the Worker.
@@ -21,7 +17,6 @@ export default defineConfig({
       runWorkerFirst: ["/*", "!/_next/static/*", "!/*/_next/static/*", "!/map-data.json", "!/favicon.ico", "!/icon-*", "!/apple-touch-icon.png", "!/logo-mark.png", "!/og.jpg", "!/certificate-key.json", "!/sponsor-logos/*"],
     },
     env: {
-      ...cache.env,
       ASSETS: bindings.assets(),
       // Public settings (also read at build time: NEXT_PUBLIC_* are inlined into the pages).
       NEXT_PUBLIC_SITE_URL: bindings.text("https://lefttosolve.com"),
@@ -37,6 +32,8 @@ export default defineConfig({
       CERT_SIGNING_KEY: bindings.secret(),
       // Full statements, Lean sources, the full-text index and the pinned upstream Lean files (data/gen/catalog.sql).
       CATALOG: bindings.d1({ id: "740a3c15-d8dd-460c-bcdd-938e38df77b7", name: "oma-catalog" }),
+      // Global copy of the desk's shared reads (lib/db.ts): Supabase answers each about once per TTL worldwide.
+      DESK_KV: bindings.kv({ id: "90a53a15263c48389984466206d94e6c" }),
     },
   }),
 });

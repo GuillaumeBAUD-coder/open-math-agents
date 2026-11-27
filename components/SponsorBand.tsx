@@ -2,7 +2,8 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "@/components/Link";
 
-export type BandSponsor = { name: string; url?: string; logo: string; lead?: boolean };
+/** tier sets the logo size: the bigger the contribution, the bigger the logo. */
+export type BandSponsor = { name: string; url?: string; logo: string; tier: "backer" | "supporter" | "sponsor" | "lead"; showName?: boolean };
 
 /**
  * "Made possible by": every sponsor's logo in one band under the hero. The logos stand still while they fit; once they
@@ -32,7 +33,12 @@ export default function SponsorBand({ sponsors, slot }: { sponsors: BandSponsor[
   const logos = (hidden: boolean) =>
     sponsors.map((s) => {
       // eslint-disable-next-line @next/next/no-img-element
-      const img = <img src={s.logo} alt={hidden ? "" : s.name} className={s.lead ? "lead" : ""} />;
+      const img = (
+        <>
+          <img src={s.logo} alt={hidden || s.showName ? "" : s.name} className={`t-${s.tier}`} />
+          {s.showName ? <span className={`sname t-${s.tier}`}>{s.name}</span> : null}
+        </>
+      );
       return s.url
         ? <a key={s.name} href={s.url} target="_blank" rel="noreferrer sponsored" title={s.name} tabIndex={hidden ? -1 : undefined}>{img}</a>
         : <span key={s.name} title={s.name}>{img}</span>;

@@ -6,5 +6,20 @@
     "tier": "backer",
     "since": "2026-11-26",
     "message": "Diplomètre est fier de soutenir Left to Solve ! Nous aidons les lycéens à choisir leurs études sur des faits, grâce aux données officielles et à l'IA."
+  },
+  {
+    "name": "Halldon",
+    "url": "https://halldon.com",
+    "logo": "/sponsor-logos/halldon.png",
+    "tier": "backer",
+    "since": "2026-11-27"
+  },
+  {
+    "name": "Athena Calc",
+    "url": "https://athenacalc.com",
+    "logo": "/sponsor-logos/athenacalc.png",
+    "tier": "backer",
+    "since": "2026-11-27",
+    "showName": true
   }
 ]

@@ -5,9 +5,10 @@
     {
       "id": "backer",
       "name": "Backer",
-      "price": 50,
+      "price": 100,
       "period": "one-time",
       "perks": [
+        "Logo size: standard size",
         "Your logo and a link to your website in the 'Made possible by' band at the top of the home page",
         "Your logo and a link on the sponsors page"
       ]
@@ -18,6 +19,7 @@
       "price": 500,
       "period": "one-time",
       "perks": [
+        "Logo size: larger than Backer",
         "Your logo and a link to your website in the 'Made possible by' band at the top of the home page",
         "Your logo and a link on the sponsors page",
         "A thank-you in News"
@@ -29,6 +31,7 @@
       "price": 5000,
       "period": "per year",
       "perks": [
+        "Logo size: larger than Supporter",
         "Your logo on the sponsors page",
         "Your logo in the 'Made possible by' band on the home page, ahead of backers"
       ]
@@ -39,6 +42,7 @@
       "price": 25000,
       "period": "per year",
       "perks": [
+        "Logo size: the largest, shown first",
         "Large logo first in the 'Made possible by' band",
         "Mentioned in News when you join",
         "Your logo on the sponsors page"

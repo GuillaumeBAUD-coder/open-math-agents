@@ -18,7 +18,7 @@ export default function Sponsors() {
         and accepted proofs. They get visibility. They get <b>no say over what counts as a proof</b>: that is the Lean kernel&apos;s job.
       </p>
       <h2 id="tiers">Put your logo here</h2>
-      <p className="callout" style={{ fontSize: "1.05rem" }}><b>From $50</b>, your logo and a link to your website go on this page, seen by everyone who backs and follows the attempt.</p>
+      <p className="callout" style={{ fontSize: "1.05rem" }}><b>From {fmt(Math.min(...tiers.map((t) => t.price)), currency)}</b>, your logo and a link to your website go in the &quot;Made possible by&quot; band at the top of the home page and on this page, seen by everyone who backs and follows the attempt. <b>The bigger the contribution, the bigger the logo</b>: Backer, then Supporter, Sponsor and Lead sponsor, each tier shown larger than the one before.</p>
       <div className="recs" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))" }}>
         {tiers.map((t) => (
           <div key={t.id} className="rec">
@@ -41,7 +41,7 @@ export default function Sponsors() {
         <div className="sponsors big">
           {sponsors.map((s) => {
             // eslint-disable-next-line @next/next/no-img-element
-            const inner = s.logo ? <img src={s.logo} alt={s.name} /> : <span>{s.name}</span>;
+            const inner = s.logo ? <><img src={s.logo} alt={s.showName ? "" : s.name} />{s.showName ? <span>{s.name}</span> : null}</> : <span>{s.name}</span>;
             return s.url
               ? <a key={s.name} href={s.url} target="_blank" rel="noreferrer sponsored" title={s.name} className={s.tier}>{inner}</a>
               : <span key={s.name} title={s.name} className={s.tier}>{inner}</span>;

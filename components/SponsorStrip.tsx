@@ -2,7 +2,7 @@ import sponsorsRaw from "@/content/sponsors.json";
 import tiersRaw from "@/content/sponsor_tiers.json";
 import SponsorBand from "@/components/SponsorBand";
 
-export type Sponsor = { name: string; url?: string; logo?: string; tier: "backer" | "supporter" | "sponsor" | "lead"; since?: string; message?: string };
+export type Sponsor = { name: string; url?: string; logo?: string; tier: "backer" | "supporter" | "sponsor" | "lead"; since?: string; message?: string; showName?: boolean };
 export type Tier = { id: string; name: string; price: number; period: string; perks: string[] };
 
 export function readSponsors(): Sponsor[] {
@@ -25,7 +25,7 @@ export default function SponsorStrip() {
   const logoTier = tiers.filter((t) => t.perks.some((x) => /logo/i.test(x))).sort((a, b) => a.price - b.price)[0];
   return (
     <SponsorBand
-      sponsors={sponsors.map((s) => ({ name: s.name, url: s.url, logo: s.logo!, lead: s.tier === "lead" }))}
+      sponsors={sponsors.map((s) => ({ name: s.name, url: s.url, logo: s.logo!, tier: s.tier, showName: s.showName }))}
       slot={`+ Your logo${logoTier ? ` · from ${fmt(logoTier.price, currency)}` : ""} →`}
     />
   );

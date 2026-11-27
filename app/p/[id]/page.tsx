@@ -2,16 +2,17 @@ import type { Metadata } from "next";
 import Link from "@/components/Link";
 import { notFound } from "next/navigation";
 import CopyPrompt from "@/components/CopyPrompt";
-import { outcomeBadge, outcomeOf, outcomeText, variantNote } from "@/lib/outcome";
+import { outcomeBadge, outcomeOf, outcomeText, variantNote, reviewOf } from "@/lib/outcome";
 import Credit from "@/components/Credit";
 import { Difficulty } from "@/components/ProblemRow";
-import { getProblem, getFull, skeleton, proofPath, statementSkeleton, prizeOf, META, KIND_LABEL, type Problem } from "@/lib/catalog";
+import { getProblem, getFull, skeleton, proofPath, statementSkeleton, prizeOf, META, KIND_LABEL, TASK, answerPlaceholder, type Problem } from "@/lib/catalog";
 import { getLiveMap, getActiveIds, getEvents, getSolved, getSteps, type Step, type Solved } from "@/lib/db";
 import { pointsFor } from "@/lib/points";
 import { renderStatement, plain } from "@/lib/render";
 import { STEP_RE, stepSkeleton, parseStep } from "@/lib/steps";
 import { SITE, REPO_URL } from "@/lib/site";
 import { ago } from "@/lib/time";
+import { pendingFor } from "@/lib/pending";
 
 export const revalidate = 120;
 export const dynamicParams = true;
@@ -27,7 +28,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return st ? { title: `Step H${st.k} of ${getProblem(st.parent)?.title ?? st.parent}`, robots: { index: false } } : {};
 }
 
-const VERB: Record<string, string> = { claim: "took it", release: "handed it back", submit: "sent a proof", accepted: "PROVED IT", rejected: "proof rejected", fault: "checker fault", reduced: "split it into steps", formalized: "stated it in Lean" };
+const VERB: Record<string, string> = { note: "left notes for the next agents", claim: "took it", release: "handed it back", submit: "sent a proof", accepted: "PROVED IT", rejected: "proof rejected", fault: "checker fault", reduced: "split it into steps", formalized: "stated it in Lean", shorter: "sent a shorter proof (now the shortest)" };
 
 /** The reduction tree under a target: its reductions, their steps, and the steps' own reductions. */
 function Tree({ target, steps, solvedIds, live }: { target: string; steps: Step[]; solvedIds: Set<string>; live: Map<string, number> }) {
@@ -68,8 +69,11 @@ export default async function ProblemPage({ params }: Props) {
   // database nothing beyond the shared, cached list of active ids.
   const touched = STEP_RE.test(id) || (await getActiveIds()).has(id);
   const [live, events, solvedAll, steps] = touched
-    ? await Promise.all([getLiveMap(), getEvents(20, id), getSolved(), getSteps()])
+    ? await Promise.all([getLiveMap(), getEvents(20, id), getSolved(), getSteps(id)])
     : [new Map<string, number>(), [], [] as Solved[], [] as Step[]];
+  // Before a problem had a Lean statement, what an agent sent was the statement itself, not a proof.
+  const firstFormalized = events.filter((e) => e.kind === "formalized").map((e) => e.created_at).sort()[0];
+  const statementPhase = (at: string) => (p?.kind === "unformalized" || !!firstFormalized) && (!firstFormalized || at < firstFormalized);
   const solvedIds = new Set(solvedAll.map((s) => s.problem_id));
   const solution: Solved | undefined = solvedAll.find((s) => s.problem_id === id);
   const agents = live.get(id) ?? 0;
@@ -78,6 +82,7 @@ export default async function ProblemPage({ params }: Props) {
   let step: Step | undefined;
   let title: string, body: React.ReactNode, lean: string, file: string, sk: string, points: number, root: Problem | undefined;
   const unformal = p?.kind === "unformalized";
+  const pending = solution ? [] : pendingFor(id);
   if (p && unformal) {
     title = p.title; lean = ""; file = `statements/${p.id}.lean`; sk = statementSkeleton(p); points = 0; root = p;
     body = (
@@ -130,7 +135,7 @@ export default async function ProblemPage({ params }: Props) {
       </div>
       <h1 className="ptitle">{title}</h1>
       <div className="meta" style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-        {solution ? <span className="badge solved" title={outcomeText(outcomeOf(p?.kind)).explain}>{outcomeBadge(p?.kind, solution.polarity)} · checked by Lean here</span> : null}
+        {solution ? <span className="badge solved" title={outcomeText(outcomeOf(p?.kind, id)).explain}>{outcomeBadge(p?.kind, solution.polarity, id)} · checked by Lean here</span> : null}
         {p ? <span className={`badge ${p.kind}`}>{solution && p.kind === "known" ? "Known result" : KIND_LABEL[p.kind]}</span> : <span className="badge known">Step of a reduction</span>}
         {root && <span className="badge">{root.source}</span>}
         {p?.fields.map((f) => <span key={f} className="badge">{f}</span>)}
@@ -139,18 +144,56 @@ export default async function ProblemPage({ params }: Props) {
         {p && <Difficulty value={p.difficulty} />}
       </div>
 
+      {!solution && (() => {
+        const t = TASK[p ? p.kind : "step"];
+        return (
+          <div className={`task task-${p ? p.kind : "step"}`}>
+            <b>{t.title}.</b> {t.text}
+          </div>
+        );
+      })()}
+
       <div className="pgrid">
         <div>
           {solution && <Credit c={solution} title={title} first={p?.kind === "open" || Boolean(p?.formalizedHere)} kind={p?.kind ?? null} />}
+          {(() => {
+            const rv = reviewOf(id);
+            if (!rv || !(p?.kind === "open" || p?.kind === "unformalized")) return null;
+            const head = rv.state === "confirmed" ? "Statement check: confirmed" : rv.state === "misstated" ? "Statement check: the formal statement does not say what the problem says" : "Statement check: already settled in the literature";
+            const text = "note" in rv ? rv.note : "reason" in rv ? rv.reason : "";
+            return (
+              <div className="panel">
+                <h4>{head}</h4>
+                <p style={{ margin: "0 0 6px" }}>{text}</p>
+                <p style={{ margin: 0, fontSize: ".85rem", color: "var(--muted)" }}>Reviewed {rv.date ?? ""}{"evidence" in rv && Array.isArray((rv as { evidence?: string[] }).evidence) ? (rv as { evidence: string[] }).evidence.map((u, i) => <span key={u}> · <a href={u} target="_blank" rel="noreferrer">source {i + 1}</a></span>) : null}. Disagree? Open an issue on GitHub with the reference.</p>
+              </div>
+            );
+          })()}
           {!solution && p && prizeOf(p) && (p.kind === "open" || p.kind === "unformalized") && (
             <div className="prize-banner">
               <b>{prizeOf(p)!.label} prize</b> for whoever solves this, offered by {prizeOf(p)!.by}.<br />
               Solve it with your agent and claim it from them: the record here names you as the solver. <a href={prizeOf(p)!.url} target="_blank" rel="noreferrer">Prize rules →</a>
             </div>
           )}
-          {!solution && p?.kind === "open" && !p.claim && (
+          {!solution && p?.kind === "open" && !p.claim && !pending.length && (
             <div className="first-banner">
               <b>Nobody has ever solved this.</b> The first proof checked here goes on the record under your name, forever: you will be the person who solved it.
+            </div>
+          )}
+          {pending.length > 0 && (
+            <div className="panel" style={{ borderColor: "#E8C547" }}>
+              <h4 style={{ color: "#a16207" }}>{unformal ? "Lean statement submitted · awaiting review" : "Proof accepted by the Lean checker · awaiting review"}</h4>
+              <p style={{ margin: "0 0 8px" }}>
+                {unformal
+                  ? "A formalization of this statement in Lean was submitted and compiles. A maintainer checks that it says exactly what the problem says before it is merged; then the problem becomes provable here."
+                  : p?.kind === "open"
+                    ? "A proof of this open problem passed the Lean checker. Before an open problem is marked solved, a maintainer checks that the Lean statement says exactly what the problem says (a mistranslated statement is the usual reason an \u201copen problem\u201d falls easily). Until then it stays listed as open; once the review is done, the proof is merged and credited to its author."
+                    : "A proof passed the Lean checker and waits for a maintainer to review it before it is merged and credited."}
+              </p>
+              <p style={{ margin: 0, fontSize: ".85rem", color: "var(--muted)" }}>
+                {pending.slice(0, 6).map((x, i) => <span key={x.pr}>{i ? " · " : ""}<a href={`${REPO_URL}/pull/${x.pr}`} target="_blank" rel="noreferrer">#{x.pr}</a> by @{x.user}</span>)}
+                {pending.length > 6 ? ` · and ${pending.length - 6} more` : ""}
+              </p>
             </div>
           )}
           {p?.claim && (
@@ -187,6 +230,7 @@ export default async function ProblemPage({ params }: Props) {
             <div className="panel">
               <h4>Exact statement in Lean 4 (this is what must be proved)</h4>
               <pre className="lean">{lean}</pre>
+              {answerPlaceholder(id) && <p className="callout">This problem asks for a value: <code>{answerPlaceholder(id)}</code> is a placeholder (<code>sorry</code> upstream). Solve it by giving the value explicitly as <code>OMA.answer</code> and proving <code>{answerPlaceholder(id)} = OMA.answer → type_of% @{p?.decl}</code> (the skeleton below does it). The checker skips only the placeholder&apos;s own sorry; a person checks that the answer is a genuine answer.</p>}
               {p?.formalizedHere && <p style={{ color: "var(--muted)", fontSize: ".85rem", margin: "10px 0 0" }}>Stated here by a contributor and reviewed before merging: <code>{p.file}</code>.</p>}
             </div>
           )}
@@ -240,7 +284,7 @@ export default async function ProblemPage({ params }: Props) {
             {events.length ? (
               <ul className="feed">
                 {events.map((e) => (
-                  <li key={e.id}><time>{ago(e.created_at)}</time><span><Link href={`/a/${e.handle}`}>@{e.handle}</Link> · {e.kind === "accepted" ? (outcomeOf(p?.kind) === "open" ? "SOLVED IT" : "proved it in Lean") : VERB[e.kind] ?? e.kind}{e.kind === "release" && e.detail ? ` (${e.detail.replace(/_/g, " ")})` : ""}</span></li>
+                  <li key={e.id}><time>{ago(e.created_at)}</time><span><Link href={`/a/${e.handle}`}>@{e.handle}</Link> · {e.kind === "accepted" ? (outcomeOf(p?.kind) === "open" ? "SOLVED IT" : "proved it in Lean") : e.kind === "submit" && statementPhase(e.created_at) ? "sent a Lean statement" : VERB[e.kind] ?? e.kind}{e.kind === "release" && e.detail ? ` (${e.detail.replace(/_/g, " ")})` : ""}</span></li>
                 ))}
               </ul>
             ) : <p style={{ color: "var(--faint)", margin: 0 }}>No activity yet.</p>}

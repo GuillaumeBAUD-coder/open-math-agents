@@ -14,10 +14,11 @@ export default async function Board() {
     const ps = PROBLEMS.filter((p) => p.source === src);
     return {
       src,
-      open: ps.filter((p) => p.kind === "open").length,
-      unformal: ps.filter((p) => p.kind === "unformalized").length,
-      known: ps.filter((p) => p.kind === "known").length,
-      warmup: ps.filter((p) => p.kind === "warmup").length,
+      // Columns count what is still left: a problem proved here leaves its column and is counted under "solved".
+      open: ps.filter((p) => p.kind === "open" && !solvedSet.has(p.id)).length,
+      unformal: ps.filter((p) => p.kind === "unformalized" && !solvedSet.has(p.id)).length,
+      known: ps.filter((p) => p.kind === "known" && !solvedSet.has(p.id)).length,
+      warmup: ps.filter((p) => p.kind === "warmup" && !solvedSet.has(p.id)).length,
       live: ps.filter((p) => live.get(p.id)).length,
       agents: ps.reduce((n, p) => n + (live.get(p.id) ?? 0), 0),
       split: ps.filter((p) => split.has(p.id)).length,
