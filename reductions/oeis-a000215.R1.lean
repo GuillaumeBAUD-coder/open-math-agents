@@ -16,6 +16,8 @@ def H3 : Prop := ∀ x : ℕ, 4 < x → 4 ∣ x → ¬ (x - 1).Prime →
     (∀ p k : ℕ, p.Prime → p ≠ 2 → k ≠ 0 →
       x ≠ 4 * p ^ k ∧ (x = 8 * p ^ k → p = 3 ∧ k % 4 = 3) ∧
       (x = 12 * p ^ k → p = 7 ∨ p = 11 ∨ p = 19)) →
+    (x % 8 = 4 → ∃ q r : ℕ, q.Prime ∧ r.Prime ∧ q ≠ r ∧ q ∣ x ^ 2 + 1 ∧
+      r ∣ x ^ 2 + 1 ∧ q % 16 ≠ 1 ∧ r % 16 ≠ 1 ∧ jacobiSym (x + 1 : ℕ) q = -1) →
     ¬ (x ^ 4 - 1 ∣ 2 ^ x - 1)
 
 lemma first_primes {n : ℕ} (hn : n ≤ 4) : (2 ^ (2 ^ n) + 1).Prime := by
@@ -136,6 +138,12 @@ lemma restrictions (x : ℕ) (big : 4 < x) (div : x ^ 4 - 1 ∣ 2 ^ x - 1) :
     have := Nat.le_of_dvd (by decide : 0 < 3) impossible
     dsimp [p] at this; omega
 
+lemma square_add_one_dvd (x : ℕ) (hx : 0 < x) : x ^ 2 + 1 ∣ x ^ 4 - 1 := by
+  refine ⟨x ^ 2 - 1, ?_⟩
+  have hx2 : 1 ≤ x ^ 2 := Nat.pow_pos hx
+  have hx4 : 1 ≤ x ^ 4 := Nat.pow_pos hx
+  zify [hx2, hx4]; ring
+
 /-- If x = 4j + 2 passes the test, then 2 is a square modulo x² + 1.
     But x² + 1 is 5 modulo 8, so its Jacobi symbol at 2 is -1. -/
 lemma four_dvd_of_test (x : ℕ) (big : 4 < x) (even : Even x)
@@ -155,13 +163,7 @@ lemma four_dvd_of_test (x : ℕ) (big : 4 < x) (even : Even x)
       rw [jacobiSym.at_two (Nat.odd_iff.mpr m2), ZMod.χ₈_nat_eq_if_mod_eight]
       simp [m8, m2]
     simpa using ZMod.nonsquare_of_jacobiSym_eq_neg_one hj
-  have md : m ∣ x ^ 4 - 1 := by
-    refine ⟨x ^ 2 - 1, ?_⟩
-    dsimp [m]
-    have hx2 : 1 ≤ x ^ 2 := Nat.pow_pos (by omega)
-    have hx4 : 1 ≤ x ^ 4 := Nat.pow_pos (by omega)
-    zify [hx2, hx4]
-    ring
+  have md : m ∣ x ^ 4 - 1 := square_add_one_dvd x (by omega)
   have hm : 1 ≡ 2 ^ x [MOD m] :=
     (Nat.modEq_iff_dvd' Nat.one_le_two_pow).mpr (md.trans div)
   have powone : (2 : ZMod m) ^ x = 1 := by
@@ -363,12 +365,7 @@ theorem four_prime_power (p k : ℕ) (hp : p.Prime) (odd : p ≠ 2) (hk : k ≠ 
   have hx8 : x % 8 = 4 := by obtain ⟨i, hi⟩ := rodd; dsimp [x]; omega
   have xy : x = y ^ 2 := by dsimp [x, r, y]; rw [hj, pow_add]; ring
   let m := x ^ 2 + 1
-  have xm : m ∣ x ^ 4 - 1 := by
-    refine ⟨x ^ 2 - 1, ?_⟩
-    dsimp [m]
-    have hx2 : 1 ≤ x ^ 2 := Nat.pow_pos (by omega)
-    have hx4 : 1 ≤ x ^ 4 := Nat.pow_pos (by omega)
-    zify [hx2, hx4]; ring
+  have xm : m ∣ x ^ 4 - 1 := square_add_one_dvd x (by omega)
   -- A negative Jacobi symbol supplies a prime where x + 1 is a nonsquare.
   obtain ⟨q, hq, qm, neg⟩ := jacobiSym.eq_neg_one_at_prime_divisor_of_eq_neg_one
     (symbol_obstruction x hx8)
@@ -541,6 +538,209 @@ lemma twelve_prime_power (p k : ℕ) (hp : p.Prime) (odd : p ≠ 2) (hk : k ≠ 
     norm_num at h23
   · exact h
 
+/-- Odd powers detect the identity on fourth roots of unity. -/
+lemma odd_fourth_root {G : Type*} [Monoid G] {z : G} {u : ℕ}
+    (hu : Odd u) (h4 : z ^ 4 = 1) (ho : z ^ u = 1) : z = 1 := by
+  have cop : u.Coprime 4 := hu.coprime_two_right.pow_right 2
+  have h := pow_gcd_eq_one.mpr ⟨ho, h4⟩
+  rwa [cop.gcd_eq_one, pow_one] at h
+
+/-- A prime that is 1 modulo 16 cannot supply the negative symbol if its local test passes. -/
+lemma one_mod_sixteen_square (x q : ℕ) (hx : x % 8 = 4) (hq : q.Prime)
+    (qm : q ∣ x ^ 2 + 1) (qc : q % 16 = 1) (test : q ∣ 2 ^ x - 1) :
+    IsSquare ((x + 1 : ℕ) : ZMod q) := by
+  let _ : Fact q.Prime := ⟨hq⟩
+  let v : ZMod q := x
+  let u := x / 4
+  let t := q / 16
+  have xu : x = 4 * u := by dsimp [u]; omega
+  have ou : Odd u := Nat.odd_iff.mpr (by dsimp [u]; omega)
+  have qt : q = 16 * t + 1 := by dsimp [t]; omega
+  have q2 : q ≠ 2 := by omega
+  have nz : (2 : ZMod q) ≠ 0 := by
+    intro h
+    exact q2 ((Nat.prime_dvd_prime_iff_eq hq Nat.prime_two).mp
+      ((ZMod.natCast_eq_zero_iff 2 q).mp (by simpa using h)))
+  have one : (2 : ZMod q) ^ x = 1 := by
+    have h := (Nat.modEq_iff_dvd' Nat.one_le_two_pow).mpr test
+    simpa using (ZMod.natCast_eq_natCast_iff _ _ _).mpr h.symm
+  have f := ZMod.pow_card_sub_one_eq_one nz
+  have z4 : ((2 : ZMod q) ^ (4 * t)) ^ 4 = 1 := by
+    rwa [← pow_mul, show 4 * t * 4 = q - 1 by omega]
+  have zu : ((2 : ZMod q) ^ (4 * t)) ^ u = 1 := by
+    rw [← pow_mul, show 4 * t * u = x * t by rw [xu]; ring, pow_mul, one, one_pow]
+  have z := odd_fourth_root ou z4 zu
+  have minus : v ^ 2 + 1 = 0 := by
+    simpa [v] using (ZMod.natCast_eq_zero_iff _ _).mpr qm
+  have h4 : v ^ 4 = 1 := by linear_combination (v ^ 2 - 1) * minus
+  have eq : (v + 1) ^ 2 = 2 * v := by linear_combination minus
+  have euler : (v + 1) ^ (q / 2) = 1 := by
+    rw [show q / 2 = 2 * (4 * t) by omega, pow_mul, eq, mul_pow, z, one_mul,
+      pow_mul, h4, one_pow]
+  have zero : v + 1 ≠ 0 := by
+    intro h
+    apply nz
+    linear_combination minus - (v - 1) * h
+  have sq := (FiniteField.isSquare_iff (F := ZMod q) (by simpa only [ZMod.ringChar_zmod_n] using q2)
+    zero).mpr (by simpa only [ZMod.card] using euler)
+  simpa [v] using sq
+
+lemma product_one_mod_sixteen (c : ℕ) (hpos : c ≠ 0)
+    (h : ∀ r : ℕ, r.Prime → r ∣ c → r ≡ 1 [MOD 16]) : c ≡ 1 [MOD 16] := by
+  induction c using Nat.recOnMul with
+  | zero => exact (hpos rfl).elim
+  | one => rfl
+  | prime p hp => exact h p hp dvd_rfl
+  | mul a b ia ib =>
+    have ha := ia (by rintro rfl; simp at hpos)
+      (fun r hr rd => h r hr (rd.trans (dvd_mul_right _ _)))
+    have hb := ib (by rintro rfl; simp at hpos)
+      (fun r hr rd => h r hr (rd.trans (dvd_mul_left _ _)))
+    simpa using ha.mul hb
+
+/-- A passing x = 4 mod 8 needs two distinct primes outside 1 mod 16 in x²+1.
+    One of them is a prime with a negative Jacobi symbol. -/
+lemma two_exceptional_primes (x : ℕ) (hx : x % 8 = 4)
+    (test : x ^ 2 + 1 ∣ 2 ^ x - 1) :
+    ∃ q r : ℕ, q.Prime ∧ r.Prime ∧ q ≠ r ∧ q ∣ x ^ 2 + 1 ∧ r ∣ x ^ 2 + 1 ∧
+      q % 16 ≠ 1 ∧ r % 16 ≠ 1 ∧ jacobiSym (x + 1 : ℕ) q = -1 := by
+  let m := x ^ 2 + 1
+  have m0 : m ≠ 0 := by dsimp [m]; omega
+  have m1 : m ≡ 1 [MOD 16] := by
+    let a := x / 4
+    have xa : x = 4 * a := by dsimp [a]; omega
+    change (x ^ 2 + 1) % 16 = 1 % 16
+    rw [xa, mul_pow, show (4 : ℕ) ^ 2 = 16 by decide, Nat.mul_add_mod_self_left]
+  have neg : jacobiSym (x + 1 : ℕ) m = -1 := symbol_obstruction x hx
+  have exceptional (q : ℕ) (hq : q.Prime) (qm : q ∣ m) (j : jacobiSym (x + 1 : ℕ) q = -1) :
+      q % 16 ≠ 1 := fun qc => ZMod.nonsquare_of_jacobiSym_eq_neg_one j (by
+        simpa using one_mod_sixteen_square x q hx hq qm qc (qm.trans test))
+  obtain ⟨q, hq, qm, jq⟩ := jacobiSym.eq_neg_one_at_prime_divisor_of_eq_neg_one neg
+  have exc := exceptional q hq qm jq
+  suffices second : ∃ r : ℕ, r.Prime ∧ r ∣ m ∧ q ≠ r ∧ r % 16 ≠ 1 by
+    obtain ⟨r, hr, rm, ne, bad⟩ := second
+    exact ⟨q, r, hq, hr, ne, qm, rm, exc, bad, jq⟩
+  by_contra! none
+  obtain ⟨k, c, qc, mc⟩ := Nat.exists_eq_pow_mul_and_not_dvd m0 q hq.ne_one
+  have cp : c ≠ 0 := by rintro rfl; simp at qc
+  have cm : c ∣ m := ⟨q ^ k, by rw [mc, Nat.mul_comm]⟩
+  have c1 := product_one_mod_sixteen c cp (fun r hr rc => by
+    have ne : q ≠ r := by rintro rfl; exact qc rc
+    exact none r hr (rc.trans cm) ne)
+  have pk : q ^ k ≡ 1 [MOD 16] := by
+    rw [mc] at m1
+    exact (by simpa using (c1.mul_left (q ^ k)).symm.trans m1)
+  have qodd : Odd q := hq.odd_of_ne_two (by
+    rintro rfl
+    have h : m % 2 = 1 := by change m % 16 = 1 % 16 at m1; omega
+    omega)
+  have pow4 : (q : ZMod 16) ^ 4 = 1 := by
+    have cert : ∀ i : Fin 16, i.val % 2 = 1 → (i.val : ZMod 16) ^ 4 = 1 := by decide +kernel
+    have h := cert ⟨q % 16, Nat.mod_lt _ (by decide)⟩ (by change q % 16 % 2 = 1; have := Nat.odd_iff.mp qodd; omega)
+    simpa using h
+  have even : Even k := by
+    by_contra absent
+    have zk : (q : ZMod 16) ^ k = 1 := by
+      simpa using (ZMod.natCast_eq_natCast_iff _ _ _).mpr pk
+    have z1 := odd_fourth_root (Nat.not_even_iff_odd.mp absent) pow4 zk
+    exact exc ((ZMod.natCast_eq_natCast_iff q 1 16).mp (by simpa using z1))
+  rw [mc, jacobiSym.mul_right' _ (pow_ne_zero _ hq.ne_zero) cp, jacobiSym.pow_right,
+    jq, even.neg_one_pow, one_mul] at neg
+  obtain ⟨r, hr, rc, jr⟩ := jacobiSym.eq_neg_one_at_prime_divisor_of_eq_neg_one neg
+  exact exceptional r hr (rc.trans cm) jr (none r hr (rc.trans cm) (by rintro rfl; exact qc rc))
+
+-- A square root modulo the complementary factor proves uniqueness without factoring it.
+lemma unique_witness_certificate (x q c a : ℕ) (hx : x % 8 = 4) (hq : q.Prime)
+    (factor : x ^ 2 + 1 = q * c) (root : x + 1 ≡ a ^ 2 [MOD c]) :
+    jacobiSym (x + 1 : ℕ) q = -1 ∧
+      ∀ p : ℕ, p.Prime → p ∣ x ^ 2 + 1 → jacobiSym (x + 1 : ℕ) p = -1 → p = q := by
+  have unique (p : ℕ) (hp : p.Prime) (pm : p ∣ x ^ 2 + 1)
+      (neg : jacobiSym (x + 1 : ℕ) p = -1) : p = q := by
+    rw [factor] at pm
+    rcases hp.dvd_mul.mp pm with pq | pc
+    · exact (Nat.prime_dvd_prime_iff_eq hp hq).mp pq
+    · exfalso
+      have reduced := root.of_dvd pc
+      have square : IsSquare ((x + 1 : ℕ) : ZMod p) := by
+        apply (isSquare_iff_exists_sq _).mpr
+        exact ⟨a, by simpa using (ZMod.natCast_eq_natCast_iff _ _ _).mpr reduced⟩
+      exact ZMod.nonsquare_of_jacobiSym_eq_neg_one neg (by simpa using square)
+  obtain ⟨p, hp, pm, neg⟩ := jacobiSym.eq_neg_one_at_prime_divisor_of_eq_neg_one
+    (symbol_obstruction x hx)
+  exact ⟨unique p hp pm neg ▸ neg, unique⟩
+
+lemma mersenne_dvd_iff (m x : ℕ) : m ∣ 2 ^ x - 1 ↔ (2 : ZMod m) ^ x = 1 := by
+  rw [← Nat.modEq_iff_dvd' Nat.one_le_two_pow, ← ZMod.natCast_eq_natCast_iff]
+  push_cast
+  exact eq_comm
+
+/-- Each remaining residue class occurs even when the first half passes and
+    the unique negative-symbol prime also passes. Each example fails the full test. -/
+theorem surviving_witness_classes (b : ℕ) (hb : b = 5 ∨ b = 9 ∨ b = 13) :
+    ∃ x q : ℕ, x % 8 = 4 ∧ q.Prime ∧ q % 16 = b ∧ q ∣ x ^ 2 + 1 ∧
+      x ^ 2 - 1 ∣ 2 ^ x - 1 ∧ q ∣ 2 ^ x - 1 ∧ ¬ (x ^ 2 + 1 ∣ 2 ^ x - 1) ∧
+      jacobiSym (x + 1 : ℕ) q = -1 ∧
+      ∀ p : ℕ, p.Prime → p ∣ x ^ 2 + 1 → jacobiSym (x + 1 : ℕ) p = -1 → p = q := by
+  rcases hb with rfl | rfl | rfl
+  · refine ⟨6818292, 5, by decide +kernel, by norm_num, by decide +kernel, by decide +kernel,
+      ?_, ?_, ?_, ?_⟩
+    · rw [mersenne_dvd_iff]
+      change (2 : ZMod 46489105797263) ^ 6818292 = 1
+      reduce_mod_char
+    · rw [mersenne_dvd_iff]
+      reduce_mod_char
+    · rw [mersenne_dvd_iff]
+      change (2 : ZMod 46489105797265) ^ 6818292 ≠ 1
+      reduce_mod_char
+      decide +kernel
+    · exact unique_witness_certificate _ _ 9297821159453 1392599994243
+        (by decide +kernel) (by norm_num) (by decide +kernel) (by decide +kernel)
+  · refine ⟨34407660, 281, by decide +kernel, by norm_num, by decide +kernel, by decide +kernel,
+      ?_, ?_, ?_, ?_⟩
+    · rw [mersenne_dvd_iff]
+      change (2 : ZMod 1183887066675599) ^ 34407660 = 1
+      reduce_mod_char
+    · rw [mersenne_dvd_iff]
+      reduce_mod_char
+    · rw [mersenne_dvd_iff]
+      change (2 : ZMod 1183887066675601) ^ 34407660 ≠ 1
+      reduce_mod_char
+      decide +kernel
+    · exact unique_witness_certificate _ _ 4213121233721 606124847645
+        (by decide +kernel) (by norm_num) (by decide +kernel) (by decide +kernel)
+  · refine ⟨9589860, 61, by decide +kernel, by norm_num, by decide +kernel, by decide +kernel,
+      ?_, ?_, ?_, ?_⟩
+    · rw [mersenne_dvd_iff]
+      change (2 : ZMod 91965414819599) ^ 9589860 = 1
+      reduce_mod_char
+    · rw [mersenne_dvd_iff]
+      reduce_mod_char
+    · rw [mersenne_dvd_iff]
+      change (2 : ZMod 91965414819601) ^ 9589860 ≠ 1
+      reduce_mod_char
+      decide +kernel
+    · exact unique_witness_certificate _ _ 1507629751141 11444095358
+        (by decide +kernel) (by norm_num) (by decide +kernel) (by decide +kernel)
+
+/-- For the first example, an odd multiplier alone repairs the full divisibility.
+    The failing prime 113 has order 28, whose odd factor 7 is missing from x. -/
+lemma odd_order_failure :
+    let x : ℕ := 6818292
+    Odd 49893557 ∧ (x ^ 4 - 1 ∣ 2 ^ (x * 49893557) - 1) ∧
+      113 ∣ x ^ 2 + 1 ∧ orderOf (2 : ZMod 113) = 28 ∧ ¬ 7 ∣ x := by
+  refine ⟨by decide +kernel, ?_, by decide +kernel, ?_, by decide +kernel⟩
+  · rw [mersenne_dvd_iff]
+    change (2 : ZMod 2161236957829205253069885695) ^ 340188840544644 = 1
+    reduce_mod_char
+  · have h := orderOf_dvd_of_pow_eq_one (by decide +kernel : (2 : ZMod 113) ^ 28 = 1)
+    have a : ¬ orderOf (2 : ZMod 113) ∣ 14 := fun hd =>
+      (by decide +kernel : (2 : ZMod 113) ^ 14 ≠ 1) (orderOf_dvd_iff_pow_eq_one.mp hd)
+    have b : ¬ orderOf (2 : ZMod 113) ∣ 4 := fun hd =>
+      (by decide +kernel : (2 : ZMod 113) ^ 4 ≠ 1) (orderOf_dvd_iff_pow_eq_one.mp hd)
+    have le := Nat.le_of_dvd (by decide : 0 < 28) h
+    generalize orderOf (2 : ZMod 113) = t at *
+    interval_cases t <;> norm_num at *
+
 theorem main : H1 → H2 → H3 → type_of% @OMA.S_oeis_a000215.main := by
   intro tail semiprime mixed
   refine ⟨?_, ?_, ?_⟩
@@ -571,7 +771,8 @@ theorem main : H1 → H2 → H3 → type_of% @OMA.S_oeis_a000215.main := by
         rw [eq] at big div
         obtain ⟨k, hk, val⟩ := power_two_converse s big div
         exact ⟨k, hk, by omega⟩
-      apply (mixed (n - 1) big (four_dvd_of_test _ big res.1 div) res.2 power ?_ div).elim
+      apply (mixed (n - 1) big (four_dvd_of_test _ big res.1 div) res.2 power ?_
+        (fun hx => two_exceptional_primes _ hx ((square_add_one_dvd _ (by omega)).trans div)) div).elim
       intro p k hp odd hk
       constructor
       · intro h
