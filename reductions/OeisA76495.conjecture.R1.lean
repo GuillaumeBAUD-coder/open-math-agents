@@ -4,6 +4,7 @@ import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.Tactic.IntervalCases
 import Mathlib.Data.ZMod.Basic
 import Mathlib.Tactic
+import Mathlib.Order.Interval.Finset.Fin
 
 /-! Prime factor restrictions on candidates of the divisor-sum congruence with remainder five. -/
 
@@ -2009,13 +2010,328 @@ theorem SigmaFive.odd_five_support {n : ℕ} (hn : Odd n)
   SigmaFive.Four.certified_odd_five_support FourSigmaCertificate.boxes_check hn h
 
 
+namespace SigmaFive.Four
+
+private theorem rank_filter_bound {s : Finset ℕ} {k : ℕ} (hs : s.card = k)
+    (i : Fin k) (t : ℕ) (hfi : s.orderEmbOfFin hs i < t) :
+    i.val + 1 ≤ (s.filter (fun x => x < t)).card := by
+  let f := s.orderEmbOfFin hs
+  let pre := Finset.Iic i
+  have hsub : Finset.image f pre ⊆ s.filter (fun x => x < t) := by
+    apply Finset.image_subset_iff.mpr
+    intro j hj
+    have hjle : j ≤ i := Finset.mem_Iic.mp hj
+    have hmem : f j ∈ s := Finset.orderEmbOfFin_mem _ _ _
+    have hlt : f j < t := lt_of_le_of_lt (f.monotone hjle) hfi
+    exact Finset.mem_filter.mpr ⟨hmem, hlt⟩
+  have hc := Finset.card_le_card hsub
+  rw [Finset.card_image_of_injective pre f.injective, Fin.card_Iic] at hc
+  exact hc
+
+private def primeLower (i : ℕ) : ℕ :=
+  match i with
+  | 0 => 3
+  | 1 => 5
+  | 2 => 7
+  | 3 => 11
+  | 4 => 13
+  | 5 => 17
+  | _ => 19
+
+private theorem prime_rank_lower {s : Finset ℕ} {k : ℕ} (hs : s.card = k)
+    (hk : k ≤ 7) (hprime : ∀ p ∈ s, p.Prime) (hlower : ∀ p ∈ s, 3 ≤ p) :
+    ∀ i : Fin k, primeLower i.val ≤ s.orderEmbOfFin hs i := by
+  intro i
+  have hi7 : i.val < 7 := lt_of_lt_of_le i.isLt hk
+  interval_cases hval : i.val
+  all_goals
+    by_contra! hlt
+    have hsub : s.filter (fun p => p < primeLower i.val) ⊆
+        (Finset.range (primeLower i.val)).filter (fun p => p.Prime ∧ 3 ≤ p) := by
+      intro p hp
+      rcases Finset.mem_filter.mp hp with ⟨hps, hpt⟩
+      apply Finset.mem_filter.mpr
+      refine ⟨Finset.mem_range.mpr hpt, ?_⟩
+      exact ⟨hprime p hps, hlower p hps⟩
+    have hcount :
+        (s.filter (fun p => p < primeLower i.val)).card ≤ i.val := by
+      calc
+        (s.filter (fun p => p < primeLower i.val)).card ≤
+            ((Finset.range (primeLower i.val)).filter (fun p => p.Prime ∧ 3 ≤ p)).card :=
+          Finset.card_le_card hsub
+        _ = i.val := by
+          rw [hval]
+          simp [primeLower]
+          decide
+    have hprefix := rank_filter_bound hs i (primeLower i.val) (by
+      simpa [primeLower, hval] using hlt)
+    omega
+
+private theorem prime_product_ratio_lt_three {s : Finset ℕ} {k : ℕ}
+    (hs : s.card = k) (hklo : 4 ≤ k) (hkhi : k ≤ 7)
+    (hprime : ∀ p ∈ s, p.Prime) (hlower : ∀ p ∈ s, 3 ≤ p) :
+    (∏ p ∈ s, (p : ℚ) / ((p : ℚ) - 1)) < 3 := by
+  classical
+  let f := s.orderEmbOfFin hs
+  have hfmem (i : Fin k) : f i ∈ s := Finset.orderEmbOfFin_mem _ _ _
+  have hfrank (i : Fin k) : primeLower i.val ≤ f i :=
+    prime_rank_lower hs hkhi hprime hlower i
+  have hprodMap :
+      (∏ p ∈ s, (p : ℚ) / ((p : ℚ) - 1)) =
+        ∏ i : Fin k, (f i : ℚ) / ((f i : ℚ) - 1) := by
+    rw [← Finset.map_orderEmbOfFin_univ s hs, Finset.prod_map]
+    simp [f]
+  have hprodBound :
+      (∏ i : Fin k, (f i : ℚ) / ((f i : ℚ) - 1)) ≤
+        ∏ i : Fin k, (primeLower i.val : ℚ) / ((primeLower i.val : ℚ) - 1) := by
+    apply Finset.prod_le_prod
+    · intro i hi
+      have hp := hprime (f i) (hfmem i)
+      have hl := hlower (f i) (hfmem i)
+      have hp1 : (1 : ℚ) < f i := by exact_mod_cast (show 1 < f i by omega)
+      linarith [div_nonneg (show (0 : ℚ) ≤ f i by positivity)
+        (show (0 : ℚ) ≤ (f i : ℚ) - 1 by linarith)]
+    · intro i hi
+      have hti := hfrank i
+      have ht3 : 3 ≤ primeLower i.val := by
+        have hi7 : i.val < 7 := lt_of_lt_of_le i.isLt hkhi
+        interval_cases i.val <;> norm_num [primeLower]
+      have hp1 : (1 : ℚ) < f i := by
+        exact_mod_cast (show 1 < f i from (hprime (f i) (hfmem i)).two_le)
+      have ht1 : (1 : ℚ) < primeLower i.val := by exact_mod_cast (by omega : 1 < primeLower i.val)
+      have hcast : (primeLower i.val : ℚ) ≤ f i := by exact_mod_cast hti
+      have hpden : 0 < (f i : ℚ) - 1 := by linarith
+      have htden : 0 < (primeLower i.val : ℚ) - 1 := by linarith
+      rw [div_le_div_iff₀ hpden htden]
+      nlinarith
+  have hlim :
+      (∏ i : Fin k, (primeLower i.val : ℚ) / ((primeLower i.val : ℚ) - 1)) < 3 := by
+    interval_cases k <;> norm_num [primeLower, Fin.prod_univ_succ]
+  rw [hprodMap]
+  exact lt_of_le_of_lt hprodBound hlim
+
+end SigmaFive.Four
+
+namespace SigmaFive
+
+/-- If every prime valuation is even, the prime factorization is a square. -/
+private theorem square_of_even_factorization {n : ℕ} (hn0 : n ≠ 0)
+    (h : ∀ p, p.Prime → Even (n.factorization p)) : IsSquare n := by
+  refine ⟨n.factorization.prod fun a b => a ^ (b / 2), ?_⟩
+  rw [← pow_two, ← powMonoidHom_apply, map_finsuppProd]
+  nth_rw 1 [← Nat.prod_factorization_pow_eq_self hn0]
+  refine Finsupp.prod_congr fun p hp => ?_
+  rw [powMonoidHom_apply, ← pow_mul,
+    Nat.div_two_mul_two_of_even (h p (Nat.prime_of_mem_primeFactors hp))]
+
+/-- An odd nonsquare has an even divisor sum: a prime with odd valuation
+contributes an even prime-power divisor sum to the multiplicative factorization. -/
+theorem even_sigma_of_odd_nonsquare {n : ℕ} (hn0 : n ≠ 0) (hn : Odd n)
+    (hnsq : ¬ IsSquare n) : Even (sigma 1 n) := by
+  classical
+  have hex : ∃ p, p.Prime ∧ ¬ Even (n.factorization p) := by
+    by_contra! h
+    exact hnsq (square_of_even_factorization hn0 h)
+  obtain ⟨p, hp, he⟩ := hex
+  have hepos : n.factorization p ≠ 0 := by
+    intro hz
+    apply he
+    simp [hz]
+  have hpdvd : p ∣ n := Nat.dvd_of_factorization_pos hepos
+  have hpmem : p ∈ n.primeFactors := Nat.mem_primeFactors.mpr ⟨hp, hpdvd, hn0⟩
+  have hpne : p ≠ 2 := by
+    intro hp2
+    subst p
+    apply (Nat.not_even_iff.mpr (by rcases hn with ⟨j, hj⟩; omega))
+    exact even_iff_two_dvd.mpr (dvd_trans (by norm_num) hpdvd)
+  have hpmod : p % 2 = 1 := hp.mod_two_eq_one_iff_ne_two.mpr hpne
+  have hpOdd : Odd p := by
+    refine ⟨p / 2, ?_⟩
+    omega
+  have hpowOdd : ∀ i, Odd (p^i) := by
+    intro i
+    exact hpOdd.pow
+  have hemod : n.factorization p % 2 = 1 := Nat.not_even_iff.mp he
+  have hlocal : Even (sigma 1 (p ^ n.factorization p)) := by
+    rw [sigma_one_apply_prime_pow hp, Finset.even_sum_iff_even_card_odd]
+    have hfilter : {i ∈ Finset.range (n.factorization p + 1) | Odd (p^i)} =
+        Finset.range (n.factorization p + 1) := by
+      ext i
+      simp [hpowOdd]
+    rw [hfilter, Finset.card_range]
+    refine ⟨n.factorization p / 2 + 1, ?_⟩
+    omega
+  have hfact : sigma 1 n = ∏ q ∈ n.primeFactors, sigma 1 (q ^ n.factorization q) := by
+    rw [isMultiplicative_sigma.multiplicative_factorization _ hn0]
+    simp [Finsupp.prod, Nat.support_factorization]
+  rw [hfact]
+  apply even_iff_two_dvd.mpr
+  exact dvd_trans (even_iff_two_dvd.mp hlocal) (Finset.dvd_prod_of_mem _ hpmem)
+
+/-- For an odd input, an even divisor sum and remainder five force the
+integer quotient to be odd. -/
+theorem odd_quotient_of_even_sigma {n : ℕ} (hn : Odd n)
+    (hmod : sigma 1 n % n = 5) (hs : Even (sigma 1 n)) :
+    Odd (sigma 1 n / n) := by
+  let k := sigma 1 n / n
+  have hdiv := Nat.mod_add_div (sigma 1 n) n
+  rw [hmod] at hdiv
+  change 5 + n*k = sigma 1 n at hdiv
+  have hnmod : n % 2 = 1 := by
+    rcases hn with ⟨j, rfl⟩
+    omega
+  have hsmod : sigma 1 n % 2 = 0 := Nat.even_iff.mp hs
+  have hkm : k % 2 = 1 := by
+    have he := congrArg (fun x : ℕ => x % 2) hdiv
+    rw [Nat.add_mod, Nat.mul_mod] at he
+    rw [hnmod, hsmod] at he
+    omega
+  refine ⟨k / 2, ?_⟩
+  omega
+
+/-- An odd quotient and the divisor contribution from two distinct primes make a
+remainder-five candidate incompatible with a sigma-to-number ratio below three. -/
+theorem exclude_remainder_five_of_ratio_lt_three
+    {n : ℕ} (hmod : sigma 1 n % n = 5)
+    (hquotOdd : Odd (sigma 1 n / n)) (hbig : n + 5 < sigma 1 n)
+    (hratio : sigma 1 n < 3*n) : False := by
+  let k := sigma 1 n / n
+  have hdiv := Nat.mod_add_div (sigma 1 n) n
+  rw [hmod] at hdiv
+  change 5 + n*k = sigma 1 n at hdiv
+  have hklt : k < 3 := by
+    by_contra! hk
+    have hmul := Nat.mul_le_mul_left n (show 3 ≤ k by omega)
+    omega
+  have hk : k = 1 := by
+    rcases hquotOdd with ⟨j, hj⟩
+    omega
+  rw [hk] at hdiv
+  omega
+
+end SigmaFive
+namespace SigmaFive
+
+/-- Four distinct odd prime factors force a proper divisor at least seven. -/
+theorem large_sigma_of_four_odd_factors {n : ℕ} (hn : Odd n)
+    (hcard : 4 ≤ n.primeFactors.card) : n + 5 < sigma 1 n := by
+  classical
+  have hn0 : n ≠ 0 := by
+    intro h
+    subst n
+    rcases hn with ⟨j, hj⟩
+    omega
+  have hsmall : n.primeFactors.filter (fun p => p < 7) ⊆ ({3, 5} : Finset ℕ) := by
+    intro p hp
+    rcases Finset.mem_filter.mp hp with ⟨hp, hup⟩
+    have hprime := Nat.prime_of_mem_primeFactors hp
+    have hdiv := Nat.dvd_of_mem_primeFactors hp
+    have hpne2 : p ≠ 2 := by
+      intro hp2
+      subst p
+      exact hn.not_two_dvd_nat hdiv
+    have hlo : 3 ≤ p := by have := hprime.two_le; omega
+    interval_cases p <;> norm_num at hprime <;> norm_num
+  have hex : ∃ q ∈ n.primeFactors, 7 ≤ q := by
+    by_contra! h
+    have hsub : n.primeFactors ⊆ ({3, 5} : Finset ℕ) := by
+      intro p hp
+      apply hsmall
+      apply Finset.mem_filter.mpr
+      refine ⟨hp, ?_⟩
+      have hp_lt : p < 7 := h p hp
+      exact hp_lt
+    have hcard' : n.primeFactors.card ≤ ({3, 5} : Finset ℕ).card :=
+      Finset.card_le_card hsub
+    norm_num at hcard'
+    omega
+  obtain ⟨q, hqmem, hq7⟩ := hex
+  have hqprime := Nat.prime_of_mem_primeFactors hqmem
+  have hnprime : ¬ n.Prime := by
+    intro hp
+    have hc : n.primeFactors.card = 1 := by simp [hp]
+    omega
+  have hqn : q ≠ n := by
+    intro heq
+    subst q
+    exact hnprime hqprime
+  have hqle : q ≤ n := Nat.le_of_dvd (Nat.pos_of_ne_zero hn0)
+    (Nat.dvd_of_mem_primeFactors hqmem)
+  have hq_lt : q < n := lt_of_le_of_ne hqle hqn
+  let T : Finset ℕ := {n, q}
+  have hTsub : T ⊆ n.divisors := by
+    intro d hd
+    simp only [T, Finset.mem_insert, Finset.mem_singleton] at hd
+    rcases hd with hdn | hdq
+    · subst d
+      exact Nat.mem_divisors_self n hn0
+    · subst d
+      exact Nat.mem_divisors.mpr ⟨Nat.dvd_of_mem_primeFactors hqmem, hn0⟩
+  have hTsum : (∑ d ∈ T, d) = n + q := by
+    simp [T, Finset.sum_pair (Ne.symm hqn)]
+  have hsum := Finset.sum_le_sum_of_subset_of_nonneg hTsub
+    (fun d _ _ => Nat.zero_le d)
+  rw [← sigma_one_apply n] at hsum
+  rw [hTsum] at hsum
+  omega
+
+/-- An odd nonsquare with at most seven distinct prime factors cannot have
+divisor-sum remainder five. -/
+theorem exclude_odd_nonsquare_le_seven {n : ℕ} (hn : Odd n)
+    (hnsq : ¬ IsSquare n) (hmod : sigma 1 n % n = 5)
+    (hcard : n.primeFactors.card ≤ 7) : False := by
+  have hn0 : n ≠ 0 := by
+    intro hz
+    subst n
+    rcases hn with ⟨j, hj⟩
+    omega
+  have hcardLo := odd_four_support hn hmod
+  have hbig := large_sigma_of_four_odd_factors hn hcardLo
+  have hsigmaEven := even_sigma_of_odd_nonsquare hn0 hn hnsq
+  have hquotOdd := odd_quotient_of_even_sigma hn hmod hsigmaEven
+  have hprime (p : ℕ) (hp : p ∈ n.primeFactors) : p.Prime :=
+    Nat.prime_of_mem_primeFactors hp
+  have hlower (p : ℕ) (hp : p ∈ n.primeFactors) : 3 ≤ p := by
+    have hdiv := Nat.dvd_of_mem_primeFactors hp
+    have hpne2 : p ≠ 2 := by
+      intro hp2
+      subst p
+      exact hn.not_two_dvd_nat hdiv
+    have := (hprime p hp).two_le
+    omega
+  have hupperPrimeProduct :
+      (∏ p ∈ n.primeFactors, Four.ratio p (n.factorization p)) < 3 := by
+    have hupper :
+        (∏ p ∈ n.primeFactors, Four.ratio p (n.factorization p)) ≤
+          ∏ p ∈ n.primeFactors, (p : ℚ) / ((p : ℚ) - 1) := by
+      apply Finset.prod_le_prod
+      · intro p hp
+        have hp0 : (0 : ℚ) < p := by exact_mod_cast (hprime p hp).pos
+        unfold Four.ratio
+        positivity
+      · intro p hp
+        exact Four.ratio_upper (hprime p hp) _
+    exact lt_of_le_of_lt hupper
+      (Four.prime_product_ratio_lt_three rfl hcardLo hcard hprime hlower)
+  have hratioQ : Four.ratio n 1 < 3 := by
+    rw [← Four.ratio_prod_of_factorization hn0]
+    exact hupperPrimeProduct
+  have hnrat : (sigma 1 n : ℚ) / (n : ℚ) < 3 := by
+    simpa [Four.ratio] using hratioQ
+  have hq : (sigma 1 n : ℚ) < 3 * n :=
+    (div_lt_iff₀ (show (0 : ℚ) < n by exact_mod_cast Nat.pos_of_ne_zero hn0)).mp hnrat
+  have hratio : sigma 1 n < 3*n := by exact_mod_cast hq
+  exact exclude_remainder_five_of_ratio_lt_three hmod hquotOdd hbig hratio
+
+end SigmaFive
+
 namespace OMA.R_OeisA76495_conjecture_R1
 
 open ArithmeticFunction
 
-/-- The remaining odd case has at least five distinct prime factors. -/
+/-- Odd candidates have at least five prime factors, and nonsquares have at least eight. -/
 def H1 : Prop :=
-  ∀ n : ℕ, Odd n → 5 ≤ n.primeFactors.card → sigma 1 n % n ≠ 5
+  ∀ n : ℕ, Odd n → 5 ≤ n.primeFactors.card → (IsSquare n ∨ 8 ≤ n.primeFactors.card) → sigma 1 n % n ≠ 5
 
 /-- The remaining even case has at least three distinct prime factors and odd divisor sum. -/
 def H2 : Prop :=
@@ -2038,7 +2354,12 @@ theorem main : H1 → H2 → type_of% @OeisA76495.conjecture := by
         refine ⟨v * (sigma 1 (v+v) / (v+v)) + 2, ?_⟩
         nlinarith only [heq]
       exact even_case n he hcard hodd hmod
-    · exact odd_case n ho (SigmaFive.odd_five_support ho hmod) hmod
+    · apply odd_case n ho (SigmaFive.odd_five_support ho hmod) _ hmod
+      by_cases hsq : IsSquare n
+      · exact Or.inl hsq
+      · right
+        by_contra! hc
+        exact SigmaFive.exclude_odd_nonsquare_le_seven ho hsq hmod (by omega)
   · rfl
 
 end OMA.R_OeisA76495_conjecture_R1
