@@ -261,7 +261,7 @@ lemma card5 {a b c d e : ℤ} (h1 : a < b) (h2 : b < c) (h3 : c < d) (h4 : d < e
     card4 h2 h3 h4]
 
 set_option maxHeartbeats 400000000 in
-lemma sub5_1 (f : Fin 5 → ℤ) (p0 : 0 < f 0) (o0 : f 0 % 2 = 1) (o1 : f 1 % 2 = 1) (o2 : f 2 % 2 = 1) (o3 : f 3 % 2 = 1) (o4 : f 4 % 2 = 1) (m0 : f 0 < f 1) (m1 : f 1 < f 2) (m2 : f 2 < f 3) (m3 : f 3 < f 4)
+lemma sub5_1 (f : Fin 5 → ℤ) (_p0 : 0 < f 0) (o0 : f 0 % 2 = 1) (o1 : f 1 % 2 = 1) (o2 : f 2 % 2 = 1) (o3 : f 3 % 2 = 1) (o4 : f 4 % 2 = 1) (_m0 : f 0 < f 1) (m1 : f 1 < f 2) (m2 : f 2 < f 3) (_m3 : f 3 < f 4)
     (H : ∀ i j k l : Fin 5, i < j → j < k → k < l → R4 (f i) (f j) (f k) (f l))
     (c1 : f 0 + f 3 = f 1 + f 2) (c2 : f 0 + f 1 + f 2 = f 4) : False := by
   by_cases c3 : f 0 + f 4 = f 1 + f 3
@@ -531,7 +531,7 @@ structure AH (y : ℕ → ℤ) : Prop where
 
 set_option maxHeartbeats 4000000 in
 lemma s238 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c602 : Q y false 1 2 3 4) (c631 : Q y true 0 2 3 5) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c411 : N (Q y false 0 1 2 4)) (c486 : N (Q y true 0 1 2 4)) (c516 : N (Q y false 0 1 3 4)) (c575 : N (Q y true 0 1 3 4)) (c584 : N (Q y false 0 2 3 4)) (c600 : N (Q y true 0 2 3 4)) (c603 : N (Q y false 0 1 2 5)) (c605 : N (Q y true 0 1 2 5)) (c614 : N (Q y false 0 1 3 5)) (c615 : N (Q y true 0 1 3 5)) (c622 : N (Q y false 0 2 3 5)) : False := by
+  (c602 : Q y false 1 2 3 4) (c631 : Q y true 0 2 3 5) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (_c411 : N (Q y false 0 1 2 4)) (_c486 : N (Q y true 0 1 2 4)) (_c516 : N (Q y false 0 1 3 4)) (_c575 : N (Q y true 0 1 3 4)) (_c584 : N (Q y false 0 2 3 4)) (_c600 : N (Q y true 0 2 3 4)) (_c603 : N (Q y false 0 1 2 5)) (_c605 : N (Q y true 0 1 2 5)) (_c614 : N (Q y false 0 1 3 5)) (_c615 : N (Q y true 0 1 3 5)) (_c622 : N (Q y false 0 2 3 5)) : False := by
  rcases em (Q y true 1 2 3 6) with c632 | c632
  ·
   rcases H.h01237 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -559,7 +559,7 @@ lemma s238 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s237 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c602 : Q y false 1 2 3 4) (c622 : Q y false 0 2 3 5) (c623 : Q y false 0 1 4 5) (c628 : Q y true 0 2 3 6) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c411 : N (Q y false 0 1 2 4)) (c486 : N (Q y true 0 1 2 4)) (c516 : N (Q y false 0 1 3 4)) (c575 : N (Q y true 0 1 3 4)) (c584 : N (Q y false 0 2 3 4)) (c600 : N (Q y true 0 2 3 4)) (c603 : N (Q y false 0 1 2 5)) (c605 : N (Q y true 0 1 2 5)) (c614 : N (Q y false 0 1 3 5)) (c615 : N (Q y true 0 1 3 5)) (c624 : N (Q y true 0 1 2 6)) (c626 : N (Q y true 0 1 3 6)) : False := by
+  (c602 : Q y false 1 2 3 4) (_c622 : Q y false 0 2 3 5) (c623 : Q y false 0 1 4 5) (c628 : Q y true 0 2 3 6) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c411 : N (Q y false 0 1 2 4)) (_c486 : N (Q y true 0 1 2 4)) (c516 : N (Q y false 0 1 3 4)) (c575 : N (Q y true 0 1 3 4)) (_c584 : N (Q y false 0 2 3 4)) (_c600 : N (Q y true 0 2 3 4)) (_c603 : N (Q y false 0 1 2 5)) (_c605 : N (Q y true 0 1 2 5)) (_c614 : N (Q y false 0 1 3 5)) (c615 : N (Q y true 0 1 3 5)) (_c624 : N (Q y true 0 1 2 6)) (_c626 : N (Q y true 0 1 3 6)) : False := by
  rcases em (Q y true 1 2 3 7) with c629 | c629
  ·
   rcases H.h02467 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -587,7 +587,7 @@ lemma s237 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s236 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c602 : Q y false 1 2 3 4) (c622 : Q y false 0 2 3 5) (c623 : Q y false 0 1 4 5) (c626 : Q y true 0 1 3 6) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c411 : N (Q y false 0 1 2 4)) (c486 : N (Q y true 0 1 2 4)) (c516 : N (Q y false 0 1 3 4)) (c575 : N (Q y true 0 1 3 4)) (c584 : N (Q y false 0 2 3 4)) (c600 : N (Q y true 0 2 3 4)) (c603 : N (Q y false 0 1 2 5)) (c605 : N (Q y true 0 1 2 5)) (c614 : N (Q y false 0 1 3 5)) (c615 : N (Q y true 0 1 3 5)) (c624 : N (Q y true 0 1 2 6)) : False := by
+  (c602 : Q y false 1 2 3 4) (_c622 : Q y false 0 2 3 5) (c623 : Q y false 0 1 4 5) (c626 : Q y true 0 1 3 6) (_c1 : N (Q y false 0 1 2 3)) (_c320 : N (Q y true 0 1 2 3)) (c411 : N (Q y false 0 1 2 4)) (c486 : N (Q y true 0 1 2 4)) (_c516 : N (Q y false 0 1 3 4)) (_c575 : N (Q y true 0 1 3 4)) (c584 : N (Q y false 0 2 3 4)) (c600 : N (Q y true 0 2 3 4)) (_c603 : N (Q y false 0 1 2 5)) (_c605 : N (Q y true 0 1 2 5)) (_c614 : N (Q y false 0 1 3 5)) (_c615 : N (Q y true 0 1 3 5)) (c624 : N (Q y true 0 1 2 6)) : False := by
  rcases em (Q y false 1 2 4 6) with c627 | c627
  ·
   rcases H.h02346 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -615,7 +615,7 @@ lemma s236 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s235 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c602 : Q y false 1 2 3 4) (c622 : Q y false 0 2 3 5) (c623 : Q y false 0 1 4 5) (c624 : Q y true 0 1 2 6) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c411 : N (Q y false 0 1 2 4)) (c486 : N (Q y true 0 1 2 4)) (c516 : N (Q y false 0 1 3 4)) (c575 : N (Q y true 0 1 3 4)) (c584 : N (Q y false 0 2 3 4)) (c600 : N (Q y true 0 2 3 4)) (c603 : N (Q y false 0 1 2 5)) (c605 : N (Q y true 0 1 2 5)) (c614 : N (Q y false 0 1 3 5)) (c615 : N (Q y true 0 1 3 5)) : False := by
+  (c602 : Q y false 1 2 3 4) (_c622 : Q y false 0 2 3 5) (c623 : Q y false 0 1 4 5) (c624 : Q y true 0 1 2 6) (c1 : N (Q y false 0 1 2 3)) (_c320 : N (Q y true 0 1 2 3)) (_c411 : N (Q y false 0 1 2 4)) (_c486 : N (Q y true 0 1 2 4)) (c516 : N (Q y false 0 1 3 4)) (c575 : N (Q y true 0 1 3 4)) (c584 : N (Q y false 0 2 3 4)) (c600 : N (Q y true 0 2 3 4)) (_c603 : N (Q y false 0 1 2 5)) (_c605 : N (Q y true 0 1 2 5)) (_c614 : N (Q y false 0 1 3 5)) (_c615 : N (Q y true 0 1 3 5)) : False := by
  rcases em (Q y false 1 3 4 6) with c625 | c625
  ·
   rcases H.h02346 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -698,7 +698,7 @@ lemma s233 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s232 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c602 : Q y false 1 2 3 4) (c615 : Q y true 0 1 3 5) (c616 : Q y false 0 1 4 5) (c617 : Q y false 0 2 3 5) (c618 : Q y true 0 2 3 6) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c411 : N (Q y false 0 1 2 4)) (c486 : N (Q y true 0 1 2 4)) (c516 : N (Q y false 0 1 3 4)) (c575 : N (Q y true 0 1 3 4)) (c584 : N (Q y false 0 2 3 4)) (c600 : N (Q y true 0 2 3 4)) (c603 : N (Q y false 0 1 2 5)) (c605 : N (Q y true 0 1 2 5)) (c614 : N (Q y false 0 1 3 5)) : False := by
+  (c602 : Q y false 1 2 3 4) (c615 : Q y true 0 1 3 5) (c616 : Q y false 0 1 4 5) (_c617 : Q y false 0 2 3 5) (c618 : Q y true 0 2 3 6) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c411 : N (Q y false 0 1 2 4)) (c486 : N (Q y true 0 1 2 4)) (c516 : N (Q y false 0 1 3 4)) (_c575 : N (Q y true 0 1 3 4)) (_c584 : N (Q y false 0 2 3 4)) (_c600 : N (Q y true 0 2 3 4)) (_c603 : N (Q y false 0 1 2 5)) (_c605 : N (Q y true 0 1 2 5)) (_c614 : N (Q y false 0 1 3 5)) : False := by
  rcases em (Q y true 1 2 3 7) with c619 | c619
  ·
   rcases H.h01247 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -806,7 +806,7 @@ lemma s229 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s228 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c602 : Q y false 1 2 3 4) (c605 : Q y true 0 1 2 5) (c607 : Q y false 0 1 4 5) (c608 : Q y false 0 2 3 5) (c610 : Q y true 0 2 3 6) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c411 : N (Q y false 0 1 2 4)) (c486 : N (Q y true 0 1 2 4)) (c516 : N (Q y false 0 1 3 4)) (c575 : N (Q y true 0 1 3 4)) (c584 : N (Q y false 0 2 3 4)) (c600 : N (Q y true 0 2 3 4)) (c603 : N (Q y false 0 1 2 5)) (c606 : N (Q y false 0 1 3 5)) (c609 : N (Q y true 0 1 3 6)) : False := by
+  (c602 : Q y false 1 2 3 4) (c605 : Q y true 0 1 2 5) (c607 : Q y false 0 1 4 5) (_c608 : Q y false 0 2 3 5) (c610 : Q y true 0 2 3 6) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c411 : N (Q y false 0 1 2 4)) (c486 : N (Q y true 0 1 2 4)) (c516 : N (Q y false 0 1 3 4)) (_c575 : N (Q y true 0 1 3 4)) (_c584 : N (Q y false 0 2 3 4)) (_c600 : N (Q y true 0 2 3 4)) (_c603 : N (Q y false 0 1 2 5)) (_c606 : N (Q y false 0 1 3 5)) (_c609 : N (Q y true 0 1 3 6)) : False := by
  rcases em (Q y true 1 2 3 7) with c611 | c611
  ·
   rcases H.h01247 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -940,7 +940,7 @@ lemma s225 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s224 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c602 : Q y false 1 2 3 4) (c603 : Q y false 0 1 2 5) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c411 : N (Q y false 0 1 2 4)) (c486 : N (Q y true 0 1 2 4)) (c516 : N (Q y false 0 1 3 4)) (c575 : N (Q y true 0 1 3 4)) (c584 : N (Q y false 0 2 3 4)) (c600 : N (Q y true 0 2 3 4)) : False := by
+  (_c602 : Q y false 1 2 3 4) (c603 : Q y false 0 1 2 5) (_c1 : N (Q y false 0 1 2 3)) (_c320 : N (Q y true 0 1 2 3)) (_c411 : N (Q y false 0 1 2 4)) (_c486 : N (Q y true 0 1 2 4)) (c516 : N (Q y false 0 1 3 4)) (c575 : N (Q y true 0 1 3 4)) (c584 : N (Q y false 0 2 3 4)) (c600 : N (Q y true 0 2 3 4)) : False := by
  rcases em (Q y false 1 3 4 5) with c604 | c604
  ·
   rcases H.h02345 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -968,7 +968,7 @@ lemma s224 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s223 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c600 : Q y true 0 2 3 4) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c411 : N (Q y false 0 1 2 4)) (c486 : N (Q y true 0 1 2 4)) (c516 : N (Q y false 0 1 3 4)) (c575 : N (Q y true 0 1 3 4)) (c584 : N (Q y false 0 2 3 4)) : False := by
+  (c600 : Q y true 0 2 3 4) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (_c411 : N (Q y false 0 1 2 4)) (_c486 : N (Q y true 0 1 2 4)) (_c516 : N (Q y false 0 1 3 4)) (_c575 : N (Q y true 0 1 3 4)) (_c584 : N (Q y false 0 2 3 4)) : False := by
  rcases em (Q y true 1 2 3 5) with c601 | c601
  ·
   rcases H.h01236 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -996,7 +996,7 @@ lemma s223 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s222 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c584 : Q y false 0 2 3 4) (c597 : Q y true 0 2 3 5) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c411 : N (Q y false 0 1 2 4)) (c486 : N (Q y true 0 1 2 4)) (c516 : N (Q y false 0 1 3 4)) (c575 : N (Q y true 0 1 3 4)) (c585 : N (Q y true 0 1 2 5)) (c592 : N (Q y true 0 1 3 5)) : False := by
+  (c584 : Q y false 0 2 3 4) (c597 : Q y true 0 2 3 5) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (_c411 : N (Q y false 0 1 2 4)) (_c486 : N (Q y true 0 1 2 4)) (_c516 : N (Q y false 0 1 3 4)) (_c575 : N (Q y true 0 1 3 4)) (_c585 : N (Q y true 0 1 2 5)) (_c592 : N (Q y true 0 1 3 5)) : False := by
  rcases em (Q y true 1 2 3 6) with c598 | c598
  ·
   rcases H.h01237 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -1024,7 +1024,7 @@ lemma s222 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s221 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c584 : Q y false 0 2 3 4) (c592 : Q y true 0 1 3 5) (c593 : Q y false 1 3 4 5) (c594 : Q y false 0 1 4 5) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c411 : N (Q y false 0 1 2 4)) (c486 : N (Q y true 0 1 2 4)) (c516 : N (Q y false 0 1 3 4)) (c575 : N (Q y true 0 1 3 4)) (c585 : N (Q y true 0 1 2 5)) : False := by
+  (c584 : Q y false 0 2 3 4) (c592 : Q y true 0 1 3 5) (c593 : Q y false 1 3 4 5) (c594 : Q y false 0 1 4 5) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (_c411 : N (Q y false 0 1 2 4)) (_c486 : N (Q y true 0 1 2 4)) (c516 : N (Q y false 0 1 3 4)) (c575 : N (Q y true 0 1 3 4)) (_c585 : N (Q y true 0 1 2 5)) : False := by
  rcases em (Q y true 0 2 3 6) with c595 | c595
  ·
   rcases H.h01346 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -1101,7 +1101,7 @@ lemma s219 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s218 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c584 : Q y false 0 2 3 4) (c585 : Q y true 0 1 2 5) (c586 : Q y false 0 1 4 5) (c587 : Q y false 1 2 4 5) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c411 : N (Q y false 0 1 2 4)) (c486 : N (Q y true 0 1 2 4)) (c516 : N (Q y false 0 1 3 4)) (c575 : N (Q y true 0 1 3 4)) : False := by
+  (c584 : Q y false 0 2 3 4) (c585 : Q y true 0 1 2 5) (c586 : Q y false 0 1 4 5) (c587 : Q y false 1 2 4 5) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c411 : N (Q y false 0 1 2 4)) (c486 : N (Q y true 0 1 2 4)) (_c516 : N (Q y false 0 1 3 4)) (_c575 : N (Q y true 0 1 3 4)) : False := by
  rcases em (Q y true 0 1 3 6) with c588 | c588
  ·
   rcases H.h01246 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -1204,7 +1204,7 @@ lemma s216 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s215 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c575 : Q y true 0 1 3 4) (c581 : Q y false 1 2 3 5) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c411 : N (Q y false 0 1 2 4)) (c486 : N (Q y true 0 1 2 4)) (c516 : N (Q y false 0 1 3 4)) (c576 : N (Q y false 0 2 3 5)) (c579 : N (Q y true 0 2 3 5)) : False := by
+  (c575 : Q y true 0 1 3 4) (c581 : Q y false 1 2 3 5) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c411 : N (Q y false 0 1 2 4)) (c486 : N (Q y true 0 1 2 4)) (_c516 : N (Q y false 0 1 3 4)) (c576 : N (Q y false 0 2 3 5)) (c579 : N (Q y true 0 2 3 5)) : False := by
  rcases em (Q y false 2 3 4 5) with c582 | c582
  ·
   rcases H.h01245 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -1232,7 +1232,7 @@ lemma s215 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s214 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c575 : Q y true 0 1 3 4) (c579 : Q y true 0 2 3 5) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c411 : N (Q y false 0 1 2 4)) (c486 : N (Q y true 0 1 2 4)) (c516 : N (Q y false 0 1 3 4)) (c576 : N (Q y false 0 2 3 5)) : False := by
+  (c575 : Q y true 0 1 3 4) (c579 : Q y true 0 2 3 5) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (_c411 : N (Q y false 0 1 2 4)) (_c486 : N (Q y true 0 1 2 4)) (_c516 : N (Q y false 0 1 3 4)) (_c576 : N (Q y false 0 2 3 5)) : False := by
  rcases em (Q y true 1 2 3 6) with c580 | c580
  ·
   rcases H.h01237 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -1260,7 +1260,7 @@ lemma s214 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s213 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c575 : Q y true 0 1 3 4) (c576 : Q y false 0 2 3 5) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c411 : N (Q y false 0 1 2 4)) (c486 : N (Q y true 0 1 2 4)) (c516 : N (Q y false 0 1 3 4)) : False := by
+  (c575 : Q y true 0 1 3 4) (c576 : Q y false 0 2 3 5) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (_c411 : N (Q y false 0 1 2 4)) (_c486 : N (Q y true 0 1 2 4)) (_c516 : N (Q y false 0 1 3 4)) : False := by
  rcases em (Q y true 0 2 3 6) with c577 | c577
  ·
   rcases H.h02456 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -1338,7 +1338,7 @@ lemma s212 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s211 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c516 : Q y false 0 1 3 4) (c572 : Q y false 1 2 3 5) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c411 : N (Q y false 0 1 2 4)) (c486 : N (Q y true 0 1 2 4)) (c517 : N (Q y true 0 1 2 5)) (c534 : N (Q y true 0 1 3 5)) (c545 : N (Q y false 0 2 3 5)) (c570 : N (Q y true 0 2 3 5)) : False := by
+  (c516 : Q y false 0 1 3 4) (c572 : Q y false 1 2 3 5) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c411 : N (Q y false 0 1 2 4)) (c486 : N (Q y true 0 1 2 4)) (c517 : N (Q y true 0 1 2 5)) (_c534 : N (Q y true 0 1 3 5)) (c545 : N (Q y false 0 2 3 5)) (c570 : N (Q y true 0 2 3 5)) : False := by
  rcases em (Q y false 2 3 4 5) with c573 | c573
  ·
   rcases H.h01245 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -1366,7 +1366,7 @@ lemma s211 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s210 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c516 : Q y false 0 1 3 4) (c570 : Q y true 0 2 3 5) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c411 : N (Q y false 0 1 2 4)) (c486 : N (Q y true 0 1 2 4)) (c517 : N (Q y true 0 1 2 5)) (c534 : N (Q y true 0 1 3 5)) (c545 : N (Q y false 0 2 3 5)) : False := by
+  (c516 : Q y false 0 1 3 4) (c570 : Q y true 0 2 3 5) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (_c411 : N (Q y false 0 1 2 4)) (_c486 : N (Q y true 0 1 2 4)) (_c517 : N (Q y true 0 1 2 5)) (_c534 : N (Q y true 0 1 3 5)) (_c545 : N (Q y false 0 2 3 5)) : False := by
  rcases em (Q y true 1 2 3 6) with c571 | c571
  ·
   rcases H.h01237 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -1394,7 +1394,7 @@ lemma s210 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s209 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c516 : Q y false 0 1 3 4) (c545 : Q y false 0 2 3 5) (c564 : Q y false 1 2 4 5) (c565 : Q y true 0 1 2 6) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c411 : N (Q y false 0 1 2 4)) (c486 : N (Q y true 0 1 2 4)) (c517 : N (Q y true 0 1 2 5)) (c534 : N (Q y true 0 1 3 5)) (c546 : N (Q y false 0 1 4 5)) (c560 : N (Q y true 0 1 4 5)) : False := by
+  (c516 : Q y false 0 1 3 4) (_c545 : Q y false 0 2 3 5) (c564 : Q y false 1 2 4 5) (c565 : Q y true 0 1 2 6) (c1 : N (Q y false 0 1 2 3)) (_c320 : N (Q y true 0 1 2 3)) (_c411 : N (Q y false 0 1 2 4)) (_c486 : N (Q y true 0 1 2 4)) (_c517 : N (Q y true 0 1 2 5)) (c534 : N (Q y true 0 1 3 5)) (c546 : N (Q y false 0 1 4 5)) (_c560 : N (Q y true 0 1 4 5)) : False := by
  rcases em (Q y false 1 3 4 6) with c566 | c566
  ·
   rcases H.h01356 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -1479,7 +1479,7 @@ lemma s208 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s207 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c516 : Q y false 0 1 3 4) (c545 : Q y false 0 2 3 5) (c560 : Q y true 0 1 4 5) (c561 : Q y false 1 2 4 5) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c411 : N (Q y false 0 1 2 4)) (c486 : N (Q y true 0 1 2 4)) (c517 : N (Q y true 0 1 2 5)) (c534 : N (Q y true 0 1 3 5)) (c546 : N (Q y false 0 1 4 5)) : False := by
+  (c516 : Q y false 0 1 3 4) (_c545 : Q y false 0 2 3 5) (c560 : Q y true 0 1 4 5) (c561 : Q y false 1 2 4 5) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (_c411 : N (Q y false 0 1 2 4)) (c486 : N (Q y true 0 1 2 4)) (_c517 : N (Q y true 0 1 2 5)) (_c534 : N (Q y true 0 1 3 5)) (_c546 : N (Q y false 0 1 4 5)) : False := by
  rcases em (Q y true 0 2 3 6) with c562 | c562
  ·
   rcases H.h12356 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -1538,7 +1538,7 @@ lemma s206 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s205 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c516 : Q y false 0 1 3 4) (c545 : Q y false 0 2 3 5) (c546 : Q y false 0 1 4 5) (c547 : Q y false 1 2 3 4) (c548 : Q y true 0 1 2 6) (c549 : Q y false 0 2 4 6) (c550 : Q y false 0 1 5 6) (c551 : Q y false 3 4 5 6) (c552 : Q y false 1 2 5 6) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c411 : N (Q y false 0 1 2 4)) (c486 : N (Q y true 0 1 2 4)) (c517 : N (Q y true 0 1 2 5)) (c534 : N (Q y true 0 1 3 5)) : False := by
+  (c516 : Q y false 0 1 3 4) (_c545 : Q y false 0 2 3 5) (c546 : Q y false 0 1 4 5) (c547 : Q y false 1 2 3 4) (c548 : Q y true 0 1 2 6) (c549 : Q y false 0 2 4 6) (c550 : Q y false 0 1 5 6) (c551 : Q y false 3 4 5 6) (c552 : Q y false 1 2 5 6) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c411 : N (Q y false 0 1 2 4)) (c486 : N (Q y true 0 1 2 4)) (c517 : N (Q y true 0 1 2 5)) (_c534 : N (Q y true 0 1 3 5)) : False := by
  rcases em (Q y true 0 1 3 7) with c553 | c553
  ·
   rcases H.h01247 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -1721,7 +1721,7 @@ lemma s200 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s199 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c516 : Q y false 0 1 3 4) (c534 : Q y true 0 1 3 5) (c541 : Q y false 1 2 4 5) (c542 : Q y false 0 2 3 5) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c411 : N (Q y false 0 1 2 4)) (c486 : N (Q y true 0 1 2 4)) (c517 : N (Q y true 0 1 2 5)) (c535 : N (Q y false 0 1 4 5)) (c540 : N (Q y false 0 2 4 5)) : False := by
+  (c516 : Q y false 0 1 3 4) (c534 : Q y true 0 1 3 5) (c541 : Q y false 1 2 4 5) (_c542 : Q y false 0 2 3 5) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (_c411 : N (Q y false 0 1 2 4)) (c486 : N (Q y true 0 1 2 4)) (_c517 : N (Q y true 0 1 2 5)) (c535 : N (Q y false 0 1 4 5)) (_c540 : N (Q y false 0 2 4 5)) : False := by
  rcases em (Q y true 0 2 3 6) with c543 | c543
  ·
   rcases H.h13456 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -1780,7 +1780,7 @@ lemma s198 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s197 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c516 : Q y false 0 1 3 4) (c534 : Q y true 0 1 3 5) (c535 : Q y false 0 1 4 5) (c536 : Q y false 0 2 3 5) (c537 : Q y true 0 2 3 6) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c411 : N (Q y false 0 1 2 4)) (c486 : N (Q y true 0 1 2 4)) (c517 : N (Q y true 0 1 2 5)) : False := by
+  (c516 : Q y false 0 1 3 4) (c534 : Q y true 0 1 3 5) (c535 : Q y false 0 1 4 5) (c536 : Q y false 0 2 3 5) (c537 : Q y true 0 2 3 6) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (_c411 : N (Q y false 0 1 2 4)) (c486 : N (Q y true 0 1 2 4)) (_c517 : N (Q y true 0 1 2 5)) : False := by
  rcases em (Q y true 1 2 3 7) with c538 | c538
  ·
   rcases H.h03457 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -1891,7 +1891,7 @@ lemma s194 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s193 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c516 : Q y false 0 1 3 4) (c517 : Q y true 0 1 2 5) (c528 : Q y false 0 2 4 5) (c529 : Q y false 1 2 3 4) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c411 : N (Q y false 0 1 2 4)) (c486 : N (Q y true 0 1 2 4)) (c518 : N (Q y false 0 2 3 5)) : False := by
+  (c516 : Q y false 0 1 3 4) (c517 : Q y true 0 1 2 5) (c528 : Q y false 0 2 4 5) (c529 : Q y false 1 2 3 4) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c411 : N (Q y false 0 1 2 4)) (c486 : N (Q y true 0 1 2 4)) (_c518 : N (Q y false 0 2 3 5)) : False := by
  rcases em (Q y true 0 1 3 6) with c530 | c530
  ·
   rcases H.h01246 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -1963,7 +1963,7 @@ lemma s192 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s191 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c516 : Q y false 0 1 3 4) (c517 : Q y true 0 1 2 5) (c518 : Q y false 0 2 3 5) (c524 : Q y false 1 2 4 5) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c411 : N (Q y false 0 1 2 4)) (c486 : N (Q y true 0 1 2 4)) (c519 : N (Q y false 1 2 3 4)) : False := by
+  (c516 : Q y false 0 1 3 4) (c517 : Q y true 0 1 2 5) (_c518 : Q y false 0 2 3 5) (c524 : Q y false 1 2 4 5) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (_c411 : N (Q y false 0 1 2 4)) (_c486 : N (Q y true 0 1 2 4)) (c519 : N (Q y false 1 2 3 4)) : False := by
  rcases em (Q y true 0 1 3 6) with c525 | c525
  ·
   rcases H.h02346 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -2017,7 +2017,7 @@ lemma s191 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s190 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c516 : Q y false 0 1 3 4) (c517 : Q y true 0 1 2 5) (c518 : Q y false 0 2 3 5) (c519 : Q y false 1 2 3 4) (c521 : Q y true 0 2 3 6) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c411 : N (Q y false 0 1 2 4)) (c486 : N (Q y true 0 1 2 4)) (c520 : N (Q y true 0 1 3 6)) : False := by
+  (c516 : Q y false 0 1 3 4) (c517 : Q y true 0 1 2 5) (c518 : Q y false 0 2 3 5) (c519 : Q y false 1 2 3 4) (c521 : Q y true 0 2 3 6) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (_c411 : N (Q y false 0 1 2 4)) (_c486 : N (Q y true 0 1 2 4)) (_c520 : N (Q y true 0 1 3 6)) : False := by
  rcases em (Q y true 1 2 3 7) with c522 | c522
  ·
   rcases H.h02567 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -2110,7 +2110,7 @@ lemma s188 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s187 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c486 : Q y true 0 1 2 4) (c512 : Q y true 0 2 3 5) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c411 : N (Q y false 0 1 2 4)) (c487 : N (Q y false 0 1 3 5)) (c488 : N (Q y true 0 1 3 5)) (c496 : N (Q y false 0 2 3 5)) : False := by
+  (c486 : Q y true 0 1 2 4) (c512 : Q y true 0 2 3 5) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (_c411 : N (Q y false 0 1 2 4)) (_c487 : N (Q y false 0 1 3 5)) (_c488 : N (Q y true 0 1 3 5)) (_c496 : N (Q y false 0 2 3 5)) : False := by
  rcases em (Q y true 1 2 3 6) with c513 | c513
  ·
   rcases H.h01237 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -2138,7 +2138,7 @@ lemma s187 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s186 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c486 : Q y true 0 1 2 4) (c496 : Q y false 0 2 3 5) (c506 : Q y false 1 2 4 5) (c507 : Q y false 0 1 3 4) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c411 : N (Q y false 0 1 2 4)) (c487 : N (Q y false 0 1 3 5)) (c488 : N (Q y true 0 1 3 5)) (c497 : N (Q y false 1 2 3 4)) : False := by
+  (c486 : Q y true 0 1 2 4) (c496 : Q y false 0 2 3 5) (c506 : Q y false 1 2 4 5) (c507 : Q y false 0 1 3 4) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (_c411 : N (Q y false 0 1 2 4)) (c487 : N (Q y false 0 1 3 5)) (c488 : N (Q y true 0 1 3 5)) (_c497 : N (Q y false 1 2 3 4)) : False := by
  rcases em (Q y true 0 1 3 6) with c508 | c508
  ·
   rcases H.h12356 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -2223,7 +2223,7 @@ lemma s185 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s184 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c486 : Q y true 0 1 2 4) (c496 : Q y false 0 2 3 5) (c497 : Q y false 1 2 3 4) (c502 : Q y false 0 1 4 5) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c411 : N (Q y false 0 1 2 4)) (c487 : N (Q y false 0 1 3 5)) (c488 : N (Q y true 0 1 3 5)) (c498 : N (Q y false 0 1 3 4)) : False := by
+  (c486 : Q y true 0 1 2 4) (_c496 : Q y false 0 2 3 5) (c497 : Q y false 1 2 3 4) (c502 : Q y false 0 1 4 5) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (_c411 : N (Q y false 0 1 2 4)) (_c487 : N (Q y false 0 1 3 5)) (c488 : N (Q y true 0 1 3 5)) (_c498 : N (Q y false 0 1 3 4)) : False := by
  rcases em (Q y true 0 1 3 6) with c503 | c503
  ·
   rcases H.h03456 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -2277,7 +2277,7 @@ lemma s184 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s183 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c486 : Q y true 0 1 2 4) (c496 : Q y false 0 2 3 5) (c497 : Q y false 1 2 3 4) (c498 : Q y false 0 1 3 4) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c411 : N (Q y false 0 1 2 4)) (c487 : N (Q y false 0 1 3 5)) (c488 : N (Q y true 0 1 3 5)) : False := by
+  (c486 : Q y true 0 1 2 4) (c496 : Q y false 0 2 3 5) (c497 : Q y false 1 2 3 4) (c498 : Q y false 0 1 3 4) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (_c411 : N (Q y false 0 1 2 4)) (_c487 : N (Q y false 0 1 3 5)) (c488 : N (Q y true 0 1 3 5)) : False := by
  rcases em (Q y true 0 1 3 6) with c499 | c499
  ·
   rcases H.h03456 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -2352,7 +2352,7 @@ lemma s182 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s181 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c486 : Q y true 0 1 2 4) (c488 : Q y true 0 1 3 5) (c492 : Q y true 0 2 3 6) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c411 : N (Q y false 0 1 2 4)) (c487 : N (Q y false 0 1 3 5)) (c489 : N (Q y false 0 2 3 6)) : False := by
+  (c486 : Q y true 0 1 2 4) (c488 : Q y true 0 1 3 5) (c492 : Q y true 0 2 3 6) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (_c411 : N (Q y false 0 1 2 4)) (_c487 : N (Q y false 0 1 3 5)) (_c489 : N (Q y false 0 2 3 6)) : False := by
  rcases em (Q y true 1 2 3 7) with c493 | c493
  ·
   rcases H.h03567 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -2380,7 +2380,7 @@ lemma s181 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s180 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c486 : Q y true 0 1 2 4) (c488 : Q y true 0 1 3 5) (c489 : Q y false 0 2 3 6) (c490 : Q y false 2 3 4 5) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c411 : N (Q y false 0 1 2 4)) (c487 : N (Q y false 0 1 3 5)) : False := by
+  (c486 : Q y true 0 1 2 4) (_c488 : Q y true 0 1 3 5) (c489 : Q y false 0 2 3 6) (c490 : Q y false 2 3 4 5) (_c1 : N (Q y false 0 1 2 3)) (_c320 : N (Q y true 0 1 2 3)) (_c411 : N (Q y false 0 1 2 4)) (_c487 : N (Q y false 0 1 3 5)) : False := by
  rcases em (Q y false 2 4 5 6) with c491 | c491
  ·
   rcases H.h03456 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -2473,7 +2473,7 @@ lemma s178 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s177 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c411 : Q y false 0 1 2 4) (c482 : Q y true 0 2 3 5) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c412 : N (Q y true 0 1 2 5)) (c437 : N (Q y false 0 1 3 5)) (c453 : N (Q y true 0 1 3 5)) (c463 : N (Q y false 0 2 3 5)) : False := by
+  (c411 : Q y false 0 1 2 4) (c482 : Q y true 0 2 3 5) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (_c412 : N (Q y true 0 1 2 5)) (_c437 : N (Q y false 0 1 3 5)) (_c453 : N (Q y true 0 1 3 5)) (_c463 : N (Q y false 0 2 3 5)) : False := by
  rcases em (Q y true 1 2 3 6) with c483 | c483
  ·
   rcases H.h01237 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -2501,7 +2501,7 @@ lemma s177 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s176 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c411 : Q y false 0 1 2 4) (c463 : Q y false 0 2 3 5) (c477 : Q y false 1 3 4 5) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c412 : N (Q y true 0 1 2 5)) (c437 : N (Q y false 0 1 3 5)) (c453 : N (Q y true 0 1 3 5)) (c464 : N (Q y false 1 2 3 4)) : False := by
+  (c411 : Q y false 0 1 2 4) (c463 : Q y false 0 2 3 5) (c477 : Q y false 1 3 4 5) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (_c412 : N (Q y true 0 1 2 5)) (_c437 : N (Q y false 0 1 3 5)) (_c453 : N (Q y true 0 1 3 5)) (c464 : N (Q y false 1 2 3 4)) : False := by
  rcases em (Q y true 0 1 2 6) with c478 | c478
  ·
   rcases H.h12346 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -2568,7 +2568,7 @@ lemma s176 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s175 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c411 : Q y false 0 1 2 4) (c463 : Q y false 0 2 3 5) (c464 : Q y false 1 2 3 4) (c465 : Q y false 0 1 4 5) (c467 : Q y true 0 1 3 6) (c468 : Q y false 0 3 4 6) (c469 : Q y false 0 1 5 6) (c470 : Q y false 2 4 5 6) (c471 : Q y false 1 3 5 6) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c412 : N (Q y true 0 1 2 5)) (c437 : N (Q y false 0 1 3 5)) (c453 : N (Q y true 0 1 3 5)) (c466 : N (Q y true 0 1 2 6)) : False := by
+  (c411 : Q y false 0 1 2 4) (_c463 : Q y false 0 2 3 5) (c464 : Q y false 1 2 3 4) (c465 : Q y false 0 1 4 5) (c467 : Q y true 0 1 3 6) (_c468 : Q y false 0 3 4 6) (c469 : Q y false 0 1 5 6) (_c470 : Q y false 2 4 5 6) (c471 : Q y false 1 3 5 6) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (_c412 : N (Q y true 0 1 2 5)) (c437 : N (Q y false 0 1 3 5)) (c453 : N (Q y true 0 1 3 5)) (_c466 : N (Q y true 0 1 2 6)) : False := by
  rcases em (Q y true 0 2 3 7) with c472 | c472
  ·
   rcases H.h01357 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -2738,7 +2738,7 @@ lemma s170 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s169 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c411 : Q y false 0 1 2 4) (c453 : Q y true 0 1 3 5) (c459 : Q y false 0 3 4 5) (c460 : Q y false 1 2 3 4) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c412 : N (Q y true 0 1 2 5)) (c437 : N (Q y false 0 1 3 5)) (c454 : N (Q y false 0 2 3 5)) (c458 : N (Q y false 0 2 4 5)) : False := by
+  (_c411 : Q y false 0 1 2 4) (c453 : Q y true 0 1 3 5) (c459 : Q y false 0 3 4 5) (c460 : Q y false 1 2 3 4) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (_c412 : N (Q y true 0 1 2 5)) (_c437 : N (Q y false 0 1 3 5)) (_c454 : N (Q y false 0 2 3 5)) (c458 : N (Q y false 0 2 4 5)) : False := by
  rcases em (Q y true 0 2 3 6) with c461 | c461
  ·
   rcases H.h02456 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -2797,7 +2797,7 @@ lemma s168 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s167 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c411 : Q y false 0 1 2 4) (c453 : Q y true 0 1 3 5) (c454 : Q y false 0 2 3 5) (c455 : Q y true 0 2 3 6) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c412 : N (Q y true 0 1 2 5)) (c437 : N (Q y false 0 1 3 5)) : False := by
+  (_c411 : Q y false 0 1 2 4) (c453 : Q y true 0 1 3 5) (c454 : Q y false 0 2 3 5) (c455 : Q y true 0 2 3 6) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (_c412 : N (Q y true 0 1 2 5)) (_c437 : N (Q y false 0 1 3 5)) : False := by
  rcases em (Q y true 1 2 3 7) with c456 | c456
  ·
   rcases H.h03567 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -2890,7 +2890,7 @@ lemma s165 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s164 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c411 : Q y false 0 1 2 4) (c437 : Q y false 0 1 3 5) (c438 : Q y false 2 3 4 5) (c449 : Q y true 0 2 3 6) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c412 : N (Q y true 0 1 2 5)) (c439 : N (Q y true 0 1 2 6)) (c443 : N (Q y true 0 1 3 6)) (c447 : N (Q y false 0 2 3 6)) : False := by
+  (c411 : Q y false 0 1 2 4) (c437 : Q y false 0 1 3 5) (c438 : Q y false 2 3 4 5) (c449 : Q y true 0 2 3 6) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (_c412 : N (Q y true 0 1 2 5)) (_c439 : N (Q y true 0 1 2 6)) (_c443 : N (Q y true 0 1 3 6)) (_c447 : N (Q y false 0 2 3 6)) : False := by
  rcases em (Q y true 1 2 3 7) with c450 | c450
  ·
   rcases H.h13457 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -2918,7 +2918,7 @@ lemma s164 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s163 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c411 : Q y false 0 1 2 4) (c437 : Q y false 0 1 3 5) (c438 : Q y false 2 3 4 5) (c447 : Q y false 0 2 3 6) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c412 : N (Q y true 0 1 2 5)) (c439 : N (Q y true 0 1 2 6)) (c443 : N (Q y true 0 1 3 6)) : False := by
+  (_c411 : Q y false 0 1 2 4) (c437 : Q y false 0 1 3 5) (_c438 : Q y false 2 3 4 5) (c447 : Q y false 0 2 3 6) (_c1 : N (Q y false 0 1 2 3)) (_c320 : N (Q y true 0 1 2 3)) (_c412 : N (Q y true 0 1 2 5)) (_c439 : N (Q y true 0 1 2 6)) (_c443 : N (Q y true 0 1 3 6)) : False := by
  rcases em (Q y false 2 4 5 6) with c448 | c448
  ·
   rcases H.h03456 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -2946,7 +2946,7 @@ lemma s163 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s162 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c411 : Q y false 0 1 2 4) (c437 : Q y false 0 1 3 5) (c438 : Q y false 2 3 4 5) (c443 : Q y true 0 1 3 6) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c412 : N (Q y true 0 1 2 5)) (c439 : N (Q y true 0 1 2 6)) : False := by
+  (c411 : Q y false 0 1 2 4) (c437 : Q y false 0 1 3 5) (c438 : Q y false 2 3 4 5) (c443 : Q y true 0 1 3 6) (_c1 : N (Q y false 0 1 2 3)) (_c320 : N (Q y true 0 1 2 3)) (c412 : N (Q y true 0 1 2 5)) (c439 : N (Q y true 0 1 2 6)) : False := by
  rcases em (Q y false 0 1 5 6) with c444 | c444
  ·
   rcases H.h03456 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -3000,7 +3000,7 @@ lemma s162 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s161 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c411 : Q y false 0 1 2 4) (c437 : Q y false 0 1 3 5) (c438 : Q y false 2 3 4 5) (c439 : Q y true 0 1 2 6) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c412 : N (Q y true 0 1 2 5)) : False := by
+  (c411 : Q y false 0 1 2 4) (c437 : Q y false 0 1 3 5) (c438 : Q y false 2 3 4 5) (c439 : Q y true 0 1 2 6) (_c1 : N (Q y false 0 1 2 3)) (_c320 : N (Q y true 0 1 2 3)) (_c412 : N (Q y true 0 1 2 5)) : False := by
  rcases em (Q y false 0 1 4 6) with c440 | c440
  ·
   rcases H.h02456 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -3054,7 +3054,7 @@ lemma s161 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s160 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c411 : Q y false 0 1 2 4) (c412 : Q y true 0 1 2 5) (c432 : Q y false 1 3 4 5) (c433 : Q y false 0 2 3 5) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c413 : N (Q y false 0 1 3 5)) (c423 : N (Q y false 0 1 4 5)) (c431 : N (Q y false 0 3 4 5)) : False := by
+  (c411 : Q y false 0 1 2 4) (c412 : Q y true 0 1 2 5) (c432 : Q y false 1 3 4 5) (c433 : Q y false 0 2 3 5) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (_c413 : N (Q y false 0 1 3 5)) (c423 : N (Q y false 0 1 4 5)) (_c431 : N (Q y false 0 3 4 5)) : False := by
  rcases em (Q y true 0 1 3 6) with c434 | c434
  ·
   rcases H.h12346 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -3126,7 +3126,7 @@ lemma s159 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s158 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c411 : Q y false 0 1 2 4) (c412 : Q y true 0 1 2 5) (c423 : Q y false 0 1 4 5) (c424 : Q y false 0 2 3 5) (c425 : Q y false 1 2 3 4) (c427 : Q y true 0 2 3 6) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c413 : N (Q y false 0 1 3 5)) (c426 : N (Q y true 0 1 3 6)) : False := by
+  (c411 : Q y false 0 1 2 4) (c412 : Q y true 0 1 2 5) (c423 : Q y false 0 1 4 5) (_c424 : Q y false 0 2 3 5) (c425 : Q y false 1 2 3 4) (c427 : Q y true 0 2 3 6) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (_c413 : N (Q y false 0 1 3 5)) (_c426 : N (Q y true 0 1 3 6)) : False := by
  rcases em (Q y true 1 2 3 7) with c428 | c428
  ·
   rcases H.h02457 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -3247,7 +3247,7 @@ lemma s155 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s154 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c411 : Q y false 0 1 2 4) (c412 : Q y true 0 1 2 5) (c413 : Q y false 0 1 3 5) (c414 : Q y false 2 3 4 5) (c419 : Q y true 0 2 3 6) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c415 : N (Q y true 0 1 3 6)) (c417 : N (Q y false 0 2 3 6)) : False := by
+  (c411 : Q y false 0 1 2 4) (c412 : Q y true 0 1 2 5) (c413 : Q y false 0 1 3 5) (c414 : Q y false 2 3 4 5) (c419 : Q y true 0 2 3 6) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (_c415 : N (Q y true 0 1 3 6)) (_c417 : N (Q y false 0 2 3 6)) : False := by
  rcases em (Q y true 1 2 3 7) with c420 | c420
  ·
   rcases H.h01457 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -3275,7 +3275,7 @@ lemma s154 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s153 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c411 : Q y false 0 1 2 4) (c412 : Q y true 0 1 2 5) (c413 : Q y false 0 1 3 5) (c414 : Q y false 2 3 4 5) (c417 : Q y false 0 2 3 6) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) (c415 : N (Q y true 0 1 3 6)) : False := by
+  (c411 : Q y false 0 1 2 4) (_c412 : Q y true 0 1 2 5) (c413 : Q y false 0 1 3 5) (c414 : Q y false 2 3 4 5) (c417 : Q y false 0 2 3 6) (_c1 : N (Q y false 0 1 2 3)) (_c320 : N (Q y true 0 1 2 3)) (_c415 : N (Q y true 0 1 3 6)) : False := by
  rcases em (Q y false 2 4 5 6) with c418 | c418
  ·
   rcases H.h03456 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -3303,7 +3303,7 @@ lemma s153 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s152 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c411 : Q y false 0 1 2 4) (c412 : Q y true 0 1 2 5) (c413 : Q y false 0 1 3 5) (c414 : Q y false 2 3 4 5) (c415 : Q y true 0 1 3 6) (c1 : N (Q y false 0 1 2 3)) (c320 : N (Q y true 0 1 2 3)) : False := by
+  (c411 : Q y false 0 1 2 4) (c412 : Q y true 0 1 2 5) (c413 : Q y false 0 1 3 5) (c414 : Q y false 2 3 4 5) (c415 : Q y true 0 1 3 6) (_c1 : N (Q y false 0 1 2 3)) (_c320 : N (Q y true 0 1 2 3)) : False := by
  rcases em (Q y false 0 1 4 6) with c416 | c416
  ·
   rcases H.h02456 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -3399,7 +3399,7 @@ lemma s150 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s149 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c320 : Q y true 0 1 2 3) (c384 : Q y false 1 2 4 5) (c393 : Q y true 0 1 3 4) (c401 : Q y true 0 2 3 5) (c405 : Q y true 0 2 4 6) (c1 : N (Q y false 0 1 2 3)) (c321 : N (Q y false 0 1 4 5)) (c369 : N (Q y true 0 1 4 5)) (c378 : N (Q y false 0 2 4 5)) (c382 : N (Q y true 0 2 4 5)) (c385 : N (Q y false 0 1 3 4)) (c394 : N (Q y false 0 2 3 4)) (c402 : N (Q y false 0 1 4 6)) (c403 : N (Q y true 0 1 4 6)) (c404 : N (Q y false 0 2 4 6)) : False := by
+  (c320 : Q y true 0 1 2 3) (c384 : Q y false 1 2 4 5) (c393 : Q y true 0 1 3 4) (_c401 : Q y true 0 2 3 5) (c405 : Q y true 0 2 4 6) (_c1 : N (Q y false 0 1 2 3)) (c321 : N (Q y false 0 1 4 5)) (_c369 : N (Q y true 0 1 4 5)) (_c378 : N (Q y false 0 2 4 5)) (_c382 : N (Q y true 0 2 4 5)) (_c385 : N (Q y false 0 1 3 4)) (_c394 : N (Q y false 0 2 3 4)) (_c402 : N (Q y false 0 1 4 6)) (_c403 : N (Q y true 0 1 4 6)) (_c404 : N (Q y false 0 2 4 6)) : False := by
  rcases em (Q y true 1 2 4 7) with c406 | c406
  ·
   rcases H.h01357 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -3497,7 +3497,7 @@ lemma s148 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s147 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c320 : Q y true 0 1 2 3) (c384 : Q y false 1 2 4 5) (c393 : Q y true 0 1 3 4) (c394 : Q y false 0 2 3 4) (c398 : Q y true 0 2 4 6) (c1 : N (Q y false 0 1 2 3)) (c321 : N (Q y false 0 1 4 5)) (c369 : N (Q y true 0 1 4 5)) (c378 : N (Q y false 0 2 4 5)) (c382 : N (Q y true 0 2 4 5)) (c385 : N (Q y false 0 1 3 4)) (c395 : N (Q y false 0 1 4 6)) (c396 : N (Q y true 0 1 4 6)) (c397 : N (Q y false 0 2 4 6)) : False := by
+  (_c320 : Q y true 0 1 2 3) (c384 : Q y false 1 2 4 5) (c393 : Q y true 0 1 3 4) (c394 : Q y false 0 2 3 4) (c398 : Q y true 0 2 4 6) (_c1 : N (Q y false 0 1 2 3)) (c321 : N (Q y false 0 1 4 5)) (_c369 : N (Q y true 0 1 4 5)) (_c378 : N (Q y false 0 2 4 5)) (_c382 : N (Q y true 0 2 4 5)) (_c385 : N (Q y false 0 1 3 4)) (_c395 : N (Q y false 0 1 4 6)) (_c396 : N (Q y true 0 1 4 6)) (_c397 : N (Q y false 0 2 4 6)) : False := by
  rcases em (Q y true 1 2 4 7) with c399 | c399
  ·
   rcases H.h01257 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -3595,7 +3595,7 @@ lemma s146 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s145 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c320 : Q y true 0 1 2 3) (c384 : Q y false 1 2 4 5) (c385 : Q y false 0 1 3 4) (c386 : Q y false 0 2 3 5) (c388 : Q y true 0 1 4 6) (c1 : N (Q y false 0 1 2 3)) (c321 : N (Q y false 0 1 4 5)) (c369 : N (Q y true 0 1 4 5)) (c378 : N (Q y false 0 2 4 5)) (c382 : N (Q y true 0 2 4 5)) (c387 : N (Q y false 0 1 4 6)) : False := by
+  (c320 : Q y true 0 1 2 3) (c384 : Q y false 1 2 4 5) (c385 : Q y false 0 1 3 4) (_c386 : Q y false 0 2 3 5) (c388 : Q y true 0 1 4 6) (_c1 : N (Q y false 0 1 2 3)) (c321 : N (Q y false 0 1 4 5)) (_c369 : N (Q y true 0 1 4 5)) (c378 : N (Q y false 0 2 4 5)) (c382 : N (Q y true 0 2 4 5)) (_c387 : N (Q y false 0 1 4 6)) : False := by
  rcases em (Q y false 0 2 4 6) with c389 | c389
  ·
   rcases H.h12356 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -3711,7 +3711,7 @@ lemma s143 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s142 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c320 : Q y true 0 1 2 3) (c382 : Q y true 0 2 4 5) (c1 : N (Q y false 0 1 2 3)) (c321 : N (Q y false 0 1 4 5)) (c369 : N (Q y true 0 1 4 5)) (c378 : N (Q y false 0 2 4 5)) : False := by
+  (c320 : Q y true 0 1 2 3) (c382 : Q y true 0 2 4 5) (_c1 : N (Q y false 0 1 2 3)) (_c321 : N (Q y false 0 1 4 5)) (_c369 : N (Q y true 0 1 4 5)) (_c378 : N (Q y false 0 2 4 5)) : False := by
  rcases em (Q y true 1 2 4 6) with c383 | c383
  ·
   rcases H.h01247 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -3739,7 +3739,7 @@ lemma s142 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s141 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c320 : Q y true 0 1 2 3) (c378 : Q y false 0 2 4 5) (c1 : N (Q y false 0 1 2 3)) (c321 : N (Q y false 0 1 4 5)) (c369 : N (Q y true 0 1 4 5)) : False := by
+  (c320 : Q y true 0 1 2 3) (c378 : Q y false 0 2 4 5) (_c1 : N (Q y false 0 1 2 3)) (_c321 : N (Q y false 0 1 4 5)) (c369 : N (Q y true 0 1 4 5)) : False := by
  rcases em (Q y true 0 1 4 6) with c379 | c379
  ·
   rcases H.h12456 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -3793,7 +3793,7 @@ lemma s141 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s140 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c320 : Q y true 0 1 2 3) (c369 : Q y true 0 1 4 5) (c375 : Q y false 1 2 4 6) (c1 : N (Q y false 0 1 2 3)) (c321 : N (Q y false 0 1 4 5)) (c370 : N (Q y false 0 2 4 6)) (c373 : N (Q y true 0 2 4 6)) : False := by
+  (c320 : Q y true 0 1 2 3) (c369 : Q y true 0 1 4 5) (c375 : Q y false 1 2 4 6) (_c1 : N (Q y false 0 1 2 3)) (_c321 : N (Q y false 0 1 4 5)) (c370 : N (Q y false 0 2 4 6)) (c373 : N (Q y true 0 2 4 6)) : False := by
  rcases em (Q y false 2 4 5 6) with c376 | c376
  ·
   rcases H.h01256 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -3821,7 +3821,7 @@ lemma s140 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s139 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c320 : Q y true 0 1 2 3) (c369 : Q y true 0 1 4 5) (c373 : Q y true 0 2 4 6) (c1 : N (Q y false 0 1 2 3)) (c321 : N (Q y false 0 1 4 5)) (c370 : N (Q y false 0 2 4 6)) : False := by
+  (c320 : Q y true 0 1 2 3) (c369 : Q y true 0 1 4 5) (c373 : Q y true 0 2 4 6) (_c1 : N (Q y false 0 1 2 3)) (_c321 : N (Q y false 0 1 4 5)) (_c370 : N (Q y false 0 2 4 6)) : False := by
  rcases em (Q y true 1 2 4 7) with c374 | c374
  ·
   rcases H.h02367 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -3849,7 +3849,7 @@ lemma s139 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s138 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c320 : Q y true 0 1 2 3) (c369 : Q y true 0 1 4 5) (c370 : Q y false 0 2 4 6) (c371 : Q y false 3 4 5 6) (c1 : N (Q y false 0 1 2 3)) (c321 : N (Q y false 0 1 4 5)) : False := by
+  (c320 : Q y true 0 1 2 3) (c369 : Q y true 0 1 4 5) (c370 : Q y false 0 2 4 6) (c371 : Q y false 3 4 5 6) (_c1 : N (Q y false 0 1 2 3)) (_c321 : N (Q y false 0 1 4 5)) : False := by
  rcases em (Q y true 1 2 3 6) with c372 | c372
  ·
   rcases H.h12456 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -3932,7 +3932,7 @@ lemma s136 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s135 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c320 : Q y true 0 1 2 3) (c321 : Q y false 0 1 4 5) (c362 : Q y true 0 2 3 5) (c363 : Q y false 1 2 4 5) (c366 : Q y true 0 2 4 6) (c1 : N (Q y false 0 1 2 3)) (c322 : N (Q y false 0 2 3 4)) (c329 : N (Q y true 0 2 3 4)) (c337 : N (Q y false 0 2 3 5)) (c364 : N (Q y true 0 1 4 6)) (c365 : N (Q y false 0 2 4 6)) : False := by
+  (c320 : Q y true 0 1 2 3) (c321 : Q y false 0 1 4 5) (_c362 : Q y true 0 2 3 5) (c363 : Q y false 1 2 4 5) (c366 : Q y true 0 2 4 6) (_c1 : N (Q y false 0 1 2 3)) (_c322 : N (Q y false 0 2 3 4)) (_c329 : N (Q y true 0 2 3 4)) (_c337 : N (Q y false 0 2 3 5)) (_c364 : N (Q y true 0 1 4 6)) (_c365 : N (Q y false 0 2 4 6)) : False := by
  rcases em (Q y true 1 2 4 7) with c367 | c367
  ·
   rcases H.h02367 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -4035,7 +4035,7 @@ lemma s133 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s132 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c320 : Q y true 0 1 2 3) (c321 : Q y false 0 1 4 5) (c337 : Q y false 0 2 3 5) (c338 : Q y false 1 2 3 4) (c345 : Q y false 0 2 4 6) (c346 : Q y false 3 4 5 6) (c353 : Q y true 0 1 3 4) (c354 : Q y true 0 1 5 6) (c355 : Q y false 1 2 5 6) (c1 : N (Q y false 0 1 2 3)) (c322 : N (Q y false 0 2 3 4)) (c329 : N (Q y true 0 2 3 4)) (c339 : N (Q y true 0 1 4 6)) (c347 : N (Q y false 0 1 3 4)) : False := by
+  (c320 : Q y true 0 1 2 3) (c321 : Q y false 0 1 4 5) (_c337 : Q y false 0 2 3 5) (c338 : Q y false 1 2 3 4) (_c345 : Q y false 0 2 4 6) (c346 : Q y false 3 4 5 6) (c353 : Q y true 0 1 3 4) (c354 : Q y true 0 1 5 6) (c355 : Q y false 1 2 5 6) (_c1 : N (Q y false 0 1 2 3)) (_c322 : N (Q y false 0 2 3 4)) (_c329 : N (Q y true 0 2 3 4)) (_c339 : N (Q y true 0 1 4 6)) (_c347 : N (Q y false 0 1 3 4)) : False := by
  rcases em (Q y true 0 2 4 7) with c356 | c356
  ·
   rcases H.h01357 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -4112,7 +4112,7 @@ lemma s130 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s129 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c320 : Q y true 0 1 2 3) (c321 : Q y false 0 1 4 5) (c337 : Q y false 0 2 3 5) (c338 : Q y false 1 2 3 4) (c345 : Q y false 0 2 4 6) (c346 : Q y false 3 4 5 6) (c347 : Q y false 0 1 3 4) (c348 : Q y false 0 1 5 6) (c349 : Q y false 1 2 5 6) (c1 : N (Q y false 0 1 2 3)) (c322 : N (Q y false 0 2 3 4)) (c329 : N (Q y true 0 2 3 4)) (c339 : N (Q y true 0 1 4 6)) : False := by
+  (c320 : Q y true 0 1 2 3) (c321 : Q y false 0 1 4 5) (_c337 : Q y false 0 2 3 5) (c338 : Q y false 1 2 3 4) (_c345 : Q y false 0 2 4 6) (c346 : Q y false 3 4 5 6) (c347 : Q y false 0 1 3 4) (c348 : Q y false 0 1 5 6) (c349 : Q y false 1 2 5 6) (_c1 : N (Q y false 0 1 2 3)) (_c322 : N (Q y false 0 2 3 4)) (_c329 : N (Q y true 0 2 3 4)) (c339 : N (Q y true 0 1 4 6)) : False := by
  rcases em (Q y true 0 1 4 7) with c350 | c350
  ·
   rcases H.h01257 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -4223,7 +4223,7 @@ lemma s126 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s125 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c320 : Q y true 0 1 2 3) (c321 : Q y false 0 1 4 5) (c337 : Q y false 0 2 3 5) (c338 : Q y false 1 2 3 4) (c339 : Q y true 0 1 4 6) (c340 : Q y false 3 4 5 6) (c341 : Q y false 0 2 4 6) (c342 : Q y false 1 2 5 6) (c1 : N (Q y false 0 1 2 3)) (c322 : N (Q y false 0 2 3 4)) (c329 : N (Q y true 0 2 3 4)) : False := by
+  (c320 : Q y true 0 1 2 3) (c321 : Q y false 0 1 4 5) (_c337 : Q y false 0 2 3 5) (c338 : Q y false 1 2 3 4) (c339 : Q y true 0 1 4 6) (c340 : Q y false 3 4 5 6) (_c341 : Q y false 0 2 4 6) (c342 : Q y false 1 2 5 6) (_c1 : N (Q y false 0 1 2 3)) (_c322 : N (Q y false 0 2 3 4)) (_c329 : N (Q y true 0 2 3 4)) : False := by
  rcases em (Q y true 0 2 4 7) with c343 | c343
  ·
   rcases H.h03457 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -4318,7 +4318,7 @@ lemma s122 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s121 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c320 : Q y true 0 1 2 3) (c321 : Q y false 0 1 4 5) (c329 : Q y true 0 2 3 4) (c330 : Q y true 1 2 3 5) (c1 : N (Q y false 0 1 2 3)) (c322 : N (Q y false 0 2 3 4)) : False := by
+  (c320 : Q y true 0 1 2 3) (c321 : Q y false 0 1 4 5) (c329 : Q y true 0 2 3 4) (c330 : Q y true 1 2 3 5) (_c1 : N (Q y false 0 1 2 3)) (_c322 : N (Q y false 0 2 3 4)) : False := by
  rcases em (Q y true 0 1 4 6) with c331 | c331
  ·
   rcases H.h03456 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -4429,7 +4429,7 @@ lemma s120 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s119 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c320 : Q y true 0 1 2 3) (c321 : Q y false 0 1 4 5) (c322 : Q y false 0 2 3 4) (c323 : Q y false 1 2 4 5) (c326 : Q y true 0 2 4 6) (c1 : N (Q y false 0 1 2 3)) (c324 : N (Q y true 0 1 4 6)) (c325 : N (Q y false 0 2 4 6)) : False := by
+  (c320 : Q y true 0 1 2 3) (c321 : Q y false 0 1 4 5) (c322 : Q y false 0 2 3 4) (c323 : Q y false 1 2 4 5) (c326 : Q y true 0 2 4 6) (_c1 : N (Q y false 0 1 2 3)) (_c324 : N (Q y true 0 1 4 6)) (_c325 : N (Q y false 0 2 4 6)) : False := by
  rcases em (Q y true 1 2 4 7) with c327 | c327
  ·
   rcases H.h02367 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -4532,7 +4532,7 @@ lemma s117 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s116 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c1 : Q y false 0 1 2 3) (c272 : Q y false 1 2 4 5) (c304 : Q y true 0 1 3 4) (c311 : Q y true 0 2 3 5) (c2 : N (Q y true 0 1 2 4)) (c84 : N (Q y true 0 1 2 5)) (c149 : N (Q y false 0 1 4 5)) (c245 : N (Q y true 0 1 4 5)) (c260 : N (Q y false 0 2 4 5)) (c270 : N (Q y true 0 2 4 5)) (c273 : N (Q y false 0 1 3 4)) (c305 : N (Q y false 0 2 3 4)) : False := by
+  (c1 : Q y false 0 1 2 3) (c272 : Q y false 1 2 4 5) (c304 : Q y true 0 1 3 4) (_c311 : Q y true 0 2 3 5) (c2 : N (Q y true 0 1 2 4)) (_c84 : N (Q y true 0 1 2 5)) (_c149 : N (Q y false 0 1 4 5)) (c245 : N (Q y true 0 1 4 5)) (c260 : N (Q y false 0 2 4 5)) (c270 : N (Q y true 0 2 4 5)) (_c273 : N (Q y false 0 1 3 4)) (c305 : N (Q y false 0 2 3 4)) : False := by
  rcases em (Q y false 0 1 4 6) with c312 | c312
  ·
   rcases H.h01356 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -4612,7 +4612,7 @@ lemma s116 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s115 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c1 : Q y false 0 1 2 3) (c272 : Q y false 1 2 4 5) (c304 : Q y true 0 1 3 4) (c305 : Q y false 0 2 3 4) (c2 : N (Q y true 0 1 2 4)) (c84 : N (Q y true 0 1 2 5)) (c149 : N (Q y false 0 1 4 5)) (c245 : N (Q y true 0 1 4 5)) (c260 : N (Q y false 0 2 4 5)) (c270 : N (Q y true 0 2 4 5)) (c273 : N (Q y false 0 1 3 4)) : False := by
+  (c1 : Q y false 0 1 2 3) (c272 : Q y false 1 2 4 5) (c304 : Q y true 0 1 3 4) (c305 : Q y false 0 2 3 4) (c2 : N (Q y true 0 1 2 4)) (_c84 : N (Q y true 0 1 2 5)) (_c149 : N (Q y false 0 1 4 5)) (_c245 : N (Q y true 0 1 4 5)) (_c260 : N (Q y false 0 2 4 5)) (_c270 : N (Q y true 0 2 4 5)) (_c273 : N (Q y false 0 1 3 4)) : False := by
  rcases em (Q y false 0 1 4 6) with c306 | c306
  ·
   rcases H.h01356 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -4692,7 +4692,7 @@ lemma s115 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s114 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c1 : Q y false 0 1 2 3) (c272 : Q y false 1 2 4 5) (c273 : Q y false 0 1 3 4) (c274 : Q y false 0 2 3 5) (c293 : Q y false 0 2 4 6) (c294 : Q y false 0 1 5 6) (c295 : Q y false 3 4 5 6) (c296 : Q y false 1 3 4 6) (c297 : Q y false 2 3 5 6) (c2 : N (Q y true 0 1 2 4)) (c84 : N (Q y true 0 1 2 5)) (c149 : N (Q y false 0 1 4 5)) (c245 : N (Q y true 0 1 4 5)) (c260 : N (Q y false 0 2 4 5)) (c270 : N (Q y true 0 2 4 5)) (c275 : N (Q y true 0 1 2 6)) (c284 : N (Q y false 0 1 4 6)) (c285 : N (Q y true 0 1 4 6)) : False := by
+  (c1 : Q y false 0 1 2 3) (c272 : Q y false 1 2 4 5) (c273 : Q y false 0 1 3 4) (_c274 : Q y false 0 2 3 5) (_c293 : Q y false 0 2 4 6) (c294 : Q y false 0 1 5 6) (c295 : Q y false 3 4 5 6) (_c296 : Q y false 1 3 4 6) (c297 : Q y false 2 3 5 6) (c2 : N (Q y true 0 1 2 4)) (c84 : N (Q y true 0 1 2 5)) (c149 : N (Q y false 0 1 4 5)) (c245 : N (Q y true 0 1 4 5)) (_c260 : N (Q y false 0 2 4 5)) (_c270 : N (Q y true 0 2 4 5)) (c275 : N (Q y true 0 1 2 6)) (_c284 : N (Q y false 0 1 4 6)) (c285 : N (Q y true 0 1 4 6)) : False := by
  rcases em (Q y true 0 1 2 7) with c298 | c298
  ·
   rcases H.h12347 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -4831,7 +4831,7 @@ lemma s110 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s109 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c1 : Q y false 0 1 2 3) (c272 : Q y false 1 2 4 5) (c273 : Q y false 0 1 3 4) (c274 : Q y false 0 2 3 5) (c285 : Q y true 0 1 4 6) (c286 : Q y false 0 2 4 6) (c287 : Q y false 0 1 5 6) (c288 : Q y false 3 4 5 6) (c289 : Q y false 1 3 4 6) (c290 : Q y false 2 3 5 6) (c2 : N (Q y true 0 1 2 4)) (c84 : N (Q y true 0 1 2 5)) (c149 : N (Q y false 0 1 4 5)) (c245 : N (Q y true 0 1 4 5)) (c260 : N (Q y false 0 2 4 5)) (c270 : N (Q y true 0 2 4 5)) (c275 : N (Q y true 0 1 2 6)) (c284 : N (Q y false 0 1 4 6)) : False := by
+  (c1 : Q y false 0 1 2 3) (c272 : Q y false 1 2 4 5) (c273 : Q y false 0 1 3 4) (_c274 : Q y false 0 2 3 5) (c285 : Q y true 0 1 4 6) (_c286 : Q y false 0 2 4 6) (c287 : Q y false 0 1 5 6) (c288 : Q y false 3 4 5 6) (_c289 : Q y false 1 3 4 6) (c290 : Q y false 2 3 5 6) (c2 : N (Q y true 0 1 2 4)) (c84 : N (Q y true 0 1 2 5)) (c149 : N (Q y false 0 1 4 5)) (_c245 : N (Q y true 0 1 4 5)) (_c260 : N (Q y false 0 2 4 5)) (_c270 : N (Q y true 0 2 4 5)) (_c275 : N (Q y true 0 1 2 6)) (_c284 : N (Q y false 0 1 4 6)) : False := by
  rcases em (Q y true 0 2 4 7) with c291 | c291
  ·
   rcases H.h01367 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -4962,7 +4962,7 @@ lemma s104 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s103 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c1 : Q y false 0 1 2 3) (c272 : Q y false 1 2 4 5) (c273 : Q y false 0 1 3 4) (c274 : Q y false 0 2 3 5) (c275 : Q y true 0 1 2 6) (c276 : Q y false 1 3 4 6) (c277 : Q y false 0 1 5 6) (c278 : Q y false 0 2 4 6) (c279 : Q y false 3 4 5 6) (c280 : Q y false 2 3 5 6) (c2 : N (Q y true 0 1 2 4)) (c84 : N (Q y true 0 1 2 5)) (c149 : N (Q y false 0 1 4 5)) (c245 : N (Q y true 0 1 4 5)) (c260 : N (Q y false 0 2 4 5)) (c270 : N (Q y true 0 2 4 5)) : False := by
+  (c1 : Q y false 0 1 2 3) (c272 : Q y false 1 2 4 5) (c273 : Q y false 0 1 3 4) (c274 : Q y false 0 2 3 5) (c275 : Q y true 0 1 2 6) (_c276 : Q y false 1 3 4 6) (c277 : Q y false 0 1 5 6) (_c278 : Q y false 0 2 4 6) (c279 : Q y false 3 4 5 6) (c280 : Q y false 2 3 5 6) (c2 : N (Q y true 0 1 2 4)) (c84 : N (Q y true 0 1 2 5)) (c149 : N (Q y false 0 1 4 5)) (_c245 : N (Q y true 0 1 4 5)) (_c260 : N (Q y false 0 2 4 5)) (_c270 : N (Q y true 0 2 4 5)) : False := by
  rcases em (Q y true 0 1 4 7) with c281 | c281
  ·
   rcases H.h01357 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -5106,7 +5106,7 @@ lemma s98 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s97 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c1 : Q y false 0 1 2 3) (c270 : Q y true 0 2 4 5) (c2 : N (Q y true 0 1 2 4)) (c84 : N (Q y true 0 1 2 5)) (c149 : N (Q y false 0 1 4 5)) (c245 : N (Q y true 0 1 4 5)) (c260 : N (Q y false 0 2 4 5)) : False := by
+  (c1 : Q y false 0 1 2 3) (c270 : Q y true 0 2 4 5) (c2 : N (Q y true 0 1 2 4)) (_c84 : N (Q y true 0 1 2 5)) (_c149 : N (Q y false 0 1 4 5)) (_c245 : N (Q y true 0 1 4 5)) (_c260 : N (Q y false 0 2 4 5)) : False := by
  rcases em (Q y true 1 2 4 6) with c271 | c271
  ·
   rcases H.h01247 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -5134,7 +5134,7 @@ lemma s97 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s96 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c1 : Q y false 0 1 2 3) (c260 : Q y false 0 2 4 5) (c265 : Q y true 0 2 4 6) (c266 : Q y true 1 2 4 7) (c267 : Q y false 0 1 6 7) (c2 : N (Q y true 0 1 2 4)) (c84 : N (Q y true 0 1 2 5)) (c149 : N (Q y false 0 1 4 5)) (c245 : N (Q y true 0 1 4 5)) (c261 : N (Q y true 0 1 2 6)) (c263 : N (Q y true 0 1 4 6)) : False := by
+  (c1 : Q y false 0 1 2 3) (c260 : Q y false 0 2 4 5) (c265 : Q y true 0 2 4 6) (_c266 : Q y true 1 2 4 7) (c267 : Q y false 0 1 6 7) (c2 : N (Q y true 0 1 2 4)) (_c84 : N (Q y true 0 1 2 5)) (c149 : N (Q y false 0 1 4 5)) (c245 : N (Q y true 0 1 4 5)) (_c261 : N (Q y true 0 1 2 6)) (c263 : N (Q y true 0 1 4 6)) : False := by
  rcases em (Q y false 0 3 5 7) with c268 | c268
  ·
   rcases H.h01456 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -5198,7 +5198,7 @@ lemma s94 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s93 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c1 : Q y false 0 1 2 3) (c260 : Q y false 0 2 4 5) (c263 : Q y true 0 1 4 6) (c2 : N (Q y true 0 1 2 4)) (c84 : N (Q y true 0 1 2 5)) (c149 : N (Q y false 0 1 4 5)) (c245 : N (Q y true 0 1 4 5)) (c261 : N (Q y true 0 1 2 6)) : False := by
+  (c1 : Q y false 0 1 2 3) (c260 : Q y false 0 2 4 5) (c263 : Q y true 0 1 4 6) (_c2 : N (Q y true 0 1 2 4)) (c84 : N (Q y true 0 1 2 5)) (_c149 : N (Q y false 0 1 4 5)) (_c245 : N (Q y true 0 1 4 5)) (c261 : N (Q y true 0 1 2 6)) : False := by
  rcases em (Q y false 1 4 5 6) with c264 | c264
  ·
   rcases H.h01256 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -5226,7 +5226,7 @@ lemma s93 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s92 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c1 : Q y false 0 1 2 3) (c260 : Q y false 0 2 4 5) (c261 : Q y true 0 1 2 6) (c2 : N (Q y true 0 1 2 4)) (c84 : N (Q y true 0 1 2 5)) (c149 : N (Q y false 0 1 4 5)) (c245 : N (Q y true 0 1 4 5)) : False := by
+  (c1 : Q y false 0 1 2 3) (c260 : Q y false 0 2 4 5) (c261 : Q y true 0 1 2 6) (_c2 : N (Q y true 0 1 2 4)) (_c84 : N (Q y true 0 1 2 5)) (_c149 : N (Q y false 0 1 4 5)) (_c245 : N (Q y true 0 1 4 5)) : False := by
  rcases em (Q y false 1 2 3 4) with c262 | c262
  ·
   rcases H.h02346 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -5291,7 +5291,7 @@ lemma s91 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s90 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c1 : Q y false 0 1 2 3) (c245 : Q y true 0 1 4 5) (c257 : Q y false 1 2 4 6) (c2 : N (Q y true 0 1 2 4)) (c84 : N (Q y true 0 1 2 5)) (c149 : N (Q y false 0 1 4 5)) (c246 : N (Q y false 0 2 4 6)) (c255 : N (Q y true 0 2 4 6)) : False := by
+  (c1 : Q y false 0 1 2 3) (c245 : Q y true 0 1 4 5) (c257 : Q y false 1 2 4 6) (c2 : N (Q y true 0 1 2 4)) (c84 : N (Q y true 0 1 2 5)) (_c149 : N (Q y false 0 1 4 5)) (c246 : N (Q y false 0 2 4 6)) (c255 : N (Q y true 0 2 4 6)) : False := by
  rcases em (Q y false 2 4 5 6) with c258 | c258
  ·
   rcases H.h01256 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -5319,7 +5319,7 @@ lemma s90 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s89 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c1 : Q y false 0 1 2 3) (c245 : Q y true 0 1 4 5) (c255 : Q y true 0 2 4 6) (c2 : N (Q y true 0 1 2 4)) (c84 : N (Q y true 0 1 2 5)) (c149 : N (Q y false 0 1 4 5)) (c246 : N (Q y false 0 2 4 6)) : False := by
+  (c1 : Q y false 0 1 2 3) (c245 : Q y true 0 1 4 5) (c255 : Q y true 0 2 4 6) (c2 : N (Q y true 0 1 2 4)) (_c84 : N (Q y true 0 1 2 5)) (_c149 : N (Q y false 0 1 4 5)) (_c246 : N (Q y false 0 2 4 6)) : False := by
  rcases em (Q y true 1 2 4 7) with c256 | c256
  ·
   rcases H.h03567 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -5347,7 +5347,7 @@ lemma s89 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s88 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c1 : Q y false 0 1 2 3) (c245 : Q y true 0 1 4 5) (c246 : Q y false 0 2 4 6) (c247 : Q y false 3 4 5 6) (c248 : Q y false 0 2 3 5) (c249 : Q y false 1 2 4 5) (c250 : Q y false 0 1 5 6) (c251 : Q y false 1 3 4 6) (c252 : Q y false 2 3 5 6) (c2 : N (Q y true 0 1 2 4)) (c84 : N (Q y true 0 1 2 5)) (c149 : N (Q y false 0 1 4 5)) : False := by
+  (c1 : Q y false 0 1 2 3) (c245 : Q y true 0 1 4 5) (_c246 : Q y false 0 2 4 6) (c247 : Q y false 3 4 5 6) (_c248 : Q y false 0 2 3 5) (c249 : Q y false 1 2 4 5) (c250 : Q y false 0 1 5 6) (_c251 : Q y false 1 3 4 6) (c252 : Q y false 2 3 5 6) (c2 : N (Q y true 0 1 2 4)) (_c84 : N (Q y true 0 1 2 5)) (_c149 : N (Q y false 0 1 4 5)) : False := by
  rcases em (Q y true 0 2 4 7) with c253 | c253
  ·
   rcases H.h01267 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -5496,7 +5496,7 @@ lemma s82 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s81 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c1 : Q y false 0 1 2 3) (c149 : Q y false 0 1 4 5) (c227 : Q y false 2 3 4 5) (c242 : Q y false 1 2 4 6) (c2 : N (Q y true 0 1 2 4)) (c84 : N (Q y true 0 1 2 5)) (c150 : N (Q y false 0 2 3 4)) (c167 : N (Q y true 0 2 3 4)) (c178 : N (Q y false 0 2 3 5)) (c213 : N (Q y true 0 2 3 5)) (c228 : N (Q y true 0 1 2 6)) (c235 : N (Q y true 0 1 4 6)) (c239 : N (Q y false 0 2 4 6)) (c240 : N (Q y true 0 2 4 6)) : False := by
+  (c1 : Q y false 0 1 2 3) (c149 : Q y false 0 1 4 5) (c227 : Q y false 2 3 4 5) (c242 : Q y false 1 2 4 6) (c2 : N (Q y true 0 1 2 4)) (c84 : N (Q y true 0 1 2 5)) (_c150 : N (Q y false 0 2 3 4)) (_c167 : N (Q y true 0 2 3 4)) (_c178 : N (Q y false 0 2 3 5)) (_c213 : N (Q y true 0 2 3 5)) (c228 : N (Q y true 0 1 2 6)) (_c235 : N (Q y true 0 1 4 6)) (c239 : N (Q y false 0 2 4 6)) (c240 : N (Q y true 0 2 4 6)) : False := by
  rcases em (Q y false 2 4 5 6) with c243 | c243
  ·
   rcases H.h01256 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -5524,7 +5524,7 @@ lemma s81 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s80 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c1 : Q y false 0 1 2 3) (c149 : Q y false 0 1 4 5) (c227 : Q y false 2 3 4 5) (c240 : Q y true 0 2 4 6) (c2 : N (Q y true 0 1 2 4)) (c84 : N (Q y true 0 1 2 5)) (c150 : N (Q y false 0 2 3 4)) (c167 : N (Q y true 0 2 3 4)) (c178 : N (Q y false 0 2 3 5)) (c213 : N (Q y true 0 2 3 5)) (c228 : N (Q y true 0 1 2 6)) (c235 : N (Q y true 0 1 4 6)) (c239 : N (Q y false 0 2 4 6)) : False := by
+  (c1 : Q y false 0 1 2 3) (c149 : Q y false 0 1 4 5) (c227 : Q y false 2 3 4 5) (c240 : Q y true 0 2 4 6) (c2 : N (Q y true 0 1 2 4)) (_c84 : N (Q y true 0 1 2 5)) (_c150 : N (Q y false 0 2 3 4)) (c167 : N (Q y true 0 2 3 4)) (_c178 : N (Q y false 0 2 3 5)) (_c213 : N (Q y true 0 2 3 5)) (_c228 : N (Q y true 0 1 2 6)) (_c235 : N (Q y true 0 1 4 6)) (_c239 : N (Q y false 0 2 4 6)) : False := by
  rcases em (Q y true 1 2 4 7) with c241 | c241
  ·
   rcases H.h13457 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -5552,7 +5552,7 @@ lemma s80 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s79 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c1 : Q y false 0 1 2 3) (c149 : Q y false 0 1 4 5) (c227 : Q y false 2 3 4 5) (c235 : Q y true 0 1 4 6) (c2 : N (Q y true 0 1 2 4)) (c84 : N (Q y true 0 1 2 5)) (c150 : N (Q y false 0 2 3 4)) (c167 : N (Q y true 0 2 3 4)) (c178 : N (Q y false 0 2 3 5)) (c213 : N (Q y true 0 2 3 5)) (c228 : N (Q y true 0 1 2 6)) : False := by
+  (c1 : Q y false 0 1 2 3) (c149 : Q y false 0 1 4 5) (c227 : Q y false 2 3 4 5) (c235 : Q y true 0 1 4 6) (c2 : N (Q y true 0 1 2 4)) (c84 : N (Q y true 0 1 2 5)) (_c150 : N (Q y false 0 2 3 4)) (_c167 : N (Q y true 0 2 3 4)) (c178 : N (Q y false 0 2 3 5)) (_c213 : N (Q y true 0 2 3 5)) (c228 : N (Q y true 0 1 2 6)) : False := by
  rcases em (Q y false 0 1 5 6) with c236 | c236
  ·
   rcases H.h03456 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -5606,7 +5606,7 @@ lemma s79 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s78 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c1 : Q y false 0 1 2 3) (c149 : Q y false 0 1 4 5) (c227 : Q y false 2 3 4 5) (c228 : Q y true 0 1 2 6) (c229 : Q y false 0 1 3 4) (c2 : N (Q y true 0 1 2 4)) (c84 : N (Q y true 0 1 2 5)) (c150 : N (Q y false 0 2 3 4)) (c167 : N (Q y true 0 2 3 4)) (c178 : N (Q y false 0 2 3 5)) (c213 : N (Q y true 0 2 3 5)) : False := by
+  (c1 : Q y false 0 1 2 3) (c149 : Q y false 0 1 4 5) (c227 : Q y false 2 3 4 5) (c228 : Q y true 0 1 2 6) (c229 : Q y false 0 1 3 4) (_c2 : N (Q y true 0 1 2 4)) (_c84 : N (Q y true 0 1 2 5)) (c150 : N (Q y false 0 2 3 4)) (c167 : N (Q y true 0 2 3 4)) (c178 : N (Q y false 0 2 3 5)) (_c213 : N (Q y true 0 2 3 5)) : False := by
  rcases em (Q y false 0 1 5 6) with c230 | c230
  ·
   rcases H.h02456 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -5704,7 +5704,7 @@ lemma s77 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s76 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c1 : Q y false 0 1 2 3) (c149 : Q y false 0 1 4 5) (c213 : Q y true 0 2 3 5) (c219 : Q y false 2 3 4 5) (c220 : Q y true 0 1 4 6) (c2 : N (Q y true 0 1 2 4)) (c84 : N (Q y true 0 1 2 5)) (c150 : N (Q y false 0 2 3 4)) (c167 : N (Q y true 0 2 3 4)) (c178 : N (Q y false 0 2 3 5)) (c214 : N (Q y false 1 2 4 5)) : False := by
+  (c1 : Q y false 0 1 2 3) (c149 : Q y false 0 1 4 5) (c213 : Q y true 0 2 3 5) (c219 : Q y false 2 3 4 5) (c220 : Q y true 0 1 4 6) (_c2 : N (Q y true 0 1 2 4)) (c84 : N (Q y true 0 1 2 5)) (c150 : N (Q y false 0 2 3 4)) (_c167 : N (Q y true 0 2 3 4)) (_c178 : N (Q y false 0 2 3 5)) (c214 : N (Q y false 1 2 4 5)) : False := by
  rcases em (Q y false 0 2 5 6) with c221 | c221
  ·
   rcases H.h12346 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -5815,7 +5815,7 @@ lemma s75 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s74 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c1 : Q y false 0 1 2 3) (c149 : Q y false 0 1 4 5) (c213 : Q y true 0 2 3 5) (c214 : Q y false 1 2 4 5) (c2 : N (Q y true 0 1 2 4)) (c84 : N (Q y true 0 1 2 5)) (c150 : N (Q y false 0 2 3 4)) (c167 : N (Q y true 0 2 3 4)) (c178 : N (Q y false 0 2 3 5)) : False := by
+  (c1 : Q y false 0 1 2 3) (c149 : Q y false 0 1 4 5) (c213 : Q y true 0 2 3 5) (c214 : Q y false 1 2 4 5) (c2 : N (Q y true 0 1 2 4)) (c84 : N (Q y true 0 1 2 5)) (c150 : N (Q y false 0 2 3 4)) (_c167 : N (Q y true 0 2 3 4)) (_c178 : N (Q y false 0 2 3 5)) : False := by
  rcases em (Q y true 0 1 4 6) with c215 | c215
  ·
   rcases H.h01256 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -5882,7 +5882,7 @@ lemma s74 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s73 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c1 : Q y false 0 1 2 3) (c149 : Q y false 0 1 4 5) (c178 : Q y false 0 2 3 5) (c179 : Q y false 1 2 3 4) (c207 : Q y true 0 2 4 6) (c2 : N (Q y true 0 1 2 4)) (c84 : N (Q y true 0 1 2 5)) (c150 : N (Q y false 0 2 3 4)) (c167 : N (Q y true 0 2 3 4)) (c180 : N (Q y true 0 1 2 6)) (c191 : N (Q y true 0 1 4 6)) (c192 : N (Q y false 0 2 4 6)) : False := by
+  (c1 : Q y false 0 1 2 3) (c149 : Q y false 0 1 4 5) (_c178 : Q y false 0 2 3 5) (c179 : Q y false 1 2 3 4) (c207 : Q y true 0 2 4 6) (c2 : N (Q y true 0 1 2 4)) (_c84 : N (Q y true 0 1 2 5)) (_c150 : N (Q y false 0 2 3 4)) (_c167 : N (Q y true 0 2 3 4)) (_c180 : N (Q y true 0 1 2 6)) (_c191 : N (Q y true 0 1 4 6)) (_c192 : N (Q y false 0 2 4 6)) : False := by
  rcases em (Q y true 1 2 4 7) with c208 | c208
  ·
   rcases H.h12357 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -5910,7 +5910,7 @@ lemma s73 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s72 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c1 : Q y false 0 1 2 3) (c149 : Q y false 0 1 4 5) (c178 : Q y false 0 2 3 5) (c179 : Q y false 1 2 3 4) (c192 : Q y false 0 2 4 6) (c193 : Q y false 3 4 5 6) (c203 : Q y true 0 1 5 6) (c204 : Q y false 1 2 5 6) (c2 : N (Q y true 0 1 2 4)) (c84 : N (Q y true 0 1 2 5)) (c150 : N (Q y false 0 2 3 4)) (c167 : N (Q y true 0 2 3 4)) (c180 : N (Q y true 0 1 2 6)) (c191 : N (Q y true 0 1 4 6)) (c194 : N (Q y false 0 1 5 6)) : False := by
+  (c1 : Q y false 0 1 2 3) (c149 : Q y false 0 1 4 5) (_c178 : Q y false 0 2 3 5) (c179 : Q y false 1 2 3 4) (_c192 : Q y false 0 2 4 6) (c193 : Q y false 3 4 5 6) (c203 : Q y true 0 1 5 6) (c204 : Q y false 1 2 5 6) (c2 : N (Q y true 0 1 2 4)) (_c84 : N (Q y true 0 1 2 5)) (_c150 : N (Q y false 0 2 3 4)) (_c167 : N (Q y true 0 2 3 4)) (_c180 : N (Q y true 0 1 2 6)) (_c191 : N (Q y true 0 1 4 6)) (_c194 : N (Q y false 0 1 5 6)) : False := by
  rcases em (Q y true 0 2 4 7) with c205 | c205
  ·
   rcases H.h03567 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -5969,7 +5969,7 @@ lemma s71 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s70 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c1 : Q y false 0 1 2 3) (c149 : Q y false 0 1 4 5) (c178 : Q y false 0 2 3 5) (c179 : Q y false 1 2 3 4) (c192 : Q y false 0 2 4 6) (c193 : Q y false 3 4 5 6) (c194 : Q y false 0 1 5 6) (c195 : Q y false 0 1 3 4) (c196 : Q y false 1 2 5 6) (c2 : N (Q y true 0 1 2 4)) (c84 : N (Q y true 0 1 2 5)) (c150 : N (Q y false 0 2 3 4)) (c167 : N (Q y true 0 2 3 4)) (c180 : N (Q y true 0 1 2 6)) (c191 : N (Q y true 0 1 4 6)) : False := by
+  (c1 : Q y false 0 1 2 3) (c149 : Q y false 0 1 4 5) (_c178 : Q y false 0 2 3 5) (c179 : Q y false 1 2 3 4) (_c192 : Q y false 0 2 4 6) (c193 : Q y false 3 4 5 6) (c194 : Q y false 0 1 5 6) (c195 : Q y false 0 1 3 4) (c196 : Q y false 1 2 5 6) (c2 : N (Q y true 0 1 2 4)) (c84 : N (Q y true 0 1 2 5)) (c150 : N (Q y false 0 2 3 4)) (c167 : N (Q y true 0 2 3 4)) (c180 : N (Q y true 0 1 2 6)) (c191 : N (Q y true 0 1 4 6)) : False := by
  rcases em (Q y true 0 1 2 7) with c197 | c197
  ·
   rcases H.h02347 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -6098,7 +6098,7 @@ lemma s68 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s67 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c1 : Q y false 0 1 2 3) (c149 : Q y false 0 1 4 5) (c178 : Q y false 0 2 3 5) (c179 : Q y false 1 2 3 4) (c180 : Q y true 0 1 2 6) (c181 : Q y false 0 2 4 6) (c182 : Q y false 0 1 5 6) (c183 : Q y false 3 4 5 6) (c184 : Q y false 0 1 3 4) (c185 : Q y false 1 2 5 6) (c2 : N (Q y true 0 1 2 4)) (c84 : N (Q y true 0 1 2 5)) (c150 : N (Q y false 0 2 3 4)) (c167 : N (Q y true 0 2 3 4)) : False := by
+  (c1 : Q y false 0 1 2 3) (c149 : Q y false 0 1 4 5) (_c178 : Q y false 0 2 3 5) (c179 : Q y false 1 2 3 4) (c180 : Q y true 0 1 2 6) (_c181 : Q y false 0 2 4 6) (c182 : Q y false 0 1 5 6) (c183 : Q y false 3 4 5 6) (c184 : Q y false 0 1 3 4) (c185 : Q y false 1 2 5 6) (c2 : N (Q y true 0 1 2 4)) (c84 : N (Q y true 0 1 2 5)) (_c150 : N (Q y false 0 2 3 4)) (_c167 : N (Q y true 0 2 3 4)) : False := by
  rcases em (Q y true 0 1 4 7) with c186 | c186
  ·
   rcases H.h01257 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -6268,7 +6268,7 @@ lemma s62 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s61 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c1 : Q y false 0 1 2 3) (c149 : Q y false 0 1 4 5) (c167 : Q y true 0 2 3 4) (c168 : Q y true 1 2 3 5) (c169 : Q y true 0 1 4 6) (c2 : N (Q y true 0 1 2 4)) (c84 : N (Q y true 0 1 2 5)) (c150 : N (Q y false 0 2 3 4)) : False := by
+  (c1 : Q y false 0 1 2 3) (c149 : Q y false 0 1 4 5) (c167 : Q y true 0 2 3 4) (c168 : Q y true 1 2 3 5) (c169 : Q y true 0 1 4 6) (_c2 : N (Q y true 0 1 2 4)) (_c84 : N (Q y true 0 1 2 5)) (_c150 : N (Q y false 0 2 3 4)) : False := by
  rcases em (Q y false 0 2 4 6) with c170 | c170
  ·
   rcases H.h03456 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -6423,7 +6423,7 @@ lemma s59 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s58 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c1 : Q y false 0 1 2 3) (c149 : Q y false 0 1 4 5) (c150 : Q y false 0 2 3 4) (c158 : Q y false 2 3 4 5) (c161 : Q y true 0 1 4 6) (c2 : N (Q y true 0 1 2 4)) (c84 : N (Q y true 0 1 2 5)) (c151 : N (Q y false 1 2 4 5)) (c159 : N (Q y true 0 1 2 6)) : False := by
+  (c1 : Q y false 0 1 2 3) (c149 : Q y false 0 1 4 5) (c150 : Q y false 0 2 3 4) (c158 : Q y false 2 3 4 5) (c161 : Q y true 0 1 4 6) (c2 : N (Q y true 0 1 2 4)) (c84 : N (Q y true 0 1 2 5)) (c151 : N (Q y false 1 2 4 5)) (_c159 : N (Q y true 0 1 2 6)) : False := by
  rcases em (Q y false 0 1 5 6) with c162 | c162
  ·
   rcases H.h02456 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -6451,7 +6451,7 @@ lemma s58 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s57 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c1 : Q y false 0 1 2 3) (c149 : Q y false 0 1 4 5) (c150 : Q y false 0 2 3 4) (c158 : Q y false 2 3 4 5) (c159 : Q y true 0 1 2 6) (c2 : N (Q y true 0 1 2 4)) (c84 : N (Q y true 0 1 2 5)) (c151 : N (Q y false 1 2 4 5)) : False := by
+  (c1 : Q y false 0 1 2 3) (_c149 : Q y false 0 1 4 5) (c150 : Q y false 0 2 3 4) (c158 : Q y false 2 3 4 5) (c159 : Q y true 0 1 2 6) (_c2 : N (Q y true 0 1 2 4)) (_c84 : N (Q y true 0 1 2 5)) (_c151 : N (Q y false 1 2 4 5)) : False := by
  rcases em (Q y false 0 3 4 6) with c160 | c160
  ·
   rcases H.h12346 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -6552,7 +6552,7 @@ lemma s56 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s55 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c1 : Q y false 0 1 2 3) (c149 : Q y false 0 1 4 5) (c150 : Q y false 0 2 3 4) (c151 : Q y false 1 2 4 5) (c153 : Q y true 0 1 4 6) (c2 : N (Q y true 0 1 2 4)) (c84 : N (Q y true 0 1 2 5)) (c152 : N (Q y true 0 1 2 6)) : False := by
+  (c1 : Q y false 0 1 2 3) (c149 : Q y false 0 1 4 5) (c150 : Q y false 0 2 3 4) (c151 : Q y false 1 2 4 5) (c153 : Q y true 0 1 4 6) (_c2 : N (Q y true 0 1 2 4)) (c84 : N (Q y true 0 1 2 5)) (_c152 : N (Q y true 0 1 2 6)) : False := by
  rcases em (Q y false 0 1 5 6) with c154 | c154
  ·
   rcases H.h03456 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -6650,7 +6650,7 @@ lemma s54 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s53 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c1 : Q y false 0 1 2 3) (c84 : Q y true 0 1 2 5) (c144 : Q y false 1 3 4 5) (c145 : Q y false 0 2 4 5) (c2 : N (Q y true 0 1 2 4)) (c85 : N (Q y false 0 1 3 4)) (c110 : N (Q y false 0 1 3 5)) (c111 : N (Q y false 0 1 4 5)) (c143 : N (Q y false 0 3 4 5)) : False := by
+  (c1 : Q y false 0 1 2 3) (c84 : Q y true 0 1 2 5) (c144 : Q y false 1 3 4 5) (c145 : Q y false 0 2 4 5) (c2 : N (Q y true 0 1 2 4)) (c85 : N (Q y false 0 1 3 4)) (_c110 : N (Q y false 0 1 3 5)) (_c111 : N (Q y false 0 1 4 5)) (c143 : N (Q y false 0 3 4 5)) : False := by
  rcases em (Q y true 0 1 4 6) with c146 | c146
  ·
   rcases H.h03456 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -6802,7 +6802,7 @@ lemma s51 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s50 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c1 : Q y false 0 1 2 3) (c84 : Q y true 0 1 2 5) (c111 : Q y false 0 1 4 5) (c124 : Q y false 0 2 3 5) (c125 : Q y false 1 2 3 4) (c126 : Q y true 0 1 4 6) (c127 : Q y false 1 3 5 6) (c128 : Q y false 0 3 4 6) (c129 : Q y false 2 4 5 6) (c2 : N (Q y true 0 1 2 4)) (c85 : N (Q y false 0 1 3 4)) (c110 : N (Q y false 0 1 3 5)) (c112 : N (Q y false 0 2 3 4)) : False := by
+  (c1 : Q y false 0 1 2 3) (_c84 : Q y true 0 1 2 5) (c111 : Q y false 0 1 4 5) (_c124 : Q y false 0 2 3 5) (c125 : Q y false 1 2 3 4) (c126 : Q y true 0 1 4 6) (c127 : Q y false 1 3 5 6) (_c128 : Q y false 0 3 4 6) (_c129 : Q y false 2 4 5 6) (c2 : N (Q y true 0 1 2 4)) (c85 : N (Q y false 0 1 3 4)) (c110 : N (Q y false 0 1 3 5)) (_c112 : N (Q y false 0 2 3 4)) : False := by
  rcases em (Q y true 0 2 4 7) with c130 | c130
  ·
   rcases H.h01347 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -7047,7 +7047,7 @@ lemma s45 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s44 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c1 : Q y false 0 1 2 3) (c84 : Q y true 0 1 2 5) (c111 : Q y false 0 1 4 5) (c112 : Q y false 0 2 3 4) (c113 : Q y false 1 2 4 5) (c2 : N (Q y true 0 1 2 4)) (c85 : N (Q y false 0 1 3 4)) (c110 : N (Q y false 0 1 3 5)) : False := by
+  (c1 : Q y false 0 1 2 3) (c84 : Q y true 0 1 2 5) (c111 : Q y false 0 1 4 5) (c112 : Q y false 0 2 3 4) (c113 : Q y false 1 2 4 5) (c2 : N (Q y true 0 1 2 4)) (c85 : N (Q y false 0 1 3 4)) (_c110 : N (Q y false 0 1 3 5)) : False := by
  rcases em (Q y true 0 1 4 6) with c114 | c114
  ·
   rcases H.h13456 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -7135,7 +7135,7 @@ lemma s43 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s42 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c1 : Q y false 0 1 2 3) (c84 : Q y true 0 1 2 5) (c85 : Q y false 0 1 3 4) (c100 : Q y false 0 2 4 5) (c105 : Q y false 1 3 4 5) (c2 : N (Q y true 0 1 2 4)) (c86 : N (Q y false 0 2 3 5)) (c101 : N (Q y false 1 2 3 4)) : False := by
+  (c1 : Q y false 0 1 2 3) (c84 : Q y true 0 1 2 5) (c85 : Q y false 0 1 3 4) (c100 : Q y false 0 2 4 5) (c105 : Q y false 1 3 4 5) (c2 : N (Q y true 0 1 2 4)) (_c86 : N (Q y false 0 2 3 5)) (c101 : N (Q y false 1 2 3 4)) : False := by
  rcases em (Q y true 0 1 4 6) with c106 | c106
  ·
   rcases H.h01356 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -7189,7 +7189,7 @@ lemma s42 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s41 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c1 : Q y false 0 1 2 3) (c84 : Q y true 0 1 2 5) (c85 : Q y false 0 1 3 4) (c100 : Q y false 0 2 4 5) (c101 : Q y false 1 2 3 4) (c2 : N (Q y true 0 1 2 4)) (c86 : N (Q y false 0 2 3 5)) : False := by
+  (c1 : Q y false 0 1 2 3) (c84 : Q y true 0 1 2 5) (c85 : Q y false 0 1 3 4) (c100 : Q y false 0 2 4 5) (_c101 : Q y false 1 2 3 4) (c2 : N (Q y true 0 1 2 4)) (_c86 : N (Q y false 0 2 3 5)) : False := by
  rcases em (Q y true 0 1 4 6) with c102 | c102
  ·
   rcases H.h03456 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -7264,7 +7264,7 @@ lemma s40 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s39 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c1 : Q y false 0 1 2 3) (c84 : Q y true 0 1 2 5) (c85 : Q y false 0 1 3 4) (c86 : Q y false 0 2 3 5) (c87 : Q y false 1 2 4 5) (c90 : Q y false 0 2 4 6) (c91 : Q y false 0 1 5 6) (c92 : Q y false 3 4 5 6) (c93 : Q y false 1 3 4 6) (c94 : Q y false 2 3 5 6) (c2 : N (Q y true 0 1 2 4)) (c88 : N (Q y false 0 1 4 6)) (c89 : N (Q y true 0 1 4 6)) : False := by
+  (c1 : Q y false 0 1 2 3) (c84 : Q y true 0 1 2 5) (c85 : Q y false 0 1 3 4) (_c86 : Q y false 0 2 3 5) (c87 : Q y false 1 2 4 5) (_c90 : Q y false 0 2 4 6) (c91 : Q y false 0 1 5 6) (c92 : Q y false 3 4 5 6) (_c93 : Q y false 1 3 4 6) (c94 : Q y false 2 3 5 6) (c2 : N (Q y true 0 1 2 4)) (c88 : N (Q y false 0 1 4 6)) (c89 : N (Q y true 0 1 4 6)) : False := by
  rcases em (Q y true 0 1 4 7) with c95 | c95
  ·
   rcases H.h01357 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -7390,7 +7390,7 @@ lemma s35 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s34 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c1 : Q y false 0 1 2 3) (c2 : Q y true 0 1 2 4) (c67 : Q y false 1 2 5 6) (c69 : Q y true 0 1 3 5) (c70 : Q y false 0 2 4 6) (c71 : Q y false 3 4 5 6) (c72 : Q y true 0 1 4 6) (c73 : Q y false 0 2 3 5) (c74 : Q y false 1 2 3 4) (c3 : N (Q y false 0 1 5 6)) (c47 : N (Q y true 0 1 5 6)) (c58 : N (Q y false 0 2 5 6)) (c65 : N (Q y true 0 2 5 6)) (c68 : N (Q y false 0 1 3 5)) : False := by
+  (c1 : Q y false 0 1 2 3) (c2 : Q y true 0 1 2 4) (c67 : Q y false 1 2 5 6) (c69 : Q y true 0 1 3 5) (c70 : Q y false 0 2 4 6) (c71 : Q y false 3 4 5 6) (c72 : Q y true 0 1 4 6) (c73 : Q y false 0 2 3 5) (c74 : Q y false 1 2 3 4) (c3 : N (Q y false 0 1 5 6)) (_c47 : N (Q y true 0 1 5 6)) (_c58 : N (Q y false 0 2 5 6)) (_c65 : N (Q y true 0 2 5 6)) (_c68 : N (Q y false 0 1 3 5)) : False := by
  rcases em (Q y false 0 3 4 7) with c75 | c75
  ·
   rcases H.h03567 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -7573,7 +7573,7 @@ lemma s29 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s28 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c1 : Q y false 0 1 2 3) (c2 : Q y true 0 1 2 4) (c65 : Q y true 0 2 5 6) (c3 : N (Q y false 0 1 5 6)) (c47 : N (Q y true 0 1 5 6)) (c58 : N (Q y false 0 2 5 6)) : False := by
+  (c1 : Q y false 0 1 2 3) (c2 : Q y true 0 1 2 4) (c65 : Q y true 0 2 5 6) (_c3 : N (Q y false 0 1 5 6)) (_c47 : N (Q y true 0 1 5 6)) (_c58 : N (Q y false 0 2 5 6)) : False := by
  rcases em (Q y true 1 2 5 7) with c66 | c66
  ·
   rcases H.h02467 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -7601,7 +7601,7 @@ lemma s28 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s27 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c1 : Q y false 0 1 2 3) (c2 : Q y true 0 1 2 4) (c58 : Q y false 0 2 5 6) (c61 : Q y true 1 2 5 7) (c62 : Q y true 0 1 6 7) (c63 : Q y false 0 3 6 7) (c3 : N (Q y false 0 1 5 6)) (c47 : N (Q y true 0 1 5 6)) (c59 : N (Q y true 0 1 5 7)) (c60 : N (Q y true 0 2 5 7)) : False := by
+  (c1 : Q y false 0 1 2 3) (c2 : Q y true 0 1 2 4) (c58 : Q y false 0 2 5 6) (c61 : Q y true 1 2 5 7) (c62 : Q y true 0 1 6 7) (c63 : Q y false 0 3 6 7) (_c3 : N (Q y false 0 1 5 6)) (_c47 : N (Q y true 0 1 5 6)) (_c59 : N (Q y true 0 1 5 7)) (_c60 : N (Q y true 0 2 5 7)) : False := by
  rcases em (Q y true 1 3 4 7) with c64 | c64
  ·
   rcases H.h12456 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -7709,7 +7709,7 @@ lemma s24 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s23 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c1 : Q y false 0 1 2 3) (c2 : Q y true 0 1 2 4) (c47 : Q y true 0 1 5 6) (c55 : Q y true 1 2 5 7) (c56 : Q y true 0 1 6 7) (c3 : N (Q y false 0 1 5 6)) (c48 : N (Q y false 0 2 5 7)) (c50 : N (Q y true 0 2 5 7)) (c53 : N (Q y false 1 2 5 7)) : False := by
+  (c1 : Q y false 0 1 2 3) (c2 : Q y true 0 1 2 4) (c47 : Q y true 0 1 5 6) (c55 : Q y true 1 2 5 7) (c56 : Q y true 0 1 6 7) (_c3 : N (Q y false 0 1 5 6)) (_c48 : N (Q y false 0 2 5 7)) (_c50 : N (Q y true 0 2 5 7)) (_c53 : N (Q y false 1 2 5 7)) : False := by
  rcases em (Q y true 2 3 4 7) with c57 | c57
  ·
   rcases H.h23567 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -7755,7 +7755,7 @@ lemma s22 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s21 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c1 : Q y false 0 1 2 3) (c2 : Q y true 0 1 2 4) (c47 : Q y true 0 1 5 6) (c53 : Q y false 1 2 5 7) (c3 : N (Q y false 0 1 5 6)) (c48 : N (Q y false 0 2 5 7)) (c50 : N (Q y true 0 2 5 7)) : False := by
+  (c1 : Q y false 0 1 2 3) (c2 : Q y true 0 1 2 4) (c47 : Q y true 0 1 5 6) (c53 : Q y false 1 2 5 7) (_c3 : N (Q y false 0 1 5 6)) (c48 : N (Q y false 0 2 5 7)) (c50 : N (Q y true 0 2 5 7)) : False := by
  rcases em (Q y false 2 5 6 7) with c54 | c54
  ·
   rcases H.h01267 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -7783,7 +7783,7 @@ lemma s21 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s20 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c1 : Q y false 0 1 2 3) (c2 : Q y true 0 1 2 4) (c47 : Q y true 0 1 5 6) (c50 : Q y true 0 2 5 7) (c51 : Q y false 4 5 6 7) (c3 : N (Q y false 0 1 5 6)) (c48 : N (Q y false 0 2 5 7)) : False := by
+  (c1 : Q y false 0 1 2 3) (c2 : Q y true 0 1 2 4) (c47 : Q y true 0 1 5 6) (c50 : Q y true 0 2 5 7) (c51 : Q y false 4 5 6 7) (_c3 : N (Q y false 0 1 5 6)) (_c48 : N (Q y false 0 2 5 7)) : False := by
  rcases em (Q y false 2 3 6 7) with c52 | c52
  ·
   rcases H.h12357 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -7829,7 +7829,7 @@ lemma s19 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s18 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c1 : Q y false 0 1 2 3) (c2 : Q y true 0 1 2 4) (c47 : Q y true 0 1 5 6) (c48 : Q y false 0 2 5 7) (c3 : N (Q y false 0 1 5 6)) : False := by
+  (_c1 : Q y false 0 1 2 3) (c2 : Q y true 0 1 2 4) (c47 : Q y true 0 1 5 6) (c48 : Q y false 0 2 5 7) (_c3 : N (Q y false 0 1 5 6)) : False := by
  rcases em (Q y false 3 5 6 7) with c49 | c49
  ·
   rcases H.h03456 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -7884,7 +7884,7 @@ lemma s17 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s16 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c1 : Q y false 0 1 2 3) (c2 : Q y true 0 1 2 4) (c3 : Q y false 0 1 5 6) (c23 : Q y false 0 2 4 6) (c24 : Q y false 3 4 5 6) (c25 : Q y false 0 2 3 5) (c36 : Q y false 1 3 4 6) (c37 : Q y false 1 2 4 5) (c38 : Q y false 2 3 5 6) (c39 : Q y false 0 1 3 4) (c4 : N (Q y false 0 2 4 5)) (c18 : N (Q y true 0 2 4 5)) (c26 : N (Q y false 1 2 3 4)) : False := by
+  (c1 : Q y false 0 1 2 3) (c2 : Q y true 0 1 2 4) (c3 : Q y false 0 1 5 6) (_c23 : Q y false 0 2 4 6) (c24 : Q y false 3 4 5 6) (_c25 : Q y false 0 2 3 5) (_c36 : Q y false 1 3 4 6) (c37 : Q y false 1 2 4 5) (c38 : Q y false 2 3 5 6) (c39 : Q y false 0 1 3 4) (_c4 : N (Q y false 0 2 4 5)) (_c18 : N (Q y true 0 2 4 5)) (c26 : N (Q y false 1 2 3 4)) : False := by
  rcases em (Q y true 0 2 4 7) with c40 | c40
  ·
   rcases H.h02567 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -8018,7 +8018,7 @@ lemma s13 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s12 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c1 : Q y false 0 1 2 3) (c2 : Q y true 0 1 2 4) (c3 : Q y false 0 1 5 6) (c23 : Q y false 0 2 4 6) (c24 : Q y false 3 4 5 6) (c25 : Q y false 0 2 3 5) (c26 : Q y false 1 2 3 4) (c27 : Q y false 1 2 5 6) (c28 : Q y false 0 1 3 4) (c4 : N (Q y false 0 2 4 5)) (c18 : N (Q y true 0 2 4 5)) : False := by
+  (c1 : Q y false 0 1 2 3) (c2 : Q y true 0 1 2 4) (c3 : Q y false 0 1 5 6) (c23 : Q y false 0 2 4 6) (c24 : Q y false 3 4 5 6) (_c25 : Q y false 0 2 3 5) (c26 : Q y false 1 2 3 4) (c27 : Q y false 1 2 5 6) (c28 : Q y false 0 1 3 4) (_c4 : N (Q y false 0 2 4 5)) (_c18 : N (Q y true 0 2 4 5)) : False := by
  rcases em (Q y true 0 1 5 7) with c29 | c29
  ·
   rcases H.h03567 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
@@ -8160,7 +8160,7 @@ lemma s10 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
 
 set_option maxHeartbeats 4000000 in
 lemma s9 (y : ℕ → ℤ) (B : Bs y) (H : AH y)
-  (c1 : Q y false 0 1 2 3) (c2 : Q y true 0 1 2 4) (c3 : Q y false 0 1 5 6) (c18 : Q y true 0 2 4 5) (c19 : Q y false 2 3 5 6) (c20 : Q y false 3 4 5 6) (c21 : Q y true 0 3 4 6) (c4 : N (Q y false 0 2 4 5)) : False := by
+  (c1 : Q y false 0 1 2 3) (_c2 : Q y true 0 1 2 4) (c3 : Q y false 0 1 5 6) (c18 : Q y true 0 2 4 5) (c19 : Q y false 2 3 5 6) (c20 : Q y false 3 4 5 6) (_c21 : Q y true 0 3 4 6) (_c4 : N (Q y false 0 2 4 5)) : False := by
  rcases em (Q y true 2 3 4 7) with c22 | c22
  ·
   rcases H.h04567 with (h|h)|(h|h)|(h|h)|(h|h)|(h|h)
