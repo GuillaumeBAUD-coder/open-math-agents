@@ -4,7 +4,7 @@ import Mathlib
 # Binary terminal coincidences between Fibonacci numbers and their indices
 
 Source: https://oeis.org/A000350
-Credit: @yungi7454147
+Credit: @Heart-galaxy
 
 OEIS A000350 comments that, apart from 1 and 5, no positive m has the property
 that Fibonacci(m), written in binary, ends with m written in binary. `Nat.digits`
