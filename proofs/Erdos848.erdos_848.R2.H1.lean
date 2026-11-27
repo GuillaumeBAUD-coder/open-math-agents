@@ -1,0 +1,1203 @@
+import OMAReductions.R_Erdos848_erdos_848_R2
+import Mathlib.NumberTheory.Primorial
+
+/-! Prefix colorings for the finite range in Erdős 848. Every color class is
+checked against squarefreeness of every product of two different members.
+A single gcd with the square of a primorial tests squarefreeness in this range. -/
+-- Credit: @marcusbuffett
+namespace OMA.E848Finite
+open Finset
+
+def little : ℕ := 10014646650599190067509233131649940057366334653200433090
+lemma little_spec : little=primorial 141 := by decide +kernel
+
+def primeB (n : ℕ) : Bool :=
+  if n≤141 then decide n.Prime else n.gcd little == 1
+
+lemma primeB_spec (n : ℕ) (hn : n≤20007) : primeB n=true ↔ n.Prime := by
+  by_cases h : n≤141
+  · simp [primeB,h]
+  simp only [primeB,if_neg h,beq_iff_eq,little_spec]
+  constructor
+  · intro cop
+    by_contra bad
+    have hp := Nat.minFac_prime (show n≠1 by omega)
+    have sq := Nat.minFac_sq_le_self (show 0<n by omega) bad
+    have b : n.minFac ≤ 141 := by nlinarith
+    have d := Nat.dvd_gcd (Nat.minFac_dvd n) (hp.dvd_primorial_iff.mpr b)
+    exact hp.not_dvd_one (cop ▸ d)
+  · intro hp
+    exact hp.coprime_iff_not_dvd.mpr (by rwa [hp.dvd_primorial_iff])
+
+def blockProd (s : ℕ) : ℕ → ℕ
+  | 0 => 1
+  | k+1 => blockProd s k * (if primeB (s+k+1) then s+k+1 else 1)
+
+lemma blocks (s k : ℕ) (bound : s+k≤20007) : primorial (s+k) = primorial s * blockProd s k := by
+  induction k with
+  | zero => simp [blockProd]
+  | succ k ih =>
+    have step (n : ℕ) : primorial (n+1) = primorial n * (if (n+1).Prime then n+1 else 1) := by
+      simp only [primorial, Finset.prod_filter, Finset.prod_range_succ]
+    change primorial (s+k+1) = primorial s * (blockProd s k * _)
+    rw [step (s+k), ih (by omega), Nat.mul_assoc]
+    simp only [primeB_spec (s+k+1) (by omega)]
+
+lemma combine (s i j a b : ℕ) (ha : blockProd s i = a) (hb : blockProd (s+i) j = b) :
+    blockProd s (i+j) = a*b := by
+  rw [←ha,←hb]
+  clear ha hb
+  induction j with
+  | zero => simp [blockProd]
+  | succ j ih =>
+    change blockProd s (i+j) * (if primeB (s+(i+j)+1) then (s+(i+j)+1) else 1) = blockProd s i * (blockProd (s+i) j * (if primeB ((s+i)+j+1) then ((s+i)+j+1) else 1))
+    rw [ih,Nat.mul_assoc]
+    simp only [Nat.add_assoc]
+
+inductive Table (α : Type) where
+  | leaf (a : α)
+  | branch (even odd : Table α)
+
+def Table.read {α : Type} : Table α → ℕ → α
+  | .leaf v, _ => v
+  | .branch e o, n => if n%2=0 then e.read (n/2) else o.read (n/2)
+
+def sf (m n : ℕ) : Bool := m % Nat.gcd n (m*m) == 0
+
+lemma sf_sound {m n : ℕ} (hm : m = primorial 20007) (hn : 0<n) (small : n ≤ 20007*20007)
+    (h : sf m n=true) : Squarefree n := by
+  apply Nat.squarefree_iff_prime_squarefree.mpr
+  intro p hp hd
+  have pp := Nat.le_of_dvd hn hd
+  have pb : p ≤ 20007 := by nlinarith
+  have pd : p ∣ m := hm ▸ hp.dvd_primorial_iff.mpr pb
+  have gg : p*p ∣ Nat.gcd n (m*m) := Nat.dvd_gcd hd (Nat.mul_dvd_mul pd pd)
+  have gm : Nat.gcd n (m*m) ∣ m := Nat.dvd_of_mod_eq_zero (beq_iff_eq.mp h)
+  exact Nat.squarefree_iff_prime_squarefree.mp (hm ▸ squarefree_primorial 20007) p hp (gg.trans gm)
+
+def scan (f : ℕ → Bool) (s : ℕ) : ℕ → Bool
+  | 0 => true
+  | k+1 => scan f s k && f (s+k)
+
+lemma of_scan {f s k x} (h : scan f s k=true) (lo : s≤x) (hi : x<s+k) : f x=true := by
+  induction k with
+  | zero => omega
+  | succ k ih =>
+    simp only [scan, Bool.and_eq_true] at h
+    by_cases e : x=s+k
+    · simpa [e] using h.2
+    · exact ih h.1 (by omega)
+
+def window (B : Table (List ℕ)) (s : ℕ) : ℕ → List ℕ
+  | 0 => []
+  | d+1 => window B s d ++ B.read (s+d)
+
+lemma window_mem {B s i d x} (mem : x ∈ Table.read B i) (lo : s ≤ i) (hi : i<s+d) :
+    x∈window B s d := by
+  induction d with
+  | zero => omega
+  | succ d ih =>
+    rw [window,List.mem_append]
+    by_cases e : i=s+d
+    · exact .inr (e ▸ mem)
+    · exact .inl (ih (by omega))
+
+def tag : List ℕ → ℕ → List (ℕ×ℕ)
+  | [],_ => []
+  | x::xs,w => (x,w%32)::tag xs (w/32)
+
+lemma tag_mem {l : List ℕ} {x : ℕ} (h : x∈l) (w : ℕ) : ∃ c, (x,c)∈tag l w := by
+  induction l generalizing w with
+  | nil => simp at h
+  | cons y ys ih =>
+    rcases List.mem_cons.mp h with rfl|h
+    · exact ⟨_,List.mem_cons_self⟩
+    · obtain ⟨c,hc⟩ := ih h (w/32)
+      exact ⟨c,List.mem_cons_of_mem _ hc⟩
+
+def pair (m : ℕ) (a b : ℕ×ℕ) := a.2!=b.2 || a.1==b.1 || sf m (a.1*b.1+1)
+def proper (m d : ℕ) : List (ℕ×ℕ) → Bool
+  | [] => true
+  | a::l => decide (a.2<d) && l.all (pair m a) && proper m d l
+
+lemma proper_lt {m d a l} (ok : proper m d l=true) (h : a∈l) : a.2<d := by
+  induction l with
+  | nil => simp at h
+  | cons b l ih =>
+    simp only [proper,Bool.and_eq_true,decide_eq_true_eq] at ok
+    rcases List.mem_cons.mp h with rfl|h
+    · exact ok.1.1
+    · exact ih ok.2 h
+
+lemma proper_pair {m d x y c l} (ok : proper m d l=true) (hx : (x,c)∈l) (hy : (y,c)∈l) :
+    x=y ∨ sf m (x*y+1)=true := by
+  induction l with
+  | nil => simp at hx
+  | cons b l ih =>
+    simp only [proper,Bool.and_eq_true,List.all_eq_true] at ok
+    rcases List.mem_cons.mp hx with e|ex <;> rcases List.mem_cons.mp hy with f|ey
+    · exact .inl (congrArg Prod.fst (e.trans f.symm))
+    · subst b; simpa [pair] using ok.1.2 (y,c) ey
+    · subst b
+      have rev : y=x ∨ sf m (y*x+1)=true := by simpa [pair] using ok.1.2 (x,c) ex
+      exact rev.imp Eq.symm (by rw [Nat.mul_comm y x]; exact id)
+    · exact ih ok.2 ex ey
+
+def diagRow (m : ℕ) (B : Table (List ℕ)) (x : ℕ) :=
+  sf m (x*x+1) || (B.read ((x-7)/25)).contains x
+
+def tagged (B : Table (List ℕ)) (W : Table ℕ) (k : ℕ) :=
+  tag (window B (k-8) (min 8 k)) (W.read k)
+
+def boundedAt (k : ℕ) := ∀ A : Finset ℕ, A⊆range (25*k+7) →
+    Erdos848.NonSquarefreeProductProp A → A.card≤k
+
+lemma all_bounds {m B W} (hm : m=primorial 20007)
+    (diag : ∀ x<20007, diagRow m B x=true)
+    (windows : ∀ k≤800, proper m (min 8 k) (tagged B W k)=true) :
+    ∀ k≤800, boundedAt k := by
+  classical
+  intro k
+  induction k using Nat.strong_induction_on with
+  | h k ih =>
+    intro hk A sub adm
+    by_cases zero : k=0
+    · subst k
+      have e : A=∅ := by
+        apply Finset.eq_empty_iff_forall_notMem.mpr
+        intro x hx
+        have hlt : x<7 := by simpa using mem_range.mp (sub hx)
+        have v : ∀ i : Fin 7, Squarefree (i.val*i.val+1) := by decide +kernel
+        exact adm x hx x hx (v ⟨x,hlt⟩)
+      simp [e]
+    let s := k-8
+    let U := A.filter (fun x => x<25*s+7)
+    let V := A.filter (fun x => ¬x<25*s+7)
+    have hU : U.card ≤ s := by
+      apply ih s (by dsimp [s]; omega) (by dsimp [s]; omega) U
+      · intro x hx; exact mem_range.mpr (mem_filter.mp hx).2
+      · intro x hx y hy; exact adm x (mem_filter.mp hx).1 y (mem_filter.mp hy).1
+    have label (x : ℕ) (hx : x∈V) : ∃ c, (x,c)∈tagged B W k := by
+      have ax := (mem_filter.mp hx).1
+      have lo := (mem_filter.mp hx).2
+      have hi := mem_range.mp (sub ax)
+      have bx : x≤20006 := by omega
+      have d := diag x (by omega)
+      simp only [diagRow,Bool.or_eq_true,List.contains_iff_mem] at d
+      rcases d with sq|mem
+      · have bd : x*x+1 ≤ 20007*20007 := (Nat.add_le_add_right (Nat.mul_le_mul bx bx) 1).trans (by decide)
+        exact (adm x ax x ax (sf_sound hm (Nat.succ_pos _) bd sq)).elim
+      · apply tag_mem
+        apply window_mem mem <;> dsimp [s] at lo ⊢ <;> omega
+    let f (x : ℕ) := if hx : x∈V then (label x hx).choose else 0
+    have tagged_f (x : ℕ) (hx : x∈V) : (x,f x)∈tagged B W k := by
+      simpa only [f,dif_pos hx] using (label x hx).choose_spec
+    have hV : V.card ≤ min 8 k := by
+      rw [←card_range (min 8 k)]
+      apply card_le_card_of_injOn f
+      · intro x hx
+        exact mem_range.mpr (proper_lt (windows k hk) (tagged_f x hx))
+      · intro x hx y hy eqc
+        have hy' := tagged_f y hy
+        rw [←eqc] at hy'
+        rcases proper_pair (windows k hk) (tagged_f x hx) hy' with e|sq
+        · exact e
+        · have ax := (mem_filter.mp hx).1
+          have ay := (mem_filter.mp hy).1
+          have bx : x≤20006 := by have := mem_range.mp (sub ax); omega
+          have by' : y≤20006 := by have := mem_range.mp (sub ay); omega
+          have bd : x*y+1 ≤ 20007*20007 := (Nat.add_le_add_right (Nat.mul_le_mul bx by') 1).trans (by decide)
+          exact (adm x ax y ay (sf_sound hm (Nat.succ_pos _) bd sq)).elim
+    have count : U.card+V.card=A.card := Finset.card_filter_add_card_filter_not _
+    dsimp [s] at hU
+    omega
+
+
+def P : ℕ := 0x207dc0f5ff86fd1be4eab851b9a588e0aad9c7b10b490a4b875a347241366dd05e3b7d719472ad173acdf01346915023a83f5da517634366f698fc302722db142fd7219e4dfd93d0e57cdd31414baf080f440da983fa56b87b72747d565eff54eff89905340d3d23591c5542dd467f5adf863e36ef77f8c40801fc6151bb19176ff69c523dff909df50e55d88767d290255d798b656068589f303b7c5cc39b40baeb2d1f2d208740ea9211d2d19e293abda344a24a146fdadba62f998ae678b9c1839a3402991faa27565521dddf7e6fc2a683933d41e2bb12d18902d3b62215f1fadc1f02f9e3a82ddebd15a0a0987330633a9839f8e05d99c36e08e0034e0af4ea484b961ac1f5379867d24ad7f596ab4cdb5f5a717814cf365db32072c5e99f70741fe42331b03b9869dc9ea6d5d0bec3ed1512bbde6317df6ba8e1f74f36311987bf1ba65d2bdf60679840dded7f1ad403149df616c79faed9f66974568c00884e4a9cf122b648627bfc3a93f6ee09fa356efe3a52dcb802738fe641c3b48698719f6182d091a2d840a0572d8c2b33ecb7d1a0c24ec90127cc38627f50d971375b374bcbfaf411fe988ec78cef5c7ffd398cfd6dc505af43b6507057bcdd39af00768d46f4dfa702899773ecfc819dbac3725f829be4cf09435c2a19bd04f9f4bad2803e7a3886ad9b78ebf8002a666f7588ce366aaea3863b3347548f440435e0173f61396e0aaf14fc895d5e1298df8c5588f6dcd9fbd0e6aa641de4058c2e8f5c10361ff7e2523b5b109cd8500d2657c9de230f013b6ffdf54a8112d0913f2996d13690375a94e8c52fec3b8ad6813aa6e5ca2ac42f69aa602f79fd4fba60e0e4258ca7bf8fedeb244f95c309f20c37b3d58d1850e38e32222c2995a6b42437206eeed9b495acec4e60554f7f3aa9d2a5d9c1dcb510bd5e3ffc098cd741d23115c4aacef20896b34b026133d4102fea14295bc4467c10a63688a29fe3dc8bb8c60ab09fecb0730ffdb5b0c379b34518b7b2fd2d5553ebaab2abeb9e68cdc3280cc41f4b344fe7204cdc8c5787f9ee2d521589673c5cbbcf2d9292f7925069556a54618a11971b8db55aad01d6791e6ba6bef20cb5d7efc338b1d3f2ea2992db65fc84e79f5afe3af01684cc148c944ed5ec1ee57a61668f114260a3128a967ff0cc01613dd3cb654867c5697887cbed2859f3be68edc013c5537ff50a00619a6091a5548463f83413b65a0a09f0d98dfdfc735cecd2b51b6c774c778a0604c7cb59725517f543201055d7928b862f69c122e90ca2fd05b016977a951e26eadf8a681f161915620d779856ffc0d45fe0fdd3963cb4197e2e54307b66edd773f68d15687f3fc51f1f06a10c373b36fc6715429603ffca4efac4e4d05391c0f031df03a4caa4edf06a4c49630c4bcdba39c5ca19be448fbfb3629bcae7e91a162c8c13fb4174613b421914e323e74952060367691acbf4a0c36eb47d8b5ea7b70654d38414a3c11f8705a8b11140875e17da1cb27bff3238de2e31740e8152c32ba7775475793db3ebd2d8799006351f69cb256f92bfaa31a296acbefbc0c98cad109d89ef35d79ed0fad381669fa74cff480d4f953cfc1816fab0746ae91dfc592683ba9bd2a30ca3120892ac0278e2855392fb0575dce3dad3badc1edf2e962c299ea5b8bebebc1b2ac8ec65d25f44f2250b51bc1706e35428fed5e7646cddd7887d3254f311decbb2737cfbbface64fcd8edc161b4071686c954d923c80dd8fae123deae9840074aec9e6dde3e69737eee5eb77ceab237672efb0d79d2b7efbecde40b110c8c67db273f40c8883fe778506c209117c0154f019fea9d73ac46a01f72908b2b72fe0cf7500b66189ed277cd5051f39844760d404b8d574d427540ffb6ec16582a9752587033e2605b5ae4a23d402758c65b6a6912ce85c4f6730023163f9586956f27e77ba86331640d08064e4d3d04b2c158eea7dea032b8bec39644f9a65e707b7a5feafbce756857d19ea19a8b8da68945ca504acaa9d2e8750b255128d92dcf17f75bd6e25fff979ea002a0a5f35f1c5f084af73093f1b841b448c60b308056b175d846c5e1dc5ed4980a571073f12835a426f74ec60480d3b46d7b292867e2196ce0037670070722b276d247873dac6e64c3e3234b3544815228b9bf8a550b8c3a281bd5e23d2995f3115292fe53586e5ed4a227f26011aefd5bb780e2544de2b0e97fa2314324f81e508adfbdf76c897e1b11b40ff362fdb2e90ed1e087f83f5d9019ce5d8e1d1a7c8704f7ead1eb12e3b94321826c41ff066e2eb2e4ecc76c6fce2cdf7f92d134412947fc183364aaafa12a034017dadb5fcf738f5786f4a71e71d20aea17926e7dfbfd450d0ce3c40762e1b4cc082874d6bfa91bbe065e6e4840a63bc0939a6f2900c2d34cd68973c972349579f0de44af35a4e4524d16df6806b79b5132c467a4ed8e1578b1f7eef3894a78b3ceef575701b3099390aa38db8ec369ba98943c3652766fc56186eb0a8faff5125f129cdd4e0055342f7f46113f63373d9c79b671a2528ff69e3e65d2d3998c6bff33905826a7f52a850ebdaddc7935b7d3502a84ad044bdc238c3b5c1541ca3c535957d0e5f7a9902b64845dcdd5e5d03f150b1118b151ecea753a77ea477192cf40d4dc13e91b2c311261c61bb8ef327bdf017ae5bc18e417d0cc4dff58fd76786efab5083946e15671194eea5de395e697b79ff6d871d387db0f1e7b239078480714adf28ecfdd03492a36bdd912a2123a0d6529c5e9905a03ee3392de008e676d0a560dbcad873fa2eca690522d03aeb7f0bc2a310ed9e4157bac7b1faf20eb4a76ab9c386ed4c7bc29f901c4cca3b1ced047581ff8e5ad7c14ba399f5895e75fd82606b8284bd32c2d67d5bd048f70c91b4567b5ce48b0a369e552ee9ee9eca654e7bd8cc7b9ce14f30e3cd2703a2b48a0210e313c7b836d008fdf4d1932313368db895bcc4f5ac57376701c603fb0c2f891f0e6dd17a9ca24fd9d603816a845cf48691ed6a3774f2af0d73c1d89c3565716798fe3e92cf48c3be31038c750b843fb10737b38a96cc935c9f68ba7f8e8a7aa8d20083f6f6e04e37f6354c9b17aeba085ad314018f0fa908020cf3ffe7e4345d4b0cb326fdbe827be02b6ba15d1baac35f8a537814454cd02568c9c0667bd52b889e961e8fb3245c69a0213b975e700c91d335494baf6900f09fb6af650a277ab371aba423cea2a14537368a8c04319ba28df082ae5e8d0a9d4b6f930f42379a4a239ff3c69a2422ff403bcb240766ed1a9d007b58a377cb9d103d17119a03e49d9fcf2febc29bb3149401f478282a57aa0ec94b114d4894c5ddc42d45a9b13602665326ad1e0e4dd29f432b3a76546348b5b6862caaa2fd4b90e68d7cf58d419f9f1e5662673c02ed8e57c01516cf5ac0114c4e488803170e89136c5cd6e4908a680e18858494fc5b438bc93f876bdaaf20e21b8f4d3d83de83ec1579edcf6d8709b160e6655f5a9930cf345f673abe6b09c4acb49e91f889104331b537a6bdf8acf8ab66794bd11bf0de1c5c129dd367ea3b45c812457fcc7ed407011ea6b89eef5117ca212c7fcc2f595515de577db08ae5d6189031c3fe5a6876a49677d7a93e408110fd5c607ef0deb24948211e6b0808c14ce18a75797f28de317a70797f19f47aca8912fca56fa2e84dcb4ef87a61c75f7820531611177654bde0533b86caf007891be3b415073e106f0be55ff69866e787996584717cb57c282a4d3f1fc352821eeebedec70392e7e034d583def8f4b1ddbd56d7de78908be36e77ff23faccc4971cb982746b6aaefbd7988de1fbc1d1fd1800bc37c30b95a64d5953daf8dd21f2b01379aa016c095e752a9c6856c75b6e0f4513ce0e62fccbd61362548bb336108271f33a443bb4877e184e4881010ab5bf2ca936705903e961d79403cea4b685401fb6cfa7a55cb56472478f400d59c53794fd59a87df5e90adf9915a57c14dd209170abf27276deb8d3a4b5deddc1f95f79bfcac9e8a5fc4826a757c5fb3b173baaf7fda40fae344540dfd137a32f24a22e9d93e9478f145f0bde0c90acc962fb1d2a3eee71daa05b546e2e4c7d5bb07d0db48e6cb52faa4836a73a62f74a50e4473e9d684ba83e32ce2fc66cc778579a775999dab76a00bb3d96c9360f67138653bde134e3df4abaf613678afb95da20837030a626f3ad4267ee55fadafd1e04bf4e3ae2183be5583d65697d52d2a066e01f92bd39d68ff50bb72a45e22258fe20de77b979cc060c4d321dcfcb6fe12d590750b4eb0ceb3214fe702be56c2c4d336c25658d845816d3522292526c44ffdd04abd05b773ff707fa69d94f29a2a5525eff1c6865e404db483fad160f8e15b0af7130040df19e93e6fbf06bfb6063d87d469ae732deeba24e1040a7841e5b10405d680e3a52d958c9043d44ad187dc5704ce5f396fef9c0eaaf893a24d71ff8b38693ce62f4386fde6e99cb550ee2b0e25368f0764397a50f35ae37cb73f7d65d2c75c55e62468fe022047e10b1b39dce9283fe4b08199da3880e23fd7dd8fa60ea535b832340e5173b711b22d4ed66b810a9bc877c4cb353622a544e806a42d3b30cefbe9c28cb9d027cd6636273f3a7d16b2746ab6bdac6420b65b53a5b6b6bbb4faf3e33dcc571c528f5cfa96ad3c25ab255fce10f524ea00e74510f77c73f9419c3e37368a823faaffdaa0432cd6a69b0d44b51543a14cd0ac88d443894dc4ddaebb607ade54a312aa24dd9344e1010eec9b858f11322b1eeb75338879453ddd2ed38e6008c3478c8c47ab71421c3152448301d375bcacd4364241cca6450166b2b53abab0fdf87acfbd430e3e0c94e456a4a84241ef01ed2d1f217153c05a1359a4b3c76383edac29a0d52a00010d9cf99b5233bde385aae76d60d384594b8300fecdb8537c202b28bef0049f980811ba8d02a5d1332e28c684675aeeaa805c836d5174eac1993ecc856bb7f63bfa3bb96af53f6f9f8daaea5f04f2e4e41216156f61f8ff2
+
+set_option maxRecDepth 20000 in
+lemma product_correct : P = primorial 20007 := by
+  symm
+  rw [blocks 0 20007 (by decide),primorial_zero,one_mul]
+  unfold P
+  apply combine 0 10003 10004 0x1dcf29f2b1860c4bea4dfa821fc7e38f0beed4d59b3408ff58c66bb21b2c758c7f7e2075a5011bd8244e7e056f5a74c244cbbd11a995980395503d3b2f143911e6c9573e8c385322a64ba44059905202ab85661ec426b084b4353d3f9cd3f69d5039256a9e18dd4ee79144d354c0f3552577defab15b11ab1b1b1b2e354d97d433ef6b5b658a6f67093fe0d07594b978c0a3feb900816da9117b72fcf798114365311acba13bd5e3b4b0727bb0b1af41cae11777e2dd1999fda0e9963a42a43566e4e51988673942a699a1d28f910c105b2e8554da9a54a07bc691fc5a5a073dee773d30645958644cc509ba78c6f3ecc4214e6871728f26ba5f9815d57acac2ea80c90ddcb85a7623dcfb9de3f86f52a254fcc35bc590b60d7b7c042fc18d706124b19e9ce36350140758df8781b499fa96fb415fa9bb07d3bb3f9f403bf615a9b872b25648d19cdea9fc929d9f4a56914496d5c8629c969b468e8ac6d196fcfe1286f8877afd579d6aa3a4f8cf056a8158753578a21a49a4af92df820233831b6fe2b14e765c863c0de31f7f9343bc80c8c4a2f0b81c8d1a0f300c3b2cb1e60771d93a6066a3e953afe74c13e2bce8c81a90e26f8c02fd62e97cb6d6aee8368a0160cc430d4f06ad38f72d213b2d0571f6b6d0536de7c96906784213ccc29fd7f66c09518def64216d08aa9233495148ec6aa35d6be8e03dae39a7cbc3fdf18dad8254f0e30c3c6bd950e1348ca870d0892f3307a1ebd0bf5203f1408327e7ac7ef60e9eafb6b06c4049f76028af618d0996c27d24bff070059ea2601751ef26219e6692754d23f8a2689bfc16b49ac73b5cdbc3a7e5b75f0b035b187541f960b0362196b2d4087b8d2dad1210b042abdc00c098274ef91e3061c78af54081c6d619515c68e0f1db37ecdaba44b6a8381014f7b9dd2215c907a2428e85fe558f8a88a4bd8a89ca70398cc1192326717eb51056b18c4e6b1136a5e439e1e160e8138326d57608edae1d3625d80a4f66848b71a7f54c626efd2a725aaa977fb6d597c563901bcb577bca18f7521f96cf30343e46cd0e98f561d17981117223dd110136530b3c1676cf144ad6e70dcf14cc1c5ff8b89978b54d394d77e42d8301415c650c53d7d897488d5364dfdae96a73907dcaa3650b36e75f6932f9b674202ea6a6ab3cc40e883aea56d4dcd31d5ee368da9bca70b27d1b94ede3971c446950bf80e6504a9de7dd826f6d2be7c121910724fbc8ece9633bb916252089ce7201db5ba954623ecdab08ddf5e9950544514254918dc2a49c567b42db698ea7c2494e1b321851eac1618642d5d02d54729393824355f2b44193ff173ebd181ebae4646d033a00ce65fcadaefee0d621ea9af6d0ee374bed57d3c2924b8887008a4d4b04890079044cb932dce5b079845f2d6e9a3ecdc42602d5a25ce9268b32c8541fa322a8d8bf5a76795a72f29b8dd9d34b0c0cee332ac9115831264b59dbbd32a087df61f085f4cfad765341410e11d5bce76a4430a6a789facc1bfb46dc5412e1fad589c491e0ba4be2f295685af2afcd6d8d49f804aa8bb585dc3d34da2f9d5857134567438d0ab4e62f254c40eab21274931344e6d31c608a4060ef2b6da6e0966ff163b5d26f1f69bea023ac2c1607879baddb116e92ea6cd4ff9376b42ff09c3110f8f7893eb5def1e9cfa8e688070c78178fdb719774d00287afb693ac06596162b41a5bec947ebb13fe1f54fa2c8212d73b46ec39987fa5269a2ce5132fc10a42a75c799499c9590503c00939c305f3fa0e744071dfad63e01c66ee82921f91dd0abaa60bb95507ce8b777053578f392b02d4f8bea970907ab229152dc98112840808c16a27140cb2dc9544ea2fc015c6e99c3fe31b76a218932958fff4e35df3590fb4086ce054c212a4c4f521428fc79b877268490dd1b5f833561ecd9b623723d4f30b488bd1908e81cf571484d7e9c28c472c15d8144efe1332c5beb3f5e10d573e8c0fd15ea1fde15f728ff39f92af4c6e56520f5d45cff480f07b430574813a8cab73d8608a962a8b48e71bc6a0059cff41f1438524da8beb07b0ed4e07ab32e3b00f362d2991f6b7db8c6029f07bb62728391310bb906e2feff20b67612c444f1ec641f42477d4f12a3f87042f00262ef637a96c465c1d32951cf44349a794f66395ebcbc46ec40381f8f3a8605741f3c7849d469e51983a9d09e9dca379d7f4105abb2906342d3fbb7b3a68fa4d6db0ff83efac965af7720b7949c3eb52dd2654165f1430955a0f540dc7b79d3dc2112af74004a7a856ee3d854446f3a4d594ec22486745cd1fbc9f4e36827b491bd9452971d780dc37a8590f2efb03619f7df79497aeb8ef8d1d7af0f576758004d9aa573a5d6571a57097741d4e552c46dec2a4ef0660b7471957fc4da8a780ab3e401eeac9e79a4ef2f72098f16129affdd72db08e38af3a2ee0fcca56242b11d5cf8a76bc1b9ac4c518dde57fb8c53680e0099eb459196197104a4d2649ecf35166 0x1170865151921baf679b3aa6b60a46a8104bd386bcec5a1a674ce27af07a81a6133a3b8c060cca480c41e46ff5daa9bea27241ff251b6e92854aff50b4a274fa472876a31924159922f9c37866264d85878d59e6fcc453ba6b5873ce99d231234efab7558e664c33f494564cfbbc37acc712e41233d8cd7036674dcac9dd992384db8a65a187221318c858159d5d6865e283fe7de863a9d03577adc5e4352affc9774204bd4754e0820c0108ea703656d7facdf0bed0cb4200025a03661b176f974c47a6793c3d6047186d7d35f09adfdb6452d3c2a9392277022c4e58a208f9fbf767dbf45c61e376ce5afd87c41d2967de50a94b297fe73369261681e081a520e8bbe29e5e762bb9c91ae55394124a567e12f650af6df87061943a5a02ebc609a4bd045d54e87bb08ee55bffacfa861342b13f8ee5f9fe22536102ecc6e2f2ecc454cbf5359716c079f4e0553f355a47e99a848f1ea0eacbb44a549c8874e2110c1abf3d41d513e26659a58b199d1bdcbea5900270504337eb639650531f7a80170b650cd2ca06588aa931d9b4183538400cf62d28ca2b38b7e0914d2d100d02849f28f3a6d27da041b7192889a323074718d95a7db36cb3bca3fc5e9b8bc2b94f327d5efe5c3b38bb289980c0ca936604f18cd6ec59079ab3f047c097f2419ea333a368bf81cc2648ac1434c4c2436c308e08e298fe61687babebb5f734e51a6e6db2b91ec7c0a4745c62cfc3c98de3703fc77e98fa162de8206f896d55c68e99b6a89571dc9f9e669aff2731ac901b3913fac5909b1b141214d53ed2867ab9d6f4f9e293454760a3ad14a5f907e5748eac64fd3a9727a837ef4b5ee7a5a4769518804d95b73524d5ee4b9624c5fdbffbbbcc86f19eed31187fee87487d8f46b773198759d13c7433d76b906d30d8e189dcc2a3defdf2cb29e7de26b58292748540c686fa8e5e95956bf3d7f755d4f69557628799fb012ae95662de1bba9ec288cc34f72861019864e9dbda9ce8d36bc812af54c5214d971f9b163a403b4d8232ab3c104eb1b0c37f31fc097c87c1e5c40d3bcd1c2d862610f18f8cd734dc0bcbcaa344f7b6d622772e564ecb9b72393f2f63734531328d8396d589a8ed15c5fb08b3a95b172a8132ceb3778243e31f7295b0df4c1818ee3bf89db5a0d0148dd10188cbf410e04215575d9126c4d49ee8e6825303a8fdd90d50d3126e7a8ddc15350e5e760a06d2f14059eb2af5d931a887d144f2d38e520ee0bfd43044b98856575fb12a2c1257c6b9d335192ad730e43735d322956e1fafd5d70fe36f496eaf97b7d050115dab51768ec7c56f4d0aa8d8ee3cd5706a2a6eff95d674df0029039426239822142639075b1d9db403ccd2311f39b3c65e94f7ee6fa0abe66685d35be4414546ac0488e021b590ca19fda5860cf03c56b7d9533d75ec1d233c7377683eafe52b969cd6f6b5bc429a7e7214070fe3b5b109663d0fcd0042a52fbd37a82dd2285196c9feddcf70ae810e6bb9e714a40b444a59843bfc610510c9be6977b92529667294ffe0bea2d516f3e46f3c985d3d49659173640f937e64b2e31cae7f39886db6710c6d2d1cd4900df143a51a0fb3bc164e580dbe08fd47f3742307ad083b25153e4a8fe89a354ffca135b9c1675aebd08e4155bfd1fc0f2aa0a9374190c12c4cbfbea3bcd2aba5c34bf0e3bf2b55ee1c667e9cf67e06d4403ae84c2aad5d6f4f313fa089d6dfcb8af0807d7fd618734cdf313e2ecaa6f854c7172eb3729908290feaf3fe36d2168a69966e883a62fe5718e54e243715472bbda6bc20020e3423df7531cdf31a536dac928f7dcfa318b37b3708786446d830a1a1b4a72ae30a4188b041a7780e91a8cc9a61c88898b9e2360e5a144d1befd79d33260527c6590f43d7294030114e8e938c6e286eab8afc74f81df3b4d0e321bd12499fcd0939eecb8f13b57068dadb5d4ad2311e53091e7474921c61e9f8b9463cb18c14ff3fa621b8e47c2dafb101f208bc0a44fe4b35b84a9cf4b103f6f74418a1c3e303d1560695c48b3da3cdf309eb93542881723a77a0932bb45237a95543c3c62d7de86f775b3971fe445db5be35ae266fd8071253fe0d31188dc1f221964bb09815c736de7aadffa5e170373f1d05df2927a8e53734eeb764304497d63d48ad911d739adcdd484710b81a9139216e54822c79d21b4b9423f6e47cda1627e2405c60d3a58619d187bcf54674803bcb7bfe7ae0bb0a7c36473cc7f3f2b33e5aa2f597331eaabf14a29f8e5b2d8d4d79c561d1537888979ee7be7caa542521274a72125f7ce5f5bfb52e2275855b011b4847a714581b713a5a0568eac3d9d1d450989a40add9900df7411df2b12a03289c2f1ecfe396f0deac3f75892f2eab00d9e594d774649de86a8711a9d485d1df04fb362ddedb662e27803df24b50dce0ca511e87310de36f8923d6112fa59dd1c2d45c0d5e882a1fad9bae9c27eeb7eba9fbe35d627458639fccbb9fa5ac0170b9365359890642aa3
+  · apply combine 0 5001 5002 0x4394807731d8356b1500d646ba9b917b91b469ef0279f7f09793c51e8901ed30f44aef6d3f340ddcffcc40efe83d51f4a02e3f589a58447c24f72c81f75e0584451989ab9aa18dc0d79270aaa31c156fee2511832786de5acdffa57ad3ee42e40d3514e6d50fe2cf898e51d60a512db3498134ebc8f2536228233bf6a97d84a2684bc8c5b3805cdc2e2f44b617fd33c3a7cc4e5284362b9b8803380f11ecf82acdf355ea3f99b748fcde54d558c3c9e9e7b23973eefe43278811cbcbb67131ae92fca6c8f0bc85f23a957d73dead34037a25fd63810a9d218071b69e8e09e0d8a101185361e1d23c9e28bec59b5f07bec2a2e9377f6873f75305501f39f13e01c4c81e34af2d200569b2183ead56134b4348f2c7102d954a4727b2225ff44f36e79e6e55ee86d0cb38fb5919a1fd21f59983219b01cf61831b669bd684ad1d8ad1db2e67188a950882abd657fc5ba468a9109f906803a1840921ce492aba00e1abcf32cca10cf855f3a5cf959da2075d54b14a822a5043b861d9b0027dccf31230ce8528b3248705972b7021c8bb0eb7d62b6e59cbe361e0c153b91f20df3ccb19efab8bec4de93efc7602dbb65878e70f44eb2ebbfa02439a84fafea8802c1311c671fd0df6cc48da4d8c342362cf1a178a382df46d45efc9e39b902fb0a7fe912ce618b6c889a10cfde53a89164ce4cef3b3513b62903f1fb1eb0daecf0c49243f501fcbd3389675fe854523f2f6c5505db3639380bc1c77b1dea4b90e7ef0592afc7b0f747920b05a1e199955c44a822b05ce2cd712cafb49171c33b759e211d4bc6cfa868c1a9eba673e68f73ffc56ef19d94c5f7fbe49901cb28cd1d7ad3e27d9c2e4ac1e6eeb3e7d0acfc7f33922985ba8c07be265f8e300949525f55ffb624d1d348f121d9f653362a60a781d1cf662dac95c655cc0b8ceeab1eca4cd41d2e0ba92632958bb7e77acae39fd5abe018d1b6c26776a01c3463fb3dc3ec964fe1722b9788427de5c2ff065fbecacd01cb70fa084e42039cf42d3085e1a85c2910dd90d6255a09b4023987b1ad9a385de0cbaef199f57fa87be43e47dc59f5374f85bbccde865872bd0e4a36c64b3509ad875bf37cdf6c7b9a66cb7726b9a2ff7608b2a9861112754b42a0efd3c8732192434ea6f5611c587a90fc5a60d419e077e7b9a0adb7d478923cd9f365616bbc5949501a702535f727e1033115929c82e2c6cbec80ba550a982ada347fe8403653e2d2bbe 0x70eb9921952b73daa9c9c0f074223c3744ca4ca5707640505a37b1a955c7b95f198ed2a791d72f18472511bc464916068544fa64173ba4ea5120df792171ba3fa281dde95730f91f7ef77930261315e4ed6adf88e2bc7afca384f563b27deddb5340f932d4a980e85367fbff02e5d8c02245deba6c6dd9106279a160560d4e9aef08a715a4ea6d58c1285ec8fc9db80bff2793531712c7363e5b4cd87cd4f02deb70683e780d08a0846da34bc02d2c077c8260c42ccc342834a695b9e06ff54182949c6b713a403b6fce1d1500a0bf1f89992bceeae31c2e3f8e085ab938a928188a56d034e2ce221ac7eb992ecedb65a9a4c65c284f05f408f2182138eb9cf41c480b8b9d3edaddd8478b3ded91a4989abe65ff4a02952c893f757eabce4cc93ad57a2d5a4480a6a2da164c47ebc26f2553e1e639f02309c1239113e1bb57c8ae13c8537df86984efd5641f1f26403a27a42e8168fed7875a48d23f226eaf3d1cc043e93390c9fbd112f81035afc210a9622021d739b5653f8768a61e41375067c54ccde76dd52a27ef29690dc8ff3040244839e05495359d6ccb43b99cb5985cacb811a027044eeba060e11b844c03b6a2ee922b06607440b60bce347f28231db793e468e2af660405a0b1c8966e9254d7f71675d45947ae78c4fecba43cec6efeac38a79a71c77c90b89f8afc03a915d10140826fe7fb3cf70b468a908f8471021f430687e918d26d56c0970ece9da2dd3e7865bc918f9ea1e4eb92ec430ab3c0bf3180d4c27ab556af73e165c850cecbf0f69bd7d55fed1e2f924647c99ff22b21b76089c96c4ff3aa80d2dec823e53a6881c0c476649202c8cd5ed81089a770bad1c1f2bb33628afda4b6b0dce4970ff99b5215f0bdca9e24e505d8b397d228f01a929c38a22bfdad6d0991cd64fe92a4d9aa424db2d5321328d5365baeab7f5a8052105ded4c5acf77844f8c376f050396fdf42bb3b1ed073c79b529769f3d3403f8712066fefb519cdb66e44d1d51a77b2c6440e35b3f66cef142fcbcabc22c95956a84e0f74e834bfc8b84af6c9169545aa85def1e9beaad541077d504bdc96c569a652ada13e8fde9794912e9d6141f91ce65c9acd1f1659a45fa65ae68290bb4b77297f97524df6d1ebdc3df92245b8e6b4e8dd89435c1a1c10e8b2fe10bcb95ab6314855525b24587febd9e42e73f236157310154d2ca617aaabc77ea50aa69ba067bb0561c4fedc65c0956653f3e989022cf393330cb3a1ef8f03bbfad
+    · apply combine 0 2500 2501 0x7b59cdc7f87401844980527643f52725aa78ef60df90342b68e455c6e526258e1d099b5d90762453c8131b4730b3bf3865b79b8a8fde6279d9540ea6f20d8922079526768bbcf62c31d69b0916e44e3150fe95a2fce9053dfda5641ee8e1216753de336c6b82efd8e4e0d5dff6070c698055cfd2d83a5216f0d139d68cc5645b1afaddf6d03c8da82a52a159b89efc0be90499b4e1b4d34d53d83503f440fa97ea87c825395653a8996bddc7e6fd7913b7cb8156c46dfc6d008c0abf3d0b2029c9439982063790abc7213a99189206b255f3189140a7586ab73bb63913ea8a1efdd1894f5f5b86ecff486bf21e09c08e84053b651bb385e86811bc5c0715bd40b3d1d6a8405e64e4c9c77eab95dd7a0f4d55cf5c5ce4cfb1b47f1d04122d7ba48e8d5089879645e45bf7564255294c6917b29728dbe26630ae9b45265d754440193c1a7205de1102aab157646ada10ec60ca6e2b7222b25750f74e6fb59601e9940c618f295bdd61b5e8fb5fec778dcd2b8682f25d7a066c3774ab146cb34f77158df2c3e21344ee78fc362120d635fcb4319dbd84f47036d54f7a298aa50fddd966f2610910717ef64d7d89c9eed29d885d9f41820c02 0x8c41259efd4276e291a2fe3124f69880290733fb157c54752318e26d5e66d140541d9d336dbd97ae8c0e114c28c2cd68a4d70b65a368fbb63e86ed548cfbc07794a8e0a552b4c00236c742782783b4545428da3cebcc928b5d1b04b53ca2c5223d9fc10066072936dad50477c79666945483a1a1d3f0c31c189de0aa5494eda21a68ef33edf71b880603e7c03b59f20eb79f593cf0775521bfcfc8c46572b3c7d76ea0dc41c8f7f0c20fcff6ee08806ee37304f5e995ba51efd0ce29932bde70ef7bf118aecf43f978b566eeb9eb74052e9839cd0a8c67865d50cb7b5b3fb48c81c066c45d6b2ff7e7ff517a5143ae7bc626bb1d8f95201ac9183ef3ff8b53f86a59271e38e2346a8ee1aea873162fd03b27f0f9f5db2019d3bf7e1724c55d0c23b9897170ed7dedb48925fe1f020fb6fb2d2c32009e9b95735e7dba7737b963c2d318bb832bf704187f3a3391dee603edd8ab72e7d6d5b7b2090937495c7285374c7bffc8923e0be8c71e3e98b6ce6db8da82fc7767c351447edeb692f1c21e874328b0fb8c9a6ecbc9d854d680a71fdf819650971c33fe654a6ab07018df1628facf1d8bfd8305b45c26b659f029f00f713bb0cc013acda0524619d05bdf
+      · apply combine 0 1250 1250 0x12a8b71fd1159aa6da82d6eb04ecc97fb213a2938812ee1275934175750dea6b4b8984e7447d9763493e8bf845102561b79f0aa792786cde7d49daa53232922df8e7e01b2549666839b0b885ab1c07b9ddda7d0be6f71689c1e8fa69cc4af7f01281e0839c3b872e03d332671957738e08a62c565c1c11881d9f347a50c8d5c09277b09959cc7d434894e3b5a40ca7d1c3ab476f6cdc3f217fcde86fd814780f853fdb382cf5892dde9a23791a2487f42d757757616f353278e1b4992da9db3bde0d045a41d1f243167868751442111fd5d7c27a1d22a773e1d3a 0x69c5befb3641106e3d8c266b7ef03ae458f521a1f4748d8c2700472e40467fa337b61e4183106d86c11396632ffc0fb5ac7a50c7c82ef1b06f92f9f406e40cf036a3c9c39deea7b6fef0f7a4e1fc6a96363399d8d5216ff595316081f2e812cc6bcf3ff83dd1f2897cc21d087c6866580d765a0000dc3c1e426b27007522ac4fa43a14dbdd8ac83a5818365c3c96ef56e30abbd2c3f9dc89f47a743ce8d0a777c3c894729080c89e0d3c102f5dcc930ffe160ac2bb0de62d4db827f311639449a984260eee510c154b5a98ba2dc0f025e238014d13048e84e5363b25b5
+        · apply combine 0 625 625 0x59da96fe2a2f3d0ff974db4f60f4de7f26224314f71130b58e96a077ee8a660da1447ea4f43f5358570be344c2a48e0d58485e6a319892e13447ae9fe51b4a5cf77efef4c783910ded0832acbc8e59d00ea2b0b8e1c41845a2ba7fd836818ff1c4bba0fb613bb0cf23553c6 0x352932df244d605d1094cb6f9b38107587bf2526a81ef94b154f2f60a6fd46c1588cf77605725608cecaf9abda1de220ac0036177d1e15a5929b7560d948ba44d6b8972e40f0e97b75a3e702d6c2f8ef75c618d1c51c84989cf9f494dc34ec8d85aa2d783b191e828e1837a45ecd7f
+          · apply combine 0 312 313 0x1272f6b68829b866208ac26c8f32b1991fabd403ebabd3ec37a1e396c495efcd46509b76530aec45717d3014ca8ad4b83db250012 0x4ded0b16c5431158e20e7b7297a66f6b86a5fe6be1930f20550ecbef250db7f77ec400025a6a15c04a706f32449bed47272e2103ae53d8b
+            · apply combine 0 156 156 0x23e53db59edc5d34f8aa3605a5ee7eb76eb88534d985cf3706 0x839352053454153f3bc28aaf26b7c07d849e3dc931e1bc4677aa483
+              · apply combine 0 78 78 0x839acd59846f644d034300ce 0x45d316e5698ca7549f8c392a85
+                · decide +kernel
+                · decide +kernel
+              · apply combine 156 78 78 0x3ccb1c89c28d7755815f4330ca74d 0x22a0fe4e9c5b77de9eac6cab30f
+                · decide +kernel
+                · decide +kernel
+            · apply combine 312 156 157 0x19f3845208917f785cd8abde778c8354ea2424fdefe0ae8c264255e1a6d 0x300b66c88c5bd42064de4a16e0b64057c7a76f3e777464a29bcd7
+              · apply combine 312 78 78 0x40bbc0baf5673853db310949dccd 0x66a0fdd3b4cf120bc1d8f0149fb3421
+                · decide +kernel
+                · decide +kernel
+              · apply combine 468 78 79 0x1c8c844f85fb6b892cbf5 0x1aed19fd458469ace91be204a179b121b
+                · decide +kernel
+                · decide +kernel
+          · apply combine 625 312 313 0xdd7b073218191295aada915e4a11a9b7d59c519b3369aad5b16c90097f50f317757dcfc0e442be1fcbea63e23d7e7b182fa75a61f8ff 0x3d724b8f46fead062cc509cd4448f7a28ef2a114b9017413beb27350d4a998d680d4f9686176e946f868c4eead8dbf1f7761f983281a52ab81
+            · apply combine 625 156 156 0x2a0c15fcc5af887fc34dcebbb6658d077ccbc5a8d42556cdcfc4aeb 0x544760b3f8a60a3651aab6c4251a79a74293ac0c05817450769d3d
+              · apply combine 625 78 78 0x163b759394d00c647cb155e4cd509 0x1e42a4463ce1a07e1d08e88b153
+                · decide +kernel
+                · decide +kernel
+              · apply combine 781 78 78 0x1357e38dbb3785d36765dc1a7d0469 0x45b6452f67e0a0df49862a7b5
+                · decide +kernel
+                · decide +kernel
+            · apply combine 937 156 157 0xde465824db40ecf51481131aed80d9f32aa04037d3fea41ec1e3428f1251 0x46c503d48bcffa6dfeb2866e1b358a2d118f6de1f3e37053690a31
+              · apply combine 937 78 78 0x26217d878c76c0ac5f88c59ba403 0x5d44aea0d2eea7a9aa5687d2ea8f4421b
+                · decide +kernel
+                · decide +kernel
+              · apply combine 1093 78 79 0x2b59ef610a7f7b207ee54b2e53 0x1a1e95ec64c6035f74583a46beceb
+                · decide +kernel
+                · decide +kernel
+        · apply combine 1250 625 625 0xc455f63b355e49235ca8d6071ff63913d9b6597360ce9d59a81fc70aba2d0aa9c271f51b0e1fc8d38b491b93f9520d368b2ed902a899ef430276756b60f5ebff7beca9feae83c384814d6ad846bcf5e24cffba3424af0e4bb6d649a5fb104a9dd2031ef6d48c03c9577f548f108d 0x89ea5d674da0e304f84086e7bede90e0a8b00a66cba31f17553199b6efc753576d71c31810e30397e24b0f187d8e958f633b3bf93ce0bce05ab96a48ac30a32a44ecab7d89c69d8471b39122ee35e0c03090133244a4cae7333b766c3e2c958c7553b916fb49ad382b641cd7eb83c9
+          · apply combine 1250 312 313 0x9efeec52877b66ea284e71d9fb72be1e56b0bea4839b49b422f5d55ae7c7b0bb2d0b0b6b15c3a706fdfd64588b8255bd6d45ee0a3cc323 0x13c1f0f8a1e62f23df3c014b231d9ab6cba7179f2670a94046c81b34c4bf4670629c651e589b5d7e108e613fc2a5d2e9d69edf04a12b08f
+            · apply combine 1250 156 156 0x5df10f7fc0ed81b366a6520379763fa9545b660becd77e9 0x1b147600fab1ee589dbd11cab7cb9b5fea7174929d3ee9e0a8f3acdd02b8472b
+              · apply combine 1250 78 78 0x55b9b1acae7057c4a142dedfc7b066e9f9 0x118893e175f971
+                · decide +kernel
+                · decide +kernel
+              · apply combine 1406 78 78 0x1644a9aa189a12858ebc7608611455b19d9 0x1375101dee36ad60c8b2420d8822a3
+                · decide +kernel
+                · decide +kernel
+            · apply combine 1562 156 157 0x11688c9e22791ca956de32a7b65c2c58e7f380e4fb5fc7d07887c83ad 0x1228bcc9094d866ae508008be8b0286f1193040c8b867bdd9f92cab
+              · apply combine 1562 78 78 0x543d64da88ac59ec06d25e2af6027dfca4f 0x34e732da0ac1ec9e251f43
+                · decide +kernel
+                · decide +kernel
+              · apply combine 1718 78 79 0x5e0502fb870b9613470252170905c7 0x3171c153db56a098d78f1d1fd
+                · decide +kernel
+                · decide +kernel
+          · apply combine 1875 312 313 0xade0f0c164b86a00ca28e3a6500edc557ef3f69aa69e184570fcb301c0c23f4e617d6fbe5b12c8ef800a5d9d825539bd030e575f97d9b3 0xcb0d3df02a3d9ae00dfca2d79368fac0aa195e97c87b6a599fc5cd7bd6f0c8857d7d35fc2a98f68a47bd17b8bac92e5ac29bb1f0429b7693
+            · apply combine 1875 156 156 0x322b5b98ab3d250a71ec6e5387ed28cb1cca45b66988141a345ce68ea1 0x37740de37ba33ea2c8267d362fa4497b88b0f56634ad19a136bd3
+              · apply combine 1875 78 78 0x205507427e4c1fd448d65f8578b9 0x18d3b5cf80096e1bfaed13299b98129
+                · decide +kernel
+                · decide +kernel
+              · apply combine 2031 78 78 0x8f222621aae8de4a590b18e87 0x632e3b087ac368193e7856ad5f55
+                · decide +kernel
+                · decide +kernel
+            · apply combine 2187 156 157 0x7da9886cf0d450dff8d079eea955b7ac78b3ab213d7bacee6b7fd4a3 0x19da88dc49b67c3fd4e349f809a13354356ec342c09a4f4193e160551
+              · apply combine 2187 78 78 0x1f3e31dfdcc0c286e4491af 0x405a84ae099b54186448a29e0f7f4fed4d
+                · decide +kernel
+                · decide +kernel
+              · apply combine 2343 78 79 0x61ad59cfebd2021db71e745f7b8b5cab99 0x43c260f09b3e14842d27a79
+                · decide +kernel
+                · decide +kernel
+      · apply combine 2500 1250 1251 0x3e975c97015adcf9f9d0a61895c8ab58c06541d175d1e4747eacaf551fb6ee56671c4b3766a3f064b6f013f23f682dd17409f471fbce8c7918b951e50f67f40bb4c346304613de5daecae8d40ea434c8dd82b7477d3bafd087cbb6b8c70c034f0d7072870c429ef6fc2180eefb834157c73ebf5ffe746a113494217284e6134c32605f610862f46c591083903884bbdfff91f006ebfc97ea4a11fc555b0c34a2937bae7e469fd2f2747528e1a338560cb87797bbdfcf89d7102bfac110b99309bd488be1945dba4e763f06af869ce231bbe034296c65b9600bc7ac596926e6f9e7 0x23da50fa15b22130514107582d4b4e075c984ac92326d9d5299a3c0dafd4eb58e2f8044d349b7acfe5f5fb38d4c987d12d8cb79a1c5d41e86dc9584a9ff03aebb95f99a5d74154957d372c15671aec583174e221e044bc821dd5cf773aea3b8831780216d7e0c5ddaf7bb08def6806b077005fbc93908f790a01799a4164b0e792709adff170d02a38c16c91c97c8f32ff6aefb9923c8eb65f298a141bfb8185af51c81938aab95b3ccbf1a89d21bf6e73b841fe50af2a8296925cf9e2d285e873ac52b54d3eb217260e6787e0160ca31606478772b33c3e7408cf40aff49
+        · apply combine 2500 625 625 0x25f1bd68de13cafa7720687133233fcc82f557d31651d9edb2cc02b6b7a24f58ebe4510be0773a683792e2abeb60e7c80397b643003f2976baff1c76b38aed88a3ef5702a491efe8c7d180f06e914073934bd3a7786ba9f4cf329aba954d9c1036b5c61bbbce6fc4b7d5ece01a503bef 0x1a64953d6352c08d36f5044f8892181f8ec4c2012451f6599e3aabd822aecaf201be64152ac32218e9eb6fa577d2e1057ea8820ec6fa59921203847d83d6e9927329cfbd13f54e95067e508c4c072b27b45f3758dd850d7ee1d07f8963abc14c0237a637269331374c34d6607c0e85c8989
+          · apply combine 2500 312 313 0x3f50314a359510dd7bdc16c712d529bae66abf48a5a1f69156978b611cc588f5f690ac669eea2e6eed000eeaa89469d08933203631ae9f375d5cd84f 0x996c699d01699b6cd651501c80353c778986b21b33c821ab82d59bb6f8cd9fc0e41536cdf74f3a606646c45db5b71dfd0c61da61
+            · apply combine 2500 156 156 0x26af3edbb67650293aec12bac6f1d389e20f6f5e08aeb9 0x1a2fbcc07cf7a4a48f7910008f9f87847914bd3bc874cf6e224fff6a6d27627e552f84dfb47
+              · apply combine 2500 78 78 0x58a3a8c3e3920ee28878217 0x6fb9a8b44397917eb9ce7af
+                · decide +kernel
+                · decide +kernel
+              · apply combine 2656 78 78 0x4fd82ab3df0ded17231a8e84d14d42a5aa93d8f4a7436d 0x53f5c3abff2c3f2c6786e86a95503
+                · decide +kernel
+                · decide +kernel
+            · apply combine 2812 156 157 0x7b522a4f9c2a0a4bd3a9d4bc2cafec09dfb9cab34de9de4c51b7 0x13e7d467226306c810d6e309fb83c773d0cc4de3ee221fe7bd4a7
+              · apply combine 2812 78 78 0x9d79a353f86c759d28fcc21173 0xc87a24f8d562a429e3e3019dad
+                · decide +kernel
+                · decide +kernel
+              · apply combine 2968 78 79 0xfe4d305c4cfc9f457a949ecdc7 0x1409dd613b86aea1ce80b5a4221
+                · decide +kernel
+                · decide +kernel
+          · apply combine 3125 312 313 0x171ca44c3ba405566ba5e3329d8d847c6c9c41a15822b36ccba66fadaf8ba4a7d7bcff68a18ff2b9263b17dbe2aabf25a4cb87b0a3 0x12457a74c97d26c50d9a3fbb0473f866aa1942cda6262644ceee89ef30583acab476f9997a7383355919bc42242f5a9b620293f87976fd4f04b2b303e3
+            · apply combine 3125 156 156 0x40ce6cfb76fa45d477d79ddc009daf62ba32f1619350bc2b5d 0x5b4c18ca025917cb2009ebaad43207a229dcaafb415ce439caf18bff
+              · apply combine 3125 78 78 0x215733defbf5c3f1ee4d5d5f 0x1f19a9084e2d27f100173e174c3
+                · decide +kernel
+                · decide +kernel
+              · apply combine 3281 78 78 0x19c956fcbc8c1382d6b1ed5e6baa51e99 0x38a5ebcb04f0fb721cab1657
+                · decide +kernel
+                · decide +kernel
+            · apply combine 3437 156 157 0x91ec155a37e5b568adf1906a65f2cbdf1485fbad2ef5a66734a0649ebeb36a25b 0x200dfa851ccc863805a5ea8ce8097700acdf2a0cfec6e0b76cb0dcb19
+              · apply combine 3437 78 78 0x3a25b82595cc35091e86806d213 0x28270396e0fc3469e71a06a2bcb0cbf601b3799
+                · decide +kernel
+                · decide +kernel
+              · apply combine 3593 78 79 0x570ec19172860b69eb7931546a1 0x5e4257288aadefacc05079e4abc979
+                · decide +kernel
+                · decide +kernel
+        · apply combine 3750 625 626 0x80537b54175abd68f8580de9ae64d6d433ea011951f84fdd2a5ac1e8ce83feedbe27b84107d5dd904e0cdb5678eed3080009fb5c8287ac9350d9a3e8a184f4d986093861ced9a9e90a3bd394c8d23e41f68ca6931c25daa71c65ec8e940506beaa56e4d8b1682c12888e7e2278b1a622f 0x4785fc28eb91ed2ce0aba54a44c2110da7ec49d1710bd730c7b50a3d543b542a5579998cca92a55afd17386e0075f1dfb175566bb86d8592b440d296b79dc3ab0947312d94bc021408bf4d73f036f9713a3dba7ee90ee962850370eb2bc3a9b5e83c115345d0e74edb79cfceb007
+          · apply combine 3750 312 313 0x2ae290adb1671f0f08a259a8f285ac6cf3763250a2a1006aca549e58db4026b050826a91bd0e7b4cd7edbac80a5ace058e8a2b0d7abda4cf05 0x2fe094a5e44206bb33e29e7e4172418d496945d0dac1e0abc0a1babdd0c4e4a0a77bdd565865f0fc865912baf83e8fdd38246a9a1130eaa3
+            · apply combine 3750 156 156 0x4f810d225cfa69027ae1209446e6d3b8bdaf9e5526965cd8bab 0x8a1688dfba8ca900fbf38eb20e22059d2b3d6d45fe9e4354e9275cec12ce00f
+              · apply combine 3750 78 78 0x7f5c31f037c566fef022aa61051 0x9fce9ca46ba0d6b807d9f93b
+                · decide +kernel
+                · decide +kernel
+              · apply combine 3906 78 78 0xa8fd57d1296ecf7a44fa5f4b625605 0xd130071614328bf659d47c0d1e8e6c603
+                · decide +kernel
+                · decide +kernel
+            · apply combine 4062 156 157 0x13069a1037942a7f2d065f20ba78cc03fca82c98cb1cfb3a3d1d 0x284357545baf2f4e5a7d63d82ebddb29412cda294f48275c921fe5b1bfabf
+              · apply combine 4062 78 78 0x1072ceb7692889f294d9ec878806f5d 0x1281ce1865fb762dc2e8c1
+                · decide +kernel
+                · decide +kernel
+              · apply combine 4218 78 79 0x1937d8ed5bbc0b6e68858d7c35b77e2167b4d 0x198ba1eb5d66523bc553bd03b
+                · decide +kernel
+                · decide +kernel
+          · apply combine 4375 313 313 0x286dd5afc34a25eed050c49249bee6ee55a5ccada77506f9bafe62401195d8b308ba21a7900e0f092fb0eff6527bc142c0740fee723db7 0x1c4e4529ee3e0ce12a89467f0e5f41fecc11c0cb2038b816ed273de7907e4404e35792b8b467d05f454b7a05860f41be09526d71d962031
+            · apply combine 4375 156 157 0x4af2ecb827249e2a44615356109966e279279e0de0298240ca4131f 0x8a1782aa5260e5db2f56d41b4061ec50e577ab9c314d552ab62da69
+              · apply combine 4375 78 78 0x1d8c8dc6f3c5f6e8bd1b4d97d 0x2895328e89cdcd3dc25b9773584a1cb
+                · decide +kernel
+                · decide +kernel
+              · apply combine 4531 78 79 0x26bd1b35877abb85b97db5ce7 0x3909030a44b2b866b813bc71637542f
+                · decide +kernel
+                · decide +kernel
+            · apply combine 4688 156 157 0xd219d2bb11432c03992d020c5158b161e29df5a3a1d37c2cc5d7 0x227d4eac3204f70420be9c7c0a172716bdd65f38090ac9fb39734937937
+              · apply combine 4688 78 78 0x324605874396cddf5efe269bb 0x42ddd24a614bc84cd815646df495
+                · decide +kernel
+                · decide +kernel
+              · apply combine 4844 78 79 0x374a4e87bbc48563adb16b 0x9fb0aa71b5308647f5cf9a91abde95a11ee65
+                · decide +kernel
+                · decide +kernel
+    · apply combine 5001 2501 2501 0x8f7bde79d63b07f4792e18bb501121f638e72da40a3e1f50ef27ea1a7a290bcb855b3b74f53d427c2bea74c980167db9c16f0cf49aac550332998052acb9e6b09d52d2c0bcbdbdb1cb3f9762eddd1e8993c29c06c7c91db632a47974489f3f80794c3757c6db5c27b46df47317209b823e89e3a2f362571773cf4277fcd8a7b11690269625adbb935ca4832e17077bfd0b344618fc02e2d42668ceb8e08aa63c948365529893cc19b638725397cc578693408b087998965467c5195bb803137bfea4b06a0c3ccf851de9075f8d3f50d1f7940eb03c84f7f937114d46a3ace6e98d7b364f6b9471512d811c5d85ba95f68763d63620be8944ff882197467d634551dbaa7d5de926328ddd50a01491fc38c81a08ce315df5c735dcda14d2835c0bd39069e02a7fbc16d98585ba02e97fc55977ef18c1161cda77ccefb2329fddcc494195b5fd3673bc8fe86ce918522faa5ea75f10a7390d6744fdc2bd73e67aff7ec38a8988a32d3194ea36264721434851523cb486ef8ae8af4c32cb6e4df41f21db14636abc29d5fcf81e450a53b0111b5dc69c7d0e787fbf8a3d22e19101997e6ad22483207b73c17733ee68268d01ed070992e16cc9874d099 0xc97826297b180036720f72e041b292ba56dd4b1e030368e6295b724e59a0f2a139db71a541b96d01c7722ca9bd6db9479d01208e46721dafa1f90d323aab7861ee3f702deaf3dbf42dc222197781c3cfe9c80b4d7bb13d3caa4de744d6f80636fb6cd70f43f9780b0047000e5dbbf491a07ab2afc33814105222c44c432240ef24267761f5deac740b02d3a65422f8f01e81089a0b656b3352a8d3feb7f208378fe6d5fa2891640d5bed74f9b2f047db51c9b0bcda1aa3a2022d0f64b266e3a853996fe42c3a47b8448554c308ecb05520db91a69fb7dab6b8584723966e5a8e65f689f90acaa6acb8a70d1debf4a408b0c9aeb1275a834ba96d2b2dadbf606c7484e7d438bee4d41c6e3f5c59ee66a61b73b7ee5bb459642638897fa3f04c3d98e9722c22987e1bdeb8883daee795d859c69f4fa792dcd4a9dc7c09f1815d5da13895000801a562e05134c678cc095d2ff1d177c310bf699d5a8bd12b19c8e166d4b1a7cb52485c82b665aaae5031bc6ca0f8abec548440f1145a536b5e92c9c3eb6b118ddc89acf6bfc89ec52af2c684a7d9195bbb53d3b03c8a630fc9bda775da8a3df4fbbee219395dcc390efda6a46dfd966041cb22b5bedd2b8ba2c70c47901329915fb1035
+      · apply combine 5001 1250 1251 0x1f69242bb520238ae9f81209be83ce56cdf08acbc51028479481bf13114761c1a262f1947a32fc14e7375f14052337f229ecdc999e53025402ee14e938d278a64d98a80fb08c2fdaaf95aefa0a06c9fc4b04a69120918091edcb48dfcda0be08c14a6492a2e475577c85ad7d15b3cbabb0b5a235ff0d892d562ed2019ca85d3ea2154f7b16340cda9a6fb3c66d4d79d0b58a2f3efc8ca2b1891478164a7dfc7826cb0a39a9ccaf5bf5c35b9b5edac647f3110463918dc7b207198d8a3bc0a8ba5cc1320907fcaff09eb65098f6f93cd5ed95f6fbe541a8bbe7e2ed2aaeb4a7 0x49167ec5fede7015d9094f1fc61ff28a3bdf5ad3248fcfc41386d5f0e1e3e66f68ca74bed0249e571d4f434aa3e9bf55074a1811f47d2e5e9f36082a67ded0c78e9f1f2d49603fbe1966bfdca8c37c35e8bec47e69bfedcdabdf0465abc50962c335d7f740e941153a83f7daa4d4286be381295feafa870e12f83efb1358800f83cbf67fda2090c9faa32e9712e9fa87eb7dcec841ce6eb8c98feddda03f5e09b015abcda92f30afd62640e2ab768ad5fcaeed5e02151551a61a61c663bac9cb7c535f742e8b4947a11c464a1a94f4d68363a3c78b7b4afdb41cb8bf
+        · apply combine 5001 625 625 0x4735c83296c293cbde68582fa0a1a29fc4680e6b128fd867dabfcff7b9ab432838218eb3fce567e73d6e8f1c4563f4db227b948fa9e8931d0bc02fbedec2469f799d353b32deb1c954b854720a8b8fc86f8fd5aeb2ebb85d484d4f29a8c00692fe3cdf183a1df581e93c2e159 0x70ebdfa8c97a06ea80888f8a938ff5bcb1df9e8ae9a45944a05f2679a43678c4e5d4f79c87834930d181b8f47fb2b7e2a0682ec60bf4385d6768dc032332776e8d5e5824df98e3e65d8fb013bac7af45cc4ddb989b50b7bae6253e5d4ca69242f54e6067f24ee65b282d9a855c2498bc585ff
+          · apply combine 5001 312 313 0xbf5702ea5e7092362cf4e572d8fdf1b0402a30af1717526d3665e763be63f1cbec1c1d868a2437bc5634bc42be4999fed4de587bcf69 0x5f463b4d494ca1ab46c3ebdbf1b3d0844cc13b2cbacbd088b066f8048f8f18734d69b7fb2eef7bb632432b18c9d6ed517ecbc12c33471
+            · apply combine 5001 156 156 0x2edb29d2a7654e456fa883852aebb37f73fbea5d2e68c47dacab037f 0x415646afd7254a9e8917394deb4e40ba3af820a62aa91b7650117
+              · apply combine 5001 78 78 0x66140a5ef634a0f4abf1f4287321 0x75826b9a830f26cca296cb3d429f
+                · decide +kernel
+                · decide +kernel
+              · apply combine 5157 78 78 0x89201d64dc7e503554a0be2aee23 0x79fa588ccec904bb2a9b8fe7d
+                · decide +kernel
+                · decide +kernel
+            · apply combine 5313 156 157 0x6d284b30948ead0a8773233338facb7a432a33d1fad1ca2671fab 0xdf70e18e42247e84e5e53319c16214b0c9d573dcb5296d1b8fcbd053
+              · apply combine 5313 78 78 0x4fc54d20e638345c6f5 0x15e4ec5c4a1a46d5bb6ba75517d1a4ee81f
+                · decide +kernel
+                · decide +kernel
+              · apply combine 5469 78 79 0x19ac98f6a7460a8a1ccd348e0de12230915 0x8b3f3784077ca9f5befdc7
+                · decide +kernel
+                · decide +kernel
+          · apply combine 5626 312 313 0xe36e5fc0efd1be49d93b89ac7b58b61ce0e5503213913be4030c3276be021397ee4fe649cc4850bf2d5c8aae835b432727e936bc76ccd7681b82f1046a631 0x7f1b25b9bffa2adc2e25ab31ca1503c8de03b7f2d3dabbc77b2772ea53cee6c38261eb2001b9f840478116eeb583104f8a35732f
+            · apply combine 5626 156 156 0x207c6949c3af19af9f7871d5a353084bdfb7d1249a8d94ba7556706195ed 0x7003b104355d0923293fa59b3da674d42618a52d9d1690dd2b64b51c72974b88d5
+              · apply combine 5626 78 78 0x310015e99b7ff1f014da38436b4e220b2fd05b 0xa9b8b59b5bd85259300557
+                · decide +kernel
+                · decide +kernel
+              · apply combine 5782 78 78 0x4435b0be1f36806e944d0dbd7a1d2a5986395b 0x1a4679b8d61de66ad4fd3a7ddad8f
+                · decide +kernel
+                · decide +kernel
+            · apply combine 5938 156 157 0x1e7065eb45f1665ca49ee8668759fcec8204de045ef16065df7 0x42cfe4bcb41469cc01561d480b53961a64a837de8e14987359a689
+              · apply combine 5938 78 78 0x9ae16cae916ecb30691 0x324ff32f60100434a05a88e3dc863007
+                · decide +kernel
+                · decide +kernel
+              · apply combine 6094 78 79 0x193aef33efc9be4212adf27421 0x2a5e9c60ac48e39ff0e4780376569
+                · decide +kernel
+                · decide +kernel
+        · apply combine 6251 625 626 0x2f8262247172669be04e774622d51ef5539703b876b312bd49b40b65f5f075a46f151535512c83992547ce539409190379f031c6845faf8e4889fb630ae3d03a5d435a674294fcc8eed6c2f1c658a112e0549562548b30e386f4aa270834f73d4276ba8a4c86d77ca7141c5378aa334134f7a66b 0x189d3f5f483e33bfb570a601d5e85270c7526334ec928996a5d71b54522a6de158550f5bf554b2c6c9314c7406712b2bd3d9b6f9fcb4db3f8e99e3c08b3d74ea7f6dc9933453930c0f2b56e4e298c32ed856742d1564185942dc982780bcc0211e234c1d213be03fd
+          · apply combine 6251 312 313 0x897634f1c3d0c979ff825f16d831f2ed5360901aa64e87d1e63afa844acd0d73869099fd826c7e059480db2062a0151d454a4e670b012eed35 0x587a72bcf6d2c7c2a047840bcd62f2cd49381ccd0d18a478150d4b84a7e6ba211663c83f7db3587f8c107b425446c918f9a403de93a6a9e63bd91f
+            · apply combine 6251 156 156 0x376f420fb7674b2cb81d7bc3b2cc7f87ac830c09de7f36e4978860ec75002d5ae4a1b1 0x27ace49046bfb1b7080582713aea0d0e1b120084680c5
+              · apply combine 6251 78 78 0xaca077597316e9ca74611736bbfef9fff82261 0x52352d650fea2e7f565a1155ec3b6151
+                · decide +kernel
+                · decide +kernel
+              · apply combine 6407 78 78 0x1816743ae6982235e9e1711 0x1a5a9b06241460314629675
+                · decide +kernel
+                · decide +kernel
+            · apply combine 6563 156 157 0x269f5ad707a84b57747b98d1d6e8aa02a5e5179d1762eac0cc12778e9c117 0x24a752791840b0b809923810146ca7455d6743a380f8f7676fced9dd39
+              · apply combine 6563 78 78 0x2d2aa71052c3300cc18f999fd9 0xdae892eaaab98bb75c8070ab9c03ba3c26f
+                · decide +kernel
+                · decide +kernel
+              · apply combine 6719 78 79 0x3783859e5632dc04fd0452e047 0xa906e768f2bb4434d82b0d4f6795967f
+                · decide +kernel
+                · decide +kernel
+          · apply combine 6876 313 313 0x334a6ddcc6b779bac12d14bb9944b1536382b8c84bb9100d4bedbfd0e7c118fc4d39d4c5c4b54a7156f5fb23f7e320999471e5f3c5 0x7ada7ff285256ab2965c4456fe26cffba628292ddc3ca693c1399554df05784944f6f9e3b1a9d4041775e1369f8318620f4fad9
+            · apply combine 6876 156 157 0x5d10759d3529ea16db0d38cea6da0f922f6f1f1a6d904bd7158a2e6344fe5 0x8d1701a9553c3761dbbfb7f8b23e5a4084dbe64fe1661
+              · apply combine 6876 78 78 0x2721547853edb277e6b8e3f 0x260d9dcc579aa9cc22653ac25737c1d52a660db
+                · decide +kernel
+                · decide +kernel
+              · apply combine 7032 78 79 0x2db417dfde97e33902a5215 0x3164a379c3c28e75b1c221d
+                · decide +kernel
+                · decide +kernel
+            · apply combine 7189 156 157 0x41cb7e8c376b63ea7b448bf7e444827dea6a2b309f595971ff05ff9 0x1de02179d572b331ebefa768a09d504bf31b1d11655cfe9e1
+              · apply combine 7189 78 78 0x123aa526f02002f41f25f24e620ab643b 0x39bfd80584c627a39ba4d5b
+                · decide +kernel
+                · decide +kernel
+              · apply combine 7345 78 79 0x2241cacd47144daada59 0xdf41e87e4c8369111108e84db0ac9
+                · decide +kernel
+                · decide +kernel
+      · apply combine 7502 1250 1251 0x81b8be5b70d3c6079032fe201d533c1c8652538bcee1d218771bf8c0961af8cdfbd38f3b65d222b8238b07007b6751b29a542faa4c25a01a2bf34594870fa8fd94d38eff726f42f6910effa130dc824586f2c9faab1eff8e748f1a84d494783c6029538f2d60896b5c87944e429b1c0e5c37280d740a08b13913262b5bf25b4d84216779aaa76dd1073b8316d0ccbce7670071049ddd78fd43e22c8f4d6b2bbdffa34956a73ebd46b02dabe07b05d2be807598c2c74c927837b41badc87b768374f67fe5a957db4de05e692be8426013dca49c15786fe16abdd9a97cdc3d6f9991be811db1 0x18d97450d06e7aba752eed124767401cd7a05f799b16ddd6c67f0018c4b3e2988fe53c0ac2e1e03762a2ae5d3cea349357b874c1c230751737dfb3a1642573dad999fc3a81ca729132eee95f7782e32f181da2a5532cab650a4227f6646fe97f71e560ae6a9ed1a180c7d64fe183c8c46adc87d814ddea4f51a475f829a2df869a3af954c3e005e72f3fc33c46716c171c094ef628358144db5aafad9c3ebab273f6c4c3a03c16564fa987cc9be09c772f14878f51b39f1a2fb4571f9297530085dbb2b6d499ad958eae7c096b9a275f15ca3639b9b787904f9f018c6e0312f3febd67c5
+        · apply combine 7502 625 625 0x7547ae3912d75f32863bf31edb7b73ca025b0779d6f01fd2b9d2288923931a877604d3dfe367e9fc1d11b7e0e27480745257399850edab9a9e0aa3e4f7d22ff9c2c25206232b587d50dcf44d93bdd0de98fd07a6e532df80029b05d6a72c5fb02c2cb5e637a0f070120c1957b9bfdc5c1c7e868f5 0x11b28637263f0e942998e3b2e19aa71f5f3e0719529634dc3f890fee6d4144f58b2103d72c757e4276d65a9c2f4ab71d8c0d4dbdce263d7adf8afa6a24237745b0e77db8e5a4963d5d15df5963c2956145e509a907f53d9d61ba83f0593340e117b1b8479f8bc31e35974f1a65d16bdc4d
+          · apply combine 7502 312 313 0x264c44eb81ae0e712f36e4d695146f98b47f7613c7af46440d168d32942099ee7fd022f3ce817b2c7a7f4faa22667cc9c4b1fa02c913e8d318a53823 0x30ff35716d3c270ee28d45cec7ff288ce08c438e838965a5d06f4e0975610e3179c4b1dd099754499c5127a2943436212fb75a6a08345aa007
+            · apply combine 7502 156 156 0x6275cce824f7eb77d9750fdf213ba26bc94da8b3bcbc9df963aabd41e7b85eb7f38d 0x6393751801031545e4d8a003e2d2b4fd6527e2e349ad0466966f
+              · apply combine 7502 78 78 0x5f204ce1eb1f738046a9d7694fdee119e13996d 0x108f8e8548a3c1a0285660d6328ea1
+                · decide +kernel
+                · decide +kernel
+              · apply combine 7658 78 78 0x2250975ff88c40a7a26e225df07bfe0b5 0x2e6ded449526cbebe513
+                · decide +kernel
+                · decide +kernel
+            · apply combine 7814 156 157 0x3ed4e762ad072b84cf9c8ff7276af5cf3c6a0f31283c72d348b4152865ab17 0xc7a1ca6ac768452845b81a39db5da24405c60464d30cb9740891
+              · apply combine 7814 78 78 0x2a00c3e5fb387f161892b72c4ae7cac2d 0x17ef2576e0b4940df34429acd20ad3
+                · decide +kernel
+                · decide +kernel
+              · apply combine 7970 78 79 0x1caaddc6364b8527d 0x6f6b62e4d64f053d4da75d99c13281aab6a5
+                · decide +kernel
+                · decide +kernel
+          · apply combine 8127 312 313 0x2ec7d98f414464badddca41783772f48b94d4bc9211008af37552451adea610f0672673e2b2824fe4a0597491d9975c1f2fabb6c395f 0x60d89943f95f35c350852a1656d5c4bc57c01c97a07d2faffb3707a0b2fbf2d5621b673d58b74e32242d419aa9846180572c9a024819b2fe694dd3
+            · apply combine 8127 156 156 0x10ad9f9de9fba4e5b3d0d16640332580781a68266d6c0d096811f 0x2ce0da9e094fc5684b793ff2090666c2dd845892c261546812c9ffc1
+              · apply combine 8127 78 78 0x3ef1bcae15d6a97f46eb 0x43d4f026879124bea2c3642f1912d499d
+                · decide +kernel
+                · decide +kernel
+              · apply combine 8283 78 78 0x11ef44db26eb39404132bea523b 0x28098780fece82ded6c9b3d18afa33
+                · decide +kernel
+                · decide +kernel
+            · apply combine 8439 156 157 0x6e08ea2de04f36392019e7accf58e7324a3d6803a243ef 0xe150e0e0e9136209622088dbde5b9d8e02b770621e794d8aa0c27e8e6fba07857bd3605d
+              · apply combine 8439 78 78 0x4e4bf506ed1bc400fb6f 0x167c5795a96410898fb6e50ff81
+                · decide +kernel
+                · decide +kernel
+              · apply combine 8595 78 79 0x6bc9ed79b139596c78cc4d0b1186e8cb7 0x21720f7d5f0b96b4fddf9a453623887d2123cf8b
+                · decide +kernel
+                · decide +kernel
+        · apply combine 8752 625 626 0x88180bb0eaae3da4334a8de3be5259b27941920b459d6c65a48b6fd74a9fb196564673053947cef4d78f15e08333aa99505c436976e8e15dfcd257fc6eb8a16ace1f3b75f91f1d2a436b3d80a3bc3446060782fc6df55978fcd9fb79ef826142a3bc4889072c813df0077bb165148e0019f 0x2ebe3ce310bb76ce24b3f397ed1deb3ee0cf3bc124bb0fb0734e929f0e6cf624673e46e8006305e7c0d361ae909c7e5c9755665fad0195a427ae1a747f7b838c144ed0993649421eeab08b7e7c2ebd1b03d20108c39a5f39847c180bad9607c622e1fa7835c1103b2c3b8b98f3cc6b8f1441b
+          · apply combine 8752 312 313 0x97b98203582ed58f1df35b16eea66ebfdf35794b698b9419e7ea3870a673fa0e28eabbcc86993434e6325ce6a45aa7dfc41c3bb5c8129a6616f 0xe5a076dd4cff6b019c405365ffd7581dc3ef38b2b5612c479d55ce8e5e459a970697a13b59a36890a8b689ad04fa0fd6a3258a14e935ead1
+            · apply combine 8752 156 156 0x71c151a6883257f2e89fa899262b3c89dec9e0f08ba6a390ca161489 0x15572c668f51d922d8f524b4c6f4f1ebc268a45f1b23c6ffa4a0109a3837
+              · apply combine 8752 78 78 0x1c21b24015ee50a3236d29e1a9f 0x40b2e4835f4d91d4b7d584a610a7d7
+                · decide +kernel
+                · decide +kernel
+              · apply combine 8908 78 78 0x20679785a1b9a3f909514b10db5 0xa8979ce7f94cbbbdb0cfd37ce400981bb
+                · decide +kernel
+                · decide +kernel
+            · apply combine 9064 156 157 0x5dc06a6f30736dc72ef3fd0a99eddffd874e3a3ca99b73f383355 0x27305ff1befe04ce6ab9a58b68d6c7f11d2077d2ea1930d5601d4e75118d
+              · apply combine 9064 78 78 0x10d20501e38dcf4d298de869 0x592dd4faf8b6adb9d2698d266b760d
+                · decide +kernel
+                · decide +kernel
+              · apply combine 9220 78 79 0x603133dad8abf82334c0d8ede4765b 0x684b8b9f801d63ed3f18da78982c37
+                · decide +kernel
+                · decide +kernel
+          · apply combine 9377 313 313 0xe60015ba9272ce32b8e5fcfc09d89f329c2da370dd19a4a2c9ed4f29d7a9f47b54aabeeb125c913bab0137e38ba036133cc5a133ad658484d5726ab 0x3406ec7d4e836d96ff595c04e8630690416e6d4758e5052a4e2aa33160e2c89f194e4b6753f4119e5079580a2e894f8909213df63a1851
+            · apply combine 9377 156 157 0x118e649d0d5fc8588691e73d69370d7ff412ec581b01ee2d317e5855350601a1719 0xd19cd2a5205c91fa7c1687677d4d3a6ce48b2c3a0509abfe0f863
+              · apply combine 9377 78 78 0x10240c6645a97c26ea9bd9266ebd418e07 0x11672ef6c162e0529d8fdb86dd69ade9df
+                · decide +kernel
+                · decide +kernel
+              · apply combine 9533 78 79 0x4570fb75320e9501d 0x304c01c0a2abf3f0042a5299e3d99abea027f
+                · decide +kernel
+                · decide +kernel
+            · apply combine 9690 156 157 0x5ff5f028988bd855b39d4d67d3b172763c539930e3ecc240df3ea1801477 0x8acbad6ccd866a38ef607da8db0b80d7d41f06cbef14e25377
+              · apply combine 9690 78 78 0x3f8deb0fa5c3c027fea5a58d2c5 0x18288c2b390b79a9478fe60f282d0b4e0b
+                · decide +kernel
+                · decide +kernel
+              · apply combine 9846 78 79 0xad1790a8a32f5f071e121d92220727 0xcd46b4a51bdbb95a8331
+                · decide +kernel
+                · decide +kernel
+  · apply combine 10003 5002 5002 0xc35105500870580a1a920928a8ed457eb940a475e32a60a00a299ced40b95a1c16a0f494660a67646b198d45043bca4c787d12c38e0ad49ef95676ff3627a2f589479f16124f4c1b758d6419494bb2780d9dd3b58516d384ef6128a3f8ae7704d025c595647049c7626c35f40ad8c6ff2cd2ff7dcfb818ef5b077df735684b1bb805e37954c74a66c140b0397fa2c8e606c646836e73ee6149796b6ecb09b440e7737b78998af92f1075e5e18e46d4af4c5eb1a9b5d3bfa1709ede8da005b3a90505bd3be8fb943f86195b1d6a92b258b84edc166396e129700e5786237f1f7f8fae203ca38c665c78a25b3055b7286dbe0a1db7bf2a196abc61e5644ef413312aafea4c7bb04bebfee2a516bdd5d2d3fb3f35a284268ddc99a7d0c8f51e7e81b94f89e1efdf64373fd6318b7b72fe21793e7e550b27ee97761daffedabf649691fa5aca4371aa320a0b572030049d56fa6a1cc0032c58e09207ea17651141123ac4fa42fce9a7881eaac2f3538f8d844260df845ae9642424358ac51f19350068fdf787be76c4bf8ee8c04264d889c010736ec01dd02ed26a61e6692a1f09f022be552de2bfa7ab7be098a99682adfe2f25423221f73ed3c1090965368a5e89479126c2165a22fa75f613d5b09dcba657ab415003ecc53db41f3a8f6a3bd6ab256df209f6d755c81ce27c3d889352f319b28faca0d2d20cc9c808754923f88ae2573789bd7b5bcaf771980d87e5e3fc058fc94ec61d4e749bbdf50e98954d05716712f8ad2ecc254bc0979cf9a2b05390196879ebe45f841d1f05c12c30eaefde613f3cd0c08d1ad53fcf83d5448cf48cdc9640cd840daa302fd120049333b4f6675b92b97819c7c3da7e5cc7af0d79afeb0c27508b877d70ac33425566a9771937b8ba82a224f12ba0275bcb720cbc0328d2273ca461a7c262c790342a2c674a14ec4ca30a634f754ab804b9fb10d35051dd309e8d6064c2d54396bc7da541791537bbbe20d46303e6eacc3ce0085997df372053938c87a689c3d5d4241ddee7cb1f6ffe7284a7abbe0e7c70cae9bca01d0c04491ef87e5a75559a40837afc195cb918f756a0804ce77231f62172b5ed50f43fea6871c1eb4978467a7b35422a97a5b4f65cd61d4329ba15a5699868a079d4db14cff2ba151e211674147295ddcb4f676d9fff7d479a8299d6f35a431f277731c87bb13755c8087c88e44b06979451609f761300e0ad9439e3e625f426349a15b6337c2b4f9709db1 0x16db9f50b4900b13bef7024ed2a706d2964d0fbbab69bbbc7dcde8dd301b7a90949070df59ed12140f0aaa7f67ed9677144dd0756f1a573f9cfa23ab88376473983b265535550c60650ba834c9819ecce7ecf87b19ebe7ce8e20c0cd470f033c4e3683cbe86978112d7827385fb1bc08541e2239f3dffe11eb813e6e8bfd0155a8c1cab88580382c089fcaadf0ab00e67878eebb7fbd1536795613cb8a7f0b6928bfdfbc91291ae1c95a087ff8fbc0a68c08ad36e17daad9879b226f35933ab8d9baf2651e5c829410b21a67d654eb3d82bef95fd09d4e0c9ebc35876aa4c5f680c7af72e3c807f74dfcc5ad97e04e36c846254ec4743daf74893140ff79883576febf44f50a0c986fc1598da30a9cbb52812570d64309d26189ebe816056ca01af9cc9ef72572ecb8609864db4bd978c72683bf343c4b9dd20b047a79b7476d923851a6f774d04232de048f773cbf8bbb88aeeacc4e21173f99f937a9fcbfb42d88e35880630e32c5876f542340a344cc94f85acc67585b485105f57bf6e763a63dc104df3283c88025dc69f388561fcf2520bbf8fee8dd9965da78c182004100a27515aa210b6e9bbdbcf33794fc25d7dc6715737da6f9da017f234d853be7094a705a14e6a773fc29fe08aa7715e30d85b10786cbf450d0c74e3a4be095fbc1cf86536357d899a6f530109a22c378812b39e7a5f892d5a1626a17960386aa3fa300122c5c20e5f07171d9a8a1c8535ee51cf1dfd2230d652cbc8f91cdcdad75de3ee6ca4597c47b8cb1381ad7f9adc648a84644aff57014afa5134f69a3cabe23468a7e64f2c3e2383a2652298fb2e0b4d7e29a76940a82990259a0148c48bb08fa36fd83276837ed321db772b65130dbb2557dafb7385562da5672e0acbb6b590d5079590e688e34e1174647b71b609cacdbffbaa50aa5284f59d170c7fbae7ef2e4f911328144c5dcbbd6f8c72285488c97c9e3dbd11cbb774f1cbcd1012cf5cbda8619f12736d3c66e348af26541a0adcbf96dccd43fbd69d9a877d102ce45d545e0c2302418718d5fab42a25b84e24f5d6b546428d975064b14e5e5884dcbf5241cbfe734b51dc6c5e52c2b48cd5ca634593c1f988bdbaa18710bb716cce823494bc89d5655fc62557423b0dade733594a8b2d8767feeaea0c1b165a773ce9f63283f2faca468645933c9aa025f10b5a80b2aba2107508800fedcdda2d38a1d78d8b45d7800d58ea25c9aec1e4b49e5768601b840807c381984fe93
+    · apply combine 10003 2501 2501 0x13f280a8ad515043f05381fd721876863a4c236abbfc9357ac4f475f010fa77ba51734c856e2a33135d71db3ab35a570d62dae3dbeeb68039a524206d55df1244df41e7cdd88c7782bff7bd7d087b97528d4e342cbe989d718d394b8fee5231059d8df1fe6e681febb8eb17cc9a0a8af8915d1ff066abab7a30883ce0d7cba834f071dce955fc5e2ad07c10e70a2084d34f837e38e7201d15b1e4510625ee8a3af6e5eee3e0616ac1662f6d9a44ae33dfea0aafeb2f918631641366f5f32d002a2b06e700a8bc73c941bb0fdd63b8aa9b40a1a2506fc8f5ea292d50ce923d4ac51ce224afedfb8db0042561e27bdf0e94658c2b5676f5b78349a7ae0a90a6c0220d6dd7ab12f8b07cc534febd0be9fb96fa58dcfb171ca5df9b37bac6a830a6387f58d3e5e28f9403795ab8282fe60b6051c7e6081d589b5e2694d11765ab1dd6f38973966fd1c2032e9e4a586b3f4ba2ac2201439fcc98305cc86ba8f1847d5680c7d2de99176b9267d53dc444c7a02be374cbb285de31e5d7b087c36b68001215f84d70e6fafac8d742d427240a3e206c144dbc9d4133d3386f42ca56e985bc344508644e73f0eb84b4218cf935c603a40d521e374e26bfe3c9bf0f 0x9caa8bceb26ef5155abf81fdff5238440f120022cb6f89382ac12c5756a353e464a35850c14881eeb434446c1f17deb6ccadb82d7e59df4d18071fadf07be9eb191ead58fdad0fd6b3bf8ca48a58505d304d62bc0c040e71d90a128647dd4925e9edd0ced527e57890f67fb04bce787a42c8d140d8f7e763cacd2261051799047b2cb7671caa151f53cffdad8350308cd93d882848f2658f1d38fcc0a8acf4ee413353cbeaf662e4b5c7742d8dd5813d313459978220629288e487d1d1cd68dd3352b331d134b631fcb852a1274b5038394c56bc647cbae0647c0ebf59724b79426d5540658f9897660b983e3ea09cf676937837cbe88135fe444d799652c8a421203251543e33791bc11636c6a612702025e275bc6003401fd44b9a93e67537cdc70f6f2cfe4adb3c5308bdf07f25055d26f73b19730d6b2a971342b4a5bc4436825a496de7988275758d719cf17816b6df78db478d5156b92a059ba6d808f51bac5a4cd6f206dc3804958265a155e6b9ea451ddde0f1068c2f58dbda90497a3e1350cf3885804f2c68a7f26fba76c5746c366bca856aca37ce96584e9b1dee8e1516601770e6080ea7ab32e09e11e431d28ddcd1ff00d37b7d61c705f5bd73f
+      · apply combine 10003 1250 1251 0xe4b2c2b6b9d69912662a018b54cd075ab3721a122a39945f3aaff0fd4d5eee2887460abb94ccce657766b1ace96af341b72eb89b2504f01b12d0fdf3e8de14ec5f01eeb36bf52a44438e4dd253c80544dd5fadf7dc2f5ec5e96a3346bfede5f465b494e92dd1c9f226ce48990c319d075c703076470d89dddf9bc94fe4b7a99dc9cf4795403220bc87ad5b8200c0148c09aaf4a170baa74b5f090197d058765018d0f2a604d39db83157dc9ceb7fb446587b5583e27c324ff5a884cf841bf3cb7104ce0fba958c8f7f07e51a19fac7562702c17cea5e15fcc661c9 0x16541c495acd72eaf4ee1d977ba7cb67d719a0123a8a774ff266b263e8b5866f19b4e7959f28011dbb8fd2d2129e1de0acf710098405c211cf42dad8f8d0142d9a4d005a6c7639463bb154b8f559dd0f7e5573ceddd9eed87353602aec8fd114be0cf4d510b04b61f5cbde806a27fdd594ada64babc20a14241b53fd1c96e88ebba879925b46657f417cc7cdd82287187058709d12704057ae3d2c30b49413dd4b04fcfb001b48340bb3f2de45d69cb8bd7db82c8cf4ba0eb6a0ead56a4f03f1b14b7e5ed8bccfdd5d6cfe47a373df035c36d3a4fc10ce93eef25f7e1b0e26a4617
+        · apply combine 10003 625 625 0x24385d98dc80cec03c374d1c5c74c2215dc3a88433413049eaefd323b32651e74ee420f1240b042e52291fc078448f069c9321bd66851d3336ec57c702fce35e2e3188470543e0e8b2d13cf7d0368bf071b4945fdac3371f9e5474e963283956ce6eac5622bcadb3a7225d1167db1c15 0x65069af0622b6f27682456f79e6c3c223f3ddd7abf4f2e2b931e55c8b360e24a8f39b67e537b4699c2e61871c36ca0b7e4c4f8aa182a7f73a911d17ef777ccd26bd68c03bd5fddcc951f3db8bd1dee18ff0180cea0ac255a889d8c51855ef8bdb9fe0b539298130cc76f7e5
+          · apply combine 10003 312 313 0x935fbe4666e1fa1440968fdff34a05c8faf48f86cc701685d2a3fbc26fd1c1becdd0ab2be05fb02d726bc65ea77ae394651c60cec552240f7d063631 0x3eead072d07330c57e3bc67aaf366804e8b09e1797679fd6103d67794c8c87c44715d23ee357d424175c9c54e7394b4e6b6cf725
+            · apply combine 10003 156 156 0xa9ad9e01e9881617385c751e544025fb6ebc718bcd955b43494e8f697997 0xde594b46d4a34bda3fae9602ba6d3f3e8a41fcb2ef5f232abeb03082f777
+              · apply combine 10003 78 78 0x51d588bdbb8a06aaaae62827c89 0x212cd02ddea6259ff239858dcdb001fd1f
+                · decide +kernel
+                · decide +kernel
+              · apply combine 10159 78 78 0x24d085f7af1cd6f308bc87ab 0x60a29c88fd9bbb580e2d1aa582976616f5365
+                · decide +kernel
+                · decide +kernel
+            · apply combine 10315 156 157 0x2d180b13e0a66f49fbb9c1c8f5fd479b7541e5542e61aaf4edac5b 0x1652f090138f8ea9f8b9b33fc1122c8ed9a49c7af6ac94f427f
+              · apply combine 10315 78 78 0x67b2116fe7e45cf7e61e245762b 0x6f53873fb144a9bed8514703a91
+                · decide +kernel
+                · decide +kernel
+              · apply combine 10471 78 79 0x2da0351abb753efb4a3d547f 0x7d41b8e83d11f0a2e912c5f1201
+                · decide +kernel
+                · decide +kernel
+          · apply combine 10628 312 313 0x43ab0db85cc16347132c347163b0bd3874bf2a5f1034d77af11d4a078baabaac4ddb4a57d160a141d780dc339504fa9c636f0496852f1a5 0x17e328c316449b2280897abe77dac32b1ecd9a8d6df37030431ade602aa78a759e3d82da720bb9583aa061614356e6004004c9941
+            · apply combine 10628 156 156 0xbc0dad6c23d21997c3f4c7712eb2f9085d9fa79600db470e7f4c86a2b 0x5c1e231d014b259beee8bc18373a1b03af06b327e86dd98d5f3b6f
+              · apply combine 10628 78 78 0x839cc131c1d2ccb76b510ccbb7b 0x16dc8b1fca2d6a2e2c7c9c38946b511
+                · decide +kernel
+                · decide +kernel
+              · apply combine 10784 78 78 0x95c86445f6558cd5f7508084a1d 0x9d7136f8cb7d040fe24a93c05fb
+                · decide +kernel
+                · decide +kernel
+            · apply combine 10940 156 157 0x742b655a614ff7cd515f3ef2701fd1a8cff13eeca4b0543ec1602b 0x34a3d4c049c47e74f8205ba72d7efb019167115617bb3ac4a43
+              · apply combine 10940 78 78 0x3e0fb3cb2439b80a4e95249f 0x1df31901d07292361ec2411f4062cf5
+                · decide +kernel
+                · decide +kernel
+              · apply combine 11096 78 79 0x1fe5ed1e635231d5587452f6185ad35 0x1a676dfdd986c978aa097
+                · decide +kernel
+                · decide +kernel
+        · apply combine 11253 625 626 0x502b340ec6000005c3f6d9bcd7a91889521c66a60d5ea766889e0009c41817536973d854bddb06b9ab72131c69cf7f0a13b81af4a2b5344050cd5f02e138418228076df19b04d540adf9bb5fdde8770eef5c0b49db483a393a1ed363f454f36bcd2873822a40c19817773 0x474d0c4e78d63b6e9015d9c3dd5a3c0c56783e887a10d55a715bd378e028dfedd4e1ba124639a81903c06bbaeda4afa7df023c278b431389cea3d2ecf2387784d3fa3cd981818b655aa652dab2253c795456269e20b2e7ad1c93e8ed65e1246882a86361e5069bd57c4d8975d3debdbc8a4f98401e25cd
+          · apply combine 11253 312 313 0x99e5d0ee339ff761baceb42ad5d9e3f0e2182cb7fff200b940cbe019d0638dae7e07a3a34fea98c28f155ab8cd6516129c5ebb5723ff 0x855b2af2f12a985edf511f0bc82f3821cbddc622f34411d43a2fd756a70404ebb825933470621da8a80adc8275ce233b6ba6d5c8d
+            · apply combine 11253 156 156 0xb1acd08e12292c7901fb56a9fe705160ffc868c729efe864245c5b 0xddbda792bed6e001c250e196232840b64485c496e95fd4ae6d382d
+              · apply combine 11253 78 78 0x632c865c38eadfc36caa48fc6b991834dd 0x1caa3074baa17f2200697
+                · decide +kernel
+                · decide +kernel
+              · apply combine 11409 78 78 0xe8ad73a77d6aaa3b61413e7bf6b 0xf3f7909ce66e20686024a0d44c7
+                · decide +kernel
+                · decide +kernel
+            · apply combine 11565 156 157 0x6288cd18b7edf7472925717a71edc8f935ae9af5638b7996e31 0x15a78382d62ec3a36365011594baca8cdd774c8f523ba19239cb11d
+              · apply combine 11565 78 78 0x5b8833f1e846e9f2d44d37e9 0x1139599e329624b411206d2b5f09
+                · decide +kernel
+                · decide +kernel
+              · apply combine 11721 78 79 0x2321f27a712ed95a25b9d 0x9dc9cd1e70d237ae230c2c18a2afa97381
+                · decide +kernel
+                · decide +kernel
+          · apply combine 11878 313 313 0x1c5221efb230a7ff4ab09fa407327ab72c037f769b00c3f3765b05a05f31e637cd9c5d7ccfce52ba53b9ff1a4ec47264434d09be84097347da1d 0x2848277914d63685076ee954ec0921dde8d942697ca641809e9b4f00676904b5d52f33c5685ec373fb02bd9b2b2cf720e79c5f3ea06a8e1b43b8f942b71
+            · apply combine 11878 156 157 0x4c4f0fb168771c55b457cf2a22572521612c5b1486e3adacbb9e763e95 0x5f02a966795d9986e1ed752df02f3fc34c8cbc0bec077efb50976eb369
+              · apply combine 11878 78 78 0xaa5aca125c1ac5b799d125adbbb0743f33 0x72ac432fa4a428e418fd2b17
+                · decide +kernel
+                · decide +kernel
+              · apply combine 12034 78 79 0xc14c819cdca598205d58b6b15aafe488eb 0x7dd44dd0a2578f65ef581ffb
+                · decide +kernel
+                · decide +kernel
+            · apply combine 12191 156 157 0x16756b1b5349e344e0d341b68c87648db125f9c4c5a9489b8128bd08d9d783 0x1cb2956f4f20182b6f8afdfac7ea7a7abc16f6358d3ac6a09c7d816ee64afb
+              · apply combine 12191 78 78 0xdcf869e270326c2ff10432e18e56f38035 0x1a04da595c7aec18f1e84a5fdfd7
+                · decide +kernel
+                · decide +kernel
+              · apply combine 12347 78 79 0x1b7a70b8a11515671c69ef9e7091 0x10b5c11677951565c7e00fa82b7541688cb
+                · decide +kernel
+                · decide +kernel
+      · apply combine 12504 1250 1251 0x9de440cb1637443c254faf4eb6c1a2e894d352fabced66eb43b28796dccff513c29cab1e701dbd559a6b91a9985892a2908fc57ca7c273d2a816bf9725add54e5459a83613106a821fac0e62e033dee0092ccf3f2a65531f9cc5c16e8c09e5be5b6bc156bf7c3850d790f580b269a9f3c09147817081da981cfd08b3279e5854c1b7149d3e57ad851dcc5678ed3ddee6fe47e4e7762b868616476d9e3ea363d7b82f3cf0b9fb1865e39829b6ae536b3d8e247cf5f6cde980446245f194579ee22e1573a0422f29276916f82302edcd8f3ddd9195bed48cc3dd3cd651f48cca046d3b96f 0xfe035dc9e36916eb3d341eda9ed373df8e362b2aa094a18b699d980e285d720a808daa3ac293e625b78e6b5180fdb5e06abe3a18b4a36d5ba0c4f7285595820b636fad27fea65f39e35efb7f3e87675603da33697b80cea4a41a6bf38653b32bc669b8f1a9cbfcdf24d3ba6087e3595fc47519a40d8908676ce8eaaa0c3c00fe5984f4d54f276f67a07dd6b2f105d69c20792b96d261025d305c229263b9ca4203eed94a2bfe75a9f20565c0c0444d341a8dbdb562cb103462354b52c213935b7208e290fc3d5b6c26a37208000a7f93bc216fae503b03176c43a9b731
+        · apply combine 12504 625 625 0x2e1bbed6a044069028556c367bd3c83e968ac4463b2d9ad0d1d3b1f80bacef3bded4f8156520b200e18fe1b85264567ca0a56201c78170bfccb5a89683d9b3e8ced0ad54c126fe0ea6369a3c7adc59e5f6e4cb045a6084c0678db5a988a99209c10f35783c05c65db1dabe1138043aac3f1b46ae6187 0x36ca2bdf10af92bf3f8996931145ec2f85e737e3107461f236e53be06837cf2b8d2bf201c1af1e8103dfc24b40b558544d915378b24b8b484866c929f9318cb4706f15e0414d73090db541f31380b1efe7cc227d63683bb27bbac97352ce15e1fcdb92c94e223e264dd10dc002d9
+          · apply combine 12504 312 313 0x9efed62d90fbd63539da1b6af84c1be65f35ddbadecd53ca5c3f45c5e6b6cbc1e12560c81a8460bc0b0ad58043f667bda7c54a46007a02f86625 0x4a3d50d5cbbca4eddacc9b93f563f5c0a88f6b9bc02d78c48dcd5ec5f45caf4a645e6f73f8f3ecf2680d0c8c85c24311130ba401e6dc639c9eda4b3b
+            · apply combine 12504 156 156 0x14ff0492d0af39226504712cec8df9fc08ef5d1785cc1a013574b655f4c0b4731c663 0x79295a00d2fc3f07980537c85754ee801f35a582e50be3d7
+              · apply combine 12504 78 78 0x5c73ebb5a3992cc60505eb6bf0b9771 0x3a2351312c5a619cc875325d39cdf4fd839913
+                · decide +kernel
+                · decide +kernel
+              · apply combine 12660 78 78 0x378162b7e91700ff47221 0x22ed1135b2264eead05feee506f7
+                · decide +kernel
+                · decide +kernel
+            · apply combine 12816 156 157 0x11828f98b34ed00d31a0801ae01103959362e39173d710b8fd298faab05 0x43d65c8a028321751899368891c30441a89b4706dfa022bd9e168ef689713f
+              · apply combine 12816 78 78 0xbae9ec99d01a3f432093bf37 0x17fb629723f3c920f36922a13a3812eeda3
+                · decide +kernel
+                · decide +kernel
+              · apply combine 12972 78 79 0x511679c2177044c934a8acd0d77e71ff52108b 0xd62ada0eaafe5e1bb91d649d
+                · decide +kernel
+                · decide +kernel
+          · apply combine 13129 312 313 0x188ccbc1fd0e1c1fd44bdd22c4e7c10f0252e363a03e5160e659238876870f33c59e45923ebd8ec65a2e8bb85959a693a5efb4a89df 0x23b54c82f2f9f171c6c0877f82c2cb0d64f2efd61a52d9cbe4c196131e183111091b6e4699a91488f640f57ad51e9d34012f0f6e437c90fa47
+            · apply combine 13129 156 156 0x281b0baacb173c766ab911726ce1adf75df59f40903c6108fa91 0x9cb4bd24a4a02a2e95cf199741df8736f85158d8cfb23956a58156f
+              · apply combine 13129 78 78 0x2c8c93b1bd1e492ef78b5e3e5bef 0xe6773751e21d4790f769917f
+                · decide +kernel
+                · decide +kernel
+              · apply combine 13285 78 78 0x30cbeee014e36031faa26712c9b9 0x3361f12048ab3078c52348164c67
+                · decide +kernel
+                · decide +kernel
+            · apply combine 13441 156 157 0x3931d901ac43550e5a779e1465463a8e19ed32c3b2ed29a0ef1f 0x9fd3e2aec121f5a26df67db173407085ee8d95d434ed42ecdd839c958597d9
+              · apply combine 13441 78 78 0x35a81125f6deef9051f213b49609 0x110e18f791a9df2f34d9c65e7
+                · decide +kernel
+                · decide +kernel
+              · apply combine 13597 78 79 0x550b838882d4a5c7d9411 0x1e11bd9b984c0627905929af7fa49b52c7b1536f49
+                · decide +kernel
+                · decide +kernel
+        · apply combine 13754 625 626 0x8889a8084a4572bba735f0f407fa02017e5573cd0929da16bc036f51cc14c87a53e03b0d05f86307aa281f12a6aa0f9e94847c00c81e0f4ce9f6a535fec4df9b6d3ea38bf341ccc2370c49651267ec7fc330a1f2dfc7664210afd485ec2e6dfdc2da0d53 0x1dc4264fdd4cb748fdc06f0491619cd1c5ab05b866727901635befb70657307adada02b3ea63e9ad40f882cf0ceff4d85422e0003f5bfe30ef52ec6b8302078d89cb70b2d83fb1a7596c38356e6e6667bb55d87a31ef374cbf988c61196d1beba92f1e37dea031e5476f204fd541a5097211cca54bdee1714eb
+          · apply combine 13754 312 313 0x155135994f232dd06f32f011e807b2d40c4cd76cd26125d82781ad55c17dfcec58b2a2bc78df1f2719e275d2c05326a3eb737c0784a4ac5 0x667b0d8acb92d295b7940d7a9cdf26a16ea775fab9f90f4dbe0a05a5c99db5bcdf26febc65bf94f34c2fa7d937
+            · apply combine 13754 156 156 0xc343d7695c78f2df3b0e60890f80433491a5f8aa06423ef972c292cb96d3e1 0x1bf29cfea2d732b78f638bc5cfb3cfb82d036879ec5ef1365
+              · apply combine 13754 78 78 0xd9250423e125833926aa68c4e190953 0xe6349008cc732ff05234d569373237b
+                · decide +kernel
+                · decide +kernel
+              · apply combine 13910 78 78 0x61087fb7a45d48e8d9213 0x49bbd1645a53b695233965f933a7
+                · decide +kernel
+                · decide +kernel
+            · apply combine 14066 156 157 0x20aa67b741932f084fa93cba0b89a4bc4c93b4563c14f81d7 0x323239440dd86cf80f2cda407582402dd3420e37a1
+              · apply combine 14066 78 78 0x67cb0be1a3c02a311b42f 0x50916794c661e1cbbd1247cf1ad9
+                · decide +kernel
+                · decide +kernel
+              · apply combine 14222 78 79 0x2000d220ef45e866a5 0x191877d7a057c0850dac2784d
+                · decide +kernel
+                · decide +kernel
+          · apply combine 14379 313 313 0xf2ebc5804b4277ca88b3ce5260f7627ff08711151f8e08eed0d50f1f4af62d4cc768ad0e7495e7ef9935e3ccc06a324ad4a4529f355cc2f4df552eb27 0x1f5e6c5c0b9eeb8cbe7c3f9a012ab7945e54bc52e2c876e754b6d22529627206a8e32d480d4c64fafc97b005e989da87442683ba12476d2df687bef29d
+            · apply combine 14379 156 157 0x787bba473afc46d43694f369127e29b068153d1485983a07ee1c3f1d11d 0x204270f44304ee6bb91f59bd7f5fd3862ec48be80f453da5ad932a9842b1e13
+              · apply combine 14379 78 78 0xfb070de79bd0cc08c5c2bcfb6157a0879e04db 0x7adeb0f8c75c41f89a767
+                · decide +kernel
+                · decide +kernel
+              · apply combine 14535 78 79 0x162181fc04a3b43175700fcd96756ebd 0x17529de0dbe9253e24c9292122d6b50f
+                · decide +kernel
+                · decide +kernel
+            · apply combine 14692 156 157 0x2010221dd8fabe0073e2b8b3b6d8197c20652fd06c7031653e141f6ce94654dcd05fed 0xfa751d4bab9d92e300fa257462a41bff65280eabc27675d5a771
+              · apply combine 14692 78 78 0x13ed9a8f7f74056441a61fb72ec14e2aeb967b9 0x19be2f6d67a6ed7048bf6d1357a92bd5
+                · decide +kernel
+                · decide +kernel
+              · apply combine 14848 78 79 0x76afb8c28b11160bd6d1f5966b6d 0x21c390de529cfa7d6fbf00595
+                · decide +kernel
+                · decide +kernel
+    · apply combine 15005 2501 2501 0x1471f957da4a477ec87ac0387dbcbf348f3785abce92ee8734350e5e1730164097f7d46987a8970c71ad3447bafe0157d615c0a1ad4ceb3d75de6ea5ce13c1b32a49918fc5cdcc2a18c2a4d4bcf57134e242799da5401778767fbc64a8aa4779d768d5ebba9234109063fc6a8ac17dfa8a71306d63bed873d112eafdd4c0a4b7270667b07ddc6918dffd1d4ecd1aa353784ad66022719f1dbfcf212d46731e969aba9340b05e37c4e1a3bb5e90f67e0f072c4522f5db0b0f002a91dade67e2520f670dd371b5f0dfa4e6fdfb078b14ae5bdd7ca4c39616308036bd84fc7fc6aa42c3cc140e7314409c661fcb362f6a0f78f8e9b758836a14c7d82c83e814daa1e2016700e7e2f39e920beb63a11d20c38cd5f99ed68d5d1cc73ac5623af1d02d7bd92a6575e5e048c0e822c2aff9ab5ceb27ec2d164f6d74380b8e365d9c5bde66473e380352d3599937766d7aeb97761db26ff6bb82db534936f66e84bc26998e84fec047e34b72440ff495062a6ca6a5e70169d1189c5ac7d2de918680f2c3bd617a5bfe219c20c01c2cb5a3f3f95f387db9647a16834e41a6f95977e65e8fee1176eb1aedbe8396d60708f1ef11a37620456313ab1bcc4c1d5847646f9c00c929fea41a78e7 0x11e35bdc5b834b7fd27cdc81210a0fd3b4bd2929538931ddccd68d8120f0d9899413e7a0832deacb14db2682eb205a03017ede23f2daef4dc43c9e663f92f2dbe2d04b7a86355d540049434bfefd02e0c73772a17715a42e5ef08cda1e30bce8cf175fc737b88764696be048731cb700b113afe604332b3e1cf53622dfd8c62af1e0d7c0c441ffd63c8b4a805df7985d0afd95b601c5f49c787ecde31e4700ae0bd020bef4ebdf16a60d1bdf03c86fbe84fc4364a02206e8fd6d5829acf280ba83fbf5642cb6e4b68f07dd488f9f30efd951f8d4f984f2a180800048b01e123f55ca125d7cf2967c7166f922b463da0e3e14059ab92a3a6aa44412bf5757154be9538ebb10547b9c819e04310f774812cd1c836ebfca29cfa931d0d610e25d91432cf1ba0f6e3e8c8dc5532da25b62611a46f39b078b757b38a61fc026d4d8b0bc95c7f0684c0303505869d49aa75004ae4be9908308331ea16a84db6b9513d46b409173ce45af40b4ec3e78c715f5b7ec9269fdaf4d430b133454dd0974887d84f796cc38aa2b1655f0133e0ff943a26e641da741721304977407b7ce13d7d60ef2a5c38d78e5811521c84b56b57239a3e4af45e99adbb75
+      · apply combine 15005 1250 1251 0x19980876d60ff8a48a5b7adbc7769fa2b3970ac0fc676e008fc12b1b194dd1a19528f2f0fc2a936def1eaf1547a993f8d1f41845d886dbc75e6224925c412dcb50e873aeae8b5521c418f910d4ce1a92decb6963bde443737e69e25285a453f78e5f371941335fcd5f7830dbb2d4a7aa4dda8c06d9b99fe15e69df7dada4d6d60460bc9d2e9c075d9b915f224471dce8fb8e11463b475cb4f297584844506f209d4393653fdca1c8d75b791af2f2f822fd3682220d614e598f7e9581dbea421ba18f1868a691471b429400697abe84f0affca9477f110b30bb583ff3dc1d9a566eb161f38edc60c849134ef 0xcc8041d542791f0b563af5d3b5261d4a4c62ded1f6129fbe7ed2a0a71640b1f6041d883f5b714d28628e07ee1cf5a07e90fd2dbb022d2e0ac98e1e0e8e821572183cfe54292b251c4937d2b1c9f2c96eaf492a2341078c89f91e2da6192087bc36407e26ab529d04f915849e070d9a295a00826c3cd967ac15ffa961898f0123c81b62c7d4338572b351cb16249427e9ee2cb0ded6c5e17dbe0c74f8dce78e63bd52ce1c6270b1b5d6796b05243637267b752e7502c0b97ceabc83a3c50f98273c47bf0bfe8f9d0c9cbd4f835789489413bd2f1ecb342d3138f2b89
+        · apply combine 15005 625 625 0x299a176d125939167885eec893dbde03ae2688856d14988818aa07f388f14ad49c871984f23fb469cb9bce221ce2d64d0e6632a8730f748d853da4f2a2d98ea6312f92c0738f2bae757732e256198573d4ddb8bdf53dc4a9f37b6f44af55c139441f2057a74d2abd68c57331d40f264c2ad2b91fa8c35 0x9d7e57b8e6369d232a9fa99cc099d18e7ca91251e39bbee6d05a57cd4455f71b8f08f9ffa02f460d231d810880b943efaa3d37cb7f367adb4732996dd2d4ef751fcf7b5214740f18641dc7188cc5db24f8549060bd2aa65cd3a1dacae9919f728a4a2aab571c5f08382be29192528aa334ecdd3913
+          · apply combine 15005 312 313 0x459bae3ebe883b4333cb65a7112214907a331b470d1eb6f407a185bebf60ac9776330051051fdf75716eede5312a3dbd880feeb69efa225ae97d77579b 0x99002d3091d8b58bc6ad5fd6ad5cae12ce552c96c0f61c85cf43519aac07a52199225fb789e496ec16b8e5c5523e73d0946475be33a0393b06f
+            · apply combine 15005 156 156 0xfd17710cdef172a9012728af89fada712774b1ee82fe38f2bf66ee75fb5 0x46687523fe5c16d69b07e91786c4d032262c90983d869c796b040feb0e34c0f
+              · apply combine 15005 78 78 0x81d640d0879d91027af9f1275bad 0x1f3058d0823c03b79e1ae51debf69529
+                · decide +kernel
+                · decide +kernel
+              · apply combine 15161 78 78 0x25edd207ab13ca4571706da53 0x1db3745ce23caa6381e9443de7e5226e3bf27d5
+                · decide +kernel
+                · decide +kernel
+            · apply combine 15317 156 157 0x13a8af13f5fb1ddb02f87bce12666ca415f370e1df352b8c229728b4aa1ddf4399d 0x7c8630837a12a6ce93c254cfc64a497491d5276a063956a7b
+              · apply combine 15317 78 78 0x86040a064ef3baa16836d2d9407b4ca3d93 0x258d8c380164c1d2c88bb5cf3c4daa0f
+                · decide +kernel
+                · decide +kernel
+              · apply combine 15473 78 79 0xb8f4b3cf63c057e72bf6f 0xac5b0c11a59d35edbee02a447fb5
+                · decide +kernel
+                · decide +kernel
+          · apply combine 15630 312 313 0x4296b1dd68f8f8910a28b12bf7a1b48d6a8595d109a751949cd512a21e228e9a389bd17bec762c2d32882ce89421b27e29ba206aca29d63f62479433f1aa9b 0x25d7bd35859c705ab1230fbae830ce2ca3cb99bd2b7194b1596e5dc9be5a96955e990c48b8d13daf42e813e42e7da1ab9c43da768f6e9
+            · apply combine 15630 156 156 0x773f1d86fa538c3b3f354b1d9f662d8e835395b47d661840469180a6830be1d 0x8ef40fbc45882ccdd2f3408ef2ba706fe45b563a5f5ad549946858355e70e17
+              · apply combine 15630 78 78 0x2a9d2f199ffdcb9ef44ffaff917ccef9 0x2cc5d102c4b95412116ce5de61e0dd45
+                · decide +kernel
+                · decide +kernel
+              · apply combine 15786 78 78 0xc08784e31012168d83f039e6a79f 0xbe14959d8d7d40bb3e3fcedac82e6926689
+                · decide +kernel
+                · decide +kernel
+            · apply combine 15942 156 157 0xb5d6070f96b86a7cb94ac016c4eddaceffe2c6b03047f0c48c367181 0x3546ff23706ae12138977e44b01535444ed25bfafd511cec6e969
+              · apply combine 15942 78 78 0xdcaff17c0fe828745f759 0xd2ee9d0f8e9860503b9366c7cd67e622e69
+                · decide +kernel
+                · decide +kernel
+              · apply combine 16098 78 79 0x3b1583e8eb017d4d99 0xe6d7321228ad8170fcf174a1d8cdf6dbc51
+                · decide +kernel
+                · decide +kernel
+        · apply combine 16255 625 626 0x79639c5d6fa2bd84f75d4c6db2218f77ce1f56aff734c51576da055b65a8b578ea6691be73b85c3a8f4a69035e1c9a578acff922f20cdfdb770091f968e8c6975edff35d53d24ef1d8de0ae4768abdd9b38c433103abaaade2a852803e6688d7aa88fa01 0x1af46c2bd306056eccf56aede56e3df63f4fefdeba1112b7c8a4e9ee8dfba1b38a36ab4f72db4949cb93ad290ffde068d7916da894b364da1179e1c84f8cd96b327bff61cff00975c95fccaecdcb5bf0be8f67bf33e1bbedbdd2d1aee71d6e79379df05f754211831e434fb1183ab2461c7c3d0113876189
+          · apply combine 16255 312 313 0x44ccdcb3c2b0164580ce69888e960879d1971c918ba20c232d64cdfac5f3fccc45dfe2d9e7050768609c0795e09f96e787744d 0x1c3adc59c1be4f29562b93c29b8c7214f4d3d5e7cdcb1e16ce5a46936c732ea607fd15756cf1d838d847fd443d3c50ec685
+            · apply combine 16255 156 156 0xf7a62505eac20aecbafec0bb885af0aa1abc31868f 0x471ec989d3d026c56679dc9186ddf0c389c170bff00d72e34de39a166563
+              · apply combine 16255 78 78 0x3e595490d790e1e52d 0x3f8d3ed382507a8a39cd5282b
+                · decide +kernel
+                · decide +kernel
+              · apply combine 16411 78 78 0x10a66c2a96819fe7f5f90f951f5dda634ddd 0x4457eb58bce5a5ec115b16c3f
+                · decide +kernel
+                · decide +kernel
+            · apply combine 16567 156 157 0x517367ec1f6a396794a7afdd69fecdcb6e9f17cfd4fd025afe419 0x58ba08baefc715ef73555c582ca182dd76b5a54bade34d
+              · apply combine 16567 78 78 0x11607e8828850c54273a05 0x4aff29484ce8716e2c2396ce354e5a05
+                · decide +kernel
+                · decide +kernel
+              · apply combine 16723 78 79 0x124bd5ec379f517b1a2f09 0x4d975a8901de58784f55b1f25
+                · decide +kernel
+                · decide +kernel
+          · apply combine 16880 313 313 0x3ba1ebbb662ec30daaabc79c50668157f2ba213fe08053dab9ed9adff871b2e0d2201a0ca94a095c237d839cc4290bc45df20a66ad8c46e898821465 0x73b73e5e13ce19e7b2965ac826b731b6a3523a3bdeb485f3b7180578abe13279a4e1b93cded3c143be69fa7a1f41b42b0441e2e89fad558eff0c6c55
+            · apply combine 16880 156 157 0x7b85a3d99dc8603e7f018521212ed9c7ef39fdef8a0f5b90287db12766224f9746d 0x7b96b19e69e54b21e04213cc5db6e8575eb9276d67ab6a76174d9
+              · apply combine 16880 78 78 0x55479ad9da173fa85fa0d94c9dcaaf83 0x172cc9309b8ba0d8019a8eb0a2b8bed8994f
+                · decide +kernel
+                · decide +kernel
+              · apply combine 17036 78 79 0x556b7985968b273dac44dc7d3 0x17263fa0128a28710e2dfa2697123
+                · decide +kernel
+                · decide +kernel
+            · apply combine 17193 156 157 0x219d38301f948ce91fb0d4af099cb93a12d1890c7355fa2ecb 0x37145f879f6d61832b26210038d4a1ac0e17b652f5785a13fb32fbf4f76f06f0f264d5f
+              · apply combine 17193 78 78 0x159997bd9bfab9b4ca2d8d 0x18e63eba1f75004c03b0ee16cdbb7
+                · decide +kernel
+                · decide +kernel
+              · apply combine 17349 78 79 0x1cfe8fe15f53935a2b99ef2563111840b14b 0x1e6505fa1ea5088a5b85ce914118e8419bbd
+                · decide +kernel
+                · decide +kernel
+      · apply combine 17506 1250 1251 0x5044276644c587c45c8cdddf253f4f9164fa51e88c05a94be5ea4f4e205a4b0b6ecc2a1e9aa7fe16af4822ba17545327887b21d495ac918eb7a4220a393f687d3d6aed26bd52bbc79c9dfa9cb6c906f38526f5d13c1b0faf4923596223e7e4649a377d3758523058b31c9cc6edc42316190d3016cf077950646b80259c573d95a3dafc007b8f963bb938b2987dac24e5711fd06f1c387139b9f2b1167aa05d4d2a0f566135beb90896338e10e3baad7a7be925de1ceb4b55b84f1f2667e792b39bbb65e7fc111b22551bfed296912a85ced798ef334f32aa4f4677b3160563 0x390d581d35665b8a799ee1de3b9e51ca5699686b46eddc0e366b91b3c050b1c349475fcd629fe150a0a3d1f0f5cedc0d26014e35cde560ed06a45683c927519510f4046c502669e924bfd2e0c81721ccad3eeb07090de70e06c17a20bf1677724a2007fe3e80d18457fadca0700567b61a53afb16a8b6afca6a9dbd2170eed5b5852ef7d1b8ca2a6bbe804b371659369d45eb4a928371b15cfae1487045da220dbc8a8f0b735d0c8db4dbdd95886ee569259420c52bd5b0ad5c4d6f2ca7c4327db2ae736cefddb98d6f4984e76b4fca095238058fb05aebdf47
+        · apply combine 17506 625 625 0xe3c96a597f780b8259cf6d9784f0213cff67b6513d72bfd9473d640580142b49b5360adedb687e273e999e20ae3d84e7755c8cf488a2f32c60bc88f5b792a857149d1eb5d19bc492c5ec653181ade422c5ca9e90ca7d2530b45e4f591c5ba33b8f1d0ee87ef162ad48ab55923a780255b9 0x5a35352bedc9422265249450c2532d6f9c2305e603c461dfd5f5cebb60570b56badde3216a04e6281277711f988909d122fc06774ef9c41c52f3ce8f2b12bb32de7ebb4f99303df4f7375e0d15728a1344334e33ab62da6c4f33cbfdda6e1cf0c359ba65a8a2a6a88f687d4841fb
+          · apply combine 17506 312 313 0x232fe1004966f41f9e004b6244721aa536e5f469c2a99cfa5f0b37cfd8449f84925cbda84ecb22b59bf3d905b8e413db6ad9181 0x6793ded13aa85f457b0f9bd8483dd3e7cae06b5d77221b80b9aa5ddb7e9a3909c4505f32dfb2f1ed20d9ee74f152b69fd2bb6d040bf57774c67564f4f039
+            · apply combine 17506 156 156 0xb917f94b51da16327c983cfdf6c8ec7348892d96ad31c43069d91 0x30aaa670210d6e4f8c439db147e129f63b7abcc5bc8a917cf1
+              · apply combine 17506 78 78 0x1bc35cd61b31376a4a60322770885 0x6aab9041efe3af3e8d2ac149d
+                · decide +kernel
+                · decide +kernel
+              · apply combine 17662 78 78 0x6e080a20a0a22aa1ce196795d 0x713a66b6025688be24be214a5
+                · decide +kernel
+                · decide +kernel
+            · apply combine 17818 156 157 0x1204310bae47530c966e025c035280875d0c4a56d3090eb252f480a142a93 0x5bfc3e08f4838aa92d5d682497ce14d0d92fd6353e6a1e530cb843b5d0bd9d83
+              · apply combine 17818 78 78 0x74db5d92c15185acffa41d737 0x2777fdba47befcb167dc52aad3514842fd85
+                · decide +kernel
+                · decide +kernel
+              · apply combine 17974 78 79 0x96488a7538c62087a47e3db7433b5b53 0x9cb13913d458c20c0667171aa51c9f11
+                · decide +kernel
+                · decide +kernel
+          · apply combine 18131 312 313 0xbcd28565ac801bbe56bf20737fd5c18d3f061d5fcdcf7afd486187a360b4c9d94698d03c27d679be292b3189a7fa4d107da603dd6019a1fe85df807da0fb 0x7a4d1e347158a5c30d5a8b6c87b880a2e725b62a2da7da2ebf33c964866f6adcc383827e8fac9a0e9cb9fdca46081301
+            · apply combine 18131 156 156 0x18243a17dd5f02da2be1327df1905ccec2aaa282838b97f7821ec2ce8a9f7 0x7d24c82cdbbd6f3c35e621cef57995603cc6a5299d92b7bdd0621d154558a01d
+              · apply combine 18131 78 78 0x83dd11636e6e241c40ee46363 0x2ede4c38dce562467652c5eabfbec5a3e55d
+                · decide +kernel
+                · decide +kernel
+              · apply combine 18287 78 78 0x27108667d2dcc15feed8a9c2cb4e5 0x334193b43eb23ca43346353cfa23e6cb82d9
+                · decide +kernel
+                · decide +kernel
+            · apply combine 18443 156 157 0x1924c0246d9460eccfc13f50a0fa58e12939c5f395d36eabc6cfb9 0x4dd36e01a6edd680f5fc99c5b3928c6ab709524b189
+              · apply combine 18443 78 78 0x2a03e62d890381ac4b07808b028f1 0x99334dfaf129a8f8f40955349
+                · decide +kernel
+                · decide +kernel
+              · apply combine 18599 78 79 0x1ad7c431ba8f257 0x2e639a510d39af0f5ed23873dcf1f
+                · decide +kernel
+                · decide +kernel
+        · apply combine 18756 625 626 0xe984ad7c61af397964726251b363cd83a95db64748d079751363f8b4dfe4e2bc2786ac710e9a398be7c7651dcfcdbeeb69295ff0d205c35c65146021cc401df948f4eb99989ce51b90505013464235b8b059d90d1ba9ecb2b739be906ee5a46b 0x3e8b755d74fe373fea73675853ab44802902d73a6c2fa4655946f4165d0b8e2da23a0c195e6220141f11c6f4359c7861088ff539269065b3c188602840368c99f416d686fe74d89e2f81fb40f21e71c8ccafd2ed55e98db164a6d8efddbcaf250f08d69658bdc8a4466ad8a2f1e32e3466280d702aa225cc795
+          · apply combine 18756 312 313 0x1f35ffff973fc886a1dcf10bc40074ed0ef54571f49f66357848812ab9079814f34ea101a313f846055ad5 0x77b603b72d025b4d87c29857ffef2a6a18463315c73281277f78bbfce7f7c1472f94c5e83b2b83a5a4313dbfad28b4942188174223f
+            · apply combine 18756 156 156 0x1270e8b51b5020df094817a066e78d44bc575951 0x1b145c1d6139ee37e5b191eb8ceb2c2767bbf317cc3c845
+              · apply combine 18756 78 78 0x2458ca69802d7d2bde3955 0x81e28f27d34014b00d
+                · decide +kernel
+                · decide +kernel
+              · apply combine 18912 78 78 0xb0d05db40fed6e2e0ea70a201 0x273503e9424772c16c1e45
+                · decide +kernel
+                · decide +kernel
+            · apply combine 19068 156 157 0xc15a61005878bcda0cffb5db54fbfe27d224b2c53ef4f8845c85932d5 0x9e7f69ef577a83581db8dd7cdfe0e6d6e69a5e33ef3589c2c3
+              · apply combine 19068 78 78 0x368cd9524de1adbb445d4dbdd4f73 0x38b643867717a9f6a2e9cdd11d297
+                · decide +kernel
+                · decide +kernel
+              · apply combine 19224 78 79 0x3a6ca7d83ed41547fdaac442e2c87 0x2b67e6f78046fc4d9e22e5
+                · decide +kernel
+                · decide +kernel
+          · apply combine 19381 313 313 0x178a52078bb6b35c23f7879b8e5c204a3c1a017d78c5608950e96b8e1701a33a71659459d89a561fe3073a55b8e990f6c2a9829c57bc3724271ea33c6f 0x2a82bfcbe0d17047e019a346df71d1c7796c5cdc6acae1647c02892a23b56661b347c39d21eddd9a96d7b528f20629fc90ff6c02a9391462164e00c63b
+            · apply combine 19381 156 157 0x92dd29b637a6659384143cd1f3150225e6bc3e141ee56344539c9ed855fcfbf96e60a8576eb 0x29088a77fe2c085a776b5eeaf5f2d6949d002c7172cf78d
+              · apply combine 19381 78 78 0x7b464ba536ca64d9f599c703a483d8a26705745a6ed 0x130fcb4046f72d28574152e66116bc237
+                · decide +kernel
+                · decide +kernel
+              · apply combine 19537 78 79 0x5ec289192f5e973291b3b7f3df741b451ef7 0x6edab20889b
+                · decide +kernel
+                · decide +kernel
+            · apply combine 19694 156 157 0x61106d108556b3e607aef1b7280114a8ac4340ae0f686c36a286d4caef389 0x701e7f01e672bafdec3a7aeb77d1da45b29f5b8e3329853242b4c2b9286a3
+              · apply combine 19694 78 78 0x66aeb8ada458c2d41dece08ed17c51f0f1cd 0xf1fe2784a2545b5f3236dbcad
+                · decide +kernel
+                · decide +kernel
+              · apply combine 19850 78 79 0x4b7b0cf2cb46a199f7fcc533dad81 0x17c434c97356407e19e966ae1d786ce23
+                · decide +kernel
+                · decide +kernel
+
+set_option maxRecDepth 12000 in
+def bins : Table (List ℕ) := (.branch (.branch (.branch (.branch (.branch (.branch (.branch (.branch (.branch (.branch (.leaf [7,18]) (.leaf [12807,12818])) (.branch (.leaf [6407,6418]) (.leaf [19207,19218]))) (.branch (.branch (.leaf [3207,3217,3218]) (.leaf [16007,16018,16020])) (.leaf [9607,9618]))) (.branch (.branch (.branch (.leaf [1607,1618,1620]) (.leaf [14407,14412,14418])) (.leaf [8007,8013,8018,8027])) (.branch (.branch (.leaf [4807,4818,4831]) (.leaf [17607,17618,17620,17625])) (.leaf [11207,11218,11224])))) (.branch (.branch (.branch (.branch (.leaf [807,818,829]) (.leaf [13607,13618,13619,13621,13631])) (.leaf [7207,7218])) (.branch (.branch (.leaf [4007,4008,4018,4030]) (.leaf [16807,16818,16830])) (.leaf [10407,10408,10418]))) (.branch (.branch (.branch (.leaf [2407,2418]) (.leaf [15207,15211,15218])) (.leaf [8807,8818,8827])) (.branch (.branch (.leaf [5607,5618]) (.leaf [18407,18418])) (.leaf [12007,12018]))))) (.branch (.branch (.branch (.branch (.branch (.leaf [407,408,418]) (.leaf [13207,13218])) (.branch (.leaf [6807,6818,6830]) (.leaf [19607,19614,19618]))) (.branch (.branch (.leaf [3607,3618,3619]) (.leaf [16407,16418])) (.leaf [10007,10018]))) (.branch (.branch (.branch (.leaf [2007,2018]) (.leaf [14807,14818])) (.leaf [8407,8418,8419])) (.branch (.branch (.leaf [5207,5218]) (.leaf [18007,18013,18018])) (.leaf [11607,11618])))) (.branch (.branch (.branch (.branch (.leaf [1207,1218]) (.leaf [14007,14018])) (.leaf [7607,7610,7618])) (.branch (.branch (.leaf [4407,4418]) (.leaf [17207,17218])) (.leaf [10807,10818]))) (.branch (.branch (.branch (.leaf [2807,2818]) (.leaf [15607,15618])) (.leaf [9207,9210,9218,9225])) (.branch (.branch (.leaf [6007,6014,6018,6031]) (.leaf [18807,18818,18823,18829])) (.leaf [12407,12418])))))) (.branch (.branch (.branch (.branch (.branch (.branch (.leaf [207,218]) (.leaf [13007,13018])) (.branch (.leaf [6607,6609,6613,6618]) (.leaf [19407,19418]))) (.branch (.branch (.leaf [3407,3418,3430]) (.leaf [16207,16218,16222])) (.leaf [9807,9818]))) (.branch (.branch (.branch (.leaf [1807,1818]) (.leaf [14607,14618])) (.leaf [8207,8211,8218])) (.branch (.branch (.leaf [5007,5018]) (.leaf [17807,17815,17818])) (.leaf [11407,11418,11422])))) (.branch (.branch (.branch (.branch (.leaf [1007,1018]) (.leaf [13807,13818,13826])) (.leaf [7407,7418])) (.branch (.branch (.leaf [4207,4218,4224]) (.leaf [17007,17013,17018])) (.leaf [10607,10618]))) (.branch (.branch (.branch (.leaf [2607,2618,2621]) (.leaf [15407,15418])) (.leaf [9007,9018,9027])) (.branch (.branch (.leaf [5807,5816,5818]) (.leaf [18607,18618])) (.leaf [12207,12218]))))) (.branch (.branch (.branch (.branch (.branch (.leaf [607,616,618]) (.leaf [13407,13415,13418,13421])) (.branch (.leaf [7007,7018,7028]) (.leaf [19807,19818]))) (.branch (.branch (.leaf [3807,3817,3818]) (.leaf [16607,16610,16618])) (.leaf [10207,10210,10218]))) (.branch (.branch (.branch (.leaf [2207,2218]) (.leaf [15007,15018])) (.leaf [8607,8618])) (.branch (.branch (.leaf [5407,5418,5421]) (.leaf [18207,18218])) (.leaf [11807,11811,11815,11818])))) (.branch (.branch (.branch (.branch (.leaf [1407,1418,1422]) (.leaf [14207,14218])) (.leaf [7807,7818])) (.branch (.branch (.leaf [4607,4618]) (.leaf [17407,17418])) (.leaf [11007,11018,11020]))) (.branch (.branch (.branch (.leaf [3007,3018]) (.leaf [15807,15816,15818])) (.leaf [9407,9418])) (.branch (.branch (.leaf [6207,6218]) (.leaf [19007,19018,19027])) (.leaf [12607,12618]))))))) (.branch (.branch (.branch (.branch (.branch (.branch (.branch (.leaf [107,117,118]) (.leaf [12907,12914,12918])) (.branch (.leaf [6507,6518,6521]) (.leaf [19307,19318,19325]))) (.branch (.branch (.leaf [3307,3309,3310,3318,3323]) (.leaf [16107,16118,16125])) (.leaf [9707,9708,9718]))) (.branch (.branch (.branch (.leaf [1707,1710,1718,1723]) (.leaf [14507,14518])) (.leaf [8107,8118,8119,8124,8130])) (.branch (.branch (.leaf [4907,4918]) (.leaf [17707,17718])) (.leaf [11307,11309,11318])))) (.branch (.branch (.branch (.branch (.leaf [907,915,918]) (.leaf [13707,13718])) (.leaf [7307,7318])) (.branch (.branch (.leaf [4107,4118,4126]) (.leaf [16907,16918])) (.leaf [10507,10518]))) (.branch (.branch (.branch (.leaf [2507,2518]) (.leaf [15307,15309,15318])) (.leaf [8907,8918,8921,8927])) (.branch (.branch (.leaf [5707,5718]) (.leaf [18507,18518,18520])) (.leaf [12107,12118]))))) (.branch (.branch (.branch (.branch (.branch (.leaf [507,515,518]) (.leaf [13307,13318])) (.branch (.leaf [6907,6918]) (.leaf [19707,19718]))) (.branch (.branch (.leaf [3707,3718,3719]) (.leaf [16507,16511,16518])) (.leaf [10107,10118]))) (.branch (.branch (.branch (.leaf [2107,2118,2127]) (.leaf [14907,14918])) (.leaf [8507,8518,8520])) (.branch (.branch (.leaf [5307,5309,5318]) (.leaf [18107,18113,18118])) (.leaf [11707,11718,11731])))) (.branch (.branch (.branch (.branch (.leaf [1307,1318]) (.leaf [14107,14118,14123,14126])) (.leaf [7707,7718])) (.branch (.branch (.leaf [4507,4518]) (.leaf [17307,17308,17318])) (.leaf [10907,10915,10918]))) (.branch (.branch (.branch (.leaf [2907,2918,2928]) (.leaf [15707,15718])) (.leaf [9307,9318])) (.branch (.branch (.leaf [6107,6118]) (.leaf [18907,18918])) (.leaf [12507,12518])))))) (.branch (.branch (.branch (.branch (.branch (.branch (.leaf [307,318,327]) (.leaf [13107,13112,13118])) (.branch (.leaf [6707,6718,6728]) (.leaf [19507,19518]))) (.branch (.branch (.leaf [3507,3518]) (.leaf [16307,16311,16318,16323])) (.leaf [9907,9918]))) (.branch (.branch (.branch (.leaf [1907,1918,1929]) (.leaf [14707,14718])) (.leaf [8307,8318,8331])) (.branch (.branch (.leaf [5107,5118]) (.leaf [17907,17914,17918,17923])) (.leaf [11507,11518,11522])))) (.branch (.branch (.branch (.branch (.leaf [1107,1113,1118]) (.leaf [13907,13910,13918,13928])) (.leaf [7507,7518,7528])) (.branch (.branch (.leaf [4307,4318,4324]) (.leaf [17107,17118])) (.leaf [10707,10716,10717,10718,10731]))) (.branch (.branch (.branch (.leaf [2707,2718]) (.leaf [15507,15518])) (.leaf [9107,9118])) (.branch (.branch (.leaf [5907,5918,5928]) (.leaf [18707,18718])) (.leaf [12307,12318]))))) (.branch (.branch (.branch (.branch (.branch (.leaf [707,718]) (.leaf [13507,13518])) (.branch (.leaf [7107,7118]) (.leaf [19907,19918]))) (.branch (.branch (.leaf [3907,3918]) (.leaf [16707,16718,16724])) (.leaf [10307,10318]))) (.branch (.branch (.branch (.leaf [2307,2309,2318]) (.leaf [15107,15111,15118])) (.leaf [8707,8708,8718])) (.branch (.branch (.leaf [5507,5518,5529]) (.leaf [18307,18318,18322])) (.leaf [11907,11918,11929])))) (.branch (.branch (.branch (.branch (.leaf [1507,1518]) (.leaf [14307,14318])) (.leaf [7907,7918,7927])) (.branch (.branch (.leaf [4707,4718]) (.leaf [17507,17518])) (.leaf [11107,11118]))) (.branch (.branch (.branch (.leaf [3107,3112,3118]) (.leaf [15907,15918])) (.leaf [9507,9518])) (.branch (.branch (.leaf [6307,6318,6320,6323]) (.leaf [19107,19112,19118])) (.leaf [12707,12718])))))))) (.branch (.branch (.branch (.branch (.branch (.branch (.branch (.branch (.leaf [57,68,70]) (.leaf [12857,12868])) (.branch (.leaf [6457,6468]) (.leaf [19257,19268]))) (.branch (.branch (.leaf [3257,3268,3281]) (.leaf [16057,16068])) (.leaf [9657,9668]))) (.branch (.branch (.branch (.leaf [1657,1668]) (.leaf [14457,14464,14468,14479])) (.leaf [8057,8068])) (.branch (.branch (.leaf [4857,4868,4875]) (.leaf [17657,17667,17668,17675,17680])) (.leaf [11257,11268])))) (.branch (.branch (.branch (.branch (.leaf [857,868]) (.leaf [13657,13668])) (.leaf [7257,7263,7268])) (.branch (.branch (.leaf [4057,4060,4068]) (.leaf [16857,16861,16868])) (.leaf [10457,10464,10468,10481]))) (.branch (.branch (.branch (.leaf [2457,2465,2468]) (.leaf [15257,15268,15279,15280])) (.leaf [8857,8858,8868])) (.branch (.branch (.leaf [5657,5668,5676]) (.leaf [18457,18458,18461,18468])) (.leaf [12057,12068,12069]))))) (.branch (.branch (.branch (.branch (.branch (.leaf [457,468]) (.leaf [13257,13268,13281])) (.branch (.leaf [6857,6859,6868]) (.leaf [19657,19668,19674]))) (.branch (.branch (.leaf [3657,3668]) (.leaf [16457,16463,16468])) (.leaf [10057,10068,10070,10077]))) (.branch (.branch (.branch (.leaf [2057,2059,2061,2068,2072]) (.leaf [14857,14868])) (.leaf [8457,8468])) (.branch (.branch (.leaf [5257,5268]) (.leaf [18057,18068])) (.leaf [11657,11668])))) (.branch (.branch (.branch (.branch (.leaf [1257,1268]) (.leaf [14057,14068])) (.leaf [7657,7668,7675])) (.branch (.branch (.leaf [4457,4464,4468]) (.leaf [17257,17268])) (.leaf [10857,10868]))) (.branch (.branch (.branch (.leaf [2857,2868]) (.leaf [15657,15668])) (.leaf [9257,9268])) (.branch (.branch (.leaf [6057,6068,6072]) (.leaf [18857,18858,18868,18869])) (.leaf [12457,12465,12468])))))) (.branch (.branch (.branch (.branch (.branch (.branch (.leaf [257,268]) (.leaf [13057,13068,13070])) (.branch (.leaf [6657,6661,6668]) (.leaf [19457,19468]))) (.branch (.branch (.leaf [3457,3458,3468,3479]) (.leaf [16257,16268])) (.leaf [9857,9864,9868,9872]))) (.branch (.branch (.branch (.leaf [1857,1868]) (.leaf [14657,14668])) (.leaf [8257,8268])) (.branch (.branch (.leaf [5057,5068]) (.leaf [17857,17868,17880])) (.leaf [11457,11468])))) (.branch (.branch (.branch (.branch (.leaf [1057,1068]) (.leaf [13857,13868])) (.leaf [7457,7468,7476])) (.branch (.branch (.leaf [4257,4268]) (.leaf [17057,17068])) (.leaf [10657,10668]))) (.branch (.branch (.branch (.leaf [2657,2668]) (.leaf [15457,15468,15478])) (.leaf [9057,9068])) (.branch (.branch (.leaf [5857,5868]) (.leaf [18657,18660,18668])) (.leaf [12257,12267,12268]))))) (.branch (.branch (.branch (.branch (.branch (.leaf [657,668]) (.leaf [13457,13461,13468])) (.branch (.leaf [7057,7068]) (.leaf [19857,19868,19872]))) (.branch (.branch (.leaf [3857,3861,3868]) (.leaf [16657,16661,16668])) (.leaf [10257,10268]))) (.branch (.branch (.branch (.leaf [2257,2267,2268,2274]) (.leaf [15057,15066,15068])) (.leaf [8657,8668])) (.branch (.branch (.leaf [5457,5468,5478]) (.leaf [18257,18268])) (.leaf [11857,11868])))) (.branch (.branch (.branch (.branch (.leaf [1457,1468]) (.leaf [14257,14266,14268])) (.leaf [7857,7868,7873])) (.branch (.branch (.leaf [4657,4662,4665,4668]) (.leaf [17457,17468,17477])) (.leaf [11057,11059,11068,11069]))) (.branch (.branch (.branch (.leaf [3057,3068]) (.leaf [15857,15868])) (.leaf [9457,9466,9468])) (.branch (.branch (.leaf [6257,6268]) (.leaf [19057,19068])) (.leaf [12657,12668,12678]))))))) (.branch (.branch (.branch (.branch (.branch (.branch (.branch (.leaf [157,168]) (.leaf [12957,12967,12968])) (.branch (.leaf [6557,6568]) (.leaf [19357,19365,19368]))) (.branch (.branch (.leaf [3357,3368]) (.leaf [16157,16168])) (.leaf [9757,9768]))) (.branch (.branch (.branch (.leaf [1757,1760,1768,1772]) (.leaf [14557,14568])) (.leaf [8157,8168])) (.branch (.branch (.leaf [4957,4968,4971]) (.leaf [17757,17768])) (.leaf [11357,11368])))) (.branch (.branch (.branch (.branch (.leaf [957,968]) (.leaf [13757,13759,13768])) (.leaf [7357,7366,7368])) (.branch (.branch (.leaf [4157,4164,4168]) (.leaf [16957,16968,16970])) (.leaf [10557,10568,10577]))) (.branch (.branch (.branch (.leaf [2557,2563,2564,2568]) (.leaf [15357,15368])) (.leaf [8957,8968])) (.branch (.branch (.leaf [5757,5768]) (.leaf [18557,18568])) (.leaf [12157,12168,12176]))))) (.branch (.branch (.branch (.branch (.branch (.leaf [557,568,577]) (.leaf [13357,13368])) (.branch (.leaf [6957,6962,6968,6974]) (.leaf [19757,19768]))) (.branch (.branch (.leaf [3757,3768]) (.leaf [16557,16568])) (.leaf [10157,10168]))) (.branch (.branch (.branch (.leaf [2157,2168]) (.leaf [14957,14968,14971])) (.leaf [8557,8568])) (.branch (.branch (.leaf [5357,5359,5368]) (.leaf [18157,18168,18169])) (.leaf [11757,11760,11768])))) (.branch (.branch (.branch (.branch (.leaf [1357,1368]) (.leaf [14157,14168])) (.leaf [7757,7765,7768])) (.branch (.branch (.leaf [4557,4568]) (.leaf [17357,17368,17378])) (.leaf [10957,10968,10974]))) (.branch (.branch (.branch (.leaf [2957,2968,2972]) (.leaf [15757,15768])) (.leaf [9357,9365,9368])) (.branch (.branch (.leaf [6157,6168]) (.leaf [18957,18968])) (.leaf [12557,12568,12574,12576])))))) (.branch (.branch (.branch (.branch (.branch (.branch (.leaf [357,368,378]) (.leaf [13157,13168])) (.branch (.leaf [6757,6760,6768,6769]) (.leaf [19557,19568]))) (.branch (.branch (.leaf [3557,3568]) (.leaf [16357,16368])) (.leaf [9957,9968]))) (.branch (.branch (.branch (.leaf [1957,1958,1968]) (.leaf [14757,14766,14768,14773,14777])) (.leaf [8357,8368,8369,8380])) (.branch (.branch (.leaf [5157,5164,5168,5169]) (.leaf [17957,17968])) (.leaf [11557,11562,11568])))) (.branch (.branch (.branch (.branch (.leaf [1157,1168]) (.leaf [13957,13968])) (.leaf [7557,7568])) (.branch (.branch (.leaf [4357,4368,4373]) (.leaf [17157,17168])) (.leaf [10757,10768]))) (.branch (.branch (.branch (.leaf [2757,2768,2774]) (.leaf [15557,15566,15568])) (.leaf [9157,9168])) (.branch (.branch (.leaf [5957,5968]) (.leaf [18757,18768])) (.leaf [12357,12368]))))) (.branch (.branch (.branch (.branch (.branch (.leaf [757,768,775,776]) (.leaf [13557,13568,13573])) (.branch (.leaf [7157,7168]) (.leaf [19957,19968,19979]))) (.branch (.branch (.leaf [3957,3968]) (.leaf [16757,16763,16768,16779])) (.leaf [10357,10366,10368,10379]))) (.branch (.branch (.branch (.leaf [2357,2368]) (.leaf [15157,15168,15176,15179])) (.leaf [8757,8768])) (.branch (.branch (.leaf [5557,5568]) (.leaf [18357,18368])) (.leaf [11957,11968,11981])))) (.branch (.branch (.branch (.branch (.leaf [1557,1568]) (.leaf [14357,14368])) (.leaf [7957,7968])) (.branch (.branch (.leaf [4757,4768]) (.leaf [17557,17568])) (.leaf [11157,11168]))) (.branch (.branch (.branch (.leaf [3157,3168]) (.leaf [15957,15968])) (.leaf [9557,9563,9568,9575])) (.branch (.branch (.leaf [6357,6368]) (.leaf [19157,19163,19167,19168])) (.leaf [12757,12768,12774]))))))))) (.branch (.branch (.branch (.branch (.branch (.branch (.branch (.branch (.branch (.leaf [32,38,41,43]) (.leaf [12832,12843])) (.branch (.leaf [6432,6443]) (.leaf [19232,19243]))) (.branch (.branch (.leaf [3232,3243]) (.leaf [16032,16043])) (.leaf [9632,9643]))) (.branch (.branch (.branch (.leaf [1632,1641,1643]) (.leaf [14432,14435,14443])) (.leaf [8032,8042,8043,8054])) (.branch (.branch (.leaf [4832,4843]) (.leaf [17632,17643,17646])) (.leaf [11232,11233,11243,11253])))) (.branch (.branch (.branch (.branch (.leaf [832,843]) (.leaf [13632,13637,13643])) (.leaf [7232,7243])) (.branch (.branch (.leaf [4032,4043,4052]) (.leaf [16832,16843])) (.leaf [10432,10442,10443]))) (.branch (.branch (.branch (.leaf [2432,2436,2443]) (.leaf [15232,15243])) (.leaf [8832,8843])) (.branch (.branch (.leaf [5632,5643,5647]) (.leaf [18432,18443])) (.leaf [12032,12043]))))) (.branch (.branch (.branch (.branch (.branch (.leaf [432,437,443]) (.leaf [13232,13241,13243,13252,13256])) (.branch (.leaf [6832,6843]) (.leaf [19632,19643]))) (.branch (.branch (.leaf [3632,3643,3648]) (.leaf [16432,16435,16443])) (.leaf [10032,10041,10043,10051]))) (.branch (.branch (.branch (.leaf [2032,2043]) (.leaf [14832,14843])) (.leaf [8432,8443,8451])) (.branch (.branch (.leaf [5232,5240,5243]) (.leaf [18032,18043])) (.leaf [11632,11643])))) (.branch (.branch (.branch (.branch (.leaf [1232,1243,1252,1253]) (.leaf [14032,14043])) (.leaf [7632,7643])) (.branch (.branch (.leaf [4432,4443]) (.leaf [17232,17243])) (.leaf [10832,10835,10843]))) (.branch (.branch (.branch (.leaf [2832,2843,2852,2855]) (.leaf [15632,15643,15644,15647])) (.leaf [9232,9243])) (.branch (.branch (.leaf [6032,6043]) (.leaf [18832,18843])) (.leaf [12432,12436,12438,12443])))))) (.branch (.branch (.branch (.branch (.branch (.branch (.leaf [232,239,243,251]) (.leaf [13032,13043])) (.branch (.leaf [6632,6643]) (.leaf [19432,19443]))) (.branch (.branch (.leaf [3432,3443,3450]) (.leaf [16232,16243])) (.leaf [9832,9843]))) (.branch (.branch (.branch (.leaf [1832,1843]) (.leaf [14632,14633,14643])) (.leaf [8232,8243])) (.branch (.branch (.leaf [5032,5043]) (.leaf [17832,17843,17844])) (.leaf [11432,11434,11443])))) (.branch (.branch (.branch (.branch (.leaf [1032,1043]) (.leaf [13832,13834,13843])) (.leaf [7432,7443])) (.branch (.branch (.leaf [4232,4243,4246]) (.leaf [17032,17043])) (.leaf [10632,10643,10655]))) (.branch (.branch (.branch (.leaf [2632,2634,2639,2643]) (.leaf [15432,15443,15449])) (.leaf [9032,9043,9056])) (.branch (.branch (.leaf [5832,5843,5845,5846]) (.leaf [18632,18643])) (.leaf [12232,12238,12243]))))) (.branch (.branch (.branch (.branch (.branch (.leaf [632,643]) (.leaf [13432,13443,13450])) (.branch (.leaf [7032,7043]) (.leaf [19832,19843]))) (.branch (.branch (.leaf [3832,3843]) (.leaf [16632,16643])) (.leaf [10232,10239,10243]))) (.branch (.branch (.branch (.leaf [2232,2243]) (.leaf [15032,15043])) (.leaf [8632,8643])) (.branch (.branch (.leaf [5432,5443,5453]) (.leaf [18232,18243,18245])) (.leaf [11832,11843,11845])))) (.branch (.branch (.branch (.branch (.leaf [1432,1443,1451]) (.leaf [14232,14243,14256])) (.leaf [7832,7841,7843,7844,7850])) (.branch (.branch (.leaf [4632,4633,4643]) (.leaf [17432,17443])) (.leaf [11032,11043,11055]))) (.branch (.branch (.branch (.leaf [3032,3039,3043]) (.leaf [15832,15843])) (.leaf [9432,9443])) (.branch (.branch (.leaf [6232,6243]) (.leaf [19032,19036,19043,19049])) (.leaf [12632,12643,12656]))))))) (.branch (.branch (.branch (.branch (.branch (.branch (.branch (.leaf [132,143]) (.leaf [12932,12943])) (.branch (.leaf [6532,6543]) (.leaf [19332,19336,19343]))) (.branch (.branch (.leaf [3332,3343]) (.leaf [16132,16143,16146,16154])) (.leaf [9732,9743]))) (.branch (.branch (.branch (.leaf [1732,1743,1744]) (.leaf [14532,14543,14545])) (.leaf [8132,8143])) (.branch (.branch (.leaf [4932,4943,4951]) (.leaf [17732,17743])) (.leaf [11332,11343])))) (.branch (.branch (.branch (.branch (.leaf [932,943,944]) (.leaf [13732,13743])) (.leaf [7332,7337,7343])) (.branch (.branch (.leaf [4132,4143,4155]) (.leaf [16932,16943])) (.leaf [10532,10543,10548]))) (.branch (.branch (.branch (.leaf [2532,2543]) (.leaf [15332,15343,15355])) (.leaf [8932,8943])) (.branch (.branch (.leaf [5732,5742,5743,5744]) (.leaf [18532,18534,18543])) (.leaf [12132,12143,12145,12156]))))) (.branch (.branch (.branch (.branch (.branch (.leaf [532,540,543]) (.leaf [13332,13343])) (.branch (.leaf [6932,6943,6948]) (.leaf [19732,19743]))) (.branch (.branch (.leaf [3732,3740,3743]) (.leaf [16532,16543,16545])) (.leaf [10132,10133,10143,10153]))) (.branch (.branch (.branch (.leaf [2132,2143]) (.leaf [14932,14942,14943])) (.leaf [8532,8543,8549])) (.branch (.branch (.leaf [5332,5338,5343]) (.leaf [18132,18143,18153])) (.leaf [11732,11733,11736,11743])))) (.branch (.branch (.branch (.branch (.leaf [1332,1343]) (.leaf [14132,14143])) (.leaf [7732,7743])) (.branch (.branch (.leaf [4532,4543,4553]) (.leaf [17332,17337,17343,17354])) (.leaf [10932,10943,10944]))) (.branch (.branch (.branch (.leaf [2932,2943]) (.leaf [15732,15743])) (.leaf [9332,9343])) (.branch (.branch (.leaf [6132,6137,6143,6154]) (.leaf [18932,18943])) (.leaf [12532,12543])))))) (.branch (.branch (.branch (.branch (.branch (.branch (.leaf [332,343]) (.leaf [13132,13143])) (.branch (.leaf [6732,6743]) (.leaf [19532,19534,19543]))) (.branch (.branch (.leaf [3532,3543]) (.leaf [16332,16343,16354])) (.leaf [9932,9943]))) (.branch (.branch (.branch (.leaf [1932,1943]) (.leaf [14732,14743,14751])) (.leaf [8332,8343,8351])) (.branch (.branch (.leaf [5132,5140,5143]) (.leaf [17932,17943,17956])) (.leaf [11532,11543])))) (.branch (.branch (.branch (.branch (.leaf [1132,1143]) (.leaf [13932,13943])) (.leaf [7532,7535,7543,7552])) (.branch (.branch (.leaf [4332,4343]) (.leaf [17132,17139,17143])) (.leaf [10732,10736,10743,10746]))) (.branch (.branch (.branch (.leaf [2732,2743]) (.leaf [15532,15543])) (.leaf [9132,9143])) (.branch (.branch (.leaf [5932,5943]) (.leaf [18732,18743,18747])) (.leaf [12332,12343]))))) (.branch (.branch (.branch (.branch (.branch (.leaf [732,743,746]) (.leaf [13532,13543,13545])) (.branch (.leaf [7132,7143]) (.leaf [19932,19943]))) (.branch (.branch (.leaf [3932,3943]) (.leaf [16732,16743])) (.leaf [10332,10343]))) (.branch (.branch (.branch (.leaf [2332,2343,2350]) (.leaf [15132,15140,15143])) (.leaf [8732,8743])) (.branch (.branch (.leaf [5532,5543]) (.leaf [18332,18343,18351])) (.leaf [11932,11943])))) (.branch (.branch (.branch (.branch (.leaf [1532,1543]) (.leaf [14332,14338,14343])) (.leaf [7932,7943])) (.branch (.branch (.leaf [4732,4743]) (.leaf [17532,17543])) (.leaf [11132,11143]))) (.branch (.branch (.branch (.leaf [3132,3141,3143]) (.leaf [15932,15933,15938,15943,15956])) (.leaf [9532,9534,9543])) (.branch (.branch (.leaf [6332,6343,6346,6352]) (.leaf [19132,19143])) (.leaf [12732,12743,12745,12754])))))))) (.branch (.branch (.branch (.branch (.branch (.branch (.branch (.branch (.leaf [82,93,99]) (.leaf [12882,12893])) (.branch (.leaf [6482,6492,6493]) (.leaf [19282,19283,19287,19293,19302]))) (.branch (.branch (.leaf [3282,3293]) (.leaf [16082,16093])) (.leaf [9682,9686,9693,9700,9703]))) (.branch (.branch (.branch (.leaf [1682,1693,1696]) (.leaf [14482,14488,14493])) (.leaf [8082,8093,8097])) (.branch (.branch (.leaf [4882,4893]) (.leaf [17682,17684,17693,17702])) (.leaf [11282,11293])))) (.branch (.branch (.branch (.branch (.leaf [882,893,905]) (.leaf [13682,13693])) (.leaf [7282,7293])) (.branch (.branch (.leaf [4082,4084,4093]) (.leaf [16882,16893])) (.leaf [10482,10493]))) (.branch (.branch (.branch (.leaf [2482,2493]) (.leaf [15282,15293])) (.leaf [8882,8887,8893])) (.branch (.branch (.leaf [5682,5693]) (.leaf [18482,18491,18493])) (.leaf [12082,12093,12098,12100]))))) (.branch (.branch (.branch (.branch (.branch (.leaf [482,493,500]) (.leaf [13282,13293])) (.branch (.leaf [6882,6893,6898]) (.leaf [19682,19690,19693,19703]))) (.branch (.branch (.leaf [3682,3693]) (.leaf [16482,16492,16493])) (.leaf [10082,10093]))) (.branch (.branch (.branch (.leaf [2082,2093,2098]) (.leaf [14882,14893])) (.leaf [8482,8493])) (.branch (.branch (.leaf [5282,5293]) (.leaf [18082,18093])) (.leaf [11682,11693])))) (.branch (.branch (.branch (.branch (.leaf [1282,1293,1303]) (.leaf [14082,14093,14097])) (.leaf [7682,7693,7704])) (.branch (.branch (.leaf [4482,4493]) (.leaf [17282,17293,17302])) (.leaf [10882,10886,10892,10893]))) (.branch (.branch (.branch (.leaf [2882,2893]) (.leaf [15682,15693])) (.leaf [9282,9286,9292,9293])) (.branch (.branch (.leaf [6082,6093,6105]) (.leaf [18882,18893])) (.leaf [12482,12493])))))) (.branch (.branch (.branch (.branch (.branch (.branch (.leaf [282,293]) (.leaf [13082,13083,13093])) (.branch (.leaf [6682,6685,6687,6690,6693]) (.leaf [19482,19493,19505]))) (.branch (.branch (.leaf [3482,3493,3506]) (.leaf [16282,16293,16294])) (.leaf [9882,9893,9901]))) (.branch (.branch (.branch (.leaf [1882,1893]) (.leaf [14682,14693,14701])) (.leaf [8282,8293])) (.branch (.branch (.leaf [5082,5087,5093,5099]) (.leaf [17882,17893])) (.leaf [11482,11493])))) (.branch (.branch (.branch (.branch (.leaf [1082,1084,1093]) (.leaf [13882,13893])) (.leaf [7482,7493,7506])) (.branch (.branch (.leaf [4282,4293,4295,4297]) (.leaf [17082,17089,17093])) (.leaf [10682,10693]))) (.branch (.branch (.branch (.leaf [2682,2693]) (.leaf [15482,15493])) (.leaf [9082,9093])) (.branch (.branch (.leaf [5882,5893]) (.leaf [18682,18689,18693])) (.leaf [12282,12293]))))) (.branch (.branch (.branch (.branch (.branch (.leaf [682,693]) (.leaf [13482,13493,13497])) (.branch (.leaf [7082,7093,7102]) (.leaf [19882,19887,19893,19902,19903]))) (.branch (.branch (.leaf [3882,3893]) (.leaf [16682,16688,16693])) (.leaf [10282,10293]))) (.branch (.branch (.branch (.leaf [2282,2293,2296]) (.leaf [15082,15093,15097])) (.leaf [8682,8689,8693])) (.branch (.branch (.leaf [5482,5493]) (.leaf [18282,18293])) (.leaf [11882,11887,11893,11900])))) (.branch (.branch (.branch (.branch (.leaf [1482,1483,1486,1493]) (.leaf [14282,14293,14295])) (.leaf [7882,7893])) (.branch (.branch (.leaf [4682,4693]) (.leaf [17482,17493,17506])) (.leaf [11082,11084,11093]))) (.branch (.branch (.branch (.leaf [3082,3093]) (.leaf [15882,15893])) (.leaf [9482,9493,9499])) (.branch (.branch (.leaf [6282,6293]) (.leaf [19082,19093])) (.leaf [12682,12693]))))))) (.branch (.branch (.branch (.branch (.branch (.branch (.branch (.leaf [182,193]) (.leaf [12982,12993])) (.branch (.leaf [6582,6593]) (.leaf [19382,19384,19393,19401]))) (.branch (.branch (.leaf [3382,3393,3405]) (.leaf [16182,16193])) (.leaf [9782,9788,9793]))) (.branch (.branch (.branch (.leaf [1782,1789,1793]) (.leaf [14582,14593,14604])) (.leaf [8182,8193])) (.branch (.branch (.leaf [4982,4993,5000,5005]) (.leaf [17782,17793])) (.leaf [11382,11389,11393])))) (.branch (.branch (.branch (.branch (.leaf [982,993]) (.leaf [13782,13788,13793])) (.leaf [7382,7393])) (.branch (.branch (.leaf [4182,4193]) (.leaf [16982,16993,16999])) (.leaf [10582,10593]))) (.branch (.branch (.branch (.leaf [2582,2593,2605]) (.leaf [15382,15393])) (.leaf [8982,8993,8997])) (.branch (.branch (.leaf [5782,5793]) (.leaf [18582,18593])) (.leaf [12182,12193,12204]))))) (.branch (.branch (.branch (.branch (.branch (.leaf [582,593,606]) (.leaf [13382,13393])) (.branch (.leaf [6982,6993,6999]) (.leaf [19782,19793,19794]))) (.branch (.branch (.leaf [3782,3788,3793,3795]) (.leaf [16582,16593])) (.leaf [10182,10193]))) (.branch (.branch (.branch (.leaf [2182,2193]) (.leaf [14982,14990,14993,15006])) (.leaf [8582,8593])) (.branch (.branch (.leaf [5382,5393]) (.leaf [18182,18193])) (.leaf [11782,11793])))) (.branch (.branch (.branch (.branch (.leaf [1382,1393]) (.leaf [14182,14193,14199,14202])) (.leaf [7782,7793])) (.branch (.branch (.leaf [4582,4586,4593]) (.leaf [17382,17393])) (.leaf [10982,10993]))) (.branch (.branch (.branch (.leaf [2982,2984,2993]) (.leaf [15782,15787,15793])) (.leaf [9382,9393,9394])) (.branch (.branch (.leaf [6182,6183,6193]) (.leaf [18982,18993,18998])) (.leaf [12582,12593,12605])))))) (.branch (.branch (.branch (.branch (.branch (.branch (.leaf [382,393]) (.leaf [13182,13193])) (.branch (.leaf [6782,6793]) (.leaf [19582,19593]))) (.branch (.branch (.leaf [3582,3593]) (.leaf [16382,16393])) (.leaf [9982,9993]))) (.branch (.branch (.branch (.leaf [1982,1985,1993]) (.leaf [14782,14793,14802])) (.leaf [8382,8393])) (.branch (.branch (.leaf [5182,5193]) (.leaf [17982,17984,17993])) (.leaf [11582,11591,11593,11598])))) (.branch (.branch (.branch (.branch (.leaf [1182,1193,1194]) (.leaf [13982,13993])) (.leaf [7582,7593])) (.branch (.branch (.leaf [4382,4393,4403]) (.leaf [17182,17188,17193])) (.leaf [10782,10793]))) (.branch (.branch (.branch (.leaf [2782,2793,2803]) (.leaf [15582,15593])) (.leaf [9182,9193,9196])) (.branch (.branch (.leaf [5982,5985,5993]) (.leaf [18782,18793])) (.leaf [12382,12389,12393]))))) (.branch (.branch (.branch (.branch (.branch (.leaf [782,793,800]) (.leaf [13582,13590,13593])) (.branch (.leaf [7182,7187,7193,7197]) (.leaf [19982,19993]))) (.branch (.branch (.leaf [3982,3986,3990,3993,4005]) (.leaf [16782,16793,16800,16801])) (.leaf [10382,10393]))) (.branch (.branch (.branch (.leaf [2382,2393]) (.leaf [15182,15193])) (.leaf [8782,8783,8793])) (.branch (.branch (.leaf [5582,5593,5604]) (.leaf [18382,18393])) (.leaf [11982,11993])))) (.branch (.branch (.branch (.branch (.leaf [1582,1591,1593]) (.leaf [14382,14393])) (.leaf [7982,7993])) (.branch (.branch (.leaf [4782,4793,4802]) (.leaf [17582,17591,17593])) (.leaf [11182,11193]))) (.branch (.branch (.branch (.leaf [3182,3193]) (.leaf [15982,15985,15993])) (.leaf [9582,9593])) (.branch (.branch (.leaf [6382,6393,6396]) (.leaf [19182,19193,19196])) (.leaf [12782,12793]))))))))))
+
+set_option maxRecDepth 12000 in
+def codes : Table ℕ := (.branch (.branch (.branch (.branch (.branch (.branch (.branch (.branch (.branch (.branch (.leaf 0x0) (.leaf 0x2388c609805090e30104428460)) (.branch (.leaf 0x639c46080052888418cc2084a0) (.leaf 0xc2739c8629481218601186209440))) (.branch (.branch (.leaf 0x18e5304c51008319c4408400) (.leaf 0x319ca6210e22888618047084a0)) (.leaf 0x738045310c50902618082184a0))) (.branch (.branch (.branch (.leaf 0x601c060948428ce31880709840) (.leaf 0x19c46088a0204c339046204a0)) (.leaf 0x2398c72802428ca31044418400)) (.branch (.branch (.leaf 0x30ce2314a7218611144008480) (.leaf 0x827318850906519ce200460)) (.leaf 0x2380c72988510c232086409420)))) (.branch (.branch (.branch (.branch (.leaf 0x29c610988728c8219040098a0) (.leaf 0x39ce1118a42848228cc61106110000)) (.branch (.leaf 0x3880739865310411804508c80) (.leaf 0x339046214e400cc5198a200420))) (.branch (.branch (.leaf 0x5310c719805210e329c4108840) (.leaf 0x11c272100639426214c30144308860)) (.leaf 0x31ce3018e5290232080508840))) (.branch (.branch (.branch (.leaf 0x3380c42142620443198e2284e0) (.leaf 0x6729026018a609042194e238480)) (.leaf 0x1807098051188518c8238460)) (.branch (.branch (.leaf 0x19cc62142721462108c009420) (.leaf 0x8e331c0519c851984608480)) (.leaf 0x8e10988510c8331c6711801290a0))))) (.branch (.branch (.branch (.branch (.branch (.leaf 0x11c65304a521063308e700400) (.leaf 0x4e7314a41104718402184c0)) (.branch (.leaf 0x63984431ca409060394651088100c20) (.leaf 0xa7318e22908610c0208460))) (.branch (.branch (.leaf 0x139cc02948510ce62080408860) (.leaf 0x339cc501402390c11984508c80)) (.leaf 0x8e0304a321ce3198a2204a0))) (.branch (.branch (.branch (.leaf 0x427114c42986430ca2004e0) (.leaf 0x14c711864304853906218041384a0)) (.leaf 0x13904230065380861904509ca0)) (.branch (.branch (.leaf 0x73944630c653108508c0208480) (.leaf 0xc87018a52848721c611086109800)) (.leaf 0xe601ca331ca5090431880209080)))) (.branch (.branch (.branch (.branch (.leaf 0x1047098051848600ce2204a0) (.leaf 0x31c063940311043208a509820)) (.leaf 0x7380c6210a02902218cc208460)) (.branch (.branch (.leaf 0x1c47084c0280c4290a3208c3088e0) (.leaf 0x29ce131065190e619840088a0)) (.leaf 0xc721840014a33908718841084a0))) (.branch (.branch (.branch (.leaf 0x409c6230ca521c661000209480) (.leaf 0x18e439825190e32144600440)) (.leaf 0x4719825310e3288a409000)) (.branch (.branch (.leaf 0x309c26294a021c62100c409860) (.leaf 0xce630005110e1194a220420)) (.leaf 0xc6739825310432804430400)))))) (.branch (.branch (.branch (.branch (.branch (.branch (.leaf 0x6388c129ce408c65208a618400) (.leaf 0xa7380c02906410c62084c0)) (.branch (.leaf 0x471980511c8120c82284c0) (.leaf 0x30c27308c0194a221ca020c8238420))) (.branch (.branch (.leaf 0xa538cc0284e41104318444098e0) (.leaf 0x19c461982511c861804409ca0)) (.leaf 0x301c06214272146220cc2384a0))) (.branch (.branch (.branch (.leaf 0x131ce51982429400210c3188e208440) (.leaf 0x14c7198652888700c011080109080)) (.leaf 0x19c46394613848630c0211001214a0)) (.branch (.branch (.leaf 0xc709c60300a5190c329c4409040) (.leaf 0x11c6609404018e338085108e1198a0)) (.leaf 0x329c86094062086510ce2084c0)))) (.branch (.branch (.branch (.branch (.leaf 0x9cc631ca3290421904508400) (.leaf 0xc0380e61948428ce20982110c40)) (.leaf 0x14e62980129c821840220460)) (.branch (.branch (.leaf 0x11ce13100510c8530c8010c21298e0) (.leaf 0x88e009805190a331444088e0)) (.leaf 0xa7118c72144418c20008e508460))) (.branch (.branch (.branch (.leaf 0x529c03018e5310430844338480) (.leaf 0x538cc701421208621904709880)) (.leaf 0x22394c3294c7218830884009c80)) (.branch (.branch (.leaf 0x31c4610c85290e33804520420) (.leaf 0x3390c53142021ca330ce208440)) (.leaf 0x10a7180c0110a2204a1198c238460))))) (.branch (.branch (.branch (.branch (.branch (.leaf 0x14c7188c021480218a3088e608c20) (.leaf 0x9ca6394c410ca410ce310400)) (.branch (.leaf 0x1c47114a6080a420cc31904708020) (.leaf 0x731c06094e4088a320c44094c0))) (.branch (.branch (.leaf 0xa131ca6010a0110c3208e308ce0) (.leaf 0x2398c30142021ca32104508460)) (.leaf 0x67298271940430cc5088e410440))) (.branch (.branch (.branch (.leaf 0x5384c02904401c623146220460) (.leaf 0x29827184c70148410c0228460)) (.leaf 0x29c0609ca7110c31888408c20)) (.branch (.branch (.leaf 0x11ca73108518c861804730420) (.leaf 0x31cc330c852948219c4008420)) (.leaf 0x11c60310e22902430c02384a0)))) (.branch (.branch (.branch (.branch (.leaf 0x14e6300a220c23188e5204e0) (.leaf 0x429ce230ca00948230c0208480)) (.leaf 0x39c66300a1208a30184408860)) (.branch (.branch (.leaf 0x8e7198a029885184c238480) (.leaf 0x739446210653188128c6200420)) (.leaf 0xc701cc101463204441884538480))) (.branch (.branch (.branch (.leaf 0x211c83300a029023308e5204e0) (.leaf 0xc0711805310e32888120420)) (.leaf 0x1388e6194c439423008a131080)) (.branch (.branch (.leaf 0x14e7118a1114e4318602086108080) (.leaf 0x409c06194c410c45388e130c80)) (.leaf 0x6739cc0314a3208661082020480))))))) (.branch (.branch (.branch (.branch (.branch (.branch (.branch (.leaf 0xc631080208420) (.leaf 0x8e7300a32046328841204c0)) (.branch (.leaf 0xc3390c72948418c223880128040) (.leaf 0x184439ce62140400c660944508460))) (.branch (.branch (.leaf 0x11ce0310a1310c3188a209c80) (.leaf 0x139cc4280441986511002184c0)) (.leaf 0x87088e0310a3218653804530440))) (.branch (.branch (.branch (.leaf 0x308e0310251188500c22184e0) (.leaf 0x46384653108508c861944710400)) (.leaf 0x63394c4000a72088118847094c0)) (.branch (.branch (.leaf 0x8e4018250188218ca238480) (.leaf 0x3080e6190a6100a70988720c42184a0)) (.leaf 0x18e2304e22942428c8218400)))) (.branch (.branch (.branch (.branch (.leaf 0xa3384c0288840886301444384c0) (.leaf 0x14e431c4538c02218830844500460)) (.leaf 0x4e619805290c728c8218440)) (.branch (.branch (.leaf 0x298e23984728cc42042228c6200480) (.leaf 0xce71980531882108642044509c20)) (.leaf 0x472942618ca41102339cc2004c0))) (.branch (.branch (.branch (.leaf 0x39c43310c5090633082009440) (.leaf 0x8e100cc42808408ca2388a709860)) (.leaf 0x621c66310a1110a01844009ca0)) (.branch (.branch (.leaf 0x11c2431065390611804509cc0) (.leaf 0x501c66198e5110233088408400)) (.leaf 0x298e319805390431044409ca0))))) (.branch (.branch (.branch (.branch (.branch (.leaf 0x311ce6214a0310a32184308420) (.leaf 0x539846204e22848318044098a0)) (.branch (.leaf 0xc73880601483218622944108480) (.leaf 0x5180e411825288871984438400))) (.branch (.branch (.leaf 0xa7398032908410c02084c0) (.leaf 0x44380e619ca7218651142119000)) (.leaf 0x9c45398e43140430c4228460))) (.branch (.branch (.branch (.leaf 0x1867000a1310a521c633104108840) (.leaf 0x638cc12808610c4720c45284e0)) (.leaf 0xa73188728c6410ce62082108000)) (.branch (.branch (.leaf 0x11c86010a52046230443304e0) (.leaf 0x239cc1290a4188661180109400)) (.leaf 0x31c461942439ca300c44080a0)))) (.branch (.branch (.branch (.branch (.leaf 0x129c6629005210c21844709840) (.leaf 0x427398a5010433086119080)) (.leaf 0x23394a6394022046610c8708040)) (.branch (.branch (.leaf 0x19ce3300a6200430944408820) (.leaf 0x1067098e5010a318844384c0)) (.leaf 0x90272988328c87198400082511cc0))) (.branch (.branch (.branch (.leaf 0x9c4629c852908718062004c0) (.leaf 0x14e6310672908218c4208400)) (.leaf 0x3204e2310a601c8230c22284e0)) (.branch (.branch (.leaf 0xa2384c639484110a31844008060) (.leaf 0x639c41310a2284871944000460)) (.leaf 0x11ce6314612808138cc218480)))))) (.branch (.branch (.branch (.branch (.branch (.branch (.leaf 0x8e4300072848618c4509c40) (.leaf 0x300e511885090e328c4008c20)) (.branch (.leaf 0x186031c0631ca5094831844408840) (.leaf 0x66380c528c8711c6430826088e0))) (.branch (.branch (.leaf 0x629c060980028c241086710c24214e0) (.leaf 0x339c06214032086111445098c0)) (.leaf 0x219c24198e50904018045098e0))) (.branch (.branch (.branch (.leaf 0xc7098e511063194061088139420) (.leaf 0x38ce730465210a218046284c0)) (.leaf 0x9ca6014c02086311c2638c80)) (.branch (.branch (.leaf 0x6601ca601424098e32884420460) (.leaf 0x8e6298a02840438c82184c0)) (.leaf 0x31c06084a7210421944708cc0)))) (.branch (.branch (.branch (.branch (.leaf 0x18a729885390430884008c00) (.leaf 0x11ce6208a10906519482004c0)) (.leaf 0x38ce2098e5310a32004030440)) (.branch (.branch (.leaf 0x18a1394c1014e221c661086309080) (.leaf 0x39ce3304a031062180c228480)) (.leaf 0x4e030c85310e338844184a0))) (.branch (.branch (.branch (.leaf 0x47218e3214c5204c3180e200420) (.leaf 0x9ce2308e5190c3208a0094c0)) (.leaf 0x639cc50946321ca32080120840)) (.branch (.branch (.leaf 0x3384c4280a2090a3308e710480) (.leaf 0x118e621865390a30880008480)) (.leaf 0xc719cc1294040886638862204a0))))) (.branch (.branch (.branch (.branch (.branch (.leaf 0x3394c12982410865008e609000) (.leaf 0x611ca53048511c0430c0218420)) (.branch (.leaf 0xa5388c42880420c6131c4038420) (.leaf 0x118ca7118c42948638c0208440))) (.branch (.branch (.leaf 0x47098c029c642984318887084a0) (.leaf 0x329cc131ca2110a32086008400)) (.leaf 0x11c06210a5110c33882330420))) (.branch (.branch (.branch (.leaf 0x214e5184c0284871884408cc0) (.leaf 0xc6394260944411c830004318480)) (.leaf 0x182711885090a3188e0090e0)) (.branch (.branch (.leaf 0xa7098c63946120c6420800088a0) (.leaf 0x31c06190a320462388e5088c0)) (.leaf 0x7110e4318e50906428cc51002208060)))) (.branch (.branch (.branch (.branch (.leaf 0x10027218a528cc438c6200420) (.leaf 0x1c67204c7094e4100a310801290c0)) (.leaf 0x539426198e12808618ca220440)) (.branch (.branch (.leaf 0x638c2231465390251904600440) (.leaf 0xe138806194a430ca71048608860)) (.leaf 0x104e3200c1094a321c670084509880))) (.branch (.branch (.branch (.leaf 0x39c46000a3218a31104508c20) (.leaf 0x67098853848238c02284c0)) (.leaf 0x4e30988511045198a238400)) (.branch (.branch (.leaf 0x4e4314a021c83108c3084c0) (.leaf 0x11c66184e50008128c82384c0)) (.leaf 0x538046200a42046330822384c0)))))))) (.branch (.branch (.branch (.branch (.branch (.branch (.branch (.branch (.leaf 0x100420) (.leaf 0x31c26194e2210671804508880)) (.branch (.leaf 0x3388c609404214c3388e2204a0) (.leaf 0x9c66380a230487194a2204c0))) (.branch (.branch (.leaf 0x4e001865210c31942238440) (.leaf 0x13904638ca3214c238c0228480)) (.leaf 0x138cc0284e7208033084409480))) (.branch (.branch (.branch (.leaf 0x101c2331465010e310886104c0) (.leaf 0x131c6731ca2214a32082009860)) (.leaf 0x2519cc139805190432984708080)) (.branch (.branch (.leaf 0x11ca1308e5310a31888101c80) (.leaf 0x63394263104501043088c7090a0)) (.leaf 0xa309c0031ca5208611106121840)))) (.branch (.branch (.branch (.branch (.leaf 0x7384c6300a51048710c82184a0) (.leaf 0x221cc7310c71142320ca33080008420)) (.leaf 0x14e231ce128c861844600480)) (.branch (.branch (.leaf 0xc4711ce600486290851804309820) (.leaf 0x11c06310c02886721c632888508420)) (.leaf 0x288e2018852846430c6238400))) (.branch (.branch (.branch (.leaf 0x4439cc128c8628c8311c0109840) (.leaf 0x8e6098e5110642986128860090e0)) (.leaf 0x11c6731045190c301841204a0)) (.branch (.branch (.leaf 0x318e731c65210430144009020) (.leaf 0xc7098a51904219802204e0)) (.leaf 0x9c66014e720863288a4084c0))))) (.branch (.branch (.branch (.branch (.branch (.leaf 0x114e02188501881188a238460) (.leaf 0x119ce4314a1218673080209440)) (.branch (.leaf 0x19ca131ca0310851888200467088e0) (.leaf 0xce729885010c61944108440))) (.branch (.branch (.leaf 0x609ce6310a321c62108a118000) (.leaf 0x109c06214443146530c4238460)) (.leaf 0x710ce730ca62046410001214a0))) (.branch (.branch (.branch (.leaf 0x4e730c65314851908200440) (.leaf 0xe72984329026390a21804020420)) (.leaf 0x6339ce601441090e61988228440)) (.branch (.branch (.leaf 0xe438cc0284a5208c3208e1184c0) (.leaf 0xc7280c4094042846319c4708840)) (.leaf 0x39c26310e501085194c218440)))) (.branch (.branch (.branch (.branch (.leaf 0x5088e731885010c32804310420) (.leaf 0xc739885090a33006218440)) (.leaf 0x47190c02908631c6038841084a0)) (.branch (.branch (.leaf 0x1388c1394032146320882004c0) (.leaf 0x8e5304c5390c21804400460)) (.leaf 0xa6398c4280870846211002184e0))) (.branch (.branch (.branch (.leaf 0x300c70982729c6410ca200480) (.leaf 0x11427018852988219c43080c0)) (.leaf 0x18e7104c33946428c0208480)) (.branch (.branch (.leaf 0x11c47198a0298811948200460) (.leaf 0x538022310a7218630880709880)) (.leaf 0x308a70188429c821944108cc0)))))) (.branch (.branch (.branch (.branch (.branch (.branch (.leaf 0x7394e1300a4214661882309040) (.leaf 0x473980520c8118ca2284c0)) (.branch (.leaf 0x31c40398850106328447304a0) (.leaf 0x31c060848518c8538c04118e510440))) (.branch (.branch (.leaf 0x4c728cc42940410cc110c4709c80) (.leaf 0x19ca2304a7208c5180c200480)) (.leaf 0x638cc12940410c8010827304a0))) (.branch (.branch (.branch (.leaf 0x8e431c05318841046518c41004a0) (.leaf 0x25380c639484388661148110c20)) (.leaf 0x7380c62948408c0710844184c0)) (.branch (.branch (.leaf 0x7380c5384a2110c61904508c60) (.leaf 0x10c7218c728482180452882008c20)) (.leaf 0x180e2098812888619c8228400)))) (.branch (.branch (.branch (.branch (.leaf 0x4e5300a3218c31144338480) (.leaf 0x90e6298072882438cc220460)) (.leaf 0x8e7300a3110c519444084c0)) (.branch (.branch (.leaf 0x8a7298c129ce4308631888408000) (.leaf 0x31ca43142511c8319040088e0)) (.leaf 0x131c06294e120c433886121040))) (.branch (.branch (.branch (.leaf 0x18c638006290a1104821944708c60) (.leaf 0x419ca62142429c6200801304c0)) (.leaf 0x4c7114c73940408c2518883088c0)) (.branch (.branch (.leaf 0xe511c24310a720cc11944008060) (.leaf 0x5388c02848320c0411c61304e0)) (.leaf 0x304e731865104802146411c6009040))))) (.branch (.branch (.branch (.branch (.branch (.leaf 0x6720cc729400204c310844384c0) (.leaf 0x39ce5308c4284831804509040)) (.branch (.leaf 0x18e5298e428062218e30082108860) (.leaf 0x9c46080a52186411863090e0))) (.branch (.branch (.leaf 0x238c2629045290e418cc200420) (.leaf 0x339446014c40886728824090c0)) (.leaf 0xc5390860142419c232886101c40))) (.branch (.branch (.branch (.leaf 0x2394c029086198e210424194e0) (.leaf 0x19c26100653088608ca238480)) (.leaf 0xc739825010621808228460)) (.branch (.branch (.leaf 0x331c23304a2290a21908238400) (.leaf 0x9ce630ca029062180a208480)) (.leaf 0x104739ca6094a02184018c0220460)))) (.branch (.branch (.branch (.branch (.leaf 0x86701cc4288851984100420) (.leaf 0xe138cc2310a021c611984528440)) (.leaf 0xe2290e4300a6010630882709840)) (.branch (.branch (.leaf 0x380e4300a5190261944108860) (.leaf 0x239cc029cc43040321042184a0)) (.leaf 0x14e7080c1298a4118633888018440))) (.branch (.branch (.branch (.leaf 0x188e431c2518886190a200420) (.leaf 0xe7310c43140410c62084a0)) (.leaf 0x19c06384a5210c33888128440)) (.branch (.branch (.leaf 0x2384c4314e429823008e3088a0) (.leaf 0x2639ca530c6509043008e101040)) (.leaf 0x611c86084a50008518c4709860))))))) (.branch (.branch (.branch (.branch (.branch (.branch (.branch (.leaf 0x128044094641088328460) (.leaf 0x67104c429c811984509400)) (.branch (.leaf 0x8e401827298831944538480) (.leaf 0x9ce321887098a6214601006110840))) (.branch (.branch (.leaf 0x6388853982521c831880228400) (.leaf 0x208ce0298e50104338444204c0)) (.leaf 0x67218c139485310231080111c60))) (.branch (.branch (.branch (.leaf 0x18c73848610ca52080319c4428400) (.leaf 0x2638cc0314e41904219402084e0)) (.leaf 0x31c27288c3214e4114a33040218400)) (.branch (.branch (.leaf 0x10ce2304a5390a318041204c0) (.leaf 0x6388c2000a330ca42946720444084e0)) (.leaf 0x31c0031ca1204a71946220440)))) (.branch (.branch (.branch (.branch (.leaf 0x427388c42944430ce410c0129860) (.leaf 0x47018253106518c26388a708080)) (.leaf 0x90e231ca3110a320800084c0)) (.branch (.branch (.leaf 0x6138c06390a5210a2184c611c8010460) (.leaf 0xe7198a50808619c421900111020)) (.leaf 0x847018850940439c663086128480))) (.branch (.branch (.branch (.leaf 0xc7098e50048238ca220460) (.leaf 0x14a7010c1288c620863288e119c80)) (.leaf 0xa710c06198a1210c32904708440)) (.branch (.branch (.leaf 0x7184e031ca60904219044284c0) (.leaf 0x231c833046531c4428c8238400)) (.leaf 0x519c4610ca53908618041090e0))))) (.branch (.branch (.branch (.branch (.branch (.leaf 0x47394c619ca120ca320440088c0) (.leaf 0x31ce629404210c238c2200460)) (.branch (.leaf 0x4339cc1014232146530881388c0) (.leaf 0x11c66090a51048619cc228400))) (.branch (.branch (.leaf 0x11ce6298251900619482004e0) (.leaf 0x11ce7304c50088628c62204a0)) (.leaf 0x8339c26214053906208cc2004a0))) (.branch (.branch (.branch (.leaf 0x8e62184129ce019063308a1080a0) (.leaf 0x121ce62140410c623142501860)) (.leaf 0x139c06214a4308623886120cc0)) (.branch (.branch (.leaf 0x121ca531ca3208433088100060) (.leaf 0x184e5018e5210c31904038440)) (.leaf 0xc101cc5300a220c64114e308440)))) (.branch (.branch (.branch (.branch (.leaf 0x11c8610ca0204e619c44084a0) (.leaf 0x14e611cc32146410cc200420)) (.leaf 0x4e531c8511882180a238460)) (.branch (.branch (.leaf 0x208e531ca03102320823094c0) (.leaf 0x5380e00984128c8219844304a0)) (.leaf 0x609c4231c2528c8618c02204a0))) (.branch (.branch (.branch (.leaf 0x33944601424098c338864088a0) (.leaf 0x4e0314a72044618843090c0)) (.leaf 0x238cc430ca12146739442004c0)) (.branch (.branch (.leaf 0x864380c5214c121c633104500440) (.leaf 0x9ca621486290e30184218400)) (.leaf 0x9ce60144020cc519444204c0)))))) (.branch (.branch (.branch (.branch (.branch (.branch (.leaf 0x4e211805310a708c82184a0) (.leaf 0x31c42310c5214871804108c60)) (.branch (.leaf 0x8e4218e230ca1390c3194a2004a0) (.leaf 0x631c0609ca5208641006208460))) (.branch (.branch (.leaf 0x470186128886204c339c4428460) (.leaf 0x239cc42986328082190a2084c0)) (.leaf 0x9ca6380a2104861904720460))) (.branch (.branch (.branch (.leaf 0x11c23304a02186511ca1310e0) (.leaf 0x10ce231485290e11984700420)) (.leaf 0x1847180c4298831944238420)) (.branch (.branch (.leaf 0xc3388c1394a121464100c308800) (.leaf 0x213986331ca72104219862004a0)) (.leaf 0x19c02310a5218e330440204e0)))) (.branch (.branch (.branch (.branch (.leaf 0xa7384c01144418c82084c0) (.leaf 0x672142609484388601080609860)) (.leaf 0xa231c8530405384871984309040)) (.branch (.branch (.leaf 0x47280c0394a4210c309c43084c0) (.leaf 0x509cc6380a120863208c008880)) (.leaf 0x14c2398e021865090e51804408440))) (.branch (.branch (.branch (.leaf 0x67218e50104238c21100a131060) (.leaf 0xc7118250008118ce2204a0)) (.leaf 0x8e730ca0214c33144708480)) (.branch (.branch (.leaf 0x29cc1300a4204e218ca2384c0) (.leaf 0x1c6711821280c438cc228480)) (.leaf 0x19c0621425208e330867090a0))))) (.branch (.branch (.branch (.branch (.branch (.leaf 0x208e1314a621c641082009460) (.leaf 0x339cc4294c520423210e200440)) (.branch (.leaf 0x639cc10144428ca111c61110c0) (.leaf 0x6388c6084e50008718c42204a0))) (.branch (.branch (.leaf 0x31c66014e420465288e410440) (.leaf 0x39ca230c4500c8619022084a0)) (.leaf 0x67218a5090c119ce200440))) (.branch (.branch (.branch (.leaf 0x319c45300853182438ca200420) (.leaf 0x4c7294c42140321c6210460088c0)) (.leaf 0xa709cc72140430c8218440)) (.branch (.branch (.leaf 0x339c4621467204c300041094a0) (.leaf 0x108e0198a53106119c4009c80)) (.leaf 0x8e1398e01142400c6538c44098a0)))) (.branch (.branch (.branch (.branch (.leaf 0x19cc621c45090a718ca200440) (.leaf 0xc4388c219427214e30080628480)) (.leaf 0xe7290c328404300a11984108860)) (.branch (.branch (.leaf 0x39c66214c5010431804520420) (.leaf 0x18e0310850148718c4108c40)) (.leaf 0x271988429cc5204a33084008ce0))) (.branch (.branch (.branch (.leaf 0x321c46300a4218e3088a5080e0) (.leaf 0x20840719885290c311c4728400)) (.leaf 0x301c4631ca0390a33086408420)) (.branch (.branch (.leaf 0x130ce721cc1294861904018440) (.leaf 0x3398a639404088031844428480)) (.leaf 0x23388c4298a421c6011421188c0))))))))) (.branch (.branch (.branch (.branch (.branch (.branch (.branch (.branch (.branch (.leaf 0x0) (.leaf 0x3380c109405210a3308c708c40)) (.branch (.leaf 0x63840609440190c338ca220440) (.leaf 0xa7184c2100a7200e330861290c0))) (.branch (.branch (.leaf 0x4e430ca6290a21884109ce0) (.leaf 0x209c4031ca53188420ca200460)) (.leaf 0x7380c710ca3090c33144128480))) (.branch (.branch (.branch (.leaf 0x511cc4310a72146138c4008860) (.leaf 0x119ca61140021c643086508480)) (.leaf 0x1841380c72908608ca22982038c40)) (.branch (.branch (.leaf 0x39ce630ca0214611082509040) (.leaf 0x4380e5118c5390431844620460)) (.leaf 0x721c462946400c25100e4098c0)))) (.branch (.branch (.branch (.branch (.leaf 0x121c6031c46298e410c2228460) (.leaf 0x201c27004c51148620c64208a008ce0)) (.leaf 0x1ce0098c6288841840228460)) (.branch (.branch (.leaf 0x319ca2398c129c841984508400) (.leaf 0x298e6204c738ca4208a30044300440)) (.leaf 0x108e130c8529c801944309880))) (.branch (.branch (.branch (.leaf 0x1394c628c4439464208c000460) (.leaf 0x487018c71148021c432944608460)) (.leaf 0x300e2198a51902719042304e0)) (.branch (.branch (.leaf 0x19ce431ca0218a33080109040) (.leaf 0xe4304a6310631944709040)) (.leaf 0x2384c239464314633104408400))))) (.branch (.branch (.branch (.branch (.branch (.leaf 0x321c26314a7208432080101860) (.leaf 0x1ce0318a3214230904520440)) (.branch (.leaf 0x8ce0310a329c8720cc51004130440) (.leaf 0x1067098a518087198c200440))) (.branch (.branch (.leaf 0x611ca60946420c00110e3094c0) (.leaf 0x11c260142621ce0194a220460)) (.leaf 0x4e4300a620c61108a5204e0))) (.branch (.branch (.branch (.leaf 0xce2018e42908500ca2084c0) (.leaf 0x14e321844004a03902308843098a0)) (.leaf 0x739c26118450008418ca230480)) (.branch (.branch (.leaf 0x394c1118a7290c33844218480) (.leaf 0x847294c128c6401c23308e009880)) (.leaf 0x63802230ca5210601944209c20)))) (.branch (.branch (.branch (.branch (.leaf 0x14e531845390861840218400) (.leaf 0x8e5304a721cc41904008ca0)) (.leaf 0x21380c529c63208c30084638480)) (.branch (.branch (.leaf 0x27010c22940429c613084609060) (.leaf 0xce41982511c86194a238400)) (.leaf 0x47298650906431c051844009cc0))) (.branch (.branch (.branch (.leaf 0x29c613088519003308e111020) (.leaf 0xce0310a5110e308825080c0)) (.leaf 0x10ca7088c52808418446090e0)) (.branch (.branch (.leaf 0x8629c01310a720c432882139860) (.leaf 0x5304e5318a7010831044718460)) (.leaf 0x14e1018e5190432080209880)))))) (.branch (.branch (.branch (.branch (.branch (.branch (.leaf 0x3390c52988708ce01182111040) (.leaf 0x67018a32988128c8238440)) (.branch (.leaf 0x10c7318e511004194a208460) (.leaf 0x9cc2198e42804429061280e230460))) (.branch (.branch (.leaf 0xa239026214643806219840284e0) (.leaf 0x180e1318a42888138ca220460)) (.leaf 0x238066194e42986729002084c0))) (.branch (.branch (.branch (.leaf 0x21ca530c402880439cc32044309820) (.leaf 0x7210c1280c438ca110c4708cc0)) (.leaf 0x46729805190c121065308e1008e0)) (.branch (.branch (.leaf 0x388c431ca539c811884330460) (.leaf 0x1047018e5190230948200cc609c40)) (.leaf 0x339ca130ca4208a33082130040)))) (.branch (.branch (.branch (.branch (.leaf 0x18e1314a4110e71808200460) (.leaf 0x118e13184428c8518047090a0)) (.leaf 0xce1300852008219845184e0)) (.branch (.branch (.leaf 0x10c72986529c0401c610888309840) (.leaf 0x88e621882280871944608460)) (.leaf 0x6380c429463204641144009c40))) (.branch (.branch (.branch (.leaf 0xa738406190e531023208a408800) (.leaf 0x19c2629487208233080300480)) (.leaf 0x38846394843846308c45284c0)) (.branch (.branch (.leaf 0x201c06214e7290a30888308cc0) (.leaf 0x3398c2280e401c651882608480)) (.leaf 0xce401862284a62046039042284e0))))) (.branch (.branch (.branch (.branch (.branch (.leaf 0xc47308c0314e12146320041090a0) (.leaf 0x2131c063146438ca22882221000)) (.branch (.leaf 0x1027310c430ca0190e30944238400) (.leaf 0x19c21310a7214630144630440))) (.branch (.branch (.leaf 0x4239ca431ca3190001844608480) (.leaf 0x2394c42806411c61088c409c60)) (.leaf 0x14e71188529c2430c221180120c00))) (.branch (.branch (.branch (.leaf 0x3380c529c8308c44110c638440) (.leaf 0x39c86298e32802420c2228440)) (.leaf 0xe1308a6390461944409060)) (.branch (.branch (.leaf 0x539c06190a2310801944109820) (.leaf 0x18e03048511c8500c2210460)) (.leaf 0x339cc6090a30148210ca238480)))) (.branch (.branch (.branch (.branch (.leaf 0x288e4300a621c60088a121c60) (.leaf 0x239066314a7214411808200460)) (.leaf 0xe131ca5190c30144310480)) (.branch (.branch (.leaf 0x4e0018e5208851904628460) (.leaf 0x3380c2094c6010e7190a220440)) (.leaf 0xc0721842294e409c650904608cc0))) (.branch (.branch (.branch (.leaf 0x33882621ca621ca30082130880) (.leaf 0x88e2398a5390c30086131080)) (.leaf 0x11c06304a539063288e200480)) (.branch (.branch (.leaf 0x439446094e6010e32004618440) (.leaf 0x18ce109885010e310885104c0)) (.leaf 0xa7118c7188a32006111c2121400))))))) (.branch (.branch (.branch (.branch (.branch (.branch (.branch (.leaf 0xc64088640888200400) (.leaf 0x210e131ca320860118a1384c0)) (.branch (.leaf 0x109c43310a621c60008a121c60) (.leaf 0x4c7214e6308a021c650886218480))) (.branch (.branch (.leaf 0x46390e131885110a01804708c20) (.leaf 0xc6384c228c8438c0111423200a0)) (.leaf 0x44701046318a020c6510c8709c20))) (.branch (.branch (.branch (.leaf 0xc329ca1314a6090e218042204e0) (.leaf 0x27000c7110a71106619845090a0)) (.leaf 0x21c62388a601404090c628c2238460)) (.branch (.branch (.leaf 0x10e530005310c218822184e0) (.leaf 0x739cc330040214a2218e51848220460)) (.leaf 0x98e530ca02048738c0230440)))) (.branch (.branch (.branch (.branch (.leaf 0x18e7204c72808110c041146509860) (.leaf 0x18e2314a721005310613882008860)) (.leaf 0x4e4314e5010c3088c2184e0)) (.branch (.branch (.leaf 0x539c03308e520c8208c61280c230480) (.leaf 0xa7218e128c8730cc40880010440)) (.leaf 0xa7118c73940420c230886628480))) (.branch (.branch (.branch (.leaf 0x4e2318c5190851904709c00) (.leaf 0x4a7018621948431c6511007088c0)) (.leaf 0x8239c07308a5190c51846230480)) (.branch (.branch (.leaf 0x8e53042539c831800230480) (.leaf 0x119c80304a32988018845098e0)) (.leaf 0x9c67298402988318845204e0))))) (.branch (.branch (.branch (.branch (.branch (.leaf 0x19c2231ca4310a71844030460) (.leaf 0x31ca6300a72882420c22184e0)) (.branch (.leaf 0x53802639ca42186300842204c0) (.leaf 0x63880730445210e31944108cc0))) (.branch (.branch (.leaf 0x8c7298e528c8020c2200440) (.leaf 0x131c413100539c861944309400)) (.leaf 0x9c0631c8518c4410cc2284e0))) (.branch (.branch (.branch (.leaf 0xc67014c238485010833144130440) (.leaf 0x2384c428c8519cc20040608ce0)) (.leaf 0xc1390c5280e4188661048008860)) (.branch (.branch (.leaf 0x631c861140221461110e508c00) (.leaf 0x218e5318a021c830944208460)) (.leaf 0x10e6308a7200660884538460)))) (.branch (.branch (.branch (.branch (.leaf 0x19c81308a509c85198c200480) (.leaf 0x1c8238406394c428c2220460)) (.leaf 0x638806204a7210232886128860)) (.branch (.branch (.leaf 0x10e030c253904338440284c0) (.leaf 0x214e0018c51902310c4509c80)) (.leaf 0x3384c731ca3210c3108a1010a0))) (.branch (.branch (.branch (.leaf 0x731ca6014c3210230084138460) (.leaf 0x4e0318a6008871944328480)) (.leaf 0x738806318a4214a418c2200460)) (.branch (.branch (.leaf 0x39886398a32002519442104e0) (.leaf 0x7394c6114a4204631844608000)) (.leaf 0x19c46098a42088619402004e0)))))) (.branch (.branch (.branch (.branch (.branch (.branch (.leaf 0xc27118c530c0428c8238400) (.leaf 0x11ce13182029c8519043184c0)) (.branch (.leaf 0x4a72006431cc5110c428c2200460) (.leaf 0x398261148438c45208c008c20))) (.branch (.branch (.leaf 0x27290c0288a4190e718442004c0) (.leaf 0xc621ca0310a3200a3088e118840)) (.leaf 0x21c823182529c861942200460))) (.branch (.branch (.branch (.leaf 0x129cc60944400c80108e709860) (.leaf 0x21c22304a7290c33944309000)) (.leaf 0xc1394c728c8038c8230440)) (.branch (.branch (.leaf 0x4711486094c438c050086309c80) (.leaf 0x2104e4310a53808118cc238460)) (.leaf 0x10e031ca2190c5184a2184c0)))) (.branch (.branch (.branch (.branch (.leaf 0x827080c429c801944609060) (.leaf 0x4109c860146620cc311445384e0)) (.leaf 0x39c8030885190a330827088a0)) (.branch (.branch (.leaf 0x18a72802601442210e33086309c80) (.leaf 0x39c24310a32082338042284c0)) (.leaf 0xc2280e0318a7210a308843090e0))) (.branch (.branch (.branch (.leaf 0x67118253804428066308a438480) (.leaf 0xce1310e5300841944608840)) (.leaf 0x4e431ca101045198c210460)) (.branch (.branch (.leaf 0x394c329c46208a32082109cc0) (.leaf 0x18e409826288871944008c40)) (.leaf 0xe7298622908400c61100c129840))))) (.branch (.branch (.branch (.branch (.branch (.leaf 0x19c46094e400c62308a5090c0) (.leaf 0x384a6390a0310a210c2220460)) (.branch (.leaf 0x67000c72988710cc110ca408480) (.leaf 0x439c8219805298831882238400))) (.branch (.branch (.leaf 0x6384c229464208642804708020) (.leaf 0x609c8731825390a31804309440)) (.leaf 0x11c26294c620c43208e1080a0))) (.branch (.branch (.branch (.leaf 0x190e301841394e410c82284c0) (.leaf 0x1867104c73140410ca50880309080)) (.leaf 0x1c67084c4280861944208860)) (.branch (.branch (.leaf 0x24384c32944621403108e408c00) (.leaf 0x190e0304a0110e33088509860)) (.leaf 0x509c62398851008719c651182119880)))) (.branch (.branch (.branch (.branch (.leaf 0x21c013986521c8528c2230440) (.leaf 0x33984601ca2210a301022304e0)) (.leaf 0x65380c009481398831984210480)) (.branch (.branch (.leaf 0x1380c7300a3290c329c4409040) (.leaf 0x38c2631ca2218651148108c00)) (.leaf 0xce5098a621447218030880209c80))) (.branch (.branch (.branch (.leaf 0x298e0318a3190430944138480) (.leaf 0x872982539062180c230440)) (.leaf 0x1c0530485210e31184330440)) (.branch (.branch (.leaf 0x3280e6304a72146438861008c0) (.leaf 0x721c2631444010c2184a200460)) (.leaf 0x3394c631482204652084338400)))))))) (.branch (.branch (.branch (.branch (.branch (.branch (.branch (.branch (.leaf 0x20880100440) (.leaf 0x4e2310a721003180a2184c0)) (.branch (.leaf 0x384c72984428c6720802184c0) (.leaf 0x9c0621463214241984700440))) (.branch (.branch (.leaf 0x200e631c65190232804410440) (.leaf 0x7384c01944721861294c220400)) (.leaf 0x31c06214e4314231144109060))) (.branch (.branch (.branch (.leaf 0x438466098a0210e32886111c80) (.leaf 0x8331c81304e53104329440088e0)) (.leaf 0x3390813082629c8019440104c0)) (.branch (.branch (.leaf 0x1467298c2284e400c2230480) (.leaf 0x290223800631ca5390841884608460)) (.leaf 0x29c66398c7288841804108ca0)))) (.branch (.branch (.branch (.branch (.leaf 0x6390c2394e2200a31982228400) (.leaf 0x29c40314e10946220ce33104609800)) (.leaf 0x380e5300a7204861884108860)) (.branch (.branch (.leaf 0x1827284c411ca33984420ca218400) (.leaf 0x310e13088530c0429423108e309c00)) (.leaf 0xe101c8231ca51902530c4230400))) (.branch (.branch (.branch (.leaf 0x639c45314a32006108883080e0) (.leaf 0x390670988029c85098652880109840)) (.leaf 0x439c4621ca3310a33082508060)) (.branch (.branch (.leaf 0x200e021825388871944630460) (.leaf 0x198e7098e51100321040284c0)) (.leaf 0x639c460946419860110a101020))))) (.branch (.branch (.branch (.branch (.branch (.leaf 0x9c4431c251900518045204c0) (.leaf 0x39065398e5190430888609820)) (.branch (.leaf 0x18e2308851900118ca209827214e0) (.leaf 0x21ce1308e5010a33044308080))) (.branch (.branch (.leaf 0x1ce3098a0290861944309840) (.leaf 0x62384a6294e400c62118c108080)) (.leaf 0x3300e029cc128c841984708840))) (.branch (.branch (.branch (.leaf 0x24300e0304a6110671944438440) (.leaf 0x273186508883114c32804709080)) (.leaf 0x27280c62946419c431184038480)) (.branch (.branch (.leaf 0x6728cc129c82000663888130880) (.leaf 0x3384c2114e52106400825004c0)) (.leaf 0x21c26014630904019442304e0)))) (.branch (.branch (.branch (.branch (.leaf 0x380e2314a219083088c609c80) (.leaf 0x2731805390a31082320480)) (.leaf 0x81394c32940438cc62882408040)) (.branch (.branch (.leaf 0xc1384c2284640006511481110e0) (.leaf 0xce5308a7290c32184108060)) (.leaf 0x27004c729885180441148710460))) (.branch (.branch (.branch (.leaf 0x21c05098e520c8628c0230440) (.leaf 0x8e4290c52808638c2238460)) (.leaf 0x4e4318c32846428c4238400)) (.branch (.branch (.leaf 0x521c26308e5008871984128460) (.leaf 0xc129c06380c5110630944709060)) (.leaf 0x198e5380c62886438c8208400)))))) (.branch (.branch (.branch (.branch (.branch (.branch (.leaf 0x21ca5098c51106308804098e0) (.leaf 0x188729865110e118440004c0)) (.branch (.leaf 0x121c0619845210c3288e209c20) (.leaf 0x1ca63140729043184823902618440))) (.branch (.branch (.leaf 0x29487088c2314e021c611146330480) (.leaf 0x9ca6018a42006620847184e0)) (.leaf 0x61390c629c4408ca200c2538880))) (.branch (.branch (.branch (.leaf 0xce5310a73902118ca0100c408840) (.leaf 0x19c07308a2310231904509c80)) (.leaf 0x6380c20146428c223002708880)) (.branch (.branch (.leaf 0x29c860946601087184c210460) (.leaf 0x9cc630c25390432880121040)) (.leaf 0x39c0131c2518c8518844184c0)))) (.branch (.branch (.branch (.branch (.leaf 0xce5304a221c623080509080) (.leaf 0x1c2431ca53148700c4220460)) (.leaf 0x14a721805110c2184c238460)) (.branch (.branch (.leaf 0x47290c13146428c60008e109c80) (.leaf 0x18e1310e53008110ca2184e0)) (.leaf 0x10e1098c5390431980228440))) (.branch (.branch (.branch (.leaf 0xa7088a6180a0190e620c42204c0) (.leaf 0x29ce231825110832144018460)) (.leaf 0x27090c0194c621c601146508880)) (.branch (.branch (.leaf 0x239841310a5010a31980238460) (.leaf 0x18ce1318a420860088e509cc0)) (.leaf 0x194e4198453988408c26288e100800))))) (.branch (.branch (.branch (.branch (.branch (.leaf 0xc7118e429804304651886108880) (.leaf 0x190e1018e40944438c22284c0)) (.branch (.leaf 0x27298242984429c630184009060) (.leaf 0x4e0314a1190c3208e128860))) (.branch (.branch (.leaf 0x7390c6194c7290232884110460) (.leaf 0x731c46008a421864088a508ce0)) (.leaf 0x11c01314c51908339862084e0))) (.branch (.branch (.branch (.leaf 0x3848731885110a3008c708460) (.leaf 0x401c2619427110a0194e2104c0)) (.leaf 0x67098a5010e30184620440)) (.branch (.branch (.leaf 0x4339c46300a72042329444184c0) (.leaf 0x1ce6314a22082301043184e0)) (.leaf 0xce029801314e410c6139c4230480)))) (.branch (.branch (.branch (.branch (.leaf 0xe509845298831884708480) (.leaf 0x1ca7304c0284432186511c0208c80)) (.leaf 0xc238ca111865390a61804409cc0)) (.branch (.branch (.leaf 0x610ce539885394821802218400) (.leaf 0x43390c12988328cc0388e009440)) (.leaf 0x3198e6218e62808528c411088138400))) (.branch (.branch (.branch (.leaf 0x19c2131ca0010651904630440) (.leaf 0x6731881288c400c22284e0)) (.leaf 0x511c2639420208c32086131ca0)) (.branch (.branch (.leaf 0x29c2639401210623104308c40) (.leaf 0x39cc5198832880410c22204c0)) (.leaf 0x409c62300a6310e520ca2184e0))))))) (.branch (.branch (.branch (.branch (.branch (.branch (.branch (.leaf 0x4c4280442086628865084c0) (.leaf 0xc1388c50140438c2220460)) (.branch (.leaf 0xce630825004851904209ce0) (.leaf 0x867090c6194e6080871944008880))) (.branch (.branch (.leaf 0x3384c638c45210001984520440) (.leaf 0x63844430c45010a3088a309ce0)) (.leaf 0x21ca6184a519cc430c0208440))) (.branch (.branch (.branch (.leaf 0x1184e2318a02146720465388c408800) (.leaf 0xc7308c129ce4090830144500460)) (.leaf 0x39c86198a629c6428c000082110440)) (.branch (.branch (.leaf 0x9ca631ca4204430084508c60) (.leaf 0x1388c729c062008510ca410c8608c20)) (.leaf 0x29c46090a32006030c42204e0)))) (.branch (.branch (.branch (.branch (.leaf 0x338c46000a621023288e6094e0) (.leaf 0x46398c528c8418482008a009ce0)) (.leaf 0x711c26308a420c032880119840)) (.branch (.branch (.leaf 0xc27298c411400214233044720c2238c40) (.leaf 0x519ca63940421861100c121c40)) (.leaf 0x3398a63140439c632084128440))) (.branch (.branch (.branch (.leaf 0x10087298e5310661846220400) (.leaf 0x638826380a0204851884428460)) (.leaf 0x7318242144621ce3088a508c00)) (.branch (.branch (.leaf 0x63980730ca720c230944208880) (.leaf 0x38886098a31102318ca238480)) (.leaf 0x463980531ca40888300c8208460))))) (.branch (.branch (.branch (.branch (.branch (.leaf 0x8439466098a1390033004210460) (.leaf 0x31ca60944400c62310e238400)) (.branch (.leaf 0x111c85300a3390451984618480) (.leaf 0x9cc6214a2110c71944320400))) (.branch (.branch (.leaf 0x29c40314c5390831044400460) (.leaf 0x638046298a0190e11904208460)) (.leaf 0x6738486014e4184a33080230480))) (.branch (.branch (.branch (.leaf 0xc72984329c0429c811844209060) (.leaf 0x1067318c529c821844408800)) (.leaf 0x9c4530ce5310630804010480)) (.branch (.branch (.leaf 0x190e4298c62808118842284e0) (.leaf 0x311c40304c5390a32086709880)) (.leaf 0x1388c3300e519023308a1110a0)))) (.branch (.branch (.branch (.branch (.leaf 0x9c463142021c630104509c60) (.leaf 0x10e1304422806428cc2004e0)) (.leaf 0x8ce2310a7010261944720460)) (.branch (.branch (.leaf 0x8e2098e52100519443084c0) (.leaf 0xc338424310650188518847080a0)) (.leaf 0x6238826304a4280871944218400))) (.branch (.branch (.branch (.leaf 0x509c86388a020c6231845084e0) (.leaf 0x8731805390a30082218440)) (.leaf 0x46384c52988121060108e509c60)) (.branch (.branch (.leaf 0x10e128cc62906439c611184008040) (.leaf 0x1ca609464018c320862104e0)) (.leaf 0xa219c26214e431c6208c4508080)))))) (.branch (.branch (.branch (.branch (.branch (.branch (.leaf 0x38ce23000531083084a2284e0) (.leaf 0x18e1308e51908538ca220400)) (.branch (.leaf 0x411ce5314e520406218630082410460) (.leaf 0x11c24314a321003308e100ca0))) (.branch (.branch (.leaf 0x27118e51188418c612080509800) (.leaf 0x6380463042518c851904238400)) (.leaf 0x19ca6094c0204c51904209c80))) (.branch (.branch (.branch (.leaf 0x8729861290831984708800) (.leaf 0x184229c2530ca42100308c4609ce0)) (.leaf 0x4118e6018a229c811944308480)) (.branch (.branch (.leaf 0x821394a6194a4010e30084138cc0) (.leaf 0xc7280c2118a7200a33844308480)) (.leaf 0x19ca629ca22106108883098c0)))) (.branch (.branch (.branch (.branch (.leaf 0x70984328ce428cc238480) (.leaf 0x3388c3090a420065388c7098a0)) (.leaf 0x638c85318653808438c2228440)) (.branch (.branch (.leaf 0xc4380c4394e5110c31844228460) (.leaf 0x31c00308a7390a30886608480)) (.leaf 0x871940631841288871902200460))) (.branch (.branch (.branch (.leaf 0x419c263148400ca5008e709840) (.leaf 0x40731805390c319c8228440)) (.leaf 0x14e0304a3218662080708840)) (.branch (.branch (.leaf 0x19c26200a62146139042184e0) (.leaf 0x4e11180530c8720ca218480)) (.leaf 0x1ce2318a0204432944409860))))) (.branch (.branch (.branch (.branch (.branch (.leaf 0x430ce3298e5010433082709480) (.leaf 0x807310c728cc410065288e108460)) (.branch (.leaf 0xce6308a6010e30884508480) (.leaf 0xc4380c128043210e71984508c40))) (.branch (.branch (.leaf 0x9c86114c42986010c6111c20) (.leaf 0x31c2619ca2290621944620480)) (.leaf 0x28447298e5310432044038460))) (.branch (.branch (.branch (.leaf 0x438806098a51908200ca2304e0) (.leaf 0x3006700cc7294e221483088c111020)) (.leaf 0x472186029ce400ca2084c0)) (.branch (.branch (.leaf 0x19c0611ca6200a31904608440) (.leaf 0xce5098252988418042004e0)) (.leaf 0x1827118672900221467208c508460)))) (.branch (.branch (.branch (.branch (.leaf 0x31c8609467310a30804538440) (.leaf 0x67004c4288c409c64108a1014e0)) (.leaf 0x1388c6214e421862180e228460)) (.branch (.branch (.leaf 0x21c460946430c832804009c20) (.leaf 0x87318250008238ca210460)) (.leaf 0x394c629c64308031044418480))) (.branch (.branch (.branch (.leaf 0x39ca331845110032144108cc0) (.leaf 0x139047198e5310032888608c20)) (.leaf 0xa421cc1304a0110e21944009860)) (.branch (.branch (.leaf 0x6390e43082029c821944108ca0) (.leaf 0x4a4398c50140418c44188c708440)) (.leaf 0x40380e2304a7214830984509060))))))))))
+
+set_option maxRecDepth 8000 in
+set_option maxHeartbeats 8000000 in
+lemma check_diag (x : ℕ) (hx : x<20007) : (diagRow P bins) x = true := by
+  by_cases h2 : x<9984
+  · by_cases h4 : x<4992
+    · by_cases h6 : x<2432
+      · by_cases h8 : x<1152
+        · by_cases h10 : x<512
+          · by_cases h12 : x<256
+            · by_cases h14 : x<128
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 0) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 128) (k := 128) (by decide +kernel) (by omega) (by omega)
+            · by_cases h14 : x<384
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 256) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 384) (k := 128) (by decide +kernel) (by omega) (by omega)
+          · by_cases h12 : x<768
+            · by_cases h14 : x<640
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 512) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 640) (k := 128) (by decide +kernel) (by omega) (by omega)
+            · by_cases h14 : x<896
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 768) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · by_cases h16 : x<1024
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 896) (k := 128) (by decide +kernel) (by omega) (by omega)
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 1024) (k := 128) (by decide +kernel) (by omega) (by omega)
+        · by_cases h10 : x<1792
+          · by_cases h12 : x<1408
+            · by_cases h14 : x<1280
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 1152) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 1280) (k := 128) (by decide +kernel) (by omega) (by omega)
+            · by_cases h14 : x<1536
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 1408) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · by_cases h16 : x<1664
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 1536) (k := 128) (by decide +kernel) (by omega) (by omega)
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 1664) (k := 128) (by decide +kernel) (by omega) (by omega)
+          · by_cases h12 : x<2048
+            · by_cases h14 : x<1920
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 1792) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 1920) (k := 128) (by decide +kernel) (by omega) (by omega)
+            · by_cases h14 : x<2176
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 2048) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · by_cases h16 : x<2304
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 2176) (k := 128) (by decide +kernel) (by omega) (by omega)
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 2304) (k := 128) (by decide +kernel) (by omega) (by omega)
+      · by_cases h8 : x<3712
+        · by_cases h10 : x<3072
+          · by_cases h12 : x<2688
+            · by_cases h14 : x<2560
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 2432) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 2560) (k := 128) (by decide +kernel) (by omega) (by omega)
+            · by_cases h14 : x<2816
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 2688) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · by_cases h16 : x<2944
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 2816) (k := 128) (by decide +kernel) (by omega) (by omega)
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 2944) (k := 128) (by decide +kernel) (by omega) (by omega)
+          · by_cases h12 : x<3328
+            · by_cases h14 : x<3200
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 3072) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 3200) (k := 128) (by decide +kernel) (by omega) (by omega)
+            · by_cases h14 : x<3456
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 3328) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · by_cases h16 : x<3584
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 3456) (k := 128) (by decide +kernel) (by omega) (by omega)
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 3584) (k := 128) (by decide +kernel) (by omega) (by omega)
+        · by_cases h10 : x<4352
+          · by_cases h12 : x<3968
+            · by_cases h14 : x<3840
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 3712) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 3840) (k := 128) (by decide +kernel) (by omega) (by omega)
+            · by_cases h14 : x<4096
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 3968) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · by_cases h16 : x<4224
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 4096) (k := 128) (by decide +kernel) (by omega) (by omega)
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 4224) (k := 128) (by decide +kernel) (by omega) (by omega)
+          · by_cases h12 : x<4608
+            · by_cases h14 : x<4480
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 4352) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 4480) (k := 128) (by decide +kernel) (by omega) (by omega)
+            · by_cases h14 : x<4736
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 4608) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · by_cases h16 : x<4864
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 4736) (k := 128) (by decide +kernel) (by omega) (by omega)
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 4864) (k := 128) (by decide +kernel) (by omega) (by omega)
+    · by_cases h6 : x<7424
+      · by_cases h8 : x<6144
+        · by_cases h10 : x<5504
+          · by_cases h12 : x<5248
+            · by_cases h14 : x<5120
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 4992) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 5120) (k := 128) (by decide +kernel) (by omega) (by omega)
+            · by_cases h14 : x<5376
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 5248) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 5376) (k := 128) (by decide +kernel) (by omega) (by omega)
+          · by_cases h12 : x<5760
+            · by_cases h14 : x<5632
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 5504) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 5632) (k := 128) (by decide +kernel) (by omega) (by omega)
+            · by_cases h14 : x<5888
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 5760) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · by_cases h16 : x<6016
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 5888) (k := 128) (by decide +kernel) (by omega) (by omega)
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 6016) (k := 128) (by decide +kernel) (by omega) (by omega)
+        · by_cases h10 : x<6784
+          · by_cases h12 : x<6400
+            · by_cases h14 : x<6272
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 6144) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 6272) (k := 128) (by decide +kernel) (by omega) (by omega)
+            · by_cases h14 : x<6528
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 6400) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · by_cases h16 : x<6656
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 6528) (k := 128) (by decide +kernel) (by omega) (by omega)
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 6656) (k := 128) (by decide +kernel) (by omega) (by omega)
+          · by_cases h12 : x<7040
+            · by_cases h14 : x<6912
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 6784) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 6912) (k := 128) (by decide +kernel) (by omega) (by omega)
+            · by_cases h14 : x<7168
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 7040) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · by_cases h16 : x<7296
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 7168) (k := 128) (by decide +kernel) (by omega) (by omega)
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 7296) (k := 128) (by decide +kernel) (by omega) (by omega)
+      · by_cases h8 : x<8704
+        · by_cases h10 : x<8064
+          · by_cases h12 : x<7680
+            · by_cases h14 : x<7552
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 7424) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 7552) (k := 128) (by decide +kernel) (by omega) (by omega)
+            · by_cases h14 : x<7808
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 7680) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · by_cases h16 : x<7936
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 7808) (k := 128) (by decide +kernel) (by omega) (by omega)
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 7936) (k := 128) (by decide +kernel) (by omega) (by omega)
+          · by_cases h12 : x<8320
+            · by_cases h14 : x<8192
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 8064) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 8192) (k := 128) (by decide +kernel) (by omega) (by omega)
+            · by_cases h14 : x<8448
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 8320) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · by_cases h16 : x<8576
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 8448) (k := 128) (by decide +kernel) (by omega) (by omega)
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 8576) (k := 128) (by decide +kernel) (by omega) (by omega)
+        · by_cases h10 : x<9344
+          · by_cases h12 : x<8960
+            · by_cases h14 : x<8832
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 8704) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 8832) (k := 128) (by decide +kernel) (by omega) (by omega)
+            · by_cases h14 : x<9088
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 8960) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · by_cases h16 : x<9216
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 9088) (k := 128) (by decide +kernel) (by omega) (by omega)
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 9216) (k := 128) (by decide +kernel) (by omega) (by omega)
+          · by_cases h12 : x<9600
+            · by_cases h14 : x<9472
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 9344) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 9472) (k := 128) (by decide +kernel) (by omega) (by omega)
+            · by_cases h14 : x<9728
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 9600) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · by_cases h16 : x<9856
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 9728) (k := 128) (by decide +kernel) (by omega) (by omega)
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 9856) (k := 128) (by decide +kernel) (by omega) (by omega)
+  · by_cases h4 : x<14976
+    · by_cases h6 : x<12416
+      · by_cases h8 : x<11136
+        · by_cases h10 : x<10496
+          · by_cases h12 : x<10240
+            · by_cases h14 : x<10112
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 9984) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 10112) (k := 128) (by decide +kernel) (by omega) (by omega)
+            · by_cases h14 : x<10368
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 10240) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 10368) (k := 128) (by decide +kernel) (by omega) (by omega)
+          · by_cases h12 : x<10752
+            · by_cases h14 : x<10624
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 10496) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 10624) (k := 128) (by decide +kernel) (by omega) (by omega)
+            · by_cases h14 : x<10880
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 10752) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · by_cases h16 : x<11008
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 10880) (k := 128) (by decide +kernel) (by omega) (by omega)
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 11008) (k := 128) (by decide +kernel) (by omega) (by omega)
+        · by_cases h10 : x<11776
+          · by_cases h12 : x<11392
+            · by_cases h14 : x<11264
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 11136) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 11264) (k := 128) (by decide +kernel) (by omega) (by omega)
+            · by_cases h14 : x<11520
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 11392) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · by_cases h16 : x<11648
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 11520) (k := 128) (by decide +kernel) (by omega) (by omega)
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 11648) (k := 128) (by decide +kernel) (by omega) (by omega)
+          · by_cases h12 : x<12032
+            · by_cases h14 : x<11904
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 11776) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 11904) (k := 128) (by decide +kernel) (by omega) (by omega)
+            · by_cases h14 : x<12160
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 12032) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · by_cases h16 : x<12288
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 12160) (k := 128) (by decide +kernel) (by omega) (by omega)
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 12288) (k := 128) (by decide +kernel) (by omega) (by omega)
+      · by_cases h8 : x<13696
+        · by_cases h10 : x<13056
+          · by_cases h12 : x<12672
+            · by_cases h14 : x<12544
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 12416) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 12544) (k := 128) (by decide +kernel) (by omega) (by omega)
+            · by_cases h14 : x<12800
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 12672) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · by_cases h16 : x<12928
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 12800) (k := 128) (by decide +kernel) (by omega) (by omega)
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 12928) (k := 128) (by decide +kernel) (by omega) (by omega)
+          · by_cases h12 : x<13312
+            · by_cases h14 : x<13184
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 13056) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 13184) (k := 128) (by decide +kernel) (by omega) (by omega)
+            · by_cases h14 : x<13440
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 13312) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · by_cases h16 : x<13568
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 13440) (k := 128) (by decide +kernel) (by omega) (by omega)
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 13568) (k := 128) (by decide +kernel) (by omega) (by omega)
+        · by_cases h10 : x<14336
+          · by_cases h12 : x<13952
+            · by_cases h14 : x<13824
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 13696) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 13824) (k := 128) (by decide +kernel) (by omega) (by omega)
+            · by_cases h14 : x<14080
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 13952) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · by_cases h16 : x<14208
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 14080) (k := 128) (by decide +kernel) (by omega) (by omega)
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 14208) (k := 128) (by decide +kernel) (by omega) (by omega)
+          · by_cases h12 : x<14592
+            · by_cases h14 : x<14464
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 14336) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 14464) (k := 128) (by decide +kernel) (by omega) (by omega)
+            · by_cases h14 : x<14720
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 14592) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · by_cases h16 : x<14848
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 14720) (k := 128) (by decide +kernel) (by omega) (by omega)
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 14848) (k := 128) (by decide +kernel) (by omega) (by omega)
+    · by_cases h6 : x<17536
+      · by_cases h8 : x<16256
+        · by_cases h10 : x<15616
+          · by_cases h12 : x<15232
+            · by_cases h14 : x<15104
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 14976) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 15104) (k := 128) (by decide +kernel) (by omega) (by omega)
+            · by_cases h14 : x<15360
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 15232) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · by_cases h16 : x<15488
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 15360) (k := 128) (by decide +kernel) (by omega) (by omega)
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 15488) (k := 128) (by decide +kernel) (by omega) (by omega)
+          · by_cases h12 : x<15872
+            · by_cases h14 : x<15744
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 15616) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 15744) (k := 128) (by decide +kernel) (by omega) (by omega)
+            · by_cases h14 : x<16000
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 15872) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · by_cases h16 : x<16128
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 16000) (k := 128) (by decide +kernel) (by omega) (by omega)
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 16128) (k := 128) (by decide +kernel) (by omega) (by omega)
+        · by_cases h10 : x<16896
+          · by_cases h12 : x<16512
+            · by_cases h14 : x<16384
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 16256) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 16384) (k := 128) (by decide +kernel) (by omega) (by omega)
+            · by_cases h14 : x<16640
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 16512) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · by_cases h16 : x<16768
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 16640) (k := 128) (by decide +kernel) (by omega) (by omega)
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 16768) (k := 128) (by decide +kernel) (by omega) (by omega)
+          · by_cases h12 : x<17152
+            · by_cases h14 : x<17024
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 16896) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 17024) (k := 128) (by decide +kernel) (by omega) (by omega)
+            · by_cases h14 : x<17280
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 17152) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · by_cases h16 : x<17408
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 17280) (k := 128) (by decide +kernel) (by omega) (by omega)
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 17408) (k := 128) (by decide +kernel) (by omega) (by omega)
+      · by_cases h8 : x<18816
+        · by_cases h10 : x<18176
+          · by_cases h12 : x<17792
+            · by_cases h14 : x<17664
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 17536) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 17664) (k := 128) (by decide +kernel) (by omega) (by omega)
+            · by_cases h14 : x<17920
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 17792) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · by_cases h16 : x<18048
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 17920) (k := 128) (by decide +kernel) (by omega) (by omega)
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 18048) (k := 128) (by decide +kernel) (by omega) (by omega)
+          · by_cases h12 : x<18432
+            · by_cases h14 : x<18304
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 18176) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 18304) (k := 128) (by decide +kernel) (by omega) (by omega)
+            · by_cases h14 : x<18560
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 18432) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · by_cases h16 : x<18688
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 18560) (k := 128) (by decide +kernel) (by omega) (by omega)
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 18688) (k := 128) (by decide +kernel) (by omega) (by omega)
+        · by_cases h10 : x<19456
+          · by_cases h12 : x<19072
+            · by_cases h14 : x<18944
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 18816) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 18944) (k := 128) (by decide +kernel) (by omega) (by omega)
+            · by_cases h14 : x<19200
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 19072) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · by_cases h16 : x<19328
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 19200) (k := 128) (by decide +kernel) (by omega) (by omega)
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 19328) (k := 128) (by decide +kernel) (by omega) (by omega)
+          · by_cases h12 : x<19712
+            · by_cases h14 : x<19584
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 19456) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 19584) (k := 128) (by decide +kernel) (by omega) (by omega)
+            · by_cases h14 : x<19840
+              · exact of_scan (f := diagRow P bins) (x := x) (s := 19712) (k := 128) (by decide +kernel) (by omega) (by omega)
+              · by_cases h16 : x<19968
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 19840) (k := 128) (by decide +kernel) (by omega) (by omega)
+                · exact of_scan (f := diagRow P bins) (x := x) (s := 19968) (k := 39) (by decide +kernel) (by omega) (by omega)
+set_option maxRecDepth 8000 in
+set_option maxHeartbeats 8000000 in
+lemma check_windows (x : ℕ) (hx : x<801) : (fun k => proper P (min 8 k) (tagged bins codes k)) x = true := by
+  by_cases h2 : x<396
+  · by_cases h4 : x<192
+    · by_cases h6 : x<96
+      · by_cases h8 : x<48
+        · by_cases h10 : x<24
+          · by_cases h12 : x<12
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 0) (k := 12) (by decide +kernel) (by omega) (by omega)
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 12) (k := 12) (by decide +kernel) (by omega) (by omega)
+          · by_cases h12 : x<36
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 24) (k := 12) (by decide +kernel) (by omega) (by omega)
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 36) (k := 12) (by decide +kernel) (by omega) (by omega)
+        · by_cases h10 : x<72
+          · by_cases h12 : x<60
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 48) (k := 12) (by decide +kernel) (by omega) (by omega)
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 60) (k := 12) (by decide +kernel) (by omega) (by omega)
+          · by_cases h12 : x<84
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 72) (k := 12) (by decide +kernel) (by omega) (by omega)
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 84) (k := 12) (by decide +kernel) (by omega) (by omega)
+      · by_cases h8 : x<144
+        · by_cases h10 : x<120
+          · by_cases h12 : x<108
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 96) (k := 12) (by decide +kernel) (by omega) (by omega)
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 108) (k := 12) (by decide +kernel) (by omega) (by omega)
+          · by_cases h12 : x<132
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 120) (k := 12) (by decide +kernel) (by omega) (by omega)
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 132) (k := 12) (by decide +kernel) (by omega) (by omega)
+        · by_cases h10 : x<168
+          · by_cases h12 : x<156
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 144) (k := 12) (by decide +kernel) (by omega) (by omega)
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 156) (k := 12) (by decide +kernel) (by omega) (by omega)
+          · by_cases h12 : x<180
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 168) (k := 12) (by decide +kernel) (by omega) (by omega)
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 180) (k := 12) (by decide +kernel) (by omega) (by omega)
+    · by_cases h6 : x<288
+      · by_cases h8 : x<240
+        · by_cases h10 : x<216
+          · by_cases h12 : x<204
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 192) (k := 12) (by decide +kernel) (by omega) (by omega)
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 204) (k := 12) (by decide +kernel) (by omega) (by omega)
+          · by_cases h12 : x<228
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 216) (k := 12) (by decide +kernel) (by omega) (by omega)
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 228) (k := 12) (by decide +kernel) (by omega) (by omega)
+        · by_cases h10 : x<264
+          · by_cases h12 : x<252
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 240) (k := 12) (by decide +kernel) (by omega) (by omega)
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 252) (k := 12) (by decide +kernel) (by omega) (by omega)
+          · by_cases h12 : x<276
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 264) (k := 12) (by decide +kernel) (by omega) (by omega)
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 276) (k := 12) (by decide +kernel) (by omega) (by omega)
+      · by_cases h8 : x<336
+        · by_cases h10 : x<312
+          · by_cases h12 : x<300
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 288) (k := 12) (by decide +kernel) (by omega) (by omega)
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 300) (k := 12) (by decide +kernel) (by omega) (by omega)
+          · by_cases h12 : x<324
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 312) (k := 12) (by decide +kernel) (by omega) (by omega)
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 324) (k := 12) (by decide +kernel) (by omega) (by omega)
+        · by_cases h10 : x<360
+          · by_cases h12 : x<348
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 336) (k := 12) (by decide +kernel) (by omega) (by omega)
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 348) (k := 12) (by decide +kernel) (by omega) (by omega)
+          · by_cases h12 : x<372
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 360) (k := 12) (by decide +kernel) (by omega) (by omega)
+            · by_cases h14 : x<384
+              · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 372) (k := 12) (by decide +kernel) (by omega) (by omega)
+              · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 384) (k := 12) (by decide +kernel) (by omega) (by omega)
+  · by_cases h4 : x<600
+    · by_cases h6 : x<492
+      · by_cases h8 : x<444
+        · by_cases h10 : x<420
+          · by_cases h12 : x<408
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 396) (k := 12) (by decide +kernel) (by omega) (by omega)
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 408) (k := 12) (by decide +kernel) (by omega) (by omega)
+          · by_cases h12 : x<432
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 420) (k := 12) (by decide +kernel) (by omega) (by omega)
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 432) (k := 12) (by decide +kernel) (by omega) (by omega)
+        · by_cases h10 : x<468
+          · by_cases h12 : x<456
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 444) (k := 12) (by decide +kernel) (by omega) (by omega)
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 456) (k := 12) (by decide +kernel) (by omega) (by omega)
+          · by_cases h12 : x<480
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 468) (k := 12) (by decide +kernel) (by omega) (by omega)
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 480) (k := 12) (by decide +kernel) (by omega) (by omega)
+      · by_cases h8 : x<540
+        · by_cases h10 : x<516
+          · by_cases h12 : x<504
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 492) (k := 12) (by decide +kernel) (by omega) (by omega)
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 504) (k := 12) (by decide +kernel) (by omega) (by omega)
+          · by_cases h12 : x<528
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 516) (k := 12) (by decide +kernel) (by omega) (by omega)
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 528) (k := 12) (by decide +kernel) (by omega) (by omega)
+        · by_cases h10 : x<564
+          · by_cases h12 : x<552
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 540) (k := 12) (by decide +kernel) (by omega) (by omega)
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 552) (k := 12) (by decide +kernel) (by omega) (by omega)
+          · by_cases h12 : x<576
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 564) (k := 12) (by decide +kernel) (by omega) (by omega)
+            · by_cases h14 : x<588
+              · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 576) (k := 12) (by decide +kernel) (by omega) (by omega)
+              · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 588) (k := 12) (by decide +kernel) (by omega) (by omega)
+    · by_cases h6 : x<696
+      · by_cases h8 : x<648
+        · by_cases h10 : x<624
+          · by_cases h12 : x<612
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 600) (k := 12) (by decide +kernel) (by omega) (by omega)
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 612) (k := 12) (by decide +kernel) (by omega) (by omega)
+          · by_cases h12 : x<636
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 624) (k := 12) (by decide +kernel) (by omega) (by omega)
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 636) (k := 12) (by decide +kernel) (by omega) (by omega)
+        · by_cases h10 : x<672
+          · by_cases h12 : x<660
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 648) (k := 12) (by decide +kernel) (by omega) (by omega)
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 660) (k := 12) (by decide +kernel) (by omega) (by omega)
+          · by_cases h12 : x<684
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 672) (k := 12) (by decide +kernel) (by omega) (by omega)
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 684) (k := 12) (by decide +kernel) (by omega) (by omega)
+      · by_cases h8 : x<744
+        · by_cases h10 : x<720
+          · by_cases h12 : x<708
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 696) (k := 12) (by decide +kernel) (by omega) (by omega)
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 708) (k := 12) (by decide +kernel) (by omega) (by omega)
+          · by_cases h12 : x<732
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 720) (k := 12) (by decide +kernel) (by omega) (by omega)
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 732) (k := 12) (by decide +kernel) (by omega) (by omega)
+        · by_cases h10 : x<768
+          · by_cases h12 : x<756
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 744) (k := 12) (by decide +kernel) (by omega) (by omega)
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 756) (k := 12) (by decide +kernel) (by omega) (by omega)
+          · by_cases h12 : x<780
+            · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 768) (k := 12) (by decide +kernel) (by omega) (by omega)
+            · by_cases h14 : x<792
+              · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 780) (k := 12) (by decide +kernel) (by omega) (by omega)
+              · exact of_scan (f := fun k => proper P (min 8 k) (tagged bins codes k)) (x := x) (s := 792) (k := 9) (by decide +kernel) (by omega) (by omega)
+end OMA.E848Finite
+
+open OMA.E848Finite Finset in
+theorem OMA.solution : OMA.R_Erdos848_erdos_848_R2.H1 := by
+  intro N hN A sub adm
+  let k := (N+17)/25
+  have hk : k≤800 := by dsimp [k]; omega
+  have e := all_bounds product_correct check_diag (fun i hi => check_windows i (by omega)) k hk A
+    (fun x hx => mem_range.mpr (by have := mem_range.mp (sub hx); dsimp [k]; omega)) adm
+  rw [Erdos848.A₇, OMA.R_Erdos848_erdos_848_R2.card_range_filter_mod25_eq 7 (by decide)]
+  exact e
