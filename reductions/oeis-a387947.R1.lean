@@ -101,18 +101,6 @@ end PrimeSquareCollision
 
 namespace OMA.R_oeis_a387947_R1
 
-/-- The prime-square case is exactly a bound on the second prime in the progression 1 modulo p. -/
-def H1 : Prop :=
-  ∀ p : ℕ, p.Prime → 7 ≤ p →
-    ∃ r s : ℕ, r.Prime ∧ s.Prime ∧ s < r ∧ r ≤ p^2 ∧
-      (r ≡ 1 [MOD p]) ∧ (s ≡ 1 [MOD p])
-
-/-- The remaining nonsquare-prime cases. -/
-def H2 : Prop :=
-  ∀ n : ℕ, 2 < n → n ≠ 4 → ¬n.Prime →
-    (∀ p : ℕ, p.Prime → 2 < p → n ≠ p^2) →
-    ∃ r s : ℕ, r.Prime ∧ s.Prime ∧ s < r ∧ r ≤ n ∧ (r-1)^2 ≡ (s-1)^2 [MOD n]
-
 private theorem small_check : ∀ r s : Fin 26,
     r.val.Prime → s.val.Prime → s.val < r.val →
     ¬ ((r.val ≤ 1 ∧ (r.val-1)^2 ≡ (s.val-1)^2 [MOD 1]) ∨
@@ -129,6 +117,18 @@ private theorem prime_case {n : ℕ} (hn : 2 < n) :
   refine ⟨n-2,?_⟩
   simp only [pow_two, Nat.mul_self_sub_mul_self_eq]
   congr 1 <;> omega
+
+/-- The prime-square case is exactly a bound on the second prime in the progression 1 modulo p. -/
+def H1 : Prop :=
+  ∀ p : ℕ, p.Prime → 7 ≤ p →
+    ∃ r s : ℕ, r.Prime ∧ s.Prime ∧ s < r ∧ r ≤ p^2 ∧
+      (r ≡ 1 [MOD p]) ∧ (s ≡ 1 [MOD p])
+
+/-- The remaining nonsquare-prime cases. -/
+def H2 : Prop :=
+  ∀ n : ℕ, 2 < n → n ≠ 4 → ¬n.Prime →
+    (∀ p : ℕ, p.Prime → 2 < p → n ≠ p^2) →
+    ∃ r s : ℕ, r.Prime ∧ s.Prime ∧ s < r ∧ r ≤ n ∧ (r-1)^2 ≡ (s-1)^2 [MOD n]
 
 theorem main : H1 → H2 → type_of% @OMA.S_oeis_a387947.main := by
   intro h1 h2 n hn
