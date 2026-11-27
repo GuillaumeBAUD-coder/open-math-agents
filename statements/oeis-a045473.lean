@@ -18,7 +18,7 @@ namespace OMA.S_oeis_a045473
 open Polynomial
 
 /-- The polynomial quotient, expanded over ZMod p without rational-function division. -/
-def shiftedQuotient (p : ℕ) : Polynomial (ZMod p) :=
+noncomputable def shiftedQuotient (p : ℕ) : Polynomial (ZMod p) :=
   X ^ 6 + C 7 * X ^ 5 + C 21 * X ^ 4 + C 35 * X ^ 3 +
     C 35 * X ^ 2 + C 21 * X + C 7
 
