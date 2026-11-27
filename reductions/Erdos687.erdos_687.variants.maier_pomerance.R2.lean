@@ -3,6 +3,12 @@ import FormalConjectures.ErdosProblems.«687»
 /-!
 # A two-band sieve reduction of the Maier–Pomerance bound
 
+This reduction has been withdrawn. The upper-band hypothesis H2 is false.
+For a small fixed positive theta, prescribe zero at the primes between
+x^theta and the square root of x and at the upper-band primes. Suitable
+choices below x^theta make the upper band hit more than half of the
+small-prime survivors. The implication below remains valid.
+
 The initial sieve uses primes up to the square root of the prime cutoff.
 The primes above that cutoff are split at the integer part of `x^(3/4)`.
 Each hypothesis bounds the fraction of the initial survivors hit in one band,
