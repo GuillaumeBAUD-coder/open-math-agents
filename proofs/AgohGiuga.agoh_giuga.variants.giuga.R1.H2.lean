@@ -2,6 +2,12 @@ import OMAReductions.R_AgohGiuga_agoh_giuga_variants_giuga_R1
 
 open AgohGiuga
 
+private lemma sum_range_mul_eq {α : Type*} [AddCommMonoid α] (f : ℕ → α) (q p : ℕ) :
+    ∑ i ∈ Finset.range (q * p), f i = ∑ k ∈ Finset.range q, ∑ r ∈ Finset.range p, f (k * p + r) := by
+  induction q with
+  | zero => simp
+  | succ q ih => rw [Nat.succ_mul, Finset.sum_range_add, ih, Finset.sum_range_succ]
+
 theorem OMA.solution : OMA.R_AgohGiuga_agoh_giuga_variants_giuga_R1.H2 := by
   intro n hn p hp_mem
   have hp : p.Prime := Nat.prime_of_mem_primeFactors hp_mem
@@ -26,7 +32,7 @@ theorem OMA.solution : OMA.R_AgohGiuga_agoh_giuga_variants_giuga_R1.H2 := by
     have hqp : n / p = q := by rw [hq, Nat.mul_div_cancel_left _ hp.pos]
     rw [hqp]
     have hmul : n = q * p := by rw [hq, mul_comm]
-    rw [hmul, Finset.sum_range_mul]
+    rw [hmul, sum_range_mul_eq]
     have hinner : ∀ k : ℕ, ∑ r ∈ Finset.range p, ((k * p + r : ℕ) : ZMod p) ^ (n - 1) =
         ∑ r ∈ Finset.Ioo 0 p, (r : ZMod p) ^ (n - 1) := by
       intro k
