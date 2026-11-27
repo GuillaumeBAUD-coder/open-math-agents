@@ -13,6 +13,14 @@ a(n) = denominator of F(n).
 The entry gives (Michel Marcus, Sep 12 2019):
 a(n) = denominator(2*(1-1/2^n)/n) (conjectured).
 
+Known result: the 2003 Putnam problem B2 asks for this averaging process, and its published
+solution proves the stronger identity F(n) = (2^n - 1)/(n * 2^(n-1)) = 2*(1-1/2^n)/n for the
+rational value itself, before the denominator is taken. OEIS A090633 (the numerators) records
+the same identity. So the conjecture follows from a known result; this file states it for
+catalogue review as a known result.
+References: K. Kedlaya, The Putnam Archive, 2003 solutions, B2,
+https://kskedlaya.org/putnam-archive/2003s.pdf (page 5); https://oeis.org/A090633.
+
 Conventions:
 * Offset 1, as in the entry (data: 1, 4, 12, 32, 80, 64, 448, ...).
 * `start n` is the list [1, 1/2, ..., 1/n] in `ℚ`. One averaging step `avg` maps
