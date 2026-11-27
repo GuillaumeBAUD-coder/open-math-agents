@@ -14,6 +14,5 @@ theorem OMA.solution : OMA.R_Erdos687_erdos_687_variants_maier_pomerance_R1.H2 :
   have hm := (isBigO_refl (fun n : ℕ => (n : ℝ) * Real.log (n : ℝ) ^ (2 : ℝ)) atTop).mul hg
   refine hm.congr' (Filter.Eventually.of_forall fun _ => rfl) ?_
   filter_upwards [hlog.eventually_gt_atTop 0] with n hn
-  dsimp
   rw [Real.rpow_add hn]
   ring
