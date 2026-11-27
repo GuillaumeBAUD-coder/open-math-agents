@@ -1,4 +1,5 @@
 import OMAStatements.S_oeis_a134641
+import Mathlib
 
 open OMA.S_oeis_a134641 in
 theorem OMA.solution : type_of% @OMA.S_oeis_a134641.main := by
@@ -50,7 +51,7 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a134641.main := by
           have hd : c ∣ p := by
             have hdm := Nat.div_add_mod p (2 * c)
             rw [hmod, hm2] at hdm
-            exact ⟨2 * (p / (2 * c)) + 1, by rw [← hdm]; ring⟩
+            exact ⟨2 * (p / (2 * c)) + 1, by first | linarith [hdm] | nlinarith [hdm]⟩
           rcases Nat.Prime.eq_one_or_self_of_dvd hp c hd with h3 | h3
           · right; omega
           · exfalso; nlinarith
