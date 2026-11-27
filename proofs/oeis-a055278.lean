@@ -75,7 +75,15 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a055278.main := by
         show k + 8 - 3 + 4 = k + 9 by omega, show k + 8 - 5 + 4 = k + 7 by omega,
         show k + 8 - 6 + 4 = k + 6 by omega, show k + 8 - 7 + 4 = k + 5 by omega,
         show k + 8 - 8 + 4 = k + 4 by omega, show k + 8 + 4 = k + 12 by omega]
-      rw [ite_eq_right (by omega), ite_eq_right (by omega), ite_eq_right (by omega),
+      rw [show (if k + 8 = 3 then (1 : ℤ) else 0) = 0 by
+          by_cases h : k + 8 = 3
+          · exfalso; omega
+          · simp [h],
+        show (if k + 8 = 2 then (1 : ℤ) else 0) = 0 by
+          by_cases h : k + 8 = 2
+          · exfalso; omega
+          · simp [h],
+        show (if k + 8 = 0 then (1 : ℤ) else 0) = 0 by simp,
         add_zero, add_zero]
       exact L_diff_eq_zero k
   have hQ := congrArg (PowerSeries.map (Int.castRingHom ℚ)) hZ
