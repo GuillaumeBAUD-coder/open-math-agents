@@ -34,7 +34,15 @@ Reading of the source (conventions the question leaves implicit):
 The case `n = 1` holds, since then `Med[y] = exp μ < exp (μ + σ²/2) = 𝔼[y]`. The MathOverflow
 answers (2017) give only a heuristic large-`n` argument (Fenton–Wilkinson approximation) and an
 approximate argument for `n = 2`; a 2024 comment notes that, for fixed `σ`, failures can occur for
-only finitely many `n`. No general proof or counterexample is known to us (November 2026).
+only finitely many `n`.
+
+Literature status (update): the statement follows from a known theorem. `y = f(Z)` with
+`f(z) = (1/n) ∑ᵢ exp (μ + σ zᵢ)` convex and `Z` standard Gaussian in `ℝⁿ`. Kwapień, *A remark on the
+median and the expectation of convex functions of Gaussian vectors*, in Probability in Banach Spaces 9
+(Birkhäuser, 1994), pp. 271–272, proves `Med f(Z) ≤ 𝔼 f(Z)` for every integrable convex `f`, via
+Ehrhard's inequality. Strictness here follows because `t ↦ Φ⁻¹(ℙ(f(Z) ≤ t))` is concave, so
+`f(Z) = Q(G)` in law for a convex, strictly increasing `Q` that is bounded below and hence not affine,
+and Jensen's inequality is strict. So this is a known result, not an open problem.
 -/
 
 namespace OMA.S_mo_271503
