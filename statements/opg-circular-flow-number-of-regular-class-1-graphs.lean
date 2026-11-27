@@ -22,6 +22,14 @@ The circular flow number `F_c(G)` is the infimum of the real numbers `r` for whi
 nowhere-zero `r`-flow. Class 1 for a `(2t+1)`-regular graph means a proper edge colouring
 with `2t+1` colours (edges sharing an end get different colours); such a graph is bridgeless,
 so the set of `r` is nonempty.
+
+Scope: the statement is made for `t ∈ {1, 2, 3, 4, 5, 7, 9, 11}`, the values not refuted in the
+literature (the source notes that `t = 1` is true). For the other values it is false:
+counterexamples are known for `t = 2p` with `p ≥ 3` odd (D. Mattiolo and E. Steffen, Edge
+colorings and circular flows on regular graphs, J. Graph Theory 99 (2022) 399-413) and for
+`t ∈ {6, 8, 10}` and every `t ≥ 12` (J. Li, X. Li and M. Wang, The flow index of regular class I
+graphs, SIAM J. Discrete Math. (2022)). They are `(2t+1)`-regular class 1 multigraphs with
+circular flow number above `2 + 2/t`.
 -/
 
 namespace OMA.S_opg_circular_flow_number_of_regular_class_1_graphs
@@ -39,9 +47,11 @@ noncomputable def circularFlowNumber {V E : Type*} [Fintype E] [DecidableEq V]
     (src tgt : E → V) : ℝ :=
   sInf {r : ℝ | ∃ φ : E → ℝ, IsNowhereZeroRealFlow src tgt r φ}
 
-/-- **Circular flow number of regular class 1 graphs (Steffen).** For an integer `t ≥ 1`,
-every `(2t+1)`-regular class 1 graph has circular flow number at most `2 + 2/t`. -/
-theorem main : ∀ (t : ℕ), 1 ≤ t → ∀ (V E : Type) [Fintype V] [DecidableEq V] [Fintype E]
+/-- **Circular flow number of regular class 1 graphs (Steffen), cases not refuted.** For
+`t ∈ {1, 2, 3, 4, 5, 7, 9, 11}`, every `(2t+1)`-regular class 1 graph has circular flow number
+at most `2 + 2/t`. -/
+theorem main : ∀ (t : ℕ), t ∈ ({1, 2, 3, 4, 5, 7, 9, 11} : Finset ℕ) →
+    ∀ (V E : Type) [Fintype V] [DecidableEq V] [Fintype E]
     (src tgt : E → V), (∀ e, src e ≠ tgt e) →
       (∀ v : V, (Finset.univ.filter fun e => src e = v).card +
         (Finset.univ.filter fun e => tgt e = v).card = 2 * t + 1) →
