@@ -14,6 +14,10 @@ those are separate statements and are not formalized in this file.
 The square pyramidal numbers are `0^2 + 1^2 + ... + k^2 = k (k + 1) (2 k + 1) / 6`.
 Their generalization to all integers `k` uses the same polynomial, so for example
 index `-1` gives `0`, index `-2` gives `-1` and index `-3` gives `-5`.
+
+*References:*
+- [A000330](https://oeis.org/A000330)
+- [A336205](https://oeis.org/A336205) (the related pentagonal case, not stated here)
 -/
 
 namespace OMA.S_oeis_a000330
