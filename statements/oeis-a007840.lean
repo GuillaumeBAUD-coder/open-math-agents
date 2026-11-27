@@ -6,6 +6,8 @@ import Mathlib
 Source: https://oeis.org/A007840
 Credit: @ivillar
 
+Status: known result: the entry records that the conjecture is true (Sela Fried, Feb 14 2026).
+
 A007840 (offset 0) is the number of factorizations of permutations of n letters into ordered
 cycles, that is, the number of ways to split n letters into cycles and then to order the cycles
 linearly; data 1, 1, 3, 14, 88, 694, 6578, ... The entry gives the formula
