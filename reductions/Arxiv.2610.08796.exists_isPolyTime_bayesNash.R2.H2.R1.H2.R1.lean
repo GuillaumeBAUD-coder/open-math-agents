@@ -15,10 +15,11 @@ linear inequality system `A y ≤ b` in `n * m` variables:
 - `y_{θ,t} = 0` whenever `t` is strictly suboptimal for type `θ` under `x`;
 - `gain(t, y) ≥ lam` whenever `x_t > 0`, and `gain(t, y) ≤ lam` whenever `x_t < 1`.
 
-* `H1`: General exact rational LP feasibility in `IsPolyTime` (Khachiyan's theorem), identical in
-  signature to `R1.H2.R1.H1`.
+* `H1`: General exact rational LP feasibility in `IsPolyTime` (Khachiyan's theorem) for
+  well-formed systems `(n, cons)` whose constraint rows have length `n` (with `n = 0 ∨ cons ≠ []`,
+  ensuring `n` is bounded by the input bit-length).
 * `H2`: Polynomial-time construction of the fixed-coverage attacker-strategy rational LP from
-  `((g, lam), x)`, with completeness and soundness.
+  `((g, lam), x)`, with row-length well-formedness, completeness, and soundness.
 * `H3`: Polynomial-time composition and flat-to-2D list reshaping of the `n * m` LP solution into
   `n` rows of length `m`.
 -/
@@ -28,20 +29,22 @@ namespace OMA.R_Arxiv_2610_08796_exists_isPolyTime_bayesNash_R2_H2_R1_H2_R1
 open ComplexityTheory Arxiv.«2610.08796»
 
 /-- Exact rational linear programming feasibility is computable in polynomial time:
-given `(n, cons)` representing `∑_j a_j x_j ≤ b` for `(a, b) ∈ cons`, if a feasible
-`x ∈ ℚ^n` exists, `lpSolve (n, cons)` returns one. -/
+given `(n, cons)` representing `∑_j a_j x_j ≤ b` for `(a, b) ∈ cons`, where every row has
+length `n` and `n = 0 ∨ cons ≠ []` (so `n` is bounded by the bit-length of the input), if a
+feasible `x ∈ ℚ^n` exists, `lpSolve (n, cons)` returns one. -/
 def H1 : Prop :=
   ∃ lpSolve : (ℕ × List (List ℚ × ℚ)) → List ℚ,
     IsPolyTime lpSolve ∧
     ∀ (n : ℕ) (cons : List (List ℚ × ℚ)),
+      (∀ r ∈ cons, r.1.length = n) → (n = 0 ∨ cons ≠ []) →
       (∃ x : List ℚ, x.length = n ∧
         ∀ r ∈ cons, (∑ j : Fin n, r.1[j.val]?.getD 0 * x[j.val]?.getD 0) ≤ r.2) →
       (lpSolve (n, cons)).length = n ∧
       ∀ r ∈ cons, (∑ j : Fin n, r.1[j.val]?.getD 0 * (lpSolve (n, cons))[j.val]?.getD 0) ≤ r.2
 
 /-- Polynomial-time construction of the fixed-coverage attacker-strategy rational LP from
-`((g, lam), x)`, with completeness from any fixed-`lam` attacker profile for `x` and soundness
-from any feasible flat solution vector `y`. -/
+`((g, lam), x)`, with row-length well-formedness, completeness from any fixed-`lam` attacker
+profile for `x`, and soundness from any feasible flat solution vector `y`. -/
 def H2 : Prop :=
   ∃ bP : (GameInput × ℚ) × List ℚ → ℕ × List (List ℚ × ℚ),
     IsPolyTime bP ∧
@@ -53,6 +56,7 @@ def H2 : Prop :=
       let gain (atk : Fin g.numTypes → Fin g.numTargets → ℚ) (t : Fin g.numTargets) :=
         (∑ θ : Fin g.numTypes, g.prior θ * atk θ t) *
           ((g.defenderPayoff t).2 - (g.defenderPayoff t).1)
+      (∀ r ∈ lp.2, r.1.length = lp.1) ∧ (lp.1 = 0 ∨ lp.2 ≠ []) ∧
       ((∃ atk : Fin g.numTypes → Fin g.numTargets → ℚ,
         (∀ θ, (∑ t, atk θ t) = 1 ∧ ∀ t, 0 ≤ atk θ t) ∧
         (∀ θ t s, 0 < atk θ t → uA θ s ≤ uA θ t) ∧
@@ -90,10 +94,10 @@ theorem main : H1 → H2 → H3 → OMA.R_Arxiv_2610_08796_exists_isPolyTime_bay
     h3 bP lpSolve hbP_pt hlp_pt, ?_⟩
   intro g lam x hg hex
   obtain ⟨p0, hxlen, _, hcov_sum, hcov_bnds, hp0_rows, hp0_br, hp0_lo, hp0_hi⟩ := hex
-  obtain ⟨hcomp, hsound⟩ := hspec g lam x hg
+  obtain ⟨hrow_len, hnonempty, hcomp, hsound⟩ := hspec g lam x hg
   have hfeas := hcomp ⟨fun θ t => (p0[θ.val]?.getD [])[t.val]?.getD 0,
     fun θ => ⟨(hp0_rows θ).2.1, (hp0_rows θ).2.2⟩, hp0_br, hp0_lo, hp0_hi⟩
-  obtain ⟨hlen, hsat⟩ := hlp_spec (bP ((g, lam), x)).1 (bP ((g, lam), x)).2 hfeas
+  obtain ⟨hlen, hsat⟩ := hlp_spec (bP ((g, lam), x)).1 (bP ((g, lam), x)).2 hrow_len hnonempty hfeas
   obtain ⟨hrows, hbr, hlo, hhi⟩ := hsound (lpSolve (bP ((g, lam), x))) hlen hsat
   have hget : ∀ (θ : Fin g.numTypes) (t : Fin g.numTargets),
       (((List.ofFn fun θ : Fin g.numTypes =>
