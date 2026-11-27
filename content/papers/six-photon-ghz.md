@@ -1,0 +1,28 @@
+---
+title: Why six pair-source outputs cannot make a three-colour GHZ tensor
+date: 2026-11-27
+summary: A finite matching obstruction and an existing rigidity theorem give a checked six-vertex proof for every finite dimension at least three.
+author: Aryan Singh (@shunyaekam), oo research
+---
+
+Imagine six labelled outputs. A source joins two outputs and assigns a colour to each endpoint. For a prescribed colouring of all six outputs, multiply the three complex edge weights in each perfect matching, then add those products. A GHZ tensor requires that sum to equal one whenever all six colours coincide and zero everywhere else. The six-vertex theorem rules out such an assignment for every finite number of colours $D \ge 3$. It concerns the normalized matching model. [Model and target](https://github.com/google-deepmind/formal-conjectures/blob/9097e2f90e66d2f6244209cb1c07f7120d17ec53/FormalConjectures/Paper/MonochromaticQuantumGraph.lean) · [Complete checked theorem](https://github.com/shunyaekam/oo-research/blob/a478a13/checks/left_to_solve/Optics.lean)
+
+## Why three colours suffice
+
+Choose any three of the available colours. Each six-output pattern using those three has exactly the same matching terms before and after the restriction. Its target value also stays the same. A solution in any dimension $D \ge 3$ would therefore give one in dimension three. [Three-colour restriction and final implication](https://github.com/GuillaumeBAUD-coder/open-math-agents/blob/79fd4c3d8dbfc9e8a1f1e621c19c0757b18c0dd9/reductions/MonochromaticQuantumGraph.eqSystem6_no_solution_ge3.R1.lean#L34-L54)
+
+## Where the contradiction occurs
+
+First suppose each edge with nonzero weight has the same colour at both ends. There are fifteen perfect matchings of six labelled vertices. For each of the three constant colourings their matching products sum to one, so at least one matching contributes a nonzero term. A mixed colouring has sum zero, which still permits cancellation between different matchings. The proof keeps the complex amplitudes while deriving restrictions on which edges and triples can be nonzero. Only after this step does it discard the weights themselves. [Amplitude expansion and incidence identity](https://github.com/shunyaekam/open-math-agents/blob/e5491fee6c7a1050a428425b922e52b97a665164/proofs/MonochromaticQuantumGraph.eqSystem6_no_solution_ge3.R1.H1.lean#L58-L115) · [From physical weights to allowed supports](https://github.com/shunyaekam/open-math-agents/blob/e5491fee6c7a1050a428425b922e52b97a665164/proofs/MonochromaticQuantumGraph.eqSystem6_no_solution_ge3.R1.H1.lean#L258-L308)
+
+Choose one nonzero matching of each colour. Relabelling the vertices and colours reduces the $15^3$ choices to eight representatives. The proof derives a contradiction from the support restrictions in every case. This establishes the obstruction for equal-colour edges. [Eight representatives and the final case split](https://github.com/shunyaekam/open-math-agents/blob/e5491fee6c7a1050a428425b922e52b97a665164/proofs/MonochromaticQuantumGraph.eqSystem6_no_solution_ge3.R1.H1.lean#L3406-L3610)
+
+Could edges with unlike endpoint colours evade this argument? Rishi Rajasekaran's diagonal-rigidity theorem answers that question. In a hypothetical solution the aggregate weight for unlike endpoint colours is zero on each used pair of distinct vertices in canonical order, $u<v$. Specializing his theorem to six vertices therefore supplies precisely the assumption used in the finite obstruction. [Rajasekaran's original theorem](https://github.com/rrajasek95/krenn-conjecture/blob/1db2e5a23d97e3b2d03c30c6d9af773111ec682b/formal/all-orders/DiagonalSource.lean) · [Six-vertex specialization and model adapter](https://github.com/shunyaekam/open-math-agents/blob/d8d7370dc10f2ac6114f7bf972cb48666e027677/proofs/MonochromaticQuantumGraph.eqSystem6_no_solution_ge3.R1.H2.lean#L10826-L10854)
+
+## Verification and credit
+
+At submission, Left to Solve’s kernel had accepted both proof files and a separate replay had checked their composition. The two upstream formal-scope reviews remain pending. [Finite proof submission](https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/1167) · [Rigidity submission](https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/1289)
+
+The contribution by Aryan Singh's oo research project, using OpenAI Codex agents (GPT-6), is the three-colour reduction, the independent finite support proof, the single-file port of Rajasekaran's work, and the combined replay. The replay builds the two submissions from pinned source files, applies the reduction and audits the original quantified target. Lean reports exactly `propext`, `Classical.choice` and `Quot.sound`. [Independent upstream check of the finite proof](https://github.com/GuillaumeBAUD-coder/open-math-agents/actions/runs/45921328482) · [Upstream check of the port](https://github.com/GuillaumeBAUD-coder/open-math-agents/actions/runs/45922309349) · [Combined audit](https://github.com/shunyaekam/oo-research/actions/runs/45922396593)
+
+The physical obstruction has prior proofs. Cervera-Lierta, Krenn and Aspuru-Guzik studied the six-vertex monochromatic case. Algal supplied a computational certificate for six vertices and three colours. Rajasekaran's formalization proves the more general complex-weight theorem for every even number of vertices at least six. [Cervera-Lierta, Krenn and Aspuru-Guzik](https://doi.org/10.22331/q-2022-10-13-836) · [Algal's six-vertex certificate](https://github.com/algal/krenn-gu-6x3-certificate/tree/c04696e515e0c02be140353fb52ea60c62e827b1) · [Rajasekaran's general proof](https://github.com/rrajasek95/krenn-conjecture/tree/1db2e5a23d97e3b2d03c30c6d9af773111ec682b)
