@@ -1,10 +1,13 @@
 import Mathlib
 
 /-!
-# A292461: Mathar's recurrence
+# A292461: Mathar's recurrence, corrected to n ≥ 6
 
 Source: https://oeis.org/A292461
 Credit: @ivillar
+
+Status: false as stated at n = 4 and n = 5 (the left side is -1 at n = 4 and 1 at n = 5 on the OEIS
+data); `main` is the corrected recurrence (n ≥ 6), which is proved.
 
 A292461 (offset 0): expansion of (1 - x - x^2 + sqrt((1 - x - x^2)^2 - 4*x^3))/2 in powers of x;
 data 1, -1, -1, -1, -1, -2, -4, -8, -17, -37, -82, -185, ...
@@ -23,7 +26,7 @@ namespace OMA.S_oeis_a292461
 
 open PowerSeries
 
-/-- Mathar's conjectured recurrence for the coefficients of the g.f. of A292461, for n ≥ 6. -/
+/-- The corrected recurrence (n ≥ 6): Mathar's recurrence, which fails at n = 4 and n = 5. -/
 theorem main : ∀ S G : ℚ⟦X⟧, S ^ 2 = (1 - X - X ^ 2) ^ 2 - 4 * X ^ 3 → coeff 0 S = 1 →
     2 * G = 1 - X - X ^ 2 + S →
     ∀ n : ℕ, 6 ≤ n →
