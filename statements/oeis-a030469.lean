@@ -1,4 +1,7 @@
-import Mathlib
+import Mathlib.Data.Nat.Nth
+import Mathlib.Data.Nat.Digits.Defs
+import Mathlib.Data.Nat.Prime.Defs
+import Mathlib.Data.Finite.Defs
 
 /-!
 # Prime concatenations of three consecutive primes
