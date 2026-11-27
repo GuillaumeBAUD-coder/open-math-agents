@@ -1,6 +1,13 @@
 import OMAReductions.R_Erdos20_erdos_20_R1
 import Mathlib.Data.Fintype.BigOperators
 
+/-!
+# Color-coding lemma for Erdős Problem 20 (step R1.H1)
+
+Averaging over all `n`-colorings of the finite union of the family `F` shows that some
+coloring makes at least a `n! / n^n` fraction of the `n`-element sets rainbow.
+-/
+
 -- Problem: Erdős Problem 20 — reduction step R1.H1
 -- Credit: @Ronandt (the owner of the agent is credited as the solver)
 -- Prove EXACTLY this target. No sorry, no axiom, no native_decide.
@@ -42,7 +49,7 @@ lemma lift0_zero {k : ℕ} (g : Fin k → Fin k) : lift0 g 0 = 0 := by
 lemma lift0_succ {k : ℕ} (g : Fin k → Fin k) (i : Fin k) :
     lift0 g i.succ = (g i).succ := by
   unfold lift0
-  rw [dif_neg (Nat.succ_ne_zero i.val)]
+  rw [dif_neg (by simp : i.succ.val ≠ 0)]
   congr 1
   apply Fin.ext
   simp
@@ -67,13 +74,13 @@ lemma lift0_bijective {k : ℕ} {g : Fin k → Fin k} (hg : Function.Bijective g
         omega
       have hg' : g ⟨x.val - 1, by omega⟩ = g ⟨y.val - 1, by omega⟩ := Fin.ext hval
       have heq := hg.1 hg'
-      have heqval := congrArg Fin.val heq
+      have heqval : x.val - 1 = y.val - 1 := congrArg Fin.val heq
       exact Fin.ext (by omega)
   · intro y
     by_cases hy : y.val = 0
     · refine ⟨0, ?_⟩
       rw [lift0_zero]
-      exact Fin.ext (by omega)
+      exact Fin.ext (by simp; omega)
     · obtain ⟨i, hi⟩ := hg.2 ⟨y.val - 1, by omega⟩
       refine ⟨i.succ, ?_⟩
       rw [lift0_succ, hi]
@@ -119,6 +126,7 @@ lemma drop0_bijective {k : ℕ} {f : Fin (k + 1) → Fin (k + 1)}
     have hcomp : Function.Bijective (fun x => swap0 (f 0) (f x)) :=
       (swap0_bijective (f 0)).comp hf
     obtain ⟨x, hx⟩ := hcomp.2 y.succ
+    dsimp only at hx
     have hx0 : x.val ≠ 0 := by
       intro hv
       have hxzero : x = 0 := Fin.ext (by simpa using hv)
@@ -143,6 +151,7 @@ noncomputable def bijectiveFinSuccEquiv (k : ℕ) :
   left_inv p := by
     apply Subtype.ext
     funext x
+    dsimp only
     by_cases hx : x.val = 0
     · have hx0 : x = 0 := Fin.ext (by simpa using hx)
       rw [hx0, lift0_zero, swap0_zero]
@@ -200,7 +209,9 @@ noncomputable def coloringSplitEquiv {α : Type} {n : ℕ} (hn : 0 < n)
                x) = fun x : A => g (eA x) := by
            funext x
            unfold extC
-           rw [dif_pos (hAU x.2), dif_pos x.2]
+           rw [dif_pos (hAU x.2)]
+           dsimp only
+           rw [dif_pos x.2]
          rw [heq]
          exact hg.comp eA.bijective⟩
     left_inv := fun ⟨f, _⟩ => by
@@ -221,7 +232,9 @@ noncomputable def coloringSplitEquiv {α : Type} {n : ℕ} (hn : 0 < n)
         funext i
         dsimp
         unfold extC
-        rw [dif_pos (hAU (eA.symm i).2), dif_pos (eA.symm i).2]
+        rw [dif_pos (hAU (eA.symm i).2)]
+        dsimp only
+        rw [dif_pos (eA.symm i).2]
         simp only [Subtype.coe_eta, Equiv.apply_symm_apply]
       · funext x
         have hxA : x.1 ∉ A := (Finset.mem_sdiff.mp x.2).2
