@@ -3367,9 +3367,10 @@ namespace Hi
 def safe (x : Nat) := if x < 2^60 then index x else x.log2
 
 theorem safe_eq (x : Nat) : safe x = x.log2 := by
-  by_cases h : x < 2^60
-  · simp [safe,h,index_eq_log2 h]
-  · simp [safe,h]
+  unfold safe
+  split
+  next h => exact index_eq_log2 h
+  next => rfl
 end Hi
 
 namespace MatchingRows.RF
