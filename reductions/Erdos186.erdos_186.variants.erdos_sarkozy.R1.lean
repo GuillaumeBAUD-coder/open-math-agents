@@ -50,6 +50,7 @@ lemma right_in_bounds {A : Finset ℕ} {N a : ℕ}
   have hyN := (mem_Icc.mp (hA (mem_filter.mp hy).1)).2
   exact mem_Icc.mpr ⟨by omega, by omega⟩
 
+-- Equal subsums of distances below and above a would give a nonempty subset with average a.
 lemma no_common_sum {A : Finset ℕ} {a : ℕ} (ha : a ∈ A)
     (hna : Erdos186.NonAveraging A)
     {U V : Finset ℕ} (hU : U ⊆ ((A.filter fun x => x < a).image fun x => a - x)) (hV : V ⊆ ((A.filter fun x => a < x).image fun x => x - a))
