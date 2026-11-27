@@ -10,6 +10,9 @@ Vladimir Kruchinin's sequence a(n) = binomial(2n+2, n) - 2*binomial(2n, n) + bin
 (offset 0; data 0, 0, 4, 20, 85, 344, ...). R. J. Mathar conjectured (Jun 07 2016) the recurrence
 -2*(n+2)*(49*n-95)*a(n) + 325*(n-1)*(n+1)*a(n-1) + 2*(67*n-38)*(2*n-5)*a(n-2) = 0.
 
+Status: the recurrence fails at n = 2 (the left side is -96 there); `main` is the corrected
+recurrence (n ≥ 3).
+
 Formalization notes:
 * The terms are computed in ℤ. At n = 0 the entry's programs take binomial(-2, 0) = 1; the
   truncated `2 * n - 2 = 0` in ℕ gives the same value, and for n ≥ 1 no truncation occurs.
