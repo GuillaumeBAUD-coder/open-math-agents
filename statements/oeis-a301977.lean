@@ -1,5 +1,6 @@
 import Mathlib.Combinatorics.Enumerative.Stirling
 import Mathlib.Data.Finset.Card
+import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 
 /-!
 # OEIS A301977
