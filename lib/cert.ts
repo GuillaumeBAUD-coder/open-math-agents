@@ -2,6 +2,7 @@ import "server-only";
 import keyInfo from "@/public/certificate-key.json";
 import { getProblem, KIND_LABEL } from "@/lib/catalog";
 import { getContributions, getSolved, type Contribution } from "@/lib/db";
+import { leanPortOf } from "@/lib/outcome";
 import { SITE } from "@/lib/site";
 
 /**
@@ -20,6 +21,7 @@ export type Certificate = {
   solvedAt: string;
   holder: { handle: string; github: string; sharePercent: number; roles: { role: string; item: string; pr: string; agent: string | null; model: string | null }[] };
   contributors: { handle: string; sharePercent: number }[];
+  originalLeanProof?: { author: string; source: string };
   checkedBy: string;
 };
 export type Signed = { certificate: Certificate; id: string; signature: string; algorithm: "Ed25519"; publicKey: string; verify: string };
@@ -67,20 +69,25 @@ export async function certificateFor(problemId: string, handle: string): Promise
   const sol = solved.find((s) => s.problem_id === problemId);
   if (!contrib || !me || !sol) return null;
   const p = getProblem(problemId);
+  const port = leanPortOf(problemId, sol.pr_url);
   const certificate: Certificate = {
     type: "left-to-solve/contribution-certificate",
     version: 1,
     issuer: SITE.replace(/^https?:\/\//, ""),
     keyId: keyInfo.keyId,
-    problem: { id: problemId, title: p?.title ?? problemId, kind: p ? KIND_LABEL[p.kind] : "step of a reduction", url: `${SITE}/p/${encodeURIComponent(problemId)}` },
+    problem: { id: problemId, title: port?.title ?? p?.title ?? problemId, kind: port ? "Known result · Lean port" : p ? KIND_LABEL[p.kind] : "step of a reduction", url: `${SITE}/p/${encodeURIComponent(problemId)}` },
     result: sol.polarity === "disproof" ? "disproof" : "proof",
-    firstSolution: p?.kind === "open",
+    firstSolution: !port && p?.kind === "open",
     solvedAt: sol.created_at,
     holder: {
       handle: me.handle, github: `https://github.com/${me.handle}`, sharePercent: pct(me.share),
-      roles: me.roles.map((r) => ({ role: r.role, item: r.item, pr: r.pr.replace(/#closed$/, ""), agent: r.agent ?? null, model: r.model ?? null })),
+      roles: me.roles.map((r) => ({
+        role: port && r.role === "proof" && r.item === problemId ? "port" : r.role,
+        item: r.item, pr: r.pr.replace(/#closed$/, ""), agent: r.agent ?? null, model: r.model ?? null,
+      })),
     },
     contributors: contrib.map((c) => ({ handle: c.handle, sharePercent: pct(c.share) })),
+    ...(port && { originalLeanProof: { author: port.originalAuthor, source: port.source } }),
     checkedBy: "Lean 4 kernel (Left to Solve checker; axioms limited to propext, Classical.choice, Quot.sound)",
   };
   const sig = await crypto.subtle.sign({ name: "Ed25519" }, await signingKey(), new TextEncoder().encode(canonical(certificate)));
@@ -98,6 +105,7 @@ export async function verifySigned(s: { certificate: unknown; signature: string 
 
 export const ROLE_LABEL: Record<string, string> = {
   proof: "Proved the theorem",
+  port: "Ported the Lean proof and submitted it",
   step: "Proved a step of a reduction",
   reduction: "Split the problem into steps that, together, prove it",
 };

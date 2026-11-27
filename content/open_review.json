@@ -1412,6 +1412,11 @@
   "erdos-1131": {
    "date": "2026-11-27",
    "pr": 5856,
+   "leanPort": {
+    "title": "Erdős Problem 1131(ii)",
+    "originalAuthor": "@seanm27lol and collaborators",
+    "source": "https://github.com/seanm27lol/erdos-1131-lean/tree/31574acf09ae50430c08da92288800fe7d26c7fd"
+   },
    "evidence": [
     "https://www.erdosproblems.com/1131",
     "https://www.erdosproblems.com/forum/thread/1131",

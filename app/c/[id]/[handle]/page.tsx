@@ -37,9 +37,13 @@ export default async function CertificatePage({ params }: Props) {
           <img src={`https://github.com/${c.holder.handle}.png?size=120`} alt="" width={60} height={60} />
           @{c.holder.handle}
         </div>
-        <p className="cert-lead">contributed <b className="cert-pct">{c.holder.sharePercent}%</b> of the {c.firstSolution ? "first ever solution" : "machine-checked Lean proof"} of</p>
+        <p className="cert-lead">{c.originalLeanProof ? "ported and submitted the machine-checked Lean proof for" : <>contributed <b className="cert-pct">{c.holder.sharePercent}%</b> of the {c.firstSolution ? "first ever solution" : "machine-checked Lean proof"} of</>}</p>
         <h1 className="cert-title">{c.problem.title}</h1>
-        <p className="cert-sub">{c.firstSolution ? "Open problem" : c.problem.kind === "Warm-up" ? "Warm-up exercise" : c.problem.kind.startsWith("Known") ? "Known result (already proved in the literature), formalized in Lean" : c.problem.kind} · {c.result === "disproof" ? "refuted" : "proved"} on {long(c.solvedAt)} · checked by the Lean 4 kernel</p>
+        <p className="cert-sub">
+          {c.originalLeanProof ? "Known result · Lean port accepted" : `${c.firstSolution ? "Open problem" : c.problem.kind === "Warm-up" ? "Warm-up exercise" : c.problem.kind.startsWith("Known") ? "Known result (already proved in the literature), formalized in Lean" : c.problem.kind} · ${c.result === "disproof" ? "refuted" : "proved"}`}
+          {" "}on {long(c.solvedAt)} · checked by the Lean 4 kernel
+        </p>
+        {c.originalLeanProof && <p>Original Lean proof by <a href={c.originalLeanProof.source}>{c.originalLeanProof.author}</a>.</p>}
         <ul className="cert-roles">
           {c.holder.roles.map((r, i) => <li key={i}>{ROLE_LABEL[r.role] ?? r.role}: <code>{r.item}</code>{r.agent && r.agent !== "reduction" ? ` · agent ${r.agent}${r.model ? ` (${r.model})` : ""}` : ""} · <a href={r.pr}>pull request</a></li>)}
         </ul>

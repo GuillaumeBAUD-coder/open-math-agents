@@ -1,6 +1,6 @@
 import Link from "@/components/Link";
 import { SITE } from "@/lib/site";
-import { outcomeBadge, outcomeOf, outcomeText } from "@/lib/outcome";
+import { leanPortOf, outcomeBadge, outcomeOf, outcomeText } from "@/lib/outcome";
 
 export type CreditData = {
   problem_id: string; handle: string; agent: string | null; model: string | null; polarity: string;
@@ -11,6 +11,11 @@ export function citation(c: CreditData, title: string, kind: string | null = nul
   const o = outcomeOf(kind, c.problem_id);
   const tool = [c.agent && c.agent !== "reduction" ? c.agent : null, c.model].filter(Boolean).join(", ");
   const others = (c.contributors ?? []).filter((h) => h !== c.handle);
+  const port = leanPortOf(c.problem_id, c.pr_url);
+  if (port) {
+    return `Original Lean proof of "${port.title}" by ${port.originalAuthor}. Left to Solve port and submission by @${c.handle}${tool ? ` (AI agent: ${tool})` : ""}, checked by the Lean 4 kernel. ` +
+      `${port.source} · ${c.pr_url.replace(/#closed$/, "")}`;
+  }
   return `@${c.handle}${tool ? ` (AI agent: ${tool})` : ""}${others.length ? `, with ${others.map((h) => "@" + h).join(", ")}` : ""}. ` +
     `${o === "known" ? "Lean formalization of the known result" : o === "warmup" ? "Warm-up" : c.polarity === "disproof" ? "Refutation of" : o === "open" ? "Solution of the open problem" : o === "pending" ? "Lean-accepted proof (statement being verified) of the open problem" : o === "misstated" ? "Proof of a mis-stated formal version of" : "Proof of"} "${title}", checked by the Lean 4 kernel. ` +
     `Left to Solve, ${c.created_at.slice(0, 10)}. ${c.pr_url.replace(/#closed$/, "")} · ${SITE}/p/${encodeURIComponent(c.problem_id)}`;
@@ -20,16 +25,19 @@ export default function Credit({ c, title, first: firstAsked = false, kind = nul
   // "Solved for the first time" only once the formal statement is confirmed to be the open problem.
   const first = firstAsked && outcomeOf(kind, c.problem_id) === "open";
   const others = (c.contributors ?? []).filter((h) => h !== c.handle);
+  const port = leanPortOf(c.problem_id, c.pr_url);
   return (
     <div className="panel" style={{ borderColor: "var(--ok)" }}>
-      <h4 style={{ color: "var(--warmup)" }}>{first ? (c.polarity === "disproof" ? "Refuted for the first time" : "Solved for the first time") : outcomeBadge(kind, c.polarity, c.problem_id)} · credited to the owner of the agent</h4>
-      {!first && <p style={{ margin: "0 0 12px", color: "var(--muted)", fontSize: ".9rem" }}>{outcomeText(outcomeOf(kind, c.problem_id)).explain}</p>}
+      <h4 style={{ color: "var(--warmup)" }}>{port ? "Known result · Lean port" : <>{first ? (c.polarity === "disproof" ? "Refuted for the first time" : "Solved for the first time") : outcomeBadge(kind, c.polarity, c.problem_id)} · credited to the owner of the agent</>}</h4>
+      {port ? (
+        <p style={{ margin: "0 0 12px" }}>Original Lean proof by <a href={port.source}>{port.originalAuthor}</a>.</p>
+      ) : !first && <p style={{ margin: "0 0 12px", color: "var(--muted)", fontSize: ".9rem" }}>{outcomeText(outcomeOf(kind, c.problem_id)).explain}</p>}
       {first && <p style={{ margin: "0 0 12px", fontWeight: 600 }}>An open problem nobody had solved before. On the record, @{c.handle} is the person who solved it.</p>}
       <div className="credit">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={`https://github.com/${c.handle}.png?size=88`} alt="" width={44} height={44} />
         <div>
-          <div style={{ fontWeight: 650, fontSize: "1.05rem" }}><Link href={`/a/${c.handle}`}>@{c.handle}</Link></div>
+          <div style={{ fontWeight: 650, fontSize: "1.05rem" }}><Link href={`/a/${c.handle}`}>@{c.handle}</Link>{port && " · Left to Solve port and submission"}</div>
           <div style={{ color: "var(--muted)", fontSize: ".9rem" }}>
             {c.agent === "reduction" ? "closed through a reduction into steps" : <>agent <b>{c.agent ?? "not declared"}</b>{c.model ? <> · model <b>{c.model}</b></> : null}</>}
             {" "}· {c.points} points · {c.created_at.slice(0, 10)} · <a href={c.pr_url.replace(/#closed$/, "")}>pull request</a>
