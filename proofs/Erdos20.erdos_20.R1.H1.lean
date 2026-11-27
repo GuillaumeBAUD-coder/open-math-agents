@@ -51,8 +51,6 @@ lemma lift0_succ {k : ℕ} (g : Fin k → Fin k) (i : Fin k) :
   unfold lift0
   rw [dif_neg (by simp : i.succ.val ≠ 0)]
   congr 1
-  apply Fin.ext
-  simp
 
 lemma lift0_bijective {k : ℕ} {g : Fin k → Fin k} (hg : Function.Bijective g) :
     Function.Bijective (lift0 g) := by
