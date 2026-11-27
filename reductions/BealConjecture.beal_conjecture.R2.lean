@@ -2,6 +2,10 @@ import FormalConjectures.Wikipedia.BealConjecture
 
 -- Credit: @Hennyrick
 
+/-! If a base is a positive power of two, a primitive solution forces the other
+two exponents to be coprime. The proof uses factorization of differences and
+sums of powers of odd numbers. H2 and H3 retain only the coprime cases. -/
+
 namespace OMA.R_BealConjecture_beal_conjecture_R2
 
 /-- Equations in which no base is a positive power of two. -/
