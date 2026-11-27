@@ -10,6 +10,7 @@ Formalization: @sturdy4days.
 In §2.1 of *Prime Number Patterns* (2008), Andrew Granville conjectures
 that for each length n at least 3, there is an arithmetic progression
 of n distinct primes whose last term is at most n! + 1.
+Paper: https://dms.umontreal.ca/~andrew/PDF/PrimePattMonthly.1.pdf.
 -/
 
 namespace OMA.S_oeis_a005115
