@@ -6,6 +6,9 @@ import Mathlib
 Source: https://oeis.org/A138365
 Credit: @ivillar
 
+Status: known result. The OEIS entry notes that a(n) = 10*a(n-1) + 10*a(n-2) - a(n-3) for
+n >= 4, and that the conjectured generating function follows from this.
+
 A006190 (offset 0) is b(0) = 0, b(1) = 1, b(n) = 3*b(n-1) + b(n-2). A138365 (offset 1) is
 a(n) = A006190(n) * A006190(n+2), with data 10, 99, 1090, 11880, 129601, ...
 Colin Barker (Oct 20 2013) gave the empirical g.f. -x*(x-10) / ((x+1)*(x^2-11*x+1));
