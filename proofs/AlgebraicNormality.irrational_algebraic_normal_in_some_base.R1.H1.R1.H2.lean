@@ -431,7 +431,7 @@ theorem fiber_disjoint {m i j : ℕ} (hm : 0 < m) (hij : i ≠ j) {a b : ℝ}
 
 end WallScale
 
-/-! Positive integer scaling decomposes the inverse image of each interval into equal pieces. -/
+/- Positive integer scaling decomposes the inverse image of each interval into equal pieces. -/
 
 open WallBridge Filter Topology
 
@@ -467,8 +467,8 @@ private theorem tendsto_union_freq {s : ℕ → ℝ} (m : ℕ)
       simp [U]
     have h := ((hlim j hjm).add (ih hT')).congr (f₂ := fun n =>
       @visitFreq s {x | ∃ k ∈ insert j T, x ∈ I k} (Classical.decPred _) n) fun n => by
-        letI : DecidablePred (· ∈ U) := Classical.decPred _
-        letI : DecidablePred (· ∈ {x | ∃ k ∈ insert j T, x ∈ I k}) := Classical.decPred _
+        let : DecidablePred (· ∈ U) := Classical.decPred _
+        let : DecidablePred (· ∈ {x | ∃ k ∈ insert j T, x ∈ I k}) := Classical.decPred _
         calc _ = visitFreq s (I j ∪ U) n := (visitFreq_union hsep n).symm
              _ = _ := congrFun (visitFreq_congr (s := s) eqU.symm) n
     simpa [Finset.card_insert_of_notMem hj, add_mul, add_comm] using h
@@ -493,7 +493,8 @@ theorem natScale {s : ℕ → ℝ} (hs : IsEquidistributedModuloOne s)
       (div_nonneg (add_nonneg (Nat.cast_nonneg _) ha) hm'.le)
       (div_le_div_of_nonneg_right (by linarith) hm'.le)
       ((div_le_one hm').mpr (by linarith))
-    convert h using 2 <;> ring
+    convert h using 2
+    ring
   have h := tendsto_union_freq m I ((b - a) / m)
     (fun hij => fiber_disjoint hm hij ha hb) hlim (Finset.range m) (fun _ h => h)
   have heq (n : ℕ) :
@@ -503,20 +504,20 @@ theorem natScale {s : ℕ → ℝ} (hs : IsEquidistributedModuloOne s)
     congr 2
     apply congrArg Finset.card
     ext t
-    simp only [Finset.mem_filter, Set.mem_setOf_eq, Finset.mem_range]
+    simp only [Finset.mem_filter, Set.mem_ofPred_eq, Finset.mem_range]
     exact and_congr_right fun _ => (fract_nat_mul_mem_Ico_nat hm ha hb (s t)).symm
   have h' := h.congr heq
   have H : ((Finset.range m).card : ℝ) * ((b - a) / (m : ℝ)) = 1 / (2 : ℝ)^k := by
     simp only [Finset.card_range]
     dsimp [a,b]
     field_simp
-    <;> ring
+    ring
   rw [H] at h'
   exact h'
 
 end WallScale
 
-/-! # Reflection of a uniformly distributed sequence -/
+/- Reflection of a uniformly distributed sequence. -/
 
 open WallBridge Filter Topology
 
