@@ -1159,8 +1159,8 @@ namespace OORaw
 
 def atom (g : Support) (n : Nat) : Prop :=
   let i := n-1
-  let c : Fin 3 := (i / 15 : Nat)
-  let e : Fin 15 := (i : Nat)
+  let c : Fin 3 := ⟨(i / 15) % 3, Nat.mod_lt _ (by decide)⟩
+  let e : Fin 15 := ⟨i % 15, Nat.mod_lt _ (by decide)⟩
   if i < 45 then g.S c e else if i < 90 then g.T c e else g.P c e
 
 theorem clauseImp {a b : Prop} (h : a → b) : ¬ a ∨ b := by
