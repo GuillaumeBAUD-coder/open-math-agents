@@ -7,27 +7,20 @@ Source: https://oeis.org/A242560
 
 Offset 1 (data 2, 1, 2, 2, 4, 3, 6, 4, ...). The quotient is taken in ℤ, so `k > n` (negative
 denominator) is allowed, and `k = n` (zero denominator) is excluded. "(n!-k)/(n-k) is an integer"
-is expressed as `(n! - k) % (n - k) = 0` in ℤ. Such a `k` always exists (`k = n + 1` works),
-so `a n` is the least one, given by `Nat.find`.
+is expressed as `(n! - k) % (n - k) = 0` in ℤ. `a(m) = k` is stated as: `k` satisfies the
+condition for `m`, and every `j` satisfying it has `k ≤ j`.
 
 Formalizes the conjecture stated in the OEIS entry: a(2n) = n (for n >= 1).
 -/
 
 namespace OMA.S_oeis_a242560
 
-/-- Some positive `k ≠ n` makes `(n! - k)/(n - k)` an integer (for example `k = n + 1`). -/
-theorem exists_good (n : ℕ) :
-    ∃ k : ℕ, 0 < k ∧ k ≠ n ∧ ((n.factorial : ℤ) - k) % ((n : ℤ) - k) = 0 := by
-  refine ⟨n + 1, by omega, by omega, ?_⟩
-  have h : ((n : ℤ) - ((n + 1 : ℕ) : ℤ)) = -1 := by push_cast; ring
-  rw [h]
-  exact Int.emod_eq_zero_of_dvd (neg_dvd.mpr (one_dvd _))
+/-- The defining condition of A242560: `0 < k`, `k ≠ m` and `(m! - k)/(m - k)` is an integer. -/
+abbrev good (m k : ℕ) : Prop :=
+  0 < k ∧ k ≠ m ∧ ((m.factorial : ℤ) - k) % ((m : ℤ) - k) = 0
 
-/-- A242560: the least positive `k` such that `(n! - k)/(n - k)` is an integer. -/
-def a (n : ℕ) : ℕ := Nat.find (exists_good n)
-
-/-- The conjecture of A242560: `a(2n) = n`. -/
-theorem main : ∀ n : ℕ, 1 ≤ n → a (2 * n) = n := by
+/-- The conjecture of A242560: `a(2n) = n`, i.e. `n` is the least `k` with `good (2n) k`. -/
+theorem main : ∀ n : ℕ, 1 ≤ n → good (2 * n) n ∧ ∀ k : ℕ, good (2 * n) k → n ≤ k := by
   sorry
 
 end OMA.S_oeis_a242560
