@@ -1002,7 +1002,7 @@ lemma disjoint_regular_routes {V : Type*} [DecidableEq V] (G : SimpleGraph V)
   obtain ⟨x,hx,y,hy,J,hlen,hs,hc,ha⟩ := route_regular_chain G hd k m hk hkm hdegree (r i)
     (C i) (A i) (Z i) F (hends i hi).1 (hends i hi).2 (by omega) (by omega)
     (hth i hi) (fun j hj => by have h := hsize i hi j hj; omega) (hpairs i hi)
-  exact ⟨x :: (J ++ [y]),⟨x,hx,y,hy,J,rfl,hlen,hs,hc⟩,by simpa [hlen] using hbound i hi,ha⟩
+  exact ⟨x :: (J ++ [y]),⟨x,hx,y,hy,J,rfl,hlen,hs,hc⟩,by have h := hbound i hi; simp [hlen]; omega,ha⟩
 
 /-- Reserve exactly the interiors of disjoint connector paths. Their
 endpoints remain available to start and end the paths in matched pairs. -/
@@ -2060,6 +2060,88 @@ lemma cycle_from_reduced_routes {V : Type*} [DecidableEq V] (G : SimpleGraph V)
   · rw [hlen]
     congr 1
     exact Finset.sum_congr rfl fun i hi => by rw [(hJ i (by have := Finset.mem_range.mp hi; omega)).1]
+
+/-- Lift a monochromatic connected matching from a finite reduced graph.
+Every even order between the stated bounds is realized. The lower bound
+allows for the connector tour and the upper bound uses the combined
+capacity of the matched pairs. -/
+lemma cycle_of_reduced_connected_matching {V I : Type*} [DecidableEq V] [Fintype I]
+    (G : SimpleGraph V) [DecidableRel G.Adj] (H : SimpleGraph I)
+    (C : I → Finset V) (N : ℕ) (hN : ∀ i, (C i).card = N)
+    (ε d : ℚ) (he : ε ≤ 1/2) (hd : 3*ε ≤ d)
+    (hred : ∀ i j, H.Adj i j → G.IsUniform ε (C i) (C j) ∧ d ≤ G.edgeDensity (C i) (C j))
+    (root : I) (t : ℕ) (u v : Fin (t+1) → I)
+    (hr : ∀ i, H.Reachable root (u i)) (hed : ∀ i, H.Adj (u i) (v i))
+    (hpair : ∀ i, Disjoint (C (u i)) (C (v i)))
+    (hsep : ∀ i j, i < j → Disjoint (C (u i) ∪ C (v i)) (C (u j) ∪ C (v j)))
+    (k m s cap : ℕ) (hk : 0 < k) (hkm : k ≤ m)
+    (hth : (N : ℚ)*(2*ε) ≤ k) (hden : (k : ℚ) ≤ (d-3*ε)*m)
+    (hs : m + 2*Fintype.card I + (t+1)*(2*Fintype.card I) ≤ s)
+    (h2s : 2*s ≤ N) (htyp : (s : ℚ) ≤ (d-ε)*N)
+    (hcap : m + cap + k + 1 + (t+1)*(2*Fintype.card I) ≤ N)
+    (n : ℕ) (hn : 3 ≤ n) (heven : Even n)
+    (hmin : (t+1)*(2*Fintype.card I + 2) ≤ n)
+    (hmax : n ≤ 4*(t+1) + 2*((t+1)*cap)) :
+    (cycleGraph n).IsContained G := by
+  classical
+  let p := t+1
+  let M := 2*Fintype.card I
+  let next : Equiv.Perm (Fin (t+1)) := Equiv.addRight 1
+  obtain ⟨w,hw,hpar⟩ := connected_matching_routes H root u v next hr hed
+  let idx (i : ℕ) : Fin (t+1) := ⟨i % (t+1), Nat.mod_lt _ (by omega)⟩
+  have valid (i : Fin (t+1)) : idx i = i := Fin.ext (Nat.mod_eq_of_lt i.isLt)
+  have idxval (i) (hi : i ≤ t) : (idx i).val = i := Nat.mod_eq_of_lt (by omega)
+  have cyclic (i) (hi : i ≤ t) : next (idx i) = idx (if i < t then i+1 else 0) := by
+    change idx i + 1 = _
+    by_cases h : i < t
+    · apply Fin.ext
+      rw [Fin.val_add_one_of_lt (show idx i < Fin.last t by change (idx i).val < t; rwa [idxval i hi])]
+      simp only [if_pos h, idxval i hi, idxval (i+1) (by omega)]
+    · have e : idx i = Fin.last t := Fin.ext (by rw [idxval i hi]; simp; omega)
+      rw [e,Fin.last_add_one,if_neg h]
+      exact Fin.ext (by simp [idx])
+  let r (i : ℕ) := (w (idx i)).length - 1
+  let route (i j : ℕ) := C ((w (idx i)).getVert j)
+  have hrlen (i) : r i + 1 = (w (idx i)).length := by dsimp [r]; have := (hw (idx i)).1; omega
+  have hbound (i) : r i + 2 ≤ M := by have := (hw (idx i)).2; have := hrlen i; dsimp [M]; omega
+  let base := ∑ i ∈ Finset.range p, (4+r i)
+  have hsum : (∑ i ∈ Finset.range p, (r i + 1)) = ∑ i, (w i).length := by
+    rw [Finset.sum_range]
+    apply Finset.sum_congr rfl
+    intro i _
+    simpa only [valid] using hrlen i.val
+  have bval : base = 4*p + ∑ i ∈ Finset.range p, r i := by simp [base,Finset.sum_add_distrib,Nat.mul_comm]
+  have low : base ≤ n := by
+    have small : base ≤ ∑ _i ∈ Finset.range p, (M+2) :=
+      Finset.sum_le_sum fun i _ => by have := hbound i; omega
+    have h : base ≤ p*(M+2) := by simpa using small
+    exact h.trans hmin
+  have big : 4*p ≤ base := by omega
+  have parity : Even base := by
+    obtain ⟨b,hb⟩ := hpar
+    rw [← hsum, Finset.sum_add_distrib] at hb
+    simp only [Finset.sum_const, Finset.card_range, nsmul_eq_mul, mul_one, Fintype.card_fin] at hb
+    change p + ((∑ i ∈ Finset.range p, r i) + p) = b + b at hb
+    exact ⟨b+p,by omega⟩
+  let q := (n-base)/2
+  have exactlen : n = base + 2*q := by
+    obtain ⟨j,hj⟩ := heven
+    obtain ⟨b,hb⟩ := parity
+    dsimp [q]; omega
+  have lim : q ≤ p*cap := by change n ≤ 4*p+2*(p*cap) at hmax; omega
+  refine cycle_from_reduced_routes G t N (fun i => C (u (idx i))) (fun i => C (v (idx i)))
+    r route (fun _ => cap) ε d he hd k m M s hk hkm hth hden hs h2s htyp
+    (fun _ _ => ⟨hN _,hN _⟩) (fun _ _ => hcap) (fun _ _ => hred _ _ (hed _))
+    (fun _ _ => hpair _) (fun i j hij hj => hsep _ _ (by change (idx i).val < (idx j).val; rwa [idxval i (by omega),idxval j hj]))
+    (fun i _ => hbound i) ?_ (fun _ _ _ _ => hN _) ?_ n q hn (by simpa [p] using lim) exactlen
+  · intro i hi
+    constructor
+    · simp [route]
+    · dsimp [route]
+      rw [hrlen,Walk.getVert_length,cyclic i hi]
+  · intro i hi j hj
+    apply hred
+    exact (w (idx i)).adj_getVert_succ (by rwa [← hrlen])
 
 /-- Splitting both sides of a pair increases its size-weighted mean square
 density by exactly the variance of the subpair densities. In particular a
