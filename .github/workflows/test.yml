@@ -27,6 +27,8 @@ jobs:
       - name: Type check and build (Cloudflare Workers, vinext)
         id: build
         run: node scripts/build_statements.mjs && node scripts/build_data.mjs && npx tsc --noEmit && npx vite build
+      - name: Agent brief and solved export lookup tests
+        run: node --test tests/agent-brief-step-lookup.test.mjs tests/solved-export.test.mjs
       - name: Start the Worker locally and load the catalogue into its D1 (desk offline in CI)
         run: |
           (npx vite preview --port 3123 > preview.log 2>&1 &)

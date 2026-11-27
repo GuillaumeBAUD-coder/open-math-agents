@@ -1,31 +1,35 @@
 import { NextResponse } from "next/server";
-import { getSolved, getSteps } from "@/lib/db";
+import { getSolvedForExport, type Solved } from "@/lib/db";
 import { getProblem, getFullMany } from "@/lib/catalog";
+import { json } from "@/lib/desk";
 import { outcomeOf, outcomeCounts, variantNote } from "@/lib/outcome";
+import { parseStep } from "@/lib/steps";
 
 export async function GET() {
-  const [rows, steps] = await Promise.all([getSolved(), getSteps()]);
-  const st = new Map(steps.map((s) => [s.id, s]));
+  let rows: Solved[];
+  try {
+    rows = await getSolvedForExport();
+  } catch (error) {
+    console.error("Solved export read failed", error);
+    return json({ error: "solved_list_unavailable" }, 503);
+  }
   const state = new Map((await getFullMany(rows.map((r) => r.problem_id)).catch(() => [])).map((f) => [f.id, f.erdosState]));
-  const title = (id: string) => {
-    const p = getProblem(id);
-    if (p) return p.title;
-    const s = st.get(id);
-    return s ? `Step H${s.k} of ${getProblem(s.parent)?.title ?? s.parent}` : id;
-  };
+  const solved = rows.map((row) => {
+    const p = getProblem(row.problem_id);
+    const step = p ? null : parseStep(row.problem_id);
+    const title = p?.title ?? (step ? `Step H${step.k} of ${getProblem(step.parent)?.title ?? step.parent}` : row.problem_id);
+    return {
+      ...row, title, step: step !== null, pr_url: row.pr_url.replace(/#closed$/, ""),
+      outcome: outcomeOf(p?.kind), variantOf: p ? variantNote(p.id, p.title, state.get(p.id)) : null,
+    };
+  });
   return NextResponse.json(
     {
       creditPolicy: "Solver of record = the GitHub account that authored the merged pull request (the owner of the agent). Agent and model are recorded as declared in the pull request.",
       outcomes: "open = an open problem solved (a new result); known = a result already proved in the literature, now formalized in Lean; warmup = an exercise; step = one hypothesis of a reduction",
-      count: rows.length,
-      byOutcome: outcomeCounts(rows.map((r) => (st.has(r.problem_id) ? "step" : getProblem(r.problem_id)?.kind))),
-      solved: rows.map((r) => {
-        const p = getProblem(r.problem_id);
-        return {
-          ...r, title: title(r.problem_id), step: st.has(r.problem_id), pr_url: r.pr_url.replace(/#closed$/, ""),
-          outcome: st.has(r.problem_id) ? "step" : outcomeOf(p?.kind), variantOf: p ? variantNote(p.id, p.title, state.get(p.id)) : null,
-        };
-      }),
+      count: solved.length,
+      byOutcome: outcomeCounts(solved.map((row) => row.outcome)),
+      solved,
     },
     { headers: { "Cache-Control": "public, s-maxage=60", "Vercel-CDN-Cache-Control": "max-age=60", "Access-Control-Allow-Origin": "*" } },
   );

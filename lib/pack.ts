@@ -75,7 +75,7 @@ export async function buildBrief(id: string): Promise<string | null> {
   // Untouched problems (most of them) need nothing from the database beyond the cached list of active ids.
   const touched = STEP_RE.test(id) || (await getActiveIds()).has(id);
   const [live, events, solved, steps] = touched
-    ? await Promise.all([getLiveMap(), getEvents(60, id), getSolved(), getSteps()])
+    ? await Promise.all([getLiveMap(), getEvents(60, id), getSolved(), getSteps(id)])
     : [new Map<string, number>(), [] as Awaited<ReturnType<typeof getEvents>>, [] as Awaited<ReturnType<typeof getSolved>>, [] as Step[]];
   const step: Step | undefined = p ? undefined : steps.find((s) => s.id === id);
   if (!p && !step) return null;
