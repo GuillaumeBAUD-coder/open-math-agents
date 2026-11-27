@@ -24,9 +24,9 @@ private def S (p n : Nat) := (p.digits n).sum
 private theorem legendre (p n : Nat) (hp : p.Prime) :
     (p-1) * n.factorial.factorization p + S p n = n := by
   have h := hp.sub_one_mul_multiplicity_factorial (n := n)
-  first
-  | rw [Nat.multiplicity_eq_factorization hp (Nat.factorial_ne_zero n)] at h
-  | rw [Nat.multiplicity_eq_factorization hp] at h
+  have bridge : multiplicity p n.factorial = n.factorial.factorization p := by
+    solve_by_elim only [Nat.multiplicity_eq_factorization, hp, Nat.factorial_ne_zero]
+  rw [bridge] at h
   rw [h]
   exact Nat.sub_add_cancel (Nat.digit_sum_le p n)
 
