@@ -13,14 +13,10 @@ theorem OMA.solution : type_of% @Erdos602.erdos_602.variants.countable_index := 
     have hsub : A i \ ⋃ j ∈ Finset.range i, A j =
         A i \ ⋃ j ∈ Finset.range i, (A i ∩ A j) := by
       ext x
-      simp only [Set.mem_diff, Set.mem_iUnion, Set.mem_inter_iff, exists_prop]
-      constructor
-      · rintro ⟨hx, hn⟩
-        exact ⟨hx, fun ⟨j, hj, _, hj'⟩ => hn ⟨j, hj, hj'⟩⟩
-      · rintro ⟨hx, hn⟩
-        exact ⟨hx, fun ⟨j, hj, hj'⟩ => hn ⟨j, hj, hx, hj'⟩⟩
+      simp only [Set.mem_sdiff, Set.mem_iUnion, Set.mem_inter_iff, exists_prop]
+      aesop
     rw [hsub]
-    refine (hA i).2.diff ?_
+    refine (hA i).2.sdiff ?_
     refine Set.Finite.biUnion (Finset.finite_toSet _) ?_
     intro j hj
     have hji : j < i := Finset.mem_range.mp hj
@@ -29,7 +25,7 @@ theorem OMA.solution : type_of% @Erdos602.erdos_602.variants.countable_index := 
       b ∈ A i \ ⋃ j ∈ Finset.range i, A j ∧ a ≠ b := by
     intro i
     obtain ⟨a, ha⟩ := (hinf i).nonempty
-    obtain ⟨b, hb, hba⟩ := ((hinf i).diff (Set.finite_singleton a)).nonempty
+    obtain ⟨b, hb, hba⟩ := ((hinf i).sdiff (Set.finite_singleton a)).nonempty
     exact ⟨a, b, ha, hb, fun h => hba (h ▸ rfl)⟩
   choose a b ha hb hab using hpick
   have key : ∀ i j, a i ≠ b j := by
@@ -45,11 +41,7 @@ theorem OMA.solution : type_of% @Erdos602.erdos_602.variants.countable_index := 
   classical
   let f : α → Fin 2 := fun n => if ∃ i, n = b i then 1 else 0
   refine ⟨f, fun i hMono => ?_⟩
-  have hfa : f (a i) = 0 := by
-    simp only [f]
-    rw [if_neg]
-    rintro ⟨j, hj⟩
-    exact key i j hj
+  have hfa : f (a i) = 0 := by simp [f, not_exists.mpr (key i)]
   have hfb : f (b i) = 1 := by
     simp only [f]
     rw [if_pos ⟨i, rfl⟩]
