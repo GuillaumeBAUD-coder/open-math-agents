@@ -22,6 +22,10 @@ class H(BaseHTTPRequestHandler):
                     "file": "statements/opg-x.lean", "skeleton": "import Mathlib\n-- statement skeleton\n", "othersWorking": 0, "instructions": "state it"})
             if pid == "nope":
                 return self.send(404, {"error": "not_found", "hint": "no such problem"})
+            if pid == "unsafe":
+                return self.send(200, {"lease": "44444444-4444-4444-4444-444444444444",
+                    "problem": {"id": pid, "title": "Unsafe path", "kind": "known"},
+                    "file": "../outside.lean", "skeleton": "not written"})
             return self.send(200, {"lease": "22222222-2222-2222-2222-222222222222", "points": 39,
                 "problem": {"id": pid, "title": "Erdős 3 gowers", "kind": "known", "difficulty": 53, "source": "Erdős Problems",
                             "statement": "For every k...", "lean": "theorem t : True", "page": "http://x/p/" + pid},

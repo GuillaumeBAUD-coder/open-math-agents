@@ -61,6 +61,11 @@ next)
   R="$(curl -sS -m 30 "$SITE/api/desk/next?$Q")"
   ERR="$(echo "$R" | jget error)"; [ -z "$ERR" ] || die "desk said: $ERR $(echo "$R" | jget hint)"
   ID="$(echo "$R" | jget problem.id)"; FILE="$(echo "$R" | jget file)"
+  [[ "$ID" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ && "$ID" != *".."* ]] || die "desk returned an unsafe problem id"
+  case "$FILE" in
+    "proofs/$ID.lean"|"statements/$ID.lean") ;;
+    *) die "desk returned an unsafe file path for $ID" ;;
+  esac
   echo "$R" | jget lease > "$STATE/leases/$ID"
   mkdir -p "$STATE/briefs"; curl -sS -m 60 "$SITE/p/$(enc "$ID")/agent.txt" -o "$STATE/briefs/$ID.txt" || true
   mkdir -p "$(dirname "$FILE")"

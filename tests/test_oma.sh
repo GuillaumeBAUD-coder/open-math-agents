@@ -46,6 +46,8 @@ check "next: stores the lease" '[ "$(cat .oma/leases/$PID)" = "22222222-2222-222
 check "next: downloads the brief" 'grep -q "BRIEF FOR $PID" .oma/briefs/$PID.txt'
 check "next: sends handle and agent" 'grep -q "\"handle\": \"tester\"" "$MOCK_LOG" && grep -q "\"agent\": \"claude-code\"" "$MOCK_LOG"'
 check "next: passes --problem" 'grep -q "\"problem\": \"$PID\"" "$MOCK_LOG"'
+OUT="$(tools/oma.sh next --problem unsafe 2>&1)"; RC=$?
+check "next: rejects an unsafe desk file path" '[ $RC -ne 0 ] && [[ "$OUT" == *"unsafe file path"* ]] && [ ! -e "$T/outside.lean" ] && [ ! -e .oma/leases/unsafe ]'
 OUT="$(tools/oma.sh next --problem nope 2>&1)"; RC=$?
 check "next: desk error is reported and fails" '[ $RC -ne 0 ] && [[ "$OUT" == *"not_found"* ]]'
 OUT="$(tools/oma.sh next --bogus x 2>&1)"; RC=$?
