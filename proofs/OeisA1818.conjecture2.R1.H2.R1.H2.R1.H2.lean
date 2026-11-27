@@ -273,10 +273,10 @@ theorem spectrum_1818 : OMA.R_OeisA1818_conjecture2_R1_H2_R1_H2_R1.H2 := by
         have h1u := h1_sub_unit r hr
         calc (1 - y r)⁻¹ * (y r) ^ (k + 1) - (1 - y r)⁻¹ * (y r) ^ k
             = -((1 - y r) * (1 - y r)⁻¹) * (y r) ^ k := by rw [pow_succ']; ring
-          _ = -((y r) ^ k) := by rw [ZMod.mul_inv_of_unit _ h1u, one_mul]
+          _ = -((y r) ^ k) := by rw [ZMod.mul_inv_of_unit _ h1u]; ring
       obtain ⟨g, hg⟩ := IsCyclic.exists_monoid_generator (α := (ZMod p)ˣ)
       have hord : orderOf g = 2 * m := by
-        rw [orderOf_eq_card_of_forall_mem_powers hg, ZMod.card_units_eq_totient, Nat.totient_prime hp]
+        rw [orderOf_eq_card_of_forall_mem_powers hg, Nat.card_eq_fintype_card, ZMod.card_units_eq_totient, Nat.totient_prime hp]
         omega
       let r₀ : Fin (2 * m) := ⟨(g : ZMod p).val - 1, by
         have hpos : 0 < (g : ZMod p).val := Nat.pos_of_ne_zero fun h =>
@@ -293,32 +293,26 @@ theorem spectrum_1818 : OMA.R_OeisA1818_conjecture2_R1_H2_R1_H2_R1.H2 := by
         have hdvd : orderOf g ∣ k := orderOf_dvd_of_pow_eq_one (Units.ext (by simpa using h1))
         rw [hord] at hdvd
         exact absurd (Nat.le_of_dvd hk1 hdvd) (not_le_of_gt hk2)
-      have hunit_sub : IsUnit (1 - ((y r₀)⁻¹) ^ k) := by
+      have hunit_sub : IsUnit (1 - (y r₀) ^ k) := by
         apply unit_of_cast_ne_zero hp
-        have hyr₀_u := y_isUnit hp r₀
-        have hyr₀_inv : y r₀ * (y r₀)⁻¹ = 1 := ZMod.mul_inv_of_unit _ hyr₀_u
         have hcast_y : castP (y r₀) = (g : ZMod p) := by
           simp only [y, map_pow, map_natCast, ZMod.pow_card, hr₀_cast]
-        have hcast_inv : castP ((y r₀)⁻¹) = (g : ZMod p)⁻¹ := by
-          apply mul_left_cancel₀ g.ne_zero
-          rw [mul_inv_cancel₀ g.ne_zero, ← hcast_y, ← map_mul, hyr₀_inv, map_one]
-        rw [map_sub, map_one, map_pow, hcast_inv, sub_ne_zero]
+        rw [map_sub, map_one, map_pow, hcast_y, sub_ne_zero]
         intro h1
-        exact hgk_ne (by
-          have h2 : ((g : ZMod p)⁻¹) ^ k = (1 : ZMod p) := h1.symm
-          calc (g : ZMod p) ^ k = (g : ZMod p) ^ k * ((g : ZMod p)⁻¹) ^ k := by rw [h2, mul_one]
-            _ = ((g : ZMod p) * (g : ZMod p)⁻¹) ^ k := by rw [← mul_pow]
-            _ = 1 := by rw [mul_inv_cancel₀ g.ne_zero, one_pow])
+        exact hgk_ne h1.symm
       have hsum_zero : ∑ r : Fin (2 * m), (y r) ^ k = 0 := by
-        have hrot : ∑ r : Fin (2 * m), (y r) ^ k = ((y r₀)⁻¹) ^ k * ∑ r : Fin (2 * m), (y r) ^ k := by
+        have hrot : ∑ r : Fin (2 * m), (y r) ^ k = (y r₀) ^ k * ∑ r : Fin (2 * m), (y r) ^ k := by
           rw [Finset.mul_sum]
           refine Finset.sum_bij (fun l _ => mulIdx r₀ l) (fun _ _ => Finset.mem_univ _)
             (fun _ _ _ _ h => hmulIdx_inj r₀ h) (fun r _ => ⟨_, Finset.mem_univ _, (hmulIdx_bij r₀).surjective r |>.choose_spec⟩) ?_
           intro l _
-          rw [hy_mul, mul_pow, mul_comm]
-        have hmul0 : (1 - ((y r₀)⁻¹) ^ k) * ∑ r : Fin (2 * m), (y r) ^ k = 0 := by
-          calc (1 - ((y r₀)⁻¹) ^ k) * ∑ r : Fin (2 * m), (y r) ^ k
-              = ∑ r : Fin (2 * m), (y r) ^ k - ((y r₀)⁻¹) ^ k * ∑ r : Fin (2 * m), (y r) ^ k := by ring
+          calc (y l) ^ k = (y l) ^ k * (y r₀ * (y r₀)⁻¹) ^ k := by
+                rw [ZMod.mul_inv_of_unit _ (y_isUnit hp r₀), one_pow, mul_one]
+            _ = (y r₀) ^ k * (y (mulIdx r₀ l)) ^ k := by
+                rw [hy_mul, mul_pow]; ring
+        have hmul0 : (1 - (y r₀) ^ k) * ∑ r : Fin (2 * m), (y r) ^ k = 0 := by
+          calc (1 - (y r₀) ^ k) * ∑ r : Fin (2 * m), (y r) ^ k
+              = ∑ r : Fin (2 * m), (y r) ^ k - (y r₀) ^ k * ∑ r : Fin (2 * m), (y r) ^ k := by ring
             _ = 0 := sub_eq_zero.mpr hrot
         exact hunit_sub.mul_right_eq_zero.mp hmul0
       have hsum_erase : ∑ r ∈ univ.erase zeroFin, (y r) ^ k = -1 := by
@@ -336,6 +330,7 @@ theorem spectrum_1818 : OMA.R_OeisA1818_conjecture2_R1_H2_R1_H2_R1.H2 := by
       rw [hpow_eq]
       dsimp [S]
       simp only [pow_zero, mul_one]
+      have : Nontrivial R := ZMod.nontrivial_iff.mpr (by dsimp [p]; nlinarith [hp.two_le])
       let invIdx (r : Fin (2 * m)) : Fin (2 * m) := mulIdx r zeroFin
       have hinv_y (r : Fin (2 * m)) : y (invIdx r) = (y r)⁻¹ := by
         dsimp [invIdx]
@@ -351,7 +346,7 @@ theorem spectrum_1818 : OMA.R_OeisA1818_conjecture2_R1_H2_R1_H2_R1.H2 := by
             _ = y r₂ := by rw [ZMod.mul_inv_of_unit _ hyr1, one_mul]
         by_contra hne
         have hsub := y_sub_isUnit hp hne
-        change IsUnit (y r - y zeroFin) at hsub
+        change IsUnit (y r₁ - y r₂) at hsub
         rw [hy_eq, sub_self] at hsub
         exact not_isUnit_zero hsub
       have hinv_mem : ∀ r ∈ univ.erase zeroFin, invIdx r ∈ univ.erase zeroFin := by
@@ -371,14 +366,12 @@ theorem spectrum_1818 : OMA.R_OeisA1818_conjecture2_R1_H2_R1_H2_R1.H2 := by
           ∑ r ∈ univ.erase zeroFin, (1 - (y r)⁻¹)⁻¹ := by
         refine Finset.sum_bij (fun r _ => invIdx r) hinv_mem (fun _ _ _ _ h => hinv_inj h) ?_ ?_
         · intro r hr
-          have hbij : Function.Bijective invIdx :=
-            Fintype.bijective_iff_injective_and_card.mpr ⟨hinv_inj, rfl⟩
+          have hbij : Function.Bijective invIdx := Finite.injective_iff_bijective.mp hinv_inj
           obtain ⟨a, ha⟩ := hbij.surjective r
           refine ⟨a, Finset.mem_erase.mpr ⟨fun ha0 => ?_, Finset.mem_univ _⟩, ha⟩
           have h1 : y r = 1 := by
             rw [← ha, hinv_y, ha0, hy0]
-            exact ZMod.inv_eq_of_mul_eq_one _ (by rw [mul_one])
-          haveI : Nontrivial R := ZMod.nontrivial_iff.mpr (by dsimp [p]; nlinarith [hp.two_le])
+            exact ZMod.inv_eq_of_mul_eq_one (1 : R) (mul_one (1 : R))
           have hsub := y_sub_isUnit hp (Finset.mem_erase.mp hr).1
           change IsUnit (y r - y zeroFin) at hsub
           rw [h1, hy0, sub_self] at hsub
