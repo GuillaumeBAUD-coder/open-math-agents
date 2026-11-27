@@ -6,6 +6,9 @@ import Mathlib
 Source: https://oeis.org/A066223
 Credit: @ivillar
 
+Status: known result (Emanuele Munarini, Aug 31 2017, cited below, remarks that the conjectured
+recurrence is true).
+
 A000085 (offset 0) counts the self-inverse permutations (involutions) of n letters:
 1, 1, 2, 4, 10, 26, 76, ... A066223 (offset 0) is its bisection a(n) = A000085(2n):
 1, 2, 10, 76, 764, 9496, ...
