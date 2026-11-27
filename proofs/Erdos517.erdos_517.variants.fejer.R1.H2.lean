@@ -8,13 +8,6 @@ open scoped Topology
 
 namespace OMA.FejerZeros
 
-private theorem factorNorm (s : Multiset ℂ) (z : ℂ) :
-    ‖((s.map fun r => X - C r).prod : ℂ[X]).eval z‖ =
-      (s.map fun r => ‖z - r‖).prod := by
-  induction s using Multiset.induction_on with
-  | empty => simp
-  | cons r s ih => simp [ih]
-
 /-- Factoring out roots within distance A of c leaves a polynomial whose value
 at c is bounded by its maximum on the circle of radius 3A. -/
 private theorem centerBound (p : ℂ[X]) (s : Multiset ℂ) (hp : p ≠ 0)
@@ -25,7 +18,10 @@ private theorem centerBound (p : ℂ[X]) (s : Multiset ℂ) (hp : p ≠ 0)
   obtain ⟨q, hq⟩ := (s.prod_X_sub_C_dvd_iff_le_roots hp).2 hs
   have heval (z : ℂ) :
       ‖p.eval z‖ = (s.map fun r => ‖z - r‖).prod * ‖q.eval z‖ := by
-    rw [hq, eval_mul, norm_mul, factorNorm]
+    rw [hq, eval_mul, norm_mul, eval_multiset_prod]
+    congr 1
+    simpa [Multiset.map_map, Function.comp_def] using
+      (map_multiset_prod (normHom.toMonoidHom : ℂ →* ℝ) (s.map fun r => z - r))
   have hqCircle (z : ℂ) (hz : z ∈ sphere c (3 * A)) :
       ‖q.eval z‖ ≤ M / (2 * A) ^ s.card := by
     have hl (r : ℂ) (hr : r ∈ s) : 2 * A ≤ ‖z - r‖ := by
@@ -36,14 +32,11 @@ private theorem centerBound (p : ℂ[X]) (s : Multiset ℂ) (hp : p ≠ 0)
     have hfactor : (2 * A) ^ s.card ≤ (s.map fun r => ‖z - r‖).prod := by
       simpa using Multiset.prod_map_le_prod_map₀ (s := s) (fun _ => 2 * A)
         (fun r => ‖z - r‖) (fun _ _ => by positivity) hl
-    apply (le_div_iff₀ (by positivity)).2
+    refine (le_div_iff₀ (by positivity)).2 ?_
     rw [mul_comm]
-    calc
-      (2 * A) ^ s.card * ‖q.eval z‖ ≤
-          (s.map fun r => ‖z - r‖).prod * ‖q.eval z‖ :=
-        mul_le_mul_of_nonneg_right hfactor (norm_nonneg _)
-      _ = ‖p.eval z‖ := (heval z).symm
-      _ ≤ M := hcircle z hz
+    have hzBound := hcircle z hz
+    rw [heval] at hzBound
+    exact (mul_le_mul_of_nonneg_right hfactor (norm_nonneg _)).trans hzBound
   have hqc : ‖q.eval c‖ ≤ M / (2 * A) ^ s.card := by
     simpa using Complex.norm_iteratedDeriv_le_of_forall_mem_sphere_norm_le 0
       (show 0 < 3 * A by positivity) q.differentiable.diffContOnCl hqCircle
@@ -53,8 +46,7 @@ private theorem centerBound (p : ℂ[X]) (s : Multiset ℂ) (hp : p ≠ 0)
   rw [heval]
   calc
     _ ≤ A ^ s.card * (M / (2 * A) ^ s.card) :=
-      (mul_le_mul_of_nonneg_right hfactor (norm_nonneg _)).trans
-        (mul_le_mul_of_nonneg_left hqc (by positivity))
+      mul_le_mul hfactor hqc (norm_nonneg _) (by positivity)
     _ = M * (1 / 2 : ℝ) ^ s.card := by
       rw [show A ^ s.card * (M / (2 * A) ^ s.card) =
         M * (A ^ s.card / (2 * A) ^ s.card) by ring, ← div_pow]
@@ -77,7 +69,7 @@ private theorem eventuallyRootFree (P : ℕ → ℂ[X]) {f : ℂ → ℂ} (hf : 
   have hd := hj z (hKR hz)
   rw [he] at hd
   have hle : ‖f z₀‖ ≤ ‖f z‖ := hmin hz
-  simp only [dist_eq_norm, sub_zero, zero_sub, norm_neg] at hd
+  simp only [dist_eq_norm, sub_zero] at hd
   exact (not_lt_of_ge hle) hd
 
 end OMA.FejerZeros
@@ -106,12 +98,11 @@ theorem OMA.solution : OMA.R_Erdos517_erdos_517_variants_fejer_R1.H2 := by
     simpa [Metric.mem_closedBall, S] using (show ‖c‖ ≤ 3 * A + ‖c‖ by linarith)
   obtain ⟨M₀, hM₀⟩ := (isCompact_closedBall (0 : ℂ) S).bddAbove_image
     hContinuous.norm.continuousOn
-  let M := max M₀ 0 + 1
-  have hM : 0 < M := by dsimp [M]; linarith [le_max_right M₀ 0]
-  have hMbound (z : ℂ) (hz : z ∈ closedBall 0 S) : ‖f z‖ + 1 ≤ M := by
-    have hzM := hM₀ (mem_image_of_mem (fun z => ‖f z‖) hz)
+  let M := M₀ + 1
+  have hM : 0 ≤ M := by
+    have h := hM₀ (mem_image_of_mem _ hcS)
     dsimp [M]
-    linarith [le_max_left M₀ 0]
+    linarith [norm_nonneg (f c)]
   have heSmall : 0 < ‖f c‖ / 2 := half_pos (norm_pos_iff.mpr hcnz)
   have ht : Tendsto (fun m : ℕ => M * (1 / 2 : ℝ) ^ m) atTop (𝓝 0) := by
     simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one
@@ -124,15 +115,12 @@ theorem OMA.solution : OMA.R_Erdos517_erdos_517_variants_fejer_R1.H2 := by
   have hKfree := eventuallyRootFree P hContinuous hUniform hK (fun _ hz => hz.1)
     (fun z hz hzero => (not_lt_of_ge hz.2) (hzeros z hzero))
   have hUb := Metric.tendstoUniformlyOn_iff.mp (hUniform S)
-  have hBoth := hR.and (hKfree.and ((hUb 1 zero_lt_one).and (hUb _ heSmall)))
-  obtain ⟨j, hjR, hjK, hjB, hjc⟩ := hBoth.exists
-  have hcClose := hjc c hcS
-  have hdiff : ‖f c - (P j).eval c‖ < ‖f c‖ / 2 := by
-    simpa [dist_eq_norm, norm_sub_rev] using hcClose
+  obtain ⟨j, hjR, hjK, hj⟩ :=
+    (hR.and (hKfree.and (hUb _ (lt_min zero_lt_one heSmall)))).exists
   have hLower : ‖f c‖ / 2 < ‖(P j).eval c‖ := by
-    have htriangle := norm_add_le (f c - (P j).eval c) ((P j).eval c)
-    rw [sub_add_cancel] at htriangle
-    linarith
+    have hclose := (hj c hcS).trans_le (min_le_right _ _)
+    rw [dist_eq_norm] at hclose
+    linarith [norm_sub_norm_le (f c) ((P j).eval c)]
   have hp : P j ≠ 0 := by
     intro he
     simp [he, not_lt_of_ge heSmall.le] at hLower
@@ -148,13 +136,12 @@ theorem OMA.solution : OMA.R_Erdos517_erdos_517_variants_fejer_R1.H2 := by
       have ht := dist_triangle z c (0 : ℂ)
       rw [mem_sphere.mp hz] at ht
       simpa [Metric.mem_closedBall, S] using ht
-    have hclose : ‖(P j).eval z - f z‖ < 1 := by
-      simpa [dist_eq_norm, norm_sub_rev] using hjB z hzS
-    have htriangle := norm_add_le ((P j).eval z - f z) (f z)
-    rw [sub_add_cancel] at htriangle
-    linarith [hMbound z hzS]
+    have hclose := (hj z hzS).trans_le (min_le_left _ _)
+    rw [dist_comm, dist_eq_norm] at hclose
+    dsimp [M]
+    linarith [norm_sub_norm_le ((P j).eval z) (f z), hM₀ (mem_image_of_mem _ hzS)]
   have hUpper := centerBound (P j) s hp (Multiset.filter_le _ _) hA hnear hcircle
   have hdec : (1 / 2 : ℝ) ^ s.card ≤ (1 / 2 : ℝ) ^ m :=
     pow_le_pow_of_le_one (by norm_num) (by norm_num) hjR
-  exact (not_lt_of_ge (hUpper.trans (mul_le_mul_of_nonneg_left hdec hM.le)))
+  exact (not_lt_of_ge (hUpper.trans (mul_le_mul_of_nonneg_left hdec hM)))
     (hm.trans hLower)

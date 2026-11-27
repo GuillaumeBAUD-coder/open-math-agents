@@ -21,5 +21,12 @@
     "tier": "backer",
     "since": "2026-11-27",
     "showName": true
+  },
+  {
+    "name": "Slash Digital Lab",
+    "url": "https://slash-digital.io",
+    "logo": "/sponsor-logos/slash-digital-lab.svg",
+    "tier": "backer",
+    "since": "2026-11-27"
   }
 ]
