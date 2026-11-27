@@ -13,7 +13,7 @@ Do not prove it here: the theorem body stays `sorry`. A person reviews the trans
 namespace OMA.S_oeis_a058128
 
 def a (n : ℕ) : ℕ :=
-  (n ^ n - n) / (n - 1) ^ 2
+  if n = 1 then 1 else (n ^ n - n) / (n - 1) ^ 2
 
 def IsWeakFermatPseudoprime (m base : ℕ) : Prop :=
   1 < m ∧ ¬ Nat.Prime m ∧ base ^ m ≡ base [MOD m]
