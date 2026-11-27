@@ -171,29 +171,39 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a090413.main := by
     linear_combination 2 * hL_eq - (1 + 4 * X ^ 2) * hdQ -
       dPs Q * hQ2 + ((6 * X - 16 * X ^ 2) * S + (1 - 6 * X)) * hdQ2
   intro n hn
+  have hC2 : (2 : PowerSeries ℚ) = C (2 : ℚ) := by
+    rw [← Nat.cast_ofNat, ← map_natCast C, Nat.cast_ofNat]
+  have hC3 : (3 : PowerSeries ℚ) = C (3 : ℚ) := by
+    rw [← Nat.cast_ofNat, ← map_natCast C, Nat.cast_ofNat]
+  have hC8 : (8 : PowerSeries ℚ) = C (8 : ℚ) := by
+    rw [← Nat.cast_ofNat, ← map_natCast C, Nat.cast_ofNat]
+  have hC12 : (12 : PowerSeries ℚ) = C (12 : ℚ) := by
+    rw [← Nat.cast_ofNat, ← map_natCast C, Nat.cast_ofNat]
+  have hC32 : (32 : PowerSeries ℚ) = C (32 : ℚ) := by
+    rw [← Nat.cast_ofNat, ← map_natCast C, Nat.cast_ofNat]
   have hcoeff : coeff n (2 * L) = coeff n (2 * (3 + 2 * (X : PowerSeries ℚ))) :=
     congrArg (coeff n) h2L
-  simp only [coeff_ofNat_mul, map_add] at hcoeff
+  have hrhs : coeff n (C (2 : ℚ) * (3 + C (2 : ℚ) * (X : PowerSeries ℚ))) =
+      2 * (coeff n (3 : PowerSeries ℚ) + 2 * coeff n X) := by
+    rw [coeff_C_mul, map_add, coeff_C_mul]
+  rw [hC2, coeff_C_mul, hrhs] at hcoeff
   have hc3 : coeff n (3 : PowerSeries ℚ) = 0 := by
-    have h3 : (3 : PowerSeries ℚ) = C (3 : ℚ) := by
-      rw [← show (1 : ℚ) + 1 + 1 = 3 by norm_num, map_add, map_add, map_one]
-      ring
-    rw [h3, coeff_C]
+    rw [hC3, coeff_C]
     by_cases h : n = 0
     · exfalso; omega
-    · simp [h]
+    · simp only [h, ↓reduceIte]
   have hcX : coeff n (X : PowerSeries ℚ) = 0 := by
     rw [coeff_X]
     by_cases h : n = 1
     · exfalso; omega
-    · simp [h]
+    · simp only [h, ↓reduceIte]
   rw [hc3, hcX] at hcoeff
   have hLn : coeff n L = 0 := by linarith
   dsimp [L] at hLn
   rw [map_add, coeff_dPs] at hLn
   have hc1 : coeff (n + 1) ((3 * X - 8 * X ^ 2) * S) =
       3 * OMA.S_oeis_a090413.term n - 8 * OMA.S_oeis_a090413.term (n - 1) := by
-    rw [sub_mul, map_sub, mul_assoc, mul_assoc, coeff_ofNat_mul, coeff_ofNat_mul,
+    rw [sub_mul, map_sub, mul_assoc, mul_assoc, hC3, hC8, coeff_C_mul, coeff_C_mul,
       coeff_succ_X_mul]
     obtain ⟨k, hk⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
     rw [show X ^ 2 * S = X * (X * S) by ring, hk, coeff_succ_X_mul, coeff_succ_X_mul]
@@ -202,7 +212,7 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a090413.main := by
       12 * ((n : ℚ) - 2) * OMA.S_oeis_a090413.term (n - 2) +
         32 * (2 - (n : ℚ)) * OMA.S_oeis_a090413.term (n - 3) := by
     obtain ⟨m, rfl⟩ : ∃ m, n = m + 3 := ⟨n - 3, by omega⟩
-    rw [coeff_X_pow_mul, map_sub, coeff_ofNat_mul, coeff_ofNat_mul,
+    rw [coeff_X_pow_mul, map_sub, hC12, hC32, coeff_C_mul, coeff_C_mul,
       coeff_dPs, coeff_dPs, coeff_succ_X_mul]
     simp only [OMA.S_oeis_a090413.term, S, show m + 3 - 2 = m + 1 by omega,
       show m + 3 - 3 = m by omega]
