@@ -15,19 +15,17 @@ The remaining final digits, zero and one, give the two residues modulo nine.
 -/
 
 theorem OMA.solution : type_of% @OMA.S_oeis_a044279.main := by
-  intro k hk hnow hprev
-  have hsum : k % 9 = (Nat.digits 10 k).sum % 9 :=
-    Nat.modEq_digits_sum 9 10 (by decide) k
-  rw [← hsum]
-  by_contra h
-  have hr : 2 ≤ k % 9 := by omega
-  have hk' : k - 1 ≠ 0 := by omega
-  have hdiv : (k - 1) / 9 = k / 9 := by omega
-  rw [Nat.digits_eq_cons_digits_div (by decide : 1 < 9) (by omega : k ≠ 0)] at hnow
-  apply hprev
-  rw [Nat.digits_eq_cons_digits_div (by decide : 1 < 9) hk', hdiv]
+  intro k hk occurs absent
+  have digitSum := Nat.modEq_digits_sum 9 10 (by decide) k
+  change k % 9 = _ at digitSum
+  rw [← digitSum]
+  by_contra! rem
+  apply absent
+  rw [Nat.digits_def' (by decide : 1 < 9) hk] at occurs
+  rw [Nat.digits_def' (by decide : 1 < 9) (by omega : 0 < k - 1),
+    show (k - 1) / 9 = k / 9 by omega]
   apply List.infix_cons
-  rcases List.infix_cons_iff.mp hnow with hp | ht
-  · have hne : 1 ≠ k % 9 := by omega
-    simp [List.prefix_cons_iff, hne] at hp
-  · exact ht
+  rcases List.infix_cons_iff.mp occurs with head | tail
+  · have := (List.cons_prefix_cons.mp head).1
+    omega
+  · exact tail
