@@ -6,6 +6,8 @@ import Mathlib
 Source: https://oeis.org/A242817
 Credit: @ivillar
 
+Status: known result: the entry notes that this is the case x = n of the Dobinski-type formula for B(n,x) (Pontus von Brömssen, Dec 05 2020).
+
 A242817 (offset 0): a(n) = B(n,n), where B(n,x) = Sum_{k=0..n} Stirling2(n,k)*x^k are the Bell
 polynomials (also known as exponential or Touchard polynomials);
 data 1, 1, 6, 57, 756, 12880, 268098, ...
