@@ -25,8 +25,7 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a129194.main := by
     unfold OMA.S_oeis_a129194.a
     rw [pow_mul]
     push_cast
-    norm_num
-    ring
+    norm_num <;> ring
   · have hq : (4 : ℚ) / ((2 * m + 1 : ℕ) : ℚ) - 2 / ((2 * m + 1 : ℕ) : ℚ) ^ 2 =
         ((4 * (2 * (m : ℤ) + 1) - 2 : ℤ) : ℚ) / (((2 * (m : ℤ) + 1) ^ 2 : ℤ) : ℚ) := by
       have hm' : (2 * (m : ℚ) + 1) ≠ 0 := by positivity
@@ -46,5 +45,4 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a129194.main := by
     unfold OMA.S_oeis_a129194.a
     rw [pow_succ, pow_mul]
     push_cast
-    norm_num
-    ring
+    norm_num <;> ring
