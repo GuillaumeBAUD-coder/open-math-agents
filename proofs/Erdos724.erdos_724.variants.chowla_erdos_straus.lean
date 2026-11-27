@@ -2163,10 +2163,12 @@ private lemma sieve_29_aux (Mbase : ℕ) (hMbase : 200 ≤ Mbase) :
           have hsum_card : (∑ i ∈ I', if ∀ p ∈ Finset.univ.biUnion f, Pev i p then (1 : ℝ) else 0) =
               (((Finset.Ico Y0 (Y0 + L')).filter (fun y => ∀ p ∈ Finset.univ.biUnion f, y % p ∈ bad p)).card : ℝ) := by
             rw [Finset.card_eq_sum_ones, Nat.cast_sum, Finset.sum_filter]
-            refine Finset.sum_congr rfl fun i _ => by
-              change (if ∀ p ∈ Finset.univ.biUnion f, i % p ∈ bad p then (1 : ℝ) else 0) =
-                if ∀ p ∈ Finset.univ.biUnion f, i % p ∈ bad p then ((1 : ℕ) : ℝ) else 0
-              split_ifs <;> simp
+            refine Finset.sum_congr rfl fun i _ => ?_
+            by_cases h : ∀ p ∈ Finset.univ.biUnion f, Pev i p
+            · have h' : ∀ p ∈ Finset.univ.biUnion f, i % p ∈ bad p := h
+              rw [if_pos h, if_pos h']; simp
+            · have h' : ¬ ∀ p ∈ Finset.univ.biUnion f, i % p ∈ bad p := h
+              rw [if_neg h, if_neg h']
           rw [← Finset.mul_sum, hsum_card, ← mul_assoc, mul_comm (L' : ℝ), mul_assoc, ← mul_sub,
             abs_mul, hsign, one_mul]
           let S := Finset.univ.biUnion f
