@@ -30,9 +30,11 @@ SLOTS=${SLOTS:-4}; declare -A SPID; LAST_REFRESH=0; LAST_OLD=0; OLDJOBS=1
 iso() { date -u -d "@$1" +%Y-%m-%dT%H:%M:%SZ; }
 JQ_RUN='[.id, .head_sha, .run_attempt, .html_url, .updated_at, (.conclusion // ""), (.display_title // "")] | @tsv'
 remaining() { gh api rate_limit --jq '"\(.resources.core.remaining) \(.resources.core.reset)"' 2>/dev/null || echo "999 0"; }
-budget() {  # never let the repository run dry: other jobs (checks, deploys) need the API too
-  local rem reset; read -r rem reset < <(remaining)
+budget() {  # never let the repository run dry: other jobs (checks, deploys) need the API too; GraphQL is checked too
+  local rem reset grem greset; read -r rem reset grem greset < <(gh api rate_limit --jq '"\(.resources.core.remaining) \(.resources.core.reset) \(.resources.graphql.remaining) \(.resources.graphql.reset)"' 2>/dev/null || echo "999 0 999 0")
+  echo "budget: core $rem, graphql $grem"
   if [ "${rem:-999}" -lt 300 ]; then echo "API budget low ($rem left), waiting for the reset"; sleep $(( reset - $(date -u +%s) + 5 )); fi
+  if [ "${grem:-999}" -lt 60 ]; then echo "GraphQL budget low ($grem left), waiting for the reset"; sleep $(( greset - $(date -u +%s) + 5 )); fi
 }
 refresh() {  # main moved on (merges): pull it and sync each verdict slot's copy (rsync: only what changed)
   git -C "$ROOT/base" fetch -q --depth 1 origin main && git -C "$ROOT/base" reset -q --hard FETCH_HEAD; git -C "$ROOT/base" clean -fdq
@@ -54,10 +56,14 @@ verdict() {  # $1 run id, $2 head sha, $3 attempt, $4 url, $5 completed before t
   if [ "$OLD" = 1 ] && gh api "repos/$REPO/issues/$PR/comments?per_page=100" --jq '.[].body' 2>/dev/null | grep -qF "$URL"; then
     return 0                                            # already reported (by verdict.yml or an earlier merger)
   fi
-  ( cd "$W" && RELINT="$W/relint.json" RUN_ID="$ID" RUN_ATTEMPT="$ATT" HEAD_SHA="$SHA" RUN_URL="$URL" \
+  mkdir -p "$ROOT/remerge"; local RM; RM=$(cat "$ROOT/remerge/$PR" 2>/dev/null || echo 0)
+  ( cd "$W" && RELINT="$W/relint.json" RUN_ID="$ID" RUN_ATTEMPT="$ATT" HEAD_SHA="$SHA" RUN_URL="$URL" REMERGE="$RM" \
       timeout 900 bash "$B/tools/verdict_one.sh" ) > "$W/log.txt" 2>&1
   echo "#$PR run $ID.$ATT: exit $? $(grep -m1 -oiE 'rate limit|ACCEPTED|REJECTED|FAULT|already on main' "$W/log.txt" || true)"
   [ -e "$W/rerun.flag" ] && echo "$ID" >> "$ROOT/watch.txt"   # a fault re-runs the check: same run id, next attempt
+  if [ -e "$W/remerge.flag" ]; then                               # merge refused: try the same verdict again later
+    echo $((RM + 1)) > "$ROOT/remerge/$PR"; rm -f "$ROOT/done/$ID.$ATT"; echo "$ID" >> "$ROOT/watch.txt"
+  fi
   git -C "$B" clean -fdq -- proofs reductions statements 2>/dev/null || true
 }
 refresh
