@@ -13,7 +13,8 @@ i.e. `a n` vanishes exactly on the divisors of `6`.
 `H1` is the finite direction: on the divisors of `6` the count is zero.  This is a direct
 computation of `a` on the (finitely many) divisors of `6`.
 
-`H2` is the open direction: every `n` not dividing `6` has `a n > 0`.
+`H2` is the open direction: every positive `n` not dividing `6` has `a n > 0`. The
+positivity hypothesis is essential, since `a 0 = 0`.
 
 `main` assembles the two directions.
 -/
@@ -26,10 +27,10 @@ def H1 : Prop :=
 
 /-- The open direction: a nonzero count happens only away from the divisors of six. -/
 def H2 : Prop :=
-  ∀ n : ℕ, ¬ n ∣ 6 → 0 < OeisA238585.a n
+  ∀ n : ℕ, 0 < n → ¬ n ∣ 6 → 0 < OeisA238585.a n
 
 theorem main : H1 → H2 → type_of% @OeisA238585.conjecture_1 := by
-  intro h1 h2 n _hn
-  exact ⟨fun hpos hd => by rw [h1 n hd] at hpos; exact lt_irrefl 0 hpos, h2 n⟩
+  intro h1 h2 n hn
+  exact ⟨fun hpos hd => by rw [h1 n hd] at hpos; exact lt_irrefl 0 hpos, h2 n hn⟩
 
 end OMA.R_OeisA238585_conjecture_1_R1
