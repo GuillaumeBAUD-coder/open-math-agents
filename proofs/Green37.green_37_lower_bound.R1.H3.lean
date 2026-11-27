@@ -44,8 +44,12 @@ lemma OMA.cover_count (A : Finset ℕ) (N : ℕ)
     · intro d hd
       have hfd := hf d hd
       have hdpos : 0 < d := (Finset.mem_Icc.mp hd).1
-      simp only [Finset.mem_filter, Finset.mem_product]
-      exact ⟨⟨hfd.1, hfd.2⟩, by omega⟩
+      change (f d, f d + d) ∈ (A ×ˢ A).filter (fun p : ℕ × ℕ => p.1 < p.2)
+      apply Finset.mem_filter.mpr
+      constructor
+      · exact Finset.mem_product.mpr ⟨hfd.1, hfd.2⟩
+      · change f d < f d + d
+        omega
     · intro d hd e he hde
       have hfirst := congrArg Prod.fst hde
       have hsecond := congrArg Prod.snd hde
