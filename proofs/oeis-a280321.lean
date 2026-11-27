@@ -64,25 +64,22 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a280321.main := by
     intro n hn
     unfold a
     trans (S n ×ˢ S n).card
-    · apply Finset.card_bij' (fun t _ => ((t.1, t.2.2.2), (t.2.1, t.2.2.1)))
-        (fun p _ => (p.1.1, p.2.1, p.2.2, p.1.2))
-      · rintro ⟨x, y, z, w⟩ ht
+    · refine Finset.card_bij' (fun t _ => ((t.1, t.2.2.2), (t.2.1, t.2.2.1)))
+        (fun p _ => (p.1.1, p.2.1, p.2.2, p.1.2)) (fun t ht => ?_) (fun p hp => ?_)
+        (fun t _ => rfl) (fun p _ => rfl)
+      · obtain ⟨x, y, z, w⟩ := t
         rw [Finset.mem_filter] at ht
         simp only [Finset.mem_product, Finset.mem_range] at ht
         obtain ⟨⟨hx, hy, hz, hw⟩, hP⟩ := ht
         rw [key hn] at hP
         simp only [S, Finset.mem_product, Finset.mem_filter, Finset.mem_range]
         exact ⟨⟨⟨hx, hw⟩, hP.1⟩, ⟨⟨hy, hz⟩, hP.2⟩⟩
-      · rintro ⟨⟨x, w⟩, ⟨y, z⟩⟩ hp
+      · obtain ⟨⟨x, w⟩, ⟨y, z⟩⟩ := p
         simp only [S, Finset.mem_product, Finset.mem_filter, Finset.mem_range] at hp
         obtain ⟨⟨⟨hx, hw⟩, h1⟩, ⟨⟨hy, hz⟩, h2⟩⟩ := hp
         rw [Finset.mem_filter]
         simp only [Finset.mem_product, Finset.mem_range]
         exact ⟨⟨hx, hy, hz, hw⟩, (key hn x y z w).2 ⟨h1, h2⟩⟩
-      · rintro ⟨x, y, z, w⟩ _
-        rfl
-      · rintro ⟨⟨x, w⟩, ⟨y, z⟩⟩ _
-        rfl
     · rw [Finset.card_product, S_card]
       ring
   refine ⟨hval, fun n hn => ?_⟩
