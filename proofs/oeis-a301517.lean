@@ -33,7 +33,8 @@ theorem OMA.disproof : ¬ (type_of% @OMA.S_oeis_a301517.main) := by
     decide
   have split : squarefreeSum w + nonsquarefreeSum w = ∑ d ∈ w.divisors, d :=
     Finset.sum_filter_add_sum_filter_not _ _ _
-  apply (show ¬ Nat.Prime 268 by decide)
+  apply (show ¬ Nat.Prime 268 by norm_num)
   apply h w 268 (by decide) (by decide)
   have hn : nonsquarefreeSum w = 72398592 := by omega
   rw [hs, hn]
+  decide
