@@ -2,6 +2,12 @@ import OMAReductions.R_AgohGiuga_agoh_giuga_variants_giuga_R1
 
 open AgohGiuga
 
+private lemma sum_range_mul_eq {α : Type*} [AddCommMonoid α] (f : ℕ → α) (q p : ℕ) :
+    ∑ i ∈ Finset.range (q * p), f i = ∑ k ∈ Finset.range q, ∑ r ∈ Finset.range p, f (k * p + r) := by
+  induction q with
+  | zero => simp
+  | succ q ih => rw [Nat.succ_mul, Finset.sum_range_add, ih, Finset.sum_range_succ]
+
 private lemma mod_p_props {n p : ℕ} (hn : IsStrongGiuga n) (hp : p.Prime) (hpn : p ∣ n) :
     (p - 1) ∣ (n - 1) ∧ p ∣ (n / p - 1) := by
   haveI : Fact p.Prime := ⟨hp⟩
@@ -25,7 +31,7 @@ private lemma mod_p_props {n p : ℕ} (hn : IsStrongGiuga n) (hp : p.Prime) (hpn
     have hqp : n / p = q := by rw [hq, Nat.mul_div_cancel_left _ hp.pos]
     rw [hqp]
     have hmul : n = q * p := by rw [hq, mul_comm]
-    rw [hmul, Finset.sum_range_mul]
+    rw [hmul, sum_range_mul_eq]
     have hinner : ∀ k : ℕ, ∑ r ∈ Finset.range p, ((k * p + r : ℕ) : ZMod p) ^ (n - 1) =
         ∑ r ∈ Finset.Ioo 0 p, (r : ZMod p) ^ (n - 1) := by
       intro k
@@ -107,8 +113,9 @@ theorem OMA.solution : OMA.R_AgohGiuga_agoh_giuga_variants_giuga_R1.H1 := by
     have hpn : p ∣ n := ⟨p * k, by rw [hk]; ring⟩
     have hdvd : p ∣ (n / p - 1) := (mod_p_props hn hp hpn).2
     have hnp : n / p = p * k := by
-      rw [hk, show p ^ 2 * k = p * (p * k) by ring, Nat.mul_div_cancel_left _ hp.pos]
+      rw [hk, show p * p * k = p * (p * k) by ring, Nat.mul_div_cancel_left _ hp.pos]
     have hp_dvd_np : p ∣ n / p := ⟨k, hnp⟩
+    have hn1 : 1 < n := hn.1.1
     have h1_pos : 1 ≤ n / p := Nat.div_pos (Nat.le_of_dvd (by omega) hpn) hp.pos
     have hp_dvd_1 : p ∣ 1 := by
       have := Nat.dvd_sub hp_dvd_np hdvd
