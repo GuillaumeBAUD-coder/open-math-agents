@@ -6,6 +6,8 @@ import Mathlib
 Source: https://oeis.org/A349509
 Credit: @ivillar
 
+Status: known result: the entry records that the conjecture is correct (Kevin Ryde, Jul 01 2023).
+
 A349509 (offset 1): a(n) is the denominator of binomial(n^3 + 6*n^2 - 6*n + 2, n^3 - 1)/n^3;
 data 1, 1, 3, 1, 1, 1, 1, 1, 3, 1, ... (the fraction is an upper bound for the number of vertices
 of the polytope of n X n X n stochastic tensors).
