@@ -6,6 +6,8 @@ import Mathlib
 Source: https://oeis.org/A144084
 Credit: @ivillar
 
+Status: known result: the entry records that the conjecture is true.
+
 A144084 (offset 0): T(n,k) is the number of partial bijections of height k of an n-element set;
 the entry gives T(n,k) = (C(n,k)^2)*k!; rows 1; 1, 1; 1, 4, 2; 1, 9, 18, 6; 1, 16, 72, 96, 24; ...
 
