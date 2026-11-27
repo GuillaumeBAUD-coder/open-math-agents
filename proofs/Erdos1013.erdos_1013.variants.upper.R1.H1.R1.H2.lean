@@ -16,8 +16,9 @@ theorem OMA.solution : OMA.R_Erdos1013_erdos_1013_variants_upper_R1_H1_R1.H2 := 
     intro y
     have hclique : Gᶜ.IsClique (↑(univ.filter fun x : Fin n => C x = y) : Set (Fin n)) := by
       simpa [SimpleGraph.Coloring.colorClass] using
-        (SimpleGraph.isClique_compl.mpr (C.isIndepSet_colorClass y))
-    by_contra! hlarge
+        ((SimpleGraph.isClique_compl G).mpr (C.isIndepSet_colorClass y))
+    by_contra hnot
+    have hlarge := Nat.lt_of_not_ge hnot
     exact (SimpleGraph.CliqueFree.mono hlarge.le hfree) _ ⟨hclique, rfl⟩
   have hcount := Finset.card_le_mul_card_image_of_maps_to
     (f := (C : Fin n → Fin c)) (s := univ) (t := univ)
