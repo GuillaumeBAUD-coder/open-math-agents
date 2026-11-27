@@ -4,7 +4,9 @@ import FormalConjectures.Wikipedia.PowerfulNumbersDensity
 
 Separate cancellation of the Möbius function from the two estimates on opposite
 sides of the divisor cutoff. Choosing the cutoff after the Mertens exponent is
-given allows every exponent strictly below one.
+given allows every exponent strictly below one. Explicitly, the saving is
+(1-a)/(3(44-14a)). For example, a Mertens exponent of 3/5 gives a saving of
+1/267 with the cutoff exponent 25/178.
 -/
 
 namespace OMA.R_PowerfulNumbersDensity_error_term_improvement_R1
