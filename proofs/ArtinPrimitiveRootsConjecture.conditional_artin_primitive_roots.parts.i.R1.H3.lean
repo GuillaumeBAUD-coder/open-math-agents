@@ -484,66 +484,6 @@ lemma pow_div_mem_iff (ha : a ≠ 0) (hk : k ≠ 0) (hζ : IsPrimitiveRoot ζ k)
     have := div_mem_adjoin_zeta hk hζ hγ0 hpow
     have heq : α ^ (k / q) = (α ^ (k / q) / γ) * γ := by field_simp
     rw [heq]; exact mul_mem this hγ
-set_option synthInstance.maxHeartbeats 400000 in
-theorem kummerDegree_mul_kummerM (ha : a ≠ 0) (hk : Squarefree k) :
-    kummerDegree a k * kummerM a k = k * k.totient := by
-  classical
-  have hk0 : k ≠ 0 := hk.ne_zero
-  obtain ⟨ζ, α, d, hζ, hα, ⟨m, hm⟩, hd0, hdeg, hmem, hmin⟩ := exists_structure ha hk0
-  have hm0 : m ≠ 0 := by rintro rfl; simp at hm; exact hk0 hm
-  have hmsq : Squarefree m := hk.squarefree_of_dvd ⟨d, by rw [hm, mul_comm]⟩
-  have hdvd_of : ∀ i, 0 < i → α ^ i ∈ ℚ⟮ζ⟯ → d ∣ i := by
-    intro i hi h
-    have hg := pow_gcd_mem ha hk0 hα hmem h
-    have := hmin _ (Nat.gcd_pos_of_pos_left _ hd0) hg
-    have hle := Nat.gcd_le_left i hd0
-    have : Nat.gcd d i = d := le_antisymm hle this
-    rw [← this]; exact Nat.gcd_dvd_right _ _
-  have key : ∀ q ∈ k.primeFactors, q ∣ m ↔ ∃ γ ∈ ℚ⟮ζ⟯, γ ^ q = a := by
-    intro q hq
-    have hq' := Nat.mem_primeFactors.1 hq
-    rw [← pow_div_mem_iff ha hk0 hζ hα hq'.2.1 hq'.1.ne_zero]
-    constructor
-    · rintro ⟨t, rfl⟩
-      have : k / q = d * t := by
-        rw [hm, show d * (q * t) = q * (d * t) by ring,
-          Nat.mul_div_cancel_left _ hq'.1.pos]
-      rw [this, pow_mul]; exact pow_mem hmem _
-    · intro h
-      obtain ⟨t, ht⟩ := hdvd_of _ (Nat.div_pos (Nat.le_of_dvd (Nat.pos_of_ne_zero hk0) hq'.2.1)
-        hq'.1.pos) h
-      refine ⟨t, ?_⟩
-      have h1 : k = q * (d * t) := by rw [← ht, Nat.mul_div_cancel' hq'.2.1]
-      have : d * m = d * (q * t) := by rw [← hm, h1]; ring
-      exact Nat.eq_of_mul_eq_mul_left hd0 this
-  have hM : kummerM a k = m := by
-    rw [← Nat.prod_primeFactors_of_squarefree hmsq]
-    unfold kummerM
-    congr 1
-    ext q
-    rw [Finset.mem_filter, Nat.mem_primeFactors, Nat.mem_primeFactors]
-    constructor
-    · rintro ⟨⟨hq, hqk, -⟩, hP⟩
-      refine ⟨hq, (key q (Nat.mem_primeFactors.2 ⟨hq, hqk, hk0⟩)).2 ?_, hm0⟩
-      by_cases h2 : q = 2
-      · subst h2
-        simp only [↓reduceIte] at hP
-        exact (exists_sq_iff hk0 hζ).2 hP
-      · simp only [h2, ↓reduceIte] at hP
-        obtain ⟨c, hc⟩ := hP
-        exact ⟨c, intCast_mem _ c, by rw [← hc]; push_cast; ring⟩
-    · rintro ⟨hq, hqm, -⟩
-      have hqk : q ∣ k := hqm.trans ⟨d, by rw [hm, mul_comm]⟩
-      have hmem' := (key q (Nat.mem_primeFactors.2 ⟨hq, hqk, hk0⟩)).1 hqm
-      refine ⟨⟨hq, hqk, hk0⟩, ?_⟩
-      by_cases h2 : q = 2
-      · subst h2
-        simp only [↓reduceIte]
-        exact (exists_sq_iff hk0 hζ).1 hmem'
-      · simp only [h2, ↓reduceIte]
-        obtain ⟨γ, hγ, hγq⟩ := hmem'
-        exact exists_int_pow_of_mem_adjoin_zeta hk0 hζ hq h2 hγ hγq
-  rw [hdeg, hM, hm]; ring
 end General
 end Artin.Kummer
 end
