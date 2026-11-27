@@ -3,6 +3,8 @@ import Mathlib
 /-!
 # OEIS A000051: a(n) = 2^n + 1
 
+Credit: @rhetoricalrhet
+
 Conjecture (Peter Luschny) stated in the comments of https://oeis.org/A000051 :
 for any integer `n ≥ 0`, `a(n) = 2^n + 1` is the permanent of the `(n+1) × (n+1)` matrix with
 `M(j, k) = -floor((j - k - 2) / (n + 1))`.
