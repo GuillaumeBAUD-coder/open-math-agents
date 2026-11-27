@@ -72,8 +72,8 @@ lemma bool_toNat_le_one (b : Bool) : b.toNat ≤ 1 := by cases b <;> decide
 lemma bool_pair_le_one {a b : Bool} (h : !(a && b) = true) : a.toNat + b.toNat ≤ 1 := by
   cases a <;> cases b <;> first | decide | exact Bool.noConfusion h
 
-lemma bool_zero_of_pair {a : Bool} (h : !(a && true) = true) : a.toNat = 0 := by
-  cases a <;> first | decide | exact Bool.noConfusion h
+lemma bool_zero_of_pair {a b : Bool} (hb : b = true) (h : !(a && b) = true) : a.toNat = 0 := by
+  subst hb; cases a <;> first | decide | exact Bool.noConfusion h
 
 lemma bool_zero_of_pair' {a : Bool} (h : !(true && a) = true) : a.toNat = 0 := by
   cases a <;> first | decide | exact Bool.noConfusion h
@@ -149,16 +149,16 @@ lemma grotzsch_core_le (v0 v1 v2 v3 v4 u0 u1 u2 u3 u4 w : Bool)
       ⟨rfl, rfl, rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl, rfl, rfl⟩ |
       ⟨rfl, rfl, rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl, rfl, rfl⟩
     · simp only [Bool.toNat_false]; omega
-    · have := bool_zero_of_pair hu10; have := bool_zero_of_pair hu40; simp only [Bool.toNat_true, Bool.toNat_false]; omega
-    · have := bool_zero_of_pair hu01; have := bool_zero_of_pair hu21; simp only [Bool.toNat_true, Bool.toNat_false]; omega
-    · have := bool_zero_of_pair hu12; have := bool_zero_of_pair hu32; simp only [Bool.toNat_true, Bool.toNat_false]; omega
-    · have := bool_zero_of_pair hu23; have := bool_zero_of_pair hu43; simp only [Bool.toNat_true, Bool.toNat_false]; omega
-    · have := bool_zero_of_pair hu04; have := bool_zero_of_pair hu34; simp only [Bool.toNat_true, Bool.toNat_false]; omega
-    · have := bool_zero_of_pair hu01; have := bool_zero_of_pair hu21; have := bool_zero_of_pair hu34; simp only [Bool.toNat_true, Bool.toNat_false]; omega
-    · have := bool_zero_of_pair hu10; have := bool_zero_of_pair hu32; have := bool_zero_of_pair hu40; simp only [Bool.toNat_true, Bool.toNat_false]; omega
-    · have := bool_zero_of_pair hu01; have := bool_zero_of_pair hu21; have := bool_zero_of_pair hu43; simp only [Bool.toNat_true, Bool.toNat_false]; omega
-    · have := bool_zero_of_pair hu04; have := bool_zero_of_pair hu12; have := bool_zero_of_pair hu32; simp only [Bool.toNat_true, Bool.toNat_false]; omega
-    · have := bool_zero_of_pair hu10; have := bool_zero_of_pair hu23; have := bool_zero_of_pair hu40; simp only [Bool.toNat_true, Bool.toNat_false]; omega
+    · have := bool_zero_of_pair rfl hu10; have := bool_zero_of_pair rfl hu40; simp only [Bool.toNat_true, Bool.toNat_false]; omega
+    · have := bool_zero_of_pair rfl hu01; have := bool_zero_of_pair rfl hu21; simp only [Bool.toNat_true, Bool.toNat_false]; omega
+    · have := bool_zero_of_pair rfl hu12; have := bool_zero_of_pair rfl hu32; simp only [Bool.toNat_true, Bool.toNat_false]; omega
+    · have := bool_zero_of_pair rfl hu23; have := bool_zero_of_pair rfl hu43; simp only [Bool.toNat_true, Bool.toNat_false]; omega
+    · have := bool_zero_of_pair rfl hu04; have := bool_zero_of_pair rfl hu34; simp only [Bool.toNat_true, Bool.toNat_false]; omega
+    · have := bool_zero_of_pair rfl hu01; have := bool_zero_of_pair rfl hu21; have := bool_zero_of_pair rfl hu34; simp only [Bool.toNat_true, Bool.toNat_false]; omega
+    · have := bool_zero_of_pair rfl hu10; have := bool_zero_of_pair rfl hu32; have := bool_zero_of_pair rfl hu40; simp only [Bool.toNat_true, Bool.toNat_false]; omega
+    · have := bool_zero_of_pair rfl hu01; have := bool_zero_of_pair rfl hu21; have := bool_zero_of_pair rfl hu43; simp only [Bool.toNat_true, Bool.toNat_false]; omega
+    · have := bool_zero_of_pair rfl hu04; have := bool_zero_of_pair rfl hu12; have := bool_zero_of_pair rfl hu32; simp only [Bool.toNat_true, Bool.toNat_false]; omega
+    · have := bool_zero_of_pair rfl hu10; have := bool_zero_of_pair rfl hu23; have := bool_zero_of_pair rfl hu40; simp only [Bool.toNat_true, Bool.toNat_false]; omega
   · have := bool_zero_of_pair' hw0; have := bool_zero_of_pair' hw1
     have := bool_zero_of_pair' hw2; have := bool_zero_of_pair' hw3
     have := bool_zero_of_pair' hw4
@@ -241,8 +241,8 @@ lemma grotzsch_indep_weight_eq_ten :
   · -- single bv 0 = true: impossible
     rw [v0, v1, v2, v3, v4] at heq
     cases bw
-    · have z1 := bool_zero_of_pair (by rw [← v0]; exact h1.2.2.1)
-      have z4 := bool_zero_of_pair (by rw [← v0]; exact h4.2.1)
+    · have z1 := bool_zero_of_pair v0 h1.2.2.1
+      have z4 := bool_zero_of_pair v0 h4.2.1
       simp only [Bool.toNat_true, Bool.toNat_false] at heq; omega
     · have := bool_zero_of_pair' h0.2.2.2; have := bool_zero_of_pair' h1.2.2.2
       have := bool_zero_of_pair' h2.2.2.2; have := bool_zero_of_pair' h3.2.2.2
@@ -251,8 +251,8 @@ lemma grotzsch_indep_weight_eq_ten :
   · -- single bv 1 = true: impossible
     rw [v0, v1, v2, v3, v4] at heq
     cases bw
-    · have z0 := bool_zero_of_pair (by rw [← v1]; exact h0.2.1)
-      have z2 := bool_zero_of_pair (by rw [← v1]; exact h2.2.2.1)
+    · have z0 := bool_zero_of_pair v1 h0.2.1
+      have z2 := bool_zero_of_pair v1 h2.2.2.1
       simp only [Bool.toNat_true, Bool.toNat_false] at heq; omega
     · have := bool_zero_of_pair' h0.2.2.2; have := bool_zero_of_pair' h1.2.2.2
       have := bool_zero_of_pair' h2.2.2.2; have := bool_zero_of_pair' h3.2.2.2
@@ -261,8 +261,8 @@ lemma grotzsch_indep_weight_eq_ten :
   · -- single bv 2 = true: impossible
     rw [v0, v1, v2, v3, v4] at heq
     cases bw
-    · have z1 := bool_zero_of_pair (by rw [← v2]; exact h1.2.1)
-      have z3 := bool_zero_of_pair (by rw [← v2]; exact h3.2.2.1)
+    · have z1 := bool_zero_of_pair v2 h1.2.1
+      have z3 := bool_zero_of_pair v2 h3.2.2.1
       simp only [Bool.toNat_true, Bool.toNat_false] at heq; omega
     · have := bool_zero_of_pair' h0.2.2.2; have := bool_zero_of_pair' h1.2.2.2
       have := bool_zero_of_pair' h2.2.2.2; have := bool_zero_of_pair' h3.2.2.2
@@ -271,8 +271,8 @@ lemma grotzsch_indep_weight_eq_ten :
   · -- single bv 3 = true: impossible
     rw [v0, v1, v2, v3, v4] at heq
     cases bw
-    · have z2 := bool_zero_of_pair (by rw [← v3]; exact h2.2.1)
-      have z4 := bool_zero_of_pair (by rw [← v3]; exact h4.2.2.1)
+    · have z2 := bool_zero_of_pair v3 h2.2.1
+      have z4 := bool_zero_of_pair v3 h4.2.2.1
       simp only [Bool.toNat_true, Bool.toNat_false] at heq; omega
     · have := bool_zero_of_pair' h0.2.2.2; have := bool_zero_of_pair' h1.2.2.2
       have := bool_zero_of_pair' h2.2.2.2; have := bool_zero_of_pair' h3.2.2.2
@@ -281,8 +281,8 @@ lemma grotzsch_indep_weight_eq_ten :
   · -- single bv 4 = true: impossible
     rw [v0, v1, v2, v3, v4] at heq
     cases bw
-    · have z0 := bool_zero_of_pair (by rw [← v4]; exact h0.2.2.1)
-      have z3 := bool_zero_of_pair (by rw [← v4]; exact h3.2.1)
+    · have z0 := bool_zero_of_pair v4 h0.2.2.1
+      have z3 := bool_zero_of_pair v4 h3.2.1
       simp only [Bool.toNat_true, Bool.toNat_false] at heq; omega
     · have := bool_zero_of_pair' h0.2.2.2; have := bool_zero_of_pair' h1.2.2.2
       have := bool_zero_of_pair' h2.2.2.2; have := bool_zero_of_pair' h3.2.2.2
@@ -292,9 +292,9 @@ lemma grotzsch_indep_weight_eq_ten :
     rw [v0, v1, v2, v3, v4] at heq
     cases bw
     · left
-      have z0 := bool_zero_of_pair (by rw [← v1]; exact h0.2.1)
-      have z2 := bool_zero_of_pair (by rw [← v1]; exact h2.2.2.1)
-      have z3 := bool_zero_of_pair (by rw [← v4]; exact h3.2.1)
+      have z0 := bool_zero_of_pair v1 h0.2.1
+      have z2 := bool_zero_of_pair v1 h2.2.2.1
+      have z3 := bool_zero_of_pair v4 h3.2.1
       simp only [Bool.toNat_true, Bool.toNat_false] at heq
       have u0 := bool_eq_false_of_toNat_zero z0
       have u1 := bool_eq_true_of_toNat_one (by omega : (bu 1).toNat = 1)
@@ -313,9 +313,9 @@ lemma grotzsch_indep_weight_eq_ten :
     rw [v0, v1, v2, v3, v4] at heq
     cases bw
     · left
-      have z1 := bool_zero_of_pair (by rw [← v0]; exact h1.2.2.1)
-      have z3 := bool_zero_of_pair (by rw [← v2]; exact h3.2.2.1)
-      have z4 := bool_zero_of_pair (by rw [← v0]; exact h4.2.1)
+      have z1 := bool_zero_of_pair v0 h1.2.2.1
+      have z3 := bool_zero_of_pair v2 h3.2.2.1
+      have z4 := bool_zero_of_pair v0 h4.2.1
       simp only [Bool.toNat_true, Bool.toNat_false] at heq
       have u0 := bool_eq_true_of_toNat_one (by omega : (bu 0).toNat = 1)
       have u1 := bool_eq_false_of_toNat_zero z1
@@ -334,9 +334,9 @@ lemma grotzsch_indep_weight_eq_ten :
     rw [v0, v1, v2, v3, v4] at heq
     cases bw
     · left
-      have z0 := bool_zero_of_pair (by rw [← v1]; exact h0.2.1)
-      have z2 := bool_zero_of_pair (by rw [← v1]; exact h2.2.2.1)
-      have z4 := bool_zero_of_pair (by rw [← v3]; exact h4.2.2.1)
+      have z0 := bool_zero_of_pair v1 h0.2.1
+      have z2 := bool_zero_of_pair v1 h2.2.2.1
+      have z4 := bool_zero_of_pair v3 h4.2.2.1
       simp only [Bool.toNat_true, Bool.toNat_false] at heq
       have u0 := bool_eq_false_of_toNat_zero z0
       have u1 := bool_eq_true_of_toNat_one (by omega : (bu 1).toNat = 1)
@@ -355,9 +355,9 @@ lemma grotzsch_indep_weight_eq_ten :
     rw [v0, v1, v2, v3, v4] at heq
     cases bw
     · left
-      have z0 := bool_zero_of_pair (by rw [← v4]; exact h0.2.2.1)
-      have z1 := bool_zero_of_pair (by rw [← v2]; exact h1.2.1)
-      have z3 := bool_zero_of_pair (by rw [← v2]; exact h3.2.2.1)
+      have z0 := bool_zero_of_pair v4 h0.2.2.1
+      have z1 := bool_zero_of_pair v2 h1.2.1
+      have z3 := bool_zero_of_pair v2 h3.2.2.1
       simp only [Bool.toNat_true, Bool.toNat_false] at heq
       have u0 := bool_eq_false_of_toNat_zero z0
       have u1 := bool_eq_false_of_toNat_zero z1
@@ -376,9 +376,9 @@ lemma grotzsch_indep_weight_eq_ten :
     rw [v0, v1, v2, v3, v4] at heq
     cases bw
     · left
-      have z1 := bool_zero_of_pair (by rw [← v0]; exact h1.2.2.1)
-      have z2 := bool_zero_of_pair (by rw [← v3]; exact h2.2.1)
-      have z4 := bool_zero_of_pair (by rw [← v0]; exact h4.2.1)
+      have z1 := bool_zero_of_pair v0 h1.2.2.1
+      have z2 := bool_zero_of_pair v3 h2.2.1
+      have z4 := bool_zero_of_pair v0 h4.2.1
       simp only [Bool.toNat_true, Bool.toNat_false] at heq
       have u0 := bool_eq_true_of_toNat_one (by omega : (bu 0).toNat = 1)
       have u1 := bool_eq_false_of_toNat_zero z1
@@ -448,6 +448,14 @@ lemma not_adj_both_of_cliqueFree {V : Type} {G : SimpleGraph V}
     ¬ G.Adj y z :=
   fun hyz => OMA.R_Erdos128_erdos_128_R2.not_adj_of_cliqueFree_three hcf hxy hyz hxz
 
+lemma not_and_decide {p q : Prop} [Decidable p] [Decidable q] (h : p → q → False) :
+    !(decide p && decide q) = true := by
+  by_cases hp : p <;> by_cases hq : q
+  · exact (h hp hq).elim
+  · rw [decide_eq_true hp, decide_eq_false hq]; rfl
+  · rw [decide_eq_false hp, decide_eq_true hq]; rfl
+  · rw [decide_eq_false hp, decide_eq_false hq]; rfl
+
 lemma grotzsch_profile_valid {V : Type} {G : SimpleGraph V} [DecidableRel G.Adj]
     (hcf : G.CliqueFree 3) (v u : Fin 5 → V) (w : V)
     (hg : ∀ i : Fin 5,
@@ -462,23 +470,10 @@ lemma grotzsch_profile_valid {V : Type} {G : SimpleGraph V} [DecidableRel G.Adj]
       !(decide (G.Adj x w) && decide (G.Adj x (u i))) := by
   intro i
   obtain ⟨h1, h2, h3, h4⟩ := hg i
-  refine ⟨?_, ?_, ?_, ?_⟩
-  · by_cases ha : G.Adj x (v i) <;> by_cases hb : G.Adj x (v (i + 1)) <;>
-      simp only [ha, hb, decide_true, decide_false, Bool.true_and, Bool.false_and,
-        Bool.and_true, Bool.and_false, Bool.not_false]
-    exact (not_adj_both_of_cliqueFree hcf ha hb h1).elim
-  · by_cases ha : G.Adj x (u i) <;> by_cases hb : G.Adj x (v (i + 1)) <;>
-      simp only [ha, hb, decide_true, decide_false, Bool.true_and, Bool.false_and,
-        Bool.and_true, Bool.and_false, Bool.not_false]
-    exact (not_adj_both_of_cliqueFree hcf ha hb h2).elim
-  · by_cases ha : G.Adj x (u i) <;> by_cases hb : G.Adj x (v (i + 4)) <;>
-      simp only [ha, hb, decide_true, decide_false, Bool.true_and, Bool.false_and,
-        Bool.and_true, Bool.and_false, Bool.not_false]
-    exact (not_adj_both_of_cliqueFree hcf ha hb h3).elim
-  · by_cases ha : G.Adj x w <;> by_cases hb : G.Adj x (u i) <;>
-      simp only [ha, hb, decide_true, decide_false, Bool.true_and, Bool.false_and,
-        Bool.and_true, Bool.and_false, Bool.not_false]
-    exact (not_adj_both_of_cliqueFree hcf ha hb h4).elim
+  exact ⟨not_and_decide fun ha hb => not_adj_both_of_cliqueFree hcf ha hb h1,
+         not_and_decide fun ha hb => not_adj_both_of_cliqueFree hcf ha hb h2,
+         not_and_decide fun ha hb => not_adj_both_of_cliqueFree hcf ha hb h3,
+         not_and_decide fun ha hb => not_adj_both_of_cliqueFree hcf ha hb h4⟩
 
 lemma sum_adj_eq_neighborSet_ncard {V : Type} [Fintype V] [DecidableEq V]
     (G : SimpleGraph V) [DecidableRel G.Adj] (z : V) :
@@ -487,8 +482,10 @@ lemma sum_adj_eq_neighborSet_ncard {V : Type} [Fintype V] [DecidableEq V]
   have h1 : (∑ x : V, if decide (G.Adj x z) then (1 : ℕ) else 0) =
       (Finset.univ.filter (fun x : V => G.Adj x z)).card := by
     rw [Finset.card_filter]
-    exact Finset.sum_congr rfl fun x _ => by
-      by_cases h : G.Adj x z <;> simp only [h, decide_true, decide_false, Bool.false_eq_true, ite_true, ite_false]
+    refine Finset.sum_congr rfl fun x _ => ?_
+    by_cases h : G.Adj x z
+    · rw [decide_eq_true h, if_pos rfl, if_pos h]
+    · rw [decide_eq_false h, if_neg Bool.false_ne_true, if_neg h]
   rw [h1]
   congr 1
   ext x
