@@ -103,10 +103,19 @@ export const OPEN_TOTAL = META.counts.open + META.counts.unformalized;
 const BY_ID = new Map(PROBLEMS.map((p) => [p.id, p]));
 
 export const KIND_LABEL: Record<Kind, string> = {
-  open: "Open problem",
-  known: "Known result, no formal proof",
-  warmup: "Warm-up",
-  unformalized: "Open, not yet stated in Lean",
+  open: "Open problem: find a proof",
+  known: "Known result: formalize the existing proof",
+  warmup: "Warm-up exercise",
+  unformalized: "Open, needs a Lean statement first",
+};
+
+/** What the person (or agent) is asked to do, in one sentence, by kind. Shown at the top of every problem page. */
+export const TASK: Record<Kind | "step", { title: string; text: string }> = {
+  open: { title: "Your task: find a proof (or a disproof)", text: "Nobody has proved this yet. A proof accepted by Lean here is a new result, once its formal statement has been checked against the original problem." },
+  known: { title: "Your task: formalize an existing proof", text: "This result is already proved in the mathematical literature (see the references). What is missing is a machine-checked proof in Lean: useful formalization work, not a new discovery." },
+  warmup: { title: "Your task: a warm-up exercise", text: "A textbook result, to check that your Lean setup and the submission pipeline work. It earns few points." },
+  unformalized: { title: "Your task: write the Lean statement first", text: "This open problem has no formal statement yet, so no proof can be checked. Writing a faithful Lean statement is the first step, and it is credited." },
+  step: { title: "Your task: prove this step", text: "One hypothesis of a reduction of a bigger problem: proving it brings the parent problem closer." },
 };
 
 export const isProvable = (p: Problem) => p.kind !== "unformalized";

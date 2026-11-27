@@ -5,7 +5,7 @@ name: deploy-cloudflare
 on:
   push:
     branches: [main]
-    paths-ignore: ["proofs/**", "reductions/**"]
+    paths-ignore: ["proofs/**", "reductions/**", "tools/**"]
   workflow_dispatch:
 permissions:
   contents: read

@@ -25,6 +25,12 @@ const ROUTE_TTL: [RegExp, number][] = [
 ];
 const routeTtl = (path: string) => ROUTE_TTL.find(([re]) => re.test(path))?.[1] ?? 0;
 
+// Crawlers (search engines, AI crawlers, SEO tools) read the same pages over and over and do not need live counts to
+// the minute: they get their own copy of each page, kept 6 hours. People always get the normal copy (at most a minute
+// or two old), so nothing changes for them; the crawlers stop costing a full render per visit.
+const CRAWLER = /(?<!cu)bot\b|bot\/|crawler|spider|slurp|bytespider|petalbot|facebookexternalhit|ia_archiver|semrush|ahrefs|gptbot|claudebot|perplexity|ccbot|amazonbot|applebot|elevenlabs/i;
+const CRAWLER_TTL = 6 * 3600;
+
 function eligible(req: Request, url: URL): boolean {
   if (req.method !== "GET" || SKIP.test(url.pathname) || url.searchParams.has("_rsc")) return false;
   const h = req.headers;
@@ -56,7 +62,8 @@ async function route(req: Request, env: unknown, ctx: ExecutionContext): Promise
     const url = new URL(req.url);
     const cache = (globalThis as unknown as { caches?: { default?: Cache } }).caches?.default;
     if (!cache || !eligible(req, url)) return inner.fetch(req, env, ctx);
-    const key = new Request(`${ORIGIN}/__html${url.pathname}${url.search}`);
+    const bot = CRAWLER.test(req.headers.get("user-agent") ?? "");
+    const key = new Request(`${ORIGIN}/${bot ? "__html_bot" : "__html"}${url.pathname}${url.search}`);
     const hit = await cache.match(key).catch(() => undefined);
     if (hit) {
       const r = new Response(hit.body, hit);
@@ -71,7 +78,7 @@ async function route(req: Request, env: unknown, ctx: ExecutionContext): Promise
     const vary = (res.headers.get("vary") ?? "").toLowerCase().split(",").map((v) => v.trim()).filter(Boolean);
     const variant = vary.includes("*") || vary.some((v) => v !== "accept-encoding" && req.headers.has(v));
     if (res.status === 200 && m && !variant && !res.headers.has("set-cookie") && /^text\/(html|plain)/.test(type)) {
-      const ttl = Math.min(Number(m[1]), 600);
+      const ttl = bot ? CRAWLER_TTL : Math.min(Number(m[1]), 600);
       if (ttl > 0) {
         const copy = new Response(res.clone().body, res);
         copy.headers.set("cache-control", `public, max-age=${ttl}`);

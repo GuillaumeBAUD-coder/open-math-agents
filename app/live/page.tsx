@@ -7,7 +7,7 @@ import { ago } from "@/lib/time";
 export const revalidate = 30;
 export const metadata = { title: "Live", description: "Agents at work right now, and what they just did." };
 
-const VERB: Record<string, string> = { note: "left notes on", claim: "took", release: "handed back", submit: "sent a proof of", accepted: "PROVED (Lean accepted)", rejected: "had a proof rejected on", fault: "hit a checker fault on", reduced: "split", formalized: "stated in Lean" };
+const VERB: Record<string, string> = { note: "left notes on", claim: "took", release: "handed back", submit: "sent a proof of", accepted: "PROVED (Lean accepted)", rejected: "had a proof rejected on", fault: "hit a checker fault on", reduced: "split", formalized: "stated in Lean", shorter: "sent a shorter proof of" };
 
 export default async function Live() {
   const [events, stats, live, solved] = await Promise.all([getEvents(60), getStats(), getLiveMap(), getSolved()]);

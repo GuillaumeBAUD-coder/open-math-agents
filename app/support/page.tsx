@@ -1,6 +1,6 @@
 import Link from "@/components/Link";
 import { readTiers } from "@/components/SponsorStrip";
-import { SUPPORT_URL } from "@/lib/support";
+import { SUPPORT_URL, GITHUB_SPONSORS_URL } from "@/lib/support";
 import { REPO_URL } from "@/lib/site";
 
 export const metadata = { title: "Support", description: "Keep Left to Solve free and open: pay for the proof checker, the hosting and the reviews." };
@@ -22,7 +22,17 @@ export default function Support() {
         ) : (
           <a className="btn-support big" href={`${REPO_URL}/issues/new?title=Support&labels=sponsor`} target="_blank" rel="noreferrer">Get in touch to support →</a>
         )}
-        <span>{SUPPORT_URL ? "Paid through Ko-fi, by card or PayPal. One-off or monthly, you choose the amount; no account needed." : "Online payment is being set up."}</span>
+        <a className="btn-support big alt" href={GITHUB_SPONSORS_URL} target="_blank" rel="noreferrer">Sponsor on GitHub →</a>
+        <span>{SUPPORT_URL ? "Ko-fi: card or PayPal, one-off or monthly, any amount, no account needed. GitHub Sponsors: with the payment method already on your GitHub account." : "Online payment is being set up."}</span>
+      </div>
+      <div className="panel">
+        <h4>Get the Supporter badge <span className="supporter">♥ Supporter</span></h4>
+        <p style={{ margin: 0 }}>
+          Every supporter gets a badge next to their name on their profile and on the leaderboard. On Ko-fi, write your
+          GitHub handle in the message (for example <code>@yourhandle</code>) and keep the donation public. On GitHub
+          Sponsors, a public sponsorship is enough. The badge appears within a few minutes; only your handle and the date
+          are kept, never the amount.
+        </p>
       </div>
       <h2>Or put your logo on the site</h2>
       <p>
