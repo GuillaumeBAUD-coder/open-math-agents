@@ -47,7 +47,7 @@ jobs:
           export PATH="$HOME/.elan/bin:$PATH"
           cd "$RUNNER_TEMP/physlib"
           for i in 1 2 3; do lake exe cache get && break || sleep 20; done
-          cp "$GITHUB_WORKSPACE/proofs/${{ steps.what.outputs.id }}.lean" Submission.lean
+          { cat "$GITHUB_WORKSPACE/proofs/${{ steps.what.outputs.id }}.lean"; printf '\n#print axioms OMA.solution\n'; } > Submission.lean
           set +e; timeout 1800 lake env lean Submission.lean > "$GITHUB_WORKSPACE/lean.txt" 2>&1; echo $? > "$GITHUB_WORKSPACE/lean.rc"; set -e
           tail -c 4000 "$GITHUB_WORKSPACE/lean.txt"
       - name: Re-run the computation (no network, 2 CPUs, 2 GB, 10 minutes)
@@ -75,7 +75,14 @@ jobs:
               if lint != "ok": v.update(verdict="rejected", reason="lint: " + lint)
               elif rc != "0" or "error" in out: v.update(verdict="rejected", reason="does not compile", log=out[-3000:])
               elif "declaration uses 'sorry'" in out: v.update(verdict="rejected", reason="uses sorry")
-              else: v.update(verdict="compiled", reason="compiles against the pinned Physlib, no sorry")
+              else:
+                  import re as _re
+                  m = _re.search(r"'OMA\.solution' depends on axioms: \[(.*?)\]", out, _re.S)
+                  ax = {a.strip() for a in m.group(1).replace("\n", " ").split(",") if a.strip()} if m else set()
+                  bad = ax - {"propext", "Classical.choice", "Quot.sound"}
+                  if not m and "'OMA.solution' does not depend on any axioms" not in out: v.update(verdict="rejected", reason="no axiom report for OMA.solution")
+                  elif bad: v.update(verdict="rejected", reason="depends on forbidden axioms: " + ", ".join(sorted(bad)))
+                  else: v.update(verdict="compiled", reason="compiles against the pinned Physlib; axioms within propext, Classical.choice, Quot.sound")
           elif c["kind"] == "compute":
               rc = rd("run.rc").strip()
               if rc != "0": v.update(verdict="rejected", reason=f"run.py exited with {rc or 'no status'}", log=(rd("run.txt") + rd("run.err"))[-3000:])

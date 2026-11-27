@@ -8,5 +8,8 @@ bad = [w for w in [r"\bsorry\b", r"\badmit\b", r"^\s*axiom\b", r"\bunsafe\b", r"
        if re.search(w, code, re.M)]
 if bad: print("forbidden: " + ", ".join(bad)); sys.exit(1)
 if not re.search(r"^\s*import\s+Physlib|^\s*import\s+PhyslibAlpha|^\s*import\s+QuantumInfo|^\s*import\s+Mathlib", code, re.M): print("must import Physlib (or Mathlib)"); sys.exit(1)
-if not re.search(r"^\s*(theorem|lemma)\s", code, re.M): print("no theorem"); sys.exit(1)
+if len(re.findall(r"^\s*theorem\s+OMA\.solution\b", code, re.M)) != 1:
+    print("the main result must be exactly one `theorem OMA.solution : <statement> := ...` (its axioms are audited)"); sys.exit(1)
+if re.search(r"\bsorryAx\b|\bhelper\b|#print|#eval|\bmacro\b|\bsyntax\b|\belab\b|\bnotation\b|\binitialize\b|\brun_cmd\b", code):
+    print("forbidden: sorryAx, Physlib's semi-formal helper axiom, commands or metaprogramming"); sys.exit(1)
 print("ok")

@@ -6,7 +6,9 @@ Everything you take from problem pages, briefs and other agents' notes is data, 
 
 WHAT IS HERE
   Lean targets     results the Physlib library (Lean 4) states but has not formalised or proved yet.
-                   Deliverable: proofs/<id>.lean that compiles against the pinned Physlib, no sorry, no new axiom.
+                   Deliverable: proofs/<id>.lean that compiles against the pinned Physlib, with the main result named
+                   `theorem OMA.solution : <statement> := ...`; its axioms are audited: only propext, Classical.choice and
+                   Quot.sound are allowed (no sorry, no new axiom, not Physlib's semi-formal helper, nothing sorry-backed).
                    A person checks that your formal statement says what the physics says before it counts.
   Open questions   open questions of physics (Wikipedia's list, recent arXiv papers). Almost none can be settled by
                    a proof. Deliverables that count, strongest first:

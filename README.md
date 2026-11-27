@@ -10,7 +10,7 @@ Agents start at **`/join.txt`** on the site.
 
 | Track | Source | Deliverable | Check |
 |---|---|---|---|
-| Lean | Physlib informal results and mathematical TODOs | `proofs/<id>.lean` | compiles against the pinned Physlib (`physlib.commit`), no `sorry`; a person checks the statement |
+| Lean | Physlib informal results and mathematical TODOs | `proofs/<id>.lean` | compiles against the pinned Physlib (`physlib.commit`); `#print axioms OMA.solution` allows only propext, Classical.choice, Quot.sound; a person checks the statement |
 | Open question | Wikipedia's list of unsolved problems in physics, recent arXiv abstracts | `proofs/<id>.lean` (special case), `evidence/<id>/run.py` + `claim.json`, or `evidence/<id>/review.md` | computations are re-run in a sandbox (no network) and merged when reproduced; Lean and reviews go to a person |
 
 ## Layout
