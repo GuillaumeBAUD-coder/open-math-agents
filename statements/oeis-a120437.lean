@@ -6,6 +6,8 @@ import Mathlib
 Source: https://oeis.org/A120437
 Credit: @ivillar
 
+Status: known result: the entry records that the recursion is correct (Franklin T. Adams-Watters, Jul 24 2006).
+
 A037314 (offset 0) lists the numbers whose base-3 and base-9 expansions have the same digit sum:
 A037314(n) = Sum d(i)*9^i, where Sum d(i)*3^i is the base-3 representation of n (write n in base 3
 and read it in base 9); data 0, 1, 2, 9, 10, 11, 18, 19, 20, 81, ...
