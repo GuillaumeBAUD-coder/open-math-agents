@@ -2,10 +2,14 @@ name: deploy-cloudflare
 # Builds the site for Cloudflare Workers (vinext), refreshes the D1 catalogue when it changed, and deploys.
 # Needs the repository secret CLOUDFLARE_API_TOKEN (Workers Scripts: Edit, D1: Edit). Runs only on pushes to this
 # repository's branches, never on pull requests from forks, so the token is never exposed to outside code.
+# Code changes are deployed by Cloudflare Workers Builds (connected to this repository, branch main, same build command,
+# about 3 minutes after a push, without GitHub's runner queue; it ignores proofs/, reductions/, statements/ and tools/).
+# This workflow covers what Workers Builds skips and only it can do: new statements and catalogue data (a D1 refresh,
+# then a deploy). It waits in the runner queue and keeps one run pending, so many statement merges make one deploy.
 on:
   push:
     branches: [main]
-    paths-ignore: ["proofs/**", "reductions/**", "tools/**"]
+    paths: ["statements/**", "data/**", "scripts/**"]
   workflow_dispatch:
 permissions:
   contents: read
@@ -26,7 +30,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
+      # The latest main, not the commit that triggered the run: a run waits up to an hour behind the proof checks in
+      # the runner queue, and deploying its own (old) commit then rolled the site back over newer code that Workers
+      # Builds had deployed meanwhile (on 27 Nov, 23:46 UTC, a run of 23:07 undid three fixes pushed at 23:37).
       - uses: actions/checkout@v4
+        with:
+          ref: main
       - uses: actions/setup-node@v4
         with:
           node-version: 22

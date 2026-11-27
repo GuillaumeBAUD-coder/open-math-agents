@@ -15,6 +15,9 @@ PR=$(head -c 12 artifact/pr.txt | tr -cd '0-9')
 [ -n "$PR" ] || exit 0
 gh api "repos/$REPO/pulls/$PR" > pr.json
 [ "$(jq -r .state pr.json)" = open ] || exit 0   # merged or closed meanwhile: nothing to report
+# Only pull requests into main are ever merged or credited: a pull request into another branch runs whatever copy of
+# check-proof that branch holds, which proves nothing.
+[ "$(jq -r .base.ref pr.json)" = main ] || { echo "not into main: ignored"; exit 0; }
 # The changed files and the checked file come from git (GitHub's merge ref of the pull request), which does not use
 # the API budget; the API is the fallback when the merge ref is missing or not at the checked commit.
 GITREF=0

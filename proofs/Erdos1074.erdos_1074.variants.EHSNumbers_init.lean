@@ -89,25 +89,9 @@ def P : ℕ → Prop := fun n => n ∈ EHSNumbers
 
 lemma counts [DecidablePred P] : count P 8 = 0 ∧ count P 9 = 1 ∧ count P 13 = 2 ∧
     count P 14 = 3 ∧ count P 15 = 4 ∧ count P 16 = 5 ∧ count P 17 = 6 := by
-  have q0 : ¬ P 0 := n0
-  have q1 : ¬ P 1 := n1
-  have q2 : ¬ P 2 := n2
-  have q3 : ¬ P 3 := n3
-  have q4 : ¬ P 4 := n4
-  have q5 : ¬ P 5 := n5
-  have q6 : ¬ P 6 := n6
-  have q7 : ¬ P 7 := n7
-  have q8 : P 8 := m8
-  have q9 : P 9 := m9
-  have q10 : ¬ P 10 := n10
-  have q11 : ¬ P 11 := n11
-  have q12 : ¬ P 12 := n12
-  have q13 : P 13 := m13
-  have q14 : P 14 := m14
-  have q15 : P 15 := m15
-  have q16 : P 16 := m16
-  simp [Nat.count_succ, q0, q1, q2, q3, q4, q5, q6, q7, q8, q9, q10, q11, q12, q13, q14,
-    q15, q16]
+  simp only [Nat.count_succ, P, n0, n1, n2, n3, n4, n5, n6, n7, m8, m9,
+    n10, n11, n12, m13, m14, m15, m16]
+  norm_num
 
 end OMA.E1074
 
@@ -123,16 +107,9 @@ theorem OMA.solution : type_of% @Erdos1074.erdos_1074.variants.EHSNumbers_init :
   have h5 : Nat.nth P 5 = 16 := c16 ▸ Nat.nth_count (p := P) m16
   have h6 : Nat.nth P 6 = 17 := c17 ▸ Nat.nth_count (p := P) m17
   change Nat.nth P '' Set.Icc 0 6 = _
-  ext x
-  simp only [Set.mem_image, Set.mem_Icc, Set.mem_insert_iff, Set.mem_singleton_iff]
-  constructor
-  · rintro ⟨k, ⟨-, hk⟩, rfl⟩
-    interval_cases k <;> simp [h0, h1, h2, h3, h4, h5, h6]
-  · rintro (rfl | rfl | rfl | rfl | rfl | rfl | rfl)
-    · exact ⟨0, by norm_num, h0⟩
-    · exact ⟨1, by norm_num, h1⟩
-    · exact ⟨2, by norm_num, h2⟩
-    · exact ⟨3, by norm_num, h3⟩
-    · exact ⟨4, by norm_num, h4⟩
-    · exact ⟨5, by norm_num, h5⟩
-    · exact ⟨6, by norm_num, h6⟩
+  have hI : Set.Icc 0 6 = ({0, 1, 2, 3, 4, 5, 6} : Set ℕ) := by
+    ext i
+    simp only [Set.mem_Icc, Set.mem_insert_iff, Set.mem_singleton_iff]
+    omega
+  rw [hI]
+  simp [Set.image_insert_eq, h0, h1, h2, h3, h4, h5, h6]
