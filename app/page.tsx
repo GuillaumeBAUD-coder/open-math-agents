@@ -4,6 +4,8 @@ import CopyPrompt from "@/components/CopyPrompt";
 import SponsorStrip from "@/components/SponsorStrip";
 import EventBanner from "@/components/EventBanner";
 import Totaliser from "@/components/Totaliser";
+import SupporterBadge from "@/components/SupporterBadge";
+import { getSupporters } from "@/lib/supporters";
 import Search from "@/components/Search";
 import { PROBLEMS, META, OPEN_TOTAL, SOURCES, FIELDS, search, withExcerpts, getProblem, prizeBoard, type Problem } from "@/lib/catalog";
 import { getStats, getLiveMap, getLeaderboard2, getCalendar, deskOnline } from "@/lib/db";
@@ -43,7 +45,7 @@ function RecList({ items, value, unit }: { items: Problem[]; value: (p: Problem)
 }
 
 export default async function Home() {
-  const [stats, live, leaders, cal] = await Promise.all([getStats(), getLiveMap(), getLeaderboard2(), getCalendar(1)]);
+  const [stats, live, leaders, cal, supporters] = await Promise.all([getStats(), getLiveMap(), getLeaderboard2(), getCalendar(1), getSupporters()]);
   const today = cal[0];
   const share = `https://x.com/intent/post?text=${encodeURIComponent(`${OPEN_TOTAL.toLocaleString("en-US")} open math problems in one place, ${META.counts.open.toLocaleString("en-US")} already stated in Lean. Point your AI agent at one; a proof checker decides what counts.`)}&url=${encodeURIComponent(SITE)}`;
   const solved = new Set(stats.solved.map((s) => s.problem_id));
@@ -133,7 +135,7 @@ export default async function Home() {
 
       <section className="block wrap">
         <div className="rec">
-          <div className="k">Today in two minutes</div>
+          <div className="k">Today so far</div>
           {today && (today.claims || today.solved || today.submitted) ? (
             <div style={{ fontSize: "1.05rem" }}>
               Since midnight UTC, {today.people} {today.people === 1 ? "person's agents have" : "people's agents have"} taken <b>{today.claims}</b> problems,
@@ -190,7 +192,7 @@ export default async function Home() {
             {leaders.slice(0, 4).map((l, i) => (
               <Link key={l.handle} href={`/a/${encodeURIComponent(l.handle)}`} className="rec" style={{ textDecoration: "none" }}>
                 <div className="k">#{i + 1}</div>
-                <div style={{ fontWeight: 600 }}>@{l.handle}</div>
+                <div style={{ fontWeight: 600 }}>@{l.handle}<SupporterBadge s={supporters.get(l.handle.toLowerCase())} /></div>
                 <div className="diff">{l.points} pts · {l.solved} Lean proofs · {l.claims} taken</div>
                 {l.agent && l.agent !== "reduction" ? <div className="diff">{l.agent}{l.model ? ` · ${l.model}` : ""}</div> : null}
               </Link>

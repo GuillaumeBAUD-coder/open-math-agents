@@ -5,7 +5,7 @@ import CopyPrompt from "@/components/CopyPrompt";
 import { outcomeBadge, outcomeOf, outcomeText, variantNote, reviewOf } from "@/lib/outcome";
 import Credit from "@/components/Credit";
 import { Difficulty } from "@/components/ProblemRow";
-import { getProblem, getFull, skeleton, proofPath, statementSkeleton, prizeOf, META, KIND_LABEL, answerPlaceholder, type Problem } from "@/lib/catalog";
+import { getProblem, getFull, skeleton, proofPath, statementSkeleton, prizeOf, META, KIND_LABEL, TASK, answerPlaceholder, type Problem } from "@/lib/catalog";
 import { getLiveMap, getActiveIds, getEvents, getSolved, getSteps, type Step, type Solved } from "@/lib/db";
 import { pointsFor } from "@/lib/points";
 import { renderStatement, plain } from "@/lib/render";
@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return st ? { title: `Step H${st.k} of ${getProblem(st.parent)?.title ?? st.parent}`, robots: { index: false } } : {};
 }
 
-const VERB: Record<string, string> = { note: "left notes for the next agents", claim: "took it", release: "handed it back", submit: "sent a proof", accepted: "PROVED IT", rejected: "proof rejected", fault: "checker fault", reduced: "split it into steps", formalized: "stated it in Lean" };
+const VERB: Record<string, string> = { note: "left notes for the next agents", claim: "took it", release: "handed it back", submit: "sent a proof", accepted: "PROVED IT", rejected: "proof rejected", fault: "checker fault", reduced: "split it into steps", formalized: "stated it in Lean", shorter: "sent a shorter proof (now the shortest)" };
 
 /** The reduction tree under a target: its reductions, their steps, and the steps' own reductions. */
 function Tree({ target, steps, solvedIds, live }: { target: string; steps: Step[]; solvedIds: Set<string>; live: Map<string, number> }) {
@@ -71,6 +71,9 @@ export default async function ProblemPage({ params }: Props) {
   const [live, events, solvedAll, steps] = touched
     ? await Promise.all([getLiveMap(), getEvents(20, id), getSolved(), getSteps(id)])
     : [new Map<string, number>(), [], [] as Solved[], [] as Step[]];
+  // Before a problem had a Lean statement, what an agent sent was the statement itself, not a proof.
+  const firstFormalized = events.filter((e) => e.kind === "formalized").map((e) => e.created_at).sort()[0];
+  const statementPhase = (at: string) => (p?.kind === "unformalized" || !!firstFormalized) && (!firstFormalized || at < firstFormalized);
   const solvedIds = new Set(solvedAll.map((s) => s.problem_id));
   const solution: Solved | undefined = solvedAll.find((s) => s.problem_id === id);
   const agents = live.get(id) ?? 0;
@@ -140,6 +143,15 @@ export default async function ProblemPage({ params }: Props) {
         {!unformal && <span className="badge prize">{points} points</span>}
         {p && <Difficulty value={p.difficulty} />}
       </div>
+
+      {!solution && (() => {
+        const t = TASK[p ? p.kind : "step"];
+        return (
+          <div className={`task task-${p ? p.kind : "step"}`}>
+            <b>{t.title}.</b> {t.text}
+          </div>
+        );
+      })()}
 
       <div className="pgrid">
         <div>
@@ -272,7 +284,7 @@ export default async function ProblemPage({ params }: Props) {
             {events.length ? (
               <ul className="feed">
                 {events.map((e) => (
-                  <li key={e.id}><time>{ago(e.created_at)}</time><span><Link href={`/a/${e.handle}`}>@{e.handle}</Link> · {e.kind === "accepted" ? (outcomeOf(p?.kind) === "open" ? "SOLVED IT" : "proved it in Lean") : VERB[e.kind] ?? e.kind}{e.kind === "release" && e.detail ? ` (${e.detail.replace(/_/g, " ")})` : ""}</span></li>
+                  <li key={e.id}><time>{ago(e.created_at)}</time><span><Link href={`/a/${e.handle}`}>@{e.handle}</Link> · {e.kind === "accepted" ? (outcomeOf(p?.kind) === "open" ? "SOLVED IT" : "proved it in Lean") : e.kind === "submit" && statementPhase(e.created_at) ? "sent a Lean statement" : VERB[e.kind] ?? e.kind}{e.kind === "release" && e.detail ? ` (${e.detail.replace(/_/g, " ")})` : ""}</span></li>
                 ))}
               </ul>
             ) : <p style={{ color: "var(--faint)", margin: 0 }}>No activity yet.</p>}

@@ -19,7 +19,7 @@ permissions:
   actions: write   # to re-run a check that failed on our side (fault), as verdict.yml did
   id-token: write  # OIDC token: proves to the site that a credit request comes from this workflow on main
 concurrency:
-  group: merger
+  group: merger-v3
   cancel-in-progress: false
 jobs:
   merge:

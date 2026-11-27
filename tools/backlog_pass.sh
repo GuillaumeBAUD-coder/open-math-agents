@@ -7,6 +7,7 @@ set -uo pipefail
 # The merger (backlog.yml, tools/merger_loop.sh v2) is the only caller now; an older merger still running from before
 # tools/merger.v2 existed must not report twice, so it does nothing here.
 if [ -e base/tools/merger.v2 ] && [ -z "${MERGER_V2:-}" ]; then exit 0; fi
+if [ -e base/tools/merger.v3 ] && [ -z "${MERGER_V3:-}" ]; then exit 0; fi   # the v3 merger has taken over
 LANES=${LANES:-3}
 gh api --paginate "repos/$REPO/issues?state=open&labels=needs-human-review&per_page=100&sort=created&direction=asc" \
   --jq '.[] | select(.pull_request) | .number' > all.txt || true
