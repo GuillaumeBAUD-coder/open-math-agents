@@ -92,12 +92,13 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a265723.main := by
     simp only [mul_sub, mul_add, mul_one, map_sub, map_add, coeff_mk, coeff_mul_X_pow',
       coeff_X, coeff_X_pow]
     rcases Nat.lt_or_ge m 4 with hm | hm
-    · interval_cases m <;> split_ifs <;> first | omega | norm_num [a_val]
+    · interval_cases m <;> split_ifs <;> first | contradiction | omega | norm_num [a_val]
     · obtain ⟨k, rfl⟩ : ∃ k, m = k + 4 := ⟨m - 4, by omega⟩
       have h := hrec (k + 4) (by omega)
       rw [show k + 4 - 2 = k + 2 by omega, show k + 4 - 4 = k by omega] at h
       have h' := congrArg (Int.cast : ℤ → ℚ) h
       push_cast at h'
       split_ifs <;> first
+        | contradiction
         | omega
         | (rw [show k + 4 - 2 = k + 2 by omega, show k + 4 - 4 = k by omega]; linarith)
