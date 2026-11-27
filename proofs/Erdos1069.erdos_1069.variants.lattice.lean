@@ -109,12 +109,16 @@ lemma rich_slice (m : ℕ) (A : AffineSubspace ℝ ℝ²) (f : Fin m ↪ Fin m �
 lemma rich_V (m : ℕ) (i : Fin m) :
     m ≤ (((grid m : Finset ℝ²) : Set ℝ²) ∩ (V (i : ℕ) : Set ℝ²)).ncard :=
   rich_slice m (V (i : ℕ)) ⟨fun j => (i, j), fun _ _ h => congrArg Prod.snd h⟩
-    (fun j => (mem_V _ _).2 (by simp))
+    (fun j => by
+      change pt (i : ℕ) (j : ℕ) ∈ V (i : ℕ)
+      rw [mem_V]; simp)
 
 lemma rich_H (m : ℕ) (j : Fin m) :
     m ≤ (((grid m : Finset ℝ²) : Set ℝ²) ∩ (H (j : ℕ) : Set ℝ²)).ncard :=
   rich_slice m (H (j : ℕ)) ⟨fun i => (i, j), fun _ _ h => congrArg Prod.fst h⟩
-    (fun i => (mem_H _ _).2 (by simp))
+    (fun i => by
+      change pt (i : ℕ) (j : ℕ) ∈ H (j : ℕ)
+      rw [mem_H]; simp)
 
 noncomputable def L (m : ℕ) : Fin m ⊕ Fin m → AffineSubspace ℝ ℝ²
   | Sum.inl i => V (i : ℕ)
