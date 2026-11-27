@@ -13,13 +13,6 @@ lemma not_powerful_two {m : ℕ} (h : m % 4 = 2) : ¬ Nat.Powerful m := by
   have hd : 2 ^ 2 ∣ m := hp 2 hmem
   omega
 
-lemma not_powerful_three {m : ℕ} (h : m % 9 = 3 ∨ m % 9 = 6) : ¬ Nat.Powerful m := by
-  intro hp
-  have hmem : 3 ∈ m.primeFactors :=
-    Nat.mem_primeFactors.mpr ⟨Nat.prime_three, by omega, by omega⟩
-  have hd : 3 ^ 2 ∣ m := hp 3 hmem
-  omega
-
 theorem mod_four (n : ℕ) (h : n % 4 ≠ 3) :
     ¬ (Nat.Powerful n ∧ Nat.Powerful (n + 1) ∧ Nat.Powerful (n + 2)) := by
   rintro ⟨h0, h1, h2⟩
