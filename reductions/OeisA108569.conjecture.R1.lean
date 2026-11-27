@@ -33,7 +33,7 @@ theorem main : H1 → H2 → type_of% @OeisA108569.conjecture := by
   change Even (Nat.nth OeisA108569.A i)
   by_cases hz : Nat.nth OeisA108569.A i = 0
   · rw [hz]
-    exact even_zero
+    exact ⟨0, rfl⟩
   · have ha := Nat.nth_mem_of_ne_zero hz
     have hcount := Nat.count_nth (Nat.lt_card_toFinset_of_nth_ne_zero hz)
     have hgt : 1 < Nat.nth OeisA108569.A i := by
