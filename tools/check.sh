@@ -5,16 +5,17 @@
 set -uo pipefail
 FILE="$1"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+case "$(uname -s)" in MINGW*|MSYS*|CYGWIN*) ROOT="$(cygpath -m "$ROOT")";; esac
 # The verdict path is made absolute now: the script later moves into the formal-conjectures checkout, and a relative
 # path would land the verdict there instead of where the caller looks for it.
 if [ -n "${2:-}" ]; then OUT="$(cd "$(dirname "$2")" && pwd)/$(basename "$2")"; else OUT=/dev/stdout; fi
 FC="${OMA_FC:-$ROOT/.oma/formal-conjectures}"
-LINT="$(python3 -I "$ROOT/tools/lint.py" "$FILE" "$ROOT/data/catalog.json")"; LINT_OK=$?
-emit() { python3 -I -c 'import json,sys; d=json.loads(sys.argv[1]); d.update(verdict=sys.argv[2], reason=sys.argv[3], log=sys.argv[4][-6000:]); print(json.dumps(d, ensure_ascii=False))' "$LINT" "$1" "$2" "${3:-}" > "$OUT"; }
-if [ $LINT_OK -ne 0 ]; then emit rejected "lint: $(python3 -I -c 'import json,sys;print("; ".join(json.loads(sys.argv[1])["errors"]))' "$LINT")"; exit 1; fi
-field() { python3 -I -c 'import json,sys;print(json.loads(sys.argv[1])[sys.argv[2]])' "$LINT" "$1"; }
+LINT="$(python3 -I -X utf8 "$ROOT/tools/lint.py" "$FILE" "$ROOT/data/catalog.json")"; LINT_OK=$?
+emit() { python3 -I -X utf8 -c 'import json,sys; d=json.loads(sys.argv[1]); d.update(verdict=sys.argv[2], reason=sys.argv[3], log=sys.argv[4][-6000:]); print(json.dumps(d, ensure_ascii=False))' "$LINT" "$1" "$2" "${3:-}" > "$OUT"; }
+if [ $LINT_OK -ne 0 ]; then emit rejected "lint: $(python3 -I -X utf8 -c 'import json,sys;print("; ".join(json.loads(sys.argv[1])["errors"]))' "$LINT")"; exit 1; fi
+field() { python3 -I -X utf8 -c 'import json,sys;print(json.loads(sys.argv[1])[sys.argv[2]])' "$LINT" "$1"; }
 MODULE="$(field imports)"; THM="$(field theorem)"
-WANT="$(python3 -I -c 'import json;print(json.load(open("'"$ROOT"'/data/catalog.json"))["meta"]["upstreamCommit"])')"
+WANT="$(python3 -I -X utf8 -c 'import json;print(json.load(open("'"$ROOT"'/data/catalog.json"))["meta"]["upstreamCommit"])')"
 HAVE="$(git -C "$FC" rev-parse HEAD 2>/dev/null || echo none)"
 [ "$HAVE" = "$WANT" ] || { emit fault "formal-conjectures checkout is at $HAVE, expected $WANT (run tools/oma.sh setup)"; exit 2; }
 cd "$FC"
@@ -54,7 +55,7 @@ if [ "$TYPE" = "statement" ]; then
   if echo "$LOG" | grep -qE "(^|:)[0-9]+:[0-9]+: error"; then emit rejected "compiler reported errors" "$LOG"; exit 1; fi
   emit accepted "the statement compiles; it now needs a human review of the translation" "$LOG"; exit 0
 fi
-AX="$(python3 -I - "$LOG" "$THM" <<'PY'
+AX="$(python3 -I -X utf8 - "$LOG" "$THM" <<'PY'
 import re, sys
 log, thm = sys.argv[1], sys.argv[2]
 if re.search(r"'%s' does not depend on any axioms" % re.escape(thm), log):
