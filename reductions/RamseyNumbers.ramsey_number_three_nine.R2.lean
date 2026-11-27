@@ -1050,7 +1050,7 @@ theorem four_no_five (A : List Nat) (known : A ∈ [
         exact List.mem_map.mpr ⟨_,List.mem_filter.mpr ⟨ih h.2,by simpa using h.1.2⟩,by congr 1 <;> omega⟩
   let valid (adj : List Nat) (tests : List (Nat×Nat)) (a b : Nat) :=
     tests.all (fun t => mem adj t.1 6) &&
-      (enum adj).all (fun p => if 4≤p.2 ∧ p.2≤6 then decide (a≤missed tests p.1+b*p.2) else true)
+      (enum adj).all (fun p => if 4≤p.2 ∧ p.2≤6 then decide (a ≤ missed tests p.1+b*p.2) else true)
   have cert : ∃ (tests : List (Nat×Nat)) (a b : Nat),
       valid A tests a b=true ∧ (tests.map Prod.snd).sum+b*24<5*a := by
     simp only [List.mem_cons,List.not_mem_nil,or_false] at known
@@ -1089,7 +1089,7 @@ theorem four_no_five (A : List Nat) (known : A ∈ [
         · push Not at h
           simp [h]
       simpa [missed,Finset.sum_add_distrib] using Nat.add_le_add one tail
-  have lower (i : Fin 5) : a≤missed tests (R i)+b*(K i) := by
+  have lower (i : Fin 5) : a ≤ missed tests (R i)+b*(K i) := by
     have h := List.all_eq_true.mp pass.2 _ (rows i)
     simpa only [sizes i,and_self,if_true,decide_eq_true_eq] using h
   have total := Finset.sum_le_sum (s:=Finset.univ) (fun i _ => lower i)
