@@ -14,15 +14,12 @@ theorem OMA.solution : type_of% @RefactorableNumber.zelinsky_refactorable_progre
   have hp2 : 2 ≤ p := hp.two_le
   have hcop : Nat.Coprime n₀ (p ^ (p - 1)) := by
     apply Nat.Coprime.pow_right
-    exact (Nat.coprime_comm.mp ((Nat.Prime.coprime_iff_not_dvd hp).mpr
-      (fun h => absurd (Nat.le_of_dvd hpos h) (not_le.mpr hlt))))
+    exact (hp.coprime_iff_not_dvd.mpr (Nat.not_dvd_of_pos_of_lt hpos hlt)).symm
   have hcard : (p ^ (p - 1)).divisors.card = p := by
     rw [Nat.divisors_prime_pow hp, Finset.card_map, Finset.card_range]
     omega
-  have hpow : 2 ≤ p ^ (p - 1) := by
-    calc 2 ≤ p := hp2
-      _ = p ^ 1 := (pow_one p).symm
-      _ ≤ p ^ (p - 1) := Nat.pow_le_pow_right (by omega) (by omega)
+  have hpow : 2 ≤ p ^ (p - 1) :=
+    hp2.trans (le_self_pow₀ (by omega) (by omega))
   refine ⟨n₀ * p ^ (p - 1), ?_, ⟨?_, ?_⟩, ?_⟩
   · nlinarith
   · exact Nat.mul_pos hpos (by omega)
