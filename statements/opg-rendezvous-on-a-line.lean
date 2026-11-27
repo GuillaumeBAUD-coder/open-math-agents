@@ -30,7 +30,21 @@ noncomputable def orientationMean (f g : Route) : ℝ≥0∞ :=
   (firstHit 1 1 f g + firstHit 1 (-1) f g +
    firstHit (-1) 1 f g + firstHit (-1) (-1) f g) / 4
 
-/-- The two teams independently sample paths from the same probability law. -/
+/-- The two teams independently sample paths from the same probability law.
+
+For fixed orientations `a, b`, write `h(t) = 2 + b * g(t) - a * f(t)`.
+For each finite `u ≥ 0`, the event `firstHit a b f g ≤ u` is the intersection
+over positive integers `j` of the unions, over rational `q ∈ [0,u]`, of
+the events `|h(q)| < 1/j`. Indeed, the zero set is closed, so a finite first
+hit is attained. A hit by time `u` can be approximated by rational times in
+`[0,u]` by continuity (use `q = 0` if `u = 0`). Conversely, compactness of
+`[0,u]` gives a convergent subsequence of approximate hits, whose limit is
+a zero of `h`.
+
+Each fixed-time route evaluation is continuous in the compact-open topology
+and hence Borel measurable. The countable unions and intersections above
+therefore give measurable sublevel events on the product of the route spaces.
+Thus each first-hit time and their finite orientation average are measurable. -/
 noncomputable def expectedTime (μ : Measure Route) : ℝ≥0∞ :=
   ∫⁻ p : Route × Route, orientationMean p.1 p.2 ∂(μ.prod μ)
 
