@@ -6,6 +6,9 @@ import Mathlib
 Source: https://oeis.org/A103627
 Credit: @ivillar
 
+Status: known result. Robert Israel (Jan 11 2018) notes that a(3k+1) = 1 and a(3k) = a(3k+2) = k,
+and that the conjectures easily follow from that.
+
 A103627 (offset 0): let S(k) = (k, 1, k); the sequence is the concatenation S(0), S(1), S(2), ...;
 data 0, 1, 0, 1, 1, 1, 2, 1, 2, 3, 1, 3, 4, 1, 4, ...
 Conjecture (Wesley Ivan Hurt, Sep 25 2017):
