@@ -6,7 +6,7 @@ import Mathlib
 Source: https://www.openproblemgarden.org/op/nearly_spanning_regular_subgraphs
 Credit: @lzvxck
 
-The source (Alon): for every `ε > 0` and every positive integer `k`, there exists
+The source (Alon and Mubayi): for every `ε > 0` and every positive integer `k`, there exists
 `r₀ = r₀(ε, k)` so that every simple `r`-regular graph `G` with `r ≥ r₀` has a `k`-regular
 subgraph `H` with `|V(H)| ≥ (1 - ε) |V(G)|`.
 
