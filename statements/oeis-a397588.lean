@@ -16,7 +16,7 @@ Formalization: @ecirak42.
 namespace OMA.S_oeis_a397588
 
 theorem main : ∀ A : PowerSeries ℤ, A.coeff 0 = 0 →
-    A = PowerSeries.X + PowerSeries.derivative (PowerSeries.X * A ^ 2) →
+    A = PowerSeries.X + PowerSeries.derivative ℤ (PowerSeries.X * A ^ 2) →
     ∀ n : ℕ, 1 ≤ n → (((A.coeff n : ℤ) : ZMod 2) = 1 ↔ ∃ k : ℕ, n = 2 ^ k) := by
   sorry
 
