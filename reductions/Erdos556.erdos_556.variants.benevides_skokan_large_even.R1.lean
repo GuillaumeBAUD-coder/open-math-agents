@@ -1498,9 +1498,9 @@ lemma bounded_tour_of_reachable_edges {I : Type*} [Fintype I] (H : SimpleGraph I
       rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
       · rw [Walk.edges_append]
         exact List.mem_append_left _ (hseen i hi)
-      · have hmem : s(u q,v q) ∈ leg.edges := by simp [leg,e,Walk.edges_append,Walk.edges_cons]
+      · have hmem : s(u i,v i) ∈ leg.edges := by simp [leg,e,Walk.edges_append,Walk.edges_cons]
         simp only [Walk.edges_append, List.mem_append]
-        tauto
+        exact Or.inr (Or.inl hmem)
 
 /-- Construct the alternating path in the proof of Benevides, Lemma 5.7(a).
 Its vertices on the first side may be specified in any simple order. Only
@@ -1579,6 +1579,34 @@ lemma dense_pair_prescribed_left_order {V : Type*} [DecidableEq V] (G : SimpleGr
       · exact Or.inl (by simp [h])
       · exact Or.inr (Finset.erase_subset _ _ h)
 
+/-- Removing up to half the vertices on either side preserves regularity
+with parameter 2ε and costs less than ε in density. In particular the
+vertices of previously embedded connectors may be deleted before a
+matched pair is expanded. -/
+lemma regular_pair_after_deletions {V : Type*} [DecidableEq V] (G : SimpleGraph V)
+    [DecidableRel G.Adj] {S T A B : Finset V} {ε : ℚ} (hreg : G.IsUniform ε S T)
+    (he : ε ≤ 1/2) (ha : A ⊆ S) (hb : B ⊆ T) (hA : S.card ≤ 2*A.card)
+    (hB : T.card ≤ 2*B.card) :
+    G.IsUniform (2*ε) A B ∧ G.edgeDensity S T - ε < G.edgeDensity A B := by
+  have hpos := hreg.pos.le
+  have half (a n : ℕ) (h : n ≤ 2*a) : (n : ℚ)*ε ≤ a := by
+    have h' : (n : ℚ) ≤ 2*a := by exact_mod_cast h
+    nlinarith [mul_le_mul_of_nonneg_left he (show 0 ≤ (n : ℚ) by positivity)]
+  have big (a n : ℕ) (h : n ≤ 2*a) : (n : ℚ)*ε ≤ a*(2*ε) := by
+    have h' : (n : ℚ) ≤ 2*a := by exact_mod_cast h
+    nlinarith [mul_le_mul_of_nonneg_right h' hpos]
+  have hab : |G.edgeDensity A B - G.edgeDensity S T| < ε := by
+    simpa using hreg ha hb (half _ _ hA) (half _ _ hB)
+  constructor
+  · intro X hX Y hY hx hy
+    have hxy : |G.edgeDensity X Y - G.edgeDensity S T| < ε := by
+      simpa using hreg (hX.trans ha) (hY.trans hb) ((big _ _ hA).trans hx) ((big _ _ hB).trans hy)
+    have htri := abs_sub_le (G.edgeDensity X Y) (G.edgeDensity S T) (G.edgeDensity A B)
+    rw [abs_sub_comm (G.edgeDensity S T) (G.edgeDensity A B)] at htri
+    have h : |G.edgeDensity X Y - G.edgeDensity A B| < 2*ε := by linarith
+    simpa using h
+  · linarith [(abs_lt.mp hab).1]
+
 /-- Splitting both sides of a pair increases its size-weighted mean square
 density by exactly the variance of the subpair densities. In particular a
 refinement chosen to repair one colour cannot cost energy in another. -/
@@ -1622,6 +1650,75 @@ lemma cluster_refinement_variance {V : Type*} [DecidableEq V] (G : SimpleGraph V
   simp_rw [expand]
   rw [Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.sum_mul, ← Finset.sum_mul, hmean, hweight]
   ring
+
+/-- A rectangle witnessing non-regularity forces a fourth-power energy
+gain when the refinement has that rectangle as one of its cells. -/
+lemma irregular_rectangle_energy_gain {V : Type*} [DecidableEq V] (G : SimpleGraph V)
+    [DecidableRel G.Adj] {S T : Finset V} (hS : S.Nonempty) (hT : T.Nonempty)
+    (P : Finpartition S) (Q : Finpartition T) {A B : Finset V} (hA : A ∈ P.parts)
+    (hB : B ∈ Q.parts) {ε : ℚ} (he : 0 ≤ ε)
+    (hs : (S.card : ℚ)*ε ≤ A.card) (ht : (T.card : ℚ)*ε ≤ B.card)
+    (hgap : ε ≤ |G.edgeDensity A B - G.edgeDensity S T|) :
+    (S.card : ℚ) * T.card * ((G.edgeDensity S T)^2 + ε^4) ≤
+      ∑ z ∈ P.parts ×ˢ Q.parts, (z.1.card : ℚ) * z.2.card * (G.edgeDensity z.1 z.2)^2 := by
+  classical
+  let D := G.edgeDensity S T
+  let term (z : Finset V × Finset V) :=
+    (z.1.card : ℚ) * z.2.card * (G.edgeDensity z.1 z.2 - D)^2
+  have hvar := cluster_refinement_variance G hS hT P Q
+  change _ = (S.card : ℚ) * T.card * D^2 + ∑ z ∈ P.parts ×ˢ Q.parts, term z at hvar
+  have hw := mul_le_mul hs ht (mul_nonneg (Nat.cast_nonneg _) he) (Nat.cast_nonneg _)
+  have hsq : ε^2 ≤ (G.edgeDensity A B - D)^2 := by
+    have h := pow_le_pow_left₀ he hgap 2
+    simpa [D, sq_abs] using h
+  have hpart : (S.card : ℚ)*T.card*ε^4 ≤ term (A,B) := by
+    have h := mul_le_mul hw hsq (sq_nonneg ε)
+      (mul_nonneg (Nat.cast_nonneg A.card) (Nat.cast_nonneg B.card))
+    dsimp [term]
+    nlinarith only [h]
+  have hsum : term (A,B) ≤ ∑ z ∈ P.parts ×ˢ Q.parts, term z :=
+    Finset.single_le_sum (fun z _ => by dsimp [term]; positivity) (Finset.mem_product.mpr ⟨hA,hB⟩)
+  rw [hvar, mul_add]
+  exact add_le_add_left (hpart.trans hsum) _
+
+/-- Size-weighted squared density is monotone under a common partition
+refinement. This applies independently to all three colours, including
+colours that did not determine the refinement. -/
+lemma weighted_energy_mono_bind {V : Type*} [DecidableEq V] (G : SimpleGraph V)
+    [DecidableRel G.Adj] {U : Finset V} (P : Finpartition U)
+    (Q : ∀ A ∈ P.parts, Finpartition A) :
+    let F := fun A B : Finset V => (A.card : ℚ)*B.card*(G.edgeDensity A B)^2
+    ∑ A ∈ P.parts, ∑ B ∈ P.parts, F A B ≤
+      ∑ A ∈ (P.bind Q).parts, ∑ B ∈ (P.bind Q).parts, F A B := by
+  classical
+  let F (A B : Finset V) := (A.card : ℚ)*B.card*(G.edgeDensity A B)^2
+  let child (A : P.parts) := (Q A.val A.property).parts
+  have bind_sum (f : Finset V → ℚ) :
+      ∑ X ∈ (P.bind Q).parts, f X = ∑ A ∈ P.parts.attach, ∑ X ∈ child A, f X :=
+    Finpartition.sum_combine (fun A : P.parts => Q A.val A.property) P.supIndep.attach f
+  have cell (A B : P.parts) :
+      F A.val B.val ≤ ∑ X ∈ child A, ∑ Y ∈ child B, F X Y := by
+    have h := cluster_refinement_variance G (P.nonempty_of_mem_parts A.property)
+      (P.nonempty_of_mem_parts B.property) (Q _ A.property) (Q _ B.property)
+    dsimp only at h
+    have hvar : 0 ≤ ∑ z ∈ (child A) ×ˢ (child B),
+        (z.1.card : ℚ) * z.2.card * (G.edgeDensity z.1 z.2 - G.edgeDensity A B)^2 :=
+      Finset.sum_nonneg (fun z _ => by positivity)
+    rw [← Finset.sum_product]
+    exact (le_add_of_nonneg_right hvar).trans_eq h.symm
+  change ∑ A ∈ P.parts, ∑ B ∈ P.parts, F A B ≤ _
+  calc
+    _ = ∑ A ∈ P.parts.attach, ∑ B ∈ P.parts.attach, F A.val B.val := by
+      simp [Finset.sum_attach]
+    _ ≤ ∑ A ∈ P.parts.attach, ∑ B ∈ P.parts.attach, ∑ X ∈ child A, ∑ Y ∈ child B, F X Y :=
+      Finset.sum_le_sum (fun A _ => Finset.sum_le_sum (fun B _ => cell A B))
+    _ = ∑ A ∈ P.parts.attach, ∑ X ∈ child A, ∑ B ∈ P.parts.attach, ∑ Y ∈ child B, F X Y := by
+      apply Finset.sum_congr rfl
+      intro A _
+      rw [Finset.sum_comm]
+    _ = ∑ X ∈ (P.bind Q).parts, ∑ Y ∈ (P.bind Q).parts, F X Y := by
+      rw [bind_sum (fun X => ∑ Y ∈ (P.bind Q).parts, F X Y)]
+      simp_rw [bind_sum (F _)]
 
 theorem main : H1 → H2 → type_of% @Erdos556.erdos_556.variants.benevides_skokan_large_even := by
   intro _ hforce
