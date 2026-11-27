@@ -15,7 +15,7 @@ namespace OMA.S_oeis_a035062
 def IsTerm (k : ℕ) : Prop :=
   7 ∉ Nat.digits 10 (2 ^ k)
 
-theorem main : IsTerm 71 ∧ ∀ k : ℕ, IsTerm k → k ≤ 71 := by
+theorem main : ∀ k : ℕ, IsTerm k → k ≤ 71 := by
   sorry
 
 end OMA.S_oeis_a035062
