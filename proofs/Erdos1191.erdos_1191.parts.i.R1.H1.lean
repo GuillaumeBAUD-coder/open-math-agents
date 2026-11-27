@@ -1,5 +1,13 @@
 import OMAReductions.R_Erdos1191_erdos_1191_parts_i_R1
 
+/-!
+# Dyadic counting bound for finite Sidon sets (Erdős Problem 1191, step R1.H1)
+
+For any Sidon set `S ⊆ [1, 2^(2R)]` with `R ≥ 16`, some dyadic scale `k ∈ [R, 2R]`
+satisfies `|S ∩ [1, 2^k]|^2 * k ≤ 512 * 2^k`, proved via short-interval Sidon
+second-moment counting, dyadic Abel summation, and Cauchy--Schwarz.
+-/
+
 -- Problem: Erdős Problem 1191 — reduction step R1.H1
 -- Credit: @Ronandt (the owner of the agent is credited as the solver)
 -- Prove EXACTLY this target. No sorry, no axiom, no native_decide.
@@ -284,15 +292,14 @@ theorem OMA.solution : OMA.R_Erdos1191_erdos_1191_parts_i_R1.H1 := by
   let A : Set ℕ := (S : Set ℕ)
   have hcnt_eq : ∀ n : ℕ, (S.filter (· ≤ n)).card = sidonCount A n := by
     intro n
-    have heq : S.filter (· ≤ n) = (Finset.Icc 1 n).filter (· ∈ A) := by
-      ext x
-      simp only [Finset.mem_filter, Finset.mem_Icc, A, Finset.mem_coe]
-      constructor
-      · rintro ⟨hxS, hxn⟩
-        exact ⟨⟨(hS (Finset.mem_coe.mpr hxS)).1, hxn⟩, hxS⟩
-      · rintro ⟨⟨_, hxn⟩, hxS⟩
-        exact ⟨hxS, hxn⟩
-    exact congrArg Finset.card heq
+    unfold sidonCount
+    refine Finset.card_bij (fun x _ => x) ?_ (fun _ _ _ _ h => h) ?_
+    · intro x hx
+      simp only [Finset.mem_filter, Finset.mem_Icc, A, Finset.mem_coe] at hx ⊢
+      exact ⟨⟨(hS (Finset.mem_coe.mpr hx.1)).1, hx.2⟩, hx.1⟩
+    · intro x hx
+      simp only [Finset.mem_filter, Finset.mem_Icc, A, Finset.mem_coe] at hx ⊢
+      exact ⟨x, ⟨hx.2, hx.1.2⟩, rfl⟩
   have hgt_nat : ∀ k ∈ Set.Icc R (2 * R), 512 * 2 ^ k < sidonCount A (2 ^ k) ^ 2 * k := by
     intro k hk
     by_contra hle
@@ -418,9 +425,18 @@ theorem OMA.solution : OMA.R_Erdos1191_erdos_1191_parts_i_R1.H1 := by
             by_cases hle : x ≤ 2 ^ (k - 1)
             · exact Or.inl ⟨⟨h1, hle⟩, hxA⟩
             · exact Or.inr ⟨⟨by omega, h2⟩, hxA⟩
-        have hadd : sidonCount A (2 ^ (k - 1)) + (B k).card = sidonCount A (2 ^ k) := by
+        have h1 : sidonCount A (2 ^ (k - 1)) = ((Finset.Icc 1 (2 ^ (k - 1))).filter (· ∈ A)).card := by
           unfold sidonCount
-          rw [← Finset.card_union_of_disjoint hdisj, hunion]
+          refine Finset.card_bij (fun x _ => x) ?_ (fun _ _ _ _ h => h) ?_
+          · intro x hx; simpa using hx
+          · intro x hx; exact ⟨x, by simpa using hx, rfl⟩
+        have h2 : sidonCount A (2 ^ k) = ((Finset.Icc 1 (2 ^ k)).filter (· ∈ A)).card := by
+          unfold sidonCount
+          refine Finset.card_bij (fun x _ => x) ?_ (fun _ _ _ _ h => h) ?_
+          · intro x hx; simpa using hx
+          · intro x hx; exact ⟨x, by simpa using hx, rfl⟩
+        have hadd : sidonCount A (2 ^ (k - 1)) + (B k).card = sidonCount A (2 ^ k) := by
+          rw [h1, h2, ← Finset.card_union_of_disjoint hdisj, hunion]
         have haddR :
             (sidonCount A (2 ^ (k - 1)) : ℝ) + ((B k).card : ℝ) =
               (sidonCount A (2 ^ k) : ℝ) := by
@@ -468,6 +484,8 @@ theorem OMA.solution : OMA.R_Erdos1191_erdos_1191_parts_i_R1.H1 := by
         have hgt_k := hgt_nat k ⟨by omega, by omega⟩
         have hmul_le : sidonCount A (2 ^ k) ^ 2 * k ≤ sidonCount A (2 ^ k) ^ 2 * (2 * R) :=
           Nat.mul_le_mul_left _ (by omega)
+        have hmul_eq : sidonCount A (2 ^ k) ^ 2 * (2 * R) = 2 * (sidonCount A (2 ^ k) ^ 2 * R) := by
+          ring
         have h256 : 256 * 2 ^ k ≤ sidonCount A (2 ^ k) ^ 2 * R := by omega
         have h256R :
             256 * ((2 ^ k : ℕ) : ℝ) ≤ (sidonCount A (2 ^ k) : ℝ) ^ 2 * (R : ℝ) := by
