@@ -30,13 +30,7 @@ lemma prime_129140227 : Nat.Prime 129140227 := by
   apply prime_certificate 129140227 5 [2, 3, 3, 19, 107, 3529] (by decide)
   · intro q hq
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
-    rcases hq with rfl | rfl | rfl | rfl | rfl | rfl
-    · norm_num
-    · norm_num
-    · norm_num
-    · norm_num
-    · norm_num
-    · norm_num
+    rcases hq with rfl | rfl | rfl | rfl | rfl | rfl <;> norm_num
   · decide
   · decide
 
@@ -44,12 +38,7 @@ lemma prime_12211 : Nat.Prime 12211 := by
   apply prime_certificate 12211 2 [2, 3, 5, 11, 37] (by decide)
   · intro q hq
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
-    rcases hq with rfl | rfl | rfl | rfl | rfl
-    · norm_num
-    · norm_num
-    · norm_num
-    · norm_num
-    · norm_num
+    rcases hq with rfl | rfl | rfl | rfl | rfl <;> norm_num
   · decide
   · decide
 
@@ -57,12 +46,7 @@ lemma prime_22346131 : Nat.Prime 22346131 := by
   apply prime_certificate 22346131 2 [2, 3, 5, 61, 12211] (by decide)
   · intro q hq
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
-    rcases hq with rfl | rfl | rfl | rfl | rfl
-    · norm_num
-    · norm_num
-    · norm_num
-    · norm_num
-    · exact prime_12211
+    rcases hq with rfl | rfl | rfl | rfl | rfl <;> first | exact prime_12211 | norm_num
   · decide
   · decide
 
@@ -70,12 +54,7 @@ lemma prime_256572153302107 : Nat.Prime 256572153302107 := by
   apply prime_certificate 256572153302107 2 [2, 3, 991, 1931, 22346131] (by decide)
   · intro q hq
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
-    rcases hq with rfl | rfl | rfl | rfl | rfl
-    · norm_num
-    · norm_num
-    · norm_num
-    · norm_num
-    · exact prime_22346131
+    rcases hq with rfl | rfl | rfl | rfl | rfl <;> first | exact prime_22346131 | norm_num
   · decide
   · decide
 
@@ -83,14 +62,7 @@ lemma prime_894301 : Nat.Prime 894301 := by
   apply prime_certificate 894301 2 [2, 2, 3, 5, 5, 11, 271] (by decide)
   · intro q hq
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
-    rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    · norm_num
-    · norm_num
-    · norm_num
-    · norm_num
-    · norm_num
-    · norm_num
-    · norm_num
+    rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> norm_num
   · decide
   · decide
 
@@ -98,11 +70,7 @@ lemma prime_11047 : Nat.Prime 11047 := by
   apply prime_certificate 11047 3 [2, 3, 7, 263] (by decide)
   · intro q hq
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
-    rcases hq with rfl | rfl | rfl | rfl
-    · norm_num
-    · norm_num
-    · norm_num
-    · norm_num
+    rcases hq with rfl | rfl | rfl | rfl <;> norm_num
   · decide
   · decide
 
@@ -110,15 +78,7 @@ lemma prime_137002507849 : Nat.Prime 137002507849 := by
   apply prime_certificate 137002507849 29 [2, 2, 2, 3, 3, 23, 11047, 7489] (by decide)
   · intro q hq
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
-    rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    · norm_num
-    · norm_num
-    · norm_num
-    · norm_num
-    · norm_num
-    · norm_num
-    · exact prime_11047
-    · norm_num
+    rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> first | exact prime_11047 | norm_num
   · decide
   · decide
 
@@ -126,15 +86,7 @@ lemma prime_14029501 : Nat.Prime 14029501 := by
   apply prime_certificate 14029501 7 [2, 2, 3, 5, 5, 5, 47, 199] (by decide)
   · intro q hq
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
-    rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    · norm_num
-    · norm_num
-    · norm_num
-    · norm_num
-    · norm_num
-    · norm_num
-    · norm_num
-    · norm_num
+    rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> norm_num
   · decide
   · decide
 
@@ -142,11 +94,7 @@ lemma prime_153174091919 : Nat.Prime 153174091919 := by
   apply prime_certificate 153174091919 7 [2, 53, 103, 14029501] (by decide)
   · intro q hq
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
-    rcases hq with rfl | rfl | rfl | rfl
-    · norm_num
-    · norm_num
-    · norm_num
-    · exact prime_14029501
+    rcases hq with rfl | rfl | rfl | rfl <;> first | exact prime_14029501 | norm_num
   · decide
   · decide
 
@@ -155,13 +103,7 @@ lemma prime_225205396855537107298933866373 : Nat.Prime 2252053968555371072989338
   apply prime_certificate 225205396855537107298933866373 2 [2, 2, 3, 894301, 137002507849, 153174091919] (by decide)
   · intro q hq
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
-    rcases hq with rfl | rfl | rfl | rfl | rfl | rfl
-    · norm_num
-    · norm_num
-    · norm_num
-    · exact prime_894301
-    · exact prime_137002507849
-    · exact prime_153174091919
+    rcases hq with rfl | rfl | rfl | rfl | rfl | rfl <;> first | exact prime_894301 | exact prime_137002507849 | exact prime_153174091919 | norm_num
   · decide
   · decide
 
