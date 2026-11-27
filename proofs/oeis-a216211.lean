@@ -925,18 +925,18 @@ private lemma deg_walk_eq {n : ℕ} (hn : 1 ≤ n) {w : List Site}
           else if v.1 = r.val + 1 then 1
           else if v.2 + 1 = c.val then 2
           else 3
+        have hiteT : ∀ (P : Prop) [Decidable P] (a b : Fin 4), P → (if P then a else b) = a :=
+          fun _ _ _ _ hP => by split_ifs; rfl
+        have hiteF : ∀ (P : Prop) [Decidable P] (a b : Fin 4), ¬ P → (if P then a else b) = b :=
+          fun _ _ _ _ hP => by split_ifs; rfl
         have hf0 : 0 < r.val → idxFn (r.val - 1, c.val) = 0 := fun h => by
-          dsimp [idxFn]; rw [ite_eq_left_of_eq_true _ _ (eq_true (by omega))]
+          dsimp [idxFn]; rw [hiteT _ _ _ (by omega)]
         have hf1 : idxFn (r.val + 1, c.val) = 1 := by
-          dsimp [idxFn]; rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega)), ite_eq_left_of_eq_true _ _ (eq_true rfl)]
+          dsimp [idxFn]; rw [hiteF _ _ _ (by omega), hiteT _ _ _ rfl]
         have hf2 : 0 < c.val → idxFn (r.val, c.val - 1) = 2 := fun h => by
-          dsimp [idxFn]
-          rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega)), ite_eq_right_of_eq_false _ _ (eq_false (by omega)),
-            ite_eq_left_of_eq_true _ _ (eq_true (by omega))]
+          dsimp [idxFn]; rw [hiteF _ _ _ (by omega), hiteF _ _ _ (by omega), hiteT _ _ _ (by omega)]
         have hf3 : idxFn (r.val, c.val + 1) = 3 := by
-          dsimp [idxFn]
-          rw [ite_eq_right_of_eq_false _ _ (eq_false (by omega)), ite_eq_right_of_eq_false _ _ (eq_false (by omega)),
-            ite_eq_right_of_eq_false _ _ (eq_false (by omega))]
+          dsimp [idxFn]; rw [hiteF _ _ _ (by omega), hiteF _ _ _ (by omega), hiteF _ _ _ (by omega)]
         have hidx_cases : ∀ v,
             (v = (r.val - 1, c.val) ∧ 0 < r.val ∨ v = (r.val + 1, c.val) ∧ r.val + 1 < n ∨
               v = (r.val, c.val - 1) ∧ 0 < c.val ∨ v = (r.val, c.val + 1) ∧ c.val < 3) →
@@ -1896,6 +1896,11 @@ private lemma adjInList_vert_map_row {m r' : ℕ} {l : List (Fin 4)} {c : Fin 4}
   have hm := adjInList_map_row_mem (by simpa using htrue)
   omega
 
+private lemma adjInList_vert_map_row_succ {m : ℕ} {l : List (Fin 4)} {c : Fin 4} :
+    adjInList (l.map fun c : Fin 4 => (m + 1, c.val)) (m, c.val) (m + 1, c.val) = false := by
+  have h := adjInList_vert_map_row (m := m) (r' := m + 1) (l := l) (c := c)
+  rwa [Nat.add_sub_cancel] at h
+
 private lemma adjInList_vert_lt_in {m : ℕ} {l : List Site} {c : Fin 4}
     (hl : ∀ p ∈ l, p.1 < m + 1 ∧ p.2 < 4) :
     adjInList l (m, c.val) (m + 1, c.val) = false := by
@@ -2097,7 +2102,7 @@ private lemma stepPaths_succ_none {n m : ℕ} {f : Fin (n + 1) → Fin 12}
       · subst hrm
         rw [hs_any, Nat.add_sub_cancel]
         have hP0 := adjInList_vert_lt_in (c := c) hProw
-        have hS10 : adjInList S₁ (m, c.val) (m + 1, c.val) = false := adjInList_vert_map_row
+        have hS10 : adjInList S₁ (m, c.val) (m + 1, c.val) = false := adjInList_vert_map_row_succ
         rw [hP0, hS10, hPl, walkH_site_head]
         simp only [topMask, hps, Bool.false_or, siteOpt_beq_same,
           siteOpt_beq_diff (Nat.ne_of_lt (Nat.lt_succ_self m)),
@@ -2167,8 +2172,8 @@ private lemma stepPaths_succ_none {n m : ℕ} {f : Fin (n + 1) → Fin 12}
       · subst hrm
         rw [hs_any, Nat.add_sub_cancel]
         have hP0 := adjInList_vert_lt_in (c := c) hProw
-        have hS10 : adjInList S₁ (m, c.val) (m + 1, c.val) = false := adjInList_vert_map_row
-        have hSQ0 : adjInList SQ (m, c.val) (m + 1, c.val) = false := adjInList_vert_map_row
+        have hS10 : adjInList S₁ (m, c.val) (m + 1, c.val) = false := adjInList_vert_map_row_succ
+        have hSQ0 : adjInList SQ (m, c.val) (m + 1, c.val) = false := adjInList_vert_map_row_succ
         rw [hP0, hS10, hSQ0, hPl, walkH_site_head]
         simp only [topMask, hps, Bool.false_or, siteOpt_beq_same,
           siteOpt_beq_diff (Nat.ne_of_lt (Nat.lt_succ_self m)),
@@ -2344,9 +2349,9 @@ private lemma stepPaths_succ_some_conn_dir {n m : ℕ} {f : Fin (n + 1) → Fin 
     · subst hrm; rw [hs_any, Nat.add_sub_cancel]
       have hP0 := adjInList_vert_lt_in (c := c) hProw
       have hQ0 := adjInList_vert_lt_in (c := c) hQrow
-      have hS10 : adjInList S₁ (m, c.val) (m + 1, c.val) = false := adjInList_vert_map_row
-      have hSa0 : adjInList Sa (m, c.val) (m + 1, c.val) = false := adjInList_vert_map_row
-      have hSb0 : adjInList Sb (m, c.val) (m + 1, c.val) = false := adjInList_vert_map_row
+      have hS10 : adjInList S₁ (m, c.val) (m + 1, c.val) = false := adjInList_vert_map_row_succ
+      have hSa0 : adjInList Sa (m, c.val) (m + 1, c.val) = false := adjInList_vert_map_row_succ
+      have hSb0 : adjInList Sb (m, c.val) (m + 1, c.val) = false := adjInList_vert_map_row_succ
       rw [hP0, hQ0, hS10, hSa0, hSb0, hPl, walkH_site_head, walkH_site_getLast, hQh, hQl, walkH_site_head]
       rw [← htop_s c]
       simp only [Bool.false_or, Bool.or_false, siteOpt_beq_same,
@@ -2532,9 +2537,9 @@ private lemma stepPaths_succ_some_conn_rev {n m : ℕ} {f : Fin (n + 1) → Fin 
     · subst hrm; rw [hs_any, Nat.add_sub_cancel]
       have hP0 := adjInList_vert_lt_in (c := c) hProw
       have hQ0 := adjInList_vert_lt_in (c := c) hQrow
-      have hS10 : adjInList S₁ (m, c.val) (m + 1, c.val) = false := adjInList_vert_map_row
-      have hSa0 : adjInList Sa (m, c.val) (m + 1, c.val) = false := adjInList_vert_map_row
-      have hSb0 : adjInList Sb (m, c.val) (m + 1, c.val) = false := adjInList_vert_map_row
+      have hS10 : adjInList S₁ (m, c.val) (m + 1, c.val) = false := adjInList_vert_map_row_succ
+      have hSa0 : adjInList Sa (m, c.val) (m + 1, c.val) = false := adjInList_vert_map_row_succ
+      have hSb0 : adjInList Sb (m, c.val) (m + 1, c.val) = false := adjInList_vert_map_row_succ
       rw [hP0, hQ0, hS10, hSa0, hSb0, hPl, walkH_site_head, walkH_site_getLast,
         List.head?_reverse, hQl, List.getLast?_reverse, hQh, walkH_site_head]
       rw [← htop_s c]
@@ -2702,8 +2707,8 @@ private lemma stepPaths_succ_some_noconn_dir {n m : ℕ} {f : Fin (n + 1) → Fi
       · subst hrm; rw [hs_any, Nat.add_sub_cancel]
         have hP0 := adjInList_vert_lt_in (c := c) hProw
         have hQ0 := adjInList_vert_lt_in (c := c) hQrow
-        have hS10 : adjInList S₁ (m, c.val) (m + 1, c.val) = false := adjInList_vert_map_row
-        have hS20 : adjInList S₂ (m, c.val) (m + 1, c.val) = false := adjInList_vert_map_row
+        have hS10 : adjInList S₁ (m, c.val) (m + 1, c.val) = false := adjInList_vert_map_row_succ
+        have hS20 : adjInList S₂ (m, c.val) (m + 1, c.val) = false := adjInList_vert_map_row_succ
         rw [hP0, hQ0, hS10, hS20, hPl, walkH_site_head, walkH_site_getLast, hQh, hQl, walkH_site_head]
         rw [← htop_s c]
         simp only [Bool.false_or, Bool.or_false, siteOpt_beq_same,
@@ -2786,9 +2791,9 @@ private lemma stepPaths_succ_some_noconn_dir {n m : ℕ} {f : Fin (n + 1) → Fi
       · subst hrm; rw [hs_any, Nat.add_sub_cancel]
         have hP0 := adjInList_vert_lt_in (c := c) hProw
         have hQ0 := adjInList_vert_lt_in (c := c) hQrow
-        have hS10 : adjInList S₁ (m, c.val) (m + 1, c.val) = false := adjInList_vert_map_row
-        have hS20 : adjInList S₂ (m, c.val) (m + 1, c.val) = false := adjInList_vert_map_row
-        have hSQ0 : adjInList SQ (m, c.val) (m + 1, c.val) = false := adjInList_vert_map_row
+        have hS10 : adjInList S₁ (m, c.val) (m + 1, c.val) = false := adjInList_vert_map_row_succ
+        have hS20 : adjInList S₂ (m, c.val) (m + 1, c.val) = false := adjInList_vert_map_row_succ
+        have hSQ0 : adjInList SQ (m, c.val) (m + 1, c.val) = false := adjInList_vert_map_row_succ
         rw [hP0, hQ0, hS10, hS20, hSQ0, hPl, walkH_site_head, walkH_site_getLast, hQh, hQl, walkH_site_head]
         rw [← htop_s c]
         simp only [Bool.false_or, Bool.or_false, siteOpt_beq_same,
@@ -2960,8 +2965,8 @@ private lemma stepPaths_succ_some_noconn_rev {n m : ℕ} {f : Fin (n + 1) → Fi
       · subst hrm; rw [hs_any, Nat.add_sub_cancel]
         have hP0 := adjInList_vert_lt_in (c := c) hProw
         have hQ0 := adjInList_vert_lt_in (c := c) hQrow
-        have hS10 : adjInList S₁ (m, c.val) (m + 1, c.val) = false := adjInList_vert_map_row
-        have hS20 : adjInList S₂ (m, c.val) (m + 1, c.val) = false := adjInList_vert_map_row
+        have hS10 : adjInList S₁ (m, c.val) (m + 1, c.val) = false := adjInList_vert_map_row_succ
+        have hS20 : adjInList S₂ (m, c.val) (m + 1, c.val) = false := adjInList_vert_map_row_succ
         rw [hP0, hQ0, hS10, hS20, hPl, walkH_site_head, walkH_site_getLast,
           List.head?_reverse, hQl, List.getLast?_reverse, hQh, walkH_site_head]
         rw [← htop_s c]
@@ -3046,9 +3051,9 @@ private lemma stepPaths_succ_some_noconn_rev {n m : ℕ} {f : Fin (n + 1) → Fi
       · subst hrm; rw [hs_any, Nat.add_sub_cancel]
         have hP0 := adjInList_vert_lt_in (c := c) hProw
         have hQ0 := adjInList_vert_lt_in (c := c) hQrow
-        have hS10 : adjInList S₁ (m, c.val) (m + 1, c.val) = false := adjInList_vert_map_row
-        have hS20 : adjInList S₂ (m, c.val) (m + 1, c.val) = false := adjInList_vert_map_row
-        have hSQ0 : adjInList SQ (m, c.val) (m + 1, c.val) = false := adjInList_vert_map_row
+        have hS10 : adjInList S₁ (m, c.val) (m + 1, c.val) = false := adjInList_vert_map_row_succ
+        have hS20 : adjInList S₂ (m, c.val) (m + 1, c.val) = false := adjInList_vert_map_row_succ
+        have hSQ0 : adjInList SQ (m, c.val) (m + 1, c.val) = false := adjInList_vert_map_row_succ
         rw [hP0, hQ0, hS10, hS20, hSQ0, hPl, walkH_site_head, walkH_site_getLast,
           List.head?_reverse, hQl, List.getLast?_reverse, hQh, walkH_site_head]
         rw [← htop_s c]
