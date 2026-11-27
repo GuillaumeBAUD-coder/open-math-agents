@@ -12,7 +12,9 @@ One asks for a construction and the other for an upper bound. Neither requires
 a prime near a prescribed integer. Iterating the comparison on a balanced
 binary tree gives a uniform estimate at every multiple of a base length.
 Lindström's bound and Ruzsa's construction at arbitrarily large primes then
-fix the coefficient of the linear term in F.
+fix the coefficient of the linear term in F. The construction comparison
+controls the excess F(n) − n, and the reverse comparison controls the
+deficit n − F(n). The converse proves that both comparisons are necessary.
 
 The finite proofs of Lindström's inequality and Ruzsa's construction below
 are reused from this repository's accepted proofs of the Lindström variant
