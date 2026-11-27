@@ -71,7 +71,6 @@ lemma sum_of_su_xia_limit
   have hlo := (tendsto_order.mp h).1 0 (by norm_num)
   have hhi := (tendsto_order.mp h).2 2 (by norm_num)
   filter_upwards [hlo, hhi] with m hpos hlt
-  dsimp only at hpos hlt
   have hden : 0 < (g (2 ^ m) : ℝ) := by
     by_contra! hz
     have he : (g (2 ^ m) : ℝ) = 0 := le_antisymm hz (Nat.cast_nonneg _)
@@ -79,7 +78,7 @@ lemma sum_of_su_xia_limit
   have hb := (div_lt_iff₀ hden).mp hlt
   rw [← Ico_insert_right (Nat.one_le_two_pow : 1 ≤ 2 ^ m),
     Finset.sum_insert Finset.right_notMem_Ico] at hb
-  push_cast at hb
+  rw [Nat.cast_add] at hb
   exact_mod_cast (by linarith : ((∑ n ∈ Ico 1 (2 ^ m), g n : ℕ) : ℝ) ≤ (g (2 ^ m) : ℝ))
 
 end OMA.R_Erdos1160_erdos_1160_variants_sum_R3
