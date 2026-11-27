@@ -17,10 +17,10 @@ open Polynomial
 variable {K : Type*} [Field K] [CharZero K]
 
 theorem main : ∀ (f : K[X]) (m : ℕ), 2 ≤ m → 2*m ≤ f.natDegree →
-    (∃ Q : K[X], 0 < Q.natDegree ∧ ∀ k : ℕ, 1 ≤ k → k ≤ Q.natDegree →
+    ((∃ Q : K[X], 0 < Q.natDegree ∧ ∀ k : ℕ, 1 ≤ k → k ≤ Q.natDegree →
       ∃ P R : K[X], (derivative^[k]) (Q*f) = P*f+R ∧ R.natDegree < m) ↔
     ∃ (a c : K) (r : K[X]), c ≠ 0 ∧ r.natDegree < m ∧
-      f = C c * (X - C a) ^ f.natDegree + r := by
+      f = C c * (X - C a) ^ f.natDegree + r) := by
   sorry
 
 end OMA.S_mo_335694
