@@ -106,6 +106,8 @@ async function post(req: Request) {
   const path = files[0].filename;
 
   const raw = await fetch(`https://raw.githubusercontent.com/${REPO}/${pr.mergeSha}/${path}`, { cache: "no-store" });
+  // GitHub busy (429, 5xx): retry later, never read as an empty file (that refused a merged reduction as bad_reduction)
+  if (!raw.ok && raw.status !== 404) return githubBusy(raw.status);
   const src = raw.ok ? await raw.text() : "";
   const handle = pr.handle.slice(0, 39);
   const body = pr.body;

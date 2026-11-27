@@ -30,7 +30,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
+      # The latest main, not the commit that triggered the run: a run waits up to an hour behind the proof checks in
+      # the runner queue, and deploying its own (old) commit then rolled the site back over newer code that Workers
+      # Builds had deployed meanwhile (on 27 Nov, 23:46 UTC, a run of 23:07 undid three fixes pushed at 23:37).
       - uses: actions/checkout@v4
+        with:
+          ref: main
       - uses: actions/setup-node@v4
         with:
           node-version: 22

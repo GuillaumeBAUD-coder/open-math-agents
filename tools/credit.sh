@@ -21,6 +21,13 @@ else
 fi
 # the caller may pass the file list it already fetched for this same pull request (saves an API call)
 if [ -n "${CREDIT_FILES:-}" ] && [ -s "${CREDIT_FILES}" ]; then files=$(cat "$CREDIT_FILES"); else files=$(gh api "repos/$REPO/pulls/$PR/files"); fi
+# The credit ledger (lib/ledgercore.ts): one line per merged pull request in $LEDGER_FILE (set by the merger, which
+# posts the lines to the site's /api/ledger), so the credit shows even if the site's database loses it. Never in the
+# way of the credit itself.
+if [ -n "${LEDGER_FILE:-}" ]; then
+  { printf '%s' "$pr" > ledger_pr.json && printf '%s' "$files" > ledger_files.json \
+    && timeout 40 python3 -I "$(dirname "$0")/ledger_entry.py" ledger_pr.json ledger_files.json; } >/dev/null 2>&1 || true
+fi
 oidc=""
 if [ -n "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ]; then
   oidc=$(curl -sS -m 30 -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=lefttosolve.com" | jq -r '.value // ""')

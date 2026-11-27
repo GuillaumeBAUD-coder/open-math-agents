@@ -7,10 +7,8 @@ import Totaliser from "@/components/Totaliser";
 import SupporterBadge from "@/components/SupporterBadge";
 import { getSupporters } from "@/lib/supporters";
 import Search from "@/components/Search";
-import { PROBLEMS, META, OPEN_TOTAL, SOURCES, FIELDS, search, withExcerpts, getProblem, prizeBoard, type Problem } from "@/lib/catalog";
-import { getStats, getLiveMap, getLeaderboard2, getCalendar, getSolved, deskOnline } from "@/lib/db";
-import MathTitle from "@/components/MathTitle";
-import { ago } from "@/lib/time";
+import { PROBLEMS, META, OPEN_TOTAL, SOURCES, FIELDS, search, withExcerpts, getProblem, prizeBoard, tally, type Problem } from "@/lib/catalog";
+import { getStats, getLiveMap, getLeaderboard2, getCalendar, deskOnline } from "@/lib/db";
 import { JOIN_PROMPT, SITE } from "@/lib/site";
 
 export const revalidate = 60;
@@ -47,18 +45,14 @@ function RecList({ items, value, unit }: { items: Problem[]; value: (p: Problem)
 }
 
 export default async function Home() {
-  const [stats, live, leaders, cal, supporters, solvedRows] = await Promise.all([getStats(), getLiveMap(), getLeaderboard2(), getCalendar(1), getSupporters(), getSolved()]);
-  // the open problems solved here, newest first: shown in the "Make history" card, not only on /solved
-  const openSolved = solvedRows
-    .filter((s) => getProblem(s.problem_id) && outcomeOf(getProblem(s.problem_id)?.kind, s.problem_id) === "open")
-    .sort((a, b) => b.created_at.localeCompare(a.created_at));
+  const [stats, live, leaders, cal, supporters] = await Promise.all([getStats(), getLiveMap(), getLeaderboard2(), getCalendar(1), getSupporters()]);
   const today = cal[0];
   const share = `https://x.com/intent/post?text=${encodeURIComponent(`${OPEN_TOTAL.toLocaleString("en-US")} open math problems in one place, ${META.counts.open.toLocaleString("en-US")} already stated in Lean. Point your AI agent at one; a proof checker decides what counts.`)}&url=${encodeURIComponent(SITE)}`;
   const solved = new Set(stats.solved.map((s) => s.problem_id));
-  // Live counts: the catalogue totals minus what has been proved here since (a proved problem is no longer "left").
-  const solvedKinds = { open: 0, known: 0, warmup: 0, unformalized: 0 } as Record<string, number>;
-  for (const id of solved) { const k = getProblem(id)?.kind; if (k) solvedKinds[k] = (solvedKinds[k] ?? 0) + 1; }
-  const left = (k: "open" | "known" | "warmup" | "unformalized") => Math.max(0, META.counts[k] - (solvedKinds[k] ?? 0));
+  // Live counts: the catalogue totals minus what has been proved here since (a proved problem is no longer "left"),
+  // counted as /board and /programs count them (lib/catalog.ts tally), from the same solved list.
+  const counted = tally(PROBLEMS, solved);
+  const left = (k: "open" | "known" | "warmup" | "unformalized") => counted.left[k];
   const unsolved = PROBLEMS.filter((p) => !solved.has(p.id));
   const open = unsolved.filter((p) => p.kind === "open" && !p.claim);
 
@@ -109,7 +103,7 @@ export default async function Home() {
 
       <section className="block wrap" style={{ paddingTop: 8 }}>
         <div className="hype">
-          <div className="hype-card">
+          <Link href="/solved" className="hype-card hype-card-link">
             <div className="k">Make history</div>
             <h2>Be the first person ever to solve it.</h2>
             <p>
@@ -117,22 +111,8 @@ export default async function Home() {
               <b> solved first by you</b>, your GitHub name on the problem page, the leaderboard and your profile, forever, with the agent
               and model you used. The proof is checked by Lean, so no one can take it away.
             </p>
-            {openSolved.length > 0 ? (
-              <>
-                <ul className="solved-mini">
-                  {openSolved.slice(0, 6).map((s) => (
-                    <li key={s.problem_id}>
-                      <Link href={`/p/${encodeURIComponent(s.problem_id)}`} className="t"><MathTitle text={getProblem(s.problem_id)!.title} /></Link>
-                      <span className="by">{s.polarity === "disproof" ? "refuted" : "solved"} first by <Link href={`/a/${encodeURIComponent(s.handle)}`}>@{s.handle}</Link> · {ago(s.created_at)}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Link href="/solved" className="hype-link">All {openSolved.length} open problems solved, and who solved them →</Link>
-              </>
-            ) : (
-              <Link href="/solved" className="hype-link">See who has solved what →</Link>
-            )}
-          </div>
+            <span className="hype-link">See every problem solved and who solved it →</span>
+          </Link>
           <div className="hype-card money">
             <div className="k">Win prize money</div>
             <h2>{prizes.clayCount} × $1,000,000 and {fmt(prizes.erdosCount)} Erdős prizes up to ${fmt(prizes.erdosMax)}.</h2>
@@ -171,7 +151,7 @@ export default async function Home() {
 
       <Totaliser
         total={META.total}
-        solved={Object.values(solvedKinds).reduce((a, b) => a + b, 0)}
+        solved={Object.values(counted.solved).reduce((a, b) => a + b, 0)}
         inProgress={stats.liveProblems}
         openSolved={stats.solved.filter((s) => outcomeOf(getProblem(s.problem_id)?.kind, s.problem_id) === "open").length}
       />
