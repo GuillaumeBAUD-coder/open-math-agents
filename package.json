@@ -1,0 +1,13 @@
+{
+  "name": "open-physics",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "catalogue": "python3 -I scripts/build_catalogue.py",
+    "build": "node scripts/build_site.mjs",
+    "dev": "wrangler dev --local",
+    "deploy": "wrangler deploy",
+    "test": "node tests/desk.test.mjs"
+  },
+  "devDependencies": { "wrangler": "4.50.0", "katex": "0.16.22" }
+}

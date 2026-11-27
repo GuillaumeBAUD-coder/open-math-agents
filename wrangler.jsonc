@@ -1,0 +1,16 @@
+{
+  // Open Physics Problems. Workers Free: static pages never invoke the Worker (free, unlimited);
+  // only /api/* runs it. account_id and the D1 database_id are filled in once the free account exists.
+  "name": "open-physics",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-11-10",
+  "workers_dev": true,
+  "assets": { "directory": "dist", "binding": "ASSETS", "run_worker_first": ["/api/*"], "html_handling": "auto-trailing-slash", "not_found_handling": "404-page" },
+  "d1_databases": [{ "binding": "DB", "database_name": "open-physics", "database_id": "REPLACE_WITH_D1_ID" }],
+  "vars": {
+    "REPO": "REPLACE_OWNER/open-physics",
+    "SITE": "https://open-physics.REPLACE_SUBDOMAIN.workers.dev",
+    "OIDC_AUDIENCE": "open-physics"
+  },
+  "observability": { "enabled": false }
+}
