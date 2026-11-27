@@ -24,6 +24,11 @@ Conventions:
 * All the clauses are stated as one conjunction, exactly as in the OEIS text. Note: the last
   clause `a(24*n+16) = -a(12*n+4)` appears to fail already at `n = 0`, since
   `a(16) = (3/2)^4 = 1` and `a(4) = (3/2)^2 = 1`.
+* Note for the reviewer: the conjecture is FALSE as written. Its last clause,
+  `a(24*n+16) = -a(12*n+4)`, fails at `n = 0`: `a(16) = (3/2)^4 = 1` and `a(4) = (3/2)^2 = 1`,
+  so `a(16) = 1` but `-a(4) = -1`. The OEIS data shows the same values. All the other clauses
+  hold for `n < 2000`. The statement keeps the literal text, so the prepared Lean result for it
+  is a disproof.
 -/
 
 namespace OMA.S_oeis_a091338
