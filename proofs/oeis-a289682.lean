@@ -172,3 +172,4 @@ theorem sol : type_of% @OMA.S_oeis_a289682.main := by
 end OMA.P289682
 
 theorem OMA.solution : type_of% @OMA.S_oeis_a289682.main := OMA.P289682.sol
+
