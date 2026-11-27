@@ -12,7 +12,7 @@ Credit: @Hennyrick
 
 namespace OMA.S_oeis_a216971
 
-theorem main (n k : ℕ) (hn : 0 < n) (hk : k < n) :
+theorem main : ∀ n k : ℕ, 0 < n → k < n →
     n ∣ {f : Fin n → Fin n |
       {x : Fin n | x ∉ Function.periodicPts f ∧ f x ∈ Function.periodicPts f}.ncard = k}.ncard := by
   sorry
