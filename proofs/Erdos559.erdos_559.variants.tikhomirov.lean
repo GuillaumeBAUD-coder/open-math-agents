@@ -5,6 +5,8 @@ open Filter Real SimpleGraph
 
 namespace OMA.Tikhomirov
 
+set_option maxHeartbeats 4000000 in
+set_option maxRecDepth 4096 in
 private theorem exists_sparse_choices {J Ω : Type*} [Fintype J] [Fintype Ω]
     [Nonempty Ω] (h r D : ℕ) (hr : r ≤ h) (good : J → Finset Ω)
     (hgood : ∀ j, (good j).card ≤ D)
@@ -79,6 +81,8 @@ private noncomputable instance {V : Type*} [Fintype V] (G : SimpleGraph V) (v : 
   unfold ParentMap
   infer_instance
 
+set_option maxHeartbeats 4000000 in
+set_option maxRecDepth 4096 in
 private theorem parentMap_card {V : Type*} [Fintype V] (G : SimpleGraph V) (v : V)
     {n d : ℕ} (parent : Fin n → Fin (n+1))
     (hp : ∀ i, (parent i).val < i.succ.val) (hd : G.maxDegree ≤ d) :
@@ -165,6 +169,8 @@ private theorem card_matching_leaf_orders {V : Type*} [Fintype V]
     simpa using Fintype.card_le_of_injective e he
   exact hc.trans (parentMap_card G (f 0) Fin.castSucc (fun i => by simp) hd)
 
+set_option maxHeartbeats 4000000 in
+set_option maxRecDepth 4096 in
 private theorem card_compatible_components {V : Type*} [Fintype V]
     (G : SimpleGraph V) (v : V) {n m d : ℕ}
     (parent : Fin n → Fin (n+1)) (hp : ∀ i, (parent i).val < i.succ.val)
@@ -346,7 +352,7 @@ private theorem treeDegree {n : ℕ} (x : Fin (n+1)) (c : Finset ℕ)
   apply Finset.card_le_card
   rintro _ hy
   obtain ⟨y, hy', rfl⟩ := Finset.mem_image.mp hy
-  exact hc y (SimpleGraph.mem_neighborFinset.mp hy')
+  exact hc y (((binaryTree n).mem_neighborFinset x y).mp hy')
 
 private theorem degree_map_emb {V W : Type*} [Fintype V] [Fintype W]
     (G : SimpleGraph V) (e : V ↪ W) (x : V) :
@@ -369,6 +375,8 @@ private theorem standard_cycle_degree {n : ℕ} (hn : 2 ≤ n) (v : Fin n) :
   rw [SimpleGraph.cycleGraph_degree_two_le]
   exact Finset.card_le_two
 
+set_option maxHeartbeats 4000000 in
+set_option maxRecDepth 4096 in
 private theorem treeWithLeafCycle_cubic (k : ℕ) (hk : 1 ≤ k)
     (σ : Equiv.Perm (Fin (2^k-1))) :
     (treeWithLeafCycle (treeLeaves k) σ).maxDegree ≤ 3 := by
@@ -459,14 +467,20 @@ private theorem leafCycle_walk (k : ℕ) (σ : Equiv.Perm (Fin (2^k-1)))
   have hv := v.isLt
   obtain ⟨p,hp⟩ := tree_walk k v (by omega)
   refine ⟨p.mapLe le_sup_left, ?_⟩
-  simpa using hp
+  rwa [SimpleGraph.Walk.length_mapLe]
 
 private theorem leafCycle_rootEdge (k : ℕ) (hk : 1 ≤ k)
     (σ : Equiv.Perm (Fin (2^k-1))) : ∃ v, (treeWithLeafCycle (treeLeaves k) σ).Adj 0 v := by
   have hpow : 4 ≤ (2 : ℕ)^(k+1) :=
     Nat.pow_le_pow_right (by decide : 0 < (2 : ℕ)) (show 2 ≤ k+1 by omega)
   let i : Fin (2^(k+1)-2) := ⟨0, by omega⟩
-  exact ⟨i.succ, tree_edges_present (treeLeaves k) σ i⟩
+  refine ⟨i.succ, ?_⟩
+  have hi : treeParent i = 0 := by
+    apply Fin.ext
+    change 0 / 2 = 0
+    rfl
+  rw [← hi]
+  exact tree_edges_present (treeLeaves k) σ i
 
 private theorem leafCycle_matching (k : ℕ) (hk : 1 ≤ k)
     (σ : Equiv.Perm (Fin (2^k-1))) :
@@ -555,6 +569,8 @@ private theorem blue_excludes_component {V : Type*} [Fintype V] {w : ℕ}
   rw [SimpleGraph.sdiff_adj] at he
   exact he.2 ⟨he.1, Or.inl (Or.inr ha)⟩
 
+set_option maxHeartbeats 4000000 in
+set_option maxRecDepth 4096 in
 private theorem red_copy_high_count {V : Type*} [Fintype V] {h w M : ℕ}
     (H : SimpleGraph V) (d : ℕ) (A : Finset V)
     (U : Fin h → SimpleGraph (Fin (w+1)))
@@ -599,8 +615,12 @@ private theorem red_copy_high_count {V : Type*} [Fintype V] {h w M : ℕ}
     apply Finset.mem_filter.mpr
     refine ⟨Finset.mem_univ _, ?_⟩
     by_cases hl : d < H.degree (f (i.val,u i.val j))
-    · simpa [e, hl] using hl
-    · simpa [e, hl] using (hh i j).resolve_left hl
+    · have hchoice : e i j = u i.val j := if_pos hl
+      rw [hchoice]
+      exact hl
+    · have hchoice : e i j = v i.val j := if_neg hl
+      rw [hchoice]
+      exact (hh i j).resolve_left hl
   have hinj (i : C) : Function.Injective (e i) := by
     intro j j' he'
     unfold e at he'
@@ -648,12 +668,14 @@ private theorem card_boundedHost (N d : ℕ) :
       have hj : ∃ u' : G.val.neighborSet v, slot G v u' = j := ⟨u, rfl⟩
       refine ⟨j, ?_⟩
       have he : hj.choose = u := (slot G v).injective hj.choose_spec
-      simpa only [table, dif_pos hj, he]
+      simp only [table, dif_pos hj, he, u]
     · rintro ⟨j, hj⟩
       by_cases h : ∃ u : G.val.neighborSet v, slot G v u = j
       · have he : h.choose.val = w := by simpa only [table, dif_pos h, Option.some.injEq] using hj
         exact he ▸ h.choose.property
-      · simp [table, h] at hj
+      · have hnone : (none : Option (Fin N)) = some w := by
+          simpa only [table, dif_neg h] using hj
+        cases hnone
   have htable : Function.Injective table := by
     intro G H h
     apply Subtype.ext
@@ -671,6 +693,8 @@ private theorem ball_of_walk {V : Type*} (G : SimpleGraph V) {u v : V}
     ⟨fun j => p.getVert j.val, p.getVert_zero, fun j => p.adj_getVert_succ j.isLt⟩
   exact ⟨i, f, p.getVert_length⟩
 
+set_option maxHeartbeats 4000000 in
+set_option maxRecDepth 4096 in
 private theorem reduce_to_test_host {η w : ℕ} {Ω : Type*}
     (U : Ω → SimpleGraph (Fin (w+1))) (k d : ℕ) (hd : 2 ≤ d)
     (radius : ∀ σ u, ∃ p : (U σ).Walk 0 u, p.length ≤ k)
@@ -721,6 +745,8 @@ private theorem reduce_to_test_host {η w : ℕ} {Ω : Type*}
   apply congrArg e
   exact Subtype.ext hf
 
+set_option maxHeartbeats 4000000 in
+set_option maxRecDepth 4096 in
 private theorem sampling_margin (t : ℕ) (ht : 1 ≤ t) :
     let k := 100*t
     let h := 2^(1024*t*t)
@@ -749,7 +775,7 @@ private theorem sampling_margin (t : ℕ) (ht : 1 ≤ t) :
   have hNpos : 0 < N := by positivity
   have hB : 2048*t ≤ B := by
     calc
-      2048*t ≤ 2048 * 2^t := Nat.mul_le_mul_left _ (Nat.lt_two_pow_self t).le
+      2048*t ≤ 2048 * 2^t := Nat.mul_le_mul_left _ (Nat.lt_two_pow_self (n := t)).le
       _ = 2^(t+11) := by rw [pow_add]; norm_num; ac_rfl
       _ ≤ B := Nat.pow_le_pow_right (by decide) (by dsimp [k]; omega)
   have hBt : 2048*t*t ≤ t*B := by
@@ -768,7 +794,7 @@ private theorem sampling_margin (t : ℕ) (ht : 1 ≤ t) :
   have hrN : d*N = r := by simp [N, r, pow_succ']
   have har : a ≤ r := by
     calc
-      a ≤ 2^a := (Nat.lt_two_pow_self a).le
+      a ≤ 2^a := (Nat.lt_two_pow_self (n := a)).le
       _ = N := hN.symm
       _ ≤ d*N := by
         simpa only [one_mul] using Nat.mul_le_mul_right N (show 1 ≤ d by omega)
@@ -802,9 +828,10 @@ private theorem sampling_margin (t : ℕ) (ht : 1 ≤ t) :
     have hmB : m-B = B-1 := by dsimp [m]; omega
     have hF := Nat.factorial_mul_pow_sub_le_factorial hBm
     rw [hmB] at hF
-    exact (by
-      simpa only [one_mul] using Nat.mul_le_mul_right (B^(B-1))
-        (Nat.factorial_pos B) : B^(B-1) ≤ B.factorial * B^(B-1)).trans hF
+    have hfacPos : 1 ≤ B.factorial := Nat.factorial_pos B
+    have hp : B^(B-1) ≤ B.factorial * B^(B-1) := by
+      simpa only [Nat.one_mul] using Nat.mul_le_mul_right (B^(B-1)) hfacPos
+    exact hp.trans hF
   calc
     Fintype.card J * h^r * (d^(w+m))^r ≤
       2^((a+2)*r) * h^r * (2^(48*t*B))^r :=
@@ -819,6 +846,8 @@ private theorem sampling_margin (t : ℕ) (ht : 1 ≤ t) :
     _ ≤ (Fintype.card (Equiv.Perm (Fin m)))^r := by
       simpa only [Fintype.card_perm, Fintype.card_fin] using Nat.pow_le_pow_left hfac r
 
+set_option maxHeartbeats 4000000 in
+set_option maxRecDepth 4096 in
 private theorem binaryFamily (t : ℕ) (ht : 1 ≤ t) :
     let k := 100*t
     let h := 2^(1024*t*t)
@@ -944,7 +973,7 @@ lemma ramseyHost_exists {W : Type*} [Finite W] (G : SimpleGraph W) :
     rw [hdiff]
     exact hGtop.trans htop
 
-/-- A natural number is realized as the edge count of a finite Ramsey host for `G`. -/
+/-- Every vertex in the support accounts for at least one incidence. -/
 lemma card_support_le_twice_edgeCount {V : Type*} [Fintype V] (H : SimpleGraph V) :
     H.support.toFinset.card ≤ 2 * edgeCount H := by
   classical
@@ -978,19 +1007,23 @@ private theorem lowHost_degree {V : Type*} [Fintype V] (H : SimpleGraph V) (d : 
   by_cases hv : H.degree v ≤ d
   · have hsub : (lowHost H d).neighborFinset v ⊆ H.neighborFinset v := by
       intro w hw
-      exact SimpleGraph.mem_neighborFinset.mpr (SimpleGraph.mem_neighborFinset.mp hw).1
+      have he : (lowHost H d).Adj v w := ((lowHost H d).mem_neighborFinset v w).mp hw
+      exact (H.mem_neighborFinset v w).mpr he.1
     rw [← SimpleGraph.card_neighborFinset_eq_degree]
     exact (Finset.card_le_card hsub).trans hv
   · have hempty : (lowHost H d).neighborFinset v = ∅ := by
       apply Finset.eq_empty_iff_forall_notMem.mpr
       intro w hw
-      exact hv (SimpleGraph.mem_neighborFinset.mp hw).2.1
+      have he : (lowHost H d).Adj v w := ((lowHost H d).mem_neighborFinset v w).mp hw
+      exact hv he.2.1
     simp [← SimpleGraph.card_neighborFinset_eq_degree, hempty]
 
 private noncomputable def rootSet {V : Type*} [Fintype V] {w : ℕ}
     (H : SimpleGraph V) (G : SimpleGraph (Fin (w+1))) : Finset V :=
   Finset.univ.filter (fun v => ∃ f : G.Copy H, f 0 = v)
 
+set_option maxHeartbeats 4000000 in
+set_option maxRecDepth 4096 in
 private theorem rareRoot {η h w d r : ℕ} (hh : 0 < h)
     (H : SimpleGraph (Fin η)) (U : Fin h → SimpleGraph (Fin (w+1)))
     (hU : ∀ i, ∃ v, (U i).Adj 0 v)
@@ -1042,6 +1075,8 @@ private theorem high_degree_upper {V : Type*} [Fintype V] (H : SimpleGraph V) (d
     _ ≤ ∑ v : V, H.degree v := Finset.sum_le_sum_of_subset (Finset.subset_univ _)
     _ = 2 * H.edgeFinset.card := H.sum_degrees_eq_twice_card_edges
 
+set_option maxHeartbeats 4000000 in
+set_option maxRecDepth 4096 in
 private theorem sizeOfSparseFamily (t : ℕ) (ht : 1 ≤ t) :
     let k := 100*t
     let h := 2^(1024*t*t)
@@ -1054,6 +1089,7 @@ private theorem sizeOfSparseFamily (t : ℕ) (ht : 1 ≤ t) :
         Disjoint (Set.range f) (Set.range g) ∧ ∀ j, (U i).Adj (f j) (g j)) →
       h * (w+1) * 2^t ≤ sizeRamsey (disjointTarget U) (disjointTarget U) := by
   classical
+  dsimp only
   intro U hcomp hSparse hmatch
   let k := 100*t
   let h := 2^(1024*t*t)
@@ -1146,6 +1182,8 @@ private theorem sizeOfSparseFamily (t : ℕ) (ht : 1 ≤ t) :
     exact (not_lt_of_ge hupper) hstrict
   exact (hRamsey R hR).elim hred hblue
 
+set_option maxHeartbeats 4000000 in
+set_option maxRecDepth 4096 in
 private theorem degree_disjointTarget {h w : ℕ}
     (U : Fin h → SimpleGraph (Fin (w+1))) (hU : ∀ i, (U i).maxDegree ≤ 3) :
     (disjointTarget U).maxDegree ≤ 3 := by
@@ -1178,6 +1216,8 @@ private theorem sizeRamsey_iso {V W : Type*} [Fintype V] [Fintype W]
     exact ⟨j, T, hm, fun R hR =>
       (hT R hR).imp (e.isContained.trans) (e.isContained.trans)⟩
 
+set_option maxHeartbeats 4000000 in
+set_option maxRecDepth 4096 in
 private theorem finite_family_bound :
     ∀ t : ℕ, 1 ≤ t → ∃ n : ℕ, t ≤ n ∧ n ≤ 2^(4096*t*t) ∧
       ∃ G : SimpleGraph (Fin n), G.maxDegree ≤ 3 ∧ n * 2^t ≤ sizeRamsey G G := by
@@ -1195,7 +1235,7 @@ private theorem finite_family_bound :
   have hG : (disjointTarget U) ≃g G := (disjointTarget U).overFinIso hncard
   refine ⟨n, ?_, ?_, G, ?_, ?_⟩
   · have hle : t ≤ 1024*t*t := by nlinarith
-    have hth : t ≤ h := (Nat.lt_two_pow_self t).le.trans (Nat.pow_le_pow_right (by decide) hle)
+    have hth : t ≤ h := (Nat.lt_two_pow_self (n := t)).le.trans (Nat.pow_le_pow_right (by decide) hle)
     exact hth.trans (Nat.le_mul_of_pos_right h (by omega))
   · have hpow : 0 < (2 : ℕ)^(k+1) := pow_pos (by decide) _
     have hw : w+1 ≤ 2^(k+1) := by dsimp [w]; omega
@@ -1211,6 +1251,8 @@ private theorem finite_family_bound :
   · rw [← sizeRamsey_iso hG]
     exact hsize
 
+set_option maxHeartbeats 4000000 in
+set_option maxRecDepth 4096 in
 theorem result : type_of% @Erdos559.erdos_559.variants.tikhomirov := by
   classical
   refine ⟨log 2 / 64, by positivity, 1, by norm_num, ?_⟩
@@ -1231,7 +1273,10 @@ theorem result : type_of% @Erdos559.erdos_559.variants.tikhomirov := by
       _ = 4096 * (t : ℝ)^2 := by ring
   have hroot : √(log (n : ℝ)) ≤ 64 * (t : ℝ) := by
     apply Real.sqrt_le_iff.mpr
-    exact ⟨by positivity, by nlinarith⟩
+    refine ⟨by positivity, ?_⟩
+    calc
+      log (n : ℝ) ≤ 4096 * (t : ℝ)^2 := hlog
+      _ = (64 * (t : ℝ))^2 := by ring
   have he : exp (log 2 / 64 * √(log (n : ℝ))) ≤ (2 : ℝ)^t := by
     have h := mul_le_mul_of_nonneg_left hroot (show 0 ≤ log 2 / 64 by positivity)
     have h' : log 2 / 64 * √(log (n : ℝ)) ≤ (t : ℝ) * log 2 := by linarith
