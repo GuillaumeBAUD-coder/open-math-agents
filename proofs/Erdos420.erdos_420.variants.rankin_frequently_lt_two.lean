@@ -4288,7 +4288,13 @@ private lemma primeBandMass_dyadic (N k : ℕ) (hN : 2 ≤ N)
     primeBandMass N (N * 2 ^ k) ≤ 6 * k / Real.log N := by
   have hlog : 0 < Real.log N := Real.log_pos (by exact_mod_cast (show 1 < N by omega))
   induction k with
-  | zero => simp [primeBandMass, primeBand, Nat.mem_primesLE]
+  | zero =>
+    have hempty : primeBand N N = ∅ := by
+      apply Finset.eq_empty_iff_forall_notMem.mpr
+      intro p hp
+      exact (Finset.mem_filter.mp hp).2.not_ge
+        (Nat.le_of_mem_primesLE (Finset.mem_filter.mp hp).1)
+    simpa [primeBandMass, hempty]
   | succ k ih =>
     let M := N * 2 ^ k
     have hNM : N ≤ M := by
@@ -4438,7 +4444,7 @@ private lemma rankin_scale_comparison (n : ℕ) (x : ℝ)
       mul_le_mul_of_nonneg_right hnum (sq_nonneg B)
     _ ≤ (x * A) * (9 * (B / 2) ^ 3) := by
       have hnonneg : 0 ≤ x * A * B ^ 3 := by positivity
-      linarith
+      nlinarith only [hnonneg]
     _ ≤ _ := mul_le_mul_of_nonneg_left
       (mul_le_mul_of_nonneg_left hcubed (by norm_num)) (by positivity)
 
@@ -4562,7 +4568,8 @@ private lemma log_translated_start {x : ℝ} {A N t : ℕ}
   have hE : 3 * Real.exp (7 * x) ≤ Real.exp (9 * x) := by
     rw [show 9 * x = 2 * x + 7 * x by ring, Real.exp_add]
     exact mul_le_mul_of_nonneg_right h3 (Real.exp_pos _).le
-  have hn : (m : ℝ) ≤ ((A + m * 1 + m * (t + 1) : ℕ) : ℝ) := by push_cast; simp; positivity
+  have hn : (m : ℝ) ≤ ((A + m * 1 + m * (t + 1) : ℕ) : ℝ) := by
+    exact_mod_cast (show m ≤ A + m * 1 + m * (t + 1) by simp only [Nat.mul_one]; omega)
   exact ⟨hM.1.trans (Real.log_le_log hm0 hn), by
     simpa only [Real.log_exp] using Real.log_le_log (hm0.trans_le hn) (hsum.trans hE)⟩
 
@@ -4603,21 +4610,25 @@ private lemma mass_at_rankin_scale {x : ℝ} {N z : ℕ}
           B = (2 * B) * (1 / 2) := by ring
           _ ≤ (k : ℝ) * (1 / 2) := mul_le_mul_of_nonneg_right hklo (by norm_num)
           _ ≤ _ := mul_le_mul_of_nonneg_left hl2 (by positivity)
-      _ = _ := by rw [mul_comm, Real.exp_nat_mul, Real.exp_log (by norm_num : (0 : ℝ) < 2)]
+      _ = _ := by rw [Real.exp_nat_mul, Real.exp_log (by norm_num : (0 : ℝ) < 2)]
   have hzy : z ≤ N * 2 ^ k := by
     exact_mod_cast hz.trans (mul_le_mul_of_nonneg_left hkp (by positivity : (0 : ℝ) ≤ N))
   have hprime : primeBandMass N z ≤ 24 * B / L := by
     apply ((primeBandMass_mono hzy).trans (primeBandMass_dyadic N k hN hcheb)).trans
-    apply (div_le_div_iff₀ (by positivity) (by positivity)).2
+    have hlogN' : 0 < Real.log N := Real.log_pos (by exact_mod_cast (show 1 < N by omega))
+    have hL' : 0 < L := by linarith
+    apply (div_le_div_iff₀ hlogN' hL').2
     have h₁ := mul_le_mul_of_nonneg_right hkhi (show 0 ≤ 6 * L by positivity)
     have h₂ := mul_le_mul_of_nonneg_left hlogN (show 0 ≤ 24 * B by positivity)
-    linarith
+    nlinarith only [h₁, h₂]
   have hzlog : Real.log z ≤ (3 / 2 : ℝ) * L := by
     have h := Real.log_le_log (by exact_mod_cast hz0) hz'
     rwa [Real.log_rpow (by linarith : 0 < x)] at h
   have hzlog2 : (Nat.log 2 z : ℝ) ≤ 3 * L := by
-    have hfl := Nat.floor_le (show 0 ≤ Real.log z / Real.log 2 by positivity)
-    rw [← Real.logb, Real.natFloor_logb_natCast] at hfl
+    have hzlog0 : 0 ≤ Real.log z := Real.log_nonneg (by exact_mod_cast hz0)
+    have hl2' : 0 < Real.log 2 := by linarith
+    have hfl := Nat.floor_le (div_nonneg hzlog0 hl2'.le)
+    rw [Real.log_div_log, Real.natFloor_logb_natCast] at hfl
     apply hfl.trans
     apply (div_le_iff₀ (by positivity)).2
     have h := mul_le_mul_of_nonneg_left hl2 (show 0 ≤ 3 * L by positivity)
@@ -4770,7 +4781,8 @@ private lemma eventual_rankin_inputs : ∀ᶠ x : ℝ in atTop,
     have hb := hP _ hmP
     simp only [Nat.floor_natCast] at hb
     refine hb.trans ?_
-    apply div_le_div_of_nonneg_right _ (Real.log_nonneg (by exact_mod_cast (hN2.trans hm)))
+    have hm1 : 1 ≤ m := by omega
+    apply div_le_div_of_nonneg_right _ (Real.log_nonneg (by exact_mod_cast hm1))
     exact mul_le_mul_of_nonneg_right (by linarith) (by positivity)
   have hmass := mass_at_rankin_scale (by linarith) hN2 hNx (by linarith) (by linarith)
     hlogN hz hz0 hzPow hPow'' hPE
@@ -4859,7 +4871,8 @@ private lemma rankin_from_seed : ∃ᶠ n : ℕ in atTop, Erdos420.F rankinCutof
   have hh' : ⌊rankinCutoff n⌋₊ ≤ h := Nat.floor_mono hscale
   have hg : 2 * (h : ℝ) / w ≤ 1 / 2 := by
     apply (div_le_iff₀ (by exact_mod_cast hw : (0 : ℝ) < w)).2
-    simp [w]
+    push_cast [w]
+    nlinarith
   exact ⟨n, hn, log_gain_to_target n h hh' (hGain.trans hg)⟩
 
 end
