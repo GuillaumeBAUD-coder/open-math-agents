@@ -15,6 +15,9 @@ PR=$(head -c 12 artifact/pr.txt | tr -cd '0-9')
 [ -n "$PR" ] || exit 0
 gh api "repos/$REPO/pulls/$PR" > pr.json
 [ "$(jq -r .state pr.json)" = open ] || exit 0   # merged or closed meanwhile: nothing to report
+# Only pull requests into main are ever merged or credited: a pull request into another branch runs whatever copy of
+# check-proof that branch holds, which proves nothing.
+[ "$(jq -r .base.ref pr.json)" = main ] || { echo "not into main: ignored"; exit 0; }
 # The changed files and the checked file come from git (GitHub's merge ref of the pull request), which does not use
 # the API budget; the API is the fallback when the merge ref is missing or not at the checked commit.
 GITREF=0
@@ -114,7 +117,9 @@ case "$VERDICT" in
         if OUT="$(gh api -X PUT "repos/$REPO/pulls/$PR/merge" -f merge_method=squash -f sha="$HEAD_SHA" 2>&1)"; then
           MERGED=1; MERGE_SHA="$(printf '%s' "$OUT" | jq -r '.sha // empty' 2>/dev/null || true)"; break
         elif printf '%s' "$OUT" | grep -q "not accessible by integration" && OUT="$(gh pr merge "$PR" --repo "$REPO" --squash --match-head-commit "$HEAD_SHA" 2>&1)"; then
-          MERGED=1; MERGE_SHA=""; break   # credit.sh reads the merge commit from the pull request (REST)
+          # the squash commit's sha from git (no API call; the REST answer can lag behind a GraphQL merge)
+          MERGE_SHA="$(git -C base fetch -q --depth 100 origin main 2>/dev/null && git -C base log -100 --format='%H %s' FETCH_HEAD | grep -m1 -E " \(#$PR\)\$" | cut -d' ' -f1 || true)"
+          MERGED=1; break
         fi
         echo "merge attempt $TRY: $OUT"
         echo "$OUT" | grep -qiE "base branch was modified|try the merge again|is not mergeable|still a draft|timeout|502|503" || break
