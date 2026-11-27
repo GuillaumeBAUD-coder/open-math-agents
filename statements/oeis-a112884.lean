@@ -6,6 +6,8 @@ import Mathlib
 Source: https://oeis.org/A112884
 Credit: @ivillar
 
+Status: known result: the entry records that the conjectured formula is true (Sela Fried, Oct 03 2024).
+
 A112884 (offset 0) is the number of bits required to represent binomial(2^n, 2^(n-1));
 data 1, 2, 3, 7, 14, 30, 61, 125, 252, 508, 1019, ...
 
