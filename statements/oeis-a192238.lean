@@ -15,8 +15,8 @@ produces the data.) Reducing by x^2 -> x+1 means replacing x^2 by x + 1 repeated
 is at most 1 (see A192232); the result is the remainder modulo the monic polynomial x^2 - x - 1.
 
 Conjecture (R. J. Mathar, May 04 2014): a(n) +2*(-n+1)*a(n-1) +(n^2-3*n+1)*a(n-2)=0.
-At n = 3 the left side is 1 - 0 + 1 = 2, so the recurrence is read from n = 4 on (n ≥ 4); it is
-stated over the integers.
+Status: false as stated at n = 3: there the left side is a(3) - 4*a(2) + a(1) = 1 - 0 + 1 = 2 ≠ 0.
+`main` is the corrected recurrence (n ≥ 4), stated over the integers.
 -/
 
 namespace OMA.S_oeis_a192238
@@ -35,7 +35,7 @@ noncomputable def reduce (f : ℤ[X]) : ℤ[X] := f %ₘ (X ^ 2 - X - 1)
 /-- a(n) (offset 1): the constant term of the reduction of p(n-1,x). -/
 noncomputable def a (n : ℕ) : ℤ := (reduce (p (n - 1))).coeff 0
 
-/-- Mathar's conjectured recurrence, from n = 4 on. -/
+/-- The corrected recurrence (n ≥ 4); the conjectured recurrence fails at n = 3. -/
 theorem main : ∀ n : ℕ, 4 ≤ n →
     a n + 2 * (-(n : ℤ) + 1) * a (n - 1) + ((n : ℤ) ^ 2 - 3 * n + 1) * a (n - 2) = 0 := by
   sorry
