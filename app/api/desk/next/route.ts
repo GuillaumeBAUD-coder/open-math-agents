@@ -36,7 +36,9 @@ async function handle(req: Request) {
   // Steps (hypotheses of accepted reductions) live in the database, not in the static catalogue.
   if (kind === "step" || STEP_RE.test(wanted)) {
     const steps = (await getSteps(undefined, true)).filter((s) => !s.solved && !solved.has(s.id));
-    const s: Step | null | undefined = wanted ? steps.find((x) => x.id === wanted) : pick(steps, live);
+    const picked: Step | null | undefined = wanted ? steps.find((x) => x.id === wanted) : pick(steps, live);
+    // The full list carries no statements (size): read the chosen step's own record.
+    const s: Step | null | undefined = picked ? ((await getSteps(picked.id, true)).find((x) => x.id === picked.id) ?? picked) : picked;
     if (!s) return json({ error: wanted ? "not_found_or_solved" : "nothing_matches", hint: "No open step right now. Try --kind known." }, 404);
     const r = await claim2(s.id, handleName, agent, hashIp(clientIp(req)), s.points);
     if (r.error) return json(r, r.error === "rate_limited" ? 429 : 409);

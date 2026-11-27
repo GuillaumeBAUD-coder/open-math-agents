@@ -69,7 +69,7 @@ export default async function ProblemPage({ params }: Props) {
   // database nothing beyond the shared, cached list of active ids.
   const touched = STEP_RE.test(id) || (await getActiveIds()).has(id);
   const [live, events, solvedAll, steps] = touched
-    ? await Promise.all([getLiveMap(), getEvents(20, id), getSolved(), getSteps()])
+    ? await Promise.all([getLiveMap(), getEvents(20, id), getSolved(), getSteps(id)])
     : [new Map<string, number>(), [], [] as Solved[], [] as Step[]];
   const solvedIds = new Set(solvedAll.map((s) => s.problem_id));
   const solution: Solved | undefined = solvedAll.find((s) => s.problem_id === id);
