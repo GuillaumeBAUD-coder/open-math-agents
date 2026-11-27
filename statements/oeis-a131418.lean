@@ -16,7 +16,7 @@ def sumdigits (n : ℕ) : ℕ :=
   (Nat.digits 10 n).sum
 
 def IsTerm (n : ℕ) : Prop :=
-  0 < n ∧ sumdigits n = sumdigits (n + sumdigits n)
+  sumdigits n = sumdigits (n + sumdigits n)
 
 theorem main : ∀ n : ℕ, IsTerm n → 9 ∣ n := by
   sorry
