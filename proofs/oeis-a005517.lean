@@ -72,8 +72,12 @@ private lemma coeff_rhs_eq (m : ℕ) :
         (if m = 1 then (2 : ℚ) else 0) +
         (if m = 2 then (3 : ℚ) else 0) -
         (if m = 4 then (1 : ℚ) else 0) := by
-  rw [map_sub, map_add, map_add, PowerSeries.coeff_one, PowerSeries.coeff_ofNat_mul,
-    PowerSeries.coeff_X, PowerSeries.coeff_ofNat_mul, PowerSeries.coeff_X_pow,
+  have hC2 : (2 : PowerSeries ℚ) = PowerSeries.C (2 : ℚ) := by
+    rw [← Nat.cast_ofNat, ← map_natCast (PowerSeries.C (R := ℚ)), Nat.cast_ofNat]
+  have hC3 : (3 : PowerSeries ℚ) = PowerSeries.C (3 : ℚ) := by
+    rw [← Nat.cast_ofNat, ← map_natCast (PowerSeries.C (R := ℚ)), Nat.cast_ofNat]
+  rw [map_sub, map_add, map_add, PowerSeries.coeff_one, hC2, PowerSeries.coeff_C_mul,
+    PowerSeries.coeff_X, hC3, PowerSeries.coeff_C_mul, PowerSeries.coeff_X_pow,
     PowerSeries.coeff_X_pow]
   split_ifs <;> norm_num
 
