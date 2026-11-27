@@ -6,6 +6,9 @@ import Mathlib
 Source: https://oeis.org/A144135
 Credit: @ivillar
 
+Status: known result (the OEIS entry records that the conjecture and the empirical g.f. were
+verified).
+
 A144135 (offset 0): a(n) = GegenbauerC[n,2,8], the Gegenbauer (ultraspherical) polynomial
 C_n^(2)(x) evaluated at x = 8; data 1, 32, 766, 16288, 324611, ...
 Conjecture (Colin Barker, Oct 27 2014): a(n) = 32*a(n-1) - 258*a(n-2) + 32*a(n-3) - a(n-4), with
