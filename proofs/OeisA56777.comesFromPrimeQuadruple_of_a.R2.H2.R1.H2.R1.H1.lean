@@ -321,7 +321,7 @@ def checkMask (m mask : ℕ) : Bool :=
       maskPossible m mask p q ||
         (List.range m).all (fun x => !(residueRoot m p q x))
 
-theorem mask_sound {m mask p q x : ℕ} (hm : 0<m) (hvalid : checkMask m mask = true)
+theorem mask_sound {m mask p q x : ℕ} (hm : 0 < m) (hvalid : checkMask m mask = true)
     (hroot : cubic (sumCoeff p q) (pairCoeff p q) (productCoeff p q) x = 0) :
     maskPossible m mask (p%m) (q%m) = true := by
   have he : cubicHigh p q x = cubicLow p q x := by
