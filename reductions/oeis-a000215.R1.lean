@@ -18,6 +18,8 @@ def H3 : Prop := ∀ x : ℕ, 4 < x → 4 ∣ x → ¬ (x - 1).Prime →
       (x = 12 * p ^ k → p = 7 ∨ p = 11 ∨ p = 19)) →
     (x % 8 = 4 → ∃ q r : ℕ, q.Prime ∧ r.Prime ∧ q ≠ r ∧ q ∣ x ^ 2 + 1 ∧
       r ∣ x ^ 2 + 1 ∧ q % 16 ≠ 1 ∧ r % 16 ≠ 1 ∧ jacobiSym (x + 1 : ℕ) q = -1) →
+    (∀ m : ℕ, m ∣ x ^ 2 + 1 → m < 2 ^ (m.primeFactors.lcm fun q => x.gcd (q - 1))) →
+    (x % 8 = 4 → ∀ q e h : ℕ, q.Prime → 0 < e → q ^ e * (2 ^ h + 1) ≠ x ^ 2 + 1) →
     ¬ (x ^ 4 - 1 ∣ 2 ^ x - 1)
 
 lemma first_primes {n : ℕ} (hn : n ≤ 4) : (2 ^ (2 ^ n) + 1).Prime := by
@@ -741,6 +743,140 @@ lemma odd_order_failure :
     generalize orderOf (2 : ZMod 113) = t at *
     interval_cases t <;> norm_num at *
 
+/-- At every prime power of the upper half, the local exponent can be shortened to
+    gcd(x,q-1). In particular a multiplicity of q never enlarges the allowed exponent. -/
+lemma local_order_compression (x q e : ℕ) (even : 2 ∣ x) (hq : q.Prime) (he : 0 < e)
+    (hP : q ^ e ∣ x ^ 2 + 1) :
+    orderOf (2 : ZMod (q ^ e)) ∣ x ↔ orderOf (2 : ZMod (q ^ e)) ∣ x.gcd (q - 1) := by
+  have qm := (dvd_pow_self q he.ne').trans hP
+  have cx : x.Coprime q := (hq.coprime_iff_not_dvd.mpr (by
+    intro qx
+    have sq := qx.trans (dvd_pow_self x (by decide : 2 ≠ 0))
+    have one : q ∣ 1 := (Nat.dvd_add_right sq).mp qm
+    exact hq.not_dvd_one one)).symm
+  have c2 : Nat.Coprime 2 q := cx.coprime_dvd_left even
+  have eu := Nat.ModEq.pow_totient (c2.pow_right e)
+  have ord := orderOf_dvd_of_pow_eq_one ((mersenne_dvd_iff _ _).mp
+    ((Nat.modEq_iff_dvd' Nat.one_le_two_pow).mp eu.symm))
+  rw [Nat.totient_prime_pow hq he] at ord
+  constructor
+  · intro dx
+    have cop := (cx.coprime_dvd_left dx).pow_right (e - 1)
+    exact Nat.dvd_gcd dx (cop.dvd_of_dvd_mul_left ord)
+  · exact fun h => h.trans (Nat.gcd_dvd_left _ _)
+
+/-- Every divisor m of the upper half has an exact test at the lcm of the allowed
+    exponents of its primes, including when m contains repeated prime factors. -/
+theorem divisor_order_test (x m : ℕ) (even : 2 ∣ x) (hm : m ∣ x ^ 2 + 1) :
+    m ∣ 2 ^ x - 1 ↔ m ∣ 2 ^ (m.primeFactors.lcm fun q => x.gcd (q - 1)) - 1 := by
+  let D := m.primeFactors.lcm fun q => x.gcd (q - 1)
+  have Dx : D ∣ x := Finset.lcm_dvd fun q _ => Nat.gcd_dvd_left _ _
+  constructor
+  · intro test
+    apply (Nat.dvd_iff_prime_pow_dvd_dvd _ m).mpr
+    intro q e hq he
+    rcases Nat.eq_zero_or_pos e with rfl | pos
+    · simp
+    have mem := hq.mem_primeFactors ((dvd_pow_self q pos.ne').trans he)
+      (fun h => by simp [h] at hm)
+    have dx := orderOf_dvd_of_pow_eq_one ((mersenne_dvd_iff _ _).mp (he.trans test))
+    have dg := (local_order_compression x q e even hq pos (he.trans hm)).mp dx
+    apply (mersenne_dvd_iff _ _).mpr
+    exact orderOf_dvd_iff_pow_eq_one.mp (dg.trans (Finset.dvd_lcm mem))
+  · intro test
+    apply (mersenne_dvd_iff _ _).mpr
+    exact orderOf_dvd_iff_pow_eq_one.mp
+      ((orderOf_dvd_of_pow_eq_one ((mersenne_dvd_iff _ _).mp test)).trans Dx)
+
+/-- The complementary factor shares every passing local order modulo q^e. -/
+lemma cofactor_order (x q e c : ℕ) (even : 2 ∣ x) (hq : q.Prime) (he : 0 < e)
+    (fac : q ^ e * c = x ^ 2 + 1) (dx : orderOf (2 : ZMod (q ^ e)) ∣ x) :
+    orderOf (2 : ZMod (q ^ e)) ∣ c - 1 := by
+  let d := orderOf (2 : ZMod (q ^ e))
+  have hP : q ^ e ∣ x ^ 2 + 1 := ⟨c, fac.symm⟩
+  have dq : d ∣ q - 1 := ((local_order_compression x q e even hq he hP).mp dx).trans
+    (Nat.gcd_dvd_right _ _)
+  have q1 := ((Nat.modEq_iff_dvd' hq.one_le).mpr dq).symm
+  have c1 : c ≡ 1 [MOD d] := calc
+    c = 1 ^ e * c := by simp
+    _ ≡ q ^ e * c [MOD d] := (q1.symm.pow e).mul_right c
+    _ = x ^ 2 + 1 := fac
+    _ ≡ 0 ^ 2 + 1 [MOD d] := ((Nat.modEq_zero_iff_dvd.mpr dx).pow 2).add_right 1
+    _ = 1 := by norm_num
+  have hc : 1 ≤ c := by
+    by_contra! hz
+    have : c = 0 := by omega
+    simp [this] at fac
+  exact (Nat.modEq_iff_dvd' hc).mp c1.symm
+
+/-- A prime-power factor with complementary factor 2^h+1 always fails in this class. -/
+theorem fermat_cofactor_obstruction (x q e h : ℕ) (hx : x % 8 = 4)
+    (hq : q.Prime) (he : 0 < e) (fac : q ^ e * (2 ^ h + 1) = x ^ 2 + 1) :
+    ¬ orderOf (2 : ZMod (q ^ e)) ∣ x := by
+  intro dx
+  have dp : orderOf (2 : ZMod (q ^ e)) ∣ 2 ^ h := by
+    simpa using cofactor_order x q e _ (by omega) hq he fac dx
+  obtain ⟨j, _, hj⟩ := (Nat.dvd_prime_pow Nat.prime_two).mp dp
+  have j2 : j ≤ 2 := by
+    by_contra! hj2
+    have h8 : 8 ∣ x := (pow_dvd_pow 2 (show 3 ≤ j by omega)).trans (hj ▸ dx)
+    omega
+  have d4 : orderOf (2 : ZMod (q ^ e)) ∣ 4 := hj ▸ pow_dvd_pow 2 j2
+  have d15 : q ^ e ∣ 15 := (mersenne_dvd_iff _ 4).mpr (orderOf_dvd_iff_pow_eq_one.mp d4)
+  have hm3 : ¬ 3 ∣ x ^ 2 + 1 := by
+    rw [Nat.dvd_iff_mod_eq_zero, Nat.add_mod, Nat.pow_mod]
+    have lt := Nat.mod_lt x (by decide : 0 < 3)
+    generalize x % 3 = a at lt ⊢
+    interval_cases a <;> decide
+  have hP : q ^ e ∣ x ^ 2 + 1 := ⟨_, fac.symm⟩
+  have p3 : ¬ 3 ∣ q ^ e := fun h => hm3 (h.trans hP)
+  have le := Nat.le_of_dvd (by decide : 0 < 15) d15
+  have big : 1 < q ^ e := one_lt_pow₀ hq.one_lt he.ne'
+  have P5 : q ^ e = 5 := by
+    generalize q ^ e = s at le d15 big p3 ⊢
+    interval_cases s <;> norm_num at *
+  have m16 : (x ^ 2 + 1) % 16 = 1 := by
+    obtain ⟨a, ha⟩ : 4 ∣ x := by omega
+    rw [ha, mul_pow, show (4 : ℕ) ^ 2 = 16 by decide, Nat.mul_add_mod_self_left]
+  rw [← fac, P5] at m16
+  by_cases large : 4 ≤ h
+  · obtain ⟨k, hk⟩ : 16 ∣ 2 ^ h := pow_dvd_pow 2 large
+    omega
+  · interval_cases h <;> norm_num at m16
+
+/-- A failed test has a witness at a full prime-power component. -/
+theorem missing_local_order_iff (x m : ℕ) (hm : m ≠ 0) :
+    ¬ m ∣ 2 ^ x - 1 ↔ ∃ q ∈ m.primeFactors,
+      ¬ orderOf (2 : ZMod (q ^ m.factorization q)) ∣ x := by
+  constructor
+  · intro fail
+    by_contra! every
+    apply fail
+    apply (Nat.dvd_iff_prime_pow_dvd_dvd _ _).mpr
+    intro q k hq hk
+    rcases Nat.eq_zero_or_pos k with rfl | pos
+    · simp
+    have mem := hq.mem_primeFactors ((dvd_pow_self q pos.ne').trans hk) hm
+    have he := (hq.pow_dvd_iff_le_factorization hm).mp hk
+    exact (pow_dvd_pow q he).trans
+      ((mersenne_dvd_iff _ _).mpr (orderOf_dvd_iff_pow_eq_one.mp (every q mem)))
+  · rintro ⟨q, _, fail⟩ test
+    exact fail (orderOf_dvd_of_pow_eq_one ((mersenne_dvd_iff _ _).mp
+      ((Nat.ordProj_dvd m q).trans test)))
+
+/-- Each divisor gives a size obstruction using only gcds, without computing any order. -/
+lemma divisor_order_bound (x m : ℕ) (pos : 0 < x) (even : 2 ∣ x)
+    (hm : m ∣ x ^ 2 + 1) (test : m ∣ 2 ^ x - 1) :
+    m < 2 ^ (m.primeFactors.lcm fun q => x.gcd (q - 1)) := by
+  let D := m.primeFactors.lcm fun q => x.gcd (q - 1)
+  have Dx : D ∣ x := Finset.lcm_dvd fun q _ => Nat.gcd_dvd_left _ _
+  have dp : 0 < D := Nat.pos_of_dvd_of_pos Dx pos
+  have big : 1 < 2 ^ D := one_lt_pow₀ (by decide : 1 < (2 : ℕ)) dp.ne'
+  have div : m ∣ 2 ^ D - 1 := (divisor_order_test x m even hm).mp test
+  have le := Nat.le_of_dvd (by omega : 0 < 2 ^ D - 1) div
+  change m < 2 ^ D
+  omega
+
 theorem main : H1 → H2 → H3 → type_of% @OMA.S_oeis_a000215.main := by
   intro tail semiprime mixed
   refine ⟨?_, ?_, ?_⟩
@@ -771,8 +907,16 @@ theorem main : H1 → H2 → H3 → type_of% @OMA.S_oeis_a000215.main := by
         rw [eq] at big div
         obtain ⟨k, hk, val⟩ := power_two_converse s big div
         exact ⟨k, hk, by omega⟩
+      have upper := (square_add_one_dvd (n - 1) (by omega)).trans div
+      have even : 2 ∣ n - 1 := res.1.two_dvd
       apply (mixed (n - 1) big (four_dvd_of_test _ big res.1 div) res.2 power ?_
-        (fun hx => two_exceptional_primes _ hx ((square_add_one_dvd _ (by omega)).trans div)) div).elim
+        (fun hx => two_exceptional_primes _ hx upper)
+        (fun m hm => divisor_order_bound _ m (by omega) even hm (hm.trans upper)) ?_ div).elim
+      swap
+      · intro hx q e h hq he fac
+        have hP : q ^ e ∣ (n - 1) ^ 2 + 1 := ⟨_, fac.symm⟩
+        exact fermat_cofactor_obstruction _ q e h hx hq he fac
+          (orderOf_dvd_of_pow_eq_one ((mersenne_dvd_iff _ _).mp (hP.trans upper)))
       intro p k hp odd hk
       constructor
       · intro h
