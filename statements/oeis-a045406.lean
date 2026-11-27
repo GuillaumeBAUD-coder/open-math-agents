@@ -13,8 +13,8 @@ with c(n,m) = Nat.stirlingFirst n m the unsigned one; the formula reproduces the
 
 Conjecture (R. J. Mathar, Sep 15 2021): D-finite with recurrence
 a(n) +(2*n-7)*a(n-1) +(n-4)^2*a(n-2)=0.
-At n = 4 the left side is a(4) + a(3) = 2, so the recurrence is read from n = 5 on (n ≥ 5); it is
-stated over the integers.
+Status: false as stated at n = 4: there the left side is a(4) + a(3) = -1 + 3 = 2 ≠ 0. `main` is
+the corrected recurrence (n ≥ 5), stated over the integers.
 -/
 
 namespace OMA.S_oeis_a045406
@@ -25,7 +25,7 @@ def s (n m : ℕ) : ℤ := (-1) ^ (n + m) * (Nat.stirlingFirst n m : ℤ)
 /-- Cloitre's formula a(n) = Sum_{i=1..n-1} i^2*Stirling1(n-1, i) (offset 2). -/
 def a (n : ℕ) : ℤ := ∑ i ∈ Finset.Icc 1 (n - 1), (i : ℤ) ^ 2 * s (n - 1) i
 
-/-- Mathar's conjectured recurrence, from n = 5 on. -/
+/-- The corrected recurrence (n ≥ 5); the conjectured recurrence fails at n = 4. -/
 theorem main : ∀ n : ℕ, 5 ≤ n →
     a n + (2 * (n : ℤ) - 7) * a (n - 1) + ((n : ℤ) - 4) ^ 2 * a (n - 2) = 0 := by
   sorry
