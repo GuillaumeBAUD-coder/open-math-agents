@@ -10,9 +10,9 @@ theorem OMA.solution :
   intro K L A i j f w hi hj hiso n
   let S := ShortComplex.mk i (cokernel.π i) (cokernel.condition i)
   let T := ShortComplex.mk j (cokernel.π j) (cokernel.condition j)
-  have hS : S.ShortExact := { exact := Abelian.exact_cokernel i }
-  have hT : T.ShortExact := { exact := Abelian.exact_cokernel j }
-  let g := cokernel.map i j (𝟙 A) f (by simpa [w])
+  have hS : S.ShortExact := { exact := ShortComplex.exact_of_g_is_cokernel S (cokernelIsCokernel i) }
+  have hT : T.ShortExact := { exact := ShortComplex.exact_of_g_is_cokernel T (cokernelIsCokernel j) }
+  let g := cokernel.map i j (𝟙 A) f (by simp [w])
   let φ : S ⟶ T :=
     { τ₁ := 𝟙 A
       τ₂ := f
