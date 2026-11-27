@@ -29,6 +29,12 @@ is $\ll \delta^2$.
   the limit of the counting function), and `limsup f(n)/n = ∞` is
   `∀ C, ∃ᶠ n, C * n < f n`. The first question is known to be false (Tao), so it is
   recorded here only in the comment.
+* The answer to the second question is also no: by Tao and Kovač the upper density of
+  `{n : f n ≤ δ n}` is `≪ δ²` (indeed `O_M(δ^M)` for every `M`), so for small `ε` that set
+  does not have density `1`. The statement therefore asserts the NEGATION of the
+  almost-all claim, together with the limsup claim (whose answer is yes). This matches
+  `Erdos1054.erdos_1054.parts.ii` and `parts.iii` in google-deepmind/formal-conjectures.
+  (Statement fix: the first version asserted the almost-all claim itself, which is false.)
 -/
 
 namespace OMA.S_erdos_1054
@@ -45,7 +51,7 @@ noncomputable def f (n : ℕ) : ℕ :=
   sInf {m : ℕ | IsSumOfSmallestDivisors n m}
 
 theorem main :
-    (∀ ε > (0 : ℝ),
+    (¬ ∀ ε > (0 : ℝ),
       Tendsto (fun N : ℕ =>
         (((Finset.Icc 1 N).filter (fun n => (f n : ℝ) ≤ ε * n)).card : ℝ) / N)
         atTop (𝓝 1)) ∧
