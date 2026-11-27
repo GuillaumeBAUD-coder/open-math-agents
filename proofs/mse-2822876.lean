@@ -58,20 +58,6 @@ theorem common_divisor_of_pairwise {R : Type*} [CommRing R] [IsDomain R]
     intro b hb
     exact Ideal.mem_span_singleton.mp (hI hb)
 
-/-- The pairwise property is equivalent to containment in a nonzero principal prime ideal. -/
-theorem pairwise_iff_exists_prime {R : Type*} [CommRing R] [IsDomain R]
-    [UniqueFactorizationMonoid R] (I : Ideal R) :
-    (∀ a ∈ I, ∀ b ∈ I,
-      ∃ d : R, d ≠ 0 ∧ ¬IsUnit d ∧ d ∣ a ∧ d ∣ b) ↔
-    ∃ p : R, Prime p ∧ ∀ a ∈ I, p ∣ a := by
-  constructor
-  · intro hpair
-    obtain ⟨d, hd0, hdu, hdiv⟩ := common_divisor_of_pairwise I hpair
-    obtain ⟨p, hp, hpd⟩ := WfDvdMonoid.exists_irreducible_factor hdu hd0
-    exact ⟨p, irreducible_iff_prime.mp hp, fun a ha => hpd.trans (hdiv a ha)⟩
-  · rintro ⟨p, hp, hdiv⟩ a ha b hb
-    exact ⟨p, hp.ne_zero, hp.not_isUnit, hdiv a ha, hdiv b hb⟩
-
 /-- Over a field, a polynomial is nonconstant exactly when it is nonzero and a nonunit. -/
 theorem positive_totalDegree_iff {K σ : Type*} [Field K] (p : MvPolynomial σ K) :
     0 < p.totalDegree ↔ p ≠ 0 ∧ ¬IsUnit p := by
