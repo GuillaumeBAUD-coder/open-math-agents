@@ -38,6 +38,41 @@ def H2 : Prop := ∃ a : ℝ, 0 < a ∧
       ∀ n ≤ N, |∑ i ∈ range (n + 1), d i| ≤ D ∧
         |sumConv d d n / Real.log n| ≤ e n
 
+/-- The prefix discrepancy condition alone is attainable at every finite horizon.
+Take the positions where the floor of the cumulative fractional mass increases. -/
+theorem round_prefix (p : ℕ → ℝ) (hp : ∀ i, 0 ≤ p i) (hp' : ∀ i, p i ≤ 1)
+    (N : ℕ) : ∃ S : Finset ℕ, S ⊆ range (N + 1) ∧ ∀ n ≤ N,
+      |∑ i ∈ range (n + 1), ((if i ∈ S then (1 : ℝ) else 0) - p i)| ≤ 1 := by
+  let F := fun n ↦ ∑ i ∈ range n, p i
+  let b : ℕ → ℤ := fun n ↦ ⌊F n⌋
+  let S := (range (N + 1)).filter fun i ↦ b i < b (i + 1)
+  have hF (i : ℕ) : F (i + 1) = F i + p i := Finset.sum_range_succ _ _
+  have hstep (i : ℕ) : b i ≤ b (i + 1) ∧ b (i + 1) ≤ b i + 1 := by
+    dsimp only [b]
+    rw [hF]
+    constructor
+    · exact Int.floor_mono (le_add_of_nonneg_right (hp i))
+    · rw [← Int.floor_add_one]
+      exact Int.floor_mono (add_le_add_right (hp' i) (F i))
+  refine ⟨S, Finset.filter_subset _ _, fun n hn ↦ ?_⟩
+  have hi' (i : ℕ) (hi : i ∈ range (n + 1)) :
+      (if i ∈ S then (1 : ℝ) else 0) = (b (i + 1) : ℝ) - b i := by
+    have hiN : i ∈ range (N + 1) := mem_range.mpr (by have := mem_range.mp hi; omega)
+    have hmem : i ∈ S ↔ b i < b (i + 1) := by simp [S, hiN]
+    have := hstep i
+    by_cases hlt : b i < b (i + 1)
+    · rw [if_pos (hmem.mpr hlt)]
+      exact_mod_cast (show (1 : ℤ) = b (i + 1) - b i by omega)
+    · rw [if_neg (fun hm ↦ hlt (hmem.mp hm))]
+      exact_mod_cast (show (0 : ℤ) = b (i + 1) - b i by omega)
+  rw [Finset.sum_sub_distrib, Finset.sum_congr rfl hi',
+    Finset.sum_range_sub (fun i ↦ (b i : ℝ)) (n + 1)]
+  have hb0 : b 0 = 0 := by simp [b, F]
+  rw [hb0, Int.cast_zero, sub_zero]
+  change |(⌊F (n + 1)⌋ : ℝ) - F (n + 1)| ≤ 1
+  rw [abs_of_nonpos (sub_nonpos.mpr (Int.floor_le _))]
+  linarith [Int.lt_floor_add_one (F (n + 1))]
+
 /-- Abel summation bounds the mixed convolution by twice the prefix discrepancy
 times the largest weight. Only prefix sums up to the current index are used. -/
 theorem mixed_bound (p d : ℕ → ℝ) (hp : Antitone p) (hpos : ∀ i, 0 ≤ p i)
