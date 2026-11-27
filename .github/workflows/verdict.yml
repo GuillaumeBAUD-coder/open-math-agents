@@ -101,7 +101,7 @@ jobs:
                 done
                 if [ "$MERGED" = 1 ]; then
                   # A merge made with GITHUB_TOKEN triggers no other workflow, so credit it here.
-                  bash base/tools/credit.sh "$PR" || true
+                  bash base/tools/credit.sh "$PR"
                 elif gh api "repos/$REPO/contents/$FPATH?ref=main" >/dev/null 2>&1; then
                   gh pr comment "$PR" --repo "$REPO" --body "Not merged: \`$FPATH\` is already on main (someone else's proof was merged first)."
                 elif [ "${RUN_ATTEMPT:-1}" -lt 4 ] && gh api -X POST "repos/$REPO/actions/runs/$RUN_ID/rerun" >/dev/null; then

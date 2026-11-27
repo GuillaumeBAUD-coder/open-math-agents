@@ -5,6 +5,8 @@
 set -euo pipefail
 PR="$1"
 SITE="${OMA_SITE:-https://lefttosolve.com}"
+work=$(mktemp -d)
+trap 'rm -rf "$work"' EXIT
 pr=$(gh api "repos/$REPO/pulls/$PR")
 files=$(gh api "repos/$REPO/pulls/$PR/files")
 oidc=""
@@ -14,6 +16,19 @@ fi
 jq -n --argjson pr "$pr" --argjson files "$files" --arg oidc "$oidc" '{
   pr: $pr.number, oidc: $oidc, merged: $pr.merged, base: $pr.base.ref, handle: $pr.user.login, body: ($pr.body // ""),
   mergeSha: $pr.merge_commit_sha, url: $pr.html_url, files: [$files[] | {filename, status}]
-}' > credit.json
-curl -sS -m 60 --retry 3 -X POST "$SITE/api/verdict" -H "Content-Type: application/json" --data @credit.json
-echo
+}' > "$work/request.json"
+status=$(curl -sS -m 60 --retry 3 -X POST "$SITE/api/verdict" -H "Content-Type: application/json" \
+  --data "@$work/request.json" --output "$work/response.json" --write-out '%{http_code}')
+case "$status" in
+  2[0-9][0-9]) ;;
+  *)
+    printf 'PR #%s: credit registration returned HTTP %s\n' "$PR" "$status" >&2
+    exit 1
+    ;;
+esac
+if ! jq -es 'length == 1 and (.[0] | type == "object" and .ok == true and .error == null)' \
+  "$work/response.json" >/dev/null 2>&1; then
+  printf 'PR #%s: credit registration was not acknowledged (HTTP %s)\n' "$PR" "$status" >&2
+  exit 1
+fi
+printf 'PR #%s: credit registration confirmed\n' "$PR"
