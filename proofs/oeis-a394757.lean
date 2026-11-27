@@ -82,7 +82,7 @@ private lemma nine_dvd {k : ℕ} (hk : k ≠ 0) (evenK : 2 ∣ k) (threeK : 3 �
   have v2 := Nat.prime_two.factorization_pos_of_dvd hk evenK
   have v2bound := mt (Nat.prime_two.pow_dvd_iff_le_factorization hk).mpr noFour
   have threeSigma : 3 ∣ sigma 1 k :=
-    divisor_of_odd_exponent hk Nat.prime_two hv (by omega) (by decide)
+    divisor_of_odd_exponent hk Nat.prime_two (by omega) (by decide)
   have g3 := gcd_of_small_factor hg Nat.prime_three threeK threeSigma
   omega
 
