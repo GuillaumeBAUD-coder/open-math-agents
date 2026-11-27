@@ -14,6 +14,9 @@ a(n) = Sum_{i=1..floor((n-1)/2)} (2*i^2 + 2*(n-i)^2 + i*(n-i)) (offset 1; data 0
 a(n) = n*(6*n - 1)*(n - 2) / 8 for n even, a(n) = n*(3*n - 1)*(n - 1) / 4 for n odd, and
 a(n) = a(n-1) + 3*a(n-2) - 3*a(n-3) - 3*a(n-4) + 3*a(n-5) + a(n-6) - a(n-7) for n > 7.
 
+Status: known result (Sela Fried, Aug 11 2024, in the entry: 'The first three conjectures of
+Barker are true'; the recurrence follows from the closed forms).
+
 Formalization notes:
 * The closed forms are stated over ℚ for n ≥ 1, the recurrence over ℤ.
 * Barker's generating function x^3*(12 + 11*x + 11*x^2 + 2*x^3) / ((1 - x)^4*(1 + x)^3) is the
