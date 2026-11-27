@@ -16,6 +16,10 @@ Since `M(j, k)` depends only on the difference `j - k`, 1-based indexing gives t
 
 The floor is taken of the rational number `(j - k - 2) / (n + 1)` with `Int.floor`, which is the
 mathematical floor also for negative arguments (no truncation toward zero).
+
+*References:*
+- [A000051](https://oeis.org/A000051)
+- [A036968](https://oeis.org/A036968) (the conjecture of Zhi-Wei Sun that inspired this one)
 -/
 
 namespace OMA.S_oeis_a000051
