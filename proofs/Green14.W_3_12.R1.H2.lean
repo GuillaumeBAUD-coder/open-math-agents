@@ -142,17 +142,57 @@ private def readPivot (queue : Array ℕ) (i : ℕ) : ℕ :=
 
 private def peek (b : Board) : ℕ := progression (choose b) &&& b.allowed
 
-private def verify (queue : Array ℕ) : ℕ → Board → ℕ → Option ℕ
+private def normalizeNat (n : ℕ) (f : ℕ → α) : α :=
+  match n with
+  | 0 => f 0
+  | n + 1 => f (n + 1)
+
+private theorem normalizeNat_eq (n : ℕ) (f : ℕ → α) : normalizeNat n f = f n := by
+  cases n <;> rfl
+
+private def normalizeBoard (b : Board) (f : Board → α) : α :=
+  normalizeNat b.shadow.reflected fun reflected =>
+  normalizeNat b.shadow.doubled fun doubled =>
+  normalizeNat b.shadow.even fun even =>
+  normalizeNat b.shadow.odd fun odd =>
+  normalizeNat b.allowed fun allowed =>
+  normalizeNat b.weight fun weight =>
+  f ⟨⟨reflected, doubled, even, odd⟩, allowed, weight⟩
+
+private theorem normalizeBoard_eq (b : Board) (f : Board → α) : normalizeBoard b f = f b := by
+  simp only [normalizeBoard, normalizeNat_eq]
+
+
+/- The branch tape supplies either a pivot or one of three groups of four
+progression differences. The kernel independently checks the indicated
+progression in the current board before using a forced move or a conflict. -/
+private def groupMask : Array ℕ := #[0x8040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008000000000000000000000000000000000000000000000000000000000000000000000000000201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040200000000000000000000000000000000000000000000000000040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008000000000000000000000000, 0x8040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008040201008000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, 0x8040200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001008040201008040201008040201008000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000201008040201008040201008040201008040201008040201008040200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000040201008040201008040201008040201008040201008040201008040201008040201008040201008000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000]
+private def groupShifts : Array ℕ := #[0x200000000200000000200000000200000000200000000200000000200000000200000000200000000200000000200000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008000001000000200000040000008000001000000200000040000008000001000000200000040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000200008000200008000200008000200008000200008000200008000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008040201008040201008040201, 0x200000000000000000200000000000000000200000000000000000200000000000000000200000000000000000200000000000000000200000000000000000200000000000000000200000000000000000200000000000000000200000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008000000000000001000000000000000200000000000000040000000000000008000000000000001000000000000000200000000000000040000000000000008000000000000001000000000000000200000000000000040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000200000000000008000000000000200000000000008000000000000200000000000008000000000000200000000000008000000000000200000000000008000000000000200000000000008000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008000000000040000000000200000000001000000000008000000000040000000000200000000001000000000008000000000040000000000200000000001, 0x200000000000000000000000000200000000000000000000000000200000000000000000000000000200000000000000000000000000200000000000000000000000000200000000000000000000000000200000000000000000000000000200000000000000000000000000200000000000000000000000000200000000000000000000000000200000000000000000000000000200000000000000000000000000000008000000000000000000000001000000000000000000000000200000000000000000000000040000000000000000000000008000000000000000000000001000000000000000000000000200000000000000000000000040000000000000000000000008000000000000000000000001000000000000000000000000200000000000000000000000040000000000000000000000000000000000000000000000000000000200000000000000000000008000000000000000000000200000000000000000000008000000000000000000000200000000000000000000008000000000000000000000200000000000000000000008000000000000000000000200000000000000000000008000000000000000000000200000000000000000000008000000000000000000000000000000000000000000000000000000000000000000000000000000008000000000000000000040000000000000000000200000000000000000001000000000000000000008000000000000000000040000000000000000000200000000000000000001000000000000000000008000000000000000000040000000000000000000200000000000000000001]
+private def localChoice (b : Board) (g : ℕ) : ℕ :=
+  let cells := groupMask[g]!
+  let high := cells <<< 8
+  let totals := ((b.allowed ||| b.weight) * groupShifts[g]!) &&& (cells * 511)
+  let empty := (high - totals) &&& high
+  let eligible := if empty = 0 then ((high + cells - totals) &&& high) else empty
+  540*g + slotOf eligible
+
+private def verify : ℕ → Board → ℕ → Option ℕ
   | 0, _, _ => none
-  | fuel + 1, b, i =>
-    let m := peek b
-    if m = 0 then some i else
-      let p := pivotOf m
-      if m = spaced p then verify queue fuel (placeRed b p) i else
-        let q := readPivot queue i
-        match verify queue fuel (placeRed b q) (i + 1) with
-        | none => none
-        | some j => verify queue fuel (markBlue b q) j
+  | fuel + 1, b, tape =>
+    let g := tape % 4
+    if g = 3 then
+      let h := (tape >>> 2) % 128
+      let p := if h = 127 then 127 + ((tape >>> 9) % 8) else h
+      let rest := if h = 127 then tape >>> 12 else tape >>> 9
+      match normalizeBoard (placeRed b p) (fun c => verify fuel c rest) with
+      | none => none
+      | some j => normalizeBoard (markBlue b p) (fun c => verify fuel c j)
+    else
+      let m := progression (localChoice b g) &&& b.allowed
+      if m = 0 then some (tape >>> 2) else
+        let p := pivotOf m
+        if m = spaced p then normalizeBoard (placeRed b p) (fun c => verify fuel c (tape >>> 2))
+        else none
 
 private def Hits (R : ℕ → Prop) :=
   ∀ i, ∃ q, (progression i).testBit (9 * q) = true ∧ R q
@@ -186,27 +226,51 @@ private theorem conflict {b : Board} (h : peek b = 0) : Impossible b := by
   have hh : (peek b).testBit (9 * p) = true := by simp [peek, hp, cov p hr]
   simp [h] at hh
 
-private theorem verifies (queue : Array ℕ) (fuel : ℕ) (b : Board) (i j : ℕ)
-    (h : verify queue fuel b i = some j) : Impossible b := by
+
+private theorem forcedAt {b : Board} (i p : ℕ)
+    (h : progression i &&& b.allowed = spaced p)
+    (yes : Impossible (placeRed b p)) : Impossible b := by
+  intro R bound free hit shadow cov
+  obtain ⟨q, hbit, hred⟩ := hit i
+  have hm : (progression i &&& b.allowed).testBit (9 * q) = true := by
+    simp [hbit, cov q hred]
+  rw [h, spaced, Nat.shiftLeft_eq, one_mul, Nat.testBit_two_pow] at hm
+  have he : p = q := by have := of_decide_eq_true hm; omega
+  have hp : R p := he.symm ▸ hred
+  exact yes R bound free hit (merge_valid shadow (atom_valid free hp (bound _ hp)))
+    (include_covers shadow cov hp)
+
+private theorem conflictAt {b : Board} (i : ℕ) (h : progression i &&& b.allowed = 0) :
+    Impossible b := by
+  intro R _ _ hit _ cov
+  obtain ⟨p, hp, hr⟩ := hit i
+  have hh : (progression i &&& b.allowed).testBit (9 * p) = true := by
+    simp [hp, cov p hr]
+  simp [h] at hh
+
+private theorem verifies (fuel : ℕ) (b : Board) (i j : ℕ)
+    (h : verify fuel b i = some j) : Impossible b := by
   induction fuel generalizing b i j with
   | zero => simp [verify] at h
   | succ fuel ih =>
-    simp only [verify] at h
+    simp only [verify, normalizeBoard_eq] at h
     split at h
-    · rename_i he
-      exact conflict he
+    · split at h
+      · contradiction
+      · rename_i k hk
+        exact fork _ (ih _ _ k hk) (ih _ _ _ h)
     · split at h
       · rename_i he
-        exact forced _ he (ih _ _ _ h)
+        exact conflictAt _ he
       · split at h
+        · rename_i he
+          exact forcedAt _ _ he (ih _ _ _ h)
         · contradiction
-        · rename_i k hk
-          exact fork _ (ih _ _ k hk) (ih _ _ _ h)
 
-private theorem kernelLeaf (b : Board) (queue : Array ℕ)
-    (h : (verify queue 140 b 0).isSome = true) : Impossible b := by
-  obtain ⟨j, hj⟩ := Option.isSome_iff_exists.mp h
-  exact verifies _ _ _ _ _ hj
+private theorem kernelLeaf (b : Board) (tape : ℕ)
+    (h : (verify 140 b tape).isSome = true) : Impossible b := by
+  obtain ⟨j,hj⟩ := Option.isSome_iff_exists.mp h
+  exact verifies _ _ _ _ hj
 
 private def blank : Board := ⟨⟨0, 0, 0, 0⟩, allPositions, 0⟩
 private def seed0 : Board := placeRed (placeRed blank 66) 68
@@ -300,48 +364,30 @@ private def board_a000 := placeRed board_a00 82
 private def board_a001 := markBlue board_a00 82
 private def board_a0010 := placeRed board_a001 72
 private def board_a0011 := markBlue board_a001 72
-private def board_a00110 := placeRed board_a0011 88
-private def board_a00111 := markBlue board_a0011 88
 private def board_a010 := placeRed board_a01 71
 private def board_a011 := markBlue board_a01 71
-private def board_a0100 := placeRed board_a010 82
-private def board_a0101 := markBlue board_a010 82
 private def board_a0110 := placeRed board_a011 75
 private def board_a0111 := markBlue board_a011 75
 private def board_a01110 := placeRed board_a0111 77
 private def board_a01111 := markBlue board_a0111 77
 private def board_a011110 := placeRed board_a01111 73
 private def board_a011111 := markBlue board_a01111 73
-private def board_a0111110 := placeRed board_a011111 69
-private def board_a0111111 := markBlue board_a011111 69
 private def board_a10 := placeRed board_a1 52
 private def board_a11 := markBlue board_a1 52
 private def board_a100 := placeRed board_a10 55
 private def board_a101 := markBlue board_a10 55
 private def board_a1000 := placeRed board_a100 79
 private def board_a1001 := markBlue board_a100 79
-private def board_a10000 := placeRed board_a1000 88
-private def board_a10001 := markBlue board_a1000 88
-private def board_a10010 := placeRed board_a1001 74
-private def board_a10011 := markBlue board_a1001 74
 private def board_a1010 := placeRed board_a101 61
 private def board_a1011 := markBlue board_a101 61
 private def board_a10100 := placeRed board_a1010 63
 private def board_a10101 := markBlue board_a1010 63
-private def board_a101010 := placeRed board_a10101 51
-private def board_a101011 := markBlue board_a10101 51
 private def board_a10110 := placeRed board_a1011 57
 private def board_a10111 := markBlue board_a1011 57
-private def board_a101100 := placeRed board_a10110 85
-private def board_a101101 := markBlue board_a10110 85
 private def board_a101110 := placeRed board_a10111 63
 private def board_a101111 := markBlue board_a10111 63
-private def board_a1011100 := placeRed board_a101110 85
-private def board_a1011101 := markBlue board_a101110 85
 private def board_a1011110 := placeRed board_a101111 53
 private def board_a1011111 := markBlue board_a101111 53
-private def board_a10111110 := placeRed board_a1011111 54
-private def board_a10111111 := markBlue board_a1011111 54
 private def board_a110 := placeRed board_a11 46
 private def board_a111 := markBlue board_a11 46
 private def board_a1100 := placeRed board_a110 55
@@ -352,62 +398,38 @@ private def board_a110010 := placeRed board_a11001 72
 private def board_a110011 := markBlue board_a11001 72
 private def board_a1100110 := placeRed board_a110011 62
 private def board_a1100111 := markBlue board_a110011 62
-private def board_a11001110 := placeRed board_a1100111 32
-private def board_a11001111 := markBlue board_a1100111 32
 private def board_a11010 := placeRed board_a1101 61
 private def board_a11011 := markBlue board_a1101 61
-private def board_a110100 := placeRed board_a11010 51
-private def board_a110101 := markBlue board_a11010 51
 private def board_a110110 := placeRed board_a11011 79
 private def board_a110111 := markBlue board_a11011 79
-private def board_a1101100 := placeRed board_a110110 54
-private def board_a1101101 := markBlue board_a110110 54
 private def board_a1101110 := placeRed board_a110111 73
 private def board_a1101111 := markBlue board_a110111 73
-private def board_a11011110 := placeRed board_a1101111 82
-private def board_a11011111 := markBlue board_a1101111 82
 private def board_a1110 := placeRed board_a111 40
 private def board_a1111 := markBlue board_a111 40
 private def board_a11100 := placeRed board_a1110 55
 private def board_a11101 := markBlue board_a1110 55
 private def board_a111000 := placeRed board_a11100 62
 private def board_a111001 := markBlue board_a11100 62
-private def board_a1110010 := placeRed board_a111001 50
-private def board_a1110011 := markBlue board_a111001 50
 private def board_a111010 := placeRed board_a11101 73
 private def board_a111011 := markBlue board_a11101 73
-private def board_a1110100 := placeRed board_a111010 57
-private def board_a1110101 := markBlue board_a111010 57
 private def board_a1110110 := placeRed board_a111011 61
 private def board_a1110111 := markBlue board_a111011 61
-private def board_a11101100 := placeRed board_a1110110 51
-private def board_a11101101 := markBlue board_a1110110 51
 private def board_a11101110 := placeRed board_a1110111 49
 private def board_a11101111 := markBlue board_a1110111 49
-private def board_a111011100 := placeRed board_a11101110 85
-private def board_a111011101 := markBlue board_a11101110 85
 private def board_a11110 := placeRed board_a1111 49
 private def board_a11111 := markBlue board_a1111 49
 private def board_a111100 := placeRed board_a11110 34
 private def board_a111101 := markBlue board_a11110 34
 private def board_a1111000 := placeRed board_a111100 100
 private def board_a1111001 := markBlue board_a111100 100
-private def board_a11110000 := placeRed board_a1111000 56
-private def board_a11110001 := markBlue board_a1111000 56
 private def board_a11110010 := placeRed board_a1111001 88
 private def board_a11110011 := markBlue board_a1111001 88
-private def board_a111100110 := placeRed board_a11110011 94
-private def board_a111100111 := markBlue board_a11110011 94
 private def board_a1111010 := placeRed board_a111101 28
 private def board_a1111011 := markBlue board_a111101 28
 private def board_a11110100 := placeRed board_a1111010 42
 private def board_a11110101 := markBlue board_a1111010 42
 private def board_a11110110 := placeRed board_a1111011 22
 private def board_a11110111 := markBlue board_a1111011 22
-private def board_a111101100 := placeRed board_a11110110 88
-private def board_a111101101 := markBlue board_a11110110 88
-private def board_a111101110 := placeRed board_a11110111 16
-private def board_a111101111 := markBlue board_a11110111 16
 private def board_a111110 := placeRed board_a11111 55
 private def board_a111111 := markBlue board_a11111 55
 private def board_a1111100 := placeRed board_a111110 48
@@ -418,16 +440,10 @@ private def board_a11111010 := placeRed board_a1111101 50
 private def board_a11111011 := markBlue board_a1111101 50
 private def board_a111110110 := placeRed board_a11111011 54
 private def board_a111110111 := markBlue board_a11111011 54
-private def board_a1111101110 := placeRed board_a111110111 38
-private def board_a1111101111 := markBlue board_a111110111 38
 private def board_a1111110 := placeRed board_a111111 61
 private def board_a1111111 := markBlue board_a111111 61
 private def board_a11111100 := placeRed board_a1111110 50
 private def board_a11111101 := markBlue board_a1111110 50
-private def board_a111111010 := placeRed board_a11111101 48
-private def board_a111111011 := markBlue board_a11111101 48
-private def board_a1111110110 := placeRed board_a111111011 51
-private def board_a1111110111 := markBlue board_a111111011 51
 private def board_a11111110 := placeRed board_a1111111 43
 private def board_a11111111 := markBlue board_a1111111 43
 private def board_a111111100 := placeRed board_a11111110 79
@@ -452,48 +468,32 @@ private def board_b00100 := placeRed board_b0010 54
 private def board_b00101 := markBlue board_b0010 54
 private def board_b001010 := placeRed board_b00101 89
 private def board_b001011 := markBlue board_b00101 89
-private def board_b0010110 := placeRed board_b001011 96
-private def board_b0010111 := markBlue board_b001011 96
 private def board_b00110 := placeRed board_b0011 86
 private def board_b00111 := markBlue board_b0011 86
 private def board_b001100 := placeRed board_b00110 73
 private def board_b001101 := markBlue board_b00110 73
 private def board_b0011010 := placeRed board_b001101 53
 private def board_b0011011 := markBlue board_b001101 53
-private def board_b00110110 := placeRed board_b0011011 63
-private def board_b00110111 := markBlue board_b0011011 63
 private def board_b001110 := placeRed board_b00111 80
 private def board_b001111 := markBlue board_b00111 80
-private def board_b0011100 := placeRed board_b001110 58
-private def board_b0011101 := markBlue board_b001110 58
 private def board_b0011110 := placeRed board_b001111 85
 private def board_b0011111 := markBlue board_b001111 85
 private def board_b00111110 := placeRed board_b0011111 81
 private def board_b00111111 := markBlue board_b0011111 81
-private def board_b001111110 := placeRed board_b00111111 84
-private def board_b001111111 := markBlue board_b00111111 84
 private def board_b010 := placeRed board_b01 60
 private def board_b011 := markBlue board_b01 60
 private def board_b0100 := placeRed board_b010 82
 private def board_b0101 := markBlue board_b010 82
 private def board_b01000 := placeRed board_b0100 73
 private def board_b01001 := markBlue board_b0100 73
-private def board_b010000 := placeRed board_b01000 54
-private def board_b010001 := markBlue board_b01000 54
-private def board_b010010 := placeRed board_b01001 77
-private def board_b010011 := markBlue board_b01001 77
 private def board_b01010 := placeRed board_b0101 84
 private def board_b01011 := markBlue board_b0101 84
-private def board_b010100 := placeRed board_b01010 46
-private def board_b010101 := markBlue board_b01010 46
 private def board_b010110 := placeRed board_b01011 80
 private def board_b010111 := markBlue board_b01011 80
 private def board_b0101110 := placeRed board_b010111 76
 private def board_b0101111 := markBlue board_b010111 76
 private def board_b01011100 := placeRed board_b0101110 90
 private def board_b01011101 := markBlue board_b0101110 90
-private def board_b010111010 := placeRed board_b01011101 86
-private def board_b010111011 := markBlue board_b01011101 86
 private def board_b0110 := placeRed board_b011 80
 private def board_b0111 := markBlue board_b011 80
 private def board_b01100 := placeRed board_b0110 48
@@ -502,34 +502,24 @@ private def board_b011000 := placeRed board_b01100 84
 private def board_b011001 := markBlue board_b01100 84
 private def board_b0110010 := placeRed board_b011001 81
 private def board_b0110011 := markBlue board_b011001 81
-private def board_b01100110 := placeRed board_b0110011 69
-private def board_b01100111 := markBlue board_b0110011 69
 private def board_b011010 := placeRed board_b01101 69
 private def board_b011011 := markBlue board_b01101 69
 private def board_b0110100 := placeRed board_b011010 38
 private def board_b0110101 := markBlue board_b011010 38
 private def board_b01101010 := placeRed board_b0110101 53
 private def board_b01101011 := markBlue board_b0110101 53
-private def board_b011010110 := placeRed board_b01101011 73
-private def board_b011010111 := markBlue board_b01101011 73
 private def board_b0110110 := placeRed board_b011011 57
 private def board_b0110111 := markBlue board_b011011 57
 private def board_b01101110 := placeRed board_b0110111 51
 private def board_b01101111 := markBlue board_b0110111 51
-private def board_b011011100 := placeRed board_b01101110 84
-private def board_b011011101 := markBlue board_b01101110 84
 private def board_b011011110 := placeRed board_b01101111 63
 private def board_b011011111 := markBlue board_b01101111 63
-private def board_b0110111100 := placeRed board_b011011110 53
-private def board_b0110111101 := markBlue board_b011011110 53
 private def board_b01110 := placeRed board_b0111 70
 private def board_b01111 := markBlue board_b0111 70
 private def board_b011100 := placeRed board_b01110 54
 private def board_b011101 := markBlue board_b01110 54
 private def board_b0111000 := placeRed board_b011100 87
 private def board_b0111001 := markBlue board_b011100 87
-private def board_b01110010 := placeRed board_b0111001 81
-private def board_b01110011 := markBlue board_b0111001 81
 private def board_b0111010 := placeRed board_b011101 48
 private def board_b0111011 := markBlue board_b011101 48
 private def board_b01110110 := placeRed board_b0111011 57
@@ -540,10 +530,6 @@ private def board_b011110 := placeRed board_b01111 74
 private def board_b011111 := markBlue board_b01111 74
 private def board_b0111100 := placeRed board_b011110 75
 private def board_b0111101 := markBlue board_b011110 75
-private def board_b01111000 := placeRed board_b0111100 52
-private def board_b01111001 := markBlue board_b0111100 52
-private def board_b011110010 := placeRed board_b01111001 87
-private def board_b011110011 := markBlue board_b01111001 87
 private def board_b01111010 := placeRed board_b0111101 69
 private def board_b01111011 := markBlue board_b0111101 69
 private def board_b011110100 := placeRed board_b01111010 85
@@ -552,8 +538,6 @@ private def board_b011110110 := placeRed board_b01111011 63
 private def board_b011110111 := markBlue board_b01111011 63
 private def board_b0111101110 := placeRed board_b011110111 57
 private def board_b0111101111 := markBlue board_b011110111 57
-private def board_b01111011110 := placeRed board_b0111101111 54
-private def board_b01111011111 := markBlue board_b0111101111 54
 private def board_b0111110 := placeRed board_b011111 76
 private def board_b0111111 := markBlue board_b011111 76
 private def board_b01111100 := placeRed board_b0111110 54
@@ -562,28 +546,18 @@ private def board_b011111000 := placeRed board_b01111100 75
 private def board_b011111001 := markBlue board_b01111100 75
 private def board_b0111110010 := placeRed board_b011111001 50
 private def board_b0111110011 := markBlue board_b011111001 50
-private def board_b01111100110 := placeRed board_b0111110011 40
-private def board_b01111100111 := markBlue board_b0111110011 40
 private def board_b011111010 := placeRed board_b01111101 90
 private def board_b011111011 := markBlue board_b01111101 90
-private def board_b0111110100 := placeRed board_b011111010 42
-private def board_b0111110101 := markBlue board_b011111010 42
 private def board_b0111110110 := placeRed board_b011111011 84
 private def board_b0111110111 := markBlue board_b011111011 84
-private def board_b01111101110 := placeRed board_b0111110111 48
-private def board_b01111101111 := markBlue board_b0111110111 48
 private def board_b01111110 := placeRed board_b0111111 64
 private def board_b01111111 := markBlue board_b0111111 64
 private def board_b011111100 := placeRed board_b01111110 86
 private def board_b011111101 := markBlue board_b01111110 86
-private def board_b0111111010 := placeRed board_b011111101 84
-private def board_b0111111011 := markBlue board_b011111101 84
 private def board_b011111110 := placeRed board_b01111111 62
 private def board_b011111111 := markBlue board_b01111111 62
 private def board_b0111111100 := placeRed board_b011111110 84
 private def board_b0111111101 := markBlue board_b011111110 84
-private def board_b01111111010 := placeRed board_b0111111101 82
-private def board_b01111111011 := markBlue board_b0111111101 82
 private def board_b10 := placeRed board_b1 62
 private def board_b11 := markBlue board_b1 62
 private def board_b100 := placeRed board_b10 84
@@ -596,40 +570,20 @@ private def board_b100010 := placeRed board_b10001 81
 private def board_b100011 := markBlue board_b10001 81
 private def board_b1000110 := placeRed board_b100011 71
 private def board_b1000111 := markBlue board_b100011 71
-private def board_b10001110 := placeRed board_b1000111 91
-private def board_b10001111 := markBlue board_b1000111 91
-private def board_b100011110 := placeRed board_b10001111 61
-private def board_b100011111 := markBlue board_b10001111 61
 private def board_b10010 := placeRed board_b1001 52
 private def board_b10011 := markBlue board_b1001 52
 private def board_b100100 := placeRed board_b10010 45
 private def board_b100101 := markBlue board_b10010 45
-private def board_b1001000 := placeRed board_b100100 34
-private def board_b1001001 := markBlue board_b100100 34
-private def board_b1001010 := placeRed board_b100101 51
-private def board_b1001011 := markBlue board_b100101 51
 private def board_b100110 := placeRed board_b10011 44
 private def board_b100111 := markBlue board_b10011 44
-private def board_b1001100 := placeRed board_b100110 51
-private def board_b1001101 := markBlue board_b100110 51
 private def board_b1001110 := placeRed board_b100111 36
 private def board_b1001111 := markBlue board_b100111 36
-private def board_b10011100 := placeRed board_b1001110 54
-private def board_b10011101 := markBlue board_b1001110 54
-private def board_b100111010 := placeRed board_b10011101 58
-private def board_b100111011 := markBlue board_b10011101 58
 private def board_b10011110 := placeRed board_b1001111 64
 private def board_b10011111 := markBlue board_b1001111 64
-private def board_b100111110 := placeRed board_b10011111 60
-private def board_b100111111 := markBlue board_b10011111 60
 private def board_b1010 := placeRed board_b101 78
 private def board_b1011 := markBlue board_b101 78
 private def board_b10100 := placeRed board_b1010 76
 private def board_b10101 := markBlue board_b1010 76
-private def board_b101000 := placeRed board_b10100 88
-private def board_b101001 := markBlue board_b10100 88
-private def board_b1010010 := placeRed board_b101001 86
-private def board_b1010011 := markBlue board_b101001 86
 private def board_b101010 := placeRed board_b10101 64
 private def board_b101011 := markBlue board_b10101 64
 private def board_b1010100 := placeRed board_b101010 51
@@ -640,8 +594,6 @@ private def board_b10101100 := placeRed board_b1010110 96
 private def board_b10101101 := markBlue board_b1010110 96
 private def board_b101011010 := placeRed board_b10101101 100
 private def board_b101011011 := markBlue board_b10101101 100
-private def board_b1010110110 := placeRed board_b101011011 92
-private def board_b1010110111 := markBlue board_b101011011 92
 private def board_b10101110 := placeRed board_b1010111 40
 private def board_b10101111 := markBlue board_b1010111 40
 private def board_b101011100 := placeRed board_b10101110 88
@@ -658,32 +610,18 @@ private def board_b101100 := placeRed board_b10110 60
 private def board_b101101 := markBlue board_b10110 60
 private def board_b1011010 := placeRed board_b101101 63
 private def board_b1011011 := markBlue board_b101101 63
-private def board_b10110100 := placeRed board_b1011010 51
-private def board_b10110101 := markBlue board_b1011010 51
 private def board_b10110110 := placeRed board_b1011011 69
 private def board_b10110111 := markBlue board_b1011011 69
-private def board_b101101100 := placeRed board_b10110110 51
-private def board_b101101101 := markBlue board_b10110110 51
-private def board_b101101110 := placeRed board_b10110111 81
-private def board_b101101111 := markBlue board_b10110111 81
 private def board_b101110 := placeRed board_b10111 76
 private def board_b101111 := markBlue board_b10111 76
 private def board_b1011100 := placeRed board_b101110 60
 private def board_b1011101 := markBlue board_b101110 60
 private def board_b10111000 := placeRed board_b1011100 96
 private def board_b10111001 := markBlue board_b1011100 96
-private def board_b101110010 := placeRed board_b10111001 93
-private def board_b101110011 := markBlue board_b10111001 93
-private def board_b1011100100 := placeRed board_b101110010 120
-private def board_b1011100101 := markBlue board_b101110010 120
 private def board_b10111010 := placeRed board_b1011101 63
 private def board_b10111011 := markBlue board_b1011101 63
-private def board_b101110110 := placeRed board_b10111011 75
-private def board_b101110111 := markBlue board_b10111011 75
 private def board_b1011110 := placeRed board_b101111 64
 private def board_b1011111 := markBlue board_b101111 64
-private def board_b10111100 := placeRed board_b1011110 86
-private def board_b10111101 := markBlue board_b1011110 86
 private def board_b10111110 := placeRed board_b1011111 86
 private def board_b10111111 := markBlue board_b1011111 86
 private def board_b101111100 := placeRed board_b10111110 60
@@ -692,12 +630,6 @@ private def board_b101111110 := placeRed board_b10111111 82
 private def board_b101111111 := markBlue board_b10111111 82
 private def board_b1011111100 := placeRed board_b101111110 60
 private def board_b1011111101 := markBlue board_b101111110 60
-private def board_b10111111000 := placeRed board_b1011111100 96
-private def board_b10111111001 := markBlue board_b1011111100 96
-private def board_b101111110010 := placeRed board_b10111111001 108
-private def board_b101111110011 := markBlue board_b10111111001 108
-private def board_b10111111010 := placeRed board_b1011111101 48
-private def board_b10111111011 := markBlue board_b1011111101 48
 private def board_b1011111110 := placeRed board_b101111111 70
 private def board_b1011111111 := markBlue board_b101111111 70
 private def board_b110 := placeRed board_b11 50
@@ -710,16 +642,10 @@ private def board_b110000 := placeRed board_b11000 86
 private def board_b110001 := markBlue board_b11000 86
 private def board_b110010 := placeRed board_b11001 58
 private def board_b110011 := markBlue board_b11001 58
-private def board_b1100100 := placeRed board_b110010 35
-private def board_b1100101 := markBlue board_b110010 35
-private def board_b11001010 := placeRed board_b1100101 70
-private def board_b11001011 := markBlue board_b1100101 70
 private def board_b1100110 := placeRed board_b110011 57
 private def board_b1100111 := markBlue board_b110011 57
 private def board_b11001100 := placeRed board_b1100110 38
 private def board_b11001101 := markBlue board_b1100110 38
-private def board_b110011010 := placeRed board_b11001101 53
-private def board_b110011011 := markBlue board_b11001101 53
 private def board_b11001110 := placeRed board_b1100111 59
 private def board_b11001111 := markBlue board_b1100111 59
 private def board_b110011100 := placeRed board_b11001110 21
@@ -728,69 +654,45 @@ private def board_b110011110 := placeRed board_b11001111 55
 private def board_b110011111 := markBlue board_b11001111 55
 private def board_b1100111110 := placeRed board_b110011111 60
 private def board_b1100111111 := markBlue board_b110011111 60
-private def board_b11001111100 := placeRed board_b1100111110 83
-private def board_b11001111101 := markBlue board_b1100111110 83
 private def board_b11010 := placeRed board_b1101 64
 private def board_b11011 := markBlue board_b1101 64
 private def board_b110100 := placeRed board_b11010 86
 private def board_b110101 := markBlue board_b11010 86
-private def board_b1101000 := placeRed board_b110100 60
-private def board_b1101001 := markBlue board_b110100 60
 private def board_b1101010 := placeRed board_b110101 88
 private def board_b1101011 := markBlue board_b110101 88
 private def board_b11010110 := placeRed board_b1101011 80
 private def board_b11010111 := markBlue board_b1101011 80
-private def board_b110101110 := placeRed board_b11010111 76
-private def board_b110101111 := markBlue board_b11010111 76
 private def board_b110110 := placeRed board_b11011 60
 private def board_b110111 := markBlue board_b11011 60
 private def board_b1101100 := placeRed board_b110110 82
 private def board_b1101101 := markBlue board_b110110 82
 private def board_b11011000 := placeRed board_b1101100 80
 private def board_b11011001 := markBlue board_b1101100 80
-private def board_b110110010 := placeRed board_b11011001 86
-private def board_b110110011 := markBlue board_b11011001 86
 private def board_b11011010 := placeRed board_b1101101 80
 private def board_b11011011 := markBlue board_b1101101 80
 private def board_b110110100 := placeRed board_b11011010 94
 private def board_b110110101 := markBlue board_b11011010 94
-private def board_b1101101010 := placeRed board_b110110101 98
-private def board_b1101101011 := markBlue board_b110110101 98
 private def board_b110110110 := placeRed board_b11011011 76
 private def board_b110110111 := markBlue board_b11011011 76
-private def board_b1101101100 := placeRed board_b110110110 86
-private def board_b1101101101 := markBlue board_b110110110 86
-private def board_b11011011010 := placeRed board_b1101101101 98
-private def board_b11011011011 := markBlue board_b1101101101 98
 private def board_b1101101110 := placeRed board_b110110111 78
 private def board_b11011011100 := placeRed board_b1101101110 88
 private def board_b11011011101 := markBlue board_b1101101110 88
-private def board_b110110111010 := placeRed board_b11011011101 104
-private def board_b110110111011 := markBlue board_b11011011101 104
 private def board_b1101110 := placeRed board_b110111 74
 private def board_b1101111 := markBlue board_b110111 74
 private def board_b11011100 := placeRed board_b1101110 76
 private def board_b11011101 := markBlue board_b1101110 76
 private def board_b110111010 := placeRed board_b11011101 80
 private def board_b110111011 := markBlue board_b11011101 80
-private def board_b1101110100 := placeRed board_b110111010 61
-private def board_b1101110101 := markBlue board_b110111010 61
 private def board_b1101110110 := placeRed board_b110111011 52
 private def board_b1101110111 := markBlue board_b110111011 52
 private def board_b11011101110 := placeRed board_b1101110111 48
 private def board_b11011101111 := markBlue board_b1101110111 48
-private def board_b110111011100 := placeRed board_b11011101110 96
-private def board_b110111011101 := markBlue board_b11011101110 96
 private def board_b11011110 := placeRed board_b1101111 70
 private def board_b11011111 := markBlue board_b1101111 70
 private def board_b110111100 := placeRed board_b11011110 48
 private def board_b110111101 := markBlue board_b11011110 48
-private def board_b1101111000 := placeRed board_b110111100 96
-private def board_b1101111001 := markBlue board_b110111100 96
 private def board_b1101111010 := placeRed board_b110111101 76
 private def board_b1101111011 := markBlue board_b110111101 76
-private def board_b11011110110 := placeRed board_b1101111011 80
-private def board_b11011110111 := markBlue board_b1101111011 80
 private def board_b110111110 := placeRed board_b11011111 58
 private def board_b110111111 := markBlue board_b11011111 58
 private def board_b1101111100 := placeRed board_b110111110 80
@@ -799,36 +701,24 @@ private def board_b1101111110 := placeRed board_b110111111 54
 private def board_b1101111111 := markBlue board_b110111111 54
 private def board_b11011111100 := placeRed board_b1101111110 76
 private def board_b11011111101 := markBlue board_b1101111110 76
-private def board_b110111111000 := placeRed board_b11011111100 57
-private def board_b110111111001 := markBlue board_b11011111100 57
 private def board_b1110 := placeRed board_b111 60
 private def board_b1111 := markBlue board_b111 60
 private def board_b11100 := placeRed board_b1110 44
 private def board_b11101 := markBlue board_b1110 44
 private def board_b111000 := placeRed board_b11100 80
 private def board_b111001 := markBlue board_b11100 80
-private def board_b1110000 := placeRed board_b111000 58
-private def board_b1110001 := markBlue board_b111000 58
 private def board_b1110010 := placeRed board_b111001 77
 private def board_b1110011 := markBlue board_b111001 77
 private def board_b11100100 := placeRed board_b1110010 82
 private def board_b11100101 := markBlue board_b1110010 82
-private def board_b111001000 := placeRed board_b11100100 86
-private def board_b111001001 := markBlue board_b11100100 86
-private def board_b111001010 := placeRed board_b11100101 78
-private def board_b111001011 := markBlue board_b11100101 78
 private def board_b11100110 := placeRed board_b1110011 71
 private def board_b11100111 := markBlue board_b1110011 71
-private def board_b111001110 := placeRed board_b11100111 65
-private def board_b111001111 := markBlue board_b11100111 65
 private def board_b111010 := placeRed board_b11101 59
 private def board_b111011 := markBlue board_b11101 59
 private def board_b1110100 := placeRed board_b111010 38
 private def board_b1110101 := markBlue board_b111010 38
 private def board_b11101000 := placeRed board_b1110100 86
 private def board_b11101001 := markBlue board_b1110100 86
-private def board_b111010010 := placeRed board_b11101001 98
-private def board_b111010011 := markBlue board_b11101001 98
 private def board_b11101010 := placeRed board_b1110101 32
 private def board_b11101011 := markBlue board_b1110101 32
 private def board_b111010110 := placeRed board_b11101011 26
@@ -841,47 +731,29 @@ private def board_b11101100 := placeRed board_b1110110 38
 private def board_b11101101 := markBlue board_b1110110 38
 private def board_b111011000 := placeRed board_b11101100 86
 private def board_b111011001 := markBlue board_b11101100 86
-private def board_b1110110010 := placeRed board_b111011001 98
-private def board_b1110110011 := markBlue board_b111011001 98
 private def board_b111011010 := placeRed board_b11101101 32
 private def board_b111011011 := markBlue board_b11101101 32
 private def board_b1110110110 := placeRed board_b111011011 41
 private def board_b1110110111 := markBlue board_b111011011 41
-private def board_b11101101100 := placeRed board_b1110110110 26
-private def board_b11101101101 := markBlue board_b1110110110 26
 private def board_b11101101110 := placeRed board_b1110110111 29
 private def board_b11101101111 := markBlue board_b1110110111 29
-private def board_b111011011100 := placeRed board_b11101101110 26
-private def board_b111011011101 := markBlue board_b11101101110 26
 private def board_b111011011110 := placeRed board_b11101101111 35
 private def board_b111011011111 := markBlue board_b11101101111 35
-private def board_b1110110111100 := placeRed board_b111011011110 26
-private def board_b1110110111101 := markBlue board_b111011011110 26
 private def board_b11101110 := placeRed board_b1110111 47
 private def board_b11101111 := markBlue board_b1110111 47
 private def board_b111011100 := placeRed board_b11101110 80
 private def board_b111011101 := markBlue board_b11101110 80
 private def board_b1110111010 := placeRed board_b111011101 83
 private def board_b1110111011 := markBlue board_b111011101 83
-private def board_b11101110100 := placeRed board_b1110111010 38
-private def board_b11101110101 := markBlue board_b1110111010 38
-private def board_b111011101010 := placeRed board_b11101110101 32
-private def board_b111011101011 := markBlue board_b11101110101 32
 private def board_b11101110110 := placeRed board_b1110111011 77
 private def board_b11101110111 := markBlue board_b1110111011 77
-private def board_b111011101100 := placeRed board_b11101110110 38
-private def board_b111011101101 := markBlue board_b11101110110 38
 private def board_b111011110 := placeRed board_b11101111 41
 private def board_b111011111 := markBlue board_b11101111 41
-private def board_b1110111100 := placeRed board_b111011110 77
-private def board_b1110111101 := markBlue board_b111011110 77
 private def board_b1110111110 := placeRed board_b111011111 71
 private def board_b11101111100 := placeRed board_b1110111110 38
 private def board_b11101111101 := markBlue board_b1110111110 38
 private def board_b111011111000 := placeRed board_b11101111100 86
 private def board_b111011111001 := markBlue board_b11101111100 86
-private def board_b1110111110010 := placeRed board_b111011111001 98
-private def board_b1110111110011 := markBlue board_b111011111001 98
 private def board_b11110 := placeRed board_b1111 58
 private def board_b11111 := markBlue board_b1111 58
 private def board_b111100 := placeRed board_b11110 80
@@ -892,78 +764,48 @@ private def board_b11110000 := placeRed board_b1111000 44
 private def board_b11110001 := markBlue board_b1111000 44
 private def board_b111100010 := placeRed board_b11110001 59
 private def board_b111100011 := markBlue board_b11110001 59
-private def board_b1111000110 := placeRed board_b111100011 41
-private def board_b1111000111 := markBlue board_b111100011 41
 private def board_b11110010 := placeRed board_b1111001 42
 private def board_b11110011 := markBlue board_b1111001 42
 private def board_b111100100 := placeRed board_b11110010 44
 private def board_b111100101 := markBlue board_b11110010 44
-private def board_b1111001010 := placeRed board_b111100101 52
-private def board_b1111001011 := markBlue board_b111100101 52
-private def board_b11110010110 := placeRed board_b1111001011 32
-private def board_b11110010111 := markBlue board_b1111001011 32
 private def board_b111100110 := placeRed board_b11110011 45
 private def board_b111100111 := markBlue board_b11110011 45
 private def board_b1111001100 := placeRed board_b111100110 72
 private def board_b1111001101 := markBlue board_b111100110 72
-private def board_b11110011010 := placeRed board_b1111001101 44
-private def board_b11110011011 := markBlue board_b1111001101 44
-private def board_b111100110110 := placeRed board_b11110011011 40
-private def board_b111100110111 := markBlue board_b11110011011 40
 private def board_b1111001110 := placeRed board_b111100111 51
 private def board_b1111001111 := markBlue board_b111100111 51
 private def board_b1111010 := placeRed board_b111101 74
 private def board_b1111011 := markBlue board_b111101 74
 private def board_b11110100 := placeRed board_b1111010 72
 private def board_b11110101 := markBlue board_b1111010 72
-private def board_b111101000 := placeRed board_b11110100 35
-private def board_b111101001 := markBlue board_b11110100 35
 private def board_b111101010 := placeRed board_b11110101 48
 private def board_b111101011 := markBlue board_b11110101 48
-private def board_b1111010100 := placeRed board_b111101010 96
-private def board_b1111010101 := markBlue board_b111101010 96
 private def board_b1111010110 := placeRed board_b111101011 36
 private def board_b1111010111 := markBlue board_b111101011 36
-private def board_b11110101100 := placeRed board_b1111010110 84
-private def board_b11110101101 := markBlue board_b1111010110 84
 private def board_b11110101110 := placeRed board_b1111010111 52
 private def board_b11110101111 := markBlue board_b1111010111 52
 private def board_b111101011110 := placeRed board_b11110101111 44
 private def board_b111101011111 := markBlue board_b11110101111 44
-private def board_b1111010111110 := placeRed board_b111101011111 40
-private def board_b1111010111111 := markBlue board_b111101011111 40
 private def board_b11110110 := placeRed board_b1111011 78
 private def board_b11110111 := markBlue board_b1111011 78
 private def board_b111101100 := placeRed board_b11110110 44
 private def board_b111101101 := markBlue board_b11110110 44
 private def board_b1111011000 := placeRed board_b111101100 92
 private def board_b1111011001 := markBlue board_b111101100 92
-private def board_b11110110010 := placeRed board_b1111011001 104
-private def board_b11110110011 := markBlue board_b1111011001 104
 private def board_b1111011010 := placeRed board_b111101101 86
 private def board_b1111011011 := markBlue board_b111101101 86
-private def board_b11110110110 := placeRed board_b1111011011 92
-private def board_b11110110111 := markBlue board_b1111011011 92
 private def board_b111101110 := placeRed board_b11110111 72
 private def board_b111101111 := markBlue board_b11110111 72
-private def board_b1111011100 := placeRed board_b111101110 71
-private def board_b1111011101 := markBlue board_b111101110 71
 private def board_b1111011110 := placeRed board_b111101111 82
 private def board_b1111011111 := markBlue board_b111101111 82
-private def board_b11110111110 := placeRed board_b1111011111 64
-private def board_b11110111111 := markBlue board_b1111011111 64
 private def board_b111110 := placeRed board_b11111 64
 private def board_b111111 := markBlue board_b11111 64
 private def board_b1111100 := placeRed board_b111110 54
 private def board_b1111101 := markBlue board_b111110 54
 private def board_b11111000 := placeRed board_b1111100 53
 private def board_b11111001 := markBlue board_b1111100 53
-private def board_b111110000 := placeRed board_b11111000 38
-private def board_b111110001 := markBlue board_b11111000 38
 private def board_b111110010 := placeRed board_b11111001 65
 private def board_b111110011 := markBlue board_b11111001 65
-private def board_b1111100100 := placeRed board_b111110010 38
-private def board_b1111100101 := markBlue board_b111110010 38
 private def board_b11111010 := placeRed board_b1111101 52
 private def board_b11111011 := markBlue board_b1111101 52
 private def board_b111110100 := placeRed board_b11111010 74
@@ -976,8 +818,6 @@ private def board_b11111011000 := placeRed board_b1111101100 90
 private def board_b11111011001 := markBlue board_b1111101100 90
 private def board_b11111011010 := placeRed board_b1111101101 40
 private def board_b11111011011 := markBlue board_b1111101101 40
-private def board_b111110110110 := placeRed board_b11111011011 48
-private def board_b111110110111 := markBlue board_b11111011011 48
 private def board_b1111101110 := placeRed board_b111110111 57
 private def board_b1111101111 := markBlue board_b111110111 57
 private def board_b11111011100 := placeRed board_b1111101110 65
@@ -986,53 +826,35 @@ private def board_b11111011110 := placeRed board_b1111101111 51
 private def board_b11111011111 := markBlue board_b1111101111 51
 private def board_b111110111110 := placeRed board_b11111011111 55
 private def board_b111110111111 := markBlue board_b11111011111 55
-private def board_b1111101111100 := placeRed board_b111110111110 42
-private def board_b1111101111101 := markBlue board_b111110111110 42
 private def board_b1111110 := placeRed board_b111111 54
 private def board_b1111111 := markBlue board_b111111 54
 private def board_b11111100 := placeRed board_b1111110 76
 private def board_b11111101 := markBlue board_b1111110 76
 private def board_b111111000 := placeRed board_b11111100 59
 private def board_b111111001 := markBlue board_b11111100 59
-private def board_b1111110000 := placeRed board_b111111000 74
-private def board_b1111110001 := markBlue board_b111111000 74
 private def board_b1111110010 := placeRed board_b111111001 57
 private def board_b1111110011 := markBlue board_b111111001 57
 private def board_b11111100110 := placeRed board_b1111110011 63
 private def board_b11111100111 := markBlue board_b1111110011 63
-private def board_b111111001110 := placeRed board_b11111100111 55
-private def board_b111111001111 := markBlue board_b11111100111 55
 private def board_b111111010 := placeRed board_b11111101 78
 private def board_b111111011 := markBlue board_b11111101 78
 private def board_b1111110100 := placeRed board_b111111010 65
 private def board_b1111110101 := markBlue board_b111111010 65
 private def board_b11111101000 := placeRed board_b1111110100 72
 private def board_b11111101001 := markBlue board_b1111110100 72
-private def board_b111111010010 := placeRed board_b11111101001 48
-private def board_b111111010011 := markBlue board_b11111101001 48
 private def board_b11111101010 := placeRed board_b1111110101 59
 private def board_b11111101011 := markBlue board_b1111110101 59
-private def board_b111111010110 := placeRed board_b11111101011 55
-private def board_b111111010111 := markBlue board_b11111101011 55
 private def board_b1111110110 := placeRed board_b111111011 74
 private def board_b1111110111 := markBlue board_b111111011 74
 private def board_b11111101100 := placeRed board_b1111110110 61
 private def board_b11111101101 := markBlue board_b1111110110 61
 private def board_b111111011010 := placeRed board_b11111101101 65
 private def board_b111111011011 := markBlue board_b11111101101 65
-private def board_b1111110110110 := placeRed board_b111111011011 57
-private def board_b1111110110111 := markBlue board_b111111011011 57
-private def board_b11111101101110 := placeRed board_b1111110110111 63
-private def board_b11111101101111 := markBlue board_b1111110110111 63
 private def board_b11111101110 := placeRed board_b1111110111 70
 private def board_b11111101111 := markBlue board_b1111110111 70
-private def board_b111111011100 := placeRed board_b11111101110 44
-private def board_b111111011101 := markBlue board_b11111101110 44
 private def board_b111111011110 := placeRed board_b11111101111 72
 private def board_b1111110111100 := placeRed board_b111111011110 65
 private def board_b1111110111101 := markBlue board_b111111011110 65
-private def board_b11111101111000 := placeRed board_b1111110111100 86
-private def board_b11111101111001 := markBlue board_b1111110111100 86
 private def board_b11111110 := placeRed board_b1111111 52
 private def board_b11111111 := markBlue board_b1111111 52
 private def board_b111111100 := placeRed board_b11111110 74
@@ -1043,22 +865,14 @@ private def board_b11111110000 := placeRed board_b1111111000 26
 private def board_b11111110001 := markBlue board_b1111111000 26
 private def board_b111111100010 := placeRed board_b11111110001 38
 private def board_b111111100011 := markBlue board_b11111110001 38
-private def board_b1111111000110 := placeRed board_b111111100011 42
-private def board_b1111111000111 := markBlue board_b111111100011 42
 private def board_b11111110010 := placeRed board_b1111111001 61
 private def board_b11111110011 := markBlue board_b1111111001 61
-private def board_b111111100110 := placeRed board_b11111110011 55
-private def board_b111111100111 := markBlue board_b11111110011 55
 private def board_b1111111010 := placeRed board_b111111101 72
 private def board_b1111111011 := markBlue board_b111111101 72
 private def board_b11111110100 := placeRed board_b1111111010 38
 private def board_b11111110101 := markBlue board_b1111111010 38
-private def board_b111111101010 := placeRed board_b11111110101 70
-private def board_b111111101011 := markBlue board_b11111110101 70
 private def board_b11111110110 := placeRed board_b1111111011 70
 private def board_b11111110111 := markBlue board_b1111111011 70
-private def board_b111111101100 := placeRed board_b11111110110 57
-private def board_b111111101101 := markBlue board_b11111110110 57
 private def board_b111111110 := placeRed board_b11111111 48
 private def board_b111111111 := markBlue board_b11111111 48
 private def board_b1111111100 := placeRed board_b111111110 70
@@ -1072,39 +886,21 @@ private def board_b111111110100 := placeRed board_b11111111010 74
 private def board_b111111110101 := markBlue board_b11111111010 74
 private def board_b1111111101010 := placeRed board_b111111110101 78
 private def board_b1111111101011 := markBlue board_b111111110101 78
-private def board_b1111111110 := placeRed board_b111111111 46
-private def board_b11111111100 := placeRed board_b1111111110 70
-private def board_b111111111000 := placeRed board_b11111111100 72
-private def board_b111111111001 := markBlue board_b11111111100 72
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b111111111001 : Impossible board_b111111111001 :=
-  kernelLeaf board_b111111111001 #[0x71592a20543b20353b20351e6229411f145435215b3d4155693b5b60204e3950, 0x4e37285541204133282d4e56202a202a59374535606059561f5f1d2a5b1f1d2a, 0x57542f4e2462112b2c3312202a1c15592b24452f3b531715451d1426311b332c, 0x566c35392a35522a611d2a1c136129184f1d184c35393b2854414e2426452726, 0x1821573f202c45536c35292f4a47074a474a6110332c353d695d26564c5d5f45, 0x26243b3317260c68566a4b675c3f1a33525c253f3f373f3d334a70213d333f68, 0x212d4a213947264537262f4c2b2b14532f4a454e3b24333f21331726523b561d, 0x1a5a2a205635394c273726184760574a39374f3935454a393b2037596a393118, 0x515d2b5a4e20414f574f625715135a60204e3b3b20455c4a5d625c615a3b594f, 0x5f565a4f4a5c3f35414e2456592f35453b3f4f1e573f204a4e285a4e1d4f5170, 0x1a4e2c60244a45564d472d565d213f705a3f6020372656202d202a2d53416465, 0x4d4e37573d334e354a3f454a4e08295a261800] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b111111111000 : Impossible board_b111111111000 :=
-  kernelLeaf board_b111111111000 #[0x50184c651f285226455613216715504515261d1c0e15265a2026561a18593935, 0x85c205c0a2c6a53535508535545314b54630f561b535c4f65593f61455c714f, 0x5152564c5d5939411b505554562a2d531d59414b5c5d2d53375c5d2c4e65184e, 0x33271c37335b37532f4e57314e33574e172c53375d] (by decide +kernel)
-
-private theorem ok_b11111111100 : Impossible board_b11111111100 :=
-  fork 72 ok_b111111111000 ok_b111111111001
-
-private theorem ok_b1111111110 : Impossible board_b1111111110 :=
-  forced 70 (by decide +kernel) ok_b11111111100
-
 private theorem ok_b111111111 : Impossible board_b111111111 :=
-  forced 46 (by decide +kernel) ok_b1111111110
+  kernelLeaf board_b111111111 0x2000cdc04000558019db7d540afaf76780128aa84edae02b2b7f820209170055595a8a8cec460029d5485b5a6cc60aaaa82000034d73b59a02aab8349aa0cac018b95b5009ba47d415ba0aa0356eee87401ffc3b582a3ff06836fa209b005ad88a0d6e280a0d56208288ade9e41d251132797bf8a208b5b0012b5cfd95dcdfed71500048382aa013b14115498b5bb3afd046bc5ddf010a22a2abfe7e2aca7b44abeff41cac5599d80aa32551424b5b3b3baa80cfc8068ec1070d0468f7757802dad9da0e0e800413f056afa104ff1682b5f0002bca84f402b5e0d073b77a0283bd061081171012e632bbba8838b81ae787012d6a80efb3cfe169358aa202dae55a0eb6d773ccd2950104fa8adf5052936630048f888aa00e0ebf2b1ce22adf0827ee756b8245c550256e777a0c4011be020aa367515756e710118e208406343adc55411515656875cf1f4da045c5001be9b5f8aaa0b3355e20288abe64a622d3d7f2b8bacedde935081119eff004143b3cbe9b41a5a22efadc8080774da4d55004101de0033cbe9b19e8d4046b629aba40025e67d2e6812803fe4d6808000cfa5dcc0112ebfd2405fedf407f82f767caf86000870007bb3d47fe8cc6088087001442beff41acd0418b802234f5044d9b5c4453abf10656a47c3e8cac08f88caf0e43046780ab356bbdd00474e822addd3601215b50506466777241000bfc5eb7b36bb9d010120556b5c8612a5aa8aac40410082540b0e7755a04a88a27327e1d4e639fa227724c7336bb9ddea3a982288c1e7600820934dc5c0164fa2a9b00afa8a4d535fced26aa4b8b4123abd66cf04101059109640a0d5692ac9cc40498af6757a4e2ebf77aa014f0a510bf15d091008b9dca7129b004500058e6f59eb39db7e411125475701015120e831001120ecf44451ade760256c9141aac4205418aaecedf8bb5d4470608ce0db3880215b3fa8445fceeaad4080adf1fd4123baabe3904aa2b67255a83a9a00100aef41a835d4002015dea0d5006b9ef16d002a9c60e28a84a9fca7536b88ac2b21d2201b78f7065860f574521b4ebbedf8341cedcf4314404067a808a9f39b7c01005678016f5be2814f5fa028a2aaceebe202a2c8c79db3c0550166bf3b5502faa8ace9edf410818bbd1d545541169680d6e6777b3b9e0f080028a09be875710506a75b55620a208ade9e82aa9dcb3c1c101125e8888dcc91bbab7a7b7d51b9882ddd4515459cef2ea88a635599dab2b08ee6830409441b98ad67ab121a7aa0202b4f6456ae23101a7a10b574022e0a00c797854f1e3fada288a6f54454a780a11739fe5eceff45454570ea11750552e7c79fd0c110500431aa04cf2e7f51a114b4d917ada2a210a93d0e0a839f2b8aa802ab438bca8295c41367739c2a4d0202a3b2ba6ed683115536a0815b4d663b3b9daf230 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b1111111101011 : Impossible board_b1111111101011 :=
-  kernelLeaf board_b1111111101011 #[0x2d67594c53685a6d213d5e22285d3d707823685d1047231f5d54286e5f3b2652, 0x223517212d4731551e59312e50353d6c1716352231502c47394754736e515747, 0x2e1c545a2c4c5f3b1a4762172f193f332f47555e2c371c2c763d5b1f1e6a3b50, 0x5b1f6a501e49635f3b3b3b1c1a505e3923373753391e1e240f3116372050352e, 0x1f3719254725371f6a2c6e1f37193b1f1358166a3b0a2884103b1a3b3b162c62, 0x3f39655935165c502b312137513922311c211a3727415e2e473b3b3b29501c19, 0x20375339415039593f6a231524372341202121162631354b311339311e3d724f, 0x2268206135226e7c371c5e503b3d314c105035553b584c162637173126395031, 0x373b6e1e] (by decide +kernel)
+  kernelLeaf board_b1111111101011 0xab04df40577eed5553da12ca8bd1a0d010170ed7545a88006efe680400b7e39dee8608b000bbd00057bb1d9990d15286808b5eaea0bbec601332da6c01404101be8aa208b2097d8e9b7388a0820d0d8e00aa22836f82234f573c1d5214a1ae7506ceff5550a5d5aca80228f0004ae936fa280a3e0e8341010e00080872da6d8ed7104225ec7115127b9c550116639edee20a288829cb9fbfd173e5ece42235c014002da2b73a1a80af018e48a821dbe00151dce8b4106380273584143c6b1be9f83ded760090c7d40177ca80ef5005dea7a1800073110339fe40250016f99d2e0a0891f4bb7cffab59eed6440fedf10ce8a0aef3f93d006c65bd5aaa00bbe15a8022004828effc86ef4d7202ef542415de5b59e2d0010b79ff565433da8282a0a2a2a327c7dfdde08340012ef40111de7335d0ef6282aae70111e208df9110a16fd3d44415ce7b5040063da4d015447e0a0131c012db7d07436baee15441767380402a76b659a8082c48a933bfbbe564d71fc580aa5f014549555f824a671fecf40155f8a291f5406af7b59b7d5411539ace441aeda2bdd42de7f3dbab77d0d16a042d7111045504be87a016f1f63ac8aaaab573dd9d463caee86d77ba0116cd4054be5b045aed292a2e058e814359c7dce04a032031fa9506a7cfddb0290451c82afc7d6ea2a00aca099fb3ccd50469fa3b584006dd0e80bdef64122d55518dde15efc3097c6a2ca8fd1c08222ab7721aad1f479fd6551bbd4d47bbbfbbd374b (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b1111111101010 : Impossible board_b1111111101010 :=
-  kernelLeaf board_b1111111101010 #[0x5b5a6965725f665c5b5a5a70535a5c624c2d772f452f501e1537395f231f223b, 0x395f5223532f513d412423241a17511545375b3d51515c581a1b1a5b0e212c6a, 0x6a2d1b2d0b1c062d15205b3d5a5a705a5e4c692d5c265131242c2c2a212c6a50, 0x715a41534c4c5264623d414c242d1658074c105a31473952583952105f231f26, 0x41531c50515d5147376a2a0e641c2c520e106e74315c20525c1c1f1c162c4c1e, 0x505f5d4737572131281b64503d241b28162c4135512151211a1f2321511a641c, 0x2516452341192a1e2d1b2d1a536a505113472f52222c372c23282e535c2c502c, 0x51555e2c415b5a68312c17312c264f473950575051675e416f5150452f415d19, 0x5e262a5e2241275c6d2d6d5b174f261924265c5e2e2461772a69682057413158, 0x2226202a] (by decide +kernel)
+  kernelLeaf board_b1111111101010 0x14545800a89b4100106abbda0b2a6d40945577b45c1c500453e820373db8a4ac0b7dbdbc000012fcfd3602288a0219d49a6d05b9b5ee902425da8a4f0fdf050157a7d1a0ebf076388a82288d8da3aaaa8ad5ef6b383a28b20016f51202d7a363a8222b35592404bec745669b9fc7dce0a92aaa0d0c46bf2050e8f9fbdc1c4012600577f47a1a829175f8020200307bb99c014b80aa0096c448ba3d0058399d567b44545ba84849bd6e6b51554069eaa016ae87470027c7d7e152d16b36faaacc85150447a8e155dd3c0016e6a2ce862a0acc54686282dfc56ef1f6fa0aa80857d0ec7111114519209bf263437b8020a24c37a82a350504b6b383b5e0012a3a1c50015a3a1c11359fd1e002821d51028eb411af267383a02c2412ad3c151608e743a3a000177a3c7dbe30abab9555956caca3bc99cc251674b092007643588dd974d51563dcd062a14b51216e673465010fe732dace667b0038f4b36b405838228153e66a8294cd81a5e4d5444c58f783cb4cd25100249adcb72a96366010fccc876b63b2a4047d515555cf4b415b1aaaab9e9643bfa3cfe9b00a40756a8220b750040537adc5e88929248730dab72ba0e001b7c00f7b58805af86a8aa0a0dad546f604ccf4eb7b9a6d015a3aca80b1d26b3956559aad5490254550eb3d5d0d4873b0897fa5a3d04a7a880bfa3a0f78382934447a8a20a9335a80897c051a395e2edf1106def786a3b200a347b9d8e18d6aa209bc46448d75bc768759ead44b7ac096b21034f97e5a485ff3773805b78dac40b5f0c1a7a16bb9e2e66b7ef822fd5545062ebfa19ed14aedf81173dfd479fd16ef (by decide +kernel)
 
 private theorem ok_b111111110101 : Impossible board_b111111110101 :=
   fork 78 ok_b1111111101010 ok_b1111111101011
@@ -1112,7 +908,7 @@ private theorem ok_b111111110101 : Impossible board_b111111110101 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b111111110100 : Impossible board_b111111110100 :=
-  kernelLeaf board_b111111110100 #[0x19505065591f5a35283f1f101f1a2c2141262235412e392e091b4119222c3733, 0x316126672e214e2353621e2115672110265859582269545f5247391a26212859, 0x1b1724351b0e1f2d1a1e29252d25350f1b2d0f2d0e3126132d1e29652e542d70, 0x1f281a3f012365352e255f3b6921662f2c552d473726523b62122d5e1a1c1f25, 0x212a1f2d1f5e6524222d471a1e6a24285b3b2d2c693b454e6c55231a23675c28, 0x4b4713075065255e576a0e21172e41586e58534e505035585d2d47100c52111e, 0x25581728534f1a544b6a2e57251721135d2157281a6a0e] (by decide +kernel)
+  kernelLeaf board_b111111110100 0x200000974101b1a5f51aa0d3e0919fa809ad440a9cbf56bb01001afa5d4810be84a1c9f774494395f51a832a809af563b24025e30b1f27a2caaa1fa1e5e1012f2aa22037bafeac76872faee0e2163501010ddd8e9e8233b54115a180284a88a50dae000480d8eeeb78faaab02a43198ab2aa52c8e7b44450eab150fe802a0b7550fe205ee4272e9345822a0002de3ea0081ad423dead26a3b7bbc12015bab31545474eef8bac04caa293b551d9d5d1e0822226b47a4a0039fb9a8d8084124fea351135b2a3fc0e8fcbb5d76022a5d5004bfa820efd3a1d0402844016cdafe559d5d6f1f6fca80a9b04505a5a828ef151851c592d85bdecd6733faa200097014de297d26d751410de3b154040feb735aa7b53a00a5c41016e20976ba310fc424deb75051a1f82b71d80b1d368a803213d6e8a7b53e5d76a095354556e00281c3518f870554de7d768a8a1d04609da3d020a7e2cf68b2a0a1caea8aa0a67d0f10d3763001b3a48a58d152645e9ea77fa5c7dce88009ac440044da1d460a136733a8082a94351a1e5ece0107f516d6d751bfe54513f90c550154fe9ad5100555662a90882a1e83a6d162035d41183aedce82282ec005100444e6f05460e6745acdbecf (by decide +kernel)
 
 private theorem ok_b11111111010 : Impossible board_b11111111010 :=
   fork 74 ok_b111111110100 ok_b111111110101
@@ -1123,12 +919,12 @@ private theorem ok_b1111111101 : Impossible board_b1111111101 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b111111110011 : Impossible board_b111111110011 :=
-  kernelLeaf board_b111111110011 #[0x182a5033504f3d534e2c2f5047221e475f285b5d47151b0a0728213326544135, 0x5e4c5d532c552e4f4c5868265a4e502833254a5b716050471b25502c23101b33, 0x62264754334e50225f195950475321544b595554503f2c3d5355503d2c685d5e, 0x595963605225141933505525332e501b481b2a28501e4721263154182519534e, 0x514d2c3d33254f26251f59544a2e5d4c5959291f455960502c59506316481f2e, 0x570c51260d552f1c6c4c5455575019192216224c0e632127686251415e5b6858, 0x5f472c511425552f295b454a24172251220d5545501662150a5e225722314126, 0x57634726544857575f533f17201126292152132421201e6a172b50514d636721, 0x6157415e571e62475247132722584e5950546841204b505a1753625e574e4162] (by decide +kernel)
+  kernelLeaf board_b111111110011 0x10404230ed7e0ea0025ec1af9ef16811fa5a42a2c7c02442012789f505845b008163676482d9e8753d1c1d070884bc1405a18816b4412fd3d0716a08deebf3b83c2020062ebf8f23e9b104052a72320908afc015f82ff4f97f808205f41a81224714d8a9d43a852c9e93900143cc04228a0cf7ab2fabe86802b479b88018f11533e21efe47d66082014d1d010420529a5eaebf1401445953dbe2f2b20552014401265f51680051e05545b008208deaf17a1808a0004a25bc595d6064014577b4584135f458c783a6c05afaa20cd6008a3a14480a6c6f575f8a90a73d9804ce5494006a75781afd0c08833a88099d16232225b45b0d202a4cc778f0a018043a7f478ba3c1c09af601096f90074763a3cdd66f767a00882979fa88a9b000450012e7f01b3d4e56bb545100016ef33050b3a00088208a59d4e7f8b802ad9f074350411059b675a1e3cb60ab23114403faaeece02a967c7a38355a5aa0225d614a42999d9f43ab8a88b25d485967abba1a8a29bc454918a6f556aa9082a3a1a28a1ec1423e87136c7416a6aa8806352e67511851a7cef1626d44115458fd4c1454267b3ba1a2d481bf99e06ce20c488084d0e3e12b4f43d4d6425f220859d116ae04d4e86ff59bdd445a7a2820357a1bdd6622e8c96ee82a888ded515606f6cceef4f514516159d5c250a5daa08b3f99a88858f469bb5ced0465a1a802aaa3678ac0a5c95aa0220dbf8f83a1c7c11537a0a08097a86b30511ea0890cde0cf31aad1504a86cf55522a18a4fd4557bd3e76222a50b34805fa8050e3e8b49454044f71f40154142fe84a3b7815de3e5749949037a2b015840fa8d0ecf4dd4e0ed7 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b111111110010 : Impossible board_b111111110010 :=
-  kernelLeaf board_b111111110010 #[0x254151744754596650631f74620a0d1b595f0b4d35170917251f0b502a4c162c, 0x525b5e66225124505151334159515124505d51255d2d47541b0f206a4b7c5b1f, 0x50517063516374675f6e5b595f662d2d1068475422415b355b2559516a1f4e5e, 0x231f33621e4e414e5119335e70416e242d681b13335147580e0c170e65505033, 0x2419254d190f106210131b052519184c265959695431200a192a3359474a0835, 0x33331845526a505133351b5f0f2417190e25130f24190f17101b471854195417, 0x1b545d521b255147190c170c350f631f474e0e190c4e51631f107447246c6414, 0x5458314723316b312441511f252141515447335026353341251c4d1f184e1b35, 0x587a6a596b5f41594735514a2e4133685935245951534e41525f21251731476e, 0x535e6e5153515a415a31534e622451593545354e336841633147624b454c474a, 0x1e13121f222f47221f21472e355750471524542a275e2267224768514120575a, 0x2a222222172163452e352124161f1f132a54481f172408222f50253151150a19, 0x2d213559472a2e24544722254c15] (by decide +kernel)
+  kernelLeaf board_b111111110010 0x10240416e875aea0a0d9c8fa8422ac55176a24c44050a9b1f14111516975405509995d562880a2d251602a2cbe87c78c5d76d71104a50ea4d104952d9fd501003f93d569254d6405415919fe01602fa4c468b5fd0d011152eac7a3840080a5740564673da88013d095410969fd16bf054423ea00a2cfe00a1d5108faedae88a0895fa180aaa31f2baa293a982b322ab4fa12ded16caa342e7d171fd1d1e0e8305002bf6b544029f37b7768222347a7a0d1ed6a020ac1ed62308b1e9f3bc588aa2aa4da3d9d441056bc5d8456ba88cec67e8d020eaa82b8f6391fc5a2284bc162f33523f2bb1c2423ebd5802d9f5ea0237f150160f678fa82d75428ea80202cad76830767e8d5090256ced715115455852767a3c208d3e7707a202977f108043c028125cbec78feeea68800d8d8f1f5001147b1f5ea12a222c749c1d14a3aa7f4b808aa1e0e024b4702a71f67d0d36802d71159f07504840852e73550a6e7f31cec414de0c0235cdf530416ee8ab52cde97a3c7c5133a100ce000120be33456b8ff1e7f81508fa833b151da8099c08067004ed28f8f3f90fa60231f549900ecc0326214d8506782833cc700c5e97aba182b475067ca224ad737dfe0001fa0932f8026751da09225c409e2023f54999c0107e5f21a028846f8f98ea7228099d6a64017c4005266720044bc937338fc8682aa0e2c862224f3782008174ba6731ccd3608483674052cfa76a6a80a31d1010506a2b33aad94067aa896723f2b90411a0a0d7047a8007f19f8b3da0020b3b8388a84ed868ea00c6767d157b0786a02c1f769345196fa3010df013e067d1e3f6300477040103314042f8ef2f50e40a1a04cf4012687228051f878f4100028f8fe983082e7effbb1206de8d9eff9b0416f23092dc87a38fd4d16882c1c04b7aaa34084935ede013125ecf47d59fc140442777b02976f22bdaa059b9174749d0c05a38228d1d59f07040906cf474550a8e93a1828a22b77a3a5c1bbade3f534000de8a8023f106022a23ab52125ff3b79fd2eb048040c1e8fd305108fd4d008b390466e86a0002a98f3ff4f162b00046f1bc022b3d297f17824dc006b97d504004004e5f45054b9fc5f4355cccb6b3 (by decide +kernel)
 
 private theorem ok_b11111111001 : Impossible board_b11111111001 :=
   fork 55 ok_b111111110010 ok_b111111110011
@@ -1136,7 +932,7 @@ private theorem ok_b11111111001 : Impossible board_b11111111001 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b11111111000 : Impossible board_b11111111000 :=
-  kernelLeaf board_b11111111000 #[0x820c1431625725355d65335247585961595d5d335f59255f6a595d214754264a, 0x52571e571e740e6d4f59135f571c60595a4f1e574c59525f542e296359455f18, 0x13091823181f1521500e0d3f6c187214181f59600d146c185a0d57604b0e251e, 0x255950544c41172557545d131f152d4c5d15252258655d59574c6c52501e4723, 0x185a4f471e59181b1f2e251421540a1f2a185d0a2222591f1454182e25173558, 0x6a6c5418542161211757171e233150474c57224f4c672b5447584c5d1f1b2d22, 0x5d222967184151355a21544f22252329625931152117525f2254265b5b692a4e, 0x1f71594550575051255960252013574f594e2a50541825592e4f595426224154, 0x294f2e6252585254265548593377145919283328260a2a2e5418605f541f2e18, 0x4f4f1f1f] (by decide +kernel)
+  kernelLeaf board_b11111111000 0x20913f50169f9fd944104803fa9d0267ebbc5a2882d2ec6808ad2d6a69b012901aba323b3c00a0cfef94d5202ce324899e215180acf251c9b429918856804ab5dd4cc6080e0c5bfd4c44453fb288bb4595319ff8f678bd0c445011abf43550428e2800a5cb3c8881834b828a8327d7d50567e2967654502772ae8753318280125ecea80bb5509faa8a2b67a9a6d17074056a60addc90591628aa794433ea18e0f47041af6b4550f539fa04222280aa8b4ba3c1254f8b545592cec71000aec2902872fb448814bbf88b6a69b414402de0236fd3ab284ab9da921abd9d4cc688015301438828b874397ebe2897c44f68f63d0e3e84cc1af90a8b4540219f933cfa082afa9888811fb1cceee000a29fc4144deb7458002882818c988b5cfd028f9ed06cf442c63378247f5da5ca6a00a8750426a62b3f8008ab05415431820a0377456a2c051604d9c660193f94ea6635da5cbed7400104ac625ece882081436a64ce0f210842317d2f3284b04255f06a9ddc9e22027f052b932dd2940099ddd012ba5d17202163004832f7729401b3d7e660d6cd129650cf71f47a8228401104f1398d1e08486354fe2aaca295d0296643d0c772820037211ffb331894aa8a83cb0594a6633f880367c1a82c080143729eccc702dad5218846f5fc1cbc76973dc82a934baf9214127bafa00a7be9b0a823b0441dbcfecf284fa0bfd7ce7834011841b3dae7e089eeafccc0046ce20ad2efed4d76a741445c788b678ba0b7f61318013ffa240cd48a631d7175f1094ba8c335d426eeb9767a082214b8fd8d26ce22e1c581412cf77500aeecf50402fea02d9c0584bdfd21010ad5d9eee878fd4d372b (by decide +kernel)
 
 private theorem ok_b1111111100 : Impossible board_b1111111100 :=
   fork 57 ok_b11111111000 ok_b11111111001
@@ -1150,41 +946,25 @@ private theorem ok_b11111111 : Impossible board_b11111111 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b11111110111 : Impossible board_b11111110111 :=
-  kernelLeaf board_b11111110111 #[0x2a2c374722495c5a1e5a511e511e4f265a1e5b5a5a1e5b5f452e141e56393b4e, 0x2d375f3f2d2c374b3f5f54615a2a3d394f56355757295c1b2c28395d1d263569, 0x504b5e6a353f6572502c745a4b2c5035351a542314225a35285a5d1d4139562a, 0x394b35504f35543039414163263935353941505a543d263d3724182641354b49, 0x4d3f5c412062502456393535231562415124452b2b1e2b1e14393b5a2e542929, 0x3041394d3f22505008244b354b3937205456262f41201e213f22201539415061, 0x3f33376e26546212533916513b0850306e3f3f5c724f3f3f2d54621a453b4b21, 0x3d5a4d212f193124353f571d41594d543d212f] (by decide +kernel)
+  kernelLeaf board_b11111110111 0x823dc0401510a05552d73743afe05244a0cec749b5dfe0015f440ee283074021b3cdea622bdc548016243afdfecf0009be8aaaa8bbb555536a22d4f164b0195404a7d08ae71010b68023477788e86c36677608ff60541ff73e5880813f545fea88a3fd6f53c59ad5501401462eef515097aa004221d870773a22cddfe8b1054686b2a2ab4311a93416925e82b5d097880b9c0556fa0ea75b40145362fd20e0208a8a2a0cf68707faab080aa822d0695c738aa4a441e86a288890d879baffb9aa4a907551450758ba1aa2c93adb9daea2d72450947a895f1707a38aa02a4d8ba08abd4155e7b11514455e7b29b9ddf6b5d92c54d50014e0000a773a008cbdaf4304410a7e2d74044068a9b0d5cf074150420f8f4da020092e75ae8ab0d79573c1e876b401a980bdc4405054da3dd515be0020a2049331d029b83b5e5e80928327a18824be4950af7ab6bbfd51100532ea015cba1acc69462e9adae1197a02ce86d726195ae80a1aea9aa8a22a8f29a2d016456d68cd75251adaeee7783b9eb6ab4405010516edf004144551405bfbfd6e2a8cb31be0220a0a004be000111ff7fa9a24e1c0102d6ab7bc0a8e79fd6dae48257d48412bea00000a74406e69bd66a3573a84ddceec00089b50101aea3a7556b36fc7c591051682a114327b9dacf682005ad928e7b45124a39ee7e9b11145654b59ec916de2236b0544b587bb7dfe2e08832892eca67b2005adae777cec (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b111111101101 : Impossible board_b111111101101 :=
-  kernelLeaf board_b111111101101 #[0x4f2e592c60541a5054545b315d4b4c235971182121265a1e2e601a2a4f56353f, 0x645a4551532f5b2c655b1f1e284e546a214e2e4f5c4f6154545c5d4c5355215c, 0x455f112b1a592145593345554c6b7721595e1a6845512e4e4c1d64106d5b215e, 0x2b1a1e2c214c453b59515f332a201b565e51591d3153571c552d5b51552d6931, 0x2c2e6455605f5c544d215d645c5a4e1e122754241e212460502b4e294e24101a, 0x4e245c59502f4c1f4d592e59503545372c55505a5c605c6a352e5a592a652a29, 0x1d26351a18292d231a4e291c1f35262a2c334e4b592a2d4e264d2c27594e5026, 0x2a26472d41331d41] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b111111101100 : Impossible board_b111111101100 :=
-  kernelLeaf board_b111111101100 #[0x2a5454595d544f62502626543150302a16292054292a60134c5c5d5412284e47, 0x1355756d597c5a564f4e4e3b5b4560544f1d54296445715950354f2a1250291d, 0x5a5c4e2067415a625a59551e5c2a135a41621f2a2e29596060594b712a61542a, 0x674c57502620292b26215c5b60504e3b2e1854561a616867545b5a1f59564c20, 0x205956512b511f565430294f18543362261d59622b695a625d2b604f201e0d] (by decide +kernel)
-
 private theorem ok_b11111110110 : Impossible board_b11111110110 :=
-  fork 57 ok_b111111101100 ok_b111111101101
+  kernelLeaf board_b11111110110 0x5050055826e3e00000add505000483acf3ba02822c1cee9b1549049506b89acc6a75ba8a08f9110111358828ced4e733f8035d36ab5982033c80676a32f52ce010aad1505b88b33b504dcdd669f5016ce2acee862026c119da4c40154b9a08d9e86bf5011019980021fe6f674001415dd9e86d78bb7c01955566a0ad5e860a0adac1b9822b83046e6aaa23ab11aebbb5d9c49551140555a8365c5556a745166bbc98815754453077f5b9d4d4119b80aa1d46ee2393b9dae76211ec984969f8111a9a4d55084f64a1d1649e0e8620a8caf02764012a2a7276931121aa926b055095e6b3dacd0f338bbbc0160042b3d1e44bfacf0005155588aa0cde8d6c916f622a151db39dd8ea8d3c56be42a8a73abadd011b7d1c496aeb780434ec742122f7f45111514408eaf35d9d0e00aa92b17b3aa2ab3e2f57545499ebc555efa1d50acf000dec84d7a38bd1c91054405dced1099aac91dc502110726248439dbdbd4390aded410c9dae2f47a7afd02dea2aab315cbdbcfe01304c7b51ced4445015546a7ab43ced773293f1982e73fc38a54c526a6b736ef33a78a2a4b5715524450f739faeece8aacd452070695335808b43446a62a8a8d4ede02032c7bbcbe66808ca3d1145412cf023c731a1d1519050e026db59ed5576a22d8335aae7f5b6bbfc4510506aa1044d9c4544add1d51057d1d0000003fd6c6a6a0b0d4f3f31c8353154419e292a38b4d9dc51615010b3b262d5e8ab0c80e9d9455b5e2d1bbabf062013f51214108419ec6f9f999c84d7e5686a08a0a6d5060230a74255e28a6d0f739515215b7e0e873b77a24ab282aaecc753216b6246b500460470fa30133f53b7a02a15ad4053fd9eb7335005062016bb993b04010041079f83dae220594c5daecea135721113ddcc40556813ed70785b16c407f155aed153d9f0682038300514b3cbc445599b8eabc3d4e45495720813c06ae823d7dbd9fe76badcfd167690ab02aa42b3b77dbd0522e0828e0ea73f15511459613bd4d54994f938bf1ecf436b813f445564ca4b4104a18a70843baaea6aa2ab5314101b3ddc5a9cfd45c5d0d3602920aa29ba9a0b22c7a1b0e12556a82824025b53a0d40452a629e555e0c9e12a04cc09b9c22ddea64b51cee3ee7 (by decide +kernel)
 
 private theorem ok_b1111111011 : Impossible board_b1111111011 :=
   fork 70 ok_b11111110110 ok_b11111110111
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b111111101011 : Impossible board_b111111101011 :=
-  kernelLeaf board_b111111101011 #[0x5733351b50292a4763372e562e502e56224739211f21222951671f212a3b2c4e, 0x292723271e31672a3b0a28623b37282a350e505635564549223350602f55505e, 0x3d5a3b5b5b3b212a3d2d5e3d3f2f5b0c2729292729212a3b22143d3d2229293d, 0x3b212a573d2a211d19233b49245f0c5e70111c172e7886123d0c5b622f222f27, 0x2c562e275f0a35373b2a2a3b27632f37282229292227513d2a3b142f2f455b5b, 0x35245435242a3d2335592f276e0e21235e41222d351d1c1a2337636c1a393f22, 0x6e37473d59372a7135503d353d2f1d2a6916591d1c356e223d2f1a5a39591d41, 0x61586e751a676a5357416751496261596335503b561d21541c6a2b0721211c1a, 0xe2b1b1a541b0e1b1a591d413529635f350e5d285a6e636a411a212b41512941, 0x492d472c3728235a542c654b241d311a1e2c3f1a1937231e6d1a1e311b0e1728, 0x4c633735412949491d5b3b503168413d414729] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b111111101010 : Impossible board_b111111101010 :=
-  kernelLeaf board_b111111101010 #[0x1a3145502d27455041372d2a37532e1c1a212a3f355b1a2916271f4e292a3b2c, 0xc23137018282d7028412135283b21642b18573723352d4c2b215e1e621a1c21, 0x416a5d3b2a3f545354632a3b54353f353b681c563b21393b212b1d293b3b5e78, 0x27242d1c27620a0e3f39414c2a533b14563733453f2f533b532b3b2437542135, 0x603b682a140c291d2a1c1d6e3b68673f596e576a802a16351d28271f1e2f2e1e, 0x16373541293b2a29271e3b534129350e28275b1f1e3f413b6a5b29593541] (by decide +kernel)
-
 private theorem ok_b11111110101 : Impossible board_b11111110101 :=
-  fork 70 ok_b111111101010 ok_b111111101011
+  kernelLeaf board_b11111110101 0x599b2e3d515be2a8ab5e0e2aaa751593a8a9273bdbddf431582518fa301110583bdc1455838a2a2c7d4eb327248156f1f59b7d4541462288f5152d75304459c0e5e5e48b088aa4ceec746a1148359ed66ff905443599c16f8428f62000f7b735a8227b18e8a8a026f1da22808a802097d463ba115f01bcd753415555378ec586379aece7783b5c064155414ea8863efed71d835dd151ad6b0000dde3d002d5c1cd64129487555655e41e8e8ca120442a783a009878b1eed5427ae9af3faba78aa157c520f9f55414a3c9c0815546c5e1d9056cf8f6bd0ddf5b25013b8122870a99cd480d5a820802bc3e87804450e9ccd7bb44416fa047c057b83675015446faaf8ed7a1822f7155af2a822f75fca8028807755802a83a72d8aa20d9e3b9cdafbb654516202f75f9adb5888aaa2e7b39de0eaab5d505154527535af00224e54156a222f747b5db3aa02bf4feec7622a1d1447aaa0232dee0e8ba00116f2a035d3b9ccd68a0208f6fd0a0e3ed9ab1ac1151ce03fd16b3adaec4053ea8a0dfe15808ad745456fbbd5681022adde82a08a7f1ebf905bea8d16a280a0229c19100553a2d3e8a40b470657baadde5341485faa0a2bf8b8016f540224b7bbd0f2ac414092bef7058465568751a40ee67891eef4493c42850932092fe33bdd208c225c3239cc4bf320aefc7ffe8845312d0a5ee33b7d8b5fa2d4406057e9f7ba80816b7780805bd40250b7bbd0eab841117b8042adc955bdbdd067fafd0042490406de334fa9d053a0a14029f94e8755bbd16534117b8880833dd16a7000514f20acb3dd4e9f00447809f3da8aa0231f3eaaddf20c2b5095478b1177a8a8037d46ab6b8ee8700208312b5b6bc0a35b504122e0b2745b3e8622888e0c14454100185fd5e877b90022bf200cf41ae6fa1a00aa75571fc7b7d1057635b1015555dd0c11576a0aab5b45c7dce8a00a8753f82200a1d162a84a7a3a867d952413fa1d56ef59cee120b688df11056bc1d10594ebbd56a0a9d20844f9ec150451df4f83a0a02a76b8ee64551882a08027ede7f3da0bfd0160e0823bf576f1514f6791116bc1d1706bbf46ab29b00cc44051554e77559cd10153b80bbb11577e8e41173e0802ffb3eed046afeacffd565b5452500605ae77519000a0227cfe7b55457e0bb00053da7c149b02adc54439a7f162b1d820ff0481573c1d5266610aaba7bbca75b45be822a02a8cf8bbfd7f00acd3dde80a2824094f95eef49a22df110a98021daf070050d5a8ddddeaba014017fd4d5029e92a8353c7aadde2202001536bbfd426b8efd19ceb6000bbd0e02a22e777a1d4579dd4e822000ef9104177defc63312100102a48411e4fe198d4602adc409e1a8e951460e2871105aea30400177a1e4c9abcc7304057e06fa3c00001ae2b71499abd0f7b3de2cd7008909cd0e6b0001046380c5e8600880ab741053f17a1a2c1dbf209282dc4014156df8045400069eabb8945399ad0e8212ab7fb5c114252de6b044509415396d3e8080807f150276a755bbd671b (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b11111110100 : Impossible board_b11111110100 :=
-  kernelLeaf board_b11111110100 #[0x1f293941564e3959455927244c536829534e4c625b24415b395d59545356463b, 0x1910215459631e10677606395431724e235a6e1a5163516e54632421242b5354, 0x551b1b1e563f50504e241b594b7256132a3d354f41534c215f234e54394e4c23, 0x5f4e4c2155214b0f1a1e2c1d104c31563f501f0f212c1b56281b2e1d39504e59, 0x564172644f284e285454224e5f613d62505647393156242423162c1b2a1b4b59, 0x314c502756473d2856211a5b3d56625051220f5e5446282e592e5b4b76592822, 0x33211d311931452431532f5751625656295e4e2f4c305e2e62312a564157504e, 0x49] (by decide +kernel)
+  kernelLeaf board_b11111110100 0x82903271110119e871450eeb1c0051044ce2b1d062e20aa4d8f4f5f888a35f41128eb8bad88ad6c11a014f5ee76bf04099808888b0ef6bb15816c59228031d575b83a0a00a2a22d7e873b48463ccc1856869fadc7deea92aaa35adb08a0221cd68016f7bd6f1608a0343428e80aa28b1fdec4941a9b1b151251b280aeececc32bb816b7b08b2a4bfb76751a2eb70705045e58a0a88164e7ea39da2928ea6c0a54d45a8a33bbfa85875427be2e875b8fb9d441504146558f5b49a1428882809351e8010a16d91666f55884286f41125e59d501bfcec99c888080875442aba00087978fd568d67b59aa900277a21ccd8f5b7fa2009433fab0a280043f50eb30043788a0d6d468826f5d9ddcea0a03439d8080059d05ab886f94379eeb6ff44686880d0e76939510137a216701065f0a72eb64f55bddae888b3f454583d3c19515055526687bfa3e76ca25531949738b3b1099a3d412090413390d0f531455020acf8f8f722ac2804290f3e801db0db9ea6128cc7e5ced1f6b455403766b04a3e3c05644a3806eda9e3d2680a1c11126af0229ec00d4cfea773c1eb68093b81cea82d9c01262f674fc8a4e6628882d3f4680040aa71a7a413b99e2ede84a4c405838b6f54973a80ac5decf5345a7d6e36ef (by decide +kernel)
 
 private theorem ok_b1111111010 : Impossible board_b1111111010 :=
   fork 38 ok_b11111110100 ok_b11111110101
@@ -1194,42 +974,26 @@ private theorem ok_b111111101 : Impossible board_b111111101 :=
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b111111100111 : Impossible board_b111111100111 :=
-  kernelLeaf board_b111111100111 #[0x504e63455b455524475b3121235d4d265d5b4154534e35475d5441455b48303b, 0x19544c081917291f17355b2824282964791f271f29285b2145555d2a21235a5c, 0x285d476556285d352923215b412a48150a1719281d50282a2f1d2b095a0a4829, 0x261b2a5648215b49292921235d2f215b56412929215b28351a3157564126271d, 0x2e561b24642a4b23175075505e556a645d542b241b554757541a4b5954245a0d, 0x4c170d1b470b5b7158561a14182e0f5c2317125a63540331575b24305a2e5471, 0xa0e0e2219265d5b71] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b111111100110 : Impossible board_b111111100110 :=
-  kernelLeaf board_b111111100110 #[0x291b4e171320122a1a294e274e121d2217121707555949305028305441212633, 0x4e2a281d1d2212202d22492c54221d1d7b6a6717224e20540a135815554e2221, 0x4b55584979291b0f6435282927553b172e45215b282d4b2955644b4d61574956, 0x1926544130594c482e564b17355b484b0f414847474529233528562148596358, 0x1c1f29351a482d284e542e2221542645453b222d471a1a23352e485b232f2255, 0x164b1229474e634e5621616a21355b292155220a2f210629211f290c581c5521, 0x28262e4d594e1d2c265b56222c4d294e4b4e295321292e4827] (by decide +kernel)
-
 private theorem ok_b11111110011 : Impossible board_b11111110011 :=
-  fork 55 ok_b111111100110 ok_b111111100111
+  kernelLeaf board_b11111110011 0x13000422b1d8aa90ed170099d36a801775008b7f1d99c0017c0006f0281be3e0aa082f0406505019b7f1db1d6cd6a2a8014cc6bb014a59907f73401051e5f504496808dac40b1f530420007b1ebf6f49b0d54455b5aec4144a982aa71d455da2acaa35b37a4f26ab97b400028f1542fd0faea08009431010bdb57d5a0880002808ae4eef53a550055e93537d5e3f0a0035f502a66b20565e28859ca9a4d5512956d6374014dc6f55d6e46088a82a1edf2755114ea80aa8a743a3c1651016ee229312bf43dbeb7071115388a22a9d0f6f01555551b5cd68a082b1d9511145afd6e0e9b04fcb2229dd4620b772454118f90b65d15412b6a3bbb5d154f082a92aa8f43dbe0eab91c28575456b00808097ccea3114ee0b4351151aad14495f9dd854455e27515b58ad895445591a9cce22a1153599802088cce5f1514e848a07f2fb5edea349a04a355404154ea0b28b264fce20a1fd3f0509fd4ea3b7a1e2e0ad5d516ee2aa28802202ad43a3c059b5adcd16873b440c7a8a8c5ede92c5eaea80a0093508fb02aab6f1558eaa8747ddd09019baac04a412a6dbbdbe0f53111a7aced5440005af1f445bb8a48ad4e0ea2c5edf2361bbd504005451aaa6c015d8a092822848cdecea2ceceeb3108536a895bc508ada400a2e859cdd4f3b9780acee14e20aa94f50e29d77234fa25b4a5ea2caa20844b53b047c9da0a2138f46775b5410e0821038751d5a1dae20a5bc5912653a1eae8b414400421056bf6405050e1b900453a0028720203fa9c676339d5d52550e0002832733fa9dae6b91add10005182224ec406a6bb45887001a9a9b62ea80002c5c001dea820022d6f1f35822088a6b47b5d77235145b78128f64557e8bab88a2a2a99d4dd4e0ec354400b38ccc8064708b0bb06adb2f401200be00004235c40b7c8c0978fd05000583c8e3eac7c1162f00aa72551ea808d751a08aab5b43c8e040b38aa8258f6c72faba00136393a0a4a1e753a0109be07f93411af28c450044954ea427eae8880ef2fa2ee2e87b7c02a8a8c240596f034b4bd4f579116018c9cbe6e0aae1d40afc9eb73b55a02a8c40ee40421dd025164b40141a212add172759a80808b2d4d168410009de00003bfbf5689067cbe8b9d80883406a72a220ac889ed8d00412bd579da2d0ea7414de0020a34ec2f88293c541aa0824b5566b53a4282ced501514fa0b3b259dc5544241165f5040825a5f0fd5c59b3b27401515874312154688b0ea70743a6d9edf (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b11111110010 : Impossible board_b11111110010 :=
-  kernelLeaf board_b11111110010 #[0x236b155d615664554823235e261877132635191478647723146b561574582a4e, 0x233578184f28645623794f296b08213b5b5a23271b35232955482816214f230e, 0x6b6f0c234831294b272722124d2833261c3523280f294b21275a262335232914, 0x275e2d6f62655e2d705a5b4833502231296b3121233145242919652955191b2e, 0x292d564b3355285a70274f294b5c636b4f5e3b6b705b5a5e271956652955484b, 0x232e1b0e551b29280e1a5d0e232e542435484b2927141616244827234806181c, 0x585a472a56555d261d232e4b4756585a4f21471b554b58315a5950645e581d2a, 0x41273b41562a4f3b235d21246928656c63562a292a272764555b6928595a4f62, 0xf19585523354b2923290e246e2d242d29562a1d564f3b1c147e29162a567e1a, 0x27614f3129275f4d315a242623211423262c2c2678292a58140f21555424101b, 0x1953212d295d292131313326284541552426556412452924291624295a216b29, 0x5d2d1a4129533b272a642955] (by decide +kernel)
+  kernelLeaf board_b11111110010 0x545bb888a2b735c1d04555440214f4f506477a7e5502555e4d4f5733c2a08d3d45143add19491538a845dc153a874446380231d9ea9b51c5d120eaa80208d5d269b106af935541259042b1753a4d41553ac02a222a5b49a9ed6872444b5ea824a74fa0987167ec75048114e9f0008bfcdd63dad269b915511e87050529a9223d36092b3a1190566a9bf1a9d576352142298fd0e882aa35704a98893219bd107eaa20099eb1d5d1e35e5ea2b4a9d01805847b028222129c7693ddadc055262049add5653d6d56a8a9dc402b6284fddeac802927329fed4e000a245b55d256ff66b45483802027dde22a241c016b602aad67eef47ddd0ea12aa93d3aa828f2e22002bb3c7d6d0000155a9d2aa9569f84453ee4eae825bc425d38aa28ece28b6b9fe2d1045b1ab6b11614558faaeb68557bba6d10eeb02a3d762a20cbd08fd6d416c6828dae7eaaa1c14518f9beae2012fb1a82aac7b58828d9e86a28c0193af736354eea84b0224ab4147aecde3baba41bd44454ea0020aa31d9ad15514bb8ed1ebba9a4daf2305042525a5ea74f94d209852d824225b5149c8d3e8f50559569186d319cd4eb71051544002b72f054519f570145565251dac10402b8727da09fa9e5f730510112c7ebe7e8a017b058011dfafe1dbed695ed6213ec6701ad91339794f5791c05012f4fac0057b11055b8102efc803168081972f60082b7e1daedf235467d0d1688b1c24253b088baf60863a1d1e4a2c762e9351515399c8232f22832234a7ab99d148437b0202ef5e96fc668f9180aa2ab1c0594f2f4f82829f551145561164b9ba8d9e9b490e62c020ad751ea3009607eb014a797ca8c87166110a4fdad368f55151ae4aa3d4ec20b25347b5fc66355567e0a3c9835b409147a979e7e9092a75540081d7a2343aefb7dad01551e9f854494ded795547ca7abc8d10146212a0016d43cfd1f00888a3b47800baf2bd200025df0f5b402c9aa820d55e468f900551ea015ed362298c12240bbe4f14154dab5cce53f18080a193ef922028f4929baf6b657e9d8d573b (by decide +kernel)
 
 private theorem ok_b1111111001 : Impossible board_b1111111001 :=
   fork 61 ok_b11111110010 ok_b11111110011
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b1111111000111 : Impossible board_b1111111000111 :=
-  kernelLeaf board_b1111111000111 #[0x56355820295a242d5f2c624c1220210e594c125f2c41475d581f2d2e306e5422, 0x532156144858292d5d626a4e182e3335172c2e6a562d5d6a172c352e780a2d2e, 0x625d216a56622d58780a0c2962294e685e563b085a29184e21535866554e6a29, 0x5c2d0a2969172d3024334c5e5a47232c3721564b4e58291d6a2129292116122d, 0x18460a20533721292e564130231955316c125a70064756184e172d210a5a2e30, 0x2c4e14553d1365531c30144e4b1f18184e1c1d70642d0e1b182b57134c4f3020, 0x18292b20205d2b24172b24211d3b2d24213521481c21273754] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b1111111000110 : Impossible board_b1111111000110 :=
-  kernelLeaf board_b1111111000110 #[0x37575f4e1429224b133d212c672435245d090e243b4e56295d594717172c2358, 0x59502d210c172435212d13214b14215571224e14220e37294e133d2d291d1d17, 0x10234e1f2e7323562c29231453534e653d783d5572681864495a5a654b646553, 0x1056676e545a563b212e35191f1715193d21144e1f293d1c230f213523081468, 0x59780e6c53625d56185a0e30213068235d685608306856085a555f5f79475d24, 0x5a565a23125d566853] (by decide +kernel)
-
 private theorem ok_b111111100011 : Impossible board_b111111100011 :=
-  fork 42 ok_b1111111000110 ok_b1111111000111
+  kernelLeaf board_b111111100011 0xc00a2ca22a6353abd068aa2b20d165bbabd26008a2a5f57a2a22a4d0e4aa27705de8028add2688876ba4cab2287246a0a8a7343aa82249f6fd4d66aa33b29a2aa13577bb212a44fcbd3ce62a8ac329b232a34ee5e7f5541418c68aa98e76733ba28a3c3c9aadd5954511491d9bd31abd115af93d01299cfd868344545544524c71b15a0ad4a883a7b7d0ea75daad20d6e0ea8c34790b2220aa99eae80c7d9aa0aaaa4bb5c804c970c36a8b1f26b6639da0a97c55ba80a887914576b5db0ee60200add40456a7d3a8a8297c55bb0d5651526a2b04cf001a677bb588a891f47a82acd5486fa1d50adcbe776350505004114e77d5a1c0014e800a9d0e5b5625d00add11c5a022ddd450fabadc28238b015bb63f18ae5021519a9ec5c0800a7a9d8ba3bda02d6c47788ed72a04a760c73b5543c82b4f4441b1a22b9babcef56129d569eaa87ad94e46828ab6353aa00480a28ab7bbe2f573b4001131aee8058467a88ad751052facd76000dabadc8122000adeefab514414beb355aebbf18ac085b882bb946b6d7146c6aa0d4f6b40550926b75412fea80b35407173325a0d5050e8a3b449924b3ccc962b7f01966aac3078fddec6891fc156e88bb61eeea68b04b58802215bb5a3e1096909035de6b7a350869e930acd9fc6c3bd98800253ec58a2adddad98e101b5b0ed8604a8a1c2560587a3521478a0025df475b11caaaa002b0d11423475b11dad10955aba2a8a2dfd45bff9e3e0b77545152643ade7f7753441500ad75b7782a42875db5d4033a21fc51664be48095d400033bdd0e53419d8a7f5420553bdce688523d0541f882a1dae03323c47494f464340447c8004ee000febbe7a8a04aa3eb6b351014e048f29a80a8234f44485a7cef2f0af7f1a323dd4015abf2f4663c982127b5aa0a8200adaf2f2f1541972797a7d9e86aa220b749543a0202a3352fa4dae88ca22a87445bcc0913d0f2f2982087586af2f1d454645b3b2984308b51db7d4e8893b527aaf70545556ea73bc09dd1184092fb7e4416be8880dfe765353a2d5997aa88a4f7ba1d66a00e7ea926aa8aaa0b5d277713aa28aa3b498abbe65042775b5380aa25decf1f2fca4a5f59a3ec6ab (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b111111100010 : Impossible board_b111111100010 :=
-  kernelLeaf board_b111111100010 #[0x1b2b6d170c65111b24291c302a29371b351b302e0e21233d2117332c5f23314b, 0x54332c48485d485856215a1d242c1f2a233d59483754296c5c6a542e16291930, 0x53745854542e503754336a502e1f5a372965485d58560c27460a303750303037, 0x2c271053642a233d483756302e1d565f1b41111d373362536258763772645448, 0x644855564654544f6f33645a5457533337495667535a534e2a53315019245355, 0x6164555d544f4f5a554e556a334e53494e] (by decide +kernel)
+  kernelLeaf board_b111111100010 0x8a2e1c5c9d5d046ef535467e233fb58357501459dd5f56cf5067642d3c1593a1028acef27323abd6d0566375350046a6a880b3fdfb3d14010c9dac5045a9d7e94a7c2b0ab3dbf27ade7d04505a7dae44469f3b54544155b220053d8f43338091205293a790555d59c22a1027c10010874fc9aad1ef7154595646a28b7eb680a880c35d82a80809dc0540502b77f37c1c10648e89ddbecf449c5834f449c588563516edacb7f9793a9a8c8c1a7f4d11162ac753506a6bb10141a1a82dfa9b3f5682343501774827f5056d6df53e5e55291b377906c75b19828228aa27e362b551586df4028712c3414586dfa9b3d550459c8d5544a4777501a4763ada1d406d6b21047749882ce044feab47bdece82222cb236455bf5353a822ecee682416aea6bb6446212d8a9c44cec384024deabf6f220ac1097d4519e5c0105239bd49a9ce6800030d009156a76f8aa8089bdae0281bd86bb1d80008a8750247af70054397d9eb3405456fea3d8f2f (by decide +kernel)
 
 private theorem ok_b11111110001 : Impossible board_b11111110001 :=
   fork 38 ok_b111111100010 ok_b111111100011
@@ -1237,7 +1001,7 @@ private theorem ok_b11111110001 : Impossible board_b11111110001 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b11111110000 : Impossible board_b11111110000 :=
-  kernelLeaf board_b11111110000 #[0x476456615453792e555e56476e642324306a545d266a542d5a4f595947536248, 0x23496e3035466747545954562b56265f4b5467476613295a6447665a615a5623, 0x463b192d57612a35084618682b2941762b292420562923644659624c53645d2d, 0x55305d41336a5a63416259572a462c415d4c295a2a2a575f61647618295d2a23, 0x3126563d53701033553d531256692d1720245a6453292918264b0f2d172c3d29, 0x554f624f5d595a4c5a4b5767305c355d263d5056505d6255722a4f26233b4646, 0x5a3d233b613057493d4f5a621966574f5a53502667354b2d185d595d68675a24, 0x202d29301067415a53465a5646665e56675a57] (by decide +kernel)
+  kernelLeaf board_b11111110000 0xa083283555bcaa302a75872c43cfc1ed62a53d58d92b6badaac6c6547377b51501605ade7ed75f101b5a8aaaf704500251ecbbc5c3b0dafa802032725551ef3fb5e2e515533e6c855afc8a433fb5d3e86aa249b951515cf8aaab35e5f2c8ab731ddd54102cf774217479fb5a4d05415422af33fc5a0cfeef6741ad628ad33694b5cbebf9f61dcd1545ae22b7754545454dbdc16869256d46860a002ddf1757e5aac211467ea6c49447bbd51204236a831b63a6d1446ab68aacf7a7f0c86aab3d116aeaab02bde9e4b591ab6a23a755505baa17d0693b5e4d54169e200aa754501053b18d5051536a032f1fc0ab7544444beb37ba8aa742aba8200230eef0767ead04451b58ab8f5a0f8bb3a22d7d5402055c6c1559a4a907bbccd054f120940ad6b55aa00084aba522be20b7f530e64fb6635153a0837755caaa8f005236ef014433a800ab78146bf8755b5c46a9046cc7a301240054557a9c060fdb49444555f29d2683adc8aa22a02a9d1f9356376700104c5ccd060a9f9304410452eeb747c9f76a8b0d5541af1bcfc7ea6820367a9aaa2435b811457a2215b505377f97d4f3e80082a47f36210813e53adad401c9884a47f364adad82b0e256bada3c901523f93061ade1ea74f05007ceaec049abded110ad8883051fdde4c64111e29361eaea7770151536826aea68aaaaded73f41b3aca3678fd3f1723 (by decide +kernel)
 
 private theorem ok_b1111111000 : Impossible board_b1111111000 :=
   fork 26 ok_b11111110000 ok_b11111110001
@@ -1254,20 +1018,12 @@ private theorem ok_b1111111 : Impossible board_b1111111 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b1111110111101 : Impossible board_b1111110111101 :=
-  kernelLeaf board_b1111110111101 #[0x47642d2c56470d21495449535d562a5d2147156222152d28202715215c51373b, 0x585c4754152022625c515e695c201c151a622853515457521c1a302b30266228, 0x5461572c57520f4f3d54356552472b1a225c54515c3d47222b155c4f5c3d5862, 0x35303953525b2b4961542a4553561f3021543d305206302b1030522662642858, 0x215131343072392330302d2c4737605826304762395e3d54301f393d52302130, 0x26642d4739315d64515c5b1f255b561a2d55191c2d2a1a202a53511c14225d2d, 0x52263454263062642860525428355252281a22261f535c7723691a1c3035285f, 0x302c1c222b23542a192326622d5247282c66281c605928552d1f2e56522c5430, 0x551f642862542623521c4b1b565c355e27592a28] (by decide +kernel)
+  kernelLeaf board_b1111110111101 0x214856ae7f45455555726a3c5d4d05372aa8fa588aa8c20a7365e6fad888dcc15af7b1154fd9c40455aa8a8c5561ace5545652139a2d5e8fa9aaa012ad4cec2a3e11644a4de2d6f4b8f8aa0ac0c28d679b101410519cd55c1d9d581551888b575b9fd55775b0a044a5acd50046a60c2c3a5a88a909b2469ca0480d4e4db0f17935180208e0e9754d0514600d70069624152d462a6b9169b100fe82234f821b9877d1fa784568a182359cd862020d74590a1477f4de4d6f1f73a22282b1eeea0842224e4d68f7385455596de7f4baaa0dbd414056b66b5bd5c001144ce735b80aaae51095410d62835592a54f001a8e92888a9cca68bbbadd0e40a0a82d1d8e8a2ad351587cb1ce8f55868200ac0c35bace3edf447062d8c41101214db0d548023f8b73a4b7b5ef5354815425867f738aaf7a5aa288b0d0e228230d6bb2290130dcea0894f42976f015155f27445c3d4d505495717a7d6cfe202014b228c343d4deec88cc35546968006d1401874802af21aa224c3a5a6f179351820a963116a6aa00387af88a28aacd5afd2c1147eb3f7b820a54d005501af97a5c7d4550055e6b2052545b73416a6484ad1ee6f70563e0200b2a8b649500245795c95b9b04b3f1b9bdec78b094b18880cdcd418fd4d5268ae8acd3320d178bb9d1ef7a718452e6a088354e6ac57015154d64362c5474fa3a8a0154c116bf4b3982a24a1ad86af45541501869bc5a8e3f935ba082aceb691f004011ba21d091493d4d150593d3d10502ee88aad6e105065565dd0f1f55002b8a308454e2c4595d6e0a0a340250627cae87b9d1dbeef (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b11111101111001 : Impossible board_b11111101111001 :=
-  kernelLeaf board_b11111101111001 #[0xc2853471052571d582d221d39511c1b761b1c5e53301a172830736447542662, 0x39305e27213063161d583b511a3034225153271f391c3071515833536d111f6f, 0x6d2d5b21276447535423343023172a5d2f212d212c5d5e2330716f5d5427216a, 0x351f6349332c5e305c5f2d617959276327303b6a575749227161333430644754, 0x5135545c5e1d2827281733714b5230512125300b16581c0616215c1f281c1f28, 0x526c1465511c512a35522c51342233495b30556539591026687358725b692c30, 0x67537a53721c5f3568522e4b306551585f54491c4754341a2655305264516e1c, 0x1a5c6537471f232e53592e2d2e55605b555b2c475314655560252a552e205326, 0x2d685b2153586a542c5416583b6a1269535b212d336d212214212e1853222d30, 0x306e58] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b11111101111000 : Impossible board_b11111101111000 :=
-  kernelLeaf board_b11111101111000 #[0x7a534762515d54682165212a345549701b7161476c5d542a68212a55495e141c, 0x5767536e1a635e540f1a0f087254310a2252556254471b47526c58532660533d, 0x2e352a6e1f225860536c522f122d737c53520e6f634b6560612d340a67584937, 0x531421156651700a39330c537062330f222f191453623110514970142a263472, 0x5321144715132d62473326282a14222328312a53175d512a232d531d2a492a1f, 0x21356c6a3312725c58172a5c212d215c2a546a352d58530e273153172a3b1d2d, 0x14225b5b6a5c2e1f2e225c2d26392d1f6c49750f6c5e22141865312a54675f53, 0x2d2f2a586a542d33496c5e26] (by decide +kernel)
-
 private theorem ok_b1111110111100 : Impossible board_b1111110111100 :=
-  fork 86 ok_b11111101111000 ok_b11111101111001
+  kernelLeaf board_b1111110111100 0x9511868bbb4465b1aaa8a880b76547476f43d3c555b1aaa88eaea6b340545a99316d556b1aa28aefd592d5045421d3d3edea2874595baacfdbaa2828714594d45554392a92bb31822c04d53c9916b7619aee6220d975415be032aaa147cff02a88f5dd3d6056ce894bb55056ea032ee0100abd8391b7a81571adeb38fd3d419929e5c89abd8354112eab12abcb2bb41aa2d3e54d8a867d069feb565a7f2ce77f6be8e972b2bb0497aa2b0b0f2f478255b1d7fa9a00127564048539a0a88c7ea6d335a6d4549abab30d944569793911a3bbb39b2a552d00ad994d41044b2ed1d4500e6ad1d5692d335e96b344168ea334d174828b3d4493d6f104461a955f2eab08e7b390d37a30644e7ad8e901e5adbf4e104ab36561ad1e554456bd4ee77b1151114eea38054fc8a8cbf20a88b3f8ea0a8b4bc05a5ab2c3a3a8028755004bb0c5e020085b559b19cc36a0a096d9543b733faa00a8e39a8021fc151b5c04fec63d93b3d668a8b7b8546587730911aff232df0e028f9ecf0080009f71eb28009f61bbf575f410246bf275908117c7c3b3c144000801a6c3c9c7ea68a286dd6ea8b6f42010f009fc9d1fa7c8a9200054d1ed39445868f2fca32b012ac2abbbafd43a04b7201050eb3024002eeb5ed1ec3e3a0804bbfbb9534154293e88121f56ce761dee550044093e8761b298f2da01dec6efa39ad08556586d38a517472554169eaa2c9f560fee79164e6aab0f8f47b1c330aa233c0115a7a2edc8f2a1fd46df8cd4722a2a0153e3e43a582a08935f3ba922ad8d54115ba2cee94e7a3b14b1cca403794d5db62379cef6294f900619ae0a4150402fa8d87cfc9c7ea69bc5a812dd8217e2ab595b1a8a8a15aba9d0a84b750567c9c50517677b4d94d16aa8b5bd5165646dfabb9aec443f88bb545ca2d73404015baaa6d81473aaa0ab73fecd5455024e08f5c7fb3bda2ca663449cb8aa00b1d444055753900cfaaaa08dfe9e8715afb3d5a8ab3d5451125f2ee76355152fa8002ab41b9a1d82141800156e8928a87b9c024aba9ead054556badec74f1d8a28aa127c558f4f2fa82aad51779204a775bd3d0e534563e228ac57149eb781551b171f67a6d4600ca22ad29a2d515044782a8c1063aaba797e404105bbd1d00048a556248f56f4f6153ba200ab24ea22ac53fb4f29a1d4114504af9b410068fc315a204e704678cd44a7a09c3c58aa880cf1fa2d7ea20086729a9234fc5b1c00021c80251d05024fc329aad36d3444797422a8c80abb6baaf76a0a007f58245d8d029955007074fb674b551155fa4b46464255bf3d50be74fa58ed20505dfe3d54597e5e811004070600b875bb4e1582a267d512c64049dbe200257f3f4fdd9ac1260c7deea6a8082043f110358fc47cb5a6a74008c7615a2c0450102a5d5d14086c58d4e3e6f45410618fd2d00d9d8e9e9b5417074f257bfad5515429f1fc5a8083475aeea215350746a1d15614cba000821d56d3abc9f860001bd50278e9878faa21b3abbb008035355a868d43c2b000ab6af27bd94ce75b (by decide +kernel)
 
 private theorem ok_b111111011110 : Impossible board_b111111011110 :=
   fork 65 ok_b1111110111100 ok_b1111110111101
@@ -1277,45 +1033,21 @@ private theorem ok_b11111101111 : Impossible board_b11111101111 :=
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b111111011101 : Impossible board_b111111011101 :=
-  kernelLeaf board_b111111011101 #[0x2d413d2d582825172f27542d3d41536a222e483b4d3f5a4d2d57414753345c20, 0x474f3953651f3d352d484d5a343b622f313f2f763b5a41315d2121410c411f35, 0x602d3b27212d17231a543f2d5123412341305a3439303452533051473f2f4f59, 0x5164415a47532d543059515e63593553523b2a3b595b3b5d6a1d5354482d2351, 0x2318345c1a41742d272e5253412d5935523b54395139741c524d0e51741c602f, 0x3b3b1b1d412d215a2b514f60482f53412d1c2e23345341226a2e3518482e232b, 0x3b2b4d280a2e5747232f12621841335a345335535b6a12283b416222482b2253, 0x52233939352b331f35522b3b284d] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b111111011100 : Impossible board_b111111011100 :=
-  kernelLeaf board_b111111011100 #[0x4f1a0e2d475c6c6a532119191630252d215c5b526a1a5e205347212d1f355441, 0x21352e5c5353352e685f5521524868515e47532751521b5d1c08021a142d4710, 0x5d5c2f685952595247543b5321372d213058214f5c726662215258573030581a, 0x21545347525869514d3d58533d5d5c524f535257535f3d48593561143d5c4f55, 0x2d1f5d512047271c1c4551584d255e58594f353f59211630542d2d682a] (by decide +kernel)
-
 private theorem ok_b11111101110 : Impossible board_b11111101110 :=
-  fork 44 ok_b111111011100 ok_b111111011101
+  kernelLeaf board_b11111101110 0x4451a56968800128f4010411ce4000039d6babc0679fc15046b8c8d2d5eef5180280024dddeaf049b828d0056880088bb022bf1f47a022afc978b0100c6810767dada600a2020d3daea120d3c282dfab25a8d121de4c02107c5a2e46a002af40516028253dde002ef1100440de7783add0e20096b57a914704027f83918012fd11055a7c1d6e7311768f69a82208034f400420e8b01504190356bb6b98e46000884bb47aa020200af4798da77335cb05203107e9add10144f80bb500414a5953e0eb700552b3b5e96efa990a2839d6068f5230e7e99cc055400a5b28cdc1daa02d1fa673c18002fd501a381292240064e0f6b8fd3d6f5361a202004a436728f7b141455c7d9dae253e96a23bc5500555bbecea236f515042545df77d59de9f5391a088b747ca00351dc1882b710077a7e110ea0000b7502fa3cd7535107f8208022adea3a3e0f20008088f83b0ed6d34100010073b0c101a60052da7800000ac3a3c7c411febf40027ed9c40404008fcfdce88053f2ea0a07f7bb5c404116f23004049bdada6efc58022bfa5911563a2bfd7fdb0424077d6b100183ac7540abba1c55250f0701040090a519c1cfed75b920041d41eeb7b1a8d0500004512ea05f5faa28a7c0456a6b77b82800241da7d6ad45116bb91a0023be6ea3fd10256d737410856e22d7e0f1fa7b4ee6834604545b820080028911fdbbd1d0647c485044fa731504e7175568f639b90288882097bdc96301416414b3cfdaeff006ce02aa04021d112dac3a990add0452501005be8d5621ea74f8fca4d2d26c605a7928f377b88888d8c81591229ef72256ef73a58080cfd129e94bafc21253c58615bf8f791a2aca0288b674151af8729bdc405b9acfd16ae22577b98a300bf74767a5a08a259e971fa9bbc655514a7a1c0556556fa812b750eaac3b18aaa870019419fdcd6512e5e6ec5808aa8769763afa0aa2b0c455580561d8c554d62aaa21d5055aeaeee74f1252569ed745855de8d1014bfb5743d2e46aa8811a3a3a81017b8fb4f5155113e34755106966fbb800027311800a02cd60053440025bc7c86a28cfc1004d63b5bc7e59405b9ecf574f43a002067040ce5b561c00297545b84a1d600ae76f6968ca0cdab35ded402906b0d4f8fa1d6e7f6bd4e0eb3 (by decide +kernel)
 
 private theorem ok_b1111110111 : Impossible board_b1111110111 :=
   fork 70 ok_b11111101110 ok_b11111101111
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b11111101101111 : Impossible board_b11111101101111 :=
-  kernelLeaf board_b11111101101111 #[0x33581b2c312d4721177b6255583354282745331a54582833271d334521342637, 0x13215547301d4970101c546a4b63451d5b1f1d1f33582c571f301e2c174b5c4d, 0x271c300f6c5830551f251d58470f1d1f554730565860575620477d54492d2c25, 0x552a1c552030252f3045451f583b472330544749202e1c4d1f28565727491d0b, 0x2d2d0e0f1c2e281d2a452d282e21282d4720272134481a551c561c190e1f1a1c, 0x28491f471b555b642a212835245456281f35565d28472d48212825571c2e212d, 0x3561562b1b2a491f1c492749251d2d142d352e282b5a4d2b252b192769475a17, 0x2e2d4d172e2323216a2769092e2d5d302a2135301e5d2d551d5d273021351035, 0x305858212b452f286449345a602b2d5555213524285f5c2d2e30345723214923, 0x2a6e5d64635b172b24525260521f352858302b34535b2a242d47555c2458] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b11111101101110 : Impossible board_b11111101101110 :=
-  kernelLeaf board_b11111101101110 #[0x584d3737584933284d562b45215856242e284d492554541754541746304b352c, 0x1725655a5c54311d244d4517582835525b4b24634d595a743328542637585637, 0x301311182e2524305a] (by decide +kernel)
-
-private theorem ok_b1111110110111 : Impossible board_b1111110110111 :=
-  fork 63 ok_b11111101101110 ok_b11111101101111
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b1111110110110 : Impossible board_b1111110110110 :=
-  kernelLeaf board_b1111110110110 #[0x7a60645a53675f691f1d2653301523596a4635462e2d30301a676423345d5447, 0x37675c3f2e2c56605a48372634565d37485d48236234531f56594852601d6757, 0x2b23342435184858152310705874195a7058642a234b1a313426581025211a14, 0x2b3035162c4f17341a1f2b30145c214b182530252d1f48353f4b372c2e245524, 0x2546] (by decide +kernel)
-
 private theorem ok_b111111011011 : Impossible board_b111111011011 :=
-  fork 57 ok_b1111110110110 ok_b1111110110111
+  kernelLeaf board_b111111011011 0x2a8832ad814addddd440726c63ede0020017e57a4c144a5a3234bc1888d2cfe80822d751b6361a08802af69882c8328a0cb4fb7aad261088ab202de3e20b55ee6ab24ec6c3585b1a88a22b634388a2af8bc8a8822fd655479393b4ed63260c40a55e8088ab7112aea255c01050ed749a8d4011442fe4c8dcd6ebb618834ebf2aa8f2554380ac9c55440951ebb5ba80cdd2faa0a08aed1e2a28f43a908a3284803ab124fe9c4ebb5bddd870022a22aaac43b5d1515540619eeeeb7612406ae09277bba7c055058621dae435400516b82d72501c3d6d57b206f55c9cfe922292c9ce4e9f111564ea5d1153badd56544a62ddaebb51aa8abc15411b5cdc414515e9750695e675014f80d288ae9e28fdacbea393a2aaac4a087f8f9beaeaaaa22c242dbf26ab43a8dae93a9a2aa0a92a8d6d467f1156baaa2a28205115bbbaa38fade46200088715146a089700054942be7305d802a1c55b82a2208b710116e3b1f9cc5da8cee008aba2ea002adc51aec00443a8c116f1f418029f001438d3402466b2026aea02a73ada0a0730003380ecfe0080926b39b57156a8a730115aba0c45561a5d7e8aa0b0e2e020b1740514ff6377a91f47a2aac301a9aa91f9388008839455155d9ce6e8221fc4051ac4c0d6ebe9f939dd42117a2029f4e6b032aac311820191fecdb1a800ac3ab9fd2e2812877b1a047d80480047e9dd3fa8b57548fb0d650ad8a22d8f075f8065440ada0d23ff7a9c9d6eb35154ba8020004f43b57463e2aa0212b0c2950984053bc9f8643605539d4d075608052f54009c7c5d50ee5bcfe802a7710fecfb1acc2242afa02827f618a2401ed66a2a097c16400197dce6ecfb1a08086f59a830aac75256f1f005143ca025fa607df8b55a6af6367d4d468a7c408b800b3d5010d70553b18028c40019e9f3b8aaab3c48ba1da69b6fa82ac314115945602012788004731aed2eaa4d86aa0b0dacbe97115450cbb6bb98b539510463b1dd5526a84de2e5fb1a8dae0032d2d045405450b7d4bd2608a8a000e3e6f2a83676d7d367a8ea69b01140601bed8eb6288237d5b1cdd59be22a2dfb1c9c5510094467a8d9b808d6d5f1743ac0a8b63ad8aa0a93457722a39ba3274ba028b53a4046a65f54116a75013532fc6c1411872f6bacdfe8a5c011636af2015864a2d75592da8acd51414119f97d5a60a1026b4feaf618a82880b14ee68221d11025e6312ec300154bca882dcff236bcaa08ff65e8c37d66bb5405126a08024025572549abd1ed3141449b5d0114c72345541025b195d1e2a22a43e1c56340e98aa2a99ed7c34b1e4d562a8f554979ad8ed34da8aa8b63218a0aa97410450f26b48529aaadf01173f737fcbb59d6c415007065ac4191a0a2a37d36d3ada0005dd41bf23411bb822a040948d1f8b69d3e0153f80056d016cf23a58003831010eee7c6be2288209eb5c1a2993b5d3d510173f7fd388007f948eea6d5629ea8a30cae8fb3c280006ae3604a435e36bb50045b8020224c3511866bcf8364d1ed3bbd4e3ee7 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b111111011010 : Impossible board_b111111011010 :=
-  kernelLeaf board_b111111011010 #[0x331949285f645d20282628202d1b495b1b5b686223575d491c235b6930344754, 0x2430312d641c5b692f242c1f571730523073623021261b332d5d33703127731b, 0x521d6f621d0a34285d28685d34376a58262f241f1f7b28353330635949351c49, 0x286320622c0d165b376a582c2c245a341620285d21285b2f6b1555641b346357, 0x30231b3134155d23580f2f1f4966252131521b57355b242c245a592017342464, 0x492861594964311c2328303152683b233031581f6160155d23575d2330200d5d, 0x3556486a5d3435576449581c2d212d5834371d2849357a1c2d3561372c5b1f5d, 0x62312e5b585c5b475b6f1b37525d5c58551f34211f63285b375823571c1f1c1b, 0x622e4f247020146c6a2e55305c2c684b52266935525b24372852553358576e33, 0x23553033105b241526332f5b2e55566426655b58345a6a652455352c6a5b3571, 0x465c5556654f305c674d5b2d2856584b252e604f5855] (by decide +kernel)
+  kernelLeaf board_b111111011010 0x100001408ddcd6ae256c1011105032e84fd87735452544cf937b7822dc1251ad6ec72f46501519454bacaef073f1646c7570054547957525618902caaa40cf21dbc854526a42c574db3d7e8820dbd577578456b793004daa0865d4b7d8da76b52525d5a88239749808c55d4844556bace989756812dbc0558168021afc7c5aee7e0b2a4e98b871281282008329ecf56bbabb0ee6a02ab3001434692f540696a0426d481174ed7105a5dbd262424ab7d46d2d5abb3ec75f5177628aacfc5ab088c757622b6f5b1dcc2516deb2247c55b7b0334efcde2ab7e968a37716e6b63abb2aa81fda6a1d00400fec0e3c425196f6fd8d41051ead7ce6a88207f399bdaf5b91a00aa03abbbb4d525411af5f01c9ca927515115b19cc9005ba8754056f6369c9282d0a0df3ba8d5a4e2d75541554447d6735bcb5f0e8adf59dbcfe84297709524eb28f0e82d9d8593e4d4280058e73610211ea361aa208c76a5e8c2200449de8f61892c7462c67fc3e0d4116514af77478aad7c5156ee8f905454458683445846eb7761a3cdec75154152245a657bba3e55956c63f5fc8a29fd5164e020e6d04465452e8798098e52cdf5f6bdbd2680842cd268080b2a5aece832fa8a05100b4e5127930189478f418a8e2d566aa00020dcb6dbe59bfabb1a0a2acc025566a00893b5b4c5056a52da0d477743a0002aca8ede22a2bf920475e57abe4e2518237b4f1ec4d5f4054100a59df7f8b1150258eea208ada68ca8eee8a8d0b475dd096101a737f57634da29020bf498a0a7f90453ffbd546d767a2c340521c7d9e4e22a0d73980aad2749882c363a82aa22df26731014926dfa757e935599fd14abea04805f161aa10d4b454187cfc582c002a4c34392b2cd29b37b3d08a5bddd0899e8470e5050018e9fe7c244aa6f6799e4ea30148abfe4d0005bba28028300051a6c400146835b9be4f00dbe80037c2016fd1862d1f5f000000aef27040039b28fadfa761b4e3f53 (by decide +kernel)
 
 private theorem ok_b11111101101 : Impossible board_b11111101101 :=
   fork 65 ok_b111111011010 ok_b111111011011
@@ -1323,7 +1055,7 @@ private theorem ok_b11111101101 : Impossible board_b11111101101 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b11111101100 : Impossible board_b11111101100 :=
-  kernelLeaf board_b11111101100 #[0x5848550d61622d2d7123755f233f58215d471c2d2b34232d5f21612d4654532c, 0x5c553f605d56112b466c2d54145646594d542d23455c6f54272b2e5d2d5d561c, 0x4665585d5c594b5d1c6c5f58565c2b5d2b5d776a646c5f58552d2b392b2d5648, 0x14212331585855484d1923584b3133271d3b14235a1b083328263426465d5c2b, 0x1c48212d541d283b4d242821284f2d21415447231f14335a133923561d410d5a, 0x584f26582a2e35556f5b35765c356f58555d2d584156611b562d525f58552645, 0x555b352b553b2a5b21541a64765c556461145d5b54645b62525b5d644b5b543b, 0x315826202b5d563b3554265c2658553b54611b2d5545282d3b5b2d5635352e2d, 0x211d232d232d213b1b355f5d3b53542845262b2a581b352e16232e252d3b582a, 0x3f535a26102d3b1b70566523262d5556212b3b452b2d475d350b5d2d4d2b213b, 0x2b232a2b237335235523535d462b5a2b4635232e3b] (by decide +kernel)
+  kernelLeaf board_b11111101100 0x828aaf1151eab51115e8fe7a8b5d11e22a8b5751e8ab4fbbc6d5e8adad81457c6d545ae8f5dbbc0084491fec282a2253eb5a6d008688b71de6f05500386d6f2e2028f0444dab7012aec00d6d0eaf77c5c40415ea820b7454118fddd5ae2a0402fbb908b74059babd0eef5459554389dc51e022dd42047880b743bbcdea0b5d418154bfddddf4fa9a8d41518baa029b10155f202aaec6802a026f6baec552414b6a3d76a00809756eefb1a802ab50463b63536830557c12ab77ada228ef16bd4d450936a2800dcd0453763aba0efa9e1cde820b75214abc5d4682882adddf6f00516ed6d05ae22b5d7728b7aba80dbd06ba842bc10abb03bd57008005bd0e54cd793455002ed9045ceaf93c394c01bbcd022900b6fa9e4c106df8ba5a82dbd0bb893930125e96fa9c8488bbec73f16936c9638441568aedaf57dfa0a5bc11501515afdbb98c88b5f7f63aba8377454116f6383d6f0e6f44416b6242dd16960a80a04dfec7574dc5ce723110444510eb7a9882770615463bd154521166ea0a4d4687261154101518a84fd6e8783a00935363e8f40004fea014d9e02a028b6b278b9d1e2a08082d6c14ef0750106e00b6b29a1d1ec754016c6b2558eaf2310566eacac0aa026747d8e5ec75567a7d53b8002082ef29a3d0540501110b59bc46cf51a6da6a222a9b51518dddee6aa2828abe3797b18288a5dee6800ad9d65e085dd55008e7b3bfd8eb682dcd94557b774957a290ddd013be2bab8727b3bfd8eaec0112b75295e00aae75782adeb6a000a00aa80c8ee757557f83835bbd6d040423abd8415418decd556f5329a080b5b4111558dd9c66f534451156e8f8bc0aa0ab73dfd4d419444faaaf5ddde915bc0ddeb673b1c8eae37c3c204062d6e0aaadd478ea2228febdfc5414647bfcb1a28a1d85508bbc7ce6b751257aac34d1f0a2b7bf85282a1d149c3cb78dd4e9eb3 (by decide +kernel)
 
 private theorem ok_b1111110110 : Impossible board_b1111110110 :=
   fork 61 ok_b11111101100 ok_b11111101101
@@ -1333,42 +1065,26 @@ private theorem ok_b111111011 : Impossible board_b111111011 :=
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b111111010111 : Impossible board_b111111010111 :=
-  kernelLeaf board_b111111010111 #[0x4a4b23645646562048174d5330575c531f17573048305833536456575428353d, 0x5828233348236408106733275a233164173328342228233134571b2d4847264a, 0x345656342822262d48152347392b28692717344f692d48642b231c552378641b, 0x306552265c642c28302d53342d2234305a62565b0954645f5d1f22222d301a61, 0x2d0a15301f281b22142115302d1b2826271b6464645d546a2e5f546852282c2d, 0x132853202e2c204f15540e2e06202d1f285635201b2d22302a1d204f48542e0f, 0x254d462e14214f4a282528585e28551f286154352c232a34252e2c1b2d201d20, 0xa232e142e154d335b4a5828353414212e235b1658494a2334282e3328212b28, 0x332853234d5a61212356232453342f2f] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b111111010110 : Impossible board_b111111010110 :=
-  kernelLeaf board_b111111010110 #[0x4926331c041951271a2d58242555525f6028542419335456615c6c28581d4d2c, 0x6433582d55235b56452a1f2e5f494a33541d265d391d28285c26281f2d474627, 0x221a095d30267256344d1f232e302326344a2f252a1f2d335b56561f252e391f, 0x30472624302d345d0921562d5148222d34133051222d22141851306848534b19, 0x174d54332817452133341d282a5d311f2d1d1017215d703328541f1f54213117, 0x3131212e60392a4a31172810] (by decide +kernel)
-
 private theorem ok_b11111101011 : Impossible board_b11111101011 :=
-  fork 55 ok_b111111010110 ok_b111111010111
+  kernelLeaf board_b11111101011 0x4a22333d4602a253c5451f3705859840506d78743a3eb6422aaa3d274f69afd0557e028a8ad1ebb0105554a6bb04090aecdd9e288834dbd95d8d46d7151469a0a5344021443aed1e0096f11412dd8d93cad5151e2b4d518ab12ed519667a8d0e88aafa81451a5e6ea291b61045d94d090ea24fe56a3044552ea0aa3b1a2dec50519575444444fea3c3d4daeb31545180478aab5a68a82a97576b3100df2300b748841a302822a77914193d46d3d215062a0aaaed67202a8a0c4424009fc57546a63b110576a82021b41adcfea3adb5c0054404418a6f5ba2d868a20aacee481083567e323116a6bb1004107eb74512856575619fd4628082c6f45a0200242c2514c124395e6188800acb737a8d36ac0aa9f44460837b935505326a8102a0d93bbd4f56a1282bb605022ff53d1d2d46b344405b8ca030d511b2f4b642993773c9acd460a0b0e45516f4f69b28cb7445545b4d1618a88016bc58d6edf00823027a9e4eff773fa1322c0495445add866b0600544104b0ed3adc80d2002d6e69aa388645ab09b5bc8cae8f8fb9d5510555ea8c558d3aa88a7d4bed3050541027fa75bc8c252c9aa8a0282508af479ceae02a48f1555501f1e4d37d8d46828f16782804c8c15491f9391046a43cf8ab3d3f2aac08dad1ec700195c997c8459ea36990128b58946082823d8ead304abeb20c6f56f238fa6d52195aa32b9780802a3f260ad6d23622b5b41c8d01111152fcdd51a7b0e46be2373a9e2901fd4be280895f545418723115187634419ea0a812d3c11c9d6ebf5351b5dee8b1d0504558e8a875d80222e0d1ceab455256a0ac72fa8c11544104868a085f85409bd4d9ea348be23174000443b3da6020801dd462001002abbba802b1d4000fe0002dcee43080500110be87bbf0d9ea3a980a29fd8103fd4e0550f2b1cbec38fa6d01526aa2aaa02ab0c1145bb4eee27410148550f00095b96f4791888102028b56ed369427b0d4868ea4912a2d6e0320248b2998d0109a3b0f4723a7accbc15615404233a2cd627bbb0c55136caa4f2eb6d39bc84a7f448411ebb0556188223d1536d395afe4092ec22ab3fadc1559f4ab6fad8aab2ab5b3fa5c55245db9c1053f99312655159f635100015bb57894151f6fadc5c510015567f50905ddfe4f2b4215067d4d04ee0c2a126eee8e7814ee0b28c565651dcd37024a8cfeb78fa8ac6d04553f27106953622850cf39a320004cce4a951d3e6b5bb1358d56526974552aae022a8a52d80116ff8394753415154999d115159f5345ade1ee609b36547633bcdd66df (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b11111101010 : Impossible board_b11111101010 :=
-  kernelLeaf board_b11111101010 #[0x252c45572d3d4647212a192c1f5b452c2c1f5d49645d6453635856225c513748, 0x5d22475c5c221c5e22475e574a585c3d695c1a3047255757681c584a5c3d642d, 0x37095d265a4f5a1551211716212a3d2651512b2a1f392334302c47392c564558, 0x39205a2b534546221d2460491d272a2c5f2419265c1f26242f4517101f262a21, 0x451f395f23535a472c5122263d5d156b512e4f2d5c302c56262c2b492f5c2120, 0x2d6022271937243d23235b245f23231f244a582c2445074565522e6439075a5d, 0x21375d395235214d2e452c395f354a231a535d2b1c22472222533d234a23202e, 0x2b395f231a21531c27203d1c1a235b141c202e2d2121472d37245f2451451924, 0x455b1f5f25372d376e1c565851202e2e1237165158601f35392e525c2c4a3d4d, 0x4621372a2e2d536b47374755251f1c372e6056466a5d1f2d374725392e68375b, 0x354a372f532b55] (by decide +kernel)
+  kernelLeaf board_b11111101010 0x2aa2b5d65622b7d7e8aaad3d5f20cab5758da0a0876faac12176a2ab7a7aa2809af98fa88aa037e3e88a1574b9fce708df5de0d416b68b1b4048757773fa00b76fc7e01252eb9d77a3254585550511bf6f55556698bdbcff7f1944052edf414414056edfdd9ceadd8d0141a3a88820d76a8b0aec96a037d514b6aaad1ec7089833f82822d75cebba5dcd6600cac51eeb22337544157b9efe8f424535a40521d0208429e732504fa0dee892a7308514d68f528466b794ce620d76b741004388021e3eb76f90220ac93bfa80293054a38a45cce8a0a4d0edf40bb8039c41a5a22d75443cdd25d8245d159b9efe0435d6568f56359353d5000016eeaf39ca8b8fa0922c50545d3c7bb2a0128f95aa89323d06bb5be0d4599145a28027ccedf49aaf711451eaaa8aa3ede93bfa288f585451e7f49caec6d0288b3549c5d0416500fc5d0011b2f4b96177938425ce1fb5a88d771522ea09fdcf7f47cc8b4f4026d71f541166822c34745b2202a6dee0308084b772b886be8ebb9fadee6c314159880c28d6d360acd5e83275faa0a03731150e0a820dce800b2820ed688aafa7c5e368828b40553ba4c1044444707270ee9f80400556c2cefe0a4c24ce9bb987f41054d82a0a4d7ea040845c00500002fa433fa6d56876fa2aa889c125bba0a089bb5a0282853fb595e8e875552f8aac002885b50eab7b882a9b5668e802088220b4757aaacfee747b4d44961902b38fb9e510559d6e2ea882cd8d5050015bba2e3e82dcc416e68b5144554548e77b45c7c022f75f159580d4ab63b9bdf4e04492dcd442535b0e3e2974abec2a12d7f4673016c6cad69b9bdf26b704454bace2ea88092d7d5b8f78dc02a891f001121150405890eab805490ceb33fdbe2e088882cd4440599feeec9d0103277711257274f0000271f63ada2aa8bb9d1dbf23 (by decide +kernel)
 
 private theorem ok_b1111110101 : Impossible board_b1111110101 :=
   fork 59 ok_b11111101010 ok_b11111101011
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b111111010011 : Impossible board_b111111010011 :=
-  kernelLeaf board_b111111010011 #[0x53212d52523328611427393b532e125c0e166a68681b1f4d6a3733195c51582c, 0x2d4f602d53280e4d27532e5253201a1c47515e33574d5d526f1b2e0e52694751, 0x1b4d1d49193733646a5d7d606e2d5f52681f5f23192a5d3747281b4720465753, 0x357033562335203d1521261521353320121f20222d58285f55681062605f1b28, 0x26092a1b22175706215d5d6b56681b617d261511214a1f68555d2d63572d6122, 0x1f64562a353d151d532020525c141f1c531210707120261b472d52175535111b, 0x22141c475521372f3d532027475f523d3d3d704a5d686157616a3517143d3720, 0x1c1d37261c602553571d470c2064263156526822351752261046202a221f23] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b111111010010 : Impossible board_b111111010010 :=
-  kernelLeaf board_b111111010010 #[0x203d1a5c5c1a20531a550f0f17252d352d2021614a24211735145c237c5a2e60, 0x7c07645a2e5c201c5e1a53152027312328472f58204d5a31551b3b284a584924, 0x512d5d3d6f6717201c693d2328655714705e142362514d61744761704f1a271a, 0x5158573128642814352719271c22203d222073695e1a1a1c27271c1a5e372814, 0x262628684922645f4962692864571c27203d5e282665685e1528262265] (by decide +kernel)
-
 private theorem ok_b11111101001 : Impossible board_b11111101001 :=
-  fork 48 ok_b111111010010 ok_b111111010011
+  kernelLeaf board_b11111101001 0x2002a9cceea2037d3600a88aa07351c1a5e15a45a9ea08915f3ba8c7c668283c9a6d8ead6d80541a5e8d505851516d72fc2a14b4d90c0558da0d560b2a2d5048fea8f55455165354e6b00847e2ae876fafc2454255eea2892b4f41a7e3e48057fa5a000bdd41615ee8302bdf872b00bb801a3c3a84015f170fab1005ae5f4029b0bdc0451bea4833fe4eb6ab8a19aeb10f75062b8029dc94250a9e83515072020314bb994cfe052520730190a792e1080020487c3e3a0e95366f8fade152696c97c8002ae35e0a206239bd370409d6044a559bd0625165f00abea89286d0e201778052efaf8000ade8c42637e1fee9b040405442b91d0e812b3fe8d000abddc405be3c22be4b7c3a2dafc3678a0aa8d6d1ea35d8552506bdc851252b90ac874dc8805720543ad767a02920da51561420967f9068b5bd8d47488adfd54415941abda321e2e194c1d5fc4424df28c0428df3721458ef090432733b7d9e832042393d5ddfee2a94a0260eb76b7604212bfd2f467f012bf82a3e54144ceabbbb7e3e02a90a8d6458037c7d071b515afac8053e9155bcff0632002b75069ea3877013744104fd3d774b05465a7a0cd6734023e451c54041401bd80933ebe0cdc0bb94bdf9bd6065da280a80923ba5e9e3f51e9e87944a5485bd4b5a589a5b3d46284a61ca69208a7d7380efa7aec9773911daa25b55595b57a34955509d19bcfe9280cdeb56df67a222678495b9b47b1acd54d920049b518413a364e8b1085c9dfe009193800210e2f4e00aa3c9d7d802093989f509541bdc41bd8aca0a8d379741014507477b21452bc02aa39555368bcbd1ec68015f54663aaa8f26aa04a90a28a30a6d70853e4674194f9cd429516837bc8a2a2d070c144f3f4f7b35d008081ae4e69f15405441013f1ccd77b6fa8a329d1c9555056edddee450a01bf273e0017d02419cf4ef7480947a8f2f5f004810a7c3bdaa2b45347e2e8e8000d4ddc38874d0548fc0b87e1ab00a88cfcd720027ea524d7f30fe4ed6bbb9802c20d45639b037b0d6824214f0115662ba0d3ec71014147a8e3e820bf410010086c6839bdad8eaaa80957378ef54146ab4aec72749a2aa0deea26b14b98aaadccd6aa0e9eaa6bab808a8fc4547e5f12ea90b7115ae0b741a1e44070f32b49800821c442fb5e0a0629dcd1ff3b5aef06c3 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b11111101000 : Impossible board_b11111101000 :=
-  kernelLeaf board_b11111101000 #[0x2252685c645d6d4756615169645c641c1f3525225c20372c6d5c47642c682e53, 0x5c5e642c3d273d211357785e5c623051285757461a5d2a5d5c2d64513561575c, 0x27522c1f23621a212f1c2a2819235c5e621c2c375d5d181c78625e5c222c6a65, 0x26686c2047655c64623d64471a1d682e626861561c2757272a62641c2f272f26, 0x23223d26171d283305311f2d311b31300e311a143371206f2837332e2c0c3d0c, 0x2c17353d0b2a1421685d2864645c2e1b216265251a132125261b0e2d3d302e1a, 0x2c2e1c4a281f2c1d33312846332c1b0c471b645e0b2e231f2d473b3d1b20640e, 0x332e6f701c565520101c1f771f260d1d122625262518371f2a0f1d56252c311b, 0x67685d56496a58466833615826332a2c2e2c633368653d5f772e7065644a235d, 0x69686870675d565d5826616f6a6a] (by decide +kernel)
+  kernelLeaf board_b11111101000 0x5602d3e8c0114450455d1f0f3f77ad8a82addc41b1a8808849b5c3c0efd1356a8eac9cfe8eef5b93cb36ad4516c74a4a4b1bd1b3c85516170e3634db3d80255aaaab35d8a402b354c7b3f4797547b900a15ffbec0abb64e1e5f272b95011ea0a925dc899ea2bbdff0ce75bab800a0c0140086733f8000101df3fcaa0026c6e7725a0029b452e20026d52e63046fa47f558fc003ba0a56d2e00acd58e6f910566cbb1000410e684ad467f805667719e84432c751822b1b67accde33910423e6f510c997b011788ccbb47a47f556025bc7c28077bdcdeca0283c9a1208ec51671005f40006bbdc5eab29a1f47774011551e4d80572680d5cd76201bc9443a962c56cba5d00d7440013d0e8025d4d9bc76b77bb0e0511049766b47aaaa8b7ba6c52540be7751a02b3d5502ec78504fe82b7158e6f8458ec31da4b1d544d6a0825367f1d062288bbf1151a8b7d9e2aed662b092335ef04288cd368025a3d9a0e3f22481975526e60d64f16f7067271f35a2779b46bb14716204e8dc3b5b39a7ebe0827d560a52e2f267321197e0a7c00497e9b954824fd2d667f50411e8888058b35882d21d7e7355a228d425133a3d95026e680035ef167359b7d00456ee2a121774c6b02a738144a58803c78bbddcd16a28202aa8b3d5e5d05b9a08037b8c982aace449ee27c557ba1c9f5f4485223c77bb9e2d87475910551aa0a57d15044af91b054040d6400ddd561102addeb9adf2747448115af87afcb7355510545a14bd1a212dcd1c9ddf6f1f856b60e1d5012196a3e9f277350411c99cd104fed7454054bb28bb9a0e14851beb3dba03739518fd9354659e8d774f (by decide +kernel)
 
 private theorem ok_b1111110100 : Impossible board_b1111110100 :=
   fork 72 ok_b11111101000 ok_b11111101001
@@ -1381,21 +1097,13 @@ private theorem ok_b11111101 : Impossible board_b11111101 :=
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b111111001111 : Impossible board_b111111001111 :=
-  kernelLeaf board_b111111001111 #[0x5717542c1f215f5656545956573364286c715f1d2c6d5f652b252a23705d4b35, 0x1c314d3314654a3121576c4d33265a2c541f1d597617532b230b150e4f2a5a56, 0x471a250a806823544d2c5c1a542c4f242b5948182a5d234e54562a545666575f, 0x4726602b562546585d2d2b2759545428575746275623302a215d1f546d1f572d, 0x56283123585d4f5d4d2b4d70585a4a2813232a21560d1b2b1e27575d4f2b5f2d, 0x242b532d2b5a5a4e14285d1e4f5a4a2d5f] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b111111001110 : Impossible board_b111111001110 :=
-  kernelLeaf board_b111111001110 #[0x5c3026111a262f1a192d535e245360692551675d4a5d5e6926102d475f544d2c, 0x1d58454a561b641d545426195660685d54492d47651d5c66521d23195d26261a, 0x2a52301d1f59454a2f0951250d2a2d271d594960541d495725282a4925590f28, 0x54645126532330257714255831455d265d2645681d5d58564d492d492d5a564d, 0x1818101d181b2d28211b2d305a4726595a5a2d5d515b5e6d511a1c143156311c, 0x11311f281d565d564964286449592d5d6a2856596e546749314e192d101c4931, 0x4d303357583049630f2d1c] (by decide +kernel)
-
 private theorem ok_b11111100111 : Impossible board_b11111100111 :=
-  fork 55 ok_b111111001110 ok_b111111001111
+  kernelLeaf board_b11111100111 0x94244149abd01029eb750014555f6b061b5ceca6ac002a3bba8b27b21510567f6b95a8433232defed6c201146a22a22c28c747d8dbb8882a28ab3fbba209537500557888cdf8763b58a0c0a92b518a293e547aaad0e00056e964446f1bd5ea9ed4fc035f456ef10813f4657dfd6f1f4da02898357c22b5b9052e846ec77705555b802aaa2abd3f67a990a23534565475f5151015afc6d4fa28b5b044451e2a830c0180215687bb9fea6a22c2edd4ff5f5bc7d58044d6a5c568311ffe8d4415451ed4e6eb3504002e6802526b6a6b35050109fa840a0a4e55f2220812d9e466355ddd1ea00033b56a6835b415562ad4e4a141ade6ebf7f422139ad222c78466ecf4a6cab9795aaa001288c7438457d591d9cdd9e9bb582a822cda99fc19003b9259fb65f54169f004af1051e2f4aea48a3b27e8aac55120b5956ebe5f445256a6b33fa1d05012bf95b0112b68d4ecf00356ebecfc9a8d015254b67c7bf9dc810598282edefee5d4195e80aa5d42156a3f877725ed71150466e000a82b0d1159eb2a2035fb1a80ac31293b8f1f80002b739882824758e87f519dc89ad82425ddadc9c0425c991128f2727b3a022022dd6051bbead475b452ceeeea60367d4541564ec700219db20a23420219d6e4339aa008149d8e0080863504c6433ba0a18e37add4688a1c21050deb761dae3e9b045b3aa104adad118ad6b7bb8a8ad1d55091426de4b7bdbd1cd6a888851cca682b1dad8a020b1c014139b530551b27474dd3c040011ec39125452fdf544a6802a884ca000c2897b1b1e2f774da22c35dd36a0ac5f46a0001de6ee58eb73715093adc154493aded68095b049b82ab404a5b0e04143b9fecf1795afd15944e2080351e4b82a37055adc00054fa229decf27012706c32954cef27afa4a9750946c0ab93aaa280a5ece3f4151c77b1c5e56802d6c4437a8e4d04ef530101050401a9a6cce40ad6c42c1889a3bbd4e4eb78f8aa32b973ba828822373cdaa8834b3baa8928f33ddd36aa88209b35dcd8602808aa226c8e6b114253682bf3599d6ea42d4fbda0ca93910a7e0f4e97a38022080367eee92acb2b24bbb7bd380aa8aa29b21ade3f7fa9cdd66df (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b11111100110 : Impossible board_b11111100110 :=
-  kernelLeaf board_b11111100110 #[0x1d1f26656d575a5d5319330c651f2c1d2664284a2a1a1d1724652e2e1c235635, 0x262c0f26237821612a685f665264286528686a5d5c465330572a3025652c4609, 0x2e1c1e566121345a234d214e1a0a255146532f5c1c5a522133265a281a262c10, 0x3d532458331d37255e635470496a5e585f4d2c23454930100b26301a5d522654, 0x232b1d3173331d3125331d310c6b285d2b5d58253757277264101d2849564f53, 0x152b313710273137681c314d0f3730495a2b] (by decide +kernel)
+  kernelLeaf board_b11111100110 0x148206544aeaf5561544163b7c86a8a3088a7d8edfd19cd041563a2a2a4dc7edf618892741b5d20abd1f028af50523bb1f9ea02822cf5563bb1d2e820b3d94048eec719ebd460a23771044155f77b1aa0029755bf5f0013e20a0a800f2c4c990ceea393a22b5b0467f0aa53dee02008d3d5949d8d04467a775010256fa5c41bda838fa98c080f0d5193eac4bdd8eff3759a828a228f22e04ac9c04461b4110c05e12a6c40619ad50152ee228d2d469536d4d950155d9cc24f6240b15bc3a1da76b47cdc405438aa0b3b0411548d70ad2ed1e374f5faa8b73514014e76b5045a5aa80800a1d9ea6ed6a3054135aa9b5415110566434d80acacc7e8a89b47a28800278d0f87a46557a32596ff9ba4a5e4d46c4d9751151d25a3d5a892ddee71ba7c0ab0e16afaa20aab1618a08897b2eb38da2a089d4140ee7f65024d808597dbd57db58042dde9ea8b019d500678cd0472e7f81422599dd379351cae06101559acee0097e926802b974155d888abb39a3eb6d7 (by decide +kernel)
 
 private theorem ok_b1111110011 : Impossible board_b1111110011 :=
   fork 63 ok_b11111100110 ok_b11111100111
@@ -1403,23 +1111,15 @@ private theorem ok_b1111110011 : Impossible board_b1111110011 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b1111110010 : Impossible board_b1111110010 :=
-  kernelLeaf board_b1111110010 #[0x1c30464a2a5b241a245b5959135b1265252c1d6519252d2c07132864155a5635, 0x591f71576e532b282869532d141d28522d535e592c24301f1f2d21252a255825, 0x1c1d2819121d5d242337256954602345595657374a2c2d0f5a57592253241728, 0x2a1761282a21561d19230b5254565721231d1c1b28573d08191c1b1c2368692d, 0x57271c532d286a68142d5354575a2d304a28] (by decide +kernel)
+  kernelLeaf board_b1111110010 0x808af82aa27d0448039d3e5ba84828a8f57a329a8a8c2b7a7a200353406bf6b25bb0e56020a8d5015565f045c3a8c401555a1eb60004a9dc944533a3e11485eca434b96a9d6ebe875480478a0a77115399bd4680215f2917b8008cce0887337a087347e8f4eb700144e629dd462aa299d66259dd1495bba4d1edf25114ba0d69d09101a9d83111147c5ece02942b5bafb7e56b3404085b8802c03f1486d75fb38288b9a7a00a0a4cbe0b00ca8ece7f0450b8f22857f7628b4f5780a8e000151a3a7a9eb729a8887745190894b54005bd4f04916f76759a0c082024e619fd4024feb742010e22a5d562004097b18122974e6c38dcae142169576f50162499ac00114980dbc40b3ad20d9d4527dbc97974bacd948423ba8139733a5d16eb3056000f93d51e4e028ae2daeb6d7 (by decide +kernel)
 
 private theorem ok_b111111001 : Impossible board_b111111001 :=
   fork 57 ok_b1111110010 ok_b1111110011
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b1111110001 : Impossible board_b1111110001 :=
-  kernelLeaf board_b1111110001 #[0x4e5b452d5f612b1815262b18247a2d262b242b0e6c3566642b26243449285a56, 0x4d4559735949252c071052181c2d5228641c4554282e2e45235754616d57613d, 0x7663526451302315354f3d23675a265c63544d5b2c102c6a12704e5863481a5c, 0x452e23245a4e14302d3023475348152d66370a305769765851666a5f23377a4e, 0x573928232e57392339282b575a4f2d67354666516951464853517660232c2222, 0x6e2c1e1f30514d6648213546573d5f12514e525a4f4522465968575a52524866, 0x4653162360104e25532d7212452553253d3d5f4e721c2d4e545e5948486a461a, 0x375b6939534d252d54534e6a461a492d6357285964543d2d4e575f5268535823, 0x252d1a5e59643d646f66575f525f544610104e584e721259454d25161c194d27, 0x5b1c48575f2d68545f57665f585e2f274d254e486a461c1c532637455f266a53, 0x213054592b69584d17252b2b242b284f5a24212b19122b2851101c5b48536135, 0x30213037221c2d646a584e5b5f54226634] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b1111110000 : Impossible board_b1111110000 :=
-  kernelLeaf board_b1111110000 #[0x674f4d2f24255f4f585a5a235a65565a2b4665252e252d6939282b2b25564557, 0x49646137301e2d64531c2d25695426245b4549284d5b67615649545f30616939, 0x5b1e2863562b2d25582e286037495f53] (by decide +kernel)
-
 private theorem ok_b111111000 : Impossible board_b111111000 :=
-  fork 74 ok_b1111110000 ok_b1111110001
+  kernelLeaf board_b111111000 0x4481586a8a2108a8761b7e542555459cd6e004e4c495b5658e76820dbc042ff53545445e6e41040169a1d86808153b382aa092bd9d3d8e6e5f04ba82bc4257a4e195ea39fdad4049a874011557a20a2671496af51aa228b2d1c86734002df23a78202e1dae36f1514458e723afdfd6fa3512a9800805fdafe6d0552fed58ef6a80bf044f9089374bb2a4ed94a47ab8da2089cc80250e74f0054db7d0511262f7f645537aba7a5d6e6b06f6a88b67c9c00bdd05c989bf53375fbfd2d0542fe229538daa8090c4504873b511b1913be592c20b3811721109ba5d5241100b61cc441339220a4dd3edf91b7888293a773d3c159ba5d6e00353660029f3bd5c6cd684049c416eaa80818fafa2ca12a3b3e4e12a6800bdd6ea813bafdfe97a30169e808a58d1e00d1b50169ea216d51e20a8060d21ced04012ec20a8d3d6fcb2588a211710512e88200014f12ea03dc0847bdfd8627672ce6b745109da82153000bdcd9e46a0c948f571b35eed6708c00c7b056000fec3512a8f37cda123510110ed78da80b32835f7bac0adfc96a08d1c169dd2d940006d73f5098ba8a8ca2e376793475f514b5d2d404a58048d85cdd7d89573a8c251547aed005616bee747a2aae751abc045af8096b9fadf3ed7905008d88a4ab9ba382828d69e8e2a891b91d3d40141a3a88009dbc1a3d6688a2c0051600045d458405da3d276b9d94d056514061adc140561a8f5523ea8953e9195d6f9b5901445be2b98680020b5f855174e2f6eb1d1f37ab4584bfa3c155bfeb9d8823dbc7d2d45814201c9d1d868f40141104aed7019fbdd1f9fb5a6ee6808063ea684dd61414adeb360850121acf564b090386a04eec6838f919ad442e7370122f67e7a08d9c010939225d66b2c2801f218aa8d2d05319cd6e0aa0b4b51e4d1055154e717455a9a8e91015d8cc8abb8ba3d14416bf2d4f0e028edd40016bf877baa2d3bb7c5d6f7f9544130f2af4131a2c9242095d36abd526131a4e097d72b1288add36a2882af5449262caf1decdaf450a4366c055c9abd55536a9369c9d476bada0dbc46153d88a8c71f5b41952015e852dd2f6310400502025da8f06df93a0a8085fc0425a7a0c9f27874105be800ac33da000adf26488128d3ce6b74be9ea6a0aa9b444549a096f50a1558bc9d460009374002df9f454170f5b93d4d051a0bfb0f0ea2a2269dcf9f9fc02cdd4025017e934b80217f9fd8ed6aab6b1555551f6bcb8230a2b5bb592a0ab2be3797404412ebb400012eb7d3b9d024951b2bd5850657a5d15adc5ebf2b (by decide +kernel)
 
 private theorem ok_b11111100 : Impossible board_b11111100 :=
   fork 59 ok_b111111000 ok_b111111001
@@ -1433,20 +1133,12 @@ private theorem ok_b111111 : Impossible board_b111111 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b111110111111 : Impossible board_b111110111111 :=
-  kernelLeaf board_b111110111111 #[0x2e53555b412a1e74291c66585b5f606e585a6a66607c656e57556674244a4e30, 0x1f6e2e54534c62262d554d1e1c295555495f53572b10292a1c5d5122412c1f60, 0x6e595a542e5c5a5251271f235a412223412e6457582d652952515823315f2955, 0x4e2a31534a2a295952284f5a1a4f4947311a5a2e2d6247291f315f5226545a2d, 0x5248514e262c264e2e2d4752245354205a485365505a0f5357152e29412e1b2d, 0x53632952534a245a2a22162d2c2155210a29550b16214129222d2a4e53282651, 0x2d56264a1a2d28] (by decide +kernel)
+  kernelLeaf board_b111110111111 0x200002b7106b69b104000959ad40156ea3800a78aa2238f594f4b545500a7cad276b5580a0800a88b2dab75982a8aa1d26aec0a21c56a740096ae8880bc42da1d55083ca745add573b1144115a7828c14054d8a9470154151169723028eced36b34515536ced76b754558f84a0ad2e414555274f5a9a0ed72300404a7a00219765a1dad5147eaaa02253d416be575daaaa7838a8a8aabb37ade76ab63a82080894f9588a2888aad53d9e964a028c4089fb6b505653588913f64193c7d58463a6bb5aee4516e09038b8fa8800a9c550fecb1eff4b4dd4d041516d642ab7145b769675b5d4d76905cd146d74ba3a2109f5513fa3c4410b5b07458120a8923e0ebb5044007275f5015084b1a0b7cba9c1569747400415a11b1a8f63a022840b7f53d5cffbb44055dacb5301069e4cf169b44425560415bd5e6e888024a88a1ece6a7aba8d5d93dfd04569ed7c515e900a8024353aace6888dde8e8b83acd052153fa260e5daa2053d852af6f558083c40aab04f7d3539cd601cd92d8e04052df7fc1a888016edb1a2156b02b5619bc1fcd411cb86ec812be0957cdf4d272b9db0c (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b1111101111101 : Impossible board_b1111101111101 :=
-  kernelLeaf board_b1111101111101 #[0x7b27313151301a1e41111e271b25301f2f2f6a19584531161a414d52244e262c, 0x4b4d5d684d6c302d514d304b24697330515d4c4d45521f514d3f245641254156, 0x663f51301b1f30134d1e292d50301d122d4d675b604d3f247b1e30234e223163, 0x2d2730415e60522d60564d411f294a4e1e1e4d3f55473047190b2d1e30524d1c, 0x2355474a304d416b55483f7b4e273029301c552d29304b29594d3f2724302956, 0x454c4d514c3b2d554d5c5147264d31315f2416314d3b1a4d5141264e2d4c5366, 0x273f4a1e612126452f4e292f3f29221c111e29262d243b] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b1111101111100 : Impossible board_b1111101111100 :=
-  kernelLeaf board_b1111101111100 #[0x294a5d3b4120314a4751292d4c484b5e62204b4541505b1c294e4e294b4a2f5a, 0x4d5b213b0b292d2d292727671a2c50514e1a4e414a232147244e1a274e1a1c3f, 0x2c1c174d295b735f265d414c195d1c1f2c31292c3b0f301a6e5d0d1f535e682c, 0x2d1e551717533f2c292131502f2d19312c554a2f2d45211f4a172c3b2255090d, 0x2d632660592d6031293f2f2d4d27152c172c6575294b4a17536e4d31534a4d53, 0x26542f62312530314d5b4d454d476c4c6e5d476e5851262c29535e5f4758554c, 0x59290e18295424266a4d303b086e542658313b203b47262d5045485045482447, 0x2151263b4120474126417041204741267c3f18291e20] (by decide +kernel)
-
 private theorem ok_b111110111110 : Impossible board_b111110111110 :=
-  fork 42 ok_b1111101111100 ok_b1111101111101
+  kernelLeaf board_b111110111110 0x4fa128808ff959ec0470e02874d824aa45c17e848d3b5388022aa2bf45841fea7458a08a8a00a0a1cd239ed4e9b5b80a4c5dea040a90c5e673711668e0233377aa08cb7aba933710ae6b478fa6c5160466e4a824ab1c1018f7f500521265b63cddde8c2a22a0a6b9bd1e0e9b9d8200b75009980014f44cd8a8fab91f95b0c10166e0b228c1d0135f53084d5e4728fff7ced3e20c30454e8a8c341539d5d6e202a751872f1054854f67149bbfc404504f8800a4c61810a7001adadc51513e220b0e0e802dec5c1d334b50556ea383adcdc055460e7f4253cae767b0110f6a908083377f8888435723ec314408f8b2ca0088267517adcf6c3a5a222100c4dd44e79b7f82acd1d8741089bc453fb0d454a451127b3723da9d6e00a50d00405870202a7725cb79b8a439fb7922b839bbfd27ef493d9002c347ced1602c7031e22cbc9169ba835dca44d1b42d37d9b0c940145596ea12b2d1e6ec397aa2caaa935051d3b0a1cf61d1d256eecce6f17a5c0a8001fd4440010a3cdd7fa4dada0210750204b8254c041d6adfbd3e8c0c764018f47619ad1500f6488ca0200041c8e7b4f8400926f4bb0cfe0a82fd505fead20000133d8e9020018bc0c72d9ad020e8b37a5a4e769b59824921c8568e9b110778a08841d060047c83a6c4120fc3841183a0d008f9074dfce504447f98d4e80aa7b4182400167538ecc682a29ea62934deac0126e2220c377ac8020023ddd4d376363aa444bbd07208ef448fa6d6e04288b438bab4c8d944a18ac5e0564693654148fc9ba9afd5860c5c80231e2124bb0c21463b3705205809b7cde2e80a10cdd848fecd0099a1bbbb80a0011fddd8e8e9b59882aa9c29e84b7b44541bfa47ec757016026622b7031e9b90542707671016e8e0d8ea77f8410afd6ea2354dd91053e2a95c455997d404456797eba9e5f2b4542fb280d3f76a92ac2033710158f4f95c4cdc469e14c2dc8f75764be4025f2069eff59a9d0000043b1c0541a1afe0145ba926763acd8401511106af2b97eb70008ba1cfe80cad04009414beb3a419177a2eaf282a28409c51bacce60525f9ba9ede8288f3c0106fec24849bbb9079988402467bba4b2809ccfeb321002158e84aa759bbc919012801f8b0cd7bb5500110bb8de01193fd3d4af6da359cde0086de82521d77800022f554eb7405ba2082a7516a4fa0549fcf9ad6743a3ced11535882a08cee0f2b478a8a10a878f882aaa4e766b015540093eced359cc11fea7416562485dc77aa90741b1d905040669588131fa3a9d6e8a81335015049192fbda2ae2d06084bd62ea107a1aa42a80c0dbce6a79da828b228ced4f2f95afed6ab (by decide +kernel)
 
 private theorem ok_b11111011111 : Impossible board_b11111011111 :=
   fork 55 ok_b111110111110 ok_b111110111111
@@ -1454,7 +1146,7 @@ private theorem ok_b11111011111 : Impossible board_b11111011111 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b11111011110 : Impossible board_b11111011110 :=
-  kernelLeaf board_b11111011110 #[0x4e2c282a1959565d495d5059315f1d5d2d2c651e5074281560222a1d59294a3f, 0x191c5a4919282a1b1f552d49287f6f0c5757625f66221a651d51587d515b291e, 0x55471c2a2955314a302a2a1c675f5055526f192a0d57414e2c55684e1d191d20, 0x2a2061554a22554a22636015] (by decide +kernel)
+  kernelLeaf board_b11111011110 0x822ab418884e1eae204cad1050145d5c4256a800a48a8bc790aae0caf5744648f9cd56a705002ae020c795b0d501108555a80442ace6c867eff434005aba8352f7f4a80a00267558debf079dacc014008040abe8e7608277653380277401994199ce61010096ba4e6751aac0410de07f41abcb70124f4152a0a3807ff7e3381af880215fc58dff368b8141514135e5cee00547b1ac5f72068f6f539ee76b3204111460022132acce8d9c12b777938a8200ddd1050a1d9d8e0880a8a97f3bddd6eb391400acb800007b151045806287d35195d07060088a2d5677b3a9e56ff (by decide +kernel)
 
 private theorem ok_b1111101111 : Impossible board_b1111101111 :=
   fork 51 ok_b11111011110 ok_b11111011111
@@ -1462,12 +1154,12 @@ private theorem ok_b1111101111 : Impossible board_b1111101111 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b11111011101 : Impossible board_b11111011101 :=
-  kernelLeaf board_b11111011101 #[0x6053505010575d4c1c372a57301357262b241e1e1c0a111c1e30502d29232c4a, 0x4c302d25290f2d1d332257331729372a111e585553374b2d2a1353374f4b522d, 0x50334b1a4e614b2e2e654b5e531e5926255f561a161e2937221611292d3f3350, 0x601e2e263f5a4e4c1e301c654b134f2d223733292a5013211b13261d241e264e, 0x72181f59691c1f5a524b3f524b534e484b101a726553537260231e29302d1a5a, 0x3f1e29551e241e1a574c23212d261f141f654b14261c1f231a254f604f590e18, 0x4c142d56552d604e2e3b1e1e172b654b142d264e554e4b4f563f2d5a142b206c, 0x5a28561e285053611b28265462622b502d1f28545a4f502d54561e623056495a, 0x2a4816265f4e22262c501c5f4e2a2d5126514f4c525a1e261e1c1e1f295f4e30, 0x1e5e2716021e314e2e4c654b37334537513729625b4b334e2a26281e15501d4e, 0x5b522445522d51535e56311a4e] (by decide +kernel)
+  kernelLeaf board_b11111011101 0x328088a896fa5a4c444462f4b0056e0aaa2212834711a7ded5ab6c735cecf6a8b7b064553e5b515458405a7b63ced7688ccc44572f2f51056fcab3e2e2022df55001025a3b7d4e2848a62edeb052f67ced560aa0aa6c91045184821ec2110052b8a23433baced5628000804148cb6a9b1444054551501bfced16a9b59a0a34311039adfe76ab5ba8828ad1c52536232d1e7ea933a58a802dacf6288326c5040114f67354553d9fd4f7f9db0d0840554ad6a24a3adaa9ed5951d0c0451a7e1d541149484dea34d953c5888a0a28a62d5f43054156e107f54753b5cfd551a1adc54016a75b44153da062d45161a30955b93dae6600c94d5515bb2aad6eae8aadf073b5dbbd55404f6aa89ecbeaabc4555cbaac32f4a600ab74da33b5416149abcee5e822a0cfc4adbfd6e2a8ca84b6b29c290abd07b37f9ed4e20829573d82808a324cf66b44155afccd1e244aa87555ba9b45093f94c10145100ff979794d362a1cd44550fea8f35a308297542651a7f83669419fd9c76a2a8818de5caa02200633fd9f4e7345453fd6b451a5cbdfe0a4234b97a9434fa19dc8c4a5ec01210cd7cbcba0253d5010a7f2f068f3da9d868a02dd5595694d680d5af067b5d8a6c05057fd0056b667690a2b2c0cccf6c3920440e79797b2424f9fadd41145a82b7d9ea755a8222808ad0c9ea1d51024dec0313d13677499ee61204dced05a1aaa8b3e5e6b11559da82b8765ebb511014017797978a088085ee9ea221ec02cea009b012f7fad9ad009122d9ed4edf5409116b00200a5b23a9d6eff914167c02c50e6620a130d5ba5d51255388fd6e929dd9e8b40216be80b3c05204bea76faad1120239ec46c688d5d129edf8525eb76464404155a24fa7b7e1527e20084be96b7c1a8088053c65286a2834321d7d6ef3339c02202df55d7d544859864f10afa9b157a4d01224f6809ece600202aa042b239ccf6c30082864b753a3d672b (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b11111011100 : Impossible board_b11111011100 :=
-  kernelLeaf board_b11111011100 #[0x20515a3b290c5a4c17204e5a24504e1a6b604f1d50594e6555201724574a2a2e, 0x4f53253b5a53615065574e4c535b2528611d1a5a1a30132214174e291f266215, 0x2a234a1a1c294e30214c565348214c535a484f4a181a295c534c30620e5a4a4f, 0x1c5a294f223355673b4c4a15231a65232a5e532c4c11331e262526285a604a2c, 0x81b141c521e291c22262c1c1f122652182b5a501c296751624c4e2a2d4c2333, 0x616f6150271f5520270a1c6a1d572c5a50514e2a335054124e224e0a291b260d, 0x574a195e51251a294e4e1e4a222c1f4e222819201f505a] (by decide +kernel)
+  kernelLeaf board_b11111011100 0x8a835f95aa8d0a080867bdad1d2e6b4554f3b04119d9ed4195aa2c510044559880a021fe768b51a20099c55805067f215156876bc38a842a8adbfc3d0d3f287fabc80a048834f84a28c2b39b14eacef5f455566205ae87479daad9eaa50c04045206a612e768b04541559d8ad4e6f4d880037020111c6f29a7325541541a5801ed4e73458a6d668a07350140fe12012c105374b31abd05b5a2d0d18839a9d0150b3f4721c5cce76ab5ba333051ea0aa33c00439aa0000b6b53b3f845401445b3eae822a0167dde13395a8a895c15501479af2ea00228f54045155dee9eb399a0c211c67a029ec85454da5d044da8d416406d78395884b0acd560008a3e566b39a9e76c35001590f33420414ad894f91aa00a321e66894f241ad723640544049fcad31852a0000a1ad4f7301029f3361e2c7608156b95cfd409f94f4810114452eefb5d3e100c3d0db2f5f9db0284cd01a7dbc0112e424082a3c39dd110d6dac005540d6c327cb3010a2ca65f9da9c5050fea6f16578090612d1c41b5888a3bd14054e336544b5ccd4444bea0e76225ad11274344867600cb0029af5f839f8a2771a1d9d419467797ab8902a0cbeaa93afcad56bb (by decide +kernel)
 
 private theorem ok_b1111101110 : Impossible board_b1111101110 :=
   fork 65 ok_b11111011100 ok_b11111011101
@@ -1477,21 +1169,13 @@ private theorem ok_b111110111 : Impossible board_b111110111 :=
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b111110110111 : Impossible board_b111110110111 :=
-  kernelLeaf board_b111110110111 #[0x5863586122213f50213f13377b2d4d293f1d0f115b1b1b165750451924314e1e, 0x45521b6656263955292d31486129566637596663503f4a53521f39507d22611f, 0x553f24372d56452441561d222d4c4e26394d5859504d604545471c5519451f39, 0x5037452f373f240c4e223952371f4a3f662d47522d5648451f19453f37243924, 0x21663f243f68615b5024212d50665b3f7f3f723312191f3f19331b41414f2119, 0x47450e4d522d371a1b2d2d0e211445562911164a14662d451f162d0e142d4d55, 0x1f483341376639502d3f456e56] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b111110110110 : Impossible board_b111110110110 :=
-  kernelLeaf board_b111110110110 #[0x4733144e5a292555526947585b536a604e525b3f4e331152525a602933391e4a, 0x1f4f295a2324216e4e6024267141231b4e26371a52291c523f13604e2c1f3323, 0x2366620e5d2417244c665a391f5a2d373f600c190c244e2221334d1f391c5b24, 0x6e4d5b264e3f5b191021153121371910482c193710780a2d524e5b4147142c41, 0x53620e4d2c22315352494f41372141534c2d52646e1f1b53556421641f1f1b1e, 0x6e1e2c574c4d472d482d544755244562546e4c4d473726601b29316e19605353, 0x4745] (by decide +kernel)
-
 private theorem ok_b11111011011 : Impossible board_b11111011011 :=
-  fork 48 ok_b111110110110 ok_b111110110111
+  kernelLeaf board_b11111011011 0x2087f40646aa2acfa83800df011cda82e7051541a872ddfe0480117dda04d6d8208fa45c76aa4de96a0c10d2dd415186f9acde8d2dc905096e3b90e8c22914c58bc2156e0100045391cb7232b29e6d6e8203178008fe5b5b8ed98180229cb79bcd40255d6643e6dfe9356a944645ffa38130e216fa1a4d60643ade02686a099bb7b2ff1ff90654297ff2d9e4b09433c02a2a8907f5fe4aab319d9e6f5560f42ac1e7e87964ce90aa08250dbf179957ea2df7fa4c673b4588888e7a5a80adf2494ff2b7fe6d914516e8347e962a8b7adc8d19412462e7f044ce245c5fedf49b22e741249d5d8421805fe936f88adeb60001445d26a841c16b602041dd45ade673b4d88a808a39d169ba8d8c8acf4352166f838b80245d948f88322273aba820a019e2e7f51ce288c5e966fcdd6d3682b9e5114aaba9d6ec8c791a20261d600401654f5bcdb7d45551b3e6f1f437fcae40164129f4b3fa2239e509a1fdd16a00061c00403fd8d5041c7d8e1220c3c8b43bfe45a1921c95ff0b4a224f6ffbd6f37811110054eff0503ba023f94148f6f378006f2da8b5f25a1c5cce9363cecf6228047d6540462e86ecf6b301816bf335069bb211f16e20ac8d156516f538fd5d1212688a80245ec5c89254f773391066e47dbe9b0556706a020089bd54ec7dda0a0a804670447074f58044a7a842b4fb163b969bacd168b1c05a7aa14b093804093f20eaac37d5290f07a7cce4156e122aa81252c59c9eee48553f9be9e92357c9b20ca87c9a89fd40053f9bcf7bb9bdbd373b84045627fdbcce43a42014380257064563a08876f99c870088c8c5145999c505be43f18ad45ba8234b4459ddbc520e47ca6284aacd050520eaa3ecd880a90a0e2c77774545265f6110052733cdb6b738aa82a7f56d6b7055beff02211706335429469338cd273b45c0002a1c5099ea889373fa8b9ce6a8aaa85bd58649a087f559fa9ed68f0527480a1e1011dd8104eeb06931937c783a8aa0288f5040de92b3b4db7cd6014b4054e7350121a5aff415549009f839da0ab3108fecf411147a28a47d59e5354676a2dad4e9715050015aba52f4f1f05645ac76f45606269fabc1cee054948a5dbdfe888ced9e4719a5ab0cb14b545ad7835382cf739ee56c3 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b11111011010 : Impossible board_b11111011010 :=
-  kernelLeaf board_b11111011010 #[0x505f61412137294e185f15491329482d2322152b22151f0e54152b1f29395626, 0x295554304750293f5d122d625f191625304c52212c53505b2962305d414c4e63, 0x290e192f4556241a4e22374c375c302d55536248302c306a4d111f481f451e65, 0x5006332f17305f54110c12503f2c170911122d062d41331520722b2933301829, 0x3f395b18132d295757624a5b49565b5568655062491520162c5612200e195b15, 0x24742f505950240c665a65506e601665501e3f4a562d2f11562d5b1424172450, 0x5433475d603f4d564c692d4d33246529661e50451456140c1415172116241917, 0x31645b2d4d0c2429335d0a2d54564e1e56393f5a593f50335954505766564c55, 0x53602c533129644a5b5b5a6e573361546429315b6a502b45247c61702d331524, 0x5a6e69471130555d2d485029666a5a17296616294f33253f3f1f53615a667c0e, 0x57153f5a55484e304e295b24301f331729111552] (by decide +kernel)
+  kernelLeaf board_b11111011010 0x114554af95c5fe20896b1abc8d499db0d1615412a76a7b7a4e5555619fd9e08225f50454415391cae22aaa8052d02d7bbd3c7c8ec3412aea08ddd6f234045a1d2a2b29f37ab50ad6aa117e53e6cb60a020a79fb3d2eff14458087f9fe9ea2c88261cb5a8819bf98ec5000a7e0d66aa153d006563a9f272b0065022de84dbed7bb65416be42ccfc38089538b2708a0a7063dbf574344040157c5d26a2bf3100130ebc34256eb33d412bc824c63e4ede8b08acade6e890cc28cd264aca9d9e08037794572dea75b9d9ec05104adb9d17fa002adaecea20ffa1b3c914b3888d4d5102875fcda0ad6e66a028292ad5ea6cf8fa840b775706ff9ba88aa35b998032a2869d6f375159eaa524d55172ea765cd9ee87171680229aacd6d50814a6335254a605724292fa1cb60282a4d4400933c0c125f49f4d4457e829434414022cf43498cf36c00a8056b040b2f43959dde0cb628b10365e867b7fcad0001adadd600057e8a8011eb6b75506de5349c8800305f4988ac50dfea239d416de02aa6327add4e8357c05006be0e2e572a00085be4f5b004b7c00055e474797a1c80e2c0564e802a215d060005b59d6e0004096100831d99d026de57a186d9f0222bf8beab0d942aff54d40248e8080cc925ac0550dfeb39022f89c0108e804b5b884486c16e82d241d9e5741f2d0955e484a759eca30c11631c8129e50042538ee00ce10002fe8bd6d266b9da2c155145be2209336fdcd8620022a4adeae208834fc5c8c9587020b35061ead5026e20091e3faa809232410013fc5cf7975388400c355ea6c38fab4310153bfc00bbac92d6e82018bbfaa099c92da5d8733a5ab0a121d66a80034f54044286b6f53aa02218b986408200a17783cce768a24e3e860222290cb7fc3a050754440543a22df53cec552654c77f4ae80049c49ea791add04047c832a2caeaf50555516570fe80200a003b2a995d5e807f53b9eb69b (by decide +kernel)
 
 private theorem ok_b1111101101 : Impossible board_b1111101101 :=
   fork 40 ok_b11111011010 ok_b11111011011
@@ -1499,12 +1183,12 @@ private theorem ok_b1111101101 : Impossible board_b1111101101 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b11111011001 : Impossible board_b11111011001 :=
-  kernelLeaf board_b11111011001 #[0x67132618231607182654220e104e640c646220214e484a20624c641245282d56, 0x2f314e5b334e185b394115240e6067292222261813120e16115007290a670e48, 0x5f3f23631264555445241d0f6555544f5013625d54456a1f3961645f54453328, 0x4a604e2239122c456a484f593f5512100e0e122f5f45244e26241254485e2426, 0x283f5e755d1d835f6a534524505b6154332f305f39532853412141533f552c53, 0x57645b4a625f5f5415643350533f6257534a126250576433506a5b7528455d53, 0x574a5333572d532d7d5b505d5e236a57411f5d4c216217212c5b6a5070621a62, 0x4a105039452f331a2b414c4854721a335462573f484a61534d4d215454506a5e, 0x48234d3f4a535016234d4a5350234d4a535085234d4a53506d1f502350185541, 0x22556230605530414c3069155739572d3f55536048574c6c4a4c573059] (by decide +kernel)
+  kernelLeaf board_b11111011001 0x40a92028b11abe2d8638309651551abcc3554a0ea0a293361e9caf5f73ca82835f5bbfd0496ae2234fb072300141016bf33d9a20822cae675f6184d9c24602923c126e22ff195d3d2865b14047824dd06574f02870a0a3c026e832ba7a943dff1411e01374195d3d287b73fc0250c5847a50c14531d5e0f2b21c812250dcea80b1717e0088cf35abd555520e282004ce46b53e59ad086558119f53c5ca8b57c417f8a48e5787404a78001374009ba1d6a70a244d4e87abbdaaa01235f95aa0094f2116795f1a156ea53e81815bfdedf4390109bbdec05525247eaebf07585040ff2a017799a1f1682017d0eb3a954081b7daba1b228033c3c59ac041025c5d7d441c9dbe56a282438bbf8a20237fa9a04295e4c9c02cfa1a34094f7fe2ebe2a20d3e560a040c4bc5d0e0502bf93198567d0f576feba8d11062e222ddca7882aaa37fa80ded7aea2ddd41944ef3ff7fd5d3e2e9311014a876f441b0e15367afc05495877f508573d3d46834f83a822a1d583d3c555ff575980a2d3e57839dc20aa80a2d1573ab124b59c5f568ca9235027f677fd5d515622590d06544490951daac8ed914896bfbfc5d26022cee551362aa4c96ca80015391ded0449a6efeff478d0ae3d466896e4c215556ae02d5358ba4c023b90c0fc80052b2ea3574144aa73fa193c0110b1714aa205dea9c5f567f73a320b87c9a14dfd1499aa991767a8d555415fb1c105276896f67a128a133b31aa85bdcf0798050012ba4c76a8a92383cf8a00aaa745a0422d4d98c9e80824b154765b000548ead0d40403ec88929c579f1dc88c8a08848f3e4f4d98d55151e2096d054490f8634d830cd4d1458ec86a02accef26a814c33c9e2d41a1c0025676b23556568028a0f1733059c9a844b8ba8d6f5b (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b11111011000 : Impossible board_b11111011000 :=
-  kernelLeaf board_b11111011000 #[0xf3950762839506c5c1e41654e23454e6176215009232f162153232f4e562420, 0x22410e1b0a2d184e3f0c0c540f33545048533f4f334961493f536a5613544f7c, 0x5c1459165028332f4e0d135c216e5c7621754e1f2121231f15212d540c252f62, 0x2470334c6f3380473370545062307c4f3f3b12574c395039334f3347336a4954, 0x4e4e0c603f65574c531e4f3f7570535b604e644a6e4f685b70452f2462392522, 0x84a0e481f3f0c23303318110f1f30131f1f33114f5c391e281a39414f4c541d, 0x2439211533281861235670282445500e1f3f293f2522410a5c294c2212071348, 0x2f18231d532f4849211d2d5470576a484945237624562411281d285415151d28, 0x3f3365574c2f594f1f1517121f334121542d18284f4970705549544845482121, 0x223341212d186c335c3369151850184823394861554764236d0c3f6141604f61, 0xc1723171e17531e28253f] (by decide +kernel)
+  kernelLeaf board_b11111011000 0x4211980a817c40451e5f4f620a4297d41a79ed4688208977fa824822d9f0702643cb731a115b355402567dcc8150164267e9cae63a1a0818e65121a91a3c4245cf48b23c3d5d51523ea5930991fb721041866ffc38241f073f4144870eff101678e5ebf33550117e0204085679f9fcaf217c960002a931fd9e810725960143d535b98c50a5180b3f4a4f00af0c5097870d5e4f35391a0b17840091a1c004390abf31aa28f3bd3e04495fc8d8624ec4a8873badea6ac8270ebe2b201ab91c9e2e8feda4eb6a24a4d8988ea32140eec2a3a9942094a84057450242b9dd469373800202a1cae802b080cf5198c149c3a3d80a516b7c351a4e2f431da0004a80a7f7fa9d4417fa5d402044590725445540615dcd53a2b33851684212c3e28aa4f91a23156570a83b91c89fdfe3347b0d0009167ca8a8298d45238fcfec300049ea29fc4544fecf23caaa4433fae6e73da8cd6a20b9ca0e80084fe6754d60453bced22414827633c1aa52ff100cbd5f99a934f462218f73f7fa0add7401103874f4b7e0e779395836ec01927fa39adfc360562ebf55212682b0e2dce94225ca19168a4f86cf99c20a8016fd9e7ff0022047e67f0ea743110316d330fe73f255191fe214cc0ef8975f9982208cb9e872c4e74819e24cfc967c7d55599fab93d4ee653406ce96e651405a1a8d4867afe9da00a2810dd0127dce815019558143eeee7db519a5050fd79da247f050ea0a1d1e807f140aea20875bd4c6603152c8a5d7f8b152045907202009481d9bc56adcc603284b0cedfe33610619d535604001facfa9d0e00402474fa04051ff3f8067c9d90440230f271241ff4f54b56408d6d0127d4e7ff3001f928b9e87db0060005468008b9e87b3b99ee1444483b97a768093328f8ba894cee44130fdb43d0d9554104ea3d7e88296d0f0494f5450151ebf9dd6d2683 (by decide +kernel)
 
 private theorem ok_b1111101100 : Impossible board_b1111101100 :=
   fork 90 ok_b11111011000 ok_b11111011001
@@ -1518,12 +1202,12 @@ private theorem ok_b11111011 : Impossible board_b11111011 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b111110101 : Impossible board_b111110101 :=
-  kernelLeaf board_b111110101 #[0x2d2c241c552d564d1c4d201c2c5a0c1733123f29272627565549337350222f4e, 0x162724231f2714211729620a214b2727625b1226245518242d303b3f35455326, 0x2c35223956262e2329392e29392c60132a5629565a232c2c512a50213b212714, 0x2c222922261e2c30242d2d7d29225b6e22552c60213555292a5f1b226222271e, 0x212a102d4d291e53220e565364505a5362612d6939505b2d5d50712e6261562d, 0xc37194b22211f4d1421212167781c136a2a4b2a21302b261703262a372c2121, 0x1a4b29334954484b4b49501a415a2a21394b31651d33211f214b3f271c2d2a1d, 0x54495a763f4d24264d352d39545435604f4d2d1862562e3b54455350392e2362, 0x2214211a12505a5318492350413941231e541a3553593f4f483f706a161e1a67, 0x4d30231a54457033625450356235621a546e234145351e2d211722274b1d3515, 0x1e4f31352f243f2f53546e24142939413f2c51662f062255485123261e354b6e, 0x2b24] (by decide +kernel)
+  kernelLeaf board_b111110101 0x5554157a4c55553dcfc444418ed740915fa4dfe888bf1a9ea08153dda08893401504a6a773c1c0140417facd00168f9b50017f41b45d5e460808cd1c5515547a6c510f680ab5c025ea2eee6e30d1e6ba9a01175550001e1b33d05c5d4e862020d764716800a2d757166ba9a08eec9544014211f0754562ed78f62202b7438105f545a2089f80025ea001dd06b95d165311190e1ac9743b580253d9468c6d2001274047a08d0e583a8a2e783a22020823cf75335a0c235d0a7c959c7fcfc06468ff0040386281ab00040b682007b35e7ea727b5f6c285507f8937549a6d400066ed714a56ea01039d0406a6023054d0056be0e7f04dd6e63c5d6d76822828803bea6811769f43044561064473b02ed1f8b3588b2f8953a400cf93a8222054d646a232f41197c9e866b83dad56224a1d5cea292f510584250163ae5ceecf441250e7f0041438812f151fe9f40450939add400101567719a880137d33cbd026116873fcdc008529a1e54444400543c2421f3fe339c804f8d5aac205516a5eaac54110e2c357a4226c215192fa20283d36ab6faa8a82cd0f282a1c81943aac86b79ba9e01a11203dd3d952458eeb6c82d3c56032743590155b5d3c1462c5e1d6e88e9dcf43b7c24b70006eec4a2d43e3aacbbc5e1eb6aa040b750559a2d0114ea0a2d368aa4029ec259cac35498812de445bfdd4e8bb7eed44241645d5d678343b5c1001aba9c041577f40040de8bc5aa280222d3e220a7b0584166d745b9eb6a0a6d441505da3d0553a808b9c145da90a9c5ceb3c193e511568815b50444114ed6ed6080c88f6566ca92cda3aae8687778008a8714004144f94d04b60829f45149a3c040fe029f5045411110a6872faa8a9f162b40000543b028824bd3ea8229fc5dbc969b45149d5c0104c6a935bc08230ddf0122cff6bb17a7a2b0ca6d4455bcb30552690a9cd66abadeb737114e72ac0cdd068027359a8450dac6680005f6559e4b845fe00282a9d3e9b41113ea95b40110abc9d9fcfa1a2d7f3b (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b111110100 : Impossible board_b111110100 :=
-  kernelLeaf board_b111110100 #[0x504d26585857244d5d1c1f222e31263026117d2d222f6a6e4d266455294e5b4b, 0x4d592d415e5739232d65595a6c30554e652957412955316a24292a653361214d, 0x6e2a295a235337672127302d261f300224292d5b50624912120e2d33222e2f4e, 0x29232931501023372926485629332229242b2d232e2c6170566b615814705b22, 0x5d5a661a5b686670566c57472d657e292a7f652969585548534d371d312e3139, 0x415d5b56211a293956395f392956652e355a23536535352f5b5d3929656f682f, 0x5d5555295929355955232953656f565a39352f2d5d615a316757315a3923592d, 0x242d1d2c56615e565641675656412d] (by decide +kernel)
+  kernelLeaf board_b111110100 0x4112640adc014ee22acc044452b7874abda8d6d44adc1f3e28b5b50546b70756f77012ae22b5753a82b670115154f288b5ecf575415191ea9e9f9741dfa4d6ed6e74056baa082fd6e220ddc4145c3a8016b54518f9fafa300c740121442d6e747d9c00540548915bc1eef6fad800422a1cd6a773a82056dcea097f0110973aa7554ad88b975db5ed68fa780aa4aae5dae882b5d8257f6fbb908a8a2b9d4f974100085dfe8d7edded622b9b10591035d36fd1a10e6f875b544b66b5f55158f8ab7541072ffb53aae160141521ffcba9f4f63abc8d00054569e24ddbe8021dc18ea0bb4063b2a39d4e8f55454e8ca08c7042864347a8b02df53a6d64091ab5b5380acf45aa20a9d4054988af25ba3d768c2cd155000001470fc3ad908a21afc3d8e404404a7c3b7a2f76a00a80a800aad4f6b47a2b4f1bf9f438080a7c9186412cb76580541369fd8601224c040b498ca75bdbd0040056878b93a0a24b5058963b5bb3d16800aed7f3b4109bd9e5041116f07bdd7d0047388828f16f97501b3aa0831425af66c390aaf3bcba9d4006bf07451453d5d0550463ead5014949549a9d579767a2a0e1d0550e24dd04686a824dd37634108052c6d7d850149937bb8a12733f88522c176002ac74da02030d36004b208047fbadd16bf94204d580eec9bc89109bb275753ceedf2f (by decide +kernel)
 
 private theorem ok_b11111010 : Impossible board_b11111010 :=
   fork 74 ok_b111110100 ok_b111110101
@@ -1534,36 +1218,20 @@ private theorem ok_b1111101 : Impossible board_b1111101 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b111110011 : Impossible board_b111110011 :=
-  kernelLeaf board_b111110011 #[0x376a5637212b49522149374d311b485d4f4f696f152169224d37102d62542647, 0x31552b4f564c5d2d4853672b662b52492a10551a3124481c102a5e6e492d2d5d, 0x30565a37565761481d565131532328312b1e204c2b102d5d2d37707e31645651, 0x2a494c5d5d051d21331c66552056492d5a2d1a665a51564d2d624d2d6754311a, 0x566c6f605f3f4d273120482e15564523534f5d2d4927243722203056492d5456, 0x375d5e1454625d7345656363254e55561a2417183148184c5e5b5d3121215f54, 0x26371923265f152134232e585d4b374e55562324602e585858] (by decide +kernel)
+  kernelLeaf board_b111110011 0x12a800c9b6faa8ca1019d1e9bbf95d0540444550ed347aed15b1a085779597b7e4550049dac357ada3d260a8b83657602d8e506c6c2b636fddef6822aa53a9b8b50051008bbdcf8ba10ae5c105c790aa8863d2f3babd6cd640a931905412f98d8eb0b230414558c7224cd4af76fbbb1d0e8a20a2a8715bfd4c166b63b3105dfe0d55bfbfe6eaa29f63aa8aa8310246bb4059004af5b8ba3e9e20a88213fbbadc91264e9f5644549b7d104545ca283559161c2a8d6e4eb7a9a8a402d6c1025156b2785401182446677790aef033329504105cee87499e73cda0010155d075b93aded62aa82dd54d6a2ac4088e6c6d747adaa229375416f8b449126eaaa0b7cfaa220b53639ad86a222d6ed62b7c0540402b6b5fc3a848c55054ef5ba3b1e9e8f454255546c7814960155e7b45141812b335790d6e288a2377104015badfe1a2aaa8bfb63e4eb7470140563a240b578557924fd415adcceeeb791a2853c51073ea8aafcda1282abe96aaaa2b2755882910d554ab9ad058e02931059919cd486abbdeec01564e82a2b74040016f3776feaeb6280df154410e2a92be4eaa882d2d438aac9d56fcdd8f212c046f24682837767eab48a4ff4fbf2b82b2887d3a2d41a9bb7c86b7c5d4d371f (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b1111100101 : Impossible board_b1111100101 :=
-  kernelLeaf board_b1111100101 #[0x740f1415495a2d341c562e47573156274731531c37252e5327474d2d5d215c20, 0x2753573127495a2f52215163522168075a094f5122082d4e63541a82332d6e22, 0x4e4e0c271a492f4e2d6a5412480d0777642d4d2d585b2d2d4e645e4e63542149, 0x331c4d2d514e2f542d222d253458335849232e2f54223164612377645a1a4e17, 0x2a171f62244e57312f561a23493152594d5a495831571765576f141165332a27, 0x1d51282e532f244e515431282e532e2e271f2d2d2e4e561458544d5a54471c39, 0x33212d33312827535c1449242727342e272e27215c212e2533274e39332a621a, 0x2514481c492722621a2e2e252e24315328151e27243339272e224d33224e1c4e, 0x631c21241c2427245a1c274d5d4d2e6321221c25544b5a225c541c211c27254e, 0x5a592452302d211c672227241c5a4d17225449491c7022624e561437174f5a4d, 0x255a2149] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b1111100100 : Impossible board_b1111100100 :=
-  kernelLeaf board_b1111100100 #[0x2f54154d151323111d4e19522449576e575737704e1a3127541c182251152d56, 0x302a1c4d2a4e371c652d68515d5222140a0f15271c1f1f1c1a244e275b372154, 0x5f5462535262584b5224372a5254212f1f5b47584e375e4d4e372a4d152d0717, 0x495f5f5e542d5f1452485337575d71573717524f] (by decide +kernel)
-
 private theorem ok_b111110010 : Impossible board_b111110010 :=
-  fork 38 ok_b1111100100 ok_b1111100101
+  kernelLeaf board_b111110010 0x504ba2536b43d220327ad76749ac2a0a080d2d161add0e80042041cf3e8b113f24d50080e75ac26f10085f9175393820c9e805215139f0d178b9dd6ca68222208adf2fa82433fb58a33771e7343a4c4449539a4d3e0a08a4d6802d69cd3f0844deee2913725db8f43a2d014398897011a988892fb5a2ee702a002a54c639a1c40444e69f44b80224ec554baa0242494e82467393a7d178b3580aec1245da5c2425da4e5140158f4f51aaaa570103d89f424988acf05173a7d760428b6419baa22cf45cece60b0293b67a1d6e82833d400558ea3013f4fb994d04064ea00229313e8229f5a1a6bb4013e800002ed3e87b9a2087001576974456789f40459db9e459eabc59acee88094750451a2ee9e820afd273b5468e4b534124158ea31774f55045da882ed3e8a4aa1fc5ba0a2dd773bad94d02c64889539b885ad4500016a71f41439c08b9d565f3fe2c1554011273bafb1d557f5b35a3d51564e0a408b31da5c2059d129bca4d6b93d8d4905640058f5f2fe5d840abec36fca95504a647cbb3d1455623089f19e2a852732566eb7a3ced015f802254d6e8b4605ba5d51469d058d14019f4963938a28c8f5da4b24bfa9a2d0158e8c03393c382248c8fefe4ed66b9d97c506772a2033b46684294a8c9f3580b13275f8532b3b5beaea64b0464640a208dc083fdfc9a20ab79b83200b7b1dbc045bc0812b789de4d026f68033bc7d4d0e892412753e448a94fafb1d211253e49ed6bf4029687210828e063d280a5a1f461f812d62790067e802d1d16235bb2c00aa13b31f5340920635a080ffe40b0a904cf5beed17d3400821fa000532ba949ed6b7699ceb608bb2608fd7d8ea080015b64215153f1f63d3ce70a037d04854b8bba78080a7d068f8cdd6f7743dcd06020327846fe2137fbdd4d495b8052c517f4a74b91a240853dbe095f84202efc78046be0cdf2fa0552ea27f7fa9e2d4112129e202d2f16a22b6300597b4b49820020df55a4aa02d2d0041a9a1d7e7fb7b0048847d0ac73b6f8020417b126e2013b6faae1650099b95d6e82002087d2fb0e11558908a0241cc066eab9db7d204939e5d5be8e8e0c009377a588808aa2ca60aa0210022b47e22095d3e735493f821fe50108e66b49cec0255993e40016f506fa1ea6bf416a9a0a5750226e05701227a828f239de089d99d5029693841593d7e03765255f59051abedfe1cecd6c700884faa8154d40839aa0263917472badeb69b (by decide +kernel)
 
 private theorem ok_b11111001 : Impossible board_b11111001 :=
   fork 65 ok_b111110010 ok_b111110011
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b111110001 : Impossible board_b111110001 :=
-  kernelLeaf board_b111110001 #[0x631f3328471b332e451f234e4519451f2815334f4d5c4e634e5f5a54222d5620, 0x24493319244f4f5a45232f220f4d1e450e15232e15545a452e1c19211c221559, 0x532e232e524f544933285955102e57765a542d225352482d5a2e53542847623f, 0x335b695b6c7a781552482e251a4f47524154217d5d4f52475a5c542e21542e28, 0x23242f1e221b1e22102e39644e1c5a232b561a534d581a5a23245365334e2d5a, 0x2b232223236441542e1e25484c2325544f174d5455624c5a5c491e0b23490f1c, 0x47574f2d2d151e2d2e4d545e6254334823535a5d5a4d2d222d525d595a284c14, 0x47574f1f6057662b4f585225335b2857234c1e49664f2b7949701c5a2467475d, 0x18332b541f1f4c1715192b1f23122b5418546d495a2b1f49091f4511331c2866, 0x2d4f232d23231f2b1e53314c] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b111110000 : Impossible board_b111110000 :=
-  kernelLeaf board_b111110000 #[0x64282b0f244c07072b1528154131181c646a4e64152f540b1b491b644c472d56, 0x5259665c2b5d07155f285d111b544d2d4c3f4e45552321414e39191211391557, 0x223013152f6b2d301b416f4153625423314e544e301f536e54475b5e61454d57, 0x534152482d4d5d55535e6e5f574f] (by decide +kernel)
-
 private theorem ok_b11111000 : Impossible board_b11111000 :=
-  fork 38 ok_b111110000 ok_b111110001
+  kernelLeaf board_b11111000 0x2220adc1001001019fca3d6e80a3c91511e7f579ee6225a9ea82b1e9998c159e00a202afa99fc855444ff4ccbea888a57248128ceaf3fa3c968abd420201a9a0418d0002a7b793dad5e7f545164e2703f9331723b3ce6a36696cdaa2022047ebe80094fcff83115afe6e44115f3fb1d2c0252ea00210cfb7a8d194afc8f906900998b07b93e6e150167eccaf81f3c9f8673b5a4d514142b3e47c121062eec7e52bf3f0415baa0ab72baa02a7b5baee6f53822f6d8b514042a633e46a0408f440a7b496b504100bbd6b126eb745802282b7a58285de18acf6b51ccd29aa0220abd151e8b54091eb290a3f27072a9aed454010f6974442462ccd1e00297a00106a73f2fa00224dea757c5a52333b5dcd125939ec1102905f08f1100024e3f641139a3d26bf565023d92a8b10556414de7b0516435da12c939d449c9cee8439dad1eafad9ad001511a78937b1b0a6b46ad62a0a3c549d3f2ea33e76a35000082ddb5a133e046df2081a7500b7ecfd7e32bd2d0090491a882bb114b9ac4467e8a47e968200307a9800400087015fbdde7e01354b8fdaee682ab534555da8a221d16a6bb51d3d05411141768f45176890d2e7e0d4e4ecf51d9c022abb2c43105d8240922957fb74d6ba9add1700214f2297230596e8b56b8041774fa9a8e3f8b451fe8930554506593acf338a8a4d4550009fa2002cfed71747afd4945a8fd026f491ee0025462e210ecaea3d76aa20a0257a6a76b44258baec2584e667149543c9273499984595e54402cf8f3fb3d472c02c9147cdecf11762430ac5cfe8f249459d9170614cea0d173fa8e2620aecf4082567e937b9c8833bc7ac8833bbf815aea68b5bd6d06b2820004a14f012183b4b91828832de6f2977aba04a52d4fbdeed2afe855f6999fa2d444406193d016462bc2002ff5eb780901871be0fbf5254283d3f17535010151ec7519d8954c5276c33fa840a0453f77538fdbd4021bde1c9022f3742af934bb3ac19b50264152e6abd54aee1f2bdfd468b041772388a6f81485a9cdd6f3341415feb00024ed062ec35747aa82a1e0e480493b73aa0126725b2a47657395d556afe4d46af420250801fa9399a80a80aa87c845403eaf2ba8d0445014af0763c4a918ce6c64d4807573b405c995d04495fd4d09805e6f64893c49bdb27338fadeb69b (by decide +kernel)
 
 private theorem ok_b1111100 : Impossible board_b1111100 :=
   fork 53 ok_b11111000 ok_b11111001
@@ -1576,79 +1244,47 @@ private theorem ok_b11111 : Impossible board_b11111 :=
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b11110111111 : Impossible board_b11110111111 :=
-  kernelLeaf board_b11110111111 #[0x6c72652d2437675e745e781a3062512c582d5a2966353653593428362c455c4d, 0x5145592c51565129455a3545332f562a1424141468302456303d30293756452f, 0x2c58346356542d59625e292475582c30416260296039566b3033622c59305847, 0x4b292d36362b587d5e2d5654671d293465375337536e283462362c1a4f603636, 0x33352d24636d33342a283539615f611c284556544f595f45542d3d542c393456, 0x39295a3f3557413956415e3033331e3b1641476d133b5e2428334736362c5c36, 0x2b5a] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b11110111110 : Impossible board_b11110111110 :=
-  kernelLeaf board_b11110111110 #[0x2f221f2e2d36414f37373f35213f2f613751452d542f552d21262d5441364d56, 0x455467543559623f2045233b5461352d5a4545623f552e545428612e512d3554, 0x332d19216128186a22352f777028532f145a1a22222d41544936542365547128, 0x2d511e265c542b573351473b39352e2f41282e39352f36533b51662f7333350a, 0x4f696651252e332d1e226a495e514d414930366a4d29214d23302b361e5e1a4d, 0x2d6630262a2c305c2014742c5e2d30365c6637514d334133162636664151303b, 0x2c66162a294733624f622d57514b1f372d35663029452f30302d244b742c2c2c, 0x3351472d51415a29301e2a2d412630232d41] (by decide +kernel)
-
 private theorem ok_b1111011111 : Impossible board_b1111011111 :=
-  fork 64 ok_b11110111110 ok_b11110111111
+  kernelLeaf board_b1111011111 0x20af02d6042a282b9d4edac01fe028d795106bf0773d6c054411838097b586028cf54040679ed0007796ea800420e047f6e4fa01df7b4980a8d467c047db608b6d6773092416da2a33c10016b804a20b749d8fdb802b033d11189a62082ac946d773e1d14029006fe92e1ce6a322f5ba9cfd115150406ce035fe2f531444105baa03dea6b3445cead3ad92f422538422484b71b6ad130db57d8d05969fbded60425bd6ea6008888aa00267ceea7698810e5d000406fd4f54960005bf4f376aa3080a369e2db6822022cd15558535cff062ab6c495b6b3b1c2808d30571f5ba9add586ce8034020e2d55bda9d527d7b1acd870700105c58e0c158154094194f8373d6c11d7aa0c304467a2e2d518155676761d8e3f475021062ed9e15559d1c56b682d1c4153b17b582284b5e2ea812acf455005fb5b5594e0526202a94e50554a768d61a0aa24d846b6830cc37b802a882c353a80adf6b7178457ea24a4ecf9604865d161095ba4dbf9fbdf4d5101641af7e335b2cb0f174759d8d04011116e2836b5390166c216b8b6c4069eb6769a8d4516dace2f739b80008a2cf68f1f4015016e890ad1e0e0ab6b400410154ec33da820aad016e8c1d360a0b0d1ea02dc60eb3cd88025b850556a7008fb3f173f55111051c5adebe8251c97a10a02809fdbe409088b76ba8a222a94ab9b61a9e2f2042abf861a000400c35ba4d97a02a215d3598aab354559adf36c35124d82aab556640aa00c3b9ca0083a929f4d677b01096ea130d06ddcf36dfa3cdc560067d020a41d19e5b654da002a02080dbb36c1e00054968ec377cfe10b4f66d15028e80897255d8a133c05b9ed17ab938288a8200037ba3cdd015158382249d1000461b6dd58024dd110454e87219ba3d8722a8020af1b67bbd9ad019ba00a0ade8e7b4ddcea6022080a2bebe00a2a33d68f1f440077a88b9c6bc00abb5f841c015054602088bb1ce082b5c57edba7ca00efa3d0a0144139b8017fcf8206780ad715840cf96e67810f8751a01263004d5a2c806b800bfeff0d468034f5f94ed724d26b459114a2d5b907a9c9e200195016daad54d1e1265d86a9f1d4645d41064051a9e7c2506a6d72016cf8b5901feaa248322e8f540840856477d4f0eb5d6f6b0022f2c0845f163feae0a0208abb1511aa62a802b5351e1c944577475ba08b5c455a9abf4140495167f0576b76dc1e7e8a4df040226fbfd4155ae002a8705fe8088abf0070e937e8f21175bd4c117eaa8055c116e40490a874da4adea7076dcdeb703 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b1111011110 : Impossible board_b1111011110 :=
-  kernelLeaf board_b1111011110 #[0x766d68363d624b4130362b304b5e2e4b6f63302b62636270735e695c514d542c, 0x4f3549694d4527474d6c304d4d457236515c295c30495c51453b395f514f3d14, 0x2d247356566940374d456371244562410f815162685b71372f791f51404d4b58, 0x4d37564b68144b41476e2440413941511830573947403736304d373756516269, 0x1a1c253b25291f4d5e45296266456c4b2d45476c106e2a374568127060563539, 0x2947544d2f5c1a36621c7c232468604d29513647602f512736603b5c20304568, 0x3b293b1f452f3b2b1e5e4723692e394d292460642b2d18514d2f3b541f2d454d, 0x5b2d353f2f2b24364d2a2857202f20352b355726513647401e213f23553b212d, 0x354f3614415c5424545a353b245a5f69512d2f561f2d36414524362d2f4b5129, 0x293549417b761e5c1a13295b63412d3b62512654392d5666561a2137135b334d, 0x56263318354b7e36566c0c47265a14514572565c3b1d4d3651411b331d291e4d, 0x4151454d3347182a36562047] (by decide +kernel)
+  kernelLeaf board_b1111011110 0xb07101128f1744566e00acf8faa08018d41640455b6eb6834163f28d6d3680caa0233e44131a008b5e5ffb6dd6f6633505423e82aaa029bb594d14100428f17e5c0295b6e60a903bd00004ef376dd1d554004839bd80067aa2011dd4e7b40126ea92a711aec83279120fefed9eee66b5414249ea714102de1263d440583a014b777e2e8e9ba98a0828e75bd6d51555cdd6cd608c2021d06f93c14202deb02aaacf041559bb5c050427e8db29c1ee753498002054d1b5b5c077a2a4c000016d77f174e4c51d6e200abf05102b67f5bb6e0e28845d400555262adb56f4abf25e80845475380a2b6f5b8d755457fafd11440515e936dcdc554556820aa8caf8a822b20d7e4a4836b810028af6bd7d04537476dc7e06200c7b405105438bfd1e082055dde00a8082a1c5b88bbd4e230bbcfe8a0317657eef579eef7008c7d1f403a75da04ae70150059ba9d26aa960d615326a800aaf156e6380280141a3cdd7eefa9a02c0a28a849fd6f1766ea70223e8d4d66ebfb99ad0516daace2c968e6822d7cd4047893d1e0c0008159ba9c11168f024236e3f835f814a85470204fb6f06efb9a0d860320845eb46008021ace60c9701de497854e7f4269bded9512622eca00a7c5e6e944022fb381125e002dc22e0011fd990f76ab45106f92c5f460004292f86860eb7508035c45ce80104ddbf5b10597e8d29a00092f83a11fdda4e0680882041dce8ab07a38a120a18d4415875f73c7d144681b7c856daab0c9ba08328df2104056fd6ca3aa84aa4ae2f4eb7415801154927cfada0ad6d074f036fcde2f2284e3d478e938b80aa02b8b60eac88c3f5ff54445a382a38bd1dbf8e837d8497fe73fab4781cde5f630049f8222a2b5e4eaae9e6f1785560a4fa31f64a66fb361a1294dd8529bd17e5b6e8f73405044114154f7361c9d10515b9d1e2eef4411048573dfc428f3f815562655ee53ed932bb7d182288b6d5ef8b97c1d151161a8b6d501157cc397aa097b505da84bd405037f8f500561abf1600e3c5911317204f0f9f5ef4f73a3cdea6b3 (by decide +kernel)
 
 private theorem ok_b111101111 : Impossible board_b111101111 :=
   fork 82 ok_b1111011110 ok_b1111011111
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b1111011101 : Impossible board_b1111011101 :=
-  kernelLeaf board_b1111011101 #[0x243d2d45535a3d4f5b2d292b2b304015173724666937375b15116b6a51145c3b, 0x292f37512d2d3d35361e0e192846405e5169621c2d102f265f2f2d3646282935, 0x2b4062205a2b6346515451634062402f523d516e2659463d5d27295b532f2124, 0x23526820352d345a4f52356e455b292d523d265f2b0f2728534652534651510c, 0x40352f2d625b62585451262d60525b29525745543d5a13302953645246605349, 0x622060593527253027282d295430281d22302d2b5135464672525a6462205a34, 0x15092024232e334058265a5245296546344f29624f1f5a2469465c53392a364f, 0x36235c206a2e54361454283336543374265a4b142a15521f2528331d5c1e202a, 0x4662405a453940522d242d346228452060294f5d5a674f5a20602d2824235a36, 0x365125495b5c1c725c54512d5b404055263f59264664585c545129662d182a20, 0x5119261e285c5554462737] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b1111011100 : Impossible board_b1111011100 :=
-  kernelLeaf board_b1111011100 #[0x2839536a59725958533b3b365c6258655c553b3b642033293b253329625c3751, 0x705e245a64286226522f592b59296536191b3657352e5923372e4f34622e5a59, 0x355c615e696e2629555728353d5e3629275f3d23553768205f33646955291c23, 0x23596759353b6220742a5d272f261e2e3d235a2733] (by decide +kernel)
-
 private theorem ok_b111101110 : Impossible board_b111101110 :=
-  fork 71 ok_b1111011100 ok_b1111011101
+  kernelLeaf board_b111101110 0x2aacb470014ce2a88a26d404f6328ee6d5d4155a9ab1b4fa8aadf6dd1d2ea900ad2754212df0a8a157339f2d9556b9d4e8eb741ab7ab031156156075755552536ffb3a2a8a6c8da8a2e4ec6c8373a9d1d4e08c8ae6d6eab263455683584236ab8b0555181b6b5562e880b9e074b5055b80a9354455b92d3c5aaa0a0828e2e83c1a9d5567e42b7725aad6a0899f16455467f6b41e0d012055ba8d54545268fb5a832036d5105b68fb9a0f56bb11151a9aa0b6ca6a2ac240d4d46cf6455b6ac9035359fd3550015362aca20adad9794d574a208ab15e967fa952ea367ac277166e68a7b504450622aab55550112b89d069347aed5019459f035406c62b2a8c9bb5d2e2ea7cbaa291b5144451a73f53e2d5449f9fd4616b5a4d1550d38891bb98094f545173c2aad5b73fc5a0f07676b809f112ea820b0d3e008a356ea740511a9b0d00105469dd4501145b0d6eafa3aa8202d7688daa2aa91b79620d2c6b5e4f168340416d6d385606d754515fadd01c5dbc14855c588010d635a9d1d3602a000b7400c1852edea784054a588957c62f537baa36b155412788c353d3d51c9d2d4014148d8b83a7c3276147d2f46835055aeb74081a720b6b19fcb4b6beed50418bdbd4401053aab7a5bdd377f4115f4aa2083f1153ea3414a7c6d54111a5aa0a94f8daa8d1d49a3a8a33578840f168315b58000abd150c7c6d4101a3a88d4da3e3d081e2d4581aa8280abfa5bdd05a3eed376741108da8af7bb88a02227d4ea15be9e102fd504950e4a4c014ebf6fd1d401116f0802dc5007bb5c016d882227b1d99c51d0a31b14481805ee014a0a3e9f16735b90d7e9b451bfa0abf916e80220236e36a380254e22d749bdc18996f1769e32a28236b7bcfd84144066deb753a02af040155e30e06579402f937d279b0501d3a0b7e9406fb0dbd62b91e55d7eae8e53b9bbd5045147d9d4506505cfd9d4856bbbd015554171683847a6208abbb884a7d7e9b3da2300abb7ba3ed602292a9f0155567ad749555b9aa2187512f7a7dda6d4f571842afa8d55011ae8af7505bda08db550494e28a7dafef747c00d576fe8d07237f1159ea80a64d914d3d5d4e8929cd05047c023c3bda4ed6a8a82a0e4d478b4dd2d015fad9c1054451155f6753c08a80e5d515b6a99cdea88028b6ebed7015045dd9d4447a0b7d1176a8b3f424069e2d84495ddaecea373d3e54957568036761505e5d9ec622d3d477830a3bdb773c5a8258c132ea82b73ab880ef581041df9341a82022cf53a08ef104b8233d4f8bb9b7e8f1f (by decide +kernel)
 
 private theorem ok_b11110111 : Impossible board_b11110111 :=
   fork 72 ok_b111101110 ok_b111101111
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b11110110111 : Impossible board_b11110110111 :=
-  kernelLeaf board_b11110110111 #[0x2346552f3b533947483664535a555a24093523554d3614411564652465293340, 0x140f3b644d16133b2b47233b4d0a2441475a41537469232460302923645f4536, 0x4514163b3b746e45643b74] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b11110110110 : Impossible board_b11110110110 :=
-  kernelLeaf board_b11110110110 #[0x362b233b4d4130354f0c2e364739294d35332f4d331a581e35537a4760342820, 0x2957493958604f47235e5a4927160a3b2907573b3b3623515729052707491569, 0x5f23362f0a2445294634292b4d3b495d3b4d392f216d5224453b5f2315275765, 0x541c2d1b612729572954604f472330411a2f39234716232b362f3b244d292f29, 0x5e51782e372457365f2330464f2847354f2f2960542d284722545d51281c1c2d, 0x2254283d3d512d302f2d4554285e36302f336f332d54281f2d2d670e30294d2f, 0x3b47363b07572e3b1b23301946362930413d69747a3b5b54242d4813112d5428, 0x411e233b29302e3522354529333d3b3d3b233548152137574d0a3b5e2936215b, 0x2f13512916211f29792f3b2f47232b3b21341e2d342274352d3b523b2d1c2823, 0x474113210e293028512f6b3b16412921252d0947210a4f3b253b29470e23302d, 0x5a6e3b301e29131f3b3b690e2330236e3b29341e222d2d1f3529542d70346c0e, 0x302221413b3b39210e3022] (by decide +kernel)
-
 private theorem ok_b1111011011 : Impossible board_b1111011011 :=
-  fork 92 ok_b11110110110 ok_b11110110111
+  kernelLeaf board_b1111011011 0x8aa32ac45ca608a0025b77c2b13bfa6a0021bb640265422f34a964ddfd329a103f0105066551df939b96d44109eef055ea847d415111f4ef9b8ad26484307158423f6b4583cd3d655966e9b2e9d1e93c1b0c118141994e8f055455145c9a0adfe2eadb47a31b1456aebf5455df4f411cec7e46a210c4230dbc9d3eb5a88b572b5a8020293138ca0ad747888d5e6eaa90db29c1caf93cbaaa230a0a224f2ea719f0358441461822c45405554950f0777882b2bbd5573a1c76c3101160122a8dac5b76ef619ed4f2049213c43f90284bbc1155dfa74768f61825430a8f041b76ef5388a8d33d8008b5ba022b7090010403fb5d4f531004016e215c380101a7b31da82c7c054458393c5011438ed4ec351d2a920020021054792217faf77b048a2916e0ea743a29755256e088a27854a3e8715a8484fddeaa0a5d01dea78f8ed1ec3205044116e20afc9e828151e94f2316d0e0887f42a53c015e75fbbc04055017f1f47a20812aaf77a1da67b00245bab4d17d3055ae40010a88ab2ddde22002088d2d5df2dce680a347a30754a4f723ddea761aed005aec008108b6b91705145380833d1415eeef545507bbbd1ed791a8a5724050edf095144afaa33715c0aef06f6a705006d810021dab7bbd04123f02a8db7787d00afa2a02edde6f47b0d104602033a2846c06dc02129d87077baaba70423a640fae77dbea69365515b8cac8c8504594549e475bd4d4620ca2c111aa9a8d157ba2bde68eb761afc44251456ecb17a9a8c955266bda32db61afc459f284a010efd9e8aadea6a3954493fadd05505be7c76b0d4f374857e2937b00468fe39760a37d26020288257db77f47b0d1548dcfd471f0426ba08088b3f5f88c020129f07535ba8c58f80948b6a6b4cb77a380b240328d39a94b12735bcc8a55339c2d02dc37e1d3ea75495abe820b0a9ea7830559fc7d1ec3839ad5544457e42a839d1f1f90020b68f005057a8236d7eef100452737941453a20afd14f7f47c080836d7f284c2b5249c5d4f1b69a0840a7501457cdddea21000c9d4520bbbbe6ea808e715fa224087db8a52c80112645ddf7f478412282574fa0b0b155fcba9e8148afc9d5521cf10363502c182b3f8fa3d854bdc096b93821227d6010b62b6177a9c3e8a804d7d778303bdb68f505a8f2d7e0954f22885d3e1f4009395f4f2c2db01657d0a3ddf3783b0d0015ae228acfd001066bb6dc7c4010473a9c499b92d759f00afd149bb3cd76352543dc8235c469f00fae3f8369a8d0773 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b1111011010 : Impossible board_b1111011010 :=
-  kernelLeaf board_b1111011010 #[0x2318514f2f6c5f542228365f5739282f3b64474f5814232f184f39232f362034, 0x642040356035186023082919580c224b292d2f2718601c0935292f1f54351d36, 0x145d492f416a182335416a49742423354d0c283345352423412e27686f232f36, 0x3661707018747761412f2d4166542237392e5d2d412d2f28232d411d29373b24, 0x742f2f542241603b412b33296424714139281a412518363664411a2f2d5d2f2d, 0x350b2f182d41701a54282d331c33352f18332f5d1c61605b3518645470281049, 0x186470350e6d614176682f6b6f355f396d2d417c665b5b1d352d2f61642f6171, 0xe1a4535356f3329454d362a23413d6b2f142b2341291f276b2f3d2a4b452d3d, 0x33577035292d3761361073373b23364168144f2f412a18294f151f1f] (by decide +kernel)
+  kernelLeaf board_b1111011010 0x419e90c22a215fe1b5e541400010153addbe8080061db64351044100e7b7dde1088f1b707d194c14549f8080bf60e802ab5544c6aa9ea7e82a0815cfea2b29fc76aa6b8bb5d055aea8a1bf84259ea9e2f37244048800056daad1f079155ee4206bd7ea5012094c057a3c910283a9d63f927e540d7afea2845eeab405425eab45c0496ec8f731e4f86d71d80020006df0f07ed8e8e11102205f806bd0009dfb5efe8120208e776eb783fcf360016f408b7a2082aa776bc22b75fe1f26842fc0401c38005c76bd120bd7e635bc1f866ba9a8e48095ba33ce65014cb3dae482fcc6a033e40a5fddd39a028a38721c1815bd1049ae98f2753e1a8d0501521803149d1ba6bf5015fd54d1622307c1aa3be025483abd10519ea7c9a4d1505078e8841d73ca3358a0c023074b98d0106da080880dbc9c1cd60b0100308bf5bddc118445faddb787e1aa14c20f0cc7d3405000406efe1e0e280082afd6f07cdd4d1684237c00173abb40bbc4b783812dd7ea318000004851e2de0e1077545114f37c77a4ca6088202137793afe0e8206ad31a022c3323dae2041d0450002d5c9fa69345478cca00ad7509b8cd460033d4598bb5d27220422223c4060ebb44513e8820ae8f7e8f5fb6f268381c8a94ad7c18a8a35e318a28b60d1e0208d01553a02899ec633916a8ac04bd0053a0282dc0957e9f31e0ce6804276ba8aa70185f94842a81fea6d73b8348db47a63850481a3d3f8497e8001b3bfd4d16a34245b6a137f0010afb9d46822fd505df935440023f53fb194d0594047802fcc73f84973802808f5fb6d06d3 (by decide +kernel)
 
 private theorem ok_b111101101 : Impossible board_b111101101 :=
   fork 86 ok_b1111011010 ok_b1111011011
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b11110110011 : Impossible board_b11110110011 :=
-  kernelLeaf board_b11110110011 #[0x557753416040295b552d51375d576f695b5b5d217a455f3b65412a2a4f47586e, 0x284760345b41510961165b6f5d53393f3524566435555f0e5f2d1b55532a3b55, 0x252d116678374d1458565b1a7f7729415545536f532047122835562a294f1039, 0x61374d4b63292a356b55513b372d2d3b37454d64512a2d2f3b2d1f2f1d642925, 0x2f162d4d3f64405f2e2a64496b6153646064616d5f212d1d350e1f2d2f285435, 0x212d306545294d18291639475864142d1f360e472d511f632964603b3f614d39, 0x5340715d4d552327512d1f2a5e0c295334555b4565412145211f6a45726b6551, 0x5e58145b6d415545770c3b666b66075e53374d5d4d55671a2f605e1f6b512f4d, 0x21371a672d5f4737302f6547636529544d3b5b7a4f2f6a5f6c67654d51372f47, 0x654763362429165f674d511f475e583b30535b40635f6534652d2947375f45] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b11110110010 : Impossible board_b11110110010 :=
-  kernelLeaf board_b11110110010 #[0x5455412d4d3035647e2a4b29355d2f644d56210e18214d395d4629394d2a4758, 0x24373f2d615d555640554d243b78287653602876604b731f6a2f2d7616616456, 0x4160556016532e3b064d0965553b3b6e603024655f3565605e532961574d2d1a, 0x104129551a3b371a533f] (by decide +kernel)
-
 private theorem ok_b1111011001 : Impossible board_b1111011001 :=
-  fork 104 ok_b11110110010 ok_b11110110011
+  kernelLeaf board_b1111011001 0xa20800e5c4223f8f48851296da4d145396efe00a20830e7e6f4701504fe47ef763a5560555020677b0e9f6f0818263d54102fe819725a609975ba9d01063edf50206fe8b1743a24adf35e7d065ba08dfd0448fb7d86bf11041cb90447f1e0b9751854eb539b8aa228aefb7fac19a7ea2bfd5dff660a82080899f1cbcde8e0088b7d055f91fbdd8ca6816f1436e00b07aba2c9170650ef928ce77e6c441d7cb366c3f7ba78240a0a88df9bddc4519bd55709b3e826b057ea0960d1026f67fd7ac4d1d55fcde9f030478e0addc4029bb57015054011e8aa027e8eb73fa0a02aaef6aa8cd4f4f6980235700b7b170511cbc1e156610ea0a0328045d0e7f642756920517e580ebc172f47005843b0000b7449461e5e2ea79b808098e10455396c5cf1fb1e4d00404829adcfea36c7680c7d61551045bd1cfe020b8f53e4f06003bd601fe2a088e1e6e2a39c124a6057e5b5ba00a9377fe4e0682817f50415dc42abc9a8554008412700020d7e1e9f93c18020e4f0e48846deff00228745ba776b8084c450ed3fadd7ea3a9a82aad7810040c3cdf66f2012a892f46b1eaca755b5c150101875ed5e5a3bbd106f894b754456eef882a6fc5e6f935045a3aac85156ebf77a220ab7543fafc8413bc0b64d01538a5e20044092f2dc8f9bf1b7e6e53b1d6c1010b790026b611487feefa9c25183d5d4409648bd3c140045dfd3d500010648847e25a8c64605af5b54055729d109fa80810e73a8e3f836988816f0560560e2814755125113ae1cb622dbf7eb77a7a0239d47fa802ad749d6f26808b5e1005abb7f1120814777f5b80092a6fab882d3d56ef408046ae888a55fbf4f83e0e072c8a756de082c123575ba30051dbe288b77416be6fc1a1274f6f5042de815dd0feb8bdfddea22e5e0e822ab505573f8fd8f76a002c20a90c4160ea7abc0080089adde00837d135d3e541fe228241f075786052c196e9ebb110129de8c210a1b199b89f2f5750467788abbf778314404161a4f2f7f4505af9702ac1dee9ea78004c3d7d95229badd48d6936f84b03fc050596f876ef57adc0c110112af379611649933bc445f1b502c4a3edd3f060c8ca3eda8018365e0223cf1443feac55657eb7edd2a96f0f93add4e00012ae08b0700596f3761a40d750150080c9a0fed56014be514ead7980155bbc2bf8c9cdeb6aa082871d98c4543b37173a0a893778d8ab08a75ceb533755c7ec7a3 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b1111011000 : Impossible board_b1111011000 :=
-  kernelLeaf board_b1111011000 #[0x35511c2416303b74693037697467784d576512276007211a131b27163041292d, 0x3565304d5b212f644d3536561f161f564d3b371a163b725b4d30245407465365, 0x391f4d4725372157511c5725221b23545e514d413035644d4165374d5141304d, 0x202e355841111a23353b2723416e58162436131c211410290e224d581f693b45, 0x46351f1b39511c2e5351371f41275d0f0e141f1b1c2e47411a2146172537141d, 0x4551374135472e413f2128684947411b394153251a1c282e23251a25282e415b, 0x37096f282925371b28214d293b46213516273b3b356d2437] (by decide +kernel)
+  kernelLeaf board_b1111011000 0x2001085be88a0089c81dfa8d4e2020a5dbe6f55546879b88429c1577891202c6d0ed7101152da27c52077ca8bbc01afb749b7e2f2a22a8ad1dbf07101046bc7d0155770787fa1d1554682c83a393c7d560e6f73aa8b07a7a84a5d3592001cd46bb000147a822a5cd62a049751aed40060eaa0b6f8db5cfe6f40451ce8aab47500e6aed169e20b3476f9fe0e9f49bba8003f04476212533f8282a81bce6bb4158fa82c1cd68751a36824845f4bb7d10129909dd954906bb056baa58d5408391cd6a423c56b82aef4fa9420a23c583eeec65b49b6d009e20029cd0e5304509221a2329c76c8b5466e22301305633fe9ddf171401cf02c1fe6f0c7d2edf544143d5fa8e831cd12af82971459bd1ecd4d16020bdd479bc1d870000aad796b27375a06960f04865d59bf37a3a043075658261cdd011ae2aa0039761cdede028800875fca164e6ea0020d76dd6cfe880a2c96cfe28b5b1a6ea02ef6fa026b00052dbbd101e5d6f9bb0d2600aaa2d4c3e22aac6e9e2400208365dae04951ce602024cb6c377890a122f4f4ec3914006fc083a7e9e7fc737848afaaa39725808527d9a306821f43826b20021286279bd3e5b61c1d4eb7 (by decide +kernel)
 
 private theorem ok_b111101100 : Impossible board_b111101100 :=
   fork 92 ok_b1111011000 ok_b1111011001
@@ -1661,21 +1297,13 @@ private theorem ok_b1111011 : Impossible board_b1111011 :=
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b1111010111111 : Impossible board_b1111010111111 :=
-  kernelLeaf board_b1111010111111 #[0x4b144e55391c2d1c0e601e4d335855294b27062d1c2d662d1874144e222d2926, 0x853640c1853251e2055212f273f2920640c41] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b1111010111110 : Impossible board_b1111010111110 :=
-  kernelLeaf board_b1111010111110 #[0x3d2d0e250e255f2d7057111f35331423490e601d1f6a110c1f2d6153352e3654, 0xf61454b262e2d2117116f6373596a4d2d2f5722550f2263353318113b3d141d, 0x272f352f272f3f2e2261451a1f374b6b563d04531a4e2f611d110c374e61351d, 0x294b37191f074e702d354b27294b131f116b4d35150e0969531a4e702d2f123f, 0x336a7e2d2f6937637a612d53351f6b6a4e0e1a0e2d2d2f3d2235263308701e45, 0x33336010295c2e2d2f3f332f3f27334e2e27330a1a2d355733633545603d4b67, 0x3f1c1c261b55213f1b33630f1b4e2e3f2f2f3f2955662249295c6a17350f1326, 0x4b352d1b0e1314222259675f354926630f35144b224e3370111c3314291b1b2f, 0x72352f335b2d33330c3565644e58171c2f2226261b552249337b2f294b2f1d29, 0x5553644e1e35333d4535330c455d4f2645556a725c363356682937692f2f121a, 0xe2d5664335c4b601e2f2d2d2d61] (by decide +kernel)
-
 private theorem ok_b111101011111 : Impossible board_b111101011111 :=
-  fork 40 ok_b1111010111110 ok_b1111010111111
+  kernelLeaf board_b111101011111 0x45444690cb28034fc98ccc6c31034f152e81ed06a80295755400150ebf4f80a28bfd4e83c98cd014483a84bca73b26544041abb9c441439aa00adce63bc19ed059109b8820b3ec75753aa0232f4fb00241b56e739450456f10066d4156e63e994e768b4056e1029d536200808ed5ba8056f26a08000a0b3ee6a0212fc19ec10800055fadd4090495b81500b2df0f57900a7e4e7622aa0027b52600415aecf5051ef002b17101056bb3c6684045d026ee04fe01440993717abeaf97736d808b3e142b62049a3404114eb7e4474e82afd00157e4b35f2d041ae0bf099ea016fa5b801433d0209678cdaf97c9ceec6808005f4e69480222fd0504245a6d5114dc0a106faba2e4ecff7c80222fc614e00110b2f5fc811dd54e32f6badc204de82003b8149e805345a80022c522cf9f9bfa08b5d016293a6f1e3f49266b94d1a5e8b9db3f868000011d39a20b3ca620a737a82281bc4115fbfd000e700881cd366faba022221dfea281bd9f8f1fa8101bd9daed01057fafd00265fbfd4e80a085579013368b93a4aa9ca5086e7ab2faca8b5c7e4f4db3e41045019f8321d0a0a9ee6aed0456e00abf7fa80acf6040597eff154fb3c141045a49daed14513ecf159ad04156ed740afb3d188631e220c028b5e2f83411041ef2f50b3ecfd5fec2206a5b9044bfd3d422a0b7f1feb0224070eb7a7a2a0b5cffafd5cec760120006b91dadd412056ebf7bc28128122daf229b6788f867b88805010262f488aa701978082df40033b31fc3f3be1addaf2a0a32f4f952caa7197a129213cfe291d94909d7d0537a096b95c7601222754b4f4f35cef86b75f92c050457fa7d7eb02b5c1098117e9f40557eff5d8022d54021c3c5c135a7f0116faa4acbc09d7a256d97bc808004d51a9e6b9dafe92a50ac39dc224108e33951454015bf4ef0ed705210144ee3f70f1780597a6d76b79401510e5f051552523efd41a071ea5cfb3eae6e2a80282dd57f115f4545175781101faaa8bc7b5d9e6354515448eef7b92aa1224b14cee8f75baaa2208ed2f22208ed2f057f56fc3110141af91cfead76780880a014d1e42127a44191de0cee12a92007f75647548045414667f5be1d81a9ed75db6ea6a3 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b111101011110 : Impossible board_b111101011110 :=
-  kernelLeaf board_b111101011110 #[0x371d284e37392d12292e70612f4b3636731f2553765356395b411f53362d3d54, 0x10213925394539141d2737212f3f2728182e61602117102e370060562d0c211c, 0x3537351b4e2114581a162d365b1f374925391625270c3728361b0f1c0c233528, 0x2f282d2726162722602d0c572d35164e2f496035141a2d6136164e272d374e2d, 0x4d3536650b0961162d5b1f4721376039122d294e58605735492f226170391812, 0x634b531645702d45651d5b1f3f537523555f6c64535265453d36364d2d3f2f37, 0x605f2d5f7c456f78286456355b7228574e5c532d392d3f564d3f2d784b0a3f56, 0xa560b1256215b265645781428563925272e57115752370c1b1f204d6c666b82, 0x2e3f275337492d6f667c6e61662d5b56644956352753604f1b212e1b2e082111, 0x552d2e39] (by decide +kernel)
+  kernelLeaf board_b111101011110 0x408a35701116eaaec41405cebb2511fe9fa7a08df2424eb724177e0a239bf9c2eef0e844e6d6f6fade4c146593d6d05ae2a27e9f8340409fca0826f20443aec4104de00bb11a084aa87238ac046b6aa22f25a20d5b5020501438836f4dd6e2fe329a8d112adac40e7112eaa7d9609775f2388015f00000696df199bcfe83400026ea880abb304cda0280ebc7ffc1dfe2515116e2000b7ff9a22145f7fe351e4eb692008d7042b7f2d475f9ddcc010a7d2002ab750010045ceb77fd6d5526e22bfd29915bf8e5eb400882b411fe8056d71ec0c232f8169e5b1008ba8409c3116f17cb9dede7f417faa0a14f01555520eba3c40abdff664819328a7cb4bcbc5deedb0556da80224dd6eb283fd004017f000df9ba8200b5db797419050250405e27c396d6f6f3fa47d0450e0037e40b06c2e725add4f3bb18282801836bed785193afc245c0802e1f86a0820b9c31a8001092d7ea35baa089f5402004504d88a96d3e0c2048bc1adc6628d7c21156ed700500012db3b17e80cc9d45c1a22d7092988a6b5be1db6a0a08896d9d8210289f845bb7d418944676b76bc0248df15ae6f0467687092980a8d8cd68496d6edbb79fe1049bf271152f12e72040b6a80297054f8ce100446fa8db66f955441101fc73956866b0a8f4016ba8c8687045cea0229773c5d40415ce53400ee49f6f800021e117f2ff4fa8cc6bb454530ee0d50514388a020485f086aee406faa8a008203c1d6d6e3342050e488c731be8088009dc9651cedbeae75b92d4e088282a20aef87875017e8024bd6da088dbe79fd0154b8ab4f0945eda84034fadb9d5622df0745153fd4f6daddef53 (by decide +kernel)
 
 private theorem ok_b11110101111 : Impossible board_b11110101111 :=
   fork 44 ok_b111101011110 ok_b111101011111
@@ -1683,55 +1311,31 @@ private theorem ok_b11110101111 : Impossible board_b11110101111 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b11110101110 : Impossible board_b11110101110 :=
-  kernelLeaf board_b11110101110 #[0x1a392c22182d1c2218680e4e704b5b706a2233330e644e2d182b260e36285654, 0x361a2d1f6622021228275f5f3d5f0c4e2d292f0f26212f592928335b2c464e2d, 0x2d1a4e1f211264286a3d362c1c64354e1b10362835282f222f0e184e0e12284b, 0x18702c5f28101666361a3318161c3661281016662d23361a6f53274518222321, 0x182014182935476f0e2856644e29282f0f15280c262922292846553628266a2c, 0x6142f165f29202f6529290e2858582958161c746f276f82162d1c23232b272f, 0x662866692d5c5f691b127820211b290e215d0e19281f2f36204d1f2d0e285336, 0x2d455b58336a5d295f5f292345815f2d354b28354b70452c274b122d6e5b291b, 0x4545556c56201b572d3355455c4b2c3d332c454519282f33535664571d21] (by decide +kernel)
+  kernelLeaf board_b11110101110 0x650062e88282317ab814ac3b32b6204b0220c025018df5f50415baa33eaf17b9a092f40566f70159f40ab30048b80245ccf28d415facf10a780a95bc9c888a857c00003b808716f17b7d8d404101519fabbba20329efea2aa15fd53a3e81218bb528aff8d7f5bc282d7978893128d4001af2fe1c290c5d0001598a7e5e3208312d6fbbb78888a0829cdeab002e6d468028b9b9802d3adee6a237f034f0a6f544497e341a22c8781637834a71d882121c4a1bb8eccea314548fea2288002fd6da0d958826e0048247f5b8ed474f4451056d86c4502988aabf2d808dfd554e834457e810019753920c229c76a3b1d220a58c054565554f632d92229cfa6202081bf11104fefdffcb68a2c2dd4e68008f184050847abc0013ebf31a0d2502298026306054e0835e18fefc76a3ade4e768542c8004a9d468aaa0bf1f80857946334da042829e840900945aa751a0a31b5055aaea0db51a6f568812accc74ac0ac70d66237f265190d458198b79b05b66b45086798ea548b622c731001b787946435140662de6c116e2023db66bdfa0aa914f0244fc5cc6122c011e00870a085ba0a9ac004a767f04392f26a3d5bde01601556dace0104639e4d5001af3b40df0a8436da8d4011141aea3417e90548b54401215f8ecc60288d3b1d84b51c92cbd16d9ad6e7f55414cd8922d95050592d4628a9f1016feac5fdee882dfc6644ced6ea74a855417e3f4dc82a21c4057e00836754ea367dbd0280059b1b40114276b7044435b9d6722cc6912202b739a88848b31e8d0000760a08033be1884408cbedfc3d5a2d0000119e08008cf4110477939dadcc70822bc404da3b6da8eb753 (by decide +kernel)
 
 private theorem ok_b1111010111 : Impossible board_b1111010111 :=
   fork 52 ok_b11110101110 ok_b11110101111
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b11110101101 : Impossible board_b11110101101 :=
-  kernelLeaf board_b11110101101 #[0x392e555735162323141f64142135295666522516232c60392d4e55593f293340, 0x281b4b4b585e556c454729181208232b4529234529232780204e6434273f2c60, 0x465e556c7855456809364557724e283929332d4e294d18276a4b2d6e4e5b5853, 0x392d1f7241354d45416c3d6e460f2b3d4d193920193d2707061139162336582c, 0x1a45026029333957564f1f78362d562e520a60642b4d4560694e4b3f22163f60, 0x15453b294b4e2d35141f1f174e4d1909] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b11110101100 : Impossible board_b11110101100 :=
-  kernelLeaf board_b11110101100 #[0x2933293945774b57352d1a675f6a74562e2d820a2b36494b3f1653392d642c60, 0x351139162e23006411351c2e282d3357352b390c111268352d0857352b252846, 0x33291f4b1e5c142e362e1857072233614b52346445352829334b28352e393564, 0x6a3d2d5f347a4159536a36685b5836101d232b6a552e34453b1a5b45131a497b, 0x148210685d4b6464454d3552296f63595f3536687a2c722c726f6468685d3664, 0x3b522e5f1d33264b352d18332e0233292e14727a145229192e232b08362b3b2e, 0x64691b636b675b56676b5d6a4b35363b3d4b562b3435263d2d233366352b2e39, 0x2269675d6b675f533d4b565f5f531b455b] (by decide +kernel)
-
 private theorem ok_b1111010110 : Impossible board_b1111010110 :=
-  fork 84 ok_b11110101100 ok_b11110101101
+  kernelLeaf board_b1111010110 0x100088808a25762e4a0bbd14e0224bd0169daddae0010533f80087f2faad3b9b9120a679950084f1ad408bcaa0bc1a9d9e000222e70041afa015b54027e7ff1b6d4000005bb5ba50010576a152c5783111500132628af9bb17124306aba78819d820a084bdfea20d12008b2dbff06e75bad004c1fee5a8b075015ae8a24de2ea3070009d98082f7ddc6c7e82832be57bcdcce0a50b9e041a44019c05ee9f01044450fb10d06c8ee72da3db76359a2131b40541412f757d9f8d0005abc5ed1c8c27501b60c5c000006bfcb676a3105041cea74019e22dd501676a79bd0080863004fa00006adaa425e02b7ddceedf635129e088b0a00a337cbd0504497ad8c81bdb57d9c5c0523e429d5103180284b1180808f57a92c5d4ea023c5118ba9d1047a7cffd073bc9b4d0110413eff114556783738200abb56af5f1ae808096d1eb000a3d2988a9fe5065172694d0e35e11414ea08035bcda2094b84bb0205b411eb3c1b9d6ec92ced4662aea402d9dfea767c0c0021504583a74cfddd0435e8e7efe282d3c15195ee894beb77f902fea14f2037c5edf930059034e6f031e80a6bf3f6f4104ada0939fd7ddf56a820aa92f6ba0a0ab6ddef75097d6d5e09034c105af0b26d05eeb7500411e80a0cf441a5cdb5d5eaed0015ce20ef05145296bb49bfa1dd9e9b51544197b5d6e6304167ca20bb05d294288b3d4e8aeca681292af2e40047d653a58a02a9ccf40082ed1e84a0af61188322b6d5e808ef576537ff21e8d05bbc0092fc9aa23938baa84dca6b820b4b53efd8126c7d9e6fe04d79429b7a3509f5ca2b3e5a821282cf97bfc9ca468c89d1dde2526de4f56f701210896f7f69891eb11000583d9d469faba541b7a3b7d8c001b600a0a0433b8400023d5e8340006aeaf2ec84569c5dde82ab09aedf171160154989e6b464fef67a9d50524fe024bc9104f62b48dcca6bb6dc8002ed59531812a957e0fa2d9f02d8754097cd34b9569e4e2ed751a88822804aa767842acab2f51b5d7608e790a1af9340208a06b91c109ce016d768f0180259323b5e40398bb51add48080067a2a4d7daeaf01073ca2338008e4a4bd1b5d6e23244008526bed7578280a297518aac8c6d4ecf44804009953b9d222ea80889df97d7daeb735a2a39fbfaa5aba1694450007a75b5daa2ddffc5680af001b6b0c9c041197b30a8ff2dd3dceb7c9acf0753 (by decide +kernel)
 
 private theorem ok_b111101011 : Impossible board_b111101011 :=
   fork 36 ok_b1111010110 ok_b1111010111
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b1111010101 : Impossible board_b1111010101 :=
-  kernelLeaf board_b1111010101 #[0x6b5534593b4b245d55686a2929244141492d6924415f36685f367666555c5b54, 0x4e1a2f742971245d34556859494e3b76596f5f1455665d2d2d245d7169417e55, 0x5b7014364167574e5c1a2d55292849256a4d46665c345f5566626359556a2933, 0x335b243b2325066a236c2e3657554d29284174470a687a474d5b725841296923, 0x62525d395d414e47585927293f294536414f2f596329295f454d416929665b45, 0x25654d2d2c1f726e5f454e294b3b2d4e4d3b681b291f2d2c4d1b0a4e346e245b, 0x5e2c526c573f45523f52456c2d5f231334284e2513574d555546293328182f0a, 0x1a474e5566741c230a555e295224534e47534e741c295e2c706633] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b1111010100 : Impossible board_b1111010100 :=
-  kernelLeaf board_b1111010100 #[0x36253937394e5f39826a70692d536e65296a2084594f29596a7c572f08665446, 0x62415f1c29694f4e5c0e4f4e4e41122b2324201e23396c2c70234b6945774e5b, 0x45542d243b450a452b0a24291517071f292f2b541f4f3610245c231a4e5f1053, 0x416613104e1a6a4e0e5f29282b2d1f544154152f394f4e54153b792423243b29, 0x3f5253694b1a19525c5f4b23247845522e541a2147542b3b4123492d4e2f584e, 0x292e4f241c027a5b531c205b69541c7a704e524e4e372057471f2d1a20534b2c, 0x2454707a4518471c52392d4f531a2d543b41620c5320] (by decide +kernel)
-
 private theorem ok_b111101010 : Impossible board_b111101010 :=
-  fork 96 ok_b1111010100 ok_b1111010101
+  kernelLeaf board_b111101010 0x4235aa247d4800419dd5f37d339888090aa8f15d5c145af600029e969310104a7ced4123e8008214f9df4ce604884a029ef6b3e18030139b10058567ded1155674bd988a00257dfe84517512960aff469717d9c0ccc2b0820ab7bfa3c9e8aa8134d473b5011052e42a4f54626beb37aba05578da9d9e20a82028c018c62afd05001515a5e4800cbcdd6eb33fa00c8934b200a85cbdddfe2f3b53a28012f8017784b79d80024dddee8e40000378a781023fadd66013710100de2b9db4f7693b78a298b00454a5897773a0a40ddd83cee3f63404406cea0a7c53bfd151454ec5c41454855b641e7e88afc51b3e3c181553a2228a72ff179ba2c1c1114d38a832a9f376f8ba2c33d41410b7a4c00451de8f94012e4aa2001bd5a3f66bb6dd7eae008093711400553a8e014a83f4e48454123e2bd1fad15918fc84dedfcbb1a803070105381a751eb04085bf86536d8a92c1f3f5f9ddcd10504108d6b710541aaea758100146c12149d2fab0019ba811b4116cddcd51a75feaba28ae6e17168a0a8e3ecf57d5a9d9e8a13b0453582bf5084ba6d0a9f8e93a46ee8d3abe8c1400b3aa31249e76a8cefed9259c8045dfdfe1629d5f3702a213775ba92add262008977e3e9c44183a0087ee2afaf440aaba934ece240ef5015425e9341aef55f47ab4554eb0aa2a749c1d4560f2ac9d6fa7091652707bfca0db2087477f0566616df6f3757b9dbea6900880939042a7c3f5a0802c5d31ca47d39d2d404738208b727e20d3d00100d6b7a9bbe12083e2c41198834f41a9d7731004fe0049049811cc17eb1004112df4f3988020283408400adfa7a99cfd7c39dc834b09d8084ed51be834151af90a847cfe22b70d6a283a7a2cbd660a2ff602296a53f4eb2f0035a80099d01a5dcefe092f47a4fc70a20c5c4561a58a28bba99ac454151438047c06a622aabd145df0747aa3449c0956f3b5fac2a88458e77071545921cd93c421cecd60a10eae763bbfa9d460022af005040816e7fa9a0820c1ea6575fa00e71009f84ed225a9a1408008575dfe749a3d858049ac00ef40954f17a9a90800ade49bbd1122e2b4918b8a02af15a4d4e57410012f87d10400193fa002a755fabea68211fd4827edb008860893b9a3cd6828b4ec196fe4342a7aa0e2e0e8b7f39a9e415081d384fc9ddcc7608253f09da28013b60e01000812d57a3d26833da28480a8f738022ecd59802232f0d1e832f1044d3c5fbe4ed1046dedb5400152ee76fa239d55276dfe441273bff8aeac0787a75bd3f76000801975388b22a23ab41dffd9e7e08aa700125b3eae4003e75f54157e23cdd4e3783 (by decide +kernel)
 
 private theorem ok_b11110101 : Impossible board_b11110101 :=
   fork 48 ok_b111101010 ok_b111101011
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b111101001 : Impossible board_b111101001 :=
-  kernelLeaf board_b111101001 #[0x2d3d5433224e34372f4e765933283d2f301e52340c721c345315741a2d5b5529, 0x59652f265e7633475c5c6f5c573559653530471c5c665c5f71356f332e34711a, 0x2e2713585f39543553642d57282d5f532e393753335c3307225c135c58741a33, 0x601f614e1f455839535b5460345853697154584f3d1c53395f343d453d685465, 0x585b453434455b655952452170245b5954342e3f53645852655752652f3d5b58, 0x535d2d2d5335542d2819271c192d553d2f2454525b5466546159544e4e306a34, 0x3534352e225545332845545c713952652e244f6535334f3d2d26285b33475f5b, 0x1f3315740a4e141d1560212e5d60371d712d330e2835195d553d2b5b2e4b3d36, 0x60242d172461156a2d210e18542d08572d211c2e1f2e07170c1c2b333b342d1a, 0x342824343d3d1a2d4b245853] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b111101000 : Impossible board_b111101000 :=
-  kernelLeaf board_b111101000 #[0x455f2b302b3d2e350e65572e1a52651c302d0d090622281b1c0639300e345529, 0x5b65575834615b453953345b5453642d3537542e655339343d61592d5b304e2e, 0x392d2e6c771769553d26352e19272d3d2f2b2e245d55273d24394753212e3434, 0x152434283d2465241f55651c2d2e35351c242d5c2e2d5b182b242e392d4f5d2d, 0x542445521c2d54343d4b6453692d] (by decide +kernel)
-
 private theorem ok_b11110100 : Impossible board_b11110100 :=
-  fork 35 ok_b111101000 ok_b111101001
+  kernelLeaf board_b11110100 0x20808d351aa0a9300001a6bdc4054401ee6b5b8880aa8b2f5260aa8223363a7b8349adc0414be9355644170e00815f56a0222b743c3b31d4e5405ba2314416beadd0e735da901fd45445d87d444842f8cd39a8aabc55167852abbd5a6b735a049fe10480554467c57e98ad0259d94c10104004ee57001c1a875da80202ddf0741088df3bf1d5b8282cf1da8daea2a19d40405441bb8d5deeaf54b7abb97848a3ddb62020d76980035d768a2088b55051abc5d9ea31411418bd4e51455b9cb71d49cf4bcbaed120449a0b433f72ed767a9033f17badd362aab28a8edecf858f8412dfd026dea4acad3d6eeb745515bd3daf02a0a9535ba4a3111933a7d249863999d6f575eebf81112654c10696830dbea6a01266da9e1eceaa854c18059d88a93b61a0eada763b7c5d4441a6020334e2f6f0002572f67a5a829170025420043f0d9276fb3d4d1569a28104bb7fd3f26a042058c4500a97972bea8a0d2f2e0802fe7bdbc01ac6228029834ff870505049d9fe2e00158dcf4f420121b7d4e5c1828ab4ec74f1110134fc7a99012d8d9fbde00193994f73dfd1801a73dc10148b88af7b47531532f0044bb01253e004fb1a97f738a3535af4fc9add10111afa8c10005b8000157fa7aedcedf14a7aab3d045b9d200b3c3eaa2c546e64f9152e763e99ac04919f67cb820bf014da0015efb6cf8fa01735446e7bf61006e752a5057dae0a2d9f2e020b5c41871f39b02dcd500253377361082fedc7905afbf67852aa520a02bb6569f1cd6b77bd4e001159e8b4005109db4c1beafc51677222cbdbb3b3d460000bdc485fc30cf60b152e84169a8114a0d0cf9673991a6a20d3cafd335adedf5753a88800a0054d449c5c4005a589cc5b909531a6f720565e8ab93422a7e9d6eb0022a57498a0d3551bdd4502649e5d0405267f484545aaf9739add76d740146ba340207349add40110b9cbb5bdbc9441410c6af512526bb873adc459f82ddc155baa1320224e75bc2ef67df45102fe9eaef74dcaa0a80a0d75da04026753eab75eebf50000155e2022ed26820a8a0ddeae9f7baa2a4c73c7e0129e20a1d5da0d35421a60436f4401b2e57e1ac600b4e5c38022b6fa2f0b9e9ea1234c048b7cd4e9f935b80d76fc0a54c0576211208b597a7b9d05411a6f75470f670899215bdbd862893b5dc5efe1482af6180abd007baed561546ba223b96b2f5f176881ac9458a979739b0d6e440de44004f4c306d16040a361085379cc368844b9d863b69d5d4e8f (by decide +kernel)
 
 private theorem ok_b1111010 : Impossible board_b1111010 :=
   fork 72 ok_b11110100 ok_b11110101
@@ -1742,41 +1346,25 @@ private theorem ok_b111101 : Impossible board_b111101 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b1111001111 : Impossible board_b1111001111 :=
-  kernelLeaf board_b1111001111 #[0x1b1b282154121c524f534b5b0e1d521c603735255e4b37596a4a7054182c2e39, 0x28154f145a5a1f2854403521696a21295b07280b211c1b21697665681c28254b, 0x6920484f471e2027061e481c4a291e291c4e181d591d55544f132848614f205b, 0x4b5e12235e27281b1421294e2c34484847275a4f4e281d2560182041205a404e, 0x1f13171d150614121d212306234a271c35471d28292616263f1a21214f291b27, 0x51e400e215f4e40281c211b2c29352727211d41631f471d3528144f5a48265c, 0x104e282822291e2f3f25515b1d1d1a604e29512523471b4e2510234718284e2c, 0x5e541426340c14402234511a40222921281d15481048145e4e5359284d4e5a3d, 0x16514e2967251b51213d27341a511c19494e0d280c1a19223d192229274d2654, 0x1c22601c1929632f492c3d34411b5a3d372e2e400d2e4922512f4b594e512549, 0x230e231c3b2934372955573d472e651e5519282e491a5425531c341929515125, 0x3d0e3b2b234a] (by decide +kernel)
+  kernelLeaf board_b1111001111 0x415497b8edde200af464784ccac025811e42ab0ed951e7377a9da708092488df14e222a55d6bef78faee08872ed1eeaea4c86742651aee4e82cc9ad09118aa9a5e9e101cd8869a66753d1d0500568e9704039a108b80607067333a9f1ebf1505164e0800acd7bb4d4183800281bd0b5bde1205bebb855455d88aa92c92c0c6ebb93a4aca8ba3afe5e208d9d05410509dad1d2e888049c92da088d1e76a724011005cfaa5cde00a22d1d0e22bdd3e34d52454635d1c49008e667593a20ced49146f04a3400199acce8b7bac99c01145a9c014f8221374dab02c54d61914042f7534a642229b56980c4d43329c0d16b2a02cad368e6b10906422581a8b53a1d8540544014519dcae800d2358009021c8ca6c4aa57b9dd3d416ce0088a39ba533bb5bde50409521d214ed51c8054aa345a9cf6bf7faa8897a3aaa20885bceeac20809dcd7839da9c510568f25d44851ec7cdf02213b044092ea2a82a290c47c7cc60a8a8d454159dab345444010bc7b052063b204190ea8a24217f9dc0d4600a07304410e9bd66a76baa827c444f882a2873bc1d10c7c7f5944063e776ba8d514a6a33f6d682aa92b234dc0815cd594053f93c5551451054be772ba288006ca624b543ba1d55478aaac86d1f2b4f9ce161aeb4000c7d3ba8d4e80a6c54b60000a6c00557f9ad0ea08a8752467ea737b00a7d51497dec96a0228f1501bda9f64550519be514a688753ced66d3156462a2c8e3e28a829fb58893f5676a33ba1225d61617066341c1c515445076b05581cec95055174e2a0c556473f8faa0aa827b41a24829f50436a7b919ce56a745514f62a2a9ce614c32c93b4a4c677115186ce77402aea254e7e4f51a23235902570ecfd0712a882b6f5195d0059faa4a53b58a008034dacfea3a9c0daf2b121e41904d3a25ab404043c0ca7b787c459460282f439ccdea80287510905b4fdb41672ee8ce68a2a3009414bcbcdf0aac284a6f51a1ea64b9548e6a92852d65009fd3d90525f6f1da0a1dc902a59cf06a8237e1506ba22297bdcbe01440186f967d5caf875331acd76e7 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b1111001110 : Impossible board_b1111001110 :=
-  kernelLeaf board_b1111001110 #[0x6f120b17190c0e1e222f51555f0a150e2064545b4e0c4e4f6a5a474a1e402829, 0xc5c1c6c565a124f134d131a1a3435052b130e26130e194e200c154e5b4e194f, 0x1c1222193420072147075b4e1257190c6f1e20151b55204e4e540c4715622654, 0x1520222f271c150c224a4e1d1326215947152248142f272013130c470c0e4715, 0x145c5547470d0c2f4a151e104e154a591e14404d2f05371d120e3f4e0c483714, 0x4e403f4e0c18195e0f4e4d4b142025180917463d491928222f25251e481c1212, 0x2e25214854182614210f213d1c0c481a1927550d0f60680d0f1c5e1862490c1c, 0x11282134252826192e1c26610d1912191c181f5a4e124054752009184b6e6a5a, 0x612b54181218405a14611814154a4a4e260c541f12264e140c212228352e2519, 0x4022181e142048264820180e4014252e1e0e2118266a404e0b39541f0e4e2140, 0x69186c2b143d14393964346a59544a4a2b142b271e4839285a471b1448184f] (by decide +kernel)
+  kernelLeaf board_b1111001110 0x2820ae9d510104031ecd5e537baa0285373aa0b9da2726a00b4f5767a988292b5044958a2bca6a0abd4453e7b049182e75476b8f80a22a22a806f8a723318812233f6068b11318ab2aa87b29a0c05500156469b5485918a0c514955255318ee06534baec44f6c8ec50143aa298d36a003aba55581ced925560245ee7a98331fd505258161dced0f03c3a2ad30a2bea66354625c2898e076b29a2187144113194caf0aa00cac95995cec65891370cea67f5554962a9b54552a9d94c668745a8dae000bb104b82219c9248ea3545143b4d511014ba8d36a82a0019d4405d9cd115137871bc82067110252599ce620a98cfe22c082c8b6b9d92e06282953420111eb88420c4e63a04465fbbd5dad76974141408143c8ea6634d94d04143a0fc505438283093dd399020b0ce461acce9f4455abca020de054447f83d18a24a376061fb0a1cef6630000317275411984739dc0c61955644515ff3b198a298cceaa282cdec7f3b901929bcbca6834ba0202a4c2098c4e5f204541a364f7159399d468b5fa025d41052e9ec445919cc420496aa44b298800dcc964abc7c20848fc02a41037198afc4995b0a0a573d90d21119d95d4a580195d9cf65381a8082a12ab4dd7e485d919be7725a048ed65419ff3b19a0aa2b236fc8c94cae8345a2a82bf4f9cd6158a9614ae335100916cae7680c9dc05527a6e56250e808d9e18f95d172329c84aa22bf4f8a0c55049e44a24f19a0a8a931f198ec54563e57456418e64b4599da6a8028883022403e875508fa8300041fb7cec968a57d840020ce33dfc7b5445241c8457090ded11315741b3ba50560a775319b020c7d500022baa80462d4dd5319aa00017339a831b3506b76b25cfc9e804a10537279ad40535b4da24086bc17692578913c770a9b0524644489e3b33ca0b3b418ccae2933ba5542b7ced1044cf53fdf92e504651661797d898092338cc767b45a02fe50960a392d5c40bfa450ac162042b8ed07935a9dbe763380029dd0d2233fd5dac923e84a32b3dc0d46a7 (by decide +kernel)
 
 private theorem ok_b111100111 : Impossible board_b111100111 :=
   fork 51 ok_b1111001110 ok_b1111001111
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b111100110111 : Impossible board_b111100110111 :=
-  kernelLeaf board_b111100110111 #[0x2f274e4b293d4e5a54084b154e5e144e60122222391d354e5e224b211a2f1e34, 0xe4f1a541d13291d2129271229155c271f135e081b2f4d511d351b0c4e0c4d5e, 0x5a5a63651b5b142f5661704e222e18264a272f1a274d1d4d51354a39290c4e4a, 0x1210234b141e5a412135183351492f4b493351336249624d565414] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b111100110110 : Impossible board_b111100110110 :=
-  kernelLeaf board_b111100110110 #[0x755b54351854221454585658681a2f702f27721e4a142f222929355b1e545c4e, 0x6a1b630f2b7033260c54145429142f562e613937544d492e1e4a29645b4a5671, 0x1d3b466a222f144d616a4d142251751d7e0e70562f2f5139295b55134f5c671b, 0x352f765a2f5161564d612f5a495f0e2f3f5b4a3957460b70184d337e5a086141, 0x140f353b5135390e05411d333935562f09412e1d1d1435142f2f4d2e2b332607, 0x223308701e5b33612f334f39561d0f111d394d4639112f103f3302223f5a564d, 0x2951294d4d5c6a2e395770561a1b404f29334d515c1d6a1d26103529330e2f10, 0x331f2e144d3b292f2f4f4d5c1326331f29390c350e1e4b40142f3b185a2f2939, 0x4a294f394a5b4b3b510e1a18] (by decide +kernel)
-
-private theorem ok_b11110011011 : Impossible board_b11110011011 :=
-  fork 40 ok_b111100110110 ok_b111100110111
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b11110011010 : Impossible board_b11110011010 :=
-  kernelLeaf board_b11110011010 #[0x181f5b606d691b763460340723164961391a27051c342221602354283912294e, 0x512f1f4f4a53393d1854391b253f273739513449376c495b4b2737370e232716, 0x4d1a461a1d702f495c37514f1d290e1b1b2560271a390c562809252f25163516, 0x273956534f2f4a53393d37514f3929530b3d2f1d491f371f1d4b4d1d27464d1f, 0x2f564b3516371f4f4f2316393d2f2539] (by decide +kernel)
-
 private theorem ok_b1111001101 : Impossible board_b1111001101 :=
-  fork 44 ok_b11110011010 ok_b11110011011
+  kernelLeaf board_b1111001101 0x212882a824b218a80a23d5125e533da00adae0e2222876b98c04019e22051e4e0aaafe5ec0c9e458019f47420679245218b93a01118b9bd6ea688ca82538042d601005af1e9978037dbd12064a7244c92bfade1f873b45828a82ecc6a6c48a564ac9f17ea8a6b1404fa00003373b8a012cde8e0a2d701656e753a335511151019dcac764293f426235d4cee0c8824f539dd0ea148a9d3e4b14215388570010b9a120027c3f93ef6238437a8000afd51102026f473bc008d737a33a549d928cd11469bded4097f4949f9dc8cbd506014ef79dd5aea623405465ec215e9dd7b29c893b1c192d16aca8b17390a9dc814156ba28a0b153bbdc8b6065e28a1cd6bf3db4d00195a9c4167ee72004456576f97ca8efa3aaa0a48ee54d663419678ca8a9fd76531414026e83bd4e32afd1290057e204fe29bdcd5827a9b085067a201fd41014ee719b5c767b880065e2a02c0ca6bf507798ed6002bf10153b9e2153d1d0900054f0024de800009bdcf56bb4473d14055fe1d6d1a568d74900a06f05696073f53b3d4249bd1ee602804c77d5aa0774d90e046b8c2a7678ed05497f0ac004345b3c47c33da0dbc9119f87452185fb3c067eb9eb74028009dc7e47054080eee700026e8011b7391c101057e4300897f8933c168022d45fe00b6b4ab737298fd056b8103be8e800d7738ec2e0021073ba233d05ced701194ab6bf13c048841c5415d809de2a003ba536baa2494d7e882fd4026ebb425195ecf4d87d0046baafc057b65ac14057f47c3d6e6f0061c84057f6b9380025fd251da002fdff6f958022e7afc6c5fc3318000337909499efed242b5a23542044c3c1d3bc3be361224446ad1715312fca64004024df0fab4009bc5345a214723af01031dff63be1d6d1145fa80880afe8f0039d4e0045be029002ae4f9fdcc0081033e6fd5a821bd431e3f4015fc367a6c67534929a412b3535394294d7f2056c017608a02e1dce4a02df40a9cdc105424e800bb3dcad4f32a82aa4164edf2b8816120ada30971faf6fa9b5c229441848c62cd54d1653520a98d8c0add000363d19ad7fc34097eb5427d8297967b95a1253265fa53522d4ea30329c95af6f3dd4ee73b51c88a822afeb68832f06b820296dbe7f1027e224fc4514796dcef754117e2297005ce9f5014973d5b61029e204fd7e82092ba7b9dee20890dfa3c280cfdcea7640a782202f9157bafc28ee8049cfedf0125054428fe779780893740453ba7d118d8b373f815408024dcd6cc20c6cd677e1afe52264f736fd1c1060004a7e47753a080a203b37a2808a81bd14be0d3e6b738ce4556b6a301404e2975faa909225cb60d784100b7475f9fd027e20a8412ba7b9dee63a982404b9c137a5d555fe9f6592a6fd2ab9e8ea22d380493a80137f662849edf2f44014fb7c4a5085be3ba9004478227cb6633f804c0836fc19001b7518b4e9be498840093b6d3c1800042b4c3e23cb6c249e01a030eb9cd69f46006240b9cd69c88484222c010f83847d4d9692146e725a9e76b3 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b1111001100 : Impossible board_b1111001100 :=
-  kernelLeaf board_b1111001100 #[0x55265f604e21061c4e18225f5f060f3d1826682f1a625c5e511c2f513735283b, 0x275b605e6b5e6522131422342622091a1d281d211e101e2834551c105e221c6c, 0x18610e60292e182e1d654f2854185e612368651c2e262e341e280e294a35080c, 0x6e162e55553d27265f4f60532e391c291b261b262e26331d2e6a290e60282e2e, 0x5533181b611876791c2e4e3d1b1d1e55284e5b2e1a28370e110676] (by decide +kernel)
+  kernelLeaf board_b1111001100 0x104855750167a022635095504844df8731f6e7ce735d8824a2a13b7b82080806f60ee8001eeaea381100506776f5d8b521ac052546df44544764750950df6e13765b5dd5d04501abbdca493e9b92bf94fc943074f5db9ce6a7141084dea6d4910137aa6d76852ac288a9b679dd444115deae51855538ef0620ca40a35da2c82aecc78741504411de0d53b02abb31a2abb3be5e7f00a8d4015054a998c102f78766a8491fa3cb9cd7602829b652215d8b4e15503da8c76a795b5e544a52118cd93e04a0dbd01c1a00d7bd7c0b15ef2e8b15508209ecac53916d354814da2a2d4600139aceea39550553b8a873d922490d4f6a3054469d28a20d5d8e643bda2d1158e6a21b3aba6efea80a8800b835a7682c321c3673155019d98d1730a5fd90bfc1b1191fb22f731a9bd1afe1044d68288420138b1296e77ba39cd7e422b47151bea35d46ef (by decide +kernel)
 
 private theorem ok_b111100110 : Impossible board_b111100110 :=
   fork 72 ok_b1111001100 ok_b1111001101
@@ -1786,29 +1374,13 @@ private theorem ok_b11110011 : Impossible board_b11110011 :=
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b11110010111 : Impossible board_b11110010111 :=
-  kernelLeaf board_b11110010111 #[0x2f741c5b6a182f372d515e541d182d2e3b4129540e2d212d5110374b2f1c2640, 0x4e2f1922353315171b4b1b234d354e2f1335352f634b590f391d2e14281e181f, 0x1e17335435351d2e352e2335352e1d540e0a4d1d2f39354f474919221c092b17, 0x2d151e27292f1965295f594f133510261c464b461b171d7c681c2f2d4e512f1f, 0x2e597a68605e555427357a3b352e64642155543b212f226c1014471333351d15, 0x155a59744955146a25333559512d492f5447295a0b152d292f5e3568495a595e, 0x642f5b] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b11110010110 : Impossible board_b11110010110 :=
-  kernelLeaf board_b11110010110 #[0x3513281d3b15091d4f394e14393b10351d0f131d2f0f37153b0f104e145e2e1c, 0x1d0a141d2f151015191d3709394f14470b13374d29336139392939291d4b2233, 0x492e481539596c1419686c495e603b3b514107121d0a29274e1912141d3f1f4b, 0x2e512f4e3b6335292f2e4e3b64355b222f2f2e4e2b393f2933392e696555484f, 0x3559194e3537131347154e132f1929336c5363495a1d290c2f334e5922292f35, 0x1f1929353333594d4651464b6a72532f276e353b600d407e222740634e2f2939, 0x40] (by decide +kernel)
-
-private theorem ok_b1111001011 : Impossible board_b1111001011 :=
-  fork 32 ok_b11110010110 ok_b11110010111
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b1111001010 : Impossible board_b1111001010 :=
-  kernelLeaf board_b1111001010 #[0x5e3b4b5329475b2d292921745129213b4e3b1d333b1722514e3b213959295a14, 0x4d2d4e1d0c16290e2947415f1b160a0f1c294659393f0c1d2726354759296859, 0x411d4b3b2847231f192d1f0c2d132d1d606a544e6549190c221b13104e41591f, 0x28351f39411d3b15162847234d2d2d3b4e39151623592935275b5b154e354739, 0x3527] (by decide +kernel)
-
 private theorem ok_b111100101 : Impossible board_b111100101 :=
-  fork 52 ok_b1111001010 ok_b1111001011
+  kernelLeaf board_b111100101 0x444015c9c028000bfb795d441b5d9fa680022a2820cc9d4006ae53d5a5d9ed7046ce228d475ba349d7f530100423ea7b5c80000bd12baaadd4ebfbdd42035f472a220327ad6ab67bdaee4484009446cfebd1e0d4150094bdd5ea9ca349f1516ba0509eb77cd00b5d77935261c9d00aa1e50aba9008a9054dde8700117e8bd990ca7030b1f541450527b3dae77a5010458aeadd8410aea83081ed3ea75fa0a19d554145cb820aa29eff059e7e4f6b90d367304650541237200cbd08da00281bcbe24a77f9da339a042bf50416e913b668ebf3fa00007b42fb3ea6840b5c40055ae774091545db5c06015da3d0016b800d745d9dea63b0048501610457373bafd60114450073b5e7f1f4050245a4e674582880229cc444144e4af2fc8a0d3b5f99d16d767a002570be006f4125e006f4783370486bb3b004695fc03024f96b8520ad75fe3e5e8367207e0e73baeca6a39003d88218e5a504458febf2e99cc10a2dfab40020c6bf904086fade8f7ba9a0201dc231a022dc01005dbbc090838a7a98ed0514015ba000875bd1c8681000df140597afce69b818aa8b20c0cfe22a675388b5c21167a2909080cfb3cdc023747940012362b2fd5f2e0429ea0222fd3f16ec46b8efc1a09237115581a90bfb501169f1a078f9dafc451453b9dae80d670ce40cedae837c040127ac0244fa3e895e259d93d7e6753b3f6680a2853d01c7c9ed6b02ad428280477a86194e335fb3e7680ab567458082a75fa2d70455768a5475fceddea0818f11af2a2829c495057ebb9dbbf261035c12de088a8b5f8a102bf5dced8400157ae741ff000a9e99e02e75de9e472e015791cfc048093c2ee411246570873d9f6653554cec0ba31d9d028082b27bde0c5511decad3be8e830742100000f92c544104ee0ad4e9f9da2220219e005525c94ceebfd5554ff2f004ef0452a0aa82800aca61dd7e0095d9a11218125733952101dd66faa489d5005cf3f29c7c105ec44f656fcdd4ecf511c3c200b9d46141cea700044873a9d5253bc2092acbd16cf6ba2c2b13c05515401519dd07795c401200011387767ee7059d94c0473ab03bc872020a84b5cee3f1189e08a0021228775f8fc5be571650778fc86a32933b29ded76734180035c0144f888a35ae08021fdcf073ba0ef04024ae5b5509471f47a0024dd6e8422dd1df3b5014111ce0572da3ecea750441ae200a27c0402b7a815bcaf3b5ae02048047dcf073b80032f177a4928e3e8f50453fc48846701056e7f1990028300adc9e280a12dcee803500808983d5d4e019de5e4e6719a2c15144013793c4521c0033b1183a1673f890049375b8cecee332da9c768a9d023ea82810701040bfcaa6f2d8088ad01447e73454e400a8031bb3b9c7f8ccee89f4dca88ad78fa9024096753e8d0051b3dedde8292f8069f200a798fdbe01096ea754253a1fa6a82a8a0802d1d4e8777ced0081de77519e083bd6142248be8b44444a3cedde878601cf6753daca6d3 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b111100100 : Impossible board_b111100100 :=
-  kernelLeaf board_b111100100 #[0x194e35601327491f16600c3f1c4e39374d21675135164e134e521f371d392d29, 0x2d4b183f184b250b2d37531d0b2d18210c4e514e602d374b2f1f21144f234e39, 0x373557213537255157356f0c21376839233735104e276a4e0c1c4e4e4b16] (by decide +kernel)
+  kernelLeaf board_b111100100 0x10441be8a928d7af822921daf42c037c144bd1c02bed7df8cc025400484382dfd1b9d4051451e28df921ae439da0209f55085d5cec219807302276aa53b9796d6e2a2224bc8431ca402bfe08c74bd2e14a4a0bd6edf900266a787700085e12d2dcc654a021c673b99a3c8b4ef06a42ddbf2f5f9fe554914394c045169fac8f9db9c0905109425533cedae00b4a820260e27a7c6542500104939fcb78319bfd150008139b3b73b7e4049bb4878665cfd1c0a1af202d16ca9d93c8027694b3fb7c043bb9d6ea7 (by decide +kernel)
 
 private theorem ok_b11110010 : Impossible board_b11110010 :=
   fork 44 ok_b111100100 ok_b111100101
@@ -1818,21 +1390,13 @@ private theorem ok_b1111001 : Impossible board_b1111001 :=
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b1111000111 : Impossible board_b1111000111 :=
-  kernelLeaf board_b1111000111 #[0x2a19473f1933252054765919272d766a1c1c4a2d005c544e3d1c08685e1a222f, 0x163d604e0c4d515c232d4e271f4e114e3f600b3d19170f1e335408270f33490c, 0xf164b0f4b160f17330a2520271c344e5e19682d1619192d122d166a2319171e, 0x3d1c2551210f3d213d257a5a4e181a49334e1c3d680c514115511a15211c214b, 0x394f47232d7b47230c3f12201e252d3d544f1c4f21152a2b1f1e11165418195c, 0x1515133d2e394a254f18222b2b15511546515c4e693d271c274e2b52] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b1111000110 : Impossible board_b1111000110 :=
-  kernelLeaf board_b1111000110 #[0x16645e743d0a6160541a1a61691b091660540e1c4e414e1c634e4f460a234727, 0x542f1c2d5b2d2f554e4a696a004f1b161a1646463d1b2d160e1c5419202a1a54, 0x281c542f69205a62217a096054413d2e48474f1321200c4e150c2d1a1c232d20, 0x415858633957575c2f5b4e2034192d3923122d231f1539341c1a2d3959395733, 0x1a4e3f65574e3f17142125333f0a2b285c4e21331f2d14390c28210e1c5c556a, 0x211b1c545b60576e0d2d1721231c091b210d2b1e19765c20093921092d1c2361, 0x154e33190c15142b2133254657252b211e601139392d11211741252d14] (by decide +kernel)
-
 private theorem ok_b111100011 : Impossible board_b111100011 :=
-  fork 41 ok_b1111000110 ok_b1111000111
+  kernelLeaf board_b111100011 0x41406584ae2a915c9ef741144055db9e5697151529f98d5916af940557a240081257a3a220802a578dd1d22e6cef4ef74f8222a00caa4a734fced1115782b134b1ce813f8fa3c0192056fef225058fa3e5081619c2803fc9683594f6974056e08f7a9cfd5624539a24fe0043d03222215d5600002bcfe0282c7b08e96ea663951109133dcd7b8a80a9cd2e82d1d0f4893143f5ee0a1c5585ee97f5c8016b9da020418c64d7276780000a84ed39bdf46800a822284448cda3c1caea8204ad1c204d657439cd0108543a8232f1f96d0551165e3f05465e96c185211f97d6159e2b4ba0d3e82480481cda73b5410abd99c5408346b72dd00a99e1010833add25a222b72dead859191e00a67040be7b54b708bdf073b9589019d37a3dcd420186147add58146769f614fe02cee23cb0cec9141ff8317bdd2004cf105f1f9ed9f5311c29f040446247ecfa4e335599e5558fa2a42bfccecf4ba0d154154aa7db1596cec0ccc674f8432dfb7ab65a539aa02a739580ab70201c55cea73b067bc909cc41447a3bd9ad16bf40010aea082222b3b6799c6681057450148a6af43880012cf4bc0d24946ebe9757ac0c21cf68484118388ee7594738a2a2dc8e870512f8ac1d494baa928b7068a687379cc01082a9a8820dbd7075fddc00003701455bc05f4243a3ce6274113780a1d004501bcaf3dc1099c5410eddcd0680027738828a1c4eb739a3f0e6b1129d8bfc512581cbd5f9d8bfcbf1025343c2c976780ac348ff15abd46b228a1739d88b08328767809fd6e53215673c110335474871d9ce80151b9d5f564a841c512c7228d8f1ee7af80a257ee6848afedf3b41a0000d36403394a2adc01ce8f055101025add1e7f892bc08039da67335a8aa82ddce2a8c59dcf5f004126788a02002a339d4d7e1290e9c411541b6b029c5a820021e4514f589f07538388002a8bdd77238fcfc9ea82c22871506a00b04aca128ce9da8840095e19adcd673000111eb7010723532657e7354106005bdbc11405bb2bfabcee570204a10212123a72756442039f9bd2d9ae55a40b6d2a8a0011b424008dbdd0828deb72d8ece75380833820e255155a88126b82a65b56b274857be9b2bde69a40085787c1d4cd712c901ae90c3da7a508402013789d8b783a98ece73b8380a53b39a8022ae3e76824fe362b5047c7d3ea7 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b111100010 : Impossible board_b111100010 :=
-  kernelLeaf board_b111100010 #[0x475b5c73695b6d605b5c22587c2f5b1a3760636f6d63555b6a29145c695e4e51, 0x196a27216a5e5561756a1629492b735c5c5a6d6362732b5e4d2a28626d276321, 0x214f4d57271b5b1b270257212d4e3d545b1a64625b613d6e5c6a541a2b5e1a27, 0x5921270e34161c0d1a685b2959596a605560552d2e69591e572d1e1c2d29692d, 0x6029551f215b4d2d7e5b735c57272d21147e5b693d4e281e134e1c1a2d1e5c08, 0x7757615957615a5b29161c2b211a575b2d693d5c6957295b492d2d645b632d75, 0x5e494f2d1c] (by decide +kernel)
+  kernelLeaf board_b111100010 0x4297b4006564e022cfc4251145bb273efd7f0ea8d9c4192bf49387b5dbe0254e84096da0e640abd0e8210449aebe035bd6fa77b8aa20b73d38ab5f205400254eadbe4ea4b75500925425be4eb7c8a838f6565bf5f06a7ab83200a1fd0f6f9ba832a2b7fddbca2979e201573afc829f95945056e8729feedfa77bcec4141205519ed059489f3b39a831ad24965b9eee62362500b3a1d9544f8ed569c885b12398dcd7202e8edea76454b3acc2a0967d5b360eae24b0583abadd7682b0da7012ce80207b9af8824b7209608453d8735ba9c04074e820a2dd0f3f8066e8943057c0093e6f88222de401be4fc0000b2be875bcedef536a45b79ac4247278b2aa6df02c0161d7bac36eee7aba962a8010aa99ad5f7b101235a7c404124133ead3ea1d56127577babaaa20acd20ae1fafab2da9e4f2a8100abf9f7304202e68a80d6bdbca63f168a102f3d5f7b9baa12c2ac554758bdb880a7d1c7a1e3e809008d5bd401088b9dcfd3a0d5bf6f830ade00537360981045d63f9afd469b7a08aa6b6fe0f1e051bf11476f8f4006ae92d6fd5a492a72992173d3dee7747 (by decide +kernel)
 
 private theorem ok_b11110001 : Impossible board_b11110001 :=
   fork 59 ok_b111100010 ok_b111100011
@@ -1840,7 +1404,7 @@ private theorem ok_b11110001 : Impossible board_b11110001 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b11110000 : Impossible board_b11110000 :=
-  kernelLeaf board_b11110000 #[0x41495b2d09552d65272d142b0d21295b606a1b2d201c6e635c64226a5e514e1a, 0x1f29227849605b6f3d4b4f3d542b396049644d515e2f4d2d682b21471b2d4d1f, 0x605c6f573d4d221f4b621f540d54071b13291b295449476a2d515147624b6e16, 0x252a1447494f5e121454072720130b3d2d1f250c1b1916296a19476a1f4b1b1f, 0x3f20250c182a602d463d544959463d3f0b3f5b594651161f136551190e545c39, 0x12071b1f52410c4e16296057492125511b1625213927205e4f5454682016463d, 0x4e3f2a2a063d182b0a5e1f1f13634e0e1917390a4e2313195b764e5c0e1c2b5e, 0x546276252958684e161f515c395b4e2d62225e4f5225414b3d4f522d5b2d5b51, 0x185418215b463d512516291c05172a] (by decide +kernel)
+  kernelLeaf board_b11110000 0xa2202098c98106a698c438416f50050636f740068f22820972da9ce63408805c12f8ab006a702e2c092eda5e0454e458f473b2d9fea180a3842dcd45cf6f9daa003408b7c5ac0a2ebdcfd0a25a5a5d55060f2f7bc00293f152968230b2dede28890cb7b7d1e7600cff06559002ab0da282023dcc6af15decfe000a7f27820a838f9d8ed338884280085f73a2b0267682b23c9f286790025100b7f6e77731d9cc6015057dec96000007c37d2287f410a5ca00c1d19cecb6a7c1815f10938128711052f474010053796d2e8421dcea020240227d06b5ee7e000a154c40a9821a34196e36f700197f82000083000814012e3331aac5147060410a2dd92236f7a980b2740402cf1b7bbfd0a017a8ff5029b7c0d9e37472d9fd002780020a8e5c005a3a671d94a88d4ee62022039d2eab29820011f54000193814fef64b465452988802c88cd4c3e29f14506a8893e217b04f75b9fd0114b8cc154de672da9f570a20899c463eead41444ff2f0104437c1ff06c057311adfd7dee2224dd0945b009fe5f8b512043fd4d00006f53a00040f9bc9ea7110854268dea7a9c9c023fab5655ba12a51c04a3c7c12247172fdd96d5141013fa9c424581e31a4f5830154442de03bf7bcbd614027ef7aa60a2abc499941cf8393c044e4d9bd1ef6900abf2019066eb75040b4600af543c7d4140378a02dc66e7f904160ecaa108927b7ade949000813d575be5d3f1322a0adca600caf1ba1d4e2280d5bf068002eac4104deb75415441c73dde3e1089b99930116babbdd1e766b (by decide +kernel)
 
 private theorem ok_b1111000 : Impossible board_b1111000 :=
   fork 44 ok_b11110000 ok_b11110001
@@ -1857,25 +1421,17 @@ private theorem ok_b1111 : Impossible board_b1111 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b11101111101 : Impossible board_b11101111101 :=
-  kernelLeaf board_b11101111101 #[0x644853512e4622202e2a56142b3434560968204e34566e531c201a2e215d362d, 0x141d2b1a0809272e5d4e221c342e394f100c5a2e1a304e214d48481462224e20, 0x503a2a584c252054223039141421362e5a2130495918151821302a5636512b2a, 0x4f4e3a2a4f3a502e271d302e21675d492a2225362a185d21513756] (by decide +kernel)
+  kernelLeaf board_b11101111101 0xa02ab002cfe76eb041556aa288893f75d0d769f1103ba882a02200c3511557687cfdde4e0022aac1458970116daad54031ddd0f476fa00a2400b5b425686eb5580a8200d8d99a832228a9741d4d16c373a82a45355629a1db62820a2288bbb5a1d872740454019b3a8218cae822a86343b0e50555d6d46dd1d5ea0028aab11508440299dc557a02a9ac1915118227554faed0511bbb3b459cda722a222bb6550a73acccfc02404886a833b5aecd6c34154469d8871059ba20b235454a9194f16a00922e9da2020c54540016c9c8e9f47541176aaac6c491683551605768220abad94d5e30b4d559169d6d504213e8e41ced56954569d6f774f39c0c083554d62ed0f776dadc (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b1110111110011 : Impossible board_b1110111110011 :=
-  kernelLeaf board_b1110111110011 #[0x7f5f154f286a4f30225a50616921331b510b374f1c074e54221c5a36332d4d6e, 0x394c54545a362d5d155a2d5822394f5f30304e271b372e3046282536112e3628, 0x304e3d5b542e5e5046373d4c592b4e395d393d537117363d2d49572d5a4e225d, 0x252e285a19362b3349531b36300b2524304c590d273d53243d1c397a584f574c, 0x6751695e50545d4e4f3d4e5a4e544969515c396d64392b675d54695330243737, 0x4e3a5058463a5d482e5e594e58285d505b583d6571545b51515149545d665a51, 0x4f2d54365c544e482a2d51364e245a3a23462e2b3d4c5446224e546737405e22, 0x334f3933182e2b394f2d46332b39482e3a675366283d344e2728212840225a28, 0x27344d4f396349542333483a2b396a2e465954305f545a30544f745e5a224e33, 0x332d2d4d5a61332e135e516739692e5f5a693a232e2e2d5e3d4e2d392e4e4d63, 0x5b4e39495469334d4f5a33] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b1110111110010 : Impossible board_b1110111110010 :=
-  kernelLeaf board_b1110111110010 #[0x5a271b372d6a27591a2e1d2e0b54592554274630223654224c2828612e21334d, 0x614e6a54334e3333285d2d59343d4c20495a544c5a2e403a505d543936494e5f, 0x2d3664515a514667735e36542b252d54304e742d283754515150572b546f2b5e, 0x2e5d2b392e2133270e224e30333d4c4e5d59503663513771175e4e2d4e2d3336, 0x391f251a30512e215436252b4e2e51213334592e4e30213928364e304c3d7a5e, 0x1b2133715436252a2e675137072814546751213330252e30273d51642e214e54, 0x2d4839282d51304c1839152821333046365151503a2d2d723d48272d28391855, 0x4628741e2a5c36] (by decide +kernel)
-
 private theorem ok_b111011111001 : Impossible board_b111011111001 :=
-  fork 98 ok_b1110111110010 ok_b1110111110011
+  kernelLeaf board_b111011111001 0x10b7b3b105cea804327a9c8ba70000467cde7f6b50040067c22233d6e2222de6e020dac5c3a020833d764fbdd1f3e80939c0110b4ebbbfdad0041b4e8023ad1ebb4011055d8b7bdbdd0019d8b7005cebb54099da2337c7a7d0169a81379fa92e7100c7c9ca980088023c459f23758000af4007393ab5dc6ece880d4c001872054035fea76b1514186b539f82c0474ef6ca5ad173b40486788020cf410a7ee7219e635d82bc41801cf3f5bc6c00819e02be054573c8d76ebcf80b422294fcd880caad28c0007bb4e768009f042651887054251a024a840d1715ad473f5bd4db773202a733ba01024600aac56f47455b73b4988005ad44075a3c1236bb05444157bde672808d4e368a208b9da100153cfa937e077b15059173b1875d0e0149b1c6c0275c002dde46bbbdd9d1127680a02d8d460a5dc802876f026c6f7cbf1e00000a9b6f40a38229479068e0b27a9ddc1415043376b410168f9f404528fa7bdd0d04146a7770121676acfdee033b0450b58b3ba9c9d510d3d1ee68039c0436f93511ce22bf3e82a85dea7a7a7c92b0c841526b7c486fa5c440976a31001b5c299db6af4819f270081a7ac29bdb62002b0c5e975149c0822c399d9c6e9f7bc20a453d272a3dce6e7f588158c159f8057e66028b0e760002f7b7b00ad4d777ba1a808040c6c6fa02f799d9d015ec002113b73ddd0173bde9fc72f800a02db7ba22b793d7c044055bb6b676c08292b2a2eeee70267530115aa60810b36b6dadc06446ef13257b5b300b7b1a2dcf3fbf810b0d111618a93b4f802c09bdbe802aec491055868046d5469724191b6479155d8b14db51c80ffdfd04824af4fc00106547ab0109fa082200c345dae8787d3a1d9e11bc040a38be6fa2093f400539a0807d614259dd4d160451ced6b6d9eb79beec04a36850210a3e99ee000055c2004dcdb6b79180b9d154051adc100009a3b0e100998631117395d468767c802c3018dc00db40128e9347a1bad02a96ea002de0b96f791a80a7c445ba022a3141ce0638012ae6f43b3f8f40101154db62025c8454004156a2ef3f476f800007c0547205321aa98e7e8e8767ac88812b0d2e800abb0161a7dee025475049c9aec425090f3ba9b9e413f8825c1114358c3801a3aed0e4004154db6297578453b8109105dd1d0ecf52005a76740815d8014ed868773800aa0828db73b02161ccdefeb400009bdaec082ef2bc0105cebb40010ecf4fac0220110ed16ced8600cf017bccc0009dddc5012ce40014346de3e8edfe397d01401bdd3b01015b8000ced6ecf6dd0402b70040009b79328e04a25ac94a3c6d00014133e9cfbdb6ea60202af5112f2dd056a6c39df4d2000085bb222a36f953a3a88d1ca182b00835f8157953df80b00abef7879deac080512a6cf9d8833c1140019ea3bbadd02ce0034def334180012706d60054e66020200dad768290375d0d204194462ef537380a8836e4f3bbfc222028b6b4f80b026f6fc12b7403564242409f55162ce6b5d9dc2005d8bd594000082a7674b8a22845530294fa2b1b61a2c566da154d1724cd4602a2a3970ebb43b3e6f8b (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b111011111000 : Impossible board_b111011111000 :=
-  kernelLeaf board_b111011111000 #[0x2b535554624d1b28360b335d541d28121b283336371a1b281d37275d6d3d392d, 0x3327535d363d2b515d51675418542b1d511b14402b5d4c5e482b401c210e621c, 0x591a4d0e1618211d33480d343d332416161b2848271b281d4f4e21615f18392e, 0x51544c4d21580f6254182533283923483d274837362a0d281828734d4d541825, 0x1c39340f1a1b392337] (by decide +kernel)
+  kernelLeaf board_b111011111000 0x8012a29cc211ced3050011221007e6b37ae7478a0a92aadfa3d2a4d4e99cdd0e88d8d4148447ec0562ea6634bb3d46804b9d1ea290848dee9f1149182037db6ab5125541246ecaa3318812ac8aa379f37155490a6f5331a5d01056560b39ae6f208a3b1852da63439dd9ea112b231ba34dee0ab3c55268885b0014b66f51a28ab2393e02b1be181467791427e244ed0f87bf98dcebb0059ea2204a4a7d400a7b776dbdd5e951d84081bbaa02b47cfd4d550040c7531579dc91054068e2001bca70357882a8dde662aa35ee46af56067349410e28888eca5057167357ca0814fab8aa02153c5cdcdea36d8aaa88000aa2f5067ddea6778540654682200104b8dea367b6dbe80aa1acdea80208a33b8a00ab7d4144fddd11dbbddceb7 (by decide +kernel)
 
 private theorem ok_b11101111100 : Impossible board_b11101111100 :=
   fork 86 ok_b111011111000 ok_b111011111001
@@ -1888,16 +1444,8 @@ private theorem ok_b111011111 : Impossible board_b111011111 :=
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b1110111101 : Impossible board_b1110111101 :=
-  kernelLeaf board_b1110111101 #[0x33132d343d4e3d3451142150333a265e2230212e51302d261f2d374951503340, 0x332d3a34372e2415213a335014542a3d344e671350333a203748394c460c3351, 0x54333434172e103a3d3433544e635458616f621d343a67515334372e24514e3a, 0x3327332d5033343d4e51342e5a48372e4659392e2a2d37513346343d335b494e, 0x3a5b4e34506363145b4e303d1426030d5b3d344e302d4e26501c481c50593a34, 0x1d20503a4c481c1d591c535373591d2e5b4e503a19594c265e503a1c0e63260e, 0x535153592e4959392e374667624c595633331b1226101a1b1a182e26562a3454, 0x5a672e6277624c5959395626265a5357264c2a51513a34532e48392e53513446, 0xe341228333d46301e3956463d39211f531a1e4e3925142e1a2e53466649] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b1110111100 : Impossible board_b1110111100 :=
-  kernelLeaf board_b1110111100 #[0x4e502422131b565849244b402a534e52534e184e5c2749496a1e561a4e502e31, 0x1a1c073363125017330d58101a300a1a3317491a1b284e1e17284e121c111a1c, 0x342763626f61556a226d626a5a646328615626251c26586a4e223a5433251730, 0x3a2d542e5266582a52403f304e223f271e1d3a504966072422525928204e2822, 0x5656634e273d461a2a54542a1a1c561f56543a2d344b1b2e1b54172747545c40, 0x4056545b56402d453a2e26565a506c26565956185627542e18221d21542e5026, 0x1d561d56145c5a1726493f5937142a562874072d37595c6a541b26561054142d, 0x673a5222114e602656281d563a54] (by decide +kernel)
-
 private theorem ok_b111011110 : Impossible board_b111011110 :=
-  fork 77 ok_b1110111100 ok_b1110111101
+  kernelLeaf board_b111011110 0x802080ed0106992d4601233c81017b8c6d867b955415cf5b540548dc8080f7125ce8743fd3cd68827b5118276e74b94d7682826b5da253d8dc02019b4014093daf3e8222aef17df150449071733b381116773d6d36a13126cb582a053ebe2126c4999242ac68e490b4775b4c016a7aee460902e75da22053d0aa3b4e36a83048032a054fa3a8a853ecebb0001081193ad9d411cebb6f8011b9415cf8222ab8b99d9eb633c1402150599e6f24969b54450111219acdea2a26b31aed0441541375b55b4ea6774044201141d0dd6813350022246733bd9c404e72b0b4f0691029fcfb39dd760a2b31355be762aa2034375809119ece933580136dee87122eb663992c4cc3bc7a6d54876ebb7ceda70b0b430a942c782c263d129d6f9db0deeaa00812802534d83c06f6f7b802a8d30109d8ab0d6ea008b3b8054dd0ce640923102128e74342ceeb69b3d3ea0cf0456e50d1167a00434def3b504000500a3b4c0005ddae46008adf5dc6ece0a022ae71104576ab1115456edf4128ecf8d8284022d37ba0a333c42df279dd4c0167900d31016997d7624aa10dd742af741025a6033ea60044ec531f01531006c787dfe2cee12d3501975e7e8f4f5402161a680adf576800a4c254a38cedd6cf50020856e03ada680adf57680a4d06582ba8775b3e865300a9aa0a2ac200007bb4d40567722cab67c9f4367bad0600002b7c1191b9c0582671b0050119b3d44412a3b3c9ea42dc91a6f79d800000f76982451c150804a687a1b3dd69bbda2c04541061832a2875dd1c0514186b740241113641fd6edf5424e8a0434728633e0602b30067dd612d2d9154591e768383445410594dd6d0522400a1519deb6eba9822a89deb6a22a2b0a77ad94c45546e62dac2fa6d95593a22ffb38a2df55204a6aad142ab72b252a8fa61f5ba8b7ecea0a80dcf5753104de44a826eb640010c009a992814d6f03940ada2210d4d40046df5b81ade2eeb5d80288a6c4144ada0a256b005400a189b34dd6ecea35b04c62ab56d3f53150445d98d5445516227743d4d4515d8028250d375b951011ade3e769f7b8aa10ac6cd6a820a20aba9a0aaab5315556aa6b39d6d01154650a4fed6ea6eb5bb4d415529782a6f5daaaa220829be594a997d3e28c51fa9b373150154606eb5ba0a54d5155dd2d4441173763011555d2e06ff61908288234ed16b120008ff614f82c421eceeeba1a2222a8cc9c97361f49a2e9767454612ca0c11a76a34584cb4d524fa263d65c5efc022c3d5f568b1110476e48a2338bd5880daf278f45554787ada6d5508012e4a873536a32163d5aaaced16eba9b3e55514bb05f04515860226b5539aaa207d9ea18f258032ab4345012fb033c6eab63219ad8728aacb0010acd6cf2fd2cb527359bd473b3d8a02a897d46a80ced5109692a0a9cc95408ea1ace73ba1a4d16aaa202893cde8a8aa42d6db1a802c9d26004bd5206ab454669e08cced1921696a0d3e56676635049da0dcd551553f27945564e884885ab3daaaa356cd73ba1aed8f37 (by decide +kernel)
 
 private theorem ok_b11101111 : Impossible board_b11101111 :=
   fork 41 ok_b111011110 ok_b111011111
@@ -1905,44 +1453,20 @@ private theorem ok_b11101111 : Impossible board_b11101111 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b11101110111 : Impossible board_b11101110111 :=
-  kernelLeaf board_b11101110111 #[0x3a562a34591d20213646375d18375e46375e25182026362d3334342e18295451, 0x5c685d2d4f29591d2a5d3721361c2668615e5d761421263a685e3021254f4e30, 0x3a3a192727096e56205a362d5d4e5d7330683a184e3a4e5c30273d3058553036, 0x59622d5d59465826633d59365426631026365b782d5d564c54203a303a716327, 0x675a29] (by decide +kernel)
+  kernelLeaf board_b11101110111 0x22a2080e7db5a9ece800862d6f770100106cf1bb183308032a6f1e480f7b3a08236d4545a9a6d921471ea22002434453736edfe35bddeb73341544a9a9008375ca2b0e05d7c7c7a7c1054419d6ca482eb33a7c19413e02209c055ddd6d0420041dadb6b7bbcec142ee00f3c4118608080e8c410015d663549119daeb009da8dcd869f7b8230c51046c75750044586082dbb9868eeeb79fa2a282c4a7b39dc405055aac20295ddbe876d8880a7314136208ba3170eaded89bb95db4a68740042113600eb400d1ded6561a1d614bcfe76800c385414181d75b601155620d3b39de004154506876dc6d045bea2aad7760c6dfbd888a2b1b51046fded2e0aa018d144041aa89b6dadc100067b4d94050569aecc6a7a9d1c (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b111011101101 : Impossible board_b111011101101 :=
-  kernelLeaf board_b111011101101 #[0x12541e4e34625234403623214034363f343154680634364e252a1f4e343a5620, 0x4c5a3a463140365a3a4e681952335225363a302a1f2a252521362d21545a3a46, 0x28460223553724292e4034561a253f303a5246523627525247615a631e544e36, 0x364e283a331818283a2a28334018283a731f373724374f3a282d362336283a54, 0x363a5446283a1d124646331d1c29464c54102e460f302d462921346240362e2e, 0x6a2e25305245403a3a252963331d293021403045731f4628362a2d4c40584651, 0x543a2e3a30731f541d3a28302d2e283a544634272e0a17292823272e281d3a28, 0x3a2a2d1d1d184e401c1c271e34561452361e17314e1e3a523a2e3a303a092833, 0x622d2552171f2e184637212e365224541f27341e2e2423246c33183a33241f54, 0x243a286c4e332918282a3a1f2e371e271e0a283a34362a3a45233a295428102a, 0x24363a2e2e313a2862] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b111011101100 : Impossible board_b111011101100 :=
-  kernelLeaf board_b111011101100 #[0x251c19252d374e0a294f213421682962186459622d0b0f7354152d215d3a5640, 0x140815191c363a3a5618732d54581c2a6218583a5b5462293029254e2d0d1c1a, 0x3a18731c281a61715d3a47696a36366f0f300b250737562815132537183a7a25, 0x690d182521374e181c27297a0d0f3325360b212e59642556332e371e33565921, 0x1c58364c560d001c27290c2e165a27213433514e0f33561836251f18643a3a33, 0x3034451356133430272e33132930342534364e584559456e5a58273427335656, 0x34] (by decide +kernel)
-
 private theorem ok_b11101110110 : Impossible board_b11101110110 :=
-  fork 38 ok_b111011101100 ok_b111011101101
+  kernelLeaf board_b11101110110 0x20824db6a3ae400415da002bb63a8eb51e2d40056049ca8128eb51ecd415276204cf0453901298d46acab759fc117608237cf6a0a8029f3d8ad450151bada620836d157003ad522e8f445d608a2d4a7a98a351086abc5add5100104ba8034b2fa429fd7663514498da282df242043a88aed6dd2d26a82a8b22ad4cfec8a7da67b404177209347a804a8824f66a2cf5010c6eb05267a4cfe0048b5375aad6e0a9dc014114ee63151676a40ce691cc053ea7b69d6ca6094b4085b62b129ecbec79daaa09edd62a234b75aed055d6c35557588a227151b3d105a9ceb5d8028aeb61f3cfe902a82aab533bbad468c35b8042bb115518eba98c6da6a8009f0441045d8acbea700051a3c05453ebb45519dc0451d6a3490756bb4baa020c3504a96a845e06a2eb8105d69754f8f5504679dd5453b000b0d0f03515061c5f9e7f44150636a350406daad6e83330181d8e0637470016da2eba988a0b1b518aeb1413b88a4b1048d8831b679dce6a7418da9334212a690d762202246d1f8b0d6ea0c6d4e8769e2c1510606db5141976424a8bb6dced10546eb5444459e82863104c6a375aa0aac541146cf444016062098d46ebe79fc1046f9012df49aa82237c26559fbad46b7441126d882a8a8f1016da90aa375d4d140151b1b80010168008f54abaa8df4982a22a75dc0da75b358280aa8b25d651fe20b0d75d2d54636882b4b5551156d80a927ea5a254b9563f87b5e3d493dd4e76a288db02668836b75c6d541639229036da822dadd73bd1c299c4415a58a22acfa5a5db6a00bad86808aab3f8022ad09154baa82a5d0edb5b820aa1ca98084816b75c6e4802582cd4cf73b69e2d041440696a280d381b6d405114411e20008781b4db6ff455a6aac756a628ba3511436d36dcee40154b8a0aab3fc08233b69baeb68301069cc3544404169c5c9ea2102215b27ab4e61a7c404101576cf861109ea75986d35424baaa834db73b455052c717102cea8c5d44dddac1456094b1a7da68927d9f5b50146b60001cdb1b6e6680a80c8888d6c6e0339a7d4f080033505515d96ed69f43a034c1159e8a8a8ad1c99da2243f67d6cc7128db4ba2227fa01950c793100415d722bad9f28e9c6e634ba1d1640105bf3b31831cc4fa9fd6ac0aaa08374041facf4bb6d0410541117aa1c2105545da2000d9f2697adb3d0405db7d51013db3d52add9c46150eeb31f3c64911539804a335e1d0008038f779145d730c7f4fab642501b620200236f7e3f11618bd2e0a20c1f11bf56d472aaa2295c9e82a5d5be6375fad548452e8a0804214c4657339cdb680800aeb0045d756cc7cf5bd4c050041b19cd562e2c0454061131d8dd6b2b6f21a44a9e2d53a288b0d4e979d800aadc55011b91ccd69700040803999d54baddbe80153b4550015aa7527e8769c44a1f468029c28b16304aa63c9d08d9c06b1632cb7178023fe7d4d112b8add590f7775d6e069b (by decide +kernel)
 
 private theorem ok_b1110111011 : Impossible board_b1110111011 :=
   fork 77 ok_b11101110110 ok_b11101110111
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b111011101011 : Impossible board_b111011101011 :=
-  kernelLeaf board_b111011101011 #[0x5121295a5a5154460f0c061c40244d4c0d236d482d21361d092d54283a34561a, 0x6b281c4e1e622a451f1d2e2436404d1d283a18651d09543a0d1c1f362d400d10, 0x2e1d1c462129545c2d462834622a45281c364c721e465d3124281c4e1e4c3124, 0x4e29293a281d28232830291f18652848362a2d301c2d674d545c2e4023302e13, 0x561430511d3a2823302d4f4f5a544746343045281d2e2e292931281e36451f28, 0x3a1f18212d2a1d23452b521e4d522e186c24362b1d1816212e2e5a271c2e1e34, 0x1d271f2e1846362e3160365224361f293a60521e401e271724733f2e2a311d2a, 0x1f272345211f2b1e4f5231524045526518451f24362e1e1e0a545418181c3a34, 0x4d542a3a2a104e274e1e241c242e5d245e114f211c2807620a732e18311f182a, 0x28401f18513d271d5c542d284f] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b111011101010 : Impossible board_b111011101010 :=
-  kernelLeaf board_b111011101010 #[0x183151522a3a2405212d2a2d1f36311a544e1e5d211a476254064e364e3a3456, 0x28514e1e513a34483a735e522a1c100f311c232a511c2d452a1f36622a5d6b2a, 0x46483628545a511d5e36451f362d462a27295a463d642936744e3a68461e3a2d, 0x91f1227511a16215b46605224363034293d3a1f231f4f3121341a1f4e24175c, 0x2831346e345e46] (by decide +kernel)
-
-private theorem ok_b11101110101 : Impossible board_b11101110101 :=
-  fork 32 ok_b111011101010 ok_b111011101011
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b11101110100 : Impossible board_b11101110100 :=
-  kernelLeaf board_b11101110100 #[0x62292421484e29275a34404045212d365a48273d4f48481a284828541a5c2d3a, 0x2e4051173d4f4e274f13277446301e2413565c464e214048022927] (by decide +kernel)
-
 private theorem ok_b1110111010 : Impossible board_b1110111010 :=
-  fork 38 ok_b11101110100 ok_b11101110101
+  kernelLeaf board_b1110111010 0x8a8d520600001fcc64ad47009ee09f9545a540003bdcea6b751a33f100566f5355bae10515710d401676209f00016767b49a22927349aed00408bba4ef647502067f22a8741539a8c543e0cce2c57cf5d98d8f20a009fc110c6202ac143f889f1051ea808045d0e7f579ed450227f4b63aa20d2d9120680a445e979731a003173fa4db6102ed14f6a80829ec56a21531042aa663211544c67375b4d410ee00208809f013faecc6080231b6da82202aed8e8a3836dd2d2620080b6cfea80aa775a0b383a59ed8520628027b045411253e5f41270273dfebb15556c7001044eeab75a0a0a01fc500c602a842821d6eab4544450ee8f41062f2be967b16419b8ab0d2d157663d9a4db68008aaabcee63140410b6874115da2abbb5a7ce682abb53db4eb65301868aa00a88a9473bbad46a8888f186b701019f80cfed7530523f1b69a8ca08c38ba80000028e8ee04aec4215da9d153b31d467b45511b6c5cff002a28e0676a70044538a23ad46770101468f0545188830d4e7f31e5e014151a002c8db6ab5ba0830c10084e6b75041105cfcdea77340001770347a20b0d017622093c11767740945439c6d0ea7051154a98217315bc6d46d3c580a88ab22ea8228c0398450db424267cb3dc000046c0aeec749c8228c039a093b3dc00013398e93d780028c03982cecf78b45504156845cfea800a29dd762080936d808829039b9dd46eb31e5d21509518ee27aa63ad100844011b9ccfe36d6e828202890386e430005a3a1c55538a4d6b011b5d1ea71b040247e33140d873204181a4c1066e40133001586e8f10144dbc8c5ba1db6028220a00847713adea9a8dd6d3ad9ad0154546c75a608222eeda737b8d82a2882713f92c54fa080a8a3473596d0ea82dbe368a2e0e96936dc0080b0d49a6a7447bbad5003fa0b0023cff3f10044415063a1da66b241110ff4ed5004997c28001b9c6e46db015455454753b5a8b475103ba8417b256dc5cfe82db5bc6d562000082a2927d4f5ae36a022f7c9c042a711b7d39dbaf461090a0c6cf620bac105ba8d581201a3880ab3b3da009471d6d340246a420eb0164079e85ee96ab024e68a04a090c7e002ac72539a3e4155d1d095439adc95162eab3fb6f1682ab20006414bbebd56a0636380a34712a5aadd70824d194120150ba1c16e082212aad6e7f6d8c882a131cd62a02d4c556767b006ee20a0821cd7208a47f17535454373b6d800b3b75b4eb68344095dac030304409519a397e0405ef3f9daa27e054567e4f13fd38db0d000f68a8089327d6d5106e71b5050a76a87818284a148052305a9d3f8b110953a4d04450eb0532359da9d3f6b69a928b0305842181c5c4380b76d808804000a28b6b91a7c47ba33f02918092335a010aa8e4680aaa8ea66bb9addd69b (by decide +kernel)
 
 private theorem ok_b111011101 : Impossible board_b111011101 :=
   fork 83 ok_b1110111010 ok_b1110111011
@@ -1950,7 +1474,7 @@ private theorem ok_b111011101 : Impossible board_b111011101 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b111011100 : Impossible board_b111011100 :=
-  kernelLeaf board_b111011100 #[0x2d615a4f254f516719372d052e0d214d541813630847481a2d0d1c5a3d27263a, 0x1025181a15185a23611d4b254d4b591d51142e1916212d4d1a192d4f134b4b3d, 0x1e1d1727136329292a5929271d1c272518291515070f27212751471e54214d29, 0x47295e514740294d12514719404d291d2005510a211c545419291d142a1e1529, 0x3d27205a251654181c5e203d191a1c4f4e203d1627304f1f2d47291e1f1d1c51, 0x1717150d4510104f1a2153312e23624e4d59291d6816276923141e291d134f4e, 0x8291d5a1a2159214d1d4537210d212740544d61274e33485b2525211c1a1e27, 0x5a08231a1e1d1429531c635a1c2627041640160f125e1023161c1d4d161c275a, 0x1a5a4f5162294b51453f1c6b6a635e66630d1c21720d1c681a5856312a151245, 0x375626451545137845131f2b72295a305e453f594f5351594c484c4f14454c4f, 0x27374048275a631c1727294d162721023d1c185a59153d1c2733545945212d13, 0x5e31305314343d4d4d5a2934] (by decide +kernel)
+  kernelLeaf board_b111011100 0x15215516f6c715586b2d3d95529b4c154540410997ba2cde590966f6b53b4d3eaa0a2ab7e060a02c8d53e290a0a8a2daf1e732fa7d4e14dd510850b69f4382aa889282c5ee73319002856b05146ce577b9cd3ecf0104a9a8d9e2e87540056e4f6fd6d36ab02c5d55110412bc5c9e2102f8e2f42a2aa893cfe8a2bf96088a7b5b0c04549aaf71750107fd9c55919fd3e551a380d9e99acb3231958599cfca6a545d5556673f35dad9159fb0082d1f16ca2a71978851e22eff9400539ca006bc83578fbdb4485004166f1e3739c928221e440396374e7a335d8eb6c7558a2295d410496acb45ed62310551ea1acf6040aa77509254a6a880aa7a79cc114584c7dace69b4fa2222a84cb6a4a0303054152da23f25ded199052188a8f2da9ccee08b372da2734fdac46a222808a74ef6b35a1c111551145b3a1c459b9dd462edf40843aa082483710e9f54582068b12d54e6f874fced9ea288b0b23b7a823529751052e87114e66b656023daa227cbe8028805f2b892374422e10d400021ab3f35a1e9ec75d82ca00c8f000c5a244ed110019bd9d4e7701244d1c5b53e20230080e9d1e533da2a122a73bc004f0919f933b7ba7d0600a0d6b41a0004ba5ba998c0145440e77b418201203dcce9ad0402004e688cfc676837b96d3ec3504867e7f5ba80811f53c7b420fe20ac773990d1e3ea7bdaa234715223e2030353a12b374852590d1e3f20099d20737539dd068aa00880a02a1785168e2b439cd59814a9930254ccea73b94d56109ee404151252ba9cf677114152fa7c00612189f8f54e0a02a9d56ab6700154e9f3b9cc01513f4a5cc6ca00a8a780294ae00295c3e20fd3e284a21c44fa0803478fca122020209eea6879ba9c868297319ae012b90063528b58a240123f0e7725e12979500a6ec32fb39de8e535da02099e010b621d4108056f37401011000d6675bcfc9e8424bd94097843dc815be1ead73f51152e1213f421568f9f112033ab7d6ea2a42175d8de43cdea663451000127e3c46011f21102466b16e81240dc14e76b7ba7d36eb (by decide +kernel)
 
 private theorem ok_b11101110 : Impossible board_b11101110 :=
   fork 80 ok_b111011100 ok_b111011101
@@ -1961,52 +1485,28 @@ private theorem ok_b1110111 : Impossible board_b1110111 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b111011011111 : Impossible board_b111011011111 :=
-  kernelLeaf board_b111011011111 #[0x312b212a4d3a6d5a21241c24331f2e1c3a212a68271f1f364e271c2b24615614, 0x1e2b1f2e312e4e36245c2e2a313476665b5b6367674c596c361f2e3a212a6a48, 0x4e40584b0d58671a652e252e272a624d1c1f4e2e2e2518213a6850273a25301e, 0x58314c5b5a314c5b5a0265305e4f5a312e4b3a595155627a2a215a253a4e2418, 0x7a2a2e253a4d2424314e3a56501a2d21252d21252d274d554c5b5a4e4c5b6702, 0x21610d1c344c273a211e3062482e4e24610d1c314c56274c2e5a2a4c0f1c2730, 0x4c1736242a2a2159242a4e24610d2e2a2a1e6231344c0e240d4e192d21302534, 0x5167244021244e2e2a253a681c314e3a2e111e3a1c302a1f0f0d2e5a] (by decide +kernel)
+  kernelLeaf board_b111011011111 0x6805a3e7c1126840d0f2000202939daed0156029775e8c4000e6088031e762eb5dc470010f6eb400398a00c355a00c7f4001fa02375ddad12665f500465b693540558020ab43a1259d26a02ac44427693c38dd4100957622aae40015567bc5b1d11a73347680b2a02a0931b820ab3b15338222dd0ec3515044b80834d0ea1871b8a2734069cce14053e220aeb43aa09ed878b94154246a8a0a8bb9da80024f0e3701114139b1e675b04013ea4cc0015ddae445568ccc1000407e734fb0fd7202ab415760829775cdc50049902224d8f3b15d75ba19ac0045ba1d44bc0052dd0f225c5416e9f9baa0255d06660b6fb5c1213b41199dbf3e0b1484b1a8b1e668dbed70280c799a36fb582f2f2008830ef6093fb58820c7005760cbd75d9e085a3b57c5fae0501155a1d12d6977584ec0290126634427703a040b1d2812f1b8058f3e6bcba04a4aed2e10aed3e32af17374018e6a00c8081fc9daed02115da5c640c68775e8e86800029f6045d697619ed1044f6800af3faed04463a0928c2bb9db6d27738115d880aab63a034d0047b608039bb7816f50c7e7c0033ea284cecfb3104040646d9fd76802bad0eabd58012354058eaf40143882ab66eebdbdac005050e14893508439a0824d419e7f5d821cc15d68755e8c014f887f0010fe28136e769f39a0aabd2787ad94c (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b1110110111101 : Impossible board_b1110110111101 :=
-  kernelLeaf board_b1110110111101 #[0x362e22685c17312f2d1f402e3a1c2d2e2a3427312e4e5d3a2f2a341c2d365614, 0x52792e7a2e09342b0d2e53307117603d67523d543a2f316d4d18363a4e241f2d, 0x362424162e223d3624162e716715650d092e070e362e5a2e1e303130274f5a31, 0x31655a5b3a4d222a2f302f472f3d3a1c1c1c311c1c672d13273d2e682d221f3d, 0x593d31315e4b792e3d675162515e3d5e596d7a31302e25315e2e3d7117305a2e, 0x215e305a02742e525a2b2e3116313058312e305a023115703d0e653910067525, 0x3d535722516221312e604947304e2d34162e3d71524c395a605a2b2e31162a09, 0x36162a34281c4f40532e3a560e58616d675e60512d5e703d6b5e6c6659584b4c, 0x302b1c2b3021161c3a161c312e1c2e312a34615d0d2f282e53522431182e1c2d, 0x30303a1e272a2d40121e271c3a1e301c1c52312e2a31225e344f182d15] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b1110110111100 : Impossible board_b1110110111100 :=
-  kernelLeaf board_b1110110111100 #[0x532e393a2a39182d342e3a15211c5a2f482e341c2d36242d1c362d504e2e3156, 0x4c574e317117523654302f3a222d0f5a2e31364e5858615b502e31404d622d2d, 0x2e313a2a30472d3954392e31522d22304e341c1b3671272e30394c79312e3039, 0x2f520f4f542d36363d526d654e2e314d5c1f3a342f4e4e363447542d4e4c302f, 0x52303a364e586f4f514e2e392e12315271272e394e09272e3117272e3a365a30, 0x66613960585b5260713a30394e573117305a614b315b3a4d30502e5a24314f3a, 0x2e3131306e5a594e] (by decide +kernel)
-
 private theorem ok_b111011011110 : Impossible board_b111011011110 :=
-  fork 26 ok_b1110110111100 ok_b1110110111101
+  kernelLeaf board_b111011011110 0x4161820080ac375881ed6004faad4154015b90320025891ec86513e7375a027b61a011cd624e74b63aed4105582031e440645dec6980a13f54100c6b72bb0e41578042730557b0d001143816c004e6eb404002da029cd8ebb50114001439abb63a28aada68202aa8b87bb8dd7e8aa3515dcaad4fa5a9363a006344576735bb6c10044b6ab0011a6a8e501139a8013f02074f5dbaeb63b4102c78711036f9fbdc3830841528eb710505bdf0defaf4416f623b307376704402c72f1442660bde9e035f551747c5c8221c158ea8022a42bbc1c9d23e08c39dadc001a700805b5dbdf8f22a014b99a039ed60098346d720abc95da2c72d800ab013a1e00bdaa230ed60be9800aee96b6b9055e02bb058e5b00063a2c3b1c000c75daa00c3b582d058ea215d004e1bdc7797a44573a00802430df5d2e0b677b84a802b1c06380037b9097f9d76f7cfa0a0d1f1622051ef682483def767dbfac100563a0b0d055da5c018e2235ed76f7e397d405618080adad76c7445472f6b006deeb9b802822c55a00bf54158682bf8fa040bf7bbac0039a807310139b1d139a00a9cf3eb72781227deebbd1a014b74101167f421ee00b6d268224c40b6bb80091690f789b6a4c00000b6bbe3c0b9f0002be5c086e0427011761f90876a00236e5ddac1225d9ed872022c74161a289f80409fdac04163d2fcebbf5822aec913ac02d357a008dd774f4161f1cbe960c01ee20267e96a80a03dea6202aeb5f822b1f6f37024003182288836dd73b49800a7f5b882db91768bd1dcc0152fa31c0117e084b75404ff035dbac1405450839add76aada6822a7d63a2a08aee7628dddd6bf0455b0934ce6b76dd6ca6822ec102158e422b1d987bbb5a10d9c12779bc3a080b9f07200d8c00b78234bc1f1e0075820230dce02aa413b6bec72fa280ac3012d6b00861e5ec78002deeb9ba2800100c3a1aeed602024d63a0233f75d2c122161bad1b73ba050012c6a5bf41027f479da0aec007380a08bb25b1e97c7804114faec073a4a0aced51044e9f5db1cbe02089f5d8012bad4005b76b0161afd044080296423f67e0d4d6e82db5446dbdd09a962aa3b7cbced76c79bdcd1001484fe83ada6bf04276a33b001b68d38fd4d6e814ed499a2030d57ebb63a002eb0156c3023eaddcf0283530401ce822bb63d2d00155ba2d873b0001a67350037b6f8f0000a7d7600030dce84280b33f3b1e01576000c373a0213306bf4ed8fc72f890d2d11b7534114586bf414175a2d6e3f544601b5abb63ab6e76a3630046c787526de20850d76c781cdf16822ab740155bd3d762239d5105d6200aadce0a8018d6ed34415d8a2a3acaeaaa2828739dad7e22203235da22b2b4ce6b76da8008a4d015bc736da2ac4b76873b5db1eb66b (by decide +kernel)
 
 private theorem ok_b11101101111 : Impossible board_b11101101111 :=
   fork 35 ok_b111011011110 ok_b111011011111
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b111011011101 : Impossible board_b111011011101 :=
-  kernelLeaf board_b111011011101 #[0x364d5a674f2d233a34342763622b2e2b310627153a244f4c2d233a502e2a5614, 0x79677a5a6053522e5c212b361e272d2427082d271c0a1c273368612707364e25, 0x3315273d2e6836272d242b4d364752512d22494d3133515e1e3a23364d4e2b6c, 0x4e2d3a4f5749605e2e0e71332a31606b635a2e4d3a22243a2a2a3322271c2413, 0x492e62665e59342e3333316763173a222a6031635e2e62582e515e6763172431, 0xe614f60515167615a63615e7060636c3321666b635e5a6c66592d222a574b60, 0x4f4d604f5239314c173148532e362b341e31283a53534f1f2b28341621242a56, 0x4c5131605e2e7128334f28343a27271118131c282d362350332b2b5061342b4c, 0x51535e39493d3a31186363701667394770535e1c5a2e682a24314e5e343a4f52, 0x5a2739535e23674f60533a2e51222d312a313a2e4d2d22313a2a332267591c39, 0x6c2a313a342a31271c186268532e222b52222d2a393149336b395a3433492d31, 0x24562b5934312a623a4d593118595a0d3431494c] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b111011011100 : Impossible board_b111011011100 :=
-  kernelLeaf board_b111011011100 #[0x361c33481c392a343627332e21392e545336544d4e532e63286d54344f2d3a56, 0x1f4e470f2d4d2d21335f622e392e25242831233153312a2e5827274834232d53, 0xe273454362d21273336222a0f314d152d28254e2d2a2512314c1b2e2a4c542d, 0x4b3a2d28392e4e222d3a28282a495c3a4b5221394c2e2a1b573152284e4b3a71, 0x3a2e2d4e6052710e3a27332d2a1c3160274e225c4e4e635a2e4d505148493152, 0x2e4e1233222d334e4d2e21392e2e4e4f542d3a5c31523a3a222d2a602739495a, 0x2323] (by decide +kernel)
-
 private theorem ok_b11101101110 : Impossible board_b11101101110 :=
-  fork 26 ok_b111011011100 ok_b111011011101
+  kernelLeaf board_b11101101110 0x4824e4940116b6a000abeced3058eab8540c5ca92eb9ba8122d9e558ea0263626cf6b1b8288a34d90563c9e6720006cd56cb1e14001d6c0b4d55a8b1c009044f9cc131e2f474f5da80000022d5e8040814b45adc10558202e7558e002a327015678006bd73dad10151a6cf50893a20adc58e00916b4fb9e9f7b4011ea8202000867e7f83a7bad7700082a8151d16b7001118eab0463a08eb5dcdd0000496e8b4158e40eb558000a82b3d16299fb3a0a9cc2073d1e9f7b4073a927110147bbad06398d44c7ca9098fe1890a16f3e8b9e408ff0e9f7b39dad77a30044455a4d8e024ec001410bdb4dd6a822a13fa5a8884ce8e80a831f077b5df1d050154600cf0414045019009fa28da6eb1504113e2a0028a9f23888639109ea73546b76dc2a223d02860a0cf15ea0080afa1e1d8944469abe67080b3f49b8000ae0c4009fd2d1095ce2b1c99a0882ac5f63c8e9ebb4041b60882832aaf699ed1014063a8e445d628b4f561a7cfcfeb0aaf51b4cb620121d26abad8ec0470e804fcc1c1475528f9f000230e0096b11c780b61dbdf0d42306818fd9a8233d0f9bd7ac8263d2f60436bd9ce6ece80012dd1682ab4201afcbd90707275de2e501042cddeece20022d35da02cf004067b1f3e2e3cbf000003ad16aac01c18a231e31f7b5dca022e2c52c62102ee8f7bcf838f2f802209363884ec0556eeb409f8257d0001224f83bdaec77c781420678020aad8ea160c410b5f088e3ed6bb9ba02020eb45a2aa93015d6ab5081560020cf45849f5423988a9327a9000a33cae89f7baef4680000db0084fa02dd26802bd1166ea00cdb8fa22814ba3add160224c9e59b892b1e10067d1ef60207b7592ab23d0456dcde76a8af51005b67e780473febb5ac383a7d2d7773421014382bc001b67b0104fa02dd260a89f5001046b78413e73445145056a89cd3ecf000b47875044f87db73b05054b84808c0db9ba22236bcfcfd6e8f7580b4d50569c8a27f1f8b57aec1415ea0a31c368209f0ae828eb49a04fd466688a2288b747bae86bb55d6ca6030a04023c451151ebb9d92c008499e8b5b84a82028cf9dcdd768700045cebb405768acec009fb535bbad0056e60820c7a5a0bae800001001d68b5ba02ac00c1880427dcea127b5823ad77020ab79da02e0e97c71d820283ac010013ecf95156e0ab39b1d0b060429f619da2ee6a33b0106778fb5aee6f4305101068f231938888c7a5a0212f5d600adc0546822e75dcee902100145adc4175a8c0146ab04424e45173758a4b2fa5a24a288773ccd770aa000ab378888b5f63d2c105473b40025eebe38ec444f8822b4c411a9b6d6ea28a1d114fb3d1500005b6a2c41563f63cde100ae0808b75180a5c800676b75004055ca089725b1e666f40445d888ab51499d4d6e7f045019dc7c7eb740100069badd0ecfbfe2c15d8022b9d76974049a8a102028d8ea008108f18f4f160063aab855da8d8d413e2089f45191b4d1eb7a7b6ce6200cf0046460004073201ceab69c8908db0114f8b3d7687000441573aed11402a74f104045b7539bd22420213ba7aed02231e208a3dbd4da73f5bbaeb66b (by decide +kernel)
 
 private theorem ok_b1110110111 : Impossible board_b1110110111 :=
   fork 29 ok_b11101101110 ok_b11101101111
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b11101101101 : Impossible board_b11101101101 :=
-  kernelLeaf board_b11101101101 #[0x4e34343a4e39312e225c3a244031271c31341f1739311d182e271731532a5614, 0x312e1e30275317312a333a345e2d312e2262173931341f243a303a4e31522e1e, 0x4e3a2767271c2f4d3d2e68301b4e604e6351341f2a275e717a391d4739312e1c, 0x534b2e3a22310d1d2a492e4e5e515e186f1f63513a4e552f312e1c30276b4d2a, 0x4b31525e705a63554b5e666530395a2e31305a2a2e3a680e60574e542a312e5a, 0x5a34765e7e557e636622345e5b69635e70606c4e5e31526671312b58605e316c, 0x71332e4e4b5b6d405e2e63275a573165522234334d632e5a345b76697d5e706c, 0x4e6330472a4e2e5a5a22495e4e3a684b5752635b6034532a5155312e343a5b5e, 0x3152212a1c2e404d2e40473a560e6654675e5a607966546a675e212e5b493a1c, 0x30342230212431522a5e34303a4b5218470539311c34222e122818213931532e, 0xd3456311e0c1e3131532e09471d4d3a1c152f1b2434392f2756311c1034122a, 0x301e3a2f15301039311c40392f31182e3a0a301e3100301e] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b11101101100 : Impossible board_b11101101100 :=
-  kernelLeaf board_b11101101100 #[0x62071b315c283034225b636e49300e625247562a303466304957302d564e3a54, 0x505a2a3a34495a502e5a702e4e623151394e4d34212e27502e3a564015173310, 0x272e272824224e63316165636a58215b177265342a342e6e5a303a495a502e5c, 0x331709212e3049301030574e3a6f4e33565b4956562e50571b302f0e12281c] (by decide +kernel)
-
 private theorem ok_b1110110110 : Impossible board_b1110110110 :=
-  fork 26 ok_b11101101100 ok_b11101101101
+  kernelLeaf board_b1110110110 0x115161820021edd6882afcae222b0c821582486e745639cd49451581b9e50057ec731aed61d6c02b245867b040558e03185619ec6e02d352b688108c73d8cc050f6a0b1d0163d3d11762a209e8fa0a00779bbace65704055f886f249800d351111cf100bf4fa35b639cc868234d496ab55261820d345aa030d0e0102009363d2d5600a497b69d0b0dd688b2f445a5a634015063e841773ab1ce60888d345aed540955525a8c1011545110431a1dce0b1e9ebb015018f4b610eaac820010e62c000bb81cdd01005dc0e3eebad8ed0101cdd4c0533f7b810b5960fce82019ba9803ab873f7b43808208bb01109b7c9dd70a291ce778f10051161c7c55a90ced76825ac09b5888b93a005ee9dbaf468cbc416be2034b0c7dbd5306a108d3404a7aae8e0957425458ebb001a6ebb7def8e033d01773b511197dbe84b6f03402f72028bbc7a7d056d6257d8f9788296880a2da602008cf519bae3d776b05a7009090dbfb7a7fbdef8603b3001b58020d3eddec903f655c017f78fcd80430922da77b0110401b7e9d71f7be1824183d9a00833b4104bdb1e979be3c00aa2831d5e458d43077b005558fb3501525e02c7a977be1a085ad1c78000357097def37974020442186a39ed6bb4858eab0ed6ab11a15dbaf463b0b0620d7d0012775345556aaab1d776b0029e032f8055d8803ad168808c7006e7755c9d04015dceef6229475411bda0018edf9fd171e234740275ceeaebf01440458ebb39c22c34febc0026e2ad00276bac1149053f9f50013e735fc8b377baef46022a882c337cec4c1822cef1e834755080699fc1455a7ef7c7f582104239cee0091f48573aac75d9cd8114163aecf602a8ac313e800b4f2fac755a880cf4105d6d344444bdadc41163aed178b4108beb9d463820d33f8224d085115d6c3515d6233b4698f4b5d9ec512760d350011a6eb50119db9d0163aed1773404001d69356062a2c71144f9cd1163a288b4cfea2b17d73a8c73b98d7602a02a09f154bec7a7aaeb653440678040897c548113a1d76c3410493808c310864030ebecedd6a8a06fd4000019db3d05ad8aa2dbe4e35b146b6bba18a0aa8a95f837b0c911557e3b5925a8c454024e69f5da089f114689345cef1ec740400430e222465dc7eaec600a28710502de5f21e5e5d01a642ab0a151a6bbdddad40001186eb401000193dae86bbb9a00201143b5aad01d6a000208ab4e4f6ba1aec0004284001b5f0d773bc5a42c704528e8a22b9e76c8003375a6875d80029f6a1aedd75b81ca88295cbe4b3c40521021a8ab8b0f86f63cb2b7351b0c205069a2c05010b7e3f772755400618ef162a00d2d08fad6d5620ac38156988a29039b61c9d0802beb0d0815b95b9dbaea66b (by decide +kernel)
 
 private theorem ok_b111011011 : Impossible board_b111011011 :=
   fork 41 ok_b1110110110 ok_b1110110111
@@ -2014,28 +1514,20 @@ private theorem ok_b111011011 : Impossible board_b111011011 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b111011010 : Impossible board_b111011010 :=
-  kernelLeaf board_b111011010 #[0x3628471f1c2d5336171b241b3d2b312a293447614e684e12362a1427292f3a56, 0x141c276410576454471c2d53312d61716a2861236a232d0e5a31270d2f1a404e, 0x333151255e51231f2f57547a6a6a22166a5a2d4e36686c12314f313157282d5a, 0x6a4b3d5e305a30675e2f5e555a6a635a4f282f4e3a2755491c541f2222270527, 0x3050502736742f4e362f523a5c6a5463575a505754500c6e6a303147485e2a29, 0x3122275317285d162d53213629764f6a5e3027302f3d2723273d0c3d27092274, 0x2f15295a5b3d15295e303a3031335228493374723317543352284e2254521a3d, 0x30555a5e786a30222969606c314053293115305e5a2a29272a2f2751] (by decide +kernel)
+  kernelLeaf board_b111011010 0x115561802357a500b5d7b23c7ab1868b189553e9da115c1ecc2450518f40d4040015169ea798e8895d877bb5aad415388922c0227d56bf9513f40aa8902ab475f95d1153dac415152def7840ae2a7bdb0dd6a8ca2b0d05551698ecfa5a8c0446164ecf004856e9b5cb400a6446797d10258a9b3e96a39da2d6552a74ba4d6b2ac22a4bdd8e8b61044fd3cbf0b28d01bb801005b5bd3d0edb5054e2abdb0167fab0bdb0d115053ec35f80802bdd3f0aa88f4fa13dc4119d080f74f89d17d361a08250e4542869f105b7d35fcec110115b6bfa5baee7288485aba990aa01410098fafa36ba1c94d7d02a62a4050c67bbd5b0c10463aa8811f142477b156a0a9c55211756a20092f7bded86828b6b61a88a39fbdafc15bd8b57556d703ab1255c7a8b6b9f88a35fcedd62a2849f04abc9c26639953055444fe8b1261169f1965894290ba7d9ec78628e884aa970540abdd1d1e7f5fcc2b2157c42a7ebd5a8816ae45d000125bb576b5bcedb7a3401521d992d8e204153f63ac931ebea3000816ea8a8005aca6a8822aa7313e080ae4c21a2a88857f27538f9cd6f4f955545163d204b7c3f1dd5aa3841c38d488fd5a00c8888c8f5b8eed620a92b1d3e0a0a8dd7e6b81cedb6a000a354040612418f9fce6b7a7b6c554bed4b229bd268a6f7babd8eab40051538d3855008fb2e1d4044459de8c0009db12c6daaaca60c09f53afdd75b (by decide +kernel)
 
 private theorem ok_b11101101 : Impossible board_b11101101 :=
   fork 32 ok_b111011010 ok_b111011011
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b1110110011 : Impossible board_b1110110011 :=
-  kernelLeaf board_b1110110011 #[0x1c2e394d232f533d2d365527225055145a2258364d28505d57506a2254334e68, 0x2f4b572e4d69634f5a502d2f4b543a182e4d3d225f2e2716212d2e775a291b2d, 0x487a6a34532b2f212749332d16304f39505a2e2d485d222d495a54362d2d242b, 0x675e2d22300f5e5a1c270c13215e575e5422334e504f3d3430275015480c211c, 0x4f2f536a4927702e5a2b292d514b3d4f2f29535a472e5e3a402e235e2e275415, 0x2233364e513430275b5b516a2b591659274f392729304d5a2e63542b292d4d63, 0x3d22304c5a286a2254335122121b282f47065a3d51581a1c2d2d271f28585871, 0x305a4c27584d28471a2d13275e49585a333654121b11281a5d4015540e001a2d, 0x2d2d0d3a5a53514851] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b1110110010 : Impossible board_b1110110010 :=
-  kernelLeaf board_b1110110010 #[0x131d5115641c4e3d5458481a2d2d5e513d22550c22284e2f0c6a582228543336, 0x111e1c220c57133d556327334e2a191c14515b14511f474e5a1a2f5f4e22131c, 0x2e6d4c27062813702d131b0c0e5e3d22302b48573d5515286654225e5e494d5a, 0x1d5033685134595a4c2e1b2827551f402e281a63132e275529252d2e401b2323, 0x4c2b59343027542d515054404d514b2f3a27574d5a4b5e] (by decide +kernel)
-
 private theorem ok_b111011001 : Impossible board_b111011001 :=
-  fork 98 ok_b1110110010 ok_b1110110011
+  kernelLeaf board_b111011001 0x242dc00016e371d6080105ada7ac51e460a820d1d876b26602aa9f055b1a004dd411471f40535add548009f089f6f612c9d11b1dad9edba984a492cdea224470519ac150602ee8c0c2562b8121353021da008480335adc01ee8b61808133b5a88a8d5428d5a2ea6cf945568e280822c411118966f51c890242fd463e1b466d6f7450149a3d8cd6735ba40b7024813e7f51551802d8e026c7c745b3db73b4085500a3b4d01869f049502b7ac20adbc000468fab11815e836751184b7674f8b3fa44054973a7d4ea20c3566f6b5dc8a0322038fa98808af4054e22dc4466f28e3e7ebf1129f0006ae9601193a7f86bbb5920aabc414e22dd068e2cbd191ef3f5fc22a7001029edae3f2eef6eb5151606bb11541514847ded769f0151550a98a88915f3f7b5ba2d868a82a88c000fd00bddace69f4414664f0050eaaded26afb37ba9a2d9f3ba18080013f51eed340061a7c112870282208572463343a820a00c7391fad03562a2b4c169e22af04457e8710414954fc9d9eaa8882dc2db0c1167ee7a1dad760242dc01a2468309177800051610ade4f6ba9b6d4056e022dd2608abc55f922212f2be824bb19ba089a70171f3fb5d0d045b8020abf65ed4dd6aa2a822635d882a01377ba2c006fea800bb4fd28400aa085b43add77dfb590aaa9c041637ab74554e6bb73b2a22137251ec2fd664169ef75bb6e415545aba7d17435812912ab94ed6b2a00a948bac6db9bc02a31a1aa2a08dde845afd0f568ba9b3e77a301166682afb3b4d04061a7c0411141a980b7041a3d43115506a7039b80aad1e5ebf75a08227cafc0004dd6d7214bef62300ca2772a1b3c01405747476992232167b5ccd770a8286f5190caa9f621006ae7f606bb140151a82000a6b015c793d769f24945aba9c852f0402dd77039444de328f9047aaef6e00ad338414fca8a21b15464fe1ade0009eb0011bc672030eef6f745b0c255ea804829548ebe82b0af7aaecb01115d475039ba9a2e62bd8c097b10193804ded682847003da09cd0458cebe880013def57c7a7d9f3b004156014ca9100c19ce653a3b3485bd581529d1cfe2d1f50489ddacd6bfa08bfa9253b458c524f39c1224f3bd1d422100aeab9339cedeea0ad4c114505b1c8cd6b7441948816f57ba38008a2bdd8945169555d648019a2d473b00515fa80008cf5763500582116a3a9b3db78b (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b111011000 : Impossible board_b111011000 :=
-  kernelLeaf board_b111011000 #[0x345168142f40331854027a121b28535e544e1b40534f54405a4e8148131c2d36, 0x592e3d15291c622733512a15154e3d4d15124e28334e4d4e33610d40611c4d67, 0x636d4754292b1d3464622b4c2e2d4c4b111c2b541d4e2e5d1d2b544b1a5a4c2e, 0x5b2e150a7a5429181b282d391b4f14542f4d1b0e5e51291340544f282351634d, 0x14294f2d4d404b475a274d216816764f54614f5d402f4b4b15] (by decide +kernel)
+  kernelLeaf board_b111011000 0x15500a7088a70067e00b2de6f032205597a8a447ed69f1541566ea487554053465bedcfea604b870059f8945de06bf110497a320b2f2ba096f14145da08a08222415d15faea6c08a7319bd46b773828a8a09bc4067e0014d146a72bf9ba00826f4770a102808dee8ea727c0d45001a9cfc810251a3c02068ea0938f9ba084b8fdbc7ea6a74155e7769a32ce4f162abd511266222ed5405ba49335197a82a4739abea67700440676bb55422050141bb9dd5f53508978a88086b4a401b5ccd772a482d675da2f72b8a739e2d3ecf01144a38ab14058ae20000b15e76f74049ba32d15c973b546cf9019dcdd59455676c1280033f0e3715619819870404e700cdf3f228d3a3e8ca6bf015606282290a0cf31b25248d4c17eb259bd468853c0141bdd4d459da826f60722253c66467f5396068a8b6b9daff8442323279cd6edb (by decide +kernel)
 
 private theorem ok_b11101100 : Impossible board_b11101100 :=
   fork 86 ok_b111011000 ok_b111011001
@@ -2049,12 +1541,12 @@ private theorem ok_b111011 : Impossible board_b111011 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b1110101111 : Impossible board_b1110101111 :=
-  kernelLeaf board_b1110101111 #[0x2b2b28362f5247455836452b4d48551f62532a2f1f39244d602728532e17560e, 0x2b36244516632a212f2f28182b2e2f2a2931285a2b24192f31282f344e1e2451, 0x213934241e312e2d4c45362b232e1d242e2e62271c4e5131511e1e545115452b, 0x1952271c16242d2d1624312a212a1e1531472d646f4c45362b362d4e1c2d362a, 0x494e34522a482a301e2921242152223115305a2a223139522e172d553158282e, 0x22162d2e5c2e3134222e3041272e3722242a22521c2e314e341d1c522e102e63, 0x24514e2f6329301e531c4963395a455e624545291e2b1d5718522e314f4e1e30, 0x452b562a452727291e1e23234f4f5a536257304d4e13456253452b5a6a1c1e41, 0x5b29302f493016697a60515851607a721b341d6f6868757c866a125e5a51344f, 0x30] (by decide +kernel)
+  kernelLeaf board_b1110101111 0x14161822b2a5bd4e00b0d4055fc08d21276196d805d3fac4147068d1ec7002d1dc1faf96102086f01699df7f223a31110747d7f9fffeac977bb5a134740211a6033f422eafadaac222e800427c84413ea73d8001ee47a802408f5018027e2213fb5d3d101b175f018624dd9d93d450848be2d5a782a88031757dae19d5a89cd928f60841d27479dafd001c78888aa7619ec1a9e73a8193a8298f738856b0062f7b19058031717102000662ea73dc8af3bd7cc74b5daa0822c79f8133b3dd0280028c345a208216d6eaeee60082aed8e80d30245aa0bb61c1c0140153ebb0005be8802a2928b449aae55404211752ce6bb63a0280ceda6770020e6c34b5d8820210c15de3e4e84ed811a622a252d5723445580a8c33da9c104382c009343852d16080882c79512bb0ed6ab0540205045b1e173d2d765f40551040015bd5d1063d8d46802aed4010ce52d3e7384b6002824d6e0adc4b6220a4d8eab4382800200202acf65763828002c7d6e80993df83338bb6d5e00a02db415bcece68020b70005b6ab43a0292e769a828a4cf6c710415dadd40199c5db6af47a0a08a8bb00103baa4d1176a2028bbc5a7ce6aa002a113ba3b1c102a38809ed8014f62153a395e2eaf0865578282adb49a911754804b78f55a1d7eaa202afc5180a80298d5ebb0117eaad4e88922c751dac11557a4a9380110cebf58ea3150415fad39d9ed4011526222a14715ea9022bd46db95445fd2e6508fa80c45ec6ab10436e2eaf8166ec8e85514ab9ff174f55a28bf1053fb9d4000149a88337c18c0a7d474f5d97eb63b (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b1110101110 : Impossible board_b1110101110 :=
-  kernelLeaf board_b1110101110 #[0x27251c1045151e460a1624212f36362e2e1e3452212358545136502e1d2b2a56, 0x522734312f273125581c3931520e6e48465e2f5146685836475346245d214531, 0x3653272d2b2529094e0a252f1d2b452f1f184d2f53172f2b242e5a2b27462b2e, 0x5227371e1731505e705250024e2e225c36271d462b2e1f505d4e2e1e4e2e2412, 0x5d514136705e7a4d30546e2e1e52314e24514518232d36392b4639494d781718, 0x65251d5d6a5b5170634670651f2e3016292b36235d295327296c5e6a236f306a, 0x4e517a2e61664e7430677b5d6e7654162b362f4f2b46364e2e245a39250d275f, 0x2f39414d4f1c60522e462e5016151f2f2b36212449542e1e4f2b4612271d361f, 0x4f1d2b1d6e2f5a296a5e4f6a572b4d5b636a5a39495e5b6a457a305e1e31225b, 0x2a5b5b2f51170f554e1c232a3013514e4f2a2f5e3117224e233013514e53241f, 0x341d3422496031225b30471630664f344f3051585e5a] (by decide +kernel)
+  kernelLeaf board_b1110101110 0x111a6a0a29dc001a541a68b454193e0d004563a8c22d4652dea0030e3e5b50461b9b54119fcd39519fb0c5a3d8ef76b55805bd5102deafc559004028e5f545400047ea157419d9cd10147aad864f5015950a3ced95467eab5fded1100046397d16a0aced40047b0c9eaa51c0127600b4f499fd059f9de40401415e77ddafed688002a7d582dec50445027fabafaa22bd466f6f0171f6aed7011439e064f7b10110b7eae0422efae80809877b3da8931d160dbd855fc0e783804de7e73c1d2d768008c6d760088450c2d800220573fafd4040578db43a4d00091410593d4d767b00141067eaf8d92d0404413e775006d9fe42276951fd6bb104c3c2e6e199d8120af4e000586008e7fdf77ddf6ea616c400057b6d4497f0a80b3f57c6c0206dd3b5da4ed60080b9d2e4801328dd3e8c257f6172e973ba888377d58a96f251a3f0f1e12a11bb87973faec8406185b82154f000aabdb6ac80c8fbbac4a9e9e08a9f12538246cc1bd80dab47efe6516186a5abbb85479104583b6d0807877bf5a14c893761d4f76bb3dd2d00016382a13b49a0083478b82a2a1498d47addb62a8239d57820b1b73ca00c9c8466e83e32f98e968089f116faaa0227b2fb1e870ab008a205ef874b81155a182e76bb45dcd01116d88200a9f5100eea246d5ebb4493fb04a20250d02ee8aced767b054546a76aed264b6415b6288ab4f4fa08add5e200897054854ea8a27156762b4bafcee8aa20af562ebf3f98d6150454266ebf50a9e5f8155fabd26bbb5808aaf00413f2c32c6d5ebba5ca1029fa505a74a028c7041417e9f04163a5ec6735473d2002ac7a04a963b911376448c2377b885f9254700237a3b1a2a008db8f80a34f208da4eee872a48b802ab1c013e25ce602128a0043a2e573dc844b24b31b158445b49a1d7e20036c01b6bb2005d9ec0169c48d2d0e8f5902c688d4e8ea20db50686bb3babd575b (by decide +kernel)
 
 private theorem ok_b111010111 : Impossible board_b111010111 :=
   fork 20 ok_b1110101110 ok_b1110101111
@@ -2062,7 +1554,7 @@ private theorem ok_b111010111 : Impossible board_b111010111 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b111010110 : Impossible board_b111010110 :=
-  kernelLeaf board_b111010110 #[0x2446392f63514d46592f45635251362748584552343146531c2f52485d2a2156, 0x551f2f2f4572515062536e51482a58313650682e4e1c29341e1c4e53372d5d46, 0x2339274c0a1036390c252e4e174c46404f46550f240f24372d242d362f453152, 0x4c41274c2d22304e622f24236a680c2e2e2f31282e271e2f2a1f2f2425242f0c, 0x1750492d3141255436102e1b5551105b1f291e1f27545b1b27574123672e1b67, 0x1b256800296a25120d650a2555376b700a2217682240121846170c27175b501c, 0x5d39492e5249531d58512a2e252e492e49475436282d531c2d29342146514829, 0x6417542e3030632f4849292130101e512a39414d17395051454d306a1d5d3755, 0x2e4e2d48283130406e0e494122394d51224141494c25615d0d23103073596753, 0x2d304960292a6066535a53554d60492e52253122472d22305b5b4d6331574167, 0x406158166647673022492e] (by decide +kernel)
+  kernelLeaf board_b111010110 0x2b210351601c3d8cb6a02b9b0515045048fe7d860a8b164ebb25496e0880830d51405593e0d4eab955050112c1e6e9f20236b40a7c801579be0e4ebba5a102a25c1098e8b11648f882add16c3411adea2dbc09b828098f63d7d83e7d773b55514016ea8a248d4600088c7061c0f763b255064f0714404580e7444066e8d1d1707401460f2799aa925d4950c3ddc6e84b2123c86c389e7892d9f3e1294fc997ea6bb244815864228330d500105c7afe46a49d4e2a875194456190cf74755d228039e0e800cdcbec0c2e724016869478b8233761a28446acee0089776f82357582eee793aee968801271151a79dec747010558aaec1142052ebb9380a28bb24f1fa9b6c056040410146b74169e7300045b808a769a1e368894791c0408a75244de9759117472313100d4fab4b92c0280246f975615a5e282aec37c02a21d7f0d15a2cbe41525a345ab2c050325ac044a4638d97c66aa127cbeaa80dbda19cd50be0d0c0064ed2dd63a0307494b8d4db6435d802821bc06ae02a251c876f3fa9c443d8827f4fc55340084b7806f4faa0135f83a3f3ebb44651137e7c8285099c1d3e850d3365ba2d873bc5840afc49a008908f357500213a3866bb50205d8200bf008058ea300205da7cf600bf0559fc017e934000512e935fc100cc40011e2e74faaa894cc5700b2435011b6cae719a5d773b2fa04cc28da90344027e046eae800443f0052628a3f00526048df5b81024c16edb082417e24045c18ed2d080112ab9fd7e4ca252fe2fcba3d0c2c5a014f4061ddd1e46abb1c02c20c745b68d0f46bb9d9cc114e1200d33dc241cc129d802a53e010406fadeef1b49811b581ce8012fc89c7d51c0849bc6c0901080b3afe2f8fa5a547806da7e47635021144022f4b08081a6331e36892d3d04439afe9723bbaad0f5b (by decide +kernel)
 
 private theorem ok_b11101011 : Impossible board_b11101011 :=
   fork 26 ok_b111010110 ok_b111010111
@@ -2070,28 +1562,20 @@ private theorem ok_b11101011 : Impossible board_b11101011 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b11101010 : Impossible board_b11101010 :=
-  kernelLeaf board_b11101010 #[0x51522a2f2a49542a4e2d4737284721211f2f232a47542864471c21482d513662, 0x29534c1e27102b1e4e2b721e31224628272b2b341e30484049494829302b6e59, 0x46682434472b5234524e1e271f5230313146282227462546242f2122152d365c, 0x534f482a49545e222d4e36271f2b291a1a54392d4d47125a282d4736294f472a, 0x635b30342f125e271f5e4e30224960294f402f1d2f2b49305e5a2a51304f] (by decide +kernel)
+  kernelLeaf board_b11101010 0x105071f6f044561aa820834d7e4bbd802012a0a7cfe282a037b9db0d1682a2882ac9f06a7115067f40d500057e02842775fabe4564ec3bddad56c2aaa34702125186a013fa788913fa468ab00493813153404446bda2d6f3b6d8289f444feaf01539ac410444535d4c11073ade9019ba11f25dad4602a02b78fb6d055014e02084fe3eab8de8c1549a0000d38f80a82af40529620a0b4d62973b3da2020c8a0a7cff4b61a02c720058f1b51a2c41044fc6c11152e8a8b1b526bf45410ea88a2e94aeb76ddcc015380a14f999ec44004fab2a43579ee7622a0828a0d2be03967b00198e8b8da8d11404fa20222abd0155ed30f6c3150091c0d45505493a0aa49e46a755618a0802abf7767a3d2d56022fe4156a80080208a949ea6ab401489dade3e088df0518002d1f43882821c43fafd551eab4044063f5358851e4d04818fa000c7390f235bd1db78b (by decide +kernel)
 
 private theorem ok_b1110101 : Impossible board_b1110101 :=
   fork 32 ok_b11101010 ok_b11101011
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b111010011 : Impossible board_b111010011 :=
-  kernelLeaf board_b111010011 #[0x2e2f517051345a0e292e7049365e224e2e2e374e2e2d37475a2e2e2f4f6a465c, 0x1a4548294f4c2e4659682f675d4970705149257b5d6a5a5e2b2d0e5a28543634, 0x4e3027342a2d366b58514e30545a344e222d2836234d48235d6a542e542b4c36, 0x1a530c1f2f212f215d302d4f4e18212f36251f2f212f215d4f4e212f36257d2e, 0x485b515a5b735a554e5d394f5d2f4e5b5a484e5a4e5d2f4e5b5a48392e2d4f74, 0x245f4f5f77585a4e4c4e2a2823302f4e2f4e464e6a2e485b36491a576a4c5f48, 0x4c252d142114401f301a402d4d306a5d77725f582248414830697c495f4c3016, 0x6a5448455e2e4d25374c485845594f542f544f39465d5434377258584d375851, 0x5a392d305a542e220c5a5b66495f5a58585f1c585e1a342d0e285a542d5e4836, 0x6a583434484130] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b111010010 : Impossible board_b111010010 :=
-  kernelLeaf board_b111010010 #[0x294d5958454c2f46305e5115071a39151a182f4e274e3915281d17554e39252e, 0xc1234211f535b55655e485c554151292f4e4c39284c4e29344712392d455f4e, 0x534c534c1a41270c39220c0c1a4767192339752117306b5b3451514c1a1e411e, 0x5e2d7253691577536f585158492b28285a1747543647492b12372047362d0a34, 0x481a2b221c] (by decide +kernel)
-
 private theorem ok_b11101001 : Impossible board_b11101001 :=
-  fork 98 ok_b111010010 ok_b111010011
+  kernelLeaf board_b11101001 0x10a00c806aec6a82d311169c8c155151060ec3b580a88ce71596e82c3b5d4d76800228b19dad4846deb9b84464f7fb5d8c505b1893097f24e763bd822a08a6b69a002adc76a3b5d4c1116e8d7b91b6c10035753509124717bd882bb40409b8976fa000020a204ce47638b8159d09fd4d7e0a3539fb9e3688084008ddea6800d3405bf72ec6a8480b6366e88880dfb1d1c44526725d6e80094c0910ea020094e067f619ac44420622420ade6e4530d90757774061efa8572eff6345a88b2341420e00ac48c510587a7f9c9eff3354000587500896d268237f9f81297fefd8ed73b40099cb3ba94455a0a34780002c3517f3b50105055fced80514a373bd5aec02476f406da00049cd680895fd5ccefe812341550591dbc068f6ba002de112f3ed6810d5e777755173cfc010005bbafe7612a05bed7239000a776b4129dddd0000005fcec155b7dae468288b9e5dade7fd335d3c001005199fd7e87404845fa1eeea840230d6f3f440045467646343afc45b69780000853fafd0ea0812fd0f776049fa80022833b43afd5b697fbca2aec500676c341153ed3411568aaddb7af4044554426c7479db0e022a6dada7020800b3b45add51b6d1f3740111918280a92808fbbeae2a6bb14001a9a20aabc99b6c01404d71740511246a750927e09335dc6ecfa31417e20119fbba002d27e1a8088f0e8f00a32754004844bfbeefabb584a2337b22015ea220a2dc451ddad47536dca2b4e8255daa2b2bf65168fc3515511a3b4ed712b28220ec54ec2abbe1a21275591b77b45ced1105762a02bb6fa8433b5114576008ab76fc7ed6802ec44449762bf9feae37738944919ad041515522916510095e8b39d5ed1056f20128a372e9fa72bd2a4c3281dfa7efec74714456c62249d40157a8d410146836b2fc7ea6db90015044963f2755e892201204b5beaa883563edb5bc820020ada6c28454f99a882014f999ac83b00a7c004668e74891610cc01199ad81063f9f504433a3c05cfd74397d86084a0226bede0d3a3b0880147999ad15010f70761204f643340625b4d0e7f011545a7dbeae808165ef6a048c5b9ca0d5e0f4753afe76094ce400073a8c410267013b54ed340440a3e4b480473add115540022e088dfc9da9d000526ea09167b1c5e66bf8d8028030ef747110202528ae1f35802e7428ae2046b31afe76a0029f0111a760239cae2028cee5f0480012ae144b3b73a5d778b (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b11101000 : Impossible board_b11101000 :=
-  kernelLeaf board_b11101000 #[0x614d452b656b5848644e51622e25214c48455162634c4551584867404d5d592f, 0x514e48534e545d6c4e554554516b455b1c2e6840554e5a5b4c2d5a4c411a5d40, 0x51482a1e392b1f231b21280e13554e4751154162594e0e395373514829344551, 0xb252d3751481c1a25485d282d4f1c152a514c45252b364c1b2740234d4f4d54, 0x4618294f48461a284f4f68674f59514f282e4d294d5d67476a47404d4c28] (by decide +kernel)
+  kernelLeaf board_b11101000 0x14514494008d806353c4cfd5091c6cd6a310548027e890804ff479f601067f6709028f033f51aec089baa0229c5541152919bddf3e80c7db5620d1f81a33799a8d051117a5d6edf54428f234411141010399ad2f232356eeaa35ba2c8ab28cfce657115505557471599c5d552eaf6d8004cd50378a7e06200128f9ba8133f1a6eb534128f2355a80089ed73abd1103f8040a3cde8a1d46880203b127a2083579d890c7e8e574120e882b2e2ece213b50001db9e9e28aa33cfa3c8d4ed34008b851d010468f3b00a4682053e7753bbd400808493b367757062e882353a3ebd208b820205be55144e6bb40a34703abcec11156d65be668ab71654006d73383a8c9ad1aef03c3cdc51162e2012bd221cb8bafb1b23005207273ba3e2d50005db024a9743a84ccd4247170a3e2c500104b1f338ba0947b182923a4008273f039bddecebf (by decide +kernel)
 
 private theorem ok_b1110100 : Impossible board_b1110100 :=
   fork 86 ok_b11101000 ok_b11101001
@@ -2104,50 +1588,26 @@ private theorem ok_b11101 : Impossible board_b11101 :=
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b111001111 : Impossible board_b111001111 :=
-  kernelLeaf board_b111001111 #[0x574f1a5d5246645d2f122e4e3151542b1f2151482e4e5d52211f52514536563b, 0x2e2e25171a2d4e26374525250a12191a262d461a2b46511f212f242e2e524f5d, 0x4624374e37192d22295e2b521b29375249315d52466451684e2e5c26284f5d4e, 0x455d5449702e5259463736452725364521233730365245360a2f21515d514e4e, 0x73222952486054366462646e314e51535436694f463145223130291b1e251718, 0x465d6c521b314e2e54495d2152482d222d552e394e5b522e542a622e52492d2d, 0x2d7452654e292b4f5d492526645768652b626c57686a4e2e3031301f1e301b46, 0x111d240a074e0d4e5e212e18313621554e6024466049521f1e31142d22461b39, 0x1056091f2d3651513d461f2d4e302a465451461306280e281f4e2d3a461a3f1e, 0x262b48512e4856465121] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b111001110 : Impossible board_b111001110 :=
-  kernelLeaf board_b111001110 #[0x5203191e1b12573165333652286733522236305268537730361f362e6223514e, 0x5d4926711d365d57495d575262291b5530572268071b220d5731626a40571b29, 0x33312e2b52483a3031365723625d1e141e165723652e1455680e201d31575c28, 0x524f3931536255165e362e33622d3155330d36536a3653662a6e493322366221, 0x3354625f2b6f22335f2b3129524b3d5e5e1a21301f2f3d3a54532d533a312e2b, 0x363a542231363a272e2e62315d6f542233522f26185e301f2f3a54312b5d395f, 0x6219] (by decide +kernel)
-
 private theorem ok_b11100111 : Impossible board_b11100111 :=
-  fork 65 ok_b111001110 ok_b111001111
+  kernelLeaf board_b11100111 0xc2826c14046155f23a68e08ab0082aaee475b104636d1d0e81132a43ad8889d3faddb6800cad1d020268ef78dc080007f5bced8692012aad236282d4c0225a3c6e51010509e1b518c4210049490ed467f9daddd7280d11b54100d6282a80ff3d91d0150404ee224c20158121fa249d8dd849dded0ebb31b1c0001b6880a1d40411abced0c1a4c04008da138364f4b004113f9ed163808535ba2d446366f5005cea0adfa74bcbced4e8208882af9fa9377093c00025d5411514de4d4446bfa3cbaa82af1155b17b34116bfa3d5ced762100c358e2020b0cfe8087b405866f4100636200811bbbece9608086f63ced768220095393888aa88ddd0f4b91a288ab7051404116b7ab800a2aedcf3bb78292b4b5d800d4c4505568082838b5dd2e4ea222a080b75116fcf45a9e9723c1a00a8254db608e4d5716aaa22993ddb1e7747a7808921536d8a33a70127f1b0118e2045d45aa22ac74061a9d015041379ec52e5f521200c6c5e009bba0c54e4fc35dd2ece80000c6dbe8db8b8280a7d2e8008db8ba1d4051e20b7c40445618ac2adba5c5c04416d83322b5fa1e8e8203202b77a3ced0276c6d26a2df067622df0433add16a7406f688ac2abe9620088882a6f101553b7e972750558e42377a5c6c1115114572747d1ced7773454d8a2a28c0167e28377676bb104176a80a5cbe802020a6b5bced36df0551262e97041052e2002b22599cd69b5ba080c6cd622bd14808d8d473fa1d7eaa9305015d88a2abba5cfd042ee0a82d7e7eac0aa1aeef4b8da09393451540aee82bf25aee76c7068e254c505051579fd0f4791ca8bb9daa00b775a58aa08228ac21cff4ba3c5db75b7780a022ae2c801133a88a36dd7531150545b1d01b6a10eb4faed2515da38b15518f7740564dfd4d16cfa5820bf005453608240800635bdb0d53fabf75d4c1463aaaabc849bbd0aaab9efecf5150042a9e2efeafdfa2c1041519ea0b7f58057b1d4f4b978a000a8a8abdef6025ed1004000435a87618029fd7ef775d4c1510a7a00add510a7bad118f2abb57d2e7e2a02b9c1418e0108b4f257160aa081574b77b6da0002ec067aa2e2d1115415bb1d06af33c6ea212dba789ab416425b74fcda222af76802b2767a2d56de2d0e88a8cf6382bb57d2e46000a0aeb61a2c7555514100401b75f47e2d015446ee2a0001eca60887b2dd7d1f975da8a294eaf30aba31da8224833bac705116bf739445651dde4e2222a26f8ea0877a66dddebe2049274806ef5fa5e2d1414e2026f12521abcb40c3afa22a8b97461f50024424de8b1bd7d8f8bd58822c040ebe0320886f53d2d40454104501e67924f66f25d7d8f9767a2820b6d1a5a8e1533f32002cfa5a2d4119b6ac359029623a3a79df8161a80b6cfe00336d778b47d1e7707 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b11100110 : Impossible board_b11100110 :=
-  kernelLeaf board_b11100110 #[0x20732f0f65591b37251a3a140d1468182b0c186833212f373621182f302d5146, 0x4e5c3068542d5d3d2d3d571a36302d5d531933211a4e5961335e2f3059593071, 0x2e1a2d3021685d1b6a5e5d2d2d30333923785d49675f82335d5d636b6a6e2254, 0x265830223b58492e305e395b2d372e392856495d2e686a2f2526332868697349, 0x36576a57495330393a37302822365e2d362857617268645d685c536953643728, 0x516c5b2a5653486d0e741853165e36365e5d512d2e392a53565461535e513758, 0x295137532f515b565536372e2a56] (by decide +kernel)
+  kernelLeaf board_b11100110 0x88a9c44968edf4029ebf002028ea05beb60820ad5db60a28b7d5d802a8aaeb747010955510d9dbd45575ba7c8c18254006dbb008ed9e998c01121620409a7a5bbdb6d0521b6aa8adeeef4740416e888aaedcec0aaaba7d6ea68084a387a7c4a237ba3a880237ec6004dbafead4052be2049c10a7a230dceeb045be20c3541468b551418556ddec0116ea0036d475f1401c382aa872f4793bb85284ba3b9d3f4e8a254fb262282df51a6d08b192a30d16080092ef2c727505768430d41bdb9ede084a2ddbec892bb73a4a04a34052b6ca000c4b27bbaef47ab51005f8a5d8010444db3d4730a8e8f4e1289cf93aecd622c10add41198687d1b24ddd045378434bab52f7775ba42b74058602a44cf511ce8ff1dde4f9f000bfc8ffec008133ebb81577231fafd5eed17539da08020b7321255261e8ea6b7bb8820bdc500505bbdebe0a0a88886b5b7008c35bdde9ea519d94167a1cd613b9446ce02e1d5159f7b00548145fb0e426ce808d9d86aa5c7101106f3d45f8fe11006cbb6737b7d2e229ad00175c5310441b800c530697466357c4c4aaa23331e8d9e874a5495fb7d22056da1c0010c6a0bf61ade8f1b (by decide +kernel)
 
 private theorem ok_b1110011 : Impossible board_b1110011 :=
   fork 71 ok_b11100110 ok_b11100111
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b111001011 : Impossible board_b111001011 :=
-  kernelLeaf board_b111001011 #[0x5d6a261d331d331f253b2e212f3737212f731f251d532a75161f2f362d3a5654, 0x28491d731d6a2e622f1a263d5c2f662f1f2651251f1d1d37492e6a3a62376f61, 0x68725156593337211a685d512f1f6f5164246c375b5d565c4558465358251a33, 0x1a311d21335d68293a6369334b7668674759535d5c5933556c1f266868623662, 0x1b12282d375d2d2f3a562f3a31331833286c3a372651212f3a4b2a1f20370f21, 0x622f2924144b6c5c06372f6621316168657372515c076158785d3726211a1a51, 0x251a] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b111001010 : Impossible board_b111001010 :=
-  kernelLeaf board_b111001010 #[0x1d12186821222222333620286a226c5d3b5b5361685d51466c5b533126564062, 0x29610623532f36562d3a375c5158334172335d67546a2268336c1e3b515c2e55, 0x72542d565f6f562878545d586a1a2e1d25184b1f0d2e636c211f2f28213f3730, 0x26545c36612e5821283326565f5464515d2e6a554654556d365636006564402e, 0x16305c5d72636a403363535f6a6540535d644663305c1a5b665c306722743325, 0x58543a1a76632f633a6c643b634b695836725c6453546663645b6a6553645d2f, 0x65636f7837267c5b402861641a2e1b2d37542d1a63250e0e092d211f2f3a587a, 0x33241d1e61642e1636206a655d6b61546a] (by decide +kernel)
-
 private theorem ok_b11100101 : Impossible board_b11100101 :=
-  fork 78 ok_b111001010 ok_b111001011
+  kernelLeaf board_b11100101 0x91104b9ac171632fd5511014e04289329aa4cbd0207665cc36df65fe6c10115543b1c4144870fa341cbf3c0150092079747985b9b2a40407e70e02d63f1dddbe9b4000143c6b00144d60210051cdf2b024b51addbf0a082b772615bafdd75b20514055fbad04163aa2cf31a20b3e5951ecd411d608a28ab7d37478495110150ebf75cbc145155aaa27f41b7e45447e8735b1c04eeac8767ddf462a829c505075e3c74e202cf5978a282f6f479f015423f675a7ddee6aaa36745544199f57416ad99fe4937a3101887462ae2d1556dc38bb47cba3aa0a8256ecf28b3e919be8a1d35e8eef0a14765117e7f514008df8351f26a4c0111012766dfb7a08ddeb7738bd8e372aad3d46c62820a9735aac2acf51ad27593ba893cf593bead778b15454017e6b4daabdc502e62bf57368b0aa802abf454fe9ba3a2a5d81103f9dd4014eedf93aef56eb55151c5b4a8224cb7f7ee1eefab4da0802889dd9ea088077679fd0051014bbbd7600080882a1d7e8037d54016f80a875ff3cff11089790203bd3d80055b2875cb67f5faadb5bbaeb753510451a46059e20aa4c43b9ed0141c3e4d765b51256da0f56a228a09974196ee202a23af70f53d5a019749131e22126fdf1aa8a8b7d37f3b78b3035651e1dc99ae04405da906f50465bb7d054551aa6b7358a2b8f14b8090ec421d89d6f2873fafdd6a92a0b63f5940d8d46a6eb35f6c51531ea8a82aff1eebd9ca0b9310577aa0a63e5ea0888423a7b1b6f97734056c988a53da982266c02406c7e4ede828226ac5cb8ad3f2777045faa12a5b61dcd54412ee402abcb4071e09236ae062aab3f1e2d3eff213ab172e4a50369f77c982aaa46d5471eb0ee66b40002df9b5054046e6c3cfa2fa6092acf14ba6e416a625cea665b7875da495634185482243a8d9e9b4441ad885fd1256a688393a3ddd77ab44100abc6e41a9a157dba0b6d011adb0a2b6d909601e5d6c9a8340d77cb4111a988210adeb62a217f09df802835b9555547e3a9ddd46b1eacd6808aaecee42a5c0631b32f3f800a0dd5957682a2558f48d9a1cfebf40414114620a1dfe2237d0186a744551441c380021b0147d3d7f24b6eb6b775a10b7d412e72251d66c6cf83f2d159f500b7741cfd4f568bd1b0ccf290a57667b455577d2a2b47b9aed9541000002abd1dc96d18f4682aa1d1608d28922c51945b3d255b68351ead104556117b3104bba8a2efb7d3e4454030f3a3bbd1e3600a04b3b3b78153d06638c9badc0f173b (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b111001001 : Impossible board_b111001001 :=
-  kernelLeaf board_b111001001 #[0x335d106c3355190f2230607333221073706770734e4654736f7a461a765c6362, 0x6965516f5c6d362e3b735d4959511d51303d5f51805459335d5171717b5b3022, 0x735d5f735f6960555455495f604e4b33556c5b55465b6c53537473695b304e65, 0x452e5336212d3d292e2f295b4e51373a7437224e295d4045676a64337a6a6f33, 0x275d366054335d4953204e171e5d1f1e461a2422460a514e496d310c5d4e334e, 0x65645d377336631b7273656f513a4e6022334e1e307a2e36275d5c335b452436, 0x6f636a5d304e22204e3a726065761a5133455d586c4e5d2e0d3754633349455d, 0x226c60720e60462e7e77334954497e6a293a22304e37182e72606f67827d6d71, 0x3669587e1e1e466328362824221e7e6c49331936762e103a80205f5169586533, 0x3336247e6c331d1b10304e1e18213637102e72122e5d455d6f33216a02603149, 0x30767b3a6f657245457d5d372e496a6036675821307e314636492233101e1b22, 0x737e11336d333676182e5d6f51737d6d6379497d634977692e22276d734e6933, 0x6377696065632e29] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b111001000 : Impossible board_b111001000 :=
-  kernelLeaf board_b111001000 #[0x2d0c1f6571596640372f583a2831732f5d2931665d2f45582e36606b64315321, 0x66735d5c1b2f092f1a1d182f1f2d28] (by decide +kernel)
-
 private theorem ok_b11100100 : Impossible board_b11100100 :=
-  fork 86 ok_b111001000 ok_b111001001
+  kernelLeaf board_b11100100 0xa20038fef88269d05c1e5c010c7ca42ed4fcffd802a224741567edd115167b6eeda8a318d5d800a0b5df7e82a00b47e792bf7dbe3d017ce0aaac9fee8b8f564fdfd3c2b12bb02201517327f6e05cf1677a7a55500678c344bb68def75eff2fcb55958b82b17fbddd454599bebb93eae05508c1890c2db80473f6343a830ff602a31d86362282b6e4809593a2d9e4300043d9bc01045b3c16da4ff7b3020202679de18de434445868b4ecf728218d43b6e5052195be435df2d50065496bb651bbab1701461bbefd9e87d582d551306000031d924f20888db74f63fd9127b624063dc6c952b1e8092a8db60aa3119149a2cf7fbd9a8a9276790299db776e084976924351975a831ffa0c51bf828947d3d8c0445172e0a04b3d17b3c1f2c760ac60c4548dad2bbfd908a8bdf67ab449c4540a9c9ff7ab154554014eeb4a45b0e76a0a2b7d85931aef968a08a60c4037ee7c10417ff14fbedc178fbfc7a2229ab41466eec3466768b4041b33b75f2c12530797ed9ad00a3ac4acf5562f774440941b1ece772aaaddc55081976376f82854c171ecf93a2202045e96ef9749726224dddbfcf0006db8f9450937f2f9f97dfd1dd7080024ec89b06a8b0001619f024ecf6c3f5aaa0cbb1416da7d01bb8897367a8280a036f8ba20934046da7eee80db8000c1d4d419f7793a40802a34f41cecbe8a4811eeee7f011154f7022c6cd70a0a4c545168c6c562281479db27dbb1e01556466ddd19db3d4676a8b17415dd3db687415b88223dd4ebb5557f108a76b7a88cee8edf75f4d50486fa2d455009da9d04126eeb038baa39f113562a193545699febd5efc514599fcfbbd2ab7f079e097f04d3e0eaf534102ae4aa2a8b27bfc80ae0d45541659dcbd01567d5f676f51000aba2891bb7ecc1a780d3fa6bcfd388b6f405541873bcb8a8e9e72f47dfdcf6e882db5555dbbd001e7b7764f6790655a39dd4568f30c55069957bdfd028e7ff53041b3a2acfbbc8d1c01e38208f1fdf6f50161a8b22d9f7721ecd440267b575441338fd12516b0f0692200bcf67a2c862880bcfe1a967c6786bcf854519db1b0106a6f3f7feb1461516366beddcf1f8b410736a2bcfbbaa00a0805ccdf0a2fe5210114404ebf359dd14541004c6bf3fadd4682b7154804410667fcbf1d6ce0819b606df9197f637582828d40563c29cf5fb7749500538931d00404337775fc5ec7008aedb68280138375f9363d3d0f5b (by decide +kernel)
 
 private theorem ok_b1110010 : Impossible board_b1110010 :=
   fork 82 ok_b11100100 ok_b11100101
@@ -2157,16 +1617,8 @@ private theorem ok_b111001 : Impossible board_b111001 :=
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b1110001 : Impossible board_b1110001 :=
-  kernelLeaf board_b1110001 #[0x1a6a20335b51617857206a493f4d1b17513067583b614d5b3f51214d4b31224e, 0x1a51755e211b211d1321131d1b581a293f67666a0c556229725e5f7229293f78, 0x6a292d495b301b2d2e671a4b372965494d5c13576f554d662d060f0d0d13261d, 0x2166765b31485f272161375b2f7a4d57625b7c5b315478676a1a2e47162b1a2d, 0x1f5831401e2b2714141b3923141e23785c5e2933073921370d332f6a1257625c, 0x21455333234b595c37236c635c4b4d6355536062492e523924375e5b1a663740, 0x211b1b162b243117494f575c63601e5c4b65605e3322391b3945626c60483931, 0x314924302925244917374d5b301f65295e53174d3d30211730601a0914451e29, 0x313125214b373f162a33622b2e5656294924192d19496c2416450a2124454029, 0x497a333954391221496a515b376b31224951332b5c4b6237246637406345651a, 0x1b1d07335b493131] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b1110000 : Impossible board_b1110000 :=
-  kernelLeaf board_b1110000 #[0x49495b624b4b5218393d3d5b07472113391b0e1a493d3d5b1b3d560e2316272e, 0x25251d251f292b2625391b1b2f1d471b3d4739291a49540e00391b1821544770, 0x3063614d54511a4b5b5b545b4b764d4b4d4d54475e511f1827544f51304d3d2f, 0x4e511d126029491d1a524d374e5419264f392d21512151104d4e2d257f4d564d, 0x4747271d4d51251f4d395147131a1d4e2729376a16214f4d291f115c5127161a, 0x273f25765763476e6a161a39391a294e2b41274f3d4e295e276a621b51251a25, 0x593d] (by decide +kernel)
-
 private theorem ok_b111000 : Impossible board_b111000 :=
-  fork 58 ok_b1110000 ok_b1110001
+  kernelLeaf board_b111000 0x10403790a2a81dd40fb3d516df2798ea3084c793fad41567a808a8a239e514aa6e725a1e4fab4185a3a4335bd01bf4a006be0118ea2e4ea800c094767abee72fc5822102b7d419650149b9b6fc0c04c7b2245f2e2aa46b63a1412c74ba1d50556510465eb7dfe5b55a0328082cf541b16af5dd6e56b628a2a705993a4cce02082dccf02b27d9a4cb62acaa88a845e15a1d26aa117400606a763aab2a8b274982220b0d4e9710055549aaa949cbedf410959bdbd867f1515405cba9d5112f712d3cbe02b37545eec34592143800045f61e0d06835a088800a10800009ca68c5cf6a7442a566439bc0450dea05b57a4d8e8005f4193a8c224cfebf009735c7e0cf69002ad7397c88397c1ded9e8b05044173882029bd73c5f16c06cc249441c1c8c0415ce8031d0f17a7a4b3c1847c844bc0b3a88dcc05be8fd98222b8f1152e72f51481559be3eae894fc1e2e4ebba5808ab9d4254126df6f6a10a8016f35b2e6dbf03201405153f8a042a558d63c0cf608aaaf4f94c05299bd5245ce08f299ed44a528105411fe3b9ded815388cf54a589550fae743a088df44806ecf5feac96a235f446b16a220aa217343e6deda36f163c02c8d609bf800027e543e1c266fdbd7e8c09eb14104a6e4b5f982c5dbfe70a45bc00018f54fc79fd59ad76aca2acb47cb6a480082af5494d6b7d588229d95baca212794102deb28d30cdeb781779f35808cbdbe8854108cc4a9f2f27866f7340109f57c4477eb571a6f9b5115ba82286e1faa37115a14851b93d36773593282d1d12ebded0e6fa00a2650e7727c85288ca1c9e7737ca48336335aaa8029dff012a67f37ab19a2808357c5a282229f975ec25510bf8872c80053a829dffe335ead06cf42deb28d1e142010b0fe3afa0f56a3328b277fa80a3378de5f1556a3b0f3ea14d8d5565de0a387a6f6f8195ff4743a0a2b4dd97b1d173b44441442cef720153ea2ff4054b8a8223db6bec18f8feef565b860155035b9c8401ce6b53ced0457a24a0b072024fcfdef282844ed4f7b10451053e82eac5c58029be8e9745119554535a5e3eaaad47c1444f9dd5101459bd1d2e7f51166e0920e7a3c7c0427889ac4043b93b4fa9dbe022a2eacb60087567e0cdc14014eaa8847f4523aa809734a38a9f2d9ae7622aad1c1555900243b92dc1a9e4e0087714135a52e6edf854559d9220d4c933a6e7ee75b82a048768ea2080487a390d5100a66f3b61104116e040297a501ff9bd6d109ba12a30dc78a0895879bd4e8e6b40542565f6f26046de48d4d15b7cbfb7374125eb4dd0489bd4d4a3edee8e7f81415010c6a029fa9cfc10168e02c39bbdd7e028aa5c414552e7740512e7f10150453abd14044da2a97739bd103780022fd5164eea91f0df200a03de4523ee7539ae10024f539645101db080dce6f31a1c004a9ca0047f860802249c1624e205bf172f90465f4b31c04a004e745ee92a3dede1f811023ea1c044049ee7378ecd70ab27547ba888f7b7a08026f01ef5b1da048f2da7d76eb (by decide +kernel)
 
 private theorem ok_b11100 : Impossible board_b11100 :=
   fork 80 ok_b111000 ok_b111001
@@ -2180,25 +1632,17 @@ private theorem ok_b111 : Impossible board_b111 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b1101111111 : Impossible board_b1101111111 :=
-  kernelLeaf board_b1101111111 #[0x284f0c4b1b56154e0c3b67283b6c56290e224b5e242316245a1a13281d2a3539, 0x625e534e12272c2a236557473b614f564e562a416a4f7362605d694f5e4e5317, 0x1d2613471f5826291b4f231b4b352a472d3d2d27273b5a5761655847616e5d4f, 0x535e4e452a534b241d4d4527374d2f1e101e261e4d194e151d2f4e5b17243b50, 0x561b2a2f1f] (by decide +kernel)
+  kernelLeaf board_b1101111111 0x82b5b400410deab0010457e009fc09001a7dee7691755a0a14f05097a222a293093bb378ba7dbeaaaa4cdd55f9ec860200a9ed4995367b9ba67100276a572014ee80afd415002776f2fa4c77a0d0c0115442243ba6c9e20c7d58543fa158d36a740237a093f02511e026f97b5d568a0c7d56ef7050416ea2a7d50450053eaefb5a8020015f0170e2e5ec71f514130fbb150102ef3fc5adee9f3b25a0aa7d5159aab47a10848e5d10afc7c551077a12e1e7f5b9dca02b5b0450555aa241c405109d5a293fe7e2f0777454050134f3f406f73ba797d41146a8acfc0050066a4bcde82ad6caf3b04066889520bbf3f28300028ddf6ceb6040a750144801da2e5f7b49800a3d12da2224e1ad68a029ac9ea33baadaee70 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b11011111101 : Impossible board_b11011111101 :=
-  kernelLeaf board_b11011111101 #[0x1a1c5f511c5e39525322512425371b3d4d2837222709511b171c28253d415c30, 0x1c726e4d582d231851062b1523180a4f2223234f2422240e245f1c3d150a155f, 0x2c23685222100e5a25244d55706817680a521c24512f24701c6541655e241c20, 0x3b6e2a371012252d0f3b2a10410e1f2a2820331c582c2741652810253d2c623d, 0x180e1f2851330e513939641a1c200e1f411f39564d4d253b396f613f5556681b, 0x1b766865573163516e51725c4d3139313d4f653d231b61615c23686337561b18, 0x1b] (by decide +kernel)
+  kernelLeaf board_b11011111101 0xaa2a2acd1bc159a37ddbd1e5d006bea0b1d55c792b0d1f772b4d1f975cc66ea8b1c65ce882a88cc77bd2282cff2ef7479bd004470f002187b9ab488a3f46b63dbf5b0404437a800634000318ecfe84aa3410a8e832cf1da0d1d0073ac08039dc99ace600228350040767f6201839fd510173d6d1029b80200cdd2eef5cfbf4404408c3bfeaf5bd19bc120414401dfbb55b7c86100904b52e80adc007e280a00a08ef5590d00160e3b3f80002ac8851a04a0d9e73b1acd125501140104fc1ccbca30080862212a5deea2cd1c5800203dd541559a3f474b0800000051643014776b0252e2aa939bd5f87128e8c122f800280e8c574b398a2ac93005445a8eb2120a8808afd27c339e5e0f08a080e5ef6939501039a0d80154040e6dcbddcdec7021028b74798d51484428ec1b2010455e57111104798c56a2cfd1680023d0011ecfc05049c8b401263b8041277f39902bde550800ae2b904af02dfcd6735541bfa820cd1ce77b05425cf4ba7a8a2c4011001a38ab2934bb7e0437abde6e8a88028e4001125be8b4f89e8e8a804b0046f010bf47351a5def07b9b0c (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b110111111001 : Impossible board_b110111111001 :=
-  kernelLeaf board_b110111111001 #[0x252b4d305764534715351f473b69584d5a1d151d1f4d1b31314b156b5c56283d, 0x4e4d35604f585a1c51593b524705224e3b572457606547251f3b5a596547691c, 0x5d64534e5d6e574b2a5761575f5f685d70106c4b58562b5d2b595d2b5f2d474d, 0x1b141b10682a1733135810231947531d233126244b6453535d2d69586457476b, 0x252f59692b1c2b6b5c5c52222b593015453b5776602a58564d2b574b5e2c3314, 0x25702d0c5649255b522b3526304d10562856495628266f1e0c28233024266849, 0x2423566122233035574d1d1e231c534e5c691c222d51305a166c565922595f56, 0xd24195f1959105d26696d2765495a4d564935584d222d564927244d4927285a, 0x255153231952521919735265565d2630301e6a316a605869255e51581030581e, 0x285f5d734e450f0a1d26172c2f2758192a2757151d3149563157261c5e5b6e5e, 0x31315f5a4e2a262826581c5d0c103110241b] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b110111111000 : Impossible board_b110111111000 :=
-  kernelLeaf board_b110111111000 #[0x23371910174e641a25475753172a35241f65235c4923571d5712231f5b352856, 0x735957175d5217605c0a25736872237a30642c232d16601c642d23576e5e5323, 0x235e5d57685b725d5a5a616457654e475d5768646128640f302d1a25155c5c69, 0x24301f57695e1f28305a593b6b5a5260356c355e68596035355a6557282a1f5a, 0x171d640d150e281f5a17171f2325301b2c5e30255a252d301551280a] (by decide +kernel)
-
 private theorem ok_b11011111100 : Impossible board_b11011111100 :=
-  fork 57 ok_b110111111000 ok_b110111111001
+  kernelLeaf board_b11011111100 0x200b1c1001058f7fb5cec0840515682c26d468b0a9b056c673bb930004233218aa08c721a4e0137a8d5002fec00177e7b3b8ba00003f45602101dd36a04a097c5662bf53ea16333aae40053f24d7d442b9dd8f27adcc020888b1ebe229b01048e77b1a2516b7eeef697a3d3ea0924904799e96c04152cce882000119d45e7d2d0272ed6eee9b1404618aa8c33d8a22a2a6ad8f0a4a0eaf06cb36334e97bdd1d96941b1a43186a88cb635541411004f6374999c45a000bf99ece43bba6d10034e22a6dc4fe5e4f6b9b8828028d6c64e22a0b5d821111b1cdd16b711518498855adc9d3e93855201666f274fa8ed608a0809391e080b5bb0f084808b47b0daf5f01540419b9dd043d92420a3ce62202cd3c99da8b73b4e7345ade8e80b5080230c2d65b5051003675b10402ce8b0292ce0097fada5f8680280b710019a8000d6e4e97b7a0d2d601457b5c14d8c39b90c124ada8d044adc9e411ada30a3404defe4453d804338051a3d8693504d80222805a393a5c457e082a82967d3abce6802c002bf5eb7301106e74b0011545abecec32bc5ddf2a3402ad7fb78304855a32858eb680a82a2cdd5e02d7d25f7b005660081040cf299bd4001400246299bc87a355a885f91119e85093ec620a10c11e674418f88b4f3b828f63a6d2704bd55572653e940254a7ddc40a5baa0c5a7b180224e4ebf1f4135eb304dddc9d3e76122ddd84b76b2957d5465eab6058025abf8704096bf7fa1546bf94ae8eefc321c0ab36cc97d8eb700aabd25854abbabece482817755e8257f5bc7d9ba8a04ec66f2cd7c1ab3f2c76b3980000201251eceef50045a5c7d4082e8020a2c02276ef418086be0093004afe0f2f1f5040112e7f00041df2c0dad0b3e5e3fa739a8022a9757cdd87300ad5f9257274f104123f28b000a0575026b9fe3eb4bbf4f2a28d8e6f6b810ef20a95c000ee7f81526e882002c9bd8f42b2c7110025e95f5f73ada8def082d17d6000ef64c550580846e222095c76a33fdac218be008205f3f834a50a3d2ec34984de2cef60830c14b90b6b5412e002b7186574111a3a8c40405693619fc0944642afe9ef680801fc551b0ed76777c020ebed64a252c41210306d7167668135ef7a392b3aaa4e0dae2130b5db5e5ebe0804a3849567fb580102088fabdc95debfa3405096dea572eef6b01b58103587c9d7f2f3b8fa28312ddc829502afda3c980e1d50547934151100007ea84c35b9ac524b95ee62020a5cc50802234fcf6cf5f1112fab77a5a32802805fc1b0dcc56a0525e95161e7e8d400e5b2048ff5b0f26a0b0d2002cd1eaadcb78310139a821934196e8f6bfbbbdd3d44551e08a888f6f99d40502182a0117c5149de4d4d69706a3eb0aa84d7e9e5f400044156d749aa441fc91444cba3ee68527400950151e42d5f3ba4204957e25a3cff6f6ba8eb6e7 (by decide +kernel)
 
 private theorem ok_b1101111110 : Impossible board_b1101111110 :=
   fork 76 ok_b11011111100 ok_b11011111101
@@ -2209,12 +1653,12 @@ private theorem ok_b110111111 : Impossible board_b110111111 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b1101111101 : Impossible board_b1101111101 :=
-  kernelLeaf board_b1101111101 #[0x273f2328121b3d53392c141b244f611e1b454560243d105345292f4d2d5c344e, 0x4723555b7669290c291327280c226e53554b2d233d393f4f3b5660293b272f53, 0x64522c4d5c305e39271b5a5e2d2956635b284724452d4d7427182d3b5664514f, 0x2c691c412f691f192d535a4f6013245b5b1524076b3d3b532f51525145233b58, 0x45642c6e53605f272d3d4f5151395f2d2c5f3d2d45090e2d656b515e272d2229, 0x701c5f414f5a585a653b476155455561557c5269695d5f5e7c247a2d45451777, 0x1a12194d1a11195207242d5c2c7b745141395b47512c5b245e513b4d192d585a, 0x293b605d45245b285b45206e1a533f271f1f10143f76601a391d1c274d275125, 0x4127234f1b4739686e1a4f565e4d662d786e6566514d3f4545535e4d29685639, 0x51473b514d66491e51453b51233b452c4d5c453d452d395325512c3947603033, 0x4f56414f664f6039183956145d70706c600a244d634545605c2c2c1a16535739] (by decide +kernel)
+  kernelLeaf board_b1101111101 0x4927eb056e50150838a8cff36a2b3f706e73182a2a82e76b6b1053020416efc340010e1ece17062b526402204dc031f431744058be0db9acd500156729acb6a0853c01004afb9d5a3c7d211601df479be6c1464e42007ba3c5e77aa51d6047cefa8458bab39bdcc408108b8208f71418ba042b77394f40a154bd1e05514566e78fe0d86208b3c420ea2027d1f3f0400204deac7dceaa23a317766b9159fd5b566f737cdadd241040117c7bbcbe6c9628ecddfe222288c5c518bd3d545bdcdd4e212a1a36b6b9c9014e030efa1541c1dde2e93166de40a8d40adf17421041aa0eecd6280d3dfe9f454fe02827f218894d465140147ff6e7066b52500738081dc50040398227d566e8929fa3a5cd64b555409338cb373591e424cec52c3e935bdcd67200a0813efba747460ea222e7b7c7c559515a3acd55112de936bdd1e77cdc40481133ab708006c62836b4e19cc905bfc1c101467f6b5411b1a36bcba00ef8fa8004587aba1175490049abe1e5100146aff3a5e9d54055d3dde46fea2aa34837bf9a4fd732aade2e28c5d555024bfdf8be4d67bba7e0d552fec27d496ea4abde7f0a2d1c45a3ca8002e7bfadd6605317f55517bab78b9083009c76b75010cbd6bd1868f7b4faa212dd65168a8a29d67a739c1ea985097fa750503f80806744005bca0b53c04b5cff064f49a2056fa41212b795e4141261fd7bddde08d3e5905fd1d40459a5a08d1e2e0340a8f77c4b635000040293274b59cdee6c30504bdb9d0044f9bd406d6097b216ea7a105ade3ede0a0a3a400448fa08209345462eb79bf4c04f90098d5ba3beb7930011a3a8cfc8fc040a3d48ab804a5bc5bb769d194e840ce440025393d044fca319a2f774f4aaeaa22002acbd6e8f811ee02b9dff3f1df5bc18010129c4177a7c0457e813253d3eff5500051e80a38966f4187bd3dcf0a2ab340429809bd149cfc4101c3b01227b37c5d62504a2f836495126f721d3d188bb329d61557f375bdcda73b (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b1101111100 : Impossible board_b1101111100 :=
-  kernelLeaf board_b1101111100 #[0x1f2c204f60521c1f7472694d513d1c0e634d0c493d0a1b273d220c1a4e5c5e30, 0x4e20235b6b4e27524e1f495b495b4e532259221a525b3d4b5120652c15330c25, 0x2974225c4f2b3b761e39472b292d63515c5c645c745b632722272d1f4d2b3d3b, 0x272c4e4f5727294d121f294f593f682c5b2c3d4b5c6227774d5951293b4d5c6a, 0x234d2920290c6023232068391b1a491f4b2d2e1828691a2d4b5b51491d1f293f, 0x3d1e345a1f271c042d1e0c2d74720e6327223333121d49282b3b393325632720, 0x27331c18164f2e5c281c5c123f18201c271d1c5e26222339101f2d39264f2d22, 0x51393d2c3f4f1c2039232d351b2c4b5c574f22595b5e4b341e395c2e] (by decide +kernel)
+  kernelLeaf board_b1101111100 0x10141a3b9c44441497bacdff3f955048e600aa0c073a82828f5ba0d737ace5ea0a21731016be0204fe01511648a567b7dee5ed33db532a00139eb9aed4244fa812b3ce663115010b680013fa5ddcd45950415519cd1126e64b00005fea6341a30141cd4113e0204770e77b4114da022d5511511e2e7219fe0555b8820e74dc022233f5ba2dee7b69dac615083fa7c1398a008201355bc0887b900019802adfa620dcb1de3d3e8b0159e808acf2588a89de4eaa3200557a28ef0545cf2a800aacf52f8f4fa0d01551e080824902b375390aa228360814e33c1b0a8fa40151e83d1b9cde8b1ada5149939fe5eb751405da822a06345147a75251412935add25f6f0501a3a80b273b9fe5053bfd3eb39dc28ca033faf8880827d4e88084dc4200967f53cfeceff4503472cd519525b7acdef2f904ae64e2d801053fdf550009bd9e8ea82a750041dec804dee603ab54153ca41d351045dce7ea0032bc77f6cf7200b9e3e822012af94053adf1e8ab14a2147b9aa373113268ac15cfa76fc7a7d141610145a7d5b8504281fd40066eaf7bbbe768a883247b0805456f50535f3b4fa30a52c11027629fe4f6fa080524e2c35be774f00045b00082059d166ba54a58242845bdef2f81a3a0f2eb3a004412bc20a133c66a5c600feb34180b28004ff074b398421fe00e9a8f2c01111000d3cdda38a82f7013990283b0a504471f3719c28349d4907b808ac1000de9f2087ba2c666b9ddcef6c3 (by decide +kernel)
 
 private theorem ok_b110111110 : Impossible board_b110111110 :=
   fork 80 ok_b1101111100 ok_b1101111101
@@ -2224,37 +1668,21 @@ private theorem ok_b11011111 : Impossible board_b11011111 :=
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b11011110111 : Impossible board_b11011110111 :=
-  kernelLeaf board_b11011110111 #[0x723f24353914391b3f4d3a23313f511f656f1b3f273a4b18565d514d554e6034, 0x6e3510473f24594f415118594d3b6255393f594f185c1c4b351c1f3f2310394f, 0x5174666c2456272e18625770532f4e4b3f31454d6c2d2945535b4e5c1f411f61, 0x685351365f3a57365141243b4171515e4d41352d514d78372a474e582c4d514d, 0x4b3d5168661f3d33313f6c2a634d374d4b375e742b4d173d1710165e78625e66, 0x3f1f512d33173f664d1c373f4b231f53684b3d3d513f56183f24514b4d4b596e, 0x4b4b1f534d4b3d454d333657363b674157653b574d3a2945535b4e4b2d33174b, 0xe766c365c5127364e4139566351473952663960745165594d3b24524b3f186c, 0x39512a63315d3b6c532a5d3b621723167453361c574152] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b11011110110 : Impossible board_b11011110110 :=
-  kernelLeaf board_b11011110110 #[0x296f33661b753f45061b3f3a2d4d130f221d51453b2417513f372d3a1a672c4e, 0x4d5347134d4d5c60452f37176d3f3179555e5315453d4d531c2d5c5560453b24, 0x272360396417472d3d3925393a203f315f55605c3d3945285345174533294533, 0x394f4f2f784533603f24645b13121d10262a2326451c3b603b2d263d27273934, 0x335e5166396737806a277237274564396c650e1c29274564592951456b174576, 0x51265c3d455328395c65575f4552636c373329593d637674582f102c6459592c, 0x39391f354519331c28232d1f34291d1a370929375166592c3f2a1c396c391d1c, 0x393f1b56231d4572561d456c1c3d4f3935453362456a763f5c28453756595158, 0x27273a3d2b765b4f5c23] (by decide +kernel)
-
 private theorem ok_b1101111011 : Impossible board_b1101111011 :=
-  fork 80 ok_b11011110110 ok_b11011110111
+  kernelLeaf board_b1101111011 0x12a02e7582541541128eabc7b1d4146ee0efd9a028ad3d56a8addc1de8ca98b802f8021088f2df4da9edb39a2435f83a8252d0011df6f6736ee6808a51d554513e488220b6e7707808573d6f1e08947023ee75014296808a19b73b08ae0fa747cbd9c09bbbd2602aa0a94b4197a80a03fcc7b35125ea04bcfe808a53c09b8a4bdee02089179bb3db6824257d40005b60bbc1090273f07afe5d115de15f410466e8a02bad4f17a7dbe7620448cbd6e80b3cbf0844bdfe80200809fe8eb74059e5f0107fe6d009ba2094736fc0ff97d028fa520ff5253f4700820cbdee202f710aa3bfeb66345047fa4d00100a381490cbe6e88a032fb3eec00025e280f7a3da3cdc0082200a9fdeecf458e8ffd9aad550c7813741056fcde5e1288b4df548af774d55f374140bf41012a120f72f90d0805a018b75efc762c09000bdb9bb474fa3b6d006fe8a810ca8ebafa8a82db28f078594526bbd161241183bc7a3dee6e2a0a280aa41daeb7514068f48537f1b7d571f9dd8d672824dd68ea033750100a3aa8f4f36bb349882d6d50540013f12ecc78b402bfc350022a7abf9d8084bd047fa8c708222f37d9a80a02022b7994114f17a7dbe777301413fc1d010fe8587dda288d721a00047d1fe93400401acf3f1060f474c60ca0000d9e6e88ef00041c5d5c273c0ffb3cfcc7730404039cbdaf2290208733fbfd426010151e10e540173b3fe5bfd26a14cd7511497394e491739bdfe137485d7228f10563bfe8e0a12b029fd01cbefcdeff654faeb9798eb600280adde8e820cdeaf3bc1b4d0413f0049f41d6a4f757f6d5000b7a833fb98088f5211ceaff37808856d1f31de2ea80223cb94502b721de2fb339a0880f750467ee76bc5d219e038b105068beae5edbfee6a355400058bb7c12b6800d9c5415a3b637382a82239d3f8282d70028b99d9e7351c10c8f55155b9fda68300029cee9ad4a4206fa9014222753b7e8f9bb3acdfeab0450554e6e701505d9a880a0ab9cee73a3aa8a6c051220240b9af78bd3d0a55546e7594041012e6a82099722afdfe2e830d2f1fb34406faa80cf4024596194f677b8a0e3d0257b64f4c4b1892292fc8700cb3c9d9c16b3a2d2cc059f7ba3e6d1145ce80267dbec8202087ffab924fbcb6f94527e2f93611ce289b3cba30043b39a9d513e517c9a02b6753a122051e2faf2fa2b171145edb9e7f132aa13f4840817fe3a2ecfc1bfd26208221264ede4f80144896801dd4869b00556008f401153717398a812ef5143060a0ef5b80a6deea8109f4213ee750a40169a7d1011e98373e4cbe82b47d6e4343dd45ce974251ceeb41a00ff55058e0457f6ae280838302e73de21cf1751a200d3e2ea885f0150a8bb3c0114ea011767a0a0cdc69f1f27b24a3370119bdcf06a221175fb7c15422faa49216ddfeac70207cf40055d5082bdd3caf177ba808cdc05596a79cd6f11085cd4055abe0e2eef4982120029f7ea01120033f366febbfd00040408b86cdf3fd411209d6b79b93c2220001fa2cef470862eef1442009265f09a3bfdbe0092ddd66bcface7743 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b1101111010 : Impossible board_b1101111010 :=
-  kernelLeaf board_b1101111010 #[0x57534d255e515758533728574e4739654f533545645c0c4527252d1c39573b36, 0x685d625d51685e5e3b5e315d3d2d53414e5d2b57474d315d1f580f245e515c28, 0x602a573d5d574f3964205e231020312d3d53533d272d2d2757652367135c393b, 0x641c12202b3d391d1d2823374537375d564b353939315035373d456c394f3568, 0x1c4b27453b703d26604b451c586458] (by decide +kernel)
+  kernelLeaf board_b1101111010 0x2a031cd010097a7e162e23be60b86f74db2e0d140025eb1739824b63240726c202d8c72673424968357bdc514573ca89dc00443ba8c415411edf8ba0437c02115249bf77adcbdae80b9d0005cec740a1a02aa2d76fa28f78becd0173a0021093f6be8f06ab40004014afbdd166ee00a57c9fb9c504111144c9a0ef68aa880c8aa3c868363addef4f05010904a7bde04fadc0856e027c4206bf97014140411f9f27dcdceef881556d1ddc110205ac5dde8e8a0aa3a3bd882808225edde117b9558f777bade9f079d80000822ddd5f5f8fc29370185563ddc414fea496342087e4293bdd1da512b9a8ebf4f0006059b8108240c975bdd1d005800afd8e9edf94001518020815f9dc7dce0865e809fa0b4f0565ae1174182c9a8b73198a317813e28802025d6e7373d7ddedb (by decide +kernel)
 
 private theorem ok_b110111101 : Impossible board_b110111101 :=
   fork 76 ok_b1101111010 ok_b1101111011
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b1101111001 : Impossible board_b1101111001 :=
-  kernelLeaf board_b1101111001 #[0x6a293d5957392c351f553533633d452f3d2c59456c593d6b45333d2c66513f50, 0x1c24222f17453d18241c232625453955332f1772593d223d6b591c665f3d453a, 0x2459513557594537745b3351591753512c192c645f250d5f252418241c292524, 0xb1511374d254e16694e1c156324514136585e585e554e335e222f25222d512c, 0x411068514e513d41634b514b725125373f3575592c4c65695e3d6b6651531b25, 0xe65663f354b7259515153243a5e53514137273d1c1b4b4d51534e4e4151534e, 0x5e517a4f5337415d536c645e534f5359726251510a25374d372f412339206975, 0x16784d4557726436575759745753593653271c57226751531678365353166c6e, 0x351c294d412c1b1f2c57072d163959537c7239391f1f1c1045514d5153395141, 0x725937252436392465535772593d6e536f41532753256f191b37531f16785307, 0x51593d5737166c36764d45203d5357727a51575745] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b1101111000 : Impossible board_b1101111000 :=
-  kernelLeaf board_b1101111000 #[0x5759456550514e3d2559514e25245e5e59574f5e4e4e0c511411372024362741, 0x572225221c3a59453725241c5b5e3f59223d2f3f245e3f593359353f4f243917, 0x512459112522522419356d5b515e58517759715e593358741f6225374d515b45, 0x4f3f4f1f5d4e5137524e363d6e574c52520a231f24222d36594f3947] (by decide +kernel)
-
 private theorem ok_b110111100 : Impossible board_b110111100 :=
-  fork 96 ok_b1101111000 ok_b1101111001
+  kernelLeaf board_b110111100 0x40109a3d9e001ee95f600016fa5b647660136c0017b700021378b808d420837b8453ebfcbf5a02094702bf2a0057e2fcbb3b7c14012e20936db9c0004049b9709a7d7c051ae5d9defbb12201429e41bf014020e53e013f02853d2e406fcce6f0011096fd3cfe5bf181104053c3f2108b5c039a9c09b841d666f000ff02ce02be1f5b96c0021ced678a7fcf960000039e540001ce7f20403f9cc8702002117a3cdc0228f4f201ce02151e0e5bf1c000a1378bc857f9793516d80057d02bf67e9c0015f040a7a10367504106dd3e801404f81cc080afa2f3e02d47a796fc6080236e9f4a008153cb7b3dddec020a3847ad409fd3d4149be20341ebb9253f6600304e4ef653d40229f94fb3f2f1604d1c8449112a38ad2edf9b820a8b7d7f0744000447b9e06011541e9faec4a0008ee72f9b81007fa08ad797f2ece824a0151e0a8f4f49bad606bd914f0195a3c1dbe9f4509ee20807310df52f9b85347a7a0833b0111677079088428e01253d4016770721e8c46068e004ed400a3bde0f8f0897b002d1d0a5fcb200002a8e976fa8003fdafd7b3acc005901099d970450820d3aded54257bebf3747a7a02a086f4b82442f5462b91c6fcdc02114bb3b410050802a02de9d00a76732bc4ac38f49d1e0edbb1ca0288dec05b18c40adeeaf3b5854959f4a837b916bf4ba0a2d5bd1c505541659ac93b3d1c46b82b5f016cf176fa822f4d16106decfa3a9167506816412fd3e8eb3140033ace10020c9dfe92e504a372104aff4978849818e201267353c12a5c01269cd201268b5f97e2ef79994c620240a4e398828f014a01536978bb9d04042aecf8251040257e5fe5d9dee2210c8b589101efaf6cf1cf36230a10c17f7bc5d0475ab083ab900194ef7b3d7c173a8ac0a082cdae7f416ae2235d9f8f16495ee8045d7e02843dd6767615022fb3080b3ca43df5ec8c11767a133dd679ba3bfe868013f50080541ff3f3f84882257727620229476fa4a8d2c4276db7bc2086ec005afccd501000696034b0200568f3fa4c101945addb691679fb9e3e88d1d50449a88a096708e974580280ad2c84855266711af0226deb782a21147bdd8c0468fdf9b3a90971ef611676459f63e9a2a27fc5a5dbf3709168eb6f50098bd7e80010116082125d1508459cdd72a03678bb7e0124b8124d39a023136fbdc2b3fece8b7bafe08a7fa52931441008bdbfecec0a033d101b3b5dff3f0100849a000e72fd7c05b3c5f2f4302a9410a3893b7ba974009065b3d1c4556769749b028037b11bd96742bf3f9404bd893b02004276aa433a394d0223b7c01041b02936da7e0f83 (by decide +kernel)
 
 private theorem ok_b11011110 : Impossible board_b11011110 :=
   fork 48 ok_b110111100 ok_b110111101
@@ -2265,20 +1693,12 @@ private theorem ok_b1101111 : Impossible board_b1101111 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b11011101111 : Impossible board_b11011101111 :=
-  kernelLeaf board_b11011101111 #[0x5b3f35613a244d223356185c5e5b57566c222a391c294b3129725c12284e582c, 0x604b37232d2d351f255e745d6e5b6e65393311273a18673f1f376e2a371c3669, 0x6c52573d563f5d63693556576e2a411f24333736524d2a596b5e594d373d4d61, 0x56725e4d4d56673523390f603f602a33376c557b65606e393936537018763963, 0x574e24593d551c4f693d5b766c5956224d59495f49596e565d6e73614d7c5f73, 0x24234557393d35564f464d1d283f3639286645605f3a372864566c6c672e5b5e, 0x1f2835561c6a2e3f1f291835601e392e3a55563a7820664d523f3f4f82563a60, 0x1f603f575311110a254f755d653d6a374141333d725c2a173318250a1c241b36, 0x565a124e24334b1f644e181b3d33186033351d1f3d3f3b2a4b5b2515411f3335, 0x3a4e3d59181b46353d4e243f5c5a3727566f145a18] (by decide +kernel)
+  kernelLeaf board_b11011101111 0x1417580288a34ed1247bc8b67319be0694a36a02a35c297bd3b49bfd15ae6cb6b52456fa7d512b7bf5450129dacc612056d5b5a02312e9da4d9e820b2f5551010ff939d8ab018cde2f7411067c82028263c1a33dae028277500febddfe3bd56a884bd42de822978ae208c1cfecf650061050456b9ff06ff456bf4f00802381104715a28d4325d4449ff5eef977bac3ab80096fc1d4583b3c5efcbb9a2902acbe208b3cc6000025c5673499bdb60a08207f5051b5d402b701cd2d5aedfea00aa8a207f540414e98daf833da280439d576a82c0baeae80a835b75f8d06ab9b0409ba8d2d257f8222ff9f8200ffed6dd78349c2908223d8b8a22d7c473a3ddae8095b5009fc6d540019ba7751bfdb6000e7540146a00b20239b422f83bfbac50001bea3c9d6c45766a028aecf3ebb5512df7bafcec5526aa8ab67155eed5d54e73fd3828822013dede8825db76767ad80a88aca8b66e016754964f7f5451593cb67ddd6eee88206ed45e7e1c8559b80c03f3bfa873eb70888a2f2d1bdcdd110559bd6f3e935d6010251eb9c7f837fa8ae0c1450556cf5106faeceaec0282a80a823ef5cbe0f76b9d11ceab6e9ea01c3154424414031f6d7398fd9d2ebe04b2bdd040ab6ff06ee58f0174ed750980ad880035fb76aac0020ea21fd26c02b3dbedb01a583374005855659d215408575f7bb3cddbe808bdc59be1f072f85be28f455ba20adc6b9fe52ea0a25efa602ddf76a8816fdde5d4049573a33c8e828a8029f7598f3ea223fcff020237f76ab421be2736da00aa1a7b7a002003fdae08161dd6930151466e8b67a021420256cc6c0373bda205bebe8000856f6722e4155634b9ce6a797a2031d88005153f2ee64b51ceec6b3 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b110111011101 : Impossible board_b110111011101 :=
-  kernelLeaf board_b110111011101 #[0x594e283952246510264f4b78523f6c6a333a7665635a7039393a2f24284e4758, 0x4e373f493552374e575b4f394e4f591355572855394e6c134e5c22526f2c104f, 0x284e3a1f4e1f13572539652955135e5c223f1f2c39355d3f244d3f371f353974, 0x225b3341252d3a3a4e3b2d413f35352d2d4e3a354e3b5d52533f1f521f4e3a41, 0x5b29554f3f5569524d52523f6a575252374d4f3f655528574b57666a25413735, 0x3f3f3555573b3b272d3a353b523f4e3a1f4f1b2c1c131f39575255593a52613a] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b110111011100 : Impossible board_b110111011100 :=
-  kernelLeaf board_b110111011100 #[0x5f3923524b530a6e584e3a1f2328394f695822232d133a4e5a45224e584d3b24, 0x1f391f3959465745295e452d3f7f5e691339535d395e45395f52592539232d57, 0xe282d1b1f22353f2d2d4f5245462513200625174f4f5f6d6c57655f064f5d52, 0x131f393f1f120e1e5745593f4f0e457c535f39534e1c3a292835293352520636, 0x141f103f39222c252539224d661e4f4e5c331c2c1f350c2c4f571c0a5e52584f, 0x37354e2507102a1c393a2d3b283f355b1f2227191b252a283f2846373f584d6c, 0x41572d58414e3a1c2c2d531515232d2539] (by decide +kernel)
-
 private theorem ok_b11011101110 : Impossible board_b11011101110 :=
-  fork 96 ok_b110111011100 ok_b110111011101
+  kernelLeaf board_b11011101110 0x800ff0501fed7450109abd7dde01023bd3f2b775a08035c0778214b7fc093b759fd0067e0a8cab026f5671cc551279fdce122ad7d42970255eceeb41a5800498775dbd4f023575401027eff9002af0221a7a5cdd0405696a8022ad2dffab41af80ad2d621019696df9b833f7fe5c054004abaa3806be4cbd886be66f570000a5c0520edf401ae8bb7b3c002083800089716eeb00420075cedde82b70820e0ff6ba20aaa35c01055b904cab79dbad01095af3b77821377696853dfe7f5006967f04109dbad45402116283a8e76eb044feaa24ed54010fe4fafa5dcf9753a800d5c9ea2a55eee6088b417f9fd67402b9c0456bdddfe9350102026eff46f8a027f6bb9fa6800093b6fa803fe4e00d710a580df9dd7ede113f540873ced0027f67278890357afa8e804446ae08e767689b327a822ceee6028022d41697bf5990c027e8d9d94a76a3025ced2d27975015521a6d4540167ea0cbfc642d2d547fecf56cf424758223db101511105cbe3d016d7c3738202e7545d6bf9926a39dc7ec6088107af800a2dd11b1c1e76880890bace68b31545bca8b114f2b820215d1eb74bb9d401be022b5e768a2800a5e00000f843559cdce88008a8eb5ba823bc044151bfdaf6f3fa0120422d3e0080219d037a5d5100556a02a310081fea38da02080837c87fd8e6fb32982a007f21800023fd73a2d6682a002975012e22e745a8cdf367b419fceee6cf01515398aa2b33f8d749198880088b34267ea4957ce62b1526f728d2d060180b1cfc9e7f73c0bfc03f8884b40551da1ec22be2317141156ceff9fa0a8848ec162ff3a7820897f73d3e767375a9d0016444146d70000114ecf508a5a80252d436db0111da8d016e80289bd0fe8b6bbfd010516e20aaa2dd40467e094b4162f1b4bac822a4f21506a2840a1b4b97e7e813f12fe0200809b7d9d7f2e8937f43644feef4b3fb9c00a54441043fb9ecea0c6ebe4a0a24b1753808224adee2eb719554601617f8ffded274e4f73d3e00146bbb9d442bdc5d85015cf7fa5a0881670204654bb9e5647adebe22a2837f73a3e972f004a7a44122bddd8e76eb80100ff08200223d4600ae79fca8283a76b1a2e0408011eb727bae768095ac448ba2d81a77639bbbd2783 (by decide +kernel)
 
 private theorem ok_b1101110111 : Impossible board_b1101110111 :=
   fork 48 ok_b11011101110 ok_b11011101111
@@ -2286,23 +1706,15 @@ private theorem ok_b1101110111 : Impossible board_b1101110111 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b1101110110 : Impossible board_b1101110110 :=
-  kernelLeaf board_b1101110110 #[0x29233d2d1c2d221839291f394b1f093d2a742d3b4f65134f4f1c3a2d3d244e58, 0x14233d2d613918271b3d1d1439353d186c70146e2a5d221f144b396c4b065765, 0x260d1c296356723d2a3d69565d5d1f564b722a171c243d5a393d393d200a204d, 0x173d5a535b2f6b3d81175b6b3d28655a293b5b2f3d534e4564233a3d5a243a27, 0x70202a232a4f1f797018293d392a2323781524203d2d4e3a3a5e495a55663924, 0x5629491866491220765a39246c2a5c5353595623533d5a293735631b3d5a535a, 0x3d5a2635185639233d56123d182d4e354b2d4e3d554e3a45575d5529234b5d7c, 0x393d373d2d1845] (by decide +kernel)
+  kernelLeaf board_b1101110110 0x2551573bdd416f8000bdd6e63540048b8a882a80abded602a6e55981ae98eb6e7945151ef7400ada44b012dee635bcec00101406bcbd6e28a0a00093b7ba002d5d276eb8ba2b5f5441bbcd5d14553a8f65ea2ca05dcbe6a82b5b53aab2731e6e55064eab092d06a3dbb5b9d262a2ecd115562b7314569e80b4f55b3d5b0550411f34f7bdac554101554edf405459816be3cdef711104b5d4f4001b5f0d4000419088aad1e0204aad50060a7f441ffcfc331a9deee751048109564c8f60111fe354410aea9341bdd6f3b4401d60a2a0abaef6b0c9ed75754027362c2ab9c256025265f7bdae9e8aa36f0215febdee2248a228082ff97edfaf05607bb28a3cbdac1550a53a0a00bbede8afe7bd3e7717c9a108f425275caa8f751b5a4c50451d69f044904d888dce6a7019406524c7d6f96f755892a2aa3df4ea82a2488d6eee892dde12614ff5b97f2d56a8aa30285f1139a4def6b73a128f77380028bdd062b02418041cdca6802a40923deeb709c3ab9cc62800027cdeb0f73b94d05ce04cb5dee630502091d9870ca7bb55c80377458a0800891fca72f50157388a28c20ece5e1b15020842bf97538240128f7badce68a22b74598c14001cea75023fa239e5f2b0527f13bdd57d300556e20a3bc0851a7e2a997510927cfd55669f9cd19d6b77ba4e7763 (by decide +kernel)
 
 private theorem ok_b110111011 : Impossible board_b110111011 :=
   fork 52 ok_b1101110110 ok_b1101110111
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b1101110101 : Impossible board_b1101110101 :=
-  kernelLeaf board_b1101110101 #[0x191b26282959646c52632f2230666a5e60452f37295a29291e666a455949333f, 0x176d4f536459351d1c1f3923301c1c593a60295857285b221f1b3a2c2b762422, 0x590d372a1c3a302a223924300c5e4b0c221c0c172437303a28652a535e64655e, 0x5e534e3a3060392d372860593553301f6d594f2a2859644b76595b35244e3063, 0x4e2c691c592e6c2d7e521c25522e532423295e1c1c574625080a130a1c181f57, 0x2e456c305c3366576a594e252e4e1c334e273a3a595345615365525778655e53, 0x24555c45662a6c5824131f6c6a3063575225352a5e5a4b6157295e5a2e2e3333, 0x201e293033354b2c332f5c645b4964645b2f554e3a5e5a5e652e2a33335f5c65, 0x5353602e452926451c344728452c1c294b2a254b47302045292c2a2c295b3337, 0x6455355a] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b1101110100 : Impossible board_b1101110100 :=
-  kernelLeaf board_b1101110100 #[0x596045535a312e55644e5360593f796169395a3365725c6f72645b614b4e5824, 0x295b160c1b283f22452229151753263546134e2d1f2f59223f45295b11223f2c, 0x4e252d31252d234e2023601e452c392b225b4e1664591e2c224f29294b5c185a, 0x5a5e2c60584b22531e204e5b4b4e33261f1b29231b26] (by decide +kernel)
-
 private theorem ok_b110111010 : Impossible board_b110111010 :=
-  fork 61 ok_b1101110100 ok_b1101110101
+  kernelLeaf board_b110111010 0x222480e4d6ae2aad711b5b4f555551a7e0d77171455382aa6d8b8a82a09cc01569a231f518c5c5041101599cd4f2f55a9025c25ea8091f618280220d0122e0a759aad4024000566a7b7b3dbea08354204f6a76180208cf5af2f040655984833c0522866165fdcd02c9dbe4e89264d5488b276f5fd5e76eb4546f6a2aa228a8daef7975da8a22aad9e8a2ab33efe290dcf2e42293204abdce2ea2aae6c440019562282ecd56c6935a27929fe010d9ead878fafd2c414ba8a8d7556aa0837bb5acbe4070f5f53c92a80deed6bb55555da2cf1454559e8aabb8baaa22bb361885cd15559f9bafeaecea820ced5550012f22ee76734541559e53b4fbac450575880a82967a7c5d16c3aa214f232f4bafa000002f8f2f7ba7ced6680a0c0e9ce6aaa0967577b354096e804a32200fee96734bac8154b5dd3d26800a8f0051551153dece680008736bf1b4b8a8282350564f515114159ccc67f50096be00b7ba7cedd6c3c1b9d0116e0df51400451e0eced754556a78a882b0cfe92a2002edecf3f00055c80032aa3b3e4d95197882876ecf6f6ba4e52a7608024b02c3c7d9d0402006edf558080c739d6c350515560008b073a4c0618cd4405006f72f450119a200800a2d414e68ccbe9306f80ab0dd6a3cbca82c2ac105129e0028ded0c9e5d111bd97d001dbcfd029f64eced79250083b9cc24150fee7444547b0ce622089cdb3baf06a742004b19157e50951dbc205055a45a7f88de0203ac804159abd0005893b69345c0219d5237a6d46a7b3a1939061157674bc7c8a20bf45b0f37ab454012f78322e12acafc51051bea7046d68929d4425390a7b337ab8bd9e4ecf7fc80885ad416f6200b3c1a42a896397c9222d1144169e80a7b41cec4515141b7cbc259db3e5044daa120a049fcdea700551e2a9bd373b101152ea28b700638825c0065ba3e7683552548291e4960cf6c5d66e7495ea800a28bb7cec8508b6ac0104e4cb3a7b59a0aa2c5081019fa9d0853d2cbee6634405b5a2329edf2a96c666f51bfd00151717110445a9d5414052b817e9e9b46b82b1b149e20cec55b9fd010017f6745bfe9044458b80a802810a726de4745bfd668802020a59f0717a7c22a05ad563aed0024abe4e7680088b4fc1d9dffe75081c3a4810b1a773dae5416790005970e5dcd481df9091cbc9dbc00130f2f9dd8d26f7 (by decide +kernel)
 
 private theorem ok_b11011101 : Impossible board_b11011101 :=
   fork 80 ok_b110111010 ok_b110111011
@@ -2310,7 +1722,7 @@ private theorem ok_b11011101 : Impossible board_b11011101 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b11011100 : Impossible board_b11011100 :=
-  kernelLeaf board_b11011100 #[0x22292357251e235d522223605d5925573056525d23574939266c5f26565d3d45, 0x261952251e256719571069576c15305a566556635963235f101557493767525d, 0x581c6560571f6c575e595830465d39615a5e5b5225576e2849561c231925176a, 0x5323585c572360536b474959725c5753415772592358121c69471d1f25472d2a, 0x353158241920491e25301f2a367a595e36594930523549251f30595822526860, 0x6965366c1f3559686336565e531f693635495752565a586564312e5317351030, 0x6a25363572355665651c1c2a6761607d5e6915336c301d251d5e25501c175623, 0x1f1f586135251f5c3669816e601710581c525c36123025501c60675a1f603070, 0x306b6758506735592a5636494f6853306d60132d1c24351f36533025685e5268, 0x4d583726592b5d1b472d1c4d4f67644f695d283d5b691928615f493757362a5c, 0x49284f7216585f60594d6533] (by decide +kernel)
+  kernelLeaf board_b11011100 0x82c9c0499462cfd00945100e5a16ec6237f49051c1d9e6e800013976067cdec6df454414d82aa24d9d5e837737c8b1f5b9ce059ba133f73ed28211939fe9eeea37b92a805bd674e6721551e1c114146fec9dbf5f6da2ab16e6a2c35275e019f2c642b43501573ed7b3a90ab154ab636c9382a2aa33f595590501d1d3d8986a0bb7c193d115b9cc581049b5cfedb00551504a7b0d2eaa080888a9a36f74b9095d18827f0920ff58f0e9335d2ea09fee6dbd3aaa9324affbbbc1aac8a92320117c86d8ce6a02b4b1b9caa2db25b0d2e82ca94339e0d495cfdae413fd83618caa223c3a4356976db5f9602282b5eb79746510cb9cc50615081239aabcfc4261e20b06cb3200037def7a72bb3f66c342043b8a8808974ef0a4ded9114bd0ce65f25116b68f44134ea02823976906deccfed7b3aaa80890ae8f1ea02db4441ad800adee9e8a00027f74e20036daf27afa0894b5014addad40052c6e5d726c755155774f2faaa2b5c8628c3166b8b1d9b1a4c8004cea0d464e7b05401012eb0cfeab5015b6252121ebb3dec14200589b7679193b0e96acd7193c328c1425d3fb0ecf6314400551634b80d1b83a7a3c04b1a08c2dcebea2008f4c1d3e45d7a847e4e22436744244e5dcebea94f41420e9288d7d111e5d9d1f63259cf4e802220c128b1f0251024ee7f4bc31f5baaec67302080022cbe0ebe8249ff669257e4080bdd9ec6c38ddddce8387506d60a4b7b11b7d2e1255154bd7c5548100376a8c93d6c0139888f1010054ce9744000042fa0926ad3667a5810a5c250f7284297cf99ebe43095534e8008d7f6657618036b1000ad80080997ad818fb380a218f0647dfc8602095ebf276fa0a8867c44456977784404590a7447d7d4152e0002a7b4510851edde961108b47ca883839aef674bd7d86815b0415a5ddd50047b5f93b9d051554d8a8aca10ecefe9baddddef17 (by decide +kernel)
 
 private theorem ok_b1101110 : Impossible board_b1101110 :=
   fork 76 ok_b11011100 ok_b11011101
@@ -2320,21 +1732,13 @@ private theorem ok_b110111 : Impossible board_b110111 :=
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b110110111011 : Impossible board_b110110111011 :=
-  kernelLeaf board_b110110111011 #[0x66185765475a4d5d532b36106e536d5a2541362b533b6270255a472b3b301c64, 0x1b1d531b275a243113652f3b70182e36122d251a26746d56233b29743d615756, 0x4f3d4d4f3d535c24565a0d5e53202f3453245e3d57273d1b1d3d41575e296353, 0x344156762c56533f4f51223d535e3a5c2d1a633f6327293b292947702329232d, 0x613d5370182e223d1272786d565f635f744d2e7818535e5b4d6d611b623d5370, 0x1551413d24534d5e4157415e313d534f517d6c616151564f72515e5e41576731, 0x535e22625b666d625e47345341552f2e62701862703a53786257745e20516930, 0x57532e3d31361c5541] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b110110111010 : Impossible board_b110110111010 :=
-  kernelLeaf board_b110110111010 #[0x6539552924234f3d53643d235e393d572f5e4f3d696f5e5d705a473d3d3f563a, 0xa177022072447134f1d245322313d3f4f1d1d2431790f3f3127632f182e221c, 0xc1862412d5a2d3d573d2d1847292422231c3b1a5524313d66761f2f1c5e271d, 0xc36153156204b41363b26577025650241512f470b3131476608245e3d652615, 0x3d33251a303b65292347313157633d2418700f2d255a5f410a47742b1d253d26] (by decide +kernel)
-
 private theorem ok_b11011011101 : Impossible board_b11011011101 :=
-  fork 104 ok_b110110111010 ok_b110110111011
+  kernelLeaf board_b11011011101 0x1404551af88ad3d762c2b3dd8e02db39a2a888b5783b0832d3ef68bc5aa8aac220adbf37b74019c5ded50146048fab4e50401429e82c1eaebf5de2f866315401b17c3545d68834d3d41f1c8008e2ebebd3bda0c45468e4a4e9c954658657a3c1c5a9ef0aa4e9ea8b372014524bdb07afaad2a2307406f6c77bd3d6111527e48051dfbbb3210570e200ae1e8e10a4d6e7fcb61268e5ed50454511bdb07afaa39f545455598f877bd3f86635d830a2808b5ee244be5a8578d0441276f5b65bf8800e3d5bff4d52904426ebbf198d5511a7cded152de29371151adb802e1d44df8b7bd3f86d3860ea2a0d6fb6b34512b682214f7fcfe5050a3820c8b7bd3ef6ebb9a32b0aaa080adcd78f6564949407fe3d3e80829d941deca9d4153c7f86a828f1453a0282a8f5bcfdeec8833764009f8b4f7a7dcd49a82a2104d6d5b58de9af74f41afda703284b4fa0849ded7baa0aa015f4faa3dcde52049ddeeb220507afded4ec82e3d0aa9e2c6f3b80953c4937a7d044b5c9363c8913d86572ebf77f0cc6bb504506d92e4596e29735b0126d7a60316deada8228088f77aca80a9fa700a893dd4230ed7eb79b31a8257c1405cbc7d412d73744024051bbd3e82015eb6c87bb8544569fb7511b582229783b6d05098555f4f77e2f8682971004b5c7d40455eef619cf2688bdc4059e41489735a130e801605dea0065c21538948f8fca488ac71863d255f31ef74998f86a28223f96e22a5e41044ad62dfe0e8228ae3fd34141157a77614b890013dd36336db415d8f5b41a82812fa0e02804db8045de9ba406914aff0c50054be5c17074410168ebf8f8be01063cc031e6a1463f9b11a4ef6a0a2c82f7cbb08c9089b2b8cd931e2e0e9122ddb5c422dd9ef5f527b90b2de31c7e5114f2935160808f39aa0cef35d3502d5d45502049b1def9bed801209fc14005f9cef6a002029f3b8088080acbfc345a812001f4993211f27b252a084fe40010ee9340aa9e8b63bde1147fc2a2acfc10ee00a7749b1fce0aa3f51fe0a0c74fe3d7e635dca232a00cc8b39e5c44073aa8ad5d4eccaa0893451f3f7bd3d00872682b0b3dd1f7b1415ceb2bdebea2a322fef720830804fdefa755456b7f7bbbf0ed71f41117ba802082f77fd6dd7a3 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b11011011100 : Impossible board_b11011011100 :=
-  kernelLeaf board_b11011011100 #[0x646b727c6c63106372634f1b3b1c66263b660a1c0a720a764f240a1c1e183456, 0x663d314d5c1a786e61786e5d636172104b2c2d2c2529142c1f1a271a1f1a2c18, 0x241c6e3b616e5d1c7a653b2d2d3b1c68475d5b3b4d6e6e65575d7368475d5b4d, 0x6e7036292f65415c5d726f725b3b4d2c3b2d2f3d1c23683b5d234f6e4724250d, 0x4f6625474b30254f3d7a783d314d3b5c36515f293a515f31275d] (by decide +kernel)
+  kernelLeaf board_b11011011100 0x41419fc0b9b4148112f1f54597c0ca0082b0d4bcfdefeb416f1aaa8f7638cdd577dce4411b74711bf892a79575a92d1c6fe82c0c75490053e4040977ddf0db6522a757f9783cadcd404104bbf2d11b7ecabcbb7bbe6e82a0aace15dea2280add155fa80a84af739a3f468a80bbc2bbaa48f9feee3e9305024b8dd40949d1cd1dd80b3bd5070fbb105456ee80a73f5e5e545dea4a2b7400516eef39e8e3ea84ddd41b7bbe6f4a28eec2551150777971221afb775139fa38f822b77456decdf36aaaaa282f7638a2cdee66b001007c7bb40104070fe3b7680a377c7ab87e590e845465e2cc9565b8a2a2cd2e20220829ca6b33f9ad541113e1ac23f881ad6663400c9aa803af05e5c21f3d9e3c8602058f501414e5e3e7ea2009bdde73cd820009b1151df9b159ce041915f2c10115f6c495104527e93159cd253d98da75b (by decide +kernel)
 
 private theorem ok_b1101101110 : Impossible board_b1101101110 :=
   fork 88 ok_b11011011100 ok_b11011011101
@@ -2344,45 +1748,21 @@ private theorem ok_b110110111 : Impossible board_b110110111 :=
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b11011011011 : Impossible board_b11011011011 :=
-  kernelLeaf board_b11011011011 #[0x73202d6b5b12195d4f23167c58683b3961232d5957291e3b311f6423516e535e, 0x1664576b174f772371655d726b607e646b7731816b77311c2434086f5f6c313d, 0x34315859412b594f5d59496e68572b27572358475764276b60516b6b64607760, 0x5b594e694b6b5b514b27273d315b74114f4f586b652b5b222b1d512526251c6e, 0x4f47595b65616a655b657b0d58271c3625633359494d6e5a4945582b30515869, 0x3d722f020c225930744f514f59584f5851655159413b3059335749584e695923, 0x3658585f64266d4f2f5d594f587f221626594f58474d2b224d5d171c4e59205f, 0x68644f16594f516567304f59413b49595758705d706970266759696b4f471f0e, 0x7065415d234f493b4757205f365753315b6e4757122b2d23532d57253d310a20, 0x4f] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b11011011010 : Impossible board_b11011011010 :=
-  kernelLeaf board_b11011011010 #[0x2779595134602d315d5375591e6004103b5a271e175a2b141e513431535e2a58, 0x3059222b343b4151395f646f305e5b5b5960682d263b672f5e644175607f5951, 0x5d5f3b495d395b3b475d3033252230264d263b1f22304d264b5d] (by decide +kernel)
-
-private theorem ok_b1101101101 : Impossible board_b1101101101 :=
-  fork 98 ok_b11011011010 ok_b11011011011
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b1101101100 : Impossible board_b1101101100 :=
-  kernelLeaf board_b1101101100 #[0x14311c2b27173d2d311c4e206831345e756c594b3627682d676c4d2b34315d58, 0x272b2b7c5b53672b6c7257612d535b163d4b624b5d75615d53161f2a1d] (by decide +kernel)
-
 private theorem ok_b110110110 : Impossible board_b110110110 :=
-  fork 86 ok_b1101101100 ok_b1101101101
+  kernelLeaf board_b110110110 0x813400b4a9284ff879783aaa0237754147cfd010164eef8f8108057e05241aa0117fa815b75f400a78a31eb7eee500163f5f2110496af09115ba3e9ec80000adebe976151eec715a0f47930589f8d0296ece2084ccfc05115a3e5d5205cf8aaab0d9fd9e0e02aa3bc9051540a4f67afa0ad8c138640020a35df87a7116502e1a6f3f67441d3ebe7f1f64000fe3b556dca02858c01b1dfc427269b580176e22033f112017f77b3ca284fec63ff02008c82022cb6a6ece8a2a84fec71f9ba802af20545803379901bbd17c04e613b5566456ce8340046fea003de45e5afc02454012005a3345b6761f4c05a7e2034799fd9c450456c74fc441b18ad1f2e8a03347b3c1d014054177b0c995046cecfafa222c9db184c2a2cef4ec259d1f3f8fa0a259d5042de397a5030e06adcbc0dbc72fef1bd8c5540804fa22736d82aa00030497c7b3ecf279beeed6a0c9d22e08036341698415ec3005128f63d3a25bece20213b818446b4e4bf5e096fa504a3cbd053e9027d01eec7912dfd323804fd1159fd8f5f97651105026557b2dbd16882abd3bd1c150012f2826d800052f1cf76854d363d8ecf07414445515f679fa8aaaddeceaab2795777a3afaa08af4fa80b5f47b638f820b5fc9a82a49f75f83421128e8c29af804d7e4f07df4106c184216f26a8215f55981d797c19ff7d1e8022f1f2e80a32377e5ebd594c1fec08c9ca6bfbec75057fd652d7f7d8ea800273a104126d311a8026fd1afe892a09b35263bdf9e83915150456e8ebede00892ccea8dde7e8f2d8087cd6c7a305650677b9d064545c3a3d6e2a802859d6be129d5051558f6ef63ca27f557268fa3eee9f7b0046ee4a017f77c9d06eeaa080082ab9edeef8f84040ddd6161880b33e5414bc8b61a6c9ba0089b4255441de8a27f45b0e6eaaa6d651665f7756587674580d20202bda6ef83d1d04145ce4137f842609c9921bf61dec4548152df2a816fb3e0d55746812dc0536ef154973e82cbfbdc0c364d05420fd70103063ff67a3cab29f416a4f3d9c556668ed3551c1add8f77a7a2a02ac2f5d411416ce7bc1a208802131521bbed74aa2429f3d97c0026d6ca10af484a67ba3b4c105158e8253ef6abb1e2c1013eacabc8051595ff380040b7b2b4f0451173eafd9ca8208f2e40af8898754156ea94fb796d4085ef2f55846c5cbdbbb00a275dc38dde9f2a5b15651843faacee00214d639cd5f028229f2fa8280088084f75bb1ce73b41e8c2854563848ab4c0954025bdf5f67679782c236c4414fe8d0511045be7f67374498555ed363ddec75b (by decide +kernel)
 
 private theorem ok_b11011011 : Impossible board_b11011011 :=
   fork 76 ok_b110110110 ok_b110110111
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b1101101011 : Impossible board_b1101101011 :=
-  kernelLeaf board_b1101101011 #[0x79704d2e3d2a3f45673a293f2233331a2e496a6565276c30271c6333494c595a, 0x673f5753453f2e2e1c2425096969585f531f4f3d3d3f4f563349613d604f3a61, 0x15514f534e455168512d3a4d4f31583a1c315b31474567314f2e182f2b23566d, 0x3f4527491717661c311a313b494969534513676331330d3f4f4c455b6531676f, 0x5b2e454f531a1f1c225c4f273a256156532e1325451522563b51251c2d3f451b, 0x6825595131672b4f582c596c3a29164d5f29783a31343f6a56255b1522615663, 0x554f4b51676051586777583158293f635758517e2a574e151c2b316147574b5b, 0x61651b763a2c4c51582a7e3b45672b4c166c3f7d296361664c314b723f3a6d3a, 0x682f2c77222c6168333110796f31826c5533705547517a55272b7263584e3f61, 0x4f600a763449673b7e6170630a5c3b6357703b7034662c61577047396157273a, 0x515c49634b3d29472c3d78576861591b2747593d3f] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b1101101010 : Impossible board_b1101101010 :=
-  kernelLeaf board_b1101101010 #[0x607826603d261a3d1e34182c27345765572c6757553d702e26256d634b564c45, 0x674d4d71294b496331495a574e57132b4d531e4c602555514c271c254d2f3b0c, 0x2e292f4d632751564b4e1a5b4b49674c51494e172e2c4b491c4d6d2b4e584c51, 0x53493a4b5c49563f294d601d2b5b3f1058294b63492e2b4b4949552633563f55] (by decide +kernel)
-
 private theorem ok_b110110101 : Impossible board_b110110101 :=
-  fork 98 ok_b1101101010 ok_b1101101011
+  kernelLeaf board_b110110101 0xa880347b980949d011571f2f417bb0a745410863eb37bf8ebfa3154030f67110df4aa927e3e10d9deec8aff9fe0c15051115f6d054569aa223271cfbbd15551917f787e1e3c414445773505dea828b8faff0d154177a2f0da79b41559e1e5415aff0d65058faa088b9f0f5f4fbaf47020afd454159f7d56a1654916b3c3e8c15567a02aa2c72188179f7ea8b1dfff6682d5d559fc3115abaa47d09a3fac5446ae9f9657f2f1f639da228aff641551070e0a84e1c432e6f7b6eb5982aaa8cce414050a396355a288bfb5177aa91700100473eaf9996f66002a2a0280fffba9f1e8187736a8093363812f1e5cff00504758aaedc45445d75740267e28a2cbe8f9fc1aa0251db1a80ae7c98efd8d8ea020858e53bff1e822d7d50b1d1d447f6ab048896bf3b518442bc7357b1f0e84291f5040656bf2fb7e8d00412f670968eb00a8a331f3eaf8119fa2ad63414159b367d9bac0540253a0296d4129ba85fd94fe375822c7169bff575b0454b8ab036f2ba2d412c3d6d411c785bd410415dc5c9fd3cd6020c9fce6222c586e73f4fa02bad2ea20e1eb68214f5d93d04192e22a08c5cae8b54adaab0aef1a3a08800a5c4439add5ff178155501037bfd828258ba29f64e5f440bf439b39b1cd6802aab1d77c9d5193a20e9da7c5c9f9f401c7c88b1d10678de47f80b3f4199c5c6016de265d55058f9f877e57a3c88aa2ab3fa7892213b4a88bd1f468048d1d6e8242bae6e8b3f63d8e14075808807363dbd09638c7d8be7c5263cfd76635fa828b2a12aaf47d6f6ea4e7e91551ff5f854a7c5c507fc20aec5415d9cd26ac9713a408569d525b4f63bfa53cff3f7b82b00f750507fcfeb6a04a22cf64ea187401ef839fbad81508870fe7786884dc61605dbdc1551556aff8be7d6075aaa020a10a77fa2d9e90cf90a35aee4fab4472ed24e5c4fa82022ecd61a4aa7d4048e78f99f2799d9ed6888253d938a82eb97a90dce4eb295b44107fa9e6eaa60d41113babc00b7ab0a88ff21d8d4f2fc7a0a89275da80a2caa2a02abe5f2705464f57554d8ab3d1516b6ff84aba00aed4ebf9be3d3e04d1c15402b72f459dab46b446df2f93a812e7c106668a51d93c8a8a80cecbebb59aa02a32f5939ce6fb7549555e4b3b46c733a38280b9f59bc2b376585e3a9e5f27c7b1c45009593dac2be8093b42be4f51415f42cdc910069e7b99e0c0052f571000a3ccd01053e2a8a734bcdd7eef981119e0d50544f1a6d4050306803dd414daa01ad1007b9eda68a2298d1959b049f569a0b5f54cb84a35f1141679f44116bf577bf0d768a326d2e204a212288edf1f2fadcce2f8b (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b110110100 : Impossible board_b110110100 :=
-  kernelLeaf board_b110110100 #[0x653d4560456b1e454f5316274e5178561c623f454f610f2b101e45565131632f, 0x1d6772315158233d45594551273f25725945201e183d30674c514c4f5a58454c, 0x3d2d3b23183f1c512431514f5c6751555156624527554f3d5a696961314b4c59, 0x232e09590a69224f581e4b5f51264c455923255a77314e693f2967695f4b5b3d, 0x292c221b2b310a45293a2d164b2c136d5c22512269152231162c312c1e29162d, 0x29221b2b3155616653555a616b2d4c2669132c102623311615221d183a1b453f, 0x393f755633395b2277337b4959654b222c1d2020455360222b45533f294b1b53, 0x5b6a39456f615c5f692949754c693f5158592c63514f2b491d2e33293f776363, 0x685a494f5c5345673f6972744c5a4f2e2c536059135c61565c696129494c5649, 0x5a7245512a2b722223254c1516492c590c473f6f68616b53635c225b4e725f7a, 0x1e5333535a3b2a61515b5339475369392d3f33554f2551151e5366294569494c, 0x33605a251733514c726749722b16455b397229] (by decide +kernel)
+  kernelLeaf board_b110110100 0x429228b3f0641292036b14410452e5f559f4799a00a9cbcf92796a1225796af2dc5d5016de8c00a910e7e5b129cf74f24967a8d3c90ad682bbd56b187a3a45bd06a7b9e3eaa0a053c934ee74556ec02b03fd9f579fca8a208a5e8e57419014f753ecda9e2ec2a4da720593a828533b58880bcb114a2f47a4054155abe55057962280a22d1e979995cb72049d676719a8147d5fe800201bfd1c242987d7d3d404129281c7dcd176f9d80021cbbf8803ebd1dae4e88b3f1b9c2d3e2f9f54955ffa716504b9623d399dac419fc0a92ee859d3f076727808b73c3aa08256c506e7a70170ea7651404193ccc944adc24927b7a228bab5ceb17104177f87b9dfd094474ea9d669493aa2a91d7299e9c157f947b1d9d0415662042b8f6168ea4fd5f2802c9d44004eebb67a0a9dfe220277c71ea8022ae3e73a80ffebd6e50a059e32ae7b7c8a8b451efa0acff7927b3e5e5f02a2008b105667702141aa028362ec88d3f068b57a0288408c5e9eff53800804bc0204df4f53c32a2c44deaf63ca04402157170f9b04469e0d5d22b5e1f5e108b7a464499a6f4e4f90504240015990d041360088f98e5b91250ae2222c53b98d15759bc00058208bbfd4e8d002cd11516226f57b1c5608a45d4ea0bae8116e5b0125eb327edc00852e6a2d4011a3a2d065d395d1516b1d1452d80acc1158e030accf6a74040b6b747aed444ea300292d9c56e9d16a220233f40042c67ba5f7f68e8a2889b99b17b3a3d2f2495ac464efcac7a77285a7642581fea2a74cfe9eff2fb7bdd057ba882dddf2a08a3cc6a88c0a83fe39d1d26c744544a3aa8acfc02e79f8450a3d5780206528f5bc5c5e0553f57801189fbded7093a70474e0e1d8f2f06109667673b828019fe5b1e8f6342914211ef78ba20caa1036762f47514fa3fc0052e040f2ecf17402141aa801ecc6f761e7d055506674741066704fed7634062ea80933872eb04f78bb2213838bebcf682b0c5e7f4f2da00b4a7e76034715061090244f1d6ce78b51ff1712119f92587865047f34af219ed49122f5ba3b1f1ebf (by decide +kernel)
 
 private theorem ok_b11011010 : Impossible board_b11011010 :=
   fork 94 ok_b110110100 ok_b110110101
@@ -2392,21 +1772,13 @@ private theorem ok_b1101101 : Impossible board_b1101101 :=
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b110110011 : Impossible board_b110110011 :=
-  kernelLeaf board_b110110011 #[0x6e5d5b70363d642c555b5b6d5e3d6c5b3f5b456d4d5e495f5e595e5d604c6253, 0x306b4f605c4e5d644f4e6479573d5d4d596c5a58656c5845306c4d5b5e57644c, 0x5f595d6d5d645e4c5d235e5d454d235e6b2e4f604f1f6b4e786f646c5f5e4e5b, 0x63644e621f1c196c2d23103d163325226e304d645d5a6c5d4f2e4d6465301059, 0x161f252222062c16761e3b1f78644e5c1f186c6045653b2c3b633b591e2c1070, 0x5a072d232c204e5c2d632c29456c2d244f583a5d2c60232558761e4e63116029, 0x3b642d33635d33705a495d5a4f2e4f3d646b4f2d7a603f60655d5a6e4f59581c, 0x605d4f1f3327202951582e7a2d60222e4f1f0829222e494f1f0d3f3163625a5a, 0x655e29495e515925702049605e5d20592b4c415858333127335a3b33635d2d2e, 0x5f515e29716c512b6f62225e296c4f5c704f58654e656c275c5d576f0c622233, 0x6b2b1545512745671e20642b2722304c595d225d5f2b5e6525516e2e2b3a4f31, 0x232b222b49395b1f234f6f2e49605a2e4c5f656c4931] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b110110010 : Impossible board_b110110010 :=
-  kernelLeaf board_b110110010 #[0x294b53513f455e394f3a161e312b2c601c2951594d6e6351656b6f7665534f58, 0x6f6b51456463534d626e634d251551456c7820533d531c4d4d3f51457665313f, 0x15513163311c4d456c272b5145183f4d2d4d27452b186c5e6353633f4d634d57, 0x53594d57594d1c2b2329592f51455c51291f3a242f2331291c4d232e2b59] (by decide +kernel)
-
 private theorem ok_b11011001 : Impossible board_b11011001 :=
-  fork 86 ok_b110110010 ok_b110110011
+  kernelLeaf board_b11011001 0x8aa23d00955e8b504000155f27405ce5bcfe22c94a3d0059fbbf5d808a8a127640c1dad76933bf8924c8b97d9c9d0563808084a43af5795e2f47544444fc5d450cfa00211ed6541e4d5e0c00009f945b0e67671441bbb0aaa802a2c41bbc97f57dec410072e975951a3eed51541576af805d73f814058e2dfc4160a3ded448153908229c7366812ad1d5fbfc580022d5695142f6a71143668493fb9f0d5059fd8f2f3b9511555cbecd04154fa020dceee8257d8437ea0cf168b67a2a002ce5ef6a793a82dec51a3a088367a4bac2cdc341c9c045493077b951bbaca83b3abe67075102c6aa28d8d9e288b1d45124fb3ed7084c92ef51467e3eeea802020b75dcab83515229bbcfcfe822cf5453e83110054ea147b1caaaa2c52efd6b7c1a2d15015da04a04fcfe235041154e8b54445dc9c59419f9fc6eff5558e498f71625ac44b5a8efc9a809282a82b767e3eef2a120b3f876b93aa00a2377b58828aa93f5daaa4fdef930435eaaac04fd6febc1bfd158101c1e5d55215bbdaf773f51b3d8ce6284a8b6b0fadc5451ec220b3418a8ceeb9a2aa8888adf1eb3505554f17d9aa8810add273fb1bae20a9041bbacf06a008fa05252e0ab63ed9ed4276a9508aab8f23d8358054f285b3f80025d16a9208b0da402ccb7db3dca8bbc4123fc00f8f273bb9c00881fcc7b3905c1cc5f2ea0a003bd0515980efc78280efb39ed19548816643145e1e3c07273bc5809007f239d282267248766ab7590051e4301ee2245b467a5d17bb61cdc1501c9a8222a5ded7b3544025bbcfc14157737c9e5d05586a90ece4a237f559b3ddc4446db8ddf277b99a0b4c937747dec4545bbc5e6e8323d6210bdebc5dcff0680a8102013f3f800ebe77e3dfe4d01076705fc2f73bb78b2ac31400d7cff0773467600028ddf273f400167793f3a80015f155017bddc4119ba967d9836bb1e5c44766200a96396522ec3d9cdede82042c8adeebf9399eec091bba85bc4480e1b4b2db7be4d1411556757b7836f5044dbdedefb325445b7a82abfc442df17dbcdc02f6327412fe037b255b3d337bbb8b8399e2e9eaa53c45b3cdd01af80a59e6e005027357a3d25253c89675fd1e2e48573055054a3a9c000113fa2a0aeb49a2088afd1eaa2c7539ce6e0b20c8f2055dabc020812000b395e8e0002c7c78212b1ce7378becd5052424f88220abe8f1731aa820aff9bca2b714466e9f15218babcc7b35089bde3c5529e28838f7fd3745c788a4dd1111afefd1d7d1e2f9305101c7aa53e6ea882e2c062dde3d9bb000425caf478becfc6834580a78aa82f7a79ce6f289370141ff478bc8880cf6f2e40a31d451fea797cb53d5028eff8bdec085041ce0cfd75ca096c4053db1d5eb3c1a2aa0a7353d1d2154111b3cdc00077638f411a3e5d40475e2a21bf10ede5ca7cfec75b (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b11011000 : Impossible board_b11011000 :=
-  kernelLeaf board_b11011000 #[0x1e2966596b3d57295731230b63292b563f151e1e252925621c29594f3f3d3045, 0x5731623d675a4918231c6b592e0c19106b0e631e56571b101e2f18292b292d24, 0x3d31312729226024242f672917602e5e4f1c59651c594c1749565e59151e176b, 0x392e602d271d3f4d58695f57233f53602d2e1c2425692d22301f5a3d4f292316, 0x604d4c2c29655c49315c3f564d633d2b654963693f69623d65495f5e4b5a5369, 0x305953602257336a3365591c313a5f5a4922276b3a656a6659335a633f] (by decide +kernel)
+  kernelLeaf board_b11011000 0x221428b0ece40234fc1a0ad020a2ebe24a0828b2aab3f568ab3f2f67145539b1d5575dfed727505516a0200a7c15b5ea0aeb4832eaa0aa200eaf376767dad14571ecabff0737425199aaaaacc41254ee5c456e727516388dcd55ff5b9be3d1117b88280c82afcbc9f1ec22815a77faa02da7c5bdc11511cbc9eff7b97a2b6b088995a7e9dce2aaec5706c0002ade04f9ddff3701125106c7a7bf8857c0451ea8ff54a7e0d116e2a0aece69392f4229169d6e8222d867fb5bde7e00422a70054140111e5b7bb1c1163829f8153a2d4600c1a4d440449afc6450b3ea72fa8060c959777b9f9cd454008b3a99739b20a0459e665f93a30a35b541440bdd9caec4acaaa47b2febd450852bec7c5bdd1501cfa80a36b93aa88a98e140479cf5f675dc00d204c8cc954133a438455d78ef1e7b1515856b75f5437c0090008438f6bf31a9d5e84b02a9d1104015b8493403da9c8033767d7bdc0000afa9c4abec720047a000002f71f529d5f5b7fa202c57410f62929ed2ea74024bca0b038b39808029c0acea13f7fbdd8717 (by decide +kernel)
 
 private theorem ok_b1101100 : Impossible board_b1101100 :=
   fork 80 ok_b11011000 ok_b11011001
@@ -2419,21 +1791,13 @@ private theorem ok_b11011 : Impossible board_b11011 :=
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b110101111 : Impossible board_b110101111 :=
-  kernelLeaf board_b110101111 #[0x4b35533f4a3f3555411e3c4d29237c6c336c1c68415736376c30303a51476052, 0x106c414b413c4d3a5c4f4130373b5d374b5c155d3c41371f4d51354b41335e14, 0x3c4b3c455b65635c373c1f30653a51294d35412b261c415736655a37303a5147, 0x3f33453a5d365b1f3a414b30263a2d3c5c37414b3c661b3f373c372530511f35, 0x354b353f47331c4d4b4d41471c36473f333b1c2a5d2b293f4d3f29453c742a59, 0x4d181e304d365c45593c4d47330c3662364d2926455c2c291859065c1e304a6a, 0x5a5c1822300c6e414b203647785b4d3c62453f2b1e20172d5b0d2265294d7611, 0x1c36685d414b1f35334b333b2d364d5141514d4b4d30694f304d637e3c514f4b, 0x6529654b4a333541355736473b3f5a472c3047414741784b5a4751474b477874, 0x5b5a2e181f306053355a222959333f414b202d5d4d6e664d3c4b1e3c4d413c4b, 0x6c3330412d57603a4b4f4b29305e4f651c53296060594d293760295a1e2e4f1e, 0x55292b34] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b110101110 : Impossible board_b110101110 :=
-  kernelLeaf board_b110101110 #[0x5d514d5d27097371572b5b3151535e301f1c2b4f5728351c3549574f6e475a36, 0x5914452b104d5d744d5757536057593553682d514d605c5d5759235747155d59, 0x4957473b59654151704f6e5a2f2f5d4b412b52262a09275d53623c15575f3565, 0x575d2b675941516d57510c2a2f16683b0c516e535e493059594f306c5951412d, 0x5a2741412d303b5d521c2359300e285e3057333551593b2b53605f5941334947, 0x53605e535127256a5e412319230952605e5145305c] (by decide +kernel)
-
 private theorem ok_b11010111 : Impossible board_b11010111 :=
-  fork 76 ok_b110101110 ok_b110101111
+  kernelLeaf board_b11010111 0x1116ae08888aaa8a757b4d1766a8a8cf6188008b41d6f5fc1bae5ea0cfc4125ea02829d877b049f820088e5ce74f053e0c4016504b063043679ba9dbf2a0860d4e080adad948f6bb9f8aa4127b56df6b05005766315413fb0f074f6b88aa96b41500091622a7b38cf7f88021307978040a835bdde9baa02822abbbcd937125e72f405110f68f39b88a0830779cbf2ea79532e008424bc05595b3c156b82880b0754255aed7db71f141de83fd01b5a84ac0231f959b0d05948123f075059448fc1fc6a040892f05b5c7e42011a3c7d02525e811ff1f4ce6dbd1a8d77183aa224bcfe88d767aa84cbd5419e88883bc0116ea8db9bd1d5118380d1c10066f2f8266ec3d382b2b3f61cdf1ffb7980820881479fa12fb5dcd00431aa10280000822d8633dd8808841e5e2212836d91f404413c75be6ef3c5a8a45c1507fa822bcf683501010bf0882b7b78dd1680c965c514f37eda0411c4099b98cf6c3419bb6ee75002a8082117b3bcd5019ba28a111f678cdb78b401156dcdc145453a6e2f7351166aa200029cc6820841670db733db0e57ab04106ba88892f0816bbfc18fb3ce6a88cde5ea2833700283a47ce6db541523e0200ff67ca0ef39aad1046eeaf0440053a02ff9b8b0082ff5391779f4d005545580082d9dfecf022ea03ac011bba20adb4141ade7f75c1e5f29230c054dbac00456ef344541b9b7d4151160e0052f405e682066cde800ff6f8108f31001bf25d87473fb40ad721179cbd44798a48c45edf97101231f7315bea03cc4043fb0e4cbbae8ea79b82335c010460e20caf50414d9ce0f5f6d8a12597056d62df9041186eba3c7c87b35404260f2f40554520ef39baa008a3ac41b9cfe0e80200c36f82aef5110bb888237e5f732b8021775e601076f9fe6f478550405ae22092f83b3e5400112f653925e02435ca7803fe56a228aaff6baa4ad5d54560e7b79cdd4e020a8a828ff9ecd55595067ecce7a3144a0f5f6da22a22088dfd9b0e0861aeba3c7f074b0925054a782460caf622c53e8e2280520029f4952fabbd90741100824799c28211f227a5a0383096f74722ec310146e7002308dad3f07044060eadd863bd0040bbd2c040e622a3ecec31010004696476a3525600bdb0ebecf6b82802220d1eceef57a0253d5c180402dfc84b3b071048041167b278fd7d0151bb80a0aafcfd9e0f4705009dbb5f0968ea42223355c80bf2de8c144655401de33a3eee9f7b424e200c3b3921236767ea82c3141d9d9e8f074116e81327afc7d12445df671094572f07a3a13c359feeed602afe4955fddc00502040a5f0757d2d0401242536ab52a44e9fbbd3f16f354012b80257efea028088d7cbd9d200024a6828c5d5e439bddfa60337102be8257e9ee0d0810abf676ba53f460aa22dd00541a3b37c1dcc850968aef5f004a21b3ca3ebf1f5544ae04cb77b388a000b77a3cdd1092ee4c2800827c4fcfa878f5f52055657a8d56f63d1e9f7b8216188442d1fce6af2459f8d5f51820a35c04004e6d75293d7c59fa29bb8fdadb733 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b11010110 : Impossible board_b11010110 :=
-  kernelLeaf board_b11010110 #[0x2d341c3a4b1e4c2953452d2d253349132733492e1a6753452f3a496566593c5a, 0x3345332a341a2a3f332e3545136749200e57353333512b3a761c33293f593157, 0x2d28353f352e5c2b5e1c333a5e1c4f1f28352e335c187034371c5134662a3345, 0x66454557266118635c4557334d315b4b623c2b253f203745271d10342f20101c, 0x6949636b4545513f615129333f65495c49315b7b6549594b5e4d55255c250c63, 0x55515e59341e1e2c455e1c3f33662a20515c4b6c761e333f6a3f665265292e49, 0x595e3f354f451c3f33526434623f51344b3f55535e4a333f266c6559293f3762, 0x3559573f334d334b55352933] (by decide +kernel)
+  kernelLeaf board_b11010110 0x1111aea020a02ad9c6beff67880cdd516067cbc6ae8a2235c4a53ccfb3dec1105fed74427ea20b17201494e6ff67d2d5010c9888a34ab4dc5a0800003fd68ec8b4e5e200ff6ae0a53ef6a004ac67a8a802ff137b3404551480532f6753bfdbe80e2c6ae82d0347bdd9da680007b4103dacc04410062f7b39bfd9f9b55822220c401a3dcc1550525f2a806cced9ec4150419eff75602a02ffcdd2d40115cba9d1914576428b27d3a327c7ebe2f0a31768ea00a8a88ff804c3cb475454e8acf0257fe5e4f73402a4e4cb1edf0ab20a8befcb927b3cbef62228cdc2506ae970044b9d0a0a5d19e3c07371745158bd7d400414536b87140031b8fb9a82c5ebe8a4b3c49b882b1edf2fc5bcd00405782800a9710147fa002a0c56fc5d3ea000877486088234d7e834242486735ba092a36ba02423fc6000406baeee72808af6f67367b0a802eb5456f71cc05067e808807f51ab5d0105db3ee6634441e1ab4d8445bec9cd55a3b4f36ab4100210019f1740210067c5d001067a084ab699ac050055aff514678a22ec6bc5c9f9f0100009388a20c4241dd7daecf40859e422a0414757a813ac0003b6a9cd9ea77fd9c1004563d257d5bb4d610e6eb979ec1545998a2a29c415a7c5d255ba08800b712f0b3e4e4f8104f8a0882833e4ebb35e7d01549569f175fa0a80eba50904024f97cdd9de76b (by decide +kernel)
 
 private theorem ok_b1101011 : Impossible board_b1101011 :=
   fork 80 ok_b11010110 ok_b11010111
@@ -2441,23 +1805,15 @@ private theorem ok_b1101011 : Impossible board_b1101011 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b1101010 : Impossible board_b1101010 :=
-  kernelLeaf board_b1101010 #[0x69725c15365e6715675d5c6e5c65767a6037667c31665b735c65746077524d51, 0x363060302d3a2a15255c1e112c29374b342a3a293f2741301a0f6727695c2567, 0x5e313665414f372d1a3c5a37522a31472b5b5c765e665a504b29292d30662d5c, 0x574a36692a2929502c221e29353f4f3a3c295950275d52572d2236414b333c53, 0x374d34604b29534d53492d555a574d6e5d47573552413c475a3f50495a525552, 0x49655950656318354f5e4a1f18102a37623c4d603f4d1e4d41623c4d344d3f4d, 0x522d57414b53364b492d525d372d4b4d1a1c624d49] (by decide +kernel)
+  kernelLeaf board_b1101010 0x200252d048916e22857e0f2f1104a7808036e5f270956e222cd2dbb8a2837d56f2f9baaa0aa8a086b6054e78b26e00849d4424f97015046cf43cbe3c000931b5c15419fa25ee56a1087f64c62a82090d56df45716f39be0dfeaa094dcf622953711460f8b79a9084dda6a800b37008457fcddbe000144dda78397a9d0005a7aa93700a7882b2701656f57b580d7c54809beeeee47c06be022d70a58000c1c0179b1f10112d6ffa1c9c546d6022b4b01aba0ab4bafcad0006da0869d055aa10829c4014f43405141668b4040f6a76bbfe7e8222bac99040444479a9ecf4300454f88288ddda58a0800800d7d6e8b6dc1e5ecf05011e74f5904449bdb1c6d8800883197583cfd0011beadd5580358a20f36d608adfa5aad41118f1f404415790aa2dbee6220824bdb1bda0a66db5d0e5e92aa9d1054e2ab760561e6ca95455b95cd1b604830d50150c1884c3125bbad22850156574ba0034110dccf6810124759a9dbf2f4156400269aac0419175a9dff2081027e0ec335800820ff3ea1089fd3b73500064bd9f59412d3f2ee6576dded0073e0a0aa15f3f770b9a0913bb1b9e5c110eda8faf060adf9cdfcc05118e88ce6ede221cf2e68a8265fa783efd2e6f47 (by decide +kernel)
 
 private theorem ok_b110101 : Impossible board_b110101 :=
   fork 88 ok_b1101010 ok_b1101011
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b1101001 : Impossible board_b1101001 :=
-  kernelLeaf board_b1101001 #[0xf6851674f1c414f5c471a263f512b3f4f64671e26647235251c70495a4c5736, 0x1c2349272b4515263f74156e6037736a6e61232765635e1a5c4d5160514f4145, 0x4f5a55493360491249312525495a185c2b1a45452d271a491e14642047311d1f, 0x4c492d1e4925151a1c276e275d1d4d2755493f525f372826785f5d1528351935, 0x2b67704f64293f595a34512d33601e1720331a62492b5d4c4c492d4f494c2b41, 0x29372c1c22110c1c29333f594f2e3f33614f495c3f7634354f3f671a4a234934, 0x51455f574f354f1c1f4a4f1c223f336018333f5f574d5f5d703f585245354534, 0x35221c22293f334d5d674d3445271f133a3a514f343f2229453a3a0c511c2d22, 0x4f5b3a1c2509453528334f29345955495149343f273f2f2d45282049644f5c57, 0x2b373f3f374527231c3b4523352d1d203a272f1c25] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b1101000 : Impossible board_b1101000 :=
-  kernelLeaf board_b1101000 #[0x5c624c2f5d2618231f1d271f2d1b0d232d1026196366601c5c7d63521f293f4d, 0x3f4f291f29162c2d121f2d315825721d53456e536051291c632f3651252e132d, 0x5d5a20265d595d572b315d534c2d514c2953625d50535b472b45512d1927552d, 0x57311c293f175e315323152b6559293f51155b2d] (by decide +kernel)
-
 private theorem ok_b110100 : Impossible board_b110100 :=
-  fork 60 ok_b1101000 ok_b1101001
+  kernelLeaf board_b110100 0x4105784080df1005fe2282ff6fc5d3e2028028f39880ef405418ba3daeb7090513ba0c451d69f4540417e734ba424fd50b7bad5514e60829713929176ba8d9eb00cfd40014e034ece088088d5c93a008d1e4ed37fa7c045017fafd6e02245d46a882020e4f93104567e220dcebed70540951700273201516a77fb3d080066f0177cf80004dda6008a45d3e8830087f2788a2eb14575d471929fb4dfe8b50453924317541d68aaeb19d1ce6b741116223478b88a0dfc9afb3f6ba4020b3f398201fc06572a20813f39a2dfecfc198d0009519eff50140bfd7c44126e205fd4bbf0d00057fd8e968802a48c5dae20a8d172569a4329dbe82320b339a2e0023c8c08cce6a767bfecea02830804fd76ff5464059f00204e1e7e849ee6ffeda02000d3100186bcfdff9f358a20412b11e020249da6af00441cff0d40067f64d4effb3dad01104544155a7475ba082b3f067b866092512fa0c654a59e6b71608888c9d5f0a4a0d7799cc8204ce4eb7240467e8849e66af8020e904ccda493adcf6802410d274b95cd67304000110204fbbb10853f773bb3741941094fd5e4eff46905a5b02045fc5156f810a3400413778eff772baa8082a36b8a00499daf3f40ad64035793b3d400b060a282049c9628149d8e97414b88327b5d02c463b9abcd717062e2a2b7515259814fb1ae4e948841eca68c4539341c7d8e8122c77250fe4227344780ab274f8a8ca20abe2e574dbfd060090953a6574850277783012546ff3e545011d5eef0e8f56544013e2265c71f7b35dce6f47814162c1d1d67ea49070418ba0283fd1d1c073ecfce6a02a0ac1e7f73865058f8b046b50a044dbfe8eb2820af7fcff26867d481503dc126f26a2bcb0866bb0840025ce7c393dae675f6db28ad7d00063a1007314eff1511504be8837b63d3d00054051e5757a02a597462cea77fd1c9414a2b88c8dbd6f7755090ad60820d14dddeceb0b77afabd00404263dde9f3340055bd1d4050a660800aa7a7e2c26ee8143069f6f8f8088aaf8ba93475ba88808899d3e0223575bbfe7e00800a74511108fea72152dacd6ea0a28c4b44feb7004458e2d8d2f10a3cb3b8ad3c962e1048dbb4a9f83a3a9ce6a2220e3d7e02a836e8e8a5c05141764f5b8895cd21c5ccd7f774d8080634782808aa7f3ba7c14feb705378323781051e82dc860209b0ce8800018fcda1438339a42809241173fbe3e967f53bfe6ef3 (by decide +kernel)
 
 private theorem ok_b11010 : Impossible board_b11010 :=
   fork 86 ok_b110100 ok_b110101
@@ -2468,20 +1824,12 @@ private theorem ok_b1101 : Impossible board_b1101 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b1100111111 : Impossible board_b1100111111 :=
-  kernelLeaf board_b1100111111 #[0x655928255228522020564c62153326575226524c62154f29184c6256232d3540, 0x34281f575260284c5d5c56120c232326471b25104c364c1428151f30591f1f4f, 0x3157535c561d2653512b1b4b41295156414b2b2d1b1e311e532b181d29222f27, 0x2b14524c475f312b604c68316047625341411f1e20516e4c6e263128312b5131, 0x6146141f586c2652521526181b4e611715282233365c33515c621f5251304159, 0x201a6c2615184730221856351f2d53642716155220223115261b2a285c1b496d, 0x26521f2425192517524728332a4a255d4c101d2556572431282a561f2746222f, 0x53187024565d5267564c2a252a2e55464b256055584e63301f336246592c1b1f, 0x24] (by decide +kernel)
+  kernelLeaf board_b1100111111 0x1008a4c0069e80ab0c63e1a4eb6a020dde971420b9fadccd56a8282a89755a822ec5abc6d0097808897517075751b1cef1f0880b0d053fb3f1604ac6eceb3400037a07f4d82a8ad2cfe935094b8086749552e5f4540a5c7d00146cf55cae412e2a28dde6600289010d903b9025eb75f126c701545518a0aaabad8d2a48827f105414fc6d16bf405906aaa6b105451d9a6c5142b98e958fb0d16a83082631adaa835cfeb75014551129f934faaca25b2bd2d072a2a2d63c2a0a890c574d9bc000556a8a928ee66f90024ea6df0ea0c6ca67f45456c7b34d80014b51540404569615d366350485237a84ed8b0e5f2ba8d16cf6d88082373167d1c45b9862e01640fead2c4a28ea420c3540683aa0059d5e94e96804ce3ea05fc458ea2bf06802b04cf4620282331d45c1c7f174f42560ea843073f80a7b6541cb475004444ddccd150dda6c51563a8c154963a02abe8e232c74458f5fa7dceb62001dd36000d3d28eaf0483788a84be0ea7014468f5b50441020f2f57add4510050dea29ed8e021ed54169eaf400c62c81dc54153a2d7e9f6982820a33fa0ab57e9680c08408e0c51933845bba8adceb602a0292d150668f04251eaa0026d958f9bd2f2ac243404099b6c404a664a535195cfec304149b387f404504048ff20cff2f6751a5d40400a5a8c40a5820d0041a948015b99e2caecf00136a82800157e968209b0100a5ccf16574451067ea700044c6a44cf175b47addaf03 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b11001111101 : Impossible board_b11001111101 :=
-  kernelLeaf board_b11001111101 #[0x29344b5958194c402f5d51342d4062152d1629342a450c452b161b182d232656, 0x1d59457723362d4167774c20721436622a611e1e155007592f1e29312b411f14, 0x45672e2b52502f365d514c5731252f2c292e20296d1e311729253667151e6c1e, 0x59490c572b6757265b3462511817314931702f246331344e5a59593317335a6a, 0x5d2d58512d2e624c2d5a511f0c227663624c26254f265d2d2215414e4745315f, 0x635d274c3155311e2a272917494e4b291f2a2b336b07221462584c5a364e2668, 0x58636557172d5f555b4c522d1f4e612922626f221f334c25241f291f33122752, 0x365531685751] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b11001111100 : Impossible board_b11001111100 :=
-  kernelLeaf board_b11001111100 #[0x1e2a2762494c1564572f512757592f5165642f225245291e22511b5d272e1731, 0xc152b232723156d571b292962234912565962222d4c15621015566d57292b27, 0x9232a102245521656452f1823232e26184c161870511b26166936184c796222, 0x221f26453622690a2a1d52452350291e361d79451436692d1d1b2d231622171e, 0x2d102749450d12201d362d451812451d0c17521829512247182d23361b1e4560, 0x51402e1a620e1f1e5b2e292f5145272a1f36452e4c15362226] (by decide +kernel)
-
 private theorem ok_b1100111110 : Impossible board_b1100111110 :=
-  fork 83 ok_b11001111100 ok_b11001111101
+  kernelLeaf board_b1100111110 0x1516d8d5d0158f2ae8ebea20d1c55549b1e3f2f5f2fa82a02b7bfa20957b790a20ccd696b73f8000033bc382a745a888c8162f7ea2cfecf515666970014989fd4e087f6792e10453e204d2d55124071f774fccd8e0d5d0563801ed01569f5397e4eaa233b50197a9d44550053faad5e8cb3d0210410440275e1f51653b1763044112676b0111555b73b4d88a289a3bbadc016c651d145ba88bb10131733400156f6b20a38221fe54541988b12490403b78f317334da22a5c1801515419fa6eeeb751516a8825783cee3e08ac5d63aa2a25fd85b3c9c94805198ad7d5eaaa08ae7ebe8ac9bb7b4f1608aa8025473197d8ea8aa32763f0d4017eb2a8a0a4f1ec769ced012d68a967515006cecf2faa02ab3d5412d7ab40162f9f5dabe974301457edb5442ee4ad1c5546675f63a0082a0aa5d7ea82cd4e84aec55070ca9d976e7b6397d068553c025d6d8a0084019f2ba7b90943669eceeac0a09036762fdf478280db5405ba0ac1f3fdf015299d284a0f9688014d6de2d5682b87144f72c202541ecaea04aaad0c3ec2d9d7e7b53b1d5e2200c1cfe800914d4ed3551100097d9ec682006799802a881035fddd4a94101a3ad311056e103c595e0505ba8a16c41014ed355c045c4014219917578205b10de88635ba3d375b4555428f030541015d80aa021af163b14fe087b516b7aed4ebf54154a3c5d014fa020aacfedb5462ea2aaed5564266576da2d36b7154521a7c593b1710481b82a4b41a774549b72dd48462e6314640258c5cef008220ccbe00152d31aa756128e2928b558f98d6e8f40959b66f253dd22c5f06a2d40fe14a6d262e2236d45e9e25515aac044ee002084d2e2e8f954a86a73d8d48aa936cefe7590458b94c446de9d82116e9dcde8a0add1e5b45810805f1590043d89d1eab21c820228b8ba22b4b2dca230d6e2ebf31a008f115451ebb4d828098d52665b5054c7c355428e486f5844d96f4e8adb12a31cad33f3e2d16332babd401958151e9f50151eb0895d4550b6f5f37b092a721154f8b47c9c96880056c5a6cf8b5908516aab2de665756420b164310108ae288d6f6f5f53abd2524fac20209ed56a04c802a9fc5c9e66575481c9d7d1557f47516993f57ecf2832fe8f9790326a2fe500145d4b8ba9e0103d8ca2d424468e6f259aee9f5d97d8f4f (by decide +kernel)
 
 private theorem ok_b110011111 : Impossible board_b110011111 :=
   fork 60 ok_b1100111110 ok_b1100111111
@@ -2489,7 +1837,7 @@ private theorem ok_b110011111 : Impossible board_b110011111 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b110011110 : Impossible board_b110011110 :=
-  kernelLeaf board_b110011110 #[0x5c4519552c5b625c512535505b4c62366358512749240f255562685127574130, 0x63142a576a68523124356258511f35471145354a6d23361e1f51254c35532f51, 0x255728497009562345071d0718284b2e0e531d0718285a494b5615571519501b, 0x6840682c4e2423316525365153174c15191517291e1b1b1a572c254c45230a63, 0x36245c455a50284524311d28361e151f36152f152f5f452a5649312a411f101e, 0x312445231d5d312c5649125128411f51781e345d2a5129515045245555455033, 0x28364e584c5f455a506d3127624c3653624c1f1f6d584c2828231d2f1d1d705d, 0x24505b5560712955292331531d1f28565167574127232c33571b511b1464411f, 0x245d45231324312c561b281b5d2356551f1a1f2c332e2e63686d533123555045, 0x2a335c295f5a505c515323532723452a204c20681a5245] (by decide +kernel)
+  kernelLeaf board_b110011110 0x802aad5119e220a3738153a848b7fb5d0d50100b9d1e9e80a0048f669e9f45451051f1755a0c04099b28120f46c80206b580a5c5d26ac12800ddd8ba3d04127a4d8eb3adaa20009bd46489bc806ee8f5455add5d3f88a6b2153f88b36782a2ed41545de3d9051d192a016de9eb1d10115291f57a1c5d26882143164445010b7a0b57c1f1d4e880a8d5d4eaa02a8f63d3d13baa89fc14551a2aad6e68f9fafc1d3e8000a3c11566a0008833ebe6f01525a381bc526a29e4e0e7f51b6d40480677000b6399880a0aa008037f8bdae862b20202aa6dd8e9fc5a021336dd3d5171653314513fa81027fdbc0d8e66a305244051a3d113bc20092bf3ba024a9df877763a4d515518ba3c01404ef7763aceb72725a2a80290ad1d47073f8a8d1e11f1c09ec4141a77755a2d1c4553a8a8051ea87174982255c51aae2a317a1b3d404016d8a0a22a24ee62317b5d0c520550001147175268881228c70eea36da0a7b544910ae7f6dab1215d817e29215c17f7f8baaeb7270163a94aaab839fd50521a027b54474690314b46acc15159daa4c24050051ec74a42cbaa5db747a797e01440155166657338288a15d144bea73da0889bd4514a0de9aebeb34b8aaa302c4ce2e8f109956415a038f4baa2c2235f2411146a0aa83049f8627ada3e2eaa32a07c05050ee1f31a8c154825e2ec141d8088080853d3b87cc6a3b5a4a80ca0049e5f5b4082bcd7d42042ba099c54a866fc7a4025395757e001b57a3a5b1d26d744108441c5d8e8e288a7f6b8aa82ac7c8e02c5d16bcad4154560dbab08088f6d9ecff474baa2ab336bd3d11585fd1c1515115b9c5cce82b57915559dbe111b1773a3a5c155af435045b7a933481c59000a882cdbc7d8e8ea8029f93a484aa4c41fc97404aba3258b5747474fd7e0ec3 (by decide +kernel)
 
 private theorem ok_b11001111 : Impossible board_b11001111 :=
   fork 55 ok_b110011110 ok_b110011111
@@ -2497,12 +1845,12 @@ private theorem ok_b11001111 : Impossible board_b11001111 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b110011101 : Impossible board_b110011101 :=
-  kernelLeaf board_b110011101 #[0x1a5d615d2345283556574153455b2566255953255b53451756081f4c31264624, 0x5a454c51275a4c454c7270284941612a53515b5a4549171d1d34572d31262d25, 0x2835604966685053656434455f494e5b5b5f4e57574e315c453037574e316e4c, 0x172231312613312f347060585c30271927341f23352f314c4e2d4f5d4e454517, 0xd0f271d6f272b1153271d41511f356158604f0f283560536e5d4f6e5d60192d, 0x1d1b1d2a2b2d511a252630352a5d56535a6356286f195b49275c235d0f65262a, 0x182b2549522b4149534e2a56270e564927272345192b53562b45655b56565049, 0x23585720532d41455927464c272b18192b452c2d46574c61494919272d652349, 0x4f5d2d592759367a255b2725582559276e620e2d2b1e28222d5f2728256e5965, 0x26342d275a25535934272722620e2b2d31162b3034274013302d231e4c102568, 0x252722122330452319492b1d172527283030162d0c402d23300f162b1d342726, 0x62692b365d2d25092a35131e2d312b2d1712252b2762161d300f2d1b16302d46, 0x25312b5119252d] (by decide +kernel)
+  kernelLeaf board_b110011101 0x82097418f0aa00000a80abe8e674112eb75045c5930881a7578aaadbbbadc04ba80822755b5d00109e7b1045bb1d01955eb7950a1404a2fa4b52eabd3e220008e2c82da1dc8100618fd404156e6f4151040b6c35b8a91b4ba7d16804a04b10051ec34144522e8f33c23275579dc1462fa5d3ea34461a200c34002dadc66000c0d3035b8008f618fd024b60abc04eed34fa6d00136202d3116e9f5401b5a8025c10129e59da69f8113e8bc58ec14557902ab763a200a225b95e0c30046989f810606800813d86b7479ee6643444b8020ae8c919fddd6ea229674faa0059d09006dfad004b8056f4fa825c086c61125ece9fdde2c7688b78015e7b2008111460a2d6f7f101144fa8c12fbbb3e5d1e8004020258c2bf20e9eb70020f200845ece9f8dccd2014fac8abc4c62b0a019d5f1710566b78da82a020c8d7e67874124f0082432733a7c56f97478aa49c9115804c6aaf01114b927a5ca8caf83a849e9e8ced575b45000153e3b00251011adc9d42593e01029f91f1733a00aaf111040a790b5b57c5e0072e0b6f215adc2056da1c9ceea0a6f909800eeab57ade8e6b045094b889b161b5d541054419565deb74f000b5a0063d585ada2a8e24145df99edf274fa0dcd511e8920377507f28a052e5e415013602aaac6f0fd3e7704437ea8849f555791e54506029e9f3bc1e8e7f404546be1c418546c6b839fa1322a8a23f546d7c1d3c4441ddddd044049feeeef8355108ceb75054bea2d1054216388b1d4d93c0444463afda68401c3c1a058eb9a040b30c13e672004fb4d4fe8f455ae8afd8f339da202a8b79fa2b779da8245d64118b97c199546d7c1a249d1142cdaaba3a4a1d3c20132f931469b17408bfc9e776f059000b797f9da002d7e441afced8f73048bc00800c35bea014835f9db1f7733b5aaa8145e66ca8d1d5144093f6b99a4802aa117267cb51e1a8e4e82b074054030f2ae9e22c347005426df6b8bc9cbe89dc4413bb4e5545afb2aab763a6c005baa2029735a8a30b77c3a880285dd1f1751b5eb6a108d7e0e0853e2ea8c20dbd2f442e6d2f67a780a8925edf4f8b97c000ad8b00230ff0a53363a6e3693 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b110011100 : Impossible board_b110011100 :=
-  kernelLeaf board_b110011100 #[0x3147695207585226224064525d64627d6d57575358692b2d272b585636524951, 0x1718622734502227162622231e231d346459522b45141e2b102053262a264e24, 0x455725255641272773622b07245645672b2431303557594c175b1f5d2f1f5822, 0x49344e22173553562450355931475626496969194556265627495b49412d5331, 0x225a4517465345504930221a2f4e4135354a53455b534e6058355f664950495b, 0x2b184e3c344152592a271849265327495b1f4930] (by decide +kernel)
+  kernelLeaf board_b110011100 0x4044555e631149daa8f341a6a82310702469767410556aa9f31c9d451213688200534f53f27b79fc0524e112c34b0d45dac044008b97e374f40022e034393a00c20b0d166b5117f3b51444560ead704516bcae9e02000845edeb4f9de0d154b1aad72050052fe439b93d0d064ec00a05bd593b4e76ac8022cbf2ad7a7d6d26a20881435ae8002a16763c7c400000ada6d938809a740509000d399e2e000056d36a4b5b4fc9ede00c49d4001a20eb7a78012a831c01462f5f0052ea91124a5c12b70753e2ac0009fe7e2e40115e1f05485275b8b808000e7d5e21089358e02030daf5fb3ccd152f80840016f3fd775fa00a7f40421ac68b841502f98f169f20128809a7250d169f084b642c526d168f802093da3d823bb4f268a0d67a5abe2ea894c84f600088abc441121a0e0161a7a6d572148a6e769363a231f51451d3ad2d0061510fd8d465a5a6d1608a40f26a52eee8904b64f17f712dbd7d05441afca4acd3ec7a757adc02a4f8caf50052c6256db6852e4f47 (by decide +kernel)
 
 private theorem ok_b11001110 : Impossible board_b11001110 :=
   fork 21 ok_b110011100 ok_b110011101
@@ -2512,21 +1860,13 @@ private theorem ok_b1100111 : Impossible board_b1100111 :=
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b110011011 : Impossible board_b110011011 :=
-  kernelLeaf board_b110011011 #[0x152352234923192313155245465025222323283650224747234a135a243b1f30, 0x111a1b534c6913473b0f15130a521b4a1e15533b1a232d220e222c4c13134c4a, 0x2e3153172350451323241b3b3b451950523b1a23283b10193b1a2c235b241347, 0x9193418522245223459295034242c234c2247273615252c252520501d222718, 0x585218295c2223472e312c4e691b25271813342922242e0d590d695222182915, 0x45235349125f5a52502c235c6b5d3156341520202e25223331201a6e2734454f, 0x235c4c3427564c255651655b564c283b202419191d5a2862152525241d315656, 0x2329534531534f283b46272c1b1518476d5d1f28362337315f2c617028452356, 0x2c2c257d1f273b3756451d25273b533423183125202746272e2c3b671a702356] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b110011010 : Impossible board_b110011010 :=
-  kernelLeaf board_b110011010 #[0x551a181f293020253b25151d293b4c23504f18300f524f4c62154c58591f2846, 0x254a551f2d34181f4a2910721518564c5f244c65593b53645f454c591f362823, 0x59181f281b1a2c1f140f591f5a19122825291f24594c1f284c1f521f36286215, 0x1e1f5912] (by decide +kernel)
-
 private theorem ok_b11001101 : Impossible board_b11001101 :=
-  fork 53 ok_b110011010 ok_b110011011
+  kernelLeaf board_b11001101 0x80b3501059a5e559403ee7f4fbbd01bea80d6d548b9dc0052f2a7ddf4f50546988223cc688082c752e8354013ea8411b51254faed0000159a3bf3e6b40560506157868fadaaa84d28f54f4f8ba0a831c0069f3f51a0a8003be3627d11566202006f8aea2a8630563f48a2edeee7f51b6d55551e202240df63a80dfd014566a028800e1d0786a38ba3eb608223c5506e733169a7e11421ad9334b8acb5b1568f228008441979b7d6e66a377a0a0c4014999d400cf2771095b5a0a428dc5a02574ba2a5d085269dd8ea0215b55016b6c5d1f4f9392d041016411bfdae9743451415159a3d11b98a2a23afbbb1eb6808a34e0404150ae83040441cbb4b82322d519f20a80ac741b06bdda7d1011a7084117867ea0b63a598d4e020dcd4045116a3c1511523ebb63ace76802e9e37c8032425d4f8000a18c2827b4d4eb24a8c8b9268400bb515412152006ec259e1046fa7a5a2cc6a72b84827144048533b4c5904a31d2d0945c5c159945cb4ecea75896872d3555126b347aab332245a20a2b1f53f2a2b6cae25c15660aa028025e0444ba0e86882770845c9f31aed8f4f2fa20a8f1414968620845c9e8f49928809bc011577828bbd058b99c125686c54b9de6b47a8d086515157790c5133a883bcd62b347aa0a8a80dbd264f14558f91d5015359bd41194101a7ccf4e093d41005663eef1f95e50009eaa0801000adaa966f8255959ecae854f6681779ad1eb745a2a3b1445a2ab31549993d2109ea8ccc646565747aa20d2d1e49d1010511e6751454044793caf4b45462f1ba1a5d5419160848f24091ea36d82ad0d14545c7d51458fa3e56804f5111b5a4c779fd86109ed3f88082001672580a967319fd46840a2840a6f35acc404005003f94c7e8080859cfe80dacce4b51a5d4500000414e8a9fd26008416799a7f51a04884ccfea88214b3fb6d478b2ba08974044455657573fadc411a6a8218cff2b53c000b5214a10f965744c6a82256e6602dfc09040012733cbd9dde8094f585293277f8baa80204cece7f6da8d1e03570400120d6634fea70001586834b84aa003bd2f00028573b82a82a7444077ccd1ea0003439f8018c44618fd541696013f99e2c510248aeccec7673fa8e36d7 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b11001100 : Impossible board_b11001100 :=
-  kernelLeaf board_b11001100 #[0x1852625652674b62673062301452185256163b51657466245276522453585b59, 0x74141d10581f2452651f46526e317046582476674a45525d674b76227d222914, 0x313b47585162694a47145a53645a5350187c6e62226c1f151f2829291b151f28, 0x314a285a645a7e536751646262225f5375302564625164627452473376584a46, 0x170e58691f465d1f5b275b1d102e245262645c27463b625358622267153b5258, 0x47625d5d62225d4b226218566c3b1f151b281b622729221715227418140a2319, 0x4b49567414294515345a64727c12513b2e51533b4b635846565c28535d5a6730, 0x3b5f53455b5623361b4e1b535a64585b534b584b465618644f6231474f5a4636, 0x182265554a660e185a34503631564b705d67] (by decide +kernel)
+  kernelLeaf board_b11001100 0x5420154c6a8b5401415551cbd5e570a166c7620635086d6d3a1aa8aab6d4463d6e5e4220dc34512bbe7e151dea09017fa7c5edf5b5104442547acb6cdf3b01137934fad7935001b1c0ab6f02a7aa52f6c620cbe375b500810c7934104427f8b0115463c7e7f6b5518d82b6d9780c9eb7d329a942a70608b95da70a00ab6b10c9a8f2fe620212ca3aef855db2b47a78a0a8bbd4525f8fb1891baddcd4688a14f046ee856b6073e9130c4118fd8b041bbd0a37727168b251bb944aaa4bd178b31d6f66a08a3bcff0840215c8dea3400de0062e50253ea745b00acc0005f2ba2fa66329880b00ac0104799c4044be28ee42c72e9cfe0d0d31b252bb87f0914b7a7c9501ade7721aed274b40415045c5e4ee688c80a9f8d88bbd50b174fb180480b0262d179f0064aeefa5a0a258d4058e4092b094451dad045c9adaff74f05cfc851c0726d8b5802c58a0a2eff4053faec42b0d2ec2393b17470726a8a0e2fa74b8fa10aa2aaacfedd8e564000a11b1058eef008fd8e8e962c9474e4ad5a5118f94ed74f44454532616b69f438431901f3a2dda24c0b8b45ecd018ff0040c573fa8e4814e0040a737a8315cfea3e994c108ee10e95b19fd274bcba0a9fd648db082d2d54776c7403871bb1a88293293ede7c99580aa45e9777004573e24be6187b68b25441403ee8b5394cc74bc5d6c0a9a5a839f42865f8b9080cfa230c716a80b0ca74b81111531d2dad96c140445df474905cbf4d91cda4e97db446972093a7d8edf67 (by decide +kernel)
 
 private theorem ok_b1100110 : Impossible board_b1100110 :=
   fork 38 ok_b11001100 ok_b11001101
@@ -2536,24 +1876,8 @@ private theorem ok_b110011 : Impossible board_b110011 :=
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b11001011 : Impossible board_b11001011 :=
-  kernelLeaf board_b11001011 #[0x3c4537274029532f274725252b6e395c45531952526445272253182d3b516215, 0x3b2513522d132d3529244a695729333b40294759523b502d493947302f393c2b, 0x243b252926253429392e2f292d6776265020596c0c5222282029221755335318, 0x22765355294a3953253953663052475c2f3c53402b295345222d26511e13532d, 0x603b4e3b455559665c5349371a292f5925522d514e273b502d452f5959641d28, 0x2d4f29261b5340274726535928511a5c585164726e620e5159524772585a3c68, 0x18271f5b2f3029761e345a592d525c517664507e26593c5a57753b69585d591f, 0x60503c5a286a4e5c222d282750764e60346d305b2d60342227346050641f5225, 0x2818611a274e0a4e12271a30254a374a2d2957292d50604e505a1428605c6a3c, 0x2d45274a2f4525273b593950294a221a3b500b221f764a6a2e162d1b271d4a18, 0x5339271d113427506027135953391b221b2650331a55272f2952294e454a513b, 0x4727112f24373b495945] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b11001010 : Impossible board_b11001010 :=
-  kernelLeaf board_b11001010 #[0x396459515534602722127659294f33502d58355f4e5c2459295b58582f595153, 0x574f3b591d] (by decide +kernel)
-
-private theorem ok_b1100101 : Impossible board_b1100101 :=
-  fork 70 ok_b11001010 ok_b11001011
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b1100100 : Impossible board_b1100100 :=
-  kernelLeaf board_b1100100 #[0x536e4e586069130813182d5b4a2437295853520926133422604a242752593947, 0x4f3b13602d1d34395926281b2e3519394553282d2e2d1f352e6019132d2e5d53, 0x34534f501a45392865291d2f2d2f59452d162b1e533c2e12072e4f602d2d5f2d, 0x3c1e2d34405c1a1015284553395310522d5b3c532d1634223c1f39301e393060, 0x3b492d39] (by decide +kernel)
-
 private theorem ok_b110010 : Impossible board_b110010 :=
-  fork 35 ok_b1100100 ok_b1100101
+  kernelLeaf board_b110010 0x2c7c4144f91c017e22524c96f82433be4eb2a59c59568bd3dce9f3bc080474494811a69fa1c2805835851293e4fb3d3dcf446f020116806f4dd0d9e001ad42aae9f5fa9d0255026a5a9c952771795c1147177add541122e9f05495afc2162e225d3eef8a1122cee7401a1a0a04a795c0900a8b35a083be862f85000045a821ffb6824ae50d5aecb6b79840004de0a9f4ef2b001040c6a300503180c8e1cd69f9d8ae110440101059d92d3f1ac161a5c0045256200df41295add4f5f011053adc405a1e0e760a943b5c8a28214c0500551e0ee7ab10011e7830550286f3b58428a8f56822ceee68b41056e008a2a393f430413b73bc1b4f6e8300ac30111205b7ab7306d345aa24820129f69e0d01a1e4d453f952d4140012e082634f9fd0ade22fc161a9fb67b04069c80896bb3820b76968805ce8f76d00568c982b43fda6e440b3a83cc2d6095f007aea2abbf4f63806ef059c02003f882de7e80029c9366fa7c0c0225014fc7d3680080b4fb3a1028e8e6b506e7024258e8f93e5eef163b1268e9000d9c411a971f091090e5d8d4585401ad6f3d1a4e0c59df3b94277c5c194aaf67cddce9e82c9d0516fc8006b53afd62ce200025d1a96a084b7a3ced3eefa1800a2dd4000a2e40bfb3a04567400b26a29de410a51a2fb6134faba9e56804239ea79002220a5dcf4fcda828000020230e971f1596e60802fde74f81a880a842af1554f4f8bc00020a8b56e80826d0a8e01ec1440109f4f5ba4dde00a5d14e0209b1452e8102d353b9d4501768b02fd4eb7001585cf9443db4dd0c010418a8882167d98ce9600a2e9010851a0c49453a2cbf5767aa82853d3182a0ef4ba0a804fa5add109e02dc055aea749caf4e808815f142014eb3d15de80ac0d4f1fb3d2d05460077d0d1056f275051cf1f40161aa82afd11cef35110155ef38bca037d3f0353d3c5552560097e9f8fa22a5c8484babe044dd8e750004b9917a780128067000296c1052f27174fc8028b2440169e635bbbe8f8b2b82020415f0019fbbc1559b39ddceb0aa848393b3d1d98006aed3c1b00027d24116212fb76753c22a130cfd9f4340056e2d8d441af7f9daa2028257349a2a59d4f6f010120416c60414d8d7f67a3d3e3680ef054193add51cea08a9122f31258f700add45a740b03b99ac86a8a57146a012a00ac5e9ee70441a790d5a5adede80a02f311200a788adcb6d301444458f3004513fb9d867b002001ce8b0d1614c1b4e9e08c84fe866b040462ee751e5d4e809dc0505f802dd105fd9c84801148badcb608aaf3dd3c79aed55415442587d76a2234ff060082dd1016f7f2016ecfdde8029204fb06add554ee22aa2b134dcf67445364a8c537abb6ba299dcf17a7a0220a35414116ebb00400056e7f00156baef06a0a8019c9eaa9008b75da20895de9f022d3f770284eec783d38001224f0411888224f31adedf2b49a2a8080a8b7d4e80236360429f4b52204e82a6d40127cd345803839580b0935053f4bb3b9e3e8f (by decide +kernel)
 
 private theorem ok_b11001 : Impossible board_b11001 :=
   fork 58 ok_b110010 ok_b110011
@@ -2561,12 +1885,12 @@ private theorem ok_b11001 : Impossible board_b11001 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b110001 : Impossible board_b110001 :=
-  kernelLeaf board_b110001 #[0x6e1a451a2d276a5a6e6139133a244a72554f272d406a76614e69555a5c602e53, 0x5a656e2d352d575a2d403a5c5d6c526a1f2d5d241f3559392c3466347a6a553a, 0x246e0e2858622c16726029642f5a4e465c5f6652686455591f1859347a594a64, 0x24243a45286870822c58406e351b5f522d5250661a1b281228243a1a3a241062, 0x1f455f4a587a5a7c24261f6e282f5a1f162864351f585b6b7239101664695965, 0x5d6a283950520e2d613527794519314e60242d221f593a452250593c5939580d, 0x65596633504a5d72645d315d52172f693431392f2d664f523a4a313a4a2d0a0f, 0x5f5545461d590c46221b6245155c28655a4f5c456f261d283549495a655c5f55, 0x2c1a1f463759595b3c2230371f18172435642c392865294a5f55451f602d5524, 0x27463931375b243a49461f3c463a594a243c4539465b2476645960301f373731, 0x605b454539456b355d59524a37394b3959395227453937463435194e52604e34, 0x5a4f60335a5835574e606965291b65335960396e6558615a64605d586559354f, 0x6d46584f1d3918296d6234] (by decide +kernel)
+  kernelLeaf board_b110001 0x44004db846c50b1cfd410ee020222e7318128aca7dbe2e65a76b9fe0c010115a19f6b040005ac6ad7afcee5541501c1a5a7cb8a705004437e5c19e2ab67c1b9d61152565dde5ec692e1ed70a219317068977b1e5eced79fa810a960c56df17541058b88e79545162faf6bddd16cf4b95a2df505cf2f5095ce59d545ce252d450a4fc5c5573c37e3694d36116bc67276a00d2c41443073b6984a22a7e36e7004463b7ede9304251575c9c10448d9fc07984846dd76740629580029311e717a68100673c6ede8081093ede4ecf8390409619fd016f88b7d8e02880b3359fe360837d22ce28859edef345822c301bf027f11113197d26d700326a020b373a8f2ea750256084b7fabc5d1000943f884b8356f578204982d7fabc5e3620a0077b3b28a80cd58da2d10379038b61a622e57b9a8f2e0c05ae7e800dce2fbf4da407711251b5c24e20049ed7240ae5c68b9ab7fab8a0a0b97b3e6d9f4351051257771541512e5e4c0bb802c740040bbd2d02f82ff4f020c34d8e0cb9d55fadf3691213fa5b43ae5720824c711975c52b5b8ad56107f2085df56a385429ce42a950da58ee21156eb2024e1daf130427fcf1733b31e778349a2808a00b7025458827faceeb41562f0aa2d0a1d9de6ac36773a889563101ba1fd520022e8017f00402576305f5b6bf9820935936807fdda8c0017e0c16b804ff42c96d4793904046b9fe4006c76f4075f2150041cb11ce432de4f4f67cba8922938449b002eb8ba8e4043468f0d56214811ffc59d8d81eec0021ae6f5180bfb4b5bc252e879b35a80086f518024004b518890a4dd66b244175c9321ac080e2d0001276ec76800a341140b1e2d665be5e0d4f08ae4c55197f6b81459d846ee680037f447374b619d192e4c806ae330d674213f98d12b3b4fd60ab159e5793b5e5c61451dd884a4ab76b882cadd2bf6b445ba40dd7736a18bbece97ab8804004feb7bba8008010933fb5ece839e4505166434d048cd890d3f583ab16ae40baf766b80408baa001ad6e9f17562a36b4051dde1d069014187393dd69395f2c156000abcfd3e220b7481eac0011157b7879d8008e9eaf6bb9e0d774f (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b110000 : Impossible board_b110000 :=
-  kernelLeaf board_b110000 #[0x4b59391f5b501b4b2f22633126222f11224b6822495924224b63494062591a34, 0x405910243131294b18314565271a684053636c18522e3c0917352d535d2e2635, 0x295320235c591e13330c531f202c1f2c4b31242e355863452940535d291f591e, 0x27292e2c392c1e16290608171e1024314026245924530d1a292c1f1b29181b61, 0x182229634a655d4b656318527755586e587c0827272e176560244b246a224b55, 0x5f5922293359275c1f222e525527292e5f17270d22291f6c142731294b632e5c, 0x27192345244020222b19266c635222591d4522192f2d16591d2b52490c09520c, 0x451429232a1f272027493149292c29614b5d31296327] (by decide +kernel)
+  kernelLeaf board_b110000 0x291122e5320538a0a208f15568a0a07f4fa0d044153f271163a0832753acc041014ea02b8741197ddd8ea08829f1e88a7c1405114f99d1f174980840c0000041a0a2c415799d128020954d82800326cf1f4b45d9cef17505145aa22a6717eb74000000222dd9ceeaf442102972782519c0089d569633bfd9d16a767c2a02ac16740553f733f824028b5d88252d24160aae9f094ebb5556fea20917c50453e8820dd1729cffb329c020a7c58e002a781025f8f5ddccc62a322c494f8fa502560aab97aee2a0804bf2f8f31c8a52d8925efd5e89b1ac4eed5916c7f311b04827d0013ebb2fe5f069345941697a4d07568b1565e09285574fa02a9d76b373a8222cd508424f65b53800021b1111825f3da8aa90d26c70660688829b549a2c59c5272a0153c6e6b53accfe0022081bc05398d5418de20318753a2d3c1141a3ee6410b1670f62013e0678200332469e7f41acc140013facc5978c749aedae82002b6302402c7c117538aa40c45a7ddc14e7f80100b39ee5046069282859e4869363a0a31d14414f2f04004c6c7528ba0202197020053e6bd1c0e9e34208063cd998e96bb798a2089e2f822235d15baa22ab4fbb8822bb20536d751612097d9dce7f441618802df439051037cbd4520017e8bc7b1e21372c88b105020817e4745cbc5122b468b93d9d262200a2e40697e3d8400093c0c18c5d9cd6d3 (by decide +kernel)
 
 private theorem ok_b11000 : Impossible board_b11000 :=
   fork 86 ok_b110000 ok_b110001
@@ -2583,49 +1907,25 @@ private theorem ok_b11 : Impossible board_b11 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b1011111111 : Impossible board_b1011111111 :=
-  kernelLeaf board_b1011111111 #[0xe55594d244b5d146f3d5a585d624b262d3d1928265b5a5558553d5a53366434, 0x4d335555335763232b6e4d686355701a5a3658205d1c53534d5a24132633105a, 0x33330e2d2d5b284555693567355b5a57234f21305d554b553378281a2d125a45, 0x23243a2833584d5a2d3b2d3a5f453a2d3f536030263d5a3630472d5757333029, 0x29282328182e35334b553f334753365a4d45193a57335558235b17182e355d2d, 0x4d3f582c21172e3533656c4b2e353641575a4f352457333a49283b335b451713, 0xc4d1c5a3d365e4b41574f3324285d3655555533365f3d36334d3d5545532d33, 0x314d3531351f2d354d60354f293f2d6a647e556f4f7455] (by decide +kernel)
+  kernelLeaf board_b1011111111 0xaa8200c75459bb5d405558e810b5cfe028aaaddaf37c188a2882ad7167ea77f88add1415401610d5e4d05fdd5c80137e28024ffa6a255719b0b37939dadeedb041541bd8200932f10460f5f9fa80acf5526b52acca3bbb6eae23570506aecf6d8a0a8ac2dfc7b80b6e0567cde5857bad5e2ea90ab4f5415440556ecf9bbfec6b351145044014397d5db5c05678228100cace5f672f105495db5d9416dc1ebe8adae7f0812d740526d7d119eaaa2eb156593a8ddeacfb7c5e4145405024beaa4f53a8d6191ea2028d31aedae0acf97d5c415fe82b3c548fd3c5105b76b59ba31745a54233a04a08ebafb3eaf635048851f5bd1442fa88635db5d501640141bbadd1e937582aaaaa305967b639ba28b6b111540485bbbd00256eeb6ff17452275add7fd3f06c3451558536f7b5b6c24415515871f5bd7c44156becf444561a9d599ea4a2a4cf1dade4045bb6f51c5eae0a2e9d2486bb9f565af6f201b5aa2235f47cfd0110eb0d556ef57978883357055416167f8d84010519ad05645b92ed71750459bc333eae0a8d5d9f5f9631f2200200a3d157eee4166e08d12e8f1f57e19aed6dbb1aa2a835045166ee0aa73a7a4d3e6f6b49888a8c4f810584536cf21aa2236b1558147757516b3cdd272f40118806ee80094c2dfbded62a28d8e015bbe2c5497810026d64005bbdd46200ce80a8d376fb5d5c112c602a831577bdae9edbc9b4c (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b1011111110 : Impossible board_b1011111110 :=
-  kernelLeaf board_b1011111110 #[0x333a3d32783037623322783c10335e3d6763623a1f16325e4d5e6c30742c5158, 0x3362313c79732a7a331c476e6e5937252318213a32627e25477a183d7a321c16, 0x33552d3033473c4d2d3232311662293a2f261c47332f25322721263331302f30, 0x33314f3c34284b4b326c24334b3133224f3c2c5c3d453029305733554a35332b, 0x68513c5a5b454a4545575a334f455d3345552924654f4b4533554b5d33453f6a, 0x4a6030455f33314f3121685d4f26266a47645d59534d30476c315d5955304f47, 0x4d3178655b63331e275b4520245955594d62593f51604d4f47514d5e59512733, 0x5160303759293362554b2655334f655d59305d2c536c2f312959334768513c5e, 0x353a205529805951592b4d24604b722412574a354b594d2775275d4d5d272459, 0x2d334d60536c2929] (by decide +kernel)
+  kernelLeaf board_b1011111110 0x204a10b7067824dcc180094f55d9a2828a7055454ed781d683645ab820a82a73ffb3d1d1525b3abe6e93c1810a0c2804bd407969325829257c00042568208d72165f679ba0ab4a9f1402eba7eef3755959502ee9f49d9e8f8361a8a37c04010416cea7041156798babcbc04014d855d9f3f415104b2f77b38824ac3225926eeb3a7ece55055f88231d553d9d0867ac7f474779ded541409ba0b1fc7974050b7e3d550159f1ec15414f80cadbe2e8349800d9c52ae200d9e6e8ab8b4505b3bfe8f8310109b8acfc011508fd1d041026e8b285ec6cf474fa000cf95e0d86880880917926fea8cf63cfc1205601158ecca1f46dde7e220829b410861537ab0159a3f93bbd9c69f37951586008031fd9ca44a2131eef6764aba300430e7f1fd1d1de76b010555b7c5c95a0902c5c118ba42d7d6d6cf9fa0a2a4a45eee40a2b3d58bd5c155504154e93cbcfe5e404212845c549567d5e5e8aaddd9e0c5d54154247fead4159ec79fbcc069405a6a35441065ea8012f414196ecd2700204833e5e0002b1d504067a8b9fbcd6773400115401ef17104405618810a75875f67d5e5682280d74519eaf105510167d5d04556e28c39167c7de7374455b8280cb8865b1c44592de2c50153bad014425f8a026c439b1f67c090bf4bacb4fc8928b21d36cf63b0e144044115faac391678038b58ef3001051002f3a03cf55fac0550019e738fbbba92b760480859c006fa5c14798d40090e3ad19604a2e2c7f6321425e3feb31a0220002af7f5b2ce6a08245b67b013ac001407bb2fc6c39141016f88ad8b67a2fc6f321a908533ef6a202ac82333df3f8fc58003ad420fe896c165ded51019bdef66c3e9ace8f63 (by decide +kernel)
 
 private theorem ok_b101111111 : Impossible board_b101111111 :=
   fork 70 ok_b1011111110 ok_b1011111111
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b10111111011 : Impossible board_b10111111011 :=
-  kernelLeaf board_b10111111011 #[0x57455c1d70216a51185b4a656a28456c4a414a33476351211e3a692d4560582c, 0x18284f623d2b4b363149334b6045235d21363a3a2d374960514a4951740f1e6a, 0x312d3b32457a6c14603745601e4f5c27492d511f364918372b33605d3d2b3632, 0x5f31326a1c2d655d6a6c3b] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b10111111010 : Impossible board_b10111111010 :=
-  kernelLeaf board_b10111111010 #[0x311418584d3232621f55511e2b4d332b23251f7180115d6d765e654d324b2c60, 0x7879512d4955452b292345330f4a13354b5c2347333a3b29493b5d324d45311f, 0x517a1e2f103d25175a254d352f16362455655a73555147553b273f4923184971, 0x3532532d33463349325345130c4a4945535d4d4b1933683227061e4d4a254d35, 0x2e45205e4d47454d53804d63165736474d3b4d3d147a642b3328352835334d4a, 0x14360a20271f3572652016575f58334572654547530c4b367c6a5f284714572d, 0x805a2023464d23211828282120274a634d2b174b35325e35326b25623d2b2e5d, 0x264f29251b2d2e4a133d36354b5c2128162e17291f3329213b2318270a2b4d3a, 0x511e2f25243d231f2f24253d6951782c5b1c636c293211252f2b291c3323293f, 0x3669556c685a47326d4f29166368196c6f5e785b6b6c69326b5e6f554551452d, 0x4651454a6a6c53726924475b315d4f493f58335d5549634f452c632c325a213b, 0x3d45516962696236647823634f10365733645a635953461c652b453331] (by decide +kernel)
-
 private theorem ok_b1011111101 : Impossible board_b1011111101 :=
-  fork 48 ok_b10111111010 ok_b10111111011
+  kernelLeaf board_b1011111101 0x412fe088c7065ead58039a8200adf2f28885ddd5ecd4111dec755044115bbbd196a2845d053d7b329e0d415bf2aa004b17c19ee015449fdcd4104004f8a49c15bd1cfedb0515854464e63540416faaaaaf67e0d156eea4abdd5edb144441966354555518ab3f415c5aaa2f757cbdb6222031e4ea22b3e5f838bab2a3d515552ee876da2abac00575a08addbf27c1d1c10656c9c5468f2a908af4c469807e7bd5d7d5050162f73205513bf0e151550faba398d502df2082caf2fab164551c5f66a2b2b105160f4ad9e42aa0a31fc7d1c155451439ed54475e9d6f17c1d8d672228a2a3de2e8ab4750914045d3e2e0510574f8b6daa0d93f1a0828fa4501031f3f21aa28db402becfc9dad51131e00208d9d4029eca80846ce79757c5c1500019ec78dd1e80122f2aacaf57b32510518404a7f2f4f224e3e0885bc8142a52563dde7e8c9dfeacad8d15059e2ddeae40c9d1115c7b3f8bacaab3114c7a028b3658325ae050eef2455165b7a7abc2d08a46cf476b8fc88ab2f6e0cfd045645396d42171ec1001a333ecd5140511401077f7bf1d096f035fb3d3b2d1075e282237bdfd5e2f4718522ecc2cade8ea022891ed7e9749aabdc445647c7f2215fa82934baabde615445d3d1fc6c22ccb3b7a288473c7ecd4ecb115164041123a5d7e840abd4e7367aa8a3d4e2aa202a2cff4dcfd11553a5d054dec2b75dcac9e2a8a3ddb6d797dcc00800210ea32da08abb2f8008a73f80033d4e87645de08f318080a89f15abe01540526ea83acffed68360140447c6d4099bc0a3e04398d46808a8d0ea20d3e8cac51c7cdd5e5f410025ed799680237b5ae8a4cbd7a5d15045716f79515ebbbb94d406d82200ad060827c04fe252a035c4b97974196d10040afdfe9042b188a2cf008bf2f2e882b1708fd3c668032f10446dfcf577f05005191f29a8008857c40a110811555bab2ee2e83bdcdd18fa2000c5e6f4f3ff02541606a6f8f2d80a08d7db71f50659b8a0ef5226ef729faf2642aaf1267800aa36b800202a36b84b3e6f04cac486ba032e9ea112dc19ec88a80c6d9e2449c1974f8b93c00019b4ae024893c5e9e02008001779bcbd41033b3e028d1b2d3e002886c003da004dc00046568480979bb5c055028feb3dafc8688bdd2e02222480a5fb5a5e6ed75557e5b6da4c0426ae122a065db5c93cfabd1e3f0822957778822a29f1ff27142111e63142493c93c701f184f9e8eb76440024f578ba8aa820abd4e8f8b880acf461551151fcac9ed797dcd15411e2247d9e0293ad401440077a9e4e83bd446eecb9bc5c18063c849fc98e534000318a0d8e6ecb511960298b3fb57a389002c220827b57cdd9e082805008af47c00976558448ffc73ff23ca8377901076fdbbde5e6ecb97acf06c3 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b101111110011 : Impossible board_b101111110011 :=
-  kernelLeaf board_b101111110011 #[0x6e312c6e1d7e496730286a282f281d293210181432453229212d102278625158, 0x4d5d4d4f334946596359631c651d5d677e656e3b592565595c4f5d49214d6a30, 0x512b454b2363295e1f51495d3331653f514f305c654d4d5c5a454d4d5a496529, 0x65724667656a5d59315151314978364b624b4963292f6b49315176286b1f103f, 0x33322262496312274b2f334b491272462e5a4f3f494963326b4922625178185b, 0x67306f67304b4965292c8057304b4b5f5d4d6f4b4f202b294f2b313065331f33, 0x3f5d0b30102b1f272330654b1a114b5e4b7e4b2b] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b101111110010 : Impossible board_b101111110010 :=
-  kernelLeaf board_b101111110010 #[0x62302c323f6316696a304563654f635d583b3f302d730d2c37633f6b31495c51, 0x5d4f6380184d592e212d5e78180a6a203f4d2c2530322f2d6b78314929323f1d, 0x5d5d6249596a78181c3b4f17212b29302e655d655a45584d32253230657a1867, 0x37654f1c311b2c53414b241f3f1f37215d316a49493b2f596a4f171d5d463128, 0x45594b4965292b4b361d6a594f4b30655a2730253f2d3f621d3065185d4d3349, 0x464b3f414b323b304d1f4545624b304d0e5a4d2b304b] (by decide +kernel)
-
-private theorem ok_b10111111001 : Impossible board_b10111111001 :=
-  fork 108 ok_b101111110010 ok_b101111110011
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b10111111000 : Impossible board_b10111111000 :=
-  kernelLeaf board_b10111111000 #[0x2e3b3345122d3f2d63332e332d31211f5562466330305d1d313624316329494d, 0x5e5d2e5e2c2d2b24363b231e292c5c53306b5c21252c145f165f222e57293149, 0x55200c102e2262315f312e62773f58211e1f2c3062514555622f30455e4b2724] (by decide +kernel)
-
 private theorem ok_b1011111100 : Impossible board_b1011111100 :=
-  fork 96 ok_b10111111000 ok_b10111111001
+  kernelLeaf board_b1011111100 0x8569fe80d20d5dc5ec362550486a0aaf003f882a7e0147b0f2ec0b2f04d6b288470425e802085ee5e87ed064425eafcfb0e01dfaa67c40406192f93e5d4f32940accffd4100abec350425e40212fbf8aadde6fbf00197aa2884fd06c8882abd4f2a00cfd5ec761e5d9e0022a1fd9f42290cf251968b716a808d27c7c0b44b6014f804bda0105f90acf97c49c97cb00508118daeeb5b2a0cfdfea08c9e04504a93b8f0225402197af93a2f1747f198d085ade02b97e5d244c6dcf82e5f57402228ddecec7160a38a28951d8f2745f190db65f8b00597a80002c9f1ea715057e22c42ebe93b1e8fdb51c2a5af54493f90d57f802a22d1d44557c5e5f2048f4552971ea706f68047fa3c9d205aeeacf63a239741ff479fb0ee6a02365c9ba8a2137414002e696b8b82cdd0041466f6b93e5d4e082cdc01840196ef379fb3d4654493888c6ecf8f5091b3e3d0404e7973b8088b77cfaa2fef2fbb010151df6700410014bb97b3a05ce7e837724e88821e6fab01965161a8a3bb5148098eb3dd9dff6028327a40073ed0230d8451ead045946a00802fd467711538cb2198d004129b2c422f00232d4eaa0a1d6e4345f8f1747b188091b4025eff480060f2f410596808efa61cdcfea02117108be2e5f2c0b0e6ea0803b42512b5cdd142415ec397ca022317b3c0a12f93e5d4e820a0a8af25f0a820b6d543bdabb393f80400525e82b30f2f6b40813e40cc34baaaff5bab0000883ff16779661e5cc7779bb3c0000a4edf855cbcfc14639b1e01237a2cd405a78820c1e5f2802a4c43f8028ff10fedf844243ddd8fab93a149c001debf844840acfab9fa088897cef778db1d4692a8ab7708024110aef8b93d9f57e33180273104877b3f0be0000875515ea761aec14101cbddc09cbdad11462f639b8002cb800912ea032d862a4ae5c015007d663cfdde7e8a200a63d00a3ff31cdece82820aed0ea8ab7456116f7e331a90a080af56a20dfe20c4dc0501669761b2d05017ea00adc451560d7f8d8f2700400414ecb7f9df16aaa330d6642800cb7f838f464b7a7a81d5b0e2e12e3e172f3f071eaddd40ac62a20bbd07fb0d115b80aa80f3c6eb36fa2d004e3d65ffaf63c9ee747d982357110841c88a8cc005486bb45e2d124063dfc0010638b1082ef1620077e5517f8b22a836343aa40201ed50feb361e2e8f17511052aec8a0a20b62c455fb0e2f085ee5ea22ca7d2620ac097bbbaed554bdab30515b8a22bd26db55151df0828f501453da9e0559dcd69ec355245d7dcd1210e097846205994d11afe5b8445bfa8b5d82257e53b1e4e88082bb77aa0cf5450022e892d6eff415b92aa8b8f678a34bb967add8e87404ff28d5c5400c5d4891bc7b0d0110661a52a3778eec751001b6935161218f8f53c9e6f83 (by decide +kernel)
 
 private theorem ok_b101111110 : Impossible board_b101111110 :=
   fork 60 ok_b1011111100 ok_b1011111101
@@ -2636,12 +1936,12 @@ private theorem ok_b10111111 : Impossible board_b10111111 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b101111101 : Impossible board_b101111101 :=
-  kernelLeaf board_b101111101 #[0x3f3a476746512d5e29632d274b7624535a53512b373f55491a6b705a4d366034, 0x3121512d595d4b2b331e593f13280c023f27671832020c5e4d222d4b4627492d, 0x32223a273a2c4b2d4d465d4b273a332e27555a4d59491a676b595e4b3f3d3523, 0x3f24615a57245549573f31285a4f2b2824201c4b36643a5e3d31555d21463a3a, 0x4b4b6a6c36284d634f4f334d6868621a55704f66365158281a322c5a3a274b6c, 0x274f1c5a1829234b2e271c4b7c2702764b6c2d235a242b671c36683d232c512d, 0x47323d734628126371624f63456665605551582c3f4b322c3f366a6d674b2429, 0x5218512b52281c364f59604d492a4f314d463328633f494d364565365e6c4d2d, 0x52601e682e332e32186c4b324532457049493a3f60242118233d3b1823283353, 0x3129664d182d2a352a4f5115654f2d554f512a1f364549323f55324b64324531, 0x4f552a4d4174325c37203136212d512a2a6351] (by decide +kernel)
+  kernelLeaf board_b101111101 0x24a0004feaeab5089baa107e9a802cb2e628237d04411506c716da1d6e2a90202347558208aaf1e4d1c63a284a7256736a02cdcc6b795556d75115573f40568e574448cbcfc456e08055c0067e8b47559fdb717001024e800cb417fd5d00565cbd425017268aa020acb8ba2c7a5e0cf6aaba3659541445db3c4005db2cc7b34125e032e8ba08032e2fc344093a00849dd6ffc1a4c540185010e6347aaa8800af711055de6347ca39544019e82b4fa598c0041068e0a2be96a339b6c04041027e8aa40a82967c1cdc41064e0828aae7e31d1444566e8c6d9e802aa8f1e22aff193b376dc5c0532e8a8dba116f7b366ea0ade3ea0a4cb7ba0f3d636a8a2a3509925aca80238f00078f8b9fa2238f8be6e10432f83abd1ec6b39217fac8032f65aa2020b37fb6c010d58886df3f20032f4104980a7513f3f39dacc6a120229c440047cbc45769f39aa8032fbe6a008800880a7c17db97bb38154015ba3ed6934000057e7ce64dbd1a0a28bdd1e08aab31168eb7041a40997a0024bf57b36da8c942559b8098f1049fc88850cfd9ea2208337d1aa200368f16822a1ac440aae00f0e7f9b6dd1ec68a28e5235c028032d66d6b500558911d69f97cab3b37fa4e104c380028a2dad6be4aa4cabc9d0416bea28ff54058ea3b5cfc1505157a8e000126820d39cbdb793051555758adedee12a2c75524552af7743a2c6dd648aabad96aa8aa2dd69f1555975ace5eb741459bc91bbbb008cbd3eeb678022bb4f854c4d5ed7374656cf274a141535e7c040001d7d9ef72f7faaabdc155ae8aaa2a222a3d8e87a3add050542cf7740597abd9e7b16cea1020088ff27a028c66802082c1197fa7f3e6365c040b10664ca537b66e8b941184455b932f8d8027e1464eb77fbac011518f8a0ae7e36d1d015bdee500554f2a263d6e9f97f6d2692d3c556d634f428e842bd06fbfeaf2748502235b226bf876b9bb6f06d3 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b101111100 : Impossible board_b101111100 :=
-  kernelLeaf board_b101111100 #[0x362d473167415a205765581f3231454f202c625268623f5e321f453641344b2b, 0x606152274f1f322c2925252c2e333659372d2e0d1d3227344d3f21331e332c31, 0x1a6831514637682f51362517592c592e32294b2c27654553211a2a2759314f1b, 0x6367585a1d686a344d5d211c2332732520156529783131602d33242537672133, 0x51472d372c33681d532e282e2c52314624282c282d2e33582d1a1d3331685867, 0x2f0a2c374f340c6261156f316a336c1f28341e51582e182e334b61685e534762, 0x674d2d314f316645676c51363b4d5145604d314f634759454d60312c29286263, 0x6f624f5e2a7c6f7e68675e250f291b311e636c5146516b7867596c684d5d581c, 0x5a4f28312f313127202f41711d47286c4f314f634565456746636b282f473278, 0x32372a282f281b1b08284f321a4f5c602e314f31273147] (by decide +kernel)
+  kernelLeaf board_b101111100 0x8032d4106fa82ab001462fd11051aa020426f6118de2351a0213f659ad16019fdcd5306bb63ac213f00163a7d4158e047e016d73f51802002c75fa80ab1c0058e9f41800bf083a028071cee11f51ecd401027e000800ac79fe3c041418be5d04022e1267c446378fd780c8a80228d7e891f65f8f7f8b1004927e420b7b55fcd8477ffbd188202e7ef64882225c7e008a737d28a0c73de3f674700408dd1d4504d7f8c50133f59f662e8e6f77b19cd000cfaa029375b888031e7e00ac75cdc5d000133fb3a3a2adb14505df3740028f17c1a0833700114158f3fc780211f151816ce83179be0c210463812ce000500053a8d2003178f4404097e2b59d00402df519fb4c670262c4c395f7e0412c75414d5a8833f667f410146d33dd1ec60820bb5011050c6bb67cbd00000c3822268ef6153e3f8b04a388047d5bb7c55059b3e501d1a775a78a822c00bb51a322ed674b63c6e250526a31259892a35b890abb678d2acab631856e6b854eecf63809a315b1aa028e7f1eaa2e7c92c60c88b5acefa3d5b4e6f7743800000807351e32c051079e8825c100010657cba9fc6c7044063aa218301516e2cf49928082975be08099f43ab3d510035ba358f478da2df0504111111d1afe8edb4ba20017c0b3acc50001240b3aed96a797a22482cc004fa28820065e2f4f52043829ad5689fb3b1e7e8808a08426f70600b0b8740a969f5427e7f65a0ab31153a5c044bb0b35db3c150556db676f800add2451768a9332373bb2d3ed39bbfc544004382b3c0a3da2228cf59b1c141155096dadc8fa0828422ac7155573f07b58288392bea8aca10e5ec67f11596b1e2f3f51415015062cf1620aa8352d515127478b407fded972a82aa7f8bb6d183b4e5eaf (by decide +kernel)
 
 private theorem ok_b10111110 : Impossible board_b10111110 :=
   fork 60 ok_b101111100 ok_b101111101
@@ -2651,66 +1951,34 @@ private theorem ok_b1011111 : Impossible board_b1011111 :=
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b10111101 : Impossible board_b10111101 :=
-  kernelLeaf board_b10111101 #[0x2a153736323a41303737103037302c6a34293a685d1532272330211f2d4d5158, 0x5c41292a2959334f3413181c2a2533213b233331306b3052332a37212d472541, 0x2d4d303a2d3429455f2c30554a5f575a5f1e454f33323631325c593129692d45, 0x4d512d2f1f2d51262b4b6c2b4131535a536853416c574736522d4d4f2d304d16, 0x2b1e2d3029325b2d4f3529302930621a5a5c4f303032595133452b35514f2451, 0x60323051416c47354f5741605d2b2c5f5f243a2951304b3351245b4d2d2d271c, 0x624d3a2d372f2b601e2b2d2b4d292d30324b29553229703a324f5f602c306262, 0x5a341e672130415721252955334b243a4d234f5a3b604d2d323055232d2f4d26, 0x2d5523572d2e4d572f4123572d302d2d29372d686c306c5c55555b] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b10111100 : Impossible board_b10111100 :=
-  kernelLeaf board_b10111100 #[0x513153276d3164534935644f5766232f285a2b606d5a2d2f55494d535a514536, 0x70352f532732495a45472d6453492f35344f494915312833495a31274d492d51, 0x31373a4d5a493a3151514f334f35326435492d324d602f624f64] (by decide +kernel)
-
 private theorem ok_b1011110 : Impossible board_b1011110 :=
-  fork 86 ok_b10111100 ok_b10111101
+  kernelLeaf board_b1011110 0x5044815b8b5700400440251f5f5baed019b857c15fa8080041d1f5f5bb0c4055baa82b7554edf01655ba88e8d051d9b0c980b66dcc1abaa82d5db7dada6092aa7b01141073ea8228761c1ebe0aaa870154bc0aa7abb3e5e20a0a2893604475cdc6900519547a44fed6ef0451204707375bb2d8620849095747adc9057e22028cdc1461114da038b8259bbad6edf015faabc4917067b557add540004457ca414dd605614eb761b2e5e00aa9d6ae802b2d91154ebc35d600a8b2d9f9282822dff072cd016182038b15c5e0c014005065b0e8ec1f671f0056bcfebe88c1d449510517077715eb3044bf8a05fd26eb00553932a51d872f67a28a80a9474104995be6eb70456e82888a200a7c144e620aaf003d8b761a9d9682a08adbd6e22cfdae8aa292a761880a28a4a9d878b01411135aa96bb9cfd5155961800b00aac365d9e8ecf8b82828882af6ba851e7ea22a093a3cdc41568eadd094245f9fd0455bd1d36aabe5e8280281b350415e02241d8f4fb5aaa14f15d1c202a94f83ecebf1f6dd2c405100405555bcdd5480427ea822dd8620833744110002dade6ec3758aab769a9e2e0a0002017f566ac305ab92b410bf82215f55455b5dfcf7179fb3e10051540596db638a0acb6e608d9c4458e2aa8a0aa7d38b78ba0022dcc0120ea7449155922a76cecf9fa8b4d85151451609e6339aac124104bb3d401050eef47c24b3d63b0d1445d7aaa0c369688a8cf0442156df43ade3e8aa4a4a975083a848ab2bb7db60c800b2c15d641d872828adf644545be4344061aa882df461acd481d5b4d4eaaeba4465d1ddcaeac008b2d3e0a23d87450873fade6f47b1a22c7451509be8bae6f02a8dae4e00822a2eb55158f472541568f3f67a210813f1ae02cb5815114041c9a835e4ea8a0add65b37c188820bf5445c5cfc400400c9f0c1ae24280a82fe9e9f65c9ed7175045115063eb7150726b4f93a820a2fdaea834e7e2a002c9c01025529395d8ea304105567a28d27ad6c74fa8b374164eb7a3a08d1c0158f4f00151044f8004a885b763e4e9f2754096be4e7f5f4115107368f5f8b28d05b5abc842707011b7b58a8a0a2dd7f5793b3751514029f6ba3c5db75b (by decide +kernel)
 
 private theorem ok_b101111 : Impossible board_b101111 :=
   fork 64 ok_b1011110 ok_b1011111
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b101110111 : Impossible board_b101110111 :=
-  kernelLeaf board_b101110111 #[0x5c63786e5c58235c1978694052246c33194d5e5c73314d243369224166262d51, 0x5c2a2c5867416658415d636231365c342446415e371d3128367253211e4d781e, 0x696a6053336032586e3736375c313223532c531260683667713668583634315c, 0x6e31531c496926661c1923317e265d592a5321254d33585960665c6a53695e59, 0x345d2125460f1d41205952244d2c1e244d4166263d28315c5e6f581c58493115, 0x6449583260721028313637594d662a29631e462c271d736018462c4127621d46, 0x33271a142d1e5911642610404911262a37111b232a321c171e1b0a651c1c7206, 0x2128352649261f28352b1e345d2321195d265f401d282a2d262333235f1e2d26, 0x1816221d222e2a32355d642b1d2b322a1d322b492a5d691c242a3264322a6923, 0x585f6935473240585f612a3532592b4626373121472d] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b101110110 : Impossible board_b101110110 :=
-  kernelLeaf board_b101110110 #[0x49362b29322d5b591d5d5b5762662a2b6c22242b2549182a1c326c5b28363556, 0x322c5d2a59371d6c591f2d660f2a2524182f3649592727342a2033283d0f102a, 0x35365c376a492b3636286020685d5e2a355957222d34412433592f275e27592a, 0x5c292c3762495132232d64363564526d5d495e6a22245b4940603d2b2b1c6a28, 0x5e6a6d5d785f365246601862602c40375c34595e5c29272a3362263237612f2d, 0x365d5e366c2b2e2b3d2c3240212c2d4949625d2c33322760632d35725d5d6d49, 0x5e] (by decide +kernel)
-
 private theorem ok_b10111011 : Impossible board_b10111011 :=
-  fork 75 ok_b101110110 ok_b101110111
+  kernelLeaf board_b10111011 0x151549556c77fd38aab5c448f8b2cb5606ca363bfe1d5005655956d765d9d0695eac6c51536aa2adf63acaa04a1e3eb7501463196c545c89dd451516bb64155b2daf771115066141c9abd05121153babd9602aaac1651493bb2d5f27548156a2288150377d39cc0849aad973164d64099644ab74ecd2b0a8f10ea36ba21126d93808026c0150fea36baa80224af3dad3bba3d62406104399eee0008029bbfc0c0044eea355ade1536aa28f519e2aa08a8fbf9ed6e029b4119e202a22ac9f4d6535010416e87b151126ce8847b269b21c0c1550151109391d36aadbe8024474de2a3c156cb39a0a25f854f60289bc579764244e7221cf961b65546c9c9e6c74430cbc1d72c86a363b6c0555be28240a59d40566f9b55aa90aa9c915571e7b51636b35554161113e77e7e0cc642acc6d59aac1d2454494fe2cef1b69ddd0ea0a5d651948d8fcee0b090741aa23672696a4d559ba802b30044f60939bc1f369b2502117b808aa363ac20105cd0805bdd6fdb19ce125b192741518ea8000c0457dda820b1ca79cc424fa7404551153622e6ce6674547b1d11501504fda6dbbd9c048556d3d0e8800c97500509bb3ec6888000888d9f06a4e6ee7aba7e9c55095bda1210967d3eaf074f5605019ec2b8365d8f76df6daaa2adfb9a802a2c75455968fa7aa8aaa32cda792d414480890c1e8d024925b79fe3a2adbd1d8c0455b6d35563dcd14b9a8aac415956763cfaaaaaac1f3763554183ddf1f8b9505558eaab6ee6aa8a8b4d271b51483ded056fa92a1dd8e8882a36df2e9e871804f620a824dfc6a0a7b550b9898ff1eed1451b9a8d8d547ca2dcccfe3d3aa8a040d515a5a4f670ca2cf451100933cdef72b73e7aa08ac79526ea8a4d9fa7451641f369b5bd1d01545955446f6db2eea237b451b7b3010506155e22bb415555e0abdd660b002ab2e068a88759add1164e2088c9f162000ddd66cf055969fc1c0263e5116eab5f977712421aefb7504593dee60409d5edeefe3bfb6e968a8b2c6f066311716ab83598a0c0dbe888b7369aa082d9ef6dcd0550554e9f1505556cfc5a6c45962aadf1015400c3afd6e22a02aa2a0b7353acdbf8b93d1d1150565a3d6ec2a80303936db5c0326a02d2edbddc50193b2aa00297b6d5a2d2682016f54093c0f0680aaf70557800aaf39b282bab51b5db773442215bfab64e8a2a002abd6da92c0136c08a546d8321544419068dbbded56d7b3d7d0541545adda6aa8ab0749b3d544546cebf4f928a0a95ed3eaa159d55b2d111559567775510555d9dbea227710024367673f8ab7910212cd8fe44a156c0052974998d7edb93a2859e5093ea2229f698aab2ad06cf8514608b2bde96a21f90d655c9db6af544494eb2c5555bb22b6f254596ce77bba02adbebe82aa4e2dcdaad29155fb3109145a4c0aa957c0b00125d93ac318d5673a944a8010a65ecedea36db5eb72f (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b10111010 : Impossible board_b10111010 :=
-  kernelLeaf board_b10111010 #[0x26311d175f6a5810352c355c5c35531f5137535f21355d641d315d522b152836, 0x37652f352b5f242a65197378651d5d5f49564b0f64352b346031571957312164, 0x5e4b4f2435252a3564251a23242a5827495e5860531766536e51252c4a262a31, 0x5d5d572c5f605826524d2d335f572d4a532258281a5d2a562a142e2d572d4a57, 0x4951461d494f58285f1526622810311e4f212f5e2d2224342c572c51514a4d37, 0x51665351270a1613121810242a602c5f1e515f17281e1d5d31230d2d1f631657, 0x275121634d4d204a2d244d245e29] (by decide +kernel)
+  kernelLeaf board_b10111010 0x4513e230d1d0e08a38f59149b8a8893741cad6eaa0a4d5141526ea89356f602a7a3e6c49560466169e24d1d3e2b2da0c04f2598c50508869355e0d660a24ab7f205554f6d1d14551605bf97d1146a0a9ecef77638023d409011badd415513f8e3cb60a0035f93ac80251e3677558164ec04fe1489b1a8d945bf95d8536d138b5190d8e9ec054167e08aa1d7ea2032ded6e8b49b4d0111159d7c4255994751055a3a0a812b9bb7d016ee20b77afca2202012b36ff83b180802a9ba5cdd6ecf0191201410bfd7d440156e92ba7a82a208028b551212c6a335ddd55a08d6d5499560a535dadd501541212beade568257d646f612f9fa4daf0000a5c0156d750544110c98a2a9735a23d26ab448401b1a7e4e2a237b25b1d83106911a797f36a4d4fddd1d2eb30452569b5558c76fa88a965d7e080d70248915e5fd085498a2ab01032e202299d9584525e7f8f2e77bba037f93d6e5e804043f445c9b5c45782d3601706012031dafd20112026700216bec743e4d362880031d3ba88497effabb190d0506b888aab306bdcc5106e720d7a79fc110028eadf15948a7dfc00010eb5c245bbb25933bb1e101aef4b5795d46db (by decide +kernel)
 
 private theorem ok_b1011101 : Impossible board_b1011101 :=
   fork 63 ok_b10111010 ok_b10111011
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b101110011 : Impossible board_b101110011 :=
-  kernelLeaf board_b101110011 #[0x3349592949142b591d53785932531d6d53715658616e5965313f515e5f492d57, 0x591c2f32156c6a615963156e2636326e2926596a225e78585132362b326d1d49, 0x266259595359685e4d25651d6f3215626a16596162631d7e4d65596a65596e1e, 0x295f584936624d335e523259321d41564b321e323162332e331d] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b1011100101 : Impossible board_b1011100101 :=
-  kernelLeaf board_b1011100101 #[0x622d27371d362f0e181c1a6410590e3f5371593f6a1d64596a1e2f152b312872, 0x6556340e5912626c46656451325362704f7051622b4d41675927463156682051, 0x51211d2e62184f516224121c321a564b312e1221212f2e62186831627d0b6367, 0x2e5618685336627a612b637456282831314f4d5b56464758665265642b2a5962, 0x5162681826624f68265162245270202514267a6a591d22251c3258336c4f6257, 0x6a3647241c525331202249592b14255e1c583215511c6227595152627f56631d, 0x4936534f2f312b593773592a2f1d31647359262528595f6558366a2f75593756, 0x1d31717a51626818211d2121711d1831282e5e4d2d2737682f322b52274d3624, 0x5e6a5832105259656222521d3326535934621870322b092d361d271c53521d37, 0x62633162282864656982267a592f34280a73598075597a22737a] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b1011100100 : Impossible board_b1011100100 :=
-  kernelLeaf board_b1011100100 #[0x517a6a595856241c32476a59472a56582d242e242d232e533f2f47332226185e, 0x1d362b28642d28336b6324513f2f186a52654d2b656a6680566373652b564d26, 0x266a4d573666535768662d216d28364d2d212424683f6a56593636] (by decide +kernel)
-
-private theorem ok_b101110010 : Impossible board_b101110010 :=
-  fork 120 ok_b1011100100 ok_b1011100101
-
 private theorem ok_b10111001 : Impossible board_b10111001 :=
-  fork 93 ok_b101110010 ok_b101110011
+  kernelLeaf board_b10111001 0x281280210800a9eff6393a880db17164dc1040459e8dee96a8222cb50412cecb3bb07adcbc1100659ed515565ac7c588aa4cb3d404465db3cee9bc5d9c1b3a00d3d5115b3e8ef62a33792f412049973ba24aefd96575411716aa9ab2da01671c38a02e2f1e77fda33769041045cbd9f568a8065ecfbb3d825675504139afd9657d9a28abab0530e800a967c78852257dd828a9b8521565009b6cbdda01229d513767d5a2ef7e3b1d1d51019720cdb57a0032f6e77400593c2aab3d4064f6753aa12762a529abd41b39dd495005a7aa3245e35b3a2cb2e9e77db808894f105e3d5b6c78741776367cbb1e59417f8251d48bd8b37f593adebf0162d514055531ec7c5a8c429610a51e4c0172eba700405ffd0111137ebb3a02020afc415a6a315c8173dab39ffcc80275ecfeb4588a285cff5def5763052a001156590c22972a028259f2f8b45c2452e18ee28b3e4da0d3d44b3b4f1663e1a88b2c015eaaa09d6edb504013b8029f39a8200d3c542296776fa2091dd8e28828283c71f5d1f17a33180d002a0221cee204ca8740543f1cee6363a8d76880b7b1019ba800ab753edf443468abf65a02bc552962288a7e6edb4982201276db22d3c5009fafd8ea8a80a42bece2adfa1510939f67a20555afceec7445100727cfb3c029b4ba8c0502b3800225ff2f636dead5000017fd7b38b7d45005adeadb71f01004499cd554842a9680b4f63a0e11111602a8c2c9eceaf29822402a5ef673b1b2caea80a00029474e78b54500053e0a8a59e8f252f16a080090ff95b4500c79de8f8bd198e09458414de2e80127fa308404d80d1f1688a4e97c34180025c91020a69b54001517d7ab00005b39dd16aa20229739b2ec6cfd9a884fd050c5a00215f00576b5b31e8c690669edb153160229eb4470e90c0afc7f4eb6a35110151b1c15040163b3f66e0896fadc822a11b8fd8f370208a34bcbe4d1500415e2abb3e2d9040168e2480874eebbc598d040527e003474c5a2810a4c96001cd6589aeb6824bd15090463aec96871000043a8afd778b31e8e15563e2c04408fba88bec7a8099fcbd6d0445a63b5544b392f17b364044463797c9a080ad1d515974fc5f0d0149f880803c3a3d8b0457aa8b37483ab0e7ece9f560636c7ade8d06a0288d1f1620b022add3edf00013bb6c11015faa0203b14c68a01ccd6964c8684cd9d140476ffa7f1c16b3a3ff56778492c9b484d9f56229ed7e5757b1d47cb01504016137ab9b80957e1114156de6e9e2c482b5fd180ab9b55045ba1f6e8120080a35549596dcdd6e87005126a293d1bff575b90011590942cedb5a106dd28209ddb6af51e4e5884096ea30467883af71f00208a4d028eff5f98f574b08510cbcdc41441857e5f56a0000cb9b5183ff04ade3c14e784597105555f5b910026f2089ba3faf5767b18b008256c04499cd96a88b1f0491757670104123eabadd8c0116e930557628888935ba3c155da8034f7fafd5401008fb3d169b31defc777 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b10111000 : Impossible board_b10111000 :=
-  kernelLeaf board_b10111000 #[0x572a362d1e2a12103132412e2d2a153157173649531d2831314120535e5d522b, 0x5d73598070226263586259615e532132411459592a341d364968495f312a4959, 0x31495f282a364d3f33314962732f34595d515f625d522547516e1d6b69477a6a, 0x1b57570f572d711d31122e27284129341a285d59571d3117495d1d3110315331, 0x5d41627932312e2a2d362729362d341a73571b1d312e2934222d36201e0f686e] (by decide +kernel)
+  kernelLeaf board_b10111000 0xa05dc083a2aac88e2fceb2d8ea024aec40011558b76d8889f4553aa0836d6ed30020552400d7cf519af9bceec75257622a9da60020422d6edb0140106a0d007b1fa2868d6dd9bd15afb12b5f1f80d7d6fc73bb1c96800030bb450044fa8d0183a9da6a1049ad50946842b00ddecf5f3bb1cbf2704501406ee77638920a443158f4f458e02882c793dfc50091468aadb7377fc533d5009198f27048145c5a043cf5517ed3b3dde8e012a212dfd571777a5a020297508f80ac4c32d1ddd9df5f09a7463e825285ebd5ddf9f6781405003ff058626e1a2f178fb1a8a20a80e2ece0e1dbdd3d0e0acb15060e214ecf008567454559334d0943bb6e4e20368c844693dfe1840650663aae4f67afa80a2ab451b6b7410f68a322840ab4964363c8888cb83aed51615ba282c2acaec756af825f6dc9e9e821dc800146c711638c1e444500106020b4fbddde96af (by decide +kernel)
 
 private theorem ok_b1011100 : Impossible board_b1011100 :=
   fork 96 ok_b10111000 ok_b10111001
@@ -2723,45 +1991,21 @@ private theorem ok_b10111 : Impossible board_b10111 :=
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b101101111 : Impossible board_b101101111 :=
-  kernelLeaf board_b101101111 #[0x4d415e1c29654c725b631c7241632735414f566535351965334140245a672a4b, 0x1d2e2f27374c2f272f4c403215242f725b63606677592235495e354135494164, 0x2d3d5b3a27301d412d64415b7066574f1d641d2464662e301d33297259355640, 0x1b5b71606c590f0f135a246a570e65354a5b3d4f674f2e59416733294d253223, 0x5e565a4d615a4012405a344a352e341e34405a3a5b2d5e2318292b3a33410e69, 0x37493d5b323228182e343d2f495a3a273549495a6d343d5a61645c3d40495f77, 0x14242e4c1c211d2426352b34594d4035675a3a5a4133344d61232b5a592f3434, 0x2a24354a552961603058554a31304163463d4c1c1722242922201d1d0f1d074d, 0x4f314f3561242a35594c58292a2e6c30315934241967212e30412e262e302267, 0x552922641d7e352a2b203031] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b101101110 : Impossible board_b101101110 :=
-  kernelLeaf board_b101101110 #[0x2f19153b496032582d53783a5b605e2f412d63463267584d274d3d3b6b163130, 0x491a331a3d333126222f183b284b5a403a2d342f3a2d4d33605b6a63415a675e, 0x324d58332a72345e462a2a4633344d583140234b24401232402366121a211e34, 0x3a65372f3a2a591d204d5e592065255a404b2f661c2a27461c34275e346a2a1c, 0x372f181c5a] (by decide +kernel)
-
 private theorem ok_b10110111 : Impossible board_b10110111 :=
-  fork 81 ok_b101101110 ok_b101101111
+  kernelLeaf board_b10110111 0x1264456aea75485516488264e3ba87ed5aeab00944601557a0c15586c71567e08b2c751567ed7c38ab4aa228214a4e55b5ecf3354594056c6a715155900aaa22a000aaaef66c363d9d410969aaaa0029333b9f505543aed870740055d880229b5db0d15521179f40556936bcad405144aba9f0e88060d561888163abcac5046388430e0f8f8d8220bdd59251999cc41004004be8b49a9c4114445ca0c24eea4827747e0891dd800fa02cdca6935daa88ccce60221d50ee934db5d415780d35142ce08b37081a020d7cfdadd60220216b883b3d52069cdd654102070e23c455e4a888a2dad6ceafda708ad3516fc9c1417bdbd819620cb51a98d445d8200ad37ba022abf93dadd69f5106b80b278154593daf6e228aaa08b4def6bc3a80393101404b9bdd51a0727bff7d444255111bdd6d6d737554470f6b5996064b154541a076b5a682a548b2b6b82aabb49569aa009eda680ac0ed6ebb7add456009bdaa2a8f31a88222aa9d1115ebad0567c1d4526441de9d410df6fe38929834367671511fa8a8fc9e8a0d6b49a829ab6be3bcbb5e56a022dbd7baa4ff3e2a4fc10545dd9d4560f9f67a20a70199ba5d968aa8f40516ebdedeeb4fb0c4104ee2010700155ba08a282e4e0f6f4012e1e6c02bf3f8154ef93450a4818ee93c9e6e49576c3960048ef33e54fcbb3b5d50456ada823033baed7e20aa89f6fc84cc025fa82a7d055fa893381b2e9518aea8c4935faa2a1cbb7a000e3f0682e6fbf6745b5e4e88897b1216bb0740116bc9d8010a0ea0aa2393449bd107bd9cd4ed065c99f2ede80c0200063ce7cb5440142083e3d3e0a080b5e0f3fad80208b976b824b5d40040cf9767c1d501a06a4ed79f55cbe0456fa12842fd4c682a273b5bac44115cbab7d40517eeb55800a084c84d9cee839ba22aa037bb3a0d0441272e97b5c0e5ea2aa0a222aa82ff367355922aaa9f08d82047325169a7d492f622d3d5a2200aab39b2e6f6367a880a28abe588282b4ef71b5551562020ab8da033d5a737b1b08ab1d25140595a81a3e5eaa0c934056064b65aaaaaacaac0d1ea8b9b25c2a9ad0e7b69c9d550d68acf004d722bdc1467b1d36a8aa28b009085fa98d561dea3001540597dae06eb5baaad3555157eeb20415bcdd01259f8314008086dfabc7aaa20a8c1ed79fbd952a4afc545243395ddec9d217068a8b2d145b1c8cb7a7f8e50955d76fc1ded404a5f881075be3e37022a40cbcfad8e6e9f5146044466ef7505dfaf2db1d8747 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b101101101 : Impossible board_b101101101 :=
-  kernelLeaf board_b101101101 #[0x576a2859596a347212104d5957521764605f5a7060712e1c5f5a704d6c562435, 0x132a1c562e161e19262b1b5a575c574f2361576c4f576c5f79615a4f6a2e594d, 0x516b52596c693d30321e2d571f464f302a591e64602a56295752301f30146a4f, 0x236c2a2f24492324181c292f1e651e1e60092b2f24092f51251c2f242464255c, 0x235a5c28565a271e31286459655a51631c2a56252356230d2d2565791c2e705f, 0x17303d3153342e272a1a2a253d34645c60792f242e2b5c655a79241c53341e20, 0x72511e1e2f31294d60242b3b29315c212b1e5930675a3d4f58512b24213d2f1c, 0x3d6429513d1e30532d532b1e282b4f29575c575f26515317303124175c665c5a, 0x1c27132e0c2b1d2a2b1c1c14152e56152a244d6c1559] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b101101100 : Impossible board_b101101100 :=
-  kernelLeaf board_b101101100 #[0x191c51512b14596c202a515e146a631f592563292b6c31342919271a1c663058, 0x5f4b4b5c6a1d641b2a5f5971665c5a2a5f4b246a59673551272b6a2b5a1e3466, 0x646a12196952594f4f5c2e2a5967305f4b614f5a304f5c635f611c242e2a6459, 0x65294f65246a2a592e] (by decide +kernel)
-
 private theorem ok_b10110110 : Impossible board_b10110110 :=
-  fork 51 ok_b101101100 ok_b101101101
+  kernelLeaf board_b10110110 0x494139a7c19109eabba2119aabceeab105057aa73160e7202a2534aebb5456b742a5755a4c4066eabb36055415040af675ef93515154e8ad1d457b9ed8622222a02d3d544456f4f579ed468a2abd902827ea7481afaa1217306abf7f8114dc0d1e9e5f618c7455556549a5f4515095b9a808239bb9c16be5d1cf6a2a87b5fa02ac755555453aacc24df069357c2aef1565853b1ee68aa0021c55e7bb3b0f3e852a8aa82b6b7bcfec72c034754100557a8aa4c4543c0bdd7e73554154522fb0deec7a7b4d01415d88829f556a05289ad2055571080a97221ef04d3a0111c9dcd5707e75fa4d8105155dabe51080001b9a800997b5f9d2673a7a88d3515504f62a8347dac44b9d2a0a8d916b76b4fa22029ed8ea02a8d024326289671172f6b901428f8f39aad51540ada5e54782b2d6d50478dd6f04a0a5e0172fe739aa202bbae1a0017f51fb38156bf49c9d1147a0a80093450959319cd4ebf219964f79750413da821ef062755f02c222fd26a0a09d7f474ba2473805fa4d8082927934892ea510dcd04028e42882ebe9767d9e9deec365804a81ed5b8a08d7c414fea211b9fb0c155b42ac2a885673de4f06a22aeada9d155011af888d2d61a828aa00a27f6194f573f15409427aaace75b5d820016d04f62a99c514536af378002dac1af82dcc4afcfd1eaaa8010987afece7ea80a80557f66845fd4f3ab61ed73fd5aed150b3cdd4015afc83ab5455476754496cfaba1020169f2c9643554955042966f6740022bf4b2fe4f06aa804dfed7c36196707c7015512495db273bf80005af874df675b49b5d15011505104cba9e7eaa65d55141149ead576754005151454177935424356c2212ccfa7a5d9d059f820a2b3fb9c12b04abb55d9f3ec308bfd20804bc125c3cfed600282c39fdcc0155c7924a37fc382a11cd272a12bb55e4ecec20457f97880cbee700a2283ab3be4d9608deabbfd9f8e80a8299bb9c2dac445405580357f97aa88493675767cfb5c445a3a0a52c9f5564095fab44457d6b3db4c41450cda67398828cb47509402a3b4a52bca767d9a0d568d08b470406f64a0494f578f5010054fe22b674be3d48853abf66acb2a82c769cb2808a0aa733a7cd673cdb0ec6cf (by decide +kernel)
 
 private theorem ok_b1011011 : Impossible board_b1011011 :=
   fork 69 ok_b10110110 ok_b10110111
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b10110101 : Impossible board_b10110101 :=
-  kernelLeaf board_b10110101 #[0x511a1f725a1e3a51305b4959491c56215166492f1d102f453256126b17602434, 0x57525218561745276a5b52596c22243232514f1f5f4c31585c59511f701f6a0c, 0x1c274f271f46495260451d0e4564170b4f285e51762f57767476174574566056, 0x4b76724b4f271f2b2a605127152a1c1f203560605c3a515c651c453029286017, 0x244a174b241664605c4f1f24231565292a231524654c283523271e2b0d057659, 0x66602f725e451b6c6a22242a17236529250c29181f30302a17100e2560594a5b, 0x4a284c282a3129292f5b29594a5b1929595e5127303a201f2429204b4a25654b, 0x20292426] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b10110100 : Impossible board_b10110100 :=
-  kernelLeaf board_b10110100 #[0x181959632425354a201926195924351f4d29512f252b2419344519514f593130, 0x29324c4a63566f2d135e226f600c51572f4d4f55514f1c59662a24251f526325, 0x45222f224c667212601f1f2b522d2d1d66264522590d021d452f170d570c1d22, 0x2667725a1e344c5b651d1c780c596c6f0c456f18603a262a1c2b5b1e345a202d, 0x512a212b26223126212b31265b65] (by decide +kernel)
-
 private theorem ok_b1011010 : Impossible board_b1011010 :=
-  fork 51 ok_b10110100 ok_b10110101
+  kernelLeaf board_b1011010 0xa22a0c55538a934da2a4ad4622229233351aaaab6382aa70058145538bf45481ade222aa7b3cad1015ade22a899d4f6750415bdd1d3ec375a02a83440fe93141554e8345125e2892b4b80397602997a88e6d270732abfe5deda28bc809bf67ab45a4d5620a0217d21155445147b9753a5e15514145419a9cc67f61a200ab0d609148855a905fa218ed414bb2a2250c1383b3caede9354009006565f978a348034a4cb793c1a102a1739f8027f0112049a3caf975380a2aac2412011e575279799a8dae8800023d3e2a88a7b5578a2482370bf6ece80a0012fedf2d5454425e93f4f9fc4140415eab55140000c1ad1d3e574550050156733fa0d011aea0002b83903077350175d1d5489544ae622299739c5d86a751802b8301050be734553e02a13f053e7f099428da20ac9c1900297838ba2110011dc77317c997d00445eb3f51a25ee8950a3f6d05115fc8257fb7d361940a5a3b65f508bdd3ade0c0002b6a0010057e96a0c010414b31d6cbf17114013f6ac2010b7d2ecfb345a4d960b000cb1a3ad2004fcfea02dfc9984a84ac7212c62173b3d1d149110ffc3952540ffab19d4a00b30151cd6927fe5dacf60ac2a83ae8ec395416dea21249d0042cf4802249ce75b44150f47cda088c9e561612197e77621c22abf50a8bb2d002ada24044bd797f069369aa24ab475580a221c10095e9b542851620012c793744a1d57a8404c74dd4816f032ea0926f3fcbb59eda68520b334101002df973bacb253325273f18cecfb346961df8cd5850008befcc78351601d600a9b501129567340a57a0116f3db4ed68340416ea545d4045d130842fd16cd2333cdf2c9783100fea007f55f4b4016ea8082dcef9b4da209175162000059c0001b82e3bc5c5f80a43317c250001bc057c667745a9d96004ce509594840838fadc26fd0640056e4f810402f68bdfe0c662200d1ebf22bf19baacfeaf04c151c949f9cecf9b55a4c10052ea007f0150a5e3d2e635001338224d9f1e8a4c5512ed795c02220d4ce02a6c4133a201674526d73fc2a884dd53a02d1d7e9744057a20a4cced38ba099d055a3a0a20b3fb3b1d86cf (by decide +kernel)
 
 private theorem ok_b101101 : Impossible board_b101101 :=
   fork 63 ok_b1011010 ok_b1011011
@@ -2769,7 +2013,7 @@ private theorem ok_b101101 : Impossible board_b101101 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b101100 : Impossible board_b101100 :=
-  kernelLeaf board_b101100 #[0x65305e45532e221d5a5931633f6a5a4d3331672b591f323127452b31253f564f, 0x6a6b30512551591c2b32552b312f5856454b595732451b163118451669672331, 0x65292929495c51721e63596659595f496b30322459555a5e596b2e602a32632e, 0x4958675a0f5b6349601c3051314d2322342324516a236051316052294d30525c, 0x615230605b41495a632749602734273f272e375829582229581d33592765632e, 0x5e4c59724b32252d292e30272e1a59276031414961632e2d3060585149603060, 0x345f293029605c295131721e2916511d2a635f745f6a5a512d5c516b2e312751, 0x5e4b596d551d3f603151374b153f2b29513b581d3f2b633f2931656632304c2b, 0x3f68242f6b2163586a26337858535e51305e3f59322251345c6730414b5e514b, 0x5941312d53602b593157262f] (by decide +kernel)
+  kernelLeaf board_b101100 0x11b3caa0c1d163aade9f831541565578b6763d7e4110454da2afd5fe2e8d2628282bf4115406d7a1f1f63d5ca8a08c3002a9b99fe3b1a80d3ef747015104a8861b7b7f80a842967196a2e8e80b4d51145b9e7d61c1e5e82817b41a8e032fbdc94becfb74ab9dd5407f88038363d1d001bf2f2bac000a928ff57a92002229e8eef544405b19dc5007faaf5406c7bfd4ec7511050cba10aae6d968082c35499abda6092dfd4e12a22c353b83400212e6a7a3b1f967b4446054e2a16c1512168e775582a858fbf9492020f4ebfeaed6d1d901116e48373a3ebd76c7554154f8aad1e01551500bdccecfcb25ecb4baa88210add414ebb5868ab23127d76209ac55486ce9fc1b1e0f2705c3a0e3c04576a8add8783554b1d1d045593e0c51561e0f0ed02042952d8783b7a8ca90793daf1e9f4008446593e0d3e00410b4d3eff5153e0abb6fc2963424053a16345840a742c67767d9d5451053f975440571ebb93ad6325833ea2ab04895ae45811fdbf1f27c1ca89cd4561d1d8f370111e0122d0159a7023d26a4b4750a54435640223f07471163caaa0183a5a9d159ba881329230c505a5dcf2ea75015380022a9e4f73a3f2cf60402e3ece801166ecea0d9d4aff27d7aaa12c35059693012ce03575004b5a2deecfaf5de0d415580ab2d4071e2a2bbd5abaf61d1d2e804014720802ce7355ecb448052ae22af118ebf2c75b8b8024bd1b395f504140165c5d404000de5ba0018e63508bca00925bd3e7d0041040151ec7cbb0d1006f6c5e9ebb0402144500491677026d76763808e3d841ffabb5cdd9e80a0aa08208b1f3eaf416cf00200207f65a2c74fa882231757a020c74bbfeb73f (by decide +kernel)
 
 private theorem ok_b10110 : Impossible board_b10110 :=
   fork 60 ok_b101100 ok_b101101
@@ -2780,17 +2024,17 @@ private theorem ok_b1011 : Impossible board_b1011 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b1010111111 : Impossible board_b1010111111 :=
-  kernelLeaf board_b1010111111 #[0x2d2233272a3f334a226e2a1c2d6e67132d52373133222d673a102d523229582c, 0x1e19273768410c1d2d2f2a331d2a780c495b4a163241271c361f1d1e412b521e, 0x1b5d123f211e2d2233142d3b25223f572d37633a5232170f21142d222b16211c, 0x781621102d2711264d1d1c3710261957116a1d26412126162d31311d310c4126, 0x1663167e6c32634b6d6d65635f765f60763723106e685225513125373231104a, 0x4522244133105637645616495f675376603a6967455b6d335129623380088018, 0xa7e6f650c1c332a57613d272b1c723264333b4a2a2f293d453270565f667461, 0x21350a141c33454531331c2a3b32582735324a333a6c314a331c31353131133a, 0x3d45333d631445192a3332333a1c602a] (by decide +kernel)
+  kernelLeaf board_b1010111111 0x147b84a80b31767a803dc40171ea94c8161062e6755b3c2565a0ab3dd6734214306ab54104143b5c1551550456c94ce6cf140022e2a82011704163ab3ce6ab505441deb2ec6800a7c946b828cb14095b3dd7b34518e2c84ad67a0273144109463ab5d06263aa02b1c9ea2eb40521457fb80a90077f9719c7367aac02be8885877bc209f404a579cf96cbc9804aacf204505df212b55a04280afc84053cf78bb2d450038756d861056ff9be9b20e1c8b8a2d262c40b076790c0046b6aa0a2df145407275b51081022da808c9efe00d9fa7f6f06eb455401d3b9f8b8296f4041dbb3d0128ea7c58ca8088433cffc46808a27fea8918cb6212e3e592dfef662a22acb671f2f1576e0a00edf2f018fbff6d401bfc0aa260eedb28a20df4790f77a3a58925c11a8ec75404014bb7d0941596c72192d20b12bf1b016d9810e435ba8c1027d580548e9b9b9480a0827739b7d505152189b50965204cf57c8e04b6acee9b83882a87542148604d96d6ec74563a822a776690944638ce0e9b51611137d15de258c88ffa6439ed6e8b67a10214e5b82ef15052e4008b5feacb5f5bb7d4031ea8aa48eb296cb55455102f883f14a4394d40156e8b015e5b40850e733db2299d514f837d4b46c1c660092a775015bafd56cf69014ef0c8abf18cd59558593dbe565b41165d0280c1d3e736d9fd01093b8a7b54560eaf540aa56a59ed6e8b6784aa9f0001556ff59eb122022b4ad17bb50100559ce505beef3e4f04496f4b6fc4a822c7119e028b5be7d5845475910d6f4b65a9ec6b3 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b10101111101 : Impossible board_b10101111101 :=
-  kernelLeaf board_b10101111101 #[0x25f3524362c1f102c453d6f6d332c551e4d4b153525201f2c363d312d165260, 0x312518640a23244d3d241a1e36244d242c232b2c320624362551297e5c3b5545, 0x2c2a5b5a5b2d45531a1a192455231818065c641a5c5b3b1e3a1e291719195d23, 0x55533b5a55246e615c501e2d452c3d2f2d152529290b2d1e2761151f5b192918, 0x65091845331c2b51691f2d322c651b211c23472b213d326551231f3b10525c1e, 0x245f51317633272d315a6831182d331c00162d3a721a3535511f182d72354b72, 0x1a2d3d5b3a1f250a2d365f5123361c141323081e3a722d15161736063629161c, 0x1a257251275a3d25675751293b492f3d4127691c495a5a2f2b694147232f5724, 0x2929243d573241330c2725323d36233d29315a2f173d2427726419502772642b, 0x4532633b3d7c685b2d5b3b643a41575b365b500c1933365741625b50453d532b, 0x5b195b3b633157332a3d5f55] (by decide +kernel)
+  kernelLeaf board_b10101111101 0x412dea99c0092debbd42971ec75450444afb3e55a103dd411894bfd5e2ecb50a541001c7abbc014547bfcdd1a0816f514156f56f77e4dd623028ab07afaadbdb60896fa1a8888ce33b3d516da90d5f83e2c145b7d0c0550062ef7a7808af44914e2a2aa749bdebecb415444560ecf405254519a7c40144bb2deedb44111f209128f753b1ed6a0aa04bf1018402fbdd271420a927f9642039333a050e215453fcbc9abcd6b01097796234756153f6b500115ee97421485cfd7d0a3a9d1977a900a1275fc04af783a7f4e731193aa08dac45b5a822fc157e9e0f1f4784ad2fe501042be934150d6b79ef6f75829fd0019444b82b5bb6d8bf9088288d1d1edb39d20204531110209e8f10471ed4405d6f2d554056e572d804a0030a825f96d86e445b602a9cb67349a8297f868e20aaac73b6aa02b3d3ea22dd8f6b9043460a0c74c72acaadd41259e734454501828296d6eebe59ac0049aea08b5d68e7f58450031a254aaadf968a4b035e5fcbcb89c031c5e5504459e0201cd5e82222d1f4e7f5b8cb598465c837c0a874148e68f05523eaf0543bdd5465ac04e5e8e8f3fbbc874bb9802089eeaf34800a0053ddf6b018aba4d00809dde1ee6aa8334345003dade2e4aab399eec00afd505bc574ba80aa71054e2f5ba2027b8054fe1cae7fb7a292822019d4e46359aac0452de228dac10502425b7ade2f4f94160235c40486b33a4eae8f40004319098c3602305ceb266b850ae681316f779ed4011d711ec8415397c8133a90899eee923c98e9731a59315a2088f1144527377b90009340153591ed006da4e6ea09381668f57a202a8002cd96020121b49b6d2ea24ac2d1d4ea89001fbb9a02efabc5d10014510177f6ba4db6800b33f90d55966a3175104817befd0076ea02cf40459d5cf6a82a33797a02c0a57151ae8225d055068129fd66db54047bcc75b96e9783 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b10101111100 : Impossible board_b10101111100 :=
-  kernelLeaf board_b10101111100 #[0x3b4d255f502a500a41685a3320232f1f51152f36252518294f2b1f3b3d32741c, 0x5c5a2155233b3268273d36641a411a190319271b1e291f3d4136155519554a23, 0x6864366e2a1f3b32233633212c102b292919412b21686341273b5136234a2332, 0x3229320b1e0529142a1f6332251e32295c2563217c3d25366f47336f7c6e2a7e, 0x6e50451a3b2c684d415c3b47095233477e68655a3116364a2323321f2325331e, 0x321f47321f33142c1021266e525c1f3b50695c4565506a64745c69632d5b4764, 0x14642d4a1e66325218526f3d7c66316e1a5c2d1f7c523b526e26253221251b25, 0x2a13334a352325355f1f173d192631473b23362331260c5f1f0f264d2a321e0e, 0x1f50190e2d4a1e1f335f452c214a14454a6a2c18253a4d2a605f13251e0e3b47, 0x4d3b1a0d6433502a5c521e414520653320453d64194f2d5b452c512d14322c4d, 0x6e321a68642c140e201e631a69695a1a680a170a1714201e] (by decide +kernel)
+  kernelLeaf board_b10101111100 0x400a68411ddb2cd692068f26a84a02ce008040298ed06829ed90971e6b104174e0809a7b5c5088026bd18ac40402f82a22ac2b2fa8514d06a9ed195a6eef358df2632a2b3c686aba152b9d2e0506083dc80c1da2e83cbaab3e001106a1177be4cce288d3f1121855bdbe2e832ace8e0aaa220ab729a02cb59cdcfe854a488ad0cce3b04416e8cacf6aa7f51555219f7f8ba2a0b343caca682011725095ead415998d2eeb00426ea002088abc1dfc9f4c3108a5cf63b45604077c7c14545593d9f2b55411156ba3c4114bc0082b5efe7f200beaa2f733a6d52541638a200a51f77a3e41b6424088a3d8e9b19a20285fc5451014fe3f4da0a2b3755d22220a2cb3d8eca79395095b8a044acf60a28b9b8141974b3188a54b1461114177ef7f9e6c5563dbb35dcd0001116e7f864103e74b92500077d2f769b0011012ecb4004390000897378002097659fe3e020cb3fb3ca6b321c088704dab10a8eeda5dcd5545853fcefa180a80ae9c540b9c5c01432e00d43d5a08d93004e9dcf4f8f5bdbc025563f93501477680d0e2ea88a6b50577a32cf473785a0eab735a41441df1f13b4b400019f1f25447f7a3cbb6b6396c1140056dcae82151e823d4659fc41111e97020099e7b565a9c101115962f4140f61753a45355a90009ff1e02cb4ba0907b4596a7b980a080a5f1e8a1fe720883dc4bb6d084adfc7c04000559fbff9eec005455fef47930045b6200106ed155a7f400477b2d1e88adb19e875990d00515e42a7014454eaaa67483abd0ec003a3511031f074f80004ef140a3b6d1e8b12b4011ecbb98085ae80568443d5d847a02a04ef65e8d141153ef76de4cd6a228b41cd6a80c6710528401e674f82931bcf6a7045003fa2a0c82f783b6d040aea812a55ccf2aa215795a3dde02caaa2937500114bdfda86ab4901a1b2aa2b20fa3b5b3d481418a3c515f87f54408068e415d7edb4ba08a97550040831aa79fc000abcfeef7bb2fa673 (by decide +kernel)
 
 private theorem ok_b1010111110 : Impossible board_b1010111110 :=
   fork 88 ok_b10101111100 ok_b10101111101
@@ -2801,7 +2045,7 @@ private theorem ok_b101011111 : Impossible board_b101011111 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b101011110 : Impossible board_b101011110 :=
-  kernelLeaf board_b101011110 #[0x252c316268674f5762505b2d364d2c585b0c685074211a5220365b2427336a22, 0x36272d0068787c6627144f106e321a5868624d1a10582d295221182c262d374d, 0x5b4132212d32316278185c337c314f6e4f176e2b4f52324d31254f6e36636518, 0x36655a32804d5b206c271a17306f292c2f255c514f6c1e5169702c6a5f635852, 0x2c101c1e303b57365d7862305a5f576f724f27364d30316533645b1c29785162, 0x290b29332f3615251a321c581f70271e311a703027723016302b29301e3b1672, 0x6e0c2729311a273615293727331a265a31253631331d29182f1f822f250a3656, 0x2c211e2b3665312c3b254f252c2529493f2c362521316310292931273326212f, 0x571a57333130272533272131301a1e260b7e303b2f18265a21301a6a291a1f32, 0x15552f243255472b5a29102b272b323331252331273620293b2527253b291f65, 0x33275a2f241b25] (by decide +kernel)
+  kernelLeaf board_b101011110 0x22b3e1154f8888dad7e9341137a5d1410452bd5d7e9365a8200235750a3eaf5106d6a748683240af4f800abd96008a08cf63a5c0405547b1d3edb41a80a122a7778822970113e2297151dea73f808828b97afa882a026bafb3d8ec35241010153e420976788a4210289f43b1d866b00540f68c9b4445005ffb00161c8022ef5fa18d376b50210090ecc335ead1052224539ad4080fecb59a822a1c10503dcaf418145b797001163acdde979f82297610156697150153c9dfec22cd449081b6974590ec7c790e0153c2a82a7638020849f67a6d4101439202bf8411250451776334fa9d8e6b004682013edb010ae2a74051be9f679ad376b4510050018e976dc2882a31e8567a10007754e635f822047f147ff00415fa5c56dbada002a7411045178a9d9e20a0212fdb695d2e6b659cec7008800a7fe1a7c03da2001408131cd7c398682d08327ee5b0cb680030d0010484057a9d867b77a0025b004e5ab32181231cd5044013db0ddeb157c06da813773c6c09262d8680016b54aff5fdf842800bcb49f88a2029f9b6a53761b1f2ecfc982136f39a08aa71f1a08851f160202b6dcbdad5001551659ffcdede83d9a40227cd64a825f618022bbf4114eb3590400015f88a5cb9d1e7e116cc5040503dd1f4fc310244559babbfe3ec74b411b7c0a202c1d96a010a875ba00acb63a1062df198ee6a233d24f9a4aa4b1e7fbb01409f8085fdda80a0222be7e52d97010a337015800463a5e7fbb6dc28263d1cba808636d8a027c015b80dd188823e343e6e6d00050153e5345809f90f76cb35d8e04041515a0d1e2d4459b8a80a9ac87635b8808a7565a588aaa1c1010c6cacd36b76f802010cdd2e8080acd8e0320020262f479f27f5f405c5a143b7a80a82ddb632cdd6763a10b7c8824334d18d0fa600887800041358a02052d06db42dea934fb3f568b (by decide +kernel)
 
 private theorem ok_b10101111 : Impossible board_b10101111 :=
   fork 60 ok_b101011110 ok_b101011111
@@ -2809,12 +2053,12 @@ private theorem ok_b10101111 : Impossible board_b10101111 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b101011101 : Impossible board_b101011101 :=
-  kernelLeaf board_b101011101 #[0x615c4d615f566435453d565a5b566c411e5c416a1e30295c1a30532d3d643150, 0x37705c2a292d5b64295b5b1d6424354a5656615a3d5c53605561566055634d64, 0x3f115210301a1b6329313c4d25322d2f515115413a2d5b0e290c29043d2f552d, 0x6417561a57655251575c221b570a1151561e6c1a51225657616a185f1b68171d, 0x1a510951252f4f6c52682c375a2b0e2b214715262d361b651d564f682f17525c, 0x1c131b154515637206573d57680a1a27645107571e532d72275a0e3a5c301f2d, 0x5b24524f133565171b29680e721a3d31520e3d35243664111f23654f41292d13, 0x733623264f535a1a3d31075268495a4f2935533d495d254b134f653270274945, 0x5a36555a63556e6a534564231c0a231f182b76296d5b72352660764772652d35, 0x32063a1f1d1032492d37295565557755704d495b1f537a705a1a233a7c3d5552, 0x2b362d322d1836371056492d1445363f2732642f2f] (by decide +kernel)
+  kernelLeaf board_b101011101 0x2002bd209056dadd11006582b748318db811be434216b727214505156e538bb6d01007f89f65e4c005fa290bf001961b759fc005053b90c065c0220b275bb7d4e10204d5d410b2f57efa0288ab57e1cdc490693dbd8504fe288434ff5f0e012d6a0081ad1eebf9aa40f7514014abd2cb5b6d046ae8296bc7c021157585b7600baba7c5f26200223c4e62ba1147827f3188aaf2154200bb6a7a2276eb336fe5b5d24da80400383ed80a47f9797085b82b5f9edb511404792108a09b6009fa0d4fb59adeec705183e54ba41d1c402c9ed6a33f53b5d141a7bdd464f10b775164bcbc004027a93fcbb2f8682280a7e1424f17115114b7a4d512a5b2cfc9ed701972e80c45f037c10240a7d1a0220ef966b7bb1c0697480080ec1eea0d749b6f268a02111cfec823f2ea293f24460ea795b93c020e68a8104f3795c521562f22857c7f2c360a57e0117bd7f462b35a7c00172740d1c090143f5f9053d80d3d6fcb4584fdac76ebb9b0d00544feb735aa08947010013ad1d2ebf9f82880a210ece69682e8d66df01445442b5a2be940a01da30108af643aaa80c7cae9b5bb6d4450620464df973bc00d6d0a7fa357ea00aa97d5a977355514432697eb66b814044afe5c004a5aa8d1d1afdcd1051606f9844af8ac923c21476b67bd9b202201ac09a3a80a2c441add7f0fab319097f837e8d024beb2081ddff30411ea5901210d91866b37e3d4ec779a0a2cdc92ecb815010256ebfa392aa51caf0775aa082880b740b78ed4e28b02408cd4ea44131eebf10041451abaddbf0220005c352042b9c00aae15153adedf935100014f5bd46ade77c9a4daf2b4406b6202035bc3dac004087bdcd08569e2a583aba02987adc88ad83abe3d426f930010570e8a10b73918a6f87416ff5bc9b5e2e800d008f7addae6606df5bd9a0529074010f773454083aead6500003d90a8c353800412cb0dccd6c351405569eb77be4d8f43 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b101011100 : Impossible board_b101011100 :=
-  kernelLeaf board_b101011100 #[0x4a17152d3a451a1c1b3d1b3c313029293c3d5b31303037312d51685f6c2a4763, 0x1f2f645632311b36572d4164695c3d1a1b313c37350e152d60323c60653f3518, 0x2d3c312d413a7c60652f511a65503535715c2f5c512d372f452f51772d355b56, 0x1f306564654f2d7730155b5c29354531321e321c2f1c2f2d694135115055715b, 0x2d5764575c516b561c363d682d292d6429501c2a2f312d1f233d362d4d1e305b, 0x51312a32312d375d152f373c471c2764797e75645a3125324a354f18312a4731, 0x2c2d6529503130151b5c3f4d2d2c3761325c325c15365d65155d6a3c514d3029, 0x65314a2a6569321c6523175735363d644f5d372a4d4f312d1f1b411b30321b3f, 0x5b2b2a311b806a71145c2d3d67315741655c653d5c3d65475d5d5f3f35293c47, 0x2d4d2d643537472d30312c1e2d37645c3529] (by decide +kernel)
+  kernelLeaf board_b101011100 0xa02b70019bc4212cb7c9b5d450105bf1f0055b82c32044638288b33daddbe030a8064d6e6d753a0dbc657a20aaad00163ca000a6f8fff57c7429a35cd6ef741001433e04c71005096bf07cbdcd4400072ea2bdee68090202bdf2f1fbbaa377bfa2841240ff6ba9c00079c7c505cbb1c4195aae45440cbe9d01191019673cba3d5410bf5f6bb6def939f8a800ddd49beab9ba4fd8ec0a0cadcfea2a801bc025082839bd86800000cb37bfd5166b7cba9c1100a1b1d005868108a578537dcdfe02034dd9156eb36f801879265dcd5164997732bb6d26bb8a032a21972bddf56f3a3801233761802a74050068ec7556cb1516390aaddbe80045772bafd255bef38f8b073613eaae4d1607ce0223fbebe4ed6c7145102052ecb45656d79fa2b46363aac04500008fcc75bb4a92057f26a935fb9cc8d1c535f5b39b6defa31255ba0cc8090a9d6f93085152453a220a850ce62a2ad7e31d1595256e7f05147af76dc8a2add501a6eac89ec4561dbcfec0a04004c3cbe4d4000072f3f58005bf7e0098657b7dcd4ed78ba82b1d5104196327b001065b1cd7eaa0447317ecb7d3c1d551aea91d6a180357500e3dbd6e8208f363a84808b783ac8bacf9a08b83cbafe8e6b450545cbd0e056bc82d7e3dcd4111061697f73a3c0adc9be12fd4522e222bfa3f7d408555bb5edf5b3faa8a2a0a82bfc9d6d0411011968b1cdedb422beb783802a964d134f737ba04a22a1240a6b37b1de6800df40495ae3b552badc1460b06032d01e6860f2eff01645ae63416568aa2017cae0aa0addd71780014d62091ccdef754137bcd8ec353c84a242a779a800bdeb7a00c761a0a8c34419bec75ba082b47d1aaaaa97fd9aae3f8f (by decide +kernel)
 
 private theorem ok_b10101110 : Impossible board_b10101110 :=
   fork 88 ok_b101011100 ok_b101011101
@@ -2824,21 +2068,13 @@ private theorem ok_b1010111 : Impossible board_b1010111 :=
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b1010110111 : Impossible board_b1010110111 :=
-  kernelLeaf board_b1010110111 #[0x4d745a655b561b1b3a6556295b45335f77333f3622314756294967505b636a58, 0x495f4f704f707a66566965692d5d2d49315f4d5d4d5b2936335f456b4d5a5166, 0x736545657f5b45675f6c57736f4d655b5765474f5d6569774533474f5f6e744f, 0x1c1c154d2d20124a6e7a4a655b4d5d2265471c297a1e5063574a63794a5a3663, 0x5356672f226a745f66500a230e14286561675f4a5b4a4d5b331f18283a65703d, 0x4d6529494d635b3d57495f457a5f7c7751776b5b7067725a576d2d7056615533, 0x4d2d2263313b455b336e3114306a1e5628332b3312704a786526295f63656d69, 0x51245a5778576a6256205b6a5362220a1d1823235115165a28] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b1010110110 : Impossible board_b1010110110 :=
-  kernelLeaf board_b1010110110 #[0x234f7063365f501c0e360a5014262d36227e69674f5d6e7463375d496c5f5658, 0x4f2477230a364f6b5a5661635b76693a53535a6f7d5a4f4b7b6b7b775a566770, 0x501c47505b5d5121333d6d35511c4f35455a304a104950515a364b5a51455a51, 0x5d5163293551654f3172506524495051635b28335b3f21281421301823371833, 0x72564f163a504a5756173a5130656572673b505b673a4551283f2476635d5a6e, 0x3d10283316511e5a723d672f49693a307c6f5b1e231c36230e4f184a30313c31, 0x184f5a69274f5b63513f326b5a69614a2d513f664f16451e6e24284f72504a49, 0x69283f722c2d2d232c291018473623064f51695b632251695a61143266782d62, 0x51457261476730] (by decide +kernel)
-
 private theorem ok_b101011011 : Impossible board_b101011011 :=
-  fork 92 ok_b1010110110 ok_b1010110111
+  kernelLeaf board_b101011011 0x1128e42293b5a80d7fc682928235f7578b4105ada0e504014b7bab544a78d8b45aa42b1043b86340147a0823d068e572ddad460934dd612156ec84a2f1ec791de0aa0545d012de422acfdda08b1e40129b0f567b81442b6a3a1404067a00abd519e4be1cad045f1e5d4440536a7bf9238f5cbedc0474e2cdc454cbaa800a22a7a4f0b37c7dbe545455ef5f10593dfc011051518bfaefff308020ef88d1c4efebedfc3cff2ed6a82a28d7d5121dbade411e1d6f0eaa12d5d9e23220d3d91402b79f5fa2f57d3bfe6e862c80880ac40047c203b29a8d0405072f874156cfdfe564200a805be573711412decf4400040ff4026351baf2fc390147b9cc404039a0a8a88579badd064b95eee8104f588232b32f6f4459bddd1810516e5c463eaa8909cd4ec23eb3dd0f1e08088857d95e3d821f3824acb58a88b6c020c7f3d0472e22cc5f2e3ff6f498be7effb34446be0bcf08545077f3702a5cbdbc01101afe5d9118fcfeeeaa9099741d3f7e2e82b3d48fcfeffbbe9a8284fc164f7f11127fc3504049ff0d407d79bad8000269f2e202820e9d6f7786a0556f2763dfd4005126f7791166e5be15254e04ab36d9f7f8bb00a23af9b8205ac68e39b41150459bf4ed797b782a95b400037aa200409bdd7975ada9e500414b7c5d9f7fefcaaa8b02cf7fac8aa36e45b1e89518f8d6d595383275033f43b7e3f5763415609044a3b1744084397875423f9f61e9c045551bfd684397254092cd6e200aadd1e0092cd4e434c6a91f9825425b68f0dc02200340053f06468fa7b7e3d4559168ad1c05d396bc38802294e5465e6e211f18aab7b1663419f9200daf4e2b29f059fcb6fc788a0b477f82c8b2f5e245af4f87210554256b74168effcdc008aacfcb6a08c5cf7bb49a8d5555009f8051cba1cad0193c22b3dc8628328d56796d0102a39eed608c072c491ef67c457f27d3bad87f31054100dfdbcf6a028088f39c80adb2110478ec04027e98e56c3945458e28ac88bcd8fcb6b68b3f412dbad0806872b54590406be8d6cbe0eb61468ec39600cb8808e5f96a267ddf43b7a019f55511d6aa317a3a8dfe93ed82838f526ee0800a02200036bddddc84968f8f494e80d748868f979f8820a2132b31f9743cbaa102a2939388b343a3e3ede00a8e05819f6f00559fe8700895194c510e02c331a3c145416f98e4659f4339d231f916876f655bba951d0e022cf7bedd0446bd08d1ce73f01515af175006d6c39590d0464e250e6a3ac2056b6da02cbc456d751e2e8236b29a3cfd2602a088020877e4788a2b44001b73fd7daeb7871491c78a00dbced88288a1a775d3d129edad4137e408fddb5cfc154197a20887bf5e021efefdaeb79fe1ca80a3c04167fc36901415c7a0ab6efe090a02b43398ed81426d8ac15a194d36a2aadd5b68bfda0869c133ea313fbbeefa70a88e3dbe823771064fb3bfd6ec773 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b101011010 : Impossible board_b101011010 :=
-  kernelLeaf board_b101011010 #[0x473357787e564d4a6a476a4a337819124a37230c584d1d3a2d5b2d472d29282c, 0x5d2810311031272d33142d5310062d1f33165a2610122036124736624a33552d, 0x1f100614273d2314565d536a0a561057315d5a53171d28490e5d7753212d5524, 0x575c714d27263d3a2d49274a3b5b50721f3758273d23313114303d265330242b, 0x16693b30333d45263b10625f21092d1d7020334a553b556357292913634b313d, 0x31304b5d674a5b28655a5f3b623b3a3d3d3b625a303d3f624f62323128573b5f, 0x65295d656a060e4d2420334a7d3d5b160c263d5b263d4d10624d4d4b293d5d3b, 0x1d2850760e29215b3d285b50285a4b275b201d63245c243a2d1d293721271424, 0x76232d5024555b287e32292732273d841e1e57271e3a303a287c5a285b2b1912, 0x537028235b695820747e3b565b705074581e45532824] (by decide +kernel)
+  kernelLeaf board_b101011010 0x82d3e120e18228e4411e2336f104274f63507d3fd8228efada8c40816fe18a343e98100cd633dc311750829ea8d27db10047c000a022dda1a4c002af6f51fed972080a74fa00cb85064fc88f7bff3db2221ed6100abe9f103dbad86328aa2eb51fce004b5aaa2028ede22af5453392c55898eea32501a1f6c7600aa750e0aa2280b6f7ba8c04520b7d0d1011476b97a7d00951406dea2a0c403be3d2735cd50526eb5b8a80229dd4edf041543a7ca64a935950115cb94a8a791044bbe5f561b560476ccdd268367cac116001040fbbdc912de025b46720a84226deeaa80200dbd36f79b90f16080b37501a6f2f53a82a4f7bbb32bbd8ec35165e2137745073f2bb7a8f2f6b8105bfac8efc5ab2a82a3bdd682a83dc4150817bbbf176b61c8aa2f7045ff62e7f0c4238b5196c751d7d4955577dfd141154054b7a75dec390167aa8af78b8029b17790f168857f4414380ac275bca2a8a27740ae1a0d9f2babaaaef04505ab8a63ebeaa08a9d4153d13c71f2f50841563bdebf7315844ae3cdd3ec820a6dee5283ad6e840249d3f2b9091df6fa1f2d1243f88a8837ec69f11507ba3c411058ea120b1d050a6c37ba6c014400a7ac349a102bc650403f90c100049140436534fbdd1e82a0494dada88000dde9f2290eac575b218080b5f4161463c800377b5d3cbe7751a080c9c4476202b7745efd3c11943adeaf0024d008bba428c86a00ac7218802b1d3e00add59e531455bd3c861b01055b9fd056796ed60b4a2089b2192d06db1558896a8aab1f6da882222a24e2e98656cfab82b7563e92cfaff8d85a5451fdd6d1901466f2bd5ca00ac247d615b572b67f8d5133aa0112e56df051e33b1a13374003bac03ad6f6f5415bc7c055ba9d46b3 (by decide +kernel)
 
 private theorem ok_b10101101 : Impossible board_b10101101 :=
   fork 100 ok_b101011010 ok_b101011011
@@ -2846,7 +2082,7 @@ private theorem ok_b10101101 : Impossible board_b10101101 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b10101100 : Impossible board_b10101100 :=
-  kernelLeaf board_b10101100 #[0x7c514d4b6761763f32645612243b5f1e16282d10332d1620364d3a7456185a63, 0x5165495f58243b5f365f32104d2d6a2c1e3362555155747a4b4d376d55745562, 0x3b665c505132567c28512d561e335a316d223371496e4d277b5b6276616a505b, 0x2d163d4d203d0a1d4d180a56235a362b2b1e222732453a0e242918231f2b1e30, 0x3153316127295a55175b77455b515f29552017703a185a4d555f49513055622d, 0x555a282d641f6424535b7c33552d533655292c642d3153755351673a281f355f, 0x2c644d5a4d1f690e2d3153315c5f5b5c53537661515f5a625f554928532c645f, 0x2b2c4d4d271e3a51305d5553203322356131696a5f6158] (by decide +kernel)
+  kernelLeaf board_b10101100 0x80002bd459810137501066e9f8509503dbae8ec3502402ee89575104069e831519e8b9016ba038763a280ba7b577f10b0e0348b6359e4e6e820536b26e88840aa2a8a29ff4e3b5b802b1e9ea08b1e42e77fb7a0097345a7c80b4fed88161e48a38045fdb5a218b26ff5793a22028e441a7acf26222057fab80056b400946a4ab742c99fe052c9a4e9f6ff9a1280a33ea000abb4a1482b7a7b6e0541aba9d67938080056eac7810069e10f5d14469ed1f3e8022ca13ad467f6ba00c5fd100463d3c81638800461d3f329ed6055cbf6fefc5d01105b7d1d1441abfa9eae2a5288420d48bfc35047598ed6a2214deae8895fd9380d1d465561d5f16802b720156e5b1581ee243374188ab0f70567780566e8244063215d6d1f6b6da808abc45411579ec02011689f65c5d05019d6008ed260a9cc68f40008fe2abcf6c3778800866db9ab43a3a2aa32eb7080a101f35188b475bd6e540a3db3ed6c7db808800d20a2a2d9e8071c21593806ee66e9ff7dbc511c58222f6f0e2282a86ae876fa3a397015693dfec72aa4a4d7780537f5956dc9037f526590e6e82ab765955b56b33db3f175705a38a4157e9a803eb054860065f3791be408edeafd344982af8bf9820d1c45129bcbf3e8e1fb60288a23fe65e4eb60820804b49ca80bbd04bf9ee8125452d8a3144156e4314199eb72da0db680244dd51d600274dad98ed78f (by decide +kernel)
 
 private theorem ok_b1010110 : Impossible board_b1010110 :=
   fork 96 ok_b10101100 ok_b10101101
@@ -2857,12 +2093,12 @@ private theorem ok_b101011 : Impossible board_b101011 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b1010101 : Impossible board_b1010101 :=
-  kernelLeaf board_b1010101 #[0x3b2c262d5b2a372b375a4b27455a4b4b23302024246424562c167018222d3429, 0x3025285a5a5f5b452d2435161d193a155b5b3a154d242d5a2d556e602d50512f, 0x551f621c555f302c5f5a652d605f3b555f1b16242d5b212a5a682a1c2f3a1f28, 0x12192650614d1d3712341d3b1d5d152f1d1f635f521d5d092f352d5b242a2f1c, 0x562d7a17372a554d60302c374b2f281470641f30172f351e3b1e131d12341419, 0x2d3a64615f685f2d6555775f515535555f536923412f362353372a514a455f53, 0x524535532b1a18526a25412f415551362f453a2d5651372d6756672b565f536d, 0x703767373767614d2d23302c2a373a4d4d26372313342d51525f282d1f301427, 0x1d3023352234344d2f303a2c2d5b1f232b5d232f07362b1a362f45641e2f3461, 0x6963376051273037362f2f231e15283035362a101e3036273a22272828196414, 0x64282b1c2f3677645737250e0d1555623763344d2d342d58632330364d342d53, 0x533160223656124d342d35232327492f223630563130582a3731741c511a3523, 0x23302a37362a50603761] (by decide +kernel)
+  kernelLeaf board_b1010101 0x11047b0c0455b7c1516d88aaba18060c41bf87a7b1c1010407068b6daa35b55425cdda6b75046b9323c9551e9f0515193afd16db40140418682056d8ea002030d0504051b1aadbec7e99ce8e6b001ae02cac28f326a357a2a01cd7edb4040bbf248001564ebe2ccdfa12e3ba4646e57abe2d16fa8a02e3da7375ba00a0b4d6e088d8f1e0808f618020adb50426ed35b8014fd3a63dbf83a3808a7c186400037c01b6a2fd09551857e8f85453d95d51b0daf00a000b6d56435401013db0c046da7c125d68b520113f28d054667c994d450ee2a230d1e2cab5d16d345a60b37005f80c375acd6f6f3f828a28f57a883779651ebf005450fa22cdb57ca11209ad6dafe2e0993244f6928bf400425a787e1a022dfcf88b7d41096fe7f0f375ba0808f61800040b355b7c01d620cdc489ba6dbe82c0894a3c9eb4d6f470905014a5dfc4951882dc043fb0ca60089f240296223176bd3d5e6b000c6a90014bd5a5c20ebf502010183d5d028e4836c595fc5c04475adeb6a001471416f80108b7cf95b40033f08aafada17fa78209b755416eebc9b00061c6ffa341506feb7cbd5fbe05fc028e15740546bc2b5786ff4fd3a3d104011483afdb6a82123e269edf558a0b4714546560a845eff4f5ad888100ab7f5832817dbeababcdf060120c30140059837d109782fc145518a2a0a53e1a3933fb0c042faafdaf02207b001de204007b278a2249dc96d34040a6c0a19c962024674daca8943c3cdceedf4118525b4c043bbbe541113bddcaebf401054ee2a7f6131e45fe97042d2880a9debb89d7ed75bdbd2682082aad7ea8229ceae20a9fcc5aa4aa29ceaf7f618aca2cc4004116ff6b954141cbab74155306dfddf5711bf9451bc5102d8935bdbc410e80ab50b580ba328956735fbad080910513f8828d61aa2aaa5c058448251dad058012b5dfedf1740056e936ba000296c90eea82a119e4447595edf2216f92481d6579ba4d6ea016b5465bd5d85dd8e0c1156f43a3a228afd955077acd055136b7b7aadbea2af1044440106f96b97a7c48ba825ae5ea212f11ec3421141aa4c44149ac804064d49d6d15665ba5520e1d26345adda6a7 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b1010100 : Impossible board_b1010100 :=
-  kernelLeaf board_b1010100 #[0x345d553074705b746c1c4157222a56681f0f5560576c2d20142112122a642c62, 0x452d2236242915355f5b601408552f2d29342d14362d3420551d572a22676f34, 0x36242f6456515664242d6422293451515a55642a502d136f2920311c5a143417, 0x2d2b2a1e1d1964362a201c3620274157315d2d6664556e3129553565615a7027, 0x276819555a1c654151174f41515a644157776160555161505a702a19582a5051, 0x68563466565d1224611e3461565a25122d516458612f55505a61576155505715, 0x2f342934] (by decide +kernel)
+  kernelLeaf board_b1010100 0x457e2434d4e2020d3897475b00851069e6eb777010280225893c388202801eda787addad4152f0220124b5b8a0004ad1d0210113276354081b0ebfabd0c0526d602005876be90e1eaf43021216be95c0428013fa333c02d5c201b59cf2f075144a38085f011427e8a80107a3dad00120c9c1ebfdf0000216c3a060eae08a80022b47c3d0ed7c355aaa00a0a9203067b1aada1b4785541116e0a0abc45567b4eea0840ac10899f26db55a0c000e628208b6d069f83d7d8e90823775ba2288b9b2111c9d5f768902b1d005454f57156be5c4505016c3daf862089f6dc4a4d7f93adc4b4716b608420a64d26add008726322d4ed3042668e4282b47b582802557c9aae872814a2adc9eab5bf538aa202920c63aa208273b5cac250536997e2e0000adc4582db49b000a72bb5eff6f458030694c425106211d5d7eb7554ed31040065b94c4555915b6b769a0c06aea081debeaad114588419f9df8888b4e105a702025deaec3e9f0c10a0002dfd3d99ce450045260f5f45aae880ad8125a3514fe3fabe0d140508abfb34045045556e8344129a1c9728a044b55e4d678b (by decide +kernel)
 
 private theorem ok_b101010 : Impossible board_b101010 :=
   fork 51 ok_b1010100 ok_b1010101
@@ -2872,24 +2108,8 @@ private theorem ok_b10101 : Impossible board_b10101 :=
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b1010011 : Impossible board_b1010011 :=
-  kernelLeaf board_b1010011 #[0x22362c35242d3268353d2d312d7c6e2b365b2d72223d1b230c35243632285c57, 0x28367519313661811a613140791f35316d497736493568100f313f5f642c2d34, 0x40615f6631312033652761365d68362d316d7479316e40353d40363177615337, 0x366d2664262a3c4f5d53782d695d492d6931745d5f495f6833685d5335407433, 0x2c262d6e515b4f4f614f6961312d415f64282d36322d3d312d5f6969725c2d64, 0x15353d6151363236726131782c12725141692d2d2d6e2d6d3f61352d66603b31, 0x632d3b62515b2d4b5c496f3162362831495f6d324b49315c4b327062635d5251, 0x73323b695b2d5c51362d324933414b32312d495f33733765632d657236695169, 0x2c31262d3b625d2c1517283236343370411e69693141102c3b613470] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b1010010 : Impossible board_b1010010 :=
-  kernelLeaf board_b1010010 #[0x223636405d37214f352a3215362b2d285f2d5d185d202a614f35182a2d284131, 0x3227415d5332681c7853785d3c285b495762653d6d53772c65576d532d61642c, 0x2a3628643d122d5d37403b286f685d773f5f281f655f645b36492a3240372a63, 0x324f361f362d286461352336356d35275c5d7036653625361032353220355761, 0x615f682c4b7e6836123668362a212868366d6f57642a1128364b656f6a6f7866, 0x40] (by decide +kernel)
-
-private theorem ok_b101001 : Impossible board_b101001 :=
-  fork 86 ok_b1010010 ok_b1010011
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b101000 : Impossible board_b101000 :=
-  kernelLeaf board_b101000 #[0x56515d37696549283147312d513341325c25366b324f753141687549315d5f63, 0x1c612d41695d2549573669497a496f154f472d2a3c267a49757657315d5f684f, 0x5f65565f36662c2d65325c5d69316a5d5f4f761c36325157] (by decide +kernel)
-
 private theorem ok_b10100 : Impossible board_b10100 :=
-  fork 88 ok_b101000 ok_b101001
+  kernelLeaf board_b10100 0x115159a8ac75055536b777a08128ab8bbba28aa802b35400042ba8297d46cb6d8aaab4d9e889c35683ca7bd3a82a0e9d8e28c1d41621acdde2e1d0969f0f9eaacab2d555177e9edeb7b9d1d145b64a88a22ab765c9c0106780200ac1e5e800b0b2d8eb793dfd2567aa12f3dbe20e5d0851571eb745272fcb5b7a7a38a820a20ae9f1e228020adddee2e8f6f041049456f2f6e6802849c81511dfb1f160080b6c50094731e4f7fdba0020232e5ea8849d8f730444597ccbe1e2f1f77a5c28aa3471152b8ad717b802e1e8edb444465aa8b6f97871158f08878d615045664be5d1d060fa75b8aa12b7205555beed555015beddfe0b12b876ba208a8ab7cd838341494077b1d141566a9b5beee8f6f567e22b3fc3920a0a0a8aaacff4f8763a2ca2ab783dfc5055726812cca35bb6d40514165add17bb1e05492025bb7fd3820969de5dce49655be4db7b74155553793101554daad121e73fbbd3d00011412f1adf4e5dd0593c804b744242d3b1fa6ddefe224c9c06ffa325501159fa3115445bbd3d415af03417a632a0b3e0787bfe6e000639208031d0644020cf861cba7f0e8b6ea6efa3152046da032dd8f6dfa64a4a8a4f9d8fbb92581ad7469eeb03566db1fbf87a7a02df529651b6d6a405bae99d8ea2a23336f0e4202d082abfe6bc3b1d148180be74848413fb5e98fb793f7e4545b727858006ba88945a3218fd8effbfe4d0459b04022b769a2d50405b68b3510455ae935bacbd1aa082d74151501eeb763ac128b71f989bb402095edb6916deb7e5a2d004125027b9bc110051e336ba4db6cb51dcebf2a40d670ea297f5155d1ace5e80a2fef46db25a236d411d1b6d568704505144544551ba36d8aaedd58577e2d7f260032ada5048e22aa36dcbf2e00809bfd5826fe07c79b64551973f1111b67f9449b6c2add4793c3b5d540551edb21509afb744446b8a27c01b9a00addf86dbcba8036d06049012edb21b2c445ae022cb41caa08a35c14012afe1d56db51e4dee82004b56e2aa13776faca81031de910b08a3dfa2a52ba3bbca77d57fdfd11146c1ff2eab7f227276f6dc9c95044555b2d01008182037e41455578f65a7e0e8000ddd5229ea528280cbd19cfc628a8a14f7c77779a32a3042b7c9c102af900162f2ef79058140641b6f4fefa1202cf2f5f4142db8c4b4f5be1f26000b30045116db5106dc0e5112ee44df490eb3f6baae02448996576d812b2bd6ea3bfaa208adc5400bb863004bba8355aa82a2b879f8ca2080ad731aac95ba8e0ec7ada897f004cba256c1bfb6d417360b35ba88099765880dceee20869d04252563eaeef7f9f800000876ce72420db91658214744af9cf0e220b751120fa7bb802a8325e4f20a80a0d7d0449b6e9e4f0002beb64fbf2ba0242b2244fc9058fadd568903cda4d823eba4e80a88075fb75f63ddeffa34009fd6d45128e3776fa2a869d54411041cb892751b1c911008fb1d6e094759f07541972aca1734ba800db5d78088cb4550489ff5d8f0748346b2c1d7164ec7bbdff1f63 (by decide +kernel)
 
 private theorem ok_b1010 : Impossible board_b1010 :=
   fork 76 ok_b10100 ok_b10101
@@ -2899,90 +2119,42 @@ private theorem ok_b101 : Impossible board_b101 :=
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b100111111 : Impossible board_b100111111 :=
-  kernelLeaf board_b100111111 #[0x2235512d462a4f5a35330f35330f1031351d352b1461454a5645646c2a2e5020, 0x2d4b332a2d292d352b223335354535333535561d355b6e4e336433356e4b3512, 0x512d372e2b622d0f2b221453313121644e352926565e5d4e412b3d2d6f5f3762, 0x6718522d59622d684b3335352d371415222d33373335252614332d182e2b4e2d, 0x3d5f294726334e37582a25471d0c22412d355137373f317c637a4a592b1b5241, 0xf253d2b104b22365f6626644d594e7a26260f293757685e6235354b3d314e18, 0x272737353f1b41526341586233262b5831374b26273d] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b100111110 : Impossible board_b100111110 :=
-  kernelLeaf board_b100111110 #[0x2a2d1a0c2d4c2b5d6e212d1d10582b514f2d2b5f4c4162516041532d475e2236, 0x215933274e2d52164d273131704f642a1c206610254e624d60521241574d2d1d, 0x1a21104d5e4c581c2b4c58252b3b4c31232b571e1a14082b4c2a252f41581c26, 0x2b1d331d4d4c565e4f6f711d53212f4f163f312e1a4d2f174c211a58101f5d0b, 0x3b2f1821254d0f3f1a0d16050c62004d62220f1a11252d18264d102d6218262d, 0x292059147a4b1c734c6222332626213f29475d2d534d1d5121291d45271a5318, 0x270a1c62582f274d255e29514d77471c51465a5118215e595e5d145d6659587a, 0xf211c29711d2f102b311c294f51514c3b2f271829182f72252747184b29252b, 0x29452b1e1f372f3b5d211a581c1a] (by decide +kernel)
-
 private theorem ok_b10011111 : Impossible board_b10011111 :=
-  fork 60 ok_b100111110 ok_b100111111
+  kernelLeaf board_b10011111 0x227d4153edf4401111aeff9550598df07a5ab480aa8e3e0f63c5b3d36a22bd14446c642a82b1d6f82cbd362a8029f5085ee3f50114b8800abdd5e4397a2db6825fd115413369bc9a80aa01374510b3b2a4efd69b884db043f54453b7ebfa340046f6ce2d495ae4acad797a000a202bdd8f3b318200f7bf880a9202a800a78fa6d9e804edbf63558292889748f8220084775219a88928b83addae0d1c46f880028b7dfec72516953e78f451520121f5caecec0024af37d2e0f2a8b9f498231d2d6e8088d9f16cd4b7d1cbd9e208b5c00016bab74151a1bea2a0a14d4ae8b5bb3d011158a1becf806ba097469154d94d9eb731aed5511495f3b5b8200ad1d6edf885dcb02caf1111c5c00b78007f40412bd11165304a7cab1e5058e87c9cedae8892a7495a54d92d6e06bdddc12770744257aa2f75ba311000efefe32dfc5ade5ecf5588822adc445382add6baaaa2aaf545b3c046ba02b5e2eaa88d767a00835d456bd6d15958023b8d70808adfbb9db3f26a02b3d54446bdbb65f212d725a8b056b808a51d6f1b5582aa013f96d6d75512519e3f1526b90cf1f90d516380935cee80aad75794e404530f1740495882a56e2f93d9aad774341a1029d0405a2e2a82bcf67f016fafd1546515277ddd0e6b554518552c67335b0840823f439cd553f1cee04aac2bf21aaf638a802aaaaa7353a4a2a084fe8e882b4799bbd7e82049f144004c6a74414c6bf51e5a5d0090a4fa80224a0c7cc6ab4bd4e0a0b25d0215ea0c9f159cf16b0856350557e08109fa6e8a5e0840bda9e8e337efc7ce620401478ddad010028eaa4a98d0f5ed55b3ad117bbb8020a5350aee019bb3d8fd6088a7418015290645674a7eb09a865a5e73e7ccf168b67a6d0424536875555fea7055000008fb5dd6e2ad3e6e77150445005a3a1c01110153a7710962e9f41135a853cc6ef5f82203018d0e97010169bcaa82a03f7f9ac15091b8296c5542e3305445716039b8028d8b10445163f009004d6474ba4ab731a6d0140859bc435baa82cae2cc69b040456eaf3bb3e454053bcdd150099d6ef6aa282cfd55905dff1cef4f04543802fd449f96dfec75da0a1ac542500066e08bf2f8a8ca4cd0e6bb190d5003fa0222b771780a6b43a4310166e88dee676339880af54667635044b882bdde8088b336380a3c57d7cf6801ad44a6a00aa000220c232457a92ccd56974597f07b19cd370020a1c555541102cecf4fca093b5bd2cb700cdc151554fb1c163b03c340467f93559cd0748a882d9b21a88a5d49676e2e001459be0e972b224b1183d7c4466e44adceea0ab9115ba6b19a32b7440899abd580bba0eed0e4b73b90ec608af854a3cfd0856eb12bc42ff330000838092b8ba3aa460d183d3d6f1fbda2db6f3 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b10011110 : Impossible board_b10011110 :=
-  kernelLeaf board_b10011110 #[0x41472631474147373141332a52475a62104d3551374721744d4d624e562d2036, 0x1d351515253141414b41272f31314d4f47470f37516e2a261c4e56414e171127, 0x2d512131375e5e5d4d4f5f4726102b4d2b614d2b351e251f1a4d551961411d2a, 0x7462262b1f1f142f2d4b2b352d1e1722332b1f1a2a2f5f6e5f4d667a2a644c31, 0x19211f35661f3319212f7a35704e1e15411f232d2263315e1a5f31415e521541, 0x4e4b1919171d0f5a1a2b59474e5f4f581c332a33352d231d23071f2b27412b57, 0x2f251f412b1e3a29222f104b5b59416f4f472b201e294b742f5550784c622f6c, 0x47512d2f45232d181c2d4b2f3a1c294c1c594b2f4d6e4d512f295529104e2d37, 0x105f4d4b475c5137351e5131294d4b5c513729134c2245355e4d512e3a182d26, 0x2d221412253a252714213a22614d45352d182e2e374b27512f47103757453551, 0x4b2d18605f2d1d29661e331a3321351b22622d335320332020222d1435233a22, 0x29294e2d35145b4b2d2f4b504f291c2d1427] (by decide +kernel)
+  kernelLeaf board_b10011110 0x9214e080a09288a79daddae80820853ade000cbd6ebf4097b41430000027ea9ce70452dca6a0029f02097adcc6000183afe220b7153ba0a9f367b6782229ac8044067a1c10046b9bd178b0005015bb3e500a7a0c0859e8228351141a2d6e5350116b82082a8f759208b5b800808b2992d092eaa22882ceb4b82a7ca64a88904a2871d68322c110520c3cde2ed75b98d760820802ec1bf2f4f88b4715f80a3211f21b7d014afa3176ba22d1c1120621dfc466f2f80458fdce8edf0045ae7b401168ec7005415388a33797a0373a3b7d554e093c5199a2c462ed714150022f6b37a3aedd6635ba6c511458fd1d6e08bf0014462e8f00405b98c4453988a0a2b797afdd70a3029cd5380a02d33398a02b6725ebf54159b884044eee6f474497e00a9c5140aaea721ced6edf92005fa20280825e00043fc1d5e488c49ee9d6a700245abf21a52f66dea00a16756483efd109fc7d5e8301013da9e01a5fd35157e44d5da18008378d82678b61597fb39dc2a20a8cbcce24ab19cbe77215051fdacd6af421485b3c7c1189da288dfe7f6339b3d5688aacf014506badd0151e8829dc551e1f00feaf1004013f075801457d7e5424633a87020ff4d790736a27f5678028a2119d43afd98f5b5f8682a8acec4f65750a0e7f47add162a8a88e3c1058edecd6a15fe001163b0507bdd2e1a00168af07e9b8b4d888abd080fe20082a087f29afe5b882292f5784108d75b9ed16110bf22c015041678af3f9ad56808bf54afe29bb1100045bfcdf362a0003eb55e4e668c08ac78616f4750151210ec76fc8b7b092f7779b83413fbfc7d3643401457a223375788220b8719babdae7b00449501112e7f35aaa24dd0aae678885c3c1ceeab5453b88b5c5012baa2a15d2ec745183a82b0797893074fafe01563d20b0c202c7a6e04fe3e829291f1fb7e8fbb55a6ce682210113badc1c1152551589059d97c8e9f45015583c7d36c79014968fc1c015263edf63a2430767aad012971f811b5c88e2c8421a08cddae888051dbf1f43f4c14169ba20cdf173badadd06db (by decide +kernel)
 
 private theorem ok_b1001111 : Impossible board_b1001111 :=
   fork 64 ok_b10011110 ok_b10011111
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b100111011 : Impossible board_b100111011 :=
-  kernelLeaf board_b100111011 #[0x451825333d501c2a454d671d1d0f182d71103722212a2514710e2b0f594b352e, 0xe211d2d5d3337183722644a4a6c2f10141d112d331b5b501021231f18501d2d, 0x2d76262d2d202f3f211d100717262137142b11640718214d11100b1326101047, 0x18162d5d27291d133721132a1d1f332650143f1d1d21262d375921162d111425, 0x5b351c2a4b2f135a4d190c0f1d132164640b13195d105251131e2d371d292d5d, 0x194b25375f172b375064194d5045141b4b224e101d644c35451f2b4b2d2b1f1f, 0x2d37131d500f29660c645019220f0c1f190b0c40372917456e1004190e1a2b33, 0x1c452b55414e1f2f19201421] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b100111010 : Impossible board_b100111010 :=
-  kernelLeaf board_b100111010 #[0x1d2e2b10141d182a6f1855192222291e1a1a525f4b18116857004a6f4d2d3335, 0x641d5e5a184b5b531a3b64604d232b4b2d2d4b4b615b641f5b2d4e2d2b4b6045, 0x68522d110f274b2a37272a6d591d4555571e4d263710516755465170602d2933, 0x213b102b4f4d45092b1d16212d4b232e0b182d2122275d112d1a61372e5a6f61, 0x4e404d294d4b4d1e195c22024e1d4b3b513b17374b09531367075a102d1d2d21, 0x5351] (by decide +kernel)
-
-private theorem ok_b10011101 : Impossible board_b10011101 :=
-  fork 58 ok_b100111010 ok_b100111011
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b10011100 : Impossible board_b10011100 :=
-  kernelLeaf board_b10011100 #[0x1a11191a55256060551e0915234c4c1959170f68104b35111435601e5f233d2b, 0x2137531c2522352a5d4c3722231f354e154e1f37401c26413b373b1e252f231e, 0x4d6452414e60334c5633415f642541173b21470d10192137265d23254c51] (by decide +kernel)
-
 private theorem ok_b1001110 : Impossible board_b1001110 :=
-  fork 54 ok_b10011100 ok_b10011101
+  kernelLeaf board_b1001110 0x444e68202c5d5e0882a08235783cec61010febf5010ce008329a1d6edf500989e282111de863f1154ea899b500106793a199d5180945a3f141001991fcce020bc44066acc0d6fa9cbe80aab175550805ddc430999c410511d9ad5ecf154ce089232f4baa37d4606ff080b25f57a37e87936544ce2cdc445a871706029c09bd97a8b809dca8c4395413be4e66d7104562e7f15780082432f5babc0fe8001feded7505510e6ab101101978bf400427a80a25ae6e675404440668fc050ee4f43a464c0123262f595149e67bbb2a085210e9602b51c9e7b5bb7e15401150553b80800a754005bddcc65b41045bddd444fc92aa9cee4f6fa20a28087278aa0a82ab3b9fd9e9b045511a194c04507fc887740403ba1d4daddbe20d9c454396d515b8891ca69790115bf6c04daa0888aadc419555ba0d157eff41143a7759084004824861f2fa9b10edf524515129abc8e2402e4c3f20d18d0e04233723808244317a4a13d360b10d04a218a00c7c76873badeeecf5505946f98d0546fa2c40021c9cae09095ecd517ea0204345544a68007723add9f4aa806f52dea0aa2b0d4321a1d1f2129fc04c60880d0ceeb78b828b08518d2ecf541056491ef433980a8aac422e88cdf3e93077451400ee3f404c72df8e430141be8b43a20aad06a8014b94d4a854538e23b578fecf2f6baec010015a7d1c420209dcb05039ba9c266e4cbd160066f1ed4023388025ce9160b9d9dc1465f31282efa388000ef2fa00037e5e1209d5a7913c22950473e1fb590d6e7740216ea1c494382a0a8a3bc860202abe7e2b378b820282757a31dd04092da1d6f2f47aec04114545505e6356e87115551602a9f4516eec24756e6b4570e90aaadf5da20a8205af7f876004d1d4b5ba0ca471147ea7c040197aae45546f8827d555edece77941058bb4ad5d1589af9ec2502159ba6dbe8ca435120428f9f4002abc8122046e8fc3c1add4ecf41811c98ca82775485bdd036b31cbca566de8c80b4f52035bbf27830026e0088f957cbd6e012a4ab74a5ea28cbe5c3dbd112c9a00b000a7fb7ade7708802de157cbf071754053baed15e848a4329a800a009dcc6ab508b7ea9063ab99d541458a80aa2d4e7b86535a20826ba58805fe5e8b463605100008f68ebe0395a823bf9badd9ed77580a8b37011726152e0f3b010306208cf90266820a15b501099f07bfe4d0011054baa000c1cbe80a2bbd0e020008091f01b90cce876fa6eee20823c141012e8400404ce8e876fd3c545398a9789516d7558c8b771666df051045545a80aa3cfed7455299da020a5756767f0506f80310339a6e0eaaa8ca0ef6f8aaa3bcf6975faa2a8f0414163d9ac44551052399cd7574baac8b8351141544c1d5cf6a20275512ba3d5099aaa1334ceaaa84d9d104be3fd190e5ed755154548ea2a536bb00800e0cf6ab37f547bdd5edb (by decide +kernel)
 
 private theorem ok_b100111 : Impossible board_b100111 :=
   fork 36 ok_b1001110 ok_b1001111
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b1001101 : Impossible board_b1001101 :=
-  kernelLeaf board_b1001101 #[0x4b47535119242655525d4b5e4d5346513a4d4a1d221f6160136f614d4b3f2d37, 0x314a4a274a590c594e4d4b293f4c223c18240d104652584d1d1d511d1947101d, 0x101d1c1f41514c511c10411b1f51242536413c4e411f36514d4b276b1f53252e, 0x41212b21413d3b252d101f361b5967243a4d4e254b291b5317161f25263c2423, 0x4b2b3d25172a06641c637e4a521e41061e110a1c4e522d4c2d3d4a1658244758, 0x293c2b2321512d3d31214e2d2b192425212d4a520a5819065541571c21112362, 0x464521184e19252d514b3f21163d4e1646514e2d1f3a2f5d512d3f18212b5b4e, 0x4d4a245f4521213f2b23274b253c217051] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b1001100 : Impossible board_b1001100 :=
-  kernelLeaf board_b1001100 #[0x73592e5920526c58416f4e2e4b4f574d2e4b193c2b2069694d1c63184c585e62, 0x182d41634d59684c631b142119451e3d5859551b411f4a554c0e211f4d37182d, 0x7e5d5d5f746e520c0a0a554e172a582279584d586f584c4c554e3f4d1d31211f, 0x4d601473215f57132f673f2d1e2d1b1d21134f4d74216e6060267b4a6c5f6076, 0x212d1e1d1b6846605b4a0c4d763c3f56782a5f55686760524e7a5e7a66472d6e, 0x604d4e5f47745852454b3c1e1d0a0c5e0a19476008193c1e702d21463c265d37, 0x581c2a4541605f4d6f605f554e5c5e5c5c212b206c5d0f2b1647806e26644d5f, 0x16677a18765f6e46581f581f181d3126311061101020644e1929193d74555146, 0x5f1e206416721e603f18466c46376e3d6c18762e261d26106c2d6b6e64412d7a] (by decide +kernel)
-
 private theorem ok_b100110 : Impossible board_b100110 :=
-  fork 51 ok_b1001100 ok_b1001101
+  kernelLeaf board_b100110 0xb3710656a2824eff174004004388021dfeaf414147a7e5e0020089779a2208802887e1d1d1237174014050e634676674badc8050000568f2f7fa1d4000b603dc449d882b109016e374749dadcfeeb5fa08a3771268eb7145517f8a218c5450ea8a0af54b7ced4ef3444415eaa3d0e2008d1d5bbdd8ea082ac87001095276b750154915e6749a5d515443888b7595095b4b15a8d8d33a921b562aea82d074af9cc2543a8a2a24751eaa38b97abdeeaa0a5c2fa00c9480ab0de4ce68228010098ffdcae967b40190508386c044103d91c56735511842774b415ba1334156ef79596ec682931063e8ab6383a1c4457a22a8ca1e0ef745de979515b90cfedb415013788a292b59d55505073e9375a884de769797888aaa750554dea8d3cbea80aa096cfe974dbcd408141555268f455486881dce67f83a2ad1d5040451266d1ce6431460e6f3fca2b47526976dcaa2ac1c1179aaa022cee0e7f6da2a83479bd2f4fc010ebcfe842a8b4f52e88288bb63a0a92b504095aa28a9f95d9c6692b675142773797a9dfe4b24cd916c340348f331a80024c6e435558db214bb1ac210cdceea0a7750a8e447733c7c86a287785125eac7d569f4733a4d36a2555e959a5b7700a5f2002ded66f2802ad3e374775a233795aa829dd141405167fc3e0c9e80a26fdc3cde5eff5bb7e126fe88aaa2527b41e4c0004b692f2cf758355410417f98e36880820ece36a2df115b768aa12022f736663edaed4136a000009dd3643849d982c0c2df5fbb4132680c1d256feb2dcb9f1001f588b28098c13b77f44ddc6ec6c2847fb1aaa008201fc044510c67763a6c1463aa310d070f1204350125021a0f273b454ce92a9d8100cf0083dfa757000028f1bb19cd56228c5d50620e20313383bfcde0000a58437f60eff579dd08dcd42f70b5cd16b9a1d455155e83d9ddd40055147eaf2d808a047c93ff7769b840326104b2cdeff8384548006a6f3b0022ff1fe9d8e960aa22c5e5e02f354105004f6207715aaaad20328cef62b811933b0d1fc1c8308c90cea0cf3024f7c35ba1c0236aaf34dddd15405bea321d6ea7b454113b8a6fd1a8b1b11c1dbe56336049bf6de6ff4041adab2078d577f404092af68e2205cf960e973b412f58dec557d79b150a3eadf772083337c1a888aa0114f9e8750812bfd7e0427a8bf64133eff5b9ec60195b9bc0410ef21c9f28cfc66fd3511150fbb91c1c060d4137ef95a0046cc410bfc8983edc811fb9012ee8577bff4f774b19a2a2b654568b2d5e765f55d8d17280be7b1b2a2cdeb1efd6506c7335066603579dc848bfc840466e7763a28a873f98d6e82107850b1f374015014b3da399ac0e3c500df314d0e48a99e2f2ca9ed7b8b358e941b3c35737c1cfe0aa2caeaf224cc450451da1cfe0cddbe635bf3c16cf2a2aed51152516ce83a5ecc18b1aa0907df882d3b41911772f4567f5f4519bc8aed97aaab0286761e6af41a10ba750074f374944e68080e3cc733b1def16cf (by decide +kernel)
 
 private theorem ok_b10011 : Impossible board_b10011 :=
   fork 44 ok_b100110 ok_b100111
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b1001011 : Impossible board_b1001011 :=
-  kernelLeaf board_b1001011 #[0x671d461c26221e4e594b2435500e1e51452f3c3c3c5d26511551204c2b1a313f, 0x26212b1a2331362327242422212223352e21272c1e231e1a4c1d24452b554b2c, 0x5119244a47511526584f21412f5523241c1e15212b3c201a1e212b41263d2121, 0x4d554e2953474c45671b4b4c2153474c62122e4f5a2b3c41373727233d62584f, 0x272321372e181a1e4f102e21451608212645272f41314d4d6b51474158575f31, 0x532f2b5f2f4b6e0d6e1a15515072602f1e503a3d174b353b53642b1924451d27, 0x1f1e2b2f7e124b3a4660272927296f274b0f2e29602c2f2c1f271e2f4651212b, 0x4d294d5b194e3d3b2f5150204e3d1d1d4b0f2e] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b1001010 : Impossible board_b1001010 :=
-  kernelLeaf board_b1001010 #[0x1d274e2229272e264d3c6260454a1d27114e1e3d262f1d1522511d552419293a, 0x2c18415a1d31264c41552c1d5a27554d5a2b1e18296961592641474c554e1c0f, 0x313c294a2b1a585a512c2029601d2721291837262c2b58262c2b5958267b0c21, 0xf1e202b2f4d2b4d032e180a1d21271c517824202b4d61265d274d1e2626294a, 0x41580c415d2655314147191924366f2b4a561d6f4d5b5551263f1e402e241e21, 0x59661e6e582c3c263f7a223727292419191a580a68181924416c5d214d37227a, 0x55295f191b2450204e2c21564e604d4e406e5d726e08184d08130d4f6e0a216b, 0x82e1a161d0d2e1a2c1d0c1d2e6e2c0a5d21212e372c3f2f3c711d2c1d660f71, 0x4d2b4d3c29584d2b265d7a29665070665658474c7066564e172956504c4d582c, 0x594b4d2b24265d1e2b4f662f3c263f4520191c2b5b4610262f] (by decide +kernel)
-
 private theorem ok_b100101 : Impossible board_b100101 :=
-  fork 51 ok_b1001010 ok_b1001011
+  kernelLeaf board_b100101 0x40a2313720054eb284dd494b799c9dbdc145dea8aafe8eaa050c141cedef4888a7755113bab2f1faee0450fe7b469681255e02fff64b978a83ae37831054faa75114faa7dfa0029f554465e3f5d8aa9f0682b350997e4a2b34543fa7cf688aafe374743a028abd15a7afd804655e0085fd55fcbd800124dd8dc4040047771acae80a2834705944687cbc1afcf6a234385515d6f7950952fcbdae2c0a93be569f9355e6749c5e100104ee9f014f8228f10edf5da298d40254458359ed40467e4345da1c0551022e222a5b48446a1d3688ac5d3ebf55583aa208b1e6ea08b37410035f478fc1ec688835f091bf82c79b8ad5e76a745010a7c7d51a66228317cf9bd42565eaa4cd0ea02a53e3e94cf164b0441774fdb5abde6a080a2c1dbea0837d41453e8f7be2c44458b1cfc02550a8e4a67455549cada3e951cae9b4961b1cfd0f075fcb571569114047a4d00e67b2ba1c57a08aabcd06028a121acf68757aaa8ac1d362aa3dd1044390820874da88a8887579ad1ec76da808a88f4fa2a931520549c0228b43aa2a2d1ed7202145555da1d3eb35503d82a3d81181883d9ad66677114549b1757a0a2aa15797aa8b3004ab3e778d82027314da28b2113dca2493b426cf2f49b5d15a1aa2cc223b3dd1e2ebf45879aaa02f31165e77741936d1caeaacd1c44906d33579ad8eff41b3ad2f5848500419babd27126eeea00a0c7b578040a33fcda82fde69b7fa80117080541c8a86739abd04b7aa8846c869b51155f80113755e82024dde6a7b1a001022cdd5f049bbbfad9111494f9ba1c82070f375b602b1b2282b1f9099a081c3cdd6e765f04253c015ba1a84c250cce6f630005662310411766b402d9dc6e0c082abb3580a8b33b8cc040eebb44376b315ddd0ea0822875dcb037d66ff4117e822883cf8e7701156684077100cd8ff8f57400653dfd084033c1bd2743141ceca4510159a1eada4ec000c1cdd409dc0f7777e5c256ed001118800639bd0223278dd10167fbb15a1d002d7802259f36cc47bddd8c10956723cd36fff5a2d015016fa4049f4054e9333ac2019d59435d8e08591158320068cc6679061112707d9ddd0e8a8004ddbec0922d547d707b1c2aa0000ce83d774da4a2d5c463ab078faa5419d50633a4d1b7bf57cad41adaa9077550df884a13742de12b57a3a6dfe08041ed481a202bb5268207b010e0c823f3da0d5f080afd144066eaf40544a6e2b08a0f5d98c528567743a7ce6aaaaa08051fc69341c0a48abc549be1d37775253e802804dcf69b1040536a7a4049590b1c4151e6a704256abcd763b5a12294759a0a0d4f4160d6000443ba7d81420438c2a731b7c04164da9242b34057aa80d634dc490acd157ca459d5ac69bf78cc514010eb331c1d91148541ad67763903010a8889b99c1e5aaeb3550103bad6b4fca3355d5166f6b579ee09494c6a7005574e32d87b3ca82aa6e0f1f99835799da0112c889cc7e774fa884d3b45a9d8093f2bb4dcdde78b4458707171115006567753e084470416009d9edee2209b5faaa928771468aea2d228e8ca9deae9333a9dd6cf (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b1001001 : Impossible board_b1001001 :=
-  kernelLeaf board_b1001001 #[0x4b35562b6c5a0819294d514e601d1d101e1321644e2768184b23164a181a3a24, 0x5051451833131d4d6e45721a6e410d5557576c5d1a2b334a5b454d5d514d515d, 0x4d102b335a201e46575f4d517f454d644c1e3f5c201d64102f3d1e4e334d135e, 0x5f6256102133163d2b1060410d3d1b2b21536212310d2147312b2b6e721a511a, 0x331d582c13232f16111d332f13021f0d1a18571d51624c1d67514c4d1a4b3d4c, 0x2b411220364e1f27554e1f35314c10150e581a2b534e3d3a234523131a31331d, 0x33231621181516272b211d294c1b215d10290f160d1b1d1b62102c5335101f4b, 0x813213a0e46233a210a182c314d233f1a3333164d1a362c0d29352e0d194d11, 0xc234d101d2b211d101a27111f5d4d5d101d3321181d58273a231d10] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b1001000 : Impossible board_b1001000 :=
-  kernelLeaf board_b1001000 #[0x8133c111870400c2940182e214b4d50515860454b605f0c50675c4e70505b3a, 0x1629402f1105331257130b4d29661a18291212240f1a292c12080b2929400d4d, 0x5d4c610d3f1a244d50451f2f4e1929193724564e4b3529081a764e412913164b, 0x242f1e2c2004154d3c1d0a702e4b5f725b2c1d4c120b190a0a1833247008564b, 0x20] (by decide +kernel)
-
 private theorem ok_b100100 : Impossible board_b100100 :=
-  fork 34 ok_b1001000 ok_b1001001
+  kernelLeaf board_b100100 0x80a8a3347a8892cdd219dc544044901515e873bc4335a229f50508e221fd92eea84a0cdebb90d113bb3d0e632510163b882a958d3e8aeb478a089dd000872508908c9e8729455d620a3b8daa28a8f94100575a1c566359c88a8b1d4219bc28f7f9ad518a678a22033cb653735adb4559a28dd1094ed704057637491338aa33723b3c511e5b4398c10100598ae5b4faaf51445143c28c9dd4e8240290d3337c87bb90d6841154e283f2d8dc1104df402774114df62c86b3400569ec35c8621fe1165eaf8392d062aa0db01009dd0b2a07f4fa0d5d515511559d9fdae8a2c7115998a90caf2ca8003bb19ad5ea0aa220b4f9dbddd68f4662ea0a8f27a8249ad8e0324cf3b80aacb3d69643bb6359a20a4f47aa2bf1082d91e03bb3d15f922413c161fc541046e6b318057d148ee147443174ce9114eec899fa3cd339b80326b5004597bde96677f6447175b21a1d16099ea1116d7baa00002bc8702c00560e0e37419051ee6f0955e87a7d8b25c22c71b888a1c15008fb1d5ea1004abeb77cb35a8cb4735a2d37188486af67dad067b44452375f104bfb370968e48200ffb172026f936042667b7fa0017354181125071df26438657f203dcf73b54159f0840cdd27a80295ee86b47a2e28636415046780a4f3b85222924df7717e59ad041ddc88a890785141046f5741afd0257f677751204d6af67cac645546df171419bddda3c8b28020cde8f7751a5ed741146b6afd9dad00106a1199d4ea2b0cdda3c4253bc19dc0040148ee433da2210a4f10e202c2e4d9daa09f02806d198e5e8f2dc34ae540a0c66b75a4c29106ac935111697e7b4a59aa283a05094264a0815d86449bbccee2be1aa2ed0097a008dff976f141672a779992d1011799e90115caa0c808acc6012aacf49f0c468aa95b025f22b7799e1c6eff95454035a4e6e20134362f28aad08327f5fced51133a8a9d0400033b7d272856e772f6b82c80a7504466bedc093b5583902a7278105b1090065e5b53c0e280495f91e080a02e0912cf20970ad57c9e2f569ba9c4573631acc6a2a22a29c96412292d262222003f635a2a2a29e5992c4628a2c2f49414f2802a7818dd16a6e4c2309e292f32398f8628028340c670c42a78198d768701025f480937a180aad1eb1c460e990a2e24bf077f9219d0f3f244288adce7728949c3a1dbdd68b (by decide +kernel)
 
 private theorem ok_b10010 : Impossible board_b10010 :=
   fork 45 ok_b100100 ok_b100101
@@ -2992,29 +2164,13 @@ private theorem ok_b1001 : Impossible board_b1001 :=
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b100011111 : Impossible board_b100011111 :=
-  kernelLeaf board_b100011111 #[0x5a311e525f5a554b4d4d2c55554e344d1a4d4b416445614b4e5c344a1850552f, 0x554a1a4a5d214f7167254b3564194f455c4e521e5f6e55296327643c581a5518, 0x2613] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b100011110 : Impossible board_b100011110 :=
-  kernelLeaf board_b100011110 #[0x245c631b2b414b1f645a632a1b292c33554d6157355c4b62273a416461504e6f, 0x1a31293a50465e4153675e50356855191829715727415c4f2169252419133529, 0x671a3a4b5a66295a3b553a5569584b2b3a14251641635e4d534f5c584e743453, 0x160a21693b1629556241636929555a4f611a5c4133294f13635e1835252b415f, 0x3b2d696e63526c191a4e3a697a6e5264355a14245345243a6767192e3a5e1e3a, 0x34455a535f355c4b46502134410f293a5f25645345673a165f525c19275f3a4e, 0x4b2d534e4b2b21592d4f575c271a0715094e5f4b1106135a086c4161255f6453, 0x200f2e0e41291b3429681c173b6e2b203b111e2d5c29332a1f311e29575c4e3a, 0x294f1664675f4b2a171c5c62294e2110274b2d3345203b2b253b173b2a554b63, 0x5f644b6c3b2b574b633141292c2a2d574e0b2d5c291f362d2535332c0b16621e, 0x2020254b632c62525c2962631620202719294e] (by decide +kernel)
-
-private theorem ok_b10001111 : Impossible board_b10001111 :=
-  fork 61 ok_b100011110 ok_b100011111
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b10001110 : Impossible board_b10001110 :=
-  kernelLeaf board_b10001110 #[0x2d1a34555f693d766150641b7d3a6967725f3a5f3b672d69457e3a3472615c4e, 0x6c59685e6834764a6855696c3d525c4b5f6e556e45692d532d551a455f66713a, 0x5c244a636135244163684a18416350642d6c3a3345405f353f6e64193a1f4668, 0x34235a523b41635d55335545552d1f0f6e5955664171343a52683a72503a6614, 0x35673d3d275952462f25713a291f4171261a5550551f08] (by decide +kernel)
-
 private theorem ok_b1000111 : Impossible board_b1000111 :=
-  fork 91 ok_b10001110 ok_b10001111
+  kernelLeaf board_b1000111 0x401914d93eaea80b2b35a08292bbbb00421e7fc7cfa20209797aa402035c908c980a219c9fc5c11b9a082a93ba5928b1eeaffbbaba9e165131e9f5155b26a2d2bcec66b65810942ae6359b5b1cf74b48a6fea036babcbe6e824dd44059d5d42011abcee005a73735a2a24de5f07404212c9c5c1c3cbd026a9d925cd2419a72b864931d0eaebf50025060092a0d2eaa12fc7acd0101c588802852ee6002a7094c5e3cb682c8310641a7d58cea79da32097fc9a892fd9a8bbd5f488020a057d0025f63e40058f07538800b3001560082de8901afcec5ea0adee6a73f800db5805ba5c05ae02008b3d662b08bc440b78b3da9e7e8805b005c9a80b9fbfcbd04558005f1014e628373b16a79da1c860009f50597add40519e8211741bbd5e040a5c00001de5f501dea04abaae84beb1e831faec54202007741d4e2021bc01069d29c004b460ca73510beefddabd068aabbc8e2a07ba556f7353a8233d567f52016388a841ed4e82080095fb9ced0175cbd6ea00d3da760b2f57a1d44b3aaa0b74419fd7ee69f35a001f05102b89d409d825fe5e47a2000d93c6d600808f6707400c3a20897956ff93a7a82a034e801022ea0dae9e857fa05556bdce5e146c506860221da7071f82a8a9dd77f905252f93a7a01178073ea13ac042d8b7f6977333a2a09f2044bfbac008676ef5ba01a711dd80a0163e97b350001020ce6b9dbac0d3a2deb93774bc9a222b5ed65349a28a2b4f62e2a2a4c9d628a39f5081cf99e55dbaef600b0007b445d65b15a88878004b4ea42ef2da9eaf8b5455460f8f00501d3a9eaf6b9fc838752514d77355160ecf51450453cfc9ea200e3dbd98daf09280a5c057c1efe208b9f0d6eb97a2b6b595005cd880a9ed628efabbac14582afa7b1a0a8cbe641002055eeb29a200a5d04b707c7dee6e02153c59fdcd0b1cefa6a02d35446069e6b09118e0888aa775d0e372808097b83a20b4f450215cfdee86835d141417475733803098d4e29271c2be9f83dce7e080a8712034e970149a8aa299c550027b5d4ea2824c24240b9e3cde12abe0f2f1544094ff93146d78f51558aa226f53c8a8b367d5e6e82a61c50052be8835ee72f800316a909f75b070104050c9e1e873bdfbdc0015ae2867d417ba8208bdd3e222a367a5c6d0005faa975415025038eeb53b029fd40483a128dc78004d9aeae8281436105ab9fc4602c280a8d390500147dad5a96ef40120ea063d0066ef5767a12b578ba28d5d6e7f1fc0208eec410b3aab57cdcaa4090715b8ed3675c552f4680a93ae0110396d0c145d6139b29dcd272b01c78213875446baa324e0f8fd19224a4ad400544c707c7d0d05b26a0a82800b7d98843ac4667c5e077f85ae02a82affdd8aa2864ccf028a23acff1bd1aa6cece0c0e8c12f68968c24269f6e562085a3abaa069f66f7a5dce5f28008825ff76292b57077622884c5f4eb7a7c21282cadeae28b09ae2f7fcda2a801c75d6b71553580cad3abb7f86481234ef74201ede1e879381116044de00afddd7a711033e8a20af2eff0282eb15bfc80bbf3eb7d3c5d111fd92accbada7cbc3dce776f (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b1000110 : Impossible board_b1000110 :=
-  kernelLeaf board_b1000110 #[0x36663d646d7c6e5f4d6333677e3446594a531a342d2327364f291e4e203d4131, 0x235b631a584a41555c335f4f1a4d242f414a29341e15202d1e2d5c524f695a2d, 0x20231a76274a1553647a5d2718234d1a1a1e766853647a5d69112d10232d5315, 0x2d24241e522c2d3d1f2c3d411c364f2e4d25550f4d62551825264157333d5b23, 0x2a55293d5d4d211e21162064521a2d2b594d4029631f23294a231b52102d2e3b, 0x25412e5d2d53412f4f5f2567182e4d4f293d] (by decide +kernel)
+  kernelLeaf board_b1000110 0x504404044bc1c41010055dddd6f4f450983afe7f035fd0252eaa267d31aec9b88a893f5380a82f714556a22d5d54ea800af7411bbb37438227b255054396d0604a805393a59ad6eaf442cea8213781b0222aa7c79fd065447a9e2595a8023d244037b4b21add76ef4105bb220a4c090499ee9600012082acc525baf73fa82082cc5ef000c1ce6db54027e02ed4425066e9755500506aea8844a3f9ba098b9ab98d2e9b4120020f5f67a024888f7b7c00328f048090602023cd7db0084f804acae0014fc9faeeea81029f810c6a3d4209b8a06b2400d6a01efb68068c00a7e4fd777d391d6e088a0020a4347ade9f0804570240247c36f9a00c79aec72b83aa802a0255c466b9aa8cfbfcfd450d737015054149afe0f2b53b4d0404f680215d06b71140150403dade41b9d2e67fa71052d6a8b79106de6e445ef93a44dbfcf777f9ba308863d9e8ae7efdaca4d38dd9c012052095b034f35b4c054485ba3d64fb6e0400049f800a9cf7000853b41bde0ec7 (by decide +kernel)
 
 private theorem ok_b100011 : Impossible board_b100011 :=
   fork 71 ok_b1000110 ok_b1000111
@@ -3022,7 +2178,7 @@ private theorem ok_b100011 : Impossible board_b100011 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b100010 : Impossible board_b100010 :=
-  kernelLeaf board_b100010 #[0x231e2d40362946414673253c2e26331e6b291f2d2e69692d313b596855623447, 0x4b2c2d62415e3a67505e525d4b6e692d5e63245e692d3a2941404d2f62182d31, 0x3b6855084b5d3a3a34416376695e745516624f5e2a5368663a2459463d52415d, 0x6c5c522c08615533553a166263594b24216d55665d686b3b6c615a4b63522334, 0x620824191a3a1f342f5c62693c5c503b3a5c696162553a33242755615233] (by decide +kernel)
+  kernelLeaf board_b100010 0x41c58100208d9266784d6a20aeb3f802d35fdcd50a4140717a75e6a08adce86a28b0a2ef75dce514d3909873175711541d6a882cf49a7c4082ae261d9111454a96cfd9dcd554545a5cb38468b0880b8756aecf46aeeb2de2d071e16797a08089343c2890223b7abe6d4116eeba35455d7acbbf6787b582a32fc7d2c940404911ed301dea82003a3abc2354565e22ddd51075a8bac669c1f1e88b76c00874e97be9d5cb78b9fa0285ed4155600ad3c21d1aa880e6dd693b3c6d45ee0d2c8120f77565eaab2cd6e0d38b83ded4090075e7d51a1ded41a5837715097a054c3bbd3adef78f498a080037bd3add44075a9e0f039ba0212afd508445c598d6e229331d50005479ed6f036d8ca8129e368107505623634a73d2e0200af35da6d9e820828a01edd7aa73fa292add760a69d434eb763bbd144404b3b113a3abe2da71f (by decide +kernel)
 
 private theorem ok_b10001 : Impossible board_b10001 :=
   fork 81 ok_b100010 ok_b100011
@@ -3030,7 +2186,7 @@ private theorem ok_b10001 : Impossible board_b10001 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b10000 : Impossible board_b10000 :=
-  kernelLeaf board_b10000 #[0x585d692d503b72241850242d52722d255b2d6d122d69451f57290e3b2b1e3a4a, 0x1e7b716976673f6d635562344d1e1059415d575b50331f46186163242e352e45, 0x402a5d5571525e6b595d646e2924647a31292d64163b64246b596f5d64726e1a, 0x2b102e3b251e2b47362d3d3627333331352b331f40102e3b4b33721a4b3b232e, 0x35332d5f1a2d3d412d21332d1f2f3a4b47556e501a1a2e5218102e3523105d47, 0x51555247551f4127292b45676e1a34620e5f672433242e2529346220250f2e18, 0x34117a5d2d6e7071581023342d1a6441537373676673331f3b6e58511e316946, 0x5b451f2f3a3d536818763a3340332f3a6876525f685f6d2c337362554e3b3b5f, 0x352a183a763a245b59511852466e3a1a2d5f6471761e3d505b1e2d232d1a3a69, 0x533b5c6e3c6255241e3464535e2434721a50242427352e31] (by decide +kernel)
+  kernelLeaf board_b10000 0x441a784c8efb9a80bbb5e68818bab88a4a02224cf6d3506009c9d3d451402f6939a7cb35d0c951926a124d4f8cad75525101768a8c76baac110c6eb144005edbac4446149dbecf479023194b8da2a0a3bb5149415542759ad6e5fd01412327c7ed8031ed7bd0ede2880201ed6ead2823d6e6b75aa00a2104e9edf173faa8004bf75bde9eaa3a3014131f6dd600b0a002cf81ad08ab3d7eeb4102d1f6e977f50b46135fc4276e920b0acd9fcfc5d5e76880ef120077dfd01698209032111fd73775ba20800dbbe188caf1ec62a808200124347ad35b9af2707a7a28f3c405579f9f04081cdf3d11167a09fddfbbb1d1c1458408f6c7074e0a2a46e8f2b57a5c7d0541456ae7f5060e9f9404253abea2e202967d5405dd9ada68b8b8154476a17f73e9367ab0829320576a0029745154ed302c5a80042834b8fd76636ba800033c1056f4888a2217f35adc087bc1c1116e8750667c2a014a2dcfebf75cbd5023ea02d5d09ddab430110535a0a26b5d80d52c954531889290d76d711044424790c815081aef1f57a88290d76ef4454ba0890c7b57c7db6b781017baaa2b6e550094fb3c5219eb1d496b880222be679fd951818a3210435dbbe465ecfe59ac5415197a8a3bd1ebb9206ab5496ee202c957b8f4bbdc10ebc014a2ce8b77c9eed4169455392a4f27eb12156638a9d55be4ca21062daa3bf2693500d780167954037f77c9f2f766b8845018f6481ef00e3e9fb6167c6167fedc81031f57c5b4e6e80207b554860259c5044820f77afa05bda1b3d44fea2b1b88831a061f1eaaa4d76d78215dc5d50022c7775474eb7686ef41144179624e04044c74349274a20ade96200bcb456e974111b7804adf6e804802a4b5be9e2e7f45405004abea71da0cef579edd72b (by decide +kernel)
 
 private theorem ok_b1000 : Impossible board_b1000 :=
   fork 96 ok_b10000 ok_b10001
@@ -3047,25 +2203,17 @@ private theorem ok_b1 : Impossible board_b1 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b011111111 : Impossible board_b011111111 :=
-  kernelLeaf board_b011111111 #[0x2a2c2c35682a2c3760491d2e2b2c2c1b2b2741336f26635f185d2f652a2c4d4b, 0x2a2f1d302e372f5d645a5e242b2f541d4d2969333d32321d295a4f3f21643d68, 0x2521491b184d3718472732515e655a2821271d324f5525594f57491d284d5433, 0x5949374d] (by decide +kernel)
+  kernelLeaf board_b011111111 0x41191b3c9c4558156fcdc91054494b882087938226f64c64ddbe000a0018c0048fa7d97470515150141bde5ed60aa34389f5590184eecb27e228242b574b8a0200259e7f5f45411464f0a028775554737a9b3c51625041155afcee04230d4405db7d61045fa800005dc1113276bbda00934115e0bfa99de6ea12a7d3a022cf04047baaa32d45967753dae7eff41543a8910e4d8a17be8d56b34100166c8d7d1a884cab59b7f06480a2b273b8aa2aed5e222b311521599bd5e9f83a0a28233f7e9b542c7a20b7f31a002410ddd01017f9755ace6f2f0 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b01111111011 : Impossible board_b01111111011 :=
-  kernelLeaf board_b01111111011 #[0x2c16243a282a452b1c36490f29355a1d4d63272a604d492c2b2a2b283667644b, 0x163a245a1c365a5c411c364f347124452b28366c352b34353f2b20572a572c2a, 0x762c554d344d34766d4d632c6760121f493a1460282a2a351d1c232c4919122c, 0x55722a6a28367012243a27345a68152445283a3a34222449453a6259702e7f3a, 0x6b2f5e333a5a5145675a3d3427632435492f2428452b28363418123a28766c3a, 0x2a28595822250f5c1d1e662f552e31284d2a35362863636c285c611f645a4f62, 0x19192b1d376055606022242b64575e6b225136493171662f665c5c64286d2260, 0x511e64595a3f515e1c2b5a2857225c2b731c5a2b5a1735285764364f294d5f2a, 0x605e582a5a362b5a63641e24600a2a5e6759373f3a] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b01111111010 : Impossible board_b01111111010 :=
-  kernelLeaf board_b01111111010 #[0x1f6962355f492b27305d112b3d6433551f30232b4163636871722635655c4b36, 0x514733283f2b2868245a4d3060641d282b2c512c605d2857492c567833675a49, 0x30285a5c3131317228574131745d53595a644141412753653d31136460625730, 0x4f555123575c3d29183d5c4d214d1463275c5c5c6468551463602c4b30415a51, 0x273f244d6357122b105c18262b374b123a4b5d24336f2e4f5c684f5c183f5a4f, 0x33223f142c3a224b64332f] (by decide +kernel)
-
 private theorem ok_b0111111101 : Impossible board_b0111111101 :=
-  fork 82 ok_b01111111010 ok_b01111111011
+  kernelLeaf board_b0111111101 0x25104c1dec15b18200aab4455b5b6e40015ea2288ab6bc7e4cf70a8a4d4155c1b02808ad577b45073f676fbfc054541475d1c54154054008f793b3dadfe82251c56f680a090a9cd5f6b51aa28d7d17735410457b4b0bcf39b6b45215f6b65002fad751d7f26db9fa22a20828a766e280a37f50015599c525133abd000003bb7f075721c188b834588889355e8a2e4cafa2222897b241d7a2c68edb93800c74000e380e6d7ea08066ee684a373c9a8c04510136eb0022f0682aad947480a32859ec68b4b8fc140b99dcf79b5fd5c105515da28ab1d4737154955144555a835db6a3c7a8b8f11544d9a8ee6aaaaae1cff93b5cfc00414c5ebd7ea0ded5550559eebb5d1e2ecaa067ed6a082a840bdda69fc7cb2935401aec841221275fa4d47170069511657a8db64d0d3580031912dd684801428fb6ecd44955575d5d5e5aad95a5b56a36dcaaf0d5524149693758009f41a76bd1ca0015da49a02c5c1110451bad511275b02d345aaa224c93c5e59d692880162ecfc34015176c8008ffbafb6b3aba8aaacdda6a80a8aab3769f6d59445044dbcdf1eb3cfe0e16562068259fd40550a4eeb0698a204a78351aae51444156d73b8a9cc009091e8ac00b39399c96802cd2dbad261480a0296b39b6e5596d77310260eb3208c2736da80a4fd469f1d044412745e095ec28db7b36b800a2bc0505a6d77fc0822bd06a2a015f55ac84d7c454166ab401665b49bac0025192ad508bc014af414e6db938fc24453b5d552d677465066ee3d3ea22ac115c1cdd64eb34095ea10cab95ea36de7f272f2150559e8b6540095fe535105859bac104519174832fc9b3c1094117e9f7fa4d851901049be3c1505afca4b2164095790d0429b998d3688abd466f80a4bc96eb61465f7749b3c114077ea20002bb9fb735401d1a8804fdb998dff6b40055109f894fd406af4747a08057e5b9a082f75398d148017bdcd0459ba1d4019b94f1e9f412e7288b739005b9e4f46c84a355ca78fc1ace5ec318583aa836b121a3a084c3451b6bb988000b1d508a63a804c7e5a8ebea2241e04108163f4ebbd3d66cf6bc9903075083ac09074fd3c400cb8810000f76393f26c8ab83c5d7e519461d1e3ea08cf4115451bfd111255eaa3551d1a4ed7378401872228460d41555c99dd46af104491668d1d10059a80d8380aef28ebf275010167212256fc62a233d73f6b0045000939fc26a34e0562c229af7f93abc14014fb0c4501bba4757bdf263233d504ab9fd451618b28f578c1e500c7c038fd1a880cc013c7e5a6daf97b9cbdb74b (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b0111111100 : Impossible board_b0111111100 :=
-  kernelLeaf board_b0111111100 #[0x64565f417f6d615f59646f61636159731f2b5a55195f6f415126352b57623a4b, 0x746c5a61745b122c647a665f5a63825b274d51672c161f2c142a171f122c1624, 0x57522f2435762c2b4d222124592f353f34636c6b5a3568515b66592c57781861, 0x5759306f2612126f62572a642e60624d62635b33415f555c73262b7469736762, 0x2c252c555958525d293f261d293a33374d59372945621f2718226c5a621a272b, 0x220f1d6f2721520f146b272b2b5122276b2b605f58332b2b5e161b183a30415e, 0x4f5a5e30362b3f315f33633a21332734333a6f2666332a33296e551e2a263127, 0x2f3d696255745a4730242474455f23352a2727263116311e622016255e3d3041, 0x5c33265f6e692c36342f62551e35315130353f24454530685c30645d6e6b7845, 0x3126305147623536265d6f646b367f7147695e5f253126241f3a2f272f24345c, 0x582e233a2f62552731413d41303d2b312658413330523158222a316c172633] (by decide +kernel)
+  kernelLeaf board_b0111111100 0x956c6aaaed1ea2a2eb1157e62eae0a08429f63c1c50157ba2c1d8642822bdd5e4828c752936b6383b3d05874b9015638802a0d8d411602ad1663c102aeccbe9b67aaa82cb1d36c3a3c7c07174a80a822d76da6d01bb82021bf7263af11016da8083ffc7448fe9ef6a8a8825fd2e4c74da80c2a02a4d8feeb401145fa7d0055fa4da6a045cc402e6aa2b3d377fdda04a69d45159b6d5561a6bfc5d5cf60a2c22b5e0258f4761a28ab5dfe8a2938ba800240003172187a3b98130c554c9ddc04040ddaebfc688c8b175fa0bdf4f8bab8a5d341515b5a91f61a8a293540549f4e2f7f47a08ad7555a8a2aa9f45153e9b63882caa8216d8e8280047b71608228305014b697bdbdd87079fa10836b46f6c350240516dabdfea024c70bfaa88aa0b3dc7bae10405450ecf4fb4d004256506059ea2baf7e9bcda0882acf55a22cf54fbbab9ed04555a2aa29b6380a00227c61458fcefbf51113e8742a5b028003f14a7af4fabd65155e8347116555169fd7a2a2aaf67077fb1b3c58155eaaa200abdbd96e08378a8a018dd6c383a0a20ded66a080a5d6757005acea91636a5ddd4505554eff550944054d9dd4eeb67b7e6ea0a821676fa800a740448be2cfeca8227d14c68bd9a2a8836b5716a009ad45113eafafa0b675111587bf4d92c00025aaa0ceff175f55e4d76b08b83c580937547178f5140b7aa012b3e0f7f450101abb73e7a6c14410159555fd3d3f3ccfe2ebf4b81504815217e931aeb120f6c45166af9b882a2d0e208224ecebf6bbfda682808e3c414d9ebed608008d726d1a51eadf9bb3a0b3506be02a021e34040c64e1fa6eced61203875e9c36f54125cb3c9faf377f0001b5e3c82517ffb78229f026e347cf820002ccb68007f15660a53558284005f40fe4b401665b49e4eb701025fd00838ffedc45c3aa017f4245b3e4e459b7f8744131e28e1ecfcf3fc2aaf1b5a35751010533dff7e2107a3a6c54525aeafafe2dd72f (by decide +kernel)
 
 private theorem ok_b011111110 : Impossible board_b011111110 :=
   fork 84 ok_b0111111100 ok_b0111111101
@@ -3075,21 +2223,13 @@ private theorem ok_b01111111 : Impossible board_b01111111 :=
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b0111111011 : Impossible board_b0111111011 :=
-  kernelLeaf board_b0111111011 #[0x5d6e667368265b2c366671601d5d654d325a1839411f415d72393f5a365c4b52, 0x5d5c73263a2a2932745e3f4d5f316d6826602a263662112b3a685d2b6065412a, 0x51362b29515a3f2c2a2628395c2b59262b395a113328352a41364f2b325d3232, 0x1f105c200c624b362b251832672b213a5e416562573135415f352741535a0c21, 0x625f39556b575a4f665e1d5d452b226e695e41514d555719272b4d4d49595a2a, 0x453e47531e2f3e4f4b5a2a3132575145252f333e192a55492a51456a60453257, 0x51333e5c4b29334b4d5a293f1e3234624b2f1f59335d4d37454d4b2c3a4f4f2f, 0x33291e4d4f3329332b4b66374d3f452c24515a215734341c594f225a272c471e, 0x20204f] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b0111111010 : Impossible board_b0111111010 :=
-  kernelLeaf board_b0111111010 #[0x6a612233616a626a2e3f5a3e2a330e451d5f3a596b3e2b41522b2a212f3a4d4b, 0x523f2a2f55282741364d2f45623a5f6d333626316241495149613f4955455c74, 0x5771174162362f35451e66282f665559333a49242935281e662b2f3a2f5f3729, 0x5f6b16335c626c53392853392a262b12416257364f2a535559662a6f5528330d, 0x2952395a5c2f3e4535623a5c29295f1e3e3339333f53695d5f5a64205a552010, 0x2631412f3527314153212b5122273659362b2a282b5e523347352e5553352e15, 0x3a335a34592e3e3153] (by decide +kernel)
-
 private theorem ok_b011111101 : Impossible board_b011111101 :=
-  fork 84 ok_b0111111010 ok_b0111111011
+  kernelLeaf board_b011111101 0x28aa0a830804141808cfd9ea73da2a00203370419f8cf538202cf57808204bd40654736df9bbfd122eb3498808051d11400b5a1c44af80b4d04250699cc511b3833f401516a16b4fa4ace3e7ba3b3df680a8173041014497a9d9f00212f066ea5ad4eff3db2d0125001a78b0102525ebf401140ff6767a0225dd9b88890b7e2e82513797acdd680b3f1544867eafe2efb400408f80aa02d3cf68a902fdf73f25f6b55a00082c704846165d7c428e0203174bafc58016780fb33aaeaf27004558a51c111062fab1070643171285975fc5a00b7f401ce800d5f5ec057ed73f685cd80828deceeddc62f208a8082af45eec9454d3ded20f479ba0a0d5d6be2a299d254f852af66e8b37524f6700b5a0c882000ab3fa90e44006b9a0c678b97b6c4457882a5d931b20acb555833e20abd0eebbd880080907cba0ab8baf92a0acc749af070105456fed744113f07a7dad54046622a1d68edb1411555788aa9e8e222ab6b7fa022b364455aa6d46e7511204b9abece010088a6d5eb9e25051b592204759ea36b828ab83b6e7e90aaf04014065ddd541196a808a32cbbab73e7a6e054075812ab84553b2fa77b7fcdd002fe228ab1d44900dbe8d36442a48b835570b2a6db78b1515238af0114501d7a3180446eeafc1e5e0e00042aeeea8bbb54473622a1cfd1a6d09b7c0aace05510156de6c8038ee0cef77cbcdc56040565a36b31a02e754415839fd41460f77b9692e7507fdadb77397d2d1147594808ab3d11b5b4ece128aec540815f6c7a7808232a6d8f0711504857f0d70454fb1e0f4f45128950eafa38a0228b4f88adb5110b382b6d5e280aad946a080aafbdd2d9f1f040186baed406ae2014f1011506babb100ae0a7296e70116d6005cd01055fbee2e0235c5c58a0a0baee6aaa8a9c1153dfcf6fb6782a00b9c59eff4010029e03a7bb837fb5a90e4c001065ad002ae08020c862dff5e814085b67dcf17b35594910029ee75180089094f73aad36000822af25a8841f175f6dcfe41080055cb4f1900552af59f37002ad541502b7e92d5d460804cfa4a811bc84135fe397e0f8b6da00a2fc40106bc5d110108f79b51a2aa22caff3757b3b3dd72701048526a76b8a3150520453de6d0457c08bf75820aafe502bf837d4f4b7fa12a2882ad55fd5c51546c327c83b6e6e82008228afe2f8b1151d62802b212dff6ecf1410155b69b63e2e0e849c428f12927c3a80a2ff24f57122f735597a6a8ead5c3a2ca4167ac32d87d5e2c5605051d5aedff6b457d80102ad9f5083ba150022e9defeebb3c88ebd04557d80a0000af60f4b00115e8a08a0aaad0ebf75cde5f53 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b011111100 : Impossible board_b011111100 :=
-  kernelLeaf board_b011111100 #[0x6458716528603664325133542f5d2f642e33321e66332c622f5c662260554945, 0x603f29575a4f2728653a176458313271265837262c5a23272e1c600c36323f51, 0x351f273f64322c26272624376e6458633a535f28543f29362f283f6418326557, 0x392954552832332b1254642f243f6255313173315457412b6151535164323649, 0x332835362b546827602b226429321e5d262c5d32373f4d24322b322928555426, 0x22285735331828601e2e2b26393f2b182351412b3918235c222e2b17572b1f11, 0x272e5a59295a2e1e352b321151321851342954] (by decide +kernel)
+  kernelLeaf board_b011111100 0x821029f5d8aab6b106cea744515ad6bb3db5c004557a822cb23d1c810565a918e8eab4d4e80d4c1052145a8ebed767a200a8a8a98d5151cb5833daec00015eaa6dcea82ff104157a8118c47d1c20e8a20aaaf73a02902a631547a22855cd16bb85557aa40b08a5fafabd1493f90a4767a8daedb2414485557923531487462127c706ca0aabd164aa0e4d4ecb10840f612a20b77536b39042eeacb6fbfe6e0209305196af15065a9c15506518a8b574156a69b73a008a7541441a9a95751882cb6780282844af25d4dc9b00c2bf49a8082ffc5d5d4a04563890cb1c820402e7b1ea75f83828af09525c3d1d61005150a9f47c9b2db727414045ae7f51115410084fbff26cb011598a8a6d3e8229b49b7c451144077628964d2c78f51161041475a94fbfa8ea68280ff53a802a80b6c45faa3517fa8a264cc6cbcbad7f06880ff53aa2a8d7ed73f4550450053e832a3cbbac40515018bf935b1b1e44565aabc755415537636fa04202a6d6728aaa8b6b47a7d770a8a021cf063306db2dff4744072688204858f8f65d4011478311545589b79365d1c02678b5341057eddd44017eb264d405da0a33d967bcd80133d45678b804045fa85cf368bc1d5e4f17 (by decide +kernel)
 
 private theorem ok_b01111110 : Impossible board_b01111110 :=
   fork 86 ok_b011111100 ok_b011111101
@@ -3099,58 +2239,34 @@ private theorem ok_b0111111 : Impossible board_b0111111 :=
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b01111101111 : Impossible board_b01111101111 :=
-  kernelLeaf board_b01111101111 #[0x286c5f2f3d2e2126632f71225f284914351b712f29634b1d5b634b394556662a, 0x3f265e3f5368532c1462523f2b4b414b624b6b5d5b394b29293937632c4b5d71, 0x2f1332263f6356456c395d39532f3f53746c572b51274d2c3f222c5d574b3e28, 0x57584f62375e3e37563f37575d265e32593f5f7d35643209626a593332255f5d, 0x591626595e133e3e49355657175e322856571753175e326759591f78565d3937, 0x4b49513e417c6b3f58634f5d392158634b2b494b28564b2b5640375645493262, 0x4163455d63633732655d594b6a56125145685d34346a634b5658516451415d53, 0x16521a783f454165785d565e573f2e685257412b5d1f5d5d590d574b5765785d, 0x454b37164565782c184b68565d6852675d4b1b344b2b636a565959655d513253, 0x411d3139493f4b223f745e2e6329265758272141636251334d3f3e5664524b65, 0x4b273f2c45336212397c3b7c374521673f6172125b] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b01111101110 : Impossible board_b01111101110 :=
-  kernelLeaf board_b01111101110 #[0x2522596e266a635d63802257326e512e311a3227645e3f2e4b7251576e376652, 0x202b2b3969512522252f595122255745166c5e3251264b6e7e2e5d372e7a6459, 0x45495c3b59496e221651295d39576345721945101e57391b1751274d1959450a, 0x455121375c67782b6c51415916514b594f76535d594b3b4f1e72295739295763] (by decide +kernel)
-
 private theorem ok_b0111110111 : Impossible board_b0111110111 :=
-  fork 48 ok_b01111101110 ok_b01111101111
+  kernelLeaf board_b0111110111 0x4aa82932f4f8ac20ff59a2317967b362c9608a84e7f9ca8b08a8eff9ca2000a237e2e875173effa9c3f2c9722a05bd083a081dd8ea80ae793c2ff97a2c44557fab3d3bdaec106b1eb20a74d820895f51146c6acaaaaa0a9f43c1f1f8ba3b3d126ebfdf6b090295b0c98804a94b41597a92e5d8b8820032f5511596f96e2f97f1888a8a2b31631cbf475bbb80120229a3696088439fbb89480812f3780b0d358297abf1fabadd9c046ce10200865eef47659002053c428b70814b35f8d445fe22317504838a02397f1ddeb77b80919845af88bfd77a3a5a0857d41420eca0a4af6ee7f89bba425decf01437afcbc4040afa80280997f1ddd41083832a5063e2f7741c78480e3c2606fb2f2f77b3cbf575b2580b47205462ea0253a3bbcaa24d32551269eaf1f2fadd8d01a3b0481193a390700492ee0253d16544597c9e8efb1515083fcc4475ea8bfc85b1e3d4067e222ddc00073a8a87016c78f97c8a0832bd4193cbd475b040540997abc242b62840c11086fd6e2f2765e2d9246ce0a800a5b4dd9ef6024f57d883022fb4593cb5eb75f25045154bf7b6592aa4cca36b75f09212fa0234f94152fded972a24e7ece828859cffe36b77773aadf0106be2d631149fe2d155bf7b7da2aab7eb6ff404515bf5f0440580502bba6ef6cbb38aff265256fff76b82564d6580c8482a82427c5a94b13abb3c0acf99697bfddd515557e8252ca4f65a6d5ff8fadc5f66820839eee242e769f0020cbf505017fd3fa7b305406be22aa02bc68e9f5166eb37f8a4ac8a2d6777010afcbdf7524a354a0047fc9bbda80b003fc4a7e8d51a7c0aab329e2e96023fc01057d2f9025083cbf168212fd7aa841775004b7b9e5ea8829c4814ee746fe3d660ac52fbba2071e98551eceff4090bf7baad252ed0f26f1e8d2fd1e3acd34848bafea3150a4ea28538056b9bf8ea200abf53e3e5e779405adf2e3e5ee78bd6f36ab5062ea02a0ad1d0f4df940125b9b2b139ff1a4aaafd9d1e0e08010ca02d9cb7479505000040125f679ff6d50429e00002177b3cbd1df3f3df2c40209110153957dcf21022008a7afe3e2f5142327b9ca83bc64000ace8927dda2cb74754204454e448dddcf2100a57f1f17e58002000678b90c4f708089157c73801bd00024bf474fa0480844dd33d9e2e2b418002bd0215e822e74955d3d1d2e8b0052e2088040bfb3d1c0144045a25ebf172decef6cb914a5a3a6c541597dbb1141407f6bb4056ee88a0b7d77ebb2600c49670012ea2d9410460b3eed37ab0831eb005dc2c79ff8882922c92becb777010d1d4125db1c10900035b2d3f93bda8000bfd1157692fe5a0b2094722bfbb6fe6e96c3 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b0111110110 : Impossible board_b0111110110 :=
-  kernelLeaf board_b0111110110 #[0x632629162652212235514b222c5d525d514759636226261d2a2b592b3541333e, 0x1b41492833695e41395f4b2a522b6457355f662b592662412b27514d3f315225, 0x5d5f5e7a1833477a3b165f4d5947374b6e30266447623726784d642662592b64, 0x592b634b2a564d23281759392c30232b30234b391241222e2e373f63312b101d, 0x1b35355f281d45335735343541391d2b1d2c2b2b22571d352235711d35342b1b, 0x6a49753f122825333331410d3331121d1e6226275f2927372749594159733721, 0x3f594b39622b2b2c213112161b2933275d59635d7684781e0a5d4b272c4b3f12, 0x3f453063374b66724b222f404b274945] (by decide +kernel)
+  kernelLeaf board_b0111110110 0x883fc422ea208c3c7b7c1625ea808b0520c0ae6ce5cbd16902bf560602a0cbd3f228949c562eff9541b3d2f73e2c9415e0a40af59a8a876392d6554100004a2d9bd4e0048cf4fa02405dc0006ce220063d6efdbbff892f19ec5688ddc104465e9f01159a4bdfe4bd5800b408c9c07aeff25c8a8a341054bb3c4042067b1e0eb14c43767b2031c96773de2d36aa89f62fea8229d014fb7c0a613ea8a3276cf070595182b3f3dbea02087a37ab0c8d74616bb7f519de2e0a2cf41642bed7541165a6822d783b9d0000ef2bc1013bacc257c292bd170835f3bb5e81601022245b5f8e7701106bc00d3579bc15086ceafc7cbd575b4109ba880023d1465f020105b3b9d674202b0d1eaf2404261a3d25f052822e725c1d160102bb40576df1ff0048e3d486380422bc58871dd440aee825febdfae31b3c05063feb9016459157796c04bfaa137b3c7dbe4bf76c34da4a81934408fe2dbe24c00a29bf1c8a2acdf2682a8a6e080c5b4056741a57e4cdf0791993ca367a28b0805a72f70773837f25eaba5c30a812afc98815f85656bdff3652a112002bdb3a6f1608a890757a7c410468eb377f8a1132a24931d59a5a5f1e9b82154eb4485b09374b43b08a822a2c6bc8b47978a80a2c4967775546977704a3a851f556cf8fc5a6e25372a8b1dd56af55010866ceaf6bc1d9efb (by decide +kernel)
 
 private theorem ok_b011111011 : Impossible board_b011111011 :=
   fork 84 ok_b0111110110 ok_b0111110111
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b0111110101 : Impossible board_b0111110101 :=
-  kernelLeaf board_b0111110101 #[0x3b4f411257575b1e393057234035651e391e1f4f40352340515c524f2b4d3f2e, 0x2b281f411f281b41211235392725471e47235d5965570e5c4b59225d5c2b5122, 0x3559565d633451315641660c315d261d412b264527541d59224156141f112141, 0x33261e581159571e22253967592527225c695139251f2627574139223330325d, 0x1d1e292b0c542b2b072b5d4b27314b0f251e3318562657332b7239624b0e5e10, 0x5d541d284d3f2b194527311b0f201b207f28334521312b273331675d34133363, 0x4133293312593067415e5d41183533351935222225303118334b4b0f30] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b0111110100 : Impossible board_b0111110100 :=
-  kernelLeaf board_b0111110100 #[0x6332454d614f2f2f23453f7065350a6c141d59596c105434272b10343f1f3956, 0x61706751304b394f62596235282b35576565705962356a5962705d4b2f352f64, 0x2339225f54335735636a39526d6b655151214554304d5d746d342e5d6c6d7539, 0x192635262b6739392e452f212e22301f2b6b4d27121f331d265d6133616a5e27, 0x21513d183f52744545213f3d7a6b4d654727153922395e0a2635275e0a22395e, 0x3245513f584547651e3f273063523f1f6a300c136a0e2019046a3d6c10264545, 0x1f6b3565395b4b4065513970624b4f5d335d5f4b614b6d6254416c1e2252333f, 0x3d3322303021] (by decide +kernel)
-
 private theorem ok_b011111010 : Impossible board_b011111010 :=
-  fork 42 ok_b0111110100 ok_b0111110101
+  kernelLeaf board_b011111010 0xa880080c1d9f20822a71416792c094b3ab0f3ea8430a307bdddc0054520f3498d015aecf4845ae671056ba2d500145a5d868231c1651631b3e265f2a28092f1fb0eef00a0280d4d4440eea8e6eff1015e20a067118ba7d8e0c1bc08101fa0c44137cb320c7fd46cf6404494062e8763854af500013e820cf63aa02819fbba0034e490027b3f1e773d800a9c2578cea62020af1052415eca41f615f7797a7d8f2aa2a2052f1fa22974f6cf31d6d3602d0ab00082895f67abf96822039e5845b164d2f111476d34b15ec86cf4d9ed0100b191e4042cf5f21110113daaa8b4bb9d00a65cfd9e0140012e9f8245b4dcf4f47010059ce9754100fe9b4f82257c060ea39d16cf61b2d151bb82a2ad7b3a0a0000256eef8f090159a7470563d6d421060f9b52044866c7bba6d410953bc1d5e28a88a6e2e9f45496a6842776000b3a2e0f5b556048a6a1120109fc8e40a1d83abc0589546a8232087f20e80327f51829bc58483a1c96d77382827e98050804bc7cf68c11f478a0a805deb3a3978044af8eee72f56b3d08b652eea88dce55f474545ac002a2ef9fc1e218925d7e882bf6f3db9d860aa2a15f47c0c95ae8a2e5d3db9c5528f6880027f994409fc0daf22cb0c8f81d1ee6a8d2d6459faaaf9bbfd762a012f70519e020a0a2d868aa0220ac3439ff5eaad7cbb9c092de0acbc4890160797a381000ab9d15e1a438b97cfd1116ee0a8b3d0bbdfc544597e1d0925f6df175383880ecd908f68b151a5b3c957fa84a0cb8b8808251dfe80a8d8e2f11fcba28281edfea0a002027d8620a2e3e96ff3fa205ab400058633600449e008280226ac76833384d147568284f7d990d368031751122e87615068ef7114c680bfea5f4c062e8a31743a80aff7bfaf5f379546032f1f4f8005769ce8b5555409cf7b1580a9b6ba0a88a9f4559bd8ad16a8139ef68119d536d755844dabf3ea0e75010141cebb560262ebf43a4834bb45b0cfeaaa00af811d7cdd3e100912cfe33cee9bbba82b875804059f878000d5ded3f248f69ce8b501041bfd4d0559f5f6ba0888e3ed5820c39e9608886dc00d7e5e8ea051c5450f1700a9b0e6f77e9c843b761a6a12ed0922ee9b301b6fd741573e1c4402567879fa3a8ac31665ece79fe2ece80ab0e2d55aeaa8a357892d7af8a397405132e002f0ecf8b0940926beaece02062de1dde5e822afd9ae808abf47278f659717000159ba8a003879fa22fd445fa8f62eff86e1c80565d866b8af66c4a820a533bd670182acfb3a900004021d4da60281209f57c90810da6ff3fb9eb6ab (by decide +kernel)
 
 private theorem ok_b01111101 : Impossible board_b01111101 :=
   fork 90 ok_b011111010 ok_b011111011
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b01111100111 : Impossible board_b01111100111 :=
-  kernelLeaf board_b01111100111 #[0x25566c6a590f26215731315c3557666c3f1231596a2f1d5d56695e5a58455f23, 0x180f1c2e2a12566a52645d57253f223f262b4f192625252b2a3d215d215a5617, 0x647965665767353965573f2f6b5b727b7d7067595d56525d2b595d5a5d3f1817, 0x1d30103f0f2f25305810335d31262b25306a570d5d7a5c39672b39303b391c0a, 0x82f3f082f3f6e1f5d212f3f27311d513b184d08] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b01111100110 : Impossible board_b01111100110 :=
-  kernelLeaf board_b01111100110 #[0x1c2b33351f1d172517154d5d170e101725216c1b2b5d0b352115451b33265a5f, 0xa561e316166651209171b0a312b173112161d2a3523571735582b3b2b214521, 0x1c2b5a58495d2a2a6635235254591d786a5d3512265d404966451d5d5214647a, 0x1d3b2a14561526352a2615101d14210e641f2714210e0308113311080c151b26, 0x351c1b21157308351f630f5d21472659213557337814176759264d5d52171d26, 0x524d353f171e21390c1f15351c5617350a101f2a25215835265d31591c0e210f, 0x3326735c7a3f51591678150e151d102672545d7a26591f35683f5154596b122b, 0x101b573f39171926211f3512595117337859331939331f3535596b5c3f123535, 0x3d175c57727a5d745d572a53666c5761531d4957171035171f23122a565d3533, 0x536c312a6a57573157725431] (by decide +kernel)
-
 private theorem ok_b0111110011 : Impossible board_b0111110011 :=
-  fork 40 ok_b01111100110 ok_b01111100111
+  kernelLeaf board_b0111110011 0x1082354005fbfe0404628080bf7feec11411425023fddd0e88200cbf7fa7c458458e02770a8f2bbd658960c73711a775454618300210dfe3f5fa5c01061aa2b0aa58e44086cf6eec74da854008abe402012e30f57215f4121bddef5dce414001cf9f57a00239d86ef49cea020202827315e4ca17cf9754493375fcfb5c11009400119cf97afbfe525095febc51b7c40821cb81f781f7e1e7ecf77ada8d0252eee230484b0cabecf77b58a00addc7fc81280463104be498c7e020829cd7712ac975b04ad5d2e6c9ddebe282097141fe4a8b4141fe9b57ca2a82b3f3388a8a6d2e4b2a5d5eab7baaaaa1c955402ee87b5a056e40018be25d95ab60896cf5759c7e02a09b43d7d8e8800920231e44b9b5ebe20899b5097668303fc001096c75241512ce36ad7e77bbd6c6041d3dec2d7638bdfd1e0014f120a546d9b1d96255eaebe2a2b535f44501058f55fe5b08a15363a89212c4f72fdcebfcbf5b223771a4ba645debeaba7e6e0192366a00020a2857f0f4f4644408ef2701122abe5f21c080a35cbe2b027f4792d575b440406eed712016784394414df5f2561fee74002f80a2419d368710fed725c80c59e80a8ec5f0059fe390002cf2cf33c084b9e01110679fdaf21035ecfaf400406e6ff25a000d72406bccf4df3d112e607ae5ff4151c02cf16fc72020084095c760245720ee434dc0801cb8100a9ddfd7002226ece8091fdafa397f8251c1106a767d792d5f4b51826e35c5001117f85f3da00a287a738280c08c333f95dae731286b68a117dae2b4400867f5580880829743aa29634546baaa9bbbb1d488b3800801cc76876007ed75002239a006f00404395f9eb2802008c6ba1207f71e3f00018aee878fa6c510102b3a1daf5f678045e329c0a12017f3f0159e5653737bbd2e002fc8041dd3620c881dd7794aab29800d6cae42126dae40c8aac84dc00d257219dd2014a6871de4d194004114503fa7e1414a6871da0000f01191c2149161919e4711a230ccaea1bd367357dae002c64029449eee0a4c22ac994155e6ca9111ae8fa5d4e12b3a20220b241dfc7abbb8a8b4d751a25a6cbbc0a3039399b8bc841dc625bb954b840114a7931589f58adada84b009ed6382187cde5c4000a096a0a289cbe2326f15b1c452655e24497d8e4b0610b677556d747d7c51122fb5d2c6a22bdde00204af05410f179010410e732064578b3dae7f85044ee5f108044b97cae088b37262ee5f1dcc434492fa97438b6cd60037abe1596ee2f406bb208711052bc5cdecf4ddaefea3 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b0111110010 : Impossible board_b0111110010 :=
-  kernelLeaf board_b0111110010 #[0xc235c235919101c703d692b594f45310b11081c516a4d10254d456c335d265a, 0x316965591f5d2b2239112f574d101e6a112225301151153d673d305f706e4d58, 0x45236c61112559496e26491c7059862a6c645756114d1c255751033d67525964, 0x1e1b681c532b25251f11305972142b39302b25166c575e6c6b706b7078266a5d, 0x59695c825964517859695d4f4525302572535c7808490c5949786e4d58596951, 0x70576a517a301c64] (by decide +kernel)
+  kernelLeaf board_b0111110010 0x4400e18c855fd5941500400051fd6c339e4d95406cfa70406e6aa28bffd9f2747f191204d9f4e008b77027f17014bcd0004b0c34bc2913cba9e11373f1b0911108e8524e3354024b3a49fc7bb85129ba0d0b0ccd8ecfa7a3c127ba140837e8e39a128534f010095e97a001a012f1fc8ec3b3f2d0029d4004af8111881cec34657a5cb7b3afded0484426367af2126549ae1a10400ebdb87e34deadbbc5c05a647ecd85900c3a08411d2f59e4fbb2112453648b2739f0e405b3817ffc014abd9e4ebf5b6450089488f374a2910140e6325e8abec14707bdf3f0052c09b3a11193a840863e9f2e84d670ff7757a04322c073ca8111c1455f8a2d7c66f10cf602a0401ab23a2d2ec39020688ec49472bbdd400500b3e3dd86004224dff872b5bb9bd8d101501019a3ee70ac8fb382040286721ca427316e1853df4eaf0acf0822944fe2ec740411782470467308a3a88eae6e43a154b8808cde2fb367ddd376b (by decide +kernel)
 
 private theorem ok_b011111001 : Impossible board_b011111001 :=
   fork 50 ok_b0111110010 ok_b0111110011
@@ -3158,7 +2274,7 @@ private theorem ok_b011111001 : Impossible board_b011111001 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b011111000 : Impossible board_b011111000 :=
-  kernelLeaf board_b011111000 #[0x2a232b265f717b65085735642a6a2f1d3222652b4956655f355f4f70565d5a59, 0x394f192b222b182b2623115d2b1c2e23122835655c2b221d576a353139312658, 0x5a4f355d7326095d31331b45235d5d6908355763565230300c2745282c56672b, 0x575a355b3965222f2a1d28355b1d2a6b2f5d287135326c6a326d5f49561b5f56, 0x637158453123262f19353572311d6772082b5d66701c5d2b5b725d2b3571191e, 0x5735547a546768635d6a525f396d713526] (by decide +kernel)
+  kernelLeaf board_b011111000 0x495f10246bd4d517d62254d0cfe8c1010971f77d5d2c14156fea0a80e701dbaa71d54156ba6c5412b1fc7b1c5c15542163a3d36a02fe414633b5d965416bf2d8e7792982473ef2c46afbb842066e00b8673bbaaa10af400a406dfcb6445bbcaf6bf1cce0909eebf6b400a6bdbdcf9704602245afc21562107751b5edea82c041dd42255ebd7f770225010051f1dae8532d09d9a055ab60997b7bfc9eb62a05206f410101bfb5b000b5cfdae8037779e9b414600104f7763b02cf004de000045e47c30515dd1082bbba711b5ebe89063d6b62d2c04586a28b0c669f048ba002a8d662856d2cfaaf73c00c2a2b3f33abc0145c8a0010af31a082be5368f4294548f775788c507311105768f25a8daf97b9c00202abd162101409477afeadae4091331d850073a02131d3763402811568f5550295e9b954900bff1e02483df9711d7dae802039340557ab40117e77658048b072f2be4f5b59104acbc57f6bb010817f9f8444c9c3addded767 (by decide +kernel)
 
 private theorem ok_b01111100 : Impossible board_b01111100 :=
   fork 75 ok_b011111000 ok_b011111001
@@ -3171,21 +2287,13 @@ private theorem ok_b011111 : Impossible board_b011111 :=
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b01111011111 : Impossible board_b01111011111 :=
-  kernelLeaf board_b01111011111 #[0x627066551a2929555855656759355a28554749255a755f305e4f605929325733, 0x49283e1822212955294959291d5925546e21554c29552122355a1e3a595d315f, 0x291834552a59294937243a2916213466555d6368595d2411645966667463557b, 0x5929164921351f7a5d296359636f22736a352f6f1f582f493a551e472163594d, 0x5a1f2f5d1522581f25492e376a223a6c2f21551e6618353a342959596e0e1822, 0x3a35573e685d5b2e552349494757256a635725492155372a4963494737473558, 0x1f292722182f4921473b315f622b] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b01111011110 : Impossible board_b01111011110 :=
-  kernelLeaf board_b01111011110 #[0x1c2b1b5d2b273231621c30331e5833142868581e1e2b1c0e65174c14285a3557, 0x5a55141b5f321d2b1c2b583055255370496a52234c615a5f49581c581c175d25, 0x5514283323212f252e1e6c581b3365351f252b28214d142b142814282b213d3b, 0x2b2e5f4f234c642b231b336518645b330e2a1c32475d59321165282b3d63241b, 0x6a16352e6c1927303b282b5d2e2c19304955172b475d1b24251b2b2831274d33, 0x21316e592a2b142a532b3b256f21536f2b593352716f1f2b477b493b5f282825, 0x2b2b] (by decide +kernel)
-
 private theorem ok_b0111101111 : Impossible board_b0111101111 :=
-  fork 54 ok_b01111011110 ok_b01111011111
+  kernelLeaf board_b0111101111 0x4a0ab0aa209fd4e9f5011698d92297f2743aaa22a11f51955dec7bf8a8e2d40155f3ad551046bd7df704880902e8eef6f5dd5d1f0032754164f1f04845556be976544599d5e3d5afa5d493a1eaedf941580005572754244c7c9e3edf41408fa88b5db1dad10fe8a8a128bfbb95d592405176311151514fe9790093aedbf32accead16233af66bf43d5cf610ace6d504654c6b5d555149d6d353c2d9d616cec56ec770a14118d172b675396e4ea82a0a2871116b9fd8a49927d777444154f8facea0a0c38fdfa2d0454e7b3ab81516ba04bfdf9fec7028aab12fe4eebab9ed04563eaaaa1cc7d9c4866e800a9e4c6822d3ab8408ab01205b3a9e4edf9115051111549bad4e10085b43b4d544cdd57a05004bbc4ad8f5017464b6756ee9323e4d406cf9b9441737d3c7d5fdf275182a88b28b3ec554c68b43a9eaea20aa764f67545141053a9dece80a5d504551442aa9eed0f5780666828a29eae22a0a1d16d7b59ed5145d7674182489bbb1eff284a0e2f879babc906b0214e888a2a9eae8058d112af9706473f676bdad460a928a931578fc9d2e8a4a416b51eb8a037f51101877b04019fe0ecea765d7d9ea8aaf5055ea1c58ea8a4800eeeceab578aa800914d55c54f578ef54154baaa8a6fd0f52ca014fdfa04af625b3b3d84296a3c7df9fc0a495f1ff7c9d4551406477dfd46aaaaa344052ec8ead4b6a135d77b35505633a7d186ef0a519014afbbac880bb50859919d8727ab90cd17d40557a2c47eee6f241052697185408237abd46c74fca04a4dd9eaa8004abd5115da20a0897f67e8f99b020464d5ea0c8f37acfcb98e45c9adbc41567840a8ec0455702a80021cd96831f5592bbd9d1242865a47cba8d5ef742902c7aa10934de234495729a8d9eab2a8f91204410ebf54454baecf7b3902c6b126f4567e5dae7f50654554ba2a4abd46879baa825315578804535188c0245351abd0ef777dad5141609516ae5344155137d7f5659dd5e289301cd578a928d8d5187574b88b4b4f5a85e1c9d550089d5d2e51e810b33205470f6b10104416ff27655961b1a731140594a56c6732fddd2e90ac9cc579be01bbaca0af4fb2d8f28d58b0055048210e730c1679eeb1a0aaa2accf29a8f46caa2904d8cf6007b12040579cc80087680e5cbe02a4cca6a3b5b5ebedb (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b0111101110 : Impossible board_b0111101110 :=
-  kernelLeaf board_b0111101110 #[0x3b5e6c5d58302912352e355629356c356435352958556630585857214c1f1e5a, 0x532e2e2127224f1c293530595557583155273d3522292e65112731214f2e4c30, 0x10532b1a24346623596553254c30336f5570304f691729304c53401513582457, 0x3417531c2436304012221a121c3022112a574c300857351f5364083513171413, 0x32545d275d36696b2b2a2a276f552a34251a2a5e533129646517532a0c563417, 0x191f17362530325d172a30532a685d1a3635276b292934531c2429592a1f2530, 0x64665f236427556b72792723253b6617524953231e24251c1f5223242349490e, 0x36122b1e342c343422302a2a3119311614362b2c342a5760171c30246a725260, 0x6a633427532b366b36534f351c5e643635581e34342c6d30573b1e1f300b2130, 0x235e5e25306e495e3024536652686e3060253053365265605f69253672583257, 0x36583658622c49562c09592c7e12521f581c36256f5552536566162c5356245f, 0x3b6b74615f596158617b6a6b59553b220c2a34754753695f2361] (by decide +kernel)
+  kernelLeaf board_b0111101110 0x81500778826bd57a787851bfaaa1367105c3928a236351030fefd5ebd4166ced5d5545de84a8b84619cab69f5d4563eb4fd3dfd1e222e1d596dd8d6015b62aa08d8f16ab35050093d6e4005566279550b3c80a2cff64b556a5ab2ac9fec6736dc82c4974677f571409a5d3f2f9b11401000b6b3551a7d6d277f47a0497b5150445bda5d87bb150064eaded55100461a4d1a7e6e97a3405441376c3c1a80a5d860d3d6015b6a208d2f2f835544408814bfe9d2edbe5d8d975f46856d5e3d4602215a69fa782102bd50596debe5626dad3e7ed74190265398837bc98aacac0db6bd8cf6a2cd3245869ace5576e8a0c3aafbbd4113d8ac07f61884088bd0e800b0d251b64b57a909ed5a6b349a628a88d345c0b0d5708a802aae446399d021018e5b24495529b6d5e8242cd51a6ab042bf83155002f9cd8693900140d5b72e9783487279bbfa3d4847269f9112afaf40929085397e74fa3d40552e80abbd854cd97e97270101481869e8f3d89312e73440104013f90288852c47a4e5991eb0c9d915938ed004ce0887f2fb6d2ec365ddc25411652faac561d3d00955a2a8868eee6b4056db5d5580454fbaf50505653b0a8529da74f39aa082932514f0840d9d410559fd2ec3658800ad4c556ee4aca7d8abbca2b6f4faf89157aad44555a7f7f57411655b4d441452e8346b5577ba7d008c7690539290064d5b2e5fa7a020402ab19d6da72ca97c494556997e9e734980836d618282103258b0a2cd6880024b398a328c34591c015630835f99b0e450474d7dae7f51410a9f64c462ab5d0449e5f29c0a93d221a02134f84579ad26d3cda3d1116ce504165e9f008a0297a66c36780a83bfaba2a002bc361cff4e82097d4540814ec399c0234f49206895c527d8d275f404a9e12ec9425da1d3f14a2d529f9cd4ea835c504161d9d11abd7c2416c6c702ae10a2a7e0547b88b5d45a9e5de5c8e82527d42063a1d044a7e04bb99b0ddea80aaaa17bd98a8a5dec6c388005392dae02c4bb9af5b4560653b5f662b135f271290d755206bca7b1d5d505a54cdb0c1082c604a258ebe87999fcf76b (by decide +kernel)
 
 private theorem ok_b011110111 : Impossible board_b011110111 :=
   fork 57 ok_b0111101110 ok_b0111101111
@@ -3193,7 +2301,7 @@ private theorem ok_b011110111 : Impossible board_b011110111 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b011110110 : Impossible board_b011110110 :=
-  kernelLeaf board_b011110110 #[0x631d2c64595449596164641d5a59541b2c403332251b22222c3318321d604d37, 0x532c57605316615260521629541e2a2e646b5a5659355f5e571d5260566d6b60, 0x604d32321156752a675a0c565a212e546d0d1e5227542c12331d562c30251e29, 0x5d293d293d11286b591d2a1f2b741e11293d645a2b226c595a1d4f655f6c5929, 0x1919236c1818591e1c64185a293d2929222339536c29565659296464102b221d, 0x63701c5a64593d565f591d68596664635b3d602b6459233964495d526460655a, 0x605929595f362f1d5d600c2a5a605a64055929591e0c2922233960295b635a60, 0x584f5d5972536036405a6552362b63584d595d527458694964283d5a3d645a58, 0x54584c36525269495d5354634d53364c654035575a5d5d3d53665d5a4d35252a, 0x2f565d2e4c6d586039185d3052492e1d2a563d2f2e35402b304c571f19395a23, 0x561f39602b1539576077242c2f3d602f546c592c39571857602b2139602b2e5d, 0x1c35252f10252a2f29221d33222935404f3025572730306629112a0e4f59646c, 0x1f212a5e4c7b4d2f] (by decide +kernel)
+  kernelLeaf board_b011110110 0x500fe28755a2284805ee67ef9bb28082fce6d74ba2000afd5448697504555a882fd4e8b3bb088cf08619841516a76bc0c29fca004c34bd5f6084fa0030e801879b5391d501900558ee7e08004d9f27b3ad9fdcea20860c0005788579cf5f52904307df2008049acd15fbdc10706288bf6a7b3b3c2100002ce73d7cc6aa102d7c41c180af44043b9c41c18aabd76815dd7f5b480aee2aaed5199913b705b1e0e19cea98eeec3a5c9d09760820027755d6c7bb020bf2576d78180080af61aa40000b33af9fe110cee7b5a3c2a982836310499c8ca8dba5c8434b34f2751046ee2d3c151aa78f9bb00d3d001b64cf2ea80820c0daf5fb5a0102ddc440aee20bde9f00c8366eee836b9ba80ad740052eab004046c73f45bb88967e5d3f0600db42881daf2e814b1504156dabf1f0280d8e6e08d9dbbd2fa680b63d3c9f26a3a5007ba928dadee0964ed72ca0ad8f0767538202148367406fe22a36c95f9deee2088a8160c660282ad06d60aa960cad7930bd9d4e92959c545003da0cd4ea28b47b9d15c180a4529ede8b8f15816d783921571f0330bc339daf27677bd6d105bfa82059cee22568d6585b3b9bc9e3d0114b7b3df070822bc450111c9d9d1ee7472727bbd2c01659c9e0d46cbdac1194440ce086747eccc60aad18e161422cea3034027b39e4cc76b53bdd29110294f0088a71145a3dcf4f00040d9a9c415052adca214d6ecea7c9942aa8264c86af0150491677bbaaa929dee80a08a9dee47101505464822ebece774112015559fd5e24bd3a063d91d4ef7c9dad401655788b28b50491401d9d9ed6774019f80d97a0214856ffb3b3a9f073765c80cb00148f5b505004eb8880aad0033ed6b19d6d0ad620200a1d76b53db8dc13d8d2c54680013f5359a0824b19e7704856b6b3005869751004f6a715408a78802cd4252be20b60e9e5bc3aa4434b42706214b2da9e510196a67b4556a00abb7260203afb5d6eced74044545bfdeebe2281de96828b83ad82a8c81b7212d7e0d5c7a88909de59e4ecf5393a0096700970e920393142726776d61167006a99bd409567032619e32c04414b9bc401116902a2d66cf1504c6cb3be0e6edf (by decide +kernel)
 
 private theorem ok_b01111011 : Impossible board_b01111011 :=
   fork 63 ok_b011110110 ok_b011110111
@@ -3201,12 +2309,12 @@ private theorem ok_b01111011 : Impossible board_b01111011 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b011110101 : Impossible board_b011110101 :=
-  kernelLeaf board_b011110101 #[0x7124642131343a71245f2828340c6e6467597359223a21642c592c113f163754, 0x535a645635396456395f2312491b2a1d16341a3b1e15092a093a56784956567b, 0x53602a1e395f235336492812252312361c3a32662718291c323f78286539653d, 0x5e717080793a7c3a256c59362f73597873231c5f49495e28715f6f3128233265, 0x256c2a1d2c235d32365f3f6d705f656d6c5a4c3f37596c6b716f6163357c7873, 0x6063606c2f7a236a59632c4970652c236c605f585b322a7337701c2c33323332, 0x662034173d2924341c5a3b293a292e18603264533a24375a705f71323a61375e, 0x5a675e3260291c1c2e3927311c39667a736f65605f2360113e60765a2428716f, 0x752369111e5a5b69585e395a5a285e5a32685b4939583124282531295e741e39, 0x355a755a745d6b5e6076293f325e326c60735d635a646737605f376a584d6528, 0x73635923236c5f2a6c5f5d5a6331365f5e5858255a5733305d] (by decide +kernel)
+  kernelLeaf board_b011110101 0x454456e7ab8fb3b200a3d515147ecefeb2204ab036625feef6b1171eaaa2c76ddfc5bdcab6355152c697b5d7c561119eb0c0415bb888ad7b58a8832275d6d7480f4d6efafbde0d5066eda028429d955fecbbd8ca20b2f67835611579ea177c7daf26402067d5516fa8aab83bfa2adfd5d8e6e8b976054632aaf5d1fa745505048e7b6d6205bc0505d3d8d16f6aa02e7b5a2a2b6b51cca2ab2d7bb5b2f460000dbd0514564ee7b1b02b24ab1d26a355505212ec741611053952defa67b73dae416cfcab7b65e0d515080539ce544e6bb73aaa820492a7d8e7373a8066d105f5f3c104137f97c1dfd1ea0e0d5411523c30950fbc18cc9db6d69351ca0485c7dfe6c01565848150734cbe82880253dd4e828a4da673b5c32b3bc1154e9083ad50153aecc78365e4e9ea88abad26aa0adf52d6282dc3bf82ab71d55996ebc3822a88adfbde0d4449500c7b835455d99283122fd41f5a3f56222a2d9f1e0208a0812cd93f0f2ea002b351fb3c1dfec608a808dbe5515540596abe7b7e0415e1c8735504659ca8acf8159720acf859697d9aae5583ba8212cd51f055dd65b6efeaa2aff2176e2f0c06fe4a248e5f6fb3b5cce5942469feb37ecfb310585d78a2c0f1f7f875b1e2228a4535c588553e6478f9f7be3a0070c93ff100f3840eb7e748a33ad2fb3b3c8adb8495f90809cfb38203e30079e8fa16139dfe4f24c9c912bdb2a3e3905fd0537ea8531d51d30c8f65e5e9f8344555aa8a0229ed5cf7f47a00ac2d3e21b6b2751cb324b414084b8a00a3c96db3982eb65e6c1095016558254f98d420002539cd96ff4524117c6a3cbc844a2ae7cbbde9f6bc9d6e155505aee75105541326ad6dcf7f47aab2a12d626193b5011bd559dd10865504b6d335a2c3bcf684a2201095e13aad60804e140ebadf8c11516a4f5ba4902adfbf8e93c9a008795458f32d389d6dc749dfd4722aa381069a0329033dda45393233f67e7a8367290116a03ad0e82000e4c59d9e4015991dfe5b5bf53 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b011110100 : Impossible board_b011110100 :=
-  kernelLeaf board_b011110100 #[0x58365e7b632f1c5666755b665449105e535f61715e5f546d535a7a715e665d64, 0x496258346f3412282f491934245469535a68162a21625e662f176d3d346b5a53, 0x5428682c362a6f5a3421585f5666176d5a535b543a585358632a6f1956666f54, 0x2f1a6f1c30582f56306a2f213d5d2e2e37303a233366565d585a2e2e5b49243a, 0x6b2f3230251f2558212a372139252125532a3053273429192f5a2f1c21362a24, 0x27616f592c59146319305d5f5d695f61236c585a5d305a567d3a3d6c5e34175a, 0x272e3d3a692f1c6a492c29346a126254536e5a2c30200f303a5621082a5f5e69, 0x6b625f236c6a2e306a5d59576a62492e21620f3021592e3766593334] (by decide +kernel)
+  kernelLeaf board_b011110100 0x85811575f8b401bfaccb22a08fd9b6ad76c3a00548d5977559442ce95fd5e2e4ea42ed2000043b20e2c7f30d08a43a359d76df95414acdd9d9e820b34d00653ebb7bbac0150400074ebf39aa021ab414193acc054ed3a451d5c92f175341544529e20eeed6022cd15618a0a0d0087ec375a0c56d4450e2355a82097f102f7a744053f8781b7f159ea0059ab6729e3cce8330c509bbdfc01bbe9d0505bfe1d1fb3b1a9236b911bbac0b0c6d6b5bfbcaaeb12669847becef68a24d32fb6bd7b0aa22202fd52465b0d2ea4a7f14baacb6343aadbe8021c4573a5c555143aa0a25e9eab4961b00d3d3ec4b4d5399d5125fa82052dad7e73541110e2b6c555a0a935f8a209ad450df9cd87631445fa15b114618a14ead7e8a21def775dc2a2bb01515bec375a3c1167a89288b9b6b6a2c25dec76b9045768112ec96df278549baea6a3d183020acdb6820ab549df85ada68751b18b00037fade6d54be4eded74f505485b7d4dd600d8e9e42b63c7a0aae84812df99eb79b010dfd4e4f4062d51002c6d38148477ed325ca2c2a35fcc2ac9cced349d4d18408574f4fb5e8e4904004b6ab543a838b00144016bde6d017ea5f276e8d28bdda7afb5d3d501b1b6c4401bdfbf1e00c402fe4028e75bcda4c75d842b7e6ea72721a0a280adee9edfd51501c380f1d1bda0dfea6a48bb7a7dafd68004f1cbde6eef93 (by decide +kernel)
 
 private theorem ok_b01111010 : Impossible board_b01111010 :=
   fork 85 ok_b011110100 ok_b011110101
@@ -3216,24 +2324,8 @@ private theorem ok_b0111101 : Impossible board_b0111101 :=
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b011110011 : Impossible board_b011110011 :=
-  kernelLeaf board_b011110011 #[0x6c70703223565b526852553d5d4f392e563f3a644f2e2e0f3f64565d5260651f, 0x372c392e272c4d3d3623392b0f394561394f5f29584d5439631e5855306c625a, 0x3a2c6a612e545a33682b552e593a54612f292c632c452f1e2c21587d33331e27, 0x59153d2b33240d562b2a1d565a746158294d602c1e585a2e1e1c4f1c1e585616, 0x2c36271d62202e142b646518564560616255293a54333a562b3914301c305829, 0x562c20171e292e3356603a5a594f293a291e2e563535241b27352a3536192923, 0x606723352c5927453a4d6764567d5a6c2b3a563a5b52684f3a67563a735d5260, 0x68406a62556b76624d6122666a59615f3a61591e29162b596a202e5460555f68, 0x35294d3355362b5a644f3a671e64567430666856526060406059353d5a4f646b, 0x5a6c5b5d30525a6823282c39275224566f282b36] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b011110010 : Impossible board_b011110010 :=
-  kernelLeaf board_b011110010 #[0x5b5d55607754605d163029392930225b6a6024112b5b24221e5b290a716e5835, 0x5b3a6567186054361c3654126a282133283a71656760556252681c11365d682c, 0x7158296645336a621d226552715b29676a525d1b3a67667124526511292b2e6a, 0x2c4558395d2b616159312e55332b602e302a2c391e0b2a32161c622c301c6e1e, 0x1d676065625223115452592130] (by decide +kernel)
-
-private theorem ok_b01111001 : Impossible board_b01111001 :=
-  fork 87 ok_b011110010 ok_b011110011
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b01111000 : Impossible board_b01111000 :=
-  kernelLeaf board_b01111000 #[0xd22332a2a4d672b2727453a285b64646a395a455b5b63215b172471582a3554, 0x222732122321162a584f2b6c4f2b4570684d315d2b2e3923132a3564585a396b, 0x275d795d665d2a2a642729212f0f] (by decide +kernel)
-
 private theorem ok_b0111100 : Impossible board_b0111100 :=
-  fork 52 ok_b01111000 ok_b01111001
+  kernelLeaf board_b0111100 0x8896bd9882a4880b6fbb802aaac32968daf4720a010008f10151acd1173809f106969302002b7bf51abdb60888ab5d4e8004dd9e80355db6afb5e4c0427ea88aa82ebcfa089ef275b0042ba6a030c004cda268dadd2f06a824438301460602b83010512ceb5c17bdae7e204e4f5ee8c4181a0a6af1757415009404875fdb0885c59044337c3b04b1222f37abb3c8c53876feeb11170f2002020d9c3da9cb68a922af5500021b3ead06bba9812e0c9512ae1017f21074620e0f3e82a0800a3dae88402cc20b3a7e2eeb941009be7f275b502fba8896bd988a801002bd75d6c14275dbe97a300149faa42a8baf3f5b045607588273eef4bc1800895b5668090820c022f9ed4ebb685410419f5bc1bac626b580a59e7e129e48075820829cf6bbadb5d15900106ba4cdea09f105aeab0006b836cce80a29d1e8820b3556d80029f3b8140562d06bb29abf2797318095b51144422e20098330e88e2eaaea9d54245275d4d05000167baeb62a48aaf73a2808a53586a202a7346a5876353d9e40162b8908f744055e200b3d26208a0dd5ab6af559dc0202b6b010a216be9e1ec6a79ba000b8304581015667bb1802a20224dad767b39cfd114a39a8a9eec75b4114002dbad66880286af0ebba9c80dac0019fa3105457d5d04457680016775d4f0e0802fc154eb39410110b1eb38b8202fe15114f6b343d8fee80040a0b3c41059e22007b93edf59c220039d760002802009f59cddee036d411ee7578fd4458573c5f0e222ae79fc8dfc44553b639ba2b54c0573a8018f8f763abb0f66a00b8b112d7b314154e1d208a870d968fad856f697a300a5ca255d4047bddd0027e0b3139d775b7fcbaf260013f5494425dc88bb1fbff275b906ef4bc1e5cfe80aa7701955622cfe0f2f8b46505545a5a3c8e8d4c5296a96743b0d450059d176c6e74052ee24a0abf0eaa008ab61ecec78901a55d88055e67aa0a88b2aafc1aed868c22ab566a0b9e3da2c02f5155aacb2db1421309cf16c84acd658689cf767be3d8d4e80839b2058b880accfd5e2c4053bc48928b32f4b0538f6f505154e19f0080756214b6ef042a006f5d79f04110737c749d2f2e47950014e32bd7623ab2de0232822baf2f9f31e0e016a9aa4a0a036ce6a036e566a64bd5a8c140104243b3d46eb41165e3e5c044573e60d001aaf8ba5e8e28239aa0a11db643135ddd18ad2ce1b7837760012ae183efa4b54c40c1c577402002d88c314f04e7294ea8c345a896f404757834991e4055e2896f49802a2cf616f538af8fbbb1b5ebe0020827eeea00879eeee6d8216eecab01116557931053e4004a794020910ebf1fa2d4053ecb5112149688b23e950e5b55763114550459fabf6602c004fd5ea8245de1e8d09ba808002831eeeaf1404576e791547b24f55b5f26d8ed600239d075ea22100dd45b3d54150155aa5082ae6f9f57808089f50014fc5dd6880a000a8edf934418101c9eadce0816b4158bb6f54191b7e3d0e20a16f2fa4f8f2b6355b5ea6d3 (by decide +kernel)
 
 private theorem ok_b011110 : Impossible board_b011110 :=
   fork 75 ok_b0111100 ok_b0111101
@@ -3244,12 +2336,12 @@ private theorem ok_b01111 : Impossible board_b01111 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b011101111 : Impossible board_b011101111 :=
-  kernelLeaf board_b011101111 #[0x292b6056286022256247513e6247476226614a4a26651d5d315e655852415733, 0x22275e3a22564d2262275a321c171c22682b6018514a476062624f5c5a4a2960, 0x662f1d0a65475e58246341625d565e6624653a244f6752265a644b2b22552668, 0x5d212734601e2856655a672b5e29563a1a5a5e6e5e26655d473a64265a1a4d61, 0x4d1e2c55184a29225d5a4f35165d56685d4d314d3468294f372c5e3464475a22, 0x595d212f3a601e2f191d3d222326312629242b18622b5829225f5855146c214a, 0x1d2b593131311d5d592b2b3a60185937595d212f3a2f2f3d26310f2e1d5a3131, 0x3d316b2b56115d3129596b3151345d4d313a31632b4d295d314f5d31] (by decide +kernel)
+  kernelLeaf board_b011101111 0x1551247bcab1f5e8a2122caaf5505adc47bbb1c154f6704d7a8231d54168ed3bbcdd54958e8eb50963c00a63d5ecdd24454e330b77563a004a0293fbbb1d10eeafb3aa2c75650558e800b1d13bddeceaf04055eebc198d01505b3a8a82dfb3ddd0e0202fdd6812bf54055f88f751564db1c7e80abb3bdad15163a8a02b1ecf774380820bf75e0cf6a2bf0050105339dc7baaa02c8b596251e9b63a2a9b54e930555550155798f160a8a2bc56c6a2aa715100145a000dfdb1a15729ecd0f2b9baa1007b5456622855cc72b4511954f28b500056ef6b9fb5e1421412daddd554151052b7a3bbcdd8e02337545005a7a3651154f3f5515116facd95402f6d34110123271fb5a2a92a2e1040506ee874fb4f067b42546aaaa156d052cbb6bcfabc480bd88cca7adbac45001135dad544149bdeec8156bda6f2f7785108faebc9ab22a6d55855454b59ac9b8061c033603428802fe3b8af2f1fbdd8d268a228aaae3e0f8b10000bbaaa02056d4502f79b498200a22e5c45d6934155067f9f812a5a6ed793500555565eaf5168d2b2b574dba342105169f510bda3ac54402545d5b5466f2a02a2f169fb58082082832ce72a085f39a2f46afc198e8ea892b63e200e0f16232a62e7f734556d64ad4e228e0d4e12a4ab2aaafc1d6d00551a24260d162a5f171fa3a8c20bed9106c5c7c515410a3eab8b4de1d055656a832ab2b5194de5cef7763aa28ab7b2172f631a5c1ebecf (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b011101110 : Impossible board_b011101110 :=
-  kernelLeaf board_b011101110 #[0x586c4d4a0e162f4d164b2f31285d2151373b323b3433281311334f34293a6024, 0x5663213a5f67534d283a312f4f5c284d1126314b23162f1421223b514a3d3a2c, 0x314a78271a135c4d171e2f53642f4a63580e325351293a2f0e3a5a2c4b53565f, 0x5a632f2f563134585a574b285d5d56584d2f3a51601e2155536a4d344f33293a, 0x4c31282c58574d4d2c18635c586258676a1d4c2e34631d6457594d765d704b5c, 0x2f22765c082f2668634d6d4c795c0f2337102e582f1d35312e2556292e60184c, 0xf292f531c33343a2f333a603311172f583319565d315c0f33343a1d5a1e272f, 0x6b1a2219795c0f33581c1f33102e261d4c2e56315c622e31533a343260180f1f, 0x295c0e28265a18295c3a4a4f110f1f3528601e171c15681f1c15281c34193319, 0x221c1556351f2831341d114b2626290b2960185528280c1f581d294c355c28] (by decide +kernel)
+  kernelLeaf board_b011101110 0x8a028b10054e724a45758456b6d73fa8d0018ec0a8b4e90ee4797a6d5111536a7501005ea2a7c198c1042af04ca8d46005518ccff636141554ee29d11166682a0b5ee6a341153850a55cc76a34ddad2425454c629e550452e6eb065624fd615415238fcfed751e0cf610005f1003995f4682027f53995d468000736999d450216799d1011b5e2206b4451699fcf731f800808cf40b19cd010053fb3c425421aed367754501199aee20adab1d00506e78b4045762c7a7a3ad414069b2dc198c140007eb0aaaa7f1fa42208a75fd3ce6a00b3da6eb40815faa00acf75e0d0459e08011cbebf504406c68902cf33ca815bbbac7b98fc1067a024d3759ded67b4fc00afd5057e8014048122fb77311a0022fd0001014de8f1e0444df6e4004cfcf731fa0080828f5041be435da2b635f9dd40156b8b1d455da88297101adaa7455de0cc6880080cce65499880231d47332cec6b520b5f009bc8224dd6663c7dcd10404b1e2d40011b1e7d07567799a02bb15001a698f3be4d06be22c01679ba20f6c45026efc397dced6000c38f0015f8000afd6b60b1e1a7402963b5d7e5e82a350bb82a5deb68d8e6ea048afd075d1f067b43a20a55d0100051a7eae6eb2d39f802a0002b3d4eeb0011638832b161bc7327cd6204f46e6a8cde2f9ed7f4fc9808200bf95e3ec6c0a0032028ed974f0020a3a9dd62222fd1d880ebb5828402ce5e80b4fad808c5feb6863d850e8030bac06feb067e9f37451505851bac05556390afe7f73111470204dc8f0a29b63854acbc8a94796d7f28ca948114d0e8b00524778147495bddd6b3b1ece2166e02012ba89861d96d7ea810cde8922db2f5faa00ac751ddd0e8803476fc83bd960040ef0069c22cf51c02b2913c8ecf02427ed353baf0693 (by decide +kernel)
 
 private theorem ok_b01110111 : Impossible board_b01110111 :=
   fork 69 ok_b011101110 ok_b011101111
@@ -3257,7 +2349,7 @@ private theorem ok_b01110111 : Impossible board_b01110111 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b01110110 : Impossible board_b01110110 :=
-  kernelLeaf board_b01110110 #[0x4a5165112747514a6b4b2659514a57291c32221d081452251621475a26315824, 0x29750a4f15311b115a57601433595a4f5a52316c6f2b4f5c28111433222b605d, 0x22515d31294b21114f1d4f344f4f254a4f222e564a625a6c4f2935601e1a1b1a, 0x4c224b3158214a35596a4f314f35225c59315d2629356422292833514731585a, 0x1b5c0f14525c3133225d2b594f20224b4f14224b2956254a5945564f2e351822, 0x79275c4f2652553314292e2e3468565157655657224b685651674a2e51594f68, 0x655c562e085935595d5c52471d316459516f345908046479281b5d337e457647, 0x334a516862205659355d562b704c521c17203129332b521f355c225959225c55, 0x34281c4f2835350e202b6464591c1f34354f213552682e] (by decide +kernel)
+  kernelLeaf board_b01110110 0xa00800d3546828aca739fa8d05af20b5c7683578810502ae4c867276739d22400327f499698d79f88a1d15aed2f46bb564040559f2b128f68d4140c5d0083016b62367625ae0240977adcafe1ccd050a5a82a7300be00948363a0aa767abc150946967f6bdcd16a036711516ce8bb9d5d682072f73ad904aec9511aa0d9d56ba04367bbdce968a31f64a000eeb1ec9d9e8e8ca94dbf6988559d9921184f2648009e7518c6f8052bbb3e85247f6212c5fb6aa31ff3a7ee73f4daa28254b504016af0cf059614a6a75d80080aa22bb5169e8eb74741afaa120a65eb654d7c091545a8ab2fd1d6e8f9f04095aed5104a3843679fe8cde2310825731f8a94c416482977363a0c8b3d177757a1020559e7e202a0c645cbc4049f80a814814e45cbd4e8b5b1112e92b5a086b3a8317adcfd76d74c6828b1401099a802a2c65e2c7b1a1d50958d75126ce28a221026ad9fb1e641504967ed745dcc54acf220cb1eee9b8504154ed7c9c0224008a8b5388a367a880ad1e3ec7b1dac105045d1c50111bb802c71453b2f43a10011d9f880449de9fb4c499fc20133f4b80892ba9fa2d76a82d6c495c08838b809ab5ece7ea76be0cf6801ac9537aa2aa8c6b54eaf5c573f2b9002ab1d013791d822d640315fc194d59eb0291367b58440b3f541b5d2c4218e8014bb359677eaf9fdcd1420051a8b09211ca628b3d16afc1ddd052570c08d1f2e47900493f1f455a3acaf5e432f51054da222d9e8e0b32bafa9ce6cb50045a849000771194c110004a5a5cb687590963f6b4db1ec693 (by decide +kernel)
 
 private theorem ok_b0111011 : Impossible board_b0111011 :=
   fork 57 ok_b01110110 ok_b01110111
@@ -3265,28 +2357,20 @@ private theorem ok_b0111011 : Impossible board_b0111011 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b0111010 : Impossible board_b0111010 :=
-  kernelLeaf board_b0111010 #[0x60600a3a2b164f393e6260584578653a64602b371809375d53665a1475595e51, 0x41323a67713a215d67607b6827686022715b685a4d74716422212b2f3253783a, 0x4c22592f6247315913416757592526470b4f5a6867135d55755b64572b216c62, 0x3162475760524d24536c472668232664181e4c181e6414253a78182957276270, 0x2226762445654562576070655345706362592c456511665857642c5862595766, 0x5e2272695359606c5f574b5d1e626e5e594c252711314d584541415d6c623145, 0x4c4f65594b121f5531244d60675759624c2f211c5d53594c5d2f24594d55534f, 0x685a67685d6452726c312b294a584d212e2939602c62291f605d575a2b295762, 0x594f5d3957603d5f294f5f5a29555f576c62225a555268655a4f5d653957604a, 0x4f59595a526065552252584a5757645259255722685560524a60681725354747, 0x4c525d4f4a2955415268554a2626670c6c4f59585952256259] (by decide +kernel)
+  kernelLeaf board_b0111010 0x20813312a5addc105109f8092b53d5c838202a34b01115d1d5e56aaaa9b49415379f8124219ece7e0a00ad9c5512c692a59e97010297002459509c5d9e7f0959c94426cf6b0524a5e0e45cb92b57451145d2ec72baf8a255f1144572652c0140b3a5c4abe2522a4a2f46d5c4128c1d2e568860e500420d18097d2ed7123f20b1fb3cfeeee7812beb83110455ef7f114653cfc01bfdac42144154f5741556ff5f100945807678b452545daeaead2f468a065c54142d73f425bb884d39773d7f072b0427476b014456133fa345bbe4e962aaa32f2f66ab1d891257a9d95d8e6e0a1e40815da9d4501573a8098365459b8b539fd940040c1d177af80b6b25004957aa7af8800880b8b99cff2f6797a2a8212cff570064858e93049be0c01149b3f5fb3818b99c82bf10e0004731bb94f04ace4cd11bb814a288afd27679ba0421574a7cfef680a48b445049e5e9e9e40a2b670018200b07b3bf95f97a243774413d800e2c376a137b6cf3354224bcc0027c8ec759bd8e2e8b222a307151160f77d9e2c85458e80a45c4551545a6fb692a2124e2ea20088397548be2ebf83505e18e5d5069f1755015411e1e3f16b4ac23359d668b17cb91f37635209abf9351255259b635024c5880967afe6c11163a808a4e2e3f5fc1d2d1066e2324ca7a8a80a91b38fa29bd1a0888323d3684393a454c67b0199c80298c14f79329a5d95529457593e331d0a7afa7c404717c399a2ece81428bfc5a0aa47d8f67911049f0725414cfd7ece08a0a5c4dc7c5f3fb5a20ba30455541cf93c002eec157eb80025bec9a4015f45457a1f678b83c2a4aacb4275e7c414138eaa2eb43ddc10cfb4802e0fde3a3859453f20e8e47068be3dbd047476b9baaa2400dd36278f93605645168757c252132bf65d3e5587c62812ebc1a032a28c4a2e0c56eb57c0aa02896e7ee78517d8b8b015706858e646062fe344cbaa33af2783504557a2df3189c041106fddd5129ee6d06d653ebd9ef747 (by decide +kernel)
 
 private theorem ok_b011101 : Impossible board_b011101 :=
   fork 48 ok_b0111010 ok_b0111011
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b01110011 : Impossible board_b01110011 :=
-  kernelLeaf board_b01110011 #[0x2525254d212f25142725182128185d4f231825224d474f175c4f645d242b3b5a, 0x58652e2e1c68684a4b55455f2b69395d355c794f5d6935275d475c4f536c1f27, 0x62584c4f5c305c52595d5d475d59452b1e356953735c5235456453556353524c, 0x2e4f5c2e2147682b556c55456453556355534d65182b53644f584c553959354f, 0x531765115947536425352235695d4d2b672b1447667a1764252e4f5d2b5c5325, 0x2b1c1a4f4764537a25552b535367525363524d475c242225682f4d47584d5245, 0x4f6c6e3b25225d4d2c252f5972584c45646c4d70154c274d14801e744d254d24, 0x536f2f304b685d5c255e59616c212f5e69252c252f1c1d5c584d24315c534f5e, 0x525272232b65185d635c2b2858172b391f4b2f3025635f766f582e5f0f256458, 0x5b2b124f60115c5b4f5c6f224f1c59305267355c5559232b5c552c355c525922, 0x6a6f6e58731f72594c11355c4c2b4730594f5b] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b01110010 : Impossible board_b01110010 :=
-  kernelLeaf board_b01110010 #[0x2b112c22172c391730255a62594c53212421116414222147215d6f53092b185e, 0x1d222130532f33251a24321a2c16250c53161c7347685309273d5d6668642114, 0x252b5d225d682b59305a12095d2b255a4c18242b771c253216585d307027212f, 0x2828332253252f3915590f534f5309] (by decide +kernel)
-
 private theorem ok_b0111001 : Impossible board_b0111001 :=
-  fork 81 ok_b01110010 ok_b01110011
+  kernelLeaf board_b0111001 0x155d58290ab3bfddd8c00595011b9e7fe5d9c99808812475af73201855666af8123ec3b3cfd46deb0016f62514815792c200027f8323dcd00b7a8213fb9efd16000013f39a4d9d874b042451cfb2d76e622955d2cea00000a8008f55f73aba0200b36baa2010dce970d9d1700d2e004297cb47abf2e634451058bba8e3ee6af205464a8a0a1632fabdce7f97a08aa88bf61a5c0148410131f7fedbbfb188aec41516fe3f4b80e4c52c74f151dfab00bf6192f140406055d1977b98a8c02a5ef76704205c3ecd0f00022fd4bde9d2ec200b38004bafce6775b9d8e6e820a24c0400463a5ce9f3f504bd813f252836609bb5015477a5d45c221770059b804aacd0112e2fecfcbb1cce2e00552059315476737e1aa0415d4a662d202a7e6ec82114cffcf70221d39bc0097848009ba4e579ccd68024fc040023f93a7fad0004bc82d5d5ed3d90069f9f511a5c2d3e4c7a34b9bc7c4226e693a4516225f46bf40259b84047d61b1cde96828317a797f2e474100141b38a4847e9f93544052ed78412445b5c90020d3dde6eaf01191cfabc0404a749503231fcdfacbf931040212ebb44029fddd5f73a7a80089785dc08c33fb982a0002bb43c7f46afabecd515aba0d24a845f274f811abe3e1006af253e6f9731a80800a0abea7e4e7f0858e6682d5c511001cea01676bcff16820563998832cfee708930c8082b9d2ecf77006ee11f512bbd9d10562e0af45508f6d7d3d3f9e08802373696a89292d7622f93a7c08d5f1e10034fa584cec79700220a5d9000abb39e8c15223472b97d5e201118bdfc1090057e9dcf77a02110a6bdcfcf3f0914bbaae9c0005aea0409fbbc7e6106e73fa7eccff2929f5480952eac0829700454bb3743afe164b88894d3e0425d4c60b10a1c51a2282863aee9204fd0964798d2e8b84566f031f940209f97ee6800113fc9ddd26af77dac145146008a3567a21022c89a7a5d7e2828e748462bd9e4007f53e844a7e0254f13a5d5e80a00977516a085dc1880746afb3b0c9b58002212c913ddd5e42971006d73331a0150109354240015f4077ce6976596d2402ac6a2b5dd87c3400053e002875fd2087745a20a1c45862134f5fc033d2e0226ba8040926a8cb358aa2b32da5d941419a0834f2d9cea00a79e0247d2ad1d3c4e927c167b8d252977cde8eac9a1ca6af23802cd649165f2459a080e7412fb0d2f00dac453176754599d3e41438c8493648410e47c994c9104445c878fc840a1da21bbefe9e275798ef747 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b0111000 : Impossible board_b0111000 :=
-  kernelLeaf board_b0111000 #[0x413d535239301165310a722b535133452317253017301c2b391d525311314a58, 0x47535a64286a3b595a4f665d4c2b7e5d6d663d2b213147535c613d535c4c2b39, 0x5930593d2b416213535217242523174762203123145124471739592b2b512b3d, 0x30605d597a72532721276153134753741e2b251630592553322c324f6c625e2b, 0x47521b675a2b234f314f745216520f17525f2539144f59472b1c415f5d4a6c24, 0x394717471759672b2b591831256a3d535e52] (by decide +kernel)
+  kernelLeaf board_b0111000 0x1484873800b1f2fb0200c7cbea80167cfabc100995f259e1055044c731c240a14beadef4fbd8120b4b5010463f4b504deb32067ed6af0051f53f4400098f3fe9b0252c008010b6100052c7e5f804a5dfd2ee7400a68cfc016ce8c7d5e7354420e29037f6ee014af669361e0d05052601bbd9c14507d7cba7c0027d144204143a09fc3d3c9e0d0aa084ac7e9fd33d8042afa51096200052e5b61d9d20252f4f65830b35219680084ff678bbdc4aa0af55256b3b0e18000b3bdd5f4841c7164fa7d2e882f90931012e410128f2fc7e5504471683638000a3ca7002147001271f2fb9d88aaceaf959195e54b478440095ef78fd3ed7931a409251dab45510141de89567b5cfc19891cddde66af44107f701177516dbe6dee0230af405150ec78fd3ee60a08c102461def4f5b9ccd1000457b9c0583a288f7a7d2e5881cec34988e2397100401563c2a8a4c0142be5abe9f4750559e8045d00911e08a17e4bb0d104be4a00130ce6af738aca774215696c34f23b1e5763 (by decide +kernel)
 
 private theorem ok_b011100 : Impossible board_b011100 :=
   fork 87 ok_b0111000 ok_b0111001
@@ -3300,36 +2384,20 @@ private theorem ok_b0111 : Impossible board_b0111 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b011011111 : Impossible board_b011011111 :=
-  kernelLeaf board_b011011111 #[0x18231e2e1357416f1d7f2b67675a591d594a74596a3a54183a19212c690f352a, 0x545422134d215f5457656e565b54491b672c2c216313632854712e1d261b2b2b, 0x163e1628656d56631208131b2c7f221d41651d0a281d221518261b2b724a5f49, 0x2f1f3426565965493729584a4f5a5b22491d545f564f22213417223729630c1e, 0x27214949741d2f235410211815224127141d2e322b1f49591e225f171d222149, 0x181b2c1d3d3a216a590d59655b543a590f491d58404d5f56516d1d49212f1f19, 0x2e41622b4a6e34326b326332661e1e744a222b56635a522624582b56542f2c41, 0x2931184c5a312e545c512e3e564d2c5a141d2e412c1d] (by decide +kernel)
+  kernelLeaf board_b011011111 0x401555506415394b1cc733b5c8882ac75dd4d51150014b9a4347545176becadcdc20166a8a0a845aca6a775dc1d44504059a82c9dd5dc1f16af444495eed11a68b2f5ea8a080b2d46c7840b2f367b505648f7d395aa0088b57c8202d5b431ea5ae969b49d8d0155ea28056ea6afc041105599074415198c6aa9bc566777bbac5005438028283ab5042b3a922237b3e5d00b7a953545d7671fc9cee08b2d8d156606cdc8450691bfb095b9a3edcef2743afc0010fe676104f8a1302874464f0aab27e99dd7e0282a8a8fa990d0e8a98d041412bc8b4545a83a7ca6775dca232d5e8a0aaab1fe4e22a967453da2d4095026fe5f3ba8048b543c9d7ea82809fc415a69b4544002b6d9f2f276fa9c02c6a804ad5427f6b44b7aa4848b024e77a9c80dfeada8b4fd44516487500569c20a5f45b7d4f8f4009199ed152d8aaafb24b6a301cb893b7502b6b8f9848225c88c209ec09bd663fe8b3b82010725b2e776510456ca28cef322cae8a280a634d9bd5fcb065114958017f1093d4d105966a68b149f37438aa02097fa9882b5f72e000a88042010bbbab76fa9c9cdf9f004166a00208b343e3e4024094249f8f5180aab00d4f8ebb3bca0088000a9b8deaf850915e6347a21ec95d88084f904810afc1f7e771ff0000015f9f50000cfa8daece778806b3cafa6828d9d4146501756eba998d140005d66743acf4e3f6baac (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b0110111101 : Impossible board_b0110111101 :=
-  kernelLeaf board_b0110111101 #[0x2b282a141e3240212a561e1d325f182c2a255a5e1e3a73146059635652224d2f, 0x4a225e6f602a495e081e191e566f1d271e5a2c28541d1e3a5663400c291d1921, 0x184a22545128293a541e325f5f60522251594a171d603e245b223e5922513a6b, 0x64105929241511283a2254101e1d1e6a1e1d695b24665a1e593d4a2a514c2229, 0x60181b491d2a320f1424595f491a4a594d21294f4b6f543a2c2b59282a645658, 0xc49634d292a3a2c2a27212a564928213a2a4d1d4f5c22261d5e261c29091c22, 0x592949542524286d541e293d4a272527371d280c29282921294f4b1d27543737, 0x37374b22141d224b370c0d22371216292a37162a221c1b63401f7d1e585f6054, 0x1c24602827672227634d6d65766060675c5a594f29321c4c1e2759492537251d, 0x401e1f2a51401b18521f22274d5f1e601b5b60533d3a5872641e594a1e641f18, 0x21131e5a4d5a4d1d272a1d23603752595a272a593763655140637d5856594b24, 0x1e1d4f3a2749] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b0110111100 : Impossible board_b0110111100 :=
-  kernelLeaf board_b0110111100 #[0x634f554a6a17224b29654a1d4f285a4a2c63224a2472226463714a5a4f67592a, 0x4b3e174f1e1c1e1b65174a24291e2437172454586665591e4a2c4f6c225a6f63, 0x4a1e25224d4a244a1e4d4f34284a171e1b5440265a164a1e2254595222631722, 0x4a22] (by decide +kernel)
-
 private theorem ok_b011011110 : Impossible board_b011011110 :=
-  fork 53 ok_b0110111100 ok_b0110111101
+  kernelLeaf board_b011011110 0xa82880447b3b882d13f75a7c40445493a1c11149e7b4546d73700092ab5cdcee9f55880221dc404788a8b836fca40d2ecf6b04f822832888aaecedfc788a02597528f030959402c7fdec75bb3cbc14988a3033d9fe1509455d1e066f010001110c74b3fca8b4fcdd456fe10a0a47b2585c19bede8a583a7bdd455d6a2d8f968a9933dd9e56209ed45106c9891fcc67325278309401151c0a27ccfa2228b4fe3e6e8d22041b7cbf6f06160d5073f73b5d9e7ea765a0a09cd051999ed3e005670064e2976f8aa2aa5cee208df9585bf0a902a2434be116533bca80a8ba5e80b29037c66375441516df2596d4eab104466f96c41155c8b01424439c6f9594571f033ffdcf60a0048508258efe02028e0c16a76753c9c4941552a697101126222492a328f6f533da9def2b001053e8097004fb7d50413b8aaaa319a9c542151aa743a2a20a79f8cbcee9fa988837c509951006f8ce4e0880e3e6ea755bad66a0820a422ac4fa1e04555575b93a42a08a343cac34bad57373b8200a1133fb9aa228b4940144d9dd024bd92a6ce6a75401151381cc5045e0cc66f425464e7755b2c141f822ac020c534988821672445bfc9cd72b456581126cf3743a9d009fa32fdfd4dd6b357a2d67044010855460abc9c84095b12c6a82e4c8767538aa0a932b891c154051abac2958451753219ecee08247b04113571229ed3ba0369ede2a0a93987362b6b3dd9def2b012556d1e669322d504153a1418c995a2ea644a20b476552244251b29dd7533dc0108cb4002ff220dff074b45d2547956b3a94ae02612f9df06fb49a002dbd495516fb2ce030c8b68e80a8baf5f28b2b1916a8a35ef7f8355c9c451bd88c003d99c003daa015bdf9dd1084104f9eed600acc0501401947533b9edd68a55bc7a228291290319a9cee67021543abc651aad054a64889ec0165a205040d0eaba1542ad800927b3bb2c046fe805118c960559aac05418824bdaef67b75f3c054129a018346cf8fadd2d17375f820032b11604c814acf625d2545884dd0a5693142410a567b201166ea8cfc69a8d0814455a565f3d802a6f550492a7034d80a2888adad414b72b3da2d142a7080d9d441a5a2cc78aa125f5172f4004007d97e7e827b10220e69ecde8a083972fcad26a745154f68a00936f82ac0097e526220054c01b1aa66f2f04d9cf72b59a2204fd4940d9a2ca506d7bfc78220d8f15067f575008656aa8040b3ab2fa2e5ea7cbca20a0854ad08a3bcfd470280b6b410256b34002c7a2c495c93e5a280a028b81112c9e3f8f2b80452d73fcfd9d56d7 (by decide +kernel)
 
 private theorem ok_b01101111 : Impossible board_b01101111 :=
   fork 63 ok_b011011110 ok_b011011111
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b011011101 : Impossible board_b011011101 :=
-  kernelLeaf board_b011011101 #[0x474d140c3426662a494c613a606525224d5c7832663273324c6e65475a1e5e51, 0x27603a1e63273229171c2266474c5a32274d5a655846462549783266242b6725, 0x58674c666b3a644d592c463a2758463e244c4d3e56662a66324c664658496246, 0x4a2c22281e35573a5a41473a4b1d77475a5b4b647d5a495a674725294b5a6572, 0x294a2a660e4024222a3e14291c261117242a2825221f4f4a2c24224a15114f29, 0x7d5a651d524a3f1e4a3a59293e622637656131464b2c24466358412c607a675a, 0x5a1d6c493a6c652265562f2a3a22241c1c19261d2b5f35594b47664a24714f66, 0x6b5e592269634f4d5a6224112b293e5c3561415b49401d5b4a6a221564664a58, 0x244a4a29626637564f5e4a524f0c5e666f2a60674f5c4f59356a326b5e633469, 0x291d292215291d2c290b1c226f4f5f494d523e1a3228323e6f0c3e594d594a66, 0x22344d4c3a56582c566f4c3e4a58556222561e6c354c5264594d585949662a32, 0x644c594929323e4d6e7856594a0a1e22494d4952224d2b6624] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b011011100 : Impossible board_b011011100 :=
-  kernelLeaf board_b011011100 #[0x1b214d081722281f4d253e4d61495e2a2828404022492263554f151d4d291e3a, 0x4d1727273e2b2618354f55250f2240491b5e226a59566c615e714d2a4d252740, 0x5a6a22352a4d783f343e1e222b61494d345626351f371d1a5e294d375c6a0e26, 0x354f4024614d5e354d5e3f223e51416228646a220d612b5649241e49714d6c4d, 0x493460666a18225b496f55281e2b3f] (by decide +kernel)
-
 private theorem ok_b01101110 : Impossible board_b01101110 :=
-  fork 84 ok_b011011100 ok_b011011101
+  kernelLeaf board_b01101110 0x2b159302668d9e4e80248a765823ee6ea08eee1f1c80d6e40516cf2b159ed0191608b27966f208c9d6512968b9babf36930011682ad3429bb339515575d6e4042c62aaceb7bf860999093ec0a576311abe2c16645d6cf7b31445ae04cc1a5b2593b3cdd84b1a2d9e4f9b55888032e0400539dc4454e8b2bc0800a73b88b30560005538bce68bdfa02cfd0bfc092719bd2e940107d9ac0065c022a365abef7e33400041455f7679b812d9e579b49ca4b2b4165748aaa787179b6fa080d6d9fa57b811419580052d9f8cc6bde6f7eabc180b9f49119f8202c8937327f676b822abab658a0bafbdaca80218f51a7a755520175f5eece8b9008510d3b8f9fcded60028038b5165101264757a9c4215f7731ae82888e1e0ea80b6f93c0c2443bdbc256aa0dab45aa95c50b272499b1657639144962d677110d9c9dd620211b3cba04008422ccbd6d7e92ac49d6a48b49a82009cc510e667914d9dd5f7f6bd9e5eaaac7c12555cdcad55049c882f1e7e02caa3499bfbdad696b2e20877246972b7fa247b44195baecea79505057da02b8b4da03237f2f8763831b5504097882cd095459271bc7d8e0e0822cd505415307228087af3f6b41094e00832b55e6c76920c0d262448b55beca6a0a740a439b229b23a8024c5f449a80ab518a28825d458800207f9f804cad66a0a8a4c55172b414af04727ea745155656aacc516a33db5ebe0280934ebb5a0c1d441a3e20a3ae5e77ef88351f42d600b6f97a0064feea05ac093a0005af3f1f4b81242a9e5e5af2fcb451416c6022e7e668019b90175e2a3af2737b3a00b3a454418dbad3ea82ad8e36bed268413366f0212bed2b79b55812166d50102196b33155cdc6ec6849c04716880b46d3f83759ef1e1080209f65802a0c04a9cbe7345a0e6c63e933b5a8932e914fa000337ad6882289976c71b42636002aa5e40524fe365e6d26a0282afcf8840a5e3e0033784429c033906069a6f36ab4a4eaa1335842600130eebc1ca397440501152e8b9bc035cfc6cbcd80ab2f9e4802cb998026ef2ec7ed67bbdd1d554164ed32149662c1e6dd5aa6345c812ca056f93efd425abca33d880a82af5fea882d79fc0d268a8018718099bd7b6b80808cdebdbfd16fb80148a38307c5a02c8928f262ab296ad16375270eafadc9d1052629ed84939300871e109bb6cc80a6f5af568b6baad119bf8d0955547fb4df6a2029ee41945a0c22af40530f279bb4eb69b8444445ae7f0686f9dc0135c08b7b4153900a93376fdcf563b4da14dc210bea7e900413efb1400155e9b31c808404c4d79faca957558452e3f458230393809bd511bda2d911475610159eb7b38110b0edef8f37558854dc0100012e9f96206aa9bc8001543c43378465f516a34003fa8813792ea08fb948166e88cae1e4f7b55c8a4aaa32454147036962068b9382c8b809a2c7d5e7e4a10574ef37539edd753 (by decide +kernel)
 
 private theorem ok_b0110111 : Impossible board_b0110111 :=
   fork 51 ok_b01101110 ok_b01101111
@@ -3337,28 +2405,20 @@ private theorem ok_b0110111 : Impossible board_b0110111 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b0110110 : Impossible board_b0110110 :=
-  kernelLeaf board_b0110110 #[0x4024341d2e142a2325583d291c58586c6540243340331f2a4f6c5e532e1e4a5a, 0x342b2e6d1526322b2e25692a4f2e1a31251c25342b1a240e34610c621a585833, 0x5326123f59273425311c1e32621d53696960351e2e79171e5f6c59784b62615f, 0x622b3f2733402a4c31352a5e2e23273126251c313b1732476270343319245269, 0x4b356b49612a64242b2a4a2a144b4961565e2e545f615461583134582a40352e, 0x474c665259614f65593f4c565f6c586c626025332b533334664a2a57284b4961, 0x53601e464a461c58463f4a29524a536663464660614b584a6c244f534b532672, 0x5e323f63586149562b322b66245846511f293235532e4c464b32401c2c4a4a4a, 0x5b524f2b63662a4c65323f2a2c6b4f5929564b4c47491e4c5b6d311e3b496547, 0x5324173d1c1829532a4f5e2c25534a605c4f643f291e342a584a696358582c60, 0x2c4f5b2c4c] (by decide +kernel)
+  kernelLeaf board_b0110110 0x802cc905127ea00905bd6733104056a7a4c420be82803dce6635380a934f55cfe06400010212f6b34bd3e57831555412e73f045501c9aff1100053c7b95085a6aabb1cae1554054511174f8fb1a0258d55559e0edf4b405409faa0a20108afc7a099b55ccc510145cb80acb507fa802ad6620ebe7f6753d6e5e08a3335463e8b273d82aaa8ccc5b7edd8e0a09edde2a327486cb8c7ef6cb4557f8a82e3ec62a8a0e1e4f5b58155ea08aa820acb615f9b49d8e37475020414053f8a76582a82ab5d24a7aed5104998a31b541165ecb4545456819cd672b6085595a9292ba7e0cf682c6e90595b1b39aacb1634041636880ff95a9d1451a5cae9f9b441571ec6d5458d8b8350105c3d2fb1caf66934459fa94f06545025eaa853d37cb5163e84cf374b448421b3ab879fa0a1397b3a8ff99d6c052fe30bb310252c6abb3c5c0e0d046a4bca88acf57ccd3d459ed3cdcad575f440545472f6424564f871297acacd7204d7b27c3aac4410425c9a4d5780aad95ab32aaca62052f558a4f87adb7b5dd4d142fe2ae1ea6aa258751b1b1e0455455a76355c0c4552154496baee5551155c5abd1fe9f41167c0d5733115638420ad755a10137b5da02a3d4555144fb1d36a2a9752004e6b1d7797d971f1194040031770da6002cf5152033a4e96343085a7a7a280b26c96aabfd8141ace9f698c0225d8e733db2c0c58877a49169fa761106d3ab40d836b9ed7702c83e72fa028a7b1012bfececf2a4a8be397e2f0ea0837f5a6a820aaf115dbb72ba22aa6d968a808af5da5f4eab9fa82402bb35cab289000c74b9cc4452e292d357a6b49828288ec485a6a08e1c4678b35cb23634401b188acf81a4d411569888422775d94d56aa84123c15044bab637baa739852b256360502c6a36cf2f0349a2cf520628b3cfeab5459fecd04096f74f5d9ee576b (by decide +kernel)
 
 private theorem ok_b011011 : Impossible board_b011011 :=
   fork 57 ok_b0110110 ok_b0110111
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b011010111 : Impossible board_b011010111 :=
-  kernelLeaf board_b011010111 #[0x595a67516467594d19275a282222183d281b5e6c245e225e400c661e1c29323f, 0x214073222f2a236433282428151c1e15235567282810591d2f2228105912281d, 0x592c4a1d2757592937271f2259562c252925225f661259194034221e1d331317, 0x34641e285407215573222f285f28241d286a1e29592f5824661e295763665864, 0x22222a2f1223542f25675a6b51641e2e245864395c0f24462c21531d1e223324, 0x1e17282817252a3931172746664a64341e2916461a252455542425251e3e6646, 0x25771e322f341e394a2c27642965512f467a645e4a6025315e322f3e5a241c5a, 0x3234393432462c3d251e292f7e242539092822292f2a231e2c291e2e181b3d29, 0x222a2f1e4a1422562a2c211e2c2532341e3e46661e5825281e2c2729392c2928, 0x244a2229341e273e3e2a1e3e22662524311e29253e661e222263462459091f56, 0x222f245767162f6c] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b011010110 : Impossible board_b011010110 :=
-  kernelLeaf board_b011010110 #[0x2f5658553255212f4b566266584c662e4a582f3e625f145f5954556251566c2a, 0x3e5e595f5672725e1f171554566d3934565410331b7571733359344c645f1222, 0x1e212e221c2939221c2f25336a5f2432594a2f5e3b61565e592c6358586e4a59, 0x2831226d60602922211e34226a5673564b6c242f3e5e25376118396b51126a2f, 0x28545960242c6a21332f18545e2422592f5e536a2f59604c2f593328661e17] (by decide +kernel)
-
 private theorem ok_b01101011 : Impossible board_b01101011 :=
-  fork 73 ok_b011010110 ok_b011010111
+  kernelLeaf board_b01101011 0x412585050245afd49888235f4133ea108805b5fecd272b9080945a9c800551069c7b4fbed417daa0120ab3d888afb50051739b504952e9363a2007b114e2a8228497219f79b3da2d1154590b8f98da4c216524ace273fcb356d16ab5fc2d27b251656a801414d9245d6d56b343a082a7b59802976584848104d33dd02b03ed9458de6cf7630124b8810a33dacd3e000a71041ceb3128014e02a365c88091434dce84cb4d962291b59bde140152e801ed4ebffda4c014b8b9d414913a8c4520645a9d7eab400490a47a7b599000094a73daed016400c700809086f5eea782512fdf3db2c554425f8834e3dc82a40ae795acd3e84a64c8214e042965ca8ebf8da4502a5241ebb277b95e0c09112ec7485826f6cb04297efbb5a4ce720a88b300dacf65f51c0aaa42a38be97240002556e7898e5f5113e20b1b404acdcaf26d340458f620a704008b7328c31b4d69749c2b255d095546a6a924d2ec8925cf6fb915cdc6d1748c8b55afd5418140968fa9aa2afd2f2c40e7ed76bd2868f933daed6152728258c2c9b9c9565ae63f585271b59a1e9e0ac051dcf6020a2c67ca84428a936984a90e4e3da8d91596a708c2a8207e43d5f9e8b5f8842aa30102bfc28d564990c88211dd47ab905028f6a7b3afe40452c642109093206b367b53d7d094971f9b216c612b193b3ace5628a2b1dd3e0a4055f59b3a9d1be24027d0403fb28bb3d6d6688a5d15380aa97945aa97f8ab36d12ece674550081880d385167b3bb3e01549ea25f044190f052103e7a2d7eab408504781064c20467a8c164990a8d2b8892730f6205747d055c233ec8a8e4014643b39dd7e12a2d051a828a43b392c8c4b025519dd152b3c80056b0cfd1d81c99319fb3cdcce9f441486d6a359945c00a210a2cc60892bdc5519be62f683b349a0b237b54054945dee4885818cf367b39a9d96ff4511151d4c22ceaa138349880a8acf5687540459ebf31aa101535896f69345822d9d44160805fdee9e82295ab5fd9f071029331117e0ab59d9ea3cd9ec01152f8450a8c63aa888028b90dba052cb83296706a745a1cf68a85234e5115517ab5adf3d5a4420aadcbf66935fbed006016f6a9700811bf8785531c8239e49000d7d1d1aa097ab5f9ed0ebb40444516735380b9e52409459cc4855fa5d9eb00413ab2fea9365c1480259e56080c8c90cbfbdbbf0f5b5000bd8167105001678fb1ac858cddcad00b38fb452f60167142ff5be580f2d5bdc0a007f2f95e42a6015bdbc0b39d4069a056ea6430059e6fa85bae0b71f9e0002cface82888d3a26793bf92e05551624bfadd8d01ab80b2e186ae2a1d7e804beb78bcd820a1635499e6c55dcac00005b1abf7d8238b1bfc92d14eff671142a7200a8c55f1747adecd5727 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b01101010 : Impossible board_b01101010 :=
-  kernelLeaf board_b01101010 #[0x235e6a562f2f6354596a562437724a5a2f4b1e1b1d370b1d2f145a4b1b24672a, 0x5a5a5e2c1d08232419565a2209222f12390939132324166c0c150a1623731d28, 0x57571d3e63131d28566c1321292f1e4a562116495f4b1b571d661d4f2821396d, 0x29225a181c1f57165e637156534a6609104054641e212e57625f6f64215f5e57, 0x226c59401c22242964725a0c17296434215a1d296c562f7324283e1e1f1f1f1e, 0x126a29395929597128601e46231e3416405a1c49651f1c235f732433583f161e, 0x331f22215822172c1f24162229291d2c5766585a6360546a281e765c5f531d72, 0x242459] (by decide +kernel)
+  kernelLeaf board_b01101010 0x2ab4a4d08649d9d9e2490109fd0517520a1e25b1c8b2facc2044fe228939524b68b53802029d683bb22cc20acdafe6d1419b1daf1f132158399aa7ab519ec4083b720a8a3732212fe53c1068efcb626225eac40014ee7b3a01229e46102b3f1d47833dc6d0009514789ec411069a96e4206836b39c828c9f2f231fc490e68fbff3d262022acf812c70bfd84b67b45aa288826cecec0ce68122d26a706151c9a92b72ed6243381404062fa9e019726d343b0b6b90863b880a712550d9d6d7fcf49a8df6a128887b3f80201227f2453f9ed4e4212100a2d051b5a898c249139807f422bea0a96e49512f78fe3d6e164a9f2b625cd808442721b2303a9e4cf6875d8215f00093177f054000dfe4d0f7fbda82b5f00046bea04b5f3bbec00c7cc144913ceea3adecc0002009e8740154e4080bf3da004ad5aada1cb682808c9cbfcbc88df5f3be6d14083bcfe954451a840a1dcfb7b5c00a00256b116bd812c0894b33ba04a89288d1e0c4a4ccf5b5ad68b81181510484e8b17f22c84124b61ce270a157393d1e0b4024e80100b7b380418662c95c09456225b47f3ceea38101804047c17bd5d6d4405f804bfc784ad153b3eaeb6936ff2d0508595b0056b65fd08020cbcf66f3ba00100df178911dd7f08094e416d72f37a4f3eab (by decide +kernel)
 
 private theorem ok_b0110101 : Impossible board_b0110101 :=
   fork 53 ok_b01101010 ok_b01101011
@@ -3366,7 +2426,7 @@ private theorem ok_b0110101 : Impossible board_b0110101 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b0110100 : Impossible board_b0110100 :=
-  kernelLeaf board_b0110100 #[0x2e755f636135631d4c565e221d1d275c29674f70344c622731673d5c4f53325a, 0x5f7c2e6251615f5e5654583135341e293f28102537351d29372413342a392118, 0x5e353e1b211659212732232c19374c2c1f632c585925562a5f312a195e723e62, 0x3131341a192c125662293f615e32693167582c2c2c1f0a585624574b1e345972, 0x29] (by decide +kernel)
+  kernelLeaf board_b0110100 0x20a9d50598e842c79a66b155841233acc975b40a71681048a77fcb87bdb2d5482234ec7cfa80a258d54459a0022cc00205667f15d8eb6a4c05afaa4bc8083daa8a8822d3b3f2ef62835df60026f10044396d4004ace87110413eb2d251eb333922890df45999accff20202a8000e3d6763b3a5eb6ab540500142fe04b1d4415667bdf2df6000200b8b2fea237cd8915dae2e5a3e1c50bfb7badd4e50866c6b1d016ba0b4d93da9e44167fca8c511521a5d46f88d75963ba0829e5056fa4c9ed355a024e755454398d76044275efea63c55c382aa04d741c79de675b42116bd88120a2cee40aca9dd3eaacdcd4f9f5165249fb2bc369b4cf17028c0284a7d8f9f59ee49739fd3d976b (by decide +kernel)
 
 private theorem ok_b011010 : Impossible board_b011010 :=
   fork 38 ok_b0110100 ok_b0110101
@@ -3376,21 +2436,13 @@ private theorem ok_b01101 : Impossible board_b01101 :=
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b01100111 : Impossible board_b01100111 :=
-  kernelLeaf board_b01100111 #[0x726429276a3e6d6c6a5f3222213a614c5a591e391739650d5863246539354a4b, 0x63656052292e622732297269583d183e6035525c233509390d6d5a4f411a1c64, 0x183e4f1e2529522f222a2527194d633f60605752221f26725221524d27265231, 0x594d5a5265355b1c3a152929355965354f4c192b2b181f2c2949521f2b6c1f29, 0x231a1c3922354a603525250e394a535c1829693d1c187929594f292265526b5e, 0x4a3a25292c526b5e4d653a55592965655376593267525e4f3a22595219592b49, 0x2631291c1e1f2a2e134f6b535e2e1e57594c4a5a3952293e4f65593552626e39, 0x602e1e4a2b3217254a1e0a314617332532162e657d145263291e31253b472b19, 0x675a6e4c592e1e4a4a214659124f4a5261604a250e231e316c46242e14131c25, 0x551e352421554a22244641154f4a3541212b294a4f55633e296667524a6c] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b01100110 : Impossible board_b01100110 :=
-  kernelLeaf board_b01100110 #[0x175f293d57675364292966582f5f131f242272643722662c644c696658255946, 0x2f555f246c60391717621e67135f232131216d7231776c623153650b13646d72, 0x1c2f5f326653215f6662335e29292c3d1e22224f1c0d1f243d1c137e2c212273, 0x5e4c66222339252e4a24722560195e231a0f584a311a5e1c5e3d252e3e625f25, 0x223f25603f741c66593f723d662915674f2f635c5e320c0a322519745e661c2a, 0x49625549635c574b4c4c222f5f3f601625646053] (by decide +kernel)
-
 private theorem ok_b0110011 : Impossible board_b0110011 :=
-  fork 69 ok_b01100110 ok_b01100111
+  kernelLeaf board_b0110011 0x2002d5d553db5d580149a952687abcac51420010516a938dc1d04084af3f5895b5d28389300421d5ea79580b3fabe3c2405517da9c91117379f56972b421408d9e7ed6a8d6ee676708049545d9ee572a92b43c6e150b392e15044419faacae960a0e1d942540c1cad2e3b1001479ed8fb38da4d41546055d94d152279088734ba92e0d767b95c8a12022bc46005965f4bcad5000f62b63c6d004beaa0008cf2052ecb44202daaed01072ff729d2f1e42028a73db031c040212ea02ef8fc124aaf60001000cf26d8e8a0aa7398807b013faab9065d93e7e004282816be9eded59768a8c7b6be0cd9e672bb5b9d10901a5a8820a9df73f500cb820059d6b8034b405717bb73cac925d6129754154e2cc440520a5ebef7378004cba00baeae0859d54114e001970110cbd3d500900edd9d96099fa5dee7f230eb09921045d9c296808267b3abe4eaa082a2a3cd67373882a2daf2bc1a88a82d7454ba002971db9e568914f059456e6635382e9dee30280a89ccc7279d4f679fa802229d14545b97415a58420ebdbdd9e6f6b44a58a165dae216f4081508039bacaea7824114ed7b38a20c20e5daf3f5499a228119c055e80a0af31a047f59a9e4f20022d2cfe2082be417667f53a80638117dcfd113da5c15502153d2d405197e8b10810955c974f99e6f8f7fc000260c41c1d7da5aa00280422d4010fe9be5d2d04140104850f4b9ba7d6094954db4b63e3d0000432ee0d1a5ac08429d778b110004053e88048cb53f2dd3d8d0107b84298d51f602a0000060dae52ee6808200023dae2740073c37dbdae7ea50709908501359cf27cb48495c9b0aa74feadf6816dc905d9eaefe4acc0cb916c288775e1e6676bb3c08221edceb0a88aa05f73aa1971baa8a08d8f1e0a024f2e008e76bcae5f228a49c95531757a5119398f00081b98d7d50025e93395499a2c955057f7f7faae0c494810b6a8c25f2783a7d2012a2dfe204a97b072cc304ffe99cf3767054607fdcb0601ef66c48014ec10572433f3f5fe3ee77b6583348cc56a348a230520102cb4b99fa6def3673595572a892b7b052679b4580828f54859ce975dcae14052682c0f2c09452f8333ded55258547c6b1fb3632146572a8a10c735dece708237b51047ba5d76fb5104480457177f2159024b88a9cd7f7f65e6e9eb22aa1efe2132b9bc5acf442bda9d4553acdee0447b1945a2480208b9f9ce0152414406e7f49a88bdce64ffd8200cb399090e8be7afeae8adfd15505648649ecf06e7000bea0017d4c5a01ef3e4f9186fec8f43b1c64014443edf960aa031fbfb3544c5a88031e9e00480d65e044178d24f0480402b27b7e597efea77bd7e9633eca82d3dc982029c8554ecc4e6ec684042bfbf93cfe88024d17cb40001895c9a40a037e45e6d670a15934024267a75737634bd9e3717 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b0110010 : Impossible board_b0110010 :=
-  kernelLeaf board_b0110010 #[0x5e326659655e3a5e5861586c213b5c4d58473b67786d5c222a5e25223b324c5a, 0x6233575e170623587a2246232725591c224659715c5c7a2353092515493b2764, 0x5b4d5e60534c5967645e2e3e451723125e7145605e4d585e71172c4558637117, 0x3a626c67473a62183e173a6e636d5b1c6246715b3765533a4659253264453771, 0x6e5e29215e452561532b5e2f63462c47455c62766e64464c7763572c5b465b3b, 0x27536753676d25493a6f6d63454c5c656f3a69762e5c495c4d5c1b3a] (by decide +kernel)
+  kernelLeaf board_b0110010 0x2001554f8b4fcf8a04a2d3f3fb705049940252f2775efc44adb8e3c1258bacb3311409405b9e5f7f282ebd3f6e5495dc2973550424f25ce45066f7337baf777b8404454e87401bdc5e4bcaa0045387500108a7abef60ca2fec7c6d6682311f4522f73c5b02a22a3db01265dde4e3682a93310443bea18fafcb32cdb7c6d0051ade880ef75e2f6702280867e3eebc5810098e957d9125f656675eed1440c7edc95b7acc73c5c6c104556e3dbd005bed9729e30b3ae3702259d04152eb2ec9c5c1424006fdc76df37bde0d040a7ccd414404b3e7f2608aa2a0ded76fb5562f4117d4011ec4b549008bdf1c5062e3838bdca4de112c645ef8e5f440159d0a0b17815402c78fe397f17220b0acfafab7b012fc80a1b47d8fd68b8da2020088f4fc0880097506ce7345c6e00802cea03c7b9a102173f5c0223e510a789d2e5761193bbd114fe4ef6cbcdc8967110192404cbdedd6888805eec6842e1d05b1ecd14243aef2e7370521b1ac7d55778aa39ff1ca03b76e62aaa8b55c2a800b5ed2e8b0577b2e676b (by decide +kernel)
 
 private theorem ok_b011001 : Impossible board_b011001 :=
   fork 81 ok_b0110010 ok_b0110011
@@ -3398,7 +2450,7 @@ private theorem ok_b011001 : Impossible board_b011001 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b011000 : Impossible board_b011000 :=
-  kernelLeaf board_b011000 #[0x16224b412521145e4d5e515a414b3d2b1b605a3e1f214b1f293f494b6a167e3a, 0x4b594f4b3b2e6a16734d2922272c4d2549254d630f1e4b293b494b5c5b49766a, 0x4d21492f4d25631e254d67495c0f4121643d4b6c61676367515e4d2b1e294f60, 0x3d161a2b2e6a1e2f5561675c49633f67514d5e29254d494d6a5176552533122a, 0x1e354f23311a27754f3d5e142e60185a253b083e4b614f4b6a16761e1637291e, 0x4f5a1212225e16042717216b374a255e29352a0a161e181b2b6a4a47256c6a5a, 0x244541725e354d5e086149607a66611e7b660e4a222923316b1b290a23255e16] (by decide +kernel)
+  kernelLeaf board_b011000 0x110149a8a845d583f2d444504bd888b5e9419bdec46130e1c488a4f83f5e6d5801c3c0801efdf9b1db2b45a288a2a70147b1f5e8000026f53a20122b47a5d45811bd96e7e28c20325ac9640a204b9168837b2d84d14053e5f5410010faf5bea32b00504b8b7b900853b5d562b002d9ecc7026f100457a884dab95a2847e412024b96cf576b01053d88ad79fa82020a3d8e6b9554454ff5e7ef7bd94d7680060c0104c6dad0501012e8bbc47200fb5425978a023870059fc92fd596fb6827b0802d8df00153c7b7b80a5b008d6af5d8016ad800f72fc45410abd020e1f3f73938238f0025851ff9f505a3cdef70408a7840052f379493b084dc21d5cc147edd5d0292f022cf9025aad0002526e876064f04afe6e97c7a021208807b4bcde4105cf927b98fc20100183a1f26a02bde5e82ecc0048670f9fc7a2ad9fa3dee6eaf4414f6a724409fe0e5e000d9ca7e812f4577aef565be7a284dd114e00222c4fa800acc0026e974124e8225e6f8f1f8082a7b0497808829c4077c9d04025f037324b7c9fb7ab2da002122d97c1d4120520252e8729b7b9ba288057ba8e22025ae0f2f7babcdf3200060c40b5bed410fe400a1e5e28007f02601453bfe4e92fd596ff6eb (by decide +kernel)
 
 private theorem ok_b01100 : Impossible board_b01100 :=
   fork 84 ok_b011000 ok_b011001
@@ -3412,25 +2464,17 @@ private theorem ok_b011 : Impossible board_b011 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b0101111 : Impossible board_b0101111 :=
-  kernelLeaf board_b0101111 #[0x3664532064594f56552f5e2236215922685d4f254726334f47310b59395a5146, 0x292c2c72646c1e0a2933212b478267626c3d6c5d53627258756859225e265e58, 0x252e202c1e260a2f372f45206c573112625620312536192c1e3725182c26301c, 0x71636257304559210a331672622c264f2e6c182e2e2b2626132e202e312c1e1d, 0x55686a264f313b595d3b4758652908312764212f5c535a4d456b226e6362537a, 0x5d1a5b683b6031662c45555c5c6645316f2c47685d7a662c1d3b215d47722258, 0x2b180c30315a4f68262e26686a125d4521317059665d535c2626476f2c664568, 0x396a4b6c5d26395d675365557a222b5c5d45282b0c22672b2e25593039222064, 0x261d182e2b6a0a2b5729242f452b3112564b395339595d25596068536c225e33, 0x412b4f215d2b2c59642b5c5d2c33265d592b5c55202e2b2726182e2c1c20262e, 0x293f1d64592e412b4b582c2e3f18452e2a2c1f4d581c5a45273f5a57311c2731, 0x2e5828532e2f58312e59] (by decide +kernel)
+  kernelLeaf board_b0101111 0x2bb00506c62aa3015a7aed7f02d8d8e080aaa0a002bbb3a9dfe0a00a230277b276704455dc1d5f2f45b1a828ab34576ff55131882289175da8a2ab599fe6e82a2a28b6339a0000dac62e9f7fa0dac1166bec745100439a7c463c1d5f3f04155140090f775780088a40b3b3a2888e4d57dcc509956eea882cc59e9b42ef4a36757dceaeac2a0c957702028af4fa6d4440008c6aed129660473041a6d4176c9089b0593b98d76afd58ad045257b5f53a91029355fc5c14115ec725d6e5e00839d4a79102c028b9ecf774baa02d9c5505c1e8d0529fb345dec414420467b9d809d5a12fd9ddd3602e7416ee8a167d0910a7a8e5eafeb45abee728ddc055122ea0a8d5579020cc5511154599f57aed092e436761b9d50005145d41220f26af658114318cd86c7b5cfc4041b46a8009b51854401769bd1eac97772522ed28748018e23c36ce8239b016ef4fb9ac089b51011371f5522dfa020228acf37174941ad1ddd35aa336fd18a8efc180c754016cdcb38ba9055ee6a428822dcf371741063b2efd80259ca51fd1ddfd600a266d66a09dd115921de87bbc7f968bb18900d5d400084d1ead1505373f4112498eefb3ddc551de8c7ec628e5d45054e230158e0a027d504c9a1d7f73a7dae6e02cc5c55155d7a2f7602963dc5aa0834f50411f5f1f1f8baf848ac35148ba22d9c010e202b80819e5b7962e2d669b1519faa20a0bb4050d998d4125d88cbb57a6d505541364f5db28a20c9576c7444116648a9ec48eea5d7688083400599ed362b20057ea137c515fc5d04106a11b3afb1c978bada128341158e0808976dc299d599ec4200025be9731acd3682b0c44e6202020a759a014aacd16e5e4d2d99ec56ab2a7041067880321d5f1f457ff04973ea38bd9b0c92b02bdf6777a7aa228c962f97635411ebe8ece8bbda8a9b200bd92b63126de4e9e2234083c9d9d641159fd6eae0afc12541902f68ba05b687259040b3a2e1400b47779fa5e3e82a9b0540519f3f8fa948231c5f6773dae8f1b (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b010111011 : Impossible board_b010111011 :=
-  kernelLeaf board_b010111011 #[0x64623251312b592e734736312b3e27212b4166627f7c626c732b3278755d535e, 0x2b132e2929491d3e1e10787b6e677d39337416326c5957326d6517412b574168, 0x623073252b26582b2f5d4f7559513d333d5f697549161b6e291b2b33495d782a, 0x516231752a30594541477572595d5829223e5d6e5b22654167621867721d6471, 0x26633059454663594b392246183153222b593b413b7559326570631d6e1d313e, 0x574f1a6e314d2836576a3e265f3059572b592b2b182e596e72125131531a4664, 0x6c5d6a3e363b311a685f4b5f6c336168475d7a664d733b7222463b61315d535f, 0x615d53365d416347576e573166597386] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b010111010 : Impossible board_b010111010 :=
-  kernelLeaf board_b010111010 #[0x191559732a271d1e3e2120212e272b32312a2f254d21312a312b1f1032366c5d, 0x3d322b266a7867734d3921393221162a2f4541392f6a2b10322e0a685e78456b, 0x416d2b724b68363f76726657681e1d1614762a5e253221282f1636122a273325, 0x1e67595e766b325f256a216d6b652b6a4163735e7226262f45142b362a667c66, 0x3f6359416259652b2b672b32325b2e1862266c4b393b293932533d3f57727266, 0x1e2f2f2a58162e2f2f1d2a3f63455b31455f5f664562585926182e2b3f656345, 0x4d5b253228] (by decide +kernel)
-
 private theorem ok_b01011101 : Impossible board_b01011101 :=
-  fork 86 ok_b010111010 ok_b010111011
+  kernelLeaf board_b01011101 0x12c38addc4a7820aa8dbbba0241f1e0288a8c7ebfbb04012bf0b31e6736aac0a80159f9ffffb3bbeadf6020db4077aa00a31d35aa801a36fea08284bdbfecc81678b874346ca428c7eefebcd824ddb9e83bf968b8d8082ef0041c382a0ac7bbd3c050505bfd7c004027eaa026bdd888800b1c9b8015408a36dd7f56fb40464ddfc48618d9d4100001001afabdb3a9002bc421055f4635da82d9f77cb25a09474563a034f35c6f2680001288a26f1ec3b39174480549486378fb3cbc80473ad22d45518d98e6394f851594545abd6ce2a02ef1183c0ab2ef505ebd9d960a80282a2b065f878f3baacaaa6eceeb1df747c5ca4a9531fae020aab400012061a59e2e800a41d8faa09d7051e5d9eef6391594e8b01517d902b775404776dbd1639783b00219f9500431702a98f3fcb3baaa8964d4578ee2d862f3d140452e80092bd376300857a84bfbbcffaf67a3a80832f7045419ea8f7bfa30e9d4917af276a442d9bd81dda14d04caa737abd009a467c9d2aefe3829564222bd949ebb9521553c88a9e1939ddf722a27b21d0ca111e3101f7eec0002cffdda241cecfe996d97b3b3d7d4414997b74218181932e5f520eaf50afb340a8507d1802a164f16cba38a90c75782a959d7624173d6423edb81908963abdf700a00d27c90243abe0ea10e6e9854c580b248ff917cf17b3e78b2caf0a665f8faf77a7ded00149b81202b6f04a101052ecb545000401467b5fa022bf55d8e01512daec017f200bf3baadff8f8b80dbd45163c5efe2a00b7fcdd2a81080c317c5a358ece9b501031aed8578a03ff2f8f4008ba83fc505c784ad9d45838862e5b3e5d5e88cabd090a50cfabd9680932edf412bb31e2d37b397c0c2e7a5477a9d621ceab4cba78888f77fd7e50796424bcb736a920a9ec133f676f6280009dbd794a08b2efe97d5a8a287dba88baf32e42892bdd58028a50760180c7f3ef7cb85114da80826d5189557f174229a80af6daaf37f34558541cdc1d476e202092bde5cbf46036c914567f8bdbe5882442e6ebfa35604f6779824894b62a53edaaef6822a9745964a2875182abf8910b6d230db25aac014013ecf4044b888f765804af4deafc68a030019fe7cdd15cea80a1d0473882cb804110f2016d956bf8b813075573aa200bfd5b0ca30af21ccb44976b24012c8acd1defc700c5c575e1046758af67e7aad3f020aaa9dcf6fb15550e20d5150ebb4553ec2be65b1d215600082fe14bcdd14050ec7690255948c7578000407f21ccb6deceef5b (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b01011100 : Impossible board_b01011100 :=
-  kernelLeaf board_b01011100 #[0x7041304f2a301c3239725d7041476126326b70210a22366a2a327a61326e4d58, 0x4f265f30474f33266e3230594d3933325d26103f4f5d6b20592b566c454f1b4f, 0x577065676b325947366e6e293d1b2a2a33130e305957614141475f262e262a59, 0x51622b366a452f1d4d3f6759744f594d5d64413b51337a3b67595d4f7d6e7b59, 0x4f41626265515e69594f5d477a4f477a59562b59] (by decide +kernel)
+  kernelLeaf board_b01011100 0x1119f88212c1cc5a080a62d032f474400220af62e9ecf3fbb8810a0011ff5a804fc50008ffad02cf5b57a0c0a4a167a3e2c004578db14035717011525f9dd9bbfd00133f6700122e993f4206cf37bbe4e50555006838bbe8e00a00cf45f5a12efcfac212d9eef3f4540153ee226efded9ebfc31472e28a8a20e7f5ecbb3882b1f086db16ed490b7620008a77b9bd57302ab405419e4f1db0ecf5f045c3823074183c7efea2009b625dca026d55d9e7e2aa6d245414046fec38fcfd05000867a9b40115376cb61d9e6e0aaae75940067ac4cbbba6d24021abfc0409f8d448a5df5e83b3abeb7b3418b82013f601379013fe190740961a84fc48040555b0c540e6cb73a2072d845bbf0c83c7d415c382082a889b65ebf8728202c2870515a2db7ab444556aab2fd61292261e65eee6f63 (by decide +kernel)
 
 private theorem ok_b0101110 : Impossible board_b0101110 :=
   fork 90 ok_b01011100 ok_b01011101
@@ -3441,52 +2485,28 @@ private theorem ok_b010111 : Impossible board_b010111 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b010110 : Impossible board_b010110 :=
-  kernelLeaf board_b010110 #[0x185a65530e226b21495563745925534f5645782b4741514f47606b4f535a5e2e, 0x173d2b2714661c47043045290f70474f672b4f4770530e6c4f5c76673d4f6a30, 0x27226a6060554525144b2b573141663e4c4c51604f4b672b56474f2b2741701c, 0x29181b49271a5c5158272b2131223e1e104b18552727255b174b491e6b4f4b6a, 0x262a261626451c5e254f5a1c6a262b102a584d2529594f4b2b33576a1e2b1d49, 0x45291e1e25021c2f63534f493f263f235c4925452a594c5849255651165e322b, 0x69583d5f4f6153455a452f312f6751240a2b6b5345661c600b4767131e107025, 0x22624f1c1c264c3d45765866225a6f5f473d5f4f492247677251533d531c6f55, 0x2b1a58102f5a2a6c5f4c5163725827493b265b45634b56724c4b63580418266a, 0x25134b621f2725582c1c4b2c2b452125123f161f2f2b0e4717221722] (by decide +kernel)
+  kernelLeaf board_b010110 0x24052ea022813c010197e2cfe9f00140044bd8d59a12a31cc44965eacd5e0088a0145d0e971025ac020a20ff2d88a44a7f5fa00af05001daa0a8a08c7cbe22c504be22c5782a09ad81b190d7f6b558205b354a40902fe4a8524cc90a3e3f9763215053e88c9ddea2009ba50096de8208c5f1f2fadf2e6680a82c2ab2fc7d8d1605111426634dead178b85441199f9cd88e72c949b99ca23dd918bf6d012141b1e6d176b05100077f7f8f82203defe4fc8411938ab0a2c523f9fe5d1e2541a7bdd4441a79cc8541051dfd5f4e40208058def7f14067f8711a7c5ed6a11175f82aaa31d7f9fa3840932856a080afa04482d794f8be6ce78317caaa128047f3e4f4404f643a19e18002925e2a2ea73d80841ed2e0b39aff1e2422034f9f80249dfe026c2601fe8f896009b9c9d2f1758055a882c22259e676364e97412b7472dded97300af01136a04ab401536a5b0404d90c5d39dec212ea2a884fed67300654b569b8050855e4355d8c1104501266e97538059c427e8cbd5ecf9501afeac410f642bcee88c9d4ea8a2426337c9c553e6b0065b9a280547b180a9f415e8763a2df74289ec86a90088cbcc6055e4fa800a9f4b8085bd84be92a92f939ef5e0a2224128013f97eac14405a50414f88bd5e0d005c1aa24209578ba5c1484020a72f57c057d8f07cdbec01940266a024ce468e3835427f2fcfabeb68c7d54449fabc459164554fc1f86735404be4ca23dd5e9f29810a66c55239a0247c826c3940422ea754450510551ff0c18fa4ff3eaf4929fa8c7f874f40111dece455100567f73eda1222067e7bcff56c331dad1040472f53c56565404768bd7a1e4e28957a44c7aa80f4c46b3a5d44229f3f91adc5e4451045f188cabe3f07a3a404fc50168fc01183d7d3fa7daef6bb (by decide +kernel)
 
 private theorem ok_b01011 : Impossible board_b01011 :=
   fork 80 ok_b010110 ok_b010111
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b010101 : Impossible board_b010101 :=
-  kernelLeaf board_b010101 #[0x492b6a222147211727254921281d312f5a12261449222b2f1d1f51492b2a4c36, 0x2549172b6e102b2b512a277a0a1426204f2b47310d495e21212733204931474f, 0x62472b6f62564f62491b4f2b47536431564f5a3f4d6a28496e664962251d6f7c, 0x49172b1f4d552a1a2f21271e4d25492a66532c472b496e762a5e166e104d5a49, 0x4f5714604d4f6e622c4f4f332c5147215e224d2271292122312f2a2f252b4c3e, 0x4c5e2b1a1a1f582b282f45161f212f3d2b562a471a2c47372b2a265e1647572b, 0x214d6a284b2b2c28625959186241285d4d4c335e3d47274c4f5e223b] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b010100 : Impossible board_b010100 :=
-  kernelLeaf board_b010100 #[0x47536b67495c3b171b471310471717492b1022496a496b6e49744978142a625e, 0x4567502269174f3d514c49213029512c3700184717745a212678514c51375121, 0x155372171f2321231321171e4917253d2b142a53472a745a50534f5339254f22, 0x4f185c4f6a501f121a1b621b1239671a760c591826291f3930391f291d2b3b5a, 0x5d3f4d4d3f4f6a56275f674d56174d4f2b5625394f474c123725212f4d1f4767, 0x5728102a62645c62122f1d4d1f501b67162826394f2b3b76625b674b27212667, 0x31534d2226573f2b1f573f2a4d645d6e4c294b451f4b57623e5d4d266159623b, 0x2b1449250c2c1a6453594b4722476a49622b] (by decide +kernel)
-
 private theorem ok_b01010 : Impossible board_b01010 :=
-  fork 46 ok_b010100 ok_b010101
+  kernelLeaf board_b01010 0x822ca8008799bead4620892f15ea8aa80acd472838b041b3b1167131e2e0e8282a3bbcde66cf041402f6a00a083dd5023e9f998a80013fbda2c5805dea24cef62bc414d6a028a9acff6355115ea35f808a2a884c5cb600927f43afd0147b8afadaad063e8001ac4166847c055beabd56a0826d45bd96c25008fd7c4015ea013faf94d08470737214019feec4316b34027e20004fd9ec8820082ce8f1f43ded16a03378025510917c754e0a2aa8745b1c45fa2820ab9005fa5d5f337d801270010beaf3f808337855416aeab35c2a22bf10510e9f3daa200800cdd20152f2755e6d2501901a7840ace3e0812be4f20eefb6abbd96e45057762043400466f6b1446a93e2d4048facb22a4afdfe2c086b73f501b172737c24fd0257c7e9f93458f0000b5b9fa05ad97fcddd5a8c0012520a4fbb33684527c5880a5c413ba284effe6421225d6124e217d5fbb21a0222bc0857d1c020005569f96507d62b8a62a26d073f40857c7e04018e3793ded1004110e02a21d3ecf591110649d8f090047e7f1149d5fab45aa84a1c40106023e872f8089f140004bc9d46925943a8ceec741517ec8d16b10025a6c022008a749d16af041405fc29de568fe00d1e1693abd57336d808af1029ac02a0020a1274b8cd45666b8412c9d3c446cf2f40441823eac28148b23fab93e2c444057a0b1ea7a20cde45a829b42beff1450057a8a807f406beff5405564cdf2777dd8084cc00153cbd50108b9fd0065ed7f16fb5100bbd3752536c2261d50acf8b77935f510547242424355e2f262c80dcdb164b5140197e89de6e7f668601bc4cfaaa8096c51a6c011cf3f57bbfb7280880d8b16de67e5e8a8a889f043a6f3e825dd5ff3741454066eff9feaeb6129f514bfa0e7e00066f5b2f802137527f202bcada5d0011001173cfd0423f33400525adf56152ea1d7f373fa89011fcfc08093f31dcd089f8eae86001fd5021096080026b5124de2120e2cde4b89409cf9f35f6c66820136731a6d0114e021fdcec30045ce7f4014e7757bbed68b0115ca7ac4af2d41001552f9fc147a871151e224f454397cf622a2949cbe8028029747babca6ab40600029f1f55f4ed7008d0c4429f3f40469e000b9d2f3f4045c5f3e80d0c1162288aba72fd3f7bb22d1c6499a52743b0d20114f475411859a40a37c004066350040063e5fe9dad0e9b5057c6082a51e660947004001bed1d0f1f90180a7ebc44473ec9ee688803bcbe20829bd04463e4f21800811f010be0217e4eaf21a2c4404064fab5104093ebf7600a9277a68880c9fc65355e2ef6bb (by decide +kernel)
 
 private theorem ok_b0101 : Impossible board_b0101 :=
   fork 84 ok_b01010 ok_b01011
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b010011 : Impossible board_b010011 :=
-  kernelLeaf board_b010011 #[0x67532253052e673b22675a6a6750602e14171b222c2b2b2c2b1722502530394f, 0x3d6432581c6522653e2c652232581825194b0f5a27672b412c2732695d31531c, 0x305c697b275309303b596953145d311b23222c242a152f3f2f30252e3f173027, 0x2c3065634b3065235c5c5a592b5c1871305e2f2b5c58645758516b593b27713b, 0x633b5d59584630505c5c653e2b646d366b625c4157543d50391f29565d292962, 0x3d5d2b5357316257312b561536552b5f3b60275360533d595d5c56515763393b, 0x2b65395d533956563b2b62517857512c673e5d2b3112573059312c71363d5736, 0x29622b635439542251222a6718625d30595e29740e59645e782e416622183136, 0x33575a63363251745e1c39705a7d25746e51726527645e57112e2e56185d5454, 0x564130392122182e675e2b6241513d5d3f563e315f5739696b11] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b010010 : Impossible board_b010010 :=
-  kernelLeaf board_b010010 #[0x4f33705c316330655d32581c22301f2c1d2a2c252c0b0f22312a1f20252f213b, 0x30292e3f5463765c605a5830326359333227302a4f3f505d315d845d581c335d, 0x2f334f2e2f5d2f215d3029] (by decide +kernel)
-
 private theorem ok_b01001 : Impossible board_b01001 :=
-  fork 77 ok_b010010 ok_b010011
+  kernelLeaf board_b01001 0x8ab5b058382aa0c373800aaaa87049440891698d7688aa048a39fbdabf1707a3a28f7101bba8ffada228afb58f7faf82ce740884d389af23ab2214cf2bea044840daf1e22db106588551fa77b39a04139c016e1dafee9700043a7bb1049a3f2f2ec2b0408127d002c9b5ee06af91c0045dd20020bbad98eee4854e56006a6a7c5abd4405c788d4d045ce3538545d1e011516abcfcaa8018eb177761d9c0165082f7002a79017a63b6cf9302901422f7e34151001770790447368b8651031b1db6af8444572f39eef4f201844050573d6d0402b6ef5788262d28e4aa000a278ebe8b0434759e7d11f75dd5f0a931d44525b57d87670563a84b338ea22a014b6def5f4162166dbdeeeafa78020a00d7d8f8b155510abec757d6c04010202b80b6dababefeefc1a2a2a127e9e4a2383654a169e80abdeb3ddee600aa2000035b5a38057f1e0080e777a8263d5158177ddecf638daa8a282c3a1aa0237316011b9a3974101907dabf27b76da0020a486bf17731640060f5fa9a22f7550a1c02ca2e7920fea9eb6a5dd40553a8220a9f16b361e5f1f2f545864a4aa92e5d1f7385646e76bb3abc054441b998d00500038ec3bdafc156555e082dcc41ac6009936bf2a882b63a3ebece922884bbc4154ff1d819677b0ee680ba754009f7a7e9e275400186bbc912ce08ae9ca794eeec705378aa3c0150116b34498802a02aaacaebf41457faa0bf61a5d05415576ff444bec34fbdd15454132690cbb19cd501432e8b04b2e23ed66208465d16cbb1a0aa88280634ba8899e5e3f060ab5a7f3eaf838022cc254faa02420cb4001821d3ddd8f4f39cc04b9f40a7acc48ba785d7640022567dde8b10048cfdac86b56959f8687835d94e400002faa6f45acd5e0a4af04104006598014af2fa2e1211a1aa5d86e79fa32a820814abf167cfd11054455dafeeea82880a8bf43ddd868000080a76182a75dbfea6a80b0063c857b773c1aa2a36bb1804b0e165aa08a98fb380cf001101969f41618ab9fbfe8602a5dd509563a8a5dd4510565bffbbb6339aa2ac2a0b3c4aef3f8219e022270eb9b1dc7b0f2f0ab0203774150465d8ce6002c8b186880407f59812a01dd5602808acd2e08b3626245eca8fd16c700109559fd10506975fa1ddf37 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b010001 : Impossible board_b010001 :=
-  kernelLeaf board_b010001 #[0x307123125c55226a5d2330371b37223f3b3718295c3f295d672c376a4c59542e, 0x212c604b5e3b37630378631b712325302b21395d2c6a2b22282b2b1817220f4b, 0x59787f18627c2b5e50535d6d505e415d6a312a1b175d6f533b575712171a6312, 0xf6f635d51215f4d635c516928602c6d571b313e3b59595d62305d745f78785d, 0x222b1d1f372960571b5759245c574b1b5f21632b2c251c205129576a185f4d63, 0x5c1b166e2c305774511b41542b6f63297f29336778625c515d4154535060765e, 0x4d547616671577296e655f74505060606d507c325977332b332b57593967255f, 0x58636f251130666d60655c5d775c654b606e5c6331635c5d3b415d3130282c33, 0x322b582a6b152b2463316054742876660e312b4d5d54633b305d51305c655f6f, 0x18257e256e6b6e7c60671b6d310f331c575f545d2963515c606d242929311c6e, 0x301621302b2b591d3916105e16291f171b2329372c2a2428581d59102b505954, 0x24295118253b4b2324291623202b311a165f5d101f] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b010000 : Impossible board_b010000 :=
-  kernelLeaf board_b010000 #[0x1b57771725316022631b4d17284d2c33255f58145d3b226a1d64574c5957532b, 0x5911605d1d176317631758282021] (by decide +kernel)
-
 private theorem ok_b01000 : Impossible board_b01000 :=
-  fork 54 ok_b010000 ok_b010001
+  kernelLeaf board_b01000 0x4140049a9d5011128e63012eef004811165e28f49a9c041512da3c5418af63822402446b2d8010dfd4006bb90cfec31100050690b68761abd502557d9c3bc88ae75181222d90ef620a16c14e7f1154be2a26f47882a9dbeb35580024c1518800d8d0003bd9c868022bc0a1a080d9ea663401044b800281fb4beec435e8eefe600e0f3e29bf6ec700540a1fb3ce6a0235fbfcb153bb90483329f1f47b9a0800183db8840a4d4f200a0829d8f409cd1dd80cb57d8d24055ebc400112babd4982063d8e583500a9f4d47dbcd8ec2018eaf212426f77a9c0363d41dec3252bbb234761dce4172ea08437fdfd8d01044c7efe002004b91d879b012606046236f83cbdcd402ef04b1dfb9a02ce5c9665f835dddcf1ec79094a0c78b573bbbbe0520e10224ddd8f08430c194680b367cdea7db2d824e7c02484ae77d4e023bb105cba5ffa614311a1e0c00c1edd41287f310196030459fbecf57c8882b3d5e08815fb392239dcfa5c0bfc200b733788805bddacd86800015fe9b08947106010df07a988032bc037e2e3d4e3ff280229e67e7fc78b00182e7029472448bbc1ea6aa4a0d3e8783edded1688af645153b9fc551455bea744c1a84d7cdec9257ece00224d5126e6135f8054979bd151bfa1f1eaf59822025ce68483210168e2a79048afeacc690dfd9426f8f1680069011fdbfc7dde568e87401bfac484df1e2a8a5cda3c089a7509472d1260d67b7af9bd8efb0491de01674896cf77c58c0c31006efd30806ffe3800f1892ddc40b3f8c7fc131c0e2fe6afbd814342a7aa02225df6e8943bdc841c49bbead8e80ab504de5f415aefbf5a7bbd26bf222d7c96410a5f8d682a18f25a1d67836810497c285ec425140077b7f1e0f011015f1e3c00537f1e9140011e97618800ca0af438a4e7826ee2408b3d5abd16c4a344057a00a22abcc65f458fd465f322c3e3a3c97739002ae20104a2db5777069500211ec3456f889be84151be22c17faaef459be6353dcd2555fea7945aef9f50a9966dfd5a3133b3d4d760d9c80423e0d409bb8202009dcbe10242858f2fca290aa98f2fd8d4680a0d410e2a1bd6906bfdf2fa5d8e8808a9183458888363c10df372fa8d066eab3678aa2004979bf8082536310a6ddc77a8002822f560a51df26d4a0855f99d9d51afd3d5edb (by decide +kernel)
 
 private theorem ok_b0100 : Impossible board_b0100 :=
   fork 73 ok_b01000 ok_b01001
@@ -3499,21 +2519,13 @@ private theorem ok_b01 : Impossible board_b01 :=
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b001111111 : Impossible board_b001111111 :=
-  kernelLeaf board_b001111111 #[0x345c293a6026392e4c6e5d5d4c471c26623d6757296d74782b29323479595a4f, 0x1e6d3a1a263946622e692e263b5d7430743139470b610e76745e7b5e763f2f35, 0x313573263d3b5d5c3a3476393a220e462b467426301e392a69672e5c1e62603f, 0x354a1b3d60675e612539352e23626a5f1e3d5d474c263d616e7e6a356e6d6d64, 0x695d6560462e682e2a3c5e5932395d32603f3f1e695d393d292e2361682e745d, 0x6d692274747f277f3a73686018642b39697b2a686d2a648469324c3a4b4a6262, 0x69726765765d5c27793922765d604665306c6d305d6e6d327b7369394b6d867b, 0x102b2e682a2b3d5d46595e4c30305d65623535325e265d4631453d295c326e6e, 0x624a7259456a5c2e21453559675a5f476e302e465c3c5a5a352930293c2b2e6c, 0x625964595a5936645a465c65672431615a3a] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b001111110 : Impossible board_b001111110 :=
-  kernelLeaf board_b001111110 #[0x345f3d4b61331b3f377659376c182e2b2729233a2445162a211f37182e34644a, 0x3d5d6a76663a783b34395f23215f5f693d4b5b37675f231d57376a30313f1d29, 0x243d5f23304574734967375c74614b3d2b2f494b66731e7b6d76745a593a3f4b, 0x4b27412a49416239613030252c492a252a2631233922415e3623304545614f45, 0x67594c4720764c2662395f3f7749375c5d4f5f175d4764235d2334595a2e2159, 0x5e4c47645930683d476e1e59] (by decide +kernel)
-
 private theorem ok_b00111111 : Impossible board_b00111111 :=
-  fork 84 ok_b001111110 ok_b001111111
+  kernelLeaf board_b00111111 0x208862ece209220e4db3dac49a9594b3b6c404c9dac46377341232f9f452149b1f0e22dad045075e2e56210293cbb38a8a208c5eb5773104504176870218bcb5ecf9fb5c8212822dfe3e00820a88bbb618bb8063773415555e60a2b6b15b5ad701054ec3654554ef357aec0523668090e8440457cbbd1aac0800a95ef75bbc6ecf7b99822aac315561ddc472e0e2d6b80002d754455962817b5155537778db1d00262ebdd4f731555658abbb42013768883a7e582267c12005b2fdbbbdcd044faca079c40a04115ce8bedddf071b40cba882c31766106dd411661ddc040dd842db791118597ef49e7e9d8041273b12fdbc2929290ffffbddbe9d16a09d354014e9a3fe2022a49f1ff75f3f4783408031a0aa2aa4e4d5ee7d39022b5ef11610055da3500b6e2008abac9dffe9d9733455541d72f95e2d511425717a701bba8b97017071b455048a5dba34115762ade77bb3a28905020cb7382a4addc455974b83151feaaaff3de9e56eee7545ee08800aa7625daa3f0f2aac268d77d36eed795a0200286f7b828aa00260f3f7bc38242974159ceb5e15515768f050031680eaefe7b7bdde3e82a2accd3628bdc5570ea0eec09fdead15aeaa84bbb1005db83b7c9a848031e6bf3d368a3dddf77b9888a0eb5a9a7db5000273ca00eb11458ee360b288102bd8df4d37520082c300153db9c8556001a7633ebb5120b9a002a47bc5e0d597faa800a09ef6eeb450005100d69b9cf1bc5c4caed081d3aed36803beefd351618074d158e2139e3e2f41556528030e3bedf4e555406f7ef992f7db7fa4afc416ba8ab4d9b9a9dd783564d80939d5dccf76882177550bbcb04cd58f9cd3682862d27be7ebe2a8008a7236ea25d3f1abe2554ecb69f9ecf6b9f8882a2817b99c7c0072767550941044618a68def1f411515dd9eecf9f415042ceccd0163e82820a0a0fb7334de2c0004505cf7f1001fea1249df64edfb98aa08b779fa0037f44084be03778fca8aa839347ddd4458547b4ecf6b5daa80a875441056cf2f4004fac1c4218440015749e0eb8b9515ce2587544058620280b0d2eb350224eab622144ba10ab9155936c747a839d1707bdb6d1505111e20a8b0e2e08245d405470f3f6062e8424def7f47c00a082830e2e0205d360879f27cfb7ee68303d35510430ecbc466541eeaf5400815fc9e5f9b501e7b09ed41514107de09b7ed9d3b5d9dd68aaff45497bdc01bbead50bb79b758aa80be35050011ded325cf7f47a040a88287bf80dff4ef797a00dbd1bf9f554566fe8f451554ef5f6faa6ac555586c79695fea27753a82a008ad3bfbde5f874459e2a808a6f5fe2a280dfedaa0d9d01bfb331aec055ec20a7d41053a3dd6009355158b96d5628a1c804fea00b7cc6bb69e4e5753 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b00111110 : Impossible board_b00111110 :=
-  kernelLeaf board_b00111110 #[0x49373a224c4b364f1d1b1d27222f2927373a622b27413c492e302e212f3a5e5c, 0x5d69700a306e3a2f69677871572b752b723962465e5964455b24645b2929736d, 0x6b3a71766e3a46646030391d1d6e8222682e782a26672581682b785d2e3c682b, 0x5d26271e2b272634696c642b46746c6c4b2226326262643a543a363a6d62465b, 0x2b5d5d603254272554225e3662625e3a623a6f2241212e682b36625e5d5e5447, 0x2639365e275d2530305e2c33305e573d272c2c27] (by decide +kernel)
+  kernelLeaf board_b00111110 0x4198093620a12e7256dded3f771100492ec355245455877b598800ab3d95877baf83082802f74facd05801259a7d5f770485bb80e0d968a21534153e0a9744402a68bbdb6f160088e2ef6088bac5131604c8eb140010b7e8b105183aa80875de8d0111015edbc5deeef08000217ba9c7c45994bb802aa9b5013e029ec0495e9f4db4c09434e0bb39511c9abe061094637d35766a49b397a2d36cbc58a2e2c051c9c2eba982028aa3ac90011b722baf6f8b104236cdbc4009d7bac5416138f76d5b76eb8de4f06828b0dce2a277654efbb95955ffd17a35da80f8d501569b5464819cfa5d7ff46af1113c732c2ddd76f35915346af5bb8280da7786a808022b61eedd680822bf58210574e2b9f82f18a3c76beaf48003ae8b04afe5b9f171bbdd9d056c9a02917056de0a8a4f26cc8b4dbd153909224a7e7ede4edf758a8348a2e66308cbd5b68880a82acfcee6f0004eea9f81545aa222fc5053c829f6fbaf16922bd5213f3074955511579c9d76aa82b0d55da1d9417ebaef773 (by decide +kernel)
 
 private theorem ok_b0011111 : Impossible board_b0011111 :=
   fork 81 ok_b00111110 ok_b00111111
@@ -3521,44 +2533,28 @@ private theorem ok_b0011111 : Impossible board_b0011111 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b0011110 : Impossible board_b0011110 :=
-  kernelLeaf board_b0011110 #[0x464b211d2f593f3319453723332f225d29456a2959302e2f1d232f225e3a495c, 0x2b333532275926293a4f543a2f332f1925272f1e3a5e516a54765d2e5a2e5a35, 0x2e7c2f5e3a5976475d2e576c356a226c35572e5e392e186c26333546302f3345, 0x356f306c2c616c646f6b5d1e4a5e7e305e107135820a20225e3f27235a2e5a26, 0x732f34347133142230152922270e2b2425306c0a3a192f6430213517372f2c39, 0x306c476947682b3d14686b5d232169646b2f30685d35342a2f686b2f6f6c3022, 0x657b6160756b5b71686c60495921252225293a211c6c303530216918272a356f, 0x655934763f61644a5d5a364949655d2725243521356b5422256851473f653f3f, 0x39186c245d646e2a343576271e223468573a4a494f473a764b3a153a49665960, 0x49226c76685b184976743a3919342f1e34232139226a206a2e6c301a6a] (by decide +kernel)
+  kernelLeaf board_b0011110 0x1501950524e8b0824366a093db506b476f96614a31a8549fb7d3075a339d8133a2a0ad350055f9ec150169a3d0ec2880b9d00917ab45400010629ab5decd86021ae54435620ae731ecd4515449a228ddf27bb55b4dae000b76d3e3407b45ac4b4d004547475f75cac41024e2808a13f8faa88a8a0ebedcbc511d622a00415dd727cdd9f0680482c197b3ac084d35087b63fe01140c3a8aaa99395dded6100a20a36e4e2448327cb822220217754f8a22970855274ad7152114943b5f5f5350015162248974747478fa2a883fd32e8acff154097fb97400f7e1f0602820275f5f6f0094178fa3766c18393d9d11143920a5d411418916974253baca0090ea01cf66c36ba880230d4043e9d440016031a7d0956d74515dfb0f672851f2454434f1fd1c822042a92bdee53d1ebeee8f5215043e9d5107261af4805fc82c3d1ddc46156baab4d355a10bf048ad1ebd4485faa223bfd9b0d168073d405fcd36505a7c726096785345a82b0c1404aea7491727c7610408abd2682a5c1161ecc56eb33820000bfc9a008b0a2c343b5d012fa00df0597e28b110b39ced75515dfb0f668aaacc4930eecd5c990a2d6fcd7ddcf72bbdc0a8aa17ed61dec95004121c830b2271daeffe2b545241aa2ef60bfd50114fa3db5aed46450056d6a6e005dca0a17ce57f7b758a91292d9fb680ac2c7eeebb255050afb2ecdae20846ad8495945ecd155ae57d777b50425ceaa9004aecc6ecd415536cf6bc6d25862afc0500567c5d0095ecf6ba0cb113ea2a0b674da9dd73f945156a6eb25156605faa2cf097e6759124b94c9f5f9edd77ba3a8a028c202eae9a9f6d56eebbb5a08c02ed546d6d78dcbc4143a1dd45fad9c0205fe930033ccf17445bec0a3c259ebf4588225de541114f17d5a00229d9b3b0d01760bf3bad0a3c97e8bbdbae4f73 (by decide +kernel)
 
 private theorem ok_b001111 : Impossible board_b001111 :=
   fork 85 ok_b0011110 ok_b0011111
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b0011101 : Impossible board_b0011101 :=
-  kernelLeaf board_b0011101 #[0x6463225e63571c2366223259673d724f6c63635b623033302c55212926593546, 0x3725391a495e2e6c4f63456f2745215778635b275759576f22672b63455f3d57, 0x17233151374f59355951212351412b672f171d16606d766b306a222130212f5c, 0x641c5935604b6e546a4b3c5f412b6a186a2a045947131c21355a594a542a1727, 0x271927453f455c625c62164b5a666a223259716c357161575b6a394521765935, 0x1c1e3d61273d6755551e5945675e302c3d3059592c5e3f224a103f5a5b312662, 0x6234571c2c67592c3f596e301d145e35596259155e162a59353559312c557a64, 0x416735705b5e67] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b0011100 : Impossible board_b0011100 :=
-  kernelLeaf board_b0011100 #[0x296f221e2f305a2e2361252e1930211e1e29104a1c2e26293446591c306e3d27, 0x625c191d5e615e1e5a633233191d5959191c2e2e5e6037600d1c65100c6c2f55, 0x6d59675e6364676362196f375e6422321822326c5e5e2b47597155255761635b, 0x78496a545959701d5b3b7a645e142a22596467632f3b625963556e7561737163, 0x1e71515e172f223b102f1d331325555f6f1e5e6a3518545a18646e29351e2149, 0x1455225e2b06155e0e1d301512221c29182529593226336216232923293b1069, 0x21233d6a161c293b2b62080e5e0e5e1e5e085c23040e471c2522305e220e2230, 0x493d252f1f2f291e25222f2b2921292923294f13573d] (by decide +kernel)
-
 private theorem ok_b001110 : Impossible board_b001110 :=
-  fork 58 ok_b0011100 ok_b0011101
+  kernelLeaf board_b001110 0x25614183e7d51009af2c8dc36442de57bcfab8b6982057c539a88acccfa8836759aff4049b39bb56182007791008a77b6ba802d9e1316a05488d9caf7b2daae018510aced75601404a6b80b6763acd9680421abfacc99ccf6883dd1070e228a27def9f4046aea0a1574f68284959c122f9fbdb0d080259bdd051061d9d60a6ceb3bdbfd172b0496541521b3fed6836f500063aa6ec5a22029f40084933a7e2eff5048b88420173c5a00805cf165b55000097daf37ab45b2c04895b3888880a271f660a0a8a00b5de3e1ebe2dbf56202c20a2e702528b9090a1fb7676be4c141045110e69676be0c82225fbb4110a9ead465f2a2bcefe225075782a1ab005814c7ab5582004c41b3a11f27a07343b5db5aaa0ad9e57113035355aa10a97c454f8a225f5547b1e4141a3b7d402067f3676bc8367128ed2828747a451e0eafcfa2b22fd010be20c8772da020983dba04af6f5e30c3d5a2d0ea2ac3100943afc4552e6df8152eb9cd727bdaed07660a93f0571e8a45f7e9f528ba1ebe908278c505c7dbd404044fd7d5404b3a00257f7e8bcfabd571e2ab45efe0a8a8bdebf9350495871e22ef624ae3caf80073514547e6d172032ecf9f5015eea0f2d067e94a23b3c78a28b8fb7e2d8688a8cf0550461a2acdaba0208754e0889b5b3b5e360049c025089ee530975fa88a7f4565fa9cf6020149745afd590815ea7438800029d401053a1208f53cfc9e90a20a57d7ba1c011ea2ac094f7d5c5b244e6a777a004af900c5a81423110777b5050250777b2514240f77b11dcd0811e22a13541da247ce69745b0d054af68b1200050768b6180a902a53abc8bbdabca055615550d95ef624290ecee22c3852bb2a4b459cd4f0098c552e2a7460b3b2d36cf4141400c596d1e22a7500047800a9dde43414005d3a80a8021ec5e3d1ef648a8825f5fa8b0455de4308057e7701416793d2e88322157bfefd00f6c217bd5b5cc753004b5d2818d5404c9d6ed4954e3410b5cf68751040493be3100524e1aba9a1674252016cfc34593ba82256f77faf277b29aad125458aa367c98820a239fc780abf5df8b44101400b3838fabeed547ae0200b87e7a2aaf1f1fb795b3e7ef608263c11c980a2239fc7e2e108ce96fd6fdec40c9c8828b65a80a18e400116cbd9a2a9017b112f6af8fab67e3d5d2e908d7c4170f28ab8fb7e2e5006402e6673bdec1015c395ed4040f74025af1ecb82019f519cef6741466ace6710404e6bb544611777bc1b7e030720080a3739888219721c08cf66bfaba9c400444541dfa2cf6bf45860025ad7742092ca3f0ea975daa826761a1c113da89ed4e02a4382656735da200a929b53b4e5118448dd9ce6c3ddbdd3eeb (by decide +kernel)
 
 private theorem ok_b00111 : Impossible board_b00111 :=
   fork 80 ok_b001110 ok_b001111
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b00110111 : Impossible board_b00110111 :=
-  kernelLeaf board_b00110111 #[0x412c46225e51553141674b6a685741625f624b6870736c765a397067594c5d2b, 0x4151675e59235f253d555a59547e34762746226e67543b6136786f2e3c2e412a, 0x6e50414c2e39254a41361c4c3d63593946712f505e5763685932275e322e7622, 0x264c4c63574b635f706c4c59596c5736635e5127276d63414b463d395e7f3157, 0x212722342c2e396e5a315446272c36235a21314c633676415b415b4c27314b5d, 0x515e416321313231414b3333296c6c326c736763594c323b673b2a3d1b183667, 0x6b59687027506751332c674b4678634154296733766d6c6f3d78636d7f6f6739, 0x676a5a23456b37541722272f34236c6c5e1e4a2e67515427675b506751706357, 0x3b2c452f3b275467235137342a2f362a460f2f2a45705a4c5141635927592a4b, 0x366b1e234a3b255e246b2223362f4a551c361e784b513146222c3b] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b00110110 : Impossible board_b00110110 :=
-  kernelLeaf board_b00110110 #[0x3239671c706576612e572e375e4a2f4b392c4b232c3d262f1d2f294b2c3d2a4c, 0x2239554b221b2b455e455923593d675d5e37372b23612e542b57613d5b1c6511, 0x45222c5b39555e265e295e452a1f1f29392e29653d653d677059] (by decide +kernel)
-
 private theorem ok_b0011011 : Impossible board_b0011011 :=
-  fork 63 ok_b00110110 ok_b00110111
+  kernelLeaf board_b0011011 0x5409516debcf68f14295bbd2e20037b9240549ebd160023d6dafd01656228822b5739b6d60154f7e3525e2000d1c998f1b45acd1111778a2bbd66aa40345d7ec214a8002ef4fa20d4c4841cfa3e8edf69aad111557e2db51095592c0a46c7eb2882fd5682245c95e1dae668a2aa0088947683e3c0b3a7d6502ceab97a000019f5d5a80a0dad1e0a0c5f5edfa980080217d169f50817e808034d1f2ecd91d9b7b3dcad76a8239f0468f2882a23534fe7c0b7d0d40501515cfd1f868280238faf8a8ebc552ce42ba36145e1a7e879fa3a82cf4166299f97c6d4407c6020b2200063e0e54d004014f20867d9ea088476f6e22ecc02dfa0f7f1e3c008dbaa3fe0bbf8073ee7a3dec415054060f8f438820c72012597131e0f2f00059e22acf53bb3550985d9b2d1366403cfcfe3ecf3345545596ef5045cfa8808ef48156f737a2c2a6315b6a20e7e9590e9f458882d315598a8aedce0aac0881bb5b5b1ea6090aa211b153eb31545b6a2a0a3c5b5a1d8f335571e82a8b6c49edab0c1c6de2ad071b7ccd3ec797ddd36821332002678f022bea8a04be031e282200437fe1ece67675480845110b3ecebe0aab6f1f7ba3a942828a08aca9f11953fb7c7c1e5eab0246deee750451402f63fec7afc842c23bba1c1d611266bb91173a5d195a49078056dd1ce66f7c7d9d5959cea82aa8946f8ebf4500a1aa24b7b656bf8fd1d9e541165a7d55911bd8acb015df6d1707a3e7d141506f767464788adfd2f2f7ab888a836b4b3d4d0501fdb4d50995eda0caa7e368b015155dde7d56a6aaefc3a2a202dbf1efd55151176f3915dc1d5680ac90754859c6d177ba3a8203574115495263c1f3f2f400b56a368c46be8841d1431632024025fcc58294bf47c3101139e2ecfb62436b4173f0f3f6799ddd5f102808245d162024002cedee75012ae5ed36aac37b0514f22885ee2eab21163fa8248229fd4ee744415da9f2ef710054815cbbdf3e88a0b00801c3b3a2dcf5797a048b4424decaf14048bdec54462eb67050405547d9def9f1516ef7b551bea88df4457a3f0ebba9800af0af80e1d417bdbd515144e797155548e2b232c5cf9f265539f0d50cbf6f0ebb5006bea82002ec6fdee56a280bf48525eae7104459a0008a80092f47acdee9b054145f9dc40417e828929e5eb37baae66ff (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b0011010 : Impossible board_b0011010 :=
-  kernelLeaf board_b0011010 #[0x376c165a3455235e55214b371857365a1c396c554b39615570575d6c6a1e2e4a, 0x2e676d54366557366a46685d2a36212a2e71211d2e396d594c4b39552c552a21, 0x67414c59372b2a342a5f236d1272372e57542c365533262c2a3457315a1b2a37, 0x5a292a3757782a2a2b5f39671d41182e3946594c2f2e76345d231e5a7634675a, 0x606c63312a45212e6157675a2345341e2a592a362e4536] (by decide +kernel)
+  kernelLeaf board_b0011010 0x122aaa8e0f678f414050639022ab51298ba1d7787afa2a2e7ed62202a3d48bc2000d34cf6abb392082ad495b6002c800aaee2edb4155b5aa0a71556b7ebe24f8d04a255aa08cab57dfd1415146073e7cef074410111031aedcf1bb3ccc160595faec055105edb4c419516ee8f54554000f65afb6d3cf8a0a8daf3e8241e67670546fb22292af55b4e00155ac880217f47823b7450425f2d6faeebf53101559566b6eae88cf5001153602a0b355b4d44afaa0a0231ed66f0556df5de7d50076f531001116de5ebe8b6d90435711bd1ddc50855b6c543a102ac44085df1d0e772085daae7dbd9e672f511141cf5759888c357556808112808876feccb70316b1a68a8a355d1e8025ee22ae008797b7c14c680a22d7d6dc36b39ca8c824e73675740554097b9c184c3d5f87300015f56efb3d59ed772b (by decide +kernel)
 
 private theorem ok_b001101 : Impossible board_b001101 :=
   fork 53 ok_b0011010 ok_b0011011
@@ -3566,7 +2562,7 @@ private theorem ok_b001101 : Impossible board_b001101 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b001100 : Impossible board_b001100 :=
-  kernelLeaf board_b001100 #[0x3f1d5012551e452221263122255f4b221e3239551d186c4c2f1d676a61542a2e, 0x29252f544b1b312222412f224b222f551e365c312345186145292c1e6a415f55, 0x575e36455f6a4c5d6137412162611623375d3b65616e54625f4c556c59342a59, 0x62784161546a22755d80545d5f5e2b5d412f22362b325f6c61092c374b2f5d35, 0x6a13215d6d62516154625060606c555e785e2c6c4b5f456c502f5d5e786f415d, 0x364b1e253161576e26362059141522334c261e3118294b682f24343260553750, 0x145f222b2c2b62314c590a6829660022342b590a2c23543341225e265f365524, 0x221e2f252c211c21] (by decide +kernel)
+  kernelLeaf board_b001100 0x2a88caaa32a8b3dabf10554bacd44010e73501450e5311042ff28b5780002cd240595f8b50458e82a88933b38ad811b468080a7493360345b4e1957a0a816715b20a0222cd1f002054d9f0745ded36a000415fd605b757042149a4aa36e5ea8010100409ed2e000c740004c3d7f769b6da020a0d204b3902514cae8b67ccd10109367b05104456398d4e8020014bf472fd26d36580060eaea08cb7e40286eac9e087581006ee11b7c5a347080030f53c5d0c0683070a00183d9d5d58af612cc8c09e36f6b3d98a4bd14215bfc5f67434457e497719af6084f8f7e28507bbe2c217c6cc1f0f53d5a2d045ebddc8204ffea62005dd0bfded056958457dde0e3010afd16b22db95f4cbbfecd05c38289e2159b7d45997afeef40d75516bf7b408905b717bfeae66849771630e2a92df6583a1f16a02e1d58422da3dbe2dddde8408e5d4c3eec011a9e2d40552ff339abececed355a042c0d9d4f090975f88b539525e6f00808518e8b54011707108205fa2e5ea228a2d7f573db6d194b9a880a320c747c5c4c6885878bc40a9c10599ef56aa41c909bfd5dfea0831dd40286a0004b6ae7b8ba2d0f230aa6c418f22d400152ec8aa25fd97a2cf60b2dce0a3573ba8291042a63d9ccd81140415f9df3e24babc3d4d56bb (by decide +kernel)
 
 private theorem ok_b00110 : Impossible board_b00110 :=
   fork 73 ok_b001100 ok_b001101
@@ -3576,21 +2572,13 @@ private theorem ok_b0011 : Impossible board_b0011 :=
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_b0010111 : Impossible board_b0010111 :=
-  kernelLeaf board_b0010111 #[0x55566655455f51354c5655215d7549325b5154322765246a5a1e22465c45672f, 0x2e1e25665d6827686b3256452169465c7c6a6555546651625b566d45625b655a, 0x5a5f216a454654544a5556665565553f54666c6a56455f4a54325b1e3255565d, 0x32625f21222a7b5d3f7f73175c7655112e2c56555b515f5c665a555c1a2c6d1e, 0x644a661e1e546a5b544a3f4f556821745d55455a2e5a6a6a2a0e5f2b2b203717, 0x5a320e644c62325d5c3a646465555a6f3a5d645a655b6f5a6d5d62763a505524, 0x355a69395f6a50454a352c3b4131512c355a6d5c314546672121190f2122323a, 0x34565039554a56455d242c453b466d4541452e3c3161512a6d312a5a542e5657, 0x27392e55222c413b5a54342c295a34261e543f395a5f452e563b505035612b2e, 0x27352639352e392b2b2e2a2c325a2e3925326237395b37395c41112e395a271a, 0x2c39232a2c5a31352e314932392532172e1c56233226795a652c2e1c39514137, 0x30244524262c241b413515] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_b0010110 : Impossible board_b0010110 :=
-  kernelLeaf board_b0010110 #[0x4f3f1e2f5525294f291c22651b1c2739455a2a356423213245645a5032394a2e, 0x2b2424291666232a2529373255292f271e3a27456a3c3c6155316c4556503955, 0x7c1e3721502c66224a292f5a395c6265767a5d764f1e62243b5634322a456a3b, 0x4f3b56352b] (by decide +kernel)
-
 private theorem ok_b001011 : Impossible board_b001011 :=
-  fork 96 ok_b0010110 ok_b0010111
+  kernelLeaf board_b001011 0x1021869341158ba4d360422acd266f11841838b5cae80acdce8f055622cc4052d62c75aea88abb44163c9d96e74b82920332cbf40a008bb39a08d6d5511ecb4df9c49005ad7975008566bb39b9c151168e2b076fa7d125ae009b738a22d754055db9d5f02abc551976ab05660cb455b5aedce9701151978b114041be8e7b7a08df473dcd09483ca2411d76e7b5a7cd6a800202c27dcebb2406ae00a828b5980a8841dde0c16ba9b4c55400159c20a9ed6d34daaca12027ba9a03fd011cf6b1464bfc5d775b445de12a9432104098a1b5f0e808a2af414495dab34eb70250dcf5795a0035b5022e024005dc4988802b38bbbe36aa2bb74458b8a0c1c118baec51e60b1c40870ea34755aaa28edd8e88aab8b5d4d775b4486bed7154445b5e9dceaa28017fd5d0e2f2b4106b8aa00acddf074418163d1d0444059b5d004b5b4033b7b9b1e2f1bcfa1d1014399c44441fa1d4588ccb44875a0236b06658ed0032630ccdc5830132eef02173901111d664c0400726e5eaf6b501077e2baeee202393b5e5d002df0028aefd106d7b7bbe2fb682c213ad00452875749279395e6cf688020009eea7ab1004102df539588bfc4559fd5d44221150b4687e9ddeaf17b5aee05144b5a8eac4100756ab1ddfe05141578a002af41a14837cbecbc5c0037f0542143a2d5684223ef000bb804ff1ffe797d002e680876eae475daceb6842ad5c15b7d1c0026fe0201373487376bab81090b734d6021400b3db9ee16d6100dfd0fab8bc6da4202a60054c10195d5eb79b446af9701501abbfd101142a600266d0084d9eaeb717bf800202caea7228cb2452df112a7b1165d5eb77705149767b00152e59b05610041bbe8e144114fe8f5ecbada280c5c8511043e9e3773f98826ac5072e08024ad5c46a79b45a3e2edf0a2a2cd6f6ed1703168816fcbdad41046ae08a80022b5bcdd5e2f7f00151a388a2b5c04266a0356caba1eefd741193aa82202cb6df47012a6c0b2c08514faa02a8239749eaed6928109ed109171bb9c5f3ebf5427e8aa02ef6b6200b5d5e2c4fccf62a828df5143aaa830014359e6d45cae12553b2abf0256d68a812e7b9e2d6099009cbf6fd6a2a8377edb0a053f4f78b54526a84efadb4d9600aab0024488bead4005477c212bd26a20000a4d4e5bcd8c80223d1558140089704153b7d96222d5d4ebf4f9edd68c80409f50562fab0401e6220f3c3a8b5755563b0028db388bd6c556a18082e72af3f1417fa0001ec5fd5c052ea229e7e20c329ce62088bcb9bc09444e69f73c5ed7284a2aadae082a8064d1e8754565c5e55502072636ba1a92acb73cad7783 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b001010 : Impossible board_b001010 :=
-  kernelLeaf board_b001010 #[0x1f2b1272715164552465665071745d57315d695b125c2f6d6655693155655a46, 0x84761e7879346554395d796078796b76346512645a2768727227326221326d57, 0x2669353a68296d2960347065706065763a60703455726567456b2e6d745d473a, 0x2b2b661425310e0b647661662e64396576646671296465665569666660324a39, 0x5b602a7616251f1086107e1322264c5c305c2434710b5c55663a3966142e0e] (by decide +kernel)
+  kernelLeaf board_b001010 0x28885bdc1aa32b2282abed96c4400444b929fc87fff04a4362fdaa4f45a6e660080b7340100661dce40149d0020b4f8e2f05b9d5f36eb49ce20166ca7202ec1da008af1001157d9b29c0025e00638ec5f240464fb70461f3602c808bbc9b9f2e8a76d1103279be3a9d88249c9a0b97cd95741ad38ae6c5441b378365cac1051cf309bd3a8ad775923a32653bb744553a04a60d69f0c10572ec03c3405518530797edbad1150a120c1f0da757555005e5b97cfa0c80ad317d7c222a2bbdbf4d0bbc7e514054175dffc0b4a9076e5663df8fced3cbc2ad4d0051cea177f3ab83569507c7e7a5a526175fdb69e5c9793b5800aa29fd1f2c42580796054a7d978b2450f02032e202b6eb5f90444fe0aaf25f2c455198e3d1f268d5c149e5f3743054138fd34851bba057e000263ddc4048034f6f25dcc057e84d43b790873757d3a2a4c756af65ed71b (by decide +kernel)
 
 private theorem ok_b00101 : Impossible board_b00101 :=
   fork 89 ok_b001010 ok_b001011
@@ -3598,7 +2586,7 @@ private theorem ok_b00101 : Impossible board_b00101 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b00100 : Impossible board_b00100 :=
-  kernelLeaf board_b00100 #[0x1a32662c575b5d6f272b6f1262272f573131231a214f6c1f353525552b6a5c46, 0x643c4c66252b4a607a5c69322a4122622b18312e3567456f5d2b4521086c5f22, 0x27542530232b18325c225518043c225c5c7a1a731f642335415c35551e6a2e68, 0x39326068655f3557396c236d22656c555c2322416a56455f235c2b6d60] (by decide +kernel)
+  kernelLeaf board_b00100 0x8a200ae75597831002d18a5972feca002d7afab2e7d9a3d514554076f2b22c41cbeceae8ca82d7360aa947a2e0fabada2a0a28b17bfa3ee6a022bd8b6e8e0d44104fb530424012e882c347c10084af31b2ee6a2e504512aaf0088206309cf345a2a80017350054102b9facd7cf3fe4c500047caaa00b5d83a0408973255aed5cf7ab5da29a31500726f399e6e052e220af595a824e0d5058442444f5dcf4ecb40455d075178b5255e2098d8e84aaedae102a2067e2e22c86feee220aa8042be548ba1e98002447b3bfa2d8004d6cbcd802cd0afa05bc512bbefe010014fc2bf7e4bc5c080027c405f92d5f63a8082c747b0886b438528b3f5152d99fdae1335c44552f5757eaee71b (by decide +kernel)
 
 private theorem ok_b0010 : Impossible board_b0010 :=
   fork 54 ok_b00100 ok_b00101
@@ -3609,12 +2597,12 @@ private theorem ok_b001 : Impossible board_b001 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b000111 : Impossible board_b000111 :=
-  kernelLeaf board_b000111 #[0x512b415e6726412a33412b223337517e417878692b5f5e415b32542641576247, 0x5e68415e371c4f1d3d272468572a375e302755713a695f5a65395b5151372c2a, 0x365f6a663131635d4b2665393326415b5e636e5e63685d78635d126a574c5657, 0x5b60575e60327c247657672b574b55356f5757621460492c68415e5d2b632a66, 0x5f5e296e5e206f63515d2b553f3c0c325563576e5d6a6384313c2478575e4635, 0x3f5176225e245e352c37325e31246246625e5d242b6f222e22292a2435372c70, 0x5e35785f692278305d554a6355497165624b674b6522554b63552b557614496f, 0x31572a14363565412731325d3d5b303557571d6257355d654b5e5f30195e7171, 0x5d222c5d222c512b2b75672c5b395e62295e555d5e575b39625d2655555e5768, 0x5160666d5d6d2c515d2a2c393b265b640d6f216f6a1d54253532266857513d6b, 0x2b2c3763376b70642b326d5d493771355e716f37363557493657545d2b763649, 0x2b232b5b39] (by decide +kernel)
+  kernelLeaf board_b000111 0x4115e28a3c011695e0a5bdce2a2022af2059a82b7f1e4d0ab7e1435fc3b26c22a928af65edeef270415050195bfc76ba20ab7b478e88abbf5bf492db6bd7e4ea08b6d50002bf53bb88a80120000afed8850836e4ea8200347901c1e6f6f7755442db8842b3a38addd44155a02b373bbd376f40326ac293237dfa8a1d52499dfeacef53408212ed35d8955969bd1d7c0a080a3bdc24035f7745ac20800b3bb88504444a2d674757d0042aa2afebe7c00051676f73def169210a7026f6d5d6eea0837b50556bec40096f73e2e96ee9b45abaa22d5ef6157f46a2031d09afa102aca6b6daf9783aa22c8a7c8163b2eee2802af7b7a0a108aac316bd7d05544af821200077c595f5016bddf2f2f24401bda2000dfe62058667bdf1d4005e3b7b6baa88f8c1506fec0a69c210645be361ddeaf2b011c78a4d5c5424fc7cba804ae2c4597e7d165f39745a09357501097a0498fababd0a41452afdb29c9f7e82b0ff6068f10f6d49175ed26b2037b66bacdbe20cb03282ac32d51bdb1d2680d0018b8daa002e2d06f77765240526afdfa2d1057692a8b53848aad010449b5dbeb3e1948a80dfe4bda9f76a054c17b5500801041eff1f475bbabd0aaebfde681022336584d5c50131f5fdda8a820a88b77d5e3effc450563bcd27e34100052bf7b9636aa235c11b7983510412bf7ba0b070b2fe693440eda80815f5433eaf8802afcbe16aed7025b7e4d7c8048afe2d2a40029e0e4eb3d1a822841d046f77700015115e2038f9562e6db77f541b5681239b18ea2c7c7dde5eaaa9b0472ee78454519e9b83dbd100002f6863f76137b4c7e8c06ef14880be324c7c0ddc97abafcceb6a2a80832a255fbde8e0ea057b6fa8828a9ce109fa28775047ba7d26aa089a3afa884ab6fded02461a00a7eafc775a000088a2e9eff6b45410cbae7b7a34750168edf44166288802ab28eaf83def3e84809b140583aac04441567c1d5e080200a2d9ecb7e8e07ec40a0ef8c8101025f1e9d5f7fbda0a8c1ede8c832c41940aa729b83d7f171f (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b000110 : Impossible board_b000110 :=
-  kernelLeaf board_b000110 #[0x686d1d7129572465673322656362687415304c572b3f2531746b4c2b155d4932, 0x391d5d5d3967333051293a653362753011673341251326316e6430307d2b1b62, 0x227569622726395d1f2b6626395f15396351626456393115745d753b4c6e4c70, 0x29697622742b29262b22702c30626662622262305a70166e645d463322294c24, 0x292b7474332274182e5a3c636474512b5b6530672c2c2939266857513b682c21, 0x5e232e2256126b49211d675e641c6418082b6457492b232e786633785e62227d, 0x2b622b26665749262e2a3962312b39317876222731392e5a5d41626263492a19, 0x656e35243b2b3139745d5a234c26643b7227266e64685e2b222c392669676976, 0x642a4c39395b64292b4c3064747569152b734967685f743f4731652639676739, 0x696529336b656863713a3349693d63493f6b66293a3f69662e6469625d] (by decide +kernel)
+  kernelLeaf board_b000110 0x122a812000e9f2e42a28a9d9faf4154672fa3c7a4bc775aaacf938085a77bb038f93bfd54141d7e6d56153aeb1ffa74103370cbb5049c98009a7c5a95df26ab99a04b39d4105cf6f101326229d5f3361c84331193e9f5d0d3a8822825757c73e4ea67f477f155567a6ff10545563ec7889572e9b73e7d0010433eb4e7414cbeec1564916b88a4d077abd018ee7e9dded68f0155599a6d05c9acbbc2396c229f4deed00726a1a3bdabd81649442245acdce9b004b4ec91299f58b4fdb57e2c0512004057a6f36c0ad7e4e4526c450976ab421ce8358b6058eb242bdcf202c7f1f6d160a8a549f63cab39d776bbbc1d0c5aa0888e2f1f27064255667246f70008223d7608ba402b64bd7c820b49d0e7700501cfdec572673809c998c11abd4050407275f93ac2c2a22bd451ebb45007c6d9b44567ca8001e3bde2d17f753ca080af0454ba62974d9e8b6515ae998d776b7982ab2028498f541c9f4c468eaf8456de8b9761e7d02059aaa22b31454ee74d8000e8c4afa00b470985077e8e40041668753a169fb68be9abe1114e29b6955e82a00808be1acd878b4151cdae2c441c5ac804022dc5b0d05b5f0e95480b74eef27778dac4882cf10516a9e66024d010526650517d7d3e2d24493e02c2a6dcf773fb02b2afcdb0202a6dcf7f0551222bb9f1ea51f16a039356b6139e0058e577a777ebbbd5a99a000eed6267c3804119ce77bba094c2dddcf2a867d9ec3490468f0129dd797401567a4c8218beb8a33330c8f9f6790a9074bcc8ca4f4db1d42dd90e4e81186c5430feeaf4054de838b21d181b73bf1d4f5f48a49a8aa99715cfb3c405045aaab97c7828128b04e2f47d30908af20c399d7c2961195eff0452e00c7557a71206be66af2bdde4ecb (by decide +kernel)
 
 private theorem ok_b00011 : Impossible board_b00011 :=
   fork 89 ok_b000110 ok_b000111
@@ -3622,7 +2610,7 @@ private theorem ok_b00011 : Impossible board_b00011 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b00010 : Impossible board_b00010 :=
-  kernelLeaf board_b00010 #[0x551f262b6f663376602222702b22697c2a3b7c226f635f5e325f226733635949, 0x2b4167572b5764635b572a1f16571f3529655635605b5741222a3565702c6260, 0x6b23693c5e766639322527193d223030372a35713f7465304f5a575a59355956, 0x71241b1c21197624374f5957316a1b2a211b16265e7c2c307135592f392a3560, 0x301c606955635964] (by decide +kernel)
+  kernelLeaf board_b00010 0x5001869cd00407060002a0e9eae8e3ecf93e3b20a0049337c007343a26747b68441224dbe82a13f505b3857d8e8200ead37aac44380221bcb69b0419bdfcd66c3e3b5e446b3afc01573c100ab6ba8a00383045d7a323f4ea80f3bdf6c10acda039d96022975164fa2802a4677ba2d8680ac31046faadafc77f8aa74d8172ec3044427f2136baf8aadaeced749b3a8856c57c1f3e0210257d5e800a55fc980018fb78035fa00055887f2da0057c003fb5d4f97000ada835f06025bc1052bf07095045a802aadaf97e1acf160a0c8321835aba30c7fa4536af64277e08e6c1565679dbc1a2c1451640a0af0d4450157a2f4f02a025f3504556ef0094f9a2f7f8fbfdec0196a8137f45aaaa239f6788e3ecf27 (by decide +kernel)
 
 private theorem ok_b0001 : Impossible board_b0001 :=
   fork 80 ok_b00010 ok_b00011
@@ -3630,7 +2618,7 @@ private theorem ok_b0001 : Impossible board_b0001 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_b0000 : Impossible board_b0000 :=
-  kernelLeaf board_b0000 #[0x392671326f1b647f65314f32356a573131312a2b2c2c2b2162213b1f27416d5d, 0x4131156d59366a653035575f236660643264623965393c3b417459246a262532, 0x365f4921694665237464652932252b6d3149262e3b602c62685f2c6275647d25, 0x255059737a2c3562645a5f77263960554662591f7b6259317a26554a5b59503c, 0x676749555f2e364a68173b5f73551c6539606659475f186a5f492b312330322e, 0x2c1859262b5f50727722272e672b593c5a5b49493b5f715921396665553f7149, 0x6459643f5065592126395b29593f2659302522502c2e594750] (by decide +kernel)
+  kernelLeaf board_b0000 0x5c9ca08d9f26ff95a86c04d97910b3a1d36e7004b7ca900a9d6ceff00804d88259d86978045d14359c822ed516cf1f9a286b331ca2828d9e5080014d882beff43e581200f7d16c1127d76a39f55f6779a005ac0b7c8127a4093bbefea929c7b3a1dcf9b40450cbb57547fa8209c7110493e7d2cfaa0232781a5abdfe915db232b6d295a368cbea280523befe133cf6ae73cbb9f0692139b6ceca0c7d4afec635150104b575fe4e00af0018e8f050101061ccb65da5e870a41167e7a32fae95959cd75857162a2b93b5aa97fefa6dce080b83aba8480ccc6f17675444804fe2fbf1767505463fad368a290055e568125becf4391055141e6dbbfc9d0fa71518dd22ab65d1e28042b74dc980397538a02aaa932d2eaf45636ec7938a8a6c15da820ef106b072aaacf16d0821a3bfa0a2acf17d7527277dd2f0706965406395d0876e0b6796155b7abcbb0daf5f8565afe8f50736160d0ac9b2d404326e2d85205cf9742590865cef38291df07e9d9d410498bab016419369765b9e49360471e016597bf811014137e4c7ff2ec79fa8a2cb0456baa8426aebf31d00463cac71156af404559c2022b395e8782c5c2a8080a1dde7f4fc1f6f77 (by decide +kernel)
 
 private theorem ok_b000 : Impossible board_b000 :=
   fork 83 ok_b0000 ok_b0001
@@ -3647,17 +2635,17 @@ private theorem ok_b : Impossible board_b :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_a11111111 : Impossible board_a11111111 :=
-  kernelLeaf board_a11111111 #[0x2d58142c325327531a5326232a33522c2c5a535e5e68223c322d522c5a544739, 0x271a325a682f580e1b2c1c364b352a5e2c172d26102c2d1c325471606969602c, 0x592a56325e325e696f5957275755305b575e5c3c552a222a56593e692f221913, 0x54552a54384732273336556f2741171d1b30332a33525916695532545e273c57, 0x5e0d24240e58162f41532f15261010261c3233363e16275a5a4d273632335e5c, 0x32452f2664304f1630183c534a0e545816133233381f1e1632382f4b271b2922, 0x45242f452d412d30234f1620291826164f1a2732333c32134f23452d32] (by decide +kernel)
+  kernelLeaf board_a11111111 0x8008c5c0549afc0400450422eb710005020eb761a82a88f1502549f96d0622a02a731a6d55408b73f61444d69f65b3de6840cb41151410015278cfd1f175baaacb14554597175fc08aa08a6f268a82c39fa820096d866379a2d3d61546563b81401a9cd632d93d96cf71a0827f154f6ca5b554196e35f88a52f054fa02209bd4ecaca8b9616f6a02a03749ac124d1dd8cb6bf83aa8ad3d14151105fa895c4d90c44400521a9b39b2d9edb551557daa096c53f6b04106d6823374f80db65b3c512f622973a98aa00aa55d575371c7c111554414655969f059edb590102afbf53f0745254bf094808773788230d67a8aab99ea822d2ece5b400474f57059753bda7de75f00041516ce0aabadaa28c0cbbd8342a32ef7a7810dfd9ebe22c8089f6be402d5d4540051489876fafdeee6f350006aea0a2ad411680a88aaeb7677da0a03a74055fa2cce802204f4f9ad96b28dad4550118746bfb18ec141137acce6db97b5c10156ac4a82537b5997d6e8a220029b2180b3401096e7365802a93553e3a8820880008e0f4e44a8269f06b35bc88b58ca682b365d3d3e953c14d60a8b4f13710a823d55b3d4521a5a808acc45510159dae9f7b550150000bd88e8d16f3800959688b756296b3b5d4e3ee70 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_a1111111011 : Impossible board_a1111111011 :=
-  kernelLeaf board_a1111111011 #[0x3b1b35455a673572554d57604b353e51353b65553f45252324516b1e3958361c, 0x253e324b061e5b5f0c4b355565643915255c511839355c35393f724d552c393f, 0x25235c39517263390868516e1e1836224d192c394d3e3341150f271a41452a35, 0x301e5b1b41512a2d391b452a352d233f3b08170b16291e24253f39085c6a5116, 0x195a2f0b3917585017236b36242025293f3618512f413b3016172c2d06512f41, 0x195e1e183610644d735a0b295e453933230b41352a233b5b5b454135094d650c, 0x3e323b3b194d39211907390f1a2c265a250b261e241a574b2c0e1d66253f6426, 0x413918331e761a2c2625392a35303f192a392a35335b200f27351a2c3e3e3326, 0x8701e1e35535f36501a2c19393b556b1e3039352a182a331b3e1d331e265530, 0x3360575f36272739500e3333192133275b60] (by decide +kernel)
+  kernelLeaf board_a1111111011 0x101019e82120e0ebe97f8051010401b69f50050493ee7a18ee60419f200cf2818ce8700067a7edf8311f0cf7028127b2066ba8322d3d92fedba19ad662a302299c90010473c832a00812efabebe3d8a0c3141111ce8ad75598c2558a33cdea10204800fb3bb3cf7009b41aba0030e0e84e7484431b3cf7db8002035acc136974067390c12adae0c3001fe00208a671155b9c255b5d9f6f41a804084084a0fd3f35cd6b3401f600282003ed9e9b40007db2c01778202012ef339242082244b3773a1cce08a1f545ce3f35acd11136856b124b82f0444d9ed268006b5050409afb4bd670ec00eea5066d2e804ff3269b33845eca3d98db64308232740884df9f6b00405e4a9ebd80b1170141cecf0151e0a402f83b5d5648a28f001de20b6f24405b7c5e0e35d051013ab204df2e3333aa08240c36b5f8be217397d8401b1a0ab3432fa3f5edb49c020d090094b92a9dfedb51414c6a93282d1d7f0777b0cb600017d6608aade58836a0d1d7f07618329ed41026de6f83880d1d55888b7738011bd516262eab6ba802dd111147bfd5de2b08008408cbe0888bcb729cf693412512ebfd45738a88e54460106e7aba390885b4ba3e08b9910e756a3f2e855131f28b9c411da3a8fbb3d98db68b100019ba304a2267459b9c01166efb67a282002a041e12b8fd3e6b0425524583c5d56d74512e002fb65a2212f00043607b844b788b7f198a8a00282b2f6bd5d0440b2f93414155cf20574bdce8e98c157382c235ee688a35dcf2a22ffe5cdeae82080acdceff4515dea09bdaf174142b5ae7e544066bf2eaf37afe0c1197b5d41f6083471ae403bd0041cbd5dfec9174bc4082a3d268a00151f5e1edcf636d9cc (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_a1111111010 : Impossible board_a1111111010 :=
-  kernelLeaf board_a1111111010 #[0x1a2626484b531c69165e4d1a11190b1e571c25323326381e45324539261c2d36, 0x1c544d57485e1d295758556e5e171c1d1f1c64165a1e151f18251c32350b2916, 0x26264c2c530b561c4c2c5a1e393e1c57250e1b55571c0a165524196948561c57, 0x2d154d3c5b22225a5b0b225509192215571e351322195f232f2c39321e45575e, 0x643c4a6f555719542351253c5b2a353818225a2a1e2f232a380e1523223e2627, 0x5e2454521b052018233c223835263c22555c515b2013235f740a102357223851, 0x522255175b41170c152a4a514a5e5e5c3e5552243c2a0e57162a4a4a232a521b, 0x413c5232164a33381c2f5b54522c554a5b542a452a3e3e3e1c1e5f522c582009, 0x2f2a41225341302c20532c182658542c52333c632d54] (by decide +kernel)
+  kernelLeaf board_a1111111010 0x4005f82a042aab83880a1028b569f0761c82aa82b35074f5159a88a014634dd8ea6812a2ce96cf79a2820a080e3d155445bd4e0ea28a0f3a5aaa808a8cb2dcad9ee3015113988202abfb7d4d0a5acc15012af2b40455b7d4d5622014aa45d56fb1545f60a83ece64a89ed0054bfd2d66a0d8c044189d522972a28bab97d055b7c1d18be48ccaeab1025195b47551195b7b4055bddcd5f75782969379a922aab54051515411dd7cb62aaae56a2922a2a12b51eab5442966f54015bda4d202a7014b3785c041504198d1ef345b8dae8a808b29b5e620a828baba2089731a3dbc0016151506824f11e42c4017fe9a2b4402521a8fafa2dc68a8aa8347c9bcd01195c3bfabd7c5154ceaa35347a0d1d504bbcedeab6ba2a088238cc68b500b5aa010aaab3dafe04451eab50951c68ed256802ba8f45a080bed369f16eaa12579ba822f31452806b7a8b00004045176bb7c00bc8891545d5c4e0499d451657af9edaeaa80a4f45aa00067606fe8f5facdceaaa80acb15294f6ac5c0426beaa285ed4014da00229b15266b3a78bd45ad88c1ce5a66b3b59edcf32cbece6a20808d7d2ea90ec110837d5c41abea28aa27315a5baba4ccf22082c021a791d6c958e75f55439aa4354d02529bd7e477b011110eeaa9ebf63abacc20eeeaf65f39809dd544400fe1cf265bb59ed0a0440104ae8209fcc68282825ce6cb6bcc004048bc5396d41035a4aaa6d5415372397c00d3c5444439aaba72ddee6e00a9ac1554623900819c5f1eebe734bb2d9e8200429b571b0101ed162eb2d45158bb0e74d9cd6edb (by decide +kernel)
 
 private theorem ok_a111111101 : Impossible board_a111111101 :=
   fork 73 ok_a1111111010 ok_a1111111011
@@ -3665,7 +2653,7 @@ private theorem ok_a111111101 : Impossible board_a111111101 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_a111111100 : Impossible board_a111111100 :=
-  kernelLeaf board_a111111100 #[0x2d385e533c566358505e32581c3e364545263e361e4a1c4c324a0e38202d4d33, 0x2d2f2d25553b5e5727554d193b5519554d2550574d293f364b1848531c582532, 0x26100d513b56615e2a2610545152412d380c580a10251c502350231858452f58, 0x3c30102a41411e5e162f1e5e1c4d3f3e3256553f56414d1b29544d4132472f4d, 0x9163c512d21562d515b512a412f452f205e162d3b2a4122] (by decide +kernel)
+  kernelLeaf board_a111111100 0x84411396d455e747095a456e28a20caa8746b6b7a3888b6f585a3aab83928282092fd94011218bafc0455077b2da00800adddea8ab60e8b79b0d1424521aa02aab8388a8082c1d0204f77b2dafc040f60002825ed39cddfefb65aa023080295babbfd55126b70700504025219b9bd4e2a202d4d40526f0765a00231f5faa20b3720510465920536431bd1dde8a82a56dc390417b0501055a20126c87534668f4b83addc608a80a3341b1800ad21a5ce6002a50c41505011e882ab3434798ec7175fa8a8058d6eabf0545455ba5eaeef41205bd88d5f54213f579b8a8aacc6777d5d051618cf579ba5c545505455a1d7e6ea77fb6d1659798d55591d3ce62aaa0a3634bb2d015bb8c5411bdb4f79822a1055b6508085c7d8e860a25ed962a88d8ce6fb6dc5d1014422e9b7dc2db540103d912b580539a13365a0808a8acac76e341ade6ecf (by decide +kernel)
 
 private theorem ok_a11111110 : Impossible board_a11111110 :=
   fork 79 ok_a111111100 ok_a111111101
@@ -3675,29 +2663,13 @@ private theorem ok_a1111111 : Impossible board_a1111111 :=
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_a1111110111 : Impossible board_a1111110111 :=
-  kernelLeaf board_a1111110111 #[0x4e3b195c641e27523f483b4a3f4c1c1e4d644a4c1e60184c27294e2022552a35, 0x52522249491948525454572b492f4d3c524a2b1b5b2251524e22572f41541e57, 0x2f27413c412f193b271c12153c5e3f2122202b29291c505b521d3f2f221e2c68, 0x23230a0b1e574c19194d68524806111e231353192d222c392f4a6b5149572b4a, 0x1b2d2a5045451645571f152345453c261f5211221954222d58163c2a180a1e4c, 0x2226171e221e600f604c771c2c23532d2d0a4c51222c511f111b0d571b512214, 0x4c4c222c1920135e50504c2c202a222b2a202a] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_a1111110110 : Impossible board_a1111110110 :=
-  kernelLeaf board_a1111110110 #[0x494e4f642d4e2b201f4e6a5420591c5c18165266605f535c521c634e594c412a, 0x5a5221354d115023495a234d39641c2c164c355c0c2758141619494f4c534f5f, 0x5f6259676657631e395a202d233912102d26664f5d4f5f5b5966506a656a7c50, 0x395e194d2b204d1a2b1e1f0a271e271d393e0e20200a1e191f15131e2b4c6a60, 0x1e234d1c27151c2b452d2f4f2d272d27641c3c4d0f2350124963193c2b202320, 0x1e1f14234f64] (by decide +kernel)
-
-private theorem ok_a111111011 : Impossible board_a111111011 :=
-  fork 51 ok_a1111110110 ok_a1111110111
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_a111111010 : Impossible board_a111111010 :=
-  kernelLeaf board_a111111010 #[0x155e204f5b6a50182a2f1652181652261b170e260e0f2057272a20252c2b223c, 0x532a5c4c1941331d1b2f5b0b2727565b202c1f1a2a1d6e2c271a102a5c6a2527, 0x2f2d69154c27555219271527550f4e4f1b2f2a27415e19202d223b0a19504d27, 0x5e22412a5522193f5550572241274e4c101a2d1f274f5527] (by decide +kernel)
-
 private theorem ok_a11111101 : Impossible board_a11111101 :=
-  fork 48 ok_a111111010 ok_a111111011
+  kernelLeaf board_a11111101 0x80a233331402668b598220099d0604f1505bd8d0d15a1ccd6620a08355a00a8b57a0aad4440506ab45c828489b2f8908227b45c0c2809ef07202a800083fc1ccfbe7359a3e9e08aa2ab7004015ba008ad80666801471545acc111a39fd48108e8026f1bd7d124de51d168094c010378b7558a950e2e22a3174b622845c51af9fc101454440ae8f8b88445d5e69b8401203fa080d2d23a2d5514020cea2d4d16b71542c65b79aac20c6a30ad40013dccc405247a80a48f15a820a2a8bcf75f9999d044cf328ab4df46a252e46a9222224b086c8e7b47a293c124469e99d6e8b59b9d7e82042b20b2caf5e243471164ed7d5e22292b5f820280889f83a83cc4460e208bf33a2ef1453e7325a25750151e77b105fe8745808a8aa0d5e8a9d51153a73615251a1dbd5a5ac2282777fafd167b59824868e96220d2d172754064e6791a8280a02b4b051a98882d4ebeaf93820a2fe6ef30201a58208acac57a20206f1092de8ba3aa48a0034b9da2ebebf83a82a8b533dd7e1459dbbc5433aa8dcf26080b281ee4f8a28b4b7fc8d505577cad17fccce6882827b9baac39301958ccd142a53de0cc6a0ccd044faaa9e768345d5d56d750414f6287f110529a00010aa8f9fa00e4d41050f7028f9b9cd3ea88a95ce6abd4458badc411597f3f5455b829f5156e80a9fc99cde622d375507e888823c84068688892c4064f8f33aa8f357aa8aa0e150047d402a0d05cf7b33c8b3700454557aa839b9ad15579ecfe2b5425113e7b585453e07715573a22afb1d920831551405418acf667411a4914fe574127a7b57ccd51106d5b83bf912902ae2ece099f14736d7d59c7a8091edcf6b51610612ac8adc54505647ae725c8910d56e9bcda0842cfeee808d3fbfc025bc08122cf9ba1eac065411444272fabf9d0ed74b558558043ccd79b91c10a18923c564f2cb6b6247cddcf9339acc1650b608a0b335051ae2a30a37319b09fb194cb6675041093aacfd410156674f959fdfd104124f0ab3b9fe4d6ea093b500a40555055e833fa84ced103575359490759ce602402a5ccc65ba58008890839bc1dfda7a37314a5ca891cf1f3bb3cce0eab67a2a8a88ded17071155659454455d574599dfe2aaa2a28200855e22875f517074f812ced45666a2aa10cd6b714fe8827d4449fd5d44053eaa80bf4055bba72bccd100153f576966799424f95d51553f57505511f8813b1027e9bd7f2a00ab4fc1d12f6119d6a41aadd16ef550551599d4400a1cdd3e20281234f408155dce666783b3c010eea820401bd7f6f11045178889f55113f2215bb7a0d49100159a7f35c2aad51010efbb0011598029f3590e101562c040373d5c04aa88a5d3e57bda0e2169fc212815bf57433184d2ad7e5ba5a028463052dd4b114d8082c1bcbe90220ed5370a92a3b4121fa0ebe9f54001558556831552eb357a2de6c3 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_a11111100 : Impossible board_a11111100 :=
-  kernelLeaf board_a11111100 #[0x394a1b2a132a1b233f294f183f3e2b4a4f663e2a4f18334f662a3339261d581c, 0x3f5729604c594c262a57332c575760331950254f64391b2a2d2a2d23294f133f, 0x336026514a2345294557261f23592c5045332c1b5b59514a613f4a1b3e505950, 0x1a2d2a331e2c1f1e2c2b4c4a626250574d4a4f234a1e2c572b4f5912112a5f35, 0x2f262f4d26352a1433252a334d4f1d1e29264d142f2d4d254f2f5c0a2402350e, 0x25141e5c29234d2b6849291e185e164f39122c2c2123331d1d142f15191e1d24, 0x1f2a261f2f254f144a5a684f4a23662a1b2f532b26181b4d5c29304f234a2b2f, 0x492d181f2314261b511725242f4f1e532f76264a2b2a3f4a1d26] (by decide +kernel)
+  kernelLeaf board_a11111100 0x121938b08add11050319fd1e404534dcac6f51a388a897d2e935fcfd01149093dd3d7e4976d372b50157a0a22100aac41ff2b44003b8a8a6cfe88aac414d9fd17e979f94c195882daf462882cfc6095a84a3dcdaad00414df4bf0169eabd366350537828a88acdee6a76180a2022cfd1e2022312b578820afd2e533da22a2dcd4e400020a3d666eaf502505d1c9d4e7b31decb6aa2a4fc402441ce12d662022a8b343808f67808774810ee94d7e0002025733921ed253ba4d7f2829b1457e42c2cdd36aa88d75594d9e9715594915632ca0b3e6f3f3b880a9ed41538ca6d9b94d0257f22b794526e979fa02a4812bfb98ad2708202c501ae3b2435a30adc4556cf4f6b33fa29242a9ed66af99a324ac40c5ac02062e870ad7c111426f2b199fa3c554958aa27b59d7d5e2033fb3aaccc4b23b02aaeff0ad767e0d4151136b476568a0a8f8b8a2a282a78bd7c51536a029fc50947d9d6608050e2ecf45115662289bedec82002d9c68f2bc3bfd151101146560a6f547dd0ece90a013437fd7d4e94088938399d9d026608a6c05575f67c202cebecaa57f06a128233ccf434bcff26aaa2ae7520404deab501555bb420d2ad5b90a3d4f3f27a2aa8023fdcf2b5400537aac9441109f2acde428f817fa9e7e630095fe08bed5f1412b505a7f9b449f6ab161149f98d42267d3fcdaac42419ee74d9dec673 (by decide +kernel)
 
 private theorem ok_a1111110 : Impossible board_a1111110 :=
   fork 50 ok_a11111100 ok_a11111101
@@ -3707,21 +2679,13 @@ private theorem ok_a111111 : Impossible board_a111111 :=
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_a1111101111 : Impossible board_a1111101111 :=
-  kernelLeaf board_a1111101111 #[0x540849544935251d570f291d254554494b35244b2424454a244a2b49212f2238, 0x414f4b3f25244820481a4808351811274811410e254a645e1a162921552b4f57, 0x1849254f452f5e16244b2049564b54561d1b523524524857215e49214952634f, 0x411d2d1a4f25172d5525170c27252d1a5e1c2b215f4f2b184f4f7457254f3c2b, 0x5e122f1247252d252f1e10582b2d10100a13122125353329413318212b165256, 0x1e4b455f1d17092345202d4f2f532b2d535a354933290f330f633c2b16254a5a, 0x3b4b4f52200b22293958101e4f5c205e16232b47204f1d225e6915391c2d1650, 0x24920250e45] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_a1111101110 : Impossible board_a1111101110 :=
-  kernelLeaf board_a1111101110 #[0x255216292425555f54524f41525554492b1d11521947583b2547613b251c2d38, 0x1c4f061b39294f0c16390b0c5c0c7255583929256418253949580b542d223c4f, 0x50494f6645504b674f695f50397270552b27392d39274a1855582b55392d641c, 0x49533d3b1e24551c2b5259194752473b524722542d4914394747672953503963, 0x1c1d3d1616184f18271c59293b1e213b244939182f3d5407553f27523b10244f] (by decide +kernel)
-
 private theorem ok_a111110111 : Impossible board_a111110111 :=
-  fork 38 ok_a1111101110 ok_a1111101111
+  kernelLeaf board_a111110111 0x82088082e4e8883454b8228ed418b88bbc0165e2aa093f696834104417c22d4e88b9c10541161b190cf610b53f556028046e6a0ef65b47abd15515418fa90a0e7ea2009dd45def4e57044004739cd6e000849296e8724c7b497c5c116fea912901de92f89d647c5d01041a8b79fafc1010200a7abd6f400d3ed622420b5c40564ecf53942a3f89029101119e3fc7bcd5e5b54a50412f52092bb5dec8496c1280084afc96302022c7d2eb74152f2fcf643b1a021082bd5ba82a432592192c8ac9e4b0150e497216bc2333d4f0842880c1d9e63a43abcb74b015ab6201074553badcd6a0a08cfd2ea02200a97d6e220b574b80a800497c66ca7d2eb735dece60022af555090e0002805fd529fabcc6a08a33f1127fd3afd002800225e7ef357a228318e4e81242979fc5d7f7b2da4d00597a8aa0e4e08a0a15b425e20254d52adc280020c8773788a00352dae9301696c8b23afa1ef7275508145543c9c1505a9638f9fc1d19faa4bc14090057fa5d26889048d4180012384d700048c047035d3191d3e8ccac8c8e230705008087697901095e4ef66b41584b6a743d5d5f133f0944af8954c4727101112a7276b8a9755523bd7c7e29c64593b8014808978ba81284b5393804cbdae934050197a4c4104991796525622a4e951656af93a1d7e8b71802b014733b8f70005552d8aaa5b31a053f4c70a7ce767538820a3bcf6a87155077a4d04a5938a2e731afc1540047ba854c3e800d5dfe0128a0a7e96a820ef21a4d00151089fc9e05a7bdd0411779ee5275739abd00415111a5d9d510084cf1f4004aa5c7dde80808a34b63e8ba9adc51a00a9394dce211f80163f9f538082d3c0a1b9c1484c7d0e51193cff37402245e8684bf3e8c33f42d3a300a037f00a1b9f97c3ababd05554fb9d6ec0800839d3e424ad41131841357b1abd1505abb9d6f933988a2120734149f86cde2b2a39c045153a93f19a096d41cf4080a88bc66210dcc67cbabd8d065738a00aa74be4cc60aaa29773a848a88a8327b18bea6b745bce00809fa20c09751452a596d4e2842b24c0412e209157bfa20c154e973f83a2a552d00695abd4e4eafa14448ef04718952a9667415644a3f6377a5d9545008fa8061dde9739addc69b (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_a111110110 : Impossible board_a111110110 :=
-  kernelLeaf board_a111110110 #[0x4807115c0f03152769065548484f4b254748555e3b4f12254b26395a58201c2d, 0x554f15194b49271f4f49693e4f6e69152220481d1e1a552b335c474939265403, 0x294525534923101e4c39583b26274c3e4c2545233919242b48295e15221a1215, 0x22692147641d4f3b230c4a0c1325231e451d4c3b0b114a552545534939261c55, 0x1620242f4f191623645c55452f6e1058394c3f55253958102653724b5c55290b, 0x4f2322180e254b6f1625124f1b25232220164f15180d251022581e15250e1f70, 0x49251e25181249201629224f122223124c264f16251521232510262558505845, 0x1f1c204120] (by decide +kernel)
+  kernelLeaf board_a111110110 0x22127f60e68304508483aa0e4e22220a0973da82289731803304b93a832da9c41516028a00282933f25a2d1e90a4b56669b104027e5b44152f222c5719510e8f1156452e90d370025d50406c743811b1c5e7e8f4598c1847608a5d525040497efd2da2229725a2204fc0dea0029747a2d0720808025b9f95d90689318dd581404b90d545d8d020284f6574ba550ecfea0c8dc34b68349afc085815089f99d2dc82a3c92507275ceaea28c5d7f45bb6026021d8dcf3315051fea82020b574baa2039db190d36c214f80014e5cbee6a8202d5d538bd16205a7143d20a47f26209dc01009fbbc447880048403300095d020332780289751e7b44558b809dd5501199bbc154017b2a11e57574b800245c462a7c9dce9b39a055c4500114e82200c5d2ea22414fa4e0828f20100867b99b9ec682a2ef104da7d0545499bec414001998978b88828f7399d26af0152540144491aa7bdaa2a574582802a9ad552595eae233f942b99d101978a349d3e7f5459fc0b27a05d3aa080fb958529feef4e95d16834150918827700f60a88a206bababd9152559f73412063f2773a6d154a4156a60f511a461f51622380373847f03cae8d48a7f4e1baba8a32316091cfd5465e9792a3f23abdec517788233f25a5e1465e9ba5411cf6bb1a0ce6b7 (by decide +kernel)
 
 private theorem ok_a11111011 : Impossible board_a11111011 :=
   fork 54 ok_a111110110 ok_a111110111
@@ -3729,7 +2693,7 @@ private theorem ok_a11111011 : Impossible board_a11111011 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_a11111010 : Impossible board_a11111010 :=
-  kernelLeaf board_a11111010 #[0x5839264121584f502111584f5c584a3918245e2117333e574150583f391d291c, 0x4a3d6045090c197007116110361e4a0e3341361b254a4e5036544950531b704a, 0x585b39454514251e265c2710244c3e21100e45334a0e2121114b453625412319, 0x251d29381e161b12252515272939100d257262100e271e416e0e261f2329252f, 0x38644f6248761e274b38251918505b39265c2727084f74294f23685539184925, 0x25393636534f1e2f4b391f35251b1d361f18361a1d1b23] (by decide +kernel)
+  kernelLeaf board_a11111010 0x202025c056001ceb6c000549b74f429f9ed7e0084bd4739fc156ba5d58413782a776d804827f31a8db35a0889de1449437888f171c8064d10549fe2e47db3da7d125ea08008b8d2e02299c4431a9150edee74da8237301154faa1029f11880044ffa68802a75129fa3f46a003571ce6300a4e2097215414b9dd4ee33da5b051110037c08292d2ea84a974ae9f150454ea100e7150512218dd2ea313cbb16a02d2431da7cf68c1d497763b53604a7f45055147a9d445114babf482c6c205bdcf282c5d4015510058b94d2e9ed4ddcd3e4349ccd01154517da1d510454558863b040062ecf44146563b43aa2870508f2f1062edb4b8a4830711011e67540056572a8bdd4000b06b1713a0a23314ced2f0d044090f91f0e436d9ed5556563b159e080c1c5b66f4ba80cac40676003435104180641b75393c83434092169e406fe1caec6e74da141d5050f2158d9fa8d0d5090ed11ec73f5015056a0b9d8e56e731802a0293555bd920a1c410be33df68849057e0e0888d0ec6ff739dd4e73 (by decide +kernel)
 
 private theorem ok_a1111101 : Impossible board_a1111101 :=
   fork 50 ok_a11111010 ok_a11111011
@@ -3737,12 +2701,12 @@ private theorem ok_a1111101 : Impossible board_a1111101 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_a11111001 : Impossible board_a11111001 :=
-  kernelLeaf board_a11111001 #[0x1a27350f27185a567a20691535212b1d4938184f661d5f18263d2757353f1652, 0x26684f3b53214f6b273521191d6927273524451a242025211a5a212035272524, 0x5e182313242d3b2345705e20662b232b4f274e1b101a3f1923451d4f4e192510, 0x1d5a1620234555123f1d2f273516181023453d2625574c23190a13202f23230a, 0x5316362610361625555c5c4926643d4f19273d653d4f203d182764351b1b0e5b, 0x357c5c451d381b4e381d4f18554b6c484f2025534f5b5a5b6b230e1827250a20, 0x4f5c5920272055484f3d4f5b4f486c4b174b485c14485b5a2409353517212f35, 0x3c2f4f1a5a1738190f5a21200e0b1d49700e0b4f08155b4f6f481a48] (by decide +kernel)
+  kernelLeaf board_a11111001 0x1540441e6bf029fa9ac046d6000a5f957199c7f5036b43a0c40451521d8bceea280220c9ee183b0505e0010a0013f1195d412df213fdfc8cd692248e7f48855cdb3a0d3e22222a0eae00421239fd00a022f79f8808816f9fc8c955136682a888b2f2fa2012f91dcca682a8048edf6b49a8802a09d6b8a2d72f8822a1d7e02d710045aff3b9808083173bd2838c37cee50519719dc9f98c122015abb2f2a5766248e7e834ba808d3c2527f6f5100b5836fd7b0a123d05595400760018d3e979845683a7a3296d4085b720aa000a6c872a0db2da5eaf736256e6a202c9d3793517bcfd184338aa27deea0e5c419ef3f41aa222bdc14048531a7f26b5cde829286f1dca36f4ee090a50d6b2da0d09478a0c5d56ae4b66151fe77057ea80a9f6b96cc72090c5651f1755ee9b4bd7e672aa4208a8f33a2b014127ca0d41215fa3d51111478aef6631055125051e4f49a288800addde80822a3e2008bca85c3bda0f36af4296111f280abc029fa7e766f219ac155fea8826747b1324c5cee8934fd469d99d4b90d36a801a399fca2ef1a7a08a879febc4104fb5d210e4c675102893be9d3ea4a09f6ba4e2ea84221ac015260832834ba0080873580a3416b43a0d06ba7d0012e024c04044d69f6bc0443fa44124f98ea04b5b56fd683d395c011ae1228aa1c455e7793b8d1084a810c620853f73740202277bf8634dbdd1493e235f6bbfcb74b (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_a11111000 : Impossible board_a11111000 :=
-  kernelLeaf board_a11111000 #[0x20275d0b5218520c121d452f154a12184a120e19453f20456a4e41150c25235e, 0x1620564a6b4f25382725174b3525414b351d3f15200e1b55411108150e1b1108, 0x642748251124175c4a25206b2435155b4f554964571b572148412b204f48274a, 0x4b253520572f216b2f4b3524351a202735161b1d4e2f0c59200b4b3524250e27, 0x1d3f2f414e4952673555230c644f411d414f3b2d252027203525202f2f4b240b, 0x27564f25255a495226387255524b274f483f042d253c12412635255b264f4135, 0x41261b261b70160b35454f254e10564f4e1b0b577e4f564e70480e2725155b41, 0x1127082745234e2545524e4e52062f23085c2535112538110b26161825172b1d, 0x272d163845233c2f2d414e11162725352d1b2f2357351b0935231b4963571b35, 0x4f6849682450273520483f2d5f506a5c4e3c5252262f234e4957520b38261b23, 0x4b4a25555c493b1523255c45250c4725106e4e3f453f4963476e56353b483f5c, 0x59635b4a354e5f3d5b2f60475b41495348555a5b492627414847] (by decide +kernel)
+  kernelLeaf board_a11111000 0x16ce002b8fb780a4b2b1445af3b546fe20bdedebfc1a08247ede282c1c593d3d161591d5ed600836f559380026d4413f07664680b1f1597cb2b4bd5ee6800432745dea025747a888a29750040b9d2280c5c5014b8cc048faa5c87bb9da013fc62e48c2ff0193a00a18f8feeeb6d7415dea221237f820adcd6a7fa393a08080e8d498050d4fb5d1941aa8c8dfeb7bf8810050f56a0009739dbce968002054b4da028bf47a200ced2464f5fa58bd445c622a6c110de8f4f8a2adc8144b6e34058ba3de60802abf5bc0241d5051409da472da7d0452ed711115b80a49bd7e8f1541540afb5cde201089daea3d44544de4a92b0c9f1f5f37b5c8e9f1182a9f544008ba3e7702a97400122f4b9d8893b11a5a1b0444057e8f447730041114ba35c8f148a2c08975c6474017a6cb66344101012e5f0114579dd50183b0a009b37c0009b37f0cb62f191ae4211727e88325e76435012b6413f0276a411bc5f2200d7e01fdcfc8001ab73be1b231d820827c4b95edf1080c1c5013e802855b9fa5e15512e56b4664f4b4db8d095041439757a58ab2f81544fcfe591bfc26a002b712eaa8f3101096880c1d3608aa2d74bdbd0014da0888b3f83a2d73bbfd015fc0b07009da0127a5e7d405446bd5d1e33c98204fd1010839dd60a0e2a093f77add152e830404faa820daea00022974180bf912015857f2f4980820a08be5e976ba080a0d5afca20afd0faf21117e80b2f6ba4c40455ae6b41069f506bac1010216cde7740a7600092fc668559d062f400165ed749a5c7604a4809fc9c8089f08a4625c8f208a4c44be220a4b5ce569741ebd08049b5caf6f0427e8357a9392122809936be6f1015afa1c4055091c1d5ea0009220e7e1234f80912b8402d920e081ada12bd7cfd2ee30053e002972f88cbdae80088a5e0e0000cbdae777f8222805751062208088ed511137d5e0e4711c001015c76a008a6f08e2341a7c0065006ee2f500029663804029620233259de2ebf4404ae02b152b0496639524429592c224876678ba28bfc6141b174b56b4cee0e5719a5d1f7b (by decide +kernel)
 
 private theorem ok_a1111100 : Impossible board_a1111100 :=
   fork 34 ok_a11111000 ok_a11111001
@@ -3755,29 +2719,13 @@ private theorem ok_a11111 : Impossible board_a11111 :=
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_a111101111 : Impossible board_a111101111 :=
-  kernelLeaf board_a111101111 #[0x1d3b3b6c5d501d553f35502135246e0e3b3b1d3c45725024191d1856142a520a, 0x1b355e38294f253c1a24591b3541663c0e1f3939551f3d1941183b1739193b21, 0x1a2c512f383d3c701f303537194f3d2c6e5e233c2c2f385639374f1b3039194d, 0x173e0c192b0f193b333b2b212b5c0c1b231a68396e5633683e122b1f394f5025, 0x502a66302a4e5915191a305e29502f5e4f5c3f18353732253624233723253f5c, 0x12252519625523124f7c5b3d395d51662c3f353d33251d39303d1f2a18252c51, 0x26304f4b1d3d25354e412a18396614254b395d51502c29301a1f234b0f36230f, 0x1a2c583f0f3e3e5826253e39663e582a143766211927581d193e253612371d25, 0x2513111d370f211917371d2512193350331d1266396d395d6650] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_a111101110 : Impossible board_a111101110 :=
-  kernelLeaf board_a111101110 #[0x1b3c35255e4c122f4f705e4b393d51252f4f660e231f2f5118375d3926322458, 0x392332185161493938264f705e2f3737411863502f2636631b1d256f2f664f2f, 0x6d7e4f69665037643776192f5a511d4f3745336a50491d68503b516a5a3e3949, 0x645160333f664f3750180f143e263c663c4b5c2d233c253e475139271f543e39, 0x30493637305c3f18363b61253232600c3f365b50323b5a455036512f55193b55, 0x3f393b252c1a3b392c0a6650510363500a2f3619504e5c6850354d6255703224, 0x352536391d25553d396623122c181b273d4f303921] (by decide +kernel)
-
 private theorem ok_a11110111 : Impossible board_a11110111 :=
-  fork 16 ok_a111101110 ok_a111101111
+  kernelLeaf board_a11110111 0x1104401404b93e648e7740116f8fc850e6701050082fa212df3ba5c2588819d4159f4300411679dd09688c8066d512005173edc12073ddf374335acd51b1822308020bfc1fbed629f7634d828a977daa22808e7cdd3eec6ab2980aadf173622aa1d0ce20a27c48002c621dc0cefb00005252edb25a08a8808b7cee974db0c451627ea2a84bd00113bbdd1042152ed79dc1d5663504214873866d0a604800a5d50425e0820e7bbd1da1acc0453a2c335c0407f5100a47aa232f47e02a020800136d1e3f25a5c4112ea119c051400717574792e5004127e8137cede80bdd01cf77a3e6d668012ff5ae0002bdc159e973b84900ae70581586f73faacc688c0800a9759800d1d4a0a1aaf368222230e555ced812b3a00570133809ad877b1114f24550d7ea00adee7e010b737fb1018e5aeab7c0596976da4d51047a090adf47a5c15917fdcc5142fa220a4bec6667578020a0fc533bbc01678abbd5e870457b105cc66a806f479ac019404d1c222e7ddaa35b18867ba37d92c085579fd615873aa033f5a1a5cd6b3501654a3afdc6a22f715e608825c33fb0e89ae00237cce0200b3f7bacf777b41121478bcd66802fc9c75b1551ce08b02000df9f9bd87282aa828b9ccea833737b5ef6e34153804fd2e3ccd69351014400802ce6f6bc1c0010cdaf31d881107f73a0039eae827f550015ee678398d1027797c4147399c001de028874eea8a820bbc117796ceef43513b90255d4401fed7a1a1d216ba4f763b011df2a00bbd3bc8bcd422fcba1a00093540ce7731d6ca6aba58ac150006ba971506d885008822e73ba5c5906af000bdd73e6d1e4b5998c013780b27c00001eecfd618080aae743820bfc51ceaef4baccd60888003bd05ceb310901056219ba18800251e5625041f8fa18ad7edb4033a828280250e050819ddcf47200850d45116bb4df1757e1b2d268230d000093b6d501000016fb0ee68202ff1004c6db477e1d2e0ccb01065e0c110809466004023fdb76fa1a21032c4477c836b911022f436dd1d7e0020957800040ce3beaf64c01068ea60e80067803fd0050cdcfdbf433182a0a3fa29bed3682f380cda8008bce5f7340005ba3c0001e6977d8004247e8e0882e74f9fca82a6fb100041ce8201b7fdc82cff4f9b8541068737f268a022b7fb6a80675fdac0028f2d1de7e00837e01422ecfd5c0801430650193c77d1a0050d0877d1f576b7daa00e71001924eb9d1ecb3180451d400c3a04c9dcee34dc0a1082b3fe1dec2065802255fb7c485bec2b107a15231e3e86bf4db6d04871e4a082206f3ba5ca4dfaff36a9094fd7e8001bd4241e6d74bdec44299a4b0017e520c8242cff877b0925e292e7007bd1d084b8a4bf9fe6c76282a3c8febf01a3b0218c506fdddce9b65a4ec643 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_a111101101 : Impossible board_a111101101 :=
-  kernelLeaf board_a111101101 #[0x6945557c6a192156254a6c5237681438554f184f1b0d4f2f491b4f25383c245e, 0x371b27301a5a184d19114d5c6c55375214354f3b49354b293048555435251a19, 0x1929354d546025384517553b550f1955214b331d294f29093d353e0f4b352135, 0x353b1b503524665d0a3d3b184166503c2a1f410d0537251d1f271d414b1f3f1d, 0x351a244f194f5f263527376830350b5b3b68174d2f393f39243f355519681b27, 0x263c594f505d76596a4f5978660d255029330b1d21192664185b3b5b3d3b1948, 0x335a77236818334d243721493733295d4f5664382627374d27591f0921192947, 0x682f1466662b1b2b504f665d4f45116a50664f23183c1f374f506a4f37335a5b, 0x49354f69684f376856780a473729375b] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_a111101100 : Impossible board_a111101100 :=
-  kernelLeaf board_a111101100 #[0x353b254f2f21144b354f2f2f4f3d564b4f5e1b564b4f5e506552356176453c24, 0x3d355b193b504f3b4b14514b55234f3625564f4b2f3849414b6127191951491f, 0x322178273d4f3377233e2139543e0f3b3b1a2121192a142149390c38264f3b35, 0x251d3b4b3539354f0f350932064b1b611a21760f210e4f3b4f6866142a194f39, 0x3218643b55657e2129627c2f3d3f3f09350d0951093b0b351b254f553b33170c, 0x14411b3e09210b1b142525212f45251b291f33291d194839623d66] (by decide +kernel)
-
 private theorem ok_a11110110 : Impossible board_a11110110 :=
-  fork 88 ok_a111101100 ok_a111101101
+  kernelLeaf board_a11110110 0x15504a4f35e50467fa7a05055747028acfe250056fe8d802b7e315aa0c7d6f8929d04425426fdbf46bf29804a99b000336af6223792bea1c1434ff3722a05de9f80445c8fab00615126879b9fa3cc6f324013fd120082a020df9fd0f5602a8053f6fab08cfb5d05015bd467dafbe8fd198c51116788484dd2750a8b7d0eac3276fb3c0a4053ddd00027f5b326e34da08a0329f6f804804dc99013f673fc80309d0e678810054ea04c7e4d880f34002cf3fa18817701ed80967d5804133fb3f8ccdc04204283712e2c50d53a88a4b3c5e77554410e674de4cc68105bc21de82a216f1ee8ef33a802a2248dae089ad2714fd5a4cea434fefe9b5144009ae9f6fe8d868a804b5c17c096f2177e8d4002502f914dd7ee761014005fe39c00249bfdaf57338800e8c0040037a7dae8bbc04010800df436ba4d0044737402377856f74115de638385488000d9ba86f355a00080829fd0905838370002edf4b9dc043fa829f113bc1c08597a7f0517f9dccea70051046b93702a78301452ee3051958b825fab82b2efab8fcce0a55d438aacbc6506789dd4e8854fc454e27447b88d75f63f110497b5d0e00a35e646f9bd3ec335a085ad404c62110a04dd21663391c01080409b90a5cf67570126fd2ca6d7499fa88830bbc493b5e5ea76188848d412ae2353441ae029735899f4f17a446ae3f313560019d450e0ab5b114bcaf6682a134b6fe8ca6e34042aea0104fd31a24fc04604378de7ebf0024e0006f67e9771bcd277b01429a80008c1cde200fb402104e8700081179bca697041004ba8144875fc5c104004b9bd5004454e7f44467aa73b99e1440246202e7c5a8223df36cb31a02064c810001df5780848cbfec4050e329f17f3405245fbdc047f8022ff13b5c0001441b89c41441028e27411de2f6b9bd2e08cfc412aebbc067810097e19a5ceea8bbd50495025ed709ce04d7127e3f456b89d961b44051125e6fc39ad0fdb11010221fa1e951dcfe120169df3fd1e6ca6ab400ce00b3f0015cecb40150e9520f8e4022113ef7029fb3fbe8f7d88200082877395054df681003f977882a023bcd68740450e675594d143a04c9dce43371a6d0129fbbd6046bb403dc05af6f3380200a3bea1a0102053f77cbca64a0080ad1c4295597d5e15547b3f6da2088a9715505ad833f97afe71c012740a0e12fc3a002009f33a84019e228e1273fb5e000100077a5c0a427ebf4394d00065ed7049fafe50905557f3f7b82080856e5f33fbd9bc400adcbd9fdec00a1a1065ca9611035f0fdb8bbcd2763 (by decide +kernel)
 
 private theorem ok_a1111011 : Impossible board_a1111011 :=
   fork 22 ok_a11110110 ok_a11110111
@@ -3785,12 +2733,12 @@ private theorem ok_a1111011 : Impossible board_a1111011 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_a11110101 : Impossible board_a11110101 :=
-  kernelLeaf board_a11110101 #[0x47233739273b495f475a45335023494f376a39502350766a334f3766183e5826, 0x1d615537594b5c2549373936382d2355493739324f544737043b391915373316, 0x550b371839324f5c1710153f5125235539362347391915394d5950273e645a4b, 0x4d2347185a38523b33172d0d39392d27522739184f514f3b29527238383f3f15, 0x185c3e333b0f2d184539335a335f23395f395a336a503e4f2d1929474766470d, 0x3d5f3e33333b1b4d5f3b54524739231b3f353f392d663b25122c45365c51255b, 0x1f33393b2d251a5a4f603f3d4e3e64393554705e321d0b32392d06320b1b2148, 0x395e4735364e35213655375c4141366b36505837614b25323d473952451b3323, 0x2b231b3c1b244d294a415b453e4121214a5e6137451b454d234f3e4939582d4e, 0x16391a270f554c4c0a1d271a253623213c39234d1b235466582118231636214d, 0x5e52745e5a1a6a695e164f23294b1d29256611581a0b230d23271a25163c234d, 0x41564f58] (by decide +kernel)
+  kernelLeaf board_a11110101 0x41444838d6e7ea2d8c44400af700034b5003a77bb59ac2826d5a80801a7af716c140567e8f154ea0a40952f3b82228a74b880c819b102392d8cd6924000bd4788822323747a7d418d6972dbcd5091ecdc5414b62ab9cd69f8051f820055e4126622aaa4cc5677000004f9ad2edb104447a882a1d44479a39d1f370400437823c00a9a00819bb1a87410140150c68f44552db6d43cdd5e022023cdea08bcd104de939ba9d10504495a8000c1edf1705447d892c1c55143a82875152577bc3b7d1404a8bb1bd428bcdd1f3f1a505009447da02c9dcf6345516e8113b73dee3e88a0000b5d6da8224ee44546b880a1e5b7576fdce010120e20041db60aa55af616d92d0ec6dfc3cbd2ecb01ee8a0047dce152d004a2e6f67d23c0100fea8a1033e4738a2ef5ba5cd683136b1127eb60d05fe22f7489dcbef2612000e71006bb53e1ded9682808a29dc845ea2a08cb73ab2ab70d88aaacb179bd0e8a2283237bca0adfdf6cf54024467c33bcdf02a4d37bf93bd04a988d4b8fb9d1e8008086f7fb5d015fee759555be6dde9725acd11008bb6d44145445b99474b80416f2404c7737da0282b3d15de0aa20fd6ea0126362ee7160408067dae667dfd1eaa139c04442fe0ae785ab5acfd5d0df60a8004fd6eb2899d4f0031f0023ee6d4118f8de809ba0a8a8f8f98ed6e3a5a2bbc559f2a0a80897d6e377390a20b9d6eaa7e41696a8a7d5ce6340027e2051d4059fbbd654f4be5b8d2155c64002ff20157f95c0605042ae8bdbe6373b2c027e885cd54044012f90caea0abfe8e9740050011f5773b6d0411ea08aa20231f7399cae0b500880e79bd9e869f7de4d2a90ab582ab2a824bcef87441608aaedfb3cbee6974001064edf73b6d000004571add90608022147d5e4edf73b2c129fd2854da588208fb7c2612a20bbdce672ba2b7d862259e5b0140063e8f06fb9d3e0888ef4001093dfe8088fdae00148bb3e868f0693814fdbfab4140501ced0d1f050e29003b646ad9f4fdbf9b31beec69b (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_a11110100 : Impossible board_a11110100 :=
-  kernelLeaf board_a11110100 #[0x66723c5649664f3c5166500b083f08170b4f1f32182747552547324f1d543e58, 0x1717142d3b2655352d3d1a13211a1321062d21554a2d554b143b354f1d604f4b, 0x48623b4f4b4a5161320f5129324f3d1f321866163327334f3314471445391455, 0x194e3d263d1f323b190f273d27354118641f3c293d4b3f35141f501d3b724f3b, 0x354c5925353b0c3e5572504a17163b0f14591472292655503e481f3b27273926, 0x4f4f61564a7a59274f5f554e4f214a6156083b0a3b51066e0a603b26523e324f, 0x455b7b3926636a3b614f5945704f5d66505239554e19560f0a1f0672264e4f59, 0x1f4e3d4e0f1d190a7818623966504e6e5c41616a482c61] (by decide +kernel)
+  kernelLeaf board_a11110100 0x2a21fe29da853202222f79dc82a4083f3b99c57e331a08e2d1073866e86c8a808204ef777383aa2122187085d5c8d00521059e1c14422e2800a856ff7b9d378fd5a400bbf0e20433fb380401174401e1cfeef9ba1d2d00115cf579da2a0067ad80023f45688a9fd4374272c14daa04ec0067ed9c219fa00cff0f5b95a0104fac0b3827d9f8805fc156abcec019fab48221e5787ad88d4014577a2b015501077d1c37229203bb15e0e0104011dea8a6e96024243ec6065cfd006bb33b3a288125daf000bbc66fbabf2e870804ad51012f825b77a002c3f29a32003670529f2d4e9b41000ab950df723408011004feef54000013e20a027d05ce9b3380208234edee9b455ee7f658802a08aef45033800fd3ef74813ed78398f26b027f124079a9ea017ba028cbdfed7504a6227f89a19dddfcb5401127e820ef5824602838b77b3f97a8012b0128f8765a80243fa8e20aa9e05973fa44045ee7f6598f365b50467ca2a7d59f3f018019e53451108f94e2ee780515629d5d082fa105f29ab777a6d400445abb5c0554116ef7401540535804f43902a029ac427a1c36b7014991143ca00055e56b745abcbca6ef40005af20cfcef40838301027e84bf37cb79d6e20124e80ae6e7ef3a02941a38819ba1b000a880bc4211ac00443fc091197c5f3f3fb2cc60029f801008fd5d2f2247e14065cfcee54df763 (by decide +kernel)
 
 private theorem ok_a1111010 : Impossible board_a1111010 :=
   fork 42 ok_a11110100 ok_a11110101
@@ -3800,37 +2748,21 @@ private theorem ok_a111101 : Impossible board_a111101 :=
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_a111100111 : Impossible board_a111100111 :=
-  kernelLeaf board_a111100111 #[0x4f41252521633c352168164d6a474776271c396811043912186e264f6e563852, 0x371b126e5627182d3f163b6a5a5f253726303c171b082f47374f2711274f2f24, 0x68475a21265b5d6c636c3b56502c276c5a254f2b3b5d65683b255c4e4535163b, 0x37506818264e4f2f3b4118632f563b485b3568456c416c3b56502a23415b485b, 0x4d165147674b555c365a6a4d6e456a5068375f59375027252312372547725c4f, 0x55213d2c5b60352a2a3c54504d30515c4d305c2655615548301675494b595555, 0x6e555c4c4f7b3c4f5b4f3f3b3b3547715f4b2a3c4d3f37263e5937304f2a3c48, 0x5b37543b5b254b5d4c394b3c49515d514b7a48364726493b513e6f494b5d5d41, 0x6e4e38264f24245d0c6e212f371027164f65275b481436544b3c2f47495d3848, 0x6e4a4c4a4f4b2a4e5935594d5f18304d6e4e3827485525212a372b383c2c2c4d, 0x55604e3b5d364b554b254b5d515c655010256c363b61556e5560365c5a484e38, 0x363e723b354d504f4b7259364f6e23274b3572] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_a111100110 : Impossible board_a111100110 :=
-  kernelLeaf board_a111100110 #[0x292337492f4d272363271947523c2f3c5d1b56450e5663526e37685214274f38, 0x494f1b523b5a484f45232c3d354d30484d3c54493949474d414937544748552f, 0x55550e5a4f556c0a3d4a482c371d3f354e566f246935554b5c273b233c3f3525, 0x2368351836553506396e526e683e1b391b3d0b35684b243b4f5541543c70104d, 0x4f4f184d4f5670104810242d3e686810292f6d2748144d2f5f554d] (by decide +kernel)
-
 private theorem ok_a11110011 : Impossible board_a11110011 :=
-  fork 94 ok_a111100110 ok_a111100111
+  kernelLeaf board_a11110011 0x2102dba547d825cb0510477880d7126e50c40067eb2fe5d9c14954426dcff7682a822a3d3e832f6bf2eaf83090a7623020ef411bbadb97d5c455404097a5c020097dde8f73056101cba022d0d48728a5f66db90017788b87abeec0440ab81836ddced6a082c8e14276202e3ddcac002662242cae7e8220a4bd574eece0008a35ecf2c84defe44d18c9872337ddced20151c69f8247571110452ea1c5957220adf1055ee379a822ce41459a137ddced590a71a6e9101419fa4e05100126295dc67bb52590144043afd16fa210d3f16e049f80008b974fdbe9194db753425e0a0aaf3157e031f93822977718000123b7b7ea688bbc56de2280097606097dde6681002b9c10997bce4f4724154480bbd1e00197fae4736d005023e0029b9382842bbe8efb0477e840927597ddc10bbc1f7757b98033327e029ef109e6cfcb78a833f11125feef115decd78ff1c16fe2a2cbd155a8bce6e08ff0106fa6df7674000116fab0c4459faad45e60248eae8aa1deeb3b7e0d25ae2002ae4555bcea74369066e0ac304a3dcd4812919b80ac3b9a6e5404504046af874002af3236196c05063af2769411125f67aba0855e6f16c04068e031f515cfcbeaf736ddaf5680a8801377760117475743000346200df4026fe2059d00006fd0c5013eaa971551e4b1006f88a8978f9cb6e70aa253f6fc0050f466313708024ed545011119fafc415df0731a0098fa5405f856c577c8d1012ded710346a0a2011704d9c1c51366efadd0d56a823c10583dbe5015a470085bc8d182047ed6a00221c4d88096f02efb300800c7ecddf5ba1acc053ea0880db3b5a5c810227eabddea800885dccbc5468e004477a125ee73b50400022ed72d9022bbc401bea1bc97bbada80aa7e064031a8b77f8aa8a5b77aaa09ab92b5dfd52edf4db0c10007997cde088c415f8b1f41be4fd3e880800211d3e833f57e93449fa041d2ea888229743c00063de62282d721543da34b600804dc01d5c7d0808f876e450100153e738485573e8c5648e139505ce4b31eed36800880013fddd6dc74b184027ea004fd318222937a594027e0b5bb8643069188280890d268110222b77db21a3514003464300214ea0c82c02ff6e9f9194c109b80bf501bfa200d5e6e23d00d1b5cc6dba846ae22d701410db9f76d140052f77a35a05f6846f01cea46f17b8bd9afa301025e0a4e15477cfe410ab880c1ca9bcf8643009b8157a00abd003bb5a801200093f122af6cc56f795c8d670000020237cee80ff6ba8004ec80828ada0802efc810527a76bd5e5f734204954f888ef500451ef3007fb5d2e80092927099f9be968203bea002d72300027e4045d1e200acd7ba00d79bb0d002460d024dc49029e75393a2022a0e793a831f9ba2c1c2193b7d2a9c7e475740008597e2aa9c147b7e4e20afe6f02a80aa7d1e840863d3e99e3f4b16579aa02fe4179ab7737a510cad6e2f2800ed9051adc84098fa5eed451186fc88068e96534fcfdc77b (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_a11110010 : Impossible board_a11110010 :=
-  kernelLeaf board_a11110010 #[0x14496a5168255516385a65254f5e275b61254f5e24493b4f2b0c4f3b143e2a3c, 0x471f5b49396a09352f242116383e2f395051683e6a4f4f602517153e6a553b2a, 0x3e2d3b2a2f1056683655474f2d3b51] (by decide +kernel)
+  kernelLeaf board_a11110010 0x4000800bed11545bbbd572888aafc875b055346db81126ae02c7d0a7e4884b777820d1e3e087f52df2773eac060114404ed71115457e934396dc602020fb11057ee750a1834700485d1c2a2fbd5cfd141467f8355012e8280097caefbd5d5ddeab29a0a82009278d5c0051f4697a500ab96c8049c76b410000cba5d5067f7b1501113f0016f070e9751867f7b49824a0249e207793f040455e33020000a9fbbca63ed56f3 (by decide +kernel)
 
 private theorem ok_a1111001 : Impossible board_a1111001 :=
   fork 88 ok_a11110010 ok_a11110011
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_a11110001 : Impossible board_a11110001 :=
-  kernelLeaf board_a11110001 #[0x3d4d453d514e0c1b3b52302f41552a63520a4e2f3b1515052f2a413b1935502c, 0x597868723c3e4e683c4f555f6e554c4b3d4f4a396c5670103c0c564e0e2a3c5a, 0x3c51375610164b10231b0c0b253530554c2d4a4c2d193b3d35175606395e524e, 0xb250c3c231637083c4d3f27411d08172a374c1b4d56414e375c0a174b1b3716, 0x2a5c55593c5c4d5f411d480c483b25101b27374e4f4d064e184f2d375c4e4b1d, 0x2a170c483f3d52163b5f2537262d0f0c3d2537080c0f510b2a084f525251483b, 0x3e5017153b144f4f193550414e4f2f3951412f41173b2f0555193556182a2d08, 0x504e1c1d4f482f3909410b414b27160b2f351d170b212f170b16290f3e211d0f, 0x515c505c4f475950474b5c55724f5e4814364f3e4f395d0c4f3c4b3b4f605629, 0x100b23510c515c5155727a48184923515c18295b6b502f2d6355273f2345503e, 0x5c51485a163555374b5c5b115a165a5a166b4c5c2f4c47235139505823115525, 0x1921273d47194f213b4d5239145f56701215720c554b236a4f3e581d4b264f47, 0x27] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_a11110000 : Impossible board_a11110000 :=
-  kernelLeaf board_a11110000 #[0x27125c235d180e6e27477c63271863272b3c0e294d5f726f636e5e37274f5652, 0x364b4f17144b186f476027482b26472b214d16414748454a373b25233b395561, 0x4b395f4b565f566e69565c5149372f56585616595e484f6027] (by decide +kernel)
-
 private theorem ok_a1111000 : Impossible board_a1111000 :=
-  fork 56 ok_a11110000 ok_a11110001
+  kernelLeaf board_a1111000 0x8427c404ce287453e0002bdd0423e02819c0267e8777880013749a5b9ca6120885fc50ab7c34010480970044095ce58ceaecbe00009048011fab9fbeec6029dc40297808a09b9f80400211f2e7479180d2804dae2da080a28b5eaea0a37e5f73522de011e802d716d4042d74005ae2debc11899dcd7e82004cc050023e8fa3b9d1a18858c000151e47ab88897521802a8a880bd1f47199220851ee62020a851eafcbf5c8cc602c9c4147a81328c0b147b998e00853b0b6fd7d0d7e8012add541c78220b57104fbfc011f17a1bee01004a3dcc400a185cd000567e20082b1f02cf4381021123f2fb9d5f96802cfebdc8ca6db41100109f8fb40009f88220b9cbba04840339f83cd440465eef601049fb83ada8a9d542873b398009dd027ec8c0057ee785461382292841c5e2241e5e9f454142d8bd7ed700543b82a097d45e8705014417e5f17ac885b538fd01557da4873b8fd55947dd0cbe577794c409f90a22c0a93f33800a035ca1c1e9d80cfc857e239c12668e2a92b075fa2ab072fbbc00140057e174080ab99daf5b31aad145ba8a8a0a235597c51046648c44557fbdd1141016965b77aac497f552edf4daa2dc4411f8cc505ef202aa5dbe4a8888c44663f51005a38bc50915588e7f4b05048a5d1e46ef050055a80173abc16779acb5cd429bdfe0e775115001918cc44441646ef452f2a2a434de9f6fa04ed409fcdc4090884373b31a0493f5b8a800dfb9a02814ec612979dc5e9719bcd1e209225b05056f88d09079cdc45457f8829f83827784044465f55808df1012671bda6f080256c83c53b6fdcd010401597c10041979bdbe5b10111e7475111bf5b21a8816d225e828090d1e6f198bd2ed761a0802357998ab795902aa0413355b99dde8bdc5ae0017d500ada1b73aa17b100502973b9012cfe3d1aad402872d1e6fb665489dda30415e73f102ae20208080dff7757a66092f5417bcfe15400656e7d9d6f8643448079a800cd00ad84ec76ab425e680216b7bcde462e0a83dd504020a3cec666f77d2d86a8bf1524583d5d55a2263e960850ad276bf7782575500ae17404445faae0e8bbcced7a1acd0065e08020039e116bfb2fadc10ab7fab712836ec04d3d6ee74793820df08541617f5b80021b1a256cb6a0b67106f7239f82b460d3e8200adb000978113f2fa414e81125e6390411dfc7f069f91b012bc4da0047d4115ea1e6e5b5020e408c7d149188031795b7e077a5c5111e08803bdcf575942041c38a129f01025dcc9091f7731a043bdda8489f2510423f00c203f3c7a7cc720018f4fc88af4798ed2114e337114406ffcbdfe3f777b4014046fa7e9fd6e96e3 (by decide +kernel)
 
 private theorem ok_a111100 : Impossible board_a111100 :=
   fork 100 ok_a1111000 ok_a1111001
@@ -3844,73 +2776,41 @@ private theorem ok_a1111 : Impossible board_a1111 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_a11101111 : Impossible board_a11101111 :=
-  kernelLeaf board_a11101111 #[0x1e2c2f4d451927634d20091963452a4d415e5b19122b6d19414d201e2c33394c, 0x5553693b5e5a3b553f2c2d573f681e1e64275b0d322b452a101b515b1515512b, 0x3b5851125e1645644d58514d53274d553f724d3b55273f1a695353553f222a5e, 0x23182a062f5b621e4d20122c333f3f3f29571b3e29513f2f4521165b52452c33, 0x30574d3f3229162a41472f513b1110651b4d1a112a412d3829573f4d3329412f, 0x5e2a562f2a41212a555257212a56513b] (by decide +kernel)
+  kernelLeaf board_a11101111 0x540040850bd84a10abad8bf06055c1c5444043aac0042ae9252c1afaaa840821d575ba3bbd86800084d7e6eff196848229c08644b6ab83880847d7ea4080b4777a0811c408648a220e5e37b34dcd608404755c1d6ee30400491494f5f7fcdd9e002202a9d060e0202fd40454798d568021b4057e00005bf171ed144166e8325acc67a0a8ff50451fea0280ff54f5f3788d2802020abed4f477fafd062ea8a1cb62820905be9717559b3dde8208d8e8e08a0092e262bd96e2e0b932a6e0820363a3c4de9e9f10026f028021577ff2c459b8bbd02aea09f7f9ad0502d3d3d425a783577fa2c1558022b7b0400abb0453f4ebbc12f688a808daddf577facd6ea02282935f7fe8cf6a227b432628b2a9f5086de3765aaa82a0abc8baad49015219bc14584a8f6f2ba92a2b457a3abcf6b35f8a84b37108b99e4f892b63e6ec14920c4e148267c7c5d560b080d375404100483deede6725820abe614a36e67901483a14dd067b59b3dcf33 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_a111011101 : Impossible board_a111011101 :=
-  kernelLeaf board_a111011101 #[0x213e18683e2a3e261d3e5266735864655461687454543c5e0a3e62166a5d3b4f, 0x61565f5b752b566458651d1a14562a2d515e0f5868584a5e543c520a5b621d1c, 0x2d5f5450245962564152625b66612f1717162161545f582a56640d1b5b695661, 0x6c566b453c65524b5b2a5871171b2d65663e482a252a246659256c4b785e1b2a, 0x5242b4d3e562f2f3e585b562c2f655208665e6a16542f695b631b71637c165e, 0x4538232f2d23302759172b2d5b715b614b2f4d631b412352541a6c560a232f69, 0x45290f5921511b1d3f252c331b121b2d4e522741244e6114632722471b242f4d, 0x515a5a65396364591a16335a59635f301664182c5f3e1951473b52255b51585b, 0x1b5f4e4d0d47385f5b26236a4d265f0d3819452c47392a3f333e265a7b2c2a48, 0x2c2c5f2f4d23682c4e5f2f4e3f51595f5f767b715a2c5f5b4822232c6347394e, 0x5b5b594d3e2b107e102b2f5b1d125b152a3e3f51395b4d4516265a2547387a5e, 0x334b581d3e513b] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_a111011100 : Impossible board_a111011100 :=
-  kernelLeaf board_a111011100 #[0x3f4c512d512a47522a0f2a1851585d6a585150171b17514c580a621a514f3e3b, 0x394a411c4f4a1b0b2217725d704f2d691d564b2a560b4f172a4a16123c254c39, 0x641b0b17211951651d3f4f2b413c27452752211661452547382c51485a634d3f, 0x214f58512147580b1950] (by decide +kernel)
-
 private theorem ok_a11101110 : Impossible board_a11101110 :=
-  fork 85 ok_a111011100 ok_a111011101
+  kernelLeaf board_a11101110 0x67a10b2f02c68322a777dd1dde80036f00806de0259e6f0a2bec88257c200433f722204357afede8877249640dbcaf0a2aca5f6ffa3b9c00116de4dc008b88042b05b586094ddad2f1f71a80a830fae62f6aacc519559dfd7f3755147842a13a304655660ceefebf4059dbfe8e002d9c5bfa80c937fedfbd806022e3b6b1551677fb7a0292301160288f59e3e3ee7404027608480a01befe0313b255810a6e378fb8d48afe80dbe800044d8148fd5cdc206936a00857f1bb8d05124433a91759c7dce8002adfecf850517da2c9b4616d7ef5990a2aad91d1d51b5904805ac91cbb9c54045c7e4ecea02b26b50560b6cfb580408b67c7dfd55818259865bc9c8089082635672257f7d99e8f1f77d2d2012edbc1a3d8c0818b7c5d5401414e110fd49b382879451a39bceeff050004b9022cd19e82ab1bc545440966f5bca820acee969f838080093a76aa128187298a8080263d4fa2e3e0aa426f4249afe189bc5dc68820228f055fa0022dc50147a8c34f80020d9d54000a042fabd6e008a36fe3a505bf0f2f121a5157f0137c79be0e0223c02960353500035c100008eceb62b051e230bfd385d26c0af805866e0cbeeb684bf50005fbeec64916f0006b68002cc185fe5e9623021336085ec0054490d5a5ba9b2092fd4214942d3dbd20c7c00106fe380418ff996ef7b3adebe2ef35115cbd2c465f02a36f558800163e3a0a0097c4deb7cbe6c4447db23a6156a228a97455a4f37670104514becc97aa3e34056f66f565955adeff53a41154168693b3aab8badc12aa41e96802b8bb7e6f0f08800bf2fa2c0297cb6875144c3b249353bfa2809631450955b5bc98dd001a10dea036f0574ed6f0eab0200a8e1eb600937fb7f5e411550655f5b401c9d8f2e7745401359094d65adaad6f47809516f6a43f849b1e8c109b1cae44504bdd4d59e74b15a80b6fc59dd81039ab32842aa1df64b226313470fb558cafb9367704497d834b10b36a008a73ec793cbc20d4f0fa3941e9c3530504a9bcef62b0541f78b2deaeeeef9fc10887200449fa00d8e8e878fa0a401631799c804a1964d3780a888bcbe87005033a12d1f2e777f82c0208aa33f57c1de624889f0418ba2a7e955119a5a1cb70aa861d8122e978fb8d00041674745124622dae071f3705fee7400256a41d60610398a891204fc2a561bc5e20a2cbf0a2492001cb0bbf0e5940027eb7d39deb68010cbd56c8000856c5ea093f02faae562aaa16c96f34bb488ccdce80aff1599a2347455ba54755c7e96802001014ab1fa8408ab31d1c6490b1ddc0824d5d8e8f430050be8212a0201bcbf4799c805630000015c62d00d75479fbeddf57 (by decide +kernel)
 
 private theorem ok_a1110111 : Impossible board_a1110111 :=
   fork 49 ok_a11101110 ok_a11101111
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_a11101101 : Impossible board_a11101101 :=
-  kernelLeaf board_a11101101 #[0x2f1b2f554f2a4f4f235e1618182f183902061b1016141b294f1d215a502c3f32, 0x5b2a2b5018451b5f5145103951180a741817705e12241d1d141f23544f58182a, 0x50141b182129121550182c39152a250f0b3e210a18182129254f23185b41214a, 0x5855514f3b1d164f192216141424160f6411221b152b5114150d4f1d2f2a311d, 0x512f39484f215f4f5b2f27164e394d6455503b1d644e274f1a3e2b1b3b415148, 0x2f4c513f392c180b231c3b21185651102f6c5e2f274f64142d56510a221b5b50, 0x51274d4f1d0a4f271b104f4d0d1b235b4d066f1b5b23122f3c2d2f184d121d18, 0x4550574c1e1561534c57534d5e061e685050575a4d5b2c392f5516295e4f3b56, 0x5f164a1b06641d4f2a3b534d455304584e453e4c4c45454d5f09542a5a2b1e1d, 0x1d2748272a3b304f565e5e70164e1e1e1d3048275b07585851481145000d181d, 0x502c3f53251d4f56294d1d4e1d51] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_a11101100 : Impossible board_a11101100 :=
-  kernelLeaf board_a11101100 #[0x4a19191221392c452623544d191b5954571b584d3f4f536b2f5a645e4d4a1832, 0x1e2f1115075b581b112715540815273b1c201b1508164f3b0d232a5325171c21, 0x1c1f4d1a11202b505b4c53531c645a1e4c15201a5953125e4d392c534a1f0811, 0x4d31574f54615a4d181a271b162f315a4e26301111271c191f1c201a1c274d1e, 0x4f5a5b] (by decide +kernel)
-
 private theorem ok_a1110110 : Impossible board_a1110110 :=
-  fork 51 ok_a11101100 ok_a11101101
+  kernelLeaf board_a1110110 0x10054404041a1acc7fd3c00001041424b9de7f5b0054e02a0004dcef3b10043b92020d473ba7d50502246209f156ef61a080a020d3fad848257b18af7c32dcec11053d8ac20089ec080eeb0d04a4709fb787d0896c600020b63a3c8d050108ec9317024068dcc60200029defe5b95a031be5845037933bcfd56ef4a5a780293722e22a22d3d1100427630277177d828ccd401499c5d5022e8137bf89ea6ab4025ad6a0af3d880a8007705522f43842bf333d95f0e0834f99a488d7c6a9f37bda008a01028021b3de8e86034350aabf6b9bdbd66e75fa000d5c544b60a8a2a7bdcfc2055de415ba3aa0027e6e3281033f0a0013b8aca7e800227e37812c824360027f371b9bd1f6f000028096940489b86f7e6fb7a3c96bf79a828b76005f80218d819b8008092c0ee635fa480cce8eff73acc010c64110bc8047a01cd0908577a1c0004210c6a2056e8e4340005117fb3bd80082fd153f3fc994d25bac0035ba38ad1689086f21044826df43a3afdce88248d00269fa1c1a00291410bfcfedebf4f96c05676aa2e79b84082004864eaf4377802770a5a7268a33b4fcfcd6fb050515e28a1bc81de20a1074945a38a48c25441b1cd57a3cfdde77000522d84233f4ce8b94264b64a5310529a4e4a2da28023fc98247459bd01504ae2be8e13292532ba328de7e775faad8ea80a9dc845686932c414cde6343a9c114915080492595e056866359b9d5112b8aad2e4a8a9201003f17bed0e4b2222b318acac6343a9d12f3f47a888a5298d844b7b0743a08112bb7aab57a8aa2b4331a2a45c40837ac804237fa3a00c5c86e741651568e22284a638572a285d331c8217f877b25a4d253b828127729a8047f511e8ad4d0559fd8cc6ab5fa8006f5f8b5759fa83408aad05067e0234fd1f7b2d98d0150531afd5001131b9c1805058321b3790d412daa23002538dea79f9de0120943dac1686acdfecb00145009427e96bb7cdc63aa234acad7e7e883084153c3dae6e6311404d60288a027c03796d7ea028c7b5ab3b4db0d01608e08291c44f9cd40ce0a29fd04139a0cd62ca29ce444fcdcf6b0a0002730100803fb3735a04811d06af0028610136f2599d3d210a79cd83276b09488f7338012b904a0cd61159e2a792ef73773acc4050a9f2b4000fe28288c015239ed7e0891d854010af021fb78ad8e844de2a11e1514f95ea62311560018ae9f05779cd06a0aa081bd4412b88c492d8a0a93f778dd1eab42069e97554be735841243b24ad5110ce24110674968773acd1022ea00a6c8091eb32b539ba22808a6737d9d15a9aaaad7cdf63959bbfe7e2c00a94f535ebf002d602000e4ef7379598d96cf (by decide +kernel)
 
 private theorem ok_a111011 : Impossible board_a111011 :=
   fork 61 ok_a1110110 ok_a1110111
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_a1110101 : Impossible board_a1110101 :=
-  kernelLeaf board_a1110101 #[0x1b66221b59332247337264582b336f331b2d6b684f525d3c6366525e544d3138, 0x32452f545e6356575e4d544554626329573c295257165e5256614f13330d1b16, 0x333c542b254b58634f1d134f1f452d5e582d544f5f5857086c565f5e7124541d, 0x5f583e234f4b31531b1653524f4d5a5754471b161c6519525466596423524d63, 0x1b26302b48202c1f27200d232a63333d2b4f41263d231010164a1b1d275f524d, 0x455e241d1d166658182a2f2f2c2323164f232f2a184d27572132182c532b2316, 0x4551665823586562584721185116584f21251a2731215321231d23253e212a2b, 0x2758] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_a1110100 : Impossible board_a1110100 :=
-  kernelLeaf board_a1110100 #[0x1d3251101b1e1918111910261e535e2d515b6410455f1b532310533319122c2f, 0x565f265d5f522651313e1164576453455854085f45540d2a23060927191f5453, 0x2732536f205e3c1a1e27522c5a612c4752685a574d6433575251643153585153, 0x455e54535e546e2366235e521616061826585e1b543c5316233154585358165e, 0x2523473122193e1d0b275d7b4d64103c631b5a632b3e1a091a192c27532d4d53, 0x235125542c1421254d6412572a545f5e2c54485327325a634d1a25324d64182c, 0x542c18452c53] (by decide +kernel)
-
 private theorem ok_a111010 : Impossible board_a111010 :=
-  fork 57 ok_a1110100 ok_a1110101
+  kernelLeaf board_a111010 0x2880a7ec63245c9151128f9bb180822a3ec64400865f16d8e3e874131882147110412dd8e7e874400052e6b4fb1c0164382220814f43a3c10153b8223d2e8228ca2fb43aaaab578a22acc5ef693093ba24a772d822b9bb198d56bf1105faa2ab308247c848f4b6b0033fa47afe10556635149b8a949f6beaa10c0876598d49674f578048f992da8a1029bd536c345957aac8d0506b39014fe28aa27d06aa23747aaf1ecf7ba00882af9f841c01363dc101478202430600492196e2566f3b80a09f5256fec02b4b9ba10a835fec6fb47cfc497b1e15146a9e6f5004142dd3e96a033f112666f6b8142abf538fa08aa29bd94100b72088a8473cb99e96800454d5415204cdd9cc982a8f8aa5cdf1ecf79a0223535784a825d6504141197a00d8f1f3f3b9282293d0167e7f8badd10bd92d8d55556f531969f8a0825fec695f11ac0a201003b3addfc19bdf1d26002d4ceecb8bafd0426a77b4471eaaa22d6d022bf5ee6ea209538ba0295364411c5a8e3d4f5f1965e6832a7a5a2808d7d442ddee968ad6f0f3f27b3e00401886e6f2da0506fcd88ac20a2e37808b367867a2b2a8a2e3e22cf540944480e5e4ec6af267efc499f08a01bd6fafd1cfe96808ddc101a6079e3d52cdd2d16f7539bb1dc60882a809539662ac635162e94b3a7a3c11a3caa125ea64a02cd514a721e5504ba2c854df264bafc4a88ab414125a9b5fef6b3495a9c8e9e9f6582a836b471e4dc1811410d69765882084df26c20498d66889747c7d8e8ac0aa2c4010cea08fb10ee2f53f288d77f785449284df264379e3cde4102adaf1e12aabd157dc102a6ba015084e6b33acd3f4f5baa8013794a7c22aa45ef7536020a78295eea7bb5100090451f9b52111f7ba58416c042d86d1068c720100826ec697b37d4de6a24224ad3cb68f6518e22b2ab53b1c0d53e182b196ef69f6580810214fa177e83bdaac22f398800d6ca7b4fd2d676b540512505c3ace3f4b421a122d1daebf37c9b3d14012bf4b8068f93450558e224d3ec6830d1d6a7d6efe00aa6d40121bbdfe960280826e8ec77d8aa0247c9aa28257ec98ac2053e2f635a988d1501404bfc5e01a98dd56a80c8f2584143642753e19e53fa01153169e9dd97202122ab51c866f0113dc8800104c99cc64760603390d370c1087b0129f2337b4125b81147b7e4e000872117bf9bd096006a7a3c86a54f59e6725acd7ee7 (by decide +kernel)
 
 private theorem ok_a11101 : Impossible board_a11101 :=
   fork 73 ok_a111010 ok_a111011
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_a1110011 : Impossible board_a1110011 :=
-  kernelLeaf board_a1110011 #[0x1423173c161f221712242049131f2d4f1756114b4b615845132d081d491e2f38, 0x3c163133201d4f594e681b124f3b1d5947264f1b4f4e47251a2d5231454f1d16, 0x221621631b49271a1a4721163c63495f59271a633c4f1b312715251a5b121b4f, 0x5d5f63534963637145234f523c4f3b334e454a31494f271b492b57557b4e4f41, 0x15295e315d5f3333745323495d311d2d2b205d316545201b12651e2f665d1666, 0x5e261b2b4f54452f5770582358532626332d5d54492b18555e53474e395e5333, 0x71165e56454e454f183d6b4a4b58315b7b54451b12314f612f3d23253d4e3363, 0x1a4c5b5b4e5670264a4f3b2d4f331a554b245529310611231b5a30151d111658, 0x1422491d10231a275b2f104f415510482355122756411d41276b15237041571b, 0x151f2217242f1b1f25261623171a5e246612451b574141101b1b122348113b41, 0x2615483b3123521b2d2f221b311b242f2b311b22153b311d161f2d1b2631231b, 0x3b4f312d1d1b181d1b] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_a1110010 : Impossible board_a1110010 :=
-  kernelLeaf board_a1110010 #[0x415545504c53334959455b455b455b73104e27396549584f495a4a504a661648, 0x5047504916181d6d105f33495f540b58415050506615095f45554c664e311257, 0x31241d61251d234f135e120a5e4f74184a1831021731665e12242f3354491d31, 0x664e5412157d5e5e584a41216610301d45544e5e544f41273d4b4e1a12151721, 0x1d4a211d27455427624f] (by decide +kernel)
-
 private theorem ok_a111001 : Impossible board_a111001 :=
-  fork 50 ok_a1110010 ok_a1110011
+  kernelLeaf board_a111001 0x45665045df2844b3f58f02dcee6f054400c67737a6c04012ba82148c00177a08c747d2cdea2b75fa2c037800820c737a4c0457eaf00639bd160815c109177ac73b96d413f80a2b737a6d041563a3d000de80c95cfea08b2fa4d7ea21bc53fa80220a974d85b184811e5f935ded279b25a145d466062937b5f838204900307219bc4894de4b47a12ac0d230852023abbc0805060e53011690c28b273b90d479ad3f0a036f5f801010e0127e041072ae2004391822a10aa3eae4b40000053f5b839dd40883a08090800a7e00235e5747f0e0f5f379ac100267200016f055804b7cecadf0d372b014144100867eef5b813f59ea086b0042aaf2f02009275714ec75404203647478041bd6041042d622230cae772396d0002c62248d00dc72ddeeb645e0155042768245e7e637bebc5052560012fb1a00031ede082aa282fbea717804003792d8f3fc3afc01041eeaa488f4b822823de76cf0a528b1f7b64895369bd5ea84acfc4005005a9c5d7f5f8169787630494451f63a7ad12a6d909254db3d55bddea727508557900a844634abd7ba78a847e76e70040bdac22d3c59e5700554f04adec8555263ddefe933d05267f4e9e8f93a24a2b5dd8e202ac775bc00abd0680092ddc02a11063e5e2e220a0d0de4b54500272e1ed7f00b66caee208aa516f360b5defe8a263e9f2789c789363f8e45d1f3fa5bcd544467eef11559e02808ced1062f2b63a84c9d4549fa027c440260537c9d5f5f00496ae0b2fbc99dcfe0e8a24c28b2da1c15560c79be4e02a8a7cd6a086b5182563e872da00a922f3c7c9c014bf8a208859d3e03021ae71ef39f9bd8f0a827d192145044ae97358128245be25c44a6f9fbccb6c767c42a0ca4ee028c8154ac0213fb3cef466f2580a084fdde8a9dc424acf1f824dd4fcde80008cfe760c7d2e6b5bd2d04106392000a04c5e7e772d8208c5352911501047805f7996d004003fa00408b2f92d2608a839850564e4f3f8b741059f8208a45f905046ada471097aa8092fc3d8e2ea288280a93d6e2b0a233bc9cf6bf71a0a89dc495595a1e453ba7e2f24a42154d3e4362d65167f9b9da00854d50425c08457fbdec05af76395c1d51543a82010439b21ac33baaa231740a9913b550122f7539fc1d3ec042f75505529780424ec3592c254552b97d0ec79514552677c3a5d114413ba3e7e8082813ef64b101015d7b0109ff4cc72b010c6a8c701105a04aa217e85118f9bbd92d26bf5504615967d4e4e8a81dd8f50d400823f43093b005b942429318077db90efea0088b233e4ed5fea62f58b1ac41d49040a1a10050e000a1e6d100ae09eff17910826ae40cce43373b6392e226be307840510aaf17a1a080ccd5169ecf93c200d9e2f6fa05108bdbe84022f6fe790e769f7382040800e5d93d8e7ea20020c9ed72012b400287012bcd96e46cb (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_a111000 : Impossible board_a111000 :=
-  kernelLeaf board_a111000 #[0x5852225f2d1d3c6355495b524e152d0b475d581d553c1b58105d162159274f31, 0x27392b49491d22594e4c521d59585358591d553f2d221b0b5f501d5f17631763, 0x4f49392f4b2121584f1e2223154f21211b214f151165271d493b554c3b533d48, 0x1b0b4f0d15492708151e] (by decide +kernel)
+  kernelLeaf board_a111000 0x21054444de2f9f808812a040dd94af274f8822282b2a232b9ee7e200c9d5573afd4005597a0487504050f639f80229ec55445aaa423caf3f43a2a8759441453780c879fc0a5257622523e5d3e7793a280a0aefaba02a33377d3dee8a41235453ee7578249d1450064e9dd51680808880d9c9d80cce960229dc84b3d8e9eaab0aa3058ece77abbfd6e80a0a82008b378befe81050d3b8288dfc25015542fe3e549608bf8fb1d2e00116917f425bab031dde78fabc9d081b7d2e584046760024095d6e2f8f8aa1002d5dd29041ac641277abaf337a880a163218295772da875225b3a7e7ec7 (by decide +kernel)
 
 private theorem ok_a11100 : Impossible board_a11100 :=
   fork 62 ok_a111000 ok_a111001
@@ -3923,74 +2823,42 @@ private theorem ok_a111 : Impossible board_a111 :=
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_a11011111 : Impossible board_a11011111 :=
-  kernelLeaf board_a11011111 #[0x3159264e594b1d611428332558572431514524616616246d4b585b51412f3b4c, 0x3357204b244b641b282d5131264b59333e5855245c19592458554b353f24614b, 0x4a4151570e257236553f3529293023193555196b6e414b355823332b2b2c3523, 0x582f4b3658512f5825452a2b4a2f5b5058515b58662f4e595c4b41695f5d235c, 0x3f3633251b5e224b235f2f191b5766502f2b334d2b2c19232224305c25576666, 0x2c58503e3b2c5325573f33313123332b235757582f45292f5155554d29302523, 0x241d1b584b614b5f62514b4a1f22175141504b251d584b1f0c2261305c2a1f61, 0x1c0e1b353651164821161c483647472132254b2c4e0e11245448353f47501d5c] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_a11011110 : Impossible board_a11011110 :=
-  kernelLeaf board_a11011110 #[0x4e55500f595061515514232d233312252d1c172d142a781225635f336d47313b, 0x4e414c45632a611d50592547335b414e51505d2b54452f41281b642c513c1630, 0x455b615064575547544e4c4c5523204e105f552d51355953412025455b45535f, 0x2d47223f3550471d1610455155295c200c22105517473f2d55554e1e5d2b5750, 0x4e2257452451455b2b4e59453341242459415e686a30646a63554d415e684e5f, 0x45312d19236350454e2816533c1c413f33332b335045] (by decide +kernel)
-
 private theorem ok_a1101111 : Impossible board_a1101111 :=
-  fork 82 ok_a11011110 ok_a11011111
+  kernelLeaf board_a1101111 0x2002882730000768046f5aedb0109a38416e468705001102d89427391b6e3e0001031f438cb5050112e32f4410566cee25076008082447549d4e46d77fa80847e86200a776e60824d04ee6fb1cbf0e880080a4bd10a06ff8ba3acbe56102c27f814597e8ec1e86a29220cbd2e77b1a8cbd4420ff003345e1d877355827f130ea2cc0028102c650df6ef000550021555674f5152e57dfecf1046382208231d0951ecf05506155e8fafaab2d7cb1afe2e040802a74057f4754abaa2aa855d9b8aa7001869747bfdb6828b3c9052f10b1bd514104bda2e5e28aa02c2a3efebf1051338a8a9bebe40aa820e6e86bf15057b3e6eaa2af81141666754550011e80480088b16126c3b9a5d011afe6d006cd9635fcbdb70820d8c00468ebf00ac62aa5c15422eab57d2c2cac5fdbd1286a8036341a380a5bec79b5f8080413b6cf7397c1c044534f7f25bb820aaa8f855581b9cae0f4756be024b128808043b4bdcb6dd5dfed70154eb048a9c461a4a3d04ced7abaa28519ea4a88d7eee0e40a124bd5ae82402356347b3d1252057aa028af59b5c0447a33ebe83408565e93410165f9344100de0a028c15bd1d8e0026c00465f6767bec00444b1d5d2602c5157333a20b67180212763abcbdae2200ff4945249e1e5ec741b3c829b101159dd9d5251979df0e53546cf4b820d8c095456be8808a4d8f475462e000090202a4f0f9b460102da4f6f2fb1ad6fa3c1d7eef99a0082045c63930a8b71080ce8a2208a8fc7d0e2e01014ed46aaa045ba78f341039890717fb3e059e4028a202bc67d0e2e200a202a8b3b45d7d522e200a2a249304a3c5edeaf144009db670108bb3e0e000a4d440049d9e0eaa217b10574622816ac11261e4d5d5e3eaf370510483def4753b410afea8b78fa2dfed702a18a008831f3bb0285b21884ac5d82a3d5d54e00973501559063352551643abaa0080a5f8fbfd6e22055c411abcec045441643db775401957d7e871754190456df87a1a888b93afd5e3eaa254d149dacd0ccd80006675747c82a0d5115067643bfd5d6f476ba0236761a7c1d4141a5d062f6f00048ba0014fbfa24b3b83ccc01058ba8082002b8f55e1cef43055016ce978fb3d0505114adf0706774791009a1ddd4057a03538bafd00020f088cc10a337e4d167470054251e65b1873b90500ab9438485141fd9d4a18a20e1e8f57808229881023d6e8823d9e8124b4b82aadce60a8097d6e5355f8c504025a5e01040c7dfd9fb78fb1ddf4b (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_a1101110 : Impossible board_a1101110 :=
-  kernelLeaf board_a1101110 #[0x2b35551d5e67624a5520273358534135574c55664c0a4c70556b57621e584b36, 0x574b2d66335752555f2f225c756b59574b4135253320205f31571b11241e4c1c, 0x55314d68251416261717634d1623274d1b522c333c5524572f6a5c22555e5c48, 0x4547212827312d4b5841162b22413029] (by decide +kernel)
+  kernelLeaf board_a1101110 0x1022e00891f1000410043ca34fb1c05b8204aa00084bdb1c1c400102502da080af4590761aa2032a76ae31e01510066fa3156011614b94cb60329b00bf50497f1ea82ad5372da3d3eaab03373788d2d66cf79a0ad5c119275f1557e8886ad4580006e6a2eae8dec5b9aa8c8ebf2f115b8a66c105167d7e969570540bfafc1614588adcfaea0baf2cf5f97c1dae801229767a0d001077f50463829215f3780124a4749a207b51999cd5ed7ab8928077bd852024b9fc5cac2502ae824832653e0220cfac74f838004ad70142be10493350006ae019b99c820ae061110999c3506aea802ebebf8b3dd8e5edb (by decide +kernel)
 
 private theorem ok_a110111 : Impossible board_a110111 :=
   fork 73 ok_a1101110 ok_a1101111
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_a1101101 : Impossible board_a1101101 :=
-  kernelLeaf board_a1101101 #[0x1f30301f1b0e2a233333585f5d29301b711d51501c665178471516304e52313b, 0x5d510a1566081d24121b2f335422281d5d335d62516b14661b58556e5d503e3c, 0x64625b59556a500f146a1d1655285028146a1754612a1f151d1517514c66151f, 0x5d1e625715581f4c1524572a412f241f241d5460551b68501b141f29511d581c, 0x142a1f551b5d2a1d16505157414a5e4a50625520292d536111523c524e593377, 0x241f23585045315f544d47276a165863312c5249333c152a2357281d57281d2a, 0x232d2f4d23274123601b231c1623215b2f65521b63243e5f23586a545514636a, 0x2d51255841570c54452f1619412d302360275f23231d3e582c58302352595825, 0x211432132d4d3254585f5d19675058455031325454503f32474d3e3355545841, 0x171b1428500f16281b1d231c2131541b3168283131211c583f6459232d165332, 0x515445] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_a1101100 : Impossible board_a1101100 :=
-  kernelLeaf board_a1101100 #[0x4116605b232b3f4c3f47333f2054294554664776504d291c4731594749533348, 0x612f63454521143016291b16302c2f2425543b55505e2f160829456650582057, 0x54206462596650495460515b5e692921412058245841245850664b47315b5450, 0x3041604a3b55] (by decide +kernel)
-
 private theorem ok_a110110 : Impossible board_a110110 :=
-  fork 54 ok_a1101100 ok_a1101101
+  kernelLeaf board_a110110 0x411a39122d4e2e02a02097c003794d46000143087e16d0146b06fa0ee8f39a1d8e0b53404024dec780d1a8d2498e0ac7439cec6ff051511517276741547ade15155490112dd3d9687414a6a8202cb27ade6e22ab2ea72b639056ff000ddc84cf9fa18093638ba8aa50d8e8aacbaa700153a1808bfc254165c7e6efb67a82415726a98a36383adc45468e97116c6c1d020af92808cea7175f80200216c004ce823075bb0d5214091f60d040104f90a2dfd1e8a3ceefbb180022cd042c7220c347d2c804b3a96350504ba3d6e202fd49ba3d3f074408091f60cde80323ce6a8a045b47a1c000582de042bfcbd2e4237b018f614992a892bec45bfa3ec7480946aea609574104a7012163f575002933fa3ec7438bb1d104004112ff539bc7d68121814feacb62d8d10c7b0b1c559d2e4ecf798224a80025755a3c8996bea8c5049953bd7d46a20141dd565385005905567f5584aae251beeeaacee5b915168604347401abf07448112577b50257543c5d5d06a7555b90aa814f561c391c5494a5a04a2abce973bb38cf5514507bf773d82a88818bafa57126c6c2a7f529995d26a35f557075f80800933fa02a933ba10d5341a7075737aa441a304a1caa4a6f298887f53ca4351cef63521824e793c592a228236f4411b3c957d5d0d0550881f94f56775410022dd5d46c820301435194f565fa9e1d56081fd0000ae775102b97c04402a3b2ca94cf36573fcc2d2c4ddc41a38acaf9b119dd2692012cdebf00419e20b530845c4928c41024ef7767a20c5dd40001c5d1f5e0214dcd9bec600ac891255ddddde86fb805798111fd860280b0cfec6fa0076ab04a47b3d512019f63424bfdde094ec4530da8def1cee890d1d028700000a73cdc347f1c7c05910ae025b61cee96c7778280030c8450183e0e568a4aefaaf53044506064c46716800d9f37435400193d4d0070680d1edf2b2217bd38884aa7643c1d07634144a4911927634405050183a4ec743cda28cbc024848fb1ede153a1e1d7e1028cb8f5022e2291743c84a0534456196d4e6f080442db0d00159a22bf49a5c2552a700a8204bbeaf4350bda00abf514422d88d4f40917040cdd0ec683afa2128a9072db831156de10108f578bfe66882ff9414163ecf17fa0ea7080a0129d248b8254c3371fedd0e6e020100a700250e71f63a0851678fa02327a7b3e46db (by decide +kernel)
 
 private theorem ok_a11011 : Impossible board_a11011 :=
   fork 79 ok_a110110 ok_a110111
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_a110101 : Impossible board_a110101 :=
-  kernelLeaf board_a110101 #[0x64712d621c3c2d55171b14234f285428614e226432294f524e522c3548553f31, 0x5b783e621b772c4848124e485e16281b1652246c1908170816070b0f29272d3e, 0x5951645f545d1b5e164e6e696a5412285d524524192d58733e176b2124596045, 0x1b22521d2a3e1914161c09141b292719222a281d3c121b2f54661b0c222c541b, 0x6f4523271d24515f5d2a51555255414e222d3e55222d2f51503b1d1d581d1d1d, 0x4e55223f57501e62574e572454571e50553b35501d1d244e50273c35171b5117, 0x23514a514154515f4157244a5451505054515f225450571e2f2961551e2c5423, 0x450d1b4f450710494f57170d1d242f32232a52545f1e511720152c2c1d1e5720, 0x4f293f23102c3e210e1b4d1c2b450c263c582310581d25141e142517450a1311, 0x645e574e251e154f41514e5107204e1e516154072041671524502f2d1e25294d, 0x261b29274f552a4114202d4e55275b142b1522645752503b1d114a6f451b5851, 0x225c574e4f1b57] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_a110100 : Impossible board_a110100 :=
-  kernelLeaf board_a110100 #[0x2c452b535366525f255453415b2c234526102c1e21111c700d14231526311d50, 0x57301d53575730735e2a3161415d5230271c3b57644e4d31615361452c321c20, 0x541d3c20411453535f147010163c23591d325c4d65525961314d5b5b594f7857, 0x6059703260534a3c2316233c63526023616160101d1c0d231d2b5f5e16252832, 0x6a5f161e1c1457585f1663523c1d54252f235e1d58324f5923282857595e5e32, 0x525b2f2c2754494149544845534a1b711c2c53232f5852631c602331230c7911, 0x5c57233c63] (by decide +kernel)
-
 private theorem ok_a11010 : Impossible board_a11010 :=
-  fork 51 ok_a110100 ok_a110101
+  kernelLeaf board_a11010 0x80a022c010146b9b5f040485105406773f37d7d368809bc14e9f150149fa02a2c14d5d57075600129a0d5bcec00aaea8027ede832a0005315795d50245e4ebe934ba1bbc06400013b8aa11e57bf501444201122e29bec747c9a088000280ab7bafcee954014b9ed4af3f8380d475009d802b29470fa0d452767b415442a8e82b87a987d4405072a02c1f3e5749d0c5fca28adc03da5c001853b08d379f88822aa77f8088823c48622cc15547d8288b21c511da6f9b9cd5e880a8029171119a6de62220242ad8d1e4314406c60ad1dd4b94cf6a8a294d4b8805f9418b8ab08ae52791d2548b8dcdeacfd18bc90a207c872801275199fd7cbe8dcee935fb2d5605547aad1696aa153bf9ee8e082a97d45541895d66b2882b33b9eebe2a2aa0c455547d1d044195d1e0e220ad553a3dfc15060f5f498212b51154a9d1e86228aa12850ea747bfaa2a2d45542a743af9ed7ea08a9f0eaa02aaa9573dacd500845a9a3c469dd5d16ff1601646bf43151550156244f78bafced41011afa4d0181501a9d7cf743abbbdaea8d0c493b80a47749a028333ba1a7d10079b22d708be6fa388c8405fdfa045d1142451e9f054ee93a3dfc415bba222082aba38890ad5d0a5835783cec5040500445addf75740045ab75117f47a1bbc10ee00a77b1aa029dd043ba89dcde8ba58227724155bec5016504090ce532d8848734455144e94cdea74f820099d16a2a4ab51a9dc665407992cdebf200a9959b22378cc5516240b341aa68cc46f105b3851f264117f04a9ddd6937decb68013b5077621a710d5d4c96a3005bbaa234b8ba4e81533a42ab75602c6dcf7db048525fd7a1c5401549c0367130628a117b7f8c1007de2cdfdf410481668b2c8c45809192d1949677048ef65b51a26f64092dd2d27b35054ce24a23916a4bea090232d87c815817903f54e9f56f0a0ac3ee04c9f1e010456f8b3980203cd40056f572f9bca68f9fa0b0aa310500446a6a3c382cec4516ab93555596a79fa20b4b9da214b059b02b5e47577fb1d1b98a822d7d55151ef3c7d2d15b7aaafd668a9fa9880c9d1160e2a0327a9c8d5518b88ad3e5622086f5078f280a73515674f47ac0aafd4405ac7052f1ea9241cd1c1a3e9116263a3c66a052379d88fabbf96d043d90c734a6b2482d5fb1a457f2dad8fa5bccee8a2d4c15424bafda941047decef6365cfd1505b3a3c551460808a8daf82d9ef6237b155165e0c15b3a35c3055459783a7cad50079b2a3c5422da8923de78fa5c220a98347a02061d5104c3e0c8677400180398de47b031dd55f7f4400bd90096e4ba82a365d4c94003bbcd01501421070729834f50585a7dfd14000a6a470c865b79a3d0119b39dd65dce6e02565d44a5d9c80430ec0c79ba0255bc50820b7d9e7fe341444abeb0957d862a9de9ea2d7d616bec3e7ded00956a0831f0f07104142ef52d555649869f04e6bbebf939da90cdc14063e1d95211a78061e2f2aacd96884273651506b348babd2a9e0002b4fcd8a8d2efea048825ea74f183dbe904559848f4558ba6e5421086084ab33dcb082287239cf8637410120a68f124ae9b639de86cf (by decide +kernel)
 
 private theorem ok_a1101 : Impossible board_a1101 :=
   fork 61 ok_a11010 ok_a11011
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_a11001111 : Impossible board_a11001111 :=
-  kernelLeaf board_a11001111 #[0x1d5023681d224e214e3022641049235449141d4962544e686f4958241e35571b, 0x2b2832211d22190d155b23451d555d674f62590e216b2349220e706e0e215824, 0x31495b50637259456b5031170d354515106a22552355502627214f273b262659, 0x728543f264e221431105d1d10070e221724355f634909590d24686763583f16, 0x31261d30416819312150311f173519270d21284150232422311d4f45496a1416, 0x545f2161211d09615b4f2159266c1e271d636828476831263126214531354721, 0xe1f1e0d413d09497b231e086827142921311d215d748665746c1d26477d216a, 0x272149547010231d231926] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_a11001110 : Impossible board_a11001110 :=
-  kernelLeaf board_a11001110 #[0x6649294b283024193015231e29146550602b07267965296255764a545e614f57, 0x23451629364c4b3b6b1e1936493352692163235b4a63665b5041595565604c50, 0x3b1e5c58212458456b6e2145555059234962554b59454c5865454c291d495d4a, 0x14413517554b2d22496e2363495b2154151d55470d55294b365b232353291915, 0x5549545578554b1d2d491523242d471d071d69243623225d174a3f4154362333, 0x7c546a795b6c6a6c47132d53541d722863630e66746c63656e80545e4f21605d, 0x59541d2d22494533235b55721e656c593354475066292478417c0e6674592159, 0x45413b5b59455e454522776a5b5063] (by decide +kernel)
-
 private theorem ok_a1100111 : Impossible board_a1100111 :=
-  fork 32 ok_a11001110 ok_a11001111
+  kernelLeaf board_a1100111 0x27c4a49090f410127a9f0c868f144198ee928f45295400ce9b1db049fd85193d8dc65920ef70104e82a30327f7c8f3d88f469f2982a9c510e82831cef2112a88921eefd3fff88a008cbdd30b66010077849370851ffba1f5753924bfca10287c3c88a8754ee27904c39016fa1004a7e87b3a6f668021ed084f9df1fa351808891fa9746c74d8128cc74dc874262e831c1af2c51f490ec74d9dd86b4c1c14a16d199d658f21c40686128aab1cfe25f6b80b008674fa0828de43a8d0683d4347a4d6010011640b0c73b80253f2158bad0825277565350002db101f51d4e147fa6c08aa768b029a902b1c055402219773ba02435083e2143b4597d26d701048bfe3e4e84274615826ce8dd27a35200a0cfe3eb1ca83fd11050194b6c793816f20a1cd02218fe5d9e2faf422870a31d20104be371226bca8045cae43d5908baba3d4452ae2a50d01536489f45543cfc4113ea2a8ef4da2a829bb3802be484842451b2d0e77011a01116a067411b95d25b7a3e2e2a82a9dc9092aeaa5dd4154cfa804ff17679609561da1f5e8f93c08222ca05008477c3dda8200903b43d8d26a104770222868f120d19dd1682433b10e22814ed868bc990c01164e8f10511a9b270a6209dc5124f62d46a624ef46888205bf93d8d267b6bd7cde090917150060eef148b792b678bdec128ba31145e0117df4003576fa1a8a0938fb3a802c29533ba02ab745c9d4018ba812c2b3d1e1216f56420aafcb23d84222e5f676767d4e3ea0404808d0f37280410a7a489249f8e4020ff31de6e006e9d9e800243d9fe7254f57e780092dfb3835702a2a01b38f93c06085bd3d50aa677e5a8d1c792263d1d80d9b5e98291b34482155c7e5f767ff53bdcfd411150f0a8ae0c5bbd5c001493b5381206aebe3900105abcbd045413bade4ea2088225747a288a4d6ea0847d01104ef020407cefa7498236d1e022eee5f4554095bfe0e00153441401b68f6794d183a00aaaa2b5cbf5797aaaa2aadd1727dd8048f15040101c7b2760b7a921d112a6573b8055c0523e001090ddaba9e5edb4005b7a0a3c011f400153d4e672bbbcf77360104b1a1c09261013638ba82026bc9dda1e2f57a1cad9d01247c9d540100b1655c0997c08d9c818bccd81402c64811978bccd560054e7793ddc205040a568f8bb00084116d4edb402099c4bddfaf3dc042099c546dc9d9e80b0834bd3810a876502c7a3d82b792b14052c7b9b506df4383c41670540525abe5f06081336879b914493b29e5e8228c100416186933382c230cae8f04f6a729a3971a18a0860e40457c00421f4df9e04cb8929f1757eda092b42a77bc3cfebe83 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_a1100110 : Impossible board_a1100110 :=
-  kernelLeaf board_a1100110 #[0x272858491216203f7221292333331c1d3c22583f281b59271d2810287221314f, 0x222831215d17524b20543d31332333661d275306205472215e681d231c276974, 0x49315047595c554b644b311510281d3b3b28202d23151020150755351d245424, 0x504b5f5852492d554b66646e553d4b505d10472d554b231b2421222d47595255, 0x4b281d2d28571c226b214b591b1d22503b2450] (by decide +kernel)
+  kernelLeaf board_a1100110 0x212f00425041146775ba10a4aa3afb208441cd17af4382894bece8004821bcee8b425a1bbd26a8001414301040a1cbd4009024bf96345a5c9d08215bb5725e00239b00000727bbabbdd25f43bb90c0108fa000b7abcbd444401479bc04049a1d1600082dc8f8009403672970d15793b1d8100a192011f01b38c002b73abcbf26812f0900165063882a5721a8cee820aef155dea341adc411147a0a95c86a8a0e04ae1f205ab8d73ba4c540a9b003324d16804a3063a1eee5f0109296292f41a4c54d07b80c767ca84428a8f6784aa166e3ba7d915969f08c2a8206e41d4f96871042f603a38eea8c8f21a108239a7f4f44c029d384fa8ec727805525a896c110641c1483ff968753d22000823c40419e22033ce60241dd79a2c02ac68000ff519be0444b3a7d0080a43ba8d90420086a3e5a1d8f3f (by decide +kernel)
 
 private theorem ok_a110011 : Impossible board_a110011 :=
   fork 62 ok_a1100110 ok_a1100111
@@ -3998,7 +2866,7 @@ private theorem ok_a110011 : Impossible board_a110011 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_a110010 : Impossible board_a110010 :=
-  kernelLeaf board_a110010 #[0x22536a0e6a105421506353230f16555349540d535e5d71134f15552308293620, 0x176524656921553d2b2b3549541d5e5e762d0f3d1b6a4a192d5c2d541b782d50, 0x553d6b212316293d4f132b5547211621115e3e15285b4f552b213529552d4f24, 0x735224b3531355d215c6e6368571065353115495722210e1b1d2421553d2341, 0x21291c211550311b35171b1527475421312349214f5e68105e0e545e54105e0e, 0x13112d5e5c5e5716274f5c071508130c4a4f6416554f4f5508136955642b2211, 0x3d4a696b5d6a545536632749535c474954530d471b312755672355115e13224f, 0x907222149273e1d115e414a6a3d4a4f3d5f4a546049534f03553d211b725e69, 0x5b556a5421553d5f232123553e651d5e16282121502869212211411316492b69, 0x1b23580d41496923211150325f231b1d10211e3131231b122331215d29215d23, 0x275727555c1052640c2322411d0a0721174931] (by decide +kernel)
+  kernelLeaf board_a110010 0x80209f216022be800889f4801441abdcc860ad480494bc98cd1e8b111839dc40015880a0802821f4397e18024eb1cde8f022b1b00808de1441838080927d3a3d0e47849a180cb1954bfa3cde7721c04a8703da00c750418f23cde4b28040011e409031d0f770810114e87002ee04008fb7d5f57534250e00155708217bdfd1f080048791e42055e7de5cef7b2da8c0104380a21c082286a8008a3400234e874591e0e048213c008b6200c9d5e91a7104ec07d168790864e9f7d9de041021082123dee0f2b0088d59424f795cfe02047b85fe575324809c1c9e9f40a400c12cfc014507d5dee874dfcb001410bd88a69d00401ef2b02274e8006bd22ef6aea7579509b602898f4fc9e9f730010023f0927a9b4f45051ba47cde82331d3f57cfa3d410416ae47bda40a504f45a084b3f12791d6f0c8505ee0012e77baf96d3e8214fe54a0b987d00050ae830442c23278ce696256004c4ff265b05411aaf3f50448199fd5c464f480858d3d5f26af4591d0ea739a08a22a1cae8150d639bc1116b97e150110de5793ec0111faa721d8e8f0964ec2200a1e7e0b17b127464304af63ba9aa8057b00042a990c2abd8ec3ea092d704588a4914bdaec7a10626bd7743800973103778f002d1d7c8601397a412001aec7854042b9527afa4440222d0e3b379dd270028480821c102042af3dd1ea2204c1eabc2a0010f7d7a00c02aa108b21e47c80c5b14ef79f93c00957b57a4100a08fa1d8a20b7400821c8e445edf65748085196f9fa01357144515e0aa1dae004a7008114426aeb79fa1024d6a42fe5c48444980ace5f4e87abbdc18857d0902a008af6bc9ea677004bdca00105efb689002b71fa0af737eae572082675b8a097300955bd4cdfe390095bd0d16420514f961810ad58ec4002d590ea621d481686cd63e9e23c00447f45b421aabb2840094f93d4c6f0120014fa04bdddf8eb0110413d884a29f95eae8f11a9db683 (by decide +kernel)
 
 private theorem ok_a11001 : Impossible board_a11001 :=
   fork 72 ok_a110010 ok_a110011
@@ -4006,7 +2874,7 @@ private theorem ok_a11001 : Impossible board_a11001 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_a11000 : Impossible board_a11000 :=
-  kernelLeaf board_a11000 #[0x7236411517364b48316b5c244110151b4516171524291d4550295b0d23362021, 0x176b0e414145151650104b5d48317d494754584f3110570c0e4f101549546917, 0x15160e1b50311052311b22481d220e170d161d10475222483617084522101649, 0x450d315c5d544f5c54625752575f574b49241b584f4545162310315b05164822, 0x151e23201023201117281e3d234b1e58233112284f453c4515451d0909584b52, 0x3b57415263525d415708206372231d282b0a1d0852524b7461095d6223412445, 0x24132b1d07141d090c620814111d0909131d14117223453b5d4f4a6e53354f24, 0x524e157452132315091f0f125223121015091d5d202352081d231d724f45244b, 0x4f41292015491d314f1f4f1d5715573558127a5d151d314b41] (by decide +kernel)
+  kernelLeaf board_a11000 0x24002414fe0e20a74195c404964e7754100218f3f6104fe844fcef5f2b812d7d4155af2045630510096c28945ebaee573bb1e5f302a8010705029700813b2bf4d8018a593c46854795c4e7f6451f924b54905029723c962910caf09cef77014107330aaa8423e96233bc2812a2123d3bf2e7f1749aa8cbc10114980113d5e8009dc3ea100421104533b89d60000119a52162c465323d028280411dc4e22009c9f002411dca691f968f8b924a03beee2033f55195eee9e0a35d095459f824ddf5f838422214bc78094bbbd2c307afc941108c85078fe5a3d0054eea3415e482b064ee23580500a5a1014b448a5fd3c389c40810bb9162d1f0749c5cae7b404447a0c0184860808888f41a0891d412fa8cf6802883dd0047a8004bcf700016391e0ac31c96a39fc5de6a00c5cae84a317204ee27611213820d6397b400c34b62e37638024103573bbd4c1a7ea00dcd06a78bafa8528b4bafdfd2196bf2f93a4cdf000243639fc5c9182200a2e5b4790c456658e28b6f0b96c4058958291a2c860ae96c7680929bd180686c721a0014b99218f0046f45c8cef0a448b1d97e04906e096e4623b90d24863f4b625091723800400561b65f118002031745c4443024b680cc9cbfaf1da241e25020f172b801025b406864340125f7791b1fee84b2740663e42554e024ac73f6390c4001afd08331d834fc865710924f53674e5fe5a0a0db004a0e57a0022fa0db48197b0012363ebee69350a0ec110090e2bc46f8ba8045b205920bf05749c0a73b81222c5e86420a9e8882de3747b6d0687 (by decide +kernel)
 
 private theorem ok_a1100 : Impossible board_a1100 :=
   fork 47 ok_a11000 ok_a11001
@@ -4019,74 +2887,42 @@ private theorem ok_a11 : Impossible board_a11 :=
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_a10111111 : Impossible board_a10111111 :=
-  kernelLeaf board_a10111111 #[0x564f1f202a1e232d314b58234d1d52331f283361616418566358562d4f2b4138, 0x631a4a4f642d4931604e4f2b562d721e66281e0c68584b3362564f4b21292132, 0x182a53582831312d4f4a69284f5845214f1e131a1b2321314f585625560e5352, 0x21282f211b5a144f1b12291c4f55222745282845191c52635e22274731312812, 0x53584b0e4b1f17125c475e1e27555e5e6b611f55131d1e584f452d234b2f2f4b, 0x4d582d452d454f4b332527204e4f22215e584f1d2758251e455851271e2f5c53, 0x5123301a2528580823222d0b1623280e1c290d0b23222747316353582d275e20, 0x22212f5d1a51561c2322287869663221584f1827284f081622212f45231a2851, 0x25515a635e474d1d254f324958492d25252d4f272b584f251e6915452f2728] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_a10111110 : Impossible board_a10111110 :=
-  kernelLeaf board_a10111110 #[0x23575329164b58291b311c2d4d581b2d3180235f58164f4a5671215323295541, 0x62201c5131594f4d452d57562f16331c455129632353532378722545630f572f, 0x221c561c1c14561a55234731202b56472b2047493325252021252533695a2125, 0x552347225527231c31254c272b4923534f31292b455820292b494b335151564f, 0x4d4d4b45065649251f4956472923471d23291a2f2f29454b4b2f271627] (by decide +kernel)
-
 private theorem ok_a1011111 : Impossible board_a1011111 :=
-  fork 54 ok_a10111110 ok_a10111111
+  kernelLeaf board_a1011111 0x4014bd1c54556d64a0222e3ef71f26e00277414b8824fd59465c9e4006c60b275b820025d000404badd51067e808a7c40154157808b639fa5cf7a72bc5d7ea027c154454620a2c43afc14bb8a90a6b1a3d6d4539a0a3d145a8c410424402f1e9f36cb43d8e7e08820063140004fa8e7e00800232d82a2c143afe2e8aa8800a8f35a8c00128e08020a94747b0cd60425c51aa258c461228f45adc100404541796d1ea3181876a7385454eb2aaa0dc5e8f45a7e3ec740055045c7880d3ec6b72553e0a2208b7b41cdc12c6b78baa0aab71048bcfe5ecf10444114ba7c44110084193b9f88a208a8b43c080215eec73f24ee28a7e16c6a5cf71705540205ac7474f840008884007b5fdcda78a8a834fb1a2232f04250076cbcfe0a825f258105ce80008fdecf69faba2deca1506f7af25570e7fab8202a0804f3b9edb1cfe2eb740151e20b2f25014117e808a0bf97a1c400146080bf43841bc012d65310419f9bc9628aa9c39c2884feae8b4fc5e004146a02228e2e0080671440e680252d614a4c7ded169f8fb1d4400163882a325c8863558a2a34fb1808a0028d8e0a00ac75bcfc850449958893a754946cfec71745544143822cfcf64f41011358a9bd1e221d8eaa882cfec695b4550052e835b1dd3d0441096978f555135cae7f935bc9e414638822c002d839dcfd0515f212200d6d6fcb9053d8028b9b51d08287b19e8ec72f67800a41262eb6cfc4597a1d4e08a02876584aa256c1419f9fd450622ab44f68f5b828828c0c797d8c011e2880cdcef4b678082027f051b3d42155c3a288a387c998eb60020e3db1856d6f3f57c1dc62402844dd40149bcbe2e208086dad8001274b8227f1193a10a56e3ea711111e20222a31f10ee84a23d4e6b00400055fa2022aa040abf53c5d15025e2324bc15fa7d0402421094b69faba3e3e8b0144112505aba7c479cd8e08025e6621027d4857c9d500411e800053c0167ec00831e50114e0af8bd8c1041aa0029d5f2797b3d05040a38a00251eb73f000010516208730145adc409cc4453994d12ad9aeae8f8fb1d111106a02bc810542b647c01457828a0c8fc9d9e0080970412e835144438025e90040452ecfd38005ac10e897c5a0ce60851c18e80259c09fcde2eb746be35b0457e0821205b67901cc252522e51d41538ae3c47d3d41469e8fa5424683c60f2d2e92a45f1e3f0105524afafd1ea88b5f5a7a9cb72fb18229c240de2c7824e72de41426e202163837add058e7fe8f640402ff58cb6cfd0004102095d00256f8e02aa1e9e8f53d5e0edb (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_a1011110 : Impossible board_a1011110 :=
-  kernelLeaf board_a1011110 #[0x3821224a515b514a5c5723451e5b2b222a312c575c4c202b2e5b21451e584b41, 0x4b224b4b2f1e5c511e562d49472d522d572749525e472363312b6f291e5a4b55, 0x575127495a49522727572b4d2159592227595756492e1b554b47511e575d5956, 0x5827511e452f2357521e5f63] (by decide +kernel)
+  kernelLeaf board_a1011110 0x4000046c69f68e0209ec1522ebf50440454151f5fa58a0029edbf8aa8e3ebf474fc9d4441a6d727040405a5a7c44414fd7d5f374543a08567014ace8b4f882800ad9ebeb5b93a228aecded5e5e000a20b1fa3808a0a7b06be0c93770446cf5b9788a00a8b978882a4bc15f9ec0101b9d1c24f75b5bc9d0180118fade96a02dc0146be9f0493a2a0d2ef71f0951e2a02858f60518e0afdfa9c09183ddae5f57718a0a1c516228124ae8f6f410200a3caee75f01401012151e00809173ddbd5eaa020208b55b1c1145675f1456e64cc15440506af0150419776f4380a81173dd8e5f07 (by decide +kernel)
 
 private theorem ok_a101111 : Impossible board_a101111 :=
   fork 53 ok_a1011110 ok_a1011111
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_a1011101 : Impossible board_a1011101 :=
-  kernelLeaf board_a1011101 #[0x3158781459532a415358325e235d526141566570694158635e606169594e2d4f, 0x234b3e583225526048594d27582132514e2c2a604e281a7858325925321b5841, 0x36353159514b581d214c574d5e1d624c5b611a6651561d1e607018651b58412b, 0x4c5d31412f2b68632f61315d5c5927606b632256592d5325682b23311815252f, 0x59275b251a591d1b2f51413152572d4153637266593125285164473635574153, 0x355a572825411f2f616153472d4e4d47354e2a4e671f2d59225f1d2b63514d5b, 0x68283172254b6a2f2723305a36514141332f2c2d6136415e25535e5e23336d4d, 0x5b2c65] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_a1011100 : Impossible board_a1011100 :=
-  kernelLeaf board_a1011100 #[0x4f21324f254c411d1c32214e6f1b6d190e4c0617222a5c4b1427485c4b253531, 0x591b326461214c512c222d4c584f1b5958706577281a282c4e511b286d0b480b, 0x5a1e321f352c62581714604f282235282c5e25274f5147272a1f21415e282827, 0x1e22115e2b4d6569634b5e535a48645c104e0d204e2352592d6f6363592c1e4d, 0x2d191c30645f4f2b595e487459365a6d69194b5a60655e53714d214d605a3219, 0x1425115e1e141515144d534e520d592322565a564e251560706d1f35234e5f2c, 0x2c4d254c194d1d23362b1270581e28072a1f3523591d4f20354d11200f0d4d14, 0x614163623e25654d1d1a410d151d1e5751624c6271481c2e5e212c254d1d211e, 0x4e4d2361194e1b2e4e582e5e225b4e1f4b4b4d1f21225e1f632c4d2325] (by decide +kernel)
-
 private theorem ok_a101110 : Impossible board_a101110 :=
-  fork 85 ok_a1011100 ok_a1011101
+  kernelLeaf board_a101110 0xa92dbe151166aa2997614d1a8d8f2a800c8af2d2f2f002d5afd451504fa3d86dadb74741045483a02080a307678a082bf59566b7c3a8a882db414083ded2f4f4054bda89085ed51ea88a2a882b3ddbcdd156bdaebe220a35614052e30711513fb04bfc388a161e9e8a91f5b8233b166eb1f6baa88ced56028aa888b3bcf9fd6f6745a000dfd5550094eeafc78d1c0459baa00dbece9f046de29740490d659c4403b8229bd7ed1d083b1e96835f1404055bb07a789098f1011410901e5919bb388b1d454ba8e8f938fa2a20b6c05156bd7d2183d3e6682ddd14463c1c05541117eafd188220263d7f871418f77b98a0a81675013e383505d7e3d175b0515b3ade9e82082a82977468002af47ca20c70260020c695d2ebf6da8212d75563d9e8f2fb1aa0a92b2774388023336bf3700001404081bdc042829df1733b7a82387522535e6d4228f5b4122113bc7b500024b07c3414c79737d8e0eaf4551eab2f04a55025f7636588aa971004296022e0d91d9e6e9f145b1802b1488765d1d54500009dab381555828960e7602a2a8828cd7e3b1b2ece08a5d400005966fb1c1d8e8000058d010f1a8253144b3d3c0045572c89241e9f636584b7b00111e225de96824e1d83d6d44a12cb8a8a570f4f07b1e3d09402bd8960f0ec169ecf3b5bcfe0416762aa08d3747b2a061cce28024ee14debb5091676858d777b45aa4a8dbe767f519782032f50119b9fd0ea8bbda8207fc7acc5266e02ca3d2e834b8783a8498f584c582080fb52f97866e7754514d70701221b88573b9ec40444afd1f1708804cf17c74060010a46735dded0eb308254b8000cdcee28a0048753dace40a6e04ca5c26662ac99e6e7747b6d5e3084b4155b876360000f6a35543e410aacff0335d47d9d9494ee52b33f4188b5c45109ba2ac4475063f4490951ba810a233729aa0a125314b91ef7020929eca64095e65842b94e6e8053e61056774b1bd9d1e8b4112ada36b912b6b3b52e8495d411c19c3dba08c29fdae820a8f9dcdfd66b7056059339cd25061e4c101bf8a2acfc05657a80d9c42f72123e98236755b76bdbd202da733aa0a8b2fb5a0e0d504cbdee9fc79ba1d0216649be0d594404ad632cce0c7b811647bd8aac12a82af9be5f4f8f52597a8b7ba7c8adad8291aab93b990d1005049d8dd070a4ed47d2eceb7910dfac2e3c61b1f67502555006599ec59b84a8d6b3db2cfed74159a82080262ec69297d404a6e0e7e082028c11628235d014050146b3bda5d3e0280b3f068f1f000404faab3fa2a1d1545420f7b44514722a8d3f6737b2c15587278710543ccd468eb300400516b7405998105639fc080209becf2a158f8797efa8c45410404d6a359a2202ced41a39bd462aaa6dc5e12386517cfd0ecb440067e0a5d667073ba082a00007365a1c5214049defcdea26dc4040ce3b446672906cbe8b55a0a3203739794d3e8a21235126e72f4bb5d8f57 (by decide +kernel)
 
 private theorem ok_a10111 : Impossible board_a10111 :=
   fork 63 ok_a101110 ok_a101111
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_a101101 : Impossible board_a101101 :=
-  kernelLeaf board_a101101 #[0x45594c4a66323f492d694a384538672b23493f455b09454a145a4a56495f5358, 0x28355f574959572d31635f47524c2b5a23572749255972314764516322285948, 0x110d190a2b1a4d282349695f475b2b482c1e522a2d6565453f5a2b5b59414c66, 0x2259683363272d2b48352d2d225a4c49272351414747682b472112685b152733, 0x1d2d352929482d47284e59575e685f592d2c5f51472c5323292d311729382327, 0x33282b2c1a47310e561a47683823566828142c535f2345665641182a282d5e41, 0x2933411c296419274d21471b5e2c2821312d485e51251b2b23311d45281b2128, 0x4c234a57675f455c2c56675f2d6017661c237c322c236a4d2c66455b5a534921, 0x35681e2d47364a565c36275a63766d6327645a4d6d634d5a4c2c2b5a1927675a, 0x323f6251606312665e5341514d66336d6066655b2c334d5b2b7151653f67575a, 0x3f53514d6e515327] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_a101100 : Impossible board_a101100 :=
-  kernelLeaf board_a101100 #[0x522759534864653561535e53221f316c6a60594e602c233636232b272c634c3f, 0x6581525f635a4a4d5e1e411e2c60604e4a45532b645c63625e535a5a2b272335, 0x634c3628634c4a625a4d4a4c2336514549491b414c634d5e455b385a1a636a6b, 0x2c605a104d1c48195e5e601b4e45285a562c5f2c635a2c4a105a4a630b495327, 0x2c484d4a495c4e254a4a5f492945282319294c6332281e7e] (by decide +kernel)
-
 private theorem ok_a10110 : Impossible board_a10110 :=
-  fork 85 ok_a101100 ok_a101101
+  kernelLeaf board_a10110 0x1497fd3d5468e0885222ccdf76288d1e9e9f65820bfc4471747520570720b8f562225ce6ef74f83a80151c266f29099b919eede08306112e6f2f6f65105662233d59040a6f6f57f1d404428f0b977fe7ebf6b155566be8c1055140f6adc8f882a36c02575b52556e728aa822db4fdac4551455029c7f6f6e4a0ab58f4fe4ed73791054046dbb8f9bdae66a0acc502157c280836b24ce9fcf88b6b99a3e575f4100173f7f455862f735114659aa8d6d48b3f7f5be0c558bea8ac88839b39a3fe62280cb99559a3f562ab2cdd66ac39b8bdbed74f938128710494004153b3e0e735810553a088d934044040433a9f9ba1d10058f9bef6b3518022a1d95458eb7500825152477b1056468ea800a5c4000deaaf47b1c1443bc5d47208a6f10050ea28d9e2a28d5eb335a00c7e463b0ed066b66b455584458fe8dc600a8f54adc8ba35194c5554555459d3efe8f84414822f9b4adc1cc6ab0041462202202b7bdc1cee88addae002a0a7515054f235bc7d0405546a33b96ce0aa895f1954af7a3bfa80367555baaaab3bfd1e3e8ab35a7a3e1051054eb74501026397d54e2e347a7d16a0aa859f46200cf04110856c7a7d6eb00af91b5d456eaaa20aadd168b0b5ae599b274fa3e014268f075023e20847f46ac0abd423e208108725e8ede574111193ecf238401037338a2b579ae6ea341251f271500d3b7f8fa436f57c8d667ba58200ab0240416ea22865c5072f17107fdad22457dbc010b3c1e668882066d4602849135d5bfd7e4e8236706be8d0b751554058f8fbfc7e9680ccd4295ed6b4000547800ad7d3f2755954592f674469796c78fe4e8ea804e3d1628a8828ecf2322ea28059c4199ab242012b4441cdb2d915fe949d6fa7410495b8d428ba88e3cfabd4147b27855fe0345ede279155422e92b29dad4495a0a8d6e4f7fa7d8d545662b23299bca8254ae4e0a297319db4aa979588a28b2b556ff2745554f1785462aa223d33c30aa7411646678f65c8a33dfed010459e0d05b590e6e4b4849cd6504a4667002f601484ded25c19be77170120051b6b51ada88b39a5042feb3c7800dad672b2182a0a5ae570b63c5f27a7a7d54114c7ccc4206dcc28d420c7d3315146578bb5cdc1552195aa10b3347b6e8e2c5c0154040593a8023273792ac1e678f00566f7b462f6f4115c7025acd78f01356c06bd00cbabfecb25014bbfe3e200ad72b9b82204a097b3db07104f68a2a2cf060009836760132b8bd3d5e8890b93046e6aa8a0a38fc5c337b69f6b115b58802bc015053e8f91af4b5293eb67a7c8d5487264e5d85916be1ea7ded061a788282b122cfeac7d9cac2eaf07679daa22000260d668f6dca8ac36d1e832a1202bd3eb3c7ccdff57 (by decide +kernel)
 
 private theorem ok_a1011 : Impossible board_a1011 :=
   fork 57 ok_a10110 ok_a10111
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_a101011 : Impossible board_a101011 :=
-  kernelLeaf board_a101011 #[0x32155d285b4e4f4d4f3228694e5e2c285862514d27284d22631227284e171e2f, 0x125b4f635649565a1628152051564f2d27275a4d5a5b235e4d635f4e20624e15, 0x2349321f1220515122324f1b532d222263524d490d2e4f22085f4d144e20574e, 0x4d4d392e6b45195b2c551e5f0b184d122c162c163e1d285727254f1f125a2228, 0x55292d0d141714225659296b692d144958162256635f4c5e4d5e596f55234d2c, 0xe1b0f08221e1e17561c2c702d53231d2c171e175f20455f162c3e1d28205912, 0x1a581b2013212c660f1e131c1e5e5d1a4a0e202c17775e4f5f1c5f4f134f4f06, 0x1a58412d5a211e25321822082a21281e5a5a6349554c56185e4a2c3913585c2a, 0x2d1e061628315d2129485e664c5f1c1732680e4e226b0d5f52485e15224e6b14, 0x322a3116081b322a28535d3221290e250e2a1c58212a782153176b1362132a29, 0x2c412c1c2a32411b] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_a101010 : Impossible board_a101010 :=
-  kernelLeaf board_a101010 #[0x4a4f5d4a2c4d5a53232823284d564a234c2c1e6a2113124c202c1e4a1f2a1d41, 0x1e5a5f525a1c6339175f594d181a59692d645818690b31635f4f634f194f1c6d, 0x2139574e1611171e2f4f4c4d2f1615272028532125205a2f630f4e2d52631027, 0x25524939635210594d271f155312] (by decide +kernel)
-
 private theorem ok_a10101 : Impossible board_a10101 :=
-  fork 51 ok_a101010 ok_a101011
+  kernelLeaf board_a10101 0xa02cd51460e808b34040e6ab6588282b32b0737b2d56c7545555401182daa88cdecb55a2aaa8e0915aa7ddd968753a00882a0ed2e803b55a22aa73b18a287155f8d509450e8ad3cbf0c5af55227e2d615489eab53adc104f60400082c21b8b6a318f08a320337743a9d161591aa24d7b560cdcceff00201ccbea2b0cb50d18ed91659da2f5f42ab0a8a84375bfd2c04206477b5055254ae8b9debca6a4846bb1ac1d6e422a402cdad438827b4ba020a832cc6ca22c9446ab54550ea3900053ddac4260ad78f93ab35799a010d6c0031dee56b3738282a024fb1a80c2dcd004405566bb1c2c0251bd0688b04f4380a8a00b3cd8fc04f744f398928041eef77761511035cac76a0835997fbe81037b0199fdfd604e6a217f19f93c504004a7e08833f0da3b378fe528468b90854f6009ecbe0804d6ce6b3e1ade9e8f009503bab35054114be9ec9844bf7f41a813345efe5b1505982fb3ba8d455506c12d9d09425b5754eb744146e5310412f94d16a0956d5b3b2b2b229dd7e9d6eaa011432d14ea4f6399a2da2eade3eff32b4cc126bda421375406f767dfd5d1e02b2b371559aa224dd4866eae71501761203af4162e2267b7aceae7b442559bf808a2f3180aaa0b3725acd40568b62282cd14114b6fb3ba8ebe9f542554bab2cfc113f92c0105b5d28b51808a88f93a0828cb3fa82092d074710128e2028b465cfd00137ad3d6e00a8b1900516c2008418fa5cdd85938de4245760a8cfd1623bfaa02cdd501129b3b24441a8020b5f6764b450896df3f958b1f5b5140464f5bb596d468a20a8015d074710142b6cfd6e9f050204fb6b015059bdaede2a8008f1016f737c7dfd40276a040a0f1704ecaeac80cb50515442bddd1551dbe773f0466eaa40a4fc65a2a8a0aa3d3ceef68012a02b351a8822d8f174719ba7d0540a41473745e3c9628829f8551cecbe7b5f8a08a25d111a5c9c0587388963e970010eb3cdd3ea0029fd50014af0094d3c96877380a82d7d9d805b51048e8297cf6bf059fb0109339bb0892afcb6574fa83518034f43a84225d014192b6b5005fe3c7e88ced6ea02210d2f1e0222438586014193e7bb5dfe968a0a036b614e78f85a05017397eff679ba098c514d6a8b67574eb7055091c9d8d5026080631da717b1f1f7f9fac42e3c0019faa19d40567e7336e8aa04ac19fddd8656aa28b39bdae9e8f40151880823c9554604dc6b72b400011f3315660800081ec44535687019124949e4b99a0d670240a7b4162567f559de0ecf (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_a10100 : Impossible board_a10100 :=
-  kernelLeaf board_a10100 #[0x554c2d552059596918222848224d2755231d28651b1d661d2a586913582d324f, 0x2e554859552e285e522f1e632759555e5e3357554c61763555275e5a2c4d2d56, 0x645e606159554e23282a283923252823231e2f5e222367555a286728236b5e1d, 0x1e276363596f23555a2c635e2c532c5e2c28576a554c61322257532765] (by decide +kernel)
+  kernelLeaf board_a10100 0x8a229ec453e02838f40031f67dfa3eae082a822b6b598aa1088a63ef6b369e822b3545454241af6b351d7c175735799a2aa2b87658aa0a8bafab4f016493ea88d97551c9ded1505070787b3d5e76102a3c4051a80822ae851146e747aa08a5c9041468f59119479ed7f7b458a8d23c4233eb57502b5809128ccfa802044a347ebef6021dc45da82155791c8204d9eae482ee14610dee96bf3de3d3f2228b6756af7b10112f6cf24afad5e668081187eda148a8135e220aba7ef76b59cdd1111556f5b46abccc5561155bd5d0682d9e5195b3da74454c6208b5460aac48d162acdd3f5747a88809dd46a2288265cde77218541cd9dd576325155574e4fb1add973f (by decide +kernel)
 
 private theorem ok_a1010 : Impossible board_a1010 :=
   fork 63 ok_a10100 ok_a10101
@@ -4096,29 +2932,13 @@ private theorem ok_a101 : Impossible board_a101 :=
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_a10011 : Impossible board_a10011 :=
-  kernelLeaf board_a10011 #[0x1d285b6d5b415562154c5b21286b38551e271d6628270e356b33285b38594e45, 0x571d20352759272b551e6e1e5530251d573235275b0e5d4b5855252b3527206e, 0x661e205b5d382d5c385955493227202b2f5c5c385859554b1d1d206930252028, 0x2d2b1c5549492957295b4956302520227c29554b231a492e39232f4b491e4c36, 0x55580e32355538294b592758232e2e295b47675a586d20201e29632062152721, 0x53234963566b553f4e2e1e33635c6355624925201e251e322d2520114e132030, 0x553f29485655354b553555621529535848551c79695f527007181d5f55607033, 0x4e592264485f4e4c533f1611560b35161c29554b2d564e23484c32704e534c39, 0x2129384958574756642d2e30052e5b1b554b23603555395b4725354b6a281b3f, 0x485355533f53476b0e4e302e35582d20072d111421352129554b5558172d5f52, 0x52635549531e2e2349282e2e5c23414c2355385b47283f4e395f2d532357685f, 0x5b58233358536652283853] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_a10010 : Impossible board_a10010 :=
-  kernelLeaf board_a10010 #[0x2710691c5a6322645a5a615664215a2d38554e45222530252118303227355b4b, 0x2810255730656257210c22631823631c2b395541455756711121352729272729, 0x6d5756492e33575b4e284e281725206b385955452e5f2859675c5b5756292b45, 0x636d665a53630e39631755612028865f7016295a532b235f1a6628097069675a, 0x2d2123285b2323286921481623482e63292763202d555f16235723706a69] (by decide +kernel)
-
 private theorem ok_a1001 : Impossible board_a1001 :=
-  fork 74 ok_a10010 ok_a10011
+  kernelLeaf board_a1001 0x80dbc5b19088f5699f63069a7e6e9628a88228dc642d3d5154a978fabc9c04469e0a88a1ed768f93a00aa3445da0284bbb9a3e0f33540011eb570041c64016f8fa408a28dff3b50021073dfc225415bd3c00047aa0215f003477f24600ad3d6522ae20814f7f8094f8febe084773b510161802ec2140411af63410455ba0d040041103eb723814d0ed7126a43a9eaf2f504ab8d8c452fca02b7bf94b1501438a9dc72744456c62095f01418fd6d0003272b7904405762c30ba0a2bb6de6fabcbd091e8a3839045af570173a805be3ea20880975af2f01117572208a337bfe7767458a000e4c9180000a04037f9d902004ce9eff91100111599122d91eb69022f6baaa345b39ca7abcbd456e80a2035b9d8848f2460024cc19682280a70e76804d3c4599b9eaeff41994e2052024c8c46add5daf2f40416aeb280ad7501abe2cae02ca9e9e220d8e1991d5ce6a284a45e74074f7fa5ca140d70e00043e638ef7fabd3160f86d2b3e9e8f93e3d01161ab7af045216aeff9dab0b08bb3dd233f1ea82973c782d5f17278004152e83540853d808200a08973db2d0456ea2974191e10027613c000506c349aba2458c7632dae0a4ab1235771a9e5f674fa040484d8d1ebb025daa704140b7c7c8873ea36bac7b75000041aa08aa0d0100f62a8a9f1e83c595e004f8a8aa1d16e82bce75793828232714153d7e1115385bd264f5b4114841869741a028b65f9aa9eaf2f41011e01ac40424e2ec0100473a3c4045fcbe001939ee66db0041124cd801ed076f0240bba8842e305116f73555c767abc9d081065a7c001506af5057e020b73546e60a2e3b1d9eaf2f4113b80909dd062405a7445869746541a8e1485af804aa27741ad74faa096710413e0abeaea1109ef7610107b445abb0d2e0ac771445afb2d6ba7ede3b401009bbccbec6d5d001414babe156ba7d4541b10bbb3ba8ede840bb7b7888107abe2caf3340004b78a0882875462a0baf71b5700963da7d0450ee66d5460aa0029f1db5d58d78020533c01851dbdc7679dc5d004496ea923221d1e108a8db792c02a0a0a8f2647a8cd3a1d04100559196d1e4a2ac8c5daa4d63d4e9f4171f22220d6f57014016fe28200116d47b5f1105594790f0c46757a7c7888823b7cdadae9e80018f55241d800ae7c797eaea82b870101064812a3408a66bffeffc32da02a715016d74fa44857a3efe6bcda444a8d944fc3134e452e7c1a016d7b7afd6e4e8a222ec678ad7c001112de4ed00146aa0208804ed465f455445524ba0d14675ee3b3d5e2e80a442ec115bf88242a3b3a292e7c860500ae76fafd6d01553910482bd40008b91228e9088697afb0c501042cbd8bafa1c000662122e412c78008634000811f8f39abdcf5783a200b17afa56c2638f2b00c200811d0ed7540093ea740013e0a9f53c009f21e9ce600dac02c7882922f2640dac46d787102ab79343a825ae5bb8eae088840a004ed8b80808a8b4b9000230d2e870140014c6c31969f6bdbe5f2b (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_a10001 : Impossible board_a10001 :=
-  kernelLeaf board_a10001 #[0x555721415e216d4125211d4157576c4e596b705e63615e65286b09705755624a, 0x2d202165271c711c1d481c71212965381b2d55552732215b2721233d25575b69, 0x295e4b29636b55275674595f55644e206970221a287066705f6c382227286456, 0x20632963295f1d69212965646660627c4e590e57113e1d2b494b236062697164, 0x2b41667062332b0e1d365e554b7933293d41636c6d61472d2d22557016235e60, 0x455f60536c695762603d2d6659274e5e6e30161e285e627b2b576e215f623d1a, 0x612b5957455d745e5229292128215b53382d5f126b661d5922602e5e6b1c5529, 0x1d457b82712e1d717c6f571a28666820641a233e1d226330202e5359276c123f, 0x605559624c591320665d59271e2768201a66282e6f6965725f476e7e281a6641, 0x3266415b2b6c6b593f726b2327101e55655e6b53206e5b45666066236341705d, 0x555b762912361c2227706923572d5f236529555e6e3f5945595768] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_a10000 : Impossible board_a10000 :=
-  kernelLeaf board_a10000 #[0x72726b626d6b6274636d6b7a5772646962456b252d11410e625d7b5e69717055, 0x6857411e251b3f2141252369211b3d325e656b65636b7f59694869631b0e6b7f, 0x28211c292e33711d29595f2d471465591d11704548631d693d2820652b65636b, 0x6221234927623d3e6206562823332d29481a3f1273627241766f5f7669282e29, 0xa2012292d0a321c1d322d65412b1e0d70232132182f04152f18041d1a1e1d18, 0x76621e20720c1e0e0a204778225f605627572525412b621e042b5f4b2b5f5d82, 0x1a292529631d14204173235d6841] (by decide +kernel)
-
 private theorem ok_a1000 : Impossible board_a1000 :=
-  fork 88 ok_a10000 ok_a10001
+  kernelLeaf board_a1000 0x92abb08916fed82a810a9c961040db39808b4ff0c114525d3a3c1112be00ab7014bfa3d41cba9eaf7b115456376ff11b3a2317246cf5f41101d1b2c41073707b78aa00804afd9ebc015b3a84ffe582adaf412614011e9f219ed1892abe5e512f7afa7a0f768296f498bb9bc1ca920e6d1151f8f838820a8a300f0eef2e0eaea367c5ccc000b380a220093d079ba05bba0259d3e00c0a007b4fe8e4045066b736a31505d881bf5005d3e5f96a805fd08feec20040fda8cd79b10542424120e778b88a280083ef7ffe38202a80bb3bf1fe7bfafc001ae411479bd1812802a48357266b40047c89203eceea2d071ecc341aee1029ea59d3fb35454096bfc45170ea8af116cf5f418baddfa77ba5828529c0005054e8751a8210021ede1034f271adefe4b0440d78d2b39b3bd9e0517835d928a0a0aa0880a37bd79ceaea7108058bdfd60a70653d15096d9e9c90558afe2c09c1c9032f745be6ece9f9da0a84017bb76cc390442da7b94600a5ec100317ef505457d7d14dd8a4a1dbf8562c895ef233129ad5f07cdf0c0412c5b3d06800415e3b3b812db01504bdd5e5ec23e74059e2a29def42c1f1fb301dba158761688f802b740896e8baafc30505018b68f6f78341b31238f5390ac20d8f538235fcefa78158243aa7cb902593cdac0e0d001717f39dd9e1001d8095f59488239023eceeaf93a00a4bc204047d834109c5e9c41238f9315253dee5e2d30a9f1fafaba7eb61500074ece204010237fabe4e7680220c5008b4fc34588909142c846b51f0f360884dc3bfece19c62028b01013e4a3c9d6c58195b9028828343b2065d3e41473978e448b0c733bca8248e39f1d0ea701cbc2a38e110deb7aba28357540104fa12cb43dbd124fc48747bde54192f57c85b7a20ba74abd7d0f07bdc810a22a1f6e204b071514990104b8a1cef07afc20457d5843673bb3ac03af481019b877bc7c4e1d92f6049978001460ebc4fc3afd5f172b041035ab4802a75844ba02a7c79dca683804409838873d1e177d19012141cedb8b3dc802b483884396080ccf7281094002400ec568381523f201e3916c42b7f025c1d6c053e20157d2f228225e0eafc59ec260408af08006ff04be82a04441015f7f4aeeffe2b4180312e800454eb715d032ce6881dc80658add5028b2f07579ec6fc3120108551e876598d5000157e020a0a022132bafcc71080133b9ad3dc10127741043198b4090e8f93a027c002c5bddf69098b1037156d470880008f67c8010add4f2335c0a8ff25c00200f3f17cb84083f6d40015dfc0097f02ede9d80051c2ec0154f0a343800730853c2ed9fc73ba90a711b3a97f5bc7ca6a2e5c5b3902c0cb11dc8fc38ba22a88c8d5c79df4ef748546152283cbabd448872f63f5e8428e8ebf073dc08802978de1288cff43c1d0112e0a2823f4e87014def765ded00cbebc41cb8463f5e3fe012159f4e210923d38110018f378ef5e3ffcb123960031afc5edd035e0008a0e2fa600218fdbc6bfd682857f97931180d3d02862e2e05af40044bc2de23b0041c760962c2ee004fbef7a7e3f0eaf63 (by decide +kernel)
 
 private theorem ok_a100 : Impossible board_a100 :=
   fork 79 ok_a1000 ok_a1001
@@ -4131,21 +2951,13 @@ private theorem ok_a1 : Impossible board_a1 :=
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_a0111111 : Impossible board_a0111111 :=
-  kernelLeaf board_a0111111 #[0x2f5836542f5b6537701b235b632e2a6b62542e2e3763272c6e632e3b55574150, 0x2f5b612e375952392767272663376763613b552e2a2b2e37612d272637395327, 0x2d6a2f3b511c3b2633181e3b61542f682c686e54336a2e533d581e626d36546b, 0x14295755513b357235572b2c6e272e573b5f545b2b225b542f312b272e571564, 0x1b312f6b7a64632e2a582a622a1e2b2a351e2f21212a315b6c1d5f2b6e366e64, 0x365b1e36532b5736535831626d0f5b2f5d6a2e165255295d6052552d64312f2b, 0x3b53342e5b2b376320633b552e522d392d276372602e3b202e3759414c293553, 0x2c2353342d5324313b553d5d5b5b2b2b202c5b2f3b5f5d2b603763276025202e, 0x3b2d513d291e532d632b2d2f2d61256355272e312f291e2f2d513b2f2f3b2d2f, 0x542d2f5d582d665f2f28646b582d513b5f5727356a355f2b54275f592f54282f, 0x5b2b] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_a0111110 : Impossible board_a0111110 :=
-  kernelLeaf board_a0111110 #[0x271f365c2e276b341a535a66353c5435415c553c41625b2e3b7c733c35572b51, 0x232b37576b622938552a2d3565522e2c082e2e58712a5c34622e55575c255b53, 0x2b5c3755552519362c55232e1e39552e35276536552b635f641c655b2435205c, 0x6331375f253b2d39375963392b21416626665a5b5862522e3b2b52263b2d2620, 0x265c5a68591e652a6169682b41682e1d3524682e2b375b5a5f] (by decide +kernel)
-
 private theorem ok_a011111 : Impossible board_a011111 :=
-  fork 69 ok_a0111110 ok_a0111111
+  kernelLeaf board_a011111 0x1104016deaf9516a6c0add7e0a0820addc152c6b7100144084b377f015fc82caa88a3c9ebec6b7a3bbd04106ff5f4f90835c101356080035efeafa98a0280a7efeaa3670015fd4d4680288002bf77ade8ef71400539ec69e0aa28b7c7abd1545bafc0444456e0a30cab874b838fab88829f5d88c754155fa4aa9cf68aaabf5bd1dde00abf554111415fbbd6e2a00afd66aaa8f69e888201028aa34d6f4f404154982b1ddf577bc8977401b7880836f57aaa22abd06022cd5b7afdde2897f114046ee280afc1a82ab37f1e9f500154500c1a5e541aeddf4f44541044699082bb1b7abd416fe3d19418b8f77d5d1505da2a94b5b8020b9d6f27c14111c78223cbc1aedde288aca835db7ecf0799aa088aa75ae434f200192555b642b36f100003db6e9eaf081af8ab6c1a7d8e060050885063e2f6e3fb7afc1442ee02a0809ab5d96c54a5d5d4eaa21770870694babadc40501726aa8c75f800caaf54de82a031d7e288082a3aff5e4f1ea14bb55d8c1455b2aac282b8b559ec444055e22aadae8a2a7b5fa1c104550eaad63dbd115080076677bfac88892afdd888b6e80115dde4ca6a7afd5e8eef41005ae82828010f2daf5f55ea202112cf76244a9f5dd7dde202082a097faa76f578208b16500840b7d4d7e0831d4455e40208a7d775f0500ae24264e15bead7eefa38022731045de88a6d9e0a4898d5494f6bbc50130f535fa0268c125167a3dda284435367ead774f7b810b63515040004f78b501536ec0b6c2a7af5fdbc505c38a8abb6fd9d1296008a39c5113f9f905413e9b1c7b7c273e200a238f70eefaba00bb44405455a22af5da0dfc38808add1493e9b1bee7a7828a7c0855fb63044096da1535fdbd5505072edf044043871bc151f6fc7822aec44940040055ebf1753895da82bb6fe3d3e00822cd1540047778f5dbbeaf5f83d0c21360adcd0006d6a88e8ece828400489ef2ea8022af0e4ba7d1abe0e804002e8e5dc8829dc5556ba4e14d1aed5edfb78248daefe220e3d8edf2541bf82a0825ddf02b74073b7ecea058f241cec024af43c1f368080226f376bb7d8d45c58222a2a94b5dbbe0000415e8252d0114d8a4bbd6e208a29b41abee6dfaba0923157552e676dacc158aba3d76228a07b738aa55c5dab5d3ea2ae5d5005b655d5e963c26fec24b9339b02e5db78849355aec849020ee68f57b7ebe0a0005afc5aa9d5040048471d5d56b710056b80a8e5e96bb12167088d76a080bbb1f1d4155dcc11a68218b5dd5ebf0a057304b92225be9e9f5913f8020b6ee6a20bb4febc568045a66b29e008016bcd88a12b5de722aa9536bc1ee70aa2d5d979ad07c5dbd04015dbbe0597e6a832073de6d7afabe8f17 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_a011110 : Impossible board_a011110 :=
-  kernelLeaf board_a011110 #[0x275e2e24572d5d1b5e2e20637c272e4523267e482e547319354553631d615237, 0x266e701f685d535c2e2e3933232e3c5473102d265f2d241b2d242745702d6439, 0x392d362d222e542f53271d265f242f3327161769546354162e262d262d272d63, 0x615e55233963273529352f27722f622e575429392015271d271c2936202e5429, 0x261b632d39482d315c5f262d6548636a2d232348312255612435392d2e5d2f68, 0x23231c2320341c1e273928204520632723161c2739265a533324725c1c2e2769, 0x681675592763522e6a485a572928263c29285927265a6354230e5c3615273c20, 0x5e20275c572c36235e065e231039532819682c3152515f2f596561285a593168, 0x5e70175e542c232d395327545a393922343551391e5a5a392854415b5127235a, 0x16774c6d555c23291c08205c151b412a352c2e2e2934452d23280e23282c3419, 0x5934292e13341d2e0f2c752215392d3928233934554152543d2e1f55111b3c55, 0x6839] (by decide +kernel)
+  kernelLeaf board_a011110 0x44895905d1b9d6ced350054ebb99927a42b4d5548eebb415147e82cc15ebca02a8b2bb9d6e0082b9d0051462aaa3d73b4d11ab82082c1e9682d4deebb404fea22ad57554088e6f798015760622df7e924599a85b7abdcd1ea746045539a08308d077301501402b9be0eab6b880a2b35d820aec411154eb4e2eb7411041547a8e554254768f451acda62a119e296540af7c32fa90deea9ace47addcf4f4fca892802a82d53b5b9c0944573a2d941698ad75468ee73da0836b50146b5b9d460b5383dbd51a3aa809f50147dad0151bda88a0d3f73afa82aaacc96155b693123ef61b59850af68f21b9e9e10a355a582133ae8d668131e962d1efebf54456ce82a2a28e5c5c3aca354b5d9d498ea080e8c645083465bebd9d3f8fa5a040aef57292ac8ed62cd7d45442454ea3444dbcd04153a8c544ace9f4ddaf1f53111147aa23bb9a8adb5915992ba7de7290a0c51147892a3ce6aaa8f41b4d49615923989ed3ee75182a8a0e2ec3283c7a0a2027d1e5b0514848e69f73a6ed74f67a200a09351021515e5dcce6a08aed3fa708054d8a06f071eb7a4555ceb231054856e2b1ee77f8044d802dd500b2f23c7eae110556e923d001047b2363a2eaf02a003038749b5d81573a882b7001549577775f90b089a3c3817b8abb222a3dcf8f9454f8028d754eaa08035d7e8122aa7f96b2abfc5aeebf535404454e0ae7904106574f88a4a7700494f9cd4eaa0db41aed0540a9a9d49873add155b72410b745aa2aeea6bfa78080aa7d4003ba6c456fe24c1057f002233d3e5b84be969d41a9882a63e501a996d774880a6d6e800a6d6e9f1010416f8f1142937bbe19fc0746081771414a7dcc5dc8aa0aee905cecf47a32000bb1e753e790c410496e9b4206feb749882c000b26f256e934fc317e1a22dcc9caab2e74f8a0a0937b5da4ebe022dd505bb9bc4926f6bb41e3fe6aaaaa9f02425dc5d1ea0829b4443f6a048d7753e799c554546bc5d45a7a38f3be1e96df (by decide +kernel)
 
 private theorem ok_a01111 : Impossible board_a01111 :=
   fork 73 ok_a011110 ok_a011111
@@ -4153,7 +2965,7 @@ private theorem ok_a01111 : Impossible board_a01111 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_a01110 : Impossible board_a01110 :=
-  kernelLeaf board_a01110 #[0x2320292b5e252b5b1e3635285e5c5b59283926642835612d63525f5e5b534533, 0x61142f2e232e591d5216182623315e502a541d263139262e522363312d364916, 0x5139255041362c21413c216d515a39515a5d68681b353c396350315b2f232825, 0x221b122839681f2a230a3d1b220d182b39632c572b502023222368182b395c5a, 0x181826312126102c52285a545a5a795765283d535e395f6835576c395a5d1b22, 0x5e57493552525e0b54202b2c282b1f2b21624119631e1e224c5254510f3d5a53, 0x49695a39233536646d5a5c494839226d685a415a39795e5757682a202c522b1f, 0x39361b55192a1918225c235a5a5e5b505e5a5b756e29225c1e35572b635a3c6a, 0x35392c285135152336235f35391e51202c3145632e415b5a2c5a242426197736, 0x453d292e665c67455513392d231e3d5e4534452e412c292336262d3945201a15, 0x395a2c5e19635f393436] (by decide +kernel)
+  kernelLeaf board_a01110 0x20091ce082805ad44566d7b8448a8cf8fbfb9da68088db522e0bdd4ebb45411473773cf8c5d125256ae4f73adc0014782a27b1ee80a015ee2ed35808baee0f0b022cc8853b2a3db70a326d6ee716458bb2a220e20358c95daee7404004166a341116568ed7011152b92a3db68c23d8afed7739ec14490a8e83405459aac7551a2e0038f5dc1edea082dad41598000036b49c0aa0a93884d99fbedb73d30cadb4050df55d040cf08822acce63a844117734780dac0166d77b41b7c8250c0440bddae42def5f772a88a82a7117733db5ebeaf85145c7dac85511e689428a2eae4fa7b5b9c096447a1520335db623228e4ddbdad56e72711191828cab39d17b7d1dad415560f2016b73f9ef75f8405416bfa30005055a02a0d674b4a95115e7fbdaa2ad7e4ed7420469682d2c8526f62fa9d00aa310a0c57acd112051882aabcfe8c4af43e2e0e82a10671c7a8a00a7b6243da2d4499b0052ea7471fbde5124b5d3c8585831a880a4298d36c701564510e9b21ace96c0b12a0928ed7539408b5a85afcf5f472ea0928def53ef6e7bfb50020da35af5f581001008d9ce7b5a0a377120837a2c190121166f25a8dcfa340440feab80411e48ad87b8846f4584843731abdcf8f598a48835f955195f4324110682428f45a0030ab048fd198d5ee7411ae6485ae8f080e754bd0e0edb4055990a1d9120e2f3106010fb768e80316b4002073d1d4ad6cddf460a2a20368d8ded79579b9f1f4363dbd7ea0929223d46a808922080497c394d7ebb61522547abbb39dd5144012965b10194c69b47b1c55092f6a88a8d0d56a0d4cee128a6d8ee721580400514da0bb2a5aa3f1ec7455156edb93a2a2a22a5b104147a0e0100014ec2bef68aa5d057dbcf6db6ba08a8c04442f6a0dcedf674055146cb9d101141536c28d9351aaa2d7c3adf1f4b54452ff7b55b7d3e2ecf (by decide +kernel)
 
 private theorem ok_a0111 : Impossible board_a0111 :=
   fork 77 ok_a01110 ok_a01111
@@ -4161,44 +2973,28 @@ private theorem ok_a0111 : Impossible board_a0111 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_a0110 : Impossible board_a0110 :=
-  kernelLeaf board_a0110 #[0x1b3638634957681b2b37273557515e3b33263750623558515a6d273559553148, 0x504163612f712e35452b697e555758496a5a595e4d2e492050492f3755334968, 0x27166d4c36316335633b515616265666236a6d31166b5d3b5350412b50315037, 0x5314723b53530866612a2d2a382b332d312b415156315e6b51562a6635345631, 0x1b642b4d493160600b1e383534555a62412b62556318453b514545684c2e2d63, 0x5731331d594d5e45642f312f333616354d505145352b575b593562352c572d63, 0x574922345b3555566d316d612f3b3151573116312f6157492b41576d2b342b68, 0x33356831331b412f3731616a5b50802a596d662a6d2445635e6345702f2c452b, 0x55625d515d535961573663351b4d373c68613668263522314d3331312b41616e, 0x453470491c1d2d533b6155551a3545183555576431635b] (by decide +kernel)
+  kernelLeaf board_a0110 0x14118bc8030834c041e1c9c01014e6775bd3d44085dee1eae20a02d5d08543588802d78b98d1459ae55ebf939658e22d38fb7a2d5f160025de8ea0005de9e2a967c3a2257c15446dcaaab8f2569ae6f9ba2df51679e8f0e42aa2db0545d1ca1229b610016ba2d8f3750959ea88331ca1963abe0f87dda20aacf6001104105ae68d8e800a33d9061037c1d457edf63e1f576fa1ac31ffcab1116cfb75500148cdaaf6e9311118ba80ae3ef68a2ce3e2e2370d97ea0822cc54118babebe20c9d5516d3b7a822b5d6af5b55476eb0024ac7dba8e1d7e280a08222ef63d1d55af80a022031c2dab0a31d7e861c0106bf2744457c1d5056be8a020bb75780aa10d355fa3005afa0031d800679ddb3cdef688c5cc9a02bf50163a12fd4967b282042db2db5e6f43811a3a082a0917415aeafafdbc15512ceaa2ad7041445716d759d7d015b80b63cdf099395e4de40193b1d54706aaa0e0c5e0cb07b71b5da757b5a018b5050483abc064b175754426824b1e638b90a048ef5a3a08c5e150598be8e660002424bb5be3e9ec01440414f96ef4029f204c53c479bc3aad1116e012ad5001c6af67a0add0463abe0e851d16b6a14aa24a31ef7af4024128f02b5b55e6daed3846b6a31c154114f96f6f3315055b6008a8b0c771ed7412c7aefa3a22a0d6c2dac49b0a6b79b90147aaaaa8a1abdbb1cb7afbba000ef0a7a8200d0e0eaf84028631c00a1b7e8028707c7e1d7f28284a8571d76824d78babe518919d3fecabd7ec682a082c9d11d58dac446cf7b9b88880020aee4e830286823275fb7c11ab80cf55104093a81a337b6c01011c6a828e3d00493d7f466f4015edf4fb5c4002be034712f6ef40159e08426c141be50c0442716208b5ec7474016d60900206dd4f812d7b3d5d8f23 (by decide +kernel)
 
 private theorem ok_a011 : Impossible board_a011 :=
   fork 75 ok_a0110 ok_a0111
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_a0101 : Impossible board_a0101 :=
-  kernelLeaf board_a0101 #[0x4d5e35604d48503b3b453b6119514d5a2a272234585a276b645a2359484b3155, 0x27575c4d72256d64626e5750132a72513b5c57255a2c482b4b482b69746b205a, 0x5c766b73715b685a574d5e502b366b5729195c512c29502e50454b482e37291e, 0x3729222f2f5c2f733c332f5b5a3953282c484b31315c25285a332f1e681e222b, 0x685a39352b36391f63682a2c225a2131504d5b352f255d355734452527492f49, 0x146e5768216135232c603136362c682731282c311a6339503568362f352b5a59, 0x5a3537353157455637362c5a373953142a696821256e1e25652a571b0b2a6e5d, 0x152f2b38352e3b50353b4b2a212a14270d2756222a192a26726148144b315158, 0x3377236a5a53316345623545572a612739635a4b315059395a334553202e342f, 0x5a315a33595c5a51275c3369] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_a0100 : Impossible board_a0100 :=
-  kernelLeaf board_a0100 #[0x1878262663263924312b20246963202e59262869242b1d6969681e212e5b4537, 0x1a231b235f3912190d255e49272f585a4553451e5a492733282e333b1d331863, 0x5a2e5c6f27646731552e49681b12317518314d5a5f2323574527682a2e271b29, 0x2b4d33265a6457292a3b35551e5b4d39634d2c2f272633124d16244d2b762631, 0x315868635f312658312a56265a201c35572c3b45775f2b3155192a573b270c17, 0x682e632639] (by decide +kernel)
-
 private theorem ok_a010 : Impossible board_a010 :=
-  fork 82 ok_a0100 ok_a0101
+  kernelLeaf board_a010 0x492d62a28a0a31ed6cfb38a2dcdb5d1c05445814fdcc167a88e9c41405504067f7d1fabb5d3c441518ec038f58b8aa80138b096bc5ebe22022abc3aa27c5173a220098f002d64bd8f4344151b3b9d0856d6cf8bd3d005441aed811169aabf2ba02abf157b8c205aeaaa8a12eddf43415ae0bbe5eab8944010090eab8a6aa80409f1ba029f426b68b40155a99d011570ab00026f97879194e5ec7a3d8c1401b5b5c54156f8d784163aa57e2f5b01406f8228a1220db59dad451bee7a788aac14d56aa8a9a7d1a1c221812f6ed25564f6aa97cbb022ab56bea9bc185eb2088552abddddd421a29eeebfa343e1daf0323c1668080d8363a80a09036e2946dacf460a9f000638aa28d6700ac735e3dcf43014009ae02e8e506dafd456babed60259c01d18480dad464073b08835d5edb4473800a2109fdc7e8d5680b31011176b50ec7a1cdede8035d40417e40082a2a5eeed7af8a82a2d38ba80c0974fc9c545faa0ab276fa08aaa745afd48017f734125ff3de6828cf540265fdbed6e7a7a208a3116620a0812397b1e5058e3730004ba2aa3b5b3c500495f9ef46c2829ed116202bd6e68080bdbd7842a020bcf278f6fd1daebf37bd8004143455edb5001d7d7c0505538a8a674b9d1c20059aa20aa7a1aec46868a202c5e5e08a089235db7d11501539ed3ea2c00a035fb9cdf9688a5d1550224db8039342c5eeebf43515405595527aaf974777882dcebe022a5c4446d6b34491abe5ea04c8da255e2269c9e9ebd076b9bdedae28aae0c66eaa0ac8da1a20a3bd545df4228517577e1ccf475415419bdad0140556800a9f45b4ec60036b0020153faf4041132685ad1f6791cbd8f57440210d18bb401500442c7a6dcec7504042c701a31140071f7f63a6d440000b1b1d56015b014014ddad00010684736bd7d66a2a823bc4851062fdf6feaf63d5cce2aa022002aebe0ef654f9082890ccbeaf81445466ecf4ddad407275f05253aa220ab77b5eae7b452de1001374160473b0818f9bacd7e0222a7d36cf5516526896cc4de2da4c019bd02be2eda6d8f6b0005d8225cc25148137ea7f26e7d8f5740055dac2c80127d19be954096a0131fae822b18d8f37b5dfd1e0022222123ebf174fc268d56bb114f809bd4ea8a9ad1ea0aa86f47dfc73aa8a4284b338c88dd444ba8a2dee4e9f5fa084a2ca858ed71711169f1754a413ddae4e9f67a8d444176cf5411778040002c40409dd59e639405025c798fc69b02494da84b0e3d36e749b1c44001578aa0d27a72410959231e835db670114d8812a8d614174e9357a1080277d381080e9f467b810ebbb7c5dbf4b (by decide +kernel)
 
 private theorem ok_a01 : Impossible board_a01 :=
   fork 71 ok_a010 ok_a011
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
-private theorem ok_a00111 : Impossible board_a00111 :=
-  kernelLeaf board_a00111 #[0x612f652762152f63412e7662372b41632957215d68315b573d5b622f57414d50, 0x7c6e315b2b41141c0f1d2955544b3b6a2e5b3d154b2d756a215626142e3c5b31, 0x6120626d616076665161631d37216d0d412b37472f563b1d1f3c543341557c14, 0x343166596c2d41616c33413c6160763145331c310a22332047606e2228702a62, 0x2b372b702c2b1b4727292049291a2833275522512d3353283d1b20232b212d41, 0x2b695f612f556a417841513b55612e57762a742f6876366d1933282e4d625433, 0x723c6541531b413c5e65535b4160166b2f5e6833455d4d6a2e672e1e166b2821, 0x6e1e5b70624d1b5f612b2f7024604d5f782b705f285d414d795f68412e55602a, 0x411e2b5b55415b2f4565576e451f532331266e2b66242e414d761e4b59666020, 0x635755556a414120] (by decide +kernel)
-
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 0 in
-private theorem ok_a00110 : Impossible board_a00110 :=
-  kernelLeaf board_a00110 #[0x68776965293d292e41162320372e24452b3471651b542e2e7a6b344172556257, 0x1b2b4c411b633d4162624c516b2d68693c3d516863212b41662f3d7066635b41, 0x3d290b235528662b416b342b0c1e360a41655141693d2d416d13565b291e636a, 0x2b0a47284141651b472a4b1b637f132b565b362b414b3d232a4b2b2d41286655, 0x4b26316314143b45144b623c14682e1d201e292856] (by decide +kernel)
-
 private theorem ok_a0011 : Impossible board_a0011 :=
-  fork 88 ok_a00110 ok_a00111
+  kernelLeaf board_a0011 0x200a898f45512bf571046af5ab05051020e081074190b073dabedeb575004160f6f5fa31715cbd7f7704c2000401173f82253c47d4820231d4deed5f9b150004526aee140083cdc953b67b04165f675044cde0d54040906ca4a116ecf76fe1e2c015a81546166e6f919bfe1d0595ebfe19284935b070a020ac04defe878d5fc350055bfaaa4a8c5016ef2b14a05079bf9effa3404560ea22bbabe0d57cb85845e6402e5c05420f4f5414114637b07798a237bcb8034f5141b7a880021077065bd7afd0096f60a23a3679317bbcdf56813032ed540033eab2802082ecf65bd7ab00028c050e8abf4e8a57fc3afd01500441abead445055104160ef8c08838acd1ddf57c3a0aedaff6d568328374d665411197fa3eda882dbdb99e01596059f28d7737c5d4c0467a082bc041146fabf86a200b35579bd511563e230127c4054e8311564e022a735a8d9e8108a7d5aba82a2e528eb74540167d3d46f74420de8304551e4aabd0f2ab783b4c00058e84ac0e6c16cfb35115415bc1f0e02bb344567a8ab0740079e1f07db54558f000a345d9e0a7358e2ba08045a094cf418128031fc1eec08045a8f86ab00717187445411078b04dbb61f07db5011cdc89475011630f8f3b820df0940955290fb71bc1d5f002adf8fafeb602bbd81104ee7f1e6408054d6780041c0aba007cc82000a69f3dda080831e02b788af83c10014c8e63f3b908a9e11abd4d25eefd5aed54105b78aa3dd15509052b92f10115b8880a9d73560a82a87ad8aa0009b29aee679dbd8f875fa080e5c0113ee2d4421004aeaff1f074485000a5df6dc5b24b7c5780a082b07c7a9ebe1202109287bbe8c463dbc501afbdd102414b7a00e2d2515fd7e0f37a1c0a2094bc4854dcc7444131e53a10a6b03bc418b94e5f8ba415401e653d1aed40a0104ee22833dc012a7254680d56d5e2b90588fd04228e0f02107cb9bd4108fa40aab96065e6fc78ff93c0057a215bb7a0204b6c915f071001119782f747aad4565e242bc055bc1d479b42556abbde8204214e2f47b21578a502151e6d5f07d7b4c0890010578ccf722036c57282d07cba9094783e9e4055ee82b783edc9ea55bb7a8208a73da40a58fd5b326f578a88cccd4441839bf1ebde404a83e2d501671733a3ebc888556fa3142455d3bcdee0b4741a142d1e3d14850eaf83e6d7e800200af74412e18e6f1ea16f83e8d45efa1a78cb820a72405ee8c24a71405dc1cb680223e45106df5da4d148babe09a6b44a403c7cb9bea6bb000977eb40d7c934e0fcbabe2ebf63 (by decide +kernel)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_a0010 : Impossible board_a0010 :=
-  kernelLeaf board_a0010 #[0x5d70186570122d5537146a58655b59282d6859595814664b5959336149375f5e, 0x232e151c2e2037233d556e606c282f371c54282959595527593d3d0a62371437, 0x3b4b3766582726312e236229206a2e2e2d6d761c503770495b59761e5d3d572d, 0x6255703d685f1c3d375b372e5d6a766254535f292d3d12282e6a2f371e366253, 0x312a3d262d6a5f1428203657] (by decide +kernel)
+  kernelLeaf board_a0010 0x24400058eab40117ba6c00156ea823abbf94c411151a0080836d88d7f162020157250501386022f7d1dfc004e6202283dd006fdbc521409bf2eeefab1144ede2ea6853c12fe1413248a788016e200a3de25a8d77ab40155f8df51200f6dbc5ca92a53ddea00cbc81bf9bb1815208a7d1484dab1c1509768f0100c5a9d072a06ad976c24bb5bedfb673a182800dfe1aa88327b7ab67ed87b810214bb8822bdebf02004b706051e2ec0462b8a1cd7620dbf28a8f7bd5f7783011d980002a35f8800df39a015351a9d4505b3a020167aba7d4016b3c093dc427b8af17014c037ca6428337cbbf0c0400c684e5c4e192e062020056f576f94f57634041232f6f5b3d020a314456e868ece800ad9ec653cd80284bc001b3a800216767e1e0093b7eff7b (by decide +kernel)
 
 private theorem ok_a001 : Impossible board_a001 :=
   fork 72 ok_a0010 ok_a0011
@@ -4206,7 +3002,7 @@ private theorem ok_a001 : Impossible board_a001 :=
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 0 in
 private theorem ok_a000 : Impossible board_a000 :=
-  kernelLeaf board_a000 #[0x261b242924155d3129541d2e270a245e5f5d312d491b282b20685e6b23453763, 0x5e31613150474d232e29582a692d455668582a2f5f2d2331452f70533c3d2f1d, 0x2b80663328615f593165263366235b26245b5e2e192b2069453747283c5d5f1b, 0x506e56615137682d6651415f7857576128240d37663418341b45415e54515f71, 0x451d416857746e56574569202d415e6151692d665141375f1a2f681866686857, 0x1b374d5f5d165f685b1b2331712469413145416565694569775b66667665415e, 0x5f37382a5f2d56697968545f215b311b411d271d5e7223372e4141275b291627, 0x273437275b686e1e3b5e4137292e3c3d372f372a26375d315f615b] (by decide +kernel)
+  kernelLeaf board_a000 0x1513ed30400481be9f8201002dfa3dd9ec0077a08dee0e02b7d4ebb441555e6f746fafd4106fac02aac80936dfbbb1d501bf8008187b780adfdbe408220000e355dfd6e8000d5b4154541d3f9f4753bf8544087b7b1d04450378201071093ba7d1513bc0257be5a3dbebb410183829074fc8a85bd95396c004f9bdbea8cdd056fe95dcb68dfd04d1dbcde8f63f1d26808169d838a4ac90b1e2f07cb808a221397d3c5c000074e3dfb7a39b601737dbcbc1ef6a2c5d4208eec1c04d1d7d00217a7bbada257d0422fa7442141a22de0f7bc3a08022d1c429551d38aaa12df36d1e0e9237efec089ae015f903a3318000059b07460068ebea00008943ddd6f0e800ad1c1be884ae8c64116f9b68f07bff8d40af8220295fc3a00c8928c4484526371be8a004e6c2115a746384699be2f07bda90d4c5a3dff8eaf400100694003ff736802000cf51e1efe08000129675000163e5d604936cfcda423c488b7a6c00005276f400002f6bb8133abd07a78bb7e3eaa842a379808ddd585bf9bef6c70141001070ec7a1c7d444126e8f19045da028a74050ac6abd3ade2eaa15ba504814d1d8d55155aafefeb702011ea0082c78b8280004aff874f79bde15215f80028a77936a9bd2622a7200912657bbb1c0455390a0acd4ceebb00444f882b49dee10bfddd8e14aade4f12829bc400505192af41a4368d10842f7af47c5dbf8f (by decide +kernel)
 
 private theorem ok_a00 : Impossible board_a00 :=
   fork 82 ok_a000 ok_a001
