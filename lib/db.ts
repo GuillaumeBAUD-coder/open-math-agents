@@ -1,7 +1,9 @@
 import "server-only";
 import { createHash } from "node:crypto";
 import { env as cfEnv } from "cloudflare:workers";
+import * as cfWorkers from "cloudflare:workers";
 import type { Mate, TeamNote } from "@/lib/collab";
+import { joinFlight, type Flight } from "@/lib/edgecache";
 
 /** Coordination desk client. Every call goes through one Postgres function, oma_api, which checks
  * OMA_DB_SECRET server-side (see supabase/migrations/002_api_gate.sql). The Supabase key only
@@ -13,23 +15,99 @@ const SECRET = process.env.OMA_DB_SECRET;
 
 export const deskOnline = Boolean(URL_ && KEY && SECRET);
 
-// Circuit breaker: after a timeout or a 5xx, this Worker instance stops calling the database for 2 min, so an overloaded
-// database gets room to recover instead of a pile of waiting requests, and pages answer at once (cached or empty values).
-let downUntil = 0;
-export const deskDown = () => Date.now() < downUntil;
+// Circuit breaker: after a timeout or a 5xx, this Worker instance stops calling the database for a while, so an
+// overloaded database gets room to recover instead of a pile of waiting requests, and pages answer at once (cached or
+// empty values). Two of them: a failed read (pages refresh with a 1 s budget, and have a last good value to fall back
+// on) pauses reads for 2 min but not the agents' writes; a failed write pauses both, writes for 30 s.
+// The state is also shared with every other instance of the data centre (a marker in its Cache API), so one failure
+// pauses the whole data centre instead of costing each of its instances its own timed-out call.
+// During a long outage the pauses grow (30 s, 1, 2, 4 min, then 5 min) and only one call per data centre probes the
+// database when a pause ends; the others fail at once instead of each waiting for its own timeout (that waiting made
+// 1 to 10% of requests take 8 s while the database was down).
+let readsDownUntil = 0;
+let writesDownUntil = 0;
+let failStreak = 0;
+export const deskDown = () => Date.now() < Math.max(readsDownUntil, writesDownUntil);
 
-async function rpc<T>(fn: string, args: Record<string, unknown>, timeoutMs = 8000): Promise<T> {
-  if (Date.now() < downUntil) throw new Error("desk_unavailable");
+/** Thrown when the database cannot answer (breaker open, timeout, 5xx): API routes answer 503 with Retry-After. */
+export class DeskUnavailable extends Error {
+  constructor(cause?: unknown) {
+    super(`desk_unavailable${cause instanceof Error ? `: ${cause.message}` : ""}`);
+    this.name = "DeskUnavailable";
+  }
+}
+
+/** An answer of the database itself (4xx: bad argument, unknown function): not a sign of overload, trips no breaker. */
+class DeskRefused extends Error {}
+
+const breakerReq = () => new Request(`${CACHE_ORIGIN}/__desk_down`);
+
+async function coloBreaker(): Promise<void> {
+  const cache = edgeCache();
+  if (!cache) return;
+  const hit = await cache.match(breakerReq()).catch(() => undefined);
+  if (!hit) return;
+  const b = (await hit.json().catch(() => null)) as { reads?: number; writes?: number; streak?: number } | null;
+  if (b) {
+    readsDownUntil = Math.max(readsDownUntil, Number(b.reads) || 0);
+    writesDownUntil = Math.max(writesDownUntil, Number(b.writes) || 0);
+    failStreak = Math.max(failStreak, Number(b.streak) || 0);
+  }
+}
+
+async function tripColo(): Promise<void> {
+  const cache = edgeCache();
+  if (!cache) return;
+  const until = Math.max(readsDownUntil, writesDownUntil);
+  // kept a while after the pause ends, so the failure streak (and thus probe mode) survives until a call succeeds
+  const s = Math.max(1, Math.ceil((until - Date.now()) / 1000)) + (failStreak ? 900 : 0);
+  await cache
+    .put(breakerReq(), new Response(JSON.stringify({ reads: readsDownUntil, writes: writesDownUntil, streak: failStreak }), { headers: { "Content-Type": "application/json", "Cache-Control": `public, max-age=${s}` } }))
+    .catch(() => undefined);
+}
+
+async function rpc<T>(fn: string, args: Record<string, unknown>, timeoutMs = 4000, kind: "read" | "write" = "write"): Promise<T> {
+  const open = () => {
+    const now = Date.now();
+    return now < writesDownUntil || (kind === "read" && now < readsDownUntil);
+  };
+  if (open()) throw new DeskUnavailable();
+  await coloBreaker();
+  if (open()) throw new DeskUnavailable();
+  const probing = failStreak > 0;
+  if (probing) {
+    // after failures, this call is the data centre's single probe: everyone else fails fast until it returns
+    const lock = Date.now() + timeoutMs + 500;
+    readsDownUntil = Math.max(readsDownUntil, lock);
+    writesDownUntil = Math.max(writesDownUntil, lock);
+    await tripColo();
+  }
   try {
-    return await rpcOnce<T>(fn, args, timeoutMs);
+    const value = await rpcOnce<T>(fn, args, timeoutMs);
+    if (probing) {
+      failStreak = 0; readsDownUntil = 0; writesDownUntil = 0;
+      await edgeCache()?.delete(breakerReq()).catch(() => undefined);
+    }
+    return value;
   } catch (e) {
-    downUntil = Date.now() + 120_000;
-    throw e;
+    if (!(e instanceof DeskRefused)) {
+      failStreak = Math.min(failStreak + 1, 10);
+      const pause = Math.min(30_000 * 2 ** (failStreak - 1), 300_000);
+      readsDownUntil = Date.now() + Math.max(120_000, pause);
+      writesDownUntil = Date.now() + pause;
+      await tripColo();
+    } else if (probing) {
+      // the database answered (a 4xx is an answer): it is up
+      failStreak = 0; readsDownUntil = 0; writesDownUntil = 0;
+      await edgeCache()?.delete(breakerReq()).catch(() => undefined);
+    }
+    throw new DeskUnavailable(e);
   }
 }
 
 async function rpcOnce<T>(fn: string, args: Record<string, unknown>, timeoutMs: number): Promise<T> {
-  // Never let a slow database hang the site: reads give up after 4 s (and fall back to the last good value), writes after 8 s.
+  // Never let a slow database hang the site: page reads give up after 1 s (and fall back to the last good value),
+  // background refreshes after 3 s, writes after 8 s.
   const res = await fetch(`${URL_}/rest/v1/rpc/oma_api`, {
     method: "POST",
     headers: { apikey: KEY!, "Content-Type": "application/json" },
@@ -37,7 +115,10 @@ async function rpcOnce<T>(fn: string, args: Record<string, unknown>, timeoutMs: 
     cache: "no-store",
     signal: AbortSignal.timeout(timeoutMs),
   });
-  if (!res.ok) throw new Error(`oma_api ${fn} ${res.status}: ${(await res.text()).slice(0, 200)}`);
+  if (!res.ok) {
+    const msg = `oma_api ${fn} ${res.status}: ${(await res.text()).slice(0, 200)}`;
+    throw res.status >= 400 && res.status < 500 && res.status !== 408 && res.status !== 429 ? new DeskRefused(msg) : new Error(msg);
+  }
   return (await res.json()) as T;
 }
 
@@ -47,7 +128,7 @@ async function rpcOnce<T>(fn: string, args: Record<string, unknown>, timeoutMs: 
  * Supabase. Concurrent identical reads wait for one call. Writes (claims, beats, verdicts) are never cached.
  */
 const MEM = new Map<string, { at: number; value: unknown }>();
-const INFLIGHT = new Map<string, Promise<unknown>>();
+const INFLIGHT = new Map<string, Flight>();
 const CACHE_ORIGIN = (process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://lefttosolve.com").replace(/\/$/, "");
 function edgeCache(): Cache | null {
   try {
@@ -60,6 +141,12 @@ function edgeCache(): Cache | null {
 // Reads shared by every page (no per-problem or per-person argument): also kept in Workers KV, one copy for the whole
 // network, so Supabase answers them about once per time-to-live worldwide instead of once per data centre.
 const GLOBAL_FNS = new Set(["stats", "live", "active_ids", "steps", "solved", "leaderboard", "leaderboard2", "calendar", "graveyard"]);
+// The site-wide event lists (/live, /feed, the desk's pending submissions) are shared too; one problem's history and
+// the feed's older pages (before=) stay per data centre, and so does a kind nobody writes (no KV key per typo).
+const EVENT_KINDS = new Set(["claim", "release", "submit", "accepted", "rejected", "fault", "note", "reduced", "formalized", "shorter"]);
+const isGlobal = (fn: string, args: Record<string, unknown>) =>
+  (GLOBAL_FNS.has(fn) && !("parent" in args)) ||
+  (fn === "events" && !("problem" in args) && !("before" in args) && (!("kind" in args) || EVENT_KINDS.has(String(args.kind))));
 type KV = { get(k: string, o: { type: "json"; cacheTtl?: number }): Promise<unknown>; put(k: string, v: string, o?: { expirationTtl?: number }): Promise<void> };
 function kv(): KV | null {
   try {
@@ -69,6 +156,42 @@ function kv(): KV | null {
   }
 }
 
+/** ctx.waitUntil of the current request (cloudflare:workers exports it), or null where the runtime has none. */
+function waitUntilFn(): ((p: Promise<unknown>) => void) | null {
+  try {
+    const w = (cfWorkers as unknown as { waitUntil?: (p: Promise<unknown>) => void }).waitUntil;
+    return typeof w === "function" ? w : null;
+  } catch {
+    return null;
+  }
+}
+
+type Entry<T> = { at: number; value: T };
+/** Keys this instance is refreshing in the background (the others keep serving the last value meanwhile). */
+const REFRESHING = new Set<string>();
+
+/** One read from the database, stored everywhere the next readers look: this instance, the data centre, KV. */
+async function refresh<T>(fn: string, args: Record<string, unknown>, key: string, revalidate: number, timeoutMs: number, store: KV | null): Promise<T> {
+  const value = await rpc<T>(fn, args, timeoutMs, "read");
+  const at = Date.now();
+  if (MEM.size > 2000) MEM.clear();
+  MEM.set(key, { at, value });
+  const body = JSON.stringify({ at, value });
+  // One write per key per refresh; kept a day so it also serves as the last good value when the database fails.
+  if (store) await store.put(`v1:${key}`, body, { expirationTtl: 86400 }).catch(() => undefined);
+  const cache = edgeCache();
+  if (cache) {
+    await cache
+      .put(new Request(`${CACHE_ORIGIN}/__desk_cache/${encodeURIComponent(key)}`), new Response(body, { headers: { "Content-Type": "application/json", "Cache-Control": `public, max-age=${revalidate}` } }))
+      .catch(() => undefined);
+    // A longer-lived copy, served while a refresh runs and when the database fails.
+    await cache
+      .put(new Request(`${CACHE_ORIGIN}/__desk_stale/${encodeURIComponent(key)}`), new Response(body, { headers: { "Content-Type": "application/json", "Cache-Control": "public, max-age=86400" } }))
+      .catch(() => undefined);
+  }
+  return value;
+}
+
 async function api<T>(fn: string, args: Record<string, unknown> = {}, revalidate?: number): Promise<T> {
   if (!deskOnline) throw new Error("desk_offline");
   if (!revalidate) return rpc<T>(fn, args);
@@ -76,26 +199,26 @@ async function api<T>(fn: string, args: Record<string, unknown> = {}, revalidate
   const ttl = revalidate * 1000;
   const m = MEM.get(key);
   if (m && Date.now() - m.at < ttl) return m.value as T;
-  // Reads are cached twice as long as asked while the database is under load (STALE_FACTOR), and a failed refresh
-  // serves the last good value instead of an empty page.
-  const running = INFLIGHT.get(key);
-  if (running) return running as Promise<T>;
+  // A failed refresh serves the last good value instead of an empty page.
+  // A read shared with a request that has since ended cannot settle here: run it again (lib/edgecache.ts, joinFlight).
+  const running = joinFlight(INFLIGHT, key, () => api<T>(fn, args, revalidate));
+  if (running) return running;
   const p = (async () => {
     const cache = edgeCache();
     const req = new Request(`${CACHE_ORIGIN}/__desk_cache/${encodeURIComponent(key)}`);
     if (cache) {
       const hit = await cache.match(req).catch(() => undefined);
       if (hit) {
-        const { at, value } = (await hit.json()) as { at: number; value: T };
-        if (Date.now() - at < ttl) {
-          MEM.set(key, { at, value });
-          return value;
+        const got = (await hit.json().catch(() => null)) as Entry<T> | null;
+        if (got && Date.now() - got.at < ttl) {
+          MEM.set(key, got);
+          return got.value;
         }
       }
     }
     // Global copy (KV). Fresh: use it. A little stale: most callers still use it and only ~15% refresh it, so the
     // data centres that notice at the same moment do not all call the database.
-    const store = GLOBAL_FNS.has(fn) && !("parent" in args) ? kv() : null;
+    const store = isGlobal(fn, args) ? kv() : null;
     let kvStale: { at: number; value: T } | null = null;
     if (store) {
       const got = (await store.get(`v1:${key}`, { type: "json", cacheTtl: 30 }).catch(() => null)) as { at: number; value: T } | null;
@@ -113,31 +236,38 @@ async function api<T>(fn: string, args: Record<string, unknown> = {}, revalidate
         kvStale = got;
       }
     }
-    let value: T;
+    // The last value: this instance's, KV's, or the data centre's day-long copy.
+    let staleRead = false;
+    let stale: Entry<T> | null = (MEM.get(key) as Entry<T> | undefined) ?? kvStale;
+    const lastValue = async () => {
+      if (!stale && !staleRead && cache) {
+        staleRead = true;
+        stale = (await cache.match(new Request(`${CACHE_ORIGIN}/__desk_stale/${encodeURIComponent(key)}`)).then((r) => (r ? r.json() : null)).catch(() => null)) as Entry<T> | null;
+      }
+      return stale;
+    };
+    // Stale-while-revalidate: a value at most three time-to-lives old is served at once and refreshed after the
+    // response (one refresh per key per instance), so a page never waits on the database when it has a recent value.
+    const later = waitUntilFn();
+    if (later) {
+      const last = await lastValue();
+      if (last && Date.now() - last.at < 3 * ttl) {
+        if (!REFRESHING.has(key)) {
+          REFRESHING.add(key);
+          later(refresh<T>(fn, args, key, revalidate, 3000, store).catch((e) => console.error(e)).finally(() => REFRESHING.delete(key)));
+        }
+        return last.value;
+      }
+    }
     try {
-      value = await rpc<T>(fn, args, 1000);
+      return await refresh<T>(fn, args, key, revalidate, 1000, store);
     } catch (e) {
-      const stale = MEM.get(key) ?? kvStale ?? (cache ? await cache.match(new Request(`${CACHE_ORIGIN}/__desk_stale/${encodeURIComponent(key)}`)).then((r) => (r ? r.json() : null)).catch(() => null) : null);
-      if (stale) return (stale as { value: T }).value;
+      const last = await lastValue();
+      if (last) return last.value;
       throw e;
     }
-    const at = Date.now();
-    if (MEM.size > 2000) MEM.clear();
-    MEM.set(key, { at, value });
-    // One write per key per refresh; kept a day so it also serves as the last good value when the database fails.
-    if (store) await store.put(`v1:${key}`, JSON.stringify({ at, value }), { expirationTtl: 86400 }).catch(() => undefined);
-    if (cache) {
-      await cache
-        .put(req, new Response(JSON.stringify({ at, value }), { headers: { "Content-Type": "application/json", "Cache-Control": `public, max-age=${revalidate}` } }))
-        .catch(() => undefined);
-      // A longer-lived copy, used only when the database fails.
-      await cache
-        .put(new Request(`${CACHE_ORIGIN}/__desk_stale/${encodeURIComponent(key)}`), new Response(JSON.stringify({ at, value }), { headers: { "Content-Type": "application/json", "Cache-Control": "public, max-age=86400" } }))
-        .catch(() => undefined);
-    }
-    return value;
-  })().finally(() => INFLIGHT.delete(key));
-  INFLIGHT.set(key, p);
+  })().finally(() => { if (INFLIGHT.get(key)?.p === p) INFLIGHT.delete(key); });
+  INFLIGHT.set(key, { p, at: Date.now() });
   return p as Promise<T>;
 }
 
@@ -180,6 +310,12 @@ export type Event = { id: number; kind: string; problem_id: string; handle: stri
 export async function getEvents(limit = 60, problem?: string, kind?: string, before?: number): Promise<Event[]> {
   if (!deskOnline) return [];
   try {
+    // One problem's history is read once with 60 entries and cut here, so its page (20) and its agent.txt (60) share
+    // one cached read instead of two.
+    if (problem && limit <= 60) {
+      const all = await api<Event[]>("events", { limit: 60, problem, ...(kind ? { kind } : {}), ...(before ? { before } : {}) }, 180);
+      return all.slice(0, limit);
+    }
     return await api<Event[]>("events", { limit, ...(problem ? { problem } : {}), ...(kind ? { kind } : {}), ...(before ? { before } : {}) }, problem ? 180 : 60);
   } catch (e) {
     console.error(e);
@@ -277,7 +413,23 @@ export const getCalendar = (days = 90) => safe<Day[]>("calendar", { days }, [], 
 
 export type Step = { id: string; reduction: string; parent: string; k: number; statement: string; module: string; points: number; created_at: string; solved: boolean; reduction_pr: string; reduction_by: string };
 /** Steps of accepted reductions. Pages: 60 s cache. The desk (fresh=true): 15 s; a step solved meanwhile is refused at claim time (already_solved). */
-export const getSteps = (parent?: string, fresh = false) => safe<Step[]>("steps", parent ? { parent } : {}, [], fresh ? 60 : 600);
+export async function getSteps(parent?: string, fresh = false): Promise<Step[]> {
+  const ttl = fresh ? 60 : 600;
+  if (parent) {
+    // The shared list of every step (one KV copy worldwide) says whether anything hangs under this id: most problems
+    // have no steps, and their pages then skip the per-problem read. An empty or failed list decides nothing.
+    const all = await safe<Step[]>("steps", {}, [], ttl);
+    if (all.length > 0 && !all.some((s) => s.id === parent || s.parent === parent)) return [];
+  }
+  return safe<Step[]>("steps", parent ? { parent } : {}, [], ttl);
+}
+
+/** The same read with no cache and no fallback: throws DeskUnavailable when the database cannot answer. For the
+ * verdict route, which must never mistake a failed read for "this step does not exist" (that refused merged work). */
+export const getStepsStrict = async (parent: string) => {
+  if (!deskOnline) throw new DeskUnavailable();
+  return rpc<Step[]>("steps", { parent }, 4000, "read");
+};
 
 export const logEvent = (kind: string, problem: string, handle: string, detail: string) =>
   api<{ ok?: boolean; error?: string }>("log", { kind, problem, handle, detail });
@@ -285,6 +437,16 @@ export const logEvent = (kind: string, problem: string, handle: string, detail: 
 export type Contribution = { handle: string; share: number; roles: { role: "proof" | "step" | "reduction"; item: string; pr: string; agent?: string | null; model?: string | null }[] };
 /** Shares of everyone who contributed to the accepted solution of a problem (sum to 1). Empty if unsolved. */
 export const getContributions = (problem: string) => safe<Contribution[]>("contributions", { problem }, [], 120);
+/** Contributions, or null when the database could not answer (getContributions reads that as "none"). */
+export async function getContributionsOrNull(problem: string): Promise<Contribution[] | null> {
+  if (!deskOnline) return null;
+  try {
+    return await api<Contribution[]>("contributions", { problem }, 120);
+  } catch (e) {
+    console.error(e);
+    return null;
+  }
+}
 
 
 /** Ids of every problem or step that has any history (taken, sent, proved...): a small list, refreshed once a minute.

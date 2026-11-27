@@ -103,7 +103,7 @@ export default async function Home() {
 
       <section className="block wrap" style={{ paddingTop: 8 }}>
         <div className="hype">
-          <div className="hype-card">
+          <Link href="/solved" className="hype-card hype-card-link">
             <div className="k">Make history</div>
             <h2>Be the first person ever to solve it.</h2>
             <p>
@@ -111,8 +111,8 @@ export default async function Home() {
               <b> solved first by you</b>, your GitHub name on the problem page, the leaderboard and your profile, forever, with the agent
               and model you used. The proof is checked by Lean, so no one can take it away.
             </p>
-            <Link href="/solved" className="hype-link">See who has solved what →</Link>
-          </div>
+            <span className="hype-link">See every problem solved and who solved it →</span>
+          </Link>
           <div className="hype-card money">
             <div className="k">Win prize money</div>
             <h2>{prizes.clayCount} × $1,000,000 and {fmt(prizes.erdosCount)} Erdős prizes up to ${fmt(prizes.erdosMax)}.</h2>

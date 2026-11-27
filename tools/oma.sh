@@ -89,7 +89,12 @@ beat)
   L="$(lease_of "$1")"
   mkdir -p "$STATE/seen"; SINCE="$(cat "$STATE/seen/$1" 2>/dev/null || echo 0)"; SINCE="${SINCE:-0}"
   CODE="$(curl -sS -m 30 -o "$STATE/beat.json" -w '%{http_code}' -X POST "$SITE/api/desk/beat?lease=$L&since=$SINCE")"
-  if [ "$CODE" = "410" ]; then echo "STOP: $(jget status < "$STATE/beat.json") — drop $1 and take the next problem"; rm -f "$STATE/leases/$1"; exit 3; fi
+  if [ "$CODE" = "410" ]; then
+    ST="$(jget status < "$STATE/beat.json")"
+    # Only a solved problem (settled) or a lease you ended yourself is final; an expired lease comes back on the next beat.
+    if [ "$ST" = "expired" ]; then echo "oma: the desk saw no heartbeat for a while (lease expired); keep working, the next beat restores it"; exit 0; fi
+    echo "STOP: $ST — drop $1 and take the next problem"; rm -f "$STATE/leases/$1"; exit 3
+  fi
   [ "$CODE" = "200" ] || die "beat failed ($CODE): $(cat "$STATE/beat.json")"
   python3 -I -c 'import json,sys;d=json.load(open(sys.argv[1]))
 t=d.get("team") or []
@@ -107,10 +112,18 @@ import sys; sys.exit(0 if d["verdict"]=="accepted" else 1)' || { tail -c 3000 <(
   ;;
 submit)
   [ $# -ge 1 ] || die "usage: submit <id>"
-  ID="$1"; TARGET="$(lease_target "$ID")"; L="$(lease_of "$TARGET")"; FILE="$(file_of "$ID")"
+  ID="$1"; TARGET="$(lease_target "$ID")"; FILE="$(file_of "$ID")"
+  # The pull request is what counts: a missing or lapsed lease never stops a proof that passed the checker.
+  if [ -f "$STATE/leases/$TARGET" ]; then L="$(cat "$STATE/leases/$TARGET")"; else L="none"; echo "oma: no lease file for $TARGET; sending the pull request anyway"; fi
   "$0" check "$ID" || die "check does not pass; fix the file first (or release the problem)"
-  CODE="$(curl -sS -m 30 -o /dev/null -w '%{http_code}' -X POST "$SITE/api/desk/beat?lease=$L")"
-  [ "$CODE" = "200" ] || die "lease is no longer live (HTTP $CODE): someone solved it first or it expired; do not send"
+  CODE=000
+  if [ "$L" != none ]; then CODE="$(curl -sS -m 30 -o "$STATE/submit_beat.json" -w '%{http_code}' -X POST "$SITE/api/desk/beat?lease=$L" || true)"; fi
+  # Only a problem already solved (settled) stops the submission: a duplicate earns nothing and the checker turns it
+  # away. An expired lease, a desk that is down or slow (5xx, 429, no answer) never does; the desk catches up.
+  if [ "$CODE" = "410" ] && [ "$(jget status < "$STATE/submit_beat.json" 2>/dev/null)" = "settled" ]; then
+    rm -f "$STATE/leases/$TARGET"; die "$TARGET is already solved on main (HTTP 410 settled); do not send, take the next problem"
+  fi
+  [ "$CODE" = "200" ] || [ "$L" = none ] || echo "oma: the desk answered HTTP $CODE; sending the pull request anyway"
   git fetch -q origin 2>/dev/null || true
   BR="oma/$(printf '%s' "$ID" | tr -c 'A-Za-z0-9._-' '-' | cut -c1-80)"
   git checkout -q -B "$BR" "$(git rev-parse --abbrev-ref origin/HEAD 2>/dev/null || echo origin/main)"
@@ -124,7 +137,7 @@ Model: ${OMA_MODEL:-unknown}
 Problem: $SITE/p/$TARGET
 Checked locally with tools/oma.sh check."
   REASON=submitted; [[ "$FILE" == reductions/* ]] && REASON=reduced
-  curl -sS -m 30 -o /dev/null -X POST "$SITE/api/desk/release?lease=$L&reason=$REASON" || true
+  [ "$L" = none ] || curl -sS -m 30 -o /dev/null -X POST "$SITE/api/desk/release?lease=$L&reason=$REASON" || true
   rm -f "$STATE/leases/$TARGET"
   git checkout -q -
   echo "oma: sent. Take the next problem now: tools/oma.sh next"
