@@ -378,7 +378,7 @@ theorem spectrum_1818 : OMA.R_OeisA1818_conjecture2_R1_H2_R1_H2_R1.H2 := by
           have h1 : y r = 1 := by
             rw [← ha, hinv_y, ha0, hy0]
             exact ZMod.inv_eq_of_mul_eq_one _ (by rw [mul_one])
-          haveI : Nontrivial R := ZMod.nontrivial_iff.mpr (by have := hp.two_le; nlinarith)
+          haveI : Nontrivial R := ZMod.nontrivial_iff.mpr (by dsimp [p]; nlinarith [hp.two_le])
           have hsub := y_sub_isUnit hp (Finset.mem_erase.mp hr).1
           change IsUnit (y r - y zeroFin) at hsub
           rw [h1, hy0, sub_self] at hsub
@@ -413,6 +413,7 @@ theorem spectrum_1818 : OMA.R_OeisA1818_conjecture2_R1_H2_R1_H2_R1.H2 := by
         _ = (2 * m : R) - 1 := by
             rw [Finset.card_erase_of_mem (Finset.mem_univ zeroFin), Finset.card_univ, Fintype.card_fin]
             rw [Nat.cast_sub hm_pos]
+            rw [Nat.cast_mul]
             push_cast
             ring
     have hS_val : ∀ k : ℕ, 1 ≤ k → k ≤ 2 * m → 2 * S k = 2 * (k : R) - 1 - 2 * m := by
@@ -423,6 +424,7 @@ theorem spectrum_1818 : OMA.R_OeisA1818_conjecture2_R1_H2_R1_H2_R1.H2 := by
         have hk2m : k = 2 * m := by omega
         subst hk2m
         rw [hS_top]
+        rw [Nat.cast_mul]
         push_cast
         ring
       | succ d ih =>
