@@ -1,122 +1,95 @@
 import OMAStatements.S_oeis_a267921
 
-/-!
-Proof of OEIS A267921 (Rule 243 elementary cellular automaton from a single ON cell):
-1. rule l c r = (l || !c), so for n >= 1, state n x = decide (x != n - 1).
-2. Unfolding encode at 2*n + 1 twice shows (a n : Z) = 2 * 4^n - 3 for n >= 1,
-   which immediately yields both the linear recurrence and generating function.
--/
+-- Credit: @DavidHallgren
+namespace Rule243Proof
 
-private lemma rule_eq (l c r : Bool) :
-    OMA.S_oeis_a267921.rule l c r = (l || !c) := by
-  cases l <;> cases c <;> cases r <;> rfl
+open OMA.S_oeis_a267921 PowerSeries
 
-private lemma state_eq : ∀ n : ℕ, 1 ≤ n → ∀ x : ℤ,
-    OMA.S_oeis_a267921.state n x = decide (x ≠ (n : ℤ) - 1)
-  | 0, h, _ => absurd h (by omega)
-  | 1, _, x => by
-      rw [OMA.S_oeis_a267921.state, OMA.S_oeis_a267921.step, rule_eq]
-      simp only [OMA.S_oeis_a267921.state, OMA.S_oeis_a267921.initial]
-      by_cases hx : x = 0 <;> by_cases hx1 : x - 1 = 0 <;> simp [hx, hx1]
-  | n + 2, _, x => by
-      have ih := state_eq (n + 1) (by omega)
-      rw [OMA.S_oeis_a267921.state, OMA.S_oeis_a267921.step, rule_eq, ih (x - 1), ih x]
-      have hcast1 : ((n + 1 : ℕ) : ℤ) - 1 = (n : ℤ) := by push_cast; ring
-      have hcast2 : ((n + 2 : ℕ) : ℤ) - 1 = (n : ℤ) + 1 := by push_cast; ring
-      rw [hcast1, hcast2]
-      by_cases hx1 : x - 1 = (n : ℤ) <;> by_cases hx : x = (n : ℤ) <;>
-        simp [hx1, hx] <;> omega
+private theorem rule_formula (l c r : Bool) : rule l c r = (l || !c) := by
+  cases l <;> cases c <;> cases r <;> decide
 
-private lemma encode_all_true (g : OMA.S_oeis_a267921.Row) (left : ℤ) :
-    ∀ k : ℕ, (∀ t : ℕ, t < k → g (left + (t : ℤ)) = true) →
-      (OMA.S_oeis_a267921.encode g left k : ℤ) = 2 ^ k - 1
-  | 0, _ => by simp [OMA.S_oeis_a267921.encode]
-  | k + 1, hk => by
-      have ih := encode_all_true g left k fun t ht => hk t (Nat.lt_succ_of_lt ht)
-      have hlast : g (left + (k : ℤ)) = true := hk k (Nat.lt_succ_self k)
-      simp only [OMA.S_oeis_a267921.encode, hlast, OMA.S_oeis_a267921.bit, ite_true]
-      push_cast
-      rw [ih, pow_succ']
-      ring
+/-- At time n+1 the unique off cell is at position n on the full integer line. -/
+private theorem row_shape (n : ℕ) (x : ℤ) : state (n+1) x = decide (x ≠ (n : ℤ)) := by
+  induction n generalizing x with
+  | zero =>
+    simp only [state, step, initial, rule_formula, Nat.cast_zero]
+    by_cases h : x = 0 <;> simp [h]
+  | succ n ih =>
+    change rule _ _ _ = _
+    rw [rule_formula, ih, ih]
+    by_cases h : x - 1 = (n : ℤ)
+    · have hs : x = ((n+1 : ℕ) : ℤ) := by omega
+      simp [hs]
+    · have hs : x ≠ (n : ℤ) + 1 := by omega
+      simp [h, hs]
 
-private lemma a_eq (n : ℕ) (hn : 1 ≤ n) :
-    (OMA.S_oeis_a267921.a n : ℤ) = 2 * 4 ^ n - 3 := by
-  obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
-  have hlen : 2 * (k + 1) + 1 = (2 * k + 1) + 1 + 1 := by omega
-  rw [OMA.S_oeis_a267921.a, hlen, OMA.S_oeis_a267921.encode, OMA.S_oeis_a267921.encode]
-  rw [state_eq (k + 1) (by omega), state_eq (k + 1) (by omega)]
-  rw [decide_eq_false_iff_not.mpr (not_not.mpr (by push_cast; ring)),
-    decide_eq_true_iff.mpr (by push_cast; omega)]
-  simp only [OMA.S_oeis_a267921.bit, Bool.false_eq_true, ite_false, ite_true]
-  push_cast
-  rw [encode_all_true _ _ _ fun t ht => by
-    rw [state_eq (k + 1) (by omega), decide_eq_true_iff]
-    push_cast
-    omega]
-  have hpow : (4 : ℤ) ^ (k + 1) = 2 * (2 : ℤ) ^ (2 * k + 1) := by
-    have h4 : (4 : ℤ) = 2 ^ 2 := by norm_num
-    rw [h4, ← pow_mul, show 2 * (k + 1) = (2 * k + 1) + 1 by omega, pow_succ']
-  linarith
+private theorem encode_ones (g : Row) (l : ℤ) (m : ℕ)
+    (h : ∀ i : ℕ, i < m → g (l + i) = true) : encode g l m + 1 = 2^m := by
+  induction m with
+  | zero => rfl
+  | succ k ih =>
+    have prev := ih (fun i hi => h i (by omega))
+    simp only [encode, h k (by omega), bit, if_true, pow_succ]
+    omega
 
-theorem OMA.solution : type_of% @OMA.S_oeis_a267921.main := by
-  have hrec : ∀ n : ℕ, 2 < n →
-      (OMA.S_oeis_a267921.a n : ℤ) =
-        5 * (OMA.S_oeis_a267921.a (n - 1) : ℤ) - 4 * (OMA.S_oeis_a267921.a (n - 2) : ℤ) := by
-    intro n hn
-    obtain ⟨k, rfl⟩ : ∃ k, n = k + 3 := ⟨n - 3, by omega⟩
-    have hn0 := a_eq (k + 3) (by omega)
-    have hn1 := a_eq (k + 2) (by omega)
-    have hn2 := a_eq (k + 1) (by omega)
-    have hsub1 : k + 3 - 1 = k + 2 := by omega
-    have hsub2 : k + 3 - 2 = k + 1 := by omega
-    rw [hsub1, hsub2, hn0, hn1, hn2]
-    have h41 : (4 : ℤ) ^ (k + 2) = 4 * (4 : ℤ) ^ (k + 1) := by rw [pow_succ']
-    have h42 : (4 : ℤ) ^ (k + 3) = 4 * (4 : ℤ) ^ (k + 2) := by rw [pow_succ']
-    linarith
-  refine ⟨hrec, ?_⟩
-  have hC4 : (4 : PowerSeries ℤ) = PowerSeries.C (4 : ℤ) := by
-    rw [← Nat.cast_ofNat, ← map_natCast (PowerSeries.C (R := ℤ)), Nat.cast_ofNat]
-  have hC5 : (5 : PowerSeries ℤ) = PowerSeries.C (5 : ℤ) := by
-    rw [← Nat.cast_ofNat, ← map_natCast (PowerSeries.C (R := ℤ)), Nat.cast_ofNat]
-  have hC8 : (8 : PowerSeries ℤ) = PowerSeries.C (8 : ℤ) := by
-    rw [← Nat.cast_ofNat, ← map_natCast (PowerSeries.C (R := ℤ)), Nat.cast_ofNat]
-  have hpoly : OMA.S_oeis_a267921.series *
-      ((1 - PowerSeries.X) * (1 - 4 * PowerSeries.X)) =
-      OMA.S_oeis_a267921.series - PowerSeries.C 5 * (PowerSeries.X * OMA.S_oeis_a267921.series) +
-        PowerSeries.C 4 * (PowerSeries.X * (PowerSeries.X * OMA.S_oeis_a267921.series)) := by
-    rw [← hC4, ← hC5]
+/-- The cropped binary word consists of 2n+1 ones followed by 01 at time n+1. -/
+private theorem value (n : ℕ) : a (n+1) + 3 = 8 * 4^n := by
+  let l : ℤ := -((n+1 : ℕ) : ℤ)
+  let m := 2*n+1
+  have ones := encode_ones (state (n+1)) l m (by
+    intro i hi
+    rw [row_shape]
+    simp only [decide_eq_true_eq]
+    dsimp [m] at hi; dsimp [l]; omega)
+  have hole : state (n+1) (l + m) = false := by
+    rw [row_shape]; simp [l,m]; omega
+  have last : state (n+1) (l + ((m+1 : ℕ) : ℤ)) = true := by
+    rw [row_shape]; simp [l,m]; omega
+  have powm : 2^m = 2*4^n := by
+    dsimp [m]; rw [pow_succ, pow_mul]; ring
+  change encode (state (n+1)) l (2*(n+1)+1) + 3 = _
+  rw [show 2*(n+1)+1 = m+1+1 by dsimp [m]; omega]
+  simp only [encode, hole, last, bit, if_true, Bool.false_eq_true, if_false]
+  omega
+
+private theorem recurrence (n : ℕ) (hn : 2 < n) :
+    (a n : ℤ) = 5*(a (n-1) : ℤ) - 4*(a (n-2) : ℤ) := by
+  obtain ⟨k,rfl⟩ : ∃ k, n=k+3 := ⟨n-3,by omega⟩
+  have hv (j : ℕ) : (a (j+1) : ℤ) + 3 = 8 * (4 : ℤ)^j := by
+    exact_mod_cast value j
+  have h0 := hv k
+  have h1 : (a (k+2) : ℤ) + 3 = 8 * (4 : ℤ)^(k+1) := hv (k+1)
+  have h2 : (a (k+3) : ℤ) + 3 = 8 * (4 : ℤ)^(k+2) := hv (k+2)
+  rw [pow_succ] at h1
+  rw [pow_succ, pow_succ] at h2
+  change (a (k+3) : ℤ) = 5*(a (k+2) : ℤ) - 4*(a (k+1) : ℤ)
+  linarith only [h0, h1, h2]
+
+private theorem generating_function :
+    series * ((1-X)*(1-4*X)) = 1 + 8*X^2 := by
+  have h : series * ((1-X)*(1-4*X)) =
+      series - C (5 : ℤ) * (series * X) + C (4 : ℤ) * (series * X^2) := by
+    rw [map_ofNat C 5, map_ofNat C 4]
     ring
-  rw [hpoly, hC8]
-  ext m
-  have ha0 : (OMA.S_oeis_a267921.a 0 : ℤ) = 1 := rfl
-  have ha1 : (OMA.S_oeis_a267921.a 1 : ℤ) = 5 := by
-    rw [a_eq 1 (by omega)]
-    norm_num
-  have ha2 : (OMA.S_oeis_a267921.a 2 : ℤ) = 29 := by
-    rw [a_eq 2 (by omega)]
-    norm_num
-  rw [map_add, map_sub, PowerSeries.coeff_C_mul, PowerSeries.coeff_C_mul,
-    map_add, PowerSeries.coeff_C_mul, PowerSeries.coeff_one, PowerSeries.coeff_X_pow]
-  by_cases hm0 : m = 0
-  · subst hm0
-    rw [PowerSeries.coeff_zero_X_mul, PowerSeries.coeff_zero_X_mul]
-    simp only [OMA.S_oeis_a267921.series, PowerSeries.coeff_mk, ha0]
-    norm_num
-  · by_cases hm1 : m = 1
-    · subst hm1
-      rw [PowerSeries.coeff_succ_X_mul, PowerSeries.coeff_succ_X_mul, PowerSeries.coeff_zero_X_mul]
-      simp only [OMA.S_oeis_a267921.series, PowerSeries.coeff_mk, ha0, ha1]
-      norm_num
-    · by_cases hm2 : m = 2
-      · subst hm2
-        rw [PowerSeries.coeff_succ_X_mul, PowerSeries.coeff_succ_X_mul, PowerSeries.coeff_succ_X_mul]
-        simp only [OMA.S_oeis_a267921.series, PowerSeries.coeff_mk, ha0, ha1, ha2]
-        norm_num
-      · obtain ⟨k, rfl⟩ : ∃ k, m = k + 3 := ⟨m - 3, by omega⟩
-        have hr := hrec (k + 3) (by omega)
-        simp only [show k + 3 - 1 = k + 2 by omega, show k + 3 - 2 = k + 1 by omega] at hr
-        rw [PowerSeries.coeff_succ_X_mul, PowerSeries.coeff_succ_X_mul, PowerSeries.coeff_succ_X_mul]
-        have hne0 : k + 3 ≠ 0 := by omega
-        have hne2 : k + 3 ≠ 2 := by omega
-        simp only [hne0, hne2, ↓reduceIte, OMA.S_oeis_a267921.series, PowerSeries.coeff_mk]
-        linarith
+  have h8 : C (8 : ℤ) = (8 : PowerSeries ℤ) := map_ofNat C 8
+  rw [h, ← h8]
+  ext n
+  simp only [map_add, map_sub]
+  rw [coeff_C_mul_X_pow]
+  simp only [coeff_C_mul, coeff_mul_X_pow', coeff_one]
+  have a0 : a 0 = 1 := by decide
+  have a1 : a 1 = 5 := by decide
+  have a2 : a 2 = 29 := by decide
+  rcases n with _ | _ | _ | k
+  · norm_num [coeff_zero_mul_X, series, coeff_mk, a0]
+  · norm_num [coeff_succ_mul_X, series, coeff_mk, a0, a1]
+  · norm_num [coeff_succ_mul_X, series, coeff_mk, a0, a1, a2]
+  · have hr := recurrence (k+3) (by omega)
+    change (a (k+3) : ℤ) = 5*(a (k+2) : ℤ) - 4*(a (k+1) : ℤ) at hr
+    simp [coeff_succ_mul_X, series, show 2 ≤ k+1+1+1 by omega, show k+1+1+1 ≠ 2 by omega]
+    linarith only [hr]
+
+end Rule243Proof
+
+theorem OMA.solution : type_of% @OMA.S_oeis_a267921.main :=
+  ⟨Rule243Proof.recurrence, Rule243Proof.generating_function⟩
