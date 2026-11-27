@@ -1,5 +1,6 @@
 import "server-only";
 import { createHash } from "node:crypto";
+import { env as cfEnv } from "cloudflare:workers";
 
 /** Coordination desk client. Every call goes through one Postgres function, oma_api, which checks
  * OMA_DB_SECRET server-side (see supabase/migrations/002_api_gate.sql). The Supabase key only
@@ -55,6 +56,18 @@ function edgeCache(): Cache | null {
   }
 }
 
+// Reads shared by every page (no per-problem or per-person argument): also kept in Workers KV, one copy for the whole
+// network, so Supabase answers them about once per time-to-live worldwide instead of once per data centre.
+const GLOBAL_FNS = new Set(["stats", "live", "active_ids", "steps", "solved", "leaderboard", "leaderboard2", "calendar", "graveyard"]);
+type KV = { get(k: string, o: { type: "json"; cacheTtl?: number }): Promise<unknown>; put(k: string, v: string, o?: { expirationTtl?: number }): Promise<void> };
+function kv(): KV | null {
+  try {
+    return ((cfEnv as unknown as { DESK_KV?: KV }).DESK_KV) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 async function api<T>(fn: string, args: Record<string, unknown> = {}, revalidate?: number): Promise<T> {
   if (!deskOnline) throw new Error("desk_offline");
   if (!revalidate) return rpc<T>(fn, args);
@@ -79,17 +92,39 @@ async function api<T>(fn: string, args: Record<string, unknown> = {}, revalidate
         }
       }
     }
+    // Global copy (KV). Fresh: use it. A little stale: most callers still use it and only ~15% refresh it, so the
+    // data centres that notice at the same moment do not all call the database.
+    const store = GLOBAL_FNS.has(fn) && !("parent" in args) ? kv() : null;
+    let kvStale: { at: number; value: T } | null = null;
+    if (store) {
+      const got = (await store.get(`v1:${key}`, { type: "json", cacheTtl: 30 }).catch(() => null)) as { at: number; value: T } | null;
+      if (got) {
+        const age = Date.now() - got.at;
+        if (age < ttl || (age < 3 * ttl && Math.random() > 0.15)) {
+          MEM.set(key, got);
+          if (cache) {
+            await cache
+              .put(req, new Response(JSON.stringify(got), { headers: { "Content-Type": "application/json", "Cache-Control": `public, max-age=${Math.max(10, Math.round((ttl - Math.min(age, ttl)) / 1000) || 10)}` } }))
+              .catch(() => undefined);
+          }
+          return got.value;
+        }
+        kvStale = got;
+      }
+    }
     let value: T;
     try {
       value = await rpc<T>(fn, args, 1000);
     } catch (e) {
-      const stale = MEM.get(key) ?? (cache ? await cache.match(new Request(`${CACHE_ORIGIN}/__desk_stale/${encodeURIComponent(key)}`)).then((r) => (r ? r.json() : null)).catch(() => null) : null);
+      const stale = MEM.get(key) ?? kvStale ?? (cache ? await cache.match(new Request(`${CACHE_ORIGIN}/__desk_stale/${encodeURIComponent(key)}`)).then((r) => (r ? r.json() : null)).catch(() => null) : null);
       if (stale) return (stale as { value: T }).value;
       throw e;
     }
     const at = Date.now();
     if (MEM.size > 2000) MEM.clear();
     MEM.set(key, { at, value });
+    // One write per key per refresh; kept a day so it also serves as the last good value when the database fails.
+    if (store) await store.put(`v1:${key}`, JSON.stringify({ at, value }), { expirationTtl: 86400 }).catch(() => undefined);
     if (cache) {
       await cache
         .put(req, new Response(JSON.stringify({ at, value }), { headers: { "Content-Type": "application/json", "Cache-Control": `public, max-age=${revalidate}` } }))

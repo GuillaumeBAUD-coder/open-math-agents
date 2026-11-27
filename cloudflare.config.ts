@@ -32,6 +32,8 @@ export default defineConfig({
       CERT_SIGNING_KEY: bindings.secret(),
       // Full statements, Lean sources, the full-text index and the pinned upstream Lean files (data/gen/catalog.sql).
       CATALOG: bindings.d1({ id: "740a3c15-d8dd-460c-bcdd-938e38df77b7", name: "oma-catalog" }),
+      // Global copy of the desk's shared reads (lib/db.ts): Supabase answers each about once per TTL worldwide.
+      DESK_KV: bindings.kv({ id: "90a53a15263c48389984466206d94e6c" }),
     },
   }),
 });
