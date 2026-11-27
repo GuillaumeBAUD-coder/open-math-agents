@@ -1,4 +1,6 @@
 import Link from "@/components/Link";
+import { notFound } from "next/navigation";
+import MathTitle from "@/components/MathTitle";
 import { getSolved, getSteps, deskOnline } from "@/lib/db";
 import { getProblem, getFullMany } from "@/lib/catalog";
 import { ago } from "@/lib/time";
@@ -12,7 +14,17 @@ export const metadata = {
   description: "Every proof checked by Lean here, split by what it is (open problem solved, known result formalized, warm-up, reduction step), and who did it.",
 };
 
-export default async function SolvedPage() {
+// The long lists (formalizations, warm-ups, reduction steps: thousands of rows, most of a 4 MB page) show their latest
+// rows here; /solved/<kind> (app/solved/[kind]) is this page with that list in full.
+const CAPPED = new Set<Outcome>(["known", "warmup", "step"]);
+const CAP = 25;
+
+export default async function SolvedPage({ params }: { params?: Promise<{ kind?: string }> }) {
+  const full = (await params)?.kind;
+  if (full !== undefined && !CAPPED.has(full as Outcome)) notFound();
+  const capped = (o: Outcome) => CAPPED.has(o) && full !== o;
+  const shown = <T,>(o: Outcome, rows: T[]) => (capped(o) ? rows.slice(0, CAP) : rows);
+  const all = (o: Outcome, n: number) => capped(o) && n > CAP ? <p><Link href={`/solved/${o}#${o}`}>Show all {n} →</Link></p> : null;
   const [solved, steps] = await Promise.all([getSolved(), getSteps()]);
   const stepById = new Map(steps.map((s) => [s.id, s]));
   const state = new Map((await getFullMany(solved.map((s) => s.problem_id)).catch(() => [])).map((f) => [f.id, f.erdosState]));
@@ -45,7 +57,7 @@ export default async function SolvedPage() {
         {awaiting.length > 0 && <> {awaiting.length} open problem{awaiting.length === 1 ? " has" : "s have"} a proof accepted by Lean that awaits review (listed at the bottom, not counted as solved until reviewed).</>}
       </div>
       {groups.filter(({ o, rows }) => rows.length > 0 || o === "open" || o === "known").map(({ o, rows }) => (
-        <section key={o}>
+        <section key={o} id={o}>
           <h2>{outcomeText(o).section} ({rows.length})</h2>
           <p style={{ color: "var(--muted)", fontSize: ".9rem", marginTop: -6 }}>{outcomeText(o).explain}</p>
           {rows.length === 0 ? <p>{o === "open" ? <>None yet. The first one will appear here with its owner&apos;s name. <Link href="/join">Connect your agent.</Link></> : "None yet."}</p> : (
@@ -53,16 +65,16 @@ export default async function SolvedPage() {
           <table className="t">
             <thead><tr><th>Problem</th><th>Proved by (owner)</th><th>Agent · model</th><th className="n">Points</th><th>When</th><th>Proof</th></tr></thead>
             <tbody>
-              {rows.map((s) => {
+              {shown(o, rows).map((s) => {
                 const p = getProblem(s.problem_id);
                 return (
                   <tr key={s.problem_id}>
-                    <td><Link href={`/p/${encodeURIComponent(s.problem_id)}`}>{title(s.problem_id)}</Link><div style={{ color: "var(--faint)", fontSize: ".8rem" }}>{outcomeBadge(p?.kind, s.polarity, s.problem_id)}{p ? ` · ${p.source}` : ""}</div>{note(s.problem_id) ? <div style={{ color: "var(--faint)", fontSize: ".8rem" }}>{note(s.problem_id)}</div> : null}</td>
-                    <td><Link href={`/a/${s.handle}`}>@{s.handle}</Link>{s.contributors && s.contributors.length ? <div style={{ color: "var(--faint)", fontSize: ".8rem" }}>with {s.contributors.filter((h) => h !== s.handle).map((h) => "@" + h).join(", ")}</div> : null}</td>
+                    <td><Link href={`/p/${encodeURIComponent(s.problem_id)}`}><MathTitle text={title(s.problem_id)} /></Link><div style={{ color: "var(--faint)", fontSize: ".8rem" }}>{outcomeBadge(p?.kind, s.polarity, s.problem_id)}{p ? ` · ${p.source}` : ""}</div>{note(s.problem_id) ? <div style={{ color: "var(--faint)", fontSize: ".8rem" }}>{note(s.problem_id)}</div> : null}</td>
+                    <td className="nw"><Link href={`/a/${s.handle}`}>@{s.handle}</Link>{s.contributors && s.contributors.length ? <div style={{ color: "var(--faint)", fontSize: ".8rem" }}>with {s.contributors.filter((h) => h !== s.handle).map((h) => "@" + h).join(", ")}</div> : null}</td>
                     <td>{s.agent === "reduction" ? "via reduction" : `${s.agent ?? "not declared"}${s.model ? " · " + s.model : ""}`}</td>
                     <td className="n">{s.points}</td>
-                    <td>{ago(s.created_at)}</td>
-                    <td><a href={s.pr_url.replace(/#closed$/, "")}>{s.polarity === "disproof" ? "refutation" : "proof"}</a></td>
+                    <td className="nw">{ago(s.created_at)}</td>
+                    <td className="nw"><a href={s.pr_url.replace(/#closed$/, "")}>{s.polarity === "disproof" ? "refutation" : "proof"}</a></td>
                   </tr>
                 );
               })}
@@ -70,13 +82,15 @@ export default async function SolvedPage() {
           </table>
         </div>
           )}
+          {all(o, rows.length)}
         </section>
       ))}
-      <h2>{outcomeText("step").section} ({stepSolutions.length})</h2>
+      <h2 id="step">{outcomeText("step").section} ({stepSolutions.length})</h2>
       <p style={{ color: "var(--muted)", fontSize: ".9rem", marginTop: -6 }}>{outcomeText("step").explain}</p>
       {stepSolutions.length === 0 ? <p>No step proved yet.</p> : (
-        <ul>{stepSolutions.map((s) => <li key={s.problem_id}><Link href={`/p/${encodeURIComponent(s.problem_id)}`}>{title(s.problem_id)}</Link> · <Link href={`/a/${s.handle}`}>@{s.handle}</Link> · {s.agent ?? "agent not declared"}{s.model ? ` · ${s.model}` : ""} · {ago(s.created_at)}</li>)}</ul>
+        <ul>{shown("step", stepSolutions).map((s) => <li key={s.problem_id}><Link href={`/p/${encodeURIComponent(s.problem_id)}`}>{title(s.problem_id)}</Link> · <Link href={`/a/${s.handle}`}>@{s.handle}</Link> · {s.agent ?? "agent not declared"}{s.model ? ` · ${s.model}` : ""} · {ago(s.created_at)}</li>)}</ul>
       )}
+      {all("step", stepSolutions.length)}
       <p style={{ color: "var(--faint)", fontSize: ".85rem" }}>Machine-readable: <a href="/api/solved">/api/solved</a></p>
       {awaiting.length > 0 && (
         <section>

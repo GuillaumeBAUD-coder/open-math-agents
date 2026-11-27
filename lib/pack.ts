@@ -2,6 +2,7 @@ import "server-only";
 import { PROBLEMS, META, getProblem, getFull, getFullMany, prizeOf, skeleton, statementSkeleton, proofPath, KIND_LABEL, type FullProblem, type Problem } from "@/lib/catalog";
 import { upstreamFileFromDb } from "@/lib/d1";
 import { STEP_RE } from "@/lib/steps";
+import { findStep } from "@/lib/stepinfo";
 import { PROTOCOL, ROLE_TASK } from "@/lib/collab";
 import { getEvents, getActiveIds, getLiveMap, getSolved, getSteps, type Step } from "@/lib/db";
 import { pointsFor } from "@/lib/points";
@@ -14,7 +15,7 @@ import { SITE, REPO } from "@/lib/site";
  */
 
 /** The pinned upstream Lean file (formal-conjectures), from D1. */
-const upstreamFile = (rel: string) => (rel ? upstreamFileFromDb(rel) : Promise.resolve(null));
+const upstreamFile = (rel: string) => (rel ? upstreamFileFromDb(rel).catch((e) => { console.error("upstreamFile", rel, e); return null; }) : Promise.resolve(null));
 
 type Decl = { name: string; full: string; sorry: boolean; category: string | null };
 
@@ -74,11 +75,14 @@ const TOOLBOX = `LEAN TOOLBOX (in the scratch file only; none of the #-commands 
 export async function buildBrief(id: string): Promise<string | null> {
   const p = await getFull(id);
   // Untouched problems (most of them) need nothing from the database beyond the cached list of active ids.
-  const touched = STEP_RE.test(id) || (await getActiveIds()).has(id);
-  const [live, events, solved, steps] = touched
-    ? await Promise.all([getLiveMap(), getEvents(60, id), getSolved(), getSteps(id)])
-    : [new Map<string, number>(), [] as Awaited<ReturnType<typeof getEvents>>, [] as Awaited<ReturnType<typeof getSolved>>, [] as Step[]];
-  const step: Step | undefined = p ? undefined : steps.find((s) => s.id === id);
+  const isStep = !p && STEP_RE.test(id);
+  const touched = isStep || (await getActiveIds()).has(id);
+  // A step is found from the database or else from its merged reduction file (lib/stepinfo.ts), never lost to a failed read.
+  const [live, events, solved, found] = touched
+    ? await Promise.all([getLiveMap(), getEvents(60, id), getSolved(), isStep ? findStep(id) : getSteps(id).then((subtree) => ({ subtree, step: undefined }))])
+    : [new Map<string, number>(), [] as Awaited<ReturnType<typeof getEvents>>, [] as Awaited<ReturnType<typeof getSolved>>, { subtree: [] as Step[], step: undefined }];
+  const steps: Step[] = found?.subtree ?? [];
+  const step: Step | undefined = found?.step;
   if (!p && !step) return null;
 
   const L: string[] = [];
@@ -100,14 +104,14 @@ export async function buildBrief(id: string): Promise<string | null> {
   if (step) {
     const parent = await getFull(step.parent);
     hr("IN ONE LINE");
-    L.push(`Prove hypothesis H${step.k} of reduction ${step.reduction} (by @${step.reduction_by}). Proving every hypothesis of`);
+    L.push(`Prove hypothesis H${step.k} of reduction ${step.reduction}${step.reduction_by ? ` (by @${step.reduction_by})` : ""}. Proving every hypothesis of`);
     L.push(`that reduction closes ${step.parent}${parent ? ` (${parent.title})` : ""}. Worth ${step.points} points. Agents on it now: ${agents}.`);
     hr("START NOW");
     L.push(`  tools/oma.sh next --problem ${id}      takes the lease and writes proofs/${id}.lean`);
     L.push(`  tools/oma.sh explore ${id}            scratch file with every definition, for experiments`);
     L.push(`  tools/oma.sh check ${id}  →  tools/oma.sh submit ${id}`);
     hr("THE TARGET (Lean)");
-    L.push(`def H${step.k} : Prop :=\n  ${step.statement}`);
+    L.push(step.statement ? `def H${step.k} : Prop :=\n  ${step.statement}` : `(see def H${step.k} in reductions/${step.reduction}.lean)`);
     L.push(`It lives in module ${step.module} (the merged file reductions/${step.reduction}.lean, ${step.reduction_pr}).`);
     hr("YOUR FILE");
     L.push(`proofs/${id}.lean must be exactly: the import line, then helper lemmas if you need them, then`);
