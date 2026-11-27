@@ -29,42 +29,18 @@ lemma rec6 (m : ℕ) :
 
 end A329227Proof
 
+open A329227Proof in
 theorem OMA.solution : type_of% @OMA.S_oeis_a329227.main := by
-  have hD : ((1 - 2 * PowerSeries.X + PowerSeries.X ^ 2 - PowerSeries.X ^ 3)
+  rw [show ((1 - 2 * PowerSeries.X + PowerSeries.X ^ 2 - PowerSeries.X ^ 3)
       * (1 + PowerSeries.X - PowerSeries.X ^ 3) : PowerSeries ℤ)
       = 1 - PowerSeries.X ^ 1 - PowerSeries.X ^ 2 - PowerSeries.X ^ 3 + PowerSeries.X ^ 4
-        - PowerSeries.X ^ 5 + PowerSeries.X ^ 6 := by
-    ring
-  rw [hD]
+        - PowerSeries.X ^ 5 + PowerSeries.X ^ 6 by ring]
   ext n
   simp only [mul_add, mul_sub, mul_one, map_add, map_sub, PowerSeries.coeff_mul_X_pow',
     PowerSeries.coeff_mk, PowerSeries.coeff_X_pow]
   rcases (by omega : n = 0 ∨ n = 1 ∨ n = 2 ∨ n = 3 ∨ n = 4 ∨ n = 5 ∨ 6 ≤ n)
-    with rfl | rfl | rfl | rfl | rfl | rfl | h
-  · simp [A329227Proof.a_zero]
-  · simp [A329227Proof.a_zero, A329227Proof.a_one]
-  · simp [A329227Proof.a_zero, A329227Proof.a_one, A329227Proof.a_two]
-  · simp [A329227Proof.a_zero, A329227Proof.a_one, A329227Proof.a_two, A329227Proof.a_three]
-  · simp [A329227Proof.a_zero, A329227Proof.a_one, A329227Proof.a_two, A329227Proof.a_three,
-      A329227Proof.a_four]
-  · simp [A329227Proof.a_zero, A329227Proof.a_one, A329227Proof.a_two, A329227Proof.a_three,
-      A329227Proof.a_four, A329227Proof.a_five]
-  · obtain ⟨m, rfl⟩ : ∃ m, n = m + 6 := ⟨n - 6, by omega⟩
-    have hr := A329227Proof.rec6 m
-    have e1 : m + 6 - 1 = m + 5 := by omega
-    have e2 : m + 6 - 2 = m + 4 := by omega
-    have e3 : m + 6 - 3 = m + 3 := by omega
-    have e4 : m + 6 - 4 = m + 2 := by omega
-    have e5 : m + 6 - 5 = m + 1 := by omega
-    have e6 : m + 6 - 6 = m := by omega
-    have c1 : 1 ≤ m + 6 := by omega
-    have c2 : 2 ≤ m + 6 := by omega
-    have c3 : 3 ≤ m + 6 := by omega
-    have c4 : 4 ≤ m + 6 := by omega
-    have c5 : 5 ≤ m + 6 := by omega
-    have c6 : 6 ≤ m + 6 := by omega
-    have z5 : ¬ m + 6 = 5 := by omega
-    simp only [if_pos c1, if_pos c2, if_pos c3, if_pos c4, if_pos c5, if_pos c6,
-      if_neg z5, e1, e2, e3, e4, e5, e6]
-    rw [hr]
-    ring
+    with rfl | rfl | rfl | rfl | rfl | rfl | h <;>
+    try (simp [a_zero, a_one, a_two, a_three, a_four, a_five]; done)
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 6 := ⟨n - 6, by omega⟩
+  simp [rec6 m]
+  ring
