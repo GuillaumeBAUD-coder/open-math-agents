@@ -994,7 +994,8 @@ lemma disjoint_regular_routes {V : Type*} [DecidableEq V] (G : SimpleGraph V)
       (∀ i < q, (∃ x ∈ A i, ∃ y ∈ Z i, ∃ J : List V,
         f i = x :: (J ++ [y]) ∧ J.length = r i ∧ (f i).Nodup ∧ (f i).IsChain G.Adj) ∧
         ∀ z ∈ f i, z ∈ used) ∧ ∀ i j, i < j → j < q → (f i).Disjoint (f j) := by
-  apply disjoint_routes_of_avoidance
+  apply disjoint_routes_of_avoidance q M (fun i L => ∃ x ∈ A i, ∃ y ∈ Z i, ∃ J : List V,
+    L = x :: (J ++ [y]) ∧ J.length = r i ∧ L.Nodup ∧ L.IsChain G.Adj)
   intro i hi F hF
   have hA := hstart i hi
   have hZ := hend i hi
@@ -1032,6 +1033,71 @@ lemma reserve_route_interiors {V I : Type*} [DecidableEq V] (used : Finset V)
     · subst j
       exact (List.nodup_append'.mp (List.nodup_cons.mp (hs i)).2).2.2 hj (by simp)
     · exact hdis i j e (by simp) (List.mem_cons_of_mem _ (List.mem_append_left _ hj))
+
+/-- Turn disjoint connector routes into the endpoint and reservation data
+for the matched pairs. Route i ends at the entry to pair i+1, with the last
+route returning to pair zero. -/
+lemma organize_matching_connectors {V : Type*} [DecidableEq V] (G : SimpleGraph V)
+    (t : ℕ) (A B : ℕ → Finset V) (r : ℕ → ℕ) (f : ℕ → List V) (used : Finset V)
+    (hf : ∀ i ≤ t, (∃ x ∈ B i, ∃ y ∈ A (if i < t then i+1 else 0), ∃ J : List V,
+      f i = x :: (J ++ [y]) ∧ J.length = r i ∧ (f i).Nodup ∧ (f i).IsChain G.Adj) ∧
+      ∀ z ∈ f i, z ∈ used)
+    (hdis : ∀ i j, i < j → j ≤ t → (f i).Disjoint (f j)) :
+    ∃ a b : ℕ → V, ∃ J : ℕ → List V, ∃ F ⊆ used,
+      (∀ i ≤ t, a i ∈ A i ∧ b i ∈ B i ∧ a i ∉ F ∧ b i ∉ F) ∧
+      (∀ i ≤ t, (J i).length = r i ∧ (J i).Nodup ∧ (b i :: J i).IsChain G.Adj ∧
+        ∀ z ∈ J i, z ∈ F) ∧
+      (∀ i j, i < j → j ≤ t → (J i).Disjoint (J j)) ∧
+      (∀ i < t, G.Adj ((b i :: J i).getLast (by simp)) (a (i+1))) ∧
+      G.Adj ((b t :: J t).getLast (by simp)) (a 0) := by
+  classical
+  have spec (i : Fin (t+1)) := (hf i (by omega)).1
+  choose x hx y hy K eqn hlen hsimple hchain using spec
+  have whole (i : Fin (t+1)) : (x i :: (K i ++ [y i])).Nodup := eqn i ▸ hsimple i
+  have chain (i : Fin (t+1)) : (x i :: (K i ++ [y i])).IsChain G.Adj := eqn i ▸ hchain i
+  have sep (i j : Fin (t+1)) (hne : i ≠ j) :
+      (x i :: (K i ++ [y i])).Disjoint (x j :: (K j ++ [y j])) := by
+    rw [← eqn i, ← eqn j]
+    rcases lt_or_gt_of_ne hne with lt | gt
+    · exact hdis _ _ lt (by omega)
+    · exact (hdis _ _ gt (by omega)).symm
+  have inused (i : Fin (t+1)) (z) (hz : z ∈ K i) : z ∈ used :=
+    (hf i (by omega)).2 z (by rw [eqn i]; simp [hz])
+  obtain ⟨F,hF,hin,hends⟩ := reserve_route_interiors used x y K whole sep inused
+  let idx (i : ℕ) : Fin (t+1) := ⟨min i t,by omega⟩
+  have idxval (i) (hi : i ≤ t) : (idx i).val = i := Nat.min_eq_left hi
+  let a : ℕ → V
+    | 0 => y (idx t)
+    | j+1 => y (idx j)
+  let b (i : ℕ) := x (idx i)
+  let J (i : ℕ) := K (idx i)
+  have endlink (i : Fin (t+1)) : G.Adj ((x i :: K i).getLast (by simp)) (y i) := by
+    have hc : ((x i :: K i) ++ [y i]).IsChain G.Adj := chain i
+    exact hc.rel_getLast_head_of_append (by simp) (by simp)
+  refine ⟨a,b,J,F,hF,?_,?_,?_,?_,endlink (idx t)⟩
+  · intro i hi
+    have hbi : b i ∈ B i := by simpa [b,idxval i hi] using hx (idx i)
+    have ha : a i ∈ A i ∧ a i ∉ F := by
+      cases i with
+      | zero => exact ⟨by simpa [a,idxval t le_rfl] using hy (idx t), (hends _).2⟩
+      | succ j =>
+        have hj : j < t := by omega
+        exact ⟨by simpa [a,idxval j hj.le,hj] using hy (idx j), (hends _).2⟩
+    exact ⟨ha.1,hbi,ha.2,(hends _).1⟩
+  · intro i hi
+    have nd := (List.nodup_cons.mp (whole (idx i))).2
+    have cc : ((x (idx i) :: K (idx i)) ++ [y (idx i)]).IsChain G.Adj := chain _
+    exact ⟨by simpa [J,idxval i hi] using hlen (idx i), (List.nodup_append'.mp nd).1,
+      cc.left_of_append, fun z hz => (hin z).mpr ⟨idx i,hz⟩⟩
+  · intro i j hij hj z hz hz'
+    have e : idx i ≠ idx j := fun h => by
+      have hh := congrArg Fin.val h
+      rw [idxval i (by omega),idxval j hj] at hh
+      omega
+    exact sep _ _ e (List.mem_cons_of_mem _ (List.mem_append_left _ hz))
+      (List.mem_cons_of_mem _ (List.mem_append_left _ hz'))
+  · intro i _
+    exact endlink (idx i)
 
 /-- Close a lifted chain at a vertex reserved outside its pools. The first
 and last pools lie in the neighbourhood of that vertex. Intermediate
@@ -1661,7 +1727,7 @@ lemma connected_matching_routes {I D : Type*} [Fintype I] [Fintype D] (H : Simpl
     have hj : (p (next i)).length < Fintype.card I := (walk (next i)).bypass_isPath.length_lt
     rw [len]; omega
   · have perm : (∑ i, (p (next i)).length) = ∑ i, (p i).length :=
-      next.sum_comp (fun i => (p i).length)
+      Equiv.sum_comp next (fun i => (p i).length)
     refine ⟨Fintype.card D + ∑ i, (p i).length, ?_⟩
     simp_rw [len, Finset.sum_add_distrib, perm]
     simp; omega
@@ -1907,6 +1973,93 @@ lemma cycle_from_routed_regular_matching {V : Type*} [DecidableEq V] (G : Simple
     · exact (Finset.mem_sdiff.mp h').2 ((hJ i (by omega)).2.2 z (List.mem_toFinset.mp h))
     · exact hJJ i j hij hj (List.mem_toFinset.mp h) (List.mem_toFinset.mp h')
   · simpa only [show ∀ i, 2 + (J i).length + 2 = 4 + (J i).length by intro; omega] using horder
+
+/-- Exact-length lifting from a system of reduced routes. Only the matched
+cluster pairs must be disjoint. Intermediate visits can repeat arbitrarily,
+both within one connector and between different connectors. -/
+lemma cycle_from_reduced_routes {V : Type*} [DecidableEq V] (G : SimpleGraph V)
+    [DecidableRel G.Adj] (t N : ℕ) (S T : ℕ → Finset V) (r : ℕ → ℕ)
+    (C : ℕ → ℕ → Finset V) (cap : ℕ → ℕ) (ε d : ℚ)
+    (he : ε ≤ 1/2) (hd : 3*ε ≤ d) (k m M s : ℕ) (hk : 0 < k) (hkm : k ≤ m)
+    (hth : (N : ℚ)*(2*ε) ≤ k) (hden : (k : ℚ) ≤ (d-3*ε)*m)
+    (hs : m + M + (t+1)*M ≤ s) (h2s : 2*s ≤ N) (htyp : (s : ℚ) ≤ (d-ε)*N)
+    (hsize : ∀ i ≤ t, (S i).card = N ∧ (T i).card = N)
+    (hcap : ∀ i ≤ t, m + cap i + k + 1 + (t+1)*M ≤ N)
+    (hpair : ∀ i ≤ t, G.IsUniform ε (S i) (T i) ∧ d ≤ G.edgeDensity (S i) (T i))
+    (hst : ∀ i ≤ t, Disjoint (S i) (T i))
+    (hsep : ∀ i j, i < j → j ≤ t → Disjoint (S i ∪ T i) (S j ∪ T j))
+    (hbound : ∀ i ≤ t, r i + 2 ≤ M)
+    (hends : ∀ i ≤ t, C i 0 = T i ∧ C i (r i+1) = S (if i < t then i+1 else 0))
+    (hcount : ∀ i ≤ t, ∀ j ≤ r i+1, (C i j).card = N)
+    (hroute : ∀ i ≤ t, ∀ j < r i+1, G.IsUniform ε (C i j) (C i (j+1)) ∧
+      d ≤ G.edgeDensity (C i j) (C i (j+1)))
+    (n q : ℕ) (hn : 3 ≤ n) (hq : q ≤ ∑ i ∈ Finset.range (t+1), cap i)
+    (hlen : n = (∑ i ∈ Finset.range (t+1), (4+r i)) + 2*q) :
+    (cycleGraph n).IsContained G := by
+  classical
+  let next (i : ℕ) := if i < t then i+1 else 0
+  have hnext (i) : next i ≤ t := by dsimp [next]; split <;> omega
+  let A (i : ℕ) := (S i).filter fun x => s < ((T i).filter (G.Adj x)).card
+  let B (i : ℕ) := (T i).filter fun x => s < ((S i).filter (G.Adj x)).card
+  have he0 : 0 ≤ ε := (hpair 0 (by omega)).1.pos.le
+  have hδ : ε ≤ d := by linarith
+  have hs' : k ≤ s := by omega
+  have hN : (N : ℚ)*ε ≤ k := by nlinarith [mul_nonneg (show 0 ≤ (N : ℚ) by positivity) he0]
+  have typ (i) (hi : i ≤ t) : s ≤ (A i).card ∧ s ≤ (B i).card := by
+    obtain ⟨hS,hT⟩ := hsize i hi
+    obtain ⟨reg,den⟩ := hpair i hi
+    have hmono := mul_le_mul_of_nonneg_right (sub_le_sub_right den ε) (show 0 ≤ (N : ℚ) by positivity)
+    have th' : (N : ℚ)*ε ≤ s := hN.trans (by exact_mod_cast hs')
+    have hbig : (N : ℚ)*ε ≤ N := hN.trans (by exact_mod_cast (show k ≤ N by omega))
+    constructor
+    · apply regular_pair_eligible_endpoints G reg (hδ.trans den) s
+      · simpa [hS] using th'
+      · simpa [hT] using hbig
+      · simpa [hT] using htyp.trans hmono
+      · simpa [hS] using h2s
+    · apply regular_pair_eligible_endpoints G reg.symm (by rw [G.edgeDensity_comm (T i)]; exact hδ.trans den) s
+      · simpa [hT] using th'
+      · simpa [hS] using hbig
+      · rw [G.edgeDensity_comm (T i),hS]; exact htyp.trans hmono
+      · simpa [hT] using h2s
+  have mulbound (i : ℕ) (hi : i < t+1) : i*M ≤ (t+1)*M := Nat.mul_le_mul_right M hi.le
+  have hdeg' : (k : ℚ) ≤ (d-ε)*m := hden.trans
+    (mul_le_mul_of_nonneg_right (by linarith) (Nat.cast_nonneg _))
+  obtain ⟨f,used,hused,hf,hsepF⟩ := disjoint_regular_routes G hδ k m hk hkm hdeg' (t+1) M r C B
+    (fun i => A (next i)) (fun i hi => hbound i (by omega))
+    (fun i hi => by
+      obtain ⟨h0,h1⟩ := hends i (by omega)
+      rw [h0,h1]
+      exact ⟨Finset.filter_subset _ _,Finset.filter_subset _ _⟩)
+    (fun i hi => by have h := (typ i (by omega)).2; have := mulbound i hi; omega)
+    (fun i hi => by have h := (typ (next i) (hnext i)).1; have := hbound i (by omega); have := mulbound i hi; omega)
+    (fun i hi j hj => by rw [hcount i (by omega) j hj]; exact hN)
+    (fun i hi j hj => by rw [hcount i (by omega) (j+1) (by omega)]; have := hbound i (by omega); have := mulbound i hi; omega)
+    (fun i hi => hroute i (by omega))
+  obtain ⟨a,b,J,F,hFu,hab,hJ,hJJ,hlink,hclose⟩ := organize_matching_connectors G t A B r f used
+    (fun i hi => hf i (by omega)) (fun i j hij hj => hsepF i j hij (by omega))
+  have hF := (Finset.card_le_card hFu).trans hused
+  refine cycle_from_routed_regular_matching G t S T a b J F ε he k m hkm cap
+    (fun i hi => (hpair i hi).1) (fun i hi => hd.trans (hpair i hi).2) hst hsep ?_ ?_ ?_ ?_ ?_ ?_
+    (fun i hi => (hJ i hi).2) hJJ hlink hclose n q hn hq ?_
+  · intro i hi
+    rw [(hsize i hi).1,(hsize i hi).2]; omega
+  · intro i hi
+    rw [(hsize i hi).1,(hsize i hi).2]; exact ⟨hth,hth⟩
+  · intro i hi
+    exact hden.trans (mul_le_mul_of_nonneg_right (sub_le_sub_right (hpair i hi).2 _) (Nat.cast_nonneg _))
+  · intro i hi
+    rw [(hsize i hi).1,(hsize i hi).2]; have := hcap i hi; omega
+  · intro i hi
+    obtain ⟨ha,hb,haF,hbF⟩ := hab i hi
+    exact ⟨(Finset.mem_filter.mp ha).1,(Finset.mem_filter.mp hb).1,haF,hbF⟩
+  · intro i hi
+    obtain ⟨ha,hb,_,_⟩ := hab i hi
+    exact ⟨lt_of_le_of_lt (by omega : k+F.card ≤ s) (Finset.mem_filter.mp ha).2,
+      lt_of_le_of_lt (by omega : k+F.card ≤ s) (Finset.mem_filter.mp hb).2⟩
+  · rw [hlen]
+    congr 1
+    exact Finset.sum_congr rfl fun i hi => by rw [(hJ i (by have := Finset.mem_range.mp hi; omega)).1]
 
 /-- Splitting both sides of a pair increases its size-weighted mean square
 density by exactly the variance of the subpair densities. In particular a
