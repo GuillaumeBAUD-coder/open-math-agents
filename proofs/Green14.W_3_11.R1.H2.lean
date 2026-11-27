@@ -1,0 +1,2704 @@
+import OMAReductions.R_Green14_W_3_11_R1
+
+/-! A finite case analysis on the colors of positions in an interval. Each branch is checked using masks for forbidden red positions and blue progressions. -/
+
+namespace OMA.Progressions
+
+def removeMask (allowed bad : Nat) := allowed ^^^ (allowed &&& bad)
+
+structure Shadows where
+  twice : Nat
+  reverse : Nat
+  even : Nat
+  odd : Nat
+
+def addShadow (p : Nat) (s : Shadows) : Shadows :=
+  ⟨s.twice ||| (1 <<< (2*p)), s.reverse ||| (if p ≤ 127 then 1 <<< (127-p) else 0),
+   s.even ||| (if p%2=0 then 1 <<< (p/2) else 0),
+   s.odd ||| (if p%2=1 then 1 <<< (p/2) else 0)⟩
+
+def shadows (rs : List Nat) := rs.foldr addShadow ⟨0,0,0,0⟩
+
+def shadowMask (s : Shadows) (p : Nat) :=
+  removeMask ((s.twice >>> p) ||| ((s.reverse <<< (2*p)) >>> 127) |||
+    (if p%2=0 then s.even <<< (p/2) else s.odd <<< (p/2+1))) (1 <<< p)
+
+def bluePattern (a d : Nat) : Nat :=
+  (List.range 11).foldr (fun t m => (1 <<< (a+t*d)) ||| m) 0
+
+def decode (table : Array Nat) (i : Nat) : Nat := (table[i/48]! >>> (16*(i%48))) % 65536
+
+structure Catalog where
+  size : Nat
+  mask : Nat → Nat
+
+def walk (stop : Nat → List Nat → Nat → Bool) (tape : Array Nat) (patterns : Catalog) : Nat → Nat → List Nat → Nat → Shadows → Bool
+  | 0, _, _, _, _ => false
+  | gas+1, i, red, allowed, sh =>
+    let z := decode tape i
+    if 55296 ≤ z then stop (z-55296) red allowed else if z < 4096 then
+      if z%2048 ≥ patterns.size then false else
+      let ap := patterns.mask (z%2048)
+      let rest := ap &&& allowed
+      if z < 2048 then rest == 0 else
+        let p := rest.log2
+        (rest == (1 <<< p)) && walk stop tape patterns gas (i+1) (p::red) (removeMask allowed (shadowMask sh p)) (addShadow p sh)
+    else
+      let p := (z-4096)%128
+      walk stop tape patterns gas (i+1) (p::red) (removeMask allowed (shadowMask sh p)) (addShadow p sh) &&
+        walk stop tape patterns gas ((z-4096)/128) red (removeMask allowed (1 <<< p)) sh
+
+
+def NoTriple (R : ℕ → Prop) := ∀ a d, 0 < d → R a → R (a+d) → R (a+2*d) → False
+
+lemma remove_safe {a b t : ℕ} (ha : a.testBit t = true) (hb : b.testBit t = false) :
+    (removeMask a b).testBit t = true := by simp [removeMask, Nat.testBit_xor, ha, hb]
+
+structure Represents (R : Nat → Prop) (s : Shadows) : Prop where
+  twice : ∀ t, s.twice.testBit t = true → ∃ q, t=2*q ∧ R q
+  reverse : ∀ t, s.reverse.testBit t = true → ∃ q, q≤127 ∧ t=127-q ∧ R q
+  even : ∀ t, s.even.testBit t = true → R (2*t)
+  odd : ∀ t, s.odd.testBit t = true → R (2*t+1)
+
+lemma add_rep {R : Nat → Prop} {s : Shadows} (h : Represents R s) {p : ℕ} (hp : R p) :
+    Represents R (addShadow p s) := by
+  constructor
+  · intro t ht
+    simp only [addShadow,Nat.testBit_or,Bool.or_eq_true] at ht
+    rcases ht with ht|ht
+    · exact h.twice t ht
+    · have e : 2*p=t := by simpa [Nat.shiftLeft_eq,Nat.testBit_two_pow] using ht
+      exact ⟨p,e.symm,hp⟩
+  · intro t ht
+    simp only [addShadow,Nat.testBit_or,Bool.or_eq_true] at ht
+    rcases ht with ht|ht
+    · exact h.reverse t ht
+    · split at ht
+      · rename_i hb
+        have e : 127-p=t := by simpa [Nat.shiftLeft_eq,Nat.testBit_two_pow] using ht
+        exact ⟨p,hb,e.symm,hp⟩
+      · simp at ht
+  · intro t ht
+    simp only [addShadow,Nat.testBit_or,Bool.or_eq_true] at ht
+    rcases ht with ht|ht
+    · exact h.even t ht
+    · split at ht
+      · rename_i hb
+        have e : p/2=t := by simpa [Nat.shiftLeft_eq,Nat.testBit_two_pow] using ht
+        rwa [show 2*t=p by omega]
+      · simp at ht
+  · intro t ht
+    simp only [addShadow,Nat.testBit_or,Bool.or_eq_true] at ht
+    rcases ht with ht|ht
+    · exact h.odd t ht
+    · split at ht
+      · rename_i hb
+        have e : p/2=t := by simpa [Nat.shiftLeft_eq,Nat.testBit_two_pow] using ht
+        rwa [show 2*t+1=p by omega]
+      · simp at ht
+
+lemma shadows_rep {R : Nat → Prop} {rs : List Nat} (hr : ∀ x ∈ rs, R x) :
+    Represents R (shadows rs) := by
+  induction rs with
+  | nil => constructor <;> simp [shadows]
+  | cons p rs ih =>
+    exact add_rep (ih fun x hx => hr x (by simp [hx])) (hr p (by simp))
+
+lemma no_midpoint {R : Nat → Prop} (h : NoTriple R) {a m b : ℕ}
+    (ha : R a) (hm : R m) (hb : R b) (he : a+b=2*m) (hne : a≠b) : False := by
+  by_cases hh : a < b
+  · exact h a (m-a) (by omega) ha (by rwa [show a+(m-a)=m by omega])
+      (by rwa [show a+2*(m-a)=b by omega])
+  · exact h b (m-b) (by omega) hb (by rwa [show b+(m-b)=m by omega])
+      (by rwa [show b+2*(m-b)=a by omega])
+
+lemma shadow_safe {R : Nat → Prop} {s : Shadows} (hs : Represents R s) (hn : NoTriple R)
+    {p t : Nat} (hp : R p) (ht : R t) : (shadowMask s p).testBit t = false := by
+  by_cases e : p=t
+  · simp [shadowMask,removeMask,Nat.testBit_xor,Nat.shiftLeft_eq,Nat.testBit_two_pow,e]
+  have ep : (1 <<< p : Nat).testBit t = false := by simp [Nat.shiftLeft_eq,Nat.testBit_two_pow,e]
+  simp only [shadowMask,removeMask,Nat.testBit_xor,Nat.testBit_and,ep,Bool.and_false,
+    Bool.xor_false,Nat.testBit_or,Bool.or_eq_false_iff]
+  refine ⟨⟨?_,?_⟩,?_⟩ <;> apply Bool.eq_false_iff.mpr <;> intro h
+  · rw [Nat.testBit_shiftRight] at h
+    obtain ⟨q,hq,hr⟩ := hs.twice _ h
+    exact no_midpoint hn hp hr ht (by omega) e
+  · rw [Nat.testBit_shiftRight, Nat.testBit_shiftLeft] at h
+    simp only [Bool.and_eq_true,decide_eq_true_eq] at h
+    obtain ⟨q,hb,hq,hr⟩ := hs.reverse _ h.2
+    exact no_midpoint hn hr hp ht (by omega) (by omega)
+  · split at h
+    · rename_i hpar
+      rw [Nat.testBit_shiftLeft] at h
+      simp only [Bool.and_eq_true,decide_eq_true_eq] at h
+      have hr := hs.even _ h.2
+      exact no_midpoint hn hp ht hr (by omega) (by omega)
+    · rename_i hpar
+      rw [Nat.testBit_shiftLeft] at h
+      simp only [Bool.and_eq_true,decide_eq_true_eq] at h
+      have hr := hs.odd _ h.2
+      exact no_midpoint hn hp ht hr (by omega) (by omega)
+
+def Hits (R : ℕ → Prop) (patterns : Catalog) :=
+  ∀ i, i < patterns.size → ∃ t, (patterns.mask i).testBit t = true ∧ R t
+
+lemma walk_sound {R : ℕ → Prop} {tape : Array ℕ} {patterns : Catalog}
+    {stop : ℕ → List ℕ → ℕ → Bool}
+    (hst : ∀ k rs a, (∀ x ∈ rs, R x) → (∀ x, R x → a.testBit x = true) → stop k rs a ≠ true)
+    (hn : NoTriple R) (hit : Hits R patterns) (gas i : ℕ) (red : List ℕ) (a : ℕ) (sh : Shadows) (hsh : Represents R sh)
+    (hr : ∀ x ∈ red, R x) (ha : ∀ x, R x → a.testBit x = true) :
+    walk stop tape patterns gas i red a sh ≠ true := by
+  induction gas generalizing i red a sh with
+  | zero => simp [walk]
+  | succ gas ih =>
+    intro hw
+    simp only [walk] at hw
+    split at hw
+    · exact hst _ red a hr ha hw
+    split at hw
+    · split at hw
+      · contradiction
+      · rename_i hin
+        obtain ⟨t, hbit, ht⟩ := hit _ (by omega : decode tape i % 2048 < patterns.size)
+        have hrest : (patterns.mask (decode tape i % 2048) &&& a).testBit t = true := by
+          simp [hbit, ha t ht]
+        split at hw
+        · simp only [beq_iff_eq] at hw
+          simp [hw] at hrest
+        · simp only [Bool.and_eq_true] at hw
+          obtain ⟨hpow,hs⟩ := hw
+          have heq := beq_iff_eq.mp hpow
+          rw [heq, Nat.shiftLeft_eq, one_mul, Nat.testBit_two_pow] at hrest
+          have he := of_decide_eq_true hrest
+          apply ih _ _ _ _ (add_rep hsh (he.symm ▸ ht)) _ _ hs
+          · intro x hx
+            rcases List.mem_cons.mp hx with he' | hh
+            · simpa only [he', he] using ht
+            · exact hr _ hh
+          · intro x hx
+            exact remove_safe (ha x hx) (shadow_safe hsh hn (he.symm ▸ ht) hx)
+    · simp only [Bool.and_eq_true] at hw
+      obtain ⟨hl,hh⟩ := hw
+      by_cases hp : R ((decode tape i-4096)%128)
+      · exact ih _ _ _ _ (add_rep hsh hp) (by simpa using And.intro hp hr)
+          (fun t ht => remove_safe (ha t ht) (shadow_safe hsh hn hp ht)) hl
+      · apply ih _ _ _ sh hsh hr _ hh
+        intro t ht
+        apply remove_safe (ha t ht)
+        simp [Nat.shiftLeft_eq, Nat.testBit_two_pow, (show (decode tape i-4096)%128 ≠ t by
+          rintro rfl; exact hp ht)]
+
+def Bad (patterns : Catalog) (seed : List ℕ × ℕ) :=
+  ∀ R : ℕ → Prop, NoTriple R → Hits R patterns →
+    (∀ x ∈ seed.1, R x) → (∀ x, R x → seed.2.testBit x = true) → False
+
+def gate {patterns : Catalog} (leaves : Array {s // Bad patterns s})
+    (k : ℕ) (red : List ℕ) (a : ℕ) : Bool :=
+  match leaves[k]? with
+  | some leaf => leaf.val == (red,a)
+  | none => false
+
+lemma gate_sound {patterns : Catalog} (leaves : Array {s // Bad patterns s})
+    {R : ℕ → Prop} (hn : NoTriple R) (hit : Hits R patterns) (k : ℕ) (rs : List ℕ) (a : ℕ)
+    (hr : ∀ x ∈ rs, R x) (ha : ∀ x, R x → a.testBit x = true) :
+    gate leaves k rs a ≠ true := by
+  unfold gate
+  split
+  · rename_i t he
+    intro hh
+    have hbad := t.property
+    rw [beq_iff_eq.mp hh] at hbad
+    exact hbad R hn hit hr ha
+  · decide
+
+lemma bad_of_gated_check {tape : Array ℕ} {pats : Catalog} {gas : ℕ} {s : List ℕ × ℕ}
+    (leaves : Array {p // Bad pats p})
+    (h : walk (gate leaves) tape pats gas 0 s.1 s.2 (shadows s.1) = true) : Bad pats s := by
+  intro R hn hit hr ha
+  exact walk_sound (gate_sound leaves hn hit) hn hit gas 0 s.1 s.2 (shadows s.1) (shadows_rep hr) hr ha h
+
+def Mono (r : Fin 114 → Bool) := ∃ (b : Bool) (a d : Fin 114), 0 < d.val ∧
+  a.val + (if b then 2 else 10) * d.val < 114 ∧
+  ∀ t : Fin 11, t.val ≤ (if b then 2 else 10) →
+    r (Fin.ofNat 114 (a.val+t.val*d.val)) = b
+
+def Red (r : Fin 114 → Bool) (n : ℕ) := n < 114 ∧ r (Fin.ofNat 114 n) = true
+
+lemma noTriple_of_not_mono {r : Fin 114 → Bool} (hn : ¬ Mono r) : NoTriple (Red r) := by
+  intro a d hd h0 h1 h2
+  obtain ⟨h2n,h2c⟩ := h2
+  apply hn
+  refine ⟨true, ⟨a,h0.1⟩, ⟨d,by omega⟩, hd, h2n, ?_⟩
+  intro t ht
+  change t.val ≤ 2 at ht
+  have ht' : t.val=0 ∨ t.val=1 ∨ t.val=2 := by omega
+  rcases ht' with hh|hh|hh
+  · simpa [hh] using h0.2
+  · simpa [hh] using h1.2
+  · simpa [hh] using h2c
+
+lemma pattern_has {t : ℕ} (ht : t < 11) (a d : ℕ) :
+    (bluePattern a d).testBit (a+t*d) = true := by
+  suffices ∀ xs : List ℕ, t ∈ xs → (xs.foldr (fun i m : ℕ => (1 <<< (a+i*d)) ||| m) 0).testBit (a+t*d) = true from
+    this _ (List.mem_range.mpr ht)
+  intro xs
+  induction xs with
+  | nil => simp
+  | cons u xs ih =>
+    intro hm
+    rcases List.mem_cons.mp hm with rfl | h
+    · simp [Nat.shiftLeft_eq, Nat.testBit_two_pow]
+    · simp [ih h]
+
+lemma pattern_hit {r : Fin 114 → Bool} (hn : ¬ Mono r) {a d : ℕ}
+    (hd : 0 < d) (hb : a+10*d < 114) :
+    ∃ x, (bluePattern a d).testBit x = true ∧ Red r x := by
+  by_contra! bad
+  apply hn
+  refine ⟨false, ⟨a,by omega⟩, ⟨d,by omega⟩, hd,hb, ?_⟩
+  intro t _
+  have h10 : t.val ≤ 10 := by omega
+  have hx : a + t.val*d < 114 := by have := Nat.mul_le_mul_right d h10; omega
+  have h := bad _ (pattern_has t.isLt a d)
+  exact Bool.eq_false_iff.mpr fun hh => h ⟨hx,hh⟩
+
+def bases : Array ℕ := #[0x1, 0x7ff, 0x155555, 0x49249249, 0x11111111111, 0x4210842108421, 0x1041041041041041, 0x408102040810204081, 0x101010101010101010101, 0x40201008040201008040201, 0x10040100401004010040100401, 0x4008010020040080100200400801]
+
+def pats : Catalog := ⟨1408, fun i =>
+  let a := i%128
+  let d := i/128+1
+  if a+10*d < 114 then (bases[d]! <<< a) else bases[1]!⟩
+
+lemma base_correct : ∀ d : Fin 12, bases[d.val]! = bluePattern 0 d.val := by decide +kernel
+
+lemma shifted_hit {r : Fin 114 → Bool} (hn : ¬ Mono r) {a d : ℕ}
+    (hd : 0 < d) (hb : a+10*d < 114) :
+    ∃ x, ((bases[d]!) <<< a).testBit x = true ∧ Red r x := by
+  by_contra! bad
+  apply hn
+  refine ⟨false, ⟨a,by omega⟩, ⟨d,by omega⟩, hd,hb, ?_⟩
+  intro t _
+  have ht : t.val ≤ 10 := by omega
+  have h114 : a+t.val*d < 114 := by have := Nat.mul_le_mul_right d ht; omega
+  have hbit : ((bases[d]!) <<< a).testBit (a+t.val*d) = true := by
+    rw [base_correct ⟨d,by omega⟩]
+    simpa [Nat.testBit_shiftLeft, Nat.le_add_right] using pattern_has t.isLt 0 d
+  exact Bool.eq_false_iff.mpr fun h => bad _ hbit ⟨h114,h⟩
+
+lemma all_hit {r : Fin 114 → Bool} (hn : ¬ Mono r) : Hits (Red r) pats := by
+  intro i hi
+  dsimp only [pats]
+  split
+  · exact shifted_hit hn (by omega) (by assumption)
+  · simpa using shifted_hit hn (a:=0) (d:=1) (by decide) (by decide)
+
+def pool0 : Array {p // Bad pats p} := #[]
+
+def tape0 : Array ℕ := #[0xa130b02091b099e099603860a8201150829023a09370b0223ad248e25a2008e08140b02091820a6099b0209081a081800800b02090608901c1d099a011819261dab030608ce0c0a08900818099a04090906002913a40a88091414a217a72928, 0x43d609b9019708570a393f51464602810858099209130c89081d0a13089d000b089c082609960a0e0210080e0b8e0a3a362238a5099b009e081d0114099631a40a1332ab02930b990b91023a085709130c870a932da92f273cd5544b03830b81, 0x91094b084b585659c85aaa60a761bd00cd081a084c01c10997089d52d30b1c09400390082603914ea70b29040409130b17023a0ba04bd60c8709c10487099b495d4d294fdb093703100a9f08cc081b084c02ab099b0a3909c0019b081a41dc, 0x39b09370a950a83091b099b031e09370aa1050308d80302089c0d0166e80857085667d1691b0b210b1a02a10a9b04870b10099201800a000902080f04860b105d145f26082803980b90040a08cc0850]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node0 : Bad pats ([74,71,52,60,53], 0x3fffe78fbdfe730352ff4bfffffff) :=
+  bad_of_gated_check (tape := tape0) (gas := 150) #[] (by decide +kernel)
+
+def tape1 : Array ℕ := #[0xb250a940a880391082308290b10019b091b0201080b23a724a526a0011b0826213229bd302237d403920aac031a1d320b0002ac0aad1b950a9b03830817081908500b9919ad0b1c03920b1403290a820a390c16099b15220b9916541e4f40ce, 0x84f0aac093705000b100b0008293ebd0b8a05000b1c09b90b1a09373bb20a2c0a27040908290a180b1a0b920b8a031a0a18349209a201b909370b1a0a1d32b2031a0aac08da0aab09b90937002908020a940a10099b0b1a2d49014008d60a39, 0x93f58cf0b1a0b13013708be05020a39554c0b990b9101b90913081952a9564b5ca709aa019b0a220a18013708be0a2c030d08be0b060503084908be08184aa94c5e4da70d02013f08900b060a100a18099b0399093f43a746cf4f2a68560310, 0x2270a990503084d6f250a39019b081808160d020b916d57704c72cb09b609ae021d08be0a18028f08270b140021082702a10b13642b651b05010848081d0c0b089c05020918088c5fa6622966c0008208010848081703005a9e0ab109370399, 0xbe0848013f081a0b1c0a390050094a05020a950aad8053816b834c030208620803093f08510a390937038908510b9979cf7d500b1a0b0c0218082702a10a1d0a957529763d0218099b0827093708be]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node1 : Bad pats ([71,52,60,53], 0x3fffff9fbfba3b035aff5ffffffff) :=
+  bad_of_gated_check (tape := tape1) (gas := 150) #[] (by decide +kernel)
+
+def tape2 : Array ℕ := #[0x84e009708210a9527d6084828af314002990a8d02a0080d085723250a390b210848030208210aa60aa001130aa10b8e0322081f08261c1e1ddc1fc9099b039608210826038b0b020aa5009c091b15a51729189f028f0821132f2454321a5642, 0x93700c4084e03143ed6099608483fc045af552001180826030008983a27093708480b1a0b1303910b22011035a90a2c0a1d093736cb3b3201370a27002608250145091b08c8089e0b96029b084802a50a9908da0c0b0b212cd12dd6302900c4, 0x59a95b40681a7fc6029a0a940192093709180828084802ad08280b250aa10a2c52c90b1a0b0c0061085f03140a930a3a4de90a2c0a1d08c409370317085f0a3a09b90a2c0a1d49c64ecb023909b9099609490a220a1805020a0b098e0a9942a7, 0xa8e02100b090a180b1a008e088600170a00089f6c960aac0b886de06fa670aa023a0826081f0b220b14040508550aa565d302ac0aa00aa50ba163cc0a220a1d00c80b140a9b03990b1401930b995dd35ead604f00480918082705000aa1091b, 0xd800031a09420a2c0b920b8a009908210a06030608210a1808297b900a9a099a0222084e02180b2277540b9a0aac013f0848091808c80a2274e278267d12029a]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node2 : Bad pats ([71,52,60,53], 0x3fffff9fbfbe7b035aff5ffffffff) :=
+  bad_of_gated_check (tape := tape2) (gas := 150) #[⟨_,node1⟩] (by decide +kernel)
+
+def tape3 : Array ℕ := #[0x94431cf35c502a608c809490a99093804050b240b1d002608220b830a1d094122d5243e00270826050008240a1805000b0808221cb11e2f030d0d031a2a1f560a1a032408290b280941002708260402098a08240b8214b015d6179f26c63dd1, 0x423143d3534858566324002908260a2709440a180937030f082708c008be01440a1838d23acf0840084201aa082708250937039b0a99084633d201c2086208c20209082530520b93099301c20862082908c2030f0938086208612bd20b9b2d93, 0xc00a1301a2099302360937561b573108400842004909370501080e081009c30849011009aa0a1d010d0a944e314fcb52550b22040c0826084908c1030c082709c30849040c08260c14475249554b610b14029308280a2c000e0825090e0a94, 0x9e082802946f31705308470027082600226c2d0b8209b9019209420b82002708260389082267ad689a6a616d4f71c60a240a1f01c2093708c0014408610a3661d208400842038e0b9809c90b83094401c90861085f5c5308c208465ec50a29, 0x2809a203060805089a08220a2c00590805089a08220aa500490867090e089a08220106085709840827762678d57b407db208420414089e0849]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node3 : Bad pats ([63,52,60,53], 0x3ffffffffe963d037a5ffffffffff) :=
+  bad_of_gated_check (tape := tape3) (gas := 150) #[] (by decide +kernel)
+
+def tape4 : Array ℕ := #[0x192282929a02f803ee302940a2c09b9099209370315082808910b140b060192091020a9235525a4022c08cd080c0b9109c109b90322091409110b990192080c090d19291b55023a093702050a010b220192090d080c142915d516d91e1b4ed6, 0x441e0c120c09020b0814023909c009b90b910a2c008f0a0b3b593d96081802930a000911089e03910a0009c036a00992389c03990a2c0b14022c0937323e339e0c00009a081803900a8e0a88098e009e090b0a0b0a062c962e9c03910a0b0a06, 0xa2c084f030e08d0084e575958be004f0937038e0a3a0892089a0a0b09c00b2953d554ca5ca503910a0509110992089e0898040b0a3909c009370a2c01860992020b09370b1c020546db4816495e4ba00061085f09b90a2c0b14022c093741be, 0x4f084e031508560a930a880b296a550a9402990992093703900b88654966be0b1e0b1702990a87048b613102a6603d0b2503800a945ee4621e03140b010aa60a2c0a9a031b5a32093801b9]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node4 : Bad pats ([66,39,75,52,60,53], 0x37ff9dbec7e6470378ebf59fbeff7) :=
+  bad_of_gated_check (tape := tape4) (gas := 150) #[] (by decide +kernel)
+
+def tape5 : Array ℕ := #[0x8990a130a0e02930a1d0937003f083d255501a2099e00990a8d03230a890a3a083f21a522be23cf269801a2099e021a099a0308089c0a3a0824021f08970983091819a81b9a1cc6031b089c082403140910093702a0134c14a416421db128af, 0x98a0a1508260825011b099e099a01a6090f083e3ca23e28010f080f088b0a89018a0885088101b93689381b083d0b87003e083d0910089a0992011b089c083e0b1004840937089c0910083e011b089c2d462fd6319a340f3a2940b1099f0293, 0xc000a830b9f0b97030f0a990015090f003d542a093755255667031b08290b16030f0829083f505c0a1f0a1a031b4d3d51cf5893624a00290a89003f0829083d04120b9f484249890b080b01029a083d0c8808294516011b082742b24aa20282, 0xc0099e098108240a150829002564320a1d0a18018a08260825028d0992082960a8011b089c099209370104098609400b870c895cbd5ea90a13003f]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node5 : Bad pats ([75,52,60,53], 0x3fff9fbffff667037877f5fffffff) :=
+  bad_of_gated_check (tape := tape5) (gas := 150) #[] (by decide +kernel)
+
+def tape6 : Array ℕ := #[0x388099209380b1e0b17022c08ca083d25c828490192081909370b170b09083d001c099220462331292901aa09a201ae093805010a941bd61caa0028081c0a3a08cd08570b1b04870a3a0992000f0b01152616a919ca083e1dbdd80011c24627, 0x392098008900a940938083d40480a1a0a15031c0a2c0a29038a082903a008c008160a87090a030e36a539323a5b083f083d013708c003890a8d005f0b090b0201380812080f301e31b132d20a29041409a60b1c09382ccc33c53ba402990a93, 0x229094108c40aa6022e0937564a0b2500cd084d0b9f5441581b0a130a0e030708910a940a1d011409374eca099a0996509801a2099a01144aaa039809370a9449c24bb160a47c2b031e083f083d001844c60c120c09023a09b9083f0b1e429b, 0x70c572e0048808950915030e09440b236d9b0a186f200a0b01370a1d081f6a1577c2020e089e089a081d0317099265a003100a130a0e0d026426091b67a903230a00098109920818004c094402295d505e1e0891014108c409380b1c08185b15, 0xd80103100a18081c081a0218091b7a230a1a0a150294089e008b090208c4091b081f76b20ba00b9803140912081f0a18001f]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node6 : Bad pats ([75,52,60,53], 0x3fff9fbffff6670378fff5fffffff) :=
+  bad_of_gated_check (tape := tape6) (gas := 150) #[⟨_,node4⟩, ⟨_,node5⟩] (by decide +kernel)
+
+def tape7 : Array ℕ := #[0xa290a24039b08970b930c050941030208200b0f08970b8b24df09a3093801440a3a08c2009509970861085f08d301a2089108130b931ce509441f5220c12751031d093809ae008a0a10099b0210152b09b6039309380a1513de16b2184c3045, 0xa290a1f43c9032b09a3019a0a090c0a3dab0ab30aa7020b091509a309ae005a085c38ca0b9e0a3900290827031d09c2031d085c344a352f363e3ad13ecc5b41001108290a8d001209a62eb109a3029409a2020e085f090e09c02bbe2cab08c2, 0xa130b2a0b930a9558d70a29040508cc0b2a0b23021508580b2b09930403512b532a55510a3a019e0b900b140b0d021f4cb00a2904170b2a0b2302130b9001130a1a48b00993030546ab49aa4b514eec0842028708990a8f030d088b0a87422d, 0xa1f030d0a1a09380997031d08c808c009c00941002908270a1a08c005030a100b2a69526b5c0938003d0a8f0a150c15040408250b1a0501083d0a1a0829030660ab62a80d000b020c176415664a6da36fd108b703060a1f0aa70a9b093f0281, 0x270b0c083d021308290a8f038a081808290b0573a7753e0a29]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node7 : Bad pats ([79,52,60,53], 0x3f9fbfffff7635037adfff5ffffff) :=
+  bad_of_gated_check (tape := tape7) (gas := 150) #[] (by decide +kernel)
+
+def tape8 : Array ℕ := #[0xd0129240891020b081d0b91269704050a29091b0819022909410937229e24950c8503910b890137099609180229094109371d1e1eb11f852b2b09b303910a29011508830a0b093718510aa500950822020b0985142b09370a291531195338c5, 0x9894151435502810a09090208cc0a24004b3c56099e3ec0454a46d7624103230b930b8b03020937082101a2099209370b2335a4371b0aa50a93013709a20046081c30c20c85082101a208460d012e240b8b31b101a20938081f0a0b010b0846, 0xb0f59130c0e0c05032208d6094d032209c00205091b0b08028109920a13522453cc54e20c17020b0b1d0a130b9e0a3902990a8d031d0c894b1f4c3e4ee8560e5bd15eca09b301aa09a2084302240a13099e093704030a830a290a240209099e, 0x8990a9b08240a9503170b060824008b0908089c0a1d6ca56e5103830b14089a0b1e099203010aa60a2c0a9a0b0d671e69a770cd784208b7011b089c099e099208c30a1d084302a10a830209099e5da108c3018a08220b83090e0a0e023a0b1d, 0x31408bf02a10a8f7fd3099e0841083e021308bf04840b1b7bcd09aa09a209b37cc80138084303170b0609b3089c774a08bf0222084304170b10734a082474530381]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node8 : Bad pats ([47,52,60,53], 0x3ffffffff75677033a9fbffffffff) :=
+  bad_of_gated_check (tape := tape8) (gas := 150) #[] (by decide +kernel)
+
+def tape9 : Array ℕ := #[0xca09b6281e29d12c483e4501aa09a2089508420a1d032309110937089522c50b970b8f019608430a220a18081f0a150a0b03050aa108931ba41f5f03150d020a04028317b10b050295089e0820160c0b13019609920a8313a8191f25414853, 0xc03412942c808b7022e08460937019609150a29084601c00a2e3aca3cd20b170b10023909aa09850a240a15030c08c200460a2909a209113452352403970b2508460b1a0b13040408472ed23142379e01aa094c0b8e0a2e0a2900ca09b60c03, 0xa2e0b980b1e022e56c8594a5f856752022e0941084a08460938039609c00937001a08180c880a88099a01184da6504c0b1e028809374bc851ca54286cc509af030c08c2022947520a1502220b130b970b2545c20b1701aa083d0a15038e083d, 0x3800b130a2c7042729e793e08b701370b1e0a3a09b609ae0938004a093769be0b130b0c022e094108460938009e081d0a240381081e081a0896089463cc65500b05022e09410846093801960c140a2e0a2905020b1c0b1e5bcc5dd0041208d4, 0x30c0a0e0a090b050b1e093802290a2c0a220112081d0a1a009e084a0898764277b10b1e0b17022c0a2909850a130a1a]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node9 : Bad pats ([43,52,60,53], 0x3ffffffff576750362ff9fbffffff) :=
+  bad_of_gated_check (tape := tape9) (gas := 150) #[] (by decide +kernel)
+
+def tape10 : Array ℕ := #[0xc0a0b9300590941274b29cf3f55022c09b90829099a084002060829099a0938224624ce574c00410840014008c1090d0a1803221bc009aa082909a201ae093804840c13080f01800b0616930a060a940a22029413b11856192a1dc81ebd57bf, 0x45ea4f2405020b280993098809ae09a600260823091b08403c3e019208260a1000220c0a00ce08260b080d003725381a39c60a360a2c009c082608220a1d0a1509410938084001aa09a6002708260209089c2caf2dbe2ec132d401aa0a150993, 0x58cbd80000c308c10227084056510aab0aa500c308c100520938084052d153b10b240b1d005708400a220a1304880b2809934d3109ae09aa02220d0209a64a5200290a270840483e0b2b019a08400a27038e09ae444503800a82099309a642b1, 0x82401ae0938084201520850083e0c056e4a6faa0b0601ae083e08270c0a6acc70a1812303910828084101aa0938082865c9083e04860a9a099a03810a3a0b0609aa08160828048609ae5eaa61a60b1b01ae09385c4c63486727853d85cfd801, 0x9a7d80487abd80386afd80201a2099e03810b23089784260a8f09a301070a130b24039e083e7fdc0c870829021308240b0d040a091b7bcc7d2f0a89019e0826031b0938083e0a1303900842083e0b1b01380a39744c761d782a790f0a9b0027, 0x317099a09920b0200299d1e0aa50a990012080f08c2084601140911994a0a290a2404090b170b130b09048508150992093709820a2e94c896a99b3108b7022908c20a150b250b170192083d09ae0a2e0a29003d8acc8d488fc909ab]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node10 : Bad pats ([52,60,53], 0x3ffffffffff67f037afffffffffff) :=
+  bad_of_gated_check (tape := tape10) (gas := 150) #[⟨_,node3⟩, ⟨_,node6⟩, ⟨_,node7⟩, ⟨_,node8⟩, ⟨_,node9⟩] (by decide +kernel)
+
+def tape11 : Array ℕ := #[0xb9002220a940306091909930a9026ac27c802a20a9605030a22083e091c0c1604840a90203122d20010099f08c10b16084000580d000a2c091c1bc71e4c23a0031409400a130a94009308910813020608120810149d1620182828d6350a4957, 0x81d03090848083e0b8b3f9d09ae4128452f0045083e0b990a270093081d09c1093808bf083e39b13bab0b0a0213083e08be09b609ae013808400329099f084202900a9a0ab2304831c10193091c0a220845031b091c09932bcf2dc432d20398, 0x81e004c09ae57a20a890b99594b5a4762ab040a08d50a060a130a9b0a94081f01ae0907088c08120910081702000a8a0a9a4d1b502453af0b180b110213089f013808c10840099f48310993011008420aa00484091943c409ae081f02950897, 0x91408150a010919039808150b806e22712109930317089f091c01c108c10040081e0b2b68d3029a0938001f65d666d569b16b1b783f028f0815083e022f61460a270a9b09af0015081703020a2709c10a895d9d5ecb0b9702a10a9b00d50a13, 0x3800914089f091c099f0997009f081f0114084d0b0f0a010017090905010a9a0a88741e75067725031b0800]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node11 : Bad pats ([42,61,60,53], 0x3fffffffebdd2b0279fbf7e7fffff) :=
+  bad_of_gated_check (tape := tape11) (gas := 150) #[] (by decide +kernel)
+
+def tape12 : Array ℕ := #[0xb29093809af09ab038b0aad0138083e020009190b2924442563264f00cd08530b290938214b09ae0231084e084a00dd0b29094a08cb1cd409af013819cb1e4604880aae0a2f08cb084d09af0405094d003e144d0aad093f154f184a29a74149, 0x99f0997003e0b290a9b09a7032908cd09ae0938031708be0a2f0a273b533d4b3f2302a10b8f01ae081f080f09070b1000d9083e0a01342536d70a220a180310080a09ae0b800a9a038709ae0b172e2030a203970aa12bca37ab039e0b900a2c, 0x89f0a220a1801b30aa208490a2c08be03240880083e09b30a2c000e0b800a0051cf544c09ae00bf0849038109ab4dcd0a2c4ec656a70502099f0b24084b0a34031d09890897084e099f484d0b900aa20b8802a243c84aca589c71a601ae0aa1, 0xb1b0a2c08490201084d080809ae0817099002846ba06ecc0a2203800a9c0a8a03100a2f098c684669ca091c014d0b870a84084e0a9c0b80029c624809900a180a0e022f098f08be0a2209905f9d050109060a010a9c0997098f5cac6525018f, 0xd80000cd0b810b22]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node12 : Bad pats ([42,61,60,53], 0x3fffffffebfd2b0279fff7e7fffff) :=
+  bad_of_gated_check (tape := tape12) (gas := 150) #[⟨_,node11⟩] (by decide +kernel)
+
+def tape13 : Array ℕ := #[0x28f089109040a9c091b04120b0e0b07004308410b860a22090f241c25b30041083e010a08430a220a1d038109c108bf0b1e08431dc01fc2031e0d001a47209b0a250300083e0b0309120041083e040309b708420b9f14c1159b17d2282b3fa0, 0x68cd0040083e0a220a18091c031c0840089f089d01090a273b1f3d2208270825019708400842091c03860a960a900821361f01830803089b0231084208060800321f0b8609b601830803089b031c0918080608002d1f0b862ede090f33a2382c, 0x89a0140083e0986081d040208410c03559f579c5a100b1702a2083e0a130059084109420aa150c0521e62a90a160227098409050987091c089d030208060a09499f0827082403830b8109800b9e0909018008070806441e089b082046ac4c96, 0x99001af09110b9f0041083e039808456d446e576f9072a277ab0a200a1b022708400a1d01b6091c089d008c0a04659f6740082708250116089c090d040b0857080d0986081d0140099f0a1d01430aa15d405ea6611c0b0904020841081c089c, 0x3e09a70311086108c108410a130142089608410a90001d0800094208c10845014d080f09c108407c4b7e9c80b1833f0825040308bf0896081d00bf083e02a174c0759e08200041083e004571c40b9f]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node13 : Bad pats ([50,61,60,53], 0x3fffffffffe97b02f1a5fffffffff) :=
+  bad_of_gated_check (tape := tape13) (gas := 150) #[] (by decide +kernel)
+
+def tape14 : Array ℕ := #[0xa9b0aad09b32a410a340200080f083e0b0f0b080c82011b0b02085b015008540061083e09b720592160229625cd01b70b990aad00d508cf010f0b021a611b3f041709180b010d010b2a039b0b9308c101180a13145315bf185d1ce62b4c43af, 0x1c10b91402841b30b140b0d02a20a9004823c400b0603990a9b3a8d3d5301900a9c01b3093f0b1001b3084f0b223648098c0205091c339837c00302093f01b30857094330c80aa202130b800b022e46319c389b011b0b0203830a0009810919, 0x3900aa800060b1b01180854085756535740581f0a16040309a30b0f091b52a5592c61cd02a20a9c039909b7091b0b140b06030e0882082a4ba94e280197084e09190b1b0b14082a004b09af462b49404f4803020aa209190a9b029009b70919, 0x3060827004f6aab0c0e0c050200098c08270b0d68d6038709c108cd0aa1091b082a66290a2a0a2003080a0e0a16038f083e03810897088d08500aae0940031d5c4c5f3f60160828082a0119089b]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node14 : Bad pats ([74,38,61,60,53], 0x3bfff7e6bffc7b0289bfeff7e7ffb) :=
+  bad_of_gated_check (tape := tape14) (gas := 150) #[] (by decide +kernel)
+
+def tape15 : Array ℕ := #[0x10f0b080c86285308ca001a090f0b0f084e25dc039208570890091c0b060b82030108950a8f0b06201a23560a310a2c010f0897093f0a18013f09191a2709b309ab1c59013f09a70aa10381091909ab013f144715a701a712d117402acd42c6, 0x93840ce0a2a0a2500bf0a2c09190a180848030909380a1801193a273bce048508c80897093803820b0636d60a1838d10a3401190a18084833dc3e2f022c08c108bf0849041509b32f5103060a2c0d012dcb0938314803080a3a09c009b7084e, 0x22a09af01ab094409a308290138552b575758490138085808d00aac01b308d8018450685156082a0b9a014308c1082a09b3013808280b1b0b14048908bf0943091c0828013808bf472b499b4bd74de253485ac009aa03060a22084c084a0227, 0xaac031c09b76fe80c050b9271160310083e0b150b00031c083e08286a950a250a206ca274de7a270040083e0a13082908280485083e0b1c63b0023409440842083e01385fc80b2a0b1c01190a9b083e5ddb61af664f02ad09b30a2a08420841, 0x31c0827098308420a2a083e00407c3f0a270a2203920a9c0a90038278cc091901b7083e0aa877220a2c00280938002a73c709160a900a8a00280a20]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node15 : Bad pats ([38,61,60,53], 0x3ffffffebfbc3b0299bffff7e7fff) :=
+  bad_of_gated_check (tape := tape15) (gas := 150) #[] (by decide +kernel)
+
+def tape16 : Array ℕ := #[0x29d32b402c6c3746099603900a16013808d80a34091c24a00a9000c408430206081009af20c6091c0a1621c0259e01a3089f09180412090f0b960b8e013808140b0808430329089b0b1c08c4174b195e1b330a1603070915099b13251ca24442, 0xb0841cd43560a960a90011c099b004b081e3caf0c88084301a308210d023a4d0b963dc0011808470a2a011208210d0235cd08c8022a08470b88335a04120a160938084e02160912091c2f53315c0c8803980b88031409ab093802160912091c, 0xa250a1b01af57480c87031155af592b018108200a16004909af52c80020512f541f5d9e029b09a30231090809894e33089b0a1b0a16008808c8089f0b240918090f4aa0022a099b090f47254f2278c603080b860306091c084501ab09a3091c, 0x20091b091205030b060c890a160a1104050b830b066c256ea1040508810a020b810b26048509ab0981088908cb02ad084e084a09ab64df67490b0d02ad0b260a0c612969a7701f099a030d0993093808490a25099b00215aaf091c028f09af, 0xa1b0a160193081f09190b0a0b1b0b14038b084b09a30a11842987488bc0099e0056083e0aa8005409a37ec0089b0a1b0a1603180a2a0b007ba5802209a602160910040477a50b1f0b1802ad084e084b09ab013873cb0c040b0d091b091c75c9, 0x501089308200b000b14003e8dd30a9c0a9000560854089b08200181091989a7]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node16 : Bad pats ([44,61,60,53], 0x3ffffffffafd7b02b9ab7e7ffffff) :=
+  bad_of_gated_check (tape := tape16) (gas := 150) #[] (by decide +kernel)
+
+def tape17 : Array ℕ := #[0x3010a020a050a8209110412080f0a000c000b080b010205229625a028220205081b0c140aa80a2c0a1b0a0c050209380c840aa80a2c1d2009ab05010951088b08910a1b0a0c0317084f09840981081c169b0a2c19cb011912af209a38a740c2, 0x8bf09a3089a0a220996030709830a82099f3da2082301a3099f09963aa9029a0a94023609ab37d0089a039e0aa209450a2c0307091933de0c120c0903830a06091909ab04840aa22f330a2c03070a9c022a084709382c462d5e316335a00992, 0x59a509a609a2031f0aa70a2503180a09004709a30b1854315552082204040b9a0a840a220a1d029a0a8e4ec05125099a040b082302270b110a064b250aa60a9402a7099f099b05000a270a0646bf0823032609ab0a00442748444c2256c60138, 0x4140a200a880911014c0a2c0a200b010aa06d9a0a1102060b00083e0985003e0a250300083e080b080f674d68096a200a000180088c0b000b10022061410a1101400a2508510b010c00050009400b015d1b5fa063050823010f0a880b00]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node17 : Bad pats ([48,61,60,53], 0x3fffffffffad7b02b82a7ffffffff) :=
+  bad_of_gated_check (tape := tape17) (gas := 150) #[] (by decide +kernel)
+
+def tape18 : Array ℕ := #[0xa052b220828021126ac2c33028f0a1d091c252f2d5901ab09a7022509af031008bf0a000843022008c409c609381ec920d721ab031008430a9b0a8f031008430aa1191b08bf030209430aa1091c028f14a516cd1b2f22c03342d80011ca33a6, 0x99b091b030d3f27082a021609b7089b0a0703060a040b870912089b030d084f39273b96030d37253db340c9539a63c68328d801028a08c40284090f0a16028f0b0f0a8430af32460a310a2c01ab09a70222091900c40aa803080aac2a4c0b1c, 0xa9b031d094c093f084f57b358c90a255a220099099b0a0c011b082a030d513352250b1f0b18030d0c010a310a2c023408ca0aa00393084e0849011b084849d34b5c4cc00b260202082a0a95091b038108bf03a143d30c8944b346e54e9f0289, 0x9a2009b0a1b0a160b140b0601a3082a099b0a11002a6b256d29099e003e0829089b003e082967a70b1f0a1b0a1669226fca020608290a940a13019b0b030a9461b10b8a0314089b0a1b0a160b06002a0a165ca95f4a099a03260a160b1f0325, 0xd80308a6d802842c02ae0aa00a94031e0aae81c40a1b0a1603000899088b0989090f0040083e0a25089b05000a250b017a9f7c95091800290aa60a250c02000b080a0c860a25083e0b290c0075dc77a77f2009a6]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node18 : Bad pats ([61,60,53], 0x3ffffffffffd7b02b9bffffffffff) :=
+  bad_of_gated_check (tape := tape18) (gas := 150) #[⟨_,node14⟩, ⟨_,node15⟩, ⟨_,node16⟩, ⟨_,node17⟩] (by decide +kernel)
+
+def tape19 : Array ℕ := #[0x2b490317086209c60a27093827cc2ed741ab029a090b0b16081c081f01100897004308c30b17201b2124091c00c308bf048508170b090b810b991c530206080f09900a1803170817081f173105010a3409b30a9c154a19511d2b23af5b425baa, 0x89008630a220a180b8f0b8703970a180a133d0f40d109af05010a22088c088a0102084c098c38160b220b1402223553048834220a2f032908530a3a0a2c0a270a9432d23a4b03890a270111081f09382db10845040d0a2c093803250a2729d3, 0x8870402081b57930b1401160a2f080f55a90d0100170b085322090300cd0c8703810891504d0b1b02904e29510f0c090c0002a20a2c09160309080f09814a310b0f0b01010d080f471d0d01048809110b0145224b9b09ab58a702a10a9b028f, 0x762b0a0e0a0900bf08410a220915090f082701a3099b0041083e022208bf69c26ab36bb06e9d0380080d0c040b86000d090f64a666a27b9c02040990083e09a70827022a083e09af09155fab622393a59432d80003870a9c0a2709a7099f0487, 0xaa709b609a388c00b000227090e08270a1804850b0309b683c0099f099702180d0109a3809f003e0a0e08277eb385808bcd05010b0309b609c1099f0993004308410938082678b301af08410a2a05030b060c04008d08410b230d03734c74d7, 0xd802d801009c08960218082692a00a900a8a009c08960115091208268f2090400b0e0b0702a108270a0e038b09978a2c03a1]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node19 : Bad pats ([61,60,53], 0x3ffffffffffd7b02f9fffffffffff) :=
+  bad_of_gated_check (tape := tape19) (gas := 150) #[⟨_,node12⟩, ⟨_,node13⟩, ⟨_,node18⟩] (by decide +kernel)
+
+def tape20 : Array ℕ := #[0xd0000260a0b081f0305084608a6262427960b0a00a608250c810a290046084205010b0209c4204a215b0a1f0390081d0b0f0b050a901d2923112cd202150823099e084108a600850c010a1509100b050c030324084013b016aa194c311b3d57, 0x99a02203fb240a44ade60180215089b0305091b081a0934030f0846084003800b0838ca3a523c2909870b8b0b8301b908410c0708970983098b34d3030a099e082103050910099e08a62fa40934002608230a1a0046084200a608252a4a2b24, 0x99a59485b46038308a40c130a1f0a1a0316084909345429011b090e0905099203930840091b501a08d002364de208a4524c56be0b1f03080a1609920a1a0a15019309960a2a0a20038a0996464800c108490192091b0b0c43d144be4829022a, 0x782a79af822401340b0c0305081d0d010c0703806ba26dd208c708c10325084708120816098b0b05695301c0084c090108120816099309b965cb6ea90b180b11022a09a202070a1a098f084909340a2e0a255f3200c10a1f0a2a0a25038b0993, 0x30508a4081c08230a1a0a150305093408250322093408d7084009b90b0580aa09930380091009340a1608a67ca7019a093408a602290a8209830910089303860a8809100317084d014e094b735609347410759b]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node20 : Bad pats ([63,49,60,53], 0x3fffffffedd73d02797b77fffffff) :=
+  bad_of_gated_check (tape := tape20) (gas := 150) #[] (by decide +kernel)
+
+def tape21 : Array ℕ := #[0x402094108410502080708c10d0026ca0b1a281e31a5393001a608420a250a200328080b0b210a2e0a2a099e099a2025013408960a2e0a29040709a2099a01b90943084b0326080c0821175518b209340328099a084914461a561c48222c4e9f, 0xa160845022e08963f48098c030208000a1608453d1c40d2422908a602200b020823038b08c708c10b0f03250938080d0a2009b90a1635c037a90326089a0b0504860a84089a3044098e04840887089a08450840038b0b26089a2b462d96099a, 0x9b901420a2e08c157d9050008a20b050b8b08c7028408a60b100a2e535355c55e5261297e50032508c109110a160a900a250a290a24021b08c3090e084201430934050147d2090e08c301c309810b0645d548c84ad60825030c0a2009340325, 0x773201c308450b050c03022f093403290a3609b96cd26dcb099301ae0a880d01093403860a8208100910032208450a290a82659667d269af6faa7ba403130a25093400400b135fcc050208400c100b05098f08c105020840090d0c8709935b4b, 0xd800030f08a408230a1a0a150181090508970910099a018f0934792208a601930934082501b60a25088f0812093403250a1609110910735275a7]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node21 : Bad pats ([63,49,60,53], 0x3ffffffffdd73d02797b7ffffffff) :=
+  bad_of_gated_check (tape := tape21) (gas := 150) #[⟨_,node20⟩] (by decide +kernel)
+
+def tape22 : Array ℕ := #[0x379b3d2a4e420101081c0a16099e099208a6003d08190a160a11001c090d0220083d09342090219b23b2003d0c090b090c0000810b090a90003d1a100b0f0b0105010881081c18321b9b01b60934083d029a081208160b08144615c81daa26a9, 0x294089a4046424d460b4b3004840a9a0b29090e08170484081b0b1b3a9a0c090c00050109140911001c098c00000981081c004d09380b2233a53510361a030f081c0981020b0807022f0a962e1008810c81050209340b012b8b2f250d013094, 0x9ae083d0a9a09140b1658aa01380c020a2f0b02083d00db085a0b960b180d0252c155325c1568cc031b0a1b093404824ccc08a6030f0a0509340b17020b098e089a091449250c8b0134084c09140a20021b09b908cd445203100a820c100934, 0x3180a1b0a16093409a608a60296091003250a166c226d32704574db0a1f029408a60311083d08cd003d66550c8105010938083d64db081567b20a15003d08550c8b0b180a2f04020938083d5ed7611a0216091405000c000b0f5b2008a60302, 0x48b099e08a602960a9076b20a29039e0914099e08a603860a2072b20b29083d]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node22 : Bad pats ([39,75,49,60,53], 0x37fddfbfdff7610270fbf5d7bfff7) :=
+  bad_of_gated_check (tape := tape22) (gas := 150) #[] (by decide +kernel)
+
+def tape23 : Array ℕ := #[0x3030901081d28292a320a200a1b021509a624a0038608160a1a081f09110a15013409ae0b09040508171ecf09110065093409ae0b090a831ca02024232a083d020509010a8408a60a200a1b028209900914081f01141324152a18422cd7542b, 0x441b0b87011108100817083d0a0b030209180817003d08a60b09010a0a0509b939ac3b1b3c953f0746524b5f0500083d0a1a0a15091b01c5083d0b1b099a01ae09b9083d089330a232a40c87354f02840a1a0b0309a608a6021a09110905081f, 0x11b099e099a0211091b56a25828099f02200a1a001f0a20093853420934021b08cd0b22001c08a60a840a114f2950d20b970b8f00be083d0b29093401900a1a0a0649460a2f0a25031b0b0208950a1b011408530b22081f001c08a60a844229, 0x28209960a15082608250110089a0a8a0a84022a083d089a0a20031f68cd08a60220083d0a9667326a900b8702070887099e083d03090996624208a600130a11088b0134080f080d0881090102200934083d5c105e9b603264576ca9]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node23 : Bad pats ([75,49,60,53], 0x3ffddfbffff7610271f3f7f7fffff) :=
+  bad_of_gated_check (tape := tape23) (gas := 150) #[] (by decide +kernel)
+
+def tape24 : Array ℕ := #[0x289f09c92a2b0c852c0134d642d2038f09a7009a08a20b0823a70a1f040909a708a2030509a300890881080f0821099a030808201c1e1eaf1fac211f0a2e038f09a70b1101a708a4031309a3030f0820099a0885152f162c171f18d124c64953, 0x19f090108960b030a1140320a2e0a29032b08460b180b09099f0b11030209a708a60305084609a337ac391f3c5b040709a708d5084601480857032b0b0a01a308090805099e08a6309f31e032ca0d0101a3084609a20c100500088f0b0300a6, 0xa0c08a4098058a90b0a0b03020c0d000a1a05000d01099a022e09c0522253a4550a048808200a90099a020c08084da208a64f9f5aca6dd277ab8357031f094308460a1a038f09a70085089c46270a11472909a20934028408a60a0c0b2b09a6, 0xb1301a60b0a6fa873cc030a08460c0b0c02030a099208460013080e0a0b0a8209a26a486baf0941009e081d081c048564a20a060b050c0b0c0201a60a2903100b0308a660cc6194048408a6048809a25d2c5e2f665003100a1a081f0a060284, 0x1b309af00c20943093408460d01082108a605000c030a3a0a050b170b0109340c857faa0b8b021f091b099e08a67aa309ab023a093808490846018e0b1375d009340215081508180303721c0c8508a6]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node24 : Bad pats ([69,49,60,53], 0x3fffffddf357550279f9fdfffffff) :=
+  bad_of_gated_check (tape := tape24) (gas := 150) #[] (by decide +kernel)
+
+def tape25 : Array ℕ := #[0x99e0842021f0b0d0aad274a0a2902ad24cc28a701b608be0311089b09a60b96009b09a6201e22520a290a24023a0891082509a2009b08970c031b2a0a1f00a6189f1d56022509a603110952081b0a340a2f09ae0a3a162a174c23452bcf5e41, 0xb2608a60b1f013f3ed00aad008a080709850b110a1109a604813a2a031f0a0b03110b0f3815393e0d000216099e0a11021009140b1f08a403113232343e040508160b180d0230aa358b3d5d41cc49274cd3038b0b8308420a9b09a30a95021f, 0xd010c0709a2099e05010846084204030a0554ca0c070897562a5924048408a60a900846084351425ad209ab5bd702a10a8f01a608a60b8f4bc509a7004608420134090d09a20a1a031a093405024552090e08a6461f48480a2903210854093f, 0x11b0820702b71d609a672ac741f0016090b088b0c850b110b030897098f05010b050c850b0368ab09a600250993020c08110910089100190a160b83629164a765b26ca4804f08b702a10a8308c309b309af019e0934022408a20a1f022909c0, 0xd80003110b0f099b0899030f091b08247e230a1f0a1a029409380288081a09ae08a47a500a150b1603960a3a0a1576b27b4c0409082408a401380a24030809a30821]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node25 : Bad pats ([49,60,53], 0x3fffffffff57750279fbfffffffff) :=
+  bad_of_gated_check (tape := tape25) (gas := 150) #[⟨_,node24⟩] (by decide +kernel)
+
+def tape26 : Array ℕ := #[0x811094e28a10a290b1b00970859094e083d0097089323c125cc0d01009708910a3a083d21592a242f5004840b900a3a040e08060b021c580b220a90093400050a050a8209b908cd0a34098809380a3a18c6038e0aa013cc1dc23eaa502f51cb, 0x43c5459e4728029a0a940a1a0a15014e09340b090897083d3ca40b180b1100be0b1b09340322083d0302085809c909c00a29364537520a1f05010a3a0938083d324c38d703160b0209ae030808880b030a882dd60a1a0a150108089708930087, 0x138083d091b08a60826019e091b55a8580f5d2364516acf97c9d801d8005127029c09a2099e093400970908081f09a2099e0a904e5203180a1a03980b9049c24ac608a60318099e099a03180a1a09a20b06050208910c070a29093409a20a1f, 0x745b022f093f0b17003d09c20aad6e486fcc78278553013f083d09a30a8f013f083d68a701ae085008be67450a290a2400d30853083d0938021a091b0b9e0b960055085360460c87624409a3011b082509a60938011b088b090f08245b3e0a8f, 0x21b882c8a288cca09af09ab03170aa10b8f0b8704850a2908a60aa10b13831f00d909a60a2e083d0a29014c08d909ae0b137dd1003d09c20b177b4c805709a7003d08a60b17003d08a676c80a2e0a2902240a2f093f08c2022f72540b250b17, 0xd802022e084a0317081e0d0296cc0b130b0c050209180a2e08a493d205020a1a0a15038a0c0009188fa991280938031e0a290b880b0c0b0501110a1a0b250b1e]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node26 : Bad pats ([49,60,53], 0x3ffffffffff7750279fbfffffffff) :=
+  bad_of_gated_check (tape := tape26) (gas := 150) #[⟨_,node22⟩, ⟨_,node23⟩, ⟨_,node25⟩] (by decide +kernel)
+
+def tape27 : Array ℕ := #[0x20108290897284d0a9909970993002924a329160314082a0193081a0a10008a08860812050108131f12209f22302325030208820a060897081a091b013f09c408b70880081a08900c82021f08b7001908140b0214c715dc19301c2f2d4a4ba6, 0x93809a7082909a3022409af09383e2b40c909aa00290a160b020a1a0a10002909180b9a0a0901180829023435b03693389f0b8a0197082a08c80c860a25332202070884082a091b301a3b4601a3082a09970314091b2bab0a160a0c021f0a1b, 0x5bad09a6022409a309090888098b0918031c0938084254330aa60118082a093808b7084101ab09384f4951e2574e5da064a202b309b30a2a08420841021a094308b70a2e002a091b08c3474c0b9a00b708d00880089f082a091b449a4948021f, 0xa160a11011408290210089f021b6d336e2c0b140b066f1604880a090b14082a019309140a8868306a2571ca7e9e021f09a6089b08290a9401140829624a018b0817089b60ac0a1b0a160084081408290918022509380b83001308125a2b0c86, 0x89a50b1f0b18050109380a0c08b7869f05010a2a0a1b03970c17093882c884498ab3099e099a020608290a940b8a001209a30a1108b70a940b187cd201870b140a16082a008409a30a160a07048808d00b187520772c791a09a201ab08b7082a, 0x3890a240b2608290b1f030d0a1b093f08070a2408298ec9091b020c081b031408490d01]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node27 : Bad pats ([40,64,60,53], 0x3fffffefef7e39029bbfff7eeffff) :=
+  bad_of_gated_check (tape := tape27) (gas := 150) #[] (by decide +kernel)
+
+def tape28 : Array ℕ := #[0x2ec13c52091f01b608410a150b130b0c0a250a20009a0896010a081a098009b622260b1c0b0e030c0a150a111ea32348030008960820030e084204880b050b00098619cc1aa008b70096081f0a110a150303081d0a1109af142916451c5226ab, 0xb1508b704030a243f3f40cf47484ca1031b09890942082405010a163a29089803890824082203250a160a0936a9381c084102240aa509b9032208670a240822325533c808b704030b0609a30822082102a50b0e038e08c3089c08422b542c27, 0x98159275a565b160a2003000aa5098c09b6089c05010a0c08b70aa5082003890aa50d0350a7532c55c85d60641a00820b9608960b020a1601420b0008220b024a160a2005020950085908b70b15039e084909b604030b06435644bf0aa501b6, 0x8270b220b89030008960aa10a1608b76ea90a20038908490b150326098c0d0209b669cd0aa5039966cf6b480b1a0b0c00240821021b09030a0c0989632700b708410c820a200a0c60a90b2100b708410c820a1601c609b60024082005020b0d, 0x3000898]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node28 : Bad pats ([50,64,60,53], 0x3ffffffffb7a7902d3acbffffffff) :=
+  bad_of_gated_check (tape := tape28) (gas := 150) #[] (by decide +kernel)
+
+def tape29 : Array ℕ := #[0xa2001a30a290b060d010a0c04030aa5251b082a27c8309f0482090108100a01099703000a2a0a091f9f09a30827013f085008480b280a2a0b0e032208050a050a01099700c208020ab2081008090b22171f19cd09a3040312bf1cac22253721, 0x94309aa0b2101a30a2409aa0d033ee741484b1f05020a0509a30c0c09153b254c2c509a000c080b08280a100b100b02000a0a0109800a16342c0a20091c02090b02082a005c0856088609aa08c4032908562cc609a304032abf0d020a162f2c, 0xa100323082a08b757a959e1022408b703235447554f5cca5e4876e00b0c03100a160984091c02040b024e9f0a20082a0119089f01800c070b2109890322080e09a30980490d0c820a1601120a240989098009060189431b45960a2003a10b1b, 0x850098c082a71c6744703810d010a0b6dbf0a2a0a20020c09800a0b0b10091f082a013f08b70399094366bf0a1a09aa0482084e08c408b702a10a3a0b1408c46247644267ac6acd018c0b8a09aa03220ab1085209af084b0943032308b7091f, 0x2708060a0708800980091c0a1009a7099f038f09af0a0c0a1003970a2509af091b7b297d2b021a783f0b1a0503093f09af093808b70188082a09aa0b0e0b0000cb08480a10]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node29 : Bad pats ([38,64,60,53], 0x3fffffbfbf7e790213affff7eefff) :=
+  bad_of_gated_check (tape := tape29) (gas := 150) #[] (by decide +kernel)
+
+def tape30 : Array ℕ := #[0x82009a30c070501084e0820094508b7094208cc0b1a02a508b722d226c628f0331b091c023a08b7084300461dc50a200a11004608430b1a0b0009a21ba00b1c03920a2501af08470b1103050820080009af0a11159f08b7175218461f2b419e, 0xb0009a303280aa50a2e3f3f0a160a1102240a1b08000980098508200b13031b08b709a20820030508b70b00098536a738d23c16040709a2088808200108080e031a08b70a240a20080008880b130300080009ab08b72cd2301131270d0201a2, 0xa2a08870b0608b758a55a5d02a509a30c8955425e21031b0a1602a50a2e0a1108b709c951c80b280b2102240d030a2505030d0209ab021109894acf4c4d4de7048508470aa509ab0224085e464f08b7485252a765c6709f7d1a02a508b70a2e, 0x8430a3408210b150b0e0211091208b70821090f048808b708216b1b0d020b9601ab08b7684e6dcd099e00b70b2108210c0c032109a30821005708520a2a0aa109a3622963c209120211084704885d4f0a340c150b260c0c01a308b70a110503, 0x19a099601ab08b705030c020a3a0a050b140c8808c47c470b0e099e022a0852084e032875d50c8808b70b18019f0b2173497746091c0046]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node30 : Bad pats ([44,64,60,53], 0x3ffffffefe7e79029bab3eeffffff) :=
+  bad_of_gated_check (tape := tape30) (gas := 150) #[] (by decide +kernel)
+
+def tape31 : Array ℕ := #[0x3020b0609aa285d2a210a0502a109aa0918098c0048093f0c170b22232c25190d0103990918013f09aa09b90aa71ea11f8108b704890aa70b1b038b0b830a090a9b0aa719cc1b41023a09520ab10a2409aa03890aa513c216452b9f42af4326, 0x9b908b7021a09aa090108900b813f450a0b091b048509aa081908b70a9503810b0909b908b70aa1389b03910b89090709aa35c53b24091f00b70a06081a091b040409aa0b060a100b9308b70b8b3021322504170b020b81041709aa098c093f, 0x8460138084757c6591b09a35a455bd20051094808d20c880b280b1a08c409a604020b260ab208c8039b093f0c884e5c0b28504609a3004109a6022e0854094308cc039e0a290b8e47e049ca4abf544d682268acd8000501084b0b1c0b090aa1, 0x8b7031a6fbf71b3041208500b0c0d016e47736679147d1e7e25894a08a6d801029f0b130b0c09a608c4031c0938084365ce0a250a2002a1090f023a0848099b08b761a10a2a0b0e03830a2a0a055e3f62a5040e084208b701150a11031c09a6, 0xa20099e099602090820869e091f022009a7082402200b1e0a88832784a20a1600b70822091f802f02880996030a08130b0c09140b0501147aa10a88048c09a3022a0b00783300d3085e0a2e09c40b1a76bf0d03022e09a70a24022a093f0b0c, 0x29a0a94039e0b8e0aa0020508240aa5084608b70220084804140a3a08220c10914d924794d609a2091f02050b8e09a60aa008248ca2961a031708b7]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node31 : Bad pats ([64,60,53], 0x3fffffffff7e79029baffffffffff) :=
+  bad_of_gated_check (tape := tape31) (gas := 150) #[⟨_,node29⟩, ⟨_,node30⟩] (by decide +kernel)
+
+def tape32 : Array ℕ := #[0x37170a290a2405000a020903081609920918031c08cd0a2e084c0a130a0900110a0720a2239e26a900530b10093f0d020a2c0a27048709af0b87048508030c0b0b1e09c20b1c0b1719d70a2204870aad0d0215271b59031e093f12ca1e4c3a3e, 0xa8208170a0e04850c030803081808173e8e40ca42a452aa00c608c00b170a130a0e091400c608c004880a1304853527364a0b1e0aae04850a1309030992094d093f09af08c0028f0a020867094108500b820a2c014d085009af2b4a2ece32e4, 0x12081058270a0b03970b8a08130915562959c664a002830803081a091409ae0a150a0b03060a1a0a82031e09af0a1a083d000208160c880b0609c00aae031e48cc4bc74d8e0a94030d0a820a2f09ae0a1a46444f15039e0a290a9409ae0386, 0x21a0a11093809a2099a01b709af083d09aa04860938674669260a1b01aa09a6022508cd09b70a2402220a250aa661cc083d0317088709a20013090f08835da60b070a255f4763ce008709960915]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node32 : Bad pats ([40,73,43,60,53], 0x3fb7fdfbedff250283fddf3efdf7f) :=
+  bad_of_gated_check (tape := tape32) (gas := 150) #[] (by decide +kernel)
+
+def tape33 : Array ℕ := #[0x1b709b6083d2833310c3859003d09380a2a0a2500be083d014f08c422420a200938235701b609aa083d048609381dc61f48019008c40a1a03820a220b101a4c0a0b00c40a2c0b8a0a0e17a403090a1809180a090118132215291bbe254b42a6, 0xaa10aa80a2a0a25013809aa3e4801900a10020609903bc209af3cbe0b1a0b13040e083d09af0a1a0a10039709af091b35a9022509b7083d33b30b0c032309af093805032fd30b100a1a0a1001180a0909af083d004a0938094f0b972b452d29, 0xa24021808c657c2091859be5d1c030e0a25083d0a150b1a029c0915030e51270c840a150a0b0225083d0b0e0b07021809124c9c4eb3524b020409090b050a15041509120b0e00cd09b746d4083d48334a5254a008a605010a1808170b800990, 0xa8a00200b00030d083d0a0909890a1a02220a9c6c426ea36f96089a00110a150990083d0b00090f00150b0766270a1b040009180a24050208170b8009900918030e0b17602d62cc643e6922020e09150912008d0a0e5b9e0a1b02070a830a2e, 0x4840a02021508110b0072a50a96]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node33 : Bad pats ([73,43,60,53], 0x3ff7fdfbfdff6502c2afdfbffdfff) :=
+  bad_of_gated_check (tape := tape33) (gas := 150) #[] (by decide +kernel)
+
+def tape34 : Array ℕ := #[0x81828cf0a130a0e00170914031e0a83080302a80b9e0b800b0523890a0502a80a8809ae0a82040309030b861e9405000a270b0c084d084c0a830b88031e0900080808640a270a29050008610a27164c09af19501cbe2085251726222aa45d2a, 0xc0d41c40a1a004c0b860b1e081e0b10020e3c1e0b800990004b09410b980c040b1e0b1705030a040b8703050c1235d70911371e3a103ec200020c890d000b980b800b1e0b170138083d05030a222dbe2ec8324c4715031e0a0508180b170015, 0x5a5203290853084d0938006409c008c40a0008140914098155d30a2c0a2701380892081f0b25098950c557cb0a15048509ae0aa10a8f03250aad4aa70b1a0b134cc70a0b02000aa10007090501110988450e0a0046510b1a0b130200081f0990, 0x1b7093870330a05721b732077d47e5289a2019a098e0aa101386a4b0a2a0a2504860b90028909af09380a2e000d098e0c8809c0093865426720685203870b1a08540a38093861486bc690ac03250aa10b1a0b1709af0b13048109af0aa60a94, 0xb070a2a0a2502010a0509150b0e0b070a20030e088b0915090f031309380c0b0a05819b83a086d70229083d0c04022908000908003d09a67b0e7c9f0b1c0a1b0b15038609380b980b880417083d09a60b8075d80115090f040209af080f0a01, 0xd80003000a200b1c0a9c0a96019608960a900b1c0b1501960a908bd48e5202150b0e0aa1]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node34 : Bad pats ([73,43,60,53], 0x3ff7fdfbfdff6502c3efdfbffdfff) :=
+  bad_of_gated_check (tape := tape34) (gas := 150) #[⟨_,node33⟩] (by decide +kernel)
+
+def tape35 : Array ℕ := #[0x23428512ad32e4202b10a24084709af0ba10b8901b3093804050ab1085722530a3401af08550938019a0866085709b31e561fd22351261f040008910b970b870a07091b030c0a200a84099208a2022509af0ab10b870d0114a6171b1a2933c5, 0x9b90a25020b09b908483f2a411945d40ba1040409b9031a084800dd08d703a00b1f0a3138dd39cb3ad50a253ba9485c4ac7021b099a091b08a40b0a01b309380a3431260a1a0a1001b3084703970b910a0b2d4b0938021b0b870b910a0b0847, 0x1880a2008a00a070b970a1d04010a8409070c870992552c0b87011b081d0a0708a40216090c099201070a024e1e4fac5197582908b702a10a1009b90a340a2f021b0a0b084809b90a310218082009180a25020b09b9084843aa0b91020b0848, 0x9b90b0a72be01180b900b100a3405030a220487094e08ce093808526bcf6cc86ea60a1a001f0a200a940a3167420a0b009e0a2a084d0a310b9909b90b9100a0081f021b081d5fa86099022a08a40a1b030608190a220b9a099a5c485dd16433, 0x29a0a9405020a22084d0b990b18]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node35 : Bad pats ([70,43,60,53], 0x3fffdff7eddf45028bfedfbfeffff) :=
+  bad_of_gated_check (tape := tape35) (gas := 150) #[] (by decide +kernel)
+
+def tape36 : Array ℕ := #[0x213281f09120386082002220986038624a225a026ad29d22d9c3bb202820b1309af09900a0b03130a2709af0c890a13030c08540aad09af048108531a4b1c271e900a1500170914028f09af03030a270a050a83154b16170a131724212a5dc1, 0x431b01020810080a0a0e3fa4461c4bbe54a6028a090f02200820013f09b60b98099039a23a9b0b150b0e02020815090c09030b880b8009900189080e090f0a3a0d030b0732200a8a35d402220915091203030a150a182c1b0a2a03030a180a15, 0x3180817090358225a245c3e08a602130a0b091b00810a000c010a8a048908930981511c0a1353240a2a030e0a2209aa4dc8038f08150a0603134a1f0b800a8a0b0e0b00040547230200088b0c000b230d030912020909890a0b02000a1841b3, 0x5000b230b0a094108ce0a220a1800000b230b0308ce0ab10b9964a7083f083d022c09b90a27604208b702a60a1b099a0100081209920a15030308180a130992]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node36 : Bad pats ([76,43,60,53], 0x3dff7efffdd06502caffdbbfffbff) :=
+  bad_of_gated_check (tape := tape36) (gas := 150) #[] (by decide +kernel)
+
+def tape37 : Array ℕ := #[0xa1004850a0e0a2f0b0900840a0009ae25cf0b80031a09af0b0c08070ab109ae23482795289c2ca6040a09b30b1a093804020a2f0ab108c7040a08da0c121a570b1e1c5001b309af0051084d040908d4085309441552164b17411e423c2a5245, 0xa0b089801900a100a843f2640c84832050009ae081e0a2f03810b1a0b0908c909b3023a09ae37cf3a610c0a03810a820d000b0209b30ab10a1535520b0a0b0301ae0a0e0a150a1004032e24302d0210099004010b8008170a0e2ba40a8a020e, 0xa3404890c880a3a0c0a57d70b0a0a8859a85fca6f2a8b47021b09a6099a08a602b109b30a250b1009aa03100ab10b020085089508c909b34c410a204dca5026021509150b2301890b1346db0a250a0b0a20030a0ab10b030215422d43d20484, 0x764b78b203990a2f001c080108150a100b896e610b1a0b1305020a2f09b66a4b0a1809ae03130a000990081e029465280a100a1805020b1a05000a94622863276756038908170a9b0aad0a2f0b0c02a10a9b001e0a135bd75caf040a08170a9b, 0x29b0a2a09c50a2c00d8085e09b90a340a8a86540aac02840a250a2702b1815482e209aa03050a2a0a200200091b020b0a130aa10a007c9b7daf7f4a882603070a2c0a180a2a0b1301b609b90a270a1303070a200b990b9174270a2a022c7148, 0xd80002a60a2509a60a1b099a08a6]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node37 : Bad pats ([76,43,60,53], 0x3dff7efffdda6502caffdbbfffbff) :=
+  bad_of_gated_check (tape := tape37) (gas := 150) #[⟨_,node36⟩] (by decide +kernel)
+
+def tape38 : Array ℕ := #[0xa2c2bce0a1b0a1605030a380950085009b709380308081b0a2c00540a3821cf2353264800140b1409140d010a180a0e0486099a0b9a04880864085d0c030b140b0d09830b011a9a0a1d04860a880d0115ca1c18030d091413271f253b465133, 0x314099e083d0a1b0a16019e083d0b003da5404a0099089704850a2c0488394a3a270b0d0a8704880a2c095009b709030911099a089902a00a380800090908170b9f0a1301000817099a2f2732a3368d093f001b089908950314081b2a270a31, 0x3830aad08500a3104880c1408640850084f5663584d624670c778a701aa09a60314083d08970a1809a2009908970a2c083d0a1b0a11000609870a870a250502084f0a8748cd083d023809b70985090f0c12050243ad0b2a46414aa04da2504e, 0xa1b0a1602250b8308296f2009a209ae0029099e0a1b02ae081b09140a870c0502060906080408030b060aae014d0a2f654c68176aaa6c4a02a00864084b093f0a2f0a2a006408500c8509810aad0b250a870a25019a08290b0d0aad5b255f5c, 0x93d109a701090b090a22039e0d0185cf0a180a1f0a1a032482cc02a009c208da0a1308180a09048409c20b8e088a000f09077c8e7e9d81a4874b972a9da3019a081809110a870a290a0708290a2402ad083d0b2b02a0082909ab734e74cc022c, 0xa1460918a32009a3099b021a088e09920a110a070196098a008e08140a109a269b25082a01c208c00a1308180a0e0a290a1f03140c03038e09c20a8f0a8392b00b2401380b9e0b8e01c20aae8e3e8fdc0a1a04020a130a0e08180c030a818ba4, 0x295082a0a830a1602250b8309a6099e03830a25]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node38 : Bad pats ([73,40,60,53], 0x3fbffdfbefff2502937fdf7efff7f) :=
+  bad_of_gated_check (tape := tape38) (gas := 150) #[] (by decide +kernel)
+
+def tape39 : Array ℕ := #[0x21a08290a10011b089f0829269a099709930210082923a303060a13222f031d09b908970a930a8d038f0a270a1b08970a1603060a1d01381acf1bc81e1303140a2a0b970a180a0e03970a1d01380a2a0314145c154f161818a520b32826424b, 0x20409140a1b023409b93eaf099a40330b180b0a02940c0a0a1b038a08cc082a39be011b099609930196098a082a3623048909140905099a0301321a343337a50b1f0400082a0a2a099a0a1b038a099a09382d4802150992082a2b3e2fde3b18, 0xa110213089157af093859b35d5503010a1a082a0a2a0b0a02990938031d514a0c890a340a2a021a08290b1d022709414d554ebe52260227094709380b260a2a0092088e0a090b08008e098a461d082a483e4a9f54d108b7028d0a15019b4129, 0x317082a0a250a1b02180a996e2f704e725b08c100540a2509b908290b240941030a08290a2f09b90b1d684a0a24041709380a1b0a1102880b0a0b8109b90938031d0b14604462a564b36b4f02270941093800d00a2c5bd30a2402380ab20a1b, 0x2110a2e020c08550b16754c0aa50a9f00470b1d0a990b0f]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node39 : Bad pats ([70,40,60,53], 0x3ffefff7efd50d029b7eff7effbff) :=
+  bad_of_gated_check (tape := tape39) (gas := 150) #[] (by decide +kernel)
+
+def tape40 : Array ℕ := #[0x495c023a084f0b140b0d0052084f25a20a310a2c0050093f030d0ab20864028d0b830b2620e80a3a03830aad041409500b9b1d5d05030aac0b990b8103060950085e08030a180a16050308030a181625099a19211b331e6c225a234f27cd5d47, 0xb140b0d029f0a9b091804000a993da709423f5341e145af0c0a03180914081b0a870a180b0604000b0a0a87099b36a20a2502b3084802ad0a3109b932ce0b1433af39db00640c840d030b990b890b140b0d011b082a05000a1d2ab32ba92f25, 0x81409180002098508970a3a0852093f09c0571e0a180a13011808c908480b0609c0522c58a60a2a048809970a8e03060a884cca0b180b0a4e2a0a3404000a880a100b18099b0b0a0a250115081b0b260b140b0608480ba109b90017090f0b89, 0x21108290c01039b08290948002909a36d636ed20a240b160b0f0501098a082909180b810400082909a30ba1671901410938019209090a16018a091b623e0a3a63d664d1699d701f7bcf82c5038a0b06099a0b180b0a048209960a895a9f0302, 0xd800031d0a1f0b0f0a9f0a99031608c709ab0aa50b0f01b30aa57d9d801f023a0a3409380b1d0a1a0a15023a0a3409380b1d0a1f031d08ca0899094109380318091b0c0c0a3a73d67651789a]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node40 : Bad pats ([70,40,60,53], 0x3ffefff7efdf0d029b7eff7effbff) :=
+  bad_of_gated_check (tape := tape40) (gas := 150) #[⟨_,node39⟩] (by decide +kernel)
+
+def tape41 : Array ℕ := #[0x28d2094103890847021d09c3039b254f265127442a1f2e553cbf02a70b18099a09b90a3403030a18099a0c840a2c048c08120a8809960180081408131aa61cca1f610a2a0050093f02a6099a03130a0e0a050aac1526165a0a2c174d21c76130, 0x14e08570a2c404d47554cb357cb02ab09410938021508470193090209870b8909b93a4f3b560b1d0b1602380850094d09470b9109b901c0085709410a000d000b2432d10aab359d021d09410938031a0a2a0a222cd60a15031a0a220a2a022c, 0x8b7022c0a340a05098a0a22093800d00a3a0c160aab040b08c809c0099f52d50a2c54cd0a1503160a1d099f4ea9038a08520a34030a4b520ba10b240aab0b1d0412484e00cc085e08560c050b080d000941022c09c00a34023a0a22423e43d6, 0x8008600b01090c0a27088f0a1d05000b01088f0a840b8067ca082a082701900a180a0e63af08a402890a240a1509ab0138085509b70a2a0313084e0a2c09b7030c0950093f5b4f5d4d5f33]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node41 : Bad pats ([70,37,60,53], 0x3ff7fff76ffd4d02982efffdfbfef) :=
+  bad_of_gated_check (tape := tape41) (gas := 150) #[] (by decide +kernel)
+
+def tape42 : Array ℕ := #[0x2310a2f03220a840b1b00d70a3a099b25a20ba10205098a0b03085f0a84099b2329275c28552c4b0404098e0b11091204150a100a840896040408830c051a1a0b061c21019a098e0017081504050883080d090f151f162617301e2f3b47512c, 0x429f03160a2a08c101b90a2f0aab3e4b3fa9473f03800a10088a0a0603980b03089209860205099b372239100c0403a00aad0d030b2209820a840a2a349f0b280b2101970a310a2f0a2a040b2dcd2fc4022f09b904040ba1084f0a312b4d0aab, 0xa9a0a880a0b04050c840a050c04569a0b210aad59495f276ec78a2a022409ab09a308b70284098e0a150b1b099f03220a840b1b00d408c80892098e4b300a1f4ca74f4b011b09830b0101c00b1845960a340a1f0a1502840b280b21022a4144, 0x70a974a6773f03800a0b0062084b08520a2f0b986d900b180b0305010a01099369a60a27099b03110a3a09b9084802a164c90a2f0a2705010b0305030aa161c962ca669b040e0a9a0a880a100b180b11029a0a8800480a2c5b1a5c4204040850, 0x8b702820a1509800a0400810809098c0a0b0aab859d0a8902180a150a0b08170a0402847f9d820f099f03180a1f0a15023a0938022f0a2c0a880a3a7b567c427da787cb048909930a150b180b11018b09900a1803240a1f0b80734a0a06020e, 0xd800028f0a1f0a1509ab]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node42 : Bad pats ([70,37,60,53], 0x3ff7fff76ffd4d02996efffdfbfef) :=
+  bad_of_gated_check (tape := tape42) (gas := 150) #[⟨_,node41⟩] (by decide +kernel)
+
+def tape43 : Array ℕ := #[0x850005627d128cf094d00900c86038008cc24a40b10029f085222c825e20c170c05040c084b0a130aa102131dcb0293093f08900b1c0a0508170389199c1ca70d020485093f008e081b0918090f0a1316d117cf1fd62e263c2f3cca3d473db4, 0xd804403f40b1d8033ebdd802d801d80005010a930a88084b0937089a099a099603020900081b0856099e0820019e08cc35240c0502930820084b0937099e0488089e30c63356381a023a08ce040c084b2d5e0b1002100b1c08582b480d0202ad, 0x58c90b2359cf5ac100260b130a2a0b0e030708260b130a2a5454005608520b1a08c40383091202a108554e9b0b224fd409b601c40c1609430b260c140c0b05020b0509930a09008a0827469348a64bd651cd564763a57db2d80642287e40d805, 0x8b70a1b0a1601ab085a09b70a3a08b7022408246c3f6e9b724a019f08240a1f0a1a021667a9039609ab66cc69c574527d2201b609ab09380b1a050008c208260b2309b7038e08260b0c0938088b5f570a9561d908b701af09ab022a08420224, 0xd80f09280925d80e092bd80d84498528d80c092ed80b81c6d80ad809802880c982abd808d807039e0b0c0b8e0a2509b60a200224093f08b708ce029f09430224774f08b7786009b67a4d04880b960842084100230a2408540a1a]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node43 : Bad pats ([60,53], 0x3fffffffffff7f03fbfffffffffff) :=
+  bad_of_gated_check (tape := tape43) (gas := 150) #[⟨_,node0⟩, ⟨_,node2⟩, ⟨_,node10⟩, ⟨_,node19⟩, ⟨_,node21⟩, ⟨_,node26⟩, ⟨_,node27⟩, ⟨_,node28⟩, ⟨_,node31⟩, ⟨_,node32⟩, ⟨_,node34⟩, ⟨_,node35⟩, ⟨_,node37⟩, ⟨_,node38⟩, ⟨_,node40⟩, ⟨_,node42⟩] (by decide +kernel)
+
+def tape44 : Array ℕ := #[0x89d03840d010b930a370b8b050108c4084125530a16004e0841080409420b090a04082303090a041f26229b279f2a4d2fb2022a084800491ac8020908230a8e005b085608470c0f18440b260b18029a0a8e14c2039c0b8c132619d21bc63bbf, 0x81b081909190b0040d7434e46c14fa7632f02ac09420841040f0a070b8b04060a04089f389b3a4809aa09a601b20823352e0a230a1e0049093809b2099309aa32a800580b09089d082300d508c90a042da9084808450a1b0318081d091c0993, 0x31509b3091c584e5941082301920913093303150a0a09b3091953ce0a1955245a1b03910b89013309b3013309190a0f4ddb0aad4ec90a1903110b890383088f0b9349494a2801aa09b300d9084a084945d709330400081708420aad09b30383, 0x48608420b920b8a031109c1084104870c850b236cc96e5a098e005008580b2300c608c209330c85685b699a703e71a875cf7827001d081b08990a1e0204081b099e022d08bf0842001d081b0b8b5e485fbe61280a9b0a9502a10a1e01aa084a, 0xd408560a3a0a230a1909aa09a202a10a090a0a09b20849099b7cae093309a3021909aa099e093309ab020a099a0a1b09aa0323084273be0a19021b09a6099e]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node44 : Bad pats ([64,48,61,53], 0x3fffffffef3d7e037d3f6ffffffff) :=
+  bad_of_gated_check (tape := tape44) (gas := 150) #[] (by decide +kernel)
+
+def tape45 : Array ℕ := #[0xa2a013308c927d228c7005508470aa10a2a004723be25d32ae5014708bf084908c501ab089a093801b30a050b0f028408220a2a1cb21e561fd10284089a0821098a002309090a2517a20b1602a6154e0502084708220a2a143219d321de3f1f, 0x4f5e54180047093808c5022a09b70947021608200a1d098e023409383a22021d0a2a38b209b33c5f3dd1005b08c90a2a093335c7022a0a8e0848028e0a0509960c850b0f050109a3089608220a2a2f3231d133530b26013808c1084908bf02a1, 0xd015a6a0b1602a656ce5ed30b180b110047099f0a2f0a2a05010a1d099f0847523e0b1f01ab099f028208800ab2001e081c4cb24e330a2f0a2a014708470ab249c301ab099f03080a840a0f0916089a46b30847009a0a840b16091c434b47be, 0x3870849093800476ec40b240b16022f08c309380c866cb20289099b0138693f08496a55705f0382088809b30482653f08c3038f08cd0d010b160a2f019f0894613e63cb66d6022a099f084702b20a340c850b875d510b24048508470a2a0996, 0x1b308bf094708c508470944]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node45 : Bad pats ([84,70,48,61,53], 0x3f7fbef7e59dae02fd7a7fbbfefff) :=
+  bad_of_gated_check (tape := tape45) (gas := 150) #[] (by decide +kernel)
+
+def tape46 : Array ℕ := #[0xb8400c527c42ace01ab09a303840938099f254b001c081f09b40a200201081f0b84093809c32148233f26552e9336de01ab09a3031d1b430303081f0821014509b418a60a2f0b240b1d014208470b9b0181082308470b9c141b15d51a3f1c59, 0x93309ab004f0aa709333f43022f08c80848022008523bd0008c08960b103a523d3f40c40a360051084f038f35d30b1d0c130c0a01ab084f0852038f0a2f0b8431d30b24336401a3099f020009802dbf0a840b240b1d01a30997099208520aac, 0x14208540b2403100a16089808d20b8203250856545256d558500b9c02a608220b16014e0854029a4eda4fc751645c94020209920a95099b099701100819089308990284081f08570a2f479d49bf013309a3039b08490a2543bf449f4c2c039b, 0x19208220141081608140a0a682609b4022508520854655002a708c509ab013808cf61cb0b24019208225fc763580b940b8c040a0b100b0809b400ca08565ac80b1d0a9a]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node46 : Bad pats ([49,70,48,61,53], 0x3fff7e76f79dee02357c7ebffffff) :=
+  bad_of_gated_check (tape := tape46) (gas := 150) #[] (by decide +kernel)
+
+def tape47 : Array ℕ := #[0x2d1c0b160318091609ab084a0938018a091c0a84050108490a05098a0886231c24d6271d00d40ab2099a0b870b18091c020008170a01084c08490997099303110a06099a18a71c25050208bf0b8209380503099a09ab144d161f1f1632484ae3, 0x1380b910c0d0a2f4027434b0119099a020a09383c2a0b87022a09b73a1f019a08200301090f091937a60c0603180919352a38af3d51445804130938088e098e004909b301382f43301e091c013809a30997082009920503089b0b182aaa0b08, 0xa000119579e0b240b1d592f5a5100490847039b09450c87018908210b1d0945524353d00007080a08990a0f0a340a2f4f5154bf5c5900480936028f09970919023408520b2609b709b3481f49d109b400480936022f0819099a089f09970993, 0x91c0133084709b4021b0942090c093605020a256c516e506fa275d501b409360197091909b4684b0c120c09001e0a1b0099081901420847631f6443653f018f09190a2a048909875f4d60d169320a31014509b309ab0a9b01ab09a3023409b4, 0x18a0b8201c3094408c30d010a84091c7a2a0b240b1d0100099a01020b0100207396749e0b82018e71c20c13]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node47 : Bad pats ([44,70,48,61,53], 0x3fffeef6f3bdea02d96e7f3fbffff) :=
+  bad_of_gated_check (tape := tape47) (gas := 150) #[] (by decide +kernel)
+
+def tape48 : Array ℕ := #[0x293e0b940b8c031709380b080aac0a9a00470c0e243e0b9c03080aac0aa60049084720be2264269402010821081f0997099301a308490a25013309a31a521b9f1e2c2a580397093309ab03260853084f08c915c700c90847133f174435e33631, 0x170a000985099a0a060a2509450847020a093808490c060b9c3c48405542bf4a5963a7d801372cd800041308520201084e34da0c010938038c3256099f09ab004f084909383043050308cd089508490b8c09382e3f09b4020a0aa600490847, 0x89a03010a840a9a57aa091905010849088508050a0209b7089a09ab05020938089a513f551f0382099a01440b160a9a4daa4ea859140a2c02ad0b030a0f019209160b1e0b17020108180b830d0246a5489409b309ab031e0a000b240b1d08c1, 0x39409b30a01704e0981020108236d9d0aa10a8f71af032609b40847031d089f0b090823021b0b25672869506abf0a270a22039108c30294085262d10c0a0b240b1d01b709385fce0b8c030309b309ab099a0936023408c15b3f5dc4039c0a01, 0x2ac08470aa10a9b0a0f093309a3028e0a050b0f]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node48 : Bad pats ([70,48,61,53], 0x3ffffef6f7bdee02fd7e7fbffffff) :=
+  bad_of_gated_check (tape := tape48) (gas := 150) #[⟨_,node46⟩, ⟨_,node47⟩] (by decide +kernel)
+
+def tape49 : Array ℕ := #[0x48408ca0aae09920b2328482a9c0065083f0c000aae09b408c0010008100b0304050941086509c2090320490d0121c824aa0a2c0315083f08190b82099208c003110b1d0b160b030b15020608020b030b160d0315aa18481b5e2e4b44285c27, 0x83f039c0aae0b160c173fc80a2d032308423cc1414f0b930b8b0383088d09ab0992093308c0022c0c8536ce083f00d208c6022c09ab33da0933022c09ab08bf0c8531ce34c439db0382086609b4088f083f0b150b0e0323083f0aae099208c0, 0x2010891098e0c0d0323083f0a2c56160aa2581c031608c4089a0a2c083f04860b92088d0b230a2c50c953340a190a14001c0919089a0b9c0a9c0a90022c09b708490843022c0b2347490aa2491c4c41030808490842081b09b309ab031c08c0, 0x9360a370a2303070b030a190a8a6ed0714476b3794f849d02a70a1908440933028f089b081b032509470c860b82082266a10c1209970296082202900992090d0b250aa10a2361a9629b684e09a36a3101b40953083f0b070b000a9c0a900919, 0x3920a96884e8f5492c30a1d0a1800bf08450842039a084909b7834802a2091c081f0825083f02a20a96008808820b030a147dae7ec8099f814b0a2201a3099b04850a8f782f02a20a9c0a190a14030a0a1e03820b2373d07499083f041209c1, 0x19b0842083f01a30997028f98af99c903920b010a8f09a30a9c039a09a394b49744032308c00936029b09970b1c914e021e09c508200b160b0f023a09330822009b081f01978a298b2a8cd5]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node49 : Bad pats ([62,48,61,53], 0x3ffffffffeb1e603fc7f3ffffffff) :=
+  bad_of_gated_check (tape := tape49) (gas := 150) #[] (by decide +kernel)
+
+def tape50 : Array ℕ := #[0x2bbf2dd933430a1e0a1901ab25c1020209090a00081b081e0997099303170938031009c12050099f0502081d0825093802940823081e1c561e3f211b029a0996001518260d010b170a14021b08cd081b0891018108cd139b15c1192724cb35b1, 0x45cc038608c40938099b099700860b070b083d330a1e0a0f038708c40997030f38af3a413fa2495e5fac039b0a1b082508c109a302a708c5023a09460a900844029c0859304e32570a3602a208440a3a0aa10187090f089b08db085b0aa20844, 0xa31004a08450a0f0a0a028f09a3004a084354b355990aa80aa2029b08450996029b08440a8a50260a1e0a1951d2030f09a30a8f0a0a0b964ccc57d9019708150996091c0a1e0a960a900080081a089209960315099743b2091c03860a1e419f, 0x31e09960a9a703409380a2c0a190a14022f094b084d084909b709b302a8084a094069570a2c029a0a9409ab0b150919000b090e0b1c0aa60a0a642266de6c41722701970a1e0a0f039608c45e410aa80aa20386088b09380a1409970a1e5bd2, 0x8250823038c0b10089f0b028726031d09840a01099f09110a8f0307080d0a82039608440b150b87800e81b384a50a1e0a0f04870a050843089d099f02ac09b80b070301080f080b0a0109830a9477aa792f7bc10a270a22050209960a9a0919, 0x9f]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node50 : Bad pats ([66,48,61,53], 0x3ffffffef7b1ea03fd6f7bfffffff) :=
+  bad_of_gated_check (tape := tape50) (gas := 150) #[] (by decide +kernel)
+
+def tape51 : Array ℕ := #[0xb010aae0b030a05093309ab099f02ae081a091c008d08450933232224af021d081b091c20b309ae039709b30a95020609851ca70b1f0b18001a098f0401080808580b0a19270a90018f090e08580b930b8316220a2c0aae1a571e4e29c1472a, 0x911013309400a2d0b8b01333ddb3f9d0993013309400a2d0b8b013339db3baf02ae09360b1f0a2d0a1d0a13001b08193527383309ae001b091109930a2c014f085e08bf094030d90a2d038b09ab081b09930a062dd532ce40a804010b830b1f, 0x22d08c50aa7089b099b098f0485094009ab0c87552758285931020a082504820899099b098f04120a0209114ea70a82018f089b03030a024b274c1a50a8519509a609a202270809098308120a820aa80a06091c0193089f43340a230a1e001b, 0x20f09000a070c0b014708580c120b1568c1099b09970a8f020a09010a270825082304890911099f040d09110a0f60c76225649b030a0a1b0b03041208175c340a0a5da70b00020a0825]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node51 : Bad pats ([68,48,61,53], 0x3fffffef7f39aa03b97b7efffffff) :=
+  bad_of_gated_check (tape := tape51) (gas := 150) #[] (by decide +kernel)
+
+def tape52 : Array ℕ := #[0x20088a09b6091909a309360a9c02160936091c093300200a16091909a322d124d2282c0216099b0489091108251e1b093309a3028f0a2709331b4303830845098109090a16040209b608c616c30c850825020713a8089f193f1f2235b25244, 0xa230283090009973fc141a54822021908c5099f021e3b3f0b180b11019f099b02a7384339503cb151ae02070911099b081b020c339f0a9c0a1d0a18021b089f084509a3001f082500450a2208bf030a0a8a0b0303072b1f2ccf2e252f33311d, 0x8c10a190b8b039b0a230a195693589f5db165a608b208b6d80002b40a230a22089f0a19099f099b02220a23038a08960b07082201b20b074b244d504e330a18020f099f099b002309970a0f0a00010e0823449e093346c3089f019f09330b00, 0x1a20822019f089f6caa0a220a180a940aa002220858099f099b0a1809a2695002230980098f0a050382090f098f63a80a220a180486081509ae0a190a0f60a7005708c1089b0997098f01ae0a0f081708165b2701a3]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node52 : Bad pats ([48,61,53], 0x3fffffffffb9aa03fd7f7ffffffff) :=
+  bad_of_gated_check (tape := tape52) (gas := 150) #[⟨_,node51⟩] (by decide +kernel)
+
+def tape53 : Array ℕ := #[0x29a284e08c3019a081c0294084a0944090b25a20a2008cb26c903260a2a09b70947022a09380c0b0b260b1f019a0a2a009a1c3e1d5e1fdf21d1029a0a940085081e18ac0a340a2a028e08471652038f0d010847082214be19d32a46553355c0, 0x9430b0a08220323084909193ea741570842433e4941021b0823021b39a8023708bf08430841013809110b2336c90b1505010a370845084101b60814081a09860a2a090c0147080f0a370c000a2a2f1e3249345438a53ab2002008bf08490847, 0xa2a5b326ed0815481c6d80000410a230a1e008f090f0a1b093809a6084109a202940a1b08bf0914089b022d08410983081a081909144da5502e53a8041608650aa00a94084209b70a2009a609a2031c0a1b44ae03110899084909b700490825, 0x93371c780c9028408210a1809960404081f0a1d6cae0b9a0b92020a0c8c0a3400230a060a8e0c86040f0a8f0b9b030308880a8e64b3660668660a2a02a708c50b0f048c0c0108235fd50b0102a75d47614369a2039708840a130890082209a3, 0xd805d80483c2d80382bed802d801013809050b8f0a2f0a2a09ab014709330b0f01387c4e7daf09b70294091308d3085708cd0a2f09387a4b0397089d099f0a2a048509330b16742f765302a1094a08cb]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node53 : Bad pats ([48,61,53], 0x3fffffffffbdfe03fd7f7ffffffff) :=
+  bad_of_gated_check (tape := tape53) (gas := 150) #[⟨_,node44⟩, ⟨_,node45⟩, ⟨_,node48⟩, ⟨_,node49⟩, ⟨_,node50⟩, ⟨_,node52⟩] (by decide +kernel)
+
+def tape54 : Array ℕ := #[0x121089528202aab001208200a950a1600202434261f2c8d0104089f081f0897019708c4091609070239086008d60997099302161bb31e1c202100470a2309b002a708440c1718500a16030f0a8415af01a308c4084408201434199f221442d3, 0x81f090d0207080d09213f2b409d02070993090d04040b080b8009b8023708430a16394002070916375009973b133ca102160aa208200044094509b00b160a1603000d030844303432a1341f0b060110081f089f089b03870844081f08950a07, 0x8c4084401380ab20b160b01574858b45f1f0b1b01a3099702a208dc0a840405082050c0523f0a160a110104081f0a844daf01a3099b03160ab20a31093808c44abf082002b209ab0b000b01093847274bb4535a76140404081f08970895009f, 0x22308c50938703f0a0172210916001f6cae0223084e038809ab6ad26bb47313038008d608cc09970993048c65b30899039308910d030b160a0701ab08ca61b46427681c030f0a070a84048c0a160003080009210d030b165cc80a075d9c01b3, 0x2009a30a160a1105030a2309ab082079b40b140b0d0193089f0899081f091009070095081f02a708c5099b0997]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node54 : Bad pats ([30,44,66,61,53], 0x3ffbfeeff2f5fa03edcd3f7beff7f) :=
+  bad_of_gated_check (tape := tape54) (gas := 150) #[] (by decide +kernel)
+
+def tape55 : Array ℕ := #[0xb2b0110098e00c4081e081926ae0c8827dc2a180ba0001e0b96011808970a310a3409b021a622e0031509160910050109ab099701c6084d0b960aa20062094b08c3084919461b331c9c038b091b09ab020708c308491433159f1e482edf3e94, 0x459a4d4c550f03980b080b88031608163d48094401ab0a113b500c170c0e00190816030f0b9309b7379f0c05001908160b96010108190816038b0a11321f33a60b16350e38e801030a16098e0b2b081600960a162c1d0b900193081e090d0819, 0xd02589d59b35aa061a20a0a038b09b308200b140b0d011b09a30020081e51b30843014008c40b064fcb52d30386081109130a31085309ab099301b349af0503081e0b8e091348b30996011b089509a309b3011609970315081b42ab0a3643cb, 0x71d072b30b080225091b6eab738676d301a309b3031509160a3109976b4b09960387098f0503090d080c67270b0800190987098364a4682a6c4c02160816081402830a16601d0b980b90028309970a1600145c2f5dd001830915010f0895010c, 0x19208970a8f08200b140b0d028f09a30020081e75b30b06011b099700c40847018708d90821]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node55 : Bad pats ([65,44,66,61,53], 0x3fffffebf1f56203adcf7b53fffff) :=
+  bad_of_gated_check (tape := tape55) (gas := 150) #[] (by decide +kernel)
+
+def tape56 : Array ℕ := #[0x90d050209930a0c279c0a800306090d02110c89241f250c29a1309a0138088e08160993081e09160284088e08150c881e25023109970993089f050209ab19a70ba0023109b7084e08ca09380b1401b7093814cc0d0317c81b9c212a378f53c6, 0x81b09ab0938098e04063e2640a701a309380a160a11048509c33aa53ca142c00a0f001e091b030d089209970938020c08160b060997099334d336a109920020091b0207084e09b709b008bf09b301160b910c0b0a0c2ccb2fa704890a070980, 0xa900a8a010a0b16573458c8635e0a190a140183090d08990d030ab209380ba00b0f0b08050209a30a340854094e09b001490b2400474b5c4c540c050ba00938011b081e098e0216090f05020a1645a146a248504f1d021108200918090f01b3, 0x2099b09b0089f0993091b02020899081e6a330b9602a209b00c0e0b0f0b010016090a652467a6019b0896081608c409b8038608c40ba060dc09b0018a081509160913081e0c050ba00b860b2b09385e4c0138]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node56 : Bad pats ([44,66,61,53], 0x3fffffeff3f5da03adef7b5bfffff) :=
+  bad_of_gated_check (tape := tape56) (gas := 150) #[] (by decide +kernel)
+
+def tape57 : Array ℕ := #[0xa2309b0040208450a2327440b900b8802360c820a02014508440a310aa80c8804090aa70b87032908d60aa81ebf206c228c0a16028908990b0804820c050844199d0b2b028f172b1b2f2450038308d80a2308c4084309a30a1615402922451e, 0x43970a900a110a07038b08c109a301490921091c09933ccb0a1602a709c7039f08cf38cb0c02098f03010a3a08440aa7092100d909b00b0f33bf361f39c33e110193091c00912f2b302002a20938088b080c090d089109932daa44a902b20844, 0x8450a16591f030d084509400a1608940b0601b00a1600c452b4539456935a3f5b210020081e02164ea1023708430a96000d0811010a08214b154c2e0b0d0b06038e0b86484c4da04fb363b2d800010d088f03000a2309b00223092109074248, 0x70a00b0f0b0801b008440903080d0b88090f02020b076b926e9d031c089b090f0a1103070a1e090f67af69c072a27a338999009f081e09970993091b048c08180b900b960b860a96031b099b089f09935e2e612401a3099b0193090d05030b83, 0x997091b029509a30386099b0993864b872401a3099b01380a1e028081c60b06099602010a8003007ea47fa20d02099704897c1f82c383a103860b0609830886089b091c081e0821031b0a110a0c01920b0674a076210307084709b00a02010f, 0xd802d8018ac1011c081b0a95]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node57 : Bad pats ([44,66,61,53], 0x3fffffeff3f5fa03edef7f7bfffff) :=
+  bad_of_gated_check (tape := tape57) (gas := 150) #[⟨_,node54⟩, ⟨_,node55⟩, ⟨_,node56⟩] (by decide +kernel)
+
+def tape58 : Array ℕ := #[0xb8f02a70a180a9b0227264b27df29a3334303a00b020a28089f0a270a22022308c5090e021908c109381f14081f099303100a1e0938004509140043081f19b20b29022308440214081f09140302081f153216cb17e81ad61c1b20b123bf382a, 0xba0084341d10c0609b302a0084303900b070a8f0a1d3cc93dd74341472f62a403860a880b160c010a130b970b8f0a2709a7099f023708c5031d081f084d324b0b970b8f02370938001f081e0a2304020a272ccb2e562f57099702040b970b89, 0xa2809a70a130a0402a709a7561d5923082603970b090c890a1d0a1303970b09513109a7099f014508440992098609100a130b1e0b10039f0b8f0a3a09384ac84ec353a9029b09b30b0903880aa0459e0a280a2302a108c3084b0300090d0c88, 0x99f0823039708980a1803066dc00a0402a709a76c1d6f23082602a70a1909a7009c08980b870098089c0b0066970a27684b69a9712103140a940938099b0214089f60c309930214089f099f03250844084302275bcb09385d3f5e9b04060989, 0x5030a180a0403800a9a0a827c2208240823000d08070a880a280a270a23082602280a1d0a9a0227744475ae79250921091e02270a23]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node58 : Bad pats ([52,66,61,53], 0x3fffffffe7f1fe036c63fffffffff) :=
+  bad_of_gated_check (tape := tape58) (gas := 150) #[] (by decide +kernel)
+
+def tape59 : Array ℕ := #[0xb0d0a3609a70921099f0288084c093800cd08220921245025c30223084c093821bf099c009b08970a95023a08cd09931dcb0b140b06004b09b30417085f08100b2219cb0a9401a709460b97098108100b8f16d00a140a881a9b1f242b3147c8, 0x9110b970b8701213e9740d509af021309140b970b8f01213a973cc3028209120b0d0a280a130a23004e084c364b393f099c0397099f084c09b30a3a0a13004c094009b30a140080091409932e99309833a441ca0301081008000b220b1d0a88, 0xa20019f0c06094057be09af032909c10b9108cd0aa75543591702b40aa108bf0a9b020f0c060b2b0c0e0c0500840899080a0a0a4d1709404fd151af604a09a809a4021409b708560ab40a880a3a093801b308bf443e0a220a1d004c09400213, 0xaa7084408430489099f094002a76d430a1d6ecd7254023609a7099f0236095308440aa109930b220b250b176943029b0843048508850a880a8f63cd64af6ab1019f090108190914089d01145dab0a1300cd0aa70a205c310b970b8f0489099f, 0x2a10844099f089f04850a8f74af0a270a220325085809530a19]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node59 : Bad pats ([46,66,61,53], 0x3ffffffbf6f4ee02ece7f7bffffff) :=
+  bad_of_gated_check (tape := tape59) (gas := 150) #[] (by decide +kernel)
+
+def tape60 : Array ℕ := #[0x9c40a160945005f08cf0943091c0c0f0a1626d4299e0a2009a72ba9000d0b2308bf0843008b08890a371f490a250820023709450a0408130811090e0b8f0a2a09b703230a3708bf08430138084a090f088d15c917d71c250921212b2dc05632, 0x443148a450cc02220a1b089a0222084500bf084b3c4a3d2a0a9c09980a9601a7099838cc0388091e09a7022235b30aa2039608450a220a1d01af0845323100c109af30ca3458371c3ec4021b09a70827082600d508cf0b02091e018c0854084e, 0x614168cc08ac08a80236084403170a200b860c8c554a0aa20a9609a809a4039709c60b860997091c08260081080d080708bf09af0d034dab0a220a1809a00193091c02220901099f099347a508270a130220099f09a7004d09380b170b1042c3, 0x19f08bf70480a230a1e0aa20a96020f080f09af08bf09a70a2809a86ca2038908bf09af0a2703a0099c66ca0a280a1e04880852099c0a2c0a27644b009b089109b708c309b3023a08d30a270852084f5ecb03970a1d0b8f03870a1d5a5f5bd3, 0x1a00845]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node60 : Bad pats ([66,61,53], 0x3ffffffff7f5fe02e8effffffffff) :=
+  bad_of_gated_check (tape := tape60) (gas := 150) #[] (by decide +kernel)
+
+def tape61 : Array ℕ := #[0x817094008cf084f08cd023a09b80857040a0910089e094d24580a880a1403a0089e0b10023a0866089e1f48209425d528ca30a9029a0a940302089e0a140b17031d085208cf032208d708590288089e155a16d518481a4a1b31394b502750b4, 0xa280828029a0a9403800b0209850b220a2c3e440a283f2a433f48a3029a0a940a2c03140b0f0c800911004e084c01b808520a3a34d135940b2937ca082803100a9a09380a14031e0910089a029a0c092d220b09029a0a942b482ea30a2c0488, 0xc890847084302280a9a0237081a0a0955b256c95a5c5f5362b37e40a4aed80002940938084908430828029a0a9403a00b220a2c4cc44daa09ab0a230a1903010981088d08450083098546c90b090a2809b309ab038108c1018908450b094251, 0x322084e09c408cc08c40101081f09900a160b256dd40b170a2800230a1e00c4082268b2089d02ac0b22032565d366a369d5704d773f013808c108bf0228084b0938614904040a1908230a340a2a039c0a370a2308435cd70404082309c10945, 0x845094088d40a2800170a13028f852286418c2f02200a1e0a13009d0a230a1e81a2833f8f24a44403000a880a230a140211081309af7c23092109a702a10a19091e792f011e0a2a0047765c08430938022a091e09900a280a23022071b2744a, 0xa220a1801a70a2708d40b10091e9f220998010e0a1409af092109a7022208bf08450a18993301400a200a280111081d0a18039808d408c60b08084593a2955596bf9b9c04020a0009140a1309af09a702820881080109030a1909b30a2700bf, 0xd802d80101af08bf0a230a1e01b3084508bfa250]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node61 : Bad pats ([66,61,53], 0x3ffffffff7f5fe03eceffffffffff) :=
+  bad_of_gated_check (tape := tape61) (gas := 150) #[⟨_,node58⟩, ⟨_,node59⟩, ⟨_,node60⟩] (by decide +kernel)
+
+def tape62 : Array ℕ := #[0x28e229cb2ad70a220a1d020509140a09089b04050941239d0a1e25cf02140b1f090b0b1104860c041f260d0301b7098508bf0a1900c3084908911b411d2f21272d9c3d4802a2081f0a2308490b1f0b180183091c089d081f0a23145717444baa, 0x41a20b1f0d0042c1472009a804800a130a8a01400a1e0b030a1304030a1e01010c050983091138cb0c8039980a3a3bae099c0502091c009d0a1804880a1e0a1402223041319d32ae33a0040508cd0b1f0a3a0b1809b700bf084902b408580140, 0x31158230b1f09b703155657084903110a1e54cf5940031c099c099404050a040b030b1504884f540a3a512452ca6748842e030a0a130b880187088f0a840c8a4a1809a00222091c09360a1e01c1089b0b89454b083f010a091c032409360ab0, 0x8450a130a28040408450a1300840812085509870b8a09c1093608456d1d6ed070c47e2401b708bf0207099c0b92020208cd64da664b0a220a1d028608220b9209c10487098708225fd50b230a1400d10b920b110b2a0a135ca361cf02140899, 0x9a08a2200450a9209368740082608a804040a190936082309a40a980404084109a408230a92815402270842040c0ab409b7093602077b4b7d4a083f0219093602220a070b91020576a1784b794309a801b708990a190c150936084274400237, 0x38708200284090f09a4083f8da00a220a1803030a8609a4090f]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node62 : Bad pats ([62,51,61,53], 0x3fffffffffd5b602cccffffffffff) :=
+  bad_of_gated_check (tape := tape62) (gas := 150) #[] (by decide +kernel)
+
+def tape63 : Array ℕ := #[0xa3409b7295008420234264a022d08c103920818244125442aa4364e402f031c08c3084b08c101b7089b0b840c030a020311081b08bf031509b71ac11c2f1ed5031c08cb18490b140b0d031109b70a1e004909b7099009381446159b20c8572e, 0x234084b08470936048208880a9a084109b20a9204880b070a2d0a1e03820b07395008413b183e54010f082108420b18000e0a0909b70823091234490a8c038c081a0a09099004820b9c0aa0048208962d442e94309201b70899093802190a09, 0x61546d3200220b000a0908450b220842023708930a23089d54490a250a20030e0936004b0b1f4fbf0a9e0a98040e09b20841038f08470a824bc60c880a924d540a2a048508450b1b0b030b060303451b08410307090f0a2d0b1543c947d750a5, 0x9b772d1099a7548764608aa01b60842021b09940a2a6c4a09360aa40a9e0303080f0a200936082008240a1b040d08450b1508260a980936652568da02160a920826031b08930c000b000a2508420a200a92048209b60c000a2a08455b9e5fab, 0x214089909360a1b019e77c809a602920a1b014408d408c308bf084a031b09190a800a110912]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node63 : Bad pats ([64,51,61,53], 0x3ffffffffd753a02cd9bfffffffff) :=
+  bad_of_gated_check (tape := tape63) (gas := 150) #[] (by decide +kernel)
+
+def tape64 : Array ℕ := #[0x111281029272a1b0a230a1e022c09400a2808c10413091323550a222523021d0a940b0d04880c141f4c0d0101c1099308950a1d009b081f08cd1b311d4320cb2c563e2a00c10a180a09081f0b140b0d01c3093808c108490a1d141b172e4fc8, 0x441446314b5209a201c30940084f09380a230aac0a9a01140a1d0b220a2d040c0a2204870c0109c3094037a738da0a063ac409ae0502093804160a23048708db0a0609100a22021e2eb13155324433520487088f0b060993009f081f0282080f, 0x59235db20302099309ae02390a2d0b1009930b020486531e0a0655ce57286c2a8c4403220a2d0b9a01c308cf0aac0c844e5a09aa014a09380913091e0a18018508c10b9148a7082805010a1e0a0f0b0d03080d020c170c0e031b0b0809384268, 0x98508230a280b807222732e769e85ce01ae0ab00b880b800239088f089f6a180a230a1e030109ae098908450a220b8002390845098964180b020a2c008d0b800b1b0b020a28614f6723021808c1031b5ccf0b0d099303105a9b081f03140a22, 0x82409a608450aa4889e005008c509930829019308c10a2783b20c030826028c0898021e08237fa280ae091e030208280a1904860a360b1e0b100239082979cf7ba8099a7d2703910a2c0a2709a2082900247432039a0a1800d00856080e09c3, 0x393084802ac094209a2082895d20a230a1e03250aa4094209aa09a6925000230aa4091e8f32084108b6030d0a2708450a9e091e09a60a98040b]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node64 : Bad pats ([52,63,61,53], 0x3fffffffff999a036d5ffffffffff) :=
+  bad_of_gated_check (tape := tape64) (gas := 150) #[] (by decide +kernel)
+
+def tape65 : Array ℕ := #[0x29572c2a55c402200a9e0a9801900824082304850b020a200a9223a90a16029208240822022509b61f2820a02554091e005b091c0c060b25084508240a200a1b0aa4030a0824082305010c860b26090109900c0f0a16162917d41c1e26c05e32, 0xa0e03a00b253fa2082441da091e0142084508250b1401130a04098b084509423aa90aaa031f084b0a3709b6048c0b860a96048c08c633ae355e3760004f0a270b1e039909470a372fcf314e3ca444c3001f099303102b1b0b1f0b1802220993, 0x9b0099309ac5caa08b403100a9e0a98091b040a09980824038308200aa8522c0c860aa4539e0a1b0a1603110823031e089d0a1303090a204b314ca40825031708c10a1d0a0e00c146b148a94d9b048c08d20a96082409980aa404860b250a1d, 0x2197024031409930a250a1b022309b20aa46d4d004b0849032608500a2309386a4f0b930b8b01aa0849022365ca0b1b0b14004b0849032662cf63da0b9b66936b486f1e75ac964001a40a25091e03060848081e031109380ab00a2f09425b21, 0x22d884a8aa88ca4039a08220a230b180b1103940a2a0b1f0b8c04880a2381d40aa6022d0a2a021109930a237ec87fca839802230aa603140a23030d0823089d79d57ac47bd7861e08aa0219099a0c06091802110b830a190049724673a10a98, 0xa22c0a230a1e0b180b11020e09b20a2301b20a130282089308230b900a1e9b229c559dd708b008ae031109940a1e04040a250138084993c894c601930b06018f0b110211098f8f9890a991a8091e022809b20a090a1e020408410a820a2d09b2, 0x4890899089d08230142084909b20899]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node65 : Bad pats ([63,61,53], 0x3fffffffffdd9a026d7ffffffffff) :=
+  bad_of_gated_check (tape := tape65) (gas := 150) #[] (by decide +kernel)
+
+def tape66 : Array ℕ := #[0x396085f08650c8828290d0329a72c4a09ab02a70a1d032b0b970b8f22ca23c3021809ae093802ad094709b20a280b1b1ec401520a3a0aad0c050b1b0486088d080308170a950a28014d0c88164b0d03040a0913142419291bca204f2f235734, 0x2880b1409ab0b060911001608193d940b930b8b40280214091103060a1439ac0d0101ae0938014d08cc0856001c08150913094d0a3a355e0c8636ca0b1637e43acb462701ae093805010a942e560a1d03160c010a130b970b8f040109130b1b, 0x774f9f3e0204090b081f084d08cd08c50b970b8f0222090d089f0a1d01ae0a9451315357099f01c50a230a2208c9089f0a1d00c9089f0a1e048908cd089d0d014a4b4bca4ec709970413091309ae09ab0b930b8b0501084909ab431b0a230a19, 0xb03038c080508030c866fc90d0171cb7428099702890a230a1e03010b8b69a86b2f0228099c0998091c0289090a09880a130b1165ae01020a010a890c130b11048808d1086508500a9b0a1301070c865d270d01040509415b4e604962a867a3, 0xa1d02ae089f0b1809400052084e85de0b970b8f87ca022c0940031f0a2c81c60d03019c0910010708900810004c0852094109070a017d140c887ea80b167f8e82a78d4b019c091605030aa2761c0a2303160c170b930a2d0b8b040509410b11, 0x8b008ae022c094008490b930b160b0f081b08910a1d0b8b0141081f0a2309980a1e02a20a9697c19a1b09ab01810a09089108bf0a230a19009308bf0a22048508910d0390a79228952b09b3030a090a099c099f0b8f0503081f099f8ad70a22, 0x9f0810081f0a140a130b180a280b140218099f09970b0a0a28a329]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node66 : Bad pats ([72,42,61,53], 0x3ffbff7f6ffda6032dffb7f7fefff) :=
+  bad_of_gated_check (tape := tape66) (gas := 150) #[] (by decide +kernel)
+
+def tape67 : Array ℕ := #[0x324083f0b18091c0d0028202a54005208d308d102830a13019c09130a8922182365099300570b2409a00c0903240852023a08d31c5c1d511f27083f01c108d10850031608d8099c0c090b1117d60997194324cf2fcc30be092dd80011c85a2a, 0x997454f4ac3048609110b1b04873d290997004f0ab00c8a09b80302089d081d0b9008570c8039d400000b22085f0ab009c10b0236583b9b3ec708b650b401ac09a802b008520b02099c048808d308520c092da80a2c0a27019f0b0a0d0009a0, 0xa2f09ac09a4022f0a220a18039709970b09553156cc019752ac08b408b003970a3a03060a0902834ea20c880c0509b84fe7099f083e030d084c08cf099302b009b8084c08cd489b0b970b8f0405085f08d1094d0b1b00d708d142a90b0209b8, 0xa017194733175d27a1e0015088d088902ad0a2801aa09380aad6b5a6c0d09ab000f0b0109aa0c06030108150201088965166621684b08280189088d08160301088409aa0c060b1b609c09b3622f6da37fa680b4092a0927030a090409930b09, 0x8b948d4d09af028609400b03031c08180a860a2c854986cb90ab08a8a2be01a2099a028608160b2309aa0486088b08160c067dca0a190a0f03000989090d0828031409b30813783109aa031b0a310a230b230b150206088f0b0600c909ab0887, 0xa0d00c860c130992a18b09ab0829031f081b088f09b30286098e081b08919ad70b930b8b04010808088d09070b0a008d088594c90b2a09b3099297239caf02ae098e0b000a2d084a0b2308bf05030b810c0b0018098e0a80018108000b818a24, 0x3230803080009810b110b000a1109a2099e02070a19038b09b30b23a741a82601b3a4c608ae08aa03830a01031f0a2d02ad]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node67 : Bad pats ([61,53], 0x3ffffffffffdb6036dfffffffffff) :=
+  bad_of_gated_check (tape := tape67) (gas := 150) #[⟨_,node66⟩] (by decide +kernel)
+
+def tape68 : Array ℕ := #[0xc0229d50843021e091e0b1e002608c3086025410c8a0c800308082602990b10212d220a26cc2c420309082402810a051d240827011e0a0f1b2e041409b90a32021a18500b100b09018808440b01040108d80b8814a4161e19ad1e43335454a2, 0x44cd471f4e55020f0829089b01b80942021908290b093c603d1f0845032508c600c0082502050899372f08233856394b3ec30a2704060aab09440937084202050a100c80082704800a992ead30cc084003800a320a9f0a28093703900b880b25, 0x5c5101440b2457cc5ec60a220a1d0406094509420aa50a9f08450043084008d40b250b1e51ce093703930845002308430c130b254d4e032508c600400c1449d64acb0a93040108230b250845084302980a24084001b808230b8143420b930b8b, 0x39a094109b90844084302140913089c082701410a32032b08c36141622d644c019208c30a240a1a084703170a1a08270824039a09440b245a25]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node68 : Bad pats ([63,52,62,53], 0x3ffffffff785ec035e17fffffffff) :=
+  bad_of_gated_check (tape := tape68) (gas := 150) #[] (by decide +kernel)
+
+def tape69 : Array ℕ := #[0x937040d0a3227d22a2d2bce0a290a24021e0822098f0b100a330847031609b808230993089703160a19002309b81dc11e9f214f242e0316084608290b250a99039b0b9302370a1a089f00280b2b0947022d0829145c159f175b184f1ad12dc5, 0x98b02870a15088b08873fa340d5451847d14f3003900a920918039039a40a18021408400aaa082302aa08c0084001410b160a0f09b8091b04030a0f0a0a322134c6362538183b2e5dcf022d08290a8d0846028d089f082903820b050a32098f, 0x5c240825008908080911089a0b020a8c02370a240840541e0c850a10004051245727082901c2084208400a290a24020a08200b890b810a1f038a082508404a244cd6022d08c6082408420c0f030f08c0084208400228095208c643440b24038b, 0xd8000380084001890aa509110a2c6a4409370111082967460b090a9903240a240a190a00098a08290a0b038808280a0a0840612464a56b2704030a10091b018f084208400a290099084208405a5b]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node69 : Bad pats ([63,52,62,53], 0x3fffffffff87ec035e1ffffffffff) :=
+  bad_of_gated_check (tape := tape69) (gas := 150) #[⟨_,node68⟩] (by decide +kernel)
+
+def tape70 : Array ℕ := #[0xa830a0f01a3081b091b01b808090818099b25a427282a4f0a2e01af0937015309af0d0020d2091e099f0b170b1001af0937020009040a041bc3089801ab0937098419220c140b1e0c0b029909ab099f020e081c142b0b1e15dc1c9721e04229, 0xb170b10004608c009af091e09ab023a0898090f081d004f084a0a1e020e09b839283aa43cc30137084e084c004f354e0192081d081c093702040a05081d3243345436cb0b1e022d0937081d09ab01b82ccb0c0b2edd3f1700120a870c090819, 0xc0458d20a0e0a09022d09370b890b810185088d098100180a0552955449562703880c020a23040409894ec10a0a038208c00185094408110d024bd209b84ca801370813088d0101081809814697482d500e5aab0a290a2401b80a2d091e099f, 0x19b098f089f03130825008308290803099267a80b2509a3689f010e08500819081708c00b050b020a8d0a87011108290b0909ab038908295d4f5f1f63a701af0b13090e0b0c0046]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node70 : Bad pats ([69,52,62,53], 0x3ffffff9dee7b4037abd7ffffffff) :=
+  bad_of_gated_check (tape := tape70) (gas := 150) #[] (by decide +kernel)
+
+def tape71 : Array ℕ := #[0x2ddc324b3652004e084c004f25ce0a1e011e082508c424320b170b10004e084c004f204e0a1e004f084c1eb22117039808250823022309b80a0e09211b2b03870b070b00030108200b210b87014608c708460b15152f170e18ad1c9e26c34242, 0x84c0b17038808230821084f09b8004f08250b073cdc08c60b2501b309af084f084c39e43f1e093701b309af03000a3235530a2300463341031509440299099b048b0c0b302b314d09b800cd0891099b0b980b230b1c020e081f099f0b252adb, 0xa1a08c60b1a00d009b801140b0208c655dc56a858df5b5b5ecf09a3041709b30a87020b09244fb10b250b1702a54d4102870c850b930b8b030108070a0a09890897082000530b1c47280921021a45274a134c4f512f6151021e0898084f0b1e, 0x9a3099770b00a3301a30997020a09186d2b6e5b724f01a3099702930a0a092469af020e09af08910a090137081309480891658e0a9867ab6ac178ae02930a100b250b0909ab030208190a140a0f0a1a0b9b0b930237094102375a5c0c850223, 0xd80001970924030c08460a0e0a04099f0a14009f74b277a40b170b1001930a1409240321]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node71 : Bad pats ([69,52,62,53], 0x3ffffff9fee7f4037ebd7ffffffff) :=
+  bad_of_gated_check (tape := tape71) (gas := 150) #[⟨_,node70⟩] (by decide +kernel)
+
+def tape72 : Array ℕ := #[0x824091e022709b8021d084409920a1e2654272403020a32099208c5084402320a1820cd0a27232d2956038808230a270a22012108241bb1031308250a28038909110b87038808c5172f18ad0844029b082503880a1813ad14cd1a541d9e4843, 0xa0e0b2a09b8414b42ca0b170b1001b9090f0824081d0a18091e020e0824089839a102220a1e0a1337a40b1e039108240823004f09410205089f0213082531a332ca33a40c8b00230a14009f091e2db204890b912c232e95355d3c97021d0a0f, 0xb0e0aab0a990937030108d00b0e0b25084d031d09b853d60b2356495ad9652703900a0e040e0825010d089a0904080c4e290c89099f4f1809b80937504a68cb0232084403970a1e0992474e0a220a1d011e0824443104170a280a1e040e0946, 0x9b3084d004b0b176f570c170a2c71230228089a0a0b09216c3178af824903900b880b150b0e099f0a270a1d020b081809b80992093709b90a99031509410b0e09b909370503082808960b010a0b0a145f5261a50a2c03880819082803885932, 0x9b308c309af0305089c0a22091e0a1809a786d389cc08b7040609850828089a04050a2c801e0a370a0b0b0509ab09a7030509af09210a2c03217a4a7c2b004d084b0a230232084a0ab30a2c03100898094509b8754a772d0b150b0e01b80a32, 0x1af09a709370843048a091e0c0f]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node72 : Bad pats ([66,52,62,53], 0x3fffffffe7e1e4037eabfffffffff) :=
+  bad_of_gated_check (tape := tape72) (gas := 150) #[] (by decide +kernel)
+
+def tape73 : Array ℕ := #[0x99b0b0f0937083f031e0a2e0a1f0233081d24ae264328dc0a13003f0c050b160a330a2e0b0f021509b90992083f1ece21932c4a03090a99031d0a140a0f019218a31a4f0a100205088f0a2c0091081300100a14141c154f083f16a41b2738cb, 0xa290a130a24001c0a18021e3dc00b1e09920b17022e3b4f3ea941c34dce006008c0083f0c860c140a100233099b099735ae0b9a032a0b08099b08c608c0002408220233083f2fa930d4331a0a1d0a18009a0b16023a083f0b1e2b5509b8021f, 0xa1a0c0f0c85008e0816099256a358cf5b2705010b170a2c0200080f088d0a100a8f524f53af60490933021a099208190a190997018e0a1a091008650a28021a099248a84b2309ab011008120810038a0b0e44960a10462f08b7020908180b13, 0x144085b081609b80a1a084201b808cc0c05684a09a7099f02180842030f0a8d0a1a021362a4644a652f08b7040f09130c0d021a09920d015ea80a8f09a7099f001708120b130a1009ab020f]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node73 : Bad pats ([48,52,62,53], 0x3ffffffffee5b4033e3fbffffffff) :=
+  bad_of_gated_check (tape := tape73) (gas := 150) #[] (by decide +kernel)
+
+def tape74 : Array ℕ := #[0xa1929450302089a0b1d082203930b17014108560b08241e2526038308260b160d0021a527462b9f34d1020f0b1e0a1509410840091e0b240a9e02360a2d0a150a1e19ce1dcc022308c30045082615d5082301370a2308c113a716c23c313cbf, 0x92ad8033fb0d8023ec2d8013dc5d8000114098a08260823020a0840020a09140302089a383239463a270a240a1f019308460317099308220026088b3225091e038308220b0809410b2409b8301e33c60a1a0485089a08230a19084001370a23, 0x98f59245c435d540a1d0488081c0a33083f0b10039f0a990937023a084c0a29004c0a3a505b51c3534155ca00180a0b003f4c240b810b990a9904880aaa09c2084c0b250281088d09810c1447560b1c0302081c0a1a44460a2c49c94d27614b, 0xa1a099702b308c56f2f0b0970a27540785603010a270a1d038909116a400a240a1a02270b0500c50b000a2908860b880a2766af67a46b9e7f430930008f0a1009b8083f08c00b0e099f0a270299083f01b909970b09030f5ac10b0104010893, 0xa13091189a88b2409af09ab00170b150a8709b3010a088d0c030a87835b0a10852f08b702370a1d08c50a1a0a15011309930a1d022909937b407ca40b170b10030c088a0a320b0909920a270328089a00190b0908660b050b827424099202b3, 0x28c08980a1a0a15030c0a130b05008009070818]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node74 : Bad pats ([52,62,53], 0x3fffffffffe7fc037ebffffffffff) :=
+  bad_of_gated_check (tape := tape74) (gas := 150) #[⟨_,node69⟩, ⟨_,node71⟩, ⟨_,node72⟩, ⟨_,node73⟩] (by decide +kernel)
+
+def tape75 : Array ℕ := #[0x9860892030327160b1e0b17021d0992082a09b92525296035a9022d08990b1e0d02099308c50a360a2703240a9e03090a2d01b91bd01ca41dca041309920993091b082a022d08d00a1500ce0854085100580a2d145715a4172a19cf21cc4443, 0xa2241d0429d0b890b81018608090805089f098f031e09860b170029080c090e399e3b1f3d990a290a2400870b170202082a0b0f349e098f00c5082a08470b260b1f020e09ac08460b252fd703250a130aaa094209b92d5032170a2e002a0818, 0xa0758985a300b1d03930a0e048708c1084c02a40a2e53cf5518565c5ba9022c084d0a22002a4f4f0b8a0a9e04870a870989081b0b0800ce0ab00c054a9d0b0a0405081b0a22482d0a154d2a50cc6846048509850899022209ac041009920ab0, 0xa360b010b110b0f70a703830b01081b004009936c1d0b030a156daa744c092b0301089709930b1f0b0a09ac0a1a029e0829030f090f0a090b080394098a619d032608560a2c0a070986603263b0649f0a2403930a8d091b0207081d0a0e001d, 0x22d0846084002ae0a2d09b480ca09ac03930a3709340b117e440a1f0a1a03830819081d091b022e08c109ac0a0709340b83789e09937aa9039b08400a9e022d72c80a15091b039b]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node75 : Bad pats ([63,40,62,53], 0x3ffffffaffd7ac027a7fff7f9ffff) :=
+  bad_of_gated_check (tape := tape75) (gas := 150) #[] (by decide +kernel)
+
+def tape76 : Array ℕ := #[0xb252d6003230911032a0d0026230c0b0c020500098109020b230303089909050d0021aa23af030308290d000b2a0b230401080f0901098b0303089f1a17080a040a0aae04840ab0088e0303080f0904158e1764180c1c2a1e9d275631d03343, 0x42ab45db032a081809890a830302082a081708013d150a040189082a3a1800c00aae0aaa0a2908170981082938a73f234c1674c9020e09b409ac04170a3a09c208d2085808540b170a330a2e032a08540b1c03030a290a3a0a0e09c208532bcd, 0x32309b30aae0b1e023708c6564f02ae082a0d010b83038a08d80aae019309040992082a0a07515e52cb54d65844610001b30c070a81089900cd08cb0484089149530a294a2b0b230b1c01ac0829038a44b00a87099b02ae084c084a0aaa09ac, 0x8520a370a2902370850094108c000c66cc46edb70cf0a81006609ac098209890a0709a709926a1f73a3032a0a070a2900c6084c09ac645b65ab0d000281098a099309830281080a098a01860a075db25f230a0e018a088e0a875b2709b409ac, 0x30309930a8d038a0b8203020aaa032a08080a0909a379307a527b1f0931092e01a3099b001808000a070a0e0b1709a7020e]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node76 : Bad pats ([36,69,40,62,53], 0x3ffbbfecfef3a4025ef9ef7f3f3f7) :=
+  bad_of_gated_check (tape := tape76) (gas := 150) #[] (by decide +kernel)
+
+def tape77 : Array ℕ := #[0x90c0a07299a2e5c09a709a3032a0a830a810992092b0a07099b254b03180a2d081d09970c090a2e0c000301085009970b1f0b1804020b250a2e1b501d892143092401a3099b001409090b010b090209080d08830887149e099716c317ad34a9, 0xa2d01b4085709410b8a3fc60829424f02830b15028308873b23092b03940918018a38300b0f39463c2f48d15a1f0384090c0a07099201c4081400500986088b319c32b20c0b0c020186080d090f089202830b2a0a072c18098e02040b030a2e, 0x91158950829092402040b2a0a2d0b8a0c00563003080911090b030109a300810a0409af50ab5197099201ac0911090b0a9e4da20b8403154ac4532d0a2403250aa5030f08290b090186082908590b23464847c909ab09a7010909a309890b92, 0x754909ab028d0a8101ac0882080b0c0b09810b836e3103020b2a0989082903020981092b0b0168aa6a936f4f77a702ae08c00a32092b09ac00520a990a8d092b030109b30aae0a3203245e460a876049624864af0a1f0a1a01890810080f0192, 0x1ac0a2d092b080709070b010c03091b032a085d0a07092b0a370384090c0906080f088b092b0b010500090c0a077bc07f5f81b009a7099b031f098508870b090a990185082909ac0b090054094c0c850c870a877348]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node77 : Bad pats ([69,40,62,53], 0x3fffbffcfef7b4027afcff7fbf7ff) :=
+  bad_of_gated_check (tape := tape77) (gas := 150) #[] (by decide +kernel)
+
+def tape78 : Array ℕ := #[0x84f09af28ad0b820202089b0b020c020b18082a0a2d261a29ce02aa08460a3221d2032508c2048809c4084a1ed60846019208830808098b09ab082a011109920b0309af192b1c4e0382082a01110c0b09920a07152b164f1fda2fdb494049a4, 0x99240d20b2a031009b30229094c09430b1008540046094304880a2d094c3a493b563dd33ee94323038a0a2901ab35510c0b00ca08c20326082932ce0a2d33d3364d03030a0209a70884099b030909ab08082d270b8a0aaa08c6022d082a01c4, 0x5f14099704850b0909ac0a9903810b110b0209090a81554f0b24048508c70b0909ac0a9901090b020b9905014dd14f4f51ea572f0b0f612a71aed80000290a2908d4014c094309c447d609b3022e45430b230b1c0481082a09920b8a0b820303, 0x92400540b090a090b0209a309970501093105000b2a090c030308116a216bcf0b240a070b1601a70846014b65cf0a2d090c0a070b9266c06ca36fb005010b240b0a089001a709310b1003910a810c170c000a3308c00c05023309475a445dcf, 0xd801030909a30997]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node78 : Bad pats ([69,40,62,53], 0x3fffbffcfef7b4027efdff7fbf7ff) :=
+  bad_of_gated_check (tape := tape78) (gas := 150) #[⟨_,node76⟩, ⟨_,node77⟩] (by decide +kernel)
+
+def tape79 : Array ℕ := #[0x8150810009127162a300a81019209000901080f0817092a0b150b070182080f08650800092a08290111088f08101e30211c25252c4f01ac08180881092a0c8b0891001609920a0201110801161617950c87031c0818092a13911aab2f493424, 0x81b0a870a8c092a008208290b2a0a863e4803030c880b1f092b040739c90c090303080008820c8838483baa414c501a031c08180b03092a003f0ab10b0e322d092e092b030208170a87088f092a0c0702ae08290a29092a0207099209000986, 0xa3a08ce092b0c00012b0d030c880a3a0000092b54625648592a5b4f0a1a0a1002ab0a99032408ca086008524f4f09ac02990b1f4c44092b040709ac032408520c0749480a2c030108290c870a81030109030d0144a546cf4a490a1f02990a02, 0x50308290a8609920a9e031e0a990c0004070a99050062ab63c8652a0a2c00dd083f0b030ab10a9905000b230c875dc96059038208290992092a02b00941]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node79 : Bad pats ([39,75,40,62,53], 0x33ffdfecfff524025adbf75faffd7) :=
+  bad_of_gated_check (tape := tape79) (gas := 150) #[] (by decide +kernel)
+
+def tape80 : Array ℕ := #[0x28a60d01005709c509b90b0a0b03040524a627642bae099b00d10865085d0951092b0c0f0a89222f0a1802ae092b08c6089f08c00a1f0a15022e099b099702070992022e083f0aae0a810a0717b218a31a290233099b099713ae1d9830b065cf, 0x81640ab41a443220381089f008e088c0b0a02b0088e0858085b3bd009933d210a8d0a8105010a1f0b0308900b020997371305000a1f33ab3e1d4a150927021f09090a07092b0a15001109920a07092b2e240107080f085f09b90b0a0b030405, 0x59495b515e23611d0a8900920a150b0a01b9085804000a3a0a1808db085b535954500c81099b09970090081001010a0b4d140a184e2355a10301089b0899000009020a810b010401092b08050a8146a448a30a1804000b010a1a0401089b0000, 0x3030816092b023a089f0c016ec301830b870c810a89039f0aae0a290d006a956cc97024742a0a270a220201080108190997089b0215098163230a1800db09b90b1f099b0997089f01520857095108510c810b81028d0a10092b0b1101ac0d01, 0x8f08170b8f0b8702b1092e083f020209ac0b1c0b157bc97d570997028d0a81088f010c0a107699782f09270400099b089f09970500722b0a1a0a15]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node80 : Bad pats ([75,40,62,53], 0x3bffdfeeffb5a4025ef7f77fbffdf) :=
+  bad_of_gated_check (tape := tape80) (gas := 150) #[] (by decide +kernel)
+
+def tape81 : Array ℕ := #[0x9970a860016098f00120893262f272428a20b100b02050008c508080a0209920a1a02b3084f08c51fcc0b1c0b1522c1020b0a02099702021a9f1c1e0a2701830897098f01ac0911080f090e171f0b100a290a2403840997132918ca2ac33e2d, 0xa2942a14943092d0229084208c309ab092b02b30ab10a2c084208c33bab08b7020b0a02099209ac0d0209af09ab039309b3022209ac0a060b830b0703840a1009b409ac00170a1009920c032f40310e33db34af384902b308c5099709920210, 0x32a09c409b405030b2a08660aae56dc585f59d160a709ab02950a8f03840b010985081b0a870a1f0a1001b40b00019209074ca34da45127522f6b490384081b0a130b250a240303098f09530a0946a40a2e0a9b0a9500c50a1d0b260aa70a2e, 0x14308d0092b0a29084208b7021f0b2a0a2e00650a2d69db0a9b0a950062085d0a2d02ae0a1809b4032a09c4644065df0a8f675109a30050094109c409b404840aae5edc0a290a24039309070b020aad5c560062085d0a37]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node81 : Bad pats ([78,40,62,53], 0x3ff7fbfeff61b4027afffe7fbfffb) :=
+  bad_of_gated_check (tape := tape81) (gas := 150) #[] (by decide +kernel)
+
+def tape82 : Array ℕ := #[0x14308490934014c084a26c928562b2309ab09b302220a8f09a702360a1a0a100a2c02ab0aa5092b0a2904170d021dcc1fd90405080c08290b0e014c0949082919c60a10014c0a800829171f0d0302870b230b8a14a41bc021a723532cc15fc8, 0x9c20aad414c00d808290b2a0b230a3709c200d808543bc63ed144a746404dd3029b0a330a2e00520a3704880b830b0108640862021a0b840b830b01336c0d010ab40b2a085235df36d1384f08b702930b930b8b0229092b099209440c170c05, 0x84a094c0232084a575e5a56022d0a22050254270c84018209180b8a05020927511a52c0554c5b2b09b30232094b09c20a290a2c0a2204840a1a092109970a8f04850a1048274ab1029509a709270063086204070a3743e70aad0a2902370862, 0x98e0a10022c0b8a0c066f240d0172a5000f09920a1a0d010c85040b08c209c40c0f09b4032a08c208c0040f65d2675c0d0169df6c4f76a782c909330930d80060ce04150a950a8f048b08d90c075e270b9309ab01270a2903940a09086308dc, 0xa3a8a5c8b4f084200cc085709a7099b0a1a864608b7021a08160107819d0c870b02022d09b4021808c00a2d7edc7f900d010a8f09a709a3030709b40b250b090a220a8f7a2f021a08c001c40c0775c009b30b100b09022c08c808c209000812, 0x1ab093101b408cc03010b0a099b092b]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node82 : Bad pats ([40,62,53], 0x3ffffffeff75b4027effff7fbffff) :=
+  bad_of_gated_check (tape := tape82) (gas := 150) #[⟨_,node81⟩] (by decide +kernel)
+
+def tape83 : Array ℕ := #[0x2a508490931005008ca022d25d80a3326cf28482cc5001d081b001921a5091b009b081d03080b0308191f25202a03110911029e09ac04840c051ac81ba6099300ce089009ac0b830b110b030233084909ac0b08151818171ca122b1572e57bf, 0xb08011b09933f9604070ab008500a3209ac0233091109313bc83e240a1301b90a330931091b09ac0b1d0b160233091b08c5050033d10b0f0c0e0c050233084c0a920a800b0f3117355c3893474a001d0b1609b409ac02aa08c60a2d09312ac4, 0x58c5d80001b409ac08c0019308190b160ab0089b0aaa55cc010e081b0c050993011b09110415091b4f29501f0a33011b0b92030108190c81089b4baa4ccc52480a1d0a18011b081d081b001a45a5029e084b091b02330a2d084b4330449f0b16, 0x32a0900099b0a3a0931092e083f021308290a830a3a0a290a1a0417099703150a8309000500089908510927670968970a3a69ae09b9023a62d96cc3705004880b8c0c050052085f08030a335f170b2a0931092e60c87ccad8025a277d4bd801, 0xd804d80303010b0a099b0931092b083f03080aae0a1f0019081d0b080993782e0a0e031f0c050a1f031e0b0173a9751379c309b409ac]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node83 : Bad pats ([40,62,53], 0x3ffffffefff7bc027effff7fbffff) :=
+  bad_of_gated_check (tape := tape83) (gas := 150) #[⟨_,node75⟩, ⟨_,node78⟩, ⟨_,node79⟩, ⟨_,node80⟩, ⟨_,node82⟩] (by decide +kernel)
+
+def tape84 : Array ℕ := #[0x29c608b7020f08950c870a8d03080a0e089b02130822020422a409b923a10c87003f0a130187080708830202081e0ba11d8b1f1d2057251904170a180a1301b90b0a0b0302140c051726189d032408d6086009b4083f15181a25274b304f44b3, 0xa99039c0a220501085c094108b73ed43fd50b9f040508200a0708b73b1f411d0931009608200a2808b703070a93082203280b1108960b0a0a93342335c137c003810a8d0a1903a109090890081e0a020b16094b0b2b2e990a2802070b160b1a, 0x6109b4085f0a220931585700c0094105000a070c0454500c170c05040d09530b0a0b03040408520a330d014f4951440202080c090a08940b0a0b0304060a890d0149494c56554f5c1d099f644b00dc08d6085c08b70b9c0a1d0b160303081e, 0x8570c140b020a330a280b28014109b40a2804050a330a070982088603030a0e0a0769120d016bd06d5271c509a709a3031108140c170b080a180a1304020a020989088d0c10081108150a0e0b16614505010a990a93093102225a490b970b8f, 0x29b0a3308b7093303940b110a8d0a8f0b2808b700070a090a870a8f74c977d10101085f0894]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node84 : Bad pats ([46,48,62,53], 0x3ffffffffaf77402b667bbfffffff) :=
+  bad_of_gated_check (tape := tape84) (gas := 150) #[] (by decide +kernel)
+
+def tape85 : Array ℕ := #[0xb970c0e0238093609332768290f0a13021909360219093323540b2802140b0009b4023a0a381fd4214b24182aca30d501930897032b0816081504020b020a0209c60811199c1b230a130a0e1c2402190936093303170a2808c2134514c04bc3, 0x133089d081b08200146081909b90b003e25401801330a190146084b084402a1084b38c909333a233b310b0f03230a1d08c40a1801330a1933313516445c00c008440b9c0a380a3300c808c001362d502e650a1d0a1803000b9c0b0801b40936, 0xa1e599f5c31031608c009b401410b160b08555400c00840001a081d0a1e050308500a3350cb0b0f524a535c5698664f733f020f082209b403090a19013349410c07005808530a3347cf4a500b1d0b1602330a14093608c50c0e0c050a180a0e, 0x821050108470b1a0b05031109c308476dc46fa50b2600490847081a0b080b9c6aa60a1d0b1671c6031d0a8d0a130a0e0218081a089b020708160b0862a30b1102180b160a1903890b085ea3601f6413009b081b0b110b0a0993039c0b8b0b16, 0xd800021e0934093103010895081c]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node85 : Bad pats ([46,48,62,53], 0x3ffffffffaf7fc02b667bbfffffff) :=
+  bad_of_gated_check (tape := tape85) (gas := 150) #[⟨_,node84⟩] (by decide +kernel)
+
+def tape86 : Array ℕ := #[0x34cb01b408500b1601410b2826550a1d0a1803870a3a0a380b9c0b1623ca27c346b361c603180a1508b701b309330aad0a290aa1009a0b0509ab09a7039b0b1a0a8f194f1b511dc902a10a2909330315093603260a23099213d414b316431f40, 0xb0540d50ba10b9900d5088508110c850b2400850b053bd53e510d010381088308470c04080209b93964421d08b70284089a09b409b901b408dd0b1f0d0132d10b240b1d01b408c809060b180aab0b112f3201410a220a1809b4023a29d42bd5, 0x8b7031a08d50a000b240b1d00dd08610a220a000a1d09c3021809c8085708560b1a524f555557bf5bd10a15013308b701970d004c4b0b1d0a1d0a1803160a2e0b08494a4d29031d09b40a1d0a180b16031a0a1d0a1844550500098708c10049, 0xa9c023808446fd80a2e0a1d0a1803000a1509b409b90a28039f09330b006a550a0e0a960a90039f084e0a060b0c0a240b080a13669c6cca0928022c09b3093308b7022208c1031a08475ed30b895fbf0a24021809a3031d089a0b1a5aa70d01, 0x11109830905]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node86 : Bad pats ([37,48,62,53], 0x3ffffff7fef5fc02d86fbfbdfefff) :=
+  bad_of_gated_check (tape := tape86) (gas := 150) #[] (by decide +kernel)
+
+def tape87 : Array ℕ := #[0x2c0f2ea309ab03080a90029c08400a2e0b820934041408450843022e09c908c70b8321c5235225960a23031d1dc626bf001b081d0b02001d1a970a0f02230b05098702230b05179b191e03010aa10a8f02280b010a83144515a31c4331295eb1, 0x820040f08870c060b1a3fa5409e43bf4d51541f0045093409ab0407099208240a900a280a1e0290081d08240b1002a10a190a0b34a536d039c33b42031d0a14081b0a0f09a3008d080f0a8308b70b010296093308b7022808130a072ac50a2e, 0x58cf098508b70a285aa75ca30a1f0a1a02a108b70214089a0a0a0114519e533f0824021409140a0a4fa70a2403010a890a8309a709a3039c0898098108b70b1d0b01039a0b0209ab089a47c00a190a0f4aa7009a08210b9b0b240a190a0f0207, 0xa24009a0824082005000a096e246fd6712f7ec90224082200c20b000a070b1e022e684f6a290a09020a09330b00018e0a0764a30a24002262b366136b430922091fd8005fa500400a23099f0a190296091009a7082405030b100b0809ab008d, 0x31a0a0f089a0847082488330aa503810b1a085704000ba1014182510b1a835b84cf894608b7030e09850a190b1a0b0909ab09a702950a830b210b1a04000a830825794409a3030e0a2e0b020b00089a0a19009a0b1a73c676a77b4f05000a09, 0x2a509ab0a28030909a7]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node87 : Bad pats ([48,62,53], 0x3ffffffffef7fc02fa6fbffffffff) :=
+  bad_of_gated_check (tape := tape87) (gas := 150) #[⟨_,node86⟩] (by decide +kernel)
+
+def tape88 : Array ℕ := #[0x411d009b083f088f098f032b08020a83089925970b0c009922af0c8a0b880293083f09360930022709c6008209af08b700d21c431dca1ec202b009c605000c170b2b0ab0195e0a2701b9083f00570851080315410ab0164f1a4b20d027a246cc, 0x99302143faf09300a22010a0a2808b73dd40c10030508b709a7030a08840c80083f0a2239cb3b190219092d08b7012d34c1019b090a0904003f0c8432190ab00b0a0b0301b9083f00d12e410ab00c8a010a09930ab00d002c142f1833cb364f, 0xb05012d08b702050b0356c557a1032b0b03085109c909b90a3a032b083f08510a38003f4fdb51dd03020c1708670b2b0d000289081909010c874be34e4954cb59de65506fcf0102084008040819089b0a1d0b0c04070899432f0a130219099b, 0x8049048008c60ab409a8030a099b0a0403a10802080009b90a3a09936c180a1e0a1402330c800b0a67a36dc8010a08580a130b030ab403030a19093603890b030a3a030309b95fc4614b62ea0c0400b7092d021908b75bb35cd5010a08160a19, 0x3280b0309460a3a0b170183088f0a190a050387088f83ad85b3884597500931048a08c609a8020e09a70c030a227ec80222093001af0b0c0c037b45031e089f0a830a000c160ab4011108890b2b0d00765e0a270a2203020ab072c5794b7c50, 0x147094608450ab40a270b0a09a80305084508910a1909360930029b0b05021308580a14001191ad932194420200090008000a270a1d09b903030ab40a278cc10a3a038109468a448fcb]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node88 : Bad pats ([46,36,42,62,53], 0x3fffffefbbf3ec028ec3f3bb7fbff) :=
+  bad_of_gated_check (tape := tape88) (gas := 150) #[] (by decide +kernel)
+
+def tape89 : Array ℕ := #[0x8150b030a0a05020b0508850815030c249b26ad29b33122020a08060906090a09890a0b003f09b90303088109891e5908b704090b0c0d021bc11f3322273eab00b709ab0b0102ad08b7091016b2099f0215142b092d020b0b0112bf183154cc, 0x481d0b244aae030509090d020a220303088308b7000708050ab00d003b4b3ccf0a8a0a0b030508b70500364b0a22021908b70a8f090934cf372e0a1804800a270a150a0604800a270930009508150906020a08862c1b2dcb2f2e02190885083f, 0x59595ad45dcb5f436cae731d7ec4000808050a01098b089f03050906080b09870a81031a08c50c0909060b814f9352330b010925091f0197089b0a1d0a180b08030508b70222083f0a1409060a8701060a22083f005a09c643484499474b099f, 0x80d08450aa20a90092e091f71b3038108b70931000f0a0f0a220c0d6b49090901af084a0c0d08b7040d093104040a19654f66456809099f00d608c60a140c040931623302190845093002000900089f0a270a220ab002b4094709b904000864, 0x303080209310a0e882b088203010a0e03030931089f09090b05841d850689198b9c92ae09a401250a1a0a0b0213092e091f7d3302180b080015090609300a1803100931009508150c04774f78457a2b7b2e0c0201250a1a0a0b01b909360883, 0x5020a22092e0a1f012e9633091f01ab0b0c0a1a94b104810a090b160c02020f09060886080e0b2408b704888dcb909d0b8c02140931099b0a180a0a02180b08]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node89 : Bad pats ([32,42,62,53], 0x3ffffeffbfb7ec02e6ecf7fbff7fb) :=
+  bad_of_gated_check (tape := tape89) (gas := 150) #[] (by decide +kernel)
+
+def tape90 : Array ℕ := #[0x91f00b7092d0a0e0210099b090308840993012808b708840a2202a208d209360c1221cf23b3261d27a52a32005b0936080c08b70a8f09030a0e081f02190c04012d088208080c12184c192701c2092d08d80ab0020a0934134215221d2b44d0, 0x81e08b740c60c840219089f09830a060219089f02833b2f3c2e3e2242140b2400d209c30942092809250100089f081e0c0435ae0145081e0a193331386a0b1601b3092d08b7012d2ec30236093409250a100a0b2dbf3055048708b7090e081e, 0x5b42608464000b90001f0a0b092e09280a1e03030931081e0aa253cb564804140a1a092d0ab00925091f0324092803240c1609830b1f4cc609140a0601830a0f0b0849294da5001e0a1e46b15098012d081e091f0a140a0f001e091f0a19011f, 0x210092d0125084a08456d420a0e0a230a190318092d0045081d68c20a1869b2012d0b1866460b800223081f091f021e62ae0b180c84013409360a38084a0128091f01ab09345db15ed10ab001ab084a084601af09c659cc]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node90 : Bad pats ([68,28,42,62,53], 0x3effebff3bb7cc02ecea67fbebff7) :=
+  bad_of_gated_check (tape := tape90) (gas := 150) #[] (by decide +kernel)
+
+def tape91 : Array ℕ := #[0xa0e2c2502140884090e0a10021925330b1a0b0c03810a0a08b7021f21c90a1902050805088d090301891e0f2041231a03110a140a0f0b8102140a1f0503194c1a490c8b021409b90b810503092e15c117331c4b2727312b09a0d80011c44e1c, 0xa8d0a0a020e090e3f19081e412e021a08b709ab0b0f099f021e09340b0c040e090e0219379d38a13a3f00c308b70a1a0a150303081e33ae35af3cb1048409340a3804050a1802950a1e2eb12fcc081f00b70a8f01b90a060805088309092b4b, 0xa8464c66c2501340a100a060414099b099755290b0f0b08020f09280b010aa8524e56a2099c099801140882080209020d030b050a1d0a0e050308b70a100b084a2702ab0a2c0a3a0b050a100501098f0a050c05451a479d0928091f0197090b, 0x1e081c091c00d1081a0a06005a0b1f0a140987081a6ab30a220928021966b10a900a8a00ce085a0a1d092d0b1600d10b1f0a8309020a1d099f092d050109050b1f0b0f5ebf625c0a0600d20d000a220b240b165b33]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node91 : Bad pats ([42,62,53], 0x3fffffffbff7ec02eeeee7fbfffff) :=
+  bad_of_gated_check (tape := tape91) (gas := 150) #[⟨_,node90⟩] (by decide +kernel)
+
+def tape92 : Array ℕ := #[0x38d444c303070a070a870500090408100b030214083f23980b0725a508b703910a190a140b2320c30927032a09a80aaa032a1c4803910a190a1403030a8103810b80189f19a30b2b009f0884086609c20a370b050a8d16321b541dc5274f529d, 0x93609a804170a3a093601c5098309270a3a3dcb3f500a2201a83a45415b039a084509a8031708d909b9023a084535d50b9903030a190a1433d937500c10030508110a0708c709a809270a1900450b05039a08c708460845090a2c212d2d30e1, 0xb1c58d00b0c009908190a140a0a56af59ca5ccc8718040709360a2209a708b7005a0b9a083f0a22504b0931048a09a80b970b170a22099f09a703150a220a190a14022208110d0147a349af4d4900cd08cb0b1709a80a220b2a0b2303050a28, 0x2380a3a0b230aaa02380862018f089b0b9a6d650ab46e547045734f09a8021409a30a1d0931030c090e09930382091465330a14000c090a089b038b0889080c0b0c619f0c880ab4633266cf68c802aa092708400b9a0b820a1d01140c800114, 0xa130a0e021909a30930038208910927099f85cb09310101089d08190b0509140c050104089d09820a000101089d08190b057d947f970a1d038209140a14009d089778b20b1702190b05009175cb76b37a4582c30323093603827254083f0927, 0xc02099f0b9709af0b17093102aa0b2a0b230b050c140b1700910b059a339d4302380a3a0b2a0aaa021408970b890ab40b0c0b99030309930114921f93219654984fa15002280b8109890a140a8d0931021409a3032a09a70c158b238c498f48, 0x48a0b17093103030a8d0228a39f0aaaa4cf09a8014c0aaa]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node92 : Bad pats ([36,46,62,53], 0x3fffffeffbf3ec02ce87bbbf7fbff) :=
+  bad_of_gated_check (tape := tape92) (gas := 150) #[] (by decide +kernel)
+
+def tape93 : Array ℕ := #[0xb0c01040914032808460b0326a327a1038308160a0a0b150a1904150b0300c208460a04081309810800209f21a3242f2a5a2f92031509140a1e08c60aaa030c0a1e09a30a1901a308d8084609140b17030c0846143316ad18d41b2230c54440, 0x41409410b0708c508450a19093608b7040708ce0b0c0a9309360b150b07039a0936084201b737480c0c0c03030a0a9304070a09341f350c38a33c414033038a0b82014c0aaa08c60305094309af09a708460a282e540b9a00c2084609110b13, 0x9c2023a08620a3803910a190a05028d54b2009f080c0b2b5399566557de5acf615463c5030709a308b7030e099f4dcb0a27020a09af08b74bca09310183088f0a830a190a050b1e49434f4276d09222038a084a0a0908b709af09a709300927, 0xa270b150b0e020708990a056e9c70ec09360099088b086109460b910b810a190a050305088f09110a0767ad6bd4724374b300530a3a09310b1c0aaa039109460a190a0504880b170ab40a38006208615d565f2d0931020a091408580a3a0ab4, 0x8f882f0c0e01410b2b0a8308998697894b8b148c1809a8031009270a27084e09c208c604807f560b900b80030a0816094709c2093108c60b980c8002aa08c679327d1082440016098f0930092703070a0a0a070931083f020709b90a3a0303, 0xd8000310092709c20a27032b084e083f0a320a1e904a0b900b88010e0c8002270b070a190b0c018b0987]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node93 : Bad pats ([36,46,62,53], 0x3fffffeffbf3fc02ce87fbbf7fbff) :=
+  bad_of_gated_check (tape := tape93) (gas := 150) #[⟨_,node92⟩] (by decide +kernel)
+
+def tape94 : Array ℕ := #[0x2c1d2ea3359c005a0b9208b70a220a1d0931038c0a380b920b8203210a130a090a1e0c02219a00220a18091200221d181eb223cf029f08b70a8d02a50912199f0b2a0a800b1c0238085b0849091208210321142308b716d41b4026a037c84733, 0x22209a000b70c120b240a270a2203010a1308b70a1e00b73ab23cd43f20404c414200b70822099c099400220820010208800b160a180a0e009d0801089732180c050a0534a6031609120b030a130a0e0287091204030a2204030b032a4f2b12, 0x20a082203035723581c63480924019c09940134093108230b1009a0041008220a1800b708224fb10c8009345148539c0214099708220a1d01a409314a454c2054c2091e02980a92032408400a9e09a409a0021908b7082343c0461801a40931, 0x3010a9e0a9209a409a003030b880a9809940a926644019c0994023309c20a180a1409340b1d0b16050108220a050a18020f5cb10c815ed503110a0e08225ab26220]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node94 : Bad pats ([46,62,53], 0x3ffffffffbf7fc02eca6fbfffffff) :=
+  bad_of_gated_check (tape := tape94) (gas := 150) #[] (by decide +kernel)
+
+def tape95 : Array ℕ := #[0x99c01300922091c089a0197098f02a40921091b0a07249f25a227c409940409085708b70aa40b8f092409a0011f09240921018f0922011e1ab11bbf050109b90a09091f19331d44209c0213091f0305080d088f098f14a2092815a42be5448b, 0x994012508b70921020e08d10a04091f3e333f9c01283b2409470941011e092501a709243840099403a00b98013608b7092401420925092233bf355809a0012430c0361c0011098f0a0e09282f24394d0c1401b709a70404091c2acf08b70b94, 0xc85593f090500b70921013608b755b3029e08450c85543f56885bd809a0028d08b708470846040408d808b70aa44ecf092150c05c9c018b0a1309a8020e091f018b4822494409284aa40c0b0c020122089a01a709250924011b0925423f43a2, 0x1a709210404091c66b308b70b94099c038b0809091c089a0197098702070924080b0905609f61a263c4099403a00b9800b70921013608b75ab302270845]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node95 : Bad pats ([41,50,62,53], 0x3ffffeff7fb7dc02e223edfefffff) :=
+  bad_of_gated_check (tape := tape95) (gas := 150) #[] (by decide +kernel)
+
+def tape96 : Array ℕ := #[0x2a8284e2bcf089c099c000708870a0b00090807241f09ab089c25c02d180503092a0a1a0a0b028c090d0a1f09ab092a09a4012a1bcc1e9a01a4092a022408b70aad09ab03260949090609810806093408c3173f0b0c19481a1f20a0333153a7, 0xb1a0a80409f092a00b73e3342204525029908b708460aa40a9e02a50a99093008b701900b1a0a100c040a9937c539d43c224ac00101088b0a0b008508090807319f0a2409ab089c09980990040a093409ab00660a370a1f0a0709c20c0a0a9e, 0x8440aaa0b0e59335ba209285ca473dc742902840a060224085208b709ab048408140b050c060b2150d3529f0a86092a09980928092502a508b7093002a508b705030b210b1a484949480919021f08b70b070b00098c089c04060b180a060406, 0x31a084a09a7092400b7084404880a9e04046c546d45091c6e337040099402a40b88011e09280aa467d801240922011e64b1659809a003030a090a9204040aa408440a07091f6118092462c0689c020e091f031c0a2e09a80927098f0207088f, 0x8060b0c0a070994089a040285a008220922091c000d0811091109a8098f09a40a27092502150930038708440a9e01440847084202807b4c0aa50a9908b7029f08470a9978c57cd47e337f4083220826d8000122089c02270925092472a2099c, 0x1a70930]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node96 : Bad pats ([50,62,53], 0x3fffffffffb7fc02e22bfffffffff) :=
+  bad_of_gated_check (tape := tape96) (gas := 150) #[⟨_,node95⟩] (by decide +kernel)
+
+def tape97 : Array ℕ := #[0x8c20b9403920a220a9e274c019f099301310840040408412340082224330a93000808460889080d082109a308b7004908210847093103010a1d1acc1cbf201f01930b02010a082203130b011622173318432554291843a0502dd80011a450ae, 0x3160a130a0e039209a709440822032a084a08123cab0c023ec0400c0a920317093109a40a130a0e0222093109090881080b08220b9701090821329f361d0317093109a404060b100324080d0324090c0b082d142e332f4c30a238c2030c09a4, 0x8b7594c5a4d02980a920222090f0a1809a455c2569c60337ea08dab08a8d801031009300a980a9209980994048a0b940b280b17093009a301b90897084408410488084648450a9e090e08224a33099c4d18039208ce0a220b8c039241c40a86, 0x8b70b840a240a1f022c092e09a46e4202220a150a0b028c08100a040a800b056a9f02920a860a09009108b70b070b00040a09300d0264466627679a6c4c70ad05020a86083f0a8a092e032608490d020a925dc00b0e0b0701a4092e00510936, 0x99809940222092e0a920213092e859e09a003030a98093600200b030a92825483c00921871c038c092e0a1f00b70d020c8b0c81092a040909c60a8a7ac27d4c0a0b05020a2c0a8a09a4092a040209af080209850b050a807548779f09210500, 0xd8020130089c0a240292089c02070b0a0b0708468b1e8c33]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node97 : Bad pats ([62,53], 0x3ffffffffff7fc02eeaffffffffff) :=
+  bad_of_gated_check (tape := tape97) (gas := 150) #[⟨_,node93⟩, ⟨_,node94⟩, ⟨_,node96⟩] (by decide +kernel)
+
+def tape98 : Array ℕ := #[0x29cb2a970b2b0058085109360a2700d20936048108000b1e098f08d20c8823cb24d926ea2cd0389445cc5322092802960a130a0e00160a0a0219092d048708030d000a83194b0b0308161a141b221cabd802142e63a4652ad801d80011ae1230, 0x4020804404b088441970b2b010e08840880018f080e3b8c3d6a43190c8a01b908c5098f08970b1f08d608d00ba00b9801b90c010a270a320a1e01b90a27032b09c20488084d2fea30d931cb34600405088f098b098704810b0501b9085109c6, 0x1b908570851094e0a22584b59d05a985dcc091f02290b81050008660a270a2952490a190a050101080a090e0b17098f0101088f4c334ead04140a290b0504880b2b48cb4a1909a80aa8040509050b2b0a270a050187080e090501b908040936, 0xd805d804d80364a0010e0b0502220b030a0400030a14611862cb09a80aa20a96032b094e09450b880a8a0a1302840c8a040c09360945]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node98 : Bad pats ([62,53], 0x3ffffffffff7fc02feeffffffffff) :=
+  bad_of_gated_check (tape := tape98) (gas := 150) #[⟨_,node85⟩, ⟨_,node87⟩, ⟨_,node88⟩, ⟨_,node89⟩, ⟨_,node91⟩, ⟨_,node97⟩] (by decide +kernel)
+
+def tape99 : Array ℕ := #[0x82608490845023626cc08c329410380089c09c60a360a14084d004f21ce0937005b08d70c140b220b0d0c0b009e089a086108220b9e094a1d140a3903020822081d03860a1417a50993001c0819090e03860b17141415a7195c205524cb2e44, 0x80c0c0241060820082501b808430849023608433c4e0b2201b8084308490137090e081f0910008c081f369338cb3a683daa00c10b050322090d09b9090e32cb33a7421b44b263d60236084903a009c30b0d0a3908942d4e09370a1e014b081e, 0x20f08d30983082658250314081f099305030c800a000301081f529e541b55aa5b4b0a940488081e091e08920020081e040a0a8009804c214d1a0a140a0f0020081f030d47a1038846a2489e4f2c020b0819081f0b140b0d018208800180088a, 0xa360a9a084d714b0938039b0b93084905010aa00a9a6c520b1b0b140239084808c409370aa06922001e08250a9a66306dc7030d0826082201b8622a08470844038008260b1402145eb00848039b0b935d516047020f093709100b8008250823, 0x29a08490847011e08260a3608c373cc03900aa0]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node99 : Bad pats ([49,66,52,63,53], 0x3fffffff659df803794b6ffffffff) :=
+  bad_of_gated_check (tape := tape99) (gas := 150) #[] (by decide +kernel)
+
+def tape100 : Array ℕ := #[0x29c30b1b0b1402b20aa6029408280c0225d626a200250a9a00250a94225623300024091b0b210b1300250a8e0b860a1e08281e5205030993086308d7028d08250204098f182e0c810145085705030c890a1e1560161f19691b2120532b5535cd, 0x29a0a940b05402d41d543d2011e08210825011e08263ba50b210b1a002009960a0f082839523d51484702a50a9f0480099309460a94084f03060a32325634c30a2800cf082408c408210aa500210a9f2d612fb2029308220b8b050208220821, 0x592f0a940aa000200d030a230a19020009920a9908ca0949011e08200d03525554c656ac05030a04089808240822050308204cac03910d034b274f325a4866d3023708200a23011e0b210b1346d50849084800210c160a2309b901960a190828, 0x844002608250a9408c108496fc8022808c5032909c7082505026a2c0b136bd508436cce0938014908210a390b28084708440325082501c4081209930a1962ac0b130a28084302a609c40a9a02b2089209c45d2c5ec663ce00260825021e09b9, 0x30d08210824032873a50c1401c40aab721d0847]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node100 : Bad pats ([64,66,52,63,53], 0x3fffffffe61cd8035f0bfffffffff) :=
+  bad_of_gated_check (tape := tape100) (gas := 150) #[] (by decide +kernel)
+
+def tape101 : Array ℕ := #[0x2b630b830328084904140938264e0a3101c309380843094a03280848225c2454009608430a39098909c308492059271b0389091e0b210b13014509b80503084319600a311a2101b8084708430305082008090c0508ca154816d91c53311f4855, 0xa3140d30b280b2100d70b2209b8032209383cc80a31020b08190b0809b83ae33e4b41c6004908c40a31091e0c0e020109960a0a34c4099337410a93020a0b0d0ba00b9802390843084801440a312dcc2f600b93038008200a3908430ba00849, 0xb080417093857ce0a0a011e089600010902081908920489081501380c05519b52940a0b54aa558f0a31038308140894091e0a0f0316091e4b414dd45a2564cc041709380ab20a3102b208c4040e098b0a0b4548465e0a190a14004909380047, 0xa0a0c040405084f09b80a0a6f5e0aab00470a3108c10b280b2101920912018308150b8368a169af6c6171a50937040a089608210b0f0328099209380a3262ce0aa5018208210b240b0f0328099209380a325dce5fdb0a9904850b210b240aab, 0x48508c10aa509890b01099204850b8108c17db20b1a0b0c082104140a3909b808c300ca09b80d030aa50328085c09b808470ba0765b78537a210a9901b9084809b8]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node101 : Bad pats ([44,66,52,63,53], 0x3fffffefa79d68034f4a7fdbfffff) :=
+  bad_of_gated_check (tape := tape101) (gas := 150) #[] (by decide +kernel)
+
+def tape102 : Array ℕ := #[0xa800a190b280c8b294d0a31022308c50044080308130b280a320a23011308120b282146245309b903860a3209960b0f050308131c4e0a231e4d02b20b0d093819d52554013808ca0ba00b0f0a0f0b08040508490847141d1759332137c3382c, 0x4040a230a2c029a08130a230937029a0a940a0b3cc63ede402f421e44a553a7d800001f082103900b88020b090c091e35a036a2022308c501450b160b0f084702320ba0304e325309b9032208610849093802b209b808472bd32dd504890a32, 0xba00c140b2559cd5b9f62d50a2765c478a202990a9303090a9a0a1909960a0a082803890b814fad03810b0c0a2c0b09089a0937040a0b930c01009a0b0c0b0900450a39481e49db4b554e32529f020109960a9a0a2c0a0f029a09140a0b0828, 0xa94040f0937090c08246fa00a27022308240012086209b908c50844030f0a32694d6bad09376cd40aa6030f0845039008d464ce09370329089f08230c8b0329089d08240b800ba0023908455e58608b0a93040108240b2508450301082408c6, 0x30608220a230a9409960306089c082402287da47f1a082602a009960b067bad0a220a1d04010b01090c09c30937082409b80844020f0825082409370293098f082572d574cb]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node102 : Bad pats ([66,52,63,53], 0x3fffffffe79de8035f4bfffffffff) :=
+  bad_of_gated_check (tape := tape102) (gas := 150) #[⟨_,node101⟩] (by decide +kernel)
+
+def tape103 : Array ℕ := #[0x94908490ab228da0a3301070d030b0625d60a802a9a2c48030f098f0a0f0a0a04040a8d030d090b0809080801b90c030b280b0d0982080c1d0b1f1f20322218040d090d0b820b920b0d0b060316090d031609380c05141f1545181e2e212f2c, 0xc160aab0c04039909b9013808d30b9a3dd109520aab3e9f029e08c8084803220856091e38ce0b9a0b8a029a0b8235da02a40b21091e020a0b0632a1341a3a5545255cc00021091e038a088e0a920a8c03820a0a088e010d0b16093808ca0405, 0xa390a09089d58b0082202a50a9f02930a3908470b25013808490321085708d808ca0a0951d352c854d501810b0604060b8108164cb00c870c0d0c040a870381081009890c87489f4dcf55a30321091e08c901380854081909140d000c8943d1, 0xaa60aa003280c0c093801b909420b280b216dd36f5c0306091b0b160a940b0f01420b8b0a390062094e0b0666dc68556ad672250a1d0a1801b80aac09380b1600140c040a0e089d082260326245001409020c030b280a0909380a86091e039a, 0x1f0822031a0b0109b80938]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node103 : Bad pats ([46,70,52,63,53], 0x3ffffbe7ed9fb8035f46bdfbfffff) :=
+  bad_of_gated_check (tape := tape103) (gas := 150) #[] (by decide +kernel)
+
+def tape104 : Array ℕ := #[0x8480aab0b2128d30aa40417085309b9038208290ba0246125ce2a9e021808480c06099a031a08040b050c051f260b8a041409140142085608201b14099603810a05088a0c0501b808570a2c0501088609c4154016d60d0218a61c522130421f, 0xc850c0f091e021308200b89021308213d413ead0a92014908d50a39091e08480996023908480821091e379a3a980a9e011e08d50854085309b903810b170c850a360052084f01b809960b1a2ed32fde091e31e1344e03800b1a08280b14040f, 0x8210b220b1401c5085f0c0e09830aab0949004853db56d30aa4589e009f081f048809000b800ab00b210a0a50250a220309081f0b0609b90993089b0383098b014208c909b9020a08c80d0046d1481349254c31512a5b1a0013082903094132, 0x81a02390993099a091b6f9d00c80b060b920b82031a09020a820000088f0b0669a06b1201b80b060902091405020b1a6514672a6d1e73b10a10011e082708210a1d0a99039b0b9308c9031b09b95dcb5f31619502800a130a930821091e0026, 0x89c08b9902ab09b90a390993081509150996040f0a180b060aa4082901930a940a2208020a1d03820857080109930c167ec08130839e030c0aab0a390b990a9a0a880a2c0a1d01b80b890b1a76ac7aaa8725008f0814038b08c972970a8c0915, 0x2990a9300290ba10a220a1d011508270821]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node104 : Bad pats ([71,70,52,63,53], 0x3fffff87f58d38037b5e1ffffffff) :=
+  bad_of_gated_check (tape := tape104) (gas := 150) #[] (by decide +kernel)
+
+def tape105 : Array ℕ := #[0x9490b1609380ab2041309490b240a390b1603060827082623c0265629542e1e03160a3908c80ba00b90040309470b1b0b1408c805000b1009930a221b5a1da809b805000c0a09930b240314099315b20a22013808c80d0313b117e0202a391a, 0xa9e01c80a3609b80a8c0b1701c8089a0b1409383d4f3fce4b320a1a00c80a0f0a3909b808260a98020a0822031709380aac0a0a35260a92000c090d0a0f0a39082632183654091e02a50a31082909b80239090d082108262c400aa405000a99, 0xa3959405a440b8a0b82041708c808290c050406082953c45592018809380829040f085b08240406085c4ea60b08503051d25c1e00130b050b02091e030909380a390b020209474149210a8c04850b0909380b0c091e010e080c090b42a14518, 0x38208280a0a091e0c0e0a920a8602980a0509380829651201380b170c06023909380500090f088e0a0a6056616062b0099a002808860a880c0e02a50a3101470b93]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node105 : Bad pats ([81,70,52,63,53], 0x39ff7ee7fc873803795ebfd7fffff) :=
+  bad_of_gated_check (tape := tape105) (gas := 150) #[] (by decide +kernel)
+
+def tape106 : Array ℕ := #[0xa360ab02956048109b90b280301081b25280c880ab026d32baa31dc0008098b09040b080c0a0a9e0a360a3104870a8d09130c130c0a0298082708260b08091b0500098b0b08182a1aa51d4f048808d60aac0944091e0938155421553b1a524c, 0x3810b050a000c0540304312471f099a02153c2a02ab0aa509380236085239c408c703a109b90aab020f091e02a00b28352a363137d30b240b1d0236084d030808d10826091b04030d032ead30cf0a9e0a98040c08d109380850084d040c08d1, 0xb82031609b9098a094257d25d30684f0a240a1fd800535103240a920138514e0a80040a0a3908c70b240b1d4fb00324085208290938011808270a000b1d4ac14c920a150027088e0918031a093845b00b8a0b82031a09380918040541a10829, 0x88a0a8070b20b220b14040b098a008a0886008e6b8c6ca60b8a08c16db0725003820a88098a011b0821082602040821652d669a0d030b140b0d03280942002609b90b280b060b2160d461d303890b130288099a008e0a0a09b85b265c590b8a, 0x3830a2208120a8e0b1400280892091108200d02811b09c3030508120a8e0b147de308c3084903060c1508570b280b2100d80aab08570a2c01880888089075b177d27a530847050208280b820402]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node106 : Bad pats ([70,52,63,53], 0x3fffffe7fd97b8037b5ebffffffff) :=
+  bad_of_gated_check (tape := tape106) (gas := 150) #[⟨_,node105⟩] (by decide +kernel)
+
+def tape107 : Array ℕ := #[0xa28030609180d03084408410209094608490aa00a8e254827da3a23029a0a9401930b0d0b0c202003820b0608220280091108970c021ca2084809b203920a8608220302098f09140a8c005808970a3308d00980159e17a2194e1e44212d50ae, 0xa09090802a409b2084508490a093f1a409b43a50a230a1e02a40a9205000c0239300845084402940a920942084136cd0415091e0c8003140a9308490a09329e0b92344809b203220a090313084104890a33095008d00a822cc4091e2da22ece, 0x82709b908570b280b1a03090a1a55af08410325094653c558ce5b506f2600c20841080e0b130b0504890812080e08884e440823082002884aa4089d01800813090d030d088808120306461a479f0823492103830b2108870b820a0909930382, 0x9a609a2039a0a1e0b0c0a1500410b9a6d2409aa028d0828021e6a310c8b0a1f01c3085a08040a0408270a1e00d808570b0d0b06082800880a0462b0651e681f0a290841019308600d010b050a1e5f476b520a28032208410aaa0aa409aa0502, 0x2a50841022484430c850a23008808120b130a24084104890812080f01857e1609807fc482550a190828028809c409b90841014608c102390866080e080c77d578c40b290a247aad0a1a030508260a940a8872a4]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node107 : Bad pats ([64,52,63,53], 0x3ffffffffe1b98033f0ffffffffff) :=
+  bad_of_gated_check (tape := tape107) (gas := 150) #[] (by decide +kernel)
+
+def tape108 : Array ℕ := #[0x9370c130381080e091308c10a2c0a220088088c243127520a29022c08c90a180a9f020609100818089b038b08c9030509810a360d021cd31d9f1fb10937041309b603990a2c0a1303930a10094a0b0d05020a361453163117d218d521c729b2, 0x41e20c800aa00a2903050910091409930a223e5643a402100a940a360a310c8a0937048008570b0c0a360a310281089f030c084903a1334b34250b0d355e37d509ae040c08c90a3209372fce02320a220a100d022d523ac74a2a00200a220a1f, 0x829595f0d025ec702990a8d020a0828551f0a220487080f0a0b0984091808d80b0602364fcc0c8404800b0d4e5e0d025331565664d209a202a009ae020008800a2249560b240b1d01ae0a3146550a1f0a1505010c0c08d408d0048b09ae0854, 0x5020a220a2d0a28022409b909376bd00b9a04840b820a240a1a02360938674c695a09aa0218094408c7048b09446355093805020a360a2c61530a29030d0918089b0897030608c908560a0f5ca70c170c05020f089f]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node108 : Bad pats ([72,52,63,53], 0x3ffffe7fdf9ba8037b5faffffffff) :=
+  bad_of_gated_check (tape := tape108) (gas := 150) #[] (by decide +kernel)
+
+def tape109 : Array ℕ := #[0x8450aa4299e005d0a3709370a36040308220b1b0b140237086609c80147085208660c86216422a224cf26ce2a9f0a2402a40a9e09b60937001d081c0a800b1e0b17018f0823081f0a27029909130a1003990a2c141f15a7179e1a521c473032, 0xb8e02990a180846031b09930a2d3e4f0a1f02320a223bc73f9e09ae03800b14008009800910081f38300c80023609370a1f08450236334c355a39560a10452a023709b60a93089f0a8d039e0937084609932db10a1a039e0a9802a508240937, 0xa100200082308290200088a091e0224080f0b80022408d800560a3952640b295350549e0c85562c03a0080908080b090a8c0b02028c4b2c03a009800a2402a548c74a1e4e2d579f09a609a203240a1f0846050008530b2443cc0b160c800b96, 0x227085309c809370a1a02000828091e01b9098b64ad0a8c0b8002000828082402320a2709b960ad621800500a320b1e0099081703015ba10c020a8c5cac5e28664c]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node109 : Bad pats ([68,52,63,53], 0x3ffffffe7f8ba8037b5afffffffff) :=
+  bad_of_gated_check (tape := tape109) (gas := 150) #[] (by decide +kernel)
+
+def tape110 : Array ℕ := #[0xb05292609b62b4700490b140b0d0406089208240501082723260849249b031a0817090e0a1001b909430b0c008a0807080c1d521e9f0b910d030204090f0898082408220280088c091e031a08880827159e1726199920d3265632484f324fc0, 0xa1a01b608223fae084100210b1a03290a370b253cd23dc70aa4004508440107082208210a1a0404082208c20895084636ae38c539da409e04870aa50a330c150822082005030b0609b90a092f23093809b60a2400550c060896082000c90854, 0x40d0b0d0b060937090d0080088a00880882549e0d03559f58326221632c70ae7148d80000c2084408460a9e0a9800230a1a040408220814099308950b104bae0841001d0a8609430b100b0900230821029309100a104427451747c74cd40022, 0x9b608220aa00a1d0a18039b0aa50a9f0a1e0aa0020e0914081f08226b440193081f089d04840814082209930a9f672168b26dc50020091e040508490c0309b20a1403820a870a3309b20b065f9e0b16030d0ab20a330b0609070a230a145c4e, 0xd802020e0914081f08220a1802b00b900b80028c81a0040b09b202390906088a08120c067fd60b0f0b0802a5082308950a277bc780b0832203800816088a08940a140a98091e038a0b880aa4749e782c85ae08b6d801040c]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node110 : Bad pats ([52,63,53], 0x3fffffffff9bb8037f5ffffffffff) :=
+  bad_of_gated_check (tape := tape110) (gas := 150) #[⟨_,node107⟩, ⟨_,node108⟩, ⟨_,node109⟩] (by decide +kernel)
+
+def tape111 : Array ℕ := #[0x29d6008008220c8827da2e203ad40143091208990821091e0503084e0b0305030b0c209f0b210821221e030309b60a11090d0299084e01c608ca0849050308ca19530c071ad50b181b9302860890032809b90b0d0a02149e159f1da124ac58c8, 0xc880194082200160a0c093809b63ea83f9243044adc011e0a110b2102a50a02080c090739210822050108800a0c098f081a032209c609b608490a9f091e339b3626099002112f28029f0a37032209c6086208d608492d5509b6029f0a370943, 0xb060850084e028709110854081c0b0a56d308cc08ca01010849099308220990030a0938082250200c88030a09904d9252da0b940b8c004b08490060085d09460822099409b649d30c88030a09b6099445920b84004b08490190082209b64253, 0xa37011208200b060b9c0c886fda714f73ca79c302a40a9e02040901082009840b100a1609b602a50a9f091e0a160990029f0943040d0841634f64200a3766d66a5402a50a9f01c4091e084e5ec308c4019008220c880b105c545fc26b4d0488, 0x32809380846084300c20b2808487cc70a250a2002a40a9e0a37084408c60381089509c908c20844775a084601450d030b1a091e084b02a40a9e]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node111 : Bad pats ([50,46,64,63,53], 0x3fffffffaa5bd802e734fcfffffff) :=
+  bad_of_gated_check (tape := tape111) (gas := 150) #[] (by decide +kernel)
+
+def tape112 : Array ℕ := #[0x28a409b2040309890a09099401010a070b9a08412530275629a6032808440a2a0938010f0b1e1fcd0aa6048109380a040503091204880b1e09820a800b061b211c131ddc0a9a01800a0709940aac0b1704170b0c091e142516a621c23a555d23, 0x90d0a090b110b0a01b90946084908443e42411e46a00a28023309b20841093804150a330293094708d0375109b238440b110b0a04070a110a0709890b890b81022a0947085908d90841305100980a11090f02042ba42d19331f0194091e0209, 0xa940202098403020a040b110b0a000e0a04549f568c579a099000440aa00a9a093800980883085b09520b260c0709b90b03031a09b94bc20a20011808980d0349c34fca51940481090d0b110b030299085d0844093844c2091e0a8004070938, 0x2a6093809b201940b066ed60d030b210b1a03060914019309830b066aa06ba101140aaa09b201140b140c0b0c0205030a2a094708d00a3300d00b1b0b9b6265649466ce684470250a230a1e04170a110984090f0b130b940890030c0a82599e, 0x891b0985032908580aa40b1a8711089d082103280c0508120b0d0b06032608d00a16812283a1082304810843089d089b029a0a8800c20841080e0b9200d008ca79427b2c7c1f0b130b0c040609b200d808d600d073e874ce0b9a089d75c47e24, 0xd00a11090b0a070105080e]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node112 : Bad pats ([46,64,63,53], 0x3fffffffaf5bd802bd27fcfffffff) :=
+  bad_of_gated_check (tape := tape112) (gas := 150) #[] (by decide +kernel)
+
+def tape113 : Array ℕ := #[0xa9403820a320b280a0c098f27a628d604030b280a0c04070887080d098f0914228c244a2a9803920822088b09930a810a940306084f0c031ba6008309830b060a3208d1085009b904150887099303020b0d1493166119ca1e962c2135c3642d, 0xa040b83040b0b130b05093802920a043d443f330b81038b08890a2501b209380aa539483aa9411f4ca003910b890097349102320a0908d10b13098f0313088909b904070a3208cf08892fcd311f33a9028208140813028e0a3309b20938010d, 0xa16001a081709940aac0a9f0b920a9402a50a9f01900b830b060a3200980b830a820b0d0a38515a534f544a57c802930a8d01b20b8208220a04099302a6084808410392086708c109b247c40a250c0b038209b20822445c49334b99038b0a25, 0x48908c10b830aab0c07029408410b26093804150889085b095209b90b266bca6dcf7025038209126720741f8edab3a8029a0a940287098f0019081704030b9b0b0261216213632602a50a9f031b0a870a090b8b0a9e0aaa5d4f0a325e4a0a1b, 0xb0688ca89c38b210b110b0a0202081b031f088f0844093804050d03824784250aa00a9a040e088f091b081b081a040e088f08800a020a827c9e031f084d0b840485098f780c0c880a8279a17f4a8518006109b909520b260c100a9a0a110a0c, 0xa1330c07028c0a1b0841028c093808569dc39f4f0b82030d091b093804159953084104820c0c97c49a920b9a040c0912091b00d008410b140b06939e951aa35509b2022d8fca00180a860918020208188d300899038309930a8d023309380292, 0xd8000302091b01120818b2b30b920b82030a0a8e0c820ab20311ae440b9a030a08410818081a030a08180841aaa4ace2b012030a0a86091b030a0aa60c02a61ea79a0a2d030609c7091b0b0201380841]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node113 : Bad pats ([46,64,63,53], 0x3fffffffaf5bd802bf37fcfffffff) :=
+  bad_of_gated_check (tape := tape113) (gas := 150) #[⟨_,node112⟩] (by decide +kernel)
+
+def tape114 : Array ℕ := #[0xa23091f0c07038108580943089d0a200a1600d808d223c30c8226a20a1902990a160a9302320946085108c503990895048108440d021c211d551f43091f04070992038108110a1103810b130502081409450a0c1521164317a2189f20ad2942, 0x94209b90a20411e4750022e0aa40a110a070c86091f01b90942080e0b1b0a110a0700c10b830b0c0b810b1a37963a9f099a040508970a10091f33a603890981090b08970b8b0a320a1b0a1602992d2f01b90a322c4331223dad4d4a00490a20, 0x3990946085808d208d0050209380b280b1a55d8005909c40d020b280b1a00d850c4535658435b1e6c2209aa0298099e04860a114c1e0b110b0a019e0a11499f0a2d0a230016080e0c05088e088604850996081644920c860a980a1903290946, 0xc8c0a230a19020209186ea8711a09a20225090f08990485090f6a9f0918032608d0080008140b030a110a0c68a10a19028108410b910a100895090c00c508170b05084161240c0c0c03038b0a1608415d95642d02a50a99022908415a550a20, 0x1708160a190a200a1a0a1502140993091973a40b8a05030916]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node114 : Bad pats ([44,64,63,53], 0x3ffffffebf5bd802bb3f7fcffffff) :=
+  bad_of_gated_check (tape := tape114) (gas := 150) #[] (by decide +kernel)
+
+def tape115 : Array ℕ := #[0x849030c0b220aa527cd02370a2e0a2400200a0c09b90938243325cf0d03030509b6080e084b08210aa5030c08211db10949011208210a241bcf2083022e09b608ca013808490143085b08200b960a0c0280141616d317da190e289f2fc852b2, 0x42b0050108960b220b8108210c103fc243d5499f4ecd02a40a9800c608c2004b0a240820030c091f37290a3738ca39b0030c0910081d04100b0c329f082134423ac3030a084b081c0821004b08490b11090d2da10919021f08cc0b0a2aa8004b, 0x94900d808ca00dc56da0d0357d559c26753684876c6010708210a98011f082151420a250a2002980942011f4dc20a990a93011909930a1f4bcf028c0a2e0a240a1609b6028009420a370a16084147560aa502a40a8c00c608c20389084141d6, 0x942084b084870b001b9084808c1048508540848081509b90a996cd36e4273af0049093803280a2e099a01b909120a2e0aab040308560a2404150b280b060b260b2162560d0363d5659a0b18005d08570b2109490a240a1f5d2604040b21091f, 0xd800040e098a08480a920a2a0a25030308c10a930a1f0a920a8c0234]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node115 : Bad pats ([44,64,63,53], 0x3ffffffebf5fd802fb3f7fcffffff) :=
+  bad_of_gated_check (tape := tape115) (gas := 150) #[⟨_,node114⟩] (by decide +kernel)
+
+def tape116 : Array ℕ := #[0xa800a060b840a1b0a0c00570a3708000b060a1a0a01098b25a028a12ea602a408460a1b099003180a0b1ea00a920a2501b90a1a01b90b1f1b470a1108c90c8504070a860a10084904870a150a1004870985149f0d03165318551c4820a73e31, 0x459849435729091f0146084b0a2e09450a200844004b08490a2e3b480b130b0c02160846381a048609100c070b26099000c7084608060c0b0c070b030c06341c36d2091e082203830a070993031b0a0b0b1a0a070005089b2b202d13091b0286, 0x632169a702a408410a8c0a040d010a200a1b0aa502860a2e0a0909940a160a0c022e094202800841089a0a374f600a1b0286089c0a2e4c485016534f011e0909039c09940c06481e0a090317091e0a07011e089a00c508090942431e0b0c4416, 0xb890a070b81004b084902240d016dd20b996e917293082773a603220b0c0aa50a250d010b990b8902a50a25021b0d0165526651000c090e089c098c039b093809b9089c0b1b0a160a0203830881010008980501080708055b9e5c935d966114, 0x3890b810824082203050a090503094b093808440c87]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node116 : Bad pats ([50,64,63,53], 0x3ffffffffa5fd802f22cbffffffff) :=
+  bad_of_gated_check (tape := tape116) (gas := 150) #[] (by decide +kernel)
+
+def tape117 : Array ℕ := #[0x8ca0b9e0b94031f0b060a87090e0a1a039e0b1f242926dc28e02b180b84039e0b110b0a0280081a1f2620942cc8339601b60a250918022508480a990a1a0a0b1aa10a980a920193085609180b9e0a24038408ca0b0a0b8e143316c81c203728, 0xb84419f0a16021a0a93032509b603843cd60aa53d9f3e9b434d00230a2439c34930672202980b0a0b030b960b8e0a110a0c039e0a1b0a9e0a98001d081b089b08460a1b0311099308c62f4d31b0039e0b110b0a0108081a0a2e0b940c860488, 0x5cc35fda0a92019008240a160aa4019008240a1b031a08440a070a1a03810b050a07513308240406088d098f0b05004b08454cc44ea9534354da569e02a509470a240b260b090b1808240384088c45a60a200a1b031f0a8d098f040f08c60823, 0xd80004040b0509b608270a250a20029f0943021f0a160841634f09b6644d0a9e0101098b0b0508240a250a20010b0a1a08240313091b0b055b290b940b9e]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node117 : Bad pats ([50,64,63,53], 0x3ffffffffa5fd802f23cfffffffff) :=
+  bad_of_gated_check (tape := tape117) (gas := 150) #[⟨_,node116⟩] (by decide +kernel)
+
+def tape118 : Array ℕ := #[0x2810843091f08250a942856048109010a07041708430b1a0b0c048a0984010c08150a060802209421d223a5252629d50a1e029a0a8e0996091f021b08170a940b1001b90843084b0a1b029f09430a32038b0a16145515cd17d619a21bad2ec2, 0xb8602990a200824030509b90a063e250a1e02100a163bad3fd6099e0143084b0a2a0a880b0c041609c80943084b36c40c86020709100a230824020731a8339a391e0a32454a020609b909960aa50386091f082409b92cc30a28038608250a9a, 0xb84020408880c800b0557a458d60c8b5a4802ac0b2502140a0b52a50c0503050b830b2550cd028d0a14001308950d010c074d9e4ed60d02020f0984030949280c104a7053c75bd509aa09a6050008240207089908160b0a44280b180c860b96, 0x21b08170984091c0a28022e08440201081a08170b0965cc0841001b081a0aab08540a2e08d4093862c8009f0d0109935ec766a80a32022908440841022908d409380480]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node118 : Bad pats ([48,64,63,53], 0x3fffffffeb5bd802ba3fcffffffff) :=
+  bad_of_gated_check (tape := tape118) (gas := 150) #[] (by decide +kernel)
+
+def tape119 : Array ℕ := #[0xaac029908570d03091b0a1127b2295402860b180118089009120415089021a103280a11201e231f242c2b6504040b1a0a9f0aab01140822088e0c890b06094b085d08560b280b1a00ca08dc0062085d155c16591b551d42335334484b464cae, 0x5000b99030609143f21401f429e4a4f0a2a0a2501940a86091e0b1800d608d00896091e0c0d0a3408c1084839423b2f00490938005d08550a380a330b260b1f03840a860b280b21094902860b842dd50a33302600ca0aa60b940b8c03280949, 0x2ac585459265e2569d2039c085408d408ca0a2e0a9a0938039a0b840a94525655c86c4608aad8034eb2d8024dacd801d8004c32004b084803060a82099409150a980a9203060c0e091b018b09140b0d0b0645a14718032809380aa40b1f0b18, 0xd80402340942084b08480a2a00170b1808470a990a93014208c1084767190a1b050109140b260b18029a0a8e62c2039c0b8c02ac60546126649b028e08120a040d010b26099a0b18029a0a885ac2039c0b84]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node119 : Bad pats ([64,63,53], 0x3fffffffff5fd802ff3ffffffffff) :=
+  bad_of_gated_check (tape := tape119) (gas := 150) #[⟨_,node111⟩, ⟨_,node113⟩, ⟨_,node115⟩, ⟨_,node117⟩, ⟨_,node118⟩] (by decide +kernel)
+
+def tape120 : Array ℕ := #[0x11e081e02100938090d0896089005030938085a098204150849085a228e0a840a1124982721099c001a0a1a02111d2e1e280286098108040b050b060a24091e0a1a03060982090d08220b11050108550b06098b1526091e17ae1ba0283147c8, 0x98208840b060890030d0d030c043e18090d02860890048508810c89085a08490d030a0c3a983b9f4221432c0922028d091b0a2e0a0c0a2403940a110a0e0c0a021d09380a11081b02072e1f30133233029908140b03088809180a112c2e34a8, 0x91f04870814089b081a0a1009ac09a402840b1809b0021508990a0b52d0081e004b08480815088e0a0b090d5021542c040a081c0b180a10001c4a294c4457b161aa03060a1d08220a18011b08550a9f45c5099c011e0821048108d00a990938, 0x640a1a0a0101380814692e099309180a1109ac09a40b180a920a8c021b092563b00a250215089f001a60b30c870b0a0b03040a081d0a1f0a2f001d081b040a0a1509895b235c615e18]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node120 : Bad pats ([70,50,63,53], 0x3fffffb7fcdf6802f77cfbfffffff) :=
+  bad_of_gated_check (tape := tape120) (gas := 150) #[] (by decide +kernel)
+
+def tape121 : Array ℕ := #[0x2a522da4028008d0081c00990816004f089d249b25a40a380b980b9004030a81098109470a270a0409980403089d1dac08502160020c1b28274e0194082004890810089d0a13031816b118a40b1401180994011e08d013ac14a919c82eae49c4, 0x825020c3fa8421f0a290a24040a081909220c01001d091e0b863b1c0a2e011b09220aae084f084b09b90142084c040234d035d938db3d29020c089b081d020c309f0922323302a40a9801850850084e02372c570aaa08c6009308450a130aaa, 0xa370152090757cb0820599e5b2c0314081108180a0c0099081208180b0552910381089d03130c884f310b0503224d4b501b54a45d4a76ae864803090825008509b909b609010845084c01b9084f45ce0a9648ac098f089f02370b990b810922, 0x407094602b408496f61702c093802180897018c0820091b0a0c6b9f0b890b81011b099c0207088f08830b21091e672c6829018f089703110b05098108210085081c60a90c85629b63b16cd3020c0819091b099c0322091e081c02b4084b08d0, 0x92201b087ae08b40021081f040a099c081c85290a9c0a96021a09980a9082520922018f0a0408180a0c091b0a2e0a29020908180a0c081b089b030d09380a0c799f7c337fa8009708210a1d0b94099c03050a1d0a09031f0a37089772b17424, 0x4020902088109110a9609b909a8099309a002a209b089ac]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node121 : Bad pats ([67,50,63,53], 0x3ffffffeded3c802f775dffffffff) :=
+  bad_of_gated_check (tape := tape121) (gas := 150) #[] (by decide +kernel)
+
+def tape122 : Array ℕ := #[0xb0303060b940b84094d0a1a0993091827a60a330193081a08180383099308560b0300c908540c150c100a800a1109931fa621a103060800098b0b030808089b030318270a0b03030814080d094a0808089b16ae1b20234729a83d4843d25331, 0xc90a2e0b9e0b18402a08b4030d0a0c0993048109010b050b2609113b9b0a900998002109060a0b0b8c0a90030a09380888098b090a008a329f0b26082201c908540a33093808140a80098b089b0118088a2c9f30a6352e37a002110a290b0a, 0xb8c009157ac5a965c535eda62456fc80931092b02100aae0a9009b60b1801b650d00a1b08b4018c089a091b08190c010a2e0a290383081a0b0d0993030c091b0b0d019c0a0c0b0c47d3491f4b2e4ec8093402920998022908250b0942a40a1b, 0x8b4000d0811000d0a046e990a11010e08220a1809b60b9401856a2c6c960b0d0b06008b0a11091b099c0a1304030a330a370a8d652c67a9005409b6030a0854094761520a37019c0c0202b45da6093804150a380a1104150a3308d5091b099c, 0x2380a980a1b0a16]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node122 : Bad pats ([50,63,53], 0x3ffffffffedb6802f77dfffffffff) :=
+  bad_of_gated_check (tape := tape122) (gas := 150) #[] (by decide +kernel)
+
+def tape123 : Array ℕ := #[0xa36093429442dcb029a09b4099c00c908480a3409b024ac09382646019c0998089b089901c308c30b0d0a1b1f1f004b0845011b088708191bcc0b8b0b830198084b08c908c3011b0819019c159e16d518930417084d08cd13cb1ca521412fb1, 0x94f08d6094903280a2a010a08100b8108880b883daf0b160ab205030b28010a08100b8108880b80084738af39dc3ee1410f093801b908480a34334745545146652c029a09340a230a1e01b90a360a9a09340938004f084c09342b4a004f084d, 0xb0d0b060390572259210a230a19004f084e01b0093853d554cb5d43023109b002310949031a0d034f610b160b0f084d02b208ce011e08210138084904810c0549534a210a314b5c4c555048032808150a9909b90c850ba00b080b01031609b9, 0xa280a230389081704170b106e1c0b1a0b13030909a00146085508c56ac86ba16f2d004f084e67cb71437b4a03a0091e0a190a1400150a2a0c100216091b0a31084f02315fd561e163410931039008100a0708200b8109890b1a089d050309b0, 0x3010a2709a4099c0b0f0aac0aa6022709317d440a1d021e08c1004d7a410c890b2b0b1d004e084d04100a1909c376d10a0e0410084d0a1e741877dc093104070b1d]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node123 : Bad pats ([46,66,63,53], 0x3ffffffbe7dde802bf67fdbffffff) :=
+  bad_of_gated_check (tape := tape123) (gas := 150) #[] (by decide +kernel)
+
+def tape124 : Array ℕ := #[0xd628550b010847010f090c08c50b210d02264e2ac62bd401b9084d0a190b24010009060a1909b90938204e0a0f01b90851084f039909b908140b2b0202081508140b010c010ab20a3109b9194e1b53018b090c0c8214541cad224c322255c3, 0xb1a08c50938032109b904173dd53ed30a0f011b081908040c8b0a06023108d708570b1a391f099201b009380b280a0b362a3b8f40c645a5020f08d808c508d209490231085a08d20b292fd50b010aa809b404820aa80324091e08d809b90949, 0x5dcb5f2a648f7c259cc602a20a230a1902a209b9084d0a140c10544b0284081f08cd09b0084f08c503240949090d09b0084c084903220b160b0804880b1b0949499d4b504e595146092200c4084e0aa20a9601b9084f43cc0c070a190a140322, 0x8960b1a09380c05709d023409b4040508150a2f6cd002ab09b9084809b004050b22030c67a968d06adc6dc77614011e0a840a0600150a2a02800814091b625c6310099203280a0b0b1a01040a0b0a2f004d094f09b9023609b00a0b5ad55c5c, 0x81f88af03900a2f0a840895081f039b0815088e0a0b0014089201b00938022f094580d08194829084a1872a8b930925018e081408890b010b21030809b0084d081479af0a0f0a0a01030819098b091b008b08870489731774210b080b010103, 0x321091e0a36a055a2c109340928022f08c109930a16048508150a0609100118089900830811089608160b9397a198909aaf0c0a0c0100990b0c08490b930b8b010d09b0084d013809b08ed10993904b928a02110992082002848a260a200097, 0x23408520a3609380a190a14023408510a36084f08c3]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node124 : Bad pats ([44,66,63,53], 0x3fffffefb7dde802bb6f7fdbfffff) :=
+  bad_of_gated_check (tape := tape124) (gas := 150) #[] (by decide +kernel)
+
+def tape125 : Array ℕ := #[0x9b40d000a1d0a18038b08490819029408940849081f249b0c8b022a0847091408200004081409381fa6219f26310b08039409b4039a0a180a2a1b4c022f08c808470a27030a0a2508c80d00174f0a18039b08230b18143119441c0828ae48d5, 0x8470b8c42310a24040f0938023609b43d563e5143520a15029a0899094409250938040b0a2a0a8e0c8c0b9237d00a2703a109380394092533560b1a0b1302130a2a0a9a093805000ba10b912ed030a8344f03010938092509222bac3a330138, 0x93858d40a2a099a5a9f0b24038c0823092501b908c109b4099a53a50a2a02ab0922040608c14fb1099a50c80a240a1a03a10a2f09b909254c335563639d019a08ce09380a24039a08490b1a46d60a2a02244443022c0925040f099a0942088a, 0x82108c1019a09140b940b1a6f5371480a240a1a01220a130aab08c7084703910b890020081a0911679968cf6b330b1d0b160225099a0a1a0a15039909b40b180a2f09b905000aab0a0005000b845d9e5f51091f61b301b90853094809b40405, 0x10908090a0a0a1b0925048472a50a2a012208c7]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node125 : Bad pats ([70,48,63,53], 0x3ffffef7f9d7a802bf7edfbffffff) :=
+  bad_of_gated_check (tape := tape125) (gas := 150) #[] (by decide +kernel)
+
+def tape126 : Array ℕ := #[0x22728612ab32ca52eaf02ab0aa50089082308d30b1100550aac09b422a624b109b9029a08980a2c014208c908541e4a0b260b1801b41b261fe1039b09b4039b094218d00a360a2c00d60aac094a0318085c0aa614e8165419d525d2394739c6, 0xa0c0b080a0e02320a160c0b02323d4a3ea240ad4552622e08b2d800009d0899050308480a360a3101b4084d0c05364a38250b1f0b180102091608190a3609b432a60a2f0a2a030a08970a340925048208170b180a0b03030a2708d70aab0a34, 0x8010b830a250a1159ad5c4f09b202b40a11085009310207082052c30d000a0e021e081c0d0050310b160b0f0293089b0a1101000a1309934ba50a3200150a1109460a0c0b11494b4d2454ca030a0a2d0a28040b0a18030a0a1e42b143d50096, 0xa3271c37324752209a602100a1809ae0b16021f6bd5092b02140a06081e0a000b1f09ae0b18038e0a84031d081a65960a1066d06a316daa030a08c30a360a2703090a250a1b03180a285eaa6045093402140a180a250a280b0a000d0a040901, 0x2960a280a90092202320aae77a8092b099e022d0a2a092b0b0f022d0a2a092b0318084c0a29]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node126 : Bad pats ([48,63,53], 0x3ffffffffbdfa802bf7fdffffffff) :=
+  bad_of_gated_check (tape := tape126) (gas := 150) #[⟨_,node125⟩] (by decide +kernel)
+
+def tape127 : Array ℕ := #[0xb160a32032b0a1108890a8d0a0e021624932741294f2b450380089709140b01020c0893081309980aaa029209980381081509141ca41de020080a160198081501140895098b181c0b80192a02920a8c098b010c080f0b0113a31520222234ad, 0x190091e40310a2a0a2502a40a9800660856091e08503cce3dc30b260390099802860a180a0c3828396c42c65f1f001d0c0d0a320a1609310232085032430b1b0b1400500ab00b1608c50b080a922fcc0a180a13030f08c70a0e093104840853, 0xa1803900a160b8057a2599e0a2d029208c708c3093109180912040f0a130aaa0c840b9251a40a1b03830915039009314d1e0b1b0b14022a0a180a980915020a0c060b8b0b8348a44acc4e25039309180931454854c10190085008c30a180a04, 0x742309317641018f0815090e09980415091e6ca00a0e09b26ed50b0a009d0a8109b20a0e018f09310b980b9001b2655867220a230a1e03830a130993093162c1691178570218089008140a070a1e091e02130a1e02135b285c24038a08200b14, 0x88081f0b140a1803900aaa0b800c8203290931815283220a230a1e01310a160a8d089708230403091509987ba57e410b180b11020e09b20a2d0a28038309980a13099304810b980a33019808590a130a8772d1]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node127 : Bad pats ([68,46,63,53], 0x3fffffbf6fdfa802af73fdeffffff) :=
+  bad_of_gated_check (tape := tape127) (gas := 150) #[] (by decide +kernel)
+
+def tape128 : Array ℕ := #[0x89b020c279f29a8091e009708210a0e099c09a40298099423440922048c09a40a8c0a9e212225ad019c081e0a1f001c081b1ca9091f001d0a1f1aa81e2a020c089b0a24001d081a0a0c17290922038c0b81089d0a2414a218b02ec32f4630b2, 0x422245d002ac088e084c00c108530851001908c33c593dd00b940a0a0b8c01b409380d02081a38940236364c3f2646c661b108acd804332cd803322e70c2d802d8013043d80001a00998089d0820092203030a8c090f09a02c22001b0a9e0a0c, 0x59260aa25bc809b908c1019308250a0b05020825541f55d50a1e05020a8a081b081e09930114081d04060a82098e08254e244f1b51cb5c99023608c3084d023648d509344a41029a0a9401c7081c081a020b441d0a8e089a00c508230a2a0a8e, 0xa940a2c0a270928092502280a84094609960b160b0801966aa40a1d092202a609b4020f08440b1e67d00a2700970a0f0b860b0f654a68a26dc303090aa209b9084c0934039e0c105f520a190a14031e08440282080009820825081d0193081a, 0xd80608b008aed80571b0029a]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node128 : Bad pats ([63,53], 0x3fffffffffdfe802ff7ffffffffff) :=
+  bad_of_gated_check (tape := tape128) (gas := 150) #[⟨_,node120⟩, ⟨_,node121⟩, ⟨_,node122⟩, ⟨_,node123⟩, ⟨_,node124⟩, ⟨_,node126⟩, ⟨_,node127⟩] (by decide +kernel)
+
+def tape129 : Array ℕ := #[0x30c4372e56ca00190c000b9c0b8c0b210a330a2e04170aa709c40a2d02ac09c40aa1215f093802b20aac03870c8909c41de21ecd023209c41b4a235b02ac0a9b0a950a2d0a28093802b3085508c50aac0850032809970aa713d31641194c26a6, 0x1140b10048c08843f17405a0a290a2403940b1501c4084f0a2301c439d53b5b3c33412202040818088e08dc08d00b9c0b28032a084f0a040a880b9c33e00400098f0a330a3208d00a09085003870a090b070b0003250aa709c80a332b232d55, 0x5acc66227344014d084f0aa10c820a320a2e0a29014d089b0b9f099701c80a230a040a240a8302044e95511f0a0703250a23091c0305088608250820023208040a0449294b1f4c9b535b048208d0084f0a2301c443d50b1c45b3099e00d00a32, 0xb8a0207090d09870a040a190822001b0c826ca80c1202a10820028169a30c0b0a286a9b6f9a09a2029b0b260b1800dc08d664d70a290a240114082308d00c14001608230a3308d060410c80031c0c1408d65d1e622e005008c500dc08d459d7, 0x31809380b150b0e02b20a290a24764d09a20aa00209090908180a8208980b92]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node129 : Bad pats ([78,67,48,64,53], 0x3ef7fedbcf73b003bf37ecffbffff) :=
+  bad_of_gated_check (tape := tape129) (gas := 150) #[] (by decide +kernel)
+
+def tape130 : Array ℕ := #[0xa32084f03860c020a010997091f010b098e249f27552d2c362d0024082002a120a90b0c00200aa108dd0a070b1a084a084d03810aa10a9b1bd31f13091f0098089603870a09039f094f0c07168e179c0b130b0c02950b15131318a521b24142, 0xa2809380146084b0b1e082504070c170b130b0c0a953d250a28032839d53f4a0aa7022837c50a1e048a0814091c09970b170a9a0b1002ac08c9084909380417094d0b280b1a084b30ca32c801b908c50387098b09080996048a091c2a262c4d, 0xa95031c0b1a57ad0a330a2e019e0b1c0b155533004b0a32099e0b1c0b15040e0a040a07099700580b1a091f4e9b0b23099e509c01b9084b09974b3153475bca70c8011f09b609b20397089b091f0b8f0a370a32465247c5d800424e00250a9a, 0xa2d0a2808d40a2e0938023a085809b96dc709aa09a2029b081b0a0c09800b1c0d030aa00a9409b26aae011c081b03810a370a2409b60938090809020a09649f0b1c0b1502a108d409b60a2e09385f2365b20204084b08cc0146084b5a5a0a9b, 0x9908230a9a093809b209a609360933029b]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node130 : Bad pats ([67,48,64,53], 0x3ffffffbcf7bf003ff37edfffffff) :=
+  bad_of_gated_check (tape := tape130) (gas := 150) #[⟨_,node129⟩] (by decide +kernel)
+
+def tape131 : Array ℕ := #[0xb130a2a0108088008100b1308c4274d28a52c3204850a390a0f0aa1084a0848031a0a2a2051014908d70a8d0c890b1302810a0a0919010e09080a0a1a9f1c2f08c81ecd03810a990b990ab304890800091f0a0f085b0c0615511752234632c2, 0x1b208d7094a0b230a230a19022a3d460a2002320b1509b209aa03020a1939ca038208c80b1a014a08c80b8236e038463bb4404909330281084b0b130a93029a090e0b09030e090b09862f2c309f0a1903840a3a08200c1008c40a20091f0489, 0x652501080914099604890c060a20561e09a604890a930a2053b20b230b15029a085e094a09b600d60b05094a0a190b1e0407088409a60b074c1e4ed250d4039a0b130a2a05020b18085b0c0605030a3a0b2505030a3a43d64560475248c657d5, 0x2a50a9903050a100b030a23020a0c160c0402ac0a00088108030a100b1f619663460aab05010b0009860a040b0304850b055aa60a235d67]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node131 : Bad pats ([27,71,48,64,53], 0x3ffdfbdfe36d70035f2f6fdffffbd) :=
+  bad_of_gated_check (tape := tape131) (gas := 150) #[] (by decide +kernel)
+
+def tape132 : Array ℕ := #[0x4850b9b28212a512bd22ec6322542130223093309140a190410093322280d030a1b01330a230a19014508570b1a1e461fb405030aa70a950a230a190143099e0c100c050a090c0702950c0e0a11164f192802a50b0e0a0c0d0313b21bc82453, 0x8200a1940b10c870a11050308010a830b070aa502830a1908c93b313d910a1b01960848093304870a89005308520a0a35a736d10a233834050109aa08070aa70a230a190b0700480933009a0a832dd10a2a02ad08c90933019a089809960a83, 0x58a65ad65bcd030509140857085556b4605164460b930b8b0181088909a60a23093300c80b17038c0a05010e4dad4ed60b090219082302094aad4b974fc20a1b0a16030508200a050389462d0933029a0a2344c547b4525b021909a20b070022, 0x326094309b909330a2d0a2303000a110aa56aad014c08570a370b070b0002830d01661c68b202950a8e0a3a0857085308c90b130933023a0855010f08960aab5f580c850a2a0a1b0053085202ab0aa5090e0a8e038c]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node132 : Bad pats ([31,71,48,64,53], 0x37ffdbdfeb7f5003773f6f5ffbdff) :=
+  bad_of_gated_check (tape := tape132) (gas := 150) #[] (by decide +kernel)
+
+def tape133 : Array ℕ := #[0x580b1a09a2099a0b230b0e01b208490aac041009b6094a23b22554020409aa085909b601c60ab31f42214d0aa5281f05010a19050108960b071b320b1a02ab08d90a19010108900a010010080009b608980d01159f173218a11c252ac82b1b, 0x1b0913001b3f28081602890a2d0a040a193d9f099e404800cf0aa5001708160209090e0b0e381f0b83395b0a1902940898010f0811089633ac02a70a8d09450817081602a70a9b0a052f1f31a634c63a42422fd800001f0a14091f0a990a93, 0xa19011408190b8b0a8757ad5bb403030a0a081808170303081552a10305099a0996020a4fa2511c0b930b8300960815098a0982020b4b16081901330a0a49a24d1304050b8e02140a8846d60d0347d354a5099bd801431f023209aa09a60933, 0x816081b099e091600186e310a160a11019a091f0819010309140a0500c80b130b02081769326aa20a81019e0a19038b081964c665b10a1b02990a06081b099e091f0219099a021908175ea65fb162486c160305089a0819028808c809965a1c, 0x8e]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node133 : Bad pats ([71,48,64,53], 0x3ffffbdfeb7f70037f3f6fdffffff) :=
+  bad_of_gated_check (tape := tape133) (gas := 150) #[⟨_,node131⟩, ⟨_,node132⟩] (by decide +kernel)
+
+def tape134 : Array ℕ := #[0x1190a1528262e4f302d018e0820091f038b09380a0f24220a9a01480aa509b30a2421a6018a0820091f038b09b30a0a09481da20a9402870817081602a508140a0a0806080509b3023408570c0002340b891492164f191f1aa61f5625c63baf, 0x938031308570a2d0aa53fd342110a1b4733008009380a1f081b0109399f0b92099e00d608500aac014309b30b2a0b1504820c123454365637a209aa0a2d0a28023209aa09a609b302290853093803830a0b0108081408082b9f2cd609a6099a, 0xb2158c90a2e01b6085d0859032a09aa031a0860085454460aa5555f56d15ac804860a87081708150a1503820b1a04000a2e08140a244cd24d9f0a9a0a19503462d36da7001b0a2d019a081a46460b11019a0a1e441f0a1103150a3a08c709b7, 0x21109a301380a1b0b9304000889091f0b8104096a210a1b6c5b0a11010b099a0a190501099608500938664667b409ab010209810b0504850c090b0261210a190a8d038a08c20a050b095e310a1b0a1600140a0a099a0aa5014c]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node134 : Bad pats ([69,48,64,53], 0x3fffffbdef375003ff3def7ffffff) :=
+  bad_of_gated_check (tape := tape134) (gas := 150) #[] (by decide +kernel)
+
+def tape135 : Array ℕ := #[0xa872c232e57382701380a240a8800800938090b0909088a24ac0933099a0a1501aa0933039209380810030e090e099a088908171d961f4e2024048c084e0b170145084b000f090c088801030817098415960ab3174e185609b319c2262d3daf, 0xb9b412546d14f4f64a7019208240b090138085b0c81091f3c480a1e0aa10a95014d093803000a00000e362337560a1f09b309330404084b0a280a19009808960817314633420aad0300088f099e0a19011309960a1503020a28081309132ac2, 0x619a022a0b0708850a10099a0a1b093305030c07099e00d808d6099a52c6544857a809ab0229099e08d908640a32093802280a880a2a0b21021b099e4a284c560933022e47c801380a1b0a110017099a0a1a0b13021a089a4344453404850938, 0x73d175130c160229093301920a1a09aa019e08250a2808160a8f6c4a6dd16ee7768d0a1102950a8f672509a709a3040409aa0a110a190b1a0b13019e0913090d02ad0a810981080b0a2809330a2060220a110a1901450a1b0d030b210a115b32, 0x96081508110a810913090d009a0a1a79130c0d0c0401a2099e0910019e09920a1f04060b2101920a1a01aa719a72e0]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node135 : Bad pats ([73,48,64,53], 0x3fffbdffaf7550037f3fcff7fffff) :=
+  bad_of_gated_check (tape := tape135) (gas := 150) #[] (by decide +kernel)
+
+def tape136 : Array ℕ := #[0x9b709380181090d0a11081c0a940a09099e019608960024091f229a0a1e23c2031c0b9603210989091c0b130108081b0b070500080d08130a111ba31d281f56203201960b130294099a00d8085615b216a817c627532e48653308b7d8001145, 0x936010f08950b070a1e0024090f080f080e3da33fce099e0184089a08240b86038438560a280a1e3a420098099a0996048608000c160a340a0a090f0a94013630ca342235c640af00200a090a370a2d05010b2a085d084a085b041429e12c5a, 0xa2a0138088d0a09090f09a209360b130b230b15038a091402380c090c005232535400810894090f08870a280b130b0c00c208130936090f0996008d088108130936090f49b24c28048909360a2d01360892081344b246444fa357d70a2001a6, 0xd801029a0a8e014508c40b130b0c0007088d09360307098660d46228643209b7050109a209960b2a0b23093605010b1a0a375ad45dcf]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node136 : Bad pats ([48,64,53], 0x3fffffffef775003ff3feffffffff) :=
+  bad_of_gated_check (tape := tape136) (gas := 150) #[⟨_,node134⟩, ⟨_,node135⟩] (by decide +kernel)
+
+def tape137 : Array ℕ := #[0x1a60b070400085b093608910817274628270a202ac9021909a60048093621b20b230b150223091409b2029a0a941dda09a603180aab0b0301b608580a2a1a491bb21f54020a099209360017084815c20a2a02880b1813d2174622a5343334c7, 0xb110b03013609a63f18029409a6093609b701a6093601090824080f080e0b2a3ace3bd73dc942334c2257af7cc1d80001a609360a200b1103150849020f091f315232420a990a93013609a6090e099e0a1b0b112e4f013608230a0a091f0895, 0x5f33019e099a0215091c029b090108800a010890081a041209b309aa0a9b081b529a55a80a1f01aa091909134ea456a601aa093301850a830a3409b34b4e0a1f0a1501a609330303080f0b83020a451b0b150b0746ce47a4029f0a3809360842, 0x21a0824085d099e0404085d6e2e705c71c475ca09337ab409a7099f020a099a0a150a20019e099a01b60919081c0b0a02ad0a1f6449663200170919622609ab6748692703280a930b110b0a0a9f00250a11089d01b70a87091f5b275cc90a20, 0xd80102950a890a150a11032a09a608c60842029a0a8208960b920a1a78c604170b280a3a005a0858005b735a7467005a085808cc]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node137 : Bad pats ([48,64,53], 0x3fffffffef7f7003ff3feffffffff) :=
+  bad_of_gated_check (tape := tape137) (gas := 150) #[⟨_,node133⟩, ⟨_,node136⟩] (by decide +kernel)
+
+def tape138 : Array ℕ := #[0x311a01b908c40943091f0a800894032209b924a00c100c0702110b1509430a2a0b28019b0a1102800a0108d9091f08961e9b1fe0221900940b000a99090d021108900b281899091f019b16310300099b05020c020b23141b15251ae127a136b2, 0x41190b00091c4220023a0c060b2304060aa1023a085309213bc509483ccd3e1b4652499e61d0001f081d0921023a09080b070b00089635270b1a0b13031c08ca08c4031c0921084a0c02031c081f081c091c0b0e01c4081d09182b1c2dd32fd6, 0xb280108080d57af0a3a58d60996022a0b280a8001080b28531254ae030008860a0c0a8001830805090201800a0109974d8e4f1251265b210a1905020a110a020300091c48200b1a029509b9094500d808d444d70a110a070095081303150921, 0x84871210b150b07040709210b230a0700100a930a3a0b0509216c346e1c039b09450aad0aa7023a08c466d768cd00200a11099b64b10a230a1e03860a3a0996030560260b13091e02250a3a0b0509960b1c5e33022a0b280a3a0b960b86022a, 0xf0a0709890921089d023a0aa7]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node138 : Bad pats ([71,66,44,64,53], 0x3fffbfcef27ad003edaf7febdffff) :=
+  bad_of_gated_check (tape := tape138) (gas := 150) #[] (by decide +kernel)
+
+def tape139 : Array ℕ := #[0x2b208c909b9011f0aa70a3a085d020c099b24e50d030ab226d5084809450488089608510c0e0b280a2a0a25084805020c020b290aa50a110a990b281ccd20dd022a0b9b02a50a990b2808520a2a014a0d020a80085b14d2171b1851282144c6, 0x432f0c0f0c06011f09920aa509210207098e0b140b0d008c0a073aa90a3a0048085d0aab03890945032136510d01376138d33ca73e8f029f09b908c90503089d088209c40945091f31550a200a11005b080e0945090f081c0a9f08cb2caf32b3, 0x5cd25de360c365cd0406098e091c08210a3a0b130b05023209b9084e0c0652af0b9102b3084b0b134fc902200c040a3a0a8d005c0a320b294bc3091f023209c9084e08dd0c89491f4da1565b6a2d032109210b1a001b091309180192081141ad, 0xd80002a508c90b0c0b05011f0a0c68210b230b1c04890c04091f00cf084e0aa502b362d5641f0b8b0232084e08cf081509930c890502085102810a3a09960b29040208530b000b055aa9]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node139 : Bad pats ([71,66,44,64,53], 0x3fffbfcef27ed003efaf7febdffff) :=
+  bad_of_gated_check (tape := tape139) (gas := 150) #[⟨_,node138⟩] (by decide +kernel)
+
+def tape140 : Array ℕ := #[0x91f099702060814272f018e0821088e080d048908830c02238e0810023a08140a37084e0c0704020b81090b00141d291ea22113259f0d0201970821091f031a08c40896084e0821099200200b130083080d0c0714d2159e189f1a0228cd3b2d, 0xb0e0138084a001d08210b053ed03f9c09214132004a084605020b1a0314392f09c43a4e0938032908c5084436d00b150b0e039708c70b8f004d084a0b1a0b0c011f084408c53052325f031a08490c100821031b088709922ba12d9f339c020b, 0x488089d0a3a0aa10921031508440b0755b3094804880b155357580c0b1a02a1084400d808d4085a08580502089d0a3a094808c709214ddc4fc550d202a70c1209970c000328085d0a8109480d02091f0300442e471249215a9e68d003150820, 0x9380b2309970844040709976e4a0d0271a1731c02a70aa16b4d0a230a1e04020b230a3a0b960b86023a665600d808d20b150b0e02a709150b28634d654e09960305091e0280088601020a065e120d025f2160260a1903070844082109210b0c, 0x2a1084a0844032208d80938041709c40aa776d3784e0b150b07004a0844092102b208ca085e]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node140 : Bad pats ([67,66,44,64,53], 0x3fffffaed772d003efa77fe9fffff) :=
+  bad_of_gated_check (tape := tape140) (gas := 150) #[] (by decide +kernel)
+
+def tape141 : Array ℕ := #[0x884092129462dd2372b03150b050a140ab10a2304040ba10a1123460aa509b70046093808210a23013808d408471e46205b0a2525b300cb08c709b3011e0aa50110091e0c050a390a0f0948184919530a19031509b7082109b313ad1aaf4545, 0x85c098a0a160b05014808c80b280aa50a2501480847085c3bd23e1a4146429f09ab09a3038e08c4040d365609210a2309af022308c40b21094c00080a0c0985092108c431e733d30b13040b0a1109210b2309af031c0b052b530a23038909af, 0x614866b304890c160a0a0820091e090f02ad081504810916531a0d01084f0a0f54270a1e01b709b302320ab3084f084e0145084b0201090c08140b0e08d809514b4e4c564e5b4f2d572f08b704050a0b0996091f091302a50a230a1901480847, 0xa250c060b217146091f03210a190a0505030b216c320d016da5729a09ab09a302230b21682b05030a2308c4084a0b210b13021e082163d90a250a200138084a030e08210a1e08960b05008908210b060a110a1e050308200b215b465d9a6053, 0x4070a230a190b1a0b05021909060c1005030945]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node141 : Bad pats ([66,44,64,53], 0x3fffffeef7765003efaf7febfffff) :=
+  bad_of_gated_check (tape := tape141) (gas := 150) #[] (by decide +kernel)
+
+def tape142 : Array ℕ := #[0x23809c90a24014408d000b7085909b725d826d10b260b1800540a240c050a0f09380d0309190b21021f090d1e2f2249281a0a8601af08d001ab08531a520ab20a2e040608b70149085e085d032109490860155f16c509af17d61b1e2a464aa7, 0x389091908b7032108630a37084a094b01af08cb084a0410094c3ad33c5a3ec9405646b20b0e0286099e369c0b2301190a2309aa09a201b632b20a37048109ab09aa09a2040609ab2f3208b7040209b609aa2d47315534cd00180b180a1a099a, 0x58cf0382082008b702a556410b1803820a020820081d54c957d35a950a8601920890081a082002380aa509b708b74ea1508c5d46683301190a1904100a2909ab091949c1099e0119081b0180459f09ab0938021a0919081c0a800b9e43d30b86, 0x20b099a020109a2084a023a09050a2e08c90c0e6dca0b236f1e0b1570437a2d031808b702a50a9f6741009b0821081b00210820008c08880b9663280a86641f65c9099e0b1c0b15019e5e1c02b108c709380c0c0c0300cb08c7084f084a0138, 0x2a50a9f0b15004d084900c7824e0b1303050b830087081508130a077fab09a280d283310a230927092402800897081a099209a30b93011f099209a3001f081e091f03150b0508210c89741f0aa575c7771b]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node142 : Bad pats ([72,44,64,53], 0x3ffeff7eef7eb003efbf3fefeffff) :=
+  bad_of_gated_check (tape := tape142) (gas := 150) #[] (by decide +kernel)
+
+def tape143 : Array ℕ := #[0x402080009c4080f09380b150b0700870c0b080924cd09a2281f09a3092402b20a2e098009190a2400d008540a250b2801af09441c521e510b0020a702b209c4093809a20a2504020b07093816c30b1c032609440a200a1b14461933291e4dce, 0xa2500dd0854085c0b263fd2409f099e099a41a70a8c02150924030a0a250b15030e08130a11089b0a1e030e09c40a25093835ad385b39b3099e010108160a0a09240a150207090709242f1a31a6001e081c0a200b0e09242cae3a920387098f, 0x3260a1b0b18011f080f0c86093856ad58465fd201a3092402390a24093809a20a1052275334645a0a98021e0b15089d0a0a099e0b0e0486090b089d0a0a08204ac60912038208210a2502a50a2d0c17099a0b1845d247150924010a09190328, 0x9b6021009210b180281084609500a3a6e2d0a370a3201c9094408460ab209a20193081f0307672768326ac16fd20aa40300091c0124633109a2012461ae0a250a20014a091f0b0a084604140b0508840c880c865dd00a1b04880c865a2009a6, 0x31c092409aa0119092408460a3a0b0a023a71ad7432]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node143 : Bad pats ([69,44,64,53], 0x3ffffbfcff2fb003efbc7fef7ffff) :=
+  bad_of_gated_check (tape := tape143) (gas := 150) #[] (by decide +kernel)
+
+def tape144 : Array ℕ := #[0x14d085c09c4284a2b5708b705020a1e09c4093805020b1a05020c150a0c08d20c022228235009a20b0e25432edb02a508200a3809b703261adf08b70a200a1b01120a3809b708c308b7041708cb090f081c0a3415c90a8c182f1cc6334e4933, 0x5b0b030aa40a920a1b404608b700200a1b0aa4000f0a9309a60845048608200a1b39463b5a0a98030709a636243cc14352093602a50a9f08b7040b0a250a2031c90b1c0b15022d0c03099e09380b0e0a340a25022d0c03099e0b070c020938, 0x15108c509c4031a0c820c020c0c56d0582259d60b150b0e008b08890b050a290a24028c0b054fa90d02040b0a2e08530a294dc4524d5dc30930092a01000885089308120a000a9209a60b000298451c0a250a2000810a930a1b0a8609a60b15, 0x119099a0b0e028c0947664609ab09a3021a0a8c019a0919038b0b15040308b760db61a262a463af048c09a204820b1a08d25ca20c0c09380210091c09a2]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node144 : Bad pats ([44,64,53], 0x3ffffffeff6db003efbf7feffffff) :=
+  bad_of_gated_check (tape := tape144) (gas := 150) #[] (by decide +kernel)
+
+def tape145 : Array ℕ := #[0x299e04880c0e030c0a1e0a190b0026a027982bd40a2a0307090f0a2d0329094a0b0708d9093821550b1502980994090f008d08851c1e0a370a2d04050b130994010f1828093819d502090c0c0b05040c0a98090c14a8165a1da322d731c943a5, 0xa2d0a1e010c0888081503280a193d980c0e3f500b0005030994084809140ba13ac60a2a03210aab09b9030309830b280b0735d53757415408b703130a090a980b0e093600db09450a3709b70b130b0c2f420292089609940912048809940a09, 0x5aa85d95022809380a920a8001810889088555240a0903210a920b13032a0a3751590a8052a2022d093802a6085a4dc10a9201384bc20a80031b0a320b130b05050009b248444a244e89572367490a250a20040e084809360a2a0b15031f0943, 0x2a50a9f0845084208b7032808830b000a9f0a8d032109b969ab0b156c470306080d0b130a370a320b0e0b0001b209380c0b004a62410b1501b2089d09380a3260d4638e0500093809360b05082308210382089b02920a09599f]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node145 : Bad pats ([51,46,64,53], 0x3fffffffbd6f7002c693fefffffff) :=
+  bad_of_gated_check (tape := tape145) (gas := 150) #[] (by decide +kernel)
+
+def tape146 : Array ℕ := #[0xc1529c92c1a325c3446048009b20a88040e093808b709b2241a0aa6028609900890002208200a111f98093809b60209093808b7005508491b4708901cc221320c88030c082208880a80098401850c020b000820082215180aa617d825d44848, 0x9b7048908ca04890a2d0c153ed60d010a093fd345490b2a028208ca03110890394a0b940b8c0990029436243a700b1c02a008540b940b8c02090b14089408920138084a00220820090e2f5330180a8e04150b060a11084908b702020990081c, 0xa9f0a09029a09900842090f572259235b5709365d4101b70aa50089088d0c8508d10b9951cf0a3401b70a99018308230897008d0a814ba34d4f4e6152c58b2f02a50a9f08b702a50a9346c1004a0938021109820a040c140b13084a0c154456, 0x38a0b8202196f2270247d5408b704040815098308cb08960b150823093603820a8c0c040b070a1e08230a19019409120823654604850819088d0c890b990895001a09126019632868d46cc702a00b0708c309b7029f0a0908220b07031b08db, 0xc030190080e09380c150a1e0a090a2d01388446878c0936029a098c0898028080a00a280a1e029a7ec68242022809380a920a8600d50881085f09890a9a09387b420823091204040b820b070a1e0a19082304820a940a2d0aa00b0773a87698, 0xd80001b70a2d093801b789d00c0c]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node146 : Bad pats ([51,46,64,53], 0x3fffffffbd7f7002ce93fefffffff) :=
+  bad_of_gated_check (tape := tape146) (gas := 150) #[⟨_,node145⟩] (by decide +kernel)
+
+def tape147 : Array ℕ := #[0x28a02a240233084f0b1c0c820b9a00d808d603290a3201500ab30b0022d523e024a2271e09302cc400490b1c0b09031b1cc1094601300b091b5b0c100c070102081408890911023a093016940a0c00890b81031c13c114a018cf09971e2858c3, 0xb1541c80997028e0a820407088308d10b0209903d8e09113e9f02020813081102800a090894381b090d02800994032a0b06088934a40a09019408980883321d35960282089809942f9339a3462101970b020c8208960a8c019308160a0c0392, 0xb020b000898081c082003870b8109970292090608140b020b81541f55a200160b8102920a3a0903081408164fa9089803910b890a8809940503084f0a9a4a144c1e50a30b1a0b130281082209940a82028c0a09082244200b0200c7090d0849, 0x4890a9f0b02098409110b280a8d099b04020911093002a508810b830b2808226ac8099003060a090a11091167246c1f0b1302aa0aa4014308480a2509b20a200107081c09b6099009b2604d62d4093063c4038b0a920a11099b5ba870470307, 0x8b702920a800a3287c50b920b8a01b2090c081284a288a089c409a3028d0b05032a08b780440a250a1b030c08b77db4093002b309b6093808b77bc801b20a1b09900b13028d099477210a11028d0b13022509b208117444752079458123914f, 0x93008b700db08460a3a0a3709b600130b1509389cda9f450b130b05013008b70011081f09b609b2032a094308460d000a2096569845994409af09a7021608b70a11001f8fb40b1a0b13020708b70b0c0930030d08b78bc88dd900200a160130, 0x28e085d0c14]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node147 : Bad pats ([45,46,64,53], 0x3fffffff3f7ff00346b5febffffff) :=
+  bad_of_gated_check (tape := tape147) (gas := 150) #[] (by decide +kernel)
+
+def tape148 : Array ℕ := #[0x2b482cb23454099403840a1e0a140b0000510a25099b0aa724460b94030d09970022090d00220b1001c608221e481f13201b0b280022081108100a0a040408220aab19191b2f21542620010e099b080c0a2a0b280a1e0a1415a43c474d2154c2, 0x41550aa7005f09940b173f45462349c303000a1e0a94031508cc08223ab20b940b8c028e08230a8203840a00362637dc021e091108220a0f0a82019708d909430c05090203220c042f0e0a0031a603100a200a16020c099b0058094a0aa52a1b, 0xc1559af0b826120685a09270924032a0c1708ce0aa609a70b130b0c02a608b70aa10a280b170a19512f092103170a1409b30a8d0b1009a708b7028e08230a820022099748200a14048b084b0c10090d0a2801c608440b2543d009b903060a81, 0x3070a160a2301a308550a0c0219081509036d2f0c8c0c826ed0701474228c4e01140c820b020a200a940a82040e0a340a200c030b820c820a9a651402a60938080e0a090b130b0c029f080d090d0993000d08100c155c235e21031509b30a19, 0x8ac10b920b8a020a09b309a30a880a82022d08500a160a9a03250c8c0c828250841402040803081608130b0c0c82030c09a30a147cb47fa60b9a023909b30a2801510a34085009b30a1b784179e2869201a3091400c70812080e732f0a880a82, 0x23a09b309a701c708cb0a3a085f9ec30c8c0c820a2d0aaa02949a480b9a02aa0a280a1b0a16048c0aaa0a280a1404800aaa94c196af98e2a01202aa0a2301b308d80c880c8c0c820aaa90d091a209b2023909b30a2802340951085009b30a1b, 0x66081208630a250a200b280a280aaa0b920b8a]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node148 : Bad pats ([46,64,53], 0x3fffffffbf7ff0036cb7fefffffff) :=
+  bad_of_gated_check (tape := tape148) (gas := 150) #[] (by decide +kernel)
+
+def tape149 : Array ℕ := #[0x8b709190824032108480b1326ab0a250a2005030b210b130209082622590a2a09b705030b0d0b06089c0b0708260b210b1300261bd91fd708b7031508480b280a2a19c723a5002608210313084a0b870b15091f15a9004a0b1312ab16c329c2, 0xb210b13050009b63f5941490a250a200a920486081f0c0b0990094a08460a200a160300091c37a00307082601900904098335290b0308b70010080e0b07008f080e0a09309c0a2a050109b60c090c002e57324936253b9e4254030d08890b05, 0x450c89581c0b2a010708c208420a20004508425452565b09360300091c098c000f09110884080308000824091f030308034cab0a1b501c0a25004a08460b1c01110895080308000823081f0b05481c49c351c55a9e65da0328084204000824, 0xa1b0b230b1571c7093603230a2008c6011f0b030138084600536a470a3a6b2d09946c526dc50aa40a9e0384080a0b0e09360a250a2004030b0e0a3a08c2084a031a0b1c0b15020c09860c035e9c6050093662c30a98021b09190c8908b70b15, 0x200a1b084508b700810a930a20]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node149 : Bad pats ([51,50,64,53], 0x3ffffffff96ff002c2bafffffffff) :=
+  bad_of_gated_check (tape := tape149) (gas := 150) #[] (by decide +kernel)
+
+def tape150 : Array ℕ := #[0x81902800b1a27a00b0502860b840a0204850a06242025a12a26038408540b0602ad09b620140a0601b909430aad08041e1f0b1a0b130009080601b90b1b198f0d010c070b060a061aa1031809100a06018c09880d01141f15d2219e33313bc7, 0x980817039c3f1e405241b1432949c5585302ad0a3709b60b070b0002a50a990503089a081c0381088c08190b0536a6382b391501020a110a100819089a02800b8c0b8601b908060a37030609c90a3a2dc10b262f5630a00487098508570a80, 0x31a09940a24094b08600a1f0b0e0aab01850aad0b0c000908060a8652d20a15543108b702240c07001008140a100b060c874e460b214f490d03028d0a870919014308d908d500ca085546e70d02482b0a1f0a1a0286089a09190019089a0b13, 0x6308620b860b2108b701b60938031c081c0862085d084a0a376256634509af09ab00b70938005008b70a2e0a2401b65a4c5c4d5d4f]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node150 : Bad pats ([72,39,50,64,53], 0x3fdffb5feb7e300360bebedffbfbf) :=
+  bad_of_gated_check (tape := tape150) (gas := 150) #[] (by decide +kernel)
+
+def tape151 : Array ℕ := #[0x8960a1a0a15030e0a1002b10a0409b925950b1326c72a2b02800a090b0c0b05089a00090b0c0b0d0994000708870b070b001d940a0700b7085e085b0b1c0b0c0b050224179309941a9b030708200b1b00490a24145a15b41f9e221f2d4843ad, 0x42d20aa40a9e0a150a10029e0a1b0a1604150b1a0a9e088d09973c43091f01ab08480b17013809b60819099b00c23543374f38b40a9202870a3a0a1b0a16008d098f30c3091f329e3da9093003130913081f0a1a089a091c01010809081a0994, 0x113098108460a160aa409070a1f0a1501b609190c090a99023708530a100989522b0b070b00008f088700070a0b08480c874d930a3a4eb15447038408c20aa40a200c070a8749a9581e092ad80045480924023a08c60414081f089308530a3a, 0xa100216089c05000b02090a090403020a256c936ea06f9a0a980a9203090a200a1603280a1a0a0b010d0b2103020a250a1f6567661a67a0038609b6021a089a614662340a9e021a08c20b280a250a2001ab0b070a87089a0a1a5c345eda6918, 0x1c090709af09ab0a1a031a08180c070a990302081c081872ab74c7]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node151 : Bad pats ([50,64,53], 0x3ffffffffb7fb00362befffffffff) :=
+  bad_of_gated_check (tape := tape151) (gas := 150) #[⟨_,node150⟩] (by decide +kernel)
+
+def tape152 : Array ℕ := #[0x8c903940b9e27d70b1509b92947029f081b031b08c50a0c239f24c103150b840b960a38093809b60238085408501e46030d09b7008e080e0a11050019a01b530b940402094b09b708cb05030a04085715d317cc1c5621492be2452863c86433, 0xb870a090d010b2a415c425643490b1c0138084a0501090e094b0a380b263b530b9c3c460c88029f08b70b1c039608900b8e355409b60314081b09b7093800d608ca085600b70a110a382f5c30d332c636ec03260b940b0e093808b7031f0854, 0x3060826085b085a09430c0d008a08d80860085b032808dc5361554c01b9094308b7040b09b705034ed34fc951670c88000b091208260b0608b70c0401b908b70d00494c4c6258545ed6089c039e09430a3a08b7039e093800dc0b940407085d, 0x2b3094d08dc084b094a031c085b6dd370480c07729e739404890aa70aa50a200822002667a56a1c759f7f478121a9c2d800031a0aa5091908220b0e01190826093861230b8e031a0aa5091908220b0e0026091c0b0c0b0608b7011c59c55c23, 0x8b709ab018509190d0308b701890919854587530b2188a0909aa0a7029909ab09a708b7009c0a0b0b840b280a02099b091f0197082708260328098802ad0b930503785379147a277ba5038c0a02089c098c0502089c039c08480b280a2a0a1b, 0xa99084609af08b70309081909940b170a200237084b08540b840aad9bc8089a0194084e0a3a0b070b00004b084903140a3a94cd95b1981e9e470b1a0b0c021609160a020994040708ca0c8809c60d010b070b00048209ab8b318e94089c0189, 0xd8010391082008980309081d08200146091f090c0b91a6a3a81c0b1a09af0b1301a7a25909210381]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node152 : Bad pats ([50,64,53], 0x3ffffffffb7ff003e2befffffffff) :=
+  bad_of_gated_check (tape := tape152) (gas := 150) #[⟨_,node149⟩, ⟨_,node151⟩] (by decide +kernel)
+
+def tape153 : Array ℕ := #[0x992010c27a229af0a942bd601970b02098e0b280b1a03140a8809960898004b0a3220a222af254a3143039109130b1e0b050aa60a9a02a509450b050a941ad60b13030d084e084b0996004b0a940a820b100b020a3215a217af1dc739ad59c2, 0xb09082804880a803f2f0b1e0996020b08283c9e4127432047c604040996004e084b0ab30b170145084b03290b090ab335ce36d6389608b709b309af040b09c408c4084f0310099603872e1e2f540a9a0938030d098e0b8f0b0c0314084a0b0d, 0x82808260a230a1e032109a7030209100a950a28552f092105030b05082809ab028e084b0a06098e03094e160a28502f522708b7030609b9092108250aa74b435623029a0a8809ab0828082602880921452b089e019f082208b70921031a08b7, 0xa880a8c0b0c030e6ea10c170938005308b70a240a1a05030a320a2e0b2a0a8c6aa96cc4028e0a8808170a1a0b0c008f0a0b64af0c1608b703150ab309b90481098709830a1a02b309975ea960e16243675670cf7dce7ea2842d029a0a8809ab, 0x9a6023909af0a2e0a2387ce92a4a145013008b70224091183450a1a09af013080c709a2099a01a60930000f088f0a1009ab08b702b30a1a099702320a880a1079af7b430b100b09018f0a1a01110b810224090e08077421751f09ab761e0486, 0x9aa0a240a1502a409aa09a69ec70a230a19039a08c80305082808539ad20aac0aa6023909af97d00a240a1a0286099a95299bc6092402aa0a23022909a30397089104870a838f9f90ab0d0102290827022909b300468b5b8c2b8d5991c109aa, 0x21508b709a2099a039208b70a19050109aa0b060828a79e0a2802860a1a08b7a4c6a926092a0927023909af]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node153 : Bad pats ([52,64,53], 0x3ffffffffe7ff0032aaffffffffff) :=
+  bad_of_gated_check (tape := tape153) (gas := 150) #[] (by decide +kernel)
+
+def tape154 : Array ℕ := #[0xb1328c30a1903130a25031309af25cd269e0a23018509b308c70318085021cf0a340a2503150a2909b7031c0a291dcf1f52234101a2091c0387098303000a07191f0c031a221b2d29ce3c243cc5d80314c8d802d8011343d800124713c23d2c, 0x465a4fa85ed47cc37d337eaed805d80400c708460c170c0e0ab203830846085405010a0209a3385b39e80a320aaa09aa09a602aa0a2309b2030009930c150b820a250a20028308930b15001708160b832d950a192f2f325a33ae01af0a250502, 0xa940a820914010d0812082256a059a10500081f0b140a380a320b8a0b2254445c2d040b0a940b0d01380a8c09b24e140b920b8a028009b20b060307091209890938089749c54b1a020c09140c02020c0a8c0c8844940b8200990c070b26421a, 0x74a878ce0b1c0b15040b0a0f084d084a0936039c0b94082308226bc20b0e00c50b13082308220402084d084a0936020908c50b990c0700c508970a0962e164ce66a868956e5b030c082008230b070a19029409380b1a08200b1300d108d90844, 0xd80a08aad8097fb2d808d8077e2dd806038f0a19082008230936002008227a420219082301940b0c0021082076c477ad00990897081b0a040382090e0b0d08c57293]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node154 : Bad pats ([64,53], 0x3fffffffff7ff003efbffffffffff) :=
+  bad_of_gated_check (tape := tape154) (gas := 150) #[⟨_,node139⟩, ⟨_,node140⟩, ⟨_,node141⟩, ⟨_,node142⟩, ⟨_,node143⟩, ⟨_,node144⟩, ⟨_,node146⟩, ⟨_,node147⟩, ⟨_,node148⟩, ⟨_,node152⟩, ⟨_,node153⟩] (by decide +kernel)
+
+def tape155 : Array ℕ := #[0x820292b02370a220b800b1801b60845001f091c244a0aa2011c081e22462518272a309d001d081f0a16011c081f1daa0b140b0d00930a1b0c0c09361b4c1f2c3c4445b2d8051740d804163e54b3d803d802142c14c2d80112b0573dd800113c, 0x9a002160a9e0a92001e3e2a3fac08b4021809980a13031b0a1d031f0a2008c50b220b1b013608cf084b0a9c0a8a004e0aae0b860c8634a8375a39ca3a98031808bf0a220b1b0b1403110a370a220318084508bf2cd409982e1b0826010f0998, 0x58b45a3ed808d807d806563456bf048508c508bf08450112081e099808c552c60a220a180b1b0b1401980a180a1301980a2802b408c508bf08450b920b8a0a224bd04c9d4e1b08b008ae01ac0a2f0b1b0a1d0a13029e0a11029e0a2742434322, 0xd817d816d815654365b00836d814d81362c0d812d811d81060c7d80f5fae6146d80ed80d5dc0d80c5cb15e4261b4633fd80bd80a59a8d809]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node155 : Bad pats ([53], 0x3fffffffffffff03fffffffffffff) :=
+  bad_of_gated_check (tape := tape155) (gas := 150) #[⟨_,node43⟩, ⟨_,node53⟩, ⟨_,node57⟩, ⟨_,node61⟩, ⟨_,node62⟩, ⟨_,node63⟩, ⟨_,node64⟩, ⟨_,node65⟩, ⟨_,node67⟩, ⟨_,node74⟩, ⟨_,node83⟩, ⟨_,node98⟩, ⟨_,node99⟩, ⟨_,node100⟩, ⟨_,node102⟩, ⟨_,node103⟩, ⟨_,node104⟩, ⟨_,node106⟩, ⟨_,node110⟩, ⟨_,node119⟩, ⟨_,node128⟩, ⟨_,node130⟩, ⟨_,node137⟩, ⟨_,node154⟩] (by decide +kernel)
+
+def tape156 : Array ℕ := #[0x160b170b1001af083f0d002697280e0c88003f0b8c0b84010608180d00221423a60aae2c5000cb081808120b84014b084b09ac1c9c09af038c09ac039f0b910a2d0b2a0939192c1a531ed8023008bf09af00ce08540b2a13d30939154c31ca, 0x414745ce0a2d02ad093908cb09af08bf02ad08cf0a0109af000f0b810a013a573c4d3ed003910aa30b89050009410c870aa335c9374b471d60a70232084f084e01af08cc01170b260c862f5c305509b000bf083f01af2b490c0e0b2a08920982, 0x589e0a070413098108bf0a01083f038a08610b25098154c957165c17091a03810a850890084d0818028509af0a02098a010b084d4c164e1c099101af08100a0749a150ac01b408c0084a031e094102a3080d09b444d60c8509af0841038209ac, 0x74d77b490b120b0b029b0a9504870b1c09ac01c20a3b094f085804880b1c69de6bcc083f03920b8a0405088c081600cd0909081d649c662a67486d4b6e350091084e081701af098108bf5f1f0b100911039208c0084e09af0a010b8208180414, 0x32a08bf0843083f05030a950aa708bf7dc802a70b23098208920a070a9b00110907093909af0818091a782d0307091a0a9504860b230982081208117321]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node156 : Bad pats ([43,40,62,61,54], 0x3ffffffe97fa568673fdef8f3ffff) :=
+  bad_of_gated_check (tape := tape156) (gas := 150) #[] (by decide +kernel)
+
+def tape157 : Array ℕ := #[0x2c480aa7022d09ac0939083f008908080a01082a0b012548275d2d4f0a9b0042083f0403080c08290c131fc80b26030108291ca609a720d1031f083f082904880b1f0b1118aa0a8904880b110829083f0b89003f082a13a9160f1a4b2f3561a3, 0x2214042441c471b04010b090b0203040b8a031d08080b043bc209a7032739473cc80a06031f083f0939080c08900b02022608100b0109a7040c32473448370b3e2150b1022d09ac093909a701ac0842040c0a2d09c10850040c0b840c032a55, 0xb04002a080c08900413080b082a561657ca0b2a0c0159dd5bcf5d2108a704150a060a950a210a890401080709070a08000d08874c1c0a830a01030b0a0849a94e45091200d10aaf0a1c09a70a060a12022d09ac09a701ac0b9242cf0b1f0b18, 0x82c3931b040109a308a701170a120182091a09a305000c066b4b6c976dad0b1c0b15029508290844093909a308a7679c0212091108a7642a6f1f0320090f0b040050083f082a604a0a1c0a12031f0a2609a7002a0aa70a260c03003f080c080f, 0x9ac013987cc8a260b0e02ae091785aa8bca90ad099f021c0a2d09ac091a04150aa10a1c0a0d022d09ac09c17ea1809d05020952088c08920a1c0a0d001d791c09ac7c3208a7018a0a0d09ac091701b40b020ab3084f09390b8f0b0e74a676ad, 0x9390b2402a309b80a2d9f4ea0a6a1900c01022b0b080a2d0b840a0702a30a9d03080c85985399349b8aa364a821ab31099b0993002a0b200b0e0b0008a30406080208000a030b820b0e020d8daa0b270b20038c0982091a004f084b0c860aae, 0x315089f0b1f08a7029b0a95023709acaa51089b01b808460b9f09460a2d02060b0fa5df0c130c0a030a08840904030a0986023b]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node157 : Bad pats ([40,62,61,54], 0x3ffffffebffaf6077377ffbf3ffff) :=
+  bad_of_gated_check (tape := tape157) (gas := 150) #[] (by decide +kernel)
+
+def tape158 : Array ℕ := #[0x2b4b098a2d42091a32b00041083f03840817081002ae08c2231424c90b8a0b820041083f0c860b92200a08290042083f0a010b110b0a003f0c860b1d1ad009ab1d310310083f09ac050308150a011648081004870b830b11139517aa25b561a7, 0xb020a2d01ab3f5040ce45234731032a083f0a2d08900b160b0f022d080b09ab399d0a2601ab0b0f020208c00939364737493cac48210300083f08c2098603240aae083f08c0308e0b8a0b8204850a060b1e09ab00800a0608ca08c402352950, 0x91a5a2d5f170a2101b008c000520b92554c0c0f0c06000f0a0200c009c20b82088f519652d7082b0a1201820b07091a0829039208c009390b244bac4d975649002b0829022d083f0b03091a009008100b03098a031d08440a0643160a260206, 0x4a0a950a0d098f0b150b0e003f082a0b010aa708c70a260a12002a69b56d237029038c081a0a1c0b150b0e004c09ac08150917652a67ad923b031109110b0a082b0a120206091a000a083f09000880088a0b035e20082904870b000a010982, 0xb8a08290403098308150a2d872a88c88aa108a50289098f082b082902210987090c0b0f812c01b009ac08c0010c0b84020d09c20986088a02890939083f090008127a0e7c247d5002a70aa1093900110851090c083f0b1274cb764c7eb28325, 0xd80004030829083f04030829089f90c90a950a8f04130a060829083f089f8dcb002908440939083f0392]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node158 : Bad pats ([40,62,61,54], 0x3ffffffebffaf687737fffbf3ffff) :=
+  bad_of_gated_check (tape := tape158) (gas := 150) #[⟨_,node157⟩] (by decide +kernel)
+
+def tape159 : Array ℕ := #[0xb0e0b000315084a09390a1c040d090a08c00b192530270e2a1b2b472cc103040984089a0380083f0c0b0b2003a0083f1d4a1f240a1c0a12003f09ab0301089a088c098a09100041083f0a26089c05010a260b0214a01696194f1a2120a33b29, 0x226083f0a280a23022109b80b903e4b40275a2c0315083f03150aad3a4909ab0a1e031e081a0a2b099b0b070b00021c089c0a17001c099f0b153349009a081c0302099f30203130348e37cb0a14022b09a3099f022b099b02350848081e0a1c, 0x9400842083f01120b1256c20a210a1c082104130a26091308440182090b0983091351cd0b0f0a1e0b0802230b870307084403040d034bcd4cd74d9d53a1009708160b08010c09130b980a2b0486088c09870a0f0a0a0b804558471d48a658b3, 0x88e088c03800a28090f6f1c70ce73a3004408420a8f09396c417ba608280223089b099b099705000a2308c20a1909a3669f08a3082500a762a50310089809ab083f0a1e0a1902140991031e0b0e091a5d995ecb61a768b0030f08a708a50486, 0x8410a060a19091a018a0884020108410844089e03020a060808832085160a260a21009e0a280041083f7ed07fce8623082401ab0a1e0a1903190a2b09a3098b028b083f78330a23030809a3084176507a1e022808c0083f0041724009390012, 0x223]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node159 : Bad pats ([52,62,61,54], 0x3fffffffffeaf685b12ffffffffff) :=
+  bad_of_gated_check (tape := tape159) (gas := 150) #[] (by decide +kernel)
+
+def tape160 : Array ℕ := #[0xa1c01100898084927b0031c084a25c929ad2f470217091708a00202091c21a60990004c0a170a1209190b000c0f0144094104860b9a1bd01cce1fa0082b040e091d0b0e0b070303091c16cd01440b03040e0a14141f091d151c18b0234b3527, 0xaa10226082b3fc540a909a70319082408a50a2b3d47021c08a7082b0217091908560b190a2b392d3acb41a3002b082a0323091d0b1c005908c232cd08420a1e343009ab022b0a23022b082b0393091d091900492bb12d302e41031c08490a2b, 0x5ac90a9d0488089a0a120b000212552a57295dad09a3031708480a26082203190b9b0a850a230a1e050008480a2b4e4150a608a3021209940b0b022b082b49a04b29030b08220a26030e0994091a0939084a464947ad52c7611f00a708270119, 0x11c08a301140b000994004a0a170a12038464a66620091c67ad099f099b0312082a0b000212082b5faa08a7021c08d30853089a08210a1700cd084f0327084c59d7]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node160 : Bad pats ([64,62,61,54], 0x3fffffffffba3606726ffffffffff) :=
+  bad_of_gated_check (tape := tape160) (gas := 150) #[] (by decide +kernel)
+
+def tape161 : Array ℕ := #[0xb0f08a708a5030108990a2b0a2103a024d326b32918032a09c208ce0a2108a7048a08ce0b9a202b0a30039208d808ce1dc922c82ccb0402091208200221192a0b980b90013909c2083f013908a708a305020939142b15c917581ab23a9c602c, 0x3980a190a140115081e08170b1c08963eb24010492b02260b190a02083f03920b260a2b0a1e38c808a503810a9b0a02098d082005020a910a850a0233210a19038009af0b180a95302335ab0a28009f081e03242ba50a140b980b900054083f, 0x8a359105b26091c032b0a0f0a1c030f08a754a60a28021c08940b0f031c0a1c511652ad0380083f0a1c048809a3099b031c09394c3b4dc94f32562503900a19081e0a0a081803900b0a022308da08090b1c45c9469e0b80039a0b8a42480a8a, 0xa12030a0826083f6fb570b273608310002a0827009b091c0c8a6b2a6c1800d408d208540c88082a0a84083f0b1c040b0b1e0a30083f013962c964cd68d086a4031c0a1c0a12018008920b0101805d325ea10c88039209800b800a8a031c0a0f, 0x95cb09a0099c000a088a0a070b000a8a0b900b88030a088f0911082a083f0a230a1e0214082b091a0c020500085308ce08270b1c0105083f7b2a7da609410304082b78c77fcb0315082602120c0275aa76b20b98030b082a083f0a230a1e031c, 0x38208bf09a308ce09170a1e0109080d0a890827082400a00a890a3009af992b9ba30a280230091d08a00d020389091593a308280230091d0503099f0c050d0090b508ce09c202300858091d031f099f081e0a148bb58d5691aa]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node161 : Bad pats ([76,62,61,54], 0x3fffbf3ffff8c686e3efeffffffff) :=
+  bad_of_gated_check (tape := tape161) (gas := 150) #[] (by decide +kernel)
+
+def tape162 : Array ℕ := #[0xb930b8b098501390b262695291609ab03240844031109c70939234a0c86244308a7031108c00b2408440842039209c20c801d481fb32ac10397093908c008440842013908a708a30297080f0c040b0408200939162b08c017c91a32372c59d8, 0x430842005b085a0b1d050108c009443de30c0d3f4909ab0303091d3a430a1e40274ab0048608c008a302910a8b35ab0a230a1e01af0b8008a500c0083f039a0b9230c831b30a280501084608a70b80083f2e5a3323013908420b0f0311088d, 0x8a00a1e028908670a060a830882080d09b70827082401af52ab57230a28020509b7089e0824030409b70a054ea609ab082850c109a402a7084409a308a70822011a0a1400c50844084309110a9b08200302088008430c040b0444214732482b, 0x81e0b1170ab71c5733209b409b003980a140b900a2609a8031108640a2308440a1e029d0b180502094166d767cb083f03190d020b25082503910a190a1462270a3503910b170a190a14031208255db25fce64476a306cd40aa2050209af09a3, 0x2350a3b0a0109910b910b81031e0a3a0c0f0c067ed108200a14023a08d10909098a0914099f08a7089f02a30a9d0235083f763b77277b190a1e01820c86083f00a708a30312]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node162 : Bad pats ([28,62,61,54], 0x3fffebffeefae686f1cfbfffffffb) :=
+  bad_of_gated_check (tape := tape162) (gas := 150) #[] (by decide +kernel)
+
+def tape163 : Array ℕ := #[0x29a90a352ac72c9e2f5431b001a308460a1e032423c103970939084408420315081e090c01a3082109391f1520c922b209b40316091c08940a260a1c0044082008a30c14083f023516c71930003f0a35081808200a190a14152b1bd4252c3c10, 0x3270846405541c544954c3058ac0a90019f0827003f0b1c0b04031c0939083f0a1403910843083f0b1c01390a3a35cd379e39b53b2b09a809a4020f0916089a0b8c09b40214083f091a098a0898002509170914083f0319091704020b0b0b00, 0x81a091c0a120b150139564d09b00a1c02010a0f08180283081f0a230b0a0b9009b0028f081f0a234fd8529e0b80542b01b40939091c0b0e029d084401910818091c494d083f023546c74a540b00031c0939083f023509394347004609b40a23, 0xa19085508d60b1e70c773d4089a01910825091a01196b350a190a1401170825091c01020b070c0267a569196ca4030409b4082008220b8c031c099f0304612b09b46224002508220c14091a083f040b08250b250a355cc75f54649e75b00480, 0x3040880091a031e083f0a1401080b007d1e7eb5039f0a9b083f0b04032a794a7b230c88082a09a809a4032409b408220b8c014109190a3208220c14083f0022]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node163 : Bad pats ([82,62,61,54], 0x3bf3fffffeeae686f3afbebffffff) :=
+  bad_of_gated_check (tape := tape163) (gas := 150) #[] (by decide +kernel)
+
+def tape164 : Array ℕ := #[0x9ab0b0104060849004f264e27470d0208280b070308084908120a0a0b8403080a2b2094233128a62c64099c0319082b0a30084c0849048608280a261acf08ca01400a3008490a261854002b09400a1e0850014413d515ce0aa81d1c30c83e22, 0xd8014052d8003f1c01390a3a0aa80139083f3cde0b070b00002808260219091d091a020a0886091400160a070b1c0b25083f361437b5392b3a1509a809a4039c0b080b940a2b0a1c031d082b2e490aa80303082808260a170212082b2a49004f, 0x588a0b9a09c201ab0a230b8a56e25ac86354683001a3093908c001ab0a2301ab50c151c80a1c031d091c0844084208c0021e09ab09a3021e091c4abb4c484eb0041308200a230a1401af08490b800a9b4623003f08c043b2482b532c0a9c0a96, 0x240808080708220a32091c031d08286ba50a1c0b8c09a4099c040a0b1c021e083f081e081c675b0984089a0b94040a08200984091d091a00210b1d08440b820503080809190a3208225e9a60a008420214084909440c0a0184]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node164 : Bad pats ([62,61,54], 0x3ffffffffefae686f3effffffffff) :=
+  bad_of_gated_check (tape := tape164) (gas := 150) #[⟨_,node162⟩, ⟨_,node163⟩] (by decide +kernel)
+
+def tape165 : Array ℕ := #[0x89c0b1d08c528cc2adf2ca32fc33921001c0b00089a091d019f090a0993040209a30b00209f08220316098a099b1e25031008130b020a9d09ab03100c1419c70c02011008910b0209b80a9103820b070910151717941c2722202430572d57b4, 0x41290a0d010d0a3b09ab0c0d0c04001c0b073c963f17435b46a74c4903800b0008bf083f0843030f083f0896089c040a0904083f09b7031d0b8732df34a036ca09a703070a970a9100c508442e41041309100b970b8f013908150b090844032a, 0xa740d80003810808082101b8085e083f55a70c010b82098a02320b00098109010821019b0b814fa55212089a0a1c0a1704160b000a12091d0821020d0913081c49a9099f099b023209b80939091a09ab0b1c0b150310084b0a910a85004c0b09, 0x739c78d802010841099109af03816d4b0a9d0191081b08ca08c2084c022309910503098c682d694c084e03910a0765d26bc7091d03810b03014162490a19089e0a0f018c08a05f9e631d6f2702280841013909af02950a235b575c495d358e2b, 0xb1709940820081f0139084104020a9d0851009c08180a8583d3854b8625893202300939084808c908410a9b019008160a010b990b817d4b80230b190b12038408410a1408940223084908410b8c769e0994022808a00a23013908c208417232, 0xa1c08210a170307082209b79ea1a2ad04800c050a21031f09870897094308420a140143089708420a910500094308c20846014e081009c2084193cc959d97b29ad30a179c2aa6b3029b090a0d020a020115084e0b108c110994091d05000841, 0xd803d802a84cd801020a08c308490a28084208a008280826005508c308590aa90898]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node165 : Bad pats ([62,61,54], 0x3ffffffffffaf687f3effffffffff) :=
+  bad_of_gated_check (tape := tape165) (gas := 150) #[⟨_,node159⟩, ⟨_,node160⟩, ⟨_,node161⟩, ⟨_,node164⟩] (by decide +kernel)
+
+def tape166 : Array ℕ := #[0x9380b180b0a09120982020608a7090f00a7084d09350d03241525a628da3d0c03910a0608a7098d091500500a21093809120911081d1db30310081d0a210d020b181a152016001d090e0193159d0b110b0a00a108800810090e139f16aa559c, 0x419108800d020b2643150c820206089d0a95093508520000090f0b0a08540d000b2a3ad308d008ce01390b2a3656032309380935050233530b180302089f000d098730a50a060c1531bb0381080d01390b2a2c91090f05022a952da634dc0099, 0x3990818584b5c3562a50399088d081d080209350915090c0139084d093809030882080b013508a7080f022109354d914f0e522400c7084d09390935031108a70d0049534b1b0c0c03230915091209380935464b009d0a0c080801390b230b02, 0x74350c01030908180890088e0b1c039f08d50a9b0a890818004d0b180485093569576a1b6cb1008e0938081609350b0a66aa6f017ce4021c08a70a17014808a708900b1c022b08ce09390b875f4d6126001708130187090b088e081a5b190a95, 0xc8c08d00502091508a5875c8926029b0a9508d0030708130a9509390a3701c108160b9980cb835684b50c130c0a013508a50201081c081808927bb10a1c0a17031c08a50502090f0890081877317826031c08180a9b0939031508180a957257, 0x13508a5031e09350a378c310a1c0a17009d08a5]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node166 : Bad pats ([40,76,67,50,61,54], 0x2ffbbb7cafcec286e1d7cbaf7dfef) :=
+  bad_of_gated_check (tape := tape166) (gas := 150) #[] (by decide +kernel)
+
+def tape167 : Array ℕ := #[0xc820024093509ba09a0013909ba09000b8025ac08200026093509a0040c0a210915212c22a52796040c0a910a8b010e090008590908089d0b0301a0089b090019a61cb50b80008d08950291159f090e01c109350c0c141d16801e2a299c3c58, 0x84d00c73fd240dd41e9462c4e08636001910a170b8100200a1c08273a91091c0194081f098c028309970a1236a438310c13021709350994098c008c081009110b0a0a08082631a402170a8f0c0c0399093809352ccb2e2c33a5002609a00b80, 0x81a0c0c0894010c09080915019308a70908552a569c58a55bac04880826030a0a8550aa51a40b88022109ba08980826030a0898023009ba023b09354a524b1c4c2b09a0002647240295089b0a210b9902830b230a3a44590a37023a08530221, 0x826001508110d000a856faa09a00300081a08180c88010b0912090c08200193081d028508a70a21679f68aa6a9c6cac0b980b90028f094a09ba0a30084d09350a21001f0c010a1c09ba03915dd25fd309a000a1090808110a120820081e0488, 0x1970827]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node167 : Bad pats ([76,67,50,61,54], 0x3ffbbf7cefcec386e3c7cfeffffff) :=
+  bad_of_gated_check (tape := tape167) (gas := 150) #[] (by decide +kernel)
+
+def tape168 : Array ℕ := #[0x9d082708240403089d091c26aa08a5011c2429004108400b190b0401a0214a232b28560319084001ac1e4a0c130c01039c085508411c40091c08a51f4f0101089d081008c40aae0b1909a40840019c09190311094009ac13a814ca18b32ebf, 0x111401c412542460b190b04032209940a37084109a03d35442b011c089d03190885098938ab0b250b17030908b80c040943032208b833de0194085b0a35324c35d639c75757014008c408b800c2081f085a2d400c06011c08272abc0b250b17, 0x5bcb5ec7011c0825083e08a3089f01a8082703190a2b00b8083e0203090e51c652d853a854a5099f0403083e09a808270319083e080d090e089d0042083e0c03040a09400b190a2b484249a14c284e3303890b250841083e04030b09018c0980, 0xaae083e0b250303083e0389091103120940050308c46bde6ca96dc26ea571cb0b970b8f0041083e099f0aa70aa100d5085509ac00d7634c0d010b910a2b0827083e64b3674f031908a50b090b020aa70aa10119089d0b250b1702a208b859d6, 0x3090a3709af09a70021081c09ac]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node168 : Bad pats ([27,77,50,61,54], 0x3feef5ffdfcc7b86f0f7f7f7fffee) :=
+  bad_of_gated_check (tape := tape168) (gas := 150) #[] (by decide +kernel)
+
+def tape169 : Array ℕ := #[0x83e040c09a709a809a0050208a3081e091c25ac27c62cd8011c08a50b17019320c1224002ae083e08b809ac03190b060b0308c808c2030209930911031119231ad40b141d40031108a5099300170b09152b0093081d081713b316cc1f2835aa, 0xb04081d422801af083e0a9b031f08b83d3f3ea30d010304081b031409b039a308b83a8c45ac4cab0a160318081e091c08b809a801a0089b0c0c0b88334c0403089f09970993011c2ea330bc0ba00206081e091909a808b8011c08a308402a3c, 0x226083e0aa70a95032008410b84563f58280b090b0203940990529e0102080308b80a030915091c512c59a35aa9040b090e083e08b809a00b17010e0817081d05010a85482109a049b305030a9c08b8083e0891081f081e014c08600b1f09af, 0x9110983089771330226083e0aa70a010a95038408a56bbf0b090b0200a5692c03110b060840083e0017080309b009ac09390052098563d10b870b97664605030b1209ac03190d030b890a265f4c60c268336e2375280197099302120841089a, 0x30409120840091908a5081f082400d1083e0b100a0608a30993089b098f03140c85]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node169 : Bad pats ([77,50,61,54], 0x3feefdffffec7b86f1f5e777fffff) :=
+  bad_of_gated_check (tape := tape169) (gas := 150) #[] (by decide +kernel)
+
+def tape170 : Array ℕ := #[0x304083e089808120058083e0c0408860a01261c091128300501222c2c2133d74aab050209a8082609a0001609ac0415093904030a2109111bd71ccc1da8083e01a0082704850a0309ac0b0d0b060183081708160b1914cc172818421fb35b25, 0xb11415109af0052084e014e08603dd80b180b11083e03040b060a8509940a890013099408160318369c380f3ac03ecb425f03000813091108170201090b09110502084109150a950a063011319c0a8904040b06023008580a372b4c09a0098c, 0x115081708140b060190081756295835590f5a4b099702a70b8f003e08270a1701a80827008c088a0a0108144f2c5021098f51d752bb019408130318499c0841083e023709af0194081700c40aa2459c46cb47c20b970b8f031109390041083e, 0x7146730f08a3743b030609160827031b09830b0d0502088b05020815098609ac6a0b6b536ca86e337721002509190b0302a2090a08a5082505030a3709b008a5622864420b1400400b02091208245ea265a37ba0029509a700a70a89021708a7, 0xd8000197089f02a20b060919002779227ab3089b03060a01091c08a30997099302a709830140091c082508b801b00aa7]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node170 : Bad pats ([77,50,61,54], 0x3feefdffffec7b86f1f7f777fffff) :=
+  bad_of_gated_check (tape := tape170) (gas := 150) #[⟨_,node169⟩] (by decide +kernel)
+
+def tape171 : Array ℕ := #[0x30b09a0094e09390b880b800381090e08840b260b0a252828532acc434603810b09084708c20b1100c209c10d030d010b260841014e09c10b2608471b461e1f01ba0988084108c21826093503260a1708c20842004713460a26154120c04c5c, 0x8170b140b0901380a3a3ea540cb038108470b0a008808860810031008a5010e08a738a539923b1f3cd309ac09a801b00939084b031b09a308c308bf335408470017099709190a0800a10a210b990b892e1c304b34ac0318094808bf084d0938, 0x19409160b810d0258530b170b1003980b8809a001050892081c0b09532854d6020308a109970b88502c5c476a4c0a2f00be08b802ae09ac0aa2040109190b1409ac083e49d84b4a038709b709af0935083e464c03180a26084708c308bf001d, 0xa210a12099f0935028509930b970b8f0b116e5370d473c00138083e093509af0135684b001d081709a70b8709a00b1101a30a1701a00b0408a70a8b631c641f083e038f093f08410d0309ba5fc06753014a093908ce039808dc094a5ada084f, 0x2060997089708800a84882009a8040a089d0b100b970b8f009709930b0d0b0302a7084703810a210a177f4b803b825f00880886010508130902030d799108a708a57b127c1f84a88b468ed402a208be753c050108a70b8c093508c808c20097, 0x4c084b03260c0398d308b8083e020d08bf084c0b1401a70c03094203060a0d0d0192cb9453964609b009ac02a108a109a30aae0aa208b8083e0017081604868a1c0b900b80]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node171 : Bad pats ([42,50,61,54], 0x3ffffff7adee3b86e3f7bbf7fffff) :=
+  bad_of_gated_check (tape := tape171) (gas := 150) #[] (by decide +kernel)
+
+def tape172 : Array ℕ := #[0x2370b1f09c408410847004125cc03020b8105010b1709190b02019421a523a924cb0935022608470842050209c509c40b260a210a1201c5094e0a2b09c4099f1aa61dcb1f41030b08a50a2b0b170327080d08a30b120a2b14c116c728405252, 0x43240b88474c011c099f0b98083e022109c008a70a1209a3099f3cc10284099000860b1808460b10029109c908a30318084034b5364f381c0c15009b081d038008860a900d01309f31dd0b02029708a1009d2c350092091c2b292d10393f3ebc, 0x892081c0b0958a85a5604880b12099755ac61c76ccc905701970b140b80031450a009b0003e4f5808b803140b9009b001390b140b0600170a0d09a74aa94c584dc609a80193081d010808a1083e461f0c8809a001b70935083e04880b1741c7, 0x8140d020b0670c973d376547bc0003e093500a7081009900a9109ba083e04080b040a910b98019f09a00c08020808da0b80652c66d868c66bd3022109ba08d0011c08150b200085081c0815094a5eb50d02605e0b170b1003980b8809a0010e, 0xb040b80030608a3872009a800470944093e004709a383d90b22050208d608470a950c1103270b097f4781d3852889d48f4603060b840a91093508c8014909c909350847795c08c2019f093508470b220b0d03090b810327086372c1084800a7, 0xd80000be08b8030d0935030b08470c0303060a0d8ccb8e5309b009ac048608170848]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node172 : Bad pats ([42,50,61,54], 0x3fffffffedee3b86e3f7bbf7fffff) :=
+  bad_of_gated_check (tape := tape172) (gas := 150) #[⟨_,node171⟩] (by decide +kernel)
+
+def tape173 : Array ℕ := #[0x29b308920408093509a3099f08a70297091124b30206090b090408bf0b840847022608bf0206090b09041f53204c0a1c233b27122c280408090c09a3099b08a701a4098f0915020609040900098f084709a4008a13ac16a1183b1aa036026046, 0xd6085808d00949011508d608ce0b190b04028b088b09150a170b8909c43ba03e61405341cb56e5048909a309080980081a090c0898089402a30a35093500ce0867085830d30b120b04099f099432220187080a0a060a1c099f0187081a0911, 0x9a359410d0201a809a3084708bf029509a308920b910067085908470c8252a10b120b0403840847040808980411099f4d280c824e4c0b19041109a00a950847009c0898001309a3472848504a5f4f1201a8084709a3442054d30391093e0935, 0x10e0a950841083e09380935038808ce00bf0827093e6c58083e6d3b0b230500085809350a3708d8084109ba083e013e08bf09380237635364c268d4704c8a1c0319099f08bf0935028408260a1c0a17093e08bf03190a265b455e3b01a80847, 0x8b80306084309b40aa20306084309ac09a803230944084300a7084c03230a3b8153824b83b085d887c201350846084304040b0609a3040d7aab7c490322099f08c208a70935006309c10d020b2308c408c203270d0209ba73d476d3794b7dc0, 0x8260990041109a308949f30a0c90322099f08a7093505020c119ad309ba009408a70a9d0d0298e29ccba2c00b0700b8083e009c089801a308a70306089091b392a809ba93c0019f0826099004880a848d2c8ec2948eaad401a30827083e08be, 0x9c08980a9608b80b150b0e028f082609380a370b80083e0a900a8a00b8083e021c09a3088e0843a5c2a6a802370938084108430306]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node173 : Bad pats ([87,37,50,61,54], 0x1ffffffdbda67386d3b77fecfdfff) :=
+  bad_of_gated_check (tape := tape173) (gas := 150) #[] (by decide +kernel)
+
+def tape174 : Array ℕ := #[0x29402ad02e0f3e5f011508a70a90083e002609350b2724460a1c0a17013508a709a800260935084f083e1fcc0a2101110b0605020b810b2a1bcc1cd3211c01880827083e009008a7174018a6029d08a70b070285080b08a7139c1530261f644b, 0x40c1423b48e75597022b09c90c0f0915040f08a73c15099b040f0a83048939153a2b0b8701ba083e004d36460b0d0094099b34b00c0f0c06030d323c019b0a2101c93053314537070138083e0935019b2cc10b180b11019b0a1c083e01900a1c, 0x5a535cab60610b970b8f040f09150c8900515445093800d552d3099f023b083e0aaf031908cd4fe5093800d54dd3512b00d508cd004d0a214b614c3b0b9f0489099f04890b8901900915008108180898089445b046a947ab02210b990b8901ac, 0x7292762801150a1c039f08070b876e21084701a46bce09a36f200d02029b09a70b890b8101a709156729692377c67dd3003e0c8908cd09c901930aaf08cd62690217099f08a703180a1708265eb3009808170a970c890aaf014e0b2a0b190b0b, 0x9b7004b08c787df08bf0041083e022b0b9784c585d109af032008c709b0031c09bf08c780d008c3823b01a4082609900d020b2a094300b808467adb0843032a78cc0180089009900111099f021c0a060b87753b08900486091108470139714c, 0x1ac]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node174 : Bad pats ([92,37,50,61,54], 0x3ffffff5b5c67386d3b7fbeeedeff) :=
+  bad_of_gated_check (tape := tape174) (gas := 150) #[] (by decide +kernel)
+
+def tape175 : Array ℕ := #[0x19408270a1c0935019408270a21264100a708270315089823290b2a2453284b294003040898082609a7030608261dbb0384098608880892090900a719a40a0801110b06181c031209b40503089208a70d0215d8093516b01c4b1fc62d9f59d2, 0xaa909af02a93f4f0935414508b80027099409b70846084205020b1c0b0e0c863a4b3cc0425e031c09900935031235530841083e039f08cd085f085e0b1209bf0b9703232fd7334536cc022109a309a808b8030008a709a32bbc083e00420841, 0x58c509a408b803940935048608980b1255d30b04099f09a401b409b001120b060135503051540c860183090c081a099b4e10522c56c6019f083e032309af09a70aa949c54abc030a09380c86099f0135082644b346c00c0d019f083e039f08cd, 0x98808510a1c09350841083e01ac09a308420221099b09c501ac08b80b0708500221099b08be002608b866ce68546a656bcb6d4102970a91099f019008900a1c08510935019008270b2a08b85f5361a3634570cf0a2ad8005ad70197083e039f, 0xd801029d]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node175 : Bad pats ([37,50,61,54], 0x3ffffffdfde67386d3b7ffeefdfff) :=
+  bad_of_gated_check (tape := tape175) (gas := 150) #[⟨_,node173⟩, ⟨_,node174⟩] (by decide +kernel)
+
+def tape176 : Array ℕ := #[0x9190910008808080a12271f0226080209a40903090003140c03228f0982251c2a2301a408b8000808060880091c099b1ec01fa60010099f0935083e00970842194109a4022117400a12022b099f098f08b815a6031008b813301b222c2d42d2, 0x8880846084101c4080c090a089b3ec7098f01c40841089b0b06038c0b270b25089b39c53b93099b040f0b1b090c361f082740c008250182091c0886089f01860821309f08a5011c08b80b062eb332ac011c08860822082101a40a0608080a1c, 0x8b808220821019b091c02a208b80206090c08c254c0559c56a60291099301a408b850bb0893030908b80a034e9f03000a0d04860b0908b84bb0000d0a0600be0802080009a4022146c04890499c4c9b51a25a2d0a25028a09a4082708b8005e, 0x84300be08210827030009c408c409ac090c6e28089b031b09350327080c080908d90b230c8569d36aa16fc975330201080a089b08460841038c08486247099b0115601f08b808250206098b09150303099f5c9b5e2864b1018308820982091c, 0x4890848082708b80843089f01a3084309890b83030908270825781b7a1f08a3048908270b0d0a9d098d0899029608210827721d]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node176 : Bad pats ([32,50,61,54], 0x3fffffbffcee7b86f315fffffbbf7) :=
+  bad_of_gated_check (tape := tape176) (gas := 150) #[] (by decide +kernel)
+
+def tape177 : Array ℕ := #[0x20c09c609ba0408093e26ce093803910c0224c70b230b1c004f084d05000a830a3508ce0a3b098908a105031dad2157093802910939090c08200c8c091104850b910a3b040f08070b03175908a718971bd32246038f0aa1134d283029cc5cc3, 0xc8640e80aa8422208be032909440a1208260a210935011c08250b183acd0391084608a50398085f082108440b91372d039008460b110b0a03a0084608253218010e085f08210b10084602120a062dcf302d343138d33dd243bcd801d8002928, 0x8a50939594a0b1409b009ac0138084408c408b80111099308a7089d031808170b11081d512b093801390847038f0a910a8b048508a74b974d514e5302a108a7089d01110997082147ad494109b45346553004820aa20a9600260c8609c00026, 0x5000a3009350404081f0b150105080b081f02906ba96d316ed30b9f0488085b0846081f0aa30a8b0500089a6629693f704573ab843c0a200a1bd80661a0d80560a5d8045faad803d8025e1b5ecd00a1082009420b060c0c0c0308b80381089f, 0x9390501091c87bf88a98bc78e359ac000410a06089a0822019f090e02120a0109a708418123822208250290099f0a84091c089a003e0a1c09a70486084609900a8401c108000a08091c779079bf7b1e7da902af08c10840083e0325084171c0, 0xb10009a081e0b120b04009808239db59f97a1c6a5b0009a08470842014408980b8400270824979c994b0b120b0402260c14022b093508270b8493a60b20009a0847084290d8949901940847084200418ccc008c0d0108270823050089ab0325, 0x270825020d083e0d000a84091ca92909a000250b1c008c0825a4d40b1208b808400317093809b4]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node177 : Bad pats ([50,61,54], 0x3fffffffffeefb86f3f7fffffffff) :=
+  bad_of_gated_check (tape := tape177) (gas := 150) #[⟨_,node166⟩, ⟨_,node167⟩, ⟨_,node168⟩, ⟨_,node170⟩, ⟨_,node172⟩, ⟨_,node175⟩, ⟨_,node176⟩] (by decide +kernel)
+
+def tape178 : Array ℕ := #[0xa2d08c70c1502af0b1f006508600102080d080b0203098308800904231124e70c0f09c104860a140c890aaf0a0300191cb51f6925d026cb2a252bdc040c094204860891080b08040c0c09c30b24185a0b1f0b1805030a231349194d2f3f4058, 0x2a7083e04030a1b3f4509a709af030e091909a30a1c038308880b083aa109393ccf0119099b0a1c048909c10a890b000aaf0a1b0b1f02af09c90a1b083e32d0362b37cb0480084d0a8a0a140b2b0a2f0a2a040109190a2503080a03090f0b83, 0x98a083e0a2608880a1c09a301b809b009390a26030e0919083e5335552758cf0119099b0a1c01b00a9c0818091204860b030a074c9e4eab504b00c10851084c0a9c0a2a09120a25029c462a05030aae0a9c0485094009b043ae454d49bf5d62, 0x21b08180a1c7016712309b00223085509af08d60b186d5472d20223094008bf0b0e0b000303081808880a26672369c875ae00960815083e09a30a260a1c048709ab09b8099b60c963b40c8802160a950008081809120a1b5c4509a709af0110, 0xa12030e09190a950939030085cb87b504030a830a190a95023008560a830b00824b842b89960a9c03a00986084e0a1609b00b98039f0a2a09af088009a7022a094c78bf0a1b7b507e4600190a0f099b09b009120a25018209390b0e02160886, 0x40408920b000a1609860197091c00140a128c1f8d2a0a90030e0a320a1c]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node178 : Bad pats ([41,74,44,61,54], 0x3f6ffbf7dbfe6b0707fbbe7dbbeff) :=
+  bad_of_gated_check (tape := tape178) (gas := 150) #[] (by decide +kernel)
+
+def tape179 : Array ℕ := #[0x13908a7084d0b2628460a2a01af083e022824432552038b0a1400a721a308c709af0228084d1fc30139083e000b0a010a9d0a1400a71b231d3f1e4f22dc29a500ce0a260a1c098a09390b1c040608920a1e0b1d02320a1c1347155418343017, 0x8d60b2a40c243a101a7083e0a2f00a7083e3ce13e51455304890862094f0a280017080438500a2a08c108a70a1b00a7091934aa00c508a733433a3f53a30c0e029508a50502084d2f330a2d0a28013908a5084d0b262cc60a1b00a70a2d0a28, 0xa1e031c0a1657d002160b26564659b3631d020c0b0f00a5093952c70b2a03800a8a50aa0a26021b09af04890a834dc34eab0a30029508c508bf0939028a0a160a1709a7004d474349454b5802b30b990b890318083e03180b2b42c30939048c, 0x20c098d702b090b020808970b9800200a1b6cd06e1a0a850488099308a3021b084d09390c8768a7021b098d0a0c662b6a0b74c702a708c90a8f00c561bf0a1b020a602508a70230093909af000b0a1b0a1908c90a2f5d3f5ea7031f0a07091c, 0x19708a70307083e0a2f003e7e527fb3030e094f0b1f09c10a0109860a950a1b0a19032609390a2a78467cab0a970a91020c09860820089708a1039108c90a217227]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node179 : Bad pats ([76,74,44,61,54], 0x3eefbb73f96eca0783dfaf7ffafff) :=
+  bad_of_gated_check (tape := tape179) (gas := 150) #[] (by decide +kernel)
+
+def tape180 : Array ℕ := #[0x83e031808a727bf2ad80a2a01b8083e08a725342ce10485094009c0022809b00aa2216003180a140a0f003e08a70b990b890139083e04161abf1ba11da31f5822cd01b80945040c09b016e0040508a70b800b260b180a28155417c3308663d3, 0x484d4c330397083e0b1d0b16003e09b801393c580c0502910993022509b8093939a33aa03d5501390c8702a2080e0a070b9109c1093935c336c73f2d548d01b8083e01b8082108a12fc70a390a2f00d608a708cc0aa2030108da094e08a709a7, 0x90408d408a5083e0a1b58d00b06022308200a950a16089f08a501b00939083e0a1b0a1604890aa70a0c0a954f4351ab01390a2f09190a1b023909b8083e4a34014c085709c0022d09b00152083e45bc46e00139083e03240a2d08d542bf43d8, 0x91909b001396f5809b709af01b809390aae01396bd86d4f038b094c09400aae050109c308cf0b2468586a3f714d758d835a001d09120a16048c0915020709810993612d624309b80ba002b40a3202a20c8c5ce409b0003e0a9c5abc5de00181, 0x106098188270a0189c88ad28f9696ab0b1b0b1402b4081b0981089b084e001f098d09af094c80d40b180a1b0a16039809b0091c7caa030809b808a5083e0a26032409b878497ab40b0d02a20c0e0a1b01b8083e040e734109b7743401c0083e, 0x9930897014009ab9f270c0e022d09b0030e093909ab9c500a1103810a0c084e99c39d17a1b504860aae09af0a16031809b00aa20206091503269221932894c30a0c02ae0a0109120aa202230b1809b0021b8c508dae021b083e018109120820, 0x40e0a11098d09ab0aa205020a1908180b8109910aa9b0b40a2b0a26021b084b093909abac49029c0a280b9801910b0f09b0a828a9bf08a5030f0aa90a2b0a2601aba349a52d022309970916]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node180 : Bad pats ([74,44,61,54], 0x3feffbf7fafceb0787dfbf7ffbfff) :=
+  bad_of_gated_check (tape := tape180) (gas := 150) #[] (by decide +kernel)
+
+def tape181 : Array ℕ := #[0x318085428532ce60a2d0a2801b7084e0a3a083e050108640c8908a70b990b8905010b24086220510d0303901de60a2300a70b830a0c0503084e0b1f0b110503084e08dc18c91a961c28233f255a04130a16083e14d5031f093912c62f4d454c, 0xa23413f435a0ba00b980228093901b70a3209c703800a1c091c08a7048309a70a970948392d3b5f3cc53dd801a70a0c0b2a093905020b260a2a009231b43354352844d6020c09ab083e08a70d0300a70a020b11094f0852084e031129d40a30, 0x3870b08091302960a0f0a9009910b01008e0a0f541d569f5826022f084b09b009190a25004b4f4351bf5c330201090c082009910c0e0a0c02a90b970c05029c0a140b9f48974a254d2b7045d80002300948094201b709af0a30093900d108c9, 0x19b09930381080b0a1c09a30a9104870a266cc76f1f01b00a2f03970a010b8101b00910682169d20a2b031d094b0b810316094b0910642109a7028a0a1c084c09190a010b990b8161cb65d86aa308a7038f0a12048509b7089b0b1d5b170a1c, 0xd801]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node181 : Bad pats ([74,44,61,54], 0x3feffbf7fbfeeb0787dfbf7ffbfff) :=
+  bad_of_gated_check (tape := tape181) (gas := 150) #[⟨_,node179⟩, ⟨_,node180⟩] (by decide +kernel)
+
+def tape182 : Array ℕ := #[0x20f090d281729212a2e0a2b02230916091303040a160a19239c253f2db302840a3b0b240c830a3509ab0a2b01ab1d490201098a030608c40d030ab20a0c1b0a0913020a098a0a0c02010a191634179c01030811080b0a0f14251c3f20a7301d, 0x4f5c0b08022608a50a170c13091c0193081f08a50a0c01b00b14008608ca0c8a39b03aa03c9c0413091008a5019135330a260389089708a533bf36b43f0f575503190a110993099b08a70183081e0b040a16048a2ba009130387082103870987, 0xb160b0f01b408c401160c0a0a2656540ab201b809b4022b088b09ab0d010b8f52c853d602260910091c023a09b00983081a08960226099709b00c804b204dae02260a1e0a3b089b01030900080f088908a5462303900a0c031442204327481c, 0x31908a7081a0894028a0a846ca0091c01a708a70a260a1c0110082108a768bf6ab402260b040a280a1e0221094608c40aa2020609b00c0d6252644b02a208c4094004160a265e525fc101b0084e0a2603a009b05ad35c46661c]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node182 : Bad pats ([77,66,44,61,54], 0x3bfefdeffbb4ea87953eb77bff7ff) :=
+  bad_of_gated_check (tape := tape182) (gas := 150) #[] (by decide +kernel)
+
+def tape183 : Array ℕ := #[0x821028a0a1727a92953032308c4084404880a2508210225081122a7244625b50b080047084409b401b008470c8a1e5c1f882b5500440a030986091c00a5089b192e1b2434a0028a0982098b0a260a0f0b08004708c708c50a0f13ab16a55bbb, 0xa280314084709c13fc64521472b0a0c0046084409b0004708443ad402ae0a900a32031b084937c639483c0c52430203098a091c048a0aa205020a26098a3246331c02210821020d098209122ea92fae0b160b0f028a08c40a350a2100c80813, 0x5a9c0b160b0f0314093e0a280140555008bf56ab0a160a11018f081d022151230b0f0b0800c7081d0a26020108150b16081d4dd34f0f08a502a7084708c50a230a954a3500440a2d0a950a8f00490844020109c108000901098a093e444c0a2d, 0xb9001b008476fa072dc77467d53031408bf0a9001af08bf6b460a160a1102250814082108430c0b098a091c00bf08430821099b652e68a0001909a300d50855613f09c30a140a0f019b5e1962256cd0092f011c0896004c08490940023a594c, 0x2a20a96031409af0a2309b00a1e03060a9009b00214099b803081cb84520938022308440a190214089f0997099309b002160a14794c7bcb00470a2a09b4020f094508ce0c8c0a2a75cc04880a0c0a840ba009b0]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node183 : Bad pats ([66,44,61,54], 0x3fffffeff9b6ca8797bfbf7bfffff) :=
+  bad_of_gated_check (tape := tape183) (gas := 150) #[] (by decide +kernel)
+
+def tape184 : Array ℕ := #[0xa1401b409b003a008540c0a26cc27c6030d08550aae09b004820854224c24282a4332110016081901b008540c0403a0098a094f1ccc1e1c0a140a0f00180915039f0a2809b00a3001b00946023b084e0a84154c163f181819231f25352b4ccd, 0x30609ab099b0a260182098b099b0a1e0140099b09b03c4b0c0b3e3501830908088e09823930401947254c24022d09b009910b890a110a0c0501081d0a0f02060a840a3030a3040b0b040230081908180c0b2d922ea80a1603140a2809b00c8a, 0xa110a2b09ab58d500a70852084c0b2402840a3a084c0ab4545c09ab031b08200a110b140a2b5133561d5dc88441d800021e089b08a50a160c8809b003140a164950091c029008160c040a0f0a0a028a0a840986001908160208421d430a448f, 0x9b409ab70a70b16032b084309b40c0403066c1f6e2401a308c3088e0c880a840c0408470843023b0a1709b0023b08c4653066cb6adc7225023b0a1709b808c40843030f09975fc9623401a308200a110b140a260290084c5b300b160b0f030d, 0xd801004708c808c404880aae0843011c0c88814682d004880847084303140944030f09a37cd37dc97f540a250488084309b00b140b060212091c01a708430a1209b0762e772979d20a16032409b409a7030e]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node184 : Bad pats ([66,44,61,54], 0x3fffffeffbb6ea8797bfbf7bfffff) :=
+  bad_of_gated_check (tape := tape184) (gas := 150) #[⟨_,node182⟩, ⟨_,node183⟩] (by decide +kernel)
+
+def tape185 : Array ℕ := #[0xa0f08a3092f030408a70a2626c1289f031d0a2f09b008470a26092f005d08480a850a2609932147242d013908470a260a210091081d05020c041aa10b1b0b141bb50139084703990b060b8116cb09b005020b810847145417d31dbb2a68519c, 0x1d08a70a8b0d010a3b4057424c45cd4ad80ab20502084908ca0b1b0b1401970847089f08a3031608470b0f0b0636ad0b9809b00193081e0b180a0f092f0187089708470a0f030b08a1089708472e8f30bb335838d33b6e0193081e0b180226, 0x81a020f093809090987030d080b55a70c05579d5a165d356325050208480b1409b00ba0004e081e0b18031b0849084e4dbb0a264f48031f0938092f038908490381084748530c86493b00a708a309390b990d010a0f0b14001e0997094b0939, 0x12f0a120a0800a30892088c03980b010ab20c01669a6821091c012f0a0d0a080304081408a70892088c03080a845f1a61a10193081a089203080a845b9a0180098f02005927]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node185 : Bad pats ([42,70,44,61,54], 0x3fffaffbe3beab86836bbb77bbfff) :=
+  bad_of_gated_check (tape := tape185) (gas := 150) #[] (by decide +kernel)
+
+def tape186 : Array ℕ := #[0x2d63302538164e100314092f09b70a160a110318093908a5099b00a50821029520a921bb23a00c160c0d013808bf09a70a160a110014081209970a1208a501b00884081209120821099718b51b201dd50047092f0b1b03a009b012d31443262e, 0x1ab092f08a740240c040a160502089609b4012f0b060b163bd80ab23d43420a00200a1c0020092f023509b4364737300a1b01000a0301390b0632b533a0091c01ab09a302b22f430b2b0b2403060a0d00470817090f0938092f01b429cd2c30, 0x8180c02092f58b05b165f25020c09910a1b092f031f09b008190b180939031f50d1534d552b652403010a05082002054ca40a160a0c0314082109000a12091c01830b08018f081147470900481c4aa0020a0b0f442509860306092f0b240b16, 0x9b404060944040608cb6ec70a3a6fd471e80226084709b00b90013f08470939023a0847685469a06bdc0c8600140a020a12092f08a5021b0a0f0a35092f0a1262a7091c0016088e09970208088e08a75d9f0a84000609390a1c092f0a080080, 0x1c0093809b405020a3b0b1d093e74c80ab2031b094b093e]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node186 : Bad pats ([82,70,44,61,54], 0x3bf7ebfbf2bea38697abbf3fbffbf) :=
+  bad_of_gated_check (tape := tape186) (gas := 150) #[] (by decide +kernel)
+
+def tape187 : Array ℕ := #[0x2bd02c9f2e96374801390a0f080b0b0409b00b800b0d0a840b060380090c01970a0f09b00a0a209821a90c0401a308470b0d0b060a000a080b011d1f021c092f0b1d040209ab08060a0a0b8017a40a08020f142b030d090f1335191626253c6c, 0x42c30a0f02b20a110a0c3f1e4b2b0c8801810a95081b0a0f0a3009390b80091c0a1b0a1605010b14011008a3084a36450820019b0a840b080112081b05013121322b33a90a11031b091c081e081b013e09380406090f08d6085508bf0851092f, 0x5bdc0b080139098b084d090f022a080d084d55270c050a08571d018b0a08020a08a70a0004020a1c08064f190a84509751a45da501390a8509810b04081b0a1b0a16005a08bf084909380ab20180081b0938455c47c8009108200b800a840c13, 0xab2084d70bb7248004c08470b160b01020808206c1d0c130c010208082169936e43091c0314081e099b0a160a11030608a30821019709930093088008020912623b63290b0864a0672e030d090f0a080b1d021c092f0a080311084d090f5a35, 0x212092f0a250a1b031409ab0938031d]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node187 : Bad pats ([26,70,44,61,54], 0x3fffaffbb3beab8687ab3e7fbfeff) :=
+  bad_of_gated_check (tape := tape187) (gas := 150) #[] (by decide +kernel)
+
+def tape188 : Array ℕ := #[0x13e0849283b0d01031609930987262d0a0c29210308090c0d0223252ac80316099308a308210a0504030993092f050208471cbb09b00183084808210b0608021ad41e2d0b14013e084a020008a3010c084714ad15d308ca092f16c520a0361c, 0x92f031b0a160a0c01870b013e250a123fc1021209190b1b0b14023b09af09ab39a93bcd48506ae200ce09b00048092f08560b260a2a35540c820b980b88020c0a0f09120938092f03240a160b182e4d0c820b8030d805020a0c0820031b0938, 0x847590f5ad35bbb011909970b14019b09160a000119530f54d3564d5f2067d8031b0938084c031b091c0b14010c091c02070912084e0b0b4c2b4d294ecd50480225085609bf020509c90ba146d70c140b140c0b0416094909c90b2b0a2a4353, 0xd80003980b88028408c869a009b003010a080a2a0a1b0314092f084c65c30b24040a0a1603060c01091c624363550b8003080a0000470a255e0f0938092f013e084a021c08470a0002250a1c]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node188 : Bad pats ([26,70,44,61,54], 0x3fffeffbb3beab8687ab3f7fbfeff) :=
+  bad_of_gated_check (tape := tape188) (gas := 150) #[⟨_,node187⟩] (by decide +kernel)
+
+def tape189 : Array ℕ := #[0x2d343c1a001e09970a14092f01b708400a280a1e254d01000800080508a50816081b0a08091c019308a305010a1e1da71e9c0c8a010808a1081e0d020c880ba0006408a5081609800d020a2b0a2602140993091c14b518481b0a22c7272a4c56, 0xa2d0a28030f092f3f2d42a50b9a0b92020a089f092f08200a230316092f091c39ad0a1603160a2302840820364b0b23011c0a1e344d37480a0c021e09ab092f09150b080a0f03082ead31a5030808a708a30c88031c092f02a709422a4d2b58, 0x85158c75abf5c50679a02b20a2b0a32092f0a2802140938091c092f023a084d0ba00ab204884f685147534b55aa09ba0228091c032a0a32023a0a0109c1081a092f4a644b280a16032a0a2d0a2801af44d546480a0c00bf083e0b15092f0b0f, 0xa3a081a0a30040c092f08bf014b09ab0d030ab26d4d6ed8714874280a320b9a0b92021c093e0a390ab20b1c0b070a23003e093e020c0a300b9863470ab20b1c01380840092f00a10a1b5ec7603f644b03190851083e0142092f085208400319, 0x12f081809190b1c0a28039309930c010a3a0942084000520850]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node189 : Bad pats ([76,44,61,54], 0x3effbf3fbbba8a8793ffaf7ffefff) :=
+  bad_of_gated_check (tape := tape189) (gas := 150) #[] (by decide +kernel)
+
+def tape190 : Array ℕ := #[0x29a80a9502890a0a098f091c040a098f2528099b274b03150a8a091922a72ab50214081b09af0a1100040819090409151e250a8a01070c0a098a0a111b28030308180b9a0b0b092f0a830b000a9501bf0a2d092f0a830b0e14c51896202b3ba9, 0x31d0aae094003200c143ed24050423b45c502a7099b0a28005f0aad0ab209ba3a55092f09ab031608140b0f36bb0a260a1c0383091c08830905088f0c800a830a120b1d0b0f0307088309970a0d092f09ab2e9d33c9019b0a8a019b09070b8a, 0xb8a00160a110b92578a5a285dde029009100144092f0a300c16539c0a0605030a900a1103010a2b08a50a264f34018109120a21082005020906088509814aa74c96509f54d20b1b0b14021109ba0940084908a50a30092f00a30a2b084a0a32, 0x22d092f08490a300a2609ba014008160b0a0b8269620aae0aa2032409ba08ca0228092f03920849634708a50a2b0a2601ab0b0f6049645665b40191092f0c0108a50a2b0a260a9c0308090708190c0a]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node190 : Bad pats ([72,44,61,54], 0x3ffeffbf7abaa38787febf7feffff) :=
+  bad_of_gated_check (tape := tape190) (gas := 150) #[] (by decide +kernel)
+
+def tape191 : Array ℕ := #[0x20109910a190b8b0501262b0b0b092f0840083e022a0a300a1b0b1c092f234501390ab20a3a001d0b0b03110ab20488094f08cf1cd01da71ebf0a1b0a0c03980ab20b88001e0a08018f08a516260b12011c089f1435171818aa2047285a41cc, 0x81a08bf0938083e030f0a0f09383e43092f0a3a01c10858094e0a190a140b19083e039109c109930b1d0a23093937c33b53020c0a3208cb0939021b099b0b830d0331d7092f0a23003e093e020a092f0b242d562e4b01390b1c2ad033c94152, 0xc805a9a09ba030a091c0b8a0c8056e20a9c031c0a35093e0c8653d20a9001af08200c8009ba038208200c804ee20aa2020208200a190a35093e0c8604040a060a1e0982020108a30a0208860820471e49564c52509c5cb05d48d800040608d8, 0x12f7045722575ae08be031f0a1c092f083e012f6bc5031f084408420a170306091c084268b501ab0b240b1d00d509b709a30a120306091c021b093f0b15621f6335652466c96ac16dd208b8d80101440b1c0b9a0b92021e093e09380820081b, 0x39a09ba012f08420a2a0a1b030d091c0842794d7b5a0a9c0a960488083e0a1209ba08a50a1b0a16019709150b0d083e]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node191 : Bad pats ([44,61,54], 0x3ffffffffbbaab8797ffbf7ffffff) :=
+  bad_of_gated_check (tape := tape191) (gas := 150) #[⟨_,node189⟩, ⟨_,node190⟩] (by decide +kernel)
+
+def tape192 : Array ℕ := #[0x81909150a2503160b110d0326cd2c28363f010709af0a160a0c001e081904860c030a8305030a1b1f3f20a3091503110a1b0b030406083e0a1b1b491c9e219604040a1402900a840397083e09af0d01161617230915182523ab4092412941ca, 0xa1c048709ab081a0a19040f3dad3fc9091c099b02a708150b0109a700130a0c394709160a1c3b23031f0a280501091535500a9c0a140a96008708810806094208c708510a2a0a2808180a14324c091903010887080604860c0c2a8f08510a2a, 0x847084e0949040308a7081a094f084e56cc595c64960b8200190b040b2409b408920c0401ab09b403870b800c860b244e584f160a2a0ab201b0084e0ba00b904a5c520a68a5795ad805461ad8044552d803442a7a46d80242c2d801d8000219, 0x78680b820486081a0a12091c01b409b0023a6c4c0d016d2b6f020a1b0a1602b20a080a840b08028466ab098a08920064084a08470ab20a2a01ab09b40235614c624d0b2403040a2a08190817013809b0094c023a5bcc0d015d1d5f2b020d092f, 0xd80603920b8a03a00ab201b409b00304081e0b800c867758091c01b409b0000b081e0b800c867358741c]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node192 : Bad pats ([44,61,54], 0x3ffffffffbfeeb8797ffbf7ffffff) :=
+  bad_of_gated_check (tape := tape192) (gas := 150) #[⟨_,node178⟩, ⟨_,node181⟩, ⟨_,node184⟩, ⟨_,node185⟩, ⟨_,node186⟩, ⟨_,node188⟩, ⟨_,node191⟩] (by decide +kernel)
+
+def tape193 : Array ℕ := #[0x84303830993038a0823269b27c729d7040b0b1e0c88099f099b004109a721a303250943089d0b1f084103250a2808c41dc2203f244d2c40013809b70b220b0308220b14038a0a140c0b099f0997023a09380b8409a70b0314a317291a48362e, 0xb8309ab00493f430b1b0b14011509970014081302960a8404063a403b143c273d29414844266031038a09a8038a09a408b803250b060ab409a70843022a08d509c109400b2a0b22314b09a433c2355001a7084708430a2a0a25022d089d099f, 0x48508c108410318084056cb099f581b0b0301970983028352a301a8098a0a84022509a75040519b539803090a2508410487090f094209a44c4700bf0a83021908bf088900bf471b48a749c84d9f59290403098b0b830942084208b800950800, 0xb1b0b0d032a084008be08b8050008c20a2a08426d406f530b8a03070a2509400842084002a6089b0944083e674908be08b803000a25084263c069a20828082a00c30b830a050981030609030b835e050b030825018b089b0b035b28010f098b, 0xc209010899084208b8013808490c0a09ba0aa60b9a031609b7093801b7085208510a3b73d075627848]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node193 : Bad pats ([32,53,61,54], 0x3fffffbffebcfb86a43fffffff3f7) :=
+  bad_of_gated_check (tape := tape193) (gas := 150) #[] (by decide +kernel)
+
+def tape194 : Array ℕ := #[0xa062a4b2ba52f9c0300099b082209970214090a099f0822241b262e36c804860b180b03028409820c861f1f0b9c029508210b260b18050209930822093808ca1ac21c9c0aa601ab09a30b2400540a2515470b9c01ab0a2a135416d020c64630, 0x4314031e09c30aa709450ab40a190843009f091c0b2b0b24031e0b0e0a3b3a5c3c4b3fd008b80093090c08220303090035270b9c0b0e0a9c0b8c03840a9c31dc0a8a02010a190a14050209ab0aa22e410822004909ab0a1e0503098a090f0993, 0x2a70856085508000d0258145a520d03009d08000b03009d52a654195b1c5fe86a9b019f0997030308154ea7091c04800b8c0aa60480099f0997030349a34b5c4cae4fa97fc8892a03840aa809b408c40c8a0c80031e089f0b100a1e09b408c4, 0x28a08ca0916030308ca0a2d0aa66ea8700e0b1b0b14029609ab091603030a14692e05000aa20a1902a209ab663c679c0d03029609ab091603030a14622e638e0b2202a60a960a84091c00bf0a1e0b030b845dae02140aa202a708c9089d0a0a, 0xb100aa609ac09a408b8019f0b030842084002a6083e83c908be03100aa681c685bc038308150997091601ab084e08490aa60aa2050109ab0997041679bb7b527d9c004909b709ab0140084e08150849763b0aa6004a08490a2d736277a80d03, 0xd800040a0848]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node194 : Bad pats ([32,53,61,54], 0x3fffffbffebcfb86b47fffffff3f7) :=
+  bad_of_gated_check (tape := tape194) (gas := 150) #[⟨_,node193⟩] (by decide +kernel)
+
+def tape195 : Array ℕ := #[0xa0f00b80a2027c12a2230300502099c0b100a190a0f01b7085109900b0e03920b8202a21fca209c0a2022bc0101080f0b810b000c060a23004a0a201a3c0a9002a1090208060c040b81098902200c04000f0a0114551509181c1d1e252b311b, 0x84f084b03233f550b1b0b14038708930800081908d90a2d09970b233d4c40c80197089b05030b010a9b0a230b0e021e084434bf371f3830481158c3002a0828030209a30a1e0a1902ac084108060b000a230a902e1e091c019f089d088c0b02, 0x8270897002957230323093908b8032a08490a2854c8562b0b890b810301089708890829082700974eb0514101380a9b09970a8901a0098f08974b3f4d310a0c01380a1e09a001390b23038f0a3b09c109380a9b0a89098f45b146a809ac030e, 0x3830b0e082a702109a30997009508190b230a8f0a890915029b09af038f08cd0b230b1b694b6a156d2b004e090c0a0f099c03820a840b2363bc082700970b0103920b8208930819048909380b1b0b140b235e1f602b612865b30a160a110029, 0x29b0a83]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node195 : Bad pats ([38,53,61,54], 0x3ffffffefff8fb86b0bdeff3f7fff) :=
+  bad_of_gated_check (tape := tape195) (gas := 150) #[] (by decide +kernel)
+
+def tape196 : Array ℕ := #[0x2a3b09ac0104089f09390b1f0b180317083e24c9274c2d2a00150b1008290a950b2609ac02a70b2609390050084d032b1cd30b261dbf1f4c22430017082a09400c010b1b02890889094b0b8b09af094003260a2d0a9b1443176119c8311464a8, 0xa1601140817031008100b0903143d413e9d3faa0b060139083e0b18003e39490a1b0a1603a1083e08c1081709140829372502a70b1833c33acc43080139083e0b18003e2fc909ac0a1b0a16031709af0a2f003e2bcd0b18031008150310291c, 0x309083e081958490a2f0a2a0139083e0b1f003e53c9554d02a70b260939032b0993082903114f310b2650bf52435a4c02950b1f0a2a03030890099b082a0a950193082a081a002a091546a3484b4ac84c290a88013f081808290b1809ac0a1b, 0x7217011c08286fb375a303180aa70a2f0a20083e03180a1b0852032608c1032b68d369d208546b3f6dbc794c94a4048809ab0aae09ac0a1b0a16030a09ac083e61aa0b14031109140a1b0a16030a09ac083e5d2a5f530b06038909390b1f0b18, 0x32b082a08268853893f003e0a900c16005e085c0c8804060b0382e20a8800cd08250b25005e082a0b030c0f0c067f5d8094841685cb8a1b8d52905001c309930982082a08260a1e0a19003e082a0825011c742a0b090b02031e0a830a0c082a, 0x1af099f081e001008170010090b9d9c0aad0a05022f084d09af02a2093f081799cf9b149ea70b980b1808a0a03c003e08280b880b18005492c90b980aa209a8030d0a90088e0a880a2a0a20030d083e002a08288c3f0a1b013f0939002a08c1, 0x31b0a1908550b180aa208a00b14032208c508550b180aa2091408a003220b0308220a82a42ea79b09a0099c]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node196 : Bad pats ([74,53,61,54], 0x3ffff3f7fffceb86a4fbaffffffff) :=
+  bad_of_gated_check (tape := tape196) (gas := 150) #[] (by decide +kernel)
+
+def tape197 : Array ℕ := #[0xb090b02081c02950818089826a528960c140c0b003e081f0825003e099c21ae0b250a1101ba0861028f082a08b81e620b1e1f162314324d019f0a9008a0089a019c0898182e023b082a0b16040208990818082a15470b8a0b9a16a81a48518e, 0x84304170b220a3b08b8005b08590828082509c1039f09533b5d3dc23fcb41580a1b019b08280a140404088508100812361e37a54aa44bd20384089a0894011c309e0a0c003e08a0089401390829081808130892083e038a2ac02da82f250041, 0x1a081601af082a08520c01571f0a110b8a0b9a582859c80a8e03910b2b0b1508b808430214089a08410b154f4c0a2a0a2000a008980025084008540a3b08b80219082a084248400c88011309100315083e0b2509140c0244ab45880028083e, 0xa16003e081f0825003e099c6e2e0b250a20019808a00486093908b808206ab008980317098608b80310082a08430066085864cb66420b250310082a082508430841040e0a3b08405fcb625d0405082808255d4167a46bd26f9b048608a0089a, 0x410aad004172570b250a1b]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node197 : Bad pats ([80,53,61,54], 0x3f3f7fffffbc7b86b4bbeebffffff) :=
+  bad_of_gated_check (tape := tape197) (gas := 150) #[] (by decide +kernel)
+
+def tape198 : Array ℕ := #[0x8280a16020a0841082a0c04272508a0019308220a230a14019b082322410994242e28c0018f081e0b180b0a08a01f3c0482090108b8081f0a140a200a16021e081b0a1404020984091c0a230b84171e082202110a0a13a718c81c300a942b56, 0x99c40c644980b1f0391081d081c030d099c3ca508b80a1e018c089c081c08400aa8001c0828082637c03a3c3e57038709af0a0f082a09a0089e031e0a1e09a831a402a2081c08c40a1e2fb034c2494d0aa00a9a048a089e0b1409a0099c020f, 0xa1b0a1100285725030a562a59270c0e02200828082601120823099c019b08230990514052ae002508230502084c0a1109190a204da74eb054175d410188081c08b80a1e009c0998098847460b11019c089c08c20a280a19019c08b8424b009c, 0x31009a00840702a0047084109a00a0f6e25725f031008400a200283080d099c09900a0f69a56b29093800be08280a1e0b1001a00a1e0a20639705030a14081e0a1e011c082a5fbc61c865c70025082300b8081e5c2a099700265a1f03230828, 0x1a80a200b100190090f09a00a0f75a50c0e0c05004408250b100a1b]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node198 : Bad pats ([53,61,54], 0x3fffffffefbcfb86b4fbeffffffff) :=
+  bad_of_gated_check (tape := tape198) (gas := 150) #[] (by decide +kernel)
+
+def tape199 : Array ℕ := #[0x31b08c5084b09400a8828480a0c0230085609ac0b250a88091a0b1e0a1b041309ac0c0103990a2d0b10011a1d9e1f1c20c301460a320aae0a300a881bc8249602880a060b090917003e0aad0b0209ac02060a880a2d1448161d182a302b54a8, 0x42264e33004b08c708c503150a01094b09390b1d3dcf0a260a21031609ac09170a2a031d09ac091737c339d3041109ac0b0802ae085009ac0a2b33c735263f2d001d0a95031709ac093903020b000b060c01050208c50b022b9c2dd42f210a16, 0xcb58450a0a59255f2b604c66a4003e09390a2a0a1c0a12031e0a2d091a0a2109ac08a5521c082b018d089d083e0a2f091a0a1c00bf0a26091708830b870b1d032209390a26485c0b0f00d1080b0a260a20091a45a44b2101910b0f09ac0b08, 0xc8002140828082b0a8a04030b160a210b0803970b226bce0c16082b6d9c6fe473d809a475a0020d082a0a0f0a0a030d08280a0d0026632164990a2a0a2509a8002a0828039808560b1e0a1b0a160391098d0b1e02a708c95b645cc3008b0a9b, 0x228082b03870b140aa2091708a0030f0a2b048a0aa27f4e0c160c0402320b1b0d000aa2032208c5038779c57ad87cc3802682ad09a0099c030f0a2b0a260aa202170828082b091c0314719c0c8a]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node199 : Bad pats ([74,59,61,54], 0x3ffffbd7fffee28486ffbffffffff) :=
+  bad_of_gated_check (tape := tape199) (gas := 150) #[] (by decide +kernel)
+
+def tape200 : Array ℕ := #[0xb140944084c2958022b0828082b0b9403200849000f08a52351243426560b240b0f020a099409440b940b840301091c048608020801099c1c221d140011080e09bf0aa2082b082802a209460940050308530b0114d20b29162d191c1fce2c41, 0x849415d0b0f0304089508bf088d03810c040b1b04800a303b4c099c3c953eab435f5e2d03940b15082b0b2403140828082b04010b1533b0355c0b0f05030b190940084c0a2b01400b152eb03147374b004908a30a2b0b940aac08ca011c08a3, 0x31b0a11093e030e099c03040889098101ba08080d025415559c56dc5851592b023009ba03a108830b0708504f4e0b920aac04010b270b04085008490315094b49520b84022b0b890b290b22471c4be250470a320406088d098f0a2b00ca0850, 0x1060811082a08290315084a08a1081165300b080315098b08a56247028f602b0a2d0a28020c0b89099c0c0803290b845c620b08093e0b01038908bf]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node200 : Bad pats ([38,72,59,61,54], 0x3fbfffbc6fbae28592fefffbd7fef) :=
+  bad_of_gated_check (tape := tape200) (gas := 150) #[] (by decide +kernel)
+
+def tape201 : Array ℕ := #[0x82b02a70a26082602a70849262927b40110081e091c0823020c091c22272430296a0b1602110822091c089e0aa81f4e2ec10aa003000912089c0826099c031c0852021117db0b070b940b840a9c02190940081e0b24082314b418b01b50409a, 0xa110a2608490b1604800a11099c0c0b02350940084902303acc3c143e2b0a320a28002b0b160a210211091c082301130a1134a70b160235082309c10858094032c7363037cb009e0a260a21011c084908230211091c2ba72d300b2402210828, 0x2808245834089a02120b070828099c5622050009150b00031908bf52460a300a26020708d208510b9c0b240b004fc90b9a03244bc253a80a8e011008220a260b24089a040a0a0c0b160b08011a08130a2645470b8a0b9a4728498e59d00312, 0x9608200c0a094003236e520a2100d308cd0857082b0b166cc9704b021108a1091708490a350a30032909170a280b0f0946665d041108a30202082b094b62290b240b1603230a110503084a5e2a0a235f2b6349695f0a9a0a9404860a8a08a0, 0x3160a350b0f039a08490a350a2602ad0aa773c9759d02a871ce0a32]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node201 : Bad pats ([72,59,61,54], 0x3fffffbd7fbee28592faeffffffff) :=
+  bad_of_gated_check (tape := tape201) (gas := 150) #[] (by decide +kernel)
+
+def tape202 : Array ℕ := #[0x2bc30b230b1c01a008280b80020c082709a025180a30030f082909a00a20003e20b4022d084d0829093e004d0a321ddc1fc30b2a013e0c801b7022d826a302ac0a35013917c90a2d02350939083e021e08280aac0a1114c2165518cd2da65fcc, 0x99c4112094543530a2048460226083e09bf091a082908280230091a0b1e0a16040b091a3825099c028e0b1e0a1636283a2b028e0b1e0a1608a30139085b083e0b1e31a733b03d4d4bd000290b0f09a00a2001890a2308290230080d09a02a2d, 0x11a082a0a160139083e56b458495ca80a940212083e082609a0020a08230a20083e0a160214083e08234f3451b0539a5ed6021c089c0a20003e4a340a300b1c014808c7011a089c082a00d945ab47570a3008bf01c1086009940b04002a091a, 0x829091a0a1c0a2a0a25039a0b840b8a082a0a2003840b060900098f0829091a6b250a1c021b672b6dd702160a260945093903290a260b2263d765cd72287cd081c602a00a9a0212083e082809a005030a0709c10a8f0a2d0829091a083e0a30, 0x8c488c109b402350ab486d008a3028e0a1484ab8a4d963008b8040f0b1e09c10a210a1c08480aa60a9a09ac09a8002a0828011a089d010a7aa30c0d0c040a0d7bae03290a1b0a160391088b0a2a0c020a0f762577ab09a4020109010900098f, 0x84409ac09a8032409a4002a9da40a1c020f0940099c0a1b0843030609940aae0a3099cd9c2b9ed0002208250b100a1b0846084403230a2508a10225084c093e011a0a0c905609b4031e0a2008c40c088e5c91a70b15934b04110b1e0a1e0411, 0x11a08a30a260a8e02a60a2d0a26a220]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node202 : Bad pats ([59,61,54], 0x3fffffffffaee28596fffffffffff) :=
+  bad_of_gated_check (tape := tape202) (gas := 150) #[] (by decide +kernel)
+
+def tape203 : Array ℕ := #[0x32ae0115081a0a2d0a1e00020a19081c0aad083e0315234525d00397093921c10a170a12040d08110915021e1da70b150b0e040d090a081b0a0a1baa1f26039708c3013917cf0c870a190b0702280b1d083e0aa708c3152318a127a9573457ca, 0xa1400100a060a1209173fa802260910089004860b020a123b963d23432700090b0d08900a0d0a0a020d0914020d351d362838a548aa02390898089f083e09390a1c03990b22039108a5083e2eda2fce0a12021e091a03220a212aa308a52b9c, 0x9b48d800030608c30a26083e091a000b088c0986031408c3083e028851c853160a2654a30a1c031b0a2d0b16091a4ec90300093908150b084c2608290828001c0a170a12009d0a0a0090080f09104623472608a503810b1b0991091309170a19, 0x822050108d10a1e09090a190b070a8a091c6fa905010a8a0a190a140919031c08510a140a05099104140b160b8c04860b8464dc0b07662d68a2048609ba048a0aa860c20aa6048608820a320a060c020a145ee2619c6b277a309aa0d8015926, 0x91c0a1204030b0d091c871704020aa600500c860c160b82018309090809014908d30b29088608970c03808f0d008222845c851c89ce8ead04140b160b8c0406098f02a8094b0b970a350897778f0b8478dc0b07048609830c160c8a731c0823, 0xd803d80202140aa60a170a0d021909ba0a1401ba09400aa69741989c0828030d0b080a260a21013e0a2d0aa60b1692499428082b04030b140849038209190b228d4f0b1d0a260a2100bf098f0983]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node203 : Bad pats ([59,61,54], 0x3ffffffffffee28596fffffffffff) :=
+  bad_of_gated_check (tape := tape203) (gas := 150) #[⟨_,node199⟩, ⟨_,node200⟩, ⟨_,node201⟩, ⟨_,node202⟩] (by decide +kernel)
+
+def tape204 : Array ℕ := #[0x5000990281b0b07040526232abc3222019b098b0048085709b40a250413084b0c8921480b0e231b2428022f08be09c0023b085808be0a250a200403085708970aa208be19c31c6409ac01c40b2215c0022b084c0b290b2214481d9c35475ead, 0x5000852099f0a20039208ca0852084c3e480b9c0b8c040809ba099b0944040d0a0c0b0b38e23a9c404b4340022b0943099b0a96091309100300093909ba0a2008b8050009830b04031c099809430c832e272fc80b9c0190090108160b1c0897, 0xb2a0aa20a9004830ab30c0c099f098b56a859bc0b0105030b8f04820aa209a40a9051cf099f099704030a8a0a2a09a00b8f4e23000a098809160b8c04110c8209a4020608c50b0609ab47c8491c4b2752810b0f04110a250a20099f084209ab, 0x944084f0a0a084c0c8670c80a110a0c05000a010b060aa209a00998030d099469406c2a00130b060a0a028a0a2b0502093908b80b01050209ab62c064dd6594672071a7833100b8099c0b9c0b8c00c50a3b0aa809ab09ac5c9c014409a70c82, 0x40d0916090d0b0e099f099b011c852788309329029b0a8f01940b060915030b08140b0d0b0680a40a8902110a0a05020a2b7c940c0f0c0601440a2508d10a0a0a167a4e050008c208b80b0d0b06772a7d95099702897323824b01a808b80185, 0x1ab0b1c0a0a098d08b80b8c091c082b08a70489090d0c0d0b150b0e02a1084a08080d02090d90aa099f099b020a080f0a05028909888b190b158c9f082b]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node204 : Bad pats ([38,65,61,54], 0x3ffffefefef8f305327ffffbf77ff) :=
+  bad_of_gated_check (tape := tape204) (gas := 150) #[] (by decide +kernel)
+
+def tape205 : Array ℕ := #[0x28a730293ca10116090a08250c16099f099b03030916090a0a8a098a0a84030309190a050b9b0b9301c608b80a9c1e4b2096030309400b070b00098d0b9b0a0a008d0b9304040a250a060901080d014009ab0a251495171b182d1ba223a726b0, 0x3030823403341ae4aa253ce5d17011c098a0b220b1b0327099f098a0822099b04890910090701a40919004235b43696382308a7023908d5093f084333333ad303270913082a099f09970303082a0c8909a7022608b808430aa72bcf2da3002a, 0xb1d00b808210a250139565257c758ad0a1c01ab0913082109100b1401a408a70a25038c082609400025082109a34e464fd751530b9a010c098d022508b809b70b2749950829082803030824032908b8088645280c0a0c0146310109082308a7, 0x2a1091508d608b8082a08290502098d0b9a082863b301ba0a2a01390b1c6052612d0a170a1200a70829009b08280b16009d0a255ac05c33039a]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node205 : Bad pats ([80,32,65,61,54], 0x3fbf37bffebc7305b63bfeffffbf7) :=
+  bad_of_gated_check (tape := tape205) (gas := 150) #[] (by decide +kernel)
+
+def tape206 : Array ℕ := #[0xb23094309b7294e09ab08420024084808a50139082a0a1223a90a26254705000b220a2a08280b9a0b8a022a09b70c880a12050208290828022a1a2d1b920b0003270c040828181c1da200a708230828019309130a121429159a20c92ac05bd6, 0xb220a260a21032609460858039c0a1701b709403c1c3d610ab4032308c50b140a3b09b739d83ece019b082b0b1603230a3b0ab4085a09b709ab34ce364902a8099f099b050209ab0aa20a8a048a2d222f2730b040c803220a260a2104030b0d, 0x8be0146085e0857002908420a1756610d030b9a0b820aa257ce08b8002a0b0f0aae09ac09a402a70a1209a709970829030f08610a1c08244c330a260843030f08260a1c48cb032446c94eb4038409b40a8a048a0aa8439c099f4530514201ab, 0x48008280a1709467051722274c37f4890ce00a708230b03019308220919032309ba0822689c0b8a0084084c09930308084c088464a70c8a66226a2d08b80503094008c4048a5f5809ab099f60c26bb00aa600610844084203240a1c5a4b0a26, 0xa9c0a84039a87280486082804860c010842853186220a170306091c039a81288221893c0483089b0b0108230c03031b0a170b037ca709b709ab02a1084f02030823085f09c578d70d03094079c70212091008280b140b9a040108260d03084f, 0x848084708a7a0c60a1c00a7084204800824082209a79cc2084401ba08be08480139985299c701390814099708a7082b013908480847942d96c69da1a65300c508c304860b260ab3086209a78fd30949039a0c0a8c5e09ac09a808b8005f0b1b, 0x40308470b220b14004209aba8a90a260a210480082609ba08b801120826032a0843a32d09a4a4420139]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node206 : Bad pats ([32,65,61,54], 0x3fffbfbfeebcf305b67bffffffbf7) :=
+  bad_of_gated_check (tape := tape206) (gas := 150) #[] (by decide +kernel)
+
+def tape207 : Array ℕ := #[0x8c909ab018c09190a20029a25d2274f2aa9364e00440824089a091000a00844089e0824211c031208a50844082b031908421cb31ea80a9a0a9400be084401a818c60ba0010d0b11004216341740199a022009190a1b004212b4145023534021, 0x39f0b220b14004408a0089e0828038f09a70b0d3cae3eda0043084202390939394a09ab3a290a2600c5082b09b70119089e082b34c70b220b1b009e0828091c050308a509b70390098c08c908a52ec70b0d302e31da01a80a200140085129c8, 0x21609b7099108290826581f03900a1b09a0031453c8089e004208b800c5094651480d030c055222552d0a2100be08a50b1808b80824032608b80c824aa802b40b900b8848ad0a9a0a94009e082601a008be44ae0b90002642c0459a4d535a1c, 0x8280a07709472a2002a0828030a080708a50a1b0a1608186d2e6e24002908c309400b180b140a8e0a82020209030b0602896429658e03030a1b0a110818082a01b70a2003190a1108d509915f4d6033629469280a1c0a170294082908260b18, 0x1900898089c0207082a0826098c002a]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node207 : Bad pats ([35,65,61,54], 0x3ffff7f7fedcf305a67befffefddf) :=
+  bad_of_gated_check (tape := tape207) (gas := 150) #[] (by decide +kernel)
+
+def tape208 : Array ℕ := #[0x8c3039f0c1109ac09a427cb28ad2a1c0a21002b082909ab23c92ce13a1b01a409a301a40a2f082b0500094d09971e341fc70a170a12031d0945093901ac194e09ab022508080805098b0919082b03840a26099714ae17c71aa120a941ca4320, 0x855084f08c5094040ad0a21002b08a109ab3d490b1b0b14039f0a260a2101a40aa20a96032608c508570aae09ac0982372838ce00cb0a2501820821323409ab082900250b1609b72fb333490b2200290c0109820a960a1703180b01082b00c5, 0x91c5aa45d305fcb0a1b020d082a099808a00994030309ab0b15091c0898533055c80a1101980a0d038b08110994098c082b4e214f2a00a0082b091c00a00a17048d0a20081c483049314a9b63a70920d8024423d801d80042d000a5082b02ae, 0xb8b00b808d10c896f9b082b722109a301ac08b8082b0a170a120115082a021108a0021c67b468ad0b150b0769976c4b7b1f039308910b830098081b082a621309ab021c08980994082a0a170303091908810898081b03030943090208810891, 0x304082a081c0b000a880a20091c03040a8e0aa1081e081c00b80aa10881080009130b000a1c0a0d030b7e30822484b4099f099b01980a110a1c0a170502099c0a0808890a1b0085099c02a008d575bc0a08769b082b794900be099409880a1b]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node208 : Bad pats ([65,61,54], 0x3ffffffffefcf305b67bfffffffff) :=
+  bad_of_gated_check (tape := tape208) (gas := 150) #[⟨_,node205⟩, ⟨_,node206⟩, ⟨_,node207⟩] (by decide +kernel)
+
+def tape209 : Array ℕ := #[0xa8801010a0227a629db2b2b2ccb02a10865084c09400a300a2b006508510c8609820aae0b260a880a26019b082a0b0e0aae1da621dd022d09400aa10c0c023208500940031f09820a3208500ab40489085014e4175b18dd1ace24c731484028, 0x19b081909120a880a2a0a08082a0a25003e0aa70aa1021c09ac083e01ac39423acb0325082a0018080b0803088108920a030b2509ac36ae37bf3c4d022d0a1c0a1702260b84082a2fa109a309af002a099f0a1c028809400c01050008630b1f, 0x7da40397083e0c1608a0082b0a960a90011c089c082a02160a0808a052b10a8a03250a160a880c8808a0040108c70a17082b4daa5010544c040d08c10aaf09af084e0ba008a00398084d0a17082b0b8846aa04010a17082b0a8443a04a4657bc, 0xb9f0b8f01c30aaf6f3f70dd0a1b04030a140a0f08190c040a826ca573d209a8010a0b0a0a23005e0b0e0b030a820d0066d00a190a200a1b0325624d02a109c308db08800a1408190a0a048509c30b8f088b001009085b8f5d9e6125684c772b, 0x296082b0a840a1702260b8409a7099f03840a2681470919832109a4099c021b088f09930a120a080197098b008f08150a117a277b26082b01c308c10a1408190a0f0a2a0a2003150c0405000a8472b10b250139]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node209 : Bad pats ([74,41,61,54], 0x3f7ffbf7dffe4b0426ffbefdffeff) :=
+  bad_of_gated_check (tape := tape209) (gas := 150) #[] (by decide +kernel)
+
+def tape210 : Array ℕ := #[0xd020c830b270b200315099b01980915252b265f0315091c0a960a840015080109982122001508000a0203001d9b1f4023272a94014008510b150307095108040c0419db0915090604040b150b0e161b0a1e0a19030e0a8913281b34326242c8, 0x82b05010a1e3fb440d641aa0a35038a0b0e0850094a0a320a2d00510940039a09970b20039a0a96006508620b003622372738db39d03cce022b0a0509900115082a0a2b0b1930a80aae0b9404860b0e0d002d640b84030e091c09970315291f, 0xb20011c099709940197098b082b5624048009150906099b0302521b543457e65c990194081b082b0a1103150a2b09390a1e0a190317090008cd08150b150d024b4b4db4020f082b091c03800b1545b4471b4fa761cc039a0b0e02ac09ba011c, 0x8c2022509420a23093902256dc56fd6021e09420939022308c9082b0a2b0b0b0183091c0c0368206ac5032708530b250aac0b1e65cb6c5208b8019c0a16022b09ba0a890a83099b60b40b190b0b02890805082b0a83099b0216098b082b5a3f, 0x325085109420a2503170b000b8209ba0939031e0b15724574b4]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node210 : Bad pats ([38,71,41,61,54], 0x3fedffeedfba1a0532fd7ef9f77df) :=
+  bad_of_gated_check (tape := tape210) (gas := 150) #[] (by decide +kernel)
+
+def tape211 : Array ℕ := #[0x2ad20aa6039c082a0949002a09a425e409400a25021723340b170b100225082a0a1208b8214f0500099309400a250212098b09100919040d0993093908b81aae1cd21e9e2750020d0a25094008be08b802120a25039c09421352144016d630d3, 0x46c80113099302840a1708b80c013e9f0b830112082b03073ab00a8309973b930404098209160913030308b80a03021434a1362e038a3328381b3fd64b9d023908be08c801ac08b809970a170b170b1000b82c4f2f4e01b408b802280b1729c0, 0xb835b495d12030009930919082b56a104830919030309970c8353310a9c0a8a08b8010a09930b1009b44fc6543061620c0b002a09930203082a090a038a49280b034a9b0b1703030a140997082b0a1700070a8409400a350a190a140b034430, 0x82b0a17028a6f3071480aa601390a350302091908b8082a048808b80b836a316c3f0b9a0488082a0a120a03002a0a170b83000163a3651267226d50008f098b082a01a409125fae0a120a0301ac08b8082b0a17010a0904028408b8082a5a1f, 0x1c0091c094008be08b804887240038a0913]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node211 : Bad pats ([32,71,41,61,54], 0x3bfdfeafdebe1b053679fef5ff3f7) :=
+  bad_of_gated_check (tape := tape211) (gas := 150) #[] (by decide +kernel)
+
+def tape212 : Array ℕ := #[0x8a000050a890a260b2027a80401081c0b0b0aae0a9c030b0a8a0a35089822d225302ac80320089801400851010108041d5b09060b0009151e220a1c0a17031e08b8093f0307081c175d18c9030e099b0b190b0b0098132708b815301f343d14, 0xa170b1e41bc43344553690e00a00898091c0b20050008b83b2e0a200a1b0319090d08b8082a031936ab039c0c8202ad0b1e34dc35ae0a1603030b0b039c312e0b250b1e021c081c09ba082a08b809392f4f321638cd030008510aa80a11099c, 0xa115a280ab45bc80c02020a099c019b54a80b1e0a11031908a0091904880a0009940980089804880a00081e4e98512e529b0112089808b809400a1c0a1702ad48c9019b0a1447b04bb4559d019c0b190a200a1b021c081e0b19009408180a1c, 0x1ba08b80a1c7034719702b4099c099003070a146c306dc873dc0a8e03830a140b100b0202ad0b1e0a1b0a16018808b808980919090d0200081c62ab651b01ba08b8081c0a1c0382089408b85ece60b467170184081c099c01ba082a0b150b82, 0x85080d02170856099408a087100b250a110b17010a08a00404099409800b00822e0a1183560a2002140a120b177e34014008c90a350b0e0b070194082a0a9c019778340a3501400b9476ce79cd7c48881d03070a140b100b0202ad0b1e0a20, 0x188081c091208b80b19031e0a1c09ba8b3c0a200c02]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node212 : Bad pats ([80,71,41,61,54], 0x3fbd7fcfdfbe1b0536b9eefdff7fb) :=
+  bad_of_gated_check (tape := tape212) (gas := 150) #[] (by decide +kernel)
+
+def tape213 : Array ℕ := #[0xa200a160139273408b8292e029608b8089609980219089608a0040621ae0a112340020d0896023b0a1c0a280a121ea21fb4252700a0089c040d0b1f0a200a16001e08960a1218341a2e01160a1700be082b14bf15aa1b3c35944fd6d8001150, 0x21c4034423c44d3021209940a1402230b03090a09940a113c9e031f0a17082b0212383439bc3e1d0a940216099c08b8040a0a11099c082b04830a8308930a11323034480b0b0216099b08b809390a1c019c081e082b2c3f2e990b20022d0942, 0x940099c58ce03260a9c09ba0a190a1401ba0919081c0b07542d56b05b480aa00a9a021c0990019c0b0b019c08b80a144dae0187090d081c089c4bbc4e980110084908b8081c0b070a1448b00c0b022809390a2008b80b190401082b08be0a20, 0x31e0a20019b084809ba0a1c64b40b100217089c0b0b0b9003070a145fb008b8031f0a1c0a1e5dc061cf030b0990084e099c0a260416]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node213 : Bad pats ([71,41,61,54], 0x3ffdffefdfbe1b0536f9eefdff7ff) :=
+  bad_of_gated_check (tape := tape213) (gas := 150) #[⟨_,node212⟩] (by decide +kernel)
+
+def tape214 : Array ℕ := #[0xb0901b80939081c27cf0a120485081c0ab30b150b0e001c0aad023921dd22d425172ac90404099704040b021e1b0b150b0e048009800c040b981baa0d000401099b03150815080f0a19040109130a2b15cb0c8717a718801f263fc755b4564a, 0x44cb009a089804860a2d04893dcb3ea80b0e0a8804890a2d095109b809040912099b089a02a10a3908000a1408180c040ba001010818099b33a837243b0e0940001c089a08960315081c2ea80a320a2d304f0a1c0a17020009150b00081c0b17, 0x643468bc6926092cd80001ab09a70315083e08980a1909a3009a08980a2d083e0a1c0a12000709880a880a26050308500a884d4e083e023909b8098609100c130503482e0b2b4ac24f21522354cf0315099f083e0a1c0a17019f083e0b014226, 0x919082b03846f2e0a260a170214090a09970a9c6d3070c8795c79a0d801019b091c0b0e011c672a082b030e0a2065ab041509150b8a0b9a0b150b0e03920b8a031e0a2b09ba0b006022099b614d038008be0b100b090184081b0a2b5ac85caa, 0xd803d80202260a1908b802840848082b0212763477bc0b100b090302082b0a260a1208b873cf0382]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node214 : Bad pats ([41,61,54], 0x3fffffffdffe5b0536fffefdfffff) :=
+  bad_of_gated_check (tape := tape214) (gas := 150) #[⟨_,node209⟩, ⟨_,node210⟩, ⟨_,node211⟩, ⟨_,node213⟩] (by decide +kernel)
+
+def tape215 : Array ℕ := #[0xa060202080e279a2ac82b9c3da3050009100500239c0a200a1600b808480b0e0b8a0a2501a408b8022b1e401f5221a003810a110a2b040c1ace0b22019c091c03230a11181c0b9202ac0a301652194c019b081b0910031212a814301c482497, 0x20c401e439544ab588b028a099c00160a303cc0091002110901080d0809039909010a060a16050036c338910b0909900b0202110901099c0a07088d03990901081631110c0503120a2b099c2ed633c83aa202060b02000f088903890b81299b, 0xb020a2503920b820322564a57480b0e091c0180088c0101528c0c050101088851200b090b0053a2098f008f09100300088f01010b090a2501010b81022b08840901081649314a484b954ca24da70093088f03090a16020709010b2942c8081b, 0xd00081b030409390b1005000b1b02ac6ccc0b996dc80c0502b309430b0401c109460a3b68c30d006a566f1c0893098b02060b150004080003220a25620809010b9963150b230290098c0907091c05000b220b020a065c9c5eaa641b0a850139, 0x19808160a16]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node215 : Bad pats ([45,71,38,61,54], 0x3fefdfeeddfa930432dcf5fb77fdf) :=
+  bad_of_gated_check (tape := tape215) (gas := 150) #[] (by decide +kernel)
+
+def tape216 : Array ℕ := #[0x28d30942038a0848021e09c4039c2550265227452a202e563c4002a80b19099b09ba0a3503040a19099b0c850a2d048d08130a8909970000081508141aa71ccb1f620a2b0051094002a7099b03140a0f0a060aad1527165b0a2d174e21c861b1, 0x453f014f08580a2d3fce47d64d34584c02ac0942093902160848010009880b8a09ba39d03ad70b1e0b1702390851094e09480b9209ba01c1085809420a010d010b2532d20aac359e021e09420939031b0a2b0a232cd70a16031b0a230a2b022d, 0x22d0a350a06098b0a23093900d10a3b0c170aac040c08c909c109a053560a2d554e0a1603170a1e09a04f2a0304085109ba01390d004bd20b250aac0b1e041348cf030b0a0008990a890a3500cd089b08c908600a3b0b980b120502094241a7, 0x10d08160a85098d010d0b066d1d0b220480081a0b80014f0860080408640a850c8d0aac69c86b4c082b082801910a190a0f643008a5028a0a250a1609ac0139085609b80a2b0314084f0a2d09b8030d095109405bd05dce5fb408b8]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node216 : Bad pats ([71,38,61,54], 0x3fefffeedffa9b05305dfffbf7fdf) :=
+  bad_of_gated_check (tape := tape216) (gas := 150) #[] (by decide +kernel)
+
+def tape217 : Array ℕ := #[0x983090f0994020a26a00a2b0b1409a4013908b803140a2b23482434082803140a900a2b09a400420a2b1eb420aa289d031b0a16082809a801390b14038708270910088c030d0812082709b81710195a1a3408b80028133c1c244c334ca64d41, 0xc0300b83fdd409b0b8f02a20b0d008b08283ca23da70b0101b709ac09a408b8031b08c50411375509b7009d08950c0c0207088b0a0a098d342735d73848040308950b8f082804030b8f0b230897089d004209b72c232ea830bc3a01424e0202, 0x5ad25c625dc80b9903090a160b190b0b02300b170d00544a563163cb6e9194abd803502d09290926d8024e29d801d80000be08b80842022b09ac09a44ac20844038f0b1b01130828475a484a030d08280a2b45480b0f0b08019808150895009d, 0xb0971237aaa01390c850b230a190aa10a9b02900b000a3b0c850a8f6bd703090a19004b08480b800b100b090a2067bc68bf03190a2008000a010a0f0a160b1702ac09c40b090a20605d04050b2a0a300140084c0851006309980b040a050853, 0xa200d000b910b8188cb0a850991020009900382080e080d0a0605000b84088c080905000aa10b810b02088e7f8c819583a8849d909b02850a190a0f050209ba0aa20a2f0a000b8108160a85098d00ca0aa2080d0a050990749d793c029b0b81, 0xd804029b0a8903230c850b9893a70a110a0c004f084d0a20031908c90851040a0aa10a2d8dd98f480d0002190aa18acd0c850051]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node217 : Bad pats ([61,54], 0x3ffffffffffefb05b6fffffffffff) :=
+  bad_of_gated_check (tape := tape217) (gas := 150) #[⟨_,node204⟩, ⟨_,node208⟩, ⟨_,node214⟩, ⟨_,node215⟩, ⟨_,node216⟩] (by decide +kernel)
+
+def tape218 : Array ℕ := #[0x1028212923090400ce0c8803820892254e0b1c02850816232a26100c0a0c01040c081d0a2d0a95022d1e2702a3091208ce0b100a3b084f03991a561d4b0d020295084f091201020810088009390a2d16a11823201c2ecc3cc33d2b3da83e3e, 0xd804402cd8033f32d802d801d80005030a9d09b4081d091a08c409b0030e0912084b081209ac084601ac08920890364e0c13029d0844081d091a09ac048608c0312c339c3958048808880403081c2d940b15001c0b0308102baa0d0202830818, 0xd40938584c0d030a0f000c089d099755990a1e008b089b0b140d000aa25341099c5a480190091c0a900a8a01ab084a0b220b14083e0aa2000c089f0502492b0880019f089f050346a7478a09ba0b804a4c4d1c4f3c5eaa7526d80541a077b5, 0x997030e6f9f038408cd08c10a0508400b0f021e08416bc06ebf72b002890a0509150b8f0b870306088b08850994000f088d649c0a0f0205090f080d0b0e62bc66d7692b74a50138083e0d000a1e028a091c5ca309a809a0032208560b1b0aa2, 0xd80bd80a78bbd809d8087750d807764ad80600130b0f0827082a038709380a230a01099f]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node218 : Bad pats ([61,54], 0x3ffffffffffeff87f7fffffffffff) :=
+  bad_of_gated_check (tape := tape218) (gas := 150) #[⟨_,node156⟩, ⟨_,node158⟩, ⟨_,node165⟩, ⟨_,node177⟩, ⟨_,node192⟩, ⟨_,node194⟩, ⟨_,node195⟩, ⟨_,node196⟩, ⟨_,node197⟩, ⟨_,node198⟩, ⟨_,node203⟩, ⟨_,node217⟩] (by decide +kernel)
+
+def tape219 : Array ℕ := #[0x260a9b00260a952757283105000a1a0b8a031408260824239a0c800994019708290b0d0b060329099708290060085e089b088a0a8e1d331ea220a8020509100827029b0a950026169b17b10b92020008260a8208d814a21924255430d63f4e, 0x50d359c802a60aa00481099409470a95085003070a333bd73e440a2900cb08c50b15032608c50a380947029a0a38099408230822029a332835e237d4393300290a9408230b8c0503082308222ec40b1c0b1502b30aa7029508290c032ad72ba3, 0x11f0b220b145856084a0849039c0b94050008210c15541c0b220b1b5552011408290a9b09970822041008270a1f0417082908ca029b082908274b564cc74e260aa7020c0993082901ba0946462e0a9500270a1f010d082708224347441b47d7, 0x322082908560c050aa00a2400200aa06d337062040608cb0aa100260a950829032908d90a150a10091f099305000a9408d9651f682d69d702050899082508230480080a090e0821602d030608620a945da862336b5672497e54023808210a24, 0x8480845002708260a9508c2084a8749022908c6032a09c80826050381ad0b1483560844844f0939014a08220a3a0b290848084503260826048009940a1a7a2d0b140a29084402a709c50a9b02b3089309c5752d76c77b4f0229082509470aac, 0x39c0994032208258e240c1500d90a3a09c4050008210aac8aec8c1e]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node219 : Bad pats ([65,67,53,64,54], 0x3fffffffcc39b406fe17fffffffff) :=
+  bad_of_gated_check (tape := tape219) (gas := 150) #[] (by decide +kernel)
+
+def tape220 : Array ℕ := #[0x88c091c01800a9b01800a952657271f28a60138084e0b910c810a150381211f0a9523a531b002950a1009150323090e0b0e09ba09121d33031c0a9b093903100938084e009f089b08620b9f0a3a094b03870b18145d175618c51a151ea8594c, 0x84d0b03081e038709483ea640c542954c2b01b90a060820040609000a0c0b02091f3a26006209380a150939010c08110d00355737223bad4e1c0138091f090208940820028109390897090e08d40b1001380814080e090b2c4f2f2208240016, 0x90f0823030e0a10090c01395595572d08200106081a0816031c521f0a0c031c0b02509b53a6099401970912082708260138084d0b2308200915091204150b030c03021509390d0047dd0138084e050244d345c2491b0503084e0820093900dc, 0xa950207081f089f6fc570c9084a011f08270a3708c46ccd764200210820004a09c468a608c409390295084a08480415090e0821089d0b2509b964d2665700c9084905020aa10a9b5fd30b1c0b150207081f081a089b5cb160c869c704880939, 0x32a08440b8c0b8402950939084a0844829c0a240a1f03940846084a011208260820084405000ba108957bc50b230b150138082378bf7dcf7f33023709460b150aa10a9b01190b150a370a9573d70846029b]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node220 : Bad pats ([50,67,53,64,54], 0x3ffffffecb3bdc06f296dffffffff) :=
+  bad_of_gated_check (tape := tape220) (gas := 150) #[] (by decide +kernel)
+
+def tape221 : Array ℕ := #[0xa15029427ae29612a542bd60b9a038408130a940b14094808c6084a00d90a15093808cb0844048c0b221ec7215405020a2409410938023308221ac404030951048b08d908650ab3185419561cce24e22d1203220938084d0194125613c22e64, 0x21081f038a091409383f280044080d08090a8e093800c50b073abe3d224033471951610139084e084a0b17013835480384084a02150a8e093908d80b9a0b23334c345637490a3203920b8a0050093809ba0384084a0b2a0322085805000a1a, 0xa150021081f0c89088357b308c5030e094f084954c709b959716519048b0b150a1500930821001e081d4eab4fb308c7001d0ab3089708954c4f03250ab30c8b49cd0b890309081a0b92081d018b090545220a1a0a1501380849032541cd42c2, 0x29a081d0c890d03701c0897089503870a810114081d01ba084908c908c50b090a0b6aa66bab6c9b0b990b910224084f084d09b902150c8908c501ba084961c7635d000109030a02081a081d091f0b1001140b220b875c1e5fcd0ba103090883, 0x21a084f08190816]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node221 : Bad pats ([45,67,53,64,54], 0x3fffff9d4f3bd4069e94ffb7fffff) :=
+  bad_of_gated_check (tape := tape221) (gas := 150) #[] (by decide +kernel)
+
+def tape222 : Array ℕ := #[0x8480b100020082227332944048c084a0b2a099002820a0b231c08a00a940384084a08a020be03060821080a0c0608cb084a08480382082209c80b841b4e03820ba10389081009930a1a03230b0d08220009142215b317e118cf1ea0255636da, 0xa330a2404800b2909ba3f4741c4038709970b250b1704810ab309ba3acf3ccd485459226655010c08210c890b1008d708cb084803820ba1334f0aa603820ba10848315c08c4030d08220a3a09b92ed20a9a0938002008220a242b3e014a084a, 0x844084a048a0b170b0e0a3a084457520939023a0844084a038f0a3a08c405020a3a50d6524d53c2039c0b8402b30b0e0a240a1503910b020b004b2e4d444e4e03070a240941084409380201098b0c050a9a01c60b2943a045c7020208000b00, 0xd8000389091f02020b060c070b9103020b9a0b896361652e0822011f6026031b09380b0d0997029a0b1b030209390a245c3e5d1f5f28022408c6]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node222 : Bad pats ([45,67,53,64,54], 0x3fffffdf4f3bd4069e94ffb7fffff) :=
+  bad_of_gated_check (tape := tape222) (gas := 150) #[⟨_,node221⟩] (by decide +kernel)
+
+def tape223 : Array ℕ := #[0xb0a03820829038c08460b26093826b30912279f0138089b0a9b09120aa603940a9b005c084a0c021fb30d0020d623492aa003230939091208900323199e08290a240a1a029b0a8f0a29082903890b0309860b230a29152b17241bbe2bda62a8, 0xa0b0a9b4126048b0a950300089b0b0d0a943db33ed744520a2d04050a9a0a0c0a950a240a0b028f0a290a9a36a40829029a0a940b8a0b9a342e000d0814089b0b0d0911031f0849089b09382f1431b339d5029a0a94031508460b060c150b18, 0xa240a1a0294572e5953029b084908ca0a24081a0a0c0a9a0115089908290138089950b3522055945c62619203090a0c0a8e0829029b0a8f4b2b029a0a8e03a10b260b0009380807089b48a049b34d22032608c5093909380a9b0b18021a0a0c, 0x11f0a1f702f0322086108c40b110845031009900b030b0903916a256c4e023309380b110b0303890989669f68cf6eae72bf7b559d2303920b8a0500093808d00aa609ba031c089b0b0d0d005f560b9a029b08140a240a9408ca0b0d05000829, 0xaa000d508460a3a029408160b09094608c70b26864e87d688a48aab030208c40938029409900b0303817e1f7fd6812e8f450a2804890b810a95011f79a108270013086309ba08c6084503100a3375ce0938782e0aa7048b08c408440a290827, 0xa1c2a2cda4bfa62e0a230a1e01b90824031109b900449b599c2e0aa7004508440415093804150a100b100b2a9744984c09b902950825001009900b03093892ae93e1995702290aa60302091003818d1f8e5608250824029a0a8e0b8108a00229, 0x3070844089d08250a290a24030709160825a8c7082701970b070b00014209ba084508440233094202a6086208c4]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node223 : Bad pats ([67,53,64,54], 0x3fffffffcf3bdc06bc97fffffffff) :=
+  bad_of_gated_check (tape := tape223) (gas := 150) #[] (by decide +kernel)
+
+def tape224 : Array ℕ := #[0xd012b9f082701820841029f0b1e25c70c860326088808410a0b0b10000a089b0041201f2133238626a82db2031e0846038b082508c70a2e1c50084101380a2e194601070b180987020116170b250b1e031408220d01145617c71d3137d248a0, 0x89b0a1e082303100a2808410846038a09120b0a3ccf3ea301120b0a3a2840ae0a25040b0a8d090f091c082502a60a3809120a2d0938023832d00c8608410303089b0a9f30c73528082a04060a930a1a0919032909420b020b8105000b2629d1, 0xd000b990b815a275c55641f0309089800a00843022e08c753450847541e082501900914090e041008a009384e9408c1022e08414c53502755310a200a1b038a0915098b082708250224094308c2084101150a0b0303089b4333444746280048, 0x31809940a1a0a8e082500280827088c0b096726091f03810825004108270b810b0963260309089801b90c06002a5ec55f9e60a90aa505000b0908270825041409800d010828]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node224 : Bad pats ([63,53,64,54], 0x3ffffffffd0f5906f43dfffffffff) :=
+  bad_of_gated_check (tape := tape224) (gas := 150) #[] (by decide +kernel)
+
+def tape225 : Array ℕ := #[0xc10822281700dd081a0b0d0a1e08220a1403920b8a0b090822084123bc26d62d3101b90a1408430841030a0990084709b91dc608c101150a060b9b0841030a0990084702150994175018c61ad5020a0b8b010f13a30c8b0c8114cd1fa53b2f, 0x48230318088408500b1408473fc64adc524467a50095082301060a0f09163a270b090b890a990a93030208410a3809900b030a9f08240823032908c10a9f0a100a0b0a280b09091f3226361902a00a1e084603920b8a00c12ac22bd00b170b10, 0xa3308475a5c093803940a2a022e082a0a8e555c56505c460223085809ba08450a140a2a0c0b0c020206089a0a1e084508260a2a4e1d023308450b9b0a230a1e031f08a0082a08260382089a46300b0a038909b902ab0a2808d308d94351441f, 0xa9f041408c6082508c20b1f0a3301ba6ccc0a1600250c0d08410a336b206fcf76cd03910a280a1409380214089a08260a880214082a63a665d008430206090f0b9109930c810a28002a5e50614d0841022e082a0a940a2a030608a00a8e0a38, 0xd80003940828082701c30a9309450a167530091f01420841722e0b25]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node225 : Bad pats ([63,53,64,54], 0x3fffffffff0f5906fc3ffffffffff) :=
+  bad_of_gated_check (tape := tape225) (gas := 150) #[⟨_,node224⟩] (by decide +kernel)
+
+def tape226 : Array ℕ := #[0x29222a9b30d63ba6534104100aac0b1c02a524620b0203230aa50b2222c1082202a70a340c070b020b920b822024091f04880a88098a029a0a941a8e0820004809ba0c0501880b920a00020b093f09b9029b0a8f145d1599175618a61c2b25bc, 0xc050a8803820811098a0c883f2044504c240322091f08ca01390855081a09150d010c8a3a520c170aac0c05039a09ba013908d40b9b345209530aac3520029f08c9084903230857091f2f4f0b9b0b8b029b0b832c5b02a50b22091f020b0b00, 0xaad09390b1700150c050a0f089e082356b358c6001509030c040b290a0a09390a87091f039b0a3a0a0a089e4f31082302a60aa002940a3a08480b260139084a0322085808d908cb0a0a485449494b5601820b0704070b82081743310c880c0e, 0x200823031b0b0209b909390aa70aa103290c0d093901ba09430b290b22645465dd0307091c0b170a950b1001430b8c0a3a038c09940b005d5d5ed6615768a60a1e0a1901b9]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node226 : Bad pats ([47,71,53,64,54], 0x3ffff7cfdb3f7106bc8d7bf7fffff) :=
+  bad_of_gated_check (tape := tape226) (gas := 150) #[] (by decide +kernel)
+
+def tape227 : Array ℕ := #[0xd0002250b170c0b0b0927e32b9f31ad032909430848023222c90b0e0b0002190822208e0a2502810a14084908221ec8020008230a9302b30a3a0a9f0b8a08220309082318221a990c0b009d08210a9f0a990b1e0c880b8a15941c4d242e391b, 0x858085709430323094b0a953ed501ba082a0b993ccf41484ed3629f04060b000a990a93091603170a250b000aa50b8105003441369f0827082a023a0a250b090a0b040b0a2503170c162ed70a932f90091f03a108c90ab30a2502b3084929c8, 0x93908c9082a0c0659270a25002a0a1909120219082a53a70b1b010f0c870b9b51c555485a13002a09390410082a4dc50a2500270b0908c40a950a890185082949270aa50289088908870a8303820c070a190a0a0887452747314bd701b90915, 0x805088b0a1971100d0272a674a1008f088b01100815081309070485080008050d0169960c0703060b8266906b916cd776537f31099b00210a32094808dd082a0c870c0f0a25002908870a89011508485d455ed70b8b0b830487091505010814, 0x82a89d30a870406098209390a990a06091903170a990b0009ba0a250c0683a2082a869304070a250939008f088b031b0a190a0b7c977dd70b8b0b83031b0a0108050b060c06791301390a250c0603820a06088b0b0303060a060907022509ba, 0x29088f0b8b0b000b8302250a930891]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node227 : Bad pats ([32,71,53,64,54], 0x3bffefcffa3f7106663d7fffff3fe) :=
+  bad_of_gated_check (tape := tape227) (gas := 150) #[] (by decide +kernel)
+
+def tape228 : Array ℕ := #[0x81089808220aa728480ab3014a08200b250a3a0c8900280a9a0b0022a725572ad52f1f03a10b2309b904160b1c09940a231de10d0005020b1708cf09390ab3023a0905090b08cf08530a370a3201940853094808cf14d018451acd1f2b36d2, 0x9940800099008ca0943089c03000a0b094308ca098c014308ca09ba3a943d2640b2472b4dc8020b09390914090b0823020b34260a990a9302010902099008273219091f010e08a0082a09b9010e082208272d410aa505010a9a094a0b170939, 0x9900a14002a573c0a8e58dc0502098c0d010b09091f02000828029f0a1051b20b0952a255265fd60a2002810a140a940822091f039a0b230b1501ba084949d40aa54b1f00a00820038a0b220a0b46260a230503094308490b9a08a043bc0303, 0x8d20827091c01390911009d081c6d946eae70d00a9f0a99040d08d209390851084e040d08d20a370ab167d7048209ba0b290302081c63a90c890ab165546a2b71dd0300089d09110a93010e0823081f028e0a81091f5c275dc90c140c0b0293, 0x143091f0aac09ba03220b0074de08c80b250b1e0237084e0309]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node228 : Bad pats ([27,71,53,64,54], 0x3ffdffcfd33f7106d6ad6fffffffc) :=
+  bad_of_gated_check (tape := tape228) (gas := 150) #[] (by decide +kernel)
+
+def tape229 : Array ℕ := #[0x28a90c8504060b1c0d0127690a9b0a8f0194098c031b0801081b23140c852427001a0b8a01b91f520b1b202d2b2b40a60a110219091f089e021e08221a2e0aa00a9a01ba08ca039c09900b1c089803150a0b0b18081a14a816d217b21b965a48, 0x9ba0a3a099408160916099702a50a23002a3c3c0b9b002a0c103ad30d0100290aa50b15014309ba082a039309ba0890098002830b000b8303003213339435b23754029b0a95014a0d030c072ea72fb138e43d1f00620853081b0b1b0b0d001b, 0x91f08a0040c0b000aa0099409ba0307099b08220a1e002252c154d6572e591a05030916089c089a031f08ca0b180a8d081a05030b14041409ba4acc089001150d0348944b9f4e28023a0994099b091c031b082203834329441f461e503202ac, 0x3250a93013f664f0a81040b0a3a08c80b250b1e64b1021008a0082a0139099001ba093900c85e425f1460326193099b0a1b0a16029a0a9403070a19]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node229 : Bad pats ([71,53,64,54], 0x3fffffcffb3f7106f6bd6f7ffffff) :=
+  bad_of_gated_check (tape := tape229) (gas := 150) #[] (by decide +kernel)
+
+def tape230 : Array ℕ := #[0xa8109c50a8f28d708450842020a0947084a0aa10a8f25492adb3f24029b0a9501940b0e0b0d202103830b0708230281091208980c031ca3084909b303930a8708230303099009150a8d005908980a3408d10981159f17a3194f1e45212e58af, 0xa240a1f02a50a9305010c033e310846084502950a93094308423bce0416091f0294084a0a0a381f0d000b93394909b303230a0a091f004232a50b930b8b0314084205010a34095108d10a832fc5091f30a3344f0a2903820a0a09ba09390329, 0x842080f0b140b060500080f088956450824082102895325089e03830b00090e018108145023082451a2011508420b14020008880807004a08420b1c0b224a8e098804070842084a0b22479c4c1b01150aa509b3018409150b9b434f44c54da6, 0x22a093902880a87082902200b8a0c076db16f57702472c909ab038b0a1a0a160828030a0a1167b0084202ad0b9b65c969cf0a29032308420aab0aa509ab0503082809ba08580b290b1b030a0a1b5db00842032609475bc660cf6351762700c3, 0xa2405000a25084205000810018685170981864587d60a1b0a1a8aad028909c509ba0842014708c2023a0867080f080d7e567f450b2a0a250a1b03060a950a8979a5812e09a709a30194082908610d030d020a1f0842030e08d90aad0d030a1f, 0x392091f08420a1102108c25082902a60842022589c40c86]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node230 : Bad pats ([65,53,64,54], 0x3ffffffffc3735067e1ffffffffff) :=
+  bad_of_gated_check (tape := tape230) (gas := 150) #[] (by decide +kernel)
+
+def tape231 : Array ℕ := #[0x13809940990282729b22aa5048808900b000994004a09c40a2d08a002952132231c0d000a240a1f022d09410a2908c2041409141c560a231e24021e0a95030e0a1518ad0d0201c2099408960a1e009c082008ce14b216c419cc253e3b5757ab, 0x14108c205003f560b230a074045433e45284bcf05010882081d081b0a8f09150306081b0d03089c03070a10362838270a160a11019409050881081f0a1500a008200911309f0a23022409ba08a00a2009382e3c331b01380a2303060a8f0915, 0x9a3050209390c8c0aa10a2a04870a230c170b970939553e040309ba08db0a330a110c0e08ca022d4ed60b970d03524809af050309380a160a11021909390a240aad0a9b0487474549be0c0d005508540a160a11018a085009390a240aad0a9b, 0xc0671db79327db0013f0a2a040f0a190c0709396d3e050208c201140a2369d60d036ad70c8501ba08c20a2e0a290aad66d5022309140a2000c20a2362200d030a2a05030c10089c0a190c0704060a230a05038c5bb25d585fbe63e96e319053, 0xa2a8cc60485093f09190891048109948525874d0d03031c0a2a82d001450a2503250939803e815b082a029a0a19029a0a8e018608c20b927bbe7ca80307081b08980a2e0aad0c0f048208590b0e0b0700910817744d76570d0303090a1b0c0f, 0x5030a230a2e0a290237094709410052995f9ad10b9b01c408d00a250aad0c8503830a250a1b0215093f934d94ad975b09ab0410085f085908d908d50b0e0b07005508540384081408d50b06089c8bd80c06]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node231 : Bad pats ([73,53,64,54], 0x3ffffcffbf37550676bf5ffffffff) :=
+  bad_of_gated_check (tape := tape231) (gas := 150) #[] (by decide +kernel)
+
+def tape232 : Array ℕ := #[0x28cd2adb2ed7461b03910b8901850b150a150a1903090ab1232309b304050aa00a2921532559020108c70907098109150a19089e0046080f0c8c0a2909b3048c0a190b10029409080a14023a0907088b08100b0915a3175618d71b241eb1262f, 0x9af04030a290b910b8104040a380a200847050108540b250b173bcd3da90b970b8f02290846091108200b810502081008a00a20030008a00a23023331c633483529379f3fd303810b1500810981091108202db10c81050009380a2008460237, 0xb070b030307081f572d0c160487551f58b30a07040c0a19084609b709af038f081d0a1f0b0303260a2d0c174e9f50d3023a09940a240a150915032a08460b0349a44c5753070a1104030a1e08460a20013808470b9f0b8f0111421f445209b7, 0x2830b1109af09940a2404870a830b030a2d63a40a2e03110a3a09af0a1a03035ea40c1602b10b890b8102b10ba15b990c875d1f60d60311]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node232 : Bad pats ([43,69,53,64,54], 0x3ffff7fcff175506eeb5cffbdffff) :=
+  bad_of_gated_check (tape := tape232) (gas := 150) #[] (by decide +kernel)
+
+def tape233 : Array ℕ := #[0xa8d000d080a0b030a250a11040d0825253e279929232e50021b0819081708950893038108170a1b091f0a8d1fa304020b9404150b0e1bdc0a250a1b013819481c99222d03a10b9900530b230c870b26014708dd0c87142d1651171f37cf44b3, 0x91c084640be42970a9902a60825093808460a940a25040c084608253abe3d9f43db00970a810119081b0c8708973693021108500825089b02160850091c0c87322934190b1f0b18009b0897031c091c0b030a250a16031c2abe2d2900250816, 0x59485ba309b30219082202a60b0955a30a29040c0a0f01430b1f0846082452bc53d656d35db1001d089908970b890b9903230a1900234b460c850b930b8b03230a0f0c1748d30a8d4c214ecf5eaf02a50a9f038f0b8701380a2508460a1b0228, 0x7b3e02010824082a0201088b091f02250d000b2a0b81022508106aa96c9f0c866e2d03a1080a08090b0a0a8d0b03028d64ad03a109810a2502a66248639f67ae6fa009a709a302a50a9904030b8308210a1904070b100910090d0b0900240a28, 0x1ba098c882e0a8d0b8102010829082502330a2809ba842e859900510a330b1f009a081803027f220c030a8d802d81a989cd0a110201082404040a830990091c023a78287a29082a023a0a01091f0a2d0228091f023a0a010b927328745f7630, 0x2a0085409c909380a1b02010829091f]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node233 : Bad pats ([69,53,64,54], 0x3ffffffcff175506fe35fffffffff) :=
+  bad_of_gated_check (tape := tape233) (gas := 150) #[] (by decide +kernel)
+
+def tape234 : Array ℕ := #[0xc07089728d30821031b081b0aa008cb0944009c0828098609ba085508ca23d30b0626272ac804880aa60a340c1608230821040709100b0709ba0a0a1ba4093909b70315084a0322091f0238085c0c160b0715a216d417d71eaf33c9543354c1, 0x230a1b00233f2f402209b702383d5341460aa5004608450108082308220a1b0405082308c308960847382f3a463b5b459f004a0b150b0e050008c2084a321c000a0828082509470d00009d0a872de330540a250a20004a0a380b1409b70056, 0x5a1c5d205fb369a26aad782f99c9d80000c3084508470a9f0a9900240a1b040508230815099408960b1150af0842001e0a8709440b110b0a00240822029409110a1149284a184cc851d50211082409120b2a0b2300240b224354084200200b1b, 0x1940820089e04850815082309940aa06ea2703375460021091f0406084a0c0409b30a15040609450b0909b30b07671f0b17030e0ab30a340b0009080a240a1563cf040e0b0e0b070938090e04040b290d02090c0b0e0b00000d080908890883, 0xaa0020709110819089c038c08ca030609820a370d0384d485a087b20938041409b7039a0a2d0a1403940a11094b0b0e05030a377c547e327fd380d689c89933040d09b708230aa10a1e0a19039c0aa60aa00a1f0aa1020f09150820082372c5, 0xd803d8029b2b08b7d80100210a230a2009380c14020509140089088d95b20a20010c08260d030d0293a00c850b15000f0a2d0a2002380a2d008b0889080d8db28ea0905496d30a2a00ca0a2d0aa6]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node234 : Bad pats ([53,64,54], 0x3fffffffff377506febffffffffff) :=
+  bad_of_gated_check (tape := tape234) (gas := 150) #[⟨_,node230⟩, ⟨_,node231⟩, ⟨_,node232⟩, ⟨_,node233⟩] (by decide +kernel)
+
+def tape235 : Array ℕ := #[0x3149031009900a100a0b04050a8e01ba0c040b29090c080d0b0e0b00000d0809211c24a025b32799040e090e0b830b930b0e0b070317090e031709390c061a201b461e1f3322342d34af6647d804153fd803d80213add80112b2d80011c11443, 0xa9f02250b18022509b901ba0a253dd50a8d3ead3fcf05000b2908580b220287089d38d30a253ac94dd4643364a0d8050022091f038b088f0a930a8d03830a0b088f010e0b17093908cb0406094a084a0ab32ddb0a3405000b002ad70a812f9b, 0x8490a8d0b030a9f050008c256490b23028d0a870b0d0b06009b08020a2d09b908c25214546258a85c1c02250b0a0b0301160828082302194aa94c420a8d04860b0a091f0a3a05000b290b0a46e208490486090f090c080d0b220a2544504899, 0xd809d808d807659bd806030309480857082309390a25091c02250939029f094b09b95fc860a80b1c0b15000a0945084a08280d000c04091f030d]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node235 : Bad pats ([53,64,54], 0x3fffffffff3ffd06febffffffffff) :=
+  bad_of_gated_check (tape := tape235) (gas := 150) #[⟨_,node219⟩, ⟨_,node220⟩, ⟨_,node222⟩, ⟨_,node223⟩, ⟨_,node225⟩, ⟨_,node226⟩, ⟨_,node227⟩, ⟨_,node228⟩, ⟨_,node229⟩, ⟨_,node234⟩] (by decide +kernel)
+
+def tape236 : Array ℕ := #[0x1ba08590a120a0309a3099f022609ba0aac0a2e0c0801c508420a2b032708dd0ab321490a2e018a09130b831ed622d0252f01820810091000d809390a2e0d031a220a120a0d0486091016a11ba3282004040a0d09190203129f14272c4f3829, 0x94309ab05030b1b00d908d309a33e453f4f00d908d30c083bc341c448510a1a029908c30212089a0b0b0ab30c89374909b309ab0489099f0a2e0a9902a50a2e0a120a080312089a0c872f17311f334b0408099b01ba09470a9a2b230b0b0b04, 0x5a4e08c502b308d109c505030b000a170b1b55e5574f00cb092009170b15014c509c0b23084a04060b0709c7094c08cb0814089e09200c084ed452c95b430a2401a3091a0a21022a08420aa609ab04030a170b23094444c346ce032a094709ba, 0x755b09ab040808d109390a340a2a05000b1909a305000b9b6b276cd7084205000b270a390d030b290b2268c404150b1509a304150a170a1108a000d908d1085d08590a210c0c039a0a1c5ee661a063a365456f4f0226084503150a1709c50946, 0x1430b14089e0b0d0aab0aa5030008220b9b77c909b3022608c308490842040608130b0e0b0708227349]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node236 : Bad pats ([45,65,64,54], 0x3ffffffd7eb7b5057a7eff9ffffff) :=
+  bad_of_gated_check (tape := tape236) (gas := 150) #[] (by decide +kernel)
+
+def tape237 : Array ℕ := #[0x1f081e0a8e02120821041609ba25a226a0283404160a8e0b930a100b290b2202870a200b190aac0a102030235704050b220a9a094a00d9085704800816085e19dd0d02094c0b290b2200dd08cb0063085e14dd15da1ad61cc33154364946c7, 0x9ba094608494143030408c80a350a11099b0b190a8d0486085508160a9a0a3508c23ac33e4f43b000c20939084a0404081c08d208510a2f093934d0030408170a8e00912fa00c860c160919040608130b070822094a08d10ab32d1f0a340a2f, 0x9810b06021b0990013956340c87572958975a1f654f04030a260a17029a513002330947085208c6039a08960d000b1b0b140403094608450d034ba24e56504452c36c237f2e040f098b08490a930a2b0a2602350943084c08490a9300c20898, 0xb840b0d0b820b1b09a37097759f76a0038a0982090c08980b8c0a330a1c0a17029a683001ba0a33674409ab01440a260b920a110896090d00c608c208180b0662250c0d0c04028d098c08420a1c08c202a60a9a5c4e5e96021109900a080487, 0xd800038308420a1109ab09a3028708980a11099b022f0aa50a120a080c877a9f7ccb0920019b099305000c080b2908880b140810031c72940a120a0800c2]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node237 : Bad pats ([45,65,64,54], 0x3ffffffd7ebfb5057e7eff9ffffff) :=
+  bad_of_gated_check (tape := tape237) (gas := 150) #[⟨_,node236⟩] (by decide +kernel)
+
+def tape238 : Array ℕ := #[0x2b932f0536dd011f0a120b2202a60a03080d090825220823050208810a0d0990081b032309c709b7084a0aa0091f1f9c2227099102121b2902a00a38032309c7086308d7084a195609b702a00a38094415d7008108230c8913db1a2126d544c9, 0x42d408cd08cb0102084a099408230991030b093908233c210c89030b099139933edb0b950b8d004c084a0061085e09470823099509b735d40c89030b09b7099531930b85004c084a0191082309b72e540c890195082300170a0d093909b72aa9, 0x9910102080e0a170c0302a0084255a70b0357990a3858d70a9f011f08c50b1151c302000902082109850a1709b701910c890a384cd70aa5019508230c8908c5019108230c8948554a434f9f59ce04890b070851084f028809120855081d0b0b, 0x32909390847084400c30b2908496cc80a260a2102a50a9f0a38084508c704160b2208c30845675b084702a50a3808cd01470c0862db0b1b091f084c02a50a9f0a38011308210b070b9d0c895e5b5fd0644b69c4031109b70293]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node238 : Bad pats ([51,47,65,64,54], 0x3fffffff54b7b505cc69f9fffffff) :=
+  bad_of_gated_check (tape := tape238) (gas := 150) #[] (by decide +kernel)
+
+def tape239 : Array ℕ := #[0x939010e0a9503000a330b290a0d099026a727d704040b290a0d04080888080e09900915218d234b299903930823088c09940a820a95030008500c041aa7008409800b000a3308d2085109ba01150b00018c088a142a156218cb1d972b2234c4, 0x38c0a260a000b84040c0b140b06093902930a003c453e340b82038c088a0a2601b309390aa6384939aa40204f2103920b8a0098339202330a0a08d20b1409900314088a09ba04080a3308d0088a2ece302032aa028308150814028f0a3409b3, 0xaa00b930a9502a60aa001910b840b070a3300990b840a830b0e0a3953db55d056cb5a4902940a8e040c09b308420b180a260994098c01b30b8308230a054a9802a7084908420501098008c209b346c50a260c0c038309b30823435d48344e1a, 0x29b0a9502880990001a081802330b0062a2639464a702a60aa005000a000b000a9f0aab5f500a33604b0a1c0a17001b081809950aad]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node239 : Bad pats ([46,47,65,64,54], 0x3ffffffe1eb7b1052c6bf87ffffff) :=
+  bad_of_gated_check (tape := tape239) (gas := 150) #[] (by decide +kernel)
+
+def tape240 : Array ℕ := #[0x2aa13049355b01130b1f022b084425b40aa70314084a0a050983091f0913048209390a0501c408150b001f140b1f098320a20a810482084a0845048219ce1b1f23dd0a9b01810a0809950aad0b180481080409390b0d091f14a6172726c357d6, 0x2820b004022414401160b030c150205091f030b0a3403040a2108660a2b094808d13ad23b9f3c953e4544cf03820a340aa1093901130b1209913357084508420203098502940a120aa103120a002ddd2f0d0a95099101390b120b0b01132920, 0xa2903270a26084608420943029508460b070b8b099503270a120846084252b15561038a0b850a0a03850b1209c4084a4e0a0b95005e0c0808580208098d09810b1249e2094c4b4d0b9b4fc909b301130b1208db0aa709950b9b084203920b8a, 0x711f725074dd0a210234084c091f0b0409ba040809c50b03084c020009050a03089709190a3469d06bda6e4476cb79150482090e0b120b04029a085e084509396243091f0a8104030a0a0b120b0b0aa70139084a0a0a0c8908455c5d5e9f6421, 0x10008170a12098509100b140b950891030d0a83839f0a950203098502940a1203030a000b120b040110098a094709ba7da07fc4808d819b0991011f084508420aa10a9b011f0b9d0b140a2b02ac0944030473e208c20110089903220a39]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node240 : Bad pats ([36,47,65,64,54], 0x3ffffaff5ea7b505384ff9dfbfe7f) :=
+  bad_of_gated_check (tape := tape240) (gas := 150) #[] (by decide +kernel)
+
+def tape241 : Array ℕ := #[0xa05090f0a83291f0b8d0483081a0a2b091c25950b9d05000a1c0944084c03040a120862085e09ba09530c060b2701830a390a1c1cbc20d022dd0112091c0b27084e0c890a930283081b08910a0d0183081b089114a616b119cd2c4b405b51a9, 0x1ba0815093908420a9309190a8d0aa70aa104890a930913022608c308490845048938493a1f0b830a9b01470b27084509390408094408c308490144085f084a31c9020d081c091c2fcd33c8359b3bdd028e0a120b270a830b07091c0304089c, 0x39b0b840a2b08d158525a955ccf5e4567260a240a1fd80052a4011c0aa70139091c084250e3001809190a9a089a0b0b4ec50a2e02a7091c03150aa74a1f0b9b030e091c0939041646d40842031c08670b150c0d454548634b5609b3022e414b, 0x3190a890aa7040709b300d908d700d16ae96bcf0a00089e6cc508240139084a0aa709b3004a08420b270b9565570b220b1b03000915019409840b0760a161a201150aab09b301150b150c0c0c0305010b1c039c59e20a34]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node241 : Bad pats ([47,65,64,54], 0x3fffffff5eb7b505786ff9fffffff) :=
+  bad_of_gated_check (tape := tape241) (gas := 150) #[⟨_,node240⟩] (by decide +kernel)
+
+def tape242 : Array ℕ := #[0x29a72bd4084700d6088e093904160a3809c50920255726d00147081e091c0c160a93031409470b0d0991031409470c871d9d1f9f0aa522512dc602a50a2f09430238084f0b0609460920184303140a9f091f01b70a380b1813b1156119ce5a2a, 0x9910c07008c098809203f19419f448d4a5b50cb030b084c0988022f090208800995399c091f091d022f091c081c3629030d085c0a080995091f0a0a030d0a08091f311934203b4952da0139091d08c8084a0188091d091f0b0b022f08580947, 0x14c08550851081b091d0a3803140b20555b585009ba01b7094308460845030d0920084c09460943029f081d091f0318084c0a384cb14e610320084c081b091c004c0b0d481f0a0d004c0b0d461c039709c509870920081e091f01c5091a0905, 0x38a0920082103850a250a0d0a1b03920b8202a50a9f0a0d0b1402930991091267d3699a6ab46ca30825022508280a1b0385098a091d08cd0828030e084c5fb20b1b0b0d624363a7020d089c0a255c290322091f0c80084c]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node242 : Bad pats ([68,51,65,64,54], 0x3ffffffdb4a7b005e4699ffffffff) :=
+  bad_of_gated_check (tape := tape242) (gas := 150) #[] (by decide +kernel)
+
+def tape243 : Array ℕ := #[0xc05091a2aaa2c3e0b0a018308420b27091f0825029f0a94091a0b85232825912f57019508250920009e082808250407091d1caa1e3e020008280824048d098d0b260a000946192a0aa6020008280824039a0946142815d61aa01f9f311c4e4e, 0x90f08180a8e081c40a8038408210b8d08c3005a08570b18020a08210b8d3a573bd30842038d0b850b0a08c5374301430a3808c734c53da043310a1702a60aa00b180b1103200a11094308420aa00920009e08280824001e080b08d00a380946, 0x3950b180a9a0a94089e582303850b9a0b8204030b060aa6085c53d20d0255205a4866b10a210a1c02a50a9f0190094408280920091d04110982086508c50aa608280b1c05020946089d0aa60944472a4aa04d430020081c0898099409900294, 0x22f08c8084709207046712a099502a50847040709200828091a050269a00b266bc86c950a9300a008240a94030a08240a000385094863a865200848084600250a1b092003030b270a38018208c20b065dea0aa65f2060cb03190820081e091a, 0x28082501200c07]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node243 : Bad pats ([51,65,64,54], 0x3ffffffff49eb505e479dffffffff) :=
+  bad_of_gated_check (tape := tape243) (gas := 150) #[] (by decide +kernel)
+
+def tape244 : Array ℕ := #[0xa93091a032008470a1b03950b19050224a70b2925c827320323084a0b0e0c030b220b1b028d0a811f5322202aa801b70a26091900160a0203040b031a161b220a990a930205098c085709190b9f0a250404089c0b850b8f143417491ca93721, 0x44610b850220081c02880a0c04890b120c160c043d343e223f150a1246a96b49d80038440307089c00580a380a1b08010b070a023622098c0119322008280825038208220920022608420a1b0b140b060a932ea3302e02200a9a0a9f09b70a26, 0x31b0a07008808860d0057200823022f08c20b1409440b0d03270991525354aa089b03850a0d084a0995030d0a870a810a0d038c0b060502084a0b9c4a944b924d954fa758320109081b0a2f0b950c87048908cb0b950b200b9f013941c70b0b, 0xd80102380a870995089d0a2f0a25009b0825082368340aa603000a08089b08250823020308880d000b00089d0b9a6328039a0a2509850b850995039d085909b70a2505035b435d155fa765d6091d]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node244 : Bad pats ([51,65,64,54], 0x3ffffffff4bfb505e479fffffffff) :=
+  bad_of_gated_check (tape := tape244) (gas := 150) #[⟨_,node242⟩, ⟨_,node243⟩] (by decide +kernel)
+
+def tape245 : Array ℕ := #[0x9150b270b19029b0a8f26c3039d0b8d02ad245525270a1c01430b850985091d0289201d0b1f030b08251eb422300500099b0b19029b0a891b43039d0b8502ad18d519a71ca628d3029b0a95039d08cb09390b85039b0a2f1355152716492b47, 0x9020a080481093908440b1b0b0d048b0985010d08160a0708033b953cd33f2640a744d60a1f029b0a8f09970920021c08180a950b1101ba0844084c0a1c02a009440a3305000a172f5630ce32d734a336ae49c302350943084c08490a2b0502, 0xa0759260a1f02110a1756ae5ad7099f0144084c0a2b0a890b0d041709c90944084c51c50c87020809110a24082502084ca94e9b541f0a33614b020709ba09970aa603870920082509ba47c40a29038708260a9b0500092008260a9543570482, 0xb060aad0a1a04110a0c6ea90b26028e0a15038509c509436b9f6cd770c8022a09390aad0194091d0d000c810b85048164cd675768c9725609ab09a7030b0a07082503040a1108a00a0d01105db05fa90c870b970b87029a0a210825030609ba, 0x2080b1101ba081c08d509390aa07c4901940a0c79260a2900c208420a9a030308180a0a093975c4772e0a33022a084508420502]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node245 : Bad pats ([49,65,64,54], 0x3fffffffd6bfb505747f9ffffffff) :=
+  bad_of_gated_check (tape := tape245) (gas := 150) #[] (by decide +kernel)
+
+def tape246 : Array ℕ := #[0xb0d039a082201ba09b7084a0aa6094a01b708cb09390b27245026aa279b030e09ba0d020a0d0323084a08620c040aa608971e9c20a2292003150a1b09b708cd0b0b0294089a081c0211084a0816162217bc03820a0d13a01a293b4962b3632d, 0x1460894081e04110b063ea0404e0822434349c4030b084c081d08220486084c0a11004c084a37c3090e3922091a02940811084f0b19081d0822029a084f048c08cb084a03070a120815009508012d9c2f5430d60b19090e31a234af039a0822, 0xc708420b820aa60a94581c5d310102082008970920039a08210c110aa652a00a17012008c50b230b150329086509c508c54dd44fa154c35e4e02a50a9900c708c3004c0a250821030d0920462a0a3847cb48b1048608940908081d0b0d0845, 0x1ba08560b290b22032009ba0a120a34011c0aa708d708566c666e2970500329094a0a340486676668b2735583d484c99d479fafd800010808220a99028e0844082261430a260a2102a50a9900c708c3040308420b8c028e08425ad45c570a17, 0x8240c0e0a3508c2084988c38ab0004a093900cb0aa70b950b8d01ba085e0a340b270b2001150823099504170aac0482085f082308637cd67da17f430b850153085e0a340b270b200294094a08237643788581dd03200a340aad0b290aa00aac, 0xa0b3d803d8029f2ed8019e33004c084903000a83099509160a990a9303000915038a081b0c0f9815091c018c09150b0e0b0795a2991905000b190b9b0aa50b290194080e090c0b0705018e2a9029929f9c500a2b0a2602810995091f0b190016, 0xd80508abd804]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node246 : Bad pats ([65,64,54], 0x3ffffffffebfb505fe7ffffffffff) :=
+  bad_of_gated_check (tape := tape246) (gas := 150) #[⟨_,node237⟩, ⟨_,node238⟩, ⟨_,node239⟩, ⟨_,node241⟩, ⟨_,node244⟩, ⟨_,node245⟩] (by decide +kernel)
+
+def tape247 : Array ℕ := #[0x2cc32dcd029f09ad0a9901420848091f09a10048091f082223c525d5038a089e08480ab109ad212b274731bc004a08440b9c0a1f019d0999001508480b8c081b004a0848181c1a311b47004a08480312094214d00b9c009c12bc15a91d323990, 0x45ab01b5090d081a089c039c08220b9d0a1f3da03fb149320b090303091c0822089c01b50942091c081b0b1b03830912081b352937a60a1e0a1902b10916040308670d0130b10841093202990841031f0999091f0392098200222a1a09a12b34, 0x19d0841091c02b1099909ad56ab089c021f09a1091c04100841093252b154200294081c0896048808480932048b090d09990a9f4d4d4e9a502e583c0404099d08240a1002934729091c03120848084602b1445009ad009a081a0a100a0b42c9, 0x29909320824010f08960816018d089a6698682b09a50a280a1e02b109a50a990a19029f09a509a101b508c15fb10320091508230234094f0990091c5ca70a105e4961196350]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node247 : Bad pats ([86,47,63,64,54], 0x3cffffffd72bd9057cadf3f3ffeff) :=
+  bad_of_gated_check (tape := tape247) (gas := 150) #[] (by decide +kernel)
+
+def tape248 : Array ℕ := #[0xc508c1084528192eb13a5d4797d800029f08c101940a1f099d0a1503830912212923490a1e0a19001c0822091f0841011f09a1050208220c030c8b08db1b2109321c431e3c028d08c70a1f08460844023409940a1f0935144916b2241724d6, 0x4331032909510a0a0a150a3400510a2e3d663fc944500b1e029f09ad09a1029a0a2908990a9938c5021e093502340a2e0153094f0a3409ba344c091c020a0a1f3134355036490099081b084109320a1900460a2e0a1f0019081e2ac22c320c85, 0x9a1091c023908410a2e573159205c50603c019d09990a1f0021081e011c081a51265242011c081e081c001a4da6010f0893028108174ba74ca24f2953b20b170b1001350847093200460a1909b54644029909ad048509b508c102190a2e41c5, 0x1a1084d0932022e08c209a16ecd0233084e084d001c0821094709a16b556cc40a1e009c081c001b66a6019d0821091c02340a2e0a1f0845643165a067d0701902290846029f08485f470b0a0aa60aa0009c081b0203098a08195b2403810821, 0x1950919091302150a3475b108c6050109a173d20c0f0c060a190a0f]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node248 : Bad pats ([47,63,64,54], 0x3fffffffd7afd9057cedf3fffffff) :=
+  bad_of_gated_check (tape := tape248) (gas := 150) #[⟨_,node247⟩] (by decide +kernel)
+
+def tape249 : Array ℕ := #[0x81081a282b29982b29032008410860099425cc0a14020109150ba10b9122a32d50028e0a1a0b8a021a098a0a2e0a8e1e52040d0b0d01ba0807089e08411acc0a050314099009150a1f038109480841085809ba15cc17a31b9a1fbc37cd5aa5, 0xa0a021509150ab50a390234091504893cb308cd023409153b5f3deb3f9941c95050004e0a330a1e0a1404060a1f0b910a280b890201090f0190089c0b06009030b03215331935a30c8a0c8003060aab09430a1f02ab0994091203830aab0983, 0x1ad09a95819030a08170a1a09c308c70a34084600170b0b534c09a956a30932020509b509ad030d0a290a080a1f021408414ccc09a94ed502b5086709c90a140a38038a0a8e0a1447cc0a05030b0a010aab09900b9145234a4500140a2e0a14, 0xa9301356fc371c502a00a1e03040912089c0823084a6d320935020f099508230a34019509130822091c020f09000823099104160b120b0409c3081563a9048908cb0b85019d08235f55609965a267e669d06e4972b3030609a909b50a140a0a, 0xd80001ad09a503890a990999]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node249 : Bad pats ([47,63,64,54], 0x3fffffffd7afd905fceff3fffffff) :=
+  bad_of_gated_check (tape := tape249) (gas := 150) #[⟨_,node248⟩] (by decide +kernel)
+
+def tape250 : Array ℕ := #[0x8460935022009900a1b022508220a1a25a0275003250a0109ba089b082202010a2520a70a1b2347291e0414084608430a16013508461bc3031b08410a1a039309420b9d039c089b174518c70822029d0844039c0a2513c714a71a201dd64a31, 0x9ba41260a250a20013508463e4304030a240a15009209940990040c09100a2f0b0439983b293caa0b1e039308470846001b090f022e08c1022f08453251332a34500c8500470a2e0a1f00c109352dc204870b932c512f5f35dd4217022e0a25, 0x81c030a0994579e0b045a2b5d1b66cd022f089209940988038c0a2f01ba0845084100c60943085e4fcb0c8709ad515c5218091c542a6c2901870947084c08450a200935022f084608c8475302200a240a2f45500b170b100201082203850a24, 0xb1072c7001e081d6f3374aa7d4582ab023809350b200a8d091c04030d0069ab0a2009ad0a1b0237084e0994091c09930a9f020309120b020993091c040309930b180a370a2e612263cf0a16039c0a370b020a9f0a8d091c03200b0908900b02, 0x99d0999031b093508c40a250a1b09a587218a2808a9020c0b0209a509a10329099d09350a16030d7eaa80c9023708c20a1a09350a110a0c0194081f0a8b0a1f0403081d0b0a0c0b0a8578477a1b001d0b020a1f0a15031708c20895081a081d, 0x1a1099d091f0824048609350c0b089d]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node250 : Bad pats ([50,63,64,54], 0x3ffffffffaafd904f0fcfffffffff) :=
+  bad_of_gated_check (tape := tape250) (gas := 150) #[] (by decide +kernel)
+
+def tape251 : Array ℕ := #[0x9870b1f091c082b032609ba084d0a14032608482446263128980a2f002b0c0c0a140a0f0b1f0b18021e0993082b1e2621612c2a03250a9f030a0a2e01ba19511a250a28022e08d10a1600cf0855085200590a2e145815a5082b17501b4d3aa9, 0xa0c02243fb409ba0b170b1002143d25414b4431502604860986089a022309ad041109930ab10a233851391e0b8a0b820187080a080608a00990031f09870b18002a080d090f301f31a0341a0a2a0a2500880b180203082b0b102b1f09900415, 0x2a90b10080d0a1009900b020a11021f085908d30a280aa954a55845662b0923022809ba08510a1f09a902850a05094308050a1a022809ba4b4c4dd109a10143085800510ab10b1247de0a2848c508a9023908520b1b0a2f0a1e0a19004d0a16, 0x9900a280826019008940c150c036eaa09a909a502280826031f0aab0a28022f68d06a2a6b4508a903820b0609430c04022f0b1f04020ab16357644c0aa909a909a5031b08a00b020a2809a102330a280c020c8b00d2085209ba5b515d255fcd, 0x500]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node251 : Bad pats ([68,63,64,54], 0x3fffffffbf8f9805b4effffffffff) :=
+  bad_of_gated_check (tape := tape251) (gas := 150) #[] (by decide +kernel)
+
+def tape252 : Array ℕ := #[0xb1e03940a8e091c0208081e0a0f001e0a082499263127b32baa02870919082b0081081c0a2302a01ebc0c0b202e0b8b0a9f04880a88098a081c0b0905020a2d0c06191e0b0b0406081c0a2316ae0a161bab21cd37a9092cd8011244d8001132, 0x94240b40a230a1e02160b1b021909c9085808570b8a0a163d453e50435655b10926050008a00b200b0b09ad0a1b029f082a039d09b5048708c90c1032c50d000395098b0b10031f2eb3301633b134a00a2503940aa00a2f00c209ad2a5c082b, 0x220585659bc5ec508a9022d084809ba08c20a0c0a1e038a0a16021909b551b452d00b1e0b17031b08d60a010b2509ba0a16030608c2050108840b040b8a4ad009ba00d6088608120c860d020b2547d24bb44e9e039b094809c40a250a16038b, 0x8c098c0a160b220304098c0b090a200a160310612a63cc09a1099d00520b190ab10999014308d30c170ab15c990a2d040509ba0b10]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node252 : Bad pats ([63,64,54], 0x3fffffffffafd905f4fffffffffff) :=
+  bad_of_gated_check (tape := tape252) (gas := 150) #[⟨_,node250⟩, ⟨_,node251⟩] (by decide +kernel)
+
+def tape253 : Array ℕ := #[0x8d5292309432b5309b5013908480143084d014309ba00c60a2522de23d324cb25d900540a2f09490946021b09200898089c012309431ba01de403920a280852031f09c8022517500c03185a0c15020d09230a250b9514cb19e11fd12e3147c4, 0x423409a50216081f0a9f0943011c09130b1b3d4f001f092301463a3e3b433f2d43510220090d0854081f0a0d091f01ba085108c634b40a9f031c081f081e030e091d30a4322b37c500cd09230a250851084d08c9022508930a190a0f02250848, 0x88f081f0999001f081d569958c56232001e081c040b0a16098a53240a30031c081c0b1509ad50dd0b0b01ad4dbc009a0815081a0a11001e4ab40c884cd15429692b01390a9f0a8d02b10a20081f462b09b109ad0216091c020d089c020d412a, 0xa8d022308220a1904070a2809b508246e230926021c6b296fb10a26031109a10a2300a0081f031909b10b070a07099466a267ad0920091d02020911089a04020a2009b10a16609c081f0202088f02b10a11094309b15c95090e5da209a5010b, 0x650a1b0a0201390815762f099409190b0b0a1209ad09a5019971c50a93]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node253 : Bad pats ([71,51,64,54], 0x3fffff6ff99fd505eef9f7fffffff) :=
+  bad_of_gated_check (tape := tape253) (gas := 150) #[] (by decide +kernel)
+
+def tape254 : Array ℕ := #[0x194081b0819282a0a340194081b081901940a110a120411094b0857099409060b040a0c0408080108550994090309121f162297242203070801098c0b040809089c030417a80a0c03040815080e094b0809089c162f1aa125c82c2940d35cb2, 0x902089c0b060b270912030008170813088f3da70a910999002209070a0c0b8d0a91030b09390889098c090b008b35200b270823041108550a34093908150a81098c089c0119088b2f20332737af3a2103070b950b85094e09940b04089c0a2a, 0x81a0a2a58a90314084c0988081a089a030409020995081d0822004d0c8900500b1450cf51a5541c56af0935018d089b091c081a0c020a2f0a2a02380a34090809910939081b0b0e0994030d091c0b0e019d0a0d0b0d445445a049af4d500482, 0xa12091c099d0a1404890939090808d1081c0a8e099404040a340a386aa06e2d70aa005509b7030b0855094866d30a38019d0c0302b563270939040408d60a340416606161d4645b67c678d094af00220820040b099d081d5baa0a9d0a970402, 0xb8d009e0898038286a487a58dc604080947020d08110b060822098a004a088b08d10b0608228112089e00d10b220238084c7cda091f7daa83e284ad093202b509b70a38032708d80a390a34000e099d091c0c160c0d7561775b0b0e0b07008c, 0x20008190a0d091c0a2f0a2a020a08190a0d081c089c030e09390a0d98209ab4092c0923030709950a14020d081a099d020d081a0112089e909c91a593190a1e0239084c08c8093900980b82011c099d8aaa8bd40b95]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node254 : Bad pats ([73,51,64,54], 0x3ffff6ffbdb7d105eefb7dfffffff) :=
+  bad_of_gated_check (tape := tape254) (gas := 150) #[] (by decide +kernel)
+
+def tape255 : Array ℕ := #[0xaaf0a0d28a9314f4c3e02a50a9901860851084f023823580aab08c7009408460a140aab215324a5011f081d0999009a0819081700500c8a1b1c1ca50b990b910500098209480a280a0509990404089e152d08511861020d12a91e4f25af6544, 0xab100260a193fb141d34750032a094308c6084c0143084f0b270b20048709430b1808260238091a084f372d395f3b4e038709430b1c0a3834503d4b020f0a9708260a91040d0988091c01c208c60c020a080aa903992b532d9f08262f230487, 0x91f0b87589d0a2f011c09230aaf0850084c09ba0143084d04035251535a565c5aaa020d089c081e020d4e2009234fb403a10b26094308260b180a280a1e040c48ad084602a50a9f0a9d0a97010708250c02094308c7452309b7020f09430b15, 0x8a0091a09b770d00aa3019408926da90b200b1901880820089c09940a2300200994091a68ad6b5871ab88be030a0826004d09ba090208c60d000a97642d099008a002380b9a0b8209230826020d5d295fa00a2a0a25040b081a09230c02001e, 0x91c001e0b0e87b40a9f0a99040b09990825038408210aa983ad0c870aa5851f0194089c04020a9d020a08247e537f2080310a1c0a1703120824031f089e0a14030a0a21783279a50826031808c20a1e0a0f00c273b275aa7a9c004c08490094, 0x2390a990a1c0a170932092c02110aaf0a9109b70b1901b791d10a1c093502930999022a08260b0a8ea50a1c00ca0a2f0b9f0b198c2b8fd394320311]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node255 : Bad pats ([69,51,64,54], 0x3ffffff6fd975405eef3dffffffff) :=
+  bad_of_gated_check (tape := tape255) (gas := 150) #[] (by decide +kernel)
+
+def tape256 : Array ℕ := #[0x13909030983281c2999090e0287089105000a0d241925202d222e2d372f028e091c0a2f0a0d0a250208081c01390851084a0a121d220c0b02120b951a531e3403070801099408150b0408890a12091c001a0a120a0d1434182f20a944c94547, 0x84a020c0b1c090e3fcc41c343a2099d0287098208050b060b000a25091f0a1b3c21092303120a1909190a0f082304880b9c08d90b95089c09940b0702a00a1e091f311c34a7099d011f082204890b040939098308850b070891030e0a120b07, 0x93909a10a23084600ce094609a909a10a210826004c09a9532b564b0aa3589d031508230a140a2109a900c2084d0894081e089a030e0941084408c50a174b224dad502f5dbe6543d8014649d800011f081f02850a0d08970a1b032308c20891, 0xd80208b50503088009120a9709ba09a9099409a102a309b1612d092301b15f2f093504140a210825019d081f0999091d5c2b0a9d0a970237]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node256 : Bad pats ([51,64,54], 0x3ffffffffdbfd505eefbfffffffff) :=
+  bad_of_gated_check (tape := tape256) (gas := 150) #[⟨_,node253⟩, ⟨_,node254⟩, ⟨_,node255⟩] (by decide +kernel)
+
+def tape257 : Array ℕ := #[0xa1729aa09b10b9102940894089e090e0307082224142621014c0a3208cb084a0a240c080935030e089a03171daa1ebe03170ab30139084a006308220a9a05000c0618a00b290b10094a0063085e0a32082215d61a541b5d1c4722492d1f5d2d, 0x8490a3509b140c854a257105b470314091c04880a32094a3ba2084a09b1093505020a260a8e08980237084e023235540a263620038908150302091c00500b0d0c08312532193326384d3cc2032908480a170a240b0e0b070821032908480a24, 0x91f0a10029a08170b1b0821091f0281090e089108d70856094a048c0a9a0b1708d70856048a0b29084803294dc94f5d51e20a32014c0900088f08630b170848010b0a2609b1484f094a02b308cb04820c0644dd081109b145d64b5a0939014a, 0xa19021f6fb20a29753e01c40a2904110a35084e6cc20a28023708c40a1f0050084e0a3768cc6a32029408240a1c0b1f0b1100c263b400ce08c204070a2b0a1f091f61d662a6663c6dcd784503a1091f0a1a0a15031b089e029a089a5a300ba1, 0x2b5084d885d099d02140a29004d854c862509a90317084c0b100a33004f814c833189c40233084e0b140b1009a103910a330a29048a084e7b427ca57f4d8dcb039c0b2a08c40a1f09350932021f08240915089e02280b260a3009860b2a7324, 0xaa4dab3c0a9b03100a0008450c8508c509b509a9030209a10a280a1e00c40a370939993203920b8a0b11021a099d091f95a6973c9b4d014b09350939038c08c40aad91420a1e92c99ea70141084f08c2004f084d8c4c09a9093502b5084d0b17, 0x2a70a1e01a5093202a7082204810aa70b140b060aa6a9240b1f021f091c09100300088008ce0809098c0a1fa425a5a6]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node257 : Bad pats ([47,67,64,54], 0x3ffffff7cfbbd5057ecffb7ffffff) :=
+  bad_of_gated_check (tape := tape257) (gas := 150) #[] (by decide +kernel)
+
+def tape258 : Array ℕ := #[0x285091008c40a1228202d2701930a1201c2085008c603100a0109930c8c22da244400150893088f030e1e1f0323093908c20946039908530a301b520d030139084e0b990230094608d3085b080408160a0c175118831d151fab25222e144e32, 0xc02019309110a1704070820010e08970084081608120b253c233d223e300093081a09110b10008d0a070911369e38ab0c1403000893081f0911099004890852084e313033ee3f8b002108200085088f09190212088f2bb10a010307299f0898, 0x391093908cf582b5995611d02100a350a30041008480b9a0210086109c2522253c45523641e753e001a0816090b08c40a300a17048608160a0709110119089a00840812089708170b94482249114b30011c081a031c09c24322091144440c0b, 0x714972200b100b09020309930a320994089a0917011c082204806a2209930057084809c80c8008210b17689f6b206e10020d098f0822020662a709170194098f0822023209b1093908cf031509b100a0081f5cb15dd75fab0a1003990939098f, 0x206081608560ab309ba0939084809b5011f090a050382a209ba0b10093983cd0b02023209b1086109ba0b9a01b1084804890a1008d9094a032a094608d979d67bd17cda7f1e092609230399091701390a32741d089a00480a260139084a]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node258 : Bad pats ([71,45,67,64,54], 0x3fffdfcf6b39d50576d8ffb77ffff) :=
+  bad_of_gated_check (tape := tape258) (gas := 150) #[] (by decide +kernel)
+
+def tape259 : Array ℕ := #[0x9b10406098f040509460b1b26ab27d129dd2cc83695011f0a850a0702810815091c023709b51fb12111099303290a0c0b1b0102081a0a0c0230093909b50406093909b118dd1a111bcc001a08160285088f149e099415be1d2b22903ca63d47, 0x93942cf09260923452e58cdd800018f0815088a0b020b22030909b1084e08153a300a100a0b0104081a098c091c008c088801ba0c8a339834a20b090b02031b08c6023509c42fd209390c06309e023509b5040608160a302bd102ac09ba0849, 0x8500929011708d608640a30099409390a32573e03020a0d0997093f093901ba08520a300b8f028508170a374ea750d153320a1a0a15023508520a37085008c40322091f0a37485609294ac2039a09ba0b10038743a503890b0208160a3309ba, 0x40809b1084d0a240923013908c5084f0a1a0a1565a609350aa30a97022b094109b10a1a0a1002350846089a0a170b915e9f0935048309b50aa95b44612301ba]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node259 : Bad pats ([45,67,64,54], 0x3fffffdf6fbbd50576deffb7fffff) :=
+  bad_of_gated_check (tape := tape259) (gas := 150) #[⟨_,node258⟩] (by decide +kernel)
+
+def tape260 : Array ℕ := #[0x240a10089b0a8f001f081d01c8081a0a0c2526089b2615285102ad088f084d00c208540852001a08c21eda20510b950a0b0b8d01b509390d03081b1b15023718cd21a72947020c08c40a30084a0935023708c4084e023712d6144d16c24eb2, 0x9ba08c6031f08450283080109830826081e0194081b3ba70aa33e493f5a08c200260a37084600260c850aa336c938560a1f009c08240b03001c081e0a21004e30c4321104070a8309970826081f0185081b0d032ca72f4933cc421a029b0a95, 0x38d582759510a280a100a23029b091a0a2d0a1a00d50b1f0b250a2d093953470a1055285a3e004d09350aa30a9d01350939004d4bcb0b9f4cd9038f0aa10b870a91048509390b110aad00180b9f45d1479749d30a1a0a15001e098c089c09c2, 0x29b0a950a2d0a280929092602290a85094709970b170b09019763250a1e092302a709b5021008450b1f60510a2800980a100b870b105dcb61236644021f084800260824]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node260 : Bad pats ([49,67,64,54], 0x3ffffffde7bbd50574dfb7fffffff) :=
+  bad_of_gated_check (tape := tape260) (gas := 150) #[] (by decide +kernel)
+
+def tape261 : Array ℕ := #[0xb92089a021c0b822720293e2b2d3cb4013909b50d010a1e0a19029b0a9500970b1920c5000508150939081b1f2721b20b09039509b5039b0a190a2b1acd023008c908480a28030b0a2608c90d0116d00a19039c08240b1913b218c51b89242f, 0x435a0148084809393fd549d355a0029b089a094509260939040c0a2b0a8f0c8d0b933a510a2801b509390285092309120a3035d10b1b0b1402140a2b0a9b09390197091208570a2b0d000d010b923051322936d0030209390926092303040a30, 0x237584d59a75f910a16028f099b0b9b0b9302250939031b084a023751cd52d70c0753db0a2b004a084803260a1e039a0b824cad4dd10a254ec4022508480939041009c40a2548510b9d0b950410099b45450a2d014308480219099b0b9d4249, 0x89a00200c0b0a30031908246e5308a001b5093908480b1908200b0b01810808091008240822040b0b0466a969516c306f9e02260b1200900a10099b62d163a80a0701b508240a1008200b120115082009090a21009e5b445d190395093909b5, 0x143084808240b260a19089c]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node261 : Bad pats ([86,71,49,64,54], 0x3efdfdeff32b54057ebdbf7bfefff) :=
+  bad_of_gated_check (tape := tape261) (gas := 150) #[] (by decide +kernel)
+
+def tape262 : Array ℕ := #[0xa3209b50b192962303001b508ca09c209ba014308ca23e20a37029b088909b508970b270b19039c08ca09431ed121e90a2d032709b508ca094309ba01b519521bcb039c08d80b260b9a09c204100b270b1900560aad13a7155217d525d33b48, 0x23009c20994405444cc45be52e46f9ed8003c56009e089a050008c908490a370a3201b5084e0c0637cb3a260b200b1901000917081a0a3709b534270a300a2b039a0a320b190926020c08560a07040608d80aac2cb40b192e260a3501260817, 0x5a1f03950854094909b50406093955d557a75cd30b25038d0824092601ba08c209b5099b51260a2b02ac0923040708c24d32099b4e490a250a1b04050a8f0a830b9a0a3009ba092649b400c20848031909b50a300206099b0d0208ce43490939, 0xb1703190a1b085b0ab309b502850a1b02230a0708220b8b6c3e6d51099b020c092002320ab367be68ab0a350a30022308ce08c20a1b099b028f08c8084e0b190b0b005508c8094c5fd1622b64c9028308950a110b19099b03190a1b09390b8d, 0xa2b012308c8082208c2019b09150b950b1b85d487c90a250a1b01230a140aac08c8084803920b8a0021081b09127e1a7f5081b4013908c2084a0848039a0994089c093903190a3009b50403089c0b0b0202081b742775c97757794c7b3e0b1e, 0x10a080a0a0b0a1c092604858926]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node262 : Bad pats ([71,49,64,54], 0x3ffffdeff3bf54057efdbf7ffffff) :=
+  bad_of_gated_check (tape := tape262) (gas := 150) #[⟨_,node261⟩] (by decide +kernel)
+
+def tape263 : Array ℕ := #[0x30b0a08030b272b282300870883089a0a820a1c25bc2ad02d1f475700c4084c02120a0f082005011ea620500a3301ba085109350b121ccc0b170b100294089c0a1201010a14099417a60a3303120a120935038a0b1213c4154c1925214b562f, 0xa2b09100a17030b09070a3009320a0108153eab0b100b09020109153a4840a3031708130a2900220b1736c20a19021f0b190a0b34b203190a2b040c31d30b100b02040c2fc832a3382143650228084908460a190932002008220b170a190a0f, 0xa335ba55f44634b02a0089c0b0b0a2e0a29020f08c20b110a3402a651c853ae01320a19001c08190a1a08464f320c0c048509320a190019089c0a1f4ab24c5d505609b3021f09350b9b02330c0c45d30c8b0c810237081d081b089908950403, 0x91d092c0a0a02280a240a1f0a116ea30b19038f090a089a0a1a092c6bbc02110a19092c0302081d0a1a0a11673268d170d309a7022e0a2b099f022e0aaf0b1961ab092c01470a2e0a240a25099f0b170b1003120a2f0aa902030851084f5a5f, 0x49084608a00a240a1f0a110a9d021f0929021f0a110a010a8b7432754d09af0224]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node263 : Bad pats ([69,49,64,54], 0x3fffffdef7b755057ef7bdfffffff) :=
+  bad_of_gated_check (tape := tape263) (gas := 150) #[] (by decide +kernel)
+
+def tape264 : Array ℕ := #[0xb0e021a0999089a01990986262427a30a2e02880892088e0b1c0a3023cc2950028e0894089e099902340b8a09430b1c0b151e290182089608480ab10b230016088c0851084d0ab118aa0c8504030a1000160907141515231b2120472d2b4fbc, 0x41aa093205013f47431f021a088a048208c208863c9c0a053da5465d4c2602990a930229099537cf091f022e093203020a39019908220b1c09ba33c80aa505010b23099930cf34c7359f38d300c2084609430819089a0a1a09350932031c09b3, 0xa9900670857091f085157cf58c40b270391099902870a190a0d5329546d5dc777a004160b2a089e0a2909b30a260a21022e09b30a29021f091f008c09880932499f09b34ad60a2b00990910029908994513091f038b09990b0700d2088c0a2e, 0xb817123731f0a2e029308c808c409320919091304100a140aab0c850b936b250a1c0384091603910932669f0b1c0b150300091600140b000b846325644d67a603940919093260496e420191085108c40a190a000191091f5b320a2b0a2602a5, 0x8aa18f23022409b3019409320a2e864b872d0b0b009e0a8209b30a0f048a0846099002837f9c0b990b9101b37dd981230a240a1f03840a14099409327b428312955803000a080a1f091f02140a1f021474a975a5038b08210b150a1903910a17, 0x39c0a280b990b91048d09329e59a0230a240a1f01320a170a8e0898082404040916099998a69b420b190b1202940a290932040409950a820a2909b3099493d00a140a0f019009120016081402ab08108d1c8e3009990229084909b30c16091f, 0x8908200b150a19]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node264 : Bad pats ([69,47,64,54], 0x3fffff7edfbf55055ae7fbdffffff) :=
+  bad_of_gated_check (tape := tape264) (gas := 150) #[] (by decide +kernel)
+
+def tape265 : Array ℕ := #[0x40a08a00844081f0826089e04010990098402050826239c0b880b800303084409410826039709440c011f2d21102522091d02960a26084502960a170a0d0387082218a11a4e0826030a0a9c0a26028408580c020a0014ce16271ba02833513e, 0x1b50854050208623f5d0a3b0ba00b2404850aa703873b2d3c2b4053441d0a150397094109c200a0082203030a8435aa36d60b24011008240b970a12001f08c50941313f336a0b16038808d608d00203091d082609412cd8089e2e4e381a474c, 0xa9400be0a120481080b0c0356a1579a5a240932022153415b3479af020309900993082608a000dc08da08c00b030a964eaa0aa803090997084408c008244b340a1f0a1a039208a0089e031145aa091a00c5094103110c85081f0b9f09c74359, 0x31408d00b010a0009830a8e081f702e00c50a9b0b0608be01320a126a520aa6029b093202940a12674d6856041108450a050aa265446c240b1f028e081f0a1a09320310084f08450b9209b50a1a5fc461de7218021508240229088b09860a12, 0x920030a0a00098f08260a0d0a1f02a60a210025082105030c11098a82a80b0d03030a170aa6802283ce03820a0508210a9c7dc484b387a09441028e0a2108a009320115081e089e089802290b9209b575a477c40b180b1102840a1a082408a0, 0xb03a4ae0b1f05030b020a1f0a10032408c80202098c08969bdc0b900b8803820ab40aa9099098c89cae9ead09260923030308250a940a12031f92440a1f001809900a0d0a950b03010a084508c60a17099003820a820b900b248b9c8e2d90ae, 0x3820a1002a109900849093f09b5019008170a8fa25d]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node265 : Bad pats ([49,67,60,54], 0x3ffffffdefb7ad05aedbf7fffffff) :=
+  bad_of_gated_check (tape := tape265) (gas := 150) #[] (by decide +kernel)
+
+def tape266 : Array ℕ := #[0x94f294700890887014608130913260b272f2a6301500b060987088901170b0f0a852113234f2e5d038f0b8701230b0f0a8b1d4f000c090e0a81091f039209230413080f182619281b470022091f00be0811080c088b14a515af1e5432a1454d, 0x82103870a813fa20897030d081909870b870b89030d0819088d0b873b513da540dd0181090d094f09230855084f0c8908970b9737c9018c0916089e038009203122093f0c0c0c03010d08870a810c89038f0b872c130a3b038f0b87004f0c13, 0x1508100a0358200b0e0b07041308c500cb0897084f0944004a08cb0897091d020c089750325262544955150415084a08be01020a0202814aa04bce0d03004a08440b1648db4d1c5aa2624100210b970895030d08d70b9743a50c8d0c83011f, 0x855102850b1c0392091c09236ed4094a009e081d082208be02850a0809c0089708210a0c0923023b09c00b290a8566a66a4e6c626fc987c70022092200c908c50c83039a09440502088e0b000c055ee25fc90b0d61280102088c081008150917, 0x8faf028508be0a30084909b100be08520b1b01230aa20aae0a3b83da0b230b150314092080460c1500be0821081d02217ca20893010d08210b1b03980b88030708be78a079a27b1d0906011f0a2b758f048808be0c1300220923729c74217e54, 0x1b109350aa30a970316089a0844018c089c01228d2c0b908e4e093502960b0609b109228ac4]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node266 : Bad pats ([51,45,67,60,54], 0x3fffffdf6f3da505cb967bf7fffff) :=
+  bad_of_gated_check (tape := tape266) (gas := 150) #[] (by decide +kernel)
+
+def tape267 : Array ℕ := #[0x9490122082209230021082008be26320b02012208be23c127de2ed3321c3fd10489084a0489084f1f4e0b2903981d4c09230b170b1000c008be02a6092008cb084f02a609200b150a1204070922159c17d719ce1ac10392092212ac20495047, 0x4b4101200a170aa8028509200a173e5e0c130c0a0122089c0b140b0d01220a170a080120089a37ab0b060217089c0a960c89358d39533b64028509200b020922012330280b1b04150887040708210a822d950b0605000810080f092208222b0d, 0x5ad35cc8032a0aa20a960922020809200911039a0a1753a05528574e5ec16d5603910aae09ba08490848002109220a854dcf09b100be08480184089e091d08ca0aae0946040708ca47644a480a26011d0c010b150a17039a09200922429c44ce, 0x29108c509410b17703e754c02020820089a01b1084408946baa09220935093201b10846040c0ab309b103150a1765d1674e683e03140aa20922089e01220923612a0a966344032209220845084403220849031b5bd1039209220b2401225932, 0x8a328bc892d301ba08450844011d0a120d030b1b04170b240212823209ba8353854802a6092008220b1501460a1709227da30c0c02a80a960a17010208200c100c08799c7b157fce86c10a24021209220c08030209b10922098873a309350932, 0x3150a1708460941093502a90aa302960b060922952f9644004509230021082009c8084591b20b170b0202ae08c0092f09228e2c032a09ba093202a80a9c023b8958]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node267 : Bad pats ([31,45,67,60,54], 0x3ff7ffdfed3fa5054bdafbf7dfefb) :=
+  bad_of_gated_check (tape := tape267) (gas := 150) #[] (by decide +kernel)
+
+def tape268 : Array ℕ := #[0x990091c0b02013f0a3b09900b1626a5292609b1023b0b160b090a210941001e0b870b170b090097085409ba0932032a09ba08171cb21ec820d32351039809200b100c110097081709500b170b10018c088c0a85090e14a5173e19492b4c6595, 0xc01012308c808d6050009b13e5e0aac3f9c41cf05000a850923084909ba09b1029a08ca0b1c0c010052092302ac08520aa835260d00361c38513b4803a00c130aa80a120d03021708970c892edb314148a20a1a04110b240a210a1702ac08ce, 0x2ae098a0aa609230a0d05030ab308be092308975592582004050b0d0b060aae0b020993048208be0b820d000b0203920b820b220aae4cc84f1b52265b2803810a850a81098b040e0b990a9a091701c008c044b246ab0b170b1001900b020917, 0x503089e70440920004809b108980b156e3e0917001d081c0402090208930b0e6a226b3271ab0a150a10009e081e03220b0264a60aa20a9c0190081e089e6246091f004908be09260b1b00210a12089a5dbe5fb4031c08920a0d08c009200914, 0x8be0986892c0c0c8c9b8e2191a804150993098f0181090e00cb0b1709200a03821d831b0a8103990800090208930b0e09170401089308910414094a0b0001c0094a08be0c020d00789c0aa80399092375467a1b7ba07e8d84a2029a089e0a94, 0x9e081e038a082193a0091f030008be0a1709810891081c0a0d02260993098f03170aa601c5092308be8bd60a8e03220b00]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node268 : Bad pats ([45,67,60,54], 0x3fffffdfef3fa5854bdef3b7fffff) :=
+  bad_of_gated_check (tape := tape268) (gas := 150) #[] (by decide +kernel)
+
+def tape269 : Array ℕ := #[0x917039008910a02081e0aa00a1702b408c80b900b88048c08470b070c820b98229024c4279a092002a008be02b40816084508c61d44098c03820b241a1c0b900b88023b0a94092602820b82023b08ca080f0a02151a0990164417c81e232e2e, 0xa12023b092008be0926030208be089e08213daf3f9c03090926023b08440a8139c109930306089e0822372f0a1f009c09260300089c33be34cc3aa14134799ad801301fd8002f33020c0896081e0a9a0a94038a081e039808c80b802aa22bc4, 0x5a1c0aa803010b02092657465ca30a1f01b108480a8109230b1002a60926014a08c808d6039109234f5c50c451cf0aa85447013e09ba08d009290aac0aa0039808ce0c820a1248b203000a810a120b1001880b874425463e4bcc64a20021081e, 0xa1f0126089e0b0f01b10932029108c509416d3e089e6e4e021709970990089c04820a210c02681c6a326fcc091f00460b240c150c0c03230b976295098f009509090a0201845f1660930aa80997010108820b010a030990020209090324590c, 0xd80202210b0f088d0c030b8701350d03774f0997005208d308be09350b0d0290089c084672be752f]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node269 : Bad pats ([45,67,60,54], 0x3fffffdfef3fa585cfdefbf7fffff) :=
+  bad_of_gated_check (tape := tape269) (gas := 150) #[⟨_,node266⟩, ⟨_,node267⟩, ⟨_,node268⟩] (by decide +kernel)
+
+def tape270 : Array ℕ := #[0x21708d309c00a290aa202a70a1f048d085d0c0c24d125d8284e29413f3e03030a2600461fbf0b1f0a1a032308460a211d9f08c0093503900b1608be0b1f1acd0485084908470229084e0c8516cd0323084d0c850a050a3014cc183b20c55425, 0x484d494c005908450aa20a210b800b1802080a1508a00407081909860a053aa43c180b260226089e08440a2102b508c00a1a08440141334c353f375e0290098c0a8a03820b9004860b920b8201c2094109062d1a2ed82f9c312609a9022b0844, 0x8190a8e08220b900a2658da5dae62c1040c08440aa70a9b09a9029b0b910b1f0b11029b09900a1c0a120a1f4fbb03890a900a1f4ca651cd0b140b0d01a90935048808a0048547240aa00a8e0221453204110860091209ba0b8009900b164426, 0x110088c0aa0704c71a40922021a08460b230a9a0a9402290b156aac0932032a0a2908c0084668be6d2b02a00b1f093265ae732182c500c0082400440b9008c008be031b5fc861a60922013f084508c608be02120b905bce0b1b09950b14031c, 0xb800ba0018809108758889a89d68b4c9b3409a509a1013208470b99031e093208c003247fc881510a210a1c02030b090b920821091f7d3f00c00a8209900820081f021a09320b0303800932761f77a37a2b099903080910082202a60a2908c0, 0x31f091f028e08be0aa70c810b1402ac0a380a3303a0088209c0975608be03170a29028e0a2693b394c698da0b06021a089e093f082408be038209100a1a09c08e4e9094031609100aa003a00b920488]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node270 : Bad pats ([47,67,60,54], 0x3ffffff7ef9fad85cdcfbf7ffffff) :=
+  bad_of_gated_check (tape := tape270) (gas := 150) #[] (by decide +kernel)
+
+def tape271 : Array ℕ := #[0x9900984000d0a0508640999271c28e22b26038208d30b0723ac0a1a2cc82e51039a0b2a09ba0aac0a9a03230a300a151db2093e032a1b56204c394508ad02a908c0084609a90a290297094109a9164c093502a90aa309a909a513c418bf532b, 0x4850aad004f0a9a3f5d40470917030608130a070b073cac4221524900c00847014608d50a240a1a3848084a020209170b9108d508c708460a240a1a020c093e09c00847312e3552013e08be084600a00a9a0a820184091508d308010c08040a, 0x9a90b14039808c80b8057225ac462ae752508a901a909a501c7093e031708c608d708be51470c850a8f099d0a9b0325084a093e08cb0aad00be0c8509414a5d099d04810c0b01c70881090b004a0941451d46e547a54ca7029a08d50a1a0a15, 0x9a90144084a0a1f040209416e4c6fc90a1271a7082b030809a90a240a1f03000a000a080a9602b2080b08470b0d0a2966c668a46aac023309490b8909a903a00aa009c00a8e60c10a1c0a17018f0a120b000aa05d4903000a000aa10a33084a, 0xb1b0c8589dd099d021a082b082901c20a24092284ac86218d490122082b0a2900c60a940a330b0603230c817e1409950410090d0b900b88020d0a0c0b980aad091a7a107c15802e81c108a500c508440a240a1f00c073240827030008c50a1c, 0x21a082b082903060a01091c902c09a509a10325082b093e08cb03258b4d0aad00be082b0a33]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node271 : Bad pats ([67,60,54], 0x3fffffffefbfad8545dffffffffff) :=
+  bad_of_gated_check (tape := tape271) (gas := 150) #[] (by decide +kernel)
+
+def tape272 : Array ℕ := #[0x98c0402081d08260997279c2cd82dc9349a424c02850a2908260a960a120a0d02960a9002850a290a0808251f22203f022909350b180b1103020897030608010b02191d1a1808260388090e0b0a00820897099314c9162a1c1c2324503250b1, 0x415f0503081a0a9b093f0a210390084d3d493fd9093505030823038739ad081f03110a020a8b081c38273ad30a150482089c08260a1c09900a17030308260b1803900c820997302d319c03980b90020d09970283081b0826013509032a272b97, 0xaa6091a03290905089d0b01572659a260286a418c33d80252afd80151add80002a80aa2023b08450903098f098c081e082605030a0209934bad08c0023b0935030308260824089c021208264622483e494e4f580a1f0a1a00c50941029d08c5, 0x92300286fbe030008980a960a120a0d08276eb2714d74a5030e098d02810a03048608be0d03682669150922082808270122642c0217099508be0b140920632e02380b080b0109440c83089d03920b820c0308be0b225d210b0d04860a1c0a17, 0x5509ba0b220b1b0b1509230116082802ac0c8684288526884709a50028092301c009460aae08be048c7e4c092908288026040b0b1f090a0a000b140916040b088a0c030b0678a87bac814d8b210306093508270b070aa309a90a9701290827, 0xd80301a1099d04140a9d091d09220a97092f]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node272 : Bad pats ([67,60,54], 0x3fffffffefbfad85efdffffffffff) :=
+  bad_of_gated_check (tape := tape272) (gas := 150) #[⟨_,node265⟩, ⟨_,node269⟩, ⟨_,node270⟩, ⟨_,node271⟩] (by decide +kernel)
+
+def tape273 : Array ℕ := #[0x22f09af08b304160c140b9708a026b32849029b0a2a09bf08bd020d08a00a3303980a2e020d08a01f33206521cb23bb004f084c01b909b51b5408c1048208a00b8b09c30055174b0b260a34041608da0a3b08cc0c0c155719511c3f2ca94d25, 0x8a90a290a2403080a850905022a09a908b33d1d0b220b803eae010b082608a0022a09b109200b80382e39b3411b00b308260a1f0a1a011a082b092032a4050308bd09a90a2a09200b8030ae34a2019f082a08810b110a890ab10b9708b708b5, 0x8b501ab093f08b3032b09b7081c091d56330a2f57c90310098809230b180a25001c0b170b11502f52bf59b1041508af0a29002808b5089e4bb309c300bd08b7022408c103260a9d4751483f022409ab002844334549495b0b140b06010b08ad, 0x93f08840a16099d091d08b508b1031609ad09a56cbf0238084703100a2f0a2069c96abb70d80925028209900b1e0b1003900b220b88644f0a20031e088c048c08480b250b80609e09a5021a081f00a008205c9f5db561af662b031f0a2e08b7, 0x3980b900318084709a50a200b8808c8018c09a5084700b5734d0b8074dc77e00220]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node273 : Bad pats ([68,70,60,54], 0x3ffffffbaeed0986afebfffffffff) :=
+  bad_of_gated_check (tape := tape273) (gas := 150) #[] (by decide +kernel)
+
+def tape274 : Array ℕ := #[0xb1e001a0819021c26a327b32d34310e3a290148084e094203180a16225d0b26022008b508ad0191084b1ebf205709c0021609a50c881c540c860986022008a708af001c099d17b309c002250a1a0a10032214330c8615dc0c88191623ac59a8, 0x8180a9940970a1b0a1603a1081709143da54233460848b50208098b082a09860884001408130b250b08002a08af0814002a341e0b2535c737920a880310082a018f08b30b0830310b250a16021208140987099b0a1c001a089008ad0b102aab, 0xa8800290a1557880a29021009a5022f082b0314085608cc53b454c955c7091a022609a90224084b0a1b082b4f455023002b082902104b2d0a244c20092602100c880a1b0a160a88031d0a1b0a160a1a0a1503060a1b43c7028d081709140099, 0x74bf092202a50a2e0a2608b108af02870a1c0a050a24082802990a17040409130b170b0902080a00098f672569496a296cbb6f34032b09b30a1c08b3030a613f0a29092603080a0808b3030a0a2f0d000a845dbf5f2963317620040809a50829, 0x84b0b2203030a2987450a300a26004d0b1801a108c10c0c0c0383d784bf88af8c0892a4a1e000a0089c0020098a0a1b092200af0a2a09c00a2e7ba57dac0ba000a0089e78687e98002a08af0a260501098a08a9082a0485084b09ad0b0a72af, 0xb240a1f0a1a001c08160a2f0b220b100c04001e08b19b960a10091f9ec70b8801000a1f0a15082b09220b1d0b16012294c7981008a002820922018a0b2b0a120a08092003170a820a268f2f91b10b88002b0826020c09a5091a8b2b092600b1, 0x3980b90019b08b708b1]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node274 : Bad pats ([74,70,60,54], 0x3ffffbebebee0987abfbbffffffff) :=
+  bad_of_gated_check (tape := tape274) (gas := 150) #[] (by decide +kernel)
+
+def tape275 : Array ℕ := #[0xa260c862bdc2d52091c00b108a904020809098b0b0d24bb0a1f019f08ab21a90a2e019b08af021c09b30b0d1eaf1fd125a5019908b508b104020a1c0416194e099d1a3b0a12031108ab00da08540a160a0c0403139b08b515b316a11bae32cd, 0x3a009a50b14404f004908473e4541dc021b09990a1101a53aaf0922038a0a2501c008470c8638523928020c099935ae3c534ddb5f3b01a70a150216098a08920195081c301631b30b8a0b8203240ab209c0019b0a1a031408180a1608b72ab3, 0x5a495c250a330a2e019d0922038a0a20050308bd0a110ab20a38093e01b108470a1b515c545255285633019d091c0b1b0b14021a0847084a4bc500c108bd03970849084748c502840a2a0951084a02ad0a2a44d446c949a9093e00c1084708bd, 0x38a0a25021b09c00c866852092200200a2000200b820b8708540b260a3864c80c8665ab09380932020808a50a11019908205daf020d08bd09ad09a902a1081a0a2a093e]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node275 : Bad pats ([44,70,60,54], 0x3fffeffbeeb609868ffbbeffbffff) :=
+  bad_of_gated_check (tape := tape275) (gas := 150) #[] (by decide +kernel)
+
+def tape276 : Array ℕ := #[0xa2400490847022609a708b726cd0a2e013208b1092c02870849082b084708bd01ad082b203f22bb0310082a0925002a1ca51e35245b27a90488099b0a0b082b082a03290ab30b1e0c0a17ad09250217082908b101a1133f14b41a472c5c57a0, 0x1c0082a08c10951404e093e032508470b2b012508bd3bce3d530a2e013e084a396041a944bb004808af0a2500c808af084f094900af3349354d0b1e082a092500b108210b8a09c008c8303436c70aa6002b082801160b8208b109a92b2f0a29, 0xa9a014908ca0a2e0a2608b30932092c00b70b160a1a093800ca08c80b240a1a0b16031708b74fce52530a2401a30922082a0b08031f09ab09380225092509c00b1000b747c849d34b4e4d295435022609c009a90a2908280a2402260847084a, 0x10d0a290a1c08b50932092c011c0b900b8801ad08af0925021c62b40926641865c70318099008a003880990022e0925031f093808b708265ca55d985ea260350aa0]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node276 : Bad pats ([70,60,54], 0x3ffffffbefbe0987aefbfffffffff) :=
+  bad_of_gated_check (tape := tape276) (gas := 150) #[] (by decide +kernel)
+
+def tape277 : Array ℕ := #[0x84b0a2f28ca0a290a24030f0aae0b010aa6091a0899082525b3011d21ae022e084b03160a2e0a961fd00a2f02ae0a9608be084b03950a331b4e1d570211094409100a380a3303240a900b16018f088c080f0a90152416e0195220a92a4163bf, 0x479e0c8502080993008708130811004b08cb09423c950b173e2b3f0503090993018809150a07081938170b830317081c04020892089c34250b16351b001c081603850813010508a00a0709422f15301e312b395f50a953be0329082608be0322, 0x22e0a2f093503930b900a2e0aa256ca5832021f0a9d0a97021f0aa3521d0092081e081c022e084a09414f220b1e0b17038b08cb023b081909050aaf0b164b5b4c25014108cb085908580a2e038b4551014108c00c0200ce08cc08a042ca445b, 0x719c76a70923091d02a60aa000cc084e09b700d908140b080b016bd76d4a0a12020c081c0b166817083d029665c46e297cb302ae0a96020308a0094f0b250b830220602b0aaf62cc0a2f010d08960c070a1603240a845ba00d005dd2092c0923, 0x2240a1b0820881f899792b5048509af0b9701af0a1108a0839f029a0a83094102af0b25804a81d7852994c59f2b02030aa608210825038709850a0d09040b220b060aa67aa802a60a9c09850b1d0b0f02380a0009b7744e0a0d03820a050aa6, 0xa541ada7022408200a1a009a9da90a2f083d02ad093f09af0a240aa105020a240a1500a00a9597a999579bbe08b3029d0a1a0a15091a03170a1a088d081f00160a0c089105018f1b90a402240a1b082003250a1b8c248d9f0911021a09af0a15, 0x12308b3032208260b1b0a33b6c10a08022f092c092308b302960a240b1d0a33b1c1b39209a3099f01ab0a24031008d409900b0f09abaccc083d013f0a2409ab022f0a2ea7cba94408b3030f0a2e09ab0a0d0a29030f09ab0a0d091da2ae]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node277 : Bad pats ([49,73,60,54], 0x3fffdefbfff32d07e6fb7fdffffff) :=
+  bad_of_gated_check (tape := tape277) (gas := 150) #[] (by decide +kernel)
+
+def tape278 : Array ℕ := #[0xa1a0a150189084d091a0a2f0199084b0a29253e27240b9f0b97032308870b150087202a09bf014709170a11041508831d2a084d1edb0c8702240a0509900b1c08d709bf090f082002820a330990162a099902110813091513a91a07219f29c5, 0x84d0502093f08543fd30b230b1c424c083d029609170a24030708160a2e0a073a29021a09170a1b028a0a820c0d09ba364837d13bc4018c09c009170206311d0a2f0a1b01c0094d0850084f02a808c00aad2d592f3e32c744a10199084d09bf, 0xa9b022f083d0a240323093f08cb083d564c00be0a1b08cb0b250aad03100a2f0a1b031b08514fb40b0d004f4dbe515d53c7099d021a0a2f083d018c091a0a1a0a10029c091a47a449be4b2557a7040409bf0b150a2e0a290502091108cb084f, 0x30e0a160a11099d083d0a8f01ba08d308540a2f083d031b0a2f6147099d00d5083d0a16081908160a11040b081e0b090a39083d5c345f296395]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node278 : Bad pats ([59,43,73,60,54], 0x3ff7fef3fd7b058545ff6f3ffdfff) :=
+  bad_of_gated_check (tape := tape278) (gas := 150) #[] (by decide +kernel)
+
+def tape279 : Array ℕ := #[0x2ca5009e0b820b230b1c01c2084d0a1525aa27c8334c48be0302085208170aad0a2f0b1e0a2022476ab50199091a05000c85081c081a03151aa41ca90a20083d0306090e0a97029616a90a2a0a20039209ba0020081d098613e214c818441db3, 0xc870aae0c14091141a80a290a24029b09bf09af0b150a2e031e084c08160c0d0b0e0a960016081a090f08c00a0737283a5b3ca90403093f0b980b88040b091208030c030c880d0231280b1e0b17030e093f03980b9004880a150b0e2ad02bcb, 0x5c245eaa083d02a809140a2f0a1a0a2a01820a8209140b0e0a1502890a9651a90a20040b0aa80a0b4faa545702960a24021a08a00a9609ba4c514d4856c4038208c00aa20a9c039808c6031e094e0b0e0c88093f0aa845d046a200cc084b0850, 0xd80008af039f0b150a840a2e0a29032309380b1c0b17684c0a200a1b038f0a240a1109bf0b1c0b0e022409380a110a9a619c64c8031e093809af0a1a0a15020008180a880b1e0b1702290aac59cf]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node279 : Bad pats ([43,73,60,54], 0x3ff7fefbfdfb0587c7ff6fbffdfff) :=
+  bad_of_gated_check (tape := tape279) (gas := 150) #[⟨_,node278⟩] (by decide +kernel)
+
+def tape280 : Array ℕ := #[0xa110019098608cc0b0827b40c08021208cc0863094c0a3924c729292bc1005a085809230b160225089d1ec70b06091a031609290c071c2602110a8704890813090819250c0701080a20094d0aae0a2a02880b16145216991a2920bf34b34a4a, 0x98f03093f8f0b07412908ab43b40224083d09a3048608af0a2f031e08af02870aae084b094c38c139d73b473cad02ae0a250a2001870856084f0a390b15008e081c081a0208099d0c862f2030d43334083d02ae0c860b220b000b1404070a88, 0x82a013809040c820c070b8202ae0a200a1101380a8753a0552257b30c8608be038a0a2e0a240b08023809b709a34e4e083d504859e26026019b083d089f021a083d0185090b08180a8747c748a7082b082a009f088a0a06091a082902080915, 0x29082b0c1408be092c083d002a08af0c020923038b08290c02643508be66470aa60a94032409ba08be012c083d005609b70a250a380a2e5dc15ece0aac048208af0997]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node280 : Bad pats ([40,73,60,54], 0x3fbffefbeffa2987827f7fbefff7f) :=
+  bad_of_gated_check (tape := tape280) (gas := 150) #[] (by decide +kernel)
+
+def tape281 : Array ℕ := #[0xc0400d7085608be089127d52ae22dcd3d474bb36b2900c0084b093f0120081e010a082109ba20202154099f099b08af0404089708220923091d0316083d0489085208160a1218c70aa0089c0502089109130a0d083d0c04152019a91c3322ad, 0xa1240990c8941d744d5083d0404085104020a3b0987084a0a390d00093f3c550b1c0b150188081c0a12039508550200081b34dd0910048908be0891081609880088302032a235a63754008c08180814085e08d209ba00be0851081b08190c16, 0xb970b875a135e2104870a9b0a2e08be0b0902a10a9b0b8753a50083083d0b150b240b1608ca09ba003d4e4e51c8562608ab03970b85084c0b1509130b0700cc08be0b8709870a050c0c48cd0b16048908910a12093f0b970b8f0113088f0415, 0x8a3030d0a00080a091a0a290a1f6fa508a90828022e0988098b083d0a000894089c081e040c0893098f0a82030109880b02653e6722018f09100a05022e0aa10b17610f62a00a1204870b07022e083d08165d2a0a870913031c08160b070c0d, 0x2870a1a]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node281 : Bad pats ([52,73,60,54], 0x3ffffafbfffa2d85826f77fffffff) :=
+  bad_of_gated_check (tape := tape281) (gas := 150) #[] (by decide +kernel)
+
+def tape282 : Array ℕ := #[0xb0801c027ce0b1c0b15003d25d40a2a00be08170a0d0a08099d089d005908560c020a330a0508be083d030d098b1dc12125244d293b020d089b031509950a110a08199f099d04160b010a160a0c0200098008920c03149b16a11ab32dac5e2e, 0x85240c70a2f0a2a00da09ba0200083d098b0894081e01883aa23d623e34038f083d098f0b15029b083d0a3336aa38d20a1242bb0aa0021109a308af08ab01ba09900a2a30bb32c446290220081c00190b012ca50c8c08be08ab08a90216081a, 0x5d250a12022f094c0b2508a1099d083d04810892093f0b240a9b0b1602b40a9b094c091a51240a38029b089b0a39091a4e5b544157170aa0008a099008a10a2f09ba0a2a4a440920020c09a3019b0a2f454708af08ab0233093f0a89083d0295, 0x8a70a2a0aae714a010008140b0009a30a2e0a2401a3083d08af0315093e69bb6b5101b7081c0ab20b080b22013f65530b1d0216094409b70a3863ce083d67b36e527710982ca7a800a10823003d08510a330b0f0d0109ba0233083d5a4e0a8e, 0x8a58915500c008be00af084b0a250aae864a87470c86030808be0187081902ae092f083d0238089d081c0a2e7f41809b0c0781ce0b8a0b9a00c008be0382794e7a5a828600c008be02ae092f083d0482081c0a2e74c10b9a0b82764e01820892, 0xa4aa032408af0a2409ab09a300c0084b0315084f0aae9c4e08af9d479fada73e022409a3008c088a973f0b0f0300081a0b060300939b0a1095160b2403870a100b0809ab00be084a00d909bf0a0709448e52083d8f330c0700c008be039a8948, 0xd8010928d80002120b0708ab082a0829028f08c00a15099b089f03240a0ba227082b]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node282 : Bad pats ([73,60,54], 0x3ffffefbfffb2d87c77f7ffffffff) :=
+  bad_of_gated_check (tape := tape282) (gas := 150) #[⟨_,node280⟩, ⟨_,node281⟩] (by decide +kernel)
+
+def tape283 : Array ℕ := #[0x15098208d408a028292a570a8a0c11048508a00a20030a0b800b17000c09880a100920215d22aa24470d01030209260a1b00c90853038108c71add1baf1d6f014808a0084d0c0800c9084d08c70310085314d10ab116230a8818642b2b32ca, 0xa8a092c0a8e40a500850a1108a00a1509c908c70381089608583b55092c050109c908c702b50857095337550a8e38af3e52492b5a500501094f08d208c70b2b0c8c0383090b088c0b0905002d9e2fd20b16092b023408c7010e091708d40a15, 0x4810b2b0aab015309ba56d55825592f0928040308c70b930b2b0b16092c048b0b8308c70b2b0b160308089c0a340a03086709ba0ab54e5550af53b1021009200b820a2f001f0b91472f0a3902200917081f0a10015209ba432445570c0a0405, 0x1ba093e0aac0aa0018b0b0808200c1009280b920c8c0b900ba0030909480b1609320928041509480990082009320b165f2e0a9461d8665600a7082702990a93]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node283 : Bad pats ([63,69,76,60,54], 0x3fffbede7b4a09872cf7effffffff) :=
+  bad_of_gated_check (tape := tape283) (gas := 150) #[] (by decide +kernel)
+
+def tape284 : Array ℕ := #[0x3020a8a0a070b93284f0110099f0938010708250a07099f030209100a94222f245625cb2af10b16028a09900825099f1e32030a0a94093804820b02098a089e0b0a1a4a009a081c0c0a0303090308c708840b100a8415d217501bab30b14b35, 0x938089e01890a8a3f260b2a0b2341af040e0a840a100990040e081c3a100b0a0b03040e081d0a1037ad00500938050234d60a100b800a8a35a63c2a092b03800c820b020a8e0aa004810a830c0309b309a72e4a0b2b05010a830c0309b309a7, 0x61d0092c01bf084d093e09ba0aac0aa001bf08c70a1c09ba0a8e0b1e5450040c09bf092b0b9a0b92022109284e1a50d6573b665803030a150b170d000a200a1b02820820038247260b230b1c020b09bf093e09380a114523484804050a880986, 0x814081170a40d0009b30935010a08670a840c0100190c810ab509b36b136d5071b184ab882f0a3000590aa00a9409b30a21039b092863a60932032b0a39005b095309ba0b0f02b55ed560e609b30a1c0a8e028a0928032b0b1c0b005ab45ba6, 0x30008510b9b0b8b0b1c09280a26014a084d09ba09350288088609900c05019080b282d00b2a0b2302b50ab10a0109b30932090a081e09900b810999050109b30a05090e0b0a01800a8801b30c010b0375940c8876d079217e2a010908920181, 0x29d0a11092600050814091509af092c0a118ca90a2608ad]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node284 : Bad pats ([69,76,60,54], 0x3fffbefe7bda01876ef7effffffff) :=
+  bad_of_gated_check (tape := tape284) (gas := 150) #[] (by decide +kernel)
+
+def tape285 : Array ℕ := #[0xb100a2f0a2005000b170b090a8926af028e0a8408570a3b09ba24482ad5011408200b820a200b230b1c03020a8a08200b890a201ddb029b0a8904890aa1199b0b890488081c0a0b0c0a029b0a830500149b159c17911aaa20e13c3551ab6547, 0xc030ab341db444809b10a3045bb4bad020b081d081a0a8f0c890b910ab10a2f0a1b0020081d03020a8a36a60ba10b9937af0211084d0ab10b230b1c03910ab10a10081a02b1085009ba05022dd62f1c312a33c809b905010b17091408d609ba, 0xba008220b9000b156c85b1a0aa0028e092608b10a1c54d05d2e030a09900a110c0108b10a300b1c023008b14e5b09ad09a503820aac09200a200b1c01200a2001b10c01483e495408af00960b1e0a1b029a0a0c08d00b820c01038a0b810c87, 0x70aa00a00b9d0b1702340b1f028a099d6d266e5d018a090b0a8808a0048269266b256faf72d1742b08408abf029f08ab0a17029908b109ad022b0d00625563a609a1029f0a1708b15fad092b03a00b9a0b900a94001c0a93013f08b109b15a1f, 0x8a00b240b1600260993094208c109b50208092005010b18832f08c1015208d2082608ce814f845d0b2b02820b180120081108c10826039b08c17aaf0a820302080e0b88789a0d017cd77dea86a4092b011709a908c1028a0a8809290a1b0129, 0x382089e0b1c05000a15942a0b0a05000b9a08ce9226092b08b708b5029b091509a908bd092b8ebb083f083d050009120b110b0a08c1]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node285 : Bad pats ([76,60,54], 0x3fffbeffffd80d87eeffeffffffff) :=
+  bad_of_gated_check (tape := tape285) (gas := 150) #[] (by decide +kernel)
+
+def tape286 : Array ℕ := #[0x999012008c008ad0020262f0c1703100820081f08c000cc08200b1022ca24bb279d09a1001e081d08af1f2d001e08190b1508b108ad0283089a0819009a081e02831828191d0b170b101abb0090081e081a0b1c0c0115330d001d292a2b42c7, 0x4050827082308c008be00a908280322082109a13caf3dd0403f0a9300cc08c008b1082108a9039136ad0a210a1702050b0208be0a2b08ab04890a890a2b08b100cc08c0094d09950c0a3045322f34a601a108a12c3f391f031008c00c170917, 0x1a30a91022108a1082903a155ab573b0a2403800b00022b098f529509c00a0809a30239098a089a09080d014fab08cc00860805081908ad0b100a300a2b4c5c53a90a2e040c09b308af0b170a300a2b4751584a6dc5038308b108ab0a2b0a21, 0xaac71d8742f79c883c10323084909a3093208c005020a29050109bf0a1709b30b156a2e0a3303250a1709b3038b090a0904086009c3653f09c201b30a1705010b1760ab0c0a030709b309a30b8b010108130a8e092c5cab5ea561e266d16b50, 0x3f083d004084bf038308ab0a93031b0a2e09b7040809c008cc09bf80bb0d0200270c080b887dda821f0a2b0a260842004909b70aac0a2b002708220a930b9209ba77d309a303830a930b010a2b0a26004909b709b3]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node286 : Bad pats ([85,52,60,54], 0x3bffffffb6da2d85aeff7ff77ffff) :=
+  bad_of_gated_check (tape := tape286) (gas := 150) #[] (by decide +kernel)
+
+def tape287 : Array ℕ := #[0x829293e2a9e315132a4028808200a330a170920091700200a8e22af0a9a25ae02990a8d030e0b081f1f0a1c0046089a089409b30b1c0b150046089a0896040809150846081a0b0e18a808ad1a5b009a081c031013a414b11d2b20293dc551d2, 0x422f43a4084247bf4fc102300944012308d3086208460a300486091408463a583cdc029a084602820894089e0a2636ca37e20a240a1a0026091a0a29012308a70111302b02940a30094409b3039b08462d3f2f2f0c03020308260a9402210846, 0x5c5300d108be084208a708a5021a0826091d553157bf664173cf003f083d004050bf028e08420a260a21028e0a1709a309200b2408420117082509950a1c4acb4dd3009408260a1a039d0a94462e0b160b0f0026091408a702a608100c160a3b, 0x8620a0d09ba0b1c0a2970d00929022908c06cbe71c5039a08be00b169ca0a17089e092609996ac700c0084208be05010a29091d08420a1c03080a1f032209ba02290842605a61240827622664d00a2b01a3084208a501a308420a1c08be5aad, 0xd8000937003f083d004072bf02ac08be0226]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node287 : Bad pats ([52,60,54], 0x3ffffffffeda2d85aefffffffffff) :=
+  bad_of_gated_check (tape := tape287) (gas := 150) #[⟨_,node286⟩] (by decide +kernel)
+
+def tape288 : Array ℕ := #[0x40c08590a340aa20a9628562b443451029a0a1608be0a17092601470a20089809ba0b1603821f2421c4091d038809c00a9408be0aa00303098c0d010ab40a8e0a0d1ad002820b01082208980b9205010a340b0809ba14aa17441d2f242e4a45, 0x82641b208be01ba08c63ec40a29029608be048209c80a340a963bc4038808260ba00a940a90029436a839523cd64324031108100a1a02820866329f08be0938093500c00a1a00a00826082403082d2a2e9f2fbe030f08230b260aa809c209ba, 0x90e09ba0b2202a80a210411085055bf0b9d56e1594b5fdb6824013f08420a1b0a16001809904fa5091d039d093f0a210b0d4daf51ae73c102960a9000a00b0803980a000909091a090e08a0482b491c0a240a1f028408260a9a0403099f098f, 0x714e028909a3084203226e4b0821040c084203226bcb6caa6fb2729c0a240a1f02960a9004820aa2039d09110a210b14004264536652671c0216098a091462280a29023a08420aa102a8082608420326094205015bd70b225cca5e3f009b0825, 0x826899f8bb590520840022009ba0a150923021f085e0a1a83be0a9d0a9702a209ba0a20092301b50a1f0823021f09427d2a7ebe80d303140a050a2501b90a1f793e082601930a100b18772a7ab585c4923f02960a90011d08a00b0802a2089e, 0x2608170a1b0a1a0b1f0a2f0b1b083d08b708b5021a09110b0a0aa2031d0923091a0290089b0a100b850b958eb201140a1b09930a1a048509b90b88]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node288 : Bad pats ([79,49,60,54], 0x3defbffffed32d06eedbfdff7ffff) :=
+  bad_of_gated_check (tape := tape288) (gas := 150) #[] (by decide +kernel)
+
+def tape289 : Array ℕ := #[0xa940a820a9028d629af2da401900a110a900288092c0a1104880846223e23a8252932ab041008c70b260b1802240d000c0c09150c0302af0a1b0d01090309151add09c01d57084600d508c709120d020a900a2e0a29029012d616501f3f4ac5, 0xb030b83010108030a3a08100a293f1b409e09b303800a8209100a293b4b4224433502940a8e0a240b0f02940a8e35a40c1037d3442f0205091a08a009380a240282089408a030560a1a050109110a1b0b10020c09112bd6092604170a290380, 0x9170a08591f0c11020309930a900b2956500a21032953355bdb03a00a3b0a900a170b22010b08250a940a3b0c104f5351d65ecb7cc102940c070a330a210a17028a0a2e0b0a0a100b03099f483509a701b30a21021a082405010a290c030087, 0x739608c377bf0842022109b708c302a60a94022e6bb20a21032209ab6a356cd7023b0a3303180b08029066320a3b675609a705020a3b0aa60a940a1c0238614e63b368536e4802a60a8e0a210a380a170a33019308250a8a0a9a0b0a01c0094e, 0x3f083d050209b50b800b260b1800c109c005010c1008c1040c825183e084d704880a290a240a9080500840873f021a08a0023a0d000b22093f0b147ba409ab0a21031b089b08250b14010f082175be0d00014d0b220a290a240322082571b3]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node289 : Bad pats ([82,49,60,54], 0x3beffffff6d22d06eefbffbfeffff) :=
+  bad_of_gated_check (tape := tape289) (gas := 150) #[] (by decide +kernel)
+
+def tape290 : Array ℕ := #[0x304439c544af00b108a5031f0a000a8d25b30b0609a5099d004008a909a90b0d222500a908a50b0d0b06021b08420a171d941fc1039208be08ad08a7030109ba0a170a0d0b0301990a03169f0b2a0b1c010b0b1d08890a8d144d192f1b4526ac, 0x28f09ba081d09150995032b08500a9b3d950b1b40440b0d41410221099909950a9408be0aa00199090e0a1703080a330a26088b0a8d098c090e35210d0136d002820995082208980b9a0b920205081309950b800094088c0ab42b5009ba2d2a, 0xa17099002a00a16571c592d5bc101900907098d019053250c0d0c0401900a16019908a508820990502a511f09ba032a08b508af0b904cce02820a2008980b9a0b8202160a8247a24a5e54c45f23028d09a508b508b1099d030d422503a00a21, 0xa1082302160a08081d68ad02a009ba0b0608420840030f09ba0398634e0a2a0990644466a5091d091a001808170a1b0a8d099d08400926028e099008a5084208a900980818]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node290 : Bad pats ([79,46,60,54], 0x2fefbffffe9b29848fdbedfffdfff) :=
+  bad_of_gated_check (tape := tape290) (gas := 150) #[] (by decide +kernel)
+
+def tape291 : Array ℕ := #[0xc1429522aa4010208160813048708830c85251d26a22c90022e09410b8a0892081100920890081a04850a2e08010b0208161e221f950a07018a0892088e038a08ce084d084c05000a2e16d2189e1a1b22282f3e36a964bf652bd80011b165c9, 0x84a084f0c1700a0084a081f084d0a100b88008e0b0900ce08cc3a9e3ba83ee8413e48c7519d031709c30d00092c0a200a16028e0a2a093e092f028a0a880c0d31ca33a502900a8a008609902e22022e0a9608a0089404880b8a0a9604880c04, 0xa0758ac5aa1040b0914090b05000a1a09050a0b552656a55e3b03100a1b0a240a1a02a30929021b08560325093e08534ddf0a150b1702154aa54ebb4fcc03100a20030609ba0a39081f0a9a092000d608be09800b100a1044a647b403170856, 0xd8090931092ed8080934d8076b4f6c31d80669b4d805d804d80367bf684568ccd802d80103170a2002ae0aa809c0084f084d0117084a615563be099d0a9700ce08c00a0709110b17099d0999039d090e0c8609170296]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node291 : Bad pats ([60,54], 0x3ffffffffffb2d87effffffffffff) :=
+  bad_of_gated_check (tape := tape291) (gas := 150) #[⟨_,node277⟩, ⟨_,node279⟩, ⟨_,node282⟩, ⟨_,node283⟩, ⟨_,node284⟩, ⟨_,node285⟩, ⟨_,node287⟩, ⟨_,node288⟩, ⟨_,node289⟩, ⟨_,node290⟩] (by decide +kernel)
+
+def tape292 : Array ℕ := #[0x4810982089208960a06099703070aa30b872533281d03800a100a0b22a32da10308091d08460117089a1ece0a2400c40b101cc2203036930117082103101927021f09b5089a08440b08009a15ce090d0086088408c00b10141f18230a171a5b, 0x993004b0a1a09b53fab41a8091d43b1004508980b880b8001840b1009103a303c23490a5c640308089408200232090e35220a0d023208450b0f00200896023209b130a231ce330d0a1701c509b10997090b08c50b0700150b0f09972acd0917, 0x5a330a170310089c572b0848040f0b2a0b1c023553d4554b038a098a0a240a1a01b509b15047002208960820050208c5082208214d204eb3524e0c0101b1081f0044089808220094084446ac0b0748210b1c0044089c0822081f040509b50a08, 0x2a309460a3201396b41091d0b1c00440822081f0b88089c039009840a1766a2091d02170913642c6954000b090d0a030b880048080f0b100910603062230c130c0a03100a2608c70a24010a080c08960822]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node292 : Bad pats ([45,67,52,62,54], 0x3fffffdfa7cbe405bb98fef7fffff) :=
+  bad_of_gated_check (tape := tape292) (gas := 150) #[] (by decide +kernel)
+
+def tape293 : Array ℕ := #[0x3080b8008240a1f0a10020b082403020810080c0b8009800a9524ab25c20a280a2301390a9d0a97091a0a1a0a15029b0a951cc702a70a0b091a1b420a2d031d0aa70a0b091a02a30844084b0230094c084e09b8154d169d0a1a18da1fa82831, 0xa3808c040d8433344cd482b0a230a1e021a08280a0b08a908a5040a0a1f0a2808ad02280a290b8037bf39ab09a53c2301a50a0b08a908a501140a150b0001a5093930a308ad038a0a29039d084a0941005008c42c4d2dc22ebf322b34284e21, 0x59475b28089f0023081f08c00a1e56af09a100ad08c008460a1e00ad0a2408a151a853c55dd5639d028509100844082708a300c009a50846021508c04a494baf040e09a50846021f08ad084a46c903980a1f08ad03980b87091d08c40b880413, 0x21082508a1089d011d08200a29002008ad66c2682b099d099901a10a23022409860a1a004e084a08ad6142082962a80a2d013908ad08c00a1e081f00c4084a08ad0a1a013908ad]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node293 : Bad pats ([67,52,62,54], 0x3fffffffafebcc85b99dfffffffff) :=
+  bad_of_gated_check (tape := tape293) (gas := 150) #[] (by decide +kernel)
+
+def tape294 : Array ℕ := #[0xb02099308220087089c091d081f26ab28b12a1a02910a1f00cc084a0212084f214e2247099302851ea7091d03090a0d0a320aa30b970281098f0821031019270a0d023208cf084f0063084a09b80939081f165517ab1ac71d1d23153fc9402d, 0xd800030708220815099700903dab0b100b090021081f0b0e038f0a3b091109973a4d3b9e00210b0e372c0a100a0b0021081f03920b8a33a80a150021081e0986004a0a3b301e0c8809b808c4023b084e08ce2d4c31c234900021081f0b0000c0, 0x1120844088e0b8058585b26082708a5032408440a3808990a1f029b0a95022b50b351c70824543104050a1a08240a350a2b039d0a380a2408444bd80405082409c209460c8a0848084402290a9b0238081b0a0a44b345ca495d4e2f5ed466c1, 0xd8010210081c08a5082501950939082464af0a2609b8030e084b0a24093961d808c0000e0b24084402385d4a0a260821010008140812090f0b900a2b]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node294 : Bad pats ([67,52,62,54], 0x3fffffffafebec85bb9dfffffffff) :=
+  bad_of_gated_check (tape := tape294) (gas := 150) #[⟨_,node292⟩, ⟨_,node293⟩] (by decide +kernel)
+
+def tape295 : Array ℕ := #[0x89c28af099d040b0a1f0489085309c20a3b021e094201c2089c0a1e22e023bb25cc26a50b20019d091702061d9d1ea70206081f0988089c021009410945090f0a0609111a281c582b02010609b80aa3091d01b80a2313af0a1f15da3b195e2b, 0x917004e084d0a10080f0a060c853f9d412845a700c0084e084a0a2d0a23031708c40b100a1e0145084a0406094535cc369e38d5050008ce089c09b8081f091d334b0406081f091d094204062ddd0b9a2fd00d020309089c0942091d09170184, 0x5aa50b190b1201110a010188559a0b0b081f0184098009080180521a0b0403800a1f01840980090a08844fcc508b53a10a1405030999091103820a1a0a10014148c24a1d0b0b4ba856d801990a190a100a0f02230a100a060c06439e05030999, 0xb190b12031d0a1f6f587241021008230a0b014109b8089a0a15082204050a1569266b90021e08ce08c0039309c265d00b850823040309150b0104060915619d6325671a6d1982af011708ce09b801425cd00a19099901420a8b09880a1f0a14, 0x89190a1003090829872408a302150a0f0829852508a901950a190a1403930a870995020608230b040206090d7e277f9d01b809410a150a010324080409410a080b017a1a00c0090808110a080b04040674a777247c25811e0215089a09b808c4, 0x1990a190a0f019d0828]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node295 : Bad pats ([63,73,52,62,54], 0x3ffffafe7faa6c85199f77fffffff) :=
+  bad_of_gated_check (tape := tape295) (gas := 150) #[] (by decide +kernel)
+
+def tape296 : Array ℕ := #[0x11a0a1a0a9d0a91022d09b8084a0a1a0aa3261d011a08d4085808ce09b80b1e048708990a2d0b1709b820642347282803270a1009b80899084a0a1f0312089a084a09b8004a082609440b0b08230324084a091a14a8175819421c4135b1363f, 0xd208cc0a0d0939048608cc3e45404a0b150b0701393b4d4128021f099d08c609b80b1c39cb553bd800038b084a09b8023b08970b0b0b04038808ce010a082631583212344c0a2302a30a9d0a1a0a15030b0a1f03830b242b512c1a2e500a19, 0x1c08230a9558315caf634103040823099d089f0939021f08270a1a08c608c0021a505252c50a230a1e008e091a0a1a0aad0a9b0a19093903170a19008408210a0809c2099d491e4a510b1c018a08880a1a085c0a190939454d4dd003920b8a, 0xa19029b0a89099b013908860a120a1009b8091a6e276fa80151094509060b12091a081f099b04870a10091a66a76a2d74477c3103000821084a031c091a0a810a12091361d209b808ab099f099b004a09b8031d5bd80b150b0e021f09b8599c, 0x1b80a150a190a290b1508b108af021f091d001c081b7b29099f030809b30a1f08c00a15022376c20a19792f08b3019308970823028f0939081f72ab0a23]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node296 : Bad pats ([73,52,62,54], 0x3ffffafeffeb6c853bbf77fffffff) :=
+  bad_of_gated_check (tape := tape296) (gas := 150) #[⟨_,node295⟩] (by decide +kernel)
+
+def tape297 : Array ℕ := #[0xa9509a30aa1014808c409a326c50224084324bf2ab104170a0a08c009b80406084220d40a350229093909b808c00b15040508430a8f1c231ee70a2b03230b0f0a0a0b080221089e0843022e08c0031c0a0a082314c215c51716195822af2bc1, 0x11d082608c408c0029108a704863d2f08c63e440a2301470a380a9709993acb0304089708210a8b09990a380a293850401e028b08a708ad01930b0b0b04021a099b098b021a099f2f1b30a0323133a841c500ab08a7010d08240b080a210843, 0x8a958d15a25021956b15e4463bf028d0a9b09390500086208170a8d0c01535108ad02124fb30a280a14022b0a8309b8093908ad4da80999048309b50a2d09b80a2803120a2b0a9b094500c60a2b08240c1345d147d54a3154c701990a190a14, 0x1a909a502030988089a0c020a1467a9083f08b501b808430080098a099908a908280b9809b862cd0840050308c601c2089c08285d5009a50999030f094509a90027]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node297 : Bad pats ([79,52,62,54], 0x3fafeffffecb6c85b9bffddffffff) :=
+  bad_of_gated_check (tape := tape297) (gas := 150) #[] (by decide +kernel)
+
+def tape298 : Array ℕ := #[0x30bf31d139550203089b0b020a2805030a1724ad0aa509b5009d089b0a2b224102b108af032508131f310c140a28085302b31c5b204d05000ab30a350a3005000b250a2b031209170d01172b18e2009d099d001a089b13b114bf1ad526df43e0, 0xa2d03270a2b0a1c00210915082908550b270b2002a53b513e3f3fc1050008af0b0209100a2b05020823098f08a50205082534b336bf0b270b2005000a2b021e09a108d70c0c00d72e950d0000290827040508242c2f0a9301930a1e2a312d00, 0x5bbf5dd15e9e653009b8021e0b200d020a300a2103120897082509a10820533f0b980b9001b50c8a0a2b050208210a0a0c8608284dbf4f20048608940a0f09b50b1e0b1700b109a104864631471e4a3055d4023508530b27091a0b1509b50a32, 0x112099b7031712600af0948009008af6d4e6e2b032009a108290304089b0b0209480c860a1069b16b3f732801ad094208960b1202190910094209b563270b1e0b10018a5fd604860b1204860b040a320a3500820824099908a504860b0459b1, 0x48008240a210ba00b90048608af0a1c0a12008c08a5]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node298 : Bad pats ([71,82,52,62,54], 0x2bfbfdafe6ca6c85bbbddfbbfffff) :=
+  bad_of_gated_check (tape := tape298) (gas := 150) #[] (by decide +kernel)
+
+def tape299 : Array ℕ := #[0xa320a2b0b8f00290827085326bf28cd2be03151021c08c7088809a3091a0b150a320a2d0141084602ab09c30b9f1e4d1f5a014808460b160b0f002909a3021c08460a9901480846171f18b3199d1bc1014808dc09b70a380a2e145023584645, 0x31c09a30a2940500b270b20014808ad0b1e0a350a30023209483ae209b80a2e00d4085a09b80a140a1c039009b800900b1c0a3834d035ab38333d4a048d09bf0a320a2b0846040e085d09bf0a322ece09b8040e08d309bf0a32094108460397, 0xa260a1c008a088e09b80b2b011309100a2b5555572658b35cca03a00a210a1c048908260824503f0b160b0f029f08dc09b80a2b0a21002908274ad304160829493f4d2451cb60c101410846019b0a1e0b080b01022b08270a234324454d09b8, 0xb5083f040d0ab509b808a909a9099d0843002608a900940892672b09b801840b20089e0c1408286554684d08406bbf02930a2609a7002908265f3f0843084201b80a2e09b301020d020a215b5b09a702a5]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node299 : Bad pats ([82,52,62,54], 0x2bfbfffff6c26c85bbbfffbbfffff) :=
+  bad_of_gated_check (tape := tape299) (gas := 150) #[] (by decide +kernel)
+
+def tape300 : Array ℕ := #[0x843099328a82dbf3cb10020084000c4084824c70b190b12011d099d08c408c0019d08b10840205408480b2000bd08b5021f081f08431c3f00c608481a471d5f221900b5083f03100d010c0f16c703100a3000200a1e13e209b814c517ca25ab, 0x8a500b108af3fad409e44b0509f01a708240842029b0915018708853a330d000a2b0a1701a737303b4a08b5009708460c870a1709a33545014508c60848029509930a2b0b1730ca32470046084200482cc70c8703170b8308972b2f0823021a, 0x317089f58455a3b5fb00025089f089d00480842099d0823542f55bf0a8d021708230821030e0a174f290a0802140999082708a109a1022b0846082708a5022b48af4ac1030008ab091547294d2600b108240821013908b14329098a0b17019d, 0x23081f0302081e69a90a170a0d031708ab08a5021e0845083f08b1030008810a830c890a2b63c165af672600af08ab0024081c008c081a0d005da6084208b15eaf031708bd0845083f]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node300 : Bad pats ([91,85,52,62,54], 0x3effdfefb6cb6c85bbb5def75dfff) :=
+  bad_of_gated_check (tape := tape300) (gas := 150) #[] (by decide +kernel)
+
+def tape301 : Array ℕ := #[0x117081c08b309a70148264728282bca2e3103980b20084800bd081a081e0b090a1a05020941081e08401fb3224e022e089c0b9809b80b88018408980b801a581cca011d081f08240a1f01b7084208bd02380984081e144515a917d0239939e4, 0xa0808c608c0040508240a2b09c23ed44151446049c75e190c13004508430184098038c50b120b0400c408480b9a3612029b08b10b1c00b5083f020f0b880a3031c732d4344a0a93018408980a1408480b1201b7081b090d083f039829c7089c, 0x594b5b2f0289083f08b5001c081b0a8b099f0b1555c5575701a1081f0b250a1f0043081f50330824018f08a5004208404d2f0a1f0a1a4e26523f001f081e0b980b9000240a1709b803a008c646444798032509c609c208c60b200848006108af, 0x71cd021f081f0b1c6fc50b120b0b020f0846081e05010846081f6b1e0b9a6c92022e09b8020f67540b170b10020f08b108ad652c020f081e08b509b8031c08b561586333684a72ab031c083f08a509a70b8f0b8701b70939083f0845021a083f, 0xb12018f08b3084508430235085808460ab585c50487088d0811080c0b2509c208c602087fd60858048d0b937e5c834787d10022081c090d089c089801b7085b081b0a19090d7926022b085a081709a776287bca0a9300450843021f08ad0840, 0x503084801140a0f08d68ace0b19]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node301 : Bad pats ([10,85,52,62,54], 0x3effbb7fb6cb6c85bbb4e6f77ffff) :=
+  bad_of_gated_check (tape := tape301) (gas := 150) #[] (by decide +kernel)
+
+def tape302 : Array ℕ := #[0x91208240a1a03980a2126c728992a4a2e4132af0219091d0b900b20021f0840215809a508b509a100480a1e028508ad09991d4b1e45232b00b508460a1e0820028f08b318230824022b0a2408480a1e09120398084208c0139e16261a31389c, 0x9b30939083f022b09393ec740a642ca4b310c0a0c01d8013a8ad80039db011208210b040a9300430a210021083f35ce3699082708a501990a190a0a0046099908c0311e0a9309a50183081f0b9009950c8908c00848084601950a0a0a930383, 0x80d0b07099d021708af56ad58cb0c8d0c8300af08ab021752b353dd00af08b55121002508a50048084209a508244eaf4fbf5c19020809a30b120a3808450848021408b3084001b30a2402170a140a0845b346c5484e019f082208b50a170238, 0x71ce0b120b0401950a0004860848090e082003106ba96dad098001510b1c0b150b1969946e9203820b1008ab08a500af64ad00270a1763b366a002380939083f0aa10a17022e08af08b55f2161ca0a93021708ab084308bd022b08485a470302, 0x22e08460845020809800840]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node302 : Bad pats ([85,52,62,54], 0x3effffffb6cb6c85bbb5fff77ffff) :=
+  bad_of_gated_check (tape := tape302) (gas := 150) #[⟨_,node300⟩, ⟨_,node301⟩] (by decide +kernel)
+
+def tape303 : Array ℕ := #[0x9b50a3001b5273f0a2d0a2802300939023024570285081f089708930b190a190b12002308200ba00a1e03251da81f99233f255529b102170a9f0a93001f192b08b1004e0a3009b5091d0a3201390a300a17013913c4155517b11aad2fc7564c, 0xa1e0a1942b1084002b10853099d08c108a9011a3bb10a2d0a28020808a909a9099d39cb01a50913082608a70489099d0b2009a9352b02a3091d32b137553e424cbf022808ad09ad020f0a170c0a08b10a3003202bc42e5509a1011a099b081a, 0x58c75952d800574f01c20939085a08bd0b2009ad09a90309081b0b0e0a140302089a0c0250a309a552d1083f08b500a9082802060b924baf09a909a5022808a90828050108d208510912089c01c2451e0b8a47ab494d032408c100da09c241d5, 0x1b309af022e08af6f4b703009b8040c0a1e0a2e030e08af09b76b426cd874ca050209a30b120b1c02a308260a140a29663f0a38022b08130a1709b709b30285082708260500098809c20a145f2f0b8b60bf635168507ec593a50937d802d801, 0x8a7021a87af88d18d44913f00a709a709930843084204830a830a9b0a2b09b309a782ca8541022e08af0b2008c608c40846032709470a1e0a1401930a91031578af79ad030b09930b8277287bce03900a2b0009089c08ad0a0f022e71a873dd, 0xd803032709a908bd083f08b501a908a70843002608a70b208fcd0840021409a90a1f01a90845032008a78acd8bc20214]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node303 : Bad pats ([52,62,54], 0x3fffffffffcb6c85bbbffffffffff) :=
+  bad_of_gated_check (tape := tape303) (gas := 150) #[⟨_,node297⟩, ⟨_,node298⟩, ⟨_,node299⟩, ⟨_,node302⟩] (by decide +kernel)
+
+def tape304 : Array ℕ := #[0x3040892081c031609050b04269e08c1281b0a2d050009b5089008400b160b0f032408400aaf099308c1048508cb0aaf09930b241dc9201d006608400c010aaf09b508c10101081000110b0400040a02154a16100d0217491a2b23502fbf354c, 0x98208c0089040a30b8409ac04830a2e0a2d04883bb208b70401094b3a473d480c86038409ac37d641cf4adc00010903088a0816099b081908b708b3029b0a953147008c08400a07081a0b83099301b508c1081a0811004d08160d022a952cab, 0x99f040f0942039d0aaf0b1756ce57bf59490a2e040209a70843093404880b0b0c01040208590b0b08434fd2514f53425bd00b940b8c0384088e09ac099308c3084200d308c7022d09ac46db47c509af03250b0409ac44470934001c081a0304, 0x19b08920890040f09440843081c659609b409ac019f0941084a093403030a2d0c01022e08b309415ec9604f624800b30842031d5aca0934029b08b3]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node304 : Bad pats ([41,40,49,62,54], 0x3ffffffe7f7a6c0670b6d6bebffff) :=
+  bad_of_gated_check (tape := tape304) (gas := 150) #[] (by decide +kernel)
+
+def tape305 : Array ℕ := #[0x28d0039f081a084d08b327cc091a0102089b0a9101b4234709970993040509ac0a97212b019b09b40b16005009ac0a9d1dab1f1724a6040e098a09b409ac0134084318d00aa301ac084a084300c3084b154a16c10b9f013409b412c71a9d2a15, 0x413f43d04714040e09140844098a09b409ac01ab08b302a70a26091a08cc09343ac73bc83e9c03970a2d0221091235b2040f0a3b0853085002070912084d32580b1603850850081d2fb2345f08b302a30a9d2cbf36cc540b039c09ac084a0134, 0x84d0a9d0a9758df59d85cc35e4c0a0b0302084a098f081a090f0c0f088e0c060011090e0b8d00c1084b088e0b174e9d0aa1031708b3019b09934ac74bad500f0b940b8c01ab08b3022608cc0934464709b40235085709ab091a08b3031d0843, 0x1ac0934084b084a001c091a0018081269266a4f029d089b001c091a661b093467500b8c019f099b09b40202089b091a093461d063140b9c02a30a9d08b3001c091a0a370c88084e08ce00920a320401]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node305 : Bad pats ([66,40,49,62,54], 0x3ffffefe7b7aec04729ee7bfbbfff) :=
+  bad_of_gated_check (tape := tape305) (gas := 150) #[] (by decide +kernel)
+
+def tape306 : Array ℕ := #[0x151084f09b509390c15099b0997032009390304081a0304081622a20c030ab323ce0aa700920b0408ce0909023008111d1e0a89030308110a0709171b211f5724ab038d0a2d084f09b5031708ce15d517bf284c2a904347d8011242d8001129, 0x405089709970993031e088e08820899099b039d08993bc33e17402609b409ac030209b50a020942093902a708530a9b09b50b12008c0890091a33270b0235ce384c040e09930a2d09340318091a0b202dcc2fc80a1003200aa7099b093409b4, 0x59b55c5f093905020a910a370a3256d16343005d09b508400b080b010a9d0a91091a02020892098f0c0e032408400a2d4d970aa34f9d031708c5089b0a2d084004870b93088e0b240a2d484a4ab553bf0a1a0a15030209820384421e0934091a, 0x48708160b8709af08b708b3029b0a2d0aa302a709b503110a3203110a2d04055ead5fe460dd61d3011a08190d0309b50a9d031f09970a9b]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node306 : Bad pats ([40,49,62,54], 0x3ffffffeff7aec0672fef7bfbffff) :=
+  bad_of_gated_check (tape := tape306) (gas := 150) #[⟨_,node304⟩, ⟨_,node305⟩] (by decide +kernel)
+
+def tape307 : Array ℕ := #[0x8200b8429dc0c8602a7090b081f08220a1a0a0601a3091a231f038408b309a30402094a0b250a23204721a926602a9e0a9001140822091a0a1e0302084409b409820a280a100a0b028f082408b7048d094809b40a2814c5161f19a31b9c3052, 0xa1a0824425544d1004b084a011a3d4f0a0a099f081e011d084b3aa70a1e004b0846093402a90a0b08240b160b08004409410a0234ab374f38a33e424b58551c030208220a1901a308b30a1a040708222d472ead089a038c09b4013909170822, 0xa1a091d5a435bd40a9c0a9601b408c002a954480a28093408b703110a10084408c451c30a1e01ab084a01b44dcf0a1f4ec10aa2032608c0093408b70a1401340914084a08c0489e0a280a240a1f03030a10083f0a280a23030108070aa30b82, 0x2240820040208430a14001e081c64c166290b94089a0b8c0302090f08430820081e0040081c5ea7089a0b84615c013408b30842021f08020a050822]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node307 : Bad pats ([48,49,62,54], 0x3ffffffffe7bec0632aebffffffff) :=
+  bad_of_gated_check (tape := tape307) (gas := 150) #[] (by decide +kernel)
+
+def tape308 : Array ℕ := #[0x8452c3f33d83bb209a0011508260a100a06002623b3089e000c08820c80091222260a1e020109170826008708230a150a061daf08a000b30aa209c60b9202a208b7093418ca1aa61f1e0a28050008a00a240a1a01ab13420934154125c8491c, 0xa100a0b0a28021009343eda422644180a1e031809420823082000ce084d08b308460915082639a50b980b9002a208243518029b09a308b708b3021a0b0a0023081e011508260a3b2fa530c9093931c30297082302910993090e0b260a242b2a, 0x8c9093959470a320a28013908b30a1e013908b7542355d5021908b708b304130b93009b080d0a910b094fdb0a1950bf0b1652505b4c78a2099c09980316084509850a020a0b09340a280912089e0b800201089e08260824048a08ce0b100b02, 0x934723f74a976b5021e093908c66e430aa8022e09c608240b1d0b16030b080a0a0009480c0a0934021409a3664969550c8002030993093908b3082401a308b708b30207098f0c030b8308455fbf612963b26bd8038708c5093908b30193091d, 0x9a0a9600b508b3032009b509c6823f0c800a8a089c021e0a08081e0a1903090a32081e091a7cad0a8a7eaa834c03a00b1209480b20020f0a010826082402830a02093408b709a304870c130b830a37]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node308 : Bad pats ([49,62,54], 0x3fffffffff7bec06eaeeeffffffff) :=
+  bad_of_gated_check (tape := tape308) (gas := 150) #[] (by decide +kernel)
+
+def tape309 : Array ℕ := #[0x8d8085a0289089f275b28d62a492c4b2d3248b5050209b109970a0d00c50a020939099721350b1c0b0e001a081609970917090e038f0a0b0993088e0a320b091b1d1daa0316091708ce084e0145085308d40c88155209390a32174d232d54cc, 0x3110a9b09390a15031f0911089b029b0c0a3ca30b0a029b0a953ac93e240a2d04890818094108d0085008ce023b09b908580500089f094e33d90a890a150302089f0d0030953556384b402a029b0a950303089f0a150b18031e085308d00323, 0x84609a558bb5a1c09ac5e426b5802a30a9109a504890853099d0a2d534d08ad08a9013909a90a2d0237093909a1099d009208ce09a909394c254e324fbb029b0a950a2d03150b100c810912004f084d01b908530a3b445245150b2a474b0829, 0x800b1e70190a2971b50b1873247b5209b409b000a708460844014169c908c0031c0a32094408a9684e0a2402370939084400d508460a2d63c508c0038208ad614e09ac65560a1a001c089208a5029108465cad0b940b8c019d08ad08a900da, 0x30a098208a90a290a24011708a909b183c70aae08c0023a084c0a290a2403250a06084b09397ec70aae80ca011708a90b080b01004408a979320a240a1a01b1093908970a10091709a576c7022908ad08a900890a370b81]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node309 : Bad pats ([40,67,62,54], 0x3ffffbfeefeaec8653dfffbfbdfff) :=
+  bad_of_gated_check (tape := tape309) (gas := 150) #[] (by decide +kernel)
+
+def tape310 : Array ℕ := #[0x8a902a1084403910b080a1e26ca27b5294209a400440a2808c00c8008a90a2404030a1402a108a71f3220560a15232c01420a240a1f01390a231ab30323084508050a89020f08a017210a1a08a9023708450b180a2314b319511c442c585b9c, 0xc860c070a1a03230c073ea408a94151020f0a3b09b90aa90c0e08463c4209b409b0022b0a240a15040208d608ad0844364209a801a9098a090e0a290a2403260ab50941084408a930d1333037d443d204060b010c8608a90a240a1a041708ad, 0x9a803820a2402150ab5084408a956d157b05a54021408280182082652320a290a2400c6084c01b94ed40a1e09a90a1400c6084e4c324fb301b9094208450a1e03a00b9800a908284720484b4a5653440aa204070b0a090e0a290a2402830a0f, 0xab50941084408a9030008440a1a6e2d70d1723075d40a9c019408a0089c002868a009a4038c0b84004466540a240a1a038c089a6442673000440a320b920c800291084408a960320a240a15622c6a587f1601b008c408c0048a084408a90b98, 0x892409a8021508940c8a0b070b00018f090008140892020582a4848e872c8ad40a960a900214089a0846090e0b0700040817091408460905048a08a908040a147a170b847cbf09b409b0022909a90a1c0a17022973ab09a8022909a90a240326, 0x40c0b000a150b8c09b403010a240a1a0326098a]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node310 : Bad pats ([37,67,62,54], 0x3fffdff7eee3ec86dbcfbffefef7f) :=
+  bad_of_gated_check (tape := tape310) (gas := 150) #[] (by decide +kernel)
+
+def tape311 : Array ℕ := #[0xad0b07098a030a26aa0a140111082608a70221094709a9004d08dd0a83081122490b2323af030a08261eb5253228240b980b9003a008d009a0089e04830a0f0a15048817c208a70407090b162d192c0c8a03a008a0139e1b18314b4c4c4ca5, 0xb800a15039808943f4240ac03900a8a004d093908c5029b3ac9029708a70a3739d10b98039108c50939020d081208a70a3735d137603c103d2444b203920912089e004d08d02fb209a00994010c08a702082c2d0a15014108ce08942ac22d2c, 0x8ad59c55b1c5d580a2902a708ad0a230a1902a709a553a3099901170820029050a3089851ad0aa255c762300922d80001b109390a32099c0994040c09b10a150a3203070a9109b147e449ac0a2801c20939038808d009a943ce09a00994040c, 0xa2809b009a1002008ad0485082009b0039a084f0a236c4c6dbf6ec9729d021e0a90021e0b90013908c00b9a0a3866d8679c0a2868a176ac02a208c400ad099d099500985fad0846615209b4019d0b1c0a96089801a508ad099d01990a020846, 0xa24014287d6040c09c20a28094286cc8a5809a0099803900a8a0b8802a209a80a230a1e019d08ad091a01a80c02091403870a890b1709a87c267db50a140b987f4b811082a4011508ad002075b30a2809b0099d0995010f0a150381082071b3, 0x20f099d0912089e00208c320b980b9001a10820081f0a23]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node311 : Bad pats ([67,62,54], 0x3fffffffefebec86dbcfbffffffff) :=
+  bad_of_gated_check (tape := tape311) (gas := 150) #[⟨_,node310⟩] (by decide +kernel)
+
+def tape312 : Array ℕ := #[0xc860b940a2e0b8c040609420b120b04008008040c87244a0d02264c2aa92fa80229099d0999091d028a090b09890a140b121e2f01030a020a8a0c140b12048908d2086608510a9c0a1401080c8715a80d020406094213cf18ca1b2920243250, 0x409d0b170b1001c60b8a08ce0501080c08840c140b203d520a3b3e9e41990503098d0917006608110c890c8837290a2d38ca47024ea8594c03020b8c0a240a900998019d0917030408000b820d020a150aa32e9d0a2404880b1209c20317294e, 0x99d09a00b9005010942082009a056d80a230a1e05000b1909410053084f51df0b980b90534b010b0a020999091104870c894ca90a2d084f03820b250b120b044a550d02022d0a150941020708950091081144a945df0b120b040489099d010f, 0xb940b170b10081c08920a1e0b8c014208200a2409990a1f02a30a976a426c9c09ac01820a0a089208c00a240a1a009408c00a230382089208c0048608920486081c048709000880084b0c850a2d5f9d609661ca632864a967ac09b4030b090b, 0x22d0941084a]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node312 : Bad pats ([63,73,43,62,54], 0x3ff7fefe5fea4c0459ff6fe7fdfff) :=
+  bad_of_gated_check (tape := tape312) (gas := 150) #[] (by decide +kernel)
+
+def tape313 : Array ℕ := #[0x816091428e529d62e2809ac02a80a1e048a08c60b980b90244b2544021909af0aa1093905000a290b1c1f4501530a3b0aae0c060b1c01030818081504880a960a8419190d0004870a9609890a0a048714a80a2916e31aaa1d4b2150312454b5, 0x84a09ac409c0a240a1a02890b1509ac0b0709120017081a3b150b940b8c3da90215091203000a15372d0d0201af09390500344b0b173565384c43a803170c020a140b980b900a1e00180b000c880c870c0b0a950d020b1e0b1701140c140186, 0xa24048757a958ca5d4572a8903b0200090c0820084e08ce08c60b980b900223090e08a00a1e01af0a954eb250d809a001c60a240a2308ca08a00a1e00ca08a00a1f048008ce089e0d0247cc494b4c48099801af09390b1c09ac0b940b8c0502, 0x711c0b120a070b0402a76e190a9505020a240aad0a106ca70939038c08c0084b022e089209ac68520a2409b402020a2e0a290402099d038208870a24629d0c8763db6550020709425f4c69bf04020a2909b4085309c309bf004a5a5b0b0b011a, 0xb120aa80a190a9c028a09860a1909420939864c88a48c5001980a900aa70182089209a0094209b4038c7e5080bf0a240a1f01b47bc70380084f0b230aa70a9b089609a00939019d081a08ce0a8a099876c87acc823202150814081203920882, 0xa0081108200a150a140b190a290b15021909a009980b0b0a29952a08b108afd800913f014209b40939032009b48ec50a230a1e03020a9c0a9b0a2e0a240a900998011a]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node313 : Bad pats ([73,43,62,54], 0x3ff7fefedffb4c865bff6feffdfff) :=
+  bad_of_gated_check (tape := tape313) (gas := 150) #[⟨_,node312⟩] (by decide +kernel)
+
+def tape314 : Array ℕ := #[0x8d0099402b109b9084d08ce271c0b980b9004020911014e08d2086022940b0309b9099823d02944048709120b1c04881caa099800500ab10c8b09b90303089e081e0b9108580c81195500000b2308600ab109c20b0315d91b1c1e482fcb39b5, 0x8d20851031708d9099d0c0a0b123f57099840c44c50573f66cd029b0a9508bd04010a9b05020855083f37270ab301150a2d085a0c0a031e083f32db34d7384d08b7023b08ce09b909410a140b90014f09c60a3b09b92cd009a0083f030e084d, 0x5b58613b02b108530b03099d048908d408530c0a55290a2d0a2801a00b0b0d0109a1032508400b19091d0d014fa151d5005308d408d202840a14019d09140a8a49994ae6099400580b2509a10c0a03250853023b08d443dd44d246a8084001c2, 0x5000b0a0a3008b508b1029b0a956b3b09ad09a9030e08af099868ad02b109390a300b12020209980a2309a164a708b508af00580855083f0b190a370a32032509940a9b083f5e550a3002a709940c0a0a370a32083f]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node314 : Bad pats ([76,43,62,54], 0x3dffbfbfdfd94c86cbffefefffbff) :=
+  bad_of_gated_check (tape := tape314) (gas := 150) #[] (by decide +kernel)
+
+def tape315 : Array ℕ := #[0xb1508290b00030209b4039225c8082903020a8309392432269c2935381f0295082a0a89038a08c0084a0487082a1dca1f450b150b0703020890022e09b408c019900b940b8c03820aae0b020a8709b416a4082a039208c0132c1abf20a9493b, 0x2890812089f0b04402a435e09b4031e09390406089f0b153bcb08293ccc47a400100a070b950b85099d008c0b2b0b100b090186082b01860a1232b233c8359d08a30301082b02240892093904060b15021209002c2a2d4b2eb22fa502070939, 0x9390aae58db598e09ac00100b0209ab0c07030208160202088a529753a255cc0829018a088e0817050009ab0c070b1c4e1d09b44fb05b246d276e3500a30a150a1005000b040b150a29002b09c2093945db0aae03020829040608a342320b00, 0x744c81ac08a9913f01a3099b028708170b2409ab0487088c08170c076b4b0a1a0a100301098a090e0829031509b4081465b209ab031c0a320a240b240b16020708900b0000ca09ac08880a025f1560b26353679f0016088e088a02ae0a2901ab, 0x98f081c089288d80b940b8c01080d000b2b09b4099385248ab002af098f0b010a2e084b0b2408c00415094d0a2d0a2e081c09820b820c0c0080081908000892098f03820a03098a779b7a157e4e09b0028709410b04031d08190a870a2d72ca, 0x50009820b120b010a1209a3099f02080a1a038c09b40b2495c296a701b4934708af08ab03840a0203040a81008e08008f190c870c140993900c09ac082a0320081c089009b40287]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node315 : Bad pats ([73,40,62,54], 0x3fbffefefffa6c86537f7fbfbff7f) :=
+  bad_of_gated_check (tape := tape315) (gas := 150) #[] (by decide +kernel)
+
+def tape316 : Array ℕ := #[0x82629532ba30a9c0a96030a08260a1e259c0148085c09c209a309340a1e0a1904020b010a8f0a8309340915082600b70a281ca7202301a308b302a8093908c619c709340401098f0a1f0a3217431aad23a22ec43da0d80112b0d80011a83e31, 0x8da2d8033fa88e43d80204850d020a1a09ab09a3093400b50b8c0a9c0a96022808260a1e389c00260a190c86015008240a2808b50a1e00ca08b3082632b2356a36a23acf09a4018f09480a1e093408220a0a028308260b1d0c140c02031d08b5, 0x6dcc01390862084a08450a1f031709c209940939554c0a320a280142084509390a240a1f019d082409940a15082b0147090e09940aa308454cad4f5151d502150826082401120a150942472b0994029108450a0d0a240824449848b257d87e44, 0x72c973ad759479560aa80025099d0b000a2309980b900b80019408270b1e084e08d00b98030e08260a23099867606a1000c509b10939030109b10b0e01b1090e0a10612a62d70a320a28031608d005000824032a5bad5cdc0c800ba05dcb6418, 0x8aaf0a230141094e08110a890b0e0a2108260a140b980b90009b0899099d0c8a8218874b09a009a803980a1e0a2401a508ad041308487bad7cc708c603980994031c08480ba078180c8003a008ad0a1e09a503a1084803090a1a09c809390b0e, 0xd807092b0928d806092ed8058fc990abd80403070805088a0a12099d0826029509a9099509390a37]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node316 : Bad pats ([62,54], 0x3ffffffffffbec86fbfffffffffff) :=
+  bad_of_gated_check (tape := tape316) (gas := 150) #[⟨_,node306⟩, ⟨_,node307⟩, ⟨_,node308⟩, ⟨_,node309⟩, ⟨_,node311⟩, ⟨_,node313⟩, ⟨_,node314⟩, ⟨_,node315⟩] (by decide +kernel)
+
+def tape317 : Array ℕ := #[0x361601ba092b0b9a0b92012b08400017081409080b040b82093824c625da022d092b08800c0e0a0603010819080b0c0c090b1e2e08a901860880022d0819092b198a088c0183090c080b0c030102151517160c88012b13121aa920ca27dc4025, 0x20108a70814093e0a2a030808a908403dcd0b160112090308a90810088c0112089238903b1d0c8c0215092b0b9a0b92022a092b093e015308a90b04092b0ab232cd345a02ab092b0b240a150b1d018309000819012b08182b2308a92ce32f4a, 0x634d0a0c0501092b08400b9a0b9209ba05010b240c880ab202930a3b0b8908400304092b5045525c545a05010a9905034cc90a2d03810a8d0a99092b0501492b0150084e081d0d0308dc48494b5a4dca0a20001d098d09890215421d43c35716, 0x4030b8d098d01860a0608a9661d092f0a20012b08a90b1602b2092b084061d501860b890a8b040a5e295fab0c8c0391099904035b21030309045a295c5c]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node317 : Bad pats ([44,40,76,63,54], 0x2effbfdbbfeec88685beaf9fdefef) :=
+  bad_of_gated_check (tape := tape317) (gas := 150) #[] (by decide +kernel)
+
+def tape318 : Array ℕ := #[0x8100c880b2b0b24012b26630a2a03160c8824d20500082a092b009009930d0021b1235c29d0001308180104082a092b1d980b160b080000090f0818082a0c881a961ea32b250a88001c082a0b090a20012b0c080a2d144d0a110c8816143229, 0x900089b092b0a1b0a11022d0b240050084d0b26031e09b90a2d3b573cdc3dc3050008180c880b0a0b030401081a0c883598382a41945bb5031d082a0c0803090a9f00d10861085e0a2d2fcf30a30c880a1b0a1100190b1d0c08050209040818, 0xa2d0b0a010f092b0a1b0a110415092b008e082909b954465525573b030f090b08c1089208140a150011092b088e4e240a1b51500a88009208290a2a08550a2d0b240b1d02110811092b0a2d47240210081a0c880a1b44c74a8e022d090f0818, 0x31008a502a56ab3099d0991022d0a1b08030a070a06082901a5092b65b368a100c709a90c8b0b890b0f63a5091a031e08a5082905010a1b0a0c5eab601d09260029088c0810000b09065a160b11]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node318 : Bad pats ([74,40,76,63,54], 0x2effbbd9fb6ec886b4fbafbfdffaf) :=
+  bad_of_gated_check (tape := tape318) (gas := 150) #[] (by decide +kernel)
+
+def tape319 : Array ℕ := #[0xb0f0b01092b082a28bb02150993092b0840050009b903890b0f0a1522cd23c325b531a5050209ba0b1208150a150c0800401c230929028508160899099909850b1200d409a10906099d08290201089b08030b1e153117990b201ac71f3448a6, 0xb8d09a5030f09290319092b3e473f4d09990287092b3ba940b305000a200c08092c09290304099d03040c8936290b200500344a374739ab441b0500092b0b160b080183081008660800092b082a0112089008112cb12f9d0c08092c09290319, 0x3170a11582b01a108290ba10b91032508290917085354c956b459d25e3b00400a11021009ba01930a104ed24faa092b022a4c4650b5630e0a9ad80049ca040f09b90912099308970b8909290a110a0c01050a870b240b09092b08a5082a0319, 0x82a711b03190b1708290413091a6db36f3473bb002a0a11039b0840031e69470c88092b040a081a0a100a2f67466a2a6b350a8e0302081a090f0800082a0b040a1b0a11092c0926050108290a100a1b0a11030f082a5ba50b9a0414092b082a, 0x211098203020a1b09ad0881082a7b160b040302082a0b9a0a1177920b20092c092600400b170a1b082a0a1103190a20]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node319 : Bad pats ([40,76,63,54], 0x2fffbfdbffeec887b4ffefbfdffef) :=
+  bad_of_gated_check (tape := tape319) (gas := 150) #[⟨_,node318⟩] (by decide +kernel)
+
+def tape320 : Array ℕ := #[0x319084d0a2f0b080998050109100a82098f0a0825a4282a295d2e2935b10190089e0a2a0a2003930a0f0925081e050308190a060a0f1ca50b1f0b18022f19501eaa004f084d0b180b11032408520a3415d017af004f084d0050124f134320b5, 0xc030304082a08a00994050108da3da43f9e05010b2b0b24038a0a3b0d013a2b3bb0432547574ca96751009609980b170194089204030b030a0309c70812081633240a0f3425092004030b260a2f0a2a03040854081609982c2f09b5020f0a20, 0xa820a3b5aa45ba200a00a1508dc08ce009e0898014d0aab014f522b0c0c0c030a0f532454600b18564a5eaf09a5023b08540c030b260a2f0a2a005908540a340b1849af04030a1b0b8d019808090a1b0925459d01150894032b0d0142240c0c, 0x1ad09a902970a0508a90920009408130826028263aa08a700610a3908d20ab10aa9622b652303110b040a1509470a3b0b9201900a15005c0859081408100c82]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node320 : Bad pats ([68,70,76,63,54], 0x3fffbfdabdcd8887bdebeffffffff) :=
+  bad_of_gated_check (tape := tape320) (gas := 150) #[] (by decide +kernel)
+
+def tape321 : Array ℕ := #[0xc0e29a52b1e2daf0a88021009a1091f050209a90a152425092603250a20050020a5089403250a20001808120c081e251f2421a90b1802840810098009260a2a09520a201ad00c8c03160a2a092605020a0b0a84091f14af160c258e2fb04c4a, 0xb2b4150442f455100c7084d032608523d51010d09070a20048b3a250c880b9008d203a108600b2508da37d80c150203082b02af0a2033ab092634dd3bd73e4509a0001a089a08940926018a081809160892088e001f090a091c039909a90d00, 0x99c009a092c0a200a8e57b0048108200988089c0b200b1909a908280926020f0b020b12089c0c880b9250af5534695000c108510a2f0b18040a0a2001870a0849250d014a57092009b509ad0488092601a10d020c0c0c0308ce0b1805020b9d, 0x1a00932032509b50b1e01ad092601a06c356d5d6ec70aa00a9a01b509ad092c092601ad09a905020a8e0b0466450a20673b010a08910b0409990b02092502080b040b1760310a8e010d090a0b250b1e03040a080a840a0f5ba55d9a632f]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node321 : Bad pats ([70,76,63,54], 0x3fffbfdbbdcec887bcebeffffffff) :=
+  bad_of_gated_check (tape := tape321) (gas := 150) #[] (by decide +kernel)
+
+def tape322 : Array ℕ := #[0x2947092003950aaf0b090b020a202729030109b509880b100b090183090209120b82081a089e2190242f2d31010f081e0a340a2f004d0b1f1b5c048c09470b1f19c309b9031f0825080d085d089f081e0190090b092814250a3417551d353d44, 0xa1540af099d41c943344ed002a309ba0a3b0a97092008a90102089e081a09120c0602b50a150a010102089e081a361537983a2f09a909a104060990094709280081081a0aaf302b09ad322904810900098f09b50a070b090aa30a9703a009b5, 0x93809320057093e084008280928573b0ba0019d09250938019d093209280840525653b05a2601ad092c0928028e0a1601b908404c2a4d31099c001e091c0a2002b50928482508400a34021609280a8e45d249b001b5099d084000280929010f, 0x39009380aa001ad0932040f0a340b180b11663509b9011d09a0089e0b9008406355021109a00928040b0a08099d085b5eb40932604967560a940193089f09a00840]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node322 : Bad pats ([25,75,76,63,54], 0x3ffdafd77da9c8873cef4bfefffff) :=
+  bad_of_gated_check (tape := tape322) (gas := 150) #[] (by decide +kernel)
+
+def tape323 : Array ℕ := #[0x9a1021b092f0840019009250a1b031d0a2a02b10b2623dc24a5264409ad27a903a10850084d0938023b09a0091f0ba11e560b9109b9092803800912099004800b020a9418a40b90008e08ce0a020a940c06039109b9138f16301a2e20353423, 0x46ab09ad0316093e0928092f0489080909320928099c3d2f3f4949a9019c0932092c00230b2009b537c739315e187c1e023b09ba0aa9092f08a702b109280840093202ab09470a3b09ba02ab08d52dc20a06020808d509ba2bae2fc431af09a9, 0x19c0840093202390b1d0a3b0a1509ba0208092802840a0109c60a3b532b544256c4582f09a90201099c092809320929030109a04c3b4ec95ba5010d099c0908093208400928019c092f084004110a8a0a2a0a1b0284090109ba0a3b432f4544, 0xb267129755876c4023b0b2409ba084001220a3b0a346c426e5078d10125099d08a10316092508cd67a9093e093201250825092c050008dd08110a8e0b8d0b2b632f64d069490c06012f09a1089f081f099d02a309ba0a3b0a850929092008a7, 0xd8000a14031909200b900d00093209a909b50390092508400932039808ce0b90014709ba00dc09c6085d7442092009a101c60990]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node323 : Bad pats ([75,76,63,54], 0x3fffafd7fda9c8873defcffefffff) :=
+  bad_of_gated_check (tape := tape323) (gas := 150) #[⟨_,node322⟩] (by decide +kernel)
+
+def tape324 : Array ℕ := #[0xc0b040609a90c81081f279d2a1a2c9e302b32bb01a50a3b0a150b2408c1032509a1086120cd0b9202101e220840032508dd09b509a11cc70383081f099d0a150a10028e082317b3040f094209ba01c3094f08610b2414da161a1a49232f4c19, 0x414708a9050008c109a10ab10d013f2b0920031e09a509a1009008a7048b08830859080d09060004089c36950890392b3a253ba34344008e0898099d082508280302089c0898040b0b090a8e2ea40142081f0a150a10091104140988099d0b25, 0x2809a508400a150c0658270a190142085109ba02b10a99535a09a5084009a100a70a3b09ba0b0b0b040840502554a3023b09a1099d04170b204ac508a9031e085809ba08c909b501420b25465548b1092909260112098009060a9d01420b1e, 0xa8809c3085202ab086709c36edc0929039a08526c3b084009ba040e0aab094f08400b24014f08dc0c8808200a850b040210080d088401a1085b094f08dc092962900999082000860b8201a50c0a0325090a5cc95d9a5ea1640b672b69da7151, 0x51094209ba01a9094209200904091a00d40942090a09297d260d027fd20b190b12030808a302910a8b77ab098008200920010d090a098809990b0b74af78d804850b25]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node324 : Bad pats ([52,80,76,63,54], 0x3ebe9fdefb2b0885b9cfeeeffffff) :=
+  bad_of_gated_check (tape := tape324) (gas := 150) #[] (by decide +kernel)
+
+def tape325 : Array ℕ := #[0xa820982091703200800099d080409290a1626a628a40a8a0415099c099808a003820a8e0a82089a03021e1a203005010b020a1b040208061b25091d0917000609260b0218a3000009030b020a82012c0c0208060b02149a16a91ca422162a99, 0x999028209260a063fa541b00a8a0401099908a00b02040c08090a8208a00b043aa5099c099804010b0909990b0203030a820a1b0999349e36a401a10c0102010803091503040804080308172f1530a531ac3c964823048c08a0099c09980414, 0x5b2f0194088f08a00b120b0b02b1085b0859005c53db0c8555510a8e0a8205020a200b040b0308910998509457a90210081f099905010a204b294cac5f160a19021609990b0b0216099902b10a3b09ba0b0445a546d1099c099803040a1109a1, 0x8520c8201ad0d026f5271ca72a974240a8a048c0994090e03040891088f0c8208110a826a290a8e00950901085c08dc09ba099c09980095089162a40b120a1166146ba2019808a002100984081f5e300920091700a00b04090e018909985994, 0xdc09c60b12099c099808a00111090b099903120b82015308580952]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node325 : Bad pats ([43,80,76,63,54], 0x3dbf9fde7b6b488499efeef7ffbbf) :=
+  bad_of_gated_check (tape := tape325) (gas := 150) #[] (by decide +kernel)
+
+def tape326 : Array ℕ := #[0x19308030897092028310b190b0b0195092624ae2ab0354703a00b9008ce09c609ba00a709480a2003800b0b0a340b921e2f09a91fd600a50ba008a903040a8d040818190a15192f0928023b09a10ba001470a3b08dc145815ab1ada22445a9e, 0x41d1092805013f34093e032009a00a110b19092801a00867085709170a2a0488099938af3b2e3dd642c54cbb029a09ba039009a00948094204880a2009990926031f09a10198081f0a08099d2f49302f325d34560ba0028e081f09a1099908a5, 0xc11084009290203091908a90501552b09a109990089080b088708400a160503090d05014fab50b4532156ac0932039809a009a1084001990aac09c30856093e01c30a390b9805010a150b04099d46b0094248564ac904110b19009508d90a1b, 0x8d7080109ba094501c36e5a0c8109a903820aa9094702840a010b040b880a3b09ba6adf6c5170c47525014709c308d90ab50aa9093203a108d70c810a1b62bb03020a8a0a1b0b1901910b905e2e604765c576ab0a1e02ac09ba01c3085959d6, 0xa93099d0a1604020a8e08a7089486a588b009280025081608a90a930a87030908a9809909a509a1012608a7084001120a060304089a08907b9508a701a9793b7cc47e258334050109a509a101a9092f00170b1901a009297319744d0840048a, 0x29a09a0013e0840021698c299ac021609c609ba03180a2a95ce97440b900b88008c0816098c039a912c0c800040093e8fda0b80029409a001c609ba014808da8bd68cc48d8092d80481]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node326 : Bad pats ([85,76,63,54], 0x3f7fbbdfef2b4887bdcfeff7fffff) :=
+  bad_of_gated_check (tape := tape326) (gas := 150) #[] (by decide +kernel)
+
+def tape327 : Array ℕ := #[0x9a1030a08900a8a0b0f0a1627a909ad03890b0f0a0608a701260a06031f08400ab10c89028a09261f4f2115222b09a1028a0928028e0a820890010d0a11199a1b2e1c29244d039109280922050008c509b9152e0b160b0f0128121d16b52f30, 0x9c0a0809470a3b093209a909a502b1092609070805089c0824030439ac09a104880840020808260b040b0f0aab009a0b0b084e0ab10a3b34ab374438253ccd40345e98012808a705010c172e2b0932030f0a0608a7028a0a3b0a062aab2c44, 0x84f028408800b1f0c0c57d10b100ba0040a099908a00b1002010c0208a0028a0a0650aa5225545809a0031209320b0402100a16020b4b254c4a0c820a8401990a1b0b04040508660a2a0a1b084d050144cd0b2605014357474a48964dac59ab, 0x72440b8002a009a002100828001009126d2b0c82099008a0011209a10828089c6a346e4402b2093e084001a1088c09280b8265c4029308a50d010c0c0b18634a672c6f087358028a0a10082b0827028408a00a105caf09a0092802b108c10c0c, 0x482089e09a0099800180a99019508180a1600187ca57e4f092804030a1608960912028408160501084e0817779678957aab7f2c0b900b88028809a0019008a002827134]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node327 : Bad pats ([90,35,76,63,54], 0x3fefbf5d6f4bc8879deeefffaff7f) :=
+  bad_of_gated_check (tape := tape327) (gas := 150) #[] (by decide +kernel)
+
+def tape328 : Array ℕ := #[0x234099c09980309092c0a200a160309099309200b02022f229024aa03850b04090a0b09031208520c06048808151daa0a341f10212f26a42831030109b509520a91092901b51747091d0040081b08910b120c0f15af099d19b42ed0631463cb, 0x84f415e42c445220023081f091d099d3e340ba0013e0840093803100a9a039109a1084d38ac39c703200a3b093201ad08a5084002390857032b325f334934bb36563b704718023b09ba084009ad09a10489099d001f099c2b1d092f2c490925, 0x2970920009b082557350a2001320b0308910b8a032b084d53420c0f552f05020c8850aa58245ab10203081f081c091d0301084d08ce081b09324c26099d4e340b980b90001c0b0909220a840408082b0b090aa0099c0056085408ce03100925, 0x4100a8a0d02704a74af099c02160929092002820a20092c0a1605000c10092c69a50a8a6ba96d307b1e9631d80165349750d80001a10932082b0399089961b509250922013209a1099d0216098609980b045da95f2b040f084d08ce09a00998, 0x22f092909200208098f022f08400aaf0a820a0885b386a905000a880a2f0b09098f8235885d8fa4912a0234099c09987daf0a190216092002840a200a08092c0a16001209930a08092c77a57a2904100b2b0a3b09c609ba0b0b0b0404067127, 0xd8040a280a23d8039855d8020928030208c708c1089a09170302082593b50a200a16022f099c0998014f084008d30a0309200b1709b9014209ba0b0901208ab308408c550c15]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node328 : Bad pats ([76,63,54], 0x3fffbfdfffebc887bdefeffffffff) :=
+  bad_of_gated_check (tape := tape328) (gas := 150) #[⟨_,node323⟩, ⟨_,node324⟩, ⟨_,node325⟩, ⟨_,node326⟩, ⟨_,node327⟩] (by decide +kernel)
+
+def tape329 : Array ℕ := #[0xb2903040d01098c030408a0261827a929ab2f1e018b08a70949090008cc08c8018b08a720500b2b0b24020f08d208870a3b08c80a1508a71dd5009a0c860a0600cc089008c8182e05010a97010208cc08850817152f162419ab233035254157, 0xa3b08a5038d0a3b3f2f09a503160a3b0aa50a930925021b3aab0b950b8d00090998080b0a1b0925389d3d2900cc09490b2b0b2402a90aa30b060501091231a9332b0c15023b082a082608cc0b2b0b24039b085c0a3b08a72c55020608a00ba0, 0x38209230a1a583009c8021a089a009c0826549a09470186082608220920009e0a1a50af52e50a3b00a50b170a1a09c709494e5955e000a90920089c0a390b240b1601a50a3947d50096092009a502390c1644a5462b4ae85a5a6534031b0922, 0x73b175c378180b2605010b1b094908550854032b09010b030a3b09c308d30c010b0608596bd80a340a2f6e5001a50b14023b085408d0645308c8014908d204860b240b9a60e40b1b01a10a1a0a1008a90b8a0b9a5e3061d0012308a90a1a0ba0, 0x41508a709900a3b0b880b8000840922081308a10a0a7ea00a2f0a2a012008a709a17ac30b1800cc0c030d030a2f0a2a02a308a7092309a10110081e08250291081e722b0923]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node329 : Bad pats ([81,70,68,63,54], 0x3eff7afbbccda807fdebff7ffffff) :=
+  bad_of_gated_check (tape := tape329) (gas := 150) #[] (by decide +kernel)
+
+def tape330 : Array ℕ := #[0xb0f09c50b1b094200a50a250c0c0b1b0b0d0403085023a9266029202d5c31cf03980a2a0a160b900415085008d0022508990a0a095108c30850041519d71cdc0a331e20040d0b060a2508c3085002250b180b140a3414d51760204e32ae5c41, 0x415304030a2a0193080208d60b2b3ed70c160b1d002b3b5c3fcf47db51a5542903200aa50847092203120a20081e092008c336313833004b0847039308a90850032b08a530570b1608cc08c8030a08a5089b0b0d01982b290b900b8000100b85, 0x9c508c3084b58ca5aaf09250a290a240225085108c30a2e09250089089c0b11082a0a2a085108c3032b082b0aab09c50011082b08470b2b0b1d094d4c614e570a2e00dd08670862002a0c894665084b0847032b0b270b2443d008c3022f0847, 0xa1a019808236fc70b180b11023409b96d5070af01220826085008c50a24032608c5084b084703020998098508210b0d014708c80b16643066cf0b08030208210b220b010b88614e0b1868ae6b438d350306082b08a703820b040a340847014d, 0xa25023b08990910081e020609b90a0f85a50b1f0b180198081d010a08150b2281a0091f0050080b0b910a8209900a0f7f2582bb0a2f04150a0f08990c0c0b1f0b18004b0848005008c8040c0942048b085074dd75dc76cf77bb7ae187aa00c1, 0xa0f0b1709b50923031e082309980b170a299e320050084b0a330b1f0a2f0a2a032608500a330b1f048508c19665985c09b503850a2e0b090b02022e08470b19099891970a2593d99b29a131020a082a08a0004c085008840b1409908bae0a2a, 0x1ad09a900160a29]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node330 : Bad pats ([70,68,63,54], 0x3ffffffb9ccda887fdebfffffffff) :=
+  bad_of_gated_check (tape := tape330) (gas := 150) #[] (by decide +kernel)
+
+def tape331 : Array ℕ := #[0xab4031d0b0d0b8a0c8a0c80031809ba08a705010901099323a9251e27d8030608060a2a0a250b8a0b0100a709120b180a2a0a25038508a503181a351b2a00a708230814088809120b8a00d909c50b1608c60c1515aa18d71d8f20e42b2043c1, 0xa0a0894031d08c6022a3e4e3f160994011408a70b060ab43c240b9800a70b060b1d09940480091400a70b06362c3724395803110ab408c60b0a0404081808c631c233b040a5011a098c0a8d0b180ab40b882eaa0225085008c60c8a09c80c80, 0x2b40a02095008c60c02048b088b0d0055dc58305db565a30a28011108a701900915081309b550a90b110c0601b909b54d4e0a2a0a2501900b220a2f0b9002140b260b0a02030a810981473b48a04aaa51cb00c609980a8d08a90a1b0a160308, 0x2070999091d08a901a9099d6e3b03060823089b021b6b1f0b9b021b089b01140b0668a569bb6cb50a1e01a908a508a902a909a5030d099d634d031108100980089009900c0261a5642b030209850b1b0b0d0211099803010815090f5aa05ba2]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node331 : Bad pats ([46,79,68,63,54], 0x2feff7bfaec36886b5ebfdeffdfff) :=
+  bad_of_gated_check (tape := tape331) (gas := 150) #[] (by decide +kernel)
+
+def tape332 : Array ℕ := #[0x9a508a90999031408c60aa908a701a924bb26a529230a28021909a90a240a1f031b09990a8b0a190b162033225002a90a9708a909a9099902971a311ccb039009150b060a1f0b0808a708a50319091d03010a0a09ba1420153118c12eb4404f, 0x14209c9094e0a9c0a90020a08263d9c0a2a0a140a2503190a19099809930a0b038509230b27381f0aa80a2f0aa20385081c0a370b220a140b260a2f34d83aaa092ed8002fae02910a8b091d08a90999028b08a901a92b3b2c250a19031408c6, 0x5cd160a5009c081e092009ba0a390a1e0a1900c60846021f092008d90c010b8a09ba0a3952d0539e5745642b021e08460388081b08840a3b0b1009230b09021448a54c4b0a39030108210b170b10021444a50a1e0046434146e14d3109370934, 0x99d03140a3308c6084508236fc10a93021408460b14081300030b8001ba08d0088c0c8069080b066a196c25712e72af05010a1f0b140b0d0b2509a509a105010b2008c60a1f00c60b145eae09a902a90aa30b06008f081908120ab508455b30, 0x1a108a5004509a90a240a1f01a90846021e09a975ce76ae78a508a9029309a10a1a032509a5]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node332 : Bad pats ([68,63,54], 0x3fffffffbecb6887fdeffffffffff) :=
+  bad_of_gated_check (tape := tape332) (gas := 150) #[⟨_,node331⟩] (by decide +kernel)
+
+def tape333 : Array ℕ := #[0x2a530a8400120826091400a925ac270a2e1f022909a900a90b2b22d10b22014908540a2920c500670b030993090809830a030303082b08180a00002b199908021b970282081709080880022a0c030a0f0819158e0d0117ab1ea9239635a44025, 0x486089a0a8409a4032409ad0a2f0383086609930a0809b93cdc0a2e0a2405010a2a09800b2438d13e2c014908120a2f0b2b0a84032b0a290920020809930b2b0d0031a9330a0c16023808cb08c709c3022908642c570b22022f092300a9292c, 0x59a90a0502080a2908140a8457325add5c2a5ee56d2409220486089a099c023409a50c0e0a2050ac05000c040a8401ad0a2e080809080b024c9609170a200a1b03020926482a040509a508820a0f088c09990b0201990d02431e46af4e24522b, 0x50108210a840a160b2409a403930a2901530a840a1609206c330a38032b0a2f695100c9085500170a1b085809c509b5094966d767c70d02022f09520aaf0a970b9d0a38624f02080907098f0a2008250152094c0c1504880920011008930a08]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node333 : Bad pats ([70,80,74,63,54], 0x3fbfdbb9f86e2886f9ebbefffffff) :=
+  bad_of_gated_check (tape := tape333) (gas := 150) #[] (by decide +kernel)
+
+def tape334 : Array ℕ := #[0x8630861021b09ad0c88276708c3295d0b2200c723c50c860b9c02a5082b09260920021109820238099d099108a5008e1cb11eaa1fb20282098200060b2b0a2e0c030b030a8219960a1b0193082a050014b30a8215a51aa921a42b524a284ac6, 0x1260a294045422a0c0a032208a309a505010a203c293ddb01b508c10a2e09490303092309ad022e095236c1384f00a70b2202af09ad000608190b1d086608630403082a0802085d306932c133a934db3a2544d700c3082a08d109b901ad082a, 0x92e029c0a340a2f00530a3805020b020aaf0a1b0a240b84020f0929021b0b850b020c890d020ab5512952240b2b08535560565257c9d8000080082a0866085108c30a250b22040a08c746c50a2f01490a150a0108a50a20022909b5092309a5, 0x8630920040608636f2908da70dd0b030407094e094208d401b5085c6a686c0a0a3805020a1b67c70c8604880d010b030c1000900816088c0b1063ab0d02032b09c509b9018f081a08180aaf000f0b840b2b08675d535f5d60cf65e0722880d2, 0x2ae0c86040e0917091101930810081709080a2085a98724885c8b28093403020a1903930a037fc10a2e0a2904060a190b2204880b037ba97d5b012308930863085809480b0909b905020a1b0c880c07764179c709a40a9001c5085c094e018f, 0x1420b2202200b2b0a2f00660a2e8edc90290a9c09a40a960303090809110b940aae0a2f]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node334 : Bad pats ([80,74,63,54], 0x3fbfdbf9fcee6886f9ffbefffffff) :=
+  bad_of_gated_check (tape := tape334) (gas := 150) #[⟨_,node333⟩] (by decide +kernel)
+
+def tape335 : Array ℕ := #[0x1b9084c0825283529432e1c30c20288093409310225094209b9030a0c0421c1234f0b160b08021609260223093109840b841da91eab01310818089d091a0914013109990a1618230a880134084b0987089b092308a700a512bb15a01aa424ae, 0xa840c8c084b0501085c094d0a2a3ecf41c94f245bdb03840a23092e09280a960a8a00200a23092e092803180a230923031809200a1f344135b1379c3ad6019d092e0a0c0a880a9601340920092e011d08a70a91094d0a2a084b2cc9019d0926, 0x134081a09930a8858255a28022a084c0b8c048c08900b24048209ad522b53d455460a24022d089d092e0095081408110c084dc60b110b0a0207092208a90a2d019908a748460b26020c0922080c0a2d0aa346574a1f012e42bb028a09160888, 0x2880a96092e028808c108940892084b6bc60c8c0c82032b0a8a098a0a8467a0028808920284088864200b8c011c098a09860888012b091c0a88088c600a622465520a2e0a29012e0a960a900288092e0a200a11]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node335 : Bad pats ([88,48,74,63,54], 0x1ffafbfdcae6e8867dbb9ffaffeff) :=
+  bad_of_gated_check (tape := tape335) (gas := 150) #[] (by decide +kernel)
+
+def tape336 : Array ℕ := #[0xa0f086129600b95099d02870a0708a10922000c08090a840d0223ab259d2a5909ad009208110a150c160c04091f014d0b0a0a880a2008a71ca81fc1022908250923092005000a200a160a88018708060b090d011520172919312b4631d75a54, 0x934008a081a0a1e092b0b1801313d3b3fd20a3702ae0aa209343b41022a0b260b18014d092308550a2a0310091f050134a535af37c9394640e001a909290934020c0d000a2309ad30520a3702ae0aa209342d410501094d0233085e03020a20, 0x2ae0aa2022a09170a23572e5849032b08d608c508c10a330216093152470a3700cd09b5022e4f4d504b54d2014908c9085509b502250b264b590b18011f0c160a2a08cb019d091f09230b250b17011f0825082144c1475949494d460c0f0318, 0xa1171410d000ab4742e77cf032609220a24092e0a2d012b08a705000a1109b50d0269b10a900b1f0131663b6adf01b90a290a24092e00d109b50c0662b103950aaf09260b1f01ad08d10b0f09315ebb60ae64cb6d5209b4012909a90a330934, 0x4e084c093405000a20092e022976430aae0aa203110899092608500a250a2d03850a25]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node336 : Bad pats ([48,74,63,54], 0x3ffefbedeaeee8867dbf9ffbfffff) :=
+  bad_of_gated_check (tape := tape336) (gas := 150) #[] (by decide +kernel)
+
+def tape337 : Array ℕ := #[0x2c290a0f0a0a020308a9084b0b1d0a230b0f00a1099523a40922040e0a20084b0a2321ab269e05030a1b0a160b0d09221eb2022408a903220999099105030a9d0b2219211ab300640863094d0233084b155f0a2a0503134d16a91ba82e495458, 0x2ab0a2f022a094209ad3f61405343654646022808a709a10b1f0b1809a9032209220b1402240a2d020c0922089f3632375338b50019098d09890a240a28032b084b30c633453bc3040e0b240b140b0d0203081b0a1109220324090f098b2a25, 0xc880b0a022a08d6574959285fc609b001b90942086609510d030b220a2a0a25018308a70a2d0b1f0b18504d028d0a0c0a030b0d0a2d038509c509b90a380c154ada4d570931092e005e08da08c1084b0b260a38019508a70d0108c308c1084b, 0x2230aa2048508a9094c0a2a0a2d0aae022a69e46ca8093101a90b110aa20a28028b0a0c098d08a9022d63b50b22022d08a9625365a867c3020a09a5099908a50c880922020a0b0a08a904885b295ca50b9801820882]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node337 : Bad pats ([44,74,63,54], 0x3feffbfdaeeee806cdffbfdffbfff) :=
+  bad_of_gated_check (tape := tape337) (gas := 150) #[] (by decide +kernel)
+
+def tape338 : Array ℕ := #[0x28c3022d0931014c09c626c90ab20316081608a90b0d0281090b0a2d010b2141098a03081fae09040308092e040a0a2d09a11d431e07229b24e20d0327cd2e2c030d0aae090f092b08a50a250a2005010b200a110aae092e14cd183242285954, 0x203090f099d08430931092b403b0aa60a9a0129092e08440304082a0b0f092c3a490aac0320092b0a2d0129092e0b0d35d50aae0319092c08430a20012931430c8c336437623ba60144084308480327092f00d609c60a202bc72cc90a2a012f, 0xaa20a96048808470ab2094409220b900047094400a70a050306081108a7520f53530c8809225420574600960ab20a190b88009d0a2308840a14030609010ab208440c0749a302250848082108a50c8846c64ba04dae09a802b40931092c0926, 0xa88020b6fa6722509380931028e0a160a140938092c021b6ac76d3173cb7c5209b409b00132092e09250a20004c084408250824093265430a9403940aa60c8a039409320aa6604661a0004309350922019d0a205c285db209ac675804820b98, 0x13408c40407091f099d0481092908610a28018609820a880284772678da7aa5084409310a1e0391091f099d00040a0b098a0c07]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node338 : Bad pats ([66,63,54], 0x3fffffffeaace886fdbffffffffff) :=
+  bad_of_gated_check (tape := tape338) (gas := 150) #[] (by decide +kernel)
+
+def tape339 : Array ℕ := #[0xa9f08430024094527470c160aa60a9a020b0b140b010a3b0a94082403140a990a94212424560937029f08210a990a9a08480847030d09b81b511e46002308210b1d032b0b120b0b0aa00a94020809890c8a0aa6152017a4194928af36415b34, 0xa2340d642b1093202ab0a9a093702a009463cc30a280a2304160a9409b80937099d3a4b3e4d472f014508480843028134cd0aa60aa50a9a0824082302a60a9a31280293093708c408480312098a09b80b01089d2dc92fac08a7012029b10314, 0x999092f022809a10937050309450a3b55d509b8032708a90b1b0a2800a90b04098a515a0a19536008c4039909370a230d030b140b0d0316093708a94ad34dd4574d092602a608c804040a0a0aa646540a2309a1099d0314081f0aa00a9a039d, 0xb29099875b1852f03940a8e0122089a6d1409a4012c09ad002909266a55098a0a1b0b9c0b946b2801b5092c092601b508c109ad64af023b08c30925082a032b085e0a080b930b2960b162c166246e5295c6a6d002390b19084a0b0608a909a1, 0x8a30030487b18bc18d258ed703040a0f0a0509940a8800010a0b0b290a34031409a90880080109a480dc82a00c160aab0925040509a50098098c04820a0f0b040a8e79a47aa909ad7bab00c908c302080b020a3474d10c06030b08930b047257, 0x9b9040f0b240c0601200865085e0a1b092c023b0953085e0b090b0b099c9baf9e189fdda1d2a2cb092e032208c302ab0828014908a9008e92b50c880a8493ac94d30a2a0a25040108a50a2001ad09a9092f04880b04082a032b09520a3b08a7, 0xd800005c0858094509b9099c0a1b09340843022a0934023b085c08d1]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node339 : Bad pats ([66,63,54], 0x3ffffffffaace887fdbffffffffff) :=
+  bad_of_gated_check (tape := tape339) (gas := 150) #[⟨_,node338⟩] (by decide +kernel)
+
+def tape340 : Array ℕ := #[0xa0b0b840b9a0a8e0402082609200402092c080b24a90994261a2899012c082a09520949032b1f640a2e0a2903820b140a2409a9040c0a3b0b2709ad1b291d5b02ab0a3b08a7092f038209a40aab039b0b9414d50b03162f185121202e255557, 0xb04001c0a0b0920099c03020a08092001930987092c0a083c293da40a20019838af3f99020a0a08089509a409230a2900250b1b03820895082508220949335334470c013720433101ad09a9092c082b099c032408a7092c0a8e2bb00b040322, 0xa380a2959455daa61a882dc040a091a0a2009a508a50382082a0a2052a90925048609980b850b100a1b09ad09a503100a2e0a200a2903100a1b092f03100c050282085a08590c010b104829492f4ad14cc5502b009508910b170b0b09980a20, 0xc97029714173af783103040a820b82012c082b0a0a6c1a0a84012c082a095208c308510a2e0a2901ad09a9002b0b046541665b698a6da57ba405000b0f0b08092c0a8e082a0b8a0a25021009260c010a3801b9085d08605bdb0b2200c70851, 0xb060406086787b009c389558a2592519d240a340a2f021f09a50a20092203830a0308c3085f094209b90a2e0a2480a509a401ad09a5012f0a2e0b207ac5092202840b02031208510920028475a077410a25031b09b509420a2e0b02031b0a29, 0x4050b1ba0510c86a12ba42c03120a2e04060b1208569c47094203170a080925022998250b1204880a0a0b17091903820a0a94a596a099e000550b2b0b250a080b17092501a50b0203040a8e0c0108910b290c068e1e8f2b03040b2b020f0a8e, 0x21a091c08980a100324091c0898a7290c8609a404050a1f0a0f0a050a1a0919021f09a9]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node340 : Bad pats ([80,70,63,54], 0x3fbfdfbbbc2e2886f9fbfefffffff) :=
+  bad_of_gated_check (tape := tape340) (gas := 150) #[] (by decide +kernel)
+
+def tape341 : Array ℕ := #[0x8290b1e28e00b220b1b0239085509100a06092325b009a1099d041308d90b1b0a9f09200b19031b0a9f1ed108a5028e081f0c0502990a930991002419991b201caf21c1021008580b1b089b08250923092002080b170b1b13af17312a474cb4, 0x41450a380b200b19012009a90113092f0a3808510117089c0a080a383b553d453e5f4433032409200aa504130b1b35d508a7092f028e08220a1a0b8a0b9a032b0b1b04050b2b02b50b930a390d022ed52fc5309a332f3751002908210c060120, 0x5cdb005309b50a3b031e092508a90b17040c08cb0b225441566d0942023b09b503250a3b5055515757c76ca48e5203920b220a3909a900a708260825000908110a8108c3492f0b270b204ac10a290a240111081c08c309c30b220b1b011a089c, 0x723508c7735d75a977e07a5c832802a909a509250a8e0b120a2900d108c7085302af08c7092c032b08c766c1685d020c08c10c14092c032b0987082b0a8e62c10b1205010b2b5fa064d769a90a3801ad09a90303082b0b2001420b2b5a585bc1, 0x1b508540b24882909220486089a85ab8b9409a4002a092c098a0a1b0a240211082a085c020c082a05020a107e2a7f600b1e80c70b9c0b94023809420238795d0c86020c0b200a240b2201c509b900d174c50c0c01ad0aaf0018091508610d01, 0xd8000309082409420a240b8c030208080a0b098a092308980821]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node341 : Bad pats ([80,70,63,54], 0x3fbfdfbbfc2e2887f9fbfefffffff) :=
+  bad_of_gated_check (tape := tape341) (gas := 150) #[⟨_,node340⟩] (by decide +kernel)
+
+def tape342 : Array ℕ := #[0x324e0a38011f09320a000a250944084a0847013823cb0234093e02250a0a08c121dc093822ce275b022508a90a1b00a91cc309220b2b0938014409190b180b110a340a2a02ab094404170a1b00dd0a3b0b041525166217571a411e51355860ac, 0xa0a031809a5082101ad0a253e2909220281084708a308213c343f8f40a0489a00a50a2509220a20383258d4040609c30a250944084a08470234093e022e08c708c1315c0938022009220a2e038a0b82008408210a250a0a2c1a0c152d2e2ec1, 0x8470b180a340a2a023909a909320239084703160b060aab0144525553d154c156340ab201ad09a9018a4e350c860b820b9002250a2e0b824ba04f5c0b92018d081d081c09220a0f01220820081e0311092201a543b444a1460f0ab20b880488, 0x8a908a5030909120b260a256f35711f742009ac09a8022009ad08a90a1b092503100935682b09b4031e092209a10b1709380220092563c166586ab07b3201990a240847093209a9030f09040b060a080a2408a708a508485e4109b009b801a9, 0x82408210a9388d508a5084809a1020108210a080b100923009708250821031b0a10089b80a80848824184b18a4790a094b49cdc0088088400a908080b2009867a140b0a00a3084709a5773b0a200a1b038b08560b0a0a250a1a0a1002240991, 0x93ea1c5a63b09b8a7b40aa60aa001ad08a70302093809129bb5082a0b0a011208a50c88082a98bb0a9a09ac09a8039008480926011d08a7084893410a9a004709a908280a290a24030d0a000b0608a708a5084709a98e2e029f08210a990109, 0x32408470b260938093209b409ac03170932092602390b140b06009d0829031ea3afa49b09a90239084a0822]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node342 : Bad pats ([70,63,54], 0x3ffffffbecaea887fdfbfffffffff) :=
+  bad_of_gated_check (tape := tape342) (gas := 150) #[] (by decide +kernel)
+
+def tape343 : Array ℕ := #[0x82a009d08630855094c010e08d908cf089d048909c323a90d0325d827b30a3703250950094c09c3205a294d48c9040709860829089b03810829031b19b31a9f0a380a0c0b0609291cc309ac09a8d80314acd802d801135813b0d80011d064ca, 0x422943460a2a0486082908a30b1b0a1b0b1403240929032b0a293ac10a38038d08a3092008550b2238c73b9b00d90a2d085808550c08094d006308d90a3809c300d9085530470a2d3262022d08d6021b0a2d2ce40a382dd935293ed200d60a2e, 0x934093101ad08c30a2a0a250b26032208a7022009860a0c082a53a909ad54d70b0a00290b0f0a1109ad04080b1b0aab009d082a4c6108c34dc14fbb574602380b2409200b1400d9082a0a200c0846a90aae0a3700a70b2200610b240a20094d, 0xd806d805675008b8d80465c2021b08c101c5085a0d020c100c0701810817090b0a0104085f29616163c10b110b0a000d098f0a1108c10d000b1b0d025c26]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node343 : Bad pats ([63,54], 0x3ffffffffeeee887fdfffffffffff) :=
+  bad_of_gated_check (tape := tape343) (gas := 150) #[⟨_,node334⟩, ⟨_,node335⟩, ⟨_,node336⟩, ⟨_,node337⟩, ⟨_,node339⟩, ⟨_,node341⟩, ⟨_,node342⟩] (by decide +kernel)
+
+def tape344 : Array ℕ := #[0xa0f35a53a355aacd80226445b46d801d80003890819099901ba0840092f004009ba20cd22210b9a0b920239093e09a503041c45099103080a151aa5092f006608a90a1508dc08400b0418cd1dda05030a2d0ab2092f14c223b4242c24a85bcc, 0x8a70d01038b08a702af0aab3e2909223f1740d744ca4c4502200820081d028d0a200b900a0f38a10922010508190a150b9204050b16098a0856023b09b9094531dc33c20938022f08590b1d0050084d2d5c0b262eca001808920a2f09452ad0, 0x932092f01220a1b09a5029708190b2408ce0b98048853500a0f02ab0b1d02a9094d08ce0ab150ab51a355a5574a59d103920b120b0b093e0932040a09220b120b0b03040a87092f085947d149d0030a0a2a0b2408ce084d005208c74250040e, 0xb81712f72a274de0a1f03116dae75b5004c0b170b1002146aa50a33021f0b2909b9021f0b2967d96956031708db09930aa30a9104080b1f021a62340ab5632f65d16c317fcbadc3d806d8055dd15e46ae44d804d80301ad09a9020f0b0409a5, 0x40a09ba08450aa80a1f0a1a02a2084b08450b170b0902910a2982cf8524883189b203110a2909a9031f085508d30aa902a209200a147c6508a902140a1a0b18021a782679af7e5109a1031f0aa8020f08260b92091f04020826082503990a29, 0xd3a02509c708a90a1aa24da4510a280201091508d708450aa909a909a5038808c609c70b1808a90b1103820b10099908c695b40a330a2998cd03890b020b030a330a29023b084503110a1f0b010b148e4f8f5691b59c55a6230025092209a1, 0xd808d807029108a9023308c60a290142ab56acb50845023308c60a29a94d0a230a1e0389082409a90a1f02a2094609a50845050308a00b02099d]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node344 : Bad pats ([63,54], 0x3fffffffffefe887fdfffffffffff) :=
+  bad_of_gated_check (tape := tape344) (gas := 150) #[⟨_,node317⟩, ⟨_,node319⟩, ⟨_,node320⟩, ⟨_,node321⟩, ⟨_,node328⟩, ⟨_,node329⟩, ⟨_,node330⟩, ⟨_,node332⟩, ⟨_,node343⟩] (by decide +kernel)
+
+def tape345 : Array ℕ := #[0x8d10aa109b30a2e0a2903970a0d099825b328d434440224099c099801a708c709a40a9b0a2401a41ec721200115089b0a9b0a1a0502085109ac093904870a88081808160a1603830b1b04010a2f08150a2515d316a019540a9b1b471d2822b5, 0x86441574220434744a709ac09a400190a9a099c02a60a243b203cc802a60aa0031408580a2e09b8384a393445925d4902ad085009b30a2e0a29029b0a0d0994050308c3085102332ed30a9b302031ae00d208510b180a0d09942c33093900d7, 0x59500b9c0b940018091a0a1a099f021b0818091a048708050b060c885320099b54c703120a8e0288081c4eca091a4fb356d45b28001c0a2e019b081b4a470b12019b0a1f48204b340a12019f099b0018091a0a1a0018091a039b0a2f014a0858, 0x735c0a2409a4099c018208860a1a0a94019f0a1a6c3209ac0401088a09200b82040a68226a500b94010309820b0604860c0a0b0364a20a1a0a8e038b08c30a060b0a61b266546e280a1c0a1703940a2409a4099c022e08ca0a9a09ac01b70854, 0x38c0aa602330b140b06020a088a71a2]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node345 : Bad pats ([49,70,65,54], 0x3fffff7bde7fe007ee7bdefffffff) :=
+  bad_of_gated_check (tape := tape345) (gas := 150) #[] (by decide +kernel)
+
+def tape346 : Array ℕ := #[0x1a08180a3528422b302ee3411301a4091500c80813080f23b00a890a8300140a170a240c8d20ad03140a1703080a1a1d301e1524a34b4f02a70b180a29021c0944099402a60aa00a15171c09a802150b1814c40b0d03180a1a12b018d11a43, 0xa1202830a290b290b1404830a9b0a833da93fc4030d09a40a150a893b3504040b1102890817085b37d70c8d0c830a290a1a029b0c830a8333a9020a0944081731c238b00b9b01a80a1c0a17030d090f09a42d35023509b404042a340a290a1a, 0xaab0a290a1504810aab56c258b05ae36493031609150a240aab01900a0d09150a2401b408d90c890c8d0c834fd151d553a309b301090b0d09a00a26022909b009a8494e023509b40c040a290a1a001a08180a3544c247300b930b8b030f09a4, 0x3290a290a210a17040e0849040e08676bd10d010a260144086609a80b29694e6ca10aab0b930b8b023b0a330a170a2e023b09b409a801c808cc0a3b086061440c8d0c8362d10aab02240a955cc90b9b02330aab0a1c0a17048d]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node346 : Bad pats ([47,37,70,65,54], 0x3ff7fd7b7e77e0075f2bfd6effdef) :=
+  bad_of_gated_check (tape := tape346) (gas := 150) #[] (by decide +kernel)
+
+def tape347 : Array ℕ := #[0x80e090e0994000e08110c1626a428a200c80b160a1a0c1624300b83030d0aa70b1121432ba101940881090e0b060a260a21021a1bb00a240306099408c30a260a1c03140b1d17c9028408940b16001808170b84149616301a421ead355b35af, 0x22a09a40398089204880a843e203f2c0d02022a0828022a09b4004739dc3aac3bda40424153432748b5d800030309150c830a210a950a8300180b060a21030f0a05028408180b112fb230b00c830a9b321502a70939080f0a0a0b140b0d02a0, 0x6508d5085b085858440b1d01a4089c0a080c89553259d35d9f0a2404890a080993091d00d908d50a120a0d0990050308140b164cb04f23512e664308ab031f0aa70a2409a30aa1028909a40a2f09a709a3465103260a2f0a2409ab02ab0a24, 0x9a40b16023309520a1c09390a246f5c02010b2908db0a2f09b40a2405000b84692e6c4e72237a4f021708d50c030b1d099704830b0d01a4085909940a0805030887609c62d363a70a1a0489089e0a3b09490b1609a40b140b0d023b085409b0, 0xb84091d0b0801b008c80b8486b20c0f0c060104081608140b840a1c0502811c0aab02a6091a03060b8408987eb27fc9838f88c209ab09a7011d0a24031d08550aa6091d0b16022a08c876b27942048d091d0b8b74d109a30224094409b00a12, 0x2ab0a330007]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node347 : Bad pats ([37,70,65,54], 0x3ff7fdfbfe77e0075f7bfffeffdef) :=
+  bad_of_gated_check (tape := tape347) (gas := 150) #[⟨_,node346⟩] (by decide +kernel)
+
+def tape348 : Array ℕ := #[0x3190911091702160b120d0126ac0a810a930301091a000709080a0c22b2239f2853038408490a260a9a05011dca0a0c03030d011c1b0a990a930301098a08160a0709870a8101ac086108dd0b9f0b19032b0b850d01144a169319c91fa93c21, 0x28e09030a0740224113449747a956490503098209ac04823ad00c03093900c30a26018a091a37c938c20220088a098a0986038f0a260a8e0a880809091a000a090b0a2030b2339635d40b220b1b000c090e088a0a0c010b0c862a96091a2ca2, 0x9955bd360ac639c0202098d081808170216081a03850a0353225419089b038d08cb0a160a0704080b144eaa509f091a04050b0b0995089d05020a024a270a124c2c0202081c0b8c001c46340a12023809b7023908550b2043c70c8903850819, 0x23808c30a3b0c0a0a9a091a03140a0c03200b066aaa6bb20aa50a9f038508c50b2909ac091a67c30a1c0a17030b09ac08470995089d0a9a04860b82029f081d0b0a019508865e1f5fd20a21018208080902018208865a110a93]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node348 : Bad pats ([51,40,70,65,54], 0x3ffeff9bf67ee085c579edbff7bff) :=
+  bad_of_gated_check (tape := tape348) (gas := 150) #[] (by decide +kernel)
+
+def tape349 : Array ℕ := #[0xa2402b308c909520c8609ac27c7291c2b4e2f9f3bdc50200080088601ab090c0906210e0a2103040a2408d409b01ed30c860b8204860a211b4a04820886098a19c20a12020c08110b010b8a098a01970b0f020c080f13c7149e1721222c5e2d, 0x550a25086140294254436044c745c947ca018b0a0b099f01390b270a0b099b3a470a930a8d00d109520a2108060c8609820b0609ac0a1a0a170a10018f312e36c3040809a30a24005f084809ac2e470a210a1c030609a308860a1701a3080a, 0xa940a8e02210a100920091a01ac0a1b0a0c019b0a1c0c8653b40a885529574a005e0a2f0a260a1c0c0a022409a3022f4cc74dc90b94039a09390a1c09a34ab40aa602100a930a260a21022409a30486093908d601ac093900550a250b220b14, 0x20c09ac0a1c09390a29029f0a210a8d02250aad6b9f6d4208a503080a2e0939081c082a0a890a170a12030f082a0226098f0a810301629f0d0164346521692908abd8005f3302990920091a0100098f099b0a0c01970a170b195ab45ca9]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node349 : Bad pats ([40,70,65,54], 0x3ffeffbbfe7ee085d779ffbff7bff) :=
+  bad_of_gated_check (tape := tape349) (gas := 150) #[⟨_,node348⟩] (by decide +kernel)
+
+def tape350 : Array ℕ := #[0x2c2430b335c904860824090f0991082103140824082203140a240b1622ac242102a50c030b1d04080b270c0c1ed5089820290939030d08240b1d0b16030d08220821031b08240b0d0024163017a30501085c0b93089814a919551b5126c443af, 0xb1d409941db0a350898082402a609b8008a088e0b923c500a3500c80a8e00cc098238ca39e23d240a2600dd0a3b08c809b80b1d0a950b95048932550aa704030b200b0f08960b010822081f009c2d29031209390aa00502093908560b982aca, 0xa990112082408200b06579f0aa5012008c854c3599d5bd166c4011a0825082201b80b220b8f0b0f0b01502c089d030f0913089c081c05000a8e0a120b1209390aa0048809390ba047ca4aa44ca951c96f33010c0a050a9f0b9302990a8d0383, 0x8ab08a500470aa00a9a0405080408020b046dac0a1c0995011a08220301692c6a210a930a26004b0847029965cd0b0f001f08650b1b0b060b200ba00a38029908470100081f0a990b245fd060e0641d093900cc08c80b1d0b16020d09870c04, 0x2a10a050939081e0a170a1204030a000913081e0a0d0a9509397d44039a0986089a091309390a2603870aa7091376490a2e03850a990a810a260c8773db7921]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node350 : Bad pats ([52,70,65,54], 0x3fffffebfa7fe0859d61bffffffff) :=
+  bad_of_gated_check (tape := tape350) (gas := 150) #[] (by decide +kernel)
+
+def tape351 : Array ℕ := #[0x1b3284d29602d5502820b82089601170823085208d024a20b980b90031408a5085203870a3b08580a3308a51fd308d0032908a108500a331c5c2120031808a9008a08160814182d193000520850029b0b1b0b140318133014d515e026433e4e, 0x9ab41d545d05251050009200a1609a708c301a30a3b0a383bd70aa50a9f0205099508180a16018208a5082136a00c0d0a8d0c04011208a50a8f0c0c02b30a9b0234305131150b88331f38cf0198080308150c0c08560b900a1608d2029b0a34, 0x8ab001157af5a2109985ca901ab0b1608ab553062600939031108520a3403240b1b0152094908ab4fb050d708cc08c801a70a16038a09940b06032609b303290a3b48d749a24b2f4c58031b08ab0c040a99023b0a34439f0aa503290a3b0a34, 0x195091a0b147033722403290b930b8b08ab0a956dd50a3803850b0f03290c8969550c0308ab0a95023b08d20998084a0b1b0b1466336a5b05010a08095309200a930b920998084a0a950b1b0b140316084b08110a950a0d00d9080e09930811, 0x5030b0d0c030b900b85084b0b160b0f01520aa5099508a3]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node351 : Bad pats ([68,46,70,65,54], 0x3ffffbbabe65a0869f69ff6bfffff) :=
+  bad_of_gated_check (tape := tape351) (gas := 150) #[] (by decide +kernel)
+
+def tape352 : Array ℕ := #[0x822094b0a3329532aad09a703140aa70a9b03140a930a9523d7252f2ca036dc011208200a0c08a9019508210b141e2f0a12030f0aa50b140a0c08ab050108d409b30b14192f1ba1020009a308d20b920b0d0b0602a5134508211635202c37c8, 0x182088608990a120991029308110a810a0a088a3da108a5402448a05e50d80038c4038c0aa6001e09200822023b09150a110a0c35230b140b0600230b030405080e0a02092030ad31a20a94099c03030a9b08a50823023b084f084902120897, 0xa120b1400200a12029309800a26081209b30226085653cf5621574558ac0a1601390a260a8e0a870a820303092008a500994c2f0c040a124d94099c502a022508ab0b8c099b09a402930a8d0b1408ab0a1203060a8d08880997082143b5462c, 0x21208a509a70a1601bf09440939023b0a2108470ab26ad70a3800140b16093967db0b140b06020009b3080f0b800a9364c56c2f09b009a8021609a709b46030020d08160b140a8e0a82021c09820a1209955b9409980020]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node352 : Bad pats ([46,70,65,54], 0x3ffffbfafe7fe0869f69ff7bfffff) :=
+  bad_of_gated_check (tape := tape352) (gas := 150) #[⟨_,node351⟩] (by decide +kernel)
+
+def tape353 : Array ℕ := #[0x90c0293093904870a06085d084826d409c5278f28dc08212aa00a210a1c0021081f0091099309130a12081e1fa920c9038b090a038309931b16081e082100cc08c808550a930a8d02a608c80206091008cc154a164318a31c302e47522d52b4, 0x2b30a8108d5085d0a1f09c5093909a709a3040308220a243bc3400f44a10a2604030b0f093938444b5c0208080a092008200b060a9909a7032208490822081f0a1f0b063243359d0390081108c808480b040a940ba0038208100aa609b8020b, 0xa0708da0d03591a5bad5dd15fc409250922d80153aed8000021081f011d0822512102a6089e0a1f0a0b0a990a264fa30b1d0b1601480a380b90020b090c040c0a2401a747c2488f082149a00a1c030b089e0a8e00470a2e09870a8143200b0f, 0x2a60a8e019508a90a1a09b4693209a802a60aa0039c65320a2400c508490aa00a9a0920099c63b36648013908470a290a2403260a8f0b1808a90282090e09940c130a1a032908c8]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node353 : Bad pats ([70,65,54], 0x3ffffffbfe7fe087df69fffffffff) :=
+  bad_of_gated_check (tape := tape353) (gas := 150) #[⟨_,node350⟩, ⟨_,node352⟩] (by decide +kernel)
+
+def tape354 : Array ℕ := #[0x3144362e03290847032908c326500aab0a260a21011a08a0020b085d09a40aa622200b080829022a084709ac09a81eb2032709b00b081c2c0a1c04810aa70aab01b008470aa700140911098f03060b84151716ad185b19a12353274246bb4725, 0xa2101830826085d08473fd342450a290a2403190a0a089c082b0a0d0a890a170aa1021737c53ba902ab09a809a40a1c0a17030d0a330a9b093933c902ad0a0a0a9b0306098f0ab3090609942fad093901030b0f09940a8903060a332a272c57, 0xa9b048909890a0c08c557b35a9f0149084f08c908c508970997023309390a07023309ac088750200b0d0b0601490848085d0a240a8809ac4d22519f54ad5cc38a358aa8d800029b0a89030d0aa7093904030b0d445745a1018308290a26084b, 0x99b0a1a00990816081d0a870a93038f08c3089b6c996f3370d47f2a02a50a240a1a09ab09a702a508c70211081a08490b1b0b0d65d509b702380a93023808540b080b010a11611f625366b36948021a089b0b1f0b1801ac08290b010aa70a0c, 0x9ac09a30a24023a09b086d188cf013909b0048608290b830b290b1b83d484c70a250a1b028e0a1a09390c860b940b84029f0854093901b7085608547ace0b9c021a0a930a8d021a093909a7099b013909b7089b74b37699785c7c1409ac0287, 0xd802d801022409ab09a7030f]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node354 : Bad pats ([70,65,54], 0x3ffffffbfe7fe087df7bfffffffff) :=
+  bad_of_gated_check (tape := tape354) (gas := 150) #[⟨_,node347⟩, ⟨_,node349⟩, ⟨_,node353⟩] (by decide +kernel)
+
+def tape355 : Array ℕ := #[0x29472a152ba8091d01b80b220b8f089d0b0f0b08031c0a120897089d08212347262c02a0081c05030b1c0a0d1ea00b1d0b1603970b1509b70315088f0315081c191b0a12048917211a571bd5032009b8081c031c0a0d13a015471fa92dc93f33, 0x4fa354b1028e08430a260a210316084609950b08048a08463b1d0a933d5309370487085c084308210a9309910a210a17030d0898082408220b2208490a260a930301091d301f34213855040d0897082308220287089b0b0002870b870287089d, 0x59a85aa05d60099b5fc96a4708ab04080a0309a30915089c099f021c099b51c70920029509a7093702390aa10b040aa0010a08250810080f0b2b09b84c4a4e4f0a2101a70937039508d1089a08260b120aa10b0401100896089e434a46cf47c4, 0x8430a210a1c0b1d0b1609a709a302a609370c0f0b0f6ccb048708210a930a210a1c093701b80b19032709450a390ab266200a210a1c01130a3908c409b862b0674f0327082108570c0609b8005308c40b190aa00b12010a082103270b000a87, 0x30608c4]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node355 : Bad pats ([52,66,65,54], 0x3fffffffeafb6005b733fffffffff) :=
+  bad_of_gated_check (tape := tape355) (gas := 150) #[] (by decide +kernel)
+
+def tape356 : Array ℕ := #[0x30408100b84020b269c0b160b0828230a2a0a2002b409b4234d29300234085009c6089a0b0f001a089a08501eb20998020d0aa8020d08190b220a341b581c240a2a00cc08c608500ab40aa8019f0b290ab3099808c6155e17cd2144324f65b1, 0x4ad0028a09a809a002010b0403143d350a02005c09a73ba50aac099c3e48020b09970b08022b37470a160a11020b099b352538a83fa64e5202960a8a0a2b0a160a1209a809a0020b099b0a21019f099b0018091a2c2709ac2d492ea8011a099f, 0x99c084a099809ab0408099c081c091a03160a115426563301970819099c0b24084c524b58c8093401ab0b160b190a2109ac0a9a0a9405010b2b0c0e0a3a0a1b0c050a8e005b0859081708430c880a900826011408120a1b43ae470e09980a1c, 0xa1c09a809a470d800210a0d0b1d09980b0f02b408cc00660a340a0d0b296ad86ba46e4471af7d4f932e01b40a2a084c09ab0a200296084c084b0a3409a8632f0304091a0aae09b709ab09a809b401b3084e09ab01b7084e5b335cc4604d004e, 0x8ca08c6019508ab0b240ab4084e084b08cc874a01ab084c048a09200b1c002208a780db825383588bc4093104830a830a250a0d0a1b08a502890a2a0a1c7a2508ab02b409b40a2a0b1d0b1600d409a40a250a1b09b4754777ad022609b0032b, 0xd03a14da75402a60a9a0b08001909950b0001c609b7084a0aae03870880081a088809c60b8c99d89b959d329ec8a833092b0928022a08ab099309ac09b403230ab20b0f0b080289082108ab8e9d0aa690c8019508ab0b24084e084c01ab8955, 0x2b20aa60c06085509b40a2a099f0b2402b3085a08d10a2509b4abc708ab01b009ac014a0b850b070a250a200488085a09b708cb0b070ab2a4d2009d0a87]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node356 : Bad pats ([66,65,54], 0x3ffffffffafb6086ff3ffffffffff) :=
+  bad_of_gated_check (tape := tape356) (gas := 150) #[] (by decide +kernel)
+
+def tape357 : Array ℕ := #[0x90c0d0328ad2a5c08c600230808098b09000d000b01019108a5030e084508150c030d0321ad228f25d60c802c20023b092008a5002308141b2f08ca09940c80023b092008a9030e0a8216af09ba01c50c110b29084c084a14de181e1cc83222, 0x1e0920402a0998000e08220c0c038708843c950c800b060b8a040c080e0a3b0c070b06023b081508970a81371439aa3e2041ad4bce5753019408d00c800198089f08160c820a0c309408c60b980b90005008230a3308d00503091208230403, 0xb1b0b1401ba08c6031608a709390845014b09060821085e0ab409200a3b54480b06032408a90845093900454dd14f945656020d09940a0a08a10410090a0c070b900b8005000a0c0b1c471049a708a900180985091d0a9b4431039a08220a02, 0xa070899081f7110019708a10821031808a504830b080d036bad6ca30b8a004e084b08cc08c6004f08150b0a66ce029b0a9500c5084b081563ad64d6090a004b084a04085fce0ab408d80099089700450c0803035bd95c9d5de4609c68aa6e20, 0x5030a0c0a950998081f03180939004a0a95745775240b900b88020d0983]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node357 : Bad pats ([46,67,68,65,54], 0x3fffffaeaef1a087af4bff4ffffff) :=
+  bad_of_gated_check (tape := tape357) (gas := 150) #[] (by decide +kernel)
+
+def tape358 : Array ℕ := #[0xa1f0aa804820b00090e08260a2909ba0a24014b084a09390329224b23d600a9082808270194091508240a150411090e04890a830899032908451aa11c110b001d241f2f005d08590b290d030a1a02020a8209940c13149f172d20d127582f22, 0x92200260b1409ba00260a9b093901470b1f0b06082601470b2b0c820b0d3aa63ccb3e5a0a290322093936d60a1f02050821092004820b140b0d332634b33fb14ad8551c0301082800450d030b160b010500085f0c010b1c09982c1d2e2d0a24, 0x5ac95cda5e245fb10a9c0a96032a086108280b220a2409220a1f03820b010a05089e082103160b1403820c824e5a4f26092251b30aa2022408a70827022409ba032a4856492d0b1400270c89465a0b0600a008280a240a1a002808264224441b, 0x30009ba082604890aa7642f0a290a24030608a961d10922030d0a1f089c04800b1409ba032b084c08260b18011d0826001959af0a05]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node358 : Bad pats ([67,68,65,54], 0x3fffffffaef1a086fb4ffffffffff) :=
+  bad_of_gated_check (tape := tape358) (gas := 150) #[] (by decide +kernel)
+
+def tape359 : Array ℕ := #[0x8da08450a950a8309150300082325a128a205010a330b830820082301010804090e0894081321250b2323c52b2e048908450b1c0b0e022e084a1ab10c110c08038308130b0009150b9a1850009a0898030e0a830c15142215621ca92daf4455, 0xa0508460948098f0a2440c508a5010d081e098b020a3b1f0c150b0e022e0845080d090d0a0d0a95093904150a8f35d1392303970b8f01ba0c870c130c010a8d093932cf33953ca9423b030d082108240b080a1a029509390b1b08210b1400d2, 0xb9d5b1508a55e3b0b0f030608a50824082304800a2e09ba0197089c09390486098408660c8a50d10c03526253a908c6014e08500b2204870b9d09390c03040808ab0b9d48cb4aa94c4a55966bdc77cf01a7093909a308ab02890a1f09390188, 0x89804866fa208c6709472a9752f0b1d0b16014e089c08500a03091d08ab09a3099f005009c5093908ab05030a1f09c5093905030b1b05030c160a0d08d30c0362a963d165ad67a3010508910c030b070b950b8d0416081609ba093908c60c87, 0x3970b8f08a3099f0395084b01390854084e002208210c15094c7f5780cd81b30b1d0b1603970a1f0939099f7a9d0937039509390824099f08ab020d099508210a8d0a1a009a0898081c0a050382]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node359 : Bad pats ([52,68,65,54], 0x3ffffffebaf32085bf66fffffffff) :=
+  bad_of_gated_check (tape := tape359) (gas := 150) #[] (by decide +kernel)
+
+def tape360 : Array ℕ := #[0xb0f038209ba27a40a2a09a3020d0817089708930b930b8b041509152223252f28c50017088d0a250993014e08cc0a2a014e0a080b801c5c1d9f0203088d09150a8301c50c83179519af0a33031b0b080a340a2f01c5135c15561fcb2fae5ccf, 0x412f0a3402830a250a1f0b0803190a1a0a203d0f0aa804803ad80202099b09980b080a1f094e03270b110a1f02ad09a30b260a250951351f36ce39e43f5c42224b56022a09a30a9b0a34048009c50aad0a9b019b0a250ab32bad2ddc09390115, 0x8190b9d0a2e0a9b0a03089c031d0aad0a2a0c800a2e09ba03260939524a55200a9c0a9602830a1b094e09ba0b270a2e4f2258a903010a2a0a1f0aa20a3402a2089e02a20b080b0147a00a1f048a094e0aa2452448dc0a96022a09a304030aa1, 0xa9509a303870821081d0b1d0b166f3309b7023b08590c1109ba6bd3031d0a3301ba0947084c019f0b2466d0685b040f0a050a080998031b094e085f0920629c0b24099f0b1664d6694b7248093403290aa101ba08265bc50aa80a290a240183, 0x2a108cb09390147084c0a2e0a96031d0b1b7bae7dcb0a340a2f029c0a2e0a1f01810a9c0a0577330b9f0aa808d509b7093978cd02960a150b010aa1]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node360 : Bad pats ([49,68,65,54], 0x3ffffff79ef32006fe6fdbfffffff) :=
+  bad_of_gated_check (tape := tape360) (gas := 150) #[] (by decide +kernel)
+
+def tape361 : Array ℕ := #[0x2ad63857004c084a0b1c004c084a031408ab0b0e24d025db010e080e0b0008610aad0b0f0b0809ab03141e33224d09ba020209a308ab084a020c08ab099b023b09060b2308ab189f1a4b0b240b16030108a90861084a0aad14d51c56274840c9, 0x863085109ba08c60a2f0a2a031b0a34023b0a8909ba09913c610b1d3d2f0939031b09ab0b24084b0ab408cc08c603230b140b1503930b14032409ba3253334d0a3804160b0009ba0b140b24019b084b2d632fdb34d8014c0a3b084a0ab40b24, 0x81301940b180b11032a0a3409480b2b565057950a8d0415091500d309810995089501940a084fa5519e0282090e08170b9a0b114d955293023408500b1d0c830b9b00d908d7032a0a3301510ab40b0145d646e147a34a1f5ac5622f0931014e, 0x774e822d04830a830a0d08a5028d6d2d0a250a1b0203099008a50a8d6b2a011a0990032a67a00a9b0a2f0a8903060a0d0994652d68a56f3b029b0a8f03850a89085001ba08510b2b5fd0614b0b29028d0a0d09985ca9008d0885048d0b155991, 0x3900b0a0303090a088209ba09980ab48750882a902308ab031b09ba08d309a30b800c0d09390211091d09a3015208c609c502030b2a0b800c0d7bd17d237ed70b160b0f008c088a0b060a2a0a25028d0b0674aa0d03040c0a2f08540a2a72c5, 0x1a3099b010f0b0a0b82010f8ea20b2a0a250a1b050008130b030a330a950b060a898c25]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node361 : Bad pats ([46,68,65,54], 0x3fffffbebef320869f6bff6ffffff) :=
+  bad_of_gated_check (tape := tape361) (gas := 150) #[] (by decide +kernel)
+
+def tape362 : Array ℕ := #[0xaa8099c28b22db3048a084a262e31c902170b940b8400280a170b1c02a80aa60a17212a2294099c04110b230a1a0a8e0c8a011708910a150852082b018d08280c0319330d030c860aa802a609200a01082b08530a1a15d21b941e1c244e3568, 0xd0300c908c50a0b08a9020c0a0309980920010c0a0308230303089b080808863a2a3ba03db33f994c4e54610301082802a834320a1a0a2b0a26021208a90b0e02a830540a24099c0a1a02a6091a0b160323084a01ba085a2b5408282c55005a, 0x39c583259b35be25f00645668c90b2903240a240a21084c0849004c084a02120a1f08a902a6091d0b164f3350d451c9019c0c8a0c810a1f038d0a9508c908a94a4702170823089d0891023808270823459d0c150c030385098d098142a747b3, 0x2a870560c8a03030920082b082803110a01090309956caf6e94731c764e02a60a240944039c0a03099c0c0e0a2467620117099c05030c1163200a12021f0823611c0d00020d099c004a0b2408d85e1c0c1103940aae099c0a1f023b08570b16, 0x48a0b9c0aae0c0f0849011508290b9c0d000a1a7a520a2b0a21031c08c50d000b9c0b940a170405084f08280a8e09460aac]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node362 : Bad pats ([34,67,72,65,54], 0x3bfeefbf64b8a085ee5efffffbff5) :=
+  bad_of_gated_check (tape := tape362) (gas := 150) #[] (by decide +kernel)
+
+def tape363 : Array ℕ := #[0x88b0b8d29270a1002ad0a9b00d5098f252d26152a31404703920b060a95099708a90aa6030008220b060a3b0b9a0ab409ba1f5c0323099709200a3b0a94005d08220a3b0b820b06021c16220ab40b9403060c8a0ab4141c18a01b56222e6253, 0x29b0a89020c08293f210997092208a904170aac05020aae0946014b09c539d23b560c0709220120085e0a810aa80946014b0d030a81085c0b9c345236a202a009ba08ca02940c0f088309c5094609202f560a1230b43c2d0289099700d908d5, 0x8110a94092258b55cad0a240a1f00db094601ba0922082b53e40d0208a308a9031d0a3b0aa2091f0212099c023b0b244d1c0aa84e2203970a3b09974ab40a1a03160a900b01091d0a12023b0c070b2404070aa20946444e459c481f502d54d1, 0x734e0aa20a9c040709110a240a1a092201440a210821081e0a1a6c316ed2022b08a50a2603920b82084a0a1a674968b475e8881bd800632202170998082b08a30aad08a902890a3b082908275f35011d0a12014b0aae0b2402ae5a4e5b9c0502, 0x21708a1082b0408091786ad0922011d08a1084984b40a240a1f012208a981c70122081d0b16084a08490122082103230b857ca80c150c0300cb08c90408092279557a157dce80330b220308082b0a1a084c084a01220a38084f012208a971d5, 0xcc0829084b08490315084f08299e4e0a240238084c09ba014a0a3b084f023b094498d59a4e9bb30aae038508c9082b0a1c0a17004f0a890a24023b084f081a0ab2084991b3933595eaa028021a08a50a2b0a21004c084a8b498d340b1b0b14, 0x23808490aa20a9c0922]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node363 : Bad pats ([67,72,65,54], 0x3fffffbfe4f8a087ef5efffffffff) :=
+  bad_of_gated_check (tape := tape363) (gas := 150) #[⟨_,node362⟩] (by decide +kernel)
+
+def tape364 : Array ℕ := #[0x2a582dd52fb402ae0a3809b70b080b0102a60a9a039a0ab2081d0382088d081a0b0621a7232c241601bf084a0aae0b0d02ae09b70b071c220856030709bf09b719d80a38030709080a0208ca09ba175b02ae0b9402ae135414561e3226a837b3, 0x84c41960b97099f03010aa70a3b09ba09b30315094409ba3bd70b163e2f43345229031b0aa20b060a110b04091a099c040309b70b1d0a0a02a60b08321434200925001d0aa009ba0b160144084a0857081c08230b200b190304089e085a09ba, 0x1ab584e030008a908a30b8c02ae555457325a280a240a1f001c0817099f099c0144099f0c110c060b940a0a0c0804100a9c03080a120a0a4ba24cd050200928032409a308ab099f018f0b240a890b07463b482803870c040b16022e094e08ca, 0x2960a8a040809000b080d000b9c0b8c00230a0a09a3085f0b080aa865d468a2099c030809ab082108a00b220b1b020a0920085909a30b085e53611c0928002b08290b240b08]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node364 : Bad pats ([73,72,65,54], 0x3ffffebfd6b02087fb7e7ffffffff) :=
+  bad_of_gated_check (tape := tape364) (gas := 150) #[] (by decide +kernel)
+
+def tape365 : Array ℕ := #[0xb01030008490c0f0a890c890323254527c70a2b0a26020a0a8703220a170849219909b709b303220aac09ba0413080e0a380a331d4a1ed722d804050b830b080a1f0a1a082401800b9a081c081b16a90a93001a0a1a13a519b02d2f44554f34, 0x2930b290a21040a09ba0b04040a091008da01010827088e094b0a3809b73be43d4a3ea60a2b029309ba094b0c0c011208270a17098d030e32a10b2a0a930502090f0a1730b134e636d34033032009440a2e0a1f04050a1a0b830a8d09b32b51, 0x23b08d80b26040c0a8f00870b8d55a70a3b56d70d0058615a535bc76ad6789c0934093102990a21041108a309a70a94040c089409a74c2c4e530b240b1600a5081008200a940a1c0b190a2b48c70937029b0a9503190a2b0993434509a708ab, 0xb140a210a2400560855031b0b836dd70a2b6ec770ca010909150997048a0c070a21691f09a7048a0a940a2166b30b240b16029b085f094b09b700d70b06094b0a1a0b1f0408088509a70b085f1f61d363d5039b0b140a2b05030b19085c0c07, 0x85689358ec70b940b8c010708180a1c099b0a1a0a10019b0a1c82a985940197091502ac081608147fb30c860a1c00cd0a1a0818099b0a107cb580d493a802a60a9a05000aac0a2403060a110b0405020b0109870a050aac74a0763377a6031d, 0x21c0aa6a02e0b940b8c05000b9c0c860a1c0a8a04889b169d9403830a2b00c3094498d80c860a840a1c028a95b599d4099c01ab0a330a2e03080a1c03190a940aac914e923300540853028308d90a3b8dd70a1c0a1705000c868aa602060915, 0x2ac0d000c860a170a8a]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node365 : Bad pats ([72,65,54], 0x3fffffbff6da2087ff7efffffffff) :=
+  bad_of_gated_check (tape := tape365) (gas := 150) #[] (by decide +kernel)
+
+def tape366 : Array ℕ := #[0x82128ad299b2ab00193090a081e08ab08dd0a390857023922dd0398081e094c08d9085800dd085c010a081e0a87099b094d08ab1e631f5b00630b98085e04800b000a88021208ab081e0c800187094c099b1528170e18e81a5d21d726292fc7, 0xb9703003faf445a4b9b039709bf09b704880b980c080a393c5b0109081c0288089c0089080837a038a10b080395085e09500c08048a0a383362352439d73da950b301950825082104860829098209202e280b220b14019708970195089f0120, 0xa000b16094d0c0803070a39565058db099f02810a9509bf0b9753bb5aa9032b0a3809c709bf0387089b0a384ee30b140b0d020a09950822091a020d098a49a0019509100827008a088e46a848260b22014c08cb011d09130b2b435b0a390b9f, 0x3870b140b2b0aa709c709bf0411085e085a08a7048a65af67d70a2900a30997028108110a950a0562af0b0d0025092008a704800aa70a0a5e2f5f9b63db0a1f048a0b160a2e09b30385]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node366 : Bad pats ([84,73,52,74,65,54], 0x3ff7e2ff5268a085bb7733eefffff) :=
+  bad_of_gated_check (tape := tape366) (gas := 150) #[] (by decide +kernel)
+
+def tape367 : Array ℕ := #[0x2b580d01030e0a950a350a330c830b9727012f1908a5313b0282089709950a8101390a290102089709951f47200d082409130405081b04050b831aa10b080a1f0a1a082404830a950a2e0aa10b0817291b99038b0b83021a12a313a5222f34d5, 0x44290b0f011008250810080f08ab0b950b8d00ab080e0a810a953bcd0014080f0a0a099f39253f244757535c62cf019f0993048d09a70a9533a308ab028f09130a930a8d0413085602950a890a3908d22e5b09b802330939010f081b0a2e2a57, 0x810080f09c50b2b086608dc595b5a570b165c58040f0b0f0300081508ab091008250b8d019f081008ab4f25520f09390406081d0b0f0c160c040486081649a80a354c51015208a508210c0409c50a1f023508ab098a0a2e0c040110089641b1, 0x32b094e0c0f0a290a1f0939084e084c039d08c50b850a290a1f029b08a504890c0666ad0a35094667c76a540937022e093908dc01c508640a33050008ab5fe50b160939616209b802390a3308dc093904040a2e01010825]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node367 : Bad pats ([48,52,74,65,54], 0x3ffeebff3acaa0853e37b3fbfffff) :=
+  bad_of_gated_check (tape := tape367) (gas := 150) #[] (by decide +kernel)
+
+def tape368 : Array ℕ := #[0x910099504060b060a2904060b14093925d62715082700800895091008880a290b140b0d009b0897048a084c0a2900141cb31e1f1f4522b1031c09390a2e0c160a990197088e08160a0a093717b1091001390a2e0937099f14191a2928a44126, 0x8a3084b09370b24018008900c08082909a7008e08270a9903800a0a09100b143a313bb309370300082708a5084b0b1436c33e6a0b16048609100c010a38008e0888081009390c0a0c01031c088e081609102d8a30ea0a2e01392a5632d50086, 0xb0f0b000b140a380aa50180089c088c080e029308250293090b0a8852a853960c0155d50a2e0300080b09a7085c0b22093708c30411094d08c5080b08a504110a24094d08c548ad4b430b0d03160a99093708c345294edb58d40a2103000827, 0x1b308ab01480937673b09390c0c04130b0e0a290137084b635b0b220b1403010a990937032a5f5560a9093904080a2e093708ab08a302335aaf5d4564dd011d]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node368 : Bad pats ([88,52,74,65,54], 0x37fbebff5ac2a085af37bbfeeffff) :=
+  bad_of_gated_check (tape := tape368) (gas := 150) #[] (by decide +kernel)
+
+def tape369 : Array ℕ := #[0xb0a0b87038508a50c1101c5091109000a070a8925b527570a290a1a048209b40114081c0b1809390a10205c0aae2147014e0939084c0850030e0a891a570997091a00a9088c0818081600a9084b0b080ab40982159c17a309b41c2e28b04743, 0xa2409b009ac040809170a1a050208c909460a260c0709203d47082b00570946080c0a290a210a0d09200a1a393103030a0d0986091a05030b0f0b000c110d0232a634b30b2205000a240a1a04810a210a0d0920082b2d242ee13ed4409b00a5, 0x612909ab014c0a25089d0a290b87031b0a2954a709bf028f0a2f0a2a52db573b02ae0a2f040708290b0008d90855085809200b220b1b00d908d74aa94f52504766546f4905000a240a1a020d082b029b0a890a2944b545a40b1b09b00b060322, 0x7ecf89b1005109b709ac0a2a01b709ab6d4d093900a9091a0a2909ab09a3030009ac68b309b46b5701040a0d0986091a022509b70b0064260b220b1b022509b7014d086408610c0800020b000a0700640863094c032b5b525c960a385e626057, 0x90708990897022b0b0886a90a1688b30a2103030818099b0a1b0b14021b089b814583b50934022a099f08da08650a33093902290a890a2b0b22021c099f79a97bd709ac02880aae09390a200a11010b08180a1a0b01019f091172a474a57730, 0x80b1b0a3a0b030818099b0a1b0a1c09b00b060211099b08ab0a03020c099b08ab92219429019b08a90b94011a099b00908d238e5c0a118fb00931092b0115099b0306]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node369 : Bad pats ([40,74,65,54], 0x3efffbbf7eeaa086f77fbfbff7fbf) :=
+  bad_of_gated_check (tape := tape369) (gas := 150) #[] (by decide +kernel)
+
+def tape370 : Array ℕ := #[0x99b030f081009040b0a08900b840b9427a328cf29a500a5084f0d000821020c090d081b081803030a33091d0c800a0c1e9c20a70c100ab403110850084c09390407084c048008960d030b2a0b15050014b1174f18571a6a09b422c338b057ae, 0x32b0b930a8f09a3048208970c0e3e330b140b0d00ab3b29404941d8462c009f082104830b080b0e09310a2537a9099b02890b0a0a350a2509b40ab401390a25029508ab08a50c040181080f0a892e3130573158093434230a1601ab0934011a, 0x6a3102b409b7093909340b140b0d021c093102b4093953c90a120131099b089b028f08070c050b030818093150230a1b51b55494032b0b9303034a4b0a12093409314b4509a809a4022609310234093945490a12040e433509b000ab0b0d0931, 0x84c08a700110b116f2f0aa20a960a290a1a70b009280922028808260a290a9c0a120a96009b08250c050a88039308260817019f08260a2909ab639b650e0a120a90675209a809a4019308250b0a0139085c0c8209205cc90a1f0aa20a965e30, 0x32209a80482]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node370 : Bad pats ([74,65,54], 0x3ffffbff7eeaa086ff6fbffffffff) :=
+  bad_of_gated_check (tape := tape370) (gas := 150) #[] (by decide +kernel)
+
+def tape371 : Array ℕ := #[0x94609ba009d081b081d01460a35029b08a50146080f091023ad24dd25a3274a08cc2b34394704800b8a0a9405000a070b030a33082208a9011d0997004f0c890c050a3b19231a2d1d1a0aa6032a08a9084c0ab408d0154a1eae41b042435ac8, 0xb010aac0c8a03840aa83eb2091f030f0aac08a50aa03cb40a1f0a1a02a80aa2031c0b9209ba014b0a3b0c100a10001c0818038a33a1349036e20aae014608990997091a001808a92f230a9a00cc2d32316a38280405081608a5001829b10aa0, 0xc8a0c800a94019308860b0608220c8a0c80032409a3099b0b0653a856a00b94019b0920048008230b084f2f0a9450340aa6019b0920048809ba0a8e4aaf0b8c4bd004170a0509a30b0609ba0b1400ab44a947ac59ae5a49d8000103080c0900, 0xc170c0571a377557ad00a2b0a26d8056cd8d8046bb000250b0e084b0b140c08085e0c150a380a33000b08dd0a950b1d099b0408085e08dd0b0d63b3084b0415085c099f60cf665b09b80939d8035d546ac9923408b8d802d801012008220b06, 0x8ab021a0b01014d09370b2286c787af0a0a89a0008a088e08a50b140502081108900c0809a30b080293093708ab7e478129832809b8050209a3099708ab0b2b0b240937031c0c010b000b8b0a2e08ab023809b70a9374330d0201100b1b09a7, 0xd807d8069328031409460a290a0a0b0d0937022408a30a0a0b0d038b0a0a0c088d298f550b980b900289089b09a3]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node371 : Bad pats ([65,54], 0x3ffffffffefaa087ff7ffffffffff) :=
+  bad_of_gated_check (tape := tape371) (gas := 150) #[⟨_,node363⟩, ⟨_,node364⟩, ⟨_,node365⟩, ⟨_,node366⟩, ⟨_,node367⟩, ⟨_,node368⟩, ⟨_,node369⟩, ⟨_,node370⟩] (by decide +kernel)
+
+def tape372 : Array ℕ := #[0x9b82cb0312402a1091308c409b80a1726c70937031c08430a8e0a260a1c2352040d098d0b150b0702121e3109b8028709950a950a1203001aa11cd40b1d0315081c082109b8001c0b20029508910c1615a00a1216d418c7204938af393439c2, 0xb0e0109085208a50d003fa341bb45d1534e613061ae80438344d801d80002a60aa008c40a1c00cc08c603290823001c0a0534a935d836c40b1d0b0f03060b1c0b000a0a00432f230b2b0a260a1c031c08dc0aa00a0a029b0991084309102aa3, 0xa95084c59575a5b08cc02b4084b093955e05f4a00a9081b0822029b0a0c090d51a30b9208500303099708a90104081b081608a54d3b4ed50a330480081b08170a9b08500307475749e5018b091d0407090008150d0344a308a90301081b0b1c, 0xa1a099703240a0808456f1f711d762d78d1004e084c004a6ad60b1b0b14004b689b01200822004b08450397093965cd0b1666a667da6bb37fb4d802004c084a09ba08c60311089909040850084e014b5cd503155bd70a33014b084e0063085d, 0xd807d8060928d8058231d8048134d803030808a5040309390b160b08023b09200845084b7c9d7ead0a240a1f030d08240b080a1a08a500d30c030b82089e082205030c0373a20b160b0f00450a3b]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node372 : Bad pats ([65,54], 0x3ffffffffefbe087ff7ffffffffff) :=
+  bad_of_gated_check (tape := tape372) (gas := 150) #[⟨_,node355⟩, ⟨_,node356⟩, ⟨_,node357⟩, ⟨_,node358⟩, ⟨_,node359⟩, ⟨_,node360⟩, ⟨_,node361⟩, ⟨_,node371⟩] (by decide +kernel)
+
+def tape373 : Array ℕ := #[0x29442a8e0914001a0994020d25a40b8f013e0b1d020d2324244f26a9013e08280994038f093908c80a0d089e1fb4020d08281ca40a0f019c099408a00b01020d18a41a9e211a01a009940238080c08260a0d09a815a40238091112a816b230a5, 0x93e099103840c080a073f2140b242484adb0212081308550a070c0b0a8e0220091a0b16001c0a2f0139364d375538940a9a0220091a0b1633ca3be05928020308a0081208550a0f08d508d1020f0b060a8e2d61090e039809a80a94020f0b06, 0xb010486081d57960a9a02070991093e089b038409110c110a0753a155b201b809ac09390411089d0c0800180a114db54f5450ca0a38022f084b09b80939029a081d081809910a1b030f099d091a032b0a0d44a9463448d4038a0a9a0b16019d, 0x250822020d081c6ca90b200b19009c081c050209390a380ba069246a4a041608940b01031d089e08286496099d0208081a0817048560a162296627092500230a12089d099d099900230820089d5bb55e2e03870b0f]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node373 : Bad pats ([51,73,70,59,54], 0x3ffff6d3def70087cd7b6dfffffff) :=
+  bad_of_gated_check (tape := tape373) (gas := 150) #[] (by decide +kernel)
+
+def tape374 : Array ℕ := #[0xa0f093900cb0aa0040b08550a39265009bf0b142754292533a702a60a39084a093e09ac0500089f0b100b8c0a2a09a402340a0d1c240324082108510c160021081f0b100212098417250a390212081e0d01155218d51ab41f5021c53c6064ae, 0xa3943ce0a9b022a09ac09b83ec54c5b0301091a020f093909bf3b1d08a103870b0809390500099c374e0a0838a90aa10a9b0220093909980481089632340b220b1b02880a20095309392fe10999030908960894081c09982ca90b2501940a88, 0x93e020f09a40c0857ca0aa10a9b02b208d60aa654cb5ad4022f0aa10a9b093905000a2f0a2a085608c8504b52440a3304080a2f0aa00a39030d08180a08099d0b16048c0a8808d60c080d01479d4a610939005e09b80314099d08d2086442d0, 0x913092571a70aad029a098f093e084a09b80a2f006608630ab2093e084a038c094b08ca68d36b486e4574db8c2902a10a0a093901910a2504160b0f081d000c08210b080b01020708205eab609f6252634509ac09b8020308a10a0a0c0f0aa6, 0x82b03020aa00a16019c089c0000080685280c140b190b120aa086480c870a9b87ab0aad0125082a0502093e7e3409bf03840a0d0925082a014c08630a9a093e084a050277d07a347c5f7f450a2e030b082b08870c870c850a9b020308810a0f, 0xa2250aa7038709390c8708a3041409a809390b0d9d259f5d0a9b02110922030698b4099d05020a3909390b0d0b06050209a8093994a2972599a7022a0a0f09b009ac02a0082909b88fb491c50a290a240324093e085109130a0f03870b2b89a8, 0x2020b0208a3041409a809390b0d]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node374 : Bad pats ([73,70,59,54], 0x3ffffef3def700874dfb7ffffffff) :=
+  bad_of_gated_check (tape := tape374) (gas := 150) #[] (by decide +kernel)
+
+def tape375 : Array ℕ := #[0xb1d022e09bf0a9527ab292902380a9a0a8d0a880a0c0851098a0401081d0a990a8821aa0b160b080293081d081a0a9a1e1602ab0aa500d509b91acf00c708bd03870802081708140a99184d014b08510854048813d4154f19611bb225332cc8, 0x31b0a1508150a10023a0a33089f0a890a9502930a8d0a883bad3e2e0314080e081d0a9a08183933402a02a70a2408290a15021008290b1b0b0d09b933c70a9502880a1509b90b06302d35c357d4038a0a9a00bd0aa72bb20a240a15002a0b8a, 0x5e4b02240b0f0ab3093e084703870a3a0a330a2e09b9093e554b018b0a830a3a09b951c70a250a16022a0a240a150a8f013e0a2a0a8e0082093e0911090f08904ab24c3308bd02ab09b9010f0a8e0a3a093e0b8f00110a15432745d546cb4e25, 0x1d0a150b8f0a3809b0084709ac031e085d081d0a940c03084e084d674c01150a160a9f02110a06021b60a961ab63500939023809b009ac0210081a0a8e0503094e5b320a2a0a1b5ccc]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node375 : Bad pats ([40,53,70,59,54], 0x3ffefff3dbde8086c7faff3dffbff) :=
+  bad_of_gated_check (tape := tape375) (gas := 150) #[] (by decide +kernel)
+
+def tape376 : Array ℕ := #[0x1b0b8108bd28482a272cab0011080f0b0d090f0c0f0c06004e080f0a0b08bd22210a24014b094508bd0aa702ab0a2a0818090c0380085a0aab1b1b1d4b1f4c0a0f021f0aa70aa101860982081a098b090f038f0aab139b164b179925253dac, 0xa2f47cb53ae57c45b20014508bd0c880b80090708860a16089601b9098b0906000408030aa10b01381b0a0000560a3a080309b0091209b90aa102a531c5350f01b00886301e39a00a2508210922022e09bf0a9b0a1b0820021b081b09390a16, 0x9a40050084f0a24093909250922002a54a503060a2a08480b8a022f08bd088808480306090a0a9b4fcf51aa09390322084f08bd0d000a2f032908500b224a434cce0107081508070b090b02088a0b8a0b2201490d000a330309084f424743a2, 0x72cb77aa099c0998020f091f0a1f08a009a00302089f081e0a200925020f082869250a2f0939020f091f08a0050308bd0848652e0b220b1b023308c508bd0847001d0a160a9509220b14604f626166d46bc46e1c04850aab0a240826082a0922, 0x289082a0a20029b08260050084f0c8c7b2d09397c4308a00114089d09b9081e0a1f028f08bd0925752909390050084c0a2e0a0f0925]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node376 : Bad pats ([53,70,59,54], 0x3ffffff3dfdfc086c7eafffffffff) :=
+  bad_of_gated_check (tape := tape376) (gas := 150) #[] (by decide +kernel)
+
+def tape377 : Array ℕ := #[0x89c0b1004870912081b031225a1272c2a34019c088d0a0f019c088b22230a83018c09150501099c0c0400dd08d908610a301dcc1f1820030b8f23a501bf081e0915089c0898099803120a8e0a9a0b0b03880b100b800d02144a1624192f33a9, 0x294093e084d0a3009ac01080a06099c010e085908800a0f0b103c243dd004040a300a070b12023009b036c338ac40425ba102b10a2e029a099c0487091208190b120b0b04870b97093e038a2ddc2f1931ac32db0a1b0a0c031909150a9a0a88, 0x59ac0a290a240320084f0a3002a0099c089e050108c70859093e02b1085900dd0a0750db51cd53ac0c0c0a100c03013e08c7086408610b0209a002050a02099c089e49c8038208900a84098a03870a0702b10a00442f451a472c4c95555856cc, 0xb25711f72550051084f08cf6ecd0ba102840800085d0a1b0847015169cd09ac0b200a290a2403200a3000da09480aa0089e03970b870c0c63ac0b9a65d866cc010e08200a1102b10b875ea5602e6c59749902a009b8090e09ac04040a0209b0, 0x3190a3009150a1f0a0f0b810013088f088d0294090e08170b8f7a957c09099901a00a100b81772d0b91039a093e084f084d08c703970b8704130c87]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node377 : Bad pats ([43,69,70,59,54], 0x3fffd7fad756c0854ff3ef7fcffff) :=
+  bad_of_gated_check (tape := tape377) (gas := 150) #[] (by decide +kernel)
+
+def tape378 : Array ℕ := #[0x98f0a05018f271928ac2aa52bdb0c0c022909b00a1f0a0f08a5018a089a0a990a0f092521a9245d2e4e01b0084702ab0aa51cd00a2e04870a9901b008470a1f08a319c3030f09ac094808470c850b9f0b8701c90c85139f17251adb1dd33ea1, 0x4cd9561c644e02a00a8e0925092203040812098a08a5082b02990a15031e39423a2d3ca8038408470a24019c089e011a34a835cc0b0f002b0a0f018f0c030829319932a437250a2602ab0aa5022908c72d43029908a5018c09a80a0f08260104, 0x84f59cc5c430a17038f093e0a330a290382082608c7084f093e544c0b990b910403089f05020c834f250ba15019019908a5031709254bad02340aab0a29011a09a808260c0c01a80a0f0826038208090864085d08da0a24452c469548db4a25, 0x2a50a9a08ca0a380a3301b009ac6d420b990b9102930999022908470a2401b009ac0847684269a56ad90a210a1c032008a10aa50925041608260b190a0f0b810283090f08260b9f5f990aab6225028309a808a50a290a24040c082608c7]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node378 : Bad pats ([69,70,59,54], 0x3ffffffad7d6c085cf73fffffffff) :=
+  bad_of_gated_check (tape := tape378) (gas := 150) #[] (by decide +kernel)
+
+def tape379 : Array ℕ := #[0x292c00da0890098c0501090e0a990a10262827b22a4c2cc83e580320091c0b06032009a820220aa70c0c005f084f0b270485085e09a80b0d1c581ddd0a290a1f02070b09092509b01847011109830b0401800a0f14270aab0a9915b321ce5ca1, 0x432048dc49c851d300a50a150a990925010b0a150a0f0b0d0063085e09a809a03a22040c086103920a940b2b36e637cc0aab3c25050109a00a10000c080b090e0a0f0b0205012f2c31a4332b093902a00a8e0b840a990a1f02a00a9403920ab2, 0x5aa20a3003120917099c084e0b290b1b01b00939545a575d0a2602ab0a2909b8093909b00145093902ab0a99020b0b250ab14d2b0ba04e574f4c00ce08ca02010905081609170d010a9300130a940c8545a50b19000008260a0b0c16091f0a1a, 0x70c371ae739776ce029b0a8902a00a8e09a0099c6d2d011a0818081704020a0f0990020f67a4691a0c8101010984020f64a4658b0b8103a1093908dd0481093961690a300b0d62996aa76e2b85a5021f09b00b140b0d032909ac0939021f5948, 0xa0b091a89288b2b09a10111088f0b8f02820a150d010d0284270b910b890206094908ca09b00a2902060a0f0829011a089e0b047cad7e4c098f02a00a9479b380910a210a1c029409a80a1f039975330a17030608280a0a0a1f04160aab01b0, 0x1a4091c0a1c0a1701a4091f012509a495a20b290a2101b00945093908210a870a81012509a0081f0109091a0a0b8ea890139353969c02a00a8e09a0099c028e0a10]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node379 : Bad pats ([77,70,59,54], 0x3ffef7fadfdcc085cfdbf7fffffff) :=
+  bad_of_gated_check (tape := tape379) (gas := 150) #[] (by decide +kernel)
+
+def tape380 : Array ℕ := #[0x8c808a028c40b200b190384089308120a15093902250b1d23420a810a260925006709520987094508d409b0048808ca0b1d1d480a260a1f202525a0021c09ac09a4028e09a017cc001f0994009308210a0d098b15200d001644192e2a4f3d59, 0x4520474f4d1c58ae69c409b1022008480a26031e09253bce0a9303090b0d0a1b39ab08bd01250a250a9f0a930381088f0b190a210a1c030f32c40c810aab040f0a2a0b8f050209830b9209a00a1f0a172f2f30d53525374b01390a1f0a26022e, 0xb8700bd08470a33018f0821080e0b17008f5425566557d70317098308930863085e0a250b2952470a0d099402930a2001c70a3308484c430b170b1005000a200914491e048b09140c020b9800210b020b0d002143d30a870a81030208214199, 0x399094e0945705c734c75530a17028e0a100a0b091409a06cab01250a1f0216092500d709140a1500bd0b200c140a2a661a08a003200c82632c67a568cc013908480925091f00a00b090a10093909900329084802165b4c5c1c5eab60c70317, 0x13e0a210238084709b009ac040609a009250a2a08bd08d0]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node380 : Bad pats ([45,70,59,54], 0x3ffff7fbddddc084cffaf7fefffff) :=
+  bad_of_gated_check (tape := tape380) (gas := 150) #[] (by decide +kernel)
+
+def tape381 : Array ℕ := #[0x88708cf09b10aa20207089a0a0b09170084081f081708b80b992432265228b0091f001508110a9a0b2208b802ac0a2b08d1093909b91d4c0a101fa8040109980139084801b1174e181c0aa808b8013909b914cc039c0a3209b1134819222cc7, 0xb170b020502093e3f4842514d2b5a9c0a15023508d10a32091f09a0093909b901ba09840859085d09980a320b25023208d334cf091f00d50b170b97038a08520a3208d3314f32ab38513b9566cc01b90a96099c099801a009b90b1b2a9c0389, 0x9870983039157235945091f00950b020a3709a00a3200870983093909b100da0b2409a0093e50c552df55220389081e0480093e09a04c2609b909b1050249450c8b0c8102a0089e081e0a0201b10939088345250b894765041508910947093e, 0xaa271440a327248741c091f039c0a3208b8032908450a3200456a5a0aa86bc46d220a1f0a1a01c70939085209ba0a370a320b070b00031009b1014761d10b2a099c099802840916000e080d0a070b815e225f3062a30232093909b1008508c7, 0x2a0081b0998093e08b80a96030d08450aa208b80502093e030d09ba]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node381 : Bad pats ([45,67,59,54], 0x3fffffdfef5b80865bdef7f7fffff) :=
+  bad_of_gated_check (tape := tape381) (gas := 150) #[] (by decide +kernel)
+
+def tape382 : Array ℕ := #[0x32928560b0908450503091709060a07032924200b09264e0ab4020d089708210c820b0221ea0a32009108450a0c081f0b88099801ba08c6081f0816001f081b03020a021823191a1b300309089708210302142308c615a01e64294430515bae, 0xc810b8901a00a210091081b089502a009390a3508b800cc0939023339d40a35023308c50ab40939385d3aca3ca33e3004150821081f0c8b09b134443f0946e10317098b089309a4030909b408c408972e300a9a08b802a00a9a2acc01ba08c6, 0x9a400c408b80407094656ca57b002a00a9a05030c1053ca54cc030e084f0848082109b909b1032208c6084503970b0709c70d034d4e0a33032908484a474ed551c40b990b9101980b090b0202030821084408c408b80021081e42c445100c8b, 0xa170306093e081108956fa60b0e0b07028e0a1708560a3201460aac0aa66a5a0aae02b20a3067d209b402350a3265cc6c4d0a0b032209b10c060b0e0b0703970b8f02300c1309b45fc760cd630b70a88c42018208930a030917009559b509ac, 0x20b09140206081d87320898001d081b040284230aa0023209b1081d09840a0782ca851a8830091f01b109a0099401b109a47ca00391085009b00a170b087b2c7e2501a409a0023209b176c803160aac0aa6023209b10b0273dc753077a2028e, 0xd80002300b0d0a320b890a0c08a009a00994]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node382 : Bad pats ([45,67,59,54], 0x3fffffdfef5bc0865fdef7f7fffff) :=
+  bad_of_gated_check (tape := tape382) (gas := 150) #[⟨_,node381⟩] (by decide +kernel)
+
+def tape383 : Array ℕ := #[0x2ca8089f01a0099808cf0915272b2ec5323503230a15090b08810a010b1508270a8f09b909a90aa10406093902ad093e1d4e0b1c09a90391084e09391acd1e27040c082708c70a30004f0b230b1c004f084d0b9f0b8714db1649184523a5484c, 0xb230a83091f0823089908a5001f081d0500093e08d308c70a353c230a07001f081b023037a33896099901a00998010f34a8359d3d2b40c5000d091c08270825089f0a950aa10202081608270825041508ce084e0182088e2b560a3a0a0c0a0b, 0x826089a0b8c0b840a9c0a96019d093e09220a240a1a0199099c092252c75552038408ca093e09a1099d0a240a150295099d4cc701a909a14b42502858e46ac80122084d08cb013946cd0aad0a9b0237092209a009ba093e44d109a1099d0221, 0x2950922099d09ac08b8012209a809a908446dc27058029b09a901800a1f099409220a9b021f091c0a95675769b5021f64c50a37039c08ca019d0a240a10625c0aae0aa8009a08260a2409a9019d5d510b8c0b84019d0a245b2c5f586369021c, 0x20208c4081d0a1a08a5099d099901850a2909860a24092208b8012272c275b509b409b0]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node383 : Bad pats ([50,67,59,54], 0x3ffffffeef7ac08659dfdffffffff) :=
+  bad_of_gated_check (tape := tape383) (gas := 150) #[] (by decide +kernel)
+
+def tape384 : Array ℕ := #[0x8cb0a150a10091729ab2aa1002b0829091a04060c85014d08290b250aad228f239d252709392cc9001009040a1009ac082903070a8103070a1009391a930a071bb00a951e35022908a309ac032b0a0d0829039f0b2a13ab154c16c532ca475a, 0xcb08a30aad091a0a300a9a0a9401890a0c08a508290207099d09890a890081088509850a07091203150a30361e38c53aab3ca6404c021c082b09a1039f0b970a15093902350aae2f42312109a90282082b08a10a95002b08a301000b06094c, 0x9b90a070b08029a08290a0756c7589f5dc80a9562b503230a1509ba08b808a301ac08b8030809ba082b4f485025084b004d0b2a023a0b24094b084d4b5b4c4c52c50a2d01b409a5099d09ac01a50844021c0829028e09a1432b444d455408b8, 0x301082b08a305030a0709170a9566ab0a15093909a903920a0b0b070d0209870207082960230aa708b80202091408150a810829029a08155b2a0a150a0b02a7]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node384 : Bad pats ([40,67,59,54], 0x3ffffbfdeb7ac08715dfffbdfdfff) :=
+  bad_of_gated_check (tape := tape384) (gas := 150) #[] (by decide +kernel)
+
+def tape385 : Array ℕ := #[0x28c42aa503810b090aa109a80c810a9527352fd54ea3d800029509a9093901ac0a3301ac08a51fdb20c5041109a90a950a3303090c060aad09a1099d029519351bc71dd408b8020c09ac08a5084609a1021708290308132c142516c2225522a8, 0xa8a0827010d08180b883f2e099c09a801190a1f0826029b0a953aab3c4402ac09b40a010b01092208250301090d0aa10a9b03810a95098533d735ae38b040b50a2800b8084609a800b808460a0209992e3008a509a1032209b008b809a401a9, 0x93909a959250398089f0939084a00260922011408200b0053ae54d40a9556b560440a230a1e01a909a5008c08280a1a0a0b091c08a5020708a00b970b09029a0c130aa748cf4aab09a101a4099c45a54dcd01990c0108a5099c09a843c50401, 0x380089d0a95099d09b009a808b802a20820092200030914089d08200999642e09a865ca02a80a9c01c708665f340b290939011908210994094d5cd409a1099d029c0b22]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node385 : Bad pats ([67,59,54], 0x3fffffffef7bc0871ddffffffffff) :=
+  bad_of_gated_check (tape := tape385) (gas := 150) #[⟨_,node384⟩] (by decide +kernel)
+
+def tape386 : Array ℕ := #[0x9a9099d03850a1b0b1d02230a1b25ab09ad013e08430b150b0704020a170a03028f202b0a20039c0b020a0d1ea021a30a2a23d52729004309b10aa60a2a028d0a1109a0091a010c098209ac0a1c09a4039c09b4143016a018cd1aad29cf472e, 0x2300b1e009d0a210a163f2c0a3a032509a10b870a323cd3404d01a10b1c0a1c01a10ab109c90b0e0230364d0a23382b39af020f099c0a880094081a0b080c88322c0203091108bd0b1c0990020f088c08942d2c2fc433a50931029b0a890a1c, 0x81d099458ad0b89001a0a830a320b870283545756195b3566e700580855028a09c60d0250dc0a370a3201a10a1402a00a8e00564bca4cad0b814dd551d369cd092e092b00bd0b230aa50a9f021708bd0a9a03230a3a0b0843ac45550a200a1b, 0x734a0a30014d0c8a005b099c0990089c0b1c6e506f5877257845004e0aad09a009bf0a3a0a35031e0a11081d099d0999001d0b19004e0b1e6327642d040a09000a3708500a3203120b02028a5dac5ed061210a300115081d05015a270a0501a0, 0x28f0a2a0a1b09b108bd018008980a320a3a093e040109c60a110a3205030ab1041109a57f5b08ce05027d54805f82530a1b031c0a2309a57aaf84d1031c0a1b00c7084d0315094709c976570b200b1201c90a23084d05010b8f71d5]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node386 : Bad pats ([66,59,54], 0x3ffffffffbdb4086dfbffffffffff) :=
+  bad_of_gated_check (tape := tape386) (gas := 150) #[] (by decide +kernel)
+
+def tape387 : Array ℕ := #[0xb020012080e0b010d0327a52b8d2ecb09ad09a904020b020b9d0b95006709ba08650a280937215d0110089c0c01001208160080080e0a931b9a1cae0b1001ba094a085e0402081209070c0117620d0318cf0b020402132c1e5509a5235134a3, 0x84a023309990c0b0a393fd041c543d54ae2551503800a10091a0b9a0b230a2303010939099d08c638553b1c5b9e04020b10093908bd02a10a390939010d0a0d0a95315732cf050008120b2a090d0b020a0d01820896040609120d002a9a0b2a, 0x820084a58c559e20b150b0e021f09a90939023909ba081f08a309a553d10a23023909a1099d093901ba08c601474d5a4e4550550b1c01a9093700cb0851013948db0c140c0b0387081f0823469d49c90a23001f0823099d09390239084608c6, 0x8cb02396fd50c140c0b0302099d0845093708bd6daf70e277150a1e0a19009d099d0999030f0a1f0a0f67250b230b1c04040b02090d081c081b03020a03098f08930c160b19081761a209990a14642a68cb021f093909a909ba01a10b060021, 0x21081e00987c2709a1099d0306093908bd7a250b150b0e013708bd093901a50c0b0b1775d10a3900d809ba093773480b1c0239]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node387 : Bad pats ([52,68,59,54], 0x3ffffffebdfb00859deefffffffff) :=
+  bad_of_gated_check (tape := tape387) (gas := 150) #[] (by decide +kernel)
+
+def tape388 : Array ℕ := #[0x22f09ba0a190a140a2a038d0a8f01bf24c50b2b0a23040808c60b2b09ba048a08520b240b1d038a08520a141ea420e222cb0a34028f099509980b2b0a2304110b240b1d020d0b8a010d0a14162a098d020a0a0d1425172418cb1b6625af2849, 0x418f43d50a8d0a250a2003060a0d09943da50302081d0998028d3a200c0d0c040302081d0998028736a038553baa452d0931020d090e0a0f010e0b0e32190b1c099001a909150a0f0b9a0a2a2fac0a2001ad08bd019809a12b510b232c2f33cc, 0x65290382090f089b03070a950a8356290a8d0a250a1b0115088d0b060a8f0a890306503352a502810815099808990a190a140018099803020a280c040402081549550a8d4aa04ba34eaa57b503160a380c04048b0a0308830983030708210c83, 0x1a9099d01980c0f0b0f0c830b1d0a2809ad00810b0009150a2a0a2009980a0d022a090f0a1b09985e2b01070b020b070a250a205bb061d5]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node388 : Bad pats ([46,68,59,54], 0x3fffffbfbdeb00869febdfeffffff) :=
+  bad_of_gated_check (tape := tape388) (gas := 150) #[] (by decide +kernel)
+
+def tape389 : Array ℕ := #[0x8290b0f092b0a1c28d00a2b2ba50237084e081d0b1e0a3a0a110a35039f09bf00670b1e0a3208dd0ab120572158004e0a370a32014808510b1e019009480a3019a509ba032008cf0a100853032008d40a300948155917521b501ce724ab2fcd, 0x21509280b2040320a2a4149492501ba082008a10a3001ba093e3ac90a230a1e023009ba023508ce084d0a2d023008ce03100a30345c3555374a0b0e38283cb4505b023a092b0a2b032b2e580a370a9f0a99040c08610a1c0aac09500a32020f, 0x8c70b8f09bf028a0894080d0881088908d90c810b2a0a3056d759255dab62a3013e084d092b092502a00a9a0a320a2d023709ba4c324e2b0a1b0a110148092b084d0a32014d084d475a0a30013e0a320b200928038f0a17432e454e039a0a23, 0x3200a32084d08c70b8f092b0a2a0a2002a00a9a0a320a230928039a092b0a2d0b9266a869480b230b1c040208a50a170a9f0a930a200a1b02175f25092b0481093e09bf0a3002325bd80ab10a1b0a1104810ab1]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node389 : Bad pats ([76,69,59,54], 0x3fffbdfe77fa0087dfb7effffffff) :=
+  bad_of_gated_check (tape := tape389) (gas := 150) #[] (by decide +kernel)
+
+def tape390 : Array ℕ := #[0x994009e0b0b0c03279c0a1529ad08bd032008db0a010b2a0b23014708670a280a010a2309c905010b201ed521db24452ad70a1b013908bd014709ba05010c08194a1a510a230a1e02340b0e16500b231b2f30cc0928d80112aed80011b43fc4, 0x83c03070a2a0a9c0a960a1e0a19030e0a230a340a2a039d0994094b085209ba08ca3ac80aa80aa203120aa70a2a031209980a9c0a2334c8365e3c9e092e023209b9093908bd022809bf0a1e02102d2d0b8f2ec50a2a01a90a8f030b0a8a0b07, 0x94c58da0a385a2a5e5008b8013e09ba0b240a2d0a230502099c0a9c0a1f09280a1a0387089b09284fb352b2022e0a84094c099c09280319085308524ab40b1c0b15002b0a15092809bf0a38029c0a190c03455147aa4d50554862c9d802414c, 0x764a093703090a8709b809990a190a14021e0a330b1702176ab36c1903100a3009b80b150b0e03100a12091766aa692808b86f55093102160a1e09b409ac02380c110a1e09b860b4022a09a403170a380a145d340b1c0b15031708560854031e, 0x23808530b150b190a2d08b804160a3508c90a380a2d03230a9f0b0f031e0a2b724773cb]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node390 : Bad pats ([59,54], 0x3ffffffffffb0087dffffffffffff) :=
+  bad_of_gated_check (tape := tape390) (gas := 150) #[⟨_,node387⟩, ⟨_,node388⟩, ⟨_,node389⟩] (by decide +kernel)
+
+def tape391 : Array ℕ := #[0x2d4234a701b409390b1602a609b40233085024c425ce0a292743029b0a95018f0821092002160a100a0b0910038c09b41d2e1f2320ad02880818081702840aa609b4023508580c0102350b8a16130a2517d019201aa721c7463046b1474647c1, 0xa2902a108670a110b120a9a3fc20295081808130a110303090f088d0a8f030f080a080f38ad3aa03cae09a7099f01390a2a020c08180a29038d0b2b0b1d0303095330d5322933d709ab0a33048d081708980a88020c0c130a202b1409b409ab, 0x8550a39089f0b14099d02120aad03270a390a0f54dd55a90a2f039d08a308cb0aad0294085608550501081c08cb0ab20a944e5a4fb351d258d4604761c987c60837d802d801d800031608d909040c0a0a350aa10a9503820a3509b442c50a2e, 0x500098f0b17018f0a056ea570657220732e774b7c0d0a17029b0a956a2b09ad09a9d80a67add80966cdd808d807652b65c5d806d805632863b5d804d80361330053085009130a1208280a9a09b809b0029b0a390a2f0b2908515c5009390325, 0x8ac305010a0509940925082b0198852e020f0b170b100500089609880c0a0a8d82cf01870894089c0a0f7fa584340a0d0225093908bd0a9b05010a1b0a9308bd0a957a57020f0925082b009c0a2e0a0f0c1375b40398099805010a2509120a33, 0xd80fd80e8bc2d80dd80c8a32d80b892d]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node391 : Bad pats ([54], 0x3fffffffffffe087fffffffffffff) :=
+  bad_of_gated_check (tape := tape391) (gas := 150) #[⟨_,node345⟩, ⟨_,node354⟩, ⟨_,node372⟩, ⟨_,node373⟩, ⟨_,node374⟩, ⟨_,node375⟩, ⟨_,node376⟩, ⟨_,node377⟩, ⟨_,node378⟩, ⟨_,node379⟩, ⟨_,node380⟩, ⟨_,node382⟩, ⟨_,node383⟩, ⟨_,node385⟩, ⟨_,node386⟩, ⟨_,node390⟩] (by decide +kernel)
+
+def tape392 : Array ℕ := #[0x999294f0a190a14018208960c0c0c030a2808c90b10010d0813099922cf0b02038208980915202526232dc459ae08b108afd80908b3d8081ac71bb1d80708add806182dd805172f1943d80415b3d803d802142f14bfd80112c1d80011b55a40, 0x415743d609990302081e008508910a1909123da23ea94514482b02340a8d08220a0f0a050c0c02050b0236950a8e038408560982088a08110b170a140a0a02930a8d30a334a039a14bd0006608510903089708230a0d0b1708c60b10020d0851, 0x2930a8d58230aa60a120aa00315093204850a940a17544d0a190191091509320b810a1702940988030a4e204f2151a35556028e08230a0f00234a140a170a1202140994001c0a0f47340a8e010c081e0b10030e08c90b890ab109b305000ab1, 0xd80fd80e019d08ab084f0ba00c880a200a11031109a509a16baf092203900a20692b004809c00a250a2004880a0c09860a12020b081a098a09c063b565cd0b8a0b8267a86f476facd80d5e4ad80c5d447046d80b5bc370bcd80a004809320a0a, 0xd816d81575bfd814d813d81273c9d81172c3743474bed810]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node392 : Bad pats ([54], 0x3ffffffffffffd87fffffffffffff) :=
+  bad_of_gated_check (tape := tape392) (gas := 150) #[⟨_,node235⟩, ⟨_,node246⟩, ⟨_,node249⟩, ⟨_,node252⟩, ⟨_,node256⟩, ⟨_,node257⟩, ⟨_,node259⟩, ⟨_,node260⟩, ⟨_,node262⟩, ⟨_,node263⟩, ⟨_,node264⟩, ⟨_,node272⟩, ⟨_,node273⟩, ⟨_,node274⟩, ⟨_,node275⟩, ⟨_,node276⟩, ⟨_,node291⟩, ⟨_,node294⟩, ⟨_,node296⟩, ⟨_,node303⟩, ⟨_,node316⟩, ⟨_,node344⟩, ⟨_,node391⟩] (by decide +kernel)
+
+def tape393 : Array ℕ := #[0xd801d800113d]
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 10000000 in
+lemma node393 : Bad pats ([54], 0x3fffffffffffff87fffffffffffff) :=
+  bad_of_gated_check (tape := tape393) (gas := 150) #[⟨_,node218⟩, ⟨_,node392⟩] (by decide +kernel)
+
+lemma center3 (r : Fin 114 → Bool) (hr : r (Fin.ofNat 114 53) = true)
+    (hb : ∀ i : Fin 114, 53 < i.val → i.val < 60 → r i = false) : Mono r := by
+  by_contra hn
+  apply node155 (Red r) (noTriple_of_not_mono hn) (all_hit hn)
+  · intro x hx
+    have he : x = 53 := by simpa using hx
+    exact he ▸ ⟨by decide, hr⟩
+  · intro x hx
+    obtain ⟨h114,hred⟩ := hx
+    have hbound : x ≤ 53 ∨ 60 ≤ x := by
+      by_contra! bad
+      have hblue := hb ⟨x,h114⟩ bad.1 bad.2
+      have he : (Fin.ofNat 114 x) = ⟨x,h114⟩ := Fin.ext (Nat.mod_eq_of_lt h114)
+      exact Bool.noConfusion (hred.symm.trans ((congrArg r he).trans hblue))
+    have hbits : ∀ t : Fin 114, t.val ≤ 53 ∨ 60 ≤ t.val →
+        Nat.testBit 0x3fffffffffffff03fffffffffffff t.val = true := by decide +kernel
+    exact hbits ⟨x,h114⟩ hbound
+
+lemma center2 (r : Fin 114 → Bool) (hr : r (Fin.ofNat 114 54) = true)
+    (hb : ∀ i : Fin 114, 54 < i.val → i.val < 59 → r i = false) : Mono r := by
+  by_contra hn
+  apply node393 (Red r) (noTriple_of_not_mono hn) (all_hit hn)
+  · intro x hx
+    have he : x = 54 := by simpa using hx
+    exact he ▸ ⟨by decide, hr⟩
+  · intro x hx
+    obtain ⟨h114,hred⟩ := hx
+    have hbound : x ≤ 54 ∨ 59 ≤ x := by
+      by_contra! bad
+      have hblue := hb ⟨x,h114⟩ bad.1 bad.2
+      have he : (Fin.ofNat 114 x) = ⟨x,h114⟩ := Fin.ext (Nat.mod_eq_of_lt h114)
+      exact Bool.noConfusion (hred.symm.trans ((congrArg r he).trans hblue))
+    have hbits : ∀ t : Fin 114, t.val ≤ 54 ∨ 59 ≤ t.val →
+        Nat.testBit 0x3fffffffffffff87fffffffffffff t.val = true := by decide +kernel
+    exact hbits ⟨x,h114⟩ hbound
+
+end OMA.Progressions
+
+theorem OMA.solution : OMA.R_Green14_W_3_11_R1.H2 := by
+  intro r j hj hj' hr hb
+  have he : j.val = 2 ∨ j.val = 3 := by omega
+  rcases he with he | he
+  · exact OMA.Progressions.center2 r (by simpa [he] using hr) (by simpa [he] using hb)
+  · exact OMA.Progressions.center3 r (by simpa [he] using hr) (by simpa [he] using hb)
