@@ -1,4 +1,5 @@
 import OMAStatements.S_oeis_a026005
+import Mathlib
 
 theorem OMA.solution : type_of% @OMA.S_oeis_a026005.main := by
   intro k
