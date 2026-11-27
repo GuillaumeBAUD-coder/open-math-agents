@@ -1,5 +1,4 @@
 import OMAReductions.R_Erdos128_erdos_128_R2
-import Mathlib.Tactic
 
 /-!
 # Reduction Erdos128.erdos_128.R2.H2.R1 of step Erdos128.erdos_128.R2.H2
@@ -464,14 +463,22 @@ lemma grotzsch_profile_valid {V : Type} {G : SimpleGraph V} [DecidableRel G.Adj]
   intro i
   obtain ⟨h1, h2, h3, h4⟩ := hg i
   refine ⟨?_, ?_, ?_, ?_⟩
-  · by_cases ha : G.Adj x (v i) <;> by_cases hb : G.Adj x (v (i + 1)) <;> simp [ha, hb]
-    exact not_adj_both_of_cliqueFree hcf ha hb h1
-  · by_cases ha : G.Adj x (u i) <;> by_cases hb : G.Adj x (v (i + 1)) <;> simp [ha, hb]
-    exact not_adj_both_of_cliqueFree hcf ha hb h2
-  · by_cases ha : G.Adj x (u i) <;> by_cases hb : G.Adj x (v (i + 4)) <;> simp [ha, hb]
-    exact not_adj_both_of_cliqueFree hcf ha hb h3
-  · by_cases ha : G.Adj x w <;> by_cases hb : G.Adj x (u i) <;> simp [ha, hb]
-    exact not_adj_both_of_cliqueFree hcf ha hb h4
+  · by_cases ha : G.Adj x (v i) <;> by_cases hb : G.Adj x (v (i + 1)) <;>
+      simp only [ha, hb, decide_true, decide_false, Bool.true_and, Bool.false_and,
+        Bool.and_true, Bool.and_false, Bool.not_false]
+    exact (not_adj_both_of_cliqueFree hcf ha hb h1).elim
+  · by_cases ha : G.Adj x (u i) <;> by_cases hb : G.Adj x (v (i + 1)) <;>
+      simp only [ha, hb, decide_true, decide_false, Bool.true_and, Bool.false_and,
+        Bool.and_true, Bool.and_false, Bool.not_false]
+    exact (not_adj_both_of_cliqueFree hcf ha hb h2).elim
+  · by_cases ha : G.Adj x (u i) <;> by_cases hb : G.Adj x (v (i + 4)) <;>
+      simp only [ha, hb, decide_true, decide_false, Bool.true_and, Bool.false_and,
+        Bool.and_true, Bool.and_false, Bool.not_false]
+    exact (not_adj_both_of_cliqueFree hcf ha hb h3).elim
+  · by_cases ha : G.Adj x w <;> by_cases hb : G.Adj x (u i) <;>
+      simp only [ha, hb, decide_true, decide_false, Bool.true_and, Bool.false_and,
+        Bool.and_true, Bool.and_false, Bool.not_false]
+    exact (not_adj_both_of_cliqueFree hcf ha hb h4).elim
 
 lemma sum_adj_eq_neighborSet_ncard {V : Type} [Fintype V] [DecidableEq V]
     (G : SimpleGraph V) [DecidableRel G.Adj] (z : V) :
@@ -480,7 +487,8 @@ lemma sum_adj_eq_neighborSet_ncard {V : Type} [Fintype V] [DecidableEq V]
   have h1 : (∑ x : V, if decide (G.Adj x z) then (1 : ℕ) else 0) =
       (Finset.univ.filter (fun x : V => G.Adj x z)).card := by
     rw [Finset.card_filter]
-    exact Finset.sum_congr rfl fun x _ => by simp
+    exact Finset.sum_congr rfl fun x _ => by
+      by_cases h : G.Adj x z <;> simp only [h, decide_true, decide_false, Bool.false_eq_true, ite_true, ite_false]
   rw [h1]
   congr 1
   ext x
@@ -509,7 +517,7 @@ lemma grotzsch_weighted_sum_eq {V : Type} [Fintype V] [DecidableEq V]
       4 * (G.neighborSet w).ncard := by
     rw [← sum_adj_eq_neighborSet_ncard G w, Finset.mul_sum]
     refine Finset.sum_congr rfl fun x _ => ?_
-    split_ifs <;> simp
+    split_ifs <;> rfl
   rw [hv, hu, hw]
 
 lemma grotzsch_min_deg_le {V : Type} [Fintype V] [DecidableEq V]
@@ -538,7 +546,8 @@ lemma grotzsch_min_deg_le {V : Type} [Fintype V] [DecidableEq V]
             (fun i => decide (G.Adj x (u i)))
             (decide (G.Adj x w))
             (grotzsch_profile_valid hcf v u w hg x)
-      _ = 10 * Fintype.card V := by simp [Finset.sum_const, smul_eq_mul, mul_comm]
+      _ = 10 * Fintype.card V := by
+        simp only [Finset.sum_const, Finset.card_univ, smul_eq_mul, mul_comm]
   by_contra h
   push_neg at h
   have hv0 := h (v 0); have hv1 := h (v 1); have hv2 := h (v 2); have hv3 := h (v 3); have hv4 := h (v 4)
@@ -599,11 +608,12 @@ lemma grotzsch_twin_core {V : Type} [Fintype V] [DecidableEq V]
             have hle := hwt_le x
             omega
         _ = 9 * (Finset.univ.filter (fun x => ¬ wt x = 10)).card := by
-          simp [Finset.sum_const, smul_eq_mul, mul_comm]
+          simp only [Finset.sum_const, smul_eq_mul, mul_comm]
     have hcard_sum : Mf.card + (Finset.univ.filter (fun x => ¬ wt x = 10)).card = Fintype.card V := by
       have := Finset.filter_card_add_filter_neg_card_eq_card
         (s := (Finset.univ : Finset V)) (p := fun x => wt x = 10)
-      simpa [Mf] using this
+      rw [Finset.card_univ] at this
+      exact this
     omega
   have hM_card : 2 * Fintype.card V < 3 * (Mf : Set V).ncard := by
     rw [Set.ncard_coe_finset]
@@ -628,15 +638,15 @@ lemma grotzsch_twin_core {V : Type} [Fintype V] [DecidableEq V]
     · refine ⟨0, r, Or.inl ⟨rfl, ?_, ?_, ?_⟩⟩
       · intro i; exact decide_eq_decide.mp (hbv i)
       · intro i; exact decide_eq_decide.mp (hbu i)
-      · simpa using hbw
+      · exact of_decide_eq_false hbw
     · refine ⟨1, r, Or.inr (Or.inl ⟨rfl, ?_, ?_, ?_⟩)⟩
       · intro i; exact decide_eq_decide.mp (hbv i)
-      · intro i; simpa using hbu i
-      · simpa using hbw
+      · intro i; exact of_decide_eq_false (hbu i)
+      · exact of_decide_eq_true hbw
     · refine ⟨2, 0, Or.inr (Or.inr ⟨rfl, ?_, ?_, ?_⟩)⟩
-      · intro i; simpa using hbv i
-      · intro i; simpa using hbu i
-      · simpa using hbw
+      · intro i; exact of_decide_eq_false (hbv i)
+      · intro i; exact of_decide_eq_true (hbu i)
+      · exact of_decide_eq_false hbw
   choose tag' idx' hspec using fun (x : {x : V // x ∈ Mf}) => hclass x.1 x.2
   let tag : V → Fin 3 := fun x => if hx : x ∈ Mf then tag' ⟨x, hx⟩ else 0
   let idx : V → Fin 5 := fun x => if hx : x ∈ Mf then idx' ⟨x, hx⟩ else 0
