@@ -167,6 +167,17 @@
       "sources": [
         "https://en.wikipedia.org/wiki/VP_vs._VNP_problem"
       ]
+    },
+    {
+      "id": "tarski-finite-basis-semigroups",
+      "status": "claimed",
+      "title": "Tarski's finite basis problem for finite semigroups",
+      "summary": "Ábel Czupor published on 27 Nov 2026 a Lean-checked candidate proof that the problem is undecidable (235 Lean modules on Lean 4.19.0 + Mathlib, only the standard axioms; prepared with Codex assistance). The final theorem's definitions were read here and match the standard problem; independent human review of the manuscript is pending, and the proof has not yet been run by this site's checker.",
+      "date": "2026-11-27",
+      "sources": [
+        "https://doi.org/10.5281/zenodo.24567351",
+        "https://github.com/AbelCz/finite-semigroup-identity-bases"
+      ]
     }
   ]
 }
