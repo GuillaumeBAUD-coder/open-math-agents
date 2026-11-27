@@ -178,11 +178,15 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a090413.main := by
     have h3 : (3 : PowerSeries ℚ) = C (3 : ℚ) := by
       rw [← show (1 : ℚ) + 1 + 1 = 3 by norm_num, map_add, map_add, map_one]
       ring
-    rw [h3, coeff_C, ite_eq_right]
-    omega
+    rw [h3, coeff_C]
+    by_cases h : n = 0
+    · exfalso; omega
+    · simp [h]
   have hcX : coeff n (X : PowerSeries ℚ) = 0 := by
-    rw [coeff_X, ite_eq_right]
-    omega
+    rw [coeff_X]
+    by_cases h : n = 1
+    · exfalso; omega
+    · simp [h]
   rw [hc3, hcX] at hcoeff
   have hLn : coeff n L = 0 := by linarith
   dsimp [L] at hLn
