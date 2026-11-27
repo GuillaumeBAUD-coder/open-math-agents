@@ -52,7 +52,8 @@ private lemma coeff_lhs_lt {m : ℕ} (hm : m < 3) :
     refine Finset.sum_eq_zero fun x hx => ?_
     have hx' : x.1 + x.2 = m := by simpa using hx
     have hx2 : x.2 ≠ 3 := by omega
-    simp [PowerSeries.coeff_X_pow, hx2]
+    rw [PowerSeries.coeff_X_pow]
+    simp only [hx2, ↓reduceIte, mul_zero]
   rw [hzero, mul_zero, sub_zero]
 
 private lemma coeff_lhs_ge (d : ℕ) :
@@ -62,6 +63,19 @@ private lemma coeff_lhs_ge (d : ℕ) :
       (OMA.S_oeis_a005517.A005517 (d + 4) : ℚ) -
         5 * (OMA.S_oeis_a005517.A005517 (d + 1) : ℚ) := by
   rw [coeff_lhs_split, PowerSeries.coeff_mul_X_pow, PowerSeries.coeff_mk]
+
+private lemma coeff_rhs_eq (m : ℕ) :
+    PowerSeries.coeff m
+      (1 + 2 * (PowerSeries.X : PowerSeries ℚ) + 3 * (PowerSeries.X : PowerSeries ℚ) ^ 2 -
+        (PowerSeries.X : PowerSeries ℚ) ^ 4) =
+      (if m = 0 then (1 : ℚ) else 0) +
+        (if m = 1 then (2 : ℚ) else 0) +
+        (if m = 2 then (3 : ℚ) else 0) -
+        (if m = 4 then (1 : ℚ) else 0) := by
+  rw [map_sub, map_add, map_add, PowerSeries.coeff_one, PowerSeries.coeff_ofNat_mul,
+    PowerSeries.coeff_X, PowerSeries.coeff_ofNat_mul, PowerSeries.coeff_X_pow,
+    PowerSeries.coeff_X_pow]
+  split_ifs <;> norm_num
 
 end Proof
 
@@ -73,23 +87,27 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a005517.main := by
   have h4 : OMA.S_oeis_a005517.A005517 4 = 5 := by simp [OMA.S_oeis_a005517.A005517]
   have h5 : OMA.S_oeis_a005517.A005517 5 = 9 := by simp [OMA.S_oeis_a005517.A005517]
   rcases m with _ | _ | _ | _ | _ | k
-  · rw [coeff_lhs_lt (by omega)]
-    simp [h1]
-  · rw [coeff_lhs_lt (by omega)]
-    simp [h2, PowerSeries.coeff_X]
-  · rw [coeff_lhs_lt (by omega)]
-    simp [h3, PowerSeries.coeff_X, PowerSeries.coeff_X_pow]
+  · rw [coeff_lhs_lt (by omega), coeff_rhs_eq]
+    norm_num [h1]
+  · rw [coeff_lhs_lt (by omega), coeff_rhs_eq]
+    norm_num [h2]
+  · rw [coeff_lhs_lt (by omega), coeff_rhs_eq]
+    norm_num [h3]
   · change PowerSeries.coeff (0 + 3) _ = PowerSeries.coeff 3 _
-    rw [coeff_lhs_ge 0]
-    simp [h4, h1, PowerSeries.coeff_X, PowerSeries.coeff_X_pow]
+    rw [coeff_lhs_ge 0, coeff_rhs_eq]
+    norm_num [h4, h1]
   · change PowerSeries.coeff (1 + 3) _ = PowerSeries.coeff 4 _
-    rw [coeff_lhs_ge 1]
-    simp [h5, h2, PowerSeries.coeff_X, PowerSeries.coeff_X_pow]
-    norm_num
-  · rw [show k + 5 = (k + 2) + 3 by omega, coeff_lhs_ge (k + 2)]
+    rw [coeff_lhs_ge 1, coeff_rhs_eq]
+    norm_num [h5, h2]
+  · rw [show k + 5 = (k + 2) + 3 by omega, coeff_lhs_ge (k + 2), coeff_rhs_eq]
     have hr := A005517_recur k
     have hq : (OMA.S_oeis_a005517.A005517 (k + 6) : ℚ) =
         5 * (OMA.S_oeis_a005517.A005517 (k + 3) : ℚ) := by
       exact_mod_cast hr
     rw [show k + 2 + 4 = k + 6 by omega, show k + 2 + 1 = k + 3 by omega, hq, sub_self]
-    simp [PowerSeries.coeff_X, PowerSeries.coeff_X_pow]
+    have hne0 : k + 5 ≠ 0 := by omega
+    have hne1 : k + 5 ≠ 1 := by omega
+    have hne2 : k + 5 ≠ 2 := by omega
+    have hne4 : k + 5 ≠ 4 := by omega
+    simp only [hne0, hne1, hne2, hne4, ↓reduceIte]
+    norm_num
