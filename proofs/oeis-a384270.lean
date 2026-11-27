@@ -272,15 +272,18 @@ private lemma coeff_finSum_seq (m n : ℕ) :
   rw [map_sum]
   split_ifs with hm
   · rw [Finset.sum_eq_single ⟨m, hm⟩]
-    · simp [coeff_X_pow]
+    · rw [coeff_C_mul, coeff_X_pow]
+      simp
     · intro b _ hb
       have hne : m ≠ b.1 := fun h => hb (Fin.ext h.symm)
-      simp [coeff_X_pow, hne]
+      rw [coeff_C_mul, coeff_X_pow]
+      simp [hne]
     · intro hmem
       exact absurd (Finset.mem_univ (⟨m, hm⟩ : Fin n)) hmem
   · refine Finset.sum_eq_zero fun b _ => ?_
     have hne : m ≠ b.1 := fun h => hm (h ▸ b.isLt)
-    simp [coeff_X_pow, hne]
+    rw [coeff_C_mul, coeff_X_pow]
+    simp [hne]
 
 private lemma defines_seriesA : OMA.S_oeis_a384270.Defines seriesA := by
   have hA0 : seriesA.constantCoeff = 0 := by
