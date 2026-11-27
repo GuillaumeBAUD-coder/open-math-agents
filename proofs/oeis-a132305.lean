@@ -80,23 +80,6 @@ theorem replace_scaled_factors {α R : Type*} [CommRing R]
       _ = g i * (C * ∏ j ∈ s, g j) := by rw [tail]
       _ = C * (g i * ∏ j ∈ s, g j) := by ring
 
-theorem one_complementary_pair {R : Type*} [CommRing R]
-    (N J C L x y sign : R) (hsum : x + y = J)
-    (hn : N ^ 2 = 0) (hrow : J * C = N * L) :
-    C * ((x + sign * N) * (y + sign * N)) = C * (x * y) := by
-  linear_combination (C * sign * N) * hsum + (sign * N) * hrow +
-    (sign * L + sign ^ 2 * C) * hn
-
-theorem all_complementary_pairs {α R : Type*} [CommRing R]
-    (indices : Finset α) (x y : α → R) (N J C L sign : R)
-    (hsum : ∀ i ∈ indices, x i + y i = J)
-    (hn : N ^ 2 = 0) (hrow : J * C = N * L) :
-    C * (∏ i ∈ indices, (x i + sign * N) * (y i + sign * N)) =
-      C * (∏ i ∈ indices, x i * y i) := by
-  apply replace_scaled_factors
-  intro i hi
-  exact one_complementary_pair N J C L (x i) (y i) sign (hsum i hi) hn hrow
-
 theorem cancel_cleared_product {R : Type*} [CommRing R]
     (upper lower numerator denominator inverse : R)
     (hclear : upper * denominator = lower * numerator)
@@ -147,14 +130,14 @@ private theorem split_indices (p j : ℕ) (hp : 0 < p) (f : ℕ → ℤ) :
     _ = _ := by rw [himage, prod_image hinj.injOn]
 
 private theorem split_linear (p M j : ℕ) (hp : 0 < p) (sign : ℤ) :
-    (∏ i ∈ range (p*j), ((p*M : ℕ) : ℤ) + sign * (i : ℤ)) =
-      (p : ℤ)^j * (∏ t ∈ range j, (M : ℤ) + sign * (t : ℤ)) *
-        (∏ i ∈ offIndices p j, ((p*M : ℕ) : ℤ) + sign * (i : ℤ)) := by
-  rw [split_indices p j hp]
+    (∏ i ∈ range (p*j), (((p*M : ℕ) : ℤ) + sign * (i : ℤ))) =
+      (p : ℤ)^j * (∏ t ∈ range j, ((M : ℤ) + sign * (t : ℤ))) *
+        (∏ i ∈ offIndices p j, (((p*M : ℕ) : ℤ) + sign * (i : ℤ))) := by
+  rw [split_indices p j hp (fun i : ℕ => ((p*M : ℕ) : ℤ) + sign * (i : ℤ))]
   congr 1
   calc
-    (∏ t ∈ range j, ((p*M : ℕ) : ℤ) + sign * ((p*t : ℕ) : ℤ)) =
-        ∏ t ∈ range j, (p : ℤ) * ((M : ℤ) + sign * (t : ℤ)) := by
+    (∏ t ∈ range j, (((p*M : ℕ) : ℤ) + sign * ((p*t : ℕ) : ℤ))) =
+        ∏ t ∈ range j, ((p : ℤ) * ((M : ℤ) + sign * (t : ℤ))) := by
       apply prod_congr rfl
       intro t ht
       push_cast
@@ -190,15 +173,15 @@ private theorem integer_multichoose_product (n j : ℕ) :
 private theorem choose_with_factorial (p M j : ℕ) (hp : 0 < p) :
     ((p*j).factorial : ℤ) * ((p*M).choose (p*j) : ℤ) =
       (p : ℤ)^j * ((j.factorial : ℤ) * (M.choose j : ℤ)) *
-        (∏ i ∈ offIndices p j, ((p*M : ℕ) : ℤ) - (i : ℤ)) := by
-  rw [← integer_choose_product, ← integer_choose_product]
+        (∏ i ∈ offIndices p j, (((p*M : ℕ) : ℤ) - (i : ℤ))) := by
+  rw [← integer_choose_product (p*M) (p*j), ← integer_choose_product M j]
   simpa only [neg_one_mul, ← sub_eq_add_neg] using (split_linear p M j hp (-1))
 
 private theorem multichoose_with_factorial (p M j : ℕ) (hp : 0 < p) :
     ((p*j).factorial : ℤ) * ((p*M).multichoose (p*j) : ℤ) =
       (p : ℤ)^j * ((j.factorial : ℤ) * (M.multichoose j : ℤ)) *
-        (∏ i ∈ offIndices p j, ((p*M : ℕ) : ℤ) + (i : ℤ)) := by
-  rw [← integer_multichoose_product, ← integer_multichoose_product]
+        (∏ i ∈ offIndices p j, (((p*M : ℕ) : ℤ) + (i : ℤ))) := by
+  rw [← integer_multichoose_product (p*M) (p*j), ← integer_multichoose_product M j]
   simpa only [one_mul] using (split_linear p M j hp 1)
 
 theorem complement_mem_offIndices {p j i : ℕ} (hi : i ∈ offIndices p j) :
@@ -217,7 +200,7 @@ theorem complement_mem_offIndices {p j i : ℕ} (hi : i ∈ offIndices p j) :
   rwa [show p*j-(p*j-i) = i by omega] at hboth
 
 private theorem complement_product (p j : ℕ) :
-    (∏ i ∈ offIndices p j, ((p*j : ℕ) : ℤ) - (i : ℤ)) =
+    (∏ i ∈ offIndices p j, (((p*j : ℕ) : ℤ) - (i : ℤ))) =
       ∏ i ∈ offIndices p j, (i : ℤ) := by
   apply Finset.prod_bij' (fun i _ => p*j-i) (fun i _ => p*j-i)
   · exact fun _ hi => complement_mem_offIndices hi
@@ -240,7 +223,7 @@ private theorem factorial_off_product (p j : ℕ) (hp : 0 < p) :
 theorem choose_clear (p M j : ℕ) (hp : 0 < p) :
     ((p*M).choose (p*j) : ℤ) * (∏ i ∈ offIndices p j, (i : ℤ)) =
       (M.choose j : ℤ) *
-        (∏ i ∈ offIndices p j, ((p*M : ℕ) : ℤ) - (i : ℤ)) := by
+        (∏ i ∈ offIndices p j, (((p*M : ℕ) : ℤ) - (i : ℤ))) := by
   have h := choose_with_factorial p M j hp
   rw [factorial_off_product p j hp] at h
   have hpos : 0 < (p : ℤ)^j * (j.factorial : ℤ) := by positivity
@@ -250,7 +233,7 @@ theorem choose_clear (p M j : ℕ) (hp : 0 < p) :
 theorem multichoose_clear (p M j : ℕ) (hp : 0 < p) :
     ((p*M).multichoose (p*j) : ℤ) * (∏ i ∈ offIndices p j, (i : ℤ)) =
       (M.multichoose j : ℤ) *
-        (∏ i ∈ offIndices p j, ((p*M : ℕ) : ℤ) + (i : ℤ)) := by
+        (∏ i ∈ offIndices p j, (((p*M : ℕ) : ℤ) + (i : ℤ))) := by
   have h := multichoose_with_factorial p M j hp
   rw [factorial_off_product p j hp] at h
   have hpos : 0 < (p : ℤ)^j * (j.factorial : ℤ) := by positivity
@@ -364,7 +347,10 @@ private theorem transfer_cleared (p k M j upper lower L : ℕ) (rise : Bool)
     dsimp [J,N]
     simpa only [mul_assoc] using congrArg (p * ·) hrow
   have hrowR : (J:R)*(lower:R)=(N:R)*(L:R) := by
-    simpa only [Nat.cast_mul] using congrArg (fun a : ℕ => (a:R)) hrowN
+    calc
+      (J:R)*(lower:R) = ((J*lower : ℕ) : R) := (Nat.cast_mul J lower).symm
+      _ = ((N*L : ℕ) : R) := congrArg (fun a : ℕ => (a:R)) hrowN
+      _ = (N:R)*(L:R) := Nat.cast_mul N L
   have paired : (lower:R) * (∏ i ∈ S, F i) =
       (lower:R) * (∏ i ∈ S, (i:R)) := by
     rw [fold_complements S J F hbound hclosed hnofix,
@@ -408,7 +394,7 @@ theorem binomial_scaled (p k n j : ℕ) (hp : p.Prime) (hp3 : 3 ≤ p)
     change (n*p^(k+1)).choose (p*j) ≡ M.choose j [MOD p^(2*(k+1))]
     rw [he]
     cases j with
-    | zero => simp
+    | zero => simp [Nat.ModEq]
     | succ j =>
       let L := (M-1).choose j
       have hr : (j+1)*M.choose (j+1)=M*L := by
@@ -432,7 +418,7 @@ theorem multichoose_scaled (p k n j : ℕ) (hp : p.Prime) (hp3 : 3 ≤ p)
     change (n*p^(k+1)).multichoose (p*j) ≡ M.multichoose j [MOD p^(2*(k+1))]
     rw [he]
     cases j with
-    | zero => simp
+    | zero => simp [Nat.ModEq]
     | succ j =>
       let L := (M+j).choose j
       have hr : (j+1)*M.multichoose (j+1)=M*L := multichoose_row_identity M j
@@ -462,7 +448,8 @@ private lemma cast_trinomial (R : Type*) [CommRing R] (N t : ℕ) :
     simp [f]
   calc
     (trinomial N t : R) = (f.map (Nat.castRingHom R)).coeff t := by
-      simp [trinomial, f]
+      change (Nat.castRingHom R) (f.coeff t) = (f.map (Nat.castRingHom R)).coeff t
+      rw [Polynomial.coeff_map]
     _ = ((1 + Polynomial.X + Polynomial.X ^ 2 : Polynomial R) ^ N).coeff t := by rw [hmap]
     _ = _ := by
       rw [← Polynomial.coeff_coe]
@@ -494,11 +481,11 @@ private lemma trinomial_sum (R : Type*) [CommRing R] (N t : ℕ) (hN : 0 < N) :
   intro i _
   simp only [one_pow, mul_one]
   have he :
-      ((-(PowerSeries.X ^ 3) : R⟦X⟧) ^ i * ↑(N.choose i)) * u =
-      PowerSeries.C ((-1 : R) ^ i * ↑(N.choose i)) * (PowerSeries.X ^ (3 * i) * u) := by
+      ((-(PowerSeries.X ^ 3) : R⟦X⟧) ^ i * (N.choose i : R⟦X⟧)) * u =
+      PowerSeries.C ((-1 : R) ^ i * (N.choose i : R)) * (PowerSeries.X ^ (3 * i) * u) := by
     simp only [map_mul, map_pow, map_neg, map_one, map_natCast, pow_mul]
-    rw [show (-(PowerSeries.X ^ 3) : R⟦X⟧) = (-1) * PowerSeries.X ^ 3 by ring, mul_pow]
-    ring
+    rw [show (-(PowerSeries.X ^ 3) : R⟦X⟧) = (-1) * PowerSeries.X ^ 3 by ring, mul_pow] <;>
+      ac_rfl
   rw [he, PowerSeries.coeff_C_mul, PowerSeries.coeff_X_pow_mul']
   by_cases h : 3 * i ≤ t
   · simp [term, h, u, coeff_inv R N _ hN]
@@ -626,23 +613,6 @@ open OMA.S_oeis_a132305
 
 namespace A132305
 
-/-- The derivative of a polynomial power supplies the whole \(p^k\) at a
-coefficient whose index is prime to \(p\). This works for arbitrary \(F\). -/
-theorem off_index_power (F : Polynomial ℕ) (p n k j : ℕ)
-    (hp : p.Prime) (hj : ¬ p ∣ j) : p^k ∣ (F^(n*p^k)).coeff j := by
-  cases j with
-  | zero => exact (hj (dvd_zero p)).elim
-  | succ m =>
-    have cop : (p^k).Coprime (m+1) :=
-      Nat.Coprime.pow_left k (hp.coprime_iff_not_dvd.mpr hj)
-    apply cop.dvd_of_dvd_mul_left
-    have e := congrArg (fun g : Polynomial ℕ => g.coeff m)
-      (Polynomial.derivative_pow F (n*p^k))
-    dsimp only at e
-    rw [Polynomial.coeff_derivative, mul_assoc, Polynomial.coeff_C_mul] at e
-    rw [mul_comm (m+1), e]
-    exact dvd_mul_of_dvd_left (dvd_mul_left (p^k) n) _
-
 private lemma multiples_in_range (p B : ℕ) (hp : 0 < p) :
     (range (p * B + 1)).filter (fun j => p ∣ j) =
       (range (B + 1)).image (fun j => p * j) := by
@@ -703,15 +673,6 @@ theorem fifth_of_coefficient_bounds (p n k : ℕ) (hp : p.Prime) (hk : 0 < k)
     | succ k => simp [pow_succ] <;> ring
   rw [endpoint]
   exact moment_of_coefficient_bounds p _ k 5 hp.pos (by decide) _ _ scaled off
-
-/-- Only the multiples-of-\(p\) coefficient transfer remains to be supplied. -/
-theorem fifth_of_scaled_only (p n k : ℕ) (hp : p.Prime) (hk : 0 < k)
-    (scaled : ∀ j, trinomial (n*p^k) (p*j) ≡
-      trinomial (n*p^(k-1)) j [MOD p^(2*k)]) :
-    a (n*p^k) ≡ a (n*p^(k-1)) [MOD p^(2*k)] := by
-  apply fifth_of_coefficient_bounds p n k hp hk scaled
-  intro j hj
-  exact off_index_power (1 + Polynomial.X + Polynomial.X^2 : Polynomial ℕ) p n k j hp hj
 
 end A132305
 
