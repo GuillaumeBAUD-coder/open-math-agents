@@ -17,6 +17,20 @@ open Finset Nat
 def GiugaCond (n : ℕ) : Prop :=
   Squarefree n ∧ ∀ p : ℕ, p.Prime → p ∣ n → (p - 1) ∣ (n - 1) ∧ p ∣ (n / p - 1)
 
+lemma prime_dvd_finset_prod {p : ℕ} (hp : p.Prime) {s : Finset ℕ}
+    (h : p ∣ ∏ q ∈ s, q) : ∃ q ∈ s, p ∣ q := by
+  classical
+  induction s using Finset.induction_on with
+  | empty =>
+    simp only [Finset.prod_empty] at h
+    exact absurd (Nat.le_of_dvd (by omega) h) (by have := hp.two_le; omega)
+  | insert a s ha ih =>
+    rw [Finset.prod_insert ha] at h
+    rcases hp.dvd_mul.mp h with h1 | h2
+    · exact ⟨a, Finset.mem_insert_self a s, h1⟩
+    · obtain ⟨q, hqs, hpq⟩ := ih h2
+      exact ⟨q, Finset.mem_insert_of_mem hqs, hpq⟩
+
 lemma prod_primes_dvd_nat {s : Finset ℕ} {b : ℕ}
     (hprime : ∀ p ∈ s, p.Prime) (hdvd : ∀ p ∈ s, p ∣ b) :
     (∏ p ∈ s, p) ∣ b := by
@@ -33,7 +47,7 @@ lemma prod_primes_dvd_nat {s : Finset ℕ} {b : ℕ}
     have hcop : Nat.Coprime a (∏ p ∈ s, p) := by
       rw [ha_prime.coprime_iff_not_dvd]
       intro h
-      obtain ⟨q, hqs, haq⟩ := (Prime.dvd_finset_prod_iff ha_prime.prime _).mp h
+      obtain ⟨q, hqs, haq⟩ := prime_dvd_finset_prod ha_prime h
       have hq_prime : q.Prime := hprime q (Finset.mem_insert_of_mem hqs)
       have heq : a = q := (Nat.prime_dvd_prime_iff_eq ha_prime hq_prime).mp haq
       exact ha (heq ▸ hqs)
@@ -280,17 +294,17 @@ lemma bernoulli_cond_iff_giuga_of_odd {n : ℕ} (hn : 3 ≤ n) (hodd : Odd n) :
     intro p hp h2
     have hmem : p ∈ S := by
       have hpD : p ∣ D := dvd_trans (dvd_mul_left p p) h2
-      obtain ⟨q, hqS, hpq⟩ := (Prime.dvd_finset_prod_iff hp.prime _).mp hpD
+      obtain ⟨q, hqS, hpq⟩ := prime_dvd_finset_prod hp hpD
       have hqp : p = q := (Nat.prime_dvd_prime_iff_eq hp (hS_prime q hqS)).mp hpq
       rwa [hqp]
     have hsplit : D = p * ∏ q ∈ S.erase p, q := (Finset.mul_prod_erase S id hmem).symm
     rw [hsplit] at h2
     have hpd : p ∣ ∏ q ∈ S.erase p, q := (mul_dvd_mul_iff_left hp.ne_zero).mp h2
-    obtain ⟨q, hq, hpq⟩ := (Prime.dvd_finset_prod_iff hp.prime _).mp hpd
+    obtain ⟨q, hq, hpq⟩ := prime_dvd_finset_prod hp hpd
     have hne : q ≠ p := (Finset.mem_erase.mp hq).1
     have hqp : p = q := (Nat.prime_dvd_prime_iff_eq hp (hS_prime q (Finset.mem_erase.mp hq).2)).mp hpq
     exact hne hqp.symm
-  obtain ⟨M, hM⟩ := Bernoulli.vonStaudt_clausen m
+  obtain ⟨M, hM⟩ := Bernoulli.vonStaudt_clausen (k := m)
   have hB_eq : B = (M : ℚ) - ∑ p ∈ S, (1 : ℚ) / p := by
     have : (M : ℚ) = B + ∑ p ∈ S, (1 : ℚ) / p := hM
     linarith
@@ -315,7 +329,7 @@ lemma bernoulli_cond_iff_giuga_of_odd {n : ℕ} (hn : 3 ≤ n) (hodd : Odd n) :
       have h3 : B.den ∣ D * B.num.natAbs := by
         have h4 : (B.den : ℤ) ∣ (D : ℤ) * B.num := ⟨_, h2.symm⟩
         exact_mod_cast Int.natAbs_dvd_natAbs.mpr h4
-      exact (B.reduced.symm.dvd_mul_right).mp h3
+      exact B.reduced.symm.dvd_of_dvd_mul_right h3
     have hD_dvd : D ∣ B.den := by
       refine prod_primes_dvd_nat hS_prime ?_
       intro p hp
@@ -351,7 +365,7 @@ lemma bernoulli_cond_iff_giuga_of_odd {n : ℕ} (hn : 3 ≤ n) (hodd : Odd n) :
     intro p hp hpN
     have hpD : p ∣ D := dvd_trans hpN hND
     have hpS : p ∈ S := by
-      obtain ⟨q, hqS, hpq⟩ := (Prime.dvd_finset_prod_iff hp.prime _).mp hpD
+      obtain ⟨q, hqS, hpq⟩ := prime_dvd_finset_prod hp hpD
       have hqp : p = q := (Nat.prime_dvd_prime_iff_eq hp (hS_prime q hqS)).mp hpq
       rwa [hqp]
     refine ⟨hS_dvd p hpS, ?_⟩
@@ -384,7 +398,7 @@ lemma bernoulli_cond_iff_giuga_of_odd {n : ℕ} (hn : 3 ≤ n) (hodd : Odd n) :
         hne ((Nat.prime_dvd_prime_iff_eq hp (hS_prime q hqS)).mp h).symm
       have hpDq : p ∣ D / q := by
         have h1 : p ∣ q * (D / q) := by rwa [Nat.mul_div_cancel' hqD]
-        exact (hcop.dvd_mul_left).mp h1
+        exact hcop.dvd_of_dvd_mul_left h1
       exact Int.ofNat_dvd.mpr hpDq
     have hsplit_sum : ∑ q ∈ S, ((D / q : ℕ) : ℤ) =
         ((D / p : ℕ) : ℤ) + ∑ q ∈ S.erase p, ((D / q : ℕ) : ℤ) :=
@@ -444,7 +458,7 @@ lemma bernoulli_cond_iff_giuga_of_odd {n : ℕ} (hn : 3 ≤ n) (hodd : Odd n) :
           hne ((Nat.prime_dvd_prime_iff_eq hp (hS_prime q hqS)).mp h).symm
         have hpDq : p ∣ D / q := by
           have h1 : p ∣ q * (D / q) := by rwa [Nat.mul_div_cancel' hqD]
-          exact (hcop.dvd_mul_left).mp h1
+          exact hcop.dvd_of_dvd_mul_left h1
         exact Int.ofNat_dvd.mpr hpDq
       have hsplit_sum : ∑ q ∈ S, ((D / q : ℕ) : ℤ) =
           ((D / p : ℕ) : ℤ) + ∑ q ∈ S.erase p, ((D / q : ℕ) : ℤ) :=
@@ -489,7 +503,8 @@ theorem OMA.solution : OMA.R_AgohGiuga_agoh_giuga_R1.H1 := by
       decide
     · intro _
       refine ⟨1, ?_⟩
-      norm_num [bernoulli'_one]
+      simp only [Nat.reduceSub, bernoulli'_one]
+      decide
   · rcases Nat.even_or_odd n with heven | hodd
     · have h4 : 4 ≤ n := by
         obtain ⟨m, rfl⟩ := heven
