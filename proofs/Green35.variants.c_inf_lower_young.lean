@@ -35,7 +35,7 @@ theorem OMA.solution : type_of% @Green35.variants.c_inf_lower_young := by
   unfold Green35.c
   apply le_sInf
   rintro r ⟨f, hf, rfl⟩
-  have hc : Green35.c ≤ eLpNorm (f ⋆ f) 2 := sInf_le ⟨f, hf, rfl⟩
+  have hc : Green35.c 2 ≤ eLpNorm (f ⋆ f) 2 := sInf_le ⟨f, hf, rfl⟩
   obtain ⟨hfi, hf0, -, hf1⟩ := hf
   have hgi : Integrable (f ⋆ f) := hfi.integrable_convolution (ContinuousLinearMap.lsmul ℝ ℝ) hfi
   have hg0 : ∀ x, 0 ≤ (f ⋆ f) x := by
@@ -45,5 +45,5 @@ theorem OMA.solution : type_of% @Green35.variants.c_inf_lower_young := by
   have hg1 : ∫ x, (f ⋆ f) x = 1 := by
     rw [integral_convolution (ContinuousLinearMap.lsmul ℝ ℝ) hfi hfi, hf1]
     simp
-  calc Green35.c ^ 2 ≤ eLpNorm (f ⋆ f) 2 volume ^ 2 := by gcongr
+  calc (Green35.c 2) ^ 2 ≤ eLpNorm (f ⋆ f) 2 volume ^ 2 := by gcongr
     _ ≤ _ := OMA.l2_sq_le_top _ hgi hg0 hg1
