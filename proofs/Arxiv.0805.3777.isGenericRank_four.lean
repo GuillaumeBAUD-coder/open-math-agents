@@ -6,9 +6,9 @@ Use a three-dimensional base and m-3 individual coordinates on each large
 axis. Five points occupy the base. Each other group has two points whose
 factors are supported in that group and the base. A pair of distinct
 one-dimensional groups needs four independent directions. For one group
-together with the base, a 28-row projected tangent matrix has an explicit
-scaled integral right inverse. The 36 base rows have their own integral
-right inverse. A common specialization makes all sectors span. The total
+together with the base, a 28-row projected tangent matrix has a right inverse
+modulo two. The 36 base rows have their own binary right inverse. Nonzero
+determinants modulo two lift these rank bounds to the complex numbers. A common specialization makes all sectors span. The total
 point count is 2m-1.
 
 Dimension counting excludes smaller ranks on a dense open set. The tangent
@@ -57,23 +57,6 @@ def sumFin {A B : Type} {a b : ℕ} (ea : A ≃ Fin a) (eb : B ≃ Fin b) : A⊕
   (Equiv.sumCongr ea eb).trans finSumFinEquiv
 
 def tab {m n : ℕ} (data : Array ℤ) (i : Fin m) (j : Fin n) : ℤ := data[i.val*n+j.val]?.getD 0
-def inverse {I C : Type} {m n : ℕ} (rows : I ≃ Fin m) (cols : C ≃ Fin n) (table : Array ℤ) :
-    Matrix C I ℤ := fun c i => table[(cols c).val*m+(rows i).val]?.getD 0
-
-lemma scaled_surjective {I K : Type} [Fintype I] [DecidableEq I] [Fintype K]
-    (A : Matrix I K ℤ) (B : Matrix K I ℤ) (d : ℤ) (hd : d ≠ 0) (h : A*B=d • 1) :
-    Function.Surjective (A.map (Int.castRingHom ℂ)).mulVec := by
-  let φ := Int.castRingHom ℂ
-  have hc : A.map φ * B.map φ = (d : ℂ) • (1 : Matrix I I ℂ) := by
-    rw [← Matrix.map_mul,h]
-    ext i j
-    change φ (d • ((1 : Matrix I I ℤ) i j)) = (d : ℂ) • ((1 : Matrix I I ℂ) i j)
-    by_cases he : i=j <;> simp [φ,Matrix.one_apply,he]
-  change Function.Surjective (A.map φ).mulVec
-  apply Matrix.mulVec_surjective_iff_exists_right_inverse.mpr
-  refine ⟨(d : ℂ)⁻¹ • B.map φ,?_⟩
-  rw [Matrix.mul_smul,hc,smul_smul,inv_mul_cancel₀ (by exact_mod_cast hd),one_smul]
-
 abbrev R₀ := Fin 4 × Fin 3 × Fin 3
 abbrev C₀ := Fin 5 × (Fin 4 ⊕ (Fin 3 ⊕ Fin 3))
 def r₀ : R₀ ≃ Fin 36 := prodFin (Equiv.refl _) (prodFin (Equiv.refl _) (Equiv.refl _))
@@ -153,7 +136,104 @@ lemma border_of_matrix (A : Fin 2 → Fin 4 → ℤ) (B C : Fin 2 → LocalAxis 
 
 end FourSlice.Finite
 
+namespace FourSlice.Finite.Parity
+
+def intBit (b : Bool) : ℤ := if b then 1 else 0
+def fieldBit (b : Bool) : ZMod 2 := if b then 1 else 0
+
+lemma cast_intBit (b : Bool) : ((intBit b : ℤ) : ZMod 2) = fieldBit b := by cases b <;> rfl
+
+lemma fieldBit_xor (a b : Bool) : fieldBit (a ^^ b) = fieldBit a + fieldBit b := by
+  cases a <;> cases b <;> decide
+
+/-- XOR of the columns whose index occurs in the mask. -/
+def xorColumns (cols : ℕ → ℕ) (mask : ℕ) : ℕ → ℕ
+  | 0 => 0
+  | m + 1 => xorColumns cols mask m ^^^ (if mask.testBit m then cols m else 0)
+
+lemma xorColumns_entry (cols : ℕ → ℕ) (mask row m : ℕ) :
+    fieldBit ((xorColumns cols mask m).testBit row) =
+      ∑ j ∈ Finset.range m, fieldBit ((cols j).testBit row) * fieldBit (mask.testBit j) := by
+  induction m with
+  | zero => simp [xorColumns, fieldBit]
+  | succ m ih =>
+    rw [xorColumns, Nat.testBit_xor, fieldBit_xor, ih, Finset.sum_range_succ]
+    cases mask.testBit m <;> simp [fieldBit]
+
+lemma complex_surjectivity {ι κ : Type} [Fintype ι] [DecidableEq ι] [Fintype κ]
+    (A : Matrix ι κ ℤ) (B : Matrix κ ι ℤ)
+    (hab : A.map (Int.castRingHom (ZMod 2)) * B.map (Int.castRingHom (ZMod 2)) = 1) :
+    Function.Surjective (A.map (Int.castRingHom ℂ)).mulVec := by
+  let C := A * B
+  have h2 : ((C.det : ℤ) : ZMod 2) = 1 := by
+    change (Int.castRingHom (ZMod 2)) C.det = 1
+    rw [RingHom.map_det, RingHom.mapMatrix_apply, show C = A * B from rfl, Matrix.map_mul, hab,
+      Matrix.det_one]
+  have hne : C.det ≠ 0 := by
+    intro he
+    rw [he, Int.cast_zero] at h2
+    exact zero_ne_one h2
+  have hu : IsUnit (C.map (Int.castRingHom ℂ)).det := by
+    apply isUnit_iff_ne_zero.mpr
+    rw [← RingHom.mapMatrix_apply, ← RingHom.map_det]
+    change (C.det : ℂ) ≠ 0
+    exact_mod_cast hne
+  have hsurj : Function.Surjective (C.map (Int.castRingHom ℂ)).mulVec :=
+    Matrix.mulVec_surjective_iff_isUnit.mpr ((Matrix.isUnit_iff_isUnit_det _).mpr hu)
+  intro y
+  obtain ⟨x, hx⟩ := hsurj y
+  refine ⟨(B.map (Int.castRingHom ℂ)).mulVec x, ?_⟩
+  rw [Matrix.mulVec_mulVec, ← Matrix.map_mul]
+  exact hx
+
+lemma surjective_of_certificate {d m : ℕ} (A : Matrix (Fin d) (Fin m) ℤ) (cols masks : ℕ → ℕ)
+    (hcols : ∀ i j, A i j = intBit ((cols j.val).testBit i.val))
+    (hcheck : ∀ i : Fin d, xorColumns cols (masks i.val) m = 2 ^ i.val) :
+    Function.Surjective (A.map (Int.castRingHom ℂ)).mulVec := by
+  let B : Matrix (Fin m) (Fin d) ℤ := fun j i => intBit ((masks i.val).testBit j.val)
+  apply complex_surjectivity A B
+  ext i j
+  rw [Matrix.mul_apply, Matrix.one_apply]
+  calc
+    _ = ∑ k : Fin m, fieldBit ((cols k.val).testBit i.val) * fieldBit ((masks j.val).testBit k.val) := by
+      apply Finset.sum_congr rfl
+      intro k _
+      change ((A i k : ℤ) : ZMod 2) * ((intBit ((masks j.val).testBit k.val) : ℤ) : ZMod 2) = _
+      rw [hcols, cast_intBit, cast_intBit]
+    _ = ∑ k ∈ Finset.range m, fieldBit ((cols k).testBit i.val) * fieldBit ((masks j.val).testBit k) := by
+      exact Fin.sum_univ_eq_sum_range (fun k => fieldBit ((cols k).testBit i.val) *
+        fieldBit ((masks j.val).testBit k)) m
+    _ = fieldBit ((xorColumns cols (masks j.val) m).testBit i.val) := (xorColumns_entry _ _ _ _).symm
+    _ = _ := by
+      rw [hcheck j, Nat.testBit_two_pow]
+      by_cases h : i = j
+      · subst j; simp [fieldBit]
+      · have hji : j.val ≠ i.val := fun hv => h (Fin.ext hv.symm)
+        simp [h, hji, fieldBit]
+
+end FourSlice.Finite.Parity
+
 namespace FourSlice.Finite
+
+private lemma reindexed_rank {I K : Type} [Fintype K] {d n : ℕ}
+    (M : Matrix I K ℤ) (rows : I ≃ Fin d) (cols : K ≃ Fin n) (words masks : ℕ → ℕ)
+    (entries : ∀ i : Fin d, ∀ j : Fin n, M (rows.symm i) (cols.symm j) = Parity.intBit ((words j.val).testBit i.val))
+    (checked : ∀ i : Fin d, Parity.xorColumns words (masks i.val) n = 2^i.val) :
+    Function.Surjective (M.map (Int.castRingHom ℂ)).mulVec := by
+  let F : Matrix (Fin d) (Fin n) ℤ := fun i j => M (rows.symm i) (cols.symm j)
+  have hs := Parity.surjective_of_certificate F words masks entries checked
+  intro y
+  obtain ⟨z,hz⟩ := hs fun i => y (rows.symm i)
+  refine ⟨fun k => z (cols k),?_⟩
+  funext i
+  have h := congrFun hz (rows i)
+  change (∑ k, ((F (rows i) k : ℤ) : ℂ) * z k) = y (rows.symm (rows i)) at h
+  change (∑ k, (M i k : ℂ)*z (cols k)) = y i
+  have he := cols.sum_comp (fun j : Fin n => (M i (cols.symm j) : ℂ)*z j)
+  simp only [Equiv.symm_apply_apply] at he
+  rw [he]
+  simpa only [F,Equiv.symm_apply_apply] using h
+
 
 namespace BaseWitness
 
@@ -162,127 +242,37 @@ def B : Fin 5 → Fin 3 → ℤ := tab #[0, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 0, 
 def C : Fin 5 → Fin 3 → ℤ := tab #[0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 0, 1, 0, 1]
 
 def M : Matrix R₀ C₀ ℤ := baseMatrix A B C
-def data : Array ℤ := #[
-  0, 0, -1, 0, 0, 0, -1, 0, 1, -1, -1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, 0, 1, 0, 0, -1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, -1, -1, -1, 1, 0, 0, 0, 0, 0, 1, 1, 1, -1, 0, 0, -1, 0, 0, 1, 0, 1, 0, 1, 1, 0, -1, 0, -1, -1, -2, 1,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, -1, -1, 0, 0, -1, -1, 1,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, -1, 0, 1, 1, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  1, 0, 0, -1, 0, 0, 0, 0, 0, -1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,
-  -1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, -1, 0, 0, 1, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 1, 0, 0, -1, -1, -2, 1, 0, 0, -1, 0, 0, 1, 1, 2, -1, 0, 0, -1, 0, 0, 1, 1, 2, -1, 0, 0, 1, 0, 0, -1, -1, -2, 1,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, -1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, -1, 0, 0, 1, 0, 0, 0, 0, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0,
-  0, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, 0, 1, 0,
-  0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, -1, 1, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 1, 0, 0, 0, 0, 1, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, -1, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, -1, 1, 1, 0, 1, 1, 1, -1,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, -1, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 1, 0, 0, 0, 0, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 1, 0, 0, 1, 0, 1, 2, -1, -1, 0, -1, -1, -2, 1,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, -1, -1, 1, -1, -1, -1, 1,
-  0, 1, -1, 0, 0, 0, 0, 0, 0, 0, -1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  -1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 1, 0, 0, 1, 1, 0, -1, 0, 0, -1, 0, 0, -1, -1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, -1, 0, 0, 1, 1, 2, -1, 0, 0, 1, 0, 0, -1, -1, -2, 1, 0, 0, 1, 0, 0, -1, 0, -2, 1, -1, 0, -1, 1, 0, 1, 1, 2, -1,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -1, 0, 0, 1, 0, 0, 1, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+private def columnWords : Array ℕ := #[0x120, 0x24000, 0x4800000, 0x900000000, 0x804, 0x4020, 0x20100, 0x9048, 0x12090, 0x24120, 0x9, 0x1200, 0x240000, 0x48000000, 0x40000, 0x200000, 0x1000000, 0x240000, 0x480000, 0x900000, 0x186, 0x30c00, 0x6180000, 0xc30000000, 0x30180000, 0x180c00000, 0xc06000000, 0x209040000, 0x412080000, 0x824100000, 0x10, 0x2000, 0x400000, 0x80000000, 0x80002, 0x400010, 0x2000080, 0x200008, 0x400010, 0x800020, 0x140, 0x28000, 0x5000000, 0xa00000000, 0x28000a05, 0x140005028, 0xa00028140, 0x200008040, 0x400010080, 0x800020100]
+private def rightMasks : Array ℕ := #[0x2000005400, 0x500040000, 0x49400590001, 0x2000005000, 0x40000000, 0x48000010004, 0x58000010005, 0x11004c0004, 0x48000010005, 0x320000058a3, 0x5c0340133, 0x49400590011, 0x320000050a3, 0x80000000, 0x48000010024, 0x68000010026, 0x11c04c0104, 0x48000010026, 0x4000, 0x100040000, 0x40000090004, 0x5000, 0x100000000, 0x40000010004, 0x10000, 0x1004c0004, 0x40000010000, 0xc030a00400c, 0x213c4000c, 0x40312c90008, 0xc030a00600c, 0x200000000, 0x40302010004, 0xc030201000c, 0x2038c0008, 0x4030201000c]
+private def word (j : ℕ) := columnWords[j]?.getD 0
+private def mask (i : ℕ) := rightMasks[i]?.getD 0
 
-def inv : Matrix C₀ R₀ ℤ := inverse r₀ c₀ data
-set_option maxRecDepth 6000 in
-set_option maxHeartbeats 2400000 in
-lemma identity : M * inv = (1 : ℤ) • (1 : Matrix R₀ R₀ ℤ) := by
-  have hv : ∀ i j : Fin 36, (M * inv) (r₀.symm i) (r₀.symm j) =
-      ((1 : ℤ) • (1 : Matrix R₀ R₀ ℤ)) (r₀.symm i) (r₀.symm j) := by decide +kernel
-  exact Matrix.ext fun i j => by simpa only [Equiv.symm_apply_apply] using hv (r₀ i) (r₀ j)
-
-lemma rank : Function.Surjective (M.map (Int.castRingHom ℂ)).mulVec :=
-  scaled_surjective M inv 1 (by decide) identity
+lemma rank : Function.Surjective (M.map (Int.castRingHom ℂ)).mulVec := by
+  apply reindexed_rank M r₀ c₀ word mask
+  · decide +kernel
+  · decide +kernel
 
 end BaseWitness
 
 namespace BorderWitness
 
-def A : Fin 2 → Fin 4 → ℤ := tab #[1, 0, 1, 1, 1, 1, 0, 0]
-def B (t : Fin 2) (j : LocalAxis) : ℤ := tab #[1, 0, 1, 0, 1, 1, 1, 0] t ((finSuccEquiv 3).symm j)
-def C (t : Fin 2) (j : LocalAxis) : ℤ := tab #[1, 1, 1, 0, 1, 0, 1, 0] t ((finSuccEquiv 3).symm j)
-def a : Fin 5 → Fin 4 → ℤ := tab #[0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1]
-def b : Fin 5 → Fin 3 → ℤ := tab #[0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0]
-def c : Fin 5 → Fin 3 → ℤ := tab #[1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0, 1]
+def A : Fin 2 → Fin 4 → ℤ := tab #[0, 0, 0, 1, 1, 0, 0, 0]
+def B (t : Fin 2) (j : LocalAxis) : ℤ := tab #[1, 0, 0, 0, 1, 1, 0, 1] t ((finSuccEquiv 3).symm j)
+def C (t : Fin 2) (j : LocalAxis) : ℤ := tab #[1, 0, 1, 1, 1, 0, 1, 0] t ((finSuccEquiv 3).symm j)
+def a : Fin 5 → Fin 4 → ℤ := tab #[1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 1]
+def b : Fin 5 → Fin 3 → ℤ := tab #[0, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0]
+def c : Fin 5 → Fin 3 → ℤ := tab #[0, 1, 0, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0]
 
 def M : Matrix R₁ C₁ ℤ := borderMatrix A B C a b c
-def data : Array ℤ := #[
-  2, 0, -1, 1, -2, 1, 0, -2, 2, 1, -1, 2, -1, 0, -5, 3, 2, -1, 3, 0, 0, 1, -3, 1, 0, -1, 1, 0,
-  1, 0, -1, 1, 0, 0, 0, -1, 2, 1, -1, 0, 0, 0, -3, 0, 3, -1, 0, 0, 0, 2, 0, -2, 0, 0, 0, 0,
-  -1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, -1, 0, 0, 3, -1, 0, 1, 0, 0, -1, -3, 3, 0, -1, 1, 0,
-  -1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, -1, 0, -2, 1, 1, 0, 1, 0, 0, 1, -1, 1, 0, -1, 1, 0,
-  1, 0, 0, 0, 0, -1, 0, -1, 0, 0, 0, 0, 1, 0, 0, -1, 1, 0, -1, 0, 0, 1, 1, -1, 0, 1, -1, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, -2, 0, 2, 0, 0, 0, -2, 2, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, -2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  1, 0, -1, 1, 0, 0, 0, -1, 0, 1, -1, 0, 0, 0, -1, 0, 1, -1, 0, 0, 0, 0, 2, -2, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  1, 0, -1, 1, 0, 0, 0, -1, 0, 1, -1, 0, 0, 0, -1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  -2, 0, 1, -1, 2, 1, 0, 0, -2, 1, 1, -2, 1, 0, 1, -1, 0, 1, -1, 0, 0, 1, 1, -1, 0, -1, -1, 0,
-  -2, 0, 1, -1, 0, 1, 0, 0, -2, 1, 1, 0, 1, 0, 1, 1, -2, 1, 1, 0, 0, 1, -1, 1, 0, -1, -1, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -2, 2, 0, 0, 0, 0, 0, 2, -2, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0, 0, -1, 0, 0, -1, 1, 0, -1, 0, 0, -1, 1, -1, 0, 1, 1, 0,
-  2, 0, -1, 1, 0, -1, 0, -2, 2, 1, -1, 2, -1, 0, -3, 1, 2, -1, 1, 0, 0, 1, -1, -1, 0, -1, 1, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, -2,
-  0, 0, 0, 0, 0, 0, 0, 2, 0, -2, 0, 0, 0, 0, 2, 0, -2, 0, 0, 0, 0, -2, 0, 2, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  1, 0, -1, 1, 0, 0, 0, -1, 0, 1, 1, 0, 0, 0, -1, 0, 1, 1, 0, 0, 0, 0, 0, 0, -2, 0, 0, 0,
-  4, -2, -2, 2, -2, 0, 0, -4, 2, 2, -2, 2, 0, 0, -4, 2, 2, -2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, -2, 0, 2, -2, 0, -2, -2, 2, 0, -2, 2, 0,
-  -4, 2, 2, -2, 2, 0, 0, 4, -2, -2, 2, -2, 0, 0, 6, -2, -4, 2, -2, 0, 0, -2, 0, 2, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, -2, 2, -2, 0, 0, 0, 0, 2, -2,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -2, 0, 2, -2, 0, 0, 0, 2, 0, -2, 2, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -2, -2, 2, 0, -2, 2, -2, 2, 2, -2, 0, 2, -2, 2,
-  2, -2, 0, 2, -2, 0, 0, -2, 2, 0, -2, 2, 0, 0, -2, 2, 0, -2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, -2, 2, 2, -2, 0, 2, -2, -2, -2, -2, 2, 0, -2, 2, 0,
-  -1, 0, 1, -1, 0, 0, 0, 1, 0, -1, 1, 0, 0, 0, 1, 0, -1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  1, 0, 0, 0, 0, -1, 0, -1, 0, 0, 0, 0, 1, 0, -2, -1, 1, 0, -1, 2, 0, 1, 1, -1, 0, 1, -1, 0]
+private def columnWords : Array ℕ := #[0xd, 0x680, 0x34000, 0x1a00000, 0x1a00000, 0x2000000, 0x4000000, 0x8000000, 0x200000, 0x400000, 0x800000, 0x1000000, 0x55, 0x2a80, 0x154000, 0xaa00000, 0x5, 0x10, 0x20, 0x40, 0x51, 0x2, 0x4, 0x8, 0x10004, 0x80020, 0x183060c, 0x2040810, 0x180060c, 0xa002850, 0x140050a, 0xe003870, 0xc18000, 0x2040000]
+private def rightMasks : Array ℕ := #[0x111000, 0x200000, 0x101000, 0x10001, 0x20000, 0x40000, 0x31000, 0x1011110b, 0x602037ab, 0x301021ab, 0x200130a2, 0x208020000, 0xa0040040, 0x2280310a0, 0x14000004, 0x101101600, 0x1101000, 0x15101000, 0x200000020, 0x2040000, 0x215105024, 0x100, 0x200, 0x400, 0x508, 0x20, 0x40, 0x80]
+private def word (j : ℕ) := columnWords[j]?.getD 0
+private def mask (i : ℕ) := rightMasks[i]?.getD 0
 
-def inv : Matrix C₁ R₁ ℤ := inverse r₁ c₁ data
-set_option maxRecDepth 6000 in
-set_option maxHeartbeats 2400000 in
-lemma identity : M * inv = (2 : ℤ) • (1 : Matrix R₁ R₁ ℤ) := by
-  have hv : ∀ i j : Fin 28, (M * inv) (r₁.symm i) (r₁.symm j) =
-      ((2 : ℤ) • (1 : Matrix R₁ R₁ ℤ)) (r₁.symm i) (r₁.symm j) := by decide +kernel
-  exact Matrix.ext fun i j => by simpa only [Equiv.symm_apply_apply] using hv (r₁ i) (r₁ j)
-
-lemma rank : Function.Surjective (M.map (Int.castRingHom ℂ)).mulVec :=
-  scaled_surjective M inv 2 (by decide) identity
+lemma rank : Function.Surjective (M.map (Int.castRingHom ℂ)).mulVec := by
+  apply reindexed_rank M r₁ c₁ word mask
+  · decide +kernel
+  · decide +kernel
 
 end BorderWitness
 
