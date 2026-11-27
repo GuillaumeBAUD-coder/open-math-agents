@@ -6,6 +6,10 @@ import Mathlib
 Source: https://oeis.org/A108411
 Credit: @ivillar
 
+Status: known result. Andrew Howroyd (Nov 20 2021) proved the conjecture: if m pairs of numbers
+add up to n, inclusion-exclusion gives 3^m admissible sets, and for even n the element n/2 cannot
+be in any of them.
+
 A108411 (offset 0): a(n) = 3^floor(n/2); data 1, 1, 3, 3, 9, 9, 27, 27, 81, ...
 Conjecture (Michael Chu, Oct 05 2021): a(n+1) is the number of distinct subsets S of
 {0,1,2,...,n} such that the sumset S+S does not contain n.
