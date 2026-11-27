@@ -17,20 +17,14 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a131401.main := by
         {d : ℕ | d ∣ Nat.fib n ∧ ∀ m : ℕ, 1 ≤ m → m < n → ¬ d ∣ Nat.fib m} := by
       refine ⟨dvd_rfl, ?_⟩
       intro m hm1 hmn hdvd
-      have hpos : 0 < Nat.fib m := Nat.fib_pos.2 (by omega)
-      have hle := Nat.le_of_dvd hpos hdvd
-      have hn3 : 3 ≤ n := by omega
+      have hle := Nat.le_of_dvd (Nat.fib_pos.2 (by omega : 0 < m)) hdvd
       have hlt : Nat.fib m < Nat.fib n := by
-        rcases Nat.lt_or_ge m 2 with h2 | h2
-        · have hm : m = 1 := by omega
-          subst hm
-          have h3 : Nat.fib 3 ≤ Nat.fib n := Nat.fib_mono hn3
-          have h32 : Nat.fib 3 = 2 := by decide
-          rw [Nat.fib_one]
-          omega
-        · obtain ⟨m', rfl⟩ : ∃ m', m = m' + 2 := ⟨m - 2, by omega⟩
-          obtain ⟨n', rfl⟩ : ∃ n', n = n' + 2 := ⟨n - 2, by omega⟩
-          exact Nat.fib_add_two_strictMono (by omega)
+        by_cases hm : 2 ≤ m
+        · have ht := Nat.fib_add_two_strictMono (show m - 2 < n - 2 by omega)
+          simpa only [Nat.sub_add_cancel hm, Nat.sub_add_cancel (show 2 ≤ n by omega)] using ht
+        · have h3 := Nat.fib_mono (show 3 ≤ n by omega)
+          rw [show m = 1 by omega, Nat.fib_one]
+          exact (show 1 < Nat.fib 3 by decide).trans_le h3
       omega
     have hs := Nat.sInf_mem ⟨_, hmem⟩
     rw [h] at hs
@@ -39,10 +33,7 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a131401.main := by
     omega
   · rintro rfl
     have hempty : {d : ℕ | d ∣ Nat.fib 2 ∧ ∀ m : ℕ, 1 ≤ m → m < 2 → ¬ d ∣ Nat.fib m} = ∅ := by
-      ext d
-      constructor
-      · rintro ⟨hd, hall⟩
-        exact (hall 1 le_rfl (by norm_num) (by simpa using hd)).elim
-      · intro h
-        exact h.elim
+      apply Set.eq_empty_iff_forall_notMem.mpr
+      rintro d ⟨hd, hall⟩
+      exact hall 1 le_rfl (by decide) (by simpa using hd)
     rw [hempty, Nat.sInf_empty]
