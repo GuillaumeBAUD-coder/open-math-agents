@@ -26,7 +26,7 @@ lemma extend_from_first {a b : ℕ} (hb : 0 < b) (ha : 0 < a)
 lemma separation (prefixBound : H1) (tailBound : H2) (k : ℕ) (hk : 2 ≤ k) :
     ∀ m : ℕ, 3^k ≤ 2^k*m → 3^k + m ≤ 2^k*m := by
   induction k using Nat.strong_induction_on with
-  | ind k ih =>
+  | _ k ih =>
     intro m above
     by_cases small : k ≤ 4096
     · have finite := prefixBound ⟨k-2, by omega⟩
