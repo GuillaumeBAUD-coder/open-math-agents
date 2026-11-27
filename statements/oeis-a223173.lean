@@ -6,6 +6,8 @@ import Mathlib
 Source: https://oeis.org/A223173
 Credit: @ivillar
 
+Status: known result (the conjecture was verified by Robert Israel, Jun 21 2018).
+
 A223173 (offset 1) is the sequence of poly-Cauchy numbers c_3^(-n),
 a(n) = Sum_{k=0..3} Stirling1(3,k)*(k+1)^n, where Stirling1 is the signed Stirling number of
 the first kind; data -1, -3, -1, 45, 359, 2037, ...
