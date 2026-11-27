@@ -9,10 +9,11 @@ Credit: @SudharsanAnimations
 Let `t ≥ 1` and let `A ⊆ {1, …, N}` be such that whenever `a, b ∈ A` with `b - a ≥ t` we have
 `b - a ∤ b`. How large can `|A|` be? Is it true that `|A| ≤ (1/2 + o_t(1)) N`?
 
-We formalize the second question. The problem page reports that it has been answered in the
-affirmative, and we state that answer: for every fixed `t ≥ 1` and every `ε > 0`, every such `A`
-has `|A| ≤ (1/2 + ε) N` once `N` is large enough (depending on `t` and `ε`). (The first question,
-the exact maximum, is not formalized here.)
+We formalize the second question, in its affirmative form: for every fixed `t ≥ 1` and every
+`ε > 0`, every such `A` has `|A| ≤ (1/2 + ε) N` once `N` is large enough (depending on `t` and
+`ε`). Its status is unclear: the problem page lists the problem as open, while its text reports
+an affirmative answer via a second-moment argument of Elliott type; a disproof is the negation of
+`main`. (The first question, the exact maximum, is not formalized here.)
 
 Conventions:
 - `b - a ≥ t` with `t ≥ 1` forces `a < b`, so the subtraction is the honest difference of
