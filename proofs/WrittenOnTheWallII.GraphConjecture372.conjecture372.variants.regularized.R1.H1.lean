@@ -748,43 +748,43 @@ theorem OMA.solution : OMA.R_WrittenOnTheWallII_GraphConjecture372_conjecture372
   let SE : Finset α := E.toFinset ∩ D
   have hSuv_card : Suv.card = (if u ∈ D then 1 else 0) + (if v ∈ D then 1 else 0) := by
     have huv_ne : u ≠ v := huv.ne
-    have h1 : Suv = (if u ∈ D then {u} else ∅) ∪ (if v ∈ D then {v} else ∅) := by
-      ext z
-      by_cases huD : u ∈ D <;> by_cases hvD : v ∈ D <;>
-        simp only [Suv, if_pos, if_neg, huD, hvD, Finset.mem_inter, Finset.mem_insert,
-          Finset.mem_singleton, Finset.mem_union, Finset.notMem_empty, or_false, false_or]
-      · constructor
-        · exact fun h => h.1
-        · rintro (rfl | rfl)
-          · exact ⟨Or.inl rfl, huD⟩
-          · exact ⟨Or.inr rfl, hvD⟩
-      · constructor
-        · rintro ⟨rfl | rfl, hzD⟩
-          · rfl
-          · exact False.elim (hvD hzD)
-        · rintro rfl
-          exact ⟨Or.inl rfl, huD⟩
-      · constructor
-        · rintro ⟨rfl | rfl, hzD⟩
-          · exact False.elim (huD hzD)
-          · rfl
-        · rintro rfl
-          exact ⟨Or.inr rfl, hvD⟩
-      · constructor
-        · rintro ⟨rfl | rfl, hzD⟩
-          · exact huD hzD
-          · exact hvD hzD
-        · exact False.elim
-    rw [h1, Finset.card_union_of_disjoint]
-    · by_cases huD : u ∈ D <;> by_cases hvD : v ∈ D <;> simp [huD, hvD]
-    · by_cases huD : u ∈ D <;> by_cases hvD : v ∈ D <;> simp [huD, hvD, huv_ne]
+    by_cases huD : u ∈ D <;> by_cases hvD : v ∈ D
+    · have h1 : Suv = {u, v} := by
+        ext z
+        simp only [Suv, Finset.mem_inter, Finset.mem_insert, Finset.mem_singleton]
+        refine ⟨fun h => h.1, fun h => ⟨h, ?_⟩⟩
+        rcases h with rfl | rfl
+        · exact huD
+        · exact hvD
+      rw [h1, Finset.card_pair huv_ne, if_pos huD, if_pos hvD]
+    · have h1 : Suv = {u} := by
+        ext z
+        simp only [Suv, Finset.mem_inter, Finset.mem_insert, Finset.mem_singleton]
+        exact ⟨fun ⟨h, hzD⟩ => h.resolve_right (fun hzv => hvD (hzv ▸ hzD)),
+               fun h => ⟨Or.inl h, h ▸ huD⟩⟩
+      rw [h1, Finset.card_singleton, if_pos huD, if_neg hvD]
+    · have h1 : Suv = {v} := by
+        ext z
+        simp only [Suv, Finset.mem_inter, Finset.mem_insert, Finset.mem_singleton]
+        exact ⟨fun ⟨h, hzD⟩ => h.resolve_left (fun hzu => huD (hzu ▸ hzD)),
+               fun h => ⟨Or.inr h, h ▸ hvD⟩⟩
+      rw [h1, Finset.card_singleton, if_neg huD, if_pos hvD]
+    · have h1 : Suv = ∅ := by
+        ext z
+        simp only [Suv, Finset.mem_inter, Finset.mem_insert, Finset.mem_singleton,
+          Finset.notMem_empty, iff_false, not_and]
+        intro h hzD
+        rcases h with rfl | rfl
+        · exact huD hzD
+        · exact hvD hzD
+      rw [h1, Finset.card_empty, if_neg huD, if_neg hvD]
   have hd_uv_A : Disjoint Suv SA := Finset.disjoint_left.mpr fun z h1 h2 => by
     have hz1 := (Finset.mem_inter.mp h1).1
     have hzA := List.mem_toFinset.mp (Finset.mem_inter.mp h2).1
     simp only [Finset.mem_insert, Finset.mem_singleton] at hz1
     rcases hz1 with rfl | rfl
     · exact hu_notA hzA
-    · exact hdisj12 v ((hp₁_mem v).mpr (Or.inr (Or.inl hzA))) hv
+    · exact hdisj12 z ((hp₁_mem z).mpr (Or.inr (Or.inl hzA))) hv
   have hd_uvA_B : Disjoint (Suv ∪ SA) SB := Finset.disjoint_left.mpr fun z h1 h2 => by
     have hzB := List.mem_toFinset.mp (Finset.mem_inter.mp h2).1
     rcases Finset.mem_union.mp h1 with h1' | h1'
@@ -792,7 +792,7 @@ theorem OMA.solution : OMA.R_WrittenOnTheWallII_GraphConjecture372_conjecture372
       simp only [Finset.mem_insert, Finset.mem_singleton] at hz1
       rcases hz1 with rfl | rfl
       · exact hu_notB hzB
-      · exact hdisj12 v ((hp₁_mem v).mpr (Or.inr (Or.inr hzB))) hv
+      · exact hdisj12 z ((hp₁_mem z).mpr (Or.inr (Or.inr hzB))) hv
     · exact hdisjAB z (List.mem_toFinset.mp (Finset.mem_inter.mp h1').1) hzB
   have hd_uvAB_C : Disjoint (Suv ∪ SA ∪ SB) SC := Finset.disjoint_left.mpr fun z h1 h2 => by
     have hzC := List.mem_toFinset.mp (Finset.mem_inter.mp h2).1
@@ -802,7 +802,7 @@ theorem OMA.solution : OMA.R_WrittenOnTheWallII_GraphConjecture372_conjecture372
       · have hz1 := (Finset.mem_inter.mp h1'').1
         simp only [Finset.mem_insert, Finset.mem_singleton] at hz1
         rcases hz1 with rfl | rfl
-        · exact hdisj12 u hu hz2
+        · exact hdisj12 z hu hz2
         · exact hv_notC hzC
       · exact hdisj12 z ((hp₁_mem z).mpr (Or.inr (Or.inl (List.mem_toFinset.mp (Finset.mem_inter.mp h1'').1)))) hz2
     · exact hdisj12 z ((hp₁_mem z).mpr (Or.inr (Or.inr (List.mem_toFinset.mp (Finset.mem_inter.mp h1').1)))) hz2
@@ -815,7 +815,7 @@ theorem OMA.solution : OMA.R_WrittenOnTheWallII_GraphConjecture372_conjecture372
         · have hz1 := (Finset.mem_inter.mp h1''').1
           simp only [Finset.mem_insert, Finset.mem_singleton] at hz1
           rcases hz1 with rfl | rfl
-          · exact hdisj12 u hu hz2
+          · exact hdisj12 z hu hz2
           · exact hv_notE hzE
         · exact hdisj12 z ((hp₁_mem z).mpr (Or.inr (Or.inl (List.mem_toFinset.mp (Finset.mem_inter.mp h1''').1)))) hz2
       · exact hdisj12 z ((hp₁_mem z).mpr (Or.inr (Or.inr (List.mem_toFinset.mp (Finset.mem_inter.mp h1'').1)))) hz2
