@@ -201,17 +201,17 @@ private theorem card_compatible_components {V : Type*} [Fintype V]
     simp only [good, if_pos hinj, Finset.mem_filter, Finset.mem_univ, true_and]
     intro i
     exact (emb σ).toHom.map_rel' (hpath σ.val i)
-  let code (σ : S) : Σ f : P, (good f : Type*) := ⟨pref σ, ⟨σ.val, hmem σ⟩⟩
+  let code (σ : S) : Σ f : P, ↥(good f) := ⟨pref σ, ⟨σ.val, hmem σ⟩⟩
   have hi : Function.Injective code := by
     intro σ τ he
-    exact Subtype.ext (congrArg (fun z : Σ f : P, (good f : Type*) => z.2.val) he)
+    exact Subtype.ext (congrArg (fun z : Σ f : P, ↥(good f) => z.2.val) he)
   have hcount (f : P) : (good f).card ≤ d^m := by
     by_cases hf : Function.Injective f.val
     · simpa only [good, if_pos hf, Function.comp_apply] using
         card_matching_leaf_orders G (f.val ∘ leaf) (hf.comp leaf.injective) hd
     · simp [good, hf]
   calc
-    S.card ≤ Fintype.card (Σ f : P, (good f : Type*)) := by
+    S.card ≤ Fintype.card (Σ f : P, ↥(good f)) := by
       simpa using Fintype.card_le_of_injective code hi
     _ = ∑ f : P, (good f).card := by simp [Fintype.card_sigma]
     _ ≤ ∑ _f : P, d^m := Finset.sum_le_sum (fun f _ => hcount f)
@@ -387,7 +387,9 @@ private theorem treeWithLeafCycle_cubic (k : ℕ) (hk : 1 ≤ k)
     ⟨fun i => treeLeaves k (leafOrder σ i),
       (treeLeaves k).injective.comp (leafOrder_injective σ)⟩
   let C := (SimpleGraph.cycleGraph (m+1)).map f
-  show (binaryTree n ⊔ C).maxDegree ≤ 3
+  let e : treeWithLeafCycle (treeLeaves k) σ ≃g (binaryTree n ⊔ C) :=
+    ⟨Equiv.refl _, fun {_ _} => Iff.rfl⟩
+  rw [e.maxDegree_eq]
   apply (binaryTree n ⊔ C).maxDegree_le_of_forall_degree_le 3
   intro x
   have hsup : (binaryTree n ⊔ C).degree x ≤ (binaryTree n).degree x + C.degree x := by
@@ -445,7 +447,10 @@ private theorem tree_walk {n : ℕ} :
       exact ⟨.nil, Nat.zero_le _⟩
     · have hvpos : 0 < v.val := by
         by_contra! hz'
-        exact hz (Fin.ext (by omega))
+        apply hz
+        apply Fin.ext
+        change v.val = 0
+        omega
       let i : Fin n := ⟨v.val-1, by have := v.isLt; omega⟩
       have hi : i.succ = v := by
         apply Fin.ext
@@ -466,8 +471,9 @@ private theorem leafCycle_walk (k : ℕ) (σ : Equiv.Perm (Fin (2^k-1)))
   have hpos : 0 < (2 : ℕ)^(k+1) := by positivity
   have hv := v.isLt
   obtain ⟨p,hp⟩ := tree_walk k v (by omega)
-  refine ⟨p.mapLe le_sup_left, ?_⟩
-  rwa [SimpleGraph.Walk.length_mapLe]
+  have hle : binaryTree (2^(k+1)-2) ≤ treeWithLeafCycle (treeLeaves k) σ :=
+    fun _ _ hab => Or.inl hab
+  exact ⟨p.mapLe hle, (SimpleGraph.Walk.length_mapLe hle p).trans_le hp⟩
 
 private theorem leafCycle_rootEdge (k : ℕ) (hk : 1 ≤ k)
     (σ : Equiv.Perm (Fin (2^k-1))) : ∃ v, (treeWithLeafCycle (treeLeaves k) σ).Adj 0 v := by
@@ -705,6 +711,7 @@ private theorem reduce_to_test_host {η w : ℕ} {Ω : Type*}
   classical
   let B : Set (Fin η) := {v | ∃ i : Fin (k+1),
     ∃ f : ParentMap (n := i.val) G x Fin.castSucc, f.val (Fin.last i.val) = v}
+  letI : Fintype B := (inferInstance : Fintype (BallVertex G x k))
   let H := G.induce B
   have ex : Nonempty (B ↪ Fin (d^(k+1))) := by
     apply Function.Embedding.nonempty_of_card_le
@@ -848,22 +855,24 @@ private theorem sampling_margin (t : ℕ) (ht : 1 ≤ t) :
 
 set_option maxHeartbeats 4000000 in
 set_option maxRecDepth 4096 in
-private theorem binaryFamily (t : ℕ) (ht : 1 ≤ t) :
-    let k := 100*t
-    let h := 2^(1024*t*t)
+private theorem binaryFamily (k h d : ℕ) (hk : 1 ≤ k) (hd : 2 ≤ d)
+    (hr : d^(k+2) ≤ h)
+    (margin :
+      let w := 2^(k+1)-2
+      let m := 2^k-1
+      let r := d^(k+2)
+      let N := d^(k+1)
+      Fintype.card (BoundedHost N d × Fin N) * h^r * (d^(w+m))^r <
+        (Fintype.card (Equiv.Perm (Fin m)))^r) :
     let w := 2^(k+1)-2
-    let d := 2^(8*t)
     ∃ U : Fin h → SimpleGraph (Fin (w+1)),
       (∀ i, (U i).maxDegree ≤ 3 ∧ ∃ v, (U i).Adj 0 v) ∧
       SparseRoots U d (d^(k+2)) ∧
       (∀ i, ∃ f : Fin (2^(k-1)) ↪ Fin (w+1), ∃ g : Fin (2^(k-1)) ↪ Fin (w+1),
         Disjoint (Set.range f) (Set.range g) ∧ ∀ j, (U i).Adj (f j) (g j)) := by
   classical
-  let k := 100*t
-  let h := 2^(1024*t*t)
   let w := 2^(k+1)-2
   let m := 2^k-1
-  let d := 2^(8*t)
   let r := d^(k+2)
   let N := d^(k+1)
   let Ω := Equiv.Perm (Fin m)
@@ -871,21 +880,10 @@ private theorem binaryFamily (t : ℕ) (ht : 1 ≤ t) :
   let U (σ : Ω) := treeWithLeafCycle (treeLeaves k) σ
   let good (j : J) := Finset.univ.filter (fun σ : Ω =>
     ∃ f : (U σ).Copy j.1.val, f 0 = j.2)
-  have hk : 1 ≤ k := by dsimp [k]; omega
-  have hd : 2 ≤ d := by
-    exact Nat.pow_le_pow_right (by decide : 0 < (2 : ℕ)) (show 1 ≤ 8*t by omega)
-  have hth : t ≤ t*t := by simpa using Nat.mul_le_mul_left t ht
-  have hr : r ≤ h := by
-    dsimp only [r,d,h]
-    rw [← pow_mul]
-    apply Nat.pow_le_pow_right (by decide)
-    dsimp [k]
-    nlinarith only [hth]
   have goodBound (j : J) : (good j).card ≤ d^(w+m) :=
     card_compatible_components j.1.val j.2 treeParent treeParent_lt (treeLeaves k) U
       (tree_edges_present (treeLeaves k)) (leaf_path_present (treeLeaves k)) j.1.property
-  obtain ⟨φ,hφ⟩ := exists_sparse_choices h r (d^(w+m)) hr good goodBound
-    (sampling_margin t ht)
+  obtain ⟨φ,hφ⟩ := exists_sparse_choices h r (d^(w+m)) hr good goodBound margin
   refine ⟨U ∘ φ, ?_, ?_, ?_⟩
   · intro i
     exact ⟨treeWithLeafCycle_cubic k hk (φ i), leafCycle_rootEdge k hk (φ i)⟩
@@ -1022,6 +1020,11 @@ private noncomputable def rootSet {V : Type*} [Fintype V] {w : ℕ}
     (H : SimpleGraph V) (G : SimpleGraph (Fin (w+1))) : Finset V :=
   Finset.univ.filter (fun v => ∃ f : G.Copy H, f 0 = v)
 
+private theorem mem_rootSet {V : Type*} [Fintype V] {w : ℕ}
+    {H : SimpleGraph V} {G : SimpleGraph (Fin (w+1))} {v : V} :
+    v ∈ rootSet H G ↔ ∃ f : G.Copy H, f 0 = v := by
+  simp only [rootSet, Finset.mem_filter, Finset.mem_univ, true_and]
+
 set_option maxHeartbeats 4000000 in
 set_option maxRecDepth 4096 in
 private theorem rareRoot {η h w d r : ℕ} (hh : 0 < h)
@@ -1033,7 +1036,7 @@ private theorem rareRoot {η h w d r : ℕ} (hh : 0 < h)
   let selectors (v : H.support) := Finset.univ.filter (fun i : Fin h =>
     ∃ f : (U i).Copy H, f 0 = v.val)
   let pc : (Σ i : Fin h, rootSet H (U i)) → Σ v : H.support, selectors v := fun p => by
-    have hr := (Finset.mem_filter.mp p.2.property).2
+    have hr := mem_rootSet.mp p.2.property
     have hmem : p.2.val ∈ H.support := by
       obtain ⟨f,hf⟩ := hr
       obtain ⟨u,hu⟩ := hU p.1
@@ -1157,7 +1160,7 @@ private theorem sizeOfSparseFamily (t : ℕ) (ht : 1 ≤ t) :
   have hblue : ¬ T.IsContained (H \ R) := by
     intro hx
     exact blue_excludes_component H d (U j) (hcomp j).2 A
-      (fun f => Finset.mem_filter.mpr ⟨Finset.mem_univ _, f, rfl⟩) (hUsub.trans hx)
+      (fun f => mem_rootSet.mpr ⟨f, rfl⟩) (hUsub.trans hx)
   have hred : ¬ T.IsContained R := by
     rintro ⟨red⟩
     let high := Finset.univ.filter (fun v => d < H.degree v)
@@ -1226,7 +1229,18 @@ private theorem finite_family_bound :
   let k := 100*t
   let h := 2^(1024*t*t)
   let w := 2^(k+1)-2
-  obtain ⟨U, hdeg, hS, hmatch⟩ := binaryFamily t ht
+  let d := 2^(8*t)
+  have hk : 1 ≤ k := by dsimp [k]; omega
+  have hd : 2 ≤ d :=
+    Nat.pow_le_pow_right (by decide : 0 < (2 : ℕ)) (show 1 ≤ 8*t by omega)
+  have hth : t ≤ t*t := by simpa using Nat.mul_le_mul_left t ht
+  have hr : d^(k+2) ≤ h := by
+    dsimp only [d,h]
+    rw [← pow_mul]
+    apply Nat.pow_le_pow_right (by decide)
+    dsimp [k]
+    nlinarith only [hth]
+  obtain ⟨U, hdeg, hS, hmatch⟩ := binaryFamily k h d hk hd hr (sampling_margin t ht)
   have hsize : h * (w+1) * 2^t ≤ sizeRamsey (disjointTarget U) (disjointTarget U) :=
     sizeOfSparseFamily t ht U hdeg hS hmatch
   let n := h*(w+1)
@@ -1253,14 +1267,11 @@ private theorem finite_family_bound :
 
 set_option maxHeartbeats 4000000 in
 set_option maxRecDepth 4096 in
-theorem result : type_of% @Erdos559.erdos_559.variants.tikhomirov := by
-  classical
-  refine ⟨log 2 / 64, by positivity, 1, by norm_num, ?_⟩
-  apply frequently_atTop.mpr
-  intro N
-  let t := N + 1
-  obtain ⟨n, htn, hn, G, hdeg, hsize⟩ := finite_family_bound t (by omega)
-  have hnpos : 0 < (n : ℝ) := by exact_mod_cast (show 0 < n by omega)
+private theorem analytic_bound (n t : ℕ) (hpos : 0 < n)
+    (hn : n ≤ 2^(4096*t*t)) :
+    exp (log 2 / 64 * √(log (n : ℝ))) ≤ (2 : ℝ)^t := by
+  have hnpos : 0 < (n : ℝ) := by exact_mod_cast hpos
+  have ht : 0 ≤ (t : ℝ) := Nat.cast_nonneg t
   have hn' : (n : ℝ) ≤ (2 : ℝ) ^ (4096*t*t) := by exact_mod_cast hn
   have hlog : log (n : ℝ) ≤ 4096 * (t : ℝ)^2 := by
     have hl := Real.log_le_log hnpos hn'
@@ -1269,22 +1280,33 @@ theorem result : type_of% @Erdos559.erdos_559.variants.tikhomirov := by
     have hlogtwo : Real.log 2 ≤ 1 := by linarith [Real.log_two_lt_d9]
     calc
       log (n : ℝ) ≤ 4096 * (t : ℝ) * t * log 2 := hl
-      _ ≤ 4096 * (t : ℝ) * t * 1 := mul_le_mul_of_nonneg_left hlogtwo (by positivity)
+      _ ≤ 4096 * (t : ℝ) * t * 1 :=
+        mul_le_mul_of_nonneg_left hlogtwo (mul_nonneg (mul_nonneg (by norm_num) ht) ht)
       _ = 4096 * (t : ℝ)^2 := by ring
   have hroot : √(log (n : ℝ)) ≤ 64 * (t : ℝ) := by
     apply Real.sqrt_le_iff.mpr
-    refine ⟨by positivity, ?_⟩
+    refine ⟨mul_nonneg (by norm_num) ht, ?_⟩
     calc
       log (n : ℝ) ≤ 4096 * (t : ℝ)^2 := hlog
       _ = (64 * (t : ℝ))^2 := by ring
-  have he : exp (log 2 / 64 * √(log (n : ℝ))) ≤ (2 : ℝ)^t := by
-    have h := mul_le_mul_of_nonneg_left hroot (show 0 ≤ log 2 / 64 by positivity)
-    have h' : log 2 / 64 * √(log (n : ℝ)) ≤ (t : ℝ) * log 2 := by linarith
-    apply (Real.exp_le_exp.mpr h').trans_eq
-    rw [Real.exp_nat_mul, Real.exp_log (by norm_num : 0 < (2 : ℝ))]
+  have h := mul_le_mul_of_nonneg_left hroot (show 0 ≤ log 2 / 64 by positivity)
+  have h' : log 2 / 64 * √(log (n : ℝ)) ≤ (t : ℝ) * log 2 := by linarith
+  apply (Real.exp_le_exp.mpr h').trans_eq
+  rw [Real.exp_nat_mul, Real.exp_log (by norm_num : 0 < (2 : ℝ))]
+
+set_option maxHeartbeats 4000000 in
+set_option maxRecDepth 4096 in
+theorem result : type_of% @Erdos559.erdos_559.variants.tikhomirov := by
+  classical
+  refine ⟨log 2 / 64, by positivity, 1, by norm_num, ?_⟩
+  apply frequently_atTop.mpr
+  intro N
+  let t := N + 1
+  obtain ⟨n, htn, hn, G, hdeg, hsize⟩ := finite_family_bound t (by omega)
+  have he := analytic_bound n t (by omega) hn
   refine ⟨n, by omega, G, hdeg, ?_⟩
   have hsize' : (n : ℝ) * (2 : ℝ)^t ≤ sizeRamsey G G := by exact_mod_cast hsize
-  simpa only [one_mul] using (mul_le_mul_of_nonneg_left he hnpos.le).trans hsize'
+  simpa only [one_mul] using (mul_le_mul_of_nonneg_left he (Nat.cast_nonneg n)).trans hsize'
 
 end OMA.Tikhomirov
 
