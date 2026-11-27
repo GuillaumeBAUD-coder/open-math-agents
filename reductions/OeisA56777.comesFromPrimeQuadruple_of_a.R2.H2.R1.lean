@@ -623,7 +623,7 @@ private theorem quintic_shape {m : ℕ}
   have hcard : m.primeFactors.card ≤ 2 := by
     by_contra! h
     exact hnd ((pow_dvd_pow 2 h).trans (A056777OddFour.two_pow_card_dvd_totient hm))
-  have hpos : 0<m.primeFactors.card := by
+  have hpos : 0 < m.primeFactors.card := by
     by_contra! h
     have he : m.primeFactors=∅ := Finset.card_eq_zero.mp (by omega)
     rcases Nat.primeFactors_eq_empty.mp he with rfl|rfl <;> simp at hlen
@@ -1220,7 +1220,7 @@ private theorem odd_core_excess_not_six_or_negative {m : ℕ} (ho : Odd m)
   rcases A056777CubeFour.four_factor_shape hm with ⟨k,hk⟩ | ⟨p,q,hp,hq,hpq,rfl⟩ |
     ⟨p,q,r,hp,hq,hr,hpq,hpr,hqr,rfl⟩ | ⟨p,q,r,s,hp,hq,hr,hs,hpq,hpr,hps,hqr,hqs,hrs,rfl⟩
   · have hm0 : m ≠ 0 := by rintro rfl; simp at hm
-    have hlarge : 2<m := by
+    have hlarge : 2 < m := by
       by_contra! h
       interval_cases m <;> simp at hm
     have hsigma := Nat.odd_iff.mp ((A056777Parity.odd_sigma_iff_square_or_twice_square hm0).mpr
