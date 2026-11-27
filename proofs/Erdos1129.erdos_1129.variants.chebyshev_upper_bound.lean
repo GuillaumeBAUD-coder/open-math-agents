@@ -258,7 +258,7 @@ lemma per_term {n m : ℕ} (hn : 1 ≤ n) (hm : m < n) {θ : ℝ} (hθ0 : 0 ≤ 
             mul_le_mul hsink (abs_sin_le_abs) (abs_nonneg _) (by norm_num)
         _ = 2 * n * |M| := by rw [one_mul, abs_mul, abs_mul]; norm_num
     have := term_bound hn hM0 hMπ hc1 hcM
-    convert this using 2
+    refine this.trans (le_of_eq (congrArg fdist ?_))
     rw [show (2 : ℝ) * n * |M| / π = |2 * n * M / π| by
         rw [abs_div ((2 : ℝ) * n * M) π, abs_mul ((2 : ℝ) * n) M, abs_of_pos hpi,
           abs_of_pos (show (0 : ℝ) < 2 * n by positivity)]]
@@ -283,7 +283,7 @@ lemma per_term {n m : ℕ} (hn : 1 ≤ n) (hm : m < n) {θ : ℝ} (hθ0 : 0 ≤ 
         have := abs_sin_le_abs (x := 2 * n * P)
         rwa [abs_of_pos (show (0 : ℝ) < 2 * n * P by positivity)] at this
       have := term_bound hn hP0.ne' (by rw [hPabs]; exact hPle) hc1 hcP'
-      convert this using 2
+      refine this.trans (le_of_eq (congrArg fdist ?_))
       rw [hPabs]
       have e : s - ((-((m : ℤ) + 1) : ℤ) : ℝ) = 2 * n * P / π := by
         push_cast; rw [hs, hP, hθk]; field_simp; ring
@@ -307,7 +307,7 @@ lemma per_term {n m : ℕ} (hn : 1 ≤ n) (hm : m < n) {θ : ℝ} (hθ0 : 0 ≤ 
       have ecos : |cos P| = |cos Q| := by rw [hPQ, cos_pi_sub, abs_neg]
       have esin : |sin P| = |sin Q| := by rw [hPQ, sin_pi_sub]
       rw [ecos, esin]
-      convert this using 2
+      refine this.trans (le_of_eq (congrArg fdist ?_))
       rw [hQabs]
       have e : s - ((2 * (n : ℤ) - 1 - m : ℤ) : ℝ) = -(2 * n * Q / π) := by
         push_cast; rw [hs, hQ, hP, hθk]; field_simp; ring
