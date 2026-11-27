@@ -1,7 +1,12 @@
 import OMAReductions.R_WrittenOnTheWallII_GraphConjecture372_conjecture372_variants_regularized_R1
 
--- Step WrittenOnTheWallII.GraphConjecture372.conjecture372.variants.regularized.R1.H1:
--- hypothesis H1 of reduction WrittenOnTheWallII.GraphConjecture372.conjecture372.variants.regularized.R1
+/-!
+# Proof of Step H1 of Written on the Wall II - Conjecture 372 (regularized)
+
+Every tree of order at least two with path cover number at most two satisfies
+vertex cover number at most total domination number.
+-/
+
 -- Credit: @kirinzhang
 
 open SimpleGraph
@@ -123,11 +128,11 @@ private lemma arm_bound {α : Type*} [DecidableEq α] (T : SimpleGraph α) (D : 
             · exact False.elim (hx₀ (hy0 y hxy ▸ hyD'))
             · rcases hy02 y hxy with rfl | rfl
               · exact False.elim (hx₀ hyD')
-              · by_cases hmod : (x₂ :: rest').length % 2 = 1
+              · by_cases hmod : (y :: rest').length % 2 = 1
                 · have := ih2 hmod hx₁
                   simp only [hcard, List.length_cons] at *; omega
-                · have hmod0 : (x₂ :: rest').length % 2 = 0 := by omega
-                  have := ih3 x₂ rest' rfl hmod0 hx₁ hyD'
+                · have hmod0 : (y :: rest').length % 2 = 0 := by omega
+                  have := ih3 y rest' rfl hmod0 hx₁ hyD'
                   simp only [hcard, List.length_cons] at *; omega
       · intro hmod hnw
         have hx₁ : x₁ ∈ D := hx₁_of_hnw hnw
@@ -139,9 +144,9 @@ private lemma arm_bound {α : Type*} [DecidableEq α] (T : SimpleGraph α) (D : 
           · exact False.elim (hx₀ (hy0 y hxy ▸ hyD'))
           · rcases hy02 y hxy with rfl | rfl
             · exact False.elim (hx₀ hyD')
-            · have hmod' : (x₂ :: rest').length % 2 = 1 := by
+            · have hmod' : (y :: rest').length % 2 = 1 := by
                 simp only [List.length_cons] at hmod ⊢; omega
-              have := ih4 x₂ rest' rfl hmod' hyD'
+              have := ih4 y rest' rfl hmod' hyD'
               simp only [hcard, if_pos hx₁, List.length_cons] at *; omega
       · intro a b heq _ hnw haD
         cases heq
@@ -205,12 +210,12 @@ private lemma armVC_covers {α : Type*} [DecidableEq α] {T : SimpleGraph α} :
       · have hvc : armVC (x₀ :: x₁ :: rest) = insert x₀ (armVC rest) := by simp [armVC, hmod]
         simp only [List.mem_cons] at hx
         rcases hx with rfl | rfl | hxrest
-        · exact Or.inl (hvc ▸ Finset.mem_insert_self x₀ _)
+        · exact Or.inl (hvc ▸ Finset.mem_insert_self x _)
         · rcases isArm_adj_snd harm with ⟨rfl, hy0⟩ | ⟨x₂, rest', rfl, hy02⟩
           · rw [hy0 y hxy]
             exact Or.inr (Or.inl (hvc ▸ Finset.mem_insert_self x₀ _))
           · rcases hy02 y hxy with rfl | rfl
-            · exact Or.inr (Or.inl (hvc ▸ Finset.mem_insert_self x₀ _))
+            · exact Or.inr (Or.inl (hvc ▸ Finset.mem_insert_self y _))
             · exact Or.inr (Or.inl (hvc ▸ Finset.mem_insert_of_mem (armVC_head_mem_of_even hmod)))
         · rcases hih x hxrest y hxy with hx' | hy' | ⟨hodd, _⟩
           · exact Or.inl (hvc ▸ Finset.mem_insert_of_mem hx')
@@ -222,12 +227,12 @@ private lemma armVC_covers {α : Type*} [DecidableEq α] {T : SimpleGraph α} :
         rcases hx with rfl | rfl | hxrest
         · rcases harm.2.1 y hxy with rfl | rfl
           · exact Or.inr (Or.inr ⟨by simp only [List.length_cons]; omega, rfl⟩)
-          · exact Or.inr (Or.inl (hvc ▸ Finset.mem_insert_self x₁ _))
-        · exact Or.inl (hvc ▸ Finset.mem_insert_self x₁ _)
+          · exact Or.inr (Or.inl (hvc ▸ Finset.mem_insert_self y _))
+        · exact Or.inl (hvc ▸ Finset.mem_insert_self x _)
         · rcases hih x hxrest y hxy with hx' | hy' | ⟨_, rfl⟩
           · exact Or.inl (hvc ▸ Finset.mem_insert_of_mem hx')
           · exact Or.inr (Or.inl (hvc ▸ Finset.mem_insert_of_mem hy'))
-          · exact Or.inr (Or.inl (hvc ▸ Finset.mem_insert_self x₁ _))
+          · exact Or.inr (Or.inl (hvc ▸ Finset.mem_insert_self y _))
 
 /- ### Section 3: Tree path-cover decomposition into 4 arms -/
 
@@ -257,7 +262,8 @@ private lemma isArm_support_tail_of_path {α : Type*} {T : SimpleGraph α} (hT :
       have hq'_supp : q'.support = w :: q'.support.tail := walk_support_eq_cons q'
       have htail_eq : (Walk.cons huv (Walk.cons hvw q')).support.tail =
           v :: w :: q'.support.tail := by
-        rw [Walk.support_cons, List.tail_cons, Walk.support_cons, hq'_supp]
+        rw [Walk.support_cons, List.tail_cons, Walk.support_cons]
+        exact congrArg (v :: ·) hq'_supp
       rw [htail_eq]
       refine ⟨?_, ?_, ?_⟩
       · rw [Walk.support_cons, hq'_supp] at hu_not
@@ -284,7 +290,7 @@ private lemma isArm_support_tail_of_path {α : Type*} {T : SimpleGraph α} (hT :
           rcases hy_mem with rfl | hy_rest
           · have hx_supp : x ∈ (Walk.cons huv (Walk.cons hvw q')).support := by
               rw [walk_support_eq_cons]
-              exact List.mem_cons_of_mem u hx_in
+              exact List.mem_cons_of_mem y hx_in
             have hxv : x = v := by
               simpa using hT.isAcyclic.eq_snd_of_adj_start hq hxy.symm hx_supp
             have hv_not : v ∉ (Walk.cons hvw q').support.tail := by
@@ -361,6 +367,7 @@ private lemma cross_adj_unique {α : Type*} {T : SimpleGraph α} (hT : T.IsTree)
     Subtype.mk.inj ((hT.isAcyclic.subsingleton_path u y).elim ⟨_, hw₁⟩ ⟨_, hw₂⟩)
   cases r₁ with
   | nil =>
+    change Walk.cons hxy Walk.nil = Walk.cons huv r₂ at heq
     have hsnd : y = v := by simpa using congrArg Walk.snd heq
     exact ⟨rfl, hsnd⟩
   | @cons _ z _ hadj r₁' =>
@@ -712,13 +719,13 @@ theorem OMA.solution : OMA.R_WrittenOnTheWallII_GraphConjecture372_conjecture372
       · rcases huv_anc with huA | hvA
         · exact Or.inl (Finset.mem_coe.mpr (by simp [VC, huA]))
         · exact Or.inr (Finset.mem_coe.mpr (by simp [VC, hvA]))
-      · exact (harm_edge y u hxy.symm hyarm).symm.imp Finset.mem_coe.mpr Finset.mem_coe.mpr
+      · exact (harm_edge y x hxy.symm hyarm).symm.imp Finset.mem_coe.mpr Finset.mem_coe.mpr
     · rcases hy_all with rfl | rfl | hyarm
       · rcases huv_anc with huA | hvA
         · exact Or.inr (Finset.mem_coe.mpr (by simp [VC, huA]))
         · exact Or.inl (Finset.mem_coe.mpr (by simp [VC, hvA]))
       · exact False.elim (hxy.ne rfl)
-      · exact (harm_edge y v hxy.symm hyarm).symm.imp Finset.mem_coe.mpr Finset.mem_coe.mpr
+      · exact (harm_edge y x hxy.symm hyarm).symm.imp Finset.mem_coe.mpr Finset.mem_coe.mpr
     · exact (harm_edge x y hxy hxarm).imp Finset.mem_coe.mpr Finset.mem_coe.mpr
   -- Upper bound on VC.card
   have hanc_card : anchors.card ≤ if uOdd ∧ vOdd then 2 else 1 := by
