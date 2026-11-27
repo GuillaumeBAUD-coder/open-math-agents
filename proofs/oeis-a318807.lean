@@ -35,6 +35,6 @@ theorem OMA.disproof : ¬ (type_of% @OMA.S_oeis_a318807.main) := by
     Finset.sum_filter_add_sum_filter_not _ _ _
   have hn : nonsquarefreeSum w = 18244445184 := by omega
   obtain ⟨p, hp, eq⟩ := h w (268^2) (by decide)
-    ⟨504, by rw [hs]; decide⟩ ⟨135072, by rw [hn]; decide⟩ (by decide) (by rw [hs, hn]; decide)
+    ⟨504, by rw [hs]⟩ ⟨135072, by rw [hn]⟩ (by decide) (by rw [hs, hn]; decide)
   have : p = 268 := by nlinarith
-  exact (show ¬ Nat.Prime 268 by decide) (this ▸ hp)
+  exact (show ¬ Nat.Prime 268 by norm_num) (this ▸ hp)
