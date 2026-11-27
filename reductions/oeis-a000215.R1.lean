@@ -15,7 +15,10 @@ def H3 : Prop := ∀ x : ℕ, 4 < x → 4 ∣ x → ¬ (x - 1).Prime →
     (¬ ∃ s : ℕ, x = 2 ^ s) →
     (∀ p k : ℕ, p.Prime → p ≠ 2 → k ≠ 0 →
       x ≠ 4 * p ^ k ∧ (x = 8 * p ^ k → p = 3 ∧ k % 4 = 3) ∧
-      (x = 12 * p ^ k → p = 7 ∨ p = 11 ∨ p = 19)) →
+      x ≠ 12 * p ^ k) →
+    (∀ p r a : ℕ, p.Prime → r.Prime → p ≠ 2 → r ≠ 2 → a ≠ 0 →
+      p^a < r → x = 4*p^a*r → p = 3 ∧ 1 < a ∧ 5 ∣ x-1) →
+    (∀ k : ℕ, k ≠ 0 → x ≠ 36*11^k ∧ x ≠ 36*71^k) →
     (x % 8 = 4 → ∃ q r : ℕ, q.Prime ∧ r.Prime ∧ q ≠ r ∧ q ∣ x ^ 2 + 1 ∧
       r ∣ x ^ 2 + 1 ∧ q % 16 ≠ 1 ∧ r % 16 ≠ 1 ∧ jacobiSym (x + 1 : ℕ) q = -1) →
     (∀ m : ℕ, m ∣ x ^ 2 + 1 → m < 2 ^ (m.primeFactors.lcm fun q => x.gcd (q - 1))) →
@@ -877,6 +880,286 @@ lemma divisor_order_bound (x m : ℕ) (pos : 0 < x) (even : 2 ∣ x)
   change m < 2 ^ D
   omega
 
+/-- Removing a prime-power factor from the exponent splits a passing divisor into its
+    exact gcd with the smaller Mersenne number and a cofactor that is 1 modulo r. -/
+lemma exponent_split (t r k v : ℕ) (hr : r.Prime) (rv : ¬ r ∣ v)
+    (test : v ∣ 2 ^ (t * r ^ k) - 1) :
+    ∃ w : ℕ, v = w * v.gcd (2 ^ t - 1) ∧ w ≡ 1 [MOD r] := by
+  let G := ∑ i ∈ Finset.range (r ^ k), (2 ^ t) ^ i
+  have split : G * (2 ^ t - 1) = 2 ^ (t * r ^ k) - 1 := by
+    rw [pow_mul]; exact geom_sum_mul_of_one_le Nat.one_le_two_pow _
+  obtain ⟨w, d, hw, hd, fac⟩ := exists_dvd_and_dvd_of_dvd_mul (split.symm ▸ test : v ∣ G * (2 ^ t - 1))
+  have wv : w ∣ v := ⟨d, fac⟩
+  have cop : w.Coprime (2 ^ t - 1) := by
+    apply Nat.coprime_of_dvd
+    intro q hq qw qA
+    have one : (2 : ZMod q) ^ t = 1 := (mersenne_dvd_iff _ _).mp qA
+    have z := (ZMod.natCast_eq_zero_iff _ _).mpr (qw.trans hw)
+    dsimp [G] at z
+    push_cast at z
+    rw [one] at z
+    have qr : q ∣ r ^ k := (ZMod.natCast_eq_zero_iff _ _).mp (by simpa using z)
+    have eq := (Nat.prime_dvd_prime_iff_eq hq hr).mp (hq.dvd_of_dvd_pow qr)
+    exact rv (eq ▸ qw.trans wv)
+  have gd : v.gcd (2 ^ t - 1) = d := fac ▸ Nat.gcd_mul_of_coprime_of_dvd cop hd
+  exact ⟨w, gd.symm ▸ fac, geom_divisor _ _ _ _ hr (fun h => rv (h.trans wv)) hw⟩
+
+lemma exponent_gcd_residue (t r k v : ℕ) (hr : r.Prime) (rv : ¬ r ∣ v)
+    (test : v ∣ 2 ^ (t * r ^ k) - 1) : v ≡ v.gcd (2 ^ t - 1) [MOD r] := by
+  obtain ⟨w, fac, one⟩ := exponent_split t r k v hr rv test
+  calc v = w * v.gcd (2 ^ t - 1) := fac
+       _ ≡ 1 * v.gcd (2 ^ t - 1) [MOD r] := one.mul_right _
+       _ = _ := one_mul _
+
+/-- If a prime dividing x once exceeds the complementary odd factor, it can be
+    removed from the exponent of the x-1 test. The size argument uses the two
+    odd factors of x-1 (compare PR 8427, square_le_of_dvd_sub_one). -/
+lemma strip_large_prime (s r : ℕ) (hs : 0 < s) (hr : r.Prime) (odd : r ≠ 2) (sr : s < r)
+    (test : 4 * s * r - 1 ∣ 2 ^ (4 * s * r) - 1) :
+    4 * s * r - 1 ∣ 2 ^ (4 * s) - 1 := by
+  let x := 4 * s * r
+  have xp : 0 < x := Nat.mul_pos (by omega) hr.pos
+  have rx : r ∣ x := dvd_mul_left _ _
+  have nx : ¬ r ∣ x - 1 := by
+    intro h
+    have hh := Nat.dvd_sub rx h
+    rw [show x - (x - 1) = 1 by omega] at hh
+    exact hr.not_dvd_one hh
+  have ht : x - 1 ∣ 2 ^ (4 * s * r ^ 1) - 1 := by simpa [x] using test
+  obtain ⟨w, fac, hw⟩ := exponent_split (4*s) r 1 (x-1) hr nx ht
+  let d := (x - 1).gcd (2 ^ (4*s) - 1)
+  change x - 1 = w * d at fac
+  suffices w = 1 by
+    have h : x - 1 = d := by simpa [this] using fac
+    change x - 1 ∣ _
+    exact h ▸ Nat.gcd_dvd_right _ _
+  by_contra ne
+  have xp2 : 2 ∣ x := by change 2 ∣ 4*s*r; exact dvd_mul_of_dvd_left (dvd_mul_of_dvd_left (by decide : 2 ∣ 4) s) r
+  have wodd : ¬2 ∣ w := by intro h; have h' : 2 ∣ x - 1 := fac ▸ dvd_mul_of_dvd_left h d; omega
+  have dodd : ¬2 ∣ d := by intro h; have h' : 2 ∣ x - 1 := fac ▸ dvd_mul_of_dvd_right h w; omega
+  have hc := (Nat.prime_two.coprime_iff_not_dvd.mpr (hr.odd_of_ne_two odd).not_two_dvd_nat)
+  have wpos : 1 ≤ w := by omega
+  have wr := (Nat.modEq_iff_dvd' wpos).mp hw.symm
+  have w2 : 2 * r ∣ w - 1 := hc.mul_dvd_of_dvd_of_dvd (by omega) wr
+  have dr : r ∣ d + 1 := by
+    have h := (hw.mul_right d).add_right 1
+    rw [← fac, Nat.sub_add_cancel xp, one_mul] at h
+    exact Nat.modEq_zero_iff_dvd.mp (h.symm.trans (Nat.modEq_zero_iff_dvd.mpr rx))
+  have d2 : 2 * r ∣ d + 1 := hc.mul_dvd_of_dvd_of_dvd (by omega) dr
+  have wl := Nat.le_of_dvd (by omega : 0 < w-1) w2
+  have dl := Nat.le_of_dvd (Nat.succ_pos d) d2
+  have bound := Nat.mul_le_mul (show 2*r+1 ≤ w by omega) (show 2*r-1 ≤ d by omega)
+  have re := hr.two_le
+  have can : 2*r-1+1=2*r := by omega
+  dsimp [x] at xp fac
+  nlinarith [Nat.sub_add_cancel xp, Nat.mul_le_mul_right r (show s+1 ≤ r by omega)]
+
+/-- A prime occurring once and larger than the other odd prime power forces
+    that other prime to be 3, and 5 must divide the predecessor. -/
+theorem large_single_prime (p r a : ℕ) (hp : p.Prime) (hr : r.Prime)
+    (oddp : p ≠ 2) (oddr : r ≠ 2) (ha : a ≠ 0) (lt : p^a < r)
+    (test : 4*p^a*r-1 ∣ 2^(4*p^a*r)-1) : p = 3 ∧ 5 ∣ 4*p^a*r-1 := by
+  have cut := strip_large_prime (p^a) r (Nat.pow_pos hp.pos) hr oddr lt test
+  let x := 4*p^a*r
+  have xp : 0 < x := Nat.mul_pos (Nat.mul_pos (by decide) (Nat.pow_pos hp.pos)) hr.pos
+  have px : p ∣ x := dvd_mul_of_dvd_left (dvd_mul_of_dvd_right (dvd_pow_self p ha) 4) r
+  have nx : ¬ p ∣ x-1 := by
+    intro h
+    have hh := Nat.dvd_sub px h
+    rw [show x-(x-1)=1 by omega] at hh
+    exact hp.not_dvd_one hh
+  obtain ⟨d, hd, dx, hm⟩ := small_divisor 4 p a (x-1) hp nx cut
+  have add := hm.add_right 1
+  rw [Nat.sub_add_cancel xp] at add
+  have pd := Nat.modEq_zero_iff_dvd.mp (add.symm.trans (Nat.modEq_zero_iff_dvd.mpr px))
+  have dl := Nat.le_of_dvd (by decide : 0 < 15) (show d ∣ 15 from hd)
+  have pl := Nat.le_of_dvd (Nat.succ_pos d) pd
+  have cert : ∀ z : Fin 16, ∀ s : Fin 17, z.val ∣ 15 → s.val.Prime → s.val ≠ 2 →
+      s.val ∣ z.val+1 → s.val=3 ∧ z.val=5 := by decide +kernel
+  obtain ⟨h3, rfl⟩ := cert ⟨d, by omega⟩ ⟨p, by omega⟩ hd hp oddp pd
+  exact ⟨h3, dx⟩
+
+/-- Even the predecessor test excludes squarefree odd parts with two distinct primes. -/
+theorem squarefree_two_primes (p r : ℕ) (hp : p.Prime) (hr : r.Prime)
+    (oddp : p ≠ 2) (oddr : r ≠ 2) (lt : p < r)
+    (test : 4*p*r-1 ∣ 2^(4*p*r)-1) : False := by
+  have cut := strip_large_prime p r hp.pos hr oddr lt test
+  obtain ⟨rfl, _⟩ := large_single_prime p r 1 hp hr oddp oddr (by decide)
+    (by simpa using lt) (by simpa using test)
+  change 12*r-1 ∣ 4095 at cut
+  have rb := Nat.le_of_dvd (by decide : 0 < 4095) cut
+  have cert2 : ∀ s : Fin 343, s.val.Prime → 3 < s.val → ¬ (12*s.val-1 ∣ 4095) := by decide +kernel
+  exact cert2 ⟨r, by omega⟩ hr lt cut
+
+/-- The entire family x=12*r^k fails. At r=7 it is the split of x^4-1 across
+    the lower and upper halves that produces the contradiction. -/
+theorem twelve_prime_power_fails (r k : ℕ) (hr : r.Prime) (odd : r ≠ 2) (hk : k ≠ 0)
+    (test : (12 * r ^ k) ^ 4 - 1 ∣ 2 ^ (12 * r ^ k) - 1) : False := by
+  have no_five (s : ℕ) (hs : (s : ZMod 5)^2 = 1) (hp : 0 < s) :
+      ¬5 ∣ 12*s^k-1 := by
+    have pos : 1 ≤ 12*s^k := Nat.mul_pos (by decide) (Nat.pow_pos hp)
+    intro div
+    have z := (ZMod.natCast_eq_natCast_iff _ _ _).mpr ((Nat.modEq_iff_dvd' pos).mpr div)
+    push_cast at z
+    have sq := congrArg (fun a : ZMod 5 => a^2) z
+    simp only [one_pow, mul_pow] at sq
+    rw [← pow_mul, mul_comm k 2, pow_mul, hs, one_pow, mul_one] at sq
+    exact (by decide : (1 : ZMod 5) ≠ 12^2) sq
+  have needs_five (h : r=11 ∨ r=19) : 5 ∣ 12*r^k-1 := by
+    obtain ⟨d, hd, dh, plus⟩ := divisor_before 12 r k (by decide) hr hk test
+    have d3 : ¬3 ∣ d := by
+      intro zz
+      have bad := zz.trans dh
+      have three : 3 ∣ 12*r^k := dvd_mul_of_dvd_left (by decide) _
+      have pos : 0 < 12*r^k := Nat.mul_pos (by decide) (Nat.pow_pos hr.pos)
+      omega
+    have cop := (Nat.prime_three.coprime_iff_not_dvd.mpr d3).symm.pow_right 2
+    have cut : d ∣ 455 := cop.dvd_of_dvd_mul_left (show d ∣ 3^2*455 from hd)
+    have bd := Nat.le_of_dvd (by decide : 0 < 455) cut
+    have cert : ∀ z : Fin 456, z.val ∣ 455 → (11 ∣ z.val+1 ∨ 19 ∣ z.val+1) → 5 ∣ z.val := by decide +kernel
+    exact (cert ⟨d, by omega⟩ cut (by rcases h with rfl|rfl; exact Or.inl plus; exact Or.inr plus)).trans dh
+  rcases twelve_prime_power r k hr odd hk test with eq|eq|eq
+  · subst r
+    let x := 12*7^k
+    have xp : 0 < x := Nat.mul_pos (by decide) (Nat.pow_pos (by decide))
+    have xp4 := Nat.pow_pos (n := 4) xp
+    have d3 : 3 ∣ x^4 := (show 3 ∣ x from dvd_mul_of_dvd_left (by decide : 3 ∣ 12) _).trans (dvd_pow_self _ (by decide : 4 ≠ 0))
+    have d7 : 7 ∣ x^4 := (show 7 ∣ x from dvd_mul_of_dvd_right (dvd_pow_self 7 hk) _).trans (dvd_pow_self _ (by decide : 4 ≠ 0))
+    have d5 : 5 ∣ x^4-1 := by
+      let _ : Fact (Nat.Prime 5) := ⟨by decide⟩
+      have nz : (x : ZMod 5) ≠ 0 := by
+        dsimp [x]; push_cast; exact mul_ne_zero (by decide) (pow_ne_zero k (by decide))
+      have one := ZMod.pow_card_sub_one_eq_one (p := 5) nz
+      apply (Nat.modEq_iff_dvd' xp4).mp
+      exact (ZMod.natCast_eq_natCast_iff _ _ _).mp (by push_cast; exact one.symm)
+    let g := (x^4-1).gcd 4095
+    have dv : g ∣ x^4-1 := Nat.gcd_dvd_left _ _
+    have da : g ∣ 4095 := Nat.gcd_dvd_right _ _
+    have g5 : 5 ∣ g := Nat.dvd_gcd d5 (by decide)
+    have g3 : ¬3 ∣ g := by intro zz; have := zz.trans dv; omega
+    have g7 : ¬7 ∣ g := by intro zz; have := zz.trans dv; omega
+    have eq := exponent_gcd_residue 12 7 k (x^4-1) (by decide) (by omega) test
+    change (x^4-1)%7 = g%7 at eq
+    have rem : g%7=6 := by omega
+    have cop3 := (Nat.prime_three.coprime_iff_not_dvd.mpr g3).symm.pow_right 2
+    have h455 : g ∣ 455 := cop3.dvd_of_dvd_mul_left (show g ∣ 3^2*455 from da)
+    have cop7 := ((show Nat.Prime 7 by decide).coprime_iff_not_dvd.mpr g7).symm
+    have h65 : g ∣ 65 := cop7.dvd_of_dvd_mul_left (show g ∣ 7*65 from h455)
+    have bound := Nat.le_of_dvd (by decide : 0 < 65) h65
+    have cert : ∀ z : Fin 66, z.val ∣ 65 → 5 ∣ z.val → z.val%7 ≠ 6 := by decide +kernel
+    exact cert ⟨g, by omega⟩ h65 g5 rem
+  · exact no_five r (eq ▸ by decide) hr.pos (needs_five (Or.inl eq))
+  · exact no_five r (eq ▸ by decide) hr.pos (needs_five (Or.inr eq))
+
+lemma shorten_period {G : Type*} [Monoid G] {r : G} {P : ℕ} (one : r^P = 1) (k : ℕ) :
+    r^k = r^(k%P) := by
+  calc _ = r^(P*(k/P)+k%P) := by rw [Nat.div_add_mod]
+       _ = _ := by rw [pow_add, pow_mul, one, one_pow, one_mul]
+
+/-- A reduction to exponent residues for a fixed t and r. -/
+lemma periodic_predecessor_test (t r k P j : ℕ) (ht : 0 < t) (hr : r.Prime) (hk : k ≠ 0)
+    (hj : j ≠ 0) (per : (r : ZMod (2^t-1))^P = 1)
+    (test : (t*r^k)^j-1 ∣ 2^(t*r^k)-1) : r ∣ ((t*r^(k%P))^j-1).gcd (2^t-1) + 1 := by
+  let A := 2^t-1
+  let n := (t*r^k)^j
+  let m := (t*r^(k%P))^j
+  have np : 1 ≤ n := Nat.pow_pos (Nat.mul_pos ht (Nat.pow_pos hr.pos))
+  have mp : 1 ≤ m := Nat.pow_pos (Nat.mul_pos ht (Nat.pow_pos hr.pos))
+  have rn : r ∣ n := (dvd_mul_of_dvd_right (dvd_pow_self r hk) t).trans (dvd_pow_self _ hj)
+  have hn : ¬r ∣ n-1 := by
+    intro hh
+    have hz := Nat.dvd_sub rn hh
+    rw [show n-(n-1)=1 by omega] at hz
+    exact hr.not_dvd_one hz
+  have one := (exponent_gcd_residue t r k (n-1) hr hn test).add_right 1
+  rw [Nat.sub_add_cancel np] at one
+  have eq : n-1 ≡ m-1 [MOD A] := by
+    apply (ZMod.natCast_eq_natCast_iff _ _ _).mp
+    rw [Nat.cast_sub np, Nat.cast_sub mp]
+    dsimp [n,m]; push_cast
+    rw [shorten_period per k]
+  have ge : (n-1).gcd A = (m-1).gcd A := by
+    rw [Nat.gcd_comm (n-1), Nat.gcd_rec A (n-1), Nat.gcd_comm (m-1), Nat.gcd_rec A (m-1)]
+    exact congrArg (fun z => z.gcd A) eq
+  change r ∣ (m-1).gcd A + 1
+  rw [← ge]
+  exact Nat.modEq_zero_iff_dvd.mp (one.symm.trans (Nat.modEq_zero_iff_dvd.mpr rn))
+
+/-- This entire branch contains the lower-test example x=2556. -/
+theorem thirtysix_seventyone (k : ℕ) (hk : k ≠ 0) :
+    ¬ ((36*71^k)^4-1 ∣ 2^(36*71^k)-1) := by
+  intro test
+  have h := periodic_predecessor_test 36 71 k 36 4 (by decide) (by decide) hk (by decide)
+    (by decide +kernel) test
+  have cert : ∀ z : Fin 36, ¬71 ∣ ((36*71^z.val)^4-1).gcd (2^36-1)+1 := by decide +kernel
+  exact cert ⟨k%36, Nat.mod_lt _ (by decide)⟩ h
+
+/-- Every lower-test passer x=36*11^k has the same upper prime witness, 17. -/
+theorem thirtysix_eleven_witness (k : ℕ) (hk : k ≠ 0)
+    (lower : (36*11^k)^2-1 ∣ 2^(36*11^k)-1) :
+    17 ∣ (36*11^k)^2+1 ∧ ¬ orderOf (2 : ZMod 17) ∣ 36*11^k := by
+  let x := 36*11^k
+  have pos : 0 < x := Nat.mul_pos (by decide) (Nat.pow_pos (by decide))
+  have pred : x-1 ∣ 2^x-1 := (Nat.sub_one_dvd_pow_sub_one x 2).trans lower
+  have h := periodic_predecessor_test 36 11 k 216 1 (by decide) (by decide) hk (by decide)
+    (by decide +kernel) (by simpa using pred)
+  have cert : ∀ z : Fin 216, 11 ∣ (36*11^z.val-1).gcd (2^36-1)+1 → z.val%4=2 := by decide +kernel
+  rw [pow_one] at h
+  have res := cert ⟨k%216, Nat.mod_lt _ (by decide)⟩ h
+  have k4 : k%4=2 := by change (k%216)%4=2 at res; omega
+  have xo : x%8=4 := by
+    have od : Odd (11^k : ℕ) := (by decide : Odd (11 : ℕ)).pow
+    obtain ⟨j,hj⟩ := od
+    dsimp [x]; omega
+  have miss : ¬ orderOf (2 : ZMod 17) ∣ x := by
+    intro dx
+    have powone := orderOf_dvd_iff_pow_eq_one.mp dx
+    rw [shorten_period (by decide : (2 : ZMod 17)^8=1) x, xo] at powone
+    exact (by decide : (2 : ZMod 17)^4 ≠ 1) powone
+  have x4 : (x : ZMod 17)^4=1 := by
+    dsimp [x]; push_cast
+    rw [shorten_period (by decide : (11 : ZMod 17)^16=1) k]
+    have table : ∀ i : Fin 16, i.val%4=2 → ((36 : ZMod 17)*11^i.val)^4=1 := by decide +kernel
+    exact table ⟨k%16, Nat.mod_lt _ (by decide)⟩ (by change (k%16)%4=2; omega)
+  have fac : (x^2-1)*(x^2+1) = x^4-1 := by
+    have x2 := Nat.pow_pos (n := 2) pos
+    have x4p := Nat.pow_pos (n := 4) pos
+    zify [x2,x4p]; ring
+  have ds : 17 ∣ (x^2-1)*(x^2+1) := by
+    rw [fac]
+    apply (Nat.modEq_iff_dvd' (Nat.pow_pos pos)).mp
+    exact (ZMod.natCast_eq_natCast_iff _ _ _).mp (by push_cast; exact x4.symm)
+  refine ⟨((show Nat.Prime 17 by decide).dvd_mul.mp ds).resolve_left ?_, miss⟩
+  intro d
+  exact miss (orderOf_dvd_of_pow_eq_one ((mersenne_dvd_iff _ _).mp (d.trans lower)))
+
+/-- Turn a global exclusion into the full prime-power witness required by a lower passer. -/
+lemma upper_witness_of_failure (x : ℕ) (xp : 0 < x) (even : 2 ∣ x)
+    (lower : x^2-1 ∣ 2^x-1) (fail : ¬x^4-1 ∣ 2^x-1) :
+    ∃ q ∈ (x^2+1).primeFactors, ¬ orderOf (2 : ZMod (q^(x^2+1).factorization q)) ∣ x := by
+  apply (missing_local_order_iff _ _ (by omega)).mp
+  intro upper
+  apply fail
+  have sq := Nat.pow_pos (n := 2) xp
+  have fourth := Nat.pow_pos (n := 4) xp
+  have cop : (x^2-1).Coprime (x^2+1) := by
+    apply Nat.coprime_of_dvd
+    intro q hq qm qp
+    have two : q ∣ 2 := (Nat.dvd_add_right qm).mp (by rwa [show x^2-1+2=x^2+1 by omega])
+    obtain rfl := (Nat.prime_dvd_prime_iff_eq hq Nat.prime_two).mp two
+    have ds := even.trans (dvd_pow_self x (by decide : 2 ≠ 0))
+    omega
+  have fac : (x^2-1)*(x^2+1)=x^4-1 := by zify [sq,fourth]; ring
+  rw [← fac]
+  exact cop.mul_dvd_of_dvd_of_dvd lower upper
+
+theorem twelve_upper_witness (r k : ℕ) (hr : r.Prime) (odd : r ≠ 2) (hk : k ≠ 0)
+    (lower : (12*r^k)^2-1 ∣ 2^(12*r^k)-1) :
+    let x := 12*r^k
+    ∃ q ∈ (x^2+1).primeFactors, ¬ orderOf (2 : ZMod (q^(x^2+1).factorization q)) ∣ x :=
+  upper_witness_of_failure _ (Nat.mul_pos (by decide) (Nat.pow_pos hr.pos))
+    (dvd_mul_of_dvd_left (by decide : 2 ∣ 12) _) lower (twelve_prime_power_fails r k hr odd hk)
+
 theorem main : H1 → H2 → H3 → type_of% @OMA.S_oeis_a000215.main := by
   intro tail semiprime mixed
   refine ⟨?_, ?_, ?_⟩
@@ -909,14 +1192,39 @@ theorem main : H1 → H2 → H3 → type_of% @OMA.S_oeis_a000215.main := by
         exact ⟨k, hk, by omega⟩
       have upper := (square_add_one_dvd (n - 1) (by omega)).trans div
       have even : 2 ∣ n - 1 := res.1.two_dvd
-      apply (mixed (n - 1) big (four_dvd_of_test _ big res.1 div) res.2 power ?_
+      apply (mixed (n - 1) big (four_dvd_of_test _ big res.1 div) res.2 power ?_ ?_ ?_
         (fun hx => two_exceptional_primes _ hx upper)
         (fun m hm => divisor_order_bound _ m (by omega) even hm (hm.trans upper)) ?_ div).elim
-      swap
+      rotate_left 3
       · intro hx q e h hq he fac
         have hP : q ^ e ∣ (n - 1) ^ 2 + 1 := ⟨_, fac.symm⟩
         exact fermat_cofactor_obstruction _ q e h hx hq he fac
           (orderOf_dvd_of_pow_eq_one ((mersenne_dvd_iff _ _).mp (hP.trans upper)))
+      rotate_left 2
+      · intro k hk
+        constructor
+        · intro h
+          rw [h] at div upper
+          have low : (36*11^k)^2-1 ∣ 2^(36*11^k)-1 := by
+            have ds := Nat.sub_one_dvd_pow_sub_one ((36*11^k)^2) 2
+            rw [← pow_mul] at ds
+            exact ds.trans div
+          obtain ⟨p17, miss⟩ := thirtysix_eleven_witness k hk low
+          exact miss (orderOf_dvd_of_pow_eq_one ((mersenne_dvd_iff _ _).mp (p17.trans upper)))
+        · intro h
+          rw [h] at div
+          exact thirtysix_seventyone k hk div
+      swap
+      · intro p r a hp hr oddp oddr ha lt h
+        have pred := (Nat.sub_one_dvd_pow_sub_one (n-1) 4).trans div
+        rw [h] at pred ⊢
+        obtain ⟨h3, h5⟩ := large_single_prime p r a hp hr oddp oddr ha lt pred
+        refine ⟨h3, ?_, h5⟩
+        by_contra! small
+        have : a = 1 := by omega
+        subst a
+        simp only [pow_one] at pred lt
+        exact squarefree_two_primes p r hp hr oddp oddr lt pred
       intro p k hp odd hk
       constructor
       · intro h
@@ -929,6 +1237,6 @@ theorem main : H1 → H2 → H3 → type_of% @OMA.S_oeis_a000215.main := by
           exact ⟨rfl, eight_three_exponent k hk div⟩
         · intro h
           rw [h] at div
-          exact twelve_prime_power p k hp odd hk div
+          exact twelve_prime_power_fails p k hp odd hk div
 
 end OMA.R_oeis_a000215_R1
