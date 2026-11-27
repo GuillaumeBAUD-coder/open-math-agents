@@ -2289,11 +2289,177 @@ def g (x : ℕ) : ℕ :=
                     else
                       23197
 
-theorem steps : ∀ x < 727,
+abbrev stepP (x : ℕ) : Prop :=
     Nat.triangular (x + 1) = Nat.triangular x + (x + 1) ∧
     Nat.triangular x + 1 + (x + 1) ≤ 265225 ∧
-    g (x + 1) = g x + cntFrom (Nat.triangular x + 1) (x + 1) := by
+    g (x + 1) = g x + cntFrom (Nat.triangular x + 1) (x + 1)
+
+theorem steps_0 : ∀ x, 0 ≤ x → x < 158 → stepP x := by
   decide +kernel
+
+theorem steps_1 : ∀ x, 158 ≤ x → x < 211 → stepP x := by
+  decide +kernel
+
+theorem steps_2 : ∀ x, 211 ≤ x → x < 250 → stepP x := by
+  decide +kernel
+
+theorem steps_3 : ∀ x, 250 ≤ x → x < 282 → stepP x := by
+  decide +kernel
+
+theorem steps_4 : ∀ x, 282 ≤ x → x < 309 → stepP x := by
+  decide +kernel
+
+theorem steps_5 : ∀ x, 309 ≤ x → x < 333 → stepP x := by
+  decide +kernel
+
+theorem steps_6 : ∀ x, 333 ≤ x → x < 355 → stepP x := by
+  decide +kernel
+
+theorem steps_7 : ∀ x, 355 ≤ x → x < 375 → stepP x := by
+  decide +kernel
+
+theorem steps_8 : ∀ x, 375 ≤ x → x < 393 → stepP x := by
+  decide +kernel
+
+theorem steps_9 : ∀ x, 393 ≤ x → x < 410 → stepP x := by
+  decide +kernel
+
+theorem steps_10 : ∀ x, 410 ≤ x → x < 426 → stepP x := by
+  decide +kernel
+
+theorem steps_11 : ∀ x, 426 ≤ x → x < 441 → stepP x := by
+  decide +kernel
+
+theorem steps_12 : ∀ x, 441 ≤ x → x < 456 → stepP x := by
+  decide +kernel
+
+theorem steps_13 : ∀ x, 456 ≤ x → x < 470 → stepP x := by
+  decide +kernel
+
+theorem steps_14 : ∀ x, 470 ≤ x → x < 484 → stepP x := by
+  decide +kernel
+
+theorem steps_15 : ∀ x, 484 ≤ x → x < 497 → stepP x := by
+  decide +kernel
+
+theorem steps_16 : ∀ x, 497 ≤ x → x < 509 → stepP x := by
+  decide +kernel
+
+theorem steps_17 : ∀ x, 509 ≤ x → x < 521 → stepP x := by
+  decide +kernel
+
+theorem steps_18 : ∀ x, 521 ≤ x → x < 533 → stepP x := by
+  decide +kernel
+
+theorem steps_19 : ∀ x, 533 ≤ x → x < 544 → stepP x := by
+  decide +kernel
+
+theorem steps_20 : ∀ x, 544 ≤ x → x < 555 → stepP x := by
+  decide +kernel
+
+theorem steps_21 : ∀ x, 555 ≤ x → x < 566 → stepP x := by
+  decide +kernel
+
+theorem steps_22 : ∀ x, 566 ≤ x → x < 576 → stepP x := by
+  decide +kernel
+
+theorem steps_23 : ∀ x, 576 ≤ x → x < 586 → stepP x := by
+  decide +kernel
+
+theorem steps_24 : ∀ x, 586 ≤ x → x < 596 → stepP x := by
+  decide +kernel
+
+theorem steps_25 : ∀ x, 596 ≤ x → x < 606 → stepP x := by
+  decide +kernel
+
+theorem steps_26 : ∀ x, 606 ≤ x → x < 615 → stepP x := by
+  decide +kernel
+
+theorem steps_27 : ∀ x, 615 ≤ x → x < 624 → stepP x := by
+  decide +kernel
+
+theorem steps_28 : ∀ x, 624 ≤ x → x < 633 → stepP x := by
+  decide +kernel
+
+theorem steps_29 : ∀ x, 633 ≤ x → x < 642 → stepP x := by
+  decide +kernel
+
+theorem steps_30 : ∀ x, 642 ≤ x → x < 650 → stepP x := by
+  decide +kernel
+
+theorem steps_31 : ∀ x, 650 ≤ x → x < 658 → stepP x := by
+  decide +kernel
+
+theorem steps_32 : ∀ x, 658 ≤ x → x < 666 → stepP x := by
+  decide +kernel
+
+theorem steps_33 : ∀ x, 666 ≤ x → x < 674 → stepP x := by
+  decide +kernel
+
+theorem steps_34 : ∀ x, 674 ≤ x → x < 682 → stepP x := by
+  decide +kernel
+
+theorem steps_35 : ∀ x, 682 ≤ x → x < 690 → stepP x := by
+  decide +kernel
+
+theorem steps_36 : ∀ x, 690 ≤ x → x < 698 → stepP x := by
+  decide +kernel
+
+theorem steps_37 : ∀ x, 698 ≤ x → x < 706 → stepP x := by
+  decide +kernel
+
+theorem steps_38 : ∀ x, 706 ≤ x → x < 714 → stepP x := by
+  decide +kernel
+
+theorem steps_39 : ∀ x, 714 ≤ x → x < 721 → stepP x := by
+  decide +kernel
+
+theorem steps_40 : ∀ x, 721 ≤ x → x < 727 → stepP x := by
+  decide +kernel
+
+theorem steps (x : ℕ) (hx : x < 727) : stepP x :=
+  if hc0 : x < 158 then steps_0 x (by omega) hc0 else
+    if hc1 : x < 211 then steps_1 x (by omega) hc1 else
+      if hc2 : x < 250 then steps_2 x (by omega) hc2 else
+        if hc3 : x < 282 then steps_3 x (by omega) hc3 else
+          if hc4 : x < 309 then steps_4 x (by omega) hc4 else
+            if hc5 : x < 333 then steps_5 x (by omega) hc5 else
+              if hc6 : x < 355 then steps_6 x (by omega) hc6 else
+                if hc7 : x < 375 then steps_7 x (by omega) hc7 else
+                  if hc8 : x < 393 then steps_8 x (by omega) hc8 else
+                    if hc9 : x < 410 then steps_9 x (by omega) hc9 else
+                      if hc10 : x < 426 then steps_10 x (by omega) hc10 else
+                        if hc11 : x < 441 then steps_11 x (by omega) hc11 else
+                          if hc12 : x < 456 then steps_12 x (by omega) hc12 else
+                            if hc13 : x < 470 then steps_13 x (by omega) hc13 else
+                              if hc14 : x < 484 then steps_14 x (by omega) hc14 else
+                                if hc15 : x < 497 then steps_15 x (by omega) hc15 else
+                                  if hc16 : x < 509 then steps_16 x (by omega) hc16 else
+                                    if hc17 : x < 521 then steps_17 x (by omega) hc17 else
+                                      if hc18 : x < 533 then steps_18 x (by omega) hc18 else
+                                        if hc19 : x < 544 then steps_19 x (by omega) hc19 else
+                                          if hc20 : x < 555 then steps_20 x (by omega) hc20 else
+                                            if hc21 : x < 566 then steps_21 x (by omega) hc21 else
+                                              if hc22 : x < 576 then steps_22 x (by omega) hc22 else
+                                                if hc23 : x < 586 then steps_23 x (by omega) hc23 else
+                                                  if hc24 : x < 596 then steps_24 x (by omega) hc24 else
+                                                    if hc25 : x < 606 then steps_25 x (by omega) hc25 else
+                                                      if hc26 : x < 615 then steps_26 x (by omega) hc26 else
+                                                        if hc27 : x < 624 then steps_27 x (by omega) hc27 else
+                                                          if hc28 : x < 633 then steps_28 x (by omega) hc28 else
+                                                            if hc29 : x < 642 then steps_29 x (by omega) hc29 else
+                                                              if hc30 : x < 650 then steps_30 x (by omega) hc30 else
+                                                                if hc31 : x < 658 then steps_31 x (by omega) hc31 else
+                                                                  if hc32 : x < 666 then steps_32 x (by omega) hc32 else
+                                                                    if hc33 : x < 674 then steps_33 x (by omega) hc33 else
+                                                                      if hc34 : x < 682 then steps_34 x (by omega) hc34 else
+                                                                        if hc35 : x < 690 then steps_35 x (by omega) hc35 else
+                                                                          if hc36 : x < 698 then steps_36 x (by omega) hc36 else
+                                                                            if hc37 : x < 706 then steps_37 x (by omega) hc37 else
+                                                                              if hc38 : x < 714 then steps_38 x (by omega) hc38 else
+                                                                                if hc39 : x < 721 then steps_39 x (by omega) hc39 else
+                                                                                  if hc40 : x < 727 then steps_40 x (by omega) hc40 else
+                                                                                    absurd hx (by omega)
 
 theorem pct_eq (x : ℕ) : x ≤ 727 → OeisA262403.primeCountTriangular x = g x := by
   induction x with
@@ -2326,10 +2492,141 @@ theorem aG_congr (f h : ℕ → ℕ) (n : ℕ) (hfh : ∀ x ≤ n, f x = h x) : 
 theorem a_eq (n : ℕ) (hn : n ≤ 727) : OeisA262403.a n = aG g n :=
   aG_congr OeisA262403.primeCountTriangular g n (fun x hx => pct_eq x (by omega))
 
+def inner (f : ℕ → ℕ) (n k : ℕ) : ℕ :=
+  ((Finset.Icc (k + 1) (n - 1)).filter (fun m => f n = f k + f m)).card
+
+theorem aG_Ico (f : ℕ → ℕ) (n : ℕ) : aG f n = ∑ k ∈ Finset.Ico 2 (n - 1), inner f n k := by
+  have e : Finset.Icc 2 (n - 2) = Finset.Ico 2 (n - 1) := by
+    ext k
+    simp only [Finset.mem_Icc, Finset.mem_Ico]
+    omega
+  show ∑ k ∈ Finset.Icc 2 (n - 2), inner f n k = _
+  rw [e]
+
+theorem glue (F : ℕ → ℕ) {lo mid hi a b : ℕ} (h1 : lo ≤ mid) (h2 : mid ≤ hi)
+    (ha : ∑ i ∈ Finset.Ico lo mid, F i = a) (hb : ∑ i ∈ Finset.Ico mid hi, F i = b) :
+    ∑ i ∈ Finset.Ico lo hi, F i = a + b := by
+  rw [← Finset.sum_Ico_consecutive F h1 h2, ha, hb]
+
+theorem a445_c0 : ∑ k ∈ Finset.Ico 2 38, inner g 445 k = 0 := by
+  decide +kernel
+
+theorem a445_c1 : ∑ k ∈ Finset.Ico 38 77, inner g 445 k = 0 := by
+  decide +kernel
+
+theorem a445_c2 : ∑ k ∈ Finset.Ico 77 121, inner g 445 k = 0 := by
+  decide +kernel
+
+theorem a445_c3 : ∑ k ∈ Finset.Ico 121 172, inner g 445 k = 0 := by
+  decide +kernel
+
+theorem a445_c4 : ∑ k ∈ Finset.Ico 172 235, inner g 445 k = 1 := by
+  decide +kernel
+
+theorem a445_c5 : ∑ k ∈ Finset.Ico 235 327, inner g 445 k = 0 := by
+  decide +kernel
+
+theorem a445_c6 : ∑ k ∈ Finset.Ico 327 444, inner g 445 k = 0 := by
+  decide +kernel
+
+theorem a445 : aG g 445 = 1 := by
+  rw [aG_Ico]
+  have s1 := glue (inner g 445) (by norm_num) (by norm_num) a445_c0 a445_c1
+  have s2 := glue (inner g 445) (by norm_num) (by norm_num) s1 a445_c2
+  have s3 := glue (inner g 445) (by norm_num) (by norm_num) s2 a445_c3
+  have s4 := glue (inner g 445) (by norm_num) (by norm_num) s3 a445_c4
+  have s5 := glue (inner g 445) (by norm_num) (by norm_num) s4 a445_c5
+  have s6 := glue (inner g 445) (by norm_num) (by norm_num) s5 a445_c6
+  exact s6
+
+theorem a727_c0 : ∑ k ∈ Finset.Ico 2 24, inner g 727 k = 0 := by
+  decide +kernel
+
+theorem a727_c1 : ∑ k ∈ Finset.Ico 24 46, inner g 727 k = 0 := by
+  decide +kernel
+
+theorem a727_c2 : ∑ k ∈ Finset.Ico 46 69, inner g 727 k = 0 := by
+  decide +kernel
+
+theorem a727_c3 : ∑ k ∈ Finset.Ico 69 93, inner g 727 k = 0 := by
+  decide +kernel
+
+theorem a727_c4 : ∑ k ∈ Finset.Ico 93 118, inner g 727 k = 0 := by
+  decide +kernel
+
+theorem a727_c5 : ∑ k ∈ Finset.Ico 118 144, inner g 727 k = 0 := by
+  decide +kernel
+
+theorem a727_c6 : ∑ k ∈ Finset.Ico 144 171, inner g 727 k = 0 := by
+  decide +kernel
+
+theorem a727_c7 : ∑ k ∈ Finset.Ico 171 199, inner g 727 k = 0 := by
+  decide +kernel
+
+theorem a727_c8 : ∑ k ∈ Finset.Ico 199 229, inner g 727 k = 0 := by
+  decide +kernel
+
+theorem a727_c9 : ∑ k ∈ Finset.Ico 229 261, inner g 727 k = 0 := by
+  decide +kernel
+
+theorem a727_c10 : ∑ k ∈ Finset.Ico 261 295, inner g 727 k = 0 := by
+  decide +kernel
+
+theorem a727_c11 : ∑ k ∈ Finset.Ico 295 332, inner g 727 k = 0 := by
+  decide +kernel
+
+theorem a727_c12 : ∑ k ∈ Finset.Ico 332 373, inner g 727 k = 0 := by
+  decide +kernel
+
+theorem a727_c13 : ∑ k ∈ Finset.Ico 373 419, inner g 727 k = 0 := by
+  decide +kernel
+
+theorem a727_c14 : ∑ k ∈ Finset.Ico 419 473, inner g 727 k = 1 := by
+  decide +kernel
+
+theorem a727_c15 : ∑ k ∈ Finset.Ico 473 542, inner g 727 k = 0 := by
+  decide +kernel
+
+theorem a727_c16 : ∑ k ∈ Finset.Ico 542 663, inner g 727 k = 0 := by
+  decide +kernel
+
+theorem a727_c17 : ∑ k ∈ Finset.Ico 663 726, inner g 727 k = 0 := by
+  decide +kernel
+
+theorem a727 : aG g 727 = 1 := by
+  rw [aG_Ico]
+  have s1 := glue (inner g 727) (by norm_num) (by norm_num) a727_c0 a727_c1
+  have s2 := glue (inner g 727) (by norm_num) (by norm_num) s1 a727_c2
+  have s3 := glue (inner g 727) (by norm_num) (by norm_num) s2 a727_c3
+  have s4 := glue (inner g 727) (by norm_num) (by norm_num) s3 a727_c4
+  have s5 := glue (inner g 727) (by norm_num) (by norm_num) s4 a727_c5
+  have s6 := glue (inner g 727) (by norm_num) (by norm_num) s5 a727_c6
+  have s7 := glue (inner g 727) (by norm_num) (by norm_num) s6 a727_c7
+  have s8 := glue (inner g 727) (by norm_num) (by norm_num) s7 a727_c8
+  have s9 := glue (inner g 727) (by norm_num) (by norm_num) s8 a727_c9
+  have s10 := glue (inner g 727) (by norm_num) (by norm_num) s9 a727_c10
+  have s11 := glue (inner g 727) (by norm_num) (by norm_num) s10 a727_c11
+  have s12 := glue (inner g 727) (by norm_num) (by norm_num) s11 a727_c12
+  have s13 := glue (inner g 727) (by norm_num) (by norm_num) s12 a727_c13
+  have s14 := glue (inner g 727) (by norm_num) (by norm_num) s13 a727_c14
+  have s15 := glue (inner g 727) (by norm_num) (by norm_num) s14 a727_c15
+  have s16 := glue (inner g 727) (by norm_num) (by norm_num) s15 a727_c16
+  have s17 := glue (inner g 727) (by norm_num) (by norm_num) s16 a727_c17
+  exact s17
+
 end OMA.A262403H1
 
 theorem OMA.solution : OMA.R_OeisA262403_conjecture_2_R1.H1 := by
   intro n hn
   simp only [Finset.mem_insert, Finset.mem_singleton] at hn
   rw [OMA.A262403H1.a_eq n (by omega)]
-  rcases hn with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide +kernel
+  rcases hn with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · decide +kernel
+  · decide +kernel
+  · decide +kernel
+  · decide +kernel
+  · decide +kernel
+  · decide +kernel
+  · decide +kernel
+  · exact OMA.A262403H1.a445
+  · exact OMA.A262403H1.a727
