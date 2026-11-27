@@ -17,6 +17,34 @@ open Finset Nat
 def GiugaCond (n : ℕ) : Prop :=
   Squarefree n ∧ ∀ p : ℕ, p.Prime → p ∣ n → (p - 1) ∣ (n - 1) ∧ p ∣ (n / p - 1)
 
+lemma prod_primes_dvd_nat {s : Finset ℕ} {b : ℕ}
+    (hprime : ∀ p ∈ s, p.Prime) (hdvd : ∀ p ∈ s, p ∣ b) :
+    (∏ p ∈ s, p) ∣ b := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert a s ha ih =>
+    rw [Finset.prod_insert ha]
+    have ha_prime : a.Prime := hprime a (Finset.mem_insert_self a s)
+    have ha_dvd : a ∣ b := hdvd a (Finset.mem_insert_self a s)
+    have hs_dvd : (∏ p ∈ s, p) ∣ b :=
+      ih (fun p hp => hprime p (Finset.mem_insert_of_mem hp))
+         (fun p hp => hdvd p (Finset.mem_insert_of_mem hp))
+    have hcop : Nat.Coprime a (∏ p ∈ s, p) := by
+      rw [ha_prime.coprime_iff_not_dvd]
+      intro h
+      obtain ⟨q, hqs, haq⟩ := (Prime.dvd_finset_prod_iff ha_prime.prime _).mp h
+      have hq_prime : q.Prime := hprime q (Finset.mem_insert_of_mem hqs)
+      have heq : a = q := (Nat.prime_dvd_prime_iff_eq ha_prime hq_prime).mp haq
+      exact ha (heq ▸ hqs)
+    exact hcop.mul_dvd_of_dvd_of_dvd ha_dvd hs_dvd
+
+lemma prod_primes_dvd_int {s : Finset ℕ} {b : ℤ}
+    (hprime : ∀ p ∈ s, p.Prime) (hdvd : ∀ p ∈ s, (p : ℤ) ∣ b) :
+    ((∏ p ∈ s, p : ℕ) : ℤ) ∣ b := by
+  have habs : ∀ p ∈ s, p ∣ b.natAbs := fun p hp => Int.natCast_dvd.mp (hdvd p hp)
+  exact Int.natCast_dvd.mpr (prod_primes_dvd_nat hprime habs)
+
 lemma not_dvd_power_sum_of_even {n : ℕ} (hn : 4 ≤ n) (heven : Even n) :
     ¬ n ∣ 1 + ∑ i ∈ Finset.Ioo 0 n, i ^ (n - 1) := by
   obtain ⟨m, rfl⟩ := heven
@@ -24,8 +52,8 @@ lemma not_dvd_power_sum_of_even {n : ℕ} (hn : 4 ≤ n) (heven : Even n) :
   intro hdvd
   have hmdvd : m ∣ 1 + ∑ i ∈ Finset.Ioo 0 (m + m), i ^ (m + m - 1) :=
     dvd_trans ⟨2, by ring⟩ hdvd
-  have hrev : (∑ i ∈ Finset.Ioo 0 (m + m), (i : ℤ) ^ (m + m - 1)) =
-      ∑ i ∈ Finset.Ioo 0 (m + m), ((m + m - i : ℕ) : ℤ) ^ (m + m - 1) := by
+  have hrev : (∑ i ∈ Finset.Ioo 0 (m + m), (i : ZMod (m + m)) ^ (m + m - 1)) =
+      ∑ i ∈ Finset.Ioo 0 (m + m), ((m + m - i : ℕ) : ZMod (m + m)) ^ (m + m - 1) := by
     refine Finset.sum_bij (fun i _ => m + m - i) ?_ ?_ ?_ ?_
     · intro i hi
       simp only [Finset.mem_Ioo] at hi ⊢
@@ -39,36 +67,29 @@ lemma not_dvd_power_sum_of_even {n : ℕ} (hn : 4 ≤ n) (heven : Even n) :
     · intro i _
       rfl
   have hodd : Odd (m + m - 1) := ⟨m - 1, by omega⟩
-  have hneg2 : ∀ i ∈ Finset.Ioo 0 (m + m),
-      ((m + m - i : ℕ) : ℤ) ^ (m + m - 1) ≡ -((i : ℤ) ^ (m + m - 1)) [ZMOD (m + m : ℕ)] := by
+  have hneg : ∀ i ∈ Finset.Ioo 0 (m + m),
+      ((m + m - i : ℕ) : ZMod (m + m)) ^ (m + m - 1) =
+        -((i : ZMod (m + m)) ^ (m + m - 1)) := by
     intro i hi
     simp only [Finset.mem_Ioo] at hi
-    have hsub : ((m + m - i : ℕ) : ℤ) = ((m + m : ℕ) : ℤ) - (i : ℤ) := by omega
-    rw [hsub]
-    have hcong : ((m + m : ℕ) : ℤ) - (i : ℤ) ≡ -(i : ℤ) [ZMOD (m + m : ℕ)] := by
-      rw [Int.modEq_iff_dvd]
-      use -1
-      ring
-    calc (((m + m : ℕ) : ℤ) - (i : ℤ)) ^ (m + m - 1)
-        ≡ (-(i : ℤ)) ^ (m + m - 1) [ZMOD (m + m : ℕ)] := hcong.pow _
-      _ = -((i : ℤ) ^ (m + m - 1)) := hodd.neg_pow _
-  have hsum_neg2 : (∑ i ∈ Finset.Ioo 0 (m + m), (i : ℤ) ^ (m + m - 1)) ≡
-      -(∑ i ∈ Finset.Ioo 0 (m + m), (i : ℤ) ^ (m + m - 1)) [ZMOD (m + m : ℕ)] := by
+    have hsub : ((m + m - i : ℕ) : ZMod (m + m)) = -(i : ZMod (m + m)) := by
+      have hle : i ≤ m + m := by omega
+      rw [Nat.cast_sub hle, ZMod.natCast_self, zero_sub]
+    rw [hsub, hodd.neg_pow]
+  have hsum_neg : (∑ i ∈ Finset.Ioo 0 (m + m), (i : ZMod (m + m)) ^ (m + m - 1)) =
+      -(∑ i ∈ Finset.Ioo 0 (m + m), (i : ZMod (m + m)) ^ (m + m - 1)) := by
     rw [hrev, ← Finset.sum_neg_distrib]
-    exact Int.ModEq.sum hneg2
-  rw [Int.modEq_iff_dvd] at hsum_neg2
-  obtain ⟨c, hc⟩ := hsum_neg2
-  have hsum_dvdZ : (m : ℤ) ∣ ∑ i ∈ Finset.Ioo 0 (m + m), (i : ℤ) ^ (m + m - 1) := by
-    refine ⟨-c, ?_⟩
-    push_cast at hc
-    linarith
+    exact Finset.sum_congr rfl hneg
+  have h2sum : ((2 * ∑ i ∈ Finset.Ioo 0 (m + m), i ^ (m + m - 1) : ℕ) : ZMod (m + m)) = 0 := by
+    push_cast
+    rw [two_mul]
+    conv_rhs => rw [← add_neg_cancel (∑ i ∈ Finset.Ioo 0 (m + m), (i : ZMod (m + m)) ^ (m + m - 1))]
+    rw [← hsum_neg]
+  have h2dvd : (m + m) ∣ 2 * ∑ i ∈ Finset.Ioo 0 (m + m), i ^ (m + m - 1) :=
+    (ZMod.natCast_eq_zero_iff _ _).mp h2sum
   have hsum_dvd : m ∣ ∑ i ∈ Finset.Ioo 0 (m + m), i ^ (m + m - 1) := by
-    have hcast : ((∑ i ∈ Finset.Ioo 0 (m + m), i ^ (m + m - 1) : ℕ) : ℤ) =
-        ∑ i ∈ Finset.Ioo 0 (m + m), (i : ℤ) ^ (m + m - 1) := by
-      push_cast
-      rfl
-    rw [← hcast] at hsum_dvdZ
-    exact Int.ofNat_dvd.mp hsum_dvdZ
+    rw [← two_mul] at h2dvd
+    exact (mul_dvd_mul_iff_left (by omega : (2 : ℕ) ≠ 0)).mp h2dvd
   have h1 : m ∣ 1 := (Nat.dvd_add_left hsum_dvd).mp hmdvd
   have : m ≤ 1 := Nat.le_of_dvd (by omega) h1
   omega
@@ -114,7 +135,7 @@ lemma sum_pow_mod_prime {p e : ℕ} [Fact p.Prime] (he : 0 < e) :
       obtain ⟨c, hc⟩ := hdvd
       rw [hc, pow_mul, ZMod.pow_card_sub_one_eq_one hr0, one_pow]
     rw [Finset.sum_congr rfl hones, Finset.sum_const, Nat.card_Ioo]
-    simp only [nsmul_eq_mul, mul_one]
+    simp only [nsmul_eq_mul, mul_one, Nat.sub_zero]
     have hp1 : ((p - 1 : ℕ) : ZMod p) = -1 := by
       have hcast : ((p - 1 : ℕ) : ZMod p) + 1 = (p : ZMod p) := by
         norm_cast
@@ -122,12 +143,13 @@ lemma sum_pow_mod_prime {p e : ℕ} [Fact p.Prime] (he : 0 < e) :
         omega
       rw [ZMod.natCast_self] at hcast
       exact eq_neg_of_add_eq_zero_left hcast
-    simpa [Nat.sub_zero] using hp1
+    exact hp1
   · obtain ⟨g, hg⟩ := IsCyclic.exists_generator (α := (ZMod p)ˣ)
     have hge : (g : ZMod p) ^ e ≠ 1 := by
       intro h1
       have hord : orderOf g = p - 1 := by
-        rw [orderOf_eq_card_of_forall_mem_zpowers hg, ZMod.card_units]
+        rw [orderOf_eq_card_of_forall_mem_zpowers hg, ZMod.card_units_eq_totient,
+          Nat.totient_prime hp]
       have hg1 : g ^ e = 1 := Units.ext (by simpa using h1)
       exact hdvd (hord ▸ orderOf_dvd_of_pow_eq_one hg1)
     have hmul : (g : ZMod p) ^ e * ∑ r ∈ Finset.range p, (r : ZMod p) ^ e =
@@ -137,7 +159,7 @@ lemma sum_pow_mod_prime {p e : ℕ} [Fact p.Prime] (he : 0 < e) :
           ((g : ZMod p) * (r : ZMod p)) ^ e := fun r _ => (mul_pow _ _ _).symm
       rw [Finset.sum_congr rfl hcast]
       have hbij : ∑ x : ZMod p, ((g : ZMod p) * x) ^ e = ∑ x : ZMod p, x ^ e :=
-        Fintype.sum_equiv (Equiv.mulLeft (g : ZMod p)) _ _ (fun _ => rfl)
+        Fintype.sum_equiv (Equiv.mulLeft₀ (g : ZMod p) (Units.ne_zero g)) _ _ (fun _ => rfl)
       have hrange : ∀ f : ZMod p → ZMod p,
           ∑ r ∈ Finset.range p, f (r : ZMod p) = ∑ x : ZMod p, f x := by
         intro f
@@ -175,7 +197,7 @@ lemma power_sum_zmod {n p : ℕ} [Fact p.Prime] (hn : 2 ≤ n) (hpn : p ∣ n) :
     induction q with
     | zero => simp
     | succ q ih =>
-      rw [Nat.mul_succ, Finset.sum_range_add, ih, Nat.cast_add, Nat.cast_one, add_mul, one_mul]
+      rw [Nat.mul_add_one, Finset.sum_range_add, ih, Nat.cast_add, Nat.cast_one, add_mul, one_mul]
       congr 1
       apply Finset.sum_congr rfl
       intro r _
@@ -191,7 +213,7 @@ lemma power_sum_iff_giuga {n : ℕ} (hn : 2 ≤ n) :
   constructor
   · intro hdvd
     have hprime : ∀ p : ℕ, p.Prime → p ∣ n →
-        ¬ p ^ 2 ∣ n ∧ (p - 1) ∣ (n - 1) ∧ p ∣ (n / p - 1) := by
+        ¬ p * p ∣ n ∧ (p - 1) ∣ (n - 1) ∧ p ∣ (n / p - 1) := by
       intro p hp hpn
       haveI : Fact p.Prime := ⟨hp⟩
       have h0 : ((1 + ∑ i ∈ Finset.Ioo 0 n, i ^ (n - 1) : ℕ) : ZMod p) = 0 := by
@@ -202,12 +224,12 @@ lemma power_sum_iff_giuga {n : ℕ} (hn : 2 ≤ n) :
       · rw [if_pos hpm] at h0
         have hq : ((n / p : ℕ) : ZMod p) = 1 := by
           linear_combination -h0
-        have hnot2 : ¬ p ^ 2 ∣ n := by
+        have hnot2 : ¬ p * p ∣ n := by
           intro h2
           have hpd : p ∣ n / p := by
             obtain ⟨c, hc⟩ := h2
             refine ⟨c, ?_⟩
-            rw [hc, sq, mul_assoc, Nat.mul_div_cancel_left _ hp.pos]
+            rw [hc, mul_assoc, Nat.mul_div_cancel_left _ hp.pos]
           have hq0 : ((n / p : ℕ) : ZMod p) = 0 := (ZMod.natCast_eq_zero_iff _ _).mpr hpd
           rw [hq0] at hq
           exact zero_ne_one hq
@@ -220,7 +242,7 @@ lemma power_sum_iff_giuga {n : ℕ} (hn : 2 ≤ n) :
     refine ⟨?_, fun p hp hpn => (hprime p hp hpn).2⟩
     rw [Nat.squarefree_iff_prime_squarefree]
     intro p hp h2
-    exact (hprime p hp (dvd_trans (dvd_pow_self p (by decide)) h2)).1 h2
+    exact (hprime p hp (dvd_trans (dvd_mul_left p p) h2)).1 h2
   · rintro ⟨hsq, hcond⟩
     have hall : ∀ p : ℕ, p.Prime → p ∣ n → p ∣ 1 + ∑ i ∈ Finset.Ioo 0 n, i ^ (n - 1) := by
       intro p hp hpn
@@ -237,11 +259,9 @@ lemma power_sum_iff_giuga {n : ℕ} (hn : 2 ≤ n) :
     have hprod : ∏ p ∈ n.primeFactors, p = n :=
       Nat.prod_primeFactors_of_squarefree hsq
     rw [← hprod]
-    apply Finset.prod_primes_dvd
-    · intro p hp
-      exact (Nat.mem_primeFactors.mp hp).1.prime
-    · intro p hp
-      exact hall p (Nat.mem_primeFactors.mp hp).1 (Nat.mem_primeFactors.mp hp).2.1
+    exact prod_primes_dvd_nat
+      (fun p hp => (Nat.mem_primeFactors.mp hp).1)
+      (fun p hp => hall p (Nat.mem_primeFactors.mp hp).1 (Nat.mem_primeFactors.mp hp).2.1)
 
 lemma bernoulli_cond_iff_giuga_of_odd {n : ℕ} (hn : 3 ≤ n) (hodd : Odd n) :
     (∃ k : ℤ, let B := bernoulli' (n - 1); (n : ℤ) * B.num + B.den = k * (n : ℤ) ^ 2) ↔
@@ -259,14 +279,14 @@ lemma bernoulli_cond_iff_giuga_of_odd {n : ℕ} (hn : 3 ≤ n) (hodd : Odd n) :
     rw [Nat.squarefree_iff_prime_squarefree]
     intro p hp h2
     have hmem : p ∈ S := by
-      have hpD : p ∣ D := dvd_trans (dvd_pow_self p (by decide)) h2
-      obtain ⟨q, hqS, hpq⟩ := hp.prime.dvd_finset_prod_iff.mp hpD
+      have hpD : p ∣ D := dvd_trans (dvd_mul_left p p) h2
+      obtain ⟨q, hqS, hpq⟩ := (Prime.dvd_finset_prod_iff hp.prime _).mp hpD
       have hqp : p = q := (Nat.prime_dvd_prime_iff_eq hp (hS_prime q hqS)).mp hpq
       rwa [hqp]
     have hsplit : D = p * ∏ q ∈ S.erase p, q := (Finset.mul_prod_erase S id hmem).symm
-    rw [hsplit, sq] at h2
+    rw [hsplit] at h2
     have hpd : p ∣ ∏ q ∈ S.erase p, q := (mul_dvd_mul_iff_left hp.ne_zero).mp h2
-    obtain ⟨q, hq, hpq⟩ := hp.prime.dvd_finset_prod_iff.mp hpd
+    obtain ⟨q, hq, hpq⟩ := (Prime.dvd_finset_prod_iff hp.prime _).mp hpd
     have hne : q ≠ p := (Finset.mem_erase.mp hq).1
     have hqp : p = q := (Nat.prime_dvd_prime_iff_eq hp (hS_prime q (Finset.mem_erase.mp hq).2)).mp hpq
     exact hne hqp.symm
@@ -287,7 +307,8 @@ lemma bernoulli_cond_iff_giuga_of_odd {n : ℕ} (hn : 3 ≤ n) (hodd : Odd n) :
       exact_mod_cast (Nat.div_mul_cancel hpD).symm
     have hden_dvd : B.den ∣ D := by
       have h1 : ((B.den : ℤ) : ℚ) * ((D : ℚ) * B) = (D : ℚ) * (B.num : ℚ) := by
-        rw [← mul_assoc, mul_comm (B.den : ℚ) (D : ℚ), mul_assoc, Rat.den_mul_eq_num]
+        rw [← mul_assoc, mul_comm ((B.den : ℤ) : ℚ) (D : ℚ), mul_assoc]
+        simp only [Int.cast_natCast, Rat.den_mul_eq_num]
       rw [hmul_int] at h1
       have h2 : (B.den : ℤ) * ((D : ℤ) * M - ∑ p ∈ S, ((D / p : ℕ) : ℤ)) = (D : ℤ) * B.num := by
         exact_mod_cast h1
@@ -296,20 +317,10 @@ lemma bernoulli_cond_iff_giuga_of_odd {n : ℕ} (hn : 3 ≤ n) (hodd : Odd n) :
         exact_mod_cast Int.natAbs_dvd_natAbs.mpr h4
       exact (B.reduced.symm.dvd_mul_right).mp h3
     have hD_dvd : D ∣ B.den := by
-      apply Finset.prod_primes_dvd
-      · intro p hp
-        exact (hS_prime p hp).prime
-      · intro p hp
-        haveI : Fact p.Prime := ⟨hS_prime p hp⟩
-        have hval := Bernoulli.padicValRat_bernoulli hm (hS_dvd p hp)
-        by_contra hnd
-        have hnum_nd := Bernoulli.not_dvd_num_bernoulli hm (hS_dvd p hp)
-        have h0 : padicValRat p B = 0 := by
-          rw [padicValRat.def]
-          have h1 : padicValInt p B.num = 0 := padicValInt.eq_zero_of_not_dvd hnum_nd
-          have h2 : padicValNat p B.den = 0 := padicValNat.eq_zero_of_not_dvd hnd
-          simp [h1, h2]
-        omega
+      refine prod_primes_dvd_nat hS_prime ?_
+      intro p hp
+      haveI : Fact p.Prime := ⟨hS_prime p hp⟩
+      exact Bernoulli.dvd_den_bernoulli hm (hS_dvd p hp)
     exact Nat.dvd_antisymm hden_dvd hD_dvd
   have hB_num : B.num = (D : ℤ) * M - ∑ p ∈ S, ((D / p : ℕ) : ℤ) := by
     have h1 : (D : ℚ) * B = ((D : ℤ) * M - ∑ p ∈ S, ((D / p : ℕ) : ℤ) : ℤ) := by
@@ -340,14 +351,14 @@ lemma bernoulli_cond_iff_giuga_of_odd {n : ℕ} (hn : 3 ≤ n) (hodd : Odd n) :
     intro p hp hpN
     have hpD : p ∣ D := dvd_trans hpN hND
     have hpS : p ∈ S := by
-      obtain ⟨q, hqS, hpq⟩ := hp.prime.dvd_finset_prod_iff.mp hpD
+      obtain ⟨q, hqS, hpq⟩ := (Prime.dvd_finset_prod_iff hp.prime _).mp hpD
       have hqp : p = q := (Nat.prime_dvd_prime_iff_eq hp (hS_prime q hqS)).mp hpq
       rwa [hqp]
     refine ⟨hS_dvd p hpS, ?_⟩
     obtain ⟨E, hDE⟩ := hND
     have hpE_nd : ¬ p ∣ E := by
       intro hpE
-      have h2 : p ^ 2 ∣ D := by
+      have h2 : p * p ∣ D := by
         obtain ⟨c, hc⟩ := hpN
         obtain ⟨d, hd⟩ := hpE
         exact ⟨c * d, by rw [hDE, hc, hd]; ring⟩
@@ -388,7 +399,7 @@ lemma bernoulli_cond_iff_giuga_of_odd {n : ℕ} (hn : 3 ≤ n) (hodd : Odd n) :
       exact dvd_sub (dvd_sub hp_dvd_DM hp_dvd_rest) hp_dvd_expr
     have hDp : D / p = (N / p) * E := by
       apply Nat.div_eq_of_eq_mul_left hp.pos
-      rw [hDE, mul_comm (N / p) E, mul_assoc, Nat.div_mul_cancel hpN, mul_comm]
+      rw [hDE, mul_assoc, mul_comm E p, ← mul_assoc, Nat.div_mul_cancel hpN]
     have hNdiv_pos : 1 ≤ N / p := Nat.div_pos (Nat.le_of_dvd (by omega) hpN) hp.pos
     have hfact : ((D / p : ℕ) : ℤ) - (E : ℤ) = ((N / p - 1 : ℕ) : ℤ) * (E : ℤ) := by
       rw [hDp, Nat.cast_mul, Nat.cast_sub hNdiv_pos, Nat.cast_one]
@@ -403,18 +414,16 @@ lemma bernoulli_cond_iff_giuga_of_odd {n : ℕ} (hn : 3 ≤ n) (hodd : Odd n) :
       have hprod : ∏ p ∈ N.primeFactors, p = N :=
         Nat.prod_primeFactors_of_squarefree hN_sqf
       rw [← hprod]
-      apply Finset.prod_primes_dvd
-      · intro p hp
-        exact (Nat.mem_primeFactors.mp hp).1.prime
-      · intro p hp
-        have hp_prime := (Nat.mem_primeFactors.mp hp).1
-        have hpN := (Nat.mem_primeFactors.mp hp).2.1
-        have hpm := (hcond p hp_prime hpN).1
-        have hpS : p ∈ S := by
-          simp only [S, Finset.mem_filter, Finset.mem_range]
-          have hle : p ≤ N := Nat.le_of_dvd (by omega) hpN
-          exact ⟨by omega, hp_prime, hpm⟩
-        exact Finset.dvd_prod_of_mem id hpS
+      refine prod_primes_dvd_nat (fun p hp => (Nat.mem_primeFactors.mp hp).1) ?_
+      intro p hp
+      have hp_prime := (Nat.mem_primeFactors.mp hp).1
+      have hpN := (Nat.mem_primeFactors.mp hp).2.1
+      have hpm := (hcond p hp_prime hpN).1
+      have hpS : p ∈ S := by
+        simp only [S, Finset.mem_filter, Finset.mem_range]
+        have hle : p ≤ N := Nat.le_of_dvd (by omega) hpN
+        exact ⟨by omega, hp_prime, hpm⟩
+      exact Finset.dvd_prod_of_mem id hpS
     obtain ⟨E, hDE⟩ := hND
     have hall : ∀ p : ℕ, p.Prime → p ∣ N → (p : ℤ) ∣ B.num + (E : ℤ) := by
       intro p hp hpN
@@ -443,7 +452,7 @@ lemma bernoulli_cond_iff_giuga_of_odd {n : ℕ} (hn : 3 ≤ n) (hodd : Odd n) :
       rw [hsplit_sum]
       have hDp : D / p = (N / p) * E := by
         apply Nat.div_eq_of_eq_mul_left hp.pos
-        rw [hDE, mul_comm (N / p) E, mul_assoc, Nat.div_mul_cancel hpN, mul_comm]
+        rw [hDE, mul_assoc, mul_comm E p, ← mul_assoc, Nat.div_mul_cancel hpN]
       have hNdiv_pos : 1 ≤ N / p := Nat.div_pos (Nat.le_of_dvd (by omega) hpN) hp.pos
       have hfact : ((D / p : ℕ) : ℤ) - (E : ℤ) = ((N / p - 1 : ℕ) : ℤ) * (E : ℤ) := by
         rw [hDp, Nat.cast_mul, Nat.cast_sub hNdiv_pos, Nat.cast_one]
@@ -459,14 +468,10 @@ lemma bernoulli_cond_iff_giuga_of_odd {n : ℕ} (hn : 3 ≤ n) (hodd : Odd n) :
     have hN_dvd : (N : ℤ) ∣ B.num + (E : ℤ) := by
       have hprod : ∏ p ∈ N.primeFactors, p = N :=
         Nat.prod_primeFactors_of_squarefree hN_sqf
-      have hprodZ : (∏ p ∈ N.primeFactors, (p : ℤ)) = (N : ℤ) := by
-        exact_mod_cast hprod
-      rw [← hprodZ]
-      apply Finset.prod_primes_dvd
-      · intro p hp
-        exact Nat.prime_iff_prime_int.mp (Nat.mem_primeFactors.mp hp).1
-      · intro p hp
-        exact hall p (Nat.mem_primeFactors.mp hp).1 (Nat.mem_primeFactors.mp hp).2.1
+      rw [← hprod]
+      exact prod_primes_dvd_int
+        (fun p hp => (Nat.mem_primeFactors.mp hp).1)
+        (fun p hp => hall p (Nat.mem_primeFactors.mp hp).1 (Nat.mem_primeFactors.mp hp).2.1)
     obtain ⟨k, hk⟩ := hN_dvd
     refine ⟨k, ?_⟩
     have hcast : (D : ℤ) = (N : ℤ) * (E : ℤ) := by exact_mod_cast hDE
