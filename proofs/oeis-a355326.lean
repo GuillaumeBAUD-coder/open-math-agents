@@ -223,22 +223,22 @@ private lemma matM3_eval_det (x : ℚ) :
       (-1 : ℚ) ^ (3 - r.val) * (Nat.choose 3 s.val : ℚ) * (faulh (3 - r.val + s.val)).eval x := by
     simp only [M, RingHom.mapMatrix_apply, Matrix.map_apply, coe_evalRingHom, matM,
       eval_add, apply_ite (Polynomial.eval x), eval_one, eval_zero, eval_mul, eval_C]
-  have e00 : M 0 0 = 1 - (faulh 3).eval x := by rw [hM]; norm_num [Nat.choose]; ring
-  have e01 : M 0 1 = -3 * (faulh 4).eval x := by rw [hM]; norm_num [Nat.choose]
-  have e02 : M 0 2 = -3 * (faulh 5).eval x := by rw [hM]; norm_num [Nat.choose]
-  have e03 : M 0 3 = -(faulh 6).eval x := by rw [hM]; norm_num [Nat.choose]
-  have e10 : M 1 0 = (faulh 2).eval x := by rw [hM]; norm_num [Nat.choose]
-  have e11 : M 1 1 = 1 + 3 * (faulh 3).eval x := by rw [hM]; norm_num [Nat.choose]
-  have e12 : M 1 2 = 3 * (faulh 4).eval x := by rw [hM]; norm_num [Nat.choose]
-  have e13 : M 1 3 = (faulh 5).eval x := by rw [hM]; norm_num [Nat.choose]
-  have e20 : M 2 0 = -(faulh 1).eval x := by rw [hM]; norm_num [Nat.choose]
-  have e21 : M 2 1 = -3 * (faulh 2).eval x := by rw [hM]; norm_num [Nat.choose]
-  have e22 : M 2 2 = 1 - 3 * (faulh 3).eval x := by rw [hM]; norm_num [Nat.choose]; ring
-  have e23 : M 2 3 = -(faulh 4).eval x := by rw [hM]; norm_num [Nat.choose]
-  have e30 : M 3 0 = (faulh 0).eval x := by rw [hM]; norm_num [Nat.choose]
-  have e31 : M 3 1 = 3 * (faulh 1).eval x := by rw [hM]; norm_num [Nat.choose]
-  have e32 : M 3 2 = 3 * (faulh 2).eval x := by rw [hM]; norm_num [Nat.choose]
-  have e33 : M 3 3 = 1 + (faulh 3).eval x := by rw [hM]; norm_num [Nat.choose]
+  have e00 : M 0 0 = 1 - (faulh 3).eval x := by rw [hM]; split_ifs with h; { norm_num [Nat.choose]; ring }; exact absurd rfl h
+  have e01 : M 0 1 = -3 * (faulh 4).eval x := by rw [hM]; split_ifs with h; { exact absurd h (by decide) }; norm_num [Nat.choose]
+  have e02 : M 0 2 = -3 * (faulh 5).eval x := by rw [hM]; split_ifs with h; { exact absurd h (by decide) }; norm_num [Nat.choose]
+  have e03 : M 0 3 = -(faulh 6).eval x := by rw [hM]; split_ifs with h; { exact absurd h (by decide) }; norm_num [Nat.choose]
+  have e10 : M 1 0 = (faulh 2).eval x := by rw [hM]; split_ifs with h; { exact absurd h (by decide) }; norm_num [Nat.choose]
+  have e11 : M 1 1 = 1 + 3 * (faulh 3).eval x := by rw [hM]; split_ifs with h; { norm_num [Nat.choose] }; exact absurd rfl h
+  have e12 : M 1 2 = 3 * (faulh 4).eval x := by rw [hM]; split_ifs with h; { exact absurd h (by decide) }; norm_num [Nat.choose]
+  have e13 : M 1 3 = (faulh 5).eval x := by rw [hM]; split_ifs with h; { exact absurd h (by decide) }; norm_num [Nat.choose]
+  have e20 : M 2 0 = -(faulh 1).eval x := by rw [hM]; split_ifs with h; { exact absurd h (by decide) }; norm_num [Nat.choose]
+  have e21 : M 2 1 = -3 * (faulh 2).eval x := by rw [hM]; split_ifs with h; { exact absurd h (by decide) }; norm_num [Nat.choose]
+  have e22 : M 2 2 = 1 - 3 * (faulh 3).eval x := by rw [hM]; split_ifs with h; { norm_num [Nat.choose]; ring }; exact absurd rfl h
+  have e23 : M 2 3 = -(faulh 4).eval x := by rw [hM]; split_ifs with h; { exact absurd h (by decide) }; norm_num [Nat.choose]
+  have e30 : M 3 0 = (faulh 0).eval x := by rw [hM]; split_ifs with h; { exact absurd h (by decide) }; norm_num [Nat.choose]
+  have e31 : M 3 1 = 3 * (faulh 1).eval x := by rw [hM]; split_ifs with h; { exact absurd h (by decide) }; norm_num [Nat.choose]
+  have e32 : M 3 2 = 3 * (faulh 2).eval x := by rw [hM]; split_ifs with h; { exact absurd h (by decide) }; norm_num [Nat.choose]
+  have e33 : M 3 3 = 1 + (faulh 3).eval x := by rw [hM]; split_ifs with h; { norm_num [Nat.choose] }; exact absurd rfl h
   have sa00 : (0 : Fin 4).succAbove 0 = 1 := rfl
   have sa01 : (0 : Fin 4).succAbove 1 = 2 := rfl
   have sa02 : (0 : Fin 4).succAbove 2 = 3 := rfl
