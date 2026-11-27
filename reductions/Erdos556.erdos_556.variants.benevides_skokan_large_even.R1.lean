@@ -1113,7 +1113,7 @@ lemma cycle_from_regular_pairs {V : Type*} [DecidableEq V] (G : SimpleGraph V)
       (ha i hi) (hb i hi) (hdegA i hi) (hdegB i hi)
     refine ⟨L, by omega, hsimp, hchain, ?_⟩
     intro z hz
-    simp only [List.mem_cons, List.mem_append, List.mem_singleton] at hz
+    simp at hz
     rcases hz with rfl | h | rfl
     · exact Finset.mem_union_left _ (ha _ hi)
     · exact Finset.mem_union.mpr (hpool z h)
@@ -1465,6 +1465,119 @@ lemma two_colour_large_component {V : Type*} [DecidableEq V]
   rw [Finset.card_union_of_disjoint (hAB.mono_right hdB)] at hc
   have hD : B.card ≤ D.card + k := blue _ haA
   omega
+
+/-- A connected matching in a finite reduced graph admits an even closed
+walk through every marked edge. The bound counts the cost of visiting the
+edges one at a time and is independent of the cluster sizes. -/
+lemma bounded_tour_of_reachable_edges {I : Type*} [Fintype I] (H : SimpleGraph I)
+    (root : I) (u v : ℕ → I) (q : ℕ) (hr : ∀ i < q, H.Reachable root (u i))
+    (he : ∀ i < q, H.Adj (u i) (v i)) :
+    ∃ p : H.Walk root root, Even p.length ∧ p.length ≤ 2 * q * Fintype.card I ∧
+      ∀ i < q, s(u i, v i) ∈ p.edges := by
+  classical
+  induction q with
+  | zero => exact ⟨.nil, by simp, by simp, by simp⟩
+  | succ q ih =>
+    obtain ⟨p, hp, hlen, hseen⟩ := ih (fun i hi => hr i (by omega)) (fun i hi => he i (by omega))
+    obtain ⟨w⟩ := hr q (by omega)
+    let e : H.Walk (u q) (v q) := .cons (he q (by omega)) .nil
+    let leg := w.bypass.append e
+    have hl : leg.length ≤ Fintype.card I := by
+      have hshort := w.bypass_isPath.length_lt
+      change (w.bypass.append e).length ≤ _
+      rw [Walk.length_append]
+      have he1 : e.length = 1 := rfl
+      omega
+    refine ⟨p.append (leg.append leg.reverse), ?_, ?_, ?_⟩
+    · rw [Walk.length_append, Walk.length_append, Walk.length_reverse]
+      exact hp.add ⟨leg.length, rfl⟩
+    · rw [Walk.length_append, Walk.length_append, Walk.length_reverse]
+      rw [Nat.mul_succ, Nat.add_mul]
+      omega
+    · intro i hi
+      rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
+      · rw [Walk.edges_append]
+        exact List.mem_append_left _ (hseen i hi)
+      · have hmem : s(u q,v q) ∈ leg.edges := by simp [leg,e,Walk.edges_append,Walk.edges_cons]
+        simp only [Walk.edges_append, List.mem_append]
+        tauto
+
+/-- Construct the alternating path in the proof of Benevides, Lemma 5.7(a).
+Its vertices on the first side may be specified in any simple order. Only
+degrees on that side are needed. -/
+lemma dense_pair_prescribed_left_order {V : Type*} [DecidableEq V] (G : SimpleGraph V)
+    [DecidableRel G.Adj] (A : Finset V) (k : ℕ) (y : V) (hy : y ∈ A)
+    (middle : List V) (B : Finset V) (x : V) (hx : x ∈ A) (hm : ∀ z ∈ middle, z ∈ A)
+    (hsimple : (x :: (middle ++ [y])).Nodup) (hdis : Disjoint A B)
+    (hmiss : ∀ z ∈ A, (B.filter fun w => ¬G.Adj z w).card ≤ k)
+    (hsize : 2*k + middle.length + 1 ≤ B.card) :
+    ∃ l : List V, l.length = 2*middle.length+1 ∧ (x :: (l ++ [y])).Nodup ∧
+      (x :: (l ++ [y])).IsChain G.Adj ∧ l.filter (fun z => z ∈ A) = middle ∧ ∀ z ∈ l, z ∈ middle ∨ z ∈ B := by
+  classical
+  have common (B : Finset V) (u v : V) (hu : u ∈ A) (hv : v ∈ A)
+      (hmiss : ∀ z ∈ A, (B.filter fun w => ¬G.Adj z w).card ≤ k)
+      (hB : 2*k < B.card) : ∃ b ∈ B, G.Adj u b ∧ G.Adj v b := by
+    let U := B.filter (G.Adj u)
+    let W := B.filter (G.Adj v)
+    have h1 := Finset.card_filter_add_card_filter_not (s := B) (G.Adj u)
+    have h2 := Finset.card_filter_add_card_filter_not (s := B) (G.Adj v)
+    have hU : B.card ≤ U.card + k := by dsimp [U]; have := hmiss u hu; omega
+    have hW : B.card ≤ W.card + k := by dsimp [W]; have := hmiss v hv; omega
+    have hsub : U ∪ W ⊆ B := Finset.union_subset (Finset.filter_subset _ _) (Finset.filter_subset _ _)
+    have hc := Finset.card_union_add_card_inter U W
+    have hc' := Finset.card_le_card hsub
+    obtain ⟨b,hb⟩ := Finset.card_pos.mp (by omega : 0 < (U ∩ W).card)
+    obtain ⟨hbu,hbw⟩ := Finset.mem_inter.mp hb
+    exact ⟨b,(Finset.mem_filter.mp hbu).1,(Finset.mem_filter.mp hbu).2,(Finset.mem_filter.mp hbw).2⟩
+  induction middle generalizing B x with
+  | nil =>
+    obtain ⟨b,hb,hxb,hyb⟩ := common B x y hx hy hmiss (by simpa using hsize)
+    have hxy : x ≠ y := by simpa using hsimple
+    have hbA : b ∉ A := fun h => Finset.disjoint_left.mp hdis h hb
+    refine ⟨[b], by simp, ?_, ?_, by simp [hbA], ?_⟩
+    · simp [hxb.ne,hxy,hyb.ne.symm]
+    · simp [List.isChain_cons_cons,hxb,hyb.symm]
+    · intro z hz
+      simpa using (show z ∈ B from (List.mem_singleton.mp hz) ▸ hb)
+  | cons u rest ih =>
+    have hu := hm u (by simp)
+    obtain ⟨b,hb,hxb,hub⟩ := common B x u hx hu hmiss (by simp at hsize; omega)
+    have hB' : 2*k + rest.length + 1 ≤ (B.erase b).card := by
+      rw [Finset.card_erase_of_mem hb]; simp at hsize; omega
+    have less (z : V) (hz : z ∈ A) :
+        ((B.erase b).filter fun w => ¬G.Adj z w).card ≤ k := by
+      apply le_trans _ (hmiss z hz)
+      exact Finset.card_le_card (Finset.filter_subset_filter _ (Finset.erase_subset _ _))
+    obtain ⟨l,hlen,hs,hc,hord,hp⟩ := ih (B.erase b) u hu (fun z hz => hm z (by simp [hz]))
+      (List.nodup_cons.mp hsimple).2 (hdis.mono_right (Finset.erase_subset _ _)) less hB'
+    have nox := (List.nodup_cons.mp hsimple).1
+    have hxrest : x ∉ rest := fun h => nox (by simp [h])
+    have hxu : x ≠ u := fun e => nox (by simp [e])
+    have hxy : x ≠ y := fun e => nox (by simp [e])
+    have hxl : x ∉ l := by
+      intro hit
+      rcases hp x hit with h | h
+      · exact hxrest h
+      · exact Finset.disjoint_left.mp hdis hx (Finset.erase_subset _ _ h)
+    have hbl : b ∉ l := by
+      intro hit
+      rcases hp b hit with h | h
+      · exact Finset.disjoint_left.mp hdis (hm b (by simp [h])) hb
+      · exact Finset.notMem_erase _ _ h
+    have hby : b ≠ y := fun e => Finset.disjoint_left.mp hdis hy (e ▸ hb)
+    have hbA : b ∉ A := fun h => Finset.disjoint_left.mp hdis h hb
+    refine ⟨b :: u :: l, by simp [hlen]; omega, ?_, ?_, by simp [hbA,hu,hord], ?_⟩
+    · exact List.nodup_cons.mpr ⟨by simp [hxb.ne,hxu,hxl,hxy],
+        List.nodup_cons.mpr ⟨by simp [hub.ne.symm,hbl,hby],hs⟩⟩
+    · exact List.isChain_cons_cons.mpr ⟨hxb,List.isChain_cons_cons.mpr ⟨hub.symm,hc⟩⟩
+    · intro z hz
+      rcases List.mem_cons.mp hz with rfl | hz
+      · exact Or.inr hb
+      rcases List.mem_cons.mp hz with rfl | hz
+      · exact Or.inl (by simp)
+      rcases hp z hz with h | h
+      · exact Or.inl (by simp [h])
+      · exact Or.inr (Finset.erase_subset _ _ h)
 
 /-- Splitting both sides of a pair increases its size-weighted mean square
 density by exactly the variance of the subpair densities. In particular a
