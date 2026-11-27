@@ -12,6 +12,7 @@ theorem OMA.solution : OMA.R_Erdos4_erdos_4_variants_rankin_R1.H2 := by
     filter_upwards [(isLittleO_log_rpow_atTop (by norm_num : (0 : ℝ) < 1 / 2)).bound hc,
       eventually_ge_atTop (1 : ℝ)] with t ht h1
     have hz : 0 ≤ t := by linarith
+    rw [← Real.sqrt_eq_rpow] at ht
     simpa [Real.norm_eq_abs, abs_of_nonneg (Real.log_nonneg h1),
       abs_of_nonneg (Real.rpow_nonneg hz (1 / 2 : ℝ)),
       ← Real.sqrt_eq_rpow, abs_of_nonneg (Real.sqrt_nonneg t)] using ht
@@ -23,7 +24,7 @@ theorem OMA.solution : OMA.R_Erdos4_erdos_4_variants_rankin_R1.H2 := by
   intro x hx
   obtain ⟨hx2, hsmallx⟩ := hN x hx
   let X : ℝ := x
-  have hX2 : 2 ≤ X := by exact_mod_cast hx2
+  have hX2 : 2 ≤ X := by dsimp [X]; exact_mod_cast hx2
   have hX0 : 0 ≤ X := by linarith
   have hlog : 0 < Real.log X := Real.log_pos (by linarith)
   have hshift : Real.log (X + 1) ≤ 2 * Real.log X := by
@@ -48,4 +49,5 @@ theorem OMA.solution : OMA.R_Erdos4_erdos_4_variants_rankin_R1.H2 := by
   have hpi : Real.sqrt X ≤ (Nat.primeCounting x : ℝ) := hdiv.trans (Chebyshev.pi_ge x)
   have hsquare := pow_le_pow_left₀ hs0 hpi 2
   rw [hs2] at hsquare
+  dsimp [X] at hsquare
   exact_mod_cast hsquare
