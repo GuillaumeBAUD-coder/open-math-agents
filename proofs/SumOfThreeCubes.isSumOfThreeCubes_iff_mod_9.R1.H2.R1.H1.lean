@@ -162,7 +162,7 @@ theorem from_integers {m : ℕ} {n x y z w : ℤ} (h : n=x^3+y^3+z^3+(m:ℤ)*w) 
   simp
 
 theorem all_moduli (n : ℤ) (hn : ¬(n ≡ 4 [ZMOD 9] ∨ n ≡ 5 [ZMOD 9])) :
-    ∀ m : ℕ, 0<m → ∃ x y z : ZMod m, (n:ZMod m)=x^3+y^3+z^3 := by
+    ∀ m : ℕ, Nat.lt 0 m → ∃ x y z : ZMod m, (n:ZMod m)=x^3+y^3+z^3 := by
   apply Nat.recOnPrimeCoprime
   · intro hm; omega
   · intro p e hp hm
@@ -192,7 +192,7 @@ theorem all_moduli (n : ℤ) (hn : ¬(n ≡ 4 [ZMOD 9] ∨ n ≡ 5 [ZMOD 9])) :
     exact Prod.ext h h'
 
 theorem local_criterion (n : ℤ) :
-    (∀ m : ℕ, 0<m → ∃ x y z : ZMod m, (n:ZMod m)=x^3+y^3+z^3) ↔
+    (∀ m : ℕ, Nat.lt 0 m → ∃ x y z : ZMod m, (n:ZMod m)=x^3+y^3+z^3) ↔
     ¬(n ≡ 4 [ZMOD 9] ∨ n ≡ 5 [ZMOD 9]) := by
   refine ⟨?_,all_moduli n⟩
   intro h hn
