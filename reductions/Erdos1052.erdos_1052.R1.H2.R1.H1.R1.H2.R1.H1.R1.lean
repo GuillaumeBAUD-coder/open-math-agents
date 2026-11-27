@@ -1,5 +1,7 @@
 import OMAReductions.R_Erdos1052_erdos_1052_R1_H2_R1_H1_R1_H2_R1
 
+/-! A reduction file for Erdős Problem 1052 (see the comment below). -/
+
 -- Reduction Erdos1052.erdos_1052.R1.H2.R1.H1.R1.H2.R1.H1.R1
 -- Credit: @adammcarter
 -- Splits step H1 of Erdos1052.erdos_1052.R1.H2.R1.H1.R1.H2.R1 (5 the only repeated odd prime of the
@@ -65,7 +67,7 @@ def H3 : Prop :=
 
 -- a odd and d a prime factor of a with d = 2 mod 3: (2^d + 1)/3 = 2 mod 3 has a prime factor
 -- c = 2 mod 3; c is a simple prime of n and 3 divides both 2^a + 1 and c + 1 (two sources of 3).
-theorem odd_mod3 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem odd_mod3 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hm : m % 2 = 1) {d : ℕ} (hd : d.Prime) (hda : d ∣ m) (h3 : d % 3 = 2) : False := by
   have hnz : ∀ {c : ℕ}, c ≠ 5 → c ∉ ({5} : Finset ℕ) := fun h h' => h (Finset.mem_singleton.mp h')
@@ -2645,7 +2647,7 @@ theorem bud5_kill {m R i j : ℕ} {P F : Finset ℕ} (hP : ∀ p ∈ P, p.Prime 
   exact mul_dvd_mul (hi.mul_right _) hj
 
 -- a an odd multiple of 43: 3 divides 2^43 + 1 and 83 + 1.
-theorem c20_d43 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d43 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 43 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
@@ -2655,7 +2657,7 @@ theorem c20_d43 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 
   exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 43) (by push_cast; reduce_mod_char)).trans hd) 83 g83 (by norm_num)
 
 -- a an odd multiple of 61: 13 divides 5^2 + 1 and 2833 + 1.
-theorem c20_d61 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d61 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 61 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, -, -, S8⟩ := facts hP (hK5 2) E
@@ -2665,7 +2667,7 @@ theorem c20_d61 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 
   exact S8 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num) 2833 g2833 (by norm_num)
 
 -- a an odd multiple of 67: 13 divides 5^2 + 1 and 7327657 + 1.
-theorem c20_d67 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d67 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 67 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, -, -, S8⟩ := facts hP (hK5 2) E
@@ -2674,7 +2676,7 @@ theorem c20_d67 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 
   exact S8 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num) 7327657 g7327657 (by norm_num)
 
 -- a an odd multiple of 73: 3 divides 2^73 + 1 and 11 + 1.
-theorem c20_d73 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d73 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 73 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
@@ -2686,7 +2688,7 @@ theorem c20_d73 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 
   exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 73) (by push_cast; reduce_mod_char)).trans hd) 11 g11 (by norm_num)
 
 -- a an odd multiple of 79: 3 divides 2^79 + 1 and 617 + 1.
-theorem c20_d79 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d79 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 79 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
@@ -2696,7 +2698,7 @@ theorem c20_d79 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 
   exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 79) (by push_cast; reduce_mod_char)).trans hd) 617 g617 (by norm_num)
 
 -- a an odd multiple of 97: 3^2 divides 971 + 1.
-theorem c20_d97 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d97 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 97 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
@@ -2705,7 +2707,7 @@ theorem c20_d97 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 971 g971 (by norm_num)
 
 -- a an odd multiple of 103: 3 divides 2^103 + 1 and 415141630193 + 1.
-theorem c20_d103 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d103 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 103 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
@@ -2714,7 +2716,7 @@ theorem c20_d103 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠
   exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 103) (by push_cast; reduce_mod_char)).trans hd) 415141630193 g415141630193 (by norm_num)
 
 -- a an odd multiple of 109: 7 divides 104124649 + 1 and 13 + 1.
-theorem c20_d109 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d109 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 109 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, S3, -, -, -, S7, -⟩ := facts hP (hK5 2) E
@@ -2724,7 +2726,7 @@ theorem c20_d109 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠
   exact absurd (S3 7 (by norm_num) (by norm_num) (nz5 (by norm_num)) 104124649 g104124649 13 g13 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 127: 3 divides 2^127 + 1 and 11 + 1.
-theorem c20_d127 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d127 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 127 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
@@ -2734,7 +2736,7 @@ theorem c20_d127 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠
   exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 127) (by push_cast; reduce_mod_char)).trans hd) 11 g11 (by norm_num)
 
 -- a an odd multiple of 139: 3^2 divides 17 + 1.
-theorem c20_d139 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d139 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 139 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
@@ -2744,7 +2746,7 @@ theorem c20_d139 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 17 g17 (by norm_num)
 
 -- a an odd multiple of 151: 3 divides 2^151 + 1 and 2351 + 1.
-theorem c20_d151 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d151 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 151 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
@@ -2754,7 +2756,7 @@ theorem c20_d151 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠
   exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 151) (by push_cast; reduce_mod_char)).trans hd) 2351 g2351 (by norm_num)
 
 -- a an odd multiple of 157: 7 divides 2350291 + 1 and 13 + 1.
-theorem c20_d157 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d157 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 157 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, S3, -, -, -, S7, -⟩ := facts hP (hK5 2) E
@@ -2764,7 +2766,7 @@ theorem c20_d157 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠
   exact absurd (S3 7 (by norm_num) (by norm_num) (nz5 (by norm_num)) 2350291 g2350291 13 g13 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 163: 13 divides 5^2 + 1 and 11281292593 + 1.
-theorem c20_d163 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d163 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 163 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, -, -, S8⟩ := facts hP (hK5 2) E
@@ -2773,7 +2775,7 @@ theorem c20_d163 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠
   exact S8 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num) 11281292593 g11281292593 (by norm_num)
 
 -- a an odd multiple of 181: 3 divides 2^181 + 1 and 1811 + 1.
-theorem c20_d181 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d181 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 181 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
@@ -2782,7 +2784,7 @@ theorem c20_d181 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠
   exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 181) (by push_cast; reduce_mod_char)).trans hd) 1811 g1811 (by norm_num)
 
 -- a an odd multiple of 193: 3 divides 2^193 + 1 and 6563 + 1.
-theorem c20_d193 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d193 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 193 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
@@ -2791,7 +2793,7 @@ theorem c20_d193 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠
   exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 193) (by push_cast; reduce_mod_char)).trans hd) 6563 g6563 (by norm_num)
 
 -- a an odd multiple of 199: 7 divides 13 + 1 and 1348959352853811313 + 1.
-theorem c20_d199 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d199 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 199 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, S3, -, -, -, S7, -⟩ := facts hP (hK5 2) E
@@ -2802,7 +2804,7 @@ theorem c20_d199 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠
   exact absurd (S3 7 (by norm_num) (by norm_num) (nz5 (by norm_num)) 13 g13 1348959352853811313 g1348959352853811313 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 211: 3^2 divides 4643 + 1.
-theorem c20_d211 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d211 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 211 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
@@ -2811,7 +2813,7 @@ theorem c20_d211 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 4643 g4643 (by norm_num)
 
 -- a an odd multiple of 223: 3^2 divides 219256122131 + 1.
-theorem c20_d223 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d223 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 223 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
@@ -2820,7 +2822,7 @@ theorem c20_d223 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 219256122131 g219256122131 (by norm_num)
 
 -- a an odd multiple of 229: 3 divides 2^229 + 1 and 18754643 + 1.
-theorem c20_d229 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d229 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 229 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
@@ -2829,7 +2831,7 @@ theorem c20_d229 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠
   exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 229) (by push_cast; reduce_mod_char)).trans hd) 18754643 g18754643 (by norm_num)
 
 -- a an odd multiple of 241: 3^2 divides 2411 + 1.
-theorem c20_d241 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d241 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 241 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
@@ -2838,1040 +2840,1040 @@ theorem c20_d241 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 2411 g2411 (by norm_num)
 
 -- a an odd multiple of 271: 3 divides 2^271 + 1 and 11 + 1.
-theorem c20_d271 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d271 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 271 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g1627 : 1627 ∈ P := S2 1627 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 1627) (x := 1 + 2 ^ 271) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 1627) (x := 1 + 2 ^ 271) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g11 : 11 ∈ P := S1 11 (by norm_num) (by norm_num) (nz5 (by norm_num)) 1627 g1627 (by norm_num)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 271) (by push_cast; reduce_mod_char)).trans hd) 11 g11 (by norm_num)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 271) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 11 g11 (by norm_num)
 
 -- a an odd multiple of 277: 7 divides 25792643401363 + 1 and 13 + 1.
-theorem c20_d277 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d277 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 277 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, S3, -, -, -, S7, -⟩ := facts hP (hK5 2) E
   have g25792643401363 : 25792643401363 ∈ P := S2 25792643401363 prime_25792643401363 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 25792643401363) (x := 1 + 2 ^ 277) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 25792643401363) (x := 1 + 2 ^ 277) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g13 : 13 ∈ P := S7 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num)
   exact absurd (S3 7 (by norm_num) (by norm_num) (nz5 (by norm_num)) 25792643401363 g25792643401363 13 g13 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 283: 3^2 divides 17 + 1.
-theorem c20_d283 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d283 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 283 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g1699 : 1699 ∈ P := S2 1699 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 1699) (x := 1 + 2 ^ 283) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 1699) (x := 1 + 2 ^ 283) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g17 : 17 ∈ P := S1 17 (by norm_num) (by norm_num) (nz5 (by norm_num)) 1699 g1699 (by norm_num)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 17 g17 (by norm_num)
 
 -- a an odd multiple of 307: 3 divides 2^307 + 1 and 1249678499 + 1.
-theorem c20_d307 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d307 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 307 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g1249678499 : 1249678499 ∈ P := S2 1249678499 prime_1249678499 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 1249678499) (x := 1 + 2 ^ 307) (by push_cast; reduce_mod_char)).trans hd)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 307) (by push_cast; reduce_mod_char)).trans hd) 1249678499 g1249678499 (by norm_num)
+    ((tw (c := 1249678499) (x := 1 + 2 ^ 307) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 307) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 1249678499 g1249678499 (by norm_num)
 
 -- a an odd multiple of 313: 3 divides 2^313 + 1 and 64067 + 1.
-theorem c20_d313 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d313 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 313 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g5562466239377370006237035693149875298444543026970449921737087520370363869220418099018130434731 : 5562466239377370006237035693149875298444543026970449921737087520370363869220418099018130434731 ∈ P := S2 5562466239377370006237035693149875298444543026970449921737087520370363869220418099018130434731 prime_5562466239377370006237035693149875298444543026970449921737087520370363869220418099018130434731 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 5562466239377370006237035693149875298444543026970449921737087520370363869220418099018130434731) (x := 1 + 2 ^ 313) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 5562466239377370006237035693149875298444543026970449921737087520370363869220418099018130434731) (x := 1 + 2 ^ 313) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g64067 : 64067 ∈ P := S1 64067 (by norm_num) (by norm_num) (nz5 (by norm_num)) 5562466239377370006237035693149875298444543026970449921737087520370363869220418099018130434731 g5562466239377370006237035693149875298444543026970449921737087520370363869220418099018130434731 (by norm_num)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 313) (by push_cast; reduce_mod_char)).trans hd) 64067 g64067 (by norm_num)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 313) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 64067 g64067 (by norm_num)
 
 -- a an odd multiple of 331: 3 divides 2^331 + 1 and 5297 + 1.
-theorem c20_d331 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d331 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 331 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g5297 : 5297 ∈ P := S2 5297 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 5297) (x := 1 + 2 ^ 331) (by push_cast; reduce_mod_char)).trans hd)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 331) (by push_cast; reduce_mod_char)).trans hd) 5297 g5297 (by norm_num)
+    ((tw (c := 5297) (x := 1 + 2 ^ 331) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 331) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 5297 g5297 (by norm_num)
 
 -- a an odd multiple of 337: 3 divides 2^337 + 1 and 21569 + 1.
-theorem c20_d337 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d337 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 337 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g21569 : 21569 ∈ P := S2 21569 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 21569) (x := 1 + 2 ^ 337) (by push_cast; reduce_mod_char)).trans hd)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 337) (by push_cast; reduce_mod_char)).trans hd) 21569 g21569 (by norm_num)
+    ((tw (c := 21569) (x := 1 + 2 ^ 337) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 337) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 21569 g21569 (by norm_num)
 
 -- a an odd multiple of 349: 3 divides 2^349 + 1 and 131282633 + 1.
-theorem c20_d349 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d349 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 349 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g131282633 : 131282633 ∈ P := S2 131282633 prime_131282633 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 131282633) (x := 1 + 2 ^ 349) (by push_cast; reduce_mod_char)).trans hd)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 349) (by push_cast; reduce_mod_char)).trans hd) 131282633 g131282633 (by norm_num)
+    ((tw (c := 131282633) (x := 1 + 2 ^ 349) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 349) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 131282633 g131282633 (by norm_num)
 
 -- a an odd multiple of 367: 3 divides 2^367 + 1 and 29 + 1.
-theorem c20_d367 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d367 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 367 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g2203 : 2203 ∈ P := S2 2203 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 2203) (x := 1 + 2 ^ 367) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 2203) (x := 1 + 2 ^ 367) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g29 : 29 ∈ P := S1 29 (by norm_num) (by norm_num) (nz5 (by norm_num)) 2203 g2203 (by norm_num)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 367) (by push_cast; reduce_mod_char)).trans hd) 29 g29 (by norm_num)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 367) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 29 g29 (by norm_num)
 
 -- a an odd multiple of 373: 3 divides 2^373 + 1 and 15107 + 1.
-theorem c20_d373 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d373 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 373 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g60427 : 60427 ∈ P := S2 60427 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 60427) (x := 1 + 2 ^ 373) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 60427) (x := 1 + 2 ^ 373) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g15107 : 15107 ∈ P := S1 15107 (by norm_num) (by norm_num) (nz5 (by norm_num)) 60427 g60427 (by norm_num)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 373) (by push_cast; reduce_mod_char)).trans hd) 15107 g15107 (by norm_num)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 373) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 15107 g15107 (by norm_num)
 
 -- a an odd multiple of 379: 3 divides 2^379 + 1 and 47 + 1.
-theorem c20_d379 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d379 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 379 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g15012732261073 : 15012732261073 ∈ P := S2 15012732261073 prime_15012732261073 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 15012732261073) (x := 1 + 2 ^ 379) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 15012732261073) (x := 1 + 2 ^ 379) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g47 : 47 ∈ P := S1 47 (by norm_num) (by norm_num) (nz5 (by norm_num)) 15012732261073 g15012732261073 (by norm_num)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 379) (by push_cast; reduce_mod_char)).trans hd) 47 g47 (by norm_num)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 379) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 47 g47 (by norm_num)
 
 -- a an odd multiple of 397: 3^2 divides 13499 + 1.
-theorem c20_d397 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d397 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 397 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g13499 : 13499 ∈ P := S2 13499 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 13499) (x := 1 + 2 ^ 397) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 13499) (x := 1 + 2 ^ 397) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 13499 g13499 (by norm_num)
 
 -- a an odd multiple of 409: 3^2 divides 176596029450915408652219208387 + 1.
-theorem c20_d409 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d409 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 409 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g176596029450915408652219208387 : 176596029450915408652219208387 ∈ P := S2 176596029450915408652219208387 prime_176596029450915408652219208387 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 176596029450915408652219208387) (x := 1 + 2 ^ 409) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 176596029450915408652219208387) (x := 1 + 2 ^ 409) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 176596029450915408652219208387 g176596029450915408652219208387 (by norm_num)
 
 -- a an odd multiple of 421: 3^2 divides 4211 + 1.
-theorem c20_d421 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d421 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 421 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g4211 : 4211 ∈ P := S2 4211 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 4211) (x := 1 + 2 ^ 421) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 4211) (x := 1 + 2 ^ 421) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 4211 g4211 (by norm_num)
 
 -- a an odd multiple of 433: 3^2 divides 71 + 1.
-theorem c20_d433 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d433 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 433 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g2837017 : 2837017 ∈ P := S2 2837017 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 2837017) (x := 1 + 2 ^ 433) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 2837017) (x := 1 + 2 ^ 433) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g71 : 71 ∈ P := S1 71 (by norm_num) (by norm_num) (nz5 (by norm_num)) 2837017 g2837017 (by norm_num)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 71 g71 (by norm_num)
 
 -- a an odd multiple of 439: 13 divides 5^2 + 1 and 3740281 + 1.
-theorem c20_d439 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d439 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 439 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, -, -, S8⟩ := facts hP (hK5 2) E
   have g3740281 : 3740281 ∈ P := S2 3740281 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 3740281) (x := 1 + 2 ^ 439) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 3740281) (x := 1 + 2 ^ 439) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S8 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num) 3740281 g3740281 (by norm_num)
 
 -- a an odd multiple of 457: 3 divides 2^457 + 1 and 1451 + 1.
-theorem c20_d457 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d457 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 457 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g6885357560205319573060633896800918448254904729193 : 6885357560205319573060633896800918448254904729193 ∈ P := S2 6885357560205319573060633896800918448254904729193 prime_6885357560205319573060633896800918448254904729193 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 6885357560205319573060633896800918448254904729193) (x := 1 + 2 ^ 457) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 6885357560205319573060633896800918448254904729193) (x := 1 + 2 ^ 457) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g1451 : 1451 ∈ P := S1 1451 (by norm_num) (by norm_num) (nz5 (by norm_num)) 6885357560205319573060633896800918448254904729193 g6885357560205319573060633896800918448254904729193 (by norm_num)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 457) (by push_cast; reduce_mod_char)).trans hd) 1451 g1451 (by norm_num)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 457) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 1451 g1451 (by norm_num)
 
 -- a an odd multiple of 463: 3 divides 2^463 + 1 and 182201 + 1.
-theorem c20_d463 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d463 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 463 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g76834966209858049526107 : 76834966209858049526107 ∈ P := S2 76834966209858049526107 prime_76834966209858049526107 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 76834966209858049526107) (x := 1 + 2 ^ 463) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 76834966209858049526107) (x := 1 + 2 ^ 463) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g182201 : 182201 ∈ P := S1 182201 (by norm_num) (by norm_num) (nz5 (by norm_num)) 76834966209858049526107 g76834966209858049526107 (by norm_num)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 463) (by push_cast; reduce_mod_char)).trans hd) 182201 g182201 (by norm_num)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 463) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 182201 g182201 (by norm_num)
 
 -- a an odd multiple of 487: 3 divides 2^487 + 1 and 227020551154913939039124941009 + 1.
-theorem c20_d487 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d487 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 487 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g227020551154913939039124941009 : 227020551154913939039124941009 ∈ P := S2 227020551154913939039124941009 prime_227020551154913939039124941009 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 227020551154913939039124941009) (x := 1 + 2 ^ 487) (by push_cast; reduce_mod_char)).trans hd)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 487) (by push_cast; reduce_mod_char)).trans hd) 227020551154913939039124941009 g227020551154913939039124941009 (by norm_num)
+    ((tw (c := 227020551154913939039124941009) (x := 1 + 2 ^ 487) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 487) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 227020551154913939039124941009 g227020551154913939039124941009 (by norm_num)
 
 -- a an odd multiple of 499: 3^2 divides 163673 + 1.
-theorem c20_d499 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d499 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 499 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g163673 : 163673 ∈ P := S2 163673 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 163673) (x := 1 + 2 ^ 499) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 163673) (x := 1 + 2 ^ 499) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 163673 g163673 (by norm_num)
 
 -- a an odd multiple of 523: 3 divides 2^523 + 1 and 11 + 1.
-theorem c20_d523 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d523 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 523 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g36667531 : 36667531 ∈ P := S2 36667531 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 36667531) (x := 1 + 2 ^ 523) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 36667531) (x := 1 + 2 ^ 523) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g11 : 11 ∈ P := S1 11 (by norm_num) (by norm_num) (nz5 (by norm_num)) 36667531 g36667531 (by norm_num)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 523) (by push_cast; reduce_mod_char)).trans hd) 11 g11 (by norm_num)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 523) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 11 g11 (by norm_num)
 
 -- a an odd multiple of 541: 3^2 divides 86561 + 1.
-theorem c20_d541 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d541 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 541 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g86561 : 86561 ∈ P := S2 86561 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 86561) (x := 1 + 2 ^ 541) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 86561) (x := 1 + 2 ^ 541) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 86561 g86561 (by norm_num)
 
 -- a an odd multiple of 547: 3^2 divides 17 + 1.
-theorem c20_d547 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d547 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 547 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g1533926272849 : 1533926272849 ∈ P := S2 1533926272849 prime_1533926272849 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 1533926272849) (x := 1 + 2 ^ 547) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 1533926272849) (x := 1 + 2 ^ 547) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g150517 : 150517 ∈ P := S1 150517 (by norm_num) (by norm_num) (nz5 (by norm_num)) 1533926272849 g1533926272849 (by norm_num)
   have g17 : 17 ∈ P := S1 17 (by norm_num) (by norm_num) (nz5 (by norm_num)) 150517 g150517 (by norm_num)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 17 g17 (by norm_num)
 
 -- a an odd multiple of 571: 3 divides 2^571 + 1 and 9137 + 1.
-theorem c20_d571 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d571 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 571 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g9137 : 9137 ∈ P := S2 9137 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 9137) (x := 1 + 2 ^ 571) (by push_cast; reduce_mod_char)).trans hd)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 571) (by push_cast; reduce_mod_char)).trans hd) 9137 g9137 (by norm_num)
+    ((tw (c := 9137) (x := 1 + 2 ^ 571) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 571) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 9137 g9137 (by norm_num)
 
 -- a an odd multiple of 577: 3 divides 2^577 + 1 and 75011 + 1.
-theorem c20_d577 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d577 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 577 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g75011 : 75011 ∈ P := S2 75011 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 75011) (x := 1 + 2 ^ 577) (by push_cast; reduce_mod_char)).trans hd)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 577) (by push_cast; reduce_mod_char)).trans hd) 75011 g75011 (by norm_num)
+    ((tw (c := 75011) (x := 1 + 2 ^ 577) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 577) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 75011 g75011 (by norm_num)
 
 -- a an odd multiple of 601: 3^2 divides 9293424294571360217 + 1.
-theorem c20_d601 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d601 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 601 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g9293424294571360217 : 9293424294571360217 ∈ P := S2 9293424294571360217 prime_9293424294571360217 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 9293424294571360217) (x := 1 + 2 ^ 601) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 9293424294571360217) (x := 1 + 2 ^ 601) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 9293424294571360217 g9293424294571360217 (by norm_num)
 
 -- a an odd multiple of 607: 3 divides 2^607 + 1 and 115331 + 1.
-theorem c20_d607 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d607 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 607 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g115331 : 115331 ∈ P := S2 115331 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 115331) (x := 1 + 2 ^ 607) (by push_cast; reduce_mod_char)).trans hd)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 607) (by push_cast; reduce_mod_char)).trans hd) 115331 g115331 (by norm_num)
+    ((tw (c := 115331) (x := 1 + 2 ^ 607) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 607) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 115331 g115331 (by norm_num)
 
 -- a an odd multiple of 613: 13 divides 5^2 + 1 and 6288254243965628477636023561015424303471232712386461634292714267317577 + 1.
-theorem c20_d613 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d613 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 613 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, -, -, S8⟩ := facts hP (hK5 2) E
   have g6288254243965628477636023561015424303471232712386461634292714267317577 : 6288254243965628477636023561015424303471232712386461634292714267317577 ∈ P := S2 6288254243965628477636023561015424303471232712386461634292714267317577 prime_6288254243965628477636023561015424303471232712386461634292714267317577 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 6288254243965628477636023561015424303471232712386461634292714267317577) (x := 1 + 2 ^ 613) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 6288254243965628477636023561015424303471232712386461634292714267317577) (x := 1 + 2 ^ 613) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S8 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num) 6288254243965628477636023561015424303471232712386461634292714267317577 g6288254243965628477636023561015424303471232712386461634292714267317577 (by norm_num)
 
 -- a an odd multiple of 619: 3 divides 2^619 + 1 and 23 + 1.
-theorem c20_d619 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d619 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 619 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g1257388159910804265763446600825278256318012249697661907431303034629811311740864601663325811 : 1257388159910804265763446600825278256318012249697661907431303034629811311740864601663325811 ∈ P := S2 1257388159910804265763446600825278256318012249697661907431303034629811311740864601663325811 prime_1257388159910804265763446600825278256318012249697661907431303034629811311740864601663325811 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 1257388159910804265763446600825278256318012249697661907431303034629811311740864601663325811) (x := 1 + 2 ^ 619) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 1257388159910804265763446600825278256318012249697661907431303034629811311740864601663325811) (x := 1 + 2 ^ 619) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g23 : 23 ∈ P := S1 23 (by norm_num) (by norm_num) (nz5 (by norm_num)) 1257388159910804265763446600825278256318012249697661907431303034629811311740864601663325811 g1257388159910804265763446600825278256318012249697661907431303034629811311740864601663325811 (by norm_num)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 619) (by push_cast; reduce_mod_char)).trans hd) 23 g23 (by norm_num)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 619) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 23 g23 (by norm_num)
 
 -- a an odd multiple of 631: 3 divides 2^631 + 1 and 8309009 + 1.
-theorem c20_d631 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d631 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 631 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g8309009 : 8309009 ∈ P := S2 8309009 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 8309009) (x := 1 + 2 ^ 631) (by push_cast; reduce_mod_char)).trans hd)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 631) (by push_cast; reduce_mod_char)).trans hd) 8309009 g8309009 (by norm_num)
+    ((tw (c := 8309009) (x := 1 + 2 ^ 631) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 631) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 8309009 g8309009 (by norm_num)
 
 -- a an odd multiple of 643: 7 divides 1081756861144651 + 1 and 13 + 1.
-theorem c20_d643 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d643 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 643 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, S3, -, -, -, S7, -⟩ := facts hP (hK5 2) E
   have g1081756861144651 : 1081756861144651 ∈ P := S2 1081756861144651 prime_1081756861144651 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 1081756861144651) (x := 1 + 2 ^ 643) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 1081756861144651) (x := 1 + 2 ^ 643) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g13 : 13 ∈ P := S7 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num)
   exact absurd (S3 7 (by norm_num) (by norm_num) (nz5 (by norm_num)) 1081756861144651 g1081756861144651 13 g13 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 661: 3 divides 2^661 + 1 and 4611137 + 1.
-theorem c20_d661 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d661 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 661 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g4611137 : 4611137 ∈ P := S2 4611137 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 4611137) (x := 1 + 2 ^ 661) (by push_cast; reduce_mod_char)).trans hd)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 661) (by push_cast; reduce_mod_char)).trans hd) 4611137 g4611137 (by norm_num)
+    ((tw (c := 4611137) (x := 1 + 2 ^ 661) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 661) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 4611137 g4611137 (by norm_num)
 
 -- a an odd multiple of 673: 3 divides 2^673 + 1 and 1330725593 + 1.
-theorem c20_d673 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d673 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 673 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g1330725593 : 1330725593 ∈ P := S2 1330725593 prime_1330725593 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 1330725593) (x := 1 + 2 ^ 673) (by push_cast; reduce_mod_char)).trans hd)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 673) (by push_cast; reduce_mod_char)).trans hd) 1330725593 g1330725593 (by norm_num)
+    ((tw (c := 1330725593) (x := 1 + 2 ^ 673) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 673) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 1330725593 g1330725593 (by norm_num)
 
 -- a an odd multiple of 691: 37^2 divides 4668478921 + 1.
-theorem c20_d691 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d691 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 691 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g4668478921 : 4668478921 ∈ P := S2 4668478921 prime_4668478921 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 4668478921) (x := 1 + 2 ^ 691) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 4668478921) (x := 1 + 2 ^ 691) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 37 (by norm_num) (by norm_num) (nz5 (by norm_num)) 4668478921 g4668478921 (by norm_num)
 
 -- a an odd multiple of 709: 3 divides 2^709 + 1 and 263 + 1.
-theorem c20_d709 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d709 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 709 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g340321 : 340321 ∈ P := S2 340321 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 340321) (x := 1 + 2 ^ 709) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 340321) (x := 1 + 2 ^ 709) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g263 : 263 ∈ P := S1 263 (by norm_num) (by norm_num) (nz5 (by norm_num)) 340321 g340321 (by norm_num)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 709) (by push_cast; reduce_mod_char)).trans hd) 263 g263 (by norm_num)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 709) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 263 g263 (by norm_num)
 
 -- a an odd multiple of 727: 3 divides 2^727 + 1 and 11633 + 1.
-theorem c20_d727 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d727 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 727 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g11633 : 11633 ∈ P := S2 11633 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 11633) (x := 1 + 2 ^ 727) (by push_cast; reduce_mod_char)).trans hd)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 727) (by push_cast; reduce_mod_char)).trans hd) 11633 g11633 (by norm_num)
+    ((tw (c := 11633) (x := 1 + 2 ^ 727) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 727) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 11633 g11633 (by norm_num)
 
 -- a an odd multiple of 733: 3^2 divides 4797953 + 1.
-theorem c20_d733 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d733 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 733 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g396485324677401403 : 396485324677401403 ∈ P := S2 396485324677401403 prime_396485324677401403 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 396485324677401403) (x := 1 + 2 ^ 733) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 396485324677401403) (x := 1 + 2 ^ 733) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g4797953 : 4797953 ∈ P := S1 4797953 (by norm_num) (by norm_num) (nz5 (by norm_num)) 396485324677401403 g396485324677401403 (by norm_num)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 4797953 g4797953 (by norm_num)
 
 -- a an odd multiple of 739: 3^2 divides 2466850733 + 1.
-theorem c20_d739 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d739 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 739 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g33407751111787921302306812882603339179 : 33407751111787921302306812882603339179 ∈ P := S2 33407751111787921302306812882603339179 prime_33407751111787921302306812882603339179 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 33407751111787921302306812882603339179) (x := 1 + 2 ^ 739) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 33407751111787921302306812882603339179) (x := 1 + 2 ^ 739) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g1670387555589396065115340644130166959 : 1670387555589396065115340644130166959 ∈ P := S1 1670387555589396065115340644130166959 prime_1670387555589396065115340644130166959 (by norm_num) (nz5 (by norm_num)) 33407751111787921302306812882603339179 g33407751111787921302306812882603339179 (by norm_num)
   have g9867402931 : 9867402931 ∈ P := S1 9867402931 prime_9867402931 (by norm_num) (nz5 (by norm_num)) 1670387555589396065115340644130166959 g1670387555589396065115340644130166959 (by norm_num)
   have g2466850733 : 2466850733 ∈ P := S1 2466850733 prime_2466850733 (by norm_num) (nz5 (by norm_num)) 9867402931 g9867402931 (by norm_num)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 2466850733 g2466850733 (by norm_num)
 
 -- a an odd multiple of 751: 3 divides 2^751 + 1 and 11 + 1.
-theorem c20_d751 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d751 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 751 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g274867 : 274867 ∈ P := S2 274867 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 274867) (x := 1 + 2 ^ 751) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 274867) (x := 1 + 2 ^ 751) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g11 : 11 ∈ P := S1 11 (by norm_num) (by norm_num) (nz5 (by norm_num)) 274867 g274867 (by norm_num)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 751) (by push_cast; reduce_mod_char)).trans hd) 11 g11 (by norm_num)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 751) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 11 g11 (by norm_num)
 
 -- a an odd multiple of 757: 3 divides 2^757 + 1 and 417817067 + 1.
-theorem c20_d757 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d757 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 757 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g417817067 : 417817067 ∈ P := S2 417817067 prime_417817067 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 417817067) (x := 1 + 2 ^ 757) (by push_cast; reduce_mod_char)).trans hd)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 757) (by push_cast; reduce_mod_char)).trans hd) 417817067 g417817067 (by norm_num)
+    ((tw (c := 417817067) (x := 1 + 2 ^ 757) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 757) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 417817067 g417817067 (by norm_num)
 
 -- a an odd multiple of 769: 3 divides 2^769 + 1 and 11 + 1.
-theorem c20_d769 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d769 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 769 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g36913 : 36913 ∈ P := S2 36913 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 36913) (x := 1 + 2 ^ 769) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 36913) (x := 1 + 2 ^ 769) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g18457 : 18457 ∈ P := S1 18457 (by norm_num) (by norm_num) (nz5 (by norm_num)) 36913 g36913 (by norm_num)
   have g11 : 11 ∈ P := S1 11 (by norm_num) (by norm_num) (nz5 (by norm_num)) 18457 g18457 (by norm_num)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 769) (by push_cast; reduce_mod_char)).trans hd) 11 g11 (by norm_num)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 769) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 11 g11 (by norm_num)
 
 -- a an odd multiple of 787: 3 divides 2^787 + 1 and 942827 + 1.
-theorem c20_d787 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d787 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 787 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g942827 : 942827 ∈ P := S2 942827 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 942827) (x := 1 + 2 ^ 787) (by push_cast; reduce_mod_char)).trans hd)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 787) (by push_cast; reduce_mod_char)).trans hd) 942827 g942827 (by norm_num)
+    ((tw (c := 942827) (x := 1 + 2 ^ 787) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 787) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 942827 g942827 (by norm_num)
 
 -- a an odd multiple of 811: 3^2 divides 7102927740195899 + 1.
-theorem c20_d811 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d811 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 811 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g7102927740195899 : 7102927740195899 ∈ P := S2 7102927740195899 prime_7102927740195899 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 7102927740195899) (x := 1 + 2 ^ 811) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 7102927740195899) (x := 1 + 2 ^ 811) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 7102927740195899 g7102927740195899 (by norm_num)
 
 -- a an odd multiple of 823: 3^2 divides 17 + 1.
-theorem c20_d823 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d823 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 823 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g316033 : 316033 ∈ P := S2 316033 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 316033) (x := 1 + 2 ^ 823) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 316033) (x := 1 + 2 ^ 823) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g158017 : 158017 ∈ P := S1 158017 (by norm_num) (by norm_num) (nz5 (by norm_num)) 316033 g316033 (by norm_num)
   have g11287 : 11287 ∈ P := S1 11287 (by norm_num) (by norm_num) (nz5 (by norm_num)) 158017 g158017 (by norm_num)
   have g17 : 17 ∈ P := S1 17 (by norm_num) (by norm_num) (nz5 (by norm_num)) 11287 g11287 (by norm_num)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 17 g17 (by norm_num)
 
 -- a an odd multiple of 829: 3^2 divides 131147801 + 1.
-theorem c20_d829 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d829 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 829 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g131147801 : 131147801 ∈ P := S2 131147801 prime_131147801 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 131147801) (x := 1 + 2 ^ 829) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 131147801) (x := 1 + 2 ^ 829) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 131147801 g131147801 (by norm_num)
 
 -- a an odd multiple of 853: 3^2 divides 2465171 + 1.
-theorem c20_d853 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d853 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 853 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g2465171 : 2465171 ∈ P := S2 2465171 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 2465171) (x := 1 + 2 ^ 853) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 2465171) (x := 1 + 2 ^ 853) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 2465171 g2465171 (by norm_num)
 
 -- a an odd multiple of 859: 3 divides 2^859 + 1 and 2027 + 1.
-theorem c20_d859 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d859 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 859 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g4045891 : 4045891 ∈ P := S2 4045891 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 4045891) (x := 1 + 2 ^ 859) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 4045891) (x := 1 + 2 ^ 859) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g2027 : 2027 ∈ P := S1 2027 (by norm_num) (by norm_num) (nz5 (by norm_num)) 4045891 g4045891 (by norm_num)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 859) (by push_cast; reduce_mod_char)).trans hd) 2027 g2027 (by norm_num)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 859) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 2027 g2027 (by norm_num)
 
 -- a an odd multiple of 877: 3 divides 2^877 + 1 and 29819 + 1.
-theorem c20_d877 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d877 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 877 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g29819 : 29819 ∈ P := S2 29819 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 29819) (x := 1 + 2 ^ 877) (by push_cast; reduce_mod_char)).trans hd)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 877) (by push_cast; reduce_mod_char)).trans hd) 29819 g29819 (by norm_num)
+    ((tw (c := 29819) (x := 1 + 2 ^ 877) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 877) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 29819 g29819 (by norm_num)
 
 -- a an odd multiple of 883: 3 divides 2^883 + 1 and 294923 + 1.
-theorem c20_d883 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d883 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 883 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g294923 : 294923 ∈ P := S2 294923 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 294923) (x := 1 + 2 ^ 883) (by push_cast; reduce_mod_char)).trans hd)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 883) (by push_cast; reduce_mod_char)).trans hd) 294923 g294923 (by norm_num)
+    ((tw (c := 294923) (x := 1 + 2 ^ 883) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 883) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 294923 g294923 (by norm_num)
 
 -- a an odd multiple of 907: 13 divides 5^2 + 1 and 3921815533 + 1.
-theorem c20_d907 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d907 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 907 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, -, -, S8⟩ := facts hP (hK5 2) E
   have g8156908781432775187914049 : 8156908781432775187914049 ∈ P := S2 8156908781432775187914049 prime_8156908781432775187914049 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 8156908781432775187914049) (x := 1 + 2 ^ 907) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 8156908781432775187914049) (x := 1 + 2 ^ 907) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g3921815533 : 3921815533 ∈ P := S1 3921815533 prime_3921815533 (by norm_num) (nz5 (by norm_num)) 8156908781432775187914049 g8156908781432775187914049 (by norm_num)
   exact S8 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num) 3921815533 g3921815533 (by norm_num)
 
 -- a an odd multiple of 919: 3^2 divides 14968673 + 1.
-theorem c20_d919 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d919 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 919 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g14968673 : 14968673 ∈ P := S2 14968673 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 14968673) (x := 1 + 2 ^ 919) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 14968673) (x := 1 + 2 ^ 919) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 14968673 g14968673 (by norm_num)
 
 -- a an odd multiple of 937: 3^2 divides 1431737 + 1.
-theorem c20_d937 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d937 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 937 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g1431737 : 1431737 ∈ P := S2 1431737 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 1431737) (x := 1 + 2 ^ 937) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 1431737) (x := 1 + 2 ^ 937) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 1431737 g1431737 (by norm_num)
 
 -- a an odd multiple of 967: 3 divides 2^967 + 1 and 47 + 1.
-theorem c20_d967 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d967 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 967 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g440953 : 440953 ∈ P := S2 440953 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 440953) (x := 1 + 2 ^ 967) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 440953) (x := 1 + 2 ^ 967) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g47 : 47 ∈ P := S1 47 (by norm_num) (by norm_num) (nz5 (by norm_num)) 440953 g440953 (by norm_num)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 967) (by push_cast; reduce_mod_char)).trans hd) 47 g47 (by norm_num)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 967) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 47 g47 (by norm_num)
 
 -- a an odd multiple of 991: 3 divides 2^991 + 1 and 3060209 + 1.
-theorem c20_d991 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d991 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 991 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g3060209 : 3060209 ∈ P := S2 3060209 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 3060209) (x := 1 + 2 ^ 991) (by push_cast; reduce_mod_char)).trans hd)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 991) (by push_cast; reduce_mod_char)).trans hd) 3060209 g3060209 (by norm_num)
+    ((tw (c := 3060209) (x := 1 + 2 ^ 991) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 991) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 3060209 g3060209 (by norm_num)
 
 -- a an odd multiple of 997: 3 divides 2^997 + 1 and 614153 + 1.
-theorem c20_d997 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d997 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 997 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g614153 : 614153 ∈ P := S2 614153 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 614153) (x := 1 + 2 ^ 997) (by push_cast; reduce_mod_char)).trans hd)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 997) (by push_cast; reduce_mod_char)).trans hd) 614153 g614153 (by norm_num)
+    ((tw (c := 614153) (x := 1 + 2 ^ 997) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 997) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 614153 g614153 (by norm_num)
 
 -- a an odd multiple of 1009: 3 divides 2^1009 + 1 and 11 + 1.
-theorem c20_d1009 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1009 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1009 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g962587 : 962587 ∈ P := S2 962587 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 962587) (x := 1 + 2 ^ 1009) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 962587) (x := 1 + 2 ^ 1009) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g11 : 11 ∈ P := S1 11 (by norm_num) (by norm_num) (nz5 (by norm_num)) 962587 g962587 (by norm_num)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1009) (by push_cast; reduce_mod_char)).trans hd) 11 g11 (by norm_num)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1009) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 11 g11 (by norm_num)
 
 -- a an odd multiple of 1021: 3 divides 2^1021 + 1 and 10211 + 1.
-theorem c20_d1021 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1021 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1021 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g10211 : 10211 ∈ P := S2 10211 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 10211) (x := 1 + 2 ^ 1021) (by push_cast; reduce_mod_char)).trans hd)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1021) (by push_cast; reduce_mod_char)).trans hd) 10211 g10211 (by norm_num)
+    ((tw (c := 10211) (x := 1 + 2 ^ 1021) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1021) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 10211 g10211 (by norm_num)
 
 -- a an odd multiple of 1033: 89^2 divides 586153 + 1.
-theorem c20_d1033 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1033 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1033 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g24651922299337 : 24651922299337 ∈ P := S2 24651922299337 prime_24651922299337 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 24651922299337) (x := 1 + 2 ^ 1033) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 24651922299337) (x := 1 + 2 ^ 1033) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g586153 : 586153 ∈ P := S1 586153 (by norm_num) (by norm_num) (nz5 (by norm_num)) 24651922299337 g24651922299337 (by norm_num)
   exact S6 89 (by norm_num) (by norm_num) (nz5 (by norm_num)) 586153 g586153 (by norm_num)
 
 -- a an odd multiple of 1039: 3 divides 2^1039 + 1 and 47 + 1.
-theorem c20_d1039 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1039 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1039 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g155851 : 155851 ∈ P := S2 155851 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 155851) (x := 1 + 2 ^ 1039) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 155851) (x := 1 + 2 ^ 1039) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g47 : 47 ∈ P := S1 47 (by norm_num) (by norm_num) (nz5 (by norm_num)) 155851 g155851 (by norm_num)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1039) (by push_cast; reduce_mod_char)).trans hd) 47 g47 (by norm_num)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1039) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 47 g47 (by norm_num)
 
 -- a an odd multiple of 1051: 3^2 divides 26015176530521 + 1.
-theorem c20_d1051 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1051 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1051 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g26015176530521 : 26015176530521 ∈ P := S2 26015176530521 prime_26015176530521 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 26015176530521) (x := 1 + 2 ^ 1051) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 26015176530521) (x := 1 + 2 ^ 1051) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 26015176530521 g26015176530521 (by norm_num)
 
 -- a an odd multiple of 1063: 3^2 divides 114584129081 + 1.
-theorem c20_d1063 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1063 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1063 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g114584129081 : 114584129081 ∈ P := S2 114584129081 prime_114584129081 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 114584129081) (x := 1 + 2 ^ 1063) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 114584129081) (x := 1 + 2 ^ 1063) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 114584129081 g114584129081 (by norm_num)
 
 -- a an odd multiple of 1069: 7 divides 13 + 1 and 7573 + 1.
-theorem c20_d1069 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1069 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1069 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, S3, -, -, -, S7, -⟩ := facts hP (hK5 2) E
   have g13 : 13 ∈ P := S7 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num)
   have g7681945177 : 7681945177 ∈ P := S2 7681945177 prime_7681945177 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 7681945177) (x := 1 + 2 ^ 1069) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 7681945177) (x := 1 + 2 ^ 1069) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g7573 : 7573 ∈ P := S1 7573 (by norm_num) (by norm_num) (nz5 (by norm_num)) 7681945177 g7681945177 (by norm_num)
   exact absurd (S3 7 (by norm_num) (by norm_num) (nz5 (by norm_num)) 13 g13 7573 g7573 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 1087: 3 divides 2^1087 + 1 and 121398914459 + 1.
-theorem c20_d1087 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1087 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1087 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g121398914459 : 121398914459 ∈ P := S2 121398914459 prime_121398914459 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 121398914459) (x := 1 + 2 ^ 1087) (by push_cast; reduce_mod_char)).trans hd)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1087) (by push_cast; reduce_mod_char)).trans hd) 121398914459 g121398914459 (by norm_num)
+    ((tw (c := 121398914459) (x := 1 + 2 ^ 1087) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1087) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 121398914459 g121398914459 (by norm_num)
 
 -- a an odd multiple of 1093: 3 divides 2^1093 + 1 and 306041 + 1.
-theorem c20_d1093 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1093 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1093 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g306041 : 306041 ∈ P := S2 306041 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 306041) (x := 1 + 2 ^ 1093) (by push_cast; reduce_mod_char)).trans hd)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1093) (by push_cast; reduce_mod_char)).trans hd) 306041 g306041 (by norm_num)
+    ((tw (c := 306041) (x := 1 + 2 ^ 1093) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1093) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 306041 g306041 (by norm_num)
 
 -- a an odd multiple of 1117: 3^2 divides 1619 + 1.
-theorem c20_d1117 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1117 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1117 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g70533063399945787 : 70533063399945787 ∈ P := S2 70533063399945787 prime_70533063399945787 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 70533063399945787) (x := 1 + 2 ^ 1117) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 70533063399945787) (x := 1 + 2 ^ 1117) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g1619 : 1619 ∈ P := S1 1619 (by norm_num) (by norm_num) (nz5 (by norm_num)) 70533063399945787 g70533063399945787 (by norm_num)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 1619 g1619 (by norm_num)
 
 -- a an odd multiple of 1123: 7^2 divides 97 + 1.
-theorem c20_d1123 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1123 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1123 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g26664334916566271989490176818526188623612993733773073764132624439822811 : 26664334916566271989490176818526188623612993733773073764132624439822811 ∈ P := S2 26664334916566271989490176818526188623612993733773073764132624439822811 prime_26664334916566271989490176818526188623612993733773073764132624439822811 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 26664334916566271989490176818526188623612993733773073764132624439822811) (x := 1 + 2 ^ 1123) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 26664334916566271989490176818526188623612993733773073764132624439822811) (x := 1 + 2 ^ 1123) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g97 : 97 ∈ P := S1 97 (by norm_num) (by norm_num) (nz5 (by norm_num)) 26664334916566271989490176818526188623612993733773073764132624439822811 g26664334916566271989490176818526188623612993733773073764132624439822811 (by norm_num)
   exact S6 7 (by norm_num) (by norm_num) (nz5 (by norm_num)) 97 g97 (by norm_num)
 
 -- a an odd multiple of 1129: 3^2 divides 5297035427 + 1.
-theorem c20_d1129 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1129 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1129 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g5297035427 : 5297035427 ∈ P := S2 5297035427 prime_5297035427 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 5297035427) (x := 1 + 2 ^ 1129) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 5297035427) (x := 1 + 2 ^ 1129) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 5297035427 g5297035427 (by norm_num)
 
 -- a an odd multiple of 1153: 3 divides 2^1153 + 1 and 101 + 1.
-theorem c20_d1153 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1153 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1153 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g27673 : 27673 ∈ P := S2 27673 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 27673) (x := 1 + 2 ^ 1153) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 27673) (x := 1 + 2 ^ 1153) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g101 : 101 ∈ P := S1 101 (by norm_num) (by norm_num) (nz5 (by norm_num)) 27673 g27673 (by norm_num)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1153) (by push_cast; reduce_mod_char)).trans hd) 101 g101 (by norm_num)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1153) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 101 g101 (by norm_num)
 
 -- a an odd multiple of 1171: 3 divides 2^1171 + 1 and 25763 + 1.
-theorem c20_d1171 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1171 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1171 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g25763 : 25763 ∈ P := S2 25763 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 25763) (x := 1 + 2 ^ 1171) (by push_cast; reduce_mod_char)).trans hd)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1171) (by push_cast; reduce_mod_char)).trans hd) 25763 g25763 (by norm_num)
+    ((tw (c := 25763) (x := 1 + 2 ^ 1171) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1171) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 25763 g25763 (by norm_num)
 
 -- a an odd multiple of 1201: 3 divides 2^1201 + 1 and 481001 + 1.
-theorem c20_d1201 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1201 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1201 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g1924003 : 1924003 ∈ P := S2 1924003 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 1924003) (x := 1 + 2 ^ 1201) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 1924003) (x := 1 + 2 ^ 1201) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g481001 : 481001 ∈ P := S1 481001 (by norm_num) (by norm_num) (nz5 (by norm_num)) 1924003 g1924003 (by norm_num)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1201) (by push_cast; reduce_mod_char)).trans hd) 481001 g481001 (by norm_num)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1201) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 481001 g481001 (by norm_num)
 
 -- a an odd multiple of 1213: 3 divides 2^1213 + 1 and 1809697712203883 + 1.
-theorem c20_d1213 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1213 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1213 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g1809697712203883 : 1809697712203883 ∈ P := S2 1809697712203883 prime_1809697712203883 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 1809697712203883) (x := 1 + 2 ^ 1213) (by push_cast; reduce_mod_char)).trans hd)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1213) (by push_cast; reduce_mod_char)).trans hd) 1809697712203883 g1809697712203883 (by norm_num)
+    ((tw (c := 1809697712203883) (x := 1 + 2 ^ 1213) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1213) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 1809697712203883 g1809697712203883 (by norm_num)
 
 -- a an odd multiple of 1231: 3^2 divides 5680156935617 + 1.
-theorem c20_d1231 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1231 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1231 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g5680156935617 : 5680156935617 ∈ P := S2 5680156935617 prime_5680156935617 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 5680156935617) (x := 1 + 2 ^ 1231) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 5680156935617) (x := 1 + 2 ^ 1231) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 5680156935617 g5680156935617 (by norm_num)
 
 -- a an odd multiple of 1237: 3 divides 2^1237 + 1 and 19793 + 1.
-theorem c20_d1237 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1237 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1237 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g19793 : 19793 ∈ P := S2 19793 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 19793) (x := 1 + 2 ^ 1237) (by push_cast; reduce_mod_char)).trans hd)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1237) (by push_cast; reduce_mod_char)).trans hd) 19793 g19793 (by norm_num)
+    ((tw (c := 19793) (x := 1 + 2 ^ 1237) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1237) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 19793 g19793 (by norm_num)
 
 -- a an odd multiple of 1249: 3 divides 2^1249 + 1 and 42467 + 1.
-theorem c20_d1249 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1249 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1249 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g42467 : 42467 ∈ P := S2 42467 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 42467) (x := 1 + 2 ^ 1249) (by push_cast; reduce_mod_char)).trans hd)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1249) (by push_cast; reduce_mod_char)).trans hd) 42467 g42467 (by norm_num)
+    ((tw (c := 42467) (x := 1 + 2 ^ 1249) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1249) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 42467 g42467 (by norm_num)
 
 -- a an odd multiple of 1279: 7^2 divides 3107971 + 1.
-theorem c20_d1279 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1279 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1279 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g3107971 : 3107971 ∈ P := S2 3107971 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 3107971) (x := 1 + 2 ^ 1279) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 3107971) (x := 1 + 2 ^ 1279) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 7 (by norm_num) (by norm_num) (nz5 (by norm_num)) 3107971 g3107971 (by norm_num)
 
 -- a an odd multiple of 1291: 3^2 divides 28403 + 1.
-theorem c20_d1291 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1291 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1291 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g28403 : 28403 ∈ P := S2 28403 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 28403) (x := 1 + 2 ^ 1291) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 28403) (x := 1 + 2 ^ 1291) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 28403 g28403 (by norm_num)
 
 -- a an odd multiple of 1297: 3 divides 2^1297 + 1 and 1973 + 1.
-theorem c20_d1297 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1297 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1297 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g155752053019 : 155752053019 ∈ P := S2 155752053019 prime_155752053019 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 155752053019) (x := 1 + 2 ^ 1297) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 155752053019) (x := 1 + 2 ^ 1297) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g1973 : 1973 ∈ P := S1 1973 (by norm_num) (by norm_num) (nz5 (by norm_num)) 155752053019 g155752053019 (by norm_num)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1297) (by push_cast; reduce_mod_char)).trans hd) 1973 g1973 (by norm_num)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1297) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 1973 g1973 (by norm_num)
 
 -- a an odd multiple of 1303: 3^2 divides 53204563686868873577 + 1.
-theorem c20_d1303 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1303 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1303 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g53204563686868873577 : 53204563686868873577 ∈ P := S2 53204563686868873577 prime_53204563686868873577 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 53204563686868873577) (x := 1 + 2 ^ 1303) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 53204563686868873577) (x := 1 + 2 ^ 1303) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 53204563686868873577 g53204563686868873577 (by norm_num)
 
 -- a an odd multiple of 1321: 13 divides 5^2 + 1 and 103 + 1.
-theorem c20_d1321 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1321 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1321 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, -, -, S8⟩ := facts hP (hK5 2) E
   have g102725010187 : 102725010187 ∈ P := S2 102725010187 prime_102725010187 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 102725010187) (x := 1 + 2 ^ 1321) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 102725010187) (x := 1 + 2 ^ 1321) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g103 : 103 ∈ P := S1 103 (by norm_num) (by norm_num) (nz5 (by norm_num)) 102725010187 g102725010187 (by norm_num)
   exact S8 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num) 103 g103 (by norm_num)
 
 -- a an odd multiple of 1327: 3 divides 2^1327 + 1 and 11 + 1.
-theorem c20_d1327 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1327 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1327 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g7963 : 7963 ∈ P := S2 7963 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 7963) (x := 1 + 2 ^ 1327) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 7963) (x := 1 + 2 ^ 1327) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g11 : 11 ∈ P := S1 11 (by norm_num) (by norm_num) (nz5 (by norm_num)) 7963 g7963 (by norm_num)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1327) (by push_cast; reduce_mod_char)).trans hd) 11 g11 (by norm_num)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1327) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 11 g11 (by norm_num)
 
 -- a an odd multiple of 1381: 3^2 divides 113738319658736238418567892099 + 1.
-theorem c20_d1381 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1381 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1381 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g113738319658736238418567892099 : 113738319658736238418567892099 ∈ P := S2 113738319658736238418567892099 prime_113738319658736238418567892099 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 113738319658736238418567892099) (x := 1 + 2 ^ 1381) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 113738319658736238418567892099) (x := 1 + 2 ^ 1381) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 113738319658736238418567892099 g113738319658736238418567892099 (by norm_num)
 
 -- a an odd multiple of 1399: 13 divides 5^2 + 1 and 103 + 1.
-theorem c20_d1399 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1399 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1399 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, -, -, S8⟩ := facts hP (hK5 2) E
   have g33577 : 33577 ∈ P := S2 33577 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 33577) (x := 1 + 2 ^ 1399) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 33577) (x := 1 + 2 ^ 1399) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g103 : 103 ∈ P := S1 103 (by norm_num) (by norm_num) (nz5 (by norm_num)) 33577 g33577 (by norm_num)
   exact S8 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num) 103 g103 (by norm_num)
 
 -- a an odd multiple of 1423: 3 divides 2^1423 + 1 and 113 + 1.
-theorem c20_d1423 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1423 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1423 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g112804057 : 112804057 ∈ P := S2 112804057 prime_112804057 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 112804057) (x := 1 + 2 ^ 1423) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 112804057) (x := 1 + 2 ^ 1423) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g113 : 113 ∈ P := S1 113 (by norm_num) (by norm_num) (nz5 (by norm_num)) 112804057 g112804057 (by norm_num)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1423) (by push_cast; reduce_mod_char)).trans hd) 113 g113 (by norm_num)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1423) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 113 g113 (by norm_num)
 
 -- a an odd multiple of 1429: 7 divides 1548733385688649 + 1 and 13 + 1.
-theorem c20_d1429 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1429 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1429 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, S3, -, -, -, S7, -⟩ := facts hP (hK5 2) E
   have g1548733385688649 : 1548733385688649 ∈ P := S2 1548733385688649 prime_1548733385688649 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 1548733385688649) (x := 1 + 2 ^ 1429) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 1548733385688649) (x := 1 + 2 ^ 1429) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g13 : 13 ∈ P := S7 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num)
   exact absurd (S3 7 (by norm_num) (by norm_num) (nz5 (by norm_num)) 1548733385688649 g1548733385688649 13 g13 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 1447: 3 divides 2^1447 + 1 and 1238047460871066723939449 + 1.
-theorem c20_d1447 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1447 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1447 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g1238047460871066723939449 : 1238047460871066723939449 ∈ P := S2 1238047460871066723939449 prime_1238047460871066723939449 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 1238047460871066723939449) (x := 1 + 2 ^ 1447) (by push_cast; reduce_mod_char)).trans hd)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1447) (by push_cast; reduce_mod_char)).trans hd) 1238047460871066723939449 g1238047460871066723939449 (by norm_num)
+    ((tw (c := 1238047460871066723939449) (x := 1 + 2 ^ 1447) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1447) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 1238047460871066723939449 g1238047460871066723939449 (by norm_num)
 
 -- a an odd multiple of 1453: 7^2 divides 1567 + 1.
-theorem c20_d1453 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1453 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1453 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g52447489 : 52447489 ∈ P := S2 52447489 prime_52447489 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 52447489) (x := 1 + 2 ^ 1453) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 52447489) (x := 1 + 2 ^ 1453) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g1567 : 1567 ∈ P := S1 1567 (by norm_num) (by norm_num) (nz5 (by norm_num)) 52447489 g52447489 (by norm_num)
   exact S6 7 (by norm_num) (by norm_num) (nz5 (by norm_num)) 1567 g1567 (by norm_num)
 
 -- a an odd multiple of 1459: 3 divides 2^1459 + 1 and 3538966647017366178930789720372963502043 + 1.
-theorem c20_d1459 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1459 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1459 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g3538966647017366178930789720372963502043 : 3538966647017366178930789720372963502043 ∈ P := S2 3538966647017366178930789720372963502043 prime_3538966647017366178930789720372963502043 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 3538966647017366178930789720372963502043) (x := 1 + 2 ^ 1459) (by push_cast; reduce_mod_char)).trans hd)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1459) (by push_cast; reduce_mod_char)).trans hd) 3538966647017366178930789720372963502043 g3538966647017366178930789720372963502043 (by norm_num)
+    ((tw (c := 3538966647017366178930789720372963502043) (x := 1 + 2 ^ 1459) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1459) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 3538966647017366178930789720372963502043 g3538966647017366178930789720372963502043 (by norm_num)
 
 -- a an odd multiple of 1471: 7 divides 87238974742151728369 + 1 and 13 + 1.
-theorem c20_d1471 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1471 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1471 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, S3, -, -, -, S7, -⟩ := facts hP (hK5 2) E
   have g87238974742151728369 : 87238974742151728369 ∈ P := S2 87238974742151728369 prime_87238974742151728369 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 87238974742151728369) (x := 1 + 2 ^ 1471) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 87238974742151728369) (x := 1 + 2 ^ 1471) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g13 : 13 ∈ P := S7 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num)
   exact absurd (S3 7 (by norm_num) (by norm_num) (nz5 (by norm_num)) 87238974742151728369 g87238974742151728369 13 g13 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 1483: 3^2 divides 31994243 + 1.
-theorem c20_d1483 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1483 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1483 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g31994243 : 31994243 ∈ P := S2 31994243 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 31994243) (x := 1 + 2 ^ 1483) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 31994243) (x := 1 + 2 ^ 1483) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 31994243 g31994243 (by norm_num)
 
 -- a an odd multiple of 1489: 3^2 divides 12344417513 + 1.
-theorem c20_d1489 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1489 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1489 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g12344417513 : 12344417513 ∈ P := S2 12344417513 prime_12344417513 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 12344417513) (x := 1 + 2 ^ 1489) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 12344417513) (x := 1 + 2 ^ 1489) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 12344417513 g12344417513 (by norm_num)
 
 -- a an odd multiple of 1531: 3 divides 2^1531 + 1 and 2297 + 1.
-theorem c20_d1531 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1531 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1531 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g9187 : 9187 ∈ P := S2 9187 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 9187) (x := 1 + 2 ^ 1531) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 9187) (x := 1 + 2 ^ 1531) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g2297 : 2297 ∈ P := S1 2297 (by norm_num) (by norm_num) (nz5 (by norm_num)) 9187 g9187 (by norm_num)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1531) (by push_cast; reduce_mod_char)).trans hd) 2297 g2297 (by norm_num)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1531) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 2297 g2297 (by norm_num)
 
 -- a an odd multiple of 1543: 3 divides 2^1543 + 1 and 4551233 + 1.
-theorem c20_d1543 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1543 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1543 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g45512329 : 45512329 ∈ P := S2 45512329 prime_45512329 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 45512329) (x := 1 + 2 ^ 1543) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 45512329) (x := 1 + 2 ^ 1543) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g4551233 : 4551233 ∈ P := S1 4551233 (by norm_num) (by norm_num) (nz5 (by norm_num)) 45512329 g45512329 (by norm_num)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1543) (by push_cast; reduce_mod_char)).trans hd) 4551233 g4551233 (by norm_num)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1543) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 4551233 g4551233 (by norm_num)
 
 -- a an odd multiple of 1549: 3^2 divides 107 + 1.
-theorem c20_d1549 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1549 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1549 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g1592062201 : 1592062201 ∈ P := S2 1592062201 prime_1592062201 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 1592062201) (x := 1 + 2 ^ 1549) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 1592062201) (x := 1 + 2 ^ 1549) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g107 : 107 ∈ P := S1 107 (by norm_num) (by norm_num) (nz5 (by norm_num)) 1592062201 g1592062201 (by norm_num)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 107 g107 (by norm_num)
 
 -- a an odd multiple of 1567: 3 divides 2^1567 + 1 and 2351 + 1.
-theorem c20_d1567 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1567 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1567 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g9403 : 9403 ∈ P := S2 9403 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 9403) (x := 1 + 2 ^ 1567) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 9403) (x := 1 + 2 ^ 1567) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g2351 : 2351 ∈ P := S1 2351 (by norm_num) (by norm_num) (nz5 (by norm_num)) 9403 g9403 (by norm_num)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1567) (by push_cast; reduce_mod_char)).trans hd) 2351 g2351 (by norm_num)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1567) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 2351 g2351 (by norm_num)
 
 -- a an odd multiple of 1579: 3^2 divides 34739 + 1.
-theorem c20_d1579 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1579 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1579 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g34739 : 34739 ∈ P := S2 34739 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 34739) (x := 1 + 2 ^ 1579) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 34739) (x := 1 + 2 ^ 1579) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 34739 g34739 (by norm_num)
 
 -- a an odd multiple of 1597: 3 divides 2^1597 + 1 and 154414585369847792316011 + 1.
-theorem c20_d1597 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1597 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1597 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g154414585369847792316011 : 154414585369847792316011 ∈ P := S2 154414585369847792316011 prime_154414585369847792316011 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 154414585369847792316011) (x := 1 + 2 ^ 1597) (by push_cast; reduce_mod_char)).trans hd)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1597) (by push_cast; reduce_mod_char)).trans hd) 154414585369847792316011 g154414585369847792316011 (by norm_num)
+    ((tw (c := 154414585369847792316011) (x := 1 + 2 ^ 1597) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1597) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 154414585369847792316011 g154414585369847792316011 (by norm_num)
 
 -- a an odd multiple of 1609: 3^2 divides 16091 + 1.
-theorem c20_d1609 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1609 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1609 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g16091 : 16091 ∈ P := S2 16091 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 16091) (x := 1 + 2 ^ 1609) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 16091) (x := 1 + 2 ^ 1609) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 16091 g16091 (by norm_num)
 
 -- a an odd multiple of 1621: 3^2 divides 647 + 1.
-theorem c20_d1621 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1621 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1621 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g2995609 : 2995609 ∈ P := S2 2995609 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 2995609) (x := 1 + 2 ^ 1621) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 2995609) (x := 1 + 2 ^ 1621) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g647 : 647 ∈ P := S1 647 (by norm_num) (by norm_num) (nz5 (by norm_num)) 2995609 g2995609 (by norm_num)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 647 g647 (by norm_num)
 
 -- a an odd multiple of 1627: 3^2 divides 1978433 + 1.
-theorem c20_d1627 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1627 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1627 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g1978433 : 1978433 ∈ P := S2 1978433 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 1978433) (x := 1 + 2 ^ 1627) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 1978433) (x := 1 + 2 ^ 1627) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 1978433 g1978433 (by norm_num)
 
 -- a an odd multiple of 1657: 7 divides 1151642337187 + 1 and 13 + 1.
-theorem c20_d1657 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1657 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1657 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, S3, -, -, -, S7, -⟩ := facts hP (hK5 2) E
   have g1151642337187 : 1151642337187 ∈ P := S2 1151642337187 prime_1151642337187 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 1151642337187) (x := 1 + 2 ^ 1657) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 1151642337187) (x := 1 + 2 ^ 1657) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g13 : 13 ∈ P := S7 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num)
   exact absurd (S3 7 (by norm_num) (by norm_num) (nz5 (by norm_num)) 1151642337187 g1151642337187 13 g13 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 1663: 3^2 divides 128103172114064024002337 + 1.
-theorem c20_d1663 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1663 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1663 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g128103172114064024002337 : 128103172114064024002337 ∈ P := S2 128103172114064024002337 prime_128103172114064024002337 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 128103172114064024002337) (x := 1 + 2 ^ 1663) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 128103172114064024002337) (x := 1 + 2 ^ 1663) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 128103172114064024002337 g128103172114064024002337 (by norm_num)
 
 -- a an odd multiple of 1669: 3 divides 2^1669 + 1 and 16691 + 1.
-theorem c20_d1669 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1669 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1669 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g16691 : 16691 ∈ P := S2 16691 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 16691) (x := 1 + 2 ^ 1669) (by push_cast; reduce_mod_char)).trans hd)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1669) (by push_cast; reduce_mod_char)).trans hd) 16691 g16691 (by norm_num)
+    ((tw (c := 16691) (x := 1 + 2 ^ 1669) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1669) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 16691 g16691 (by norm_num)
 
 -- a an odd multiple of 1693: 3 divides 2^1693 + 1 and 4948983910284158284280949700383491609217577054379 + 1.
-theorem c20_d1693 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1693 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1693 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g4948983910284158284280949700383491609217577054379 : 4948983910284158284280949700383491609217577054379 ∈ P := S2 4948983910284158284280949700383491609217577054379 prime_4948983910284158284280949700383491609217577054379 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 4948983910284158284280949700383491609217577054379) (x := 1 + 2 ^ 1693) (by push_cast; reduce_mod_char)).trans hd)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1693) (by push_cast; reduce_mod_char)).trans hd) 4948983910284158284280949700383491609217577054379 g4948983910284158284280949700383491609217577054379 (by norm_num)
+    ((tw (c := 4948983910284158284280949700383491609217577054379) (x := 1 + 2 ^ 1693) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1693) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 4948983910284158284280949700383491609217577054379 g4948983910284158284280949700383491609217577054379 (by norm_num)
 
 -- a an odd multiple of 1699: 3 divides 2^1699 + 1 and 118931 + 1.
-theorem c20_d1699 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1699 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1699 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g118931 : 118931 ∈ P := S2 118931 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 118931) (x := 1 + 2 ^ 1699) (by push_cast; reduce_mod_char)).trans hd)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1699) (by push_cast; reduce_mod_char)).trans hd) 118931 g118931 (by norm_num)
+    ((tw (c := 118931) (x := 1 + 2 ^ 1699) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1699) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 118931 g118931 (by norm_num)
 
 -- a an odd multiple of 1723: 3^2 divides 12209847761303531 + 1.
-theorem c20_d1723 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1723 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1723 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g12209847761303531 : 12209847761303531 ∈ P := S2 12209847761303531 prime_12209847761303531 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 12209847761303531) (x := 1 + 2 ^ 1723) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 12209847761303531) (x := 1 + 2 ^ 1723) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 12209847761303531 g12209847761303531 (by norm_num)
 
 -- a an odd multiple of 1741: 3 divides 2^1741 + 1 and 130611215276657814724409 + 1.
-theorem c20_d1741 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1741 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1741 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g130611215276657814724409 : 130611215276657814724409 ∈ P := S2 130611215276657814724409 prime_130611215276657814724409 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 130611215276657814724409) (x := 1 + 2 ^ 1741) (by push_cast; reduce_mod_char)).trans hd)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1741) (by push_cast; reduce_mod_char)).trans hd) 130611215276657814724409 g130611215276657814724409 (by norm_num)
+    ((tw (c := 130611215276657814724409) (x := 1 + 2 ^ 1741) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1741) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 130611215276657814724409 g130611215276657814724409 (by norm_num)
 
 -- a an odd multiple of 1747: 3 divides 2^1747 + 1 and 1016572313 + 1.
-theorem c20_d1747 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1747 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1747 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g1016572313 : 1016572313 ∈ P := S2 1016572313 prime_1016572313 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 1016572313) (x := 1 + 2 ^ 1747) (by push_cast; reduce_mod_char)).trans hd)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1747) (by push_cast; reduce_mod_char)).trans hd) 1016572313 g1016572313 (by norm_num)
+    ((tw (c := 1016572313) (x := 1 + 2 ^ 1747) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1747) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 1016572313 g1016572313 (by norm_num)
 
 -- a an odd multiple of 1753: 3^2 divides 4893972298219433321 + 1.
-theorem c20_d1753 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1753 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1753 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g4893972298219433321 : 4893972298219433321 ∈ P := S2 4893972298219433321 prime_4893972298219433321 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 4893972298219433321) (x := 1 + 2 ^ 1753) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 4893972298219433321) (x := 1 + 2 ^ 1753) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 4893972298219433321 g4893972298219433321 (by norm_num)
 
 -- a an odd multiple of 1759: 3 divides 2^1759 + 1 and 15099257 + 1.
-theorem c20_d1759 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1759 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1759 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, S4, -, -, -, -⟩ := facts hP (hK5 2) E
   have g15099257 : 15099257 ∈ P := S2 15099257 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 15099257) (x := 1 + 2 ^ 1759) (by push_cast; reduce_mod_char)).trans hd)
-  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1759) (by push_cast; reduce_mod_char)).trans hd) 15099257 g15099257 (by norm_num)
+    ((tw (c := 15099257) (x := 1 + 2 ^ 1759) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
+  exact S4 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) ((tw (c := 3) (x := 1 + 2 ^ 1759) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd) 15099257 g15099257 (by norm_num)
 
 -- a an odd multiple of 202: 3^2 divides 809 + 1.
-theorem c20_d202 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d202 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 202 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
@@ -3880,7 +3882,7 @@ theorem c20_d202 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 809 g809 (by norm_num)
 
 -- a an odd multiple of 206: 3^2 divides 41201 + 1.
-theorem c20_d206 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d206 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 206 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
@@ -3889,7 +3891,7 @@ theorem c20_d206 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 41201 g41201 (by norm_num)
 
 -- a an odd multiple of 214: 13 divides 5^2 + 1 and 857 + 1.
-theorem c20_d214 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d214 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 214 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, -, -, S8⟩ := facts hP (hK5 2) E
@@ -3898,7 +3900,7 @@ theorem c20_d214 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠
   exact S8 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num) 857 g857 (by norm_num)
 
 -- a an odd multiple of 218: 3^2 divides 5669 + 1.
-theorem c20_d218 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d218 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 218 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
@@ -3907,7 +3909,7 @@ theorem c20_d218 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 5669 g5669 (by norm_num)
 
 -- a an odd multiple of 226: 7^2 divides 58309 + 1.
-theorem c20_d226 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d226 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 226 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
@@ -3916,7 +3918,7 @@ theorem c20_d226 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠
   exact S6 7 (by norm_num) (by norm_num) (nz5 (by norm_num)) 58309 g58309 (by norm_num)
 
 -- a an odd multiple of 254: 13 divides 5^2 + 1 and 18797 + 1.
-theorem c20_d254 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d254 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 254 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, -, -, S8⟩ := facts hP (hK5 2) E
@@ -3925,170 +3927,170 @@ theorem c20_d254 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠
   exact S8 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num) 18797 g18797 (by norm_num)
 
 -- a an odd multiple of 262: 3^2 divides 269665073 + 1.
-theorem c20_d262 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d262 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 262 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g269665073 : 269665073 ∈ P := S2 269665073 prime_269665073 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 269665073) (x := 1 + 2 ^ 262) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 269665073) (x := 1 + 2 ^ 262) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 269665073 g269665073 (by norm_num)
 
 -- a an odd multiple of 274: 3^2 divides 23633 + 1.
-theorem c20_d274 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d274 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 274 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g189061 : 189061 ∈ P := S2 189061 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 189061) (x := 1 + 2 ^ 274) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 189061) (x := 1 + 2 ^ 274) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g94531 : 94531 ∈ P := S1 94531 (by norm_num) (by norm_num) (nz5 (by norm_num)) 189061 g189061 (by norm_num)
   have g23633 : 23633 ∈ P := S1 23633 (by norm_num) (by norm_num) (nz5 (by norm_num)) 94531 g94531 (by norm_num)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 23633 g23633 (by norm_num)
 
 -- a an odd multiple of 278: 3^2 divides 557 + 1.
-theorem c20_d278 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d278 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 278 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g557 : 557 ∈ P := S2 557 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 557) (x := 1 + 2 ^ 278) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 557) (x := 1 + 2 ^ 278) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 557 g557 (by norm_num)
 
 -- a an odd multiple of 298: 3^2 divides 179 + 1.
-theorem c20_d298 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d298 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 298 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g1789 : 1789 ∈ P := S2 1789 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 1789) (x := 1 + 2 ^ 298) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 1789) (x := 1 + 2 ^ 298) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g179 : 179 ∈ P := S1 179 (by norm_num) (by norm_num) (nz5 (by norm_num)) 1789 g1789 (by norm_num)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 179 g179 (by norm_num)
 
 -- a an odd multiple of 302: 11^2 divides 67759 + 1.
-theorem c20_d302 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d302 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 302 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g2854495385411919762116496381035264358442074113 : 2854495385411919762116496381035264358442074113 ∈ P := S2 2854495385411919762116496381035264358442074113 prime_2854495385411919762116496381035264358442074113 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 2854495385411919762116496381035264358442074113) (x := 1 + 2 ^ 302) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 2854495385411919762116496381035264358442074113) (x := 1 + 2 ^ 302) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g18837001 : 18837001 ∈ P := S1 18837001 (by norm_num) (by norm_num) (nz5 (by norm_num)) 2854495385411919762116496381035264358442074113 g2854495385411919762116496381035264358442074113 (by norm_num)
   have g67759 : 67759 ∈ P := S1 67759 (by norm_num) (by norm_num) (nz5 (by norm_num)) 18837001 g18837001 (by norm_num)
   exact S6 11 (by norm_num) (by norm_num) (nz5 (by norm_num)) 67759 g67759 (by norm_num)
 
 -- a an odd multiple of 314: 3^2 divides 1493 + 1.
-theorem c20_d314 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d314 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 314 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g2790467761 : 2790467761 ∈ P := S2 2790467761 prime_2790467761 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 2790467761) (x := 1 + 2 ^ 314) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 2790467761) (x := 1 + 2 ^ 314) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g1493 : 1493 ∈ P := S1 1493 (by norm_num) (by norm_num) (nz5 (by norm_num)) 2790467761 g2790467761 (by norm_num)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 1493 g1493 (by norm_num)
 
 -- a an odd multiple of 326: 3^2 divides 7807049 + 1.
-theorem c20_d326 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d326 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 326 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g7807049 : 7807049 ∈ P := S2 7807049 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 7807049) (x := 1 + 2 ^ 326) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 7807049) (x := 1 + 2 ^ 326) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 7807049 g7807049 (by norm_num)
 
 -- a an odd multiple of 334: 7 divides 75005713 + 1 and 13 + 1.
-theorem c20_d334 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d334 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 334 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, S3, -, -, -, S7, -⟩ := facts hP (hK5 2) E
   have g75005713 : 75005713 ∈ P := S2 75005713 prime_75005713 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 75005713) (x := 1 + 2 ^ 334) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 75005713) (x := 1 + 2 ^ 334) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g13 : 13 ∈ P := S7 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num)
   exact absurd (S3 7 (by norm_num) (by norm_num) (nz5 (by norm_num)) 75005713 g75005713 13 g13 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 346: 3 divides 13625405957 + 1 and 11 + 1.
-theorem c20_d346 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d346 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 346 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, S3, -, -, -, -, -⟩ := facts hP (hK5 2) E
   have g13625405957 : 13625405957 ∈ P := S2 13625405957 prime_13625405957 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 13625405957) (x := 1 + 2 ^ 346) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 13625405957) (x := 1 + 2 ^ 346) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g43 : 43 ∈ P := S1 43 (by norm_num) (by norm_num) (nz5 (by norm_num)) 13625405957 g13625405957 (by norm_num)
   have g11 : 11 ∈ P := S1 11 (by norm_num) (by norm_num) (nz5 (by norm_num)) 43 g43 (by norm_num)
   exact absurd (S3 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 13625405957 g13625405957 11 g11 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 358: 7 divides 31815461 + 1 and 13 + 1.
-theorem c20_d358 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d358 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 358 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, S3, -, -, -, S7, -⟩ := facts hP (hK5 2) E
   have g31815461 : 31815461 ∈ P := S2 31815461 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 31815461) (x := 1 + 2 ^ 358) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 31815461) (x := 1 + 2 ^ 358) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g13 : 13 ∈ P := S7 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num)
   exact absurd (S3 7 (by norm_num) (by norm_num) (nz5 (by norm_num)) 31815461 g31815461 13 g13 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 362: 3^2 divides 9413 + 1.
-theorem c20_d362 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d362 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 362 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g9413 : 9413 ∈ P := S2 9413 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 9413) (x := 1 + 2 ^ 362) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 9413) (x := 1 + 2 ^ 362) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 9413 g9413 (by norm_num)
 
 -- a an odd multiple of 382: 7^2 divides 3821 + 1.
-theorem c20_d382 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d382 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 382 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g3821 : 3821 ∈ P := S2 3821 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 3821) (x := 1 + 2 ^ 382) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 3821) (x := 1 + 2 ^ 382) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 7 (by norm_num) (by norm_num) (nz5 (by norm_num)) 3821 g3821 (by norm_num)
 
 -- a an odd multiple of 386: 3^2 divides 773 + 1.
-theorem c20_d386 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d386 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 386 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g773 : 773 ∈ P := S2 773 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 773) (x := 1 + 2 ^ 386) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 773) (x := 1 + 2 ^ 386) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 773 g773 (by norm_num)
 
 -- a an odd multiple of 394: 7 divides 52009 + 1 and 13 + 1.
-theorem c20_d394 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d394 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 394 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, S3, -, -, -, S7, -⟩ := facts hP (hK5 2) E
   have g52009 : 52009 ∈ P := S2 52009 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 52009) (x := 1 + 2 ^ 394) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 52009) (x := 1 + 2 ^ 394) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g13 : 13 ∈ P := S7 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num)
   exact absurd (S3 7 (by norm_num) (by norm_num) (nz5 (by norm_num)) 52009 g52009 13 g13 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 398: 7 divides 797 + 1 and 13 + 1.
-theorem c20_d398 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d398 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 398 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, S3, -, -, -, S7, -⟩ := facts hP (hK5 2) E
   have g797 : 797 ∈ P := S2 797 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 797) (x := 1 + 2 ^ 398) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 797) (x := 1 + 2 ^ 398) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g13 : 13 ∈ P := S7 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num)
   exact absurd (S3 7 (by norm_num) (by norm_num) (nz5 (by norm_num)) 797 g797 13 g13 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 422: 3^2 divides 95110361 + 1.
-theorem c20_d422 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d422 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 422 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g95110361 : 95110361 ∈ P := S2 95110361 prime_95110361 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 95110361) (x := 1 + 2 ^ 422) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 95110361) (x := 1 + 2 ^ 422) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 95110361 g95110361 (by norm_num)
 
 -- a an odd multiple of 446: 3 divides 11597 + 1 and 6530333 + 1.
-theorem c20_d446 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d446 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 446 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, S3, -, -, -, -, -⟩ := facts hP (hK5 2) E
   have g11597 : 11597 ∈ P := S2 11597 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 11597) (x := 1 + 2 ^ 446) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 11597) (x := 1 + 2 ^ 446) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g6530333 : 6530333 ∈ P := S2 6530333 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 6530333) (x := 1 + 2 ^ 446) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 6530333) (x := 1 + 2 ^ 446) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact absurd (S3 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 11597 g11597 6530333 g6530333 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 454: 5^3 divides (2^454 + 1) * prod (p + 1) over p in {5449}.
@@ -4097,11 +4099,11 @@ theorem c20_d454 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠
     (hd : 1 + 2 ^ 454 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, -, -, -⟩ := facts hP (hK5 2) E
   have g5449 : 5449 ∈ P := S2 5449 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 5449) (x := 1 + 2 ^ 454) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 5449) (x := 1 + 2 ^ 454) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have b0 : (∅ : Finset ℕ) ⊆ P ∧ 5 ^ 0 ∣ ∏ p ∈ (∅ : Finset ℕ), (p + 1) :=
     ⟨Finset.empty_subset _, by rw [pow_zero]; exact one_dvd _⟩
   have b1 := bud5_cons b0 g5449 (by simp) (by norm_num : 5 ^ 2 ∣ 5449 + 1)
-  exact bud5_kill (i := 1) hP h5 E hd b1.1 (tw (c := 5) (x := 1 + 2 ^ 454) (by push_cast; reduce_mod_char)) (by norm_num) b1.2
+  exact bud5_kill (i := 1) hP h5 E hd b1.1 (tw (c := 5) (x := 1 + 2 ^ 454) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)) (by norm_num) b1.2
 
 -- a an odd multiple of 458: 5^4 divides (2^458 + 1) * prod (p + 1) over p in {2749}.
 theorem c20_d458 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
@@ -4109,1022 +4111,1022 @@ theorem c20_d458 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠
     (hd : 1 + 2 ^ 458 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, -, -, -⟩ := facts hP (hK5 2) E
   have g2749 : 2749 ∈ P := S2 2749 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 2749) (x := 1 + 2 ^ 458) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 2749) (x := 1 + 2 ^ 458) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have b0 : (∅ : Finset ℕ) ⊆ P ∧ 5 ^ 0 ∣ ∏ p ∈ (∅ : Finset ℕ), (p + 1) :=
     ⟨Finset.empty_subset _, by rw [pow_zero]; exact one_dvd _⟩
   have b1 := bud5_cons b0 g2749 (by simp) (by norm_num : 5 ^ 3 ∣ 2749 + 1)
-  exact bud5_kill (i := 1) hP h5 E hd b1.1 (tw (c := 5) (x := 1 + 2 ^ 458) (by push_cast; reduce_mod_char)) (by norm_num) b1.2
+  exact bud5_kill (i := 1) hP h5 E hd b1.1 (tw (c := 5) (x := 1 + 2 ^ 458) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)) (by norm_num) b1.2
 
 -- a an odd multiple of 466: 13^2 divides 30757 + 1.
-theorem c20_d466 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d466 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 466 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g30757 : 30757 ∈ P := S2 30757 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 30757) (x := 1 + 2 ^ 466) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 30757) (x := 1 + 2 ^ 466) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) 30757 g30757 (by norm_num)
 
 -- a an odd multiple of 478: 13 divides 5^2 + 1 and 77852679293 + 1.
-theorem c20_d478 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d478 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 478 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, -, -, S8⟩ := facts hP (hK5 2) E
   have g77852679293 : 77852679293 ∈ P := S2 77852679293 prime_77852679293 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 77852679293) (x := 1 + 2 ^ 478) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 77852679293) (x := 1 + 2 ^ 478) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S8 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num) 77852679293 g77852679293 (by norm_num)
 
 -- a an odd multiple of 482: 3^2 divides 251 + 1.
-theorem c20_d482 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d482 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 482 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g15594629 : 15594629 ∈ P := S2 15594629 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 15594629) (x := 1 + 2 ^ 482) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 15594629) (x := 1 + 2 ^ 482) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g251 : 251 ∈ P := S1 251 (by norm_num) (by norm_num) (nz5 (by norm_num)) 15594629 g15594629 (by norm_num)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 251 g251 (by norm_num)
 
 -- a an odd multiple of 502: 3^2 divides 5021 + 1.
-theorem c20_d502 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d502 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 502 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g5021 : 5021 ∈ P := S2 5021 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 5021) (x := 1 + 2 ^ 502) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 5021) (x := 1 + 2 ^ 502) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 5021 g5021 (by norm_num)
 
 -- a an odd multiple of 514: 3^2 divides 71 + 1.
-theorem c20_d514 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d514 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 514 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g28564009 : 28564009 ∈ P := S2 28564009 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 28564009) (x := 1 + 2 ^ 514) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 28564009) (x := 1 + 2 ^ 514) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g71 : 71 ∈ P := S1 71 (by norm_num) (by norm_num) (nz5 (by norm_num)) 28564009 g28564009 (by norm_num)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 71 g71 (by norm_num)
 
 -- a an odd multiple of 526: 3^2 divides 731141 + 1.
-theorem c20_d526 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d526 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 526 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g731141 : 731141 ∈ P := S2 731141 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 731141) (x := 1 + 2 ^ 526) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 731141) (x := 1 + 2 ^ 526) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 731141 g731141 (by norm_num)
 
 -- a an odd multiple of 538: 3^2 divides 5381 + 1.
-theorem c20_d538 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d538 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 538 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g5381 : 5381 ∈ P := S2 5381 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 5381) (x := 1 + 2 ^ 538) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 5381) (x := 1 + 2 ^ 538) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 5381 g5381 (by norm_num)
 
 -- a an odd multiple of 542: 3^2 divides 1309337 + 1.
-theorem c20_d542 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d542 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 542 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g10474693 : 10474693 ∈ P := S2 10474693 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 10474693) (x := 1 + 2 ^ 542) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 10474693) (x := 1 + 2 ^ 542) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g5237347 : 5237347 ∈ P := S1 5237347 (by norm_num) (by norm_num) (nz5 (by norm_num)) 10474693 g10474693 (by norm_num)
   have g1309337 : 1309337 ∈ P := S1 1309337 (by norm_num) (by norm_num) (nz5 (by norm_num)) 5237347 g5237347 (by norm_num)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 1309337 g1309337 (by norm_num)
 
 -- a an odd multiple of 554: 3^2 divides 14543 + 1.
-theorem c20_d554 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d554 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 554 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g232681 : 232681 ∈ P := S2 232681 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 232681) (x := 1 + 2 ^ 554) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 232681) (x := 1 + 2 ^ 554) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g116341 : 116341 ∈ P := S1 116341 (by norm_num) (by norm_num) (nz5 (by norm_num)) 232681 g232681 (by norm_num)
   have g58171 : 58171 ∈ P := S1 58171 (by norm_num) (by norm_num) (nz5 (by norm_num)) 116341 g116341 (by norm_num)
   have g14543 : 14543 ∈ P := S1 14543 (by norm_num) (by norm_num) (nz5 (by norm_num)) 58171 g58171 (by norm_num)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 14543 g14543 (by norm_num)
 
 -- a an odd multiple of 562: 7 divides 3373 + 1 and 3827221 + 1.
-theorem c20_d562 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d562 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 562 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, S3, -, -, -, -, -⟩ := facts hP (hK5 2) E
   have g3373 : 3373 ∈ P := S2 3373 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 3373) (x := 1 + 2 ^ 562) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 3373) (x := 1 + 2 ^ 562) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g3827221 : 3827221 ∈ P := S2 3827221 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 3827221) (x := 1 + 2 ^ 562) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 3827221) (x := 1 + 2 ^ 562) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact absurd (S3 7 (by norm_num) (by norm_num) (nz5 (by norm_num)) 3373 g3373 3827221 g3827221 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 566: 3^2 divides 449 + 1.
-theorem c20_d566 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d566 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 566 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g3108270227561166513471139050917630250627849827446163307471742778796333223910258298061 : 3108270227561166513471139050917630250627849827446163307471742778796333223910258298061 ∈ P := S2 3108270227561166513471139050917630250627849827446163307471742778796333223910258298061 prime_3108270227561166513471139050917630250627849827446163307471742778796333223910258298061 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 3108270227561166513471139050917630250627849827446163307471742778796333223910258298061) (x := 1 + 2 ^ 566) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 3108270227561166513471139050917630250627849827446163307471742778796333223910258298061) (x := 1 + 2 ^ 566) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g449 : 449 ∈ P := S1 449 (by norm_num) (by norm_num) (nz5 (by norm_num)) 3108270227561166513471139050917630250627849827446163307471742778796333223910258298061 g3108270227561166513471139050917630250627849827446163307471742778796333223910258298061 (by norm_num)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 449 g449 (by norm_num)
 
 -- a an odd multiple of 586: 17^2 divides 22396921 + 1.
-theorem c20_d586 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d586 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 586 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g22396921 : 22396921 ∈ P := S2 22396921 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 22396921) (x := 1 + 2 ^ 586) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 22396921) (x := 1 + 2 ^ 586) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 17 (by norm_num) (by norm_num) (nz5 (by norm_num)) 22396921 g22396921 (by norm_num)
 
 -- a an odd multiple of 614: 3^2 divides 93329 + 1.
-theorem c20_d614 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d614 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 614 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g93329 : 93329 ∈ P := S2 93329 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 93329) (x := 1 + 2 ^ 614) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 93329) (x := 1 + 2 ^ 614) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 93329 g93329 (by norm_num)
 
 -- a an odd multiple of 622: 3^2 divides 21149 + 1.
-theorem c20_d622 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d622 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 622 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g21149 : 21149 ∈ P := S2 21149 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 21149) (x := 1 + 2 ^ 622) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 21149) (x := 1 + 2 ^ 622) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 21149 g21149 (by norm_num)
 
 -- a an odd multiple of 626: 3^2 divides 42569 + 1.
-theorem c20_d626 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d626 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 626 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g42569 : 42569 ∈ P := S2 42569 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 42569) (x := 1 + 2 ^ 626) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 42569) (x := 1 + 2 ^ 626) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 42569 g42569 (by norm_num)
 
 -- a an odd multiple of 634: 3^2 divides 344759057 + 1.
-theorem c20_d634 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d634 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 634 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g344759057 : 344759057 ∈ P := S2 344759057 prime_344759057 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 344759057) (x := 1 + 2 ^ 634) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 344759057) (x := 1 + 2 ^ 634) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 344759057 g344759057 (by norm_num)
 
 -- a an odd multiple of 662: 3 divides 589181 + 1 and 11 + 1.
-theorem c20_d662 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d662 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 662 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, S3, -, -, -, -, -⟩ := facts hP (hK5 2) E
   have g589181 : 589181 ∈ P := S2 589181 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 589181) (x := 1 + 2 ^ 662) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 589181) (x := 1 + 2 ^ 662) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g11 : 11 ∈ P := S1 11 (by norm_num) (by norm_num) (nz5 (by norm_num)) 589181 g589181 (by norm_num)
   exact absurd (S3 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 589181 g589181 11 g11 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 674: 3^2 divides 2549069 + 1.
-theorem c20_d674 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d674 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 674 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g2549069 : 2549069 ∈ P := S2 2549069 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 2549069) (x := 1 + 2 ^ 674) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 2549069) (x := 1 + 2 ^ 674) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 2549069 g2549069 (by norm_num)
 
 -- a an odd multiple of 694: 7 divides 5575597 + 1 and 13 + 1.
-theorem c20_d694 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d694 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 694 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, S3, -, -, -, S7, -⟩ := facts hP (hK5 2) E
   have g5575597 : 5575597 ∈ P := S2 5575597 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 5575597) (x := 1 + 2 ^ 694) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 5575597) (x := 1 + 2 ^ 694) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g13 : 13 ∈ P := S7 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num)
   exact absurd (S3 7 (by norm_num) (by norm_num) (nz5 (by norm_num)) 5575597 g5575597 13 g13 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 698: 3^2 divides 763613 + 1.
-theorem c20_d698 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d698 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 698 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g763613 : 763613 ∈ P := S2 763613 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 763613) (x := 1 + 2 ^ 698) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 763613) (x := 1 + 2 ^ 698) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 763613 g763613 (by norm_num)
 
 -- a an odd multiple of 706: 7 divides 13 + 1 and 22253377 + 1.
-theorem c20_d706 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d706 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 706 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, S3, -, -, -, S7, -⟩ := facts hP (hK5 2) E
   have g13 : 13 ∈ P := S7 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num)
   have g18347988927920572092886567162416695526372519913346248798338768106859275713914500070771500472538615219486721 : 18347988927920572092886567162416695526372519913346248798338768106859275713914500070771500472538615219486721 ∈ P := S2 18347988927920572092886567162416695526372519913346248798338768106859275713914500070771500472538615219486721 prime_18347988927920572092886567162416695526372519913346248798338768106859275713914500070771500472538615219486721 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 18347988927920572092886567162416695526372519913346248798338768106859275713914500070771500472538615219486721) (x := 1 + 2 ^ 706) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 18347988927920572092886567162416695526372519913346248798338768106859275713914500070771500472538615219486721) (x := 1 + 2 ^ 706) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g22253377 : 22253377 ∈ P := S1 22253377 (by norm_num) (by norm_num) (nz5 (by norm_num)) 18347988927920572092886567162416695526372519913346248798338768106859275713914500070771500472538615219486721 g18347988927920572092886567162416695526372519913346248798338768106859275713914500070771500472538615219486721 (by norm_num)
   exact absurd (S3 7 (by norm_num) (by norm_num) (nz5 (by norm_num)) 13 g13 22253377 g22253377 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 718: 13 divides 5^2 + 1 and 1429 + 1.
-theorem c20_d718 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d718 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 718 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, -, -, S8⟩ := facts hP (hK5 2) E
   have g585889 : 585889 ∈ P := S2 585889 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 585889) (x := 1 + 2 ^ 718) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 585889) (x := 1 + 2 ^ 718) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g1429 : 1429 ∈ P := S1 1429 (by norm_num) (by norm_num) (nz5 (by norm_num)) 585889 g585889 (by norm_num)
   exact S8 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num) 1429 g1429 (by norm_num)
 
 -- a an odd multiple of 734: 3 divides 300613450595050653169853516389035139504087366260264943426013315702268533480936328328948524855350568033150042113 + 1 and 23 + 1.
-theorem c20_d734 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d734 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 734 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, S3, -, -, -, -, -⟩ := facts hP (hK5 2) E
   have g300613450595050653169853516389035139504087366260264943426013315702268533480936328328948524855350568033150042113 : 300613450595050653169853516389035139504087366260264943426013315702268533480936328328948524855350568033150042113 ∈ P := S2 300613450595050653169853516389035139504087366260264943426013315702268533480936328328948524855350568033150042113 prime_300613450595050653169853516389035139504087366260264943426013315702268533480936328328948524855350568033150042113 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 300613450595050653169853516389035139504087366260264943426013315702268533480936328328948524855350568033150042113) (x := 1 + 2 ^ 734) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 300613450595050653169853516389035139504087366260264943426013315702268533480936328328948524855350568033150042113) (x := 1 + 2 ^ 734) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g165963031279777 : 165963031279777 ∈ P := S1 165963031279777 prime_165963031279777 (by norm_num) (nz5 (by norm_num)) 300613450595050653169853516389035139504087366260264943426013315702268533480936328328948524855350568033150042113 g300613450595050653169853516389035139504087366260264943426013315702268533480936328328948524855350568033150042113 (by norm_num)
   have g23 : 23 ∈ P := S1 23 (by norm_num) (by norm_num) (nz5 (by norm_num)) 165963031279777 g165963031279777 (by norm_num)
   exact absurd (S3 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 300613450595050653169853516389035139504087366260264943426013315702268533480936328328948524855350568033150042113 g300613450595050653169853516389035139504087366260264943426013315702268533480936328328948524855350568033150042113 23 g23 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 746: 3^2 divides 1493 + 1.
-theorem c20_d746 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d746 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 746 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g1493 : 1493 ∈ P := S2 1493 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 1493) (x := 1 + 2 ^ 746) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 1493) (x := 1 + 2 ^ 746) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 1493 g1493 (by norm_num)
 
 -- a an odd multiple of 758: 13 divides 5^2 + 1 and 4549 + 1.
-theorem c20_d758 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d758 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 758 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, -, -, S8⟩ := facts hP (hK5 2) E
   have g4549 : 4549 ∈ P := S2 4549 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 4549) (x := 1 + 2 ^ 758) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 4549) (x := 1 + 2 ^ 758) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S8 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num) 4549 g4549 (by norm_num)
 
 -- a an odd multiple of 766: 11^2 divides 4597 + 1.
-theorem c20_d766 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d766 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 766 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g4597 : 4597 ∈ P := S2 4597 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 4597) (x := 1 + 2 ^ 766) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 4597) (x := 1 + 2 ^ 766) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 11 (by norm_num) (by norm_num) (nz5 (by norm_num)) 4597 g4597 (by norm_num)
 
 -- a an odd multiple of 778: 3^2 divides 17117 + 1.
-theorem c20_d778 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d778 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 778 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g17117 : 17117 ∈ P := S2 17117 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 17117) (x := 1 + 2 ^ 778) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 17117) (x := 1 + 2 ^ 778) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 17117 g17117 (by norm_num)
 
 -- a an odd multiple of 794: 11^2 divides 25409 + 1.
-theorem c20_d794 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d794 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 794 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g25409 : 25409 ∈ P := S2 25409 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 25409) (x := 1 + 2 ^ 794) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 25409) (x := 1 + 2 ^ 794) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 11 (by norm_num) (by norm_num) (nz5 (by norm_num)) 25409 g25409 (by norm_num)
 
 -- a an odd multiple of 802: 3^2 divides 107 + 1.
-theorem c20_d802 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d802 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 802 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g3209 : 3209 ∈ P := S2 3209 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 3209) (x := 1 + 2 ^ 802) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 3209) (x := 1 + 2 ^ 802) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g107 : 107 ∈ P := S1 107 (by norm_num) (by norm_num) (nz5 (by norm_num)) 3209 g3209 (by norm_num)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 107 g107 (by norm_num)
 
 -- a an odd multiple of 818: 3^2 divides 1637 + 1.
-theorem c20_d818 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d818 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 818 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g1637 : 1637 ∈ P := S2 1637 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 1637) (x := 1 + 2 ^ 818) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 1637) (x := 1 + 2 ^ 818) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 1637 g1637 (by norm_num)
 
 -- a an odd multiple of 838: 3 divides 53633 + 1 and 63689 + 1.
-theorem c20_d838 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d838 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 838 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, S3, -, -, -, -, -⟩ := facts hP (hK5 2) E
   have g53633 : 53633 ∈ P := S2 53633 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 53633) (x := 1 + 2 ^ 838) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 53633) (x := 1 + 2 ^ 838) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g63689 : 63689 ∈ P := S2 63689 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 63689) (x := 1 + 2 ^ 838) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 63689) (x := 1 + 2 ^ 838) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact absurd (S3 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 53633 g53633 63689 g63689 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 842: 3^2 divides 31142213 + 1.
-theorem c20_d842 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d842 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 842 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g31142213 : 31142213 ∈ P := S2 31142213 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 31142213) (x := 1 + 2 ^ 842) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 31142213) (x := 1 + 2 ^ 842) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 31142213 g31142213 (by norm_num)
 
 -- a an odd multiple of 862: 7^2 divides 97 + 1.
-theorem c20_d862 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d862 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 862 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g91373 : 91373 ∈ P := S2 91373 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 91373) (x := 1 + 2 ^ 862) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 91373) (x := 1 + 2 ^ 862) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g97 : 97 ∈ P := S1 97 (by norm_num) (by norm_num) (nz5 (by norm_num)) 91373 g91373 (by norm_num)
   exact S6 7 (by norm_num) (by norm_num) (nz5 (by norm_num)) 97 g97 (by norm_num)
 
 -- a an odd multiple of 866: 17^2 divides 1733 + 1.
-theorem c20_d866 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d866 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 866 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g1733 : 1733 ∈ P := S2 1733 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 1733) (x := 1 + 2 ^ 866) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 1733) (x := 1 + 2 ^ 866) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 17 (by norm_num) (by norm_num) (nz5 (by norm_num)) 1733 g1733 (by norm_num)
 
 -- a an odd multiple of 878: 37 divides 695377 + 1 and 9397 + 1.
-theorem c20_d878 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d878 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 878 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, S3, -, -, -, -, -⟩ := facts hP (hK5 2) E
   have g695377 : 695377 ∈ P := S2 695377 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 695377) (x := 1 + 2 ^ 878) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 695377) (x := 1 + 2 ^ 878) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g9397 : 9397 ∈ P := S1 9397 (by norm_num) (by norm_num) (nz5 (by norm_num)) 695377 g695377 (by norm_num)
   exact absurd (S3 37 (by norm_num) (by norm_num) (nz5 (by norm_num)) 695377 g695377 9397 g9397 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 886: 37^2 divides 773339215189 + 1.
-theorem c20_d886 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d886 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 886 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g773339215189 : 773339215189 ∈ P := S2 773339215189 prime_773339215189 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 773339215189) (x := 1 + 2 ^ 886) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 773339215189) (x := 1 + 2 ^ 886) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 37 (by norm_num) (by norm_num) (nz5 (by norm_num)) 773339215189 g773339215189 (by norm_num)
 
 -- a an odd multiple of 898: 3 divides 3593 + 1 and 165233 + 1.
-theorem c20_d898 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d898 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 898 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, S3, -, -, -, -, -⟩ := facts hP (hK5 2) E
   have g3593 : 3593 ∈ P := S2 3593 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 3593) (x := 1 + 2 ^ 898) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 3593) (x := 1 + 2 ^ 898) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g165233 : 165233 ∈ P := S2 165233 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 165233) (x := 1 + 2 ^ 898) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 165233) (x := 1 + 2 ^ 898) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact absurd (S3 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 3593 g3593 165233 g165233 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 914: 7 divides 13 + 1 and 83 + 1.
-theorem c20_d914 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d914 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 914 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, S3, -, -, -, S7, -⟩ := facts hP (hK5 2) E
   have g13 : 13 ∈ P := S7 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num)
   have g71293 : 71293 ∈ P := S2 71293 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 71293) (x := 1 + 2 ^ 914) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 71293) (x := 1 + 2 ^ 914) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g829 : 829 ∈ P := S1 829 (by norm_num) (by norm_num) (nz5 (by norm_num)) 71293 g71293 (by norm_num)
   have g83 : 83 ∈ P := S1 83 (by norm_num) (by norm_num) (nz5 (by norm_num)) 829 g829 (by norm_num)
   exact absurd (S3 7 (by norm_num) (by norm_num) (nz5 (by norm_num)) 13 g13 83 g83 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 922: 3 divides 14753 + 1 and 7278269 + 1.
-theorem c20_d922 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d922 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 922 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, S3, -, -, -, -, -⟩ := facts hP (hK5 2) E
   have g14753 : 14753 ∈ P := S2 14753 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 14753) (x := 1 + 2 ^ 922) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 14753) (x := 1 + 2 ^ 922) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g7278269 : 7278269 ∈ P := S2 7278269 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 7278269) (x := 1 + 2 ^ 922) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 7278269) (x := 1 + 2 ^ 922) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact absurd (S3 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 14753 g14753 7278269 g7278269 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 926: 3^2 divides 16694937341 + 1.
-theorem c20_d926 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d926 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 926 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g16694937341 : 16694937341 ∈ P := S2 16694937341 prime_16694937341 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 16694937341) (x := 1 + 2 ^ 926) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 16694937341) (x := 1 + 2 ^ 926) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 16694937341 g16694937341 (by norm_num)
 
 -- a an odd multiple of 934: 13 divides 5^2 + 1 and 1372981 + 1.
-theorem c20_d934 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d934 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 934 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, -, -, S8⟩ := facts hP (hK5 2) E
   have g1372981 : 1372981 ∈ P := S2 1372981 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 1372981) (x := 1 + 2 ^ 934) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 1372981) (x := 1 + 2 ^ 934) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S8 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num) 1372981 g1372981 (by norm_num)
 
 -- a an odd multiple of 958: 11 divides 39557737 + 1 and 571 + 1.
-theorem c20_d958 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d958 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 958 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, S3, -, -, -, -, -⟩ := facts hP (hK5 2) E
   have g39557737 : 39557737 ∈ P := S2 39557737 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 39557737) (x := 1 + 2 ^ 958) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 39557737) (x := 1 + 2 ^ 958) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g571 : 571 ∈ P := S1 571 (by norm_num) (by norm_num) (nz5 (by norm_num)) 39557737 g39557737 (by norm_num)
   exact absurd (S3 11 (by norm_num) (by norm_num) (nz5 (by norm_num)) 39557737 g39557737 571 g571 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 974: 13 divides 5^2 + 1 and 1949 + 1.
-theorem c20_d974 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d974 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 974 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, -, -, S8⟩ := facts hP (hK5 2) E
   have g1949 : 1949 ∈ P := S2 1949 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 1949) (x := 1 + 2 ^ 974) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 1949) (x := 1 + 2 ^ 974) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S8 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num) 1949 g1949 (by norm_num)
 
 -- a an odd multiple of 982: 3 divides 3929 + 1 and 34631213 + 1.
-theorem c20_d982 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d982 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 982 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, S3, -, -, -, -, -⟩ := facts hP (hK5 2) E
   have g3929 : 3929 ∈ P := S2 3929 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 3929) (x := 1 + 2 ^ 982) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 3929) (x := 1 + 2 ^ 982) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g34631213 : 34631213 ∈ P := S2 34631213 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 34631213) (x := 1 + 2 ^ 982) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 34631213) (x := 1 + 2 ^ 982) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact absurd (S3 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 3929 g3929 34631213 g34631213 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 998: 3^2 divides 1997 + 1.
-theorem c20_d998 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d998 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 998 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g1997 : 1997 ∈ P := S2 1997 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 1997) (x := 1 + 2 ^ 998) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 1997) (x := 1 + 2 ^ 998) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 1997 g1997 (by norm_num)
 
 -- a an odd multiple of 1006: 3^2 divides 10061 + 1.
-theorem c20_d1006 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1006 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1006 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g10061 : 10061 ∈ P := S2 10061 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 10061) (x := 1 + 2 ^ 1006) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 10061) (x := 1 + 2 ^ 1006) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 10061 g10061 (by norm_num)
 
 -- a an odd multiple of 1018: 7 divides 4073 + 1 and 103837 + 1.
-theorem c20_d1018 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1018 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1018 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, S3, -, -, -, -, -⟩ := facts hP (hK5 2) E
   have g4073 : 4073 ∈ P := S2 4073 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 4073) (x := 1 + 2 ^ 1018) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 4073) (x := 1 + 2 ^ 1018) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g103837 : 103837 ∈ P := S2 103837 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 103837) (x := 1 + 2 ^ 1018) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 103837) (x := 1 + 2 ^ 1018) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact absurd (S3 7 (by norm_num) (by norm_num) (nz5 (by norm_num)) 4073 g4073 103837 g103837 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 1042: 7 divides 16673 + 1 and 13 + 1.
-theorem c20_d1042 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1042 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1042 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, S3, -, -, -, S7, -⟩ := facts hP (hK5 2) E
   have g16673 : 16673 ∈ P := S2 16673 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 16673) (x := 1 + 2 ^ 1042) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 16673) (x := 1 + 2 ^ 1042) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g13 : 13 ∈ P := S7 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num)
   exact absurd (S3 7 (by norm_num) (by norm_num) (nz5 (by norm_num)) 16673 g16673 13 g13 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 1046: 3^2 divides 8369 + 1.
-theorem c20_d1046 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1046 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1046 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g8369 : 8369 ∈ P := S2 8369 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 8369) (x := 1 + 2 ^ 1046) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 8369) (x := 1 + 2 ^ 1046) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 8369 g8369 (by norm_num)
 
 -- a an odd multiple of 1082: 3^2 divides 17 + 1.
-theorem c20_d1082 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1082 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1082 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g1281089 : 1281089 ∈ P := S2 1281089 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 1281089) (x := 1 + 2 ^ 1082) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 1281089) (x := 1 + 2 ^ 1082) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g42703 : 42703 ∈ P := S1 42703 (by norm_num) (by norm_num) (nz5 (by norm_num)) 1281089 g1281089 (by norm_num)
   have g17 : 17 ∈ P := S1 17 (by norm_num) (by norm_num) (nz5 (by norm_num)) 42703 g42703 (by norm_num)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 17 g17 (by norm_num)
 
 -- a an odd multiple of 1094: 3^2 divides 107 + 1.
-theorem c20_d1094 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1094 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1094 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g45232564075409 : 45232564075409 ∈ P := S2 45232564075409 prime_45232564075409 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 45232564075409) (x := 1 + 2 ^ 1094) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 45232564075409) (x := 1 + 2 ^ 1094) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g281837 : 281837 ∈ P := S1 281837 (by norm_num) (by norm_num) (nz5 (by norm_num)) 45232564075409 g45232564075409 (by norm_num)
   have g107 : 107 ∈ P := S1 107 (by norm_num) (by norm_num) (nz5 (by norm_num)) 281837 g281837 (by norm_num)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 107 g107 (by norm_num)
 
 -- a an odd multiple of 1114: 3^2 divides 91441702997 + 1.
-theorem c20_d1114 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1114 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1114 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g91441702997 : 91441702997 ∈ P := S2 91441702997 prime_91441702997 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 91441702997) (x := 1 + 2 ^ 1114) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 91441702997) (x := 1 + 2 ^ 1114) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 91441702997 g91441702997 (by norm_num)
 
 -- a an odd multiple of 1126: 3^2 divides 89 + 1.
-theorem c20_d1126 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1126 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1126 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g51797 : 51797 ∈ P := S2 51797 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 51797) (x := 1 + 2 ^ 1126) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 51797) (x := 1 + 2 ^ 1126) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g89 : 89 ∈ P := S1 89 (by norm_num) (by norm_num) (nz5 (by norm_num)) 51797 g51797 (by norm_num)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 89 g89 (by norm_num)
 
 -- a an odd multiple of 1138: 13 divides 5^2 + 1 and 37690561 + 1.
-theorem c20_d1138 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1138 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1138 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, -, -, S8⟩ := facts hP (hK5 2) E
   have g37690561 : 37690561 ∈ P := S2 37690561 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 37690561) (x := 1 + 2 ^ 1138) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 37690561) (x := 1 + 2 ^ 1138) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S8 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num) 37690561 g37690561 (by norm_num)
 
 -- a an odd multiple of 1142: 3^2 divides 276821 + 1.
-theorem c20_d1142 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1142 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1142 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g5536417 : 5536417 ∈ P := S2 5536417 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 5536417) (x := 1 + 2 ^ 1142) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 5536417) (x := 1 + 2 ^ 1142) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g2768209 : 2768209 ∈ P := S1 2768209 (by norm_num) (by norm_num) (nz5 (by norm_num)) 5536417 g5536417 (by norm_num)
   have g276821 : 276821 ∈ P := S1 276821 (by norm_num) (by norm_num) (nz5 (by norm_num)) 2768209 g2768209 (by norm_num)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 276821 g276821 (by norm_num)
 
 -- a an odd multiple of 1154: 7 divides 2309 + 1 and 13 + 1.
-theorem c20_d1154 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1154 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1154 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, S3, -, -, -, S7, -⟩ := facts hP (hK5 2) E
   have g2309 : 2309 ∈ P := S2 2309 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 2309) (x := 1 + 2 ^ 1154) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 2309) (x := 1 + 2 ^ 1154) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g13 : 13 ∈ P := S7 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num)
   exact absurd (S3 7 (by norm_num) (by norm_num) (nz5 (by norm_num)) 2309 g2309 13 g13 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 1174: 3^2 divides 1601 + 1.
-theorem c20_d1174 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1174 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1174 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g35221 : 35221 ∈ P := S2 35221 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 35221) (x := 1 + 2 ^ 1174) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 35221) (x := 1 + 2 ^ 1174) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g1601 : 1601 ∈ P := S1 1601 (by norm_num) (by norm_num) (nz5 (by norm_num)) 35221 g35221 (by norm_num)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 1601 g1601 (by norm_num)
 
 -- a an odd multiple of 1186: 3^2 divides 23360190343863455255753897 + 1.
-theorem c20_d1186 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1186 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1186 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g23360190343863455255753897 : 23360190343863455255753897 ∈ P := S2 23360190343863455255753897 prime_23360190343863455255753897 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 23360190343863455255753897) (x := 1 + 2 ^ 1186) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 23360190343863455255753897) (x := 1 + 2 ^ 1186) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 23360190343863455255753897 g23360190343863455255753897 (by norm_num)
 
 -- a an odd multiple of 1198: 17 divides 4793 + 1 and 86257 + 1.
-theorem c20_d1198 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1198 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1198 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, S3, -, -, -, -, -⟩ := facts hP (hK5 2) E
   have g4793 : 4793 ∈ P := S2 4793 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 4793) (x := 1 + 2 ^ 1198) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 4793) (x := 1 + 2 ^ 1198) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g86257 : 86257 ∈ P := S2 86257 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 86257) (x := 1 + 2 ^ 1198) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 86257) (x := 1 + 2 ^ 1198) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact absurd (S3 17 (by norm_num) (by norm_num) (nz5 (by norm_num)) 4793 g4793 86257 g86257 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 1202: 3^2 divides 17 + 1.
-theorem c20_d1202 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1202 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1202 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g685141 : 685141 ∈ P := S2 685141 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 685141) (x := 1 + 2 ^ 1202) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 685141) (x := 1 + 2 ^ 1202) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g67 : 67 ∈ P := S1 67 (by norm_num) (by norm_num) (nz5 (by norm_num)) 685141 g685141 (by norm_num)
   have g17 : 17 ∈ P := S1 17 (by norm_num) (by norm_num) (nz5 (by norm_num)) 67 g67 (by norm_num)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 17 g17 (by norm_num)
 
 -- a an odd multiple of 1214: 13 divides 5^2 + 1 and 7889023609 + 1.
-theorem c20_d1214 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1214 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1214 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, -, -, S8⟩ := facts hP (hK5 2) E
   have g7889023609 : 7889023609 ∈ P := S2 7889023609 prime_7889023609 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 7889023609) (x := 1 + 2 ^ 1214) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 7889023609) (x := 1 + 2 ^ 1214) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S8 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num) 7889023609 g7889023609 (by norm_num)
 
 -- a an odd multiple of 1226: 3 divides 17458241 + 1 and 23 + 1.
-theorem c20_d1226 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1226 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1226 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, S3, -, -, -, -, -⟩ := facts hP (hK5 2) E
   have g17458241 : 17458241 ∈ P := S2 17458241 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 17458241) (x := 1 + 2 ^ 1226) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 17458241) (x := 1 + 2 ^ 1226) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g23 : 23 ∈ P := S1 23 (by norm_num) (by norm_num) (nz5 (by norm_num)) 17458241 g17458241 (by norm_num)
   exact absurd (S3 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 17458241 g17458241 23 g23 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 1234: 3^2 divides 86381 + 1.
-theorem c20_d1234 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1234 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1234 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g86381 : 86381 ∈ P := S2 86381 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 86381) (x := 1 + 2 ^ 1234) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 86381) (x := 1 + 2 ^ 1234) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 86381 g86381 (by norm_num)
 
 -- a an odd multiple of 1238: 3^2 divides 284741 + 1.
-theorem c20_d1238 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1238 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1238 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g284741 : 284741 ∈ P := S2 284741 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 284741) (x := 1 + 2 ^ 1238) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 284741) (x := 1 + 2 ^ 1238) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 284741 g284741 (by norm_num)
 
 -- a an odd multiple of 1262: 3^2 divides 328121 + 1.
-theorem c20_d1262 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1262 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1262 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g328121 : 328121 ∈ P := S2 328121 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 328121) (x := 1 + 2 ^ 1262) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 328121) (x := 1 + 2 ^ 1262) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 328121 g328121 (by norm_num)
 
 -- a an odd multiple of 1282: 3 divides 62248793 + 1 and 1487 + 1.
-theorem c20_d1282 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1282 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1282 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, S3, -, -, -, -, -⟩ := facts hP (hK5 2) E
   have g62248793 : 62248793 ∈ P := S2 62248793 prime_62248793 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 62248793) (x := 1 + 2 ^ 1282) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 62248793) (x := 1 + 2 ^ 1282) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g1487 : 1487 ∈ P := S1 1487 (by norm_num) (by norm_num) (nz5 (by norm_num)) 62248793 g62248793 (by norm_num)
   exact absurd (S3 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 62248793 g62248793 1487 g1487 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 1286: 3^2 divides 53 + 1.
-theorem c20_d1286 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1286 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1286 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g7981661881 : 7981661881 ∈ P := S2 7981661881 prime_7981661881 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 7981661881) (x := 1 + 2 ^ 1286) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 7981661881) (x := 1 + 2 ^ 1286) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g53 : 53 ∈ P := S1 53 (by norm_num) (by norm_num) (nz5 (by norm_num)) 7981661881 g7981661881 (by norm_num)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 53 g53 (by norm_num)
 
 -- a an odd multiple of 1294: 3^2 divides 9679121 + 1.
-theorem c20_d1294 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1294 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1294 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g9679121 : 9679121 ∈ P := S2 9679121 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 9679121) (x := 1 + 2 ^ 1294) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 9679121) (x := 1 + 2 ^ 1294) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 9679121 g9679121 (by norm_num)
 
 -- a an odd multiple of 1306: 3^2 divides 233 + 1.
-theorem c20_d1306 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1306 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1306 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g26214220912037007616369852597 : 26214220912037007616369852597 ∈ P := S2 26214220912037007616369852597 prime_26214220912037007616369852597 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 26214220912037007616369852597) (x := 1 + 2 ^ 1306) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 26214220912037007616369852597) (x := 1 + 2 ^ 1306) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g233 : 233 ∈ P := S1 233 (by norm_num) (by norm_num) (nz5 (by norm_num)) 26214220912037007616369852597 g26214220912037007616369852597 (by norm_num)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 233 g233 (by norm_num)
 
 -- a an odd multiple of 1318: 3^2 divides 5273 + 1.
-theorem c20_d1318 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1318 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1318 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g5273 : 5273 ∈ P := S2 5273 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 5273) (x := 1 + 2 ^ 1318) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 5273) (x := 1 + 2 ^ 1318) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 5273 g5273 (by norm_num)
 
 -- a an odd multiple of 1322: 13 divides 5^2 + 1 and 93405283373 + 1.
-theorem c20_d1322 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1322 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1322 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, -, -, S8⟩ := facts hP (hK5 2) E
   have g93405283373 : 93405283373 ∈ P := S2 93405283373 prime_93405283373 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 93405283373) (x := 1 + 2 ^ 1322) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 93405283373) (x := 1 + 2 ^ 1322) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S8 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num) 93405283373 g93405283373 (by norm_num)
 
 -- a an odd multiple of 1346: 3 divides 2693 + 1 and 26921 + 1.
-theorem c20_d1346 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1346 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1346 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, S3, -, -, -, -, -⟩ := facts hP (hK5 2) E
   have g2693 : 2693 ∈ P := S2 2693 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 2693) (x := 1 + 2 ^ 1346) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 2693) (x := 1 + 2 ^ 1346) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g26921 : 26921 ∈ P := S2 26921 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 26921) (x := 1 + 2 ^ 1346) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 26921) (x := 1 + 2 ^ 1346) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact absurd (S3 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 2693 g2693 26921 g26921 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 1354: 3^2 divides 5417 + 1.
-theorem c20_d1354 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1354 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1354 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g5417 : 5417 ∈ P := S2 5417 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 5417) (x := 1 + 2 ^ 1354) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 5417) (x := 1 + 2 ^ 1354) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 5417 g5417 (by norm_num)
 
 -- a an odd multiple of 1366: 3^2 divides 195140238443 + 1.
-theorem c20_d1366 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1366 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1366 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g1951402384429 : 1951402384429 ∈ P := S2 1951402384429 prime_1951402384429 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 1951402384429) (x := 1 + 2 ^ 1366) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 1951402384429) (x := 1 + 2 ^ 1366) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g195140238443 : 195140238443 ∈ P := S1 195140238443 prime_195140238443 (by norm_num) (nz5 (by norm_num)) 1951402384429 g1951402384429 (by norm_num)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 195140238443 g195140238443 (by norm_num)
 
 -- a an odd multiple of 1382: 7^2 divides 97 + 1.
-theorem c20_d1382 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1382 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1382 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g11057 : 11057 ∈ P := S2 11057 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 11057) (x := 1 + 2 ^ 1382) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 11057) (x := 1 + 2 ^ 1382) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g97 : 97 ∈ P := S1 97 (by norm_num) (by norm_num) (nz5 (by norm_num)) 11057 g11057 (by norm_num)
   exact S6 7 (by norm_num) (by norm_num) (nz5 (by norm_num)) 97 g97 (by norm_num)
 
 -- a an odd multiple of 1402: 3 divides 4846812462461 + 1 and 137 + 1.
-theorem c20_d1402 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1402 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1402 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, S3, -, -, -, -, -⟩ := facts hP (hK5 2) E
   have g4846812462461 : 4846812462461 ∈ P := S2 4846812462461 prime_4846812462461 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 4846812462461) (x := 1 + 2 ^ 1402) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 4846812462461) (x := 1 + 2 ^ 1402) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g1093 : 1093 ∈ P := S1 1093 (by norm_num) (by norm_num) (nz5 (by norm_num)) 4846812462461 g4846812462461 (by norm_num)
   have g547 : 547 ∈ P := S1 547 (by norm_num) (by norm_num) (nz5 (by norm_num)) 1093 g1093 (by norm_num)
   have g137 : 137 ∈ P := S1 137 (by norm_num) (by norm_num) (nz5 (by norm_num)) 547 g547 (by norm_num)
   exact absurd (S3 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 4846812462461 g4846812462461 137 g137 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 1418: 3 divides 2837 + 1 and 11 + 1.
-theorem c20_d1418 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1418 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1418 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, S3, -, -, -, -, -⟩ := facts hP (hK5 2) E
   have g2837 : 2837 ∈ P := S2 2837 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 2837) (x := 1 + 2 ^ 1418) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 2837) (x := 1 + 2 ^ 1418) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g11 : 11 ∈ P := S1 11 (by norm_num) (by norm_num) (nz5 (by norm_num)) 2837 g2837 (by norm_num)
   exact absurd (S3 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 2837 g2837 11 g11 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 1438: 3^2 divides 863 + 1.
-theorem c20_d1438 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1438 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1438 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g8629 : 8629 ∈ P := S2 8629 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 8629) (x := 1 + 2 ^ 1438) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 8629) (x := 1 + 2 ^ 1438) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g863 : 863 ∈ P := S1 863 (by norm_num) (by norm_num) (nz5 (by norm_num)) 8629 g8629 (by norm_num)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 863 g863 (by norm_num)
 
 -- a an odd multiple of 1454: 7^2 divides 97 + 1.
-theorem c20_d1454 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1454 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1454 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g2909 : 2909 ∈ P := S2 2909 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 2909) (x := 1 + 2 ^ 1454) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 2909) (x := 1 + 2 ^ 1454) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g97 : 97 ∈ P := S1 97 (by norm_num) (by norm_num) (nz5 (by norm_num)) 2909 g2909 (by norm_num)
   exact S6 7 (by norm_num) (by norm_num) (nz5 (by norm_num)) 97 g97 (by norm_num)
 
 -- a an odd multiple of 1466: 3 divides 627449 + 1 and 47 + 1.
-theorem c20_d1466 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1466 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1466 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, S3, -, -, -, -, -⟩ := facts hP (hK5 2) E
   have g627449 : 627449 ∈ P := S2 627449 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 627449) (x := 1 + 2 ^ 1466) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 627449) (x := 1 + 2 ^ 1466) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g47 : 47 ∈ P := S1 47 (by norm_num) (by norm_num) (nz5 (by norm_num)) 627449 g627449 (by norm_num)
   exact absurd (S3 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 627449 g627449 47 g47 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 1478: 13 divides 5^2 + 1 and 6139613 + 1.
-theorem c20_d1478 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1478 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1478 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, -, -, S8⟩ := facts hP (hK5 2) E
   have g6139613 : 6139613 ∈ P := S2 6139613 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 6139613) (x := 1 + 2 ^ 1478) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 6139613) (x := 1 + 2 ^ 1478) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S8 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num) 6139613 g6139613 (by norm_num)
 
 -- a an odd multiple of 1486: 3^2 divides 260683037 + 1.
-theorem c20_d1486 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1486 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1486 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g260683037 : 260683037 ∈ P := S2 260683037 prime_260683037 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 260683037) (x := 1 + 2 ^ 1486) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 260683037) (x := 1 + 2 ^ 1486) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 260683037 g260683037 (by norm_num)
 
 -- a an odd multiple of 1502: 7^2 divides 4507 + 1.
-theorem c20_d1502 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1502 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1502 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g9013 : 9013 ∈ P := S2 9013 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 9013) (x := 1 + 2 ^ 1502) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 9013) (x := 1 + 2 ^ 1502) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g4507 : 4507 ∈ P := S1 4507 (by norm_num) (by norm_num) (nz5 (by norm_num)) 9013 g9013 (by norm_num)
   exact S6 7 (by norm_num) (by norm_num) (nz5 (by norm_num)) 4507 g4507 (by norm_num)
 
 -- a an odd multiple of 1514: 3^2 divides 32507 + 1.
-theorem c20_d1514 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1514 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1514 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g83940354459118810481 : 83940354459118810481 ∈ P := S2 83940354459118810481 prime_83940354459118810481 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 83940354459118810481) (x := 1 + 2 ^ 1514) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 83940354459118810481) (x := 1 + 2 ^ 1514) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g32507 : 32507 ∈ P := S1 32507 (by norm_num) (by norm_num) (nz5 (by norm_num)) 83940354459118810481 g83940354459118810481 (by norm_num)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 32507 g32507 (by norm_num)
 
 -- a an odd multiple of 1522: 3 divides 1567661 + 1 and 227 + 1.
-theorem c20_d1522 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1522 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1522 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, S3, -, -, -, -, -⟩ := facts hP (hK5 2) E
   have g1567661 : 1567661 ∈ P := S2 1567661 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 1567661) (x := 1 + 2 ^ 1522) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 1567661) (x := 1 + 2 ^ 1522) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g227 : 227 ∈ P := S1 227 (by norm_num) (by norm_num) (nz5 (by norm_num)) 1567661 g1567661 (by norm_num)
   exact absurd (S3 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 1567661 g1567661 227 g227 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 1538: 3^2 divides 1508116661 + 1.
-theorem c20_d1538 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1538 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1538 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g1508116661 : 1508116661 ∈ P := S2 1508116661 prime_1508116661 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 1508116661) (x := 1 + 2 ^ 1538) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 1508116661) (x := 1 + 2 ^ 1538) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 1508116661 g1508116661 (by norm_num)
 
 -- a an odd multiple of 1546: 3^2 divides 961613 + 1.
-theorem c20_d1546 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1546 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1546 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g961613 : 961613 ∈ P := S2 961613 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 961613) (x := 1 + 2 ^ 1546) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 961613) (x := 1 + 2 ^ 1546) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 961613 g961613 (by norm_num)
 
 -- a an odd multiple of 1574: 13 divides 5^2 + 1 and 406093 + 1.
-theorem c20_d1574 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1574 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1574 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, -, -, S8⟩ := facts hP (hK5 2) E
   have g406093 : 406093 ∈ P := S2 406093 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 406093) (x := 1 + 2 ^ 1574) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 406093) (x := 1 + 2 ^ 1574) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S8 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num) 406093 g406093 (by norm_num)
 
 -- a an odd multiple of 1594: 3^2 divides 1131019499249 + 1.
-theorem c20_d1594 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1594 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1594 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g1131019499249 : 1131019499249 ∈ P := S2 1131019499249 prime_1131019499249 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 1131019499249) (x := 1 + 2 ^ 1594) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 1131019499249) (x := 1 + 2 ^ 1594) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 1131019499249 g1131019499249 (by norm_num)
 
 -- a an odd multiple of 1618: 13 divides 5^2 + 1 and 6473 + 1.
-theorem c20_d1618 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1618 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1618 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, -, -, S8⟩ := facts hP (hK5 2) E
   have g6473 : 6473 ∈ P := S2 6473 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 6473) (x := 1 + 2 ^ 1618) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 6473) (x := 1 + 2 ^ 1618) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S8 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num) 6473 g6473 (by norm_num)
 
 -- a an odd multiple of 1622: 3 divides 5336381 + 1 and 2687 + 1.
-theorem c20_d1622 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1622 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1622 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, S3, -, -, -, -, -⟩ := facts hP (hK5 2) E
   have g5336381 : 5336381 ∈ P := S2 5336381 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 5336381) (x := 1 + 2 ^ 1622) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 5336381) (x := 1 + 2 ^ 1622) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g2687 : 2687 ∈ P := S1 2687 (by norm_num) (by norm_num) (nz5 (by norm_num)) 5336381 g5336381 (by norm_num)
   exact absurd (S3 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 5336381 g5336381 2687 g2687 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 1642: 3^2 divides 521 + 1.
-theorem c20_d1642 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1642 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1642 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g441085379960554789 : 441085379960554789 ∈ P := S2 441085379960554789 prime_441085379960554789 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 441085379960554789) (x := 1 + 2 ^ 1642) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 441085379960554789) (x := 1 + 2 ^ 1642) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g521 : 521 ∈ P := S1 521 (by norm_num) (by norm_num) (nz5 (by norm_num)) 441085379960554789 g441085379960554789 (by norm_num)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 521 g521 (by norm_num)
 
 -- a an odd multiple of 1646: 7 divides 19753 + 1 and 13 + 1.
-theorem c20_d1646 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1646 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1646 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, S3, -, -, -, S7, -⟩ := facts hP (hK5 2) E
   have g19753 : 19753 ∈ P := S2 19753 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 19753) (x := 1 + 2 ^ 1646) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 19753) (x := 1 + 2 ^ 1646) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g13 : 13 ∈ P := S7 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num)
   exact absurd (S3 7 (by norm_num) (by norm_num) (nz5 (by norm_num)) 19753 g19753 13 g13 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 1654: 7^2 divides 148861 + 1.
-theorem c20_d1654 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1654 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1654 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g148861 : 148861 ∈ P := S2 148861 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 148861) (x := 1 + 2 ^ 1654) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 148861) (x := 1 + 2 ^ 1654) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 7 (by norm_num) (by norm_num) (nz5 (by norm_num)) 148861 g148861 (by norm_num)
 
 -- a an odd multiple of 1658: 3^2 divides 32939 + 1.
-theorem c20_d1658 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1658 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1658 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g464235512584146182617 : 464235512584146182617 ∈ P := S2 464235512584146182617 prime_464235512584146182617 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 464235512584146182617) (x := 1 + 2 ^ 1658) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 464235512584146182617) (x := 1 + 2 ^ 1658) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g32939 : 32939 ∈ P := S1 32939 (by norm_num) (by norm_num) (nz5 (by norm_num)) 464235512584146182617 g464235512584146182617 (by norm_num)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 32939 g32939 (by norm_num)
 
 -- a an odd multiple of 1678: 3^2 divides 5564249 + 1.
-theorem c20_d1678 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1678 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1678 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g5564249 : 5564249 ∈ P := S2 5564249 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 5564249) (x := 1 + 2 ^ 1678) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 5564249) (x := 1 + 2 ^ 1678) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 5564249 g5564249 (by norm_num)
 
 -- a an odd multiple of 1706: 3 divides 3413 + 1 and 569 + 1.
-theorem c20_d1706 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1706 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1706 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, S3, -, -, -, -, -⟩ := facts hP (hK5 2) E
   have g3413 : 3413 ∈ P := S2 3413 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 3413) (x := 1 + 2 ^ 1706) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 3413) (x := 1 + 2 ^ 1706) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g569 : 569 ∈ P := S1 569 (by norm_num) (by norm_num) (nz5 (by norm_num)) 3413 g3413 (by norm_num)
   exact absurd (S3 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 3413 g3413 569 g569 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 1714: 3^2 divides 593 + 1.
-theorem c20_d1714 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1714 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1714 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g4702664630197 : 4702664630197 ∈ P := S2 4702664630197 prime_4702664630197 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 4702664630197) (x := 1 + 2 ^ 1714) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 4702664630197) (x := 1 + 2 ^ 1714) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g593 : 593 ∈ P := S1 593 (by norm_num) (by norm_num) (nz5 (by norm_num)) 4702664630197 g4702664630197 (by norm_num)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 593 g593 (by norm_num)
 
 -- a an odd multiple of 1718: 3^2 divides 53 + 1.
-theorem c20_d1718 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1718 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1718 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g41233 : 41233 ∈ P := S2 41233 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 41233) (x := 1 + 2 ^ 1718) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 41233) (x := 1 + 2 ^ 1718) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g53 : 53 ∈ P := S1 53 (by norm_num) (by norm_num) (nz5 (by norm_num)) 41233 g41233 (by norm_num)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 53 g53 (by norm_num)
 
 -- a an odd multiple of 1726: 13 divides 5^2 + 1 and 31069 + 1.
-theorem c20_d1726 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1726 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1726 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, -, -, S8⟩ := facts hP (hK5 2) E
   have g62137 : 62137 ∈ P := S2 62137 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 62137) (x := 1 + 2 ^ 1726) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 62137) (x := 1 + 2 ^ 1726) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g31069 : 31069 ∈ P := S1 31069 (by norm_num) (by norm_num) (nz5 (by norm_num)) 62137 g62137 (by norm_num)
   exact S8 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num) 31069 g31069 (by norm_num)
 
 -- a an odd multiple of 1754: 3^2 divides 17891 + 1.
-theorem c20_d1754 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1754 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1754 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g178909 : 178909 ∈ P := S2 178909 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 178909) (x := 1 + 2 ^ 1754) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 178909) (x := 1 + 2 ^ 1754) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g17891 : 17891 ∈ P := S1 17891 (by norm_num) (by norm_num) (nz5 (by norm_num)) 178909 g178909 (by norm_num)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 17891 g17891 (by norm_num)
 
 -- a an odd multiple of 1762: 41^2 divides 292493 + 1.
-theorem c20_d1762 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1762 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1762 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g292493 : 292493 ∈ P := S2 292493 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 292493) (x := 1 + 2 ^ 1762) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 292493) (x := 1 + 2 ^ 1762) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 41 (by norm_num) (by norm_num) (nz5 (by norm_num)) 292493 g292493 (by norm_num)
 
 -- a an odd multiple of 1766: 7 divides 10597 + 1 and 13 + 1.
-theorem c20_d1766 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1766 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1766 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, S3, -, -, -, S7, -⟩ := facts hP (hK5 2) E
   have g10597 : 10597 ∈ P := S2 10597 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 10597) (x := 1 + 2 ^ 1766) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 10597) (x := 1 + 2 ^ 1766) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g13 : 13 ∈ P := S7 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num)
   exact absurd (S3 7 (by norm_num) (by norm_num) (nz5 (by norm_num)) 10597 g10597 13 g13 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 1774: 7^2 divides 1982764321 + 1.
-theorem c20_d1774 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1774 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1774 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g1982764321 : 1982764321 ∈ P := S2 1982764321 prime_1982764321 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 1982764321) (x := 1 + 2 ^ 1774) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 1982764321) (x := 1 + 2 ^ 1774) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 7 (by norm_num) (by norm_num) (nz5 (by norm_num)) 1982764321 g1982764321 (by norm_num)
 
 -- a an odd multiple of 1814: 5^3 divides (2^1814 + 1) * prod (p + 1) over p in {36684968468392674349}.
@@ -5133,357 +5135,357 @@ theorem c20_d1814 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p �
     (hd : 1 + 2 ^ 1814 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, -, -, -⟩ := facts hP (hK5 2) E
   have g36684968468392674349 : 36684968468392674349 ∈ P := S2 36684968468392674349 prime_36684968468392674349 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 36684968468392674349) (x := 1 + 2 ^ 1814) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 36684968468392674349) (x := 1 + 2 ^ 1814) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have b0 : (∅ : Finset ℕ) ⊆ P ∧ 5 ^ 0 ∣ ∏ p ∈ (∅ : Finset ℕ), (p + 1) :=
     ⟨Finset.empty_subset _, by rw [pow_zero]; exact one_dvd _⟩
   have b1 := bud5_cons b0 g36684968468392674349 (by simp) (by norm_num : 5 ^ 2 ∣ 36684968468392674349 + 1)
-  exact bud5_kill (i := 1) hP h5 E hd b1.1 (tw (c := 5) (x := 1 + 2 ^ 1814) (by push_cast; reduce_mod_char)) (by norm_num) b1.2
+  exact bud5_kill (i := 1) hP h5 E hd b1.1 (tw (c := 5) (x := 1 + 2 ^ 1814) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)) (by norm_num) b1.2
 
 -- a an odd multiple of 1822: 3 divides 29153 + 1 and 113 + 1.
-theorem c20_d1822 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1822 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1822 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, S3, -, -, -, -, -⟩ := facts hP (hK5 2) E
   have g29153 : 29153 ∈ P := S2 29153 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 29153) (x := 1 + 2 ^ 1822) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 29153) (x := 1 + 2 ^ 1822) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g113 : 113 ∈ P := S1 113 (by norm_num) (by norm_num) (nz5 (by norm_num)) 29153 g29153 (by norm_num)
   exact absurd (S3 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 29153 g29153 113 g113 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 1838: 3 divides 3677 + 1 and 169097 + 1.
-theorem c20_d1838 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1838 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1838 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, S3, -, -, -, -, -⟩ := facts hP (hK5 2) E
   have g3677 : 3677 ∈ P := S2 3677 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 3677) (x := 1 + 2 ^ 1838) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 3677) (x := 1 + 2 ^ 1838) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g169097 : 169097 ∈ P := S2 169097 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 169097) (x := 1 + 2 ^ 1838) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 169097) (x := 1 + 2 ^ 1838) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact absurd (S3 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 3677 g3677 169097 g169097 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 1858: 3^2 divides 7433 + 1.
-theorem c20_d1858 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1858 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1858 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g7433 : 7433 ∈ P := S2 7433 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 7433) (x := 1 + 2 ^ 1858) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 7433) (x := 1 + 2 ^ 1858) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 7433 g7433 (by norm_num)
 
 -- a an odd multiple of 1874: 13^2 divides 802073 + 1.
-theorem c20_d1874 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1874 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1874 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g802073 : 802073 ∈ P := S2 802073 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 802073) (x := 1 + 2 ^ 1874) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 802073) (x := 1 + 2 ^ 1874) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) 802073 g802073 (by norm_num)
 
 -- a an odd multiple of 1882: 3^2 divides 3383837 + 1.
-theorem c20_d1882 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1882 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1882 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g3383837 : 3383837 ∈ P := S2 3383837 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 3383837) (x := 1 + 2 ^ 1882) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 3383837) (x := 1 + 2 ^ 1882) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 3383837 g3383837 (by norm_num)
 
 -- a an odd multiple of 1894: 3^2 divides 141803 + 1.
-theorem c20_d1894 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1894 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1894 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g6522937 : 6522937 ∈ P := S2 6522937 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 6522937) (x := 1 + 2 ^ 1894) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 6522937) (x := 1 + 2 ^ 1894) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g141803 : 141803 ∈ P := S1 141803 (by norm_num) (by norm_num) (nz5 (by norm_num)) 6522937 g6522937 (by norm_num)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 141803 g141803 (by norm_num)
 
 -- a an odd multiple of 1906: 83^2 divides 2809306768001 + 1.
-theorem c20_d1906 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1906 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1906 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g2809306768001 : 2809306768001 ∈ P := S2 2809306768001 prime_2809306768001 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 2809306768001) (x := 1 + 2 ^ 1906) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 2809306768001) (x := 1 + 2 ^ 1906) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 83 (by norm_num) (by norm_num) (nz5 (by norm_num)) 2809306768001 g2809306768001 (by norm_num)
 
 -- a an odd multiple of 1934: 3 divides 328781 + 1 and 1481 + 1.
-theorem c20_d1934 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_d1934 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1934 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, S3, -, -, -, -, -⟩ := facts hP (hK5 2) E
   have g328781 : 328781 ∈ P := S2 328781 (by norm_num) (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 328781) (x := 1 + 2 ^ 1934) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 328781) (x := 1 + 2 ^ 1934) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g1481 : 1481 ∈ P := S1 1481 (by norm_num) (by norm_num) (nz5 (by norm_num)) 328781 g328781 (by norm_num)
   exact absurd (S3 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 328781 g328781 1481 g1481 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 68719476736: 7 divides 2748779069441 + 1 and 13 + 1.
-theorem c20_f36 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_f36 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 68719476736 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, S3, -, -, -, S7, -⟩ := facts hP (hK5 2) E
   have g2748779069441 : 2748779069441 ∈ P := S2 2748779069441 prime_2748779069441 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 2748779069441) (x := 1 + 2 ^ 68719476736) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 2748779069441) (x := 1 + 2 ^ 68719476736) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g13 : 13 ∈ P := S7 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num)
   exact absurd (S3 7 (by norm_num) (by norm_num) (nz5 (by norm_num)) 2748779069441 g2748779069441 13 g13 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 274877906944: 7 divides 6597069766657 + 1 and 13 + 1.
-theorem c20_f38 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_f38 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 274877906944 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, S3, -, -, -, S7, -⟩ := facts hP (hK5 2) E
   have g6597069766657 : 6597069766657 ∈ P := S2 6597069766657 prime_6597069766657 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 6597069766657) (x := 1 + 2 ^ 274877906944) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 6597069766657) (x := 1 + 2 ^ 274877906944) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g13 : 13 ∈ P := S7 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num)
   exact absurd (S3 7 (by norm_num) (by norm_num) (nz5 (by norm_num)) 6597069766657 g6597069766657 13 g13 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 549755813888: 11 divides 46179488366593 + 1 and 263 + 1.
-theorem c20_f39 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_f39 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 549755813888 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, S3, -, -, -, -, -⟩ := facts hP (hK5 2) E
   have g46179488366593 : 46179488366593 ∈ P := S2 46179488366593 prime_46179488366593 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 46179488366593) (x := 1 + 2 ^ 549755813888) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 46179488366593) (x := 1 + 2 ^ 549755813888) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g263 : 263 ∈ P := S1 263 (by norm_num) (by norm_num) (nz5 (by norm_num)) 46179488366593 g46179488366593 (by norm_num)
   exact absurd (S3 11 (by norm_num) (by norm_num) (nz5 (by norm_num)) 46179488366593 g46179488366593 263 g263 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 4398046511104: 3^2 divides 69545110012857251 + 1.
-theorem c20_f42 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_f42 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 4398046511104 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g1529992420282859521 : 1529992420282859521 ∈ P := S2 1529992420282859521 prime_1529992420282859521 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 1529992420282859521) (x := 1 + 2 ^ 4398046511104) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 1529992420282859521) (x := 1 + 2 ^ 4398046511104) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g69545110012857251 : 69545110012857251 ∈ P := S1 69545110012857251 prime_69545110012857251 (by norm_num) (nz5 (by norm_num)) 1529992420282859521 g1529992420282859521 (by norm_num)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 69545110012857251 g69545110012857251 (by norm_num)
 
 -- a an odd multiple of 4503599627370496: 13 divides 5^2 + 1 and 1567903 + 1.
-theorem c20_f52 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_f52 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 4503599627370496 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, -, -, S8⟩ := facts hP (hK5 2) E
   have g74201307460556292097 : 74201307460556292097 ∈ P := S2 74201307460556292097 prime_74201307460556292097 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 74201307460556292097) (x := 1 + 2 ^ 4503599627370496) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 74201307460556292097) (x := 1 + 2 ^ 4503599627370496) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g1567903 : 1567903 ∈ P := S1 1567903 (by norm_num) (by norm_num) (nz5 (by norm_num)) 74201307460556292097 g74201307460556292097 (by norm_num)
   exact S8 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num) 1567903 g1567903 (by norm_num)
 
 -- a an odd multiple of 36028797018963968: 3^2 divides 4179340454199820289 + 1.
-theorem c20_f55 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_f55 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 36028797018963968 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g4179340454199820289 : 4179340454199820289 ∈ P := S2 4179340454199820289 prime_4179340454199820289 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 4179340454199820289) (x := 1 + 2 ^ 36028797018963968) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 4179340454199820289) (x := 1 + 2 ^ 36028797018963968) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 4179340454199820289 g4179340454199820289 (by norm_num)
 
 -- a an odd multiple of 288230376151711744: 3 divides 219055085875300925441 + 1 and 1667 + 1.
-theorem c20_f58 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_f58 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 288230376151711744 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, S3, -, -, -, -, -⟩ := facts hP (hK5 2) E
   have g219055085875300925441 : 219055085875300925441 ∈ P := S2 219055085875300925441 prime_219055085875300925441 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 219055085875300925441) (x := 1 + 2 ^ 288230376151711744) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 219055085875300925441) (x := 1 + 2 ^ 288230376151711744) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g1667 : 1667 ∈ P := S1 1667 (by norm_num) (by norm_num) (nz5 (by norm_num)) 219055085875300925441 g219055085875300925441 (by norm_num)
   exact absurd (S3 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 219055085875300925441 g219055085875300925441 1667 g1667 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 4611686018427387904: 13 divides 5^2 + 1 and 12857380619375557476353 + 1.
-theorem c20_f62 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_f62 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 4611686018427387904 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, -, -, S8⟩ := facts hP (hK5 2) E
   have g12857380619375557476353 : 12857380619375557476353 ∈ P := S2 12857380619375557476353 prime_12857380619375557476353 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 12857380619375557476353) (x := 1 + 2 ^ 4611686018427387904) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 12857380619375557476353) (x := 1 + 2 ^ 4611686018427387904) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S8 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num) 12857380619375557476353 g12857380619375557476353 (by norm_num)
 
 -- a an odd multiple of 9223372036854775808: 13 divides 5^2 + 1 and 9097024474706080249 + 1.
-theorem c20_f63 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_f63 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 9223372036854775808 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, -, -, S8⟩ := facts hP (hK5 2) E
   have g1328165573307087716353 : 1328165573307087716353 ∈ P := S2 1328165573307087716353 prime_1328165573307087716353 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 1328165573307087716353) (x := 1 + 2 ^ 9223372036854775808) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 1328165573307087716353) (x := 1 + 2 ^ 9223372036854775808) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g9097024474706080249 : 9097024474706080249 ∈ P := S1 9097024474706080249 prime_9097024474706080249 (by norm_num) (nz5 (by norm_num)) 1328165573307087716353 g1328165573307087716353 (by norm_num)
   exact S8 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num) 9097024474706080249 g9097024474706080249 (by norm_num)
 
 -- a an odd multiple of 73786976294838206464: 7 divides 4457323664018586376077313 + 1 and 13 + 1.
-theorem c20_f66 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_f66 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 73786976294838206464 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, S3, -, -, -, S7, -⟩ := facts hP (hK5 2) E
   have g4457323664018586376077313 : 4457323664018586376077313 ∈ P := S2 4457323664018586376077313 prime_4457323664018586376077313 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 4457323664018586376077313) (x := 1 + 2 ^ 73786976294838206464) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 4457323664018586376077313) (x := 1 + 2 ^ 73786976294838206464) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g13 : 13 ∈ P := S7 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num)
   exact absurd (S3 7 (by norm_num) (by norm_num) (nz5 (by norm_num)) 4457323664018586376077313 g4457323664018586376077313 13 g13 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 2361183241434822606848: 3^2 divides 6450752615599935361908737 + 1.
-theorem c20_f71 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_f71 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 2361183241434822606848 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g6450752615599935361908737 : 6450752615599935361908737 ∈ P := S2 6450752615599935361908737 prime_6450752615599935361908737 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 6450752615599935361908737) (x := 1 + 2 ^ 2361183241434822606848) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 6450752615599935361908737) (x := 1 + 2 ^ 2361183241434822606848) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 6450752615599935361908737 g6450752615599935361908737 (by norm_num)
 
 -- a an odd multiple of 9444732965739290427392: 7^2 divides 188894659314785808547841 + 1.
-theorem c20_f73 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_f73 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 9444732965739290427392 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g188894659314785808547841 : 188894659314785808547841 ∈ P := S2 188894659314785808547841 prime_188894659314785808547841 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 188894659314785808547841) (x := 1 + 2 ^ 9444732965739290427392) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 188894659314785808547841) (x := 1 + 2 ^ 9444732965739290427392) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 7 (by norm_num) (by norm_num) (nz5 (by norm_num)) 188894659314785808547841 g188894659314785808547841 (by norm_num)
 
 -- a an odd multiple of 151115727451828646838272: 11^2 divides 256896736668108699625062401 + 1.
-theorem c20_f77 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_f77 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 151115727451828646838272 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g256896736668108699625062401 : 256896736668108699625062401 ∈ P := S2 256896736668108699625062401 prime_256896736668108699625062401 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 256896736668108699625062401) (x := 1 + 2 ^ 151115727451828646838272) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 256896736668108699625062401) (x := 1 + 2 ^ 151115727451828646838272) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 11 (by norm_num) (by norm_num) (nz5 (by norm_num)) 256896736668108699625062401 g256896736668108699625062401 (by norm_num)
 
 -- a an odd multiple of 2417851639229258349412352: 13 divides 5^2 + 1 and 5241902353849032101525979137 + 1.
-theorem c20_f81 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_f81 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 2417851639229258349412352 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, -, -, S8⟩ := facts hP (hK5 2) E
   have g5241902353849032101525979137 : 5241902353849032101525979137 ∈ P := S2 5241902353849032101525979137 prime_5241902353849032101525979137 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 5241902353849032101525979137) (x := 1 + 2 ^ 2417851639229258349412352) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 5241902353849032101525979137) (x := 1 + 2 ^ 2417851639229258349412352) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S8 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num) 5241902353849032101525979137 g5241902353849032101525979137 (by norm_num)
 
 -- a an odd multiple of 2475880078570760549798248448: 3 divides 14072902366596202965053244178433 + 1 and 690233 + 1.
-theorem c20_f91 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_f91 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 2475880078570760549798248448 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, S3, -, -, -, -, -⟩ := facts hP (hK5 2) E
   have g14072902366596202965053244178433 : 14072902366596202965053244178433 ∈ P := S2 14072902366596202965053244178433 prime_14072902366596202965053244178433 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 14072902366596202965053244178433) (x := 1 + 2 ^ 2475880078570760549798248448) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 14072902366596202965053244178433) (x := 1 + 2 ^ 2475880078570760549798248448) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g690233 : 690233 ∈ P := S1 690233 (by norm_num) (by norm_num) (nz5 (by norm_num)) 14072902366596202965053244178433 g14072902366596202965053244178433 (by norm_num)
   exact absurd (S3 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 14072902366596202965053244178433 g14072902366596202965053244178433 690233 g690233 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 9903520314283042199192993792: 3 divides 7316007754729683197725441917976577 + 1 and 41 + 1.
-theorem c20_f93 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_f93 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 9903520314283042199192993792 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, S3, -, -, -, -, -⟩ := facts hP (hK5 2) E
   have g7316007754729683197725441917976577 : 7316007754729683197725441917976577 ∈ P := S2 7316007754729683197725441917976577 prime_7316007754729683197725441917976577 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 7316007754729683197725441917976577) (x := 1 + 2 ^ 9903520314283042199192993792) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 7316007754729683197725441917976577) (x := 1 + 2 ^ 9903520314283042199192993792) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g41 : 41 ∈ P := S1 41 (by norm_num) (by norm_num) (nz5 (by norm_num)) 7316007754729683197725441917976577 g7316007754729683197725441917976577 (by norm_num)
   exact absurd (S3 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 7316007754729683197725441917976577 g7316007754729683197725441917976577 41 g41 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 633825300114114700748351602688: 3^2 divides 17 + 1.
-theorem c20_f99 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_f99 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 633825300114114700748351602688 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g329244355096077565991935730125897729 : 329244355096077565991935730125897729 ∈ P := S2 329244355096077565991935730125897729 prime_329244355096077565991935730125897729 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 329244355096077565991935730125897729) (x := 1 + 2 ^ 633825300114114700748351602688) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 329244355096077565991935730125897729) (x := 1 + 2 ^ 633825300114114700748351602688) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g17 : 17 ∈ P := S1 17 (by norm_num) (by norm_num) (nz5 (by norm_num)) 329244355096077565991935730125897729 g329244355096077565991935730125897729 (by norm_num)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 17 g17 (by norm_num)
 
 -- a an odd multiple of 166153499473114484112975882535043072: 3^2 divides 9304595970494411110326649421962412033 + 1.
-theorem c20_f117 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_f117 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 166153499473114484112975882535043072 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g9304595970494411110326649421962412033 : 9304595970494411110326649421962412033 ∈ P := S2 9304595970494411110326649421962412033 prime_9304595970494411110326649421962412033 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 9304595970494411110326649421962412033) (x := 1 + 2 ^ 166153499473114484112975882535043072) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 9304595970494411110326649421962412033) (x := 1 + 2 ^ 166153499473114484112975882535043072) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 9304595970494411110326649421962412033 g9304595970494411110326649421962412033 (by norm_num)
 
 -- a an odd multiple of 42535295865117307932921825928971026432: 3 divides 850705917302346158658436518579420528641 + 1 and 23 + 1.
-theorem c20_f125 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_f125 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 42535295865117307932921825928971026432 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, S3, -, -, -, -, -⟩ := facts hP (hK5 2) E
   have g850705917302346158658436518579420528641 : 850705917302346158658436518579420528641 ∈ P := S2 850705917302346158658436518579420528641 prime_850705917302346158658436518579420528641 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 850705917302346158658436518579420528641) (x := 1 + 2 ^ 42535295865117307932921825928971026432) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 850705917302346158658436518579420528641) (x := 1 + 2 ^ 42535295865117307932921825928971026432) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g23 : 23 ∈ P := S1 23 (by norm_num) (by norm_num) (nz5 (by norm_num)) 850705917302346158658436518579420528641 g850705917302346158658436518579420528641 (by norm_num)
   exact absurd (S3 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 850705917302346158658436518579420528641 g850705917302346158658436518579420528641 23 g23 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 22300745198530623141535718272648361505980416: 3 divides 3032901347000164747248857685080177164813336577 + 1 and 11 + 1.
-theorem c20_f144 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_f144 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 22300745198530623141535718272648361505980416 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, S3, -, -, -, -, -⟩ := facts hP (hK5 2) E
   have g3032901347000164747248857685080177164813336577 : 3032901347000164747248857685080177164813336577 ∈ P := S2 3032901347000164747248857685080177164813336577 prime_3032901347000164747248857685080177164813336577 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 3032901347000164747248857685080177164813336577) (x := 1 + 2 ^ 22300745198530623141535718272648361505980416) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 3032901347000164747248857685080177164813336577) (x := 1 + 2 ^ 22300745198530623141535718272648361505980416) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g11 : 11 ∈ P := S1 11 (by norm_num) (by norm_num) (nz5 (by norm_num)) 3032901347000164747248857685080177164813336577 g3032901347000164747248857685080177164813336577 (by norm_num)
   exact absurd (S3 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 3032901347000164747248857685080177164813336577 g3032901347000164747248857685080177164813336577 11 g11 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 178405961588244985132285746181186892047843328: 7 divides 2230074519853062314153571827264836150598041600001 + 1 and 13 + 1.
-theorem c20_f147 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_f147 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 178405961588244985132285746181186892047843328 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, S3, -, -, -, S7, -⟩ := facts hP (hK5 2) E
   have g2230074519853062314153571827264836150598041600001 : 2230074519853062314153571827264836150598041600001 ∈ P := S2 2230074519853062314153571827264836150598041600001 prime_2230074519853062314153571827264836150598041600001 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 2230074519853062314153571827264836150598041600001) (x := 1 + 2 ^ 178405961588244985132285746181186892047843328) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 2230074519853062314153571827264836150598041600001) (x := 1 + 2 ^ 178405961588244985132285746181186892047843328) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g13 : 13 ∈ P := S7 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num)
   exact absurd (S3 7 (by norm_num) (by norm_num) (nz5 (by norm_num)) 2230074519853062314153571827264836150598041600001 g2230074519853062314153571827264836150598041600001 13 g13 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 1427247692705959881058285969449495136382746624: 13 divides 5^2 + 1 and 124204803210043452689216278205372864748572142206977 + 1.
-theorem c20_f150 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_f150 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1427247692705959881058285969449495136382746624 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, -, -, S8⟩ := facts hP (hK5 2) E
   have g124204803210043452689216278205372864748572142206977 : 124204803210043452689216278205372864748572142206977 ∈ P := S2 124204803210043452689216278205372864748572142206977 prime_124204803210043452689216278205372864748572142206977 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 124204803210043452689216278205372864748572142206977) (x := 1 + 2 ^ 1427247692705959881058285969449495136382746624) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 124204803210043452689216278205372864748572142206977) (x := 1 + 2 ^ 1427247692705959881058285969449495136382746624) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S8 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num) 124204803210043452689216278205372864748572142206977 g124204803210043452689216278205372864748572142206977 (by norm_num)
 
 -- a an odd multiple of 3213876088517980551083924184682325205044405987565585670602752: 3^2 divides 683 + 1.
-theorem c20_f201 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_f201 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 3213876088517980551083924184682325205044405987565585670602752 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g124569837190956926160012901398286924947521176078042100592562667521 : 124569837190956926160012901398286924947521176078042100592562667521 ∈ P := S2 124569837190956926160012901398286924947521176078042100592562667521 prime_124569837190956926160012901398286924947521176078042100592562667521 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 124569837190956926160012901398286924947521176078042100592562667521) (x := 1 + 2 ^ 3213876088517980551083924184682325205044405987565585670602752) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 124569837190956926160012901398286924947521176078042100592562667521) (x := 1 + 2 ^ 3213876088517980551083924184682325205044405987565585670602752) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g683 : 683 ∈ P := S1 683 (by norm_num) (by norm_num) (nz5 (by norm_num)) 124569837190956926160012901398286924947521176078042100592562667521 g124569837190956926160012901398286924947521176078042100592562667521 (by norm_num)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 683 g683 (by norm_num)
 
 -- a an odd multiple of 205688069665150755269371147819668813122841983204197482918576128: 7 divides 2468256835981809063232453773836025757474103798450369795022913537 + 1 and 13 + 1.
-theorem c20_f207 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_f207 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 205688069665150755269371147819668813122841983204197482918576128 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, S3, -, -, -, S7, -⟩ := facts hP (hK5 2) E
   have g2468256835981809063232453773836025757474103798450369795022913537 : 2468256835981809063232453773836025757474103798450369795022913537 ∈ P := S2 2468256835981809063232453773836025757474103798450369795022913537 prime_2468256835981809063232453773836025757474103798450369795022913537 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 2468256835981809063232453773836025757474103798450369795022913537) (x := 1 + 2 ^ 205688069665150755269371147819668813122841983204197482918576128) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 2468256835981809063232453773836025757474103798450369795022913537) (x := 1 + 2 ^ 205688069665150755269371147819668813122841983204197482918576128) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g13 : 13 ∈ P := S7 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num)
   exact absurd (S3 7 (by norm_num) (by norm_num) (nz5 (by norm_num)) 2468256835981809063232453773836025757474103798450369795022913537 g2468256835981809063232453773836025757474103798450369795022913537 13 g13 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 52656145834278593348959013841835216159447547700274555627155488768: 3^2 divides 6763365995538079644113691573900682504384080816814065022974359599316993 + 1.
-theorem c20_f215 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_f215 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 52656145834278593348959013841835216159447547700274555627155488768 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g6763365995538079644113691573900682504384080816814065022974359599316993 : 6763365995538079644113691573900682504384080816814065022974359599316993 ∈ P := S2 6763365995538079644113691573900682504384080816814065022974359599316993 prime_6763365995538079644113691573900682504384080816814065022974359599316993 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 6763365995538079644113691573900682504384080816814065022974359599316993) (x := 1 + 2 ^ 52656145834278593348959013841835216159447547700274555627155488768) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 6763365995538079644113691573900682504384080816814065022974359599316993) (x := 1 + 2 ^ 52656145834278593348959013841835216159447547700274555627155488768) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 6763365995538079644113691573900682504384080816814065022974359599316993 g6763365995538079644113691573900682504384080816814065022974359599316993 (by norm_num)
 
 -- a an odd multiple of 107839786668602559178668060348078522694548577690162289924414440996864: 7 divides 13 + 1 and 199346322480330839701 + 1.
-theorem c20_f226 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_f226 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 107839786668602559178668060348078522694548577690162289924414440996864 ∣ 2 ^ m + 1) : False := by
   obtain ⟨S1, S2, S3, -, -, -, S7, -⟩ := facts hP (hK5 2) E
   have g13 : 13 ∈ P := S7 13 (by norm_num) (by norm_num) (nz5 (by norm_num)) (by norm_num)
   have g12940774400232307101440167241769422723345829322819474790929732919623681 : 12940774400232307101440167241769422723345829322819474790929732919623681 ∈ P := S2 12940774400232307101440167241769422723345829322819474790929732919623681 prime_12940774400232307101440167241769422723345829322819474790929732919623681 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 12940774400232307101440167241769422723345829322819474790929732919623681) (x := 1 + 2 ^ 107839786668602559178668060348078522694548577690162289924414440996864) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 12940774400232307101440167241769422723345829322819474790929732919623681) (x := 1 + 2 ^ 107839786668602559178668060348078522694548577690162289924414440996864) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   have g199346322480330839701 : 199346322480330839701 ∈ P := S1 199346322480330839701 prime_199346322480330839701 (by norm_num) (nz5 (by norm_num)) 12940774400232307101440167241769422723345829322819474790929732919623681 g12940774400232307101440167241769422723345829322819474790929732919623681 (by norm_num)
   exact absurd (S3 7 (by norm_num) (by norm_num) (nz5 (by norm_num)) 13 g13 199346322480330839701 g199346322480330839701 (by norm_num) (by norm_num)) (by norm_num)
 
 -- a an odd multiple of 431359146674410236714672241392314090778194310760649159697657763987456: 3^2 divides 100075322028463174917803960003016869060541080096470605049856601245089793 + 1.
-theorem c20_f228 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_f228 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 431359146674410236714672241392314090778194310760649159697657763987456 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g100075322028463174917803960003016869060541080096470605049856601245089793 : 100075322028463174917803960003016869060541080096470605049856601245089793 ∈ P := S2 100075322028463174917803960003016869060541080096470605049856601245089793 prime_100075322028463174917803960003016869060541080096470605049856601245089793 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 100075322028463174917803960003016869060541080096470605049856601245089793) (x := 1 + 2 ^ 431359146674410236714672241392314090778194310760649159697657763987456) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 100075322028463174917803960003016869060541080096470605049856601245089793) (x := 1 + 2 ^ 431359146674410236714672241392314090778194310760649159697657763987456) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 100075322028463174917803960003016869060541080096470605049856601245089793 g100075322028463174917803960003016869060541080096470605049856601245089793 (by norm_num)
 
 -- a an odd multiple of 1809251394333065553493296640760748560207343510400633813116524750123642650624: 3^2 divides 2916513247664901672231194184906326679054237738765821706743837897199311952805889 + 1.
-theorem c20_f250 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
+theorem c20_f250 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (_h5 : 5 ∉ P)
     (E : (2 ^ m + 1) * (1 + 5 ^ 2) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 5 ^ 2 * ∏ p ∈ P, p)
     (hd : 1 + 2 ^ 1809251394333065553493296640760748560207343510400633813116524750123642650624 ∣ 2 ^ m + 1) : False := by
   obtain ⟨-, S2, -, -, -, S6, -, -⟩ := facts hP (hK5 2) E
   have g2916513247664901672231194184906326679054237738765821706743837897199311952805889 : 2916513247664901672231194184906326679054237738765821706743837897199311952805889 ∈ P := S2 2916513247664901672231194184906326679054237738765821706743837897199311952805889 prime_2916513247664901672231194184906326679054237738765821706743837897199311952805889 (by norm_num) (nz5 (by norm_num))
-    ((tw (c := 2916513247664901672231194184906326679054237738765821706743837897199311952805889) (x := 1 + 2 ^ 1809251394333065553493296640760748560207343510400633813116524750123642650624) (by push_cast; reduce_mod_char)).trans hd)
+    ((tw (c := 2916513247664901672231194184906326679054237738765821706743837897199311952805889) (x := 1 + 2 ^ 1809251394333065553493296640760748560207343510400633813116524750123642650624) (by rw [Nat.cast_add, Nat.cast_one, Nat.cast_pow, Nat.cast_ofNat]; reduce_mod_char)).trans hd)
   exact S6 3 (by norm_num) (by norm_num) (nz5 (by norm_num)) 2916513247664901672231194184906326679054237738765821706743837897199311952805889 g2916513247664901672231194184906326679054237738765821706743837897199311952805889 (by norm_num)
 
 theorem odd_sieve_0 {m : ℕ} {P : Finset ℕ} (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2) (h5 : 5 ∉ P)
@@ -8389,7 +8391,7 @@ theorem main : H1 → H2 → H3 → OMA.R_Erdos1052_erdos_1052_R1_H2_R1_H1_R1_H2
         · exact (odd_mod3 hP h5 E ha hd hda h0).elim
       refine ⟨?_, h3⟩
       by_contra hlt
-      push_neg at hlt
+      push Not at hlt
       exact odd_sieve hP h5 E hd h3 hD' h43d (by omega))
     omega
   · have := h2 n h hS he h43 ha (fun d hd hd2 hda => by
@@ -8397,7 +8399,7 @@ theorem main : H1 → H2 → H3 → OMA.R_Erdos1052_erdos_1052_R1_H2_R1_H1_R1_H2
       have hdo : d % 2 = 1 := hd.eq_two_or_odd.resolve_left hd2
       have hD' := hD (2 * d) (mod_of_dvd_two_mod_four hda hdo ha)
       by_contra hlt
-      push_neg at hlt
+      push Not at hlt
       exact even_sieve hP h5 E hd hD' h101 (by omega))
     omega
   · have := h3 n h hS he h43 ha hR (fermat20 hP h5 E)
