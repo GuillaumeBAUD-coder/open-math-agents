@@ -295,6 +295,7 @@ and the `c + u` images in the automorphism group of the kernel. The number of te
 most `(q'! + 1) * A * M`, where `A` bounds the classes of quotients and `M` is a moment of
 automorphism groups of 2-groups, bounded by `H1`. Every weight is at most `2^((k+j)(2^L q')²)`,
 and `H2` bounds `g (2^(k+r))` from below; the comparison is `poly_ineq`. -/
+set_option maxHeartbeats 4000000 in
 theorem main : H1 → H2 → OMA.R_Erdos1160_erdos_1160_variants_sum_R3_H2_R1.H2 := by
   intro hmom hlow r q hr hq hqr
   classical
@@ -356,7 +357,7 @@ theorem main : H1 → H2 → OMA.R_Erdos1160_erdos_1160_variants_sum_R3_H2_R1.H2
     ?_, ?_⟩
   · -- every group of order `2^k * q` is covered
     intro G P hG
-    obtain ⟨c, hcL, hck, xN, hxN, xH, hxH, S, hS⟩ := cover hodd G P hG
+    obtain ⟨c, hcL, hck, xN, hxN, xH, hxH, S, hS⟩ := cover (k := k) (j := j) hodd G P hG
     obtain ⟨α, hα⟩ := action_cover S (gen c ⟨xH, hxH⟩) (Function.surjInv (hsurj c ⟨xH, hxH⟩))
       (Function.surjInv_eq (hsurj c ⟨xH, hxH⟩))
     refine ⟨E ⟨⟨c, Nat.lt_succ_of_le (by rw [hL]; exact hcL)⟩, (⟨xN, hxN⟩, ⟨xH, hxH⟩), α⟩, ?_⟩
