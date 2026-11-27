@@ -6,6 +6,8 @@ import Mathlib
 Source: https://oeis.org/A024401
 Credit: @ivillar
 
+Status: known result: the entry records a proof through a closed form (Austen M. Fletcher, Aug 05 2026).
+
 A024401 (offset 1): a(n) = [ (3rd elementary symmetric function of S(n))/(2nd elementary symmetric
 function of S(n)) ], where S(n) = {first n+2 positive integers congruent to 2 mod 3} and [ ] is
 the floor; data 1, 3, 6, 11, 16, 22, 30, 38, 47, 58, ...
