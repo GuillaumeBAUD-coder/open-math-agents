@@ -15,10 +15,12 @@ lemma reflected_factors_tuple (s : Multiset ℂ) :
       (((s.map fun a => (X : ℂ[X]) - C a).prod).reflect s.card) := by
   classical
   induction s using Multiset.induction_on with
-  | empty => exact ⟨fun i => Fin.elim0 i, by simp⟩
+  | empty =>
+    rw [Multiset.card_zero]
+    exact ⟨Fin.elim0, by simp⟩
   | cons a s ih =>
     obtain ⟨z, hz⟩ := ih
-    simp only [Multiset.card_cons, Multiset.map_cons, Multiset.prod_cons]
+    rw [Multiset.card_cons, Multiset.map_cons, Multiset.prod_cons]
     refine ⟨Fin.cons a z, ?_⟩
     rw [Fin.prod_univ_succ]
     simp only [Fin.cons_zero, Fin.cons_succ]
@@ -67,7 +69,7 @@ lemma factorTelescoping (r : ℂ) (q : ℂ[X]) (k : ℕ) :
   let p := q * (1 - C r * X)
   change (∑ j ∈ range (k + 1), p.coeff j * r ^ (k + 1 - j)) = q.coeff k * r
   have h0 : p.coeff 0 = q.coeff 0 := by
-    simp [p, mul_sub, ← mul_assoc, coeff_mul_X_zero]
+    simp [p, mul_sub, ← mul_assoc]
   have hs (m : ℕ) : p.coeff (m + 1) = q.coeff (m + 1) - q.coeff m * r := by
     simp [p, mul_sub, ← mul_assoc]
   induction k with
@@ -112,7 +114,7 @@ lemma factorPowerSumNewton {n : ℕ} (z : Fin n → ℂ) (k : ℕ) (hk : 1 ≤ k
     have hderiv : derivative q = ∑ i, rem i * (-C (z i)) := by
       dsimp [q, rem]
       rw [derivative_prod_finset]
-      simp [f, derivative_C_mul_X]
+      simp [f]
     have hc := congrArg (fun t : ℂ[X] => t.coeff m) hderiv
     simp only [coeff_derivative, finsetSum_coeff, mul_neg, coeff_neg, coeff_mul_C,
       Finset.sum_neg_distrib] at hc
@@ -145,13 +147,12 @@ lemma expCoeff_step (a : ℂ) (j : ℕ) :
   have hj : (j : ℂ) + 1 ≠ 0 := by exact_mod_cast Nat.succ_ne_zero j
   have hf : (j.factorial : ℂ) ≠ 0 := by exact_mod_cast Nat.factorial_ne_zero j
   field_simp
-  <;> ring
 
 lemma correctedExp_coeff (a : ℂ) (n j : ℕ) :
     (correctedExp a n).coeff j =
       (if j ≤ n then expCoeff a j else 0) - (if j = n then expPartial a n else 0) := by
   classical
-  simp [correctedExp, Polynomial.finsetSum_coeff, coeff_monomial, eq_comm, Nat.lt_succ_iff]
+  simp [correctedExp, Polynomial.finsetSum_coeff, coeff_monomial, eq_comm]
 
 lemma correctedExp_eval_one (a : ℂ) (n : ℕ) : (correctedExp a n).eval 1 = 0 := by
   classical
@@ -172,7 +173,8 @@ lemma newton_middle_sum (c s : ℕ → ℂ) {k : ℕ} (hk : 2 ≤ k)
     intro j hj
     have hj' := Finset.mem_range.mp hj
     rw [hs _ (by omega) (by omega), mul_zero]
-  simp [hz, show m + 2 - (m + 1) = 1 by omega]
+  rw [hz]
+  simp [show m + 2 - (m + 1) = 1 by omega]
 
 lemma newton_last_sum (c s : ℕ → ℂ) {n : ℕ} (hn : 2 ≤ n)
     (hs : ∀ i, 2 ≤ i → i < n → s i = 0) :
@@ -185,10 +187,11 @@ lemma newton_last_sum (c s : ℕ → ℂ) {n : ℕ} (hn : 2 ≤ n)
     intro j hj
     have hj' := Finset.mem_range.mp hj
     rw [hs _ (by omega) (by omega), mul_zero]
-  simp [hz, show m+2+1-(m+2) = 1 by omega, add_comm, add_left_comm, add_assoc]
+  rw [hz]
+  simp [show m+2+1-(m+2) = 1 by omega, add_comm, add_left_comm]
 
 lemma correctedExp_moments (a : ℂ) (n : ℕ) (hn : 2 ≤ n) (s : ℕ → ℂ)
-    (hN : ∀ k, 1 ≤ k → (k : ℂ) * (correctedExp a n).coeff k +
+    (hN : ∀ (k : ℕ), 1 ≤ k → (k : ℂ) * (correctedExp a n).coeff k +
         ∑ j ∈ range k, (correctedExp a n).coeff j * s (k-j) = 0) :
     s 1 = a ∧ (∀ k, 2 ≤ k → k < n → s k = 0) ∧
       s n = n * expPartial a n ∧
@@ -240,47 +243,27 @@ namespace OMA973
 
 lemma tuple_on_interval (n : ℕ) (hn : 2 ≤ n) (z : Fin n → ℂ)
     (hz : ∃ i, z i = 1) :
-    ∃ w : ℕ → ℂ, (∃ r ∈ Icc 1 n, w r = 1) ∧ 1 ≤ ‖w 1‖ ∧ (∀ i ∈ Icc 1 n, ‖w i‖ ≤ ‖w 1‖) ∧
+    ∃ w : ℕ → ℂ, (∃ r ∈ Icc 1 n, w r = 1) ∧
       ∀ k : ℕ, ∑ i ∈ Icc 1 n, w i ^ k = ∑ i, z i ^ k := by
   classical
-  let i0 : Fin n := ⟨0, by omega⟩
-  letI : Nonempty (Fin n) := ⟨i0⟩
-  obtain ⟨imax, hm⟩ := Finite.exists_max (fun j => ‖z j‖)
-  let e := Equiv.swap i0 imax
-  let idx (i : ℕ) : Fin n := if h : i-1 < n then ⟨i-1, h⟩ else i0
-  let w (i : ℕ) := z (e (idx i))
-  have h1 : w 1 = z imax := by
-    have h : 0 < n := by omega
-    have he : idx 1 = i0 := by simp [idx, i0, h]
-    simp [w, he, e]
+  let idx (i : ℕ) : Fin n := if h : i-1 < n then ⟨i-1, h⟩ else ⟨0, by omega⟩
+  let w (i : ℕ) := z (idx i)
+  have hj (j : Fin n) : idx (1 + (j : ℕ)) = j := by
+    simp [idx, Nat.add_comm 1, j.isLt]
   obtain ⟨i, hi⟩ := hz
-  refine ⟨w, ?_, ?_, fun j _ => ?_, ?_⟩
-  · let t := e.symm i
-    refine ⟨t.val+1, mem_Icc.mpr ⟨by omega, by have := t.isLt; omega⟩, ?_⟩
-    have ht : idx (t.val+1) = t := by simp [idx, t.isLt]
-    simpa [w, ht, t] using hi
-  · rw [h1]
-    simpa [hi] using hm i
-  · rw [h1]
-    exact hm _
+  refine ⟨w, ⟨1 + i.val, mem_Icc.mpr ⟨by omega, by have := i.isLt; omega⟩, ?_⟩, ?_⟩
+  · simpa only [w, hj] using hi
   · intro k
-    have hi : Icc 1 n = Ico 1 (n+1) := by
+    have heq : Icc 1 n = Ico 1 (n+1) := by
       ext j
       simp only [mem_Icc, mem_Ico]
       omega
-    rw [hi, sum_Ico_eq_sum_range, Nat.add_sub_cancel]
+    rw [heq, sum_Ico_eq_sum_range, Nat.add_sub_cancel]
     rw [← Fin.sum_univ_eq_sum_range (fun j => w (1+j)^k) n]
-    calc
-      ∑ j : Fin n, w (1 + (j : ℕ)) ^ k = ∑ j : Fin n, z (e j) ^ k := by
-        apply Finset.sum_congr rfl
-        intro j _
-        have he : idx (1 + (j : ℕ)) = j := by
-          simp [idx, Nat.add_comm 1, j.isLt]
-        simp [w, he]
-      _ = ∑ j, z j ^ k := e.sum_comp (fun j => z j ^ k)
+    simp only [w, hj]
 
-lemma raw_complex_moments_with_one (n : ℕ) (hn : 2 ≤ n) (a : ℂ) :
-    ∃ w : ℕ → ℂ, (∃ r ∈ Icc 1 n, w r = 1) ∧ 1 ≤ ‖w 1‖ ∧ (∀ i ∈ Icc 1 n, ‖w i‖ ≤ ‖w 1‖) ∧
+lemma raw_complex_moments (n : ℕ) (hn : 2 ≤ n) (a : ℂ) :
+    ∃ w : ℕ → ℂ, (∃ r ∈ Icc 1 n, w r = 1) ∧
       (∀ k ∈ Ico 2 n, ∑ i ∈ Icc 1 n, w i ^ k = 0) ∧
       (∑ i ∈ Icc 1 n, w i ^ n) = n * expPartial a n ∧
       (∑ i ∈ Icc 1 n, w i ^ (n + 1)) =
@@ -296,19 +279,10 @@ lemma raw_complex_moments_with_one (n : ℕ) (hn : 2 ≤ n) (a : ℂ) :
         ∑ j ∈ range k, (correctedExp a n).coeff j * ∑ i, z i ^ (k-j) = 0 := by
     simpa only [hprod] using hN k hk
   obtain ⟨_, hmid, hl, hr⟩ := correctedExp_moments a n hn (fun k => ∑ i, z i ^ k) hrule
-  obtain ⟨w, hroot, hw, hwmax, hwk⟩ := tuple_on_interval n hn z hone
-  refine ⟨w, hroot, hw, hwmax, fun k hk => (hwk k).trans (hmid k (mem_Ico.mp hk).1 (mem_Ico.mp hk).2), ?_, ?_⟩
+  obtain ⟨w, hroot, hwk⟩ := tuple_on_interval n hn z hone
+  refine ⟨w, hroot, fun k hk => (hwk k).trans (hmid k (mem_Ico.mp hk).1 (mem_Ico.mp hk).2), ?_, ?_⟩
   · exact (hwk n).trans hl
   · exact (hwk (n+1)).trans hr
-
-lemma raw_complex_moments (n : ℕ) (hn : 2 ≤ n) (a : ℂ) :
-    ∃ w : ℕ → ℂ, 1 ≤ ‖w 1‖ ∧ (∀ i ∈ Icc 1 n, ‖w i‖ ≤ ‖w 1‖) ∧
-      (∀ k ∈ Ico 2 n, ∑ i ∈ Icc 1 n, w i ^ k = 0) ∧
-      (∑ i ∈ Icc 1 n, w i ^ n) = n * expPartial a n ∧
-      (∑ i ∈ Icc 1 n, w i ^ (n + 1)) =
-        ((n+1 : ℕ) : ℂ) * a * expPartial a n + (-a)^(n+1)/(n.factorial : ℂ) := by
-  obtain ⟨w, _, hrest⟩ := raw_complex_moments_with_one n hn a
-  exact ⟨w, hrest⟩
 
 lemma raw_exp_moments (n : ℕ) (hn : 2 ≤ n) (a : ℝ) :
     let t := ∑ j ∈ range (n+1), (-a)^j / (j.factorial : ℝ)
@@ -319,7 +293,7 @@ lemma raw_exp_moments (n : ℕ) (hn : 2 ≤ n) (a : ℝ) :
         ((((n : ℝ) + 1) * a * t + (-a) ^ (n + 1) / (n.factorial : ℝ) : ℝ) : ℂ) := by
   classical
   dsimp only
-  obtain ⟨w, hroot, _, _, hmid, hl, hr⟩ := raw_complex_moments_with_one n hn (a : ℂ)
+  obtain ⟨w, hroot, hmid, hl, hr⟩ := raw_complex_moments n hn (a : ℂ)
   refine ⟨w, hroot, hmid, ?_, ?_⟩
   · rw [hl]
     simp [expPartial, expCoeff, Complex.ofReal_sum]
@@ -380,7 +354,7 @@ lemma erdos973_large_bounds (n : ℕ) (hn : 64 ≤ n) :
         rw [mul_pow]
         field_simp <;> ring
       _ ≤ Real.exp (2*a)/(2 : ℝ)^n :=
-        div_le_div_of_nonneg_right (Real.pow_div_factorial_le_exp (by positivity) n) (by positivity)
+        div_le_div_of_nonneg_right (Real.pow_div_factorial_le_exp (2 * a) (by positivity) n) (by positivity)
       _ = (Real.exp (2/5)/2)^n := by
         rw [div_pow, ← Real.exp_nat_mul]
         congr 2
@@ -464,7 +438,7 @@ lemma split_sum (f : ℕ → ℂ) (m : ℕ) :
   | zero => simp
   | succ m ih =>
     rw [Finset.sum_Icc_succ_top (a := 1) (b := m + 1) (by omega) f, ih, sum_range_succ]
-    simp [Nat.add_assoc, add_assoc]
+    simp [add_assoc]
 
 lemma half_sum (m : ℕ) (v : ℂ) (hq : v ^ (2 * m + 1) = 1)
     (hv : v ≠ 1) (hn : ‖v‖ = 1) :
@@ -540,7 +514,7 @@ lemma finite_general (m : ℕ) (hm : 2 ≤ m) :
     let S := v * ∑ j ∈ range m, v ^ j
     have hRe : S.re = -(1/2 : ℝ) := half_sum m v hvq hv hvn
     have hS : ‖S‖ ≤ m := calc
-      ‖S‖ = ‖∑ j ∈ range m, v ^ j‖ := by simp [S, norm_mul, hvn]
+      ‖S‖ = ‖∑ j ∈ range m, v ^ j‖ := by simp [S, hvn]
       _ ≤ ∑ j ∈ range m, ‖v ^ j‖ := norm_sum_le _ _
       _ = (m : ℝ) := by simp [norm_pow, hvn]
     have ht : 0 < r^k := pow_pos hr _
@@ -588,11 +562,13 @@ lemma finite_two :
     rw [hzb]
     interval_cases k
     · have h : ‖1 + b^2‖^2 = 185/256 := by
-        norm_num [b, Complex.sq_norm, Complex.normSq_apply, pow_succ,
+        rw [Complex.sq_norm, Complex.normSq_apply]
+        norm_num [b, pow_succ,
           Complex.add_re, Complex.add_im, Complex.mul_re, Complex.mul_im]
       nlinarith [sq_nonneg (‖1+b^2‖ - 1)]
     · have h : ‖1 + b^3‖^2 = 2813/4096 := by
-        norm_num [b, Complex.sq_norm, Complex.normSq_apply, pow_succ,
+        rw [Complex.sq_norm, Complex.normSq_apply]
+        norm_num [b, pow_succ,
           Complex.add_re, Complex.add_im, Complex.mul_re, Complex.mul_im]
       nlinarith [sq_nonneg (‖1+b^3‖ - 1)]
 
@@ -700,7 +676,7 @@ theorem main : H1 → H2 → H3 → type_of% @Erdos973.erdos_973.variants.le_one
   have hmin : 1 < min c b := lt_min hc hb
   refine ⟨min c b, hmin, ?_⟩
   intro n hn
-  have hneg : -(n : ℝ) ≤ 0 := by positivity
+  have hneg : -(n : ℝ) ≤ 0 := neg_nonpos.mpr (Nat.cast_nonneg n)
   have hpos : 0 < min c b := zero_lt_one.trans hmin
   by_cases hlarge : 64 ≤ n
   · obtain ⟨w, hw, hzero, hlast, hnext⟩ := h1 n hn ((n : ℝ) / 5)
