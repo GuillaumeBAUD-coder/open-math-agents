@@ -20,9 +20,7 @@ lemma OMA.lcm_mul_sub_sum_int (N : ℕ) (A : Finset ℕ) (hA : A ⊆ Icc 1 N) :
   have hn0 : n ≠ 0 := by
     have := (Finset.mem_Icc.mp hnI).1
     omega
-  have hdvd : n ∣ L := by
-    have := Finset.dvd_lcm (f := id) hnI
-    simpa [hL] using this
+  have hdvd : n ∣ L := Finset.dvd_lcm hnI
   rw [Nat.cast_div hdvd (by exact_mod_cast hn0)]
   ring
 
@@ -42,12 +40,8 @@ theorem OMA.solution : type_of% @Erdos311.delta_ge_inv_lcm := by
     have hk0 : k ≠ 0 := by
       rintro rfl
       apply hx
-      have : (1 - ∑ n ∈ A, (1 : ℝ) / n) = 0 := by
-        have h' : (L : ℝ) * (1 - ∑ n ∈ A, (1 : ℝ) / n) = 0 := by simpa using hk
-        rcases mul_eq_zero.mp h' with h | h
-        · exact absurd h hLR.ne'
-        · exact h
-      rw [this, abs_zero]
+      rw [abs_eq_zero]
+      exact (mul_eq_zero.mp (by simpa using hk)).resolve_left hLR.ne'
     have hk1 : (1 : ℝ) ≤ |(k : ℝ)| := by
       rw [← Int.cast_abs]
       exact_mod_cast Int.one_le_abs hk0
