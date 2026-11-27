@@ -4,7 +4,7 @@ import Mathlib
 # The parity conjecture for OEIS A000139
 
 Source: https://oeis.org/A000139
-Credit: @yungi7454147
+Credit: @Heart-galaxy
 
 OEIS A000139 defines `a(n) = 2 * (3*n)! / ((2*n+1)! * (n+1)!)` with offset 0,1, so
 `n` ranges over all natural numbers. Its conjecture says that `a(n)` is odd exactly when `n`
