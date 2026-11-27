@@ -60,6 +60,22 @@ end OMA.Erdos28Capacity
 
 namespace OMA.Erdos28Transfer
 
+private theorem two_when_each_pair_uses (A : Set ℕ) (d n : ℕ)
+    (uses : ∀ a ∈ A, ∀ b ∈ A, a+b=n → a=d ∨ b=d) :
+    AdditiveCombinatorics.sumRep A n ≤ 2 := by
+  classical
+  rw [AdditiveCombinatorics.sumRep_def]
+  refine le_trans ?_ (Finset.card_le_two (a := (d,n-d)) (b := (n-d,d)))
+  apply Finset.card_le_card
+  rintro ⟨a,b⟩ hp
+  obtain ⟨diag,ha,hb⟩ := Finset.mem_filter.mp hp
+  have hs : a+b=n := Finset.mem_antidiagonal.mp diag
+  rcases uses a ha b hb hs with h | h
+  · have eqb : b=n-d := by omega
+    simp [h,eqb]
+  · have eqa : a=n-d := by omega
+    simp [h,eqa]
+
 /-- For globally bounded finite prefixes which cover through their last element,
 a degree bound D yields a local obstruction at 2D+1. -/
 theorem obstruction_of_degree_bound (g D : ℕ) (hg : 2 ≤ g)
@@ -96,25 +112,13 @@ theorem obstruction_of_degree_bound (g D : ℕ) (hg : 2 ≤ g)
     by_cases hn : n ≤ 2 * D + 1
     · have sub : (T : Set ℕ) ⊆ (S : Set ℕ) := fun _ hx => (Finset.mem_filter.mp hx).1
       exact (OMA.R_Erdos28_erdos_28_R1.monotone_count sub n).trans (capped n hn)
-    · rw [AdditiveCombinatorics.sumRep_def]
-      refine le_trans ?_ (le_trans (Finset.card_le_two (a := (d, n-d)) (b := (n-d, d))) hg)
-      apply Finset.card_le_card
-      rintro ⟨a, b⟩ hp
-      have hpair : (a,b) ∈ (Finset.antidiagonal n).filter
-          (fun q : ℕ × ℕ => q.1 ∈ T ∧ q.2 ∈ T) := hp
-      have hsum : a+b=n := Finset.mem_antidiagonal.mp (Finset.mem_filter.mp hpair).1
-      obtain ⟨ha,hb⟩ := (Finset.mem_filter.mp hpair).2
-      have hsplit : a = d ∨ b = d := by
-        rcases ht a ha with h | h
-        · rcases ht b hb with j | j
-          · omega
-          · exact Or.inr j
-        · exact Or.inl h
-      rcases hsplit with h | h
-      · have h' : b = n - d := by omega
-        simp [h, h']
-      · have h' : a = n - d := by omega
-        simp [h, h']
+    · apply le_trans (two_when_each_pair_uses (T : Set ℕ) d n ?_) hg
+      intro a ha b hb hsum
+      rcases ht a ha with low | same
+      · rcases ht b hb with low' | same
+        · omega
+        · exact Or.inr same
+      · exact Or.inl same
   have hbd := bounds d T (Finset.mem_filter.mpr ⟨hdS, le_rfl⟩)
     (fun x hx => Finset.mem_Iic.mpr (Finset.mem_filter.mp hx).2) hcov hglobal
   omega
