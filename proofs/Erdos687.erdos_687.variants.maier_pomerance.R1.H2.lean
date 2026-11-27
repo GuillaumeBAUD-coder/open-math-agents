@@ -23,5 +23,5 @@ theorem OMA.solution : OMA.R_Erdos687_erdos_687_variants_maier_pomerance_R1.H2 :
     ring
   · filter_upwards [eventually_gt_atTop 1] with x hx
     have hxpos : 0 < Real.log (x : ℝ) := Real.log_pos (by exact_mod_cast hx)
-    rw [Real.rpow_add hxpos.le]
+    rw [Real.rpow_add hxpos]
     ring
