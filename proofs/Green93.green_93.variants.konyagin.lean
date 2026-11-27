@@ -8299,10 +8299,12 @@ theorem irreducibleProb_one_tendsto :
 end OdlyzkoPoonen
 end Bridge93
 
+open Filter in
 theorem OMA.solution : type_of% @Green93.green_93.variants.konyagin := by
   refine ⟨1 / 2, by norm_num, ?_⟩
+  have hhalf : (1 / 2 : ℝ) < 1 := by norm_num
   have hprob : ∀ᶠ n : ℕ in atTop, (1 / 2 : ℝ) < Green93.irreducibleProb 1 n :=
-    (tendsto_order.1 OdlyzkoPoonen.irreducibleProb_one_tendsto).1 _ (by norm_num)
+    (tendsto_order.1 OdlyzkoPoonen.irreducibleProb_one_tendsto).1 _ hhalf
   have hlog : Tendsto (fun n : ℕ ↦ Real.log (n : ℝ)) atTop atTop :=
     Real.tendsto_log_atTop.comp tendsto_natCast_atTop_atTop
   filter_upwards [hprob, hlog.eventually_ge_atTop 1] with n hp hl
