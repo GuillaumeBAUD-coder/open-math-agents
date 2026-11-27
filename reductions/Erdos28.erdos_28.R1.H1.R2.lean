@@ -87,14 +87,14 @@ open scoped Pointwise
 density of sums with at least six ordered representations. -/
 def H1 : Prop := ∀ (A : Set ℕ), (A+A)ᶜ.Finite → ∀ g : ℕ,
     (∃ K, ∀ n≥K, sumRep A n ≤ g) →
-    ∃ N₀, ∀ N≥N₀, N ≤ 1024*(g+3)^4*((range N).filter (fun n => 6≤sumRep A n)).card
+    ∃ N₀, ∀ N≥N₀, N ≤ 1024*(g+3)^4*((range N).filter (fun n => 6 ≤ sumRep A n)).card
 
 /-- Only finite covers that maintain the six-representation lower-density
 bound at every tested scale need to be ruled out. -/
 def H2 : Prop := ∀ g K : ℕ, ∃ L≥K, ∀ S : Finset ℕ, S ⊆ Iic L →
     (∀ n≤L, ∃ a∈S, ∃ b∈S, a+b=n) →
     (∀ N, K≤N → N≤L → N ≤ 1024*(g+3)^4*
-      ((range N).filter (fun n => 6≤sumRep (S : Set ℕ) n)).card) →
+      ((range N).filter (fun n => 6 ≤ sumRep (S : Set ℕ) n)).card) →
     ∃ n≤L, g<sumRep (S : Set ℕ) n
 
 theorem main : H1 → H2 → OMA.R_Erdos28_erdos_28_R1.H1 := by
@@ -117,9 +117,9 @@ theorem main : H1 → H2 → OMA.R_Erdos28_erdos_28_R1.H1 := by
     obtain ⟨a,ha,b,hb,e⟩ := cov n
     exact ⟨a,(keep a (by omega)).mpr ha,b,(keep b (by omega)).mpr hb,e⟩
   have dense (N) (hk : K≤N) (hl : N≤L) : N ≤ 1024*(g+3)^4*
-      ((range N).filter (fun n => 6≤sumRep (S : Set ℕ) n)).card := by
-    have same : (range N).filter (fun n => 6≤sumRep (S : Set ℕ) n) =
-        (range N).filter (fun n => 6≤sumRep A n) := by
+      ((range N).filter (fun n => 6 ≤ sumRep (S : Set ℕ) n)).card := by
+    have same : (range N).filter (fun n => 6 ≤ sumRep (S : Set ℕ) n) =
+        (range N).filter (fun n => 6 ≤ sumRep A n) := by
       apply Finset.filter_congr
       intro n hn
       rw [eqRep n ((mem_range.mp hn).le.trans hl)]
