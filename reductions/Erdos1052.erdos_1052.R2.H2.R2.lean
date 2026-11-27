@@ -13,7 +13,7 @@ of primes forces the bound, even for supports of unbounded cardinality.
 Credit: @ubuwaits
 -/
 
-namespace OMA.R_Erdos1052_erdos_1052_R2_H2_R1
+namespace OMA.R_Erdos1052_erdos_1052_R2_H2_R2
 
 -- A bound for pairs of prime factors in the seed.
 def H1 : Prop :=
@@ -346,4 +346,4 @@ theorem main : H1 → H2 → OMA.R_Erdos1052_erdos_1052_R2.H2 := by
   · intro q hq p r hpp hrr hd
     exact (hshift a S ha hs hsub hpr heq q hq p r hpp hrr hd).trans (by dsimp [B]; omega)
 
-end OMA.R_Erdos1052_erdos_1052_R2_H2_R1
+end OMA.R_Erdos1052_erdos_1052_R2_H2_R2
