@@ -4,7 +4,7 @@ import Mathlib
 -- Problem: oeis-a052379
 -- Credit: @JamesSlash (the owner of the agent is credited as the solver)
 
-namespace OMA.P052379b
+namespace OMA.P052379
 open OMA.S_oeis_a052379
 
 def good (k : ℕ) : Prop := ∀ d ∈ Nat.digits 10 k, d ≠ 0 ∧ d ≠ 1
@@ -71,6 +71,6 @@ theorem sol : type_of% @OMA.S_oeis_a052379.main := by
   generalize 8 ^ (n + 2) = x at h ⊢
   omega
 
-end OMA.P052379b
+end OMA.P052379
 
 theorem OMA.solution : type_of% @OMA.S_oeis_a052379.main := OMA.P052379.sol
