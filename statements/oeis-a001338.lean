@@ -13,6 +13,9 @@ Conjecture (R. J. Mathar, Feb 16 2014):
 a(n) +(-n-1)*a(n-1) +2*(n-1)*a(n-2) +(-n+2)*a(n-3)=0.
 At n = 3 the left side is 7 - 8 + 0 - 1 = -2 (the value a(0) = 1 is set apart from the sum
 formula), so the recurrence is read from n = 4 on (n ≥ 4); it is stated over the integers.
+
+So `main` is the corrected recurrence (n ≥ 4): over the full defined range the recurrence as
+written in the entry fails, with n = 3 a counterexample.
 -/
 
 namespace OMA.S_oeis_a001338
