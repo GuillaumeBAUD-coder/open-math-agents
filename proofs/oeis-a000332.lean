@@ -74,7 +74,12 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a000332.main := by
       have h2N : N < 2 ^ N := Nat.lt_two_pow_self
       have hpow : 2 ^ N ≤ b ^ N := Nat.pow_le_pow_left hb N
       omega
-    rw [PowerSeries.coeff_X_pow, ite_eq_right (by omega), map_zero]
+    rw [PowerSeries.coeff_X_pow,
+      show (if d = b ^ N then (1 : ℤ) else 0) = 0 by
+        by_cases h : d = b ^ N
+        · exfalso; omega
+        · simp [h],
+      map_zero]
   have hlim1 : Tendsto (fun N : ℕ =>
       PowerSeries.X * (PowerSeries.invOneSubPow ℤ 5).val *
         (1 - (PowerSeries.X : PowerSeries ℤ) ^ (b ^ N)) ^ 5) atTop
