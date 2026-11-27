@@ -6,7 +6,7 @@ import { outcomeBadge, outcomeOf, outcomeText, variantNote } from "@/lib/outcome
 import Credit from "@/components/Credit";
 import { Difficulty } from "@/components/ProblemRow";
 import { getProblem, getFull, skeleton, proofPath, statementSkeleton, prizeOf, META, KIND_LABEL, type Problem } from "@/lib/catalog";
-import { getLiveMap, getActiveIds, getEvents, getSolved, getSteps, type Step, type Solved } from "@/lib/db";
+import { getLiveMap, getActiveIds, getEvents, getSolution, getSteps, type Step } from "@/lib/db";
 import { pointsFor } from "@/lib/points";
 import { renderStatement, plain } from "@/lib/render";
 import { STEP_RE, stepSkeleton, parseStep } from "@/lib/steps";
@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 const VERB: Record<string, string> = { claim: "took it", release: "handed it back", submit: "sent a proof", accepted: "PROVED IT", rejected: "proof rejected", fault: "checker fault", reduced: "split it into steps", formalized: "stated it in Lean" };
 
 /** The reduction tree under a target: its reductions, their steps, and the steps' own reductions. */
-function Tree({ target, steps, solvedIds, live }: { target: string; steps: Step[]; solvedIds: Set<string>; live: Map<string, number> }) {
+function Tree({ target, steps, live }: { target: string; steps: Step[]; live: Map<string, number> }) {
   const reds = Array.from(new Set(steps.filter((s) => s.parent === target).map((s) => s.reduction)));
   if (reds.length === 0) return null;
   return (
@@ -45,9 +45,9 @@ function Tree({ target, steps, solvedIds, live }: { target: string; steps: Step[
               {own.map((s) => (
                 <li key={s.id}>
                   <Link href={`/p/${encodeURIComponent(s.id)}`}>H{s.k}</Link>{" "}
-                  {solvedIds.has(s.id) ? <span className="badge solved">proved</span> : live.get(s.id) ? <span className="badge live">{live.get(s.id)} live</span> : <span className="badge">open step</span>}
+                  {s.solved ? <span className="badge solved">proved</span> : live.get(s.id) ? <span className="badge live">{live.get(s.id)} live</span> : <span className="badge">open step</span>}
                   <code style={{ marginLeft: 8, fontSize: ".78rem" }}>{s.statement.replace(/\s+/g, " ").slice(0, 110)}</code>
-                  <Tree target={s.id} steps={steps} solvedIds={solvedIds} live={live} />
+                  <Tree target={s.id} steps={steps} live={live} />
                 </li>
               ))}
             </ul>
@@ -67,11 +67,9 @@ export default async function ProblemPage({ params }: Props) {
   // A problem nobody has touched (the vast majority) has no history, no solution and no steps: its page asks the
   // database nothing beyond the shared, cached list of active ids.
   const touched = STEP_RE.test(id) || (await getActiveIds()).has(id);
-  const [live, events, solvedAll, steps] = touched
-    ? await Promise.all([getLiveMap(), getEvents(20, id), getSolved(), getSteps()])
-    : [new Map<string, number>(), [], [] as Solved[], [] as Step[]];
-  const solvedIds = new Set(solvedAll.map((s) => s.problem_id));
-  const solution: Solved | undefined = solvedAll.find((s) => s.problem_id === id);
+  const [live, events, solution, steps] = touched
+    ? await Promise.all([getLiveMap(), getEvents(20, id), getSolution(id), getSteps()])
+    : [new Map<string, number>(), [], null, [] as Step[]];
   const agents = live.get(id) ?? 0;
   const prompt = `Read ${SITE}/p/${encodeURIComponent(id)}/agent.txt and solve it, following ${SITE}/join.txt.`;
 
@@ -194,7 +192,7 @@ export default async function ProblemPage({ params }: Props) {
           {hasTree && (
             <div className="panel">
               <h4>How it has been split (reductions and steps)</h4>
-              <Tree target={id} steps={steps} solvedIds={solvedIds} live={live} />
+              <Tree target={id} steps={steps} live={live} />
             </div>
           )}
 

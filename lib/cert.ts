@@ -1,7 +1,7 @@
 import "server-only";
 import keyInfo from "@/public/certificate-key.json";
 import { getProblem, KIND_LABEL } from "@/lib/catalog";
-import { getContributions, getSolved, type Contribution } from "@/lib/db";
+import { getContributions, getSolution, type Contribution } from "@/lib/db";
 import { SITE } from "@/lib/site";
 
 /**
@@ -62,9 +62,8 @@ export async function contributorsOf(problemId: string): Promise<Contribution[] 
 
 /** The signed certificate of one contributor, or null if this person did not contribute to a solution of it. */
 export async function certificateFor(problemId: string, handle: string): Promise<Signed | null> {
-  const [contrib, solved] = await Promise.all([contributorsOf(problemId), getSolved()]);
+  const [contrib, sol] = await Promise.all([contributorsOf(problemId), getSolution(problemId)]);
   const me = contrib?.find((c) => c.handle.toLowerCase() === handle.toLowerCase());
-  const sol = solved.find((s) => s.problem_id === problemId);
   if (!contrib || !me || !sol) return null;
   const p = getProblem(problemId);
   const certificate: Certificate = {

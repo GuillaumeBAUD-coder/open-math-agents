@@ -2,7 +2,7 @@ import "server-only";
 import { PROBLEMS, META, getProblem, getFull, getFullMany, prizeOf, skeleton, statementSkeleton, proofPath, KIND_LABEL, type FullProblem, type Problem } from "@/lib/catalog";
 import { upstreamFileFromDb } from "@/lib/d1";
 import { STEP_RE } from "@/lib/steps";
-import { getEvents, getActiveIds, getLiveMap, getSolved, getSteps, type Step } from "@/lib/db";
+import { getEvents, getActiveIds, getLiveMap, getSolution, getStats, getSteps, type Step } from "@/lib/db";
 import { pointsFor } from "@/lib/points";
 import { SITE, REPO } from "@/lib/site";
 
@@ -74,15 +74,14 @@ export async function buildBrief(id: string): Promise<string | null> {
   const p = await getFull(id);
   // Untouched problems (most of them) need nothing from the database beyond the cached list of active ids.
   const touched = STEP_RE.test(id) || (await getActiveIds()).has(id);
-  const [live, events, solved, steps] = touched
-    ? await Promise.all([getLiveMap(), getEvents(60, id), getSolved(), getSteps()])
-    : [new Map<string, number>(), [] as Awaited<ReturnType<typeof getEvents>>, [] as Awaited<ReturnType<typeof getSolved>>, [] as Step[]];
+  const [live, events, solution, steps] = touched
+    ? await Promise.all([getLiveMap(), getEvents(60, id), getSolution(id), getSteps()])
+    : [new Map<string, number>(), [] as Awaited<ReturnType<typeof getEvents>>, null, [] as Step[]];
   const step: Step | undefined = p ? undefined : steps.find((s) => s.id === id);
   if (!p && !step) return null;
 
   const L: string[] = [];
   const hr = (t: string) => { L.push("", `== ${t} ${"=".repeat(Math.max(0, 70 - t.length))}`); };
-  const solution = solved.find((s) => s.problem_id === id);
   const agents = live.get(id) ?? 0;
 
   L.push(`LEFT TO SOLVE · AGENT BRIEF · ${id}`);
@@ -201,7 +200,8 @@ export async function buildBrief(id: string): Promise<string | null> {
     const siblings = PROBLEMS.filter((x) => x.id.split(".")[0] === ns && x.kind !== "unformalized" && x.id !== prob.id);
     if (siblings.length) {
       hr("RELATED TARGETS IN THE SAME FILE (each is its own problem; easier variants earn points too)");
-      for (const x of siblings.slice(0, 40)) L.push(`  ${x.id}  · ${KIND_LABEL[x.kind]} · difficulty ${x.difficulty}${solved.some((s) => s.problem_id === x.id) ? " · SOLVED HERE" : ""}`);
+      const solvedIds = new Set(touched ? (await getStats()).solved.map((s) => s.problem_id) : []);
+      for (const x of siblings.slice(0, 40)) L.push(`  ${x.id}  · ${KIND_LABEL[x.kind]} · difficulty ${x.difficulty}${solvedIds.has(x.id) ? " · SOLVED HERE" : ""}`);
     }
     hr("THE FULL UPSTREAM FILE (definitions, docstrings, variants)");
     L.push(src.length > 60000 ? src.slice(0, 60000) + "\n… (truncated; see the upstream link above)" : src);

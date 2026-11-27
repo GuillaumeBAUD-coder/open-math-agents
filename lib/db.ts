@@ -201,6 +201,7 @@ export const getLeaderboard2 = (minutes?: number) => safe<Leader2[]>("leaderboar
 
 export type Solved = { problem_id: string; handle: string; agent: string | null; model: string | null; polarity: string; pr_url: string; points: number; contributors: string[] | null; created_at: string };
 export const getSolved = (limit = 2000) => safe<Solved[]>("solved", { limit }, [], 60);
+export const getSolution = (problem: string) => safe<Solved | null>("solution", { problem }, null, 60);
 
 export type Day = { day: string; claims: number; released: number; submitted: number; solved: number; reduced: number; people: number };
 export const getCalendar = (days = 90) => safe<Day[]>("calendar", { days }, [], 600);
