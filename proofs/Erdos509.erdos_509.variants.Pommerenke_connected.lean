@@ -718,7 +718,8 @@ theorem OMA.solution : type_of% @Erdos509.erdos_509.variants.Pommerenke_connecte
     h_summable := (hasSum_fintype _).summable
     h_bdd := ?_
     h_pos := fun _ ↦ by norm_num }⟩⟩
-  · simpa using PommerenkeRootEnclosure.centroid_enclosure f hf hdeg hE
+  · intro z hz
+    exact Set.mem_iUnion.mpr ⟨(), PommerenkeRootEnclosure.centroid_enclosure f hf hdeg hE hz⟩
   · simp
 
 /-
