@@ -30,7 +30,7 @@ export type Problem = {
   /** Where the details live in D1: 0 the core tables, 1 the packed MathOverflow tables. */
   shard: number;
   /** A solution has been announced but is not verified (or is disputed). */
-  claim?: { summary: string; date: string; sources: string[] };
+  claim?: { summary: string; date: string; sources: string[]; silent?: boolean };
   /** Editorial note (e.g. why a related result does not settle this one). */
   note?: { summary: string; sources: string[] };
 };
@@ -52,7 +52,8 @@ export type FullProblem = Problem & {
   formalizedHere?: boolean;
 };
 
-export type Override = { id: string; status: "solved" | "claimed" | "open"; title?: string; summary: string; date: string; sources: string[] };
+/** silent: added automatically (announcement watch); it changes what the desk hands out but is not shown on the site. */
+export type Override = { id: string; status: "solved" | "claimed" | "open"; title?: string; summary: string; date: string; sources: string[]; silent?: boolean };
 const OVERRIDES = (overridesRaw as unknown as { reviewed: string; entries: Override[] }).entries;
 export const STATUS_REVIEWED = (overridesRaw as unknown as { reviewed: string }).reviewed;
 const OV = new Map(OVERRIDES.map((o) => [o.id, o]));
@@ -77,14 +78,14 @@ export const MO_BUCKETS = cards.meta.moBuckets;
 (cards as { rows: CardRow[] | null }).rows = null;
 
 /** Problems settled recently (verified), removed from the open list and shown on /status. */
-export const SETTLED: (Override & { problem?: Problem })[] = OVERRIDES.filter((o) => o.status === "solved").map((o) => ({ ...o, problem: ALL.find((p) => p.id === o.id) }));
+export const SETTLED: (Override & { problem?: Problem })[] = OVERRIDES.filter((o) => o.status === "solved" && !o.silent).map((o) => ({ ...o, problem: ALL.find((p) => p.id === o.id) }));
 /** Problems with an announced but unverified solution: kept, flagged, ranked lower. */
-export const CLAIMED: Override[] = OVERRIDES.filter((o) => o.status === "claimed");
+export const CLAIMED: Override[] = OVERRIDES.filter((o) => o.status === "claimed" && !o.silent);
 
 export const PROBLEMS: Problem[] = ALL.filter((p) => OV.get(p.id)?.status !== "solved").map((p) => {
   const o = OV.get(p.id);
   if (!o) return p;
-  if (o.status === "claimed") return { ...p, fame: Math.max(1, p.fame - 30), claim: { summary: o.summary, date: o.date, sources: o.sources } };
+  if (o.status === "claimed") return { ...p, fame: Math.max(1, p.fame - 30), claim: { summary: o.summary, date: o.date, sources: o.sources, silent: Boolean(o.silent) } };
   return { ...p, title: o.title ?? p.title, note: { summary: o.summary, sources: o.sources } };
 });
 const count = (k: Kind) => PROBLEMS.filter((p) => p.kind === k).length;
@@ -103,10 +104,19 @@ export const OPEN_TOTAL = META.counts.open + META.counts.unformalized;
 const BY_ID = new Map(PROBLEMS.map((p) => [p.id, p]));
 
 export const KIND_LABEL: Record<Kind, string> = {
-  open: "Open problem",
-  known: "Known result, no formal proof",
-  warmup: "Warm-up",
-  unformalized: "Open, not yet stated in Lean",
+  open: "Open problem: find a proof",
+  known: "Known result: formalize the existing proof",
+  warmup: "Warm-up exercise",
+  unformalized: "Open, needs a Lean statement first",
+};
+
+/** What the person (or agent) is asked to do, in one sentence, by kind. Shown at the top of every problem page. */
+export const TASK: Record<Kind | "step", { title: string; text: string }> = {
+  open: { title: "Your task: find a proof (or a disproof)", text: "Nobody has proved this yet. A proof accepted by Lean here is a new result, once its formal statement has been checked against the original problem." },
+  known: { title: "Your task: formalize an existing proof", text: "This result is already proved in the mathematical literature (see the references). What is missing is a machine-checked proof in Lean: useful formalization work, not a new discovery." },
+  warmup: { title: "Your task: a warm-up exercise", text: "A textbook result, to check that your Lean setup and the submission pipeline work. It earns few points." },
+  unformalized: { title: "Your task: write the Lean statement first", text: "This open problem has no formal statement yet, so no proof can be checked. Writing a faithful Lean statement is the first step, and it is credited." },
+  step: { title: "Your task: prove this step", text: "One hypothesis of a reduction of a bigger problem: proving it brings the parent problem closer." },
 };
 
 export const isProvable = (p: Problem) => p.kind !== "unformalized";
@@ -119,7 +129,11 @@ export function getProblem(id: string) {
 export async function getFull(id: string): Promise<FullProblem | undefined> {
   const p = BY_ID.get(id);
   if (!p) return undefined;
-  const d = await problemDetail(p, MO_BUCKETS);
+  const d = await problemDetail(p, MO_BUCKETS).catch(() => problemDetail(p, MO_BUCKETS)).catch((e) => {
+    // D1 failed twice: the page still renders from the in-memory card (title, kind, source) instead of a 500.
+    console.error("getFull", id, e);
+    return null;
+  });
   return {
     statement: "", lean: "", module: "", file: "", line: 0, category: p.kind === "unformalized" ? "unformalized" : "", ref: null, erdosState: null,
     ...(d as Partial<FullProblem>), ...p,
@@ -129,7 +143,10 @@ export async function getFull(id: string): Promise<FullProblem | undefined> {
 /** Full data for several problems at once (one or two D1 queries instead of one per problem). */
 export async function getFullMany(ids: string[]): Promise<FullProblem[]> {
   const ps = ids.map((id) => BY_ID.get(id)).filter((p): p is Problem => Boolean(p));
-  const d = await problemDetails(ps, MO_BUCKETS);
+  const d = await problemDetails(ps, MO_BUCKETS).catch(() => problemDetails(ps, MO_BUCKETS)).catch((e) => {
+    console.error("getFullMany", e);
+    return new Map<string, Record<string, unknown>>();
+  });
   return ps.map((p) => ({
     statement: "", lean: "", module: "", file: "", line: 0, category: p.kind === "unformalized" ? "unformalized" : "", ref: null, erdosState: null,
     ...(d.get(p.id) as Partial<FullProblem>), ...p,

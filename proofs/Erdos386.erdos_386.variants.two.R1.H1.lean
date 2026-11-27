@@ -14,8 +14,7 @@ theorem OMA.solution : OMA.R_Erdos386_erdos_386_variants_two_R1.H1 := by
   have hProduct : (t + 1) * t = P * 2 := by nlinarith [hk]
   have ht3 : 3 ≤ t := by
     by_contra! h
-    have ht2 : t ≤ 2 := by omega
-    nlinarith [Nat.mul_self_le_mul_self ht2]
+    interval_cases t <;> omega
   refine ⟨t + 1, by omega, ?_, ?_⟩
   · rw [Nat.choose_two_right, Nat.add_sub_cancel, hProduct, Nat.mul_div_cancel] <;> norm_num
   · nlinarith [hProduct]

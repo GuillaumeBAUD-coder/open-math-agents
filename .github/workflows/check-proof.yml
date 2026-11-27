@@ -1,6 +1,8 @@
 # Untrusted stage: compiles a submitted proof. No secrets, read-only token.
 # The trusted stage (verdict.yml) re-checks the diff itself before believing this verdict.
 name: check-proof
+# The pull request number in the run's title lets the merger find it without downloading the artifact.
+run-name: "check-proof #${{ github.event.pull_request.number }}"
 on:
   pull_request:
     paths: ["proofs/**", "reductions/**", "statements/**"]
@@ -12,11 +14,25 @@ concurrency:
 jobs:
   check:
     runs-on: ubuntu-latest
-    timeout-minutes: 75
+    # Above every limit inside (20 min to build the imports + 30 min for the proof + ~3 min of setup), so a slow proof
+    # always ends with a verdict: a job killed by this limit counts as cancelled and would get none.
+    timeout-minutes: 60
+    env:
+      # Where warm-lean-cache.yml (trusted, on main) builds the toolchain, Mathlib and formal-conjectures, and where they
+      # are restored: the same fixed paths on both sides, outside the workspace.
+      ELAN_HOME: /mnt/oma/elan
+      OMA_FC: /mnt/oma/fc
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          # The merge commit and its two parents are all the history the diff below needs. Only what the checks read
+          # is written out (proofs/ is ~250 MB): the submitted file itself is added by the next step.
+          fetch-depth: 2
+          sparse-checkout: |
+            tools
+            data
+            reductions
+            statements
       - name: Exactly one new file under proofs/, reductions/ or statements/
         id: diff
         run: |
@@ -28,9 +44,13 @@ jobs:
           [ "$(wc -l < /tmp/diff.txt)" = "1" ] || { echo "verdict=rejected" >> "$GITHUB_OUTPUT"; echo '{"verdict":"rejected","reason":"a pull request must add exactly one file under proofs/, reductions/ or statements/ and change nothing else"}' > verdict.json; exit 0; }
           read -r ST F < /tmp/diff.txt
           # Strict whitelist: the file name is attacker-controlled and is used in later steps.
-          if [ "$ST" != "A" ] || ! printf '%s' "$F" | grep -Eq "^(proofs|reductions|statements)/[A-Za-z0-9_.'-]+\.lean$"; then
-            echo '{"verdict":"rejected","reason":"the one change must be a new file proofs/<id>.lean, reductions/<id>.R<n>.lean or statements/<id>.lean (letters, digits, _ . - only)"}' > verdict.json; exit 0
+          # A new file, or (shortest-proof rule) a new version of a proof already on main.
+          if ! printf '%s' "$F" | grep -Eq "^(proofs|reductions|statements)/[A-Za-z0-9_.'-]+\.lean$" || { [ "$ST" != "A" ] && ! { [ "$ST" = "M" ] && printf '%s' "$F" | grep -q '^proofs/'; }; }; then
+            echo '{"verdict":"rejected","reason":"the one change must be a new file proofs/<id>.lean, reductions/<id>.R<n>.lean or statements/<id>.lean (letters, digits, _ . - only), or a shorter version of a proofs/<id>.lean already on main"}' > verdict.json; exit 0
           fi
+          # proofs/ is outside the sparse checkout: write out the submitted file (its content as committed; a symbolic
+          # link stays the text of its target, which no later step follows).
+          if [ ! -e "$F" ]; then mkdir -p "$(dirname "$F")"; git show "HEAD:$F" > "$F"; fi
           echo "file=$F" >> "$GITHUB_OUTPUT"
       - name: Already on main? (a duplicate is turned away before minutes of compiling)
         if: steps.diff.outputs.file != ''
@@ -38,9 +58,18 @@ jobs:
         env:
           FILE: ${{ steps.diff.outputs.file }}
         run: |
-          git fetch -q origin main
+          git fetch -q --depth 1 origin main
           if git cat-file -e "origin/main:$FILE" 2>/dev/null; then
-            python3 -I -c 'import json,os; json.dump({"verdict":"rejected","reason":"already proved: "+os.environ["FILE"]+" is on main (someone else'"'"'s proof was merged first); take another problem"},open("verdict.json","w"))'
+            # Shortest-proof rule: a proof already on main is replaced by one at least 5% (and 20 characters) shorter,
+            # comments and whitespace not counted (tools/prooflen.py, from main: the pull request changes one file only).
+            if printf '%s' "$FILE" | grep -q '^proofs/'; then
+              git show "origin/main:$FILE" > /tmp/old.lean
+              read -r RES NEW OLD < <(python3 -I tools/prooflen.py /tmp/old.lean "$FILE")
+              if [ "$RES" = shorter ]; then echo "Shorter proof: $NEW characters against $OLD on main"; exit 0; fi
+              NEW="$NEW" OLD="$OLD" python3 -I -c 'import json,os; json.dump({"verdict":"rejected","reason":"already proved: "+os.environ["FILE"]+" is on main. A new proof replaces it only if it is at least 5% and 20 characters shorter, comments and spaces not counted (yours: "+os.environ["NEW"]+", current: "+os.environ["OLD"]+"); otherwise take another problem"},open("verdict.json","w"))'
+            else
+              python3 -I -c 'import json,os; json.dump({"verdict":"rejected","reason":"already on main: "+os.environ["FILE"]+" (someone else'"'"'s was merged first); take another problem"},open("verdict.json","w"))'
+            fi
             echo "dup=1" >> "$GITHUB_OUTPUT"
           fi
       - name: Lint (before anything compiles)
@@ -50,40 +79,48 @@ jobs:
           FILE: ${{ steps.diff.outputs.file }}
         run: |
           python3 -I tools/lint.py "$FILE" data/catalog.json > /tmp/lint.json && echo "ok=1" >> "$GITHUB_OUTPUT" || { cat /tmp/lint.json; python3 -I -c 'import json;d=json.load(open("/tmp/lint.json"));d.update(verdict="rejected",reason="lint: "+"; ".join(d["errors"]));json.dump(d,open("verdict.json","w"))'; }
+      # Every rejection above ends here, in seconds: nothing below runs without a lint pass.
       - name: Pinned formal-conjectures
         if: steps.lint.outputs.ok == '1'
         id: fc
         run: |
+          sudo mkdir -p /mnt/oma && sudo chown "$(id -u):$(id -g)" /mnt/oma
           C=$(python3 -I -c 'import json;print(json.load(open("data/catalog.json"))["meta"]["upstreamCommit"])')
           echo "commit=$C" >> "$GITHUB_OUTPUT"
-          git init -q "$RUNNER_TEMP/fc" && cd "$RUNNER_TEMP/fc"
+          git init -q "$OMA_FC" && cd "$OMA_FC"
           git remote add origin https://github.com/google-deepmind/formal-conjectures
           git fetch -q --depth 1 origin "$C" && git checkout -q FETCH_HEAD
       # Read-only: the cache is filled on main by warm-lean-cache.yml, which every pull request can read. A cache saved
-      # from a pull request is visible to that pull request only, so saving here cost ~30 s per run for nothing.
+      # from a pull request is visible to that pull request only (and a pull request could poison it), so none is saved.
       - uses: actions/cache/restore@v4
         if: steps.lint.outputs.ok == '1'
+        id: cache
         with:
           path: |
-            ~/.elan
-            ${{ runner.temp }}/fc/.lake
-          key: fc-${{ steps.fc.outputs.commit }}
+            /mnt/oma/elan
+            /mnt/oma/fc/.lake
+          key: lean-mnt-v1-${{ steps.fc.outputs.commit }}
       - name: Lean toolchain and Mathlib cache
         if: steps.lint.outputs.ok == '1'
+        env:
+          HIT: ${{ steps.cache.outputs.cache-hit }}
         run: |
+          echo "$ELAN_HOME/bin" >> "$GITHUB_PATH"
+          # The restored tree is complete (the warm job refuses to save one that would need building): nothing to fetch.
+          if [ "$HIT" = true ]; then echo "toolchain, Mathlib and formal-conjectures libraries restored"; exit 0; fi
+          # No cache yet for this pin (just changed): install and download, as the warm job does.
           # Downloads from GitHub and Azure fail now and then (504s): retry each one before giving up.
           retry() { for i in 1 2 3 4; do "$@" && return 0; echo "attempt $i failed: $*"; sleep $((i * 20)); done; return 1; }
-          if ! command -v lake >/dev/null && [ ! -x ~/.elan/bin/lake ]; then
+          if [ ! -x "$ELAN_HOME/bin/lake" ]; then
             retry curl -sSfL --retry 3 https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -o /tmp/elan-init.sh
             retry sh /tmp/elan-init.sh -y --default-toolchain none
           fi
-          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
-          cd "$RUNNER_TEMP/fc" && retry ~/.elan/bin/lake exe cache get
+          cd "$OMA_FC" && retry "$ELAN_HOME/bin/lake" exe cache get
       - name: Compile and audit axioms
         if: steps.lint.outputs.ok == '1'
         env:
           FILE: ${{ steps.diff.outputs.file }}
-        run: OMA_FC="$RUNNER_TEMP/fc" tools/check.sh "$FILE" verdict.json || true
+        run: tools/check.sh "$FILE" verdict.json || true
       - name: Record PR number
         # Also after a failed setup step, so the contributor always gets a verdict (a fault is re-run automatically).
         if: ${{ !cancelled() }}
@@ -98,3 +135,7 @@ jobs:
           path: |
             verdict.json
             pr.txt
+      - name: Fail unless accepted
+        # A green run means accepted (the merger then needs no artifact download); anything else is red on the PR.
+        if: ${{ !cancelled() }}
+        run: python3 -I -c 'import json,sys; sys.exit(0 if json.load(open("verdict.json")).get("verdict") == "accepted" else 1)'
