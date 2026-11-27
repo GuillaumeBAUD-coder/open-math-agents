@@ -10,11 +10,14 @@ const stubs = {
   db: `export const deskOnline = true;
     export const getLiveMap = async () => new Map();
     export const getStats = async () => ({ solved: [] });
-    export const getSteps = async (id, fresh) => {
+    const readSteps = async (id, fresh) => {
       globalThis.fixture.lookups.push([id, fresh]);
-      return id === globalThis.fixture.step.id
+      if (globalThis.fixture.failedRead) throw new Error('fixture: database unavailable');
+      return id === globalThis.fixture.step.id && !globalThis.fixture.missingStep
         ? [globalThis.fixture.step] : globalThis.fixture.globalSteps;
     };
+    export const getSteps = (id, fresh) => readSteps(id, fresh).catch(() => []);
+    export const getDeskSteps = (id) => readSteps(id, true);
     export const claim2 = async (id) => {
       globalThis.fixture.claims.push(id);
       return { lease: 'fixture-lease' };
@@ -75,6 +78,24 @@ test('a solved exact step is excluded before claiming', async () => {
   const res = await GET(request({ problem: stepId }));
   assert.equal(res.status, 404);
   assert.deepEqual(fixture.lookups, [[stepId, true]]);
+  assert.deepEqual(fixture.claims, []);
+});
+
+test('a missing exact step still returns 404', async () => {
+  const fixture = setup();
+  fixture.missingStep = true;
+  const res = await GET(request({ problem: stepId }));
+  assert.equal(res.status, 404);
+  assert.equal((await res.json()).error, 'not_found_or_solved');
+  assert.deepEqual(fixture.claims, []);
+});
+
+test('a failed step lookup returns a retryable error before claiming', async () => {
+  const fixture = setup();
+  fixture.failedRead = true;
+  const res = await GET(request({ problem: stepId }));
+  assert.equal(res.status, 503);
+  assert.equal((await res.json()).error, 'step_lookup_unavailable');
   assert.deepEqual(fixture.claims, []);
 });
 

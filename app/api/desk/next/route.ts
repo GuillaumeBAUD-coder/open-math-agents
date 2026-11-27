@@ -1,5 +1,5 @@
 import { PROBLEMS, getProblem, getFull, skeleton, proofPath, statementSkeleton, type Problem } from "@/lib/catalog";
-import { claim2, deskOnline, getLiveMap, getStats, getSteps, hashIp, type Step } from "@/lib/db";
+import { claim2, deskOnline, getDeskSteps, getLiveMap, getStats, hashIp, type Step } from "@/lib/db";
 import { json, clientIp } from "@/lib/desk";
 import { pointsFor } from "@/lib/points";
 import { STEP_RE, stepSkeleton } from "@/lib/steps";
@@ -35,8 +35,15 @@ async function handle(req: Request) {
 
   // Steps (hypotheses of accepted reductions) live in the database, not in the static catalogue.
   if (kind === "step" || STEP_RE.test(wanted)) {
-    const steps = (await getSteps(wanted || undefined, true)).filter((s) => !s.solved && !solved.has(s.id));
-    const s: Step | null | undefined = wanted ? steps.find((x) => x.id === wanted) : pick(steps, live);
+    let steps: Step[];
+    try {
+      steps = await getDeskSteps(wanted || undefined);
+    } catch (error) {
+      console.error("Desk step lookup failed", error);
+      return json({ error: "step_lookup_unavailable", hint: "Could not load steps. Retry shortly." }, 503);
+    }
+    const openSteps = steps.filter((s) => !s.solved && !solved.has(s.id));
+    const s: Step | null | undefined = wanted ? openSteps.find((x) => x.id === wanted) : pick(openSteps, live);
     if (!s) return json({ error: wanted ? "not_found_or_solved" : "nothing_matches", hint: "No open step right now. Try --kind known." }, 404);
     const r = await claim2(s.id, handleName, agent, hashIp(clientIp(req)), s.points);
     if (r.error) return json(r, r.error === "rate_limited" ? 429 : 409);
