@@ -674,7 +674,7 @@ end A056777Parity
 end
 
 section
-/-!
+/-
 # Odd squarefree pairs in the A056777 conjecture
 
 The converse in [OEIS A056777](https://oeis.org/A056777) is Conjecture 1.1 of
@@ -844,7 +844,7 @@ end A056777Squarefree
 end
 
 section
-/-!
+/-
 # Injectivity of the totient deficit and divisor surplus for prime products `p²q`
 
 For distinct primes `p` and `q`, the values of `n - φ(n)` and `σ(n) - n`
@@ -3774,8 +3774,8 @@ private theorem three_core_pair_impossible {q s t : ℕ}
   have hq1 := hq.pos
   have hs1 := hs.pos
   have ht1 := ht.pos
-  have hs5 : 5≤s := by have := hs.two_le; have := Nat.odd_iff.mp hos; omega
-  have ht5 : 5≤t := by have := ht.two_le; have := Nat.odd_iff.mp hot; omega
+  have hs5 : 5 ≤ s := by have := hs.two_le; have := Nat.odd_iff.mp hos; omega
+  have ht5 : 5 ≤ t := by have := ht.two_le; have := Nat.odd_iff.mp hot; omega
   zify [hq1,hs1,ht1] at h hs5 ht5
   norm_num at h
   rcases h with ⟨hg,hφ⟩ | ⟨hg,hφ⟩ <;> nlinarith only [hg,hφ,hs5,ht5]
