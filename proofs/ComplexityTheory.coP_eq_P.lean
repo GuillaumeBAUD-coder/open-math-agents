@@ -6,29 +6,23 @@ import FormalConjectures.Millennium.PvsNP
 -- Prove EXACTLY this target. No sorry, no axiom, no native_decide.
 
 
+/-! Boolean encoding uses a single bit. Composing the output alphabet with bit negation
+decides the complement in the same time. -/
+
 open ComplexityTheory Turing
 
--- Bool is encoded as a single bit, so a machine deciding L, read through an output alphabet
--- composed with Boolean negation, decides the complement of L in the same time.
 lemma OMA.compl_mem_P (L : DecisionProblem) (h : L ∈ P) : Lᶜ ∈ P := by
   obtain ⟨M⟩ := h
   refine ⟨{ M with
     outputAlphabet := M.outputAlphabet.trans Equiv.boolNot
     outputsFun := fun a => ?_ }⟩
-  have hM := M.outputsFun a
-  have key : List.map (M.outputAlphabet.trans Equiv.boolNot).invFun
-      ((BitstringEncoding.toEncoding (α := Bool)).encode (Lᶜ a)) =
-      List.map M.outputAlphabet.invFun ((BitstringEncoding.toEncoding (α := Bool)).encode (L a)) := by
-    show [M.outputAlphabet.symm (Equiv.boolNot.symm ((Lᶜ) a))] = [M.outputAlphabet.symm (L a)]
-    simp [Equiv.boolNot]
-  rw [key]
-  exact hM
+  have output := M.outputsFun a
+  change TM2OutputsInTime _ _ (some [M.outputAlphabet.symm (L a)]) _ at output
+  change TM2OutputsInTime _ _
+    (some [M.outputAlphabet.symm (Equiv.boolNot.symm (Lᶜ a))]) _
+  simpa [Equiv.boolNot] using output
 
 theorem OMA.solution : type_of% @ComplexityTheory.coP_eq_P := by
   ext L
-  constructor
-  · intro hL
-    have := OMA.compl_mem_P _ hL
-    rwa [compl_compl] at this
-  · intro hL
-    exact OMA.compl_mem_P L hL
+  exact ⟨fun hL => by simpa only [compl_compl] using OMA.compl_mem_P _ hL,
+    OMA.compl_mem_P L⟩
