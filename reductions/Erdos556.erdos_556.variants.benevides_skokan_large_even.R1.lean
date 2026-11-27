@@ -964,9 +964,9 @@ lemma cycle_of_regular_closed_walk {V : Type*} [DecidableEq V] (G : SimpleGraph 
   have h1 := degree hden (hattach 1 (by omega)) hn1
   have h2 := degree hclose.2 (hattach _ le_rfl) hn2
   let P (i : ℕ) := if i = r then (C (r+2)).filter (G.Adj a) else (C (i+2)).erase a
-  apply lift_regular_circuit G hd k m hk hkm hdegree r (fun i => C (i+1)) P
+  refine lift_regular_circuit G hd k m hk hkm hdegree r (fun i => C (i+1)) P
     ((C 1).filter (G.Adj a)) (Finset.filter_subset _ _) (by omega) (fun i hi => hthreshold _ (by omega))
-    _ (fun i hi => hpairs _ (by omega)) a
+    ?_ (fun i hi => hpairs _ (by omega)) a ?_ ?_ ?_
   · intro i hi
     by_cases eq : i = r
     · subst i
@@ -1015,7 +1015,9 @@ lemma join_disjoint_path_segments {V : Type*} [DecidableEq V] (G : SimpleGraph V
     have hchain : (X ++ Y).IsChain G.Adj := by
       apply hc.append hc'
       intro u hu v hv
-      have hu' : b t = u := by simpa [← List.cons_append] using hu
+      have hu' : b t = u := by
+        change u ∈ ((a 0 :: l) ++ [b t]).getLast? at hu
+        simpa using hu
       have hv' : a (t+1) = v := by simpa using hv
       exact hu' ▸ hv' ▸ hlinks t (by omega)
     let L := l ++ [b t, a (t+1)] ++ l'
@@ -1053,7 +1055,7 @@ lemma allocate_cycle_length (t : ℕ) (cap : ℕ → ℕ) (q : ℕ)
         intro i hi
         simp [use, (Finset.mem_range.mp hi).ne]
       rw [Finset.sum_range_succ, hold, hsum]
-      simp [use]; omega
+      simp [use]
 
 /-- In a cyclic arrangement of disjoint path segments, independently
 extensible segments realize every admissible total order of the correct
