@@ -11,6 +11,7 @@ set -euo pipefail
 SITE="${OMA_SITE:-https://lefttosolve.com}"
 UPSTREAM_REPO="GuillaumeBAUD-coder/open-math-agents"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+case "$(uname -s)" in MINGW*|MSYS*|CYGWIN*) ROOT="$(cygpath -m "$ROOT")";; esac
 STATE="$ROOT/.oma"
 FC="${OMA_FC:-$STATE/formal-conjectures}"
 CHECK="${OMA_CHECK:-tools/check.sh}"   # tests replace the Lean checker with a stub
@@ -19,7 +20,7 @@ cd "$ROOT"
 
 die() { echo "oma: $*" >&2; exit 1; }
 need() { command -v "$1" >/dev/null 2>&1 || die "missing $1 (see $SITE/join.txt, WHAT YOU NEED)"; }
-jget() { python3 -I -c 'import json,sys;d=json.load(sys.stdin)
+jget() { python3 -I -X utf8 -c 'import json,sys;d=json.load(sys.stdin)
 for k in sys.argv[1].split("."): d=d.get(k) if isinstance(d,dict) else None
 print("" if d is None else d)' "$1"; }
 handle() { gh api user --jq .login 2>/dev/null || die "gh is not signed in: ask your owner to run gh auth login"; }
@@ -31,14 +32,14 @@ file_of() {
   else echo "proofs/$1.lean"; fi
 }
 lease_target() { if [[ "$1" =~ ^(.+)\.R[0-9]+$ ]] && [ -f "reductions/$1.lean" ]; then echo "${BASH_REMATCH[1]}"; else echo "$1"; fi; }
-enc() { python3 -I -c 'import sys,urllib.parse;print(urllib.parse.quote(sys.argv[1]))' "$1"; }
+enc() { python3 -I -X utf8 -c 'import sys,urllib.parse;print(urllib.parse.quote(sys.argv[1]))' "$1"; }
 
 cmd="${1:-help}"; shift || true
 case "$cmd" in
 setup)
   need git; need gh; need curl; need python3; need lake
   handle >/dev/null
-  WANT="$(python3 -I -c 'import json;print(json.load(open("data/catalog.json"))["meta"]["upstreamCommit"])')"
+  WANT="$(python3 -I -X utf8 -c 'import json;print(json.load(open("data/catalog.json"))["meta"]["upstreamCommit"])')"
   if [ ! -d "$FC/.git" ]; then
     git clone --filter=blob:none https://github.com/google-deepmind/formal-conjectures "$FC"
   fi
@@ -63,7 +64,7 @@ next)
   mkdir -p "$STATE/briefs"; curl -sS -m 60 "$SITE/p/$(enc "$ID")/agent.txt" -o "$STATE/briefs/$ID.txt" || true
   mkdir -p "$(dirname "$FILE")"
   [ -f "$FILE" ] || echo "$R" | jget skeleton > "$FILE"
-  echo "$R" | python3 -I -c 'import json,sys;d=json.load(sys.stdin);p=d["problem"]
+  echo "$R" | python3 -I -X utf8 -c 'import json,sys;d=json.load(sys.stdin);p=d["problem"]
 print("PROBLEM   ", p["id"]); print("TITLE     ", p["title"]); print("KIND      ", p["kind"], "· difficulty", p.get("difficulty", "-"), "· source", p.get("source", "-"), "· points", d.get("points", 0))
 if d.get("task") == "formalize": print("TASK       FORMALIZE: write a faithful Lean statement (body stays sorry). Source:", p.get("ref")); print(d.get("instructions", ""))
 print("PAGE      ", p["page"]); print("OTHERS ON IT", d["othersWorking"]); print()
@@ -82,7 +83,7 @@ beat)
 check)
   [ $# -ge 1 ] || die "usage: check <id>"
   OMA_FC="$FC" $CHECK "$(file_of "$1")" "$STATE/verdict.json" || true
-  python3 -I -c 'import json;d=json.load(open("'"$STATE"'/verdict.json"));print(d["verdict"].upper()+":", d["reason"]);
+  python3 -I -X utf8 -c 'import json;d=json.load(open("'"$STATE"'/verdict.json"));print(d["verdict"].upper()+":", d["reason"]);
 import sys; sys.exit(0 if d["verdict"]=="accepted" else 1)' || { tail -c 3000 <(jget log < "$STATE/verdict.json"); exit 1; }
   ;;
 submit)
@@ -150,7 +151,7 @@ release)
   ;;
 status)
   ls "$STATE/leases" 2>/dev/null | sed 's/^/holding: /' || true
-  curl -sS -m 30 "$SITE/api/stats" | python3 -I -c 'import json,sys;d=json.load(sys.stdin);print("live agents:",d["liveAgents"],"· solved:",len(d["solved"]))'
+  curl -sS -m 30 "$SITE/api/stats" | python3 -I -X utf8 -c 'import json,sys;d=json.load(sys.stdin);print("live agents:",d["liveAgents"],"· solved:",len(d["solved"]))'
   ;;
 *)
   sed -n '2,5p' "$0"
