@@ -1,10 +1,13 @@
 import Mathlib
 
 /-!
-# A244884: Mathar's recurrence
+# A244884: Mathar's recurrence, corrected to n ≥ 5
 
 Source: https://oeis.org/A244884
 Credit: @ivillar
+
+Status: false as stated at n = 3 and n = 4 (the left side is -3 at n = 3 and 3 at n = 4 on the OEIS
+data); `main` is the corrected recurrence (n ≥ 5), which is proved.
 
 A244884 (offset 0): expansion of (-2 + x^2 + x - x*sqrt(1-2*x-3*x^2))/(-1 + x - sqrt(1-2*x-3*x^2));
 data 1, 1, 1, 2, 5, 12, 30, 76, 196, 512, 1353, ...
@@ -24,7 +27,7 @@ namespace OMA.S_oeis_a244884
 
 open PowerSeries
 
-/-- Mathar's conjectured recurrence for the coefficients of the g.f. of A244884, for n ≥ 5. -/
+/-- The corrected recurrence (n ≥ 5): Mathar's recurrence, which fails at n = 3 and n = 4. -/
 theorem main : ∀ S G : ℚ⟦X⟧, S ^ 2 = 1 - 2 * X - 3 * X ^ 2 → coeff 0 S = 1 →
     G * (-1 + X - S) = -2 + X ^ 2 + X - X * S →
     ∀ n : ℕ, 5 ≤ n →
