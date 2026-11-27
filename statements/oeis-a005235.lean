@@ -10,7 +10,7 @@ For n ≥ 1, let p_n be the n-th prime and p_n# the product of all primes ≤ p_
 A005235 lists the least m > 1 such that m + p_n# is prime. Reo F. Fortune
 conjectured that a(n) is always prime; that is the statement below.
 
-The index follows the OEIS offset (a(1) = 3). `Nat.primorial p` is Mathlib's
+The index follows the OEIS offset (a(1) = 3). `primorial p` is Mathlib's
 product of the primes ≤ p, and `Nat.nth Nat.Prime (n - 1)` is p_n.
 -/
 
