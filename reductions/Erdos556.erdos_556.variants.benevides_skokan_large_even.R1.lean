@@ -2316,12 +2316,12 @@ lemma equipartition_weighted_energy_bounds {V : Type*} [DecidableEq V] (G : Simp
   let w (z : Finset V × Finset V) := (z.1.card : ℚ)*z.2.card
   let Z := P.parts ×ˢ P.parts
   have hpow : (∑ z ∈ P.parts.offDiag, f z) = p^2 * P.energy G := by
-    have hp : p ≠ 0 := by exact_mod_cast hne.card_pos.ne'
+    have hp : p ≠ 0 := by dsimp [p]; exact_mod_cast hne.card_pos.ne'
     unfold Finpartition.energy
     change _ = p^2 * ((∑ z ∈ P.parts.offDiag, f z) / p^2)
     field_simp
   have hsize (A) (hA : A ∈ P.parts) : m ≤ A.card ∧ (A.card : ℚ) ≤ m+1 := by
-    rcases Finpartition.isEquipartition_iff_card_parts_eq_average.mp hP A hA with h | h
+    rcases hP.card_parts_eq_average hA with h | h
     · simp [h,m]
     · simp [h,m]
   have limits (z) (hz : z ∈ Z) : m^2 ≤ w z ∧ w z ≤ (m+1)^2 := by
@@ -2332,7 +2332,7 @@ lemma equipartition_weighted_energy_bounds {V : Type*} [DecidableEq V] (G : Simp
     exact ⟨by simpa [w,pow_two] using mul_le_mul h1 h3 hm (Nat.cast_nonneg z.1.card),
       by simpa [w,pow_two] using mul_le_mul h2 h4 (Nat.cast_nonneg z.2.card) (by linarith : 0 ≤ m+1)⟩
   have spl : ∑ z ∈ Z, f z = ∑ z ∈ P.parts.diag, f z + ∑ z ∈ P.parts.offDiag, f z := by
-    dsimp [Z]; rw [← Finset.diag_union_offDiag, Finset.sum_union Finset.disjoint_diag_offDiag]
+    dsimp [Z]; rw [← Finset.diag_union_offDiag, Finset.sum_union (Finset.disjoint_diag_offDiag _)]
   have diaglo : 0 ≤ ∑ z ∈ P.parts.diag, f z := Finset.sum_nonneg (fun z _ => sq_nonneg _)
   have diaghi : ∑ z ∈ P.parts.diag, f z ≤ p := by
     calc
@@ -2342,14 +2342,14 @@ lemma equipartition_weighted_energy_bounds {V : Type*} [DecidableEq V] (G : Simp
   change (m^2*(p^2 * P.energy G) ≤ ∑ z ∈ Z, w z * f z) ∧ _
   constructor
   · calc
-      _ ≤ m^2*(∑ z ∈ Z, f z) := by rw [spl,← hpow]; gcongr; linarith
+      _ ≤ m^2*(∑ z ∈ Z, f z) := by rw [spl,← hpow]; exact mul_le_mul_of_nonneg_left (le_add_of_nonneg_left diaglo) (sq_nonneg _)
       _ = ∑ z ∈ Z, m^2*f z := Finset.mul_sum ..
       _ ≤ _ := Finset.sum_le_sum fun z hz => mul_le_mul_of_nonneg_right (limits z hz).1 (sq_nonneg _)
   · calc
       (∑ z ∈ Z, w z * f z) ≤ ∑ z ∈ Z, (m+1)^2*f z :=
         Finset.sum_le_sum fun z hz => mul_le_mul_of_nonneg_right (limits z hz).2 (sq_nonneg _)
       _ = (m+1)^2*(∑ z ∈ Z, f z) := (Finset.mul_sum ..).symm
-      _ ≤ (m+1)^2*(p^2 * P.energy G + p) := by rw [spl,← hpow]; gcongr; linarith
+      _ ≤ (m+1)^2*(p^2 * P.energy G + p) := by rw [spl,← hpow]; exact mul_le_mul_of_nonneg_left (by linarith only [diaghi]) (sq_nonneg _)
 
 /-- Convert the integral equipartition bounds into a uniform additive
 error for the normalized index. The size conditions apply both to the
@@ -2429,6 +2429,155 @@ lemma equipartition_refinement_energy_loss {V : Type*} [DecidableEq V] (G : Simp
   have hpos : 0 < (U.card : ℚ)^2 := pow_pos (by exact_mod_cast hU.card_pos) _
   have := le_of_mul_le_mul_left comp hpos
   linarith
+
+/-- A partition irregular for one colour has an equitable refinement that
+increases the sum of all three energies. The error allowed in the other two
+colours is covered by the gain in the irregular colour. -/
+lemma three_colour_energy_increment {V : Type*} [DecidableEq V] [Fintype V] [Nonempty V]
+    (c : Fin 3 → SimpleGraph V) [∀ j, DecidableRel (c j).Adj]
+    {P : Finpartition (Finset.univ : Finset V)} (hP : P.IsEquipartition) {ε : ℚ}
+    (he : 0 < ε) (he1 : ε ≤ 1) (i : Fin 3) (hirr : ¬P.IsUniform (c i) (ε : ℝ))
+    (h7 : 7 ≤ P.parts.card) (hpow : 100 ≤ (4 : ℝ)^P.parts.card * (ε : ℝ)^5)
+    (hbig : P.parts.card * 16^P.parts.card ≤ Fintype.card V)
+    (b : ℕ) (hb : 0 < b) (hbε : 256 ≤ (b : ℚ)*ε^5) (hbp : b ≤ P.parts.card)
+    (hbn : b*SzemerediRegularity.stepBound P.parts.card ≤ Fintype.card V) :
+    ∃ R : Finpartition (Finset.univ : Finset V), R.IsEquipartition ∧
+      R.parts.card = SzemerediRegularity.stepBound P.parts.card ∧
+      (∑ j, P.energy (c j)) + ε^5/8 ≤ ∑ j, R.energy (c j) := by
+  classical
+  let R := SzemerediRegularity.increment hP (c i) (ε : ℝ)
+  have hR : R.IsEquipartition := SzemerediRegularity.increment_isEquipartition ..
+  have hcard : R.parts.card = SzemerediRegularity.stepBound P.parts.card :=
+    SzemerediRegularity.card_increment hbig hirr
+  have gain : P.energy (c i) + ε^5/4 ≤ R.energy (c i) := by
+    exact_mod_cast SzemerediRegularity.energy_increment hP h7 hpow hbig hirr
+      (by exact_mod_cast he.le) (by exact_mod_cast he1)
+  have hstep : P.parts.card ≤ SzemerediRegularity.stepBound P.parts.card :=
+    SzemerediRegularity.le_stepBound _
+  have hx0 : 0 ≤ ε^5/2 := by positivity
+  have hsize (S : Finpartition (Finset.univ : Finset V)) (h : S ∈ ({P,R} : Finset _)) :
+      S.parts.Nonempty ∧ 1 ≤ (Finset.univ : Finset V).card / S.parts.card ∧
+      128 ≤ (((Finset.univ : Finset V).card / S.parts.card : ℕ) : ℚ)*(ε^5/2) ∧
+      128 ≤ (S.parts.card : ℚ)*(ε^5/2) := by
+    have hp : b ≤ S.parts.card ∧ S.parts.card ≤ SzemerediRegularity.stepBound P.parts.card := by
+      simp only [Finset.mem_insert, Finset.mem_singleton] at h
+      rcases h with rfl | rfl
+      · exact ⟨hbp,hstep⟩
+      · rw [hcard]; exact ⟨hbp.trans hstep,le_rfl⟩
+    have hs : 0 < S.parts.card := hb.trans_le hp.1
+    have hdiv : b ≤ Fintype.card V / S.parts.card :=
+      (Nat.le_div_iff_mul_le hs).mpr ((Nat.mul_le_mul_left b hp.2).trans hbn)
+    have threshold (z : ℕ) (hz : b ≤ z) : 128 ≤ (z : ℚ)*(ε^5/2) := by
+      have h := mul_le_mul_of_nonneg_right (show (b : ℚ) ≤ z by exact_mod_cast hz) (pow_nonneg he.le 5)
+      linarith
+    rw [Finset.card_univ]
+    exact ⟨Finset.card_pos.mp hs,hb.trans_le hdiv,threshold _ hdiv,threshold _ hp.1⟩
+  have loss (j : Fin 3) : P.energy (c j) ≤ R.energy (c j) + ε^5/16 := by
+    have h := equipartition_refinement_energy_loss (c j) Finset.univ_nonempty P
+      (fun _ => SzemerediRegularity.chunk hP (c i) (ε : ℝ)) hP hR (ε^5/2) hx0 hsize
+    change P.energy (c j) ≤ R.energy (c j) + ε^5/2/8 at h
+    linarith
+  refine ⟨R,hR,hcard,?_⟩
+  rw [Fin.sum_univ_three,Fin.sum_univ_three]
+  have cases3 : ∀ j : Fin 3, j = 0 ∨ j = 1 ∨ j = 2 := by decide
+  rcases cases3 i with rfl | rfl | rfl <;> linarith [loss 0,loss 1,loss 2]
+
+/-- Transport rational regularity thresholds to Mathlib's real-valued
+regularity lemma without changing the exceptional cluster pairs. -/
+lemma regular_pair_rat_iff_real {V : Type*} (G : SimpleGraph V) [DecidableRel G.Adj]
+    {S T : Finset V} (ε : ℚ) : G.IsUniform ε S T ↔ G.IsUniform (ε : ℝ) S T := by
+  constructor
+  · intro h A hA B hB hs ht
+    have hu : |G.edgeDensity A B - G.edgeDensity S T| < ε := by
+      simpa using h hA hB (by exact_mod_cast hs) (by exact_mod_cast ht)
+    exact_mod_cast hu
+  · intro h A hA B hB hs ht
+    have hu := h hA hB (by exact_mod_cast hs) (by exact_mod_cast ht)
+    have hh : |G.edgeDensity A B - G.edgeDensity S T| < ε := by exact_mod_cast hu
+    simpa using hh
+
+lemma uniform_partition_rat_of_real {V : Type*} [DecidableEq V] (G : SimpleGraph V)
+    [DecidableRel G.Adj] {U : Finset V} (P : Finpartition U) (ε : ℚ)
+    (h : P.IsUniform G (ε : ℝ)) : P.IsUniform G ε := by
+  classical
+  have eqn : P.nonUniforms G ε = P.nonUniforms G (ε : ℝ) := by
+    ext ⟨A,B⟩
+    simp only [Finpartition.mk_mem_nonUniforms,regular_pair_rat_iff_real G ε]
+  unfold Finpartition.IsUniform at h ⊢
+  rw [eqn]
+  exact_mod_cast h
+
+/-- A single equitable partition simultaneously regular for all three
+graphs, with a number of clusters bounded independently of the host order. -/
+lemma simultaneous_three_colour_regularity (ε : ℚ) (he : 0 < ε) (he1 : ε ≤ 1) (l : ℕ) :
+    ∃ B N₀ : ℕ, ∀ N ≥ N₀, ∀ c : Fin 3 → SimpleGraph (Fin N), ∀ [inst : ∀ i, DecidableRel (c i).Adj],
+      ∃ P : Finpartition (Finset.univ : Finset (Fin N)), P.IsEquipartition ∧ l ≤ P.parts.card ∧
+        P.parts.card ≤ B ∧ ∀ i, P.IsUniform (c i) ε := by
+  classical
+  let b := ⌈256/ε^5⌉₊ + 1
+  let start := SzemerediRegularity.initialBound (ε : ℝ) (max l b)
+  let rounds := ⌈24/ε^5⌉₊ + 1
+  let bound (j : ℕ) := (SzemerediRegularity.stepBound^[j]) start
+  let B := bound rounds
+  have grow (j) : bound j ≤ bound (j+1) := by
+    dsimp [bound]; rw [Function.iterate_succ_apply']; exact SzemerediRegularity.le_stepBound _
+  have mono : Monotone bound := monotone_nat_of_le_succ grow
+  have startle : start ≤ B := mono (Nat.zero_le rounds)
+  have hb : 0 < b := Nat.succ_pos _
+  have hε5 : 0 < ε^5 := pow_pos he _
+  have largeb : 256 ≤ (b : ℚ)*ε^5 := by
+    apply (div_le_iff₀ hε5).mp
+    exact (Nat.le_ceil _).trans (by dsimp [b]; push_cast; linarith)
+  have largel : 3 < ε^5/8*(rounds : ℚ) := by
+    have h : 24/ε^5 < (rounds : ℚ) := (Nat.le_ceil _).trans_lt (by dsimp [rounds]; push_cast; linarith)
+    have := (div_lt_iff₀ hε5).mp h
+    linarith
+  have hstart : max l b ≤ start := SzemerediRegularity.le_initialBound ..
+  refine ⟨B, B*16^B + b*SzemerediRegularity.stepBound B + B + 1,?_⟩
+  intro N hN c inst
+  haveI : NeZero N := ⟨by omega⟩
+  obtain ⟨P₀,heq₀,hcnt₀⟩ := Finpartition.exists_equipartition_card_eq (Finset.univ : Finset (Fin N))
+    (show start ≠ 0 by dsimp [start]; exact (SzemerediRegularity.initialBound_pos ..).ne')
+    (show start ≤ (Finset.univ : Finset (Fin N)).card by simp; omega)
+  have loop (j : ℕ) (hj : j ≤ rounds) :
+      ∃ P : Finpartition (Finset.univ : Finset (Fin N)), P.IsEquipartition ∧ start ≤ P.parts.card ∧
+        P.parts.card ≤ bound j ∧ ((∀ i, P.IsUniform (c i) (ε : ℝ)) ∨ ε^5/8*j ≤ ∑ i, P.energy (c i)) := by
+    induction j with
+    | zero =>
+      exact ⟨P₀,heq₀,hcnt₀.ge,hcnt₀.le,Or.inr (by simpa using Finset.sum_nonneg
+        (s := Finset.univ) (fun i _ => P₀.energy_nonneg (c i)))⟩
+    | succ j ih =>
+      obtain ⟨P,heq,hlo,hhi,halt⟩ := ih (by omega)
+      by_cases uniform : ∀ i, P.IsUniform (c i) (ε : ℝ)
+      · exact ⟨P,heq,hlo,hhi.trans (grow j),Or.inl uniform⟩
+      have base := halt.resolve_left uniform
+      push Not at uniform
+      obtain ⟨i,hi⟩ := uniform
+      have hprev : P.parts.card ≤ B := hhi.trans (mono (by omega : j ≤ rounds))
+      have hn₁ : P.parts.card*16^P.parts.card ≤ Fintype.card (Fin N) := by
+        rw [Fintype.card_fin]
+        exact (Nat.mul_le_mul hprev (Nat.pow_le_pow_right (by decide) hprev)).trans (by omega)
+      have hn₂ : b*SzemerediRegularity.stepBound P.parts.card ≤ Fintype.card (Fin N) := by
+        rw [Fintype.card_fin]
+        exact (Nat.mul_le_mul_left b (SzemerediRegularity.stepBound_mono hprev)).trans (by omega)
+      have hpow : 100 ≤ (4 : ℝ)^P.parts.card * (ε : ℝ)^5 := by
+        have h0 := SzemerediRegularity.hundred_lt_pow_initialBound_mul
+          (by exact_mod_cast he : 0 < (ε : ℝ)) (max l b)
+        exact h0.le.trans (mul_le_mul_of_nonneg_right (pow_right_mono₀ (by norm_num) hlo) (by positivity))
+      obtain ⟨R,hR,hr,gain⟩ := three_colour_energy_increment c heq he he1 i hi
+        ((SzemerediRegularity.seven_le_initialBound ..).trans hlo) hpow hn₁ b hb largeb
+        ((le_max_right l b).trans (hstart.trans hlo)) hn₂
+      refine ⟨R,hR,?_,?_,Or.inr ?_⟩
+      · rw [hr]; exact hlo.trans (SzemerediRegularity.le_stepBound _)
+      · rw [hr]; change _ ≤ (SzemerediRegularity.stepBound^[j+1]) start
+        rw [Function.iterate_succ_apply']; exact SzemerediRegularity.stepBound_mono hhi
+      · push_cast; linarith
+  obtain ⟨P,hP,hlo,hhi,hend⟩ := loop rounds le_rfl
+  have maxE : (∑ i, P.energy (c i)) ≤ 3 := by
+    rw [Fin.sum_univ_three]; linarith [P.energy_le_one (c 0),P.energy_le_one (c 1),P.energy_le_one (c 2)]
+  have uniform := hend.resolve_right (fun h => (not_le_of_gt largel) (h.trans maxE))
+  exact ⟨P,hP,(le_max_left l b).trans (hstart.trans hlo),hhi,
+    fun i => uniform_partition_rat_of_real (c i) P ε (uniform i)⟩
 
 theorem main : H1 → H2 → type_of% @Erdos556.erdos_556.variants.benevides_skokan_large_even := by
   intro _ hforce
