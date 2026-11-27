@@ -14,8 +14,7 @@ def H2 : Prop :=
     g * x ≤ y * z → g * y ≤ x * z → Nat.Coprime x y →
     (g * x + 1) * (y * z + 1) ∣ (g * x + y * z) ^ 2 →
     (g * y + 1) * (x * z + 1) ∣ (g * y + x * z) ^ 2 →
-      (g * x + y * z) ^ 2 / ((g * x + 1) * (y * z + 1)) =
-        (g * y + x * z) ^ 2 / ((g * y + 1) * (x * z + 1))
+      g = z
 
 theorem normalized_shared_divisor {a b c d : ℕ}
     (ha : 0 < a) (hc : 0 < c) (hab : a * b = c * d)
@@ -119,7 +118,10 @@ theorem main : H1 → H2 → OMA.R_Arxiv_1601_03081_crystals_components_unique_R
     have hprod' : a * b = a * d := by simpa [hac] using hprod
     have hbd : b = d := Nat.eq_of_mul_eq_mul_left (by omega) hprod'
     simp [hac, hbd]
-  · simpa [hax, hby, hcy, hdx] using
-      hcore g x y z hg hxpos hypos hzpos hxy_eq hsort₁ hsort₂ hxy hdiv₁' hdiv₂'
+  · have hgz := hcore g x y z hg hxpos hypos hzpos hxy_eq hsort₁ hsort₂ hxy hdiv₁' hdiv₂'
+    subst z
+    have hn : (g * x + y * g) ^ 2 = (g * y + x * g) ^ 2 := by ring
+    have hd : (g * x + 1) * (y * g + 1) = (g * y + 1) * (x * g + 1) := by ring
+    rw [hax, hby, hcy, hdx, hn, hd]
 
 end OMA.R_Arxiv_1601_03081_crystals_components_unique_R1_H2_R1
