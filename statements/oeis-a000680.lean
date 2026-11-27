@@ -5,7 +5,7 @@ import Mathlib
 
 Source: https://oeis.org/A000680
 Source text: https://github.com/oeis/oeisdata/blob/main/seq/A000/A000680.seq
-Credit: @yungi7454147
+Credit: @Heart-galaxy
 
 Werner Schulte asked whether, for every positive integer n, a(n) + 2^n
 is divisible by 2*n + 1 exactly when 2*n + 1 is prime, where
