@@ -1,4 +1,4 @@
-import Mathlib.Init
+import Mathlib.Data.Int.Basic
 
 /-!
 # OEIS A054516
