@@ -69,15 +69,9 @@ theorem OMA.solution : type_of% @Erdos1074.erdos_1074.variants.PillaiPrimes_init
     have := Nat.nth_count (p := P) (memP 71 (by norm_num) (by decide))
     rwa [count_eq 71 (by norm_num)] at this
   change Nat.nth P '' Set.Icc 0 5 = _
-  ext x
-  simp only [Set.mem_image, Set.mem_Icc, Set.mem_insert_iff, Set.mem_singleton_iff]
-  constructor
-  · rintro ⟨k, ⟨-, hk⟩, rfl⟩
-    interval_cases k <;> simp [h0, h1, h2, h3, h4, h5]
-  · rintro (rfl | rfl | rfl | rfl | rfl | rfl)
-    · exact ⟨0, by norm_num, h0⟩
-    · exact ⟨1, by norm_num, h1⟩
-    · exact ⟨2, by norm_num, h2⟩
-    · exact ⟨3, by norm_num, h3⟩
-    · exact ⟨4, by norm_num, h4⟩
-    · exact ⟨5, by norm_num, h5⟩
+  have hI : Set.Icc 0 5 = ({0, 1, 2, 3, 4, 5} : Set ℕ) := by
+    ext i
+    simp only [Set.mem_Icc, Set.mem_insert_iff, Set.mem_singleton_iff]
+    omega
+  rw [hI]
+  simp [Set.image_insert_eq, h0, h1, h2, h3, h4, h5]
