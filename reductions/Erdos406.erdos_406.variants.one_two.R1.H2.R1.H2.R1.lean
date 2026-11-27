@@ -24,7 +24,8 @@ def H2 : Prop := ∀ j t : ℕ, 6 ≤ j →
 
 theorem main : H1 → H2 → OMA.R_Erdos406_erdos_406_variants_one_two_R1_H2_R1.H2 := by
   classical
-  intro small recordGap j k hj hk period low prior
+  intro small recordGap j k hj hk width period low prior
+  dsimp [width] at period low prior ⊢
   by_cases five : j = 5
   · subst j
     have bound : k < 164572 := by
