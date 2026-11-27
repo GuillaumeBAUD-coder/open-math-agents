@@ -2109,7 +2109,7 @@ lemma cycle_of_reduced_connected_matching {V I : Type*} [DecidableEq V] [Fintype
     rw [Finset.sum_range]
     apply Finset.sum_congr rfl
     intro i _
-    simpa only [valid] using hrlen i.val
+    exact (hrlen i.val).trans (congrArg (fun j => (w j).length) (valid i))
   have bval : base = 4*p + ∑ i ∈ Finset.range p, r i := by simp [base,Finset.sum_add_distrib,Nat.mul_comm]
   have low : base ≤ n := by
     have small : base ≤ ∑ _i ∈ Finset.range p, (M+2) :=
@@ -2142,6 +2142,46 @@ lemma cycle_of_reduced_connected_matching {V I : Type*} [DecidableEq V] [Fintype
   · intro i hi j hj
     apply hred
     exact (w (idx i)).adj_getVert_succ (by rwa [← hrlen])
+
+/-- At a host of exactly 2n vertices, the excess of four times the
+matching size over the number of clusters pays for discarded vertices
+and the unused capacity of each matched pair. -/
+lemma matching_capacity_at_sharp_host (n N c p exc loss : ℕ)
+    (hhost : 2*n ≤ c*N + exc) (hmatch : c ≤ 4*p) (hfit : loss ≤ N)
+    (hslack : 4*p*loss + exc ≤ (4*p-c)*N) :
+    n ≤ 4*p + 2*(p*(N-loss)) := by
+  have hfull : (4*p-c)*N + c*N = 4*p*N := by rw [← Nat.add_mul, Nat.sub_add_cancel hmatch]
+  have hcap : 4*p*(N-loss) + 4*p*loss = 4*p*N := by rw [← Nat.mul_add, Nat.sub_add_cancel hfit]
+  have hdouble : 4*p*(N-loss) = 2*(2*(p*(N-loss))) := by ring
+  omega
+
+/-- The connected-matching case at the sharp host size. The counting
+hypotheses allow an exceptional set of size exc outside the equal clusters.
+All reduced edges in H have the indicated density in the same colour. -/
+lemma sharp_host_of_connected_matching {I : Type*} [Fintype I] (n : ℕ)
+    (col : Fin 3 → SimpleGraph (Fin (2*n))) (i : Fin 3) [DecidableRel (col i).Adj]
+    (H : SimpleGraph I) (C : I → Finset (Fin (2*n))) (N : ℕ) (hN : ∀ j, (C j).card = N)
+    (ε d : ℚ) (he : ε ≤ 1/2) (hd : 3*ε ≤ d)
+    (hred : ∀ x y, H.Adj x y → (col i).IsUniform ε (C x) (C y) ∧ d ≤ (col i).edgeDensity (C x) (C y))
+    (root : I) (t : ℕ) (u v : Fin (t+1) → I)
+    (hr : ∀ j, H.Reachable root (u j)) (hed : ∀ j, H.Adj (u j) (v j))
+    (hpair : ∀ j, Disjoint (C (u j)) (C (v j)))
+    (hsep : ∀ j l, j < l → Disjoint (C (u j) ∪ C (v j)) (C (u l) ∪ C (v l)))
+    (k m s exc : ℕ) (hk : 0 < k) (hkm : k ≤ m)
+    (hth : (N : ℚ)*(2*ε) ≤ k) (hden : (k : ℚ) ≤ (d-3*ε)*m)
+    (hs : m + 2*Fintype.card I + (t+1)*(2*Fintype.card I) ≤ s)
+    (h2s : 2*s ≤ N) (htyp : (s : ℚ) ≤ (d-ε)*N)
+    (hn : 3 ≤ n) (heven : Even n) (hmin : (t+1)*(2*Fintype.card I+2) ≤ n)
+    (hhost : 2*n ≤ Fintype.card I*N + exc) (hmatch : Fintype.card I ≤ 4*(t+1))
+    (hfit : m+k+1+(t+1)*(2*Fintype.card I) ≤ N)
+    (hslack : 4*(t+1)*(m+k+1+(t+1)*(2*Fintype.card I)) + exc ≤
+      (4*(t+1)-Fintype.card I)*N) :
+    ∃ j, (cycleGraph n).IsContained (col j) := by
+  let loss := m+k+1+(t+1)*(2*Fintype.card I)
+  have hbudget : m + (N-loss) + k + 1 + (t+1)*(2*Fintype.card I) ≤ N := by dsimp [loss]; omega
+  refine ⟨i,cycle_of_reduced_connected_matching (col i) H C N hN ε d he hd hred root t u v
+    hr hed hpair hsep k m s (N-loss) hk hkm hth hden hs h2s htyp hbudget n hn heven hmin ?_⟩
+  exact matching_capacity_at_sharp_host n N _ (t+1) exc loss hhost hmatch hfit hslack
 
 /-- Splitting both sides of a pair increases its size-weighted mean square
 density by exactly the variance of the subpair densities. In particular a
