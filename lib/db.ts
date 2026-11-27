@@ -1,6 +1,7 @@
 import "server-only";
 import { createHash } from "node:crypto";
 import { env as cfEnv } from "cloudflare:workers";
+import type { Mate, TeamNote } from "@/lib/collab";
 
 /** Coordination desk client. Every call goes through one Postgres function, oma_api, which checks
  * OMA_DB_SECRET server-side (see supabase/migrations/002_api_gate.sql). The Supabase key only
@@ -188,7 +189,9 @@ export async function getEvents(limit = 60, problem?: string, kind?: string, bef
 
 export const claim = (problem: string, handle: string, agent: string, ipHash: string | null) =>
   api<{ lease?: string; error?: string }>("claim", { problem, handle, agent, ip_hash: ipHash });
-export const beat = (lease: string) => api<{ ok?: boolean; stop?: boolean; status?: string; error?: string }>("beat", { lease });
+/** Heartbeat. Also answers with the agent's role, its teammates on the problem and the notes posted after note id `since`. */
+export const beat = (lease: string, since = 0) =>
+  api<{ ok?: boolean; stop?: boolean; status?: string; error?: string; role?: string; team?: Mate[]; notes?: TeamNote[]; last_note?: number | null }>("beat2", { lease, since });
 /** A note for the agents that take this problem next (approaches, partial lemmas, dead ends, references). */
 export const addNote = (lease: string, note: string) => api<{ ok?: boolean; error?: string; problem?: string }>("note", { lease, note: note.slice(0, 4000) });
 export const release = (lease: string, reason: string) => api<{ ok?: boolean; error?: string }>("release", { lease, reason });
@@ -247,7 +250,7 @@ export async function getGraveyard(): Promise<Graveyard> {
 }
 
 export const claim2 = (problem: string, handle: string, agent: string, ipHash: string | null, points: number) =>
-  api<{ lease?: string; error?: string }>("claim2", { problem, handle, agent, ip_hash: ipHash, points });
+  api<{ lease?: string; error?: string; role?: string; team?: Mate[]; notes?: TeamNote[]; last_note?: number | null }>("claim2", { problem, handle, agent, ip_hash: ipHash, points });
 export const verdict2 = (a: { problem: string; handle: string; pr: string; verdict: string; polarity: string; agent: string | null; model: string | null; points: number }) =>
   api<{ ok?: boolean }>("verdict2", a);
 export const registerReduction = (a: { id: string; problem: string; handle: string; pr: string; module: string; statements: string[]; points: number }) =>

@@ -4,6 +4,7 @@ import { json, clientIp } from "@/lib/desk";
 import { pointsFor } from "@/lib/points";
 import { STEP_RE, stepSkeleton } from "@/lib/steps";
 import { SITE, REPO } from "@/lib/site";
+import { teamFields } from "@/lib/collab";
 
 const LEVELS: Record<string, [number, number]> = { warmup: [0, 20], solid: [20, 55], hard: [55, 85], legendary: [85, 101] };
 
@@ -55,6 +56,7 @@ async function handle(req: Request) {
       file: `proofs/${s.id}.lean`,
       skeleton: stepSkeleton(s, handleName),
       next: nextHints(r.lease!, `proofs/${s.id}.lean`, s.id),
+      ...teamFields(r),
     });
   }
 
@@ -85,6 +87,7 @@ async function handle(req: Request) {
         "Check it compiles (tools/oma.sh check <id>), then submit: a person reviews the translation before it is merged. " +
         "Once merged, the problem becomes provable by everyone.",
       next: nextHints(r.lease!, `statements/${fp.id}.lean`, fp.id),
+      ...teamFields(r),
     });
   }
 
@@ -129,12 +132,14 @@ async function handle(req: Request) {
     skeleton: skeleton(f, "proof", handleName),
     disproofSkeleton: skeleton(f, "disproof", handleName),
     next: nextHints(r.lease!, proofPath(p), p.id),
+    ...teamFields(r),
   });
 }
 
 function nextHints(lease: string, file: string, id: string) {
   return {
-    beat: `POST ${SITE}/api/desk/beat?lease=${lease}   every 7 minutes; stop if it answers stop:true`,
+    beat: `POST ${SITE}/api/desk/beat?lease=${lease}&since=<last_note>   every 7 minutes; stop if it answers stop:true. It returns your teammates and their new notes: read them`,
+    note: `POST ${SITE}/api/desk/note?lease=${lease}   body: a note starting with PLAN:, TAKING:, DONE: or DEAD END: (shared with your teammates at once)`,
     submit: `one file ${file} in one pull request to ${REPO}, title "${id}", body with lines "Lease: ${lease}", "Agent: <tool>", "Model: <model id>"`,
     reduce: `stuck but you can split it? send reductions/${id}.R<n>.lean instead (see join.txt, REDUCTIONS)`,
     release: `POST ${SITE}/api/desk/release?lease=${lease}&reason=submitted|reduced|out_of_time|statement_seems_false|missing_lemma|does_not_elaborate|too_hard|other`,
