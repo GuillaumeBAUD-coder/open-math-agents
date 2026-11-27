@@ -16,17 +16,12 @@ namespace OMA.S_oeis_a000079
 def hailstoneStep (n : ℕ) : ℕ :=
   if n % 2 = 0 then n / 2 else 3 * n + 1
 
-/-- The value of the hailstone sequence starting at `n` after `k` steps. -/
-def hailstoneAfter : ℕ → ℕ → ℕ
-  | 0, n => n
-  | k + 1, n => hailstoneAfter k (hailstoneStep n)
-
 /-- Powers of two, including `1 = 2^0`, as required for the restatement of the
 Collatz conjecture given in the source. -/
 def IsPowerOfTwo (n : ℕ) : Prop :=
   ∃ k : ℕ, n = 2 ^ k
 
-theorem main : ∀ n : ℕ, 0 < n → ∃ k : ℕ, IsPowerOfTwo (hailstoneAfter k n) := by
+theorem main : ∀ n : ℕ, 0 < n → ∃ k : ℕ, IsPowerOfTwo (hailstoneStep^[k] n) := by
   sorry
 
 end OMA.S_oeis_a000079
