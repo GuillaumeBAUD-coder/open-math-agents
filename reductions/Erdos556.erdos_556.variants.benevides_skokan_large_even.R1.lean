@@ -1607,6 +1607,143 @@ lemma regular_pair_after_deletions {V : Type*} [DecidableEq V] (G : SimpleGraph 
     simpa using h
   · linarith [(abs_lt.mp hab).1]
 
+/-- Expand a matched pair while avoiding the vertices already assigned to
+other connectors. The input degree and size conditions are measured before
+deletion, and the forbidden budget is charged explicitly. -/
+lemma regular_pair_path_avoiding {V : Type*} [DecidableEq V] (G : SimpleGraph V)
+    [DecidableRel G.Adj] {S T F : Finset V} {ε : ℚ} (hreg : G.IsUniform ε S T)
+    (he : ε ≤ 1/2) (hd : 3*ε ≤ G.edgeDensity S T) (hst : Disjoint S T)
+    (k m r : ℕ) (hkm : k ≤ m) (hS : 2*F.card ≤ S.card) (hT : 2*F.card ≤ T.card)
+    (hthS : (S.card : ℚ)*(2*ε) ≤ k) (hthT : (T.card : ℚ)*(2*ε) ≤ k)
+    (hden : (k : ℚ) ≤ (G.edgeDensity S T - 3*ε)*m)
+    (hcapS : m + r + k + 1 + F.card ≤ S.card) (hcapT : m + r + 1 + F.card ≤ T.card)
+    {x y : V} (hx : x ∈ S) (hy : y ∈ T) (hxF : x ∉ F) (hyF : y ∉ F)
+    (hxdeg : k + F.card < (T.filter (G.Adj x)).card)
+    (hydeg : k + F.card < (S.filter (G.Adj y)).card) :
+    ∃ l : List V, l.length = 2*r+2 ∧ (x :: (l ++ [y])).Nodup ∧
+      (x :: (l ++ [y])).IsChain G.Adj ∧ ∀ z ∈ l, (z ∈ S ∨ z ∈ T) ∧ z ∉ F := by
+  classical
+  let A := S \ F
+  let B := T \ F
+  have hAS : A ⊆ S := Finset.sdiff_subset
+  have hBT : B ⊆ T := Finset.sdiff_subset
+  have hca : S.card - F.card ≤ A.card := Finset.le_card_sdiff F S
+  have hcb : T.card - F.card ≤ B.card := Finset.le_card_sdiff F T
+  obtain ⟨hreg',hd'⟩ := regular_pair_after_deletions G hreg he hAS hBT (by omega) (by omega)
+  have deg (v : V) (U : Finset V) (hu : k + F.card < (U.filter (G.Adj v)).card) :
+      k < ((U \ F).filter (G.Adj v)).card := by
+    have heq : (U \ F).filter (G.Adj v) = (U.filter (G.Adj v)) \ F := by
+      ext w
+      simp [and_assoc, and_comm, and_left_comm]
+    rw [heq]
+    have h := Finset.le_card_sdiff F (U.filter (G.Adj v))
+    omega
+  have h2ε : 0 ≤ 2*ε := by linarith [hreg.pos]
+  have threshold {P Q : Finset V} (hp : P ⊆ Q) (h : (Q.card : ℚ)*(2*ε) ≤ k) :
+      (P.card : ℚ)*(2*ε) ≤ k :=
+    (mul_le_mul_of_nonneg_right (by exact_mod_cast Finset.card_le_card hp) h2ε).trans h
+  have hden' : (k : ℚ) ≤ (G.edgeDensity A B - 2*ε)*m :=
+    hden.trans (mul_le_mul_of_nonneg_right (by linarith) (Nat.cast_nonneg _))
+  obtain ⟨l,hl,hs,hc,hpool⟩ := regular_pair_path_between G hreg' (by linarith) (hst.mono hAS hBT)
+    k m r (threshold hAS hthS) (threshold hBT hthT) hkm hden' (by omega) (by omega)
+    (Finset.mem_sdiff.mpr ⟨hx,hxF⟩) (Finset.mem_sdiff.mpr ⟨hy,hyF⟩) (deg x T hxdeg) (deg y S hydeg)
+  refine ⟨l,hl,hs,hc,?_⟩
+  intro z hz
+  rcases hpool z hz with h | h
+  · exact ⟨Or.inl (hAS h),(Finset.mem_sdiff.mp h).2⟩
+  · exact ⟨Or.inr (hBT h),(Finset.mem_sdiff.mp h).2⟩
+
+/-- Append a reserved connector to a simple path without shifting its
+starting endpoint. The connector may have no internal vertices. -/
+lemma append_reserved_connector {V : Type*} (G : SimpleGraph V) {a b : V} (L J : List V)
+    (hpath : (a :: (L ++ [b])).Nodup) (hchain : (a :: (L ++ [b])).IsChain G.Adj)
+    (hJ : J.Nodup) (hcJ : (b :: J).IsChain G.Adj)
+    (hdis : (a :: (L ++ [b])).Disjoint J) :
+    let e := (b :: J).getLast (by simp)
+    ∃ M : List V, M.length = L.length + J.length ∧ (a :: (M ++ [e])).Nodup ∧
+      (a :: (M ++ [e])).IsChain G.Adj ∧
+      ∀ z ∈ a :: (M ++ [e]), z ∈ a :: (L ++ [b]) ∨ z ∈ J := by
+  let Q := b :: J
+  have hQ : Q ≠ [] := by simp [Q]
+  let e := Q.getLast hQ
+  have heq : Q.dropLast ++ [e] = b :: J := List.dropLast_concat_getLast hQ
+  let M := L ++ Q.dropLast
+  have hjoin : a :: (M ++ [e]) = (a :: (L ++ [b])) ++ J := by
+    simp only [M,List.append_assoc,heq,List.cons_append,List.singleton_append]
+  refine ⟨M, ?_, ?_, ?_, ?_⟩
+  · simp [M,Q]
+  · rw [hjoin]
+    exact List.nodup_append'.mpr ⟨hpath,hJ,hdis⟩
+  · rw [hjoin]
+    change (a :: ((L ++ [b]) ++ J)).IsChain G.Adj
+    rw [List.append_assoc]
+    exact List.isChain_cons_split.mpr ⟨hchain,hcJ⟩
+  · rw [hjoin]
+    exact fun _ hz => List.mem_append.mp hz
+
+/-- Expand a matching of regular pairs linked by concrete connector paths.
+Connector interiors may visit other matched clusters. All their vertices
+are charged to F once and reserved throughout the expansion. -/
+lemma cycle_from_routed_regular_matching {V : Type*} [DecidableEq V] (G : SimpleGraph V)
+    [DecidableRel G.Adj] (t : ℕ) (S T : ℕ → Finset V) (a b : ℕ → V) (J : ℕ → List V)
+    (F : Finset V) (ε : ℚ) (he : ε ≤ 1/2) (k m : ℕ) (hkm : k ≤ m) (cap : ℕ → ℕ)
+    (hreg : ∀ i ≤ t, G.IsUniform ε (S i) (T i))
+    (hd : ∀ i ≤ t, 3*ε ≤ G.edgeDensity (S i) (T i))
+    (hst : ∀ i ≤ t, Disjoint (S i) (T i))
+    (hsep : ∀ i j, i < j → j ≤ t → Disjoint (S i ∪ T i) (S j ∪ T j))
+    (hsmall : ∀ i ≤ t, 2*F.card ≤ (S i).card ∧ 2*F.card ≤ (T i).card)
+    (hth : ∀ i ≤ t, ((S i).card : ℚ)*(2*ε) ≤ k ∧ ((T i).card : ℚ)*(2*ε) ≤ k)
+    (hden : ∀ i ≤ t, (k : ℚ) ≤ (G.edgeDensity (S i) (T i) - 3*ε)*m)
+    (hcap : ∀ i ≤ t, m + cap i + k + 1 + F.card ≤ (S i).card ∧
+        m + cap i + 1 + F.card ≤ (T i).card)
+    (hab : ∀ i ≤ t, a i ∈ S i ∧ b i ∈ T i ∧ a i ∉ F ∧ b i ∉ F)
+    (hdeg : ∀ i ≤ t, k + F.card < ((T i).filter (G.Adj (a i))).card ∧
+        k + F.card < ((S i).filter (G.Adj (b i))).card)
+    (hJ : ∀ i ≤ t, (J i).Nodup ∧ (b i :: J i).IsChain G.Adj ∧ ∀ z ∈ J i, z ∈ F)
+    (hJJ : ∀ i j, i < j → j ≤ t → (J i).Disjoint (J j))
+    (hlink : ∀ i < t, G.Adj ((b i :: J i).getLast (by simp)) (a (i+1)))
+    (hclose : G.Adj ((b t :: J t).getLast (by simp)) (a 0))
+    (n q : ℕ) (hn : 3 ≤ n) (hq : q ≤ ∑ i ∈ Finset.range (t+1), cap i)
+    (horder : n = (∑ i ∈ Finset.range (t+1), (4 + (J i).length)) + 2*q) :
+    (cycleGraph n).IsContained G := by
+  classical
+  let pair (i : ℕ) := (S i ∪ T i) \ F
+  let pool (i : ℕ) := pair i ∪ (J i).toFinset
+  let e (i : ℕ) := (b i :: J i).getLast (by simp)
+  refine cycle_of_flexible_segments G t a e pool (fun i => 2 + (J i).length) cap ?_ hlink hclose ?_
+    n q hn hq ?_
+  · intro i hi j hj
+    obtain ⟨hx,hy,hxF,hyF⟩ := hab i hi
+    obtain ⟨hS,hT⟩ := hcap i hi
+    obtain ⟨L,hL,hs,hc,hpool⟩ := regular_pair_path_avoiding G (hreg i hi) he (hd i hi) (hst i hi)
+      k m j hkm (hsmall i hi).1 (hsmall i hi).2 (hth i hi).1 (hth i hi).2 (hden i hi)
+      (by omega) (by omega) hx hy hxF hyF (hdeg i hi).1 (hdeg i hi).2
+    have inPair (z) (hz : z ∈ a i :: (L ++ [b i])) : z ∈ pair i := by
+      apply Finset.mem_sdiff.mpr
+      simp at hz
+      rcases hz with rfl | h | rfl
+      · exact ⟨Finset.mem_union_left _ hx,hxF⟩
+      · exact ⟨Finset.mem_union.mpr (hpool z h).1,(hpool z h).2⟩
+      · exact ⟨Finset.mem_union_right _ hy,hyF⟩
+    have sep : (a i :: (L ++ [b i])).Disjoint (J i) := fun z h h' =>
+      (Finset.mem_sdiff.mp (inPair z h)).2 ((hJ i hi).2.2 z h')
+    obtain ⟨M,hM,hs',hc',hverts⟩ := append_reserved_connector G L (J i) hs hc
+      (hJ i hi).1 (hJ i hi).2.1 sep
+    refine ⟨M,by omega,hs',hc',?_⟩
+    intro z hz
+    rcases hverts z hz with h | h
+    · exact Finset.mem_union_left _ (inPair z h)
+    · exact Finset.mem_union_right _ (List.mem_toFinset.mpr h)
+  · intro i j hij hj
+    apply Finset.disjoint_left.mpr
+    intro z hz hz'
+    rcases Finset.mem_union.mp hz with h | h <;> rcases Finset.mem_union.mp hz' with h' | h'
+    · exact Finset.disjoint_left.mp (hsep i j hij hj) (Finset.mem_sdiff.mp h).1 (Finset.mem_sdiff.mp h').1
+    · exact (Finset.mem_sdiff.mp h).2 ((hJ j hj).2.2 z (List.mem_toFinset.mp h'))
+    · exact (Finset.mem_sdiff.mp h').2 ((hJ i (by omega)).2.2 z (List.mem_toFinset.mp h))
+    · exact hJJ i j hij hj (List.mem_toFinset.mp h) (List.mem_toFinset.mp h')
+  · simpa only [show ∀ i, 2 + (J i).length + 2 = 4 + (J i).length by intro; omega] using horder
+
 /-- Splitting both sides of a pair increases its size-weighted mean square
 density by exactly the variance of the subpair densities. In particular a
 refinement chosen to repair one colour cannot cost energy in another. -/
@@ -1679,7 +1816,7 @@ lemma irregular_rectangle_energy_gain {V : Type*} [DecidableEq V] (G : SimpleGra
   have hsum : term (A,B) ≤ ∑ z ∈ P.parts ×ˢ Q.parts, term z :=
     Finset.single_le_sum (fun z _ => by dsimp [term]; positivity) (Finset.mem_product.mpr ⟨hA,hB⟩)
   rw [hvar, mul_add]
-  exact add_le_add_left (hpart.trans hsum) _
+  exact add_le_add (le_refl _) (hpart.trans hsum)
 
 /-- Size-weighted squared density is monotone under a common partition
 refinement. This applies independently to all three colours, including
@@ -1704,12 +1841,15 @@ lemma weighted_energy_mono_bind {V : Type*} [DecidableEq V] (G : SimpleGraph V)
     have hvar : 0 ≤ ∑ z ∈ (child A) ×ˢ (child B),
         (z.1.card : ℚ) * z.2.card * (G.edgeDensity z.1 z.2 - G.edgeDensity A B)^2 :=
       Finset.sum_nonneg (fun z _ => by positivity)
-    rw [← Finset.sum_product]
+    rw [Finset.sum_product] at h
     exact (le_add_of_nonneg_right hvar).trans_eq h.symm
   change ∑ A ∈ P.parts, ∑ B ∈ P.parts, F A B ≤ _
   calc
     _ = ∑ A ∈ P.parts.attach, ∑ B ∈ P.parts.attach, F A.val B.val := by
-      simp [Finset.sum_attach]
+      calc
+        _ = ∑ A ∈ P.parts.attach, (fun X => ∑ B ∈ P.parts, F X B) A.val :=
+          (Finset.sum_attach _ _).symm
+        _ = _ := Finset.sum_congr rfl fun A _ => (Finset.sum_attach _ (F A.val)).symm
     _ ≤ ∑ A ∈ P.parts.attach, ∑ B ∈ P.parts.attach, ∑ X ∈ child A, ∑ Y ∈ child B, F X Y :=
       Finset.sum_le_sum (fun A _ => Finset.sum_le_sum (fun B _ => cell A B))
     _ = ∑ A ∈ P.parts.attach, ∑ X ∈ child A, ∑ B ∈ P.parts.attach, ∑ Y ∈ child B, F X Y := by
