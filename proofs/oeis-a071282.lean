@@ -46,31 +46,13 @@ private theorem odd_position (q : ℕ) : denominatorAt 3 (2 * q + 1) = 3 := by
   rw [denominatorAt, hpeirce]
 
 theorem period (i : ℕ) : denominatorAt 3 i = ([2, 3, 1, 3, 2, 3] : List ℕ)[i % 6]! := by
-  have hcases : i % 6 = 0 ∨ i % 6 = 1 ∨ i % 6 = 2 ∨
-      i % 6 = 3 ∨ i % 6 = 4 ∨ i % 6 = 5 := by omega
-  rcases hcases with h | h | h | h | h | h
-  · have hi : i = 2 * (i / 2) := by omega
-    have hj : i / 2 % 3 ≠ 1 := by omega
-    rw [h, hi, even_position]
-    simp [hj]
-  · have hi : i = 2 * (i / 2) + 1 := by omega
-    rw [h, hi, odd_position]
-    rfl
-  · have hi : i = 2 * (i / 2) := by omega
-    have hj : i / 2 % 3 = 1 := by omega
-    rw [h, hi, even_position]
-    simp [hj]
-  · have hi : i = 2 * (i / 2) + 1 := by omega
-    rw [h, hi, odd_position]
-    rfl
-  · have hi : i = 2 * (i / 2) := by omega
-    have hj : i / 2 % 3 ≠ 1 := by omega
-    rw [h, hi, even_position]
-    simp [hj]
-  · have hi : i = 2 * (i / 2) + 1 := by omega
-    rw [h, hi, odd_position]
-    rfl
-
+  rcases Nat.even_or_odd' i with ⟨q, rfl | rfl⟩
+  · rw [even_position]
+    rcases (by omega : q % 3 = 0 ∨ q % 3 = 1 ∨ q % 3 = 2) with h | h | h <;>
+      simp [h, show 2 * q % 6 = 2 * (q % 3) by omega]
+  · rw [odd_position]
+    rcases (by omega : (2 * q + 1) % 6 = 1 ∨ (2 * q + 1) % 6 = 3 ∨ (2 * q + 1) % 6 = 5) with
+      h | h | h <;> simp [h]
 end OMA.A071282
 
 theorem OMA.solution : type_of% @OMA.S_oeis_a071282.main := OMA.A071282.period
