@@ -152,3 +152,4 @@ theorem sol : OMA.R_oeis_a228947_R1.H1 := by
 end OMA.P228947H1
 
 theorem OMA.solution : OMA.R_oeis_a228947_R1.H1 := OMA.P228947H1.sol
+
