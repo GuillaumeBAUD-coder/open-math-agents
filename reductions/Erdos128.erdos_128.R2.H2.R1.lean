@@ -69,13 +69,13 @@ def H2 : Prop :=
 
 lemma bool_toNat_le_one (b : Bool) : b.toNat ≤ 1 := by cases b <;> decide
 
-lemma bool_pair_le_one {a b : Bool} (h : !(a && b) = true) : a.toNat + b.toNat ≤ 1 := by
+lemma bool_pair_le_one {a b : Bool} (h : (!(a && b)) = true) : a.toNat + b.toNat ≤ 1 := by
   cases a <;> cases b <;> first | decide | exact Bool.noConfusion h
 
-lemma bool_zero_of_pair {a b : Bool} (hb : b = true) (h : !(a && b) = true) : a.toNat = 0 := by
+lemma bool_zero_of_pair {a b : Bool} (hb : b = true) (h : (!(a && b)) = true) : a.toNat = 0 := by
   subst hb; cases a <;> first | decide | exact Bool.noConfusion h
 
-lemma bool_zero_of_pair' {a : Bool} (h : !(true && a) = true) : a.toNat = 0 := by
+lemma bool_zero_of_pair' {a : Bool} (h : (!(true && a)) = true) : a.toNat = 0 := by
   cases a <;> first | decide | exact Bool.noConfusion h
 
 lemma bool_eq_false_of_toNat_zero {b : Bool} (h : b.toNat = 0) : b = false := by
@@ -97,8 +97,8 @@ lemma sum_fin5_bool_toNat (f : Fin 5 → Bool) :
   simp only [bool_ite_eq_toNat]
 
 lemma c5_cases (v0 v1 v2 v3 v4 : Bool)
-    (h01 : !(v0 && v1) = true) (h12 : !(v1 && v2) = true) (h23 : !(v2 && v3) = true)
-    (h34 : !(v3 && v4) = true) (h40 : !(v4 && v0) = true) :
+    (h01 : (!(v0 && v1)) = true) (h12 : (!(v1 && v2)) = true) (h23 : (!(v2 && v3)) = true)
+    (h34 : (!(v3 && v4)) = true) (h40 : (!(v4 && v0)) = true) :
     (v0 = false ∧ v1 = false ∧ v2 = false ∧ v3 = false ∧ v4 = false) ∨
     (v0 = true  ∧ v1 = false ∧ v2 = false ∧ v3 = false ∧ v4 = false) ∨
     (v0 = false ∧ v1 = true  ∧ v2 = false ∧ v3 = false ∧ v4 = false) ∨
@@ -129,13 +129,13 @@ lemma fin5_eq_of_vals {f g : Fin 5 → Bool}
   | ⟨4, _⟩ => h4
 
 lemma grotzsch_core_le (v0 v1 v2 v3 v4 u0 u1 u2 u3 u4 w : Bool)
-    (hv01 : !(v0 && v1) = true) (hv12 : !(v1 && v2) = true) (hv23 : !(v2 && v3) = true)
-    (hv34 : !(v3 && v4) = true) (hv40 : !(v4 && v0) = true)
-    (hu01 : !(u0 && v1) = true) (hu04 : !(u0 && v4) = true) (hw0 : !(w && u0) = true)
-    (hu12 : !(u1 && v2) = true) (hu10 : !(u1 && v0) = true) (hw1 : !(w && u1) = true)
-    (hu23 : !(u2 && v3) = true) (hu21 : !(u2 && v1) = true) (hw2 : !(w && u2) = true)
-    (hu34 : !(u3 && v4) = true) (hu32 : !(u3 && v2) = true) (hw3 : !(w && u3) = true)
-    (hu40 : !(u4 && v0) = true) (hu43 : !(u4 && v3) = true) (hw4 : !(w && u4) = true) :
+    (hv01 : (!(v0 && v1)) = true) (hv12 : (!(v1 && v2)) = true) (hv23 : (!(v2 && v3)) = true)
+    (hv34 : (!(v3 && v4)) = true) (hv40 : (!(v4 && v0)) = true)
+    (hu01 : (!(u0 && v1)) = true) (hu04 : (!(u0 && v4)) = true) (hw0 : (!(w && u0)) = true)
+    (hu12 : (!(u1 && v2)) = true) (hu10 : (!(u1 && v0)) = true) (hw1 : (!(w && u1)) = true)
+    (hu23 : (!(u2 && v3)) = true) (hu21 : (!(u2 && v1)) = true) (hw2 : (!(w && u2)) = true)
+    (hu34 : (!(u3 && v4)) = true) (hu32 : (!(u3 && v2)) = true) (hw3 : (!(w && u3)) = true)
+    (hu40 : (!(u4 && v0)) = true) (hu43 : (!(u4 && v3)) = true) (hw4 : (!(w && u4)) = true) :
     3 * (v0.toNat + v1.toNat + v2.toNat + v3.toNat + v4.toNat) +
     2 * (u0.toNat + u1.toNat + u2.toNat + u3.toNat + u4.toNat) +
     4 * w.toNat ≤ 10 := by
@@ -411,7 +411,7 @@ lemma grotzsch_diam_two (t1 t2 : Fin 3) (i1 i2 : Fin 5) :
   fin_cases t1 <;> fin_cases t2
   · left
     have hcases := OMA.R_Erdos128_erdos_128_R2.fin5_cases_rel i1 i2
-    rcases hcases with rfl | rfl | rfl | rfl | rfl
+    rcases hcases with heq | heq | heq | heq | heq <;> rw [heq] at hnot ⊢
     · exact ⟨i1 + 1, Or.inl ⟨rfl, Or.inl rfl⟩, Or.inl ⟨rfl, Or.inl rfl⟩⟩
     · exact (hnot (Or.inl ⟨rfl, rfl, Or.inl rfl⟩)).elim
     · exact ⟨i1 + 1, Or.inl ⟨rfl, Or.inl rfl⟩, Or.inl ⟨rfl, Or.inr (OMA.R_Erdos128_erdos_128_R2.fin5_add_2_4 i1).symm⟩⟩
@@ -419,7 +419,7 @@ lemma grotzsch_diam_two (t1 t2 : Fin 3) (i1 i2 : Fin 5) :
     · exact (hnot (Or.inl ⟨rfl, rfl, Or.inr rfl⟩)).elim
   · left
     have hcases := OMA.R_Erdos128_erdos_128_R2.fin5_cases_rel i1 i2
-    rcases hcases with rfl | rfl | rfl | rfl | rfl
+    rcases hcases with heq | heq | heq | heq | heq <;> rw [heq] at hnot ⊢
     · exact ⟨i1 + 1, Or.inl ⟨rfl, Or.inl rfl⟩, Or.inr ⟨rfl, Or.inl rfl⟩⟩
     · exact (hnot (Or.inr (Or.inl ⟨rfl, rfl, Or.inl rfl⟩))).elim
     · exact ⟨i1 + 1, Or.inl ⟨rfl, Or.inl rfl⟩, Or.inr ⟨rfl, Or.inr (OMA.R_Erdos128_erdos_128_R2.fin5_add_2_4 i1).symm⟩⟩
@@ -429,7 +429,7 @@ lemma grotzsch_diam_two (t1 t2 : Fin 3) (i1 i2 : Fin 5) :
     exact ⟨i1 + 1, Or.inl ⟨rfl, Or.inl rfl⟩, Or.inr rfl⟩
   · left
     have hcases := OMA.R_Erdos128_erdos_128_R2.fin5_cases_rel i1 i2
-    rcases hcases with rfl | rfl | rfl | rfl | rfl
+    rcases hcases with heq | heq | heq | heq | heq <;> rw [heq] at hnot ⊢
     · exact ⟨i1 + 1, Or.inr ⟨rfl, Or.inl rfl⟩, Or.inl ⟨rfl, Or.inl rfl⟩⟩
     · exact (hnot (Or.inr (Or.inr (Or.inl ⟨rfl, rfl, Or.inl rfl⟩)))).elim
     · exact ⟨i1 + 1, Or.inr ⟨rfl, Or.inl rfl⟩, Or.inl ⟨rfl, Or.inr (OMA.R_Erdos128_erdos_128_R2.fin5_add_2_4 i1).symm⟩⟩
@@ -449,7 +449,7 @@ lemma not_adj_both_of_cliqueFree {V : Type} {G : SimpleGraph V}
   fun hyz => OMA.R_Erdos128_erdos_128_R2.not_adj_of_cliqueFree_three hcf hxy hyz hxz
 
 lemma not_and_decide {p q : Prop} [Decidable p] [Decidable q] (h : p → q → False) :
-    !(decide p && decide q) = true := by
+    (!(decide p && decide q)) = true := by
   by_cases hp : p <;> by_cases hq : q
   · exact (h hp hq).elim
   · rw [decide_eq_true hp, decide_eq_false hq]; rfl
@@ -546,11 +546,25 @@ lemma grotzsch_min_deg_le {V : Type} [Fintype V] [DecidableEq V]
       _ = 10 * Fintype.card V := by
         simp only [Finset.sum_const, Finset.card_univ, smul_eq_mul, mul_comm]
   by_contra h
-  push_neg at h
+  push Not at h
   have hv0 := h (v 0); have hv1 := h (v 1); have hv2 := h (v 2); have hv3 := h (v 3); have hv4 := h (v 4)
   have hu0 := h (u 0); have hu1 := h (u 1); have hu2 := h (u 2); have hu3 := h (u 3); have hu4 := h (u 4)
   have hw := h w
   rw [Fin.sum_univ_five, Fin.sum_univ_five] at hsum_le
+  have sv : 50 * Fintype.card V < 29 * ((G.neighborSet (v 0)).ncard + (G.neighborSet (v 1)).ncard +
+      (G.neighborSet (v 2)).ncard + (G.neighborSet (v 3)).ncard + (G.neighborSet (v 4)).ncard) := by
+    have h01 : 20 * Fintype.card V < 29 * ((G.neighborSet (v 0)).ncard + (G.neighborSet (v 1)).ncard) := by omega
+    have h23 : 20 * Fintype.card V < 29 * ((G.neighborSet (v 2)).ncard + (G.neighborSet (v 3)).ncard) := by omega
+    omega
+  have su : 50 * Fintype.card V < 29 * ((G.neighborSet (u 0)).ncard + (G.neighborSet (u 1)).ncard +
+      (G.neighborSet (u 2)).ncard + (G.neighborSet (u 3)).ncard + (G.neighborSet (u 4)).ncard) := by
+    have h01 : 20 * Fintype.card V < 29 * ((G.neighborSet (u 0)).ncard + (G.neighborSet (u 1)).ncard) := by omega
+    have h23 : 20 * Fintype.card V < 29 * ((G.neighborSet (u 2)).ncard + (G.neighborSet (u 3)).ncard) := by omega
+    omega
+  generalize (G.neighborSet (v 0)).ncard + (G.neighborSet (v 1)).ncard +
+      (G.neighborSet (v 2)).ncard + (G.neighborSet (v 3)).ncard + (G.neighborSet (v 4)).ncard = Sv at hsum_le sv
+  generalize (G.neighborSet (u 0)).ncard + (G.neighborSet (u 1)).ncard +
+      (G.neighborSet (u 2)).ncard + (G.neighborSet (u 3)).ncard + (G.neighborSet (u 4)).ncard = Su at hsum_le su
   omega
 
 lemma grotzsch_twin_core {V : Type} [Fintype V] [DecidableEq V]
@@ -587,6 +601,20 @@ lemma grotzsch_twin_core {V : Type} [Fintype V] [DecidableEq V]
     have hv0 := hmin (v 0); have hv1 := hmin (v 1); have hv2 := hmin (v 2); have hv3 := hmin (v 3); have hv4 := hmin (v 4)
     have hu0 := hmin (u 0); have hu1 := hmin (u 1); have hu2 := hmin (u 2); have hu3 := hmin (u 3); have hu4 := hmin (u 4)
     have hw := hmin w
+    have sv : 5 * Fintype.card V < 3 * ((G.neighborSet (v 0)).ncard + (G.neighborSet (v 1)).ncard +
+        (G.neighborSet (v 2)).ncard + (G.neighborSet (v 3)).ncard + (G.neighborSet (v 4)).ncard) := by
+      have h01 : 2 * Fintype.card V < 3 * ((G.neighborSet (v 0)).ncard + (G.neighborSet (v 1)).ncard) := by omega
+      have h23 : 2 * Fintype.card V < 3 * ((G.neighborSet (v 2)).ncard + (G.neighborSet (v 3)).ncard) := by omega
+      omega
+    have su : 5 * Fintype.card V < 3 * ((G.neighborSet (u 0)).ncard + (G.neighborSet (u 1)).ncard +
+        (G.neighborSet (u 2)).ncard + (G.neighborSet (u 3)).ncard + (G.neighborSet (u 4)).ncard) := by
+      have h01 : 2 * Fintype.card V < 3 * ((G.neighborSet (u 0)).ncard + (G.neighborSet (u 1)).ncard) := by omega
+      have h23 : 2 * Fintype.card V < 3 * ((G.neighborSet (u 2)).ncard + (G.neighborSet (u 3)).ncard) := by omega
+      omega
+    generalize (G.neighborSet (v 0)).ncard + (G.neighborSet (v 1)).ncard +
+        (G.neighborSet (v 2)).ncard + (G.neighborSet (v 3)).ncard + (G.neighborSet (v 4)).ncard = Sv at sv ⊢
+    generalize (G.neighborSet (u 0)).ncard + (G.neighborSet (u 1)).ncard +
+        (G.neighborSet (u 2)).ncard + (G.neighborSet (u 3)).ncard + (G.neighborSet (u 4)).ncard = Su at su ⊢
     omega
   have hsum_ub : ∑ x : V, wt x ≤ 9 * Fintype.card V + Mf.card := by
     have hsplit : ∑ x : V, wt x =
@@ -607,8 +635,7 @@ lemma grotzsch_twin_core {V : Type} [Fintype V] [DecidableEq V]
         _ = 9 * (Finset.univ.filter (fun x => ¬ wt x = 10)).card := by
           simp only [Finset.sum_const, smul_eq_mul, mul_comm]
     have hcard_sum : Mf.card + (Finset.univ.filter (fun x => ¬ wt x = 10)).card = Fintype.card V := by
-      have := Finset.filter_card_add_filter_neg_card_eq_card
-        (s := (Finset.univ : Finset V)) (p := fun x => wt x = 10)
+      have := Finset.card_filter_add_card_filter_not (s := (Finset.univ : Finset V)) (p := fun x => wt x = 10)
       rw [Finset.card_univ] at this
       exact this
     omega
