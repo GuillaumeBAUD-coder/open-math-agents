@@ -1,4 +1,5 @@
 import FormalConjectures.ErdosProblems.«101»
+import Mathlib.Algebra.MvPolynomial.Polynomial
 
 -- Reduction Erdos101.erdos_101.R1 of Erdős Problem 101
 -- Credit: @ubuwaits
@@ -8,7 +9,8 @@ import FormalConjectures.ErdosProblems.«101»
 
 The first hypothesis asks whether a positive proportion of points incident to many
 four-point lines must have a positive proportion on a curve of bounded degree.
-The second is the bounded-degree case of the quadruple-line estimate
+We prove the full bounded-degree case through degree three, including reducible cubics.
+The second hypothesis is the remaining bounded-degree quadruple-line estimate
 (Elekes and Szabó, On Triple Lines and Cubic Curves, Theorem 4.3).
 
 The choice of points matters. On each surviving line we designate one of its
@@ -21,7 +23,7 @@ surviving line on one bounded-degree curve.
 namespace OMA.R_Erdos101_erdos_101_R1
 
 open EuclideanGeometry MvPolynomial Filter Asymptotics
-open scoped Classical Finset
+open scoped Classical Finset Polynomial
 
 /-- A positive-density set of points, each on linearly many four-point lines,
 has a positive-density subset on a curve of degree bounded in terms of the density. -/
@@ -34,12 +36,12 @@ def H1 : Prop :=
       ∃ F : MvPolynomial (Fin 2) ℝ, F ≠ 0 ∧ F.totalDegree ≤ d ∧
         c * S.card ≤ (T.filter (fun p => eval (fun i => p i) F = 0)).card
 
-/-- The quadruple-line bound on one bounded-degree real algebraic curve,
-uniform in its coefficients. The size parameter n may bound the number of points. -/
+/-- The quadruple-line bound for algebraic curves of degree from four to d,
+uniform in their coefficients. The cases of degree at most three are proved below. -/
 def H2 : Prop :=
   ∀ d : ℕ, ∀ ε : ℝ, 0 < ε → ∃ N : ℕ, ∀ n : ℕ, N ≤ n →
     ∀ S : Finset ℝ², S.card ≤ n → NonCollinearFor 5 (S : Set ℝ²) →
-      ∀ F : MvPolynomial (Fin 2) ℝ, F ≠ 0 → F.totalDegree ≤ d →
+      ∀ F : MvPolynomial (Fin 2) ℝ, F ≠ 0 → 4 ≤ F.totalDegree → F.totalDegree ≤ d →
         (∀ p ∈ S, eval (fun i => p i) F = 0) →
         ((linesWithPointsFor 4 (S : Set ℝ²)).ncard : ℝ) ≤ ε * (n : ℝ)^2
 
@@ -317,11 +319,330 @@ lemma max_pair_bound (n : ℕ) : 12 * Erdos101.numLinesWithFourPointMax n ≤ n 
   rw [← he, Set.ncard_eq_toFinset_card _ lineFin, ← hTcard]
   exact h
 
+/-- Substituting affine univariate polynomials does not increase total degree. -/
+lemma degree_substitution {σ : Type*} (F : MvPolynomial σ ℝ) (u : σ → Polynomial ℝ)
+    (hu : ∀ i, (u i).natDegree ≤ 1) :
+    ((eval₂Hom Polynomial.C u) F).natDegree ≤ F.totalDegree := by
+  let φ := eval₂Hom Polynomial.C u
+  have he : φ F = ∑ v ∈ F.support, φ (monomial v (coeff v F)) := by
+    simpa only [map_sum] using congrArg φ F.as_sum
+  change (φ F).natDegree ≤ _
+  rw [he]
+  apply Polynomial.natDegree_sum_le_of_forall_le
+  intro v hv
+  change ((eval₂Hom Polynomial.C u) (monomial v (coeff v F))).natDegree ≤ _
+  rw [eval₂Hom_monomial]
+  calc
+    _ ≤ (Polynomial.C (coeff v F)).natDegree +
+        (v.prod (fun i e => (u i)^e)).natDegree := Polynomial.natDegree_mul_le
+    _ = (v.prod (fun i e => (u i)^e)).natDegree := by simp
+    _ ≤ ∑ i ∈ v.support, ((u i)^(v i)).natDegree := Polynomial.natDegree_prod_le ..
+    _ ≤ ∑ i ∈ v.support, v i := Finset.sum_le_sum fun i _ =>
+      (Polynomial.natDegree_pow_le).trans (by simpa using Nat.mul_le_mul_left (v i) (hu i))
+    _ ≤ F.totalDegree := le_totalDegree hv
+
+lemma eval_substitution {σ : Type*} (F : MvPolynomial σ ℝ) (u : σ → Polynomial ℝ) (t : ℝ) :
+    (((eval₂Hom Polynomial.C u) F).eval t) = eval (fun i => (u i).eval t) F := by
+  exact (polynomial_eval_eval₂ Polynomial.C u F).trans (by
+    have he : (Polynomial.evalRingHom t).comp Polynomial.C = RingHom.id ℝ := by ext; simp
+    rw [he, eval₂_id])
+
+lemma eq_zero_of_many_roots {U : Finset ℝ²} {i : Fin 2} {g : Polynomial ℝ}
+    (hproj : Set.InjOn (fun p : ℝ² => p i) (U : Set ℝ²))
+    (hroot : ∀ p ∈ U, g.eval (p i) = 0) (hsize : g.natDegree < U.card) : g = 0 := by
+  by_contra hn
+  have hsub : (U.image (fun p => p i)).val ⊆ g.roots := by
+    intro t ht
+    obtain ⟨p, hp, rfl⟩ := Finset.mem_image.mp ht
+    exact (Polynomial.mem_roots hn).mpr (hroot p hp)
+  have h := Polynomial.card_le_degree_of_subset_roots hsub
+  rw [Finset.card_image_of_injOn hproj] at h
+  omega
+
+/-- A line determined by two distinct points is a horizontal level
+or the graph of x as an affine function of y. -/
+lemma charts {S : Finset ℝ²} {L : AffineSubspace ℝ ℝ²}
+    (hL : L ∈ linesWithPointsFor 4 (S : Set ℝ²)) :
+    (∃ b : ℝ, ∀ p : ℝ², p ∈ L ↔ p 1 = b) ∨
+    (∃ m b : ℝ, ∀ p : ℝ², p ∈ L ↔ p 0 = m * p 1 + b) := by
+  obtain ⟨⟨a, _, b, _, hne, rfl⟩, _⟩ := hL
+  have param (p : ℝ²) : p ∈ line[ℝ, a, b] ↔
+      ∃ t : ℝ, ∀ i, p i = a i + t * (b i - a i) := by
+    rw [mem_affineSpan_pair_iff_exists_lineMap_eq]
+    constructor
+    · rintro ⟨t, rfl⟩
+      refine ⟨t, fun i => ?_⟩
+      simp [AffineMap.lineMap_apply_module]
+      ring
+    · rintro ⟨t, ht⟩
+      refine ⟨t, ?_⟩
+      ext i
+      simp [AffineMap.lineMap_apply_module]
+      rw [ht i]
+      ring
+  by_cases hy : b 1 = a 1
+  · have hx : b 0 - a 0 ≠ 0 := by
+      intro he
+      apply hne
+      ext i
+      fin_cases i
+      · exact (sub_eq_zero.mp he).symm
+      · exact hy.symm
+    left
+    refine ⟨a 1, fun p => (param p).trans ?_⟩
+    constructor
+    · rintro ⟨t, ht⟩
+      simpa [hy] using ht 1
+    · intro hp
+      refine ⟨(p 0 - a 0) / (b 0 - a 0), ?_⟩
+      intro i
+      fin_cases i
+      · dsimp; field_simp; ring
+      · simpa [hy] using hp
+  · have hd : b 1 - a 1 ≠ 0 := sub_ne_zero.mpr hy
+    let m := (b 0 - a 0) / (b 1 - a 1)
+    have hm : m * (b 1 - a 1) = b 0 - a 0 := div_mul_cancel₀ _ hd
+    right
+    refine ⟨m, a 0 - m * a 1, fun p => (param p).trans ?_⟩
+    constructor
+    · rintro ⟨t, ht⟩
+      rw [ht 0, ht 1]
+      linear_combination -t * hm
+    · intro hp
+      let t := (p 1 - a 1) / (b 1 - a 1)
+      have ht : t * (b 1 - a 1) = p 1 - a 1 := div_mul_cancel₀ _ hd
+      refine ⟨t, ?_⟩
+      intro i
+      fin_cases i
+      · dsimp
+        linear_combination hp + m * ht - t * hm
+      · dsimp
+        linarith
+
+lemma coordinates_eq {a b : ℝ²} (h0 : a 0 = b 0) (h1 : a 1 = b 1) : a = b := by
+  ext i
+  fin_cases i
+  · exact h0
+  · exact h1
+
+lemma unique_eval (Q : MvPolynomial (Fin 1) ℝ) (t : ℝ) :
+    ((uniqueAlgEquiv ℝ (Fin 1)) Q).eval t = eval (fun _ => t) Q := by
+  simpa only [uniqueAlgEquiv_apply, coe_eval₂Hom, Polynomial.eval_X] using
+    eval_substitution Q (fun _ => Polynomial.X) t
+
+lemma line_code {S : Finset ℝ²} {L : AffineSubspace ℝ ℝ²}
+    (hL : L ∈ linesWithPointsFor 4 (S : Set ℝ²))
+    (F : MvPolynomial (Fin 2) ℝ) (hF : F ≠ 0) (hd : F.totalDegree < 4)
+    (hS : ∀ p ∈ S, eval (fun i => p i) F = 0) :
+    let P := (finSuccEquiv ℝ 1) F
+    let g := (uniqueAlgEquiv ℝ (Fin 1)) P.leadingCoeff
+    ∃ z ∈ P.roots.toFinset.disjSum g.roots.toFinset, ∀ p : ℝ², p ∈ L ↔ match z with
+      | .inl q => p 0 = eval (fun _ => p 1) q
+      | .inr b => p 1 = b := by
+  let P := (finSuccEquiv ℝ 1) F
+  let g := (uniqueAlgEquiv ℝ (Fin 1)) P.leadingCoeff
+  change ∃ z ∈ P.roots.toFinset.disjSum g.roots.toFinset, ∀ p : ℝ², p ∈ L ↔ match z with
+      | .inl q => p 0 = eval (fun _ => p 1) q
+      | .inr b => p 1 = b
+  have hP : P ≠ 0 := fun h => hF ((finSuccEquiv ℝ 1).injective
+    (h.trans (map_zero (finSuccEquiv ℝ 1)).symm))
+  have hg : g ≠ 0 := fun h => (Polynomial.leadingCoeff_ne_zero.mpr hP)
+    ((uniqueAlgEquiv ℝ (Fin 1)).injective (h.trans (map_zero (uniqueAlgEquiv ℝ (Fin 1))).symm))
+  let U := S.filter (fun p => p ∈ L)
+  have hU : U.card = 4 := four_points hL
+  obtain ⟨b, hlevel⟩ | ⟨m, b, hgraph⟩ := charts hL
+  · let e := eval (fun _ : Fin 1 => b)
+    have hx (x : ℝ) : (P.map e).eval x = eval (Fin.cases x (fun _ : Fin 1 => b)) F := by
+      calc
+        _ = e (P.eval (C x)) := by
+          simpa only [e, eval_C] using Polynomial.eval_map_apply (p := P) e (C x)
+        _ = _ := by
+          simpa only [e, P, eval_C] using
+            eval_polynomial_eval_finSuccEquiv (x := fun _ : Fin 1 => b) F (C x)
+    have hconst (p : ℝ²) (hp : p ∈ U) : p 1 = b := (hlevel p).mp (Finset.mem_filter.mp hp).2
+    have hsmall : (P.map e).natDegree < U.card := by
+      rw [hU]
+      exact Polynomial.natDegree_map_le.trans_lt
+        ((natDegree_finSuccEquiv F ▸ degreeOf_le_totalDegree F 0).trans_lt hd)
+    have hzero : P.map e = 0 := by
+      apply eq_zero_of_many_roots (U := U) (i := 0) _ _ hsmall
+      · intro a ha c hc heq
+        exact coordinates_eq heq ((hconst _ ha).trans (hconst _ hc).symm)
+      · intro p hp
+        rw [hx]
+        have heq : (fun i => Fin.cases (p 0) (fun _ : Fin 1 => b) i) = fun i => p i := by
+          funext i
+          fin_cases i
+          · rfl
+          · exact (hconst p hp).symm
+        rw [heq]
+        exact hS p (Finset.mem_filter.mp hp).1
+    have hg0 : g.eval b = 0 := by
+      rw [show g.eval b = e P.leadingCoeff from unique_eval _ _]
+      have hh := congrArg (fun W : Polynomial ℝ => W.coeff P.natDegree) hzero
+      simpa only [Polynomial.coeff_map, Polynomial.coeff_zero, Polynomial.leadingCoeff] using hh
+    refine ⟨.inr b, ?_, hlevel⟩
+    simpa using (Polynomial.mem_roots hg).mpr hg0
+  · let q : MvPolynomial (Fin 1) ℝ := C m * X 0 + C b
+    let u : Fin 2 → Polynomial ℝ :=
+      Fin.cases (Polynomial.C m * Polynomial.X + Polynomial.C b) (fun _ => Polynomial.X)
+    let W := (eval₂Hom Polynomial.C u) F
+    have hu (i : Fin 2) : (u i).natDegree ≤ 1 := by
+      fin_cases i
+      · change (Polynomial.C m * Polynomial.X + Polynomial.C b).natDegree ≤ 1
+        exact Polynomial.natDegree_add_le_of_degree_le
+          (by simpa using (Polynomial.natDegree_mul_le (p := Polynomial.C m) (q := Polynomial.X)))
+          (by simp)
+      · change (Polynomial.X : Polynomial ℝ).natDegree ≤ 1
+        simp
+    have hxy (p : ℝ²) (hp : p ∈ U) : p 0 = m * p 1 + b :=
+      (hgraph p).mp (Finset.mem_filter.mp hp).2
+    have hW : W = 0 := by
+      apply eq_zero_of_many_roots (U := U) (i := 1)
+      · intro a ha c hc he
+        apply coordinates_eq _ he
+        exact (hxy _ ha).trans ((congrArg (fun y => m*y+b) he).trans (hxy _ hc).symm)
+      · intro p hp
+        rw [show W.eval (p 1) = _ from eval_substitution F u (p 1)]
+        have he : (fun i => (u i).eval (p 1)) = fun i => p i := by
+          funext i
+          fin_cases i
+          · simpa [u] using (hxy p hp).symm
+          · exact Polynomial.eval_X
+        rw [he]
+        exact hS p (Finset.mem_filter.mp hp).1
+      · rw [hU]
+        exact (degree_substitution F u hu).trans_lt hd
+    have hroot : P.eval q = 0 := by
+      apply MvPolynomial.funext
+      intro y
+      rw [map_zero, eval_polynomial_eval_finSuccEquiv]
+      have he : (fun i => Fin.cases (eval y q) y i) = fun i => (u i).eval (y 0) := by
+        funext i
+        fin_cases i
+        · simp [q, u]
+        · exact (Polynomial.eval_X (x := y 0)).symm
+      rw [he, ← eval_substitution F u (y 0)]
+      change W.eval (y 0) = 0
+      rw [hW, Polynomial.eval_zero]
+    refine ⟨.inl q, ?_, ?_⟩
+    · simpa using (Polynomial.mem_roots hP).mpr hroot
+    · intro p
+      simpa [q] using hgraph p
+
+/-- A real algebraic curve of degree at most three, including a reducible one,
+can support no more four-point lines than its total degree. -/
+theorem four_lines_on_cubic (S : Finset ℝ²) (F : MvPolynomial (Fin 2) ℝ) (hF : F ≠ 0)
+    (hd : F.totalDegree ≤ 3) (hS : ∀ p ∈ S, eval (fun i => p i) F = 0) :
+    (linesWithPointsFor 4 (S : Set ℝ²)).ncard ≤ F.totalDegree := by
+  let P := (finSuccEquiv ℝ 1) F
+  let g := (uniqueAlgEquiv ℝ (Fin 1)) P.leadingCoeff
+  let codes := P.roots.toFinset.disjSum g.roots.toFinset
+  let A := (four_lines_finite S).toFinset
+  have hP : P ≠ 0 := fun h => hF ((finSuccEquiv ℝ 1).injective
+    (h.trans (map_zero (finSuccEquiv ℝ 1)).symm))
+  let carrier (z : MvPolynomial (Fin 1) ℝ ⊕ ℝ) : Set ℝ² := {p | match z with
+    | .inl q => p 0 = eval (fun _ => p 1) q
+    | .inr b => p 1 = b}
+  have h (L : A) : ∃ z ∈ codes, ∀ p : ℝ², p ∈ L.val ↔ p ∈ carrier z :=
+    line_code ((four_lines_finite S).mem_toFinset.mp L.property) F hF (by omega) hS
+  choose z hz hdesc using h
+  let enc (L : A) : codes := ⟨z L, hz L⟩
+  have hinj : Function.Injective enc := by
+    intro L M he
+    have hcode : z L = z M := congrArg Subtype.val he
+    exact Subtype.ext (SetLike.ext fun p =>
+      (hdesc L p).trans (hcode ▸ (hdesc M p).symm))
+  have hcount : A.card ≤ codes.card := by simpa using Fintype.card_le_of_injective enc hinj
+  have hdeg : g.natDegree ≤ P.leadingCoeff.totalDegree := by
+    exact degree_substitution P.leadingCoeff (fun _ => Polynomial.X) (by simp)
+  have hlead : P.coeff P.natDegree ≠ 0 := Polynomial.leadingCoeff_ne_zero.mpr hP
+  have hl := totalDegree_coeff_finSuccEquiv_add_le F P.natDegree hlead
+  change P.leadingCoeff.totalDegree + P.natDegree ≤ F.totalDegree at hl
+  rw [Set.ncard_eq_toFinset_card _ (four_lines_finite S)]
+  calc
+    A.card ≤ codes.card := hcount
+    _ = P.roots.toFinset.card + g.roots.toFinset.card := Finset.card_disjSum ..
+    _ ≤ P.natDegree + g.natDegree := Nat.add_le_add
+      ((Multiset.toFinset_card_le _).trans (Polynomial.card_roots' P))
+      ((Multiset.toFinset_card_le _).trans (Polynomial.card_roots' g))
+    _ ≤ F.totalDegree := by omega
+
+/-- With k points off a cubic, t₄ ≤ deg(F) + k(n−1)/3. -/
+theorem four_lines_near_cubic (S : Finset ℝ²) (F : MvPolynomial (Fin 2) ℝ)
+    (hF : F ≠ 0) (hd : F.totalDegree ≤ 3) :
+    3 * (linesWithPointsFor 4 (S : Set ℝ²)).ncard ≤
+      3 * F.totalDegree +
+        (S.filter (fun p => eval (fun i => p i) F ≠ 0)).card * (S.card - 1) := by
+  let T := S.filter (fun p => eval (fun i => p i) F = 0)
+  have ht := four_lines_on_cubic T F hF hd (fun _ hp => (Finset.mem_filter.mp hp).2)
+  have hdel := delete_points_bound (show T ⊆ S from Finset.filter_subset ..)
+  have he : S \ T = S.filter (fun p => eval (fun i => p i) F ≠ 0) := by
+    ext p
+    by_cases hp : p ∈ S <;> simp [hp, T]
+  rw [he] at hdel
+  omega
+
+/-- The desired asymptotic holds when all but o(n) points lie on a cubic.
+Both the curve and the exceptional points may vary freely with n. -/
+theorem littleO_near_cubics (S : ℕ → Finset ℝ²) (F : ℕ → MvPolynomial (Fin 2) ℝ)
+    (hcard : ∀ n, (S n).card ≤ n) (hnonzero : ∀ n, F n ≠ 0)
+    (hdeg : ∀ n, (F n).totalDegree ≤ 3)
+    (hexceptions : (fun n => (((S n).filter (fun p => eval (fun i => p i) (F n) ≠ 0)).card : ℝ))
+      =o[atTop] (fun n => (n : ℝ))) :
+    (fun n => ((linesWithPointsFor 4 (↑(S n) : Set ℝ²)).ncard : ℝ))
+      =o[atTop] (fun n => (n : ℝ)^2) := by
+  apply IsLittleO.of_bound
+  intro ε hε
+  obtain ⟨K, hK⟩ := exists_nat_gt (9 / ε)
+  filter_upwards [eventually_ge_atTop (max K 1), hexceptions.bound hε] with n hn hsmall
+  let k := ((S n).filter (fun p => eval (fun i => p i) (F n) ≠ 0)).card
+  let q := (linesWithPointsFor 4 (↑(S n) : Set ℝ²)).ncard
+  change ‖(k : ℝ)‖ ≤ ε * ‖(n : ℝ)‖ at hsmall
+  change ‖(q : ℝ)‖ ≤ ε * ‖(n : ℝ)^2‖
+  rw [Real.norm_of_nonneg (Nat.cast_nonneg _), Real.norm_of_nonneg (Nat.cast_nonneg _)] at hsmall
+  rw [Real.norm_of_nonneg (Nat.cast_nonneg _), Real.norm_of_nonneg (sq_nonneg _)]
+  have hnear : 3 * q ≤ 9 + k * n := by
+    have h := four_lines_near_cubic (S n) (F n) (hnonzero n) (hdeg n)
+    change 3 * q ≤ 3 * (F n).totalDegree + k * ((S n).card - 1) at h
+    exact h.trans (Nat.add_le_add (by have := hdeg n; omega)
+      (Nat.mul_le_mul_left k ((Nat.sub_le ..).trans (hcard n))))
+  have hr : 3 * (q : ℝ) ≤ 9 + (k : ℝ) * n := by exact_mod_cast hnear
+  have hn1 : (1 : ℝ) ≤ n := by exact_mod_cast (show 1 ≤ n by omega)
+  have hnK : (K : ℝ) ≤ n := by exact_mod_cast (show K ≤ n by omega)
+  have hsq : (n : ℝ) ≤ (n : ℝ)^2 := by nlinarith [mul_nonneg (Nat.cast_nonneg n) (sub_nonneg.mpr hn1)]
+  have hconst : (9 : ℝ) ≤ ε * (n : ℝ)^2 :=
+    (by linarith [(div_lt_iff₀ hε).mp hK] : (9 : ℝ) ≤ ε * K).trans
+      (mul_le_mul_of_nonneg_left (hnK.trans hsq) hε.le)
+  have hkn := mul_le_mul_of_nonneg_right hsmall (Nat.cast_nonneg n : 0 ≤ (n : ℝ))
+  nlinarith only [hr, hconst, hkn]
+
+/-- Absorb the uniform constant for cubics into the quadratic error term. -/
+lemma all_degrees_bound (h2 : H2) (d : ℕ) (ε : ℝ) (hε : 0 < ε) :
+    ∃ N : ℕ, ∀ n : ℕ, N ≤ n →
+      ∀ S : Finset ℝ², S.card ≤ n → NonCollinearFor 5 (S : Set ℝ²) →
+        ∀ F : MvPolynomial (Fin 2) ℝ, F ≠ 0 → F.totalDegree ≤ d →
+          (∀ p ∈ S, eval (fun i => p i) F = 0) →
+          ((linesWithPointsFor 4 (S : Set ℝ²)).ncard : ℝ) ≤ ε * (n : ℝ)^2 := by
+  obtain ⟨N, hhigh⟩ := h2 d ε hε
+  obtain ⟨K, hK⟩ := exists_nat_gt (3 / ε)
+  refine ⟨max N (max K 1), ?_⟩
+  intro n hn S hSn hS F hF hd hzero
+  by_cases hsmall : F.totalDegree ≤ 3
+  · have hk : (K : ℝ) ≤ (n : ℝ) := by exact_mod_cast (show K ≤ n by omega)
+    have hn1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast (show 1 ≤ n by omega)
+    have hsq : (n : ℝ) ≤ (n : ℝ)^2 := by nlinarith [mul_nonneg (Nat.cast_nonneg n) (sub_nonneg.mpr hn1)]
+    calc
+      _ ≤ (3 : ℝ) := by exact_mod_cast (four_lines_on_cubic S F hF hsmall hzero).trans hsmall
+      _ ≤ ε * K := by linarith [(div_lt_iff₀ hε).mp hK]
+      _ ≤ ε * (n : ℝ)^2 := mul_le_mul_of_nonneg_left (hk.trans hsq) hε.le
+  · exact hhigh n (le_trans (le_max_left ..) hn) S hSn hS F hF (by omega) hd hzero
+
 lemma configuration_bound (h1 : H1) (h2 : H2) (ε : ℝ) (hε : 0 < ε) :
     ∃ N : ℕ, ∀ S : Finset ℝ², N ≤ S.card → NonCollinearFor 5 (S : Set ℝ²) →
       ((linesWithPointsFor 4 (S : Set ℝ²)).ncard : ℝ) ≤ ε * (S.card : ℝ)^2 := by
   obtain ⟨d, η, hη, N, hcap⟩ := capture_many h1 4 ε hε
-  obtain ⟨M, halg⟩ := h2 d (η / 2) (half_pos hη)
+  obtain ⟨M, halg⟩ := all_degrees_bound h2 d (η / 2) (half_pos hη)
   refine ⟨max (max N M) 1, ?_⟩
   intro S hn hS
   have hN := (le_max_left N M).trans ((le_max_left _ 1).trans hn)
