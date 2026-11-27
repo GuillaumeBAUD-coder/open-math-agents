@@ -124,11 +124,56 @@ lemma decomposition_of_second_denominator (p : ℕ) (h180 : p % 180 = 1)
     _ = p * (y * z) + 9 * y * z := by ring
     _ = p * (y * z + x * z + x * y) := by rw [hsplit]; dsimp [B]; ring
 
+lemma decomposition_of_scaled_identity {n a b k : ℕ}
+    (hn : 0 < n) (ha : 0 < a) (hb : 0 < b) (hk : 0 < k)
+    (h : 5 * a * b * k = n + a + b) : HasSierpinskiDecomposition n := by
+  apply OMA.R_SierpinskiEgyptianFractionConjecture_sierpinski_egyptian_fraction_conjecture_R1.decomposition_of_identity
+    (x := a * b * k) (y := n * b * k) (z := n * a * k)
+    hn (by positivity) (by positivity) (by positivity)
+  calc
+    5 * (a * b * k) * (n * b * k) * (n * a * k) =
+        (n ^ 2 * a * b * k ^ 2) * (5 * a * b * k) := by ring
+    _ = (n ^ 2 * a * b * k ^ 2) * (n + a + b) := by rw [h]
+    _ = _ := by ring
+
+/-- A divisor d of n+a with d+1 divisible by 5*a supplies b and k. -/
+lemma decomposition_of_shifted_divisor {n a d : ℕ} (hn : 0 < n) (ha : 0 < a)
+    (hd : d ∣ n + a) (hda : 5 * a ∣ d + 1) : HasSierpinskiDecomposition n := by
+  obtain ⟨b, hb⟩ := hd
+  obtain ⟨k, hk⟩ := hda
+  have hbpos : 0 < b := by
+    apply Nat.pos_of_ne_zero
+    intro hbzero
+    have hzero : n + a = 0 := by simpa [hbzero] using hb
+    omega
+  have hkpos : 0 < k := by
+    apply Nat.pos_of_ne_zero
+    intro hkzero
+    have hzero : d + 1 = 0 := by simpa [hkzero] using hk
+    omega
+  apply decomposition_of_scaled_identity hn ha hbpos hkpos
+  calc
+    5 * a * b * k = (5 * a * k) * b := by ring
+    _ = (d + 1) * b := by rw [← hk]
+    _ = d * b + b := by ring
+    _ = n + a + b := by rw [← hb]
+
+lemma progression_four_forty_four_twenty_one (t : ℕ) :
+    HasSierpinskiDecomposition (440 * t + 421) := by
+  apply decomposition_of_scaled_identity (a := 8) (b := 11) (k := t + 1)
+    (by positivity) (by decide) (by decide) (by positivity)
+  ring
+
+lemma certificate_22861 :
+    (5 : ℚ) / 22861 = 1 / 4576 + 1 / 13076492 + 1 / 9510176 := by
+  norm_num
+
 -- The prime quotient is automatically 1 modulo 5.
 def H1 : Prop :=
   ∀ p : ℕ, p.Prime → p % 180 = 1 → 18001 < p → ¬ ((p + 4) / 5).Prime →
     (∀ q : ℕ, q ∣ (p + 4) / 5 → q % 4 ≠ 3) →
     (¬ ∃ d : ℕ, d ∣ (p * ((p + 9) / 5)) ^ 2 ∧ d % 9 = 7) →
+    (¬ ∃ a d : ℕ, 0 < a ∧ 0 < d ∧ d ∣ p + a ∧ 5 * a ∣ d + 1) →
     ((5 * p + 1) / 6).Prime → HasSierpinskiDecomposition p
 
 -- Here the quotient is greater than 1 by the lower bound on p.
@@ -136,6 +181,7 @@ def H2 : Prop :=
   ∀ p : ℕ, p.Prime → p % 180 = 1 → 18001 < p → ¬ ((p + 4) / 5).Prime →
     (∀ q : ℕ, q ∣ (p + 4) / 5 → q % 4 ≠ 3) →
     (¬ ∃ d : ℕ, d ∣ (p * ((p + 9) / 5)) ^ 2 ∧ d % 9 = 7) →
+    (¬ ∃ a d : ℕ, 0 < a ∧ 0 < d ∧ d ∣ p + a ∧ 5 * a ∣ d + 1) →
     ¬ ((5 * p + 1) / 6).Prime →
     (∀ q : ℕ, q.Prime → q ∣ (5 * p + 1) / 6 → q % 5 = 1) →
     HasSierpinskiDecomposition p
@@ -144,10 +190,13 @@ theorem main : H1 → H2 → OMA.R_SierpinskiEgyptianFractionConjecture_sierpins
   intro hPrime hComposite p hp h180 hlarge ha hdiv
   by_cases hShift : ∃ d : ℕ, d ∣ (p * ((p + 9) / 5)) ^ 2 ∧ d % 9 = 7
   · exact decomposition_of_second_denominator p h180 hShift
+  by_cases hScaled : ∃ a d : ℕ, 0 < a ∧ 0 < d ∧ d ∣ p + a ∧ 5 * a ∣ d + 1
+  · obtain ⟨a, d, haPos, _, hd, hda⟩ := hScaled
+    exact decomposition_of_shifted_divisor hp.pos haPos hd hda
   by_cases hm : ((5 * p + 1) / 6).Prime
-  · exact hPrime p hp h180 hlarge ha hdiv hShift hm
+  · exact hPrime p hp h180 hlarge ha hdiv hShift hScaled hm
   by_cases hall : ∀ q : ℕ, q.Prime → q ∣ (5 * p + 1) / 6 → q % 5 = 1
-  · exact hComposite p hp h180 hlarge ha hdiv hShift hm hall
+  · exact hComposite p hp h180 hlarge ha hdiv hShift hScaled hm hall
   push Not at hall
   obtain ⟨q, _, hq, hq5⟩ := hall
   have hq0 : q % 5 ≠ 0 := by
