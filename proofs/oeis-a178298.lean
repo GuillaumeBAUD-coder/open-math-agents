@@ -21,8 +21,20 @@ private lemma toReal_inj {n : ℕ} {x y : Fin n → Fin 5}
   have hi : (((x i : ℕ) : ℝ)) = ((y i : ℕ) : ℝ) := congrFun h i
   exact_mod_cast hi
 
+private def intIcc (b : ℤ) : Finset ℤ :=
+  (Finset.range (2 * b.toNat + 1)).image (fun j : ℕ => (j : ℤ) - b)
+
+private lemma mem_intIcc {b x : ℤ} (hb : 0 ≤ b) : x ∈ intIcc b ↔ -b ≤ x ∧ x ≤ b := by
+  rw [intIcc, Finset.mem_image]
+  constructor
+  · rintro ⟨j, hj, rfl⟩
+    rw [Finset.mem_range] at hj
+    omega
+  · rintro ⟨h1, h2⟩
+    refine ⟨(x + b).toNat, Finset.mem_range.mpr ?_, ?_⟩ <;> omega
+
 private def coordFinset (k : ℕ) (b : ℤ) : Finset (Fin 5 × ℤ) :=
-  (Finset.univ ×ˢ Finset.Icc (-b) b).filter
+  (Finset.univ ×ˢ intIcc b).filter
     (fun p => 0 ≤ (p.1 : ℤ) + (k : ℤ) * p.2 ∧ (p.1 : ℤ) + (k : ℤ) * p.2 ≤ 4)
 
 private lemma coordFinset_2_2 : (coordFinset 2 2).card = 13 := by decide
@@ -43,7 +55,7 @@ private lemma pairFinset_card (n k : ℕ) (b : ℤ) (hb : 0 ≤ b) :
         (fun f i => (f i).1.1)
         (fun x i => ⟨(x i, 0), by
           simp only [coordFinset, Finset.mem_filter, Finset.mem_product, Finset.mem_univ,
-            Finset.mem_Icc, true_and]
+            mem_intIcc hb, true_and]
           have hx := (x i).isLt
           refine ⟨⟨by omega, by omega⟩, by omega, by omega⟩⟩)
         ?_ ?_ ?_ ?_
@@ -564,8 +576,9 @@ private lemma collinear_mem_classes {n : ℕ} {s : Finset (Fin n → Fin 5)}
     rcases hnum with hnum1 | hnum_rev
     · let f : Fin n → ↥(coordFinset k b) := fun i =>
         ⟨(x0 i, ((x2 i : ℤ) - (x0 i : ℤ)) / (k : ℤ)), by
+          have hb0 : 0 ≤ b := by have := hb_bound i; omega
           simp only [coordFinset, Finset.mem_filter, Finset.mem_product, Finset.mem_univ,
-            Finset.mem_Icc, true_and]
+            mem_intIcc hb0, true_and]
           have hdi := hdvd i
           rw [hden] at hdi
           have hmul : (k : ℤ) * (((x2 i : ℤ) - (x0 i : ℤ)) / (k : ℤ)) = (x2 i : ℤ) - (x0 i : ℤ) := by
@@ -616,8 +629,9 @@ private lemma collinear_mem_classes {n : ℕ} {s : Finset (Fin n → Fin 5)}
         simp only [mkTriple, hx0f, hx1f, hx2f]
     · let f : Fin n → ↥(coordFinset k b) := fun i =>
         ⟨(x2 i, ((x0 i : ℤ) - (x2 i : ℤ)) / (k : ℤ)), by
+          have hb0 : 0 ≤ b := by have := hb_bound i; omega
           simp only [coordFinset, Finset.mem_filter, Finset.mem_product, Finset.mem_univ,
-            Finset.mem_Icc, true_and]
+            mem_intIcc hb0, true_and]
           have hdi : (k : ℤ) ∣ ((x0 i : ℤ) - (x2 i : ℤ)) := by
             have := hdvd i
             rw [hden] at this
@@ -796,7 +810,7 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a178298.main := by
       let f' : Fin n → ↥(OMA.P_oeis_a178298.coordFinset 2 2) := fun i =>
         ⟨(OMA.P_oeis_a178298.mkX2 f i, -(f i).1.2), by
           simp only [OMA.P_oeis_a178298.coordFinset, Finset.mem_filter, Finset.mem_product,
-            Finset.mem_univ, Finset.mem_Icc, true_and]
+            Finset.mem_univ, OMA.P_oeis_a178298.mem_intIcc (by omega : (0 : ℤ) ≤ 2), true_and]
           have hp := (Finset.mem_filter.mp (f i).2).2
           have hv2 := OMA.P_oeis_a178298.mkX2_val f i
           dsimp [OMA.P_oeis_a178298.mkX0] at hv2
