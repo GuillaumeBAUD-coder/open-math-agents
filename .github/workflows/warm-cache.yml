@@ -1,0 +1,44 @@
+# Builds Physlib at the pinned commit once on main and saves the cache every pull request can read (a cache saved
+# from a pull request is only visible to that pull request).
+name: warm-cache
+on:
+  push:
+    branches: [main]
+    paths: ["physlib.commit", ".github/workflows/warm-cache.yml"]
+  schedule:
+    - cron: "23 3 * * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  warm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - name: Physlib at the pinned commit
+        run: |
+          git clone --filter=blob:none https://github.com/leanprover-community/physlib.git "$RUNNER_TEMP/physlib"
+          git -C "$RUNNER_TEMP/physlib" checkout -q "$(cat physlib.commit)"
+      - uses: actions/cache/restore@v4
+        id: c
+        with:
+          path: |
+            ~/.elan
+            ${{ runner.temp }}/physlib/.lake
+          key: physlib-${{ hashFiles('physlib.commit') }}
+      - name: Build
+        if: steps.c.outputs.cache-hit != 'true'
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain none
+          export PATH="$HOME/.elan/bin:$PATH"
+          cd "$RUNNER_TEMP/physlib"
+          for i in 1 2 3; do lake exe cache get && break || sleep 30; done
+          lake build Physlib PhyslibAlpha QuantumInfo
+      - uses: actions/cache/save@v4
+        if: steps.c.outputs.cache-hit != 'true'
+        with:
+          path: |
+            ~/.elan
+            ${{ runner.temp }}/physlib/.lake
+          key: physlib-${{ hashFiles('physlib.commit') }}

@@ -1,0 +1,90 @@
+# Untrusted stage: runs on pull requests with a read-only token and no secrets. Compiles a Lean proof against the
+# pinned Physlib, or re-runs a computation in a container with no network, then uploads a verdict for verdict.yml.
+name: check
+on:
+  pull_request:
+    paths: ["proofs/**", "evidence/**"]
+permissions:
+  contents: read
+concurrency:
+  group: check-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 2 }
+      - name: What is submitted
+        id: what
+        run: |
+          git diff --name-status HEAD^1 HEAD | python3 -I -c 'import sys,json
+          rows=[l.split("\t") for l in sys.stdin.read().splitlines() if l]
+          print(json.dumps([{"filename": r[-1], "status": {"A":"added"}.get(r[0][0],"modified")} for r in rows]))' > files.json
+          python3 -I tools/classify.py < files.json > class.json; cat class.json
+          echo "kind=$(python3 -I -c 'import json;d=json.load(open("class.json"));print(d.get("kind","") if d["ok"] else "")')" >> "$GITHUB_OUTPUT"
+          echo "id=$(python3 -I -c 'import json;print(json.load(open("class.json")).get("id",""))')" >> "$GITHUB_OUTPUT"
+      - name: Lint (Lean)
+        if: steps.what.outputs.kind == 'lean'
+        run: python3 -I tools/lint_lean.py "proofs/${{ steps.what.outputs.id }}.lean" | tee lint.txt
+      - name: Physlib at the pinned commit (cache filled on main by warm-cache.yml)
+        if: steps.what.outputs.kind == 'lean'
+        run: |
+          git clone --filter=blob:none https://github.com/leanprover-community/physlib.git "$RUNNER_TEMP/physlib"
+          git -C "$RUNNER_TEMP/physlib" checkout -q "$(cat physlib.commit)"
+      - uses: actions/cache/restore@v4
+        if: steps.what.outputs.kind == 'lean'
+        with:
+          path: |
+            ~/.elan
+            ${{ runner.temp }}/physlib/.lake
+          key: physlib-${{ hashFiles('physlib.commit') }}
+      - name: Compile
+        if: steps.what.outputs.kind == 'lean'
+        run: |
+          command -v lake || { curl -sSfL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain none; }
+          export PATH="$HOME/.elan/bin:$PATH"
+          cd "$RUNNER_TEMP/physlib"
+          for i in 1 2 3; do lake exe cache get && break || sleep 20; done
+          cp "$GITHUB_WORKSPACE/proofs/${{ steps.what.outputs.id }}.lean" Submission.lean
+          set +e; timeout 1800 lake env lean Submission.lean > "$GITHUB_WORKSPACE/lean.txt" 2>&1; echo $? > "$GITHUB_WORKSPACE/lean.rc"; set -e
+          tail -c 4000 "$GITHUB_WORKSPACE/lean.txt"
+      - name: Re-run the computation (no network, 2 CPUs, 2 GB, 10 minutes)
+        if: steps.what.outputs.kind == 'compute'
+        run: |
+          D="evidence/${{ steps.what.outputs.id }}"
+          printf 'FROM python:3.12-slim\nRUN pip install --no-cache-dir numpy==2.1.3 scipy==1.14.1 sympy==1.13.3 mpmath==1.3.0\n' > Dockerfile.sandbox
+          docker build -q -t sandbox -f Dockerfile.sandbox . >/dev/null
+          set +e
+          timeout 660 docker run --rm --network none --cpus 2 --memory 2g --pids-limit 256 --read-only --tmpfs /tmp \
+            -v "$PWD/$D:/w:ro" -w /w sandbox timeout 600 python3 -I run.py > run.txt 2> run.err; echo $? > run.rc
+          set -e
+          tail -c 2000 run.txt; tail -c 2000 run.err
+      - name: Verdict
+        if: always()
+        run: |
+          python3 -I - <<'PY'
+          import json, os
+          c = json.load(open("class.json")) if os.path.exists("class.json") else {"ok": False, "reason": "no classification"}
+          v = {"pr": ${{ github.event.pull_request.number }}, "sha": "${{ github.event.pull_request.head.sha }}", "kind": c.get("kind"), "id": c.get("id"), "track": c.get("track")}
+          def rd(f): return open(f).read() if os.path.exists(f) else ""
+          if not c["ok"]: v.update(verdict="rejected", reason=c["reason"])
+          elif c["kind"] == "lean":
+              lint, out, rc = rd("lint.txt").strip(), rd("lean.txt"), rd("lean.rc").strip()
+              if lint != "ok": v.update(verdict="rejected", reason="lint: " + lint)
+              elif rc != "0" or "error" in out: v.update(verdict="rejected", reason="does not compile", log=out[-3000:])
+              elif "declaration uses 'sorry'" in out: v.update(verdict="rejected", reason="uses sorry")
+              else: v.update(verdict="compiled", reason="compiles against the pinned Physlib, no sorry")
+          elif c["kind"] == "compute":
+              rc = rd("run.rc").strip()
+              if rc != "0": v.update(verdict="rejected", reason=f"run.py exited with {rc or 'no status'}", log=(rd("run.txt") + rd("run.err"))[-3000:])
+              else:
+                  r = os.popen(f"python3 -I tools/compare_claim.py evidence/{c['id']}/claim.json run.txt").read().strip()
+                  v.update(verdict="reproduced" if r == "reproduced" else "rejected", reason=r)
+          else: v.update(verdict="review", reason="a review is read by a person")
+          json.dump(v, open("verdict.json", "w")); print(json.dumps(v)[:1500])
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: verdict, path: verdict.json, retention-days: 7 }

@@ -1,0 +1,61 @@
+# Trusted stage. Never checks out or runs pull request code. Re-classifies the PR from the API, comments, merges
+# reproduced computations, labels Lean proofs and reviews for a person, and reports merged results to the site
+# (authenticated with this workflow's OIDC token).
+name: verdict
+on:
+  workflow_run:
+    workflows: [check]
+    types: [completed]
+  pull_request_target:
+    types: [closed]
+    paths: ["proofs/**", "evidence/**"]
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  id-token: write
+jobs:
+  report:
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion != 'cancelled'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { name: verdict, path: artifact, run-id: "${{ github.event.workflow_run.id }}", github-token: "${{ secrets.GITHUB_TOKEN }}" }
+      - uses: actions/checkout@v4
+        with: { ref: main, path: base }
+      - name: Re-check from the API, comment, merge or label
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          V=artifact/verdict.json; PR=$(jq -r .pr $V); SHA=$(jq -r .sha $V)
+          [ "$(gh pr view $PR --repo $REPO --json headRefOid -q .headRefOid)" = "$SHA" ] || { echo "stale"; exit 0; }
+          gh api "repos/$REPO/pulls/$PR/files?per_page=100" --jq '[.[]|{filename,status}]' > files.json
+          (cd base && python3 -I tools/classify.py < ../files.json) > class.json
+          OK=$(jq -r .ok class.json); KIND=$(jq -r .kind class.json); VERD=$(jq -r .verdict $V); REASON=$(jq -r .reason $V)
+          if [ "$OK" != "true" ]; then VERD=rejected; REASON="$(jq -r .reason class.json)"; fi
+          [ "$KIND" = "$(jq -r .kind $V)" ] || { VERD=rejected; REASON="the submission changed kind between check and verdict"; }
+          case "$VERD" in
+            reproduced)
+              gh pr comment $PR --repo $REPO --body "**REPRODUCED**: the checker re-ran \`run.py\` in a sandbox and got the claimed result ($REASON). This is evidence, not a solution of the question. Merging."
+              gh pr merge $PR --repo $REPO --squash --match-head-commit "$SHA" && bash base/tools/credit.sh $PR reproduced || true ;;
+            compiled)
+              gh label create needs-human-review --repo $REPO --color E8C547 2>/dev/null || true
+              gh pr edit $PR --repo $REPO --add-label needs-human-review || true
+              gh pr comment $PR --repo $REPO --body "**COMPILES** against the pinned Physlib, no sorry. A person now checks that the formal statement says what the physics says before merging." ;;
+            review)
+              gh label create needs-human-review --repo $REPO --color E8C547 2>/dev/null || true
+              gh pr edit $PR --repo $REPO --add-label needs-human-review || true
+              gh pr comment $PR --repo $REPO --body "Received: a person reads reviews and checks every reference before merging." ;;
+            *)
+              gh pr comment $PR --repo $REPO --body "**REJECTED**: $REASON. Push a fix to this pull request to re-run the check." ;;
+          esac
+  credit:
+    if: github.event_name == 'pull_request_target' && github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: main, path: base }
+      - name: Report to the site
+        env: { GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}" }
+        run: bash base/tools/credit.sh ${{ github.event.pull_request.number }}

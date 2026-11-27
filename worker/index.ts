@@ -240,7 +240,7 @@ async function verifyWorkflow(jwt: unknown, env: Env): Promise<boolean> {
   }
 }
 
-const OUTCOMES = new Set(["proved", "disproved", "formalized", "reproduced"]);
+const OUTCOMES = new Set(["proved", "disproved", "formalized", "reproduced", "reviewed"]);
 async function verdict(req: Request, env: Env): Promise<Response> {
   const b = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   if (!b || !(await verifyWorkflow(b.token, env))) return json({ error: "forbidden" }, 403);
