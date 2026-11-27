@@ -29,7 +29,7 @@ private lemma L_diff_eq_zero (k : ℕ) : L_diff k = 0 := by
   induction k using Nat.strong_induction_on with
   | h k ih =>
     by_cases hk : k < 12
-    · interval_cases k <;> decide
+    · interval_cases k <;> norm_num [L_diff, OMA.S_oeis_a055278.A055278]
     · obtain ⟨m, rfl⟩ : ∃ m, k = m + 12 := ⟨k - 12, by omega⟩
       have hstep : L_diff (m + 12) = L_diff m := by
         unfold L_diff
@@ -56,46 +56,57 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a055278.main := by
       (1 - (PowerSeries.X : PowerSeries ℤ) ^ 3) *
       (1 - (PowerSeries.X : PowerSeries ℤ)) ^ 3
   have hZ : F * D = (PowerSeries.X : PowerSeries ℤ) ^ 3 + (PowerSeries.X : PowerSeries ℤ) ^ 2 + 1 := by
-    have hFD : F * D = F - 3 * ((PowerSeries.X : PowerSeries ℤ) ^ 1 * F) +
-        2 * (PowerSeries.X ^ 2 * F) + PowerSeries.X ^ 3 * F - PowerSeries.X ^ 5 * F -
-        2 * (PowerSeries.X ^ 6 * F) + 3 * (PowerSeries.X ^ 7 * F) - PowerSeries.X ^ 8 * F := by
+    have hC2 : (2 : PowerSeries ℤ) = PowerSeries.C (2 : ℤ) := by
+      rw [← Nat.cast_ofNat, ← map_natCast (PowerSeries.C (R := ℤ)), Nat.cast_ofNat]
+    have hC3 : (3 : PowerSeries ℤ) = PowerSeries.C (3 : ℤ) := by
+      rw [← Nat.cast_ofNat, ← map_natCast (PowerSeries.C (R := ℤ)), Nat.cast_ofNat]
+    have hFD : F * D = F - PowerSeries.C 3 * ((PowerSeries.X : PowerSeries ℤ) ^ 1 * F) +
+        PowerSeries.C 2 * (PowerSeries.X ^ 2 * F) + PowerSeries.X ^ 3 * F - PowerSeries.X ^ 5 * F -
+        PowerSeries.C 2 * (PowerSeries.X ^ 6 * F) + PowerSeries.C 3 * (PowerSeries.X ^ 7 * F) -
+        PowerSeries.X ^ 8 * F := by
       dsimp [D]
+      rw [← hC2, ← hC3]
       ring
     rw [hFD]
     ext m
-    simp only [map_sub, map_add, PowerSeries.coeff_ofNat_mul, PowerSeries.coeff_X_pow_mul',
+    simp only [map_sub, map_add, PowerSeries.coeff_C_mul, PowerSeries.coeff_X_pow_mul',
       PowerSeries.coeff_X_pow, PowerSeries.coeff_one, PowerSeries.coeff_mk, F]
-    by_cases hm : m < 8
-    · interval_cases m <;> decide
-    · obtain ⟨k, rfl⟩ : ∃ k, m = k + 8 := ⟨m - 8, by omega⟩
-      simp only [show 1 ≤ k + 8 by omega, show 2 ≤ k + 8 by omega, show 3 ≤ k + 8 by omega,
-        show 5 ≤ k + 8 by omega, show 6 ≤ k + 8 by omega, show 7 ≤ k + 8 by omega,
-        show 8 ≤ k + 8 by omega, ite_true,
+    rcases m with _ | _ | _ | _ | _ | _ | _ | _ | k
+    · norm_num [OMA.S_oeis_a055278.A055278]
+    · norm_num [OMA.S_oeis_a055278.A055278]
+    · norm_num [OMA.S_oeis_a055278.A055278]
+    · norm_num [OMA.S_oeis_a055278.A055278]
+    · norm_num [OMA.S_oeis_a055278.A055278]
+    · norm_num [OMA.S_oeis_a055278.A055278]
+    · norm_num [OMA.S_oeis_a055278.A055278]
+    · norm_num [OMA.S_oeis_a055278.A055278]
+    · have h1 : 1 ≤ k + 8 := by omega
+      have h2 : 2 ≤ k + 8 := by omega
+      have h3 : 3 ≤ k + 8 := by omega
+      have h5 : 5 ≤ k + 8 := by omega
+      have h6 : 6 ≤ k + 8 := by omega
+      have h7 : 7 ≤ k + 8 := by omega
+      have h8 : 8 ≤ k + 8 := by omega
+      have hne3 : k + 8 ≠ 3 := by omega
+      have hne2 : k + 8 ≠ 2 := by omega
+      have hne0 : k + 8 ≠ 0 := by omega
+      simp only [h1, h2, h3, h5, h6, h7, h8, hne3, hne2, hne0, ↓reduceIte,
         show k + 8 - 1 + 4 = k + 11 by omega, show k + 8 - 2 + 4 = k + 10 by omega,
         show k + 8 - 3 + 4 = k + 9 by omega, show k + 8 - 5 + 4 = k + 7 by omega,
         show k + 8 - 6 + 4 = k + 6 by omega, show k + 8 - 7 + 4 = k + 5 by omega,
-        show k + 8 - 8 + 4 = k + 4 by omega, show k + 8 + 4 = k + 12 by omega]
-      rw [show (if k + 8 = 3 then (1 : ℤ) else 0) = 0 by
-          by_cases h : k + 8 = 3
-          · exfalso; omega
-          · simp [h],
-        show (if k + 8 = 2 then (1 : ℤ) else 0) = 0 by
-          by_cases h : k + 8 = 2
-          · exfalso; omega
-          · simp [h],
-        show (if k + 8 = 0 then (1 : ℤ) else 0) = 0 by simp,
-        add_zero, add_zero]
+        show k + 8 - 8 + 4 = k + 4 by omega, show k + 8 + 4 = k + 12 by omega,
+        add_zero]
       exact L_diff_eq_zero k
   have hQ := congrArg (PowerSeries.map (Int.castRingHom ℚ)) hZ
   have hFmap : F.map (Int.castRingHom ℚ) =
       PowerSeries.mk fun n => (OMA.S_oeis_a055278.A055278 (n + 4) : ℚ) := by
     ext n
-    simp [F]
+    simp only [F, PowerSeries.coeff_map, PowerSeries.coeff_mk, Int.coe_castRingHom]
   have hDmap : D.map (Int.castRingHom ℚ) =
       (1 - (PowerSeries.X : PowerSeries ℚ) ^ 2) *
         (1 - (PowerSeries.X : PowerSeries ℚ) ^ 3) *
         (1 - (PowerSeries.X : PowerSeries ℚ)) ^ 3 := by
     dsimp [D]
-    simp [PowerSeries.map_X]
+    simp only [map_mul, map_pow, map_sub, map_one, PowerSeries.map_X]
   rw [map_mul, hFmap, hDmap] at hQ
-  simpa [PowerSeries.map_X] using hQ
+  simpa only [map_add, map_pow, map_one, PowerSeries.map_X] using hQ
