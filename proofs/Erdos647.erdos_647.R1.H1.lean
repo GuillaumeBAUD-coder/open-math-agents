@@ -1,14 +1,15 @@
 import OMAReductions.R_Erdos647_erdos_647_R1
 
 open ArithmeticFunction
+open scoped ArithmeticFunction
 
 private lemma step_le_12 (a : ℕ) : (a + 3) ^ 6 ≤ 12 * (a + 2) ^ 6 := by
   zify
   have h : (12 : ℤ) * ((a : ℤ) + 2) ^ 6 = ((a : ℤ) + 3) ^ 6 +
       (11 * (a : ℤ) ^ 6 + 126 * (a : ℤ) ^ 5 + 585 * (a : ℤ) ^ 4 +
-       1380 * (a : ℤ) ^ 3 + 1695 * (a : ℤ) ^ 2 + 1014 * (a : ℤ) + 39) := by ring
+       1380 * (a : ℤ) ^ 3 + 1665 * (a : ℤ) ^ 2 + 846 * (a : ℤ) + 39) := by ring
   linarith [show (0 : ℤ) ≤ 11 * (a : ℤ) ^ 6 + 126 * (a : ℤ) ^ 5 + 585 * (a : ℤ) ^ 4 +
-    1380 * (a : ℤ) ^ 3 + 1695 * (a : ℤ) ^ 2 + 1014 * (a : ℤ) + 39 by positivity]
+    1380 * (a : ℤ) ^ 3 + 1665 * (a : ℤ) ^ 2 + 846 * (a : ℤ) + 39 by positivity]
 
 private lemma bound_ge_64 {p : ℕ} (hp : 64 ≤ p) (a : ℕ) :
     ((a + 1 : ℚ) ^ 6) / (p : ℚ) ^ a ≤ 1 := by
@@ -26,7 +27,7 @@ private lemma bound_ge_64 {p : ℕ} (hp : 64 ≤ p) (a : ℕ) :
         _ ≤ p * p ^ (a + 1) := Nat.mul_le_mul_left _ ih
         _ = p ^ (a + 2) := by ring
 
-private lemma bound_ge_13 {p : ℕ} (hp : 13 ≤ p) (a : ℕ) :
+private lemma bound_ge_13 {p : ℕ} (hp : 13 ≤ p) (hp64 : p < 64) (a : ℕ) :
     ((a + 1 : ℚ) ^ 6) / (p : ℚ) ^ a ≤ 64 / (p : ℚ) := by
   have hp0 : (0 : ℚ) < p := by positivity
   rw [div_le_div_iff₀ (pow_pos hp0 a) hp0]
@@ -56,7 +57,8 @@ private lemma bound_small_step {p a0 : ℕ} (hp : 0 < p)
   · have hp0 : (0 : ℚ) < p := by exact_mod_cast hp
     rw [div_le_div_iff₀ (pow_pos hp0 a) (pow_pos hp0 a0)]
     norm_cast
-    induction a, ha using Nat.le_induction with
+    have ha' : a0 ≤ a := le_of_lt ha
+    induction a, ha' using Nat.le_induction with
     | base => exact le_rfl
     | succ k hk ih =>
       have hk1 : (k + 2) ^ 6 * p ^ a0 ≤ p * ((k + 1) ^ 6 * p ^ a0) := by
@@ -93,7 +95,7 @@ private lemma prime_bound (p : ℕ) (hp : p.Prime) (a : ℕ) :
   unfold c
   split_ifs with h2 h3 h5 h7 h11 h64
   · subst h2
-    refine bound_small_step (a0 := 8) (by decide) (fun k hk => ?_) (fun k hk => ?_) a
+    refine bound_small_step (p := 2) (a0 := 8) (by decide) (fun k hk => ?_) (fun k hk => ?_) a
     · zify
       have h : (2 : ℤ) * ((k : ℤ) + 1) ^ 6 = ((k : ℤ) + 2) ^ 6 +
           ((k : ℤ) ^ 6 - 6 * (k : ℤ) ^ 5 - 45 * (k : ℤ) ^ 4 - 120 * (k : ℤ) ^ 3 -
@@ -102,7 +104,7 @@ private lemma prime_bound (p : ℕ) (hp : p.Prime) (a : ℕ) :
       nlinarith [sq_nonneg ((k : ℤ) - 8)]
     · interval_cases k <;> norm_num
   · subst h3
-    refine bound_small_step (a0 := 4) (by decide) (fun k hk => ?_) (fun k hk => ?_) a
+    refine bound_small_step (p := 3) (a0 := 4) (by decide) (fun k hk => ?_) (fun k hk => ?_) a
     · zify
       have hk4 : (4 : ℤ) ≤ k := by exact_mod_cast hk
       have h : (3 : ℤ) * ((k : ℤ) + 1) ^ 6 - ((k : ℤ) + 2) ^ 6 =
@@ -111,7 +113,7 @@ private lemma prime_bound (p : ℕ) (hp : p.Prime) (a : ℕ) :
       nlinarith [sq_nonneg ((k : ℤ) - 4)]
     · interval_cases k <;> norm_num
   · subst h5
-    refine bound_small_step (a0 := 3) (by decide) (fun k hk => ?_) (fun k hk => ?_) a
+    refine bound_small_step (p := 5) (a0 := 3) (by decide) (fun k hk => ?_) (fun k hk => ?_) a
     · zify
       have hk3 : (3 : ℤ) ≤ k := by exact_mod_cast hk
       have h : (5 : ℤ) * ((k : ℤ) + 1) ^ 6 - ((k : ℤ) + 2) ^ 6 =
@@ -120,7 +122,7 @@ private lemma prime_bound (p : ℕ) (hp : p.Prime) (a : ℕ) :
       nlinarith [sq_nonneg ((k : ℤ) - 3)]
     · interval_cases k <;> norm_num
   · subst h7
-    refine bound_small_step (a0 := 2) (by decide) (fun k hk => ?_) (fun k hk => ?_) a
+    refine bound_small_step (p := 7) (a0 := 2) (by decide) (fun k hk => ?_) (fun k hk => ?_) a
     · zify
       have hk2 : (2 : ℤ) ≤ k := by exact_mod_cast hk
       have h : (7 : ℤ) * ((k : ℤ) + 1) ^ 6 - ((k : ℤ) + 2) ^ 6 =
@@ -129,7 +131,7 @@ private lemma prime_bound (p : ℕ) (hp : p.Prime) (a : ℕ) :
       nlinarith [sq_nonneg ((k : ℤ) - 2)]
     · interval_cases k <;> norm_num
   · subst h11
-    refine bound_small_step (a0 := 2) (by decide) (fun k hk => ?_) (fun k hk => ?_) a
+    refine bound_small_step (p := 11) (a0 := 2) (by decide) (fun k hk => ?_) (fun k hk => ?_) a
     · zify
       have hk2 : (2 : ℤ) ≤ k := by exact_mod_cast hk
       have h : (11 : ℤ) * ((k : ℤ) + 1) ^ 6 - ((k : ℤ) + 2) ^ 6 =
@@ -138,9 +140,10 @@ private lemma prime_bound (p : ℕ) (hp : p.Prime) (a : ℕ) :
       nlinarith [sq_nonneg ((k : ℤ) - 2)]
     · interval_cases k <;> norm_num
   · have hp13 : 13 ≤ p := by
-      have := hp.two_le
-      omega
-    exact bound_ge_13 hp13 a
+      by_contra hlt
+      have hlt' : p < 13 := Nat.lt_of_not_le hlt
+      interval_cases p <;> simp_all [Nat.Prime]
+    exact bound_ge_13 hp13 h64 a
   · exact bound_ge_64 (by omega) a
 
 theorem OMA.solution : OMA.R_Erdos647_erdos_647_R1.H1 := by
@@ -169,10 +172,14 @@ theorem OMA.solution : OMA.R_Erdos647_erdos_647_R1.H1 := by
         ∏ p ∈ (Finset.range 64).filter Nat.Prime, c p := by
       let S := m.primeFactors ∪ (Finset.range 64).filter Nat.Prime
       have h1 : ∏ p ∈ m.primeFactors, c p ≤ ∏ p ∈ S, c p := by
-        refine Finset.prod_le_prod_of_subset_of_one_le' Finset.subset_union_left fun p hpS _ => ?_
-        rcases Finset.mem_union.mp hpS with hp | hp
-        · exact c_ge_one p (Nat.prime_of_mem_primeFactors hp)
-        · exact c_ge_one p (Finset.mem_filter.mp hp).2
+        rw [← Finset.prod_sdiff (Finset.subset_union_left (s₁ := m.primeFactors) (s₂ := (Finset.range 64).filter Nat.Prime))]
+        refine le_mul_of_one_le_left (Finset.prod_nonneg fun p hp => ?_) ?_
+        · exact (zero_le_one.trans (c_ge_one p (Nat.prime_of_mem_primeFactors hp)))
+        · refine Finset.one_le_prod' fun p hpS => ?_
+          rw [Finset.mem_sdiff] at hpS
+          rcases Finset.mem_union.mp hpS.1 with hp | hp
+          · exact False.elim (hpS.2 hp)
+          · exact c_ge_one p (Finset.mem_filter.mp hp).2
       have h2 : ∏ p ∈ S, c p = ∏ p ∈ (Finset.range 64).filter Nat.Prime, c p := by
         refine (Finset.prod_subset Finset.subset_union_right fun p hpS hnot => ?_).symm
         have hp_prime : p.Prime := by
