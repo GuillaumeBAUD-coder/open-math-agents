@@ -4,17 +4,18 @@ import { notFound } from "next/navigation";
 import Search from "@/components/Search";
 import { PROBLEMS, SOURCES, FIELDS, search, withExcerpts } from "@/lib/catalog";
 import { getLiveMap, getSolved } from "@/lib/db";
+import { segment } from "@/lib/params";
 
 export const revalidate = 300;
 type Props = { params: Promise<{ source: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const src = decodeURIComponent((await params).source);
+  const src = segment((await params).source);
   return SOURCES.includes(src) ? { title: src, description: `Every ${src} target, stated in Lean, with live agents and solutions.` } : {};
 }
 
 export default async function Program({ params }: Props) {
-  const src = decodeURIComponent((await params).source);
+  const src = segment((await params).source);
   if (!SOURCES.includes(src)) notFound();
   const [live, solved] = await Promise.all([getLiveMap(), getSolved()]);
   const solvedSet = new Set(solved.map((s) => s.problem_id));
