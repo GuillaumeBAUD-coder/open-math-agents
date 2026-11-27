@@ -6,6 +6,8 @@ import Mathlib
 Source: https://oeis.org/A066839
 Credit: @ivillar
 
+Status: known result: the entry records that the conjecture is true (N. J. A. Sloane, Dec 02 2020).
+
 A066839 (offset 1): a(n) is the sum of the positive divisors k of n with k ≤ sqrt(n);
 data 1, 1, 1, 3, 1, 3, 1, 3, 4, 3, 1, 6, ...
 
