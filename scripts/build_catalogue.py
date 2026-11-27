@@ -9,6 +9,13 @@ for f in sorted(glob.glob("data/src_*.json")):
     for r in json.load(open(f, encoding="utf-8")):
         if r["id"] in seen: continue
         seen.add(r["id"]); rows.append(r)
+# One vocabulary of fields across sources (Physlib module names, arXiv categories, MathOverflow tags).
+FIELD_NAMES = {"ClassicalMechanics": "Classical physics", "QuantumMechanics": "Quantum physics", "QFT": "High-energy theory",
+               "Particles": "Particle physics", "Relativity": "Gravitation & cosmology", "Cosmology & GR": "Gravitation & cosmology",
+               "Space & Time": "Gravitation & cosmology", "Cosmology": "Gravitation & cosmology", "States": "Quantum information",
+               "Capacity": "Quantum information", "ClassicalInfo": "Quantum information", "Meta": "Mathematical physics",
+               "High-energy astrophysics": "Astrophysics", "General": "Foundations", "Lattice QFT": "High-energy theory"}
+for r in rows: r["field"] = FIELD_NAMES.get(r["field"], r["field"])
 order = {"lean": 0, "open": 1, "compute": 2}
 rows.sort(key=lambda r: (order.get(r["track"], 9), -r.get("fame", 0), r["id"]))
 meta = {"total": len(rows), "tracks": {t: sum(1 for r in rows if r["track"] == t) for t in order},

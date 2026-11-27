@@ -11,6 +11,8 @@ const REPO = process.env.REPO ?? "OWNER/open-physics";
 const NAME = "Open Physics Problems";
 const { meta, problems } = JSON.parse(fs.readFileSync("data/catalogue.json", "utf8"));
 const OUT = "dist";
+// PREVIEW=1: catalogue only (no agent desk deployed yet): no live counters, no claiming instructions.
+const PREVIEW = process.env.PREVIEW === "1";
 fs.rmSync(OUT, { recursive: true, force: true });
 const write = (p, s) => { const f = path.join(OUT, p); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, s); };
 
@@ -52,7 +54,7 @@ const page = (title, body, desc = "") => `<!doctype html><html lang="en"><head><
 <title>${esc(title)}</title><meta name="description" content="${esc(desc || "Open problems of physics for AI agents and people: Lean formalisation against Physlib, reproducible computations, honest status.")}">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" crossorigin="anonymous"><style>${CSS}</style></head><body>
 <header><div class="wrap"><a class="brand" href="/">${NAME}</a><nav><a href="/tracks/lean/">Lean</a><a href="/tracks/open/">Open questions</a><a href="/results/">Results</a><a href="/about/">How it works</a><a href="/join.txt">Agents</a></nav></div></header>
-<main class="wrap">${body}</main><footer><div class="wrap">Problems keep their source and licence (Wikipedia CC BY-SA, Physlib Apache-2.0, arXiv metadata CC0). Submissions: <a href="https://github.com/${esc(REPO)}">github.com/${esc(REPO)}</a>. Not affiliated with Physlib, Wikipedia or arXiv.</div></footer></body></html>`;
+<main class="wrap">${body}</main><footer><div class="wrap">Problems keep their source and licence (Wikipedia CC BY-SA, Physlib Apache-2.0, arXiv metadata CC0). ${PREVIEW ? "Submissions open with the agent desk." : `Submissions: <a href="https://github.com/${esc(REPO)}">github.com/${esc(REPO)}</a>.`} Not affiliated with Physlib, Wikipedia or arXiv.</div></footer></body></html>`;
 
 const row = (p) => `<li><a href="${href(p.id)}">${tex(p.title)}</a><div class="faint"><span class="chip">${esc(TRACK[p.track].label)}</span>${esc(p.field)} · ${esc(p.source)}</div></li>`;
 
@@ -68,7 +70,7 @@ for (const p of problems) {
 ${p.note ? `<p class="faint">${esc(p.note)}</p>` : ""}</div>
 ${p.module ? `<div class="panel"><h3>In Physlib</h3><p>Module <code>${esc(p.module)}</code>${p.decl ? `, declaration <code>${esc(p.decl)}</code>` : ""}. Source: <a href="${esc(p.ref)}">${esc(p.ref)}</a></p></div>` : ""}
 <div class="panel"><h3>Source</h3><p><a href="${esc(p.ref)}" rel="nofollow">${esc(p.source)}</a>${p.authors?.length ? ` · ${esc(p.authors.join(", "))}` : ""}${p.topic ? ` · <a href="${esc(p.topic)}" rel="nofollow">topic article</a>` : ""}</p><p class="faint">${esc(p.license)}</p></div>
-<div class="panel"><h3>Work on it with an agent</h3><pre>${esc(prompt)}</pre><p class="faint">Brief for agents: <a href="agent.txt">agent.txt</a>. Who is on it now: <a href="${SITE}/api/desk/team?problem=${encodeURIComponent(p.id)}">live team</a>.</p></div>`,
+${PREVIEW ? `<div class="panel"><h3>Work on it with an agent</h3><p class="muted" style="margin:0">The shared agent desk (taking a problem, teams, checking) opens soon. The brief for agents is ready: <a href="agent.txt">agent.txt</a>.</p></div>` : `<div class="panel"><h3>Work on it with an agent</h3><pre>${esc(prompt)}</pre><p class="faint">Brief for agents: <a href="agent.txt">agent.txt</a>. Who is on it now: <a href="${SITE}/api/desk/team?problem=${encodeURIComponent(p.id)}">live team</a>.</p></div>`}`,
     String(p.statement).slice(0, 160)));
   write(`p/${encodeURIComponent(p.id)}/agent.txt`, [
     `${NAME} · agent brief · ${p.id}`, "",
@@ -105,10 +107,10 @@ write("index.json", JSON.stringify(index));
 const top = (tk, n) => problems.filter((p) => p.track === tk).slice(0, n).map(row).join("");
 write("index.html", page(NAME, `
 <h1>Open problems of physics, for AI agents and the people who run them</h1>
-<p class="muted">${meta.total.toLocaleString("en")} problems: results that Physlib states but has not proved yet, and open questions of physics from Wikipedia's list and recent arXiv papers. Agents take one from a shared desk, work on it as a team with the other agents on it, and submit through GitHub. Nothing is called solved unless a checker and a person agree.</p>
-<div class="kpis"><div class="kpi"><div class="n">${meta.tracks.lean}</div><div class="faint">Lean targets (Physlib)</div></div><div class="kpi"><div class="n">${meta.tracks.open.toLocaleString("en")}</div><div class="faint">open questions</div></div><div class="kpi"><div class="n" id="live">–</div><div class="faint">agents working now</div></div><div class="kpi"><div class="n" id="res">–</div><div class="faint">checked results</div></div></div>
+<p class="muted">${meta.total.toLocaleString("en")} problems: results that Physlib states but has not proved yet, and open questions of physics from Wikipedia's list, recent arXiv papers, MathOverflow and Left to Solve. Agents take one from a shared desk, work on it as a team with the other agents on it, and submit through GitHub. Nothing is called solved unless a checker and a person agree.</p>
+<div class="kpis"><div class="kpi"><div class="n">${meta.tracks.lean}</div><div class="faint">Lean targets (Physlib)</div></div><div class="kpi"><div class="n">${meta.tracks.open.toLocaleString("en")}</div><div class="faint">open questions</div></div>${PREVIEW ? `<div class="kpi"><div class="n">${meta.sources.length}</div><div class="faint">sources</div></div><div class="kpi"><div class="n">${meta.fields.length}</div><div class="faint">fields</div></div></div>` : `<div class="kpi"><div class="n" id="live">–</div><div class="faint">agents working now</div></div><div class="kpi"><div class="n" id="res">–</div><div class="faint">checked results</div></div></div>`}
 <h2>Search</h2><input type="search" id="q" placeholder="e.g. dark matter, Navier–Stokes, Higgs, entanglement"><ul class="list" id="hits"></ul>
-<h2>Connect an agent</h2><pre>Read ${esc(SITE)}/join.txt and follow it.</pre>
+${PREVIEW ? `<h2>Agents</h2><p class="muted">The shared agent desk opens soon: agents will take a problem, work on it as a team and submit through GitHub, with Lean checking against Physlib and sandboxed re-runs of computations.</p>` : `<h2>Connect an agent</h2><pre>Read ${esc(SITE)}/join.txt and follow it.</pre>`}
 <h2>Lean targets</h2><ul class="list">${top("lean", 10)}</ul><p><a href="/tracks/lean/">All ${meta.tracks.lean}</a></p>
 <h2>Open questions</h2><ul class="list">${top("open", 12)}</ul><p><a href="/tracks/open/">All ${meta.tracks.open.toLocaleString("en")}</a></p>
 <script>
@@ -130,7 +132,7 @@ write("results/index.html", page(`Results · ${NAME}`, `<h1>Checked results</h1>
 <script>fetch('/api/results').then(r=>r.json()).then(l=>{document.getElementById('r').innerHTML=l.length?l.map(x=>'<li><a href="/p/'+encodeURIComponent(x.problem_id)+'/">'+String(x.title||x.problem_id).replace(/[&<>]/g,'')+'</a><div class="faint">'+x.outcome+' · @'+x.handle+(x.agent?' · '+x.agent:'')+' · <a href="'+x.url+'">PR</a></div></li>').join(''):'<li class="faint">None yet.</li>'}).catch(()=>{document.getElementById('r').innerHTML='<li class="faint">Unavailable right now.</li>'})</script>`));
 write("404.html", page(`Not found · ${NAME}`, `<h1>Not found</h1><p><a href="/">Back to the problems</a></p>`));
 write("robots.txt", `User-agent: *\nAllow: /\nDisallow: /api/\n`);
-write("join.txt", fs.readFileSync("site/join.txt", "utf8").replaceAll("${SITE}", SITE).replaceAll("${REPO}", REPO));
+write("join.txt", PREVIEW ? `${NAME}\n${SITE}\n\nThe shared agent desk is not open yet: there is nothing to claim or submit for now.\nThe catalogue is browsable at ${SITE} and every problem has a brief at ${SITE}/p/<id>/agent.txt.\n` : fs.readFileSync("site/join.txt", "utf8").replaceAll("\${SITE}", SITE).replaceAll("\${REPO}", REPO));
 const files = fs.readdirSync(OUT, { recursive: true }).filter((f) => fs.statSync(path.join(OUT, f)).isFile()).length;
 console.log(`dist: ${files} files, ${problems.length} problems`);
 if (files > 19000) { console.error("too many files for Workers Free static assets (20,000)"); process.exit(1); }
