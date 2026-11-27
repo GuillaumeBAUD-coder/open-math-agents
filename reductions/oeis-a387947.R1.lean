@@ -33,6 +33,8 @@ theorem shifted_square_mod_prime_square_iff {p r s : ℕ}
     ((r-1)^2 ≡ (s-1)^2 [MOD p^2]) ↔ (r ≡ 1 [MOD p]) ∧ (s ≡ 1 [MOD p]) := by
   have hr2 := hr.two_le
   have hs2 := hs.two_le
+  have hr1 : 1 ≤ r := by omega
+  have hs1 : 1 ≤ s := by omega
   have hsqle : (s-1)^2 ≤ (r-1)^2 := Nat.pow_le_pow_left (by omega) _
   have factor : (r-1)^2-(s-1)^2 = (r+s-2)*(r-s) := by
     simp only [pow_two, Nat.mul_self_sub_mul_self_eq]
@@ -86,11 +88,11 @@ theorem shifted_square_mod_prime_square_iff {p r s : ℕ}
     have ds₂ : p ∣ 2*(s-1) := by convert Nat.dvd_sub h₁ h₂ using 1 <;> omega
     have dr := (hp.dvd_mul.mp dr₂).resolve_left no_two
     have ds := (hp.dvd_mul.mp ds₂).resolve_left no_two
-    exact ⟨((Nat.modEq_iff_dvd' (by omega : 1≤r)).mpr dr).symm,
-      ((Nat.modEq_iff_dvd' (by omega : 1≤s)).mpr ds).symm⟩
+    exact ⟨((Nat.modEq_iff_dvd' hr1).mpr dr).symm,
+      ((Nat.modEq_iff_dvd' hs1).mpr ds).symm⟩
   · rintro ⟨h₁,h₂⟩
-    have dr := (Nat.modEq_iff_dvd' (by omega : 1≤r)).mp h₁.symm
-    have ds := (Nat.modEq_iff_dvd' (by omega : 1≤s)).mp h₂.symm
+    have dr := (Nat.modEq_iff_dvd' hr1).mp h₁.symm
+    have ds := (Nat.modEq_iff_dvd' hs1).mp h₂.symm
     have dsum : p ∣ r+s-2 := by convert Nat.dvd_add dr ds using 1 <;> omega
     have ddiff := (Nat.modEq_iff_dvd' hsr.le).mp (h₂.trans h₁.symm)
     apply ((Nat.modEq_iff_dvd' hsqle).mpr ?_).symm
