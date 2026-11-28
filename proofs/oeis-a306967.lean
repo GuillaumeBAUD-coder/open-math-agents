@@ -2,7 +2,7 @@ import OMAStatements.S_oeis_a306967
 
 -- Problem: A306967: a(n) is the first Zagreb index of the Fibonacci cube Gamma(n).
 -- Upstream: formal-conjectures statements/oeis-a306967.lean:0 (declaration OMA.S_oeis_a306967.main)
--- Credit: @agchua (the owner of the agent is credited as the solver)
+-- Original proof by @agchua, PR #34062.
 -- Prove EXACTLY this target. No sorry, no axiom, no native_decide.
 -- Proof idea: show hammingDist v u = 1 corresponds bijectively to single-bit flips, and for a
 -- Fibonacci string v flipping bit i preserves IsFib iff both neighbours of i are false. Splitting
@@ -520,6 +520,7 @@ theorem fib_moments_rec67 (A0 B0 A1 B1 A2 B2 : ℕ → ℤ)
   change T2 (m + 6) = 3 * T2 (m + 5) - 5 * T2 (m + 3) + 3 * T2 (m + 1) + T2 m
   linarith
 
+open PowerSeries in
 theorem OMA.solution : type_of% @OMA.S_oeis_a306967.main := by
   obtain ⟨A0, hA0def⟩ : ∃ g : ℕ → ℤ, ∀ n, g n = SA67 n (fun _ => 1) := ⟨_, fun _ => rfl⟩
   obtain ⟨B0, hB0def⟩ : ∃ g : ℕ → ℤ, ∀ n, g n = SB67 n (fun _ => 1) := ⟨_, fun _ => rfl⟩
@@ -593,107 +594,51 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a306967.main := by
     intro m
     rw [hb_eq, hb_eq, hb_eq, hb_eq, hb_eq]
     exact fib_moments_rec67 A0 B0 A1 B1 A2 B2 hA0_0 hB0_1 hA0 hB0 hA1 hB1 hA2 hB2 m
-  -- Compute initial values b 0 .. b 5 from the recurrences
-  have hA0_1 : A0 1 = 1 := by have := hA0 0; linarith
-  have hA0_2 : A0 2 = 2 := by have := hA0 1; linarith
-  have hB0_2 : B0 2 = 1 := by have := hB0 0; linarith
-  have hA0_3 : A0 3 = 3 := by have := hA0 2; linarith
-  have hB0_3 : B0 3 = 2 := by have := hB0 1; linarith
-  have hA0_4 : A0 4 = 5 := by have := hA0 3; linarith
-  have hB0_4 : B0 4 = 3 := by have := hB0 2; linarith
-  have hA1_1 : A1 1 = 1 := by have := hA1 0; linarith
-  have hA1_2 : A1 2 = 3 := by have := hA1 1; linarith
-  have hB1_2 : B1 2 = 1 := by have := hB1 0; linarith
-  have hA1_3 : A1 3 = 6 := by have := hA1 2; linarith
-  have hB1_3 : B1 3 = 4 := by have := hB1 1; linarith
-  have hA1_4 : A1 4 = 13 := by have := hA1 3; linarith
-  have hB1_4 : B1 4 = 7 := by have := hB1 2; linarith
-  have hA2_1 : A2 1 = 1 := by have := hA2 0; linarith
-  have hA2_2 : A2 2 = 5 := by have := hA2 1; linarith
-  have hB2_2 : B2 2 = 1 := by have := hB2 0; linarith
-  have hA2_3 : A2 3 = 14 := by have := hA2 2; linarith
-  have hB2_3 : B2 3 = 8 := by have := hB2 1; linarith
-  have hA2_4 : A2 4 = 37 := by have := hA2 3; linarith
-  have hB2_4 : B2 4 = 17 := by have := hB2 2; linarith
-  have hA2_5 : A2 5 = 85 := by have := hA2 4; linarith
-  have hB2_5 : B2 5 = 47 := by have := hB2 3; linarith
-  have vb0 : b 0 = 0 := by rw [hb_eq]; linarith
-  have vb1 : b 1 = 2 := by rw [hb_eq]; linarith
-  have vb2 : b 2 = 6 := by rw [hb_eq]; linarith
-  have vb3 : b 3 = 22 := by rw [hb_eq]; linarith
-  have vb4 : b 4 = 54 := by rw [hb_eq]; linarith
-  have vb5 : b 5 = 132 := by rw [hb_eq]; linarith
+  -- Specialize the six moment recurrences at each index needed for the controls.
+  have next (m : ℕ) :=
+    And.intro (hA0 m) (And.intro (hB0 m) (And.intro (hA1 m)
+      (And.intro (hB1 m) (And.intro (hA2 m) (hB2 m)))))
+  have vals : b 0 = 0 ∧ b 1 = 2 ∧ b 2 = 6 ∧ b 3 = 22 ∧ b 4 = 54 ∧ b 5 = 132 := by
+    obtain ⟨_, _, _, _, _, _⟩ := next 0
+    obtain ⟨_, _, _, _, _, _⟩ := next 1
+    obtain ⟨_, _, _, _, _, _⟩ := next 2
+    obtain ⟨_, _, _, _, _, _⟩ := next 3
+    obtain ⟨_, _, _, _, _, _⟩ := next 4
+    simp only [Nat.reduceAdd] at *
+    repeat' apply And.intro
+    all_goals rw [hb_eq] <;> omega
+  obtain ⟨vb0, vb1, vb2, vb3, vb4, vb5⟩ := vals
   refine ⟨?_, ?_⟩
   · intro n hn
     obtain ⟨m, rfl⟩ : ∃ m, n = m + 7 := ⟨n - 7, by omega⟩
-    rw [show m + 7 - 1 = m + 6 by omega, show m + 7 - 3 = m + 4 by omega,
-      show m + 7 - 5 = m + 2 by omega, show m + 7 - 6 = m + 1 by omega]
-    simp only [hb]
-    have h := hrec (m + 1)
-    rw [show m + 1 + 6 = m + 7 by omega, show m + 1 + 5 = m + 6 by omega,
-      show m + 1 + 3 = m + 4 by omega, show m + 1 + 1 = m + 2 by omega] at h
-    exact h
-  · obtain ⟨f, hf⟩ : ∃ f : ℕ → ℚ, ∀ n, f n = if n = 0 then (0 : ℚ) else (a n : ℚ) :=
-      ⟨_, fun _ => rfl⟩
-    have hfun : (fun n => if n = 0 then (0 : ℚ) else (a n : ℚ)) = f :=
-      funext fun n => (hf n).symm
-    have f_eq_b : ∀ n, f n = (b n : ℚ) := by
-      intro n
-      cases n with
-      | zero => rw [hf, if_pos rfl, vb0]; rfl
-      | succ k =>
-        rw [hf, if_neg (Nat.succ_ne_zero k)]
-        have h := hb (k + 1)
-        exact_mod_cast h
-    have f0 : f 0 = 0 := by rw [f_eq_b, vb0]; norm_num
-    have f1 : f 1 = 2 := by rw [f_eq_b, vb1]; norm_num
-    have f2 : f 2 = 6 := by rw [f_eq_b, vb2]; norm_num
-    have f3 : f 3 = 22 := by rw [f_eq_b, vb3]; norm_num
-    have f4 : f 4 = 54 := by rw [f_eq_b, vb4]; norm_num
-    have f5 : f 5 = 132 := by rw [f_eq_b, vb5]; norm_num
-    have frec : ∀ m, f (m + 6) = 3 * f (m + 5) - 5 * f (m + 3) + 3 * f (m + 1) + f m := by
-      intro m
-      simp only [f_eq_b]
+    simpa (disch := omega) [Nat.add_sub_assoc, Nat.add_assoc, hb] using hrec (m + 1)
+  · let f : ℕ → ℚ := fun n => b n
+    have hf : (fun n => if n = 0 then (0 : ℚ) else (a n : ℚ)) = f := by
+      funext n
+      split_ifs with h0
+      · subst n
+        simp [f, vb0]
+      · unfold f
+        exact_mod_cast hb n
+    have frec (m : ℕ) : f (m + 6) = 3 * f (m + 5) - 5 * f (m + 3) + 3 * f (m + 1) + f m := by
+      unfold f
       exact_mod_cast hrec m
-    rw [show PowerSeries.mk (fun n => if n = 0 then (0 : ℚ) else (a n : ℚ)) = PowerSeries.mk f
-      from congrArg PowerSeries.mk hfun]
-    have e : PowerSeries.mk f * (1 - PowerSeries.X - PowerSeries.X ^ 2) ^ 3 =
-        PowerSeries.mk f
-          - (PowerSeries.C : ℚ →+* PowerSeries ℚ) 3 * (PowerSeries.mk f * PowerSeries.X ^ 1)
-          + (PowerSeries.C : ℚ →+* PowerSeries ℚ) 5 * (PowerSeries.mk f * PowerSeries.X ^ 3)
-          - (PowerSeries.C : ℚ →+* PowerSeries ℚ) 3 * (PowerSeries.mk f * PowerSeries.X ^ 5)
-          - (PowerSeries.C : ℚ →+* PowerSeries ℚ) 1 * (PowerSeries.mk f * PowerSeries.X ^ 6) := by
-      rw [map_ofNat (PowerSeries.C : ℚ →+* PowerSeries ℚ) 3,
-        map_ofNat (PowerSeries.C : ℚ →+* PowerSeries ℚ) 5,
-        map_one (PowerSeries.C : ℚ →+* PowerSeries ℚ)]
+    rw [hf]
+    let A := mk f
+    have hd : A * (1 - X - X ^ 2) ^ 3 =
+        A - C 3 * (X ^ 1 * A) + C 5 * (X ^ 3 * A) - C 3 * (X ^ 5 * A) - X ^ 6 * A := by
+      simp only [map_ofNat]
       ring
-    have e2 : (2 * PowerSeries.X * (1 + 2 * PowerSeries.X ^ 2 - PowerSeries.X ^ 3) :
-        PowerSeries ℚ) =
-        PowerSeries.X ^ 1 * (PowerSeries.C : ℚ →+* PowerSeries ℚ) 2
-          + PowerSeries.X ^ 3 * (PowerSeries.C : ℚ →+* PowerSeries ℚ) 4
-          - PowerSeries.X ^ 4 * (PowerSeries.C : ℚ →+* PowerSeries ℚ) 2 := by
-      rw [map_ofNat (PowerSeries.C : ℚ →+* PowerSeries ℚ) 2,
-        map_ofNat (PowerSeries.C : ℚ →+* PowerSeries ℚ) 4]
+    have hn : (2 * X * (1 + 2 * X ^ 2 - X ^ 3) : ℚ⟦X⟧) =
+        C 2 * X ^ 1 + C 4 * X ^ 3 - C 2 * X ^ 4 := by
+      simp only [map_ofNat]
       ring
-    rw [e, e2]
+    change A * _ = _
+    rw [hd, hn]
     ext n
-    simp only [map_add, map_sub, PowerSeries.coeff_C_mul, PowerSeries.coeff_mul_X_pow',
-      PowerSeries.coeff_mk, PowerSeries.coeff_X_pow_mul', PowerSeries.coeff_C]
-    rcases Nat.lt_or_ge n 6 with hn | hn
-    · interval_cases n
-      · norm_num [f0]
-      · norm_num [f0, f1]
-      · norm_num [f1, f2]
-      · norm_num [f0, f2, f3]
-      · norm_num [f1, f3, f4]
-      · norm_num [f0, f2, f4, f5]
+    simp only [A, map_add, map_sub, coeff_C_mul, coeff_X_pow_mul', coeff_X_pow, coeff_mk]
+    by_cases hn : n < 6
+    · interval_cases n <;> norm_num [f, vb0, vb1, vb2, vb3, vb4, vb5]
     · obtain ⟨m, rfl⟩ : ∃ m, n = m + 6 := ⟨n - 6, by omega⟩
-      rw [if_pos (by omega : 1 ≤ m + 6), if_pos (by omega : 3 ≤ m + 6),
-        if_pos (by omega : 5 ≤ m + 6), if_pos (by omega : 6 ≤ m + 6),
-        if_pos (by omega : 1 ≤ m + 6), if_pos (by omega : 3 ≤ m + 6),
-        if_pos (by omega : 4 ≤ m + 6),
-        if_neg (by omega : ¬ (m + 6 - 1 = 0)), if_neg (by omega : ¬ (m + 6 - 3 = 0)),
-        if_neg (by omega : ¬ (m + 6 - 4 = 0)),
-        show m + 6 - 1 = m + 5 by omega, show m + 6 - 3 = m + 3 by omega,
-        show m + 6 - 5 = m + 1 by omega, show m + 6 - 6 = m by omega, frec m]
-      ring
+      simp (disch := omega) [Nat.add_sub_assoc]
+      linear_combination frec m
