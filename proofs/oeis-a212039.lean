@@ -325,7 +325,7 @@ lemma a_one : a 1 = 0 := by
   refine (congrArg Set.ncard (Set.ext fun x => ?_)).trans (Set.ncard_empty _)
   simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_and]
   rintro - - ⟨c, hc⟩
-  norm_num at hc
+  norm_num at hc <;> omega
 
 /-! ## Counting pairs of cells -/
 
