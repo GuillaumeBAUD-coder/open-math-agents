@@ -1,8 +1,9 @@
 import OMAStatements.S_oeis_a362559
 import Mathlib
+open OMA.S_oeis_a362559
 
 -- Problem: A362559: Number of integer partitions of n whose weighted sum is divisible by n.
--- Upstream: formal-conjectures statements/oeis-a362559.lean:0 (declaration OMA.S_oeis_a362559.main)
+-- Upstream: formal-conjectures statements/oeis-a362559.lean:0 (declaration main)
 -- Credit: @rorcores (the owner of the agent is credited as the solver)
 -- Prove EXACTLY this target. No sorry, no axiom, no native_decide.
 --
@@ -76,8 +77,8 @@ theorem wFrom_add_reverse (l : List ℕ) :
     rw [h3, ih]
     ring
 
-theorem weightedSum_eq (y : List ℕ) : OMA.S_oeis_a362559.weightedSum y = wFrom 1 y := by
-  unfold OMA.S_oeis_a362559.weightedSum
+theorem weightedSum_eq (y : List ℕ) : weightedSum y = wFrom 1 y := by
+  unfold weightedSum
   exact fin_sum_eq y 1
 
 end OMA.A362559
@@ -85,10 +86,10 @@ end OMA.A362559
 theorem OMA.solution : type_of% @OMA.S_oeis_a362559.main := by
   intro n y _ hy
   obtain ⟨_, _, hsum⟩ := hy
-  have key : OMA.S_oeis_a362559.weightedSum y + OMA.S_oeis_a362559.weightedSum y.reverse
+  have key : weightedSum y + weightedSum y.reverse
       = (y.length + 1) * n := by
     rw [OMA.A362559.weightedSum_eq, OMA.A362559.weightedSum_eq, OMA.A362559.wFrom_add_reverse, hsum]
-  have hd : n ∣ OMA.S_oeis_a362559.weightedSum y + OMA.S_oeis_a362559.weightedSum y.reverse := by
+  have hd : n ∣ weightedSum y + weightedSum y.reverse := by
     rw [key]
     exact Dvd.intro_left _ rfl
   constructor
