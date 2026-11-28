@@ -31,8 +31,8 @@ lemma product_smooth_bound (k u t : ℕ) (hk : 0 < k) (ht : 0 < t) (hu : 1 < u +
     have hp_prime : Nat.Prime p := (Finset.mem_filter.mp hp).2
     exact Nat.pow_log_le_self hp_prime.one_lt (by linarith [hu])
   have hcard : ((Finset.range (k + 1)).filter Nat.Prime).card = Nat.primeCounting k := by
-    -- Mathlib has Nat.primeCounting_eq_card_filter_range_succ or equivalent
-    sorry -- exact Nat.primeCounting_eq_card_filter_range (or the matching lemma)
+    rw [← Nat.primesLE_card_eq_primeCounting]
+    exact congr_arg Finset.card (Nat.primesLE_eq_filter_range k)
   -- Each term ≤ u+t, so product ≤ (u+t)^card
   calc
     ∏ p in (Finset.range (k + 1)).filter Nat.Prime, p ^ Nat.log p (u + t)
