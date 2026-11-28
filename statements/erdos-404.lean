@@ -4,7 +4,7 @@ import Mathlib
 # Erdős Problem 404
 
 Source: https://www.erdosproblems.com/404
-Credit: @SudharsanAnimations
+Credit: Sudharsan Rajendiran
 
 For which integers `a ≥ 1` and primes `p` is there a finite upper bound on those `k` such that
 there are `a = a_1 < ⋯ < a_n` with `p^k ∣ a_1! + ⋯ + a_n!`? If `f(a, p)` is the greatest such `k`,
