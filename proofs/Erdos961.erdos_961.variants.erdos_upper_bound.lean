@@ -28,8 +28,9 @@ lemma product_smooth_bound (k u t : ℕ) (hk : 0 < k) (ht : 0 < t) (hu : 1 < u +
       ≤ (u + t) ^ (Nat.primeCounting k) := by
   have hterm (p : ℕ) (hp : p ∈ (Finset.range (k + 1)).filter Nat.Prime) :
       p ^ Nat.log p (u + t) ≤ u + t := by
-    -- Nat.pow_log_le or by definition of log
-    sorry
+    have hp_prime : Nat.Prime p := by
+      exact (Finset.mem_filter.mp hp).2
+    exact Nat.pow_log_le_self hp_prime.one_lt (by linarith)
   have hcard : ((Finset.range (k + 1)).filter Nat.Prime).card = Nat.primeCounting k := by
     -- standard: primes ≤ k have card = π(k)
     sorry
@@ -52,7 +53,8 @@ lemma erdos_1955_contradiction (k : ℕ) (hk : 100 < k)
   -- Upper bound: from smoothness, each prime power in the binomial is ≤ log, so
   -- choose (u+t) t ≤ product_smooth_bound
   have hupper : Nat.choose (u + t) t ≤ (u + t) ^ Nat.primeCounting k := by
-    -- use binomial_val_bound for every p ≤ k and the product lemma
+    -- From smoothness of the run, every prime factor of the binomial is ≤ k
+    -- Apply binomial_val_bound to each and multiply
     sorry
   -- Lower bound from choose bounds (e.g. (u/t)^t roughly)
   have hlower : (u + t) ^ Nat.primeCounting k < Nat.choose (u + t) t := by
