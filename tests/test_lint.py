@@ -119,6 +119,19 @@ lint(f"proofs/{U}.lean", f"import OMAStatements.S_{SAN(U)}\n\ntheorem OMA.soluti
 out = lint(f"proofs/{U}.lean", f"import OMAStatements.S_{SAN(U)}\n\ntheorem OMA.disproof : ¬ (type_of% @{SNS}.main) := by\n  simp\n", True, name="refutation of a statement merged here")
 assert out.get("polarity") == "disproof"
 
+# An upstream formalization closes new statement submissions. If a local
+# translation already merged, its existing proof and reduction targets still work.
+upstream = next(p for p in EXTRA["upstreamErdos"] if p["id"] == "erdos-260")
+uid = upstream["id"]
+uns = f"OMA.S_{SAN(uid)}"
+ufile = f"statements/{uid}.lean"
+ustmt = GOOD_ST.replace(SNS, uns)
+uproof = f"import OMAStatements.S_{SAN(uid)}\n\ntheorem OMA.solution : type_of% @{uns}.main := by\n  intro n\n  rfl\n"
+lint(ufile, ustmt, False, upstream["upstreamFile"], "statement: upstream Lean file already exists")
+lint(f"proofs/{uid}.lean", uproof, False, upstream["upstreamFile"], "proof: no merged local translation")
+open(os.path.join(tmp, ufile), "w").write(ustmt)
+lint(f"proofs/{uid}.lean", uproof, True, name="proof: existing local translation remains accessible")
+
 shutil.rmtree(tmp)
 print(f"\n{'ALL PASSED' if not failures else f'{failures} FAILED'}")
 sys.exit(1 if failures else 0)

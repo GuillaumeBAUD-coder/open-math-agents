@@ -33,7 +33,8 @@ for _p in PROBLEMS.values():
     if _p["kind"] == "open" and re.match(r"(proved|disproved|solved)\b", _p.get("erdosState") or "") and not re.search(r"\.variants?\.", _p["id"]):
         _p["kind"] = "known"
 _extra_path = os.path.join(os.path.dirname(os.path.abspath(catalog_path)), "extra.json")
-EXTRA = {p["id"]: p for p in json.load(open(_extra_path, encoding="utf-8"))["problems"]} if os.path.exists(_extra_path) else {}
+_extra = json.load(open(_extra_path, encoding="utf-8")) if os.path.exists(_extra_path) else {}
+EXTRA = {p["id"]: p for p in _extra.get("problems", []) + _extra.get("upstreamErdos", [])}
 # The long tail waits for statements too: OEIS / MathOverflow / Math.SE / curated (extra2.json) and the MathOverflow
 # dump (extra3.json.gz). Only their ids matter here.
 _data_dir = os.path.dirname(os.path.abspath(catalog_path))
@@ -137,12 +138,16 @@ if ms:
     target = {"kind": "statement", "import": "Mathlib", "statement": "", "decl": None}
     if pid not in EXTRA:
         errors.append(f"{pid} is not a problem waiting for a statement")
+    elif EXTRA[pid].get("upstreamFile"):
+        errors.append(f"{pid} is already formalized upstream in {EXTRA[pid]['upstreamFile']}")
 elif mp:
     pid = mp.group(1)
     target = describe_target(pid)
     ftype = "proof" if (pid in PROBLEMS or pid in EXTRA) else "step"
     if target is None:
-        if pid in EXTRA:
+        if EXTRA.get(pid, {}).get("upstreamFile"):
+            errors.append(f"{pid} has no merged local statement; its upstream statement is in {EXTRA[pid]['upstreamFile']}")
+        elif pid in EXTRA:
             errors.append(f"{pid} has no Lean statement yet: send statements/{pid}.lean first (it must be reviewed and merged)")
         else:
             errors.append(f"unknown problem or step id {pid} (a step needs its reduction merged first)")

@@ -55,7 +55,8 @@ const formalized = (p) => {
 
 const core = [
   ...catalog.problems.map((p) => ({ ...settledUpstream(p), fame: fameOf(p) })),
-  ...extra.problems.map((p) => formalized({ ...p, fame: fameOf(p) })),
+  ...extra.problems.concat((extra.upstreamErdos ?? []).filter((p) => statements[p.id]))
+    .map((p) => formalized({ ...p, fame: fameOf(p) })),
   ...e2.rows.map(([id, title, si, fields, statement, ref, authors, fame, difficulty, tags, area, posts]) => formalized({
     id, title, source: e2.sources[si], kind: "unformalized", category: "unformalized", fields, tags, statement, ref, authors, fame, difficulty,
     area, decl: "", lean: "", module: "", file: "", line: 0, prize: null, erdos: null, erdosState: null, forumPosts: posts, license: e2.licenses[e2.sources[si]],
