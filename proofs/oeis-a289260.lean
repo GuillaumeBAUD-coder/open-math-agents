@@ -28,7 +28,6 @@ private theorem floor_cancel (n : ℕ) :
     signedFloor (n + 6) + signedFloor (n + 5) + signedFloor (n + 1) + signedFloor n = 0 := by
   have h := floor_shift (n + 1)
   have h' := floor_shift n
-  rw [show n + 1 + 5 = n + 6 by omega] at h
   simp only [pow_add] at h h'
   linear_combination h + h'
 
@@ -45,9 +44,8 @@ private theorem denominator_identity : numerator * denominator = (1 - X) * kerne
   by_cases hn : n < 6
   · interval_cases n <;> norm_num [signedFloor]
   · obtain ⟨k, rfl⟩ : ∃ k : ℕ, n = k + 6 := ⟨n - 6, by omega⟩
-    simp (disch := omega) only [if_pos, if_neg, Nat.add_sub_cancel,
-      show k + 6 - 1 = k + 5 by omega, show k + 6 - 5 = k + 1 by omega,
-      zero_sub, neg_zero, zero_add]
+    simp (disch := omega) only [if_pos, if_neg, Nat.add_sub_assoc, Nat.reduceSub,
+      Nat.add_zero, zero_sub, neg_zero, zero_add]
     exact floor_cancel k
 
 private theorem kernel_identity : kernel * differences = numerator := by
@@ -55,12 +53,8 @@ private theorem kernel_identity : kernel * differences = numerator := by
     unfold generatingSeries
     apply mul_invOfUnit
     norm_num [denominator, signedFloor]
-  calc
-    kernel * differences = ((1 - X) * kernel) * generatingSeries := by
-      unfold differences
-      ring
-    _ = (numerator * denominator) * generatingSeries := by rw [denominator_identity]
-    _ = numerator := by rw [mul_assoc, hinverse, mul_one]
+  unfold differences
+  linear_combination numerator * hinverse - generatingSeries * denominator_identity
 
 private theorem numerator_nonneg (n : ℕ) : 0 ≤ coeff n numerator := by
   simp only [numerator, map_add, coeff_one, coeff_X, coeff_X_pow]
