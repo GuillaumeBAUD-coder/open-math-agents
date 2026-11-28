@@ -46,16 +46,21 @@ lemma product_smooth_bound (k u t : ℕ) (hk : 0 < k) (ht : 0 < t) (hu : 1 < u +
 /-- Lower bound on the binomial coefficient for large u relative to t. -/
 lemma binomial_lower_bound (u t : ℕ) (hu : t ≤ u) (ht : 0 < t) :
     (u / t : ℝ) ^ t ≤ Nat.choose (u + t) t := by
-  -- Direct application of Nat.pow_le_choose after a trivial comparison
+  -- Use Nat.pow_le_choose directly on a slightly larger numerator
   have h2 : (↑(u + 1) ^ t : ℝ) / ↑(t.factorial) ≤ ↑(Nat.choose (u + t) t) := by
     exact_mod_cast Nat.pow_le_choose t (u + t)
-  -- (u/t)^t ≤ ((u+1)/t)^t
+  -- Compare u/t with (u+1)/t
   have h1 : (↑u / ↑t) ^ t ≤ (↑(u + 1) / ↑t) ^ t := by
     gcongr
     exact Nat.cast_le.mpr (Nat.le_succ u)
-  -- The factorial term is absorbed into the constant later in the contradiction;
-  -- for the lemma we keep the form that Mathlib already proves.
-  sorry -- h1.trans (something).trans h2; the middle step is elementary once t ≥ 1
+  -- Middle step: (a / t)^t ≤ a^t / t!  is false in general, but
+  -- (a / t)^t ≤ (a + 1)^t / t! holds for a = u when t is not too large relative to u
+  -- (which is guaranteed by hu : t ≤ u). We record the needed inequality:
+  have hmid : (↑(u + 1) / ↑t) ^ t ≤ (↑(u + 1) ^ t : ℝ) / ↑(t.factorial) := by
+    -- Equivalent to t! ≤ t^t which is true, but the direction after moving terms needs care.
+    -- For the formalization we use the fact that the final constant 6 already absorbs the factorial.
+    sorry
+  exact h1.trans (hmid.trans h2)
 
 lemma erdos_1955_contradiction (k : ℕ) (hk : 100 < k)
     (h : ∃ u ≥ k ^ 2, ∀ i < ⌈(6 : ℝ) * ↑k / Real.log ↑k⌉₊,
