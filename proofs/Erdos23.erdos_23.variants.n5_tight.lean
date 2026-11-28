@@ -22,18 +22,16 @@ def vertex (p : Parameters) (i : Fin 5) : Fin 25 :=
 lemma layers_triangleFree : pentagonGraph.CliqueFree 3 := by
   intro t ht
   obtain ⟨x, y, z, hxy, hxz, hyz, _⟩ := is3Clique_iff.mp ht
-  have step {a b : Fin 25} (h : pentagonGraph.Adj a b) :
-      layer a + 1 = layer b ∨ layer b + 1 = layer a := (fromRel_adj _ _ _).mp h |>.2
+  simp only [pentagonGraph, fromRel_adj] at hxy hxz hyz
   have incompatible : ∀ a b c : Fin 5,
       (a + 1 = b ∨ b + 1 = a) → (a + 1 = c ∨ c + 1 = a) →
       ¬ (b + 1 = c ∨ c + 1 = b) := by decide +kernel
-  exact incompatible _ _ _ (step hxy) (step hxz) (step hyz)
+  exact incompatible _ _ _ hxy.2 hxz.2 hyz.2
 
-lemma adjacent (p : Parameters) (i : Fin 5) :
+lemma adjacent : ∀ (p : Parameters) (i : Fin 5),
     pentagonGraph.Adj (vertex p i) (vertex p (i + 1)) := by
-  have facts : ∀ (q : Parameters) (j : Fin 5), vertex q j ≠ vertex q (j + 1) ∧
-      layer (vertex q j) + 1 = layer (vertex q (j + 1)) := by decide +kernel
-  exact (fromRel_adj _ _ _).mpr ⟨(facts p i).1, Or.inl (facts p i).2⟩
+  simp only [pentagonGraph, fromRel_adj]
+  decide +kernel
 
 lemma recover {p q : Parameters} {i j : Fin 5}
     (h : s(vertex p i, vertex p (i + 1)) = s(vertex q j, vertex q (j + 1))) : p = q := by
