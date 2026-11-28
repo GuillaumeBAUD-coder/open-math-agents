@@ -223,12 +223,12 @@ theorem exponent_sieve {n : ℕ} {S : Finset ℕ} (h : Erdos1052.IsUnitaryPerfec
     have h25 : 25 ∣ n := (Nat.Coprime.dvd_mul_left (by decide : Nat.Coprime 25 2)).mp hprod
     exact not_square 5 (by decide) (by decide) (by decide) h25
   apply sieve
-  · exact exclude (by decide) (by decide) (by decide) (by decide)
+  · exact exclude (q := 11) (by norm_num) (by decide) (by decide) (by decide)
   · exact h5
-  · exact exclude (by decide) (by decide) (by decide) (by decide)
-  · exact exclude (by decide) (by decide) (by decide) (by decide)
-  · exact exclude (by decide) (by decide) (by decide) (by decide)
-  · exact exclude (by decide) (by decide) (by decide) (by decide)
+  · exact exclude (q := 17) (by norm_num) (by decide) (by decide) (by decide)
+  · exact exclude (q := 257) (by norm_num) (by decide) (by decide) (by decide)
+  · exact exclude (q := 1409) (by norm_num) (by decide) (by decide) (by decide)
+  · exact exclude (q := 641) (by norm_num) (by decide) (by decide) (by decide)
 
 end UnitaryExponentSieve
 
@@ -361,13 +361,21 @@ def H3 : Prop :=
     n.factorization 65537 % 32 = 16 → 4365089 ∈ S →
     padicValNat 2 n ≤ A
 
+lemma uniform_bound {I : Type} [Fintype I] (f : I → ℕ) : ∃ A, ∀ i, f i ≤ A := by
+  classical
+  exact ⟨Finset.univ.sup f, fun i => Finset.le_sup (f := f) (Finset.mem_univ i)⟩
+
+set_option maxHeartbeats 2000000 in
 theorem main : H1 → H2 → H3 → OMA.R_Erdos1052_erdos_1052_R1_H2_R1_H2_R1_H1_R1_H1_R1_H1_R1.H1 := by
   classical
   intro b1 b2 b3
   let f1 (q : Fin 40422) := Classical.choose (b1 q)
   let f2 (j : Fin 45 × Fin 1738537) := Classical.choose (b2 j)
   let f3 (j : Fin 45 × Fin 1738537) := Classical.choose (b3 j)
-  refine ⟨max (Finset.univ.sup f1) (max (Finset.univ.sup f2) (Finset.univ.sup f3)), ?_⟩
+  obtain ⟨A1, bound1⟩ := uniform_bound f1
+  obtain ⟨A2, bound2⟩ := uniform_bound f2
+  obtain ⟨A3, bound3⟩ := uniform_bound f3
+  refine ⟨max A1 (max A2 A3), ?_⟩
   intro n h hsq S hS hpoint hW h4 h3 h5 h7 h19 hres h16 h64 h31 hlist h223 h607 h48 hY htwo h32 hF2
   have hF : 65537 ∈ S := (hS _).mpr ⟨by norm_num, by decide, hF2⟩
   obtain ⟨hcard, q, hq, hne, hbound⟩ :=
@@ -378,23 +386,24 @@ theorem main : H1 → H2 → H3 → OMA.R_Erdos1052_erdos_1052_R1_H2_R1_H2_R1_H1
     have h128 : 128 ∣ n.factorization 65537 := by
       rcases ecase with he | he
       · have hthree := (UnitaryForcedKernelPrime.forced_mem_and_card h hS hF2 he hlist hY).2
-        omega
+        rw [hpair] at hthree
+        exact False.elim ((by decide : ¬ (3 : ℕ) ≤ 2) hthree)
       · exact he
-    let p : Fin 40422 := ⟨q, by omega⟩
+    let p : Fin 40422 := ⟨q, Nat.lt_succ_of_le hhi⟩
     have hA : padicValNat 2 n ≤ f1 p := Classical.choose_spec (b1 p) n h hsq S hS hpoint hW
       h4 h3 h5 h7 h19 hres h16 h64 h31 hlist h223 h607 h48 hY htwo h32 hF2 hlo hset h128
-    exact hA.trans ((Finset.le_sup (f := f1) (Finset.mem_univ p)).trans (le_max_left _ _))
-  · let j : Fin 45 × Fin 1738537 := (⟨S.card, by omega⟩, ⟨q, by omega⟩)
-    have hthree : 3 ≤ S.card := by omega
+    exact hA.trans ((bound1 p).trans (le_max_left _ _))
+  · let j : Fin 45 × Fin 1738537 := (⟨S.card, Nat.lt_succ_of_le hcard⟩, ⟨q, Nat.lt_succ_of_le hbound⟩)
+    have hthree : 3 ≤ S.card := lt_of_le_of_ne htwo (Ne.symm hpair)
     rcases ecase with he | he
     · have hm := (UnitaryForcedKernelPrime.forced_mem_and_card h hS hF2 he hlist hY).1
       have hA : padicValNat 2 n ≤ f3 j := Classical.choose_spec (b3 j) n h hsq S hS hpoint hW
         h4 h3 h5 h7 h19 hres h16 h64 h31 hlist h223 h607 h48 hY htwo h32 hF2 hthree rfl hq hne he hm
-      exact hA.trans ((Finset.le_sup (f := f3) (Finset.mem_univ j)).trans
+      exact hA.trans ((bound3 j).trans
         ((le_max_right _ _).trans (le_max_right _ _)))
     · have hA : padicValNat 2 n ≤ f2 j := Classical.choose_spec (b2 j) n h hsq S hS hpoint hW
         h4 h3 h5 h7 h19 hres h16 h64 h31 hlist h223 h607 h48 hY htwo h32 hF2 hthree rfl hq hne he
-      exact hA.trans ((Finset.le_sup (f := f2) (Finset.mem_univ j)).trans
+      exact hA.trans ((bound2 j).trans
         ((le_max_left _ _).trans (le_max_right _ _)))
 
 end OMA.R_Erdos1052_erdos_1052_R1_H2_R1_H2_R1_H1_R1_H1_R1_H1_R1_H1_R1
