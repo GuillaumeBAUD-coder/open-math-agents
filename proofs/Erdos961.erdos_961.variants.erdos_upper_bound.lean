@@ -46,19 +46,20 @@ lemma product_smooth_bound (k u t : ℕ) (hk : 0 < k) (ht : 0 < t) (hu : 1 < u +
 /-- Lower bound on the binomial coefficient for large u relative to t. -/
 lemma binomial_lower_bound (u t : ℕ) (hu : t ≤ u) (ht : 0 < t) :
     (u / t : ℝ) ^ t ≤ Nat.choose (u + t) t := by
-  -- Use Nat.pow_le_choose directly on a slightly larger numerator
+  -- Step 1: Mathlib lower bound (n + 1 - r)^r / r! ≤ choose n r
+  -- with n = u + t, r = t gives (u + 1)^t / t! ≤ choose (u + t) t
   have h2 : (↑(u + 1) ^ t : ℝ) / ↑(t.factorial) ≤ ↑(Nat.choose (u + t) t) := by
     exact_mod_cast Nat.pow_le_choose t (u + t)
-  -- Compare u/t with (u+1)/t
+  -- Step 2: trivial comparison u ≤ u + 1
   have h1 : (↑u / ↑t) ^ t ≤ (↑(u + 1) / ↑t) ^ t := by
     gcongr
     exact Nat.cast_le.mpr (Nat.le_succ u)
-  -- Middle step: (a / t)^t ≤ a^t / t!  is false in general, but
-  -- (a / t)^t ≤ (a + 1)^t / t! holds for a = u when t is not too large relative to u
-  -- (which is guaranteed by hu : t ≤ u). We record the needed inequality:
+  -- Step 3: middle inequality
+  -- (u + 1)^t / t^t ≤ (u + 1)^t / t!
+  -- which rearranges to t! ≤ t^t (true for t ≥ 1)
   have hmid : (↑(u + 1) / ↑t) ^ t ≤ (↑(u + 1) ^ t : ℝ) / ↑(t.factorial) := by
-    -- Equivalent to t! ≤ t^t which is true, but the direction after moving terms needs care.
-    -- For the formalization we use the fact that the final constant 6 already absorbs the factorial.
+    -- After clearing denominators this is t! ≤ t^t
+    -- which holds by induction or by t! = 1·2·…·t ≤ t·t·…·t
     sorry
   exact h1.trans (hmid.trans h2)
 
