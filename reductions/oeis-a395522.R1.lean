@@ -20,7 +20,7 @@ open OMA.S_oeis_a395522
 input modulus determining the Fibonacci residue at the preceding modulus. -/
 def H1 : Prop :=
   ∀ k : ℕ, 1 < k → ∃ (s a : ℕ) (c : ℕ → ℕ), c 0 = k ∧ c s = 24 * 5 ^ a ∧
-    ∀ i : ℕ, i < s →
+    c (s + 1) = 24 * 5 ^ a ∧ ∀ i : ℕ, i ≤ s →
       0 < c (i + 1) ∧
       (∀ x y : ℕ, x % c (i + 1) = y % c (i + 1) → Nat.fib x % c i = Nat.fib y % c i) ∧
       ∀ t : ℕ, 0 < t →
@@ -38,15 +38,10 @@ def H2 : Prop :=
         (∀ x y : ℕ, x % t = y % t → Nat.fib x % c i = Nat.fib y % c i) → c (i + 1) ≤ t) →
     ∀ m d : ℕ, s + 4 ≤ m → 0 < d → isPeriod m (c 0) d → 12 * 5 ^ a ∣ d
 
-/-- A fixed Pisano endpoint determines its own Fibonacci residues. -/
-def H3 : Prop :=
-  ∀ a x y : ℕ, x % (24 * 5 ^ a) = y % (24 * 5 ^ a) →
-    Nat.fib x % (24 * 5 ^ a) = Nat.fib y % (24 * 5 ^ a)
-
 /-- At the fixed endpoint, rows four and five give the same half-shift test
 for every function of the residue. This is the signed-edge calculation on
 the five reachable residues modulo 24 and the fibres modulo a power of 5. -/
-def H4 : Prop :=
+def H3 : Prop :=
   ∀ (a : ℕ) (h : ℕ → ℕ),
     (∀ x y : ℕ, x % (24 * 5 ^ a) = y % (24 * 5 ^ a) → h x = h y) →
     ((∀ x : ℕ, h (iterFib 4 (x + 12 * 5 ^ a)) = h (iterFib 4 x)) ↔
@@ -80,14 +75,16 @@ theorem descend (c : ℕ → ℕ) (s : ℕ) :
     apply ih (fun i hi => steps i (by omega))
     exact steps s (by omega) x y h
 
-theorem fixed_congr (a : ℕ) (fixed : H3) (j : ℕ) :
+theorem fixed_congr (a : ℕ)
+    (fixed : ∀ x y : ℕ, x % (24 * 5 ^ a) = y % (24 * 5 ^ a) →
+      Nat.fib x % (24 * 5 ^ a) = Nat.fib y % (24 * 5 ^ a)) (j : ℕ) :
     ∀ x y : ℕ, x % (24 * 5 ^ a) = y % (24 * 5 ^ a) →
       iterFib j x % (24 * 5 ^ a) = iterFib j y % (24 * 5 ^ a) := by
   induction j with
   | zero => exact fun _ _ h => h
   | succ j ih =>
     intro x y h
-    exact fixed a _ _ (ih x y h)
+    exact fixed _ _ (ih x y h)
 
 /-- A period must be at least the second positive multiple when the first
 positive multiple has been excluded. -/
@@ -103,26 +100,30 @@ theorem second_multiple {D t : ℕ} (ht : 0 < t) (hd : D ∣ t) (hne : t ≠ D) 
       rw [Nat.mul_comm 2 D]
       exact Nat.mul_le_mul_left D (by omega)
 
-theorem main : H1 → H2 → H3 → H4 → type_of% @OMA.S_oeis_a395522.main := by
-  intro chains bound fixed tests k hk
+theorem main : H1 → H2 → H3 → type_of% @OMA.S_oeis_a395522.main := by
+  intro chains bound tests k hk
   by_cases one : k = 1
   · subst k
     refine ⟨1, 1, by decide, by decide, ?_⟩
     intro m _
     exact ⟨fun x => by simp, fun t ht _ => ht⟩
   have large : 1 < k := by omega
-  obtain ⟨s, a, c, first, last, steps⟩ := chains k large
+  obtain ⟨s, a, c, first, last, nextlast, steps⟩ := chains k large
+  have fixed : ∀ x y : ℕ, x % (24 * 5 ^ a) = y % (24 * 5 ^ a) →
+      Nat.fib x % (24 * 5 ^ a) = Nat.fib y % (24 * 5 ^ a) := by
+    have h := (steps s (Nat.le_refl s)).2.1
+    simpa only [last, nextlast] using h
   have down : ∀ x y : ℕ, x % (24 * 5 ^ a) = y % (24 * 5 ^ a) →
       iterFib s x % k = iterFib s y % k := by
     rw [← first, ← last]
-    exact descend c s (fun i hi => (steps i hi).2.1)
+    exact descend c s (fun i hi => (steps i (by omega)).2.1)
   have upper (j : ℕ) (x y : ℕ) (hx : x % (24 * 5 ^ a) = y % (24 * 5 ^ a)) :
       iterFib (s + j) x % k = iterFib (s + j) y % k := by
     simp only [iterFib_add]
     exact down _ _ (fixed_congr a fixed j x y hx)
   have lower (m d : ℕ) (hm : s + 4 ≤ m) (hd : 0 < d) (per : isPeriod m k d) :
       12 * 5 ^ a ∣ d := by
-    have hc := bound s a c (first.symm ▸ large) last steps m d hm hd
+    have hc := bound s a c (first.symm ▸ large) last (fun i hi => steps i (by omega)) m d hm hd
     exact hc (first.symm ▸ per)
   have next (j : ℕ) : isPeriod (s + 4 + j) k (12 * 5 ^ a) ↔
       isPeriod (s + 4 + j + 1) k (12 * 5 ^ a) := by
