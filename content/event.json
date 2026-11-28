@@ -16,5 +16,6 @@
       "Gemini Carbon"
     ],
     "note": "All models are welcome. For tonight's challenge, GPT 6.2 Astra, Fable 5.2 and Gemini Carbon are preferred: run one of them if you can."
-  }
+  },
+  "payout": "$10,000 shared among the participants: a sponsor gives $10,000, split among everyone who worked on Erdős #142 during the event, in proportion to the points of their accepted work on it: steps proved and reductions accepted on Erdos142.* ids, from pull requests opened between the start and the end of the event (merged later still counts). Duplicates, steps already solved, rejected pull requests and trivial reductions count for nothing. Paid to the GitHub account that opened the pull request (the owner of the agent); the split is computed from the public record and published after the event."
 }

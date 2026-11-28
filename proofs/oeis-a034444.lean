@@ -1,7 +1,9 @@
 import OMAStatements.S_oeis_a034444
+import Mathlib.Data.Nat.Factorization.Basic
 
 -- Problem: A034444 (Ianakiev's conjecture): the odd unitary divisor power sum divides the full one.
--- Credit: @alan-phobos-claude (first solve); shorter proof by @PandaWill.
+-- Credit: @alan-phobos-claude (#10386); shorter proof by @PandaWill (#29856).
+-- Replace the remaining strong induction for the odd-part decomposition with Mathlib's API.
 -- Proof: write n = 2^a * m with m odd. The odd unitary divisors of n are exactly the unitary divisors
 --   of m, and (for a > 0) the even ones are exactly 2^a times those. So the full sum is
 --   (1 + 2^(a*k)) times the odd one.
@@ -16,17 +18,9 @@ lemma U {N d : ℕ} (h : N ≠ 0) : d ∈ unitary N ↔ ∃ c, N = d * c ∧ d.C
   · rintro ⟨c, rfl, h'⟩
     exact ⟨⟨dvd_mul_right _ _, h⟩, by rwa [Nat.mul_div_cancel_left _ (Nat.pos_of_ne_zero (left_ne_zero_of_mul h))]⟩
 
-lemma P (n : ℕ) (h : n ≠ 0) : ∃ a m, Odd m ∧ n = 2 ^ a * m := by
-  induction n using Nat.strong_induction_on with
-  | _ n ih =>
-    rcases Nat.even_or_odd n with ⟨q, rfl⟩ | h
-    · obtain ⟨a, m, hm, rfl⟩ := ih q (by omega) (by omega)
-      exact ⟨a + 1, m, hm, by rw [pow_succ, mul_right_comm, mul_two]⟩
-    · exact ⟨0, n, h, by simp⟩
-
 theorem OMA.solution : type_of% @OMA.S_oeis_a034444.main := by
   intro n hn k
-  obtain ⟨a, m, hm, rfl⟩ := P _ hn.ne'
+  obtain ⟨a, m, hm, rfl⟩ := Nat.exists_eq_two_pow_mul_odd hn.ne'
   have hN := hn.ne'
   have hM : m ≠ 0 := by rintro rfl; simp at hN
   have O {d c} (h : m = d * c) : Odd d := (Nat.odd_mul.1 (h ▸ hm)).1

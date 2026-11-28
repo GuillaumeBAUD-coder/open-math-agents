@@ -2,6 +2,7 @@ import OMAStatements.S_mo_369929
 import Mathlib
 
 /-!
+Shortens the counterexample by @koolkao (merged #27590).
 MathOverflow 369929: on `ℝ²` take `q x = |x₀| + |x₁| + min |x₀| |x₁|`, a continuous quasinorm
 with constant `2`, and the segment from `(1, 0)` to `(0, 1)`. On the segment `q = 1 + min`, so
 the only maximum point is the midpoint `(1/2, 1/2)`, which is not an extreme point.
@@ -22,9 +23,7 @@ def b : Fin 2 → ℝ := ![0, 1]
 lemma q_quasinorm : IsQuasinorm q := by
   refine ⟨?_, fun x => ?_, fun x hx => ?_, fun t x ht => ?_, 2, by norm_num, fun x y => ?_⟩
   · unfold q; fun_prop
-  · unfold q
-    have := le_min (abs_nonneg (x 0)) (abs_nonneg (x 1))
-    linarith [abs_nonneg (x 0), abs_nonneg (x 1)]
+  · unfold q; positivity
   · unfold q at hx
     have h0 := abs_nonneg (x 0); have h1 := abs_nonneg (x 1)
     have hm := le_min h0 h1
@@ -55,8 +54,7 @@ theorem disproof_aux :
   have e0 : (u • a + v • b) 0 = u := by simp [a, b]
   have e1 : (u • a + v • b) 1 = v := by simp [a, b]
   have hq : q ![1 / 2, 1 / 2] = 3 / 2 := by
-    simp only [q, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.head_cons]
-    norm_num
+    norm_num [q]
   rw [hq, q, e0, e1, abs_of_nonneg hu, abs_of_nonneg hv] at h1
   have hu2 : 1 / 2 ≤ u := by linarith [min_le_left u v]
   have hv2 : 1 / 2 ≤ v := by linarith [min_le_right u v]
