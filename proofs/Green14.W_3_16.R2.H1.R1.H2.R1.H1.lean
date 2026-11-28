@@ -926,37 +926,37 @@ private def pref6 : Nat := pref5 ||| (1 <<< 114)
 set_option maxRecDepth 200000 in
 set_option maxHeartbeats 0 in
 private theorem run0 :
-    walk maxFuel (Nat.lor initTable (rowVal 90)) (Nat.lor pref0 (cell initTable 90)) 1 = 2684 := by
+    walk maxFuel (initTable ||| rowVal 90) (pref0 ||| cell initTable 90) 1 = 2684 := by
   decide +kernel
 
 set_option maxRecDepth 200000 in
 set_option maxHeartbeats 0 in
 private theorem run1 :
-    walk maxFuel (Nat.lor initTable (rowVal 94)) (Nat.lor pref1 (cell initTable 94)) 2684 = 5128 := by
+    walk maxFuel (initTable ||| rowVal 94) (pref1 ||| cell initTable 94) 2684 = 5128 := by
   decide +kernel
 
 set_option maxRecDepth 200000 in
 set_option maxHeartbeats 0 in
 private theorem run2 :
-    walk maxFuel (Nat.lor initTable (rowVal 102)) (Nat.lor pref2 (cell initTable 102)) 5128 = 7773 := by
+    walk maxFuel (initTable ||| rowVal 102) (pref2 ||| cell initTable 102) 5128 = 7773 := by
   decide +kernel
 
 set_option maxRecDepth 200000 in
 set_option maxHeartbeats 0 in
 private theorem run3 :
-    walk maxFuel (Nat.lor initTable (rowVal 106)) (Nat.lor pref3 (cell initTable 106)) 7773 = 11834 := by
+    walk maxFuel (initTable ||| rowVal 106) (pref3 ||| cell initTable 106) 7773 = 11834 := by
   decide +kernel
 
 set_option maxRecDepth 200000 in
 set_option maxHeartbeats 0 in
 private theorem run4 :
-    walk maxFuel (Nat.lor initTable (rowVal 110)) (Nat.lor pref4 (cell initTable 110)) 11834 = 18442 := by
+    walk maxFuel (initTable ||| rowVal 110) (pref4 ||| cell initTable 110) 11834 = 18442 := by
   decide +kernel
 
 set_option maxRecDepth 200000 in
 set_option maxHeartbeats 0 in
 private theorem run5 :
-    walk maxFuel (Nat.lor initTable (rowVal 114)) (Nat.lor pref5 (cell initTable 114)) 18442 = 20816 := by
+    walk maxFuel (initTable ||| rowVal 114) (pref5 ||| cell initTable 114) 18442 = 20816 := by
   decide +kernel
 
 private theorem root_empty : without (maskAt 0) pref6 = 0 := by decide +kernel
