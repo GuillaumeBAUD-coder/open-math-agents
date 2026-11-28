@@ -245,10 +245,6 @@ noncomputable def sensitiveVertices {n : ℕ} (f : Cube n → ℝ) (i : Fin n) :
   classical
   exact Finset.univ.filter fun x => f x ≠ f (flip i x)
 
-/-- Number of ordered sensitive edges, indexed by their initial vertex and direction. -/
-noncomputable def sensitiveEdgeCount {n : ℕ} (f : Cube n → ℝ) : ℕ :=
-  ∑ i : Fin n, (sensitiveVertices f i).card
-
 /-- Sum of the uniform probabilities that a coordinate flip changes `f`. -/
 noncomputable def averageSensitivity {n : ℕ} (f : Cube n → ℝ) : ℝ :=
   ∑ i : Fin n, ((sensitiveVertices f i).card : ℝ) / (2 : ℝ) ^ n
@@ -327,19 +323,12 @@ def dictator {n : ℕ} (i : Fin n) (x : Cube n) : Bool := x i
 
 def complementDictator {n : ℕ} (i : Fin n) (x : Cube n) : Bool := !(x i)
 
-def CourtadeKumarStatement : Prop :=
-  ∀ (n : ℕ), 1 ≤ n →
-    ∀ ε : ℝ, 0 ≤ ε → ε ≤ (1 : ℝ) / 2 →
-      ∀ f : Cube n → Bool, mutualInformation ε f ≤ 1 - binaryEntropy ε
-
 def DictatorAttainmentStatement : Prop :=
   ∀ (n : ℕ), 1 ≤ n →
     ∀ ε : ℝ, 0 ≤ ε → ε ≤ (1 : ℝ) / 2 →
       ∀ i : Fin n,
         mutualInformation ε (dictator i) = 1 - binaryEntropy ε ∧
         mutualInformation ε (complementDictator i) = 1 - binaryEntropy ε
-
-def FullStatement : Prop := CourtadeKumarStatement ∧ DictatorAttainmentStatement
 
 end LeanBlast.CourtadeKumar
 
@@ -362,10 +351,6 @@ namespace LeanBlast.GotsmanLinial
     flip i x i = !(x i) := by
   simp [flip]
 
-theorem flip_apply_ne {n : ℕ} (i : Fin n) (x : Cube n) (j : Fin n) (h : j ≠ i) :
-    flip i x j = x j := by
-  simp [flip, h]
-
 @[simp] theorem flip_flip {n : ℕ} (i : Fin n) (x : Cube n) :
     flip i (flip i x) = x := by
   funext j
@@ -373,18 +358,6 @@ theorem flip_apply_ne {n : ℕ} (i : Fin n) (x : Cube n) (j : Fin n) (h : j ≠ 
   · subst j
     simp [flip]
   · simp [flip, h]
-
-theorem flip_ne_self {n : ℕ} (i : Fin n) (x : Cube n) : flip i x ≠ x := by
-  intro h
-  have hi := congrFun h i
-  cases hxi : x i <;> simp [flip, hxi] at hi
-
-theorem flip_injective_direction {n : ℕ} (x : Cube n) :
-    Function.Injective (fun i : Fin n => flip i x) := by
-  intro i j h
-  by_contra hij
-  have hi := congrFun h i
-  cases hxi : x i <;> simp [flip, hij, hxi] at hi
 
 theorem flip_involutive {n : ℕ} (i : Fin n) : Function.Involutive (flip i) :=
   flip_flip i
@@ -396,30 +369,12 @@ theorem flip_bijective {n : ℕ} (i : Fin n) : Function.Bijective (flip i) :=
     cubeCoord (flip i x) i = -cubeCoord x i := by
   cases hxi : x i <;> simp [cubeCoord, flip, hxi]
 
-theorem cubeCoord_flip_ne {n : ℕ} (x : Cube n) (i j : Fin n) (h : j ≠ i) :
-    cubeCoord (flip i x) j = cubeCoord x j := by
-  simp [cubeCoord, flip, h]
-
-theorem cubeCoord_cases {n : ℕ} (x : Cube n) (i : Fin n) :
-    cubeCoord x i = 1 ∨ cubeCoord x i = -1 := by
-  cases hxi : x i <;> simp [cubeCoord, hxi]
-
 @[simp] theorem cubeCoord_sq {n : ℕ} (x : Cube n) (i : Fin n) :
     (cubeCoord x i) ^ 2 = 1 := by
   cases hxi : x i <;> simp [cubeCoord, hxi]
 
 @[simp] theorem thresholdSign_zero : thresholdSign 0 = 1 := by
   simp [thresholdSign]
-
-theorem thresholdSign_eq_one_iff (t : ℝ) : thresholdSign t = 1 ↔ 0 ≤ t := by
-  by_cases h : 0 ≤ t
-  · simp [thresholdSign, h]
-  · simp [thresholdSign, h, show (-1 : ℝ) ≠ 1 by norm_num]
-
-theorem thresholdSign_eq_neg_one_iff (t : ℝ) : thresholdSign t = -1 ↔ t < 0 := by
-  by_cases h : 0 ≤ t
-  · simp [thresholdSign, h, not_lt.mpr h, show (1 : ℝ) ≠ -1 by norm_num]
-  · simp [thresholdSign, h, lt_of_not_ge h]
 
 theorem thresholdSign_cases (t : ℝ) : thresholdSign t = 1 ∨ thresholdSign t = -1 := by
   unfold thresholdSign
@@ -430,33 +385,6 @@ theorem thresholdSign_cases (t : ℝ) : thresholdSign t = 1 ∨ thresholdSign t 
 
 @[simp] theorem card_cube (n : ℕ) : Fintype.card (Cube n) = 2 ^ n := by
   simp [Cube]
-
-/-- The Boolean encoding represents every sign vector exactly once. -/
-noncomputable def cubeEquivSignVectors (n : ℕ) :
-    Cube n ≃ {x : Fin n → ℝ // ∀ i, x i = 1 ∨ x i = -1} := by
-  classical
-  exact
-    { toFun := fun x => ⟨cubeCoord x, cubeCoord_cases x⟩
-      invFun := fun x i => decide (x.1 i = 1)
-      left_inv := by
-        intro x
-        funext i
-        cases hxi : x i <;> simp [cubeCoord, hxi, show (-1 : ℝ) ≠ 1 by norm_num]
-      right_inv := by
-        intro x
-        apply Subtype.ext
-        funext i
-        rcases x.2 i with hxi | hxi <;>
-          simp [cubeCoord, hxi, show (-1 : ℝ) ≠ 1 by norm_num] }
-
-theorem averageSensitivity_eq_count {n : ℕ} (f : Cube n → ℝ) :
-    averageSensitivity f = (sensitiveEdgeCount f : ℝ) / (2 : ℝ) ^ n := by
-  simp [averageSensitivity, sensitiveEdgeCount, Finset.sum_div]
-
-theorem averageSensitivity_eq_uniform {n : ℕ} (f : Cube n → ℝ) :
-    averageSensitivity f =
-      ∑ i : Fin n, ((sensitiveVertices f i).card : ℝ) / (Fintype.card (Cube n) : ℝ) := by
-  simp [averageSensitivity]
 
 end LeanBlast.GotsmanLinial
 
@@ -582,11 +510,6 @@ theorem cubeAverage_smul (c : ℝ) (g : Cube n → ℝ) :
     cubeAverage (fun x => c * g x) = c * cubeAverage g := by
   simp [cubeAverage, ← Finset.mul_sum, mul_div_assoc]
 
-theorem cubeAverage_sum {ι : Type u} [Fintype ι] (f : ι → Cube n → ℝ) :
-    cubeAverage (fun x => ∑ i, f i x) = ∑ i, cubeAverage (f i) := by
-  simp only [cubeAverage, Finset.sum_div]
-  exact Finset.sum_comm
-
 theorem cubeAverage_nonneg {g : Cube n → ℝ} (hg : ∀ x, 0 ≤ g x) :
     0 ≤ cubeAverage g :=
   div_nonneg (Finset.sum_nonneg fun x _ => hg x) (le_of_lt (cube_denominator_pos n))
@@ -612,14 +535,6 @@ theorem IsInterior.cubeAverage {g : Cube n → ℝ} (hg : IsInterior g) :
   constructor
   · simpa using cubeAverage_lt (fun x => (hg x).1)
   · simpa using cubeAverage_lt (fun x => (hg x).2)
-
-theorem cubeAverage_le_const {g : Cube n → ℝ} {c : ℝ} (hg : ∀ x, g x ≤ c) :
-    cubeAverage g ≤ c := by
-  simpa using cubeAverage_mono hg
-
-theorem const_le_cubeAverage {g : Cube n → ℝ} {c : ℝ} (hg : ∀ x, c ≤ g x) :
-    c ≤ cubeAverage g := by
-  simpa using cubeAverage_mono hg
 
 theorem noiseKernel_symm (u : ℝ) (x y : Cube n) :
     noiseKernel u x y = noiseKernel u y x := by
@@ -835,11 +750,6 @@ namespace LeanBlast.CourtadeKumar
 
 theorem ell_pos : 0 < ell := Real.log_pos (by norm_num)
 
-theorem ell_lt_one : ell < 1 := by
-  have h := Real.log_lt_sub_one_of_pos (x := 2) (by norm_num) (by norm_num)
-  norm_num at h
-  exact h
-
 @[simp] theorem psi_zero : psi 0 = 0 := by norm_num [psi]
 @[simp] theorem psi_one : psi 1 = ell := by norm_num [psi, ell]
 
@@ -894,11 +804,6 @@ theorem entropy_nonneg {v : ℝ} (hv : v ∈ Icc (-1) 1) : 0 ≤ entropy v := by
 theorem entropy_pos {v : ℝ} (hv : v ∈ Ioo (-1) 1) : 0 < entropy v := by
   rw [entropy_eq_binEntropy]
   exact Real.binEntropy_pos (by linarith [hv.1]) (by linarith [hv.2])
-
-theorem psi_le_ell {v : ℝ} (hv : v ∈ Icc (-1) 1) : psi v ≤ ell := by
-  have := entropy_nonneg hv
-  unfold entropy at this
-  linarith
 
 theorem psi_lt_ell {v : ℝ} (hv : v ∈ Ioo (-1) 1) : psi v < ell := by
   have := entropy_pos hv
@@ -1152,18 +1057,6 @@ theorem observationMarginal_eq_uniform (ε : ℝ) (f : Cube n → Bool) (y : Cub
   simp_rw [jointProbability_eq_posterior]
   rw [← Finset.sum_div, sum_signProbability]
 
-theorem observationMarginal_pos (ε : ℝ) (f : Cube n → Bool) (y : Cube n) :
-    0 < observationMarginal ε f y := by
-  rw [observationMarginal_eq_uniform]
-  exact div_pos zero_lt_one (cube_denominator_pos n)
-
-theorem conditionalProbability_eq_signProbability (ε : ℝ) (f : Cube n → Bool)
-    (b : Bool) (y : Cube n) :
-    jointProbability ε f b y / observationMarginal ε f y =
-      signProbability (noiseOperator (1 - 2 * ε) (signEncoding f) y) b := by
-  rw [jointProbability_eq_posterior, observationMarginal_eq_uniform]
-  field_simp
-
 theorem jointProbability_nonneg (ε : ℝ) (f : Cube n → Bool)
     (hε0 : 0 ≤ ε) (hεhalf : ε ≤ (1 : ℝ) / 2) (b : Bool) (y : Cube n) :
     0 ≤ jointProbability ε f b y := by
@@ -1172,12 +1065,6 @@ theorem jointProbability_nonneg (ε : ℝ) (f : Cube n → Bool)
   split_ifs
   · exact bitFlipKernel_nonneg hε0 hεhalf x y
   · exact le_refl 0
-
-theorem jointProbability_sum (ε : ℝ) (f : Cube n → Bool) :
-    (∑ b : Bool, ∑ y : Cube n, jointProbability ε f b y) = 1 := by
-  change (∑ b : Bool, functionMarginal ε f b) = 1
-  simp_rw [functionMarginal_eq_signProbability]
-  exact sum_signProbability _
 
 end LeanBlast.CourtadeKumar
 
@@ -1268,31 +1155,6 @@ theorem mutualInformation_eq_informationDeficit (ε : ℝ) (f : Cube n → Bool)
   rw [cubeAverage_noiseOperator]
   ring
 
-theorem mutualInformation_nats (ε : ℝ) (f : Cube n → Bool)
-    (hε0 : 0 ≤ ε) (hεhalf : ε ≤ (1 : ℝ) / 2) :
-    ell * mutualInformation ε f =
-      informationDeficit (noiseOperator (1 - 2 * ε) (signEncoding f)) := by
-  rw [mutualInformation_eq_informationDeficit ε f hε0 hεhalf]
-  field_simp [ne_of_gt ell_pos]
-
-theorem mutualInformation_nats_eq_entropy (ε : ℝ) (f : Cube n → Bool)
-    (hε0 : 0 ≤ ε) (hεhalf : ε ≤ (1 : ℝ) / 2) :
-    ell * mutualInformation ε f = entropy (cubeAverage (signEncoding f)) -
-      entropyAverage (noiseOperator (1 - 2 * ε) (signEncoding f)) := by
-  rw [mutualInformation_nats ε f hε0 hεhalf]
-  unfold informationDeficit
-  rw [cubeAverage_noiseOperator]
-
-theorem mutualInformation_nats_eq_psi (ε : ℝ) (f : Cube n → Bool)
-    (hε0 : 0 ≤ ε) (hεhalf : ε ≤ (1 : ℝ) / 2) :
-    ell * mutualInformation ε f =
-      cubeAverage (fun x => psi (noiseOperator (1 - 2 * ε) (signEncoding f) x)) -
-        psi (cubeAverage (signEncoding f)) := by
-  rw [mutualInformation_nats_eq_entropy ε f hε0 hεhalf]
-  unfold entropyAverage entropy
-  rw [cubeAverage_sub, cubeAverage_const]
-  ring
-
 end LeanBlast.CourtadeKumar
 
 end
@@ -1345,16 +1207,6 @@ theorem signEncoding_complementDictator (i : Fin n) :
     signEncoding (complementDictator i) = fun x => -signEncoding (dictator i) x := by
   funext x
   cases hx : x i <;> simp [signEncoding, complementDictator, dictator, hx]
-
-theorem noiseOperator_complementDictator (u : ℝ) (i : Fin n) (x : Cube n) :
-    noiseOperator u (signEncoding (complementDictator i)) x =
-      u * signEncoding (complementDictator i) x := by
-  rw [signEncoding_complementDictator, noiseOperator_neg, noiseOperator_dictator]
-  ring
-
-theorem cubeAverage_complementDictator (i : Fin n) :
-    cubeAverage (signEncoding (complementDictator i)) = 0 := by
-  rw [signEncoding_complementDictator, cubeAverage_neg, cubeAverage_dictator, neg_zero]
 
 theorem isSignValued_signEncoding (f : Cube n → Bool) : IsSignValued (signEncoding f) := by
   intro x
@@ -1444,27 +1296,6 @@ theorem dictatorAttainment : DictatorAttainmentStatement := by
   exact ⟨mutualInformation_dictator ε hε0 hεhalf i,
     mutualInformation_complementDictator ε hε0 hεhalf i⟩
 
-theorem mutualInformation_zero_le (f : Cube n → Bool) : mutualInformation 0 f ≤ 1 := by
-  rw [mutualInformation_eq_informationDeficit 0 f (by norm_num) (by norm_num)]
-  simp only [mul_zero, sub_zero]
-  apply (div_le_one ell_pos).mpr
-  simpa only [psi_one] using
-    informationDeficit_noise_one_le (signEncoding f) (isSignValued_signEncoding f)
-
-theorem mutualInformation_half (f : Cube n → Bool) :
-    mutualInformation ((1 : ℝ) / 2) f = 0 := by
-  rw [mutualInformation_eq_informationDeficit _ f (by norm_num) (by norm_num)]
-  norm_num
-
-theorem courtadeKumar_zero (f : Cube n → Bool) :
-    mutualInformation 0 f ≤ 1 - binaryEntropy 0 := by
-  simpa only [binaryEntropy_zero, sub_zero] using mutualInformation_zero_le f
-
-theorem courtadeKumar_half (f : Cube n → Bool) :
-    mutualInformation ((1 : ℝ) / 2) f ≤ 1 - binaryEntropy ((1 : ℝ) / 2) := by
-  rw [mutualInformation_half, one_sub_binaryEntropy_eq_psi]
-  norm_num
-
 end LeanBlast.CourtadeKumar
 
 end
@@ -1496,13 +1327,6 @@ def setBit (i : Fin n) (b : Bool) (x : Cube n) : Cube n := Function.update x i b
 
 @[simp] theorem setBit_setBit (i : Fin n) (a b : Bool) (x : Cube n) :
     setBit i b (setBit i a x) = setBit i b x := Function.update_idem _ _ _
-
-theorem setBit_comm {i j : Fin n} (hij : i ≠ j) (a b : Bool) (x : Cube n) :
-    setBit j b (setBit i a x) = setBit i a (setBit j b x) :=
-  by
-    change Function.update (Function.update x i a) j b =
-      Function.update (Function.update x j b) i a
-    exact Function.update_comm hij a b x
 
 def IsIncreasingIn (i : Fin n) (F : Cube n → ℝ) : Prop :=
   ∀ x, F (setBit i false x) ≤ F (setBit i true x)
@@ -2082,10 +1906,6 @@ theorem two_lt_exp_347_div_500 : (2 : ℝ) < Real.exp (347 / 500) := by
 theorem ell_lt_347_div_500 : ell < 347 / 500 :=
   (Real.log_lt_iff_lt_exp (by norm_num : (0 : ℝ) < 2)).mpr two_lt_exp_347_div_500
 
-theorem nine_lt_exp_eleven_fifths : (9 : ℝ) < Real.exp (11 / 5) := by
-  refine lt_of_lt_of_le ?_ (Real.sum_le_exp_of_nonneg (by norm_num : (0 : ℝ) ≤ 11 / 5) 8)
-  norm_num [Finset.sum_range_succ, Nat.factorial]
-
 theorem nineteen_lt_exp_three : (19 : ℝ) < Real.exp 3 := by
   refine lt_of_lt_of_le ?_ (Real.sum_le_exp_of_nonneg (by norm_num : (0 : ℝ) ≤ 3) 7)
   norm_num [Finset.sum_range_succ, Nat.factorial]
@@ -2100,63 +1920,10 @@ theorem nine_halves_lt_exp_151_div_100 : (9 / 2 : ℝ) < Real.exp (151 / 100) :=
 theorem log_nine_halves_lt_151_div_100 : Real.log (9 / 2) < 151 / 100 :=
   (Real.log_lt_iff_lt_exp (by norm_num : (0 : ℝ) < 9 / 2)).mpr nine_halves_lt_exp_151_div_100
 
-def smallCurvatureBound (z : ℝ) : ℝ :=
-  ((4 / 3) + (8 / 15) * (z / (1 - z))) / ((1 - z) ^ 2 * (1 + z / 3) ^ 3)
-
-theorem smallCurvatureBound_lt_ten_sevenths {z : ℝ}
-    (hz0 : 0 ≤ z) (hz25 : z ≤ 1 / 25) : smallCurvatureBound z < 10 / 7 := by
-  have hz1 : 0 < 1 - z := by linarith
-  have hratio : z / (1 - z) ≤ 1 / 24 := (div_le_iff₀ hz1).mpr (by linarith)
-  have hnum : (4 / 3 : ℝ) + (8 / 15) * (z / (1 - z)) ≤ 61 / 45 := by linarith
-  have hzsq : z ^ 2 ≤ 1 / 625 := by
-    nlinarith [mul_nonneg hz0 (show 0 ≤ 1 / 25 - z by linarith)]
-  have hcube : 1 + z ≤ (1 + z / 3) ^ 3 := by
-    nlinarith [sq_nonneg z, pow_nonneg hz0 3]
-  have hbase : (599 / 625 : ℝ) ≤ (1 - z) ^ 2 * (1 + z) := by
-    nlinarith [pow_nonneg hz0 3]
-  have hden : (599 / 625 : ℝ) ≤ (1 - z) ^ 2 * (1 + z / 3) ^ 3 :=
-    hbase.trans (mul_le_mul_of_nonneg_left hcube (sq_nonneg _))
-  have hden0 : 0 < (1 - z) ^ 2 * (1 + z / 3) ^ 3 := by linarith
-  apply (div_lt_iff₀ hden0).mpr
-  calc
-    (4 / 3 : ℝ) + (8 / 15) * (z / (1 - z)) ≤ 61 / 45 := hnum
-    _ < (10 / 7) * (599 / 625) := by norm_num
-    _ ≤ (10 / 7) * ((1 - z) ^ 2 * (1 + z / 3) ^ 3) :=
-      mul_le_mul_of_nonneg_left hden (by norm_num)
-
 theorem ten_sevenths_lt_inv_ell : (10 / 7 : ℝ) < 1 / ell := by
   have hpos : 0 < ell := Real.log_pos (by norm_num)
   apply (lt_div_iff₀ hpos).mpr
   have h := ell_lt_347_div_500
-  linarith
-
-theorem smallCurvatureBound_lt_inv_ell {z : ℝ}
-    (hz0 : 0 ≤ z) (hz25 : z ≤ 1 / 25) : smallCurvatureBound z < 1 / ell :=
-  (smallCurvatureBound_lt_ten_sevenths hz0 hz25).trans ten_sevenths_lt_inv_ell
-
-theorem largeCurvature_first_term_le {y : ℝ} (hy : 0 ≤ y) :
-    (1 - y) * (1 + (10 / 9) * y) ^ 2 ≤ 13718 / 10935 := by
-  have h : 0 ≤ (y - 11 / 30) ^ 2 * ((100 / 81) * y + 460 / 243) :=
-    mul_nonneg (sq_nonneg _) (by positivity)
-  nlinarith
-
-theorem largeCurvature_second_term_le {y : ℝ} (hy0 : 0 ≤ y) (hy5 : y ≤ 5 / 11) :
-    (1 + y) * (1 + (10 / 9) * y) ^ 2 / 81 ≤ 355216 / 8732691 := by
-  calc
-    (1 + y) * (1 + (10 / 9) * y) ^ 2 / 81 ≤
-        (1 + (5 / 11 : ℝ)) * (1 + (10 / 9) * (5 / 11)) ^ 2 / 81 := by
-      gcongr
-    _ = 355216 / 8732691 := by norm_num
-
-theorem largeCurvature_rational_sum :
-    (13718 / 10935 : ℝ) + 355216 / 8732691 < 4 / 3 := by norm_num
-
-theorem largeCurvatureEnvelope_lt {y : ℝ} (hy0 : 0 ≤ y) (hy5 : y ≤ 5 / 11) :
-    (1 / 2 : ℝ) * ((1 - y) * (1 + (10 / 9) * y) ^ 2 +
-      (1 + y) * (1 + (10 / 9) * y) ^ 2 / 81) < 2 / 3 := by
-  have h1 := largeCurvature_first_term_le hy0
-  have h2 := largeCurvature_second_term_le hy0 hy5
-  have h3 := largeCurvature_rational_sum
   linarith
 
 end LeanBlast.CourtadeKumar
@@ -2588,93 +2355,6 @@ theorem tendsto_artanh_mul_id_div_psi_zero_right :
   · exact hp
   · exact hquot
 
-theorem tendsto_psi_div_sq_zero_right :
-    Tendsto (fun u : ℝ => psi u / u ^ 2) (𝓝[>] 0) (𝓝 (1 / 2 : ℝ)) := by
-  have hu : Tendsto (fun u : ℝ => u) (𝓝[>] 0) (𝓝 0) :=
-    tendsto_nhdsWithin_of_tendsto_nhds tendsto_id
-  apply HasDerivAt.lhopital_zero_right_on_Ioo
-    (f' := Real.artanh) (g' := fun u => 2 * u) (show (0 : ℝ) < 1 by norm_num)
-  · intro u hu
-    exact hasDerivAt_psi ⟨by linarith [hu.1], hu.2⟩
-  · intro u _
-    convert! (hasDerivAt_id u).pow 2 using 1
-    simp
-  · intro u hu
-    exact mul_ne_zero (by norm_num) (ne_of_gt hu.1)
-  · simpa using (continuous_psi.tendsto (0 : ℝ)).mono_left nhdsWithin_le_nhds
-  · simpa using hu.pow 2
-  · simpa [div_div, mul_comm] using tendsto_artanh_div_id_zero_right.div_const 2
-
-private theorem endpoint_one_sub_sq_pos {u : ℝ} (hu : u ∈ Ioo 0 1) :
-    0 < 1 - u ^ 2 := by
-  have h := mul_pos (show 0 < 1 + u by linarith [hu.1]) (sub_pos.mpr hu.2)
-  nlinarith
-
-theorem tendsto_artanh_sub_id_div_cube_zero_right :
-    Tendsto (fun u : ℝ => (Real.artanh u - u) / u ^ 3)
-      (𝓝[>] 0) (𝓝 (1 / 3 : ℝ)) := by
-  have hu : Tendsto (fun u : ℝ => u) (𝓝[>] 0) (𝓝 0) :=
-    tendsto_nhdsWithin_of_tendsto_nhds tendsto_id
-  have hda : HasDerivAt Real.artanh 1 0 := by
-    simpa using hasDerivAt_artanh (show (0 : ℝ) ∈ Ioo (-1) 1 by constructor <;> norm_num)
-  have ha : Tendsto Real.artanh (𝓝[>] 0) (𝓝 0) := by
-    simpa using hda.continuousAt.tendsto.mono_left nhdsWithin_le_nhds
-  have hden : Tendsto (fun u : ℝ => 3 * (1 - u ^ 2)) (𝓝[>] 0) (𝓝 3) := by
-    convert! tendsto_const_nhds.mul (tendsto_const_nhds.sub (hu.pow 2)) using 1
-    norm_num
-  have hquot : Tendsto (fun u : ℝ => (1 / (1 - u ^ 2) - 1) / (3 * u ^ 2))
-      (𝓝[>] 0) (𝓝 (1 / 3 : ℝ)) := by
-    apply (tendsto_const_nhds.div hden (show (3 : ℝ) ≠ 0 by norm_num)).congr'
-    filter_upwards [Ioo_mem_nhdsGT (show (0 : ℝ) < 1 by norm_num)] with u hu
-    have hu0 := ne_of_gt hu.1
-    have hsq := ne_of_gt (endpoint_one_sub_sq_pos hu)
-    dsimp
-    field_simp
-    ring
-  apply HasDerivAt.lhopital_zero_right_on_Ioo
-    (f' := fun u => 1 / (1 - u ^ 2) - 1) (g' := fun u => 3 * u ^ 2)
-    (show (0 : ℝ) < 1 by norm_num)
-  · intro u hu
-    exact (hasDerivAt_artanh ⟨by linarith [hu.1], hu.2⟩).sub (hasDerivAt_id u)
-  · intro u _
-    convert! (hasDerivAt_id u).pow 3 using 1
-    simp
-  · intro u hu
-    exact mul_ne_zero (by norm_num) (pow_ne_zero 2 (ne_of_gt hu.1))
-  · simpa using ha.sub hu
-  · simpa using hu.pow 3
-  · exact hquot
-
-theorem tendsto_entropy_inverse_second_derivative_zero_right :
-    Tendsto (fun u : ℝ =>
-      ((1 + u ^ 2) * Real.artanh u - u) /
-        ((1 - u ^ 2) ^ 2 * (Real.artanh u) ^ 3))
-      (𝓝[>] 0) (𝓝 (4 / 3 : ℝ)) := by
-  have hu : Tendsto (fun u : ℝ => u) (𝓝[>] 0) (𝓝 0) :=
-    tendsto_nhdsWithin_of_tendsto_nhds tendsto_id
-  have hnum : Tendsto
-      (fun u : ℝ => (Real.artanh u - u) / u ^ 3 + Real.artanh u / u)
-      (𝓝[>] 0) (𝓝 (4 / 3 : ℝ)) := by
-    convert! tendsto_artanh_sub_id_div_cube_zero_right.add tendsto_artanh_div_id_zero_right
-      using 1
-    norm_num
-  have hden : Tendsto
-      (fun u : ℝ => (1 - u ^ 2) ^ 2 * (Real.artanh u / u) ^ 3)
-      (𝓝[>] 0) (𝓝 1) := by
-    convert! ((tendsto_const_nhds.sub (hu.pow 2)).pow 2).mul
-      (tendsto_artanh_div_id_zero_right.pow 3) using 1
-    norm_num
-  have h := hnum.div hden (show (1 : ℝ) ≠ 0 by norm_num)
-  simp only [div_one] at h
-  apply h.congr'
-  filter_upwards [Ioo_mem_nhdsGT (show (0 : ℝ) < 1 by norm_num)] with u hu
-  have hu0 := ne_of_gt hu.1
-  have ha0 := ne_of_gt (Real.artanh_pos hu)
-  have hsq := ne_of_gt (endpoint_one_sub_sq_pos hu)
-  dsimp
-  field_simp
-  ring
-
 end LeanBlast.CourtadeKumar
 
 end
@@ -2852,12 +2532,6 @@ theorem rDeriv_psi {u : ℝ} (hu : u ∈ Ioo 0 1) :
   simp only [rDeriv, if_neg (not_le.mpr (psi_pos_of_pos hu.1 hu.2.le)),
     psiInv_psi ⟨hu.1.le, hu.2.le⟩]
 
-theorem rSecondDeriv_psi {u : ℝ} (hu : u ∈ Ioo 0 1) :
-    rSecondDeriv (psi u) = ((1 + u ^ 2) * Real.artanh u - u) /
-      ((1 - u ^ 2) ^ 2 * (Real.artanh u) ^ 3) := by
-  simp only [rSecondDeriv, if_neg (not_le.mpr (psi_pos_of_pos hu.1 hu.2.le)),
-    psiInv_psi ⟨hu.1.le, hu.2.le⟩]
-
 theorem hasDerivAt_rDerivativeFormula {u : ℝ} (hu : u ∈ Ioo 0 1) :
     HasDerivAt (fun v => 1 + v / ((1 - v ^ 2) * Real.artanh v))
       (((1 + u ^ 2) * Real.artanh u - u) /
@@ -2958,12 +2632,6 @@ theorem rSecondDeriv_pos {s : ℝ} (hs : s ∈ Ioo 0 ell) : 0 < rSecondDeriv s :
   simp only [rSecondDeriv, if_neg (not_le.mpr hs.1)]
   exact div_pos hn (mul_pos (sq_pos_of_pos hq) (pow_pos ht 3))
 
-theorem rSecondDeriv_nonneg {s : ℝ} (hs : 0 ≤ s) (hsell : s < ell) :
-    0 ≤ rSecondDeriv s := by
-  rcases hs.eq_or_lt with rfl | hs
-  · norm_num
-  · exact (rSecondDeriv_pos ⟨hs, hsell⟩).le
-
 theorem convexOn_r : ConvexOn ℝ (Ico 0 ell) r := by
   refine convexOn_of_hasDerivWithinAt2_nonneg
     (f' := rDeriv) (f'' := rSecondDeriv) (convex_Ico 0 ell) continuousOn_r ?_ ?_ ?_
@@ -3025,11 +2693,6 @@ theorem tendsto_rDeriv_zero_right : Tendsto rDeriv (𝓝[>] 0) (𝓝 2) := by
   filter_upwards [self_mem_nhdsWithin] with s hs
   simp only [Function.comp_apply, rDeriv, if_neg (not_le.mpr (show 0 < s from hs))]
 
-theorem tendsto_rSecondDeriv_zero_right : Tendsto rSecondDeriv (𝓝[>] 0) (𝓝 (4 / 3 : ℝ)) := by
-  apply (tendsto_entropy_inverse_second_derivative_zero_right.comp tendsto_psiInv_zero_right).congr'
-  filter_upwards [self_mem_nhdsWithin] with s hs
-  simp only [Function.comp_apply, rSecondDeriv, if_neg (not_le.mpr (show 0 < s from hs))]
-
 theorem continuousOn_rDeriv : ContinuousOn rDeriv (Ico 0 ell) := by
   intro s hs
   rcases hs.1.eq_or_lt with rfl | hs0
@@ -3060,34 +2723,6 @@ theorem hasDerivWithinAt_rGap_zero : HasDerivWithinAt rGap 0 (Ici 0) 0 := by
   convert! hasDerivWithinAt_r_zero.sub
     (((hasDerivAt_id (0 : ℝ)).const_mul 2).hasDerivWithinAt) using 1
   simp
-
-theorem monotoneOn_r : MonotoneOn r (Ico 0 ell) := by
-  intro s hs t ht hst
-  have h := monotoneOn_rGap hs ht hst
-  unfold rGap at h
-  linarith
-
-theorem hasDerivWithinAt_rDeriv_zero :
-    HasDerivWithinAt rDeriv (4 / 3 : ℝ) (Ici 0) 0 := by
-  have hlim : Tendsto (fun s : ℝ => (rDeriv s - 2) / s)
-      (𝓝[>] 0) (𝓝 (4 / 3 : ℝ)) := by
-    apply HasDerivAt.lhopital_zero_right_on_Ioo
-      (f' := rSecondDeriv) (g' := fun _ => 1) ell_pos
-    · intro s hs
-      exact (hasDerivAt_rDeriv hs).sub_const 2
-    · intro s _
-      exact hasDerivAt_id s
-    · intro s _
-      norm_num
-    · simpa using tendsto_rDeriv_zero_right.sub (tendsto_const_nhds (x := (2 : ℝ)))
-    · exact tendsto_nhdsWithin_of_tendsto_nhds tendsto_id
-    · simpa using tendsto_rSecondDeriv_zero_right
-  rw [hasDerivWithinAt_iff_tendsto_slope, Ici_sdiff_left]
-  have he : slope rDeriv 0 = fun s : ℝ => (rDeriv s - 2) / s := by
-    ext s
-    simp only [slope_def_field, rDeriv_zero, sub_zero]
-  rw [he]
-  exact hlim
 
 end LeanBlast.CourtadeKumar
 
@@ -3195,8 +2830,6 @@ theorem hasSum_psi_closed {v : ℝ} (hv : |v| ≤ 1) :
 theorem hasSum_psiCoeff : HasSum psiCoeff ell := by
   simpa using hasSum_psi_closed (v := 1) (by norm_num)
 
-theorem tsum_psiCoeff : ∑' k : ℕ, psiCoeff k = ell := hasSum_psiCoeff.tsum_eq
-
 theorem half_sq_le_psi {v : ℝ} (hv : |v| ≤ 1) : v ^ 2 / 2 ≤ psi v := by
   have h := (summable_psi_closed hv).sum_le_tsum {0} (fun k hk =>
     mul_nonneg (psiCoeff_nonneg k) (Even.pow_nonneg (even_two_mul (k + 1)) v))
@@ -3241,10 +2874,6 @@ namespace LeanBlast.CourtadeKumar
 
 def curvatureNumeratorCoeff (k : ℕ) : ℝ :=
   1 / (2 * (k : ℝ) + 1) + 1 / (2 * (k : ℝ) + 3)
-
-theorem curvatureNumeratorCoeff_nonneg (k : ℕ) : 0 ≤ curvatureNumeratorCoeff k := by
-  unfold curvatureNumeratorCoeff
-  positivity
 
 theorem curvatureNumeratorCoeff_antitone : Antitone curvatureNumeratorCoeff := by
   intro i j hij
@@ -3661,35 +3290,6 @@ theorem L_curvature_bound {x : ℝ} (hx : x ∈ Ioo (0 : ℝ) ell) :
   have hs : ell - x ∈ Ioo (0 : ℝ) ell := ⟨by linarith [hx.2], by linarith [hx.1]⟩
   simpa only [sub_sub_cancel] using inverseEntropy_curvature_bound hs
 
-theorem LDeriv_curvature_bound {x : ℝ} (hx : x ∈ Ioo (0 : ℝ) ell) :
-    x ^ 2 * deriv LDeriv x ≤ 2 / 3 := by
-  rw [(hasDerivAt_LDeriv_of_lt hx).deriv]
-  exact L_curvature_bound hx
-
-theorem hasDerivAt_deriv_L_of_lt {x : ℝ} (hx : x ∈ Ioo (0 : ℝ) ell) :
-    HasDerivAt (deriv L) (rSecondDeriv (ell - x)) x := by
-  have he : deriv L =ᶠ[𝓝 x] LDeriv := by
-    filter_upwards [Ioo_mem_nhds hx.1 hx.2] with y hy
-    exact (hasDerivAt_L_of_lt hy).deriv
-  exact (hasDerivAt_LDeriv_of_lt hx).congr_of_eventuallyEq he
-
-theorem L_second_deriv_bound {x : ℝ} (hx : x ∈ Ioo (0 : ℝ) ell) :
-    x ^ 2 * deriv (deriv L) x ≤ 2 / 3 := by
-  rw [(hasDerivAt_deriv_L_of_lt hx).deriv]
-  exact L_curvature_bound hx
-
-theorem hasDerivAt_deriv_r_of_pos {s : ℝ} (hs : s ∈ Ioo (0 : ℝ) ell) :
-    HasDerivAt (deriv r) (rSecondDeriv s) s := by
-  have he : deriv r =ᶠ[𝓝 s] rDeriv := by
-    filter_upwards [Ioo_mem_nhds hs.1 hs.2] with y hy
-    exact (hasDerivAt_r hy).deriv
-  exact (hasDerivAt_rDeriv hs).congr_of_eventuallyEq he
-
-theorem r_second_deriv_bound {s : ℝ} (hs0 : 0 < s) (hs : s ≤ s0) :
-    deriv (deriv r) s ≤ 1 / ell := by
-  rw [(hasDerivAt_deriv_r_of_pos ⟨hs0, hs.trans_lt s0_lt_ell⟩).deriv]
-  exact rSecondDeriv_le_inv_ell hs0.le hs
-
 end LeanBlast.CourtadeKumar
 
 end
@@ -3804,16 +3404,6 @@ theorem continuousOn_LDeriv : ContinuousOn LDeriv (Ioi 0) := by
   · subst x
     exact continuousAt_LDeriv_at_ell.continuousWithinAt
   · exact (hasDerivAt_LDeriv hx hxe).continuousAt.continuousWithinAt
-
-theorem continuousOn_L : ContinuousOn L (Ioi 0) :=
-  fun _ hx => (hasDerivAt_L hx).continuousAt.continuousWithinAt
-
-theorem LSecondDeriv_bound {x : ℝ} (hx : 0 < x) :
-    x ^ 2 * LSecondDeriv x ≤ 2 / 3 := by
-  by_cases h : x < ell
-  · simpa only [LSecondDeriv, if_pos h] using L_curvature_bound ⟨hx, h⟩
-  · rw [LSecondDeriv_eq_zero_of_ell_le (le_of_not_gt h)]
-    norm_num
 
 end LeanBlast.CourtadeKumar
 
@@ -3994,10 +3584,6 @@ theorem cubeAverage_noiseFlow (F : Cube n → ℝ) (t : ℝ) :
     cubeAverage (noiseFlow F t) = cubeAverage F :=
   cubeAverage_noiseOperator _ _
 
-theorem meanVariance_noiseFlow (F : Cube n → ℝ) (t : ℝ) :
-    meanVariance (noiseFlow F t) = meanVariance F := by
-  simp only [meanVariance, cubeAverage_noiseFlow]
-
 theorem isInterior_noiseFlow (F : Cube n → ℝ) (hF : IsSignValued F)
     (hnc : ∃ x y, F x ≠ F y) {t : ℝ} (ht : 0 < t) :
     IsInterior (noiseFlow F t) := by
@@ -4079,12 +3665,6 @@ theorem entropyAverage_noiseFlow_pos
   apply div_pos _ (cube_denominator_pos n)
   exact Finset.sum_pos
     (fun x _ => entropy_pos (isInterior_noiseFlow F hF hnc ht x)) Finset.univ_nonempty
-
-theorem meanVariance_noiseFlow_pos
-    (F : Cube n → ℝ) (hF : IsSignValued F) (hnc : ∃ x y, F x ≠ F y) (t : ℝ) :
-    0 < meanVariance (noiseFlow F t) := by
-  rw [meanVariance_noiseFlow]
-  exact meanVariance_pos_of_signValued_nonconstant hF hnc
 
 end LeanBlast.CourtadeKumar
 
@@ -4227,11 +3807,6 @@ theorem flip_succ_cases (i : Fin n) (b : Bool) (x : Cube n) :
     · subst k
       simp [flip, LeanBlast.GotsmanLinial.flip]
     · simp [flip, LeanBlast.GotsmanLinial.flip, hki]
-
-theorem restrict_cubeDerivative_succ (g : Cube (n + 1) → ℝ) (i : Fin n) (b : Bool) :
-    restrict (cubeDerivative i.succ g) b = cubeDerivative i (restrict g b) := by
-  funext x
-  simp only [restrict, cubeDerivative, flip_succ_cases]
 
 theorem cubeAverage_first_coordinate_energy (g : Cube (n + 1) → ℝ) :
     cubeAverage (fun x => Real.artanh (g x) * cubeDerivative 0 g x) =
@@ -4554,22 +4129,6 @@ theorem hasDerivAt_K {s : ℝ} (hs : 0 ≤ s) : HasDerivAt K (KDeriv s) s := by
 theorem continuousOn_K : ContinuousOn K (Ici 0) :=
   fun _s hs => (hasDerivAt_K hs).continuousAt.continuousWithinAt
 
-theorem monotone_KDeriv : Monotone KDeriv :=
-  KDeriv_monotone_of_rDeriv monotoneOn_rDeriv
-
-theorem KDeriv_nonneg (s : ℝ) : 0 ≤ KDeriv s := by
-  rw [KDeriv_eq_clamp]
-  exact sub_nonneg.mpr (rDeriv_ge_two (clamp_mem_inverse_domain s).1
-    (clamp_mem_inverse_domain s).2)
-
-theorem monotoneOn_K : MonotoneOn K (Ici 0) := by
-  refine monotoneOn_of_hasDerivWithinAt_nonneg (f' := KDeriv)
-    (convex_Ici 0) continuousOn_K ?_ ?_
-  · intro s hs
-    exact (hasDerivAt_K (interior_subset hs)).hasDerivWithinAt
-  · intro s _
-    exact KDeriv_nonneg s
-
 theorem convexOn_K : ConvexOn ℝ (Ici 0) K :=
   convexOn_K_of_shape hasDerivWithinAt_rGap_zero monotoneOn_rDeriv
 
@@ -4664,22 +4223,11 @@ theorem pair_weighted_sq (a b : ℝ) (h : |a| + |b| < 1) :
   field_simp
   ring
 
-theorem pairEntropyGap_eq_psi (a b : ℝ) :
-    pairEntropyGap a b = (psi (a + b) + psi (a - b)) / 2 - psi a := by
-  unfold pairEntropyGap entropy
-  ring
-
 @[simp] theorem pairEntropyGap_zero (a : ℝ) : pairEntropyGap a 0 = 0 := by
   simp [pairEntropyGap]
 
 @[simp] theorem pairDissipation_zero (a : ℝ) : pairDissipation a 0 = 0 := by
   simp [pairDissipation]
-
-theorem pairEntropyGap_neg_right (a b : ℝ) : pairEntropyGap a (-b) = pairEntropyGap a b := by
-  change entropy a - (entropy (a - b) + entropy (a - -b)) / 2 = _
-  rw [sub_neg_eq_add]
-  unfold pairEntropyGap
-  ring
 
 private theorem weighted_psi_div (s b : ℝ) (hs : 0 < s) (hb : |b| < s) :
     s / 2 * psi (b / s) =
@@ -4770,17 +4318,6 @@ theorem pairEntropyGap_lt_ell (a b : ℝ) (h : |a| + |b| < 1) :
           (by linarith [pair_denom_sub_pos a b h]))
     _ = ell := by ring
 
-theorem pair_entropyAverage_pos (a b : ℝ) (h : |a| + |b| < 1) :
-    0 < (entropy (a + b) + entropy (a - b)) / 2 := by
-  have hp := entropy_pos (pair_add_mem_Ioo a b h)
-  have hm := entropy_pos (pair_sub_mem_Ioo a b h)
-  linarith
-
-theorem pairEntropyGap_lt_entropy (a b : ℝ) (h : |a| + |b| < 1) :
-    pairEntropyGap a b < entropy a := by
-  unfold pairEntropyGap
-  linarith [pair_entropyAverage_pos a b h]
-
 theorem pairEntropyGap_le_quadratic (a b : ℝ) (h : |a| + |b| < 1) :
     pairEntropyGap a b ≤ ell * (b ^ 2 / (1 - a ^ 2)) := by
   calc
@@ -4811,28 +4348,6 @@ theorem pairEntropyGap_div_variance_lt_ell (a b : ℝ) (h : |a| + |b| < 1) :
   exact (pairEntropyGap_le_quadratic a b h).trans_lt
     (mul_lt_mul_of_pos_left hratio ell_pos)
 
-theorem hasDerivAt_pairEntropyGap (a b : ℝ) (h : |a| + |b| < 1) :
-    HasDerivAt (fun t => pairEntropyGap a t)
-      ((Real.artanh (a + b) - Real.artanh (a - b)) / 2) b := by
-  have hp : HasDerivAt (fun t => psi (a + t)) (Real.artanh (a + b)) b := by
-    convert! (hasDerivAt_psi (pair_add_mem_Ioo a b h)).comp b
-      ((hasDerivAt_id b).const_add a) using 1
-    simp
-  have hm : HasDerivAt (fun t => psi (a - t)) (-Real.artanh (a - b)) b := by
-    convert! (hasDerivAt_psi (pair_sub_mem_Ioo a b h)).comp b
-      ((hasDerivAt_const b a).sub (hasDerivAt_id b)) using 1
-    simp
-  have hf : (fun t => pairEntropyGap a t) =
-      (fun t => (psi (a + t) + psi (a - t)) / 2 - psi a) :=
-    funext (pairEntropyGap_eq_psi a)
-  rw [hf]
-  convert! ((hp.add hm).div_const 2).sub_const (psi a) using 1
-
-theorem pairDissipation_eq_mul_deriv (a b : ℝ) (h : |a| + |b| < 1) :
-    pairDissipation a b = b * deriv (fun t => pairEntropyGap a t) b := by
-  rw [(hasDerivAt_pairEntropyGap a b h).deriv, pairDissipation]
-  ring
-
 theorem pairDissipation_weighted_r (a b : ℝ) (h : |a| + |b| < 1) :
     pairDissipation a b =
       (1 + a) / 2 * r (psi (b / (1 + a))) +
@@ -4857,11 +4372,6 @@ theorem r_pairEntropyGap_le_pairDissipation (a b : ℝ) (h : |a| + |b| < 1) :
 theorem rGap_pairEntropyGap_le (a b : ℝ) (h : |a| + |b| < 1) :
     rGap (pairEntropyGap a b) ≤ pairDissipation a b - 2 * pairEntropyGap a b := by
   exact sub_le_sub_right (r_pairEntropyGap_le_pairDissipation a b h) _
-
-theorem K_pairEntropyGap_le (a b : ℝ) (h : |a| + |b| < 1) :
-    K (pairEntropyGap a b) ≤ pairDissipation a b - 2 * pairEntropyGap a b :=
-  (K_le_rGap (pairEntropyGap_nonneg a b h) (pairEntropyGap_lt_ell a b h)).trans
-    (rGap_pairEntropyGap_le a b h)
 
 end LeanBlast.CourtadeKumar
 
@@ -4911,10 +4421,6 @@ theorem hasSum_lambda {z : ℝ} (hz0 : 0 ≤ z) (hz1 : z < 1) :
     ext j
     rw [pow_succ]
     field_simp
-
-theorem summable_lambda {z : ℝ} (hz0 : 0 ≤ z) (hz1 : z < 1) :
-    Summable (fun j : ℕ => z ^ j / ((j : ℝ) + 1)) :=
-  (hasSum_lambda hz0 hz1).summable
 
 theorem monotoneOn_lambda : MonotoneOn lambda (Ico (0 : ℝ) 1) := by
   intro x hx y hy hxy
@@ -5907,12 +5413,6 @@ theorem normalized_pair_scale_pos {a b : ℝ} (hab : |a| + |b| < 1) : 0 < 1 - a 
   have h := mul_pos (pair_denom_add_pos a b hab) (pair_denom_sub_pos a b hab)
   nlinarith
 
-theorem abs_lt_normalized_pair_scale {a b : ℝ} (hab : |a| + |b| < 1) :
-    |b| < 1 - a ^ 2 := by
-  have ha : |a| < 1 := lt_of_le_of_lt (le_add_of_nonneg_right (abs_nonneg b)) hab
-  have hm := mul_nonneg (abs_nonneg a) (show 0 ≤ 1 - |a| by linarith)
-  nlinarith [sq_abs a]
-
 theorem two_atom_moment_logconvex (w u p q : ℝ)
     (hw : 0 ≤ w) (hu : 0 ≤ u) (hp : 0 ≤ p) (hq : 0 ≤ q) (j : ℕ) :
     (w * p ^ (j + 1) + u * q ^ (j + 1)) ^ 2 ≤
@@ -5989,15 +5489,6 @@ theorem normalizedPairMoment_logconvex {a b : ℝ} (hab : |a| + |b| < 1) (j : �
     rw [div_pow, div_mul_div_comm, ← pow_two (1 - a ^ 2)]
     exact div_le_div_of_nonneg_right (rawPairMoment_logconvex hab (j + 1))
       (sq_nonneg (1 - a ^ 2))
-
-theorem normalizedPairMoment_one_lt_one {a b : ℝ} (hab : |a| + |b| < 1) :
-    normalizedPairMoment a b 1 < 1 := by
-  rw [normalizedPairMoment_one hab]
-  have hA := normalized_pair_scale_pos hab
-  have hb := abs_lt_normalized_pair_scale hab
-  have hprod := mul_pos (sub_pos.mpr hb) (add_pos_of_pos_of_nonneg hA (abs_nonneg b))
-  apply (div_lt_one (sq_pos_of_pos hA)).mpr
-  nlinarith [sq_abs b]
 
 theorem hasSum_normalizedPairEntropy {a b : ℝ} (hab : |a| + |b| < 1) :
     HasSum (fun k => psiCoeff k * normalizedPairMoment a b (k + 1))
@@ -8030,13 +7521,6 @@ theorem courtadeKumar_bound {n : ℕ} (ε : ℝ)
   apply div_le_div_of_nonneg_right _ ell_pos.le
   apply informationDeficit_noise_le_psi (signEncoding f) (isSignValued_signEncoding f)
   constructor <;> linarith
-
-theorem courtadeKumar : CourtadeKumarStatement := by
-  intro n _ ε hε0 hεhalf f
-  exact courtadeKumar_bound ε hε0 hεhalf f
-
-theorem courtadeKumarAndAttainment : FullStatement :=
-  ⟨courtadeKumar, dictatorAttainment⟩
 
 end LeanBlast.CourtadeKumar
 
