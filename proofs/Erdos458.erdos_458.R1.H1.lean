@@ -10,8 +10,6 @@ summatory von Mangoldt function, so the difference is the sum over `(a, b]`.
 -/
 open Finset ArithmeticFunction
 
-namespace F2E458
-
 theorem log_lcm (n : ℕ) : Real.log (Erdos458.lcm_upto n : ℝ) = Chebyshev.psi n :=
   (Chebyshev.psi_eq_log_lcmUpto n).symm
 
@@ -23,7 +21,6 @@ theorem log_lcm_diff : ∀ a b : ℕ, a ≤ b →
     ← Finset.sum_Ioc_consecutive _ (Nat.zero_le a) hab]
   ring
 
-end F2E458
 
 theorem OMA.solution : OMA.R_Erdos458_erdos_458_R1.H1 :=
-  F2E458.log_lcm_diff
+  log_lcm_diff
