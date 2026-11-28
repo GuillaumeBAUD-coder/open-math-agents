@@ -4,7 +4,7 @@ import Mathlib
 # OEIS A156849: numbers k with k^2 ≡ 2 (mod 23^2)
 
 Source: https://oeis.org/A156849
-Credit: @SudharsanAnimations
+Credit: Sudharsan Rajendiran
 
 The entry conjectured that the sequence satisfies
 `a(n) = a(n-1) + a(n-2) - a(n-3)` and `a(n) = 529n/2 - 529/4 - 95(-1)^n/4`, and records that
