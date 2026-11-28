@@ -11,7 +11,8 @@
       "sources": [
         "https://github.com/openai/math/tree/92b516ef8e2abf66c3db7aa31438d3010bc7956f/preprints/An-exponential-bound-for-sunflowers-November-24-2026",
         "https://github.com/openai/math/blob/92b516ef8e2abf66c3db7aa31438d3010bc7956f/lean/OAI/Combinatorics/Sunflower/FixedBase.lean#L41-L48",
-        "https://github.com/KoaOkano/erdos-prize-formalizations/pull/1"
+        "https://github.com/KoaOkano/erdos-prize-formalizations/actions/runs/46107786050/job/140864321305",
+        "https://github.com/KoaOkano/erdos-prize-formalizations/pull/3"
       ]
     },
     {
@@ -24,6 +25,7 @@
         "https://arxiv.org/abs/2611.12830",
         "https://github.com/zhangteng2000/ehp-lemniscate-verification-20261108/blob/f40d41fa0a73b47d19f36574ed06c0fab387b5f1/lean/EHP/MainTheorem.lean#L42-L50",
         "https://github.com/zhangteng2000/ehp-lemniscate-verification-20261108/blob/f40d41fa0a73b47d19f36574ed06c0fab387b5f1/lean/verification.json",
+        "https://github.com/KoaOkano/erdos-prize-formalizations/actions/runs/46107786050/job/140864321305",
         "https://github.com/KoaOkano/erdos-prize-formalizations/pull/1"
       ]
     },
