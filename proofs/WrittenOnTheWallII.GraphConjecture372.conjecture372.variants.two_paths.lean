@@ -61,66 +61,6 @@ lemma card_le_of_inj (D X : Finset α) (hD : T.IsTotalDominating (D : Set α))
       · exact absurd (h ▸ hzD) h1
       · exact absurd (h ▸ hzD) h2
 
-lemma vc_two (hT : T.IsTree) (D : Finset α) (hD : T.IsTotalDominating (D : Set α)) :
-    T.vertexCoverNum.toNat ≤ 2 * D.card := by
-  classical
-  have hf : ∀ v, ∃ d, d ∈ D ∧ T.Adj v d := fun v => by
-    obtain ⟨d, hd, h⟩ := hD v
-    exact ⟨d, hd, h⟩
-  let f : α → α := fun v => Classical.choose (hf v)
-  have hfD : ∀ v, f v ∈ D := fun v => (Classical.choose_spec (hf v)).1
-  have hfA : ∀ v, T.Adj v (f v) := fun v => (Classical.choose_spec (hf v)).2
-  let O := Dᶜ
-  let EOO := T.edgeFinset.filter (fun e => ∀ v ∈ e, v ∉ D)
-  let EDO := O.image (fun v => s(v, f v))
-  have hsub : EOO ∪ EDO ⊆ T.edgeFinset := by
-    intro e he
-    rcases Finset.mem_union.mp he with h | h
-    · exact (Finset.mem_filter.mp h).1
-    · obtain ⟨v, -, rfl⟩ := Finset.mem_image.mp h
-      exact (mem_edgeFinset).mpr (hfA v)
-  have hdisj : Disjoint EOO EDO := by
-    rw [Finset.disjoint_left]
-    intro e h1 h2
-    obtain ⟨v, -, rfl⟩ := Finset.mem_image.mp h2
-    exact (Finset.mem_filter.mp h1).2 (f v) (Sym2.mem_mk_right _ _) (hfD v)
-  have hEDO : EDO.card = O.card := by
-    apply Finset.card_image_of_injOn
-    intro v hv v' hv' h
-    have hv : v ∉ D := Finset.mem_compl.mp hv
-    rcases Sym2.eq_iff.mp h with ⟨h1, -⟩ | ⟨h1, -⟩
-    · exact h1
-    · exact absurd (h1 ▸ hfD v') hv
-  have hO : O.card + D.card = Fintype.card α := by
-    rw [Finset.card_compl]
-    have := Finset.card_le_univ D
-    omega
-  have hE := hT.card_edgeFinset
-  have hcount : EOO.card + O.card ≤ T.edgeFinset.card := by
-    rw [← hEDO, ← Finset.card_union_of_disjoint hdisj]
-    exact Finset.card_le_card hsub
-  let C := D ∪ EOO.image (fun e => e.out.1)
-  have hC : T.IsVertexCover (C : Set α) := by
-    intro x y hxy
-    by_cases hx : x ∈ D
-    · left; exact Finset.mem_union_left _ hx
-    by_cases hy : y ∈ D
-    · right; exact Finset.mem_union_left _ hy
-    have he : s(x, y) ∈ EOO := by
-      refine Finset.mem_filter.mpr ⟨(mem_edgeFinset).mpr hxy, ?_⟩
-      intro v hv
-      rcases Sym2.mem_iff.mp hv with rfl | rfl
-      · exact hx
-      · exact hy
-    have hm : (s(x, y)).out.1 ∈ C := Finset.mem_union_right _ (Finset.mem_image_of_mem _ he)
-    rcases Sym2.mem_iff.mp (Sym2.out_fst_mem s(x, y)) with h | h
-    · left; rw [← h]; exact hm
-    · right; rw [← h]; exact hm
-  have hCc : C.card ≤ D.card + EOO.card :=
-    (Finset.card_union_le _ _).trans (by have := Finset.card_image_le (s := EOO) (f := fun e => e.out.1); omega)
-  have := vc_le C hC
-  omega
-
 section paths
 variable {a b : α}
 
@@ -477,12 +417,6 @@ lemma core2 (hT : T.IsTree) (hn : 2 ≤ Fintype.card α) (hp : T.pathCoverNumber
       rcases Finset.mem_insert.mp hs' with rfl | hs'
       · rw [hs1] at hv; exact Or.inl (List.mem_toFinset.mp hv)
       · rw [Finset.mem_singleton.mp hs', hs2] at hv; exact Or.inr (List.mem_toFinset.mp hv)
-
-lemma core3 (hT : T.IsTree) (hn : 2 ≤ Fintype.card α) :
-    T.vertexCoverNum.toNat ≤ 2 * T.totalDominationNumber := by
-  obtain ⟨D, hD, hDc⟩ := exists_tds hT hn
-  rw [← hDc]
-  exact vc_two hT D hD
 
 end paths
 

@@ -1,97 +1,64 @@
 import OMAReductions.R_Erdos20_erdos_20_R1_H2_R2
-import Mathlib.Data.Fintype.Pi
-import Mathlib.Data.Fintype.BigOperators
 
--- Credit: @tongenspace
+/-! Leave any unused positions constant and read each of the packed blocks at
+its own coordinates. A sunflower in the packed words is a sunflower in every block. -/
+
+private def blockPosition {n t N : ℕ} (h : t * n ≤ N) (b : Fin t) (j : Fin n) : Fin N :=
+  Fin.castLE h (finProdFinEquiv (b, j))
+
+private def packWords {n m t N : ℕ} (hN : 0 < N) (hm : m ≤ N)
+    (words : Fin t → Fin n → Fin m) (x : Fin N) : Fin N :=
+  if hx : x.val < t * n then
+    let ij := finProdFinEquiv.symm (⟨x.val, hx⟩ : Fin (t * n))
+    Fin.castLE hm (words ij.1 ij.2)
+  else ⟨0, hN⟩
+
+private theorem packWords_block {n m t N : ℕ} (hN : 0 < N) (hm : m ≤ N)
+    (ht : t * n ≤ N) (words : Fin t → Fin n → Fin m) (b : Fin t) (j : Fin n) :
+    packWords hN hm words (blockPosition ht b j) = Fin.castLE hm (words b j) := by
+  unfold packWords blockPosition
+  rw [Fin.val_castLE, dif_pos (finProdFinEquiv (b, j)).isLt]
+  exact congrArg (fun ij => Fin.castLE hm (words ij.1 ij.2))
+    (finProdFinEquiv.symm_apply_apply (b, j))
 
 theorem OMA.solution : OMA.R_Erdos20_erdos_20_R1_H2_R2.H2 := by
   classical
-  intro r n m t N hN hmN htn W hW
-  let pack : (Fin t → (Fin n → Fin m)) → (Fin N → Fin N) :=
-    fun f j =>
-      if hj : j.val < t * n then
-        have hn : 0 < n := by
-          by_contra h
-          have hn0 : n = 0 := by omega
-          simp [hn0] at hj
-        have hb : j.val / n < t := (Nat.div_lt_iff_lt_mul hn).mpr (by simpa [Nat.mul_comm] using hj)
-        ⟨(f ⟨j.val / n, hb⟩ ⟨j.val % n, Nat.mod_lt j.val hn⟩).val,
-          Nat.lt_of_lt_of_le (Fin.isLt _) hmN⟩
-      else
-        ⟨0, hN⟩
-  have hpack_eval : ∀ (f : Fin t → (Fin n → Fin m)) (b : Fin t) (k : Fin n),
-      have hidx : b.val * n + k.val < N := by
-        have h1 : b.val * n + k.val < (b.val + 1) * n := by
-          rw [Nat.add_mul, Nat.one_mul]
-          exact Nat.add_lt_add_left k.isLt _
-        have h2 : (b.val + 1) * n ≤ t * n := Nat.mul_le_mul_right n (Nat.succ_le_of_lt b.isLt)
-        exact Nat.lt_of_lt_of_le h1 (Nat.le_trans h2 htn)
-      (pack f ⟨b.val * n + k.val, hidx⟩).val = (f b k).val := by
-    intro f b k hidx
-    have hn : 0 < n := Nat.lt_of_le_of_lt (Nat.zero_le _) k.isLt
-    have hlt_tn : b.val * n + k.val < t * n := by
-      have h1 : b.val * n + k.val < (b.val + 1) * n := by
-        rw [Nat.add_mul, Nat.one_mul]
-        exact Nat.add_lt_add_left k.isLt _
-      exact Nat.lt_of_lt_of_le h1 (Nat.mul_le_mul_right n (Nat.succ_le_of_lt b.isLt))
-    simp only [pack, hlt_tn, ↓reduceDIte]
-    have hdiv : (b.val * n + k.val) / n = b.val := by
-      rw [Nat.mul_comm b.val n, Nat.mul_add_div hn, Nat.div_eq_of_lt k.isLt, Nat.add_zero]
-    have hmod : (b.val * n + k.val) % n = k.val := by
-      rw [Nat.mul_comm b.val n, Nat.mul_add_mod, Nat.mod_eq_of_lt k.isLt]
-    have hb_eq : (⟨(b.val * n + k.val) / n, (Nat.div_lt_iff_lt_mul hn).mpr
-        (by simpa [Nat.mul_comm] using hlt_tn)⟩ : Fin t) = b := Fin.ext hdiv
-    have hk_eq : (⟨(b.val * n + k.val) % n, Nat.mod_lt _ hn⟩ : Fin n) = k := Fin.ext hmod
-    rw [hb_eq, hk_eq]
-  have hpack_inj : Function.Injective pack := by
-    intro f g hfg
-    funext b k
-    apply Fin.ext
-    have h1 := hpack_eval f b k
-    have h2 := hpack_eval g b k
-    rw [hfg] at h1
-    exact h1.symm.trans h2
-  let P : Finset (Fin t → (Fin n → Fin m)) := Fintype.piFinset (fun _ : Fin t => W)
-  refine ⟨P.image pack, ?_, ?_⟩
-  · rw [Finset.card_image_of_injective P hpack_inj]
-    simp [P]
+  intro r n m t N hN hm ht W hW
+  let encode : (Fin t → ↥W) ↪ (Fin N → Fin N) :=
+    ⟨fun words => packWords hN hm (fun b => (words b).val), by
+      intro u v huv
+      funext b
+      apply Subtype.ext
+      funext j
+      have heq := congrFun huv (blockPosition ht b j)
+      change packWords hN hm (fun i => (u i).val) (blockPosition ht b j) =
+        packWords hN hm (fun i => (v i).val) (blockPosition ht b j) at heq
+      rw [packWords_block, packWords_block] at heq
+      exact Fin.castLE_injective hm heq⟩
+  refine ⟨Finset.univ.map encode, ?_, ?_⟩
+  · rw [Finset.card_map, Finset.card_univ, Fintype.card_fun, Fintype.card_fin, Fintype.card_coe]
   · intro v hv hsun
-    have hpre : ∀ i : Fin r, ∃ f, f ∈ P ∧ pack f = v i := by
-      intro i
-      exact Finset.mem_image.mp (hv i)
-    let f : Fin r → Fin t → (Fin n → Fin m) := fun i => Classical.choose (hpre i)
-    have hfP : ∀ i : Fin r, f i ∈ P := fun i => (Classical.choose_spec (hpre i)).1
-    have hfeq : ∀ i : Fin r, pack (f i) = v i := fun i => (Classical.choose_spec (hpre i)).2
-    have hf_eq : ∀ a b : Fin r, f a = f b := by
-      intro a b
-      funext blk
-      have hw : ∀ a' b' : Fin r, f a' blk = f b' blk := by
-        apply hW (fun i => f i blk)
-        · intro i
-          exact (Fintype.mem_piFinset.mp (hfP i)) blk
-        · intro k
-          have hidx : blk.val * n + k.val < N := by
-            have h1 : blk.val * n + k.val < (blk.val + 1) * n := by
-              rw [Nat.add_mul, Nat.one_mul]
-              exact Nat.add_lt_add_left k.isLt _
-            have h2 : (blk.val + 1) * n ≤ t * n := Nat.mul_le_mul_right n (Nat.succ_le_of_lt blk.isLt)
-            exact Nat.lt_of_lt_of_le h1 (Nat.le_trans h2 htn)
-          let j : Fin N := ⟨blk.val * n + k.val, hidx⟩
-          have heval : ∀ i : Fin r, (v i j).val = (f i blk k).val := by
-            intro i
-            rw [← hfeq i]
-            exact hpack_eval (f i) blk k
-          rcases hsun j with hall | hinj
-          · left
-            intro a' b'
-            apply Fin.ext
-            rw [← heval a', ← heval b', hall a' b']
-          · right
-            intro a' b' hab
-            apply hinj
-            apply Fin.ext
-            rw [heval a', heval b']
-            exact congrArg Fin.val hab
-      exact hw a b
-    intro a b
-    rw [← hfeq a, ← hfeq b, hf_eq a b]
+    have pre (i : Fin r) : ∃ u : Fin t → ↥W, encode u = v i := by
+      obtain ⟨u, _, hu⟩ := Finset.mem_map.mp (hv i)
+      exact ⟨u, hu⟩
+    choose u hu using pre
+    have hread (i : Fin r) (b : Fin t) (j : Fin n) :
+        v i (blockPosition ht b j) = Fin.castLE hm ((u i b).val j) := by
+      rw [← hu i]
+      exact packWords_block hN hm ht (fun k => (u i k).val) b j
+    have hblock (b : Fin t) : ∀ a c : Fin r, (u a b).val = (u c b).val := by
+      apply hW (fun i => (u i b).val) (fun i => (u i b).property)
+      intro j
+      rcases hsun (blockPosition ht b j) with equal | distinct
+      · left
+        intro a c
+        apply Fin.castLE_injective hm
+        rw [← hread, ← hread]
+        exact equal a c
+      · right
+        intro a c heq
+        exact distinct ((hread a b j).trans
+          ((congrArg (Fin.castLE hm) heq).trans (hread c b j).symm))
+    intro a c
+    have heq : u a = u c := funext fun b => Subtype.ext (hblock b a c)
+    rw [← hu a, ← hu c, heq]
