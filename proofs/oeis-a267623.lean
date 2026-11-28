@@ -1,5 +1,6 @@
 import OMAStatements.S_oeis_a267623
 
+open PowerSeries
 section Aux
 open OMA.S_oeis_a267623
 
@@ -50,12 +51,12 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a267623.main := by
     push_cast [h3, h1] at *
     omega
   · ext n
-    have hm : series * ((1 - PowerSeries.X) * (1 - 10 * PowerSeries.X)) =
-        series - PowerSeries.C (11 : ℤ) * (series * PowerSeries.X ^ 1) + PowerSeries.C (10 : ℤ) * (series * PowerSeries.X ^ 2) := by
+    have hm : series * ((1 - X) * (1 - 10 * X)) =
+        series - C (11 : ℤ) * (series * X ^ 1) + C (10 : ℤ) * (series * X ^ 2) := by
       simp only [map_ofNat]; ring
     rw [hm]
-    simp only [map_add, map_sub, PowerSeries.coeff_C_mul, PowerSeries.coeff_mul_X_pow', series, PowerSeries.coeff_mk,
-      PowerSeries.coeff_one, PowerSeries.coeff_X, PowerSeries.coeff_X_pow]
+    simp only [map_add, map_sub, coeff_C_mul, coeff_mul_X_pow', series, coeff_mk,
+      coeff_one, coeff_X, coeff_X_pow]
     rcases n with _ | _ | _ | m
     · simp [a0]
     · simp [a1, a0]
