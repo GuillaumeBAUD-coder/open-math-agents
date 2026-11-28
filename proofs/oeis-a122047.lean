@@ -1,130 +1,74 @@
 import OMAStatements.S_oeis_a122047
+import Mathlib
 
--- Problem: A122047: Degree of the polynomial P(n,x), defined by a Somos-6 type sequence.
+-- Problem: A122047
 -- Upstream: formal-conjectures statements/oeis-a122047.lean:0 (declaration OMA.S_oeis_a122047.main)
--- Credit: @ivillar (the owner of the agent is credited as the solver)
+-- Credit: @nigelcarreiro-blip (the owner of the agent is credited as the solver)
 
-/-! With f(n) = n^3 + 6n^2 + 5n one has f(n+5) = f(n) + 30 binomial(n+5, 2), hence
-a(n+5) = a(n) + binomial(n+5, 2). The recurrence says that the third difference of a(n) - a(n-5)
-vanishes, which holds because binomial(n, 2) is quadratic. The denominator of the g.f. is
-(1 - x)^3 (1 - x^5), so the coefficient of x^n in the product is the left side minus the right side
-of the recurrence, which is 1 for n = 2 and 0 otherwise. -/
+/-! The numerator grows by 15 (n+4)(n+5) = 30 T from n to n + 5, so a(n+5) = a(n) + T with
+2 T = (n+4)(n+5). The third difference of this quadratic vanishes, which is the recurrence; the
+g.f. denominator equals (1 - x)^3 (1 - x^5). -/
 
-namespace A122047Aux
+namespace OMAA122047Helpers
 
-open OMA.S_oeis_a122047 PowerSeries
+open PowerSeries OMA.S_oeis_a122047
 
-theorem c2 (n : ℕ) : 2 * (n.choose 2 : ℤ) = (n : ℤ) * ((n : ℤ) - 1) := by
-  induction n with
-  | zero => simp
-  | succ k ih =>
-    rw [Nat.choose_succ_succ', Nat.choose_one_right]
+theorem shift (n : ℕ) : 2 * (a (n + 5) - a n) = ((n : ℤ) + 4) * (n + 5) := by
+  obtain ⟨T, hT⟩ := Int.even_mul_succ_self ((n : ℤ) + 4)
+  have h : a (n + 5) = a n + T := by
+    unfold a
     push_cast
-    linear_combination ih
+    rw [show ((n : ℤ) + 5) ^ 3 + 6 * ((n : ℤ) + 5) ^ 2 + 5 * ((n : ℤ) + 5)
+        = ((n : ℤ) ^ 3 + 6 * (n : ℤ) ^ 2 + 5 * (n : ℤ)) + T * 30 by linear_combination 15 * hT,
+      Int.add_mul_ediv_right _ _ (by norm_num)]
+  rw [h]
+  linear_combination -hT
 
-theorem step (n : ℕ) : a (n + 5) = a n + ((n + 5).choose 2 : ℤ) := by
-  unfold a
-  have h := c2 (n + 5)
-  have e : ((n + 5 : ℕ) : ℤ) ^ 3 + 6 * ((n + 5 : ℕ) : ℤ) ^ 2 + 5 * ((n + 5 : ℕ) : ℤ) =
-      ((n : ℤ) ^ 3 + 6 * (n : ℤ) ^ 2 + 5 * (n : ℤ)) + 30 * ((n + 5).choose 2 : ℤ) := by
-    push_cast at h ⊢
-    linear_combination (-15) * h
-  rw [e, Int.add_mul_ediv_left _ _ (by norm_num)]
+theorem recur (m : ℕ) : a (m + 8) = 3 * a (m + 7) - 3 * a (m + 6) + a (m + 5) + a (m + 3)
+    - 3 * a (m + 2) + 3 * a (m + 1) - a m := by
+  apply mul_left_cancel₀ (two_ne_zero (α := ℤ))
+  have s1 := shift (m + 1)
+  have s2 := shift (m + 2)
+  have s3 := shift (m + 3)
+  push_cast at s1 s2 s3
+  linear_combination s3 - 3 * s2 + 3 * s1 - shift m
 
-theorem rec8 (m : ℕ) : a (m + 8) = 3 * a (m + 7) - 3 * a (m + 6) + a (m + 5) + a (m + 3) - 3 * a (m + 2) +
-    3 * a (m + 1) - a m := by
-  have s3 := step (m + 3)
-  have s2 := step (m + 2)
-  have s1 := step (m + 1)
-  have s0 := step m
-  have c8 := c2 (m + 3 + 5)
-  have c7 := c2 (m + 2 + 5)
-  have c6 := c2 (m + 1 + 5)
-  have c5 := c2 (m + 5)
-  push_cast at c8 c7 c6 c5
-  have key : 2 * (a (m + 8) - (3 * a (m + 7) - 3 * a (m + 6) + a (m + 5) + a (m + 3) - 3 * a (m + 2) +
-      3 * a (m + 1) - a m)) = 0 := by
-    linear_combination 2 * s3 - 6 * s2 + 6 * s1 - 2 * s0 + c8 - 3 * c7 + 3 * c6 - c5
-  linarith
+theorem cX (f : ℕ → ℚ) (c : ℚ) (n k : ℕ) :
+    coeff n (PowerSeries.mk f * (C c * X ^ k)) = if k ≤ n then c * f (n - k) else 0 := by
+  rw [mul_left_comm, coeff_C_mul, coeff_mul_X_pow', coeff_mk]
+  split_ifs <;> simp
 
-theorem a0 : a 0 = 0 := by norm_num [a]
-theorem a1 : a 1 = 0 := by norm_num [a]
-theorem a2 : a 2 = 1 := by norm_num [a]
-theorem a3 : a 3 = 3 := by norm_num [a]
-theorem a4 : a 4 = 6 := by norm_num [a]
-theorem a5 : a 5 = 10 := by norm_num [a]
-theorem a6 : a 6 = 15 := by norm_num [a]
-theorem a7 : a 7 = 22 := by norm_num [a]
+end OMAA122047Helpers
 
-theorem gfC : PowerSeries.mk (fun n => (a n : ℚ)) * C 1 +
-    PowerSeries.mk (fun n => (a n : ℚ)) * X * C (-3) +
-    PowerSeries.mk (fun n => (a n : ℚ)) * X * X * C 3 +
-    PowerSeries.mk (fun n => (a n : ℚ)) * X * X * X * C (-1) +
-    PowerSeries.mk (fun n => (a n : ℚ)) * X * X * X * X * X * C (-1) +
-    PowerSeries.mk (fun n => (a n : ℚ)) * X * X * X * X * X * X * C 3 +
-    PowerSeries.mk (fun n => (a n : ℚ)) * X * X * X * X * X * X * X * C (-3) +
-    PowerSeries.mk (fun n => (a n : ℚ)) * X * X * X * X * X * X * X * X * C 1 =
-    (1 : ℚ⟦X⟧) * X * X * C 1 := by
-  ext n
-  cases n with
-  | zero =>
-    simp only [map_add, PowerSeries.coeff_mul_C, PowerSeries.coeff_zero_mul_X, PowerSeries.coeff_mk]
-    simp [a0]
-  | succ n =>
-    cases n with
-    | zero =>
-      simp only [map_add, PowerSeries.coeff_mul_C, PowerSeries.coeff_succ_mul_X, PowerSeries.coeff_zero_mul_X, PowerSeries.coeff_mk]
-      simp [a0, a1]
-    | succ n =>
-      cases n with
-      | zero =>
-        simp only [map_add, PowerSeries.coeff_mul_C, PowerSeries.coeff_succ_mul_X, PowerSeries.coeff_zero_mul_X, PowerSeries.coeff_mk]
-        simp [a0, a1, a2]
-      | succ n =>
-        cases n with
-        | zero =>
-          simp only [map_add, PowerSeries.coeff_mul_C, PowerSeries.coeff_succ_mul_X, PowerSeries.coeff_zero_mul_X, PowerSeries.coeff_mk]
-          simp [a0, a1, a2, a3]
-        | succ n =>
-          cases n with
-          | zero =>
-            simp only [map_add, PowerSeries.coeff_mul_C, PowerSeries.coeff_succ_mul_X, PowerSeries.coeff_zero_mul_X, PowerSeries.coeff_mk]
-            simp [a1, a2, a3, a4]
-            norm_num
-          | succ n =>
-            cases n with
-            | zero =>
-              simp only [map_add, PowerSeries.coeff_mul_C, PowerSeries.coeff_succ_mul_X, PowerSeries.coeff_zero_mul_X, PowerSeries.coeff_mk]
-              simp [a0, a2, a3, a4, a5]
-              norm_num
-            | succ n =>
-              cases n with
-              | zero =>
-                simp only [map_add, PowerSeries.coeff_mul_C, PowerSeries.coeff_succ_mul_X, PowerSeries.coeff_zero_mul_X, PowerSeries.coeff_mk]
-                simp [a0, a1, a3, a4, a5, a6]
-                norm_num
-              | succ n =>
-                cases n with
-                | zero =>
-                  simp only [map_add, PowerSeries.coeff_mul_C, PowerSeries.coeff_succ_mul_X, PowerSeries.coeff_zero_mul_X, PowerSeries.coeff_mk]
-                  simp [a0, a1, a2, a4, a5, a6, a7]
-                  norm_num
-                | succ n =>
-                  simp only [map_add, PowerSeries.coeff_mul_C, PowerSeries.coeff_succ_mul_X, PowerSeries.coeff_mk]
-                  have h := rec8 n
-                  have hq : ((a (n + 8) : ℤ) : ℚ) = 3 * ((a (n + 7) : ℤ) : ℚ) - 3 * ((a (n + 6) : ℤ) : ℚ) + ((a (n + 5) : ℤ) : ℚ) +
-                      ((a (n + 3) : ℤ) : ℚ) - 3 * ((a (n + 2) : ℤ) : ℚ) + 3 * ((a (n + 1) : ℤ) : ℚ) - ((a n : ℤ) : ℚ) := by
-                    exact_mod_cast h
-                  simp [PowerSeries.coeff_one]
-                  linear_combination hq
-
-end A122047Aux
-
+open PowerSeries OMA.S_oeis_a122047 OMAA122047Helpers in
 theorem OMA.solution : type_of% @OMA.S_oeis_a122047.main := by
-  refine ⟨?_, ?_⟩
-  · intro n hn
-    obtain ⟨m, rfl⟩ : ∃ m, n = m + 8 := ⟨n - 8, by omega⟩
-    exact A122047Aux.rec8 m
-  · have h := A122047Aux.gfC
-    simp only [map_ofNat, map_neg, map_one] at h
-    linear_combination h
+  refine ⟨fun n hn => ?_, ?_⟩
+  · obtain ⟨m, rfl⟩ : ∃ m, n = m + 8 := ⟨n - 8, by omega⟩
+    rw [show m + 8 - 1 = m + 7 by omega, show m + 8 - 2 = m + 6 by omega,
+      show m + 8 - 3 = m + 5 by omega, show m + 8 - 5 = m + 3 by omega,
+      show m + 8 - 6 = m + 2 by omega, show m + 8 - 7 = m + 1 by omega,
+      show m + 8 - 8 = m by omega]
+    exact recur m
+  · have hD : ((1 + X + X ^ 2 + X ^ 3 + X ^ 4) * (1 - X) ^ 4 : PowerSeries ℚ) = C 1 * X ^ 0
+        - C 3 * X ^ 1 + C 3 * X ^ 2 - C 1 * X ^ 3 - C 1 * X ^ 5 + C 3 * X ^ 6 - C 3 * X ^ 7
+        + C 1 * X ^ 8 := by
+      simp only [map_one, map_ofNat]
+      ring
+    rw [mul_assoc, hD]
+    ext n
+    simp only [mul_add, mul_sub, map_add, map_sub, cX, coeff_X_pow]
+    rcases Nat.lt_or_ge n 8 with h | h
+    · interval_cases n <;> norm_num [a]
+    · obtain ⟨m, rfl⟩ : ∃ m, n = m + 8 := ⟨n - 8, by omega⟩
+      have hq : ((a (m + 8) : ℤ) : ℚ) = ((3 * a (m + 7) - 3 * a (m + 6) + a (m + 5) + a (m + 3)
+          - 3 * a (m + 2) + 3 * a (m + 1) - a m : ℤ) : ℚ) := by rw [recur]
+      push_cast at hq
+      simp only [show 0 ≤ m + 8 by omega, show 1 ≤ m + 8 by omega, show 2 ≤ m + 8 by omega,
+        show 3 ≤ m + 8 by omega, show 5 ≤ m + 8 by omega, show 6 ≤ m + 8 by omega,
+        show 7 ≤ m + 8 by omega, show 8 ≤ m + 8 by omega, ↓reduceIte,
+        show m + 8 - 0 = m + 8 by omega, show m + 8 - 1 = m + 7 by omega,
+        show m + 8 - 2 = m + 6 by omega, show m + 8 - 3 = m + 5 by omega,
+        show m + 8 - 5 = m + 3 by omega, show m + 8 - 6 = m + 2 by omega,
+        show m + 8 - 7 = m + 1 by omega, show m + 8 - 8 = m by omega,
+        show m + 8 ≠ 2 by omega]
+      linarith
