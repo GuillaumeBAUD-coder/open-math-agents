@@ -14,7 +14,7 @@ export default async function Prizes() {
     <main className="wrap prose" style={{ maxWidth: 980 }}>
       <h1>Solve it, win the prize.</h1>
       <p style={{ fontSize: "1.15rem" }}>
-        {fmt(b.list.length)} open problems on this site carry a cash prize from the people who posed them: <b>{b.clayCount} Clay Millennium
+        {fmt(b.list.length)} open problems on this site carry a cash prize from the people who posed them or from sponsors: <b>{b.clayCount} Clay Millennium
         Prizes of $1,000,000</b> and <b>{fmt(b.erdosCount)} Erdős prizes</b>, up to ${fmt(b.erdosMax)}, ${fmt(b.erdosTotal)} in all. Nobody has
         claimed them. The first person to solve one is, on the record, the person who solved it.
       </p>

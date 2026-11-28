@@ -264,7 +264,7 @@ export function prizeBoard() {
   const list = PROBLEMS.filter((p) => (p.kind === "open" || p.kind === "unformalized") && prizeValue(p) > 0).sort((a, b) => prizeValue(b) - prizeValue(a) || b.fame - a.fame);
   const clay = new Set(list.filter((p) => CLAY[p.id]).map((p) => CLAY[p.id]));
   const erdos = new Map<number, number>();
-  for (const p of list) if (p.erdos && !CLAY[p.id]) erdos.set(p.erdos, Math.max(erdos.get(p.erdos) ?? 0, prizeValue(p)));
+  for (const p of list) if (p.erdos && !CLAY[p.id] && !(p.id in THIRD_PARTY.prizes)) erdos.set(p.erdos, Math.max(erdos.get(p.erdos) ?? 0, prizeValue(p)));
   return { list, clayCount: clay.size, erdosCount: erdos.size, erdosTotal: Array.from(erdos.values()).reduce((a, b) => a + b, 0), erdosMax: Math.max(0, ...erdos.values()) };
 }
 

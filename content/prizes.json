@@ -13,6 +13,168 @@
       "by": "Bakuage Co., Ltd. (Tokyo)",
       "claim": "Bakuage's rules on mathprize.net decide; announced 7 July 2021",
       "url": "https://mathprize.net/"
+    },
+    "GoldbachConjecture.goldbach": {
+      "usd": 1000, "label": "1,000 USDC",
+      "by": "BrainChain",
+      "claim": "Paid in USDC on Base for the first proof or disproof of this problem merged here as its own proof file after 28 November 2026, 10:39 UTC; the GitHub account that sent it claims it on BrainChain's terms",
+      "url": "https://usebrainchain.com/problems/goldbach-conjecture"
+    },
+    "PerfectNumbers.infinitely_many_even_perfect": {
+      "usd": 1000, "label": "1,000 USDC",
+      "by": "BrainChain",
+      "claim": "Paid in USDC on Base for the first proof or disproof of this problem merged here as its own proof file after 28 November 2026, 10:39 UTC; the GitHub account that sent it claims it on BrainChain's terms",
+      "url": "https://usebrainchain.com/problems/mersenne-primes"
+    },
+    "TwinPrimes.twin_primes": {
+      "usd": 1000, "label": "1,000 USDC",
+      "by": "BrainChain",
+      "claim": "Paid in USDC on Base for the first proof or disproof of this problem merged here as its own proof file after 28 November 2026, 10:39 UTC; the GitHub account that sent it claims it on BrainChain's terms",
+      "url": "https://usebrainchain.com/problems/twin-primes"
+    },
+    "PerfectNumbers.odd_perfect_number_conjecture": {
+      "usd": 1000, "label": "1,000 USDC",
+      "by": "BrainChain",
+      "claim": "Paid in USDC on Base for the first proof or disproof of this problem merged here as its own proof file after 28 November 2026, 10:39 UTC; the GitHub account that sent it claims it on BrainChain's terms",
+      "url": "https://usebrainchain.com/problems/odd-perfect-numbers"
+    },
+    "LegendreConjecture.legendre_conjecture": {
+      "usd": 500, "label": "500 USDC",
+      "by": "BrainChain",
+      "claim": "Paid in USDC on Base for the first proof or disproof of this problem merged here as its own proof file after 28 November 2026, 10:39 UTC; the GitHub account that sent it claims it on BrainChain's terms",
+      "url": "https://usebrainchain.com/problems/legendre-conjecture"
+    },
+    "LonelyRunnerConjecture.lonely_runner_conjecture": {
+      "usd": 500, "label": "500 USDC",
+      "by": "BrainChain",
+      "claim": "Paid in USDC on Base for the first proof or disproof of this problem merged here as its own proof file after 28 November 2026, 10:39 UTC; the GitHub account that sent it claims it on BrainChain's terms",
+      "url": "https://usebrainchain.com/problems/lonely-runner"
+    },
+    "Conjecture_1_3_to_2_3.conjecture_1_3_to_2_3": {
+      "usd": 500, "label": "500 USDC",
+      "by": "BrainChain",
+      "claim": "Paid in USDC on Base for the first proof or disproof of this problem merged here as its own proof file after 28 November 2026, 10:39 UTC; the GitHub account that sent it claims it on BrainChain's terms",
+      "url": "https://usebrainchain.com/problems/one-third-two-thirds"
+    },
+    "AndrewsCurtis.andrews_curtis_conjecture": {
+      "usd": 500, "label": "500 USDC",
+      "by": "BrainChain",
+      "claim": "Paid in USDC on Base for the first proof or disproof of this problem merged here as its own proof file after 28 November 2026, 10:39 UTC; the GitHub account that sent it claims it on BrainChain's terms",
+      "url": "https://usebrainchain.com/problems/andrews-curtis"
+    },
+    "GracefulLabeling.graceful_tree_conjecture": {
+      "usd": 500, "label": "500 USDC",
+      "by": "BrainChain",
+      "claim": "Paid in USDC on Base for the first proof or disproof of this problem merged here as its own proof file after 28 November 2026, 10:39 UTC; the GitHub account that sent it claims it on BrainChain's terms",
+      "url": "https://usebrainchain.com/problems/graceful-trees"
+    },
+    "UnionClosed.union_closed": {
+      "usd": 500, "label": "500 USDC",
+      "by": "BrainChain",
+      "claim": "Paid in USDC on Base for the first proof or disproof of this problem merged here as its own proof file after 28 November 2026, 10:39 UTC; the GitHub account that sent it claims it on BrainChain's terms",
+      "url": "https://usebrainchain.com/problems/union-closed-sets"
+    },
+    "Hadamard.HadamardConjecture": {
+      "usd": 500, "label": "500 USDC",
+      "by": "BrainChain",
+      "claim": "Paid in USDC on Base for the first proof or disproof of this problem merged here as its own proof file after 28 November 2026, 10:39 UTC; the GitHub account that sent it claims it on BrainChain's terms",
+      "url": "https://usebrainchain.com/problems/hadamard-conjecture"
+    },
+    "LittlewoodConjecture.littlewood_conjecture": {
+      "usd": 500, "label": "500 USDC",
+      "by": "BrainChain",
+      "claim": "Paid in USDC on Base for the first proof or disproof of this problem merged here as its own proof file after 28 November 2026, 10:39 UTC; the GitHub account that sent it claims it on BrainChain's terms",
+      "url": "https://usebrainchain.com/problems/littlewood-conjecture"
+    },
+    "Catalan.pillais_conjecture": {
+      "usd": 500, "label": "500 USDC",
+      "by": "BrainChain",
+      "claim": "Paid in USDC on Base for the first proof or disproof of this problem merged here as its own proof file after 28 November 2026, 10:39 UTC; the GitHub account that sent it claims it on BrainChain's terms",
+      "url": "https://usebrainchain.com/problems/pillai-conjecture"
+    },
+    "ChowlaLiouvilleConjecture.chowla_liouville_conjecture": {
+      "usd": 500, "label": "500 USDC",
+      "by": "BrainChain",
+      "claim": "Paid in USDC on Base for the first proof or disproof of this problem merged here as its own proof file after 28 November 2026, 10:39 UTC; the GitHub account that sent it claims it on BrainChain's terms",
+      "url": "https://usebrainchain.com/problems/chowla-conjecture"
+    },
+    "Exponentials.four_exponentials_conjecture": {
+      "usd": 500, "label": "500 USDC",
+      "by": "BrainChain",
+      "claim": "Paid in USDC on Base for the first proof or disproof of this problem merged here as its own proof file after 28 November 2026, 10:39 UTC; the GitHub account that sent it claims it on BrainChain's terms",
+      "url": "https://usebrainchain.com/problems/four-exponentials"
+    },
+    "Schanuel.schanuel_conjecture": {
+      "usd": 500, "label": "500 USDC",
+      "by": "BrainChain",
+      "claim": "Paid in USDC on Base for the first proof or disproof of this problem merged here as its own proof file after 28 November 2026, 10:39 UTC; the GitHub account that sent it claims it on BrainChain's terms",
+      "url": "https://usebrainchain.com/problems/schanuel-conjecture"
+    },
+    "ReconstructionConjecture.reconstruction_conjecture": {
+      "usd": 500, "label": "500 USDC",
+      "by": "BrainChain",
+      "claim": "Paid in USDC on Base for the first proof or disproof of this problem merged here as its own proof file after 28 November 2026, 10:39 UTC; the GitHub account that sent it claims it on BrainChain's terms",
+      "url": "https://usebrainchain.com/problems/graph-reconstruction"
+    },
+    "InscribedSquare.inscribed_square_problem": {
+      "usd": 500, "label": "500 USDC",
+      "by": "BrainChain",
+      "claim": "Paid in USDC on Base for the first proof or disproof of this problem merged here as its own proof file after 28 November 2026, 10:39 UTC; the GitHub account that sent it claims it on BrainChain's terms",
+      "url": "https://usebrainchain.com/problems/inscribed-square"
+    },
+    "CernyConjecture.cerny_conjecture": {
+      "usd": 500, "label": "500 USDC",
+      "by": "BrainChain",
+      "claim": "Paid in USDC on Base for the first proof or disproof of this problem merged here as its own proof file after 28 November 2026, 10:39 UTC; the GitHub account that sent it claims it on BrainChain's terms",
+      "url": "https://usebrainchain.com/problems/cerny-conjecture"
+    },
+    "Erdos242.erdos_242": {
+      "usd": 500, "label": "500 USDC",
+      "by": "BrainChain",
+      "claim": "Paid in USDC on Base for the first proof or disproof of this problem merged here as its own proof file after 28 November 2026, 10:39 UTC; the GitHub account that sent it claims it on BrainChain's terms",
+      "url": "https://usebrainchain.com/problems/erdos-242"
+    },
+    "AlgebraicNormality.irrational_algebraic_normal_in_some_base": {
+      "usd": 500, "label": "500 USDC",
+      "by": "BrainChain",
+      "claim": "Paid in USDC on Base for the first proof or disproof of this problem merged here as its own proof file after 28 November 2026, 10:39 UTC; the GitHub account that sent it claims it on BrainChain's terms",
+      "url": "https://usebrainchain.com/problems/algebraic-normality"
+    },
+    "SumOfThreeCubes.isSumOfThreeCubes_iff_mod_9": {
+      "usd": 500, "label": "500 USDC",
+      "by": "BrainChain",
+      "claim": "Paid in USDC on Base for the first proof or disproof of this problem merged here as its own proof file after 28 November 2026, 10:39 UTC; the GitHub account that sent it claims it on BrainChain's terms",
+      "url": "https://usebrainchain.com/problems/sum-of-three-cubes"
+    },
+    "MeynielConjecture.meyniel_conjecture": {
+      "usd": 250, "label": "250 USDC",
+      "by": "BrainChain",
+      "claim": "Paid in USDC on Base for the first proof or disproof of this problem merged here as its own proof file after 28 November 2026, 10:39 UTC; the GitHub account that sent it claims it on BrainChain's terms",
+      "url": "https://usebrainchain.com/problems/meyniel-conjecture"
+    },
+    "ErdosMoser.erdos_moser_conjecture": {
+      "usd": 250, "label": "250 USDC",
+      "by": "BrainChain",
+      "claim": "Paid in USDC on Base for the first proof or disproof of this problem merged here as its own proof file after 28 November 2026, 10:39 UTC; the GitHub account that sent it claims it on BrainChain's terms",
+      "url": "https://usebrainchain.com/problems/erdos-moser"
+    },
+    "Erdos398.erdos_398": {
+      "usd": 250, "label": "250 USDC",
+      "by": "BrainChain",
+      "claim": "Paid in USDC on Base for the first proof or disproof of this problem merged here as its own proof file after 28 November 2026, 10:39 UTC; the GitHub account that sent it claims it on BrainChain's terms",
+      "url": "https://usebrainchain.com/problems/erdos-398"
+    },
+    "Erdos17.erdos_17": {
+      "usd": 250, "label": "250 USDC",
+      "by": "BrainChain",
+      "claim": "Paid in USDC on Base for the first proof or disproof of this problem merged here as its own proof file after 28 November 2026, 10:39 UTC; the GitHub account that sent it claims it on BrainChain's terms",
+      "url": "https://usebrainchain.com/problems/erdos-17"
+    },
+    "LovaszPlummerConjecture.sheehan_conjecture": {
+      "usd": 250, "label": "250 USDC",
+      "by": "BrainChain",
+      "claim": "Paid in USDC on Base for the first proof or disproof of this problem merged here as its own proof file after 28 November 2026, 10:39 UTC; the GitHub account that sent it claims it on BrainChain's terms",
+      "url": "https://usebrainchain.com/problems/sheehan-conjecture"
     }
   }
 }
