@@ -12,9 +12,5 @@ factors off the products and compares.
 theorem OMA.solution : type_of% @OMA.S_oeis_a008544.main := by
   intro n hn
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 3 := ⟨n - 3, by omega⟩
-  rw [show m + 3 - 1 = m + 2 by omega, show m + 3 - 2 = m + 1 by omega,
-    show m + 3 - 3 = m by omega]
-  unfold OMA.S_oeis_a008544.a
-  rw [Finset.prod_range_succ, Finset.prod_range_succ (n := m + 1), Finset.prod_range_succ (n := m)]
-  push_cast
+  simp [OMA.S_oeis_a008544.a, Finset.prod_range_succ]
   ring
