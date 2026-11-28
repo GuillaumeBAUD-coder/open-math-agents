@@ -1,6 +1,9 @@
 import OMAReductions.R_Erdos396_erdos_396_R1_H2_R1
 import Mathlib
 
+-- Certificate by @Genbox, using Justin Dehorty's k = 16 witness.
+-- Shortening: use Mathlib's descending-factorial product identity.
+
 open Finset
 
 private def witness : ℕ := 20021368432952099
@@ -63,13 +66,6 @@ private theorem witnessDivides : witness.descFactorial 17 ∣ witness.centralBin
   rw [Nat.centralBinom_eq_two_mul_choose, two_mul, Nat.factorization_choose' hp hlog]
   exact hcarry
 
-private theorem descDivides (n k l : ℕ) (h : k ≤ l) : n.descFactorial k ∣ n.descFactorial l := by
-  induction l, h using Nat.le_induction with
-  | base => exact dvd_rfl
-  | succ l _ ih =>
-    rw [Nat.descFactorial_succ]
-    exact ih.trans (dvd_mul_left _ _)
-
 theorem OMA.solution : OMA.R_Erdos396_erdos_396_R1_H2_R1.H1 := by
   intro k _ hk
-  exact ⟨witness, (descDivides witness (k + 1) 17 (by omega)).trans witnessDivides⟩
+  exact ⟨witness, (Dvd.intro_left _ (Nat.descFactorial_mul_descFactorial (by omega))).trans witnessDivides⟩
