@@ -5,7 +5,8 @@ A reflection-symmetric colouring on 233 points must contain a red 3-term
 or blue 16-term arithmetic progression under the specified initial colours.
 The reflection argument and certificate checker are adapted from tchayen in
 https://github.com/lefttosolve2/open-math-agents/pull/36950.
-This case has a separately generated certificate with 20816 nodes and 771 progressions. -/
+This case has a separately generated certificate with 20816 nodes and 771 progressions.
+The six branches of the first progression are replayed separately. -/
 
 namespace OMA.G14W316H1
 
@@ -914,11 +915,51 @@ private theorem walk_ok {c : Nat → Bool}
     exact branches_ok hs hap ih hv 16 (without (maskAt p) b) b (p + 1) hb
       (hit_without (maskAt_hit hs hap p) hb)
 
+private def pref0 : Nat := ((1 <<< 92) ||| (1 <<< 98)) ||| (1 <<< 86)
+private def pref1 : Nat := pref0 ||| (1 <<< 90)
+private def pref2 : Nat := pref1 ||| (1 <<< 94)
+private def pref3 : Nat := pref2 ||| (1 <<< 102)
+private def pref4 : Nat := pref3 ||| (1 <<< 106)
+private def pref5 : Nat := pref4 ||| (1 <<< 110)
+private def pref6 : Nat := pref5 ||| (1 <<< 114)
+
 set_option maxRecDepth 200000 in
 set_option maxHeartbeats 0 in
-private theorem run_ok :
-    walk maxFuel initTable (((1 <<< 92) ||| (1 <<< 98)) ||| (1 <<< 86)) 0 = numNodes := by
+private theorem run0 :
+    walk maxFuel (Nat.lor initTable (rowVal 90)) (Nat.lor pref0 (cell initTable 90)) 1 = 2684 := by
   decide +kernel
+
+set_option maxRecDepth 200000 in
+set_option maxHeartbeats 0 in
+private theorem run1 :
+    walk maxFuel (Nat.lor initTable (rowVal 94)) (Nat.lor pref1 (cell initTable 94)) 2684 = 5128 := by
+  decide +kernel
+
+set_option maxRecDepth 200000 in
+set_option maxHeartbeats 0 in
+private theorem run2 :
+    walk maxFuel (Nat.lor initTable (rowVal 102)) (Nat.lor pref2 (cell initTable 102)) 5128 = 7773 := by
+  decide +kernel
+
+set_option maxRecDepth 200000 in
+set_option maxHeartbeats 0 in
+private theorem run3 :
+    walk maxFuel (Nat.lor initTable (rowVal 106)) (Nat.lor pref3 (cell initTable 106)) 7773 = 11834 := by
+  decide +kernel
+
+set_option maxRecDepth 200000 in
+set_option maxHeartbeats 0 in
+private theorem run4 :
+    walk maxFuel (Nat.lor initTable (rowVal 110)) (Nat.lor pref4 (cell initTable 110)) 11834 = 18442 := by
+  decide +kernel
+
+set_option maxRecDepth 200000 in
+set_option maxHeartbeats 0 in
+private theorem run5 :
+    walk maxFuel (Nat.lor initTable (rowVal 114)) (Nat.lor pref5 (cell initTable 114)) 18442 = 20816 := by
+  decide +kernel
+
+private theorem root_empty : without (maskAt 0) pref6 = 0 := by decide +kernel
 
 end OMA.G14W316H1
 
@@ -926,8 +967,82 @@ theorem OMA.solution : OMA.R_Green14_W_3_16_R2_H1_R1_H2_R1.H1 := by
   intro c h92 h98 h86 ⟨hs, hap⟩
   have hinit : OMA.G14W316H1.Compat c OMA.G14W316H1.initTable :=
     OMA.G14W316H1.init_compat hs hap
-  have hb : OMA.G14W316H1.Blue c (((1 <<< 92) ||| (1 <<< 98)) ||| (1 <<< 86)) :=
-    OMA.G14W316H1.blueOr (OMA.G14W316H1.blueOr (OMA.G14W316H1.blueSingle h92) (OMA.G14W316H1.blueSingle h98)) (OMA.G14W316H1.blueSingle h86)
-  have h0 := OMA.G14W316H1.walk_ok hs hap OMA.G14W316H1.maxFuel _ _ 0 hinit hb
-  rw [OMA.G14W316H1.run_ok] at h0
-  exact absurd h0 (by decide)
+  have hb0 : OMA.G14W316H1.Blue c OMA.G14W316H1.pref0 :=
+    OMA.G14W316H1.blueOr (OMA.G14W316H1.blueOr (OMA.G14W316H1.blueSingle h92)
+      (OMA.G14W316H1.blueSingle h98)) (OMA.G14W316H1.blueSingle h86)
+  by_cases hr90 : c 90 = true
+  · have hv := OMA.G14W316H1.compatOr hinit (OMA.G14W316H1.row_compat hs hap hr90)
+    have hb := OMA.G14W316H1.blueOr hb0 (hinit 90 hr90)
+    have hz := OMA.G14W316H1.walk_ok hs hap OMA.G14W316H1.maxFuel _ _ 1 hv hb
+    rw [OMA.G14W316H1.run0] at hz
+    exact absurd hz (by decide)
+  have hf90 : c 90 = false := by
+    cases hv : c 90 with
+    | false => rfl
+    | true => exact (hr90 hv).elim
+  have hb1 : OMA.G14W316H1.Blue c OMA.G14W316H1.pref1 :=
+    OMA.G14W316H1.blueOr hb0 (OMA.G14W316H1.blueSingle hf90)
+  by_cases hr94 : c 94 = true
+  · have hv := OMA.G14W316H1.compatOr hinit (OMA.G14W316H1.row_compat hs hap hr94)
+    have hb := OMA.G14W316H1.blueOr hb1 (hinit 94 hr94)
+    have hz := OMA.G14W316H1.walk_ok hs hap OMA.G14W316H1.maxFuel _ _ 2684 hv hb
+    rw [OMA.G14W316H1.run1] at hz
+    exact absurd hz (by decide)
+  have hf94 : c 94 = false := by
+    cases hv : c 94 with
+    | false => rfl
+    | true => exact (hr94 hv).elim
+  have hb2 : OMA.G14W316H1.Blue c OMA.G14W316H1.pref2 :=
+    OMA.G14W316H1.blueOr hb1 (OMA.G14W316H1.blueSingle hf94)
+  by_cases hr102 : c 102 = true
+  · have hv := OMA.G14W316H1.compatOr hinit (OMA.G14W316H1.row_compat hs hap hr102)
+    have hb := OMA.G14W316H1.blueOr hb2 (hinit 102 hr102)
+    have hz := OMA.G14W316H1.walk_ok hs hap OMA.G14W316H1.maxFuel _ _ 5128 hv hb
+    rw [OMA.G14W316H1.run2] at hz
+    exact absurd hz (by decide)
+  have hf102 : c 102 = false := by
+    cases hv : c 102 with
+    | false => rfl
+    | true => exact (hr102 hv).elim
+  have hb3 : OMA.G14W316H1.Blue c OMA.G14W316H1.pref3 :=
+    OMA.G14W316H1.blueOr hb2 (OMA.G14W316H1.blueSingle hf102)
+  by_cases hr106 : c 106 = true
+  · have hv := OMA.G14W316H1.compatOr hinit (OMA.G14W316H1.row_compat hs hap hr106)
+    have hb := OMA.G14W316H1.blueOr hb3 (hinit 106 hr106)
+    have hz := OMA.G14W316H1.walk_ok hs hap OMA.G14W316H1.maxFuel _ _ 7773 hv hb
+    rw [OMA.G14W316H1.run3] at hz
+    exact absurd hz (by decide)
+  have hf106 : c 106 = false := by
+    cases hv : c 106 with
+    | false => rfl
+    | true => exact (hr106 hv).elim
+  have hb4 : OMA.G14W316H1.Blue c OMA.G14W316H1.pref4 :=
+    OMA.G14W316H1.blueOr hb3 (OMA.G14W316H1.blueSingle hf106)
+  by_cases hr110 : c 110 = true
+  · have hv := OMA.G14W316H1.compatOr hinit (OMA.G14W316H1.row_compat hs hap hr110)
+    have hb := OMA.G14W316H1.blueOr hb4 (hinit 110 hr110)
+    have hz := OMA.G14W316H1.walk_ok hs hap OMA.G14W316H1.maxFuel _ _ 11834 hv hb
+    rw [OMA.G14W316H1.run4] at hz
+    exact absurd hz (by decide)
+  have hf110 : c 110 = false := by
+    cases hv : c 110 with
+    | false => rfl
+    | true => exact (hr110 hv).elim
+  have hb5 : OMA.G14W316H1.Blue c OMA.G14W316H1.pref5 :=
+    OMA.G14W316H1.blueOr hb4 (OMA.G14W316H1.blueSingle hf110)
+  by_cases hr114 : c 114 = true
+  · have hv := OMA.G14W316H1.compatOr hinit (OMA.G14W316H1.row_compat hs hap hr114)
+    have hb := OMA.G14W316H1.blueOr hb5 (hinit 114 hr114)
+    have hz := OMA.G14W316H1.walk_ok hs hap OMA.G14W316H1.maxFuel _ _ 18442 hv hb
+    rw [OMA.G14W316H1.run5] at hz
+    exact absurd hz (by decide)
+  have hf114 : c 114 = false := by
+    cases hv : c 114 with
+    | false => rfl
+    | true => exact (hr114 hv).elim
+  have hb6 : OMA.G14W316H1.Blue c OMA.G14W316H1.pref6 :=
+    OMA.G14W316H1.blueOr hb5 (OMA.G14W316H1.blueSingle hf114)
+  have hx := OMA.G14W316H1.hit_without (OMA.G14W316H1.maskAt_hit hs hap 0) hb6
+  rw [OMA.G14W316H1.root_empty] at hx
+  obtain ⟨i, hi, _⟩ := hx
+  simp at hi
