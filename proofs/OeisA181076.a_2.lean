@@ -24,8 +24,6 @@ lemma log_const (f : ℕ → ℕ → ℤ) : (hannaLog f).constantCoeff = 0 := by
 
 end OMA.A181076
 
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 1000000 in
 theorem OMA.solution : type_of% @OeisA181076.a_2 := by
   unfold a hannaExp
   rw [OMA.A181076.subst_coeff_sum _ _ (OMA.A181076.log_const _) 2]
