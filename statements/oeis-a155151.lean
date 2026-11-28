@@ -4,7 +4,7 @@ import Mathlib
 # OEIS A155151: powers of two in T(n, k) = 4nk + 2n + 2k + 2
 
 Source: https://oeis.org/A155151
-Credit: @SudharsanAnimations
+Credit: Sudharsan Rajendiran
 
 A155151 is the triangle `T(n, k) = 4 n k + 2 n + 2 k + 2`, `1 ≤ k ≤ n`, read by rows. Vincenzo
 Librandi conjectured: if `p` is prime and `2^p` belongs to the sequence, then `2^p - 1` is not a
