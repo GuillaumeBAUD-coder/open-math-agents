@@ -689,22 +689,22 @@ theorem controls :
       (hr : ∀ n, f (n + 6) + 10 * f (n + 4) + 5 * f (n + 2) =
         5 * f (n + 5) + 10 * f (n + 3) + f (n + 1)) (k : ℕ) :
       12 * (f (k + 1) : ℤ) = p k := by
-    induction k using Nat.strong_induction_on with
-    | ind k ih =>
-      rcases Nat.lt_or_ge k 5 with hk | hk
-      · interval_cases k <;> norm_num [p, h1, h2, h3, h4, h5]
-      · obtain ⟨m, rfl⟩ : ∃ m, k = m + 5 := ⟨k - 5, by omega⟩
-        have e0 := ih m (by omega)
-        have e1 := ih (m + 1) (by omega)
-        have e2 := ih (m + 2) (by omega)
-        have e3 := ih (m + 3) (by omega)
-        have e4 := ih (m + 4) (by omega)
-        have r : (f (m + 6) : ℤ) + 10 * f (m + 4) + 5 * f (m + 2) =
-            5 * f (m + 5) + 10 * f (m + 3) + f (m + 1) := by
-          exact_mod_cast hr m
-        dsimp only [p] at e0 e1 e2 e3 e4 ⊢
-        push_cast at e1 e2 e3 e4 ⊢
-        linear_combination 12 * r + 5 * e4 - 10 * e3 + 10 * e2 - 5 * e1 + e0
+    induction k using Nat.strong_induction_on
+    rename_i k ih
+    rcases Nat.lt_or_ge k 5 with hk | hk
+    · interval_cases k <;> norm_num [p, h1, h2, h3, h4, h5]
+    · obtain ⟨m, rfl⟩ : ∃ m, k = m + 5 := ⟨k - 5, by omega⟩
+      have e0 := ih m (by omega)
+      have e1 := ih (m + 1) (by omega)
+      have e2 := ih (m + 2) (by omega)
+      have e3 := ih (m + 3) (by omega)
+      have e4 := ih (m + 4) (by omega)
+      have r : (f (m + 6) : ℤ) + 10 * f (m + 4) + 5 * f (m + 2) =
+          5 * f (m + 5) + 10 * f (m + 3) + f (m + 1) := by
+        exact_mod_cast hr m
+      dsimp only [p] at e0 e1 e2 e3 e4 ⊢
+      push_cast at e1 e2 e3 e4 ⊢
+      linear_combination 12 * r + 5 * e4 - 10 * e3 + 10 * e2 - 5 * e1 + e0
   have value (n v : ℕ) (hn : 0 < n) (hv : p (↑(n - 1) : ℤ) = 12 * (v : ℤ)) : a n = v := by
     have h := key a a_v1 a_v2 a_v3 a_v4 a_v5 a_rel (n - 1)
     rw [Nat.sub_add_cancel hn, hv] at h
