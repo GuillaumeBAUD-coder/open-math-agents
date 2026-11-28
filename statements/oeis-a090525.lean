@@ -4,7 +4,7 @@ import Mathlib
 # OEIS A090525: no term is zero
 
 Source: https://oeis.org/A090525
-Credit: @SudharsanAnimations
+Credit: Sudharsan Rajendiran
 
 `A090525(n)` (for `n ≥ 2`) is the least `k` such that `⌊n^n / k⌋` is prime, or `0` if there is no
 such `k`. The OEIS entry conjectures that no term is zero, and records the proof: if `p` is a
