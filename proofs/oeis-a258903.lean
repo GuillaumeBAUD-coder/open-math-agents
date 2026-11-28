@@ -83,14 +83,14 @@ private theorem collapse {M n : ℕ} (hM : 0 < M) (hn : 2*M+4 ≤ n) :
         have hval : term 2 3 n (1,n) = 2*3^n := by
           simpa only [term, pow_one, Nat.factorial_one, one_mul, Prod.fst, Prod.snd] using
             Nat.mul_div_cancel (2*3^n) (Nat.factorial_pos n)
-        simp [f, hval, hn1, Ne.symm hn1]
+        simp [Nat.ModEq, f, hval, hn1, Ne.symm hn1]
       rcases eq_or_ne e 1 with rfl|he
       · simp only [mul_one] at hm
         subst d
         have hval : term 2 3 n (n,1) = 2^n*3 := by
           simpa only [term, pow_one, Nat.factorial_one, mul_one, Prod.fst, Prod.snd] using
             Nat.mul_div_cancel (2^n*3) (Nat.factorial_pos n)
-        simp [f, hval, hn1, Ne.symm hn1, mul_comm]
+        simp [Nat.ModEq, f, hval, hn1, Ne.symm hn1, mul_comm]
       have hd0 : d ≠ 0 := by rintro rfl; simp_all
       have he0 : e ≠ 0 := by rintro rfl; simp_all
       simpa [f, hd, he] using (Nat.modEq_zero_iff_dvd.mpr
