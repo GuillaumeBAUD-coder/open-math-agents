@@ -13,17 +13,10 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a192984.main := by
   intro n _ M hM
   obtain ⟨⟨k, hk⟩, hub⟩ := hM
   have hle : ∀ j : ℕ, step^[j] n ≤ M := fun j => hub ⟨j, rfl⟩
-  have e1 : step^[k + 1] n = step (step^[k] n) := Function.iterate_succ_apply' (f := step) k n
-  have e2 : step^[k + 1 + 1] n = step (step^[k + 1] n) :=
-    Function.iterate_succ_apply' (f := step) (k + 1) n
   have h1 : step M ≤ M := by
-    have h := hle (k + 1)
-    rw [e1, hk] at h
-    exact h
+    simpa only [Function.iterate_succ_apply', hk] using hle (k + 1)
   have h2 : step (step M) ≤ M := by
-    have h := hle (k + 1 + 1)
-    rw [e2, e1, hk] at h
-    exact h
+    simpa only [Function.iterate_succ_apply', hk] using hle (k + 1 + 1)
   have hgt : ∀ m : ℕ, m % 3 ≠ 0 → 4 * m + 1 ≤ step m := by
     intro m hm
     unfold step
