@@ -132,11 +132,20 @@ def file_refs(text):
     return list(dict.fromkeys(re.findall(r"https?://[^\s)\]>]+", m.group(1))))[:6]
 
 
+def module_component(part):
+    """One path component written as a Lean name component.
+
+    Guillemets are needed as soon as any dot-separated segment starts with a digit: Lean reads
+    `math.0608009` as the two names `math` and `0608009`, and a name may not start with a digit, so
+    `import FormalConjectures.Arxiv.math.0608009.DixmierConjecture` does not parse."""
+    return "«%s»" % part if any(re.match(r"^\d", s) for s in part.split(".")) else part
+
+
 def parse_file(path, rel):
     text = open(path, encoding="utf-8").read()
     lines = text.splitlines()
     module = "FormalConjectures." + ".".join(
-        "«%s»" % p if re.match(r"^\d", p) else p for p in rel[len("FormalConjectures/"):-5].split("/")
+        module_component(p) for p in rel[len("FormalConjectures/"):-5].split("/")
     )
     title = file_title(text)
     refs = file_refs(text)
