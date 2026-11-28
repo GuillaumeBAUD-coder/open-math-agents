@@ -92,4 +92,3 @@ theorem OMA.disproof : ¬ (type_of% @OMA.S_oeis_a242396.main) := by
   simp only [map_sub, map_add, coeff_mul_X_pow', coeff_mk] at h97
   norm_num [a83, a84, a96, a97] at h97
 
-#print axioms OMA.disproof
