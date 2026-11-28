@@ -3,18 +3,18 @@ import Mathlib
 
 -- Step Erdos1052.erdos_1052.R1.H2.R1.H1.R1.H2.R1.H4.R1.H3:
 -- Hypothesis H3 of reduction Erdos1052.erdos_1052.R1.H2.R1.H1.R1.H2.R1.H4.R1
--- Credit: @sanchan
+-- Credit: @alanaut24
 
 /-!
-# Direct proof of step H3 (single repeated odd prime z with e = 4 mod 8)
+# Shorter proof of step H3
 
-We prove the step unconditionally with explicit bound A = 9:
-1. For z in {419, 463, 503, 607, 883, 1019, 1327}, the forced simple-prime chain starting from
-   1 + z^4 | 1 + z^e reaches either two distinct sources for 3 or 5, or 3^2 dividing p + 1.
-2. For z = 11, 1 + 11^4 = 2 * 7321 forces the chain 7321 -> {7, 523}, 523 -> 131, 131 -> {3, 11},
-   consuming both 3 and 7. Graham's weighted bound (`master_gen`) combined with `mersenne_bound`,
-   `fiber_bound` (u = 22), and `zleaf_bound` (i = 2) yields an upper bound < 1.89 against the
-   lower bound >= 1.9979 for all a >= 10.
+The original proof and seven prime-chain exclusions are by @sanchan.
+The z = 11 branch uses the forced chain 7321 -> 523 -> 131.
+For odd a, both 2^a+1 and 131+1 supply the simple prime 3.
+For even a, a prime q = 2 mod 3 dividing 2^a+1 must be 1 mod 4,
+so q is neither 11 nor 131; q+1 and 131+1 again give two sources of 3.
+This replaces the original weighted estimate and preserves the exact target.
+Related parity argument: @DPS0340, pull request #39771.
 -/
 
 namespace OMA.H3Proof
@@ -488,216 +488,41 @@ private theorem kill_1327 {m e : ℕ} {P : Finset ℕ}
   have hp_432599183 : 432599183 ∈ P := S1 432599183 p_432599183 (by norm_num) (by simp) 6921586927 hp_6921586927 (by norm_num)
   exact S6 3 (by norm_num) (by norm_num) (by simp) 432599183 hp_432599183 (by norm_num)
 
-private def beta11 (p : ℕ) : ℚ :=
-  if p = 7321 then (7322 : ℚ) / 7321
-  else if p = 523 then ((524 : ℚ) / 523) * ((7322 : ℚ) / 7321)
-  else if p = 131 then ((132 : ℚ) / 131) * ((524 : ℚ) / 523) * ((7322 : ℚ) / 7321)
-  else if p = 3 then ((4 : ℚ) / 3) * ((132 : ℚ) / 131) * ((524 : ℚ) / 523) * ((7322 : ℚ) / 7321)
-  else if p = 7 then ((8 : ℚ) / 7) * ((7322 : ℚ) / 7321)
-  else ((p : ℚ) + 1) / ((p : ℚ) - 1)
-
-private theorem beta11_bounds {p : ℕ} (hp : 2 ≤ p) :
-    1 + 1 / (p : ℚ) ≤ beta11 p ∧ beta11 p ≤ ((p : ℚ) + 1) / ((p : ℚ) - 1) := by
-  unfold beta11
-  split_ifs with h1 h2 h3 h4 h5
-  · subst h1; norm_num
-  · subst h2; norm_num
-  · subst h3; norm_num
-  · subst h4; norm_num
-  · subst h5; norm_num
-  · exact ⟨one_add_le_B hp, le_refl _⟩
-
-private theorem beta11_pos {p : ℕ} (hp : 2 ≤ p) : 0 < beta11 p := by
-  have h1 := (beta11_bounds hp).1
-  have h2 : (0 : ℚ) < 1 + 1 / (p : ℚ) := by positivity
-  linarith
-
 private theorem kill_11 {m e : ℕ} {P : Finset ℕ}
     (hP : ∀ p ∈ P, p.Prime ∧ p ≠ 2)
     (E : (2 ^ m + 1) * (1 + 11 ^ e) * ∏ p ∈ P, (p + 1) = 2 ^ (m + 1) * 11 ^ e * ∏ p ∈ P, p)
     (he : e % 8 = 4) (hm : 10 ≤ m) : False := by
-  obtain ⟨S1, -, S3, -, -, -, S7, S8⟩ :=
+  obtain ⟨S1, S2, S3, S4, _, _, S7, _⟩ :=
     facts hP (hK_singleton (z := 11) (e := e) (by norm_num)) E
   have hD : 1 + 11 ^ 4 ∣ 1 + 11 ^ e := one_add_pow_dvd_of_odd_mul he
-  have h7321d : 7321 ∣ 1 + 11 ^ e := (by norm_num : 7321 ∣ 1 + 11 ^ 4).trans hD
-  have hp_7321 : 7321 ∈ P := S7 7321 (by norm_num) (by norm_num) (by simp) h7321d
+  have hp_7321 : 7321 ∈ P := S7 7321 (by norm_num) (by norm_num) (by simp)
+    ((by norm_num : 7321 ∣ 1 + 11 ^ 4).trans hD)
   have hp_523 : 523 ∈ P := S1 523 (by norm_num) (by norm_num) (by simp) 7321 hp_7321 (by norm_num)
   have hp_131 : 131 ∈ P := S1 131 (by norm_num) (by norm_num) (by simp) 523 hp_523 (by norm_num)
-  have hp_3 : 3 ∈ P := S1 3 (by norm_num) (by norm_num) (by simp) 131 hp_131 (by norm_num)
-  have hp_7 : 7 ∈ P := S1 7 (by norm_num) (by norm_num) (by simp) 7321 hp_7321 (by norm_num)
-  have hK0 : 0 < 11 ^ e := pow_pos (by norm_num) e
-  obtain ⟨L, hLP, hLN, hMain⟩ := master_gen hP
-    (hK_singleton (z := 11) (e := e) (by norm_num)) hK0 E beta11
-    (fun p hp => beta11_bounds (hP p hp).1.two_le)
-    (fun p hp c hc hcd _ hne => by
-      have hcases : c = 7321 ∨ c = 523 ∨ c = 131 ∨ c = 3 ∨ c = 7 := by
-        by_contra hnot
-        push Not at hnot
-        obtain ⟨h1, h2, h3, h4, h5⟩ := hnot
-        exact hne (by simp [beta11, h1, h2, h3, h4, h5])
-      rcases hcases with rfl | rfl | rfl | rfl | rfl
-      · exact absurd hcd (S8 7321 (by norm_num) (by norm_num) (by simp) h7321d p hp)
-      · have hpeq : p = 7321 :=
-          S3 523 (by norm_num) (by norm_num) (by simp) p hp 7321 hp_7321 hcd (by norm_num)
-        subst hpeq
-        norm_num [beta11]
-      · have hpeq : p = 523 :=
-          S3 131 (by norm_num) (by norm_num) (by simp) p hp 523 hp_523 hcd (by norm_num)
-        subst hpeq
-        norm_num [beta11]
-      · have hpeq : p = 131 :=
-          S3 3 (by norm_num) (by norm_num) (by simp) p hp 131 hp_131 hcd (by norm_num)
-        subst hpeq
-        norm_num [beta11]
-      · have hpeq : p = 7321 :=
-          S3 7 (by norm_num) (by norm_num) (by simp) p hp 7321 hp_7321 hcd (by norm_num)
-        subst hpeq
-        norm_num [beta11])
-  have hLdecomp : ∀ q ∈ L, ∃ k j, 1 ≤ k ∧ q + 1 = 2 ^ k * 11 ^ j := by
-    intro q hq
-    have hqP := hLP hq
-    have hqp := (hP q hqP).1
-    have hq2 := (hP q hqP).2
-    obtain ⟨k, j, hkj⟩ := two_pow_mul_pow_of_odd_primes_eq (z := 11) (by omega)
-      (fun c hc hc2 hcd => Finset.mem_singleton.mp (hLN q hq c hc hc2 hcd))
-    have hk1 : 1 ≤ k := by
-      by_contra hk0
-      have hk_eq : k = 0 := by omega
-      subst hk_eq
-      have hodd_q : q % 2 = 1 := by
-        rcases hqp.eq_two_or_odd with h | h
-        · exact absurd h hq2
-        · exact h
-      have heven : 2 ∣ q + 1 := by omega
-      rw [hkj, pow_zero, one_mul] at heven
-      have h211 : 2 ∣ 11 := Nat.prime_two.dvd_of_dvd_pow heven
-      norm_num at h211
-    exact ⟨k, j, hk1, hkj⟩
-  let L0 := L.filter (fun q => ¬ 11 ∣ q + 1)
-  let L12 := L.filter (fun q => 11 ∣ q + 1)
-  let L1 := L12.filter (fun q => ¬ 11 ^ 2 ∣ q + 1)
-  let L2 := L12.filter (fun q => 11 ^ 2 ∣ q + 1)
-  have hsplit1 : ∏ q ∈ L, beta11 q = (∏ q ∈ L12, beta11 q) * (∏ q ∈ L0, beta11 q) :=
-    (Finset.prod_filter_mul_prod_filter_not L (fun q => 11 ∣ q + 1) beta11).symm
-  have hsplit2 : ∏ q ∈ L12, beta11 q = (∏ q ∈ L2, beta11 q) * (∏ q ∈ L1, beta11 q) :=
-    (Finset.prod_filter_mul_prod_filter_not L12 (fun q => 11 ^ 2 ∣ q + 1) beta11).symm
-  have hL0_bound : ∏ q ∈ L0, beta11 q ≤
-      (beta11 3 * beta11 7 * beta11 31 * beta11 127) * (2048 / 2047) := by
-    apply mersenne_bound beta11 L0
-    · intro q hq
-      exact (hP q (hLP (Finset.mem_filter.mp hq).1)).1
-    · intro q hq
-      obtain ⟨hqL, hndvd⟩ := Finset.mem_filter.mp hq
-      obtain ⟨k, j, -, hkj⟩ := hLdecomp q hqL
-      have hj0 : j = 0 := by
-        by_contra hj
-        have h11 : 11 ∣ 11 ^ j := dvd_pow_self 11 hj
-        exact hndvd (hkj ▸ h11.mul_left _)
-      subst hj0
-      exact ⟨k, by simpa using hkj⟩
-    · intro q hq
-      have h2 := (hP q (hLP (Finset.mem_filter.mp hq).1)).1.two_le
-      exact ⟨beta11_pos h2, (beta11_bounds h2).2⟩
-    · norm_num [beta11]
-  have hL1_bound : ∏ q ∈ L1, beta11 q ≤ (22 : ℚ) / (22 - 2) := by
-    have hstep1 : ∏ q ∈ L1, beta11 q ≤ ∏ q ∈ L1, (((q : ℚ) + 1) / ((q : ℚ) - 1)) :=
-      Finset.prod_le_prod
-        (fun q hq => (beta11_pos (hP q (hLP (Finset.mem_filter.mp (Finset.mem_filter.mp hq).1).1)).1.two_le).le)
-        (fun q hq => (beta11_bounds (hP q (hLP (Finset.mem_filter.mp (Finset.mem_filter.mp hq).1).1)).1.two_le).2)
-    refine hstep1.trans (fiber_bound (u := 22) (by norm_num) L1 ?_)
-    intro q hq
-    obtain ⟨hq12, hndvd2⟩ := Finset.mem_filter.mp hq
-    obtain ⟨hqL, hdvd1⟩ := Finset.mem_filter.mp hq12
-    obtain ⟨k, j, hk1, hkj⟩ := hLdecomp q hqL
-    have hj1 : j = 1 := by
-      have hj_pos : 1 ≤ j := by
-        by_contra hj0
-        have : j = 0 := by omega
-        subst this
-        rw [hkj, pow_zero, mul_one] at hdvd1
-        have h112 : 11 ∣ 2 := (by norm_num : Nat.Prime 11).dvd_of_dvd_pow hdvd1
-        norm_num at h112
-      have hj_lt : j < 2 := by
-        by_contra hj2
-        have h11sq : 11 ^ 2 ∣ 11 ^ j := Nat.pow_dvd_pow 11 (by omega)
-        exact hndvd2 (hkj ▸ h11sq.mul_left _)
+  rcases Nat.mod_two_eq_zero_or_one m with hm0 | hm1
+  · have hmEven : Even m := Nat.even_iff.mpr hm0
+    have hmod : (2 ^ m + 1) % 3 = 2 := by
+      obtain ⟨k, hk⟩ : ∃ k, m = 2 * k := ⟨m / 2, by omega⟩
+      rw [hk, pow_mul]
+      have hp : (2 ^ 2) ^ k % 3 = 1 := by norm_num [Nat.pow_mod]
       omega
-    subst hj1
-    have hk2 : 2 ≤ k := by
-      by_contra hklt
-      have hk_eq : k = 1 := by omega
-      subst hk_eq
-      have hq21 : q = 21 := by omega
-      have hqp := (hP q (hLP hqL)).1
-      rw [hq21] at hqp
-      norm_num at hqp
-    refine ⟨k - 1, by omega, ?_⟩
-    rw [hkj, pow_one]
-    have hpow : 2 ^ k = 2 ^ (k - 1) * 2 := by
-      conv_lhs => rw [show k = (k - 1) + 1 by omega, pow_succ]
-    rw [hpow]
-    ring
-  have hL2_bound : ∏ q ∈ L2, beta11 q ≤ ((11 : ℚ) ^ 2) / ((11 : ℚ) ^ 2 - 3) := by
-    have hstep1 : ∏ q ∈ L2, beta11 q ≤ ∏ q ∈ L2, (((q : ℚ) + 1) / ((q : ℚ) - 1)) :=
-      Finset.prod_le_prod
-        (fun q hq => (beta11_pos (hP q (hLP (Finset.mem_filter.mp (Finset.mem_filter.mp hq).1).1)).1.two_le).le)
-        (fun q hq => (beta11_bounds (hP q (hLP (Finset.mem_filter.mp (Finset.mem_filter.mp hq).1).1)).1.two_le).2)
-    refine hstep1.trans (zleaf_bound (z := 11) (by norm_num) 2 (by norm_num) L2 ?_)
-    intro q hq
-    obtain ⟨hq12, hdvd2⟩ := Finset.mem_filter.mp hq
-    obtain ⟨hqL, -⟩ := Finset.mem_filter.mp hq12
-    obtain ⟨k, j, hk1, hkj⟩ := hLdecomp q hqL
-    have hj2 : 2 ≤ j := by
-      by_contra hjlt
-      have hcop : Nat.Coprime (11 ^ 2) (2 ^ k) :=
-        ((by norm_num : Nat.Coprime 11 2).pow_left 2).pow_right k
-      rw [hkj] at hdvd2
-      have h11j : 11 ^ 2 ∣ 11 ^ j := hcop.dvd_of_dvd_mul_left hdvd2
-      have hle := Nat.le_of_dvd (pow_pos (by norm_num) j) h11j
-      interval_cases j <;> norm_num at hle
-    exact ⟨k, j, hk1, hj2, hkj⟩
-  have hL0_nn : 0 ≤ ∏ q ∈ L0, beta11 q :=
-    Finset.prod_nonneg fun q hq => (beta11_pos (hP q (hLP (Finset.mem_filter.mp hq).1)).1.two_le).le
-  have hL1_nn : 0 ≤ ∏ q ∈ L1, beta11 q :=
-    Finset.prod_nonneg fun q hq => (beta11_pos (hP q (hLP (Finset.mem_filter.mp (Finset.mem_filter.mp hq).1).1)).1.two_le).le
-  have hL2_nn : 0 ≤ ∏ q ∈ L2, beta11 q :=
-    Finset.prod_nonneg fun q hq => (beta11_pos (hP q (hLP (Finset.mem_filter.mp (Finset.mem_filter.mp hq).1).1)).1.two_le).le
-  have hL12_bound : ∏ q ∈ L12, beta11 q ≤ (((11 : ℚ) ^ 2) / ((11 : ℚ) ^ 2 - 3)) * ((22 : ℚ) / (22 - 2)) := by
-    rw [hsplit2]
-    exact mul_le_mul hL2_bound hL1_bound hL1_nn (by norm_num)
-  have hL12_nn : 0 ≤ ∏ q ∈ L12, beta11 q := by rw [hsplit2]; exact mul_nonneg hL2_nn hL1_nn
-  have hL_bound : ∏ q ∈ L, beta11 q ≤
-      (((11 : ℚ) ^ 2) / ((11 : ℚ) ^ 2 - 3)) * ((22 : ℚ) / (22 - 2)) *
-        ((beta11 3 * beta11 7 * beta11 31 * beta11 127) * (2048 / 2047)) := by
-    rw [hsplit1]
-    exact mul_le_mul hL12_bound hL0_bound hL0_nn (by norm_num)
-  have hL_num : ∏ q ∈ L, beta11 q ≤ (19 : ℚ) / 10 :=
-    hL_bound.trans (by norm_num [beta11])
-  have hm_pow : (1024 : ℚ) ≤ (2 : ℚ) ^ m := by
-    have : (2 : ℕ) ^ 10 ≤ 2 ^ m := Nat.pow_le_pow_right (by norm_num) hm
-    exact_mod_cast this
-  have h2m : 1 + 1 / (2 : ℚ) ^ m ≤ 1 + 1 / 1024 := by
-    have hinv : 1 / (2 : ℚ) ^ m ≤ 1 / 1024 := one_div_le_one_div_of_le (by norm_num) hm_pow
-    linarith
-  have he4 : 4 ≤ e := by omega
-  have he_pow : (11 : ℚ) ^ 4 ≤ (11 : ℚ) ^ e := by
-    have : (11 : ℕ) ^ 4 ≤ 11 ^ e := Nat.pow_le_pow_right (by norm_num) he4
-    exact_mod_cast this
-  have h11e : ((1 + 11 ^ e : ℕ) : ℚ) / ((11 ^ e : ℕ) : ℚ) ≤ 1 + 1 / (11 : ℚ) ^ 4 := by
-    push_cast
-    have hpos : (0 : ℚ) < (11 : ℚ) ^ e := by positivity
-    rw [add_div, div_self hpos.ne', add_comm]
-    have hinv : 1 / (11 : ℚ) ^ e ≤ 1 / (11 : ℚ) ^ 4 := one_div_le_one_div_of_le (by norm_num) he_pow
-    linarith
-  have hprod_nn : 0 ≤ ∏ q ∈ L, beta11 q := by rw [hsplit1]; exact mul_nonneg hL12_nn hL0_nn
-  have hfac1 : (1 + 1 / (2 : ℚ) ^ m) * (((1 + 11 ^ e : ℕ) : ℚ) / ((11 ^ e : ℕ) : ℚ)) ≤
-      (1 + 1 / 1024) * (1 + 1 / (11 : ℚ) ^ 4) :=
-    mul_le_mul h2m h11e (by positivity) (by norm_num)
-  have htot : (1 + 1 / (2 : ℚ) ^ m) * (((1 + 11 ^ e : ℕ) : ℚ) / ((11 ^ e : ℕ) : ℚ)) *
-      ∏ q ∈ L, beta11 q ≤ (1 + 1 / 1024) * (1 + 1 / (11 : ℚ) ^ 4) * ((19 : ℚ) / 10) :=
-    mul_le_mul hfac1 hL_num hprod_nn (by norm_num)
-  have hnum : (1 + 1 / (1024 : ℚ)) * (1 + 1 / (11 : ℚ) ^ 4) * ((19 : ℚ) / 10) < 2 := by norm_num
-  linarith
+    obtain ⟨q, hqp, hqd, hq3⟩ := exists_prime_mod3 _ hmod
+    have hq2 : q ≠ 2 := by
+      rintro rfl
+      have h2d : 2 ∣ 2 ^ m := dvd_pow_self 2 (by omega)
+      have hbad : 2 ∣ 1 := (Nat.dvd_add_right h2d).mp hqd
+      norm_num at hbad
+    have hq4 : q % 4 = 1 := mod_four_of_dvd_one_add_pow_even hqp hq2 hmEven
+      (by simpa [add_comm] using hqd)
+    have hq11 : q ≠ 11 := by intro h; subst q; norm_num at hq4
+    have hqP : q ∈ P := S2 q hqp hq2 (by simpa using hq11) hqd
+    have h3q : 3 ∣ q + 1 := by omega
+    have hq131 : q = 131 := S3 3 (by norm_num) (by norm_num) (by simp)
+      q hqP 131 hp_131 h3q (by norm_num)
+    rw [hq131] at hq4
+    norm_num at hq4
+  · exact S4 3 (by norm_num) (by norm_num) (by simp)
+      (three_dvd_two_pow_add_one hm1) 131 hp_131 (by norm_num)
 
 end OMA.H3Proof
 
