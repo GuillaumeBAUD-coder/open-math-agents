@@ -6,8 +6,12 @@ import Mathlib
 Source: https://en.wikipedia.org/wiki/Rota%27s_basis_conjecture
 Credit: @Bondyboy2001
 
-State the problem EXACTLY as the source states it: same quantifiers, same ranges, no simplification.
-Do not prove it here: the theorem body stays `sorry`. A person reviews the translation before merging.
+Rota's basis conjecture (Huang and Rota, 1994): if a matroid of rank `n` has `n` pairwise
+disjoint bases, then their `n * n` elements can be arranged into an `n x n` matrix whose rows
+are the given bases and whose columns are also bases. Equivalently: the elements of the union
+can be re-partitioned into `n` disjoint "transversal" bases, each taking exactly one element
+from every one of the given bases. The conjecture is stated here for every natural rank `n`;
+the rank-zero case is vacuous.
 -/
 
 namespace OMA.S_wp_rota_s_basis_conjecture
