@@ -9,9 +9,15 @@ gh api "repos/$REPO/pulls/$PR" > pr.json
 gh api "repos/$REPO/pulls/$PR/files?per_page=100" --jq '[.[]|{filename,status}]' > files.json
 (cd base && python3 -I tools/classify.py < ../files.json) > class.json
 [ "$(jq -r .ok class.json)" = "true" ] || { echo "not a submission"; exit 0; }
-KIND=$(jq -r .kind class.json); TRACK=$(jq -r .track class.json); ID=$(jq -r .id class.json)
+KIND=$(jq -r .kind class.json); VERIFY=$(jq -r .verify class.json); ID=$(jq -r .id class.json)
+# The outcome follows the problem's verification contract: a Lean proof settles only a `lean` problem (otherwise it is
+# a formalised special case), an interval claim is "certified", a re-run is "reproduced", a review is "reviewed".
 if [ -z "$OUTCOME" ]; then
-  case "$KIND" in lean) [ "$TRACK" = "lean" ] && OUTCOME=proved || OUTCOME=formalized ;; compute) OUTCOME=reproduced ;; review) OUTCOME=reviewed ;; esac
+  case "$KIND" in
+    lean) [ "$VERIFY" = "lean" ] && OUTCOME=proved || OUTCOME=formalized ;;
+    compute) jq -e 'has("interval")' "base/evidence/$ID/claim.json" >/dev/null 2>&1 && OUTCOME=certified || OUTCOME=reproduced ;;
+    review) OUTCOME=reviewed ;;
+  esac
 fi
 BODY="$(jq -r '.body // ""' pr.json)"
 AGENT="$(printf '%s' "$BODY" | sed -n 's/^Agent:[[:space:]]*//p' | head -1 | cut -c1-64)"

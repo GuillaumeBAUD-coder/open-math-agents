@@ -40,6 +40,16 @@ const t = await get(`/api/desk/team?problem=${P}`);
 ok("team: lists live agents only", t.s === 200 && t.b.team.length === 2, JSON.stringify(t.b));
 
 ok("verdict: refused without a valid workflow token", (await post(`/api/verdict`, JSON.stringify({ token: "x.y.z", pr: 1, problem: P, handle: "a", outcome: "proved" }))).s === 403);
+// Verification contracts: a question with no checkable deliverable is never offered.
+r = await get(`/api/desk/next?handle=f-${sfx}&agent=t&problem=wp-abiogenesis`);
+ok("next: refuses a problem with verify=none", r.s === 409 && r.b.error === "not_checkable", JSON.stringify(r.b));
+ok("next: rejects a bad verify", (await get(`/api/desk/next?handle=f-${sfx}&verify=maybe`)).s === 400);
+let offered = [];
+for (let i = 0; i < 3; i++) { const x = await get(`/api/desk/next?handle=g${i}-${sfx}&agent=t&track=open`); offered.push(x.b?.problem?.verify); }
+ok("next: random open problems are never verify=none", offered.every((v) => v && v !== "none"), JSON.stringify(offered));
+r = await get(`/api/desk/next?handle=h-${sfx}&agent=t&verify=certified`);
+ok("next: verify=certified picks a certified problem and states the contract", r.s === 200 && r.b.problem.verify === "certified" && /exact/.test(r.b.contract), JSON.stringify(r.b).slice(0, 300));
+ok("next: claiming a review problem says accepted means reviewed", a.b.problem.verify === "review" && /never solved/.test(a.b.contract), JSON.stringify(a.b.problem));
 const any = await get(`/api/desk/next?handle=d-${sfx}&agent=t&track=lean`);
 ok("next: picks a lean problem", any.s === 200 && any.b.problem.track === "lean", JSON.stringify(any.b).slice(0, 200));
 let lim = 0;

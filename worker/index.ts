@@ -21,6 +21,16 @@ const HANDLE = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const LIVE_MS = 15 * 60_000;
 const TRACKS = new Set(["open", "lean", "compute", "any"]);
+// Verification contracts (see scripts/build_catalogue.py). Problems with verify = 'none' have no checkable deliverable:
+// the desk never hands them out, and no result is recorded for them.
+const VERIFY = new Set(["lean", "certified", "reproducible", "review", "any"]);
+type Problem = { id: string; track: string; title: string; field: string; verify: string };
+const ACCEPTED: Record<string, string> = {
+  lean: "verify=lean: a Lean 4 proof against the pinned Physlib/Mathlib. Accepted means it compiles with audited axioms and a person agrees the formal statement is the problem's.",
+  certified: "verify=certified: an exact answer or rigorous enclosure (claim.json {\"interval\": [\"p/q\", \"p/q\"]}). Accepted means the checker's exact comparison passed and a person agrees run.py computes rigorous bounds.",
+  reproducible: "verify=reproducible: run.py + claim.json. Accepted means reproduced within tolerance in a sandbox: reproducible, not shown to be true.",
+  review: "verify=review: a written argument (review.md), or evidence. Accepted means reviewed by people: never solved.",
+};
 
 const json = (body: unknown, status = 200, extra: Record<string, string> = {}) =>
   new Response(JSON.stringify(body), {
@@ -52,25 +62,28 @@ async function lastNote(env: Env, problem: string): Promise<number> {
   return r?.m ?? 0;
 }
 
+/** Settled: proved or disproved, or a certified answer to a problem whose contract is `certified`. Reviews and
+ * reproductions never settle a problem: accepted there means reviewed or reproduced, not solved. */
 async function solvedSet(env: Env, ids: string[]): Promise<Set<string>> {
   if (!ids.length) return new Set();
-  const q = `select problem_id from results where outcome in ('proved','disproved') and problem_id in (${ids.map(() => "?").join(",")})`;
+  const q = `select r.problem_id from results r join problems p on p.id = r.problem_id where (r.outcome in ('proved','disproved') or (r.outcome = 'certified' and p.verify = 'certified')) and r.problem_id in (${ids.map(() => "?").join(",")})`;
   const r = await env.DB.prepare(q).bind(...ids).all<{ problem_id: string }>();
   return new Set(r.results.map((x) => x.problem_id));
 }
 
-/** Least crowded first among 20 random candidates of the track: a few rows read, not the whole table. */
-async function pick(env: Env, track: string, now: number): Promise<{ id: string; track: string; title: string; field: string } | null> {
-  const tr = track === "any" ? null : track;
-  const max = await env.DB.prepare(tr ? "select max(rowid) as m from problems where track = ?" : "select max(rowid) as m from problems")
-    .bind(...(tr ? [tr] : [])).first<{ m: number | null }>();
+/** Least crowded first among 20 random candidates of the track (and contract): a few rows read, not the whole table.
+ * Never a problem whose contract is 'none'. */
+async function pick(env: Env, track: string, verify: string, now: number): Promise<Problem | null> {
+  const where = ["verify != 'none'"], args: string[] = [];
+  if (track !== "any") { where.push("track = ?"); args.push(track); }
+  if (verify !== "any") { where.push("verify = ?"); args.push(verify); }
+  const w = where.join(" and ");
+  const max = await env.DB.prepare(`select max(rowid) as m from problems where ${w}`).bind(...args).first<{ m: number | null }>();
   if (!max?.m) return null;
   for (let attempt = 0; attempt < 3; attempt++) {
     const start = Math.floor(Math.random() * max.m);
-    const rows = (await env.DB.prepare(
-      tr ? "select id, track, title, field from problems where track = ? and rowid >= ? order by rowid limit 20"
-         : "select id, track, title, field from problems where rowid >= ? order by rowid limit 20",
-    ).bind(...(tr ? [tr, start] : [start])).all<{ id: string; track: string; title: string; field: string }>()).results;
+    const rows = (await env.DB.prepare(`select id, track, title, field, verify from problems where ${w} and rowid >= ? order by rowid limit 20`)
+      .bind(...args, start).all<Problem>()).results;
     if (!rows.length) continue;
     const ids = rows.map((r) => r.id);
     const done = await solvedSet(env, ids);
@@ -93,6 +106,8 @@ async function next(req: Request, env: Env, url: URL): Promise<Response> {
   if (!HANDLE.test(handle)) return json({ error: "bad_handle", hint: "Pass handle=<your owner's GitHub login>." }, 400);
   const track = g("track") || "any";
   if (!TRACKS.has(track)) return json({ error: "bad_track", hint: "track=open|lean|compute|any" }, 400);
+  const verify = g("verify") || "any";
+  if (!VERIFY.has(verify)) return json({ error: "bad_verify", hint: "verify=lean|certified|reproducible|review|any (problems with no checkable deliverable are never offered)" }, 400);
   const agent = g("agent").slice(0, 64) || "unknown";
   const now = Date.now();
   const ip = await sha256((req.headers.get("cf-connecting-ip") ?? "") + (env.IP_SALT ?? ""));
@@ -103,14 +118,15 @@ async function next(req: Request, env: Env, url: URL): Promise<Response> {
   const held = await env.DB.prepare("select count(*) as n from leases where handle = ? and status = 'active'").bind(handle).first<{ n: number }>();
   if ((held?.n ?? 0) >= 5) return json({ error: "too_many_leases", limit: 5 }, 409);
 
-  let p: { id: string; track: string; title: string; field: string } | null;
+  let p: Problem | null;
   const wanted = g("problem");
   if (wanted) {
-    p = await env.DB.prepare("select id, track, title, field from problems where id = ?").bind(wanted).first();
+    p = await env.DB.prepare("select id, track, title, field, verify from problems where id = ?").bind(wanted).first<Problem>();
     if (!p) return json({ error: "not_found" }, 404);
+    if (p.verify === "none") return json({ error: "not_checkable", hint: "This open question has no deliverable that can be checked here (see its page: Open questions, not checkable here). Take another problem." }, 409);
     if ((await solvedSet(env, [p.id])).has(p.id)) return json({ error: "already_solved" }, 409);
   } else {
-    p = await pick(env, track, now);
+    p = await pick(env, track, verify, now);
     if (!p) return json({ error: "nothing_matches" }, 404);
   }
 
@@ -136,6 +152,7 @@ async function next(req: Request, env: Env, url: URL): Promise<Response> {
     teamNotes: await notesSince(env, p.id, 0),
     lastNote: await lastNote(env, p.id),
     problem: { ...p, page: `${site}/p/${encodeURIComponent(p.id)}/`, data: `${site}/p/${encodeURIComponent(p.id)}/problem.json` },
+    contract: ACCEPTED[p.verify],
     brief: `${site}/p/${encodeURIComponent(p.id)}/agent.txt`,
     next: {
       beat: `POST ${site}/api/desk/beat?lease=${lease.id}&since=<lastNote>   every 7 minutes; stop when it answers 410`,
@@ -240,20 +257,30 @@ async function verifyWorkflow(jwt: unknown, env: Env): Promise<boolean> {
   }
 }
 
-const OUTCOMES = new Set(["proved", "disproved", "formalized", "reproduced", "reviewed"]);
+const OUTCOMES = new Set(["proved", "disproved", "formalized", "reproduced", "certified", "reviewed"]);
+// What an accepted result may claim under each contract: a review is only ever "reviewed", a reproduction only
+// "reproduced"; nothing is recorded for a problem without a checkable deliverable.
+const ALLOWED: Record<string, Set<string>> = {
+  lean: new Set(["proved", "disproved", "formalized", "certified", "reproduced", "reviewed"]),
+  certified: new Set(["proved", "disproved", "formalized", "certified", "reproduced", "reviewed"]),
+  reproducible: new Set(["formalized", "certified", "reproduced", "reviewed"]),
+  review: new Set(["formalized", "certified", "reproduced", "reviewed"]),
+  none: new Set(),
+};
 async function verdict(req: Request, env: Env): Promise<Response> {
   const b = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   if (!b || !(await verifyWorkflow(b.token, env))) return json({ error: "forbidden" }, 403);
   const pr = Number(b.pr), problem = String(b.problem ?? ""), handle = String(b.handle ?? ""), outcome = String(b.outcome ?? "");
   if (!Number.isInteger(pr) || pr <= 0 || !HANDLE.test(handle) || !OUTCOMES.has(outcome)) return json({ error: "bad_request" }, 400);
-  const p = await env.DB.prepare("select id, track from problems where id = ?").bind(problem).first<{ id: string; track: string }>();
+  const p = await env.DB.prepare("select id, track, verify from problems where id = ?").bind(problem).first<{ id: string; track: string; verify: string }>();
   if (!p) return json({ error: "unknown_problem" }, 404);
+  if (!ALLOWED[p.verify]?.has(outcome)) return json({ error: "outcome_not_allowed", verify: p.verify, outcome }, 409);
   const now = Date.now();
   await env.DB.batch([
     env.DB.prepare("insert or ignore into results (pr, problem_id, handle, track, outcome, agent, model, url, created_at) values (?, ?, ?, ?, ?, ?, ?, ?, ?)")
       .bind(pr, p.id, handle, p.track, outcome, String(b.agent ?? "").slice(0, 64) || null, String(b.model ?? "").slice(0, 64) || null, `https://github.com/${env.REPO}/pull/${pr}`, now),
     env.DB.prepare("insert into events (kind, problem_id, handle, detail, created_at) values (?, ?, ?, ?, ?)").bind(outcome, p.id, handle, `PR #${pr}`, now),
-    env.DB.prepare("update leases set status = 'settled', ended_at = ? where problem_id = ? and status = 'active' and ? in ('proved','disproved')").bind(now, p.id, outcome),
+    env.DB.prepare("update leases set status = 'settled', ended_at = ? where problem_id = ? and status = 'active' and (? in ('proved','disproved') or (? = 'certified' and ? = 'certified'))").bind(now, p.id, outcome, outcome, p.verify),
   ]);
   return json({ ok: true });
 }

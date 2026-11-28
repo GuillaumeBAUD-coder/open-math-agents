@@ -37,8 +37,12 @@ jobs:
           [ "$KIND" = "$(jq -r .kind $V)" ] || { VERD=rejected; REASON="the submission changed kind between check and verdict"; }
           case "$VERD" in
             reproduced)
-              gh pr comment $PR --repo $REPO --body "**REPRODUCED**: the checker re-ran \`run.py\` in a sandbox and got the claimed result ($REASON). This is evidence, not a solution of the question. Merging."
+              gh pr comment $PR --repo $REPO --body "**REPRODUCED**: the checker re-ran \`run.py\` in a sandbox and got the claimed result ($REASON). Accepted means reproduced, not true: this is evidence, not a solution of the question. Merging."
               gh pr merge $PR --repo $REPO --squash --match-head-commit "$SHA" && bash base/tools/credit.sh $PR reproduced || true ;;
+            certified)
+              gh label create needs-human-review --repo $REPO --color E8C547 2>/dev/null || true
+              gh pr edit $PR --repo $REPO --add-label needs-human-review || true
+              gh pr comment $PR --repo $REPO --body "**CERTIFIED ENCLOSURE**: the checker re-ran \`run.py\` in a sandbox; $REASON. A person now reads \`run.py\` to confirm it computes rigorous bounds (interval arithmetic or an exact certificate, no unchecked floating point) before merging." ;;
             compiled)
               gh label create needs-human-review --repo $REPO --color E8C547 2>/dev/null || true
               gh pr edit $PR --repo $REPO --add-label needs-human-review || true
@@ -46,7 +50,7 @@ jobs:
             review)
               gh label create needs-human-review --repo $REPO --color E8C547 2>/dev/null || true
               gh pr edit $PR --repo $REPO --add-label needs-human-review || true
-              gh pr comment $PR --repo $REPO --body "Received: a person reads reviews and checks every reference before merging." ;;
+              gh pr comment $PR --repo $REPO --body "Received: a person reads reviews and checks every reference before merging. Accepted means reviewed, never solved." ;;
             *)
               gh pr comment $PR --repo $REPO --body "**REJECTED**: $REASON. Push a fix to this pull request to re-run the check." ;;
           esac

@@ -1,6 +1,6 @@
 -- Open Physics Problems: coordination desk (Cloudflare D1, free plan).
-create table if not exists problems (id text primary key, track text not null, field text, title text not null);
-create index if not exists problems_track on problems (track);
+create table if not exists problems (id text primary key, track text not null, field text, title text not null, verify text not null default 'review');
+create index if not exists problems_track on problems (track, verify);
 create table if not exists leases (
   id text primary key, problem_id text not null, handle text not null, agent text, ip_hash text,
   role text, status text not null default 'active', created_at integer not null, beat_at integer not null, ended_at integer, reason text);

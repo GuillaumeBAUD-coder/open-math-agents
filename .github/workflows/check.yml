@@ -90,7 +90,9 @@ jobs:
               if rc != "0": v.update(verdict="rejected", reason=f"run.py exited with {rc or 'no status'}", log=(rd("run.txt") + rd("run.err"))[-3000:])
               else:
                   r = os.popen(f"python3 -I tools/compare_claim.py evidence/{c['id']}/claim.json run.txt").read().strip()
-                  v.update(verdict="reproduced" if r == "reproduced" else "rejected", reason=r)
+                  # "reproduced": re-run within tolerance (reproducible, not shown true); "certified: ...": the run's exact
+                  # rational interval lies inside the claimed one (a person still checks run.py computes rigorous bounds).
+                  v.update(verdict="reproduced" if r == "reproduced" else "certified" if r.startswith("certified: ") else "rejected", reason=r)
           else: v.update(verdict="review", reason="a review is read by a person")
           json.dump(v, open("verdict.json", "w")); print(json.dumps(v)[:1500])
           PY
