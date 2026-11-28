@@ -1,5 +1,6 @@
 import OMAStatements.S_oeis_a165433
 
+open Finset
 -- Problem: A165433: A transform of the double factorial numbers A001147.
 -- Upstream: formal-conjectures statements/oeis-a165433.lean:0 (declaration OMA.S_oeis_a165433.main)
 -- Credit: @agchua (the owner of the agent is credited as the solver)
@@ -17,51 +18,51 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a165433.main := by
     push_cast
     field
   have hext : ∀ n M : ℕ, n / 2 + 1 ≤ M →
-      a n = ∑ k ∈ Finset.range M, ((n - k).choose k : ℚ) * d k := by
+      a n = ∑ k ∈ range M, ((n - k).choose k : ℚ) * d k := by
     intro n M hM
-    have e : a n = ∑ k ∈ Finset.range (n / 2 + 1), ((n - k).choose k : ℚ) * d k := by
+    have e : a n = ∑ k ∈ range (n / 2 + 1), ((n - k).choose k : ℚ) * d k := by
       unfold a
-      apply Finset.sum_congr rfl
+      apply sum_congr rfl
       intro k _
       rw [hd, mul_div_assoc]
     rw [e]
-    apply Finset.sum_subset (Finset.range_subset_range.mpr hM)
+    apply sum_subset (range_subset_range.mpr hM)
     intro k _ hk
-    rw [Finset.mem_range] at hk
+    rw [mem_range] at hk
     rw [Nat.choose_eq_zero_of_lt (by omega : n - k < k), Nat.cast_zero, zero_mul]
   obtain ⟨b, hb⟩ : ∃ b : ℕ → ℚ, ∀ n : ℕ,
-      b n = ∑ k ∈ Finset.range (n + 1), (k : ℚ) * (((n - k).choose k : ℚ) * d k) :=
+      b n = ∑ k ∈ range (n + 1), (k : ℚ) * (((n - k).choose k : ℚ) * d k) :=
     ⟨_, fun _ => rfl⟩
   have L1 : ∀ n : ℕ, a (n + 2) = a (n + 1) + a n + 2 * b n := by
     intro n
     rw [hext (n + 2) (n + 1 + 1) (by omega), hext (n + 1) (n + 1 + 1) (by omega),
-      hext n (n + 1) (by omega), hb, Finset.sum_range_succ' _ (n + 1),
-      Finset.sum_range_succ' _ (n + 1)]
-    have key : ∀ k ∈ Finset.range (n + 1),
+      hext n (n + 1) (by omega), hb, sum_range_succ' _ (n + 1),
+      sum_range_succ' _ (n + 1)]
+    have key : ∀ k ∈ range (n + 1),
         ((n + 2 - (k + 1)).choose (k + 1) : ℚ) * d (k + 1)
           = ((n + 1 - (k + 1)).choose (k + 1) : ℚ) * d (k + 1) + ((n - k).choose k : ℚ) * d k
             + 2 * ((k : ℚ) * (((n - k).choose k : ℚ) * d k)) := by
       intro k hk
-      rw [Finset.mem_range] at hk
+      rw [mem_range] at hk
       rw [show n + 2 - (k + 1) = n - k + 1 by omega, show n + 1 - (k + 1) = n - k by omega,
         Nat.choose_succ_succ' (n - k) k, hds k]
       push_cast
       ring
-    rw [Finset.sum_congr rfl key, Finset.sum_add_distrib, Finset.sum_add_distrib, ← Finset.mul_sum]
+    rw [sum_congr rfl key, sum_add_distrib, sum_add_distrib, ← mul_sum]
     simp only [Nat.choose_zero_right, Nat.cast_one]
     ring
   have L2 : ∀ p : ℕ, 2 * b (p + 1) - b p = ((p : ℚ) + 1) * (a (p + 1) - a p) := by
     intro p
     have hbp : b p
-        = ∑ k ∈ Finset.range (p + 1 + 1), (k : ℚ) * (((p - k).choose k : ℚ) * d k) := by
-      rw [hb, Finset.sum_range_succ _ (p + 1),
+        = ∑ k ∈ range (p + 1 + 1), (k : ℚ) * (((p - k).choose k : ℚ) * d k) := by
+      rw [hb, sum_range_succ _ (p + 1),
         Nat.choose_eq_zero_of_lt (by omega : p - (p + 1) < p + 1)]
       simp
     rw [hbp, hb (p + 1), hext (p + 1) (p + 1 + 1) (by omega), hext p (p + 1 + 1) (by omega),
-      Finset.mul_sum, ← Finset.sum_sub_distrib, ← Finset.sum_sub_distrib, Finset.mul_sum]
-    apply Finset.sum_congr rfl
+      mul_sum, ← sum_sub_distrib, ← sum_sub_distrib, mul_sum]
+    apply sum_congr rfl
     intro k hk
-    rw [Finset.mem_range] at hk
+    rw [mem_range] at hk
     rcases k with _ | j
     · simp
     rcases Nat.lt_or_ge j p with hj | hj
