@@ -70,7 +70,9 @@ lemma candidate_exists (l : List ℕ) (hn : l.Nodup)
       have hlarge : 1 < x ∨ 1 < y := by omega
       let m := (l.sum + 1) * (x * y)
       have hprod : 1 ≤ x * y := Nat.mul_pos hx hy
-      have hm : l.sum < m := by dsimp [m]; nlinarith
+      have hm : l.sum < m := by
+        exact lt_of_lt_of_le (Nat.lt_succ_self _) (by
+          simpa only [Nat.mul_one] using Nat.mul_le_mul_left (l.sum + 1) hprod)
       refine ⟨m, by omega, fresh m hm, ?_⟩
       simp only [Allowed, hr]
       rcases hlarge with hxl | hyl
