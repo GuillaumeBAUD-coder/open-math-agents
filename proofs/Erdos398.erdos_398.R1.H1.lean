@@ -1,6 +1,5 @@
 import OMAReductions.R_Erdos398_erdos_398_R1
-import Mathlib.Data.Nat.Sqrt
-import Mathlib.Algebra.Ring.Parity
+import Mathlib
 
 theorem OMA.solution : OMA.R_Erdos398_erdos_398_R1.H1 := fun n hn => by
   obtain ⟨v, hv⟩ := Nat.dvd_factorial (by decide : 0 < 4) hn
