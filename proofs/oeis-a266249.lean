@@ -8,64 +8,41 @@ namespace OMA.S_oeis_a266249
 def E : List ℤ := [-4, -3, -2, 0]
 def O : List ℤ := [-6, -4, -3, -2, -1, 0]
 
+/-- Rule 9 is on when the left cell is off and the center and right cells agree. -/
+private lemma rule_truth_table (l c r : Bool) : rule l c r = (!l && ((!c && !r) || (c && r))) := by
+  cases l <;> cases c <;> cases r <;> decide
+
 lemma s1 (i : ℤ) : state 1 i = decide (i ∉ [-1, 0, 1]) := by
   show rule (decide (i - 1 = 0)) (decide (i = 0)) (decide (i + 1 = 0)) = _
-  rcases (by omega : i ≤ -2 ∨ (-1 ≤ i ∧ i ≤ 1) ∨ 2 ≤ i) with h | ⟨h1, h2⟩ | h
-  · rw [decide_eq_false (by omega : ¬ i - 1 = 0), decide_eq_false (by omega : ¬ i = 0),
-      decide_eq_false (by omega : ¬ i + 1 = 0), decide_eq_true (by simp <;> omega)]; decide
-  · interval_cases i <;> decide
-  · rw [decide_eq_false (by omega : ¬ i - 1 = 0), decide_eq_false (by omega : ¬ i = 0),
-      decide_eq_false (by omega : ¬ i + 1 = 0), decide_eq_true (by simp <;> omega)]; decide
+  simp only [rule_truth_table, ← decide_not, ← Bool.decide_and, ← Bool.decide_or, decide_eq_decide, List.mem_cons, List.mem_nil_iff, or_false]
+  omega
 
 lemma s2 (i : ℤ) : state 2 i = decide (i ∈ [0, 2]) := by
   show rule (state 1 (i - 1)) (state 1 i) (state 1 (i + 1)) = _
-  rw [s1, s1, s1]
-  rcases (by omega : i ≤ -3 ∨ (-2 ≤ i ∧ i ≤ 3) ∨ 4 ≤ i) with h | ⟨h1, h2⟩ | h
-  · rw [decide_eq_true (by simp <;> omega), decide_eq_true (by simp <;> omega),
-      decide_eq_true (by simp <;> omega), decide_eq_false (by simp <;> omega)]; decide
-  · interval_cases i <;> decide
-  · rw [decide_eq_true (by simp <;> omega), decide_eq_true (by simp <;> omega),
-      decide_eq_true (by simp <;> omega), decide_eq_false (by simp <;> omega)]; decide
+  simp only [s1, rule_truth_table, ← decide_not, ← Bool.decide_and, ← Bool.decide_or, decide_eq_decide, List.mem_cons, List.mem_nil_iff, or_false]
+  omega
 
 lemma s3 (i : ℤ) : state 3 i = decide (i ∉ [-1, 0, 1, 2, 3]) := by
   show rule (state 2 (i - 1)) (state 2 i) (state 2 (i + 1)) = _
-  rw [s2, s2, s2]
-  rcases (by omega : i ≤ -3 ∨ (-2 ≤ i ∧ i ≤ 4) ∨ 5 ≤ i) with h | ⟨h1, h2⟩ | h
-  · rw [decide_eq_false (by simp <;> omega), decide_eq_false (by simp <;> omega),
-      decide_eq_false (by simp <;> omega), decide_eq_true (by simp <;> omega)]; decide
-  · interval_cases i <;> decide
-  · rw [decide_eq_false (by simp <;> omega), decide_eq_false (by simp <;> omega),
-      decide_eq_false (by simp <;> omega), decide_eq_true (by simp <;> omega)]; decide
+  simp only [s2, rule_truth_table, ← decide_not, ← Bool.decide_and, ← Bool.decide_or, decide_eq_decide, List.mem_cons, List.mem_nil_iff, or_false]
+  omega
 
 lemma s4 (i : ℤ) : state 4 i = decide (i - 4 ∈ E) := by
   show rule (state 3 (i - 1)) (state 3 i) (state 3 (i + 1)) = _
-  rw [s3, s3, s3]
-  rcases (by omega : i ≤ -3 ∨ (-2 ≤ i ∧ i ≤ 5) ∨ 6 ≤ i) with h | ⟨h1, h2⟩ | h
-  · rw [decide_eq_true (by simp <;> omega), decide_eq_true (by simp <;> omega),
-      decide_eq_true (by simp <;> omega), decide_eq_false (by simp [E]; omega)]; decide
-  · interval_cases i <;> decide
-  · rw [decide_eq_true (by simp <;> omega), decide_eq_true (by simp <;> omega),
-      decide_eq_true (by simp <;> omega), decide_eq_false (by simp [E]; omega)]; decide
+  simp only [s3, rule_truth_table, ← decide_not, ← Bool.decide_and, ← Bool.decide_or, decide_eq_decide, E, List.mem_cons, List.mem_nil_iff, or_false]
+  omega
 
 /-- Even row to odd row (relative position `e = i - t`). -/
 lemma stepEO (e : ℤ) :
     rule (decide (e - 1 ∈ E)) (decide (e ∈ E)) (decide (e + 1 ∈ E)) = decide (e - 1 ∉ O) := by
-  rcases (by omega : e ≤ -6 ∨ (-5 ≤ e ∧ e ≤ 1) ∨ 2 ≤ e) with h | ⟨h1, h2⟩ | h
-  · rw [decide_eq_false (by simp [E]; omega), decide_eq_false (by simp [E]; omega),
-      decide_eq_false (by simp [E]; omega), decide_eq_true (by simp [O]; omega)]; decide
-  · interval_cases e <;> decide
-  · rw [decide_eq_false (by simp [E]; omega), decide_eq_false (by simp [E]; omega),
-      decide_eq_false (by simp [E]; omega), decide_eq_true (by simp [O]; omega)]; decide
+  simp only [rule_truth_table, ← decide_not, ← Bool.decide_and, ← Bool.decide_or, decide_eq_decide, E, O, List.mem_cons, List.mem_nil_iff, or_false]
+  omega
 
 /-- Odd row to even row (relative position `e = i - t`). -/
 lemma stepOE (e : ℤ) :
     rule (decide (e - 1 ∉ O)) (decide (e ∉ O)) (decide (e + 1 ∉ O)) = decide (e - 1 ∈ E) := by
-  rcases (by omega : e ≤ -8 ∨ (-7 ≤ e ∧ e ≤ 1) ∨ 2 ≤ e) with h | ⟨h1, h2⟩ | h
-  · rw [decide_eq_true (by simp [O]; omega), decide_eq_true (by simp [O]; omega),
-      decide_eq_true (by simp [O]; omega), decide_eq_false (by simp [E]; omega)]; decide
-  · interval_cases e <;> decide
-  · rw [decide_eq_true (by simp [O]; omega), decide_eq_true (by simp [O]; omega),
-      decide_eq_true (by simp [O]; omega), decide_eq_false (by simp [E]; omega)]; decide
+  simp only [rule_truth_table, ← decide_not, ← Bool.decide_and, ← Bool.decide_or, decide_eq_decide, E, O, List.mem_cons, List.mem_nil_iff, or_false]
+  omega
 
 /-- The rows from time 4 on. -/
 lemma pattern (t : ℕ) (ht : 4 ≤ t) (i : ℤ) :
