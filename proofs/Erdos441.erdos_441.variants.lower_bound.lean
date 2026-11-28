@@ -38,22 +38,10 @@ lemma constr_lcm {N u : ℕ} (hu : 2 * (u * u) ≤ N) :
     ∀ a ∈ constr u, ∀ b ∈ constr u, Nat.lcm a b ≤ N := by
   intro a ha b hb
   rcases mem_constr ha with ⟨_, ha2⟩ | ⟨i, _, hi2, rfl⟩ <;>
-    rcases mem_constr hb with ⟨_, hb2⟩ | ⟨j, _, hj2, rfl⟩
-  · calc Nat.lcm a b ≤ a * b := Nat.div_le_self _ _
-      _ ≤ u * u := Nat.mul_le_mul ha2 hb2
-      _ ≤ N := by omega
-  · calc Nat.lcm a (2 * j) ≤ a * (2 * j) := Nat.div_le_self _ _
-      _ ≤ u * (2 * u) := Nat.mul_le_mul ha2 (by omega)
-      _ = 2 * (u * u) := by ring
-      _ ≤ N := hu
-  · calc Nat.lcm (2 * i) b ≤ (2 * i) * b := Nat.div_le_self _ _
-      _ ≤ (2 * u) * u := Nat.mul_le_mul (by omega) hb2
-      _ = 2 * (u * u) := by ring
-      _ ≤ N := hu
-  · rw [Nat.lcm_mul_left]
-    calc 2 * Nat.lcm i j ≤ 2 * (i * j) := Nat.mul_le_mul_left _ (Nat.div_le_self _ _)
-      _ ≤ 2 * (u * u) := Nat.mul_le_mul_left _ (Nat.mul_le_mul hi2 hj2)
-      _ ≤ N := hu
+    rcases mem_constr hb with ⟨_, hb2⟩ | ⟨j, _, hj2, rfl⟩ <;>
+    first
+    | exact (Nat.div_le_self _ _).trans (by nlinarith)
+    | rw [Nat.lcm_mul_left]; exact (Nat.mul_le_mul_left 2 (Nat.div_le_self _ _)).trans (by nlinarith)
 
 lemma constr_sub {N u : ℕ} (hu : 2 * (u * u) ≤ N) : constr u ⊆ Icc 1 N := by
   intro a ha
