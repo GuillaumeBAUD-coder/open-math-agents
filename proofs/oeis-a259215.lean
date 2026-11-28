@@ -55,28 +55,18 @@ private theorem tr_iff : ∀ p c : Row, Tr p c ↔
     (p 0 = p 1 ↔ c 0 = c 1) ∧ (p 0 = 0 ∨ p 1 = 0 ∨ c 0 = 0 ∨ c 1 = 0) := by
   decide
 
-private theorem v00 (m : ℕ) : val m ![0, 0] = (cnt m).1 := by rw [val, if_pos rfl]
-private theorem v11 (m : ℕ) : val m ![1, 1] = (cnt m).2.1 := by
-  rw [val, if_neg (by decide), if_pos rfl]
-private theorem v01 (m : ℕ) : val m ![0, 1] = (cnt m).2.2 := by
-  rw [val, if_neg (by decide), if_neg (by decide)]
-private theorem v10 (m : ℕ) : val m ![1, 0] = (cnt m).2.2 := by
-  rw [val, if_neg (by decide), if_neg (by decide)]
-
 private theorem step (m : ℕ) (p : Row) :
     ∑ c : Row, (if Tr p c then val m c else 0) = val (m + 1) p := by
   rw [sum_row]
   rcases row_cases p with rfl | rfl | rfl | rfl <;>
-    simp [tr_iff, v00, v01, v10, v11, cnt] <;> omega
+    simp (disch := decide) [tr_iff, val, cnt] <;> omega
 
 private theorem D_succ (n : ℕ) (p : Row) :
     D (n + 1) p = ∑ c : Row, (if Tr p c then D n c else 0) := by
   rw [D, card_cons]
   refine Finset.sum_congr rfl fun c _ => ?_
   simp only [Fin.cons_zero, valid_cons]
-  by_cases h : Tr p c
-  · simp [h, D]
-  · simp [h]
+  by_cases h : Tr p c <;> simp [h, D]
 
 private theorem D_eq (n : ℕ) : ∀ p : Row, D n p = val (n + 1) p := by
   induction n with
@@ -105,7 +95,7 @@ private theorem a_succ (n : ℕ) : a (n + 1) = A' (n + 1) := by
     simp only [valid_cons, D]
   simp only [h]
   rw [sum_row]
-  simp only [v00, v01, v10, v11, A']
+  simp (disch := decide) [val, A']
   ring
 
 private theorem A'_rec (m : ℕ) : A' (m + 3) + A' (m + 1) + 2 * A' m = 3 * A' (m + 2) := by
@@ -123,28 +113,24 @@ private theorem a3 : a 3 = 24 := by rw [a_succ]; rfl
 private theorem gf :
     (1 - 2 * X) * (1 - X - X ^ 2) * mk (fun n => if n = 0 then 0 else (a n : ℤ)) =
       (X * (7 - 8 * X - 8 * X ^ 2) : PowerSeries ℤ) := by
-  set s : PowerSeries ℤ := mk (fun n => if n = 0 then 0 else (a n : ℤ)) with hs
+  let s : PowerSeries ℤ := mk (fun n => if n = 0 then 0 else (a n : ℤ))
   have hd : (1 - 2 * X) * (1 - X - X ^ 2) * s =
-      s - (s * C (3 : ℤ)) * X ^ 1 + s * X ^ 2 + (s * C (2 : ℤ)) * X ^ 3 := by
-    simp only [pow_one, map_ofNat]
+      s - C 3 * (X ^ 1 * s) + X ^ 2 * s + C 2 * (X ^ 3 * s) := by
+    simp only [map_ofNat]
     ring
   have hn : (X * (7 - 8 * X - 8 * X ^ 2) : PowerSeries ℤ) =
-      C (7 : ℤ) * X ^ 1 - C (8 : ℤ) * X ^ 2 - C (8 : ℤ) * X ^ 3 := by
-    simp only [pow_one, map_ofNat]
+      C 7 * X ^ 1 - C 8 * X ^ 2 - C 8 * X ^ 3 := by
+    simp only [map_ofNat]
     ring
+  change _ * s = _
   rw [hd, hn]
   ext n
-  simp only [map_add, map_sub, coeff_mul_X_pow', coeff_mul_C, coeff_C, hs, coeff_mk]
-  rcases (by omega : n = 0 ∨ n = 1 ∨ n = 2 ∨ n = 3 ∨ 4 ≤ n) with h | h | h | h | h
-  · subst h; simp
-  · subst h; simp [a1]
-  · subst h; simp [a1, a2]
-  · subst h; simp [a1, a2, a3]
+  simp only [s, map_add, map_sub, coeff_X_pow_mul', coeff_C_mul, coeff_X_pow, coeff_mk]
+  by_cases h : n < 4
+  · interval_cases n <;> norm_num [a1, a2, a3]
   · obtain ⟨m, rfl⟩ : ∃ m, n = m + 4 := ⟨n - 4, by omega⟩
+    simp (disch := omega) [Nat.add_sub_assoc]
     have := a_rec m
-    simp only [show m + 4 - 1 = m + 3 by omega, show m + 4 - 2 = m + 2 by omega,
-      show m + 4 - 3 = m + 1 by omega]
-    simp
     omega
 
 
@@ -190,10 +176,8 @@ private theorem closed (m : ℕ) :
     refine ⟨h2, h3, ?_⟩
     have hr : (a (m + 4) : ℝ) + (a (m + 2) : ℝ) + 2 * (a (m + 1) : ℝ) = 3 * (a (m + 3) : ℝ) := by
       exact_mod_cast a_rec m
-    rw [show m + 1 + 3 = m + 1 + 3 from rfl, T_rec (m + 1)]
-    rw [show m + 1 + 2 = m + 3 by ring] at h3 ⊢
-    rw [show m + 1 + 1 = m + 2 by ring] at h2 ⊢
-    rw [show m + 1 + 3 = m + 4 by ring]
+    have ht := T_rec (m + 1)
+    norm_num only [Nat.add_assoc, Nat.reduceAdd] at ht
     linarith
 
 theorem OMA.solution : type_of% @OMA.S_oeis_a259215.main := by
