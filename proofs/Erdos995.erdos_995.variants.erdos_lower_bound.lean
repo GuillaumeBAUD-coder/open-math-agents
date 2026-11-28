@@ -78,23 +78,6 @@ namespace OMA996
 
 def IsLacunary (n : ℕ → ℕ) : Prop := ∃ c > (1 : ℝ), ∀ᶠ k in atTop, c * n k < n (k + 1)
 
-noncomputable def fourierPartial {T : ℝ} [hT : Fact (0 < T)] (f : Lp ℂ 2 (@haarAddCircle T hT))
-    (k : ℕ) : AddCircle T → ℂ :=
-  fun x => ∑ i ∈ Icc (-k : ℤ) k, fourierCoeff f i • fourier i x
-
-def FourierTailBound (C : ℝ) (f : Lp ℂ 2 (haarAddCircle (T := 1))) : Prop :=
-  (fun k : ℕ => (eLpNorm (⇑f - fourierPartial f k) 2 (haarAddCircle (T := 1))).toReal) =O[atTop]
-    (fun k : ℕ => 1 / (log (log (log k))) ^ C)
-
-def LacunaryAveragesConverge (f : Lp ℂ 2 (haarAddCircle (T := 1))) (n : ℕ → ℕ) : Prop :=
-  ∀ᵐ x ∂(haarAddCircle (T := 1)),
-    Tendsto (fun N : ℕ => (∑ k ∈ range N, f (n k • x)) / N) atTop
-      (𝓝 (∫ t, f t ∂haarAddCircle))
-
-def Erdos996Statement : Prop :=
-  ∃ C : ℝ, 0 < C ∧ ∀ (f : Lp ℂ 2 (haarAddCircle (T := 1))) (n : ℕ → ℕ),
-    IsLacunary n → FourierTailBound C f → LacunaryAveragesConverge f n
-
 def IsDyadicLacunary (n : ℕ → ℕ) : Prop := 1 ≤ n 0 ∧ ∀ k, 2 * n k ≤ n (k + 1)
 
 lemma IsDyadicLacunary.isLacunary {n : ℕ → ℕ} (hn : IsDyadicLacunary n) : IsLacunary n := by
@@ -159,8 +142,6 @@ def spacing (A k : ℕ) : ℕ := depth A k + 2
 def shift (A : ℕ) : ℕ → ℕ
   | 0 => 0
   | k + 1 => shift A k + blockLen A k * spacing A k + depth A k
-
-def logQ (A k : ℕ) : ℕ := shift A (k + 1) + 2
 
 def stage (A s : ℕ) : ℕ := Nat.findGreatest (fun k => firstTrial A k ≤ s) s
 
@@ -919,13 +900,6 @@ lemma integral_indicator_spikeSet (d : ℕ) :
 lemma integrable_indicator_spikeSet (d : ℕ) :
     Integrable (fun x => (spikeSet d).indicator (1 : (AddCircle (1 : ℝ)) → ℝ) x) (haarAddCircle (T := 1)) :=
   (integrable_const (1 : ℝ)).indicator (measurableSet_spikeSet d)
-
-lemma integral_spike_nsmul (d n : ℕ) (hn : n ≠ 0) : ∫ x, spike d (n • x) ∂(haarAddCircle (T := 1)) = 0 := by
-  rw [integral_nsmul_comp n hn _ (measurable_spike d)]
-  simp only [spike_eq]
-  rw [integral_div, integral_sub (integrable_indicator_spikeSet d) (integrable_const _),
-    integral_indicator_spikeSet, integral_const]
-  simp
 
 lemma integral_spike_nsmul_sq (d n : ℕ) (hd : 1 ≤ d) (hn : n ≠ 0) :
     ∫ x, spike d (n • x) ^ 2 ∂(haarAddCircle (T := 1)) = 1 := by
@@ -1921,25 +1895,11 @@ lemma stage_eq (A s k : ℕ) (h1 : firstTrial A k ≤ s) (h2 : s < firstTrial A 
   · exact h
   · have := hm (show k + 1 ≤ stage A s from h); omega
 
-lemma stage_mono (A : ℕ) : Monotone (stage A) := by
-  intro s t hst
-  by_contra h
-  rw [not_le] at h
-  obtain ⟨a1, _⟩ := stage_spec A s
-  obtain ⟨_, b2⟩ := stage_spec A t
-  have := (firstTrial_strictMono A).monotone (show stage A t + 1 ≤ stage A s from h)
-  omega
-
 lemma trialLen_le (A s : ℕ) : 8 * trialLen s ≤ blockLen A (stage A s) := by
   unfold trialLen blockLen
   have h1 : s + 1 ≤ firstTrial A (stage A s + 1) := Nat.succ_le_of_lt (stage_spec A s).2
   have h2 : 21 ^ (s + 1) ≤ 21 ^ firstTrial A (stage A s + 1) := Nat.pow_le_pow_right (by norm_num) h1
   rw [pow_succ] at h2
-  omega
-
-lemma shift_mono (A : ℕ) : Monotone (shift A) := by
-  refine monotone_nat_of_le_succ (fun k => ?_)
-  show shift A k ≤ shift A k + blockLen A k * spacing A k + depth A k
   omega
 
 lemma trialStart_mono (A : ℕ) : Monotone (trialStart A) := by
@@ -1952,142 +1912,6 @@ lemma blk_floor (A k : ℕ) (x : (AddCircle (1 : ℝ))) : -(floorC A k) ≤ blk 
     (lam_pos A k) (by norm_num) (one_le_blockLen A k) (depth_spec A k).1 x
   unfold blk floorC
   exact this
-
-lemma lt_two_pow_aux (n : ℕ) : n < 2 ^ n := by
-  induction n with
-  | zero => simp
-  | succ n ih => rw [pow_succ]; omega
-
-lemma firstTrial_le_pow (A k : ℕ) : firstTrial A k ≤ 2 ^ (A * k + k + 24) := by
-  induction k with
-  | zero => simp [firstTrial]
-  | succ k ih =>
-    show firstTrial A k + nTrials A k ≤ _
-    unfold nTrials aExp
-    have h1 : 2 ^ (A * k + k + 24) ≤ 2 ^ (A * (k + 1) + k + 24) :=
-      Nat.pow_le_pow_right (by norm_num) (by nlinarith)
-    have h2 : 2 ^ (A * (k + 1) + (k + 1) + 24) = 2 * 2 ^ (A * (k + 1) + k + 24) := by ring
-    omega
-
-lemma aExp_le_firstTrial (A k : ℕ) : aExp A k ≤ firstTrial A (k + 1) := by
-  show aExp A k ≤ firstTrial A k + nTrials A k
-  unfold nTrials
-  have h1 := lt_two_pow_aux (aExp A k)
-  have h2 : 2 ^ aExp A k ≤ 2 ^ (aExp A k + k + 24) := Nat.pow_le_pow_right (by norm_num) (by omega)
-  omega
-
-lemma depth_le (A k : ℕ) : depth A k ≤ 6 * firstTrial A (k + 1) + 23 := by
-  obtain ⟨S, hS⟩ : ∃ S, firstTrial A (k + 1) = S := ⟨_, rfl⟩
-  have hL : blockLen A k = 8 * 21 ^ S := by rw [← hS]; rfl
-  have ha := aExp_le_firstTrial A k
-  rw [hS] at ha ⊢
-  apply Nat.clog_le_of_le_pow
-  rw [hL]
-  have h21 : 21 ^ S ≤ 2 ^ (5 * S) := by rw [pow_mul]; exact Nat.pow_le_pow_left (by norm_num) S
-  have h2a : 2 ^ aExp A k ≤ 2 ^ S := Nat.pow_le_pow_right (by norm_num) ha
-  have e : 2 ^ (6 * S + 23) = 2 ^ 23 * (2 ^ (5 * S) * 2 ^ S) := by ring
-  rw [e]
-  have h3 : 21 ^ S * 2 ^ aExp A k ≤ 2 ^ (5 * S) * 2 ^ S := Nat.mul_le_mul h21 h2a
-  have e2 : 640000 * (8 * 21 ^ S) * 2 ^ aExp A k = 5120000 * (21 ^ S * 2 ^ aExp A k) := by ring
-  rw [e2]
-  exact Nat.mul_le_mul (by norm_num) h3
-
-lemma shift_le (A k : ℕ) : shift A k ≤ 2 ^ (6 * firstTrial A k + 10) := by
-  induction k with
-  | zero => simp [shift]
-  | succ k ih =>
-    show shift A k + blockLen A k * spacing A k + depth A k ≤ 2 ^ (6 * firstTrial A (k + 1) + 10)
-    have hmono : firstTrial A k + 1 ≤ firstTrial A (k + 1) :=
-      Nat.succ_le_of_lt (firstTrial_strictMono A (Nat.lt_succ_self k))
-    have hd := depth_le A k
-    obtain ⟨S, hS⟩ : ∃ S, firstTrial A (k + 1) = S := ⟨_, rfl⟩
-    have hL : blockLen A k = 8 * 21 ^ S := by rw [← hS]; rfl
-    rw [hS] at hd hmono ⊢
-    have hL' : blockLen A k ≤ 2 ^ (5 * S + 3) := by
-      rw [hL]
-      have h21 : 21 ^ S ≤ 2 ^ (5 * S) := by rw [pow_mul]; exact Nat.pow_le_pow_left (by norm_num) S
-      have : 2 ^ (5 * S + 3) = 8 * 2 ^ (5 * S) := by ring
-      omega
-    have hsp : spacing A k = depth A k + 2 := rfl
-    have hlin : 12 * S + 48 ≤ 2 ^ (S + 6) := by
-      have := lt_two_pow_aux S
-      have : 2 ^ (S + 6) = 64 * 2 ^ S := by ring
-      omega
-    have hb1 := one_le_blockLen A k
-    have h1 : blockLen A k * spacing A k + depth A k ≤ blockLen A k * (2 * depth A k + 2) := by
-      rw [hsp]; nlinarith
-    have h2 : blockLen A k * (2 * depth A k + 2) ≤ 2 ^ (5 * S + 3) * 2 ^ (S + 6) :=
-      Nat.mul_le_mul hL' (by omega)
-    have h3 : 2 ^ (6 * firstTrial A k + 10) ≤ 2 ^ (6 * S + 4) :=
-      Nat.pow_le_pow_right (by norm_num) (by omega)
-    have e1 : 2 ^ (6 * S + 10) = 64 * 2 ^ (6 * S + 4) := by ring
-    have e2 : 2 ^ (5 * S + 3) * 2 ^ (S + 6) = 32 * 2 ^ (6 * S + 4) := by ring
-    omega
-
-lemma twoLogQ_le (A k : ℕ) : 2 * logQ A k ≤ 2 ^ (2 ^ ((A + 1) * (k + 1) + 30)) := by
-  have h1 := shift_le A (k + 1)
-  have h2 := firstTrial_le_pow A (k + 1)
-  have hq : logQ A k = shift A (k + 1) + 2 := rfl
-  have hM : A * (k + 1) + (k + 1) + 24 = (A + 1) * (k + 1) + 24 := by ring
-  rw [hM] at h2
-  have hpM : 2 ^ ((A + 1) * (k + 1) + 30) = 64 * 2 ^ ((A + 1) * (k + 1) + 24) := by ring
-  have hpos : 0 < 2 ^ ((A + 1) * (k + 1) + 24) := by positivity
-  have h3 : 6 * firstTrial A (k + 1) + 12 ≤ 2 ^ ((A + 1) * (k + 1) + 30) := by omega
-  have h4 : 2 ^ (6 * firstTrial A (k + 1) + 12) ≤ 2 ^ (2 ^ ((A + 1) * (k + 1) + 30)) :=
-    Nat.pow_le_pow_right (by norm_num) h3
-  have h5 : 2 ^ (6 * firstTrial A (k + 1) + 12) = 4 * 2 ^ (6 * firstTrial A (k + 1) + 10) := by
-    ring
-  have h6 : 4 ≤ 2 ^ (6 * firstTrial A (k + 1) + 10) := by
-    calc 4 = 2 ^ 2 := by norm_num
-      _ ≤ _ := Nat.pow_le_pow_right (by norm_num) (by omega)
-  omega
-
-lemma scale_bound (A : ℕ) (hA : 1 ≤ A) (k : ℕ) :
-    Real.log (Real.log (Real.log ((2 : ℝ) ^ (2 * logQ A k)))) ≤ ((A : ℝ) + 1) * (k + 1) + 30 := by
-  have hn := twoLogQ_le A k
-  have hq2 : 2 ≤ logQ A k := by show 2 ≤ shift A (k + 1) + 2; omega
-  obtain ⟨T, hT⟩ : ∃ T, (A + 1) * (k + 1) + 30 = T := ⟨_, rfl⟩
-  rw [hT] at hn
-  obtain ⟨E, hE0⟩ : ∃ E, 2 * logQ A k = E := ⟨_, rfl⟩
-  rw [hE0] at hn
-  have hE4 : 4 ≤ E := by omega
-  rw [hE0]
-  have hlt := Real.log_two_lt_d9
-  have hgt := Real.log_two_gt_d9
-  have hx1 : Real.log ((2 : ℝ) ^ E) = (E : ℝ) * Real.log 2 := Real.log_pow _ _
-  have hE : (E : ℝ) ≤ (2 : ℝ) ^ (2 ^ T) := by
-    have := (Nat.cast_le (α := ℝ)).2 hn
-    rw [Nat.cast_pow, Nat.cast_ofNat] at this
-    exact this
-  have hEge : (4 : ℝ) ≤ (E : ℝ) := by exact_mod_cast hE4
-  have hx1pos : 1 < Real.log ((2 : ℝ) ^ E) := by
-    rw [hx1]
-    have := mul_le_mul_of_nonneg_right hEge (by linarith : (0 : ℝ) ≤ Real.log 2)
-    linarith
-  have hx1le : Real.log ((2 : ℝ) ^ E) ≤ (2 : ℝ) ^ (2 ^ T) := by
-    rw [hx1]
-    have : (E : ℝ) * Real.log 2 ≤ (E : ℝ) * 1 :=
-      mul_le_mul_of_nonneg_left (by linarith) (by linarith)
-    linarith
-  have hx2pos : 0 < Real.log (Real.log ((2 : ℝ) ^ E)) := Real.log_pos hx1pos
-  have hx2le : Real.log (Real.log ((2 : ℝ) ^ E)) ≤ (2 : ℝ) ^ T := by
-    have h1 : Real.log (Real.log ((2 : ℝ) ^ E)) ≤ Real.log ((2 : ℝ) ^ (2 ^ T)) :=
-      Real.log_le_log (by linarith) hx1le
-    have h2 : Real.log ((2 : ℝ) ^ (2 ^ T)) = ((2 ^ T : ℕ) : ℝ) * Real.log 2 := Real.log_pow _ _
-    have h3 : ((2 ^ T : ℕ) : ℝ) = (2 : ℝ) ^ T := by push_cast; rfl
-    have h4 : (0 : ℝ) ≤ (2 : ℝ) ^ T := by positivity
-    have h5 : (2 : ℝ) ^ T * Real.log 2 ≤ (2 : ℝ) ^ T * 1 :=
-      mul_le_mul_of_nonneg_left (by linarith) h4
-    rw [h2, h3] at h1
-    linarith
-  have h1 : Real.log (Real.log (Real.log ((2 : ℝ) ^ E))) ≤ Real.log ((2 : ℝ) ^ T) :=
-    Real.log_le_log hx2pos hx2le
-  have h2 : Real.log ((2 : ℝ) ^ T) = (T : ℝ) * Real.log 2 := Real.log_pow _ _
-  have h3 : (T : ℝ) = ((A : ℝ) + 1) * (k + 1) + 30 := by rw [← hT]; push_cast; ring
-  have h4 : (T : ℝ) * Real.log 2 ≤ (T : ℝ) * 1 :=
-    mul_le_mul_of_nonneg_left (by linarith) (by positivity)
-  rw [h2] at h1
-  linarith
 
 end Asm
 end OMA996
@@ -3149,8 +2973,6 @@ theorem hoLowerBound : HoLowerBound := by
 theorem erdos_995 : Erdos995Answer :=
   ⟨erdosUpperBound, hoLowerBound, criticalExponent_of erdosUpperBound hoLowerBound,
     not_logLogQuestion_of hoLowerBound⟩
-
-theorem erdos_995_logLog : ¬ LogLogQuestion := erdos_995.2.2.2
 
 end OMA995
 end

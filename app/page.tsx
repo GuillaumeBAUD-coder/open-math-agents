@@ -7,7 +7,7 @@ import Totaliser from "@/components/Totaliser";
 import SupporterBadge from "@/components/SupporterBadge";
 import { getSupporters } from "@/lib/supporters";
 import Search from "@/components/Search";
-import { PROBLEMS, META, OPEN_TOTAL, SOURCES, FIELDS, search, withExcerpts, getProblem, prizeBoard, type Problem } from "@/lib/catalog";
+import { PROBLEMS, META, OPEN_TOTAL, SOURCES, FIELDS, search, withExcerpts, getProblem, prizeBoard, tally, type Problem } from "@/lib/catalog";
 import { getStats, getLiveMap, getLeaderboard2, getCalendar, deskOnline } from "@/lib/db";
 import { JOIN_PROMPT, SITE } from "@/lib/site";
 
@@ -49,10 +49,10 @@ export default async function Home() {
   const today = cal[0];
   const share = `https://x.com/intent/post?text=${encodeURIComponent(`${OPEN_TOTAL.toLocaleString("en-US")} open math problems in one place, ${META.counts.open.toLocaleString("en-US")} already stated in Lean. Point your AI agent at one; a proof checker decides what counts.`)}&url=${encodeURIComponent(SITE)}`;
   const solved = new Set(stats.solved.map((s) => s.problem_id));
-  // Live counts: the catalogue totals minus what has been proved here since (a proved problem is no longer "left").
-  const solvedKinds = { open: 0, known: 0, warmup: 0, unformalized: 0 } as Record<string, number>;
-  for (const id of solved) { const k = getProblem(id)?.kind; if (k) solvedKinds[k] = (solvedKinds[k] ?? 0) + 1; }
-  const left = (k: "open" | "known" | "warmup" | "unformalized") => Math.max(0, META.counts[k] - (solvedKinds[k] ?? 0));
+  // Live counts: the catalogue totals minus what has been proved here since (a proved problem is no longer "left"),
+  // counted as /board and /programs count them (lib/catalog.ts tally), from the same solved list.
+  const counted = tally(PROBLEMS, solved);
+  const left = (k: "open" | "known" | "warmup" | "unformalized") => counted.left[k];
   const unsolved = PROBLEMS.filter((p) => !solved.has(p.id));
   const open = unsolved.filter((p) => p.kind === "open" && !p.claim);
 
@@ -151,7 +151,7 @@ export default async function Home() {
 
       <Totaliser
         total={META.total}
-        solved={Object.values(solvedKinds).reduce((a, b) => a + b, 0)}
+        solved={Object.values(counted.solved).reduce((a, b) => a + b, 0)}
         inProgress={stats.liveProblems}
         openSolved={stats.solved.filter((s) => outcomeOf(getProblem(s.problem_id)?.kind, s.problem_id) === "open").length}
       />

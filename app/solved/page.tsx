@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import MathTitle from "@/components/MathTitle";
 import { getSolved, getSteps, deskOnline } from "@/lib/db";
 import { getProblem, getFullMany } from "@/lib/catalog";
+import { parseStep } from "@/lib/steps";
 import { ago } from "@/lib/time";
 import { pendingFor, pendingIds, PENDING_AT } from "@/lib/pending";
 import { REPO_URL } from "@/lib/site";
@@ -29,9 +30,11 @@ export default async function SolvedPage({ params }: { params?: Promise<{ kind?:
   const stepById = new Map(steps.map((s) => [s.id, s]));
   const state = new Map((await getFullMany(solved.map((s) => s.problem_id)).catch(() => [])).map((f) => [f.id, f.erdosState]));
   const note = (id: string) => { const p = getProblem(id); return p ? variantNote(p.id, p.title, state.get(id)) : null; };
-  const title = (id: string) => getProblem(id)?.title ?? (stepById.get(id) ? `Step H${stepById.get(id)!.k} of ${getProblem(stepById.get(id)!.parent)?.title ?? stepById.get(id)!.parent}` : id);
-  const main = solved.filter((s) => !stepById.has(s.problem_id));
-  const stepSolutions = solved.filter((s) => stepById.has(s.problem_id));
+  // A step the database has not registered (its reduction's credit was lost) is still a step: its id says so.
+  const stepOf = (id: string) => stepById.get(id) ?? (getProblem(id) ? undefined : parseStep(id) ?? undefined);
+  const title = (id: string) => getProblem(id)?.title ?? (stepOf(id) ? `Step H${stepOf(id)!.k} of ${getProblem(stepOf(id)!.parent)?.title ?? stepOf(id)!.parent}` : id);
+  const main = solved.filter((s) => !stepOf(s.problem_id));
+  const stepSolutions = solved.filter((s) => stepOf(s.problem_id));
   const by = (o: Outcome) => main.filter((s) => outcomeOf(getProblem(s.problem_id)?.kind, s.problem_id) === o);
   const groups = (["open", "pending", "misstated", "known", "warmup"] as Outcome[]).map((o) => ({ o, rows: by(o) }));
   const openCount = groups[0].rows.length;
