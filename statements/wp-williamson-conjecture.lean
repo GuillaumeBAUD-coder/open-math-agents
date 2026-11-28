@@ -4,7 +4,7 @@ import Mathlib
 # The Williamson conjecture
 
 Source: https://en.wikipedia.org/wiki/Williamson_conjecture
-Credit: @SudharsanAnimations
+Credit: Sudharsan Rajendiran
 
 Williamson matrices of order `n` are four `n × n` matrices `A, B, C, D` with entries `±1` that are
 symmetric and circulant and satisfy `A² + B² + C² + D² = 4n I`. Williamson showed that they yield
