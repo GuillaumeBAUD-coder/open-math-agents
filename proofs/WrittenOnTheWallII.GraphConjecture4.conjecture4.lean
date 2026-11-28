@@ -76,30 +76,25 @@ lemma exists_tree {α : Type*} (G : SimpleGraph α) (hconn : G.Connected) (u v w
     intro x y hxy hr
     rw [SimpleGraph.fromRel_adj] at hxy
     have huu : ¬ G.Adj u u := G.irrefl
-    have hvv : ¬ G.Adj v v := G.irrefl
     have hvu : ¬ G.Adj v u := fun h => huv h.symm
     obtain ⟨hne, (⟨rfl, h1⟩ | ⟨rfl, h1, h2⟩) | (⟨rfl, h1⟩ | ⟨rfl, h1, h2⟩)⟩ := hxy
-    · have hyx : y ≠ x := fun h => hne h.symm
-      simp [hyx, h1] at hr
+    · simp [hne.symm, h1] at hr
     · by_cases hxu : x = u
       · subst hxu
-        have hyx : y ≠ x := fun h => hne h.symm
-        simp [hyx, h1] at hr
+        simp [hne.symm, h1] at hr
       · by_cases hy : G.Adj u y
         · rcases h2 with h2 | h2
           · exact absurd hy h2
           · simp [huv, h2]
         · have hyu : y ≠ u := by rintro rfl; exact hvu h1
-          have hyx : y ≠ x := fun h => hne h.symm
-          simp [hxu, huv, hy, hyu, hyx] at hr
+          simp [hxu, huv, hy, hyu, hne.symm] at hr
     · simp [h1]
     · by_cases hx : G.Adj u x
       · have hxu : x ≠ u := by rintro rfl; exact huu hx
         by_cases hyu : y = u
         · simp [hx, hyu]
         · simp [hx, hxu, hyu, huv] at hr
-      · have hxy : x ≠ y := hne
-        simp [hx, hxy]
+      · simp [hx, hne]
   obtain ⟨T, hHT, hTG, hT⟩ := hconn.exists_isTree_le_of_le_of_isAcyclic hHG hHac
   refine ⟨T, hTG, hT, fun y hy => hHT ?_, fun y hy hy' => hHT ?_⟩
   · rw [SimpleGraph.fromRel_adj]
@@ -158,13 +153,7 @@ lemma leaves_le_Ls {α : Type*} [Fintype α] [DecidableEq α] (G : SimpleGraph �
         { toEquiv := Equiv.Set.univ α
           map_rel_iff' := Iff.rfl }
       exact e.isTree_iff.2 hT
-    · show ((Finset.filter (fun v => (SimpleGraph.toSubgraph T hTG).degree v = 1)
-        (SimpleGraph.toSubgraph T hTG).verts.toFinset).card : ℝ) = _
-      have hv : (SimpleGraph.toSubgraph T hTG).verts.toFinset = Finset.univ := by
-        ext x
-        exact ⟨fun _ => Finset.mem_univ x, fun _ => Set.mem_toFinset.2 (Set.mem_univ x)⟩
-      rw [hv]
-      simp_rw [SimpleGraph.degree_toSubgraph G T hTG]
+    · simp [SimpleGraph.degree_toSubgraph]
 
 end OMAConjecture4
 
@@ -199,8 +188,7 @@ theorem OMA.solution : type_of% @WrittenOnTheWallII.GraphConjecture4.conjecture4
     rw [Finset.card_insert_of_notMem (by simp [huw])] at c2
     have c3 := Finset.card_sdiff_add_card (G.neighborFinset v) (G.neighborFinset u)
     rw [Finset.union_comm] at c3
-    rw [T.card_neighborFinset_eq_degree u] at c1
-    rw [T.card_neighborFinset_eq_degree v] at c2
+    simp only [T.card_neighborFinset_eq_degree] at c1 c2
     have hNG : NG G ≤ ((G.neighborFinset u ∪ G.neighborFinset v).card : ℝ) := by
       have hmem : s(u, v) ∈ (Gᶜ).edgeFinset := by
         rw [mem_edgeFinset, mem_edgeSet, compl_adj]
@@ -232,10 +220,7 @@ theorem OMA.solution : type_of% @WrittenOnTheWallII.GraphConjecture4.conjecture4
     have c1 := Finset.card_le_card hu'
     rw [Finset.card_erase_of_mem (Finset.mem_univ u), Finset.card_univ,
       T.card_neighborFinset_eq_degree u] at c1
-    have hNG : NG G = (Fintype.card α : ℝ) := by
-      unfold NG
-      simp only
-      rw [dif_neg hne]
+    have hNG : NG G = (Fintype.card α : ℝ) := by simp [NG, hne]
     have hk : (Fintype.card α : ℤ) - 1 ≤
         ((Finset.univ.filter fun x => T.degree x = 1).card : ℤ) := by
       omega
