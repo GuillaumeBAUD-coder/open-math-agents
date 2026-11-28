@@ -1,5 +1,6 @@
 import FormalConjectures.Wikipedia.ThabitNumber
 
+open ArithmeticFunction
 -- Problem: Thābit ibn Qurra's amicable number theorem
 -- Upstream: formal-conjectures FormalConjectures/Wikipedia/ThabitNumber.lean:76 (declaration ThabitNumber.thabit_amicable_rule)
 -- Credit: @philipsaint (the owner of the agent is credited as the solver)
@@ -7,8 +8,8 @@ import FormalConjectures.Wikipedia.ThabitNumber
 
 /-- The sum of divisors of a power of two: `σ(2^k) + 1 = 2^(k+1)`. -/
 theorem OMA.sigma_two_pow (k : ℕ) :
-    ArithmeticFunction.sigma 1 (2 ^ k) + 1 = 2 ^ (k + 1) := by
-  rw [ArithmeticFunction.sigma_one_apply, Nat.sum_divisors_prime_pow Nat.prime_two]
+    sigma 1 (2 ^ k) + 1 = 2 ^ (k + 1) := by
+  rw [sigma_one_apply, Nat.sum_divisors_prime_pow Nat.prime_two]
   induction k with
   | zero => simp
   | succ k ih =>
@@ -17,28 +18,28 @@ theorem OMA.sigma_two_pow (k : ℕ) :
 
 /-- The sum of divisors of a prime `p` is `p + 1`. -/
 theorem OMA.sigma_prime {p : ℕ} (hp : p.Prime) :
-    ArithmeticFunction.sigma 1 p = p + 1 := by
-  rw [ArithmeticFunction.sigma_one_apply, hp.sum_divisors]
+    sigma 1 p = p + 1 := by
+  rw [sigma_one_apply, hp.sum_divisors]
 
 /-- The arithmetic core of Thābit's rule, with `t = 2^(n-1)`, `N = 2^n`, `S = σ(N)`. -/
 theorem OMA.thabit_core {t N P Q R : ℕ} (ht : 2 ≤ t) (hN : N = 2 * t)
-    (hS : ArithmeticFunction.sigma 1 N + 1 = 4 * t)
+    (hS : sigma 1 N + 1 = 4 * t)
     (hNP : Nat.Coprime N P) (hNQ : Nat.Coprime N Q) (hNR : Nat.Coprime N R)
     (hP : P + 1 = 3 * t) (hQ : Q + 1 = 6 * t) (hR : R + 1 = 18 * (t * t))
     (hp : P.Prime) (hq : Q.Prime) (hr : R.Prime) :
     IsAmicable (N * P * Q) (N * R) := by
   have hPQ : Nat.Coprime P Q := (Nat.coprime_primes hp hq).2 (by omega)
-  have hsA : ArithmeticFunction.sigma 1 (N * P * Q)
-      = ArithmeticFunction.sigma 1 N * (P + 1) * (Q + 1) := by
-    rw [ArithmeticFunction.isMultiplicative_sigma.map_mul_of_coprime
+  have hsA : sigma 1 (N * P * Q)
+      = sigma 1 N * (P + 1) * (Q + 1) := by
+    rw [isMultiplicative_sigma.map_mul_of_coprime
         (Nat.Coprime.mul_left hNQ hPQ),
-      ArithmeticFunction.isMultiplicative_sigma.map_mul_of_coprime hNP,
+      isMultiplicative_sigma.map_mul_of_coprime hNP,
       OMA.sigma_prime hp, OMA.sigma_prime hq]
-  have hsB : ArithmeticFunction.sigma 1 (N * R)
-      = ArithmeticFunction.sigma 1 N * (R + 1) := by
-    rw [ArithmeticFunction.isMultiplicative_sigma.map_mul_of_coprime hNR,
+  have hsB : sigma 1 (N * R)
+      = sigma 1 N * (R + 1) := by
+    rw [isMultiplicative_sigma.map_mul_of_coprime hNR,
       OMA.sigma_prime hr]
-  generalize ArithmeticFunction.sigma 1 N = S at hS hsA hsB
+  generalize sigma 1 N = S at hS hsA hsB
   zify at hS hP hQ hR
   have zS : (S : ℤ) = 4 * t - 1 := by omega
   have zP : (P : ℤ) = 3 * t - 1 := by omega
@@ -75,7 +76,7 @@ theorem OMA.solution : type_of% @ThabitNumber.thabit_amicable_rule := by
   have e2 : 2 ^ (2 * (m + 1) - 1) = 2 * (2 ^ m * 2 ^ m) := by
     have : 2 * (m + 1) - 1 = m + m + 1 := by omega
     rw [this, pow_succ, pow_add]; ring
-  have hS : ArithmeticFunction.sigma 1 (2 ^ (m + 1)) + 1 = 4 * 2 ^ m := by
+  have hS : sigma 1 (2 ^ (m + 1)) + 1 = 4 * 2 ^ m := by
     rw [OMA.sigma_two_pow, pow_succ, pow_succ]; ring
   unfold ThabitNumber.thabitNumber at hp hq ⊢
   rw [e2] at hr ⊢
