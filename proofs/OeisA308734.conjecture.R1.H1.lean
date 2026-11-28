@@ -1,5 +1,4 @@
 import OMAReductions.R_OeisA308734_conjecture_R1
-import Mathlib.NumberTheory.SumTwoSquares
 
 /-!
 # Proof of `OeisA308734.conjecture.R1.H1`
