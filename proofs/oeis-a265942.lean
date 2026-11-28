@@ -15,18 +15,10 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a265942.main := by
   have hrec : ∀ n : ℕ, a (n + 1) = ∑ k ∈ Finset.range (n + 1),
       (-1 : ℤ) ^ (n + 1 - k + 1) * ((n + 1 - k + 1 : ℕ) : ℤ) ^ k * a k := by
     intro n
-    rw [a]
-    exact Fin.sum_univ_eq_sum_range
-      (fun k => (-1 : ℤ) ^ (n + 1 - k + 1) * ((n + 1 - k + 1 : ℕ) : ℤ) ^ k * a k) (n + 1)
+    rw [a, Finset.sum_range]
   have h0 : a 0 = 1 := by rw [a]
-  have h1 : a 1 = 1 := by
-    have e := hrec 0
-    norm_num [h0] at e
-    exact e
-  have h2 : a 2 = 1 := by
-    have e := hrec 1
-    norm_num [Finset.sum_range_succ, h0, h1] at e
-    exact e
+  have h1 : a 1 = 1 := by simpa [h0] using hrec 0
+  have h2 : a 2 = 1 := by simpa [Finset.sum_range_succ, h0, h1] using hrec 1
   have Sar : ∀ r : ℕ, ∑ j ∈ Finset.range r, 2 * ((r + 1 - j : ℕ) : ℤ) = (r : ℤ) ^ 2 + 3 * r := by
     intro r
     induction r with
@@ -62,21 +54,21 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a265942.main := by
         ring
       have T : ∀ j : ℕ, j < r → 4 ∣ F (3 + j) - 2 * ((r + 1 - j : ℕ) : ℤ) := by
         intro j hj
-        have ha := ih (3 + j) (by omega) (by omega)
-        obtain ⟨q, hq⟩ : ∃ q : ℤ, a (3 + j) = 4 * q + 2 := ⟨a (3 + j) / 4, by omega⟩
-        dsimp only [F]
-        rw [hq, show r + 2 + 1 - (3 + j) + 1 = r + 1 - j by omega]
-        have hpar : (2 : ℤ) ∣ ((r + 1 - j : ℕ) : ℤ) ^ (3 + j) - ((r + 1 - j : ℕ) : ℤ) := by
-          rcases Int.even_or_odd ((r + 1 - j : ℕ) : ℤ) with hx | hx
+        let y := r + 1 - j
+        have ha : (2 : ℤ) ≡ a (3 + j) [ZMOD 4] := (ih (3 + j) (by omega) (by omega)).symm
+        have hp : (y : ℤ) ≡ (y : ℤ) ^ (3 + j) [ZMOD 2] := by
+          apply Int.modEq_iff_dvd.mpr
+          rcases Int.even_or_odd (y : ℤ) with hx | hx
           · exact (Even.sub (hx.pow_of_ne_zero (n := 3 + j) (by omega)) hx).two_dvd
           · exact (Odd.sub_odd (hx.pow (n := 3 + j)) hx).two_dvd
-        obtain ⟨c, hc⟩ := hpar
-        rcases neg_one_pow_eq_or ℤ (r + 1 - j) with hs | hs
-        · rw [hs]
-          exact ⟨q * ((r + 1 - j : ℕ) : ℤ) ^ (3 + j) + c, by linear_combination 2 * hc⟩
-        · rw [hs]
-          exact ⟨-(q * ((r + 1 - j : ℕ) : ℤ) ^ (3 + j)) - c - ((r + 1 - j : ℕ) : ℤ),
-            by linear_combination (-2 : ℤ) * hc⟩
+        have hs : (1 : ℤ) ≡ (-1 : ℤ) ^ y [ZMOD 2] := by
+          simpa only [one_pow] using (show (1 : ℤ) ≡ -1 [ZMOD 2] by decide).pow y
+        have hh := (hs.mul hp).mul_right' (c := 2)
+        dsimp only [F]
+        rw [show r + 2 + 1 - (3 + j) + 1 = y by dsimp [y]; omega]
+        exact Int.modEq_iff_dvd.mp (by
+          simpa only [one_mul, mul_comm (y : ℤ) 2, show (2 : ℤ) * 2 = 4 by decide, y] using
+            hh.trans (ha.mul_left _))
       have htail : 4 ∣ ∑ j ∈ Finset.range r, F (3 + j) -
           ∑ j ∈ Finset.range r, 2 * ((r + 1 - j : ℕ) : ℤ) := by
         rw [← Finset.sum_sub_distrib]
@@ -89,13 +81,10 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a265942.main := by
           exact ⟨2 * (t : ℤ) ^ 2 + 3 * t, by push_cast; ring⟩
         · rw [ho.neg_one_pow]
           exact ⟨-1, by ring⟩
-      have hsplit : a (r + 2 + 1) - 2 = (F 0 + F 1 + F 2 + ((r : ℤ) ^ 2 + 3 * r) - 2) +
-          (∑ j ∈ Finset.range r, F (3 + j) - ∑ j ∈ Finset.range r, 2 * ((r + 1 - j : ℕ) : ℤ)) := by
+      have hfin : 4 ∣ a (r + 2 + 1) - 2 := by
+        convert dvd_add hbase htail using 1
         rw [hsum, Sar r]
         ring
-      have hfin : 4 ∣ a (r + 2 + 1) - 2 := by
-        rw [hsplit]
-        exact dvd_add hbase htail
       omega
   intro n hn
   exact key n (by omega)
