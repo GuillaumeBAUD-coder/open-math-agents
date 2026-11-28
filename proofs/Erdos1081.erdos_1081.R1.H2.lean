@@ -1,21 +1,27 @@
 import OMAReductions.R_Erdos1081_erdos_1081_R1
 
-/-! With y = log x → ∞ it suffices that y^a / (log y)^C → ∞. Its reciprocal (log y)^C / y^a
-tends to 0 by `isLittleO_log_rpow_rpow_atTop` and is eventually positive. -/
+-- Credit: @LordMike
 
-open Filter Topology in
+open Filter in
 theorem OMA.solution : OMA.R_Erdos1081_erdos_1081_R1.H2 := by
   intro a C ha
-  have h0 : Tendsto (fun y : ℝ => Real.log y ^ C / y ^ a) atTop (𝓝 0) :=
-    (isLittleO_log_rpow_rpow_atTop C ha).tendsto_div_nhds_zero
-  have hpos : ∀ᶠ y : ℝ in atTop, Real.log y ^ C / y ^ a ∈ Set.Ioi 0 := by
-    filter_upwards [Real.tendsto_log_atTop.eventually_gt_atTop 0, eventually_gt_atTop 0]
-      with y h1 h2
-    exact div_pos (Real.rpow_pos_of_pos h1 C) (Real.rpow_pos_of_pos h2 a)
-  have h1 : Tendsto (fun y : ℝ => Real.log y ^ C / y ^ a) atTop (𝓝[>] 0) :=
-    tendsto_nhdsWithin_iff.2 ⟨h0, hpos⟩
-  have h2 : Tendsto (fun y : ℝ => y ^ a / Real.log y ^ C) atTop atTop := by
-    refine (tendsto_inv_nhdsGT_zero.comp h1).congr ?_
-    intro y
-    simp only [Function.comp_apply, inv_div]
-  exact h2.comp Real.tendsto_log_atTop
+  have hf : Tendsto (fun x : ℝ => Real.log (Real.log x)) atTop atTop :=
+    Real.tendsto_log_atTop.comp Real.tendsto_log_atTop
+  have hw : Tendsto (fun x : ℝ => a * Real.log (Real.log x)) atTop atTop :=
+    hf.const_mul_atTop ha
+  have h1 := ((tendsto_exp_div_rpow_atTop C).comp hw).const_mul_atTop
+    (Real.rpow_pos_of_pos ha C)
+  refine h1.congr' ?_
+  filter_upwards [eventually_gt_atTop (Real.exp 1)] with x hx
+  have h1x : 1 < Real.log x := by
+    have := Real.log_lt_log (Real.exp_pos 1) hx
+    rwa [Real.log_exp] at this
+  have hL : 0 < Real.log x := by linarith
+  have hv : 0 < Real.log (Real.log x) := Real.log_pos h1x
+  have key : Real.log x ^ a = Real.exp (a * Real.log (Real.log x)) := by
+    rw [mul_comm, Real.exp_mul, Real.exp_log hL]
+  have hac : 0 < a ^ C := Real.rpow_pos_of_pos ha C
+  have hvc : 0 < Real.log (Real.log x) ^ C := Real.rpow_pos_of_pos hv C
+  simp only [Function.comp_apply]
+  rw [key, Real.mul_rpow ha.le hv.le]
+  field_simp
