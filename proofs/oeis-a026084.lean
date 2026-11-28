@@ -159,54 +159,38 @@ The sequence is due to Clark Kimberling and the recurrence to R. J. Mathar. -/
 namespace Walk026084
 open OMA.S_oeis_a026084
 
-private theorem step_nonzero (z : ℤ) : |z| = 1 ↔ z = -1 ∨ z = 1 := by
-  rcases le_total 0 z with h|h
-  · rw [abs_of_nonneg h]; omega
-  · rw [abs_of_nonpos h]; omega
+private theorem mem_choices (t : ℕ) (z : ℤ) : z ∈ choices t ↔
+    (t ≤ 3 → |z|=1) ∧ (3<t → |z|≤1) := by
+  rcases le_or_gt t 3 with h|h
+  · simp [choices,h,not_lt_of_ge h,abs_eq (by decide : (0:ℤ)≤1),or_comm]
+  · simp [choices,h.not_ge,h,abs_le]
+    omega
 
-private theorem step_bounded (z : ℤ) : |z| ≤ 1 ↔ z = -1 ∨ z = 0 ∨ z = 1 := by
-  rw [abs_le]; omega
+private theorem pair_step {n : ℕ} {y : ℤ} (p : Path n y) (i j : Fin (n+1))
+    (hj : j.val=i.val+1) : p.pos j-p.pos i ∈ choices j.val := by
+  let k : Fin n := ⟨i.val,by omega⟩
+  rw [show j=k.succ from Fin.ext hj,show i=k.castSucc from Fin.ext rfl]
+  exact p.valid k
 
 def originalEquiv (n : ℕ) : ↥(walks n) ≃ Path n 1 where
   toFun v := {
     pos := v.val
     start := v.property.1 0 rfl
-    finish := v.property.2.1 (Fin.last n) rfl
-    valid := fun i => by
-      by_cases h : i.val+1 ≤ 3
-      · have e := v.property.2.2.1 i.castSucc i.succ rfl h
-        simpa [choices,h, step_nonzero] using e
-      · have e := v.property.2.2.2 i.castSucc i.succ rfl (by change 3 < i.val+1; omega)
-        simpa [choices,h, step_bounded] using e }
+    finish := v.property.2.1 _ rfl
+    valid := fun i => (mem_choices _ _).mpr
+      ⟨v.property.2.2.1 i.castSucc i.succ rfl,v.property.2.2.2 i.castSucc i.succ rfl⟩ }
   invFun p := ⟨p.pos, by
-    refine ⟨?_,?_,?_,?_⟩
+    refine ⟨?_,?_,fun i j h => ((mem_choices _ _).mp (pair_step p i j h)).1,
+      fun i j h => ((mem_choices _ _).mp (pair_step p i j h)).2⟩
     · intro i hi
-      have e : i = 0 := Fin.ext hi
-      simpa [e] using p.start
+      simpa [show i=0 from Fin.ext hi] using p.start
     · intro i hi
-      have e : i = Fin.last n := Fin.ext hi
-      simpa [e] using p.finish
-    · intro i j hj hsmall
-      let k : Fin n := ⟨i.val,by omega⟩
-      have e : j=k.succ := Fin.ext hj
-      have e' : i=k.castSucc := Fin.ext rfl
-      have h : k.val+1 ≤ 3 := by change i.val+1≤3; omega
-      rw [e,e',step_nonzero]
-      simpa [choices,h] using p.valid k
-    · intro i j hj hlarge
-      let k : Fin n := ⟨i.val,by omega⟩
-      have e : j=k.succ := Fin.ext hj
-      have e' : i=k.castSucc := Fin.ext rfl
-      have h : ¬ k.val+1 ≤ 3 := by change ¬ i.val+1≤3; omega
-      rw [e,e',step_bounded]
-      simpa [choices,h] using p.valid k⟩
+      simpa [show i=Fin.last n from Fin.ext hi] using p.finish⟩
   left_inv p := rfl
   right_inv p := eq_of_pos rfl
 
-theorem a_as_count (n : ℕ) : a n = countPaths n 1 := by
-  unfold a countPaths
-  rw [←Nat.card_coe_set_eq]
-  exact_mod_cast Nat.card_congr (originalEquiv n)
+theorem a_as_count (n : ℕ) : a n = countPaths n 1 :=
+  congrArg Int.ofNat (Nat.card_congr (originalEquiv n))
 
 theorem count_after_three (k : ℕ) (y : ℤ) :
     countPaths (k+3) y = tri k (y-3) + 3*tri k (y-1) +
@@ -223,7 +207,7 @@ theorem count_after_three (k : ℕ) (y : ℤ) :
 theorem a_weighted (k : ℕ) : a (k+3) = weighted k := by
   rw [a_as_count,count_after_three]
   norm_num [weighted]
-  rw [show (-2 : ℤ) = -(2 : ℤ) by decide,mirror]
+  rw [mirror k 2]
   ring
 
 theorem solution (n : ℕ) (hn : 7 ≤ n) :
