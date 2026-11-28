@@ -4,7 +4,7 @@ import Mathlib
 # OEIS A090523: no zeros for n > 2
 
 Source: https://oeis.org/A090523
-Credit: @SudharsanAnimations
+Credit: Sudharsan Rajendiran
 
 A090523(n) is the smallest prime p such that floor(n!/p) is prime, or 0 if no such prime exists.
 The entry's conjecture "there are no zeros for n > 2" is recorded as correct (Franklin T. Adams-Watters,
