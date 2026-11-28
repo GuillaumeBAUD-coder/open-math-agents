@@ -6,7 +6,7 @@ import FormalConjectures.Arxiv.«2602.05192».FirstProof4
 /-! The top coefficient is the product of the original top coefficients.
 Every other summand has strictly smaller exponent. -/
 
-open Polynomial Finset
+open Polynomial Finset Nat
 open scoped Nat
 open Arxiv.«2602.05192»
 
@@ -17,19 +17,19 @@ theorem OMA.solution : type_of% @Arxiv.«2602.05192».finiteAdditiveConvolution_
     rw [← natDegree_eq_of_degree_eq_some hr, coeff_natDegree]
     exact leadingCoeff_ne_zero.mpr (by rintro rfl; simp at hr)
   have htop : (finiteAdditiveConvolution n p q).coeff n = p.coeff n * q.coeff n := by
-    simp only [finiteAdditiveConvolution, Polynomial.finsetSum_coeff,
-      Polynomial.coeff_smul, Polynomial.coeff_X_pow, smul_eq_mul]
-    rw [Finset.sum_eq_single 0]
+    simp only [finiteAdditiveConvolution, finsetSum_coeff,
+      coeff_smul, coeff_X_pow, smul_eq_mul]
+    rw [sum_eq_single 0]
     · simp [show (n ! : ℝ) ≠ 0 by positivity]
     · intro k hk hk0
       have hk' := Finset.mem_range.mp hk
       simp [show n ≠ n - k by omega]
     · simp
-  apply Polynomial.degree_eq_of_le_of_coeff_ne_zero
-  · apply Polynomial.natDegree_le_iff_degree_le.mp
+  apply degree_eq_of_le_of_coeff_ne_zero
+  · apply natDegree_le_iff_degree_le.mp
     unfold finiteAdditiveConvolution
-    refine (Polynomial.natDegree_sum_le _ _).trans (Finset.sup_le ?_)
-    exact fun k _ => (Polynomial.natDegree_smul_le _ _).trans
-      ((Polynomial.natDegree_X_pow_le _).trans (Nat.sub_le n k))
+    refine (natDegree_sum_le _ _).trans (Finset.sup_le ?_)
+    exact fun k _ => (natDegree_smul_le _ _).trans
+      ((natDegree_X_pow_le _).trans (sub_le n k))
   · rw [htop]
     exact mul_ne_zero (topCoeff p hp) (topCoeff q hq)
