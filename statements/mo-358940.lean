@@ -14,8 +14,8 @@ sections of maximal boundary measure, is a separate statement.
 
 Conventions:
 * `A` is a convex body: compact, convex, nonempty interior, in `ℝⁿ`, `n ≥ 2`. Hyperplanes are
-  `{x | ⟪u, x⟫ = t}` with `‖u‖ = 1`. The `(n-1)`-volume of a section is `μH[n-1]` (Mathlib's
-  Hausdorff measure, which agrees with Lebesgue measure on hyperplanes).
+  `{x | ⟪u, x⟫ = t}` with `‖u‖ = 1`. The `(n-1)`-volume of a section is `μHE[n - 1]`,
+  the Euclidean Hausdorff measure, normalized to agree with Lebesgue measure on hyperplanes.
 * `er_m(v) = (v / ωₘ)^(1/m)` with `ωₘ` the volume of the unit ball of `ℝᵐ`.
 -/
 
@@ -33,7 +33,7 @@ noncomputable def er (m : ℕ) (v : ℝ) : ℝ := (v / omega m) ^ ((1 : ℝ) / m
 /-- The `(n-1)`-volume of the section of `A` by `{⟪u, ·⟫ = t}`. -/
 noncomputable def sec {n : ℕ} (A : Set (EuclideanSpace ℝ (Fin n))) (u : EuclideanSpace ℝ (Fin n))
     (t : ℝ) : ℝ :=
-  (μH[(n : ℝ) - 1] (A ∩ {x | inner ℝ u x = t})).toReal
+  (μHE[n - 1] (A ∩ {x | inner ℝ u x = t})).toReal
 
 /-- Question (a): a maximal-volume hyperplane section has effective radius `≥ er(A)`. -/
 theorem main : ∀ (n : ℕ) (A : Set (EuclideanSpace ℝ (Fin n))), 2 ≤ n →
