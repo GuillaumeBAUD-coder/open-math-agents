@@ -1,0 +1,55 @@
+import Mathlib
+
+/-!
+# A269761: Number of n X 2 0..5 arrays with some element plus some horizontally or vertically adjacent neighbor totalling five exactly once
+
+Source: https://oeis.org/A269761
+Credit: @Dariusthedoggie
+
+OEIS Foundation and contributors, CC BY-SA 4.0. Retrieved 2026-11-27.
+Offset 1 (data 6, 480, 17520, 524160, 14288400, ...).
+
+Conventions:
+* An n X 2 array is `x : Fin n → Fin 2 → Fin 6`: row `i`, column `j`, entry `x i j` in `0..5`.
+* Horizontally adjacent pairs: the two entries `x i 0` and `x i 1` of each row `i`.
+* Vertically adjacent pairs: the entries `x i j` and `x (i + 1) j` for each column `j`.
+  For an array with `m + 1` rows these are indexed by `(i, j) : Fin m × Fin 2`
+  (rows `i.castSucc` and `i.succ`).
+* Totalling five exactly once: exactly one unordered pair of adjacent entries sums to 5.
+* `a 0 = 0` is a convention outside the offset; it does not change the generating function
+  identity, whose series has zero constant term.
+
+Conjectures (empirical recurrence in the formula section, and Colin Barker, Jan 28 2019):
+a(n) = 42*a(n-1) - 441*a(n-2) for n > 3; G.f.: 6*x*(1 + 38*x + x^2) / (1 - 21*x)^2;
+a(n) = 80 * 3^(n-2) * 7^(n-3) * (31*n-20) for n > 1.
+The generating function is stated after multiplication by its denominator, whose constant
+term is one. The closed form has negative exponents at `n = 2`, so it is stated in `ℚ`
+with integer exponents.
+-/
+
+namespace OMA.S_oeis_a269761
+
+open PowerSeries
+
+/-- The number of horizontally or vertically adjacent pairs of the array `x` (with `m + 1` rows)
+totalling five. -/
+def pairsTotallingFive (m : ℕ) (x : Fin (m + 1) → Fin 2 → Fin 6) : ℕ :=
+  (Finset.univ.filter (fun i : Fin (m + 1) => (x i 0 : ℕ) + (x i 1 : ℕ) = 5)).card +
+    (Finset.univ.filter
+      (fun p : Fin m × Fin 2 => (x p.1.castSucc p.2 : ℕ) + (x p.1.succ p.2 : ℕ) = 5)).card
+
+/-- A269761: the number of n X 2 arrays over `0..5` with exactly one adjacent pair totalling
+five. -/
+def a : ℕ → ℕ
+  | 0 => 0
+  | m + 1 =>
+    (Finset.univ.filter (fun x : Fin (m + 1) → Fin 2 → Fin 6 => pairsTotallingFive m x = 1)).card
+
+theorem main :
+    (∀ n : ℕ, 4 ≤ n → (a n : ℤ) = 42 * a (n - 1) - 441 * a (n - 2)) ∧
+    (PowerSeries.mk (fun n => (a n : ℚ)) * (1 - 21 * X) ^ 2 =
+      6 * X * (1 + 38 * X + X ^ 2)) ∧
+    (∀ n : ℕ, 2 ≤ n → (a n : ℚ) = 80 * 3 ^ ((n : ℤ) - 2) * 7 ^ ((n : ℤ) - 3) * (31 * n - 20)) := by
+  sorry
+
+end OMA.S_oeis_a269761
