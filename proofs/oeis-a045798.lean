@@ -1,4 +1,5 @@
 import OMAStatements.S_oeis_a045798
+open OMA.S_oeis_a045798
 
 namespace OMA.P_oeis_a045798
 
@@ -26,20 +27,20 @@ private lemma gcd_mod20_ten (k : ℕ) : Nat.gcd k 10 = Nat.gcd (k % 20) 10 := by
     exact dvd_add (Nat.gcd_dvd_left (k % 20) 10) hg10
 
 private lemma oddish_iff (k : ℕ) :
-    OMA.S_oeis_a045798.oddish k ↔ k % 20 = 11 ∨ k % 20 = 13 ∨ k % 20 = 17 ∨ k % 20 = 19 := by
+    oddish k ↔ k % 20 = 11 ∨ k % 20 = 13 ∨ k % 20 = 17 ∨ k % 20 = 19 := by
   have hdec : ∀ r : Fin 20,
       (Nat.Coprime r.1 10 ∧ (r.1 / 10 % 10) % 2 = 1 ↔
         r.1 = 11 ∨ r.1 = 13 ∨ r.1 = 17 ∨ r.1 = 19) := by decide
-  have hred : OMA.S_oeis_a045798.oddish k ↔
+  have hred : oddish k ↔
       Nat.Coprime (k % 20) 10 ∧ ((k % 20) / 10 % 10) % 2 = 1 := by
-    rw [OMA.S_oeis_a045798.oddish, Nat.coprime_iff_gcd_eq_one,
+    rw [oddish, Nat.coprime_iff_gcd_eq_one,
       Nat.coprime_iff_gcd_eq_one, gcd_mod20_ten]
     have htens : (k / 10 % 10) % 2 = ((k % 20) / 10 % 10) % 2 := by omega
     rw [htens]
   rw [hred]
   exact hdec ⟨k % 20, Nat.mod_lt k (by decide)⟩
 
-private lemma f_oddish (k : ℕ) : OMA.S_oeis_a045798.oddish (f k) := by
+private lemma f_oddish (k : ℕ) : oddish (f k) := by
   rw [oddish_iff]
   dsimp [f]
   split_ifs <;> omega
@@ -54,12 +55,12 @@ private lemma f_add_four (k : ℕ) : f (k + 4) = f k + 20 := by
   rw [Nat.add_mod_right, Nat.add_div_right _ (by decide)]
   omega
 
-private lemma nth_oddish_eq (n : ℕ) : Nat.nth OMA.S_oeis_a045798.oddish n = f n := by
+private lemma nth_oddish_eq (n : ℕ) : Nat.nth oddish n = f n := by
   induction n using Nat.strong_induction_on with
   | h n ih =>
     rw [Nat.nth_eq_sInf]
-    have hmem : f n ∈ {x | OMA.S_oeis_a045798.oddish x ∧
-        ∀ k < n, Nat.nth OMA.S_oeis_a045798.oddish k < x} := by
+    have hmem : f n ∈ {x | oddish x ∧
+        ∀ k < n, Nat.nth oddish k < x} := by
       refine ⟨f_oddish n, fun k hk => ?_⟩
       rw [ih k hk]
       exact f_strictMono hk
@@ -85,7 +86,7 @@ end OMA.P_oeis_a045798
 theorem OMA.solution : type_of% @OMA.S_oeis_a045798.main := by
   intro n hn
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hn
-  have ha : ∀ m : ℕ, OMA.S_oeis_a045798.a m = OMA.P_oeis_a045798.f (m - 1) :=
+  have ha : ∀ m : ℕ, a m = OMA.P_oeis_a045798.f (m - 1) :=
     fun m => OMA.P_oeis_a045798.nth_oddish_eq (m - 1)
   rw [ha, ha, ha, ha]
   have h1 : k + 6 - 1 = (k + 1) + 4 := by omega
