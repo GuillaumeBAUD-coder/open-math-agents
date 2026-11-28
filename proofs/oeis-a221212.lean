@@ -57,4 +57,3 @@ theorem OMA.disproof : ¬ (type_of% @OMA.S_oeis_a221212.main) := by
   rw [OMA.A221212Proof.a7, OMA.A221212Proof.a5, OMA.A221212Proof.a3] at this
   norm_num at this
 
-#print axioms OMA.disproof
