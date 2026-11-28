@@ -21,19 +21,11 @@ namespace OMA.R_Erdos1221_erdos_1221_parts_i_R1
 open Filter Erdos1221 MeasureTheory
 open scoped ENNReal
 
-/-- Number of the first `n` points in the arc `(x, x + len]` of the circle `ℝ/ℤ`. -/
-noncomputable def cnt (a : ℕ → ℝ) (n : ℕ) (x len : ℝ) : ℕ :=
-  ((Finset.range n).filter fun j => 0 < Int.fract (a j - x) ∧ Int.fract (a j - x) ≤ len).card
-
-/-- The anchored-box discrepancy `#(P ∩ (0,u] × (0,v]) - |P| u v`. -/
-noncomputable def disc (P : Finset (ℝ × ℝ)) (u v : ℝ) : ℝ :=
-  ((P.filter fun p => 0 < p.1 ∧ p.1 ≤ u ∧ 0 < p.2 ∧ p.2 ≤ v).card : ℝ) - P.card * u * v
-
 /-- Halász's `L¹` lower bound for planar discrepancy (the paper's Theorem 7.1). -/
 def H1 : Prop :=
   ∃ cH : ℝ, 0 < cH ∧ ∀ P : Finset (ℝ × ℝ), 2 ≤ P.card →
     (∀ p ∈ P, 0 < p.1 ∧ p.1 ≤ 1 ∧ 0 < p.2 ∧ p.2 ≤ 1) →
-    cH * Real.sqrt (Real.log P.card) ≤ ∫ u in (0 : ℝ)..1, ∫ v in (0 : ℝ)..1, |disc P u v|
+    cH * Real.sqrt (Real.log P.card) ≤ ∫ u in (0 : ℝ)..1, ∫ v in (0 : ℝ)..1, |(((P.filter fun p => 0 < p.1 ∧ p.1 ≤ u ∧ 0 < p.2 ∧ p.2 ≤ v).card : ℝ) - P.card * u * v)|
 
 /-- `L¹` short-arc regularity from the one-sided bound `n M_n - r ≤ A` (the paper's Lemmas
 6.1–6.3 and Proposition 6.4). -/
@@ -42,7 +34,7 @@ def H2 : Prop :=
     ∀ a : ℕ → ℝ, Function.Injective (fun k ↦ Int.fract (a k)) →
     (∀ᶠ n : ℕ in atTop, (n : ℝ) * maxSpan a n r ≤ r + A) →
     ∀ᶠ n : ℕ in atTop, ∀ D : ℝ, 0 ≤ D → D ≤ Real.sqrt (A * r) / Real.log (r / A) ^ 2 →
-      ∫ x in (0 : ℝ)..1, |(cnt a n x (D / n) : ℝ) - D| ≤ C₃ * A
+      ∫ x in (0 : ℝ)..1, |(((Finset.range n).filter fun j => 0 < Int.fract (a j - x) ∧ Int.fract (a j - x) ≤ D / n).card : ℝ) - D| ≤ C₃ * A
 
 /-- From `L¹` short-arc regularity to a planar point set with small `L¹` discrepancy (the paper's
 Lemma 7.2, before Halász's theorem is applied). -/
@@ -50,10 +42,10 @@ def H3 : Prop :=
   ∀ a : ℕ → ℝ, Function.Injective (fun k ↦ Int.fract (a k)) → ∀ B S : ℝ, 1 ≤ B → 8 ≤ S →
     4 * B ≤ ⌊S⌋₊ →
     (∀ᶠ n : ℕ in atTop, ∀ D : ℝ, 0 ≤ D → D ≤ S →
-      ∫ x in (0 : ℝ)..1, |(cnt a n x (D / n) : ℝ) - D| ≤ B) →
+      ∫ x in (0 : ℝ)..1, |(((Finset.range n).filter fun j => 0 < Int.fract (a j - x) ∧ Int.fract (a j - x) ≤ D / n).card : ℝ) - D| ≤ B) →
     ∃ P : Finset (ℝ × ℝ), (∀ p ∈ P, 0 < p.1 ∧ p.1 ≤ 1 ∧ 0 < p.2 ∧ p.2 ≤ 1) ∧
       (⌊S⌋₊ : ℝ) / 2 ≤ P.card ∧
-      ∫ u in (0 : ℝ)..1, ∫ v in (0 : ℝ)..1, |disc P u v| ≤ 3 * B
+      ∫ u in (0 : ℝ)..1, ∫ v in (0 : ℝ)..1, |(((P.filter fun p => 0 < p.1 ∧ p.1 ≤ u ∧ 0 < p.2 ∧ p.2 ≤ v).card : ℝ) - P.card * u * v)| ≤ 3 * B
 
 lemma log_le_two_sqrt {y : ℝ} (hy : 0 ≤ y) : Real.log y ≤ 2 * Real.sqrt y := by
   have h := Real.log_le_rpow_div hy (by norm_num : (0 : ℝ) < 1 / 2)
@@ -209,7 +201,7 @@ theorem main : H1 → H2 → H3 → type_of% @Erdos1221.erdos_1221.parts.i := by
     have hreg := h2 r A hA hC2 a ha hev
     have hreg' : ∀ᶠ n : ℕ in atTop, ∀ D : ℝ, 0 ≤ D →
         D ≤ Real.sqrt (A * r) / Real.log (r / A) ^ 2 →
-        ∫ x in (0 : ℝ)..1, |(cnt a n x (D / n) : ℝ) - D| ≤ B₀ * A :=
+        ∫ x in (0 : ℝ)..1, |(((Finset.range n).filter fun j => 0 < Int.fract (a j - x) ∧ Int.fract (a j - x) ≤ D / n).card : ℝ) - D| ≤ B₀ * A :=
       hreg.mono fun n hn D hD0 hDS => (hn D hD0 hDS).trans
         (mul_le_mul_of_nonneg_right (by simp only [hB₀]; linarith [le_abs_self C₃]) (by linarith))
     have hB1 : 1 ≤ B₀ := by rw [hB₀]; linarith [abs_nonneg C₃]
