@@ -32,11 +32,15 @@ PROBLEMS = {p["id"]: p for p in cat["problems"]}
 for _p in PROBLEMS.values():
     if _p["kind"] == "open" and re.match(r"(proved|disproved|solved)\b", _p.get("erdosState") or "") and not re.search(r"\.variants?\.", _p["id"]):
         _p["kind"] = "known"
-_extra_path = os.path.join(os.path.dirname(os.path.abspath(catalog_path)), "extra.json")
+_data_dir = os.path.dirname(os.path.abspath(catalog_path))
+_overrides_path = os.path.join(_data_dir, "status_overrides.json")
+KNOWN = set()
+if os.path.exists(_overrides_path):
+    KNOWN = {o["id"] for o in json.load(open(_overrides_path, encoding="utf-8"))["entries"] if o["status"] == "known"}
+_extra_path = os.path.join(_data_dir, "extra.json")
 EXTRA = {p["id"]: p for p in json.load(open(_extra_path, encoding="utf-8"))["problems"]} if os.path.exists(_extra_path) else {}
 # The long tail waits for statements too: OEIS / MathOverflow / Math.SE / curated (extra2.json) and the MathOverflow
 # dump (extra3.json.gz). Only their ids matter here.
-_data_dir = os.path.dirname(os.path.abspath(catalog_path))
 if os.path.exists(os.path.join(_data_dir, "extra2.json")):
     for _r in json.load(open(os.path.join(_data_dir, "extra2.json"), encoding="utf-8"))["rows"]:
         EXTRA.setdefault(_r[0], {"id": _r[0]})
@@ -110,7 +114,8 @@ def describe_target(tid):
         if not os.path.exists(f"statements/{tid}.lean"):
             return None
         decl = f"OMA.{ssan(tid)}.main"
-        return {"kind": "open", "import": f"OMAStatements.{ssan(tid)}", "statement": f"type_of% @{decl}", "decl": decl}
+        return {"kind": "known" if tid in KNOWN else "open", "import": f"OMAStatements.{ssan(tid)}",
+                "statement": f"type_of% @{decl}", "decl": decl}
     m = STEP_RE.match(tid)
     if m:
         rid = f"{m.group(1)}.R{m.group(2)}"

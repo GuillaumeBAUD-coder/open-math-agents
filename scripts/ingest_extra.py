@@ -97,9 +97,11 @@ def strip_templates(s):
     return "".join(out)
 
 
+WIKI_REF = re.compile(r"<ref\b[^>]*?/\s*>|<ref\b[^>]*>.*?</ref\s*>", re.I | re.S)
+
+
 def wiki_to_text(s):
-    s = re.sub(r"<ref[^>/]*/>", "", s)
-    s = re.sub(r"<ref[^>]*>.*?</ref>", "", s, flags=re.S)
+    s = WIKI_REF.sub("", s)
     s = strip_templates(s)
     s = re.sub(r"<math[^>]*>(.*?)</math>", lambda m: "$" + m.group(1).strip() + "$", s, flags=re.S)
     s = re.sub(r"\[\[(?:File|Image):[^\]]*\]\]", "", s)
@@ -121,6 +123,31 @@ def first_link(s):
     text = (m.group(3) or (anchor if anchor and target in s[:2] else target)).strip()
     url = "https://en.wikipedia.org/wiki/" + target.replace(" ", "_") + ("#" + anchor.replace(" ", "_") if anchor else "")
     return text, url
+
+
+# These unlinked questions already have statements, leases or history under IDs
+# derived from a citation. Identify them by the question even if the citation changes.
+UNLINKED_QUESTIONS = {
+    "Guralnick–Thompson conjecture on the composition factors of groups in genus-0 systems": (
+        "wp-journal-of-algebra", "Guralnick–Thompson conjecture", "https://annals.math.princeton.edu/articles/11017"),
+    "Kung–Traub conjecture on the optimal order of a multipoint iteration without memory": (
+        "wp-journal-of-the-acm", "Optimal order of multipoint iteration without memory (Kung–Traub conjecture)",
+        "https://doi.org/10.1145/321850.321860"),
+    "Hartshorne's conjectures": (
+        "wp-mathematische-annalen", "Two conjectures of Hartshorne", "https://doi.org/10.1007/BF01453563"),
+    "The universality problem for C-free graphs: For which finite sets C of graphs does the class "
+    "of C-free countable graphs have a universal member under strong embeddings?": (
+        "wp-journal-of-combinatorial-theory", "Universal countable graphs with forbidden subgraphs",
+        "https://en.wikipedia.org/wiki/List_of_unsolved_problems_in_mathematics#Model_theory_and_formal_languages"),
+    "Is the Borel monadic theory of the real order (BMTO) decidable? Is the monadic theory of well-ordering (MTWO) consistently decidable?": (
+        "wp-j-barwise", "Decidability of Borel monadic real order and monadic well-ordering",
+        "https://doi.org/10.1017/9781316717158.019"),
+    "Determine the structure of Keisler's order.": (
+        "wp-advances-in-mathematics", "Structure of Keisler's order", "https://shelah.logic.at/files/94585/1050.pdf"),
+    "Mazur's conjectures": (
+        "wp-experimental-mathematics", "Mazur's conjectures on the topology of rational points",
+        "https://doi.org/10.1080/10586458.1992.10504244"),
+}
 
 
 FIELD_MAP = {
@@ -163,7 +190,7 @@ _w = open(WP_UNSOLVED, encoding="utf-8").read()
 _c = open(WP_CONJ, encoding="utf-8").read()
 for chunk in (_w[_w.index("== Problems solved since"):_w.index("== See also")],
               _c[_c.index("==Conjectures now proved"):_c.index("==Refutations of conventional")]):
-    for m in re.finditer(r"\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|([^\]]+))?\]\]", chunk):
+    for m in re.finditer(r"\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|([^\]]+))?\]\]", WIKI_REF.sub("", chunk)):
         for t in (m.group(1), m.group(2)):
             if t:
                 k = norm(t)
@@ -220,7 +247,9 @@ wiki = open(WP_UNSOLVED, encoding="utf-8").read()
 start = wiki.index("== Unsolved problems ==")
 end = wiki.index("== Problems solved since")
 section = sub = None
-for line in wiki[start:end].splitlines():
+# A citation can span lines inside a single bullet. Keep the remainder of the question.
+items = WIKI_REF.sub(lambda m: m[0].replace("\n", " "), wiki[start:end])
+for line in items.splitlines():
     h3 = re.match(r"^===\s*([^=]+?)\s*===\s*$", line)
     h4 = re.match(r"^====\s*([^=]+?)\s*====\s*$", line)
     if h3:
@@ -232,24 +261,35 @@ for line in wiki[start:end].splitlines():
     if not line.startswith("*"):
         continue
     body = line.lstrip("*").strip()
-    name, url = first_link(body)
     text = wiki_to_text(body)
-    if not name or len(text) < 4:
+    if len(text) < 4:
         continue
-    name_clean = wiki_to_text(name)
-    # Title: the linked name (or the text before a colon when the item starts with prose)
-    title = name_clean
+    name, url = first_link(WIKI_REF.sub("", body))
     pre = text.split(":")[0].strip()
-    if len(pre) < 90 and name_clean.lower() in pre.lower():
-        title = pre.removeprefix("The ").strip() if pre.lower().startswith("the ") else pre
+    if text in UNLINKED_QUESTIONS:
+        pid, title, url = UNLINKED_QUESTIONS[text]
+    elif name:
+        title = wiki_to_text(name)
+        if len(pre) < 90 and title.lower() in pre.lower():
+            title = pre.removeprefix("The ").strip()
+        pid = "wp-" + slug(title)
+    elif first_link(body)[0]:
+        # The only link is bibliographic. Use the question and its list section.
+        title = pre
+        pid = "wp-" + slug(title)
+        heading = sub or section or "Unsolved problems"
+        url = "https://en.wikipedia.org/wiki/List_of_unsolved_problems_in_mathematics#" + heading.replace(" ", "_")
+    else:
+        continue
     desc = text[len(pre) + 1:].strip() if ":" in text and text.startswith(pre) else text
-    if desc.lower() == title.lower():
+    if desc.lower() == title[:140].lower():
         desc = ""
     fld = field_for(section, sub)
-    e = base_entry(id="wp-" + slug(title), title=title[:140], source="Wikipedia list (not formalized)",
+    e = base_entry(id=pid, title=title[:140], source="Wikipedia list (not formalized)",
                    fields=[fld], statement=desc[:900], ref=url, license="Text: Wikipedia, CC BY-SA 4.0",
                    area=f"{section}{' » ' + sub if sub else ''}")
-    add(e, [norm(title), norm(name_clean), norm(url.split("/wiki/")[1].split("#")[0].replace("_", " ")) if "#" not in url else None])
+    page_key = norm(url.split("/wiki/")[1].replace("_", " ")) if "/wiki/" in url and "#" not in url else None
+    add(e, [norm(title), norm(wiki_to_text(name)) if name else None, page_key])
 
 # ---- 2. Wikipedia: List of conjectures (open + partly open tables) -------------------------------
 conj = open(WP_CONJ, encoding="utf-8").read()
