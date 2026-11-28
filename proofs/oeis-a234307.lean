@@ -1,6 +1,4 @@
 import OMAStatements.S_oeis_a234307
-import Mathlib.Tactic.Ring
-import Mathlib.Algebra.BigOperators.Ring.Finset
 
 open Finset OMA.S_oeis_a234307
 
