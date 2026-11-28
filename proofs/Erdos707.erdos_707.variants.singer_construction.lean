@@ -268,8 +268,10 @@ theorem core {F K : Type*} [Field F] [Field K] [Finite F] [Finite K] [Algebra F 
   have hQ : ∀ i j : ℕ, (j : ZMod n) = (i : ZMod n) →
       ∃ a : F, γ ^ j = algebraMap F K a * γ ^ i := by
     intro i j h
-    obtain ⟨a, ha⟩ := hA2 _ ((ZMod.natCast_eq_zero_iff _ _).1 <| by
-      rw [hrel2, h, sub_self])
+    have hdiv : n ∣ j + M' * i := by
+      apply (ZMod.natCast_eq_zero_iff _ _).1
+      rw [hrel2 i j, h, sub_self]
+    obtain ⟨a, ha⟩ := hA2 (j + M' * i) hdiv
     exact ⟨a, by rw [ha]; exact (hrel1 i j).symm⟩
   have hWmod : ∀ i j : ℕ, (j : ZMod n) = (i : ZMod n) → γ ^ i ∈ W → γ ^ j ∈ W := by
     intro i j h hi
