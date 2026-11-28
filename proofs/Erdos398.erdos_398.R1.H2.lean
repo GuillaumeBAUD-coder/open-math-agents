@@ -1,6 +1,5 @@
 import OMAReductions.R_Erdos398_erdos_398_R1
-import Mathlib.Data.Nat.Sqrt
-import Mathlib.Algebra.Ring.Parity
+import Mathlib
 
 theorem OMA.solution : OMA.R_Erdos398_erdos_398_R1.H2 := fun n hn => by
   simp only [eq_comm (a := n.factorial + 1), Nat.exists_mul_self', Set.mem_insert_iff,
