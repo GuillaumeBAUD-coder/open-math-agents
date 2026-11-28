@@ -28,3 +28,4 @@ theorem OMA.solution : OMA.R_Erdos142_erdos_142_variants_lower_R2_H1_R1_H2_R2_H3
   rw [Real.norm_of_nonneg (by positivity), neg_mul, Real.exp_neg, ← div_eq_mul_inv,
     div_le_iff₀ hE, inv_mul_eq_div, le_div_iff₀ hq]
   exact hj
+
