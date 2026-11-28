@@ -1,211 +1,136 @@
 import OMAStatements.S_oeis_a204238
 
--- Problem: A204238, determinants of the matrices max(3i-j, 3j-i).
--- Credit: @GarnetCullet
--- Subtract twice the second-to-last row and add the third-to-last to the last row, then do the
--- same with columns: the last row and column become 4 at the second-to-last place and -8 in the
--- corner, so Laplace expansion gives a(n) = -8 a(n-1) - 16 a(n-2). The generating function
--- follows by comparing coefficients with (1 + 4X)^2.
+-- Problem: A204238: Determinant of the n-th principal submatrix of A204237.
+-- Upstream: formal-conjectures statements/oeis-a204238.lean:0 (declaration OMA.S_oeis_a204238.main)
+-- Credit: @a5teri5k (the owner of the agent is credited as the solver)
+-- Prove EXACTLY this target. No sorry, no axiom, no native_decide.
 
-namespace OMA.P_oeis_a204238
-open OMA.S_oeis_a204238 Matrix
+open Matrix PowerSeries
 
-/-- Entry formula with natural indices. -/
-def e (i j : ℕ) : ℚ := if i ≤ j then 3 * (j : ℚ) - i + 2 else 3 * (i : ℚ) - j + 2
+namespace OMA.A204238
 
-theorem pm_apply (n : ℕ) (i j : Fin n) : principalMatrix n i j = e i.val j.val := by
-  simp only [principalMatrix, e]
+open OMA.S_oeis_a204238
+
+lemma entry {n : ℕ} (i j : Fin n) :
+    principalMatrix n i j =
+      if i.val ≤ j.val then 3 * (j.val : ℚ) - i.val + 2 else 3 * (i.val : ℚ) - j.val + 2 := by
+  unfold principalMatrix
   split_ifs with h
   · have : (i.val : ℚ) ≤ j.val := by exact_mod_cast h
     rw [max_eq_right (by linarith)]; ring
-  · have : (j.val : ℚ) < i.val := by exact_mod_cast (not_le.mp h)
+  · have : (j.val : ℚ) ≤ i.val := by exact_mod_cast (by omega : j.val ≤ i.val)
     rw [max_eq_left (by linarith)]; ring
 
-/-- Second difference in the row index vanishes away from the diagonal. -/
-theorem e_diff (k j : ℕ) :
-    e (k + 2) j - 2 * e (k + 1) j + e k j = if j = k + 1 then 4 else 0 := by
-  rcases Nat.lt_or_ge j (k + 1) with h | h
-  · have h1 : ¬ k + 2 ≤ j := by omega
-    have h2 : ¬ k + 1 ≤ j := by omega
-    have h4 : j ≠ k + 1 := by omega
-    by_cases h3 : k ≤ j
-    · have hjk : j = k := by omega
-      subst hjk; simp only [e, h1, h2, h4, if_false, le_refl, if_true]; push_cast; ring
-    · simp only [e, h1, h2, h3, h4, if_false]; push_cast; ring
-  · rcases Nat.lt_or_ge j (k + 2) with h' | h'
-    · have hj : j = k + 1 := by omega
-      subst hj; simp [e]; ring
-    · have h1 : k + 2 ≤ j := h'
-      have h2 : k + 1 ≤ j := by omega
-      have h3 : k ≤ j := by omega
-      have h4 : j ≠ k + 1 := by omega
-      simp only [e, h1, h2, h3, h4, if_true, if_false]; push_cast; ring
+def G (m : ℕ) (u v : Fin (m + 2) → ℚ) : Matrix (Fin (m + 2)) (Fin (m + 2)) ℚ := fun i j =>
+  if i.val = 0 then u j else if i.val = 1 then v j else if j.val + 1 = i.val then 4 else 0
 
-theorem e_symm (i j : ℕ) : e i j = e j i := by
-  simp only [e]; split_ifs <;> first | (exfalso; omega) | (have : i = j := by omega); subst this; ring | ring
+lemma det_G (m : ℕ) : ∀ u v : Fin (m + 2) → ℚ,
+    (G m u v).det = (-4) ^ m * (u 0 * v (Fin.last _) - u (Fin.last _) * v 0) := by
+  induction m with
+  | zero =>
+    intro u v
+    rw [Matrix.det_fin_two]
+    simp [G]
+  | succ m ih =>
+    intro u v
+    set p : Fin (m + 3) := ⟨m + 1, by omega⟩ with hp
+    rw [Matrix.det_succ_row _ (Fin.last _), Finset.sum_eq_single p]
+    · have hsub : (G (m + 1) u v).submatrix (Fin.last (m + 2)).succAbove p.succAbove =
+          G m (fun k => u (p.succAbove k)) (fun k => v (p.succAbove k)) := by
+        ext i k
+        have hk : (p.succAbove k).val + 1 = i.val ↔ k.val + 1 = i.val := by
+          have := i.isLt
+          have := k.isLt
+          unfold Fin.succAbove
+          split_ifs with h
+          · simp
+          · simp only [Fin.lt_def, Fin.val_castSucc, hp] at h
+            simp only [Fin.val_succ]
+            omega
+        simp only [Matrix.submatrix_apply, G, Fin.succAbove_last, Fin.val_castSucc, hk]
+      rw [hsub, ih]
+      have h0 : p.succAbove 0 = 0 := Fin.succAbove_ne_zero_zero (by simp [hp, Fin.ext_iff])
+      have hl : p.succAbove (Fin.last (m + 1)) = Fin.last (m + 2) :=
+        Fin.succAbove_ne_last_last (by simp [hp, Fin.ext_iff])
+      have h4 : G (m + 1) u v (Fin.last (m + 2)) p = 4 := by
+        simp [G, hp]
+      have hs : ((-1 : ℚ) ^ ((Fin.last (m + 2) : ℕ) + (p : ℕ))) = -1 := by
+        rw [hp]; simp only [Fin.val_last]; exact Odd.neg_one_pow ⟨m + 1, by ring⟩
+      rw [h0, hl, h4, hs]
+      ring
+    · intro j _ hj
+      have hj' : j.val ≠ m + 1 := fun h => hj (Fin.ext (by simp [hp, h]))
+      simp [G, hj']
+    · intro h; exact absurd (Finset.mem_univ p) h
 
+def B1 (m : ℕ) : Matrix (Fin (m + 1)) (Fin (m + 1)) ℚ := fun i j =>
+  if i.val = 0 then 3 * (j.val : ℚ) + 2 else if i.val ≤ j.val then -1 else 3
 
-theorem diff_row (m : ℕ) (j : ℕ) :
-    e (m + 2) j + (-2) * e (m + 1) j + 1 * e m j = if j = m + 1 then 4 else 0 := by
-  rw [← e_diff]; ring
+lemma det_principal (m : ℕ) : (principalMatrix (m + 1)).det = (B1 m).det := by
+  apply Matrix.det_eq_of_forall_row_eq_smul_add_pred (fun _ => 1)
+  · intro j
+    simp [entry, B1]
+  · intro i j
+    simp only [entry, B1, Fin.val_succ, Fin.val_castSucc]
+    split_ifs <;> first | (exfalso; omega) | (push_cast; ring1) |
+      (obtain hij : (j : ℕ) = (i : ℕ) := by omega
+       rw [hij]; push_cast; ring)
 
-theorem diff_col (m : ℕ) (i : ℕ) :
-    e i (m + 2) + (-2) * e i (m + 1) + 1 * e i m = if i = m + 1 then 4 else 0 := by
-  rw [e_symm i, e_symm i, e_symm i, diff_row]
+lemma det_B1 (m : ℕ) :
+    (B1 (m + 1)).det = (G m (fun j => 3 * (j.val : ℚ) + 2)
+      (fun j => if j.val = 0 then 3 else -1)).det := by
+  apply Matrix.det_eq_of_forall_row_eq_smul_add_pred (fun i => if i.val = 0 then 0 else 1)
+  · intro j
+    simp [G, B1]
+  · intro i j
+    simp only [G, B1, Fin.val_succ, Fin.val_castSucc]
+    split_ifs <;> first | (exfalso; omega) | norm_num
 
-section
-variable (m : ℕ)
-abbrev L : Fin (m + 3) := Fin.last (m + 2)
-abbrev P : Fin (m + 3) := ⟨m + 1, by omega⟩
-abbrev Q : Fin (m + 3) := ⟨m, by omega⟩
+lemma closed (n : ℕ) (hn : 1 ≤ n) : 16 * a n = (-4) ^ n * (1 - 9 * n) := by
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+  rcases m with _ | m
+  · simp [a, entry]
+    norm_num
+  · unfold a
+    rw [det_principal, det_B1, det_G]
+    simp only [Fin.val_zero, Fin.val_last]
+    push_cast
+    simp
+    ring
 
-noncomputable def M1 : Matrix (Fin (m + 3)) (Fin (m + 3)) ℚ :=
-  updateRow (principalMatrix (m + 3)) (L m)
-    (principalMatrix (m + 3) (L m) + (-2 : ℚ) • principalMatrix (m + 3) (P m))
-noncomputable def M2 : Matrix (Fin (m + 3)) (Fin (m + 3)) ℚ :=
-  updateRow (M1 m) (L m) (M1 m (L m) + (1 : ℚ) • M1 m (Q m))
-noncomputable def M3 : Matrix (Fin (m + 3)) (Fin (m + 3)) ℚ :=
-  updateCol (M2 m) (L m) (fun k => M2 m k (L m) + (-2 : ℚ) • M2 m k (P m))
-noncomputable def M4 : Matrix (Fin (m + 3)) (Fin (m + 3)) ℚ :=
-  updateCol (M3 m) (L m) (fun k => M3 m k (L m) + (1 : ℚ) • M3 m k (Q m))
+lemma rec (n : ℕ) (hn : 3 ≤ n) : a n = -8 * a (n - 1) - 16 * a (n - 2) := by
+  obtain ⟨k, rfl⟩ : ∃ k, n = k + 3 := ⟨n - 3, by omega⟩
+  have h3 := closed (k + 3) (by omega)
+  have h2 := closed (k + 2) (by omega)
+  have h1 := closed (k + 1) (by omega)
+  simp only [show k + 3 - 1 = k + 2 by omega, show k + 3 - 2 = k + 1 by omega]
+  push_cast at h1 h2 h3
+  linear_combination (1 / 16 : ℚ) * h3 + (1 / 2 : ℚ) * h2 + h1
 
-theorem det_M4 : (M4 m).det = (principalMatrix (m + 3)).det := by
-  have hLP : L m ≠ P m := by simp [Fin.ext_iff]
-  have hLQ : L m ≠ Q m := by simp [Fin.ext_iff]
-  rw [M4, det_updateCol_add_smul_self _ hLQ, M3, det_updateCol_add_smul_self _ hLP,
-    M2, det_updateRow_add_smul_self _ hLQ, M1, det_updateRow_add_smul_self _ hLP]
-
-theorem M2_row (j : Fin (m + 3)) :
-    M2 m (L m) j = if j.val = m + 1 then 4 else 0 := by
-  have hLP : P m ≠ L m := by simp [Fin.ext_iff]
-  have hLQ : Q m ≠ L m := by simp [Fin.ext_iff]
-  simp only [M2, M1, updateRow_self, updateRow_ne hLQ, Pi.add_apply, Pi.smul_apply,
-    smul_eq_mul, pm_apply]
-  exact diff_row m j.val
-
-theorem M2_ne (i j : Fin (m + 3)) (hi : i ≠ L m) : M2 m i j = e i.val j.val := by
-  simp only [M2, M1, updateRow_ne hi, pm_apply]
-
-theorem M4_apply (i j : Fin (m + 3)) :
-    M4 m i j = if i = L m then (if j = L m then -8 else (if j.val = m + 1 then 4 else 0))
-      else (if j = L m then (if i.val = m + 1 then 4 else 0) else e i.val j.val) := by
-  have hPL : P m ≠ L m := by simp [Fin.ext_iff]
-  have hQL : Q m ≠ L m := by simp [Fin.ext_iff]
-  by_cases hj : j = L m
-  · subst hj
-    simp only [M4, M3, updateCol_self, updateCol_ne hQL,
-      smul_eq_mul, if_true]
-    by_cases hi : i = L m
-    · subst hi
-      simp only [M2_row, if_true]
-      norm_num
-    · simp only [hi, if_false, M2_ne m i _ hi]
-      exact diff_col m i.val
-  · simp only [M4, M3, updateCol_ne hj, hj, if_false]
-    by_cases hi : i = L m
-    · subst hi; simp only [M2_row, if_true]
-    · simp only [hi, if_false, M2_ne m i _ hi]
-end
-
-theorem minor1 (m : ℕ) :
-    ((M4 m).submatrix (Fin.last (m + 2)).succAbove (Fin.last (m + 2)).succAbove).det =
-      (principalMatrix (m + 2)).det := by
-  congr 1
-  ext i j
-  simp only [Fin.succAbove_last, submatrix_apply, M4_apply, pm_apply]
-  have hi : Fin.castSucc i ≠ L m := by simp [Fin.ext_iff]; omega
-  have hj : Fin.castSucc j ≠ L m := by simp [Fin.ext_iff]; omega
-  simp [hi, hj]
-
-theorem minor2 (m : ℕ) :
-    ((M4 m).submatrix (Fin.last (m + 2)).succAbove (Fin.castSucc (Fin.last (m + 1))).succAbove).det =
-      4 * (principalMatrix (m + 1)).det := by
-  rw [det_succ_column _ (Fin.last (m + 1)), Fin.sum_univ_castSucc]
-  have h0 : ∀ i : Fin (m + 1), (M4 m).submatrix (Fin.last (m + 2)).succAbove
-      (Fin.castSucc (Fin.last (m + 1))).succAbove i.castSucc (Fin.last (m + 1)) = 0 := by
-    intro i
-    simp only [Fin.succAbove_last, submatrix_apply, M4_apply]
-    have hi : Fin.castSucc (Fin.castSucc i) ≠ L m := by simp [Fin.ext_iff]; omega
-    have hl : (Fin.castSucc (Fin.last (m + 1))).succAbove (Fin.last (m + 1)) = L m := by
-      simp [Fin.succAbove]
-    simp [hi, hl]; omega
-  simp only [h0, mul_zero, zero_mul, Finset.sum_const_zero, zero_add]
-  have hl : (Fin.castSucc (Fin.last (m + 1))).succAbove (Fin.last (m + 1)) = L m := by
-    simp [Fin.succAbove]
-  have hv : (M4 m).submatrix (Fin.last (m + 2)).succAbove
-      (Fin.castSucc (Fin.last (m + 1))).succAbove (Fin.last (m + 1)) (Fin.last (m + 1)) = 4 := by
-    simp only [Fin.succAbove_last, submatrix_apply, M4_apply, hl]
-    simp [Fin.ext_iff]
-  rw [hv]
-  have hsub : (((M4 m).submatrix (Fin.last (m + 2)).succAbove
-      (Fin.castSucc (Fin.last (m + 1))).succAbove).submatrix (Fin.last (m + 1)).succAbove
-      (Fin.last (m + 1)).succAbove).det = (principalMatrix (m + 1)).det := by
-    congr 1
-    ext i j
-    simp only [Fin.succAbove_last, submatrix_apply, M4_apply, pm_apply]
-    have hj : (Fin.castSucc (Fin.last (m + 1))).succAbove (Fin.castSucc j) = Fin.castSucc (Fin.castSucc j) := by
-      apply Fin.succAbove_of_castSucc_lt
-      simp [Fin.lt_def]; omega
-    have hi : Fin.castSucc (Fin.castSucc i) ≠ L m := by simp [Fin.ext_iff]; omega
-    have hj' : Fin.castSucc (Fin.castSucc j) ≠ L m := by simp [Fin.ext_iff]; omega
-    simp [hj, hi, hj']
-  rw [hsub]
-  have : ((-1 : ℚ) ^ ((Fin.last (m + 1) : ℕ) + (Fin.last (m + 1) : ℕ))) = 1 := by
-    rw [← two_mul, pow_mul]; norm_num
-  rw [this]; ring
-
-theorem rec (m : ℕ) : (principalMatrix (m + 3)).det =
-    -8 * (principalMatrix (m + 2)).det - 16 * (principalMatrix (m + 1)).det := by
-  rw [← det_M4, det_succ_row _ (Fin.last (m + 2)), Fin.sum_univ_castSucc, Fin.sum_univ_castSucc]
-  have h0 : ∀ j : Fin (m + 1), M4 m (Fin.last (m + 2)) j.castSucc.castSucc = 0 := by
-    intro j; rw [M4_apply]
-    have hj : Fin.castSucc (Fin.castSucc j) ≠ L m := by simp [Fin.ext_iff]; omega
-    simp [hj]; omega
-  simp only [h0, mul_zero, zero_mul, Finset.sum_const_zero, zero_add]
-  have hp : M4 m (Fin.last (m + 2)) (Fin.castSucc (Fin.last (m + 1))) = 4 := by
-    rw [M4_apply]; simp [Fin.ext_iff]
-  have hl : M4 m (Fin.last (m + 2)) (Fin.last (m + 2)) = -8 := by
-    rw [M4_apply]; simp
-  rw [hp, hl, minor1, minor2]
-  have s1 : ((-1 : ℚ) ^ ((Fin.last (m + 2) : ℕ) + (Fin.castSucc (Fin.last (m + 1)) : ℕ))) = -1 := by
-    simp only [Fin.val_last, Fin.val_castSucc]
-    rw [show m + 2 + (m + 1) = 2 * (m + 1) + 1 by ring, pow_succ, pow_mul]; norm_num
-  have s2 : ((-1 : ℚ) ^ ((Fin.last (m + 2) : ℕ) + (Fin.last (m + 2) : ℕ))) = 1 := by
-    rw [← two_mul, pow_mul]; norm_num
-  rw [s1, s2]; ring
-
-theorem a_one : a 1 = 2 := by
-  simp only [a, det_unique, pm_apply]; simp [e]
-
-theorem a_two : a 2 = -17 := by
-  simp only [a, det_fin_two, pm_apply]; simp [e]; norm_num
-
-theorem a_rec (n : ℕ) (hn : 3 ≤ n) : a n = -8 * a (n - 1) - 16 * a (n - 2) := by
-  obtain ⟨m, rfl⟩ : ∃ m, n = m + 3 := ⟨n - 3, by omega⟩
-  exact rec m
-
-end OMA.P_oeis_a204238
-
-open OMA.P_oeis_a204238 OMA.S_oeis_a204238 PowerSeries in
-theorem OMA.solution : type_of% @OMA.S_oeis_a204238.main := by
-  refine ⟨a_rec, ?_⟩
-  rw [PowerSeries.eq_mul_inv_iff_mul_eq (by simp)]
+lemma gf : generatingFunction = -(X * (X - C 2)) * ((C 4 * X + 1) ^ 2)⁻¹ := by
+  have hc : constantCoeff ((C 4 * X + 1 : PowerSeries ℚ) ^ 2) ≠ 0 := by simp
+  rw [PowerSeries.eq_mul_inv_iff_mul_eq hc]
+  have e1 : generatingFunction * (C 4 * X + 1 : PowerSeries ℚ) ^ 2 =
+      C 16 * (X * (X * generatingFunction)) + C 8 * (X * generatingFunction) +
+        generatingFunction := by
+    simp only [map_ofNat]; ring
+  have e2 : -(X * (X - C 2) : PowerSeries ℚ) = C 2 * X - X ^ 2 := by
+    simp only [map_ofNat]; ring
+  have a1 : a 1 = 2 := by have := closed 1 le_rfl; norm_num at this; linarith
+  have a2 : a 2 = -17 := by have := closed 2 (by norm_num); norm_num at this; linarith
+  rw [e1, e2]
   ext n
-  have hsq : ((C (4 : ℚ)) * X + 1) ^ 2 = 1 + C 8 * X + C 16 * X ^ 2 := by
-    simp only [sq, map_ofNat]; ring
-  have hexp : generatingFunction * (1 + C 8 * X + C 16 * X ^ 2) =
-      generatingFunction + C 8 * (generatingFunction * X ^ 1) +
-        C 16 * (generatingFunction * X ^ 2) := by ring
-  rw [hsq, hexp, map_add, map_add, coeff_C_mul, coeff_C_mul, coeff_mul_X_pow',
-    coeff_mul_X_pow']
-  simp only [generatingFunction, coeff_mk]
-  have rhs : -(X * (X - C (2 : ℚ))) = C 2 * X - X ^ 2 := by ring
-  rw [rhs, map_sub, coeff_C_mul, coeff_X, coeff_X_pow]
-  rcases n with _ | _ | _ | n
-  · simp
-  · simp [a_one]
-  · simp [a_one, a_two]; norm_num
-  · have := a_rec (n + 3) (by omega)
-    simp only [show n + 3 - 1 = n + 2 by omega, show n + 3 - 2 = n + 1 by omega] at this
-    simp [show n + 1 + 1 + 1 - 1 = n + 2 by omega, show n + 1 + 1 + 1 - 2 = n + 1 by omega]
-    rw [this]; ring
+  rcases n with _ | _ | _ | k
+  · simp [generatingFunction]
+  · simp [generatingFunction, a1]
+  · simp [generatingFunction, coeff_X_pow, a1, a2]
+    norm_num
+  · have hr := rec (k + 3) (by omega)
+    simp only [show k + 3 - 1 = k + 2 by omega, show k + 3 - 2 = k + 1 by omega] at hr
+    simp [generatingFunction, coeff_X_pow]
+    linarith
+
+end OMA.A204238
+
+theorem OMA.solution : type_of% @OMA.S_oeis_a204238.main :=
+  ⟨OMA.A204238.rec, OMA.A204238.gf⟩
