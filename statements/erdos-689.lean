@@ -14,7 +14,7 @@ congruences $\equiv a_p \pmod p$?
 
 ## Formalization notes
 
-* "sufficiently large" is stated as `∀ᶠ n : ℕ in atTop`.
+* "sufficiently large" is stated as `∀ᶠ n : ℕ in Filter.atTop`.
 * The congruences are indexed by the primes $p \le n$: `p.Prime` already forces $p \ge 2$,
   and the range `Finset.range (n + 1)` restricts to $p \le n$.
 * A congruence class modulo $p$ is an element of `ZMod p`, and an integer $m$ satisfies
@@ -34,7 +34,7 @@ def TwoCoveringResidues (n : ℕ) : Prop :=
     ∀ m ∈ Finset.Icc 1 n,
       2 ≤ ((Finset.range (n + 1)).filter (fun p => p.Prime ∧ (m : ZMod p) = a p)).card
 
-theorem main : ∀ᶠ n : ℕ in atTop, TwoCoveringResidues n := by
+theorem main : ∀ᶠ n : ℕ in Filter.atTop, TwoCoveringResidues n := by
   sorry
 
 end OMA.S_erdos_689
