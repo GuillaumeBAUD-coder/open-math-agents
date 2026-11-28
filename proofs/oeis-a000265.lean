@@ -10,77 +10,33 @@ namespace OMA.Proof_oeis_a000265
 open OMA.S_oeis_a000265
 
 private lemma a_two_mul (m : ℕ) (hm : 0 < m) : a (2 * m) = a m := by
-  unfold a
-  have hne : m ≠ 0 := by omega
-  have hfac : (2 * m).factorization 2 = m.factorization 2 + 1 := by
-    rw [Nat.factorization_mul (by norm_num) hne, Finsupp.add_apply,
-      Nat.Prime.factorization_self Nat.prime_two]
-    omega
-  rw [hfac, pow_succ', Nat.mul_div_mul_left _ _ (by norm_num)]
+  rw [a, a, Nat.factorization_mul two_ne_zero hm.ne', Finsupp.add_apply,
+    Nat.prime_two.factorization_self, add_comm, pow_succ', Nat.mul_div_mul_left _ _ two_pos]
 
 private lemma a_two_mul_add_one (m : ℕ) : a (2 * m + 1) = 2 * m + 1 := by
-  unfold a
-  have hndvd : ¬ (2 ∣ 2 * m + 1) := by omega
-  have hfac : (2 * m + 1).factorization 2 = 0 :=
-    Nat.factorization_eq_zero_of_not_dvd hndvd
-  rw [hfac, pow_zero, Nat.div_one]
+  simp [a, Nat.factorization_eq_zero_of_not_dvd (by omega : ¬ 2 ∣ 2 * m + 1)]
 
 private lemma sum_a_Icc (i : ℕ) :
     ∑ j ∈ Finset.Icc ((i + 1) / 2) i, a (j + 1) = ((i + 2) / 2) ^ 2 := by
   induction i with
-  | zero =>
-    simp [a_two_mul_add_one 0]
+  | zero => simp [a_two_mul_add_one 0]
   | succ i ih =>
-    rcases Nat.even_or_odd i with ⟨r, hr⟩ | ⟨r, hr⟩
-    · have hi : i = 2 * r := by omega
-      subst hi
-      have hl1 : (2 * r + 1) / 2 = r := by omega
-      have hl2 : (2 * r + 1 + 1) / 2 = r + 1 := by omega
-      have hsq : (2 * r + 1 + 2) / 2 = (2 * r + 2) / 2 := by omega
-      rw [hl1] at ih
-      rw [hl2, hsq, ← ih]
-      have hleft :
-          ∑ j ∈ Finset.Icc r (2 * r), a (j + 1) =
-            a (r + 1) + ∑ j ∈ Finset.Icc (r + 1) (2 * r), a (j + 1) := by
-        rw [← Finset.insert_Icc_add_one_left_eq_Icc (by omega : r ≤ 2 * r),
-          Finset.sum_insert (by simp)]
-      have hright :
-          ∑ j ∈ Finset.Icc (r + 1) (2 * r + 1), a (j + 1) =
-            (∑ j ∈ Finset.Icc (r + 1) (2 * r), a (j + 1)) + a (2 * r + 2) := by
-        rw [Finset.sum_Icc_succ_top (by omega : r + 1 ≤ 2 * r + 1)]
-      have ha2 : a (2 * r + 2) = a (r + 1) := by
-        rw [show 2 * r + 2 = 2 * (r + 1) by omega]
-        exact a_two_mul (r + 1) (by omega)
-      rw [hleft, hright, ha2]
-      ring
-    · subst hr
-      have hl1 : (2 * r + 1 + 1) / 2 = r + 1 := by omega
-      have hl2 : (2 * r + 1 + 1 + 1) / 2 = r + 1 := by omega
-      rw [hl1] at ih
-      rw [hl2, Finset.sum_Icc_succ_top (by omega : r + 1 ≤ 2 * r + 2), ih]
-      have haodd : a (2 * r + 2 + 1) = 2 * r + 3 := a_two_mul_add_one (r + 1)
-      have hc1 : (2 * r + 1 + 2) / 2 = r + 1 := by omega
-      have hc2 : (2 * r + 1 + 1 + 2) / 2 = r + 2 := by omega
-      rw [haodd, hc1, hc2]
+    obtain ⟨r, rfl | rfl⟩ := Nat.even_or_odd' i
+    · rw [show (2 * r + 1) / 2 = r by omega, ← Finset.insert_Icc_add_one_left_eq_Icc
+        (by omega : r ≤ 2 * r), Finset.sum_insert (by simp)] at ih
+      rw [show (2 * r + 1 + 1) / 2 = r + 1 by omega, show (2 * r + 1 + 2) / 2 = (2 * r + 2) / 2 by omega,
+        Finset.sum_Icc_succ_top (by omega), ← ih, show 2 * r + 1 + 1 = 2 * (r + 1) by ring,
+        a_two_mul _ r.succ_pos, add_comm]
+    · rw [show (2 * r + 1 + 1 + 1) / 2 = (2 * r + 1 + 1) / 2 by omega, Finset.sum_Icc_succ_top (by omega),
+        ih, show 2 * r + 1 + 1 + 1 = 2 * (r + 1) + 1 by ring, a_two_mul_add_one,
+        show (2 * (r + 1) + 1) / 2 = r + 1 by omega, show (2 * r + 1 + 1 + 2) / 2 = r + 2 by omega]
       ring
 
 private lemma t_det_ne_zero (N : ℕ) : (t N).det ≠ 0 := by
-  have htri : (t N).BlockTriangular OrderDual.toDual := by
-    intro i j hij
-    have hij' : i < j := OrderDual.toDual_lt_toDual.mp hij
-    unfold t
-    have hnot : ¬ ((j : ℕ) ≤ (i : ℕ) ∧ (i : ℕ) ≤ 2 * (j : ℕ)) := by
-      have : (i : ℕ) < (j : ℕ) := hij'
-      omega
-    rw [if_neg hnot]
-  rw [Matrix.det_of_isLowerTriangular (t N) htri]
-  rw [Finset.prod_ne_zero_iff]
-  intro i _
-  unfold t
-  have hcond : (i : ℕ) ≤ (i : ℕ) ∧ (i : ℕ) ≤ 2 * (i : ℕ) := by omega
-  rw [if_pos hcond]
-  have hne : ((((i : ℕ) + 2) / 2 : ℕ) : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
-  exact one_div_ne_zero hne
+  rw [Matrix.det_of_isLowerTriangular (t N) fun i j (h : i < j) => if_neg (by omega)]
+  exact Finset.prod_ne_zero_iff.2 fun i _ => by
+    simp only [t, le_refl, true_and, if_pos (by omega : (i : ℕ) ≤ 2 * i)]
+    exact one_div_ne_zero (Nat.cast_ne_zero.2 (by omega))
 
 private lemma t_mulVec_a (N : ℕ) :
     (t N).mulVec (fun j : Fin N => (a (j.val + 1) : ℚ)) =
