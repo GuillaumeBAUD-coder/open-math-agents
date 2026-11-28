@@ -12,8 +12,7 @@ lemma OMA.fewer {j k : ℕ} (hjk : j ≤ k)
     OrdinalMultiColorRamsey.{u} (ω_ 1 ^ 2) (ω_ 1 * ω) 3 j := by
   classical
   intro col
-  let embed (c : Fin (j + 1)) : Fin (k + 1) :=
-    ⟨c.val, c.isLt.trans_le (Nat.succ_le_succ hjk)⟩
+  let embed := Fin.castLE (n := j + 1) (m := k + 1) (by omega)
   obtain ⟨A, hmono, htype⟩ | ⟨i, A, hmono, hcard⟩ :=
     hk fun e => embed (col e)
   · refine Or.inl ⟨A, ?_, htype⟩
@@ -27,12 +26,11 @@ lemma OMA.fewer {j k : ℕ} (hjk : j ≤ k)
         intro x hx y hy
         by_contra hxy
         have he := congrArg Fin.val (hmono x hx y hy hxy)
-        change (col s(x, y)).val = i.val + 1 at he
+        simp [embed] at he
         have hb := (col s(x, y)).isLt
         omega
-      have hsmall := hs.cardinalMk_le_one
-      rw [hcard] at hsmall
-      exact (by exact_mod_cast (by decide : ¬ (3 : ℕ) ≤ 1) : ¬ (3 : Cardinal) ≤ 1) hsmall
+      have hsmall := hcard ▸ hs.cardinalMk_le_one
+      norm_num at hsmall
     refine Or.inr ⟨⟨i.val, hi⟩, A, ?_, hcard⟩
     intro x hx y hy hxy
     have he := congrArg Fin.val (hmono x hx y hy hxy)
