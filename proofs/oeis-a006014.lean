@@ -45,7 +45,7 @@ theorem secondTable_push (n : ℕ) : ∃ v, secondTable (n+1)=(secondTable n).pu
   simp only [secondTable]
   split <;> exact ⟨_,rfl⟩
 
-theorem firstTable_getD {m n : ℕ} (hn : n≤m) :
+theorem firstTable_getD {m n : ℕ} (hn : n ≤ m) :
     (firstTable m).getD n 0=a006014 n := by
   induction m with
   | zero =>
@@ -55,12 +55,12 @@ theorem firstTable_getD {m n : ℕ} (hn : n≤m) :
   | succ m ih =>
     by_cases he : n=m+1
     · subst n; rfl
-    · have hnm : n≤m := by omega
+    · have hnm : n ≤ m := by omega
       obtain ⟨v,hv⟩ := firstTable_push m
       rw [hv, getD_push_lt _ _ _ (by rw [firstTable_size]; omega)]
       exact ih hnm
 
-theorem secondTable_getD {m n : ℕ} (hn : n≤m) :
+theorem secondTable_getD {m n : ℕ} (hn : n ≤ m) :
     (secondTable m).getD n 0=a379818 n := by
   induction m with
   | zero =>
@@ -70,7 +70,7 @@ theorem secondTable_getD {m n : ℕ} (hn : n≤m) :
   | succ m ih =>
     by_cases he : n=m+1
     · subst n; rfl
-    · have hnm : n≤m := by omega
+    · have hnm : n ≤ m := by omega
       obtain ⟨v,hv⟩ := secondTable_push m
       rw [hv, getD_push_lt _ _ _ (by rw [secondTable_size]; omega)]
       exact ih hnm
@@ -91,7 +91,7 @@ theorem first_recurrence (n : ℕ) :
   have hi' := mem_range.mp hi
   rw [firstTable_getD (by omega), firstTable_getD (by omega)]
 
-theorem a025480_le (n : ℕ) : a025480 n≤n := by
+theorem a025480_le (n : ℕ) : a025480 n ≤ n := by
   induction n using Nat.strong_induction_on with
   | h n ih =>
     rw [a025480]
@@ -387,7 +387,7 @@ theorem eq_shifted (S : ℕ→ℚ) (h0 : S 0=1)
 theorem solution_of_recurrence
     (hrec : ∀ n, dyadic (n+1)=((n:ℚ)+2)*dyadic n+
       ∑ i ∈ range n, dyadic i*dyadic (n-1-i)) :
-    ∀ n : ℕ, 1≤n → a006014 n=∑ k ∈ range (2^(n-1)), a379818 k := by
+    ∀ n : ℕ, 1 ≤ n → a006014 n=∑ k ∈ range (2^(n-1)), a379818 k := by
   intro n hn
   have h := eq_shifted dyadic dyadic_zero hrec (n-1)
   rw [show n-1+1=n by omega] at h
@@ -417,7 +417,7 @@ namespace A006014FPS
 noncomputable abbrev D := PowerSeries.derivative ℚ
 
 lemma coeff_X_mul' (F : PowerSeries ℚ) (n : ℕ) :
-    coeff n (X*F)=if 1≤n then coeff (n-1) F else 0 := by
+    coeff n (X*F)=if 1 ≤ n then coeff (n-1) F else 0 := by
   simpa using coeff_X_pow_mul' F 1 n
 
 theorem recurrence (u S : ℕ→ℚ) (hu0 : u 0=1)
@@ -450,7 +450,7 @@ theorem recurrence (u S : ℕ→ℚ) (hu0 : u 0=1)
         linarith
       | succ n =>
         have h := hrec (n+2)
-        have h2 : 2≤n+2 := by omega
+        have h2 : 2 ≤ n+2 := by omega
         simp [coeff_X_pow_mul', coeff_derivative, U, h2]
         push_cast at h
         nlinarith [h]
@@ -478,7 +478,7 @@ theorem recurrence (u S : ℕ→ℚ) (hu0 : u 0=1)
   | zero =>
     simpa [coeff_X_mul', coeff_X_pow_mul', coeff_derivative, G] using hc
   | succ n =>
-    have h2 : 2≤n+2 := by omega
+    have h2 : 2 ≤ n+2 := by omega
     simp [coeff_X_pow_mul', coeff_derivative, hsquare, G, h2] at hc
     simp only [Nat.add_sub_cancel, Nat.cast_add, Nat.cast_one]
     linear_combination hc
@@ -489,7 +489,7 @@ open OMA.S_oeis_a006014
 
 namespace A006014Final
 
-theorem solution : ∀ n : ℕ, 1 ≤ n →
+theorem solution : ∀ n : ℕ, 1  ≤  n →
     a006014 n = ∑ k ∈ Finset.range (2^(n-1)), a379818 k := by
   apply A006014Uniqueness.solution_of_recurrence
   apply A006014FPS.recurrence A006014Operator.u A006014Uniqueness.dyadic
