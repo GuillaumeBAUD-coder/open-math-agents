@@ -20,7 +20,7 @@ Translation notes.
 namespace OMA.S_oeis_a089948
 
 /-- The concatenation of the decimal expansions of the first n odd primes. -/
-def c : ℕ → ℕ
+noncomputable def c : ℕ → ℕ
   | 0 => 0
   | n + 1 => c n * 10 ^ (Nat.digits 10 (Nat.nth Nat.Prime (n + 1))).length + Nat.nth Nat.Prime (n + 1)
 
