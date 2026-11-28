@@ -4,7 +4,7 @@ import Mathlib
 # OEIS A067745: a numerator equal to the odd part of 3n - 2
 
 Source: https://oeis.org/A067745
-Credit: @SudharsanAnimations
+Credit: Sudharsan Rajendiran
 
 `A067745(n)` is the numerator of `(3n - 2) / (n^(2n-1) (2n - 1) 4^(n-1))`. The entry conjectures that
 it is the odd part of `3n - 2`, and records the proof (Robert Israel): `gcd(3n - 2, 2n - 1) = 1`,
