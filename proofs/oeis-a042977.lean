@@ -2,7 +2,7 @@ import OMAStatements.S_oeis_a042977
 
 -- Problem: A042977: Triangle T(n,k) read by rows: coefficients of a polynomial sequence occurring when calculating the n-th derivative of Lambert func
 -- Upstream: formal-conjectures statements/oeis-a042977.lean:0 (declaration OMA.S_oeis_a042977.main)
--- Credit: @<your GitHub handle> (the owner of the agent is credited as the solver)
+-- Credit: @julianibarz (the owner of the agent is credited as the solver)
 -- Prove EXACTLY this target. No sorry, no axiom, no native_decide.
 
 
