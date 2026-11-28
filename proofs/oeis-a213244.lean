@@ -36,43 +36,34 @@ theorem gcd_period (m : ℕ) : Nat.gcd (2 ^ (m + 4) - 1) 5 = Nat.gcd (2 ^ m - 1)
 
 theorem mul_a (n : ℕ) (hn : n ≠ 0) :
     ((Nat.gcd (2 ^ n - 1) 5 : ℕ) : ℤ) * a n = 2 ^ n - 1 := by
-  rw [card_pow n hn]
-  have h1 : 1 ≤ 2 ^ n := Nat.one_le_two_pow
-  have hd : Nat.gcd (2 ^ n - 1) 5 ∣ 2 ^ n - 1 := Nat.gcd_dvd_left _ _
-  rw [← Nat.cast_mul, Nat.mul_div_cancel' hd]
-  push_cast [Nat.cast_sub h1]
+  rw [card_pow n hn, ← Nat.cast_mul, Nat.mul_div_cancel' (Nat.gcd_dvd_left _ _)]
+  push_cast [Nat.cast_sub Nat.one_le_two_pow]
   ring
 
 theorem recur (n : ℕ) (hn : 8 < n) : (a n : ℤ) = 17 * a (n - 4) - 16 * a (n - 8) := by
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 8 := ⟨n - 8, by omega⟩
   rw [show m + 8 - 4 = m + 4 by omega, show m + 8 - 8 = m by omega]
-  have hm : m ≠ 0 := by omega
-  have g1 := gcd_period m
-  have g2 := gcd_period (m + 4)
-  rw [show m + 4 + 4 = m + 8 by omega] at g2
-  have h0 := mul_a m hm
+  change (a (m + 4 + 4) : ℤ) = _
+  have h0 := mul_a m (by omega)
   have h1 := mul_a (m + 4) (by omega)
-  have h2 := mul_a (m + 8) (by omega)
-  rw [g2, g1] at h2
-  rw [g1] at h1
+  have h2 := mul_a (m + 4 + 4) (by omega)
+  simp only [gcd_period] at h1 h2
+  simp only [pow_add] at h1 h2
   have hg : ((Nat.gcd (2 ^ m - 1) 5 : ℕ) : ℤ) ≠ 0 := by
-    have : 0 < Nat.gcd (2 ^ m - 1) 5 := Nat.gcd_pos_of_pos_right _ (by norm_num)
-    exact_mod_cast this.ne'
+    exact_mod_cast (Nat.gcd_pos_of_pos_right (2 ^ m - 1) (by decide : 0 < 5)).ne'
   apply mul_left_cancel₀ hg
-  rw [h2, mul_sub, mul_left_comm, h1, mul_left_comm, h0, pow_add, pow_add]
-  ring
+  linear_combination h2 - 17 * h1 + 16 * h0
 
 theorem key : mk (fun n => if n = 0 then (0 : ℚ) else a n) * ((X - 1) * (X + 1) * (2 * X - 1) * (2 * X + 1) * (X ^ 2 + 1) * (4 * X ^ 2 + 1)) = X * (8 * X ^ 6 + 12 * X ^ 5 + 14 * X ^ 4 + 3 * X ^ 3 + 7 * X ^ 2 + 3 * X + 1) := by
   set F := mk (fun n => if n = 0 then (0 : ℚ) else a n)
   have left : F * ((X - 1) * (X + 1) * (2 * X - 1) * (2 * X + 1) *
       (X ^ 2 + 1) * (4 * X ^ 2 + 1)) =
-      F - C (17 : ℚ) * (X ^ 4 * F) + C (16 : ℚ) * (X ^ 8 * F) := by
+      F - C 17 * (X ^ 4 * F) + C 16 * (X ^ 8 * F) := by
     simp only [map_ofNat]
     ring
   have right : (X * (8 * X ^ 6 + 12 * X ^ 5 + 14 * X ^ 4 + 3 * X ^ 3 +
       7 * X ^ 2 + 3 * X + 1) : ℚ⟦X⟧) =
-      X ^ 1 + C (3 : ℚ) * X ^ 2 + C (7 : ℚ) * X ^ 3 + C (3 : ℚ) * X ^ 4 +
-        C (14 : ℚ) * X ^ 5 + C (12 : ℚ) * X ^ 6 + C (8 : ℚ) * X ^ 7 := by
+      X ^ 1 + C 3 * X ^ 2 + C 7 * X ^ 3 + C 3 * X ^ 4 + C 14 * X ^ 5 + C 12 * X ^ 6 + C 8 * X ^ 7 := by
     simp only [map_ofNat]
     ring
   rw [left, right]
