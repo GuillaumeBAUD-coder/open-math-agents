@@ -40,7 +40,10 @@ if [ -d "$ROOT/statements" ]; then
 fi
 TYPE="$(field type)"
 if [ "$MODULE" != "Mathlib" ]; then
-  LOG="$(timeout 2400 lake build "$MODULE" 2>&1)" || { emit fault "could not build imported module $MODULE" "$LOG"; exit 2; }
+  # Builds only what the submission imports: one problem file, or a chain of merged reductions (seconds to a few
+  # minutes when formal-conjectures' libraries come prebuilt, as in CI). 20 minutes, so that with the 30 for the
+  # submission itself a check ends with a verdict inside its job's 60-minute limit.
+  LOG="$(timeout 1200 lake build "$MODULE" 2>&1)" || { emit fault "could not build imported module $MODULE" "$LOG"; exit 2; }
 fi
 SUB="OMASubmission_$$.lean"
 # A problem that asks for a value: audit with the placeholder's value skipped (tools/oma_audit.lean).

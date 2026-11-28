@@ -59,33 +59,28 @@ open Erdos770 in
 theorem OMA.solution : type_of% @Erdos770.erdos_770.variants.odd_h_unbounded := by
   intro a
   obtain ⟨p, hp, hpK, hp4, hres⟩ := OMA770.key (a + 2)
-  set n := p / 2 with hn
+  set n := p / 2
   have hodd : Odd n := Nat.odd_iff.mpr (by omega)
-  have hn1 : 1 ≤ n := by omega
   set S : Set ℕ∞ := {m | 2 < m ∧
-    ((Finset.Icc 2 m.toNat).image fun i => (i ^ n - 1)).gcd id = 1} with hS
-  have hhn : h n = sInf S := rfl
+    ((Finset.Icc 2 m.toNat).image fun i => (i ^ n - 1)).gcd id = 1}
   -- finiteness
-  set g := Nat.gcd (2 ^ n - 1) (3 ^ n - 1) with hg
+  set g := Nat.gcd (2 ^ n - 1) (3 ^ n - 1)
   have hgpos : 0 < g := Nat.gcd_pos_of_pos_left _ (by
     have := Nat.one_lt_two_pow (n := n) (by omega); omega)
   have hmem : ((g + 3 : ℕ) : ℕ∞) ∈ S := by
     refine ⟨by exact_mod_cast (show 2 < g + 3 by omega), ?_⟩
     rw [ENat.toNat_natCast]
-    set G := ((Finset.Icc 2 (g + 3)).image fun i => (i ^ n - 1)).gcd id with hG
+    set G := ((Finset.Icc 2 (g + 3)).image fun i => (i ^ n - 1)).gcd id
     have hd : ∀ i, 2 ≤ i → i ≤ g + 3 → G ∣ i ^ n - 1 := fun i h1 h2 =>
       Finset.gcd_dvd (Finset.mem_image_of_mem _ (Finset.mem_Icc.mpr ⟨h1, h2⟩))
     have hGg : G ∣ g := Nat.dvd_gcd (hd 2 le_rfl (by omega)) (hd 3 (by omega) (by omega))
     by_contra hG1
-    obtain ⟨r, hr, hrG⟩ := Nat.exists_prime_and_dvd hG1
-    have hrg : r ≤ g := Nat.le_of_dvd hgpos (hrG.trans hGg)
-    have h1 : r ∣ r ^ n - 1 := hrG.trans (hd r hr.two_le (by omega))
-    have h2 : r ∣ r ^ n := dvd_pow_self r (by omega)
-    have h3 : r ∣ r ^ n - (r ^ n - 1) := Nat.dvd_sub h2 h1
-    have : r ^ n - (r ^ n - 1) = 1 := by
-      have := Nat.one_le_pow n r hr.pos; omega
-    rw [this] at h3
-    exact hr.one_lt.ne' (Nat.dvd_one.mp h3)
+    have hGpos : 0 < G := Nat.pos_of_dvd_of_pos hGg hgpos
+    have hGle := Nat.le_of_dvd hgpos hGg
+    have h1 : G ∣ G ^ n - 1 := hd G (by omega) (by omega)
+    have hpow : 1 ≤ G ^ n := Nat.one_le_pow n G hGpos
+    have hsub : G ^ n - (G ^ n - 1) = 1 := by omega
+    exact hG1 (Nat.dvd_one.mp (hsub ▸ Nat.dvd_sub (dvd_pow_self G (by omega)) h1))
   have hlow : ∀ x ∈ S, ((a + 3 : ℕ) : ℕ∞) ≤ x := by
     intro x hx
     rcases hx with ⟨h2x, hgcd⟩
@@ -93,7 +88,6 @@ theorem OMA.solution : type_of% @Erdos770.erdos_770.variants.odd_h_unbounded := 
     | top => exact le_top
     | coe k =>
       rw [ENat.toNat_natCast] at hgcd
-      have h2k : 2 < k := by exact_mod_cast h2x
       by_contra hk
       have hk' : k ≤ a + 2 := by
         have : ¬ (a + 3 ≤ k) := fun h => hk (by exact_mod_cast h)
@@ -109,9 +103,8 @@ theorem OMA.solution : type_of% @Erdos770.erdos_770.variants.odd_h_unbounded := 
         rw [hres i (by omega) (by omega)]; simp
       rw [hgcd] at this
       exact hp.one_lt.ne' (Nat.dvd_one.mp this)
-  have hle : h n ≤ ((g + 3 : ℕ) : ℕ∞) := hhn ▸ sInf_le hmem
-  have hge : ((a + 3 : ℕ) : ℕ∞) ≤ h n := hhn ▸ le_sInf hlow
-  have hne : h n ≠ ⊤ := ne_top_of_le_ne_top (ENat.natCast_ne_top _) hle
+  have hge : ((a + 3 : ℕ) : ℕ∞) ≤ h n := le_sInf hlow
+  have hne : h n ≠ ⊤ := ne_top_of_le_ne_top (ENat.natCast_ne_top _) (sInf_le hmem)
   refine ⟨(h n).toNat, ⟨h n, ⟨n, hodd, rfl⟩, rfl⟩, ?_⟩
   rw [← ENat.natCast_toNat hne] at hge
   have : a + 3 ≤ (h n).toNat := by exact_mod_cast hge

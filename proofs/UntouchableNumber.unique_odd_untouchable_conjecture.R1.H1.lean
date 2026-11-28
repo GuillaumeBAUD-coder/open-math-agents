@@ -12,40 +12,24 @@ theorem OMA.solution : OMA.R_UntouchableNumber_unique_odd_untouchable_conjecture
   rintro ⟨n, hsum⟩
   by_cases hn : n ≤ 16
   · interval_cases n <;> revert hsum <;> decide
-  · have hn2 : 2 ≤ n := by omega
-    by_cases hp : n.Prime
-    · rw [Nat.Prime.sum_properDivisors hp] at hsum
-      omega
-    · obtain ⟨d, hd1, hd2, hd3⟩ := Nat.exists_dvd_of_not_prime2 hn2 hp
-      have hq : n / d ∣ n := Nat.div_dvd_of_dvd hd1
-      have hqd : n / d * d = n := Nat.div_mul_cancel hd1
-      have hqlt : n / d < n := Nat.div_lt_self (by omega) (by omega)
-      have h1 : (1 : ℕ) ∈ n.properDivisors := Nat.mem_properDivisors.mpr ⟨one_dvd _, by omega⟩
-      have hdm : d ∈ n.properDivisors := Nat.mem_properDivisors.mpr ⟨hd1, hd3⟩
-      have hqm : n / d ∈ n.properDivisors := Nat.mem_properDivisors.mpr ⟨hq, hqlt⟩
-      have hd5 : d ≤ 4 := by
-        have h2 : ({1, d} : Finset ℕ) ⊆ n.properDivisors := by
-          intro t ht
-          rcases Finset.mem_insert.mp ht with rfl | ht
-          · exact h1
-          · rw [Finset.mem_singleton.mp ht]
-            exact hdm
-        have h3 := Finset.sum_le_sum_of_subset (f := fun t => t) h2
-        rw [Finset.sum_pair (by omega)] at h3
-        omega
-      have hq5 : n / d ≤ 4 := by
-        have hq2 : 2 ≤ n / d := by
-          by_contra hcon
-          have : n / d * d ≤ 1 * d := Nat.mul_le_mul_right d (by omega)
-          omega
-        have h2 : ({1, n / d} : Finset ℕ) ⊆ n.properDivisors := by
-          intro t ht
-          rcases Finset.mem_insert.mp ht with rfl | ht
-          · exact h1
-          · rw [Finset.mem_singleton.mp ht]
-            exact hqm
-        have h3 := Finset.sum_le_sum_of_subset (f := fun t => t) h2
-        rw [Finset.sum_pair (by omega)] at h3
-        omega
-      have : n / d * d ≤ 4 * 4 := Nat.mul_le_mul hq5 hd5
-      omega
+  by_cases hp : n.Prime
+  · rw [Nat.Prime.sum_properDivisors hp] at hsum
+    omega
+  -- Every proper divisor greater than one contributes alongside one, so it is at most four.
+  have bound (d : ℕ) (hd : d ∣ n) (hd1 : 1 < d) (hdn : d < n) : d ≤ 4 := by
+    have hsub : ({1, d} : Finset ℕ) ⊆ n.properDivisors :=
+      Finset.insert_subset_iff.mpr ⟨Nat.mem_properDivisors.mpr ⟨one_dvd _, by omega⟩,
+        Finset.singleton_subset_iff.mpr (Nat.mem_properDivisors.mpr ⟨hd, hdn⟩)⟩
+    have h := Finset.sum_le_sum_of_subset (f := fun t => t) hsub
+    rw [Finset.sum_pair (by omega)] at h
+    omega
+  obtain ⟨d, hd, hd1, hdn⟩ := Nat.exists_dvd_of_not_prime2 (by omega : 2 ≤ n) hp
+  have he := Nat.div_mul_cancel hd
+  have hq : 1 < n / d := by
+    by_contra! h
+    have := Nat.mul_le_mul_right d h
+    omega
+  have hb := Nat.mul_le_mul
+    (bound (n / d) (Nat.div_dvd_of_dvd hd) hq (Nat.div_lt_self (by omega) hd1))
+    (bound d hd hd1 hdn)
+  omega
