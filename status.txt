@@ -1,0 +1,40 @@
+19:57:27 budget (App token, limit 15000): core 11771, graphql 10000, queue 4134, busy 32/32
+19:57:41 budget (App token, limit 15000): core 11749, graphql 10000, queue 4109, busy 32/32
+19:57:41 budget pace: 121 calls/min, 32 min to reset, slots allowed 32
+19:57:56 budget (App token, limit 15000): core 11732, graphql 10000, queue 4109, busy 32/32
+19:57:56 budget pace: 103 calls/min, 31 min to reset, slots allowed 32
+19:58:11 budget (App token, limit 15000): core 12599, graphql 10000, queue 4099, busy 32/32
+19:58:27 budget (App token, limit 15000): core 12567, graphql 10000, queue 4099, busy 32/32
+19:58:28 budget pace: 108 calls/min, 32 min to reset, slots allowed 32
+19:58:41 budget (App token, limit 15000): core 12539, graphql 10000, queue 4089, busy 32/32
+19:58:42 budget pace: 112 calls/min, 31 min to reset, slots allowed 32
+19:58:57 budget (App token, limit 15000): core 11656, graphql 10000, queue 4089, busy 32/32
+19:59:11 budget (App token, limit 15000): core 11648, graphql 10000, queue 4086, busy 32/32
+19:59:12 budget pace: 85 calls/min, 30 min to reset, slots allowed 32
+19:59:26 budget (App token, limit 15000): core 12461, graphql 10000, queue 4086, busy 32/32
+19:59:42 budget (App token, limit 15000): core 12429, graphql 10000, queue 4059, busy 32/32
+19:59:43 budget pace: 96 calls/min, 30 min to reset, slots allowed 32
+19:59:56 budget (App token, limit 15000): core 11596, graphql 10000, queue 4059, busy 32/32
+20:00:12 budget (App token, limit 15000): core 12399, graphql 10000, queue 4070, busy 32/32
+20:00:29 budget (App token, limit 15000): core 11552, graphql 10000, queue 4070, busy 32/32
+20:00:44 budget (App token, limit 15000): core 11516, graphql 10000, queue 4061, busy 32/32
+20:00:45 budget pace: 112 calls/min, 29 min to reset, slots allowed 32
+20:00:59 budget (App token, limit 15000): core 11501, graphql 10000, queue 4061, busy 32/32
+20:01:00 budget pace: 94 calls/min, 28 min to reset, slots allowed 32
+20:01:14 queue: dropped 1 runs of closed pull requests, 4040 left
+20:01:14 budget (App token, limit 15000): core 11473, graphql 10000, queue 4039, busy 32/32
+20:01:15 budget pace: 102 calls/min, 28 min to reset, slots allowed 32
+20:01:28 budget (App token, limit 15000): core 11457, graphql 10000, queue 4039, busy 32/32
+20:01:28 budget pace: 90 calls/min, 28 min to reset, slots allowed 32
+20:01:43 budget (App token, limit 15000): core 12277, graphql 10000, queue 4026, busy 32/32
+20:01:59 budget (App token, limit 15000): core 11421, graphql 10000, queue 4026, busy 32/32
+20:02:14 budget (App token, limit 15000): core 11367, graphql 10000, queue 4010, busy 32/32
+20:02:15 budget pace: 132 calls/min, 27 min to reset, slots allowed 32
+20:02:29 budget (App token, limit 15000): core 11320, graphql 10000, queue 4010, busy 32/32
+20:02:29 budget pace: 155 calls/min, 27 min to reset, slots allowed 32
+20:02:44 budget (App token, limit 15000): core 11287, graphql 10000, queue 3991, busy 32/32
+20:02:45 budget pace: 144 calls/min, 27 min to reset, slots allowed 32
+20:02:59 budget (App token, limit 15000): core 11258, graphql 10000, queue 3991, busy 32/32
+20:03:00 budget pace: 134 calls/min, 26 min to reset, slots allowed 32
+20:03:14 budget (App token, limit 15000): core 11241, graphql 10000, queue 3982, busy 32/32
+20:03:15 budget pace: 112 calls/min, 26 min to reset, slots allowed 32

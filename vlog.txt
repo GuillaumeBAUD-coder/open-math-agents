@@ -1,0 +1,400 @@
+19:57:02 #36940 run b36940-8f292cbb325a.3: 55s group commit: 10 merges fetch=4.120306195s build=4.844127498s push=4.418240377s Tphases=pr=0 refs=3 decide=4 lintprep=11 lint=13 premerge=13 end=55exit 0 
+19:57:02 #36950 run b36950-afb8e54bb9fb.3: 36s  Tphases=pr=0 refs=5 decide=5 lintprep=8 lint=15 premerge=15 end=36exit 0 merged by git
+19:57:02 #36947 run 46170452373.1: 41s  Tphases=pr=0 refs=3 decide=4 lintprep=7 lint=14 premerge=14 end=41exit 0 merged by git
+19:57:02 #36948 run 46170454163.1: 41s  Tphases=pr=0 refs=9 decide=9 lintprep=11 lint=19 premerge=19 end=41exit 0 merged by git
+19:57:02 #36944 run b36944-1a6e02de0c7b.3: 42s  Tphases=pr=0 refs=5 decide=5 lintprep=7 lint=15 premerge=15 end=42exit 0 merged by git
+19:57:02 #36953 run 46170487431.1: 25s  Tphases=pr=0 refs=4 decide=5 lintprep=6 lint=9 premerge=9 end=25exit 0 merged by git
+19:57:02 #36955 run b36955-906534c88b23.3: 26s  Tphases=pr=0 refs=3 decide=3 lintprep=5 lint=7 premerge=8 end=26exit 0 merged by git
+19:57:03 #36951 run 46170483108.1: 36s  Tphases=pr=0 refs=3 decide=4 lintprep=6 lint=13 premerge=13 end=36exit 0 merged by git
+19:57:03 #36954 run b36954-08ddbd7bdfa4.3: 27s  Tphases=pr=0 refs=5 decide=6 lintprep=6 lint=9 premerge=9 end=27exit 0 merged by git
+19:57:07 #40797 run 46183741489.1: 3s  Tphases=pr=0 refs=1 decide=2 lint=2 end=3exit 0 
+19:57:11 #36960 run b36960-ab2c5553fdc2.3: 22s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=7 premerge=7 end=22exit 0 merged by git
+19:57:11 #36942 run 46170443432.1: 50s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=10 premerge=10 end=50exit 0 already on main
+19:57:11 #36937 run b36937-4c0aaf27c765.3: 98s  Tphases=pr=0 refs=10 decide=11 lintprep=14 lint=27 premerge=27 end=97exit 0 already on main
+19:57:11 #36941 run 46170419809.1: 50s group commit: 4 merges fetch=3.363513286s build=2.168306059s push=2.762594783s Tphases=pr=0 refs=15 decide=16 lintprep=25 lint=26 premerge=26 end=50exit 0 already on main
+19:57:11 #36957 run b36957-8cf391e7d705.3: 22s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=7 premerge=7 end=22exit 0 merged by git
+19:57:11 #36959 run 46170517190.1: 21s  Tphases=pr=0 refs=1 decide=2 lintprep=3 lint=6 premerge=6 end=21exit 0 merged by git
+19:57:11 #36945 run 46170449520.1: 50s  Tphases=pr=0 refs=3 decide=4 lintprep=6 lint=12 premerge=12 end=50exit 0 already on main
+19:57:11 #36943 run b36943-9bf6827995fb.3: 51s  Tphases=pr=0 refs=2 decide=2 lintprep=4 lint=11 premerge=11 end=51exit 0 
+19:57:11 #36956 run b36956-bd3942ad8405.3: 22s  Tphases=pr=0 refs=2 decide=2 lintprep=4 lint=8 premerge=8 end=22exit 0 merged by git
+19:57:16 #36944 run 46170449010.1: 55s  Tphases=pr=0 refs=6 decide=7 lintprep=9 lint=16 premerge=16 end=55exit 0 already on main
+19:57:16 #36954 run 46170499890.1: 39s  Tphases=pr=0 refs=5 decide=5 lintprep=6 lint=8 premerge=8 end=39exit 0 already on main
+19:57:16 #36948 run b36948-3fd289f116e4.3: 55s  Tphases=pr=0 refs=8 decide=9 lintprep=11 lint=19 premerge=19 end=55exit 0 already on main
+19:57:16 #36949 run 46170478769.1: 49s  Tphases=pr=0 refs=3 decide=4 lintprep=6 lint=12 premerge=13 end=49exit 0 
+19:57:16 #36952 run b36952-7b341b2d0189.3: 50s  Tphases=pr=1 refs=3 decide=4 lintprep=6 lint=14 premerge=14 end=50exit 0 
+19:57:16 #36951 run b36951-738af326d70b.3: 50s  Tphases=pr=0 refs=4 decide=5 lintprep=8 lint=14 premerge=14 end=50exit 0 
+19:57:16 #36955 run 46170499805.1: 39s  Tphases=pr=0 refs=4 decide=5 lintprep=6 lint=8 premerge=8 end=39exit 0 already on main
+19:57:17 #36950 run 46170481531.1: 49s  Tphases=pr=0 refs=4 decide=5 lintprep=6 lint=14 premerge=14 end=49exit 0 already on main
+19:57:17 #36960 run 46170517646.1: 27s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=6 premerge=6 end=26exit 0 already on main
+19:57:29 #36964 run 46170529369.1: 25s  Tphases=pr=0 refs=3 decide=4 lintprep=5 lint=10 premerge=10 end=25exit 0 merged by git
+19:57:30 #36959 run b36959-849b99f4e40a.3: 41s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=7 premerge=7 end=40exit 0 
+19:57:30 #36957 run 46170506049.1: 40s group commit: 6 merges fetch=5.836531460s build=3.951289699s push=3.102183195s Tphases=pr=0 refs=1 decide=1 lintprep=3 lint=6 premerge=6 end=40exit 0 already on main
+19:57:30 #36962 run 46170523149.1: 26s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=8 premerge=8 end=26exit 0 already on main
+19:57:30 #36956 run 46170501768.1: 40s  Tphases=pr=0 refs=3 decide=3 lintprep=4 lint=7 premerge=7 end=40exit 0 already on main
+19:57:30 #36967 run b36967-bd5ca31193c6.3: 26s  Tphases=pr=0 refs=1 decide=1 lintprep=3 lint=7 premerge=7 end=26exit 0 merged by git
+19:57:30 #36963 run b36963-d64f1adb3110.3: 27s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=8 premerge=8 end=27exit 0 merged by git
+19:57:30 #36966 run b36966-c16e728af3aa.3: 27s  Tphases=pr=1 refs=2 decide=2 lintprep=4 lint=7 premerge=7 end=27exit 0 merged by git
+19:57:30 #36961 run 46170517841.1: 26s  Tphases=pr=0 refs=1 decide=1 lintprep=2 lint=8 premerge=8 end=26exit 0 merged by git
+19:57:30 #36965 run 46170531757.1: 26s  Tphases=pr=0 refs=2 decide=2 lintprep=4 lint=8 premerge=8 end=26exit 0 merged by git
+19:57:33 #36981 run b36981-1cd1c8fc42bb.3: 2s  Tphases=pr=0 refs=2 end=2exit 0 skip: stale
+19:57:37 #33438 run 46183511810.1: 28s group commit: 6 merges fetch=2.801026630s build=1.310730680s push=3.197888084s Tphases=pr=0 refs=2 decide=2 lintprep=4 lint=7 premerge=7 end=28exit 0 merged by git
+19:57:37 #36973 run 46181953550.1: 23s  Tphases=pr=0 refs=2 decide=3 lintprep=4 lint=10 premerge=10 end=23exit 0 merged by git
+19:57:37 #36968 run 46170545316.1: 25s  Tphases=pr=0 refs=3 decide=3 lintprep=4 lint=8 premerge=8 end=25exit 0 merged by git
+19:57:37 #36972 run 46170558174.1: 23s  Tphases=pr=0 refs=2 decide=2 lintprep=4 lint=9 premerge=9 end=23exit 0 merged by git
+19:57:37 #36970 run 46176959492.1: 24s  Tphases=pr=0 refs=3 decide=4 lintprep=5 lint=12 premerge=12 end=24exit 0 merged by git
+19:57:37 #36969 run 46181577889.1: 25s  Tphases=pr=0 refs=3 decide=3 lintprep=4 lint=10 premerge=10 end=25exit 0 already on main
+19:57:37 #36971 run 46183305809.1: 23s  Tphases=pr=0 refs=2 decide=3 lintprep=4 lint=11 premerge=11 end=23exit 0 merged by git
+19:57:38 #36966 run 46170537441.1: 33s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=10 premerge=10 end=33exit 0 already on main
+19:57:42 #40824 run 46183806531.1: 1s  Tphases=pr=0 refs=1 decide=1 lint=1 end=1exit 0 REJECTED
+without a comment
+19:57:43 #40091 run 46183805050.1: 2s  Tphases=pr=0 refs=1 decide=1 lint=1 end=2exit 0 
+19:57:44 #36974 run 46170565534.1: 24s  Tphases=pr=0 refs=3 decide=3 lintprep=5 lint=9 premerge=9 end=24exit 0 merged by git
+19:57:44 #36963 run 46170527425.1: 40s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=8 premerge=8 end=40exit 0 already on main
+19:57:44 #36967 run 46170544748.1: 32s group commit: 5 merges fetch=2.968100673s build=1.280094745s push=2.433076999s Tphases=pr=0 refs=2 decide=3 lintprep=4 lint=9 premerge=9 end=32exit 0 already on main
+19:57:44 #36961 run b36961-eb0391e1fa9f.3: 41s  Tphases=pr=0 refs=4 decide=4 lintprep=5 lint=10 premerge=10 end=41exit 0 already on main
+19:57:44 #36976 run 46170581277.1: 24s  Tphases=pr=0 refs=3 decide=4 lintprep=5 lint=9 premerge=9 end=24exit 0 merged by git
+19:57:44 #36978 run b36978-85f03e0fff80.3: 24s  Tphases=pr=0 refs=2 decide=2 lintprep=4 lint=8 premerge=8 end=24exit 0 merged by git
+19:57:44 #36977 run 46170591935.1: 24s  Tphases=pr=0 refs=3 decide=4 lintprep=5 lint=8 premerge=8 end=24exit 0 merged by git
+19:57:44 #36975 run 46170569833.1: 24s  Tphases=pr=0 refs=3 decide=4 lintprep=5 lint=9 premerge=9 end=24exit 0 merged by git
+19:57:52 #36968 run b36968-0a483f483322.3: 40s group commit: 4 merges fetch=2.550216368s build=2.366344406s push=3.194772312s Tphases=pr=0 refs=3 decide=4 lintprep=5 lint=10 premerge=10 end=40exit 0 already on main
+19:57:53 #36972 run b36972-7ff4f0b60285.3: 39s  Tphases=pr=0 refs=4 decide=4 lintprep=5 lint=11 premerge=11 end=39exit 0 already on main
+19:57:53 #36984 run 46170604059.1: 18s  Tphases=pr=0 refs=2 decide=3 lintprep=4 lint=6 premerge=6 end=17exit 0 already on main
+19:57:53 #36980 run b36980-bc695805d5ff.3: 22s  Tphases=pr=0 refs=1 decide=1 lintprep=3 lint=5 premerge=5 end=22exit 0 merged by git
+19:57:53 #36983 run 46170606087.1: 21s  Tphases=pr=0 refs=1 decide=1 lintprep=2 lint=7 premerge=7 end=21exit 0 merged by git
+19:57:53 #36982 run b36982-e70647867541.3: 22s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=7 premerge=7 end=22exit 0 merged by git
+19:57:53 #36981 run 46176769503.1: 22s  Tphases=pr=0 refs=2 decide=3 lintprep=4 lint=8 premerge=8 end=22exit 0 merged by git
+19:57:55 run 46183149652.1 (check-proof #40524): no artifact yet (try 1)
+19:57:59 #36986 run b36986-127a094685a5.3: 19s  Tphases=pr=0 refs=1 decide=1 lintprep=2 lint=5 premerge=6 end=19exit 0 merged by git
+19:57:59 #36987 run b36987-46b1f5736004.3: 19s  Tphases=pr=0 refs=1 decide=2 lintprep=3 lint=7 premerge=7 end=19exit 0 merged by git
+19:57:59 #36977 run b36977-75ede6b7771d.3: 40s group commit: 3 merges fetch=2.389910038s build=1.417512129s push=2.211940984s Tphases=pr=1 refs=5 decide=6 lintprep=7 lint=11 premerge=11 end=40exit 0 already on main
+19:57:59 #36985 run b36985-cdbc30c8309b.3: 19s  Tphases=pr=0 refs=1 decide=1 lintprep=2 lint=5 premerge=5 end=19exit 0 merged by git
+19:57:59 #36976 run b36976-63a7e177d02d.3: 40s  Tphases=pr=0 refs=3 decide=4 lintprep=6 lint=10 premerge=10 end=40exit 0 
+19:57:59 #36978 run 46170590266.1: 38s  Tphases=pr=0 refs=3 decide=3 lintprep=4 lint=8 premerge=8 end=38exit 0 already on main
+19:57:59 #36974 run b36974-a5497faad4d9.3: 40s  Tphases=pr=0 refs=3 decide=3 lintprep=5 lint=10 premerge=10 end=40exit 0 
+19:58:10 #36990 run b36990-ee272d01d66a.3: 25s  Tphases=pr=0 refs=2 decide=2 lintprep=4 lint=7 premerge=7 end=25exit 0 merged by git
+19:58:10 #36988 run b36988-28b4c9928c28.3: 27s  Tphases=pr=0 refs=2 decide=3 lintprep=4 lint=8 premerge=8 end=26exit 0 merged by git
+19:58:10 #36989 run b36989-e66280296e1b.3: 25s  Tphases=pr=0 refs=2 decide=2 lintprep=4 lint=7 premerge=7 end=25exit 0 merged by git
+19:58:10 #36982 run 46170599770.1: 38s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=7 premerge=7 end=38exit 0 
+19:58:10 #36992 run b36992-9f0ed6dc292b.3: 25s  Tphases=pr=0 refs=4 decide=5 lintprep=6 lint=10 premerge=10 end=25exit 0 merged by git
+19:58:10 #36983 run b36983-a4bec6ffcf02.3: 39s group commit: 6 merges fetch=5.024728691s build=3.157778307s push=2.752372377s Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=8 premerge=8 end=39exit 0 
+19:58:10 #36993 run b36993-751c781390f4.3: 25s  Tphases=pr=0 refs=3 decide=3 lintprep=4 lint=9 premerge=9 end=25exit 0 merged by git
+19:58:10 #36980 run 46170592946.1: 39s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=7 premerge=8 end=39exit 0 
+19:58:10 #36991 run 46183376205.1: 24s  Tphases=pr=0 refs=2 decide=3 lintprep=4 lint=8 premerge=8 end=24exit 0 merged by git
+19:58:11 run 46183149652.1 (check-proof #40524): no artifact yet (try 2)
+19:58:14 #40736 run 46183578726.1: 3s  Tphases=pr=0 refs=2 decide=2 lint=2 end=3exit 0 
+19:58:18 #36996 run b36996-70b26717874f.3: 23s  Tphases=pr=0 refs=1 decide=1 lintprep=2 lint=5 premerge=5 end=23exit 0 merged by git
+19:58:18 #36979 run b36979-6330ca49050a.3: 47s  Tphases=pr=0 refs=2 decide=3 lintprep=4 lint=7 premerge=8 end=47exit 0 already on main
+19:58:18 #36985 run 46170610294.1: 37s group commit: 5 merges fetch=3.790216467s build=2.071980663s push=2.689232357s Tphases=pr=0 refs=1 decide=1 lintprep=2 lint=6 premerge=6 end=37exit 0 
+19:58:19 #36995 run b36995-c7ce1917d65e.3: 23s  Tphases=pr=0 refs=3 decide=4 lintprep=5 lint=9 premerge=9 end=23exit 0 merged by git
+19:58:19 #36987 run 46170622873.1: 38s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=8 premerge=8 end=37exit 0 
+19:58:19 #36986 run 46170616476.1: 39s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=7 premerge=7 end=39exit 0 
+19:58:19 #37000 run b37000-a6c62ac63096.3: 19s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=8 premerge=8 end=19exit 0 merged by git
+19:58:19 #37001 run b37001-0ccb2c1b59e1.3: 19s  Tphases=pr=0 refs=2 decide=3 lintprep=4 lint=7 premerge=7 end=19exit 0 merged by git
+19:58:19 #36994 run b36994-61f6a4f3411b.3: 24s  Tphases=pr=0 refs=1 decide=1 lintprep=2 lint=5 premerge=5 end=24exit 0 merged by git
+19:58:25 #36990 run 46170637420.1: 39s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=7 premerge=7 end=39exit 0 
+19:58:26 #36999 run b36999-4bbe7343c2d0.3: 25s  Tphases=pr=0 refs=4 decide=5 lintprep=6 lint=8 premerge=8 end=25exit 0 merged by git
+19:58:26 #37003 run b37003-918d316ddab9.3: 14s  Tphases=pr=0 refs=1 decide=1 lintprep=2 lint=5 premerge=5 end=14exit 0 merged by git
+19:58:26 #36989 run 46170627352.1: 40s group commit: 3 merges fetch=3.278717623s build=.874599309s push=2.485692580s Tphases=pr=0 refs=1 decide=2 lintprep=3 lint=8 premerge=8 end=39exit 0 
+19:58:26 #36992 run 46170652929.1: 39s  Tphases=pr=0 refs=4 decide=5 lintprep=6 lint=9 premerge=9 end=39exit 0 already on main
+19:58:26 #36998 run b36998-97495313484e.3: 25s  Tphases=pr=0 refs=6 decide=6 lintprep=7 lint=9 premerge=9 end=25exit 0 merged by git
+19:58:26 #36988 run 46170618617.1: 41s  Tphases=pr=0 refs=3 decide=3 lintprep=5 lint=9 premerge=9 end=41exit 0 already on main
+19:58:26 #36993 run 46171565988.1: 30s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=7 premerge=7 end=30exit 0 already on main
+19:58:26 #37002 run b37002-6c581e7a09a2.3: 15s  Tphases=pr=0 refs=1 decide=1 lintprep=2 lint=5 premerge=5 end=14exit 0 
+19:58:27 run 46183149652.1 (check-proof #40524): no artifact after 3 tries, left to the batch checker
+19:58:35 #36995 run 46170655301.1: 39s  Tphases=pr=0 refs=4 decide=4 lintprep=6 lint=10 premerge=10 end=39exit 0 already on main
+19:58:36 #36994 run 46170654756.1: 40s group commit: 2 merges fetch=6.138357941s build=1.341165542s push=2.404370067s Tphases=pr=0 refs=1 decide=2 lintprep=2 lint=6 premerge=6 end=40exit 0 
+19:58:36 #37001 run 46170667927.1: 25s  Tphases=pr=0 refs=1 decide=1 lintprep=2 lint=6 premerge=6 end=25exit 0 already on main
+19:58:36 #37000 run 46170664887.1: 35s  Tphases=pr=0 refs=2 decide=2 lintprep=4 lint=8 premerge=8 end=35exit 0 already on main
+19:58:36 #36979 run 46170592229.1: 65s  Tphases=pr=0 refs=3 decide=3 lintprep=4 lint=8 premerge=8 end=65exit 0 already on main
+19:58:36 #36996 run 46170655489.1: 39s  Tphases=pr=0 refs=1 decide=1 lintprep=2 lint=6 premerge=6 end=39exit 0 already on main
+19:58:36 #37005 run b37005-9c93aef2e948.3: 24s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=6 premerge=6 end=24exit 0 merged by git
+19:58:36 #37004 run 46170678956.1: 25s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=6 premerge=6 end=25exit 0 merged by git
+19:58:40 #40860 run 46183881284.1: 2s  Tphases=pr=0 refs=1 decide=1 lint=1 end=2exit 0 
+19:58:44 #37009 run 46178394390.1: 24s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=8 premerge=8 end=24exit 0 merged by git
+19:58:44 #37010 run b37010-c1efe91c051f.3: 24s  Tphases=pr=0 refs=1 decide=1 lintprep=2 lint=6 premerge=6 end=24exit 0 merged by git
+19:58:44 #37008 run b37008-2d87107c7fcd.3: 24s  Tphases=pr=0 refs=1 decide=1 lintprep=2 lint=7 premerge=7 end=24exit 0 merged by git
+19:58:44 #37012 run b37012-904b6129672c.3: 17s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=6 premerge=6 end=17exit 0 merged by git
+19:58:44 #37003 run 46170672754.1: 33s group commit: 4 merges fetch=4.397183261s build=1.769937515s push=2.512033255s Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=6 premerge=6 end=33exit 0 
+19:58:44 #36999 run 46170663235.1: 43s  Tphases=pr=0 refs=5 decide=5 lintprep=6 lint=8 premerge=8 end=43exit 0 already on main
+19:58:44 #37002 run 46170667972.1: 33s  Tphases=pr=0 refs=1 decide=2 lintprep=3 lint=6 premerge=6 end=33exit 0 
+19:58:44 #37007 run 46170691882.1: 24s  Tphases=pr=0 refs=6 decide=6 lintprep=8 lint=11 premerge=11 end=24exit 0 already on main
+19:58:44 #36998 run 46170659887.1: 44s  Tphases=pr=1 refs=6 decide=7 lintprep=8 lint=10 premerge=10 end=44exit 0 already on main
+19:58:53 #37011 run b37011-625af3e0f1c5.3: 27s  Tphases=pr=0 refs=3 decide=3 lintprep=4 lint=8 premerge=8 end=27exit 0 merged by git
+19:58:53 #37004 run b37004-228c029e54ce.3: 42s group commit: 4 merges fetch=3.538771286s build=2.273071943s push=2.880308990s Tphases=pr=0 refs=1 decide=1 lintprep=2 lint=6 premerge=6 end=42exit 0 already on main
+19:58:53 #37014 run b37014-4e4c512cf8fc.3: 26s  Tphases=pr=0 refs=2 decide=2 lintprep=4 lint=8 premerge=8 end=26exit 0 merged by git
+19:58:53 #37016 run b37016-869f111746aa.3: 16s  Tphases=pr=0 refs=1 decide=1 lintprep=2 lint=4 premerge=4 end=16exit 0 merged by git
+19:58:53 #37005 run 46170683667.1: 37s  Tphases=pr=0 refs=1 decide=2 lintprep=3 lint=4 premerge=4 end=37exit 0 already on main
+19:58:53 #37015 run b37015-277ec8815cfd.3: 26s  Tphases=pr=0 refs=4 decide=4 lintprep=5 lint=8 premerge=8 end=26exit 0 merged by git
+19:58:53 #37013 run 46170723635.1: 25s  Tphases=pr=0 refs=4 decide=4 lintprep=5 lint=8 premerge=8 end=25exit 0 already on main
+19:59:02 #37017 run 46170751668.1: 24s  Tphases=pr=0 refs=2 decide=3 lintprep=3 lint=5 premerge=5 end=24exit 0 merged by git
+19:59:02 #37021 run b37021-137d210239bf.3: 17s  Tphases=pr=0 refs=1 decide=1 lintprep=3 lint=6 premerge=6 end=17exit 0 merged by git
+19:59:02 #37018 run 46170753067.1: 24s  Tphases=pr=0 refs=1 decide=1 lintprep=2 lint=5 premerge=5 end=24exit 0 merged by git
+19:59:02 #37019 run b37019-ea121181904a.3: 25s  Tphases=pr=0 refs=5 decide=5 lintprep=6 lint=8 premerge=8 end=25exit 0 merged by git
+19:59:02 #37008 run 46170692596.1: 42s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=8 premerge=8 end=42exit 0 
+19:59:02 #37010 run 46170702536.1: 41s  Tphases=pr=0 refs=2 decide=2 lintprep=4 lint=8 premerge=8 end=41exit 0 
+19:59:02 #37012 run 46170711800.1: 34s group commit: 4 merges fetch=4.170598052s build=2.270384050s push=2.565316194s Tphases=pr=0 refs=1 decide=2 lintprep=3 lint=7 premerge=7 end=34exit 0 
+19:59:02 #37007 run b37007-204045f9ec73.3: 42s  Tphases=pr=0 refs=8 decide=8 lintprep=9 lint=12 premerge=12 end=42exit 0 already on main
+19:59:07 #40743 run 46183592937.1: 3s  Tphases=pr=0 refs=2 decide=2 lint=2 end=3exit 0 
+19:59:24 #37015 run 46170736504.1: 55s  Tphases=pr=0 refs=2 decide=2 lintprep=4 lint=7 premerge=7 end=55exit 0 
+19:59:24 #37030 run b37030-2564c649a95b.3: 21s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=6 premerge=6 end=21exit 0 merged by git
+19:59:24 #37006 run 46170684679.1: 64s group commit: 13 merges fetch=2.943879007s build=1.630312583s push=5.634911833s Tphases=pr=0 refs=1 decide=2 lintprep=3 lint=6 premerge=7 end=64exit 0 already on main
+19:59:24 #37025 run b37025-c96719570d16.3: 38s  Tphases=pr=0 refs=2 decide=3 lintprep=4 lint=8 premerge=8 end=38exit 0 merged by git
+19:59:24 #37016 run 46170746793.1: 46s  Tphases=pr=0 refs=1 decide=1 lintprep=2 lint=4 premerge=4 end=46exit 0 already on main
+19:59:24 #37020 run 46183078459.1: 39s  Tphases=pr=0 refs=2 decide=2 lintprep=4 lint=6 premerge=7 end=39exit 0 merged by git
+19:59:24 #37023 run 46170783721.1: 38s  Tphases=pr=0 refs=1 decide=1 lintprep=3 lint=5 premerge=6 end=38exit 0 merged by git
+19:59:24 #37019 run 46170757572.1: 42s  Tphases=pr=0 refs=3 decide=3 lintprep=4 lint=7 premerge=7 end=42exit 0 already on main
+19:59:24 #37018 run b37018-0f15ebf6c6e6.3: 47s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=6 premerge=6 end=47exit 0 
+19:59:25 #37028 run b37028-6148aac99543.3: 30s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=6 premerge=6 end=30exit 0 merged by git
+19:59:25 #37031 run 46170837817.1: 21s  Tphases=pr=0 refs=1 decide=1 lintprep=2 lint=5 premerge=5 end=20exit 0 merged by git
+19:59:25 #37026 run b37026-3c67b4f26973.3: 31s  Tphases=pr=0 refs=1 decide=2 lintprep=3 lint=6 premerge=6 end=31exit 0 merged by git
+19:59:25 #37029 run b37029-84b09d726f4c.3: 22s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=5 premerge=5 end=22exit 0 merged by git
+19:59:25 #35265 run 46183516759.1: 21s  Tphases=pr=0 refs=1 decide=1 lintprep=2 lint=5 premerge=5 end=21exit 0 merged by git
+19:59:25 #37017 run b37017-b015644a3b63.3: 48s  Tphases=pr=0 refs=2 decide=3 lintprep=4 lint=6 premerge=6 end=48exit 0 already on main
+19:59:25 #37021 run 46170773649.1: 40s  Tphases=pr=0 refs=2 decide=2 lintprep=4 lint=8 premerge=8 end=40exit 0 
+19:59:25 #37022 run 46172152111.1: 39s  Tphases=pr=0 refs=4 decide=5 lintprep=6 lint=9 premerge=9 end=39exit 0 merged by git
+19:59:25 #37032 run b37032-744a42107036.3: 17s  Tphases=pr=0 refs=1 decide=1 lintprep=2 lint=3 premerge=3 end=17exit 0 merged by git
+19:59:25 #37011 run 46170703316.1: 58s  Tphases=pr=0 refs=2 decide=3 lintprep=4 lint=8 premerge=8 end=58exit 0 already on main
+19:59:25 #37014 run 46170732212.1: 57s  Tphases=pr=0 refs=2 decide=2 lintprep=4 lint=8 premerge=8 end=57exit 0 
+19:59:25 #37024 run b37024-25fef08b5b13.3: 40s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=8 premerge=8 end=40exit 0 merged by git
+19:59:26 #37027 run 46170805616.1: 30s  Tphases=pr=0 refs=1 decide=1 lintprep=2 lint=5 premerge=5 end=30exit 0 merged by git
+19:59:28 #37024 run 46170783086.1: 42s  Tphases=pr=0 refs=1 decide=2 lintprep=3 lint=7 premerge=7 end=42exit 0 already on main
+19:59:28 #37006 run b37006-b185f1260e31.3: 69s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=9 premerge=9 end=69exit 0 already on main
+19:59:29 #37023 run b37023-52fc1f1944a7.3: 43s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=8 premerge=8 end=43exit 0 
+19:59:29 #37027 run b37027-8066836c54f2.3: 34s  Tphases=pr=0 refs=3 decide=3 lintprep=4 lint=7 premerge=7 end=34exit 0 already on main
+19:59:40 #37031 run b37031-57e52e9b6566.3: 37s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=6 premerge=6 end=37exit 0 
+19:59:40 #37026 run 46170792560.1: 45s  Tphases=pr=0 refs=1 decide=1 lintprep=3 lint=5 premerge=5 end=45exit 0 already on main
+19:59:40 #37028 run 46170807976.1: 45s  Tphases=pr=0 refs=1 decide=1 lintprep=2 lint=5 premerge=5 end=45exit 0 
+19:59:40 #37029 run 46170816394.1: 36s  Tphases=pr=0 refs=1 decide=1 lintprep=2 lint=5 premerge=5 end=36exit 0 already on main
+19:59:41 #37030 run 46170838322.1: 36s  Tphases=pr=0 refs=3 decide=3 lintprep=4 lint=6 premerge=6 end=36exit 0 already on main
+19:59:41 #37025 run 46170785827.1: 46s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=6 premerge=6 end=46exit 0 already on main
+19:59:48 #37034 run b37034-c1a42a3a686f.3: 23s group commit: 1 merges fetch=1.364363535s build=1.261697822s push=2.808704221s Tphases=pr=0 refs=2 decide=2 lintprep=4 lint=14 premerge=14 end=23exit 0 merged by git
+20:00:05 #37038 run b37038-23c46e3990c4.3: 40s group commit: 19 merges fetch=2.014119396s build=2.285501049s push=3.029068583s Tphases=pr=0 refs=2 decide=3 lintprep=5 lint=15 premerge=15 end=40exit 0 merged by git
+20:00:05 #37050 run 46171036135.1: 35s  Tphases=pr=0 refs=4 decide=5 lintprep=7 lint=15 premerge=15 end=35exit 0 merged by git
+20:00:05 #37048 run b37048-6015c843b950.3: 37s  Tphases=pr=0 refs=3 decide=4 lintprep=7 lint=17 premerge=17 end=37exit 0 merged by git
+20:00:05 #37037 run 46170870557.1: 39s  Tphases=pr=0 refs=2 decide=3 lintprep=6 lint=17 premerge=17 end=39exit 0 merged by git
+20:00:05 #37039 run 46170877961.1: 39s  Tphases=pr=0 refs=9 decide=10 lintprep=14 lint=22 premerge=22 end=39exit 0 merged by git
+20:00:05 #37036 run b37036-a13877654715.3: 40s  Tphases=pr=0 refs=2 decide=3 lintprep=6 lint=18 premerge=18 end=40exit 0 merged by git
+20:00:05 #37041 run b37041-ff9d8933e0f5.3: 39s  Tphases=pr=0 refs=2 decide=3 lintprep=6 lint=15 premerge=15 end=39exit 0 merged by git
+20:00:05 #37045 run b37045-53e6f9e63092.3: 39s  Tphases=pr=0 refs=3 decide=3 lintprep=7 lint=18 premerge=18 end=39exit 0 merged by git
+20:00:05 #37051 run 46171087861.1: 35s  Tphases=pr=0 refs=3 decide=4 lintprep=8 lint=16 premerge=16 end=34exit 0 merged by git
+20:00:05 #37053 run 46171060739.1: 34s  Tphases=pr=0 refs=3 decide=5 lintprep=8 lint=16 premerge=16 end=34exit 0 merged by git
+20:00:05 #37033 run 46183494326.1: 40s  Tphases=pr=1 refs=3 decide=3 lintprep=6 lint=16 premerge=16 end=40exit 0 merged by git
+20:00:05 #37058 run b37058-c55ff7d3de80.3: 17s  Tphases=pr=1 refs=2 decide=2 lintprep=3 lint=5 premerge=5 end=17exit 0 merged by git
+20:00:05 #37034 run 46170860264.1: 39s  Tphases=pr=0 refs=2 decide=2 lintprep=6 lint=17 premerge=17 end=39exit 0 
+20:00:05 #37047 run 46181701427.1: 37s  Tphases=pr=0 refs=4 decide=5 lintprep=8 lint=18 premerge=18 end=37exit 0 merged by git
+20:00:05 #37040 run b37040-b763e62f67ad.3: 40s  Tphases=pr=0 refs=2 decide=3 lintprep=6 lint=19 premerge=19 end=39exit 0 merged by git
+20:00:06 #37046 run b37046-f3a0e149eb45.3: 39s  Tphases=pr=0 refs=3 decide=4 lintprep=7 lint=20 premerge=20 end=39exit 0 merged by git
+20:00:11 #37036 run 46170868673.1: 45s  Tphases=pr=0 refs=3 decide=3 lintprep=6 lint=18 premerge=18 end=45exit 0 already on main
+20:00:11 #37038 run 46170875486.1: 45s  Tphases=pr=0 refs=2 decide=3 lintprep=5 lint=15 premerge=15 end=45exit 0 already on main
+20:00:11 #37055 run 46171098971.1: 23s  Tphases=pr=0 refs=1 decide=2 lintprep=3 lint=6 premerge=6 end=23exit 0 merged by git
+20:00:11 #37040 run 46170882804.1: 45s  Tphases=pr=0 refs=3 decide=4 lintprep=7 lint=20 premerge=20 end=45exit 0 already on main
+20:00:12 #37057 run 46171089798.1: 23s  Tphases=pr=0 refs=2 decide=2 lintprep=4 lint=6 premerge=7 end=23exit 0 merged by git
+20:00:12 #37041 run 46170888607.1: 44s  Tphases=pr=0 refs=8 decide=8 lintprep=12 lint=20 premerge=20 end=44exit 0 already on main
+20:00:12 #37056 run 46171071410.1: 24s  Tphases=pr=0 refs=2 decide=2 lintprep=4 lint=7 premerge=7 end=24exit 0 merged by git
+20:00:12 #37054 run 46171038770.1: 24s  Tphases=pr=0 refs=1 decide=2 lintprep=3 lint=6 premerge=6 end=24exit 0 merged by git
+20:00:17 #37048 run 46171020672.1: 48s  Tphases=pr=0 refs=3 decide=4 lintprep=7 lint=16 premerge=16 end=48exit 0 already on main
+20:00:17 #37053 run b37053-6b6882247a49.3: 47s  Tphases=pr=0 refs=3 decide=4 lintprep=8 lint=17 premerge=17 end=47exit 0 
+20:00:17 #37046 run 46171088769.1: 49s  Tphases=pr=0 refs=3 decide=4 lintprep=8 lint=20 premerge=20 end=49exit 0 already on main
+20:00:17 #37045 run 46171051584.1: 50s  Tphases=pr=0 refs=2 decide=3 lintprep=6 lint=17 premerge=17 end=50exit 0 
+20:00:17 #37039 run b37039-0c46e3dd2b16.3: 52s  Tphases=pr=0 refs=12 decide=13 lintprep=17 lint=23 premerge=23 end=52exit 0 already on main
+20:00:17 #37051 run b37051-c802edb7899b.3: 48s  Tphases=pr=0 refs=11 decide=12 lintprep=15 lint=19 premerge=19 end=48exit 0 already on main
+20:00:30 #37055 run b37055-6633edd22831.3: 43s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=7 premerge=7 end=43exit 0 already on main
+20:00:30 #37054 run b37054-e41403176ef6.3: 43s  Tphases=pr=0 refs=3 decide=4 lintprep=5 lint=8 premerge=8 end=43exit 0 already on main
+20:00:35 #40831 run 46183820374.1: 2s  Tphases=pr=0 refs=1 decide=1 lint=1 end=2exit 0 
+20:00:40 #37060 run b37060-5bac09c28cd6.3: 34s  Tphases=pr=0 refs=2 decide=2 lintprep=4 lint=13 premerge=13 end=34exit 0 merged by git
+20:00:40 #37059 run b37059-651571b89f6e.3: 34s  Tphases=pr=0 refs=2 decide=2 lintprep=4 lint=12 premerge=12 end=34exit 0 merged by git
+20:00:40 #37072 run b37072-1edf60eb3bf2.3: 27s  Tphases=pr=0 refs=3 decide=4 lintprep=8 lint=14 premerge=14 end=27exit 0 merged by git
+20:00:40 #37063 run b37063-7d76fc2503eb.3: 34s  Tphases=pr=0 refs=3 decide=3 lintprep=6 lint=16 premerge=16 end=34exit 0 merged by git
+20:00:40 #37064 run 46171107774.1: 33s  Tphases=pr=0 refs=2 decide=2 lintprep=5 lint=15 premerge=15 end=33exit 0 merged by git
+20:00:40 #37068 run 46171154208.1: 31s  Tphases=pr=0 refs=2 decide=3 lintprep=7 lint=16 premerge=16 end=31exit 0 merged by git
+20:00:40 #37070 run b37070-1aa30e0728ad.3: 27s  Tphases=pr=0 refs=3 decide=3 lintprep=5 lint=14 premerge=14 end=27exit 0 merged by git
+20:00:40 #37067 run 46183305059.1: 32s  Tphases=pr=0 refs=3 decide=3 lintprep=6 lint=16 premerge=16 end=31exit 0 merged by git
+20:00:40 #37061 run b37061-31ebb692a15a.3: 34s group commit: 12 merges fetch=3.936774444s build=1.703165430s push=4.954216840s Tphases=pr=0 refs=2 decide=2 lintprep=4 lint=11 premerge=11 end=34exit 0 merged by git
+20:00:40 #37066 run 46171092996.1: 33s  Tphases=pr=0 refs=2 decide=3 lintprep=5 lint=15 premerge=15 end=33exit 0 merged by git
+20:00:40 #37062 run b37062-5f756706e33d.3: 34s  Tphases=pr=0 refs=2 decide=3 lintprep=5 lint=15 premerge=15 end=34exit 0 merged by git
+20:00:41 #37065 run 46171082034.1: 34s  Tphases=pr=0 refs=2 decide=3 lintprep=5 lint=14 premerge=14 end=34exit 0 merged by git
+20:00:42 run 46183303899.1 (check-proof #40599): no artifact yet (try 1)
+20:00:45 #40746 run 46183603088.1: 3s  Tphases=pr=0 refs=2 decide=2 lint=2 end=3exit 0 
+20:00:47 #37086 run b37086-261fb101947f.3: 1s  Tphases=pr=0 end=1exit 0 
+20:00:48 #37074 run 46171112195.1: 28s  Tphases=pr=0 refs=4 decide=4 lintprep=7 lint=11 premerge=11 end=28exit 0 merged by git
+20:00:48 #37059 run 46171076063.1: 41s  Tphases=pr=0 refs=1 decide=2 lintprep=5 lint=15 premerge=15 end=41exit 0 already on main
+20:00:48 #37071 run 46171111500.1: 34s  Tphases=pr=0 refs=4 decide=5 lintprep=8 lint=15 premerge=15 end=34exit 0 merged by git
+20:00:48 #37061 run 46171082147.1: 41s  Tphases=pr=0 refs=1 decide=2 lintprep=3 lint=12 premerge=12 end=41exit 0 
+20:00:48 #37073 run b37073-7e6fba922036.3: 34s  Tphases=pr=0 refs=3 decide=4 lintprep=7 lint=14 premerge=15 end=34exit 0 merged by git
+20:00:48 #37077 run b37077-ee8a13176914.3: 29s  Tphases=pr=0 refs=3 decide=4 lintprep=6 lint=12 premerge=12 end=28exit 0 merged by git
+20:00:48 #37062 run 46171104385.1: 41s  Tphases=pr=0 refs=2 decide=2 lintprep=5 lint=16 premerge=16 end=41exit 0 already on main
+20:00:48 #37060 run 46171124114.1: 41s  Tphases=pr=0 refs=1 decide=2 lintprep=5 lint=15 premerge=15 end=41exit 0 already on main
+20:00:48 #37076 run 46171142585.1: 28s  Tphases=pr=1 refs=4 decide=5 lintprep=6 lint=10 premerge=10 end=28exit 0 merged by git
+20:00:48 #37075 run 46171102492.1: 28s  Tphases=pr=0 refs=4 decide=4 lintprep=7 lint=12 premerge=12 end=28exit 0 merged by git
+20:00:48 #37069 run b37069-cb809d64dd5a.3: 35s group commit: 7 merges fetch=2.248823131s build=1.383014933s push=2.915192136s Tphases=pr=0 refs=3 decide=4 lintprep=8 lint=15 premerge=15 end=35exit 0 merged by git
+20:00:55 #37070 run 46171093972.1: 41s  Tphases=pr=0 refs=4 decide=4 lintprep=8 lint=15 premerge=15 end=41exit 0 already on main
+20:00:56 #37066 run b37066-6e7b21a52aca.3: 48s group commit: 1 merges fetch=3.132564760s build=1.640058192s push=2.661518780s Tphases=pr=0 refs=2 decide=2 lintprep=5 lint=15 premerge=15 end=48exit 0 
+20:00:56 #37072 run 46171099485.1: 41s  Tphases=pr=0 refs=4 decide=4 lintprep=8 lint=15 premerge=15 end=41exit 0 
+20:00:56 #37069 run 46171112588.1: 41s  Tphases=pr=0 refs=3 decide=4 lintprep=8 lint=15 premerge=15 end=41exit 0 already on main
+20:00:56 #37073 run 46171089962.1: 35s  Tphases=pr=0 refs=3 decide=4 lintprep=7 lint=11 premerge=11 end=35exit 0 already on main
+20:00:56 #37063 run 46171090093.1: 49s  Tphases=pr=0 refs=5 decide=6 lintprep=9 lint=18 premerge=18 end=49exit 0 already on main
+20:00:56 #37078 run 46171179710.1: 19s  Tphases=pr=0 refs=1 decide=1 lintprep=2 lint=3 premerge=3 end=19exit 0 merged by git
+20:01:01 run 46183303899.1 (check-proof #40599): no artifact yet (try 2)
+20:01:05 #37076 run b37076-053c4f62c4de.3: 46s group commit: 4 merges fetch=2.789696312s build=2.969172307s push=3.354897456s Tphases=pr=0 refs=4 decide=5 lintprep=8 lint=12 premerge=12 end=46exit 0 already on main
+20:01:05 #37079 run 46171103857.1: 23s  Tphases=pr=0 refs=1 decide=1 lintprep=2 lint=6 premerge=6 end=23exit 0 merged by git
+20:01:05 #37077 run 46171096167.1: 33s  Tphases=pr=0 refs=2 decide=2 lintprep=2 lint=3 premerge=3 end=33exit 0 already on main
+20:01:05 #37081 run 46181814188.1: 23s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=10 premerge=10 end=23exit 0 merged by git
+20:01:05 #37083 run 46171192499.1: 23s  Tphases=pr=0 refs=2 decide=3 lintprep=4 lint=9 premerge=9 end=23exit 0 already on main
+20:01:05 #37080 run b37080-1aefad071546.3: 24s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=8 premerge=8 end=24exit 0 merged by git
+20:01:05 #37082 run b37082-9e419a9811da.3: 23s  Tphases=pr=0 refs=1 decide=1 lintprep=2 lint=7 premerge=7 end=23exit 0 merged by git
+20:01:08 #37098 run b37098-db63f2b290cd.3: 5s  Tphases=pr=0 refs=5 end=5exit 0 skip: stale
+20:01:12 #37098 run 46171065483.1: 6s  Tphases=pr=0 refs=5 end=6exit 0 skip: stale
+20:01:16 #37084 run 46171023992.1: 33s  Tphases=pr=0 refs=5 decide=5 lintprep=7 lint=13 premerge=13 end=33exit 0 merged by git
+20:01:17 #37088 run 46171025978.1: 28s  Tphases=pr=0 refs=3 decide=4 lintprep=6 lint=11 premerge=11 end=28exit 0 merged by git
+20:01:17 #37093 run 46171037737.1: 27s  Tphases=pr=0 refs=2 decide=3 lintprep=4 lint=9 premerge=9 end=26exit 0 merged by git
+20:01:17 #37090 run 46171028602.1: 27s  Tphases=pr=0 refs=2 decide=3 lintprep=5 lint=9 premerge=9 end=27exit 0 merged by git
+20:01:17 #37089 run 46182480285.1: 28s  Tphases=pr=0 refs=3 decide=3 lintprep=5 lint=8 premerge=8 end=27exit 0 merged by git
+20:01:17 #37087 run 46171187119.1: 28s  Tphases=pr=0 refs=7 decide=7 lintprep=9 lint=14 premerge=14 end=28exit 0 already on main
+20:01:17 #37091 run 46171033795.1: 27s  Tphases=pr=0 refs=3 decide=3 lintprep=5 lint=11 premerge=11 end=27exit 0 merged by git
+20:01:17 #40100 run 46184106227.1: 2s  Tphases=pr=0 refs=1 decide=1 lint=1 end=2exit 0 
+20:01:17 #37085 run 46182565574.1: 34s group commit: 7 merges fetch=5.013339838s build=4.283351839s push=2.760183855s Tphases=pr=0 refs=2 decide=3 lintprep=5 lint=11 premerge=11 end=34exit 0 merged by git
+20:01:19 run 46183303899.1 (check-proof #40599): no artifact after 3 tries, left to the batch checker
+20:01:28 #37101 run b37101-d26d8e76736e.3: 22s  Tphases=pr=0 refs=2 decide=2 lintprep=4 lint=8 premerge=8 end=22exit 0 merged by git
+20:01:28 #37096 run b37096-ce3a33962333.3: 27s  Tphases=pr=0 refs=2 decide=2 lintprep=4 lint=9 premerge=9 end=27exit 0 merged by git
+20:01:28 #37095 run b37095-832a4911445b.3: 27s  Tphases=pr=0 refs=2 decide=3 lintprep=4 lint=8 premerge=8 end=27exit 0 merged by git
+20:01:28 #37100 run 46171068899.1: 22s  Tphases=pr=0 refs=2 decide=3 lintprep=4 lint=8 premerge=8 end=22exit 0 merged by git
+20:01:28 #37099 run b37099-d6d742176159.3: 23s  Tphases=pr=0 refs=2 decide=3 lintprep=4 lint=8 premerge=8 end=23exit 0 merged by git
+20:01:28 #37082 run 46171144802.1: 46s group commit: 7 merges fetch=4.926708641s build=3.817505580s push=2.629755869s Tphases=pr=0 refs=2 decide=2 lintprep=4 lint=10 premerge=10 end=46exit 0 
+20:01:28 #37097 run b37097-c8d5b62432d1.3: 26s  Tphases=pr=0 refs=1 decide=2 lintprep=3 lint=9 premerge=9 end=26exit 0 merged by git
+20:01:28 #37083 run b37083-6f7d7b030d3e.3: 46s  Tphases=pr=0 refs=1 decide=2 lintprep=3 lint=9 premerge=9 end=46exit 0 already on main
+20:01:28 #37092 run 46171036121.1: 38s  Tphases=pr=0 refs=7 decide=7 lintprep=9 lint=13 premerge=13 end=38exit 0 already on main
+20:01:28 #37079 run b37079-c8a076602d1c.3: 47s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=9 premerge=9 end=47exit 0 already on main
+20:01:28 #37080 run 46171168024.1: 46s  Tphases=pr=0 refs=2 decide=2 lintprep=4 lint=11 premerge=11 end=46exit 0 
+20:01:28 #37094 run b37094-f3faa6da2327.3: 38s  Tphases=pr=0 refs=8 decide=9 lintprep=10 lint=13 premerge=13 end=38exit 0 merged by git
+20:01:40 #37103 run b37103-41823803bacc.3: 33s  Tphases=pr=0 refs=7 decide=7 lintprep=8 lint=10 premerge=10 end=33exit 0 merged by git
+20:01:40 #37104 run b37104-025986ff671d.3: 22s  Tphases=pr=0 refs=1 decide=2 lintprep=3 lint=5 premerge=6 end=22exit 0 merged by git
+20:01:40 #37107 run b37107-c8d37944990d.3: 22s  Tphases=pr=0 refs=1 decide=1 lintprep=2 lint=5 premerge=5 end=21exit 0 merged by git
+20:01:40 #37106 run b37106-30784d51dea4.3: 22s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=6 premerge=6 end=22exit 0 merged by git
+20:01:41 #37108 run b37108-16df076c428c.3: 21s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=6 premerge=6 end=21exit 0 merged by git
+20:01:41 #37105 run 46171102771.1: 22s  Tphases=pr=0 refs=1 decide=2 lintprep=3 lint=7 premerge=7 end=22exit 0 merged by git
+20:01:41 #37091 run b37091-7baa8e8d6aa4.3: 52s  Tphases=pr=0 refs=3 decide=4 lintprep=5 lint=12 premerge=12 end=52exit 0 already on main
+20:01:41 #37090 run b37090-cdd303011c39.3: 52s group commit: 6 merges fetch=5.925073832s build=3.578799984s push=2.788950389s Tphases=pr=0 refs=2 decide=3 lintprep=4 lint=10 premerge=10 end=52exit 0 already on main
+20:01:41 #37093 run b37093-80d28ae0fa41.3: 52s  Tphases=pr=0 refs=2 decide=3 lintprep=4 lint=11 premerge=11 end=51exit 0 already on main
+20:01:41 run 46183497265.1 (check-proof #40227): no artifact yet (try 1)
+20:01:45 #40977 run 46184153827.1: 3s  Tphases=pr=0 refs=2 decide=2 lint=2 end=3exit 0 
+20:01:47 #37115 run b37115-77dde81f705b.3: 18s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=7 premerge=7 end=18exit 0 merged by git
+20:01:47 #37094 run 46171040076.1: 55s group commit: 5 merges fetch=2.003440669s build=.918897362s push=2.893038584s Tphases=pr=0 refs=9 decide=10 lintprep=11 lint=15 premerge=15 end=55exit 0 already on main
+20:01:47 #37116 run b37116-e20cfeb45e07.3: 18s  Tphases=pr=0 refs=1 decide=2 lintprep=3 lint=8 premerge=8 end=18exit 0 merged by git
+20:01:47 #37113 run b37113-b8aa53009226.3: 18s  Tphases=pr=0 refs=1 decide=2 lintprep=3 lint=8 premerge=8 end=18exit 0 merged by git
+20:01:47 #37096 run 46171044350.1: 45s  Tphases=pr=0 refs=3 decide=4 lintprep=5 lint=10 premerge=11 end=45exit 0 already on main
+20:01:47 #37099 run 46171067749.1: 41s  Tphases=pr=0 refs=2 decide=2 lintprep=4 lint=8 premerge=8 end=41exit 0 already on main
+20:01:47 #37097 run 46171056353.1: 45s  Tphases=pr=0 refs=1 decide=1 lintprep=3 lint=8 premerge=8 end=44exit 0 already on main
+20:01:47 #37101 run 46171076626.1: 40s  Tphases=pr=0 refs=3 decide=3 lintprep=5 lint=8 premerge=8 end=40exit 0 already on main
+20:01:47 #37095 run 46171044918.1: 45s  Tphases=pr=0 refs=2 decide=2 lintprep=4 lint=10 premerge=10 end=45exit 0 
+20:01:47 #37109 run b37109-6c2cff06ea78.3: 18s  Tphases=pr=0 refs=1 decide=1 lintprep=2 lint=7 premerge=7 end=18exit 0 merged by git
+20:01:47 #37111 run 46171120360.1: 18s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=8 premerge=8 end=18exit 0 
+20:01:47 #37114 run b37114-a81232bb7872.3: 18s  Tphases=pr=0 refs=1 decide=1 lintprep=2 lint=6 premerge=6 end=18exit 0 merged by git
+20:01:51 #37106 run 46171108759.1: 32s  Tphases=pr=0 refs=1 decide=2 lintprep=3 lint=6 premerge=6 end=31exit 0 already on main
+20:01:51 #37104 run 46171096912.1: 32s  Tphases=pr=0 refs=1 decide=1 lintprep=2 lint=6 premerge=6 end=32exit 0 already on main
+20:01:51 #37105 run b37105-f266efb8d0e1.3: 33s  Tphases=pr=0 refs=2 decide=2 lintprep=4 lint=8 premerge=8 end=33exit 0 already on main
+20:01:51 #37107 run 46171108270.1: 32s  Tphases=pr=0 refs=1 decide=2 lintprep=3 lint=7 premerge=7 end=32exit 0 already on main
+20:01:51 #37103 run 46171087058.1: 41s  Tphases=pr=0 refs=5 decide=5 lintprep=6 lint=7 premerge=7 end=41exit 0 already on main
+20:01:51 #37108 run 46171112330.1: 22s  Tphases=pr=0 refs=2 decide=2 lintprep=4 lint=8 premerge=8 end=22exit 0 
+20:01:56 #37124 run b37124-d8de33b6a6b4.3: 8s  Tphases=pr=0 refs=7 end=8exit 0 skip: stale
+20:01:57 #37124 run 46171172900.1: 8s  Tphases=pr=0 refs=7 end=8exit 0 skip: stale
+20:02:01 #37109 run 46171113475.1: 31s  Tphases=pr=0 refs=2 decide=2 lintprep=4 lint=8 premerge=8 end=31exit 0 already on main
+20:02:01 #37114 run 46171128119.1: 31s group commit: 3 merges fetch=2.807940563s build=2.944164243s push=3.511296570s Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=8 premerge=8 end=31exit 0 already on main
+20:02:01 #37113 run 46171127809.1: 32s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=8 premerge=8 end=31exit 0 
+20:02:01 #37116 run 46171141290.1: 30s  Tphases=pr=0 refs=2 decide=2 lintprep=4 lint=7 premerge=7 end=29exit 0 already on main
+20:02:01 #37115 run 46171129577.1: 32s  Tphases=pr=0 refs=2 decide=2 lintprep=4 lint=9 premerge=9 end=32exit 0 already on main
+20:02:01 #37118 run b37118-dc4004f45c5c.3: 20s  Tphases=pr=0 refs=1 decide=1 lintprep=2 lint=6 premerge=6 end=20exit 0 merged by git
+20:02:01 #37117 run b37117-2f1ce2dfd5bf.3: 20s  Tphases=pr=0 refs=1 decide=1 lintprep=2 lint=4 premerge=4 end=20exit 0 merged by git
+20:02:01 #37119 run b37119-54169bfebc68.3: 20s  Tphases=pr=0 refs=1 decide=1 lintprep=2 lint=6 premerge=6 end=20exit 0 merged by git
+20:02:02 #37120 run b37120-a77090d27b14.3: 21s  Tphases=pr=0 refs=4 decide=4 lintprep=6 lint=11 premerge=11 end=21exit 0 already on main
+20:02:04 run 46183497265.1 (check-proof #40227): no artifact yet (try 2)
+20:02:08 #40983 run 46184168728.1: 4s  Tphases=pr=0 refs=2 decide=3 lint=3 end=3exit 0 REJECTED
+without a comment
+20:02:09 #37121 run b37121-e7c1b6231395.3: 22s  Tphases=pr=0 refs=2 decide=3 lintprep=5 lint=11 premerge=11 end=22exit 0 merged by git
+20:02:09 #37119 run 46171165196.1: 28s  Tphases=pr=0 refs=1 decide=1 lintprep=2 lint=6 premerge=6 end=27exit 0 already on main
+20:02:09 #37118 run 46171144461.1: 28s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=8 premerge=8 end=28exit 0 
+20:02:09 #40986 run 46184171783.1: 4s  Tphases=pr=0 refs=2 decide=3 lint=3 end=4exit 0 
+20:02:09 #37117 run 46171147776.1: 28s group commit: 1 merges fetch=2.192732699s build=1.701226903s push=2.575760497s Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=7 premerge=7 end=28exit 0 
+20:02:20 #37125 run b37125-1fb70f773876.3: 32s  Tphases=pr=0 refs=3 decide=4 lintprep=6 lint=12 premerge=13 end=32exit 0 merged by git
+20:02:20 #37123 run b37123-e8e3bba91484.3: 32s  Tphases=pr=0 refs=2 decide=2 lintprep=4 lint=12 premerge=12 end=32exit 0 merged by git
+20:02:20 #37129 run b37129-6c1b469b4aae.3: 28s  Tphases=pr=0 refs=3 decide=3 lintprep=5 lint=13 premerge=13 end=28exit 0 merged by git
+20:02:20 #37128 run b37128-d4a7fcfaa324.3: 29s  Tphases=pr=0 refs=3 decide=4 lintprep=6 lint=14 premerge=14 end=29exit 0 merged by git
+20:02:20 #37120 run 46171167025.1: 38s group commit: 7 merges fetch=2.480508798s build=4.675439053s push=3.337940913s Tphases=pr=0 refs=2 decide=2 lintprep=4 lint=9 premerge=9 end=37exit 0 already on main
+20:02:20 #37126 run b37126-9db0ada8bd67.3: 31s  Tphases=pr=0 refs=2 decide=3 lintprep=5 lint=13 premerge=13 end=31exit 0 merged by git
+20:02:20 #37122 run b37122-f75861ad75e6.3: 32s  Tphases=pr=0 refs=2 decide=2 lintprep=4 lint=13 premerge=13 end=32exit 0 merged by git
+20:02:20 #37127 run b37127-bb42393cdef8.3: 31s  Tphases=pr=0 refs=9 decide=9 lintprep=12 lint=16 premerge=16 end=31exit 0 already on main
+20:02:20 #37130 run b37130-d62c45766e90.3: 27s  Tphases=pr=0 refs=3 decide=3 lintprep=5 lint=12 premerge=12 end=27exit 0 merged by git
+20:02:20 run 46183497265.1 (check-proof #40227): no artifact after 3 tries, left to the batch checker
+20:02:23 #40995 run 46184195352.1: 2s  Tphases=pr=0 refs=2 decide=2 lint=2 end=2exit 0 REJECTED
+without a comment
+20:02:23 #40991 run 46184189495.1: 2s  Tphases=pr=0 refs=2 decide=2 lint=2 end=2exit 0 REJECTED
+without a comment
+20:02:24 #40993 run 46184191291.1: 3s  Tphases=pr=0 refs=1 decide=2 lint=2 end=3exit 0 
+20:02:25 #37132 run b37132-29909ea7c554.3: 21s  Tphases=pr=0 refs=2 decide=3 lintprep=4 lint=11 premerge=11 end=21exit 0 merged by git
+20:02:25 #37133 run b37133-362460c47566.3: 21s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=9 premerge=9 end=20exit 0 merged by git
+20:02:25 #37131 run b37131-22a966eac787.3: 21s  Tphases=pr=0 refs=2 decide=2 lintprep=4 lint=9 premerge=9 end=21exit 0 merged by git
+20:02:25 #37134 run b37134-e5ddb16bf14a.3: 20s  Tphases=pr=0 refs=3 decide=3 lintprep=5 lint=11 premerge=11 end=20exit 0 merged by git
+20:02:25 #37121 run 46171381710.1: 37s group commit: 4 merges fetch=2.320250154s build=.882726454s push=2.329898414s Tphases=pr=0 refs=3 decide=3 lintprep=5 lint=12 premerge=12 end=37exit 0 already on main
+20:02:27 #37143 run b37143-2c296c486471.3: 1s  Tphases=pr=0 end=1exit 0 
+20:02:28 #41008 run 46184218483.1: 2s  Tphases=pr=0 refs=2 decide=2 lint=2 end=2exit 0 REJECTED
+without a comment
+20:02:30 #41006 run 46184213506.1: 4s  Tphases=pr=0 refs=3 decide=4 lint=4 end=4exit 0 REJECTED
+without a comment
+20:02:33 #37122 run 46171168138.1: 44s  Tphases=pr=0 refs=2 decide=3 lintprep=5 lint=13 premerge=13 end=44exit 0 already on main
+20:02:33 #37126 run 46171185348.1: 44s group commit: 3 merges fetch=3.190471818s build=1.575739918s push=2.725130767s Tphases=pr=0 refs=3 decide=4 lintprep=6 lint=13 premerge=13 end=43exit 0 already on main
+20:02:33 #37136 run 46171229032.1: 22s  Tphases=pr=0 refs=4 decide=5 lintprep=6 lint=9 premerge=9 end=22exit 0 merged by git
+20:02:33 #37127 run 46171193424.1: 41s  Tphases=pr=0 refs=13 decide=13 lintprep=15 lint=19 premerge=19 end=41exit 0 already on main
+20:02:33 #37123 run 46171168610.1: 44s  Tphases=pr=0 refs=2 decide=3 lintprep=5 lint=12 premerge=12 end=44exit 0 
+20:02:33 #37129 run 46171347581.1: 39s  Tphases=pr=0 refs=3 decide=3 lintprep=5 lint=12 premerge=12 end=39exit 0 already on main
+20:02:33 #37130 run 46171192105.1: 28s  Tphases=pr=0 refs=2 decide=2 lintprep=4 lint=11 premerge=11 end=28exit 0 already on main
+20:02:33 #37137 run b37137-3e2c7b3556db.3: 23s  Tphases=pr=0 refs=2 decide=3 lintprep=5 lint=8 premerge=8 end=23exit 0 merged by git
+20:02:33 #37125 run 46171173890.1: 44s  Tphases=pr=0 refs=2 decide=3 lintprep=5 lint=12 premerge=12 end=44exit 0 already on main
+20:02:33 #37128 run 46171190762.1: 41s  Tphases=pr=0 refs=3 decide=4 lintprep=6 lint=13 premerge=13 end=41exit 0 
+20:02:33 #37135 run b37135-3dd69f39166c.3: 25s  Tphases=pr=0 refs=3 decide=3 lintprep=5 lint=11 premerge=11 end=25exit 0 merged by git
+20:02:40 #37133 run 46171215106.1: 35s  Tphases=pr=0 refs=2 decide=3 lintprep=4 lint=9 premerge=9 end=35exit 0 
+20:02:40 #37131 run 46171197870.1: 35s group commit: 3 merges fetch=1.855128599s build=2.063688672s push=2.782115143s Tphases=pr=0 refs=2 decide=2 lintprep=4 lint=10 premerge=11 end=35exit 0 
+20:02:40 #37132 run 46171203360.1: 35s  Tphases=pr=0 refs=2 decide=3 lintprep=5 lint=11 premerge=11 end=35exit 0 already on main
+20:02:40 #37134 run 46171217493.1: 33s  Tphases=pr=0 refs=5 decide=5 lintprep=7 lint=11 premerge=11 end=33exit 0 already on main
+20:02:41 #37141 run 46183762694.1: 18s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=6 premerge=6 end=18exit 0 merged by git
+20:02:41 #37140 run b37140-4f17ce1bb7aa.3: 20s  Tphases=pr=0 refs=1 decide=1 lintprep=2 lint=5 premerge=5 end=19exit 0 merged by git
+20:02:41 #37138 run b37138-10f1b49dd7f7.3: 21s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=6 premerge=6 end=21exit 0 merged by git
+20:02:48 #37137 run 46171233778.1: 37s  Tphases=pr=0 refs=2 decide=3 lintprep=4 lint=9 premerge=9 end=37exit 0 already on main
+20:02:48 #37145 run b37145-99581d09e5c3.3: 22s  Tphases=pr=0 refs=2 decide=3 lintprep=4 lint=8 premerge=8 end=22exit 0 merged by git
+20:02:48 #37136 run b37136-e3862f14d54a.3: 38s group commit: 4 merges fetch=2.144648389s build=2.090626164s push=3.135168875s Tphases=pr=0 refs=5 decide=5 lintprep=7 lint=11 premerge=11 end=38exit 0 already on main
+20:02:48 #37142 run b37142-fec2fa91137c.3: 23s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=6 premerge=6 end=23exit 0 merged by git
+20:02:48 #37135 run 46171218736.1: 38s  Tphases=pr=0 refs=3 decide=4 lintprep=6 lint=11 premerge=11 end=38exit 0 already on main
+20:02:48 #37144 run 46171285073.1: 21s  Tphases=pr=0 refs=2 decide=2 lintprep=4 lint=7 premerge=7 end=21exit 0 merged by git
+20:02:48 #37146 run b37146-7b09dc7f27b6.3: 21s  Tphases=pr=0 refs=3 decide=3 lintprep=4 lint=9 premerge=9 end=21exit 0 merged by git
+20:02:49 #40118 run 46184234446.1: 3s  Tphases=pr=0 refs=2 decide=2 lint=2 end=3exit 0 
+20:02:55 #37150 run b37150-13a1f2c4de1b.3: 21s  Tphases=pr=0 refs=2 decide=2 lintprep=4 lint=9 premerge=9 end=20exit 0 merged by git
+20:02:55 #37138 run 46171235882.1: 34s  Tphases=pr=0 refs=1 decide=2 lintprep=3 lint=6 premerge=6 end=34exit 0 
+20:02:55 #37140 run 46171244153.1: 33s group commit: 4 merges fetch=2.121571107s build=2.326036599s push=2.915171397s Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=6 premerge=6 end=33exit 0 already on main
+20:02:56 #37151 run b37151-4322eb9565d1.3: 20s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=9 premerge=9 end=20exit 0 merged by git
+20:02:56 #37149 run b37149-e46cebe9aebf.3: 22s  Tphases=pr=0 refs=3 decide=3 lintprep=4 lint=11 premerge=11 end=22exit 0 merged by git
+20:02:56 #37147 run b37147-30ffea88ba1b.3: 25s  Tphases=pr=0 refs=3 decide=4 lintprep=5 lint=9 premerge=9 end=25exit 0 merged by git
+20:03:05 #37152 run b37152-ac755d60af31.3: 30s  Tphases=pr=0 refs=2 decide=3 lintprep=5 lint=11 premerge=11 end=30exit 0 merged by git
+20:03:05 #37148 run b37148-7e542cd837c0.3: 31s  Tphases=pr=0 refs=7 decide=8 lintprep=9 lint=12 premerge=13 end=31exit 0 merged by git
+20:03:05 #37153 run b37153-a8ba5d7b4134.3: 20s  Tphases=pr=0 refs=2 decide=2 lintprep=4 lint=7 premerge=7 end=20exit 0 merged by git
+20:03:05 #37144 run b37144-93fa225fc10c.3: 39s  Tphases=pr=0 refs=2 decide=3 lintprep=4 lint=8 premerge=8 end=39exit 0 
+20:03:05 #37154 run b37154-92b56a45e243.3: 20s  Tphases=pr=0 refs=2 decide=3 lintprep=4 lint=7 premerge=7 end=20exit 0 merged by git
+20:03:05 #37145 run 46171285356.1: 38s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=7 premerge=7 end=38exit 0 already on main
+20:03:05 #37146 run 46171292169.1: 35s  Tphases=pr=0 refs=3 decide=3 lintprep=5 lint=9 premerge=9 end=35exit 0 already on main
+20:03:05 #37142 run 46171274388.1: 39s group commit: 4 merges fetch=5.940616653s build=1.375246380s push=2.604278655s Tphases=pr=0 refs=1 decide=2 lintprep=3 lint=5 premerge=5 end=39exit 0 already on main
+20:03:05 #40927 run 46184012537.1: 3s  Tphases=pr=0 refs=2 decide=2 lint=2 end=3exit 0 
+20:03:15 #37155 run b37155-438a35057804.3: 30s  Tphases=pr=0 refs=3 decide=4 lintprep=5 lint=9 premerge=9 end=30exit 0 merged by git
+20:03:15 #37151 run 46171317545.1: 39s  Tphases=pr=0 refs=1 decide=2 lintprep=4 lint=10 premerge=10 end=39exit 0 already on main
+20:03:15 #37150 run 46171490782.1: 40s  Tphases=pr=0 refs=2 decide=3 lintprep=5 lint=11 premerge=11 end=40exit 0 
+20:03:15 #37161 run 46171361718.1: 17s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=6 premerge=6 end=17exit 0 merged by git
+20:03:15 #37156 run 46171339154.1: 25s  Tphases=pr=0 refs=2 decide=3 lintprep=5 lint=8 premerge=8 end=25exit 0 merged by git
+20:03:15 #37157 run b37157-7e252d9cfb6c.3: 25s  Tphases=pr=0 refs=2 decide=3 lintprep=4 lint=8 premerge=8 end=25exit 0 merged by git
+20:03:15 #37147 run 46171299920.1: 40s group commit: 9 merges fetch=1.563232595s build=1.637639001s push=5.855605535s Tphases=pr=0 refs=2 decide=3 lintprep=4 lint=8 premerge=8 end=40exit 0 
+20:03:15 #37160 run 46183567084.1: 17s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=5 premerge=5 end=17exit 0 merged by git
+20:03:15 #37162 run 46171362655.1: 17s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=6 premerge=6 end=17exit 0 merged by git
+20:03:15 #37158 run b37158-2476c410398d.3: 25s  Tphases=pr=0 refs=2 decide=3 lintprep=4 lint=9 premerge=9 end=25exit 0 merged by git
+20:03:15 #37159 run 46171354420.1: 24s  Tphases=pr=0 refs=2 decide=2 lintprep=4 lint=8 premerge=8 end=24exit 0 merged by git
+20:03:15 #37149 run 46171301160.1: 40s  Tphases=pr=0 refs=2 decide=3 lintprep=5 lint=12 premerge=12 end=40exit 0 already on main
+20:03:15 #37164 run b37164-772df54dd522.3: 18s  Tphases=pr=0 refs=2 decide=3 lintprep=4 lint=6 premerge=6 end=18exit 0 merged by git
+20:03:21 #37152 run 46171321845.1: 44s  Tphases=pr=0 refs=2 decide=3 lintprep=5 lint=10 premerge=10 end=44exit 0 already on main
+20:03:21 #37154 run 46171327255.1: 34s  Tphases=pr=0 refs=2 decide=2 lintprep=3 lint=8 premerge=8 end=34exit 0 already on main
+20:03:21 #37148 run 46171301500.1: 46s group commit: 1 merges fetch=2.987080913s build=.257318821s push=2.225761282s Tphases=pr=0 refs=7 decide=8 lintprep=9 lint=14 premerge=14 end=45exit 0 already on main
+20:03:21 #37166 run 46171387787.1: 14s  Tphases=pr=0 refs=1 decide=1 lintprep=2 lint=5 premerge=5 end=13exit 0 merged by git
+20:03:21 #37153 run 46171324544.1: 35s  Tphases=pr=0 refs=2 decide=3 lintprep=4 lint=9 premerge=9 end=35exit 0 
