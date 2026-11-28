@@ -102,11 +102,16 @@ lemma erdos_1955_contradiction (k : ℕ) (hk : 100 < k)
     exact Nat.ceil_le.mpr (by linarith [this, hu_ge])
   -- Upper bound from smoothness + product_smooth_bound
   have hupper : Nat.choose (u + t) t ≤ (u + t) ^ Nat.primeCounting k := by
-    -- every prime factor ≤ k by the run assumption, then apply the product lemma
+    -- The run assumption implies every prime factor of the binomial is ≤ k
+    -- Apply binomial_val_bound to each prime and multiply
     sorry
   -- Lower bound via binomial_lower_bound
   have hlower : (u + t) ^ Nat.primeCounting k < Nat.choose (u + t) t := by
-    -- (u/t)^t is much larger than (u+t)^π(k) when t ~ 6k/log k and u ≥ k²
+    -- binomial_lower_bound gives (u/t)^t ≤ choose
+    -- Compare (u/t)^t with (u+t)^π(k)
+    have hbin : (↑u / ↑t) ^ t ≤ Nat.choose (u + t) t := by
+      exact binomial_lower_bound u t ht_le_u ht_pos
+    -- (u/t)^t > (u+t)^π(k) for the chosen constant 6
     sorry
   exact lt_irrefl _ (hupper.trans_lt hlower)
 
