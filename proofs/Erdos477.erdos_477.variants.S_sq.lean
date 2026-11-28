@@ -1,94 +1,56 @@
 import FormalConjectures.ErdosProblems.«477»
 
-/-!
-# No additive complement for the squares
+theorem erdos477_sq_sub_sq_of_mod_four (m : ℤ) (h : m % 4 ≠ 2) : ∃ k l : ℤ, m = k ^ 2 - l ^ 2 := by
+  rcases Int.emod_two_eq_zero_or_one m with h2 | h2
+  · obtain ⟨t, rfl⟩ : ∃ t, m = 4 * t := ⟨m / 4, by omega⟩
+    exact ⟨t + 1, t - 1, by ring⟩
+  · obtain ⟨t, rfl⟩ : ∃ t, m = 2 * t + 1 := ⟨m / 2, by omega⟩
+    exact ⟨t + 1, t, by ring⟩
 
-This is the case `a = 1`, `k = 0`, `c = 0` of the following argument for
-`g x = a * x ^ 2 + a * k * x + c`.
-
-* Every multiple of `4 * a` is a difference of two values of `g`: for `k = 2 * j` use
-  `g (x + 2) - g x = 4 * a * (x + 1 + j)`, and for `k = 2 * j + 1` use
-  `g (x + 1) - g x = 2 * a * (x + j + 1)`.
-* So if two distinct elements of `A` are congruent modulo `4 * a`, some integer has two
-  representations.
-* Otherwise `A` is finite. The values of `g` are bounded on one side (below if `a > 0`, above if
-  `a < 0`), so `A + g(ℤ)` is bounded on that side and some integer has no representation.
--/
-
-namespace OMA.E477
-
-/-- Every multiple of `4 * a` is a difference of two values of `a * x ^ 2 + a * k * x + c`. -/
-lemma exists_diff (a k c t : ℤ) :
-    ∃ x y : ℤ, (a * x ^ 2 + a * k * x + c) - (a * y ^ 2 + a * k * y + c) = 4 * a * t := by
-  obtain ⟨j, hj | hj⟩ := Int.even_or_odd' k
-  · refine ⟨t - 1 - j + 2, t - 1 - j, ?_⟩
-    subst hj
-    ring
-  · refine ⟨2 * t - j - 1 + 1, 2 * t - j - 1, ?_⟩
-    subst hj
-    ring
-
-/-- The values of `a * x ^ 2 + a * k * x + c` stay on one side of `c - a * k ^ 2`. -/
-lemma value_bound (a k c x : ℤ) :
-    (0 < a → c - a * k ^ 2 ≤ a * x ^ 2 + a * k * x + c) ∧
-      (a < 0 → a * x ^ 2 + a * k * x + c ≤ c - a * k ^ 2) := by
-  have h : 0 ≤ x ^ 2 + k * x + k ^ 2 := by nlinarith [sq_nonneg (2 * x + k), sq_nonneg k]
-  constructor
-  · intro ha
-    nlinarith [mul_nonneg ha.le h]
-  · intro ha
-    nlinarith [mul_nonneg (neg_nonneg.2 ha.le) h]
-
-/-- The core statement, for the function `g x = a * x ^ 2 + a * k * x + c`. -/
-lemma core (a k c : ℤ) (ha : a ≠ 0) (R : Set ℤ)
-    (hR : ∀ r, r ∈ R ↔ ∃ x : ℤ, a * x ^ 2 + a * k * x + c = r) (A : Set ℤ) :
-    ∃ z, ¬ ∃! p ∈ A ×ˢ R, z = p.1 + p.2 := by
-  by_cases h : ∃ a1 ∈ A, ∃ a2 ∈ A, a1 ≠ a2 ∧ (4 * a) ∣ (a1 - a2)
-  · obtain ⟨a1, h1, a2, h2, hne, t, ht⟩ := h
-    obtain ⟨x, y, hxy⟩ := exists_diff a k c t
-    refine ⟨a1 + (a * y ^ 2 + a * k * y + c), ?_⟩
-    rintro ⟨p, -, huniq⟩
-    have e1 := huniq (a1, a * y ^ 2 + a * k * y + c) ⟨⟨h1, (hR _).2 ⟨y, rfl⟩⟩, rfl⟩
-    have e2 := huniq (a2, a * x ^ 2 + a * k * x + c)
-      ⟨⟨h2, (hR _).2 ⟨x, rfl⟩⟩, by simp only; linarith⟩
-    have : a1 = a2 := congrArg Prod.fst (e1.trans e2.symm)
-    exact hne this
-  · have h' : ∀ a1 ∈ A, ∀ a2 ∈ A, (4 * a) ∣ (a1 - a2) → a1 = a2 := by
-      intro a1 h1 a2 h2 hd
-      by_contra hne
-      exact h ⟨a1, h1, a2, h2, hne, hd⟩
-    have h4a : (4 * a) ≠ 0 := mul_ne_zero (by norm_num) ha
-    have hfin : A.Finite := by
-      apply Set.Finite.of_finite_image (f := fun x : ℤ => x % (4 * a))
-      · apply (Set.finite_Ico (0 : ℤ) |4 * a|).subset
-        rintro _ ⟨x, -, rfl⟩
-        exact ⟨Int.emod_nonneg x h4a, Int.emod_lt_abs x h4a⟩
-      · intro a1 h1 a2 h2 he
-        have hd : (4 * a) ∣ (a2 - a1) := Int.ModEq.dvd he
-        exact (h' a2 h2 a1 h1 hd).symm
-    rcases lt_or_gt_of_ne ha with hneg | hpos
-    · obtain ⟨M, hM⟩ := hfin.bddAbove
-      refine ⟨M + (c - a * k ^ 2) + 1, ?_⟩
-      rintro ⟨p, ⟨⟨hp1, hp2⟩, hz⟩, -⟩
-      obtain ⟨x, hx⟩ := (hR _).1 hp2
-      have b1 := hM hp1
-      have b2 := (value_bound a k c x).2 hneg
-      rw [hx] at b2
-      linarith
-    · obtain ⟨m, hm⟩ := hfin.bddBelow
-      refine ⟨m + (c - a * k ^ 2) - 1, ?_⟩
-      rintro ⟨p, ⟨⟨hp1, hp2⟩, hz⟩, -⟩
-      obtain ⟨x, hx⟩ := (hR _).1 hp2
-      have b1 := hm hp1
-      have b2 := (value_bound a k c x).1 hpos
-      rw [hx] at b2
-      linarith
-
-end OMA.E477
+theorem erdos477_no_square_tiling :
+    ¬ ∃ A : Set ℤ, ∀ n : ℤ, ∃! p : ℤ × ℤ, p.1 ∈ A ∧ (∃ k : ℤ, p.2 = k ^ 2) ∧ n = p.1 + p.2 := by
+  rintro ⟨A, hA⟩
+  have hdiff : ∀ a ∈ A, ∀ a' ∈ A, a ≠ a' → (a - a') % 4 = 2 := by
+    intro a ha a' ha' hne
+    by_contra hmod
+    obtain ⟨k, l, hkl⟩ := erdos477_sq_sub_sq_of_mod_four (a - a') hmod
+    obtain ⟨p, _, huniq⟩ := hA (a + l ^ 2)
+    have h1 : (a, l ^ 2) = p := huniq (a, l ^ 2) ⟨ha, ⟨l, rfl⟩, rfl⟩
+    have h2 : (a', k ^ 2) = p := huniq (a', k ^ 2) ⟨ha', ⟨k, rfl⟩, by linarith⟩
+    have h3 := congrArg Prod.fst (h1.trans h2.symm)
+    simp at h3
+    exact hne h3
+  obtain ⟨p0, ⟨ha0, _, _⟩, _⟩ := hA 0
+  have ha0' : p0.1 ∈ A := ha0
+  by_cases hsingle : ∀ a ∈ A, a = p0.1
+  · obtain ⟨p, ⟨hp1, ⟨k, hk⟩, hn⟩, _⟩ := hA (p0.1 - 1)
+    have hp := hsingle p.1 hp1
+    linarith [sq_nonneg k]
+  · push_neg at hsingle
+    obtain ⟨a1, ha1, hne⟩ := hsingle
+    have htwo : ∀ a ∈ A, a = p0.1 ∨ a = a1 := by
+      intro a ha
+      by_contra hcon
+      push_neg at hcon
+      have h01 := hdiff p0.1 ha0' a1 ha1 (Ne.symm hne)
+      have h0a := hdiff a ha p0.1 ha0' hcon.1
+      have h1a := hdiff a ha a1 ha1 hcon.2
+      omega
+    obtain ⟨p, ⟨hp1, ⟨k, hk⟩, hn⟩, _⟩ := hA (min p0.1 a1 - 1)
+    rcases htwo p.1 hp1 with h | h
+    · have := min_le_left p0.1 a1
+      linarith [sq_nonneg k]
+    · have := min_le_right p0.1 a1
+      linarith [sq_nonneg k]
 
 open Polynomial
 
 theorem OMA.solution : type_of% @Erdos477.erdos_477.variants.S_sq := by
+  classical
   intro A
-  refine OMA.E477.core 1 0 0 one_ne_zero _ (fun r => ?_) A
-  simp
+  by_contra hn
+  apply erdos477_no_square_tiling
+  refine ⟨A, ?_⟩
+  intro n
+  have hz := not_not.mp (not_exists.mp hn n)
+  simpa only [Set.mem_prod, Set.mem_range, Polynomial.eval_pow, Polynomial.eval_X, and_assoc, eq_comm] using hz
