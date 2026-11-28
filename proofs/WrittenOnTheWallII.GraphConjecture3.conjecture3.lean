@@ -13,15 +13,12 @@ theorem OMA.solution : type_of% @WrittenOnTheWallII.GraphConjecture3.conjecture3
     obtain ⟨T, hHT, hTG, ht⟩ := hc.exists_isTree_le_of_le_of_isAcyclic
       (H := G ⊓ starGraph v) inf_le_left ((isTree_starGraph v).isAcyclic.anti inf_le_right)
     have hdeg : G.degree v ≤ T.degree v := card_le_card fun w hw =>
-      (T.mem_neighborFinset v w).mpr (hHT ⟨(G.mem_neighborFinset v w).mp hw,
-        starGraph_center_adj ((G.mem_neighborFinset v w).mp hw).ne⟩)
+      let h := (G.mem_neighborFinset v w).mp hw
+      (T.mem_neighborFinset v w).mpr (hHT ⟨h, starGraph_center_adj h.ne⟩)
     have hw (u : V) : 2 + (if u = v then T.degree v else 0) ≤
         T.degree u + (if T.degree u = 1 then 1 else 0) + (if u = v then 2 else 0) := by
       have := ht.connected.preconnected.degree_pos_of_nontrivial u
-      by_cases hu : u = v
-      · subst u; simp; split <;> omega
-      · by_cases h1 : T.degree u = 1 <;> simp [hu, h1]
-        omega
+      split_ifs <;> (try subst u) <;> omega
     have hsum := sum_le_sum (s := univ) fun u _ => hw u
     simp only [sum_add_distrib, sum_const, card_univ, nsmul_eq_mul, sum_ite_eq', mem_univ,
       if_true, sum_boole] at hsum
@@ -30,10 +27,9 @@ theorem OMA.solution : type_of% @WrittenOnTheWallII.GraphConjecture3.conjecture3
     let S := G.toSubgraph T hTG
     have iso : S.coe ≃g T := { toEquiv := Equiv.Set.univ V, map_rel_iff' := by intros; rfl }
     have hS : S.IsSpanning ∧ S.coe.IsTree := ⟨toSubgraph.isSpanning T hTG, iso.isTree_iff.mpr ht⟩
-    have hj : (univ.filter fun x => T.degree x = 1) ⊆ S.verts.toFinset.filter (fun x => S.degree x = 1) :=
-      fun w hw => mem_filter.mpr ⟨by simp [S], by rw [degree_toSubgraph]; exact (mem_filter.mp hw).2⟩
-    have hcard : G.degree v ≤ (S.verts.toFinset.filter fun x => S.degree x = 1).card :=
-      le_trans (by omega) (card_le_card hj)
+    have hcard : G.degree v ≤ (S.verts.toFinset.filter fun x => S.degree x = 1).card := by
+      simpa [S, degree_toSubgraph] using
+        (show G.degree v ≤ (univ.filter fun x => T.degree x = 1).card by omega)
     refine le_trans (Nat.cast_le.mpr hcard) ?_
     exact le_csSup ⟨Fintype.card V, by rintro _ ⟨Z, _, rfl⟩; exact Nat.cast_le.mpr (card_le_univ _)⟩
       ⟨S, hS, rfl⟩
