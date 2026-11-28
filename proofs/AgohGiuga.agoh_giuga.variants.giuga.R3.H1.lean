@@ -1,28 +1,46 @@
 import OMAReductions.R_AgohGiuga_agoh_giuga_variants_giuga_R3
 
--- Step AgohGiuga.agoh_giuga.variants.giuga.R3.H1: hypothesis H1 of reduction AgohGiuga.agoh_giuga.variants.giuga.R3
--- Credit: @JamesSlash. From q D + m = m q k + 1 and m > 1 we get D < m k; with t = m k - D this gives q t = m - 1,
--- so 1 <= t < m and D = m (k - 1) + (m - t), hence D mod m = m - t and q (m - D mod m) = q t = m - 1.
+-- Step H1 of reduction AgohGiuga.agoh_giuga.variants.giuga.R3: from q D + m = m q k + 1 with
+-- m, q > 1, the residue r = D mod m satisfies q (m - r) = m - 1.
+-- Writing D = m t + r gives q r + m - 1 = m q (k - t); the left side lies in [m - 1, (q+1)(m-1)],
+-- which forces k - t = 1.
+-- Credit: @GiridhariPradeep (agent: Claude Code)
 
 theorem OMA.solution : OMA.R_AgohGiuga_agoh_giuga_variants_giuga_R3.H1 := by
   intro m D q k hm hq h
-  have hlt : q * D < q * (m * k) := by nlinarith
-  have hDK : D < m * k := Nat.lt_of_mul_lt_mul_left hlt
-  obtain ⟨t, ht⟩ : ∃ t, D + t = m * k := ⟨m * k - D, by omega⟩
-  have e1 : q * D + q * t = m * q * k := by rw [← mul_add, ht]; ring
-  have hqt : q * t + 1 = m := by linarith
-  have ht1 : 1 ≤ t := by omega
-  have htm : t < m := by nlinarith
-  have hk : 1 ≤ k := by
-    rcases Nat.eq_zero_or_pos k with hk0 | hk0
-    · subst hk0; simp at ht; omega
-    · exact hk0
-  have hD : D = (m - t) + m * (k - 1) := by
-    have : m * k = m * (k - 1) + m := by
-      conv_lhs => rw [show k = (k - 1) + 1 by omega]
-      ring
-    omega
-  have hmod : D % m = m - t := by
-    rw [hD, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt (by omega)]
-  rw [hmod, show m - (m - t) = t by omega]
-  omega
+  have hr : D % m < m := Nat.mod_lt _ (by omega)
+  have hD : m * (D / m) + D % m = D := Nat.div_add_mod D m
+  set r := D % m with hrdef
+  set t := D / m with htdef
+  -- q r + m - 1 = m q (k - t), over ℤ
+  have key : (q : ℤ) * r + m - 1 = (m : ℤ) * q * ((k : ℤ) - t) := by
+    have h' : (q : ℤ) * D + m = (m : ℤ) * q * k + 1 := by exact_mod_cast h
+    have hD' : (m : ℤ) * t + r = D := by exact_mod_cast hD
+    rw [← hD'] at h'
+    linarith
+  set u : ℤ := (k : ℤ) - t with hu
+  have hmz : (1 : ℤ) < m := by exact_mod_cast hm
+  have hqz : (1 : ℤ) < q := by exact_mod_cast hq
+  have hrz : (r : ℤ) < m := by exact_mod_cast hr
+  have hr0 : (0 : ℤ) ≤ r := by positivity
+  have hu1 : 1 ≤ u := by
+    by_contra hc
+    push_neg at hc
+    have : u ≤ 0 := by omega
+    have : (m : ℤ) * q * u ≤ 0 := by
+      have : (0 : ℤ) ≤ (m : ℤ) * q := by positivity
+      nlinarith
+    nlinarith
+  have hu2 : u ≤ 1 := by
+    by_contra hc
+    push_neg at hc
+    have : (2 : ℤ) ≤ u := by omega
+    have : (m : ℤ) * q * 2 ≤ (m : ℤ) * q * u := by
+      have : (0 : ℤ) ≤ (m : ℤ) * q := by positivity
+      nlinarith
+    nlinarith
+  have hu' : u = 1 := le_antisymm hu2 hu1
+  rw [hu', mul_one] at key
+  have hle : r ≤ m := hr.le
+  zify [hle, (by omega : 1 ≤ m)]
+  linarith
