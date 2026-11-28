@@ -4,7 +4,7 @@ import Mathlib
 # OEIS A319528: 8 σ(n) = σ(7n) exactly when 7 ∤ n
 
 Source: https://oeis.org/A319528
-Credit: @SudharsanAnimations
+Credit: Sudharsan Rajendiran
 
 `A319528(n) = 8 σ(n)`. Charlie Neder conjectured that `a(n) = σ(7n)` (`= A283078(n)`) if and only if
 `n` is not a multiple of `7`. The entry records that this is true: if `gcd(7, n) = 1` then
