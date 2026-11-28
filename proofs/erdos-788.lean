@@ -60,17 +60,9 @@ theorem card_binary_assignments (t : ℕ) :
     Fintype.card (Fin t → Bool) = 2 ^ t := by
   simp
 
-theorem card_binary_tables (p t : ℕ) [NeZero p] :
-    Fintype.card ((Fin t → Bool) → ZMod p) = p ^ (2 ^ t) := by
-  simp
-
 theorem bertrand_interface (Q : ℕ) (hQ : Q ≠ 0) :
     ∃ q : ℕ, q.Prime ∧ Q < q ∧ q ≤ 2 * Q :=
   Nat.exists_prime_lt_and_le_two_mul Q hQ
-
-theorem fixed_length_digit_words_card {p : ℕ} (hp : 1 < p) (k : ℕ) :
-    (List.fixedLengthDigits hp k).card = p ^ k :=
-  List.card_fixedLengthDigits hp k
 
 theorem one_bit_raw_carry {a b p : ℕ} (hp : 0 < p)
     (ha : a < p) (hb : b < p) :
@@ -784,25 +776,6 @@ theorem natSqrt_firstBlockSize_le {r : ℕ} (hr : 2 ≤ r) :
         norm_num at hm ⊢
         nlinarith
 
-theorem natSqrt_suffixSize_le {r : ℕ} (hr : 2 ≤ r) :
-    (Nat.sqrt (suffixSize r) : ℝ) ≤
-      (3 / 4 : ℝ) * Real.sqrt r := by
-  calc
-    (Nat.sqrt (suffixSize r) : ℝ) ≤ Real.sqrt (suffixSize r : ℝ) :=
-      Real.nat_sqrt_le_real_sqrt
-    _ ≤ (3 / 4 : ℝ) * Real.sqrt r := by
-      apply Real.sqrt_le_iff.mpr
-      constructor
-      · positivity
-      · have htNat : 2 * suffixSize r ≤ r := by
-          simp only [suffixSize]
-          omega
-        have ht : (2 : ℝ) * suffixSize r ≤ r := by
-          exact_mod_cast htNat
-        rw [mul_pow, Real.sq_sqrt (by positivity : (0 : ℝ) ≤ r)]
-        norm_num at ht ⊢
-        nlinarith
-
 theorem realSqrt_suffixSize_le {r : ℕ} (hr : 2 ≤ r) :
     Real.sqrt (suffixSize r : ℝ) ≤
       (3 / 4 : ℝ) * Real.sqrt r := by
@@ -1047,13 +1020,6 @@ theorem cast_clog_lt_logb_add_one {b n : ℕ}
   rw [← Real.natCeil_logb_natCast]
   exact Nat.ceil_lt_add_one (Real.logb_nonneg hbR hnR)
 
-theorem cast_seedExponent_lt {p D : ℕ} (hp : 1 < p) :
-    ((trevisanSeedExponent p D : ℕ) : ℝ) <
-      (D : ℝ) * Real.logb p 2 + 1 := by
-  have hpowpos : 0 < 2 ^ D := pow_pos (by omega) D
-  have h := cast_clog_lt_logb_add_one hp (by omega : 1 ≤ 2 ^ D)
-  simpa [trevisanSeedExponent, Real.logb_pow] using h
-
 /-- The ceiling choice of `trevisanSlackExponent` implies exactly the real
 counting inequality consumed by the reconstruction theorem. -/
 theorem trevisan_reconstruction_count {p r D : ℕ}
@@ -1188,48 +1154,6 @@ theorem le_fNat {n t : ℕ} (h : Guarantees n t) : t ≤ fNat n := by
 noncomputable def f (n : ℕ) : ℤ :=
   (fNat n : ℤ)
 
-/-- The paper's universal guarantee predicate for an arbitrary integer `t`. -/
-def IntegerGuarantees (n : ℕ) (t : ℤ) : Prop :=
-  ∀ B : Finset ℕ, B ⊆ J n →
-    ∃ C : Finset ℕ, Admissible n B C ∧
-      t ≤ ((B.card + C.card : ℕ) : ℤ)
-
-theorem f_integerGuarantees (n : ℕ) : IntegerGuarantees n (f n) := by
-  intro B hB
-  obtain ⟨C, hC, hscore⟩ := fNat_guarantees n B hB
-  refine ⟨C, hC, ?_⟩
-  simpa [f] using (Int.ofNat_le.mpr hscore)
-
-theorem integerGuarantees_le_f {n : ℕ} {t : ℤ}
-    (h : IntegerGuarantees n t) : t ≤ f n := by
-  by_cases ht : t ≤ 0
-  · exact ht.trans (by simp [f])
-  · have ht0 : 0 ≤ t := le_of_lt (lt_of_not_ge ht)
-    let u : ℕ := t.toNat
-    have hu_cast : (u : ℤ) = t := Int.toNat_of_nonneg ht0
-    have hu : Guarantees n u := by
-      intro B hB
-      obtain ⟨C, hC, hscore⟩ := h B hB
-      refine ⟨C, hC, ?_⟩
-      exact_mod_cast (hu_cast ▸ hscore)
-    have huf : u ≤ fNat n := le_fNat hu
-    simpa [f, hu_cast] using (Int.ofNat_le.mpr huf)
-
-/-- `f n` is the greatest integer having the universal guarantee. -/
-theorem f_isGreatestIntegerGuarantee (n : ℕ) :
-    IntegerGuarantees n (f n) ∧
-      ∀ t : ℤ, IntegerGuarantees n t → t ≤ f n :=
-  ⟨f_integerGuarantees n, fun _t ht ↦ integerGuarantees_le_f ht⟩
-
-/-- An integer has the universal guarantee exactly when it is at most `f n`. -/
-theorem integerGuarantees_iff_le_f {n : ℕ} {t : ℤ} :
-    IntegerGuarantees n t ↔ t ≤ f n := by
-  constructor
-  · exact integerGuarantees_le_f
-  · intro htf B hB
-    obtain ⟨C, hC, hscore⟩ := f_integerGuarantees n B hB
-    exact ⟨C, hC, htf.trans hscore⟩
-
 end Erdos788
 
 end
@@ -1250,49 +1174,11 @@ namespace Erdos788
 noncomputable def exponentCorrection (n : ℕ) : ℝ :=
   (Real.log (Real.log (n : ℝ)) / Real.log (n : ℝ)) ^ (1 / 3 : ℝ)
 
-/-- The explicit lower-bound constant stated in the strong paper. -/
-noncomputable def finalLowerBoundConstant : ℝ :=
-  1 / 2000
-
-/-- The fully quantified two-sided conclusion of the main theorem. -/
-def QuantitativeMainTheorem : Prop :=
-  ∃ c C : ℝ, 0 < c ∧ 0 < C ∧
-    ∃ n₀ : ℕ, 1 ≤ n₀ ∧ ∀ n : ℕ, n₀ ≤ n →
-      c * Real.sqrt ((n : ℝ) * Real.log (n : ℝ)) ≤ (f n : ℝ) ∧
-        (f n : ℝ) ≤
-          (n : ℝ) ^ ((1 / 2 : ℝ) + C * exponentCorrection n)
-
 /-- Explicit epsilon quantifiers for `f(n) = n^(1/2+o(1))`. -/
 def HasExponentOneHalf : Prop :=
   ∀ ε : ℝ, 0 < ε → ∃ n₀ : ℕ, 1 ≤ n₀ ∧ ∀ n : ℕ, n₀ ≤ n →
     (n : ℝ) ^ ((1 / 2 : ℝ) - ε) ≤ (f n : ℝ) ∧
       (f n : ℝ) ≤ (n : ℝ) ^ ((1 / 2 : ℝ) + ε)
-
-/-- The precise epsilon-quantified upper-bound question on the original
-Erdős Problems page. -/
-def AnswersOriginalUpperQuestion : Prop :=
-  ∀ ε : ℝ, 0 < ε → ∃ n₀ : ℕ, 1 ≤ n₀ ∧ ∀ n : ℕ, n₀ ≤ n →
-    (f n : ℝ) ≤ (n : ℝ) ^ ((1 / 2 : ℝ) + ε)
-
-/-- The theorem stated in the strong paper: the explicit lower bound holds
-for every `n ≥ 3`, the quantitative upper bound holds for all sufficiently
-large positive integers, and the resulting exponent is one half. -/
-def PaperMainTheorem : Prop :=
-  (∀ n : ℕ, 3 ≤ n →
-    finalLowerBoundConstant * Real.sqrt ((n : ℝ) * Real.log (n : ℝ)) ≤
-      (f n : ℝ)) ∧
-  (∃ C : ℝ, 0 < C ∧
-    ∃ n₀ : ℕ, 1 ≤ n₀ ∧ ∀ n : ℕ, n₀ ≤ n →
-      finalLowerBoundConstant *
-          Real.sqrt ((n : ℝ) * Real.log (n : ℝ)) ≤ (f n : ℝ) ∧
-        (f n : ℝ) ≤
-          (n : ℝ) ^ ((1 / 2 : ℝ) + C * exponentCorrection n)) ∧
-  HasExponentOneHalf
-
-/-- The complete final statement: the strong paper theorem together with the
-original upper-bound question in its exact epsilon-quantified form. -/
-def MainTheorem : Prop :=
-  PaperMainTheorem ∧ AnswersOriginalUpperQuestion
 
 end Erdos788
 
@@ -1337,14 +1223,6 @@ theorem exponentCorrection_pow_three {N : ℕ}
     (div_pos hLL hL).le
   simpa [one_div] using
     (Real.rpow_inv_natCast_pow hbase (by norm_num : (3 : ℕ) ≠ 0))
-
-theorem correction_mul_inverseCorrectionScale {N : ℕ}
-    (hL : 0 < Real.log (N : ℝ))
-    (hLL : 0 < Real.log (Real.log (N : ℝ))) :
-    exponentCorrection N * inverseCorrectionScale N = 1 := by
-  have hδ := exponentCorrection_pos hL hLL
-  rw [inverseCorrectionScale, max_eq_right (inv_nonneg.mpr hδ.le), mul_inv_cancel₀]
-  exact hδ.ne'
 
 /-- Integral threshold to which Bertrand's postulate is applied. -/
 noncomputable def primeThreshold (N : ℕ) : ℕ :=
@@ -1587,78 +1465,6 @@ theorem finiteDot_sum_norm_expand {κ ι : Type*} [Fintype κ]
   apply Finset.sum_congr rfl
   intro k _hk
   rw [mul_comm]
-
-/-- Abstract simplex/Johnson calculation.  If all listed unit vectors have
-pairwise inner product at most `β` and correlate with one unit received word
-by more than `γ`, then the list has the standard rational size bound. -/
-theorem card_lt_simplex_list_bound
-    {κ ι : Type*} [Fintype κ] [DecidableEq ι]
-    (L : Finset ι) (v : ι → κ → ℝ) (w : κ → ℝ)
-    (β γ : ℝ)
-    (hL : L.Nonempty)
-    (hw : ∑ k, w k ^ 2 = 1)
-    (hdiag : ∀ i ∈ L, finiteDot (v i) (v i) ≤ 1)
-    (hoff : ∀ i ∈ L, ∀ j ∈ L, i ≠ j → finiteDot (v i) (v j) ≤ β)
-    (hcorr : ∀ i ∈ L, γ < finiteDot (v i) w)
-    (hγ : 0 ≤ γ) (hgap : β < γ ^ 2) :
-    (L.card : ℝ) < (1 - β) / (γ ^ 2 - β) := by
-  classical
-  let S : κ → ℝ := fun k ↦ ∑ i ∈ L, v i k
-  have hcardposNat : 0 < L.card := Finset.card_pos.mpr hL
-  have hcardpos : (0 : ℝ) < L.card := by exact_mod_cast hcardposNat
-  have hcorrSum : (L.card : ℝ) * γ < finiteDot S w := by
-    rw [finiteDot_sum_left]
-    obtain ⟨i₀, hi₀⟩ := hL
-    have hsum : ∑ _i ∈ L, γ < ∑ i ∈ L, finiteDot (v i) w :=
-      Finset.sum_lt_sum (fun i hi ↦ (hcorr i hi).le)
-        ⟨i₀, hi₀, hcorr i₀ hi₀⟩
-    simpa using hsum
-  have hleft_nonneg : 0 ≤ (L.card : ℝ) * γ :=
-    mul_nonneg hcardpos.le hγ
-  have hdotpos : 0 < finiteDot S w := hleft_nonneg.trans_lt hcorrSum
-  have hsquareStrict : ((L.card : ℝ) * γ) ^ 2 < (finiteDot S w) ^ 2 := by
-    nlinarith
-  have hcauchy : (finiteDot S w) ^ 2 ≤
-      (∑ k, S k ^ 2) * ∑ k, w k ^ 2 := by
-    exact Finset.sum_mul_sq_le_sq_mul_sq Finset.univ S w
-  rw [hw, mul_one] at hcauchy
-  have hrow : ∀ i ∈ L,
-      (∑ j ∈ L, finiteDot (v i) (v j)) ≤
-        1 + (L.card - 1 : ℕ) * β := by
-    intro i hi
-    rw [← Finset.sum_erase_add _ _ hi]
-    have hoffsum : ∑ j ∈ L.erase i, finiteDot (v i) (v j) ≤
-        ∑ _j ∈ L.erase i, β := by
-      exact Finset.sum_le_sum fun j hj ↦
-        hoff i hi j (Finset.mem_of_mem_erase hj) (Finset.ne_of_mem_erase hj).symm
-    calc
-      (∑ j ∈ L.erase i, finiteDot (v i) (v j)) + finiteDot (v i) (v i)
-          ≤ (∑ _j ∈ L.erase i, β) + 1 :=
-        add_le_add hoffsum (hdiag i hi)
-      _ = 1 + (L.card - 1 : ℕ) * β := by
-        rw [Finset.sum_const, Finset.card_erase_of_mem hi]
-        simp only [nsmul_eq_mul]
-        ring
-  have hnorm : ∑ k, S k ^ 2 ≤
-      (L.card : ℝ) * (1 + (L.card - 1 : ℕ) * β) := by
-    rw [finiteDot_sum_norm_expand]
-    calc
-      (∑ i ∈ L, ∑ j ∈ L, finiteDot (v i) (v j)) ≤
-          ∑ _i ∈ L, (1 + (L.card - 1 : ℕ) * β) :=
-        Finset.sum_le_sum hrow
-      _ = (L.card : ℝ) * (1 + (L.card - 1 : ℕ) * β) := by
-        rw [Finset.sum_const]
-        simp only [nsmul_eq_mul]
-  have hmaster : ((L.card : ℝ) * γ) ^ 2 <
-      (L.card : ℝ) * (1 + (L.card - 1 : ℕ) * β) :=
-    hsquareStrict.trans_le (hcauchy.trans hnorm)
-  have hcastSub : ((L.card - 1 : ℕ) : ℝ) = (L.card : ℝ) - 1 := by
-    rw [Nat.cast_sub (by omega)]
-    norm_num
-  rw [hcastSub] at hmaster
-  have hdenom : 0 < γ ^ 2 - β := sub_pos.mpr hgap
-  apply (lt_div_iff₀ hdenom).2
-  nlinarith
 
 /-- Scale-invariant form of `card_lt_simplex_list_bound`.  This avoids
 introducing square roots when the regular-simplex vectors all have the same
@@ -1960,20 +1766,6 @@ theorem finiteDot_wordSimplexRaw_le_of_agreement_le
   apply (div_le_div_iff_of_pos_right (by
     exact sub_pos.mpr (by exact_mod_cast hp))).2
   have hp0 : (0 : ℝ) ≤ p := by positivity
-  nlinarith
-
-theorem finiteDot_wordSimplexRaw_lt_of_agreement_lt
-    {p ell : ℕ} [NeZero p] (hp : 1 < p)
-    (u v : BinaryCoord ell → ZMod p) (a : ℝ)
-    (h : agreement u v < a) :
-    finiteDot (wordSimplexRaw u) (wordSimplexRaw v) <
-      simplexWordScale p ell *
-        (((p : ℝ) * a - 1) / ((p : ℝ) - 1)) := by
-  rw [finiteDot_wordSimplexRaw_eq_scale_mul hp]
-  apply mul_lt_mul_of_pos_left _ (simplexWordScale_pos hp)
-  apply (div_lt_div_iff_of_pos_right (by
-    exact sub_pos.mpr (by exact_mod_cast hp))).2
-  have hp0 : (0 : ℝ) < p := by positivity
   nlinarith
 
 theorem scale_mul_lt_finiteDot_wordSimplexRaw_of_lt_agreement
@@ -3379,13 +3171,6 @@ theorem tv_nonneg [Fintype α] (P Q : FinDist α) :
 theorem tv_self [Fintype α] (P : FinDist α) : P.tv P = 0 := by
   simp [tv]
 
-theorem tv_symm [Fintype α] (P Q : FinDist α) : P.tv Q = Q.tv P := by
-  unfold tv
-  congr 1
-  apply Finset.sum_congr rfl
-  intro a _ha
-  exact abs_sub_comm _ _
-
 theorem tv_triangle [Fintype α] (P Q R : FinDist α) :
     P.tv R ≤ P.tv Q + Q.tv R := by
   have hpoint : ∀ a : α,
@@ -4253,50 +4038,6 @@ theorem tv_prod_right [Fintype α] [Fintype β]
       rw [R.sum_mass]
       simp
 
-/-- Total variation is unchanged after adjoining the same independent left
-factor. -/
-theorem tv_prod_left [Fintype α] [Fintype β]
-    (R : FinDist α) (P Q : FinDist β) :
-    (R.prod P).tv (R.prod Q) = P.tv Q := by
-  rw [tv, tv, Fintype.sum_prod_type]
-  simp only [prod_mass]
-  have hpoint : ∀ a : α, ∀ b : β,
-      |R.mass a * P.mass b - R.mass a * Q.mass b| =
-        R.mass a * |P.mass b - Q.mass b| := by
-    intro a b
-    rw [← mul_sub, abs_mul, abs_of_nonneg (R.nonneg a)]
-  simp_rw [hpoint]
-  calc
-    (1 / 2 : ℝ) * ∑ a, ∑ b, R.mass a * |P.mass b - Q.mass b| =
-        (1 / 2 : ℝ) * ∑ a, R.mass a * ∑ b, |P.mass b - Q.mass b| := by
-      congr 1
-      apply Finset.sum_congr rfl
-      intro a _ha
-      rw [Finset.mul_sum]
-    _ = (1 / 2 : ℝ) * ∑ b, |P.mass b - Q.mass b| := by
-      rw [← Finset.sum_mul, R.sum_mass, one_mul]
-
-/-- Pushing forward cannot increase finite total variation. -/
-theorem tv_map_le [Fintype α] [Fintype β] [DecidableEq β]
-    (f : α → β) (P Q : FinDist α) :
-    (P.map f).tv (Q.map f) ≤ P.tv Q := by
-  rw [tv, tv]
-  have hfiber : ∀ b : β,
-      |∑ a with f a = b, P.mass a - ∑ a with f a = b, Q.mass a| ≤
-        ∑ a with f a = b, |P.mass a - Q.mass a| := by
-    intro b
-    rw [← Finset.sum_sub_distrib]
-    exact Finset.abs_sum_le_sum_abs _ _
-  have hsum := Finset.sum_le_sum fun b
-      (_hb : b ∈ (Finset.univ : Finset β)) ↦ hfiber b
-  have hpartition :
-      (∑ b, ∑ a with f a = b, |P.mass a - Q.mass a|) =
-        ∑ a, |P.mass a - Q.mass a| := by
-    simp [Finset.sum_fiberwise_eq_sum_filter Finset.univ Finset.univ f
-      (fun a ↦ |P.mass a - Q.mass a|)]
-  rw [hpartition] at hsum
-  exact mul_le_mul_of_nonneg_left hsum (by norm_num)
-
 @[simp]
 theorem map_equiv_mass [Fintype α] [Fintype β] [DecidableEq β]
     (e : α ≃ β) (P : FinDist α) (a : α) :
@@ -4308,21 +4049,6 @@ theorem map_equiv_mass [Fintype α] [Fintype β] [DecidableEq β]
     simp
   rw [hfiber]
   simp
-
-/-- A uniform finite distribution remains uniform under a reindexing
-equivalence. -/
-theorem map_uniform_equiv [Fintype α] [Fintype β]
-    [Nonempty α] [Nonempty β] [DecidableEq β]
-    (e : α ≃ β) :
-    (FinDist.uniform α).map e = FinDist.uniform β := by
-  classical
-  apply FinDist.ext
-  intro b
-  let a : α := e.symm b
-  have hab : e a = b := e.apply_symm_apply b
-  rw [← hab, map_equiv_mass]
-  simp only [uniform_mass]
-  rw [Fintype.card_congr e]
 
 /-- Total variation is invariant under a reindexing equivalence. -/
 theorem tv_map_equiv [Fintype α] [Fintype β] [DecidableEq β]
@@ -4400,41 +4126,6 @@ theorem fst_prod [Fintype α] [Fintype β] [DecidableEq α]
   rw [fst_mass]
   simp only [prod_mass]
   rw [← Finset.mul_sum, Q.sum_mass, mul_one]
-
-/-- The uniform law on a product is the product of the uniform laws. -/
-theorem uniform_prod [Fintype α] [Fintype β] [Nonempty α] [Nonempty β] :
-    FinDist.uniform (α × β) =
-      (FinDist.uniform α).prod (FinDist.uniform β) := by
-  classical
-  apply FinDist.ext
-  intro z
-  simp only [uniform_mass, prod_mass, Fintype.card_prod]
-  have ha : (Fintype.card α : ℝ) ≠ 0 := by
-    exact_mod_cast (Nat.ne_of_gt (Fintype.card_pos : 0 < Fintype.card α))
-  have hb : (Fintype.card β : ℝ) ≠ 0 := by
-    exact_mod_cast (Nat.ne_of_gt (Fintype.card_pos : 0 < Fintype.card β))
-  push_cast
-  field_simp
-
-/-- Associativity of independent finite products, after the canonical
-reindexing of the underlying product type. -/
-theorem map_prodAssoc
-    {δ : Type*} [Fintype α] [Fintype β] [Fintype δ]
-    [DecidableEq α] [DecidableEq β] [DecidableEq δ]
-    (P : FinDist α) (Q : FinDist β) (R : FinDist δ) :
-    ((P.prod Q).prod R).map (Equiv.prodAssoc α β δ) =
-      P.prod (Q.prod R) := by
-  classical
-  apply FinDist.ext
-  intro z
-  let w : (α × β) × δ := ((z.1, z.2.1), z.2.2)
-  have hw : Equiv.prodAssoc α β δ w = z := by
-    exact Prod.ext rfl (Prod.ext rfl rfl)
-  rw [← hw, map_equiv_mass]
-  simp only [prod_mass]
-  rw [hw]
-  dsimp [w]
-  ring
 
 /-- The point selected by `finiteArgmax` has at least the average mass. -/
 theorem average_le_argmax_mass [Fintype β] [Nonempty β]
@@ -4543,45 +4234,6 @@ theorem exists_predictor_of_tv_gt
     apply (div_lt_iff₀ hp).2
     simpa [mul_comm] using hmain
   linarith
-
-/-- Repeated triangle inequality along a finite chain. -/
-theorem tv_le_sum_range_chain [Fintype α]
-    (H : ℕ → FinDist α) (r : ℕ) :
-    (H 0).tv (H r) ≤
-      ∑ i ∈ Finset.range r, (H i).tv (H (i + 1)) := by
-  induction r with
-  | zero => simp
-  | succ r ih =>
-      calc
-        (H 0).tv (H (r + 1)) ≤
-            (H 0).tv (H r) + (H r).tv (H (r + 1)) :=
-          tv_triangle (H 0) (H r) (H (r + 1))
-        _ ≤ (∑ i ∈ Finset.range r, (H i).tv (H (i + 1))) +
-            (H r).tv (H (r + 1)) := add_le_add ih le_rfl
-        _ = ∑ i ∈ Finset.range (r + 1),
-            (H i).tv (H (i + 1)) := by
-          rw [Finset.sum_range_succ]
-
-/-- If the endpoints of a chain are more than `ε` apart, one of its `r`
-steps is more than `ε/r` apart. -/
-theorem exists_step_tv_gt [Fintype α]
-    (H : ℕ → FinDist α) {r : ℕ} (hr : 0 < r) (ε : ℝ)
-    (hend : ε < (H 0).tv (H r)) :
-    ∃ i < r, ε / r < (H i).tv (H (i + 1)) := by
-  by_contra hnone
-  push_neg at hnone
-  have hsum :
-      (∑ i ∈ Finset.range r, (H i).tv (H (i + 1))) ≤ ε := by
-    calc
-      (∑ i ∈ Finset.range r, (H i).tv (H (i + 1))) ≤
-          ∑ _i ∈ Finset.range r, ε / r :=
-        Finset.sum_le_sum fun i hi ↦ hnone i (Finset.mem_range.mp hi)
-      _ = ε := by
-        rw [Finset.sum_const, Finset.card_range]
-        simp only [nsmul_eq_mul]
-        have hrR : (r : ℝ) ≠ 0 := by exact_mod_cast (Nat.ne_of_gt hr)
-        field_simp
-  exact (not_lt_of_ge ((tv_le_sum_range_chain H r).trans hsum)) hend
 
 end FinDist
 
@@ -5442,20 +5094,6 @@ theorem sequential_sum_eq_weighted_successRate
       intro y _hy
       ring
 
-theorem predictorSuccessRate_nonneg
-    {p r : ℕ} [Fact p.Prime] {η : ℝ}
-    (C : ShortLinearCode p (2 * r) η)
-    (D : SuffixDesign C.ell r) (i : Fin r)
-    (predictor : (D.Coord → Bool) × FFVec p i.val → ZMod p)
-    (x : FFVec p (2 * r)) :
-    0 ≤ predictorSuccessRate C D i predictor x := by
-  unfold predictorSuccessRate
-  apply mul_nonneg (by positivity)
-  apply Finset.sum_nonneg
-  intro y _hy
-  unfold predictorSuccess
-  split <;> norm_num
-
 theorem predictorSuccessRate_le_one
     {p r : ℕ} [Fact p.Prime] {η : ℝ}
     (C : ShortLinearCode p (2 * r) η)
@@ -5892,23 +5530,6 @@ noncomputable def canonicalRawTrevisanFamily
     (seedThreshold_le_pow_seedExponent (by omega))
     (trevisan_reconstruction_count hp hr)
 
-/-- Existence of the complete raw Trevisan family with the canonical
-integer parameters. -/
-theorem exists_canonicalRawTrevisanFamily
-    (p r : ℕ) [Fact p.Prime] (hp : 2 < p) (hr : 0 < r) :
-    ∃ C : ShortLinearCode p (2 * r) (trevisanEta p r),
-      ∃ D : SuffixDesign C.ell r,
-        Nonempty (RawLinearExtractorFamily p r
-          (trevisanSeedExponent p D.coordCard)
-          (trevisanSlackExponent p r D.coordCard)) := by
-  have hm : 1 ≤ 2 * r := by omega
-  obtain ⟨C⟩ := exists_shortLinearCode p (2 * r) hm
-    (trevisanEta p r)
-    (trevisanEta_pos (by omega) hr)
-    (trevisanEta_lt_half hp hr)
-  let D := SuffixDesign.build C.ell r
-  exact ⟨C, D, ⟨canonicalRawTrevisanFamily hp hr C D⟩⟩
-
 end Reconstruction
 
 end Erdos788
@@ -6082,19 +5703,6 @@ theorem chosenSlackExponent_le_dimension
   · exact parameterDimension_pos_of_regular h
   · exact chosenDesign_entropy_log_bound h C
 
-/-- The canonical slack is small enough for the uniform-source rank-pruning
-argument. -/
-theorem chosen_dimension_add_slack_le_two_mul
-    {N : ℕ} (h : ParameterRegular N)
-    (C : ShortLinearCode (parameterPrime N) (2 * parameterDimension N)
-      (trevisanEta (parameterPrime N) (parameterDimension N))) :
-    parameterDimension N +
-        trevisanSlackExponent (parameterPrime N) (parameterDimension N)
-          (SuffixDesign.build C.ell (parameterDimension N)).coordCard ≤
-      2 * parameterDimension N := by
-  have hs := chosenSlackExponent_le_dimension h C
-  omega
-
 /-- At each regular `N`, the canonical raw Trevisan family can be rank
 pruned to a surjective linear extractor family with the same integer seed
 and entropy exponents. -/
@@ -6219,11 +5827,6 @@ theorem eventually_parameterRegular :
     (tendsto_order.1 hproduct).2 1 (by norm_num),
     (tendsto_order.1 hscaled).2 1 (by norm_num)] with N hL hq hproductN hscaledN
   exact ⟨hL, hq, hproductN.le, hscaledN.le⟩
-
-/-- A concrete natural threshold exists for `ParameterRegular`. -/
-theorem exists_parameterRegular_threshold :
-    ∃ N₀ : ℕ, ∀ N : ℕ, N₀ ≤ N → ParameterRegular N := by
-  simpa only [Filter.eventually_atTop] using eventually_parameterRegular
 
 end Erdos788
 
@@ -6664,10 +6267,6 @@ theorem fNat_eq_minGraphScore (n : ℕ) : fNat n = minGraphScore n := by
   · exact guarantees_iff_le_minGraphScore.mp (fNat_guarantees n)
   · exact le_fNat (guarantees_iff_le_minGraphScore.mpr le_rfl)
 
-/-- Integer-valued form of the exact min--max identity. -/
-theorem f_eq_minGraphScore (n : ℕ) : f n = (minGraphScore n : ℤ) := by
-  simp [f, fNat_eq_minGraphScore]
-
 end Erdos788
 
 end
@@ -6697,51 +6296,6 @@ theorem sumGraph_adj {N : ℕ} {A : Finset ℕ} {x y : Fin N} :
 noncomputable instance sumGraphDecidableAdj (N : ℕ) (A : Finset ℕ) :
     DecidableRel (sumGraph N A).Adj :=
   Classical.decRel _
-
-/-- Admissibility in normalized coordinates. -/
-def NormalizedAdmissible {N : ℕ} (A : Finset ℕ)
-    (C : Finset (Fin N)) : Prop :=
-  ∀ x ∈ C, ∀ y ∈ C, x ≠ y → x.1 + y.1 ∉ A
-
-theorem normalizedAdmissible_iff_isIndepSet
-    {N : ℕ} {A : Finset ℕ} {C : Finset (Fin N)} :
-    NormalizedAdmissible A C ↔
-      (sumGraph N A).IsIndepSet (C : Set (Fin N)) := by
-  rw [SimpleGraph.isIndepSet_iff]
-  simp only [Set.Pairwise, Finset.mem_coe]
-  constructor
-  · intro h x hx y hy hxy
-    exact sumGraph_adj.mp.mt fun hadj ↦ h x hx y hy hxy hadj.2
-  · intro h x hx y hy hxy hsum
-    exact h hx hy hxy (sumGraph_adj.mpr ⟨hxy, hsum⟩)
-
-/-- Adding a fixed vertex to the vertex label is injective. -/
-def addEmbedding {N : ℕ} (x : Fin N) : Fin N ↪ ℕ where
-  toFun y := x.1 + y.1
-  inj' := by
-    intro y z h
-    apply Fin.ext
-    exact Nat.add_left_cancel h
-
-/-- Equation (2.1): each selected sum supplies at most one neighbor of a
-fixed vertex. -/
-theorem degree_sumGraph_le_card {N : ℕ} (A : Finset ℕ) (x : Fin N) :
-    (sumGraph N A).degree x ≤ A.card := by
-  classical
-  rw [← SimpleGraph.card_neighborFinset_eq_degree]
-  rw [← card_map (addEmbedding x)]
-  apply card_le_card
-  intro s hs
-  rw [mem_map] at hs
-  obtain ⟨y, hy, rfl⟩ := hs
-  have hadj : (sumGraph N A).Adj x y :=
-    (SimpleGraph.mem_neighborFinset (G := sumGraph N A) (v := x) y).mp hy
-  exact (sumGraph_adj.mp hadj).2
-
-theorem maxDegree_sumGraph_le_card {N : ℕ} (A : Finset ℕ) :
-    (sumGraph N A).maxDegree ≤ A.card := by
-  exact SimpleGraph.maxDegree_le_of_forall_degree_le (G := sumGraph N A)
-    A.card (degree_sumGraph_le_card A)
 
 end Erdos788
 
@@ -6912,40 +6466,6 @@ theorem mem_activePalette {n b : ℕ} {B : Finset ℕ} :
       b ∈ B ∧ ∃ c c' : Vertex n, c ≠ c' ∧ c.1 + c'.1 = b := by
   simp [activePalette]
 
-/-- Translating an original palette down and back gives precisely its active
-part. -/
-theorem denormalizePalette_normalizePalette (n : ℕ) (B : Finset ℕ) :
-    denormalizePalette n (normalizePalette n B) = activePalette n B := by
-  ext b
-  simp only [mem_denormalizePalette, mem_normalizePalette, mem_activePalette]
-  constructor
-  · rintro ⟨s, ⟨hsatt, hsB⟩, _hsatt', hsb⟩
-    refine ⟨?_, ?_⟩
-    · simpa [hsb] using hsB
-    · obtain ⟨x, y, hxy, hsum⟩ :=
-        (mem_attainableNormalizedSums_iff (n - 1) s).mp hsatt
-      let c : Vertex n := (vertexEquivFin n).symm x
-      let c' : Vertex n := (vertexEquivFin n).symm y
-      refine ⟨c, c', ?_, ?_⟩
-      · exact fun h ↦ hxy ((vertexEquivFin n).symm.injective h)
-      · rw [vertex_sum_eq_normalized n c c']
-        simp only [c, c', Equiv.apply_symm_apply]
-        omega
-  · rintro ⟨hbB, c, c', hcc', rfl⟩
-    let x : Fin (n - 1) := vertexEquivFin n c
-    let y : Fin (n - 1) := vertexEquivFin n c'
-    have hxy : x ≠ y := fun h ↦ hcc' ((vertexEquivFin n).injective h)
-    have hsatt : x.1 + y.1 ∈ attainableNormalizedSums (n - 1) :=
-      (mem_attainableNormalizedSums_iff (n - 1) (x.1 + y.1)).mpr
-        ⟨x, y, hxy, rfl⟩
-    refine ⟨x.1 + y.1, ⟨hsatt, ?_⟩, hsatt, ?_⟩
-    · rw [show sumOffset n + (x.1 + y.1) = c.1 + c'.1 by
-          simpa [x, y, Nat.add_assoc] using
-            (vertex_sum_eq_normalized n c c').symm]
-      exact hbB
-    · simpa [x, y, Nat.add_assoc] using
-        (vertex_sum_eq_normalized n c c').symm
-
 /-- Adding the fixed offset is injective, so denormalization preserves the
 cardinality of the attainable part of a normalized palette. -/
 theorem card_denormalizePalette (n : ℕ) (A : Finset ℕ) :
@@ -6955,24 +6475,6 @@ theorem card_denormalizePalette (n : ℕ) (A : Finset ℕ) :
   apply Finset.card_image_of_injective
   intro s t hst
   exact Nat.add_left_cancel hst
-
-/-- The active original palette and its normalized translate have exactly
-the same number of colors. -/
-theorem card_activePalette_eq_card_normalizePalette
-    (n : ℕ) (B : Finset ℕ) :
-    (activePalette n B).card = (normalizePalette n B).card := by
-  calc
-    (activePalette n B).card =
-        (denormalizePalette n (normalizePalette n B)).card :=
-      congrArg Finset.card (denormalizePalette_normalizePalette n B).symm
-    _ = ((normalizePalette n B).filter
-          fun s ↦ s ∈ attainableNormalizedSums (n - 1)).card :=
-      card_denormalizePalette n (normalizePalette n B)
-    _ = (normalizePalette n B).card := by
-      congr 1
-      apply Finset.filter_eq_self.mpr
-      intro s hs
-      exact (mem_normalizePalette.mp hs).1
 
 /-- The original palette graph is exactly the normalized sum graph, up to
 the coordinate equivalence. -/
@@ -7041,45 +6543,6 @@ theorem indepNum_paletteGraph_eq_sumGraph (n : ℕ) (B : Finset ℕ) :
     (paletteGraph n B).indepNum =
       (sumGraph (n - 1) (normalizePalette n B)).indepNum :=
   indepNum_eq_of_iso (paletteGraphIso n B)
-
-/-- Removing colors which label no edge does not change the graph. -/
-theorem paletteGraph_activePalette (n : ℕ) (B : Finset ℕ) :
-    paletteGraph n (activePalette n B) = paletteGraph n B := by
-  ext c c'
-  simp only [paletteGraph_adj, mem_activePalette]
-  constructor
-  · rintro ⟨hcc', hb, _⟩
-    exact ⟨hcc', hb⟩
-  · rintro ⟨hcc', hb⟩
-    exact ⟨hcc', hb, c, c', hcc', rfl⟩
-
-/-- The active palette is a subpalette of the original palette. -/
-theorem activePalette_subset (n : ℕ) (B : Finset ℕ) :
-    activePalette n B ⊆ B :=
-  Finset.filter_subset _ _
-
-/-- Deleting unattainable colors cannot increase the graph score: the graph
-and its independence number stay fixed, while the palette cardinality can
-only decrease. -/
-theorem graphScore_activePalette_le (n : ℕ) (B : Finset ℕ) :
-    graphScore n (activePalette n B) ≤ graphScore n B := by
-  rw [graphScore, graphScore, paletteGraph_activePalette n B]
-  exact Nat.add_le_add_right
-    (Finset.card_le_card (activePalette_subset n B)) _
-
-/-- Exact normalized form of the score after inactive colors are deleted. -/
-theorem graphScore_activePalette_eq_normalized (n : ℕ) (B : Finset ℕ) :
-    graphScore n (activePalette n B) =
-      (normalizePalette n B).card +
-        (sumGraph (n - 1) (normalizePalette n B)).indepNum := by
-  rw [graphScore, paletteGraph_activePalette n B,
-    indepNum_paletteGraph_eq_sumGraph n B,
-    card_activePalette_eq_card_normalizePalette n B]
-
-/-- Palette support remains inside `J n` after inactive colors are deleted. -/
-theorem activePalette_subset_J {n : ℕ} {B : Finset ℕ} (hB : B ⊆ J n) :
-    activePalette n B ⊆ J n :=
-  (activePalette_subset n B).trans hB
 
 end Erdos788
 
@@ -7208,16 +6671,6 @@ theorem fNat_le_of_normalized_palette
     rw [graphScore, hcard, indepNum_paletteGraph_eq_sumGraph, hnorm]
   rw [fNat_eq_minGraphScore, ← hscore]
   exact minGraphScore_le hB
-
-/-- Exact finite upper bridge from a group palette to `f(N+1)`. -/
-theorem fNat_succ_le_of_group_palette
-    (p k N : ℕ) (hp : 1 < p) (hNM : N ≤ p ^ k)
-    (S : Finset (FFVec p k)) :
-    fNat (N + 1) ≤ 2 ^ k * S.card + (groupSumGraph S).indepNum := by
-  obtain ⟨B, hBatt, hBcard, hBind⟩ := carry_lift_restrict p k N hp hNM S
-  have hf := fNat_le_of_normalized_palette (N + 1) B (by
-    simpa using hBatt)
-  exact hf.trans (Nat.add_le_add hBcard hBind)
 
 end Erdos788
 
