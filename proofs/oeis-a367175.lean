@@ -46,7 +46,8 @@ theorem small_sigma (n : ℕ) (hn : 1 < n) (hd : S_oeis_a367175.a n ∣ (sig n :
   have h' : (4:ℤ) * (s n : ℤ) < (sig n : ℤ) := by exact_mod_cast h
   have hs' : (0:ℤ) < s n := by exact_mod_cast hs
   have hd' : ((sig n : ℤ) - 2 * (s n : ℤ)) ∣ 2 * (s n : ℤ) := by
-    convert dvd_sub hd (dvd_refl ((sig n : ℤ) - 2 * (s n : ℤ))) using 1 <;> ring
+    have aux := dvd_sub hd (dvd_refl ((sig n : ℤ) - 2 * (s n : ℤ)))
+    rwa [show (sig n : ℤ) - ((sig n : ℤ) - 2 * (s n : ℤ)) = 2 * (s n : ℤ) by omega] at aux
   have := Int.le_of_dvd (show (0:ℤ) < 2 * (s n : ℤ) by omega) hd'
   omega
 
