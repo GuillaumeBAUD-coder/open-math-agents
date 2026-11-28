@@ -1,5 +1,8 @@
 import OMAStatements.S_opg_a_conjecture_about_direct_product_of_funcoids
 
+/- Original proof by Jon McBee, upstream PR #36502.
+   This revision uses Mathlib for three filter and ultrafilter lemmas. -/
+
 namespace OpgDirectProductFuncoids
 
 open OMA.S_opg_a_conjecture_about_direct_product_of_funcoids
@@ -9,26 +12,7 @@ open Filter
 
 private lemma mem_iff_not_overlap_compl {α : Type*} (x : Filter α) (S : Set α) :
     S ∈ x ↔ ¬ Overlap x (𝓟 Sᶜ) := by
-  unfold Overlap
-  constructor
-  · intro hS hne
-    have hempty : (∅ : Set α) ∈ x ⊓ 𝓟 Sᶜ := by
-      have hinter : S ∩ Sᶜ ∈ x ⊓ 𝓟 Sᶜ := Filter.inter_mem_inf hS (Filter.mem_principal_self Sᶜ)
-      simp only [Set.inter_compl_self] at hinter
-      exact hinter
-    exact hne.ne (Filter.empty_mem_iff_bot.mp hempty)
-  · intro hnot
-    have hbot : x ⊓ 𝓟 Sᶜ = ⊥ := Filter.not_neBot.mp hnot
-    have hempty : (∅ : Set α) ∈ x ⊓ 𝓟 Sᶜ := Filter.empty_mem_iff_bot.mpr hbot
-    obtain ⟨U, hU, V, hV, hUV⟩ := Filter.mem_inf_iff.mp hempty
-    rw [Filter.mem_principal] at hV
-    have hsub : U ⊆ S := by
-      intro a haU
-      by_contra haS
-      have hmem : a ∈ U ∩ V := ⟨haU, hV haS⟩
-      rw [← hUV] at hmem
-      exact hmem
-    exact Filter.mem_of_superset hU hsub
+  simp [Overlap, Filter.not_neBot, Filter.inf_principal_eq_bot]
 
 private lemma overlap_symm {α : Type*} {x y : Filter α} : Overlap x y ↔ Overlap y x := by
   unfold Overlap
@@ -49,37 +33,10 @@ private lemma filter_le_of_overlap {α : Type*} {x y : Filter α}
   exact (mem_iff_not_overlap_compl y S).mp hSy hovy
 
 private lemma filter_le_of_ultrafilter {α : Type*} {x y : Filter α}
-    (h : ∀ u : Ultrafilter α, (u : Filter α) ≤ x → (u : Filter α) ≤ y) : x ≤ y := by
-  intro S hSy
-  by_contra hSx
-  have hovx : (x ⊓ 𝓟 Sᶜ).NeBot := by
-    by_contra hnot
-    exact hSx ((mem_iff_not_overlap_compl x S).mpr hnot)
-  obtain ⟨u, hu⟩ := @Ultrafilter.exists_le α (x ⊓ 𝓟 Sᶜ) hovx
-  have hux : (u : Filter α) ≤ x := hu.trans inf_le_left
-  have huSc : Sᶜ ∈ (u : Filter α) := Filter.le_principal_iff.mp (hu.trans inf_le_right)
-  have huS : S ∈ (u : Filter α) := h u hux hSy
-  have hempty : (∅ : Set α) ∈ (u : Filter α) := by
-    have hinter := Filter.inter_mem huS huSc
-    simp only [Set.inter_compl_self] at hinter
-    exact hinter
-  exact u.neBot.ne (Filter.empty_mem_iff_bot.mp hempty)
+    (h : ∀ u : Ultrafilter α, (u : Filter α) ≤ x → (u : Filter α) ≤ y) : x ≤ y := Filter.le_iff_ultrafilter.mpr h
 
 private lemma ultrafilter_overlap_iff_le {α : Type*} (u : Ultrafilter α) (x : Filter α) :
-    Overlap (u : Filter α) x ↔ (u : Filter α) ≤ x := by
-  constructor
-  · intro hov S hSx
-    rcases u.mem_or_compl_mem S with hS | hSc
-    · exact hS
-    · exfalso
-      have hempty : (∅ : Set α) ∈ (u : Filter α) ⊓ x := by
-        have := Filter.inter_mem_inf hSc hSx
-        simpa using this
-      exact hov.ne (Filter.empty_mem_iff_bot.mp hempty)
-  · intro hle
-    unfold Overlap
-    rw [inf_eq_left.mpr hle]
-    exact u.neBot
+    Overlap (u : Filter α) x ↔ (u : Filter α) ≤ x := Ultrafilter.inf_neBot_iff
 
 private lemma funcoid_forward_mono {α β : Type*} (h : Funcoid α β) {x₁ x₂ : Filter α}
     (hle : x₁ ≤ x₂) : h.forward x₁ ≤ h.forward x₂ := by
