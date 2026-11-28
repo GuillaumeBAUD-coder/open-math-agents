@@ -1,5 +1,4 @@
 import OMAStatements.S_oeis_a050446
-import Mathlib
 
 /-!
 # The counts disagree for a single edge
@@ -12,9 +11,4 @@ one choice.
 
 open OMA.S_oeis_a050446 in
 theorem OMA.disproof : ¬ (type_of% @OMA.S_oeis_a050446.main) := by
-  intro h
-  have htable : tableValue 1 1 = 2 := by decide
-  have hword : wordCount 1 1 = 1 := by decide
-  have hcount := h 1 1
-  rw [htable, hword] at hcount
-  omega
+  exact fun h => (by decide : tableValue 1 1 ≠ wordCount 1 1) (h 1 1)
