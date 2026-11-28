@@ -2,6 +2,8 @@ import OMAReductions.R_Erdos101_erdos_101_R2_H2_R1
 import Mathlib
 
 -- Extracted from @ubuwaits's accepted proof of Erdős 101 R2.H2 (PR #23304).
+-- Shortening: use the exact tripartite cardinality in the triangle-count inequality
+-- and remove the redundant final theorem wrapper.
 
 section DoubleTriangleRemoval
 
@@ -30,11 +32,9 @@ theorem many_shadows [Fintype P] (T : Finset (P × P × P)) [ExplicitDisjoint T]
     (δ : ℝ) (hδ : 0 < δ) (hT : δ * (Fintype.card P : ℝ)^2 ≤ T.card) :
     triangleRemovalBound (δ / 9) * (Fintype.card P : ℝ)^3 ≤ (shadows T).card := by
   classical
-  have hfar : (graph T).FarFromTriangleFree (δ/9) := by
-    apply farFromTriangleFree
+  have hsz := (farFromTriangleFree (t := T) (ε := δ/9) (by
     push_cast
-    nlinarith only [hT]
-  have hsz := hfar.le_card_cliqueFinset
+    nlinarith only [hT])).le_card_cliqueFinset
   have hsub : (graph T).cliqueFinset 3 ⊆ (shadows T).map toTriangle := by
     intro s hs
     obtain ⟨u,v,w, huv,huw,hvw,rfl⟩ := SimpleGraph.is3Clique_iff.mp (mem_cliqueFinset_iff.mp hs)
@@ -43,14 +43,13 @@ theorem many_shadows [Fintype P] (T : Finset (P × P × P)) [ExplicitDisjoint T]
     refine ⟨(x,y,z),?_,he⟩
     apply mem_filter.mpr
     exact ⟨mem_univ _,Graph.in₀₁_iff.mp hxy,Graph.in₀₂_iff.mp hxz,Graph.in₁₂_iff.mp hyz⟩
-  have hsize : ((graph T).cliqueFinset 3).card ≤ (shadows T).card := by
+  have hsize : (((graph T).cliqueFinset 3).card : ℝ) ≤ (shadows T).card := by
+    norm_cast
     simpa using card_le_card hsub
-  have hh : (Fintype.card P : ℝ)^3 ≤ (Fintype.card (P ⊕ P ⊕ P) : ℝ)^3 := by
-    simp only [Fintype.card_sum, Nat.cast_add]
-    apply pow_le_pow_left₀ (by positivity)
-    linarith [(Nat.cast_nonneg (Fintype.card P) : (0:ℝ) ≤ Fintype.card P)]
-  exact ((mul_le_mul_of_nonneg_left hh (triangleRemovalBound_pos (by positivity)).le).trans hsz).trans
-    (by exact_mod_cast hsize)
+  simp only [Fintype.card_sum, Nat.cast_add] at hsz
+  have := mul_nonneg (triangleRemovalBound_pos (by positivity : 0 < δ/9)).le
+    (pow_nonneg (Nat.cast_nonneg (Fintype.card P)) 3)
+  nlinarith
 
 
 private theorem max_fiber [Fintype P] [Nonempty P] {E : Type*}
@@ -146,7 +145,7 @@ end TriangleAnchors
 
 open EuclideanGeometry SimpleGraph SimpleGraph.TripartiteFromTriangles
 
-theorem OMA.boundedRatioTwoAnchors : OMA.R_Erdos101_erdos_101_R2_H2_R1.H1 := by
+theorem OMA.solution : OMA.R_Erdos101_erdos_101_R2_H2_R1.H1 := by
   intro δ hδ
   refine ⟨triangleRemovalBound (triangleRemovalBound (δ/9)/9),
     triangleRemovalBound_pos (div_pos (triangleRemovalBound_pos (by positivity)) (by norm_num)),?_⟩
@@ -159,5 +158,3 @@ theorem OMA.boundedRatioTwoAnchors : OMA.R_Erdos101_erdos_101_R2_H2_R1.H1 := by
 
 end DoubleTriangleRemoval
 
-theorem OMA.solution : OMA.R_Erdos101_erdos_101_R2_H2_R1.H1 := by
-  exact OMA.boundedRatioTwoAnchors
