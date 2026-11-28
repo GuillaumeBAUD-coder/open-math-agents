@@ -6,7 +6,8 @@ once the interval is long enough, in the log-log form of the reduction.
 Mathematics: E. Szemeredi (1975). Formal proof bundled from a port of the Szemeredi
 formalization in plby/lean-proofs (src/latest/ErdosProblems, commit 8822f7dd; Apache-2.0,
 copyright Boris Alexeev; formal authors credited there). The bridge to the formal-conjectures
-definitions is new. Names are shortened to fit the 512 KiB limit.
+definitions is from Adam Carter’s submission, with the baseline updated by weizj99 in PR 32403.
+This revision omits unused helpers while retaining the original mathematical proof.
 -/
 section
 namespace ag
@@ -309,15 +310,7 @@ theorem mo
     (hA : B.gA A) :
     0 ≤ B.a7 A :=
   o9 (B.vj hA)
-theorem gA.cK
-    (B : ah J K H)
-    {A : (g : Finset K) →
-      ({v : K // v ∈ g} → G) → ℝ}
-    (hA : B.gA A)
-    (g₀ : Finset K) :
-    (B.cK g₀).gA A := by
-  intro g hg y
-  exact hA g (Finset.mem_of_mem_erase hg) y
+
 noncomputable def d4
     (B : ah J K H)
     (g₀ : Finset K)
@@ -3523,10 +3516,7 @@ theorem of_le {P Q : ab Ω} {g : Ω → ℝ}
     dJ P g := by
   intro x y hy
   exact hg x y (ab.gj s8 x hy)
-theorem aq (P : ab Ω) (f : Ω → ℝ) :
-    dJ P (aq P f) := by
-  intro x y hy
-  exact cY P f hy
+
 end dJ
 theorem qC (A : aW Ω) :
     dJ
@@ -3733,40 +3723,9 @@ theorem BM
     (r : ℕ) (f : G → ℝ) (u : cU G r) :
     gd r f f u = 0 := by
   simp [gd]
-theorem vY
-    {G : Type*} [Fintype G] [AddCommGroup G]
-    (r : ℕ) (f g : G → ℝ) (u : cU G r) :
-    gd r g f u = -gd r f g u := by
-  calc
-    gd r g f u =
-        mean (fun x : Fin r → G =>
-          (-1 : ℝ) *
-            ((f (∑ i, x i) - g (∑ i, x i)) *
-              ∏ i, u i (dc i x))) := by
-      apply congrArg mean
-      funext x
-      ring
-    _ = (-1 : ℝ) *
-        mean (fun x : Fin r → G =>
-          (f (∑ i, x i) - g (∑ i, x i)) *
-            ∏ i, u i (dc i x)) :=
-      k0 _ _
-    _ = -gd r f g u := by
-      simp [gd]
-theorem lu.refl
-    {G : Type*} [Fintype G] [AddCommGroup G]
-    (r : ℕ) (f : G → ℝ) :
-    lu r f f 0 := by
-  intro u _ _
-  simp
-theorem lu.symm
-    {G : Type*} [Fintype G] [AddCommGroup G]
-    {r : ℕ} {f g : G → ℝ} {ε : ℝ}
-    (h : lu r f g ε) :
-    lu r g f ε := by
-  intro u Gz GA
-  rw [vY, abs_neg]
-  exact h u Gz GA
+
+
+
 end av.ag
 end
 section
@@ -3782,14 +3741,8 @@ namespace av.ag
 open scoped Pointwise
 def qW {Ω : Type*} (g : Ω → ℝ) : Prop :=
   (∀ x, 0 ≤ g x) ∧ ∀ x, g x ≤ 1
-theorem qW.nonneg
-    {Ω : Type*} {g : Ω → ℝ} (hg : qW g) :
-    ∀ x, 0 ≤ g x :=
-  hg.1
-theorem qW.le_one
-    {Ω : Type*} {g : Ω → ℝ} (hg : qW g) :
-    ∀ x, g x ≤ 1 :=
-  hg.2
+
+
 end av.ag
 end
 section
@@ -6625,30 +6578,7 @@ noncomputable def nL
     eK aQ an e upper a x ^ 2 *
       aB
         (au an e) b x
-theorem rt
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k j : ℕ}
-    (aQ an : af G k j)
-    (e : al k (j + 1))
-    (upper : ab (Fin (j + 1) → G))
-    (a : upper.parts)
-    (b : (au an e).parts)
-    {β : ℝ}
-    (gr :
-      aq (au an e)
-          (fun x =>
-            eK
-              aQ an e upper a x ^ 2)
-          ((au an e).representative b) ≤
-        β) :
-    nL aQ an e upper a b ≤
-      β * qj an e b := by
-  exact
-    kI
-      (au an e)
-      (fun x =>
-        eK aQ an e upper a x ^ 2)
-      b gr
+
 def oj
     {G : Type*} [Fintype G] [DecidableEq G]
     {k j : ℕ}
@@ -6664,40 +6594,7 @@ def oj
         (fun y => eK
           aQ an e upper a y ^ 2) x ≤
       β
-theorem oj.oE
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k j : ℕ}
-    (aQ an : af G k j)
-    (e : al k (j + 1))
-    (upper : ab (Fin (j + 1) → G))
-    (a : upper.parts) (x : Fin (j + 1) → G)
-    (α β : ℝ)
-    (h5 :
-      oj
-        aQ an e upper a x α β) :
-    nL
-        aQ an e upper a
-        (fJ an e x) ≤
-      β *
-        qj an e
-          (fJ an e x) := by
-  apply rt
-  have vv :
-      (au an e).representative
-          (fJ an e x) ∈
-        (au an e).part x := by
-    exact
-      (au an e).jP
-        (fJ an e x)
-  have heq :=
-    cY
-      (au an e)
-      (fun y =>
-        eK
-          aQ an e upper a y ^ 2)
-      vv
-  rw [heq]
-  exact h5.2
+
 structure ai
     (G : Type*) [Fintype G] [DecidableEq G]
     (k r : ℕ) (C : aa G k r) where
@@ -6799,20 +6696,8 @@ def lh
     {k r : ℕ}
     (T S : eg G k r) : Prop :=
   ∀ e, (T e).partition ≤ (S e).partition
-theorem lh.refl
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k r : ℕ}
-    (S : eg G k r) :
-    lh S S :=
-  fun _ => le_rfl
-theorem lh.trans
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k r : ℕ}
-    {U T S : eg G k r}
-    (GR : lh U T)
-    (GS : lh T S) :
-    lh U S :=
-  fun e => (GR e).trans (GS e)
+
+
 theorem tF
     {G : Type*} [Fintype G] [Nonempty G]
     {k r : ℕ}
@@ -11233,407 +11118,7 @@ def nO
   aQ := R.aQ
   dy := R.dy
 end bk
-theorem bk.nonempty
-    {G : Type*} [Fintype G] [DecidableEq G] [Nonempty G]
-    {k r : ℕ}
-    (initial : aa G k r)
-    (ε : (j : Fin r) → ℕ → ℝ)
-    (aG : (j : Fin r) → ℕ → ℕ)
-    (length : Fin r → ℕ)
-    (hε : ∀ j n, 0 ≤ ε j n)
-    (dP :
-      ∀ j n,
-        (Fintype.card
-          (al k (j.1 + 1)) : ℝ) <
-          (aG j n : ℝ) * (ε j n) ^ 2)
-    (iB : ∀ j, 0 < length j) :
-    Nonempty
-      (bk
-        G k r initial ε aG length) := by
-  induction r with
-  | zero =>
-      let index : Fin 0 → ℕ := fun j => Fin.elim0 j
-      refine ⟨{
-        index := index
-        an := initial
-        aQ := initial
-        dy :=
-          aa.db.refl initial
-        bJ :=
-          aa.db.refl initial
-        da := rfl
-        dZ := rfl
-        fM := ?_
-        regular := ?_
-        eo := ?_
-        gN := ?_
-        bT := ?_
-        c1 := ?_ }⟩
-      · intro j
-        exact Fin.elim0 j
-      · intro j
-        exact Fin.elim0 j
-      · intro j
-        exact Fin.elim0 j
-      · intro j
-        exact Fin.elim0 j
-      · intro j
-        exact Fin.elim0 j
-      · intro j
-        exact Fin.elim0 j
-  | succ r ih =>
-      let lD :
-          af G k r :=
-        initial.ed.bl
-      let upper :
-          af G k (r + 1) :=
-        initial.bl
-      have wF :
-          ∀ n, 0 ≤ ε (Fin.last r) n :=
-        fun n => hε (Fin.last r) n
-      have xI :
-          ∀ n,
-            (Fintype.card
-              (al k (r + 1)) : ℝ) <
-              (aG (Fin.last r) n : ℝ) *
-                (ε (Fin.last r) n) ^ 2 := by
-        intro n
-        have h := dP (Fin.last r) n
-        change
-          (Fintype.card
-            (al k (r + 1)) : ℝ) <
-            (aG (Fin.last r) n : ℝ) *
-              (ε (Fin.last r) n) ^ 2 at h
-        exact h
-      let bc :=
-        iF
-          lD upper
-          (ε (Fin.last r))
-          (aG (Fin.last r))
-          wF xI
-          (length (Fin.last r))
-          (iB (Fin.last r))
-      let eE :
-          aa G k r :=
-        initial.ed.bb bc.aQ
-      let εlower : (j : Fin r) → ℕ → ℝ :=
-        fun j => ε j.castSucc
-      let jI : (j : Fin r) → ℕ → ℕ :=
-        fun j => aG j.castSucc
-      let jJ : Fin r → ℕ :=
-        fun j => length j.castSucc
-      have uf :
-          ∀ j n, 0 ≤ εlower j n :=
-        fun j n => hε j.castSucc n
-      have vy :
-          ∀ j n,
-            (Fintype.card
-              (al k (j.1 + 1)) : ℝ) <
-              (jI j n : ℝ) *
-                (εlower j n) ^ 2 :=
-        fun j n => dP j.castSucc n
-      have uj :
-          ∀ j, 0 < jJ j :=
-        fun j => iB j.castSucc
-      obtain ⟨aA⟩ :=
-        ih eE εlower jI jJ
-          uf vy uj
-      let bA :
-          aa G k r :=
-        aA.an.bb
-          bc.an
-      let an :
-          aa G k (r + 1) :=
-        bA.eF upper
-      let aQ :
-          aa G k (r + 1) :=
-        aA.aQ.eF upper
-      let index : Fin (r + 1) → ℕ :=
-        fun j =>
-          Fin.lastCases bc.index
-            aA.index j
-      have ku :
-          aA.aQ.bl =
-            bc.aQ := by
-        calc
-          aA.aQ.bl =
-              eE.bl :=
-            aA.dZ
-          _ = bc.aQ :=
-            aa.eY
-              initial.ed bc.aQ
-      have fS :
-          aA.an.bl =
-            bc.aQ := by
-        calc
-          aA.an.bl =
-              eE.bl :=
-            aA.da
-          _ = bc.aQ :=
-            aa.eY
-              initial.ed bc.aQ
-      refine ⟨{
-        index := index
-        an := an
-        aQ := aQ
-        dy := ?_
-        bJ := ?_
-        da := ?_
-        dZ := ?_
-        fM := ?_
-        regular := ?_
-        eo := ?_
-        gN := ?_
-        bT := ?_
-        c1 := ?_ }⟩
-      · have lk :
-            aA.aQ.db
-              bA := by
-          intro q e
-          cases q using Fin.lastCases with
-          | last =>
-              simp only [bA,
-                aa.bb,
-                Fin.lastCases_last]
-              change al k r at e
-              have heq :
-                  aA.aQ.partition
-                      (Fin.last r) e =
-                    bc.aQ e :=
-                congrFun ku e
-              rw [heq]
-              exact bc.dy e
-          | cast i =>
-              simp only [bA,
-                aa.bb,
-                Fin.lastCases_castSucc]
-              exact aA.dy
-                i.castSucc e
-        exact aa.g3
-          lk
-          (aP.refl upper)
-      · have lk :
-            bA.db initial.ed := by
-          intro q e
-          cases q using Fin.lastCases with
-          | last =>
-              simp only [bA,
-                aa.bb,
-                Fin.lastCases_last]
-              change al k r at e
-              exact bc.bJ e
-          | cast i =>
-              simp only [bA,
-                aa.bb,
-                Fin.lastCases_castSucc]
-              have h :=
-                aA.bJ
-                  i.castSucc e
-              simpa only [eE,
-                aa.bb,
-                Fin.lastCases_castSucc,
-                aa.ed] using h
-        have ve :=
-          aa.g3
-            lk
-            (aP.refl upper)
-        simpa [an, upper] using ve
-      · simp [an, upper]
-      · simp [aQ, upper]
-      · intro q
-        cases q using Fin.lastCases with
-        | last =>
-            simpa [index] using bc.fM
-        | cast i =>
-            simpa [index, jJ] using
-              aA.fM i
-      · intro q
-        cases q using Fin.lastCases with
-        | last =>
-            simp only [aQ,
-              aa.aT,
-              aa.dB,
-              Fin.succ_last,
-              cR,
-              index, Fin.lastCases_last]
-            change
-              @a3
-                G _ _ k r
-                (aA.aQ.partition
-                  (Fin.last r))
-                upper
-                (ε (Fin.last r) bc.index)
-            have dk := bc.lC
-            rw [← ku] at dk
-            exact dk
-        | cast i =>
-            have dk :=
-              aA.regular i
-            simp only [aQ,
-              aa.aT,
-              Fin.succ_castSucc,
-              cR,
-              index, Fin.lastCases_castSucc]
-            change
-              @a3
-                G _ _ k i.1
-                (aA.aQ.partition
-                  i.castSucc)
-                (aA.aQ.partition i.succ)
-                (ε i.castSucc
-                  (aA.index i))
-            exact dk
-      · intro q
-        cases q using Fin.lastCases with
-        | last =>
-            have ip := bc.eo
-            simp only [aQ, an, bA,
-              aa.aT,
-              aa.dB,
-              aa.bb,
-              Fin.lastCases_last, Fin.succ_last]
-            change
-              0 ≤
-                aH
-                    aA.aQ.bl upper -
-                  aH
-                    bc.an upper
-            rw [ku]
-            exact ip
-        | cast i =>
-            have ip :=
-              aA.eo i
-            simp only [aQ, an, bA,
-              aa.aT,
-              aa.bb,
-              Fin.lastCases_castSucc,
-              Fin.succ_castSucc]
-            convert ip using 1
-      · intro q
-        cases q using Fin.lastCases with
-        | last =>
-            have ip := bc.gN
-            simp only [aQ, an, bA,
-              aa.aT,
-              aa.dB,
-              aa.bb,
-              Fin.lastCases_last, Fin.succ_last]
-            change
-              aH
-                    aA.aQ.bl upper -
-                  aH
-                    bc.an upper ≤
-                (Fintype.card
-                  (al k (r + 1)) : ℝ) /
-                    (length (Fin.last r) : ℝ)
-            rw [ku]
-            exact ip
-        | cast i =>
-            have ip :=
-              aA.gN i
-            simp only [aQ, an, bA,
-              aa.aT,
-              aa.bb,
-              Fin.lastCases_castSucc,
-              Fin.succ_castSucc, jJ]
-            convert ip using 1; rfl
-      · intro q
-        cases q using Fin.lastCases with
-        | last =>
-            intro e
-            have b8 :=
-              bc.bT e
-            simp only [an, bA,
-              aa.aT,
-              aa.bb,
-              Fin.lastCases_last,
-              index, Fin.lastCases_last]
-            change al k r at e
-            change
-              ab.aO
-                    (bc.an e) ≤
-                aL
-                    r (aG (Fin.last r))
-                    bc.index *
-                  ab.aO
-                    (initial.partition
-                      (Fin.last r).castSucc e)
-            exact b8
-        | cast i =>
-            intro e
-            change al k i.1 at e
-            have b8 :=
-              aA.bT i e
-            simp only [an, bA,
-              aa.aT,
-              aa.bb,
-              Fin.lastCases_castSucc,
-              index, Fin.lastCases_castSucc]
-            change
-              ab.aO
-                  (aA.an.partition
-                    i.castSucc e) ≤
-                aL
-                    i.1 (aG i.castSucc)
-                    (aA.index i) *
-                  ab.aO
-                    (initial.partition
-                      i.castSucc.castSucc e)
-            simp only [jI, eE,
-              aa.bb,
-              Fin.lastCases_castSucc,
-              aa.ed] at b8
-            convert b8 using 1
-      · intro q
-        cases q using Fin.lastCases with
-        | last =>
-            intro e
-            change al k r at e
-            have b8 :=
-              bc.c1 e
-            simp only [aQ,
-              aa.aT,
-              index, Fin.lastCases_last]
-            change
-              ab.aO
-                  (aA.aQ.partition
-                    (Fin.last r) e) ≤
-                aL
-                    r (aG (Fin.last r))
-                    (bc.index + 1) *
-                  ab.aO
-                    (initial.partition
-                      (Fin.last r).castSucc e)
-            have heq :
-                aA.aQ.partition
-                    (Fin.last r) e =
-                  bc.aQ e :=
-              congrFun ku e
-            rw [heq]
-            exact b8
-        | cast i =>
-            intro e
-            change al k i.1 at e
-            have b8 :=
-              aA.c1 i e
-            simp only [aQ,
-              aa.aT,
-              index, Fin.lastCases_castSucc]
-            change
-              ab.aO
-                  (aA.aQ.partition
-                    i.castSucc e) ≤
-                aL
-                    i.1 (aG i.castSucc)
-                    (aA.index i + 1) *
-                  ab.aO
-                    (initial.partition
-                      i.castSucc.castSucc e)
-            simp only [jI, eE,
-              aa.bb,
-              Fin.lastCases_castSucc,
-              aa.ed] at b8
-            convert b8 using 1
+
 namespace bk
 end bk
 end av.ag
@@ -11715,389 +11200,7 @@ def nO
   aQ := R.aQ
   dy := R.dy
 end a5
-theorem a5.nonempty
-    {G : Type*} [Fintype G] [DecidableEq G] [Nonempty G]
-    {k r : ℕ}
-    (initial : aa G k r)
-    (ε : (j : Fin r) → ℕ → ℝ)
-    (aG : (j : Fin r) → ℕ → ℕ)
-    (length : Fin r → ℕ)
-    (hε : ∀ j n, 0 ≤ ε j n)
-    (dP :
-      ∀ j n,
-        (Fintype.card
-          (al k (j.1 + 1)) : ℝ) <
-          (aG j n : ℝ) * (ε j n) ^ 2)
-    (iB : ∀ j, 0 < length j) :
-    Nonempty
-      (a5
-        G k r initial ε aG length) := by
-  induction r with
-  | zero =>
-      let index : Fin 0 → ℕ := fun j => Fin.elim0 j
-      refine ⟨{
-        index := index
-        an := initial
-        aQ := initial
-        dy :=
-          aa.db.refl initial
-        bJ :=
-          aa.db.refl initial
-        da := rfl
-        dZ := rfl
-        fM := ?_
-        lE := ?_
-        eo := ?_
-        gN := ?_
-        bT := ?_
-        c1 := ?_ }⟩
-      · intro j
-        exact Fin.elim0 j
-      · intro j
-        exact Fin.elim0 j
-      · intro j
-        exact Fin.elim0 j
-      · intro j
-        exact Fin.elim0 j
-      · intro j
-        exact Fin.elim0 j
-      · intro j
-        exact Fin.elim0 j
-  | succ r ih =>
-      let lD :
-          af G k r :=
-        initial.ed.bl
-      let upper :
-          af G k (r + 1) :=
-        initial.bl
-      have wF :
-          ∀ n, 0 ≤ ε (Fin.last r) n :=
-        fun n => hε (Fin.last r) n
-      have xI :
-          ∀ n,
-            (Fintype.card
-              (al k (r + 1)) : ℝ) <
-              (aG (Fin.last r) n : ℝ) *
-                (ε (Fin.last r) n) ^ 2 := by
-        intro n
-        have h := dP (Fin.last r) n
-        change
-          (Fintype.card
-            (al k (r + 1)) : ℝ) <
-            (aG (Fin.last r) n : ℝ) *
-              (ε (Fin.last r) n) ^ 2 at h
-        exact h
-      let bc :=
-        iF
-          lD upper
-          (ε (Fin.last r))
-          (aG (Fin.last r))
-          wF xI
-          (length (Fin.last r))
-          (iB (Fin.last r))
-      let eE :
-          aa G k r :=
-        initial.ed.bb bc.an
-      let εlower : (j : Fin r) → ℕ → ℝ :=
-        fun j => ε j.castSucc
-      let jI : (j : Fin r) → ℕ → ℕ :=
-        fun j => aG j.castSucc
-      let jJ : Fin r → ℕ :=
-        fun j => length j.castSucc
-      have uf :
-          ∀ j n, 0 ≤ εlower j n :=
-        fun j n => hε j.castSucc n
-      have vy :
-          ∀ j n,
-            (Fintype.card
-              (al k (j.1 + 1)) : ℝ) <
-              (jI j n : ℝ) *
-                (εlower j n) ^ 2 :=
-        fun j n => dP j.castSucc n
-      have uj :
-          ∀ j, 0 < jJ j :=
-        fun j => iB j.castSucc
-      obtain ⟨aA⟩ :=
-        ih eE εlower jI jJ
-          uf vy uj
-      let bA :
-          aa G k r :=
-        aA.an
-      let dD :
-          aa G k r :=
-        aA.aQ.bb bc.aQ
-      let an :
-          aa G k (r + 1) :=
-        bA.eF upper
-      let aQ :
-          aa G k (r + 1) :=
-        dD.eF upper
-      let index : Fin (r + 1) → ℕ :=
-        fun j =>
-          Fin.lastCases bc.index
-            aA.index j
-      have ku :
-          aA.aQ.bl =
-            bc.an := by
-        calc
-          aA.aQ.bl =
-              eE.bl :=
-            aA.dZ
-          _ = bc.an :=
-            aa.eY
-              initial.ed bc.an
-      have fS :
-          aA.an.bl =
-            bc.an := by
-        calc
-          aA.an.bl =
-              eE.bl :=
-            aA.da
-          _ = bc.an :=
-            aa.eY
-              initial.ed bc.an
-      refine ⟨{
-        index := index
-        an := an
-        aQ := aQ
-        dy := ?_
-        bJ := ?_
-        da := ?_
-        dZ := ?_
-        fM := ?_
-        lE := ?_
-        eo := ?_
-        gN := ?_
-        bT := ?_
-        c1 := ?_ }⟩
-      · have lk :
-            dD.db bA := by
-          intro q e
-          cases q using Fin.lastCases with
-          | last =>
-              simp only [dD, bA,
-                aa.bb,
-                Fin.lastCases_last]
-              change al k r at e
-              have heq :
-                  aA.an.partition
-                      (Fin.last r) e =
-                    bc.an e :=
-                congrFun fS e
-              rw [heq]
-              exact bc.dy e
-          | cast i =>
-              simp only [dD, bA,
-                aa.bb,
-                Fin.lastCases_castSucc]
-              exact aA.dy
-                i.castSucc e
-        exact aa.g3
-          lk
-          (aP.refl upper)
-      · have wM :
-            eE.db initial.ed := by
-          exact aa.oD
-            initial.ed bc.an
-            (by
-              simpa only [lD] using
-                bc.bJ)
-        have lk :
-            bA.db initial.ed :=
-          aa.db.trans
-            aA.bJ
-            wM
-        have ve :=
-          aa.g3
-            lk
-            (aP.refl upper)
-        simpa [an, bA, upper] using ve
-      · simp [an, upper]
-      · simp [aQ, upper]
-      · intro q
-        cases q using Fin.lastCases with
-        | last =>
-            simpa [index] using bc.fM
-        | cast i =>
-            simpa [index, jJ] using
-              aA.fM i
-      · intro q
-        cases q using Fin.lastCases with
-        | last =>
-            simp only [aQ, dD, an,
-              bA,
-              aa.aT,
-              aa.dB,
-              aa.bb,
-              Fin.lastCases_last, Fin.succ_last,
-              index, Fin.lastCases_last]
-            exact bc.lC
-        | cast i =>
-            have dk :=
-              aA.lE i
-            simp only [aQ, dD, an,
-              bA,
-              aa.aT,
-              aa.bb,
-              Fin.lastCases_castSucc, Fin.succ_castSucc,
-              index, Fin.lastCases_castSucc]
-            change
-              @a3
-                G _ _ k i.1
-                (aA.aQ.partition
-                  i.castSucc)
-                (aA.an.partition
-                  i.succ)
-                (ε i.castSucc
-                  (aA.index i))
-            exact dk
-      · intro q
-        cases q using Fin.lastCases with
-        | last =>
-            have ip := bc.eo
-            simp only [aQ, dD, an,
-              bA,
-              aa.aT,
-              aa.dB,
-              aa.bb,
-              Fin.lastCases_last, Fin.succ_last]
-            change
-              0 ≤
-                aH
-                    bc.aQ upper -
-                  aH
-                    aA.an.bl
-                    upper
-            rw [fS]
-            exact ip
-        | cast i =>
-            have ip :=
-              aA.eo i
-            simp only [aQ, dD, an,
-              bA,
-              aa.aT,
-              aa.bb,
-              Fin.lastCases_castSucc, Fin.succ_castSucc]
-            convert ip using 1
-      · intro q
-        cases q using Fin.lastCases with
-        | last =>
-            have ip := bc.gN
-            simp only [aQ, dD, an,
-              bA,
-              aa.aT,
-              aa.dB,
-              aa.bb,
-              Fin.lastCases_last, Fin.succ_last]
-            change
-              aH
-                    bc.aQ upper -
-                  aH
-                    aA.an.bl
-                    upper ≤
-                (Fintype.card
-                  (al k (r + 1)) : ℝ) /
-                    (length (Fin.last r) : ℝ)
-            rw [fS]
-            exact ip
-        | cast i =>
-            have ip :=
-              aA.gN i
-            simp only [aQ, dD, an,
-              bA,
-              aa.aT,
-              aa.bb,
-              Fin.lastCases_castSucc, Fin.succ_castSucc,
-              jJ]
-            convert ip using 1; rfl
-      · intro q
-        cases q using Fin.lastCases with
-        | last =>
-            intro e
-            change al k r at e
-            have b8 :=
-              bc.bT e
-            simp only [an, bA,
-              aa.aT,
-              index, Fin.lastCases_last]
-            change
-              ab.aO
-                  (aA.an.partition
-                    (Fin.last r) e) ≤
-                aL
-                    r (aG (Fin.last r))
-                    bc.index *
-                  ab.aO
-                    (initial.partition
-                      (Fin.last r).castSucc e)
-            have heq :
-                aA.an.partition
-                    (Fin.last r) e =
-                  bc.an e :=
-              congrFun fS e
-            rw [heq]
-            exact b8
-        | cast i =>
-            intro e
-            change al k i.1 at e
-            have b8 :=
-              aA.bT i e
-            simp only [an, bA,
-              aa.aT,
-              index, Fin.lastCases_castSucc]
-            change
-              ab.aO
-                  (aA.an.partition
-                    i.castSucc e) ≤
-                aL
-                    i.1 (aG i.castSucc)
-                    (aA.index i) *
-                  ab.aO
-                    (initial.partition
-                      i.castSucc.castSucc e)
-            simp only [jI, eE,
-              aa.bb,
-              Fin.lastCases_castSucc,
-              aa.ed] at b8
-            convert b8 using 1
-      · intro q
-        cases q using Fin.lastCases with
-        | last =>
-            intro e
-            change al k r at e
-            have b8 :=
-              bc.c1 e
-            simp only [aQ, dD,
-              aa.aT,
-              aa.bb,
-              Fin.lastCases_last,
-              index, Fin.lastCases_last]
-            exact b8
-        | cast i =>
-            intro e
-            change al k i.1 at e
-            have b8 :=
-              aA.c1 i e
-            simp only [aQ, dD,
-              aa.aT,
-              aa.bb,
-              Fin.lastCases_castSucc,
-              index, Fin.lastCases_castSucc]
-            change
-              ab.aO
-                  (aA.aQ.partition
-                    i.castSucc e) ≤
-                aL
-                    i.1 (aG i.castSucc)
-                    (aA.index i + 1) *
-                  ab.aO
-                    (initial.partition
-                      i.castSucc.castSucc e)
-            simp only [jI, eE,
-              aa.bb,
-              Fin.lastCases_castSucc,
-              aa.ed] at b8
-            convert b8 using 1
+
 namespace ak
 end ak
 namespace a5
@@ -12316,58 +11419,8 @@ theorem uk {k r : ℕ}
           simpa using rS n
       | cast j =>
           simpa using ih (vD bW) j n
-theorem xk {k r : ℕ}
-    {S : aJ k r}
-    (P : S.br) (hS : S.IsAdmissible) :
-    ∀ j n,
-      (Fintype.card (al k (j.1 + 1)) : ℝ) <
-        (P.aG j n : ℝ) * (P.aR j n) ^ 2 := by
-  induction P with
-  | nil =>
-      intro j
-      exact Fin.elim0 j
-  | @node r aR aG length next bW lower ih =>
-      rcases hS with ⟨_htolerance, gS, _hlength, vD⟩
-      intro j n
-      cases j using Fin.lastCases with
-      | last =>
-          change
-            (Fintype.card (al k (r + 1)) : ℝ) <
-              ((br.node
-                (aR := aR) (aG := aG)
-                bW lower).aG (Fin.last r) n : ℕ) *
-                (br.node
-                  (aR := aR) (aG := aG)
-                  bW lower).aR (Fin.last r) n ^ 2
-          rw [q9, sB]
-          exact gS n
-      | cast j =>
-          change
-            (Fintype.card (al k (j.1 + 1)) : ℝ) <
-              ((br.node
-                (aR := aR) (aG := aG)
-                bW lower).aG j.castSucc n : ℕ) *
-                (br.node
-                  (aR := aR) (aG := aG)
-                  bW lower).aR j.castSucc n ^ 2
-          rw [vz, qk]
-          exact ih (vD bW) j n
-theorem length_pos {k r : ℕ}
-    {S : aJ k r}
-    (P : S.br) (hS : S.IsAdmissible) :
-    ∀ j, 0 < P.length j := by
-  induction P with
-  | nil =>
-      intro j
-      exact Fin.elim0 j
-  | @node r aR aG length next bW lower ih =>
-      rcases hS with ⟨_htolerance, _hbudget, iB, vD⟩
-      intro j
-      cases j using Fin.lastCases with
-      | last =>
-          simpa using iB
-      | cast j =>
-          simpa using ih (vD bW) j
+
+
 end br
 structure uS
     {G : Type*} [Fintype G] [DecidableEq G]
@@ -12960,46 +12013,9 @@ theorem k6
   unfold dC
   exact one_div_pos.mpr
     (by exact_mod_cast F.positive M)
-theorem jm
-    (k j initialBound : ℕ) (F : aF) :
-    ∀ n,
-      0 <
-        fx
-          k j initialBound F n := by
-  intro n
-  exact k6 F
-    (bE
-      k j initialBound F n)
-theorem oo
-    (k j initialBound : ℕ) (F : aF) :
-    ∀ n,
-      (Fintype.card
-          (al k (j + 1)) : ℝ) <
-        (gg
-            k j initialBound F n : ℝ) *
-          (fx
-            k j initialBound F n) ^ 2 := by
-  intro n
-  exact kh
-    (jm
-      k j initialBound F n)
-theorem eM
-    (k j initialBound : ℕ) (F : aF) :
-    ∀ n,
-      bE
-          k j initialBound F n =
-        aL
-            j (gg
-              k j initialBound F) n *
-          initialBound := by
-  intro n
-  induction n with
-  | zero =>
-      simp [aL]
-  | succ n ih =>
-      rw [rv, ih]
-      simp [aL,
-        Nat.mul_assoc]
+
+
+
 noncomputable def dU
     (k j : ℕ) (γ : ℝ) : ℕ :=
   Nat.ceil
@@ -13086,84 +12102,7 @@ structure ki
       ab.aO (aQ e) ≤
         bE
           k j initialBound F (index + 1)
-theorem ki.nonempty
-    {G : Type*} [Fintype G] [DecidableEq G] [Nonempty G]
-    {k j initialBound : ℕ}
-    (initial : af G k j)
-    (upper : af G k (j + 1))
-    (F : aF) {γ : ℝ} (Cp : 0 < γ)
-    (gO :
-      ∀ e,
-        ab.aO (initial e) ≤
-          initialBound) :
-    Nonempty
-      (ki
-        G k j initialBound initial upper F γ) := by
-  let τ : ℕ → ℝ :=
-    fx k j initialBound F
-  let B : ℕ → ℕ :=
-    gg k j initialBound F
-  let L : ℕ :=
-    dU k j γ
-  obtain ⟨R⟩ :=
-    gw.nonempty
-      initial upper τ B
-      (fun n =>
-        (jm
-          k j initialBound F n).le)
-      (oo
-        k j initialBound F)
-      (h9 k j γ)
-  refine ⟨{
-    index := R.index
-    fM := R.fM
-    an := R.an
-    aQ := R.aQ
-    dy := R.dy
-    bJ :=
-      R.bJ
-    lC := ?_
-    eo := R.eo
-    gN := ?_
-    bT := ?_
-    c1 := ?_ }⟩
-  · simpa [τ, nQ] using
-      R.lC
-  · exact R.gN.trans
-      (fb
-        Cp).le
-  · intro e
-    calc
-      ab.aO (R.an e) ≤
-          aL
-              j B R.index *
-            ab.aO (initial e) :=
-        R.bT e
-      _ ≤
-          aL
-              j B R.index *
-            initialBound :=
-        Nat.mul_le_mul_left _ (gO e)
-      _ =
-          bE
-            k j initialBound F R.index := by
-        rw [eM]
-  · intro e
-    calc
-      ab.aO (R.aQ e) ≤
-          aL
-              j B (R.index + 1) *
-            ab.aO (initial e) :=
-        R.c1 e
-      _ ≤
-          aL
-              j B (R.index + 1) *
-            initialBound :=
-        Nat.mul_le_mul_left _ (gO e)
-      _ =
-          bE
-            k j initialBound F (R.index + 1) := by
-        rw [eM]
+
 end av.ag
 end
 section
@@ -13229,38 +12168,9 @@ noncomputable def eh
     (fun j =>
       k7
         k r initialBound F index j)
-theorem pU
-    (k r : ℕ)
-    (initialBound : Fin (r + 1) → ℕ)
-    (F : aF) :
-    ∀ j n,
-      0 <
-        f4
-          k r initialBound F j n := by
-  intro j n
-  exact jm
-    k j.1 (initialBound j.castSucc) F n
-theorem qx
-    (k r : ℕ)
-    (initialBound : Fin (r + 1) → ℕ)
-    (F : aF) :
-    ∀ j n,
-      (Fintype.card
-          (al k (j.1 + 1)) : ℝ) <
-        (gD
-            k r initialBound F j n : ℝ) *
-          (f4
-            k r initialBound F j n) ^ 2 := by
-  intro j n
-  exact oo
-    k j.1 (initialBound j.castSucc) F n
-theorem qS
-    (k r : ℕ) (γ : Fin r → ℝ) :
-    ∀ j,
-      0 <
-        gE k r γ j := by
-  intro j
-  exact h9 k j.1 (γ j)
+
+
+
 structure bg
     (G : Type*) [Fintype G] [DecidableEq G]
     (k r : ℕ)
@@ -13319,140 +12229,7 @@ structure bg
           k r initialBound F index q
 namespace bg
 end bg
-theorem bg.nonempty
-    {G : Type*} [Fintype G] [DecidableEq G] [Nonempty G]
-    {k r : ℕ}
-    (initial : aa G k r)
-    (initialBound : Fin (r + 1) → ℕ)
-    (F : aF)
-    (γ : Fin r → ℝ)
-    (Cp : ∀ j, 0 < γ j)
-    (gO :
-      ∀ (q : Fin (r + 1)) (e : al k q.1),
-        ab.aO
-          (initial.partition q e) ≤ initialBound q) :
-    Nonempty
-      (bg
-        G k r initial initialBound F γ) := by
-  let τ : (j : Fin r) → ℕ → ℝ :=
-    f4
-      k r initialBound F
-  let B : (j : Fin r) → ℕ → ℕ :=
-    gD
-      k r initialBound F
-  let L : Fin r → ℕ :=
-    gE k r γ
-  obtain ⟨R⟩ :=
-    bk.nonempty
-      initial τ B L
-      (fun j n =>
-        (pU
-          k r initialBound F j n).le)
-      (qx
-        k r initialBound F)
-      (qS k r γ)
-  refine ⟨{
-    index := R.index
-    an := R.an
-    aQ := R.aQ
-    dy := R.dy
-    bJ :=
-      R.bJ
-    da := R.da
-    dZ := R.dZ
-    fM := ?_
-    regular := ?_
-    eo := R.eo
-    gN := ?_
-    bT := ?_
-    c1 := ?_ }⟩
-  · intro j
-    simpa [L, gE] using
-      R.fM j
-  · intro j
-    have dk := R.regular j
-    simpa [τ, f4,
-      cR,
-      c6,
-      nQ] using dk
-  · intro j
-    exact (R.gN j).trans
-      (by
-        simpa [L, gE] using
-          (fb
-            (Cp j)).le)
-  · intro q
-    cases q using Fin.lastCases with
-    | last =>
-        intro e
-        have m5 := congrFun R.da e
-        simp only [aa.bl] at m5
-        rw [m5]
-        simpa [eN] using
-          gO (Fin.last r) e
-    | cast i =>
-        intro e
-        have b8 := R.bT i e
-        calc
-          ab.aO
-              (R.an.partition i.castSucc e) ≤
-              aL
-                  i.1 (B i) (R.index i) *
-                ab.aO
-                  (initial.partition i.castSucc e) := by
-            simpa [B, gD] using
-              b8
-          _ ≤
-              aL
-                  i.1 (B i) (R.index i) *
-                initialBound i.castSucc :=
-            Nat.mul_le_mul_left _
-              (gO i.castSucc e)
-          _ =
-              eN
-                k r initialBound F R.index i.castSucc := by
-            simp only [
-              eN,
-              c6,
-              Fin.lastCases_castSucc]
-            rw [eM]
-            rfl
-  · intro q
-    cases q using Fin.lastCases with
-    | last =>
-        intro e
-        have m5 := congrFun R.dZ e
-        simp only [aa.bl] at m5
-        rw [m5]
-        simpa [eh] using
-          gO (Fin.last r) e
-    | cast i =>
-        intro e
-        have b8 := R.c1 i e
-        calc
-          ab.aO
-              (R.aQ.partition i.castSucc e) ≤
-              aL
-                  i.1 (B i) (R.index i + 1) *
-                ab.aO
-                  (initial.partition i.castSucc e) := by
-            simpa [B, gD] using
-              b8
-          _ ≤
-              aL
-                  i.1 (B i) (R.index i + 1) *
-                initialBound i.castSucc :=
-            Nat.mul_le_mul_left _
-              (gO i.castSucc e)
-          _ =
-              eh
-                k r initialBound F R.index i.castSucc := by
-            simp only [
-              eh,
-              k7,
-              Fin.lastCases_castSucc]
-            rw [eM]
-            rfl
+
 end av.ag
 end
 section
@@ -13617,99 +12394,7 @@ structure iL
       ab.aO
           (regularity.an.partition q e) ≤
         scale q
-theorem oJ
-    {G : Type*} [Fintype G] [DecidableEq G] [Nonempty G]
-    {k r : ℕ}
-    {initialBound : Fin (r + 1) → ℕ}
-    {F : aF}
-    {bP : ℕ}
-    (S : a4
-      k r initialBound F bP)
-    (initial : aa G k r)
-    (gO :
-      ∀ (q : Fin (r + 1)) (e : al k q.1),
-        ab.aO
-            (initial.partition q e) ≤
-          initialBound q) :
-    Nonempty
-      (iL k r initial initialBound F bP) := by
-  obtain ⟨P, R, rT⟩ :=
-    S.lG.o1
-      initial S.gp
-  refine ⟨{
-    aR := P.aR
-    aG := P.aG
-    length := P.length
-    regularity := R
-    scale := S.scale P
-    o2 := S.o2 P
-    fT := S.fT P
-    pw := ?_
-    dq := ?_
-    uV := ?_
-    bT := ?_ }⟩
-  · intro j
-    simp only [cR]
-    rw [congrFun rT j]
-    exact
-      P.uk S.gp
-        j (P.index j)
-  · intro j
-    simpa [cR, rT] using
-      S.dq P j
-  · intro j
-    have ip := R.gN j
-    have uW := S.i9 P j
-    change
-      aH
-            (R.aQ.partition j.castSucc)
-            (R.an.partition j.succ) -
-          aH
-            (R.an.partition j.castSucc)
-            (R.an.partition j.succ) ≤
-        fG F (S.scale P) j
-    exact ip.trans uW
-  · intro q
-    cases q using Fin.lastCases with
-    | last =>
-        intro e
-        have m5 := congrFun R.da e
-        simp only [aa.bl] at m5
-        rw [m5]
-        calc
-          ab.aO
-                (initial.partition (Fin.last r) e) ≤
-              initialBound (Fin.last r) :=
-            gO (Fin.last r) e
-          _ =
-              ca
-                initialBound P (Fin.last r) := by
-            simp [ca]
-          _ ≤ S.scale P (Fin.last r) :=
-            S.e4 P (Fin.last r)
-    | cast j =>
-        intro e
-        calc
-          ab.aO
-                (R.an.partition j.castSucc e) ≤
-              aL
-                    j.1 (P.aG j) (P.index j) *
-                ab.aO
-                    (initial.partition j.castSucc e) := by
-            rw [← congrFun rT j]
-            exact R.bT j e
-          _ ≤
-              aL
-                    j.1 (P.aG j) (P.index j) *
-                initialBound j.castSucc :=
-            Nat.mul_le_mul_left _
-              (gO j.castSucc e)
-          _ =
-              ca
-                initialBound P j.castSucc := by
-            simp [ca]
-          _ ≤ S.scale P j.castSucc :=
-            S.e4 P j.castSucc
+
 def zero
     (k : ℕ)
     (initialBound : Fin 1 → ℕ)
@@ -14322,18 +13007,7 @@ theorem uo
             ((next bW).kz lower).trans
               (um
                 (fun i => (next i).ef) bW)
-theorem nonempty
-    (k r : ℕ)
-    (initialBound : Fin (r + 1) → ℕ)
-    (F : aF)
-    (bP : ℕ) :
-    Nonempty
-      (a4
-        k r initialBound F bP) := by
-  obtain ⟨S⟩ :=
-    uo
-      k r initialBound F bP
-  exact ⟨S.jn⟩
+
 end a4
 end av.ag
 end
@@ -16053,18 +14727,7 @@ structure nc
         (iC
           r initialBound aG length) ξ
 namespace nc
-theorem oJ
-    {G : Type*} [Fintype G] [DecidableEq G] [Nonempty G]
-    {k r initialBound : ℕ} {ξ : ℝ}
-    (S : nc k r initialBound ξ)
-    (initial : aa G k r) :
-    Nonempty
-      (bk
-        G k r initial S.aR S.aG S.length) := by
-  exact bk.nonempty
-    initial S.aR S.aG S.length
-    (fun j n => (S.zv j n).le)
-    S.xk S.length_pos
+
 end nc
 end av.ag
 end
