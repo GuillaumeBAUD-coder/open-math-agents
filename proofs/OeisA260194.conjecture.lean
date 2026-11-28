@@ -31,6 +31,12 @@ def Good (s : State) : Prop :=
   ∃ k : ℕ, (run k s).d = 1 ∧ (run k s).e = 1 ∧
     ∀ j ≤ k, (run j s).d ≤ 89
 
+theorem Good.one (x : ℕ) : Good ⟨x,1,1⟩ := by
+  refine ⟨0,rfl,rfl,?_⟩
+  intro j hj
+  rw [Nat.le_zero.mp hj]
+  exact (by decide : 1 ≤ 89)
+
 theorem Good.prepend {s : State} (h : Good (next s)) (hd : s.d ≤ 89) : Good s := by
   obtain ⟨k, hp, hq, hb⟩ := h
   refine ⟨k+1, hp, hq, ?_⟩
@@ -58,13 +64,9 @@ theorem compatible_mod (x m : ℕ) (s : Step)
   have hmod : (x % m + s.offset) % g = (x + s.offset) % g := by
     rw [Nat.add_mod (x % m), Nat.mod_mod_of_dvd x hdiv, ← Nat.add_mod]
   change Nat.gcd (x % m + s.offset) g = Nat.gcd s.jump m
-  calc
-    _ = Nat.gcd ((x % m + s.offset) % g) g := gcd_mod_second _ _
-    _ = Nat.gcd ((x + s.offset) % g) g := by rw [hmod]
-    _ = Nat.gcd (x + s.offset) g := (gcd_mod_second _ _).symm
-    _ = Nat.gcd s.jump m := by
-      dsimp [g]
-      rw [Nat.gcd_comm m s.divisor, ← Nat.gcd_assoc, hs]
+  rw [gcd_mod_second (x % m + s.offset) g, hmod, ← gcd_mod_second]
+  dsimp [g]
+  rw [Nat.gcd_comm m s.divisor, ← Nat.gcd_assoc, hs]
 
 def impossible (m : ℕ) (hs : List Step) : Bool :=
   (0 < m) && (List.range m).all (fun r => !(hs.all (compatible m r)))
@@ -96,12 +98,12 @@ theorem chk_correct (n o d e x : ℕ) (hs : List Step)
   | zero =>
     simp only [chk, Bool.or_eq_true, Bool.and_eq_true, beq_iff_eq, List.any_eq_true] at hc
     rcases hc with ⟨rfl, rfl⟩ | ⟨m, -, hm⟩
-    · exact ⟨0, rfl, rfl, fun j hj => by cases Nat.le_zero.mp hj; exact (by decide : 1 ≤ 89)⟩
+    · exact Good.one _
     · exact (impossible_false hm h).elim
   | succ n ih =>
     simp only [chk, Bool.or_eq_true, Bool.and_eq_true, beq_iff_eq, List.any_eq_true] at hc
     rcases hc with (⟨rfl, rfl⟩ | ⟨m, -, hm⟩) | ⟨hbound, hcs⟩
-    · exact ⟨0, rfl, rfl, fun j hj => by cases Nat.le_zero.mp hj; exact (by decide : 1 ≤ 89)⟩
+    · exact Good.one _
     · exact (impossible_false hm h).elim
     · let f := Nat.gcd (x + o) (d + e)
       have hf : 0 < f := Nat.gcd_pos_of_pos_left _ (by omega)
@@ -139,12 +141,7 @@ theorem after_reset (x : ℕ) (hx : 0 < x) : Good (next ⟨x,1,1⟩) := by
   · have h1 : Nat.gcd x 2 = 1 := by rw [gcd_mod_second, h]; decide
     have hn : next ⟨x,1,1⟩ = ⟨x+1,1,1⟩ := by simp [next, jump, h1]
     rw [hn]
-    refine ⟨0,rfl,rfl,?_⟩
-    intro j hj
-    have hj0 : j = 0 := by omega
-    subst j
-    change 1 ≤ 89
-    decide
+    exact Good.one _
 
 theorem run_pos (j : ℕ) (s : State) (hs : 0 < s.x) : 0 < (run j s).x := by
   induction j generalizing s with
@@ -165,15 +162,8 @@ theorem all_good (n x : ℕ) (hx : 0 < x) : (run n ⟨x,1,1⟩).d ≤ 89 := by
       · exact hb n hk
       · have hp : 0 < (run k (next ⟨x,1,1⟩)).x :=
           run_pos k _ (by dsimp [next]; omega)
-        have hr : run k (next ⟨x,1,1⟩) = ⟨(run k (next ⟨x,1,1⟩)).x,1,1⟩ := by
-          cases h : run k (next ⟨x,1,1⟩) with
-          | mk y d e =>
-            rw [h] at hd he
-            change d = 1 at hd
-            change e = 1 at he
-            subst d
-            subst e
-            rfl
+        have hr : run k (next ⟨x,1,1⟩) = ⟨(run k (next ⟨x,1,1⟩)).x,1,1⟩ :=
+          congrArg₂ (State.mk _) hd he
         rw [show n = k + (n-k) by omega, run_add, hr]
         exact ih (n-k) (by omega) _ hp
 
@@ -196,19 +186,8 @@ theorem sequence_matches (n : ℕ) :
       a (n+5) = a (n+4) + (next s).d ∧ a (n+4) = a (n+3) + (next s).e
     have hsum : a (n+4) = a (n+2) + (s.d + s.e) := by dsimp [s]; omega
     have hj : jump s = Nat.gcd (a (n+4)) (a (n+2)) := by
-      let p := a (n+2)
-      let q := s.d + s.e
-      have hu : s.x = p + q := hx.trans hsum
-      have hv : Nat.gcd (p+q) p = Nat.gcd q p := by
-        rw [Nat.add_comm p q]
-        exact Nat.gcd_add_self_left p q
-      change Nat.gcd s.x q = Nat.gcd (a (n+4)) p
-      calc
-        _ = Nat.gcd (p+q) q := congrArg (fun z => Nat.gcd z q) hu
-        _ = Nat.gcd p q := Nat.gcd_add_self_left q p
-        _ = Nat.gcd q p := Nat.gcd_comm p q
-        _ = Nat.gcd (p+q) p := hv.symm
-        _ = Nat.gcd (a (n+4)) p := congrArg (fun z => Nat.gcd z p) hsum.symm
+      simp only [jump, show s.x = a (n+4) from hx, hsum, Nat.gcd_add_self_left]
+      rw [Nat.add_comm (a (n+2)) (s.d+s.e), Nat.gcd_add_self_left, Nat.gcd_comm]
     have ha : a (n+5) = a (n+4) + Nat.gcd (a (n+4)) (a (n+2)) := rfl
     simp only [next]
     change s.x + jump s = a (n+5) ∧ a (n+5) = a (n+4) + jump s ∧
