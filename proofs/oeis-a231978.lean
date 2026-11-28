@@ -1,7 +1,6 @@
 import OMAStatements.S_oeis_a231978
 import Mathlib.Data.Nat.Prime.Basic
-import Mathlib.Tactic.IntervalCases
-import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Tactic
 
 open OMA.S_oeis_a231978
 
