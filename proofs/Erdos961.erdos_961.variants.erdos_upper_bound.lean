@@ -58,8 +58,11 @@ lemma binomial_lower_bound (u t : ℕ) (hu : t ≤ u) (ht : 0 < t) :
   -- (u + 1)^t / t^t ≤ (u + 1)^t / t!
   -- which rearranges to t! ≤ t^t (true for t ≥ 1)
   have hmid : (↑(u + 1) / ↑t) ^ t ≤ (↑(u + 1) ^ t : ℝ) / ↑(t.factorial) := by
-    -- After clearing denominators this is t! ≤ t^t
-    -- which holds by induction or by t! = 1·2·…·t ≤ t·t·…·t
+    -- Equivalent (after multiplying both sides by t^t * t!) to t! ≤ t^t
+    -- which is true for all t ≥ 1
+    have hfact : ↑(t.factorial) ≤ (↑t : ℝ) ^ t := by
+      sorry -- standard: factorial ≤ t^t
+    -- then rearrange
     sorry
   exact h1.trans (hmid.trans h2)
 
