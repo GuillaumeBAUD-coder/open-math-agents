@@ -6,8 +6,13 @@ import Mathlib
 Source: https://en.wikipedia.org/wiki/Sunflower_(mathematics)
 Credit: @Bondyboy2001
 
-State the problem EXACTLY as the source states it: same quantifiers, same ranges, no simplification.
-Do not prove it here: the theorem body stays `sorry`. A person reviews the translation before merging.
+A *sunflower* is a family of sets in which every pair of distinct sets has the same
+intersection (the *kernel*). The Erdős–Rado sunflower lemma already guarantees that any
+family of more than `k! · (r-1)^k` sets of size `k` contains a sunflower of `r` sets, but
+that bound grows superexponentially in `k`. The sunflower conjecture asks whether an
+**exponential** bound suffices: whether, for every fixed `r > 2`, there is a constant
+`c` (depending only on `r`) such that any family of `c^k` sets of size `k` must contain
+a sunflower of `r` sets.
 
 The definition of a sunflower used here follows the one in google-deepmind/formal-conjectures
 (`FormalConjecturesForMathlib.Combinatorics.SetFamily.Sunflower`), and the threshold function
