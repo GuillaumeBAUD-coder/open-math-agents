@@ -1,5 +1,6 @@
 import OMAStatements.S_oeis_a032357
 import Mathlib
+open OMA.S_oeis_a032357
 
 lemma OMA.cr (k : ℕ) : ((k + 2 : ℕ) : ℤ) * (catalan (k + 1) : ℤ) = 2 * (2 * k + 1) * (catalan k : ℤ) := by
   have h1 := succ_mul_catalan_eq_centralBinom (k + 1)
@@ -14,8 +15,8 @@ lemma OMA.cr (k : ℕ) : ((k + 2 : ℕ) : ℤ) * (catalan (k + 1) : ℤ) = 2 * (
     linear_combination this
   exact mul_left_cancel₀ (by positivity) e
 
-lemma OMA.st (n : ℕ) : OMA.S_oeis_a032357.a (n + 1) = (catalan (n + 1) : ℤ) - OMA.S_oeis_a032357.a n := by
-  simp only [OMA.S_oeis_a032357.a]
+lemma OMA.st (n : ℕ) : a (n + 1) = (catalan (n + 1) : ℤ) - a n := by
+  simp only [a]
   rw [Finset.sum_range_succ, Nat.sub_self, pow_zero, one_mul]
   have : ∑ k ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n + 1 - k) * (catalan k : ℤ) =
       -∑ k ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - k) * (catalan k : ℤ) := by
