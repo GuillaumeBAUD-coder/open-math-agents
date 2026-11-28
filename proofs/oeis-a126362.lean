@@ -12,23 +12,8 @@ lemma four_ones : adjacency *ᵥ (adjacency *ᵥ (adjacency *ᵥ (adjacency *ᵥ
 lemma pow_step (n : ℕ) : adjacency ^ (n + 4) *ᵥ ones =
     (5 : ℤ) • (adjacency ^ (n + 3) *ᵥ ones) - (6 : ℤ) • (adjacency ^ (n + 2) *ᵥ ones) -
       adjacency ^ (n + 1) *ᵥ ones + (2 : ℤ) • (adjacency ^ n *ᵥ ones) := by
-  have e4 : adjacency ^ (n + 4) *ᵥ ones =
-      adjacency ^ n *ᵥ (adjacency *ᵥ (adjacency *ᵥ (adjacency *ᵥ (adjacency *ᵥ ones)))) := by
-    simp only [Matrix.mulVec_mulVec]
-    congr 1
-    simp [pow_succ, mul_assoc]
-  have e3 : adjacency ^ (n + 3) *ᵥ ones =
-      adjacency ^ n *ᵥ (adjacency *ᵥ (adjacency *ᵥ (adjacency *ᵥ ones))) := by
-    simp only [Matrix.mulVec_mulVec]
-    congr 1
-    simp [pow_succ, mul_assoc]
-  have e2 : adjacency ^ (n + 2) *ᵥ ones = adjacency ^ n *ᵥ (adjacency *ᵥ (adjacency *ᵥ ones)) := by
-    simp only [Matrix.mulVec_mulVec]
-    congr 1
-    simp [pow_succ, mul_assoc]
-  have e1 : adjacency ^ (n + 1) *ᵥ ones = adjacency ^ n *ᵥ (adjacency *ᵥ ones) := by
-    simp only [Matrix.mulVec_mulVec, pow_succ]
-  rw [e4, e3, e2, e1, four_ones, Matrix.mulVec_add, Matrix.mulVec_sub, Matrix.mulVec_sub,
+  simp only [pow_succ, ← Matrix.mulVec_mulVec]
+  rw [four_ones, Matrix.mulVec_add, Matrix.mulVec_sub, Matrix.mulVec_sub,
     Matrix.mulVec_smul, Matrix.mulVec_smul, Matrix.mulVec_smul]
 
 lemma a_rec (m : ℕ) :
