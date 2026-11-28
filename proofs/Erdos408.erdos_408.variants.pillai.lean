@@ -27,21 +27,13 @@ lemma OMA.totient_step (m : ℕ) (hm : 2 < m) : f m = f m.totient + 1 := by
     rcases Nat.totient_eq_one_iff.mp h with h | h <;> omega
   obtain ⟨hpos, hφ⟩ := OMA.totient_height_spec m.totient hp0
   apply le_antisymm
-  · exact Nat.sInf_le (show 1 ≤ f m.totient + 1 ∧
-      Nat.totient^[f m.totient + 1] m = 1 from
-        ⟨by omega, by rw [Function.iterate_succ_apply, hφ]⟩)
+  · exact Nat.sInf_le ⟨by omega, by rw [Function.iterate_succ_apply, hφ]⟩
   · refine le_csInf (OMA.totient_hit m hm0) ?_
     rintro (k | k) ⟨hk, hiter⟩
     · omega
     · have htail : Nat.totient^[k] m.totient = 1 := by
         simpa only [Function.iterate_succ_apply] using hiter
-      have hk' : 1 ≤ k := by
-        by_contra! h
-        have hk0 : k = 0 := by omega
-        subst k
-        exact hp1 (by simpa using htail)
-      exact Nat.succ_le_succ (Nat.sInf_le (show 1 ≤ k ∧
-        Nat.totient^[k] m.totient = 1 from ⟨hk', htail⟩))
+      exact Nat.succ_le_succ (Nat.sInf_le ⟨Nat.pos_of_ne_zero (by rintro rfl; exact hp1 htail), htail⟩)
 
 noncomputable def OMA.corrected_height (m : ℕ) : ℕ :=
   f m - if Odd m then 1 else 0
@@ -61,14 +53,10 @@ lemma OMA.corrected_step (m : ℕ) (hm : 0 < m) :
   · subst m
     simp [OMA.corrected_one, OMA.corrected_two]
   have hgt : 2 < m := by omega
-  have he : Even m.totient := Nat.totient_even hgt
-  have hno : ¬ Odd m.totient := Nat.not_odd_iff_even.mpr he
-  by_cases hmEven : Even m
-  · simp only [OMA.corrected_height, if_neg (Nat.not_odd_iff_even.mpr hmEven),
-      if_neg hno, if_pos hmEven, Nat.sub_zero, OMA.totient_step m hgt]
-  · simp only [OMA.corrected_height, if_pos (Nat.not_even_iff_odd.mp hmEven),
-      if_neg hno, if_neg hmEven, Nat.sub_zero, OMA.totient_step m hgt,
-      Nat.add_sub_cancel, Nat.add_zero]
+  have h := Nat.not_odd_iff_even.mpr (Nat.totient_even hgt)
+  rcases Nat.even_or_odd m with hm | hm
+  · simp [OMA.corrected_height, OMA.totient_step m hgt, hm, h, Nat.not_odd_iff_even.mpr hm]
+  · simp [OMA.corrected_height, OMA.totient_step m hgt, hm, h, Nat.not_even_iff_odd.mpr hm]
 
 lemma OMA.corrected_prime_odd (p : ℕ) (hp : p.Prime) (h2 : p ≠ 2) :
     OMA.corrected_height p = OMA.corrected_height (p - 1) := by
@@ -124,20 +112,11 @@ lemma OMA.corrected_mul (a b : ℕ) (ha : 0 < a) (hb : 0 < b) :
       by_cases hb1 : b = 1
       · simp [hb1, OMA.corrected_one]
       obtain ⟨p, hp, d, hd⟩ := Nat.exists_prime_and_dvd ha1
-      have hdpos : 0 < d := by
-        by_contra! hn
-        have hd0 : d = 0 := by omega
-        simp [hd0] at hd
-        omega
+      have hdpos : 0 < d := Nat.pos_of_ne_zero (by rintro rfl; omega)
       have hdb : 0 < d * b := Nat.mul_pos hdpos hb
       have hz' : p * (d * b) = z := by rw [← Nat.mul_assoc, ← hd, hz]
-      have hdlt : d * b < z := by
-        rw [← hz']
-        simpa only [Nat.one_mul] using Nat.mul_lt_mul_of_pos_right hp.one_lt hdb
-      have halt : p * d < z := by
-        rw [← hd, ← hz]
-        simpa only [Nat.mul_one] using
-          Nat.mul_lt_mul_of_pos_left (show 1 < b by omega) ha
+      have hdlt : d * b < z := hz' ▸ lt_mul_left hdb hp.one_lt
+      have halt : p * d < z := hd ▸ hz ▸ lt_mul_right ha (by omega)
       calc
         _ = OMA.corrected_height (p * (d * b)) := by rw [← Nat.mul_assoc, ← hd]
         _ = OMA.corrected_height p + OMA.corrected_height (d * b) :=
@@ -153,11 +132,7 @@ lemma OMA.corrected_exponential (m : ℕ) (hm : 0 < m) :
     by_cases hm1 : m = 1
     · simp [hm1, OMA.corrected_one]
     obtain ⟨p, hp, d, hd⟩ := Nat.exists_prime_and_dvd hm1
-    have hdpos : 0 < d := by
-      by_contra! h
-      have hd0 : d = 0 := by omega
-      simp [hd0] at hd
-      omega
+    have hdpos : 0 < d := Nat.pos_of_ne_zero (by rintro rfl; omega)
     by_cases hd1 : d = 1
     · have hmp : m = p := by simpa only [hd1, Nat.mul_one] using hd
       by_cases hp2 : p = 2
@@ -172,13 +147,8 @@ lemma OMA.corrected_exponential (m : ℕ) (hm : 0 < m) :
       rw [hmp, hc, pow_succ']
       have hpos : 0 < (3 : ℕ) ^ OMA.corrected_height t := by positivity
       omega
-    · have hp_lt : p < m := by
-        rw [hd]
-        simpa only [Nat.mul_one] using
-          Nat.mul_lt_mul_of_pos_left (show 1 < d by omega) hp.pos
-      have hd_lt : d < m := by
-        rw [hd]
-        simpa only [Nat.one_mul] using Nat.mul_lt_mul_of_pos_right hp.one_lt hdpos
+    · have hp_lt : p < m := hd ▸ lt_mul_right hp.pos (by omega)
+      have hd_lt : d < m := hd ▸ lt_mul_left hdpos hp.one_lt
       calc
         m = p * d := hd
         _ ≤ (3 ^ OMA.corrected_height p) * (3 ^ OMA.corrected_height d) :=
@@ -223,10 +193,7 @@ theorem OMA.solution : type_of% @Erdos408.erdos_408.variants.pillai := by
     by_cases he : Even n
     · exact (Nat.pow_le_pow_right (by decide) (show k ≤ f n by omega)).trans
         (OMA.totient_even_power n hnpos he)
-    · have hgt : 2 < n := by
-        by_contra! h
-        have hn2 : n = 2 := by omega
-        exact he (hn2 ▸ (by decide : Even 2))
+    · have hgt : 2 < n := hn.lt_of_ne (by rintro rfl; exact he even_two)
       have hk_eq : k = f n.totient := by
         dsimp only [k]
         rw [OMA.totient_step n hgt, Nat.add_sub_cancel]
