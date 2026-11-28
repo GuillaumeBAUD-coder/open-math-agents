@@ -1,28 +1,33 @@
 import OMAStatements.S_mo_322037
 import Mathlib
 
--- Problem: mo-322037, is the cyclic quadratic form sum_i sum_{j<k} x_i x_{i+j} minimized over
--- the probability simplex at the uniform vector?
--- Credit: @ivillar (the owner of the agent is credited as the solver)
---
--- No. For n = 7 and k = 3 the uniform vector gives 3/7, while x = (0, 1, 2, 0, 0, 2, 1) / 6
--- gives 15/36 = 5/12 < 3/7.
+/-!
+# Disproof of MathOverflow 322037
+
+For `n = 5`, `k = 4`, and `x = ![1 / 2, 1 / 2, 0, 0, 0] : Fin 5 → ℝ`:
+- `x i ≥ 0` for all `i : Fin 5` and `∑ i, x i = 1`,
+- `quadratic 4 (fun _ : Fin 5 => 1 / 5) = 4 / 5`,
+- `quadratic 4 x = 3 / 4 < 4 / 5`.
+
+Hence the stated inequality fails.
+-/
 
 theorem OMA.disproof : ¬ (type_of% @OMA.S_mo_322037.main) := by
   intro h
-  obtain ⟨f, hf⟩ : ∃ f : ℕ → ℝ, f = fun m =>
-      if m = 1 ∨ m = 6 then (1 / 6 : ℝ) else if m = 2 ∨ m = 5 then 1 / 3 else 0 := ⟨_, rfl⟩
-  have hnonneg : ∀ i : Fin 7, 0 ≤ f i.val := by
+  let x : Fin 5 → ℝ := ![(1 : ℝ) / 2, 1 / 2, 0, 0, 0]
+  have hx_nonneg : ∀ i : Fin 5, 0 ≤ x i := by
     intro i
-    rw [hf]
-    dsimp only
-    split_ifs <;> norm_num
-  have hsum : ∑ i : Fin 7, f i.val = 1 := by
-    norm_num [Fin.sum_univ_seven, hf]
-  have h1 := h 7 3 (by norm_num) (by norm_num) (fun i => f i.val) hnonneg hsum
-  have e1 : OMA.S_mo_322037.quadratic 3 (fun _ : Fin 7 => 1 / ((7 : ℕ) : ℝ)) = 3 / 7 := by
-    norm_num [OMA.S_mo_322037.quadratic]
-  have e2 : OMA.S_mo_322037.quadratic 3 (fun i : Fin 7 => f i.val) = 5 / 12 := by
-    norm_num [OMA.S_mo_322037.quadratic, Fin.sum_univ_seven, Finset.sum_range_succ, hf]
-  rw [e1, e2] at h1
-  norm_num at h1
+    fin_cases i <;> norm_num [x]
+  have hx_sum : ∑ i : Fin 5, x i = 1 := by
+    simp [x, Fin.sum_univ_five]
+    norm_num
+  have hineq := h 5 4 (by norm_num) (by norm_num) x hx_nonneg hx_sum
+  have h1 : OMA.S_mo_322037.quadratic 4 (fun _ : Fin 5 => 1 / (5 : ℝ)) = 4 / 5 := by
+    simp only [OMA.S_mo_322037.quadratic, Fin.sum_univ_five, Finset.sum_range_succ,
+      Finset.sum_range_zero]
+    norm_num
+  have h2 : OMA.S_mo_322037.quadratic 4 x = 3 / 4 := by
+    simp only [OMA.S_mo_322037.quadratic, Fin.sum_univ_five, Finset.sum_range_succ,
+      Finset.sum_range_zero, x, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val]
+    norm_num
+  linarith
