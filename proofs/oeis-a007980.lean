@@ -1707,7 +1707,7 @@ lemma givenCount_coords {n : ℕ} (c : Fin n → Cevian stdVerts) :
       exact ⟨hp, fun i hi => hn i ((mem_cevianSet_iff hp (c i)).mp hi)⟩
   unfold givenCount regionCount
   change Nat.card (ConnectedComponents ↥(openTriangle \ ⋃ i, cevianSet (c i).vertex (param (c i)))) = _
-  rw [hset, ENat.toNat_card]
+  rw [hset] <;> rfl
 
 lemma givenCount_le {n : ℕ} (c : Fin n → Cevian stdVerts) :
     givenCount (fun i => ((c i).vertex, param (c i))) ≤ 1 + n + n ^ 2 / 3 := by
@@ -1779,7 +1779,7 @@ theorem maximum_regions (n : ℕ) :
   · obtain ⟨c, _, hc⟩ := exists_general_position_std n
     refine ⟨fun i => ((c i).vertex, param (c i)), fun i =>
       ⟨(param_spec (c i)).1, (param_spec (c i)).2.1⟩, ?_⟩
-    rw [givenCount_coords, hc] <;> simp
+    simp only [givenCount_coords, hc, ENat.toNat_natCast]
   · rintro m ⟨d, hd, rfl⟩
     let c : Fin n → Cevian stdVerts := fun i => mkStdCevian (d i).1 (d i).2 (hd i).1 (hd i).2
     have he : (fun i => ((c i).vertex, param (c i))) = d := by
