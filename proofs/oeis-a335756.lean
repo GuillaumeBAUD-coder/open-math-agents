@@ -1,111 +1,53 @@
 import OMAStatements.S_oeis_a335756
+import Mathlib
 
--- Problem: A335756: A cup filling problem starting with 2 empty cups of sizes 3 and n, where a(n) is the number of unreachable states.
+-- Problem: A335756
 -- Upstream: formal-conjectures statements/oeis-a335756.lean:0 (declaration OMA.S_oeis_a335756.main)
--- Credit: @ivillar (the owner of the agent is credited as the solver)
+-- Credit: @nigelcarreiro-blip (the owner of the agent is credited as the solver)
 
-/-! One has a(n+3) = a(n) + 10 if 3 divides n and a(n+3) = a(n) + 6 otherwise, and n+3 is divisible by
-3 exactly when n is; hence a(n+6) - a(n+3) = a(n+3) - a(n). The denominator of the g.f. is
-(1 - x^3)^2, so the coefficient of x^n in the product is a(n) - 2 a(n-3) + a(n-6), which is
-2, 0, 2, 8, 6, 4 for n = 0, ..., 5 and 0 otherwise. -/
+/-! n, n + 3 and n + 6 have the same residue mod 3, and on each residue class a is affine in n, so
+a(n+6) - 2 a(n+3) + a(n) = 0. The g.f. denominator equals (1 - x^3)^2 = 1 - 2x^3 + x^6. -/
 
-namespace A335756Aux
+namespace OMAA335756Helpers
 
-open OMA.S_oeis_a335756 PowerSeries
+open PowerSeries OMA.S_oeis_a335756
 
-theorem step (n : ℕ) : a (n + 3) = a n + (if n % 3 = 0 then 10 else 6) := by
-  unfold a
-  by_cases h : n % 3 = 0
-  · have h' : (n + 3) % 3 = 0 := by omega
-    have e : (n + 3) / 3 = n / 3 + 1 := by omega
-    rw [if_pos h, if_pos h', if_pos h, e]
-    push_cast
-    ring
-  · have h' : ¬ ((n + 3) % 3 = 0) := by omega
-    rw [if_neg h, if_neg h', if_neg h]
-    push_cast
-    ring
+theorem recur (n : ℕ) : a (n + 6) = 2 * a (n + 3) - a n := by
+  simp only [a, show (n + 6) % 3 = n % 3 by omega, show (n + 3) % 3 = n % 3 by omega,
+    show (n + 6) / 3 = n / 3 + 2 by omega, show (n + 3) / 3 = n / 3 + 1 by omega]
+  split_ifs <;> push_cast <;> ring
 
-theorem rec6 (m : ℕ) : a (m + 6) = 2 * a (m + 3) - a m := by
-  have s1 := step (m + 3)
-  have s0 := step m
-  have hm : (m + 3) % 3 = m % 3 := by omega
-  rw [hm] at s1
-  linear_combination s1 - s0
+theorem cX (f : ℕ → ℚ) (c : ℚ) (n k : ℕ) :
+    coeff n (PowerSeries.mk f * (C c * X ^ k)) = if k ≤ n then c * f (n - k) else 0 := by
+  rw [mul_left_comm, coeff_C_mul, coeff_mul_X_pow', coeff_mk]
+  split_ifs <;> simp
 
-theorem a0 : a 0 = 2 := by norm_num [a]
+end OMAA335756Helpers
 
-theorem a1 : a 1 = 0 := by norm_num [a]
-
-theorem a2 : a 2 = 2 := by norm_num [a]
-
-theorem a3 : a 3 = 12 := by norm_num [a]
-
-theorem a4 : a 4 = 6 := by norm_num [a]
-
-theorem a5 : a 5 = 8 := by norm_num [a]
-
-theorem gfC : PowerSeries.mk (fun n => (a n : ℚ)) * C 1 +
-    PowerSeries.mk (fun n => (a n : ℚ)) * X * X * X * C (-2) +
-    PowerSeries.mk (fun n => (a n : ℚ)) * X * X * X * X * X * X * C 1 =
-    (1 : ℚ⟦X⟧) * C 2 + (1 : ℚ⟦X⟧) * X * X * C 2 + (1 : ℚ⟦X⟧) * X * X * X * C 8 +
-      (1 : ℚ⟦X⟧) * X * X * X * X * C 6 + (1 : ℚ⟦X⟧) * X * X * X * X * X * C 4 := by
-  ext n
-  cases n with
-  | zero =>
-    simp only [map_add, PowerSeries.coeff_mul_C, PowerSeries.coeff_zero_mul_X, PowerSeries.coeff_mk]
-    simp [a0]
-  | succ n =>
-    cases n with
-    | zero =>
-      simp only [map_add, PowerSeries.coeff_mul_C, PowerSeries.coeff_succ_mul_X,
-        PowerSeries.coeff_zero_mul_X, PowerSeries.coeff_mk]
-      simp [a1]
-    | succ n =>
-      cases n with
-      | zero =>
-        simp only [map_add, PowerSeries.coeff_mul_C, PowerSeries.coeff_succ_mul_X,
-          PowerSeries.coeff_zero_mul_X, PowerSeries.coeff_mk]
-        simp [a2]
-      | succ n =>
-        cases n with
-        | zero =>
-          simp only [map_add, PowerSeries.coeff_mul_C, PowerSeries.coeff_succ_mul_X,
-            PowerSeries.coeff_zero_mul_X, PowerSeries.coeff_mk]
-          simp [a0, a3]
-          norm_num
-        | succ n =>
-          cases n with
-          | zero =>
-            simp only [map_add, PowerSeries.coeff_mul_C, PowerSeries.coeff_succ_mul_X,
-              PowerSeries.coeff_zero_mul_X, PowerSeries.coeff_mk]
-            simp [a1, a4]
-          | succ n =>
-            cases n with
-            | zero =>
-              simp only [map_add, PowerSeries.coeff_mul_C, PowerSeries.coeff_succ_mul_X,
-                PowerSeries.coeff_zero_mul_X, PowerSeries.coeff_mk]
-              simp [a2, a5]
-              norm_num
-            | succ m =>
-              simp only [map_add, PowerSeries.coeff_mul_C, PowerSeries.coeff_succ_mul_X,
-                PowerSeries.coeff_mk]
-              have h := rec6 m
-              have hq : ((a (m + 6) : ℤ) : ℚ) = 2 * ((a (m + 3) : ℤ) : ℚ) - ((a m : ℤ) : ℚ) := by
-                exact_mod_cast h
-              simp [PowerSeries.coeff_one]
-              linear_combination hq
-
-end A335756Aux
-
+open PowerSeries OMA.S_oeis_a335756 OMAA335756Helpers in
 theorem OMA.solution : type_of% @OMA.S_oeis_a335756.main := by
-  refine ⟨?_, ?_⟩
-  · have h := A335756Aux.gfC
-    simp only [map_ofNat, map_neg, map_one] at h
-    linear_combination h
-  · intro n hn
-    obtain ⟨m, rfl⟩ : ∃ m, n = m + 6 := ⟨n - 6, by omega⟩
-    have e1 : m + 6 - 3 = m + 3 := rfl
-    have e2 : m + 6 - 6 = m := rfl
-    rw [e1, e2]
-    exact A335756Aux.rec6 m
+  refine ⟨?_, fun n hn => ?_⟩
+  · have hD : ((1 - X) ^ 2 * (1 + X + X ^ 2) ^ 2 : PowerSeries ℚ) =
+        C 1 * X ^ 0 - C 2 * X ^ 3 + C 1 * X ^ 6 := by
+      simp only [map_one, map_ofNat]
+      ring
+    have hN : (2 * (1 + X ^ 2 + 4 * X ^ 3 + 3 * X ^ 4 + 2 * X ^ 5) : PowerSeries ℚ) =
+        C 2 * X ^ 0 + C 2 * X ^ 2 + C 8 * X ^ 3 + C 6 * X ^ 4 + C 4 * X ^ 5 := by
+      simp only [map_ofNat]
+      ring
+    rw [hD, hN]
+    ext n
+    simp only [mul_add, mul_sub, map_add, map_sub, cX, coeff_C_mul_X_pow]
+    rcases Nat.lt_or_ge n 6 with h | h
+    · interval_cases n <;> norm_num [a]
+    · obtain ⟨m, rfl⟩ : ∃ m, n = m + 6 := ⟨n - 6, by omega⟩
+      have hq : ((a (m + 6) : ℤ) : ℚ) = ((2 * a (m + 3) - a m : ℤ) : ℚ) := by rw [recur]
+      push_cast at hq
+      simp only [show 0 ≤ m + 6 by omega, show 3 ≤ m + 6 by omega, show 6 ≤ m + 6 by omega,
+        ↓reduceIte, show m + 6 - 0 = m + 6 by omega, show m + 6 - 3 = m + 3 by omega,
+        show m + 6 - 6 = m by omega, show m + 6 ≠ 0 by omega, show m + 6 ≠ 2 by omega,
+        show m + 6 ≠ 3 by omega, show m + 6 ≠ 4 by omega, show m + 6 ≠ 5 by omega]
+      linarith
+  · obtain ⟨m, rfl⟩ : ∃ m, n = m + 6 := ⟨n - 6, by omega⟩
+    rw [show m + 6 - 3 = m + 3 by omega, show m + 6 - 6 = m by omega]
+    exact recur m
