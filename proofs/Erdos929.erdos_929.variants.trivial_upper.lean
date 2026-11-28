@@ -1,92 +1,52 @@
 import FormalConjectures.ErdosProblems.«929»
-import Mathlib.Data.Nat.Periodic
 
-/-! The upper bound for Erdős Problem 929 follows from a periodic set of starting points. -/
+/-! The set is periodic modulo `2 * (k + 1)!` and contains `1`, so it has positive density. -/
 
-open Filter
-open scoped Topology
-
-lemma OMA.periodic_hasPosDensity {p : ℕ → Prop} {d : ℕ}
-    (hd : 0 < d) (hp : Function.Periodic p d) (hnonempty : ∃ n < d, p n) :
-    {n : ℕ | p n}.HasPosDensity := by
-  classical
-  let count := Nat.count p
-  let density : ℝ := (count d : ℝ) / (d : ℝ)
-  have hd' : (0 : ℝ) < d := by exact_mod_cast hd
-  have hdensity : 0 < density := by
-    have hcount : 0 < count d := Nat.pos_of_ne_zero (Nat.count_ne_iff_exists.mpr hnonempty)
-    exact div_pos (by exact_mod_cast hcount) hd'
-  have hdensity_le : density ≤ 1 := by
-    apply (div_le_one hd').mpr
-    exact_mod_cast Nat.count_le (p := p) (n := d)
-  have hblocks (q r : ℕ) : count (q * d + r) = q * count d + count r := by
-    dsimp only [count]
-    induction q with
-    | zero => simp
-    | succ q ih =>
-      rw [Nat.succ_mul, add_right_comm (q * d) d r, Nat.count_add',
-        congrArg (fun a : ℕ → Prop => Nat.count a (q * d + r)) (funext hp), ih,
-        Nat.succ_mul, add_right_comm]
-  have hncard (n : ℕ) : ({m : ℕ | p m} ∩ Set.Iio n).ncard = count n := by
-    rw [show {m : ℕ | p m} ∩ Set.Iio n =
-        (↑((Finset.range n).filter p) : Set ℕ) by ext m; simp [and_comm],
-      Set.ncard_coe_finset, ← Nat.count_eq_card_filter_range]
-  have herr : ∀ᶠ n : ℕ in atTop, |(count n : ℝ) / (n : ℝ) - density| ≤ (d : ℝ) / n := by
-    filter_upwards [eventually_ge_atTop 1] with n hn
-    let r := n % d
-    let q := n / d
-    have hsplit : q * d + r = n := by simpa [q, r, mul_comm] using Nat.div_add_mod n d
-    have hcount : q * count d + count r = count n := hsplit ▸ (hblocks q r).symm
-    have hsplit' : (q : ℝ) * (d : ℝ) + (r : ℝ) = (n : ℝ) := by exact_mod_cast hsplit
-    have hcount' : (q : ℝ) * (count d : ℝ) + (count r : ℝ) = (count n : ℝ) := by
-      exact_mod_cast hcount
-    have hd_mul : (d : ℝ) * density = (count d : ℝ) :=
-      mul_div_cancel₀ _ hd'.ne'
-    have hn' : (0 : ℝ) < n := by exact_mod_cast (show 0 < n by omega)
-    have hr : (r : ℝ) ≤ (d : ℝ) := by exact_mod_cast (Nat.mod_lt n hd).le
-    have hcount_r : (count r : ℝ) ≤ (r : ℝ) := by exact_mod_cast Nat.count_le (p := p)
-    have herror : (count n : ℝ) / (n : ℝ) - density =
-        ((count r : ℝ) - (r : ℝ) * density) / (n : ℝ) := by
-      apply (eq_div_iff hn'.ne').mpr
-      calc
-        _ = (count n : ℝ) - (n : ℝ) * density := by field_simp
-        _ = _ := by rw [← hcount', ← hsplit', add_mul, mul_assoc, hd_mul]; ring
-    rw [herror, abs_div, abs_of_pos hn']
-    apply div_le_div_of_nonneg_right _ hn'.le
-    apply abs_le.mpr
-    constructor
-    · have h := mul_le_mul_of_nonneg_left hdensity_le (Nat.cast_nonneg r)
-      linarith [Nat.cast_nonneg (α := ℝ) (count r)]
-    · have h := mul_nonneg (Nat.cast_nonneg (α := ℝ) r) hdensity.le
-      linarith
-  have ht : Tendsto (fun n : ℕ ↦ (count n : ℝ) / (n : ℝ) - density) atTop (𝓝 0) := by
-    apply squeeze_zero_norm' ?_ (tendsto_const_div_atTop_nhds_zero_nat (d : ℝ))
-    simpa only [Real.norm_eq_abs] using herr
-  refine ⟨density, hdensity, ?_⟩
-  simpa [Set.HasDensity, Set.partialDensity, hncard] using ht.add_const density
+open Filter Erdos929
 
 theorem OMA.solution : type_of% @Erdos929.erdos_929.variants.trivial_upper := by
+  classical
   intro k
-  apply Erdos929.S_le
-  let d := (k + 1).factorial
-  apply OMA.periodic_hasPosDensity (d := d) (Nat.factorial_pos _)
-  · intro n
-    apply propext
-    simp only [Erdos929.AllHaveSmallPrimeFactor]
-    have period (p i : ℕ) (hp : p.Prime) (hle : p ≤ k + 1) :
-        p ∣ n + i ↔ p ∣ n + d + i := by
-      rw [add_right_comm n d i]
-      exact Nat.dvd_add_iff_left (Nat.dvd_factorial hp.pos hle)
-    constructor <;> intro h i hi <;> obtain ⟨p, hp, hle, hdvd⟩ := h i hi
-    · exact ⟨p, hp, hle, (period p i hp hle).mpr hdvd⟩
-    · exact ⟨p, hp, hle, (period p i hp hle).mp hdvd⟩
-  · by_cases hk : k = 0
-    · exact ⟨0, Nat.factorial_pos _, by simp [Erdos929.AllHaveSmallPrimeFactor, hk]⟩
-    · refine ⟨1, ?_, ?_⟩
-      · have hdvd : 2 ∣ d := Nat.dvd_factorial (by decide) (by omega)
-        exact lt_of_lt_of_le (by decide) (Nat.le_of_dvd (Nat.factorial_pos _) hdvd)
-      · intro i hi
-        have hi' := Finset.mem_Icc.mp hi
-        have hprime : (1 + i).minFac.Prime := Nat.minFac_prime (by omega)
-        exact ⟨(1 + i).minFac, hprime,
-          (Nat.minFac_le (by omega)).trans (by omega), Nat.minFac_dvd _⟩
+  apply S_le
+  set D := 2 * (k + 1).factorial
+  set p := AllHaveSmallPrimeFactor (k + 1) k
+  have hD : 2 ≤ D := by have := Nat.factorial_pos (k + 1); omega
+  have per (n : ℕ) : p (D + n) = p n := propext <| forall₂_congr fun i _ =>
+    exists_congr fun q => and_congr_right fun hq => and_congr_right fun h => by
+      rw [add_assoc]; exact Nat.dvd_add_right ((Nat.dvd_factorial hq.pos h).mul_left 2)
+  have hc (n : ℕ) : Nat.count p (D + n) = Nat.count p D + Nat.count p n := by
+    rw [Nat.count_add]; simp only [per]
+  have h1 : p 1 := fun i hi => by
+    simp only [Finset.mem_Icc] at hi
+    exact ⟨_, Nat.minFac_prime (by omega), (Nat.minFac_le (by omega)).trans (by omega),
+      Nat.minFac_dvd _⟩
+  have hpos := (Nat.count_lt_count_succ_iff.2 h1).trans_le (Nat.count_monotone p hD)
+  set c := (Nat.count p D : ℝ) / D
+  have hDc : (D : ℝ) * c = Nat.count p D := mul_div_cancel₀ _ (by positivity)
+  have hc1 : c ≤ 1 := div_le_one_of_le₀ (mod_cast Nat.count_le _) (by positivity)
+  have hc0 : 0 < c := div_pos (mod_cast (Nat.zero_le _).trans_lt hpos) (by positivity)
+  clear_value c
+  set e := fun n : ℕ => (Nat.count p n : ℝ) - n * c
+  have he : Function.Periodic e D := fun n => by
+    simp only [e, add_comm n, hc]; push_cast; linear_combination -hDc
+  have hb (n : ℕ) : |e n| ≤ D := by
+    rw [← he.map_mod_nat]
+    have h2 : (Nat.count p (n % D) : ℝ) ≤ (n % D : ℕ) := mod_cast Nat.count_le _
+    have h3 : ((n % D : ℕ) : ℝ) < D := mod_cast Nat.mod_lt n (by omega)
+    have h4 := mul_nonneg (Nat.cast_nonneg (α := ℝ) (n % D)) hc0.le
+    have h5 := mul_le_mul_of_nonneg_left hc1 (Nat.cast_nonneg (α := ℝ) (n % D))
+    rw [abs_le]; constructor <;> linarith [Nat.cast_nonneg (α := ℝ) (Nat.count p (n % D))]
+  refine ⟨c, hc0, ?_⟩
+  rw [Set.HasDensity, ← add_zero c]
+  refine (tendsto_const_nhds.add (squeeze_zero_norm' (f := fun n : ℕ => e n / n) ?_
+    (tendsto_const_div_atTop_nhds_zero_nat (D : ℝ)))).congr' ?_
+  · filter_upwards [eventually_gt_atTop 0] with n hn
+    rw [norm_div, Real.norm_eq_abs, Real.norm_natCast]
+    exact div_le_div_of_nonneg_right (hb n) n.cast_nonneg
+  · filter_upwards [eventually_gt_atTop 0] with n hn
+    rw [Set.partialDensity, Set.inter_univ, Set.univ_inter,
+      show {m | p m} ∩ Set.Iio n = ↑((Finset.range n).filter p) by ext; simp [and_comm],
+      Set.ncard_coe_finset, ← Nat.count_eq_card_filter_range, ← Finset.coe_range,
+      Set.ncard_coe_finset, Finset.card_range]
+    field_simp
+    simp only [e]; ring
