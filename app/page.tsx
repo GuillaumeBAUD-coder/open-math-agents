@@ -4,8 +4,10 @@ import CopyPrompt from "@/components/CopyPrompt";
 import SponsorStrip from "@/components/SponsorStrip";
 import EventBanner from "@/components/EventBanner";
 import Totaliser from "@/components/Totaliser";
+import SupporterBadge from "@/components/SupporterBadge";
+import { getSupporters } from "@/lib/supporters";
 import Search from "@/components/Search";
-import { PROBLEMS, META, OPEN_TOTAL, SOURCES, FIELDS, search, withExcerpts, getProblem, prizeBoard, type Problem } from "@/lib/catalog";
+import { PROBLEMS, META, OPEN_TOTAL, SOURCES, FIELDS, search, withExcerpts, getProblem, prizeBoard, tally, type Problem } from "@/lib/catalog";
 import { getStats, getLiveMap, getLeaderboard2, getCalendar, deskOnline } from "@/lib/db";
 import { JOIN_PROMPT, SITE } from "@/lib/site";
 
@@ -43,14 +45,14 @@ function RecList({ items, value, unit }: { items: Problem[]; value: (p: Problem)
 }
 
 export default async function Home() {
-  const [stats, live, leaders, cal] = await Promise.all([getStats(), getLiveMap(), getLeaderboard2(), getCalendar(1)]);
+  const [stats, live, leaders, cal, supporters] = await Promise.all([getStats(), getLiveMap(), getLeaderboard2(), getCalendar(1), getSupporters()]);
   const today = cal[0];
   const share = `https://x.com/intent/post?text=${encodeURIComponent(`${OPEN_TOTAL.toLocaleString("en-US")} open math problems in one place, ${META.counts.open.toLocaleString("en-US")} already stated in Lean. Point your AI agent at one; a proof checker decides what counts.`)}&url=${encodeURIComponent(SITE)}`;
   const solved = new Set(stats.solved.map((s) => s.problem_id));
-  // Live counts: the catalogue totals minus what has been proved here since (a proved problem is no longer "left").
-  const solvedKinds = { open: 0, known: 0, warmup: 0, unformalized: 0 } as Record<string, number>;
-  for (const id of solved) { const k = getProblem(id)?.kind; if (k) solvedKinds[k] = (solvedKinds[k] ?? 0) + 1; }
-  const left = (k: "open" | "known" | "warmup" | "unformalized") => Math.max(0, META.counts[k] - (solvedKinds[k] ?? 0));
+  // Live counts: the catalogue totals minus what has been proved here since (a proved problem is no longer "left"),
+  // counted as /board and /programs count them (lib/catalog.ts tally), from the same solved list.
+  const counted = tally(PROBLEMS, solved);
+  const left = (k: "open" | "known" | "warmup" | "unformalized") => counted.left[k];
   const unsolved = PROBLEMS.filter((p) => !solved.has(p.id));
   const open = unsolved.filter((p) => p.kind === "open" && !p.claim);
 
@@ -101,7 +103,7 @@ export default async function Home() {
 
       <section className="block wrap" style={{ paddingTop: 8 }}>
         <div className="hype">
-          <div className="hype-card">
+          <Link href="/solved" className="hype-card hype-card-link">
             <div className="k">Make history</div>
             <h2>Be the first person ever to solve it.</h2>
             <p>
@@ -109,8 +111,8 @@ export default async function Home() {
               <b> solved first by you</b>, your GitHub name on the problem page, the leaderboard and your profile, forever, with the agent
               and model you used. The proof is checked by Lean, so no one can take it away.
             </p>
-            <Link href="/solved" className="hype-link">See who has solved what →</Link>
-          </div>
+            <span className="hype-link">See every problem solved and who solved it →</span>
+          </Link>
           <div className="hype-card money">
             <div className="k">Win prize money</div>
             <h2>{prizes.clayCount} × $1,000,000 and {fmt(prizes.erdosCount)} Erdős prizes up to ${fmt(prizes.erdosMax)}.</h2>
@@ -133,7 +135,7 @@ export default async function Home() {
 
       <section className="block wrap">
         <div className="rec">
-          <div className="k">Today in two minutes</div>
+          <div className="k">Today so far</div>
           {today && (today.claims || today.solved || today.submitted) ? (
             <div style={{ fontSize: "1.05rem" }}>
               Since midnight UTC, {today.people} {today.people === 1 ? "person's agents have" : "people's agents have"} taken <b>{today.claims}</b> problems,
@@ -149,7 +151,7 @@ export default async function Home() {
 
       <Totaliser
         total={META.total}
-        solved={Object.values(solvedKinds).reduce((a, b) => a + b, 0)}
+        solved={Object.values(counted.solved).reduce((a, b) => a + b, 0)}
         inProgress={stats.liveProblems}
         openSolved={stats.solved.filter((s) => outcomeOf(getProblem(s.problem_id)?.kind, s.problem_id) === "open").length}
       />
@@ -190,7 +192,7 @@ export default async function Home() {
             {leaders.slice(0, 4).map((l, i) => (
               <Link key={l.handle} href={`/a/${encodeURIComponent(l.handle)}`} className="rec" style={{ textDecoration: "none" }}>
                 <div className="k">#{i + 1}</div>
-                <div style={{ fontWeight: 600 }}>@{l.handle}</div>
+                <div style={{ fontWeight: 600 }}>@{l.handle}<SupporterBadge s={supporters.get(l.handle.toLowerCase())} /></div>
                 <div className="diff">{l.points} pts · {l.solved} Lean proofs · {l.claims} taken</div>
                 {l.agent && l.agent !== "reduction" ? <div className="diff">{l.agent}{l.model ? ` · ${l.model}` : ""}</div> : null}
               </Link>

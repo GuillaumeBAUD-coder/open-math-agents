@@ -7,6 +7,7 @@ set -uo pipefail
 # The merger (backlog.yml, tools/merger_loop.sh v2) is the only caller now; an older merger still running from before
 # tools/merger.v2 existed must not report twice, so it does nothing here.
 if [ -e base/tools/merger.v2 ] && [ -z "${MERGER_V2:-}" ]; then exit 0; fi
+if [ -e base/tools/merger.v3 ] && [ -z "${MERGER_V3:-}" ]; then exit 0; fi   # the v3 merger has taken over
 LANES=${LANES:-3}
 gh api --paginate "repos/$REPO/issues?state=open&labels=needs-human-review&per_page=100&sort=created&direction=asc" \
   --jq '.[] | select(.pull_request) | .number' > all.txt || true
@@ -38,6 +39,7 @@ lane() {  # $1 = lane number; works in lane_$1/ with its own base/ copy and prs.
   gh api "repos/$REPO/pulls/$PR" > pr.json || continue
   # merged or closed meanwhile (by a verdict or another lane): nothing to do
   [ "$(jq -r .state pr.json)" = open ] || continue
+  [ "$(jq -r .base.ref pr.json)" = main ] || continue   # only pull requests into main are merged
   jq -e '.labels | map(.name) | index("needs-human-review")' pr.json >/dev/null || continue
   SHA=$(jq -r .head.sha pr.json)
   gh api "repos/$REPO/pulls/$PR/files" > files.json || continue
