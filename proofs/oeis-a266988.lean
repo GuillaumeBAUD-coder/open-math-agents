@@ -1,14 +1,9 @@
 import OMAStatements.S_oeis_a266988
 
--- Problem: A266988: The indices of primes for which the average of the primitive roots is < p/2.
--- Upstream: formal-conjectures statements/oeis-a266988.lean:0 (declaration OMA.S_oeis_a266988.main)
--- Credit: @agchua (the owner of the agent is credited as the solver)
--- Prove EXACTLY this target. No sorry, no axiom, no native_decide.
--- Idea: suppose p is prime and not 3 mod 4, so p = 2 or p = 4t + 1. Then g -> p - g maps the
--- primitive roots onto themselves: for p = 2 it fixes g = 1; for p = 4t + 1 and x of order 4t,
--- y = x^(2t) has y^2 = 1 and y <> 1, so y = -1, hence -x = x^(2t+1) and x = (-x)^(2t+1), and
--- -x has the same order as x. So the sum S of the primitive roots equals the sum of p - g,
--- 2S = p * card, and card > 0 (the units of ZMod p are cyclic). Hence the average is p/2.
+/-! Primitive-root averages, following @agchua (#21832).
+The finite-set negation and averaging argument is retained. The order of the
+negative of a primitive root now follows from Mathlib's primitive-root power
+lemmas and coprimality, replacing the explicit reverse-power calculation. -/
 
 open OMA.S_oeis_a266988 in
 theorem OMA.solution : type_of% @OMA.S_oeis_a266988.main := by
@@ -27,32 +22,15 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a266988.main := by
     intro h1 x hx
     obtain ⟨t, ht⟩ : ∃ t, p - 1 = 4 * t := ⟨(p - 1) / 4, by omega⟩
     have ht0 : 0 < t := by omega
-    have hx4 : x ^ (4 * t) = 1 := by
-      rw [← ht, ← hx]
-      exact pow_orderOf_eq_one x
-    have hy : x ^ (2 * t) = -1 := by
-      have hsq : x ^ (2 * t) * x ^ (2 * t) = 1 := by
-        rw [← pow_add, show 2 * t + 2 * t = 4 * t by ring]
-        exact hx4
-      rcases mul_self_eq_one_iff.mp hsq with h1' | h1'
-      · exfalso
-        have hd : orderOf x ∣ 2 * t := orderOf_dvd_of_pow_eq_one h1'
-        rw [hx, ht] at hd
-        have hle := Nat.le_of_dvd (by omega) hd
-        omega
-      · exact h1'
-    have hnx : -x = x ^ (2 * t + 1) := by
-      rw [pow_succ, hy]
-      ring
-    have hxx : x = (-x) ^ (2 * t + 1) := by
-      rw [hnx, ← pow_mul, show (2 * t + 1) * (2 * t + 1) = 4 * t * (t + 1) + 1 by ring,
-        pow_succ, pow_mul, hx4, one_pow, one_mul]
-    apply Nat.dvd_antisymm
-    · rw [← hx, hnx]
-      exact orderOf_pow_dvd _
-    · have h2 : orderOf ((-x) ^ (2 * t + 1)) ∣ orderOf (-x) := orderOf_pow_dvd _
-      rw [← hxx, hx] at h2
-      exact h2
+    have hx' : IsPrimitiveRoot x (4 * t) := by
+      simpa [hx, ht] using IsPrimitiveRoot.orderOf x
+    have hy : x ^ (2 * t) = -1 :=
+      (IsPrimitiveRoot.pow (by omega : 0 < 4 * t) hx' (by ring : 4 * t = 2 * t * 2)).eq_neg_one_of_two_right
+    have hc : (2 * t + 1).Coprime (4 * t) := by
+      rw [show 4 * t = 2 * (2 * t) by ring, Nat.coprime_mul_iff_right]
+      exact ⟨Nat.coprime_two_right.mpr ⟨t, rfl⟩, by simp⟩
+    have hnx : -x = x ^ (2 * t + 1) := by rw [pow_succ, hy]; ring
+    rw [hnx, ← (hx'.pow_of_coprime _ hc).eq_orderOf, ← ht]
   -- g -> p - g maps primitive roots to primitive roots
   have hsym : ∀ g ∈ primRoots p, p - g ∈ primRoots p := by
     intro g hg

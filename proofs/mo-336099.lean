@@ -1,4 +1,8 @@
 import OMAStatements.S_mo_336099
+import Mathlib.Algebra.Order.Star.Real
+
+/-! Retains the fedja counterexample, formalized by @etaubman (#21342 companion)
+and @Solfanbtc (#26666). Uses the standard outer-product positivity theorem. -/
 
 open Matrix
 open scoped BigOperators Matrix
@@ -13,16 +17,9 @@ private def rank1 (a : Fin 4 → ℝ) : Matrix (Fin 4) (Fin 4) ℝ :=
   fun i j => a i * a j
 
 private lemma rank1_posSemidef (a : Fin 4 → ℝ) : (rank1 a).PosSemidef := by
-  refine PosSemidef.of_dotProduct_mulVec_nonneg ?_ fun x => ?_
-  · ext i j
-    simp only [Matrix.conjTranspose_apply, rank1, star_trivial]
-    ring
-  · have hq : star x ⬝ᵥ (rank1 a) *ᵥ x =
-        (x 0 * a 0 + x 1 * a 1 + x 2 * a 2 + x 3 * a 3) ^ 2 := by
-      simp [dotProduct, mulVec, rank1, Fin.sum_univ_four]
-      ring
-    rw [hq]
-    exact sq_nonneg _
+  convert Matrix.posSemidef_vecMulVec_self_star a using 1
+  ext i j
+  simp [rank1, Matrix.vecMulVec]
 
 private def matA : Matrix (Fin 4) (Fin 4) ℝ := rank1 a1 + rank1 a2
 private def matB : Matrix (Fin 4) (Fin 4) ℝ := rank1 b1 + rank1 b2

@@ -1,6 +1,11 @@
 import OMAStatements.S_mo_239951
+import Mathlib.Combinatorics.SimpleGraph.Connectivity.Finite
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.NormNum
+
+-- Retains @Genbox's K4,4 eigenvalue counterexample from PR #27480.
+-- Earlier development by @etaubman accompanies statement PR #21264.
+-- Kernel-decidable finite connectivity replaces the explicit path cases.
 
 open OMA.S_mo_239951
 open scoped BigOperators
@@ -14,17 +19,7 @@ theorem OMA.disproof : ¬ (type_of% @OMA.S_mo_239951.main) := by
   let : DecidableRel G.Adj := fun i j =>
     inferInstanceAs (Decidable (i.val % 2 ≠ j.val % 2))
   have hdegree : ∀ i, G.degree i = 4 := by decide +revert
-  have hconnected : G.Connected := by
-    rw [SimpleGraph.connected_iff_exists_forall_reachable]
-    refine ⟨0, fun w => ?_⟩
-    by_cases hw : w.val % 2 = 0
-    · have h01 : G.Adj 0 1 := by decide +revert
-      have h1w : G.Adj 1 w := by
-        change 1 ≠ w.val % 2
-        rw [hw]
-        decide
-      exact h01.reachable.trans h1w.reachable
-    · exact (show G.Adj 0 w from fun e => hw e.symm).reachable
+  have hconnected : G.Connected := by decide +revert
   have hweights (i : Fin 8) :
       (∑ k ∈ G.neighborFinset i, (1 : ℝ) / ((max (G.degree i) (G.degree k) : ℕ) + 1)) =
         (4 : ℝ) / 5 := by

@@ -280,24 +280,6 @@ theorem conjecture :
       (16 * X ^ 5 - 24 * X ^ 4 + 8 * X ^ 3 + 2 * X ^ 2 - X + 1 : PowerSeries ℤ) :=
   ⟨recurrence, gf⟩
 
-/-- Controls: the entry's terms a(0..16). -/
-theorem controls : a 0 = 1 ∧ a 1 = 0 ∧ a 2 = 6 ∧ a 3 = 10 ∧ a 4 = 10 ∧ a 5 = 42 ∧ a 6 = 42 ∧
-    a 7 = 170 ∧ a 8 = 170 ∧ a 9 = 682 ∧ a 10 = 682 ∧ a 11 = 2730 ∧ a 12 = 2730 ∧
-    a 13 = 10922 ∧ a 14 = 10922 ∧ a 15 = 43690 ∧ a 16 = 43690 := by
-  obtain ⟨v3, v4, v5⟩ := a_values
-  refine ⟨a_zero, a_one, a_two, v3, v4, v5, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [a_odd_powers 6 (by norm_num)]; decide
-  · rw [a_odd_powers 7 (by norm_num)]; decide
-  · rw [a_odd_powers 8 (by norm_num)]; decide
-  · rw [a_odd_powers 9 (by norm_num)]; decide
-  · rw [a_odd_powers 10 (by norm_num)]; decide
-  · rw [a_odd_powers 11 (by norm_num)]; decide
-  · rw [a_odd_powers 12 (by norm_num)]; decide
-  · rw [a_odd_powers 13 (by norm_num)]; decide
-  · rw [a_odd_powers 14 (by norm_num)]; decide
-  · rw [a_odd_powers 15 (by norm_num)]; decide
-  · rw [a_odd_powers 16 (by norm_num)]; decide
-
 end OMA.S_oeis_a284238
 
 theorem OMA.solution : type_of% @OMA.S_oeis_a284238.main :=

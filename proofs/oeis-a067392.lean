@@ -4,6 +4,7 @@ import OMAStatements.S_oeis_a067392
 # Distinct noncoprime sums at prime distance
 
 V. S. Guba's conjecture as recorded in OEIS A067392 (May 2024).
+Original Lean proof: @AttaQ.
 An equality forces two consecutive even totients. A bound for totients
 congruent to two modulo four leaves only finitely many cases.
 -/
@@ -14,21 +15,14 @@ open OMA.S_oeis_a067392 Finset
 /-- Reflect the reduced residues by k ↦ n-k, then sum over their complement. -/
 private theorem twice_a (n : ℕ) (hn : 2 ≤ n) : 2 * a n = n * (n + 1 - n.totient) := by
   let S := (range n).filter (n.Coprime ·)
-  have memS (k : ℕ) : k ∈ S ↔ 0 < k ∧ k < n ∧ n.Coprime k := by
-    simp only [S, mem_filter, mem_range]
-    constructor
-    · rintro ⟨hlt, hc⟩
-      refine ⟨?_, hlt, hc⟩
-      by_contra! h
-      have : k = 0 := by omega
-      subst k
+  have memS (k : ℕ) : k ∈ S ↔ k < n ∧ n.Coprime k := by simp [S]
+  have refl_mem (k : ℕ) (hk : k ∈ S) : n - k ∈ S := by
+    obtain ⟨hlt, hc⟩ := (memS k).mp hk
+    have hpos : k ≠ 0 := by
+      rintro rfl
       have : n = 1 := by simpa using hc
       omega
-    · rintro ⟨_, hlt, hc⟩
-      exact ⟨hlt, hc⟩
-  have refl_mem (k : ℕ) (hk : k ∈ S) : n - k ∈ S := by
-    obtain ⟨hpos, hlt, hc⟩ := (memS k).mp hk
-    exact (memS _).mpr ⟨by omega, by omega, (Nat.coprime_self_sub_right hlt.le).mpr hc⟩
+    exact (memS _).mpr ⟨by omega, (Nat.coprime_self_sub_right hlt.le).mpr hc⟩
   have refl_refl (k : ℕ) (hk : k ∈ S) : n - (n - k) = k := by
     have := (memS k).mp hk
     omega
@@ -40,37 +34,30 @@ private theorem twice_a (n : ℕ) (hn : 2 ≤ n) : 2 * a n = n * (n + 1 - n.toti
       _ = ∑ k ∈ S, (k+(n-k)) := sum_add_distrib.symm
       _ = ∑ _k ∈ S, n := sum_congr rfl fun k hk => by have := (memS k).mp hk; omega
       _ = n * n.totient := by simp [Nat.totient_eq_card_coprime, S, mul_comm]
-  have hS : (Icc 1 n).filter (n.Coprime ·) = S := by
+  have hS : (range (n+1)).filter (n.Coprime ·) = S := by
     ext k
-    rw [memS]
-    simp only [mem_filter, mem_Icc]
-    constructor
-    · rintro ⟨⟨hp, hl⟩, hc⟩
-      refine ⟨hp, lt_of_le_of_ne hl ?_, hc⟩
-      rintro rfl
-      have : k = 1 := by simpa using hc
-      omega
-    · rintro ⟨hp, hl, hc⟩
-      exact ⟨⟨hp, hl.le⟩, hc⟩
-  have hcomp : (Icc 1 n).filter (fun k => ¬n.Coprime k) =
-      (Icc 1 n).filter (fun k => 1 < n.gcd k) := by
-    apply filter_congr
-    intro k _
-    change (¬n.gcd k = 1) ↔ 1 < n.gcd k
+    simp only [S, mem_filter, mem_range]
+    by_cases hk : k = n
+    · subst k
+      simp [show n ≠ 1 by omega]
+    · rw [show k < n + 1 ↔ k < n by omega]
+  have hpred (k : ℕ) : (¬ n.Coprime k) ↔ 1 < n.gcd k := by
+    change n.gcd k ≠ 1 ↔ 1 < n.gcd k
     have := Nat.gcd_pos_of_pos_left k (by omega : 0 < n)
     omega
-  have split := sum_filter_add_sum_filter_not (Icc 1 n) (n.Coprime ·) (fun k => k)
-  rw [hS, hcomp] at split
-  change (∑ k ∈ S, k) + a n = _ at split
-  have triangle : (∑ k ∈ Icc 1 n, k) = ∑ k ∈ range (n+1), k := by
+  have hcomp : (∑ k ∈ (range (n+1)).filter (fun k => ¬ n.Coprime k), k) = a n := by
+    simp_rw [hpred]
+    symm
+    unfold a
     apply sum_subset
     · intro k hk
-      simpa only [mem_range] using (show k < n+1 by have := mem_Icc.mp hk; omega)
-    · intro k hk hk'
-      simp only [mem_range] at hk
-      simp only [mem_Icc, not_and] at hk'
+      simp only [mem_filter, mem_Icc, mem_range] at hk ⊢
       omega
-  rw [triangle] at split
+    · intro k hk hk'
+      simp only [mem_filter, mem_Icc, mem_range] at hk hk'
+      omega
+  have split := sum_filter_add_sum_filter_not (range (n+1)) (n.Coprime ·) (fun k => k)
+  rw [hS, hcomp] at split
   have tri := sum_range_id_mul_two (n+1)
   simp only [Nat.add_sub_cancel] at tri
   rw [Nat.mul_sub, mul_comm n (n + 1)]
@@ -98,32 +85,23 @@ private theorem ne_of_not_dvd (n p : ℕ) (hn : 0 < n) (hp : p.Prime) (hpn : ¬p
   have := n.totient_le
   exact (Nat.not_dvd_of_pos_of_lt (by omega) (by omega)) hd'
 
-/-- For an even index above two, the odd totient factors preserve the mismatch modulo four. -/
+/-- At an even index above two, four divides twice the sum exactly when it divides the index. -/
 private theorem ne_two (n : ℕ) (hn : 0 < n) : a n ≠ a (n+2) := by
+  have div4 (m : ℕ) (hm : 2 < m) (he : 2 ∣ m) : 4 ∣ 2 * a m ↔ 4 ∣ m := by
+    have evenTotient := (Nat.totient_even hm).two_dvd
+    have ht := m.totient_le
+    have ho : Odd (m+1-m.totient) := ⟨(m+1-m.totient)/2, by omega⟩
+    have hc : Nat.Coprime 4 (m+1-m.totient) := (Nat.coprime_two_left.mpr ho).pow_left 2
+    rw [twice_a m hm.le]
+    exact hc.dvd_mul_right
   by_cases he : 2 ∣ n
   · by_cases h2 : n = 2
     · subst n
       decide
-    have gt : 2 < n := by omega
-    intro hh
-    have h := twice_a n (by omega)
-    have h' := twice_a (n+2) (by omega)
-    have eqm := congrArg (· % 4) (show n*(n+1-n.totient) =
-        (n+2)*(n+2+1-(n+2).totient) by omega)
-    obtain ⟨u, hu⟩ := Nat.totient_even gt
-    obtain ⟨v, hv⟩ := Nat.totient_even (by omega : 2 < n+2)
-    have tu := n.totient_le
-    have tv := (n+2).totient_le
-    rw [Nat.mul_mod, Nat.mul_mod (n+2)] at eqm
-    have r : n % 4 = 0 ∨ n % 4 = 2 := by omega
-    have odd1 : (n+1-n.totient)%4 = 1 ∨ (n+1-n.totient)%4 = 3 := by omega
-    have odd2 : (n+2+1-(n+2).totient)%4 = 1 ∨ (n+2+1-(n+2).totient)%4 = 3 := by omega
-    rcases r with h0 | h0 <;> rcases odd1 with h1 | h1 <;> rcases odd2 with h2 | h2
-    all_goals first
-      | have h3 : (n+2)%4 = 0 := by omega
-        simp [h0,h1,h2,h3] at eqm
-      | have h3 : (n+2)%4 = 2 := by omega
-        simp [h0,h1,h2,h3] at eqm
+    intro same
+    have h : 4 ∣ n ↔ 4 ∣ n+2 := by
+      rw [← div4 n (by omega) he, same, div4 (n+2) (by omega) (by omega)]
+    omega
   · exact ne_of_not_dvd n 2 hn Nat.prime_two he
 
 set_option maxHeartbeats 1000000 in
@@ -159,12 +137,11 @@ private theorem totients_at_multiples (p k : ℕ) (hp : p.Prime) (hp3 : 3 ≤ p)
   have hrpos : 1 ≤ r := by omega
   have hrlt : r < p := by omega
   have hp1 : p-1+1=p := by omega
-  have divP : p-1 ∣ P := by
-    rw [← Nat.totient_prime hp]; exact Nat.totient_dvd_of_dvd (Nat.dvd_mul_right _ _)
-  have divQ : p-1 ∣ Q := by
-    rw [← Nat.totient_prime hp]; exact Nat.totient_dvd_of_dvd (Nat.dvd_mul_right _ _)
-  obtain ⟨i,hi⟩ := divP
-  obtain ⟨j,hj⟩ := divQ
+  have div (t : ℕ) : p-1 ∣ (p*t).totient := by
+    rw [← Nat.totient_prime hp]
+    exact Nat.totient_dvd_of_dvd (Nat.dvd_mul_right _ _)
+  obtain ⟨i,hi⟩ := div k
+  obtain ⟨j,hj⟩ := div (k+1)
   have hdif : Q+r = P+2*p := by nlinarith only [hX,hY,hs,hys,hr]
   have jlo : i+2 ≤ j := by
     by_contra! h
@@ -181,12 +158,16 @@ private theorem totients_at_multiples (p k : ℕ) (hp : p.Prime) (hp3 : 3 ≤ p)
   have Pval : P+p=2*k+3 := by nlinarith only [hX,hs,sp,hprod]
   have Qval : Q=2*k+p+1 := by omega
   change (P+p=2*k+3) ∧ (Q=2*k+p+1) ∧ _
+  have pDvdTotient (t : ℕ) (ht : p ∣ t) : p ∣ (p*t).totient := by
+    have hp2 : p ^ 2 ∣ p * t := by
+      simpa only [pow_two] using Nat.mul_dvd_mul (dvd_refl p) ht
+    have hphi := Nat.totient_dvd_of_dvd hp2
+    rw [show (p^2).totient = p*(p-1) by
+      simpa only [pow_one] using Nat.totient_prime_pow_succ hp 1] at hphi
+    exact (dvd_mul_right _ _).trans hphi
   have ndt : ¬p ∣ k+1 := by
     intro h
-    have dQ : p ∣ Q := by
-      dsimp [Q]
-      rw [Nat.totient_mul_of_prime_of_dvd hp h]
-      exact Nat.dvd_mul_right _ _
+    have dQ : p ∣ Q := pDvdTotient _ h
     have he : Q+1=2*(k+1)+p := by omega
     have hQ1 : p ∣ Q+1 := he ▸ dvd_add (dvd_mul_of_dvd_right h 2) (dvd_refl p)
     have := (Nat.dvd_add_right dQ).mp hQ1
@@ -199,13 +180,10 @@ private theorem totients_at_multiples (p k : ℕ) (hp : p.Prime) (hp3 : 3 ≤ p)
       have l := Nat.totient_le (k+1)
       norm_num at t
       omega
-    · norm_num at hp
+    · exact (by decide : ¬ Nat.Prime 4) hp
   refine ⟨Pval,Qval,h5,?_,ndt⟩
   intro h
-  have dP : p ∣ P := by
-    dsimp [P]
-    rw [Nat.totient_mul_of_prime_of_dvd hp h]
-    exact Nat.dvd_mul_right _ _
+  have dP : p ∣ P := pDvdTotient _ h
   have h3 : p ∣ 3 := (Nat.dvd_add_right (dvd_mul_of_dvd_right h 2)).mp
     (Pval ▸ dvd_add dP (dvd_refl p))
   have := Nat.le_of_dvd (by decide) h3

@@ -1,8 +1,8 @@
 import OMAStatements.S_oeis_a204983
 
--- Problem: A204983: a(n) = 2^(k-1) - 2^(j-1), least pair of distinct positive powers of 2 with n | 2^(k-1)-2^(j-1).
--- Credit: @ceejcake
--- Proof: factor n = 2^v * oddPart n; n | 2^j * (2^(k-j) - 1) iff v ≤ j and oddPart n | 2^(k-j) - 1.
+/-! Following @ceejcake (#27597), retain the minimal-pair and period argument.
+Use Mathlib's complementary prime part for the positivity, oddness, and
+factorization of the odd part. -/
 
 namespace ProofA204983
 
@@ -11,22 +11,10 @@ open OMA.S_oeis_a204983
 private lemma oddPart_pos_and_odd {n : ℕ} (hn : 1 ≤ n) :
     0 < oddPart n ∧ Odd (oddPart n) ∧ n = 2 ^ padicValNat 2 n * oddPart n := by
   have hne : n ≠ 0 := by omega
-  have hdvd : 2 ^ padicValNat 2 n ∣ n := pow_padicValNat_dvd
-  have hmul : 2 ^ padicValNat 2 n * oddPart n = n := Nat.mul_div_cancel' hdvd
-  have hpos : 0 < oddPart n := by
-    by_contra h0
-    have : oddPart n = 0 := by omega
-    rw [this, mul_zero] at hmul
-    omega
-  have hnotdvd : ¬ (2 ∣ oddPart n) := by
-    intro h2
-    have hpow : 2 ^ (padicValNat 2 n + 1) ∣ n := by
-      conv_rhs => rw [← hmul]
-      rw [pow_succ]
-      exact mul_dvd_mul_left _ h2
-    have hle := (padicValNat_dvd_iff_le hne).mp hpow
-    omega
-  exact ⟨hpos, Nat.odd_iff.mpr (by omega), hmul.symm⟩
+  simp only [oddPart, ← Nat.factorization_def n Nat.prime_two]
+  refine ⟨Nat.ordCompl_pos 2 hne, ?_, (Nat.ordProj_mul_ordCompl_eq_self n 2).symm⟩
+  exact Nat.not_even_iff_odd.mp (by
+    simpa only [even_iff_two_dvd] using Nat.not_dvd_ordCompl Nat.prime_two hne)
 
 private lemma exists_period {m : ℕ} (hm_pos : 0 < m) (hm_odd : Odd m) :
     ∃ d : ℕ, 0 < d ∧ m ∣ 2 ^ d - 1 := by
