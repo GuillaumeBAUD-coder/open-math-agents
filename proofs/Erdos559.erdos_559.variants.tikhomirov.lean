@@ -9,7 +9,7 @@ namespace OMA.Tikhomirov
 
 set_option maxHeartbeats 4000000 in
 set_option maxRecDepth 4096 in
-private theorem exists_sparse_choices {J Ω : Type*} [Fintype J] [Fintype Ω]
+private theorem exists_sparse_choices {J Ω : Type*} [Fintype J] [Fintype Ω] [DecidableEq Ω]
     [Nonempty Ω] (h r D : ℕ) (hr : r ≤ h) (good : J → Finset Ω)
     (hgood : ∀ j, (good j).card ≤ D)
     (hm : Fintype.card J * h^r * D^r < (Fintype.card Ω)^r) :
@@ -430,7 +430,8 @@ private theorem treeWithLeafCycle_cubic (k : ℕ) (hk : 1 ≤ k)
         omega
       calc
         C.degree (f y) = (SimpleGraph.cycleGraph (m+1)).degree y :=
-          degree_map_emb _ f y (instMap := inferInstanceAs (DecidableRel C.Adj))
+          degree_map_emb (SimpleGraph.cycleGraph (m+1)) f y
+            (instMap := inferInstanceAs (DecidableRel C.Adj))
         _ ≤ 2 := standard_cycle_degree hm y
     omega
   · have hcycle : C.degree x = 0 := by
@@ -924,9 +925,15 @@ private theorem binaryFamily (k h d : ℕ) (hk : 1 ≤ k) (hd : 2 ≤ d)
         rootedChoices (U ∘ φ) G x ⊆
           (Finset.univ.filter (fun i : Fin h => φ i ∈ good (H,y))) := by
       intro i hi
+      have hi' : ∃ f : (U (φ i)).Copy G, f 0 = x :=
+        (mem_rootedChoices (U := U ∘ φ) (σ := i)).mp hi
       exact Finset.mem_filter.mpr ⟨Finset.mem_univ _,
-        mem_rootedChoices.mpr (hy (φ i) (mem_rootedChoices.mp hi))⟩
-    exact (Finset.card_le_card hsub).trans_lt (hφ (H,y))
+        (mem_rootedChoices (U := U) (v := y) (σ := φ i)).mpr (hy (φ i) hi')⟩
+    have hlt : (Finset.univ.filter (fun i : Fin h => φ i ∈ good (H,y))).card < r := hφ (H,y)
+    have hcard : (rootedChoices (U ∘ φ) G x).card < r :=
+      (Finset.card_le_card hsub).trans_lt hlt
+    change (rootedChoices (U ∘ φ) G x).card < r
+    exact hcard
   · intro i
     exact leafCycle_matching k hk (φ i)
 
