@@ -1,12 +1,4 @@
 import OMAReductions.R_Erdos723_erdos_723_variants_leq_11_R1_H2_R2_H4_R1_H2_R1_H2_R1
-import Mathlib.Algebra.BigOperators.Group.Finset.Basic
-import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Finset.Powerset
-import Mathlib.Data.Fintype.EquivFin
-import Mathlib.Data.Fintype.Fin
-import Mathlib.Data.Fintype.Sum
-import Mathlib.Data.Nat.Choose.Basic
 
 -- Credit: @avivorly
 open Finset
@@ -36,14 +28,14 @@ lemma third_point_for_disjoint_heavy_support
     | inl b =>
       let onLine := Finset.univ.filter fun x : Fin 19 => M (.inr (.inl b)) (.inl x) = true
       have sz : onLine.card = 3 := bSizes b
-      have newPoint : (onLine \ {p,q}).Nonempty := by
+      have np : (onLine \ {p,q}).Nonempty := by
         apply Finset.sdiff_nonempty.mpr
         intro sub
         have le := Finset.card_le_card sub
         have lim : ({p,q} : Finset (Fin 19)).card ≤ 2 :=
           (Finset.card_insert_le p {q}).trans_eq (by simp)
         omega
-      obtain ⟨t,ht⟩ := newPoint
+      obtain ⟨t,ht⟩ := np
       obtain ⟨onB,notOld⟩ := Finset.mem_sdiff.mp ht
       have tOnB := (Finset.mem_filter.mp onB).2
       have tp : t ≠ p := fun same => notOld (same ▸ Finset.mem_insert_self _ _)
