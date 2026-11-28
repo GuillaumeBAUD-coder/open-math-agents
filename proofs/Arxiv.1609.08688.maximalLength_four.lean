@@ -57,16 +57,12 @@ lemma lt2b_of (a b : Fin 3 → ℕ) (h : lt₂ a b) : lt2b (f a) (f b) = true :=
   fin_cases i <;> fin_cases j <;> simp_all
 
 lemma mem_allT (a : Fin 3 → ℕ) (h : Set.range a ⊆ Set.Icc 1 4) : f a ∈ allT := by
-  have h0 := h ⟨0, rfl⟩
-  have h1 := h ⟨1, rfl⟩
-  have h2 := h ⟨2, rfl⟩
-  simp only [Set.mem_Icc] at h0 h1 h2
-  have m : ∀ x : ℕ, 1 ≤ x → x ≤ 4 → x ∈ L4 := by
-    intro x hx1 hx2
+  have m (i : Fin 3) : a i ∈ L4 := by
+    obtain ⟨lo, hi⟩ := h ⟨i, rfl⟩
     simp only [L4, List.mem_cons, List.not_mem_nil, or_false]
     omega
   simp only [allT, f, List.mem_flatMap, List.mem_map]
-  exact ⟨a 0, m _ h0.1 h0.2, a 1, m _ h1.1 h1.2, a 2, m _ h2.1 h2.2, rfl⟩
+  exact ⟨a 0, m 0, a 1, m 1, a 2, m 2, rfl⟩
 
 lemma len_le (s : List (Fin 3 → ℕ)) (hr : ∀ a ∈ s, Set.range a ⊆ Set.Icc 1 4)
     (hs : IsIncreasing₂ s) : s.length ≤ 8 := by
@@ -96,17 +92,17 @@ lemma ex_range : ∀ a ∈ ex, Set.range a ⊆ Set.Icc 1 4 := by
   rcases ha with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
     fin_cases i <;> simp
 
-lemma main : maximalLength 4 = 8 := by
-  have hub : ∀ m ∈ { List.length s | (s) (_ : ∀ a ∈ s, Set.range a ⊆ Set.Icc 1 4)
-      (_ : IsIncreasing₂ s) }, m ≤ 8 := by
-    rintro _ ⟨s, hr, hs, rfl⟩
-    exact len_le s hr hs
-  have hmem : 8 ∈ { List.length s | (s) (_ : ∀ a ∈ s, Set.range a ⊆ Set.Icc 1 4)
-      (_ : IsIncreasing₂ s) } := ⟨ex, ex_range, ex_inc, rfl⟩
-  unfold maximalLength
-  exact le_antisymm (csSup_le ⟨8, hmem⟩ hub) (le_csSup ⟨8, hub⟩ hmem)
+lemma greatest_sup {s : Set ℕ} {n : ℕ} (h : IsGreatest s n) : sSup s = n :=
+  h.isLUB.csSup_eq ⟨n, h.1⟩
 
 end OMAMaxLen4Aux
 
-theorem OMA.solution : type_of% @Arxiv.«1609.08688».maximalLength_four :=
-  OMAMaxLen4Aux.main
+open OMAMaxLen4Aux
+
+theorem OMA.solution : type_of% @Arxiv.«1609.08688».maximalLength_four := by
+  unfold Arxiv.«1609.08688».maximalLength
+  apply greatest_sup
+  constructor
+  · exact ⟨ex, ex_range, ex_inc, rfl⟩
+  · rintro _ ⟨s, hr, hs, rfl⟩
+    exact len_le s hr hs
