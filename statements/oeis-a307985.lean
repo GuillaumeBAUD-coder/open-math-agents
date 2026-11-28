@@ -4,7 +4,7 @@ import Mathlib
 # OEIS A307985: the recurrence a(n) = a(n-3) + a(n-6) - a(n-9)
 
 Source: https://oeis.org/A307985
-Credit: @SudharsanAnimations
+Credit: Sudharsan Rajendiran
 
 A307985(n) is the number of integer-sided triangles with perimeter `n` and sides `a ≤ b ≤ c` such
 that `b ∣ n`. Colin Barker conjectured (May 2019) the g.f.
