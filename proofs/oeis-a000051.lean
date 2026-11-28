@@ -81,36 +81,16 @@ lemma V_eq (m : ℕ) : ∑ σ : Perm (Fin (m+1)), (if σ 0 = Fin.last m then w �
 
 lemma entry (n j k : ℕ) (hj : j ≤ n) (hk : k ≤ n) :
     -⌊(((j:ℚ)+1) - ((k:ℚ)+1) - 2)/((n:ℚ)+1)⌋ = H j k * (if j = 0 ∧ k = n then 2 else 1) := by
-  have hn : (0:ℚ) < (n:ℚ)+1 := by positivity
-  have hj' : (j:ℚ) ≤ n := by exact_mod_cast hj
-  have hk' : (k:ℚ) ≤ n := by exact_mod_cast hk
+  have e (z : ℤ) (h1 : z*(n+1) ≤ (j:ℤ)+1-(k+1)-2) (h2 : (j:ℤ)+1-(k+1)-2 < (z+1)*(n+1)) :
+      ⌊(((j:ℚ)+1) - ((k:ℚ)+1) - 2)/((n:ℚ)+1)⌋ = z := by
+    rw [Int.floor_eq_iff, le_div_iff₀ (by positivity), div_lt_iff₀ (by positivity)]
+    constructor <;> exact_mod_cast ‹_›
   unfold H
-  by_cases h1 : j ≤ k + 1
-  · by_cases h2 : j = 0 ∧ k = n
-    · obtain ⟨rfl, rfl⟩ := h2
-      have : ⌊(((0:ℕ):ℚ)+1 - (((k:ℕ):ℚ)+1) - 2)/((k:ℚ)+1)⌋ = -2 := by
-        rw [Int.floor_eq_iff]
-        constructor
-        · rw [le_div_iff₀ hn]; push_cast; linarith
-        · rw [div_lt_iff₀ hn]; push_cast; linarith
-      rw [this]; simp
-    · rw [if_pos h1, if_neg h2]
-      have h3 : (k:ℚ) + 1 ≤ j + n := by exact_mod_cast (by omega : k + 1 ≤ j + n)
-      have h4 : (j:ℚ) ≤ k + 1 := by exact_mod_cast h1
-      have : ⌊(((j:ℚ)+1) - ((k:ℚ)+1) - 2)/((n:ℚ)+1)⌋ = -1 := by
-        rw [Int.floor_eq_iff]
-        constructor
-        · rw [le_div_iff₀ hn]; push_cast; linarith
-        · rw [div_lt_iff₀ hn]; push_cast; linarith
-      rw [this]; simp
-  · rw [if_neg h1]
-    have h4 : (k:ℚ) + 2 ≤ j := by exact_mod_cast (by omega : k + 2 ≤ j)
-    have : ⌊(((j:ℚ)+1) - ((k:ℚ)+1) - 2)/((n:ℚ)+1)⌋ = 0 := by
-      rw [Int.floor_eq_iff]
-      constructor
-      · push_cast; apply div_nonneg <;> linarith
-      · rw [div_lt_iff₀ hn]; push_cast; linarith
-    rw [this]; simp
+  split_ifs with h1 h2
+  · rw [e (-2) (by omega) (by omega)]; rfl
+  · rw [e (-1) (by omega) (by omega)]; rfl
+  · omega
+  · rw [e 0 (by omega) (by omega)]; rfl
 
 end OMA.A000051Aux
 
