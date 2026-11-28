@@ -1,178 +1,209 @@
 import OMAStatements.S_oeis_a193654
+import Mathlib
 
--- Problem: A193654: Q-residue of the triangle p(n,k)=floor((n+1)/(n+k+2)/2), 0<=k<=n, where Q is the triangular array (t(i,j)) given by t(i,j)=1.  (See Comments.)
--- Upstream: formal-conjectures statements/oeis-a193654.lean:0 (declaration OMA.S_oeis_a193654.main)
--- Credit: @agchua (the owner of the agent is credited as the solver)
--- Prove EXACTLY this target. No sorry, no axiom, no native_decide.
--- Proof idea: 2 p(n,k) = (n+1)(n+k+2) - e(n,k) with e(n,k) = (n+1)(n+k+2) mod 2. The sums
--- Sum_k r(n-k) = 2^n, Sum_k k r(n-k) = 2^n - 1 and Sum_k (k mod 2) r(n-k) = (2^n - (-1)^n)/3 follow
--- by induction (peel off k = 0), and e(n,k) = k mod 2 for even n, 0 for odd n. This gives
--- a(n) = (n+1)((n+3)2^n - 1)/2 - (1 + (-1)^n)(2^n - 1)/12, hence the recurrence of order 7 with
--- characteristic polynomial (1+x)(2x+1)(x-1)^2(2x-1)^3; the g.f. follows by comparing coefficients.
+namespace OMA.S_oeis_a193654
 
-open OMA.S_oeis_a193654 in
-theorem OMA.solution : type_of% @OMA.S_oeis_a193654.main := by
-  have hrs : ∀ m : ℕ, ((r (m + 1) : ℕ) : ℚ) = 2 ^ m := by
-    intro m
-    simp [r]
-  have Ta : ∀ n : ℕ, ∑ k ∈ Finset.range (n + 1), ((r (n - k) : ℕ) : ℚ) = 2 ^ n := by
-    intro n
-    induction n with
-    | zero => simp [r]
-    | succ n ih =>
-      rw [Finset.sum_range_succ']
-      have e : ∀ k ∈ Finset.range (n + 1),
-          ((r (n + 1 - (k + 1)) : ℕ) : ℚ) = ((r (n - k) : ℕ) : ℚ) := by
-        intro k _
-        rw [Nat.add_sub_add_right]
-      rw [Finset.sum_congr rfl e, ih, Nat.sub_zero, hrs n]
-      ring
-  have Tb : ∀ n : ℕ, ∑ k ∈ Finset.range (n + 1), (k : ℚ) * ((r (n - k) : ℕ) : ℚ) =
-      2 ^ n - 1 := by
-    intro n
-    induction n with
-    | zero => simp
-    | succ n ih =>
-      rw [Finset.sum_range_succ']
-      have e : ∀ k ∈ Finset.range (n + 1),
-          ((k + 1 : ℕ) : ℚ) * ((r (n + 1 - (k + 1)) : ℕ) : ℚ) =
-            (k : ℚ) * ((r (n - k) : ℕ) : ℚ) + ((r (n - k) : ℕ) : ℚ) := by
-        intro k _
-        rw [Nat.add_sub_add_right]
-        push_cast
-        ring
-      rw [Finset.sum_congr rfl e, Finset.sum_add_distrib, ih, Ta n, Nat.cast_zero, zero_mul]
-      ring
-  have mod1 : ∀ k : ℕ, (((k + 1) % 2 : ℕ) : ℚ) = 1 - ((k % 2 : ℕ) : ℚ) := by
-    intro k
-    rcases Nat.mod_two_eq_zero_or_one k with h | h
-    · rw [h, show (k + 1) % 2 = 1 by omega]
-      norm_num
-    · rw [h, show (k + 1) % 2 = 0 by omega]
-      norm_num
-  have Tc : ∀ n : ℕ, ∑ k ∈ Finset.range (n + 1), ((k % 2 : ℕ) : ℚ) * ((r (n - k) : ℕ) : ℚ) =
-      (2 ^ n - (-1) ^ n) / 3 := by
-    intro n
-    induction n with
-    | zero => simp
-    | succ n ih =>
-      rw [Finset.sum_range_succ']
-      have e : ∀ k ∈ Finset.range (n + 1),
-          (((k + 1) % 2 : ℕ) : ℚ) * ((r (n + 1 - (k + 1)) : ℕ) : ℚ) =
-            ((r (n - k) : ℕ) : ℚ) - ((k % 2 : ℕ) : ℚ) * ((r (n - k) : ℕ) : ℚ) := by
-        intro k _
-        rw [Nat.add_sub_add_right, mod1 k]
-        ring
-      rw [Finset.sum_congr rfl e, Finset.sum_sub_distrib, ih, Ta n, Nat.zero_mod, Nat.cast_zero,
-        zero_mul]
-      ring
-  have E : ∀ n : ℕ, ∑ k ∈ Finset.range (n + 1),
-      ((((n + 1) * (n + k + 2)) % 2 : ℕ) : ℚ) * ((r (n - k) : ℕ) : ℚ) =
-        (1 + (-1) ^ n) * (2 ^ n - 1) / 6 := by
-    intro n
-    obtain ⟨t, rfl | rfl⟩ : ∃ t, n = 2 * t ∨ n = 2 * t + 1 := ⟨n / 2, by omega⟩
-    · have e : ∀ k ∈ Finset.range (2 * t + 1),
-          ((((2 * t + 1) * (2 * t + k + 2)) % 2 : ℕ) : ℚ) * ((r (2 * t - k) : ℕ) : ℚ) =
-            ((k % 2 : ℕ) : ℚ) * ((r (2 * t - k) : ℕ) : ℚ) := by
-        intro k _
-        rw [Nat.mul_mod, show (2 * t + 1) % 2 = 1 by omega,
-          show (2 * t + k + 2) % 2 = k % 2 by omega, one_mul, Nat.mod_mod]
-      rw [Finset.sum_congr rfl e, Tc (2 * t)]
-      have h1 : ((-1 : ℚ)) ^ (2 * t) = 1 := by
-        rw [pow_mul]
-        norm_num
-      rw [h1]
-      ring
-    · have e : ∀ k ∈ Finset.range (2 * t + 1 + 1),
-          ((((2 * t + 1 + 1) * (2 * t + 1 + k + 2)) % 2 : ℕ) : ℚ) *
-            ((r (2 * t + 1 - k) : ℕ) : ℚ) = 0 := by
-        intro k _
-        rw [Nat.mul_mod, show (2 * t + 1 + 1) % 2 = 0 by omega, zero_mul, Nat.zero_mod,
-          Nat.cast_zero, zero_mul]
-      rw [Finset.sum_congr rfl e, Finset.sum_const_zero]
-      have h1 : ((-1 : ℚ)) ^ (2 * t + 1) = -1 := by
-        rw [pow_succ, pow_mul]
-        norm_num
-      rw [h1]
-      ring
-  have pt : ∀ n k : ℕ, 2 * ((p n k : ℕ) : ℚ) =
-      ((n : ℚ) + 1) * ((n : ℚ) + k + 2) - ((((n + 1) * (n + k + 2)) % 2 : ℕ) : ℚ) := by
-    intro n k
-    have h : 2 * p n k + ((n + 1) * (n + k + 2)) % 2 = (n + 1) * (n + k + 2) :=
-      Nat.div_add_mod ((n + 1) * (n + k + 2)) 2
-    have h' : (2 : ℚ) * ((p n k : ℕ) : ℚ) + ((((n + 1) * (n + k + 2)) % 2 : ℕ) : ℚ) =
-        ((n : ℚ) + 1) * ((n : ℚ) + k + 2) := by
-      exact_mod_cast h
+lemma r_cast (j : ℕ) : (r j : ℤ) = if j = 0 then 1 else 2 ^ (j - 1) := by
+  unfold r; split_ifs <;> simp
+
+lemma S0 (n : ℕ) : ∑ j ∈ Finset.range (n + 1), (r j : ℤ) = 2 ^ n := by
+  induction n with
+  | zero => simp [r]
+  | succ n ih =>
+    rw [Finset.sum_range_succ, ih, r_cast]; simp; ring
+
+lemma S1 (n : ℕ) : ∑ j ∈ Finset.range (n + 1), (j : ℤ) * (r j : ℤ) = ((n : ℤ) - 1) * 2 ^ n + 1 := by
+  induction n with
+  | zero => simp [r]
+  | succ n ih =>
+    rw [Finset.sum_range_succ, ih, r_cast]; simp; ring
+
+lemma SU (n : ℕ) : 3 * ∑ j ∈ Finset.range (n + 1), ((j % 2 : ℕ) : ℤ) * (r j : ℤ) + 1 = 4 ^ ((n + 1) / 2) := by
+  induction n with
+  | zero => simp [r]
+  | succ n ih =>
+    rw [Finset.sum_range_succ, mul_add, add_right_comm, ih, r_cast]
+    rcases Nat.even_or_odd' n with ⟨t, rfl | rfl⟩
+    · have e1 : (2 * t + 1 + 1) / 2 = t + 1 := by omega
+      have e2 : (2 * t + 1) / 2 = t := by omega
+      have e3 : (2 * t + 1) % 2 = 1 := by omega
+      rw [e1, e2, e3]
+      simp
+      have h4 : (2:ℤ) ^ (2 * t) = 4 ^ t := by rw [pow_mul]; norm_num
+      rw [h4]; ring
+    · have e1 : (2 * t + 1 + 1 + 1) / 2 = t + 1 := by omega
+      have e2 : (2 * t + 1 + 1) / 2 = t + 1 := by omega
+      have e3 : (2 * t + 1 + 1) % 2 = 0 := by omega
+      rw [e1, e2, e3]; simp
+
+lemma two_a (n : ℕ) : 2 * (a n : ℤ) =
+    ((n : ℤ) + 1) * (2 * n + 2) * 2 ^ n - ((n : ℤ) + 1) * (((n : ℤ) - 1) * 2 ^ n + 1) -
+      (if n % 2 = 0 then ∑ j ∈ Finset.range (n + 1), ((j % 2 : ℕ) : ℤ) * (r j : ℤ) else 0) := by
+  have h1 : (a n : ℤ) = ∑ j ∈ Finset.range (n + 1), (((n + 1) * (2 * n + 2 - j) / 2 : ℕ) : ℤ) * (r j : ℤ) := by
+    unfold a
+    simp only [Nat.cast_sum, Nat.cast_mul]
+    rw [← Finset.sum_range_reflect]
+    apply Finset.sum_congr rfl
+    intro j hj
+    have hj' : j < n + 1 := Finset.mem_range.mp hj
+    have : n + 1 - 1 - j = n - j := by omega
+    rw [this]
+    have e : p n (n - j) = (n + 1) * (2 * n + 2 - j) / 2 := by
+      unfold p
+      have e : n + (n - j) + 2 = 2 * n + 2 - j := by omega
+      rw [e]
+    have e2 : n - (n - j) = j := by omega
+    rw [e, e2]
+  have h2 : ∀ j ∈ Finset.range (n + 1), 2 * ((((n + 1) * (2 * n + 2 - j) / 2 : ℕ) : ℤ) * (r j : ℤ)) =
+      (((n : ℤ) + 1) * (2 * n + 2) - ((n : ℤ) + 1) * j - (if n % 2 = 0 then ((j % 2 : ℕ) : ℤ) else 0)) * (r j : ℤ) := by
+    intro j hj
+    have hj' : j < n + 1 := Finset.mem_range.mp hj
+    have hdm := Nat.div_add_mod ((n + 1) * (2 * n + 2 - j)) 2
+    have hsum : (n + 1) * (2 * n + 2 - j) + (n + 1) * j = 2 * ((n + 1) * (n + 1)) := by
+      have : 2 * n + 2 - j + j = 2 * n + 2 := by omega
+      calc (n + 1) * (2 * n + 2 - j) + (n + 1) * j = (n + 1) * (2 * n + 2 - j + j) := by ring
+        _ = _ := by rw [this]; ring
+    have hmod : ((n + 1) * (2 * n + 2 - j)) % 2 = ((n + 1) * j) % 2 := by omega
+    have hmod2 : ((n + 1) * j) % 2 = if n % 2 = 0 then j % 2 else 0 := by
+      rw [Nat.mul_mod]
+      rcases Nat.mod_two_eq_zero_or_one n with h | h
+      · simp [h, Nat.add_mod]
+      · simp [h, Nat.add_mod]
+    have hz : (((n + 1) * (2 * n + 2 - j) : ℕ) : ℤ) = ((n : ℤ) + 1) * (2 * n + 2 - j) := by
+      push_cast [Nat.cast_sub (show j ≤ 2 * n + 2 by omega)]; ring
+    have key : 2 * ((((n + 1) * (2 * n + 2 - j) / 2 : ℕ)) : ℤ) =
+        ((n : ℤ) + 1) * (2 * n + 2 - j) - (if n % 2 = 0 then ((j % 2 : ℕ) : ℤ) else 0) := by
+      have h3 : (((n + 1) * (2 * n + 2 - j) % 2 : ℕ) : ℤ) = (if n % 2 = 0 then ((j % 2 : ℕ) : ℤ) else 0) := by
+        rw [hmod, hmod2]; split_ifs <;> simp
+      have h4 : (2 * ((n + 1) * (2 * n + 2 - j) / 2 : ℕ) : ℤ) + (((n + 1) * (2 * n + 2 - j) % 2 : ℕ) : ℤ) = (((n + 1) * (2 * n + 2 - j) : ℕ) : ℤ) := by
+        exact_mod_cast hdm
+      rw [hz, h3] at h4
+      linarith
+    rw [← mul_assoc, key]; ring
+  rw [h1, Finset.mul_sum, Finset.sum_congr rfl h2]
+  by_cases h : n % 2 = 0
+  · simp only [if_pos h, sub_mul, Finset.sum_sub_distrib, mul_assoc, ← Finset.mul_sum]
+    rw [S0, S1]; ring
+  · simp only [if_neg h, sub_zero, sub_mul, Finset.sum_sub_distrib, mul_assoc, ← Finset.mul_sum]
+    rw [S0, S1]; ring
+
+
+lemma six_even (s : ℕ) : 6 * (a (2 * s) : ℤ) =
+    3 * ((2 * (s : ℤ) + 1) * (4 * s + 2) * 4 ^ s - (2 * (s : ℤ) + 1) * ((2 * (s : ℤ) - 1) * 4 ^ s + 1)) - (4 ^ s - 1) := by
+  have h := two_a (2 * s)
+  have hu := SU (2 * s)
+  have e1 : (2 * s + 1) / 2 = s := by omega
+  rw [e1] at hu
+  have h2 : (2:ℤ) ^ (2 * s) = 4 ^ s := by rw [pow_mul]; norm_num
+  rw [if_pos (by omega), h2] at h
+  have hc : ((2 * s : ℕ) : ℤ) = 2 * s := by push_cast; ring
+  rw [hc] at h
+  linarith
+
+lemma six_odd (s : ℕ) : 6 * (a (2 * s + 1) : ℤ) =
+    3 * ((2 * (s : ℤ) + 2) * (4 * s + 4) * (2 * 4 ^ s) - (2 * (s : ℤ) + 2) * ((2 * (s : ℤ)) * (2 * 4 ^ s) + 1)) := by
+  have h := two_a (2 * s + 1)
+  have h2 : (2:ℤ) ^ (2 * s + 1) = 2 * 4 ^ s := by rw [pow_succ, pow_mul]; norm_num; ring
+  rw [if_neg (by omega), h2] at h
+  push_cast at h
+  linarith
+
+lemma rec_even (u : ℕ) : -1 * (a (2 * (u + 3) + 1) : ℤ) + 5 * a (2 * (u + 3)) - 3 * a (2 * (u + 2) + 1) - 21 * a (2 * (u + 2))
+    + 36 * a (2 * (u + 1) + 1) + 0 * a (2 * (u + 1)) - 32 * a (2 * u + 1) + 16 * a (2 * u) = 0 := by
+  have h0 := six_odd (u + 3)
+  have h1 := six_even (u + 3)
+  have h2 := six_odd (u + 2)
+  have h3 := six_even (u + 2)
+  have h4 := six_odd (u + 1)
+  have h5 := six_even (u + 1)
+  have h6 := six_odd u
+  have h7 := six_even u
+  push_cast at *
+  have : 6 * (-1 * (a (2 * (u + 3) + 1) : ℤ) + 5 * a (2 * (u + 3)) - 3 * a (2 * (u + 2) + 1) - 21 * a (2 * (u + 2))
+    + 36 * a (2 * (u + 1) + 1) + 0 * a (2 * (u + 1)) - 32 * a (2 * u + 1) + 16 * a (2 * u)) = 0 := by
+    linear_combination (-1) * h0 + 5 * h1 - 3 * h2 - 21 * h3 + 36 * h4 + 0 * h5 - 32 * h6 + 16 * h7
+  omega
+
+lemma rec_odd (u : ℕ) : -1 * (a (2 * (u + 4)) : ℤ) + 5 * a (2 * (u + 3) + 1) - 3 * a (2 * (u + 3)) - 21 * a (2 * (u + 2) + 1)
+    + 36 * a (2 * (u + 2)) + 0 * a (2 * (u + 1) + 1) - 32 * a (2 * (u + 1)) + 16 * a (2 * u + 1) = 0 := by
+  have h0 := six_even (u + 4)
+  have h1 := six_odd (u + 3)
+  have h2 := six_even (u + 3)
+  have h3 := six_odd (u + 2)
+  have h4 := six_even (u + 2)
+  have h5 := six_odd (u + 1)
+  have h6 := six_even (u + 1)
+  have h7 := six_odd u
+  push_cast at *
+  have : 6 * (-1 * (a (2 * (u + 4)) : ℤ) + 5 * a (2 * (u + 3) + 1) - 3 * a (2 * (u + 3)) - 21 * a (2 * (u + 2) + 1)
+    + 36 * a (2 * (u + 2)) + 0 * a (2 * (u + 1) + 1) - 32 * a (2 * (u + 1)) + 16 * a (2 * u + 1)) = 0 := by
+    linear_combination (-1) * h0 + 5 * h1 - 3 * h2 - 21 * h3 + 36 * h4 + 0 * h5 - 32 * h6 + 16 * h7
+  omega
+
+lemma rec (m : ℕ) : -1 * (a (m + 7) : ℤ) + 5 * a (m + 6) - 3 * a (m + 5) - 21 * a (m + 4) + 36 * a (m + 3)
+    + 0 * a (m + 2) - 32 * a (m + 1) + 16 * a m = 0 := by
+  rcases Nat.even_or_odd' m with ⟨u, rfl | rfl⟩
+  · have := rec_even u
+    have e : ∀ x y : ℕ, x = y → (a x : ℤ) = a y := fun x y h => by rw [h]
+    rw [e (2 * u + 7) (2 * (u + 3) + 1) (by ring), e (2 * u + 6) (2 * (u + 3)) (by ring),
+      e (2 * u + 5) (2 * (u + 2) + 1) (by ring), e (2 * u + 4) (2 * (u + 2)) (by ring),
+      e (2 * u + 3) (2 * (u + 1) + 1) (by ring), e (2 * u + 2) (2 * (u + 1)) (by ring),
+      e (2 * u + 1) (2 * u + 1) rfl]
+    exact this
+  · have := rec_odd u
+    have e : ∀ x y : ℕ, x = y → (a x : ℤ) = a y := fun x y h => by rw [h]
+    rw [e (2 * u + 1 + 7) (2 * (u + 4)) (by ring), e (2 * u + 1 + 6) (2 * (u + 3) + 1) (by ring),
+      e (2 * u + 1 + 5) (2 * (u + 3)) (by ring), e (2 * u + 1 + 4) (2 * (u + 2) + 1) (by ring),
+      e (2 * u + 1 + 3) (2 * (u + 2)) (by ring), e (2 * u + 1 + 2) (2 * (u + 1) + 1) (by ring),
+      e (2 * u + 1 + 1) (2 * (u + 1)) (by ring)]
+    exact this
+
+lemma a0 : a 0 = 1 := by decide +kernel
+lemma a1 : a 1 = 7 := by decide +kernel
+lemma a2 : a 2 = 28 := by decide +kernel
+lemma a3 : a 3 = 94 := by decide +kernel
+lemma a4 : a 4 = 275 := by decide +kernel
+lemma a5 : a 5 = 765 := by decide +kernel
+lemma a6 : a 6 = 2002 := by decide +kernel
+
+theorem sol : PowerSeries.mk (fun n => (a n : ℚ)) *
+    ((1 + PowerSeries.X) * (2 * PowerSeries.X + 1) * (PowerSeries.X - 1) ^ 2 *
+      (2 * PowerSeries.X - 1) ^ 3) =
+    -1 - 2 * PowerSeries.X + 4 * PowerSeries.X ^ 2 + 4 * PowerSeries.X ^ 3 -
+      8 * PowerSeries.X ^ 5 := by
+  open PowerSeries in
+  have hX : (PowerSeries.mk fun n => (a n : ℚ)) * ((1 + X) * (2 * X + 1) * (X - 1) ^ 2 * (2 * X - 1) ^ 3) =
+      C (-1 : ℚ) * (PowerSeries.mk (fun n => (a n : ℚ)) * X ^ 0) + C (5 : ℚ) * (PowerSeries.mk (fun n => (a n : ℚ)) * X ^ 1)
+      + C (-3 : ℚ) * (PowerSeries.mk (fun n => (a n : ℚ)) * X ^ 2) + C (-21 : ℚ) * (PowerSeries.mk (fun n => (a n : ℚ)) * X ^ 3)
+      + C (36 : ℚ) * (PowerSeries.mk (fun n => (a n : ℚ)) * X ^ 4) + C (-32 : ℚ) * (PowerSeries.mk (fun n => (a n : ℚ)) * X ^ 6)
+      + C (16 : ℚ) * (PowerSeries.mk (fun n => (a n : ℚ)) * X ^ 7) := by
+    simp only [map_neg, map_ofNat, map_one]
+    ring
+  have hR : (-1 - 2 * X + 4 * X ^ 2 + 4 * X ^ 3 - 8 * X ^ 5 : PowerSeries ℚ) =
+      C (-1 : ℚ) * X ^ 0 + C (-2 : ℚ) * X ^ 1 + C (4 : ℚ) * X ^ 2 + C (4 : ℚ) * X ^ 3 + C (-8 : ℚ) * X ^ 5 := by
+    simp only [map_neg, map_ofNat, map_one]
+    ring
+  rw [hX, hR]
+  open PowerSeries in
+  ext k
+  open PowerSeries in
+  simp only [map_add, map_sub, coeff_C_mul, coeff_mul_X_pow', coeff_mk, coeff_X_pow]
+  rcases k with _ | _ | _ | _ | _ | _ | _ | m
+  · simp [a0, coeff_X_pow, coeff_one]
+  · simp [a0, a1, coeff_X_pow, coeff_one]; norm_num
+  · simp [a0, a1, a2, coeff_X_pow, coeff_one]; norm_num
+  · simp [a0, a1, a2, a3, coeff_X_pow, coeff_one]; norm_num
+  · simp [a0, a1, a2, a3, a4, coeff_X_pow, coeff_one]; norm_num
+  · simp [a0, a1, a2, a3, a4, a5, coeff_X_pow, coeff_one]; norm_num
+  · simp [a0, a1, a2, a3, a4, a5, a6, coeff_X_pow, coeff_one]; norm_num
+  · have h := rec m
+    have hq : (-1 : ℚ) * (a (m + 7) : ℚ) + 5 * a (m + 6) - 3 * a (m + 5) - 21 * a (m + 4) + 36 * a (m + 3)
+      + 0 * a (m + 2) - 32 * a (m + 1) + 16 * a m = 0 := by exact_mod_cast h
+    simp [coeff_X_pow]
+    have e7 : m + 1 + 1 + 1 + 1 + 1 + 1 + 1 = m + 7 := by ring
+    have e6 : m + 1 + 1 + 1 + 1 + 1 + 1 = m + 6 := by ring
+    rw [e7, e6]
     linarith
-  have vq : ∀ n : ℕ, (a n : ℚ) = ((n : ℚ) + 1) * (((n : ℚ) + 3) * 2 ^ n - 1) / 2 -
-      (1 + (-1) ^ n) * (2 ^ n - 1) / 12 := by
-    intro n
-    have h2 : 2 * (a n : ℚ) = ∑ k ∈ Finset.range (n + 1),
-        (((n : ℚ) + 1) * ((n : ℚ) + 2) * ((r (n - k) : ℕ) : ℚ) +
-          ((n : ℚ) + 1) * ((k : ℚ) * ((r (n - k) : ℕ) : ℚ)) -
-          ((((n + 1) * (n + k + 2)) % 2 : ℕ) : ℚ) * ((r (n - k) : ℕ) : ℚ)) := by
-      simp only [a, Nat.cast_sum, Nat.cast_mul]
-      rw [Finset.mul_sum]
-      refine Finset.sum_congr rfl fun k _ => ?_
-      linear_combination ((r (n - k) : ℕ) : ℚ) * pt n k
-    rw [Finset.sum_sub_distrib, Finset.sum_add_distrib, ← Finset.mul_sum, ← Finset.mul_sum,
-      Ta n, Tb n, E n] at h2
-    linear_combination h2 / 2
-  have hrec : ∀ k : ℕ, -(a (k + 7) : ℚ) + 5 * (a (k + 6) : ℚ) - 3 * (a (k + 5) : ℚ) -
-      21 * (a (k + 4) : ℚ) + 36 * (a (k + 3) : ℚ) - 32 * (a (k + 1) : ℚ) + 16 * (a k : ℚ) = 0 := by
-    intro k
-    rw [vq (k + 7), vq (k + 6), vq (k + 5), vq (k + 4), vq (k + 3), vq (k + 1), vq k]
-    push_cast
-    ring
-  have e1 : PowerSeries.mk (fun n => (a n : ℚ)) *
-      ((1 + PowerSeries.X) * (2 * PowerSeries.X + 1) * (PowerSeries.X - 1) ^ 2 *
-        (2 * PowerSeries.X - 1) ^ 3) =
-      (PowerSeries.C : ℚ →+* PowerSeries ℚ) 5 *
-          (PowerSeries.mk (fun n => (a n : ℚ)) * PowerSeries.X ^ 1)
-        + (PowerSeries.C : ℚ →+* PowerSeries ℚ) 36 *
-          (PowerSeries.mk (fun n => (a n : ℚ)) * PowerSeries.X ^ 4)
-        + (PowerSeries.C : ℚ →+* PowerSeries ℚ) 16 *
-          (PowerSeries.mk (fun n => (a n : ℚ)) * PowerSeries.X ^ 7)
-        - PowerSeries.mk (fun n => (a n : ℚ))
-        - (PowerSeries.C : ℚ →+* PowerSeries ℚ) 3 *
-          (PowerSeries.mk (fun n => (a n : ℚ)) * PowerSeries.X ^ 2)
-        - (PowerSeries.C : ℚ →+* PowerSeries ℚ) 21 *
-          (PowerSeries.mk (fun n => (a n : ℚ)) * PowerSeries.X ^ 3)
-        - (PowerSeries.C : ℚ →+* PowerSeries ℚ) 32 *
-          (PowerSeries.mk (fun n => (a n : ℚ)) * PowerSeries.X ^ 6) := by
-    rw [map_ofNat (PowerSeries.C : ℚ →+* PowerSeries ℚ) 5,
-      map_ofNat (PowerSeries.C : ℚ →+* PowerSeries ℚ) 36,
-      map_ofNat (PowerSeries.C : ℚ →+* PowerSeries ℚ) 16,
-      map_ofNat (PowerSeries.C : ℚ →+* PowerSeries ℚ) 3,
-      map_ofNat (PowerSeries.C : ℚ →+* PowerSeries ℚ) 21,
-      map_ofNat (PowerSeries.C : ℚ →+* PowerSeries ℚ) 32]
-    ring
-  have e2 : (-1 - 2 * PowerSeries.X + 4 * PowerSeries.X ^ 2 + 4 * PowerSeries.X ^ 3 -
-      8 * PowerSeries.X ^ 5 : PowerSeries ℚ) =
-      PowerSeries.X ^ 2 * (PowerSeries.C : ℚ →+* PowerSeries ℚ) 4
-        + PowerSeries.X ^ 3 * (PowerSeries.C : ℚ →+* PowerSeries ℚ) 4
-        - 1
-        - PowerSeries.X ^ 1 * (PowerSeries.C : ℚ →+* PowerSeries ℚ) 2
-        - PowerSeries.X ^ 5 * (PowerSeries.C : ℚ →+* PowerSeries ℚ) 8 := by
-    rw [map_ofNat (PowerSeries.C : ℚ →+* PowerSeries ℚ) 4,
-      map_ofNat (PowerSeries.C : ℚ →+* PowerSeries ℚ) 2,
-      map_ofNat (PowerSeries.C : ℚ →+* PowerSeries ℚ) 8]
-    ring
-  rw [e1, e2]
-  ext m
-  simp only [map_add, map_sub, PowerSeries.coeff_C_mul, PowerSeries.coeff_mul_X_pow',
-    PowerSeries.coeff_mk, PowerSeries.coeff_mul_C, PowerSeries.coeff_X_pow,
-    PowerSeries.coeff_one]
-  rcases Nat.lt_or_ge m 7 with hm | hm
-  · interval_cases m <;> norm_num [vq]
-  · obtain ⟨k, rfl⟩ : ∃ k, m = k + 7 := ⟨m - 7, by omega⟩
-    rw [if_pos (show 1 ≤ k + 7 by omega), if_pos (show 4 ≤ k + 7 by omega),
-      if_pos (show 7 ≤ k + 7 by omega), if_pos (show 2 ≤ k + 7 by omega),
-      if_pos (show 3 ≤ k + 7 by omega), if_pos (show 6 ≤ k + 7 by omega),
-      if_neg (show ¬(k + 7 = 2) by omega), if_neg (show ¬(k + 7 = 3) by omega),
-      if_neg (show ¬(k + 7 = 0) by omega), if_neg (show ¬(k + 7 = 1) by omega),
-      if_neg (show ¬(k + 7 = 5) by omega),
-      show k + 7 - 1 = k + 6 by omega, show k + 7 - 4 = k + 3 by omega,
-      show k + 7 - 7 = k by omega, show k + 7 - 2 = k + 5 by omega,
-      show k + 7 - 3 = k + 4 by omega, show k + 7 - 6 = k + 1 by omega]
-    linear_combination hrec k
+
+end OMA.S_oeis_a193654
+theorem OMA.solution : type_of% @OMA.S_oeis_a193654.main := OMA.S_oeis_a193654.sol
