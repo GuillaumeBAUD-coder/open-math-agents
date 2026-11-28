@@ -1,6 +1,7 @@
 import OMAStatements.S_oeis_a024219
 import Mathlib
 
+open PowerSeries
 namespace A024219
 open OMA.S_oeis_a024219
 
@@ -73,36 +74,36 @@ lemma a4 : a 4 = 12 := floor_val 4 (by norm_num) 12 4 (Or.inr rfl) (by norm_num)
 lemma a5 : a 5 = 19 := floor_val 5 (by norm_num) 19 4 (Or.inr rfl) (by norm_num)
 
 lemma coeff_F_mul_X (k n : ℕ) :
-    PowerSeries.coeff n (F * PowerSeries.X ^ k) = if k ≤ n then a (n - k) else 0 := by
-  simp only [PowerSeries.coeff_mul_X_pow', F, PowerSeries.coeff_mk]
+    coeff n (F * X ^ k) = if k ≤ n then a (n - k) else 0 := by
+  simp only [coeff_mul_X_pow', F, coeff_mk]
 
 lemma coeff_lhs (n : ℕ) :
-    PowerSeries.coeff n ((1 + PowerSeries.X ^ 2) * (1 - PowerSeries.X) ^ 3 * F) =
+    coeff n ((1 + X ^ 2) * (1 - X) ^ 3 * F) =
       a n - 3 * (if 1 ≤ n then a (n - 1) else 0) + 4 * (if 2 ≤ n then a (n - 2) else 0) -
         4 * (if 3 ≤ n then a (n - 3) else 0) + 3 * (if 4 ≤ n then a (n - 4) else 0) -
         (if 5 ≤ n then a (n - 5) else 0) := by
-  have expand : (1 + PowerSeries.X ^ 2) * (1 - PowerSeries.X) ^ 3 * F =
-      F - PowerSeries.C 3 * (F * PowerSeries.X ^ 1) + PowerSeries.C 4 * (F * PowerSeries.X ^ 2) -
-        PowerSeries.C 4 * (F * PowerSeries.X ^ 3) + PowerSeries.C 3 * (F * PowerSeries.X ^ 4) -
-        F * PowerSeries.X ^ 5 := by
+  have expand : (1 + X ^ 2) * (1 - X) ^ 3 * F =
+      F - C 3 * (F * X ^ 1) + C 4 * (F * X ^ 2) -
+        C 4 * (F * X ^ 3) + C 3 * (F * X ^ 4) -
+        F * X ^ 5 := by
     simp only [map_ofNat, pow_one]
     ring
   rw [expand]
-  simp only [map_add, map_sub, PowerSeries.coeff_C_mul, coeff_F_mul_X]
-  simp only [F, PowerSeries.coeff_mk]
+  simp only [map_add, map_sub, coeff_C_mul, coeff_F_mul_X]
+  simp only [F, coeff_mk]
 
 lemma coeff_rhs (n : ℕ) :
-    PowerSeries.coeff n ((3 : PowerSeries ℤ) * PowerSeries.X ^ 2 - 2 * PowerSeries.X ^ 3 +
-        3 * PowerSeries.X ^ 4 - PowerSeries.X ^ 5) =
+    coeff n ((3 : PowerSeries ℤ) * X ^ 2 - 2 * X ^ 3 +
+        3 * X ^ 4 - X ^ 5) =
       3 * (if n = 2 then 1 else 0) - 2 * (if n = 3 then 1 else 0) +
         3 * (if n = 4 then 1 else 0) - (if n = 5 then 1 else 0) := by
-  have expand : ((3 : PowerSeries ℤ) * PowerSeries.X ^ 2 - 2 * PowerSeries.X ^ 3 +
-        3 * PowerSeries.X ^ 4 - PowerSeries.X ^ 5) =
-      PowerSeries.C 3 * PowerSeries.X ^ 2 - PowerSeries.C 2 * PowerSeries.X ^ 3 +
-        PowerSeries.C 3 * PowerSeries.X ^ 4 - PowerSeries.X ^ 5 := by
+  have expand : ((3 : PowerSeries ℤ) * X ^ 2 - 2 * X ^ 3 +
+        3 * X ^ 4 - X ^ 5) =
+      C 3 * X ^ 2 - C 2 * X ^ 3 +
+        C 3 * X ^ 4 - X ^ 5 := by
     simp only [map_ofNat]
   rw [expand]
-  simp only [map_add, map_sub, PowerSeries.coeff_C_mul, PowerSeries.coeff_X_pow]
+  simp only [map_add, map_sub, coeff_C_mul, coeff_X_pow]
 
 end A024219
 
@@ -117,7 +118,7 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a024219.main := by
     have e5 : m + 6 - 5 = m + 1 := by omega
     rw [e1, e2, e3, e4, e5]
     exact A024219.rec_shift m
-  · apply PowerSeries.ext
+  · apply ext
     intro n
     rw [A024219.coeff_lhs, A024219.coeff_rhs]
     by_cases hn : 6 ≤ n
