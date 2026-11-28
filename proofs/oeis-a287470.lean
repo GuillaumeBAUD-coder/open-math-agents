@@ -134,22 +134,6 @@ theorem conjecture :
     (∀ n : ℕ, 3 < n → (a n : ℤ) = 6 * a (n - 2) - 8 * a (n - 4)) :=
   ⟨gf, a_even, a_odd, recurrence⟩
 
-theorem val_even (n N : ℕ) (h : n % 2 = 0) (hN : (2 : ℤ) ^ (n + 1) - 2 ^ (n / 2) = N) :
-    a n = N := by
-  have e : (a n : ℤ) = N := by rw [a_even n h, hN]
-  exact_mod_cast e
-
-/-- Controls: the entry's terms a(0..19). -/
-theorem controls : a 0 = 1 ∧ a 1 = 0 ∧ a 2 = 6 ∧ a 3 = 0 ∧ a 4 = 28 ∧ a 5 = 0 ∧ a 6 = 120 ∧
-    a 7 = 0 ∧ a 8 = 496 ∧ a 9 = 0 ∧ a 10 = 2016 ∧ a 11 = 0 ∧ a 12 = 8128 ∧ a 13 = 0 ∧
-    a 14 = 32640 ∧ a 15 = 0 ∧ a 16 = 130816 ∧ a 17 = 0 ∧ a 18 = 523776 ∧ a 19 = 0 :=
-  ⟨val_even 0 1 rfl (by norm_num), a_odd 1 rfl, val_even 2 6 rfl (by norm_num), a_odd 3 rfl,
-    val_even 4 28 rfl (by norm_num), a_odd 5 rfl, val_even 6 120 rfl (by norm_num), a_odd 7 rfl,
-    val_even 8 496 rfl (by norm_num), a_odd 9 rfl, val_even 10 2016 rfl (by norm_num),
-    a_odd 11 rfl, val_even 12 8128 rfl (by norm_num), a_odd 13 rfl,
-    val_even 14 32640 rfl (by norm_num), a_odd 15 rfl, val_even 16 130816 rfl (by norm_num),
-    a_odd 17 rfl, val_even 18 523776 rfl (by norm_num), a_odd 19 rfl⟩
-
 end OMA.S_oeis_a287470
 
 theorem OMA.solution : type_of% @OMA.S_oeis_a287470.main :=

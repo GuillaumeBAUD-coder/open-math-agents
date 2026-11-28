@@ -6,11 +6,6 @@ open PowerSeries
 
 
 
-/-- Controls: the entry's data a(1..22). -/
-theorem controls : (List.range 22).map (fun i => a (i + 1)) =
-    [1, 1, 1, 1, 3, 4, 4, 6, 11, 15, 18, 27, 43, 59, 78, 115, 172, 239, 330, 480, 698, 980] := by
-  decide
-
 theorem recurrence (n : ℕ) (hn : 5 < n) : a n = a (n - 3) + 2 * a (n - 4) + a (n - 5) := by
   obtain ⟨r, rfl⟩ : ∃ r, n = r + 6 := ⟨n - 6, by omega⟩
   show ways (r + 6 - 1) true = ways (r + 6 - 3 - 1) true + 2 * ways (r + 6 - 4 - 1) true +

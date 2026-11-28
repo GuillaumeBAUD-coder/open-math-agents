@@ -1,23 +1,20 @@
 import OMAStatements.S_oeis_a052182
 import Mathlib
 
--- Credit: @oh-meh
+-- Original proof: @oh-meh. Sum reindexing and root-power simplification: @rgoldman73-dev.
 open OMA.S_oeis_a052182 Finset Polynomial Matrix
 
 private noncomputable def rowPoly (n : ℕ) : ℤ[X] :=
   ∑ i ∈ range n, C ((i : ℤ)+1) * X^i
 
 private theorem weighted (n : ℕ) : weightedSum n = X * rowPoly n := by
-  induction n with
-  | zero => simp [weightedSum, rowPoly]
-  | succ n ih =>
-    have hI : Icc 1 (n+1) = insert (n+1) (Icc 1 n) := by ext i; simp; omega
-    have hn : n+1 ∉ Icc 1 n := by simp
-    simp only [weightedSum, hI, sum_insert hn, rowPoly, sum_range_succ, mul_add]
-    change _ + weightedSum n = X * rowPoly n + _
-    rw [ih, pow_succ]
-    push_cast
-    ring
+  unfold weightedSum rowPoly
+  rw [← Ico_succ_right_eq_Icc, sum_Ico_eq_sum_range]
+  simp only [mul_sum]
+  apply sum_congr rfl
+  intro i _
+  push_cast
+  ring
 
 private theorem row_degree (n : ℕ) : (rowPoly (n+1)).natDegree = n := by
   apply natDegree_eq_of_le_of_coeff_ne_zero
@@ -30,8 +27,7 @@ private theorem row_degree (n : ℕ) : (rowPoly (n+1)).natDegree = n := by
 
 private theorem root_add {n : ℕ} [NeZero n] {u : ℂ} (hu : u^n=1) (i j : Fin n) :
     u ^ ((i+j).val) = u^i.val * u^j.val := by
-  rw [Fin.val_add, ← pow_add]
-  conv_rhs => rw [← Nat.mod_add_div (i.val+j.val) n, pow_add, pow_mul, hu, one_pow, mul_one]
+  rw [Fin.val_add, ← pow_eq_pow_mod _ hu, pow_add]
 
 private theorem fourier_det {n : ℕ} [NeZero n] {z : ℂ} (hz : IsPrimitiveRoot z n) :
     (circulant (fun i : Fin n => (i.val : ℂ)+1)).det =
@@ -82,11 +78,8 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a052182.main := by
   let f := rowPoly (m+1)
   let g := (X^(m+1)-C 1 : ℤ[X])
   have hdeg : f.natDegree=m := row_degree m
-  have hne : f ≠ 0 := by
-    intro h
-    have h0 := congrArg (fun p : ℤ[X] => p.coeff 0) h
-    simp only [f, rowPoly, finsetSum_coeff, coeff_C_mul_X_pow] at h0
-    simp at h0
+  have hne : f ≠ 0 := fun h => by
+    simpa [f, rowPoly, coeff_C_mul_X_pow] using congrArg (fun p : ℤ[X] => p.coeff 0) h
   have hg : g.natDegree=m+1 := natDegree_X_pow_sub_C
   have hx : resultant X g 1 (m+1) = -1 := by
     have h := resultant_X_sub_C_left g (m+1) (0:ℤ) hg.le

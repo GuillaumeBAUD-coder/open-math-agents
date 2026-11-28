@@ -3,6 +3,8 @@ import OMAStatements.S_mo_130387
 -- Problem: Savings property: A transformation which turns nonnegative martingales into uniformly
 -- integrable ones (https://mathoverflow.net/questions/130387).
 -- Credit: @ricnov (the owner of the agent is credited as the solver)
+-- Shortening uses the defining maxima, Martingale.setIntegral_eq, and domination of a constant
+-- uniformly integrable family; the original savings construction and pathwise limits are retained.
 --
 -- Status. The source states the three facts proved here as known (it can be shown that ...) and
 -- asks only whether probability theory has a name for such a transformation; the savings trick is
@@ -119,23 +121,13 @@ lemma L_succ (m : ℕ → ℝ) (hm : ∀ n, 0 ≤ m n) (n : ℕ) :
     field_simp
     ring
 
-lemma L_nonneg (m : ℕ → ℝ) (hm : ∀ n, 0 ≤ m n) (n : ℕ) : 0 ≤ (NL m n).2 := by
+lemma L_nonneg (m : ℕ → ℝ) (n : ℕ) : 0 ≤ (NL m n).2 := by
   induction n with
   | zero => simp [NL]
-  | succ n ih =>
-    rw [L_succ m hm n]
-    have hu : 0 < U m n := lt_of_lt_of_le one_pos (U_ge_one m n)
-    have := U_mono m (Nat.le_succ n)
-    have : 0 ≤ (U m (n + 1) - U m n) / U m n := div_nonneg (by linarith) hu.le
-    linarith
+  | succ n ih => exact ih.trans (le_max_right _ _)
 
-lemma L_mono (m : ℕ → ℝ) (hm : ∀ n, 0 ≤ m n) : Monotone fun n => (NL m n).2 := by
-  refine monotone_nat_of_le_succ fun n => ?_
-  rw [L_succ m hm n]
-  have hu : 0 < U m n := lt_of_lt_of_le one_pos (U_ge_one m n)
-  have := U_mono m (Nat.le_succ n)
-  have : 0 ≤ (U m (n + 1) - U m n) / U m n := div_nonneg (by linarith) hu.le
-  linarith
+lemma L_mono (m : ℕ → ℝ) : Monotone fun n => (NL m n).2 := by
+  exact monotone_nat_of_le_succ fun _ => le_max_right _ _
 
 lemma N_ge_L (m : ℕ → ℝ) (hm : ∀ n, 0 ≤ m n) (n : ℕ) : (NL m n).2 ≤ (NL m n).1 := by
   have h := NL_sub m hm n
@@ -143,11 +135,9 @@ lemma N_ge_L (m : ℕ → ℝ) (hm : ∀ n, 0 ≤ m n) (n : ℕ) : (NL m n).2 �
   have : 0 ≤ (m n + 1) / U m n := div_nonneg (by linarith [hm n]) hu.le
   linarith
 
-lemma N_le_L_add_one (m : ℕ → ℝ) (hm : ∀ n, 0 ≤ m n) (n : ℕ) :
+lemma N_le_L_add_one (m : ℕ → ℝ) (n : ℕ) :
     (NL m (n + 1)).1 ≤ (NL m (n + 1)).2 + 1 := by
-  have h := NL_sub m hm (n + 1)
-  have hu : 0 < U m (n + 1) := lt_of_lt_of_le one_pos (U_ge_one m (n + 1))
-  have : (m (n + 1) + 1) / U m (n + 1) ≤ 1 := (div_le_one hu).2 (U_ge m n)
+  have h : (NL m (n + 1)).1 - 1 ≤ (NL m (n + 1)).2 := le_max_left _ _
   linarith
 
 /-- `L_n ≤ U_n - 1`. -/
@@ -229,7 +219,7 @@ lemma limsup_of_N_tendsto (m : ℕ → ℝ) (hm : ∀ n, 0 ≤ m n)
       exact le_trans (by linarith) (le_max_right _ _)
   have hNb : ∀ n, n0 ≤ n → (NL m (n + 1)).1 ≤ max (U m n0) (b + 1) := by
     intro n hn
-    have h1 := N_le_L_add_one m hm n
+    have h1 := N_le_L_add_one m n
     have h2 := L_le_U m hm (n + 1)
     have h3 := hUb (n + 1) (by omega)
     linarith
@@ -333,27 +323,18 @@ lemma N_martingale {Ω : Type} [m0 : MeasurableSpace Ω] {P : Measure Ω} [IsPro
 /-- A sequence dominated by an integrable function is uniformly integrable. -/
 lemma ui_of_dominated {Ω : Type} [MeasurableSpace Ω] {P : Measure Ω} [IsFiniteMeasure P]
     (f : ℕ → Ω → ℝ) (Z : Ω → ℝ) (hf : ∀ n, AEStronglyMeasurable (f n) P)
-    (hZm : StronglyMeasurable Z) (hZ : Integrable Z P) (hdom : ∀ n, ∀ᵐ ω ∂P, |f n ω| ≤ Z ω) :
+    (hZ : Integrable Z P) (hdom : ∀ n, ∀ᵐ ω ∂P, |f n ω| ≤ Z ω) :
     UniformIntegrable f 1 P := by
-  refine uniformIntegrable_of le_rfl ENNReal.one_ne_top hf fun ε hε => ?_
-  obtain ⟨C, hC⟩ := (memLp_one_iff_integrable.2 hZ).eLpNorm_indicator_norm_ge_le hZm hε
-  refine ⟨(max C 0).toNNReal, fun n => le_trans (eLpNorm_mono_ae ?_) hC⟩
-  filter_upwards [hdom n] with ω hω
-  have hfz : ‖f n ω‖ ≤ ‖Z ω‖ := by
-    rw [Real.norm_eq_abs, Real.norm_eq_abs]
-    exact le_trans hω (le_abs_self _)
-  by_cases h1 : ω ∈ {x | (max C 0).toNNReal ≤ ‖f n x‖₊}
-  · have h1' : max C 0 ≤ ‖f n ω‖ := by
-      have := Real.toNNReal_le_iff_le_coe.1 h1
-      simpa using this
-    have h2 : ω ∈ {x | C ≤ ‖Z x‖₊} := by
-      show C ≤ ((‖Z ω‖₊ : NNReal) : ℝ)
-      rw [coe_nnnorm]
-      exact le_trans (le_trans (le_max_left _ _) h1') hfz
-    rw [Set.indicator_of_mem h1, Set.indicator_of_mem h2]
-    exact hfz
-  · rw [Set.indicator_of_notMem h1, norm_zero]
-    exact norm_nonneg _
+  have hnorm : ∀ n, ∀ᵐ ω ∂P, ‖f n ω‖ ≤ ‖Z ω‖ := fun n =>
+    (hdom n).mono fun ω hω => hω.trans (le_abs_self _)
+  obtain ⟨_, hu, C, hC⟩ := uniformIntegrable_const (ι := ℕ) le_rfl
+    ENNReal.one_ne_top (memLp_one_iff_integrable.2 hZ)
+  refine ⟨hf, ?_, C, fun n => (eLpNorm_mono_ae (hnorm n)).trans (hC n)⟩
+  intro ε hε
+  obtain ⟨δ, hδ, hbound⟩ := hu hε
+  refine ⟨δ, hδ, fun n s hs hμs => (eLpNorm_mono_ae ?_).trans (hbound n s hs hμs)⟩
+  filter_upwards [hnorm n] with ω hω
+  simpa only [norm_indicator_eq_indicator_norm] using Set.indicator_le_indicator hω
 
 /-- Fact (3): `N` is uniformly integrable. -/
 lemma N_ui {Ω : Type} [m0 : MeasurableSpace Ω] {P : Measure Ω} [IsProbabilityMeasure P]
@@ -377,7 +358,7 @@ lemma N_ui {Ω : Type} [m0 : MeasurableSpace Ω] {P : Measure Ω} [IsProbability
     rw [hLfun n]
     exact (hNm n).sub (((hMm n).add_const 1).div (hUm n))
   have hLnn : ∀ n ω, 0 ≤ (NL (fun k => M k ω) n).2 :=
-    fun n ω => L_nonneg (fun k => M k ω) (fun k => hnn k ω) n
+    fun n ω => L_nonneg (fun k => M k ω) n
   have hLle : ∀ n ω, (NL (fun k => M k ω) n).2 ≤ (NL (fun k => M k ω) n).1 :=
     fun n ω => N_ge_L (fun k => M k ω) (fun k => hnn k ω) n
   have hLint : ∀ n, Integrable (fun ω => (NL (fun k => M k ω) n).2) P := by
@@ -388,16 +369,8 @@ lemma N_ui {Ω : Type} [m0 : MeasurableSpace Ω] {P : Measure Ω} [IsProbability
   -- expectations
   have hEN : ∀ n, ∫ ω, (NL (fun k => M k ω) n).1 ∂P = ∫ ω, M 0 ω ∂P + 1 := by
     intro n
-    have h1 := hN.2 0 n (Nat.zero_le n)
-    have h2 : ∫ ω, (NL (fun k => M k ω) n).1 ∂P = ∫ ω, (NL (fun k => M k ω) 0).1 ∂P := by
-      rw [← integral_condExp (G.le 0)]
-      exact integral_congr_ae h1
-    rw [h2]
-    have h3 : (fun ω => (NL (fun k => M k ω) 0).1) = fun ω => M 0 ω + 1 := by
-      funext ω
-      simp [NL]
-    rw [h3, integral_add (hM.integrable 0) (integrable_const 1)]
-    simp
+    simpa [NL, integral_add (hM.integrable 0) (integrable_const 1)] using
+      (hN.setIntegral_eq (Nat.zero_le n) MeasurableSet.univ).symm
   have hEL : ∀ n, ∫ ω, (NL (fun k => M k ω) n).2 ∂P ≤ ∫ ω, M 0 ω ∂P + 1 := by
     intro n
     rw [← hEN n]
@@ -406,7 +379,7 @@ lemma N_ui {Ω : Type} [m0 : MeasurableSpace Ω] {P : Measure Ω} [IsProbability
   have hfm : ∀ n, Measurable (fun ω => ENNReal.ofReal (NL (fun k => M k ω) n).2) :=
     fun n => ENNReal.measurable_ofReal.comp (hLm n)
   have hfmono : Monotone (fun n ω => ENNReal.ofReal (NL (fun k => M k ω) n).2) :=
-    fun i j hij ω => ENNReal.ofReal_le_ofReal (L_mono (fun k => M k ω) (fun k => hnn k ω) hij)
+    fun i j hij ω => ENNReal.ofReal_le_ofReal (L_mono (fun k => M k ω) hij)
   have hYm : Measurable (fun ω => ⨆ n, ENNReal.ofReal (NL (fun k => M k ω) n).2) :=
     Measurable.iSup hfm
   have hlin : ∫⁻ ω, ⨆ n, ENNReal.ofReal (NL (fun k => M k ω) n).2 ∂P
@@ -424,7 +397,6 @@ lemma N_ui {Ω : Type} [m0 : MeasurableSpace Ω] {P : Measure Ω} [IsProbability
   refine ui_of_dominated _
     (fun ω => M 0 ω + 2 + (⨆ n, ENNReal.ofReal (NL (fun k => M k ω) n).2).toReal)
     (fun n => (hNm n).aestronglyMeasurable)
-    (((hMm 0).add_const 2).add hYm.ennreal_toReal).stronglyMeasurable
     (((hM.integrable 0).add (integrable_const 2)).add hYint) fun n => ?_
   filter_upwards [hae] with ω hω
   have hY0 : 0 ≤ (⨆ n, ENNReal.ofReal (NL (fun k => M k ω) n).2).toReal := ENNReal.toReal_nonneg
@@ -444,7 +416,7 @@ lemma N_ui {Ω : Type} [m0 : MeasurableSpace Ω] {P : Measure Ω} [IsProbability
     rw [this]
     linarith
   | succ k =>
-    have h1 := N_le_L_add_one (fun j => M j ω) (fun j => hnn j ω) k
+    have h1 := N_le_L_add_one (fun j => M j ω) k
     have h2 := hLY (k + 1)
     have h3 := hnn 0 ω
     linarith
@@ -460,7 +432,7 @@ theorem OMA.solution : type_of% @OMA.S_mo_130387.main := by
   have hN := OMA.N_martingale hM hnn
   have hUI := OMA.N_ui hM hnn
   refine ⟨⟨hN, fun n ω => ?_⟩, fun ω => ⟨fun h => ?_, fun h => ?_⟩, hUI, ?_⟩
-  · exact le_trans (OMA.L_nonneg (fun k => M k ω) (fun k => hnn k ω) n)
+  · exact le_trans (OMA.L_nonneg (fun k => M k ω) n)
       (OMA.N_ge_L (fun k => M k ω) (fun k => hnn k ω) n)
   · exact OMA.N_tendsto_of_limsup (fun k => M k ω) (fun k => hnn k ω) h
   · exact OMA.limsup_of_N_tendsto (fun k => M k ω) (fun k => hnn k ω) h

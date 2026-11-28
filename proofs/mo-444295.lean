@@ -10,6 +10,8 @@ import Mathlib
 -- The minor is evaluated through an explicit factorization L * U with L lower triangular
 -- (diagonal product 2) and U upper triangular with unit diagonal.
 
+-- Kernel-check the finite matrix equality and triangularity directly over Fin9.
+-- Original LU counterexample and credit are preserved.
 namespace MO444295
 
 open OMA.S_mo_444295
@@ -56,29 +58,16 @@ def U : Matrix (Fin 9) (Fin 9) ℤ :=
     0, 0, 0, 0, 0, 0, 0, 1, 1;
     0, 0, 0, 0, 0, 0, 0, 0, 1]
 
-theorem entries : ∀ i : ℕ, ∀ hi : i < 9, ∀ j : ℕ, ∀ hj : j < 9,
-    (tensorSquare A).submatrix id c ⟨i, hi⟩ ⟨j, hj⟩ = (L * U) ⟨i, hi⟩ ⟨j, hj⟩ := by
-  decide +kernel
-
 theorem sub_eq : (tensorSquare A).submatrix id c = L * U := by
-  ext i j
-  exact entries i.1 i.2 j.1 j.2
-
-theorem lowerL : ∀ i : ℕ, ∀ hi : i < 9, ∀ j : ℕ, ∀ hj : j < 9, i < j →
-    L ⟨i, hi⟩ ⟨j, hj⟩ = 0 := by
-  decide +kernel
-
-theorem upperU : ∀ i : ℕ, ∀ hi : i < 9, ∀ j : ℕ, ∀ hj : j < 9, j < i →
-    U ⟨i, hi⟩ ⟨j, hj⟩ = 0 := by
   decide +kernel
 
 theorem detL : L.det = 2 := by
-  have h : L.IsLowerTriangular := fun i j hij => lowerL i.1 i.2 j.1 j.2 hij
+  have h : L.IsLowerTriangular := by decide +kernel
   rw [Matrix.det_of_isLowerTriangular L h]
   decide +kernel
 
 theorem detU : U.det = 1 := by
-  have h : U.IsUpperTriangular := fun i j hij => upperU i.1 i.2 j.1 j.2 hij
+  have h : U.IsUpperTriangular := by decide +kernel
   rw [Matrix.det_of_isUpperTriangular h]
   decide +kernel
 

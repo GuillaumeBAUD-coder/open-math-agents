@@ -72,74 +72,16 @@ lemma a3 : a 3 = 7 := floor_val 3 (by norm_num) 7 2 (Or.inl rfl) (by norm_num)
 lemma a4 : a 4 = 12 := floor_val 4 (by norm_num) 12 4 (Or.inr rfl) (by norm_num)
 lemma a5 : a 5 = 19 := floor_val 5 (by norm_num) 19 4 (Or.inr rfl) (by norm_num)
 
-lemma coeff_F_mul_X (k n : ℕ) :
-    PowerSeries.coeff n (F * PowerSeries.X ^ k) = if k ≤ n then a (n - k) else 0 := by
-  simp only [PowerSeries.coeff_mul_X_pow', F, PowerSeries.coeff_mk]
-
-lemma coeff_lhs (n : ℕ) :
-    PowerSeries.coeff n ((1 + PowerSeries.X ^ 2) * (1 - PowerSeries.X) ^ 3 * F) =
-      a n - 3 * (if 1 ≤ n then a (n - 1) else 0) + 4 * (if 2 ≤ n then a (n - 2) else 0) -
-        4 * (if 3 ≤ n then a (n - 3) else 0) + 3 * (if 4 ≤ n then a (n - 4) else 0) -
-        (if 5 ≤ n then a (n - 5) else 0) := by
-  have expand : (1 + PowerSeries.X ^ 2) * (1 - PowerSeries.X) ^ 3 * F =
-      F - PowerSeries.C 3 * (F * PowerSeries.X ^ 1) + PowerSeries.C 4 * (F * PowerSeries.X ^ 2) -
-        PowerSeries.C 4 * (F * PowerSeries.X ^ 3) + PowerSeries.C 3 * (F * PowerSeries.X ^ 4) -
-        F * PowerSeries.X ^ 5 := by
-    simp only [map_ofNat, pow_one]
-    ring
-  rw [expand]
-  simp only [map_add, map_sub, PowerSeries.coeff_C_mul, coeff_F_mul_X]
-  simp only [F, PowerSeries.coeff_mk]
-
-lemma coeff_rhs (n : ℕ) :
-    PowerSeries.coeff n ((3 : PowerSeries ℤ) * PowerSeries.X ^ 2 - 2 * PowerSeries.X ^ 3 +
-        3 * PowerSeries.X ^ 4 - PowerSeries.X ^ 5) =
-      3 * (if n = 2 then 1 else 0) - 2 * (if n = 3 then 1 else 0) +
-        3 * (if n = 4 then 1 else 0) - (if n = 5 then 1 else 0) := by
-  have expand : ((3 : PowerSeries ℤ) * PowerSeries.X ^ 2 - 2 * PowerSeries.X ^ 3 +
-        3 * PowerSeries.X ^ 4 - PowerSeries.X ^ 5) =
-      PowerSeries.C 3 * PowerSeries.X ^ 2 - PowerSeries.C 2 * PowerSeries.X ^ 3 +
-        PowerSeries.C 3 * PowerSeries.X ^ 4 - PowerSeries.X ^ 5 := by
-    simp only [map_ofNat]
-  rw [expand]
-  simp only [map_add, map_sub, PowerSeries.coeff_C_mul, PowerSeries.coeff_X_pow]
-
 end A024219
 
+open PowerSeries OMA.S_oeis_a024219 A024219 in
 theorem OMA.solution : type_of% @OMA.S_oeis_a024219.main := by
-  constructor
-  · intro n hn
-    obtain ⟨m, rfl⟩ : ∃ m, n = m + 6 := ⟨n - 6, by omega⟩
-    have e1 : m + 6 - 1 = m + 5 := by omega
-    have e2 : m + 6 - 2 = m + 4 := by omega
-    have e3 : m + 6 - 3 = m + 3 := by omega
-    have e4 : m + 6 - 4 = m + 2 := by omega
-    have e5 : m + 6 - 5 = m + 1 := by omega
-    rw [e1, e2, e3, e4, e5]
-    exact A024219.rec_shift m
-  · apply PowerSeries.ext
-    intro n
-    rw [A024219.coeff_lhs, A024219.coeff_rhs]
-    by_cases hn : 6 ≤ n
-    · obtain ⟨m, rfl⟩ : ∃ m, n = m + 6 := ⟨n - 6, by omega⟩
-      have e1 : m + 6 - 1 = m + 5 := by omega
-      have e2 : m + 6 - 2 = m + 4 := by omega
-      have e3 : m + 6 - 3 = m + 3 := by omega
-      have e4 : m + 6 - 4 = m + 2 := by omega
-      have e5 : m + 6 - 5 = m + 1 := by omega
-      have h := A024219.rec_shift m
-      have c1 : 1 ≤ m + 6 := by omega
-      have c2 : 2 ≤ m + 6 := by omega
-      have c3 : 3 ≤ m + 6 := by omega
-      have c4 : 4 ≤ m + 6 := by omega
-      have c5 : 5 ≤ m + 6 := by omega
-      have d2 : ¬ (m + 6 = 2) := by omega
-      have d3 : ¬ (m + 6 = 3) := by omega
-      have d4 : ¬ (m + 6 = 4) := by omega
-      have d5 : ¬ (m + 6 = 5) := by omega
-      rw [if_pos c1, if_pos c2, if_pos c3, if_pos c4, if_pos c5, if_neg d2, if_neg d3,
-        if_neg d4, if_neg d5, e1, e2, e3, e4, e5]
-      linarith
-    · have hn' : n < 6 := by omega
-      interval_cases n <;>
-        norm_num [A024219.a0, A024219.a1, A024219.a2, A024219.a3, A024219.a4, A024219.a5]
+  have r (m : ℕ) : a (m + 6) = 3 * a (m + 5) - 4 * a (m + 4) + 4 * a (m + 3) - 3 * a (m + 2) + a (m + 1) := by
+    linarith [rec_shift m]
+  refine ⟨fun n hn => ?_, ?_⟩
+  · obtain ⟨m, rfl⟩ : ∃ m, n = m + 6 := ⟨n - 6, by omega⟩
+    simpa using rec_shift m
+  · simp only [F]
+    ring_nf
+    ext n
+    rcases n with _ | _ | _ | _ | _ | _ | n <;> simp [coeff_mul_X_pow', coeff_X_pow, coeff_X, ← map_ofNat C, coeff_mul_C, coeff_succ_mul_X, coeff_X_pow_mul', coeff_succ_X_mul, coeff_C_mul, -eq_intCast, r, a0, a1, a2, a3, a4, a5] <;> ring

@@ -1,201 +1,159 @@
 import OMAStatements.S_oeis_a179929
 import Mathlib
 
--- Problem: OEIS A179929 (a conjecture of Peter Bala): a(n + phi(k)) = a(n) mod k for all large n.
--- Here a(n) = Sum_{j=0..n} (-1)^(n+j) * 3^(n-j) * 2^j * Stirling2(n,j) * j!; the extra factors are periodic by (2) for n >= 2k.
--- Proof, valid for every weight sequence g. (1) Stirling2(n,j) * j! = Sum_{i=0..j} (-1)^(j+i) *
--- C(j,i) * i^n (number of surjections), by induction on n from the recurrence. (2) For n >= k one
--- has i^(n + phi(k)) = i^n mod k for every i: check it modulo each prime power p^e dividing k;
--- if p divides i both sides vanish since e <= k <= n, otherwise use Euler's theorem and
--- phi(p^e) | phi(k). (3) k divides j! for j >= k, so modulo k only the terms j < k of the sum
--- matter, and each of them is periodic by (1) and (2).
+/-
+A179929: a(n) = sum over j of (-1)^(n+j) 3^(n-j) 2^j S(n,j) j! is eventually periodic modulo k
+with period phi(k), from n = 2k on.
 
-open Finset
+Method, for any S with the Stirling recurrence S(n+1, j+1) = (j+1) S(n, j+1) + S(n, j):
+- surj: S(n,j) j! = sum over i <= j of (-1)^(j+i) C(j,i) i^n, by induction on n.
+- pow_per: a^(n+d) = a^n modulo k whenever n >= k and phi(k) divides d.
+- genper2: for n >= k the terms with j >= k vanish modulo k because k divides j!; for j < k the
+  Stirling factor is periodic, so any weights that are periodic for j < k can be put in front.
+- The weights: 3^(n-j) is periodic once n - j >= k (which holds for n >= 2k and j < k), and
+  (-1)^(n+j) is handled by replacing -1 with k - 1.
+-/
 
-lemma OMA.surj (s : ℕ → ℕ → ℕ) (h00 : s 0 0 = 1) (hn0 : ∀ n, s (n + 1) 0 = 0)
-    (h0j : ∀ j, s 0 (j + 1) = 0)
-    (hrec : ∀ n j, s (n + 1) (j + 1) = (j + 1) * s n (j + 1) + s n j) :
-    ∀ n j : ℕ, (s n j : ℤ) * (j.factorial : ℤ)
-      = ∑ i ∈ range (j + 1), (-1 : ℤ) ^ (j + i) * (j.choose i : ℤ) * (i : ℤ) ^ n := by
+namespace OMA.P179929
+
+lemma pow_per : ∀ k : ℕ, 0 < k → ∀ a n d : ℕ, k ≤ n → k.totient ∣ d →
+    a ^ (n + d) ≡ a ^ n [MOD k] := by
+  intro k
+  induction k using Nat.strong_induction_on with
+  | _ k ih =>
+    intro hk a n d hn hd
+    rcases Nat.eq_or_lt_of_le (Nat.gcd_pos_of_pos_right a hk) with h | h
+    · obtain ⟨t, rfl⟩ := hd
+      have h1 : a ^ k.totient ≡ 1 [MOD k] := Nat.ModEq.pow_totient h.symm
+      have h2 := (h1.pow t).mul_left (a ^ n)
+      rw [one_pow, mul_one, ← pow_mul, ← pow_add] at h2
+      exact h2
+    · obtain ⟨a', ha'⟩ := Nat.gcd_dvd_left a k
+      obtain ⟨k', hk'⟩ := Nat.gcd_dvd_right a k
+      generalize Nat.gcd a k = g at h ha' hk'
+      subst ha' hk'
+      have hk'pos : 0 < k' := by
+        rcases Nat.eq_zero_or_pos k' with h0 | h0
+        · simp [h0] at hk
+        · exact h0
+      have h2k : 2 * k' ≤ g * k' := Nat.mul_le_mul_right k' h
+      obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+      have hdvd : k'.totient ∣ d := (Nat.totient_dvd_of_dvd (Dvd.intro_left g rfl)).trans hd
+      have h3 := ((ih k' (by omega) hk'pos (g * a') m d (by omega) hdvd).mul_left' g).mul_left a'
+      have e1 : (g * a') ^ (m + 1 + d) = a' * (g * (g * a') ^ (m + d)) := by ring
+      have e2 : (g * a') ^ (m + 1) = a' * (g * (g * a') ^ m) := by ring
+      rw [e1, e2]
+      exact h3
+
+lemma chooseK (j i : ℕ) : (i : ℤ) * ((j + 1).choose i : ℤ) =
+    (j + 1) * (((j + 1).choose i : ℤ) - (j.choose i : ℤ)) := by
+  rcases i with _ | m
+  · simp
+  · have h1 := Nat.add_one_mul_choose_eq j m
+    have h2 := Nat.choose_succ_succ j m
+    zify at h1 h2
+    push_cast
+    linear_combination (-1 : ℤ) * h1 - ((j : ℤ) + 1) * h2
+
+lemma surj (S : ℕ → ℕ → ℕ) (h00 : S 0 0 = 1) (hn0 : ∀ n, S (n + 1) 0 = 0)
+    (h0j : ∀ j, S 0 (j + 1) = 0)
+    (hrec : ∀ n j, S (n + 1) (j + 1) = (j + 1) * S n (j + 1) + S n j) :
+    ∀ n j : ℕ, (S n j : ℤ) * (j.factorial : ℤ) =
+      ∑ i ∈ Finset.range (j + 1), (-1 : ℤ) ^ (j + i) * (j.choose i : ℤ) * (i : ℤ) ^ n := by
   intro n
   induction n with
   | zero =>
     intro j
+    have e : ∀ i : ℕ, (-1 : ℤ) ^ (j + i) * (j.choose i : ℤ) * (i : ℤ) ^ 0 =
+        (-1) ^ j * ((-1) ^ i * (j.choose i : ℤ)) := fun i => by rw [pow_add]; ring
+    simp only [e, ← Finset.mul_sum, Int.alternating_sum_range_choose]
     rcases j with _ | j
     · simp [h00]
-    · rw [h0j]
-      have h := Int.alternating_sum_range_choose (n := j + 1)
-      have h2 : ∑ i ∈ range (j + 1 + 1), (-1 : ℤ) ^ (j + 1 + i) * ((j + 1).choose i : ℤ) * (i : ℤ) ^ 0
-          = (-1 : ℤ) ^ (j + 1) * ∑ i ∈ range (j + 1 + 1), (-1 : ℤ) ^ i * ((j + 1).choose i : ℤ) := by
-        rw [Finset.mul_sum]
-        refine Finset.sum_congr rfl (fun i _ => ?_)
-        rw [pow_add]
-        ring
-      rw [h2, h]
-      simp
+    · simp [h0j]
   | succ n ih =>
     intro j
     rcases j with _ | j
-    · rw [hn0]
-      simp
-    · have e1 : (s (n + 1) (j + 1) : ℤ) * ((j + 1).factorial : ℤ)
-          = ((j : ℤ) + 1) * ((s n (j + 1) : ℤ) * ((j + 1).factorial : ℤ))
-            + ((j : ℤ) + 1) * ((s n j : ℤ) * (j.factorial : ℤ)) := by
+    · simp [hn0]
+    · have ih1 := ih (j + 1)
+      have ih0 := ih j
+      have ext : ∑ i ∈ Finset.range (j + 1), (-1 : ℤ) ^ (j + i) * (j.choose i : ℤ) * (i : ℤ) ^ n =
+          ∑ i ∈ Finset.range (j + 1 + 1), (-1 : ℤ) ^ (j + i) * (j.choose i : ℤ) * (i : ℤ) ^ n := by
+        rw [Finset.sum_range_succ _ (j + 1)]
+        simp [Nat.choose_succ_self]
+      rw [ext] at ih0
+      have lhs : (S (n + 1) (j + 1) : ℤ) * ((j + 1).factorial : ℤ) =
+          (j + 1) * ((S n (j + 1) : ℤ) * ((j + 1).factorial : ℤ)) +
+            (j + 1) * ((S n j : ℤ) * (j.factorial : ℤ)) := by
         rw [hrec, Nat.factorial_succ]
         push_cast
         ring
-      have e2 : ∑ i ∈ range (j + 1), (-1 : ℤ) ^ (j + i) * (j.choose i : ℤ) * (i : ℤ) ^ n
-          = ∑ i ∈ range (j + 1 + 1), (-1 : ℤ) ^ (j + i) * (j.choose i : ℤ) * (i : ℤ) ^ n := by
-        rw [Finset.sum_range_succ _ (j + 1), Nat.choose_succ_self]
-        simp
-      rw [e1, ih (j + 1), ih j, e2, Finset.mul_sum, Finset.mul_sum, ← Finset.sum_add_distrib]
-      refine Finset.sum_congr rfl (fun i _ => ?_)
-      rcases i with _ | i
-      · simp only [Nat.choose_zero_right, Nat.cast_one, Nat.cast_zero, add_zero, mul_one]
+      rw [lhs, ih1, ih0, Finset.mul_sum, Finset.mul_sum, ← Finset.sum_add_distrib]
+      refine Finset.sum_congr rfl fun i _ => ?_
+      have K := chooseK j i
+      have s : (-1 : ℤ) ^ (j + i) = -(-1) ^ (j + 1 + i) := by
+        rw [show j + 1 + i = j + i + 1 by ring, pow_succ]
         ring
-      · have hc : ((j + 1).choose (i + 1) : ℤ) = (j.choose i : ℤ) + (j.choose (i + 1) : ℤ) := by
-          rw [Nat.choose_succ_succ]
-          push_cast
-          ring
-        have hm : ((j : ℤ) + 1) * (j.choose i : ℤ)
-            = ((j + 1).choose (i + 1) : ℤ) * ((i : ℤ) + 1) := by
-          have h3 := Nat.add_one_mul_choose_eq j i
-          exact_mod_cast h3
-        rw [hc] at hm
-        have hs : (-1 : ℤ) ^ (j + 1 + (i + 1)) = -(-1 : ℤ) ^ (j + (i + 1)) := by
-          have h4 : j + 1 + (i + 1) = (j + (i + 1)) + 1 := by ring
-          rw [h4, pow_succ]
-          ring
-        push_cast
-        rw [hs, hc, pow_succ]
-        linear_combination (-(-1 : ℤ) ^ (j + (i + 1)) * ((i : ℤ) + 1) ^ n) * hm
+      rw [s, pow_succ]
+      linear_combination (-((-1 : ℤ) ^ (j + 1 + i)) * (i : ℤ) ^ n) * K
 
-lemma OMA.pow_per (k i n : ℕ) (hk : 1 ≤ k) (hn : k ≤ n) :
-    i ^ (n + Nat.totient k) ≡ i ^ n [MOD k] := by
-  rcases Nat.eq_zero_or_pos i with rfl | hi
-  · have h1 : n ≠ 0 := by omega
-    have h2 : n + Nat.totient k ≠ 0 := by omega
-    rw [zero_pow h1, zero_pow h2]
-  have hle : i ^ n ≤ i ^ (n + Nat.totient k) := Nat.pow_le_pow_right hi (Nat.le_add_right _ _)
-  refine ((Nat.modEq_iff_dvd' hle).mpr ?_).symm
-  rw [Nat.dvd_iff_prime_pow_dvd_dvd]
-  intro p e hp hpe
-  refine (Nat.modEq_iff_dvd' hle).mp ?_
-  by_cases hpi : p ∣ i
-  · have he : e ≤ n := by
-      have h1 : p ^ e ≤ k := Nat.le_of_dvd (by omega) hpe
-      have h2 : e < p ^ e := Nat.lt_pow_self hp.one_lt
-      omega
-    have hd1 : p ^ e ∣ i ^ n := (pow_dvd_pow p he).trans (pow_dvd_pow_of_dvd hpi n)
-    have hd2 : p ^ e ∣ i ^ (n + Nat.totient k) :=
-      hd1.trans (pow_dvd_pow i (Nat.le_add_right _ _))
-    exact (Nat.modEq_zero_iff_dvd.mpr hd1).trans (Nat.modEq_zero_iff_dvd.mpr hd2).symm
-  · have hcop : Nat.Coprime i (p ^ e) :=
-      Nat.Coprime.pow_right e ((Nat.Prime.coprime_iff_not_dvd hp).mpr hpi).symm
-    have h1 : i ^ Nat.totient (p ^ e) ≡ 1 [MOD p ^ e] := Nat.ModEq.pow_totient hcop
-    obtain ⟨t, ht⟩ := Nat.totient_dvd_of_dvd hpe
-    have h2 : i ^ Nat.totient k ≡ 1 [MOD p ^ e] := by
-      rw [ht, pow_mul]
-      have h5 := h1.pow t
-      rwa [one_pow] at h5
-    have h3 := h2.mul_left (i ^ n)
-    rw [← pow_add, mul_one] at h3
-    exact h3.symm
+lemma sum_modEq {ι : Type*} (s : Finset ι) (f g : ι → ℤ) (m : ℤ)
+    (h : ∀ i ∈ s, f i ≡ g i [ZMOD m]) : ∑ i ∈ s, f i ≡ ∑ i ∈ s, g i [ZMOD m] := by
+  rw [Int.modEq_iff_dvd, ← Finset.sum_sub_distrib]
+  exact Finset.dvd_sum fun i hi => Int.modEq_iff_dvd.1 (h i hi)
 
-lemma OMA.trunc (s : ℕ → ℕ → ℕ) (g : ℕ → ℤ) (k m : ℕ) (hk : 1 ≤ k) (hm : k ≤ m + 1) :
-    ∑ j ∈ range (m + 1), ((s m j : ℤ) * (j.factorial : ℤ)) * g j
-      ≡ ∑ j ∈ range k, ((s m j : ℤ) * (j.factorial : ℤ)) * g j [ZMOD k] := by
-  rw [Int.modEq_iff_dvd]
-  have h := Finset.sum_Ico_eq_sub (fun j => ((s m j : ℤ) * (j.factorial : ℤ)) * g j) hm
-  have hd : (k : ℤ) ∣ ∑ j ∈ Ico k (m + 1), ((s m j : ℤ) * (j.factorial : ℤ)) * g j := by
-    refine Finset.dvd_sum (fun j hj => ?_)
-    have hkj : k ≤ j := (Finset.mem_Ico.mp hj).1
-    have h6 : (k : ℤ) ∣ (j.factorial : ℤ) :=
-      Int.natCast_dvd_natCast.mpr (Nat.dvd_factorial (by omega) hkj)
-    exact Dvd.dvd.mul_right (Dvd.dvd.mul_left h6 _) _
-  rw [h] at hd
-  have h7 := (dvd_neg (a := (k : ℤ))).mpr hd
-  rwa [neg_sub] at h7
+lemma genper2 (S : ℕ → ℕ → ℕ) (h00 : S 0 0 = 1) (hn0 : ∀ n, S (n + 1) 0 = 0)
+    (h0j : ∀ j, S 0 (j + 1) = 0)
+    (hrec : ∀ n j, S (n + 1) (j + 1) = (j + 1) * S n (j + 1) + S n j)
+    (k : ℕ) (hk : 1 ≤ k) (n d : ℕ) (hn : k ≤ n) (hd : k.totient ∣ d) (w w' : ℕ → ℤ)
+    (hw : ∀ j < k, w' j ≡ w j [ZMOD (k : ℤ)]) :
+    (∑ j ∈ Finset.range (n + d + 1), w' j * ((S (n + d) j : ℤ) * (j.factorial : ℤ))) ≡
+      ∑ j ∈ Finset.range (n + 1), w j * ((S n j : ℤ) * (j.factorial : ℤ)) [ZMOD (k : ℤ)] := by
+  have trunc : ∀ (m : ℕ) (v : ℕ → ℤ), k ≤ m →
+      (∑ j ∈ Finset.range (m + 1), v j * ((S m j : ℤ) * (j.factorial : ℤ))) ≡
+        ∑ j ∈ Finset.range k, v j * ((S m j : ℤ) * (j.factorial : ℤ)) [ZMOD (k : ℤ)] := by
+    intro m v hm
+    rw [Finset.range_eq_Ico, Finset.range_eq_Ico,
+      ← Finset.sum_Ico_consecutive _ (Nat.zero_le k) (by omega : k ≤ m + 1),
+      Int.modEq_iff_dvd, sub_add_cancel_left]
+    refine dvd_neg.2 (Finset.dvd_sum fun j hj => ?_)
+    have hj' : k ≤ j := (Finset.mem_Ico.1 hj).1
+    exact Dvd.dvd.mul_left
+      (Dvd.dvd.mul_left (Int.natCast_dvd_natCast.2 (Nat.dvd_factorial hk hj')) _) _
+  refine (trunc _ w' (by omega)).trans (Int.ModEq.trans ?_ (trunc n w hn).symm)
+  refine sum_modEq _ _ _ _ fun j hj => Int.ModEq.mul (hw j (Finset.mem_range.1 hj)) ?_
+  rw [surj S h00 hn0 h0j hrec, surj S h00 hn0 h0j hrec]
+  refine sum_modEq _ _ _ _ fun i _ => Int.ModEq.mul_left _ ?_
+  have := pow_per k hk i n d hn hd
+  exact_mod_cast (Int.natCast_modEq_iff.2 this)
 
-lemma OMA.T_per (s : ℕ → ℕ → ℕ) (h00 : s 0 0 = 1) (hn0 : ∀ n, s (n + 1) 0 = 0)
-    (h0j : ∀ j, s 0 (j + 1) = 0)
-    (hrec : ∀ n j, s (n + 1) (j + 1) = (j + 1) * s n (j + 1) + s n j)
-    (k n j : ℕ) (hk : 1 ≤ k) (hn : k ≤ n) :
-    (s (n + Nat.totient k) j : ℤ) * (j.factorial : ℤ)
-      ≡ (s n j : ℤ) * (j.factorial : ℤ) [ZMOD k] := by
-  rw [OMA.surj s h00 hn0 h0j hrec, OMA.surj s h00 hn0 h0j hrec]
-  refine Int.ModEq.sum (fun i _ => ?_)
-  have h := OMA.pow_per k i n hk hn
-  have h' : ((i ^ (n + Nat.totient k) : ℕ) : ℤ) ≡ ((i ^ n : ℕ) : ℤ) [ZMOD (k : ℤ)] :=
-    Int.natCast_modEq_iff.mpr h
-  push_cast at h'
-  exact Int.ModEq.mul_left _ h'
-
-theorem OMA.gen (s : ℕ → ℕ → ℕ) (h00 : s 0 0 = 1) (hn0 : ∀ n, s (n + 1) 0 = 0)
-    (h0j : ∀ j, s 0 (j + 1) = 0)
-    (hrec : ∀ n j, s (n + 1) (j + 1) = (j + 1) * s n (j + 1) + s n j)
-    (g : ℕ → ℤ) (k : ℕ) (hk : 1 ≤ k) (n : ℕ) (hn : k ≤ n) :
-    ∑ j ∈ range (n + Nat.totient k + 1),
-        ((s (n + Nat.totient k) j : ℤ) * (j.factorial : ℤ)) * g j
-      ≡ ∑ j ∈ range (n + 1), ((s n j : ℤ) * (j.factorial : ℤ)) * g j [ZMOD k] := by
-  have h1 := OMA.trunc s g k (n + Nat.totient k) hk (by omega)
-  have h2 := OMA.trunc s g k n hk (by omega)
-  have h3 : ∑ j ∈ range k, ((s (n + Nat.totient k) j : ℤ) * (j.factorial : ℤ)) * g j
-      ≡ ∑ j ∈ range k, ((s n j : ℤ) * (j.factorial : ℤ)) * g j [ZMOD k] := by
-    refine Int.ModEq.sum (fun j _ => ?_)
-    exact (OMA.T_per s h00 hn0 h0j hrec k n j hk hn).mul_right _
-  exact (h1.trans h3).trans h2.symm
-
-open OMA.S_oeis_a179929
-
-theorem OMA.solution : type_of% @OMA.S_oeis_a179929.main := by
-  have h00 : stirling2 0 0 = 1 := by
-    rw [stirling2]
-  have hn0 : ∀ n, stirling2 (n + 1) 0 = 0 := fun n => by
-    rw [stirling2]
-  have h0j : ∀ j, stirling2 0 (j + 1) = 0 := fun j => by
-    rw [stirling2]
-  have hrec : ∀ n j, stirling2 (n + 1) (j + 1)
-      = (j + 1) * stirling2 n (j + 1) + stirling2 n j := fun n j => by
-    rw [stirling2]
+lemma main' (S : ℕ → ℕ → ℕ) (h00 : S 0 0 = 1) (hn0 : ∀ n, S (n + 1) 0 = 0)
+    (h0j : ∀ j, S 0 (j + 1) = 0)
+    (hrec : ∀ n j, S (n + 1) (j + 1) = (j + 1) * S n (j + 1) + S n j) :
+    ∀ k : ℕ, 1 ≤ k → ∃ N : ℕ, ∀ n : ℕ, N ≤ n →
+      (∑ j ∈ Finset.range (n + Nat.totient k + 1),
+        (-1 : ℤ) ^ (n + Nat.totient k + j) * (3 : ℤ) ^ (n + Nat.totient k - j) * (2 : ℤ) ^ j *
+          ((S (n + Nat.totient k) j : ℤ) * (j.factorial : ℤ))) ≡
+      ∑ j ∈ Finset.range (n + 1),
+        (-1 : ℤ) ^ (n + j) * (3 : ℤ) ^ (n - j) * (2 : ℤ) ^ j *
+          ((S n j : ℤ) * (j.factorial : ℤ)) [ZMOD k] := by
   intro k hk
   refine ⟨2 * k, fun n hn => ?_⟩
-  have e : ∀ m, a m = ∑ j ∈ range (m + 1), ((stirling2 m j : ℤ) * (j.factorial : ℤ))
-      * ((-1 : ℤ) ^ (m + j) * (3 : ℤ) ^ (m - j) * (2 : ℤ) ^ j) := by
-    intro m
-    unfold a
-    refine Finset.sum_congr rfl (fun j _ => ?_)
-    ring
-  rw [e, e]
-  have h1 := OMA.trunc stirling2 (fun j => (-1 : ℤ) ^ (n + Nat.totient k + j)
-    * (3 : ℤ) ^ (n + Nat.totient k - j) * (2 : ℤ) ^ j) k (n + Nat.totient k) hk (by omega)
-  have h2 := OMA.trunc stirling2 (fun j => (-1 : ℤ) ^ (n + j) * (3 : ℤ) ^ (n - j) * (2 : ℤ) ^ j)
-    k n hk (by omega)
-  beta_reduce at h1 h2
-  have hneg : (-1 : ℤ) ^ Nat.totient k ≡ 1 [ZMOD (k : ℤ)] := by
-    rcases Nat.lt_or_ge 2 k with h | h
-    · rw [Even.neg_one_pow (Nat.totient_even h)]
-    · interval_cases k
-      · simp [Int.ModEq]
-      · rw [Nat.totient_two]
-        decide
-  have h3 : ∑ j ∈ range k, ((stirling2 (n + Nat.totient k) j : ℤ) * (j.factorial : ℤ))
-        * ((-1 : ℤ) ^ (n + Nat.totient k + j) * (3 : ℤ) ^ (n + Nat.totient k - j) * (2 : ℤ) ^ j)
-      ≡ ∑ j ∈ range k, ((stirling2 n j : ℤ) * (j.factorial : ℤ))
-        * ((-1 : ℤ) ^ (n + j) * (3 : ℤ) ^ (n - j) * (2 : ℤ) ^ j) [ZMOD (k : ℤ)] := by
-    refine Int.ModEq.sum (fun j hj => ?_)
-    have hj' : j < k := Finset.mem_range.mp hj
-    have hT := OMA.T_per stirling2 h00 hn0 h0j hrec k n j hk (by omega)
-    have hp := OMA.pow_per k 3 (n - j) hk (by omega)
-    have hp' : (((3 : ℕ) ^ (n - j + Nat.totient k) : ℕ) : ℤ) ≡ (((3 : ℕ) ^ (n - j) : ℕ) : ℤ)
-        [ZMOD (k : ℤ)] := Int.natCast_modEq_iff.mpr hp
-    push_cast at hp'
-    have hsub : n + Nat.totient k - j = n - j + Nat.totient k := by omega
-    have hsg : (-1 : ℤ) ^ (n + Nat.totient k + j) ≡ (-1 : ℤ) ^ (n + j) [ZMOD (k : ℤ)] := by
-      have h4 : n + Nat.totient k + j = (n + j) + Nat.totient k := by ring
-      rw [h4, pow_add]
-      have h5 := (Int.ModEq.refl ((-1 : ℤ) ^ (n + j))).mul hneg
-      rwa [mul_one] at h5
-    rw [hsub]
-    exact hT.mul ((hsg.mul hp').mul (Int.ModEq.refl _))
-  exact (h1.trans h3).trans h2.symm
+  refine genper2 S h00 hn0 h0j hrec k hk n k.totient (by omega) dvd_rfl _ _ fun j hj => ?_
+  refine Int.ModEq.mul_right _ (Int.ModEq.mul ?_ ?_)
+  · have h0 : (-1 : ℤ) ≡ ((k - 1 : ℕ) : ℤ) [ZMOD (k : ℤ)] := by
+      rw [Int.modEq_iff_dvd]
+      exact ⟨1, by push_cast [Nat.cast_sub hk]; ring⟩
+    have h1 := pow_per k hk (k - 1) (n + j) k.totient (by omega) dvd_rfl
+    have h2 : ((k - 1 : ℕ) : ℤ) ^ (n + j + k.totient) ≡ ((k - 1 : ℕ) : ℤ) ^ (n + j)
+        [ZMOD (k : ℤ)] := by
+      exact_mod_cast (Int.natCast_modEq_iff.2 h1)
+    rw [show n + k.totient + j = n + j + k.totient by ring]
+    exact (h0.pow _).trans (h2.trans (h0.pow _).symm)
+  · have h1 := pow_per k hk 3 (n - j) k.totient (by omega) dvd_rfl
+    rw [show n + k.totient - j = n - j + k.totient by omega]
+    exact_mod_cast (Int.natCast_modEq_iff.2 h1)
+
+end OMA.P179929
+
+theorem OMA.solution : type_of% @OMA.S_oeis_a179929.main :=
+  OMA.P179929.main' OMA.S_oeis_a179929.stirling2 rfl (fun _ => rfl) (fun _ => rfl) (fun _ _ => rfl)

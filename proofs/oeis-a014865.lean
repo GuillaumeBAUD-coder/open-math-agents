@@ -1,5 +1,8 @@
 import OMAStatements.S_oeis_a014865
 
+/-! Following @AttaQ (#24874), retain the recurrence and order arguments.
+The least-factor coprimality step uses Mathlib’s direct gcd bound. -/
+
 namespace OMA.S_oeis_a014865
 
 theorem closed_s (k : ℕ) : 196 * s k + 15 + 14*k = 15^(k+1) := by
@@ -16,13 +19,7 @@ theorem closed_s (k : ℕ) : 196 * s k + 15 + 14*k = 15^(k+1) := by
 private theorem least_coprime (k : ℕ) (hgt : 1 < k) :
     k.gcd (k.minFac - 1) = 1 := by
   have hp := (Nat.minFac_prime (by omega : k ≠ 1)).two_le
-  by_contra hn
-  let q := (k.gcd (k.minFac - 1)).minFac
-  have hq : 2 ≤ q := (Nat.minFac_prime hn).two_le
-  have hqd : q ∣ k.gcd (k.minFac - 1) := Nat.minFac_dvd _
-  have hlow := Nat.minFac_le_of_dvd hq (hqd.trans (Nat.gcd_dvd_left _ _))
-  have hhigh := Nat.le_of_dvd (by omega : 0 < k.minFac - 1) (hqd.trans (Nat.gcd_dvd_right _ _))
-  omega
+  exact Nat.gcd_eq_one_of_lt_minFac (by omega) (by omega)
 
 theorem small_factor (k : ℕ) (hk : IsTerm k) (ho : Odd k) (hgt : 1 < k) :
     3 ∣ k ∨ 5 ∣ k ∨ 7 ∣ k := by

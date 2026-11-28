@@ -1,7 +1,6 @@
 import OMAStatements.S_oeis_a213244
-import Mathlib
 
--- Proof of Colin Barker's conjectures in OEIS A213244 (statement by @ivillar).
+-- Proof of Colin Barker's conjectures in OEIS A213244 (original formalization by @ivillar).
 -- Idea: the nonzero 5th powers of GF(2^n) form the image of y ↦ y^5 on the cyclic group
 -- GF(2^n)ˣ of order M = 2^n - 1, so a(n) = M / gcd(M, 5) (the formula of the OEIS entry); as 5
 -- divides 2^4 - 1, gcd(M, 5) is 4-periodic in n, which gives the recurrence and the g.f.
@@ -64,31 +63,27 @@ theorem recur (n : ℕ) (hn : 8 < n) : (a n : ℤ) = 17 * a (n - 4) - 16 * a (n 
   ring
 
 theorem key : mk (fun n => if n = 0 then (0 : ℚ) else a n) * ((X - 1) * (X + 1) * (2 * X - 1) * (2 * X + 1) * (X ^ 2 + 1) * (4 * X ^ 2 + 1)) = X * (8 * X ^ 6 + 12 * X ^ 5 + 14 * X ^ 4 + 3 * X ^ 3 + 7 * X ^ 2 + 3 * X + 1) := by
-  have e1 : ((X - 1) * (X + 1) * (2 * X - 1) * (2 * X + 1) * (X ^ 2 + 1) * (4 * X ^ 2 + 1) : ℚ⟦X⟧) =
-      1 - C (17 : ℚ) * X ^ 4 + C (16 : ℚ) * X ^ 8 := by
-    rw [map_ofNat C 17, map_ofNat C 16]
+  set F := mk (fun n => if n = 0 then (0 : ℚ) else a n)
+  have left : F * ((X - 1) * (X + 1) * (2 * X - 1) * (2 * X + 1) *
+      (X ^ 2 + 1) * (4 * X ^ 2 + 1)) =
+      F - C (17 : ℚ) * (X ^ 4 * F) + C (16 : ℚ) * (X ^ 8 * F) := by
+    simp only [map_ofNat]
     ring
-  have e2 : (X * (8 * X ^ 6 + 12 * X ^ 5 + 14 * X ^ 4 + 3 * X ^ 3 + 7 * X ^ 2 + 3 * X + 1) : ℚ⟦X⟧) =
-      X ^ 1 + C (3 : ℚ) * X ^ 2 + C (7 : ℚ) * X ^ 3 + C (3 : ℚ) * X ^ 4 + C (14 : ℚ) * X ^ 5 + C (12 : ℚ) * X ^ 6 + C (8 : ℚ) * X ^ 7 := by
-    rw [map_ofNat C 3, map_ofNat C 7, map_ofNat C 8, map_ofNat C 12, map_ofNat C 14]
+  have right : (X * (8 * X ^ 6 + 12 * X ^ 5 + 14 * X ^ 4 + 3 * X ^ 3 +
+      7 * X ^ 2 + 3 * X + 1) : ℚ⟦X⟧) =
+      X ^ 1 + C (3 : ℚ) * X ^ 2 + C (7 : ℚ) * X ^ 3 + C (3 : ℚ) * X ^ 4 +
+        C (14 : ℚ) * X ^ 5 + C (12 : ℚ) * X ^ 6 + C (8 : ℚ) * X ^ 7 := by
+    simp only [map_ofNat]
     ring
-  rw [e1, e2]
-  have e3 : mk (fun n => if n = 0 then (0 : ℚ) else a n) * (1 - C (17 : ℚ) * X ^ 4 + C (16 : ℚ) * X ^ 8) =
-      mk (fun n => if n = 0 then (0 : ℚ) else a n) - C (17 : ℚ) * (X ^ 4 * mk (fun n => if n = 0 then (0 : ℚ) else a n)) + C (16 : ℚ) * (X ^ 8 * mk (fun n => if n = 0 then (0 : ℚ) else a n)) := by
-    ring
-  rw [e3]
+  rw [left, right]
   ext n
-  simp only [map_add, map_sub, coeff_C_mul, coeff_mk, coeff_X_pow_mul', coeff_X_pow]
+  simp only [F, map_add, map_sub, coeff_C_mul, coeff_mk, coeff_X_pow_mul', coeff_X_pow]
   by_cases hn : n ≤ 8
   · interval_cases n <;> norm_num [card_pow]
-  · obtain ⟨m, rfl⟩ : ∃ m, n = m + 9 := ⟨n - 9, by omega⟩
-    have := recur (m + 9) (by omega)
-    rw [show m + 9 - 4 = m + 5 by omega, show m + 9 - 8 = m + 1 by omega] at this
-    have h : ((a (m + 9) : ℤ) : ℚ) = ((17 * a (m + 5) - 16 * a (m + 1) : ℤ) : ℚ) := by
-      rw [this]
+  · have h := congrArg (Int.cast : ℤ → ℚ) (recur n (by omega))
     push_cast at h
-    simp [h]
-    try ring
+    simp (disch := omega) only [if_pos, if_neg, mul_zero, add_zero, zero_add, sub_zero]
+    linear_combination h
 
 end OMAA213244Helpers
 

@@ -9,6 +9,10 @@ plby/lean-proofs, src/latest/ErdosProblems/Erdos140, commit 8822f7dd, formal aut
 there, built on YaelDillies/LeanAPAP and AddCombi, Apache-2.0); only the final summability
 argument is new.
 -/
+open Real (log exp pi)
+open Set (indicator)
+open Fintype (piFinset)
+open Function (Injective)
 alias Io:= Finset.sum_congr
 alias Q0:= AddChar.norm_apply
 alias Q1:= Real.exp_pos
@@ -210,7 +214,7 @@ alias TP:= Finset.sum_div
 alias TQ:= Finset.abs_sum_le_sum_abs
 alias TR:= Pi.conj_apply
 alias TS:= Real.rpow_neg
-alias TT:= Real.sqrt_pos
+
 alias TU:= apply_ite
 alias TV:= AddChar.map_neg_eq_conj
 alias TW:= Finset.prod_mul_distrib
@@ -338,7 +342,7 @@ lemma FM {k:ℕ} (hk:2≤k) (S:Set ℕ) :
   S.IsAPOfLengthFree k↔ ∀ a d:ℕ,0<d→ ¬ (∀ i<k,a+i*d∈S):=by
  constructor
  ·intro h a d hd z9
-  have hinj:Function.Injective (fun i:ℕ=>a+i*d):=by
+  have hinj:Injective (fun i:ℕ=>a+i*d):=by
    intro i j hij
    have:i*d=j*d:=by simpa using hij
    exact Nat.eq_of_mul_eq_mul_right hd this
@@ -428,7 +432,7 @@ variable {ι α ip:Type*}
 section CommMonoidWithZero
 variable [CommMonoidWithZero ip] [DecidableEq α]
 lemma mQ [Fintype α] (s:Finset ι) (t:ι→Finset α) (x:α) :
-  (Set.indicator (↑(s.inf t)) fun _↦(1:ip)) x= ∏ i∈s,(Set.indicator (t i) fun _↦(1:_)) x:=by simp[Qm,mem_inf,prod_boole]
+  (indicator (↑(s.inf t)) fun _↦(1:ip)) x= ∏ i∈s,(indicator (t i) fun _↦(1:_)) x:=by simp[Qm,mem_inf,prod_boole]
 end CommMonoidWithZero
 end
 end
@@ -438,7 +442,7 @@ section
 variable {α G ip:Type*}
 section yH
 variable [One ip] [Zero ip] [AddGroup G] [AddAction G α]
-@[simp] lemma D4 (g:G) (s:Set α) (a:α):(Set.indicator (g+ᵥ s) fun _↦(1:ip)) a=(Set.indicator s fun _↦(1:_)) (-g+ᵥ a):=by
+@[simp] lemma D4 (g:G) (s:Set α) (a:α):(indicator (g+ᵥ s) fun _↦(1:ip)) a=(indicator s fun _↦(1:_)) (-g+ᵥ a):=by
  classical simp[Qm,Tb]
 end yH
 end
@@ -449,7 +453,7 @@ section
 variable {G ip:Type*}
 section yH
 variable [One ip] [Zero ip] [AddGroup G]
-@[simp] lemma FJ (s:Set G) (a:G):(Set.indicator (-s) fun _↦(1:ip)) a=(Set.indicator s fun _↦(1:_)) (-a):=by
+@[simp] lemma FJ (s:Set G) (a:G):(indicator (-s) fun _↦(1:ip)) a=(indicator s fun _↦(1:_)) (-a):=by
  classical simp[Qm]
 end yH
 end
@@ -459,15 +463,15 @@ section
 variable {F α β ip nO:Type*}
 namespace Set
 variable [MonoidWithZero ip] [MonoidWithZero nO] {s:Set α}
-lemma iq (s t:Set α) (x:α):(Set.indicator (s∩t) fun _↦(1:ip)) x=(Set.indicator s fun _↦(1:_)) x*(Set.indicator t fun _↦(1:_)) x:=by
+lemma iq (s t:Set α) (x:α):(indicator (s∩t) fun _↦(1:ip)) x=(indicator s fun _↦(1:_)) x*(indicator t fun _↦(1:_)) x:=by
  classical simp[indicator_apply, ←ite_and,and_comm]
 lemma rj [FunLike F ip nO] [MonoidWithZeroHomClass F ip nO] (f:F) (s:Set α)
-  (x:α):f ((Set.indicator s fun _↦(1:_)) x)=(Set.indicator s fun _↦(1:_)) x:=by classical exact MonoidWithZeroHom.map_ite_one_zero ..
+  (x:α):f ((indicator s fun _↦(1:_)) x)=(indicator s fun _↦(1:_)) x:=by classical exact MonoidWithZeroHom.map_ite_one_zero ..
 variable [Nontrivial ip] {a:α}
-lemma qn:(Set.indicator s fun _↦(1:ip)) a≠0↔a∈s:=by
+lemma qn:(indicator s fun _↦(1:ip)) a≠0↔a∈s:=by
  classical exact one_ne_zero.ite_ne_right_iff
 variable (ip) in
-@[simp] lemma j0:(Set.indicator s fun _↦(1:ip)).support=s:=by
+@[simp] lemma j0:(indicator s fun _↦(1:ip)).support=s:=by
  ext; exact qn
 end Set
 end
@@ -479,50 +483,12 @@ variable {G ip:Type*}
 section Semiring
 variable [One ip] [Zero ip] [AddCommGroup G]
 variable (ip) in
-lemma sU (a:G) (s:Set G):τ a (Set.indicator s fun _↦(1:ip))=(Set.indicator (a+ᵥ s) fun _↦(1:_)):=by
+lemma sU (a:G) (s:Set G):τ a (indicator s fun _↦(1:ip))=(indicator (a+ᵥ s) fun _↦(1:_)):=by
  classical ext; simp[Qm,Tb,sub_eq_neg_add]
 end Semiring
 end
 end
-section
-section
-open scoped ComplexConjugate
-variable {G R:Type*}
-section CommSemiring
-variable [CommSemiring R] [StarRing R] [AddCommGroup G]
-end CommSemiring
-end
-end
-section
-section
-namespace ZMod
-variable {M:Type*} {q:ℕ}
-end ZMod
-end
-end
-section
-section
-open scoped Finset BigOperators
-namespace AddChar
-variable {ι G:Type*} {q:ℕ} [AddCommGroup G]
-section
-variable {Δ:Set (AddChar G ℂ)} {ψ:AddChar G ℂ} {x:G}
-variable [Finite G]
-variable {V:AddSubgroup G} [Fintype V]
-end
-variable [Module (ZMod q) G] {γ:AddChar G ℂ} {r:ZMod q} {x:G}
-variable [Fact q.Prime] [FiniteDimensional (ZMod q) G] {γ:ι→ AddChar G ℂ}
- {s:Finset ι}
-end AddChar
-end
-end
-section
-section
-namespace RCLike
-variable {K:Type*} [RCLike K]
-end RCLike
-end
-end
+
 section
 section
 open ENNReal
@@ -693,20 +659,10 @@ lemma yK (f:G→R) (n:ℕ):(ep f ((n+1)))=(aC f ((ep f n))):=fA _ _
  | n+1=>by simp_rw[vl,vm _ _ n,RB,uL]
 variable [StarRing R]
 end CommSemiring
-namespace NNReal
-end NNReal
-namespace Complex
-end Complex
+
 end
 end
-section
-open scoped ComplexConjugate
-section
-namespace Set
-variable {α R:Type*} [CommSemiring R] [StarRing R]
-end Set
-end
-end
+
 section
 open Finset Function
 open Fintype (card)
@@ -715,7 +671,7 @@ section
 variable {K L α G:Type*}
 section DivisionSemiring
 variable [DivisionSemiring K] [DivisionSemiring L] {s:Finset α}
-noncomputable def mu (s:Finset α):α→K:=(#s:K)⁻¹ •(Set.indicator s fun _↦(1:_))
+noncomputable def mu (s:Finset α):α→K:=(#s:K)⁻¹ •(indicator s fun _↦(1:_))
 lemma mu_apply [DecidableEq α] (x:α):mu s x=(#s:K)⁻¹ *ite (x∈s) 1 0:=by
  simp[mu,Qm]
 @[simp] lemma FQ:(mu ∅:α→K)=0:=by ext; simp[mu]
@@ -732,7 +688,7 @@ variable (K)
 @[simp] lemma jo (s:Finset α):support ((@mu K _ _) s)=s:=by ext; simp
 end Nontrivial
 variable (K)
-lemma l5 [CharZero K] (s:Finset α): #s•(@mu K _ _) s=(Set.indicator s fun _↦(1:_)):=by
+lemma l5 [CharZero K] (s:Finset α): #s•(@mu K _ _) s=(indicator s fun _↦(1:_)):=by
  classical
  ext x:1
  simp only[RD,mu_apply,Td,Q3,mul_zero,smul_ite,QS,
@@ -741,7 +697,7 @@ lemma l5 [CharZero K] (s:Finset α): #s•(@mu K _ _) s=(Set.indicator s fun _�
  ·have:s.Nonempty:=⟨_,h⟩
   simp[this.ne_empty]
  ·simp
-lemma qr [CharZero K] (s:Finset α) (x:α): #s•(@mu K _ _) s x=(Set.indicator s fun _↦(1:_)) x:=
+lemma qr [CharZero K] (s:Finset α) (x:α): #s•(@mu K _ _) s x=(indicator s fun _↦(1:_)) x:=
  SR (l5 K _) _
 @[simp] lemma kW [CharZero K] [Fintype α] (hs:s.Nonempty): ∑ x,(@mu K _ _) s x=1:=by
  classical
@@ -765,9 +721,7 @@ variable [StarRing K]
 @[simp] lemma CB [AddCommGroup G] [DecidableEq G] (s:Finset G) :
   conjneg ((@mu K _ _) s)=mu (-s):=by ext; simp[mu_apply]; split_ifs<;>simp
 end Semifield
-section Semifield
-variable (K) [Semifield K] [StarRing K] {s:Finset α}
-end Semifield
+
 section LinearOrderedSemifield
 variable [Semifield K] [LinearOrder K] [IsStrictOrderedRing K] {s:Finset α}
 @[simp] lemma cC:0≤(@mu K _ _) s:=fun a↦by classical rw[mu_apply]; split_ifs<;>simp
@@ -787,9 +741,7 @@ open scoped NNReal
 @[simp] lemma Aa (s:Finset α) (x:α): ↑((@mu (ℝ≥0) _ _) s x)=(@mu (ℝ) _ _) s x:=xV NNReal.toRealHom _ _
 @[simp] lemma iF (s:Finset α):(↑) ∘ (@mu (ℝ≥0) _ _) s=(@mu (ℝ) _ _) s:=funext<| Aa _
 end NNReal
-namespace Mathlib.Meta.Positivity
-open Lean Meta Qq Function
-end Mathlib.Meta.Positivity
+
 end
 end
 section
@@ -797,26 +749,11 @@ section
 open Finset Fintype Function
 open scoped BigOperators ComplexConjugate NNReal Pointwise translate
 variable {G R γ:Type*} [Fintype G] [DecidableEq G] [AddCommGroup G]
-section CommSemiring
-variable [CommSemiring R] {f g:G→R}
-variable [StarRing R]
-end CommSemiring
-section Semifield
-variable [Semifield R]
-variable [StarRing R]
-end Semifield
-section Semifield
-variable [Semifield R] [CharZero R]
-variable [StarRing R]
-end Semifield
-section Field
-variable [Field R] [CharZero R]
-variable [StarRing R]
-end Field
+
 section CommSemiring
 variable [CommSemiring R] {f g:G→R} {n:ℕ}
 lemma j1 (s:Finset G) :
-  ∀ (n:ℕ) (a:G),((ep ((Set.indicator s fun _↦(1:R))) n)) a= #{x∈(Fintype.piFinset fun _:Fin n↦s) | ∑ i,x i=a}
+  ∀ (n:ℕ) (a:G),((ep ((indicator s fun _↦(1:R))) n)) a= #{x∈(piFinset fun _:Fin n↦s) | ∑ i,x i=a}
  | 0,a=>by simp[TU card,eq_comm]
  | n+1,a=>by
   simp_rw[yK,cR,j1,Qm,
@@ -826,7 +763,7 @@ lemma j1 (s:Finset G) :
   refine card_equiv ((Equiv.sigmaEquivProd ..).trans<| Fin.consEquiv fun _↦G) ?_
   aesop (add simp[Fin.sum_cons,Fin.forall_fin_succ])
 lemma pn (s:Finset G) (n:ℕ) (f:G→R) :
-  (aC ((ep ((Set.indicator s fun _↦(1:_))) n)) f)= ∑ a∈(Fintype.piFinset fun _:Fin n↦s),τ (∑ i,a i) f:=by
+  (aC ((ep ((indicator s fun _↦(1:_))) n)) f)= ∑ a∈(piFinset fun _:Fin n↦s),τ (∑ i,a i) f:=by
  ext b
  simp only[cR,j1,Si,QZ,
   ←QS, ←sum_const,Finset.sum_fiberwise']
@@ -843,9 +780,7 @@ lemma vJ (s:Finset G) (n:ℕ) (f:G→R) :
  rfl
 variable [StarRing R]
 end Semifield
-section Field
-variable [Field R] [CharZero R]
-end Field
+
 end
 end
 section
@@ -860,20 +795,9 @@ section NormedAddCommGroup
 variable [NormedAddCommGroup E] {p q:ℝ≥0∞} {f g h:α→E}
 noncomputable def c2 (p:ℝ≥0∞) (f:α→E):ℝ:=lpNorm f p (uniformOn .univ)
 @[simp] lemma yM:0≤(c2 p f):=by simp[c2]
-section NormedField
-variable [NormedField 𝕜] {p:ℝ≥0∞} {f g:α→𝕜}
-variable [NormedSpace ℝ 𝕜]
-end NormedField
-section RCLike
-variable {p:ℝ≥0∞}
-end RCLike
-section DiscreteMeasurableSpace
-variable [DiscreteMeasurableSpace α] [Finite α]
-end DiscreteMeasurableSpace
+
 variable [Finite α]
-section NormedField
-variable [NormedField 𝕜] {p:ℝ≥0∞} {f g:α→𝕜}
-end NormedField
+
 omit [Finite α]
 variable [DiscreteMeasurableSpace α] [Fintype α]
 lemma mR (iu:p≠0) (hp:p≠∞) (f:α→E) :
@@ -900,40 +824,7 @@ lemma oE (f:α→E):(c2 (∞) f)= ⨆ i, ‖f i‖:=by
 omit [Finite α]
 end NormedAddCommGroup
 end MeasureTheory
-namespace Mathlib.Meta.Positivity
-open Lean Meta Qq Function MeasureTheory
-section Examples
-section NormedAddCommGroup
-variable [Fintype α] [DiscreteMeasurableSpace α] [NormedAddCommGroup E] [PartialOrder E] {f:α→E}
-end NormedAddCommGroup
-section Complex
-variable [Fintype α] [DiscreteMeasurableSpace α] {w:α→ℝ≥0} {f:α→ℂ}
-end Complex
-end Examples
-end Mathlib.Meta.Positivity
-namespace MeasureTheory
-section Real
-variable {α:Type*} {w3:MeasurableSpace α} [DiscreteMeasurableSpace α] [Finite α] {p q:ℝ≥0}
- {f g:α→ℝ}
-end Real
-section mv
-variable {α:Type*} {w3:MeasurableSpace α} [DiscreteMeasurableSpace α] [Finite α] [RCLike 𝕜]
- {p q:ℝ≥0} {f g:α→𝕜}
-end mv
-section
-variable {α:Type*} {w3:MeasurableSpace α}
-end
-end MeasureTheory
-namespace MeasureTheory
-variable {ι G 𝕜 E R:Type*} [Fintype ι] {I3:MeasurableSpace ι} [DiscreteMeasurableSpace ι]
-section Indicator
-variable [RCLike R] {s:Finset ι} {p:ℝ≥0}
-end Indicator
-section c2
-variable {mG:MeasurableSpace G} [DiscreteMeasurableSpace G] [AddCommGroup G] [Finite G]
- {p:ℝ≥0∞}
-end c2
-end MeasureTheory
+
 end
 end
 section
@@ -977,9 +868,7 @@ lemma er (hp:1≤p) :
  lpNorm_sub_le_lpNorm_sub_add_lpNorm_sub .of_discrete .of_discrete hp
 end DiscreteMeasurableSpace
 variable [Fintype α]
-section NormedField
-variable [NormedField 𝕜] {p:ℝ≥0∞} {f g:α→𝕜}
-end NormedField
+
 variable [DiscreteMeasurableSpace α]
 lemma iv (iu:p≠0) (hp:p≠∞) (f:α→E) :
   (aJ p f)=(∑ i, ‖f i‖ ^p.toReal)^p.toReal⁻¹:=by
@@ -1004,30 +893,7 @@ lemma vw {i:α}: ‖f i‖ ≤(aJ (∞) f):=by
 omit [Finite α]
 variable [Fintype α]
 end MeasureTheory
-namespace Mathlib.Meta.Positivity
-open Lean Meta Qq Function MeasureTheory
-section Examples
-section NormedAddCommGroup
-variable [Fintype α] [DiscreteMeasurableSpace α] [NormedAddCommGroup E] [PartialOrder E] {f:α→E}
-end NormedAddCommGroup
-section Complex
-variable [Fintype α] [DiscreteMeasurableSpace α] {f:α→ℂ}
-end Complex
-end Examples
-end Mathlib.Meta.Positivity
-namespace MeasureTheory
-section Real
-variable {α:Type*} {w3:MeasurableSpace α} [DiscreteMeasurableSpace α] [Finite α] {p q:ℝ≥0}
- {f g:α→ℝ}
-end Real
-section mv
-variable {α:Type*} {w3:MeasurableSpace α} [DiscreteMeasurableSpace α] [Finite α] [RCLike 𝕜]
- {p q:ℝ≥0} {f g:α→𝕜}
-end mv
-section
-variable {α:Type*} {w3:MeasurableSpace α}
-end
-end MeasureTheory
+
 end
 end
 section
@@ -1039,7 +905,7 @@ variable {ι G 𝕜 E R:Type*} [Finite ι] {I3:MeasurableSpace ι} [DiscreteMeas
 section Indicator
 variable [RCLike R] {s:Finset ι} {p:ℝ≥0}
 lemma kX (hp:p≠0) (s:Finset ι) :
-  (aJ p ((Set.indicator ((s:Set ι)) fun _↦(1:R))))^(p:ℝ)= #s:=by
+  (aJ p ((indicator ((s:Set ι)) fun _↦(1:R))))^(p:ℝ)= #s:=by
  classical
  cases RR ι
  have: ∀ x,(ite (x∈s) 1 0:ℝ)^(p:ℝ) =
@@ -1047,17 +913,17 @@ lemma kX (hp:p≠0) (s:Finset ι) :
  simp[iT,hp,Qm,TU norm, -sum_const,
   card_eq_sum_ones]
 lemma n8 (hp:p≠0) (s:Finset ι) :
-  (aJ p ((Set.indicator ((s:Set ι)) fun _↦(1:R))))= #s^(p⁻¹ :ℝ):=by
+  (aJ p ((indicator ((s:Set ι)) fun _↦(1:R))))= #s^(p⁻¹ :ℝ):=by
  refine(eq_rpow_inv ?_ ?_ ?_).2 (kX ?_ _)<;>first | positivity | exact d8
 lemma rA {p:ℕ} (hp:p≠0) (s:Finset ι) :
-  (aJ p ((Set.indicator ((s:Set ι)) fun _↦(1:R))))^(p:ℝ)= #s:=by
+  (aJ p ((indicator ((s:Set ι)) fun _↦(1:R))))^(p:ℝ)= #s:=by
  simpa using kX (Nat.cast_ne_zero.2 hp) s
-lemma r7 (s:Finset ι):(aJ 2 ((Set.indicator ((s:Set ι)) fun _↦(1:R))))^2= #s:=by
+lemma r7 (s:Finset ι):(aJ 2 ((indicator ((s:Set ι)) fun _↦(1:R))))^2= #s:=by
  simpa using rA SD s
-@[simp] lemma tU (s:Finset ι):(aJ 2 ((Set.indicator ((s:Set ι)) fun _↦(1:R))))=Real.sqrt #s:=by
+@[simp] lemma tU (s:Finset ι):(aJ 2 ((indicator ((s:Set ι)) fun _↦(1:R))))=Real.sqrt #s:=by
  rw[eq_comm,sqrt_eq_iff_eq_sq,r7]<;>first | positivity | exact d8
 lemma rB (hp:1≤p) (hs:s.Nonempty):(aJ p ((@mu R _ _) s))= #s^((p:ℝ)⁻¹ -1):=by
- rw[mu,vK ((#s)⁻¹ :R) ((Set.indicator ((s:Set ι)) fun _↦(1:R))),n8,Up,
+ rw[mu,vK ((#s)⁻¹ :R) ((indicator ((s:Set ι)) fun _↦(1:R))),n8,Up,
   RCLike.norm_natCast,TK, ←Real.rpow_sub_one]<;>positivity
 lemma zK (hp:1≤p):(aJ p ((@mu R _ _) s))≤ #s^(p⁻¹ -1:ℝ):=by
  obtain rfl | hs:=s.eq_empty_or_nonempty
@@ -1147,7 +1013,7 @@ lemma wW {p:ℝ≥0} (hp:1≤p) (f g:G→𝕜) :
  obtain rfl | hp:=hp.eq_or_lt
  ·simp_rw[ENNReal.coe_one,ek,sum_mul_sum,cR]
   calc
-   ∑ x, ‖∑ y,f y*g (x-y)‖ ≤ ∑ x, ∑ y, ‖f y*g (x-y)‖:=
+   _ ≤ ∑ x, ∑ y, ‖f y*g (x-y)‖:=
     sum_le_sum fun x _↦Rq _ _
    _=_:= ?_
   rw[sum_comm]
@@ -1178,7 +1044,7 @@ lemma wW {p:ℝ≥0} (hp:1≤p) (f g:G→𝕜) :
   ·have:1-(p:ℝ)⁻¹ ≠0:=sub_ne_zero.2 (inv_ne_one.2<| NNReal.coe_ne_one.2 hp.ne').symm
    simp[mul_rpow,rpow_nonneg,iu.ne',this,abs_rpow_of_nonneg]
  calc
-  ∑ x, ‖∑ y,f y*g (x-y)‖ ^(p:ℝ) ≤
+  _ ≤
     ∑ x,(∑ y, ‖f y‖ ^(p:ℝ)* ‖g (x-y)‖)*(∑ y, ‖g (x-y)‖)^(p-1:ℝ):=
    sum_le_sum fun i _↦this _
   _=_:= ?_
@@ -1224,8 +1090,8 @@ variable {α:Type*} {w3:MeasurableSpace α} [DiscreteMeasurableSpace α] [Fintyp
  {f g:α→ℝ}
 lemma ng (p q:ℝ≥0∞) [p.HolderConjugate q] :
   ⟪f,g⟫_[ℝ]≤(aJ p f)*(aJ q g):=by
- have xY:p≠0:=Tk p q
- have xZ:q≠0:=Tk q p
+ have xY := Tk p q
+ have xZ := Tk q p
  have yQ:⟪f,g⟫_[ℝ]= ∑ i,f i*g i:=by simp[wInner_one_eq_sum,Qx]
  have N5 i:f i*g i≤ ‖f i‖ * ‖g i‖:=
   (SG _).trans_eq (by rw[SU]; simp[QK])
@@ -1239,8 +1105,8 @@ lemma ng (p q:ℝ≥0∞) [p.HolderConjugate q] :
   simp only[yQ,ek,norm_eq_abs,dw,sum_mul]
   gcongr ∑ _, ?_ with i
   grw[SG (_*_),SU, ←le_ciSup (SA _)]
- have N6:0<p.toReal:=UJ xY Af
- have N7:0<q.toReal:=UJ xZ MF
+ have N6 := UJ xY Af
+ have N7 := UJ xZ MF
  have uO:Real.HolderConjugate p.toReal q.toReal:=by
   simpa using ENNReal.HolderTriple.toReal (p:=p) (q:=q) (r:=1) N6 N7
  rw[yQ,iv xY Af,iv xZ MF]
@@ -1274,12 +1140,12 @@ section
 open Finset Fintype Nat Real
 variable {ι:Type*} {A:Finset ι} {m n:ℕ}
 lemma step_one (hA:A.Nonempty) (f:ι→ℝ) (a:Fin n→ι)
-  (hf: ∀ i, ∑ a∈(Fintype.piFinset fun _:Fin n↦A),f (a i)=0) :
+  (hf: ∀ i, ∑ a∈(piFinset fun _:Fin n↦A),f (a i)=0) :
   |∑ i,f (a i)| ^(m+1) ≤
-   (∑ b∈(Fintype.piFinset fun _:Fin n↦A), |∑ i,(f (a i)-f (b i))| ^(m+1))/ #A^n:=by
- let B:=(Fintype.piFinset fun _:Fin n↦A)
+   (∑ b∈(piFinset fun _:Fin n↦A), |∑ i,(f (a i)-f (b i))| ^(m+1))/ #A^n:=by
+ let B:=(piFinset fun _:Fin n↦A)
  calc
-  |∑ i,f (a i)| ^(m+1)
+  _
    = |∑ i,(f (a i)-(∑ b∈B,f (b i))/ #B)| ^(m+1):=by
    simp only[B,hf,sub_zero,zero_div]
   _= |(∑ b∈B, ∑ i,(f (a i)-f (b i)))/ #B| ^(m+1):=by
@@ -1296,9 +1162,9 @@ lemma step_one (hA:A.Nonempty) (f:ι→ℝ) (a:Fin n→ι)
   _≤(∑ b∈B, |∑ i,(f (a i)-f (b i))| ^(m+1))/ #B:=by
    gcongr; exact TF (fun _ _↦Q8 _) _
   _=_:=by simp[B]
-lemma D6 (hA:A.Nonempty) (f:ι→ℝ) (hf: ∀ i, ∑ a∈(Fintype.piFinset fun _:Fin n↦A),f (a i)=0) (m:ℕ)
+lemma D6 (hA:A.Nonempty) (f:ι→ℝ) (hf: ∀ i, ∑ a∈(piFinset fun _:Fin n↦A),f (a i)=0) (m:ℕ)
   (a:Fin n→ι) :
-  |∑ i,f (a i)| ^m≤(∑ b∈(Fintype.piFinset fun _:Fin n↦A), |∑ i,(f (a i)-f (b i))| ^m)/ #A^n:=by
+  |∑ i,f (a i)| ^m≤(∑ b∈(piFinset fun _:Fin n↦A), |∑ i,(f (a i)-f (b i))| ^m)/ #A^n:=by
  cases m
  ·simp only[pow_zero,sum_const,prod_const,Nat.smul_one_eq_cast,Finset.card_fin,
    card_piFinset, ←Rv]
@@ -1307,20 +1173,20 @@ lemma D6 (hA:A.Nonempty) (f:ι→ℝ) (hf: ∀ i, ∑ a∈(Fintype.piFinset fun 
   exact RF (Finset.card_pos.2 hA) _
  exact step_one hA f a hf
 lemma Ag (A:Finset ι) (f:ι→ℝ) (ε:Fin n→ℝ)
-  (hε:ε∈(Fintype.piFinset fun _:Fin n↦(({-1,1}:Finset ℝ)))) (g:(Fin n→ℝ)→ℝ) :
-  ∑ a∈(Fintype.piFinset fun _:Fin n↦A), ∑ b∈(Fintype.piFinset fun _:Fin n↦A),g (ε*(f ∘ a-f ∘ b)) =
-   ∑ a∈(Fintype.piFinset fun _:Fin n↦A), ∑ b∈(Fintype.piFinset fun _:Fin n↦A),g (f ∘ a-f ∘ b):=by
+  (hε:ε∈(piFinset fun _:Fin n↦(({-1,1}:Finset ℝ)))) (g:(Fin n→ℝ)→ℝ) :
+  ∑ a∈(piFinset fun _:Fin n↦A), ∑ b∈(piFinset fun _:Fin n↦A),g (ε*(f ∘ a-f ∘ b)) =
+   ∑ a∈(piFinset fun _:Fin n↦A), ∑ b∈(piFinset fun _:Fin n↦A),g (f ∘ a-f ∘ b):=by
  rw[←sum_product', ←sum_product']
  let n9:(Fin n→ι) × (Fin n→ι)→(Fin n→ι) × (Fin n→ι):=by
   intro xy
   exact(fun i↦if ε i=1 then xy.1 i else xy.2 i,fun i↦if ε i=1 then xy.2 i else xy.1 i)
- have h₁: ∀ a∈((Fintype.piFinset fun _:Fin n↦A)) ×ˢ ((Fintype.piFinset fun _:Fin n↦A)),n9 a∈((Fintype.piFinset fun _:Fin n↦A)) ×ˢ ((Fintype.piFinset fun _:Fin n↦A)):=by
+ have h₁: ∀ a∈((piFinset fun _:Fin n↦A)) ×ˢ ((piFinset fun _:Fin n↦A)),n9 a∈((piFinset fun _:Fin n↦A)) ×ˢ ((piFinset fun _:Fin n↦A)):=by
   simp only[mem_product,mem_piFinset, ←forall_and,n9]
   intro a h i
   split_ifs
   ·exact h i
   ·exact(h i).symm
- have h₂: ∀ a∈((Fintype.piFinset fun _:Fin n↦A)) ×ˢ ((Fintype.piFinset fun _:Fin n↦A)),n9 (n9 a)=a:=fun a _↦by
+ have h₂: ∀ a∈((piFinset fun _:Fin n↦A)) ×ˢ ((piFinset fun _:Fin n↦A)),n9 (n9 a)=a:=fun a _↦by
   ext<;>simp only[n9]<;>split_ifs<;>rfl
  refine sum_nbij' n9 n9 h₁ h₁ h₂ h₂ ?_
  ·rintro ⟨a,b⟩ _
@@ -1332,11 +1198,11 @@ lemma Ag (A:Finset ι) (f:ι→ℝ) (ε:Fin n→ℝ)
   rw[(hε i).resolve_right h]
   ring
 lemma FT (f:ι→ℝ) :
-  ∑ a∈(Fintype.piFinset fun _:Fin n↦A), ∑ b∈(Fintype.piFinset fun _:Fin n↦A),(∑ i,(f (a i)-f (b i)))^(2*m) =
-   2⁻¹ ^n* ∑ ε∈(Fintype.piFinset fun _:Fin n↦(({-1,1}:Finset ℝ))),
-    ∑ a∈(Fintype.piFinset fun _:Fin n↦A), ∑ b∈(Fintype.piFinset fun _:Fin n↦A),(∑ i,ε i*(f (a i)-f (b i)))^(2*m):=by
- let B:=(Fintype.piFinset fun _:Fin n↦A)
- have: ∀ ε∈(Fintype.piFinset fun _:Fin n↦(({-1,1}:Finset ℝ))),
+  ∑ a∈(piFinset fun _:Fin n↦A), ∑ b∈(piFinset fun _:Fin n↦A),(∑ i,(f (a i)-f (b i)))^(2*m) =
+   2⁻¹ ^n* ∑ ε∈(piFinset fun _:Fin n↦(({-1,1}:Finset ℝ))),
+    ∑ a∈(piFinset fun _:Fin n↦A), ∑ b∈(piFinset fun _:Fin n↦A),(∑ i,ε i*(f (a i)-f (b i)))^(2*m):=by
+ let B:=(piFinset fun _:Fin n↦A)
+ have: ∀ ε∈(piFinset fun _:Fin n↦(({-1,1}:Finset ℝ))),
   ∑ a∈B, ∑ b∈B,(∑ i,ε i*(f (a i)-f (b i)))^(2*m) =
    ∑ a∈B, ∑ b∈B,(∑ i,(f (a i)-f (b i)))^(2*m):=
   fun ε hε↦Ag A f _ hε fun z:Fin n→ℝ↦univ.sum z^(2*m)
@@ -1345,19 +1211,19 @@ lemma FT (f:ι→ℝ) :
  ·positivity
  ·norm_num
 lemma CE (f:ι→ℝ) :
-  ∑ ε∈(Fintype.piFinset fun _:Fin n↦(({-1,1}:Finset ℝ))),
-   ∑ a∈(Fintype.piFinset fun _:Fin n↦A), ∑ b∈(Fintype.piFinset fun _:Fin n↦A),(∑ i,ε i*(f (a i)-f (b i)))^(2*m) =
-   ∑ a∈(Fintype.piFinset fun _:Fin n↦A), ∑ b∈(Fintype.piFinset fun _:Fin n↦A), ∑ k∈piAntidiag univ (2*m),
+  ∑ ε∈(piFinset fun _:Fin n↦(({-1,1}:Finset ℝ))),
+   ∑ a∈(piFinset fun _:Fin n↦A), ∑ b∈(piFinset fun _:Fin n↦A),(∑ i,ε i*(f (a i)-f (b i)))^(2*m) =
+   ∑ a∈(piFinset fun _:Fin n↦A), ∑ b∈(piFinset fun _:Fin n↦A), ∑ k∈piAntidiag univ (2*m),
      (multinomial univ k* ∏ t,(f (a t)-f (b t))^k t) *
-      ∑ ε∈(Fintype.piFinset fun _:Fin n↦(({-1,1}:Finset ℝ))), ∏ t,ε t^k t:=by
- simp only[@sum_comm _ _ (Fin n→ℝ) _ _ ((Fintype.piFinset fun _:Fin n↦A)),sum_pow_eq_sum_piAntidiag]
+      ∑ ε∈(piFinset fun _:Fin n↦(({-1,1}:Finset ℝ))), ∏ t,ε t^k t:=by
+ simp only[@sum_comm _ _ (Fin n→ℝ) _ _ ((piFinset fun _:Fin n↦A)),sum_pow_eq_sum_piAntidiag]
  refine sum_congr rfl fun a _↦ ?_
  refine sum_congr rfl fun b _↦ ?_
  simp only[QL,prod_mul_distrib, @sum_comm _ _ (Fin n→ℝ), ←mul_sum, ←sum_mul]
  refine sum_congr rfl fun k _↦ ?_
  rw[←Qo,QN]
 lemma D7 {k:Fin n→ℕ} :
-  ∑ ε∈(Fintype.piFinset fun _:Fin n↦(({-1,1}:Finset ℝ))), ∏ t,ε t^k t=2^n*ite (∀ i,Even (k i)) 1 0:=by
+  ∑ ε∈(piFinset fun _:Fin n↦(({-1,1}:Finset ℝ))), ∏ t,ε t^k t=2^n*ite (∀ i,Even (k i)) 1 0:=by
  calc
   _= ∏ i, ∑ j∈({-1,1}:Finset ℝ),j^k i:=by rw[←sum_prod_piFinset]
   _= ∏ i,if Even (k i) then 2 else 0:=by
@@ -1390,14 +1256,14 @@ lemma CI {f:ι→ℝ} {a b:Fin n→ι} :
  gcongr
  refine add_pow_le ?_ ?_ m<;>positivity
 lemma FV {f : ι → ℝ} (hm : 1 ≤ m) (hA : A.Nonempty) :
-    (∑ a ∈ (Fintype.piFinset fun _ : Fin n ↦ A), ∑ b ∈ (Fintype.piFinset fun _ : Fin n ↦ A), ∑ k ∈ piAntidiag univ m,
+    (∑ a ∈ (piFinset fun _ : Fin n ↦ A), ∑ b ∈ (piFinset fun _ : Fin n ↦ A), ∑ k ∈ piAntidiag univ m,
       ↑(multinomial univ fun i ↦ 2 * k i) * ∏ t, (f (a t) - f (b t)) ^ (2 * k t)) / #A ^ n
-        ≤ (4 * m) ^ m * ∑ a ∈ (Fintype.piFinset fun _ : Fin n ↦ A), (∑ i, f (a i) ^ 2) ^ m:= by
-  let B:= (Fintype.piFinset fun _ : Fin n ↦ A)
+        ≤ (4 * m) ^ m * ∑ a ∈ (piFinset fun _ : Fin n ↦ A), (∑ i, f (a i) ^ 2) ^ m:= by
+  let B:= (piFinset fun _ : Fin n ↦ A)
   calc
-    (∑ a ∈ B, ∑ b ∈ B, ∑ k ∈ piAntidiag univ m,
-      (multinomial univ fun i ↦ 2 * k i : ℝ) * ∏ t, (f (a t) - f (b t)) ^ (2 * k t)) / #A ^ n
-    _ ≤ (∑ a ∈ B, ∑ b ∈ B, m ^ m * 2 ^ (m + (m - 1)) *
+    _
+
+      ≤ (∑ a ∈ B, ∑ b ∈ B, m ^ m * 2 ^ (m + (m - 1)) *
           ((∑ i, f (a i) ^ 2) ^ m + (∑ i, f (b i) ^ 2) ^ m) : ℝ) / #A ^ n:= by
       gcongr; exact FU.trans <| CF.trans CI
     _ = _:= by
@@ -1410,20 +1276,20 @@ lemma FV {f : ι → ℝ} (hm : 1 ≤ m) (hA : A.Nonempty) :
       · positivity
 section
 namespace Real
-lemma tu (m:ℕ) (f:ι→ℝ) (hf: ∀ i, ∑ a∈(Fintype.piFinset fun _:Fin n↦A),f (a i)=0) :
-  ∑ a∈(Fintype.piFinset fun _:Fin n↦A),(∑ i,f (a i))^(2*m) ≤
-   (4*m)^m* ∑ a∈(Fintype.piFinset fun _:Fin n↦A),(∑ i,f (a i)^2)^m:=by
+lemma tu (m:ℕ) (f:ι→ℝ) (hf: ∀ i, ∑ a∈(piFinset fun _:Fin n↦A),f (a i)=0) :
+  ∑ a∈(piFinset fun _:Fin n↦A),(∑ i,f (a i))^(2*m) ≤
+   (4*m)^m* ∑ a∈(piFinset fun _:Fin n↦A),(∑ i,f (a i)^2)^m:=by
  obtain rfl | hm:=m.eq_zero_or_pos
  ·simp
  have w4:1≤ m:=by rwa[Ty]
  obtain rfl | hA:=A.eq_empty_or_nonempty
  ·cases n<;>cases m<;>simp
- let B:=(Fintype.piFinset fun _:Fin n↦A)
+ let B:=(piFinset fun _:Fin n↦A)
  calc
   ∑ a∈B,(∑ i,f (a i))^(2*m)
-   ≤ ∑ a∈(Fintype.piFinset fun _:Fin n↦A),(∑ b∈B, |∑ i,(f (a i)-f (b i))| ^(2*m))/ #A^n:=by
+   ≤ ∑ a∈(piFinset fun _:Fin n↦A),(∑ b∈B, |∑ i,(f (a i)-f (b i))| ^(2*m))/ #A^n:=by
    gcongr; simpa[QU,sq_abs] using D6 hA f hf (2*m) _
-  _=(∑ a∈(Fintype.piFinset fun _:Fin n↦A), ∑ b∈(Fintype.piFinset fun _:Fin n↦A), ∑ k∈piAntidiag univ (2*m) with ∀ i,2∣k i,
+  _=(∑ a∈(piFinset fun _:Fin n↦A), ∑ b∈(piFinset fun _:Fin n↦A), ∑ k∈piAntidiag univ (2*m) with ∀ i,2∣k i,
     multinomial univ (fun i↦k i)* ∏ t,(f (a t)-f (b t))^k t)/ #A^n:=by
    rw[←sum_div]
    simp only[QU,sq_abs]
@@ -1432,27 +1298,27 @@ lemma tu (m:ℕ) (f:ι→ℝ) (hf: ∀ i, ∑ a∈(Fintype.piFinset fun _:Fin n�
    simp only[D7,Td,mul_zero,Q3, ←sum_filter, ←sum_mul,even_iff_two_dvd]
    rw[Qx,mul_div_mul_left]
    positivity
-  _=(∑ a∈(Fintype.piFinset fun _:Fin n↦A), ∑ b∈(Fintype.piFinset fun _:Fin n↦A), ∑ k∈(piAntidiag univ m).map
+  _=(∑ a∈(piFinset fun _:Fin n↦A), ∑ b∈(piFinset fun _:Fin n↦A), ∑ k∈(piAntidiag univ m).map
      ⟨(2•·),fun _ _ h↦funext fun i↦mul_right_injective₀ SD (SR h i)⟩,
     multinomial univ (fun i↦k i)* ∏ t,(f (a t)-f (b t))^k t)/ #A^n:=by
    rw[map_nsmul_piAntidiag_univ m (ι:=Fin n) (n:=2) SD]; congr!
-  _=(∑ a∈(Fintype.piFinset fun _:Fin n↦A), ∑ b∈(Fintype.piFinset fun _:Fin n↦A), ∑ k∈piAntidiag univ m,
+  _=(∑ a∈(piFinset fun _:Fin n↦A), ∑ b∈(piFinset fun _:Fin n↦A), ∑ k∈piAntidiag univ m,
     multinomial univ (fun i↦2*k i)* ∏ t,(f (a t)-f (b t))^(2*k t))/ #A^n:=by
    simp
   _≤_:=FV w4 hA
-lemma g8 (hm:m≠0) (f:ι→ℝ) (hf: ∀ i, ∑ a∈(Fintype.piFinset fun _:Fin n↦A),f (a i)=0) :
-  ∑ a∈(Fintype.piFinset fun _:Fin n↦A),(∑ i,f (a i))^(2*m) ≤
-   (4*m)^m*n^(m-1)* ∑ a∈(Fintype.piFinset fun _:Fin n↦A), ∑ i,f (a i)^(2*m):=by
+lemma g8 (hm:m≠0) (f:ι→ℝ) (hf: ∀ i, ∑ a∈(piFinset fun _:Fin n↦A),f (a i)=0) :
+  ∑ a∈(piFinset fun _:Fin n↦A),(∑ i,f (a i))^(2*m) ≤
+   (4*m)^m*n^(m-1)* ∑ a∈(piFinset fun _:Fin n↦A), ∑ i,f (a i)^(2*m):=by
  obtain _ | m:=m
  ·simp at hm
  obtain rfl | hn:=n.eq_zero_or_pos
  ·simp
  calc
-  ∑ a∈(Fintype.piFinset fun _:Fin n↦A),(∑ i,f (a i))^(2*(m+1))
-   ≤ (4* ↑(m+1))^(m+1)* ∑ a∈(Fintype.piFinset fun _:Fin n↦A),(∑ i,f (a i)^2)^(m+1):=
+  ∑ a∈(piFinset fun _:Fin n↦A),(∑ i,f (a i))^(2*(m+1))
+   ≤ (4* ↑(m+1))^(m+1)* ∑ a∈(piFinset fun _:Fin n↦A),(∑ i,f (a i)^2)^(m+1):=
    tu _ f hf
-  _≤(4* ↑(m+1))^(m+1)*(∑ a∈(Fintype.piFinset fun _:Fin n↦A),n^m* ∑ i,f (a i)^(2*(m+1))):= ?_
-  _≤(4* ↑(m+1))^(m+1)*n^m* ∑ a∈(Fintype.piFinset fun _:Fin n↦A), ∑ i,f (a i)^(2*(m+1)):=by
+  _≤(4* ↑(m+1))^(m+1)*(∑ a∈(piFinset fun _:Fin n↦A),n^m* ∑ i,f (a i)^(2*(m+1))):= ?_
+  _≤(4* ↑(m+1))^(m+1)*n^m* ∑ a∈(piFinset fun _:Fin n↦A), ∑ i,f (a i)^(2*(m+1)):=by
    simp_rw[Qo,mul_sum]; rfl
  gcongr with a
  rw[←div_le_iff₀' (by positivity)]
@@ -1461,12 +1327,12 @@ lemma g8 (hm:m≠0) (f:ι→ℝ) (hf: ∀ i, ∑ a∈(Fintype.piFinset fun _:Fin
 end Real
 namespace RCLike
 variable {𝕜:Type*} [RCLike 𝕜]
-lemma g8 (hm:m≠0) (f:ι→𝕜) (hf: ∀ i, ∑ a∈(Fintype.piFinset fun _:Fin n↦A),f (a i)=0) :
-  ∑ a∈(Fintype.piFinset fun _:Fin n↦A), ‖∑ i,f (a i)‖ ^(2*m) ≤
-   (8*m)^m*n^(m-1)* ∑ a∈(Fintype.piFinset fun _:Fin n↦A), ∑ i, ‖f (a i)‖ ^(2*m):=by
+lemma g8 (hm:m≠0) (f:ι→𝕜) (hf: ∀ i, ∑ a∈(piFinset fun _:Fin n↦A),f (a i)=0) :
+  ∑ a∈(piFinset fun _:Fin n↦A), ‖∑ i,f (a i)‖ ^(2*m) ≤
+   (8*m)^m*n^(m-1)* ∑ a∈(piFinset fun _:Fin n↦A), ∑ i, ‖f (a i)‖ ^(2*m):=by
  let f₁ x:ℝ:=re (f x)
  let f₂ x:ℝ:=im (f x)
- let B:=(Fintype.piFinset fun _:Fin n↦A)
+ let B:=(piFinset fun _:Fin n↦A)
  have K0 i: ∑ a∈B,f₁ (a i)=0:=by rw[←RK,hf,map_zero]
  have K1 i: ∑ a∈B,f₂ (a i)=0:=by rw[←RK,hf,map_zero]
  have h₁:=Real.g8 hm _ K0
@@ -1498,13 +1364,7 @@ end
 end
 section
 open scoped Pointwise Combinatorics.Additive translate
-namespace Finset
-variable {α:Type*} [DecidableEq α] {s:Finset α} {k:ℕ}
-section Add
-variable [Add α]
-end Add
-variable [AddCommGroup α] [Fintype α]
-end Finset
+
 section
 variable {α:Type*} {g:α→ℝ} {c ε:ℝ} {A:Finset α}
 open Finset
@@ -1563,9 +1423,9 @@ lemma BC (hε:0<ε) (hm:1≤ m) (hk:64*m/ε^2≤k) :
 end
 variable [DecidableEq G] [AddCommGroup G]
 lemma xk (hm:1≤ m) (x:G) :
-  ∑ a∈(Fintype.piFinset fun _:Fin k↦A), ‖∑ i,f (x-a i)-(k•((aC (mu A) f))) x‖ ^(2*m) ≤
+  ∑ a∈(piFinset fun _:Fin k↦A), ‖∑ i,f (x-a i)-(k•((aC (mu A) f))) x‖ ^(2*m) ≤
    (8*m)^m*k^(m-1) *
-    ∑ a∈(Fintype.piFinset fun _:Fin k↦A), ∑ i, ‖f (x-a i)-((aC (mu A) f)) x‖ ^(2*m):=by
+    ∑ a∈(piFinset fun _:Fin k↦A), ∑ i, ‖f (x-a i)-((aC (mu A) f)) x‖ ^(2*m):=by
  let f':G→ℂ:=fun a↦f (x-a)-((aC (mu A) f)) x
  refine(RCLike.g8 (by linarith only[hm]) f' ?_).trans_eq' ?_
  ·intro i
@@ -1582,9 +1442,9 @@ def CJ (k m:ℕ) (ε:ℝ) (f:G→ℂ) (A:Finset G) (a:Fin k→G):Prop:=
  (aJ (2*m) (fun x:G↦ ∑ i,f (x-a i)-(k•((aC (mu A) f))) x))≤k*ε*(aJ (2*m) f)
 noncomputable instance:DecidablePred (CJ k m ε f A):=Classical.decPred _
 noncomputable def l (k m:ℕ) (ε:ℝ) (f:G→ℂ) (A:Finset G):Finset (Fin k→G):=
- {x∈(Fintype.piFinset fun _:Fin k↦A) | CJ k m ε f A x}
+ {x∈(piFinset fun _:Fin k↦A) | CJ k m ε f A x}
 lemma yT (hε:0<ε) (hm:1≤ m)
-  (h: ∑ a∈(Fintype.piFinset fun _:Fin k↦A),
+  (h: ∑ a∈(piFinset fun _:Fin k↦A),
     ((aJ (2*m) (fun x:G↦ ∑ i:Fin k,f (x-a i)-(k•((aC (mu A) f))) x))^(2*m):ℝ) ≤
    1/2*(k*ε*(aJ (2*m) f))^(2*m)* #A^k) :
   (#A^k:ℝ)/2≤ #(l k m ε f A):=by
@@ -1601,8 +1461,8 @@ lemma yT (hε:0<ε) (hm:1≤ m)
 variable [DiscreteMeasurableSpace G]
 open MeasureTheory in
 lemma xl (hm:1≤ m) (hA:A.Nonempty) :
-  (8*m)^m*k^(m-1)* ∑ a∈(Fintype.piFinset fun _:Fin k↦A), ∑ i,(aJ (2*m) (τ (a i) f-(aC (mu A) f)))^(2*m) ≤
-   (8*m)^m*k^(m-1)* ∑ _a∈(Fintype.piFinset fun _:Fin k↦A), ∑ _i:Fin k,(2*(aJ (2*m) f))^(2*m):=by
+  (8*m)^m*k^(m-1)* ∑ a∈(piFinset fun _:Fin k↦A), ∑ i,(aJ (2*m) (τ (a i) f-(aC (mu A) f)))^(2*m) ≤
+   (8*m)^m*k^(m-1)* ∑ _a∈(piFinset fun _:Fin k↦A), ∑ _i:Fin k,(2*(aJ (2*m) f))^(2*m):=by
  have yS:((2*m:ℕ):ℝ≥0∞)=2*m:=by rw[Rm,So]
  have w4:1<2*m:=(Qr 2 hm).trans_lt'<| by norm_num1
  have M1:(1:ℝ≥0∞)≤2*m:=by rw[←yS,Nat.one_le_cast]; exact w4.le
@@ -1635,10 +1495,10 @@ lemma Ho (hε:0<ε) (hm:1≤ m) (hk:(64:ℝ)*m/ε^2≤k) :
  rw[←yS,QL]
  simp only[gz w4]
  rw[sum_comm]
- have: ∀ x:G, ∑ a∈(Fintype.piFinset fun _:Fin k↦A),
+ have: ∀ x:G, ∑ a∈(piFinset fun _:Fin k↦A),
    ‖∑ i,f (x-a i)-(k•((aC (mu A) f))) x‖ ^(2*m) ≤
   (8*m)^m*k^(m-1) *
-   ∑ a∈(Fintype.piFinset fun _:Fin k↦A), ∑ i, ‖f (x-a i)-((aC (mu A) f)) x‖ ^(2*m):=
+   ∑ a∈(piFinset fun _:Fin k↦A), ∑ i, ‖f (x-a i)-((aC (mu A) f)) x‖ ^(2*m):=
   xk hm
  refine(sum_le_sum fun x _↦this x).trans ?_
  rw[←mul_sum]
@@ -1649,8 +1509,8 @@ lemma Ho (hε:0<ε) (hm:1≤ m) (hk:(64:ℝ)*m/ε^2≤k) :
   simp only[Rw,QZ]
  simp only[this]
  have :
-  (8*m)^m*k^(m-1)* ∑ a∈(Fintype.piFinset fun _:Fin k↦A), ∑ i,(aJ (2*m) (τ (a i) f-(aC (mu A) f)))^(2*m) ≤
-   (8*m)^m*k^(m-1)* ∑ a∈(Fintype.piFinset fun _:Fin k↦A), ∑ i,(2*(aJ (2*m) f))^(2*m):=
+  (8*m)^m*k^(m-1)* ∑ a∈(piFinset fun _:Fin k↦A), ∑ i,(aJ (2*m) (τ (a i) f-(aC (mu A) f)))^(2*m) ≤
+   (8*m)^m*k^(m-1)* ∑ a∈(piFinset fun _:Fin k↦A), ∑ i,(2*(aJ (2*m) f))^(2*m):=
   xl hm hA
  refine Sj (mod_cast this) ?_
  simpa[Qo] using BC hε hm hk
@@ -1686,7 +1546,7 @@ lemma pN {t:G} {a:Fin k→G} (ha:a∈l k m ε f A)
   translate_smul_right (-t) ((aC (mu A) f)) k,Qo,Q6,R5 ((k:ℝ)*_), ←
   Qo]
  calc
-  (aJ (2*m) (τ (-t) (k•((aC (mu A) f)))-k•((aC (mu A) f))))
+  _
    ≤ (aJ (2*m) (τ (-t) (k•((aC (mu A) f)))-f₁))+(aJ (2*m) (f₁-k•((aC (mu A) f)))):=
    er (mod_cast hp)
   _≤k*ε*(aJ (2*m) f)+k*ε*(aJ (2*m) f):=by gcongr
@@ -1722,20 +1582,7 @@ variable [StarRing R] [StarOrderedRing R]
 @[simp] lemma f8 (hf:0≤f) (hg:0≤g):support ((al f g))=support f-support g:=by
  simpa[Qy] using tW hf (conjneg_nonneg.2 hg)
 end iw
-section lr
-variable [CommSemiring R] [PartialOrder R] [IsOrderedRing R] {f g:G→R} {n:ℕ}
-end lr
-section iw
-variable [CommSemiring R] [PartialOrder R] [IsStrictOrderedRing R] [StarRing R] [StarOrderedRing R]
- {f g:G→R} {n:ℕ}
-end iw
-namespace Mathlib.Meta.Positivity
-open Lean Meta Qq Function
-section
-variable [CommSemiring R] [PartialOrder R] [IsOrderedRing R] {f g:G→R}
-variable [StarRing R] [StarOrderedRing R]
-end
-end Mathlib.Meta.Positivity
+
 end
 end
 section
@@ -1755,9 +1602,7 @@ lemma Ah [NormedField 𝕜] [NormedSpace 𝕜 E] (c:𝕜) (f:α→E) (p:ℝ≥0�
   (b0 p w (c•f))= ‖c‖₊*(b0 p w f):=lpNorm_const_smul ..
 lemma zM [NormedSpace ℝ E] (n:ℕ) (f:α→E) (p:ℝ≥0∞) (w:α→ℝ≥0) :
   (b0 p w (n•f))=n•(b0 p w f):=lpNorm_nsmul ..
-section RCLike
-variable {K:Type*} [RCLike K]
-end RCLike
+
 variable [Finite α]
 variable [Fintype α] [DiscreteMeasurableSpace α]
 lemma lu (iu:p≠0) (hp:p≠∞) (w:α→ℝ≥0) (f:α→E) :
@@ -1781,25 +1626,16 @@ lemma qX (hp:1≤p) (w:α→ℝ≥0) (f g:α→E) :
   (b0 p w f)≤(b0 p w (f+g))+(b0 p w g):=by simpa using yU hp w (f+g) (-g)
 end one_le
 end NormedAddCommGroup
-section Real
-variable [DiscreteMeasurableSpace α] {p:ℝ≥0∞} {w:α→ℝ≥0} {f g:α→ℝ}
-end Real
-section b0
-variable [Finite α] [DiscreteMeasurableSpace α] {p:ℝ≥0} {w:α→ℝ≥0}
-variable [AddCommGroup α]
-end b0
-namespace Mathlib.Meta.Positivity
-open Lean Meta Qq Function MeasureTheory
-end Mathlib.Meta.Positivity
+
 end
 end
 section
 section
 namespace Finset
 variable {α R:Type*} [Fintype α] [Semiring R]
-@[simp] lemma rp (s:Finset α): ∑ x,(Set.indicator ((s:Set α)) fun _↦(1:R)) x= #s:=by
+@[simp] lemma rp (s:Finset α): ∑ x,(indicator ((s:Set α)) fun _↦(1:R)) x= #s:=by
  classical simp[Qm]
-lemma lN (s:Finset α): #s= ∑ x,(Set.indicator ((s:Set α)) fun _↦(1:_)) x:=
+lemma lN (s:Finset α): #s= ∑ x,(indicator ((s:Set α)) fun _↦(1:_)) x:=
  (rp _).symm
 end Finset
 end
@@ -1813,9 +1649,7 @@ variable [Preorder M] [ZeroLEOneClass M] {s:Set α}
 @[simp] lemma cY:0≤ s.indicator (fun _↦(1:M)):=
  indicator_nonneg (by simp)
 end Preorder
-section PartialOrder
-variable [PartialOrder M] [ZeroLEOneClass M] [NeZero (1:M)] {s:Set α}
-end PartialOrder
+
 end Set
 end
 end
@@ -1827,8 +1661,8 @@ variable {G:Type*} [DecidableEq G] [Fintype G] [AddCommGroup G] {p:ℕ} {aL a0 A
  {ε δ:ℝ}
 private def c (p:ℕ) (A:Finset G) (s:Fin p→G):Finset G:=univ.inf fun i↦s i+ᵥ A
 private lemma Ca (p:ℕ) (aL a0 A:Finset G) (f:G→ℝ) :
-  ∑ s,⟪(al ((Set.indicator (↑(aL∩c p A s)) fun _↦(1:(ℝ)))) ((Set.indicator (↑(a0∩c p A s)) fun _↦(1:_)))),f⟫_[ℝ] =
-   (#aL* #a0)• ∑ x,((al ((@mu (ℝ) _ _) aL) (mu a0))) x*((al ((Set.indicator A fun _↦(1:_))) ((Set.indicator A fun _↦(1:_))))) x^p*f x:=by
+  ∑ s,⟪(al ((indicator (↑(aL∩c p A s)) fun _↦(1:(ℝ)))) ((indicator (↑(a0∩c p A s)) fun _↦(1:_)))),f⟫_[ℝ] =
+   (#aL* #a0)• ∑ x,((al ((@mu (ℝ) _ _) aL) (mu a0))) x*((al ((indicator A fun _↦(1:_))) ((indicator A fun _↦(1:_))))) x^p*f x:=by
  simp_rw[Qo]
  simp only[wInner_one_eq_sum,inner_apply',R3,mul_sum,sum_mul,smul_sum,
   @sum_comm _ _ (Fin p→G),lM,rm,Fintype.sum_pow,
@@ -1851,10 +1685,10 @@ private lemma x1 (p:ℕ) (B A:Finset G) :
  rw[←Nat.cast_sum,K3]; norm_cast
 variable [MeasurableSpace G]
 noncomputable def s (p:ℝ≥0) (ε:ℝ) (aL a0 A:Finset G):Finset G:=
- {x | (1-ε)*(b0 p ((al (mu aL) (mu a0))) ((al ((Set.indicator ((A:Set G)) fun _↦(1:(ℝ)))) ((Set.indicator A fun _↦(1:_))))))<((al ((Set.indicator A fun _↦(1:_))) ((Set.indicator A fun _↦(1:_))))) x}
+ {x | (1-ε)*(b0 p ((al (mu aL) (mu a0))) ((al ((indicator ((A:Set G)) fun _↦(1:(ℝ)))) ((indicator A fun _↦(1:_))))))<((al ((indicator A fun _↦(1:_))) ((indicator A fun _↦(1:_))))) x}
 @[simp] lemma K4 {p:ℝ≥0} {ε:ℝ} {aL a0 A:Finset G} {x:G} :
   x∈s p ε aL a0 A ↔
-   (1-ε)*(b0 p ((al (mu aL) (mu a0))) ((al ((Set.indicator ((A:Set G)) fun _↦(1:(ℝ)))) ((Set.indicator A fun _↦(1:_))))))<((al ((Set.indicator A fun _↦(1:_))) ((Set.indicator A fun _↦(1:_))))) x:=by simp[s]
+   (1-ε)*(b0 p ((al (mu aL) (mu a0))) ((al ((indicator ((A:Set G)) fun _↦(1:(ℝ)))) ((indicator A fun _↦(1:_))))))<((al ((indicator A fun _↦(1:_))) ((indicator A fun _↦(1:_))))) x:=by simp[s]
 lemma I6 {p : ℝ≥0} {ε : ℝ} {aL a0 A : Finset G} {x : G} :
     x ∈ s p ε aL a0 A ↔ (1 - ε) * (_root_.b0 p ((_root_.al (_root_.mu aL) (_root_.mu a0))) ((_root_.al ((@_root_.mu (ℝ) _ _) A) (_root_.mu A)))) < ((_root_.al (_root_.mu A) (_root_.mu A))) x:= by
   obtain rfl | hA:= A.eq_empty_or_nonempty
@@ -1862,7 +1696,7 @@ lemma I6 {p : ℝ≥0} {ε : ℝ} {aL a0 A : Finset G} {x : G} :
   · simp [← l5, -nsmul_eq_mul, oB, oC, zM, hA.card_pos]
 variable [DiscreteMeasurableSpace G]
 private lemma jq (hp:p≠0) (hB:(aL∩a0).Nonempty) (hA:A.Nonempty) :
-  (0:ℝ)<(b0 p ((al (mu aL) (mu a0))) ((al ((Set.indicator A fun _↦(1:(ℝ)))) ((Set.indicator A fun _↦(1:_))))))^p:=by
+  (0:ℝ)<(b0 p ((al (mu aL) (mu a0))) ((al ((indicator A fun _↦(1:(ℝ)))) ((indicator A fun _↦(1:_))))))^p:=by
  rw[jd (by positivity)]
  refine sum_pos' (fun x _↦by positivity) ⟨0,mem_univ _,smul_pos ?_<| RF ?_ _⟩
  ·rwa[Tx, ←Ur,f8,jo,jo,
@@ -1873,22 +1707,22 @@ private lemma jq (hp:p≠0) (hB:(aL∩a0).Nonempty) (hA:A.Nonempty) :
 lemma N9 (hp₂:2≤p) (f:G→ℝ≥0) (hf: ∃ x,x∈aL-a0∧x∈A-A∧x∈f.support)
   (hB:(aL∩a0).Nonempty) (hA:A.Nonempty) :
   ∃ aX,aX⊆aL∧ ∃ a3,a3⊆a0 ∧
-   ⟪(al ((@mu (ℝ) _ _) aX) (mu a3)),(↑) ∘ f⟫_[ℝ]*(b0 p ((al (mu aL) (mu a0))) ((al ((Set.indicator A fun _↦(1:(ℝ)))) ((Set.indicator A fun _↦(1:_))))))^p
-    ≤ 2* ∑ x,((al (mu aL) (mu a0))) x*((al ((Set.indicator A fun _↦(1:(ℝ)))) ((Set.indicator A fun _↦(1:_))))) x^p*f x ∧
-   (4:ℝ) ⁻¹ *(b0 p ((al (mu aL) (mu a0))) ((al ((Set.indicator A fun _↦(1:(ℝ)))) ((Set.indicator A fun _↦(1:_))))))^(2*p)/ #A^(2*p)
+   ⟪(al ((@mu (ℝ) _ _) aX) (mu a3)),(↑) ∘ f⟫_[ℝ]*(b0 p ((al (mu aL) (mu a0))) ((al ((indicator A fun _↦(1:(ℝ)))) ((indicator A fun _↦(1:_))))))^p
+    ≤ 2* ∑ x,((al (mu aL) (mu a0))) x*((al ((indicator A fun _↦(1:(ℝ)))) ((indicator A fun _↦(1:_))))) x^p*f x ∧
+   (4:ℝ) ⁻¹ *(b0 p ((al (mu aL) (mu a0))) ((al ((indicator A fun _↦(1:(ℝ)))) ((indicator A fun _↦(1:_))))))^(2*p)/ #A^(2*p)
     ≤ #aX/ #aL ∧
-   (4:ℝ) ⁻¹ *(b0 p ((al (mu aL) (mu a0))) ((al ((Set.indicator A fun _↦(1:(ℝ)))) ((Set.indicator A fun _↦(1:_))))))^(2*p)/ #A^(2*p)
+   (4:ℝ) ⁻¹ *(b0 p ((al (mu aL) (mu a0))) ((al ((indicator A fun _↦(1:(ℝ)))) ((indicator A fun _↦(1:_))))))^(2*p)/ #A^(2*p)
     ≤ #a3/ #a0:=by
  have:=hB.mono inter_subset_left
  have:=hB.mono inter_subset_right
  have iu:p≠0:=by positivity
  have:=jq iu hB hA
  set M:ℝ:=
-  2 ⁻¹ *(b0 p ((al (mu aL) (mu a0))) ((al ((Set.indicator A fun _↦(1:(ℝ)))) ((Set.indicator A fun _↦(1:_))))))^p*(sqrt #aL*sqrt #a0)/ #A^p
+  2 ⁻¹ *(b0 p ((al (mu aL) (mu a0))) ((al ((indicator A fun _↦(1:(ℝ)))) ((indicator A fun _↦(1:_))))))^p*(sqrt #aL*sqrt #a0)/ #A^p
    with Ai
  have hM:0<M:=by rw[Ai]; positivity
- replace hf:0< ∑ x,((al ((@mu (ℝ) _ _) aL) (mu a0))) x*((al ((Set.indicator A fun _↦(1:_))) ((Set.indicator A fun _↦(1:_))))) x^p*f x:=by
-  have:0≤(al ((@mu (ℝ) _ _) aL) (mu a0))*((al ((Set.indicator A fun _↦(1:_))) ((Set.indicator A fun _↦(1:_)))))^p*(↑) ∘ f:=
+ replace hf:0< ∑ x,((al ((@mu (ℝ) _ _) aL) (mu a0))) x*((al ((indicator A fun _↦(1:_))) ((indicator A fun _↦(1:_))))) x^p*f x:=by
+  have:0≤(al ((@mu (ℝ) _ _) aL) (mu a0))*((al ((indicator A fun _↦(1:_))) ((indicator A fun _↦(1:_)))))^p*(↑) ∘ f:=
    Qn (Qn (iN cC cC)<| QH
     (iN Set.cY Set.cY) _) fun _↦by simp
   refine Fintype.sum_pos<| this.lt_iff_ne'.2<| support_nonempty_iff.1 ?_
@@ -1900,27 +1734,27 @@ lemma N9 (hp₂:2≤p) (f:G→ℝ≥0) (hf: ∃ x,x∈aL-a0∧x∈A-A∧x∈f.su
  set a3:=fun s↦a0∩c p A s
  set g:(Fin p→G)→ℝ:=fun s↦ #(aX s)* #(a3 s) with D9
  have hg: ∀ s,0≤g s:=fun s↦by rw[D9]; dsimp; positivity
- have Aj: ∑ s,g s= #aL* #a0*(b0 p ((al (mu aL) (mu a0))) ((al ((Set.indicator A fun _↦(1:(ℝ)))) ((Set.indicator A fun _↦(1:_))))))^p:=by
-  have Ea:0≤(al ((Set.indicator ((A:Set G)) fun _↦(1:(ℝ)))) ((Set.indicator A fun _↦(1:_)))):=
+ have Aj: ∑ s,g s= #aL* #a0*(b0 p ((al (mu aL) (mu a0))) ((al ((indicator A fun _↦(1:(ℝ)))) ((indicator A fun _↦(1:_))))))^p:=by
+  have Ea:0≤(al ((indicator ((A:Set G)) fun _↦(1:(ℝ)))) ((indicator A fun _↦(1:_)))):=
    iN Set.cY Set.cY
   simpa only[jd iu,norm_of_nonneg (Ea _),RG,
    NNReal.lg,NNReal.iF,wInner_one_eq_sum,Rt,inner_apply',
    ←coe_inter,conj_to_real,Q3,jJ,rp,QS,
    Rm,g,aX,a3] using! Ca p aL a0 A 1
- suffices ∑ s,⟪(al ((Set.indicator (aX s) fun _↦(1:(ℝ)))) ((Set.indicator (a3 s) fun _↦(1:_)))),(↑) ∘ f⟫_[ℝ]*(b0 p ((al (mu aL) (mu a0))) ((al ((Set.indicator A fun _↦(1:(ℝ)))) ((Set.indicator A fun _↦(1:_))))))^p
-  < ∑ s,(Set.indicator (({s | M^2≤g s}:Finset _)) fun _↦(1:_)) s*g s *
-    (2* ∑ x,((al (mu aL) (mu a0))) x*((al ((Set.indicator A fun _↦(1:(ℝ)))) ((Set.indicator A fun _↦(1:_))))) x^p*f x) by
+ suffices ∑ s,⟪(al ((indicator (aX s) fun _↦(1:(ℝ)))) ((indicator (a3 s) fun _↦(1:_)))),(↑) ∘ f⟫_[ℝ]*(b0 p ((al (mu aL) (mu a0))) ((al ((indicator A fun _↦(1:(ℝ)))) ((indicator A fun _↦(1:_))))))^p
+  < ∑ s,(indicator (({s | M^2≤g s}:Finset _)) fun _↦(1:_)) s*g s *
+    (2* ∑ x,((al (mu aL) (mu a0))) x*((al ((indicator A fun _↦(1:(ℝ)))) ((indicator A fun _↦(1:_))))) x^p*f x) by
   obtain ⟨s, -,hs⟩:=exists_lt_of_sum_lt this
   refine ⟨_,inter_subset_left (s₂:=c p A s),_,inter_subset_left (s₂:=c p A s), ?_⟩
   simp only[Qm,SS] at hs
   split_ifs at hs with h; swap
   ·simp only[zero_mul,wInner_one_eq_sum,Rh,SV,
     R3] at hs
-   have:0≤(al ((Set.indicator ((aX s:Set G)) fun _↦(1:(ℝ)))) ((Set.indicator (a3 s) fun _↦(1:_)))):=
+   have:0≤(al ((indicator ((aX s:Set G)) fun _↦(1:(ℝ)))) ((indicator (a3 s) fun _↦(1:_)))):=
     iN Set.cY Set.cY
    cases hs.not_ge<|
     Qn (sum_nonneg fun x _↦Qn (this _)<| by positivity)<| by positivity
-  have:(4:ℝ) ⁻¹ *(b0 p ((al (mu aL) (mu a0))) ((al ((Set.indicator A fun _↦(1:(ℝ)))) ((Set.indicator A fun _↦(1:_))))))^(2*p)/ #A^(2*p)
+  have:(4:ℝ) ⁻¹ *(b0 p ((al (mu aL) (mu a0))) ((al ((indicator A fun _↦(1:(ℝ)))) ((indicator A fun _↦(1:_))))))^(2*p)/ #A^(2*p)
    ≤ #(aX s)/ #aL*(#(a3 s)/ #a0):=by
    rw[div_mul_div_comm,Qs (by positivity)]
    simpa[D9,Ai,QL,TY,pow_mul',show(2:ℝ)^2=4 by norm_num,
@@ -1972,17 +1806,17 @@ lemma Hq (aL a0:Finset G) (hε:0<ε) (Ak:ε≤1) (Cc:0<δ) (hp:Even p)
   (hp₂:2≤p) (FW:ε⁻¹ *log (2/δ)≤p) (hB:(aL∩a0).Nonempty) (hA:A.Nonempty)
   (hf: ∃ x,x∈aL-a0∧x∈A-A∧x∉s p ε aL a0 A) :
   ∃ aX,aX⊆aL∧ ∃ a3,a3⊆a0∧1-δ≤ ∑ x∈s p ε aL a0 A,((al (mu aX) (mu a3))) x ∧
-    (4:ℝ)⁻¹ *(b0 p ((al (mu aL) (mu a0))) ((al ((Set.indicator A fun _↦(1:(ℝ)))) ((Set.indicator A fun _↦(1:_))))))^(2*p)/ #A^(2*p) ≤
+    (4:ℝ)⁻¹ *(b0 p ((al (mu aL) (mu a0))) ((al ((indicator A fun _↦(1:(ℝ)))) ((indicator A fun _↦(1:_))))))^(2*p)/ #A^(2*p) ≤
       #aX/ #aL ∧
-     (4:ℝ)⁻¹ *(b0 p ((al (mu aL) (mu a0))) ((al ((Set.indicator A fun _↦(1:(ℝ)))) ((Set.indicator A fun _↦(1:_))))))^(2*p)/ #A^(2*p) ≤
+     (4:ℝ)⁻¹ *(b0 p ((al (mu aL) (mu a0))) ((al ((indicator A fun _↦(1:(ℝ)))) ((indicator A fun _↦(1:_))))))^(2*p)/ #A^(2*p) ≤
       #a3/ #a0:=by
  obtain ⟨aX,I7,a3,I8,h,r9,sa⟩:=
-  N9 hp₂ (Set.indicator ((s p ε aL a0 A)ᶜ) fun _↦(1:_))
+  N9 hp₂ (indicator ((s p ε aL a0 A)ᶜ) fun _↦(1:_))
    (by simpa only[Set.j0,coe_compl,Set.mem_compl_iff,mem_coe]) hB hA
  refine ⟨aX,I7,a3,I8, ?_,r9,sa⟩
  have iu:0<p:=by positivity
  have aux (c:Finset G) (r)
-  (h:(4:ℝ)⁻¹ *(b0 p ((al (mu aL) (mu a0))) ((al ((Set.indicator A fun _↦(1:(ℝ)))) ((Set.indicator A fun _↦(1:_))))))^(2*p)/ #A^(2*p)≤ #c/r) :
+  (h:(4:ℝ)⁻¹ *(b0 p ((al (mu aL) (mu a0))) ((al ((indicator A fun _↦(1:(ℝ)))) ((indicator A fun _↦(1:_))))))^(2*p)/ #A^(2*p)≤ #c/r) :
   c.Nonempty:=by
   simp_rw[nonempty_iff_ne_empty]
   rintro rfl
@@ -1994,7 +1828,7 @@ lemma Hq (aL a0:Finset G) (hε:0<ε) (Ak:ε≤1) (Cc:0<δ) (hp:Even p)
  rw[sub_le_comm]
  calc
   _= ∑ x∈(s p ε aL a0 A)ᶜ,((al (mu aX) (mu a3))) x:= ?_
-  _=⟪(al ((@mu (ℝ) _ _) aX) (mu a3)),(↑) ∘ (Set.indicator ((s (↑p) ε aL a0 A)ᶜ) fun _↦(1:(ℝ≥0)))⟫_[ℝ]:=by
+  _=⟪(al ((@mu (ℝ) _ _) aX) (mu a3)),(↑) ∘ (indicator ((s (↑p) ε aL a0 A)ᶜ) fun _↦(1:(ℝ≥0)))⟫_[ℝ]:=by
    simp[wInner_one_eq_sum, -mem_compl, -K4,Qm]
    simp only[←ite_not (_∈s p ε aL a0 A), ←mem_compl,TU]
    simp[-mem_compl]
@@ -2006,19 +1840,19 @@ lemma Hq (aL a0:Finset G) (hε:0<ε) (Ak:ε≤1) (Cc:0<δ) (hp:Even p)
  simp only[TU NNReal.toReal,Qm,TN,NNReal.coe_zero,
   mul_boole,Fintype.sum_ite_mem,S5, ←coe_compl,mem_coe]
  calc
-  ∑ x∈(s p ε aL a0 A)ᶜ,((al (mu aL) (mu a0))) x*((al ((Set.indicator A fun _↦(1:_))) ((Set.indicator A fun _↦(1:_))))) x^p ≤
+  ∑ x∈(s p ε aL a0 A)ᶜ,((al (mu aL) (mu a0))) x*((al ((indicator A fun _↦(1:_))) ((indicator A fun _↦(1:_))))) x^p ≤
     ∑ x∈(s p ε aL a0 A)ᶜ,
-     ((al (mu aL) (mu a0))) x*((1-ε)*(b0 p ((al (mu aL) (mu a0))) ((al ((Set.indicator A fun _↦(1:(ℝ)))) ((Set.indicator A fun _↦(1:_)))))))^p:=by
+     ((al (mu aL) (mu a0))) x*((1-ε)*(b0 p ((al (mu aL) (mu a0))) ((al ((indicator A fun _↦(1:(ℝ)))) ((indicator A fun _↦(1:_)))))))^p:=by
    gcongr with x hx
    ·exact dM cC cC x
    ·exact dM Set.cY Set.cY _
    ·simpa using hx
-  _≤ ∑ x,((al (mu aL) (mu a0))) x*((1-ε)*(b0 p ((al (mu aL) (mu a0))) ((al ((Set.indicator A fun _↦(1:(ℝ)))) ((Set.indicator A fun _↦(1:_)))))))^p:=by
+  _≤ ∑ x,((al (mu aL) (mu a0))) x*((1-ε)*(b0 p ((al (mu aL) (mu a0))) ((al ((indicator A fun _↦(1:(ℝ)))) ((indicator A fun _↦(1:_)))))))^p:=by
    gcongr
    ·intros
     exact Qn (dM cC cC _)<| hp.pow_nonneg _
    ·exact subset_univ _
-  _=(aJ 1 ((@mu (ℝ) _ _) aL))*(aJ 1 ((@mu (ℝ) _ _) a0))*((1-ε)^p*(b0 p ((al (mu aL) (mu a0))) ((al ((Set.indicator A fun _↦(1:(ℝ)))) ((Set.indicator A fun _↦(1:_))))))^p)
+  _=(aJ 1 ((@mu (ℝ) _ _) aL))*(aJ 1 ((@mu (ℝ) _ _) a0))*((1-ε)^p*(b0 p ((al (mu aL) (mu a0))) ((al ((indicator A fun _↦(1:(ℝ)))) ((indicator A fun _↦(1:_))))))^p)
    := ?_
   _≤_:=
    RQ (Qn (hp.pow_nonneg _)<| hp.pow_nonneg _)<|
@@ -2115,10 +1949,7 @@ lemma yV (p q:ℝ≥0∞) (_hr₀:r≠0) [PS:ENNReal.HolderTriple p q r] :
  ·exact ENNReal.mul_ne_top FX.eLpNorm_ne_top FY.eLpNorm_ne_top
  ·simpa[Pi.mul_def] using key
 end mv
-section Real
-variable {α:Type*} {w3:MeasurableSpace α} [DiscreteMeasurableSpace α] [Fintype α] {p q:ℝ≥0}
- {f g:α→ℝ}
-end Real
+
 section mv
 variable {α:Type*} {w3:MeasurableSpace α} [DiscreteMeasurableSpace α] [Fintype α] [RCLike 𝕜]
  {p q r:ℝ≥0∞} {f g:α→𝕜}
@@ -2240,7 +2071,7 @@ lemma e8 [Fintype G] {B:aj G} {s t:NNReal} {x y:G}
  intro γ oa
  rw[map_add]
  calc
-  ‖γ x+γ y‖ ≤ ‖γ x‖ + ‖γ y‖:=norm_add_le _ _
+  _ ≤ ‖γ x‖ + ‖γ y‖:=norm_add_le _ _
   _≤(s:ℝ)*(B.width γ:ℝ)+(t:ℝ)*(B.width γ:ℝ):=
    Sr (hx γ oa) (hy γ oa)
   _=((s+t:NNReal):ℝ)*(B.width γ:ℝ):=by
@@ -2266,7 +2097,7 @@ noncomputable def map (B:aj G) (e:G ≃+ H):aj H:=by
  classical
  simp[map]
 private lemma vx (e:G ≃+ H) :
-  Function.Injective (fun γ:AddCharacter G↦γ.comp e.symm.toAddMonoidHom):=by
+  Injective (fun γ:AddCharacter G↦γ.comp e.symm.toAddMonoidHom):=by
  intro γ δ h
  ext x
  have hx:=S6 h (e x)
@@ -2290,8 +2121,8 @@ private lemma sf (B:aj G) (e:G ≃+ H)
  rw[mem_carrier,mem_carrier]
  constructor
  ·intro hx γ oa
-  have CK:γ.comp e.symm.toAddMonoidHom∈(B.map e).eX:=by
-   exact vQ B e _ |>.mpr ⟨γ,oa,rfl⟩
+  have CK :=
+         vQ B e _ |>.mpr ⟨γ,oa,rfl⟩
   have hh:=hx (γ.comp e.symm.toAddMonoidHom) CK
   rw[sf] at hh
   have An:(γ.comp e.symm.toAddMonoidHom) (e x)=γ x:=by simp
@@ -2319,7 +2150,7 @@ noncomputable def eK (N:ℕ) (hN:Odd N):ZMod N ≃+ ZMod N:=by
         abel }
   have K5:IsUnit (2:ZMod N):=
     (ZMod.isUnit_iff_coprime 2 N).2 (Nat.coprime_two_left.mpr hN)
-  have Hs:Function.Bijective (fun x:ZMod N↦(2:ZMod N)*x):=
+  have Hs :=
     IsUnit.isUnit_iff_mulLeft_bijective.mp K5
   have M5:Function.Bijective f:=by
     simpa only[f,AddMonoidHom.coe_mk,ZeroHom.coe_mk,R5] using Hs
@@ -2360,8 +2191,8 @@ def rank (s:aY G):ℕ:=s.ba.rank
 def card (s:aY G):ℕ:=s.e9.card
 lemma sg (s:aY G):s.e9.Nonempty:=
  (s.ba.ai s.outer).aE
-lemma dI (s:aY G):0<s.density:=by
- exact Rn (by exact_mod_cast s.nonempty.card_pos)
+lemma dI (s:aY G):0<s.density:=
+       Rn (by exact_mod_cast s.nonempty.card_pos)
   (by exact_mod_cast s.sg.card_pos)
 lemma density_le_one (s:aY G):s.density≤1:=by
  rw[density,Q9 (by exact_mod_cast s.sg.card_pos)]
@@ -2371,7 +2202,7 @@ def dk (q:ℝ) (aq:ℕ) (aU:ℝ)
   (s t:aY G):Prop:=
  q*s.density≤t.density ∧
   t.rank≤ s.rank+aq ∧
-  Real.exp (-aU)*(s.card:ℝ)≤(t.card:ℝ)
+  exp (-aU)*(s.card:ℝ)≤(t.card:ℝ)
 inductive eu (q:ℝ) (aq:ℕ) (aU:ℝ) :
   ℕ→aY G→aY G→Prop
  | nil (s:aY G):eu q aq aU 0 s s
@@ -2387,9 +2218,9 @@ lemma qZ {q:ℝ} {aq:ℕ} {aU:ℝ}
  induction h with
  | nil s=>simp
  | @cons n s t u pE x3 ih =>
-   have uP:0≤q^n:=QH hq n
+   have uP := QH hq n
    calc
-    q^(n+1)*s.density=q^n*(q*s.density):=by
+    _ =q^n*(q*s.density):=by
      rw[RB]
      ring
     _≤q^n*t.density:=
@@ -2398,23 +2229,23 @@ lemma qZ {q:ℝ} {aq:ℕ} {aU:ℝ}
 lemma card_bound {q:ℝ} {aq:ℕ} {aU:ℝ}
   {n:ℕ} {s t:aY G}
   (h:eu q aq aU n s t) :
-  Real.exp (-(n:ℝ)*aU)*(s.card:ℝ)≤(t.card:ℝ):=by
+  exp (-(n:ℝ)*aU)*(s.card:ℝ)≤(t.card:ℝ):=by
  induction h with
  | nil s=>simp
  | @cons n s t u pE x3 ih =>
-   have BD:0≤Real.exp (-(n:ℝ)*aU):=
+   have BD:0≤exp (-(n:ℝ)*aU):=
     (Q1 _).le
    calc
-    Real.exp (-((n+1:ℕ):ℝ)*aU)*(s.card:ℝ) =
-      Real.exp (-(n:ℝ)*aU) *
-       (Real.exp (-aU)*(s.card:ℝ)):=by
+    _ =
+      exp (-(n:ℝ)*aU) *
+       (exp (-aU)*(s.card:ℝ)):=by
      rw[show-((n+1:ℕ):ℝ)*aU =
        (-(n:ℝ)*aU)+(-aU) by
       push_cast
       ring,
       R7]
      ring
-    _≤Real.exp (-(n:ℝ)*aU)*(t.card:ℝ):=
+    _≤exp (-(n:ℝ)*aU)*(t.card:ℝ):=
      iO pE.2.2 BD
     _≤(u.card:ℝ):=ih
 end eu
@@ -2435,8 +2266,8 @@ def aK (ν f:X→ℝ) (k:ℕ):ℝ:=
  ∑ x:X,ν x* |f x| ^k
 omit [DecidableEq X] in
 lemma dx {ν f:X→ℝ} (f9: ∀ x,0≤ν x) (k:ℕ) :
-  0≤aK ν f k:=by
- exact sum_nonneg fun x _↦Qn (f9 x) (QH (Q8 _) _)
+  0≤aK ν f k:=
+       sum_nonneg fun x _↦Qn (f9 x) (QH (Q8 _) _)
 noncomputable def cP (ε:ℝ):ℕ:=
  Nat.ceil (60/ε^2)
 noncomputable def dJ (ε:ℝ) (p:ℕ):ℕ:=
@@ -2862,8 +2693,8 @@ lemma lv
    apply Qi _ (Tn zj _)
    simpa using Real.rpow_le_rpow_of_exponent_le (by norm_num:(1:ℝ)≤2) K6
 def bS (p:ℕ):ℕ:=2*p
-lemma sX (p:ℕ):Even (bS p):=by
- exact ⟨p,by simp[bS,R5]⟩
+lemma sX (p:ℕ):Even (bS p):=
+       ⟨p,by simp[bS,R5]⟩
 lemma t3 {p:ℕ} (hp:0<p) :
   p≤bS p:=by
  simp only[bS]
@@ -2893,8 +2724,8 @@ lemma js
 noncomputable def cz (ε:ℝ) (p:ℕ):ℕ:=
  dJ (ε/2) (cF p)
 lemma t4 (ε:ℝ) (p:ℕ) :
-  Even (cz ε p):=by
- exact sh _ _
+  Even (cz ε p):=
+       sh _ _
 lemma uQ {ε:ℝ} {p:ℕ}
   (hε:0<ε) (hp:0<p) :
   0<cz ε p:=by
@@ -3198,13 +3029,13 @@ lemma cf {A:Finset G} (hA:A.Nonempty) :
 omit [DecidableEq G] in
 lemma fa {f g:G→ℝ}
   (hf: ∀ x,0≤f x) (hg: ∀ x,0≤g x) (z:G) :
-  0≤ao f g z:=by
- exact sum_nonneg fun x _↦Qn (hf x) (hg (z-x))
+  0≤ao f g z:=
+       sum_nonneg fun x _↦Qn (hf x) (hg (z-x))
 omit [DecidableEq G] in
 lemma gB {f g:G→ℝ}
   (hf: ∀ x,0≤f x) (hg: ∀ x,0≤g x) (z:G) :
-  0≤aZ f g z:=by
- exact sum_nonneg fun x _↦Qn (hf x) (hg (x-z))
+  0≤aZ f g z:=
+       sum_nonneg fun x _↦Qn (hf x) (hg (x-z))
 lemma kC (A B:Finset G) (x:G) :
   ao (af A) (af B) x =
    (#(A.filter fun y↦x-y∈B):ℝ)*(#A:ℝ)⁻¹ *(#B:ℝ)⁻¹:=by
@@ -3290,7 +3121,7 @@ lemma kZ (A C:Finset G) :
  unfold df Finset.addConvolution
  simp only[Finset.card_eq_sum_ones,QE,Finset.sum_product]
  calc
-  (∑ a∈A, ∑ b∈A, ∑ c∈C,if a+b=c+c then 1 else 0) =
+  _ =
     ∑ a∈A, ∑ c∈C, ∑ b∈A,if a+b=c+c then 1 else 0:=by
    apply Io rfl
    intro a _
@@ -3298,11 +3129,11 @@ lemma kZ (A C:Finset G) :
   _= ∑ c∈C, ∑ a∈A, ∑ b∈A,if a+b=c+c then 1 else 0:=by
    rw[QD]
 lemma jK {A C:Finset G}
-  (eU:Function.Injective (fun x:G↦x+x)) :
+  (eU:Injective (fun x:G↦x+x)) :
   qj (ao (af A) (af A))
     (af (C.image fun x↦x+x)) =
    (df A C:ℝ)*(#A:ℝ)⁻¹ ^2*(#C:ℝ)⁻¹:=by
- let D:Finset G:=C.image fun x↦x+x
+ let D := C.image fun x↦x+x
  have Jk: #D= #C:=by
   dsimp[D]
   exact card_image_of_injective _ eU
@@ -3350,7 +3181,7 @@ lemma iA {A A' C:Finset G} (t:G)
   rcases pK with ⟨⟨⟨ha,hc⟩,hb⟩,uS⟩
   refine ⟨⟨⟨hA a ha,hC b hb⟩,hA c hc⟩, ?_⟩
   calc
-   (a-t)+(c-t)=(a+c)-(t+t):=by
+   _ =(a+c)-(t+t):=by
     simp only[Qy,neg_add_rev]
     ac_rfl
    _=(b+b)-(t+t):=QA (fun x↦x-(t+t)) uS
@@ -3358,9 +3189,9 @@ lemma iA {A A' C:Finset G} (t:G)
     simp only[Qy,neg_add_rev]
     ac_rfl
  ·rintro ⟨⟨a,c⟩,b⟩ _ ⟨⟨a',c'⟩,b'⟩ _ heq
-  have Lb:a-t=a'-t:=QA (fun x↦x.1.1) heq
-  have Lc:b-t=b'-t:=QA (fun x↦x.1.2) heq
-  have Ld:c-t=c'-t:=QA (fun x↦x.2) heq
+  have Lb := QA (fun x↦x.1.1) heq
+  have Lc := QA (fun x↦x.1.2) heq
+  have Ld := QA (fun x↦x.2) heq
   have ha:a=a':=calc
    a=(a-t)+t:=(Rs a t).symm
    _=(a'-t)+t:=QA (fun x↦x+t) Lb
@@ -3404,7 +3235,7 @@ def a1 (B:aj G):Prop:=
 omit [DecidableEq G] in
 lemma sj (B:aj G) (a8:ℝ≥0) :
   (B.ai a8).a1 ↔
-   let d:ℕ:=max B.rank 1
+   let d := max B.rank 1
    ∀ aF:ℝ≥0,
     aF≤1/(100*(d:ℝ≥0)) →
      (1-100*(d:ℝ)*(aF:ℝ)) *
@@ -3435,10 +3266,10 @@ lemma k0
    simpa using Aw
   ·exact b5 (Ss (by positivity)) hx.1
  ·intro oJ
-  have zN:x∈(B.ai a8).carrier:=by
-   exact b5 (T4) oJ
+  have zN :=
+         b5 (T4) oJ
   have Jl:x-t∈(B.ai a8).carrier:=by
-   have eY: -t∈(B.ai eta).carrier:=ec.mpr ht
+   have eY := ec.mpr ht
    have xt:=e8 oJ eY
    simpa[Qy,tsub_add_cancel_of_le fC] using xt
   have xu:x∈fp (B.ai a8).carrier t:=by
@@ -3556,8 +3387,8 @@ lemma g7
   rw[Qt, ←QJ]
   simp_rw[←UY]
   calc
-   |∑ t:G,ν t *
-     (af B.carrier (x-t)-af B.carrier x)| ≤
+   _
+                                          ≤
      ∑ t:G, |ν t *
       (af B.carrier (x-t)-af B.carrier x)|:=
     abs_sum_le_sum_abs _ _
@@ -3567,9 +3398,9 @@ lemma g7
     intro t _
     rw[SU,QC (ks t)]
  calc
-  ∑ x:G,
-    |ao (af B.carrier) ν x -
-     (∑ t:G,ν t)*af B.carrier x| ≤
+  _
+
+                                 ≤
     ∑ x:G, ∑ t:G,ν t *
      |af B.carrier (x-t)-af B.carrier x|:=by
    exact QI fun x _↦gX x
@@ -3607,7 +3438,7 @@ lemma f4
  have oJ:Jm.card≤K.card:=by
   apply Qu
   exact aj.b5 (T4:a8-eta≤a8)
- have ch:my.card≤2*K.card:=
+ have ch :=
   dF.2.2.trans (Qr 2 oJ)
  have x6:(0:ℝ)<K.card:=by
   exact_mod_cast(B.ai a8).aE.card_pos
@@ -3619,13 +3450,13 @@ lemma f4
   rw[fG]
   simp only[ao]
   calc
-   ∑ t:G,ν t*af my (x-t) =
+   _ =
      ∑ t:G,ν t*(my.card:ℝ)⁻¹:=by
     apply Io rfl
     intro t _
     by_cases ht:ν t=0
     ·simp[ht]
-    ·have Aw:x-t∈my:=
+    ·have Aw :=
       aj.j2 hx (pR t ht)
      rw[dj Aw]
    _=(∑ t:G,ν t)*(my.card:ℝ)⁻¹:=by
@@ -3635,7 +3466,7 @@ lemma f4
  ·rw[show(B.ai a8).carrier=K by rfl,
    dj hx,x7 hx]
   calc
-   (K.card:ℝ)⁻¹ =1/(K.card:ℝ):=by rw[R6]
+   _ =1/(K.card:ℝ):=by rw[R6]
    _≤2/(my.card:ℝ):=by
     rw[Sy x6 Eh]
     simpa only[QT] using(show(my.card:ℝ)≤2*K.card by
@@ -3656,7 +3487,7 @@ lemma gC
   af B.carrier x ≤
    2*ao
     (af (B.ai (1+κ)).carrier) ν x:=by
- let d:ℕ:=max B.rank 1
+ let d := max B.rank 1
  have hd:0<d:=by simp[d]
  have Jo:κ≤1/(400*(d:ℝ≥0)):=by simpa[d] using qx
  have Ei:κ≤1/(100*(d:ℝ≥0)):=by
@@ -3674,7 +3505,7 @@ lemma gC
    exact_mod_cast Jo
   have Os:(0:ℝ)<d:=by exact_mod_cast hd
   calc
-   (100:ℝ)*d*(κ:ℝ)≤100*d*(1/(400*(d:ℝ))):=by gcongr
+   _ ≤100*d*(1/(400*(d:ℝ))):=by gcongr
    _=1/4:=by field_simp; ring
  have Ej :
    ((B.ai (1+κ)).carrier.card:ℝ) ≤
@@ -3731,8 +3562,8 @@ lemma dP
  have ks: ∀ t,0≤ν t:=fun t↦bO C (-t)
  have ob: ∑ t:G,ν t=1:=by
   calc
-   ∑ t:G,ν t= ∑ t:G,af C t:=by
-    exact Qk (Equiv.neg G) _ _ (fun _↦rfl)
+   _ = ∑ t:G,af C t:=
+          Qk (Equiv.neg G) _ _ (fun _↦rfl)
    _=1:=cf hC
  have pR: ∀ t,ν t≠0→t∈(B.ai κ).carrier:=by
   intro t ht
@@ -3759,16 +3590,15 @@ lemma dP
   dsimp[ν]
   rw[neg_sub]
   ring
- have dc :
-   ∑ y:G,bs A y*af B.carrier y =
-    cp A B.carrier:=
+ have dc  :=
+
   jV lO B.aE
  rw[Ay, ←dc, ←QJ]
  simp_rw[←UY]
  calc
-  |∑ y:G,bs A y *
-    (ao (af B.carrier) ν y -
-     af B.carrier y)| ≤
+  _
+
+                      ≤
     ∑ y:G, |bs A y *
      (ao (af B.carrier) ν y -
       af B.carrier y)|:=abs_sum_le_sum_abs _ _
@@ -3799,11 +3629,11 @@ lemma kk
    (∃ x:G,
     (1+ε/2)*cp A B.carrier≤a9 A q2 x):=by
  let K:=B.carrier
- let α:ℝ:=cp A K
+ let α := cp A K
  let E:ℝ:=200*((max B.rank 1:ℕ):ℝ)*(κ:ℝ)
- let y0:ℝ:= ∑ x:G,af K x*a9 A pS x
- let y1:ℝ:= ∑ x:G,af K x*a9 A q2 x
- have hK:K.Nonempty:=B.aE
+ let y0 :=  ∑ x:G,af K x*a9 A pS x
+ let y1 :=  ∑ x:G,af K x*a9 A q2 x
+ have hK := B.aE
  have P2:0<α:=by
   dsimp[α,K,cp]
   exact Rn (by exact_mod_cast hA.card_pos) (by exact_mod_cast hK.card_pos)
@@ -3823,7 +3653,7 @@ lemma kk
   linarith
  have NO:2*E≤ε*α/4:=by
   calc
-   2*E=400*((max B.rank 1:ℕ):ℝ)*(κ:ℝ):=by
+   _ =400*((max B.rank 1:ℕ):ℝ)*(κ:ℝ):=by
     dsimp[E]
     ring
    _≤ε*cp A B.carrier/4:=dV
@@ -3842,9 +3672,9 @@ lemma kk
  have gX: ∀ x∈K,
    a9 A pS x+a9 A q2 x<T:=by
   intro x hx
-  have Py:a9 A pS x<(1+ε/2)*α:=
+  have Py :=
    QV (fun h↦Cf ⟨x,h⟩)
-  have Pz:a9 A q2 x<(1+ε/2)*α:=
+  have Pz :=
    QV (fun h↦Cg ⟨x,h⟩)
   have Ap :
     a9 A pS x<(1-ε)*α ∨
@@ -3870,12 +3700,12 @@ lemma kk
      (bO K x)
    ·simp[dO hx]
   ·refine ⟨0,Sz 0, ?_⟩
-   have hz:0∈K:=B.se
+   have hz := B.se
    exact T6 (gX 0 hz)
     ((qw hK 0).2 hz)
  have CV:y0+y1<T:=by
   calc
-   y0+y1= ∑ x:G,af K x *
+   _ = ∑ x:G,af K x *
      (a9 A pS x+a9 A q2 x):=by
     dsimp[y0,y1]
     rw[←T7]
@@ -3972,7 +3802,7 @@ lemma jU (A:Finset G) (ψ:AddChar G ℂ) :
   cG (af A) ψ =
    ((A.card:ℝ)⁻¹ :ℂ)*c5.c6 A ψ:=by
  calc
-  cG (af A) ψ =
+  _ =
     ∑ x∈A,((A.card:ℝ)⁻¹ :ℂ)*ψ x:=by
    rw[cG, ←Ro (s₁:=A) (s₂:=Finset.univ)]
    ·apply Io rfl
@@ -3995,7 +3825,7 @@ lemma fy
   intro h
   exact Jr (c5.gm.mpr h)
  calc
-  ‖cG (af C.carrier) ψ‖ =
+  _ =
     (C.carrier.card:ℝ)⁻¹ * ‖c5.c6 C.carrier ψ‖:=by
    rw[jU,QO]
    simp[Up]
@@ -4009,7 +3839,7 @@ lemma jb (f g:G→ℝ) (ψ:AddChar G ℂ) :
  unfold cG ao
  push_cast
  calc
-  ∑ x:G,(∑ y:G,(f y:ℂ)*(g (x-y):ℂ))*ψ x =
+  _ =
     ∑ x:G, ∑ y:G,(f y:ℂ)*(g (x-y):ℂ)*ψ x:=by
    apply Io rfl
    intro x hx
@@ -4025,7 +3855,7 @@ lemma jb (f g:G→ℝ) (ψ:AddChar G ℂ) :
    refine Qk (Equiv.subRight y) _ _ fun z↦ ?_
    have Jr:ψ z=ψ y*ψ (z-y):=by
     calc
-     ψ z=ψ (y+(z-y)):=QA ψ (by simp)
+     _ =ψ (y+(z-y)):=QA ψ (by simp)
      _=ψ y*ψ (z-y):=St ψ y (z-y)
    simp only[Ut]
    rw[Jr]
@@ -4053,7 +3883,7 @@ lemma t5 {w:G→ℝ} (hw: ∀ x,0≤w x)
   ‖cG w ψ‖ ≤ ∑ x:G,w x:=by
  unfold cG
  calc
-  ‖∑ x:G,(w x:ℂ)*ψ x‖ ≤
+  _ ≤
     ∑ x:G, ‖(w x:ℂ)*ψ x‖:=Rq _ _
   _= ∑ x:G,w x:=by
    apply Io rfl
@@ -4064,8 +3894,8 @@ def ed (B:aj G) (σ:ℝ≥0) (n:ℕ):G→ℝ:=
   (af (B.ai (1+(n:ℝ≥0)*σ)).carrier)
   (dd (af (B.ai σ).carrier) n)
 lemma qz (B:aj G) (σ:ℝ≥0) (n:ℕ) (x:G) :
-  0≤ed B σ n x:=by
- exact fa
+  0≤ed B σ n x:=
+       fa
   (bO _)
   (sY (bO _) n) x
 lemma sn (B:aj G) (σ:ℝ≥0) (n:ℕ) :
@@ -4081,8 +3911,8 @@ lemma nh
  rw[ed,fG]
  simp only[ao]
  calc
-  ∑ t:G,dd (af (B.ai σ).carrier) n t *
-     af (B.ai (1+(n:ℝ≥0)*σ)).carrier (x-t) =
+  _
+                                           =
     ∑ t:G,dd (af (B.ai σ).carrier) n t *
      (((B.ai (1+(n:ℝ≥0)*σ)).carrier.card:ℝ)⁻¹):=by
    apply Io rfl
@@ -4090,11 +3920,11 @@ lemma nh
    by_cases Js :
      dd (af (B.ai σ).carrier) n t=0
    ·simp[Js]
-   ·have Ot:t∈(B.ai ((n:ℝ≥0)*σ)).carrier:=
+   ·have Ot :=
      jL B σ n t Js
-    have Aw:x-t ∈
-      (B.ai (1+(n:ℝ≥0)*σ)).carrier:=by
-     exact aj.j2
+    have Aw :=
+
+           aj.j2
       (B:=B) (s:=1) (t:=(n:ℝ≥0)*σ)
       (by simpa using hx) Ot
     rw[dj Aw]
@@ -4114,7 +3944,7 @@ lemma oM
   (B.ai (1+(n:ℝ≥0)*σ)).carrier.card ≤
    2*B.carrier.card:=by
  let κ:ℝ≥0:=(n:ℝ≥0)*σ
- let d:ℕ:=max B.rank 1
+ let d := max B.rank 1
  have jt:=dF κ (by simpa[κ,d] using dV)
  have oc:(1+100*(d:ℝ)*(κ:ℝ))≤2:=by
   have NS:(κ:ℝ)≤1/(100*(d:ℝ)):=by
@@ -4122,14 +3952,14 @@ lemma oM
     simpa[κ,d] using dV)
   have hd:(0:ℝ)<d:=by exact_mod_cast(show 0<d by simp[d])
   calc
-   1+100*(d:ℝ)*(κ:ℝ) ≤
+   _ ≤
      1+100*(d:ℝ)*(1/(100*(d:ℝ))):=by gcongr
    _=2:=by field_simp; ring
  have Jt :
    ((B.ai (1+κ)).carrier.card:ℝ) ≤
     2*(B.carrier.card:ℝ):=by
   calc
-   ((B.ai (1+κ)).carrier.card:ℝ) ≤
+   _ ≤
      (1+100*(d:ℝ)*(κ:ℝ))*(B.carrier.card:ℝ):=by
     simpa[κ,d] using jt.2
    _≤2*(B.carrier.card:ℝ):=by gcongr
@@ -4233,7 +4063,7 @@ private lemma nQ (B:aj G)
   rwa[←hH]
  have vU:=Uu ni ⟨γ,oa⟩
  calc
-  ‖γ x.1-γ y.1‖ ≤ |cx (γ x.1)-cx (γ y.1)|:=
+  _ ≤ |cx (γ x.1)-cx (γ y.1)|:=
    gu _ _
   _≤(B.width γ:ℝ)/2:=
    oN (by positivity) CW CX vU
@@ -4248,13 +4078,13 @@ private lemma qA (B:aj G)
  classical
  by_cases jv:Nonempty
    {x:↥(B.ai 1).carrier// B.gr x=a}
- ·let x₀:{x:↥(B.ai 1).carrier// B.gr x=a}:=
+ ·let x₀ :=
    Classical.choice jv
   let f:{x:↥(B.ai 1).carrier// B.gr x=a} →
     ↥(B.ai (1/2)).carrier:=
    fun x↦⟨x.1.1-x₀.1.1,nQ B
     (x.2.trans x₀.2.symm)⟩
-  have hf:Function.Injective f:=by
+  have hf:Injective f:=by
    intro x y ni
    apply RI
    apply RI
@@ -4262,7 +4092,7 @@ private lemma qA (B:aj G)
    dsimp[f] at q4
    exact S8 q4
   calc
-   Fintype.card {x:↥(B.ai 1).carrier// B.gr x=a} ≤
+   _ ≤
      Fintype.card ↥(B.ai (1/2)).carrier:=
     R1 f hf
    _=(B.ai (1/2)).carrier.card:=Rx _
@@ -4274,7 +4104,7 @@ lemma de (B:aj G) :
    4^B.rank*(B.ai (1/2)).carrier.card:=by
  classical
  let S:=B.eX→Fin 4
- let q:↥(B.ai 1).carrier→ S:=B.gr
+ let q := B.gr
  have jv: ∀ a:S,
    Fintype.card {x:↥(B.ai 1).carrier// q x=a} ≤
     (B.ai (1/2)).carrier.card:=by
@@ -4305,7 +4135,7 @@ lemma iW (B:aj G) :
  simp only[f6,vo] at h₂ iB
  norm_num at h₂ iB
  calc
-  (B.ai 2).carrier.card≤4^B.rank*B.carrier.card:=h₂
+  _ ≤4^B.rank*B.carrier.card:=h₂
   _≤4^B.rank*(4^B.rank*(B.ai (1/2)).carrier.card):=by
    gcongr
    simpa using h₁
@@ -4483,15 +4313,15 @@ private lemma nR
  linarith
 omit [DecidableEq G] in
 private lemma nS (B:aj G) :
-  Real.log ((B.ai (5/4)).carrier.card:ℝ) -
-    Real.log ((B.ai (1/4)).carrier.card:ℝ) <
+  log ((B.ai (5/4)).carrier.card:ℝ) -
+    log ((B.ai (1/4)).carrier.card:ℝ) <
    5*(max B.rank 1:ℕ):=by
  classical
- let d:ℕ:=max B.rank 1
+ let d := max B.rank 1
  have ch:(B.ai (5/4)).carrier.card ≤
    4^(3*B.rank)*(B.ai (1/4)).carrier.card:=by
   calc
-   (B.ai (5/4)).carrier.card≤(B.ai 2).carrier.card:=
+   _ ≤(B.ai 2).carrier.card:=
     Qu (b5
      (show(5/4:NNReal)≤2 by
       rw[QF (by norm_num:(0:NNReal)<4)]
@@ -4512,20 +4342,20 @@ private lemma nS (B:aj G) :
   exact_mod_cast(show 0<d by simp[d])
  have Nc:(B.rank:ℝ)≤d:=by
   exact_mod_cast(Tu B.rank 1)
- have PA:Real.log (4:ℝ)<5/3:=by
+ have PA:log (4:ℝ)<5/3:=by
   rw[Real.log_four_eq]
   linarith[Real.log_two_lt_d9]
- have fF:(3*B.rank:ℕ)*Real.log (4:ℝ)<5*d:=by
+ have fF:(3*B.rank:ℕ)*log (4:ℝ)<5*d:=by
   push_cast
   calc
-   3*(B.rank:ℝ)*Real.log 4≤3*d*Real.log 4:=by
+   _ ≤3*d*log 4:=by
     gcongr
    _<3*d*(5/3):=by gcongr
    _=5*d:=by ring
  dsimp[d] at fF ⊢
  linarith
 private noncomputable def fj (B:aj G) (s:ℝ):ℝ:=
- Real.log ((B.ai s.toNNReal).carrier.card:ℝ) /
+ log ((B.ai s.toNNReal).carrier.card:ℝ) /
   (max B.rank 1:ℕ)
 omit [DecidableEq G] in
 private lemma q5 (B:aj G) :
@@ -4640,35 +4470,35 @@ lemma eP (B:aj G) :
  simp only[fj,Real.toNNReal_coe,
   show r.toNNReal=a8 by rfl] at tb uU
  change
-  |Real.log ((B.ai j5).carrier.card:ℝ)/d -
-   Real.log ((B.ai a8).carrier.card:ℝ)/d| ≤
+  |log ((B.ai j5).carrier.card:ℝ)/d -
+   log ((B.ai a8).carrier.card:ℝ)/d| ≤
     60* |(j5:ℝ)-r| at tb
  change
-  |Real.log ((B.ai mz).carrier.card:ℝ)/d -
-   Real.log ((B.ai a8).carrier.card:ℝ)/d| ≤
+  |log ((B.ai mz).carrier.card:ℝ)/d -
+   log ((B.ai a8).carrier.card:ℝ)/d| ≤
     60* |(mz:ℝ)-r| at uU
  rw[div_sub_div_same,TE,RT z2] at tb uU
  have Ep :
-   Real.log ((B.ai a8).carrier.card:ℝ) -
-     Real.log ((B.ai j5).carrier.card:ℝ) ≤
+   log ((B.ai a8).carrier.card:ℝ) -
+     log ((B.ai j5).carrier.card:ℝ) ≤
     60*d*(aF:ℝ):=by
   have xw:=(QF z2).mp tb
   calc
-   _≤ |Real.log ((B.ai j5).carrier.card:ℝ) -
-     Real.log ((B.ai a8).carrier.card:ℝ)|:=by
+   _≤ |log ((B.ai j5).carrier.card:ℝ) -
+     log ((B.ai a8).carrier.card:ℝ)|:=by
     rw[Su]
     exact SG _
    _≤60* |(j5:ℝ)-r| *d:=xw
    _≤60*(aF:ℝ)*d:=by gcongr
    _=60*d*(aF:ℝ):=by ring
  have F5 :
-   Real.log ((B.ai mz).carrier.card:ℝ) -
-     Real.log ((B.ai a8).carrier.card:ℝ) ≤
+   log ((B.ai mz).carrier.card:ℝ) -
+     log ((B.ai a8).carrier.card:ℝ) ≤
     60*d*(aF:ℝ):=by
   have xw:=(QF z2).mp uU
   calc
-   _≤ |Real.log ((B.ai mz).carrier.card:ℝ) -
-     Real.log ((B.ai a8).carrier.card:ℝ)|:=SG _
+   _≤ |log ((B.ai mz).carrier.card:ℝ) -
+     log ((B.ai a8).carrier.card:ℝ)|:=SG _
    _≤60* |(mz:ℝ)-r| *d:=xw
    _≤60*(aF:ℝ)*d:=by gcongr
    _=60*d*(aF:ℝ):=by ring
@@ -4775,8 +4605,7 @@ open scoped BigOperators ComplexConjugate
 namespace ay.jw
 open dT
 variable {G:Type*} [AddCommGroup G] [Fintype G]
-def MK (f:G→ℂ) (p:ℕ):ℝ:=
- 𝔼 x:G, ‖f x‖ ^p
+
 def aK (nu:G→ℝ) (f:G→ℂ) (p:ℕ):ℝ:=
  𝔼 x:G,nu x* ‖f x‖ ^p
 def ds (nu:G→ℝ) (fJ:AddChar G ℂ):ℂ:=
@@ -4835,9 +4664,9 @@ lemma gv
     (ay.aZ b b)):=by
  let ac:G→ℂ:=(↑) ∘ a
  let bc:G→ℂ:=(↑) ∘ b
- let da:G→ℂ:=a2 ac ac
- let db:G→ℂ:=a2 bc bc
- let h:G→ℂ:=dT.convolution da db
+ let da := a2 ac ac
+ let db := a2 bc bc
+ let h := dT.convolution da db
  have t9 (x:G) :
    (ay.ao
      (ay.aZ a a)
@@ -4872,7 +4701,7 @@ lemma gv
   unfold ds
   simp_rw[t9]
   calc
-   (𝔼 x:G,(Fintype.card G:ℂ)^3*h x*fJ x) =
+   _ =
      (Fintype.card G:ℂ)^3*(𝔼 x:G,h x*fJ x):=by
     calc
      _=𝔼 x:G,(Fintype.card G:ℂ)^3*(h x*fJ x):=by
@@ -4904,14 +4733,14 @@ omit [AddCommGroup G] in
 lemma iG {I:Type*} {k:ℕ} (_hk:k≠0)
   (nu:G→ℝ) (s:Finset I) (u:I→G→ℂ) :
   (aK nu (∑ i∈s,u i) (2*k):ℂ) =
-   ∑ x∈(Fintype.piFinset fun _:Fin k↦s), ∑ y∈(Fintype.piFinset fun _:Fin k↦s),
+   ∑ x∈(piFinset fun _:Fin k↦s), ∑ y∈(piFinset fun _:Fin k↦s),
     𝔼 a:G,(nu a:ℂ) *
      ((∏ i,conj (u (x i) a))* ∏ i,u (y i) a):=by
  rw[aK]
  push_cast
  simp_rw[Si]
  calc
-  (𝔼 a:G,(nu a:ℂ)*(‖∑ i∈s,u i a‖ :ℂ)^(2*k)) =
+  _ =
     𝔼 a:G,(nu a:ℂ) *
      ((∑ i∈s,conj (u i a))^k*(∑ j∈s,u j a)^k):=by
    congr 1 with a
@@ -4920,8 +4749,8 @@ lemma iG {I:Type*} {k:ℕ} (_hk:k≠0)
    simp_rw[sum_pow',Finset.sum_mul_sum,mul_sum,expect_sum_comm]
 omit [AddCommGroup G] in
 lemma dx {nu:G→ℝ} (rq: ∀ x,0≤nu x)
-  (f:G→ℂ) (p:ℕ):0≤aK nu f p:=by
- exact expect_nonneg fun x _↦Qn (rq x) (QH (Re _) _)
+  (f:G→ℂ) (p:ℕ):0≤aK nu f p:=
+       expect_nonneg fun x _↦Qn (rq x) (QH (Re _) _)
 lemma gw
   {p:ℕ} (hp:p≠0) (mx:Even p)
   (nu:G→ℝ) (rq: ∀ x,0≤nu x)
@@ -4981,9 +4810,9 @@ lemma gw
   let a:ℂ:=
    (∏ i,(‖coeff f (psi i)‖ ^2:ℂ)) *
     ∏ i,(‖coeff f (phi i)‖ ^2:ℂ)
-  let c:ℂ:=
+  let c :=
    conj (∏ i,coeff f (psi i)^2)* ∏ i,coeff f (phi i)^2
-  let eta:AddChar G ℂ:= ∑ i,phi i- ∑ i,psi i
+  let eta :=  ∑ i,phi i- ∑ i,psi i
   have kB :
     (𝔼 x:G,(nu x:ℂ) *
       (a*((∏ i,conj (psi i x))* ∏ i,phi i x))) =
@@ -5103,9 +4932,9 @@ lemma nj
  ·exact mul_eq_zero.mpr (Or.inl (by simpa[Hc] using hy))
  by_cases ni:Hd (x-y)=0
  ·exact mul_eq_zero.mpr (Or.inr (by simpa[Hd] using ni))
- have Jq:y∈(B.ai (2*eta)).carrier:=
+ have Jq :=
   hO hC fN hy
- have F3:x-y∈(B.ai (2*eta)).carrier:=
+ have F3 :=
   hO hD gn ni
  have AF:=aj.e8 Jq F3
  have heq:y+(x-y)=x:=by abel
@@ -5122,7 +4951,7 @@ lemma lU
   (kE: ∀ t:G, ∑ x:G,nu (x-t)*h x≤R) :
   ∑ x:G,mu x*h x≤2*R:=by
  calc
-  ∑ x:G,mu x*h x ≤
+  _ ≤
     ∑ x:G,(2*ao outer nu x)*h x:=by
    apply QI
    intro x _
@@ -5136,7 +4965,7 @@ lemma lU
    apply QA (fun z:ℝ↦2*z)
    simp only[ao]
    calc
-    ∑ x:G,(∑ y:G,outer y*nu (x-y))*h x =
+    _ =
       ∑ x:G, ∑ y:G,(outer y*nu (x-y))*h x:=by
      apply Io rfl
      intro x _
@@ -5248,7 +5077,7 @@ lemma vz
   rw[←card_pos, ← @Nat.cast_pos ℝ]
   exact Jz.trans_lt' (by positivity)
  let P:Finset ((Fin k→G) × G):=L ×ˢ S
- let X:Finset (Fin k→G):=(Fintype.piFinset fun _:Fin k↦((A+S)))
+ let X:Finset (Fin k→G):=(piFinset fun _:Fin k↦((A+S)))
  let φ:((Fin k→G) × G)→(Fin k→G):=fun z↦z.1+fun _↦z.2
  have pT:X.Nonempty:=(hA.add hS).piFinset_const
  have AG: ∀ z∈P,φ z∈X:=by
@@ -5258,7 +5087,7 @@ lemma vz
   have AH:l∈L:=JA.1
   change l∈gl.l k q (ε/2) f A at AH
   rw[gl.l,mem_filter] at AH
-  have hl:l∈(Fintype.piFinset fun _:Fin k↦A):=AH.1
+  have hl:l∈(piFinset fun _:Fin k↦A):=AH.1
   intro i
   exact Finset.add_mem_add (Fintype.mem_piFinset.1 hl i) JA.2
  have Et: #X= #(A+S)^k:=by simp[X]
@@ -5331,20 +5160,20 @@ lemma vz
   simpa[neg_sub,mul_div_cancel₀ _ (two_ne_zero' ℝ)] using JK
 private lemma ua
   {G:Type*} (B C:Finset G) (hB:B.Nonempty) (hC:C.Nonempty)
-  (q:ℕ) (hq:q=⌈1+Real.log (min 1 ((#C:ℝ)/ #B))⁻¹⌉₊) :
-  ((#C:ℝ)/ #B)^(-((2*q:ℕ):ℝ)⁻¹)≤Real.exp 1:=by
+  (q:ℕ) (hq:q=⌈1+log (min 1 ((#C:ℝ)/ #B))⁻¹⌉₊) :
+  ((#C:ℝ)/ #B)^(-((2*q:ℕ):ℝ)⁻¹)≤exp 1:=by
  let r:ℝ:=min 1 ((#C:ℝ)/ #B)
  have tc:0<r:=by
   dsimp[r]
   exact lt_min U1 (Rn (by exact_mod_cast hC.card_pos) (by exact_mod_cast hB.card_pos))
  have xA:r≤1:=Uv _ _
- have si:0<1+Real.log r⁻¹:=by
-  have Ck:0≤Real.log r⁻¹:=
+ have si:0<1+log r⁻¹:=by
+  have Ck:0≤log r⁻¹:=
    Qv ((Uw tc).2 xA)
   linarith
  have x9:1≤q:=by
   rw[hq,Nat.one_le_ceil_iff]
-  have Ck:0≤Real.log r⁻¹:=
+  have Ck:0≤log r⁻¹:=
    Qv ((Uw tc).2 xA)
   dsimp[r] at Ck ⊢
   linarith
@@ -5352,26 +5181,26 @@ private lemma ua
   ((#C:ℝ)/ #B)^(-((2*q:ℕ):ℝ)⁻¹)
     ≤ r^(-((2*q:ℕ):ℝ)⁻¹):=
    Real.rpow_le_rpow_of_nonpos (by positivity) inf_le_right<| neg_nonpos.2<| by positivity
-  _≤r^(-(1+Real.log r⁻¹)⁻¹):=
+  _≤r^(-(1+log r⁻¹)⁻¹):=
    Th (by positivity) xA<| TO<| inv_anti₀
     si<| (Rr _).trans<| by
      rw[←hq]
      exact_mod_cast T9 q (by norm_num:0<2)
-  _≤r^(-(0+Real.log r⁻¹)⁻¹):=by
+  _≤r^(-(0+log r⁻¹)⁻¹):=by
    obtain hr | hr:r=1∨r<1:=xA.eq_or_lt
    ·simp[hr]
-   have:0<Real.log r⁻¹:=Sv<| (one_lt_inv₀ tc).2 hr
+   have:0<log r⁻¹:=Sv<| (one_lt_inv₀ tc).2 hr
    exact Th (by positivity) xA
     (by gcongr; exact Us)
-  _=r^(Real.log r)⁻¹:=by simp[inv_neg]
-  _≤Real.exp 1:=Real.rpow_inv_log_le_exp_one
+  _=r^(log r)⁻¹:=by simp[inv_neg]
+  _≤exp 1:=Real.rpow_inv_log_le_exp_one
 private lemma sZ
   {G:Type*} [Fintype G] [DecidableEq G] [AddCommGroup G]
   [MeasurableSpace G] [DiscreteMeasurableSpace G]
   {A:Finset G} (B C:Finset G) (u x:G) (q:ℕ) (x9:1≤q) :
-  ‖(τ u ((aC (((aC (mu A) (((Set.indicator B fun _↦(1:_)):G→ℂ))))) (mu C))) -
-   (aC (((aC (mu A) ((Set.indicator B fun _↦(1:_)))))) (mu C)):G→ℂ) x‖ ≤
-    (aJ (2*q) (τ u ((aC (mu A) (((Set.indicator B fun _↦(1:_)):G→ℂ))))-(aC (mu A) ((Set.indicator B fun _↦(1:_)))))) *
+  ‖(τ u ((aC (((aC (mu A) (((indicator B fun _↦(1:_)):G→ℂ))))) (mu C))) -
+   (aC (((aC (mu A) ((indicator B fun _↦(1:_)))))) (mu C)):G→ℂ) x‖ ≤
+    (aJ (2*q) (τ u ((aC (mu A) (((indicator B fun _↦(1:_)):G→ℂ))))-(aC (mu A) ((indicator B fun _↦(1:_)))))) *
      (aJ (NNReal.conjExponent (2*q)) ((@mu (ℂ) _ _) (x+ᵥ -C))):=by
  let M:ℕ:=2*q
  have z1:1<(M:ℝ≥0):=by
@@ -5380,17 +5209,17 @@ private lemma sZ
   omega
  have hM:(M:ℝ≥0).HolderConjugate _:=S2 z1
  have P7:(M:ℝ≥0∞).HolderConjugate _:=hM.coe_ennreal
- set F:G→ℂ:=τ u ((aC (mu A) ((Set.indicator B fun _↦(1:_)))))-(aC (mu A) ((Set.indicator B fun _↦(1:_))))
+ set F:G→ℂ:=τ u ((aC (mu A) ((indicator B fun _↦(1:_)))))-(aC (mu A) ((indicator B fun _↦(1:_))))
  have x7 :
-   (τ u ((aC (((aC (mu A) ((Set.indicator B fun _↦(1:_)))))) (mu C)))-(aC (((aC (mu A) ((Set.indicator B fun _↦(1:_)))))) (mu C)):G→ℂ) x =
+   (τ u ((aC (((aC (mu A) ((indicator B fun _↦(1:_)))))) (mu C)))-(aC (((aC (mu A) ((indicator B fun _↦(1:_)))))) (mu C)):G→ℂ) x =
     ((aC F (mu C))) x:=by simp[CA,F]
  have hsum:((aC F (mu C))) x= ∑ y,F y*mu (x+ᵥ -C) y:=by
   rw[cR]
   congr with y
   simp[neg_add_eq_sub]
  calc
-  ‖(τ u ((aC (((aC (mu A) ((Set.indicator B fun _↦(1:_)))))) (mu C))) -
-    (aC (((aC (mu A) ((Set.indicator B fun _↦(1:_)))))) (mu C)):G→ℂ) x‖
+  ‖(τ u ((aC (((aC (mu A) ((indicator B fun _↦(1:_)))))) (mu C))) -
+    (aC (((aC (mu A) ((indicator B fun _↦(1:_)))))) (mu C)):G→ℂ) x‖
     = ‖∑ y,F y*mu (x+ᵥ -C) y‖:=by rw[x7,hsum]
   _≤ ∑ y, ‖F y*mu (x+ᵥ -C) y‖:=Rq _ _
   _=(aJ 1 (F*mu (x+ᵥ -C))):=by
@@ -5405,58 +5234,58 @@ private lemma vA
   {A:Finset G} {ε:ℝ} (B C:Finset G)
   (hC:C.Nonempty) (u x:G) (q:ℕ) (x9:1≤q)
   (C7 :
-   (aJ (2*q) (τ u ((aC (mu A) (((Set.indicator B fun _↦(1:_)):G→ℂ))))-(aC (mu A) ((Set.indicator B fun _↦(1:_)))))) ≤
-    ε/Real.exp 1*(aJ (2*q) (((Set.indicator B fun _↦(1:_)):G→ℂ)))) :
-  ‖(τ u ((aC (((aC (mu A) ((Set.indicator B fun _↦(1:_)))))) (mu C))) -
-   (aC (((aC (mu A) ((Set.indicator B fun _↦(1:_)))))) (mu C)):G→ℂ) x‖ ≤
-    ε*(((#C:ℝ)/ #B)^(-((2*q:ℕ):ℝ)⁻¹)/Real.exp 1):=by
+   (aJ (2*q) (τ u ((aC (mu A) (((indicator B fun _↦(1:_)):G→ℂ))))-(aC (mu A) ((indicator B fun _↦(1:_)))))) ≤
+    ε/exp 1*(aJ (2*q) (((indicator B fun _↦(1:_)):G→ℂ)))) :
+  ‖(τ u ((aC (((aC (mu A) ((indicator B fun _↦(1:_)))))) (mu C))) -
+   (aC (((aC (mu A) ((indicator B fun _↦(1:_)))))) (mu C)):G→ℂ) x‖ ≤
+    ε*(((#C:ℝ)/ #B)^(-((2*q:ℕ):ℝ)⁻¹)/exp 1):=by
  let M:ℕ:=2*q
  have Lu:(M:ℝ≥0)≠0:=by positivity
  have z1:1<(M:ℝ≥0):=by
   norm_cast
   dsimp[M]
   omega
- have hM:(M:ℝ≥0).HolderConjugate _:=S2 z1
+ have hM := S2 z1
  calc
-  ‖(τ u ((aC (((aC (mu A) ((Set.indicator B fun _↦(1:_)))))) (mu C))) -
-    (aC (((aC (mu A) ((Set.indicator B fun _↦(1:_)))))) (mu C)):G→ℂ) x‖
-    ≤ (aJ M (τ u ((aC (mu A) (((Set.indicator B fun _↦(1:_)):G→ℂ))))-(aC (mu A) ((Set.indicator B fun _↦(1:_)))))) *
+  _
+
+    ≤ (aJ M (τ u ((aC (mu A) (((indicator B fun _↦(1:_)):G→ℂ))))-(aC (mu A) ((indicator B fun _↦(1:_)))))) *
       (aJ (NNReal.conjExponent M) ((@mu (ℂ) _ _) (x+ᵥ -C))):=by
      simpa[M] using sZ B C u x q x9
-  _≤ε/Real.exp 1* #B^(M:ℝ)⁻¹ *
+  _≤ε/exp 1* #B^(M:ℝ)⁻¹ *
      (aJ (NNReal.conjExponent M) ((@mu (ℂ) _ _) (x+ᵥ -C))):=by
    gcongr
    ·exact d8
    have Lv :
-     (aJ M (τ u ((aC (mu A) (((Set.indicator B fun _↦(1:_)):G→ℂ))))-(aC (mu A) ((Set.indicator B fun _↦(1:_)))))) ≤
-      ε/Real.exp 1*(aJ M (((Set.indicator B fun _↦(1:_)):G→ℂ))):=by
+     (aJ M (τ u ((aC (mu A) (((indicator B fun _↦(1:_)):G→ℂ))))-(aC (mu A) ((indicator B fun _↦(1:_)))))) ≤
+      ε/exp 1*(aJ M (((indicator B fun _↦(1:_)):G→ℂ))):=by
     simpa only[M,Rm,Nat.cast_ofNat] using C7
-   have F7:(aJ M (((Set.indicator B fun _↦(1:_)):G→ℂ)))=(#B:ℝ)^(M:ℝ)⁻¹:=by
+   have F7:(aJ M (((indicator B fun _↦(1:_)):G→ℂ)))=(#B:ℝ)^(M:ℝ)⁻¹:=by
     rw[show(M:ℝ≥0∞)=((M:ℝ≥0):ℝ≥0∞) by norm_num,
      n8 Lu]
     norm_num
    rw[←F7]
    exact Lv
-  _=ε*(((#C:ℝ)/ #B)^(-(M:ℝ)⁻¹)/Real.exp 1):=by
+  _=ε*(((#C:ℝ)/ #B)^(-(M:ℝ)⁻¹)/exp 1):=by
    rw[←mul_comm_div,rB hM.symm.lt.le hC.neg.vadd_finset,
     card_vadd_finset,card_neg,hM.symm.coe.inv_sub_one,Real.div_rpow,Qo]
    any_goals positivity
    push_cast
    rw[TS,TS, ←Qw,inv_div_inv]
    all_goals positivity
-  _=ε*(((#C:ℝ)/ #B)^(-((2*q:ℕ):ℝ)⁻¹)/Real.exp 1):=by
+  _=ε*(((#C:ℝ)/ #B)^(-((2*q:ℕ):ℝ)⁻¹)/exp 1):=by
    simp[M]
 private lemma ss
   {G:Type*} [Fintype G] [DecidableEq G] [AddCommGroup G]
   [MeasurableSpace G] [DiscreteMeasurableSpace G]
   {A:Finset G} {ε:ℝ} (hε:0<ε) (B C:Finset G)
   (hC:C.Nonempty) (u:G) (q:ℕ) (x9:1≤q)
-  (eO:((#C:ℝ)/ #B)^(-((2*q:ℕ):ℝ)⁻¹)≤Real.exp 1)
+  (eO:((#C:ℝ)/ #B)^(-((2*q:ℕ):ℝ)⁻¹)≤exp 1)
   (C7 :
-   (aJ (2*q) (τ u ((aC (mu A) (((Set.indicator B fun _↦(1:_)):G→ℂ))))-(aC (mu A) ((Set.indicator B fun _↦(1:_)))))) ≤
-    ε/Real.exp 1*(aJ (2*q) (((Set.indicator B fun _↦(1:_)):G→ℂ)))) :
-  (aJ (∞) ((τ u ((aC (((aC (mu A) ((Set.indicator B fun _↦(1:_)))))) (mu C))) -
-   (aC (((aC (mu A) ((Set.indicator B fun _↦(1:_)))))) (mu C)):G→ℂ)))≤ε:=by
+   (aJ (2*q) (τ u ((aC (mu A) (((indicator B fun _↦(1:_)):G→ℂ))))-(aC (mu A) ((indicator B fun _↦(1:_)))))) ≤
+    ε/exp 1*(aJ (2*q) (((indicator B fun _↦(1:_)):G→ℂ)))) :
+  (aJ (∞) ((τ u ((aC (((aC (mu A) ((indicator B fun _↦(1:_)))))) (mu C))) -
+   (aC (((aC (mu A) ((indicator B fun _↦(1:_)))))) (mu C)):G→ℂ)))≤ε:=by
  rw[dw]
  refine ciSup_le fun x↦(vA B C hC u x q x9 C7).trans ?_
  refine Sq hε.le ((Q9 (by positivity)).2 ?_)
@@ -5466,27 +5295,27 @@ lemma q7
   [MeasurableSpace G] [DiscreteMeasurableSpace G]
   {A S:Finset G} (hA:A.Nonempty) (hS:S.Nonempty)
   (ε:ℝ) (hε:0<ε) (B C:Finset G) (hB:B.Nonempty) (hC:C.Nonempty) :
-  let q:=⌈1+Real.log (min 1 ((#C:ℝ)/ #B))⁻¹⌉₊
-  let k:=cQ q (ε/Real.exp 1)
+  let q:=⌈1+log (min 1 ((#C:ℝ)/ #B))⁻¹⌉₊
+  let k:=cQ q (ε/exp 1)
   ∃ T:Finset G,
    T⊆S∧T.Nonempty ∧
    (((#A:ℝ)^k/2* #S)/(#(A+S):ℝ)^k≤ #T) ∧
    ∀ s∈T, ∀ t∈T,
-    (aJ (∞) ((τ (t-s) ((aC (((aC (mu A) ((Set.indicator B fun _↦(1:_)))))) (mu C))) -
-     (aC (((aC (mu A) ((Set.indicator B fun _↦(1:_)))))) (mu C)):G→ℂ)))≤ε:=by
+    (aJ (∞) ((τ (t-s) ((aC (((aC (mu A) ((indicator B fun _↦(1:_)))))) (mu C))) -
+     (aC (((aC (mu A) ((indicator B fun _↦(1:_)))))) (mu C)):G→ℂ)))≤ε:=by
  let r:ℝ:=min 1 ((#C:ℝ)/ #B)
- let m:ℝ:=1+Real.log r⁻¹
+ let m:ℝ:=1+log r⁻¹
  have tc:0<r:=by
   dsimp[r]
   exact lt_min U1 (Rn (by exact_mod_cast hC.card_pos) (by exact_mod_cast hB.card_pos))
  have xA:r≤1:=Uv _ _
  have PE:0< m:=by
-  have:0≤Real.log r⁻¹:=Qv ((Uw tc).2 xA)
+  have:0≤log r⁻¹:=Qv ((Uw tc).2 xA)
   positivity
  have Hf:1≤⌈m⌉₊:=Nat.one_le_iff_ne_zero.2 (by positivity)
  obtain ⟨T,Ew,uW,ch,hT⟩:=
-  vz hA hS ⌈m⌉₊ Hf (ε/Real.exp 1) (by positivity)
-   ((Set.indicator B fun _↦(1:_)):G→ℂ)
+  vz hA hS ⌈m⌉₊ Hf (ε/exp 1) (by positivity)
+   ((indicator B fun _↦(1:_)):G→ℂ)
  refine ⟨T,Ew,uW, ?_, ?_⟩
  ·simpa[r,m] using ch
  ·intro s hs t ht
@@ -5499,28 +5328,28 @@ lemma mX
   {A S:Finset G} (hA:A.Nonempty) (hS:S.Nonempty)
   (ε:ℝ) (hε:0<ε) (m:ℕ) (hm:m≠0)
   (B C:Finset G) (hB:B.Nonempty) (hC:C.Nonempty) :
-  let q:=⌈1+Real.log (min 1 ((#C:ℝ)/ #B))⁻¹⌉₊
-  let k:=cQ q ((ε/m)/Real.exp 1)
+  let q:=⌈1+log (min 1 ((#C:ℝ)/ #B))⁻¹⌉₊
+  let k:=cQ q ((ε/m)/exp 1)
   ∃ (T:Finset G) (z:G),
    T⊆S∧z∈T ∧
    (-z+ᵥ T).Nonempty∧(-z+ᵥ T)⊆S-S ∧
    (((#A:ℝ)^k/2* #S)/(#(A+S):ℝ)^k≤ #T) ∧
-   (aJ (∞) (((aC ((ep (mu (-z+ᵥ T)) m)) (((aC (((aC (mu A) ((Set.indicator B fun _↦(1:_)))))) (mu C))))) -
-    (aC (((aC (mu A) ((Set.indicator B fun _↦(1:_)))))) (mu C)):G→ℂ)))≤ε:=by
+   (aJ (∞) (((aC ((ep (mu (-z+ᵥ T)) m)) (((aC (((aC (mu A) ((indicator B fun _↦(1:_)))))) (mu C))))) -
+    (aC (((aC (mu A) ((indicator B fun _↦(1:_)))))) (mu C)):G→ℂ)))≤ε:=by
  have G7:(0:ℝ)< m:=by exact_mod_cast(Nat.pos_iff_ne_zero.2 hm)
- have Cc:0<ε/(m:ℝ):=Rn hε G7
+ have Cc := Rn hε G7
  obtain ⟨T,Ew,uW,ch,jl⟩:=
   q7 hA hS (ε/(m:ℝ)) Cc B C hB hC
  obtain ⟨z,hz⟩:=uW
- let X:Finset G:=-z+ᵥ T
+ let X := -z+ᵥ T
  have pT:X.Nonempty:=by
   refine ⟨0, ?_⟩
   change 0∈ -z+ᵥ T
   rw[mem_vadd_finset]
   exact ⟨z,hz,by simp⟩
  have F8: ∀ x∈X,
-   (aJ (∞) ((τ x ((aC (((aC (mu A) ((Set.indicator B fun _↦(1:_)))))) (mu C))) -
-    (aC (((aC (mu A) ((Set.indicator B fun _↦(1:_)))))) (mu C)):G→ℂ)))≤ε/(m:ℝ):=by
+   (aJ (∞) ((τ x ((aC (((aC (mu A) ((indicator B fun _↦(1:_)))))) (mu C))) -
+    (aC (((aC (mu A) ((indicator B fun _↦(1:_)))))) (mu C)):G→ℂ)))≤ε/(m:ℝ):=by
   intro x hx
   change x∈ -z+ᵥ T at hx
   rw[mem_vadd_finset] at hx
@@ -5532,21 +5361,21 @@ lemma mX
   rw[mem_vadd_finset] at hx
   obtain ⟨t,ht,rfl⟩:=hx
   simpa[Qy,RV] using sub_mem_sub (Ew ht) (Ew hz)
- set F:G→ℂ:=(aC (((aC (mu A) ((Set.indicator B fun _↦(1:_)))))) (mu C))
+ set F:G→ℂ:=(aC (((aC (mu A) ((indicator B fun _↦(1:_)))))) (mu C))
  refine ⟨T,z,Ew,hz, ?_,Lw, ?_, ?_⟩
  ·simpa[X] using pT
  ·simpa using ch
  ·change(aJ (∞) ((aC ((ep (mu X) m)) F)-F))≤ε
   calc
-   ((aJ (∞) ((aC ((ep (mu X) m)) F)-F)):ℝ)
-     = (aJ (∞) (𝔼 a∈(Fintype.piFinset fun _:Fin m↦X),(τ (∑ i,a i) F-F))):=by
+   _
+     = (aJ (∞) (𝔼 a∈(piFinset fun _:Fin m↦X),(τ (∑ i,a i) F-F))):=by
       rw[vJ,expect_sub_distrib,expect_const pT.piFinset_const]
-   _≤𝔼 a∈(Fintype.piFinset fun _:Fin m↦X),(aJ (∞) (τ (∑ i,a i) F-F)):=
+   _≤𝔼 a∈(piFinset fun _:Fin m↦X),(aJ (∞) (τ (∑ i,a i) F-F)):=
     wU le_top
-   _≤𝔼 _a∈(Fintype.piFinset fun _:Fin m↦X),ε:=by
+   _≤𝔼 _a∈(piFinset fun _:Fin m↦X),ε:=by
     refine expect_le_expect fun a ha↦ ?_
     calc
-     ((aJ (∞) (τ (∑ i,a i) F-F)):ℝ)
+     _
        ≤ ∑ i,(aJ (∞) (τ (a i) F-F)):=
         pM le_top _ _ _
      _≤ ∑ _i,ε/(m:ℝ):=by
@@ -5571,7 +5400,7 @@ private lemma ub (A:Finset G) (psi:AddChar G ℂ) :
  classical
  rw[c5.c6,Qj]
  calc
-  (∑ x:G,(af A x:ℂ)*psi x) =
+  _ =
     ∑ x:G,if x∈A then ((A.card:ℂ)⁻¹)*psi x else 0:=by
    apply Io rfl
    intro x _
@@ -5617,7 +5446,7 @@ lemma l8
   ‖1-psi t‖ ≤
    200*((max C.rank 1:ℕ):ℝ)*(sigma:ℝ)/eta:=by
  classical
- let F:ℂ:= ∑ x:G,(af C.carrier x:ℂ)*psi x
+ let F :=  ∑ x:G,(af C.carrier x:ℂ)*psi x
  have ch:(0:ℝ)<C.carrier.card:=by
   exact_mod_cast C.aE.card_pos
  have JL: ‖F‖ = ‖c5.c6 C.carrier psi‖ /C.carrier.card:=by
@@ -5634,9 +5463,9 @@ lemma l8
       af C.carrier x|:=by
   rw[←QO,pU C.carrier psi t]
   calc
-   ‖∑ x:G,
-     ((af C.carrier x -
-       af C.carrier (x-t):ℝ):ℂ)*psi x‖ ≤
+   _
+
+                                       ≤
      ∑ x:G,
       ‖((af C.carrier x -
         af C.carrier (x-t):ℝ):ℂ)*psi x‖:=
@@ -5656,7 +5485,7 @@ lemma l8
    ‖1-psi t‖ *eta ≤
     200*((max C.rank 1:ℕ):ℝ)*(sigma:ℝ):=by
   calc
-   ‖1-psi t‖ *eta≤ ‖1-psi t‖ * ‖F‖:=
+   _ ≤ ‖1-psi t‖ * ‖F‖:=
     iO iU (Re _)
    _≤ ∑ x:G,
      |af C.carrier (x-t) -
@@ -5749,7 +5578,7 @@ lemma nT [Finite G]
  intro psi Lx
  by_cases zm:psi∈Delta
  ·exact ⟨psi,Finset.subset_addSpan zm,0,hzero,by simp⟩
- ·have y3:insert psi Delta⊆T:=
+ ·have y3 :=
    Finset.insert_subset Lx (Finset.mem_powerset.mp dQ.1)
   have hnot: ¬ cy S (insert psi Delta):=by
    intro Ng
@@ -5787,8 +5616,8 @@ lemma nT [Finite G]
     rw[Rp] at mS
     exact mS.resolve_left (fun h↦Db (h▸ha))
    let z:=(∑ a∈u,a)- ∑ a∈t.erase psi,a
-   have hz:z∈Delta.addSpan:=by
-    exact Tp y4 HM
+   have hz :=
+          Tp y4 HM
    refine ⟨z,hz,(∑ a∈t,a)- ∑ a∈u,a,Da, ?_⟩
    dsimp[z]
    rw[←SO _ _ Ex]
@@ -5805,10 +5634,10 @@ lemma nT [Finite G]
     rw[Rp] at mS
     exact mS.resolve_left (fun h↦Dc (h▸ha))
    let z:=(∑ a∈t,a)- ∑ a∈u.erase psi,a
-   have hz:z∈Delta.addSpan:=by
-    exact Tp rX HN
+   have hz :=
+          Tp rX HN
    let s:=-((∑ a∈t,a)- ∑ a∈u,a)
-   have hs:s∈S:=hS _ Da
+   have hs := hS _ Da
    refine ⟨z,hz,s,hs, ?_⟩
    dsimp[z,s]
    rw[←SO _ _ Ey]
@@ -5930,7 +5759,7 @@ lemma cy.oj
  let F:Finset (AddChar G ℂ)→ℂ:=fun t ↦
   ∑ u∈t.powerset,el v t u *
    ay.cG w (fq t u)
- let E:ℂ:= ∑ t∈Delta.powerset.erase ∅,F t
+ let E :=  ∑ t∈Delta.powerset.erase ∅,F t
  have su:(∅:Finset (AddChar G ℂ))∈Delta.powerset:=by simp
  have Ni: ∑ x:G,(w x:ℂ)=1:=by exact_mod_cast AJ
  have HO:F ∅=1:=by
@@ -5944,10 +5773,10 @@ lemma cy.oj
   ring
  have oJ (t:Finset (AddChar G ℂ))
    (ht:t∈Delta.powerset.erase ∅): ‖F t‖ ≤q:=by
-  have rX:t⊆Delta:=Finset.mem_powerset.mp (Sm ht)
-  have JM:t.Nonempty:=Finset.nonempty_iff_ne_empty.mpr (Sw ht)
+  have rX := Finset.mem_powerset.mp (Sm ht)
+  have JM := Finset.nonempty_iff_ne_empty.mpr (Sw ht)
   calc
-   ‖F t‖ ≤ ∑ u∈t.powerset,
+   _ ≤ ∑ u∈t.powerset,
      ‖el v t u *
       ay.cG w (fq t u)‖:=by
     exact Rq _ _
@@ -5967,20 +5796,20 @@ lemma cy.oj
     simp[QS]
  have JO: ‖E‖ ≤q*(2:ℝ)^Delta.card:=by
   calc
-   ‖E‖ ≤ ∑ t∈Delta.powerset.erase ∅, ‖F t‖:=Rq _ _
-   _≤ ∑ _t∈Delta.powerset.erase ∅,q:=by
-    exact QI fun t ht↦oJ t ht
-   _≤ ∑ _t∈Delta.powerset,q:=by
-    exact Ry (Finset.erase_subset _ _)
+   _ ≤ ∑ t∈Delta.powerset.erase ∅, ‖F t‖:=Rq _ _
+   _≤ ∑ _t∈Delta.powerset.erase ∅,q:=
+          QI fun t ht↦oJ t ht
+   _≤ ∑ _t∈Delta.powerset,q:=
+          Ry (Finset.erase_subset _ _)
      (fun _ _ _↦xZ)
    _=q*(2:ℝ)^Delta.card:=by
     simp[Ux]
     ring
- let R:ℝ:=
+ let R :=
   ∑ x:G,w x* ∏ psi∈Delta,(1+(v psi*psi x).re)
  have Lz:(R:ℂ)=1+E:=by
   calc
-   (R:ℂ)= ∑ x:G,(w x:ℂ) *
+   _ = ∑ x:G,(w x:ℂ) *
      (↑(∏ psi∈Delta,(1+(v psi*psi x).re)):ℂ):=by
     dsimp[R]
     push_cast
@@ -6025,7 +5854,7 @@ lemma cy.k4
   eV w 1 Delta:=by
  apply dQ.uc vq AJ xZ hq ch
  calc
-  q*(2:ℝ)^k≤(1/4:ℝ)^k*(2:ℝ)^k:=
+  _ ≤(1/4:ℝ)^k*(2:ℝ)^k:=
    Qi Dd (QH (by norm_num) _)
   _=(1/2:ℝ)^k:=by rw[←QL]; congr 1; norm_num
   _≤1:=Uy (by norm_num) (by norm_num)
@@ -6064,7 +5893,7 @@ lemma f2
   ∑ x:G,bs X x*w x=c*X.card:=by
  classical
  calc
-  ∑ x:G,bs X x*w x= ∑ x∈X,c:=by
+  _ = ∑ x∈X,c:=by
    rw[←Ro (s₁:=X) (s₂:=Finset.univ)]
    ·apply Io rfl
     intro x hx
@@ -6080,7 +5909,7 @@ lemma jg
    (c:ℂ)*c5.c6 X psi:=by
  classical
  calc
-  ∑ x:G,((bs X x*w x:ℝ):ℂ)*psi x =
+  _ =
     ∑ x∈X,(c:ℂ)*psi x:=by
    rw[←Ro (s₁:=X) (s₂:=Finset.univ)]
    ·apply Io rfl
@@ -6107,12 +5936,12 @@ lemma km
   have hh:c*(eta*(X.card:ℝ)) ≤
     c* ‖c5.c6 X psi‖:=by
    calc
-    c*(eta*(X.card:ℝ))=eta*(c*(X.card:ℝ)):=by ring
+    _ =eta*(c*(X.card:ℝ)):=by ring
     _≤c* ‖c5.c6 X psi‖:=h
   nlinarith
  ·intro h
   calc
-   eta*(c*(X.card:ℝ))=c*(eta*(X.card:ℝ)):=by ring
+   _ =c*(eta*(X.card:ℝ)):=by ring
    _≤c* ‖c5.c6 X psi‖:=
     iO h hc.le
 end ay.jO
@@ -6250,7 +6079,7 @@ lemma iQ
   (ft:0< ∑ x:G,f x*mu x) :
   (Delta.card:ℝ) ≤
    2*(K+log ((∑ x:G,f x*mu x)⁻¹))/eta^2:=by
- let a:ℝ:= ∑ x:G,f x*mu x
+ let a :=  ∑ x:G,f x*mu x
  have ha:0<a:=by simpa[a] using ft
  let spec:AddChar G ℂ→ℂ:=fun psi ↦
   ∑ x:G,(f x*mu x:ℝ)*psi x
@@ -6269,8 +6098,8 @@ lemma iQ
      (∑ psi∈Delta,c psi*psi x) =
     (eta:ℂ)* ∑ psi∈Delta,(‖spec psi‖ :ℂ):=by
   calc
-   ∑ x:G,((f x*mu x:ℝ):ℂ) *
-     (∑ psi∈Delta,c psi*psi x) =
+   _
+                               =
      ∑ psi∈Delta,
       c psi* ∑ x:G,((f x*mu x:ℝ):ℂ)*psi x:=by
     simp_rw[Qj]
@@ -6292,7 +6121,7 @@ lemma iQ
     eta* ∑ psi∈Delta, ‖spec psi‖:=by
   have JP:=QA Complex.re Ga
   calc
-   ∑ x:G,f x*mu x*P x =
+   _ =
      (∑ x:G,((f x*mu x:ℝ):ℂ) *
       (∑ psi∈Delta,c psi*psi x)).re:=by
     simp[P,Complex.re_sum,Complex.mul_re]
@@ -6303,7 +6132,7 @@ lemma iQ
    eta^2*a*Delta.card≤ ∑ x:G,f x*mu x*P x:=by
   rw[JR]
   calc
-   eta^2*a*(Delta.card:ℝ) =
+   _ =
      ∑ psi∈Delta,eta*(eta*a):=by
     simp
     ring
@@ -6324,11 +6153,11 @@ lemma iQ
   exact div_self ha.ne'
  have HR:eta^2*Delta.card≤ ∑ x:G,w x*P x:=by
   calc
-   eta^2*(Delta.card:ℝ) ≤
+   _ ≤
      (∑ x:G,f x*mu x*P x)/a:=by
     rw[Qs ha]
     calc
-     eta^2*(Delta.card:ℝ)*a =
+     _ =
        eta^2*a*(Delta.card:ℝ):=by ring
      _≤_:=BN
    _= ∑ x:G,w x*P x:=by
@@ -6341,8 +6170,8 @@ lemma iQ
    exp (eta^2*Delta.card) ≤
     ∑ x:G,w x*exp (P x):=by
   calc
-   exp (eta^2*Delta.card)≤exp (∑ x:G,w x*P x):=by
-    exact Real.exp_le_exp.mpr HR
+   _ ≤exp (∑ x:G,w x*P x):=
+          Real.exp_le_exp.mpr HR
    _≤_:=j6 w vq AK P
  have AM :
    ∑ x:G,w x*exp (P x) ≤
@@ -6353,7 +6182,7 @@ lemma iQ
   intro x hx
   rw[Ri]
   calc
-   a⁻¹ *(f x*mu x)*exp (P x) ≤
+   _ ≤
      a⁻¹ *(1*mu x)*exp (P x):=by
     apply Qi _ (exp_pos _).le
     apply iO _ (inv_nonneg.mpr ha.le)
@@ -6364,16 +6193,15 @@ lemma iQ
     exp (K+eta^2*Delta.card/2):=by
   have hr:=s4 mu K Delta AL dQ c
   simpa[P,LB] using hr
- have ue :
-   exp (eta^2*Delta.card) ≤
-    a⁻¹ *exp (K+eta^2*Delta.card/2):=
+ have ue  :=
+
   HS.trans (AM.trans
    (iO JS (inv_nonneg.mpr ha.le)))
  have hmul :
    a*exp (eta^2*Delta.card) ≤
     exp (K+eta^2*Delta.card/2):=by
   calc
-   a*exp (eta^2*Delta.card) ≤
+   _ ≤
      a*(a⁻¹ *exp (K+eta^2*Delta.card/2)):=by
     gcongr
    _=exp (K+eta^2*Delta.card/2):=by
@@ -6383,7 +6211,7 @@ lemma iQ
     K+eta^2*Delta.card/2:=by
   rw[←exp_log ha, ←exp_add] at hmul
   exact Real.exp_le_exp.mp hmul
- have HT:0<eta^2:=SY fC
+ have HT := SY fC
  rw[Qs HT]
  rw[log_inv]
  nlinarith
@@ -6397,8 +6225,8 @@ lemma jW
   (l4:Delta⊆c5.cj X eta) :
   (Delta.card:ℝ)≤2*(1+log R)/eta^2:=by
  classical
- have AN :
-   ∑ x:G,bs X x*w x=c*X.card:=
+ have AN  :=
+
   jO.f2 ud hw
  have ft:0< ∑ x:G,bs X x*w x:=by
   rw[AN]
@@ -6417,11 +6245,11 @@ lemma jW
  have Gb :
    ((∑ x:G,bs X x*w x)⁻¹)≤R:=by
   simpa[AN] using hR
- have ei :
-   log ((∑ x:G,bs X x*w x)⁻¹)≤log R:=
+ have ei  :=
+
   QG (inv_pos.mpr ft) Gb
  calc
-  (Delta.card:ℝ) ≤
+  _ ≤
     2*(1+log ((∑ x:G,bs X x*w x)⁻¹)) /
      eta^2:=by simpa using oQ
   _≤2*(1+log R)/eta^2:=by
@@ -6442,7 +6270,7 @@ lemma om [Finite G]
   nT S T hzero eY
  have fH:Delta.card≤k:=by
   by_contra hnot
-  have HU:k≤Delta.card:=Nat.le_of_not_ge hnot
+  have HU := Nat.le_of_not_ge hnot
   obtain ⟨Gamma,w6,rG⟩:=
    Finset.exists_subset_card_eq HU
   have zo:= oQ Gamma (w6.trans uf)
@@ -6473,14 +6301,14 @@ lemma mY
      ∃ z∈Delta.addSpan,
       ∃ s∈c5.cj C.carrier (1/2),psi=z+s:=by
  classical
- let D:ℝ:=bf B X eta
- let k:ℕ:=dg B X eta
- let d:ℕ:=max B.rank 1
- let a:NNReal:=cJ B X eta
+ let D := bf B X eta
+ let k := dg B X eta
+ let d := max B.rank 1
+ let a := cJ B X eta
  obtain ⟨a8,gJ,lj,xv⟩:=
   (B.ai a).eP
- let tau:NNReal:=a8*a
- let C:aj G:=B.ai tau
+ let tau := a8*a
+ let C := B.ai tau
  have td:C.a1:=by
   simpa[C,tau] using xv
  have hd:0<d:=by simp[d]
@@ -6493,7 +6321,7 @@ lemma mY
   have LF:(0:NNReal)<(((2*k+1:ℕ):NNReal)):=by positivity
   have Oj:(0:NNReal)<100*(d:NNReal):=by positivity
   calc
-   (((2*k:ℕ):NNReal)*tau) =
+   _ =
      ((2*k:ℕ):NNReal)*(a8*a):=rfl
    _≤((2*k:ℕ):NNReal)*(1*a):=by gcongr
    _=(((2*k:ℕ):NNReal) /
@@ -6503,10 +6331,10 @@ lemma mY
     gcongr
     exact(Q9 LF).2 (by
      exact_mod_cast Nat.le_add_right (2*k) 1)
- let T:Finset (AddChar G ℂ):=c5.cj X eta
- let S:Finset (AddChar G ℂ):=
+ let T := c5.cj X eta
+ let S :=
   c5.cj C.carrier (1/2)
- let w:G→ℝ:=ay.ed B tau (2*k)
+ let w := ay.ed B tau (2*k)
  let outer:Finset G:=
   (B.ai (1+(((2*k:ℕ):NNReal)*tau))).carrier
  let c:ℝ:=(outer.card:ℝ)⁻¹
@@ -6514,8 +6342,8 @@ lemma mY
  have vq: ∀ x,0≤w x:=by
   intro x
   exact ay.qz B tau (2*k) x
- have AJ: ∑ x:G,w x=1:=by
-  exact ay.sn B tau (2*k)
+ have AJ :=
+        ay.sn B tau (2*k)
  have HV: ∀ x∈B.carrier,w x=c:=by
   intro x hx
   simpa[w,c,outer] using
@@ -6523,8 +6351,8 @@ lemma mY
  have De:outer.card≤2*B.carrier.card:=by
   simpa[outer,d] using
    (ay.oM rH (2*k) dV)
- have Ez:0<outer.card:=by
-  exact outer.card_pos.mpr (by
+ have Ez :=
+        outer.card_pos.mpr (by
    simpa[outer] using
     (B.ai (1+(((2*k:ℕ):NNReal)*tau))).aE)
  have hc:0<c:=by
@@ -6536,14 +6364,14 @@ lemma mY
   have Nj:(outer.card:ℝ)≤2*B.carrier.card:=by
    exact_mod_cast De
   calc
-   (c*(X.card:ℝ))⁻¹ =(outer.card:ℝ)/X.card:=by
+   _ =(outer.card:ℝ)/X.card:=by
     dsimp[c]
     field_simp
    _≤(2*B.carrier.card:ℝ)/X.card:=
     (R9 OQ).2 Nj
    _=R:=by simp[R]
- have hzero:(0:AddChar G ℂ)∈S:=by
-  exact nm C.carrier
+ have hzero :=
+        nm C.carrier
  have eY: ∀ s∈S, -s∈S:=by
   intro s hs
   exact ku hs
@@ -6560,10 +6388,10 @@ lemma mY
     ‖ay.cG w psi‖ ≤(1/2:ℝ)^(2*k):=by
    intro psi cT
    calc
-    ‖ay.cG w psi‖ ≤
+    _ ≤
       ‖ay.cG
-       (af (B.ai tau).carrier) psi‖ ^(2*k):=by
-     exact ay.ly
+       (af (B.ai tau).carrier) psi‖ ^(2*k):=
+           ay.ly
       B tau (2*k) psi
     _≤(1/2:ℝ)^(2*k):=by
      gcongr
@@ -6629,7 +6457,7 @@ lemma eE (psi:AddChar G ℂ) (x:G) :
  exact S6 (AddChar.circleEquivComplex.apply_symm_apply psi) x
 omit [DecidableEq G] in
 lemma pV :
-  Function.Injective (aP (G:=G)):=by
+  Injective (aP (G:=G)):=by
  intro psi fJ h
  ext x
  have hx:=S6 h x
@@ -6796,8 +6624,8 @@ lemma gZ
 omit [DecidableEq G] in
 lemma lV
   (psi:AddChar G ℂ) (x:G)
-  (JV: ‖aP psi x‖ ≤(2*Real.pi)⁻¹) :
-  ‖1-psi x‖ ≤4*Real.pi* ‖aP psi x‖:=by
+  (JV: ‖aP psi x‖ ≤(2*pi)⁻¹) :
+  ‖1-psi x‖ ≤4*pi* ‖aP psi x‖:=by
  classical
  let a:ℝ:=AddCircle.equivIoc (1:ℝ) (-1/2) (aP psi x)
  have EC:a∈Set.Ioc (-1/2) (-1/2+1):=
@@ -6810,18 +6638,18 @@ lemma lV
  have Cn: ‖aP psi x‖ = |a|:=by
   rw[←tw]
   exact(Ts (1:ℝ) (by norm_num)).2 (by simpa using JW)
- have vV: ‖(2*Real.pi*a:ℂ)‖ =2*Real.pi* |a|:=by
+ have vV: ‖(2*pi*a:ℂ)‖ =2*pi* |a|:=by
   simp[QK,QC Real.pi_nonneg]
- have uY: ‖(2*Real.pi*a:ℂ)*Complex.I‖ ≤1:=by
+ have uY: ‖(2*pi*a:ℂ)*Complex.I‖ ≤1:=by
   rw[QO,Complex.norm_I,Q3,vV, ←Cn]
-  have Af:0<2*Real.pi:=by positivity
+  have Af:0<2*pi:=by positivity
   calc
-   2*Real.pi* ‖aP psi x‖ ≤
-     2*Real.pi*(2*Real.pi)⁻¹:=
+   2*pi* ‖aP psi x‖ ≤
+     2*pi*(2*pi)⁻¹:=
     iO JV Af.le
    _=1:=by field_simp
  have l9:=Complex.norm_exp_sub_one_le uY
- have heval:psi x=Complex.exp ((2*Real.pi*a:ℂ)*Complex.I):=by
+ have heval:psi x=Complex.exp ((2*pi*a:ℂ)*Complex.I):=by
   rw[←eE psi x, ←tw]
   simp only[AddCircle.toCircle_apply_mk,Circle.coe_exp]
   congr 1
@@ -6829,52 +6657,52 @@ lemma lV
   field_simp
  rw[heval,norm_sub_rev]
  calc
-  ‖Complex.exp ((2*Real.pi*a:ℂ)*Complex.I)-1‖
-    ≤ 2* ‖(2*Real.pi*a:ℂ)*Complex.I‖:=l9
-  _=4*Real.pi* ‖aP psi x‖:=by
+  ‖Complex.exp ((2*pi*a:ℂ)*Complex.I)-1‖
+    ≤ 2* ‖(2*pi*a:ℂ)*Complex.I‖:=l9
+  _=4*pi* ‖aP psi x‖:=by
    rw[QO,Complex.norm_I,Q3,vV,Cn]
    ring
 omit [DecidableEq G] in
 lemma jP
   (B:aj G) {Delta:Finset (AddChar G ℂ)} {aF r:ℝ≥0}
   {psi:AddChar G ℂ} {x:G}
-  (dV:(Delta.card:ℝ)*(r:ℝ)≤(2*Real.pi)⁻¹)
+  (dV:(Delta.card:ℝ)*(r:ℝ)≤(2*pi)⁻¹)
   (hx:x∈(cD B Delta aF r).carrier)
   (cT:psi∈Delta.addSpan) :
-  ‖1-psi x‖ ≤4*Real.pi*((Delta.card:ℝ)*(r:ℝ)):=by
+  ‖1-psi x‖ ≤4*pi*((Delta.card:ℝ)*(r:ℝ)):=by
  classical
  have JX:=gZ
   B hx cT
  calc
-  ‖1-psi x‖ ≤4*Real.pi* ‖aP psi x‖:=
+  _ ≤4*pi* ‖aP psi x‖:=
    lV psi x (JX.trans dV)
-  _≤4*Real.pi*((Delta.card:ℝ)*(r:ℝ)):=
+  _≤4*pi*((Delta.card:ℝ)*(r:ℝ)):=
    iO JX (by positivity)
 omit [DecidableEq G] in
 lemma jh
   (B:aj G) {Delta Q S:Finset (AddChar G ℂ)} {aF r:ℝ≥0}
   {beta:ℝ} {x:G}
-  (dV:(Delta.card:ℝ)*(r:ℝ)≤(2*Real.pi)⁻¹)
+  (dV:(Delta.card:ℝ)*(r:ℝ)≤(2*pi)⁻¹)
   (hx:x∈(cD B Delta aF r).carrier)
   (j7: ∀ psi∈Q, ∃ z∈Delta.addSpan, ∃ s∈S,psi=z+s)
   (ED: ∀ s∈S, ‖1-s x‖ ≤beta) :
   ∀ psi∈Q,
-   ‖1-psi x‖ ≤4*Real.pi*((Delta.card:ℝ)*(r:ℝ))+beta:=by
+   ‖1-psi x‖ ≤4*pi*((Delta.card:ℝ)*(r:ℝ))+beta:=by
  classical
  intro psi cT
  obtain ⟨z,hz,s,hs,rfl⟩:=j7 psi cT
- have HY :
-   ‖1-z x‖ ≤4*Real.pi*((Delta.card:ℝ)*(r:ℝ)):=
+ have HY  :=
+
   jP B dV hx hz
  calc
-  ‖1-(z+s) x‖ = ‖(1-z x)+z x*(1-s x)‖:=by
+  _ = ‖(1-z x)+z x*(1-s x)‖:=by
    rw[U3]
    congr 1
    ring
   _≤ ‖1-z x‖ + ‖z x*(1-s x)‖:=norm_add_le _ _
   _= ‖1-z x‖ + ‖1-s x‖:=by
    rw[QO,Q0,QT]
-  _≤4*Real.pi*((Delta.card:ℝ)*(r:ℝ))+beta:=
+  _≤4*pi*((Delta.card:ℝ)*(r:ℝ))+beta:=
    Sr HY (ED s hs)
 omit [DecidableEq G] in
 lemma iY
@@ -6882,12 +6710,12 @@ lemma iY
   {Delta Q:Finset (AddChar G ℂ)} {sigma r:ℝ≥0}
   (iX:sigma ≤
    1/(100*(max C.rank 1:ℕ):ℝ≥0))
-  (dV:(Delta.card:ℝ)*(r:ℝ)≤(2*Real.pi)⁻¹)
+  (dV:(Delta.card:ℝ)*(r:ℝ)≤(2*pi)⁻¹)
   (j7: ∀ psi∈Q, ∃ z∈Delta.addSpan,
    ∃ s∈c5.cj C.carrier (1/2),psi=z+s) :
   ∀ x∈(cD C Delta sigma r).carrier, ∀ psi∈Q,
    ‖1-psi x‖ ≤
-    4*Real.pi*((Delta.card:ℝ)*(r:ℝ)) +
+    4*pi*((Delta.card:ℝ)*(r:ℝ)) +
      400*((max C.rank 1:ℕ):ℝ)*(sigma:ℝ):=by
  classical
  intro x hx
@@ -6905,67 +6733,67 @@ namespace ay.qC
 noncomputable section
 variable {G:Type*} [AddCommGroup G] [Fintype G] [DecidableEq G]
 open aj jm
-def rI (m:Nat) (hm:0< m) (z:AddCircle (1:Real)):Fin m:=by
- have ug:0≤(cx z+1/2)*(m:Real):=by
+def rI (m:ℕ) (hm:0< m) (z:AddCircle (1:ℝ)):Fin m:=by
+ have ug:0≤(cx z+1/2)*(m:ℝ):=by
   have hz:=(k1 z).1
-  have qD:(0:Real)≤ m:=by positivity
+  have qD:(0:ℝ)≤ m:=by positivity
   exact Qn (by linarith) qD
  refine ⟨⌊(cx z+1/2)*m⌋₊,(Uc ug).2 ?_⟩
  have hz:cx z+1/2<1:=by
   linarith[(k1 z).2]
- have qD:(0:Real)< m:=by exact_mod_cast hm
- exact(Sk hz qD).trans_eq (QT (m:Real))
+ have qD:(0:ℝ)< m:=by exact_mod_cast hm
+ exact(Sk hz qD).trans_eq (QT (m:ℝ))
 lemma nV
-  {m:Nat} (hm:0< m) {z w:AddCircle (1:Real)}
+  {m:ℕ} (hm:0< m) {z w:AddCircle (1:ℝ)}
   (lP:rI m hm z=rI m hm w) :
-  ‖z-w‖ ≤1/(m:Real):=by
+  ‖z-w‖ ≤1/(m:ℝ):=by
  let rz:=cx z
  let rw:=cx w
- let uz:=(rz+1/2)*(m:Real)
- let uw:=(rw+1/2)*(m:Real)
+ let uz:=(rz+1/2)*(m:ℝ)
+ let uw:=(rw+1/2)*(m:ℝ)
  have P8:0≤rz+1/2:=by
   dsimp[rz]
   linarith[(k1 z).1]
  have P9:0≤rw+1/2:=by
   dsimp[rw]
   linarith[(k1 w).1]
- have qD:(0:Real)< m:=by exact_mod_cast hm
+ have qD:(0:ℝ)< m:=by exact_mod_cast hm
  have OR:0≤uz:=by dsimp[uz]; positivity
  have OS:0≤uw:=by dsimp[uw]; positivity
  have vW:⌊uz⌋₊=⌊uw⌋₊:=by
   have q4:=QA Fin.val lP
   simpa only[rI,uz,uw,rz,rw] using q4
- have uZ:((⌊uz⌋₊:Nat):Real)≤uz:=Ti OR
- have u0:uz<((⌊uz⌋₊:Nat):Real)+1:=RY uz
- have AR:((⌊uw⌋₊:Nat):Real)≤uw:=Ti OS
- have AS:uw<((⌊uw⌋₊:Nat):Real)+1:=RY uw
- have Df:(rz-rw)*(m:Real)<1:=by
+ have uZ := Ti OR
+ have u0 := RY uz
+ have AR := Ti OS
+ have AS := RY uw
+ have Df:(rz-rw)*(m:ℝ)<1:=by
   dsimp[uz,uw] at uZ u0 AR AS
   rw[vW] at uZ u0
   nlinarith
- have Dg: -(1/(m:Real))<rz-rw:=by
-  have hmul:(-1:Real)<(rz-rw)*(m:Real):=by
+ have Dg: -(1/(m:ℝ))<rz-rw:=by
+  have hmul:(-1:ℝ)<(rz-rw)*(m:ℝ):=by
    dsimp[uz,uw] at uZ u0 AR AS
    rw[vW] at uZ u0
    nlinarith
-  have hdiv:(-1:Real)/(m:Real)<rz-rw:=
+  have hdiv:(-1:ℝ)/(m:ℝ)<rz-rw:=
    (Tv qD).2 hmul
   simpa only[neg_div,R6] using hdiv
- have BO:rz-rw<1/(m:Real):=
+ have BO:rz-rw<1/(m:ℝ):=
   (SP qD).2 Df
  calc
-  ‖z-w‖ ≤ |rz-rw|:=gu z w
-  _≤1/(m:Real):=(abs_lt.2 ⟨Dg,BO⟩).le
-def signature (Delta:Finset (AddChar G Complex))
-  (m:Nat) (hm:0< m) (x:G):Delta→Fin m:=
+  _ ≤ |rz-rw|:=gu z w
+  _≤1/(m:ℝ):=(abs_lt.2 ⟨Dg,BO⟩).le
+def signature (Delta:Finset (AddChar G ℂ))
+  (m:ℕ) (hm:0< m) (x:G):Delta→Fin m:=
  fun psi↦rI m hm (aP psi.1 x)
 omit [DecidableEq G] in
 lemma qE
-  (B:aj G) (Delta:Finset (AddChar G Complex))
+  (B:aj G) (Delta:Finset (AddChar G ℂ))
   (aF r:NNReal) (x:G) :
   x∈(cD B Delta aF r).carrier ↔
    x∈(B.ai aF).carrier ∧
-    ∀ psi∈Delta, ‖aP psi x‖ ≤(r:Real):=by
+    ∀ psi∈Delta, ‖aP psi x‖ ≤(r:ℝ):=by
  classical
  constructor
  ·intro hx
@@ -6984,7 +6812,7 @@ lemma qE
      if gamma∈Delta.image aP then
       min (aF*B.width gamma) r
      else aF*B.width gamma
-    else r):NNReal):Real)
+    else r):NNReal):ℝ)
   rcases k5 with vX | JZ
   ·by_cases Dh:gamma∈Delta.image aP
    ·obtain ⟨psi,cT,EE⟩:=Finset.mem_image.mp Dh
@@ -7002,8 +6830,8 @@ lemma qE
     exact dQ psi cT
 omit [DecidableEq G] in
 private lemma mB
-  (B:aj G) (Delta:Finset (AddChar G Complex))
-  (aF:NNReal) {m:Nat} (hm:0< m)
+  (B:aj G) (Delta:Finset (AddChar G ℂ))
+  (aF:NNReal) {m:ℕ} (hm:0< m)
   (S:Finset G) (hS:S⊆(B.ai aF).carrier)
   {x y:↥S} (ni:signature Delta m hm x.1=signature Delta m hm y.1) :
   x.1-y.1 ∈
@@ -7019,20 +6847,20 @@ private lemma mB
   simpa only[SE,S9,R6] using hbound
 omit [DecidableEq G] in
 private lemma s5
-  (B:aj G) (Delta:Finset (AddChar G Complex))
-  (aF:NNReal) {m:Nat} (hm:0< m)
+  (B:aj G) (Delta:Finset (AddChar G ℂ))
+  (aF:NNReal) {m:ℕ} (hm:0< m)
   (S:Finset G) (hS:S⊆(B.ai aF).carrier)
   (a:Delta→Fin m) :
   Fintype.card {x:↥S// signature Delta m hm x.1=a} ≤
    (cD B Delta (aF+aF) (m:NNReal)⁻¹).carrier.card:=by
  classical
  by_cases jv:Nonempty {x:↥S// signature Delta m hm x.1=a}
- ·let x₀:{x:↥S// signature Delta m hm x.1=a}:=Classical.choice jv
+ ·let x₀ := Classical.choice jv
   let f:{x:↥S// signature Delta m hm x.1=a} →
     ↥(cD B Delta (aF+aF) (m:NNReal)⁻¹).carrier:=
    fun x↦⟨x.1.1-x₀.1.1,mB
     B Delta aF hm S hS (x.2.trans x₀.2.symm)⟩
-  have hf:Function.Injective f:=by
+  have hf:Injective f:=by
    intro x y ni
    apply RI
    apply RI
@@ -7040,7 +6868,7 @@ private lemma s5
    dsimp[f] at q4
    exact S8 q4
   calc
-   Fintype.card {x:↥S// signature Delta m hm x.1=a} ≤
+   _ ≤
      Fintype.card ↥(cD B Delta (aF+aF)
       (m:NNReal)⁻¹).carrier:=R1 f hf
    _=(cD B Delta (aF+aF)
@@ -7049,8 +6877,8 @@ private lemma s5
   simp
 omit [DecidableEq G] in
 lemma nW
-  (B:aj G) (Delta:Finset (AddChar G Complex))
-  (aF:NNReal) {m:Nat} (hm:0< m)
+  (B:aj G) (Delta:Finset (AddChar G ℂ))
+  (aF:NNReal) {m:ℕ} (hm:0< m)
   (S:Finset G) (hS:S⊆(B.ai aF).carrier) :
   S.card≤ m^Delta.card *
    (cD B Delta (aF+aF) (m:NNReal)⁻¹).carrier.card:=by
@@ -7079,8 +6907,8 @@ lemma nW
  exact(Rd Em) ha
 omit [DecidableEq G] in
 lemma tz
-  (B:aj G) (Delta:Finset (AddChar G Complex))
-  (aF:NNReal) {m:Nat} (hm:0< m)
+  (B:aj G) (Delta:Finset (AddChar G ℂ))
+  (aF:NNReal) {m:ℕ} (hm:0< m)
   (S:Finset G) (hS:S⊆(B.ai aF).carrier) :
   (cD B Delta (aF+aF) (m:NNReal)⁻¹).rank ≤
     B.rank+Delta.card ∧
@@ -7110,7 +6938,7 @@ lemma q8 [Finite G] (psi:AddChar G ℂ) (t:G) :
   have:=Q0 psi t
   simp[h] at this
  calc
-  ‖(psi t)⁻¹ -1‖ = ‖(psi t)⁻¹ *(1-psi t)‖:=by
+  _ = ‖(psi t)⁻¹ *(1-psi t)‖:=by
    congr 1
    field_simp
   _= ‖1-psi t‖:=by
@@ -7192,29 +7020,29 @@ lemma oR
 lemma sv
   [MeasurableSpace G] [DiscreteMeasurableSpace G]
   (A B C:Finset G) (hA:A.Nonempty) (hC:C.Nonempty) :
-  (c2 1 (dft ((aC (((aC ((@mu (ℂ) _ _) A) (((Set.indicator B fun _↦(1:_)):G→ℂ))))) (mu C))))) ≤
+  (c2 1 (dft ((aC (((aC ((@mu (ℂ) _ _) A) (((indicator B fun _↦(1:_)):G→ℂ))))) (mu C))))) ≤
    Real.sqrt ((B.card:ℝ)/C.card):=by
  calc
-  (c2 1 (dft ((aC (((aC ((@mu (ℂ) _ _) A) (((Set.indicator B fun _↦(1:_)):G→ℂ))))) (mu C)))))
+  _
     = (c2 1 (dft ((@mu (ℂ) _ _) A) *
-      (dft ((Set.indicator B fun _↦(1:_)):G→ℂ)*dft ((@mu (ℂ) _ _) C)))):=by
+      (dft ((indicator B fun _↦(1:_)):G→ℂ)*dft ((@mu (ℂ) _ _) C)))):=by
      rw[x2,x2]
      congr 1
      funext psi
      ring_nf
-  _≤(c2 1 (dft ((Set.indicator B fun _↦(1:_)):G→ℂ)*dft ((@mu (ℂ) _ _) C))):=by
+  _≤(c2 1 (dft ((indicator B fun _↦(1:_)):G→ℂ)*dft ((@mu (ℂ) _ _) C))):=by
    calc
-    _≤(c2 1 (dft ((Set.indicator B fun _↦(1:_)):G→ℂ)*dft ((@mu (ℂ) _ _) C))) *
+    _≤(c2 1 (dft ((indicator B fun _↦(1:_)):G→ℂ)*dft ((@mu (ℂ) _ _) C))) *
        (c2 (∞) (dft ((@mu (ℂ) _ _) A))):=by
       simpa[Qx] using
-       (tY (f:=dft ((Set.indicator B fun _↦(1:_)):G→ℂ)*dft ((@mu (ℂ) _ _) C))
+       (tY (f:=dft ((indicator B fun _↦(1:_)):G→ℂ)*dft ((@mu (ℂ) _ _) C))
         (g:=dft ((@mu (ℂ) _ _) A)) 1 ∞)
-    _≤(c2 1 (dft ((Set.indicator B fun _↦(1:_)):G→ℂ)*dft ((@mu (ℂ) _ _) C)))*1:=by
+    _≤(c2 1 (dft ((indicator B fun _↦(1:_)):G→ℂ)*dft ((@mu (ℂ) _ _) C)))*1:=by
       gcongr
       ·exact yM
       exact(qY _).trans_eq (uN hA)
     _=_:=Q3 _
-  _≤(c2 2 (dft ((Set.indicator B fun _↦(1:_)):G→ℂ)))*(c2 2 (dft ((@mu (ℂ) _ _) C))):=
+  _≤(c2 2 (dft ((indicator B fun _↦(1:_)):G→ℂ)))*(c2 2 (dft ((@mu (ℂ) _ _) C))):=
    tY 2 2
   _=Real.sqrt (B.card:ℝ)*(C.card:ℝ)^(-2⁻¹ :ℝ):=by
    rw[w5,tU,w5,CD hC]
@@ -7276,16 +7104,16 @@ lemma kH
   intro hn
   have:=ay.aI.ku hn
   exact hnot (by simpa only[neg_neg] using this)
- have NW :
-   ‖ay.c5.c6 X (-psi)‖ <(1/2:ℝ)*X.card:=by
-  exact QV fun h↦eY (ay.c5.gm.mpr h)
+ have NW  :=
+
+        QV fun h↦eY (ay.c5.gm.mpr h)
  have ch:(0:ℝ)<X.card:=by exact_mod_cast hX.card_pos
  have xS :
    ‖ay.cG (ay.af X) (-psi)‖ <1/2:=by
   rw[ay.jU,QO,Up,
    Rf,QK,RT ch]
   calc
-   (X.card:ℝ)⁻¹ * ‖ay.c5.c6 X (-psi)‖ <
+   _ <
      (X.card:ℝ)⁻¹ *((1/2:ℝ)*X.card):=by gcongr
    _=1/2:=by field_simp
  rw[s6] at cT
@@ -7298,24 +7126,24 @@ lemma ib
  rw[←tA T a psi]
  exact cT
 noncomputable def a6 (D:ℝ):ℕ:=
- ⌈2*Real.pi*max D 0⌉₊+1
+ ⌈2*pi*max D 0⌉₊+1
 lemma gf (D:ℝ):0<a6 D:=by
  simp[a6]
 lemma jc (D:ℝ) :
   D*((((a6 D:ℕ):ℝ≥0)⁻¹ :ℝ)) ≤
-   (2*Real.pi)⁻¹:=by
+   (2*pi)⁻¹:=by
  let n:=a6 D
  have LH:0<n:=gf D
  have hn:(0:ℝ)<n:=by exact_mod_cast LH
- have Af:(0:ℝ)<2*Real.pi:=by positivity
- have rJ:2*Real.pi*max D 0 ≤
-   (Nat.ceil (2*Real.pi*max D 0):ℝ):=Rr _
- have fF:2*Real.pi*D≤(n:ℝ):=by
+ have Af:(0:ℝ)<2*pi:=by positivity
+ have rJ:2*pi*max D 0 ≤
+   (Nat.ceil (2*pi*max D 0):ℝ):=Rr _
+ have fF:2*pi*D≤(n:ℝ):=by
   calc
-   2*Real.pi*D≤2*Real.pi*max D 0:=by
+   2*pi*D≤2*pi*max D 0:=by
     gcongr
     exact Tu _ _
-   _≤(Nat.ceil (2*Real.pi*max D 0):ℝ):=rJ
+   _≤(Nat.ceil (2*pi*max D 0):ℝ):=rJ
    _≤(n:ℝ):=by
     dsimp[n,a6]
     exact_mod_cast Nat.le_succ _
@@ -7324,28 +7152,28 @@ lemma jc (D:ℝ) :
  rw[tw]
  rw[←Qw,QF hn]
  calc
-  D≤(n:ℝ)/(2*Real.pi):=
+  D≤(n:ℝ)/(2*pi):=
    (Qs Af).2 (by nlinarith[fF])
-  _=(2*Real.pi)⁻¹ *(n:ℝ):=by
+  _=(2*pi)⁻¹ *(n:ℝ):=by
    field_simp
 lemma sw (D:ℝ) (d q:ℕ)
   (hd:(d:ℝ)≤D) (hq:0<q) :
-  4*Real.pi*(d:ℝ) *
+  4*pi*(d:ℝ) *
     (((((q*a6 D:ℕ):ℝ≥0)⁻¹ :ℝ))) ≤
    2/(q:ℝ):=by
- have hs:0<a6 D:=gf D
+ have hs := gf D
  have Qa:(0:ℝ)<a6 D:=by exact_mod_cast hs
  have Jd:(0:ℝ)<q:=by exact_mod_cast hq
  have dc:D*((a6 D:ℝ)⁻¹) ≤
-   (2*Real.pi)⁻¹:=by
+   (2*pi)⁻¹:=by
   have h:=jc D
   have tw:((((a6 D:ℕ):ℝ≥0)⁻¹ :ℝ)) =
     (a6 D:ℝ)⁻¹:=by norm_cast
   simpa[tw] using h
  have NX:(d:ℝ)*((a6 D:ℝ)⁻¹) ≤
-   (2*Real.pi)⁻¹:=by
+   (2*pi)⁻¹:=by
   calc
-   (d:ℝ)*((a6 D:ℝ)⁻¹) ≤
+   _ ≤
      D*((a6 D:ℝ)⁻¹):=by gcongr
    _≤_:=dc
  have tw:(((((q*a6 D:ℕ):ℝ≥0)⁻¹ :ℝ))) =
@@ -7353,11 +7181,11 @@ lemma sw (D:ℝ) (d q:ℕ)
   norm_cast
  rw[tw,mul_inv]
  calc
-  4*Real.pi*(d:ℝ) *
-    ((q:ℝ)⁻¹ *(a6 D:ℝ)⁻¹) =
+  _
+                          =
     (q:ℝ)⁻¹ *
-     (4*Real.pi*((d:ℝ)*(a6 D:ℝ)⁻¹)):=by ring
-  _≤(q:ℝ)⁻¹ *(4*Real.pi*(2*Real.pi)⁻¹):=by gcongr
+     (4*pi*((d:ℝ)*(a6 D:ℝ)⁻¹)):=by ring
+  _≤(q:ℝ)⁻¹ *(4*pi*(2*pi)⁻¹):=by gcongr
   _=2/(q:ℝ):=by
    field_simp
    ring
@@ -7394,7 +7222,7 @@ lemma kn
   (iX:aF+aF ≤
    1/(100*(max C.rank 1:ℕ):ℝ≥0))
   (dV:(Delta.card:ℝ)*((m:ℝ≥0)⁻¹ :ℝ) ≤
-   (2*Real.pi)⁻¹)
+   (2*pi)⁻¹)
   (j7: ∀ psi∈Q, ∃ z∈Delta.addSpan,
    ∃ s∈ay.c5.cj C.carrier (1/2),psi=z+s) :
   let D:=ay.jm.cD C Delta
@@ -7404,7 +7232,7 @@ lemma kn
    X.card≤ m^Delta.card*D.carrier.card ∧
    ∀ t∈D.carrier, ∀ psi∈Q,
     ‖1-psi t‖ ≤
-     4*Real.pi*((Delta.card:ℝ)*((m:ℝ≥0)⁻¹ :ℝ)) +
+     4*pi*((Delta.card:ℝ)*((m:ℝ≥0)⁻¹ :ℝ)) +
       400*((max C.rank 1:ℕ):ℝ)*(aF+aF:ℝ≥0):=by
  classical
  let D:=ay.jm.cD C Delta
@@ -7444,7 +7272,7 @@ lemma gK
   (iX:aF+aF ≤
    1/(100*(max C.rank 1:ℕ):ℝ≥0))
   (dV:(Delta.card:ℝ)*((m:ℝ≥0)⁻¹ :ℝ) ≤
-   (2*Real.pi)⁻¹)
+   (2*pi)⁻¹)
   (j7: ∀ psi∈Q, ∃ z∈Delta.addSpan,
    ∃ s∈ay.c5.cj C.carrier (1/2),psi=z+s) :
   ∃ R:ay.aj G,
@@ -7453,7 +7281,7 @@ lemma gK
    X.card≤ m^Delta.card*(4^(C.rank+Delta.card)*R.carrier.card) ∧
    ∀ t∈R.carrier, ∀ psi∈Q,
     ‖1-psi t‖ ≤
-     4*Real.pi*((Delta.card:ℝ)*((m:ℝ≥0)⁻¹ :ℝ)) +
+     4*pi*((Delta.card:ℝ)*((m:ℝ≥0)⁻¹ :ℝ)) +
       400*((max C.rank 1:ℕ):ℝ)*(aF+aF:ℝ≥0):=by
  classical
  let D:=ay.jm.cD C Delta
@@ -7481,7 +7309,7 @@ lemma iD
    1/(100*(max B.rank 1:ℕ):ℝ≥0))
   (dV :
    ay.aI.bf B X eta *
-     (((m:ℝ≥0)⁻¹ :ℝ))≤(2*Real.pi)⁻¹) :
+     (((m:ℝ≥0)⁻¹ :ℝ))≤(2*pi)⁻¹) :
   ∃ a8:ℝ≥0, ∃ C:ay.aj G,
    ∃ Delta:Finset (AddChar G ℂ), ∃ R:ay.aj G,
     1/2≤a8∧a8≤1 ∧
@@ -7498,7 +7326,7 @@ lemma iD
     ∀ t∈R.carrier,
      ∀ psi∈ay.c5.cj X eta,
       ‖1-psi t‖ ≤
-       4*Real.pi *
+       4*pi *
          (Delta.card:ℝ)*(((m:ℝ≥0)⁻¹ :ℝ)) +
         400*((max B.rank 1:ℕ):ℝ) *
          (aF+aF:ℝ≥0):=by
@@ -7514,7 +7342,7 @@ lemma iD
  have hinv:0≤(((m:ℝ≥0)⁻¹ :ℝ)):=by positivity
  have BP :
    (Delta.card:ℝ)*(((m:ℝ≥0)⁻¹ :ℝ)) ≤
-    (2*Real.pi)⁻¹:=
+    (2*pi)⁻¹:=
   (Qi fH hinv).trans dV
  obtain ⟨R,qk,oT,yc,vZ,l7⟩:=
   gK
@@ -7536,9 +7364,9 @@ lemma fk
   (dy:aF+aF ≤
    1/(100*(max bl.rank 1:ℕ):ℝ≥0))
   (dh:ℕ) (pX:0<dh) :
-  let q:=⌈1+Real.log (min 1 ((L.card:ℝ)/M.card))⁻¹⌉₊
+  let q:=⌈1+log (min 1 ((L.card:ℝ)/M.card))⁻¹⌉₊
   let wK:=ay.cQ q
-   ((delta/m)/Real.exp 1)
+   ((delta/m)/exp 1)
   ∃ (T X:Finset G) (z:G) (a8:ℝ≥0),
    ∃ (fl:ay.aj G)
     (Delta:Finset (AddChar G ℂ)) (R:ay.aj G),
@@ -7560,10 +7388,10 @@ lemma fk
       Delta.card *
      (4^(bl.rank+Delta.card)*R.carrier.card) ∧
    ∀ t∈R.carrier,
-    (aJ (∞) (τ t ((aC (((aC ((@mu (ℂ) _ _) A) (((Set.indicator M fun _↦(1:_)):G→ℂ))))) (mu L))) -
-      ((aC (((aC ((@mu (ℂ) _ _) A) (((Set.indicator M fun _↦(1:_)):G→ℂ))))) (mu L))))) ≤
+    (aJ (∞) (τ t ((aC (((aC ((@mu (ℂ) _ _) A) (((indicator M fun _↦(1:_)):G→ℂ))))) (mu L))) -
+      ((aC (((aC ((@mu (ℂ) _ _) A) (((indicator M fun _↦(1:_)):G→ℂ))))) (mu L))))) ≤
      2*delta +
-      (4*Real.pi *
+      (4*pi *
          (Delta.card:ℝ) *
           ((((dh*a6
            (ay.aI.bf
@@ -7573,18 +7401,18 @@ lemma fk
         2*(1/2:ℝ)^m) *
        Real.sqrt ((M.card:ℝ)/L.card):=by
  classical
- let q:=⌈1+Real.log (min 1 ((L.card:ℝ)/M.card))⁻¹⌉₊
+ let q:=⌈1+log (min 1 ((L.card:ℝ)/M.card))⁻¹⌉₊
  let wK:=ay.cQ q
-  ((delta/m)/Real.exp 1)
+  ((delta/m)/exp 1)
  obtain ⟨T,z,ui,ML,pT,_hXdiff,nk,j8⟩:=
   ay.mX
    hA bl.aE delta cu m hm M L hM hL
- let X:Finset G:=-z+ᵥ T
+ let X := -z+ᵥ T
  have uW:T.Nonempty:=⟨z,ML⟩
  let dim:=ay.aI.bf bl T (1/2)
  let n:=dh*a6 dim
- have hn:0<n:=QP pX (gf dim)
- have dV:dim*(((n:ℝ≥0)⁻¹ :ℝ))≤(2*Real.pi)⁻¹:=by
+ have hn := QP pX (gf dim)
+ have dV:dim*(((n:ℝ≥0)⁻¹ :ℝ))≤(2*pi)⁻¹:=by
   have oQ:0≤dim:=by
    have nk:(0:ℝ)<T.card:=by exact_mod_cast uW.card_pos
    have ch:(T.card:ℝ)≤bl.carrier.card:=by
@@ -7592,13 +7420,12 @@ lemma fk
    have eO:(1:ℝ)≤2*(bl.carrier.card:ℝ)/T.card:=by
     rw[Qs nk]
     nlinarith
-   have ei:0≤Real.log (2*(bl.carrier.card:ℝ)/T.card):=
+   have ei :=
     Qv eO
    dsimp[dim,ay.aI.bf]
    positivity
-  have dc:dim *
-    ((((a6 dim:ℕ):ℝ≥0)⁻¹ :ℝ)) ≤
-     (2*Real.pi)⁻¹:=
+  have dc :=
+
    jc dim
   have Dj:a6 dim≤n:=by
    dsimp[n]
@@ -7618,10 +7445,10 @@ lemma fk
   iD
    bl sx T uW ui (1/2) (by norm_num)
     aF n hn dy (by simpa[dim] using dV)
- let F:G→ℂ:=(aC (((aC (mu A) ((Set.indicator M fun _↦(1:_)))))) (mu L))
+ let F:G→ℂ:=(aC (((aC (mu A) ((indicator M fun _↦(1:_)))))) (mu L))
  let P:G→ℂ:=(aC ((ep (mu X) m)) F)
  let phase:ℝ:=
-  4*Real.pi*(Delta.card:ℝ)*(((n:ℝ≥0)⁻¹ :ℝ)) +
+  4*pi*(Delta.card:ℝ)*(((n:ℝ≥0)⁻¹ :ℝ)) +
    400*((max bl.rank 1:ℕ):ℝ)*(aF+aF:ℝ≥0)
  have H3:0≤phase:=by
   dsimp[phase]
@@ -7644,7 +7471,7 @@ lemma fk
     (phase+2*(1/2:ℝ)^m) *
      Real.sqrt ((M.card:ℝ)/L.card):=by
    calc
-    (aJ (∞) (τ t P-P)) ≤
+    _ ≤
       (phase+2*(1/2:ℝ)^m)*(c2 1 (dft F)):=by
        simpa[P] using hP
     _≤(phase+2*(1/2:ℝ)^m) *
@@ -7688,9 +7515,8 @@ lemma d7
  simp_rw[Qt]
  rw[sum_comm]
  calc
-  ∑ y:G, ∑ x:G,
-    ((if y∈aX then (#aX:ℝ)⁻¹ else 0) *
-     (if y-(x-t)∈a3 then (#a3:ℝ)⁻¹ else 0))*bJ S x
+  _
+
     = ((#aX:ℝ)⁻¹ *(#a3:ℝ)⁻¹) *
       ∑ y:G, ∑ x:G,
        bJ aX y*bJ a3 (y-(x-t)) *
@@ -7876,7 +7702,7 @@ lemma qF
  classical
  rw[dN w f hp]
  calc
-  (b0 p w f)≤(b0 p w ((fun _:G↦C))):=by
+  _ ≤(b0 p w ((fun _:G↦C))):=by
    apply lpNorm_mono_real .of_discrete
    simpa[QC hC] using hf
   _=C:=by
@@ -7927,12 +7753,12 @@ lemma eZ
   |((al ((@mu (ℝ) _ _) A) (mu B.carrier))) t-(B.carrier.card:ℝ)⁻¹| ≤
    (A.card:ℝ)⁻¹ *
     (200*((max B.rank 1:ℕ):ℝ)*(aF:ℝ)):=by
- have hB:B.carrier.Nonempty:=B.aE
+ have hB := B.aE
  have dc :
    ∑ x:G,(@mu (ℝ) _ _) A x*mu B.carrier x =
     (B.carrier.card:ℝ)⁻¹:=by
   calc
-   ∑ x:G,(@mu (ℝ) _ _) A x*mu B.carrier x =
+   _ =
      ∑ x:G,(@mu (ℝ) _ _) A x*(B.carrier.card:ℝ)⁻¹:=by
     apply Io rfl
     intro x _
@@ -7961,8 +7787,8 @@ lemma eZ
   ring
  rw[Dk]
  calc
-  |∑ x:G,(@mu (ℝ) _ _) A x *
-    (mu B.carrier (x-t)-mu B.carrier x)| ≤
+  _
+                                         ≤
     ∑ x:G, |(@mu (ℝ) _ _) A x *
      (mu B.carrier (x-t)-mu B.carrier x)|:=
    TQ _ _
@@ -8024,9 +7850,9 @@ lemma ko
     (((al (mu B.carrier) (mu B.carrier))) t-m)| ≤
      2*eA+eB:=by
   calc
-   |(((al ((@mu (ℝ) _ _) A) (mu B.carrier))) t-m) +
-     (((al (mu B.carrier) (mu A))) t-m) -
-     (((al (mu B.carrier) (mu B.carrier))) t-m)| ≤
+   _
+
+                                                 ≤
      |((al ((@mu (ℝ) _ _) A) (mu B.carrier))) t-m| +
      |((al (mu B.carrier) (mu A))) t-m| +
      |((al (mu B.carrier) (mu B.carrier))) t-m|:=by
@@ -8100,11 +7926,11 @@ lemma uk
  let positive:G→ℝ:=(al ((@mu (ℝ) _ _) A) (mu A))
  let main:ℝ:=(K.card:ℝ)⁻¹
  let f:G→ℝ:=(K.card:ℝ)•gH
- let g0:G→ℝ:=main•(f+1)
- have hK:K.Nonempty:=B.aE
+ let g0 := main•(f+1)
+ have hK := B.aE
  have yd:(0:ℝ)<K.card:=by exact_mod_cast hK.card_pos
  have fF:0< main:=by simp[main,yd]
- have ft: ∑ x:G,nu x=1:=i7 hD hE
+ have ft := i7 hD hE
  have wL:an.cw ((↑) ∘ nu):=
   ⟨fun x↦by exact_mod_cast(show 0≤nu x by exact gS D E x),
    by simpa using QA (fun z:ℝ≥0↦(z:ℝ)) ft⟩
@@ -8138,13 +7964,13 @@ lemma uk
   omega
  have Gd:=an.js
   wL hp (f:=f)
- have EH:epsilon/2 <
-   an.aM ((↑) ∘ nu) f sA:=by
-  exact H6.trans_le (by simpa[sA] using Gd)
+ have EH :=
+
+        H6.trans_le (by simpa[sA] using Gd)
  have AU:(epsilon/2)^sA ≤
    aK ((↑) ∘ nu) f sA:=by
   calc
-   (epsilon/2)^sA ≤
+   _ ≤
      an.aM ((↑) ∘ nu) f sA^sA:=
     Qp (by positivity) EH.le sA
    _=aK ((↑) ∘ nu) f sA:=
@@ -8214,7 +8040,7 @@ private lemma sB (A:Finset G) (ey b₂:G) :
   (∑ s:G,if ey-s∈A∧b₂-s∈A then (1:ℝ) else 0) =
    ef A (ey-b₂):=by
  rw[ef]
- let e:G ≃ G:=Equiv.subRight b₂
+ let e := Equiv.subRight b₂
  rw[show((#(Finset.univ.filter fun t:G↦ey-b₂-t∈A∧ -t∈A):ℕ):ℝ) =
    ∑ t:G,if ey-b₂-t∈A∧ -t∈A then (1:ℝ) else 0 by
   simp]
@@ -8231,20 +8057,20 @@ private lemma pq (A:Finset G) (ey b₂:G) (p:ℕ) :
   (∑ s:Fin p→G,
     if ∀ i,ey-s i∈A∧b₂-s i∈A then (1:ℝ) else 0) =
    (ef A (ey-b₂):ℝ)^p:=by
- let D:Finset G:=Finset.univ.filter fun t:G↦ey-t∈A∧b₂-t∈A
+ let D := Finset.univ.filter fun t:G↦ey-t∈A∧b₂-t∈A
  have LL :
    Finset.univ.filter
      (fun s:Fin p→G↦ ∀ i,ey-s i∈A∧b₂-s i∈A) =
-    Fintype.piFinset (fun _:Fin p↦D):=by
+    piFinset (fun _:Fin p↦D):=by
   ext s
   simp[D,RX]
  calc
-  (∑ s:Fin p→G,
-    if ∀ i,ey-s i∈A∧b₂-s i∈A then (1:ℝ) else 0) =
+  _
+                                                =
     ((Finset.univ.filter
      (fun s:Fin p→G↦ ∀ i,ey-s i∈A∧b₂-s i∈A)).card:ℝ):=by
    simp
-  _=((Fintype.piFinset fun _:Fin p↦D).card:ℝ):=by rw[LL]
+  _=((piFinset fun _:Fin p↦D).card:ℝ):=by rw[LL]
   _=(D.card:ℝ)^p:=by simp[Fintype.card_piFinset]
   _=(ef A (ey-b₂):ℝ)^p:=by
    congr 1
@@ -8272,10 +8098,9 @@ lemma v3 (A aL a0:Finset G) (p:ℕ) (F:G→ℝ) :
  apply sum_congr rfl
  intro b₂ PI
  calc
-  (∑ s:Fin p→G,
-   if ∀ i,ey-s i∈A then
-    if ∀ i,b₂-s i∈A then F (ey-b₂) else 0
-   else 0) =
+  _
+
+           =
     (∑ s:Fin p→G,
      (if ∀ i,ey-s i∈A∧b₂-s i∈A then (1:ℝ) else 0)) *
       F (ey-b₂):=by
@@ -8291,16 +8116,16 @@ open scoped ENNReal NNReal Pointwise
 variable [MeasurableSpace G] [DiscreteMeasurableSpace G]
 lemma v7 {A:Finset G} {p:ℕ} {ε δ:ℝ}
   (aL a0:Finset G) (hε:0<ε) (Ak:ε≤1) (Cc:0<δ)
-  (hp:Even p) (hp₂:2≤p) (FW:ε⁻¹ *Real.log (2/δ)≤p)
+  (hp:Even p) (hp₂:2≤p) (FW:ε⁻¹ *log (2/δ)≤p)
   (hB:(aL∩a0).Nonempty) (hA:A.Nonempty)
   (hf: ∃ x,x∈aL-a0∧x∈A-A∧x∉s p ε aL a0 A) :
   ∃ aX,aX⊆aL∧ ∃ a3,a3⊆a0 ∧
    1-δ≤ ∑ x∈s p ε aL a0 A,((al (mu aX) (mu a3))) x ∧
-   (4:ℝ)⁻¹ *(b0 p ((al (mu aL) (mu a0))) ((al ((Set.indicator A fun _↦(1:(ℝ)))) ((Set.indicator A fun _↦(1:_))))))^(2*p)/ #A^(2*p) ≤
+   (4:ℝ)⁻¹ *(b0 p ((al (mu aL) (mu a0))) ((al ((indicator A fun _↦(1:(ℝ)))) ((indicator A fun _↦(1:_))))))^(2*p)/ #A^(2*p) ≤
     #aX/ #aL ∧
-   (4:ℝ)⁻¹ *(b0 p ((al (mu aL) (mu a0))) ((al ((Set.indicator A fun _↦(1:(ℝ)))) ((Set.indicator A fun _↦(1:_))))))^(2*p)/ #A^(2*p) ≤
-    #a3/ #a0:=by
- exact Hq aL a0 hε Ak Cc hp hp₂ FW hB hA hf
+   (4:ℝ)⁻¹ *(b0 p ((al (mu aL) (mu a0))) ((al ((indicator A fun _↦(1:(ℝ)))) ((indicator A fun _↦(1:_))))))^(2*p)/ #A^(2*p) ≤
+    #a3/ #a0:=
+       Hq aL a0 hε Ak Cc hp hp₂ FW hB hA hf
 end v5
 end
 end cA
@@ -8312,8 +8137,7 @@ open scoped BigOperators NNReal translate
 namespace ay.ah
 noncomputable section
 variable {G:Type*} [AddCommGroup G] [Fintype G] [DecidableEq G]
-namespace Dm
-end Dm
+
 open br
 structure aA (original:Finset G) where
  restriction:aY G
@@ -8323,11 +8147,11 @@ structure aA (original:Finset G) where
 namespace aA
 def e9 {original:Finset G} (s:aA original):Finset G:=
  s.restriction.e9
-def density {original:Finset G} (s:aA original):Real:=
+def density {original:Finset G} (s:aA original):ℝ:=
  s.restriction.density
-def rank {original:Finset G} (s:aA original):Nat:=
+def rank {original:Finset G} (s:aA original):ℕ:=
  s.restriction.rank
-def card {original:Finset G} (s:aA original):Nat:=
+def card {original:Finset G} (s:aA original):ℕ:=
  s.restriction.card
 lemma dI {original:Finset G} (s:aA original) :
   0<s.density:=s.restriction.dI
@@ -8335,33 +8159,33 @@ lemma density_le_one {original:Finset G} (s:aA original) :
   s.density≤1:=s.restriction.density_le_one
 end aA
 inductive cU {original:Finset G}
-  (q:Real) (aq:Nat) (aU:Real) :
-  Nat→aA original→aA original→Prop
+  (q:ℝ) (aq:ℕ) (aU:ℝ) :
+  ℕ→aA original→aA original→Prop
  | nil (s:aA original) :
    cU q aq aU 0 s s
- | cons {n:Nat} {s t u:aA original}
+ | cons {n:ℕ} {s t u:aA original}
    (pE:dk q aq aU
     s.restriction t.restriction)
    (x3:cU q aq aU n t u) :
    cU q aq aU (n+1) s u
 namespace cU
-lemma forget {original:Finset G} {q:Real} {aq:Nat}
-  {aU:Real} {n:Nat} {s t:aA original}
+lemma forget {original:Finset G} {q:ℝ} {aq:ℕ}
+  {aU:ℝ} {n:ℕ} {s t:aA original}
   (h:cU q aq aU n s t) :
   eu q aq aU n s.restriction t.restriction:=by
  induction h with
  | nil s=>exact eu.nil s.restriction
  | cons pE _ ih=>exact eu.cons pE ih
-lemma qZ {original:Finset G} {q:Real} {aq:Nat}
-  {aU:Real} (hq:0≤q) {n:Nat}
+lemma qZ {original:Finset G} {q:ℝ} {aq:ℕ}
+  {aU:ℝ} (hq:0≤q) {n:ℕ}
   {s t:aA original}
   (h:cU q aq aU n s t) :
   q^n*s.density≤t.density:=
  h.forget.qZ hq
-lemma card_bound {original:Finset G} {q:Real} {aq:Nat}
-  {aU:Real} {n:Nat} {s t:aA original}
+lemma card_bound {original:Finset G} {q:ℝ} {aq:ℕ}
+  {aU:ℝ} {n:ℕ} {s t:aA original}
   (h:cU q aq aU n s t) :
-  Real.exp (-(n:Real)*aU)*(s.card:Real)≤(t.card:Real):=
+  exp (-(n:ℝ)*aU)*(s.card:ℝ)≤(t.card:ℝ):=
  h.forget.card_bound
 end cU
 def dn (A C:Finset G) (x:G):Finset G:=
@@ -8394,10 +8218,10 @@ lemma dz
  exact aj.ec.mp (hC OY)
 lemma bk
   {A C:Finset G} (_hC:C.Nonempty) (x:G) :
-  a9 A C x=(dn A C x).card/(C.card:Real):=by
+  a9 A C x=(dn A C x).card/(C.card:ℝ):=by
  classical
  rw[a9,ao]
- let e:G ≃ G:=Equiv.subLeft x
+ let e := Equiv.subLeft x
  rw[Qk e
   (fun y:G=>bs A y*af C (x-y))
   (fun c:G=>bs A (x-c)*af C c)
@@ -8405,9 +8229,9 @@ lemma bk
  rw[wZ]
  simp only[bs,af,Qw]
  have gX (c:G) :
-   (if x-c∈A then (1:Real) else 0) *
-     (if c∈C then (C.card:Real)⁻¹ else 0) =
-    if c∈C∧x-c∈A then (C.card:Real)⁻¹ else 0:=by
+   (if x-c∈A then (1:ℝ) else 0) *
+     (if c∈C then (C.card:ℝ)⁻¹ else 0) =
+    if c∈C∧x-c∈A then (C.card:ℝ)⁻¹ else 0:=by
   by_cases hc:c∈C<;>by_cases ha:x-c∈A<;>simp[hc,ha]
  simp_rw[gX]
  rw[←QE]
@@ -8422,21 +8246,21 @@ open Function MeasureTheory
 open scoped ENNReal Pointwise
 omit [AddCommGroup G] [Fintype G] in
 lemma hZ (A:Finset G) :
-  ag.aS A=(@mu Real _ _) A:=by
+  ag.aS A=(@mu ℝ _ _) A:=by
  funext x
  simp[ag.aS,mu_apply]
 lemma eg (aX a3:Finset G) :
   ag.a2
     (ag.aS aX)
     (ag.aS a3) =
-   (al ((@mu Real _ _) aX) (mu a3)):=by
+   (al ((@mu ℝ _ _) aX) (mu a3)):=by
  funext x
  rw[hZ,hZ,
   ag.a2,eL]
  simp
 lemma os
   (aX a3 S:Finset G) (t:G) :
-  ((aC (((aC ((@mu (ℂ) _ _) (-aX)) (((Set.indicator S fun _↦(1:_)):G→ℂ))))) (mu a3))) t =
+  ((aC (((aC ((@mu (ℂ) _ _) (-aX)) (((indicator S fun _↦(1:_)):G→ℂ))))) (mu a3))) t =
    Complex.ofReal
     (ag.bC
      (fun x↦ag.a2
@@ -8444,16 +8268,16 @@ lemma os
       (ag.aS a3) (x-t))
      (ag.bJ S)):=by
  classical
- let a:G→Real:=(@mu Real _ _) aX
- let b:G→Real:=(@mu Real _ _) a3
- let kK:G→Real:=(Set.indicator S fun _↦(1:_))
+ let a:G→ℝ:=(@mu ℝ _ _) aX
+ let b:G→ℝ:=(@mu ℝ _ _) a3
+ let kK:G→ℝ:=(indicator S fun _↦(1:_))
  have qG :
    ag.bC
      (fun x↦ag.a2
       (ag.aS aX)
       (ag.aS a3) (x-t))
      (ag.bJ S) =
-    ⟪τ t ((al a b)),kK⟫_[Real]:=by
+    ⟪τ t ((al a b)),kK⟫_[ℝ]:=by
   rw[eg]
   unfold ag.bC
    ag.bJ
@@ -8461,42 +8285,42 @@ lemma os
    R3,QZ,a,b,kK,Qm,
    mem_coe]
  have uO :
-   ((aC (((aC ((@mu Real _ _) (-aX)) kK))) b)) t =
+   ((aC (((aC ((@mu ℝ _ _) (-aX)) kK))) b)) t =
     ag.bC
      (fun x↦ag.a2
       (ag.aS aX)
       (ag.aS a3) (x-t))
      (ag.bJ S):=by
   calc
-   ((aC (((aC ((@mu Real _ _) (-aX)) kK))) b)) t =
-     ((aC (((aC kK b))) ((@mu Real _ _) (-aX)))) t:=by
+   _ =
+     ((aC (((aC kK b))) ((@mu ℝ _ _) (-aX)))) t:=by
       apply Uu
       calc
-       (aC (((aC ((@mu Real _ _) (-aX)) kK))) b) =
-         (aC kK (((aC ((@mu Real _ _) (-aX)) b)))):=by
-          rw[fA ((@mu Real _ _) (-aX)) kK,
+       _ =
+         (aC kK (((aC ((@mu ℝ _ _) (-aX)) b)))):=by
+          rw[fA ((@mu ℝ _ _) (-aX)) kK,
            iS]
-       _=(aC kK (((aC b ((@mu Real _ _) (-aX)))))):=by
-          rw[fA ((@mu Real _ _) (-aX)) b]
-       _=(aC (((aC kK b))) ((@mu Real _ _) (-aX))):=by
+       _=(aC kK (((aC b ((@mu ℝ _ _) (-aX)))))):=by
+          rw[fA ((@mu ℝ _ _) (-aX)) b]
+       _=(aC (((aC kK b))) ((@mu ℝ _ _) (-aX))):=by
           rw[iS]
    _=((al (((aC kK b))) a)) t:=by
-    rw[←CB (K:=Real) aX,iM]
-   _=⟪τ t a,(aC kK b)⟫_[Real]:=by
+    rw[←CB (K:=ℝ) aX,iM]
+   _=⟪τ t a,(aC kK b)⟫_[ℝ]:=by
     rw[tV]
-    exact RCLike.conj_wInner_symm (𝕜:=Real)
-     (1:G→Real) ((aC kK b)) (τ t a)
-   _=⟪(al (τ t a) b),kK⟫_[Real]:=by
-    exact(kY
+    exact RCLike.conj_wInner_symm (𝕜:=ℝ)
+     (1:G→ℝ) ((aC kK b)) (τ t a)
+   _=⟪(al (τ t a) b),kK⟫_[ℝ]:=
+         (kY
      (τ t a) b kK).symm
-   _=⟪τ t ((al a b)),kK⟫_[Real]:=by rw[rl]
+   _=⟪τ t ((al a b)),kK⟫_[ℝ]:=by rw[rl]
    _=_:=qG.symm
- have LO:((↑) ∘ kK:G→ Complex)=((Set.indicator S fun _↦(1:_)):G→ Complex):=by
+ have LO:((↑) ∘ kK:G→ ℂ)=((indicator S fun _↦(1:_)):G→ ℂ):=by
   ext x
   by_cases hx:x∈S<;>simp[kK,hx]
  rw[←uO]
- change((aC (((aC ((@mu Complex _ _) (-aX)) (((Set.indicator S fun _↦(1:_)):G→ Complex))))) (mu a3))) t =
-  (Complex.ofReal ∘ ((aC (((aC ((@mu Real _ _) (-aX)) kK))) b))) t
+ change((aC (((aC ((@mu ℂ _ _) (-aX)) (((indicator S fun _↦(1:_)):G→ ℂ))))) (mu a3))) t =
+  (Complex.ofReal ∘ ((aC (((aC ((@mu ℝ _ _) (-aX)) kK))) b))) t
  rw[Complex.qo,Complex.qo]
  simp only[Complex.yL,b]
  rw[LO]
@@ -8507,7 +8331,7 @@ lemma ca
      (ag.aS aX)
      (ag.aS a3))
     (ag.bJ S) =
-   ∑ x∈S,((al ((@mu Real _ _) aX) (mu a3))) x:=by
+   ∑ x∈S,((al ((@mu ℝ _ _) aX) (mu a3))) x:=by
  classical
  rw[eg]
  unfold ag.bC
@@ -8517,13 +8341,13 @@ lemma ca
  have eI:Finset.univ.filter (fun x:G=>x∈S)=S:=by ext; simp
  rw[eI]
 lemma nn
-  {D:aj G} {aX a3 S:Finset G} {epsilon delta:Real}
+  {D:aj G} {aX a3 S:Finset G} {epsilon delta:ℝ}
   (fY:aX.Nonempty) (g9:a3.Nonempty)
-  (ft:1-delta≤ ∑ x∈S,((al ((@mu Real _ _) aX) (mu a3))) x)
+  (ft:1-delta≤ ∑ x∈S,((al ((@mu ℝ _ _) aX) (mu a3))) x)
   (uj: ∀ t∈D.carrier,
    |ag.bW aX a3 S t -
      ag.bW aX a3 S 0| ≤
-    epsilon*(aX.card:Real)*a3.card) :
+    epsilon*(aX.card:ℝ)*a3.card) :
   1-delta-epsilon ≤
    ag.bC
     (ag.d9
@@ -8547,20 +8371,20 @@ lemma nn
  linarith
 section zS
 variable [MeasurableSpace G] [DiscreteMeasurableSpace G]
-def bj (A aL a0:Finset G) (p:Nat):Real:=
- (4:Real)⁻¹ *
-   (b0 p ((al (mu aL) (mu a0))) ((al ((Set.indicator A fun _↦(1:(ℝ)))) ((Set.indicator A fun _↦(1:_))))))^(2*p) /
-  (A.card:Real)^(2*p)
+def bj (A aL a0:Finset G) (p:ℕ):ℝ:=
+ (4:ℝ)⁻¹ *
+   (b0 p ((al (mu aL) (mu a0))) ((al ((indicator A fun _↦(1:(ℝ)))) ((indicator A fun _↦(1:_))))))^(2*p) /
+  (A.card:ℝ)^(2*p)
 omit [DiscreteMeasurableSpace G] [MeasurableSpace G] in
 lemma kL
   (A:Finset G) (x:G) :
-  (cA.ef A x:Real) =
-   ((al ((Set.indicator A fun _↦(1:Real))) ((Set.indicator A fun _↦(1:_))))) x:=by
+  (cA.ef A x:ℝ) =
+   ((al ((indicator A fun _↦(1:ℝ))) ((indicator A fun _↦(1:_))))) x:=by
  classical
  rw[cA.ef,eL]
  have qG :
-   ((#(Finset.univ.filter fun t:G↦x-t∈A∧ -t∈A):Nat):Real) =
-    ∑ t:G,if x-t∈A∧ -t∈A then (1:Real) else 0:=by
+   ((#(Finset.univ.filter fun t:G↦x-t∈A∧ -t∈A):ℕ):ℝ) =
+    ∑ t:G,if x-t∈A∧ -t∈A then (1:ℝ) else 0:=by
   simp
  rw[qG]
  refine Qk (Equiv.subLeft x) _ _ (fun y↦ ?_)
@@ -8569,38 +8393,38 @@ lemma kL
  rw[eY]
  split_ifs<;>simp_all
 lemma gQ
-  (A aL a0:Finset G) (p:Nat) (hp:p≠0)
+  (A aL a0:Finset G) (p:ℕ) (hp:p≠0)
   (rK:aL.Nonempty) (u2:a0.Nonempty) :
   (∑ u:Fin p→G,
-    ((cA.cS A aL u).card:Real) *
+    ((cA.cS A aL u).card:ℝ) *
      (cA.cS A a0 u).card) =
-   (aL.card:Real)*a0.card *
-    (b0 p ((al (mu aL) (mu a0))) ((al ((Set.indicator A fun _↦(1:Real))) ((Set.indicator A fun _↦(1:_))))))^p:=by
+   (aL.card:ℝ)*a0.card *
+    (b0 p ((al (mu aL) (mu a0))) ((al ((indicator A fun _↦(1:ℝ))) ((indicator A fun _↦(1:_))))))^p:=by
  classical
- let gH:G→Real:=(al ((Set.indicator A fun _↦(1:Real))) ((Set.indicator A fun _↦(1:_))))
+ let gH:G→ℝ:=(al ((indicator A fun _↦(1:ℝ))) ((indicator A fun _↦(1:_))))
  have rL: ∀ x,0≤gH x:=fun x ↦
   dM Set.cY Set.cY x
- have nX:=cA.v3 A aL a0 p (fun _↦(1:Real))
+ have nX:=cA.v3 A aL a0 p (fun _↦(1:ℝ))
  have kB :
    (∑ u:Fin p→G,
      cA.wM (cA.cS A aL u)
-      (cA.cS A a0 u) (fun _↦(1:Real))) =
+      (cA.cS A a0 u) (fun _↦(1:ℝ))) =
     ∑ u:Fin p→G,
-     ((cA.cS A aL u).card:Real) *
+     ((cA.cS A aL u).card:ℝ) *
       (cA.cS A a0 u).card:=by
   apply Io rfl
   intro u _
   simp[cA.wM]
  have oO :
    (∑ ey∈aL, ∑ b₂∈a0,
-     (cA.ef A (ey-b₂):Real)^p) =
-    ∑ x:G,((al ((Set.indicator aL fun _↦(1:Real))) ((Set.indicator a0 fun _↦(1:_))))) x*gH x^p:=by
+     (cA.ef A (ey-b₂):ℝ)^p) =
+    ∑ x:G,((al ((indicator aL fun _↦(1:ℝ))) ((indicator a0 fun _↦(1:_))))) x*gH x^p:=by
   rw[lM]
   simp[Qm,gH,kL]
  have t9 :
-   ((al ((Set.indicator aL fun _↦(1:Real))) ((Set.indicator a0 fun _↦(1:_))))) =
-    fun x↦(aL.card:Real)*a0.card *
-     ((al ((@mu Real _ _) aL) (mu a0))) x:=by
+   ((al ((indicator aL fun _↦(1:ℝ))) ((indicator a0 fun _↦(1:_))))) =
+    fun x↦(aL.card:ℝ)*a0.card *
+     ((al ((@mu ℝ _ _) aL) (mu a0))) x:=by
   ext x
   simp only[eL,Qm,mu_apply]
   rw[Qj]
@@ -8609,9 +8433,9 @@ lemma gQ
   by_cases hy:y∈aL<;>by_cases Es:y-x∈a0
   ·simp only[mem_coe,RP hy,RP Es,Rc,
     star_trivial,Q3]
-   have yf:(aL.card:Real)≠0:=by
+   have yf:(aL.card:ℝ)≠0:=by
     exact_mod_cast rK.card_ne_zero
-   have yg:(a0.card:Real)≠0:=by
+   have yg:(a0.card:ℝ)≠0:=by
     exact_mod_cast u2.card_ne_zero
    field_simp
   ·simp[hy,Es]
@@ -8622,24 +8446,24 @@ lemma gQ
  rw[kB] at nX
  simp only[Q3] at nX
  calc
-  (∑ u:Fin p→G,
-    ((cA.cS A aL u).card:Real) *
-     (cA.cS A a0 u).card) =
+  _
+
+                          =
     ∑ ey∈aL, ∑ b₂∈a0,
-     (cA.ef A (ey-b₂):Real)^p:=by
+     (cA.ef A (ey-b₂):ℝ)^p:=by
    simpa using nX
   _ =
-    ∑ x:G,((al ((Set.indicator aL fun _↦(1:Real))) ((Set.indicator a0 fun _↦(1:_))))) x*gH x^p:=by
-   exact oO
-  _=(aL.card:Real)*a0.card *
-     ∑ x:G,((al ((@mu Real _ _) aL) (mu a0))) x*gH x^p:=by
+    ∑ x:G,((al ((indicator aL fun _↦(1:ℝ))) ((indicator a0 fun _↦(1:_))))) x*gH x^p:=
+         oO
+  _=(aL.card:ℝ)*a0.card *
+     ∑ x:G,((al ((@mu ℝ _ _) aL) (mu a0))) x*gH x^p:=by
    rw[t9]
    rw[Qj]
    apply Io rfl
    intro x _
    ring
-  _=(aL.card:Real)*a0.card *
-    (b0 p ((al (mu aL) (mu a0))) ((al ((Set.indicator A fun _↦(1:Real))) ((Set.indicator A fun _↦(1:_))))))^p:=by
+  _=(aL.card:ℝ)*a0.card *
+    (b0 p ((al (mu aL) (mu a0))) ((al ((indicator A fun _↦(1:ℝ))) ((indicator A fun _↦(1:_))))))^p:=by
    congr 1
    rw[oS]
    apply Io rfl
@@ -8648,9 +8472,9 @@ lemma gQ
     QC (rL x),NNReal.lg,
     NNReal.iF,gH]
 omit [DiscreteMeasurableSpace G] [MeasurableSpace G] in
-theorem qH (A B : Finset G) (p : Nat) :
-    (∑ u : Fin p → G, ((cA.cS A B u).card : Real)) =
-      (A.card : Real) ^ p * B.card:= by
+theorem qH (A B : Finset G) (p : ℕ) :
+    (∑ u : Fin p → G, ((cA.cS A B u).card : ℝ)) =
+      (A.card : ℝ) ^ p * B.card:= by
   classical
   have sC :
       ∑ u : Fin p → G, (cA.cS A B u).card =
@@ -8670,15 +8494,15 @@ theorem qH (A B : Finset G) (p : Nat) :
     · simp [hb]
   exact_mod_cast sC
 lemma pZ
-  (A aL a0:Finset G) (p:Nat) (u3:2≤p)
+  (A aL a0:Finset G) (p:ℕ) (u3:2≤p)
   (hB:(aL∩a0).Nonempty) (hA:A.Nonempty) :
   ∃ u:Fin p→G,
    (cA.cS A aL u).Nonempty ∧
    (cA.cS A a0 u).Nonempty ∧
    bj A aL a0 p ≤
-    ((cA.cS A aL u).card:Real)/aL.card ∧
+    ((cA.cS A aL u).card:ℝ)/aL.card ∧
    bj A aL a0 p ≤
-    ((cA.cS A a0 u).card:Real)/a0.card:=by
+    ((cA.cS A a0 u).card:ℝ)/a0.card:=by
  classical
  have hp:p≠0:=by omega
  have rK:aL.Nonempty:=hB.mono inter_subset_left
@@ -8686,10 +8510,10 @@ lemma pZ
  have u4:A.Nonempty:=hA
  let aX:(Fin p→G)→Finset G:=fun u↦cA.cS A aL u
  let a3:(Fin p→G)→Finset G:=fun u↦cA.cS A a0 u
- let N:Real:=(b0 p ((al (mu aL) (mu a0))) ((al ((Set.indicator A fun _↦(1:Real))) ((Set.indicator A fun _↦(1:_))))))
- let g:(Fin p→G)→Real:=fun u↦(aX u).card*(a3 u).card
+ let N:ℝ:=(b0 p ((al (mu aL) (mu a0))) ((al ((indicator A fun _↦(1:ℝ))) ((indicator A fun _↦(1:_))))))
+ let g:(Fin p→G)→ℝ:=fun u↦(aX u).card*(a3 u).card
  have hg: ∀ u,0≤g u:=fun u↦by dsimp[g]; positivity
- have Aj: ∑ u,g u=(aL.card:Real)*a0.card*N^p:=by
+ have Aj: ∑ u,g u=(aL.card:ℝ)*a0.card*N^p:=by
   simpa[g,aX,a3,N] using
    gQ A aL a0 p hp rK u2
  obtain ⟨b,hb⟩:=hB
@@ -8713,25 +8537,25 @@ lemma pZ
    exact QM (by exact_mod_cast(Finset.card_pos.mpr ⟨b,v8⟩))
     (by exact_mod_cast(Finset.card_pos.mpr ⟨b,v9⟩))⟩
  have Hh:0<N^p:=by
-  have jt:0<(aL.card:Real)*a0.card:=by positivity
+  have jt:0<(aL.card:ℝ)*a0.card:=by positivity
   rw[Aj] at rY
   rcases mul_pos_iff.mp rY with gy | eY
   ·exact gy.2
   ·exact(Rd jt.le eY.1).elim
- let M:Real:=
+ let M:ℝ:=
   2⁻¹ *N^p*(Real.sqrt aL.card*Real.sqrt a0.card) /
-   (A.card:Real)^p
+   (A.card:ℝ)^p
  have hM:0<M:=by
   dsimp[M]
-  have J4:(0:Real)<A.card:=by exact_mod_cast u4.card_pos
-  have yf:(0:Real)<aL.card:=by exact_mod_cast rK.card_pos
-  have yg:(0:Real)<a0.card:=by exact_mod_cast u2.card_pos
+  have J4:(0:ℝ)<A.card:=by exact_mod_cast u4.card_pos
+  have yf:(0:ℝ)<aL.card:=by exact_mod_cast rK.card_pos
+  have yg:(0:ℝ)<a0.card:=by exact_mod_cast u2.card_pos
   exact Rn (QM (QM (by norm_num) Hh)
    (QM (Real.sqrt_pos.2 yf) (Real.sqrt_pos.2 yg)))
    (RF J4 p)
- have H7: ∑ u,((aX u).card:Real)=(A.card:Real)^p*aL.card:=by
+ have H7: ∑ u,((aX u).card:ℝ)=(A.card:ℝ)^p*aL.card:=by
   simpa[aX] using qH A aL p
- have H8: ∑ u,((a3 u).card:Real)=(A.card:Real)^p*a0.card:=by
+ have H8: ∑ u,((a3 u).card:ℝ)=(A.card:ℝ)^p*a0.card:=by
   simpa[a3] using qH A a0 p
  have mC: ∃ u,M^2≤g u:=by
   by_cases h: ∀ u,g u≠0→M^2≤g u
@@ -8744,8 +8568,8 @@ lemma pZ
    exact ⟨u,h u hu⟩
   ·push Not at h
    obtain ⟨u₁,H9,Ge⟩:=h
-   have Ap:(2:Real)* ∑ u with g u<M^2,g u< ∑ u,g u:=by
-    rw[←lt_div_iff₀' (by norm_num:(0:Real)<2),Ri]
+   have Ap:(2:ℝ)* ∑ u with g u<M^2,g u< ∑ u,g u:=by
+    rw[←lt_div_iff₀' (by norm_num:(0:ℝ)<2),Ri]
     calc
      ∑ u with g u<M^2,g u =
        ∑ u with g u<M^2∧g u≠0,
@@ -8769,13 +8593,13 @@ lemma pZ
       apply Io rfl
       intro u _
       dsimp only[g]
-      rw[Real.sqrt_mul (by positivity:(0:Real)≤(aX u).card)]
-     _≤M*(Real.sqrt (∑ u,((aX u).card:Real)) *
-        Real.sqrt (∑ u,((a3 u).card:Real))):=by
+      rw[Real.sqrt_mul (by positivity:(0:ℝ)≤(aX u).card)]
+     _≤M*(Real.sqrt (∑ u,((aX u).card:ℝ)) *
+        Real.sqrt (∑ u,((a3 u).card:ℝ))):=by
       gcongr
       exact Real.sum_sqrt_mul_sqrt_le _ (fun _↦by positivity)
        (fun _↦by positivity)
-     _=(2:Real)⁻¹ * ∑ u,g u:=by
+     _=(2:ℝ)⁻¹ * ∑ u,g u:=by
       dsimp only[M]
       rw[H7,H8,Real.sqrt_mul' _ (by positivity),
        Real.sqrt_mul' _ (by positivity),
@@ -8793,38 +8617,38 @@ lemma pZ
    linarith
  obtain ⟨u,hu⟩:=mC
  have te:bj A aL a0 p ≤
-   (((aX u).card:Real)/aL.card) *
-    (((a3 u).card:Real)/a0.card):=by
+   (((aX u).card:ℝ)/aL.card) *
+    (((a3 u).card:ℝ)/a0.card):=by
   dsimp[bj,M,N,g] at hu ⊢
-  have J4:(A.card:Real)≠0:=by exact_mod_cast u4.card_ne_zero
-  have yf:(aL.card:Real)≠0:=by exact_mod_cast rK.card_ne_zero
-  have yg:(a0.card:Real)≠0:=by exact_mod_cast u2.card_ne_zero
+  have J4:(A.card:ℝ)≠0:=by exact_mod_cast u4.card_ne_zero
+  have yf:(aL.card:ℝ)≠0:=by exact_mod_cast rK.card_ne_zero
+  have yg:(a0.card:ℝ)≠0:=by exact_mod_cast u2.card_ne_zero
   rw[div_mul_div_comm,Qs (by positivity)]
-  simpa[QL,TY,pow_mul',show(2:Real)^2=4 by norm_num,
-   Uf (show 0≤(aL.card:Real) by positivity),
-   Uf (show 0≤(a0.card:Real) by positivity),
+  simpa[QL,TY,pow_mul',show(2:ℝ)^2=4 by norm_num,
+   Uf (show 0≤(aL.card:ℝ) by positivity),
+   Uf (show 0≤(a0.card:ℝ) by positivity),
    J4,yf,yg,S5] using hu
  have J5:0<g u:=(SY hM).trans_le hu
- have EJ:0<((aX u).card:Real)*(a3 u).card:=by
+ have EJ:0<((aX u).card:ℝ)*(a3 u).card:=by
   simpa only[g] using J5
- have EK:0<((aX u).card:Real)∧0<((a3 u).card:Real):=by
+ have EK:0<((aX u).card:ℝ)∧0<((a3 u).card:ℝ):=by
   rcases mul_pos_iff.mp EJ with gy | eY
   ·exact gy
   ·exact(Rd (Q5 _) eY.1).elim
- have xB:0<((aX u).card:Real):=EK.1
- have Gf:0<((a3 u).card:Real):=EK.2
+ have xB:0<((aX u).card:ℝ):=EK.1
+ have Gf:0<((a3 u).card:ℝ):=EK.2
  refine ⟨u,Finset.card_pos.mp (by exact_mod_cast xB),
   Finset.card_pos.mp (by exact_mod_cast Gf), ?_, ?_⟩
- ·have sa:((a3 u).card:Real)≤a0.card:=by
+ ·have sa:((a3 u).card:ℝ)≤a0.card:=by
    exact_mod_cast Qu (cA.kJ A a0 u)
   exact te.trans (Sq (by positivity)
-   ((Q9 (by positivity:(0:Real)<a0.card)).2 sa))
- ·have r9:((aX u).card:Real)≤aL.card:=by
+   ((Q9 (by positivity:(0:ℝ)<a0.card)).2 sa))
+ ·have r9:((aX u).card:ℝ)≤aL.card:=by
    exact_mod_cast Qu (cA.kJ A aL u)
   exact te.trans (RQ (by positivity)
-   ((Q9 (by positivity:(0:Real)<aL.card)).2 r9))
+   ((Q9 (by positivity:(0:ℝ)<aL.card)).2 r9))
 structure aW (A aL a0:Finset G)
-  (p:Nat) (epsilon delta:Real) where
+  (p:ℕ) (epsilon delta:ℝ) where
  aX:Finset G
  a3:Finset G
  u5:aX⊆aL
@@ -8836,41 +8660,41 @@ structure aW (A aL a0:Finset G)
     (ag.aS a3))
    (ag.bJ (s p epsilon aL a0 A))
  tC:bj A aL a0 p ≤
-  (aX.card:Real)/aL.card
+  (aX.card:ℝ)/aL.card
  tD:bj A aL a0 p ≤
-  (a3.card:Real)/a0.card
+  (a3.card:ℝ)/a0.card
 namespace aW
 def bg
-  (A aL a0:Finset G) (p:Nat) (epsilon:Real):Finset G:=
+  (A aL a0:Finset G) (p:ℕ) (epsilon:ℝ):Finset G:=
  s p epsilon aL a0 A∩(aL-a0)
 omit [DiscreteMeasurableSpace G] in
 lemma oX
-  (A aL a0:Finset G) (p:Nat) (epsilon:Real) :
+  (A aL a0:Finset G) (p:ℕ) (epsilon:ℝ) :
   bg A aL a0 p epsilon⊆aL-a0:=
  Sd
 omit [DiscreteMeasurableSpace G] in
 lemma lR
-  {A aL a0:Finset G} {p:Nat} {epsilon delta:Real}
+  {A aL a0:Finset G} {p:ℕ} {epsilon delta:ℝ}
   (data:aW A aL a0 p epsilon delta)
   (cu:delta<1):data.aX.Nonempty∧data.a3.Nonempty:=by
  have ft:1-delta ≤
-   ∑ x∈s p epsilon aL a0 A,((al ((@mu Real _ _) data.aX) (mu data.a3))) x:=by
+   ∑ x∈s p epsilon aL a0 A,((al ((@mu ℝ _ _) data.aX) (mu data.a3))) x:=by
   simpa only[ca] using
    data.oW
  constructor
  ·by_contra wa
-  have su:data.aX=∅:=not_nonempty_iff_eq_empty.mp wa
+  have su := not_nonempty_iff_eq_empty.mp wa
   rw[su] at ft
   simp at ft
   linarith
  ·by_contra wa
-  have su:data.a3=∅:=not_nonempty_iff_eq_empty.mp wa
+  have su := not_nonempty_iff_eq_empty.mp wa
   rw[su] at ft
   simp at ft
   linarith
 omit [DiscreteMeasurableSpace G] in
 lemma np
-  {A aL a0:Finset G} {p:Nat} {epsilon delta:Real}
+  {A aL a0:Finset G} {p:ℕ} {epsilon delta:ℝ}
   (data:aW A aL a0 p epsilon delta) :
   1-delta ≤
    ag.bC
@@ -8881,21 +8705,21 @@ lemma np
      (bg A aL a0 p epsilon)):=by
  have Ia:1-delta ≤
    ∑ x∈s p epsilon aL a0 A,
-    ((al ((@mu Real _ _) data.aX) (mu data.a3))) x:=by
+    ((al ((@mu ℝ _ _) data.aX) (mu data.a3))) x:=by
   simpa only[ca] using
    data.oW
  have hsum :
    ∑ x∈bg A aL a0 p epsilon,
-     ((al ((@mu Real _ _) data.aX) (mu data.a3))) x =
+     ((al ((@mu ℝ _ _) data.aX) (mu data.a3))) x =
     ∑ x∈s p epsilon aL a0 A,
-     ((al ((@mu Real _ _) data.aX) (mu data.a3))) x:=by
+     ((al ((@mu ℝ _ _) data.aX) (mu data.a3))) x:=by
   apply Ro Sh
   intro x xC LP
   rw[←UQ]
   intro Np
   apply LP
   have EL :
-    x∈Function.support ((al ((@mu Real _ _) data.aX) (mu data.a3))):=Np
+    x∈Function.support ((al ((@mu ℝ _ _) data.aX) (mu data.a3))):=Np
   have J6:x∈data.aX-data.a3:=by
    simpa only[f8 cC cC,jo,
     ←coe_sub,mem_coe] using EL
@@ -8907,12 +8731,12 @@ lemma np
  exact Ia
 omit [DiscreteMeasurableSpace G] in
 lemma gL
-  {A aL a0:Finset G} {p:Nat} {epsilon delta:Real}
+  {A aL a0:Finset G} {p:ℕ} {epsilon delta:ℝ}
   (data:aW A aL a0 p epsilon delta)
   (cu:delta<1) :
   (bg A aL a0 p epsilon).Nonempty:=by
  by_contra z4
- have su:bg A aL a0 p epsilon=∅:=
+ have su :=
   not_nonempty_iff_eq_empty.mp z4
  have ft:=data.np
  rw[su] at ft
@@ -8921,10 +8745,10 @@ lemma gL
  linarith
 end aW
 lemma q9
-  {A:Finset G} {p:Nat} {epsilon delta:Real}
+  {A:Finset G} {p:ℕ} {epsilon delta:ℝ}
   (aL a0:Finset G) (eM:0<epsilon) (tE:epsilon≤1)
   (cu:0<delta) (hp:Even p) (u3:2≤p)
-  (wb:epsilon⁻¹ *Real.log (2/delta)≤p)
+  (wb:epsilon⁻¹ *log (2/delta)≤p)
   (hB:(aL∩a0).Nonempty) (hA:A.Nonempty)
   (oP: ∃ x,x∈aL-a0∧x∈A-A ∧
    x∉s p epsilon aL a0 A) :
@@ -8944,7 +8768,7 @@ lemma q9
  ·simpa only[bj] using y6
  ·simpa only[bj] using y7
 lemma ma
-  {A:Finset G} {p:Nat} {epsilon delta:Real}
+  {A:Finset G} {p:ℕ} {epsilon delta:ℝ}
   (aL a0:Finset G) (cu:0<delta) (u3:2≤p)
   (hB:(aL∩a0).Nonempty) (hA:A.Nonempty)
   (kI: ∀ x,x∈aL-a0→x∈A-A →
@@ -8970,17 +8794,17 @@ lemma ma
    rw[←Hi]
    abel
  have hsum :
-   ∑ x∈s p epsilon aL a0 A,((al ((@mu Real _ _) aX) (mu a3))) x=1:=by
+   ∑ x∈s p epsilon aL a0 A,((al ((@mu ℝ _ _) aX) (mu a3))) x=1:=by
   calc
-   ∑ x∈s p epsilon aL a0 A,((al ((@mu Real _ _) aX) (mu a3))) x =
-     ∑ x:G,((al ((@mu Real _ _) aX) (mu a3))) x:=by
+   ∑ x∈s p epsilon aL a0 A,((al ((@mu ℝ _ _) aX) (mu a3))) x =
+     ∑ x:G,((al ((@mu ℝ _ _) aX) (mu a3))) x:=by
     apply Ro (S7 _)
     intro x _ LS
     rw[←UQ]
     intro Nq
     apply LS
     apply LQ
-    have LU:x∈Function.support ((al ((@mu Real _ _) aX) (mu a3))):=Nq
+    have LU:x∈Function.support ((al ((@mu ℝ _ _) aX) (mu a3))):=Nq
     simpa only[f8 cC cC,jo,
      ←coe_sub,mem_coe] using LU
    _=1:=by
@@ -8999,10 +8823,10 @@ lemma ma
  rw[ca,hsum]
  linarith
 lemma kM
-  {A:Finset G} {p:Nat} {epsilon delta:Real}
+  {A:Finset G} {p:ℕ} {epsilon delta:ℝ}
   (aL a0:Finset G) (eM:0<epsilon) (tE:epsilon≤1)
   (cu:0<delta) (hp:Even p) (u3:2≤p)
-  (wb:epsilon⁻¹ *Real.log (2/delta)≤p)
+  (wb:epsilon⁻¹ *log (2/delta)≤p)
   (hB:(aL∩a0).Nonempty) (hA:A.Nonempty) :
   Nonempty (aW A aL a0 p epsilon delta):=by
  classical
@@ -9015,11 +8839,11 @@ lemma kM
   by_contra O1
   exact oP ⟨x,O0,Ek,O1⟩
 structure cb
-  {A aL a0:Finset G} {p:Nat} {epsilon delta:Real}
+  {A aL a0:Finset G} {p:ℕ} {epsilon delta:ℝ}
   (data:aW A aL a0 p epsilon delta)
   (parent:aj G) (dR:NNReal)
-  (source:Finset G) (aq bq:Nat)
-  (bm:Real) where
+  (source:Finset G) (aq bq:ℕ)
+  (bm:ℝ) where
  child:aj G
  k6:child.a1
  rN:child.rank≤parent.rank+aq
@@ -9032,13 +8856,13 @@ structure cb
    ag.bW
     data.aX data.a3
      (aW.bg A aL a0 p epsilon) 0| ≤
-   bm*(data.aX.card:Real)*data.a3.card
+   bm*(data.aX.card:ℝ)*data.a3.card
 def cb.mono
-  {A aL a0:Finset G} {p:Nat} {epsilon delta:Real}
+  {A aL a0:Finset G} {p:ℕ} {epsilon delta:ℝ}
   {data:aW A aL a0 p epsilon delta}
   {parent:aj G} {dR:NNReal} {source:Finset G}
-  {aq bq zs tf:Nat}
-  {bm lA:Real}
+  {aq bq zs tf:ℕ}
+  {bm lA:ℝ}
   (P:cb data parent dR source
    aq bq bm)
   (cK:aq≤zs)
@@ -9055,15 +8879,11 @@ def cb.mono
  oY:=by
   intro t ht
   calc
-   |ag.bW
-     data.aX data.a3
-      (aW.bg A aL a0 p epsilon) t -
-    ag.bW
-     data.aX data.a3
-      (aW.bg A aL a0 p epsilon) 0|
-     ≤ bm*(data.aX.card:Real)*data.a3.card:=
+   _
+
+     ≤ bm*(data.aX.card:ℝ)*data.a3.card:=
     P.oY t ht
-   _≤lA*(data.aX.card:Real)*data.a3.card:=by
+   _≤lA*(data.aX.card:ℝ)*data.a3.card:=by
     gcongr
 omit [DiscreteMeasurableSpace G] [MeasurableSpace G] in
 lemma kN
@@ -9073,7 +8893,7 @@ lemma kN
     (ag.a2
      (ag.aS aX)
      (ag.aS a3)) =
-   (aC ((@mu Real _ _) D) (((al (mu aX) (mu a3))))):=by
+   (aC ((@mu ℝ _ _) D) (((al (mu aX) (mu a3))))):=by
  funext x
  rw[hZ,
   eg,
@@ -9088,7 +8908,7 @@ lemma j9
       (ag.aS aX)
       (ag.aS a3)))
     (ag.bJ S) =
-   ∑ x∈S,((aC ((@mu Real _ _) D) (((al (mu aX) (mu a3)))))) x:=by
+   ∑ x∈S,((aC ((@mu ℝ _ _) D) (((al (mu aX) (mu a3)))))) x:=by
  classical
  rw[kN]
  unfold ag.bC
@@ -9099,8 +8919,8 @@ lemma j9
  rw[eI]
 omit [DiscreteMeasurableSpace G] [MeasurableSpace G] in
 lemma lW
-  {D aX a3 S:Finset G} {gH:G→Real}
-  {mass threshold:Real}
+  {D aX a3 S:Finset G} {gH:G→ℝ}
+  {mass threshold:ℝ}
   (oZ:0≤threshold)
   (rL: ∀ x,0≤gH x)
   (sE: ∀ x∈S,threshold≤gH x)
@@ -9113,36 +8933,36 @@ lemma lW
       (ag.aS a3)))
     (ag.bJ S)) :
   threshold*mass ≤
-   ∑ x:G,((aC ((@mu Real _ _) D) (((al (mu aX) (mu a3)))))) x*gH x:=by
+   ∑ x:G,((aC ((@mu ℝ _ _) D) (((al (mu aX) (mu a3)))))) x*gH x:=by
  classical
  rw[j9] at ft
  have zt: ∀ x:G,
-   0≤((aC ((@mu Real _ _) D) (((al (mu aX) (mu a3)))))) x:=by
+   0≤((aC ((@mu ℝ _ _) D) (((al (mu aX) (mu a3)))))) x:=by
   intro x
   exact pC cC
    (fun y↦dM cC cC y) x
  calc
-  threshold*mass ≤
+  _ ≤
     threshold* ∑ x∈S,
-     ((aC ((@mu Real _ _) D) (((al (mu aX) (mu a3)))))) x:=
+     ((aC ((@mu ℝ _ _) D) (((al (mu aX) (mu a3)))))) x:=
    iO ft oZ
   _= ∑ x∈S,
-    threshold*((aC ((@mu Real _ _) D) (((al (mu aX) (mu a3)))))) x:=by
+    threshold*((aC ((@mu ℝ _ _) D) (((al (mu aX) (mu a3)))))) x:=by
    rw[Qj]
   _≤ ∑ x∈S,
-    ((aC ((@mu Real _ _) D) (((al (mu aX) (mu a3)))))) x*gH x:=by
+    ((aC ((@mu ℝ _ _) D) (((al (mu aX) (mu a3)))))) x*gH x:=by
    apply QI
    intro x hx
    rw[Qx threshold]
    exact iO (sE x hx) (zt x)
   _≤ ∑ x:G,
-    ((aC ((@mu Real _ _) D) (((al (mu aX) (mu a3)))))) x*gH x:=by
-   exact Tj fun x ↦
+    ((aC ((@mu ℝ _ _) D) (((al (mu aX) (mu a3)))))) x*gH x:=
+         Tj fun x ↦
     Qn (zt x) (rL x)
 omit [DecidableEq G] [DiscreteMeasurableSpace G] [MeasurableSpace G] in
 lemma mD
-  {w f:G→Real} (hw: ∀ x,0≤w x)
-  (u6: ∑ x:G,w x=1) {lower:Real}
+  {w f:G→ℝ} (hw: ∀ x,0≤w x)
+  (u6: ∑ x:G,w x=1) {lower:ℝ}
   (ic:lower≤ ∑ x:G,w x*f x) :
   ∃ x:G,lower≤f x:=by
  classical
@@ -9151,23 +8971,23 @@ lemma mD
    (Finset.univ:Finset G).Nonempty)
  refine ⟨x,ic.trans ?_⟩
  calc
-  ∑ y:G,w y*f y≤ ∑ y:G,w y*f x:=by
+  _ ≤ ∑ y:G,w y*f x:=by
    apply QI
    intro y _
    exact iO (Dp y (by simp)) (hw y)
   _=f x:=by rw[←Qt,u6,QT]
 omit [AddCommGroup G] [DecidableEq G] [DiscreteMeasurableSpace G] [MeasurableSpace G] in
 lemma lB
-  {w f:G→Real} {T:Finset G} (hT:T.Nonempty)
+  {w f:G→ℝ} {T:Finset G} (hT:T.Nonempty)
   (hw: ∀ x,0≤w x) (wc: ∀ x,x∉T→w x=0)
-  (u6: ∑ x:G,w x=1) {lower:Real}
+  (u6: ∑ x:G,w x=1) {lower:ℝ}
   (ic:lower≤ ∑ x:G,w x*f x) :
   ∃ x∈T,lower≤f x:=by
  classical
  obtain ⟨x,O2,Dp⟩:=TX T f hT
  refine ⟨x,O2,ic.trans ?_⟩
  calc
-  ∑ y:G,w y*f y≤ ∑ y:G,w y*f x:=by
+  _ ≤ ∑ y:G,w y*f x:=by
    apply QI
    intro y _
    by_cases hy:y∈T
@@ -9177,22 +8997,22 @@ lemma lB
 omit [DiscreteMeasurableSpace G] [MeasurableSpace G] in
 lemma lC
   (D E:Finset G) :
-  ((↑) ∘ aN.bh D E:G→Real) =
-   (aC (((al ((@mu Real _ _) D) (mu E)))) (((al (mu E) (mu D))))):=by
+  ((↑) ∘ aN.bh D E:G→ℝ) =
+   (aC (((al ((@mu ℝ _ _) D) (mu E)))) (((al (mu E) (mu D))))):=by
  unfold aN.bh
   aN.dU
  simp only[NNReal.gF,NNReal.oD,
   NNReal.iF]
  symm
- rw[kr,fA ((@mu Real _ _) E) (mu D)]
+ rw[kr,fA ((@mu ℝ _ _) E) (mu D)]
 omit [DiscreteMeasurableSpace G] [MeasurableSpace G] in
 lemma kp
-  (D E:Finset G) (f:G→Real) (p:Nat) :
+  (D E:Finset G) (f:G→ℝ) (p:ℕ) :
   aK
     ((↑) ∘ aN.bh D E) f p =
-   ∑ z:G,((al ((@mu Real _ _) D) (mu E))) z *
+   ∑ z:G,((al ((@mu ℝ _ _) D) (mu E))) z *
     aK
-     (fun x↦((al ((@mu Real _ _) E) (mu D))) (x-z)) f p:=by
+     (fun x↦((al ((@mu ℝ _ _) E) (mu D))) (x-z)) f p:=by
  rw[lC]
  unfold aK
  simp_rw[cR,Qt]
@@ -9206,15 +9026,15 @@ lemma kp
 omit [DiscreteMeasurableSpace G] [MeasurableSpace G] in
 lemma lD
   {D E:Finset G} (hD:D.Nonempty) (hE:E.Nonempty)
-  (f:G→Real) (p:Nat) {lower:Real}
+  (f:G→ℝ) (p:ℕ) {lower:ℝ}
   (ic:lower≤aK
    ((↑) ∘ aN.bh D E) f p) :
   ∃ z∈D-E,
    ((z+ᵥ E)∩D).Nonempty ∧
-   lower≤aK ((al ((@mu Real _ _) (z+ᵥ E)) (mu D))) f p:=by
- let w:G→Real:=(al ((@mu Real _ _) D) (mu E))
- let F:G→Real:=fun z ↦
-  aK (fun x↦((al ((@mu Real _ _) E) (mu D))) (x-z)) f p
+   lower≤aK ((al ((@mu ℝ _ _) (z+ᵥ E)) (mu D))) f p:=by
+ let w:G→ℝ:=(al ((@mu ℝ _ _) D) (mu E))
+ let F:G→ℝ:=fun z ↦
+  aK (fun x↦((al ((@mu ℝ _ _) E) (mu D))) (x-z)) f p
  have O3:(D-E).Nonempty:=by
   obtain ⟨d,hd⟩:=hD
   obtain ⟨e,he⟩:=hE
@@ -9251,45 +9071,45 @@ lemma lD
   exact Rs d e
  ·dsimp only[F] at y8
   have t9 :
-    (fun x↦((al ((@mu Real _ _) E) (mu D))) (x-z)) =
-     (al ((@mu Real _ _) (z+ᵥ E)) (mu D)):=by
+    (fun x↦((al ((@mu ℝ _ _) E) (mu D))) (x-z)) =
+     (al ((@mu ℝ _ _) (z+ᵥ E)) (mu D)):=by
    rw[←vI,rl]
    rfl
   rw[t9] at y8
   exact y8
 lemma lE
   {D E A:Finset G} (hD:D.Nonempty) (hE:E.Nonempty)
-  (_hA:A.Nonempty) {p:Nat} (hp:0<p) {lower:Real}
+  (_hA:A.Nonempty) {p:ℕ} (hp:0<p) {lower:ℝ}
   (AV:0≤lower)
   (ic:lower ≤
    an.aM
     ((↑) ∘ aN.bh D E)
-    ((al ((@mu Real _ _) A) (mu A))) p) :
+    ((al ((@mu ℝ _ _) A) (mu A))) p) :
   ∃ z∈D-E,
    ((z+ᵥ E)∩D).Nonempty ∧
-   lower≤(b0 p ((al (mu (z+ᵥ E)) (mu D))) ((al ((@mu Real _ _) A) (mu A)))):=by
+   lower≤(b0 p ((al (mu (z+ᵥ E)) (mu D))) ((al ((@mu ℝ _ _) A) (mu A)))):=by
  let nu:=aN.bh D E
  have rq:an.cw
-   ((↑) ∘ nu:G→Real):=by
+   ((↑) ∘ nu:G→ℝ):=by
   refine ⟨?_, ?_⟩
   ·intro x
    exact_mod_cast(aN.gS D E x)
-  ·simpa using QA (fun r:NNReal↦(r:Real))
+  ·simpa using QA (fun r:NNReal↦(r:ℝ))
     (aN.i7 hD hE)
  have yW:lower^p ≤
-   aK ((↑) ∘ nu:G→Real)
-    ((al ((@mu Real _ _) A) (mu A))) p:=by
+   aK ((↑) ∘ nu:G→ℝ)
+    ((al ((@mu ℝ _ _) A) (mu A))) p:=by
   calc
    lower^p ≤
      an.aM
-       ((↑) ∘ nu:G→Real) ((al ((@mu Real _ _) A) (mu A))) p^p:=
+       ((↑) ∘ nu:G→ℝ) ((al ((@mu ℝ _ _) A) (mu A))) p^p:=
     Qp AV ic p
-   _=aK ((↑) ∘ nu:G→Real)
-     ((al ((@mu Real _ _) A) (mu A))) p:=
+   _=aK ((↑) ∘ nu:G→ℝ)
+     ((al ((@mu ℝ _ _) A) (mu A))) p:=
     an.jr rq hp
  obtain ⟨z,hz,um,EN⟩:=
   lD hD hE
-   ((al ((@mu Real _ _) A) (mu A))) p (by simpa[nu] using yW)
+   ((al ((@mu ℝ _ _) A) (mu A))) p (by simpa[nu] using yW)
  let u7:G→NNReal:=(al ((@mu NNReal _ _) (z+ᵥ E)) (mu D))
  have rK:(z+ᵥ E).Nonempty:=by
   obtain ⟨e,he⟩:=hE
@@ -9297,7 +9117,7 @@ lemma lE
   rw[Ug]
   exact ⟨e,he,rfl⟩
  have Hj:an.cw
-   ((↑) ∘ u7:G→Real):=by
+   ((↑) ∘ u7:G→ℝ):=by
   refine ⟨?_, ?_⟩
   ·intro x
    exact_mod_cast(dM cC cC x:0≤u7 x)
@@ -9307,66 +9127,66 @@ lemma lE
    simp only[Rc,star_trivial]
    rw[kW _ rK,kW _ hD,QT]
  have Dq:lower^p ≤
-   aK ((↑) ∘ u7:G→Real)
-    ((al ((@mu Real _ _) A) (mu A))) p:=by
+   aK ((↑) ∘ u7:G→ℝ)
+    ((al ((@mu ℝ _ _) A) (mu A))) p:=by
   simpa only[u7,NNReal.gF,NNReal.iF] using EN
  have EO:lower^p ≤
    an.aM
-     ((↑) ∘ u7:G→Real) ((al ((@mu Real _ _) A) (mu A))) p^p:=by
+     ((↑) ∘ u7:G→ℝ) ((al ((@mu ℝ _ _) A) (mu A))) p^p:=by
   rw[an.jr Hj hp]
   exact Dq
  have AW:0 ≤
    an.aM
-    ((↑) ∘ u7:G→Real) ((al ((@mu Real _ _) A) (mu A))) p:=
+    ((↑) ∘ u7:G→ℝ) ((al ((@mu ℝ _ _) A) (mu A))) p:=
   an.j3 Hj _ _
  have yh:lower ≤
    an.aM
-    ((↑) ∘ u7:G→Real) ((al ((@mu Real _ _) A) (mu A))) p:=by
+    ((↑) ∘ u7:G→ℝ) ((al ((@mu ℝ _ _) A) (mu A))) p:=by
   by_contra hnot
   have xS:=QV hnot
   have LV:=pow_lt_pow_left₀ xS AW hp.ne'
   exact(Rd EO) LV
  refine ⟨z,hz,um, ?_⟩
  rw[aN.dN u7
-  ((al ((@mu Real _ _) A) (mu A))) hp] at yh
+  ((al ((@mu ℝ _ _) A) (mu A))) hp] at yh
  exact yh
 omit [DiscreteMeasurableSpace G] [MeasurableSpace G] in
 lemma m0
   {A D:Finset G} (hA:A.Nonempty) (x:G) :
-  (A.card:Real)*((aC ((@mu Real _ _) D) (mu A))) x=a9 A D x:=by
+  (A.card:ℝ)*((aC ((@mu ℝ _ _) D) (mu A))) x=a9 A D x:=by
  classical
  rw[cR,a9,ao,Qj]
- let e:G ≃ G:=Equiv.subLeft x
+ let e := Equiv.subLeft x
  rw[Qk e
-  (fun z:G↦(A.card:Real)*((@mu Real _ _) D z*mu A (x-z)))
-  (fun y:G↦(A.card:Real)*((@mu Real _ _) D (x-y)*mu A y))]
+  (fun z:G↦(A.card:ℝ)*((@mu ℝ _ _) D z*mu A (x-z)))
+  (fun y:G↦(A.card:ℝ)*((@mu ℝ _ _) D (x-y)*mu A y))]
  ·apply Io rfl
   intro y _
   simp only[mu_apply,bs,af]
-  have sF:(A.card:Real)≠0:=by exact_mod_cast hA.card_ne_zero
+  have sF:(A.card:ℝ)≠0:=by exact_mod_cast hA.card_ne_zero
   by_cases J9:y∈A
   ·by_cases Ka:x-y∈D
    ·simp only[RP J9,RP Ka,Q3]
     calc
-     (A.card:Real)*((D.card:Real)⁻¹ *(A.card:Real)⁻¹) =
-       (D.card:Real)⁻¹ *((A.card:Real)*(A.card:Real)⁻¹):=by ring
-     _=(D.card:Real)⁻¹:=by rw[Tw sF,Q3]
-     _=1*(D.card:Real)⁻¹:=by rw[QT]
+     _ =
+       (D.card:ℝ)⁻¹ *((A.card:ℝ)*(A.card:ℝ)⁻¹):=by ring
+     _=(D.card:ℝ)⁻¹:=by rw[Tw sF,Q3]
+     _=1*(D.card:ℝ)⁻¹:=by rw[QT]
    ·simp[J9,Ka]
   ·simp[J9]
  ·intro y
   simp[e]
 omit [DiscreteMeasurableSpace G] [MeasurableSpace G] in
 lemma p0
-  (d a₁ a₂ a:G→Real) :
-  ⟪(aC d (((al a₁ a₂)))),(al a a)⟫_[Real] =
-   ⟪(aC d a),(aC (((al a₂ a₁))) a)⟫_[Real]:=by
+  (d a₁ a₂ a:G→ℝ) :
+  ⟪(aC d (((al a₁ a₂)))),(al a a)⟫_[ℝ] =
+   ⟪(aC d a),(aC (((al a₂ a₁))) a)⟫_[ℝ]:=by
  rw[ro,ro]
  congr 1
  change(al (((al a a))) (((al a₁ a₂))))=(al (((aC (((al a₂ a₁))) a))) a)
  simp_rw[←iM,pL,conjneg_conjneg]
  calc
-  (aC (((aC a (conjneg a)))) (((aC (conjneg a₁) a₂)))) =
+  _ =
     (aC (((aC a (conjneg a₁)))) (((aC (conjneg a) a₂)))):=
    ir _ _ _ _
   _=(aC (((aC (conjneg a₁) a))) (((aC a₂ (conjneg a))))):=by
@@ -9381,9 +9201,9 @@ lemma jy
   {D aX a3 A S:Finset G}
   (_hD:D.Nonempty) (fY:aX.Nonempty)
   (g9:a3.Nonempty) (hA:A.Nonempty)
-  {threshold mass lower:Real} (oZ:0≤threshold)
-  (rL: ∀ x,0≤((al ((@mu Real _ _) A) (mu A))) x)
-  (sE: ∀ x∈S,threshold≤((al ((@mu Real _ _) A) (mu A))) x)
+  {threshold mass lower:ℝ} (oZ:0≤threshold)
+  (rL: ∀ x,0≤((al ((@mu ℝ _ _) A) (mu A))) x)
+  (sE: ∀ x∈S,threshold≤((al ((@mu ℝ _ _) A) (mu A))) x)
   (ft:mass ≤
    ag.bC
     (ag.d9
@@ -9393,15 +9213,15 @@ lemma jy
       (ag.aS a3)))
     (ag.bJ S))
   (ic:lower≤threshold*mass) :
-  ∃ x:G,(A.card:Real)*lower≤a9 A D x:=by
+  ∃ x:G,(A.card:ℝ)*lower≤a9 A D x:=by
  have EP:=lW oZ rL
   sE ft
  have xD:=p0
-  ((@mu Real _ _) D) (mu aX) (mu a3) (mu A)
+  ((@mu ℝ _ _) D) (mu aX) (mu a3) (mu A)
  rw[Sg,Sg] at xD
  simp only[SV,R3] at xD
- let w:G→Real:=(aC (((al ((@mu Real _ _) a3) (mu aX)))) (mu A))
- let f:G→Real:=(aC ((@mu Real _ _) D) (mu A))
+ let w:G→ℝ:=(aC (((al ((@mu ℝ _ _) a3) (mu aX)))) (mu A))
+ let f:G→ℝ:=(aC ((@mu ℝ _ _) D) (mu A))
  have hw: ∀ x,0≤w x:=by
   intro x
   exact pC
@@ -9414,9 +9234,9 @@ lemma jy
    kW _ hA,Q3]
  have Ay:lower≤ ∑ x:G,w x*f x:=by
   calc
-   lower≤threshold*mass:=ic
+   _ ≤threshold*mass:=ic
    _≤ ∑ x:G,
-     ((aC ((@mu Real _ _) D) (((al (mu aX) (mu a3)))))) x*((al (mu A) (mu A))) x:=
+     ((aC ((@mu ℝ _ _) D) (((al (mu aX) (mu a3)))))) x*((al (mu A) (mu A))) x:=
     EP
    _= ∑ x:G,w x*f x:=by
     rw[xD]
@@ -9436,7 +9256,7 @@ lemma bK
  have Gh: ¬ 0<(dn A C x).card:=by
   intro ch
   exact h (Finset.card_pos.mp ch)
- have ch:(dn A C x).card=0:=Nat.eq_zero_of_not_pos Gh
+ have ch := Nat.eq_zero_of_not_pos Gh
  rw[bk hC,ch] at hx
  norm_num at hx
 structure bt where
@@ -9466,7 +9286,7 @@ omit [DecidableEq G] in
 lemma od (B:aj G) (dF:B.a1) :
     ∃ c:bt (G:=G),
       c.ba=B∧c.outer=1∧c.carrier=B.carrier:=by
-  let d:Nat:=max B.rank 1
+  let d:ℕ:=max B.rank 1
   let aF:NNReal:=1/(400*(d:NNReal))
   have hd:0<d:=by simp[d]
   have ES:0<aF:=by
@@ -9483,19 +9303,19 @@ lemma od (B:aj G) (dF:B.a1) :
     · exact_mod_cast(show 1≤100*d by omega)
     · positivity
   have jt:=dF aF (by simpa[d] using zu)
-  have Ax:(100:Real)*d*(aF:Real)≤1/4:=by
-    have LW:(aF:Real)≤1/(400*(d:Real)):=by
+  have Ax:(100:ℝ)*d*(aF:ℝ)≤1/4:=by
+    have LW:(aF:ℝ)≤1/(400*(d:ℝ)):=by
       exact_mod_cast(show aF≤1/(400*(d:NNReal)) by rfl)
-    have O6:(0:Real)<d:=by exact_mod_cast hd
+    have O6:(0:ℝ)<d:=by exact_mod_cast hd
     calc
-      (100:Real)*d*(aF:Real) ≤
-          100*d*(1/(400*(d:Real))):=by gcongr
+      (100:ℝ)*d*(aF:ℝ) ≤
+          100*d*(1/(400*(d:ℝ))):=by gcongr
       _=1/4:=by field_simp; ring
   have EU :
-      ((B.ai (1+aF)).carrier.card:Real) ≤
-        2*((B.ai (1-aF)).carrier.card:Real):=by
+      ((B.ai (1+aF)).carrier.card:ℝ) ≤
+        2*((B.ai (1-aF)).carrier.card:ℝ):=by
     nlinarith[jt.1,jt.2,Ax,
-      show(0:Real)<B.carrier.card by
+      show(0:ℝ)<B.carrier.card by
         exact_mod_cast B.aE.card_pos]
   have ch :
       (B.ai (1+aF)).carrier.card ≤
@@ -9530,49 +9350,49 @@ def di {original:Finset G} (s:aA original)
   (gy:0<a9 s.restriction.set child.carrier x) :
   (di s child x gy).density =
    a9 s.restriction.set child.carrier x:=by
- change((dn s.restriction.set child.carrier x).card:Real) /
+ change((dn s.restriction.set child.carrier x).card:ℝ) /
    child.carrier.card=a9 s.restriction.set child.carrier x
  exact(bk child.aE x).symm
 lemma fb
   {original:Finset G} (s:aA original)
   (child:bt (G:=G)) (x:G)
-  {q aU:Real} {aq:Nat}
+  {q aU:ℝ} {aq:ℕ}
   (gy:0<a9 s.restriction.set child.carrier x)
   (c8:q*s.density ≤
    a9 s.restriction.set child.carrier x)
   (cK:child.ba.rank≤ s.rank+aq)
-  (ch:Real.exp (-aU)*(s.card:Real)≤child.carrier.card) :
+  (ch:exp (-aU)*(s.card:ℝ)≤child.carrier.card) :
   dk q aq aU s.restriction
    (di s child x gy).restriction:=by
  refine ⟨?_,cK, ?_⟩
  ·change q*s.density ≤
-   ((dn s.restriction.set child.carrier x).card:Real) /
+   ((dn s.restriction.set child.carrier x).card:ℝ) /
     child.carrier.card
   rw[←bk child.aE]
   exact c8
- ·change Real.exp (-aU)*(s.restriction.card:Real) ≤
+ ·change exp (-aU)*(s.restriction.card:ℝ) ≤
    child.carrier.card
   exact ch
 section sG
 variable [MeasurableSpace G] [DiscreteMeasurableSpace G]
 lemma nq
-  {D:aj G} {aX a3 S:Finset G} {error:Real}
+  {D:aj G} {aX a3 S:Finset G} {error:ℝ}
   (fY:aX.Nonempty) (g9:a3.Nonempty)
   (jl: ∀ t∈D.carrier,
-   (aJ (∞) (τ t ((aC (((aC ((@mu Complex _ _) (-aX)) (((Set.indicator S fun _↦(1:_)):G→ Complex))))) (mu a3))) -
-     ((aC (((aC ((@mu Complex _ _) (-aX)) (((Set.indicator S fun _↦(1:_)):G→ Complex))))) (mu a3))))) ≤
+   (aJ (∞) (τ t ((aC (((aC ((@mu ℂ _ _) (-aX)) (((indicator S fun _↦(1:_)):G→ ℂ))))) (mu a3))) -
+     ((aC (((aC ((@mu ℂ _ _) (-aX)) (((indicator S fun _↦(1:_)):G→ ℂ))))) (mu a3))))) ≤
     error) :
   ∀ t∈D.carrier,
    |ag.bW aX a3 S t -
      ag.bW aX a3 S 0| ≤
-    error*(aX.card:Real)*a3.card:=by
+    error*(aX.card:ℝ)*a3.card:=by
  classical
- let F:G→ Complex:=
-  (aC (((aC ((@mu Complex _ _) (-aX)) (((Set.indicator S fun _↦(1:_)):G→ Complex))))) (mu a3))
+ let F:G→ ℂ:=
+  (aC (((aC ((@mu ℂ _ _) (-aX)) (((indicator S fun _↦(1:_)):G→ ℂ))))) (mu a3))
  have hF (u:G) :
    F u=Complex.ofReal
     (ag.bW aX a3 S u /
-     (aX.card*a3.card:Real)):=by
+     (aX.card*a3.card:ℝ)):=by
   dsimp only[F]
   rw[os]
   congr 1
@@ -9589,12 +9409,12 @@ lemma nq
  have Hk :
    |(ag.bW aX a3 S t -
      ag.bW aX a3 S 0) /
-     (aX.card*a3.card:Real)| ≤error:=by
+     (aX.card*a3.card:ℝ)| ≤error:=by
   rw[Rw,QZ,sub_neg_eq_add,zero_add,
    hF t,hF 0, ←Complex.ofReal_sub,Rf,QK,
    ←UT] at gX
   exact gX
- have ch:(0:Real)<(aX.card:Real)*a3.card:=
+ have ch:(0:ℝ)<(aX.card:ℝ)*a3.card:=
   QM (by exact_mod_cast fY.card_pos) (by exact_mod_cast g9.card_pos)
  rw[TE,RT ch] at Hk
  have pO:=(QF ch).mp Hk
@@ -9627,67 +9447,67 @@ lemma hU
  rw[uY]
  ring
 lemma h4
-  {D:aj G} {aX a3 S:Finset G} {error:Real}
+  {D:aj G} {aX a3 S:Finset G} {error:ℝ}
   (fY:aX.Nonempty) (g9:a3.Nonempty)
   (jl: ∀ t∈D.carrier,
-   (aJ (∞) (τ t ((aC (((aC ((@mu Complex _ _) (-a3)) (((Set.indicator ((-S:Finset G)) fun _↦(1:_)):G→ Complex))))) (mu aX))) -
-     ((aC (((aC ((@mu Complex _ _) (-a3)) (((Set.indicator ((-S:Finset G)) fun _↦(1:_)):G→ Complex))))) (mu aX))))) ≤
+   (aJ (∞) (τ t ((aC (((aC ((@mu ℂ _ _) (-a3)) (((indicator ((-S:Finset G)) fun _↦(1:_)):G→ ℂ))))) (mu aX))) -
+     ((aC (((aC ((@mu ℂ _ _) (-a3)) (((indicator ((-S:Finset G)) fun _↦(1:_)):G→ ℂ))))) (mu aX))))) ≤
     error) :
   ∀ t∈D.carrier,
    |ag.bW aX a3 S t -
      ag.bW aX a3 S 0| ≤
-    error*(aX.card:Real)*a3.card:=by
+    error*(aX.card:ℝ)*a3.card:=by
  classical
  have dc:=nq
   (D:=D) (aX:=a3) (a3:=aX) (S:=-S) (error:=error)
   g9 fY jl
  intro t ht
- have eY: -t∈D.carrier:=aj.ec.mpr ht
+ have eY := aj.ec.mpr ht
  have h:=dc (-t) eY
  rw[hU aX a3 S (-t),
   hU aX a3 S 0] at h
  simpa[Qx,Q6,Qo] using h
-noncomputable def mb (M L:Finset G):Nat:=
- ⌈1+Real.log (min 1 ((L.card:Real)/M.card))⁻¹⌉₊
+noncomputable def mb (M L:Finset G):ℕ:=
+ ⌈1+log (min 1 ((L.card:ℝ)/M.card))⁻¹⌉₊
 noncomputable def cm
-  (M L:Finset G) (dv:Real) (m:Nat):Nat:=
+  (M L:Finset G) (dv:ℝ) (m:ℕ):ℕ:=
  cQ (mb M L)
-  ((dv/m)/Real.exp 1)
+  ((dv/m)/exp 1)
 lemma ej
-    {A aL a0:Finset G} {p:Nat} {sigma delta:Real}
+    {A aL a0:Finset G} {p:ℕ} {sigma delta:ℝ}
     (data:aW A aL a0 p sigma delta)
     (cu:delta<1)
-    (dv:Real) (sH:0<dv)
-    (m:Nat) (hm:m≠0)
+    (dv:ℝ) (sH:0<dv)
+    (m:ℕ) (hm:m≠0)
     (bl:aj G) (sx:bl.a1)
     (aF:NNReal)
     (dy:aF+aF ≤
-      1/(100*(max bl.rank 1:Nat):NNReal))
-    (dh:Nat) (pX:0<dh)
-    (bm:Real)
-    (dV: ∀ (T:Finset G) (Delta:Finset (AddChar G Complex)),
-      (Delta.card:Real) ≤
+      1/(100*(max bl.rank 1:ℕ):NNReal))
+    (dh:ℕ) (pX:0<dh)
+    (bm:ℝ)
+    (dV: ∀ (T:Finset G) (Delta:Finset (AddChar G ℂ)),
+      (Delta.card:ℝ) ≤
         aI.bf bl T (1/2) →
       2*dv +
-          (2/(dh:Real) +
-            400*((max bl.rank 1:Nat):Real) *
+          (2/(dh:ℝ) +
+            400*((max bl.rank 1:ℕ):ℝ) *
               (aF+aF:NNReal) +
-            2*(1/2:Real)^m) *
+            2*(1/2:ℝ)^m) *
           Real.sqrt
-            (((aW.bg A aL a0 p sigma).card:Real) /
+            (((aW.bg A aL a0 p sigma).card:ℝ) /
               data.aX.card)≤bm) :
     ∃ (T X:Finset G) (a8:NNReal) (fl:aj G)
-      (Delta:Finset (AddChar G Complex)),
-      ((((-data.a3).card:Real) ^
+      (Delta:Finset (AddChar G ℂ)),
+      ((((-data.a3).card:ℝ) ^
             cm
               (-(aW.bg A aL a0 p sigma))
               data.aX dv m/2*bl.carrier.card) /
-          ((-data.a3+bl.carrier).card:Real) ^
+          ((-data.a3+bl.carrier).card:ℝ) ^
             cm
               (-(aW.bg A aL a0 p sigma))
               data.aX dv m≤T.card) ∧
       T⊆bl.carrier∧X.Nonempty ∧
-      (Delta.card:Real) ≤
+      (Delta.card:ℝ) ≤
         aI.bf bl T (1/2) ∧
       1/2≤a8∧a8≤1 ∧
       fl=bl.ai (a8 *
@@ -9701,7 +9521,7 @@ lemma ej
             4^(bl.rank+Delta.card))
           bm):=by
   classical
-  let S:Finset G:=
+  let S :=
     aW.bg A aL a0 p sigma
   have gN:=data.lR cu
   have Gi:(-data.a3).Nonempty:=by
@@ -9720,33 +9540,33 @@ lemma ej
       (A:=-data.a3) Gi dv sH m hm
       (-S) data.aX LX gN.1 bl sx aF dy
       dh pX
-  let n:Nat:=
+  let n :=
     dh*ag.a6
       (aI.bf bl T (1/2))
-  let p3:Real:=
+  let p3:ℝ:=
     2*dv +
-      (4*Real.pi*(Delta.card:Real) *
-          ((((n:Nat):NNReal)⁻¹ :Real)) +
-        400*((max bl.rank 1:Nat):Real) *
+      (4*pi*(Delta.card:ℝ) *
+          ((((n:ℕ):NNReal)⁻¹ :ℝ)) +
+        400*((max bl.rank 1:ℕ):ℝ) *
           (aF+aF:NNReal) +
-        2*(1/2:Real)^m) *
-      Real.sqrt ((S.card:Real)/data.aX.card)
+        2*(1/2:ℝ)^m) *
+      Real.sqrt ((S.card:ℝ)/data.aX.card)
   have l7 :
-      4*Real.pi*(Delta.card:Real) *
-          ((((n:Nat):NNReal)⁻¹ :Real))≤2/(dh:Real):=by
+      4*pi*(Delta.card:ℝ) *
+          ((((n:ℕ):NNReal)⁻¹ :ℝ))≤2/(dh:ℝ):=by
     simpa[n] using
       (ag.sw
         (aI.bf bl T (1/2))
         Delta.card dh fH pX)
   have nX:p3≤bm:=by
     calc
-      p3 ≤
+      _ ≤
           2*dv +
-            (2/(dh:Real) +
-              400*((max bl.rank 1:Nat):Real) *
+            (2/(dh:ℝ) +
+              400*((max bl.rank 1:ℕ):ℝ) *
                 (aF+aF:NNReal) +
-              2*(1/2:Real)^m) *
-            Real.sqrt ((S.card:Real)/data.aX.card):=by
+              2*(1/2:ℝ)^m) *
+            Real.sqrt ((S.card:ℝ)/data.aX.card):=by
         dsimp only[p3]
         gcongr
       _≤bm:=by simpa[S] using dV T Delta fH
@@ -9768,27 +9588,23 @@ lemma ej
         simpa[S,n,p3,Qo] using jl t ht)
     intro t ht
     calc
-      |ag.bW
-          data.aX data.a3
-            (aW.bg A aL a0 p sigma) t -
-        ag.bW
-          data.aX data.a3
-            (aW.bg A aL a0 p sigma) 0|
-          ≤ p3*(data.aX.card:Real)*data.a3.card:=by
+      _
+
+          ≤ p3*(data.aX.card:ℝ)*data.a3.card:=by
             simpa[S] using uj t ht
-      _≤bm*(data.aX.card:Real)*data.a3.card:=by
+      _≤bm*(data.aX.card:ℝ)*data.a3.card:=by
         gcongr
 end sG
 def bV {original:Finset G} (s:aA original)
-  (ak aB:bt (G:=G)) (epsilon:Real):Prop:=
+  (ak aB:bt (G:=G)) (epsilon:ℝ):Prop:=
  ∃ x∈s.e9,
   (1-epsilon)*s.density ≤
    a9 s.restriction.set ak.carrier x ∧
   (1-epsilon)*s.density ≤
    a9 s.restriction.set aB.carrier x
 structure kO {original:Finset G}
-  (s:aA original) (epsilon aU:Real)
-  (aq:Nat) where
+  (s:aA original) (epsilon aU:ℝ)
+  (aq:ℕ) where
  eta:NNReal
  NZ:s.restriction.ba.vT s.restriction.outer eta
  ak:bt (G:=G)
@@ -9799,8 +9615,8 @@ structure kO {original:Finset G}
   (s.restriction.ba.ai eta).carrier
  rankOne:ak.ba.rank≤ s.rank+aq
  p5:aB.ba.rank≤ s.rank+aq
- mE:Real.exp (-aU)*(s.card:Real)≤ak.carrier.card
- mF:Real.exp (-aU)*(s.card:Real)≤aB.carrier.card
+ mE:exp (-aU)*(s.card:ℝ)≤ak.carrier.card
+ mF:exp (-aU)*(s.card:ℝ)≤aB.carrier.card
 end
 end ay.ah
 end
@@ -9975,7 +9791,7 @@ lemma nr
   an.aM tH pI p ≤
    epsilon*(B.carrier.card:ℝ)⁻¹:=by
  let nu:=aN.bh D E
- have ft: ∑ x:G,nu x=1:=
+ have ft :=
   aN.i7 hD hE
  have rq:an.cw ((↑) ∘ nu):=
   ⟨fun x↦by
@@ -9984,7 +9800,7 @@ lemma nr
    by simpa using QA (fun z:ℝ≥0↦(z:ℝ)) ft⟩
  have ch:(0:ℝ)<B.carrier.card:=by
   exact_mod_cast B.aE.card_pos
- have fF:0<(B.carrier.card:ℝ)⁻¹:=inv_pos.mpr ch
+ have fF := inv_pos.mpr ch
  apply an.nP
    ju rq eM fF hp (by simpa[nu] using lh) _
    (by simpa[nu] using qv)
@@ -10020,7 +9836,7 @@ lemma ou
    apply abs_eq_zero.mp
    exact SC hs (Q8 s)
   simp[O8,O9]
- have z7:0<w:=SM hw (Ne.symm vq)
+ have z7 := SM hw (Ne.symm vq)
  have qD:(0:ℝ)< m:=by exact_mod_cast hm
  let ur:ℝ:=((r+w)*(m:ℝ))/w
  let us:ℝ:=((s+w)*(m:ℝ))/w
@@ -10054,10 +9870,10 @@ lemma ou
   have q4:=QA Fin.val lP
   simpa only[rO,ur,us,Nat.min_eq_left BS,
    Nat.min_eq_left BT] using q4
- have MQ:((⌊ur⌋₊:ℕ):ℝ)≤ur:=Ti Kb
- have EV:ur<((⌊ur⌋₊:ℕ):ℝ)+1:=RY ur
- have MR:((⌊us⌋₊:ℕ):ℝ)≤us:=Ti Kc
- have EW:us<((⌊us⌋₊:ℕ):ℝ)+1:=RY us
+ have MQ := Ti Kb
+ have EV := RY ur
+ have MR := Ti Kc
+ have EW := RY us
  have IZ:ur<us+1:=by
   calc
    ur<((⌊ur⌋₊:ℕ):ℝ)+1:=EV
@@ -10118,7 +9934,7 @@ private lemma kP
  have hdiv:= ou hm
   (Qn (by positivity) (by positivity)) CW CX vU
  calc
-  ‖γ x.1-γ y.1‖ ≤
+  _ ≤
     |cx (γ x.1)-cx (γ y.1)|:=
    gu _ _
   _≤((a8:ℝ)*(B.width γ:ℝ))/(m:ℝ):=hdiv
@@ -10136,8 +9952,8 @@ private lemma ps
  classical
  by_cases jv:Nonempty
    {x:↥(B.ai a8).carrier// B.fv a8 m x=a}
- ·let x₀ :
-    {x:↥(B.ai a8).carrier// B.fv a8 m x=a}:=
+ ·let x₀  :=
+
    Classical.choice jv
   let f :
     {x:↥(B.ai a8).carrier// B.fv a8 m x=a} →
@@ -10146,7 +9962,7 @@ private lemma ps
     ⟨x.1.1-x₀.1.1,
      kP B a8 hm
       (x.2.trans x₀.2.symm)⟩
-  have hf:Function.Injective f:=by
+  have hf:Injective f:=by
    intro x y ni
    apply RI
    apply RI
@@ -10154,8 +9970,8 @@ private lemma ps
    dsimp[f] at q4
    exact S8 q4
   calc
-   Fintype.card
-     {x:↥(B.ai a8).carrier// B.fv a8 m x=a} ≤
+   _
+                                            ≤
      Fintype.card ↥(B.ai (a8/(m:NNReal))).carrier:=
     R1 f hf
    _=(B.ai (a8/(m:NNReal))).carrier.card:=
@@ -10170,7 +9986,7 @@ lemma h6
     (B.ai (a8/(m:NNReal))).carrier.card:=by
  classical
  let S:=B.eX→Fin (2*m+1)
- let q:↥(B.ai a8).carrier→ S:=B.fv a8 m
+ let q := B.fv a8 m
  have jv: ∀ a:S,
    Fintype.card {x:↥(B.ai a8).carrier// q x=a} ≤
     (B.ai (a8/(m:NNReal))).carrier.card:=by
@@ -10200,7 +10016,7 @@ lemma cM
     (B.ai (a8/(m:NNReal))).carrier.card:=by
  classical
  calc
-  (B.ai a8).carrier.card ≤
+  _ ≤
     (2*m+1)^B.rank *
      (B.ai (a8/(m:NNReal))).carrier.card:=
    h6 B a8 hm
@@ -10218,9 +10034,7 @@ open Finset
 open scoped NNReal Pointwise
 namespace ay
 noncomputable section
-namespace aj
-variable {G:Type*} [AddCommGroup G] [Fintype G] [DecidableEq G]
-end aj
+
 lemma lX
   {G:Type*} [AddCommGroup G] [Fintype G]
   (B:aj G) (X:Finset G) {beta eta:ℝ}
@@ -10228,7 +10042,7 @@ lemma lX
   (hX:X.Nonempty)
   (ch:beta*(B.carrier.card:ℝ)≤(X.card:ℝ)) :
   aI.bf B X eta ≤
-   2*(1+Real.log (2/beta))/eta^2:=by
+   2*(1+log (2/beta))/eta^2:=by
  have wN:(0:ℝ)<B.carrier.card:=by
   exact_mod_cast B.aE.card_pos
  have LY:(0:ℝ)<X.card:=by
@@ -10239,11 +10053,10 @@ lemma lX
   nlinarith
  have Ic:0<2*(B.carrier.card:ℝ)/X.card:=by
   positivity
- have ei :
-   Real.log (2*(B.carrier.card:ℝ)/X.card) ≤
-    Real.log (2/beta):=
+ have ei  :=
+
   QG Ic eO
- have Kg:0<eta^2:=SY fC
+ have Kg := SY fC
  rw[aI.bf]
  apply(R9 Kg).2
  nlinarith
@@ -10253,7 +10066,7 @@ lemma fQ
   (hV:0<beta) (hX:X.Nonempty)
   (ch:beta*(B.carrier.card:ℝ)≤(X.card:ℝ)) :
   aI.bf B X (1/2) ≤
-   8*(1+Real.log (2/beta)):=by
+   8*(1+log (2/beta)):=by
  have h:=
   lX B X hV
    (by norm_num:(0:ℝ)<1/2) hX ch
@@ -10288,8 +10101,8 @@ lemma y9 {d aq:ℕ} (cE:0<aq) :
 lemma i8 {d aq r:ℕ}
   (cE:0<aq)
   (cK:r≤ax d aq) :
-  max r 1≤ax d aq:=by
- exact max_le cK (y9 cE)
+  max r 1≤ax d aq:=
+       max_le cK (y9 cE)
 lemma mc {d aq:ℕ} (cE:0<aq) :
   0<bn d aq:=by
  unfold bn
@@ -10309,12 +10122,12 @@ lemma p6 {d aq r:ℕ}
  have lF:=i8 cE cK
  unfold bn
  calc
-  100*max r 1≤100*ax d aq:=
+  _ ≤100*ax d aq:=
    Qr 100 lF
   _≤819200*ax d aq*2^d:=by
    have qI:100≤819200:=by omega
    calc
-    100*ax d aq≤819200*ax d aq:=
+    _ ≤819200*ax d aq:=
      QQ _ qI
     _≤819200*ax d aq*2^d:=
      Q4 _ (RF (by norm_num) _)
@@ -10360,7 +10173,7 @@ lemma wd {d aq r:ℕ}
     ((819200:ℝ)*(max r 1:ℕ)*(2:ℝ)^d)⁻¹:=
   (RJ Hl xE).2 hbound
  calc
-  400*((max r 1:ℕ):ℝ)*(bn d aq:ℝ)⁻¹ ≤
+  _ ≤
     400*((max r 1:ℕ):ℝ) *
      ((819200:ℝ)*(max r 1:ℕ)*(2:ℝ)^d)⁻¹:=by
    gcongr
@@ -10379,12 +10192,12 @@ lemma nZ {d aq r:ℕ}
  have lF:=i8 cE cK
  unfold bd
  calc
-  200*max r 1≤200*ax d aq:=
+  _ ≤200*ax d aq:=
    Qr 200 lF
   _≤76800*ax d aq*2^(d+1):=by
    have qI:200≤76800:=by omega
    calc
-    200*ax d aq≤76800*ax d aq:=
+    _ ≤76800*ax d aq:=
      QQ _ qI
     _≤76800*ax d aq*2^(d+1):=
      Q4 _ (RF (by norm_num) _)
@@ -10404,7 +10217,7 @@ lemma rb {d aq r:ℕ}
   apply(RJ kB oO).2
   exact_mod_cast si
  calc
-  (bd d aq:NNReal)⁻¹ +(bd d aq:NNReal)⁻¹ ≤
+  _ ≤
     (200*(max r 1:ℕ):NNReal)⁻¹ +
      (200*(max r 1:ℕ):NNReal)⁻¹:=
    Sr hinv hinv
@@ -10428,24 +10241,24 @@ lemma nt
   {c beta:ℝ} (hc:0<c) (hV:0<beta) (C:ℝ) :
   Tendsto
    (fun N:ℕ =>
-    (Real.log (N:ℝ))^C *
-     Real.exp (-c*(Real.log (N:ℝ))^beta))
+    (log (N:ℝ))^C *
+     exp (-c*(log (N:ℝ))^beta))
    atTop (nhds 0):=by
- have ei:Tendsto (fun N:ℕ=>Real.log (N:ℝ)) atTop atTop:=
+ have ei:Tendsto (fun N:ℕ=>log (N:ℝ)) atTop atTop:=
   Real.tendsto_log_atTop.comp Sa
- have hpow:Tendsto (fun N:ℕ=>(Real.log (N:ℝ))^beta) atTop atTop:=
+ have hpow:Tendsto (fun N:ℕ=>(log (N:ℝ))^beta) atTop atTop:=
   (UR hV).comp ei
  have h:=
   (tendsto_rpow_mul_exp_neg_mul_atTop_nhds_zero (C/beta) c hc).comp hpow
  refine h.congr' ?_
  filter_upwards[eventually_gt_atTop 1] with N hN
- have ql:0≤Real.log (N:ℝ):=
+ have ql:0≤log (N:ℝ):=
   Qv (by exact_mod_cast hN.le)
  change
-  ((Real.log (N:ℝ))^beta)^(C/beta) *
-    Real.exp (-c*(Real.log (N:ℝ))^beta) =
-   (Real.log (N:ℝ))^C *
-    Real.exp (-c*(Real.log (N:ℝ))^beta)
+  ((log (N:ℝ))^beta)^(C/beta) *
+    exp (-c*(log (N:ℝ))^beta) =
+   (log (N:ℝ))^C *
+    exp (-c*(log (N:ℝ))^beta)
  congr 1
  rw[←S0 ql]
  congr 1
@@ -10454,36 +10267,36 @@ lemma m1
   {K c beta:ℝ} (hK:0≤K) (hc:0<c) (hV:0<beta)
   (AX: ∀ᶠ N:ℕ in atTop,
    (r3 N:ℝ) ≤
-    K*(N:ℝ)*Real.exp (-c*(Real.log (N:ℝ))^beta))
+    K*(N:ℝ)*exp (-c*(log (N:ℝ))^beta))
   (C:ℝ) :
   (fun N:ℕ=>(r3 N:ℝ))=O[atTop]
-   (fun N:ℕ=>(N:ℝ)/(Real.log (N:ℝ))^C):=by
+   (fun N:ℕ=>(N:ℝ)/(log (N:ℝ))^C):=by
  have we:=
   nt hc hV C
  have dV: ∀ᶠ N:ℕ in atTop,
-   (Real.log (N:ℝ))^C *
-     Real.exp (-c*(Real.log (N:ℝ))^beta)≤1:=
+   (log (N:ℝ))^C *
+     exp (-c*(log (N:ℝ))^beta)≤1:=
   we.eventually (Iic_mem_nhds (by norm_num:(0:ℝ)<1))
  refine Asymptotics.IsBigO.of_bound K ?_
  filter_upwards[AX,dV,eventually_gt_atTop 1] with N hbound Ig hN
  have zv:0≤(N:ℝ):=by positivity
- have Gj:0<Real.log (N:ℝ):=
+ have Gj:0<log (N:ℝ):=
   Sv (by exact_mod_cast hN)
- have w7:0<(Real.log (N:ℝ))^C:=
+ have w7:0<(log (N:ℝ))^C:=
   SQ Gj C
  rw[RA (Q5 (r3 N))]
  rw[RA (RS zv w7.le)]
  apply hbound.trans
  have Ih :
-   Real.exp (-c*(Real.log (N:ℝ))^beta) ≤
-    1/(Real.log (N:ℝ))^C:=by
+   exp (-c*(log (N:ℝ))^beta) ≤
+    1/(log (N:ℝ))^C:=by
   rw[Qs w7]
   simpa[Qx] using Ig
  calc
-  K*(N:ℝ)*Real.exp (-c*(Real.log (N:ℝ))^beta) ≤
-    K*(N:ℝ)*(1/(Real.log (N:ℝ))^C):=
+  K*(N:ℝ)*exp (-c*(log (N:ℝ))^beta) ≤
+    K*(N:ℝ)*(1/(log (N:ℝ))^C):=
    iO Ih (Qn hK zv)
-  _=K*((N:ℝ)/(Real.log (N:ℝ))^C):=by ring
+  _=K*((N:ℝ)/(log (N:ℝ))^C):=by ring
 end ay
 end
 section
@@ -10528,7 +10341,7 @@ lemma g1 {C:Finset G} (f:G→ℝ) :
   |aT C f| ≤aT C fun x↦ |f x|:=by
  unfold aT
  calc
-  |(∑ x∈C,f x)/(C.card:ℝ)| =
+  _ =
     |(∑ x∈C,f x)| /(C.card:ℝ):=by
    rw[TE]
    congr 1
@@ -10554,11 +10367,11 @@ lemma mH {C:Finset G} (hC:C.Nonempty)
 lemma s7 {B C:Finset G} (hC:C.Nonempty)
   (w8:C⊆B) (p:ℕ) (f:G→ℝ) :
   bL C B* |pairing f C| ^p≤cO B p f:=by
- have hB:B.Nonempty:=hC.mono w8
+ have hB := hC.mono w8
  have nN: |pairing f C| ^p≤cO C p f:=by
   rw[mU hC]
   calc
-   |aT C f| ^p
+   _
      ≤ (aT C fun x↦ |f x|)^p:=
       Qp (Q8 _) (g1 f) p
    _≤cO C p f:=mH hC p f
@@ -10566,7 +10379,7 @@ lemma s7 {B C:Finset G} (hC:C.Nonempty)
   unfold bL
   positivity
  calc
-  bL C B* |pairing f C| ^p
+  _
     ≤ bL C B*cO C p f:=iO nN uS
   _=(∑ x∈C, |f x| ^p)/B.card:=by
    unfold bL cO aT
@@ -10588,23 +10401,22 @@ lemma rd {B C:Finset G} (hC:C.Nonempty)
  have JK: |dK-bo| ≤
    |(dK-bo)-pairing f C| + |pairing f C|:=by
   calc
-   |dK-bo| =
+   _ =
      |((dK-bo)-pairing f C)+pairing f C|:=by ring_nf
    _≤ |(dK-bo)-pairing f C| + |pairing f C|:=UP _ _
  have nN:3*(ε*bo)/4< |pairing f C|:=by
-  have iU:ε*bo< |dK-bo|:=QV rE
+  have iU := QV rE
   nlinarith
  have uS:0≤bL C B:=by
   unfold bL
   positivity
- have Gk:(3*(ε*bo)/4)^p≤ |pairing f C| ^p:=
+ have Gk :=
   Qp (by positivity) nN.le p
- have AY :
-   (2/3:ℝ)^p*(3*(ε*bo)/4)^p ≤
-    bL C B* |pairing f C| ^p:=by
-  exact QW c8 Gk (by positivity) uS
+ have AY  :=
+
+        QW c8 Gk (by positivity) uS
  calc
-  (ε*bo/2)^p =
+  _ =
     (2/3:ℝ)^p*(3*(ε*bo)/4)^p:=by
    rw[←QL]
    congr 1
@@ -10639,7 +10451,7 @@ lemma nv {B C:Finset G} (hC:C.Nonempty)
  rcases n0 hC w8 p hp f dK bo fF
   c8 ew with rE | oP
  ·exact rE
- ·have Nr:p≠0:=Nat.ne_of_gt hp
+ ·have Nr := Nat.ne_of_gt hp
   have Ii:(bo/8)^p<(bo/4)^p:=by
    apply pow_lt_pow_left₀
    ·nlinarith
@@ -10664,8 +10476,8 @@ omit [Fintype G] in
  simp[a4]
 omit [Fintype G] in
 lemma eJ {S:Finset G} (hS:S.Nonempty) :
-  (a4 S).Nonempty:=by
- exact hS.image _
+  (a4 S).Nonempty:=
+       hS.image _
 omit [Fintype G] in
 lemma qJ {S T:Finset G} (Pc:S⊆T) :
   a4 S⊆a4 T:=by
@@ -10674,12 +10486,12 @@ lemma qJ {S T:Finset G} (Pc:S⊆T) :
  exact m2.mpr ⟨y,Pc hy,rfl⟩
 omit [Fintype G] in
 lemma qK (S:Finset G)
-  (eU:Function.Injective (fun x:G↦x+x)) :
-  #(a4 S)= #S:=by
- exact card_image_of_injective _ eU
+  (eU:Injective (fun x:G↦x+x)) :
+  #(a4 S)= #S:=
+       card_image_of_injective _ eU
 omit [Fintype G] in
 lemma pv (S T:Finset G)
-  (eU:Function.Injective (fun x:G↦x+x)) :
+  (eU:Injective (fun x:G↦x+x)) :
   aw.bL (a4 S) (a4 T) =
    aw.bL S T:=by
  simp only[aw.bL,qK S eU,
@@ -10710,19 +10522,19 @@ lemma jQ
  exact aj.sV M hM x
 @[simp] lemma u8
   (M:ℕ) (hM:Odd M) (B:aj (ZMod M)) :
-  (hY M hM B).rank=B.rank:=by
- exact aj.Am B (aj.eK M hM)
+  (hY M hM B).rank=B.rank:=
+       aj.Am B (aj.eK M hM)
 @[simp] lemma p7
   (M:ℕ) [NeZero M] (hM:Odd M) (B:aj (ZMod M)) :
-  (hY M hM B).carrier.card=B.carrier.card:=by
- exact aj.tZ M hM B
+  (hY M hM B).carrier.card=B.carrier.card:=
+       aj.tZ M hM B
 def bb (A' b4:Finset G):ℝ:=
  (Fintype.card G:ℝ) *
   qj
    (ao (af A') (af A'))
    (af (a4 b4))
 lemma pw
-  (eU:Function.Injective (fun x:G↦x+x))
+  (eU:Injective (fun x:G↦x+x))
   (A' b4:Finset G) :
   bb A' b4 =
    (Fintype.card G:ℝ)*(df A' b4:ℝ) *
@@ -10732,7 +10544,7 @@ lemma pw
   jK eU]
  ring
 lemma nw
-  (eU:Function.Injective (fun x:G↦x+x))
+  (eU:Injective (fun x:G↦x+x))
   {A' b4:Finset G} (qL:A'.Nonempty) (gO:b4.Nonempty) :
   bb A' b4 =
    (Fintype.card G:ℝ)*(df A' b4:ℝ) /
@@ -10749,7 +10561,7 @@ lemma kb
      ao (af A') (af A') x):=by
  let D:=a4 b4
  let F:=ao (af A') (af A')
- have hD:D.Nonempty:=eJ gO
+ have hD := eJ gO
  have ya:(#D:ℝ)≠0:=by exact_mod_cast hD.card_ne_zero
  unfold bb aw.aT qj
  change(Fintype.card G:ℝ) *
@@ -10849,129 +10661,13 @@ lemma ea {original:Finset G}
   (1-epsilon)*s.density ≤
    a9 s.restriction.set aB.carrier (cr h):=
  (Uo h).2.2
-def kS {original:Finset G}
-  {s:ah.aA original}
-  {epsilon aU:ℝ} {aq:ℕ}
-  (P:ah.kO s epsilon aU aq)
-  (h:ah.bV s P.ak P.aB epsilon):Finset G:=
- ah.dn s.restriction.set P.ak.carrier (cr h)
-def g2 {original:Finset G}
-  {s:ah.aA original}
-  {epsilon aU:ℝ} {aq:ℕ}
-  (P:ah.kO s epsilon aU aq)
-  (h:ah.bV s P.ak P.aB epsilon):Finset G:=
- ah.dn s.restriction.set P.aB.carrier (cr h)
+
 def a5 {original:Finset G}
   (s:ah.aA original) (epsilon:ℝ):ℝ:=
  (1-epsilon)*s.density
-noncomputable def iI
-    {original:Finset G} (s:ah.aA original)
-    {epsilon aU:ℝ} {aq:ℕ}
-    (P:ah.kO s epsilon aU aq)
-    (aQ:ah.bV s P.ak P.aB epsilon)
-    (_hepsilon_nonneg:0≤epsilon) (b2:epsilon<1)
-    {p:ℕ} (hp:0<p) (f:G→ℝ)
-    (jz:(2/3:ℝ)^p≤a5 s epsilon)
-    (ew :
-      |(bb
-            (kS P aQ) (g2 P aQ) -
-          (Fintype.card G:ℝ)/(#P.ak.carrier:ℝ)) -
-          aw.pairing f (a4 (g2 P aQ))| ≤
-        ((Fintype.card G:ℝ)/(#P.ak.carrier:ℝ))/8)
-    (ee :
-      an.aM
-          (af (a4 P.aB.carrier)) f p ≤
-        ((Fintype.card G:ℝ)/(#P.ak.carrier:ℝ))/8) :
-    eh original:=by
-  let x:G:=cr aQ
-  let A':Finset G:=kS P aQ
-  let b4:Finset G:=g2 P aQ
-  let B:Finset G:=P.ak.carrier
-  let B':Finset G:=P.aB.carrier
-  let alpha:ℝ:=a5 s epsilon
-  have lG:alpha≤a9 s.restriction.set B x:=by
-    simpa[alpha,x,B,a5] using c0 aQ
-  have o0:alpha≤a9 s.restriction.set B' x:=by
-    simpa[alpha,x,B',a5] using ea aQ
-  have b8:0<alpha:=by
-    exact QM (sub_pos.mpr b2) s.dI
-  have qL:A'.Nonempty:=by
-    apply ah.bK P.ak.aE
-    exact b8.trans_le lG
-  have gO:b4.Nonempty:=by
-    apply ah.bK P.aB.aE
-    exact b8.trans_le o0
-  have kc:b4⊆B':=by
-    exact ah.dz
-      (B:=P.aB.ba) (a8:=P.aB.outer)
-      (A:=s.restriction.set) (C:=P.aB.carrier)
-      (x:=x) (fun _ hz↦hz)
-  have gP: ∀ z∈A',z-(s.shift-x)∈original:=by
-    intro z hz
-    have i1:x+z∈s.restriction.set:=
-      (ah.e4.mp hz).2
-    have hs:=s.eR (x+z) i1
-    have heq:z-(s.shift-x)=(x+z)-s.shift:=by abel
-    rwa[heq]
-  have fR: ∀ z∈b4,z-(s.shift-x)∈original:=by
-    intro z hz
-    have i1:x+z∈s.restriction.set:=
-      (ah.e4.mp hz).2
-    have hs:=s.eR (x+z) i1
-    have heq:z-(s.shift-x)=(x+z)-s.shift:=by abel
-    rwa[heq]
-  have nx:alpha*(#B:ℝ)≤(#A':ℝ):=by
-    have wN:(0:ℝ)< #B:=by exact_mod_cast P.ak.aE.card_pos
-    rw[ah.bk
-      P.ak.aE x] at lG
-    exact(Qs wN).mp lG
-  have ny:alpha*(#B':ℝ)≤(#b4:ℝ):=by
-    have wg:(0:ℝ)< #B':=by exact_mod_cast P.aB.aE.card_pos
-    rw[ah.bk
-      P.aB.aE x] at o0
-    exact(Qs wg).mp o0
-  have qM :
-      (2/3:ℝ)^p≤aw.bL b4 B':=by
-    calc
-      (2/3:ℝ)^p≤alpha:=jz
-      _≤a9 s.restriction.set B' x:=by
-        simpa[alpha,x,B',a5] using
-          ea aQ
-      _=aw.bL b4 B':=by
-        rw[ah.bk
-          P.aB.aE x]
-        rfl
-  have o1:(a4 B').Nonempty:=
-    eJ P.aB.aE
-  have uq :
-      aw.cO (a4 B') p f ≤
-        (((Fintype.card G:ℝ)/(#B:ℝ))/8)^p:=by
-    apply fc o1 hp f (by positivity)
-    simpa[B,B'] using ee
-  exact
-    { A':=A'
-      b4:=b4
-      B:=B
-      B':=B'
-      translate:=s.shift-x
-      alpha:=alpha
-      p:=p
-      f:=f
-      jR:=qL
-      iZ:=gO
-      kQ:=P.ak.aE
-      h8:=kc
-      fL:=gP
-      fm:=fR
-      i0:=b8.le
-      kR:=nx
-      jS:=ny
-      p_pos:=hp
-      gg:=qM
-      e7:=by simpa[A',b4,B] using ew
-      gh:=uq }
+
 lemma lY
-  (eU:Function.Injective (fun x:G↦x+x))
+  (eU:Injective (fun x:G↦x+x))
   {A' b4:Finset G} (qL:A'.Nonempty) (gO:b4.Nonempty)
   {bo:ℝ}
   (iB:bo/2≤bb A' b4) :
@@ -10990,7 +10686,7 @@ lemma lY
  rw[QF (QM (by norm_num) hG)]
  nlinarith
 lemma m3
-  (eU:Function.Injective (fun x:G↦x+x))
+  (eU:Injective (fun x:G↦x+x))
   {A A' b4 B':Finset G} (qL:A'.Nonempty) (gO:b4.Nonempty)
   (kc:b4⊆B') (t:G)
   (gP: ∀ x∈A',x-t∈A)
@@ -11005,26 +10701,26 @@ lemma m3
    aw.cO (a4 B') p f≤(bo/8)^p) :
   bo*(#A':ℝ)^2*(#b4:ℝ) /
     (2*(Fintype.card G:ℝ))≤(dL A:ℝ):=by
- have hC:(a4 b4).Nonempty:=eJ gO
- have w8:a4 b4⊆a4 B':=qJ kc
+ have hC := eJ gO
+ have w8 := qJ kc
  have EZ :
    (2/3:ℝ)^p ≤
     aw.bL (a4 b4) (a4 B'):=by
   rwa[pv b4 B' eU]
- have iB :
-   bo/2≤bb A' b4:=
+ have iB  :=
+
   aw.nv hC w8 p hp f
    (bb A' b4) bo fF EZ ew ee
  have Ki:=
   lY eU qL gO iB
- have E0:df A' b4≤dL A:=
+ have E0 :=
   iA t gP fR
  have Dt :
    (df A' b4:ℝ)≤(dL A:ℝ):=by
   exact_mod_cast E0
  exact Ki.trans Dt
 lemma kd
-  (eU:Function.Injective (fun x:G↦x+x))
+  (eU:Injective (fun x:G↦x+x))
   {A A' b4 B B':Finset G}
   (qL:A'.Nonempty) (gO:b4.Nonempty) (hB:B.Nonempty)
   (kc:b4⊆B') (t:G)
@@ -11048,12 +10744,12 @@ lemma kd
  have hG:(0:ℝ)<Fintype.card G:=by
   exact_mod_cast(Fintype.card_pos:0<Fintype.card G)
  have yk:(0:ℝ)< #B:=by exact_mod_cast hB.card_pos
- have fF:(0:ℝ)<(Fintype.card G:ℝ)/(#B:ℝ):=
+ have fF :=
   Rn hG yk
  have ic:=m3 eU qL gO kc t
   gP fR hp f fF c8 ew ee
- have Ij :
-   (alpha*(#B:ℝ))^2≤(#A':ℝ)^2:=
+ have Ij  :=
+
   Qp (Qn b8 yk.le) o2 2
  have Kj :
    alpha^3*(#B:ℝ)^2*(#B':ℝ) ≤
@@ -11074,10 +10770,9 @@ lemma kd
  rw[oO] at ic
  rw[kB]
  exact(Qz Kj (by positivity)).trans ic
-namespace eh
-end eh
+
 lemma me
-  (eU:Function.Injective (fun x:G↦x+x))
+  (eU:Injective (fun x:G↦x+x))
   {A A' b4 B B':Finset G}
   (qL:A'.Nonempty) (gO:b4.Nonempty) (hB:B.Nonempty)
   (kc:b4⊆B') (t:G)
@@ -11096,11 +10791,11 @@ lemma me
   (ee :
    aw.cO (a4 B') p f ≤
     (((Fintype.card G:ℝ)/(#B:ℝ))/8)^p)
-  (AZ:Real.exp (-K*(d:ℝ)^12)*(Fintype.card G:ℝ)^2 ≤
+  (AZ:exp (-K*(d:ℝ)^12)*(Fintype.card G:ℝ)^2 ≤
    alpha^3*(#B:ℝ)*(#B':ℝ)/2) :
-  Real.exp (-K*(d:ℝ)^12)*(Fintype.card G:ℝ)^2 ≤
-   (dL A:ℝ):=by
- exact AZ.trans<|
+  exp (-K*(d:ℝ)^12)*(Fintype.card G:ℝ)^2 ≤
+   (dL A:ℝ):=
+       AZ.trans<|
   kd eU qL gO hB kc t
    gP fR b8 o2 nA hp f c8 ew ee
 lemma kq
@@ -11123,10 +10818,10 @@ lemma kq
   (ee :
    aw.cO (a4 B') p f ≤
     (((Fintype.card (ZMod M):ℝ)/(#B:ℝ))/8)^p)
-  (AZ:Real.exp (-K*(d:ℝ)^12) *
+  (AZ:exp (-K*(d:ℝ)^12) *
     (Fintype.card (ZMod M):ℝ)^2 ≤
    alpha^3*(#B:ℝ)*(#B':ℝ)/2) :
-  Real.exp (-K*(d:ℝ)^12) *
+  exp (-K*(d:ℝ)^12) *
     (Fintype.card (ZMod M):ℝ)^2≤(dL A:ℝ):=by
  apply me
   (aj.eK M hM).injective qL gO hB kc t
@@ -11146,24 +10841,24 @@ def dX (K:ℝ) (nO:ℕ):Prop:=
    ∀ (A:Finset ℕ),A⊆Finset.Icc 1 N→ A.Nonempty →
     ∀ d:ℕ,
      1≤d →
-     Real.log ((N:ℝ)/(#A:ℝ))≤(d:ℝ)*Real.log 2 →
-      Real.exp (-K*(d:ℝ)^12)*(N:ℝ)^2 ≤
+     log ((N:ℝ)/(#A:ℝ))≤(d:ℝ)*log 2 →
+      exp (-K*(d:ℝ)^12)*(N:ℝ)^2 ≤
        (dL A:ℝ)
 lemma jA
   {K:ℝ} {nO:ℕ} (AX:dX K nO) :
   ∀ᶠ N:ℕ in atTop,
    (r3 N:ℝ) ≤
-    (N:ℝ)*Real.exp
-     (-(Real.log 2/(2*K^(1/12:ℝ))) *
-      (Real.log (N:ℝ))^(1/12:ℝ)):=by
+    (N:ℝ)*exp
+     (-(log 2/(2*K^(1/12:ℝ))) *
+      (log (N:ℝ))^(1/12:ℝ)):=by
  have hK:0<K:=AX.1
- have ei:Tendsto (fun N:ℕ=>Real.log (N:ℝ)) atTop atTop:=
+ have ei:Tendsto (fun N:ℕ=>log (N:ℝ)) atTop atTop:=
   Real.tendsto_log_atTop.comp Sa
- have Gl:Tendsto (fun N:ℕ=>Real.log (N:ℝ)/K) atTop atTop:=
+ have Gl:Tendsto (fun N:ℕ=>log (N:ℝ)/K) atTop atTop:=
   Tendsto.atTop_div_const hK ei
  have wJ :
    Tendsto
-    (fun N:ℕ=>(Real.log (N:ℝ)/K)^(1/12:ℝ))
+    (fun N:ℕ=>(log (N:ℝ)/K)^(1/12:ℝ))
     atTop atTop:=
   (UR (by norm_num:(0:ℝ)<1/12)).comp Gl
  filter_upwards[eventually_ge_atTop nO,eventually_gt_atTop 3,
@@ -11191,13 +10886,13 @@ lemma jA
   exact w9
  have Dw:(0:ℝ)<(N:ℝ)/(r3 N:ℝ):=
   Rn yo o3
- let q:ℝ:=Real.log ((N:ℝ)/(r3 N:ℝ))/Real.log 2
+ let q:ℝ:=log ((N:ℝ)/(r3 N:ℝ))/log 2
  let d:ℕ:=Nat.ceil q
- have sJ:0<Real.log 2:=Sv (by norm_num)
+ have sJ:0<log 2:=Sv (by norm_num)
  have E3:0≤q:=by
   exact RS (Qv Dv) sJ.le
  have A0 :
-   Real.log ((N:ℝ)/(#A:ℝ))≤(d:ℝ)*Real.log 2:=by
+   log ((N:ℝ)/(#A:ℝ))≤(d:ℝ)*log 2:=by
   rw[wO]
   rw[←QF sJ]
   simpa[q,d] using Rr q
@@ -11227,16 +10922,16 @@ lemma jA
  have qG:=AX.2 N Kk A z8 u4 d Eo A0
  rw[uR E1,wO] at qG
  have Ik :
-   Real.exp (-K*(d:ℝ)^12)*(N:ℝ)^2≤(N:ℝ):=
+   exp (-K*(d:ℝ)^12)*(N:ℝ)^2≤(N:ℝ):=
   qG.trans w9
  have A1 :
-   Real.exp (-K*(d:ℝ)^12)*(N:ℝ)≤1:=by
+   exp (-K*(d:ℝ)^12)*(N:ℝ)≤1:=by
   have pO :
-    (Real.exp (-K*(d:ℝ)^12)*(N:ℝ))*(N:ℝ) ≤
+    (exp (-K*(d:ℝ)^12)*(N:ℝ))*(N:ℝ) ≤
      1*(N:ℝ):=by
    simpa[TI,Qo] using Ik
   exact(TZ pO yo)
- have Dy:Real.log (N:ℝ)≤K*(d:ℝ)^12:=by
+ have Dy:log (N:ℝ)≤K*(d:ℝ)^12:=by
   have Fa:=
    QG
     (QM (Q1 _) yo)
@@ -11244,17 +10939,17 @@ lemma jA
   rw[Ql (Real.exp_ne_zero _) yo.ne',Real.log_exp,
    Real.log_one] at Fa
   linarith
- have ql:0≤Real.log (N:ℝ):=
+ have ql:0≤log (N:ℝ):=
   Qv (by exact_mod_cast(show 1≤N by omega))
- have BW:0≤Real.log (N:ℝ)/K:=
+ have BW:0≤log (N:ℝ)/K:=
   RS ql hK.le
- have BX:Real.log (N:ℝ)/K≤(d:ℝ)^12:=by
+ have BX:log (N:ℝ)/K≤(d:ℝ)^12:=by
   rw[QF hK]
   simpa[Qx] using Dy
  have L0 :
-   (Real.log (N:ℝ)/K)^(1/12:ℝ)≤(d:ℝ):=by
+   (log (N:ℝ)/K)^(1/12:ℝ)≤(d:ℝ):=by
   calc
-   (Real.log (N:ℝ)/K)^(1/12:ℝ) ≤
+   (log (N:ℝ)/K)^(1/12:ℝ) ≤
      ((d:ℝ)^12)^(1/12:ℝ):=
     Sf BW BX (by norm_num)
    _=(d:ℝ):=by
@@ -11264,72 +10959,72 @@ lemma jA
  have KW:(d:ℝ)<q+1:=by
   simpa[d] using Nat.ceil_lt_add_one E3
  have yp :
-   (Real.log (N:ℝ)/K)^(1/12:ℝ)/2≤q:=by
+   (log (N:ℝ)/K)^(1/12:ℝ)/2≤q:=by
   linarith
  have xF :
-   (Real.log 2/2) *
-     (Real.log (N:ℝ)/K)^(1/12:ℝ) ≤
-    Real.log ((N:ℝ)/(r3 N:ℝ)):=by
+   (log 2/2) *
+     (log (N:ℝ)/K)^(1/12:ℝ) ≤
+    log ((N:ℝ)/(r3 N:ℝ)):=by
   calc
-   (Real.log 2/2) *
-     (Real.log (N:ℝ)/K)^(1/12:ℝ) =
-     ((Real.log (N:ℝ)/K)^(1/12:ℝ)/2)*Real.log 2:=by ring
-   _≤q*Real.log 2:=
+   (log 2/2) *
+     (log (N:ℝ)/K)^(1/12:ℝ) =
+     ((log (N:ℝ)/K)^(1/12:ℝ)/2)*log 2:=by ring
+   _≤q*log 2:=
     Qi yp sJ.le
-   _=Real.log ((N:ℝ)/(r3 N:ℝ)):=by
+   _=log ((N:ℝ)/(r3 N:ℝ)):=by
     simp[q,sJ.ne']
  have Dz:0<K^(1/12:ℝ):=
   SQ hK _
  have A2 :
-   (Real.log 2/(2*K^(1/12:ℝ))) *
-     (Real.log (N:ℝ))^(1/12:ℝ) =
-    (Real.log 2/2) *
-     (Real.log (N:ℝ)/K)^(1/12:ℝ):=by
+   (log 2/(2*K^(1/12:ℝ))) *
+     (log (N:ℝ))^(1/12:ℝ) =
+    (log 2/2) *
+     (log (N:ℝ)/K)^(1/12:ℝ):=by
   rw[Real.div_rpow ql hK.le]
   field_simp[Dz.ne']
  have zT :
-   Real.exp
-     ((Real.log 2/(2*K^(1/12:ℝ))) *
-      (Real.log (N:ℝ))^(1/12:ℝ)) ≤
+   exp
+     ((log 2/(2*K^(1/12:ℝ))) *
+      (log (N:ℝ))^(1/12:ℝ)) ≤
     (N:ℝ)/(r3 N:ℝ):=by
   rw[←Real.le_log_iff_exp_le Dw]
   rw[A2]
   exact xF
  have BY :
    (r3 N:ℝ) *
-     Real.exp
-      ((Real.log 2/(2*K^(1/12:ℝ))) *
-       (Real.log (N:ℝ))^(1/12:ℝ)) ≤
+     exp
+      ((log 2/(2*K^(1/12:ℝ))) *
+       (log (N:ℝ))^(1/12:ℝ)) ≤
     (N:ℝ):=by
   have:=(Qs o3).mp zT
   simpa[Qx] using this
  calc
   (r3 N:ℝ) ≤
     (N:ℝ) /
-     Real.exp
-      ((Real.log 2/(2*K^(1/12:ℝ))) *
-       (Real.log (N:ℝ))^(1/12:ℝ)):=
+     exp
+      ((log 2/(2*K^(1/12:ℝ))) *
+       (log (N:ℝ))^(1/12:ℝ)):=
    (Qs (Q1 _)).2 BY
   _=(N:ℝ) *
-    Real.exp
-     (-((Real.log 2/(2*K^(1/12:ℝ))) *
-      (Real.log (N:ℝ))^(1/12:ℝ))):=by
+    exp
+     (-((log 2/(2*K^(1/12:ℝ))) *
+      (log (N:ℝ))^(1/12:ℝ))):=by
    rw[Uh,Qw]
-  _=(N:ℝ)*Real.exp
-    (-(Real.log 2/(2*K^(1/12:ℝ))) *
-     (Real.log (N:ℝ))^(1/12:ℝ)):=by
+  _=(N:ℝ)*exp
+    (-(log 2/(2*K^(1/12:ℝ))) *
+     (log (N:ℝ))^(1/12:ℝ)):=by
    congr 2
    ring
 lemma m4
   {K:ℝ} {nO:ℕ} (AX:dX K nO)
   (C:ℝ) :
   (fun N:ℕ=>(r3 N:ℝ))=O[atTop]
-   (fun N:ℕ=>(N:ℝ)/(Real.log (N:ℝ))^C):=by
- have hc:0<Real.log 2/(2*K^(1/12:ℝ)):=by
+   (fun N:ℕ=>(N:ℝ)/(log (N:ℝ))^C):=by
+ have hc:0<log 2/(2*K^(1/12:ℝ)):=by
   exact Rn (Sv (by norm_num))
    (QM two_pos (SQ AX.1 _))
  apply m1
-   (K:=1) (c:=Real.log 2/(2*K^(1/12:ℝ)))
+   (K:=1) (c:=log 2/(2*K^(1/12:ℝ)))
    (beta:=(1/12:ℝ)) Us hc (by norm_num) _ C
  simpa using jA AX
 end ay
@@ -11343,9 +11038,9 @@ def f1 (K:ℝ):Prop:=
   ∀ (N:ℕ),1≤N →
    ∀ (A:Finset (ZMod (aD N))),A.Nonempty →
     ∀ d:ℕ,1≤d →
-     Real.log (((aD N:ℕ):ℝ)/(#A:ℝ)) ≤
-       (d:ℝ)*Real.log 2 →
-      Real.exp (-K*(d:ℝ)^12) *
+     log (((aD N:ℕ):ℝ)/(#A:ℝ)) ≤
+       (d:ℝ)*log 2 →
+      exp (-K*(d:ℝ)^12) *
         ((aD N:ℕ):ℝ)^2 ≤
        (dL A:ℝ)
 noncomputable def gp (G:Type*) [AddCommGroup G]:aj G where
@@ -11407,16 +11102,16 @@ noncomputable def bQ (N:ℕ)
 @[simp] lemma p8 (N:ℕ)
   (A:Finset (ZMod (aD N))) (hA:A.Nonempty) :
   (bQ N A hA).density =
-   (#A:ℝ)/(aD N:ℕ):=by
- exact n1 N A hA
+   (#A:ℝ)/(aD N:ℕ):=
+       n1 N A hA
 @[simp] lemma rP (N:ℕ)
   (A:Finset (ZMod (aD N))) (hA:A.Nonempty) :
-  (bQ N A hA).rank=0:=by
- exact px N A hA
+  (bQ N A hA).rank=0:=
+       px N A hA
 @[simp] lemma rQ (N:ℕ)
   (A:Finset (ZMod (aD N))) (hA:A.Nonempty) :
-  (bQ N A hA).card=aD N:=by
- exact py N A hA
+  (bQ N A hA).card=aD N:=
+       py N A hA
 lemma mf
   {G:Type*} [AddCommGroup G] [Fintype G] [DecidableEq G]
   {original:Finset G} {d:ℕ}
@@ -11430,7 +11125,7 @@ lemma mf
  have hpow:(2:ℝ)^(d+1) ≤
    (1025/1024:ℝ)^(1024*(d+1)):=by
   calc
-   (2:ℝ)^(d+1)≤((1025/1024:ℝ)^1024)^(d+1):=
+   _ ≤((1025/1024:ℝ)^1024)^(d+1):=
     Qp (by positivity) dc (d+1)
    _=(1025/1024:ℝ)^(1024*(d+1)):=by rw[←QU]
  change 1/(2:ℝ)^d≤ s.density at c3
@@ -11471,7 +11166,7 @@ structure dm (N:ℕ)
   aw.cO (aO.a4 B') p f ≤
    (((Fintype.card (ZMod (aD N)):ℝ)/(#B:ℝ))/8)^p
  rr :
-  Real.exp (-K*(d:ℝ)^12) *
+  exp (-K*(d:ℝ)^12) *
     (Fintype.card (ZMod (aD N)):ℝ)^2 ≤
    alpha^3*(#B:ℝ)*(#B':ℝ)/2
 structure dr
@@ -11480,59 +11175,16 @@ structure dr
   (K:ℝ) (d:ℕ) where
  ll:aO.eh original
  tK:(3/4:ℝ)*t.density≤ll.alpha
- A3:Real.exp (-(K*((d+1:ℕ):ℝ)^11)) *
+ A3:exp (-(K*((d+1:ℕ):ℝ)^11)) *
    (t.card:ℝ)≤(#ll.B:ℝ)
- za:Real.exp (-(K*((d+1:ℕ):ℝ)^11)) *
+ za:exp (-(K*((d+1:ℕ):ℝ)^11)) *
    (t.card:ℝ)≤(#ll.B':ℝ)
-namespace dr
-noncomputable def KX
-    {G:Type*} [AddCommGroup G] [Fintype G] [DecidableEq G]
-    {original:Finset G} (t:ah.aA original)
-    {K:ℝ} {d aq p:ℕ}
-    (P:ah.kO t (1/8:ℝ)
-      (K*((d+1:ℕ):ℝ)^11) aq)
-    (aQ:ah.bV t P.ak P.aB (1/8:ℝ))
-    (hp:0<p) (f:G→ℝ)
-    (jz:(2/3:ℝ)^p ≤
-      aO.a5 t (1/8:ℝ))
-    (ew :
-      |(aO.bb
-            (aO.kS P aQ)
-            (aO.g2 P aQ) -
-          (Fintype.card G:ℝ)/(#P.ak.carrier:ℝ)) -
-          aw.pairing f
-            (aO.a4
-              (aO.g2 P aQ))| ≤
-        ((Fintype.card G:ℝ)/(#P.ak.carrier:ℝ))/8)
-    (ee :
-      an.aM
-          (af
-            (aO.a4 P.aB.carrier)) f p ≤
-        ((Fintype.card G:ℝ)/(#P.ak.carrier:ℝ))/8) :
-    dr t K d:=by
-  let c:=aO.iI t P aQ
-    (by norm_num) (by norm_num) hp f jz ew ee
-  refine
-    { ll:=c
-      tK:= ?_
-      A3:= ?_
-      za:= ?_ }
-  · change(3/4:ℝ)*t.density ≤
-      aO.a5 t (1/8:ℝ)
-    simp only[aO.a5]
-    nlinarith[t.dI.le]
-  · change Real.exp (-(K*((d+1:ℕ):ℝ)^11)) *
-        (t.card:ℝ)≤(#P.ak.carrier:ℝ)
-    exact P.mE
-  · change Real.exp (-(K*((d+1:ℕ):ℝ)^11)) *
-        (t.card:ℝ)≤(#P.aB.carrier:ℝ)
-    exact P.mF
-end dr
+
 namespace dm
-private lemma vD:Real.exp (-1)≤(1/2:ℝ):=by
- have he:(2:ℝ)≤Real.exp 1:=Real.exp_one_gt_two.le
+private lemma vD:exp (-1)≤(1/2:ℝ):=by
+ have he := Real.exp_one_gt_two.le
  have hm:=Qi he (Q1 (-1)).le
- have te:Real.exp 1*Real.exp (-1)=1:=by
+ have te:exp 1*exp (-1)=1:=by
   rw[←R7]
   norm_num
  rw[te] at hm
@@ -11541,13 +11193,13 @@ private lemma vD:Real.exp (-1)≤(1/2:ℝ):=by
 lemma p9
   {d:ℕ} (hd:1≤d) {alpha:ℝ}
   (b8:(3/4:ℝ)*(1/(2:ℝ)^d)≤alpha) :
-  Real.exp (-(8:ℝ)*(d:ℝ)^12)≤alpha^3/2:=by
+  exp (-(8:ℝ)*(d:ℝ)^12)≤alpha^3/2:=by
  let m:ℕ:=8*d^12
- have l9:Real.exp (-(8:ℝ)*(d:ℝ)^12) =
-   Real.exp (-1)^m:=by
+ have l9:exp (-(8:ℝ)*(d:ℝ)^12) =
+   exp (-1)^m:=by
   rw[show-(8:ℝ)*(d:ℝ)^12=(m:ℝ)*(-1) by
    simp[m],Real.exp_nat_mul]
- have iB:Real.exp (-1)^m≤(1/2:ℝ)^m:=
+ have iB:exp (-1)^m≤(1/2:ℝ)^m:=
   Qp (Q1 _).le vD m
  have PJ:d≤d^12:=Nat.le_pow (by norm_num)
  have hm:3*d+3≤ m:=by
@@ -11563,7 +11215,7 @@ lemma p9
   gcongr
   all_goals norm_num[R8]
  calc
-  Real.exp (-(8:ℝ)*(d:ℝ)^12)=Real.exp (-1)^m:=l9
+  exp (-(8:ℝ)*(d:ℝ)^12)=exp (-1)^m:=l9
   _≤(1/2:ℝ)^m:=iB
   _≤(1/2:ℝ)^(3*d+3):=we
   _≤((3/4:ℝ)*(1/(2:ℝ)^d))^3/2:=qI
@@ -11571,7 +11223,7 @@ lemma p9
 def sK {N:ℕ}
   {A:Finset (ZMod (aD N))} {K:ℝ} {d:ℕ}
   (c:aO.eh A)
-  (DA:Real.exp (-K*(d:ℝ)^12) *
+  (DA:exp (-K*(d:ℝ)^12) *
     (Fintype.card (ZMod (aD N)):ℝ)^2 ≤
    c.alpha^3*(#c.B:ℝ)*(#c.B':ℝ)/2) :
   dm N A K d where
@@ -11599,44 +11251,44 @@ def sK {N:ℕ}
  rr:=DA
 lemma nB
   {G:Type*} [Fintype G] {zb zc:ℝ} {d:ℕ} {B B':Finset G}
-  (hB:Real.exp (-zb*(d:ℝ)^12)*(Fintype.card G:ℝ) ≤
+  (hB:exp (-zb*(d:ℝ)^12)*(Fintype.card G:ℝ) ≤
    (#B:ℝ))
-  (Km:Real.exp (-zc*(d:ℝ)^12)*(Fintype.card G:ℝ) ≤
+  (Km:exp (-zc*(d:ℝ)^12)*(Fintype.card G:ℝ) ≤
    (#B':ℝ)) :
-  Real.exp (-(zb+zc)*(d:ℝ)^12) *
+  exp (-(zb+zc)*(d:ℝ)^12) *
     (Fintype.card G:ℝ)^2≤(#B:ℝ)*(#B':ℝ):=by
  calc
-  Real.exp (-(zb+zc)*(d:ℝ)^12) *
-     (Fintype.card G:ℝ)^2 =
-    (Real.exp (-zb*(d:ℝ)^12)*(Fintype.card G:ℝ)) *
-     (Real.exp (-zc*(d:ℝ)^12)*(Fintype.card G:ℝ)):=by
+  _
+                          =
+    (exp (-zb*(d:ℝ)^12)*(Fintype.card G:ℝ)) *
+     (exp (-zc*(d:ℝ)^12)*(Fintype.card G:ℝ)):=by
    rw[show-(zb+zc)*(d:ℝ)^12 =
      -zb*(d:ℝ)^12+ -zc*(d:ℝ)^12 by ring,
     R7]
    ring
-  _≤(#B:ℝ)*(#B':ℝ):=by
-   exact QW hB Km (by positivity) (by positivity)
+  _≤(#B:ℝ)*(#B':ℝ):=
+         QW hB Km (by positivity) (by positivity)
 lemma lZ
   {G:Type*} [Fintype G] {alpha n2 wP:ℝ} {d:ℕ}
   {B B':Finset G}
-  (c8:Real.exp (-n2*(d:ℝ)^12)≤alpha^3/2)
-  (DB:Real.exp (-wP*(d:ℝ)^12) *
+  (c8:exp (-n2*(d:ℝ)^12)≤alpha^3/2)
+  (DB:exp (-wP*(d:ℝ)^12) *
     (Fintype.card G:ℝ)^2≤(#B:ℝ)*(#B':ℝ)) :
-  Real.exp (-(n2+wP)*(d:ℝ)^12) *
+  exp (-(n2+wP)*(d:ℝ)^12) *
     (Fintype.card G:ℝ)^2 ≤
    alpha^3*(#B:ℝ)*(#B':ℝ)/2:=by
  have Gm:0≤(#B:ℝ)*(#B':ℝ):=by positivity
  calc
-  Real.exp (-(n2+wP)*(d:ℝ)^12) *
-     (Fintype.card G:ℝ)^2 =
-    Real.exp (-n2*(d:ℝ)^12) *
-     (Real.exp (-wP*(d:ℝ)^12) *
+  _
+                          =
+    exp (-n2*(d:ℝ)^12) *
+     (exp (-wP*(d:ℝ)^12) *
       (Fintype.card G:ℝ)^2):=by
    rw[show-(n2+wP)*(d:ℝ)^12 =
      -n2*(d:ℝ)^12+ -wP*(d:ℝ)^12 by ring,
     R7]
    ring
-  _≤Real.exp (-n2*(d:ℝ)^12) *
+  _≤exp (-n2*(d:ℝ)^12) *
      ((#B:ℝ)*(#B':ℝ)):=
    iO DB (Q1 _).le
   _≤(alpha^3/2)*((#B:ℝ)*(#B':ℝ)):=
@@ -11644,11 +11296,11 @@ lemma lZ
   _=alpha^3*(#B:ℝ)*(#B':ℝ)/2:=by ring
 lemma BZ {N:ℕ} {A:Finset (ZMod (aD N))}
   {K:ℝ} {d:ℕ} (c:dm N A K d) :
-  Real.exp (-K*(d:ℝ)^12) *
+  exp (-K*(d:ℝ)^12) *
     ((aD N:ℕ):ℝ)^2≤(dL A:ℝ):=by
  let:NeZero (aD N):=⟨by simp[aD]⟩
- have A4:Odd (aD N):=by
-  exact ⟨N,by simp[aD,R5]⟩
+ have A4:Odd (aD N):=
+        ⟨N,by simp[aD,R5]⟩
  simpa using aO.kq A4
   c.jR c.iZ c.kQ c.h8 c.translate
   c.fL c.fm c.i0 c.kR
@@ -11660,25 +11312,10 @@ def eT (K:ℝ):Prop:=
   ∀ (N:ℕ),1≤N →
    ∀ (A:Finset (ZMod (aD N))),A.Nonempty →
     ∀ d:ℕ,1≤d →
-     Real.log (((aD N:ℕ):ℝ)/(#A:ℝ)) ≤
-       (d:ℝ)*Real.log 2 →
+     log (((aD N:ℕ):ℝ)/(#A:ℝ)) ≤
+       (d:ℝ)*log 2 →
       Nonempty (dm N A K d)
-def wQ (K:ℝ):Prop:=
- 0<K ∧
-  ∀ (N:ℕ),1≤N →
-   ∀ (A:Finset (ZMod (aD N))),A.Nonempty →
-    ∀ d:ℕ,1≤d →
-     Real.log (((aD N:ℕ):ℝ)/(#A:ℝ)) ≤
-       (d:ℝ)*Real.log 2 →
-      ∃ aq:ℕ,
-       ∀ t:ah.aA A,
-        (1/(2:ℝ)^d)≤t.density →
-        t.rank≤1024*(d+1)*aq →
-        (¬ ∃ u:ah.aA A,
-         br.dk (1025/1024:ℝ) aq
-          (K*((d+1:ℕ):ℝ)^11)
-          t.restriction u.restriction) →
-        Nonempty (dr t K d)
+
 lemma nC
   {K:ℝ} (h:eT K) :
   f1 K:=by
@@ -11692,7 +11329,7 @@ private lemma uu {d:ℕ} (hd:1≤d) :
   push_cast
   linarith
  calc
-  ((d+1:ℕ):ℝ)^12≤(2*(d:ℝ))^12:=
+  _ ≤(2*(d:ℝ))^12:=
    Qp (by positivity) dc 12
   _=(2:ℝ)^12*(d:ℝ)^12:=by rw[QL]
 namespace dm
@@ -11700,14 +11337,14 @@ lemma iJ
   {G:Type*} [Fintype G] {K:ℝ} (hK:0≤K)
   {d n mg:ℕ} (hd:1≤d) (hn:n≤1024*(d+1))
   {B:Finset G}
-  (ue:Real.exp (-(n:ℝ) *
+  (ue:exp (-(n:ℝ) *
      (K*((d+1:ℕ):ℝ)^11))*(Fintype.card G:ℝ) ≤
     (mg:ℝ))
-  (A5:Real.exp (-(K*((d+1:ℕ):ℝ)^11)) *
+  (A5:exp (-(K*((d+1:ℕ):ℝ)^11)) *
     (mg:ℝ)≤(#B:ℝ)) :
-  Real.exp (-(1025*(2:ℝ)^12*K)*(d:ℝ)^12) *
+  exp (-(1025*(2:ℝ)^12*K)*(d:ℝ)^12) *
     (Fintype.card G:ℝ)≤(#B:ℝ):=by
- let step:ℝ:=K*((d+1:ℕ):ℝ)^11
+ let step := K*((d+1:ℕ):ℝ)^11
  have Kn:n+1≤1025*(d+1):=by omega
  have Ko:(n:ℝ)+1≤1025*((d+1:ℕ):ℝ):=by
   exact_mod_cast Kn
@@ -11717,7 +11354,7 @@ lemma iJ
  have Gn:((n:ℝ)+1)*step ≤
    1025*K*((d+1:ℕ):ℝ)^12:=by
   calc
-   ((n:ℝ)+1)*step ≤
+   _ ≤
      (1025*((d+1:ℕ):ℝ))*step:=
     Qi Ko yq
    _=1025*K*((d+1:ℕ):ℝ)^12:=by
@@ -11727,26 +11364,26 @@ lemma iJ
  have yr:((n:ℝ)+1)*step ≤
    (1025*(2:ℝ)^12*K)*(d:ℝ)^12:=by
   calc
-   ((n:ℝ)+1)*step ≤
+   _ ≤
      1025*K*((d+1:ℕ):ℝ)^12:=Gn
    _≤1025*K*((2:ℝ)^12*(d:ℝ)^12):=
     iO hpow (Qn (by norm_num) hK)
    _=(1025*(2:ℝ)^12*K)*(d:ℝ)^12:=by ring
- have Fb:Real.exp (-((n:ℝ)+1)*step) *
+ have Fb:exp (-((n:ℝ)+1)*step) *
    (Fintype.card G:ℝ)≤(#B:ℝ):=by
   calc
-   Real.exp (-((n:ℝ)+1)*step)*(Fintype.card G:ℝ) =
-     Real.exp (-step) *
-      (Real.exp (-(n:ℝ)*step)*(Fintype.card G:ℝ)):=by
+   _ =
+     exp (-step) *
+      (exp (-(n:ℝ)*step)*(Fintype.card G:ℝ)):=by
     rw[show-((n:ℝ)+1)*step =
       -step+(-(n:ℝ)*step) by ring,R7]
     ring
-   _≤Real.exp (-step)*(mg:ℝ):=
+   _≤exp (-step)*(mg:ℝ):=
     iO (by simpa[step] using ue)
      (Q1 _).le
    _≤(#B:ℝ):=by simpa[step] using A5
- have l9:Real.exp (-(1025*(2:ℝ)^12*K)*(d:ℝ)^12) ≤
-   Real.exp (-((n:ℝ)+1)*step):=by
+ have l9:exp (-(1025*(2:ℝ)^12*K)*(d:ℝ)^12) ≤
+   exp (-((n:ℝ)+1)*step):=by
   apply Real.exp_le_exp.mpr
   nlinarith
  exact(Qi l9 (by positivity)).trans Fb
@@ -11760,7 +11397,7 @@ noncomputable def tL
    (bQ N A hA).density)
   (c8:(1025/1024:ℝ)^n *
     (bQ N A hA).density≤t.density)
-  (ch:Real.exp (-(n:ℝ) *
+  (ch:exp (-(n:ℝ) *
      (K*((d+1:ℕ):ℝ)^11)) *
     ((bQ N A hA).card:ℝ)≤(t.card:ℝ))
   (terminal:dr t K d) :
@@ -11789,18 +11426,18 @@ noncomputable def tL
    _≤(3/4:ℝ)*t.density:=
     iO Go (by norm_num)
    _≤c.alpha:=terminal.tK
- have A6:Real.exp (-(8:ℝ)*(d:ℝ)^12) ≤
+ have A6:exp (-(8:ℝ)*(d:ℝ)^12) ≤
    c.alpha^3/2:=p9 hd b8
- have ys:Real.exp (-(n:ℝ) *
+ have ys:exp (-(n:ℝ) *
     (K*((d+1:ℕ):ℝ)^11)) *
    (Fintype.card (ZMod (aD N)):ℝ)≤(t.card:ℝ):=by
   simpa only[rQ,ZMod.card] using ch
- have hB:Real.exp (-(1025*(2:ℝ)^12*K)*(d:ℝ)^12) *
+ have hB:exp (-(1025*(2:ℝ)^12*K)*(d:ℝ)^12) *
    (Fintype.card (ZMod (aD N)):ℝ)≤(#c.B:ℝ):=by
   exact iJ
    (G:=ZMod (aD N)) (K:=K) hK
    (d:=d) (n:=n) (mg:=t.card) hd hn ys terminal.A3
- have Km:Real.exp (-(1025*(2:ℝ)^12*K)*(d:ℝ)^12) *
+ have Km:exp (-(1025*(2:ℝ)^12*K)*(d:ℝ)^12) *
    (Fintype.card (ZMod (aD N)):ℝ)≤(#c.B':ℝ):=by
   exact iJ
    (G:=ZMod (aD N)) (K:=K) hK
@@ -11817,31 +11454,31 @@ private lemma n3 {N:ℕ} (hN:1≤N) :
  linarith
 private lemma ow
   {N d:ℕ} {A:Finset ℕ} (hN:1≤N) (hA:A.Nonempty)
-  (ei:Real.log ((N:ℝ)/(#A:ℝ))≤(d:ℝ)*Real.log 2) :
-  Real.log (((aD N:ℕ):ℝ)/(#A:ℝ)) ≤
-   ((d+2:ℕ):ℝ)*Real.log 2:=by
+  (ei:log ((N:ℝ)/(#A:ℝ))≤(d:ℝ)*log 2) :
+  log (((aD N:ℕ):ℝ)/(#A:ℝ)) ≤
+   ((d+2:ℕ):ℝ)*log 2:=by
  have Kp:(0:ℝ)<N:=by exact_mod_cast hN
  have Fc:(0:ℝ)< #A:=by exact_mod_cast hA.card_pos
- have Il:(0:ℝ)<(N:ℝ)/(#A:ℝ):=Rn Kp Fc
+ have Il := Rn Kp Fc
  have wh :
    (((aD N:ℕ):ℝ)/(#A:ℝ)) ≤
     4*((N:ℝ)/(#A:ℝ)):=by
   calc
-   (((aD N:ℕ):ℝ)/(#A:ℝ)) ≤
+   _ ≤
      (4*(N:ℝ))/(#A:ℝ):=
     Qz (n3 hN) Fc.le
    _=4*((N:ℝ)/(#A:ℝ)):=by ring
  calc
-  Real.log (((aD N:ℕ):ℝ)/(#A:ℝ)) ≤
-    Real.log (4*((N:ℝ)/(#A:ℝ))):=
+  _ ≤
+    log (4*((N:ℝ)/(#A:ℝ))):=
    QG (by positivity) wh
-  _=2*Real.log 2+Real.log ((N:ℝ)/(#A:ℝ)):=by
+  _=2*log 2+log ((N:ℝ)/(#A:ℝ)):=by
    rw[Ql (by norm_num:(4:ℝ)≠0) Il.ne',
     show(4:ℝ)=2*2 by norm_num,
     Ql (by norm_num:(2:ℝ)≠0) (by norm_num:(2:ℝ)≠0)]
    ring
-  _≤2*Real.log 2+(d:ℝ)*Real.log 2:=by linarith
-  _=((d+2:ℕ):ℝ)*Real.log 2:=by
+  _≤2*log 2+(d:ℝ)*log 2:=by linarith
+  _=((d+2:ℕ):ℝ)*log 2:=by
    push_cast
    ring
 private lemma ux {d:ℕ} (hd:1≤d) :
@@ -11851,7 +11488,7 @@ private lemma ux {d:ℕ} (hd:1≤d) :
   push_cast
   linarith
  calc
-  ((d+2:ℕ):ℝ)^12≤(3*(d:ℝ))^12:=
+  _ ≤(3*(d:ℝ))^12:=
    Qp (by positivity) dc 12
   _=(3:ℝ)^12*(d:ℝ)^12:=by rw[QL]
 lemma tM
@@ -11865,19 +11502,19 @@ lemma tM
  have ze:(cZ N A).Nonempty:=by
   obtain ⟨a,ha⟩:=hA
   exact ⟨cn N a,fi.mpr ⟨a,ha,rfl⟩⟩
- have DC: #(cZ N A)= #A:=vR Kq
+ have DC := vR Kq
  have Fd :
-   Real.log (((aD N:ℕ):ℝ) /
+   log (((aD N:ℕ):ℝ) /
      (#(cZ N A):ℝ)) ≤
-    ((d+2:ℕ):ℝ)*Real.log 2:=by
+    ((d+2:ℕ):ℝ)*log 2:=by
   rw[DC]
   exact ow hN hA ei
  have Kr:=zd.2 N hN (cZ N A) ze
   (d+2) (by omega) Fd
  have hpow:=ux hd
  have l9 :
-   Real.exp (-((3:ℝ)^12*K)*(d:ℝ)^12) ≤
-    Real.exp (-K*((d+2:ℕ):ℝ)^12):=by
+   exp (-((3:ℝ)^12*K)*(d:ℝ)^12) ≤
+    exp (-K*((d+2:ℕ):ℝ)^12):=by
   apply Real.exp_le_exp.mpr
   have hK:=zd.1.le
   nlinarith[iO hpow hK]
@@ -11887,8 +11524,8 @@ lemma tM
   have MS:(0:ℝ)≤N:=by positivity
   linarith
  calc
-  Real.exp (-((3:ℝ)^12*K)*(d:ℝ)^12)*(N:ℝ)^2 ≤
-    Real.exp (-K*((d+2:ℕ):ℝ)^12) *
+  _ ≤
+    exp (-K*((d+2:ℕ):ℝ)^12) *
      (((aD N:ℕ):ℝ))^2:=
    QW l9 Ks (sq_nonneg _) (Q1 _).le
   _≤(dL (cZ N A):ℝ):=Kr
@@ -12004,8 +11641,8 @@ structure dB
      s.aV.restriction.ba.carrier/4
  rankOne:ak.ba.rank≤ s.rank+aq
  p5:aB.ba.rank≤ s.rank+aq
- mE:Real.exp (-aU)*(s.card:ℝ)≤ak.carrier.card
- mF:Real.exp (-aU)*(s.card:ℝ)≤aB.carrier.card
+ mE:exp (-aU)*(s.card:ℝ)≤ak.carrier.card
+ mF:exp (-aU)*(s.card:ℝ)≤aB.carrier.card
 omit [DiscreteMeasurableSpace G] [MeasurableSpace G] in
 lemma m5
   {original:Finset G} (s:aG original)
@@ -12043,7 +11680,7 @@ lemma m5
   rw[o5] at hx
   have gy:0<a9 s.aV.restriction.set
     P.ak.carrier x:=by
-   have hs:0<s.aV.density:=s.aV.dI
+   have hs := s.aV.dI
    have hq:0<(1+epsilon/2:ℝ):=by nlinarith
    exact(QM hq hs).trans_le (by simpa using hx)
   let u:=ah.di s.aV P.ak x gy
@@ -12064,7 +11701,7 @@ lemma m5
   rw[o5] at hx
   have gy:0<a9 s.aV.restriction.set
     P.aB.carrier x:=by
-   have hs:0<s.aV.density:=s.aV.dI
+   have hs := s.aV.dI
    have hq:0<(1+epsilon/2:ℝ):=by nlinarith
    exact(QM hq hs).trans_le (by simpa using hx)
   let u:=ah.di s.aV P.aB x gy
@@ -12111,19 +11748,19 @@ noncomputable def mi
           (af (aO.a4 aB.carrier)) f p ≤
         ((Fintype.card G:ℝ)/(#ak.carrier:ℝ))/8) :
     aO.eh original:=by
-  let x:G:=aO.cr aQ
-  let A':Finset G:=a7 aQ
-  let b4:Finset G:=d3 aQ
-  let B:Finset G:=ak.carrier
-  let B':Finset G:=aB.carrier
-  let alpha:ℝ:=aO.a5 s epsilon
+  let x := aO.cr aQ
+  let A' := a7 aQ
+  let b4 := d3 aQ
+  let B := ak.carrier
+  let B' := aB.carrier
+  let alpha := aO.a5 s epsilon
   have lG:alpha≤a9 s.restriction.set B x:=by
     simpa[alpha,x,B,aO.a5] using
       aO.c0 aQ
   have o0:alpha≤a9 s.restriction.set B' x:=by
     simpa[alpha,x,B',aO.a5] using
       aO.ea aQ
-  have b8:0<alpha:=
+  have b8 :=
     QM (sub_pos.mpr b2) s.dI
   have qL:A'.Nonempty:=by
     apply ah.bK ak.aE
@@ -12131,8 +11768,8 @@ noncomputable def mi
   have gO:b4.Nonempty:=by
     apply ah.bK aB.aE
     exact b8.trans_le o0
-  have kc:b4⊆B':=by
-    exact ah.dz
+  have kc :=
+          ah.dz
       (B:=aB.ba) (a8:=aB.outer)
       (A:=s.restriction.set) (C:=aB.carrier)
       (x:=x) (fun _ hz↦hz)
@@ -12163,13 +11800,13 @@ noncomputable def mi
   have qM :
       (2/3:ℝ)^p≤aw.bL b4 B':=by
     calc
-      (2/3:ℝ)^p≤alpha:=jz
+      _ ≤alpha:=jz
       _≤a9 s.restriction.set B' x:= o0
       _=aw.bL b4 B':=by
         rw[ah.bk
           aB.aE x]
         rfl
-  have o1:(aO.a4 B').Nonempty:=
+  have o1 :=
     aO.eJ aB.aE
   have uq :
       aw.cO (aO.a4 B') p f ≤
@@ -12253,7 +11890,7 @@ structure eS
     (257/256:ℝ) *
       aO.a5 s.aV epsilon≤t.density ∧
     t.rank≤ s.rank+aq ∧
-    Real.exp (-aU)*(s.card:ℝ)≤(t.card:ℝ)
+    exp (-aU)*(s.card:ℝ)≤(t.card:ℝ)
 noncomputable def ox
     {original:Finset G} (s:aG original)
     {K:ℝ} {d aq p:ℕ}
@@ -12314,10 +11951,10 @@ noncomputable def ox
       aO.a5 s.aV (1/512:ℝ)
     simp only[aO.a5]
     nlinarith[s.aV.dI.le]
-  · change Real.exp (-(K*((d+1:ℕ):ℝ)^11)) *
+  · change exp (-(K*((d+1:ℕ):ℝ)^11)) *
         (s.card:ℝ)≤(#P.ak.carrier:ℝ)
     exact P.mE
-  · change Real.exp (-(K*((d+1:ℕ):ℝ)^11)) *
+  · change exp (-(K*((d+1:ℕ):ℝ)^11)) *
         (s.card:ℝ)≤(#P.aB.carrier:ℝ)
     exact P.mF
 lemma l1
@@ -12413,12 +12050,12 @@ noncomputable def eF (N:ℕ)
 @[simp] lemma la (N:ℕ)
   (A:Finset (ZMod (aD N))) (hA:A.Nonempty) :
   (eF N A hA).density =
-   (#A:ℝ)/(aD N:ℕ):=by
- exact p8 N A hA
+   (#A:ℝ)/(aD N:ℕ):=
+       p8 N A hA
 @[simp] lemma wm (N:ℕ)
   (A:Finset (ZMod (aD N))) (hA:A.Nonempty) :
-  (eF N A hA).rank=0:=by
- exact rP N A hA
+  (eF N A hA).rank=0:=
+       rP N A hA
 omit [DiscreteMeasurableSpace G] [MeasurableSpace G] in
 lemma jB
   {original:Finset G}
@@ -12481,8 +12118,8 @@ lemma jB
 lemma lH
   {N d:ℕ} (_hN:1≤N)
   {A:Finset (ZMod (aD N))} (hA:A.Nonempty)
-  (ei:Real.log (((aD N:ℕ):ℝ)/(#A:ℝ)) ≤
-   (d:ℝ)*Real.log 2) :
+  (ei:log (((aD N:ℕ):ℝ)/(#A:ℝ)) ≤
+   (d:ℝ)*log 2) :
   br.nK d
    (eF N A hA).density:=by
  have Ip:0<aD N:=by simp[aD]
@@ -12492,8 +12129,8 @@ lemma lH
    ((aD N:ℕ):ℝ)/(#A:ℝ):=Rn yY ch
  have hpow:(0:ℝ)<(2:ℝ)^d:=RF (by norm_num) _
  have L7 :
-   Real.log (((aD N:ℕ):ℝ)/(#A:ℝ)) ≤
-    Real.log ((2:ℝ)^d):=by
+   log (((aD N:ℕ):ℝ)/(#A:ℝ)) ≤
+    log ((2:ℝ)^d):=by
   simpa[QB] using ei
  have wh :
    (((aD N:ℕ):ℝ)/(#A:ℝ))≤(2:ℝ)^d:=
@@ -12563,17 +12200,15 @@ lemma lb
   Cr.qZ (by norm_num)
  change(1025/1024:ℝ)^n *
    (bQ N A hA).density≤t.aV.density at zw
- have c8 :
-   (1025/1024:ℝ)^n *
-     (bQ N A hA).density≤t.aV.density:=by
-  exact zw
+ have c8  :=
+
+        zw
  have Fe:=Cr.card_bound
- change Real.exp (-(n:ℝ)*(K*((d+1:ℕ):ℝ)^11)) *
+ change exp (-(n:ℝ)*(K*((d+1:ℕ):ℝ)^11)) *
    ((bQ N A hA).card:ℝ)≤t.aV.card at Fe
- have ch :
-   Real.exp (-(n:ℝ)*(K*((d+1:ℕ):ℝ)^11)) *
-     ((bQ N A hA).card:ℝ)≤t.aV.card:=by
-  exact Fe
+ have ch  :=
+
+        Fe
  exact ⟨dm.tL hd hA hK.le hn
   uv c8 ch data⟩
 end
@@ -12588,7 +12223,7 @@ variable {G:Type*} [Fintype G] [DecidableEq G] [AddCommGroup G]
 private lemma rf (K:aj G) (x:G) :
   af K.carrier (-x)=af K.carrier x:=by
  by_cases hx:x∈K.carrier
- ·have Kv: -x∈K.carrier:=aj.ec.mpr hx
+ ·have Kv := aj.ec.mpr hx
   simp[dj hx,dj Kv]
  ·have Kv: -x∉K.carrier:=by
    intro h
@@ -12606,7 +12241,7 @@ lemma ie
     (200*((max K.rank 1:ℕ):ℝ)*(κ:ℝ)):=by
  let E:ℝ:=200*((max K.rank 1:ℕ):ℝ)*(κ:ℝ)
  have sF:(A.card:ℝ)≠0:=by exact_mod_cast hA.card_ne_zero
- have L8: ∑ x:G,af A x=1:=
+ have L8 :=
   cf hA
  have dc :
    ∑ x:G,af A x*(K.carrier.card:ℝ)⁻¹ =
@@ -12616,15 +12251,15 @@ lemma ie
    ∑ x:G,
      |af K.carrier (t-x) -
       af K.carrier (-x)| ≤E:=by
-  have eY: -t∈(K.ai κ).carrier:=
+  have eY :=
    aj.ec.mpr ht
   have kE:=
    aj.cN
     dF qx eY
   calc
-   ∑ x:G,
-     |af K.carrier (t-x) -
-      af K.carrier (-x)| =
+   _
+
+                         =
      ∑ x:G,
       |af K.carrier (x- -t) -
        af K.carrier x|:=by
@@ -12639,9 +12274,9 @@ lemma ie
       af K.carrier (-x)| ≤
     (A.card:ℝ)⁻¹ *E:=by
   calc
-   ∑ x:G,af A x *
-     |af K.carrier (t-x) -
-      af K.carrier (-x)| =
+   _
+
+                         =
      (A.card:ℝ)⁻¹ * ∑ x∈A,
       |af K.carrier (t-x) -
        af K.carrier (-x)|:=by
@@ -12666,9 +12301,9 @@ lemma ie
  rw[ao, ←dc, ←QJ]
  simp_rw[←UY]
  calc
-  |∑ x:G,af A x *
-    (af K.carrier (t-x) -
-     (K.carrier.card:ℝ)⁻¹)| =
+  _
+
+                            =
     |∑ x:G,af A x *
      (af K.carrier (t-x) -
       af K.carrier (-x))|:=by
@@ -12720,9 +12355,9 @@ lemma dY
   (200*((max K.rank 1:ℕ):ℝ)*(κ:ℝ))
  rw[tN hC]
  calc
-  |aw.aT C (fun x ↦
-    ao (af A)
-     (af K.carrier) x-(K.carrier.card:ℝ)⁻¹)| ≤
+  _
+
+                                             ≤
    aw.aT C (fun x ↦
     |ao (af A)
      (af K.carrier) x-(K.carrier.card:ℝ)⁻¹|):=
@@ -12795,7 +12430,7 @@ lemma gT
  let sM:=ao (af K.carrier) (af K.carrier)
  let eC:ℝ:=(K.carrier.card:ℝ)⁻¹
  let E:ℝ:=200*((max K.rank 1:ℕ):ℝ)*(κ:ℝ)
- have hC:C.Nonempty:=aO.eJ gO
+ have hC := aO.eJ gO
  have Kw: |aw.aT C qO-eC| ≤
    (A.card:ℝ)⁻¹ *E:=by
   simpa[C,qO,eC,E] using
@@ -12817,14 +12452,14 @@ lemma gT
      (aw.aT C sM-eC)| ≤
     2*((A.card:ℝ)⁻¹ *E)+eC*E:=by
   calc
-   |(aw.aT C qO-eC) +
-     (aw.aT C rv-eC) -
-     (aw.aT C sM-eC)| ≤
+   _
+
+                      ≤
     |aw.aT C qO-eC| +
      |aw.aT C rv-eC| +
      |aw.aT C sM-eC|:=by
     calc
-     |_-_| ≤ |(aw.aT C qO-eC) +
+     _ ≤ |(aw.aT C qO-eC) +
        (aw.aT C rv-eC)| +
        |aw.aT C sM-eC|:=by
       simpa[Su] using(abs_sub_le
@@ -12875,11 +12510,9 @@ lemma gT
  rw[L9,fF,nN]
  have yj:0≤(Fintype.card G:ℝ):=by positivity
  calc
-  |((Fintype.card G:ℝ)*aw.aT C yw -
-    (Fintype.card G:ℝ)*eC) -
-    (Fintype.card G:ℝ) *
-     (aw.aT C yw-aw.aT C qO -
-      aw.aT C rv+aw.aT C sM)| =
+  _
+
+                              =
    (Fintype.card G:ℝ) *
     |(aw.aT C qO-eC) +
      (aw.aT C rv-eC) -
@@ -12935,9 +12568,9 @@ lemma e5
     ((K.carrier.card:ℝ)⁻¹)/8:=by
   apply d5.trans
   nlinarith
- have Nu:(@mu (ℝ) _ _) A=af A:=
+ have Nu :=
   aN.eQ A
- have Nv:(@mu (ℝ) _ _) K.carrier=af K.carrier:=
+ have Nv :=
   aN.eQ K.carrier
  simpa only[Nu,Nv] using
   gT dF qx hA lO
@@ -12954,14 +12587,14 @@ def cH:ℝ:=1/8192
 def dh (alpha:ℝ):ℕ:=⌈8192/alpha⌉₊
 def dq (alpha:ℝ):ℕ:=Nat.clog 2 (dh alpha)
 def g4 (alpha:ℝ):ℕ:=
- ⌈1+Real.log (2/alpha)⌉₊
+ ⌈1+log (2/alpha)⌉₊
 def fE (alpha:ℝ):ℕ:=
  ay.cQ (g4 alpha)
-  ((cH/dq alpha)/Real.exp 1)
+  ((cH/dq alpha)/exp 1)
 def gs (alpha:ℝ) (k:ℕ):ℝ:=
  (alpha/2)^k/2
 def rg (alpha:ℝ) (k:ℕ):ℕ:=
- ⌈8*(1+Real.log (2/gs alpha k))⌉₊
+ ⌈8*(1+log (2/gs alpha k))⌉₊
 def dt (d:ℕ):ℕ:=4*(d+1)
 def bH (d:ℕ):ℕ:=
  an.cz (1/8:ℝ) (dt d)
@@ -13048,7 +12681,7 @@ lemma tO (d:ℕ) :
   rw[RB]
   ring
  rw[uY,QB]
- have ei:Real.log (2:ℝ)≤1:=by
+ have ei:log (2:ℝ)≤1:=by
   convert QX (show(0:ℝ)<2 by norm_num) using 1
   norm_num
  push_cast
@@ -13068,25 +12701,25 @@ lemma n4 (d:ℕ) :
   change(b1 d:ℝ) =
    av d+13
   exact_mod_cast(by simpa[Nat.add_comm] using uX)
- have l9:Real.exp 1≤3:=Real.exp_one_lt_three.le
+ have l9:exp 1≤3:=Real.exp_one_lt_three.le
  have hE:(0:ℝ)≤av d:=by positivity
  rw[Kx]
  unfold cH
  have si :
    (0:ℝ) <
     (((1/8192:ℝ)/(av d+13)) /
-     Real.exp 1/2)^2:=by positivity
+     exp 1/2)^2:=by positivity
  apply(QF si).2
  have Gr:(0:ℝ)<av d+13:=by positivity
  have PK:(g4 (aR d):ℝ) ≤
    av d+13:=by linarith
- have PL:Real.exp 1^2≤(9:ℝ):=by
+ have PL:exp 1^2≤(9:ℝ):=by
   nlinarith[Q1 (1:ℝ)]
  field_simp
  push_cast
  calc
   64*(g4 (aR d):ℝ)*8192^2 *
-    (av d+13)^2*Real.exp 1^2*2^2 ≤
+    (av d+13)^2*exp 1^2*2^2 ≤
    64*(av d+13)*8192^2 *
     (av d+13)^2*9*2^2:=by
      gcongr
@@ -13103,19 +12736,19 @@ lemma gV {alpha:ℝ} (b8:0<alpha) :
  apply Nat.ceil_pos.2
  positivity
 lemma m6 {alpha:ℝ} (_halpha:0<alpha) :
-  8192/alpha≤(dh alpha:ℝ):=by
- exact Rr _
+  8192/alpha≤(dh alpha:ℝ):=
+       Rr _
 lemma s8 {alpha ratio:ℝ}
   (b8:0<alpha) (yx:alpha≤2)
   (eO:alpha/2≤ratio) :
-  ⌈1+Real.log (min 1 ratio)⁻¹⌉₊≤g4 alpha:=by
+  ⌈1+log (min 1 ratio)⁻¹⌉₊≤g4 alpha:=by
  have yy:0<alpha/2:=by positivity
  have Gs:alpha/2≤(1:ℝ):=by linarith
- have Ky:alpha/2≤ min 1 ratio:=le_min Gs eO
- have Ir:0< min 1 ratio:=yy.trans_le Ky
+ have Ky := le_min Gs eO
+ have Ir := yy.trans_le Ky
  have hinv:(min 1 ratio)⁻¹ ≤(alpha/2)⁻¹:=
   (RJ Ir yy).2 Ky
- have ei:Real.log (min 1 ratio)⁻¹ ≤Real.log (2/alpha):=by
+ have ei:log (min 1 ratio)⁻¹ ≤log (2/alpha):=by
   have sy:(alpha/2)⁻¹ =2/alpha:=by
    field_simp
   rw[←sy]
@@ -13156,7 +12789,7 @@ lemma sN {alpha:ℝ} (b8:0<alpha)
    have:alpha<8192:=by
     nlinarith
    exact(SP b8).2 (by nlinarith)
-  have rJ:8192/alpha≤(dh alpha:ℝ):=m6 b8
+  have rJ := m6 b8
   exact_mod_cast iU.trans_le rJ
  exact Nat.clog_pos (by norm_num) hq
 lemma o8 {alpha:ℝ} (_halpha:0<alpha) :
@@ -13170,10 +12803,10 @@ lemma qP {alpha:ℝ} (b8:0<alpha) :
  have hpow:(0:ℝ)<(2:ℝ)^dq alpha:=by positivity
  have uP:(dh alpha:ℝ)≤(2:ℝ)^dq alpha:=by
   exact_mod_cast o8 b8
- have rJ:8192/alpha≤(dh alpha:ℝ):=
+ have rJ :=
   m6 b8
  calc
-  (1/2:ℝ)^dq alpha =
+  _ =
     ((2:ℝ)^dq alpha)⁻¹:=by
      rw[R6,Te]
   _≤(dh alpha:ℝ)⁻¹:=
@@ -13220,8 +12853,8 @@ lemma s9
  have uX:=qP b8
  have DE:=jj b8 o7
  calc
-  (2*(1/2:ℝ)^dq alpha) *
-    Real.sqrt (2/alpha) ≤
+  _
+                        ≤
    (2*(alpha/8192))*(2/alpha):=by
     gcongr
   _=1/2048:=by
@@ -13233,8 +12866,8 @@ lemma zV {alpha:ℝ} {k:ℕ} (b8:0<alpha) :
  positivity
 lemma sO
   {alpha:ℝ} {k:ℕ} (b8:0<alpha) :
-  Real.log (2/gs alpha k) =
-   Real.log 4+(k:ℝ)*Real.log (2/alpha):=by
+  log (2/gs alpha k) =
+   log 4+(k:ℝ)*log (2/alpha):=by
  have iB:(0:ℝ)<alpha/2:=by positivity
  have uY :
    2/gs alpha k=4/(alpha/2)^k:=by
@@ -13259,17 +12892,17 @@ lemma ke (d:ℕ) :
   have MT:(fE (aR d):ℝ) ≤
     (2^38*(av d+13)^3:ℕ):=by
    exact_mod_cast hk
-  have Ct:Real.log (2:ℝ)≤1:=by
+  have Ct:log (2:ℝ)≤1:=by
    convert QX (show(0:ℝ)<2 by norm_num) using 1
    norm_num
-  have A8:Real.log (4:ℝ)≤2:=by
+  have A8:log (4:ℝ)≤2:=by
    rw[show(4:ℝ)=2^2 by norm_num,QB]
    have hmul:=iO Ct
     (show(0:ℝ)≤2 by norm_num)
    norm_num at hmul ⊢
    exact hmul
   have Ff :
-    Real.log (2/aR d) ≤
+    log (2/aR d) ≤
      (av d+1:ℝ):=by
    unfold aR
    have uY :
@@ -13291,7 +12924,7 @@ lemma ke (d:ℕ) :
    have:(1:ℝ)≤av d+13:=by nlinarith
    exact RH this
   have DF :
-    0≤Real.log (2/aR d):=by
+    0≤log (2/aR d):=by
    apply Qv
    apply(Qs (bP d)).2
    nlinarith[i3 d]
@@ -13300,27 +12933,24 @@ lemma ke (d:ℕ) :
      (2^38:ℝ)*(av d+13)^3:=by
    norm_num at MT ⊢
    exact MT
-  have DG :
-    Real.log (2/aR d) ≤
-     av d+13:=Ff.trans Pj
-  have hmul :
-    (fE (aR d):ℝ) *
-      Real.log (2/aR d) ≤
-     (2^38:ℝ)*(av d+13)^3 *
-      (av d+13):=by
-   exact QW Nw DG DF (by positivity)
+  have DG  :=
+
+              Ff.trans Pj
+  have hmul  :=
+
+         QW Nw DG DF (by positivity)
   push_cast at ⊢
   calc
-   8*(1+(Real.log 4 +
-     (fE (aR d):ℝ) *
-      Real.log (2/aR d))) ≤
+   _
+
+                          ≤
     8*(1+(2 +
      (2^38*(av d+13)^3:ℝ) *
       (av d+13))):=by
        have oJ :
-         Real.log 4 +
+         log 4 +
            (fE (aR d):ℝ) *
-            Real.log (2/aR d) ≤
+            log (2/aR d) ≤
           2+(2^38:ℝ) *
            (av d+13)^3 *
             (av d+13):=by
@@ -13356,25 +12986,25 @@ lemma ff (d:ℕ) :
    (1024*aH)*(d+1)^9:=by
  unfold ar.ax
  calc
-  1024*(d+1)*au d ≤
+  _ ≤
     1024*(d+1) *
      (aH*(d+1)^8):=by
    gcongr
    exact jC d
   _=(1024*aH)*(d+1)^9:=by
    ring
-lemma fh:Real.log (2:ℝ)≤1:=by
+lemma fh:log (2:ℝ)≤1:=by
  have h:=
   QX (show(0:ℝ)<2 by norm_num)
  norm_num at h ⊢
  exact h
 lemma cV {n:ℕ} (hn:0<n) :
-  Real.log (n:ℝ)≤n:=by
+  log (n:ℝ)≤n:=by
  have h:=QX
   (show(0:ℝ)<n by exact_mod_cast hn)
  nlinarith
 lemma qb (d:ℕ) :
-  Real.log (bE d:ℝ) ≤
+  log (bE d:ℝ) ≤
    (av d+13:ℝ):=by
  rw[ti]
  push_cast
@@ -13384,7 +13014,7 @@ lemma qb (d:ℕ) :
  have ug:(0:ℝ)≤13+av d:=by positivity
  nlinarith[iO fh ug]
 lemma o9 (d:ℕ) :
-  Real.log (bE d:ℝ) ≤
+  log (bE d:ℝ) ≤
    1720335*((d+1:ℕ):ℝ)^2:=by
  have hE:=gU d
  have MU:1≤(d+1)^2:=by
@@ -13393,13 +13023,13 @@ lemma o9 (d:ℕ) :
    av d+13≤1720335*(d+1)^2:=by
   nlinarith
  calc
-  Real.log (bE d:ℝ) ≤
+  log (bE d:ℝ) ≤
     (av d+13:ℝ):=
    qb d
   _≤1720335*((d+1:ℕ):ℝ)^2:=by
    exact_mod_cast Gr
 lemma pa (d:ℕ) :
-  Real.log (au d:ℝ) ≤
+  log (au d:ℝ) ≤
    42+4*(av d+13:ℝ):=by
  have yr:=ke d
  have Kz :
@@ -13408,14 +13038,13 @@ lemma pa (d:ℕ) :
   exact_mod_cast yr
  have wu:(0:ℝ)<au d:=by
   exact_mod_cast bX d
- have ei :
-   Real.log (au d:ℝ) ≤
-    Real.log ((2^42*(av d+13)^4:ℕ):ℝ):=
+ have ei  :=
+
   QG wu Kz
  have Gt :
-   Real.log ((2^42*(av d+13)^4:ℕ):ℝ) =
-    42*Real.log 2 +
-     4*Real.log ((av d+13:ℕ):ℝ):=by
+   log ((2^42*(av d+13)^4:ℕ):ℝ) =
+    42*log 2 +
+     4*log ((av d+13:ℕ):ℝ):=by
   push_cast
   rw[show(4398046511104:ℝ)=(2:ℝ)^42 by norm_num]
   rw[Ql (Rg _ (by norm_num))
@@ -13424,12 +13053,11 @@ lemma pa (d:ℕ) :
   push_cast
   ring
  have It:0<av d+13:=by positivity
- have Iu :
-   Real.log ((av d+13:ℕ):ℝ) ≤
-    (av d+13:ℕ):=
+ have Iu  :=
+
   cV It
  rw[Gt] at ei
- have MV:42*Real.log (2:ℝ)≤42:=by
+ have MV:42*log (2:ℝ)≤42:=by
   nlinarith[iO fh
    (show(0:ℝ)≤42 by norm_num)]
  have Gu:=iO Iu
@@ -13437,7 +13065,7 @@ lemma pa (d:ℕ) :
  push_cast at ei Gu
  nlinarith
 lemma fM (d:ℕ) :
-  Real.log (au d:ℝ) ≤
+  log (au d:ℝ) ≤
    6881382*((d+1:ℕ):ℝ)^2:=by
  have hE:=gU d
  have MU:1≤(d+1)^2:=by
@@ -13447,35 +13075,35 @@ lemma fM (d:ℕ) :
     6881382*(d+1)^2:=by
   nlinarith
  calc
-  Real.log (au d:ℝ) ≤
+  log (au d:ℝ) ≤
     42+4*(av d+13:ℝ):=
    pa d
   _≤6881382*((d+1:ℕ):ℝ)^2:=by
    exact_mod_cast Iv
 lemma qc
   {R:ℕ} (hR:0<R) :
-  Real.log ((8*R+1:ℕ):ℝ) ≤
-   9+Real.log (R:ℝ):=by
+  log ((8*R+1:ℕ):ℝ) ≤
+   9+log (R:ℝ):=by
  have Mb:1≤R:=Nat.one_le_iff_ne_zero.mpr hR.ne'
  have sC:8*R+1≤9*R:=by omega
  have zf:(0:ℝ)<((8*R+1:ℕ):ℝ):=by
   exact_mod_cast(show 0<8*R+1 by positivity)
  have kT:(0:ℝ)<R:=by exact_mod_cast hR
  have ei :
-   Real.log ((8*R+1:ℕ):ℝ) ≤
-    Real.log ((9*R:ℕ):ℝ):=
+   log ((8*R+1:ℕ):ℝ) ≤
+    log ((9*R:ℕ):ℝ):=
   QG zf (by exact_mod_cast sC)
  have te :
-   Real.log ((9*R:ℕ):ℝ) =
-    Real.log 9+Real.log (R:ℝ):=by
+   log ((9*R:ℕ):ℝ) =
+    log 9+log (R:ℝ):=by
   push_cast
   rw[Ql (by norm_num) kT.ne']
  rw[te] at ei
- have h9:Real.log (9:ℝ)≤9:=
+ have h9:log (9:ℝ)≤9:=
   cV (by norm_num)
  nlinarith
 lemma m7 (d:ℕ) :
-  Real.log
+  log
     ((bE d*(8*au d+1:ℕ):ℕ):ℝ) ≤
    8601726*((d+1:ℕ):ℝ)^2:=by
  have Hm:0<bE d:=by
@@ -13496,7 +13124,7 @@ lemma m7 (d:ℕ) :
  push_cast at Mc wR pb Gv
  nlinarith
 lemma eG (d:ℕ) :
-  Real.log
+  log
     (ar.ax d (au d):ℝ) ≤
    6881393*((d+1:ℕ):ℝ)^2:=by
  have Gw:=bX d
@@ -13504,7 +13132,7 @@ lemma eG (d:ℕ) :
   exact_mod_cast Gw
  have hdPos:0<d+1:=by omega
  have Fi:(0:ℝ)<d+1:=by exact_mod_cast hdPos
- have Md:Real.log ((d+1:ℕ):ℝ)≤(d+1:ℕ):=
+ have Md :=
   cV hdPos
  have Gx:=fM d
  have Nx:((d+1:ℕ):ℝ)≤((d+1:ℕ):ℝ)^2:=by
@@ -13516,7 +13144,7 @@ lemma eG (d:ℕ) :
  rw[Ql
    (Rl (by norm_num) Fi.ne') wu.ne',
   Ql (by norm_num) Fi.ne']
- have Ny:Real.log (1024:ℝ)≤10:=by
+ have Ny:log (1024:ℝ)≤10:=by
   rw[show(1024:ℝ)=2^10 by norm_num,QB]
   push_cast
   nlinarith[iO fh
@@ -13526,13 +13154,13 @@ lemma eG (d:ℕ) :
   nlinarith
  nlinarith
 lemma qd (d:ℕ) :
-  Real.log
+  log
     (ar.bn d (au d):ℝ) ≤
    7700594*((d+1:ℕ):ℝ)^2:=by
  have hR:=eG d
- have hconst:Real.log (819200:ℝ)≤819200:=
+ have hconst:log (819200:ℝ)≤819200:=
   cV (by norm_num)
- have hpow:(d:ℝ)*Real.log 2≤d:=by
+ have hpow:(d:ℝ)*log 2≤d:=by
   nlinarith[iO fh
    (show(0:ℝ)≤d by positivity)]
  have pb:(1:ℝ)≤((d+1:ℕ):ℝ)^2:=by
@@ -13556,13 +13184,13 @@ lemma qd (d:ℕ) :
  push_cast at hR hpow Gy ⊢
  nlinarith
 lemma qe (d:ℕ) :
-  Real.log
+  log
     (ar.bd d (au d):ℝ) ≤
    6958194*((d+1:ℕ):ℝ)^2:=by
  have hR:=eG d
- have hconst:Real.log (76800:ℝ)≤76800:=
+ have hconst:log (76800:ℝ)≤76800:=
   cV (by norm_num)
- have hpow:((d+1:ℕ):ℝ)*Real.log 2≤d+1:=by
+ have hpow:((d+1:ℕ):ℝ)*log 2≤d+1:=by
   have hmul:=iO fh
    (show(0:ℝ)≤((d+1:ℕ):ℝ) by positivity)
   norm_num at hmul ⊢
@@ -13590,22 +13218,22 @@ lemma qe (d:ℕ) :
  nlinarith
 lemma kU
   (d ax:ℕ) (vb:0<ax) {LR:ℝ}
-  (KY:Real.log (ax:ℝ)≤LR) :
-  Real.log
+  (KY:log (ax:ℝ)≤LR) :
+  log
     ((8388608*max ax 1 *
      2^av d:ℕ):ℝ) ≤
    23+LR+av d:=by
- have lF:max ax 1=ax:=
+ have lF :=
   max_eq_left (Nat.one_le_iff_ne_zero.mpr vb.ne')
  rw[lF]
  have zx:(0:ℝ)<ax:=by exact_mod_cast vb
- have MW:Real.log (8388608:ℝ)≤23:=by
+ have MW:log (8388608:ℝ)≤23:=by
   rw[show(8388608:ℝ)=2^23 by norm_num,QB]
   push_cast
   nlinarith[iO fh
    (show(0:ℝ)≤23 by norm_num)]
  have N1 :
-   (av d:ℝ)*Real.log 2 ≤
+   (av d:ℝ)*log 2 ≤
     av d:=by
   nlinarith[iO fh
    (show(0:ℝ)≤av d by positivity)]
@@ -13654,10 +13282,10 @@ lemma vE
   (cK:rank≤R) (cu:delta≤D) :
   dH rank delta n≤dH R D N:=by
  unfold dH
- have hN:0<N:=hn.trans_le Hn
+ have hN := hn.trans_le Hn
  have jx:n^delta≤N^D:=by
   calc
-   n^delta≤N^delta:=R4 Hn _
+   _ ≤N^delta:=R4 Hn _
    _≤N^D:=QR hN cu
  have uh:4^(rank+delta)≤4^(R+D):=by
   apply QR (by norm_num)
@@ -13676,9 +13304,9 @@ lemma kg {rank d4 m:ℕ} (hm:0< m) :
  unfold bA
  positivity
 lemma uF {rank d4 m:ℕ} (hm:0< m) :
-  Real.log (bA rank d4 m:ℝ) =
-   Real.log 200+Real.log ((max rank 1:ℕ):ℝ) +
-    Real.log ((2*d4+1:ℕ):ℝ)+Real.log (m:ℝ):=by
+  log (bA rank d4 m:ℝ) =
+   log 200+log ((max rank 1:ℕ):ℝ) +
+    log ((2*d4+1:ℕ):ℝ)+log (m:ℝ):=by
  have qD:(0:ℝ)< m:=by exact_mod_cast hm
  unfold bA
  push_cast
@@ -13687,26 +13315,26 @@ lemma uF {rank d4 m:ℕ} (hm:0< m) :
   Ql (by norm_num) (by positivity)]
 lemma m9
   {rank d4 m:ℕ} {LR LC LM:ℝ} (hm:0< m)
-  (PM:Real.log ((max rank 1:ℕ):ℝ)≤LR)
-  (PV:Real.log ((2*d4+1:ℕ):ℝ)≤LC)
-  (hM:Real.log (m:ℝ)≤LM) :
-  Real.log (bA rank d4 m:ℝ) ≤
+  (PM:log ((max rank 1:ℕ):ℝ)≤LR)
+  (PV:log ((2*d4+1:ℕ):ℝ)≤LC)
+  (hM:log (m:ℝ)≤LM) :
+  log (bA rank d4 m:ℝ) ≤
    200+LR+LC+LM:=by
  rw[uF hm]
- have DH:Real.log (200:ℝ)≤200:=
+ have DH:log (200:ℝ)≤200:=
   cV (by norm_num)
  nlinarith
 lemma ky
   {rank ax:ℕ} (vb:0<ax) (cK:rank≤ax) :
-  Real.log ((max rank 1:ℕ):ℝ)≤Real.log (ax:ℝ):=by
- have lF:max rank 1≤ax:=
+  log ((max rank 1:ℕ):ℝ)≤log (ax:ℝ):=by
+ have lF :=
   max_le cK (Nat.one_le_iff_ne_zero.mpr vb.ne')
  have wS:(0:ℝ)< max rank 1:=by positivity
  exact QG wS (by exact_mod_cast lF)
 lemma kh
   {d4 R:ℕ} (hR:0<R) (pd:d4≤8*R) :
-  Real.log ((2*d4+1:ℕ):ℝ) ≤
-   17+Real.log (R:ℝ):=by
+  log ((2*d4+1:ℕ):ℝ) ≤
+   17+log (R:ℝ):=by
  have Mb:1≤R:=Nat.one_le_iff_ne_zero.mpr hR.ne'
  have sC:2*d4+1≤17*R:=by
   nlinarith
@@ -13714,16 +13342,16 @@ lemma kh
   exact_mod_cast(show 0<2*d4+1 by positivity)
  have kT:(0:ℝ)<R:=by exact_mod_cast hR
  have ei :
-   Real.log ((2*d4+1:ℕ):ℝ) ≤
-    Real.log ((17*R:ℕ):ℝ):=
+   log ((2*d4+1:ℕ):ℝ) ≤
+    log ((17*R:ℕ):ℝ):=
   QG zf (by exact_mod_cast sC)
  have te :
-   Real.log ((17*R:ℕ):ℝ) =
-    Real.log 17+Real.log (R:ℝ):=by
+   log ((17*R:ℕ):ℝ) =
+    log 17+log (R:ℝ):=by
   push_cast
   rw[Ql (by norm_num) kT.ne']
  rw[te] at ei
- have Qc:Real.log (17:ℝ)≤17:=
+ have Qc:log (17:ℝ)≤17:=
   cV (by norm_num)
  nlinarith
 lemma iR
@@ -13731,7 +13359,7 @@ lemma iR
   (cK:rank ≤
    ar.ax d (au d))
   (pd:d4≤8*au d) :
-  Real.log
+  log
     (bA rank d4
      (8388608 *
       max (ar.ax d (au d)) 1 *
@@ -13745,23 +13373,23 @@ lemma iR
  have hm:0< m:=by
   unfold m
   positivity
- have wR:Real.log (R:ℝ) ≤
+ have wR:log (R:ℝ) ≤
    6881393*((d+1:ℕ):ℝ)^2:=by
   simpa[R] using eG d
- have Gz:Real.log ((max rank 1:ℕ):ℝ) ≤
+ have Gz:log ((max rank 1:ℕ):ℝ) ≤
    6881393*((d+1:ℕ):ℝ)^2:=
   (ky kT (by simpa[R] using cK)).trans wR
- have Iw:Real.log ((2*d4+1:ℕ):ℝ) ≤
+ have Iw:log ((2*d4+1:ℕ):ℝ) ≤
    17+6881382*((d+1:ℕ):ℝ)^2:=by
   calc
-   Real.log ((2*d4+1:ℕ):ℝ) ≤
-     17+Real.log (au d:ℝ):=
+   _ ≤
+     17+log (au d:ℝ):=
     kh
      (bX d) pd
    _≤17+6881382*((d+1:ℕ):ℝ)^2:=by
     gcongr
     exact fM d
- have Me:Real.log (m:ℝ) ≤
+ have Me:log (m:ℝ) ≤
    23+8601715*((d+1:ℕ):ℝ)^2:=by
   have nX:=kU d R kT wR
   have hE:=gU d
@@ -13777,14 +13405,14 @@ lemma iR
    exact_mod_cast(show 1≤d+1 by omega)
   nlinarith
  simpa[m,R] using(by nlinarith :
-  Real.log (bA rank d4 m:ℝ) ≤
+  log (bA rank d4 m:ℝ) ≤
    22364730*((d+1:ℕ):ℝ)^2)
 lemma jT
   (d rank d4:ℕ)
   (cK:rank ≤
    ar.ax d (au d))
   (pd:d4≤8*au d) :
-  Real.log
+  log
     (((3*bA rank d4
      (cd d
       (ar.ax d (au d))))^rank:ℕ):ℝ) ≤
@@ -13799,14 +13427,14 @@ lemma jT
  have hP:0<P:=by
   unfold P
   exact kg hm
- have PN:Real.log (P:ℝ) ≤
+ have PN:log (P:ℝ) ≤
    22364730*((d+1:ℕ):ℝ)^2:=by
   simpa[P,m,R,cd] using
    iR d rank d4 cK pd
- have Pl:Real.log ((3*P:ℕ):ℝ) ≤
+ have Pl:log ((3*P:ℕ):ℝ) ≤
    3+22364730*((d+1:ℕ):ℝ)^2:=by
   have Pm:(0:ℝ)<P:=by exact_mod_cast hP
-  have h3:Real.log (3:ℝ)≤3:=
+  have h3:log (3:ℝ)≤3:=
    cV (by norm_num)
   rw[show((3*P:ℕ):ℝ)=(3:ℝ)*(P:ℝ) by norm_num]
   rw[Ql (by norm_num) Pm.ne']
@@ -13815,7 +13443,7 @@ lemma jT
   have tj:(1:ℝ)≤(d+1:ℕ):=by
    exact_mod_cast(show 1≤d+1 by omega)
   nlinarith
- have oc:Real.log ((3*P:ℕ):ℝ) ≤
+ have oc:log ((3*P:ℕ):ℝ) ≤
    22364733*((d+1:ℕ):ℝ)^2:=by
   nlinarith
  have sP:(rank:ℝ) ≤
@@ -13830,7 +13458,7 @@ lemma jT
       (1024*aH:ℕ) *
        ((d+1:ℕ):ℝ)^9 by
      exact_mod_cast ff d)
- have zW:0≤Real.log ((3*P:ℕ):ℝ):=by
+ have zW:0≤log ((3*P:ℕ):ℝ):=by
   apply Qv
   exact_mod_cast(show 1≤3*P by omega)
  have hmul:=QW sP oc zW (by positivity)
@@ -13886,9 +13514,9 @@ lemma f5
    Qr _ ym
 lemma wx
   {rank delta n:ℕ} (hn:0<n) :
-  Real.log (dH rank delta n:ℝ) =
-   (delta:ℝ)*Real.log (n:ℝ) +
-    (rank+delta:ℝ)*Real.log 4:=by
+  log (dH rank delta n:ℝ) =
+   (delta:ℝ)*log (n:ℝ) +
+    (rank+delta:ℝ)*log 4:=by
  have Ko:(0:ℝ)<n:=by exact_mod_cast hn
  unfold dH
  push_cast
@@ -13901,9 +13529,9 @@ lemma ck {rank m:ℕ} (hm:0< m) :
  unfold bG
  positivity
 lemma f0 {rank m:ℕ} (hm:0< m) :
-  Real.log (bG rank m:ℝ) =
+  log (bG rank m:ℝ) =
    (rank:ℝ) *
-    (Real.log ((3*m:ℕ):ℝ)+Real.log 4):=by
+    (log ((3*m:ℕ):ℝ)+log 4):=by
  have qD:(0:ℝ)< m:=by exact_mod_cast hm
  unfold bG
  push_cast
@@ -13912,11 +13540,11 @@ lemma f0 {rank m:ℕ} (hm:0< m) :
  ring
 lemma qf {rank bn bd:ℕ}
   (eH:0<bn) (fw:0<bd) :
-  Real.log (bT rank bn bd:ℝ) =
+  log (bT rank bn bd:ℝ) =
    (rank:ℝ) *
-    (Real.log ((3*bn:ℕ):ℝ)+Real.log 4) +
+    (log ((3*bn:ℕ):ℝ)+log 4) +
    (rank:ℝ) *
-    (Real.log ((3*bd:ℕ):ℝ)+Real.log 4):=by
+    (log ((3*bd:ℕ):ℝ)+log 4):=by
  unfold bT
  push_cast
  rw[Ql
@@ -13926,16 +13554,16 @@ lemma qf {rank bn bd:ℕ}
  push_cast
  ring
 lemma nG (rank:ℕ) :
-  Real.log (bR rank:ℝ) =
+  log (bR rank:ℝ) =
    (rank:ℝ) *
-     (Real.log ((3*(1600*max rank 1):ℕ):ℝ) +
-      Real.log 4) +
+     (log ((3*(1600*max rank 1):ℕ):ℝ) +
+      log 4) +
     (rank:ℝ) *
-     (Real.log ((3*(200*max rank 1):ℕ):ℝ) +
-      Real.log 4) +
+     (log ((3*(200*max rank 1):ℕ):ℝ) +
+      log 4) +
     (rank:ℝ) *
-     (Real.log ((3*(200*max rank 1):ℕ):ℝ) +
-      Real.log 4):=by
+     (log ((3*(200*max rank 1):ℕ):ℝ) +
+      log 4):=by
  have lF:0< max rank 1:=by positivity
  have DI:0<1600*max rank 1:=by positivity
  have DH:0<200*max rank 1:=by positivity
@@ -13956,15 +13584,15 @@ lemma nG (rank:ℕ) :
  ring
 lemma fI
   {m:ℕ} {L:ℝ} (hm:0< m)
-  (ei:Real.log (m:ℝ)≤L) :
-  Real.log ((3*m:ℕ):ℝ)≤3+L:=by
+  (ei:log (m:ℝ)≤L) :
+  log ((3*m:ℕ):ℝ)≤3+L:=by
  have qD:(0:ℝ)< m:=by exact_mod_cast hm
- have h3:Real.log (3:ℝ)≤3:=
+ have h3:log (3:ℝ)≤3:=
   cV (by norm_num)
  push_cast
  rw[Ql (by norm_num) qD.ne']
  nlinarith
-lemma lS:Real.log (4:ℝ)≤2:=by
+lemma lS:log (4:ℝ)≤2:=by
  rw[show(4:ℝ)=2^2 by norm_num,QB]
  have hmul:=iO fh
   (show(0:ℝ)≤2 by norm_num)
@@ -13974,7 +13602,7 @@ lemma ia
   (d rank:ℕ)
   (cK:rank ≤
    ar.ax d (au d)) :
-  Real.log
+  log
     (bT rank
      (ar.bn d (au d))
      (ar.bd d (au d)):ℝ) ≤
@@ -13988,10 +13616,10 @@ lemma ia
  have fw:0<bd:=by
   unfold bd
   exact ar.md (bX d)
- have GB:Real.log (bn:ℝ) ≤
+ have GB:log (bn:ℝ) ≤
    7700594*((d+1:ℕ):ℝ)^2:=by
   simpa[bn] using qd d
- have GC:Real.log (bd:ℝ) ≤
+ have GC:log (bd:ℝ) ≤
    6958194*((d+1:ℕ):ℝ)^2:=by
   simpa[bd] using qe d
  have Nz:=fI eH GB
@@ -14001,30 +13629,30 @@ lemma ia
    exact_mod_cast(show 1≤d+1 by omega)
   nlinarith
  have DJ :
-   Real.log ((3*bn:ℕ):ℝ)+Real.log 4 ≤
+   log ((3*bn:ℕ):ℝ)+log 4 ≤
     7700599*((d+1:ℕ):ℝ)^2:=by
   nlinarith[lS]
  have DK :
-   Real.log ((3*bd:ℕ):ℝ)+Real.log 4 ≤
+   log ((3*bd:ℕ):ℝ)+log 4 ≤
     6958199*((d+1:ℕ):ℝ)^2:=by
   nlinarith[lS]
  have sP:(rank:ℝ) ≤
    (1024*aH:ℕ) *
     ((d+1:ℕ):ℝ)^9:=by
   calc
-   (rank:ℝ) ≤
+   _ ≤
      (ar.ax d (au d):ℝ):=by
     exact_mod_cast cK
    _≤(1024*aH:ℕ) *
      ((d+1:ℕ):ℝ)^9:=by
     exact_mod_cast ff d
  have xI :
-   0≤Real.log ((3*bn:ℕ):ℝ)+Real.log 4:=by
+   0≤log ((3*bn:ℕ):ℝ)+log 4:=by
   have h3:(1:ℝ)≤(3*bn:ℕ):=by
    exact_mod_cast(show 1≤3*bn by omega)
   nlinarith[Qv h3,Qv (show(1:ℝ)≤4 by norm_num)]
  have xJ :
-   0≤Real.log ((3*bd:ℕ):ℝ)+Real.log 4:=by
+   0≤log ((3*bd:ℕ):ℝ)+log 4:=by
   have h3:(1:ℝ)≤(3*bd:ℕ):=by
    exact_mod_cast(show 1≤3*bd by omega)
   nlinarith[Qv h3,Qv (show(1:ℝ)≤4 by norm_num)]
@@ -14037,17 +13665,17 @@ lemma gD
   (d rank:ℕ)
   (cK:rank ≤
    ar.ax d (au d)) :
-  Real.log (bR rank:ℝ) ≤
+  log (bR rank:ℝ) ≤
    (1024*aH*20646194:ℕ) *
     ((d+1:ℕ):ℝ)^11:=by
  let R:=ar.ax d (au d)
  have kT:0<R:=by
   unfold R
   exact ar.iH (bX d)
- have wR:Real.log (R:ℝ) ≤
+ have wR:log (R:ℝ) ≤
    6881393*((d+1:ℕ):ℝ)^2:=by
   simpa[R] using eG d
- have N2:Real.log ((max rank 1:ℕ):ℝ) ≤
+ have N2:log ((max rank 1:ℕ):ℝ) ≤
    6881393*((d+1:ℕ):ℝ)^2:=
   (ky kT (by simpa[R] using cK)).trans wR
  have wS:0< max rank 1:=by positivity
@@ -14057,21 +13685,21 @@ lemma gD
    exact_mod_cast(show 1≤d+1 by omega)
   nlinarith
  have Ix :
-   Real.log ((1600*max rank 1:ℕ):ℝ) ≤
+   log ((1600*max rank 1:ℕ):ℝ) ≤
     1600+6881393*((d+1:ℕ):ℝ)^2:=by
   rw[show((1600*max rank 1:ℕ):ℝ) =
     (1600:ℝ)*((max rank 1:ℕ):ℝ) by norm_num]
   rw[Ql (by norm_num) A9.ne']
-  have DI:Real.log (1600:ℝ)≤1600:=
+  have DI:log (1600:ℝ)≤1600:=
    cV (by norm_num)
   nlinarith
  have Fj :
-   Real.log ((200*max rank 1:ℕ):ℝ) ≤
+   log ((200*max rank 1:ℕ):ℝ) ≤
     200+6881393*((d+1:ℕ):ℝ)^2:=by
   rw[show((200*max rank 1:ℕ):ℝ) =
     (200:ℝ)*((max rank 1:ℕ):ℝ) by norm_num]
   rw[Ql (by norm_num) A9.ne']
-  have DH:Real.log (200:ℝ)≤200:=
+  have DH:log (200:ℝ)≤200:=
    cV (by norm_num)
   nlinarith
  have Iy:0<1600*max rank 1:=by positivity
@@ -14079,11 +13707,11 @@ lemma gD
  have NB:=fI Iy Ix
  have Mf:=fI Fk Fj
  have DL :
-   Real.log ((3*(1600*max rank 1):ℕ):ℝ)+Real.log 4 ≤
+   log ((3*(1600*max rank 1):ℕ):ℝ)+log 4 ≤
     6882998*((d+1:ℕ):ℝ)^2:=by
   nlinarith[lS]
  have Ba :
-   Real.log ((3*(200*max rank 1):ℕ):ℝ)+Real.log 4 ≤
+   log ((3*(200*max rank 1):ℕ):ℝ)+log 4 ≤
     6881598*((d+1:ℕ):ℝ)^2:=by
   nlinarith[lS]
  have sP:(rank:ℝ) ≤
@@ -14099,12 +13727,12 @@ lemma gD
        ((d+1:ℕ):ℝ)^9 by
      exact_mod_cast ff d)
  have xK :
-   0≤Real.log ((3*(1600*max rank 1):ℕ):ℝ)+Real.log 4:=by
+   0≤log ((3*(1600*max rank 1):ℕ):ℝ)+log 4:=by
   have h3:(1:ℝ)≤(3*(1600*max rank 1):ℕ):=by
    exact_mod_cast(show 1≤3*(1600*max rank 1) by omega)
   nlinarith[Qv h3,Qv (show(1:ℝ)≤4 by norm_num)]
  have wy :
-   0≤Real.log ((3*(200*max rank 1):ℕ):ℝ)+Real.log 4:=by
+   0≤log ((3*(200*max rank 1):ℕ):ℝ)+log 4:=by
   have h3:(1:ℝ)≤(3*(200*max rank 1):ℕ):=by
    exact_mod_cast(show 1≤3*(200*max rank 1) by omega)
   nlinarith[Qv h3,Qv (show(1:ℝ)≤4 by norm_num)]
@@ -14126,7 +13754,7 @@ def cW:ℕ:=
  1024*aH*57669725 +
   eW
 lemma lI (d:ℕ) :
-  Real.log (cL d:ℝ) ≤
+  log (cL d:ℝ) ≤
    (eW:ℝ) *
     ((d+1:ℕ):ℝ)^10:=by
  let R:=ar.ax d (au d)
@@ -14140,10 +13768,10 @@ lemma lI (d:ℕ) :
  have hn:0<n:=by
   unfold n
   positivity
- have Mg:Real.log (n:ℝ) ≤
+ have Mg:log (n:ℝ) ≤
    8601726*((d+1:ℕ):ℝ)^2:=by
   simpa[n] using m7 d
- have B1:0≤Real.log (n:ℝ):=by
+ have B1:0≤log (n:ℝ):=by
   apply Qv
   exact_mod_cast(show 1≤n by exact Nat.one_le_iff_ne_zero.mpr hn.ne')
  have cu:(delta:ℝ) ≤
@@ -14165,11 +13793,11 @@ lemma lI (d:ℕ) :
    ((d+1:ℕ):ℝ)^10:=
   Se hx (by omega)
  have jx :
-   (delta:ℝ)*Real.log (n:ℝ) ≤
+   (delta:ℝ)*log (n:ℝ) ≤
     ((aH:ℝ)*8601726) *
      ((d+1:ℕ):ℝ)^10:=by
   calc
-   (delta:ℝ)*Real.log (n:ℝ) ≤
+   (delta:ℝ)*log (n:ℝ) ≤
      ((aH:ℝ) *
       ((d+1:ℕ):ℝ)^8) *
       (8601726*((d+1:ℕ):ℝ)^2):=
@@ -14196,22 +13824,22 @@ lemma lI (d:ℕ) :
      ((d+1:ℕ):ℝ)^10:=by
     push_cast
     ring
- have A8:Real.log (4:ℝ)≤2:=by
+ have A8:log (4:ℝ)≤2:=by
   rw[show(4:ℝ)=2^2 by norm_num,QB]
   have hmul:=iO fh
    (show(0:ℝ)≤2 by norm_num)
   norm_num at hmul ⊢
   exact hmul
- have zg:0≤Real.log (4:ℝ):=
+ have zg:0≤log (4:ℝ):=
   Qv (by norm_num)
  have uh :
-   (R+delta:ℝ)*Real.log 4 ≤
+   (R+delta:ℝ)*log 4 ≤
     (2:ℝ) *
      (1024*aH +
       aH) *
      ((d+1:ℕ):ℝ)^10:=by
   calc
-   (R+delta:ℝ)*Real.log 4 ≤
+   (R+delta:ℝ)*log 4 ≤
      ((1024*aH +
       aH:ℕ):ℝ) *
       ((d+1:ℕ):ℝ)^10*2:=
@@ -14223,7 +13851,7 @@ lemma lI (d:ℕ) :
     push_cast
     ring
  unfold cL
- change Real.log (dH R delta n:ℝ)≤_
+ change log (dH R delta n:ℝ)≤_
  rw[wx hn]
  unfold eW
  push_cast at jx uh ⊢
@@ -14233,7 +13861,7 @@ lemma jX
   (cK:rank ≤
    ar.ax d (au d))
   (pd:d4≤8*au d) :
-  Real.log (cv d rank d4:ℝ) ≤
+  log (cv d rank d4:ℝ) ≤
    (cW:ℝ) *
     ((d+1:ℕ):ℝ)^11:=by
  let two:=bT rank
@@ -14245,22 +13873,22 @@ lemma jX
    (cd d
     (ar.ax d (au d))))^rank
  let cell:=cL d
- have vc:Real.log (two:ℝ) ≤
+ have vc:log (two:ℝ) ≤
    (1024*aH*14658798:ℕ) *
     ((d+1:ℕ):ℝ)^11:=by
   simpa[two] using
    ia d rank cK
- have j8:Real.log (smooth:ℝ) ≤
+ have j8:log (smooth:ℝ) ≤
    (1024*aH*20646194:ℕ) *
     ((d+1:ℕ):ℝ)^11:=by
   simpa[smooth] using
    gD d rank cK
- have gM:Real.log (source:ℝ) ≤
+ have gM:log (source:ℝ) ≤
    (1024*aH*22364733:ℕ) *
     ((d+1:ℕ):ℝ)^11:=by
   simpa[source] using
    jT d rank d4 cK pd
- have lP:Real.log (cell:ℝ) ≤
+ have lP:log (cell:ℝ) ≤
    (eW:ℝ) *
     ((d+1:ℕ):ℝ)^10:=by
   simpa[cell] using lI d
@@ -14269,7 +13897,7 @@ lemma jX
  have KC:((d+1:ℕ):ℝ)^10 ≤
    ((d+1:ℕ):ℝ)^11:=
   Se hx (by omega)
- have Iz:Real.log (cell:ℝ) ≤
+ have Iz:log (cell:ℝ) ≤
    (eW:ℝ) *
     ((d+1:ℕ):ℝ)^11:=
   lP.trans (iO KC (by positivity))
@@ -14293,7 +13921,7 @@ lemma jX
    exact gV (bP d)
   unfold cell cL dH
   positivity
- change Real.log ((two*smooth*source*cell:ℕ):ℝ)≤_
+ change log ((two*smooth*source*cell:ℕ):ℝ)≤_
  push_cast
  rw[Ql
    (Rl
@@ -14337,8 +13965,8 @@ lemma w0
 lemma qR
   {M:ℕ} [NeZero M] (hM:Odd M) (B:aj (ZMod M))
   (hB:B.a1) :
-  (aO.hY M hM B).a1:=by
- exact w0 B (aj.eK M hM) hB
+  (aO.hY M hM B).a1:=
+       w0 B (aj.eK M hM) hB
 omit [DecidableEq G] in
 lemma fW
   (B:aj G) (m:ℕ) (hm:0< m) :
@@ -14371,11 +13999,11 @@ lemma fW
       (B.ai ((m:NNReal)⁻¹)).carrier.card:=by
    simpa[Qw] using c3
   calc
-   B.carrier.card ≤
+   _ ≤
      (3*m)^B.rank *
       (B.ai ((m:NNReal)⁻¹)).carrier.card:=uD
-   _≤(3*m)^B.rank*(4^B.rank*R.carrier.card):=by
-    exact Qr _ (by simpa[D] using ya)
+   _≤(3*m)^B.rank*(4^B.rank*R.carrier.card):=
+          Qr _ (by simpa[D] using ya)
    _=((3*m)^B.rank*4^B.rank)*c.carrier.card:=by
     rw[wz]
     ring
@@ -14430,12 +14058,12 @@ lemma rR (B:aj G)
   intro x hx
   obtain ⟨y,hy,rfl⟩:=aO.m2.mp hx
   exact aj.e8 (r2 hy) (r2 hy)
- have GJ:xN.ba.rank=B.rank:=Fm.trans xM
+ have GJ := Fm.trans xM
  have xO :
    B.carrier.card ≤
     bI B bn bd*xN.carrier.card:=by
   calc
-   B.carrier.card ≤
+   _ ≤
      b9 B bn*Bd.carrier.card:=
     ve
    _≤b9 B bn *
@@ -14475,11 +14103,11 @@ structure gj {original:Finset G}
   400*((max s.restriction.ba.rank 1:ℕ):ℝ) *
     (((bn:NNReal)⁻¹ :NNReal):ℝ)≤epsilon*s.density/4
  tk :
-  Real.exp (-aU)*(s.card:ℝ) ≤
+  exp (-aU)*(s.card:ℝ) ≤
    ((b9 s.restriction.ba bn:ℕ):ℝ)⁻¹ *
     (s.restriction.ba.carrier.card:ℝ)
  tl :
-  Real.exp (-aU)*(s.card:ℝ) ≤
+  exp (-aU)*(s.card:ℝ) ≤
    ((bI s.restriction.ba bn bd:ℕ):ℝ)⁻¹ *
     (s.restriction.ba.carrier.card:ℝ)
 lemma mm
@@ -14487,17 +14115,17 @@ lemma mm
   {g5:ℕ} {aU:ℝ} {child:Finset G}
   (mK:(0:ℝ)<(g5:ℝ))
   (oe :
-   Real.exp (-aU)*(s.card:ℝ) ≤
+   exp (-aU)*(s.card:ℝ) ≤
     (g5:ℝ)⁻¹ *(s.restriction.ba.carrier.card:ℝ))
   (GK :
    (s.restriction.ba.carrier.card:ℝ) ≤
     (g5:ℝ)*(child.card:ℝ)) :
-  Real.exp (-aU)*(s.card:ℝ)≤child.card:=by
+  exp (-aU)*(s.card:ℝ)≤child.card:=by
  calc
-  Real.exp (-aU)*(s.card:ℝ) ≤
+  _ ≤
     (g5:ℝ)⁻¹ *(s.restriction.ba.carrier.card:ℝ):= oe
-  _≤(g5:ℝ)⁻¹ *((g5:ℝ)*(child.card:ℝ)):=by
-   exact iO GK (by positivity)
+  _≤(g5:ℝ)⁻¹ *((g5:ℝ)*(child.card:ℝ)):=
+         iO GK (by positivity)
   _=child.card:=by
    field_simp
 lemma jk
@@ -14505,15 +14133,15 @@ lemma jk
   (ju:s.restriction.outer=1)
   {g5:ℕ} {aU:ℝ}
   (mK:(0:ℝ)<(g5:ℝ))
-  (ei:Real.log (g5:ℝ)≤aU) :
-  Real.exp (-aU)*(s.card:ℝ) ≤
+  (ei:log (g5:ℝ)≤aU) :
+  exp (-aU)*(s.card:ℝ) ≤
    (g5:ℝ)⁻¹ *(s.restriction.ba.carrier.card:ℝ):=by
  have l9 :
-   Real.exp (-aU)≤(g5:ℝ)⁻¹:=by
-  have eY: -aU≤ -Real.log (g5:ℝ):=TO ei
+   exp (-aU)≤(g5:ℝ)⁻¹:=by
+  have eY := TO ei
   have h:=Real.exp_le_exp.mpr eY
   calc
-   Real.exp (-aU)≤Real.exp (-Real.log (g5:ℝ)):=h
+   _ ≤exp (-log (g5:ℝ)):=h
    _=(g5:ℝ)⁻¹:=by
     rw[Uh,Real.exp_log mK]
  have ch :
@@ -14525,17 +14153,17 @@ lemma jk
  exact Qi l9 (by positivity)
 lemma oy
   {g5:ℕ} {aU:ℝ} (mK:0<g5)
-  (ei:Real.log (g5:ℝ)≤aU) :
-  Real.exp (-aU)*(g5:ℝ)≤1:=by
- have l9:Real.exp (-aU)≤(g5:ℝ)⁻¹:=by
-  have eY: -aU≤ -Real.log (g5:ℝ):=TO ei
+  (ei:log (g5:ℝ)≤aU) :
+  exp (-aU)*(g5:ℝ)≤1:=by
+ have l9:exp (-aU)≤(g5:ℝ)⁻¹:=by
+  have eY := TO ei
   calc
-   Real.exp (-aU)≤Real.exp (-Real.log (g5:ℝ)):=
+   _ ≤exp (-log (g5:ℝ)):=
     Real.exp_le_exp.mpr eY
    _=(g5:ℝ)⁻¹:=by
     rw[Uh,Real.exp_log (by exact_mod_cast mK)]
  calc
-  Real.exp (-aU)*(g5:ℝ)≤(g5:ℝ)⁻¹ *g5:=by gcongr
+  _ ≤(g5:ℝ)⁻¹ *g5:=by gcongr
   _=1:=by
    have Pn:(0:ℝ)<g5:=by exact_mod_cast mK
    field_simp
@@ -14557,13 +14185,13 @@ lemma lJ
  apply Sj ?_ hT
  apply(Qs IC).2
  calc
-  ((alpha/C)^k/2)*(S.card:ℝ) *
-    ((A+S).card:ℝ)^k ≤
+  _
+                     ≤
    ((alpha/C)^k/2)*(S.card:ℝ) *
     (C*(D.card:ℝ))^k:=by
      gcongr
   _=(alpha*(D.card:ℝ))^k/2*S.card:=by
-     have PW:C≠0:=hC.ne'
+     have PW := hC.ne'
      rw[QL]
      field_simp
      have ID:alpha/C*C=alpha:=by field_simp
@@ -14604,7 +14232,7 @@ lemma ij
   have hmul :
     100*((max B.rank 1:ℕ):ℝ)*(a8:ℝ)≤1:=by
    calc
-    100*((max B.rank 1:ℕ):ℝ)*(a8:ℝ) ≤
+    _ ≤
       100*((max B.rank 1:ℕ):ℝ) *
        (1/(100*((max B.rank 1:ℕ):ℝ))):=by
         gcongr
@@ -14614,7 +14242,7 @@ lemma ij
    ((B.ai (1+a8)).carrier.card:ℝ) ≤
     2*(B.carrier.card:ℝ):=by
   calc
-   ((B.ai (1+a8)).carrier.card:ℝ) ≤
+   _ ≤
      (1+100*((max B.rank 1:ℕ):ℝ)*(a8:ℝ)) *
       (B.carrier.card:ℝ):=ch
    _≤2*(B.carrier.card:ℝ):=by
@@ -14713,7 +14341,7 @@ omit [DecidableEq G] in
 lemma rS (W:aj G) :
   Nonempty (bU W):=by
  classical
- let dW:ℕ:=max W.rank 1
+ let dW := max W.rank 1
  let eta:NNReal:=1/(1600*(dW:NNReal))
  have Qe:0<dW:=by simp[dW]
  have IF:0<eta:=by
@@ -14728,7 +14356,7 @@ lemma rS (W:aj G) :
  obtain ⟨vf,Fr,Bg,Mh⟩:=
   (W.ai eta).eP
  let b6:aj G:=(W.ai eta).ai vf
- let dD:ℕ:=max b6.rank 1
+ let dD := max b6.rank 1
  let theta:NNReal:=1/(200*(dD:NNReal))
  have Qf:0<dD:=by simp[dD]
  have Fs:0<theta:=by
@@ -14743,7 +14371,7 @@ lemma rS (W:aj G) :
  obtain ⟨vg,Ft,Bh,Mi⟩:=
   (b6.ai theta).eP
  let bx:aj G:=(b6.ai theta).ai vg
- let dE:ℕ:=max bx.rank 1
+ let dE := max bx.rank 1
  let phi:NNReal:=1/(200*(dE:NNReal))
  have Qg:0<dE:=by simp[dE]
  have IG:0<phi:=by
@@ -14773,7 +14401,7 @@ lemma rS (W:aj G) :
      ((b6.ai theta).ai 1).carrier)
  have Fu:theta≤1:=by
   calc
-   theta≤1/(100*(max b6.rank 1:ℕ):NNReal):=
+   _ ≤1/(100*(max b6.rank 1:ℕ):NNReal):=
     xf
    _≤1:=by
     rw[Q9]
@@ -14792,7 +14420,7 @@ lemma rS (W:aj G) :
      ((bx.ai phi).ai 1).carrier)
  have IH:phi≤1:=by
   calc
-   phi≤1/(100*(max bx.rank 1:ℕ):NNReal):=
+   _ ≤1/(100*(max bx.rank 1:ℕ):NNReal):=
     zE
    _≤1:=by
     rw[Q9]
@@ -14925,7 +14553,7 @@ lemma qg
     (H.bx.ai H.phi) H.pg H.xd
  unfold b7
  calc
-  W.carrier.card≤(3*qh)^W.rank *
+  _ ≤(3*qh)^W.rank *
     (W.ai H.eta).carrier.card:=Mk
   _≤(3*qh)^W.rank*(4^W.rank*H.b6.carrier.card):=
    Qr _ Ml
@@ -15000,12 +14628,12 @@ lemma ld
    t∈(C.ak.ba.ai
     ((bd:NNReal)⁻¹ +(bd:NNReal)⁻¹)).carrier:=by
  intro t ht
- have KH :
-   t∈(W.ai (4*H.eta)).carrier:=
+ have KH  :=
+
   ki W H.r0 H.rZ t ht
  have GS:4*H.eta≤(1:NNReal):=by
   calc
-   4*H.eta ≤
+   _ ≤
      1/(400*(max W.rank 1:ℕ):NNReal):=H.mI
    _≤1:=by
     rw[Q9]
@@ -15053,8 +14681,8 @@ lemma mo
   exact_mod_cast H.bx.aE.card_pos
  have Cu :
    ah.bj A aL H.bx.carrier p *
-     (H.bx.carrier.card:ℝ)≤(data.a3.card:ℝ):=by
-  exact(Qs Fv).mp data.tD
+     (H.bx.carrier.card:ℝ)≤(data.a3.card:ℝ):=
+       (Qs Fv).mp data.tD
  have DQ :
    ah.bj A aL H.bx.carrier p *
      (H.bx.carrier.card:ℝ)≤((-data.a3).card:ℝ):=by
@@ -15090,7 +14718,7 @@ lemma i5
   (W:aj G) (H:bU W)
   (data:ah.aW A aL H.bx.carrier p sigma delta)
   (cu:delta<1)
-  (k:ℕ) (T:Finset G) (Delta:Finset (AddChar G Complex))
+  (k:ℕ) (T:Finset G) (Delta:Finset (AddChar G ℂ))
   (hV:0 <
    b3 (A:=A) (aL:=aL) (p:=p) (sigma:=sigma)
     (delta:=delta) W H data k)
@@ -15101,7 +14729,7 @@ lemma i5
   (dQ:(Delta.card:ℝ) ≤
    aI.bf H.bl T (1/2)) :
   Delta.card ≤
-   ⌈8*(1+Real.log (2 /
+   ⌈8*(1+log (2 /
     b3 (A:=A) (aL:=aL) (p:=p) (sigma:=sigma)
      (delta:=delta) W H data k))⌉₊:=by
  have wD :
@@ -15112,7 +14740,7 @@ lemma i5
    mo W H data cu k T hT
  have oQ :
    aI.bf H.bl T (1/2) ≤
-    8*(1+Real.log (2 /
+    8*(1+log (2 /
      b3 (A:=A) (aL:=aL) (p:=p) (sigma:=sigma)
       (delta:=delta) W H data k)):=
   fQ H.bl T hV
@@ -15141,7 +14769,7 @@ lemma oz
      cq W H) /
      cI W H data.a3^k≤(T.card:ℝ))) :
   aI.bf H.bl T (1/2) ≤
-   8*(1+Real.log (2 /
+   8*(1+log (2 /
     b3 (A:=A) (aL:=aL) (p:=p) (sigma:=sigma)
      (delta:=delta) W H data k)):=by
  have wD :
@@ -15170,7 +14798,7 @@ lemma n6
  have hpow :
    (2/3:ℝ)^(4*(d+1))≤(1/2:ℝ)^(d+1):=by
   calc
-   (2/3:ℝ)^(4*(d+1)) =
+   _ =
      ((2/3:ℝ)^4)^(d+1):=by rw[QU]
    _≤(1/2:ℝ)^(d+1):=
     Qp (by positivity) dc (d+1)
@@ -15180,13 +14808,13 @@ lemma n6
   have DS:0≤(1/2:ℝ)^d:=by positivity
   rw[RB]
   calc
-   (1/2:ℝ)^d*(1/2) ≤
+   _ ≤
      (1/2:ℝ)^d*(511/512):=
     iO (by norm_num) DS
    _=(511/512:ℝ)*(1/(2:ℝ)^d):=by
     simp[R6,Te,Qx]
  calc
-  (2/3:ℝ)^(4*(d+1))≤(1/2:ℝ)^(d+1):=hpow
+  _ ≤(1/2:ℝ)^(d+1):=hpow
   _≤(511/512:ℝ)*(1/(2:ℝ)^d):=we
   _≤(511/512:ℝ)*s.density:=
    iO c3 (by norm_num)
@@ -15219,11 +14847,11 @@ noncomputable def bF
           (C.aB.carrier.card:ℝ):=by
     exact_mod_cast C.mF
   have ve :
-      Real.exp (-aU)*(s.card:ℝ)≤C.ak.carrier.card:=by
+      exp (-aU)*(s.card:ℝ)≤C.ak.carrier.card:=by
     simpa[bu.aG.card] using
       mm s.aV zX kG.tk IL
   have xO :
-      Real.exp (-aU)*(s.card:ℝ)≤C.aB.carrier.card:=by
+      exp (-aU)*(s.card:ℝ)≤C.aB.carrier.card:=by
     simpa[bu.aG.card] using
       mm s.aV zY kG.tl IM
   have o5 :
@@ -15278,7 +14906,7 @@ lemma ph
   (b2:epsilon<1) :
   (cX s ak aB aQ).Nonempty:=by
  let alpha:=a5 s epsilon
- have b8:0<alpha:=
+ have b8 :=
   QM (sub_pos.mpr b2) s.dI
  have lG:alpha ≤
    a9 s.restriction.set ak.carrier
@@ -15292,127 +14920,12 @@ lemma qS
   {original:Finset G} (s:ah.aA original)
   (ak aB:ah.bt (G:=G)) {epsilon:ℝ}
   (aQ:ah.bV s ak aB epsilon) :
-  cX s ak aB aQ⊆ak.carrier:=by
- exact ah.dz
+  cX s ak aB aQ⊆ak.carrier:=
+       ah.dz
   (B:=ak.ba) (a8:=ak.outer)
   (A:=s.restriction.set) (C:=ak.carrier)
   (x:=aO.cr aQ) (fun _ hz↦hz)
-noncomputable def iI
-    {original:Finset G} (s:ah.aA original)
-    (ak aB:ah.bt (G:=G)) {epsilon:ℝ}
-    (aQ:ah.bV s ak aB epsilon)
-    (_hepsilon_nonneg:0≤epsilon) (b2:epsilon<1)
-    {p:ℕ} (hp:0<p) (f:G→ℝ)
-    (jz:(2/3:ℝ)^p≤a5 s epsilon)
-    (ew :
-      |(aO.bb
-            (cX s ak aB aQ)
-            (jE s ak aB aQ) -
-          (Fintype.card G:ℝ)/(#ak.carrier:ℝ)) -
-          aw.pairing f
-            (aO.a4
-              (jE s ak aB aQ))| ≤
-        ((Fintype.card G:ℝ)/(#ak.carrier:ℝ))/8)
-    (ee :
-      an.aM
-          (af (aO.a4 aB.carrier))
-          f p ≤
-        ((Fintype.card G:ℝ)/(#ak.carrier:ℝ))/8) :
-    aO.eh original:=by
-  let x:G:=aO.cr aQ
-  let A':Finset G:=cX s ak aB aQ
-  let b4:Finset G:=jE s ak aB aQ
-  let B:Finset G:=ak.carrier
-  let B':Finset G:=aB.carrier
-  let alpha:ℝ:=a5 s epsilon
-  have lG:alpha≤a9 s.restriction.set B x:=by
-    simpa[alpha,x,B,a5] using
-      aO.c0 aQ
-  have o0:alpha≤a9 s.restriction.set B' x:=by
-    simpa[alpha,x,B',a5] using
-      aO.ea aQ
-  have b8:0<alpha:=by
-    exact QM (sub_pos.mpr b2) s.dI
-  have qL:A'.Nonempty:=by
-    apply ah.bK
-      ak.aE
-    exact b8.trans_le lG
-  have gO:b4.Nonempty:=by
-    apply ah.bK
-      aB.aE
-    exact b8.trans_le o0
-  have kc:b4⊆B':=by
-    exact ah.dz
-      (B:=aB.ba) (a8:=aB.outer)
-      (A:=s.restriction.set) (C:=aB.carrier)
-      (x:=x) (fun _ hz↦hz)
-  have gP: ∀ z∈A',z-(s.shift-x)∈original:=by
-    intro z hz
-    have i1:x+z∈s.restriction.set:=
-      (ah.e4.mp hz).2
-    have hs:=s.eR (x+z) i1
-    have heq:z-(s.shift-x)=(x+z)-s.shift:=by abel
-    rwa[heq]
-  have fR: ∀ z∈b4,z-(s.shift-x)∈original:=by
-    intro z hz
-    have i1:x+z∈s.restriction.set:=
-      (ah.e4.mp hz).2
-    have hs:=s.eR (x+z) i1
-    have heq:z-(s.shift-x)=(x+z)-s.shift:=by abel
-    rwa[heq]
-  have nx:alpha*(#B:ℝ)≤(#A':ℝ):=by
-    have wN:(0:ℝ)< #B:=by
-      exact_mod_cast ak.aE.card_pos
-    rw[ah.bk
-      ak.aE x] at lG
-    exact(Qs wN).mp lG
-  have ny:alpha*(#B':ℝ)≤(#b4:ℝ):=by
-    have wg:(0:ℝ)< #B':=by
-      exact_mod_cast aB.aE.card_pos
-    rw[ah.bk
-      aB.aE x] at o0
-    exact(Qs wg).mp o0
-  have qM :
-      (2/3:ℝ)^p≤aw.bL b4 B':=by
-    calc
-      (2/3:ℝ)^p≤alpha:=jz
-      _≤a9 s.restriction.set B' x:=by
-        simpa[alpha,x,B',a5] using
-          aO.ea aQ
-      _=aw.bL b4 B':=by
-        rw[ah.bk
-          aB.aE x]
-        rfl
-  have o1:(aO.a4 B').Nonempty:=
-    aO.eJ aB.aE
-  have uq :
-      aw.cO (aO.a4 B') p f ≤
-        (((Fintype.card G:ℝ)/(#B:ℝ))/8)^p:=by
-    apply aO.fc
-      o1 hp f (by positivity)
-    simpa[B,B'] using ee
-  exact
-    { A':=A'
-      b4:=b4
-      B:=B
-      B':=B'
-      translate:=s.shift-x
-      alpha:=alpha
-      p:=p
-      f:=f
-      jR:=qL
-      iZ:=gO
-      kQ:=ak.aE
-      h8:=kc
-      fL:=gP
-      fm:=fR
-      i0:=b8.le
-      kR:=nx
-      jS:=ny
-      p_pos:=hp
-      gg:=qM
-      e7:=by simpa[A',b4,B] using ew
-      gh:=uq }
+
 noncomputable def bB
   {original:Finset G} (s:ah.aA original)
   (ak aB:ah.bt (G:=G)) {epsilon:ℝ}
@@ -15420,7 +14933,7 @@ noncomputable def bB
   (b2:epsilon<1) :
   ah.aA original:=by
  let x:=aO.cr aQ
- have oc:0<a5 s epsilon:=
+ have oc :=
   QM (sub_pos.mpr b2) s.dI
  have hx:a5 s epsilon ≤
    a9 s.restriction.set ak.carrier x:=by
@@ -15449,14 +14962,14 @@ lemma na
   exact_mod_cast(show 1≤bn by omega)
  have A5:C.ak.carrier.card≤ s.restriction.ba.carrier.card:=by
   calc
-   C.ak.carrier.card ≤
+   _ ≤
      (s.restriction.ba.ai ((bn:NNReal)⁻¹)).carrier.card:=
     Qu C.nY
    _≤(s.restriction.ba.ai 1).carrier.card:=
     Qu (aj.b5 GU)
    _=s.restriction.ba.carrier.card:=by simp
  calc
-  (bB s C.ak C.aB aQ b2).card =
+  _ =
     C.ak.carrier.card:=by
    simp[bB,ah.di,
     ah.bt.eo,
@@ -15481,9 +14994,8 @@ lemma mq
   ((bB s C.ak C.aB aQ b2).card:ℝ) ≤
    ((bI s.restriction.ba bn bd *
      b7 W:ℕ):ℝ)*(H.bl.carrier.card:ℝ):=by
- have mj :
-   (bB s C.ak C.aB aQ b2).card ≤
-    s.card:=
+ have mj  :=
+
   na s eH C aQ b2 ju
  have KI :
    s.card≤bI s.restriction.ba bn bd*W.carrier.card:=by
@@ -15498,7 +15010,7 @@ lemma mq
     (bI s.restriction.ba bn bd *
      b7 W)*H.bl.carrier.card:=by
   calc
-   (bB s C.ak C.aB aQ b2).card ≤
+   _ ≤
      s.card:=mj
    _≤bI s.restriction.ba bn bd*W.carrier.card:=KI
    _≤bI s.restriction.ba bn bd *
@@ -15519,7 +15031,7 @@ lemma mM
       ((al ((@mu (ℝ) _ _) A) (mu A))) p)^(2*p):=by
  let w:G→ℝ≥0:=(al (mu aL) (mu a0))
  have rL :
-   ((al ((Set.indicator A fun _↦(1:Real))) ((Set.indicator A fun _↦(1:_))))) =
+   ((al ((indicator A fun _↦(1:ℝ))) ((indicator A fun _↦(1:_))))) =
     ((A.card:ℝ)^2)•((al ((@mu (ℝ) _ _) A) (mu A))):=by
   rw[←l5 ℝ A,oB,oC]
   funext x
@@ -15529,7 +15041,7 @@ lemma mM
   aN.gx w
    ((al ((@mu (ℝ) _ _) A) (mu A))) ((A.card:ℝ)^2) (by positivity) hp
  have oS :
-   (b0 p ((al (mu aL) (mu a0))) ((al ((Set.indicator A fun _↦(1:Real))) ((Set.indicator A fun _↦(1:_)))))) =
+   (b0 p ((al (mu aL) (mu a0))) ((al ((indicator A fun _↦(1:ℝ))) ((indicator A fun _↦(1:_)))))) =
     (A.card:ℝ)^2 *
      an.aM
       ((↑) ∘ w)
@@ -15550,10 +15062,10 @@ lemma mN
   (hB:(aL∩a0).Nonempty) (hA:A.Nonempty) :
   0<ah.bj A aL a0 p:=by
  classical
- have xY:p≠0:=hp.ne'
- have rK:aL.Nonempty:=hB.mono Sh
- have u2:a0.Nonempty:=hB.mono Sd
- let N:ℝ:=(b0 p ((al (mu aL) (mu a0))) ((al ((Set.indicator A fun _↦(1:(ℝ)))) ((Set.indicator A fun _↦(1:_))))))
+ have xY := hp.ne'
+ have rK := hB.mono Sh
+ have u2 := hB.mono Sd
+ let N:ℝ:=(b0 p ((al (mu aL) (mu a0))) ((al ((indicator A fun _↦(1:(ℝ)))) ((indicator A fun _↦(1:_))))))
  have KJ:=
   ah.gQ A aL a0 p xY rK u2
  obtain ⟨b,hb⟩:=hB
@@ -15595,7 +15107,7 @@ lemma mN
   intro MS
   rw[MS] at Hh
   simp[xY] at Hh
- have Ms:0<N:=SM GV (Ne.symm NH)
+ have Ms := SM GV (Ne.symm NH)
  unfold ah.bj
  have sF:(0:ℝ)<A.card:=by
   exact_mod_cast(Finset.card_pos.mpr ⟨a,ha⟩)
@@ -15616,7 +15128,7 @@ lemma ik
    (data.aX.card:ℝ) /
     (ah.aW.bg A
      (z+ᵥ H.b6.carrier) H.bx.carrier p sigma).card:=by
- let S:Finset G:=
+ let S :=
   ah.aW.bg A
    (z+ᵥ H.b6.carrier) H.bx.carrier p sigma
  have vi:S.Nonempty:=by
@@ -15628,8 +15140,8 @@ lemma ik
   simp
  have Mt :
    alpha*(H.b6.carrier.card:ℝ)≤(data.aX.card:ℝ):=by
-  have aQ :
-    alpha≤(data.aX.card:ℝ)/(z+ᵥ H.b6.carrier).card:=
+  have aQ  :=
+
    dS.trans data.tC
   rw[yk] at aQ
   have Mu:(0:ℝ)<H.b6.carrier.card:=by
@@ -15638,8 +15150,8 @@ lemma ik
  have Fw :
    S.card≤2*H.b6.carrier.card:=by
   calc
-   S.card≤((z+ᵥ H.b6.carrier)-H.bx.carrier).card:=by
-    exact Qu
+   _ ≤((z+ᵥ H.b6.carrier)-H.bx.carrier).card:=
+          Qu
      (ah.aW.oX
       A (z+ᵥ H.b6.carrier) H.bx.carrier p sigma)
    _≤2*H.b6.carrier.card:=
@@ -15649,9 +15161,9 @@ lemma ik
   exact_mod_cast Fw
  apply(Qs DT).2
  calc
-  alpha/2*(S.card:ℝ) ≤
-    alpha/2*(2*(H.b6.carrier.card:ℝ)):=by
-   exact iO EY (by positivity)
+  _ ≤
+    alpha/2*(2*(H.b6.carrier.card:ℝ)):=
+         iO EY (by positivity)
   _=alpha*(H.b6.carrier.card:ℝ):=by ring
   _≤(data.aX.card:ℝ):=Mt
 omit [AddCommGroup G] [DecidableEq G] [DiscreteMeasurableSpace G] [Fintype G] [MeasurableSpace G] in
@@ -15689,16 +15201,15 @@ lemma tQ
     Real.sqrt ((S.card:ℝ)/aX.card)≤(1/512:ℝ):=by
  classical
  have fX:=aa.bP d
- have DE :
-   Real.sqrt ((S.card:ℝ)/aX.card) ≤
-    Real.sqrt (2/aa.aR d):=
+ have DE  :=
+
   oA fX fY hS eO
  have l7 :
    (2/(aa.bE d:ℝ)) *
      Real.sqrt ((S.card:ℝ)/aX.card)≤1/2048:=by
   calc
-   (2/(aa.bE d:ℝ)) *
-     Real.sqrt ((S.card:ℝ)/aX.card) ≤
+   _
+                                    ≤
     (2/(aa.bE d:ℝ)) *
      Real.sqrt (2/aa.aR d):=by
       gcongr
@@ -15708,9 +15219,9 @@ lemma tQ
      (aF+aF:NNReal)) *
     Real.sqrt ((S.card:ℝ)/aX.card)≤1/2048:=by
   calc
-   (400*((max rank 1:ℕ):ℝ) *
-     (aF+aF:NNReal)) *
-    Real.sqrt ((S.card:ℝ)/aX.card) ≤
+   _
+
+                                   ≤
     (400*((max rank 1:ℕ):ℝ) *
      (aF+aF:NNReal)) *
     Real.sqrt (2/aa.aR d):=by
@@ -15720,8 +15231,8 @@ lemma tQ
    (2*(1/2:ℝ)^aa.b1 d) *
      Real.sqrt ((S.card:ℝ)/aX.card)≤1/2048:=by
   calc
-   (2*(1/2:ℝ)^aa.b1 d) *
-     Real.sqrt ((S.card:ℝ)/aX.card) ≤
+   _
+                                    ≤
     (2*(1/2:ℝ)^aa.b1 d) *
      Real.sqrt (2/aa.aR d):=by
       gcongr
@@ -15745,15 +15256,14 @@ lemma rh
    Real.sqrt (2/aa.aR d) ≤
    1/2048:=by
  let e:ℕ:=2+2*d*aa.bH d
- let P:ℕ:=bD d ax
+ let P := bD d ax
  have Mv:(0:ℝ)<P:=by
   dsimp[P,bD,e]
   positivity
- have lF:max rank 1≤ max ax 1:=
+ have lF :=
   Sn 1 cK
- have DE :
-   Real.sqrt (2/aa.aR d) ≤
-    2/aa.aR d:=
+ have DE  :=
+
   aa.jj
    (aa.bP d)
    (aa.dZ d)
@@ -15796,7 +15306,7 @@ lemma rh
   positivity
  apply(QF si).2
  calc
-  1600*((max rank 1:ℕ):ℝ)*(2:ℝ)^e ≤
+  _ ≤
     1600*((max ax 1:ℕ):ℝ)*(2:ℝ)^e:=by
    gcongr
   _≤(1/2048:ℝ) *
@@ -15854,7 +15364,7 @@ lemma e6
    aa.aR d ≤
     ah.bj A aL H.bx.carrier p)
   (hk:k≤aa.dC d) :
-  ⌈8*(1+Real.log (2 /
+  ⌈8*(1+log (2 /
    b3 W H data k))⌉₊ ≤
    aa.au d:=by
  let alpha:=aa.aR d
@@ -15894,12 +15404,12 @@ lemma e6
     2/aa.gs alpha K:=by
   exact Rb (by norm_num) Fx DV
  have ei :
-   Real.log (2/b3 W H data k) ≤
-    Real.log (2/aa.gs alpha K):=
+   log (2/b3 W H data k) ≤
+    log (2/aa.gs alpha K):=
   QG (by positivity) hdiv
  have y2 :
-   8*(1+Real.log (2/b3 W H data k)) ≤
-    8*(1+Real.log (2/aa.gs alpha K)):=by
+   8*(1+log (2/b3 W H data k)) ≤
+    8*(1+log (2/aa.gs alpha K)):=by
   nlinarith
  apply Sj (S3 y2)
  unfold aa.au aa.rg
@@ -15930,12 +15440,12 @@ lemma gR
   positivity
  have oQ:= oz W H data cu k T hV hT
  have rJ :
-   8*(1+Real.log (2/b3 W H data k)) ≤
-    (⌈8*(1+Real.log (2/b3 W H data k))⌉₊:ℝ):=
+   8*(1+log (2/b3 W H data k)) ≤
+    (⌈8*(1+log (2/b3 W H data k))⌉₊:ℝ):=
   Rr _
  have cK:=e6 W H data d k dS hk
  have Fy :
-   (⌈8*(1+Real.log (2/b3 W H data k))⌉₊:ℝ) ≤
+   (⌈8*(1+log (2/b3 W H data k))⌉₊:ℝ) ≤
     aa.au d:=by
   exact_mod_cast cK
  exact oQ.trans (rJ.trans Fy)
@@ -15951,7 +15461,7 @@ lemma nb
     ah.bj A aL H.bx.carrier p)
   (hk:k≤aa.dC d)
   (g6:H.bl.rank≤ax)
-  (T:Finset G) (Delta:Finset (AddChar G Complex))
+  (T:Finset G) (Delta:Finset (AddChar G ℂ))
   (hT :
    ((du data.a3^k/2 *
      cq W H) /
@@ -15978,11 +15488,11 @@ lemma nb
   apply S3
   have lF:max dim 0≤(aa.au d:ℝ):=
    max_le oQ (by positivity)
-  have Af:2*Real.pi≤(8:ℝ):=by
+  have Af:2*pi≤(8:ℝ):=by
    nlinarith[Real.pi_lt_four]
   calc
-   2*Real.pi*max dim 0 ≤
-     2*Real.pi*aa.au d:=by
+   2*pi*max dim 0 ≤
+     2*pi*aa.au d:=by
     gcongr
    _≤8*(aa.au d:ℝ):=by
     gcongr
@@ -16041,7 +15551,7 @@ lemma i6
       (fun x:G=>(((al ((@mu (ℝ≥0) _ _) aL) (mu a0))) x:ℝ))
       ((al ((@mu (ℝ) _ _) A) (mu A))) r:=by
   calc
-   1/(2:ℝ)^d≤(A.card:ℝ)/K.card:=c8
+   _ ≤(A.card:ℝ)/K.card:=c8
    _≤(65/64:ℝ)*((A.card:ℝ)/K.card):=by
     nlinarith
    _=(A.card:ℝ)*((65/64:ℝ)*(K.card:ℝ)⁻¹):=by
@@ -16084,18 +15594,18 @@ lemma i6
  rw[sy,mM A aL a0 hr]
  gcongr
 lemma qT (d:ℕ) :
-  ((1/8192:ℝ)⁻¹)*Real.log (2/(1/8192:ℝ)) ≤
+  ((1/8192:ℝ)⁻¹)*log (2/(1/8192:ℝ)) ≤
    aa.bH d:=by
- have My:Real.log (2:ℝ)≤1:=by
+ have My:log (2:ℝ)≤1:=by
   convert QX (show(0:ℝ)<2 by norm_num) using 1
   norm_num
- have ei:Real.log (2/(1/8192:ℝ))≤14:=by
+ have ei:log (2/(1/8192:ℝ))≤14:=by
   rw[show(2/(1/8192:ℝ))=(2:ℝ)^14 by norm_num,
    QB]
   norm_num at My ⊢
   nlinarith
  have kB :
-   ((1/8192:ℝ)⁻¹)*Real.log (2/(1/8192:ℝ)) ≤
+   ((1/8192:ℝ)⁻¹)*log (2/(1/8192:ℝ)) ≤
     (114688:ℝ):=by
   norm_num
   nlinarith
@@ -16145,8 +15655,8 @@ lemma rT
  have kG:=sQ
  have hA:(0:ℝ)≤u.restriction.set.card:=by positivity
  calc
-  (1+(1/8:ℝ)/32) *
-    ((u.restriction.set.card:ℝ)/C.ak.ba.carrier.card) ≤
+  _
+                                                      ≤
    ((65/64:ℝ)*(1-1/8192) *
     (1-1/8192-1/512)) *
      ((u.restriction.set.card:ℝ)/C.ak.ba.carrier.card):=by
@@ -16184,7 +15694,7 @@ lemma nc
   field_simp
   nlinarith
  calc
-  1/(2:ℝ)^(d+1) ≤
+  _ ≤
     (1-(1/512:ℝ))*(1/(2:ℝ)^d):=iB
   _≤(1-(1/512:ℝ))*s.density:=by gcongr
   _=a5 s d1:=by simp[a5,zZ]
@@ -16202,9 +15712,9 @@ lemma l2
   unfold aa.dt
   omega
  calc
-  (2/3:ℝ)^aa.dt (d+1) ≤
-    (2/3:ℝ)^aa.dt d:=by
-   exact SJ dc xR l9
+  _ ≤
+    (2/3:ℝ)^aa.dt d:=
+         SJ dc xR l9
   _≤(1-(1/512:ℝ))*s.density:=by
    simpa[aa.dt] using
     n6 s c3
@@ -16218,24 +15728,24 @@ lemma nd
   (d5:width≤alpha/384) (wH:0≤width) :
   2*(vj⁻¹ *width)+i9⁻¹ *width ≤
    (1/64:ℝ)*i9⁻¹:=by
- have IP:0<alpha*i9:=QM b8 yd
+ have IP := QM b8 yd
  have PR:vj⁻¹ ≤(alpha*i9)⁻¹:=
   (RJ sF IP).2 lO
  have jx:vj⁻¹ *width≤ i9⁻¹ /384:=by
   calc
-   vj⁻¹ *width≤(alpha*i9)⁻¹ *width:=by gcongr
+   _ ≤(alpha*i9)⁻¹ *width:=by gcongr
    _≤(alpha*i9)⁻¹ *(alpha/384):=by gcongr
    _=i9⁻¹ /384:=by
     field_simp
  have FA:width≤1/384:=by
   calc
-   width≤alpha/384:=d5
+   _ ≤alpha/384:=d5
    _≤1/384:=by gcongr
  have uh:i9⁻¹ *width≤ i9⁻¹ /384:=by
   simpa[Qw] using
    iO FA (by positivity:0≤ i9⁻¹)
  calc
-  2*(vj⁻¹ *width)+i9⁻¹ *width ≤
+  _ ≤
     2*(i9⁻¹ /384)+i9⁻¹ /384:=by gcongr
   _≤(1/64:ℝ)*i9⁻¹:=by
    have Ma:0≤ i9⁻¹:=by positivity
@@ -16348,7 +15858,7 @@ lemma lL
    1/(100*(max H.bl.rank 1:ℕ):NNReal))
   (dh:ℕ) (pX:0<dh)
   (bm aU:ℝ)
-  (dV: ∀ (T:Finset G) (Delta:Finset (AddChar G Complex)),
+  (dV: ∀ (T:Finset G) (Delta:Finset (AddChar G ℂ)),
    (Delta.card:ℝ) ≤
     aI.bf H.bl T (1/2) →
    2*dv +
@@ -16363,13 +15873,13 @@ lemma lL
   {aq bq:ℕ}
   (g6:H.bl.rank≤ s.rank)
   (B5 :
-   ⌈8*(1+Real.log (2 /
+   ⌈8*(1+log (2 /
     b3 W H data
      (ah.cm
       (-(ah.aW.bg
        s.restriction.set aL H.bx.carrier p sigma))
       data.aX dv m)))⌉₊≤aq)
-  (DX: ∀ (T:Finset G) (Delta:Finset (AddChar G Complex)),
+  (DX: ∀ (T:Finset G) (Delta:Finset (AddChar G ℂ)),
    ((du data.a3 ^
      (ah.cm
       (-(ah.aW.bg
@@ -16389,7 +15899,7 @@ lemma lL
     4^(H.bl.rank+Delta.card)≤bq)
   (pj:0<bq)
   (gM: ∀ (T:Finset G) (a8:NNReal) (fl:aj G)
-    (_Delta:Finset (AddChar G Complex)),
+    (_Delta:Finset (AddChar G ℂ)),
    ((du data.a3 ^
      (ah.cm
       (-(ah.aW.bg
@@ -16404,14 +15914,14 @@ lemma lL
    1/2≤a8 →
    fl=H.bl.ai (a8 *
     aI.cJ H.bl T (1/2)) →
-   Real.exp (-aU)*(s.card:ℝ)*(bq:ℝ) ≤
+   exp (-aU)*(s.card:ℝ)*(bq:ℝ) ≤
     ((fl.ai aF).carrier.card:ℝ)) :
   ∃ (parent:aj G) (dR:NNReal)
    (source:Finset G) (pk:ℕ),
    ∃ P:ah.cb data parent
     dR source aq pk bm,
     P.child.rank≤ s.rank+aq ∧
-    Real.exp (-aU)*(s.card:ℝ)≤P.child.carrier.card:=by
+    exp (-aU)*(s.card:ℝ)≤P.child.carrier.card:=by
  obtain ⟨T,X,a8,fl,Delta,nk,ui,pT,dQ,
    gJ,lj,oU,GY⟩:=
   ej
@@ -16423,7 +15933,7 @@ lemma lL
     (aI.bf H.bl T (1/2))) ^
     Delta.card *
    4^(H.bl.rank+Delta.card)
- let k:ℕ:=
+ let k :=
   ah.cm
    (-(ah.aW.bg
     s.restriction.set aL H.bx.carrier p sigma))
@@ -16434,9 +15944,8 @@ lemma lL
      cI W H data.a3^k≤(T.card:ℝ)):=by
   simpa[k,du,cq,
    cI,gk] using nk
- have xQ :
-   0<ah.bj s.restriction.set aL
-    H.bx.carrier p:=
+ have xQ  :=
+
   mN s.restriction.set aL
    H.bx.carrier hp hB s.restriction.nonempty
  have hV :
@@ -16453,34 +15962,32 @@ lemma lL
  have Bk:P.child.rank≤ s.rank+aq:=by
   have nX:=P.rN
   calc
-   P.child.rank≤H.bl.rank+aq:=by
+   _ ≤H.bl.rank+aq:=by
     simpa[P,oU,aj.f6] using nX
    _≤ s.rank+aq:=RZ g6 aq
- have GZ :
-   Real.exp (-aU)*(s.card:ℝ)*(bq:ℝ) ≤
-    ((fl.ai aF).carrier.card:ℝ):=
+ have GZ  :=
+
   gM T a8 fl Delta zi gJ oU
  have FB :
    ((fl.ai aF).carrier.card:ℝ) ≤
     (bq:ℝ)*(P.child.carrier.card:ℝ):=by
-  have sC :
-    (fl.ai aF).carrier.card ≤
-     bq*P.child.carrier.card:=by
-   exact P.nM
+  have sC  :=
+
+         P.nM
   exact_mod_cast sC
  have FC :
    (bq:ℝ) *
-     (Real.exp (-aU)*(s.card:ℝ)) ≤
+     (exp (-aU)*(s.card:ℝ)) ≤
     (bq:ℝ)*(P.child.carrier.card:ℝ):=by
   calc
-   (bq:ℝ) *
-     (Real.exp (-aU)*(s.card:ℝ)) =
-     Real.exp (-aU)*(s.card:ℝ)*bq:=by ring
+   _
+                                 =
+     exp (-aU)*(s.card:ℝ)*bq:=by ring
    _≤((fl.ai aF).carrier.card:ℝ):=GZ
    _≤(bq:ℝ)*(P.child.carrier.card:ℝ):=FB
  have G0:(0:ℝ)<bq:=by exact_mod_cast pj
- have Bl :
-   Real.exp (-aU)*(s.card:ℝ)≤P.child.carrier.card:=
+ have Bl  :=
+
   Uj FC G0
  exact ⟨fl,aF+aF,(fl.ai aF).carrier,
   bq,P,Bk,Bl⟩
@@ -16510,7 +16017,7 @@ lemma jG
      1/2048)
   {bq:ℕ}
   (g6:H.bl.rank≤ s.rank)
-  (DX: ∀ (T:Finset G) (Delta:Finset (AddChar G Complex)),
+  (DX: ∀ (T:Finset G) (Delta:Finset (AddChar G ℂ)),
    ((du data.a3 ^
      (ah.cm
       (-(ah.aW.bg
@@ -16535,7 +16042,7 @@ lemma jG
     4^(H.bl.rank+Delta.card)≤bq)
   (pj:0<bq)
   (gM: ∀ (T:Finset G) (a8:NNReal) (fl:aj G)
-    (_Delta:Finset (AddChar G Complex)),
+    (_Delta:Finset (AddChar G ℂ)),
    ((du data.a3 ^
      (ah.cm
       (-(ah.aW.bg
@@ -16554,7 +16061,7 @@ lemma jG
    1/2≤a8 →
    fl=H.bl.ai (a8 *
     aI.cJ H.bl T (1/2)) →
-   Real.exp (-aU)*(s.card:ℝ)*(bq:ℝ) ≤
+   exp (-aU)*(s.card:ℝ)*(bq:ℝ) ≤
     ((fl.ai aF).carrier.card:ℝ)) :
   ∃ (parent:aj G) (dR:NNReal)
    (source:Finset G) (pk:ℕ),
@@ -16562,11 +16069,11 @@ lemma jG
     dR source (aa.au d)
      pk bm,
     P.child.rank≤ s.rank+aa.au d ∧
-    Real.exp (-aU)*(s.card:ℝ)≤P.child.carrier.card:=by
- let S:Finset G:=
+    exp (-aU)*(s.card:ℝ)≤P.child.carrier.card:=by
+ let S :=
   ah.aW.bg s.restriction.set
    (z+ᵥ H.b6.carrier) H.bx.carrier p sigma
- let k:ℕ:=
+ let k :=
   ah.cm (-S) data.aX
    aa.cH
    (aa.b1 d)
@@ -16591,7 +16098,7 @@ lemma jG
    (-S) data.aX fX
    (aa.i3 d) eO vk
  have dV :
-   ∀ (T:Finset G) (Delta:Finset (AddChar G Complex)),
+   ∀ (T:Finset G) (Delta:Finset (AddChar G ℂ)),
    (Delta.card:ℝ) ≤
     aI.bf H.bl T (1/2) →
    2*aa.cH +
@@ -16635,9 +16142,9 @@ lemma mO
   (dc:mr≤d2*(B.carrier.card:ℝ))
   (gM:source=(B.ai a8).carrier)
   (oe :
-   Real.exp (-aU)*d2 *
+   exp (-aU)*d2 *
      (((3*P)^B.rank:ℕ):ℝ)*(bq:ℝ)≤1) :
-  Real.exp (-aU)*mr*(bq:ℝ) ≤
+  exp (-aU)*mr*(bq:ℝ) ≤
    (source.card:ℝ):=by
  classical
  have B6 :
@@ -16660,12 +16167,12 @@ lemma mO
    _=d2*(((3*P)^B.rank:ℕ):ℝ) *
      (source.card:ℝ):=by ring
  calc
-  Real.exp (-aU)*mr*(bq:ℝ) ≤
-    Real.exp (-aU) *
+  _ ≤
+    exp (-aU) *
      (d2*(((3*P)^B.rank:ℕ):ℝ) *
       (source.card:ℝ))*(bq:ℝ):=by
        gcongr
-  _=(Real.exp (-aU)*d2 *
+  _=(exp (-aU)*d2 *
      (((3*P)^B.rank:ℕ):ℝ)*(bq:ℝ)) *
      (source.card:ℝ):=by ring
   _≤1*(source.card:ℝ):=
@@ -16682,12 +16189,12 @@ lemma mP
   (nI:0≤d2)
   (dc:mr≤d2*(H.bl.carrier.card:ℝ))
   (oe :
-   Real.exp (-aU)*d2 *
+   exp (-aU)*d2 *
      (((3*aa.bA H.bl.rank
        (aI.dg H.bl T (1/2))
        (bD d ax))^H.bl.rank:ℕ):ℝ) *
       (bq:ℝ)≤1) :
-  Real.exp (-aU)*mr*(bq:ℝ) ≤
+  exp (-aU)*mr*(bq:ℝ) ≤
    ((fl.ai (ct d ax)).carrier.card:ℝ):=by
  classical
  let m:=bD d ax
@@ -16786,7 +16293,7 @@ lemma il
   (nI:0≤d2)
   (dc:(s.card:ℝ)≤d2*(H.bl.carrier.card:ℝ))
   (oe :
-   Real.exp (-c9)*d2 *
+   exp (-c9)*d2 *
      (((3*bY d ax)^ax:ℕ):ℝ) *
       (cB d ax:ℝ)≤1) :
   ∃ (parent:aj G) (dR:NNReal)
@@ -16795,11 +16302,11 @@ lemma il
     dR source (aa.au d)
      pk (1/512:ℝ),
     P.child.rank≤ s.rank+aa.au d ∧
-    Real.exp (-c9)*(s.card:ℝ)≤P.child.carrier.card:=by
- let S:Finset G:=
+    exp (-c9)*(s.card:ℝ)≤P.child.carrier.card:=by
+ let S :=
   ah.aW.bg s.restriction.set
    (z+ᵥ H.b6.carrier) H.bx.carrier p sigma
- let k:ℕ:=ah.cm (-S) data.aX
+ let k := ah.cm (-S) data.aX
   aa.cH (aa.b1 d)
  have fX:=aa.bP d
  have eO :
@@ -16829,9 +16336,8 @@ lemma il
     dS hk g6 T Delta (by simpa[k,S] using hT) dQ
  ·exact sR d ax
  ·intro T a8 fl Delta hT gJ oU
-  have pd :
-    aI.dg H.bl T (1/2) ≤
-     aa.au d+1:=
+  have pd  :=
+
    nJ W H data cu d k dS hk T
     (by simpa[k,S] using hT)
   have hP :
@@ -16840,7 +16346,7 @@ lemma il
       (bD d ax) ≤
      bY d ax:=by
    unfold bY aa.bA
-   have lF:max H.bl.rank 1≤ max ax 1:=
+   have lF :=
     Sn 1 g6
    gcongr
   have hpow :
@@ -16849,9 +16355,9 @@ lemma il
       (bD d ax))^H.bl.rank ≤
      (3*bY d ax)^ax:=by
    calc
-    (3*aa.bA H.bl.rank
-      (aI.dg H.bl T (1/2))
-      (bD d ax))^H.bl.rank ≤
+    _
+
+                           ≤
      (3*bY d ax)^H.bl.rank:=by
       apply R4
       gcongr
@@ -16864,7 +16370,7 @@ lemma il
       exact QP (by norm_num) IQ
      ·exact g6
   have xG :
-    Real.exp (-c9)*d2 *
+    exp (-c9)*d2 *
      (((3*aa.bA H.bl.rank
        (aI.dg H.bl T (1/2))
        (bD d ax))^H.bl.rank:ℕ):ℝ) *
@@ -16883,7 +16389,7 @@ theorem gW
     (iX : 0 < sigma) (qU : sigma ≤ 1)
     (cu : 0 < delta) (wI : delta < 1)
     (hr : 0 < r) (Bm : Even r) (DY : 2 ≤ r)
-    (Bn : sigma⁻¹ * Real.log (2 / delta) ≤ r)
+    (Bn : sigma⁻¹ * log (2 / delta) ≤ r)
     (rU : 0 ≤ fx)
     (mC : fx ≤
       an.aM
@@ -16905,15 +16411,15 @@ theorem gW
             ∃ P : ah.cb data parent
               dR source aq bq bm,
               P.child.rank ≤ s.rank + aq ∧
-              Real.exp (-aU) * (s.card : ℝ) ≤ P.child.carrier.card) :
+              exp (-aU) * (s.card : ℝ) ≤ P.child.carrier.card) :
     ∃ t : bu.aG original,
       br.dk (1 + epsilon / 32) aq aU
         s.restriction t.aV.restriction:= by
   obtain ⟨z, hz, um, rV⟩:=
     ah.lE hD hE
       s.restriction.nonempty hr rU mC
-  let aL : Finset G:= z +ᵥ E
-  let a0 : Finset G:= D
+  let aL  :=  z +ᵥ E
+  let a0  :=  D
   have hB : (aL ∩ a0).Nonempty:= by
     simpa [aL, a0] using um
   obtain ⟨data⟩:=
@@ -16926,24 +16432,17 @@ theorem gW
       (by simpa [aL, a0] using rV)
       (by simpa [aL, a0] using data)
   have gN:= data.lR wI
-  let S : Finset G:=
+  let S  :=
     ah.aW.bg
       s.restriction.set aL a0 r sigma
-  have ft :
-      1 - delta - bm ≤
-        ag.bC
-          (ag.d9
-            (ag.aS P.child.carrier)
-            (ag.a2
-              (ag.aS data.aX)
-              (ag.aS data.a3)))
-          (ag.bJ S):= by
-    exact ah.nn gN.1 gN.2
+  have ft  :=
+
+          ah.nn gN.1 gN.2
       (by
         simpa only [ah.ca]
           using data.np)
       (by simpa [S] using P.oY)
-  have oZ : 0 ≤ (1 - sigma) * fx:=
+  have oZ  :=
     mul_nonneg (sub_nonneg.mpr qU) rU
   have sE : ∀ x ∈ S,
       (1 - sigma) * fx ≤
@@ -17001,14 +16500,14 @@ lemma gq
   (iX:0<sigma) (qU:sigma≤1)
   (cu:0<delta) (wI:delta<1)
   (hr:0<r) (Bm:Even r) (DY:2≤r)
-  (Bn:sigma⁻¹ *Real.log (2/delta)≤r)
+  (Bn:sigma⁻¹ *log (2/delta)≤r)
   (rU:0≤fx)
   (jx :
-   Real.exp (-eb)*(s.card:ℝ)≤C.ak.carrier.card)
+   exp (-eb)*(s.card:ℝ)≤C.ak.carrier.card)
   (mC:fx ≤
    an.aM
     ((↑) ∘ aN.bh D E)
-    ((al ((@mu Real _ _)
+    ((al ((@mu ℝ _ _)
      (bB s C.ak C.aB aQ bZ).restriction.set) (mu (bB s C.ak C.aB aQ bZ).restriction.set)))
     r)
   (DZ :
@@ -17031,19 +16530,19 @@ lemma gq
        bZ).restriction.set
       (z+ᵥ E) D r sigma delta,
      ∃ (parent:aj G) (dR:NNReal)
-      (source:Finset G) (bq:Nat),
+      (source:Finset G) (bq:ℕ),
       ∃ P:ah.cb data parent
        dR source aq bq bm,
        P.child.rank ≤
         (bB s C.ak C.aB aQ
          bZ).rank+aq ∧
-       Real.exp (-c9) *
+       exp (-c9) *
          ((bB s C.ak C.aB aQ
           bZ).card:ℝ)≤P.child.carrier.card) :
   ∃ t:bu.aG original,
    (1+epsilon/32)*a5 s d1≤t.density ∧
    t.rank≤ s.rank+aq ∧
-   Real.exp (-(eb+c9))*(s.card:ℝ) ≤
+   exp (-(eb+c9))*(s.card:ℝ) ≤
     (t.card:ℝ):=by
  let u:=bB s C.ak C.aB aQ bZ
  obtain ⟨t,ht⟩:=
@@ -17059,8 +16558,8 @@ lemma gq
     aO.c0 aQ
   simpa[u,bB,ah.hQ] using hx
  have IS :
-   Real.exp (-eb)*(s.card:ℝ)≤(u.card:ℝ):=by
-  change Real.exp (-eb)*(s.card:ℝ) ≤
+   exp (-eb)*(s.card:ℝ)≤(u.card:ℝ):=by
+  change exp (-eb)*(s.card:ℝ) ≤
    (C.ak.carrier.card:ℝ)
   exact jx
  refine ⟨t, ?_, ?_, ?_⟩
@@ -17073,13 +16572,13 @@ lemma gq
   rw[←Bo]
   exact ht.2.1
  ·calc
-   Real.exp (-(eb+c9))*(s.card:ℝ) =
-     Real.exp (-c9) *
-      (Real.exp (-eb)*(s.card:ℝ)):=by
+   _ =
+     exp (-c9) *
+      (exp (-eb)*(s.card:ℝ)):=by
     rw[show-(eb+c9) =
       -c9+ -eb by ring,R7]
     ring
-   _≤Real.exp (-c9)*(u.card:ℝ):=
+   _≤exp (-c9)*(u.card:ℝ):=
     iO IS (Q1 _).le
    _≤(t.card:ℝ):=ht.2.2
 end xP
@@ -17115,7 +16614,7 @@ lemma nf
       (jE s C.ak C.aB aQ))| ≤
    ((Fintype.card G:ℝ)/(#C.ak.carrier:ℝ))/8:=by
  let alpha:=a5 s epsilon
- have b8:0<alpha:=
+ have b8 :=
   QM (sub_pos.mpr b2) s.dI
  have lG:alpha ≤
    a9 s.restriction.set C.ak.carrier
@@ -17145,9 +16644,9 @@ lemma nf
    (B:=C.ak.ba) (a8:=C.ak.outer)
    (A:=s.restriction.set) (C:=C.ak.carrier)
    (x:=aO.cr aQ) (fun _ hz↦hz)
- have r2 :
-   jE s C.ak C.aB aQ⊆C.aB.carrier:=by
-  exact ah.dz
+ have r2  :=
+
+        ah.dz
    (B:=C.aB.ba) (a8:=C.aB.outer)
    (A:=s.restriction.set) (C:=C.aB.carrier)
    (x:=aO.cr aQ) (fun _ hz↦hz)
@@ -17214,7 +16713,7 @@ lemma kj
           (257/256:ℝ) *
               aO.a5 s.aV epsilon≤t.density ∧
           t.rank≤ s.rank+aq ∧
-          Real.exp (-aU)*(s.card:ℝ)≤(t.card:ℝ)) :
+          exp (-aU)*(s.card:ℝ)≤(t.card:ℝ)) :
     Nonempty
       (bu.eS (p:=p) s
         (bF
@@ -17298,7 +16797,7 @@ lemma iE
     (kG:gj s.aV bn bd (1/512:ℝ)
       (eb+c9))
     (jx :
-      Real.exp (-eb)*(s.card:ℝ)≤C.ak.carrier.card)
+      exp (-eb)*(s.card:ℝ)≤C.ak.carrier.card)
     (aQ:ah.bV s.aV
       (bF
         (aq:=aa.au (d+1))
@@ -17325,7 +16824,7 @@ lemma iE
             (((bd:NNReal)⁻¹ +(bd:NNReal)⁻¹ :NNReal):ℝ)) ≤
         (1/8:ℝ)/8*(C.ak.ba.carrier.card:ℝ)⁻¹)
     (sS :
-      Real.exp (-c9) *
+      exp (-c9) *
           ((bI s.aV.restriction.ba bn bd *
             b7 W:ℕ):ℝ) *
           (((3*bY (d+1) ax)^ax:ℕ):ℝ) *
@@ -17339,7 +16838,7 @@ lemma iE
     (1/512:ℝ) at aQ
   let u:=bB s.aV C.ak C.aB aQ (by norm_num)
   have uI:=mn W H
-  have xg:H.bl.rank=s.rank:=uI.2.2.trans yE
+  have xg := uI.2.2.trans yE
   have Br:H.bl.rank≤ax:=by rw[xg]; exact jI
   have Bo:u.rank=s.rank:=by
     simpa[u,bB,ah.aA.rank,
@@ -17367,12 +16866,12 @@ lemma iE
             (aa.bH (d+1))
             (1/8192:ℝ) (1/8192:ℝ),
           ∃ (parent:aj G) (dR:NNReal)
-            (source:Finset G) (bq:Nat),
+            (source:Finset G) (bq:ℕ),
             ∃ P:ah.cb data parent
               dR source (aa.au (d+1))
               bq (1/512:ℝ),
               P.child.rank≤u.rank+aa.au (d+1) ∧
-              Real.exp (-c9)*(u.card:ℝ)≤P.child.carrier.card:=by
+              exp (-c9)*(u.card:ℝ)≤P.child.carrier.card:=by
     intro z hz um rV data
     have B9 :
         (65/64:ℝ)*(C.ak.ba.carrier.card:ℝ)⁻¹ ≤
@@ -17385,11 +16884,8 @@ lemma iE
         ((al ((@mu (ℝ) _ _) u.restriction.set) (mu u.restriction.set)))
         (aa.fU (d+1))]
       exact rV
-    have b8 :
-        aa.aR (d+1) ≤
-          ah.bj u.restriction.set
-            (z+ᵥ H.b6.carrier) H.bx.carrier
-            (aa.bH (d+1)):=
+    have b8  :=
+
       i6
         u.restriction.set (z+ᵥ H.b6.carrier) H.bx.carrier
         C.ak.ba.carrier (d+1)
@@ -17453,7 +16949,7 @@ lemma iL
   (cK:rank≤ar.ax (d+1)
    (aa.au (d+1)))
   (pd:d4≤8*aa.au (d+1)) :
-  Real.log (aa.cv (d+1) rank d4:ℝ) ≤
+  log (aa.cv (d+1) rank d4:ℝ) ≤
    2048*(aa.cW:ℝ) *
     ((d+1:ℕ):ℝ)^11:=by
  have ei:=aa.jX
@@ -17464,12 +16960,12 @@ lemma iL
  have hpow:((d+1+1:ℕ):ℝ)^11 ≤
    (2:ℝ)^11*((d+1:ℕ):ℝ)^11:=by
   calc
-   ((d+1+1:ℕ):ℝ)^11 ≤
+   _ ≤
      (2*((d+1:ℕ):ℝ))^11:=
     Qp (by positivity) dc 11
    _=(2:ℝ)^11*((d+1:ℕ):ℝ)^11:=by rw[QL]
  calc
-  Real.log (aa.cv (d+1) rank d4:ℝ) ≤
+  _ ≤
     (aa.cW:ℝ) *
      ((d+1+1:ℕ):ℝ)^11:=by simpa using ei
   _≤(aa.cW:ℝ) *
@@ -17480,7 +16976,7 @@ lemma f3
   (d rank:ℕ)
   (cK:rank≤ar.ax (d+1)
    (aa.au (d+1))) :
-  Real.log (aa.bT rank
+  log (aa.bT rank
    (ar.bn (d+1) (aa.au (d+1)))
    (ar.bd (d+1) (aa.au (d+1))):ℝ) ≤
    2048*(aa.cW:ℝ) *
@@ -17548,7 +17044,7 @@ lemma gE
   (d rank:ℕ)
   (cK:rank≤ar.ax (d+1)
    (aa.au (d+1))) :
-  Real.log (aa.bG rank
+  log (aa.bG rank
    (ar.bn (d+1) (aa.au (d+1))):ℝ) ≤
    2048*(aa.cW:ℝ) *
     ((d+1:ℕ):ℝ)^11:=by
@@ -17671,7 +17167,7 @@ lemma sT :
       refine ⟨P, ?_⟩
       intro aQ
       have Bt :
-          Real.exp (-eN)*(s.aV.card:ℝ) ≤
+          exp (-eN)*(s.aV.card:ℝ) ≤
             ((b9 s.aV.restriction.ba bn:ℕ):ℝ)⁻¹ *
               (s.aV.restriction.ba.carrier.card:ℝ):=by
         have mK :
@@ -17687,7 +17183,7 @@ lemma sT :
           br.aY.rank] using
           (gE d s.rank jI)
       have jx :
-          Real.exp (-eN)*(s.card:ℝ)≤C.ak.carrier.card:=by
+          exp (-eN)*(s.card:ℝ)≤C.ak.carrier.card:=by
         have mK :
             (0:ℝ) <
               (b9 s.aV.restriction.ba bn:ℕ):=by
@@ -17789,7 +17285,7 @@ lemma sT :
         unfold aa.cv
         exact QP (QP (QP vc j8) gM) lP
       have Bu :
-          Real.exp (-eN) *
+          exp (-eN) *
               (aa.cv e ax d4:ℝ) ≤
             1:=by
         apply oy FF
@@ -17874,18 +17370,18 @@ lemma sT :
           (Ra (Ra vc j8) (SF))
           (SF)
       have sS :
-          Real.exp (-eN) *
+          exp (-eN) *
               ((bI s.aV.restriction.ba bn bd *
                 b7 W:ℕ):ℝ) *
               (((3*bY e ax)^ax:ℕ):ℝ) *
                 (cB e ax:ℝ)≤1:=by
         calc
-          Real.exp (-eN) *
+          exp (-eN) *
               ((bI s.aV.restriction.ba bn bd *
                 b7 W:ℕ):ℝ) *
               (((3*bY e ax)^ax:ℕ):ℝ) *
                 (cB e ax:ℝ) ≤
-              Real.exp (-eN) *
+              exp (-eN) *
                 (aa.cv e ax d4:ℝ):=by
                   have yF :
                       ((bI s.aV.restriction.ba bn bd *
@@ -17897,17 +17393,17 @@ lemma sT :
                     exact_mod_cast FH
                   push_cast at yF ⊢
                   calc
-                    Real.exp (-eN) *
+                    exp (-eN) *
                         ((bI s.aV.restriction.ba bn bd:ℝ) *
                           b7 W) *
                         (3*bY e ax:ℝ)^ax *
                           cB e ax =
-                        Real.exp (-eN) *
+                        exp (-eN) *
                           (((bI s.aV.restriction.ba bn bd:ℝ) *
                             b7 W) *
                             (3*bY e ax:ℝ)^ax *
                               cB e ax):=by ring
-                    _≤Real.exp (-eN) *
+                    _≤exp (-eN) *
                         (aa.cv e ax d4:ℝ):=
                       iO yF (Q1 _).le
           _≤1:=Bu
@@ -17928,7 +17424,7 @@ lemma lf
   {K:ℝ} (hK:0<K) (nX:bu.jZ K)
   (C:ℝ) :
   (fun N:ℕ=>(r3 N:ℝ))=O[atTop]
-   (fun N:ℕ=>(N:ℝ)/(Real.log (N:ℝ))^C):=by
+   (fun N:ℕ=>(N:ℝ)/(log (N:ℝ))^C):=by
  obtain ⟨K',nO,qG⟩:=
   i2
    ⟨8+2050*(2:ℝ)^12*K,
@@ -17938,13 +17434,13 @@ lemma l3
   (nX: ∃ K:ℝ,0<K∧bu.jZ K)
   (C:ℝ) (_hC:0<C) :
   (fun N:ℕ=>(r3 N:ℝ))=O[atTop]
-   (fun N:ℕ=>(N:ℝ)/(Real.log (N:ℝ))^C):=by
+   (fun N:ℕ=>(N:ℝ)/(log (N:ℝ))^C):=by
  obtain ⟨K,hK,MD⟩:=nX
  exact lf hK MD C
 lemma FI (C:ℝ) (hC:0<C) :
   (fun N:ℕ=>(r3 N:ℝ))=O[atTop]
-   (fun N:ℕ=>(N:ℝ)/(Real.log (N:ℝ))^C):=by
- exact l3
+   (fun N:ℕ=>(N:ℝ)/(log (N:ℝ))^C):=
+       l3
   uH.sT C hC
 end ay
 end
@@ -17981,11 +17477,11 @@ end Erdos142KM
 open Erdos142 Filter Real
 
 theorem OMA.solution : OMA.R_Erdos142_erdos_142_variants_lower_R2_H1_R1.H1 := by
-  have L : 0 < Real.log 4 := Real.log_pos (by norm_num)
+  have L : 0 < log 4 := Real.log_pos (by norm_num)
   have tend : Tendsto (fun j : ℕ => (4:ℕ)^j) atTop atTop :=
     tendsto_pow_atTop_atTop_of_one_lt (by decide)
   refine Summable.of_norm_bounded_eventually_nat
-    ((Real.summable_one_div_nat_pow.mpr one_lt_two).mul_left ((Real.log 4)⁻¹ ^ 2)) ?_
+    ((Real.summable_one_div_nat_pow.mpr one_lt_two).mul_left ((log 4)⁻¹ ^ 2)) ?_
   filter_upwards [tend.eventually Erdos142KM.logSquare, eventually_gt_atTop 0] with j hj hj0
   have hp : (0:ℝ) < 4 ^ j := by positivity
   have hj' : (0:ℝ) < j := by exact_mod_cast hj0
@@ -17993,5 +17489,5 @@ theorem OMA.solution : OMA.R_Erdos142_erdos_142_variants_lower_R2_H1_R1.H1 := by
   push_cast at hj
   rw [Real.log_pow, show ((1:ℝ)+1) = ((2:ℕ):ℝ) by norm_num, Real.rpow_natCast] at hj
   rw [div_le_iff₀ hp]
-  calc (r 3 (4^j) : ℝ) ≤ 4^j / ((j:ℝ) * Real.log 4)^2 := hj
+  calc (r 3 (4^j) : ℝ) ≤ 4^j / ((j:ℝ) * log 4)^2 := hj
     _ = _ := by field_simp

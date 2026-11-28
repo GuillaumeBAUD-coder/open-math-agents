@@ -126,16 +126,10 @@ theorem recurrence : ∀ n : ℕ, 5 ≤ n →
         C (3 : ℤ) * (X * d⁄dX ℤ A * X ^ 5) + (A - C (6 : ℤ) * (A * X ^ 1) +
         C (2 : ℤ) * (A * X ^ 2) + C (14 : ℤ) * (A * X ^ 3) + C (17 : ℤ) * (A * X ^ 4) +
         C (6 : ℤ) * (A * X ^ 5)) := by
-    rw [show (C (2 : ℤ) : ℤ⟦X⟧) = 2 from map_ofNat C 2,
-      show (C (3 : ℤ) : ℤ⟦X⟧) = 3 from map_ofNat C 3,
-      show (C (4 : ℤ) : ℤ⟦X⟧) = 4 from map_ofNat C 4,
-      show (C (6 : ℤ) : ℤ⟦X⟧) = 6 from map_ofNat C 6,
-      show (C (11 : ℤ) : ℤ⟦X⟧) = 11 from map_ofNat C 11,
-      show (C (14 : ℤ) : ℤ⟦X⟧) = 14 from map_ofNat C 14,
-      show (C (17 : ℤ) : ℤ⟦X⟧) = 17 from map_ofNat C 17]
+    simp only [map_ofNat]
     ring
   have eB : (1 - 4 * X + X ^ 2 : ℤ⟦X⟧) = 1 - C (4 : ℤ) * X ^ 1 + X ^ 2 := by
-    rw [show (C (4 : ℤ) : ℤ⟦X⟧) = 4 from map_ofNat C 4]
+    simp only [map_ofNat]
     ring
   have h := congrArg (coeff (m + 5)) ode
   rw [e, eB] at h
@@ -155,29 +149,9 @@ theorem recurrence : ∀ n : ℕ, 5 ≤ n →
 /-- Controls: M(0..5) = 1, 1, 2, 4, 9, 21 and a(0..5) = 1, 1, 3, 7, 18, 47 as in the entry. -/
 lemma controls : M 2 = 2 ∧ M 3 = 4 ∧ M 4 = 9 ∧ M 5 = 21 ∧
     a 1 = 1 ∧ a 2 = 3 ∧ a 3 = 7 ∧ a 4 = 18 ∧ a 5 = 47 := by
-  have m0 : M 0 = 1 := by simp [M]
-  have m1 : M 1 = 1 := by simp [M]
-  have m2 : M 2 = 2 := by rw [M_rec]; simp [Finset.sum_range_succ, m0, m1]
-  have m3 : M 3 = 4 := by rw [M_rec]; simp [Finset.sum_range_succ, m0, m1, m2]
-  have m4 : M 4 = 9 := by rw [M_rec]; simp [Finset.sum_range_succ, m0, m1, m2, m3]
-  have m5 : M 5 = 21 := by rw [M_rec]; simp [Finset.sum_range_succ, m0, m1, m2, m3, m4]
-  have a0 : a 0 = 1 := by simp [a]
-  have a1 : a 1 = 1 := by rw [a]; simp [m1]
-  have a2 : a 2 = 3 := by rw [a]; simp [Finset.sum_Icc_succ_top, m1, m2, a0]
-  have a3 : a 3 = 7 := by rw [a]; simp [Finset.sum_Icc_succ_top, m1, m2, m3, a0, a1]
-  have a4 : a 4 = 18 := by rw [a]; simp [Finset.sum_Icc_succ_top, m1, m2, m3, m4, a0, a1, a2]
-  have a5 : a 5 = 47 := by
-    rw [a]; simp [Finset.sum_Icc_succ_top, m1, m2, m3, m4, m5, a0, a1, a2, a3]
-  exact ⟨m2, m3, m4, m5, a1, a2, a3, a4, a5⟩
-
-/-- Mathar's conjecture: the recurrence holds for every n >= 5. -/
-theorem conjecture : ∀ n : ℕ, 5 ≤ n →
-    ((n : ℤ) + 1) * a n + 2 * (-2 * (n : ℤ) - 1) * a (n - 1) + 2 * (-(n : ℤ) + 3) * a (n - 2) +
-      (11 * (n : ℤ) - 19) * a (n - 3) + (11 * (n : ℤ) - 27) * a (n - 4) +
-      3 * ((n : ℤ) - 3) * a (n - 5) = 0 :=
-  recurrence
+  decide +kernel
 
 end OMA.S_oeis_a045994
 
 theorem OMA.solution : type_of% @OMA.S_oeis_a045994.main :=
-  OMA.S_oeis_a045994.conjecture
+  OMA.S_oeis_a045994.recurrence
