@@ -1,9 +1,5 @@
 import OMAStatements.S_mse_4452078
-import Mathlib.Analysis.Calculus.Deriv.MeanValue
-import Mathlib.Analysis.Calculus.Deriv.Inv
-import Mathlib.Analysis.SpecialFunctions.ExpDeriv
-import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.FunProp
+import Mathlib
 
 /-!
 # Complete negative answer to the derivative-ratio existence question
@@ -95,11 +91,6 @@ theorem no_simultaneous_divergence
       Tendsto (fun x : ℝ => deriv f x / (f x) ^ n) atTop atTop) := by
   intro h
   exact no_square_ratio_divergence hdiff hmono (h 2 (by decide))
-
-end OMA.MSE4452078
-
-
-namespace OMA.MSE4452078
 
 theorem exp_exp_witness :
     ∃ f : ℝ → ℝ, Differentiable ℝ f ∧ StrictMono (fun x => |f x|) ∧
