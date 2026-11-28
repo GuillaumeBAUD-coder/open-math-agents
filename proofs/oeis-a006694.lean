@@ -3,14 +3,8 @@ import OMAStatements.S_oeis_a006694
 /-!
 # A006694: `a ((3^n - 1) / 2) = n`
 
-Modulo `3^n`, the orbit of a nonzero residue `x` under multiplication by `2` is determined by the
-exact power of `3` dividing `x`, and every exponent `v < n` occurs.  So the orbits are indexed by
-`Fin n`.
-
-* Multiplication by `2^k` preserves the power of `3`, since `2` is coprime to `3`.
-* `2` generates the units modulo `3^n`: `4 = 1 + 3` has order `3^(n-1)` and `2` has even order
-  (it already has order `2` modulo `3`), so `2` has order `2 * 3^(n-1) = φ(3^n)`.  Writing
-  `x = 3^v u` and `y = 3^v w` with `u`, `w` prime to `3`, some power of `2` carries `u` to `w`.
+The nonzero residues modulo `3^n` split into `n` orbits under multiplication by `2`, indexed by
+the exact power of `3` dividing each residue.
 -/
 
 namespace OMA.S_oeis_a006694
@@ -70,7 +64,7 @@ lemma exists_two_pow (m u w : ℕ) (hu : ¬ 3 ∣ u) (hw : ¬ 3 ∣ w) :
   simpa [hU, hW, hgval] using this
 
 /-- The power of `3` in a nonzero residue is the same for `x` and `2^k x`. -/
-lemma padicValNat_val_two_pow_mul (n k : ℕ) (x y : ZMod (3 ^ n)) (hx : x ≠ 0) (hy : y ≠ 0)
+lemma val2 (n k : ℕ) (x y : ZMod (3 ^ n)) (hx : x ≠ 0) (hy : y ≠ 0)
     (h : y = 2 ^ k * x) : padicValNat 3 y.val = padicValNat 3 x.val := by
   have : NeZero (3 ^ n) := ⟨pow_ne_zero n (by decide)⟩
   have hx0 : x.val ≠ 0 := (ZMod.val_ne_zero x).mpr hx
@@ -111,7 +105,7 @@ lemma card_cosets (n N : ℕ) (hN : N = 3 ^ n) :
   let f : Quot (fun x y : {x : ZMod (3 ^ n) // x ≠ 0} => SameCoset (3 ^ n) x.1 y.1) → Fin n :=
     Quot.lift (fun x => ⟨padicValNat 3 x.1.val, hlt x⟩) (by
       rintro x y ⟨k, hk⟩
-      exact Fin.ext (padicValNat_val_two_pow_mul n k x.1 y.1 x.2 y.2 hk).symm)
+      exact Fin.ext (val2 n k x.1 y.1 x.2 y.2 hk).symm)
   have hf : Function.Bijective f := by
     constructor
     · intro p q
