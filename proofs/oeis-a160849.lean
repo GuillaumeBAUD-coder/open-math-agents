@@ -213,4 +213,3 @@ end OMA.A160849Proof
 open OMA.A160849Proof in
 theorem OMA.solution : type_of% @OMA.S_oeis_a160849.main := main_proof
 
-#print axioms OMA.solution
