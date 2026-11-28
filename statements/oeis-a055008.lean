@@ -4,7 +4,7 @@ import Mathlib
 # OEIS A055008: numbers with gcd(φ(k), σ(k)) = 1
 
 Source: https://oeis.org/A055008
-Credit: @SudharsanAnimations
+Credit: Sudharsan Rajendiran
 
 A055008 lists the numbers `k` with `gcd(φ(k), σ(k)) = 1`. The entry conjectures that every term is
 a square or twice a square, and records the proof (Amiram Eldar, Jason Yuen): if `k` is neither,
