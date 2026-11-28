@@ -1,62 +1,47 @@
 import OMAReductions.R_Erdos142_erdos_142_variants_lower_R2
 
-/-!
-# Step H2 of the reduction Erdos142.erdos_142.variants.lower.R2
+/-! Recasts the block-separation argument from PR #5265 as linear arithmetic on the block scales. -/
 
-Block j occupies (4 4^j, 5 4^j]. Consecutive blocks are separated by a gap larger than the
-length of a block, so an arithmetic progression of length at least three whose first two terms
-lie in different blocks has its third term in a gap. Hence the first two terms share a block,
-the common difference is less than 4^j, and by induction every term stays in that block. The
-progression then translates to one inside B j, which is excluded.
--/
+lemma block_power_cases (i j : ℕ) : 4 ^ i = 4 ^ j ∨ 4 * 4 ^ i ≤ 4 ^ j ∨ 4 * 4 ^ j ≤ 4 ^ i := by
+  have gap {m n : ℕ} (h : m < n) : 4 * 4 ^ m ≤ 4 ^ n := by
+    calc
+      _ = 4 ^ (m + 1) := by ring
+      _ ≤ _ := Nat.pow_le_pow_right (by decide) h
+  rcases lt_trichotomy i j with h | rfl | h
+  · exact Or.inr (Or.inl (gap h))
+  · exact Or.inl rfl
+  · exact Or.inr (Or.inr (gap h))
 
-namespace OMA.Helpers
-
-theorem pow4_cases (j j' : ℕ) : j = j' ∨ 4 * 4 ^ j ≤ 4 ^ j' ∨ 4 * 4 ^ j' ≤ 4 ^ j := by
-  have step {i k : ℕ} (h : i < k) : 4 * 4 ^ i ≤ 4 ^ k := by
-    simpa only [pow_succ'] using ((show (4 : ℕ) ^ (i + 1) ≤ 4 ^ k from Nat.pow_le_pow_right (by decide) h))
-  rcases lt_trichotomy j j' with h | h | h
-  · exact Or.inr (Or.inl (step h))
-  · exact Or.inl h
-  · exact Or.inr (Or.inr (step h))
-
-end OMA.Helpers
-
-open OMA.Helpers in
 theorem OMA.solution : OMA.R_Erdos142_erdos_142_variants_lower_R2.H2 := by
-  intro k hk B hB hfree ⟨a, d, hd, h⟩
-  have bounds {j b : ℕ} (hb : b ∈ B j) := Finset.mem_Icc.mp (hB j hb)
-  obtain ⟨j0, b0, hb0, e0⟩ := h 0 (by omega)
-  obtain ⟨j1, b1, hb1, e1⟩ := h 1 (by omega)
-  obtain ⟨j2, b2, hb2, e2⟩ := h 2 (by omega)
-  have B0 := bounds hb0
-  have B1 := bounds hb1
-  have B2 := bounds hb2
-  simp only [zero_mul, add_zero, one_mul] at e0 e1
-  have j10 : j1 = j0 := by
-    rcases pow4_cases j0 j1 with h01 | h01 | h01
-    · exact h01.symm
-    · rcases pow4_cases j1 j2 with h12 | h12 | h12
-      · subst h12; omega
-      all_goals omega
-    · omega
-  subst j10
-  have hdP : d < 4 ^ j1 := by omega
-  have all : ∀ i, i < k → ∃ b ∈ B j1, a + i * d = 4 * 4 ^ j1 + b := by
+  intro k hk B hB hfree ⟨a, d, hd, terms⟩
+  choose! index point belongs place using terms
+  have bounds (i : ℕ) (hi : i < k) :
+      4 * 4 ^ index i < a + i * d ∧ a + i * d ≤ 5 * 4 ^ index i := by
+    have := Finset.mem_Icc.mp (hB _ (belongs i hi))
+    have := place i hi
+    omega
+  have first := bounds 0 (by omega)
+  have second := bounds 1 (by omega)
+  have small : d < 4 ^ index 0 := by
+    have := bounds 2 (by omega)
+    have := block_power_cases (index 0) (index 1)
+    have := block_power_cases (index 1) (index 2)
+    omega
+  have all : ∀ i < k, 4 ^ index i = 4 ^ index 0 := by
     intro i
     induction i with
-    | zero => intro _; exact ⟨b0, hb0, by simpa using e0⟩
+    | zero => simp
     | succ i ih =>
       intro hi
-      obtain ⟨b, hb, e⟩ := ih (by omega)
-      obtain ⟨j, b', hb', e'⟩ := h (i + 1) hi
-      have Bi := bounds hb
-      have Bs := bounds hb'
-      rw [add_mul, one_mul] at e'
-      rcases pow4_cases j1 j with rfl | hj | hj
-      · exact ⟨b', hb', by simpa [add_mul] using e'⟩
-      all_goals exfalso; omega
-  apply hfree j1
-  refine ⟨a - 4 * 4 ^ j1, d, hd, fun i hi => ?_⟩
-  obtain ⟨b, hb, e⟩ := all i hi
-  rwa [show a - 4 * 4 ^ j1 + i * d = b by omega]
+      have here := bounds i (by omega)
+      have there := bounds (i + 1) hi
+      have := ih (by omega)
+      have := block_power_cases (index (i + 1)) (index 0)
+      rw [add_mul, one_mul] at there
+      omega
+  refine hfree (index 0) ⟨a - 4 * 4 ^ index 0, d, hd, fun i hi => ?_⟩
+  have same := all i hi
+  have atPoint := place i hi
+  have pointEq : a - 4 * 4 ^ index 0 + i * d = point i := by omega
+  rw [pointEq, ← Nat.pow_right_injective (by decide : 2 ≤ 4) same]
+  exact belongs i hi
