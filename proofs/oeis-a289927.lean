@@ -13,16 +13,13 @@ def L : ℕ → ℤ
   | k + 2 => L (k + 1) + L k
 
 lemma L_cast (k : ℕ) : (L k : ℝ) = Real.goldenRatio ^ k + Real.goldenConj ^ k := by
-  induction k using Nat.strong_induction_on with
-  | _ k ih =>
-    rcases k with _ | _ | k
-    · norm_num [L]
-    · norm_num [L]
-    · rw [L]
-      push_cast
-      rw [ih (k + 1) (by omega), ih k (by omega), pow_add Real.goldenRatio k 2,
-        pow_add Real.goldenConj k 2, Real.goldenRatio_sq, Real.goldenConj_sq]
-      ring
+  induction k using Nat.twoStepInduction
+  · norm_num [L]
+  · simpa only [L, pow_one, Int.cast_one] using Real.goldenRatio_add_goldenConj.symm
+  · rename_i k h0 h1
+    rw [L, Int.cast_add, h0, h1, pow_add _ k 2, pow_add _ k 2,
+      Real.goldenRatio_sq, Real.goldenConj_sq]
+    ring
 
 /-- floor(phi^k) = L(k) - [k even] for k >= 1. -/
 lemma floor_phi (k : ℕ) (hk : 1 ≤ k) :
@@ -61,23 +58,17 @@ lemma s_pos (k : ℕ) (hk : 1 ≤ k) : s k = (L k : ℚ) - (if k % 2 = 0 then 1 
 lemma s_vals : s 1 = 1 ∧ s 2 = 2 ∧ s 3 = 4 ∧ s 4 = 6 := by
   refine ⟨?_, ?_, ?_, ?_⟩ <;> rw [s_pos _ (by norm_num)] <;> norm_num [L]
 
+private lemma s_difference (m : ℕ) :
+    s (m + 3) - s (m + 1) = (L (m + 2) : ℚ) := by
+  simp (disch := omega) only [s_pos, show (m + 3) % 2 = (m + 1) % 2 by omega, L, Int.cast_add]
+  ring
+
 lemma s_rec (n : ℕ) (hn : 5 ≤ n) :
     s n - s (n - 1) - 2 * s (n - 2) + s (n - 3) + s (n - 4) = 0 := by
-  obtain ⟨m, rfl⟩ : ∃ m, n = m + 5 := ⟨n - 5, by omega⟩
-  rw [show m + 5 - 1 = m + 4 by omega, show m + 5 - 2 = m + 3 by omega,
-    show m + 5 - 3 = m + 2 by omega, show m + 5 - 4 = m + 1 by omega,
-    s_pos _ (by omega), s_pos _ (by omega), s_pos _ (by omega), s_pos _ (by omega),
-    s_pos _ (by omega)]
-  have l5 : L (m + 5) = L (m + 4) + L (m + 3) := rfl
-  have l4 : L (m + 4) = L (m + 3) + L (m + 2) := rfl
-  have l3 : L (m + 3) = L (m + 2) + L (m + 1) := rfl
-  have e1 : (m + 5) % 2 = (m + 1) % 2 := by omega
-  have e2 : (m + 4) % 2 = (m + 2) % 2 := by omega
-  have e3 : (m + 3) % 2 = (m + 1) % 2 := by omega
-  rw [e1, e2, e3, l5, l4, l3]
-  have : (m + 2) % 2 = 0 ∨ (m + 2) % 2 = 1 := by omega
-  have h' : (m + 1) % 2 = 0 ↔ (m + 2) % 2 = 1 := by omega
-  rcases this with h | h <;> simp [h, h'] <;> ring
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' hn
+  change s (m + 5) - s (m + 4) - 2 * s (m + 3) + s (m + 2) + s (m + 1) = 0
+  have h : (L (m + 4) : ℚ) = L (m + 3) + L (m + 2) := by simp only [L, Int.cast_add]
+  linear_combination s_difference (m + 2) - s_difference (m + 1) - s_difference m + h
 
 /-- S * (1 - x - 2x^2 + x^3 + x^4) = x + x^2 - x^4. -/
 lemma S_mul : S * (1 - X ^ 1 - C (2 : ℚ) * X ^ 2 + X ^ 3 + X ^ 4) = X ^ 1 + X ^ 2 - X ^ 4 := by
@@ -88,7 +79,8 @@ lemma S_mul : S * (1 - X ^ 1 - C (2 : ℚ) * X ^ 2 + X ^ 3 + X ^ 4) = X ^ 1 + X 
   ext n
   simp only [map_sub, map_add, coeff_C_mul, coeff_mul_X_pow', coeff_X_pow, coeff_S]
   rcases Nat.lt_or_ge n 5 with hn | hn
-  · interval_cases n <;> simp [s, v1, v2, v3, v4] <;> norm_num [s] at v1 v2 v3 v4 ⊢ <;> linarith
+  · have v0 : s 0 = 0 := by simp [s]
+    interval_cases n <;> norm_num [v0, v1, v2, v3, v4]
   · have hr := s_rec n hn
     simp (disch := omega) [if_pos, if_neg]
     linarith
@@ -119,19 +111,16 @@ theorem gf : PowerSeries.mk a * (1 - 3 * X - 4 * X ^ 2 + 7 * X ^ 3 + 5 * X ^ 4 -
   set R : ℚ⟦X⟧ := X ^ 1 + X ^ 2 - X ^ 4 with hR
   have hE : F * D0 ^ 2 = D0 ^ 2 - R * D0 - R ^ 2 := by
     rw [hF, ← hSD]; ring
+  have hN : R * D0 + R ^ 2 = X * ((1 - X ^ 2 + X ^ 3) * (1 + X - X ^ 3)) := by
+    rw [hR, hD0]
+    simp only [map_ofNat]
+    ring
   have key : X * (PowerSeries.mk a * (D0 ^ 2 - R * D0 - R ^ 2)) =
       X * ((1 - X ^ 2 + X ^ 3) * (1 + X - X ^ 3)) := by
-    rw [← hE]
-    calc X * (PowerSeries.mk a * (F * D0 ^ 2)) = (PowerSeries.mk a * X) * F * D0 ^ 2 := by ring
-      _ = (I - 1) * F * D0 ^ 2 := by rw [hAX]
-      _ = (F * I - F) * D0 ^ 2 := by ring
-      _ = (1 - F) * D0 ^ 2 := by rw [hFI]
-      _ = (S * D0) * D0 + (S * D0) ^ 2 := by rw [hF]; ring
-      _ = R * D0 + R ^ 2 := by rw [hSD]
-      _ = X * ((1 - X ^ 2 + X ^ 3) * (1 + X - X ^ 3)) := by
-          rw [hR, hD0, show (C (2 : ℚ) : ℚ⟦X⟧) = 2 from map_ofNat C 2]; ring
-  have hcancel := mul_left_cancel₀ PowerSeries.X_ne_zero key
-  rw [← hcancel, hD0, hR, show (C (2 : ℚ) : ℚ⟦X⟧) = 2 from map_ofNat C 2]
+    rw [← hE, ← hN]
+    linear_combination (F * D0 ^ 2) * hAX + D0 ^ 2 * hFI - hE
+  rw [← mul_left_cancel₀ PowerSeries.X_ne_zero key, hD0, hR]
+  simp only [map_ofNat]
   ring
 
 /-- Barker's recurrence for n > 7. -/
