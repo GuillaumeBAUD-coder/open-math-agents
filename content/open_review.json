@@ -22628,6 +22628,30 @@
     "https://github.com/thatnealpatel/proofs/blob/main/Proofs/Analysis/A010786ProdFloorKotesovec.lean"
    ],
    "reason": "The 'disproof' refutes the formalizer's strengthening, not the entry's conjecture. Kotesovec wrote log a(n) ~ c(n - log(2*pi*n)/2) with conjecture c = A085361; the statement reads '~' as an expansion with error o(log n), and the proof shows that error bound fails. Under the standard reading (ratio -> 1, i.e. log a(n)/n -> c), the conjecture c = A085361 is true and was proved sorry-free in thatnealpatel/proofs (A010786ProdFloorKotesovec.lean, 2026-10-25). A site 'disproved' label would misreport it."
+  },
+  "oeis-a290413": {
+   "date": "2026-11-28",
+   "pr": 27654,
+   "evidence": [
+    "https://oeis.org/A290413"
+   ],
+   "reason": "Disproof of a printed range slip, the same as the siblings A290412/4/5. Barker's recurrence is printed 'for n>6', but his own g.f. has a degree-9 numerator, and the Lean disproof uses the recurrence at n=8. My simulation (diagonal read in base 10, as in %N and the data) satisfies the g.f. through n=40, and the recurrence fails only at n=8 and 9. So the intended conjecture is true and is not addressed."
+  },
+  "mo-283370": {
+   "date": "2026-11-28",
+   "pr": 16864,
+   "evidence": [
+    "https://mathoverflow.net/questions/283370"
+   ],
+   "reason": "The statement is a faithful literal encoding ('some fixed width 0<h<d', any finite nonzero measure on K), but the Lean disproof exploits a loophole rather than the intended problem. It takes K = the unit disk cut at x <= 1/4, h = 3/2 > half the width, and mu = Dirac at 0: every properly meeting plank of width 3/2 contains 0, so mu is trivially plank-invariant. The same trick works on a disk, and Ghomi's question (motivated by the Archimedes hat-box converse) clearly intends a genuine, e.g. non-atomic, measure or small h. The MO question has no answers, and the substantive problem is untouched."
+  },
+  "oeis-a000111": {
+   "date": "2026-11-28",
+   "pr": 29739,
+   "evidence": [
+    "https://oeis.org/A000111"
+   ],
+   "reason": "The disproof exploits Lean's junk values, not the math. It takes x = pi/2, where cos x = 0, so Lean's tan x = sin/cos = 0 and 1/cos x = 0. It shows the continued fraction truncations converge to some L >= -1 there, then derives 0 = 1 + x/L. Gladkovskii's e.g.f. identity tan x + sec x = 1 + x/U(0) concerns x where sec and tan are defined (formally, a power-series identity), and the statement's 'every real x' reading includes the poles. The intended identity is untouched."
   }
  },
  "known": {
@@ -41075,6 +41099,224 @@
     "https://oeis.org/A154921"
    ],
    "reason": "Granvik's conjecture (A000629 = row sums of A154921, T(n,k) = C(n,k)*A000670(n-k)) is stated faithfully. It was already settled in the entry: Bala's comment (May 2012) states it as fact with the horse-race bijection, and A154921 is the exponential Riordan array [1/(2-e^x), x], whose row sums have e.g.f. e^x/(2-e^x), the printed e.g.f. of A000629. A classical binomial-transform identity."
+  },
+  "oeis-a307307": {
+   "date": "2026-11-28",
+   "pr": 29821,
+   "evidence": [
+    "https://oeis.org/A307307",
+    "https://doi.org/10.1016/j.disc.2011.03.019"
+   ],
+   "reason": "Faithful (Lucas cube Lambda(n), sum of cubed degrees; a(1)=0 is handled correctly). The entry's Maple program is the Klavzar-Mollard-Petkovsek (Discrete Math. 2011) bivariate degree g.f. of Lucas cubes. Applying (t d/dt)^3 at t=1 gives exactly Barker's g.f. (I checked this symbolically), and the recurrence is its denominator. This is a mechanical corollary of a published theorem, the same situation as the Fibonacci-cube sibling A307208."
+  },
+  "mo-257899": {
+   "date": "2026-11-28",
+   "pr": 29823,
+   "evidence": [
+    "https://mathoverflow.net/questions/257899",
+    "https://github.com/connoranderson/open-math-agents/blob/a4d4ac7cb9b32fe4f5d969f3bb3dd11f9fd0e1a2/proofs/mo-257899.lean",
+    "https://doi.org/10.1090/S0002-9939-1952-0050579-7"
+   ],
+   "reason": "Faithful: V(sigma,k) is transcribed with sigma acting on indices, which is equivalent because k is strictly increasing. My brute force agrees with 'property A iff (n+1) | sum k_i' for all n=2,3 cases with small k. The OP's n=2 guess left out cases such as (0,3,6), which really do work. The MO question has no answers. But the proof file says it is an unchanged port by @rodolfoquint of @connoranderson's complete proof, published earlier in connoranderson's fork (statement PR #24841), using Marshall Hall's 1952 theorem. That makes it an adaptation of an earlier public solution."
+  },
+  "oeis-a207702": {
+   "date": "2026-11-28",
+   "pr": 29819,
+   "evidence": [
+    "https://oeis.org/A207702",
+    "https://isitsolved.com/journal/849ff39de7ae"
+   ],
+   "reason": "Faithful (n x 7 binary arrays, row patterns 000/010 and column patterns 001/110, read as in the data). But isitsolved iis:2611.00300 (filed 2026-11-28 11:52 UTC) proves Barker's g.f. and Hardin's recurrence for A207702 by an exact transfer matrix. That is before the site proof commit (12:47 UTC). Barker's degree-7 polynomial is equivalent to that g.f."
+  },
+  "oeis-a143862": {
+   "date": "2026-11-28",
+   "pr": 29812,
+   "evidence": [
+    "https://oeis.org/A143862"
+   ],
+   "reason": "Arndt's 'conjectured' g.f. 1+Sum_{n>=1}(x^n/(1-x^n))^n is term for term the same series as the entry's first g.f. Sum_{k>=0} x^(k^2)/(1-x^k)^k. The statement also defines a(n) by Hanna's divisor sum, which is just the coefficient extraction of that series, so the claim is essentially immediate from the definition. The proof file also says it reassembles a companion proof by Heart-galaxy published in statement PR 21609, 'without a novelty claim'. I could not open PR 21609, because the GitHub API is blocked for that repository in this session."
+  },
+  "oeis-a279735": {
+   "date": "2026-11-28",
+   "pr": 29814,
+   "evidence": [
+    "https://oeis.org/A279735",
+    "https://isitsolved.com/journal/bb4951d4a901"
+   ],
+   "reason": "isitsolved iis:2611.00237 (filed 2026-11-28 05:28 UTC) proves Barker's g.f. and Hardin's recurrence for A279735 by an exact transfer matrix. That is well before the site proof commit (12:47 UTC). The explicit Binet-type closed form is a direct consequence of the g.f. 2x^2(1-2x)/(1-3x+x^2)^2."
+  },
+  "oeis-a179929": {
+   "date": "2026-11-28",
+   "pr": 18607,
+   "evidence": [
+    "https://github.com/thatnealpatel/proofs/blob/main/Proofs/Sorry/Enumerative/A179929EulerianMod.lean",
+    "https://oeis.org/A179929"
+   ],
+   "reason": "Bala's conjecture (a(n) mod k eventually periodic with period dividing phi(k)) is stated faithfully. But thatnealpatel/proofs already has a sorry-free Lean proof, A179929_eventually_periodic_totient, plus a sharper Carmichael-lambda version, by the same method: k! S(n+1,k+1) as an alternating binomial power sum, then Euler's theorem on prime powers. That file was in the library before the site solves on Nov 28: it is listed in our np_ids.txt crawl of 10:35 UTC, and its header says it was retrieved 2026-10-21."
+  },
+  "oeis-a362534": {
+   "date": "2026-11-28",
+   "pr": 28825,
+   "evidence": [
+    "https://www.trureturing.org/research/sabba-2023-a362534-polarization-transfer-refutation/",
+    "https://oeis.org/A362534"
+   ],
+   "reason": "Disproof of Sabba's conjecture at n=19: num(g(19)) = 215955 but den(f/g) = 43191. The statement header itself says this counterexample was already verified by the TrureTuring project (Problems/sabba-2023-a362534-polarization-transfer-refutation.md and Library/Certificates/sabba2023a362534.md in the-omega-institute/trureturing), which is in our trureturing clone from before the site proof."
+  },
+  "oeis-a320949": {
+   "date": "2026-11-28",
+   "pr": 29784,
+   "evidence": [
+    "https://github.com/the-omega-institute/trureturing/blob/dev/D5/S3/ArithSums/HannaA320949ModThree.lean",
+    "https://oeis.org/A320949"
+   ],
+   "reason": "Hanna's claim that 3 | a(n) for n>0 (sum_j (1+x)^(j^2)/(1+A)^(j+1) = 1) is stated faithfully over all integer solutions. But trureturing's D5/S3/ArithSums/HannaA320949ModThree.result proves exactly this claim, existence and every solution, with no sorry, using the same binomial-average and finite-difference route. It is in our trureturing clone, whose HEAD commit is 10:31 UTC Nov 28, before the site proof at 12:45 UTC."
+  },
+  "oeis-a118207": {
+   "date": "2026-11-28",
+   "pr": 29779,
+   "evidence": [
+    "https://github.com/blakestone-x/math/blob/main/A118207/README.md",
+    "https://oeis.org/A118207",
+    "https://oeis.org/A118205/a118205.pdf"
+   ],
+   "reason": "Bala's identity A(X^2) = prod Phi_n(X^n)Phi_n((-X)^n) is stated faithfully as a congruence mod X^(N+1) for every N. But Blake Stone's repository blakestone-x/math already has a complete Lean proof dated Nov 27, 2026 (A118207/Proof.lean, linked from the README). It builds on Bala's 2023 note (Prop. 1, the Liouville-cyclotomic product). The site statement credits @blakestone-x, and the merged proof (sserene7, 12:45 UTC Nov 28) uses the same CyclotomicLiouville development."
+  },
+  "oeis-a273314": {
+   "date": "2026-11-28",
+   "pr": 27900,
+   "evidence": [
+    "https://oeis.org/A273314",
+    "https://oeis.org/A273315",
+    "https://oeis.org/A273745"
+   ],
+   "reason": "Faithful (2D Rule 643, partial sums of the [-k,k]^2 counts; my simulation matches the cubic for 1<=n<=60). But the content was already settled on this site. Rule 643's first differences 8(1+n) for n>1 were proved in oeis-a273745/a273791 (committed 08:08 UTC, which prove a273745 = A273315 as Rule 643 differences) and in oeis-a273315 (13:48 UTC, same author). That fixes the count, and so these partial sums, before this proof (15:44 UTC). Only finite initial checks remain. This matches the earlier batch verdict on A273480/A273315."
+  },
+  "oeis-a273834": {
+   "date": "2026-11-28",
+   "pr": 27991,
+   "evidence": [
+    "https://oeis.org/A273834",
+    "https://oeis.org/A273831"
+   ],
+   "reason": "Faithful (2D Rule 961, first differences; my simulation matches 8+(-1)^n+8n for 3<=n<59). But the same author's site solve of A273831 (Rule 961 count with closed forms for n>=3, committed 13:14 UTC) gives these first differences by subtraction, before this proof (15:43 UTC). Cohen's Zenodo artifact also certifies Rule 961. The recurrence and g.f. follow with finitely many checks."
+  },
+  "oeis-a273385": {
+   "date": "2026-11-28",
+   "pr": 29790,
+   "evidence": [
+    "https://doi.org/10.5281/zenodo.24384895",
+    "https://oeis.org/A273385",
+    "https://oeis.org/A270009"
+   ],
+   "reason": "Faithful (my simulation gives 1,5,49,225,961,3969,... for Rule 659 and 1,8,49,... for Rule 5). Cohen (Zenodo 24384895, 20 Nov) proves in Lean the 11 companion rules and the closed form (n>1), from which the recurrence and g.f. follow (his paper notes a(0..4) are checked by computation). He leaves Mathar's Rule 5 identity open. But the Rule 5 per-stage count was proved on this site first: A270009 differences at 10:19 UTC, A270008 at 10:56 UTC, A270006 at 10:19 UTC, all before this proof (12:46 UTC). That gives Rule 5 at stage 2^n-1 as (2^(n+1)-1)^2, so the last conjunct is algebra."
+  },
+  "oeis-a002000": {
+   "date": "2026-11-28",
+   "pr": 29753,
+   "evidence": [
+    "https://github.com/the-omega-institute/trureturing/blob/dev/Problems/oeis-a002000-bala-cubic-three-adic-congruence.md",
+    "https://oeis.org/A002000"
+   ],
+   "reason": "Bala's congruence a(n+1) = a(n) mod 3^(n+r+2) for n>=r is stated verbatim. trureturing proves exactly this statement (theorem result (n r) (hr : r <= n) : 3^(n+r+2) | a(n+1) - a(n), resolution Proved; Library/Recurrence/bala2022a002000.md). It is in our clone, HEAD 10:31 UTC Nov 28, before the site proof at 12:43 UTC. The site proof uses the same d(n)=a(n)^2-4 argument."
+  },
+  "oeis-a223886": {
+   "date": "2026-11-28",
+   "pr": 29775,
+   "evidence": [
+    "https://oeis.org/A223886",
+    "https://arxiv.org/abs/1111.3057"
+   ],
+   "reason": "Faithful (for k,j>0 and p large, k p^3 | C(jkp,jp) - C(kj,j)), and it is a corollary of a classical theorem. C(jkp,jp) = k C(jkp-1,jp-1) and C(kj,j) = k C(kj-1,j-1), so for p > max(k,3) it reduces to the Jacobsthal-Kazandzidis congruence C(ap,bp) = C(a,b) mod p^3 (p>=5). That congruence is surveyed in Mestrovic's paper, which the entry itself cites."
+  },
+  "oeis-a217772": {
+   "date": "2026-11-28",
+   "pr": 29761,
+   "evidence": [
+    "https://oeis.org/A217772",
+    "https://arxiv.org/abs/1111.3057"
+   ],
+   "reason": "The quotient in the statement is exactly C(3p,p) (exact natural-number division), so the claim is 3p^3 | C(3p,p)-3 for odd primes p. Since C(3p,p) = 3 C(3p-1,p-1), this is the classical Glaisher/Ljunggren generalization of Wolstenholme, C(kp-1,p-1) = 1 mod p^3 for p>=5, plus a direct check at p=3 (84-3=81). Luschny's 2016 comment in the entry already records it for all k>=2."
+  },
+  "oeis-a288315": {
+   "date": "2026-11-28",
+   "pr": 29759,
+   "evidence": [
+    "https://doi.org/10.5281/zenodo.23407380",
+    "https://oeis.org/A288315"
+   ],
+   "reason": "Faithful (the 00->0001, 1->00 fixed point, positions of 0, m in [1.22,1.23), a limit plus two-sided discrepancy for all n>=1). But Ashburn, 'Iterated string replacements from 00...' (Zenodo 23407380, 16 Oct 2026), map M21, Table rows: A288315 with m = 1.2266815 (root of x^3+3x^2-6x+1) and '-1 < m - a(n)/n < 1: true', proved there. That is before the site proof."
+  },
+  "oeis-a177163": {
+   "date": "2026-11-28",
+   "pr": 16251,
+   "evidence": [
+    "https://doi.org/10.3390/math14122177",
+    "https://oeis.org/A177163"
+   ],
+   "reason": "Mathar's order-4 P-recurrence (n>=4) for the Choulet sequence (a0,a1,k,l)=(1,7,0,-1) is stated faithfully: the definition reproduces the data, and the recurrence checks to n=59. It is covered by Dubickas, 'Recurrence Formulas for Choulet Sequences', Mathematics 14 (2026) 2177, which proves these recurrences for every Choulet sequence a(n+1)=sum a(j)a(n-j)+k(n+1)+l. The same verdict was given for the siblings A177129, A176953, etc."
+  },
+  "oeis-a176956": {
+   "date": "2026-11-28",
+   "pr": 16175,
+   "evidence": [
+    "https://doi.org/10.3390/math14122177",
+    "https://oeis.org/A176956"
+   ],
+   "reason": "Mathar's order-5 P-recurrence (n>=5) for the Choulet sequence (a0,a1,k,l)=(1,3,-1,-1) is stated faithfully: the definition reproduces the data 1,3,3,11,35,139,..., and the recurrence checks to n=59. It is covered by Dubickas, Mathematics 14 (2026) 2177, which treats all Choulet sequences (k != 0 gives order 5)."
+  },
+  "oeis-a177128": {
+   "date": "2026-11-28",
+   "pr": 16278,
+   "evidence": [
+    "https://doi.org/10.3390/math14122177",
+    "https://oeis.org/A177128"
+   ],
+   "reason": "Mathar's order-4 P-recurrence (n>=4) for the Choulet sequence (a0,a1,k,l)=(1,7,0,1) is stated faithfully, and it checks to n=59. It is covered by Dubickas, 'Recurrence Formulas for Choulet Sequences', Mathematics 14 (2026) 2177 (June 2026), which predates the site proof (Nov 28 UTC)."
+  },
+  "oeis-a066385": {
+   "date": "2026-11-28",
+   "pr": 13935,
+   "evidence": [
+    "https://arxiv.org/abs/1801.00416",
+    "https://oeis.org/A066385"
+   ],
+   "reason": "Schoenfield's conjecture a(n) = ceil(3n/2)+3 for odd n>15 is stated faithfully, using n=m+1 and (3n+1)/2 = ceil(3n/2). But Higashitani-Kurimoto, 'Permutations with small maximal k-consecutive sums' (arXiv:1801.00416, v4 2019), Corollary 1.6(a), already gives msum(n,3) = 2 for every odd n >= 7 except 9 and 15. So a(n) = 3(n+1)/2 + 2 = ceil(3n/2)+3, and the entry's conjecture was settled in the literature before 2026."
+  },
+  "mo-231133": {
+   "date": "2026-11-28",
+   "pr": 29748,
+   "evidence": [
+    "https://mathoverflow.net/questions/231133",
+    "https://github.com/connoranderson/open-math-agents/blob/9dba4d86a8ad9a2f413d565f773dfb01c96998e6/proofs/mo-231133.lean"
+   ],
+   "reason": "The proof file says it is an unchanged port by @rodolfoquint of @connoranderson's complete proof, published earlier in connoranderson's fork (statement PR #24791), so it adapts an earlier public solution. The MO question is an open-ended request for 'a lower bound', with no answers. The statement supplies its own answer: Mirsky's classical trace-norm inequality for real b, with sharpness, plus a reachability characterization for nonreal b. So the content is a classical inequality plus an author-chosen reformulation, not a resolution of a precise open problem."
+  },
+  "mo-216263": {
+   "date": "2026-11-28",
+   "pr": 29740,
+   "evidence": [
+    "https://mathoverflow.net/questions/216263",
+    "https://github.com/connoranderson/open-math-agents/blob/efdfeb716a70120a7ee300eaf8710dea8625c393/proofs/mo-216263.lean"
+   ],
+   "reason": "The proof file says it is a 'credited port of @connoranderson's complete public proof', retained unchanged and 'not a claim of a new mathematical discovery' (statement PR #25016). So it adapts an earlier public solution. The statement is also an author-chosen sufficient condition (Taylor truncation plus Lagrange correction, and the M/j^2 data), not a full answer to the MO question, as the header itself admits."
+  },
+  "mo-267680": {
+   "date": "2026-11-28",
+   "pr": 29732,
+   "evidence": [
+    "https://mathoverflow.net/questions/267680",
+    "https://github.com/connoranderson/open-math-agents/blob/e2ed71df9a5413f53257d1fb7baab4572abccaef/proofs/mo-267680.lean"
+   ],
+   "reason": "The proof file says it is an unchanged port by @rodolfoquint of @connoranderson's complete proof, published earlier (statement PR #25013), so it adapts an earlier public solution. The question names no topology, and the statement picks pointwise convergence (compact by Tychonoff, sequentially compact iff n <= 2), which is an author-chosen interpretation."
+  },
+  "mo-277190": {
+   "date": "2026-11-28",
+   "pr": 29726,
+   "evidence": [
+    "https://mathoverflow.net/questions/277190"
+   ],
+   "reason": "The statement is the classical Jordan-Wielandt fact that the Hermitian dilation [[0,C],[C*,0]] has eigenvalues +-sigma_i(C) (via charpoly(D) = charpoly(CC*)(X^2)), plus a 2x2 example showing that repeated eigenvalues of C need not give repeated eigenvalues of D. Both points are given in the MO comments by David Handelman and Surb ('this has relatively little to do with the eigenvalues of C, rather the singular values'). A textbook result, not an open problem."
   }
  },
  "reviewed": "2026-11-28"
