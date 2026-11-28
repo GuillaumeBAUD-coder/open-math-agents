@@ -62,24 +62,6 @@ theorem ordered_enumeration (A : Set ℕ)
   have hp := (hmem n).2
   omega
 
-theorem prefix_frontier (a : ℕ → ℕ) (ha : StrictMono a) (ha0 : 0 < a 0)
-    (n : ℕ) (hbound : 2 * a n ≤ n ^ 2 + 2) :
-    2 * a n + n ≤ 2 * (∑ i ∈ Finset.range n, a i) + 2 := by
-  have hpoint (i : ℕ) : i + 1 ≤ a i := by
-    induction i with
-    | zero => exact ha0
-    | succ i ih =>
-      have hi : a i < a (i + 1) := ha (Nat.lt_succ_self i)
-      omega
-  have hsum (k : ℕ) : k * (k + 1) ≤ 2 * (∑ i ∈ Finset.range k, a i) := by
-    induction k with
-    | zero => simp
-    | succ k ih =>
-      rw [Finset.sum_range_succ]
-      nlinarith [hpoint k]
-  have hs := hsum n
-  nlinarith
-
 end OMA.Erdos344Quadratic
 
 theorem OMA.solution : OMA.R_Erdos344_erdos_344_variants_sqrt_two_R1.H1 :=

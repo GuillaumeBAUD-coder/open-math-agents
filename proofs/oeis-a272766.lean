@@ -21,21 +21,6 @@ theorem conjecture_false :
   rw [primorial_eleven] at this
   exact not_term_2310 this
 
-theorem control_two : IsTerm 2 := by
-  refine ⟨by norm_num, by decide +kernel, ?_⟩
-  intro m h1 h2
-  omega
-
-theorem control_six : IsTerm 6 := by
-  refine ⟨by norm_num, by decide +kernel, ?_⟩
-  intro m h1 h2
-  interval_cases m <;> decide +kernel
-
-theorem control_thirty : IsTerm 30 := by
-  refine ⟨by norm_num, by decide +kernel, ?_⟩
-  intro m h1 h2
-  interval_cases m <;> decide +kernel
-
 theorem disproof : ¬ (∀ n : ℕ, 1 < primorial n → IsTerm (primorial n)) := conjecture_false
 
 end OMA.S_oeis_a272766

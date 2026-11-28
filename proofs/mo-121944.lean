@@ -13,6 +13,15 @@ import OMAStatements.S_mo_121944
 
 open Polynomial Matrix
 
+-- Reuse the same triangular determinant argument for all nine interpolation points.
+private lemma det_of_certificate {n : ℕ} (A Q U : Matrix (Fin n) (Fin n) ℚ) (d : ℚ)
+    (hQ : Q.IsUpperTriangular) (hU : U.IsUpperTriangular) (hm : Qᵀ * A = U)
+    (hq : (∏ i, Q i i) ≠ 0) (hu : (∏ i, Q i i) * d = ∏ i, U i i) : A.det = d := by
+  have h := congrArg Matrix.det hm
+  rw [Matrix.det_mul, Matrix.det_transpose, Matrix.det_of_isUpperTriangular hQ,
+    Matrix.det_of_isUpperTriangular hU] at h
+  exact mul_left_cancel₀ hq (h.trans hu.symm)
+
 private def cQ8 : Matrix (Fin 8) (Fin 8) ℚ :=
   !![1, 1, 3, 1, 9, 6, 30, 60;
      0, 5, 15, 5, 45, 30, 150, 300;
@@ -34,20 +43,8 @@ private def cU8 : Matrix (Fin 8) (Fin 8) ℚ :=
      0, 0, 0, 0, 0, 0, 0, 182996]
 
 private lemma ev8 : (Matrix.scalar (Fin 8) (8 : ℚ) - OMA.S_mo_121944.givenMatrix).det = 11711744 := by
-  have hQ0 : ∀ p : Fin 8 × Fin 8, p.2 < p.1 → cQ8 p.1 p.2 = 0 := by decide +kernel
-  have hQ : cQ8.IsUpperTriangular := fun i j hij => hQ0 (i, j) hij
-  have hU0 : ∀ p : Fin 8 × Fin 8, p.2 < p.1 → cU8 p.1 p.2 = 0 := by decide +kernel
-  have hU : cU8.IsUpperTriangular := fun i j hij => hU0 (i, j) hij
-  have hmul : cQ8ᵀ * (Matrix.scalar (Fin 8) (8 : ℚ) - OMA.S_mo_121944.givenMatrix) = cU8 := by
-    decide +kernel
-  have hq : ∏ i : Fin 8, cQ8 i i = 115151907594240000 := by decide +kernel
-  have hu : ∏ i : Fin 8, cU8 i i = 1348629662855394754560000 := by decide +kernel
-  have hdet := congrArg Matrix.det hmul
-  rw [Matrix.det_mul, Matrix.det_transpose, Matrix.det_of_isUpperTriangular hQ,
-    Matrix.det_of_isUpperTriangular hU, hq, hu] at hdet
-  have h0 : (115151907594240000 : ℚ) ≠ 0 := by norm_num
-  refine mul_left_cancel₀ h0 (hdet.trans ?_)
-  norm_num
+  apply det_of_certificate _ cQ8 cU8
+  all_goals decide +kernel
 
 private def cQ9 : Matrix (Fin 8) (Fin 8) ℚ :=
   !![1, 1, 1, 1, 1, 9, 693, 6237;
@@ -70,20 +67,8 @@ private def cU9 : Matrix (Fin 8) (Fin 8) ℚ :=
      0, 0, 0, 0, 0, 0, 0, 31695331]
 
 private lemma ev9 : (Matrix.scalar (Fin 8) (9 : ℚ) - OMA.S_mo_121944.givenMatrix).det = 31695331 := by
-  have hQ0 : ∀ p : Fin 8 × Fin 8, p.2 < p.1 → cQ9 p.1 p.2 = 0 := by decide +kernel
-  have hQ : cQ9.IsUpperTriangular := fun i j hij => hQ0 (i, j) hij
-  have hU0 : ∀ p : Fin 8 × Fin 8, p.2 < p.1 → cU9 p.1 p.2 = 0 := by decide +kernel
-  have hU : cU9.IsUpperTriangular := fun i j hij => hU0 (i, j) hij
-  have hmul : cQ9ᵀ * (Matrix.scalar (Fin 8) (9 : ℚ) - OMA.S_mo_121944.givenMatrix) = cU9 := by
-    decide +kernel
-  have hq : ∏ i : Fin 8, cQ9 i i = 173305682198377702560 := by decide +kernel
-  have hu : ∏ i : Fin 8, cU9 i i = 5492980961458388945658747360 := by decide +kernel
-  have hdet := congrArg Matrix.det hmul
-  rw [Matrix.det_mul, Matrix.det_transpose, Matrix.det_of_isUpperTriangular hQ,
-    Matrix.det_of_isUpperTriangular hU, hq, hu] at hdet
-  have h0 : (173305682198377702560 : ℚ) ≠ 0 := by norm_num
-  refine mul_left_cancel₀ h0 (hdet.trans ?_)
-  norm_num
+  apply det_of_certificate _ cQ9 cU9
+  all_goals decide +kernel
 
 private def cQ10 : Matrix (Fin 8) (Fin 8) ℚ :=
   !![1, 1, 3, 1, 9, 15, 60, 300;
@@ -106,20 +91,8 @@ private def cU10 : Matrix (Fin 8) (Fin 8) ℚ :=
      0, 0, 0, 0, 0, 0, 0, 2393848]
 
 private lemma ev10 : (Matrix.scalar (Fin 8) (10 : ℚ) - OMA.S_mo_121944.givenMatrix).det = 76603136 := by
-  have hQ0 : ∀ p : Fin 8 × Fin 8, p.2 < p.1 → cQ10 p.1 p.2 = 0 := by decide +kernel
-  have hQ : cQ10.IsUpperTriangular := fun i j hij => hQ0 (i, j) hij
-  have hU0 : ∀ p : Fin 8 × Fin 8, p.2 < p.1 → cU10 p.1 p.2 = 0 := by decide +kernel
-  have hU : cU10.IsUpperTriangular := fun i j hij => hU0 (i, j) hij
-  have hmul : cQ10ᵀ * (Matrix.scalar (Fin 8) (10 : ℚ) - OMA.S_mo_121944.givenMatrix) = cU10 := by
-    decide +kernel
-  have hq : ∏ i : Fin 8, cQ10 i i = 268164525286318500000 := by decide +kernel
-  have hu : ∏ i : Fin 8, cU10 i i = 20542243600883294994816000000 := by decide +kernel
-  have hdet := congrArg Matrix.det hmul
-  rw [Matrix.det_mul, Matrix.det_transpose, Matrix.det_of_isUpperTriangular hQ,
-    Matrix.det_of_isUpperTriangular hU, hq, hu] at hdet
-  have h0 : (268164525286318500000 : ℚ) ≠ 0 := by norm_num
-  refine mul_left_cancel₀ h0 (hdet.trans ?_)
-  norm_num
+  apply det_of_certificate _ cQ10 cU10
+  all_goals decide +kernel
 
 private def cQ11 : Matrix (Fin 8) (Fin 8) ℚ :=
   !![1, 1, 3, 1, 9, 33, 1287, 14157;
@@ -142,20 +115,8 @@ private def cU11 : Matrix (Fin 8) (Fin 8) ℚ :=
      0, 0, 0, 0, 0, 0, 0, 169303775]
 
 private lemma ev11 : (Matrix.scalar (Fin 8) (11 : ℚ) - OMA.S_mo_121944.givenMatrix).det = 169303775 := by
-  have hQ0 : ∀ p : Fin 8 × Fin 8, p.2 < p.1 → cQ11 p.1 p.2 = 0 := by decide +kernel
-  have hQ : cQ11.IsUpperTriangular := fun i j hij => hQ0 (i, j) hij
-  have hU0 : ∀ p : Fin 8 × Fin 8, p.2 < p.1 → cU11 p.1 p.2 = 0 := by decide +kernel
-  have hU : cU11.IsUpperTriangular := fun i j hij => hU0 (i, j) hij
-  have hmul : cQ11ᵀ * (Matrix.scalar (Fin 8) (11 : ℚ) - OMA.S_mo_121944.givenMatrix) = cU11 := by
-    decide +kernel
-  have hq : ∏ i : Fin 8, cQ11 i i = 3883138032959938318393344 := by decide +kernel
-  have hu : ∏ i : Fin 8, cU11 i i = 657429927826191981071145074073600 := by decide +kernel
-  have hdet := congrArg Matrix.det hmul
-  rw [Matrix.det_mul, Matrix.det_transpose, Matrix.det_of_isUpperTriangular hQ,
-    Matrix.det_of_isUpperTriangular hU, hq, hu] at hdet
-  have h0 : (3883138032959938318393344 : ℚ) ≠ 0 := by norm_num
-  refine mul_left_cancel₀ h0 (hdet.trans ?_)
-  norm_num
+  apply det_of_certificate _ cQ11 cU11
+  all_goals decide +kernel
 
 private def cQ12 : Matrix (Fin 8) (Fin 8) ℚ :=
   !![1, 1, 1, 1, 1, 3, 105, 315;
@@ -178,20 +139,8 @@ private def cU12 : Matrix (Fin 8) (Fin 8) ℚ :=
      0, 0, 0, 0, 0, 0, 0, 5437036]
 
 private lemma ev12 : (Matrix.scalar (Fin 8) (12 : ℚ) - OMA.S_mo_121944.givenMatrix).det = 347970304 := by
-  have hQ0 : ∀ p : Fin 8 × Fin 8, p.2 < p.1 → cQ12 p.1 p.2 = 0 := by decide +kernel
-  have hQ : cQ12.IsUpperTriangular := fun i j hij => hQ0 (i, j) hij
-  have hU0 : ∀ p : Fin 8 × Fin 8, p.2 < p.1 → cU12 p.1 p.2 = 0 := by decide +kernel
-  have hU : cU12.IsUpperTriangular := fun i j hij => hU0 (i, j) hij
-  have hmul : cQ12ᵀ * (Matrix.scalar (Fin 8) (12 : ℚ) - OMA.S_mo_121944.givenMatrix) = cU12 := by
-    decide +kernel
-  have hq : ∏ i : Fin 8, cQ12 i i = 127726277657457604608 := by decide +kernel
-  have hu : ∏ i : Fin 8, cU12 i i = 44444951665253930542557560832 := by decide +kernel
-  have hdet := congrArg Matrix.det hmul
-  rw [Matrix.det_mul, Matrix.det_transpose, Matrix.det_of_isUpperTriangular hQ,
-    Matrix.det_of_isUpperTriangular hU, hq, hu] at hdet
-  have h0 : (127726277657457604608 : ℚ) ≠ 0 := by norm_num
-  refine mul_left_cancel₀ h0 (hdet.trans ?_)
-  norm_num
+  apply det_of_certificate _ cQ12 cU12
+  all_goals decide +kernel
 
 private def cQ13 : Matrix (Fin 8) (Fin 8) ℚ :=
   !![1, 1, 3, 1, 9, 39, 2145, 27885;
@@ -214,20 +163,8 @@ private def cU13 : Matrix (Fin 8) (Fin 8) ℚ :=
      0, 0, 0, 0, 0, 0, 0, 673360619]
 
 private lemma ev13 : (Matrix.scalar (Fin 8) (13 : ℚ) - OMA.S_mo_121944.givenMatrix).det = 673360619 := by
-  have hQ0 : ∀ p : Fin 8 × Fin 8, p.2 < p.1 → cQ13 p.1 p.2 = 0 := by decide +kernel
-  have hQ : cQ13.IsUpperTriangular := fun i j hij => hQ0 (i, j) hij
-  have hU0 : ∀ p : Fin 8 × Fin 8, p.2 < p.1 → cU13 p.1 p.2 = 0 := by decide +kernel
-  have hU : cU13.IsUpperTriangular := fun i j hij => hU0 (i, j) hij
-  have hmul : cQ13ᵀ * (Matrix.scalar (Fin 8) (13 : ℚ) - OMA.S_mo_121944.givenMatrix) = cU13 := by
-    decide +kernel
-  have hq : ∏ i : Fin 8, cQ13 i i = 374076537604586613375540000 := by decide +kernel
-  have hu : ∏ i : Fin 8, cU13 i i = 251888408914801219221667293859260000 := by decide +kernel
-  have hdet := congrArg Matrix.det hmul
-  rw [Matrix.det_mul, Matrix.det_transpose, Matrix.det_of_isUpperTriangular hQ,
-    Matrix.det_of_isUpperTriangular hU, hq, hu] at hdet
-  have h0 : (374076537604586613375540000 : ℚ) ≠ 0 := by norm_num
-  refine mul_left_cancel₀ h0 (hdet.trans ?_)
-  norm_num
+  apply det_of_certificate _ cQ13 cU13
+  all_goals decide +kernel
 
 private def cQ14 : Matrix (Fin 8) (Fin 8) ℚ :=
   !![1, 1, 3, 1, 9, 21, 168, 1176;
@@ -250,20 +187,8 @@ private def cU14 : Matrix (Fin 8) (Fin 8) ℚ :=
      0, 0, 0, 0, 0, 0, 0, 38701048]
 
 private lemma ev14 : (Matrix.scalar (Fin 8) (14 : ℚ) - OMA.S_mo_121944.givenMatrix).det = 1238433536 := by
-  have hQ0 : ∀ p : Fin 8 × Fin 8, p.2 < p.1 → cQ14 p.1 p.2 = 0 := by decide +kernel
-  have hQ : cQ14.IsUpperTriangular := fun i j hij => hQ0 (i, j) hij
-  have hU0 : ∀ p : Fin 8 × Fin 8, p.2 < p.1 → cU14 p.1 p.2 = 0 := by decide +kernel
-  have hU : cU14.IsUpperTriangular := fun i j hij => hU0 (i, j) hij
-  have hmul : cQ14ᵀ * (Matrix.scalar (Fin 8) (14 : ℚ) - OMA.S_mo_121944.givenMatrix) = cU14 := by
-    decide +kernel
-  have hq : ∏ i : Fin 8, cQ14 i i = 2701680050553194208849120 := by decide +kernel
-  have hu : ∏ i : Fin 8, cU14 i i = 3345851178147251060159738172088320 := by decide +kernel
-  have hdet := congrArg Matrix.det hmul
-  rw [Matrix.det_mul, Matrix.det_transpose, Matrix.det_of_isUpperTriangular hQ,
-    Matrix.det_of_isUpperTriangular hU, hq, hu] at hdet
-  have h0 : (2701680050553194208849120 : ℚ) ≠ 0 := by norm_num
-  refine mul_left_cancel₀ h0 (hdet.trans ?_)
-  norm_num
+  apply det_of_certificate _ cQ14 cU14
+  all_goals decide +kernel
 
 private def cQ15 : Matrix (Fin 8) (Fin 8) ℚ :=
   !![1, 1, 1, 1, 1, 15, 3315, 49725;
@@ -286,20 +211,8 @@ private def cU15 : Matrix (Fin 8) (Fin 8) ℚ :=
      0, 0, 0, 0, 0, 0, 0, 2180754151]
 
 private lemma ev15 : (Matrix.scalar (Fin 8) (15 : ℚ) - OMA.S_mo_121944.givenMatrix).det = 2180754151 := by
-  have hQ0 : ∀ p : Fin 8 × Fin 8, p.2 < p.1 → cQ15 p.1 p.2 = 0 := by decide +kernel
-  have hQ : cQ15.IsUpperTriangular := fun i j hij => hQ0 (i, j) hij
-  have hU0 : ∀ p : Fin 8 × Fin 8, p.2 < p.1 → cU15 p.1 p.2 = 0 := by decide +kernel
-  have hU : cU15.IsUpperTriangular := fun i j hij => hU0 (i, j) hij
-  have hmul : cQ15ᵀ * (Matrix.scalar (Fin 8) (15 : ℚ) - OMA.S_mo_121944.givenMatrix) = cU15 := by
-    decide +kernel
-  have hq : ∏ i : Fin 8, cQ15 i i = 217400980637038291704000000 := by decide +kernel
-  have hu : ∏ i : Fin 8, cU15 i i = 474098090955691878979446863304000000 := by decide +kernel
-  have hdet := congrArg Matrix.det hmul
-  rw [Matrix.det_mul, Matrix.det_transpose, Matrix.det_of_isUpperTriangular hQ,
-    Matrix.det_of_isUpperTriangular hU, hq, hu] at hdet
-  have h0 : (217400980637038291704000000 : ℚ) ≠ 0 := by norm_num
-  refine mul_left_cancel₀ h0 (hdet.trans ?_)
-  norm_num
+  apply det_of_certificate _ cQ15 cU15
+  all_goals decide +kernel
 
 private def cQ16 : Matrix (Fin 8) (Fin 8) ℚ :=
   !![1, 1, 3, 1, 9, 12, 252, 1008;
@@ -322,20 +235,8 @@ private def cU16 : Matrix (Fin 8) (Fin 8) ℚ :=
      0, 0, 0, 0, 0, 0, 0, 57784100]
 
 private lemma ev16 : (Matrix.scalar (Fin 8) (16 : ℚ) - OMA.S_mo_121944.givenMatrix).det = 3698182400 := by
-  have hQ0 : ∀ p : Fin 8 × Fin 8, p.2 < p.1 → cQ16 p.1 p.2 = 0 := by decide +kernel
-  have hQ : cQ16.IsUpperTriangular := fun i j hij => hQ0 (i, j) hij
-  have hU0 : ∀ p : Fin 8 × Fin 8, p.2 < p.1 → cU16 p.1 p.2 = 0 := by decide +kernel
-  have hU : cU16.IsUpperTriangular := fun i j hij => hU0 (i, j) hij
-  have hmul : cQ16ᵀ * (Matrix.scalar (Fin 8) (16 : ℚ) - OMA.S_mo_121944.givenMatrix) = cU16 := by
-    decide +kernel
-  have hq : ∏ i : Fin 8, cQ16 i i = 24056232562374774834069504 := by decide +kernel
-  have hu : ∏ i : Fin 8, cU16 i i = 88964335872481294495318760069529600 := by decide +kernel
-  have hdet := congrArg Matrix.det hmul
-  rw [Matrix.det_mul, Matrix.det_transpose, Matrix.det_of_isUpperTriangular hQ,
-    Matrix.det_of_isUpperTriangular hU, hq, hu] at hdet
-  have h0 : (24056232562374774834069504 : ℚ) ≠ 0 := by norm_num
-  refine mul_left_cancel₀ h0 (hdet.trans ?_)
-  norm_num
+  apply det_of_certificate _ cQ16 cU16
+  all_goals decide +kernel
 
 theorem OMA.solution : type_of% @OMA.S_mo_121944.main := by
   have hcard : (({8, 9, 10, 11, 12, 13, 14, 15, 16} : Finset ℚ)).card = 9 := by decide +kernel

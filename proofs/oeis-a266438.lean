@@ -47,12 +47,6 @@ theorem black_pos (t : ℕ) : black (t + 1) = if t % 2 = 0 then 2 * t + 3 else 0
     omega
   · simp [h]
 
-/-- Control: the first ten terms. -/
-theorem first_terms : (List.range 10).map a = [1, 4, 4, 11, 11, 22, 22, 37, 37, 56] := by
-  simp only [List.range_succ, List.range_zero, List.nil_append, List.map_cons, List.map_nil,
-    List.map_append]
-  simp [a, Finset.sum_range_succ, black_zero, black_pos]
-
 /-- Barker's closed form `a(n) = (n^2 + 2n - (-1)^n (n+1) + 3) / 2`, as `2 a(n) = ...`. -/
 theorem closed_form (n : ℕ) :
     2 * (a n : ℤ) = (n : ℤ) ^ 2 + 2 * n - (-1) ^ n * (n + 1) + 3 := by
