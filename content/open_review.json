@@ -23174,6 +23174,39 @@
     "https://doi.org/10.5281/zenodo.24384895"
    ],
    "reason": "Disproof exploits an index slip in Barker's printed range: the recurrence a(n)=a(n-2)+a(n-4)-a(n-6) is printed 'for n>9' but the g.f. (numerator degree 11) only implies it for n>11; data give a(11)=44 vs 48. The g.f. matches all 128 b-file-range data terms, and the recurrence holds for n>11, so the substantive conjecture is true; the disproof uses the n=11 slip. Also, Cohen (Zenodo 24384895) Lean-certifies the full Rule 62 evolution (A270080), so even the true version would be novelty-doubtful."
+  },
+  "wp-representation": {
+   "date": "2026-11-28",
+   "pr": 34377,
+   "evidence": [
+    "https://en.wikipedia.org/wiki/Word-representable_graph"
+   ],
+   "reason": "Degenerate loophole: the witness is the edgeless graph on 2 vertices, which is 2-representable (word 0011) but not 1-representable, so it 'requires' 2 > floor(2/2) copies. Every non-complete graph on 2 or 3 vertices does the same; the open question (crown graphs reach n/2) is about non-trivial graphs, which the formal statement does not exclude."
+  },
+  "oeis-a068130": {
+   "date": "2026-11-28",
+   "pr": 34320,
+   "evidence": [
+    "https://oeis.org/A068130"
+   ],
+   "reason": "Degenerate-case disproof: at T=1 the only numbers with digit sum 1 are powers of 10, and only 1 and 10 are triangular. The conjecture's wording ('every triangular T') does include T=1, so the counterexample is literally valid. But it is the trivial edge case, says nothing about the intended claim for larger T, and the formal statement only excludes T=0."
+  },
+  "oeis-a093454": {
+   "date": "2026-11-28",
+   "pr": 20316,
+   "evidence": [
+    "https://oeis.org/A093454",
+    "https://github.com/thatnealpatel/proofs/blob/main/Proofs/NumberComplexity/A093454Refutation.lean"
+   ],
+   "reason": "The disproof exploits a wording slip: the comment says 'finitely many ... which are not integers', but Wilson's next comment shows the intended claim is 'finitely many integers' (only n=1,2,3,4,6). The site proves non-integrality for all n>=16, which refutes the literal text and proves the intended one. The literal refutation was also already public in thatnealpatel/proofs (A093454Refutation.lean, by 2026-10-25), so it is known as well."
+  },
+  "oeis-a284940": {
+   "date": "2026-11-28",
+   "pr": 30482,
+   "evidence": [
+    "https://oeis.org/A284940"
+   ],
+   "reason": "Disproof exploits a printed range slip. The g.f. reproduces the data (a(8)=11110), while Barker's recurrence 'for n>6' fails exactly at n = 6, 8, 10, 12 and holds from n=13 on, because the numerator has degree 12. So the conjunction is false only because of the printed range n>6 (should be n>12); the intended formulas are true."
   }
  },
  "known": {
@@ -43109,6 +43142,187 @@
     "https://oeis.org/A202303"
    ],
    "reason": "Robert Israel's 2016 comment in A031149 already classifies all solutions (seven Pell families under M=[19,60;6,19]), from which Barker's recurrence for y^2 follows; A023110 even carries 'The conjectures are all correct; cf. Israel's comment' (Song, Nov 12 2026), and the proof says it follows Israel's families. Statement starts at n=23, correct since Fischer's inserted zero makes n=22 fail (checked on data)."
+  },
+  "arxiv-2608.20875": {
+   "date": "2026-11-28",
+   "pr": 34387,
+   "evidence": [
+    "https://arxiv.org/abs/2608.20875"
+   ],
+   "reason": "The statement itself says the conjecture was disproved in arXiv:2608.20875 (Kressner-Vandereycken, Aug 2026), which gives an integer 7x7 counterexample with exact certificates. The site disproof formalizes a 7x7 integer matrix and rational separator of the same kind."
+  },
+  "mo-275621": {
+   "date": "2026-11-28",
+   "pr": 34356,
+   "evidence": [
+    "https://mathoverflow.net/questions/275621",
+    "https://mathoverflow.net/a/275805"
+   ],
+   "reason": "Jean Duchon's 2017 answer proves the inequality by monotone coupling, and the proof file cites it. The formalization matches the question."
+  },
+  "oeis-a272170": {
+   "date": "2026-11-28",
+   "pr": 34368,
+   "evidence": [
+    "https://github.com/the-omega-institute/trureturing/blob/main/D5/S3/Arith/FibonacciSecondBitRunLength.lean",
+    "https://github.com/the-omega-institute/trureturing/blob/main/Library/Recurrence/cicuttin2016a272170.md"
+   ],
+   "reason": "trureturing proves exactly Cicuttin's claim (no three equal consecutive second bits of F(n), n>=3), added 2026-09-22 (commit ad81b2b), well before this PR."
+  },
+  "oeis-a394697": {
+   "date": "2026-11-28",
+   "pr": 34371,
+   "evidence": [
+    "https://github.com/the-omega-institute/trureturing/blob/main/D5/S3/Combinatorics/Graph/Pressure/ToroidalKingsPeakEntropy.lean",
+    "https://github.com/mathesis-papers/oeis-a394697-toroidal-king-peak-entropy"
+   ],
+   "reason": "trureturing ToroidalKingsPeakEntropy.lean (added 2026-11-06, commit 29bb498, no sorry) proves rootGrowth peak n -> A247413, Kotesovec's conjecture; a mathesis-papers note also covers it. The site proof was submitted Nov 28."
+  },
+  "oeis-a355257": {
+   "date": "2026-11-28",
+   "pr": 34359,
+   "evidence": [
+    "https://github.com/the-omega-institute/trureturing/blob/main/D5/S3/Arith/Congruence/TebniA355257Divisibility.lean",
+    "https://github.com/the-omega-institute/trureturing/blob/main/D5/S3/Arith/Congruence/TebniA355257Quotient.lean"
+   ],
+   "reason": "trureturing (added 2026-11-03) proves conjectures 1 (prime_residue), 2 and 4. Conjecture 3 (columns are A355259's interpolating polynomials) is immediate, since each column is a polynomial in n of degree <= k. Nothing substantive is new."
+  },
+  "oeis-a163198": {
+   "date": "2026-11-28",
+   "pr": 34350,
+   "evidence": [
+    "https://oeis.org/A163198"
+   ],
+   "reason": "(F-1)^2(F+2)/4 = (F^3-3F+2)/4, which is K. Subba Rao's 1953 formula listed in the same entry (Amer. Math. Monthly 60, p. 682) and also in Clary-Hemenway. Lang's line is just a rewriting of a proved identity, not an open conjecture."
+  },
+  "oeis-a270922": {
+   "date": "2026-11-28",
+   "pr": 34354,
+   "evidence": [
+    "https://github.com/rbajaj5/a183068-supercongruence/blob/main/related-results/ModularProductPrimeCoefficientPacket.md"
+   ],
+   "reason": "rbajaj5's ModularProductPrimeCoefficientPacket (in the repo by 2026-10-15) proves Bala's A270922 tower a(np^r) == a(np^(r-1)) mod p^(2r), p>=3 (Theorem 4). The statement matches."
+  },
+  "oeis-a270919": {
+   "date": "2026-11-28",
+   "pr": 34309,
+   "evidence": [
+    "https://github.com/rbajaj5/a183068-supercongruence/blob/main/related-results/ModularProductPrimeCoefficientPacket.md"
+   ],
+   "reason": "The same rbajaj5 packet (by 2026-10-15) proves a(p) == 2p+2 mod p^2 for odd primes (Corollary 2). The extra conjunct a(2) not== 6 mod 4 is a trivial computation."
+  },
+  "oeis-a288664": {
+   "date": "2026-11-28",
+   "pr": 34372,
+   "evidence": [
+    "https://oeis.org/A288664",
+    "https://oeis.org/A288663"
+   ],
+   "reason": "The proof file says its Rule 493 sector and diagonal lemmas are adapted from Garry Taulu's earlier site proof of A288663 (same diagonal, read in the opposite order; merged 2026-11-28 ~10:22 UTC, before this one ~15:39 UTC). Under the brief, adaptation of an earlier public site proof means known."
+  },
+  "oeis-a270087": {
+   "date": "2026-11-28",
+   "pr": 34353,
+   "evidence": [
+    "https://oeis.org/A270087",
+    "https://oeis.org/A278757"
+   ],
+   "reason": "Rule 73 from one cell becomes all-OFF at even and all-ON at odd stages from t=4 on. An earlier site proof of A278757 (merged ~09:10 UTC Nov 28, before this ~10:19 UTC) proves state_eq and 'period: state (t+2) = state t for t>=4' on the whole plane, from which all five of Barker's formulas follow at once. This is not covered by Cohen's Zenodo paper (stages 2^n-1 only)."
+  },
+  "oeis-a281733": {
+   "date": "2026-11-28",
+   "pr": 34365,
+   "evidence": [
+    "https://cs.uwaterloo.ca/journals/JIS/VOL18/Pilehrood/pile5.html",
+    "https://oeis.org/A281733"
+   ],
+   "reason": "Hessami Pilehrood and Hessami Pilehrood (JIS 18 (2015) 15.11.7, Prop. 43, cited in the entry) prove T_k = 16^(k-1)(2C(3k-2,k-1) - C(3k-2,k)). With Lucas' theorem this gives T_p == 0 - 2 = -2 (mod p) in one line. The statement uses Selkirk's equivalent closed form, so Sun's Conjecture 4 was effectively settled in 2015."
+  },
+  "mo-337998": {
+   "date": "2026-11-28",
+   "pr": 34343,
+   "evidence": [
+    "https://mathoverflow.net/a/338010"
+   ],
+   "reason": "Iosif Pinelis's 2019 answer shows sqrt(EM(c)) is not convex ('of course, no'). The proof file says it is an instance of his answer (Bernoulli family, theta = +-log 3)."
+  },
+  "mo-92798": {
+   "date": "2026-11-28",
+   "pr": 34338,
+   "evidence": [
+    "https://mathoverflow.net/a/95547"
+   ],
+   "reason": "Suvrit's answer already gives a 3x3 counterexample showing the conditions are not sufficient. The site's counterexample, diag(3,12,10) vs diag(4,21/5,22) with b=-2, meets min a < min c and tr(L-J)>0, and only replays a known 'no'."
+  },
+  "oeis-a278754": {
+   "date": "2026-11-28",
+   "pr": 34333,
+   "evidence": [
+    "https://oeis.org/A278754",
+    "https://oeis.org/A278755"
+   ],
+   "reason": "The x-axis of 2D Rule 65 from one cell was described for all stages in an earlier site proof of A278755 (theorems axis_even/axis_odd, merged ~08:56 UTC Nov 28, before this ~15:37 UTC). By the square's symmetry this fixes every digit of A278754, so Barker's recurrence and g.f. are immediate corollaries; the formalization itself is faithful."
+  },
+  "mo-229028": {
+   "date": "2026-11-28",
+   "pr": 34324,
+   "evidence": [
+    "https://mathoverflow.net/questions/229028"
+   ],
+   "reason": "David Speyer's 2016 comment under the question gives exactly this counterexample: (1,1,1) is log-concave, but (log(1+x+x^2))'' > 0 for small x>=0. The asker acknowledged it in a comment."
+  },
+  "oeis-a076821": {
+   "date": "2026-11-28",
+   "pr": 34313,
+   "evidence": [
+    "https://oeis.org/A076821"
+   ],
+   "reason": "The entry itself already says 'The sum of the reciprocals diverges. In particular, the sum ... up to n is at least n/(log n + log log n)^2' (Charles R Greathouse IV, Apr 17 2012). The site's Cauchy-Schwarz proof is the same elementary observation."
+  },
+  "mo-122908": {
+   "date": "2026-11-28",
+   "pr": 34303,
+   "evidence": [
+    "https://arxiv.org/abs/1902.00784",
+    "https://mathoverflow.net/questions/122908"
+   ],
+   "reason": "A. Jensen, 'Self-Polar Polytopes' (arXiv:1902.00784), Corollary 7.3: for polyhedral P with P ⊆ -P°, there is a polyhedral Q with P ⊆ Q = -Q° ⊆ -P°. After first adding a small polytope around the origin (possible since P is bounded), this gives the bounded polytope Q asked for. Fedor Petrov's comment had already given the convex-body version."
+  },
+  "oeis-a154421": {
+   "date": "2026-11-28",
+   "pr": 34302,
+   "evidence": [
+    "https://oeis.org/A154421"
+   ],
+   "reason": "The site counterexample n = 36930553345551 is D. S. McNeil's, recorded in the entry itself (Jan 17 2009). I re-checked it: no s, t give n - F_s - L_{3t} an odd prime."
+  },
+  "mo-262273": {
+   "date": "2026-11-28",
+   "pr": 34284,
+   "evidence": [
+    "https://arxiv.org/abs/1008.2863",
+    "https://arxiv.org/abs/2610.08591",
+    "https://mathoverflow.net/questions/262273"
+   ],
+   "reason": "The main claim det[1/(z_i-z_j)] = Pf^2 = Hafnian of 1/(z_i-z_j)^2 (sum over perfect matchings of the products of 1/(z_i-z_j)^2) is a known identity: it appears in arXiv:1008.2863 (Ising CFT correlators, 2010) and as Lemma C.1 of arXiv:2610.08591. The other parts are trivial: odd skew-symmetric determinants vanish, and on the unit circle every summand has the same phase."
+  },
+  "oeis-a245876": {
+   "date": "2026-11-28",
+   "pr": 34261,
+   "evidence": [
+    "https://oeis.org/A245876",
+    "https://github.com/lefttosolve2/open-math-agents/pull/29989"
+   ],
+   "reason": "The proof file says its transfer recurrence and justification are adapted from ppleskov's earlier site proof of A245875 (PR 29989). Under the brief this means known; the formalization of Hardin's count and Barker's formulas is otherwise faithful."
+  },
+  "mo-105026": {
+   "date": "2026-11-28",
+   "pr": 34250,
+   "evidence": [
+    "https://arxiv.org/abs/1208.5637",
+    "https://mathoverflow.net/questions/105026"
+   ],
+   "reason": "Nasehpour (the asker) answered this himself in arXiv:1208.5637 (v4 2015). Theorem 19 there: weak Gaussian <=> every prime ideal subtractive. Prop. 20/21 there: S = P ∪ {1} with P an idempotent monoid and P^2=0 is weak Gaussian but not subtractive once |S| >= 4. The site's 4-element semiring {0,1,a,b} is exactly this construction; the MO answer by Korbelar retracted itself."
   }
  },
  "reviewed": "2026-11-28"
