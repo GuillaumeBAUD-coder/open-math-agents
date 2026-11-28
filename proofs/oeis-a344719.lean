@@ -7811,8 +7811,7 @@ theorem rows_lower {n : ℕ} (hn : n≤11) {rs : List ℕ}
     (hs : SuffixBounds n rs) :
     expected n ≤ cost n rs := by
   by_cases hn0 : n=0
-  · subst n
-    simp [expected]
+  · simp [hn0, expected]
   · have hn1 : 1≤n := by omega
     by_contra hbad
     have hc : cost n rs ≤ expected n-1 := by
