@@ -1263,6 +1263,16 @@
       "sources": [
         "https://en.wikipedia.org/wiki/Ravenel%27s_conjectures"
       ]
+    },
+    {
+      "id": "wp-brumer-stark-conjecture",
+      "status": "claimed",
+      "title": "Brumer–Stark conjecture",
+      "summary": "Dasgupta and Kakde proved the conjecture away from the prime 2 (2020), and a full proof over Z was announced in 2023 (Wikipedia article); Wikipedia's list of conjectures still gives it as open.",
+      "date": "2023",
+      "sources": [
+        "https://en.wikipedia.org/wiki/Brumer%E2%80%93Stark_conjecture"
+      ]
     }
   ]
 }
