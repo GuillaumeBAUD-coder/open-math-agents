@@ -2,11 +2,11 @@ import OMAReductions.R_Erdos1052_erdos_1052_R2_H2_R1
 import Mathlib
 
 -- Step Erdos1052.erdos_1052.R2.H2.R1.H1: hypothesis H1 of reduction Erdos1052.erdos_1052.R2.H2.R1
--- Credit: @ivillar. Uses Graham1052.core (Graham 1989), the accepted proof by @adammcarter
+-- Credit: @ivillar. Uses Graham1052.big (Graham 1989), the accepted proof by @adammcarter
 -- (proofs/Erdos1052.erdos_1052.R1.H1.lean) as inlined in the reduction file.
 -- Strategy. For c = 9, u = 10 (2^a + 1). Then 5 divides the left side, so 5 is in S; removing 5
--- (factor 6 / 5) and adding 3 (factor 4 / 3) turns the c = 9 equation into Graham's balance
--- equation (2^a + 1) prod (p + 1) = 2^(a+1) prod p for T = (S minus 5) plus 3, hence a is 1, 2 or 6.
+-- (factor 6 / 5) and adding 3 (factor 4 / 3) turns the equation into Graham's squarefree
+-- balance. Graham's large-exponent obstruction then puts a directly in range 10.
 
 open Finset in
 theorem OMA.solution : OMA.R_Erdos1052_erdos_1052_R2_H2_R1.H1 := by
@@ -20,14 +20,13 @@ theorem OMA.solution : OMA.R_Erdos1052_erdos_1052_R2_H2_R1.H1 := by
     rw [Nat.primeFactors_mul h2m (by norm_num), Nat.primeFactors_prime_pow ha0 Nat.prime_two, h9,
       Nat.primeFactors_prime_pow (by norm_num) Nat.prime_three]
     rfl
+  have hf : (2 ^ a * 9).factorization = Finsupp.single 2 a + Finsupp.single 3 2 := by
+    rw [Nat.factorization_mul h2m (by norm_num), h9,
+      Nat.Prime.factorization_pow Nat.prime_two, Nat.Prime.factorization_pow Nat.prime_three]
   have hf2 : (2 ^ a * 9).factorization 2 = a := by
-    rw [Nat.factorization_mul h2m (by norm_num), Finsupp.add_apply,
-      Nat.Prime.factorization_pow Nat.prime_two, Finsupp.single_eq_same, h9,
-      Nat.Prime.factorization_pow Nat.prime_three, Finsupp.single_eq_of_ne (by norm_num), add_zero]
+    norm_num [hf, Finsupp.add_apply, Finsupp.single_apply]
   have hf3 : (2 ^ a * 9).factorization 3 = 2 := by
-    rw [Nat.factorization_mul h2m (by norm_num), Finsupp.add_apply,
-      Nat.Prime.factorization_pow Nat.prime_two, Finsupp.single_eq_of_ne (by norm_num), h9,
-      Nat.Prime.factorization_pow Nat.prime_three, Finsupp.single_eq_same]
+    norm_num [hf, Finsupp.add_apply, Finsupp.single_apply]
   rw [hpf, Finset.prod_pair (by norm_num), hf2, hf3] at hE
   -- hE : (1 + 2 ^ a) * (1 + 3 ^ 2) * ∏ (1 + p) = 2 * (2 ^ a * 9) * ∏ p
   have hb2 : 2 ∣ 2 ^ a * 9 := dvd_mul_of_dvd_left (dvd_pow_self 2 ha0) 9
@@ -65,8 +64,6 @@ theorem OMA.solution : OMA.R_Erdos1052_erdos_1052_R2_H2_R1.H1 := by
   have E : (2 ^ a + 1) * ∏ p ∈ insert 3 T, (p + 1) = 2 ^ (a + 1) * ∏ p ∈ insert 3 T, p := by
     rw [Finset.prod_insert h3T, Finset.prod_insert h3T, pow_succ]
     apply Nat.eq_of_mul_eq_mul_left (show 0 < 15 by norm_num)
-    calc 15 * ((2 ^ a + 1) * ((3 + 1) * ∏ p ∈ T, (p + 1)))
-        = (1 + 2 ^ a) * (1 + 3 ^ 2) * (6 * ∏ p ∈ T, (p + 1)) := by ring
-      _ = 2 * (2 ^ a * 9) * (5 * ∏ p ∈ T, p) := hE
-      _ = 15 * (2 ^ a * 2 * (3 * ∏ p ∈ T, p)) := by ring
-  rcases OMA.R_Erdos1052_erdos_1052_R2_H2_R1.Graham1052.core hP E (by omega) with ⟨h, -⟩ | ⟨h, -⟩ | ⟨h, -⟩ <;> simp [h]
+    convert hE using 1 <;> ring
+  exact Finset.mem_range.mpr <| lt_of_not_ge
+    (OMA.R_Erdos1052_erdos_1052_R2_H2_R1.Graham1052.big hP E)
