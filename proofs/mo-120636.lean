@@ -35,7 +35,11 @@ lemma expectation_derivative (f : ℕ → ℝ) (n : ℕ) (p : ℝ) :
       ((n : ℝ) * expectation (n - 1) (fun j => f (j + 1) - f j) p) p := by
   cases n with
   | zero =>
-    simpa [expectation, bernsteinPolynomial] using hasDerivAt_const p (f 0)
+    have he : expectation 0 f = fun _ => f 0 := by
+      funext q
+      simp [expectation, bernsteinPolynomial]
+    rw [he]
+    simpa using hasDerivAt_const p (f 0)
   | succ n =>
     let b : ℕ → ℝ := fun j => (bernsteinPolynomial ℝ n j).eval p
     have ht := telescope f b (n + 1)
