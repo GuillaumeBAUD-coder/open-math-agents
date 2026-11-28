@@ -28,42 +28,12 @@ lemma key (h0 : coeff 0 L = 0) (m : ℕ) :
   by_contra h
   exact hd (by rw [high h0 m d (by omega), smul_zero])
 
-lemma c22 (h0 : coeff 0 L = 0) : coeff 2 (L ^ 2) = coeff 1 L ^ 2 := by
-  rw [pow_two, coeff_mul, Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk]
-  simp [Finset.sum_range_succ, h0]
-  ring
-
-lemma c32 (h0 : coeff 0 L = 0) : coeff 3 (L ^ 2) = 2 * coeff 1 L * coeff 2 L := by
-  rw [pow_two, coeff_mul, Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk]
-  simp [Finset.sum_range_succ, h0]
-  ring
-
-lemma c42 (h0 : coeff 0 L = 0) :
-    coeff 4 (L ^ 2) = 2 * coeff 1 L * coeff 3 L + coeff 2 L ^ 2 := by
-  rw [pow_two, coeff_mul, Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk]
-  simp [Finset.sum_range_succ, h0]
-  ring
-
-lemma c33 (h0 : coeff 0 L = 0) : coeff 3 (L ^ 3) = coeff 1 L ^ 3 := by
-  rw [pow_succ, coeff_mul, Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk]
-  simp [Finset.sum_range_succ, h0, c22 h0, high h0 0 2, high h0 1 2]
-  ring
-
-lemma c43 (h0 : coeff 0 L = 0) : coeff 4 (L ^ 3) = 3 * coeff 1 L ^ 2 * coeff 2 L := by
-  rw [pow_succ, coeff_mul, Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk]
-  simp [Finset.sum_range_succ, h0, c22 h0, c32 h0, high h0 0 2, high h0 1 2]
-  ring
-
-lemma c44 (h0 : coeff 0 L = 0) : coeff 4 (L ^ 4) = coeff 1 L ^ 4 := by
-  rw [pow_succ, coeff_mul, Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk]
-  simp [Finset.sum_range_succ, h0, c33 h0, high h0 0 3, high h0 1 3, high h0 2 3]
-  ring
-
 lemma E4 (h0 : coeff 0 L = 0) :
     coeff 4 (subst L (exp ℚ)) = coeff 4 L + coeff 1 L * coeff 3 L + coeff 2 L ^ 2 / 2
       + coeff 1 L ^ 2 * coeff 2 L / 2 + coeff 1 L ^ 4 / 24 := by
   rw [key h0]
-  simp [Finset.sum_range_succ, coeff_exp, c42 h0, c43 h0, c44 h0, Nat.factorial]
+  simp [Finset.sum_range_succ, coeff_exp, pow_succ, coeff_mul,
+    Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk, h0, Nat.factorial, coeff_one]
   ring
 
 end OMA.Hanna
