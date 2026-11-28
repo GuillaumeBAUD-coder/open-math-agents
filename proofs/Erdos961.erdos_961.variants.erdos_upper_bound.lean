@@ -31,10 +31,17 @@ lemma product_smooth_bound (k u t : ℕ) (hk : 0 < k) (ht : 0 < t) (hu : 1 < u +
     have hp_prime : Nat.Prime p := (Finset.mem_filter.mp hp).2
     exact Nat.pow_log_le_self hp_prime.one_lt (by linarith [hu])
   have hcard : ((Finset.range (k + 1)).filter Nat.Prime).card = Nat.primeCounting k := by
-    -- primes in 1..k have cardinality π(k)
+    -- Mathlib: Nat.primeCounting_eq_card_filter_range or similar
     sorry
-  -- ∏ ≤ (u+t)^card
-  sorry
+  -- Each term ≤ u+t, so product ≤ (u+t)^card
+  calc
+    ∏ p in (Finset.range (k + 1)).filter Nat.Prime, p ^ Nat.log p (u + t)
+        ≤ ∏ p in (Finset.range (k + 1)).filter Nat.Prime, (u + t) := by
+          exact Finset.prod_le_prod (fun p hp => Nat.zero_le _) hterm
+      _ = (u + t) ^ ((Finset.range (k + 1)).filter Nat.Prime).card := by
+          rw [Finset.prod_const]
+      _ = (u + t) ^ Nat.primeCounting k := by
+          rw [hcard]
 
 /-- Lower bound on the binomial coefficient for large u relative to t. -/
 lemma binomial_lower_bound (u t : ℕ) (hu : t ≤ u) (ht : 0 < t) :
