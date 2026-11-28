@@ -10,11 +10,15 @@ open Finset OMA.S_oeis_a210374
 private abbrev tuples (k n : ℕ) := Finset.Nat.antidiagonalTuple k n
 
 private theorem sum_choose (d n : ℕ) :
-    (∑ ij ∈ antidiagonal n, (d + ij.2).choose d) = (d + n + 1).choose (d + 1) := by
+    ((List.Nat.antidiagonal n).map fun ij => (d + ij.2).choose d).sum =
+      (d + n + 1).choose (d + 1) := by
   induction n with
   | zero => simp
   | succ n ih =>
-    rw [Finset.Nat.sum_antidiagonal_succ, ih, Nat.choose_succ_succ (d + (n + 1)), ← Nat.add_assoc]
+    rw [List.Nat.antidiagonal_succ, List.map_cons, List.sum_cons, List.map_map]
+    change (d + (n + 1)).choose d +
+      ((List.Nat.antidiagonal n).map fun ij => (d + ij.2).choose d).sum = _
+    rw [ih, Nat.choose_succ_succ (d + (n + 1)), ← Nat.add_assoc]
 
 -- Stars and bars, by separating the first coordinate and applying the hockey-stick identity.
 private theorem tuple_card (d n : ℕ) : (tuples (d + 1) n).card = (d + n).choose d := by
@@ -24,7 +28,7 @@ private theorem tuple_card (d n : ℕ) : (tuples (d + 1) n).card = (d + n).choos
     change (List.Nat.antidiagonalTuple (d + 1 + 1) n).length = _
     rw [List.Nat.antidiagonalTuple, List.length_flatMap]
     simp only [List.length_map]
-    change (∑ ij ∈ Finset.antidiagonal n, (tuples (d + 1) ij.2).card) = _
+    change ((List.Nat.antidiagonal n).map fun ij => (tuples (d + 1) ij.2).card).sum = _
     simp_rw [ih]
     simpa [Nat.add_right_comm d 1 n] using sum_choose d n
 
