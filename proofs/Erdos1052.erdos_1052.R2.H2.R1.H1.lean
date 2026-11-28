@@ -20,15 +20,12 @@ theorem OMA.solution : OMA.R_Erdos1052_erdos_1052_R2_H2_R1.H1 := by
     rw [Nat.primeFactors_mul h2m (by norm_num), Nat.primeFactors_prime_pow ha0 Nat.prime_two, h9,
       Nat.primeFactors_prime_pow (by norm_num) Nat.prime_three]
     rfl
-  have hf2 : (2 ^ a * 9).factorization 2 = a := by
-    rw [Nat.factorization_mul h2m (by norm_num), Finsupp.add_apply,
-      Nat.Prime.factorization_pow Nat.prime_two, Finsupp.single_eq_same, h9,
-      Nat.Prime.factorization_pow Nat.prime_three, Finsupp.single_eq_of_ne (by norm_num), add_zero]
-  have hf3 : (2 ^ a * 9).factorization 3 = 2 := by
-    rw [Nat.factorization_mul h2m (by norm_num), Finsupp.add_apply,
-      Nat.Prime.factorization_pow Nat.prime_two, Finsupp.single_eq_of_ne (by norm_num), h9,
-      Nat.Prime.factorization_pow Nat.prime_three, Finsupp.single_eq_same]
-  rw [hpf, Finset.prod_pair (by norm_num), hf2, hf3] at hE
+  have hf : (2 ^ a * 9).factorization = Finsupp.single 2 a + Finsupp.single 3 2 := by
+    rw [Nat.factorization_mul h2m (by norm_num), h9,
+      Nat.Prime.factorization_pow Nat.prime_two, Nat.Prime.factorization_pow Nat.prime_three]
+  rw [hpf, Finset.prod_pair (by norm_num), hf] at hE
+  simp only [Finsupp.add_apply, Finsupp.single_apply, show (2 : ℕ) ≠ 3 by decide,
+    show (3 : ℕ) ≠ 2 by decide, if_true, if_false, add_zero, zero_add] at hE
   -- hE : (1 + 2 ^ a) * (1 + 3 ^ 2) * ∏ (1 + p) = 2 * (2 ^ a * 9) * ∏ p
   have hb2 : 2 ∣ 2 ^ a * 9 := dvd_mul_of_dvd_left (dvd_pow_self 2 ha0) 9
   have hb3 : 3 ∣ 2 ^ a * 9 := dvd_mul_of_dvd_right (by norm_num) _
@@ -37,16 +34,9 @@ theorem OMA.solution : OMA.R_Erdos1052_erdos_1052_R2_H2_R1.H1 := by
     have hd : 5 ∣ 2 * (2 ^ a * 9) * ∏ p ∈ S, p := by
       rw [← hE]; exact dvd_mul_of_dvd_left (dvd_mul_of_dvd_right (by norm_num) _) _
     have h5p : Nat.Prime 5 := by norm_num
-    rcases (Nat.Prime.dvd_mul h5p).mp hd with h | h
-    · exfalso
-      rcases (Nat.Prime.dvd_mul h5p).mp h with h | h
-      · omega
-      · rcases (Nat.Prime.dvd_mul h5p).mp h with h | h
-        · exact absurd (Nat.Prime.dvd_of_dvd_pow h5p h) (by norm_num)
-        · omega
-    · obtain ⟨p, hp, h5p'⟩ := (Prime.dvd_finsetProd_iff h5p.prime _).mp h
-      have := (Nat.prime_dvd_prime_iff_eq h5p (hS p hp).1).mp h5p'
-      exact this ▸ hp
+    norm_num [h5p.dvd_mul, h5p.prime.dvd_pow_iff_dvd ha0] at hd
+    obtain ⟨p, hp, h5p'⟩ := (Prime.dvd_finsetProd_iff h5p.prime _).mp hd
+    exact ((Nat.prime_dvd_prime_iff_eq h5p (hS p hp).1).mp h5p') ▸ hp
   set T := S.erase 5 with hT
   have h3T : 3 ∉ T := fun h => (hS 3 (Finset.mem_of_mem_erase h)).2 hb3
   have hP : ∀ p ∈ insert 3 T, p.Prime ∧ p ≠ 2 := by
