@@ -63,7 +63,7 @@ private theorem starDist_le_two {α : Type} [DecidableEq α] (a b : Option α) :
 private theorem starDist_ge_one {α : Type} [DecidableEq α] {a b : Option α}
     (h : a ≠ b) : 1 ≤ starDist a b := by
   unfold starDist
-  rw [ite_eq_right h]
+  rw [if_neg h]
   split_ifs <;> norm_num
 
 private theorem starDist_comm {α : Type} [DecidableEq α] (a b : Option α) :
@@ -71,7 +71,7 @@ private theorem starDist_comm {α : Type} [DecidableEq α] (a b : Option α) :
   by_cases h : a = b
   · subst b
     rfl
-  · simp only [starDist, ite_eq_right h, ite_eq_right (Ne.symm h)]
+  · simp only [starDist, if_neg h, if_neg (Ne.symm h)]
     rw [Bool.and_comm a.isSome b.isSome]
 
 private theorem starDist_triangle {α : Type} [DecidableEq α] (a b c : Option α) :
@@ -330,7 +330,7 @@ theorem isClosed_subtree (x : Path) (n : ℕ) : IsClosed (subtree x n) := by
       linarith [scale_pos n]
     have hball := closedBall_baseIn x n le_rfl (show 2 * scale (n + 1) < 2 * scale n by
       linarith [scale_pos n])
-    rw [ite_eq_right (not_le_of_gt hr), Set.union_empty] at hball
+    rw [if_neg (not_le_of_gt hr), Set.union_empty] at hball
     rw [← hball]
     exact Metric.isClosed_closedBall
 
@@ -461,7 +461,7 @@ theorem measure_branch_ne_zero (n : ℕ) : (branch n : ℝ≥0∞) ≠ 0 := by
 
 instance measure_coordinate_probability (n : ℕ) : IsProbabilityMeasure (coordinateMeasure n) := by
   constructor
-  rw [coordinateMeasure, smul_apply, smul_eq_mul, Measure.count_univ]
+  rw [coordinateMeasure, Measure.smul_apply, smul_eq_mul, Measure.count_univ]
   simp only [ENat.card_eq_coe_fintype_card, Fintype.card_fin, ENat.toENNReal_coe]
   exact ENNReal.inv_mul_cancel (measure_branch_ne_zero n) (by simp)
 
@@ -481,7 +481,7 @@ theorem measurable_cyl (x : Path) (n : ℕ) : MeasurableSet (cyl x n) := by
 theorem base_cyl_eq_prod (x : Path) (n : ℕ) :
     base (cyl x n) = ∏ i ∈ Finset.range n, (branch i : ℝ≥0∞)⁻¹ := by
   rw [base, cyl_eq_pi, Measure.infinitePi_pi coordinateMeasure]
-  · simp only [coordinateMeasure, smul_apply, smul_eq_mul, Measure.count_singleton, mul_one]
+  · simp only [coordinateMeasure, Measure.smul_apply, smul_eq_mul, Measure.count_singleton, mul_one]
   · exact fun i _ => measurableSet_singleton (x i)
 
 theorem base_cyl_pos (x : Path) (n : ℕ) : 0 < base (cyl x n) := by
@@ -638,9 +638,9 @@ theorem mixture_apply (hbase : Measurable baseIn) (hatom : ∀ n, Measurable (at
     {s : Set X} (hs : MeasurableSet s) :
     μ s = (1 / 2 : ℝ≥0∞) *
       (base (baseIn ⁻¹' s) + ∑' n : ℕ, weight n * base (atomIn n ⁻¹' s)) := by
-  rw [μ, smul_apply, smul_eq_mul, add_apply, Measure.map_apply hbase hs,
+  rw [μ, Measure.smul_apply, smul_eq_mul, Measure.add_apply, Measure.map_apply hbase hs,
     Measure.sum_apply _ hs]
-  simp only [smul_apply, smul_eq_mul, Measure.map_apply (hatom _) hs]
+  simp only [Measure.smul_apply, smul_eq_mul, Measure.map_apply (hatom _) hs]
 
 theorem mixture_probability (hbase : Measurable baseIn) (hatom : ∀ n, Measurable (atomIn n)) :
     IsProbabilityMeasure μ := by
@@ -684,7 +684,8 @@ theorem mixture_base_image (hbase : Measurable baseIn) (hatom : ∀ n, Measurabl
 
 theorem spike_integrable (hbase : Measurable baseIn) (hatom : ∀ n, Measurable (atomIn n))
     (hf : Measurable spike) : Integrable spike μ := by
-  refine ⟨hf.aestronglyMeasurable, hasFiniteIntegral_iff_eNorm.mpr ?_⟩
+  refine ⟨hf.aestronglyMeasurable, ?_⟩
+  change (∫⁻ z, ‖spike z‖ₑ ∂μ) < ∞
   have hNorm : Measurable (fun z => ‖spike z‖ₑ) := measurable_eNorm.comp hf
   have hleft : (∫⁻ z, ‖spike z‖ₑ ∂(base.map baseIn)) = 0 := by
     rw [lintegral_map hNorm hbase]
@@ -1093,7 +1094,12 @@ theorem ae_baseAndAtoms [MeasurableSpace X] [MeasurableSpace.CountablySeparated 
       refine (Set.finite_range place).subset ?_
       rintro _ ⟨x, rfl⟩
       exact ⟨takePrefix x n, rfl⟩
-    filter_upwards [ae_map_mem_range hfinite.measurableSet (hAtoms n).aemeasurable] with y hy
+    have hRange : ∀ᵐ y ∂base.map (atomIn n), y ∈ Set.range (atomIn n) := by
+      rw [ae_iff]
+      change (base.map (atomIn n)) ((Set.range (atomIn n))ᶜ) = 0
+      rw [Measure.map_apply (hAtoms n) hfinite.measurableSet.compl,
+        Set.preimage_compl, Set.preimage_range, Set.compl_univ, measure_empty]
+    filter_upwards [hRange] with y hy
     obtain ⟨x, rfl⟩ := hy
     exact hpAtoms n x
   have hSum : ∀ᵐ y ∂Measure.sum (fun n => weight n • base.map (atomIn n)), p y :=
