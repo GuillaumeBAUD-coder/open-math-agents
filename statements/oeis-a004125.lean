@@ -4,7 +4,7 @@ import Mathlib
 # OEIS A004125: Pol's conjecture on sums of remainders
 
 Source: https://oeis.org/A004125
-Credit: @SudharsanAnimations
+Credit: Sudharsan Rajendiran
 
 `a(n) = ∑_{k=1}^{n} (n mod k)` is the sum of the remainders of `n` mod `1, 2, …, n`. Omar E. Pol
 observed that if `n` is an even perfect number then `a(n) = a(n - 1) - 1`. Sela Fried (OEIS,
