@@ -16,7 +16,6 @@ namespace OMA.Proof_arxiv_2005_12115
 
 open OMA.S_arxiv_2005_12115
 
-local notation "sg" => ArithmeticFunction.sigma 1
 
 lemma prod_ratio_le (c : ℕ) (hc : 2 ≤ c) (S : Finset ℕ) :
     (∀ x ∈ S, c ≤ x) →
@@ -81,13 +80,13 @@ lemma one_sub_sum_le_prod (S : Finset ℕ) (t : ℕ → ℚ) :
       mul_le_mul_of_nonneg_left ih' (by linarith [h1.2])
     nlinarith [mul_nonneg h1.1 hsum]
 
-lemma deficient_iff (n : ℕ) : n.Deficient ↔ sg n < 2 * n := by
+lemma deficient_iff (n : ℕ) : n.Deficient ↔ (ArithmeticFunction.sigma 1) n < 2 * n := by
   unfold Nat.Deficient
   rw [ArithmeticFunction.sigma_one_apply, Nat.sum_divisors_eq_sum_properDivisors_add_self]
   omega
 
 lemma sigma_pp (p a : ℕ) (hp : p.Prime) :
-    ((sg (p ^ a) : ℕ) : ℚ) / (p : ℚ) ^ a =
+    (((ArithmeticFunction.sigma 1) (p ^ a) : ℕ) : ℚ) / (p : ℚ) ^ a =
       (p : ℚ) / ((p : ℚ) - 1) * (1 - 1 / (p : ℚ) ^ (a + 1)) := by
   have hp2 : (2 : ℚ) ≤ p := by exact_mod_cast hp.two_le
   have hp1 : (p : ℚ) - 1 ≠ 0 := fun h => by linarith
@@ -106,19 +105,19 @@ lemma sigma_pp (p a : ℕ) (hp : p.Prime) :
   rw [e1, div_self hp1, mul_one, mul_sub, mul_one, ← pow_succ', mul_one_div, div_self hpa1]
 
 lemma sigma_div (n : ℕ) (hn : n ≠ 0) :
-    ((sg n : ℕ) : ℚ) / (n : ℚ) = ∏ p ∈ n.primeFactors,
+    (((ArithmeticFunction.sigma 1) n : ℕ) : ℚ) / (n : ℚ) = ∏ p ∈ n.primeFactors,
       ((p : ℚ) / ((p : ℚ) - 1) * (1 - 1 / (p : ℚ) ^ (n.factorization p + 1))) := by
-  have h1 : sg n = ∏ p ∈ n.primeFactors, sg (p ^ n.factorization p) := by
-    rw [ArithmeticFunction.IsMultiplicative.multiplicative_factorization (sg)
+  have h1 : (ArithmeticFunction.sigma 1) n = ∏ p ∈ n.primeFactors, (ArithmeticFunction.sigma 1) (p ^ n.factorization p) := by
+    rw [ArithmeticFunction.IsMultiplicative.multiplicative_factorization ((ArithmeticFunction.sigma 1))
       ArithmeticFunction.isMultiplicative_sigma hn]
     rfl
   have h2 : (∏ p ∈ n.primeFactors, p ^ n.factorization p) = n := by
     have h := Nat.prod_factorization_pow_eq_self hn
     exact h
-  have hcast : ((sg n : ℕ) : ℚ) / (n : ℚ) = ∏ p ∈ n.primeFactors,
-      (((sg (p ^ n.factorization p) : ℕ) : ℚ) / (p : ℚ) ^ n.factorization p) := by
+  have hcast : (((ArithmeticFunction.sigma 1) n : ℕ) : ℚ) / (n : ℚ) = ∏ p ∈ n.primeFactors,
+      ((((ArithmeticFunction.sigma 1) (p ^ n.factorization p) : ℕ) : ℚ) / (p : ℚ) ^ n.factorization p) := by
     rw [Finset.prod_div_distrib]
-    have e1 : ((sg n : ℕ) : ℚ) = ∏ p ∈ n.primeFactors, ((sg (p ^ n.factorization p) : ℕ) : ℚ) := by
+    have e1 : (((ArithmeticFunction.sigma 1) n : ℕ) : ℚ) = ∏ p ∈ n.primeFactors, (((ArithmeticFunction.sigma 1) (p ^ n.factorization p) : ℕ) : ℚ) := by
       rw [h1, Nat.cast_prod]
     have e2 : (n : ℚ) = ∏ p ∈ n.primeFactors, (p : ℚ) ^ n.factorization p := by
       have : ((∏ p ∈ n.primeFactors, p ^ n.factorization p : ℕ) : ℚ) = (n : ℚ) := by rw [h2]
@@ -131,8 +130,8 @@ lemma sigma_div (n : ℕ) (hn : n ≠ 0) :
 
 lemma drop_prime (n p : ℕ) (hn : n ≠ 0) (hp : p.Prime) (hpn : p ∣ n)
     (hineq : 2 * (n : ℚ) * ((p : ℚ) ^ (n.factorization p + 1) - 1) ≤
-      ((sg n : ℕ) : ℚ) * ((p : ℚ) ^ (n.factorization p + 1) - p)) :
-    ∃ m, m ∣ n ∧ m ≠ n ∧ 2 * m ≤ sg m := by
+      (((ArithmeticFunction.sigma 1) n : ℕ) : ℚ) * ((p : ℚ) ^ (n.factorization p + 1) - p)) :
+    ∃ m, m ∣ n ∧ m ≠ n ∧ 2 * m ≤ (ArithmeticFunction.sigma 1) m := by
   have ha : 0 < n.factorization p := hp.factorization_pos_of_dvd hn hpn
   obtain ⟨b, hb⟩ : ∃ b, n.factorization p = b + 1 := ⟨n.factorization p - 1, by omega⟩
   have hdec := Nat.ordProj_mul_ordCompl_eq_self n p
@@ -148,11 +147,11 @@ lemma drop_prime (n p : ℕ) (hn : n ≠ 0) (hp : p.Prime) (hpn : p ∣ n)
     have h2 : 2 * n ≤ p * n := Nat.mul_le_mul_right n hp.two_le
     have h3 : 0 < n := Nat.pos_of_ne_zero hn
     linarith
-  · have hs_n : sg n = sg (p ^ (b + 1)) * sg u := by
+  · have hs_n : (ArithmeticFunction.sigma 1) n = (ArithmeticFunction.sigma 1) (p ^ (b + 1)) * (ArithmeticFunction.sigma 1) u := by
       rw [← hdec]
       exact ArithmeticFunction.isMultiplicative_sigma.map_mul_of_coprime
         (Nat.Coprime.pow_left _ hcop)
-    have hs_m : sg (p ^ b * u) = sg (p ^ b) * sg u :=
+    have hs_m : (ArithmeticFunction.sigma 1) (p ^ b * u) = (ArithmeticFunction.sigma 1) (p ^ b) * (ArithmeticFunction.sigma 1) u :=
       ArithmeticFunction.isMultiplicative_sigma.map_mul_of_coprime (Nat.Coprime.pow_left _ hcop)
     rw [ArithmeticFunction.sigma_one_apply_prime_pow hp] at hs_n hs_m
     have hA := geom_sum_mul (p : ℚ) (b + 1 + 1)
@@ -161,7 +160,7 @@ lemma drop_prime (n p : ℕ) (hn : n ≠ 0) (hp : p.Prime) (hpn : p ∣ n)
       Finset.sum_pos (fun i _ => pow_pos hP0 i) ⟨0, mem_range.mpr (by omega)⟩
     have hnq : (n : ℚ) = (p : ℚ) ^ (b + 1) * (u : ℚ) := by
       rw [← hdec]; push_cast; ring
-    have hsnq : ((sg n : ℕ) : ℚ) = (∑ i ∈ range (b + 1 + 1), (p : ℚ) ^ i) * ((sg u : ℕ) : ℚ) := by
+    have hsnq : (((ArithmeticFunction.sigma 1) n : ℕ) : ℚ) = (∑ i ∈ range (b + 1 + 1), (p : ℚ) ^ i) * (((ArithmeticFunction.sigma 1) u : ℕ) : ℚ) := by
       rw [hs_n]; push_cast; ring
     rw [hnq, hsnq] at hineq
     have cpos : (0 : ℚ) < (∑ i ∈ range (b + 1 + 1), (p : ℚ) ^ i) * (p : ℚ) * ((p : ℚ) - 1) :=
@@ -170,18 +169,18 @@ lemma drop_prime (n p : ℕ) (hn : n ≠ 0) (hp : p.Prime) (hpn : p ∣ n)
         ((∑ i ∈ range (b + 1 + 1), (p : ℚ) ^ i) * (p : ℚ) * ((p : ℚ) - 1)) =
         2 * ((p : ℚ) ^ (b + 1) * (u : ℚ)) * ((p : ℚ) ^ (b + 1 + 1) - 1) := by
       rw [← hA]; ring
-    have e2 : (∑ i ∈ range (b + 1), (p : ℚ) ^ i) * ((sg u : ℕ) : ℚ) *
+    have e2 : (∑ i ∈ range (b + 1), (p : ℚ) ^ i) * (((ArithmeticFunction.sigma 1) u : ℕ) : ℚ) *
         ((∑ i ∈ range (b + 1 + 1), (p : ℚ) ^ i) * (p : ℚ) * ((p : ℚ) - 1)) =
-        (∑ i ∈ range (b + 1 + 1), (p : ℚ) ^ i) * ((sg u : ℕ) : ℚ) *
+        (∑ i ∈ range (b + 1 + 1), (p : ℚ) ^ i) * (((ArithmeticFunction.sigma 1) u : ℕ) : ℚ) *
           ((p : ℚ) ^ (b + 1 + 1) - p) := by
       have e3 : (p : ℚ) ^ (b + 1 + 1) - p =
           (p : ℚ) * ((∑ i ∈ range (b + 1), (p : ℚ) ^ i) * ((p : ℚ) - 1)) := by
         rw [hB]; ring
       rw [e3]; ring
     have hfin : 2 * ((p : ℚ) ^ b * (u : ℚ)) ≤
-        (∑ i ∈ range (b + 1), (p : ℚ) ^ i) * ((sg u : ℕ) : ℚ) :=
+        (∑ i ∈ range (b + 1), (p : ℚ) ^ i) * (((ArithmeticFunction.sigma 1) u : ℕ) : ℚ) :=
       le_of_mul_le_mul_right (by rw [e1, e2]; exact hineq) cpos
-    have hcastgoal : ((2 * (p ^ b * u) : ℕ) : ℚ) ≤ ((sg (p ^ b * u) : ℕ) : ℚ) := by
+    have hcastgoal : ((2 * (p ^ b * u) : ℕ) : ℚ) ≤ (((ArithmeticFunction.sigma 1) (p ^ b * u) : ℕ) : ℚ) := by
       rw [hs_m]; push_cast; linarith
     exact_mod_cast hcastgoal
 
@@ -193,10 +192,10 @@ theorem key (n : ℕ) (hPND : PrimitiveNonDeficient n) :
   by_contra hcon
   push_neg at hcon
   have hnq : (0 : ℚ) < n := by exact_mod_cast hn0
-  have hσ : 2 * n ≤ sg n := by
+  have hσ : 2 * n ≤ (ArithmeticFunction.sigma 1) n := by
     have := (deficient_iff n).not.mp hnd
     omega
-  have hσq : 2 * (n : ℚ) ≤ ((sg n : ℕ) : ℚ) := by exact_mod_cast hσ
+  have hσq : 2 * (n : ℚ) ≤ (((ArithmeticFunction.sigma 1) n : ℕ) : ℚ) := by exact_mod_cast hσ
   have hH := sigma_div n hn
   rw [Finset.prod_mul_distrib] at hH
   have hprime : ∀ p ∈ n.primeFactors, (2 : ℚ) ≤ p := fun p hp => by
@@ -338,10 +337,10 @@ theorem key (n : ℕ) (hPND : PrimitiveNonDeficient n) :
     have h5 : 2 * (Fn : ℚ) * (2 * (Q - 1)) ≤ 2 * (Fn : ℚ) * (G * W * (Q - p)) := by
       nlinarith
     exact le_of_mul_le_mul_left h5 (by linarith)
-  have hsn : ((sg n : ℕ) : ℚ) = G * W * (n : ℚ) := by
+  have hsn : (((ArithmeticFunction.sigma 1) n : ℕ) : ℚ) = G * W * (n : ℚ) := by
     rw [← hH, div_mul_cancel₀ _ hnq.ne']
   have hineq : 2 * (n : ℚ) * ((p : ℚ) ^ (n.factorization p + 1) - 1) ≤
-      ((sg n : ℕ) : ℚ) * ((p : ℚ) ^ (n.factorization p + 1) - p) := by
+      (((ArithmeticFunction.sigma 1) n : ℕ) : ℚ) * ((p : ℚ) ^ (n.factorization p + 1) - p) := by
     rw [← hQ, hsn]
     nlinarith [mul_le_mul_of_nonneg_left hmain hnq.le]
   obtain ⟨m, hmn, hmne, hm⟩ := drop_prime n p hn hp hpn hineq
