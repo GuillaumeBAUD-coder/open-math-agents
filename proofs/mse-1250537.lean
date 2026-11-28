@@ -9,7 +9,7 @@ noncomputable def lattice (z : ℤ × ℤ) : ℂ :=
   (z.1 : ℂ) * Complex.exp (-2 * Complex.I * (Real.pi : ℂ) / 3) +
   (z.2 : ℂ) * Complex.exp (2 * Complex.I * (Real.pi : ℂ) / 3)
 
-def window : Finset (ℤ × ℤ) :=
+noncomputable def window : Finset (ℤ × ℤ) :=
   (Finset.Icc (-5 : ℤ) 5).product (Finset.Icc (-5 : ℤ) 5)
 
 noncomputable def latticeTerm (k : ℕ) (z : ℤ × ℤ) : ℂ :=
