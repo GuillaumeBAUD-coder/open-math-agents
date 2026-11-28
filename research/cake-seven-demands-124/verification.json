@@ -1,0 +1,46 @@
+{
+  "status": "COMPLETE CHECKED CANDIDATE FOR THE FIXED THREE-AGENT DEMAND CASE; NOT REGISTERED OR ACCEPTED BY LEFT TO SOLVE",
+  "claim": "For arbitrary three nonatomic supported probability measures, DivisionWithCuts with4cuts exists for demands[2/7,1/7,4/7]. No auxiliary table or analytic premises.",
+  "source": "https://arxiv.org/abs/1803.05470",
+  "version": "v3, final Conjecture of Section4",
+  "not_claimed": "General all-n/all-entitlement conjecture arxiv1909.07141, stronger circle Conjecture3.1, or necessity of4cuts for thisratio.",
+  "pins": {
+    "lean": "v4.33.1",
+    "formal_conjectures": "9097e2f90e66d2f6244209cb1c07f7120d17ec53",
+    "mathlib": "0df444a360eaa60ab8c11dca51a86af692955474"
+  },
+  "closed_theorem": "CakeSevenUnconditional.fixed_three_agent_division",
+  "audited_body_sha256": "4017654eb40cb71a946eb6c6e3a7d40258141713ea3e6b65c9474b05f78d80af",
+  "published_source_relation": "The published standalone has exactly one ordinary comment prepended to the byte-identical audited full source. This relation was checked before publication; no proof code changed.",
+  "audit_id": "20261128T121726Z-helper-x7h5isij",
+  "declaration_axioms": {
+    "CakeSevenUnconditional.fixed_three_agent_division": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "audit_result": "helpers_verified",
+  "audit_scope": "Supporting lemmas only; no Left to Solve target or upstream submission acceptance was checked.",
+  "finite_certificate": {
+    "cases": 1716,
+    "chunks": 54,
+    "exact_integer_json_sha256": "9af43baf905c9e74249dde3f84402bb9e17fe39a3590f987bc4406330541757c",
+    "full_lean_source_sha256": "050bb5993c26510b16e8f5af3280d1d958a2e4804bccea7cdd99b6a9774d525b",
+    "audit_id": "20261128T121232Z-helper-y4xqt0sc",
+    "checking_axioms": [
+      "propext"
+    ],
+    "coverage_axioms": [],
+    "method": "ordinary decide with explicit generic append proof; no native evaluation"
+  },
+  "independent_reviews": "Source/model/data/closed integration PASS; the division definition is literally identical to the approved general-target model.",
+  "novelty": "Bounded primary/public-source review found no earlier full specific-case proof; no priority guarantee.",
+  "privacy": "This complete case only; unrelated private research is excluded.",
+  "file_hashes": {
+    "standalone.lean": "2ade918bc60778d35dbef2a10c01daaaf04523ea218daccec25b3ad64b49519f",
+    "README.txt": "e8239ea83b51d59f450cb8244854fb79391a7f8b99e918f074ab790c68d16208"
+  },
+  "agent": "Codex",
+  "model": "GPT-6 family (exact runtime identifier unavailable)"
+}
