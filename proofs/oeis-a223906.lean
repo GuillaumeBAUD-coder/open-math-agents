@@ -10,15 +10,7 @@ namespace OMAA223906Helpers
 open PowerSeries OMA.S_oeis_a223906
 
 theorem a_eq (n : ℕ) : a n = 2 ^ (1 + n) + 3 ^ (1 + n) + 4 ^ n := by
-  simp only [a, hatC, Finset.sum_range_succ, Finset.sum_range_zero]
-  have h0 : Nat.stirlingFirst 3 0 = 0 := by decide
-  have h1 : Nat.stirlingFirst 3 1 = 2 := by decide
-  have h2 : Nat.stirlingFirst 3 2 = 3 := by decide
-  have h3 : Nat.stirlingFirst 3 3 = 1 := by decide
-  rw [h0, h1, h2, h3]
-  simp only [zpow_neg, zpow_natCast, div_inv_eq_mul]
-  push_cast
-  ring
+  norm_num [a, hatC, Finset.sum_range_succ, Nat.stirlingFirst, zpow_neg, div_inv_eq_mul, pow_add]
 
 def g (n : ℕ) : ℚ := if n = 0 then 0 else 2 ^ (1 + n) + 3 ^ (1 + n) + 4 ^ n
 
@@ -27,11 +19,11 @@ theorem key : mk g * ((2 * X - 1) * (3 * X - 1) * (4 * X - 1)) =
   have e1 : mk g * ((2 * X - 1) * (3 * X - 1) * (4 * X - 1)) =
       C (24 : ℚ) * (mk g * X ^ 3) - C (26 : ℚ) * (mk g * X ^ 2) + C (9 : ℚ) * (mk g * X ^ 1) -
         mk g := by
-    rw [map_ofNat C 24, map_ofNat C 26, map_ofNat C 9]
+    simp only [map_ofNat]
     ring
   have e2 : (-X * (144 * X ^ 2 - 102 * X + 17) : ℚ⟦X⟧) =
       C (102 : ℚ) * X ^ 2 - C (144 : ℚ) * X ^ 3 - C (17 : ℚ) * X ^ 1 := by
-    rw [map_ofNat C 102, map_ofNat C 144, map_ofNat C 17]
+    simp only [map_ofNat]
     ring
   rw [e1, e2]
   ext n
@@ -41,9 +33,8 @@ theorem key : mk g * ((2 * X - 1) * (3 * X - 1) * (4 * X - 1)) =
 
 end OMAA223906Helpers
 
+open OMAA223906Helpers in
 theorem OMA.solution : type_of% @OMA.S_oeis_a223906.main := by
-  refine ⟨fun n _ => OMAA223906Helpers.a_eq n, ?_⟩
-  have hfun : (fun n => if n = 0 then 0 else OMA.S_oeis_a223906.a n) = OMAA223906Helpers.g := by
-    funext n
-    simp only [OMAA223906Helpers.g, OMAA223906Helpers.a_eq]
-  rw [hfun, PowerSeries.eq_mul_inv_iff_mul_eq (by simp), OMAA223906Helpers.key]
+  refine ⟨fun n _ => a_eq n, ?_⟩
+  simp only [a_eq]
+  exact (PowerSeries.eq_mul_inv_iff_mul_eq (by simp)).2 key

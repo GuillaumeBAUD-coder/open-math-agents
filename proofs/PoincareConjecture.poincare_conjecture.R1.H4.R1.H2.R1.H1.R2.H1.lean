@@ -1,5 +1,11 @@
 import OMAReductions.R_PoincareConjecture_poincare_conjecture_R1_H4_R1_H2_R1_H1_R2
 
+/-!
+Retains @minimumnz's scalar comparison proof from open-math-agents PR #11004.
+Uses the Mathlib constant-barrier comparison as in @Salofe's pending PR #11192.
+This proves only the registered finite-trace scalar bound.
+-/
+
 open Filter Set Real
 open scoped Topology
 
@@ -7,59 +13,10 @@ private lemma dini_nonincreasing {a b : ℝ} (hab : a ≤ b) {f : ℝ → ℝ}
     (hcont : ContinuousOn f (Icc a b))
     (hdini : ∀ x ∈ Ico a b, ∀ r > 0, ∃ᶠ y in 𝓝[>] x, (y - x)⁻¹ * (f y - f x) < r) :
     f b ≤ f a := by
-  by_contra hlt
-  push_neg at hlt
-  rcases eq_or_lt_of_le hab with rfl | hlt_ab
-  · exact lt_irrefl _ hlt
-  let ε : ℝ := (f b - f a) / (2 * (b - a))
-  have hε : 0 < ε := div_pos (sub_pos.mpr hlt) (by linarith)
-  let g : ℝ → ℝ := fun x => f x - f a - ε * (x - a)
-  have hg_cont : ContinuousOn g (Icc a b) := by
-    refine (hcont.sub continuousOn_const).sub ?_
-    exact continuousOn_const.mul (continuousOn_id.sub continuousOn_const)
-  let S : Set ℝ := {x ∈ Icc a b | g x ≤ 0}
-  have haS : a ∈ S := ⟨⟨le_rfl, hab⟩, by simp [g]⟩
-  have hS_ne : S.Nonempty := ⟨a, haS⟩
-  have hS_bdd : BddAbove S := ⟨b, fun x hx => hx.1.2⟩
-  have hS_closed : IsClosed S := by
-    have hpre : S = Icc a b ∩ g ⁻¹' Iic 0 := by
-      ext x
-      simp [S, mem_Iic]
-    rw [hpre]
-    exact hg_cont.preimage_isClosed_of_isClosed isClosed_Icc isClosed_Iic
-  let c : ℝ := sSup S
-  have hcS : c ∈ S := hS_closed.csSup_mem hS_ne hS_bdd
-  have hcb : c ≤ b := hcS.1.2
-  have hca : a ≤ c := hcS.1.1
-  have hgc : g c ≤ 0 := hcS.2
-  have hc_lt : c < b := by
-    rcases eq_or_lt_of_le hcb with hce | hlt'
-    · exfalso
-      have hgb : g b ≤ 0 := hce ▸ hgc
-      have hgb_val : g b = (f b - f a) / 2 := by
-        dsimp [g, ε]
-        have hba : b - a ≠ 0 := sub_ne_zero.mpr hlt_ab.ne'
-        field_simp [hba]
-        ring
-      linarith
-    · exact hlt'
-  have hfreq := hdini c ⟨hca, hc_lt⟩ ε hε
-  have hIoo : Ioo c b ∈ 𝓝[>] c := Ioo_mem_nhdsGT hc_lt
-  have hfreq' := hfreq.and_eventually hIoo
-  obtain ⟨y, hy_ineq, hy_gt, hy_lt⟩ := hfreq'.exists
-  have hyc_pos : 0 < y - c := sub_pos.mpr hy_gt
-  have hfy : f y - f c < ε * (y - c) := by
-    have h1 := mul_lt_mul_of_pos_left hy_ineq hyc_pos
-    rw [mul_inv_cancel_left₀ hyc_pos.ne'] at h1
-    linarith
-  have hgy : g y ≤ 0 := by
-    have hdiff : g y - g c = (f y - f c) - ε * (y - c) := by
-      dsimp [g]
-      ring
-    linarith
-  have hyS : y ∈ S := ⟨⟨hca.trans hy_gt.le, hy_lt.le⟩, hgy⟩
-  have hyle : y ≤ c := le_csSup hS_bdd hyS
-  linarith
+  exact image_le_of_liminf_slope_right_le_deriv_boundary hcont
+    (B := fun _ => f a) (B' := fun _ => 0) le_rfl continuousOn_const
+    (fun x _ => hasDerivWithinAt_const x _ (f a))
+    (by simpa only [slope, vsub_eq_sub, smul_eq_mul] using hdini) ⟨hab, le_rfl⟩
 
 theorem OMA.solution :
     OMA.R_PoincareConjecture_poincare_conjecture_R1_H4_R1_H2_R1_H1_R2.H1 := by
