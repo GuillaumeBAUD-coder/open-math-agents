@@ -1,5 +1,6 @@
 import FormalConjectures.ErdosProblems.«939»
 
+open Finset
 /-!
 The binomial construction from the [Erdős Problem 939 discussion](https://www.erdosproblems.com/forum/thread/939)
 gives a witness from the odd terms of the expansion
@@ -22,36 +23,36 @@ theorem OMA.solution : type_of% @Erdos939.erdos_939.variants.seven := by
   let e := 2 * (210 ^ 7 : ℕ) ^ 7
   let s : Finset ℕ := {a, b, c, d, e}
   have ha : a ∉ ({b, c, d, e} : Finset ℕ) := by
-    norm_num [Finset.mem_insert, Finset.mem_singleton, a, b, c, d, e]
+    norm_num [mem_insert, mem_singleton, a, b, c, d, e]
   have hb : b ∉ ({c, d, e} : Finset ℕ) := by
-    norm_num [Finset.mem_insert, Finset.mem_singleton, b, c, d, e]
+    norm_num [mem_insert, mem_singleton, b, c, d, e]
   have hc : c ∉ ({d, e} : Finset ℕ) := by
-    norm_num [Finset.mem_insert, Finset.mem_singleton, c, d, e]
+    norm_num [mem_insert, mem_singleton, c, d, e]
   have hd : d ∉ ({e} : Finset ℕ) := by
     norm_num [d, e]
   refine ⟨s, ?_⟩
   change s.card = 7 - 2 ∧ s.Coprime ∧ (7 : ℕ).Full (∑ n ∈ s, n) ∧
     ∀ n ∈ s, 0 < n ∧ (7 : ℕ).Full n
   refine ⟨?_, ?_, ?_, ?_⟩
-  · simp only [s, Finset.card_insert_of_notMem ha, Finset.card_insert_of_notMem hb,
-      Finset.card_insert_of_notMem hc, Finset.card_insert_of_notMem hd, Finset.card_singleton]
+  · simp only [s, card_insert_of_notMem ha, card_insert_of_notMem hb,
+      card_insert_of_notMem hc, card_insert_of_notMem hd, card_singleton]
   · have hgcd : Nat.gcd a e = 1 := by norm_num [a, e]
-    have hma : a ∈ s := Finset.mem_insert_self _ _
-    have hme : e ∈ s := by simp only [s, Finset.mem_insert, Finset.mem_singleton, eq_self, or_true]
-    have hda : s.gcd id ∣ a := Finset.gcd_dvd hma
-    have hde : s.gcd id ∣ e := Finset.gcd_dvd hme
+    have hma : a ∈ s := mem_insert_self _ _
+    have hme : e ∈ s := by simp only [s, mem_insert, mem_singleton, eq_self, or_true]
+    have hda : s.gcd id ∣ a := gcd_dvd hma
+    have hde : s.gcd id ∣ e := gcd_dvd hme
     change s.gcd id = 1
     exact Nat.dvd_one.mp (hgcd ▸ Nat.dvd_gcd hda hde)
   · have hsum : (∑ n ∈ s, n) = (211 ^ 7 + 210 ^ 7 : ℕ) ^ 7 := by
-      simp only [s, Finset.sum_insert ha, Finset.sum_insert hb, Finset.sum_insert hc,
-        Finset.sum_insert hd, Finset.sum_singleton]
+      simp only [s, sum_insert ha, sum_insert hb, sum_insert hc,
+        sum_insert hd, sum_singleton]
       norm_num [a, b, c, d, e]
     rw [hsum]
     simpa only [one_mul] using OMA.full_mul_pow_of_dvd (k := 7)
       (one_dvd (211 ^ 7 + 210 ^ 7 : ℕ))
   · intro n hn
     have hcases : n = a ∨ n = b ∨ n = c ∨ n = d ∨ n = e := by
-      simpa only [s, Finset.mem_insert, Finset.mem_singleton] using hn
+      simpa only [s, mem_insert, mem_singleton] using hn
     rcases hcases with rfl | rfl | rfl | rfl | rfl
     · refine ⟨by norm_num [a], ?_⟩
       simpa only [one_mul] using OMA.full_mul_pow_of_dvd (k := 7)
