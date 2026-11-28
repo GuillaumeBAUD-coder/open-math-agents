@@ -471,8 +471,8 @@ private theorem isSquare_neg_of_three_mod_eight_case {q m : ℕ} [Fact q.Prime]
     exact Int.emod_eq_zero_of_dvd hdvd2
   have hchiq : ZMod.χ₄ (↑q : ZMod 4) = 1 := ZMod.χ₄_nat_one_mod_four hq
   have hchi8 : ZMod.χ₈' (↑m : ZMod 8) = 1 := by
-    rw [ZMod.χ₈'_nat_eq_if_mod_eight, ite_eq_right (by omega : ¬ m % 2 = 0),
-      ite_eq_left (Or.inr hm)]
+    rw [ZMod.χ₈'_nat_eq_if_mod_eight, if_neg (by omega : ¬ m % 2 = 0),
+      if_pos (Or.inr hm)]
   have hJq : jacobiSym ((q : ℤ)) m = 1 := by
     have h2q1 : jacobiSym (-2 * (q : ℤ)) m = 1 := by
       rw [jacobiSym.mod_left' hmod2, jacobiSym.one_left]
@@ -552,19 +552,19 @@ private theorem isSquare_neg_of_two_mod_four_case {q m : ℕ} [Fact q.Prime]
     · have e41 : ZMod.χ₄ (↑q : ZMod 4) = 1 := hchiq
       have e81 : ZMod.χ₈ (↑q : ZMod 8) = 1 := by
         have hq81 : q % 8 = 1 := by omega
-        rw [ZMod.χ₈_nat_eq_if_mod_eight, ite_eq_right (by omega : ¬ q % 2 = 0),
-          ite_eq_left (by omega : q % 8 = 1 ∨ q % 8 = 7)]
+        rw [ZMod.χ₈_nat_eq_if_mod_eight, if_neg (by omega : ¬ q % 2 = 0),
+          if_pos (by omega : q % 8 = 1 ∨ q % 8 = 7)]
       have e4m : ZMod.χ₄ (↑m' : ZMod 4) = 1 := ZMod.χ₄_nat_one_mod_four h1
       rw [e41, e81, e4m]
       norm_num
     · have e41 : ZMod.χ₄ (↑q : ZMod 4) = 1 := hchiq
       have e85 : ZMod.χ₈ (↑q : ZMod 8) = -1 := by
         have hq85 : q % 8 = 5 := by omega
-        rw [ZMod.χ₈_nat_eq_if_mod_eight, ite_eq_right (by omega : ¬ q % 2 = 0),
-          ite_eq_right (by omega : ¬ (q % 8 = 1 ∨ q % 8 = 7))]
+        rw [ZMod.χ₈_nat_eq_if_mod_eight, if_neg (by omega : ¬ q % 2 = 0),
+          if_neg (by omega : ¬ (q % 8 = 1 ∨ q % 8 = 7))]
       have e4m : ZMod.χ₄ (↑m' : ZMod 4) = -1 := by
-        rw [ZMod.χ₄_nat_eq_if_mod_four, ite_eq_right (by omega : ¬ m' % 2 = 0),
-          ite_eq_right (by omega : ¬ m' % 4 = 1)]
+        rw [ZMod.χ₄_nat_eq_if_mod_four, if_neg (by omega : ¬ m' % 2 = 0),
+          if_neg (by omega : ¬ m' % 4 = 1)]
       rw [e41, e85, e4m]
       norm_num
   have hne' : (Int.cast (-((m : ℕ) : ℤ)) : ZMod q) ≠ 0 := by
@@ -1587,6 +1587,7 @@ set_option maxRecDepth 4096 in
 set_option maxHeartbeats 0 in
 lemma certificate15 : twoFreeCertificate 15 68 7 23 25 = true := by decide +kernel
 
+set_option maxHeartbeats 1200000 in
 lemma block16 (t h i : ℕ) :
     represents 17 16 (7+74*t+polygonalNumber 26 h+polygonalNumber 31 i) := by
   obtain ⟨w,x,y,z, ht⟩ := Nat.sum_four_squares t
