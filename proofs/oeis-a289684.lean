@@ -1,0 +1,117 @@
+import OMAStatements.S_oeis_a289684
+
+/-!
+# Proof of the recurrence for OEIS A289684
+
+Eliminating `c` (from `2 X c = 1 - S`) turns `G (2 - c ^ 2) = 1` into `G (4 X ^ 2 + 2 X - 1 + S) = 2 X ^ 2`. With `S ^ 2 = 1 - 4 * X`, the generating function satisfies
+`G * (-16 * X ^ 2 + 64 * X ^ 3 + 64 * X ^ 4) = -8 * X ^ 2 + 16 * X ^ 3 + 32 * X ^ 4 + (-8 * X ^ 2) * S`.
+
+Differentiating `S ^ 2 = p` gives `2 p S' = p' S`. Differentiating the equation for `G`, and using it
+to eliminate `S'` and then `S`, gives a first-order linear differential equation with polynomial
+coefficients; after cancelling a common factor it reads
+`(1 - 8 * X + 12 * X ^ 2 + 16 * X ^ 3) * (X G') + (-2 * X + 24 * X ^ 3) * G = -2 * X ^ 2 + 12 * X ^ 3`.
+The coefficient of `X ^ m` in `X G'` is `m` times that of `G`, so comparing the coefficients of
+`X ^ n` for `n ≥ 4` gives the recurrence.
+-/
+
+namespace OMA.S_oeis_a289684
+
+open PowerSeries
+
+/-- Numerals are constants for the derivative. -/
+theorem d_ofNat (n : ℕ) [n.AtLeastTwo] : d⁄dX ℚ (ofNat(n) : ℚ⟦X⟧) = 0 := by
+  first
+    | exact Derivation.map_natCast (d⁄dX ℚ) n
+    | (rw [← map_ofNat (C : ℚ →+* ℚ⟦X⟧) n]; exact derivative_C)
+
+/-- The coefficient of `X ^ m` in `X * f'` is `m` times the coefficient of `X ^ m` in `f`. -/
+theorem coeff_theta (f : ℚ⟦X⟧) (m : ℕ) : coeff m (X * d⁄dX ℚ f) = m * coeff m f := by
+  cases m with
+  | zero => simp
+  | succ m =>
+    rw [coeff_succ_X_mul, coeff_derivative]
+    push_cast
+    ring
+
+end OMA.S_oeis_a289684
+
+set_option maxHeartbeats 1600000 in
+open PowerSeries OMA.S_oeis_a289684 in
+theorem OMA.solution : type_of% @OMA.S_oeis_a289684.main := by
+  intro S c G hS _ hc hG0 n hn
+  -- eliminate `c`: `G (4 X ^ 2 + 2 X - 1 + S) = 2 X ^ 2` (times 2)
+  have hG : 2 * (G * (4 * X ^ 2 + 2 * X - 1 + S)) = 2 * (2 * X ^ 2) := by
+    linear_combination (4 * X ^ 2) * hG0 + G * hS + G * (2 * X * c + 1 - S) * hc
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 + 1 + 1 + 1 := ⟨n - 4, by omega⟩
+  have hS' : S ^ 2 = 1 - 4 * X := by
+    linear_combination hS
+  have h1 : G * (-16 * X ^ 2 + 64 * X ^ 3 + 64 * X ^ 4) = -8 * X ^ 2 + 16 * X ^ 3 + 32 * X ^ 4 + (-8 * X ^ 2) * S := by
+    linear_combination ((-2 + 4 * X + 8 * X ^ 2) - (2) * S) * hG + (G * (2) ^ 2 - 0 * (2)) * hS
+  have hdS : 2 * S * d⁄dX ℚ S = -4 := by
+    have h := congrArg (d⁄dX ℚ) hS'
+    have e1 : d⁄dX ℚ (S ^ 2) = 2 * S * d⁄dX ℚ S := by
+      simp only [Derivation.leibniz_pow, smul_eq_mul, nsmul_eq_mul, Nat.cast_ofNat, Nat.reduceSub,
+        pow_one]
+      ring
+    have e2 : d⁄dX ℚ (1 - 4 * X : ℚ⟦X⟧) = -4 := by
+      simp only [map_sub, map_add, map_neg, map_zero, Derivation.leibniz, Derivation.leibniz_pow,
+        Derivation.map_one_eq_zero, derivative_X, d_ofNat, smul_eq_mul, nsmul_eq_mul, Nat.cast_ofNat,
+        Nat.reduceSub, pow_one]
+      ring
+    rw [e1, e2] at h
+    exact h
+  have hdS2 : 2 * (1 - 4 * X) * d⁄dX ℚ S = (-4) * S := by
+    linear_combination S * hdS - 2 * d⁄dX ℚ S * hS'
+  have hE : d⁄dX ℚ G * (-16 * X ^ 2 + 64 * X ^ 3 + 64 * X ^ 4) + G * (-32 * X + 192 * X ^ 2 + 256 * X ^ 3) = -16 * X + 48 * X ^ 2 + 128 * X ^ 3 + (-16 * X) * S + (-8 * X ^ 2) * d⁄dX ℚ S := by
+    have h := congrArg (d⁄dX ℚ) h1
+    have e1 : d⁄dX ℚ (G * (-16 * X ^ 2 + 64 * X ^ 3 + 64 * X ^ 4)) = d⁄dX ℚ G * (-16 * X ^ 2 + 64 * X ^ 3 + 64 * X ^ 4) + G * (-32 * X + 192 * X ^ 2 + 256 * X ^ 3) := by
+      simp only [map_sub, map_add, map_neg, map_zero, Derivation.leibniz, Derivation.leibniz_pow,
+        Derivation.map_one_eq_zero, derivative_X, d_ofNat, smul_eq_mul, nsmul_eq_mul, Nat.cast_ofNat,
+        Nat.reduceSub, pow_one]
+      ring
+    have e2 : d⁄dX ℚ (-8 * X ^ 2 + 16 * X ^ 3 + 32 * X ^ 4 + (-8 * X ^ 2) * S) = -16 * X + 48 * X ^ 2 + 128 * X ^ 3 + (-16 * X) * S + (-8 * X ^ 2) * d⁄dX ℚ S := by
+      simp only [map_sub, map_add, map_neg, map_zero, Derivation.leibniz, Derivation.leibniz_pow,
+        Derivation.map_one_eq_zero, derivative_X, d_ofNat, smul_eq_mul, nsmul_eq_mul, Nat.cast_ofNat,
+        Nat.reduceSub, pow_one]
+      ring
+    rw [e1, e2] at h
+    exact h
+  have key : X ^ 4 * (256) * ((1 - 8 * X + 12 * X ^ 2 + 16 * X ^ 3) * (X * d⁄dX ℚ G) + (-2 * X + 24 * X ^ 3) * G - (-2 * X ^ 2 + 12 * X ^ 3)) = 0 := by
+    linear_combination ((1) * X * (2 * (1 - 4 * X) * (-8 * X ^ 2))) * hE + ((1) * X * (-8 * X ^ 2) ^ 2) * hdS2
+      - ((1) * X * (2 * (1 - 4 * X) * (-16 * X) + (-8 * X ^ 2) * (-4))) * h1
+  have hF : (256 : ℚ⟦X⟧) ≠ 0 := by
+    have hrw : (256 : ℚ⟦X⟧) = C (256) + X * 0 := by
+      simp only [map_ofNat, map_neg, map_one]
+      ring
+    rw [hrw]
+    intro h
+    have h0 := congrArg (coeff 0) h
+    simp only [map_add, coeff_zero_C, coeff_zero_X_mul, map_zero, add_zero] at h0
+    norm_num at h0
+  have ode : (1 - 8 * X + 12 * X ^ 2 + 16 * X ^ 3) * (X * d⁄dX ℚ G) + (-2 * X + 24 * X ^ 3) * G - (-2 * X ^ 2 + 12 * X ^ 3) = 0 :=
+    (mul_eq_zero.mp key).resolve_left (mul_ne_zero (pow_ne_zero 4 X_ne_zero) hF)
+  obtain ⟨Θ, hΘ, hcΘ⟩ : ∃ Θ : ℚ⟦X⟧, Θ = X * d⁄dX ℚ G ∧ ∀ k, coeff k Θ = k * coeff k G :=
+    ⟨_, rfl, coeff_theta G⟩
+  have key2 : C (1) * Θ
+      + C (-8) * (X * Θ)
+      + C (12) * (X * (X * Θ))
+      + C (16) * (X * (X * (X * Θ)))
+      + C (-2) * (X * G)
+      + C (24) * (X * (X * (X * G)))
+      + C (2) * (X * (X * 1))
+      + C (-12) * (X * (X * (X * 1))) = 0 := by
+    rw [hΘ]
+    simp only [map_ofNat, map_neg, map_one]
+    linear_combination ode
+  have hne1 : m + 1 ≠ 0 := by omega
+  have hne2 : m + 1 + 1 ≠ 0 := by omega
+  have hne3 : m + 1 + 1 + 1 ≠ 0 := by omega
+  have hne4 : m + 1 + 1 + 1 + 1 ≠ 0 := by omega
+  have h := congrArg (coeff (m + 1 + 1 + 1 + 1)) key2
+  simp only [map_add, coeff_C_mul, coeff_succ_X_mul, hcΘ, coeff_one, map_zero, if_neg hne1, if_neg hne2, if_neg hne3, if_neg hne4] at h
+  have e1 : m + 1 + 1 + 1 + 1 - 1 = m + 1 + 1 + 1 := by omega
+  have e2 : m + 1 + 1 + 1 + 1 - 2 = m + 1 + 1 := by omega
+  have e3 : m + 1 + 1 + 1 + 1 - 3 = m + 1 := by omega
+  rw [e1, e2, e3]
+  push_cast at h ⊢
+  linear_combination (1 / 1 : ℚ) * h
