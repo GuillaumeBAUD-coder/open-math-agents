@@ -81,10 +81,10 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a265942.main := by
           exact ⟨2 * (t : ℤ) ^ 2 + 3 * t, by push_cast; ring⟩
         · rw [ho.neg_one_pow]
           exact ⟨-1, by ring⟩
-      have hfin : 4 ∣ a (r + 2 + 1) - 2 := by
-        convert dvd_add hbase htail using 1
-        rw [hsum, Sar r]
-        ring
+      obtain ⟨q, hq⟩ := dvd_add hbase htail
+      have hfin : 4 ∣ a (r + 2 + 1) - 2 := ⟨q, by
+        rw [hsum]
+        linear_combination hq + Sar r⟩
       omega
   intro n hn
   exact key n (by omega)
