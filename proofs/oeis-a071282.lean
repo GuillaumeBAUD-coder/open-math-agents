@@ -1,5 +1,4 @@
 import OMAStatements.S_oeis_a071282
-import Mathlib.Tactic
 
 open OMA.S_oeis_a071282 in
 theorem OMA.solution : type_of% @OMA.S_oeis_a071282.main := by
