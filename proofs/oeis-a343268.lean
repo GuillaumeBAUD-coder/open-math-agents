@@ -195,7 +195,7 @@ theorem repr_of_row {k t lo hi n m1 m2 m3 : ℕ}
   change 0 < m1 ∧ 0 < m2 ∧ ((t = 1 ∧ 0 < m3) ∨ (t = 2 ∧ m3 = 0)) ∧
     R % s = n % s ∧ R + t * (L / 2) * s ≤ lo ∧ hi ≤ R + t * (L - 1) * s at h
   obtain ⟨hm1, hm2, ht, hmod, hmin, hmax⟩ := h
-  have hs : 0 < s := by dsimp [s]; omega
+  have hs : 0 < s := Nat.succ_pos L
   have hL : 0 < L := by dsimp [L]; positivity
   have hRn : R ≤ n := by omega
   have hdiv : R / s ≤ n / s := Nat.div_le_div_right hRn
@@ -281,7 +281,7 @@ private theorem inBand (data : Array ℕ) (bits k t lo hi n : ℕ) (hk : 1 ≤ k
     (hn : lo ≤ n) (hn' : n ≤ hi)
     (good : IntervalOK (rowOK data bits k t lo hi) 0 (2^k+1)) : repr n := by
   let i := n % (2^k+1)
-  have hi' : i < 2^k+1 := Nat.mod_lt _ (by omega)
+  have hi' : i < 2^k+1 := Nat.mod_lt _ (Nat.succ_pos (2 ^ k))
   have h := good i (by omega) hi'
   unfold rowOK at h
   exact repr_of_row hk hn hn' (of_decide_eq_true h)
@@ -2438,6 +2438,7 @@ private lemma band (s : ℕ) (c : ℤ) (n : ℕ) (hc : c=1 ∨ c=2)
     (hlo : (64*c+1)*(8192*(2:ℤ)^s)^2 ≤ 128*(n:ℤ))
     (hhi : 32*(n:ℤ) ≤ (32*c+1)*(8192*(2:ℤ)^s)^2) : Four n := by
   have hs := powerBound s
+  have hs0 : 0 ≤ (s : ℤ) := by positivity
   by_cases hn : (n:ℤ) ≤ c*(8192*(2:ℤ)^s)^2
   · apply localBand 32 (128*(2:ℤ)^s) c n hc (by linarith) ⟨s+7,by rw [pow_add];ring⟩
     left
@@ -2472,7 +2473,7 @@ private lemma reach (s n : ℕ) (hn : 34078720 ≤ n)
     by_cases prev : 32*(n:ℤ) ≤ 65*(8192*(2:ℤ)^s)^2
     · exact ih prev
     · apply scaleCover (s+1) n _ hu
-      rw [pow_succ]
+      rw [show (2 : ℤ)^(s+1) = (2 : ℤ)^s * 2 from pow_succ _ _]
       nlinarith
 
 theorem analytic (n : ℕ) (hn : 34078720 ≤ n) : Four n := by
