@@ -4,7 +4,7 @@ import Mathlib
 # OEIS A196279: the order-11 recurrence a(n) = a(n-1) + a(n-10) - a(n-11)
 
 Source: https://oeis.org/A196279
-Credit: @SudharsanAnimations
+Credit: Sudharsan Rajendiran
 
 Let `r = (7n) mod 10` and `x = ⌊7n/10⌋` be the last digit and leading part of `7n`; then
 `a(n) = (x - 2r)/7`. R. J. Mathar conjectured (Oct 2011) that `a(n) = a(n-1) + a(n-10) - a(n-11)`,
