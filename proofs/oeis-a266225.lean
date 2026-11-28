@@ -1,5 +1,6 @@
 import OMAStatements.S_oeis_a266225
 import Mathlib
+open OMA.S_oeis_a266225
 
 namespace A266225
 
@@ -30,9 +31,9 @@ end A266225
 open scoped Classical in
 theorem OMA.solution : type_of% @OMA.S_oeis_a266225.main := by
   intro n hn
-  have hex : ∃ x : ℕ, OMA.S_oeis_a266225.qualifies n x :=
-    A266225.exists_x (OMA.S_oeis_a266225.primeAt n)
-  unfold OMA.S_oeis_a266225.a
+  have hex : ∃ x : ℕ, qualifies n x :=
+    A266225.exists_x (primeAt n)
+  unfold a
   rw [dif_pos hex]
   have h : 1 < Nat.find hex := (Nat.find_spec hex).1
   exact_mod_cast h
