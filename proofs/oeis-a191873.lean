@@ -34,37 +34,30 @@ private theorem emptyDiagonal {n : ℕ} {A : Board n} (hA : rectangleFree A)
     change S.card ≤ N.card
     have neighbor (j : Fin n) : j ∈ N ↔ ∃ i ∈ S, R i j := by simp [N]
     have hS : S.card ≤ n := by simpa using S.card_le_univ
-    by_cases hfull : S.card = n
-    · have hSuniv : S = Finset.univ := S.eq_univ_of_card (by simpa using hfull)
-      have hNuniv : N = Finset.univ := by
-        apply Finset.eq_univ_of_forall
-        intro j
-        obtain ⟨i, hi⟩ := hcol j
-        exact (neighbor j).2 ⟨i, by simp [hSuniv], hi⟩
-      simp [hNuniv, hfull]
-    by_cases hsmall : S.card ≤ 1
-    · by_cases hzero : S.card = 0
-      · simp [hzero]
-      have hpos : 0 < S.card := by omega
-      obtain ⟨i, hi⟩ := Finset.card_pos.mp hpos
+    by_contra! hlt
+    have hSlarge : 1 < S.card := by
+      obtain ⟨i, hi⟩ := Finset.card_pos.mp (show 0 < S.card by omega)
       obtain ⟨j, hj⟩ := hrow i
       have hNpos : 0 < N.card := Finset.card_pos.mpr ⟨j, (neighbor j).2 ⟨i, hi, hj⟩⟩
       omega
-    · by_contra hle
-      have hlt : N.card < S.card := lt_of_not_ge hle
-      let M : Finset (Fin n) := Finset.univ \ N
-      have hM : M.card = n - N.card := by
-        simp [M, Finset.card_sdiff_of_subset (Finset.subset_univ N)]
-      have hMlarge : 1 < M.card := by omega
-      have hSlarge : 1 < S.card := by omega
-      obtain ⟨i, k, hi, hk, hik⟩ := Finset.one_lt_card_iff.mp hSlarge
-      obtain ⟨j, l, hj, hl, hjl⟩ := Finset.one_lt_card_iff.mp hMlarge
-      have occupied (r c : Fin n) (hr : r ∈ S) (hc : c ∈ M) : (r, c) ∈ A := by
-        by_contra h
-        have hcN : c ∉ N := (Finset.mem_sdiff.mp hc).2
-        exact hcN ((neighbor c).2 ⟨r, hr, h⟩)
-      exact hA i k j l hik hjl (occupied i j hi hj) (occupied i l hi hl)
-        (occupied k j hk hj) (occupied k l hk hl)
+    let M : Finset (Fin n) := Finset.univ \ N
+    have hM : M.card = n - N.card := by
+      simp [M, Finset.card_sdiff_of_subset (Finset.subset_univ N)]
+    have occupied (r c : Fin n) (hr : r ∈ S) (hc : c ∈ M) : (r, c) ∈ A := by
+      by_contra h
+      exact (Finset.mem_sdiff.mp hc).2 ((neighbor c).2 ⟨r, hr, h⟩)
+    have hMlarge : 1 < M.card := by
+      obtain ⟨j, hj⟩ := Finset.card_pos.mp (show 0 < M.card by omega)
+      obtain ⟨i, hi⟩ := hcol j
+      have hSlt : S.card < n := by
+        simpa using S.card_lt_iff_ne_univ.mpr (by
+          intro e
+          exact hi (occupied i j (e ▸ Finset.mem_univ i) hj))
+      omega
+    obtain ⟨i, k, hi, hk, hik⟩ := Finset.one_lt_card_iff.mp hSlarge
+    obtain ⟨j, l, hj, hl, hjl⟩ := Finset.one_lt_card_iff.mp hMlarge
+    exact hA i k j l hik hjl (occupied i j hi hj) (occupied i l hi hl)
+      (occupied k j hk hj) (occupied k l hk hl)
   have matching : ∃ f : Fin n → Fin n, Function.Injective f ∧ ∀ i, R i (f i) := by
     apply (Fintype.all_card_le_filter_rel_iff_exists_injective R).mp
     intro S
@@ -97,34 +90,29 @@ private theorem next_val {n : ℕ} (i : Fin n) :
 
 private theorem cyclic {n : ℕ} (hn : 3 ≤ n) : 2 * n ∈ weights n := by
   classical
+  have hnext (i : Fin n) : (next i).val = i.val + 1 ∨ (next i).val = 0 ∧ i.val + 1 = n := by
+    have := i.isLt
+    rw [next_val]
+    split_ifs <;> omega
   have neNext (i : Fin n) : next i ≠ i := by
     intro h
-    have hv := congrArg Fin.val h
-    rw [next_val] at hv
-    have hi := i.isLt
-    split at hv <;> omega
+    have hi := hnext i
+    rw [h] at hi
+    omega
   have injNext : Function.Injective (next : Fin n → Fin n) := by
     intro i k h
+    have hi := hnext i
+    have hk := hnext k
+    have hb := (next k).isLt
+    rw [h] at hi
     apply Fin.ext
-    have hv := congrArg Fin.val h
-    rw [next_val i, next_val k] at hv
-    have hi := i.isLt
-    have hk := k.isLt
-    by_cases hi' : i.val + 1 < n <;> by_cases hk' : k.val + 1 < n <;>
-      simp only [hi', hk', if_true, if_false] at hv <;> omega
+    omega
   have noTwoCycle (i : Fin n) : next (next i) ≠ i := by
     intro h
-    have hv := congrArg Fin.val h
-    rw [next_val (next i)] at hv
-    have hstep := next_val i
-    have hi := i.isLt
-    by_cases hi' : i.val + 1 < n
-    · rw [if_pos hi'] at hstep
-      rw [hstep] at hv
-      split at hv <;> omega
-    · rw [if_neg hi'] at hstep
-      rw [hstep, if_pos (show 0 + 1 < n by omega)] at hv
-      omega
+    have hi := hnext i
+    have hh := hnext (next i)
+    rw [h] at hh
+    omega
   let D : Fin n × Bool → Fin n × Fin n :=
     fun (i, b) => (i, if b then next i else i)
   have hD : Function.Injective D := by
@@ -133,11 +121,7 @@ private theorem cyclic {n : ℕ} (hn : 3 ≤ n) : 2 * n ∈ weights n := by
     subst k
     have hc := congrArg Prod.snd h
     change (if b then next i else i) = (if c then next i else i) at hc
-    cases b <;> cases c
-    · rfl
-    · exact (neNext i hc.symm).elim
-    · exact (neNext i hc).elim
-    · rfl
+    cases b <;> cases c <;> simp [neNext i, Ne.symm (neNext i)] at hc ⊢
   let A : Board n := Finset.univ.map ⟨D, hD⟩
   have cols {i j : Fin n} (h : (i, j) ∈ A) : j = i ∨ j = next i := by
     obtain ⟨⟨k, b⟩, _, heq⟩ := Finset.mem_map.mp h
@@ -158,13 +142,10 @@ private theorem cyclic {n : ℕ} (hn : 3 ≤ n) : 2 * n ∈ weights n := by
     · exact (hik (injNext (h.symm.trans h'))).elim
   refine ⟨A, ?_, ?_⟩
   · intro i k j l hik hjl hij hil hkj hkl
-    rcases overlap hik (cols hij) (cols hkj) with ⟨hji, hik'⟩ | ⟨hjk, hki'⟩
-    · rcases overlap hik (cols hil) (cols hkl) with ⟨hli, _⟩ | ⟨_, hki'⟩
-      · exact hjl (hji.trans hli.symm)
-      · exact noTwoCycle i ((congrArg next hki').symm.trans hik'.symm)
-    · rcases overlap hik (cols hil) (cols hkl) with ⟨_, hik'⟩ | ⟨hlk, _⟩
-      · exact noTwoCycle i ((congrArg next hki').symm.trans hik'.symm)
-      · exact hjl (hjk.trans hlk.symm)
+    rcases overlap hik (cols hij) (cols hkj) with ⟨he, hj⟩ | ⟨he, hj⟩ <;>
+      rcases overlap hik (cols hil) (cols hkl) with ⟨hle, hl⟩ | ⟨hle, hl⟩ <;>
+      subst j <;> subst l <;>
+      first | exact hjl rfl | exact noTwoCycle i (by grind)
   · simp [A, Fintype.card_prod, Fintype.card_bool, Nat.mul_comm]
 
 private theorem fullRowBound {n : ℕ} {A : Board n} (hA : rectangleFree A)
@@ -205,17 +186,11 @@ private theorem weightBound {n : ℕ} (A : Board n) : A.card ≤ n * n := by
 private theorem strictWeightBound {n : ℕ} (hn : 3 ≤ n) {A : Board n}
     (hA : rectangleFree A) : A.card < n * n := by
   have hne : A ≠ Finset.univ := by
-    intro h
+    rintro rfl
     let i : Fin n := ⟨0, by omega⟩
     let k : Fin n := ⟨1, by omega⟩
-    have hik : i ≠ k := by
-      intro heq
-      have hv : (0 : ℕ) = 1 := congrArg Fin.val heq
-      omega
-    have all (p : Fin n × Fin n) : p ∈ A := by
-      rw [h]
-      exact Finset.mem_univ p
-    exact hA i k i k hik hik (all _) (all _) (all _) (all _)
+    have hik : i ≠ k := fun e => Nat.zero_ne_one (congrArg Fin.val e)
+    exact hA i k i k hik hik (Finset.mem_univ _) (Finset.mem_univ _) (Finset.mem_univ _) (Finset.mem_univ _)
   simpa only [Fintype.card_prod, Fintype.card_fin] using A.card_lt_iff_ne_univ.mpr hne
 
 theorem solve (n : ℕ) (hn : 3 ≤ n) :
@@ -233,17 +208,11 @@ theorem solve (n : ℕ) (hn : 3 ≤ n) :
   have hlarge := maximal cyc
   obtain ⟨A, hA, hcard⟩ := hz
   have hrow (i : Fin n) : ∃ j, (i, j) ∉ A := by
-    by_contra h
-    have hfull (j : Fin n) : (i, j) ∈ A := by
-      by_contra hj
-      exact h ⟨j, hj⟩
+    by_contra! hfull
     have hsmall := fullRowBound hA hfull
     omega
   have hcol (j : Fin n) : ∃ i, (i, j) ∉ A := by
-    by_contra h
-    have hfull (i : Fin n) : (i, j) ∈ A := by
-      by_contra hi
-      exact h ⟨i, hi⟩
+    by_contra! hfull
     have hsmall := fullColBound hA hfull
     omega
   obtain ⟨B, hB, hdiag, hBA⟩ := emptyDiagonal hA hrow hcol
