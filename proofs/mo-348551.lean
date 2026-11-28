@@ -66,14 +66,6 @@ noncomputable def s (k : ℕ) : Fin 3 → ℝ :=
 lemma scaleBounds (m : ℕ) : 0 < scale m ∧ scale m ≤ 1 := by
   exact ⟨by unfold scale; positivity, pow_le_one₀ (by norm_num) (by norm_num)⟩
 
-/-- The source's proposed spectral bound holds for this example at every time. -/
-lemma spectrumBounds (k : ℕ) (i : Fin 3) : 0 ≤ s k i ∧ s k i ≤ 1 := by
-  have h := scaleBounds (k/2)
-  have hs : (scale (k/2))^2 ≤ 1 := by nlinarith [mul_nonneg h.1.le (sub_nonneg.mpr h.2)]
-  by_cases hk : k % 2 = 0 <;> fin_cases i <;>
-    norm_num [s, hk, abs_of_pos h.1] <;>
-    first | constructor <;> nlinarith [sq_nonneg (scale (k/2))] | nlinarith
-
 lemma spectrumOrder (k : ℕ) : Antitone (s k) := by
   have h := scaleBounds (k/2)
   have hs : (scale (k/2))^2 ≤ 1 := by nlinarith [mul_nonneg h.1.le (sub_nonneg.mpr h.2)]
