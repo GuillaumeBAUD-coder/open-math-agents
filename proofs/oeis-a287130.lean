@@ -59,11 +59,11 @@ def caState (rule : Nat) : Nat → Cell → Bool
   | g + 1 => step rule (caState rule g)
 
 /-- The window [-g,g]^2 around the seed. -/
-def window (g : Nat) : Finset Cell :=
+noncomputable def window (g : Nat) : Finset Cell :=
   Finset.Icc (-(g : Int)) g ×ˢ Finset.Icc (-(g : Int)) g
 
 /-- The OEIS count: number of ON cells of stage g inside the (2g+1) x (2g+1) square around the seed. -/
-def onCount (rule g : Nat) : Nat :=
+noncomputable def onCount (rule g : Nat) : Nat :=
   ((window g).filter (fun p => caState rule g p = true)).card
 
 end LT2D
