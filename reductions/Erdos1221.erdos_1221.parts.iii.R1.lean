@@ -5,15 +5,16 @@ Reduction R1 of `Erdos1221.erdos_1221.parts.iii`: `r(μ_r - 1) → ∞`.
 
 Following Korsky, *A Resolution of the de Bruijn–Erdős Consecutive-Gap Problem*
 (arXiv:2609.07196, CC BY 4.0), Theorem 1.1 (ratio part), Sections 2–5. For a sequence whose
-consecutive `r`-span ratio stays below `1 + A/r` with `A = log r / 100`:
+consecutive `r`-span ratio stays below `1 + A/r` with `A = log r / 1000`:
 * H2 (Sections 2–3, Lemma 2.1 and Proposition 3.1): the point counts in short arcs are then
   regular, `|N_n((x, x + D/n]) - D| ≤ 3A + C₁A/log(r/A)` for `0 ≤ D ≤ S = √(Ar)/log²(r/A)`.
 * H3 (Section 4, Lemma 4.2): such regularity yields a list of `⌊S⌋` points of `[0,1)` all of
   whose prefixes have discrepancy at most that bound.
 * H1 (Larcher; the paper's Theorem 4.1): every list of `L ≥ L₀` points of `[0,1)` has a prefix
-  of discrepancy at least `(log L)/16`.
-`main` carries out Section 5: since `3/100 < 1/32`, these are incompatible for large `r`, so
-every admissible sequence has `limsup M/m ≥ 1 + log r/(100 r)`, hence so does `μ_r`, which beats
+  of discrepancy at least `(log L)/60` (the paper uses Larcher's sharper constant; any fixed
+  constant works for this target).
+`main` carries out Section 5: since `3/1000 < 1/120`, these are incompatible for large `r`, so
+every admissible sequence has `limsup M/m ≥ 1 + log r/(1000 r)`, hence so does `μ_r`, which beats
 `1 + K/r` for every fixed `K` and all large `r`.
 -/
 
@@ -26,7 +27,7 @@ open scoped ENNReal
 def H1 : Prop :=
   ∃ L₀ : ℕ, ∀ L : ℕ, L₀ ≤ L → ∀ z : ℕ → ℝ, (∀ i < L, 0 ≤ z i ∧ z i < 1) →
     ∃ j ≤ L, ∃ u : ℝ, 0 ≤ u ∧ u ≤ 1 ∧
-      Real.log L / 16 ≤ |(((Finset.range j).filter fun i => z i < u).card : ℝ) - j * u|
+      Real.log L / 60 ≤ |(((Finset.range j).filter fun i => z i < u).card : ℝ) - j * u|
 
 /-- Short-arc regularity from a bounded span ratio (the paper's Lemma 2.1 and Proposition 3.1,
 with Section 5's steps (b)–(c)). -/
@@ -56,11 +57,11 @@ set_option maxHeartbeats 2000000 in
 /-- All the size conditions needed in Section 5 hold for large `r`. -/
 lemma eventually_conditions (C₀ C₁ : ℝ) (hC₁ : 0 < C₁) (L₀ : ℕ) :
     ∀ᶠ r : ℕ in atTop,
-      let A : ℝ := Real.log r / 100
+      let A : ℝ := Real.log r / 1000
       let Λ : ℝ := Real.log (r / A)
       let S : ℝ := Real.sqrt (A * r) / Λ ^ 2
       1 ≤ A ∧ C₀ * A ≤ r ∧ 2 ≤ S ∧ L₀ ≤ ⌊S⌋₊ ∧ 0 < Λ ∧
-        3 * A + C₁ * A / Λ < Real.log ⌊S⌋₊ / 16 := by
+        3 * A + C₁ * A / Λ < Real.log ⌊S⌋₊ / 60 := by
   -- choose a threshold `Y` for `y = log r`
   have hL0 : 0 ≤ Real.log ((L₀ : ℝ) + 2) := Real.log_nonneg (by have := L₀.cast_nonneg (α := ℝ); linarith)
   have hc1 := sq_nonneg (C₁ / 50 + 1)
@@ -130,8 +131,8 @@ lemma eventually_conditions (C₀ C₁ : ℝ) (hC₁ : 0 < C₁) (L₀ : ℕ) :
   have hlog2 : Real.log 2 < 1 := by
     have := Real.log_two_lt_d9; linarith
   -- B is small
-  have hB : 3 * A + C₁ * A / Λ ≤ 3 * y / 100 + C₁ / 50 := by
-    have : C₁ * A / Λ ≤ C₁ / 50 := by
+  have hB : 3 * A + C₁ * A / Λ ≤ 3 * y / 1000 + C₁ / 500 := by
+    have : C₁ * A / Λ ≤ C₁ / 500 := by
       rw [div_le_iff₀ hΛpos]; simp only [A]; nlinarith
     simp only [A] at this ⊢; linarith
   have hC₁y : C₁ / 50 + 1 ≤ Real.sqrt y / 4 := by
@@ -150,23 +151,28 @@ lemma eventually_conditions (C₀ C₁ : ℝ) (hC₁ : 0 < C₁) (L₀ : ℕ) :
     rcases le_or_gt C₀ 0 with h | h
     · nlinarith
     · nlinarith [mul_le_mul_of_nonneg_left h1 h.le, mul_le_mul_of_nonneg_right h3 hs0]
+  have hs0 : 0 ≤ Real.sqrt y := Real.sqrt_nonneg _
+  have hC₁s : C₁ / 500 ≤ Real.sqrt y / 4 - 1 := by linarith
+  have hfin : 3 * y / 1000 + C₁ / 500 + 1 < (y / 2 - 4 * Real.sqrt y - 1) / 60 := by
+    have hss : 400 * Real.sqrt y ≤ y := by nlinarith
+    linarith
   refine ⟨hA, hC0, hS2, hfl, hΛpos, ?_⟩
-  nlinarith
+  linarith
 
 theorem main : H1 → H2 → H3 → type_of% @Erdos1221.erdos_1221.parts.iii := by
   rintro ⟨L₀, hL⟩ ⟨C₀, C₁, hC₁, h2⟩ h3 K
-  have hK : ∀ᶠ r : ℕ in atTop, 100 * K < Real.log r :=
-    (Real.tendsto_log_atTop.comp tendsto_natCast_atTop_atTop).eventually_gt_atTop (100 * K)
+  have hK : ∀ᶠ r : ℕ in atTop, 1000 * K < Real.log r :=
+    (Real.tendsto_log_atTop.comp tendsto_natCast_atTop_atTop).eventually_gt_atTop (1000 * K)
   filter_upwards [eventually_conditions C₀ C₁ hC₁ L₀, hK, eventually_gt_atTop 0] with r hc hKr hr0
   dsimp only at hc
   obtain ⟨hA, hC0, hS2, hfl, hΛpos, hBS⟩ := hc
   have hrpos : (0 : ℝ) < r := by exact_mod_cast hr0
-  have hB1 : 1 ≤ 3 * (Real.log r / 100) + C₁ * (Real.log r / 100) / Real.log (r / (Real.log r / 100)) := by
-    have : 0 ≤ C₁ * (Real.log r / 100) / Real.log (r / (Real.log r / 100)) := by positivity
+  have hB1 : 1 ≤ 3 * (Real.log r / 1000) + C₁ * (Real.log r / 1000) / Real.log (r / (Real.log r / 1000)) := by
+    have : 0 ≤ C₁ * (Real.log r / 1000) / Real.log (r / (Real.log r / 1000)) := by positivity
     linarith
   -- every admissible sequence has limsup ratio ≥ 1 + A / r
   have key : ∀ a : ℕ → ℝ, Function.Injective (fun k ↦ Int.fract (a k)) →
-      ENNReal.ofReal (1 + (Real.log r / 100) / r) ≤
+      ENNReal.ofReal (1 + (Real.log r / 1000) / r) ≤
         limsup (fun n : ℕ => ENNReal.ofReal (maxSpan a n r) / ENNReal.ofReal (minSpan a n r))
           atTop := by
     intro a ha
@@ -174,14 +180,14 @@ theorem main : H1 → H2 → H3 → type_of% @Erdos1221.erdos_1221.parts.iii := 
     push Not at hlt
     obtain ⟨b, hb1, hb2⟩ := exists_between hlt
     have hbtop : b ≠ ⊤ := ne_top_of_lt hb2
-    have hbr : b.toReal < 1 + (Real.log r / 100) / r := ENNReal.toReal_lt_of_lt_ofReal hb2
+    have hbr : b.toReal < 1 + (Real.log r / 1000) / r := ENNReal.toReal_lt_of_lt_ofReal hb2
     set C : ℝ := max 0 ((b.toReal - 1) * r) with hCdef
-    have hCA : C < Real.log r / 100 := by
+    have hCA : C < Real.log r / 1000 := by
       refine max_lt (by linarith) ?_
-      have : (b.toReal - 1) < (Real.log r / 100) / r := by linarith
-      calc (b.toReal - 1) * r < ((Real.log r / 100) / r) * r := by
+      have : (b.toReal - 1) < (Real.log r / 1000) / r := by linarith
+      calc (b.toReal - 1) * r < ((Real.log r / 1000) / r) * r := by
             exact mul_lt_mul_of_pos_right this hrpos
-        _ = Real.log r / 100 := by field_simp
+        _ = Real.log r / 1000 := by field_simp
     have hbC : b ≤ ENNReal.ofReal (1 + C / r) := by
       rw [← ENNReal.ofReal_toReal hbtop]
       apply ENNReal.ofReal_le_ofReal
@@ -194,11 +200,11 @@ theorem main : H1 → H2 → H3 → type_of% @Erdos1221.erdos_1221.parts.iii := 
     obtain ⟨j, hj, u, hu0, hu1, hge⟩ := hL _ hfl z hz
     have := hzB j hj u hu0 hu1
     linarith
-  have hmu : ENNReal.ofReal (1 + (Real.log r / 100) / r) ≤ mu r :=
+  have hmu : ENNReal.ofReal (1 + (Real.log r / 1000) / r) ≤ mu r :=
     le_iInf₂ fun a ha => key a ha
   refine lt_of_lt_of_le ?_ hmu
   rw [ENNReal.ofReal_lt_ofReal_iff (by positivity)]
-  have : K / r < (Real.log r / 100) / r := div_lt_div_of_pos_right (by linarith) hrpos
+  have : K / r < (Real.log r / 1000) / r := div_lt_div_of_pos_right (by linarith) hrpos
   linarith
 
 end OMA.R_Erdos1221_erdos_1221_parts_iii_R1
