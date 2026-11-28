@@ -114,7 +114,7 @@ private lemma numerator_at_root {I : Type*} [Fintype I] [DecidableEq I]
   rw [Finset.sum_eq_single i]
   · intro j _ hj
     rw [Finset.prod_eq_zero (Finset.mem_erase.mpr ⟨Ne.symm hj, Finset.mem_univ i⟩) (sub_self _), mul_zero]
-  · simp
+  · simp only [Finset.mem_univ, not_true_eq_false, mul_eq_zero, IsEmpty.forall_iff]
 
 private lemma rank_of_special_rows {m : ℕ} (hm : 2 ≤ m)
     (values : Fin (m+2) → Fin m → ℂ) (α : Fin m → ℂ) (β : ℂ)
@@ -127,8 +127,9 @@ private lemma rank_of_special_rows {m : ℕ} (hm : 2 ≤ m)
     have r := matrix (Fin.castLE (by omega : m ≤ m+2) i)
     simp only [unit] at r
     have prod : (∏ g : Fin m, (1-(if i=g then 1 else 0) : ℂ)) = 0 := by
-      exact Finset.prod_eq_zero (Finset.mem_univ i) (by simp)
-    simpa [prod] using r
+      exact Finset.prod_eq_zero (Finset.mem_univ i) (by simp only [↓reduceIte, sub_self])
+    simpa only [ite_mul, one_mul, zero_mul, Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte, prod,
+      sub_zero] using r
   have r := matrix (⟨m, by omega⟩ : Fin (m+2))
   simp only [two, all] at r
   let z : Fin m := ⟨0, by omega⟩
@@ -138,11 +139,16 @@ private lemma rank_of_special_rows {m : ℕ} (hm : 2 ≤ m)
       (if i=z then β else 0) + (if i=o then β else 0) := by
     have ziff : i.val=0 ↔ i=z := ⟨fun h => Fin.ext h, fun h => congrArg Fin.val h⟩
     have oiff : i.val=1 ↔ i=o := ⟨fun h => Fin.ext h, fun h => congrArg Fin.val h⟩
-    by_cases iz : i=z <;> by_cases io : i=o <;> simp_all
+    by_cases iz : i=z <;> by_cases io : i=o <;> simp_all only [ite_mul, one_mul, zero_mul, ne_eq,
+      iff_false, or_self, ↓reduceIte, add_zero, iff_true, zero_ne_one, not_false_eq_true, or_false,
+      left_eq_add, not_true_eq_false, reduceCtorEq, false_iff, one_ne_zero, or_true, zero_add]
   have prod : (∏ g : Fin m, (1-(if g.val=0 ∨ g.val=1 then 1 else 0) : ℂ)) = 0 := by
-    exact Finset.prod_eq_zero (Finset.mem_univ z) (by simp [z])
+    exact Finset.prod_eq_zero (Finset.mem_univ z) (by simp only [zero_ne_one, or_false, ↓reduceIte,
+      sub_self, z])
   simp only [prod, terms, Finset.sum_add_distrib] at r
-  have bzero : β=0 := by simp at r; linear_combination r
+  have bzero : β=0 := by
+    simp only [Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte, sub_zero, one_mul, add_eq_left] at r
+    exact r
   exact ⟨funext fun i => (all i).trans bzero, bzero⟩
 
 end SharpTensorEven
@@ -156,7 +162,7 @@ private lemma coefficient_from_two_values {m : ℕ} (v : Fin m → ℂ)
       (p.eval x / (nodePoly v).eval x - p.eval (-x) / (nodePoly v).eval (-x)) / (2*x) := by
   obtain ⟨q, rfl⟩ := nodePoly_dvd distinct roots
   by_cases hq : q=0
-  · simp [hq]
+  · simp only [hq, mul_zero, coeff_zero, eval_zero, zero_div, sub_self]
   have dq : q.natDegree ≤ 1 := by
     rw [natDegree_mul (nodePoly_monic v).ne_zero hq, nodePoly_degree, Fintype.card_fin] at deg
     omega
@@ -222,7 +228,8 @@ private lemma degree_drop {p : ℂ[X]} {n : ℕ} (top : p.coeff (n+1)=0)
     (bound : p.natDegree ≤ n+1) : p.natDegree ≤ n := by
   by_contra! bad
   have eq : p.natDegree=n+1 := by omega
-  have nz : p ≠ 0 := by intro h; simp [h] at eq
+  have nz : p ≠ 0 := by intro h; simp only [h, natDegree_zero, Nat.right_eq_add, Nat.add_eq_zero_iff,
+    one_ne_zero, and_false] at eq
   exact (leadingCoeff_ne_zero.mpr nz) (by rw [leadingCoeff,eq]; exact top)
 
 end SharpTensorEven
@@ -249,11 +256,11 @@ private def read {m : ℕ} (f : Option (Color m)→ℂ) : Mark m→ℂ
 
 private lemma fullMark_injective {m : ℕ} (g : Group m) : Function.Injective (fullMark g) := by
   intro i j h
-  cases i <;> cases j <;> simp_all [fullMark]
+  cases i <;> cases j <;> simp_all only [fullMark, Sum.inl.injEq, Prod.mk.injEq, true_and, reduceCtorEq]
 
 private lemma smallMark_injective {m : ℕ} : Function.Injective (@smallMark m) := by
   intro a b h
-  simpa [smallMark] using h
+  simpa only [smallMark, Sum.inl.injEq, Prod.mk.injEq, true_and] using h
 
 private noncomputable def moments {m : ℕ} (s : Group m→ℂ) (v : Group m→Color m→ℂ) (x : Color m→ℂ)
     (a : Color m) (g : Group m) : ℂ :=
@@ -281,7 +288,8 @@ private lemma full_numerator_shape {m : ℕ}
     (∀ a, (U (some a)).eval (x a)+(U none).eval (x a)=0) := by
   intro S P U
   have lower c : (U c).natDegree ≤ m+1 := by
-    have size : Fintype.card (Option (Color m))-1=m+2 := by simp
+    have size : Fintype.card (Option (Color m))-1=m+2 := by
+      simp only [Fintype.card_option, Fintype.card_fin, add_tsub_cancel_right]
     apply degree_drop
     · change (numerator (fun k => -t (fullMark g k)) (fun k => f (fullMark g k) c)).coeff (m+2)=0
       have h := (numerator_coeff (fun k => -t (fullMark g k)) (fun k => f (fullMark g k) c)).trans (mass g c)
@@ -308,13 +316,13 @@ private lemma full_numerator_shape {m : ℕ}
     have z := pole g (.inr j)
     simp only [read] at z
     rw [z,mul_zero] at e
-    simpa [ht,node] using e
+    simpa only [ht, node, Sum.elim_inr] using e
   have posColor (j : Group m) (a : Color m) : (U (some a)).eval (v j a)=0 := by
     have e := posEval (.inl (some j,a)) (some a)
     have z := pole g (.inl (some j,a))
     simp only [read] at z
     rw [z,mul_zero] at e
-    simpa [ht,node] using e
+    simpa only [ht, node, Sum.elim_inl, Option.elim_some] using e
   have factor {z : Group m→ℂ} {w : ℂ} {p : ℂ[X]}
       (inj : Function.Injective z) (opposite : ∀ j,w≠z j) (degree : p.natDegree≤m+1)
       (roots : ∀ j,p.eval (z j)=0) (extra : p.eval w=0) :
@@ -327,21 +335,28 @@ private lemma full_numerator_shape {m : ℕ}
       · exact (opposite _ eq).elim
       · exact (opposite _ eq.symm).elim
       · exact congrArg Option.some (inj eq)
-    have core := equals_scalar_nodes yinj (p:=p) (by simpa using degree)
+    have core := equals_scalar_nodes yinj (p:=p) (by simpa only [Fintype.card_option,
+      Fintype.card_fin] using degree)
       (fun i => match i with | none => extra | some j => roots j)
-    simpa [nodePoly,y,Fintype.prod_option,mul_comm (X-C w)] using core
-  refine ⟨factor ?_ ?_ (lower none) posShort (by simpa [fullMark,ht,node] using negative none),
-    fun a => factor ?_ ?_ (lower (some a)) (fun j => posColor j a)
-      (by simpa [fullMark,ht,node] using negative (some a)),?_⟩
+    simpa only [nodePoly, y, Fintype.prod_option, Option.elim_none, Option.elim_some,
+      mul_comm (X - C w)] using core
+  have negShort : (U none).eval (-s g) = 0 := by
+    simpa only [ht, node, fullMark, Sum.elim_inr] using negative none
+  have negColor (a : Color m) : (U (some a)).eval (-v g a) = 0 := by
+    simpa only [ht, node, fullMark, Sum.elim_inl, Option.elim_some] using negative (some a)
+  refine ⟨factor ?_ ?_ (lower none) posShort negShort,
+    fun a => factor ?_ ?_ (lower (some a)) (fun j => posColor j a) (negColor a), ?_⟩
   · intro i j e
     exact Sum.inr.inj (distinct (by simpa only [ht,node,Sum.elim_inr] using e))
   · intro j e
     exact regular (.inr g) (.inr j) (by simp only [ht,node,Sum.elim_inr]; rw [←e,add_neg_cancel])
   · intro i j e
     exact Option.some.inj (congrArg Prod.fst (Sum.inl.inj
-      (distinct (by simpa [ht,node] using e) : (.inl (some i,a) : Mark m) = .inl (some j,a))))
+      (distinct (by simpa only [ht, node, Sum.elim_inl,
+        Option.elim_some] using e) : (.inl (some i,a) : Mark m) = .inl (some j,a))))
   · intro j e
-    exact regular (.inl (some g,a)) (.inl (some j,a)) (by simp [ht,node,←e])
+    exact regular (.inl (some g,a)) (.inl (some j,a)) (by simp only [ht, node, Sum.elim_inl,
+      Option.elim_some, ← e, add_neg_cancel])
   · intro a
     have z := pole g (smallMark a)
     simp only [smallMark,read,add_div,Finset.sum_add_distrib] at z
@@ -350,7 +365,7 @@ private lemma full_numerator_shape {m : ℕ}
     have eq := congrArg₂ (· + ·) p q
     dsimp only [smallMark] at eq
     rw [← mul_add,z,mul_zero] at eq
-    simpa [ht,node,smallMark] using eq
+    simpa only [ht, node, Sum.elim_inl, Option.elim_none] using eq
 
 end SharpTensorEven
 namespace SharpTensorEven
@@ -380,16 +395,18 @@ private lemma small_numerator_moments {m : ℕ}
       (∑ g, f (.inr g) (some a)*E.eval (-s g)/(D a).eval (-s g)) =
         β*((S.eval (x a)/(P a).eval (x a)-S.eval (-x a)/(P a).eval (-x a))/(2*x a)) := by
   intro S P E D U β
-  have tS (g : Group m) : t (.inr g)=s g := by simp [ht,node]
-  have tX (a : Color m) : t (smallMark a)=x a := by simp [ht,node,smallMark]
-  have tV (g : Group m) (a : Color m) : t (.inl (some g,a))=v g a := by simp [ht,node]
+  have tS (g : Group m) : t (.inr g)=s g := by simp only [ht, node, Sum.elim_inr]
+  have tX (a : Color m) : t (smallMark a)=x a := by simp only [ht, node, smallMark, Sum.elim_inl,
+    Option.elim_none]
+  have tV (g : Group m) (a : Color m) : t (.inl (some g,a))=v g a := by simp only [ht, node, Sum.elim_inl,
+    Option.elim_some]
   have differ {i j : Mark m} (ne : i≠j) : t i≠t j := distinct.ne ne
   have nz (j i : Mark m) : t j≠-t i := fun h =>
     regular j i ((congrArg (·+t i) h).trans (neg_add_cancel _))
   have xNonzero (a : Color m) : x a≠0 := fun h => regular (smallMark a) (smallMark a)
-    (by simp [tX,h])
+    (by simp only [tX, h, add_zero])
   have cap (c : Option (Color m)) : (U c).natDegree≤m+1 := by
-    simpa [U,smallNumerator] using
+    simpa only [U, smallNumerator, Fintype.card_fin, Nat.add_one_sub_one] using
       numerator_degree (fun a => -x a) (fun a => f (smallMark a) c)
   have top (c : Option (Color m)) : (U c).coeff (m+1)=-(∑ g,f (.inr g) c) := by
     have sm := numerator_coeff (fun a => -x a) (fun a => f (smallMark a) c)
@@ -418,7 +435,7 @@ private lemma small_numerator_moments {m : ℕ}
       simpa only [tS] using z
   refine ⟨sU,fun a => ?_⟩
   let ρ (g : Group m) := f (.inr g) (some a)
-  have degE : E.natDegree=m+2 := by simp [E,nodePoly_degree]
+  have degE : E.natDegree=m+2 := by simp only [nodePoly_degree, Fintype.card_fin, E]
   have monicD : (D a).Monic :=
     (nodePoly_monic _).mul ((monic_X_sub_C _).mul (monic_X_sub_C _))
   have degD : (D a).natDegree=m+2 := by
@@ -442,7 +459,7 @@ private lemma small_numerator_moments {m : ℕ}
         exact (Ne.symm (nz (smallMark a) (.inr g)))
       · rw [← sub_neg_eq_add,ne_eq,sub_eq_zero,neg_inj]
         rw [←tS,←tX]
-        exact differ (by simp [smallMark])
+        exact differ (by simp only [smallMark, ne_eq, reduceCtorEq, not_false_eq_true])
   let W := U (some a)+∑ g,C (ρ g)*residueCorrection E (D a) (s g)
   have degW : W.natDegree≤m+1 := by
     apply (natDegree_add_le _ _).trans
@@ -494,7 +511,7 @@ private lemma small_numerator_moments {m : ℕ}
     have z := evalW nxRoot (fun j => by
       apply neg_injective.ne
       rw [←tX,←tS]
-      exact differ (by simp [smallMark]))
+      exact differ (by simp only [smallMark, ne_eq, reduceCtorEq, not_false_eq_true]))
     have e : E.eval (-x a)=0 := nodePoly_root (fun k => -x k) a
     rw [z,e,zero_mul,add_zero]
     have h₁ := numerator_at_root (fun k => -x k) (fun k => f (smallMark k) (some a)) a
@@ -512,7 +529,8 @@ private lemma small_numerator_moments {m : ℕ}
     (fun i j he => Option.some.inj (congrArg Prod.fst (Sum.inl.inj
       (distinct (by simpa only [tV] using he) : (.inl (some i,a) : Mark m)=.inl (some j,a)))))
     (xNonzero a)
-    (nodePoly_ne_zero_at _ _ (fun g => by rw [←tX,←tV]; exact differ (by simp [smallMark])))
+    (nodePoly_ne_zero_at _ _ (fun g => by rw [←tX,←tV]; exact differ (by simp only [smallMark, ne_eq,
+      Sum.inl.injEq, Prod.mk.injEq, reduceCtorEq, and_true, not_false_eq_true])))
     (nodePoly_ne_zero_at _ _ (fun g => by rw [←tX,←tV]; exact (nz _ _).symm))
     W degW rootsW
   change W.coeff (m+1) = (W.eval (x a)/(P a).eval (x a) -
@@ -549,13 +567,16 @@ private lemma block_kernel {m : ℕ}
     (poleSmall : ∀ j,(∑ a,read (f (smallMark a)) j/(t j+x a))+
       (∑ g,read (f (.inr g)) j/(t j+s g))=0) :
     f=0 := by
-  have tS (g : Group m) : t (.inr g)=s g := by simp [ht,node]
-  have tX (a : Color m) : t (smallMark a)=x a := by simp [ht,node,smallMark]
-  have tV (g : Group m) (a : Color m) : t (.inl (some g,a))=v g a := by simp [ht,node]
+  have tS (g : Group m) : t (.inr g)=s g := by simp only [ht, node, Sum.elim_inr]
+  have tX (a : Color m) : t (smallMark a)=x a := by simp only [ht, node, smallMark, Sum.elim_inl,
+    Option.elim_none]
+  have tV (g : Group m) (a : Color m) : t (.inl (some g,a))=v g a := by simp only [ht, node, Sum.elim_inl,
+    Option.elim_some]
   have differ {i j : Mark m} (ne : i≠j) : t i≠t j := distinct.ne ne
   have nz (j i : Mark m) : t j≠-t i := fun h =>
     regular j i ((congrArg (·+t i) h).trans (neg_add_cancel _))
-  have xne (a : Color m) : x a≠0 := fun h => regular (smallMark a) (smallMark a) (by simp [tX,h])
+  have xne (a : Color m) : x a≠0 := fun h => regular (smallMark a) (smallMark a) (by simp only [tX, h,
+    add_zero])
   have regXV (a : Color m) (g : Group m) : x a+v g a≠0 := by
     rw [←tX,←tV]
     exact regular _ _
@@ -565,7 +586,7 @@ private lemma block_kernel {m : ℕ}
   have distinctXS (a : Color m) (g : Group m) : x a-s g≠0 := by
     apply sub_ne_zero.mpr
     rw [←tX,←tS]
-    exact differ (by simp [smallMark])
+    exact differ (by simp only [smallMark, ne_eq, reduceCtorEq, not_false_eq_true])
   have short (g : Group m) : f (.inr g) none=0 := diagonal (.inr g)
   let S := nodePoly s
   let P (a : Color m) := nodePoly (fun g => v g a)
@@ -591,7 +612,8 @@ private lemma block_kernel {m : ℕ}
     apply nodePoly_ne_zero_at
     intro j
     rw [←tX,←tV]
-    exact differ (by simp [smallMark])
+    exact differ (by simp only [smallMark, ne_eq, Sum.inl.injEq, Prod.mk.injEq, reduceCtorEq, and_true,
+      not_false_eq_true])
   have coeffNX (a : Color m) : (P a).eval (-x a)≠0 := by
     apply nodePoly_ne_zero_at
     intro j
@@ -609,7 +631,7 @@ private lemma block_kernel {m : ℕ}
     intro a _
     apply sub_ne_zero.mpr
     rw [←tV,←tS]
-    exact differ (by simp)
+    exact differ (by simp only [ne_eq, reduceCtorEq, not_false_eq_true])
   have mix (g : Group m) (a : Color m) :
       A g a*((P a).eval (x a)*(x a+v g a))+
         α g*(S.eval (x a)*(x a+s g))=0 := by
@@ -629,10 +651,11 @@ private lemma block_kernel {m : ℕ}
       have sets : Finset.univ.erase (none : Option (Color m))=Finset.univ.map emb := by
         ext i
         cases i with
-        | none => simp [emb]
+        | none => simp only [Finset.mem_erase, ne_eq, not_true_eq_false, Finset.mem_univ, and_true,
+          Finset.mem_map, reduceCtorEq, and_false, exists_const, emb]
         | some a =>
           simp only [Finset.mem_erase,Finset.mem_univ,and_true,Finset.mem_map,true_and]
-          exact ⟨fun _ => ⟨a,rfl⟩,fun _ => by simp⟩
+          exact ⟨fun _ => ⟨a,rfl⟩,fun _ => by simp only [ne_eq, reduceCtorEq, not_false_eq_true]⟩
       rw [sets,Finset.prod_map]
       rw [show R g = ∏ a, (v g a-s g) from rfl]
       apply Finset.prod_congr rfl
@@ -676,7 +699,8 @@ private lemma block_kernel {m : ℕ}
     have diffv : x a-v g a≠0 := by
       apply sub_ne_zero.mpr
       rw [←tX,←tV]
-      exact differ (by simp [smallMark])
+      exact differ (by simp only [smallMark, ne_eq, Sum.inl.injEq, Prod.mk.injEq, reduceCtorEq, and_true,
+        not_false_eq_true])
     field_simp [negv,diffv,distinctXS]
   have killed := test scaled β (fun a => by
     have eq := equations a
@@ -712,7 +736,8 @@ private lemma block_kernel {m : ℕ}
           fun i => i.elim (-x j) (fun k => k.elim (x j) (fun g => v g j))
         have neq (g : Group m) : x j ≠ v g j := by
           rw [←tX,←tV]
-          exact differ (by simp [smallMark])
+          exact differ (by simp only [smallMark, ne_eq, Sum.inl.injEq, Prod.mk.injEq, reduceCtorEq,
+            and_true, not_false_eq_true])
         have opp (g : Group m) : v g j ≠ -x j := by
           rw [←tX,←tV]
           exact nz _ _
@@ -732,7 +757,7 @@ private lemma block_kernel {m : ℕ}
             · have h : v g j=v l j := eq
               rw [←tV,←tV] at h
               have e : (.inl (some g,j) : Mark m) = .inl (some l,j) := distinct h
-              simpa using e
+              simpa only [Option.some.injEq, Sum.inl.injEq, Prod.mk.injEq, and_true] using e
         have cap : (U (some j)).natDegree < Fintype.card (Option (Option (Group m))) := by
           have h := numerator_degree (fun a => -x a) (fun a => f (smallMark a) (some j))
           simp only [Group,Color,Fintype.card_option,Fintype.card_fin] at h ⊢
@@ -766,7 +791,7 @@ private lemma block_kernel {m : ℕ}
           have gone (g : Group m) : read (f (.inr g)) i = 0 := by
             change read (f (fullMark g none)) i = 0
             rcases i with ⟨q,a⟩|q
-            · cases q <;> simp [read,allFull]
+            · cases q <;> simp only [read, allFull, add_zero]
             · exact allFull g none none
           simpa only [gone,zero_div,Finset.sum_const_zero,add_zero] using h
         apply zero_of_many_roots inject cap
@@ -779,12 +804,12 @@ private lemma block_kernel {m : ℕ}
           have e := congrArg₂ (· + ·) (evalSmall (smallMark j) (some j))
             (evalSmall (smallMark j) none)
           rw [←mul_add,z,mul_zero,z₀,eval_zero,add_zero] at e
-          simpa [points,tX] using e
+          simpa only [points, Option.elim_some, Option.elim_none, tX] using e
         · have e := evalSmall (.inl (some g,j)) (some j)
           have z := pole' (.inl (some g,j))
           simp only [read] at z
           rw [z,mul_zero] at e
-          simpa [points,tV] using e
+          simpa only [points, Option.elim_some, tV] using e
     have inj : Function.Injective (fun i => -x i) := neg_injective.comp
       (fun i j h => smallMark_injective (distinct (by simpa only [tX] using h)))
     exact congrFun (zero_residues _ inj _ Uzero) a
@@ -831,35 +856,36 @@ private lemma good_nodes {m : ℕ} (hm : 2≤m) :
     | .inl (some g,a) => if active a g then 2 else 1
   let e := Fintype.equivFin (Mark m)
   let p (z : ℝ) (i : Mark m) : ℝ := center i+z*(e i).val
-  have p0 (i : Mark m) : p 0 i=center i := by simp [p]
+  have p0 (i : Mark m) : p 0 i=center i := by simp only [zero_mul, add_zero, p]
   have hcenter (i : Mark m) : 0<center i := by
     rcases i with ⟨q,a⟩|g
-    · cases q <;> simp [center]
+    · cases q <;> simp only [Nat.ofNat_pos, center]
       split <;> norm_num
     · norm_num [center]
   have pContinuous (i : Mark m) : Continuous fun z => p z i := by
-    dsimp only [p]
-    fun_prop
+    exact continuous_const.add (continuous_id.mul continuous_const)
   let s (z : ℝ) (g : Group m) : ℂ := p z (.inr g)
   let v (z : ℝ) (g : Group m) (a : Color m) : ℂ := p z (.inl (some g,a))
   let x (z : ℝ) (a : Color m) : ℂ := p z (smallMark a)
   let d (z : ℝ) := moments (s z) (v z) (x z)
-  have cs (g : Group m) : s 0 g=1 := by simp [s,p0,center]
-  have cx (a : Color m) : x 0 a=2 := by simp [x,p0,center,smallMark]
+  have cs (g : Group m) : s 0 g=1 := by simp only [p0, Complex.ofReal_one, s, center]
+  have cx (a : Color m) : x 0 a=2 := by simp only [smallMark, p0, Complex.ofReal_ofNat, x, center]
   have cv (g : Group m) (a : Color m) : v 0 g a=if active a g then 2 else 1 := by
-    simp [v,p0,center,apply_ite]
+    simp only [p0, apply_ite, Complex.ofReal_ofNat, Complex.ofReal_one, ite_eq_left_iff,
+      OfNat.one_ne_ofNat, imp_false, Decidable.not_not, ite_eq_right_iff, OfNat.ofNat_ne_one,
+      ite_then_self, imp_self, v, center]
   have d0 (a : Color m) (g : Group m) : d 0 a g = if active a g then 1 else 0 := by
     simp only [d,moments,cs,cx,cv]
     split <;> norm_num
   have atUnit (g j : Fin m) : d 0 (selectRow (some g)) j = if g=j then 1 else 0 := by
     rw [d0]
     have a : ((selectRow (some g) : Color m)).val=g.val := rfl
-    simp [active,a,g.isLt,show (g.val=j.val) ↔ g=j from ⟨Fin.ext,fun h => congrArg Fin.val h⟩,
-      show g.val≠m by omega]
+    simp only [a, g.isLt, show (g.val = j.val) ↔ g = j from ⟨Fin.ext, fun h => congrArg Fin.val h⟩,
+      true_and, show g.val ≠ m by omega, false_and, or_false, active]
   have atTwo (j : Group m) : d 0 (selectRow none) j = if j.val=0 ∨ j.val=1 then 1 else 0 := by
     rw [d0]
     have a : (selectRow (none : Option (Group m))).val=m := rfl
-    simp [active,a]
+    simp only [a, lt_self_iff_false, false_and, true_and, false_or, active]
   have noKernel (k : Option (Group m)→ℂ) (zero : (testMatrix (d 0)).mulVec k=0) : k=0 := by
     let α (g : Group m) := k (some g)
     let β := k none
@@ -879,8 +905,9 @@ private lemma good_nodes {m : ℕ} (hm : 2≤m) :
       · by_cases c : a.val=m
         · have he : selectRow (none : Option (Group m))=a := Fin.ext c.symm
           simpa only [he] using z none
-        · have row (g : Group m) : d 0 a g=0 := by simp [d0,active,b,c]
-          simp [row]
+        · have row (g : Group m) : d 0 a g=0 := by simp only [d0, b, false_and, c, or_self, ↓reduceIte,
+          active]
+          simp only [row, zero_mul, Finset.sum_const_zero, sub_zero, Finset.prod_const_one, sub_self]
     obtain ⟨az,bz⟩ := rank_of_special_rows hm (d 0) α β test atUnit atTwo
     rw [←hk,az,bz]
     funext q
@@ -989,11 +1016,13 @@ private lemma selector_full {m : ℕ} (g : Group m) (f : Mark m→ℂ) :
   classical
   simp only [Fintype.sum_sum_type,Fintype.sum_prod_type,Fintype.sum_option,selector,fullMark,
     zero_mul,Finset.sum_const_zero,zero_add,ite_mul,one_mul]
-  simp [Finset.sum_ite_irrel,add_comm]
+  simp only [Finset.sum_ite_irrel, Finset.sum_const_zero, Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte,
+    add_comm]
 
 private lemma selector_small {m : ℕ} (f : Mark m→ℂ) :
     (∑ i,selector none i*f i)=(∑ a,f (smallMark a))+(∑ g,f (.inr g)) := by
-  simp [Fintype.sum_sum_type,Fintype.sum_prod_type,Fintype.sum_option,selector,smallMark]
+  simp only [selector, Fintype.sum_sum_type, Fintype.sum_prod_type, Fintype.sum_option, one_mul, zero_mul,
+    Finset.sum_const_zero, add_zero, smallMark]
 
 -- Reindex the block system for the merged conic tangent criterion.
 private lemma local_witness (m : ℕ) (hm : 2≤m) :
@@ -1014,9 +1043,11 @@ private lemma local_witness (m : ℕ) (hm : 2≤m) :
     simp only [b,bp,h,Mark,Fintype.card_sum,Fintype.card_prod,Fintype.card_option,Fintype.card_fin]
     rw [show (m+3)*(m+1)=(m+1)*(m+2)+m+1 by ring]
     omega
-  let e : Fin b ≃ Mark m := Fintype.equivOfCardEq (by simp [cb])
-  let ec : Fin h ≃ Option (Color m) := Fintype.equivOfCardEq (by simp [h])
-  let eq : Fin u ≃ Option (Group m) := Fintype.equivOfCardEq (by simp [u,h])
+  let e : Fin b ≃ Mark m := Fintype.equivOfCardEq (by simp only [Fintype.card_fin, cb])
+  let ec : Fin h ≃ Option (Color m) := Fintype.equivOfCardEq (by
+    simp only [Fintype.card_fin, Fintype.card_option, h])
+  let eq : Fin u ≃ Option (Group m) := Fintype.equivOfCardEq (by
+    simp only [Nat.reduceSubDiff, Fintype.card_fin, Fintype.card_option, u, h])
   obtain ⟨s,v,x,distinct,regular,test⟩ := good_nodes hm
   let t := node s v x
   let M : Matrix (Fin b) (Fin h) ℂ := fun i c => read (Pi.single (ec c) 1) (e i)
@@ -1027,8 +1058,10 @@ private lemma local_witness (m : ℕ) (hm : 2≤m) :
     rw [←ec.symm.sum_comp (fun c => read (Pi.single (ec c) 1) (e i)*f c)]
     simp only [Equiv.apply_symm_apply]
     rcases e i with ⟨q,a⟩|g
-    · cases q <;> simp [read,Pi.single_apply,ite_mul,add_mul,Finset.sum_add_distrib]
-    · simp [read,Pi.single_apply,ite_mul]
+    · cases q <;> simp only [read, Pi.single_apply, add_mul, ite_mul, one_mul, zero_mul,
+      Finset.sum_add_distrib, Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte, Function.comp_apply]
+    · simp only [read, Pi.single_apply, ite_mul, one_mul, zero_mul, Finset.sum_ite_eq, Finset.mem_univ,
+      ↓reduceIte, Function.comp_apply]
   have inject : Function.Injective M.mulVec := by
     intro a c he
     apply eq_of_sub_eq_zero
@@ -1060,7 +1093,7 @@ private lemma local_witness (m : ℕ) (hm : 2≤m) :
     change (∑ i,selector q i*F i c)=
       ∑ i,selector (eq (eq.symm q)) (e i)*f i (ec.symm c)
     rw [←e.symm.sum_comp (fun i => selector (eq (eq.symm q)) (e i)*f i (ec.symm c))]
-    simp [F]
+    simp only [Fintype.sum_sum_type, Equiv.apply_symm_apply, F]
   have poles_all (q : Option (Group m)) (j : Mark m) :
       (∑ i,selector q i*(read (F i) j/(t j+t i)))=0 := by
     have h := pole (eq.symm q) (e.symm j)
@@ -1068,7 +1101,7 @@ private lemma local_witness (m : ℕ) (hm : 2≤m) :
     convert h using 1
     rw [←e.symm.sum_comp (fun i => selector q (e i)*
       (read (f i ∘ ec.symm) j/(t j+t (e i))))]
-    simp [F,Function.comp_def]
+    simp only [Fintype.sum_sum_type, Equiv.apply_symm_apply, Function.comp_def, F]
   have all := block_kernel s v x test t rfl distinct regular F diagonal
     (fun g c => by simpa only [selector_full] using mass_all (some g) c)
     (fun g j => by simpa only [selector_full] using poles_all (some g) j)
@@ -1076,10 +1109,10 @@ private lemma local_witness (m : ℕ) (hm : 2≤m) :
     (fun j => by
       have h := poles_all none j
       rw [selector_small] at h
-      simpa [t,node,smallMark] using h)
+      simpa only [smallMark, node, Sum.elim_inl, Option.elim_none, Sum.elim_inr, t] using h)
   funext i c
   have z := congrFun (congrFun all (e i)) (ec c)
-  simpa [F] using z
+  simpa only [F, Pi.zero_apply, Equiv.symm_apply_apply] using z
 
 end SharpTensorEven
 
