@@ -1,228 +1,127 @@
 import OMAStatements.S_oeis_a077864
+import Mathlib.Algebra.BigOperators.Intervals
+import Mathlib.Algebra.Polynomial.Degree.Operations
+import Mathlib.Tactic.IntervalCases
+import Mathlib.Tactic.NormNum
+
+-- Original Lean proof: @JeremyDevs.
 
 namespace OMA.P077864
 
 open OMA.S_oeis_a077864 Finset Polynomial
 
-/-- The companion sequence, with the same recurrence. -/
-def b : ℕ → ℤ
-  | 0 => 0
-  | 1 => 1
-  | 2 => 1
-  | 3 => 2
-  | n + 4 => 2 * b (n + 3) + b (n + 2) - b (n + 1) - b n
+private noncomputable abbrev P : ℤ[X] := 1 + X + X ^ 2
 
-lemma a_rec (n : ℕ) : a (n + 4) = 2 * a (n + 3) + a (n + 2) - a (n + 1) - a n := by
-  rw [a]
+/-- A row-i entry on the diagonal of weight m, extended by zero. -/
+private noncomputable def W (m i : ℕ) : ℤ := if 2 * i ≤ m then T i (m - 2 * i) else 0
 
-lemma b_rec (n : ℕ) : b (n + 4) = 2 * b (n + 3) + b (n + 2) - b (n + 1) - b n := by
-  rw [b]
+private noncomputable def D (m : ℕ) : ℤ := ∑ i ∈ range (m / 2 + 1), W m i
 
-lemma link (n : ℕ) :
-    (a (n + 2) = a (n + 1) + b (n + 3) + a n ∧ b (n + 4) = b (n + 3) + b (n + 2) + a n)
-    ∧ (a (n + 3) = a (n + 2) + b (n + 4) + a (n + 1)
-      ∧ b (n + 5) = b (n + 4) + b (n + 3) + a (n + 1))
-    ∧ (a (n + 4) = a (n + 3) + b (n + 5) + a (n + 2)
-      ∧ b (n + 6) = b (n + 5) + b (n + 4) + a (n + 2))
-    ∧ (a (n + 5) = a (n + 4) + b (n + 6) + a (n + 3)
-      ∧ b (n + 7) = b (n + 6) + b (n + 5) + a (n + 3)) := by
-  induction n with
-  | zero => decide
-  | succ n ih =>
-    obtain ⟨⟨p0, q0⟩, ⟨p1, q1⟩, ⟨p2, q2⟩, ⟨p3, q3⟩⟩ := ih
-    have a4 : a (n + 4) = 2 * a (n + 3) + a (n + 2) - a (n + 1) - a n := a_rec n
-    have a5 : a (n + 5) = 2 * a (n + 4) + a (n + 3) - a (n + 2) - a (n + 1) := a_rec (n + 1)
-    have a6 : a (n + 6) = 2 * a (n + 5) + a (n + 4) - a (n + 3) - a (n + 2) := a_rec (n + 2)
-    have b6 : b (n + 6) = 2 * b (n + 5) + b (n + 4) - b (n + 3) - b (n + 2) := b_rec (n + 2)
-    have b7 : b (n + 7) = 2 * b (n + 6) + b (n + 5) - b (n + 4) - b (n + 3) := b_rec (n + 3)
-    have b8 : b (n + 8) = 2 * b (n + 7) + b (n + 6) - b (n + 5) - b (n + 4) := b_rec (n + 4)
-    refine ⟨⟨p1, q1⟩, ⟨p2, q2⟩, ⟨p3, q3⟩, ?_, ?_⟩
-    · show a (n + 6) = a (n + 5) + b (n + 7) + a (n + 4)
-      linarith
-    · show b (n + 8) = b (n + 7) + b (n + 6) + a (n + 4)
-      linarith
+private lemma coeff_shift (m i d : ℕ) (hi : 2 * i ≤ m) (hd : d ≤ m) :
+    (X ^ d * P ^ i).coeff (m - 2 * i) = W (m - d) i := by
+  rw [coeff_X_pow_mul']
+  by_cases h : 2 * i ≤ m - d
+  · rw [if_pos (by omega), W, if_pos h, T]
+    congr 1
+    omega
+  · rw [if_neg (by omega), W, if_neg h]
 
-lemma Tcongr {m m1 k k1 : ℕ} (h1 : m = m1) (h2 : k = k1) : T m k = T m1 k1 := by
-  subst h1; subst h2; rfl
+private lemma W_step (m i : ℕ) :
+    W (m + 4) (i + 1) = W (m + 2) i + W (m + 1) i + W m i := by
+  by_cases h : 2 * i ≤ m + 2
+  · have hP : P ^ (i + 1) = P ^ i + X ^ 1 * P ^ i + X ^ 2 * P ^ i := by
+      rw [pow_succ']
+      simp only [P, pow_one, add_mul, one_mul]
+    rw [W, if_pos (by omega), T, hP, coeff_add, coeff_add,
+      show m + 4 - 2 * (i + 1) = m + 2 - 2 * i by omega,
+      coeff_shift (m + 2) i 1 h (by omega), coeff_shift (m + 2) i 2 h (by omega),
+      show m + 2 - 1 = m + 1 by omega, Nat.add_sub_cancel]
+    rw [show W (m + 2) i = (P ^ i).coeff (m + 2 - 2 * i) from if_pos h]
+  · simp (disch := omega) only [W, if_neg, add_zero]
 
-lemma hp (m : ℕ) : (1 + X + X ^ 2 : ℤ[X]) ^ (m + 1)
-    = (1 + X + X ^ 2) ^ m + (1 + X + X ^ 2) ^ m * X + (1 + X + X ^ 2) ^ m * X ^ 2 := by
-  ring
+private lemma extend (m N : ℕ) (h : m / 2 + 1 ≤ N) :
+    (∑ i ∈ range N, W m i) = D m := by
+  symm
+  refine sum_subset (range_mono h) (fun i _ hi => ?_)
+  simp only [mem_range, not_lt] at hi
+  rw [W, if_neg (by omega)]
 
-lemma T00 : T 0 0 = 1 := by simp [T]
+private lemma D_rec (m : ℕ) : D (m + 4) = D (m + 2) + D (m + 1) + D m := by
+  have h : D (m + 4) = (∑ i ∈ range (m / 2 + 2), W (m + 4) (i + 1)) := by
+    unfold D
+    rw [show (m + 4) / 2 + 1 = m / 2 + 2 + 1 by omega, sum_range_succ']
+    have hz : W (m + 4) 0 = 0 := by simp [W, T, coeff_one]
+    rw [hz, add_zero]
+  rw [h]
+  simp (disch := omega) only [W_step, sum_add_distrib, extend]
 
-lemma Tz (k : ℕ) : T 0 (k + 1) = 0 := by simp [T, coeff_one]
+private noncomputable def odd (n : ℕ) : ℤ := D (2 * n + 3)
 
-lemma ts0 (m : ℕ) : T (m + 1) 0 = T m 0 := by
-  unfold T
-  rw [hp m, coeff_add, coeff_add]
-  simp [mul_coeff_zero]
+private lemma odd_rec (n : ℕ) :
+    odd (n + 4) = 2 * odd (n + 3) + odd (n + 2) - odd (n + 1) - odd n := by
+  let m := 2 * n + 3
+  have h₀ := D_rec m
+  have h₁ := D_rec (m + 1)
+  have h₂ := D_rec (m + 2)
+  have h₄ := D_rec (m + 4)
+  simp only [Nat.add_assoc, Nat.reduceAdd] at h₁ h₂ h₄
+  unfold odd
+  have h (k : ℕ) : 2 * (n + k) + 3 = m + 2 * k := by omega
+  simp only [h 1, h 2, h 3, h 4, Nat.reduceMul]
+  change D (m + 8) = 2 * D (m + 6) + D (m + 4) - D (m + 2) - D m
+  omega
 
-lemma ts1 (m : ℕ) : T (m + 1) 1 = T m 1 + T m 0 := by
-  unfold T
-  rw [hp m, coeff_add, coeff_add]
-  have h1 : (((1 + X + X ^ 2 : ℤ[X]) ^ m) * X).coeff 1 = ((1 + X + X ^ 2 : ℤ[X]) ^ m).coeff 0 :=
-    coeff_mul_X _ 0
-  have h2 : (((1 + X + X ^ 2 : ℤ[X]) ^ m) * X ^ 2).coeff 1 = 0 := by
-    rw [coeff_mul_X_pow']
-    simp
-  rw [h1, h2, add_zero]
+private lemma initial : odd 0 = 1 ∧ odd 1 = 2 ∧ odd 2 = 5 ∧ odd 3 = 11 := by
+  have hbase : D 0 = 1 ∧ D 1 = 0 ∧ D 2 = 1 ∧ D 3 = 1 := by
+    norm_num [D, W, sum_range_succ, T, coeff_add, coeff_one, coeff_X, coeff_X_pow]
+  obtain ⟨h0, h1, h2, h3⟩ := hbase
+  have r0 := D_rec 0
+  have r1 := D_rec 1
+  have r2 := D_rec 2
+  have r3 := D_rec 3
+  have r4 := D_rec 4
+  have r5 := D_rec 5
+  norm_num only [Nat.reduceAdd] at r0 r1 r2 r3 r4 r5
+  norm_num only [odd, Nat.reduceMul, Nat.reduceAdd]
+  omega
 
-lemma ts (m k : ℕ) : T (m + 1) (k + 2) = T m (k + 2) + T m (k + 1) + T m k := by
-  unfold T
-  rw [hp m, coeff_add, coeff_add, coeff_mul_X_pow, coeff_mul_X]
+private lemma a_odd (n : ℕ) : a n = odd n := by
+  induction n using Nat.strong_induction_on with
+  | _ n ih =>
+    by_cases hn : n < 4
+    · obtain ⟨h0, h1, h2, h3⟩ := initial
+      interval_cases n <;> simp [a, h0, h1, h2, h3]
+    · obtain ⟨k, rfl⟩ : ∃ k, n = k + 4 := ⟨n - 4, by omega⟩
+      rw [a, odd_rec, ih (k + 3) (by omega), ih (k + 2) (by omega),
+        ih (k + 1) (by omega), ih k (by omega)]
 
-lemma ts2 (m k k1 k2 : ℕ) (h1 : k1 = k + 1) (h2 : k2 = k + 2) :
-    T (m + 1) k2 = T m k2 + T m k1 + T m k := by
-  subst h1; subst h2; exact ts m k
+private lemma T_zero {i k : ℕ} (h : 2 * i < k) : T i k = 0 := by
+  have hp : P.natDegree ≤ 2 := by
+    simpa [P] using
+      (natDegree_add_le_of_le (natDegree_add_le_of_le (by simp) (by simp)) (by simp) :
+        (1 + X + X ^ 2 : ℤ[X]).natDegree ≤ max (max 0 1) 2)
+  exact coeff_eq_zero_of_natDegree_lt ((natDegree_pow_le_of_le i hp).trans_lt (by omega))
 
-lemma Tbig (m : ℕ) : ∀ k : ℕ, 2 * m < k → T m k = 0 := by
-  induction m with
-  | zero =>
-    intro k hk
-    obtain ⟨j, rfl⟩ : ∃ j, k = j + 1 := ⟨k - 1, by omega⟩
-    exact Tz j
-  | succ m ih =>
-    intro k hk
-    obtain ⟨j, rfl⟩ : ∃ j, k = j + 2 := ⟨k - 2, by omega⟩
-    rw [ts, ih _ (by omega), ih _ (by omega), ih _ (by omega)]
-    simp
-
-/-- Odd diagonal sums, over all j up to n. -/
-noncomputable def U (n : ℕ) : ℤ := ∑ j ∈ range (n + 1), T (n + 1 - j) (2 * j + 1)
-
-/-- Even diagonal sums, over all j up to n. -/
-noncomputable def V (n : ℕ) : ℤ := ∑ j ∈ range (n + 1), T (n - j) (2 * j)
-
-lemma hE (n : ℕ) : U (n + 1) = T (n + 2) 1 + ∑ j ∈ range (n + 2), T (n + 1 - j) (2 * j + 3) := by
-  have hl : ∑ j ∈ range (n + 1 + 1), T (n + 1 + 1 - j) (2 * j + 1)
-      = ∑ j ∈ range (n + 1), T (n + 1 + 1 - (j + 1)) (2 * (j + 1) + 1)
-        + T (n + 1 + 1 - 0) (2 * 0 + 1) := sum_range_succ' _ _
-  have hr : ∑ j ∈ range (n + 2), T (n + 1 - j) (2 * j + 3)
-      = ∑ j ∈ range (n + 1), T (n + 1 - j) (2 * j + 3)
-        + T (n + 1 - (n + 1)) (2 * (n + 1) + 3) := sum_range_succ _ _
-  have hc : ∑ j ∈ range (n + 1), T (n + 1 + 1 - (j + 1)) (2 * (j + 1) + 1)
-      = ∑ j ∈ range (n + 1), T (n + 1 - j) (2 * j + 3) :=
-    sum_congr rfl (fun j _ => Tcongr (by omega) (by omega))
-  have z : T (n + 1 - (n + 1)) (2 * (n + 1) + 3) = 0 := Tbig _ _ (by omega)
-  have f0 : T (n + 1 + 1 - 0) (2 * 0 + 1) = T (n + 2) 1 := Tcongr (by omega) (by omega)
-  unfold U
-  rw [hl, hr, hc, z, f0]
-  ring
-
-lemma hA (n : ℕ) : V (n + 2) = T (n + 2) 0 + ∑ j ∈ range (n + 2), T (n + 1 - j) (2 * j + 2) := by
-  have hl : ∑ j ∈ range (n + 2 + 1), T (n + 2 - j) (2 * j)
-      = ∑ j ∈ range (n + 2), T (n + 2 - (j + 1)) (2 * (j + 1))
-        + T (n + 2 - 0) (2 * 0) := sum_range_succ' _ _
-  have hc : ∑ j ∈ range (n + 2), T (n + 2 - (j + 1)) (2 * (j + 1))
-      = ∑ j ∈ range (n + 2), T (n + 1 - j) (2 * j + 2) :=
-    sum_congr rfl (fun j _ => Tcongr (by omega) (by omega))
-  have f0 : T (n + 2 - 0) (2 * 0) = T (n + 2) 0 := Tcongr (by omega) (by omega)
-  unfold V
-  rw [hl, hc, f0]
-  ring
-
-lemma hB (n : ℕ) : U n = ∑ j ∈ range (n + 2), T (n + 1 - j) (2 * j + 1) := by
-  have hr : ∑ j ∈ range (n + 2), T (n + 1 - j) (2 * j + 1)
-      = ∑ j ∈ range (n + 1), T (n + 1 - j) (2 * j + 1)
-        + T (n + 1 - (n + 1)) (2 * (n + 1) + 1) := sum_range_succ _ _
-  have z : T (n + 1 - (n + 1)) (2 * (n + 1) + 1) = 0 := Tbig _ _ (by omega)
-  unfold U
-  rw [hr, z, add_zero]
-
-lemma hC (n : ℕ) : V (n + 1) = ∑ j ∈ range (n + 2), T (n + 1 - j) (2 * j) := rfl
-
-lemma R1 (n : ℕ) : U (n + 2) = U (n + 1) + V (n + 2) + U n := by
-  have hl : ∑ j ∈ range (n + 2 + 1), T (n + 2 + 1 - j) (2 * j + 1)
-      = ∑ j ∈ range (n + 2), T (n + 2 + 1 - (j + 1)) (2 * (j + 1) + 1)
-        + T (n + 2 + 1 - 0) (2 * 0 + 1) := sum_range_succ' _ _
-  have hc : ∑ j ∈ range (n + 2), T (n + 2 + 1 - (j + 1)) (2 * (j + 1) + 1)
-      = ∑ j ∈ range (n + 2), (T (n + 1 - j) (2 * j + 3) + T (n + 1 - j) (2 * j + 2)
-        + T (n + 1 - j) (2 * j + 1)) := by
-    refine sum_congr rfl (fun j hj => ?_)
-    have hj2 := mem_range.mp hj
-    exact (Tcongr (by omega) (by omega)).trans
-      (ts2 (n + 1 - j) (2 * j + 1) (2 * j + 2) (2 * j + 3) (by omega) (by omega))
-  have f0 : T (n + 2 + 1 - 0) (2 * 0 + 1) = T (n + 2) 1 + T (n + 2) 0 :=
-    (Tcongr (by omega) (by omega)).trans (ts1 (n + 2))
-  have h : U (n + 2) = ∑ j ∈ range (n + 2), (T (n + 1 - j) (2 * j + 3)
-      + T (n + 1 - j) (2 * j + 2) + T (n + 1 - j) (2 * j + 1))
-      + (T (n + 2) 1 + T (n + 2) 0) := by
-    unfold U
-    rw [hl, hc, f0]
-  rw [h, sum_add_distrib, sum_add_distrib, hE, hA, hB]
-  ring
-
-lemma R2 (n : ℕ) : V (n + 3) = V (n + 2) + V (n + 1) + U n := by
-  have hl : ∑ j ∈ range (n + 3 + 1), T (n + 3 - j) (2 * j)
-      = ∑ j ∈ range (n + 3), T (n + 3 - (j + 1)) (2 * (j + 1))
-        + T (n + 3 - 0) (2 * 0) := sum_range_succ' _ _
-  have hs : ∑ j ∈ range (n + 3), T (n + 3 - (j + 1)) (2 * (j + 1))
-      = ∑ j ∈ range (n + 2), T (n + 3 - (j + 1)) (2 * (j + 1))
-        + T (n + 3 - (n + 2 + 1)) (2 * (n + 2 + 1)) := sum_range_succ _ _
-  have z : T (n + 3 - (n + 2 + 1)) (2 * (n + 2 + 1)) = 0 := Tbig _ _ (by omega)
-  have hc : ∑ j ∈ range (n + 2), T (n + 3 - (j + 1)) (2 * (j + 1))
-      = ∑ j ∈ range (n + 2), (T (n + 1 - j) (2 * j + 2) + T (n + 1 - j) (2 * j + 1)
-        + T (n + 1 - j) (2 * j)) := by
-    refine sum_congr rfl (fun j hj => ?_)
-    have hj2 := mem_range.mp hj
-    exact (Tcongr (by omega) (by omega)).trans
-      (ts2 (n + 1 - j) (2 * j) (2 * j + 1) (2 * j + 2) (by omega) (by omega))
-  have f0 : T (n + 3 - 0) (2 * 0) = T (n + 2) 0 :=
-    (Tcongr (by omega) (by omega)).trans (ts0 (n + 2))
-  have h : V (n + 3) = ∑ j ∈ range (n + 2), (T (n + 1 - j) (2 * j + 2)
-      + T (n + 1 - j) (2 * j + 1) + T (n + 1 - j) (2 * j)) + 0 + T (n + 2) 0 := by
-    unfold V
-    rw [hl, hs, hc, z, f0]
-  rw [h, sum_add_distrib, sum_add_distrib, hA, hC, hB]
-  ring
-
-lemma T10 : T 1 0 = 1 := by rw [ts0, T00]
-
-lemma T11 : T 1 1 = 1 := by rw [ts1, Tz, T00]; rfl
-
-lemma T12 : T 1 2 = 1 := by rw [ts 0 0, Tz, Tz, T00]; rfl
-
-lemma T20 : T 2 0 = 1 := by rw [ts0, T10]
-
-lemma T21 : T 2 1 = 2 := by rw [ts1, T11, T10]; rfl
-
-lemma T13 : T 1 3 = 0 := Tbig _ _ (by omega)
-
-lemma T02 : T 0 2 = 0 := Tbig _ _ (by omega)
-
-lemma T04 : T 0 4 = 0 := Tbig _ _ (by omega)
-
-lemma uv (n : ℕ) : U n = a n ∧ U (n + 1) = a (n + 1) ∧ V n = b (n + 1)
-    ∧ V (n + 1) = b (n + 2) ∧ V (n + 2) = b (n + 3) := by
-  induction n with
-  | zero =>
-    refine ⟨?_, ?_, ?_, ?_, ?_⟩
-    · simp [U, T11, a]
-    · simp [U, sum_range_succ, T21, T13, a]
-    · simp [V, T00, b]
-    · simp [V, sum_range_succ, T10, T02, b]
-    · simp [V, sum_range_succ, T20, T12, T04, b]
-  | succ n ih =>
-    obtain ⟨h1, h2, h3, h4, h5⟩ := ih
-    obtain ⟨⟨p0, q0⟩, _⟩ := link n
-    have r1 := R1 n
-    have r2 := R2 n
-    refine ⟨h2, ?_, h4, h5, ?_⟩
-    · show U (n + 2) = a (n + 2)
-      linarith
-    · show V (n + 3) = b (n + 4)
-      linarith
+theorem diagonal : type_of% @OMA.S_oeis_a077864.main := by
+  intro n
+  rw [a_odd]
+  unfold odd D
+  rw [show (2 * n + 3) / 2 + 1 = n + 2 by omega]
+  calc
+    (∑ i ∈ range (n + 2), W (2 * n + 3) i) =
+        ∑ j ∈ range (n + 2), T (n + 1 - j) (2 * j + 1) := by
+      rw [← sum_range_reflect (W (2 * n + 3)) (n + 2)]
+      refine sum_congr rfl fun j hj => ?_
+      have hj' := mem_range.mp hj
+      rw [show n + 2 - 1 = n + 1 by omega, W, if_pos (by omega)]
+      congr 1
+      omega
+    _ = ∑ j ∈ range (n / 2 + 1), T (n + 1 - j) (2 * j + 1) := by
+      symm
+      refine sum_subset (range_mono (by omega)) fun j hj hj' => ?_
+      simp only [mem_range, not_lt] at hj hj'
+      exact T_zero (by omega)
 
 end OMA.P077864
 
-open OMA.S_oeis_a077864 OMA.P077864 in
-theorem OMA.solution : type_of% @OMA.S_oeis_a077864.main := by
-  intro n
-  rw [← (uv n).1]
-  unfold U
-  symm
-  refine Finset.sum_subset (Finset.range_mono (by omega)) (fun j hj hnj => ?_)
-  have h1 := Finset.mem_range.mp hj
-  have h2 : ¬ j < n / 2 + 1 := fun h => hnj (Finset.mem_range.mpr h)
-  exact Tbig _ _ (by omega)
+theorem OMA.solution : type_of% @OMA.S_oeis_a077864.main := OMA.P077864.diagonal
