@@ -11,8 +11,6 @@ If the lower limit is at least `c > 0`, then eventually `f X / √X > c / 2`, so
 `√X ≤ (2 / c) * f X` for large `X`.
 -/
 
-namespace PartitionParityLiminfStep
-
 open Filter Asymptotics
 
 theorem isBigO_of_liminf : ∀ (f : ℝ → ℝ) (c : ℝ), 0 < c →
@@ -35,7 +33,4 @@ theorem isBigO_of_liminf : ∀ (f : ℝ → ℝ) (c : ℝ), 0 < c →
   rw [h3]
   exact mul_le_mul_of_nonneg_left h2.le (by positivity)
 
-end PartitionParityLiminfStep
-
-theorem OMA.solution : OMA.R_PartitionParity_zheng_odd_R1.H2 :=
-  PartitionParityLiminfStep.isBigO_of_liminf
+theorem OMA.solution : OMA.R_PartitionParity_zheng_odd_R1.H2 := isBigO_of_liminf
