@@ -1,6 +1,7 @@
 import OMAReductions.R_PoincareConjecture_poincare_conjecture_R1_H2_R1_H2_R1
 import Mathlib
 
+open AddCommGrpCat
 -- Step PoincareConjecture.poincare_conjecture.R1.H2.R1.H2.R1.H1: hypothesis H1 of reduction
 -- PoincareConjecture.poincare_conjecture.R1.H2.R1.H2.R1
 -- Credit: @ivillar
@@ -18,14 +19,14 @@ open CategoryTheory Limits AlgebraicTopology
 
 namespace OMA.PoincareSupport
 
-theorem mem_closure {T : Type} (w : ↑(∐ (fun _ : T => AddCommGrpCat.of ℤ))) :
+theorem mem_closure {T : Type} (w : ↑(∐ (fun _ : T => of ℤ))) :
     w ∈ AddSubgroup.closure
-      (⋃ t : T, Set.range (Limits.Sigma.ι (fun _ : T => AddCommGrpCat.of ℤ) t)) := by
+      (⋃ t : T, Set.range (Limits.Sigma.ι (fun _ : T => of ℤ) t)) := by
   let H := AddSubgroup.closure
-      (⋃ t : T, Set.range (Limits.Sigma.ι (fun _ : T => AddCommGrpCat.of ℤ) t))
-  let q : (∐ (fun _ : T => AddCommGrpCat.of ℤ)) ⟶
-      AddCommGrpCat.of (↑(∐ (fun _ : T => AddCommGrpCat.of ℤ)) ⧸ H) :=
-    AddCommGrpCat.ofHom (QuotientAddGroup.mk' H)
+      (⋃ t : T, Set.range (Limits.Sigma.ι (fun _ : T => of ℤ) t))
+  let q : (∐ (fun _ : T => of ℤ)) ⟶
+      of (↑(∐ (fun _ : T => of ℤ)) ⧸ H) :=
+    ofHom (QuotientAddGroup.mk' H)
   have hq : q = 0 := by
     apply Limits.Sigma.hom_ext
     intro t
@@ -35,22 +36,22 @@ theorem mem_closure {T : Type} (w : ↑(∐ (fun _ : T => AddCommGrpCat.of ℤ))
     rw [QuotientAddGroup.mk'_apply, QuotientAddGroup.eq_zero_iff]
     exact AddSubgroup.subset_closure (Set.mem_iUnion.mpr ⟨t, 1, rfl⟩)
   have h2 : q w = 0 := by rw [hq]; rfl
-  have h1 : ((w : ↑(∐ (fun _ : T => AddCommGrpCat.of ℤ))) : ↑(∐ (fun _ : T => AddCommGrpCat.of ℤ)) ⧸ H) = 0 :=
+  have h1 : ((w : ↑(∐ (fun _ : T => of ℤ))) : ↑(∐ (fun _ : T => of ℤ)) ⧸ H) = 0 :=
     h2
   exact (QuotientAddGroup.eq_zero_iff w).mp h1
 
 theorem gen_case (M : Type) [TopologicalSpace M]
     (σ : (TopCat.toSSet.obj (TopCat.of M)).obj (Opposite.op (SimplexCategory.mk 3))) (n : ℤ)
     (x : M) (hx : x ∉ Set.range ((TopCat.of M).toSSetObjEquiv _ σ)) :
-    ∃ c : (((singularChainComplexFunctor AddCommGrpCat).obj (AddCommGrpCat.of ℤ)).obj
+    ∃ c : (((singularChainComplexFunctor AddCommGrpCat).obj (of ℤ)).obj
         (TopCat.of ↥({x}ᶜ : Set M))).X 3,
-      ((((singularChainComplexFunctor AddCommGrpCat).obj (AddCommGrpCat.of ℤ)).map
+      ((((singularChainComplexFunctor AddCommGrpCat).obj (of ℤ)).map
           (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩)).f 3) c =
-        Limits.Sigma.ι (fun _ => AddCommGrpCat.of ℤ) σ n := by
+        Limits.Sigma.ι (fun _ => of ℤ) σ n := by
   let e := (TopCat.of M).toSSetObjEquiv (Opposite.op (SimplexCategory.mk 3))
   let e' := (TopCat.of ↥({x}ᶜ : Set M)).toSSetObjEquiv (Opposite.op (SimplexCategory.mk 3))
   let σ' := e'.symm ⟨fun p => ⟨e σ p, fun h => hx ⟨p, h⟩⟩, (e σ).continuous.subtype_mk _⟩
-  refine ⟨Limits.Sigma.ι (fun _ => AddCommGrpCat.of ℤ) σ' n, ?_⟩
+  refine ⟨Limits.Sigma.ι (fun _ => of ℤ) σ' n, ?_⟩
   have hφ : (TopCat.toSSet.map (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ :
       TopCat.of ↥({x}ᶜ : Set M) ⟶ TopCat.of M)).app _ σ' = σ := by
     apply e.injective
@@ -61,12 +62,12 @@ theorem gen_case (M : Type) [TopologicalSpace M]
     rfl
   have key : (Limits.Sigma.map' ((TopCat.toSSet.map (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ :
         TopCat.of ↥({x}ᶜ : Set M) ⟶ TopCat.of M)).app (Opposite.op (SimplexCategory.mk 3)))
-        (fun _ => 𝟙 (AddCommGrpCat.of ℤ)) :
+        (fun _ => 𝟙 (of ℤ)) :
       (∐ fun _ : (TopCat.toSSet.obj (TopCat.of ↥({x}ᶜ : Set M))).obj
-          (Opposite.op (SimplexCategory.mk 3)) => AddCommGrpCat.of ℤ) ⟶
+          (Opposite.op (SimplexCategory.mk 3)) => of ℤ) ⟶
         ∐ fun _ : (TopCat.toSSet.obj (TopCat.of M)).obj (Opposite.op (SimplexCategory.mk 3)) =>
-          AddCommGrpCat.of ℤ) (Limits.Sigma.ι (fun _ => AddCommGrpCat.of ℤ) σ' n) =
-      Limits.Sigma.ι (fun _ => AddCommGrpCat.of ℤ) σ n := by
+          of ℤ) (Limits.Sigma.ι (fun _ => of ℤ) σ' n) =
+      Limits.Sigma.ι (fun _ => of ℤ) σ n := by
     rw [← ConcreteCategory.comp_apply, Limits.Sigma.ι_comp_map', ConcreteCategory.comp_apply]
     rw [hφ]
     rfl
@@ -77,17 +78,17 @@ end OMA.PoincareSupport
 theorem OMA.solution : OMA.R_PoincareConjecture_poincare_conjecture_R1_H2_R1_H2_R1.H1 := by
   unfold OMA.R_PoincareConjecture_poincare_conjecture_R1_H2_R1_H2_R1.H1
   intro M _ z
-  have key : ∀ w : (((singularChainComplexFunctor AddCommGrpCat).obj (AddCommGrpCat.of ℤ)).obj
+  have key : ∀ w : (((singularChainComplexFunctor AddCommGrpCat).obj (of ℤ)).obj
       (TopCat.of M)).X 3, ∃ K : Set M, IsCompact K ∧ ∀ x ∉ K,
-        ∃ c : (((singularChainComplexFunctor AddCommGrpCat).obj (AddCommGrpCat.of ℤ)).obj
+        ∃ c : (((singularChainComplexFunctor AddCommGrpCat).obj (of ℤ)).obj
             (TopCat.of ↥({x}ᶜ : Set M))).X 3,
-          ((((singularChainComplexFunctor AddCommGrpCat).obj (AddCommGrpCat.of ℤ)).map
+          ((((singularChainComplexFunctor AddCommGrpCat).obj (of ℤ)).map
               (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩)).f 3) c = w := by
     intro w
     refine AddSubgroup.closure_induction (p := fun w _ => ∃ K : Set M, IsCompact K ∧ ∀ x ∉ K,
-        ∃ c : (((singularChainComplexFunctor AddCommGrpCat).obj (AddCommGrpCat.of ℤ)).obj
+        ∃ c : (((singularChainComplexFunctor AddCommGrpCat).obj (of ℤ)).obj
             (TopCat.of ↥({x}ᶜ : Set M))).X 3,
-          ((((singularChainComplexFunctor AddCommGrpCat).obj (AddCommGrpCat.of ℤ)).map
+          ((((singularChainComplexFunctor AddCommGrpCat).obj (of ℤ)).map
               (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩)).f 3) c = w)
       ?_ ?_ ?_ ?_ (OMA.PoincareSupport.mem_closure w)
     · intro y hy
