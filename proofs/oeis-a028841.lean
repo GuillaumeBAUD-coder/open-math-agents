@@ -18,17 +18,9 @@ theorem idr_of_lt (n : ℕ) (h : n < 10) : idr n = n := by
 theorem idr_of_ge (n : ℕ) (h : 10 ≤ n) : idr n = idr (ds n) := by
   rw [idr, dif_neg (by omega)]
 
-theorem ds_pos (n : ℕ) (h : 0 < n) : 0 < ds n := by
-  induction n using Nat.strong_induction_on with
-  | _ n ih =>
-    unfold ds
-    rw [Nat.digits_def' (by norm_num) h, List.sum_cons]
-    by_cases hr : 0 < n % 10
-    · omega
-    · have hq : 0 < n / 10 := by omega
-      have := ih (n / 10) (by omega) hq
-      unfold ds at this
-      omega
+theorem ds_pos (n : ℕ) (h : 0 < n) : 0 < ds n :=
+  (Nat.pos_of_ne_zero (Nat.getLast_digit_ne_zero 10 h.ne')).trans_le
+    (List.le_sum_of_mem (List.getLast_mem _))
 
 /-- Iterating the digit sum preserves the residue modulo nine and positivity. -/
 theorem idr_properties (n : ℕ) :
@@ -85,23 +77,11 @@ theorem R_periodic (m : ℕ) : R (m + 9) ↔ R m := by
   unfold R
   omega
 
-theorem count_add_period {Q : ℕ → Prop} [DecidablePred Q] {T : ℕ}
-    (hper : ∀ m, Q (m + T) ↔ Q m) : ∀ m, Nat.count Q (m + T) = Nat.count Q m + Nat.count Q T := by
-  intro m
-  induction m with
-  | zero => simp
-  | succ m ih =>
-    rw [show m + 1 + T = (m + T) + 1 by omega, Nat.count_succ, ih, Nat.count_succ]
-    simp [hper, Nat.add_right_comm]
-
 theorem count_9 : Nat.count R 9 = 5 := by decide +kernel
 
-theorem R_infinite : (Set.ofPred R).Infinite := by
-  apply Set.infinite_of_not_bddAbove
-  rintro ⟨N, hN⟩
-  have : R (9 * N + 1) := Or.inl (by omega)
-  have := hN (show 9 * N + 1 ∈ Set.ofPred R from this)
-  omega
+theorem R_infinite : (Set.ofPred R).Infinite :=
+  Set.infinite_of_injective_forall_mem (f := fun n : ℕ => 9 * n + 1)
+    (fun _ _ h => by dsimp only at h; omega) (fun _ => Or.inl (by omega))
 
 theorem nth_add_five (k : ℕ) : Nat.nth R (k + 5) = Nat.nth R k + 9 := by
   set x := Nat.nth R k
@@ -109,18 +89,16 @@ theorem nth_add_five (k : ℕ) : Nat.nth R (k + 5) = Nat.nth R k + 9 := by
   have hcx : Nat.count R x = k := Nat.count_nth_of_infinite R_infinite k
   have hP : R (x + 9) := (R_periodic x).mpr hx
   have hc : Nat.count R (x + 9) = k + 5 := by
-    rw [count_add_period R_periodic, hcx, count_9]
+    rw [Nat.count_add', count_9, ← hcx]
+    simp only [Nat.count_eq_card_filter_range, R_periodic]
   rw [← hc, Nat.nth_count hP]
+
+private theorem a_shift (n : ℕ) (hn : 5 < n) : a n = a (n - 5) + 9 := by
+  simp only [a, P_eq, show n - 1 = (n - 5 - 1) + 5 by omega, nth_add_five]
 
 theorem conjecture_true : Conjecture := by
   intro n hn
-  have h1 : a n = a (n - 5) + 9 := by
-    unfold a
-    rw [P_eq, show n - 1 = (n - 5 - 1) + 5 by omega, nth_add_five]
-  have h2 : a (n - 1) = a (n - 6) + 9 := by
-    unfold a
-    rw [P_eq, show n - 1 - 1 = (n - 6 - 1) + 5 by omega, nth_add_five]
-  rw [h1, h2]
+  rw [a_shift n (by omega), a_shift (n - 1) (by omega), show n - 1 - 5 = n - 6 by omega]
   push_cast
   ring
 
@@ -133,8 +111,8 @@ theorem first_terms : a 1 = 1 ∧ a 2 = 2 ∧ a 3 = 3 ∧ a 4 = 5 ∧ a 5 = 8 �
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩ <;> exact a_eq _ _ (by decide) (by decide +kernel)
 
 theorem idr_98 : idr 98 = 8 := by
-  rw [idr_of_ge 98 (by norm_num), show ds 98 = 17 by decide, idr_of_ge 17 (by norm_num),
-    show ds 17 = 8 by decide, idr_of_lt 8 (by norm_num)]
+  obtain ⟨hlt, hmod, _⟩ := idr_properties 98
+  omega
 
 open PowerSeries in
 /-- Barker's g.f. as an identity of formal power series: from `x^7` on the coefficients of the
