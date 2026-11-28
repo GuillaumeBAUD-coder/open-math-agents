@@ -6,7 +6,7 @@ import Mathlib
 and `a_{i+l} / √2` within `1/12`; the second-difference condition makes `a_{i+l} - a_i` grow by
 `2l` per step, so some integer `m` has `(l - 1) |√2 l - m| < 1/6`; but `2l² - m²` is a nonzero
 integer, which gives `|√2 l - m| > 1 / (3l)`.
-Credit: @SudharsanAnimations -/
+Credit: Sudharsan Rajendiran -/
 
 namespace OMA.P462095
 
