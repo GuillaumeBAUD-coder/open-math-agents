@@ -1,16 +1,10 @@
 import OMAStatements.S_oeis_a111042
-import Mathlib
 
--- 903 is an odd Erdos-Woods number (OEIS A111042, first term; counterexamples to Dowe's conjecture found
--- by Bienkowski, Korzeniowski and Lorys and by Lygeros, see Cegielski et al. 2003). The starting point a
--- below was found by our own search: a partition of the primes below 903 into P1, P2 such that every
--- i in [1, 902] has a prime factor in P1 or 903 - i has one in P2, then a = 0 (mod P1),
--- a = -903 (mod P2) by the Chinese remainder theorem. The 904 gcd conditions are checked by the kernel.
-
+-- The odd length 903 is listed in OEIS A111042. This starting point is obtained
+-- by choosing endpoint prime factors and applying the Chinese remainder theorem.
+-- The Lean kernel verifies all 904 gcd conditions.
 theorem OMA.disproof : ¬ (type_of% @OMA.S_oeis_a111042.main) := by
   intro h
-  have hw : OMA.S_oeis_a111042.Woods 903 :=
-    ⟨by norm_num, 24220306346888432412903967737658519251789092126233778247004832733282836548838583703432414308006497937018708747922705991578498086430524063991081432091884650408040741215425842642714873581949617400000583455852847056473937546866750612520090716722689803330402028393273161989305334322492574386868929460636208127637122661285548979586741335391750348871146854148844906656845383105000,
-      by norm_num, by decide +kernel⟩
-  have he := h 903 hw
-  exact absurd he (by decide)
+  exact (by decide : ¬ Even (903 : ℕ))
+    (h 903 ⟨by decide, 2145105522743337737543375917231401723056516485924524393598675453453103875649154518609734348027660970017164321841934342142530073196757016934752974345333993843761820725511317067999719663397130767003399945179164530127350902191808413238965848721033442562342168610291509390898956234510900290620989227629628854326051940832634911807263243863795438870771133154710,
+      by decide, by decide +kernel⟩)
