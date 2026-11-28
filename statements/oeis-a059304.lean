@@ -4,7 +4,7 @@ import Mathlib
 # OEIS A059304: a(n) = Σ_{j,k} C(n,j) C(n,k) C(j+k,n)
 
 Source: https://oeis.org/A059304
-Credit: @SudharsanAnimations
+Credit: Sudharsan Rajendiran
 
 `A059304(n) = 2^n (2n)!/(n!)^2`. Peter Bala conjectured (Jul 2024) that
 `a(n) = Σ_{0 ≤ j, k ≤ n} binomial(n, j) binomial(n, k) binomial(j + k, n)` for all `n ≥ 0`; the entry
