@@ -1,30 +1,14 @@
 import OMAReductions.R_Erdos936_erdos_936_variants_factorial_sub_one_R1
--- Step Erdos936.erdos_936.variants.factorial_sub_one.R1.H2: hypothesis H2 of reduction Erdos936.erdos_936.variants.factorial_sub_one.R1
--- Credit: @Raimo33
--- Proof adapted from the merged proof of Erdos936.erdos_936.variants.factorial_add_one.R1.H2 (same statement word for word).
 
--- Step Erdos936.erdos_936.variants.factorial_add_one.R1.H2: hypothesis H2 of reduction Erdos936.erdos_936.variants.factorial_add_one.R1
--- primorial n ≤ 4^n, and (4^e)^n / n! tends to 0, so eventually C * (4^e)^n < n!.
+-- Shortens the factorial/primorial comparison by @Raimo33, adapted from the add-one case.
+-- The constant-multiple limit argument also appears in PR #32702; PR #36758 was consulted.
 
 theorem OMA.solution : OMA.R_Erdos936_erdos_936_variants_factorial_sub_one_R1.H2 := by
   intro C e
-  have ht := FloorSemiring.tendsto_pow_div_factorial_atTop ((4 : ℝ) ^ e)
-  have hev : ∀ᶠ n : ℕ in Filter.atTop,
-      ((4 : ℝ) ^ e) ^ n / (n.factorial : ℝ) < 1 / ((C : ℝ) + 1) :=
-    ht.eventually (gt_mem_nhds (by positivity))
-  filter_upwards [hev] with n hn
-  have hf : (0 : ℝ) < n.factorial := by exact_mod_cast Nat.factorial_pos n
-  have hC : (0 : ℝ) < (C : ℝ) + 1 := by positivity
-  rw [div_lt_div_iff₀ hf hC, one_mul] at hn
-  have hp : primorial n ^ e ≤ (4 ^ e) ^ n := by
-    rw [← pow_mul, mul_comm, pow_mul]
-    exact Nat.pow_le_pow_left (primorial_le_four_pow n) e
-  have hpR : ((primorial n : ℕ) : ℝ) ^ e ≤ ((4 : ℝ) ^ e) ^ n := by exact_mod_cast hp
-  have hpos : (0 : ℝ) < ((4 : ℝ) ^ e) ^ n := by positivity
-  have hreal : ((C * primorial n ^ e : ℕ) : ℝ) < n.factorial := by
-    have h1 : ((C * primorial n ^ e : ℕ) : ℝ) ≤ (C : ℝ) * ((4 : ℝ) ^ e) ^ n := by
-      push_cast
-      exact mul_le_mul_of_nonneg_left hpR (by positivity)
-    nlinarith
-  exact_mod_cast hreal
-
+  have h := (FloorSemiring.tendsto_pow_div_factorial_atTop ((4 : ℝ) ^ e)).const_mul (C : ℝ)
+  filter_upwards [h.eventually_lt_const (by simp : (C : ℝ) * 0 < 1)] with n hn
+  rw [← mul_div_assoc, div_lt_one (by positivity)] at hn
+  have hp := Nat.pow_le_pow_left (primorial_le_four_pow n) e
+  rw [← pow_mul, mul_comm n e, pow_mul] at hp
+  have hlt : C * (4 ^ e) ^ n < n.factorial := by exact_mod_cast hn
+  exact (Nat.mul_le_mul_left C hp).trans_lt hlt
