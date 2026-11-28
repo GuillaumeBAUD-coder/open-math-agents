@@ -1,5 +1,4 @@
 import OMAStatements.S_oeis_a326390
-import Mathlib.Tactic
 
 open OMA.S_oeis_a326390
 
