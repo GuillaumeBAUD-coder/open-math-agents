@@ -7,7 +7,6 @@ Source: https://oeis.org/A207110
 Credit: @clementtrecourt
 
 The conjectures listed in the entry, all stated below as one conjunction:
-* a(n) = (1/280)*n^7 + (7/45)*n^6 + (47/15)*n^5 + (206/9)*n^4 + (4111/120)*n^3 - (1037/45)*n^2 - (4493/210)*n + 9.
 * G.f.: x*(25 + 425*x - 901*x^2 + 419*x^3 + 249*x^4 - 269*x^5 + 79*x^6 - 9*x^7) / (1 - x)^8.
 * a(n) = 8*a(n-1) - 28*a(n-2) + 56*a(n-3) - 70*a(n-4) + 56*a(n-5) - 28*a(n-6) + 8*a(n-7) - a(n-8) for n>8.
 
@@ -35,7 +34,6 @@ def a (n : ℕ) : ℤ :=
 
 open PowerSeries in
 theorem main :
-    (∀ n : ℕ, 1 ≤ n → (a n : ℚ) = 1 / 280 * (n : ℚ) ^ 7 + 7 / 45 * (n : ℚ) ^ 6 + 47 / 15 * (n : ℚ) ^ 5 + 206 / 9 * (n : ℚ) ^ 4 + 4111 / 120 * (n : ℚ) ^ 3 - 1037 / 45 * (n : ℚ) ^ 2 - 4493 / 210 * (n : ℚ) + 9) ∧
     (PowerSeries.mk (fun n => if n < 1 then 0 else (a n : ℚ)) * ((1 - X) ^ 8 : PowerSeries ℚ) = X * (25 + 425 * X - 901 * X ^ 2 + 419 * X ^ 3 + 249 * X ^ 4 - 269 * X ^ 5 + 79 * X ^ 6 - 9 * X ^ 7)) ∧
     (∀ n : ℕ, 9 ≤ n → (a n : ℚ) = 8 * a (n - 1) - 28 * a (n - 2) + 56 * a (n - 3) - 70 * a (n - 4) + 56 * a (n - 5) - 28 * a (n - 6) + 8 * a (n - 7) - a (n - 8)) := by
   sorry
