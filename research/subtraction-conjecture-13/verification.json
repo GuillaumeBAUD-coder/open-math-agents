@@ -1,0 +1,55 @@
+{
+  "status": "COMPLETE CHECKED CANDIDATE; NEW TARGET REGISTRATION AND TRANSLATION REVIEW REQUIRED",
+  "paper": "https://arxiv.org/abs/2510.24280",
+  "version": "v2, Conjecture13, Definition2",
+  "claim": "Dominant c>=2b preserves all-heaps FF=AA agreement from {a,b} to {a,b,c}.",
+  "stronger_result": "Exact all-four-profile outcome formula with period2c and additive utility(c,c), valid from heap0.",
+  "pins": {
+    "lean": "v4.33.1",
+    "formal_conjectures": "9097e2f90e66d2f6244209cb1c07f7120d17ec53",
+    "mathlib": "0df444a360eaa60ab8c11dca51a86af692955474"
+  },
+  "audit_id": "20261128T130307Z-helper-zugtyt9j",
+  "audit_result": "helpers_verified",
+  "audit_scope": "Supporting lemmas only; no Left to Solve target or upstream submission acceptance was checked.",
+  "declaration_axioms": {
+    "Conj13Complete.exact_outcome_formula": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Conj13Complete.conjecture_13": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Conj13Complete.periodic_affine_outcome": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Conj13Complete.exact_outcome_formula_generic": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Conj13Complete.conjecture_13_generic": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Conj13Complete.periodic_affine_outcome_generic": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "model": "Exact approved finite-set Definition2 recurrence; formal equivalence to specialized models proved for all heaps/profiles.",
+  "model_bridge_audit": "20261128T130111Z-helper-a0dshdhc",
+  "file_hashes": {
+    "standalone.lean": "ee408ea21c90ae94b394a91cac29835bea199fd334f5345bf7e99aa0317e9784",
+    "README.txt": "680cadee900dbf88f59b7580d7baa21112894311e85b2daa20c6eebdd13b3b10"
+  },
+  "not_claimed": "No original registered-target acceptance, no resolution of Conjecture4 (already refuted),14,16 or other claims.",
+  "novelty": "Bounded primary/linked-public-proof search found no earlier Conjecture13 proof; not a priority guarantee."
+}

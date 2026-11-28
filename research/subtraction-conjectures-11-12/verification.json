@@ -1,0 +1,114 @@
+{
+  "status": "NEWLY PROPOSED FORMALIZATIONS; NOT REGISTERED OR ACCEPTED BY LEFT TO SOLVE.",
+  "paper": "https://arxiv.org/abs/2510.24280",
+  "version": "v2,20January2026",
+  "source_pdf_sha256": "e6a29e500f3e0d18a7ee441561e1d27c4e2413fb8a32c3f6562725ad2a17f99b",
+  "claims": [
+    "Conjecture11 full ratio/allheaps convention independence",
+    "Conjecture12 full nonresonant original claim including existence of intervalindex and LEAST distinguishing heap"
+  ],
+  "pins": {
+    "lean": "v4.33.1",
+    "formal_conjectures": "9097e2f90e66d2f6244209cb1c07f7120d17ec53",
+    "mathlib": "0df444a360eaa60ab8c11dca51a86af692955474"
+  },
+  "checks": [
+    {
+      "file": "conjecture11/proof.lean",
+      "sha256": "a6c5e7cc04d698301f75c30b29b870c79e96bdcb2742e916b02b48c7b590794c",
+      "declarations": {
+        "OMA.solution": [
+          "Classical.choice",
+          "Quot.sound",
+          "propext"
+        ]
+      },
+      "result": "named theorem kernel/axiom audit passed",
+      "registry_scope": "Supporting lemmas only; no Left to Solve target or upstream submission acceptance was checked.",
+      "published_file": "conjecture11/proof.lean"
+    },
+    {
+      "file": "conjecture11/standalone.lean",
+      "sha256": "99bcdcb0951e407ab53bb5f3a0ef28cfe990153898dc88e25286f44a1dd07f6c",
+      "declarations": {
+        "Conj11Complete.conjecture_11": [
+          "Classical.choice",
+          "Quot.sound",
+          "propext"
+        ],
+        "Conj11Complete.ratio_convention_independence": [
+          "Classical.choice",
+          "Quot.sound",
+          "propext"
+        ],
+        "Conj11Complete.consecutive_multiple_convention_independence": [
+          "Classical.choice",
+          "Quot.sound",
+          "propext"
+        ]
+      },
+      "result": "named theorem kernel/axiom audit passed",
+      "registry_scope": "Supporting lemmas only; no Left to Solve target or upstream submission acceptance was checked.",
+      "published_file": "conjecture11/standalone.lean"
+    },
+    {
+      "file": "conjecture12/proof.lean",
+      "sha256": "aee02c59a17df1203b1eedf8b257425b7873f56929aa66d1a81a6845a0f4204a",
+      "declarations": {
+        "OMA.solution": [
+          "Classical.choice",
+          "Quot.sound",
+          "propext"
+        ]
+      },
+      "result": "named theorem kernel/axiom audit passed",
+      "registry_scope": "Supporting lemmas only; no Left to Solve target or upstream submission acceptance was checked.",
+      "published_file": "conjecture12/proof.lean"
+    },
+    {
+      "file": "subtraction-complete.lean",
+      "sha256": "c04034db1dd19676abfe567a6524af541a68c727f628198b073d85d8075f23c0",
+      "declarations": {
+        "Conj11Complete.conjecture_11": [
+          "Classical.choice",
+          "Quot.sound",
+          "propext"
+        ],
+        "Conj11Complete.ratio_convention_independence": [
+          "Classical.choice",
+          "Quot.sound",
+          "propext"
+        ],
+        "Conj12Complete.original_ratio_first_discrepancy": [
+          "Classical.choice",
+          "Quot.sound",
+          "propext"
+        ],
+        "Conj12Complete.original_conjecture_12": [
+          "Classical.choice",
+          "Quot.sound",
+          "propext"
+        ]
+      },
+      "result": "named theorem kernel/axiom audit passed",
+      "registry_scope": "Supporting lemmas only; no Left to Solve target or upstream submission acceptance was checked.",
+      "published_file": "standalone.lean"
+    }
+  ],
+  "translation_review": "Independent source/model/parameter/scaling review found no concrete loophole; official human registry statement review still required.",
+  "novelty_review": "Bounded public source search found no full earlier proof of Conj11 orConj12; no priority guarantee. Authors already conjectured the formulas. Related public Conj15/17 derivations do not settle these claims.",
+  "privacy": "This complete package only. No unrelated private arithmetic, channel, cake or Poisson research included.",
+  "file_hashes": {
+    "standalone.lean": "c04034db1dd19676abfe567a6524af541a68c727f628198b073d85d8075f23c0",
+    "README.txt": "5dbee0fdb6c8fe14960010495c475b626ae28b7c6e41572baf3935132d467da5",
+    "conjecture11/standalone.lean": "99bcdcb0951e407ab53bb5f3a0ef28cfe990153898dc88e25286f44a1dd07f6c",
+    "conjecture11/README.txt": "701f957440001e6539929a347881c905f1809ceca15fc25289650ce0b0fb3c0c",
+    "conjecture11/statement.lean": "5068e1de52525e59c158a067ed979c9103eedebc7ff2d0ccf760261a3ef2b490",
+    "conjecture11/proof.lean": "a6c5e7cc04d698301f75c30b29b870c79e96bdcb2742e916b02b48c7b590794c",
+    "conjecture12/standalone.lean": "a3953da56e3db91c710e5d646f1af2b7dfc8dcfb4d50961ca3134d7ac71e4f11",
+    "conjecture12/README.txt": "5ebc3209fd5221360e8b57fafb47499ac491ba668c3da05cbe5adabbcaf1e440",
+    "conjecture12/statement.lean": "696a50a9ec71999f8318ff44e69c13db221266326126fc49750f82c40ab99374",
+    "conjecture12/proof.lean": "aee02c59a17df1203b1eedf8b257425b7873f56929aa66d1a81a6845a0f4204a"
+  },
+  "tool": "Codex, GPT-6 family; exact runtime model identifier unavailable"
+}
