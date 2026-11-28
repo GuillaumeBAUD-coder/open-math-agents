@@ -372,50 +372,29 @@ lemma dfa_initial : dfaCount 0 = 1 ∧ dfaCount 1 = 3 ∧ dfaCount 2 = 9 ∧
 def dfaGeneratingSeries : PowerSeries ℚ :=
   PowerSeries.mk (fun n => (gfSequence n : ℚ))
 
+open PowerSeries in
 lemma dfaGeneratingSeries_mul :
-    dfaGeneratingSeries * (1 - PowerSeries.X)^5 =
-      PowerSeries.X * (3 - 6*PowerSeries.X + 8*PowerSeries.X^2 -
-        5*PowerSeries.X^3 + PowerSeries.X^4) := by
-  have he : dfaGeneratingSeries * (1 - PowerSeries.X)^5 =
-      dfaGeneratingSeries - PowerSeries.C 5 * (dfaGeneratingSeries * PowerSeries.X^1) +
-      PowerSeries.C 10 * (dfaGeneratingSeries * PowerSeries.X^2) -
-      PowerSeries.C 10 * (dfaGeneratingSeries * PowerSeries.X^3) +
-      PowerSeries.C 5 * (dfaGeneratingSeries * PowerSeries.X^4) -
-      dfaGeneratingSeries * PowerSeries.X^5 := by
+    dfaGeneratingSeries * (1 - X)^5 = X * (3 - 6*X + 8*X^2 - 5*X^3 + X^4) := by
+  let F := dfaGeneratingSeries
+  change F * (1 - X)^5 = _
+  have he : F * (1 - X)^5 =
+      F - C 5 * (F * X^1) + C 10 * (F * X^2) -
+      C 10 * (F * X^3) + C 5 * (F * X^4) - F * X^5 := by
     simp only [map_ofNat]
     ring
-  have hp : (PowerSeries.X : PowerSeries ℚ) * (3 - 6*PowerSeries.X +
-      8*PowerSeries.X^2 - 5*PowerSeries.X^3 + PowerSeries.X^4) =
-      PowerSeries.C 3 * PowerSeries.X^1 - PowerSeries.C 6 * PowerSeries.X^2 +
-      PowerSeries.C 8 * PowerSeries.X^3 - PowerSeries.C 5 * PowerSeries.X^4 +
-      PowerSeries.C 1 * PowerSeries.X^5 := by
-    simp only [map_ofNat, map_one]
+  have hp : (X : PowerSeries ℚ) * (3 - 6*X + 8*X^2 - 5*X^3 + X^4) =
+      C 3 * X^1 - C 6 * X^2 + C 8 * X^3 - C 5 * X^4 + X^5 := by
+    simp only [map_ofNat]
     ring
   rw [he, hp]
-  apply PowerSeries.ext
-  intro n
-  simp only [map_sub, map_add, PowerSeries.coeff_C_mul,
-    PowerSeries.coeff_mul_X_pow', dfaGeneratingSeries, PowerSeries.coeff_mk]
+  ext n
+  simp only [map_sub, map_add, coeff_C_mul, coeff_mul_X_pow', F, dfaGeneratingSeries, coeff_mk]
   by_cases hn : n < 6
-  · interval_cases n <;>
-      norm_num [gfSequence, dfa_initial.1, dfa_initial.2.1, dfa_initial.2.2.1,
-        dfa_initial.2.2.2.1, dfa_initial.2.2.2.2.1, dfa_initial.2.2.2.2.2]
-  · obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le (show 6 ≤ n by omega)
-    have hr : (dfaCount (k+6) : ℚ) - 5*dfaCount (k+5) + 10*dfaCount (k+4) -
-        10*dfaCount (k+3) + 5*dfaCount (k+2) - dfaCount (k+1) = 0 := by
-      exact_mod_cast (show dfaCount (k+6) - 5*dfaCount (k+5) + 10*dfaCount (k+4) -
-        10*dfaCount (k+3) + 5*dfaCount (k+2) - dfaCount (k+1) = 0 by
-          simpa only [Nat.add_assoc, Nat.reduceAdd] using dfa_recurrence (k+1))
-    norm_num [gfSequence, show 6+k=k+6 by omega,
-      show 1 ≤ k+6 by omega, show 2 ≤ k+6 by omega, show 3 ≤ k+6 by omega,
-      show 4 ≤ k+6 by omega, show 5 ≤ k+6 by omega,
-      show k+6-1=k+5 by omega, show k+6-2=k+4 by omega,
-      show k+6-3=k+3 by omega, show k+6-4=k+2 by omega, show k+6-5=k+1 by omega,
-      show k+6 ≠ 0 by omega, show k+5 ≠ 0 by omega, show k+4 ≠ 0 by omega,
-      show k+3 ≠ 0 by omega, show k+2 ≠ 0 by omega, show k+1 ≠ 0 by omega,
-      show k+6 ≠ 1 by omega, show k+6 ≠ 2 by omega, show k+6 ≠ 3 by omega,
-      show k+6 ≠ 4 by omega, show k+6 ≠ 5 by omega]
-    linarith
+  · obtain ⟨v0, v1, v2, v3, v4, v5⟩ := dfa_initial
+    interval_cases n <;> norm_num [gfSequence, v0, v1, v2, v3, v4, v5]
+  · obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' (show 6 ≤ n by omega)
+    simp (disch := omega) [gfSequence, coeff_X_pow, Nat.add_sub_assoc]
+    exact_mod_cast dfa_recurrence (k + 1)
 
 lemma actualImage_iff_dfa (w : List Symbol) :
     actualImage w ↔ w.foldl dfaStep (0 : Fin 7) ≠ 6 :=
