@@ -1,8 +1,7 @@
 import FormalConjectures.ErdosProblems.«542»
 import Mathlib
 
--- Problem: Erdos Problem 542, variant chen (result of Chen Yong-Gao, Acta Sci. Math. (Szeged) 62 (1996), 101-114).
--- Credit: @LordMike
+-- Problem: Erdos Problem 542, variant chen
 -- Upstream: formal-conjectures FormalConjectures/ErdosProblems/542.lean:118 (declaration Erdos542.erdos_542.variants.chen)
 -- Route: weighted packing. The multiples (at most n) of distinct members of A are disjoint.
 -- Give m the weight G(floor(4n/m))/m for a fixed step function G (the list blocks below,
@@ -58,6 +57,7 @@ def cFl (D : ℕ) (L : List (ℕ × ℕ × ℕ)) (M : ℕ) : ℕ :=
 
 -- A. Packing and the weight identity
 
+-- @@L packing
 theorem packing (n : ℕ) (A : Finset ℕ) (w : ℕ → ℝ) (hsub : A ⊆ Icc 1 n)
     (hlcm : ∀ a ∈ A, ∀ b ∈ A, a ≠ b → n < Nat.lcm a b) (hw : ∀ m, 0 ≤ w m) :
     ∑ a ∈ A, ∑ j ∈ Icc 1 (n / a), w (a * j) ≤ ∑ m ∈ Icc 1 n, w m := by
@@ -112,6 +112,7 @@ theorem packing (n : ℕ) (A : Finset ℕ) (w : ℕ → ℝ) (hsub : A ⊆ Icc 1
   rw [h1, h2]
   exact Finset.sum_le_sum_of_subset_of_nonneg hsubI (fun m _ _ => hw m)
 
+-- @@L block_filter
 theorem block_filter (lo hi M : ℕ) (hlo : 4 ≤ lo) (hle : lo ≤ hi) :
     ∑ j ∈ Icc 1 (M / 4), (if lo ≤ M / j ∧ M / j ≤ hi then (1 : ℝ) / j else 0) = bs lo hi M := by
   rw [← Finset.sum_filter]
@@ -135,6 +136,7 @@ theorem block_filter (lo hi M : ℕ) (hlo : 4 ≤ lo) (hle : lo ≤ hi) :
       exact ⟨⟨hj, by nlinarith⟩, by nlinarith, by nlinarith⟩
 
 
+-- @@L inner_sum
 theorem inner_sum (L : List (ℕ × ℕ × ℕ)) (hL : ∀ b ∈ L, 4 ≤ b.1 ∧ b.1 ≤ b.2.1) (M : ℕ) :
     ∑ j ∈ Icc 1 (M / 4), ((Gt L (M / j) : ℕ) : ℝ) / j = cR L M := by
   induction L with
@@ -163,6 +165,7 @@ theorem inner_sum (L : List (ℕ × ℕ × ℕ)) (hL : ∀ b ∈ L, 4 ≤ b.1 �
       split_ifs <;> ring
     rw [hc, Finset.sum_congr rfl key, Finset.sum_add_distrib, hsum, ih']
 
+-- @@L weight_sum
 theorem weight_sum (L : List (ℕ × ℕ × ℕ)) (hL : ∀ b ∈ L, 4 ≤ b.1 ∧ b.1 ≤ b.2.1)
     (n a : ℕ) (ha : 1 ≤ a) :
     ∑ j ∈ Icc 1 (n / a), ((Gt L (4 * n / (a * j)) : ℕ) : ℝ) / ((a * j : ℕ) : ℝ)
@@ -184,6 +187,7 @@ theorem weight_sum (L : List (ℕ × ℕ × ℕ)) (hL : ∀ b ∈ L, 4 ≤ b.1 �
 
 -- B. Harmonic block sums against logarithms
 
+-- @@L harm_lower
 theorem harm_lower (a b : ℕ) (hab : a ≤ b) :
     Real.log (((b : ℝ) + 1) / ((a : ℝ) + 1)) ≤ ∑ j ∈ Ioc a b, (1 : ℝ) / j := by
   induction b, hab using Nat.le_induction with
@@ -214,6 +218,7 @@ theorem harm_lower (a b : ℕ) (hab : a ≤ b) :
     rw [hsplit]
     linarith
 
+-- @@L harm_upper
 theorem harm_upper (a b : ℕ) (ha : 1 ≤ a) (hab : a ≤ b) :
     ∑ j ∈ Ioc a b, (1 : ℝ) / j ≤ Real.log ((b : ℝ) / (a : ℝ)) := by
   induction b, hab using Nat.le_induction with
@@ -246,6 +251,7 @@ theorem harm_upper (a b : ℕ) (ha : 1 ≤ a) (hab : a ≤ b) :
     rw [hsplit]
     linarith
 
+-- @@L bs_lower
 theorem bs_lower (lo hi M : ℕ) (hlo : 1 ≤ lo) (hle : lo ≤ hi) (hM : 1 ≤ M) :
     Real.log (((hi : ℝ) + 1) / (lo : ℝ)) - ((hi : ℝ) + 1) / (M : ℝ) ≤ bs lo hi M := by
   unfold bs
@@ -289,6 +295,7 @@ theorem bs_lower (lo hi M : ℕ) (hlo : 1 ≤ lo) (hle : lo ≤ hi) (hM : 1 ≤ 
   linarith
 
 
+-- @@L bs_upper
 theorem bs_upper (lo hi M : ℕ) (hlo : 1 ≤ lo) (hle : lo ≤ hi) (hM : hi < M) :
     bs lo hi M ≤ Real.log (((hi : ℝ) + 1) / (lo : ℝ)) + (hi : ℝ) / ((M : ℝ) - (hi : ℝ)) := by
   unfold bs
@@ -336,6 +343,7 @@ theorem bs_upper (lo hi M : ℕ) (hlo : 1 ≤ lo) (hle : lo ≤ hi) (hM : hi < M
 
 -- C. Rational bounds for logarithms
 
+-- @@L log_lower
 theorem log_lower (z : ℝ) (hz0 : 0 ≤ z) (hz1 : z < 1) :
     2 * z + 2 * z ^ 3 / 3 ≤ Real.log ((1 + z) / (1 - z)) := by
   have habs : |z| < 1 := by rw [abs_of_nonneg hz0]; exact hz1
@@ -350,6 +358,7 @@ theorem log_lower (z : ℝ) (hz0 : 0 ≤ z) (hz1 : z < 1) :
   norm_num [Finset.sum_range_succ] at h2
   linarith
 
+-- @@L log_upper
 theorem log_upper (z : ℝ) (hz0 : 0 ≤ z) (hz1 : z < 1) :
     Real.log ((1 + z) / (1 - z)) ≤ 2 * z + 2 * z ^ 3 / (3 * (1 - z ^ 2)) := by
   have habs : |z| < 1 := by rw [abs_of_nonneg hz0]; exact hz1
@@ -386,6 +395,7 @@ theorem log_upper (z : ℝ) (hz0 : 0 ≤ z) (hz1 : z < 1) :
   rw [Real.log_div hne1 hne2]
   linarith [key, hval]
 
+-- @@L lowQ_le
 theorem lowQ_le (lo hi : ℕ) (hlo : 1 ≤ lo) (hle : lo ≤ hi) :
     ((lowQ lo hi : ℚ) : ℝ) ≤ Real.log (((hi : ℝ) + 1) / (lo : ℝ)) := by
   have hlo' : (1 : ℝ) ≤ (lo : ℝ) := by exact_mod_cast hlo
@@ -415,6 +425,7 @@ theorem lowQ_le (lo hi : ℕ) (hlo : 1 ≤ lo) (hle : lo ≤ hi) :
   rw [hq]
   exact key
 
+-- @@L le_upQ
 theorem le_upQ (lo hi : ℕ) (hlo : 1 ≤ lo) (hle : lo ≤ hi) :
     Real.log (((hi : ℝ) + 1) / (lo : ℝ)) ≤ ((upQ lo hi : ℚ) : ℝ) := by
   have hlo' : (1 : ℝ) ≤ (lo : ℝ) := by exact_mod_cast hlo
@@ -447,6 +458,7 @@ theorem le_upQ (lo hi : ℕ) (hlo : 1 ≤ lo) (hle : lo ≤ hi) :
 
 -- T. The tail: large M
 
+-- @@L tail_lower_gen
 theorem tail_lower_gen (L : List (ℕ × ℕ × ℕ)) (hL : ∀ b ∈ L, 1 ≤ b.1 ∧ b.1 ≤ b.2.1)
     (M0 M : ℕ) (hM0 : 1 ≤ M0) (hM : M0 ≤ M) :
     (((L.map fun b => (b.2.2 : ℚ) * (lowQ b.1 b.2.1 - ((b.2.1 : ℚ) + 1) / (M0 : ℚ))).sum : ℚ) : ℝ)
@@ -476,6 +488,7 @@ theorem tail_lower_gen (L : List (ℕ × ℕ × ℕ)) (hL : ∀ b ∈ L, 1 ≤ b
     simp only [cR, List.map_cons, List.sum_cons, Rat.cast_add] at ih' ⊢
     linarith
 
+-- @@L tail_upper_gen
 theorem tail_upper_gen (L : List (ℕ × ℕ × ℕ)) (H : ℕ)
     (hL : ∀ b ∈ L, 1 ≤ b.1 ∧ b.1 ≤ b.2.1 ∧ b.2.1 ≤ H)
     (M1 M : ℕ) (hM1 : H < M1) (hM : M1 ≤ M) :
@@ -508,6 +521,7 @@ theorem tail_upper_gen (L : List (ℕ × ℕ × ℕ)) (H : ℕ)
     simp only [cR, List.map_cons, List.sum_cons, Rat.cast_add] at ih' ⊢
     linarith
 
+-- @@L num_lower
 theorem num_lower :
     (10000000 : ℚ) ≤
       (blocks.map fun b => (b.2.2 : ℚ) *
@@ -515,6 +529,7 @@ theorem num_lower :
   decide +kernel
 
 
+-- @@L num_upper
 theorem num_upper :
     (blocks.map fun b => (b.2.2 : ℚ) *
         (upQ b.1 b.2.1 + (b.2.1 : ℚ) / (((690040 : ℕ) : ℚ) - ((235 : ℕ) : ℚ)))).sum
@@ -524,6 +539,7 @@ theorem num_upper :
 
 -- F. The finite range
 
+-- @@L hs_le
 theorem hs_le (D a c : ℕ) :
     ((hs D a c : ℕ) : ℝ) ≤ (D : ℝ) * ∑ j ∈ Ioc a (a + c), (1 : ℝ) / j := by
   induction c with
@@ -537,6 +553,7 @@ theorem hs_le (D a c : ℕ) :
     rw [e, Finset.sum_Ioc_succ_top (by omega : a ≤ a + c), hh, Nat.cast_add, mul_add]
     linarith
 
+-- @@L cFl_le
 theorem cFl_le_aux1 (D g lo hi M : ℕ) (hlo : 1 ≤ lo) (hle : lo ≤ hi) :
     ((g * hs D (M / (hi + 1)) (M / lo - M / (hi + 1)) : ℕ) : ℝ)
       ≤ (D : ℝ) * ((g : ℝ) * bs lo hi M) := by
@@ -568,24 +585,231 @@ theorem cFl_le (D : ℕ) (L : List (ℕ × ℕ × ℕ)) (hL : ∀ b ∈ L, 1 ≤
     rw [e1, e2, Nat.cast_add]
     linarith
 
-set_option maxHeartbeats 4000000 in
-theorem finite_check_aux1 : ∀ q : Fin 52, ∀ r : Fin 100,
-    10000000 * 1000000000000 ≤ cFl 1000000000000 blocks (100 * q.val + r.val + 4) := by
+-- @@L fast_table
+/-- Prefix sum of D / j (natural division) over j in 1..x, as a plain Nat.rec. -/
+def PR (D x : ℕ) : ℕ := Nat.rec 0 (fun n ih => D / (n + 1) + ih) x
+
+theorem PR_eq (D x : ℕ) : PR D x = hs D 0 x := by
+  induction x with
+  | zero => rfl
+  | succ x ih =>
+    have e1 : hs D 0 (x + 1) = D / (x + 1) + hs D 0 x := by
+      show D / (0 + x + 1) + hs D 0 x = _
+      rw [Nat.zero_add]
+    have e2 : PR D (x + 1) = D / (x + 1) + PR D x := rfl
+    rw [e1, e2, ih]
+
+theorem PR_mono (D : ℕ) {x y : ℕ} (h : x ≤ y) : PR D x ≤ PR D y := by
+  induction y with
+  | zero =>
+    have : x = 0 := by omega
+    subst this
+    exact le_rfl
+  | succ y ih =>
+    rcases Nat.lt_or_ge x (y + 1) with h1 | h1
+    · have h2 := ih (by omega)
+      have e : PR D (y + 1) = D / (y + 1) + PR D y := rfl
+      rw [e]
+      exact le_trans h2 (Nat.le_add_left _ _)
+    · have : x = y + 1 := by omega
+      subst this
+      exact le_rfl
+
+theorem hs_add (D a c : ℕ) : hs D 0 (a + c) = hs D 0 a + hs D a c := by
+  induction c with
+  | zero => simp [hs]
+  | succ c ih =>
+    have e1 : hs D 0 (a + c + 1) = D / (a + c + 1) + hs D 0 (a + c) := by
+      show D / (0 + (a + c) + 1) + hs D 0 (a + c) = _
+      rw [Nat.zero_add]
+    have e2 : hs D a (c + 1) = D / (a + c + 1) + hs D a c := rfl
+    have e3 : a + (c + 1) = a + c + 1 := by omega
+    rw [e3, e1, e2]
+    omega
+
+def cFr (D : ℕ) (L : List (ℕ × ℕ × ℕ)) (M : ℕ) : ℕ :=
+  (L.map fun b => b.2.2 * (PR D (M / b.1) - PR D (M / (b.2.1 + 1)))).sum
+
+theorem cFr_eq (D : ℕ) (L : List (ℕ × ℕ × ℕ)) (hL : ∀ b ∈ L, 1 ≤ b.1 ∧ b.1 ≤ b.2.1) (M : ℕ) :
+    cFl D L M = cFr D L M := by
+  induction L with
+  | nil => simp [cFl, cFr]
+  | cons b L ih =>
+    have hb := hL b (by simp)
+    have ih2 := ih (fun c hc => hL c (by simp [hc]))
+    have h2 : M / (b.2.1 + 1) ≤ M / b.1 := Nat.div_le_div_left (by omega) (by omega)
+    have e := hs_add D (M / (b.2.1 + 1)) (M / b.1 - M / (b.2.1 + 1))
+    have e2 : M / (b.2.1 + 1) + (M / b.1 - M / (b.2.1 + 1)) = M / b.1 := by omega
+    rw [e2] at e
+    have p1 := PR_eq D (M / b.1)
+    have p2 := PR_eq D (M / (b.2.1 + 1))
+    have e3 : hs D (M / (b.2.1 + 1)) (M / b.1 - M / (b.2.1 + 1))
+        = PR D (M / b.1) - PR D (M / (b.2.1 + 1)) := by omega
+    simp only [cFl, cFr, List.map_cons, List.sum_cons] at ih2 ⊢
+    rw [e3, ih2]
+
+theorem blocks_ok : ∀ b ∈ blocks, 4 ≤ b.1 ∧ b.1 ≤ b.2.1 ∧ b.2.1 ≤ 235 := by
+  decide
+
+/-- Sum over the blocks of g * PR D (M / key b). -/
+def sumK (D : ℕ) (L : List (ℕ × ℕ × ℕ)) (key : ℕ × ℕ × ℕ → ℕ) (M : ℕ) : ℕ :=
+  (L.map fun b => b.2.2 * PR D (M / key b)).sum
+
+/-- The new term of PR D (M / k) when M grows to M: D / (M / k) if k divides M, else 0. -/
+def inc (D M k : ℕ) : ℕ := if M % k = 0 then D / (M / k) else 0
+
+/-- The growth of sumK from M - 1 to M. -/
+def upK (D : ℕ) (L : List (ℕ × ℕ × ℕ)) (key : ℕ × ℕ × ℕ → ℕ) (M : ℕ) : ℕ :=
+  (L.map fun b => b.2.2 * inc D M (key b)).sum
+
+theorem PR_succ_div (D M k : ℕ) : PR D ((M + 1) / k) = PR D (M / k) + inc D (M + 1) k := by
+  unfold inc
+  by_cases h : (M + 1) % k = 0
+  · have hd : k ∣ M + 1 := Nat.dvd_of_mod_eq_zero h
+    have e := Nat.succ_div_of_dvd hd
+    have e2 : PR D (M / k + 1) = D / (M / k + 1) + PR D (M / k) := rfl
+    rw [if_pos h, e, e2]
+    omega
+  · have hd : ¬ k ∣ M + 1 := fun hd => h (Nat.mod_eq_zero_of_dvd hd)
+    rw [if_neg h, Nat.succ_div_of_not_dvd hd]
+    rfl
+
+theorem sumK_succ (D : ℕ) (L : List (ℕ × ℕ × ℕ)) (key : ℕ × ℕ × ℕ → ℕ) (M : ℕ) :
+    sumK D L key (M + 1) = sumK D L key M + upK D L key (M + 1) := by
+  induction L with
+  | nil => simp [sumK, upK]
+  | cons b L ih =>
+    simp only [sumK, upK, List.map_cons, List.sum_cons] at ih ⊢
+    rw [PR_succ_div, Nat.mul_add]
+    omega
+
+theorem sumK_zero (D : ℕ) (L : List (ℕ × ℕ × ℕ)) (key : ℕ × ℕ × ℕ → ℕ) :
+    sumK D L key 0 = 0 := by
+  induction L with
+  | nil => simp [sumK]
+  | cons b L ih =>
+    simp only [sumK, List.map_cons, List.sum_cons] at ih ⊢
+    rw [ih]
+    simp [PR]
+
+theorem cFr_add (D : ℕ) (L : List (ℕ × ℕ × ℕ)) (hL : ∀ b ∈ L, 1 ≤ b.1 ∧ b.1 ≤ b.2.1) (M : ℕ) :
+    cFr D L M + sumK D L (fun b => b.2.1 + 1) M = sumK D L (fun b => b.1) M := by
+  induction L with
+  | nil => simp [cFr, sumK]
+  | cons b L ih =>
+    have hb := hL b (by simp)
+    have ih2 := ih (fun c hc => hL c (by simp [hc]))
+    have h2 : M / (b.2.1 + 1) ≤ M / b.1 := Nat.div_le_div_left (by omega) (by omega)
+    have hle := PR_mono D h2
+    have key : b.2.2 * (PR D (M / b.1) - PR D (M / (b.2.1 + 1)))
+        + b.2.2 * PR D (M / (b.2.1 + 1)) = b.2.2 * PR D (M / b.1) := by
+      rw [← Nat.mul_add, Nat.sub_add_cancel hle]
+    simp only [cFr, sumK, List.map_cons, List.sum_cons] at ih2 ⊢
+    omega
+
+/-- Branch-free version of inc for D = 10^12, cheap in the kernel. -/
+def incb (M k : ℕ) : ℕ := bif Nat.beq (M % k) 0 then 1000000000000 / (M / k) else 0
+
+theorem incb_eq (M k : ℕ) : incb M k = inc 1000000000000 M k := by
+  unfold incb inc
+  cases hb : Nat.beq (M % k) 0
+  · have h := Nat.ne_of_beq_eq_false hb
+    rw [if_neg h]
+    rfl
+  · have h := Nat.eq_of_beq_eq_true hb
+    rw [if_pos h]
+    rfl
+
+/-- The growth of the sum of g * PR D (M / lo), written out block by block. -/
+def upA (M : ℕ) : ℕ :=
+    10000300 * incb M 4 + (10571746 * incb M 5 + (10000300 * incb M 6 + (5963454 * incb M 8
+     + (5000150 * incb M 9 + (4714428 * incb M 10 + (1666717 * incb M 12 + (1476235 * incb M 15
+     + (994583 * incb M 16 + (1666717 * incb M 18 + (1012273 * incb M 24 + (897983 * incb M 25
+     + (1219085 * incb M 27 + (463822 * incb M 40 + (545457 * incb M 42 + (156222 * incb M 48
+     + (213367 * incb M 50 + (306732 * incb M 60 + (444347 * incb M 63 + (400390 * incb M 65
+     + (452340 * incb M 66 + (33615 * incb M 84 + (185156 * incb M 88 + (216903 * incb M 90
+     + (117382 * incb M 112 + (147458 * incb M 114 + (122612 * incb M 115 + (90686 * incb M 140
+     + (115002 * incb M 141 + (61926 * incb M 142 + (95116 * incb M 144 + (75411 * incb M 145
+     + (22365 * incb M 232 + (10207 * incb M 235)))))))))))))))))))))))))))))))))
+
+/-- The growth of the sum of g * PR D (M / (hi + 1)), written out block by block. -/
+def upB (M : ℕ) : ℕ :=
+    10000300 * incb M 5 + (10571746 * incb M 6 + (10000300 * incb M 8 + (5963454 * incb M 9
+     + (5000150 * incb M 10 + (4714428 * incb M 12 + (1666717 * incb M 15 + (1476235 * incb M 16
+     + (994583 * incb M 18 + (1666717 * incb M 20 + (1012273 * incb M 25 + (897983 * incb M 27
+     + (1219085 * incb M 28 + (463822 * incb M 42 + (545457 * incb M 44 + (156222 * incb M 50
+     + (213367 * incb M 52 + (306732 * incb M 63 + (444347 * incb M 65 + (400390 * incb M 66
+     + (452340 * incb M 68 + (33615 * incb M 85 + (185156 * incb M 90 + (216903 * incb M 92
+     + (117382 * incb M 114 + (147458 * incb M 115 + (122612 * incb M 116 + (90686 * incb M 141
+     + (115002 * incb M 142 + (61926 * incb M 144 + (95116 * incb M 145 + (75411 * incb M 148
+     + (22365 * incb M 235 + (10207 * incb M 236)))))))))))))))))))))))))))))))))
+
+theorem upA_eq (M : ℕ) : upA M = upK 1000000000000 blocks (fun b => b.1) M := by
+  unfold upA upK blocks
+  simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, incb_eq, Nat.add_zero]
+
+theorem upB_eq (M : ℕ) : upB M = upK 1000000000000 blocks (fun b => b.2.1 + 1) M := by
+  unfold upB upK blocks
+  simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, incb_eq, Nat.add_zero]
+
+/-- Ascending scan: the state holds the two sums at m; checks M = m + 1, m + 2, ... -/
+def loopG (n m A B : ℕ) : Bool :=
+  Nat.rec (fun _ _ _ => true)
+    (fun _ ih m A B =>
+      (Nat.ble (m + 1) 3 ||
+        Nat.ble (10000000 * 1000000000000 + (B + upB (m + 1))) (A + upA (m + 1))) &&
+      ih (m + 1) (A + upA (m + 1)) (B + upB (m + 1))) n m A B
+
+theorem loopG_spec (n : ℕ) : ∀ m A B, loopG n m A B = true →
+    A = sumK 1000000000000 blocks (fun b => b.1) m →
+    B = sumK 1000000000000 blocks (fun b => b.2.1 + 1) m →
+    ∀ j, j < n → (m + 1 + j < 4 ∨
+      10000000 * 1000000000000 + sumK 1000000000000 blocks (fun b => b.2.1 + 1) (m + 1 + j)
+        ≤ sumK 1000000000000 blocks (fun b => b.1) (m + 1 + j)) := by
+  induction n with
+  | zero => intro m A B _ _ _ j hj; omega
+  | succ n ih =>
+    intro m A B h hA hB j hj
+    have h1 : ((Nat.ble (m + 1) 3 ||
+        Nat.ble (10000000 * 1000000000000 + (B + upB (m + 1))) (A + upA (m + 1))) &&
+      (loopG n (m + 1) (A + upA (m + 1)) (B + upB (m + 1)))) = true := h
+    rw [Bool.and_eq_true] at h1
+    have hA' : A + upA (m + 1) = sumK 1000000000000 blocks (fun b => b.1) (m + 1) := by
+      rw [sumK_succ, hA, upA_eq]
+    have hB' : B + upB (m + 1) = sumK 1000000000000 blocks (fun b => b.2.1 + 1) (m + 1) := by
+      rw [sumK_succ, hB, upB_eq]
+    rcases Nat.eq_zero_or_pos j with hj0 | hj0
+    · subst hj0
+      have h2 := h1.1
+      rw [Bool.or_eq_true] at h2
+      rw [hA', hB'] at h2
+      rcases h2 with h2 | h2
+      · left; have := Nat.le_of_ble_eq_true h2; omega
+      · right; have := Nat.le_of_ble_eq_true h2; simpa using this
+    · have h3 := ih (m + 1) _ _ h1.2 hA' hB' (j - 1) (by omega)
+      have e : m + 1 + 1 + (j - 1) = m + 1 + j := by omega
+      rw [e] at h3
+      exact h3
+
+-- @@L finite_check
+theorem finite_check_aux : loopG 5200 0 0 0 = true := by
   decide +kernel
 
 theorem finite_check (M : ℕ) (h4 : 4 ≤ M) (hM : M ≤ 5200) :
     10000000 * 1000000000000 ≤ cFl 1000000000000 blocks M := by
-  have h := finite_check_aux1 ⟨(M - 4) / 100, by omega⟩ ⟨(M - 4) % 100, by omega⟩
-  have e : 100 * ((M - 4) / 100) + (M - 4) % 100 + 4 = M := by omega
-  simp only [e] at h
-  exact h
-
-
+  have h := loopG_spec 5200 0 0 0 finite_check_aux
+    (sumK_zero _ _ _).symm (sumK_zero _ _ _).symm (M - 1) (by omega)
+  have e : 0 + 1 + (M - 1) = M := by omega
+  rw [e] at h
+  have hL : ∀ b ∈ blocks, 1 ≤ b.1 ∧ b.1 ≤ b.2.1 := fun b hb =>
+    ⟨by have := (blocks_ok b hb).1; omega, (blocks_ok b hb).2.1⟩
+  have h2 := cFr_add 1000000000000 blocks hL M
+  rw [cFr_eq 1000000000000 blocks hL M]
+  rcases h with h | h
+  · omega
+  · omega
 
 -- Assembly (proved)
-
-theorem blocks_ok : ∀ b ∈ blocks, 4 ≤ b.1 ∧ b.1 ≤ b.2.1 ∧ b.2.1 ≤ 235 := by
-  decide
 
 theorem c_ge (M : ℕ) (h4 : 4 ≤ M) : (10000000 : ℝ) ≤ cR blocks M := by
   have hL : ∀ b ∈ blocks, 1 ≤ b.1 ∧ b.1 ≤ b.2.1 := fun b hb =>
@@ -658,6 +882,7 @@ theorem main (n : ℕ) (hn : 172509 < n) (A : Finset ℕ) (hsub : A ⊆ Icc 1 n)
 
 end OMA.E542
 
+-- @@L END
 theorem OMA.solution : type_of% @Erdos542.erdos_542.variants.chen := by
   intro n hn A hA
   exact OMA.E542.main n hn A hA.1 (fun a ha b hb hab => hA.2 ha hb hab)
