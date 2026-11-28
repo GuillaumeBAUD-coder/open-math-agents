@@ -1,5 +1,6 @@
 import FormalConjectures.ErdosProblems.«859»
 import Mathlib.Data.Nat.Periodic
+import Mathlib.Tactic.GCongr
 
 /-! The divisor-sum set is periodic away from zero, with period `t!`. -/
 
@@ -15,14 +16,13 @@ lemma OMA.periodic_hasPosDensity {p : ℕ → Prop} {d : ℕ}
   have hd' : (0 : ℝ) < d := by exact_mod_cast hd
   have hdensity : 0 < density :=
     div_pos (by exact_mod_cast (Nat.pos_of_ne_zero (Nat.count_ne_iff_exists.mpr hnonempty))) hd'
-  have hshift (n : ℕ) : Nat.count (fun i ↦ p (i + d)) n = count n :=
-    congrArg (fun q : ℕ → Prop => Nat.count q n) (funext hp)
   have hblocks (q r : ℕ) : count (q * d + r) = q * count d + count r := by
     induction q with
     | zero => simp
     | succ q ih =>
       dsimp only [count]
-      rw [Nat.succ_mul, add_right_comm (q * d) d r, Nat.count_add', hshift]
+      rw [Nat.succ_mul, add_right_comm (q * d) d r, Nat.count_add',
+        congrArg (fun f : ℕ → Prop => Nat.count f _) (funext hp)]
       change count (q * d + r) + count d = (q + 1) * count d + count r
       rw [ih, Nat.succ_mul, add_right_comm]
   have hncard (n : ℕ) : ({m : ℕ | p m} ∩ Set.Iio n).ncard = count n := by
@@ -33,18 +33,16 @@ lemma OMA.periodic_hasPosDensity {p : ℕ → Prop} {d : ℕ}
     have small (b : ℕ → ℕ) (hb : ∀ n, b n ≤ d) :
         Tendsto (fun n : ℕ ↦ (b n : ℝ) / n) atTop (𝓝 0) :=
       squeeze_zero (fun _ => by positivity)
-        (fun n => div_le_div_of_nonneg_right (by exact_mod_cast hb n) (Nat.cast_nonneg n))
+        (fun n => by gcongr; exact_mod_cast hb n)
         (tendsto_const_div_atTop_nhds_zero_nat (d : ℝ))
     have hr := small (fun n => n % d) fun n => (Nat.mod_lt n hd).le
     have hc := small (fun n => count (n % d)) fun n =>
       (Nat.count_le (p := p)).trans (Nat.mod_lt n hd).le
-    have h1 : Tendsto (fun _ : ℕ => (1 : ℝ)) atTop (𝓝 1) := tendsto_const_nhds
-    have hlim := ((h1.sub hr).const_mul density).add hc
+    have hlim := ((tendsto_const_nhds (x := (1 : ℝ)).sub hr).const_mul density).add hc
     simp only [sub_zero, mul_one, add_zero] at hlim
     refine hlim.congr' ?_
     filter_upwards [eventually_ge_atTop (1 : ℕ)] with n hn
     have hn0 : (n : ℝ) ≠ 0 := by exact_mod_cast (show n ≠ 0 by omega)
-    have hd0 : (d : ℝ) ≠ 0 := by exact_mod_cast hd.ne'
     have hsplit := Nat.div_add_mod' n d
     have hcount := hblocks (n / d) (n % d)
     rw [hsplit] at hcount
@@ -53,7 +51,7 @@ lemma OMA.periodic_hasPosDensity {p : ℕ → Prop} {d : ℕ}
     push_cast at hsplit' hcount'
     change density * (1 - ((n % d : ℕ) : ℝ) / n) + (count (n % d) : ℝ) / n = (count n : ℝ) / n
     dsimp only [density]
-    field_simp [hd0, hn0]
+    field_simp [hd'.ne', hn0]
     rw [hcount', ← hsplit']
     ring
   refine ⟨density, hdensity, ?_⟩
@@ -75,23 +73,18 @@ theorem OMA.solution : type_of% @Erdos859.erdos_859.variants.positive_density :=
   have hp : Function.Periodic p d := by
     intro n
     apply propext
-    constructor <;> rintro ⟨s, h, hsum⟩ <;>
-      refine ⟨s, fun i hi ↦ ⟨(h i hi).1, ?_⟩, hsum⟩
-    · exact (hstep n hsum hi (h i hi).1).mpr (h i hi).2
-    · exact (hstep n hsum hi (h i hi).1).mp (h i hi).2
+    exact exists_congr fun s => and_congr_left fun hs => forall_congr' fun i =>
+      imp_congr_right fun hi => and_congr_right fun hpos => (hstep n hs hi hpos).symm
   have hset : {n | p n} = insert 0 (Erdos859.DivisorSumSet t) := by
     ext n
-    by_cases hn : n = 0
-    · subst n
-      exact iff_of_true hpzero (Set.mem_insert _ _)
+    rcases eq_or_ne n 0 with rfl | hn
+    · simp [hpzero]
     · simp only [Set.mem_setOf_eq, Set.mem_insert_iff, or_iff_right hn]
-      constructor
-      · rintro ⟨s, h, hsum⟩
-        exact ⟨s, fun i hi ↦ Nat.mem_divisors.mpr ⟨(h i hi).2, hn⟩, hsum⟩
-      · rintro ⟨s, h, hsum⟩
-        refine ⟨s, fun i hi ↦ ?_, hsum⟩
-        have hdiv := (Nat.mem_divisors.mp (h hi)).1
-        exact ⟨Nat.pos_of_dvd_of_pos hdiv (Nat.pos_of_ne_zero hn), hdiv⟩
+      constructor <;> rintro ⟨s, h, hsum⟩ <;> refine ⟨s, ?_, hsum⟩
+      · exact fun i hi => Nat.mem_divisors.mpr ⟨(h i hi).2, hn⟩
+      · intro i hi
+        have hd := (Nat.mem_divisors.mp (h hi)).1
+        exact ⟨Nat.pos_of_dvd_of_pos hd (Nat.pos_of_ne_zero hn), hd⟩
   have hzero : 0 ∉ Erdos859.DivisorSumSet t := by
     rintro ⟨s, hs, hsum⟩
     have hempty : s = ∅ := Finset.subset_empty.mp (by simpa using hs)
