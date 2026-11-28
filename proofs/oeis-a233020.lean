@@ -45,43 +45,28 @@ theorem good_iff (n : ℕ) (x : Fin (n + 1) → R) : Good x ↔ Walk x ∧ x 0 0
       omega
     · exact h2 (Nat.succ_pos n)
   · rintro ⟨⟨hok, hc⟩, h0⟩
-    refine ⟨fun p q hpq => ?_, fun h => ?_⟩
-    · obtain ⟨⟨pi, pj⟩, ⟨qi, qj⟩⟩ := (⟨p, q⟩ : (Fin (n + 1) × Fin 2) × (Fin (n + 1) × Fin 2))
-      obtain ⟨hne, h1, h2, -, -⟩ := hpq
-      have bp := (x p.1 p.2).isLt
-      have bq := (x q.1 q.2).isLt
-      suffices hs : (x p.1 p.2 : ℕ) + x q.1 q.2 ≠ 3 by omega
-      rcases lt_trichotomy (p.1 : ℕ) q.1 with hl | he | hg
-      · have hlt : (p.1 : ℕ) < n := by have := q.1.isLt; omega
-        have e1 : (⟨p.1, hlt⟩ : Fin n).castSucc = p.1 := Fin.ext rfl
-        have e2 : (⟨p.1, hlt⟩ : Fin n).succ = q.1 := Fin.ext (by simp; omega)
-        have := hc ⟨p.1, hlt⟩ p.2 q.2
-        rw [e1, e2] at this
-        exact this
-      · have hi : p.1 = q.1 := Fin.ext he
-        have hj : p.2 ≠ q.2 := fun h => hne (Prod.ext hi h)
-        have hv : (p.2 : ℕ) ≠ q.2 := fun h => hj (Fin.ext h)
-        have hp2 := p.2.isLt
-        have hq2 := q.2.isLt
-        have hk := hok p.1
-        have b0 := (x p.1 0).isLt
-        have b1 := (x p.1 1).isLt
-        rw [← hi]
-        rcases (show ((p.2 : ℕ) = 0 ∧ (q.2 : ℕ) = 1) ∨ ((p.2 : ℕ) = 1 ∧ (q.2 : ℕ) = 0) by omega) with
-          ⟨h3, h4⟩ | ⟨h3, h4⟩
-        · rw [show p.2 = 0 from Fin.ext h3, show q.2 = 1 from Fin.ext h4]
-          exact hk
-        · rw [show p.2 = 1 from Fin.ext h3, show q.2 = 0 from Fin.ext h4]
-          omega
-      · have hlt : (q.1 : ℕ) < n := by have := p.1.isLt; omega
-        have e1 : (⟨q.1, hlt⟩ : Fin n).castSucc = q.1 := Fin.ext rfl
-        have e2 : (⟨q.1, hlt⟩ : Fin n).succ = p.1 := Fin.ext (by simp; omega)
-        have := hc ⟨q.1, hlt⟩ q.2 p.2
-        rw [e1, e2] at this
+    have near (i k : Fin (n + 1)) (h : i.val + 1 = k.val) : compat (x i) (x k) := by
+      let j : Fin n := ⟨i.val, by have := k.isLt; omega⟩
+      simpa only [show j.castSucc = i from Fin.ext rfl, show j.succ = k from Fin.ext h] using hc j
+    refine ⟨?_, fun h => ?_⟩
+    · rintro ⟨i, j⟩ ⟨k, l⟩ ⟨hne, h1, h2, -, -⟩
+      change i.val ≤ k.val + 1 at h1
+      change k.val ≤ i.val + 1 at h2
+      change (x k l : ℕ) ≠ 3 - (x i j : ℕ)
+      have bp := (x i j).isLt
+      have bq := (x k l).isLt
+      suffices h : (x i j : ℕ) + x k l ≠ 3 by omega
+      rcases lt_trichotomy i.val k.val with hl | he | hg
+      · exact near i k (by omega) j l
+      · have hi : i = k := Fin.ext he
+        subst k
+        have hj : j ≠ l := fun e => hne (Prod.ext rfl e)
+        have hr : (x i 0 : ℕ) + x i 1 ≠ 3 := hok i
+        have columns : ∀ j l : Fin 2, j ≠ l → (j = 0 ∧ l = 1) ∨ (j = 1 ∧ l = 0) := by decide
+        rcases columns j l hj with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> simpa [add_comm] using hr
+      · have h := near k i (by omega) l j
         omega
-    · have e : (⟨0, h⟩ : Fin (n + 1)) = 0 := Fin.ext rfl
-      rw [e]
-      exact h0
+    · exact h0
 
 theorem walk_cons (n : ℕ) (r : R) (y : Fin (n + 1) → R) :
     Walk (Fin.cons r y : Fin (n + 2) → R) ↔ ok r ∧ compat r (y 0) ∧ Walk y := by
@@ -98,18 +83,17 @@ theorem walk_cons (n : ℕ) (r : R) (y : Fin (n + 1) → R) :
 /-- F(n, s): the number of row sequences of length n+1 satisfying the conditions, starting at s. -/
 def F (n : ℕ) (s : R) : ℕ := ∑ y : Fin (n + 1) → R, if Walk y ∧ y 0 = s then 1 else 0
 
+private lemma sum_fixed_row (s : R) (p : R → Prop) [DecidablePred p] :
+    (∑ r : R, if p r ∧ r = s then (1 : ℕ) else 0) = if p s then 1 else 0 := by
+  have h (r : R) : (if p r ∧ r = s then (1 : ℕ) else 0) =
+      if r = s then (if p r then 1 else 0) else 0 := by
+    by_cases hr : r = s <;> simp [hr]
+  simp [h, Finset.sum_ite_eq']
+
 theorem F_zero (s : R) : F 0 s = if ok s then 1 else 0 := by
   unfold F
   rw [← (Equiv.funUnique (Fin 1) R).symm.sum_comp]
-  have h : ∀ r : R, (if Walk ((Equiv.funUnique (Fin 1) R).symm r) ∧
-      (Equiv.funUnique (Fin 1) R).symm r 0 = s then 1 else 0) = if r = s then (if ok s then 1 else 0) else 0 := by
-    intro r
-    simp only [Equiv.funUnique_symm_apply, Walk, IsEmpty.forall_iff, and_true]
-    by_cases hr : r = s
-    · subst hr; simp
-    · simp [hr]
-  rw [Finset.sum_congr rfl (fun r _ => h r), Finset.sum_ite_eq']
-  simp
+  simpa [Equiv.funUnique_symm_apply, Walk] using sum_fixed_row s ok
 
 private theorem sum_by_state {U S : Type*} [Fintype U] [Fintype S] [DecidableEq S]
     (state : U → S) (valid : U → Prop) [DecidablePred valid]
@@ -136,20 +120,9 @@ theorem F_succ (n : ℕ) (s : R) :
   have lhs : F (n + 1) s = ∑ y : Fin (n + 1) → R, if ok s ∧ compat s (y 0) ∧ Walk y then 1 else 0 := by
     unfold F
     rw [← (Fin.consEquiv (fun _ : Fin (n + 2) => R)).sum_comp, Fintype.sum_prod_type, Finset.sum_comm]
-    apply Finset.sum_congr rfl
-    intro y _
-    have h : ∀ r : R, (if Walk ((Fin.consEquiv (fun _ : Fin (n + 2) => R)) (r, y)) ∧
-        (Fin.consEquiv (fun _ : Fin (n + 2) => R)) (r, y) 0 = s then 1 else 0) =
-        if r = s then (if ok s ∧ compat s (y 0) ∧ Walk y then 1 else 0) else 0 := by
-      intro r
-      rw [show (Fin.consEquiv (fun _ : Fin (n + 2) => R)) (r, y) = (Fin.cons r y : Fin (n + 2) → R)
-        from rfl]
-      simp only [walk_cons, Fin.cons_zero]
-      by_cases hr : r = s
-      · subst hr; simp
-      · simp [hr]
-    rw [Finset.sum_congr rfl (fun r _ => h r), Finset.sum_ite_eq']
-    simp
+    refine Finset.sum_congr rfl fun y _ => ?_
+    simpa only [Fin.consEquiv_apply, walk_cons, Fin.cons_zero] using
+      sum_fixed_row s (fun r => ok r ∧ compat r (y 0) ∧ Walk y)
   rw [lhs]
   unfold F
   simpa only [and_assoc] using
