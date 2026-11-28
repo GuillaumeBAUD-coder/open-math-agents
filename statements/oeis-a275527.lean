@@ -4,7 +4,7 @@ import Mathlib
 # OEIS A275527: classes of permutations under rotation and complement
 
 Source: https://oeis.org/A275527
-Credit: @SudharsanAnimations
+Credit: Sudharsan Rajendiran
 
 A275527(n) is the number of classes of permutations of length `n`, two permutations being equivalent
 if one is obtained from the other by a cyclic rotation (12345 -> 23451, ...), by the complement to
