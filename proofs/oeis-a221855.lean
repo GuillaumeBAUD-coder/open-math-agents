@@ -1,433 +1,905 @@
 import OMAStatements.S_oeis_a221855
-import Mathlib
+import Mathlib.GroupTheory.GroupAction.Quotient
+import Mathlib.Data.ZMod.Units
+import Mathlib.Tactic.Ring
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.IntervalCases
 
-open Finset
+-- Problem: A221855: Number of cyclotomic cosets of 13 mod 10^n.
+-- Upstream: formal-conjectures statements/oeis-a221855.lean:0 (declaration OMA.S_oeis_a221855.main)
+-- Credit: Daniel Whorlow (@draonbioetl)
+-- Proof via Burnside's lemma on Multiplicative (ZMod M) acting on ZMod (10^n) by multiplication by 13^k,
+-- combined with 2-adic and 5-adic Lifting the Exponent for 13^k - 1, CRT factorization, and coefficient extraction.
 
-namespace OMAOrbit
+namespace OMA_A221855
 
-/-- Fixed-point criterion for the multiplier `c`. -/
-theorem unit_pow_smul_eq_iff {N : ℕ} (c : ℕ) (hc0 : 0 < c) (hc : c.Coprime N) (x : ZMod N)
-    (k : ℕ) : (ZMod.unitOfCoprime c hc ^ k) • x = x ↔ (c : ZMod (addOrderOf x)) ^ k = 1 := by
-  have hk : 1 ≤ c ^ k := Nat.one_le_pow _ _ hc0
-  have h1 : (ZMod.unitOfCoprime c hc ^ k) • x = ((c ^ k : ℕ) : ZMod N) * x := by
-    rw [Units.smul_def, smul_eq_mul, Units.val_pow_eq_pow_val, ZMod.coe_unitOfCoprime]
-    push_cast; ring
-  have h2 : ((c ^ k : ℕ) : ZMod N) * x = x ↔ (c ^ k - 1) • x = 0 := by
-    rw [nsmul_eq_mul, Nat.cast_sub hk, sub_mul, Nat.cast_one, one_mul, sub_eq_zero]
-  rw [h1, h2, ← addOrderOf_dvd_iff_nsmul_eq_zero, ← ZMod.natCast_eq_zero_iff, Nat.cast_sub hk,
-    sub_eq_zero, Nat.cast_pow, Nat.cast_one]
+open OMA.S_oeis_a221855 Finset PowerSeries
 
-theorem card_filter_dvd_range {L o : ℕ} (ho : 0 < o) (hoL : o ∣ L) :
-    ((range L).filter (fun k => o ∣ k)).card = L / o := by
-  obtain ⟨q, rfl⟩ := hoL
-  rw [Nat.mul_div_cancel_left q ho]
-  have : (range (o * q)).filter (fun k => o ∣ k) = (range q).image (fun i => o * i) := by
-    ext k
-    simp only [mem_filter, mem_range, mem_image]
-    constructor
-    · rintro ⟨hk, i, rfl⟩
-      exact ⟨i, Nat.lt_of_mul_lt_mul_left hk, rfl⟩
-    · rintro ⟨i, hi, rfl⟩
-      exact ⟨Nat.mul_lt_mul_of_pos_left hi ho, dvd_mul_right o i⟩
-  rw [this, card_image_of_injective _ (fun a b h => Nat.eq_of_mul_eq_mul_left ho h), card_range]
+/-! ### Part 1: 2-adic and 5-adic LTE for `13^k - 1` -/
 
-/-- Orbit count of multiplication by `c` on `ZMod N`. -/
-theorem card_orbits {N : ℕ} [NeZero N] (c : ℕ) (hc0 : 0 < c) (hc : c.Coprime N) :
-    Nat.card (MulAction.orbitRel.Quotient (Subgroup.zpowers (ZMod.unitOfCoprime c hc)) (ZMod N))
-      = ∑ m ∈ N.divisors, m.totient / orderOf (c : ZMod m) := by
-  classical
-  set u := ZMod.unitOfCoprime c hc with hu
-  set L := orderOf u with hLdef
-  have hL : 0 < L := orderOf_pos u
-  have hB := MulAction.sum_card_fixedBy_eq_card_orbits_mul_card_group
-    (Subgroup.zpowers u) (ZMod N)
-  simp only [Fintype.card_eq_nat_card, Nat.card_zpowers] at hB
-  have hfix : ∀ g : Subgroup.zpowers u, Nat.card (MulAction.fixedBy (ZMod N) g)
-      = (univ.filter (fun x : ZMod N => g • x = x)).card := by
-    intro g
-    rw [← Fintype.card_eq_nat_card, ← Set.toFinset_card]
-    congr 1
-    ext x
-    simp [MulAction.mem_fixedBy]
-  have hstab : ∀ x : ZMod N, (univ.filter (fun g : Subgroup.zpowers u => g • x = x)).card
-      = L / orderOf (c : ZMod (addOrderOf x)) := by
+private lemma odd_sum_geom_odd {a m : ℕ} (ha : Odd a) (hm : Odd m) :
+    Odd (∑ i ∈ range m, a ^ i) := by
+  have hmod : ∀ i, a ^ i % 2 = 1 := by
+    intro i
+    rcases ha with ⟨k, rfl⟩
+    induction i with
+    | zero => simp
+    | succ i ih =>
+      rw [pow_succ, Nat.mul_mod, ih]
+      omega
+  have hsum : ∀ k, (∑ i ∈ range k, a ^ i) % 2 = k % 2 := by
+    intro k
+    induction k with
+    | zero => simp
+    | succ k ih =>
+      rw [sum_range_succ, Nat.add_mod, ih, hmod k]
+      omega
+  rw [Nat.odd_iff, hsum m]
+  exact Nat.odd_iff.mp hm
+
+private lemma pow_sub_one_eq_mul_geom (a m : ℕ) (ha : 1 ≤ a) :
+    a ^ m - 1 = (a - 1) * ∑ i ∈ range m, a ^ i := by
+  induction m with
+  | zero => simp
+  | succ m ih =>
+    have hge : 1 ≤ a ^ m := Nat.one_le_pow _ _ ha
+    have hge' : 1 ≤ a ^ (m + 1) := Nat.one_le_pow _ _ ha
+    rw [sum_range_succ, mul_add, ← ih]
+    zify [ha, hge, hge']
+    rw [pow_succ]
+    ring
+
+private lemma gcd_mul_right_of_coprime {a b c : ℕ} (h : Nat.Coprime b c) :
+    Nat.gcd (a * b) c = Nat.gcd a c := by
+  apply Nat.dvd_antisymm
+  · have hd_ab : Nat.gcd (a * b) c ∣ a * b := Nat.gcd_dvd_left (a * b) c
+    have hd_c : Nat.gcd (a * b) c ∣ c := Nat.gcd_dvd_right (a * b) c
+    have hcop : Nat.Coprime (Nat.gcd (a * b) c) b := (h.coprime_dvd_right hd_c).symm
+    exact Nat.dvd_gcd (hcop.dvd_of_dvd_mul_right hd_ab) hd_c
+  · exact Nat.dvd_gcd (dvd_mul_of_dvd_left (Nat.gcd_dvd_left a c) b) (Nat.gcd_dvd_right a c)
+
+/-- Exact 2-adic valuation of `13^(2^j) - 1`: `2^(j + 2) * t` with `t` odd for all `j : ℕ`. -/
+private lemma pow13_sub_one_two_adic_pow :
+    ∀ j : ℕ, ∃ t : ℕ, Odd t ∧ 13 ^ (2 ^ j) - 1 = 2 ^ (j + 2) * t := by
+  intro j
+  induction j with
+  | zero =>
+    exact ⟨3, ⟨1, rfl⟩, by decide⟩
+  | succ j ih =>
+    rcases ih with ⟨t, ⟨u, rfl⟩, ht⟩
+    have hpow : 13 ^ (2 ^ (j + 1)) = (13 ^ (2 ^ j)) ^ 2 := by
+      rw [← pow_mul, pow_succ]
+    have hge1 : 1 ≤ 13 ^ (2 ^ j) := Nat.one_le_pow _ _ (by omega)
+    have hfac : 13 ^ (2 ^ (j + 1)) - 1 = (13 ^ (2 ^ j) - 1) * (13 ^ (2 ^ j) + 1) := by
+      rw [hpow]
+      zify [hge1, show 1 ≤ (13 ^ (2 ^ j)) ^ 2 by nlinarith]
+      ring
+    have hplus : 13 ^ (2 ^ j) + 1 = 2 * (2 ^ (j + 1) * (2 * u + 1) + 1) := by
+      have h13 : 13 ^ (2 ^ j) = 2 ^ (j + 2) * (2 * u + 1) + 1 := by omega
+      rw [h13, pow_succ]
+      ring
+    refine ⟨(2 * u + 1) * (2 ^ (j + 1) * (2 * u + 1) + 1), ?_, ?_⟩
+    · have heven : 2 ∣ 2 ^ (j + 1) := dvd_pow_self 2 (by omega)
+      rcases heven with ⟨w, hw⟩
+      refine ⟨u + (2 * u + 1) * (w * (2 * u + 1)), ?_⟩
+      rw [hw]; ring
+    · rw [hfac, ht, hplus, pow_succ]
+      ring
+
+private lemma pow13_sub_one_two_adic (j m : ℕ) (hm : Odd m) :
+    ∃ t : ℕ, Odd t ∧ 13 ^ (2 ^ j * m) - 1 = 2 ^ (j + 2) * t := by
+  obtain ⟨t0, ht0, h0⟩ := pow13_sub_one_two_adic_pow j
+  have ha : 1 ≤ 13 ^ (2 ^ j) := Nat.one_le_pow _ _ (by omega)
+  have hodd_a : Odd (13 ^ (2 ^ j)) := Odd.pow ⟨6, rfl⟩
+  have hgeom := odd_sum_geom_odd hodd_a hm
+  refine ⟨t0 * ∑ i ∈ range m, (13 ^ (2 ^ j)) ^ i, ht0.mul hgeom, ?_⟩
+  rw [pow_mul, pow_sub_one_eq_mul_geom _ m ha, h0, mul_assoc]
+
+private lemma gcd_pow13_sub_one_two (j m n : ℕ) (hm : Odd m) :
+    Nat.gcd (13 ^ (2 ^ j * m) - 1) (2 ^ n) = 2 ^ (min n (j + 2)) := by
+  obtain ⟨t, ht, hEq⟩ := pow13_sub_one_two_adic j m hm
+  rw [hEq]
+  have hcop : Nat.Coprime t (2 ^ n) :=
+    Nat.Coprime.pow_right _ ((Nat.prime_two.coprime_iff_not_dvd.mpr (by
+      intro h2; rcases ht with ⟨u, hu⟩; omega)).symm)
+  rw [gcd_mul_right_of_coprime hcop]
+  by_cases h : n ≤ j + 2
+  · rw [Nat.min_eq_left h]
+    exact Nat.gcd_eq_right (Nat.pow_dvd_pow 2 h)
+  · rw [Nat.min_eq_right (by omega)]
+    exact Nat.gcd_eq_left (Nat.pow_dvd_pow 2 (by omega))
+
+/-- Exact 5-adic valuation of `13^(4 * 5^j) - 1`: `5^(j + 1) * t` with `5 ∤ t`. -/
+private lemma pow13_sub_one_five_adic_pow :
+    ∀ j : ℕ, ∃ t : ℕ, ¬ 5 ∣ t ∧ 13 ^ (4 * 5 ^ j) - 1 = 5 ^ (j + 1) * t := by
+  intro j
+  induction j with
+  | zero =>
+    exact ⟨5712, by decide, by decide⟩
+  | succ j ih =>
+    rcases ih with ⟨t, ht5, ht⟩
+    set a := 13 ^ (4 * 5 ^ j)
+    have ha1 : 1 ≤ a := Nat.one_le_pow _ _ (by omega)
+    have hpow : 13 ^ (4 * 5 ^ (j + 1)) = a ^ 5 := by
+      dsimp [a]; rw [← pow_mul]; congr 1; ring
+    have hfac : 13 ^ (4 * 5 ^ (j + 1)) - 1 = (a - 1) * (1 + a + a ^ 2 + a ^ 3 + a ^ 4) := by
+      rw [hpow, pow_sub_one_eq_mul_geom a 5 ha1]
+      simp [Finset.sum_range_succ]
+    have hd5 : 5 ∣ a - 1 := by
+      rw [ht]
+      exact dvd_mul_of_dvd_left (dvd_pow_self 5 (by omega)) t
+    rcases hd5 with ⟨w, hw⟩
+    have ha_eq : a = 1 + 5 * w := by omega
+    have hgeom : 1 + a + a ^ 2 + a ^ 3 + a ^ 4 =
+        5 * (1 + 10 * w + 50 * w ^ 2 + 125 * w ^ 3 + 125 * w ^ 4) := by
+      rw [ha_eq]; ring
+    set q := 1 + 10 * w + 50 * w ^ 2 + 125 * w ^ 3 + 125 * w ^ 4
+    have hq5 : ¬ 5 ∣ q := by omega
+    refine ⟨t * q, ?_, ?_⟩
+    · intro h5
+      rcases (Nat.prime_five.dvd_mul).mp h5 with h | h
+      · exact ht5 h
+      · exact hq5 h
+    · rw [hfac, ht, hgeom, pow_succ]
+      ring
+
+private lemma pow13_sub_one_five_adic (j m : ℕ) (hm : ¬ 5 ∣ m) :
+    ∃ t : ℕ, ¬ 5 ∣ t ∧ 13 ^ (4 * 5 ^ j * m) - 1 = 5 ^ (j + 1) * t := by
+  obtain ⟨t0, ht0, h0⟩ := pow13_sub_one_five_adic_pow j
+  set a := 13 ^ (4 * 5 ^ j)
+  have ha1 : 1 ≤ a := Nat.one_le_pow _ _ (by omega)
+  have h5a : 5 ∣ a - 1 := by
+    rw [h0]; exact dvd_mul_of_dvd_left (dvd_pow_self 5 (by omega)) t0
+  have ha_mod5 : a % 5 = 1 := by omega
+  have hgeom_mod5 : ∀ k, (∑ i ∈ range k, a ^ i) % 5 = k % 5 := by
+    intro k
+    induction k with
+    | zero => simp
+    | succ k ih =>
+      rw [sum_range_succ, Nat.add_mod, ih, Nat.pow_mod, ha_mod5]
+      simp
+  have hgeom5 : ¬ 5 ∣ ∑ i ∈ range m, a ^ i := by
+    intro h5
+    apply hm
+    have h1 : (∑ i ∈ range m, a ^ i) % 5 = 0 := Nat.mod_eq_zero_of_dvd h5
+    rw [hgeom_mod5 m] at h1
+    exact Nat.dvd_of_mod_eq_zero h1
+  refine ⟨t0 * ∑ i ∈ range m, a ^ i, ?_, ?_⟩
+  · intro h5
+    rcases (Nat.prime_five.dvd_mul).mp h5 with h | h
+    · exact ht0 h
+    · exact hgeom5 h
+  · rw [pow_mul, pow_sub_one_eq_mul_geom a m ha1, h0, mul_assoc]
+
+private lemma gcd_pow13_sub_one_five_not_four (k n : ℕ) (hk : ¬ 4 ∣ k) :
+    Nat.gcd (13 ^ k - 1) (5 ^ n) = 1 := by
+  have hmod5 : 13 ^ k % 5 ≠ 1 := by
+    have h134 : 13 ^ 4 % 5 = 1 := by decide
+    have hdiv : k = 4 * (k / 4) + k % 4 := (Nat.div_add_mod k 4).symm
+    rw [hdiv, pow_add, pow_mul, Nat.mul_mod, Nat.pow_mod, h134, one_pow]
+    have hr : k % 4 < 4 := Nat.mod_lt k (by decide)
+    have hr0 : k % 4 ≠ 0 := fun h0 => hk (Nat.dvd_of_mod_eq_zero h0)
+    interval_cases h : (k % 4)
+    · exact absurd rfl hr0
+    · decide
+    · decide
+    · decide
+  have hge1 : 1 ≤ 13 ^ k := Nat.one_le_pow _ _ (by omega)
+  have hndvd5 : ¬ 5 ∣ 13 ^ k - 1 := by omega
+  exact (Nat.Coprime.pow_right n (Nat.prime_five.coprime_iff_not_dvd.mpr hndvd5).symm).gcd_eq_one
+
+private lemma gcd_pow13_sub_one_five_four (j m n : ℕ) (hm : ¬ 5 ∣ m) :
+    Nat.gcd (13 ^ (4 * 5 ^ j * m) - 1) (5 ^ n) = 5 ^ (min n (j + 1)) := by
+  obtain ⟨t, ht5, hEq⟩ := pow13_sub_one_five_adic j m hm
+  rw [hEq]
+  have hcop : Nat.Coprime t (5 ^ n) :=
+    Nat.Coprime.pow_right n (Nat.prime_five.coprime_iff_not_dvd.mpr ht5).symm
+  rw [gcd_mul_right_of_coprime hcop]
+  by_cases h : n ≤ j + 1
+  · rw [Nat.min_eq_left h]
+    exact Nat.gcd_eq_right (Nat.pow_dvd_pow 5 h)
+  · rw [Nat.min_eq_right (by omega)]
+    exact Nat.gcd_eq_left (Nat.pow_dvd_pow 5 (by omega))
+
+/-! ### Part 2: Fixed-point counting and Burnside's lemma on `ZMod (10^n)` -/
+
+private lemma card_mul_eq_zero_zmod (N c : ℕ) [NeZero N] :
+    (univ.filter (fun x : ZMod N => (c : ZMod N) * x = 0)).card = Nat.gcd c N := by
+  have hN : 0 < N := NeZero.pos N
+  set d := Nat.gcd c N
+  have hd_pos : 0 < d := Nat.gcd_pos_of_pos_right c hN
+  have hd_dvd_c : d ∣ c := Nat.gcd_dvd_left c N
+  have hd_dvd_N : d ∣ N := Nat.gcd_dvd_right c N
+  set q := N / d
+  have hN_eq : N = q * d := (Nat.div_mul_cancel hd_dvd_N).symm
+  have hcop : Nat.Coprime (c / d) q :=
+    Nat.coprime_div_gcd_div_gcd hd_pos (m := c) (n := N)
+  have hiff : ∀ x : Fin N, ((c : ZMod N) * (x.val : ZMod N) = 0) ↔ q ∣ x.val := by
     intro x
-    have hcL : (c : ZMod (addOrderOf x)) ^ L = 1 := by
-      rw [← unit_pow_smul_eq_iff c hc0 hc x L, pow_orderOf_eq_one, one_smul]
-    have ho : 0 < orderOf (c : ZMod (addOrderOf x)) :=
-      orderOf_pos_iff.mpr (isOfFinOrder_iff_pow_eq_one.mpr ⟨L, hL, hcL⟩)
-    have hoL : orderOf (c : ZMod (addOrderOf x)) ∣ L := orderOf_dvd_of_pow_eq_one hcL
-    rw [← card_filter_dvd_range ho hoL]
-    symm
-    refine Finset.card_bij (fun k _ => (⟨u ^ k, k, by simp⟩ : Subgroup.zpowers u)) ?_ ?_ ?_
-    · intro k hk
-      simp only [mem_filter, mem_range, mem_univ, true_and] at hk ⊢
-      rw [Submonoid.smul_def]
-      exact (unit_pow_smul_eq_iff c hc0 hc x k).mpr (orderOf_dvd_iff_pow_eq_one.mp hk.2)
-    · intro a ha b hb hab
-      simp only [mem_filter, mem_range] at ha hb
-      have h : u ^ a = u ^ b := congrArg Subtype.val hab
-      exact pow_injOn_Iio_orderOf ha.1 hb.1 h
-    · intro g hg
-      simp only [mem_filter, mem_univ, true_and] at hg
-      have hg2 := (isOfFinOrder_of_finite u).mem_zpowers_iff_mem_range_orderOf.mp g.2
-      simp only [mem_image, mem_range] at hg2
-      obtain ⟨k, hk, hgk⟩ := hg2
-      refine ⟨k, ?_, Subtype.ext hgk⟩
-      simp only [mem_filter, mem_range]
-      refine ⟨hk, orderOf_dvd_of_pow_eq_one ?_⟩
-      rw [← unit_pow_smul_eq_iff c hc0 hc x k, hgk]
-      rw [Submonoid.smul_def] at hg
-      exact hg
-  have hswap : ∑ g : Subgroup.zpowers u, (univ.filter (fun x : ZMod N => g • x = x)).card
-      = ∑ x : ZMod N, (univ.filter (fun g : Subgroup.zpowers u => g • x = x)).card := by
-    simp only [card_eq_sum_ones, sum_filter]
-    exact sum_comm
-  have hgroup : ∑ x : ZMod N, L / orderOf (c : ZMod (addOrderOf x))
-      = ∑ m ∈ N.divisors, m.totient * (L / orderOf (c : ZMod m)) := by
-    rw [← sum_fiberwise_of_maps_to (s := univ) (t := N.divisors) (g := addOrderOf)
-      (fun x _ => Nat.mem_divisors.mpr
-        ⟨by simpa [ZMod.card] using addOrderOf_dvd_card (x := x), NeZero.ne N⟩)]
-    apply sum_congr rfl
-    intro m hm
-    rw [sum_congr rfl (fun x hx => by rw [(mem_filter.1 hx).2]), sum_const, smul_eq_mul]
-    congr 1
-    have hmN : m ∣ Fintype.card (ZMod N) := by
-      rw [ZMod.card]; exact Nat.dvd_of_mem_divisors hm
-    have := IsAddCyclic.card_addOrderOf_eq_totient (α := ZMod N) hmN
-    simpa using this
-  have hdiv : ∀ m ∈ N.divisors, orderOf (c : ZMod m) ∣ m.totient ∧ orderOf (c : ZMod m) ∣ L := by
-    intro m hm
-    have hmN : m ∣ N := Nat.dvd_of_mem_divisors hm
-    have hcm : c.Coprime m := Nat.Coprime.coprime_dvd_right hmN hc
-    have e1 : orderOf (c : ZMod m) = orderOf (ZMod.unitOfCoprime c hcm) := by
-      rw [← orderOf_units, ZMod.coe_unitOfCoprime]
-    refine ⟨?_, ?_⟩
-    · rw [e1]; exact orderOf_dvd_of_pow_eq_one (ZMod.pow_totient _)
-    · apply orderOf_dvd_of_pow_eq_one
-      have h1 : ((u ^ L : (ZMod N)ˣ) : ZMod N) = 1 := by
-        rw [hLdef, pow_orderOf_eq_one, Units.val_one]
-      rw [Units.val_pow_eq_pow_val, hu, ZMod.coe_unitOfCoprime] at h1
-      have h2 := congrArg (ZMod.castHom hmN (ZMod m)) h1
-      rw [map_pow, map_natCast, map_one] at h2
-      exact h2
-  have key : Nat.card (MulAction.orbitRel.Quotient (Subgroup.zpowers u) (ZMod N)) * L
-      = (∑ m ∈ N.divisors, m.totient / orderOf (c : ZMod m)) * L := by
-    have e : Nat.card (MulAction.orbitRel.Quotient (Subgroup.zpowers u) (ZMod N))
-        = Nat.card (Quotient (MulAction.orbitRel (Subgroup.zpowers u) (ZMod N))) := rfl
-    rw [e, ← hB, sum_congr rfl (fun g _ => hfix g), hswap, sum_congr rfl (fun x _ => hstab x),
-      hgroup, sum_mul]
-    apply sum_congr rfl
-    intro m hm
-    obtain ⟨⟨a, ha⟩, ⟨b, hb⟩⟩ := hdiv m hm
-    have ho : 0 < orderOf (c : ZMod m) := by
-      rcases Nat.eq_zero_or_pos (orderOf (c : ZMod m)) with h | h
-      · rw [h, zero_mul] at hb; omega
-      · exact h
-    rw [ha, hb, Nat.mul_div_cancel_left _ ho, Nat.mul_div_cancel_left _ ho]
-    ring
-  exact Nat.eq_of_mul_eq_mul_right hL key
+    rw [← Nat.cast_mul, ZMod.natCast_eq_zero_iff]
+    constructor
+    · intro hNdvd
+      have h1 : q * d ∣ (c / d) * d * x.val := by
+        rwa [← hN_eq, Nat.div_mul_cancel hd_dvd_c]
+      rw [mul_assoc, mul_comm d x.val, ← mul_assoc] at h1
+      have h2 : q ∣ (c / d) * x.val := (mul_dvd_mul_iff_right (by omega : d ≠ 0)).mp (by
+        simpa [mul_assoc] using h1)
+      exact hcop.symm.dvd_of_dvd_mul_left h2
+    · rintro ⟨t, ht⟩
+      refine ⟨(c / d) * t, ?_⟩
+      calc
+        c * x.val = (c / d * d) * (q * t) := by rw [Nat.div_mul_cancel hd_dvd_c, ht]
+        _ = (q * d) * ((c / d) * t) := by ring
+        _ = N * ((c / d) * t) := by rw [← hN_eq]
+  have hcard_fin : (univ.filter (fun x : ZMod N => (c : ZMod N) * x = 0)).card =
+      (univ : Finset (Fin d)).card := by
+    refine Finset.card_bij (fun x _ => ⟨x.val / q, ?_⟩) ?_ ?_ ?_
+    · have hxlt : x.val < N := ZMod.val_lt x
+      exact Nat.div_lt_of_lt_mul (by rw [← hN_eq]; exact hxlt)
+    · intro x _; exact mem_univ _
+    · intro x1 hx1 x2 hx2 hEq
+      have h1 : (c : ZMod N) * (x1.val : ZMod N) = 0 := by
+        simpa using (mem_filter.mp hx1).2
+      have h2 : (c : ZMod N) * (x2.val : ZMod N) = 0 := by
+        simpa using (mem_filter.mp hx2).2
+      have hd1 : q ∣ x1.val := (hiff ⟨x1.val, ZMod.val_lt x1⟩).mp h1
+      have hd2 : q ∣ x2.val := (hiff ⟨x2.val, ZMod.val_lt x2⟩).mp h2
+      have hdiv : x1.val / q = x2.val / q := congrArg Fin.val hEq
+      have hval : x1.val = x2.val := by
+        rw [← Nat.mul_div_cancel' hd1, ← Nat.mul_div_cancel' hd2, hdiv]
+      exact ZMod.val_injective N hval
+    · intro t _
+      have hqpos : 0 < q := Nat.div_pos (Nat.le_of_dvd hN hd_dvd_N) hd_pos
+      have hlt : q * t.val < N := by
+        rw [hN_eq]; exact Nat.mul_lt_mul_of_pos_left t.isLt hqpos
+      refine ⟨((q * t.val : ℕ) : ZMod N), mem_filter.mpr ⟨mem_univ _, ?_⟩, ?_⟩
+      · exact (hiff ⟨q * t.val, hlt⟩).mpr ⟨t.val, rfl⟩
+      · apply Fin.ext
+        dsimp
+        rw [ZMod.val_natCast, Nat.mod_eq_of_lt hlt, Nat.mul_div_right _ hqpos]
+  simpa using hcard_fin
 
-/-- Order modulo a coprime product is the lcm of the orders. -/
-theorem orderOf_natCast_mul (c a b : ℕ) (hab : a.Coprime b) :
-    orderOf (c : ZMod (a * b)) = Nat.lcm (orderOf (c : ZMod a)) (orderOf (c : ZMod b)) := by
-  rw [← MulEquiv.orderOf_eq (ZMod.chineseRemainder hab).toMulEquiv (c : ZMod (a * b))]
-  have h : (ZMod.chineseRemainder hab).toMulEquiv (c : ZMod (a * b))
-      = ((c : ZMod a), (c : ZMod b)) := by
-    rw [RingEquiv.toMulEquiv_eq_coe, RingEquiv.coe_toMulEquiv, map_natCast]
+private lemma card_fixed_pow13 (n k : ℕ) :
+    (univ.filter (fun x : ZMod (10 ^ n) => (13 : ZMod (10 ^ n)) ^ k * x = x)).card =
+      Nat.gcd (13 ^ k - 1) (10 ^ n) := by
+  have hge1 : 1 ≤ 13 ^ k := Nat.one_le_pow _ _ (by omega)
+  have hcast : ((13 ^ k - 1 : ℕ) : ZMod (10 ^ n)) = (13 : ZMod (10 ^ n)) ^ k - 1 := by
+    rw [Nat.cast_sub hge1, Nat.cast_pow, Nat.cast_one]
     rfl
-  rw [h, Prod.orderOf]
+  have hfilt : univ.filter (fun x : ZMod (10 ^ n) => (13 : ZMod (10 ^ n)) ^ k * x = x) =
+      univ.filter (fun x : ZMod (10 ^ n) => ((13 ^ k - 1 : ℕ) : ZMod (10 ^ n)) * x = 0) := by
+    ext x
+    simp only [mem_filter, mem_univ, true_and, hcast, sub_mul, one_mul, sub_eq_zero]
+  rw [hfilt]
+  exact card_mul_eq_zero_zmod (10 ^ n) (13 ^ k - 1)
 
-/-- Divisor sums over `2^n * 5^n`. -/
-theorem sum_divisors_two_five (n : ℕ) (f : ℕ → ℕ) :
-    ∑ m ∈ (2 ^ n * 5 ^ n).divisors, f m
-      = ∑ i ∈ range (n + 1), ∑ j ∈ range (n + 1), f (2 ^ i * 5 ^ j) := by
-  have hcop : (2 ^ n).Coprime (5 ^ n) := by
-    apply Nat.Coprime.pow; norm_num
-  rw [Nat.divisors_mul, Finset.mul_def, sum_image (fun p hp q hq h =>
-    hcop.mul_injOn_divisors (by simpa using hp) (by simpa using hq) h), sum_product,
-    Nat.divisors_prime_pow Nat.prime_two, sum_map]
-  apply sum_congr rfl
-  intro i _
-  rw [Nat.divisors_prime_pow (by norm_num : Nat.Prime 5), sum_map]
-  rfl
-
-
-theorem natCast_pow_eq_one_iff (c e M : ℕ) (hc : 0 < c) :
-    ((c : ZMod M)) ^ e = 1 ↔ M ∣ c ^ e - 1 := by
-  have hk : 1 ≤ c ^ e := Nat.one_le_pow _ _ hc
-  rw [← ZMod.natCast_eq_zero_iff, Nat.cast_sub hk, sub_eq_zero, Nat.cast_pow, Nat.cast_one]
-
-theorem tot2 (i : ℕ) : (2 ^ i).totient = if i = 0 then 1 else 2 ^ (i - 1) := by
-  rcases i with _ | i
-  · simp
-  · rw [Nat.totient_prime_pow_succ Nat.prime_two]
-    simp
-
-theorem tot5 (l : ℕ) : (5 ^ (l + 1)).totient = 4 * 5 ^ l := by
-  rw [Nat.totient_prime_pow_succ (by norm_num : Nat.Prime 5)]
-  ring
-
--- a = 1 + 2^(e+2) t0 with t0 odd gives a^(2^m) = 1 + 2^(m+e+2) t with t odd
-theorem pow_two_pow_gen (a t0 e : ℕ) (ha : a = 1 + 2 ^ (e + 2) * t0) (ht0 : t0 % 2 = 1)
-    (m : ℕ) : ∃ t, t % 2 = 1 ∧ a ^ (2 ^ m) = 1 + 2 ^ (m + e + 2) * t := by
-  induction m with
-  | zero => exact ⟨t0, ht0, by rw [pow_zero, pow_one, ha]; ring_nf⟩
-  | succ m ih =>
-    obtain ⟨t, ht, h⟩ := ih
-    refine ⟨t + 2 * (2 ^ (m + e) * t ^ 2), ?_, ?_⟩
-    · rw [Nat.add_mul_mod_self_left]; exact ht
-    · rw [pow_succ, pow_mul, h]; ring
-
--- a = 1 + 5 t0 with 5 not dividing t0 gives a^(5^m) = 1 + 5^(m+1) t with 5 not dividing t
-theorem pow_five_pow_gen (a t0 : ℕ) (ha : a = 1 + 5 * t0) (ht0 : t0 % 5 ≠ 0) (m : ℕ) :
-    ∃ t, t % 5 ≠ 0 ∧ a ^ (5 ^ m) = 1 + 5 ^ (m + 1) * t := by
-  induction m with
-  | zero => exact ⟨t0, ht0, by rw [pow_zero, pow_one, ha]; ring⟩
-  | succ m ih =>
-    obtain ⟨t, ht, h⟩ := ih
-    refine ⟨t + 5 * (2 * 5 ^ m * t ^ 2 + 2 * 5 ^ (2 * m + 1) * t ^ 3 + 5 ^ (3 * m + 2) * t ^ 4
-      + 5 ^ (4 * m + 2) * t ^ 5), ?_, ?_⟩
-    · rw [Nat.add_mul_mod_self_left]; exact ht
-    · rw [pow_succ, pow_mul, h]; ring
-
-theorem pow_mod_five_four (o : ℕ) (h : 13 ^ o % 5 = 1) : 4 ∣ o := by
-  induction o using Nat.strong_induction_on with
-  | _ o ih =>
-    rcases Nat.lt_or_ge o 4 with ho | ho
-    · interval_cases o <;> simp_all
-    · obtain ⟨p, rfl⟩ : ∃ p, o = p + 4 := ⟨o - 4, by omega⟩
-      have e : 13 ^ (p + 4) % 5 = 13 ^ p % 5 := by
-        rw [pow_add, Nat.mul_mod]; norm_num
-      have := ih p (by omega) (by rw [← e]; exact h)
-      omega
-
-theorem orderOf_c_two_pow (i : ℕ) :
-    orderOf ((13 : ℕ) : ZMod (2 ^ i)) = if i ≤ 2 then 1 else 2 ^ (i - 2) := by
-  split_ifs with h
-  · rw [orderOf_eq_one_iff]
-    have e : ((13 : ℕ) : ZMod (2 ^ i)) = ((1 : ℕ) : ZMod (2 ^ i)) := by
-      rw [ZMod.natCast_eq_natCast_iff']
-      interval_cases i <;> rfl
-    rw [e, Nat.cast_one]
-  · obtain ⟨k, rfl⟩ : ∃ k, i = k + 3 := ⟨i - 3, by omega⟩
-    rw [show k + 3 - 2 = k + 1 by omega]
-    have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
-    apply orderOf_eq_prime_pow
-    · rw [natCast_pow_eq_one_iff _ _ _ (by norm_num)]
-      obtain ⟨t, ht, h⟩ := pow_two_pow_gen 13 3 0 (by norm_num) (by norm_num) k
-      rw [h, Nat.add_sub_cancel_left]
-      intro hd
-      have h2 : 2 ^ (k + 0 + 2) * 2 ∣ 2 ^ (k + 0 + 2) * t := by
-        rw [← pow_succ]; exact hd
-      have h3 := Nat.dvd_of_mul_dvd_mul_left (by positivity) h2
-      omega
-    · rw [natCast_pow_eq_one_iff _ _ _ (by norm_num)]
-      obtain ⟨t, ht, h⟩ := pow_two_pow_gen 13 3 0 (by norm_num) (by norm_num) (k + 1)
-      rw [h, Nat.add_sub_cancel_left]
-      exact ⟨t, by ring⟩
-
-theorem orderOf_c_five_pow (j : ℕ) :
-    orderOf ((13 : ℕ) : ZMod (5 ^ j)) = if j = 0 then 1 else 4 * 5 ^ (j - 1) := by
-  split_ifs with h
-  · subst h
-    rw [orderOf_eq_one_iff]
-    have e : ((13 : ℕ) : ZMod (5 ^ 0)) = ((1 : ℕ) : ZMod (5 ^ 0)) := by
-      rw [ZMod.natCast_eq_natCast_iff']; rfl
-    rw [e, Nat.cast_one]
-  · obtain ⟨l, rfl⟩ : ∃ l, j = l + 1 := ⟨j - 1, by omega⟩
-    rw [Nat.add_sub_cancel]
-    have : Fact (Nat.Prime 5) := ⟨by norm_num⟩
-    have hy : orderOf (((13 : ℕ) : ZMod (5 ^ (l + 1))) ^ 4) = 5 ^ l := by
-      rcases l with _ | l
-      · rw [pow_zero, orderOf_eq_one_iff, natCast_pow_eq_one_iff _ _ _ (by norm_num)]
-        norm_num
-      · apply orderOf_eq_prime_pow
-        · rw [← pow_mul, natCast_pow_eq_one_iff _ _ _ (by norm_num), pow_mul]
-          obtain ⟨t, ht, h⟩ := pow_five_pow_gen (13 ^ 4) 5712 (by norm_num) (by norm_num) l
-          rw [h, Nat.add_sub_cancel_left]
-          intro hd
-          have h2 : 5 ^ (l + 1) * 5 ∣ 5 ^ (l + 1) * t := by
-            rw [← pow_succ]; exact hd
-          have h3 := Nat.dvd_of_mul_dvd_mul_left (by positivity) h2
-          omega
-        · rw [← pow_mul, natCast_pow_eq_one_iff _ _ _ (by norm_num), pow_mul]
-          obtain ⟨t, ht, h⟩ := pow_five_pow_gen (13 ^ 4) 5712 (by norm_num) (by norm_num) (l + 1)
-          rw [h, Nat.add_sub_cancel_left]
-          exact ⟨t, by ring⟩
-    have h4 : 4 ∣ orderOf ((13 : ℕ) : ZMod (5 ^ (l + 1))) := by
-      apply pow_mod_five_four
-      have h1 := pow_orderOf_eq_one ((13 : ℕ) : ZMod (5 ^ (l + 1)))
-      rw [natCast_pow_eq_one_iff _ _ _ (by norm_num)] at h1
-      have h2 : 5 ∣ 13 ^ orderOf ((13 : ℕ) : ZMod (5 ^ (l + 1))) - 1 :=
-        (dvd_pow_self 5 (Nat.succ_ne_zero l)).trans h1
-      have hpos : 1 ≤ 13 ^ orderOf ((13 : ℕ) : ZMod (5 ^ (l + 1))) := Nat.one_le_pow _ _ (by norm_num)
-      generalize 13 ^ orderOf ((13 : ℕ) : ZMod (5 ^ (l + 1))) = X at h2 hpos ⊢
-      omega
-    have h5 := orderOf_pow' ((13 : ℕ) : ZMod (5 ^ (l + 1))) (n := 4) (by norm_num)
-    rw [hy, Nat.gcd_eq_right h4] at h5
-    omega
-
-def a13 (i : ℕ) : ℕ := if i ≤ 1 then 1 else 2
-
-def b13 (i : ℕ) : ℕ := if i ≤ 1 then 1 else if i = 2 then 2 else if i = 3 then 4 else 8
-
-theorem lcm_of_dvd {a b : ℕ} (h : a ∣ b) : Nat.lcm a b = b :=
-  Nat.dvd_antisymm (Nat.lcm_dvd h dvd_rfl) (Nat.dvd_lcm_right a b)
-
-theorem term13 (i j : ℕ) :
-    (2 ^ i * 5 ^ j).totient / orderOf ((13 : ℕ) : ZMod (2 ^ i * 5 ^ j))
-      = if j = 0 then a13 i else b13 i := by
-  have hcop : (2 ^ i).Coprime (5 ^ j) := Nat.Coprime.pow _ _ (by norm_num)
-  rw [orderOf_natCast_mul _ _ _ hcop, orderOf_c_two_pow, orderOf_c_five_pow,
-    Nat.totient_mul hcop, tot2]
-  rcases (show i ≤ 2 ∨ i = 3 ∨ ∃ k, i = k + 4 by
-    rcases Nat.lt_or_ge i 4 with h | h
-    · omega
-    · right; right; exact ⟨i - 4, by omega⟩) with hi | rfl | ⟨k, rfl⟩
-  · have hb : (if i = 0 then 1 else 2 ^ (i - 1)) = b13 i := by
-      unfold b13; interval_cases i <;> rfl
-    have ha : a13 i = b13 i := by
-      unfold a13 b13; interval_cases i <;> rfl
-    rw [hb, if_pos hi, ha]
-    rcases j with _ | l
-    · simp
-    · rw [if_neg (Nat.succ_ne_zero l), if_neg (Nat.succ_ne_zero l), Nat.add_sub_cancel, tot5,
-        Nat.lcm_one_left]
-      apply Nat.div_eq_of_eq_mul_left (by positivity)
-      ring
-  · rw [if_neg (show ¬ (3 : ℕ) = 0 by norm_num), if_neg (show ¬ (3 : ℕ) ≤ 2 by norm_num),
-      show (3 : ℕ) - 2 = 1 from rfl, show (3 : ℕ) - 1 = 2 from rfl, pow_one]
-    rcases j with _ | l
-    · rw [if_pos rfl, if_pos rfl, pow_zero, Nat.totient_one, Nat.lcm_one_right, mul_one]
-      unfold a13
-      rw [if_neg (show ¬ (3 : ℕ) ≤ 1 by norm_num)]
-      norm_num
-    · rw [if_neg (Nat.succ_ne_zero l), if_neg (Nat.succ_ne_zero l), Nat.add_sub_cancel, tot5,
-        lcm_of_dvd (Dvd.dvd.mul_right (by norm_num : (2 : ℕ) ∣ 4) _)]
-      unfold b13
-      rw [if_neg (show ¬ (3 : ℕ) ≤ 1 by norm_num), if_neg (show ¬ (3 : ℕ) = 2 by norm_num),
-        if_pos (show (3 : ℕ) = 3 from rfl)]
-      apply Nat.div_eq_of_eq_mul_left (by positivity)
-      ring
-  · rw [if_neg (show ¬ (k + 4 = 0) by omega), if_neg (show ¬ (k + 4 ≤ 2) by omega),
-      show k + 4 - 2 = k + 2 by omega, show k + 4 - 1 = k + 3 by omega]
-    rcases j with _ | l
-    · rw [if_pos rfl, if_pos rfl, pow_zero, Nat.totient_one, Nat.lcm_one_right, mul_one]
-      unfold a13
-      rw [if_neg (show ¬ (k + 4 ≤ 1) by omega)]
-      apply Nat.div_eq_of_eq_mul_left (by positivity)
-      ring
-    · rw [if_neg (Nat.succ_ne_zero l), if_neg (Nat.succ_ne_zero l), Nat.add_sub_cancel, tot5,
-        show 2 ^ (k + 2) = 4 * 2 ^ k by ring, Nat.lcm_mul_left,
-        Nat.Coprime.lcm_eq_mul (Nat.Coprime.pow _ _ (by norm_num))]
-      unfold b13
-      rw [if_neg (show ¬ (k + 4 ≤ 1) by omega), if_neg (show ¬ (k + 4 = 2) by omega),
-        if_neg (show ¬ (k + 4 = 3) by omega)]
-      apply Nat.div_eq_of_eq_mul_left (by positivity)
-      ring
-
-theorem sum13 (n : ℕ) :
-    ∑ i ∈ range (n + 1), ∑ j ∈ range (n + 1), (if j = 0 then a13 i else b13 i)
-      = ∑ i ∈ range (n + 1), a13 i + n * ∑ i ∈ range (n + 1), b13 i := by
-  rw [mul_sum, ← sum_add_distrib]
-  apply sum_congr rfl
-  intro i _
-  rw [sum_range_succ']
-  simp only [Nat.succ_ne_zero, if_false, if_true, sum_const, card_range, smul_eq_mul]
-  ring
-
-theorem sumA13 (n : ℕ) (hn : 3 ≤ n) : ∑ i ∈ range (n + 1), a13 i = 2 * n := by
-  induction n, hn using Nat.le_induction with
-  | base => simp [sum_range_succ, a13]
-  | succ n hn ih =>
-    rw [sum_range_succ, show a13 (n + 1) = 2 by unfold a13; rw [if_neg (by omega)]]
-    omega
-
-theorem sumB13 (n : ℕ) (hn : 3 ≤ n) : ∑ i ∈ range (n + 1), b13 i + 16 = 8 * n := by
-  induction n, hn using Nat.le_induction with
-  | base => simp [sum_range_succ, b13]
-  | succ n hn ih =>
-    rw [sum_range_succ, show b13 (n + 1) = 8 by
-      unfold b13; rw [if_neg (by omega), if_neg (by omega), if_neg (by omega)]]
-    omega
-
-theorem card13 (n : ℕ) (hc : Nat.Coprime 13 (10 ^ n)) :
-    Nat.card (MulAction.orbitRel.Quotient (Subgroup.zpowers (ZMod.unitOfCoprime 13 hc))
-      (ZMod (10 ^ n))) = ∑ i ∈ range (n + 1), a13 i + n * ∑ i ∈ range (n + 1), b13 i := by
+/-- General Burnside identity: whenever `0 < M` and `10^n ∣ 13^M - 1`,
+`M * a n = ∑ k ∈ range M, gcd(13^k - 1, 10^n)`. -/
+private lemma burnside_general (n M : ℕ) (hMpos : 0 < M) (hdvd : 10 ^ n ∣ 13 ^ M - 1) :
+    (M : ℤ) * a n = ∑ k ∈ range M, (Nat.gcd (13 ^ k - 1) (10 ^ n) : ℤ) := by
+  classical
+  have : NeZero M := ⟨by omega⟩
   have : NeZero (10 ^ n) := ⟨by positivity⟩
-  rw [card_orbits 13 (by norm_num) hc, show (10 : ℕ) ^ n = 2 ^ n * 5 ^ n by rw [← mul_pow]; norm_num,
-    sum_divisors_two_five n (fun m => m.totient / orderOf ((13 : ℕ) : ZMod m))]
-  simp only [term13]
-  exact sum13 n
+  let : Fintype (Multiplicative (ZMod M)) := Fintype.ofEquiv (ZMod M) Multiplicative.ofAdd
+  set u13 : (ZMod (10 ^ n))ˣ := ZMod.unitOfCoprime 13 ((by decide : Nat.Coprime 13 10).pow_right n)
+  have hu13_powM : u13 ^ M = 1 := by
+    apply Units.ext
+    change (13 : ZMod (10 ^ n)) ^ M = 1
+    have hge1 : 1 ≤ 13 ^ M := Nat.one_le_pow _ _ (by omega)
+    have h0 : ((13 ^ M - 1 : ℕ) : ZMod (10 ^ n)) = 0 := (ZMod.natCast_eq_zero_iff _ _).mpr hdvd
+    rw [Nat.cast_sub hge1, Nat.cast_pow, Nat.cast_one] at h0
+    exact sub_eq_zero.mp h0
+  let φ : Multiplicative (ZMod M) →* (ZMod (10 ^ n))ˣ :=
+    { toFun := fun k => u13 ^ (Multiplicative.toAdd k).val
+      map_one' := by simp
+      map_mul' := fun x y => by
+        change u13 ^ ((Multiplicative.toAdd x + Multiplicative.toAdd y).val) =
+          u13 ^ (Multiplicative.toAdd x).val * u13 ^ (Multiplicative.toAdd y).val
+        rw [← pow_add, ZMod.val_add]
+        set s := (Multiplicative.toAdd x).val + (Multiplicative.toAdd y).val
+        have hdiv : s = M * (s / M) + s % M := (Nat.div_add_mod s M).symm
+        conv_rhs => rw [hdiv, pow_add, pow_mul, hu13_powM, one_pow, one_mul] }
+  let : MulAction (Multiplicative (ZMod M)) (ZMod (10 ^ n)) :=
+    MulAction.compHom (ZMod (10 ^ n)) φ
+  have horb_eq : ∀ x y : ZMod (10 ^ n),
+      MulAction.orbitRel (Subgroup.zpowers u13) (ZMod (10 ^ n)) x y ↔
+      MulAction.orbitRel (Multiplicative (ZMod M)) (ZMod (10 ^ n)) x y := by
+    intro x y
+    constructor
+    · rintro ⟨⟨g, hg⟩, hgx⟩
+      rw [Subgroup.mem_zpowers_iff] at hg
+      rcases hg with ⟨m, rfl⟩
+      refine ⟨Multiplicative.ofAdd (m : ZMod M), ?_⟩
+      change (u13 ^ ((m : ZMod M).val)) • y = x
+      rw [← hgx]
+      change (u13 ^ ((m : ZMod M).val)) • y = (u13 ^ m) • y
+      congr 1
+      have hmod : (m : ℤ) ≡ ((m : ZMod M).val : ℤ) [ZMOD (M : ℤ)] := by
+        rw [← ZMod.intCast_eq_intCast_iff]
+        simp
+      obtain ⟨q, hq⟩ := Int.ModEq.symm hmod |>.dvd
+      have hm_eq : m = ((m : ZMod M).val : ℤ) + (M : ℤ) * q := by linarith
+      conv_rhs => rw [hm_eq]
+      rw [zpow_add, zpow_mul, zpow_natCast, zpow_natCast, hu13_powM, one_zpow, mul_one]
+    · rintro ⟨k, hkx⟩
+      exact ⟨⟨u13 ^ (Multiplicative.toAdd k).val, Subgroup.npow_mem_zpowers u13 _⟩, hkx⟩
+  have hquot_equiv :
+      MulAction.orbitRel.Quotient (Subgroup.zpowers u13) (ZMod (10 ^ n)) ≃
+      MulAction.orbitRel.Quotient (Multiplicative (ZMod M)) (ZMod (10 ^ n)) :=
+    Quotient.congr (Equiv.refl _) (fun x y => horb_eq x y)
+  have ha_nat : a n = (Fintype.card (MulAction.orbitRel.Quotient (Multiplicative (ZMod M)) (ZMod (10 ^ n))) : ℤ) := by
+    unfold a
+    rw [Nat.card_congr hquot_equiv, Nat.card_eq_fintype_card]
+  have hburn := MulAction.sum_card_fixedBy_eq_card_orbits_mul_card_group
+    (Multiplicative (ZMod M)) (ZMod (10 ^ n))
+  have hcardG : Fintype.card (Multiplicative (ZMod M)) = M := by
+    rw [Fintype.card_congr Multiplicative.toAdd, ZMod.card]
+  rw [hcardG] at hburn
+  have hsum_eq :
+      (∑ k : Multiplicative (ZMod M), Fintype.card (MulAction.fixedBy (ZMod (10 ^ n)) k)) =
+      ∑ k ∈ range M, Nat.gcd (13 ^ k - 1) (10 ^ n) := by
+    have heq : (∑ k : Multiplicative (ZMod M), Fintype.card (MulAction.fixedBy (ZMod (10 ^ n)) k)) =
+        ∑ k : Fin M, Nat.gcd (13 ^ k.val - 1) (10 ^ n) := by
+      let e : Multiplicative (ZMod M) ≃ Fin M :=
+        { toFun := fun k => ⟨(Multiplicative.toAdd k).val, ZMod.val_lt _⟩
+          invFun := fun i => Multiplicative.ofAdd (i.val : ZMod M)
+          left_inv := fun k => by simp
+          right_inv := fun i => by
+            apply Fin.ext
+            simp [ZMod.val_natCast, Nat.mod_eq_of_lt i.isLt] }
+      refine Fintype.sum_equiv e _ _ (fun k => ?_)
+      have hfix : Fintype.card (MulAction.fixedBy (ZMod (10 ^ n)) k) =
+          (univ.filter (fun x : ZMod (10 ^ n) => (13 : ZMod (10 ^ n)) ^ (Multiplicative.toAdd k).val * x = x)).card := by
+        rw [Fintype.card_subtype]
+        apply congrArg Finset.card
+        ext x
+        simp only [mem_filter, mem_univ, true_and, MulAction.mem_fixedBy]
+        change ((u13 ^ (Multiplicative.toAdd k).val : (ZMod (10 ^ n))ˣ) : ZMod (10 ^ n)) * x = x ↔ _
+        simp [u13]
+      rw [hfix, card_fixed_pow13]
+      rfl
+    rw [heq, Fin.sum_univ_eq_sum_range (fun k => Nat.gcd (13 ^ k - 1) (10 ^ n)) M]
+  rw [ha_nat]
+  have hnat : M * Fintype.card (MulAction.orbitRel.Quotient (Multiplicative (ZMod M)) (ZMod (10 ^ n))) =
+      ∑ k ∈ range M, Nat.gcd (13 ^ k - 1) (10 ^ n) := by
+    linarith [hburn, hsum_eq]
+  exact_mod_cast hnat
 
-theorem a_eq (n : ℕ) : OMA.S_oeis_a221855.a n
-    = ((∑ i ∈ range (n + 1), a13 i + n * ∑ i ∈ range (n + 1), b13 i : ℕ) : ℤ) := by
-  unfold OMA.S_oeis_a221855.a
-  rw [card13]
+/-- Small values `a 1 = 4` and `a 2 = 12` directly from Burnside's identity. -/
+private lemma a_one : a 1 = 4 := by
+  have h := burnside_general 1 4 (by decide) (by decide)
+  have hsum : ∑ k ∈ range 4, (Nat.gcd (13 ^ k - 1) (10 ^ 1) : ℤ) = 16 := by decide
+  rw [hsum] at h
+  omega
 
-theorem a_closed (n : ℕ) (hn : 2 < n) :
-    OMA.S_oeis_a221855.a n = 2 * (n : ℤ) * (4 * n - 7) := by
-  rw [a_eq]
-  have hA := sumA13 n (by omega)
-  have hB := sumB13 n (by omega)
-  generalize ∑ i ∈ range (n + 1), a13 i = SA at hA ⊢
-  generalize ∑ i ∈ range (n + 1), b13 i = SB at hB ⊢
-  have hA' : (SA : ℤ) = 2 * n := by exact_mod_cast hA
-  have hB' : (SB : ℤ) + 16 = 8 * n := by exact_mod_cast hB
-  push_cast
-  linear_combination hA' + (n : ℤ) * hB'
+private lemma a_two : a 2 = 12 := by
+  have h := burnside_general 2 20 (by decide) (by decide)
+  have hsum : ∑ k ∈ range 20, (Nat.gcd (13 ^ k - 1) (10 ^ 2) : ℤ) = 240 := by decide
+  rw [hsum] at h
+  omega
 
-theorem a_one : OMA.S_oeis_a221855.a 1 = 4 := by
-  rw [a_eq]; simp [sum_range_succ, a13, b13]
+/-! ### Part 3: Exact evaluation of the Burnside sum for `n ≥ 3` via CRT -/
 
-theorem a_two : OMA.S_oeis_a221855.a 2 = 12 := by
-  rw [a_eq]; simp [sum_range_succ, a13, b13]
+private def expA (n : ℕ) : ℕ := max 2 (n - 2)
+private def expB (n : ℕ) : ℕ := n - 1
+private def periodM (n : ℕ) : ℕ := 2 ^ expA n * 5 ^ expB n
 
-end OMAOrbit
+private lemma periodM_pos (n : ℕ) : 0 < periodM n := by
+  unfold periodM; positivity
 
-open OMAOrbit in
-theorem OMA.solution : type_of% @OMA.S_oeis_a221855.main := by
-  refine ⟨fun n hn => a_closed n hn, fun n hn => ?_, ?_⟩
-  · obtain ⟨k, rfl⟩ : ∃ k, n = k + 6 := ⟨n - 6, by omega⟩
-    rw [show k + 6 - 1 = k + 5 by omega, show k + 6 - 2 = k + 4 by omega,
-      show k + 6 - 3 = k + 3 by omega, a_closed (k + 6) (by omega), a_closed (k + 5) (by omega),
-      a_closed (k + 4) (by omega), a_closed (k + 3) (by omega)]
-    push_cast
-    ring
-  · have v3 := a_closed 3 (by norm_num)
-    have v4 := a_closed 4 (by norm_num)
-    have v5 := a_closed 5 (by norm_num)
-    norm_num at v3 v4 v5
-    have e1 : ((PowerSeries.X : PowerSeries ℤ) - 1) ^ 3 * OMA.S_oeis_a221855.series
-        = PowerSeries.X ^ 3 * OMA.S_oeis_a221855.series
-          - PowerSeries.C 3 * (PowerSeries.X ^ 2 * OMA.S_oeis_a221855.series)
-          + PowerSeries.C 3 * (PowerSeries.X ^ 1 * OMA.S_oeis_a221855.series)
-          - OMA.S_oeis_a221855.series := by
-      simp only [map_ofNat]; ring
-    have e2 : (2 * PowerSeries.X * (4 * PowerSeries.X ^ 4 - 7 * PowerSeries.X ^ 3
-        - 3 * PowerSeries.X ^ 2 - 2) : PowerSeries ℤ)
-        = PowerSeries.C 8 * PowerSeries.X ^ 5 - PowerSeries.C 14 * PowerSeries.X ^ 4
-          - PowerSeries.C 6 * PowerSeries.X ^ 3 - PowerSeries.C 4 * PowerSeries.X ^ 1 := by
-      simp only [map_ofNat]; ring
-    rw [e1, e2]
-    refine PowerSeries.ext (fun k => ?_)
-    simp only [map_sub, map_add, PowerSeries.coeff_C_mul, PowerSeries.coeff_X_pow_mul',
-      PowerSeries.coeff_X_pow, OMA.S_oeis_a221855.series, PowerSeries.coeff_mk]
-    rcases (show k ≤ 5 ∨ ∃ m, k = m + 6 by
-      rcases Nat.lt_or_ge k 6 with h | h
-      · left; omega
-      · right; exact ⟨k - 6, by omega⟩) with hk | ⟨m, rfl⟩
-    · interval_cases k <;> simp [a_one, a_two, v3, v4, v5]
-    · simp only [show ¬ (m + 6 = 5) from by omega, show ¬ (m + 6 = 4) from by omega,
-        show ¬ (m + 6 = 3) from by omega, show ¬ (m + 6 = 1) from by omega,
-        show 3 ≤ m + 6 from by omega, show 2 ≤ m + 6 from by omega,
-        show 1 ≤ m + 6 from by omega,
-        show m + 6 - 3 = m + 3 from by omega, show m + 6 - 2 = m + 4 from by omega,
-        show m + 6 - 1 = m + 5 from by omega, show ¬ (m + 3 = 0) from by omega,
-        show ¬ (m + 4 = 0) from by omega, show ¬ (m + 5 = 0) from by omega,
-        show ¬ (m + 6 = 0) from by omega, if_true, if_false]
-      rw [a_closed (m + 3) (by omega), a_closed (m + 4) (by omega), a_closed (m + 5) (by omega),
-        a_closed (m + 6) (by omega)]
-      push_cast
+private lemma ten_pow_dvd_pow13_periodM (n : ℕ) (hn : 3 ≤ n) :
+    10 ^ n ∣ 13 ^ periodM n - 1 := by
+  have h10 : (10 : ℕ) ^ n = 2 ^ n * 5 ^ n := by
+    rw [show (10 : ℕ) = 2 * 5 by rfl, mul_pow]
+  rw [h10]
+  have hcop : Nat.Coprime (2 ^ n) (5 ^ n) := (by decide : Nat.Coprime 2 5).pow n n
+  apply hcop.mul_dvd_of_dvd_of_dvd
+  · have hodd : Odd (5 ^ expB n) := Odd.pow ⟨2, rfl⟩
+    obtain ⟨t, _, ht⟩ := pow13_sub_one_two_adic (expA n) (5 ^ expB n) hodd
+    have hM : 2 ^ expA n * 5 ^ expB n = periodM n := rfl
+    rw [hM] at ht
+    rw [ht]
+    have hle : n ≤ expA n + 2 := by unfold expA; omega
+    exact dvd_mul_of_dvd_left (Nat.pow_dvd_pow 2 hle) t
+  · have hA2 : 2 ≤ expA n := by unfold expA; omega
+    have hM : periodM n = 4 * 5 ^ expB n * 2 ^ (expA n - 2) := by
+      unfold periodM
+      have : 2 ^ expA n = 4 * 2 ^ (expA n - 2) := by
+        rw [show (4 : ℕ) = 2 ^ 2 by decide, ← pow_add]; congr 1; omega
+      rw [this]; ring
+    have hnd5 : ¬ 5 ∣ 2 ^ (expA n - 2) := by
+      intro h5
+      have := Nat.prime_five.dvd_of_dvd_pow h5
+      omega
+    obtain ⟨t, _, ht⟩ := pow13_sub_one_five_adic (expB n) (2 ^ (expA n - 2)) hnd5
+    rw [hM, ht]
+    have hle : n ≤ expB n + 1 := by unfold expB; omega
+    exact dvd_mul_of_dvd_left (Nat.pow_dvd_pow 5 hle) t
+
+private def g2 (n k : ℕ) : ℕ := Nat.gcd (13 ^ k - 1) (2 ^ n)
+private def g5 (n k : ℕ) : ℕ := Nat.gcd (13 ^ k - 1) (5 ^ n)
+
+private lemma gcd_ten_split (n k : ℕ) :
+    Nat.gcd (13 ^ k - 1) (10 ^ n) = g2 n k * g5 n k := by
+  have h10 : (10 : ℕ) ^ n = 2 ^ n * 5 ^ n := by
+    rw [show (10 : ℕ) = 2 * 5 by rfl, mul_pow]
+  rw [h10, g2, g5]
+  set m := 13 ^ k - 1
+  have hcop : Nat.Coprime (2 ^ n) (5 ^ n) := (by decide : Nat.Coprime 2 5).pow n n
+  apply Nat.dvd_antisymm
+  · obtain ⟨d1, d2, hd1, hd2, hEq⟩ := Nat.dvd_mul.mp (Nat.gcd_dvd_right m (2 ^ n * 5 ^ n))
+    have hdm : d1 * d2 ∣ m := hEq ▸ Nat.gcd_dvd_left m (2 ^ n * 5 ^ n)
+    rw [← hEq]
+    exact mul_dvd_mul
+      (Nat.dvd_gcd (dvd_trans (dvd_mul_right d1 d2) hdm) hd1)
+      (Nat.dvd_gcd (dvd_trans (dvd_mul_left d2 d1) hdm) hd2)
+  · have hcop_g : Nat.Coprime (Nat.gcd m (2 ^ n)) (Nat.gcd m (5 ^ n)) :=
+      (hcop.coprime_dvd_left (Nat.gcd_dvd_right m (2 ^ n))).coprime_dvd_right
+        (Nat.gcd_dvd_right m (5 ^ n))
+    exact Nat.dvd_gcd
+      (hcop_g.mul_dvd_of_dvd_of_dvd (Nat.gcd_dvd_left m (2 ^ n)) (Nat.gcd_dvd_left m (5 ^ n)))
+      (mul_dvd_mul (Nat.gcd_dvd_right m (2 ^ n)) (Nat.gcd_dvd_right m (5 ^ n)))
+
+private lemma g2_periodic (n k q : ℕ) (hn : 3 ≤ n) :
+    g2 n (k + 2 ^ expA n * q) = g2 n k := by
+  unfold g2
+  have hge1 : 1 ≤ 13 ^ (2 ^ expA n * q) := Nat.one_le_pow _ _ (by omega)
+  have hge2 : 1 ≤ 13 ^ k := Nat.one_le_pow _ _ (by omega)
+  have hdvd : 2 ^ n ∣ 13 ^ (2 ^ expA n * q) - 1 := by
+    obtain ⟨t, _, ht⟩ := pow13_sub_one_two_adic_pow (expA n)
+    have h2 : 2 ^ n ∣ 13 ^ (2 ^ expA n) - 1 := by
+      rw [ht]; exact dvd_mul_of_dvd_left (Nat.pow_dvd_pow 2 (by unfold expA; omega)) t
+    rw [pow_mul, pow_sub_one_eq_mul_geom _ q (Nat.one_le_pow _ _ (by omega))]
+    exact dvd_mul_of_dvd_left h2 _
+  have hmod : (13 ^ (k + 2 ^ expA n * q) - 1) % (2 ^ n) = (13 ^ k - 1) % (2 ^ n) := by
+    have h13 : 13 ^ (k + 2 ^ expA n * q) - 1 =
+        (13 ^ k - 1) + 13 ^ k * (13 ^ (2 ^ expA n * q) - 1) := by
+      rw [pow_add]
+      zify [hge1, hge2, show 1 ≤ 13 ^ k * 13 ^ (2 ^ expA n * q) by nlinarith]
       ring
+    rw [h13, Nat.add_mod, Nat.mul_mod, Nat.mod_eq_zero_of_dvd hdvd, mul_zero, Nat.zero_mod,
+      add_zero, Nat.mod_mod]
+  rw [Nat.gcd_comm, Nat.gcd_rec, hmod, ← Nat.gcd_rec, Nat.gcd_comm]
+
+private lemma g5_periodic (n k q : ℕ) (hn : 3 ≤ n) :
+    g5 n (k + 4 * 5 ^ expB n * q) = g5 n k := by
+  unfold g5
+  have hge1 : 1 ≤ 13 ^ (4 * 5 ^ expB n * q) := Nat.one_le_pow _ _ (by omega)
+  have hge2 : 1 ≤ 13 ^ k := Nat.one_le_pow _ _ (by omega)
+  have hdvd : 5 ^ n ∣ 13 ^ (4 * 5 ^ expB n * q) - 1 := by
+    obtain ⟨t, _, ht⟩ := pow13_sub_one_five_adic_pow (expB n)
+    have h2 : 5 ^ n ∣ 13 ^ (4 * 5 ^ expB n) - 1 := by
+      rw [ht]; exact dvd_mul_of_dvd_left (Nat.pow_dvd_pow 5 (by unfold expB; omega)) t
+    rw [pow_mul, pow_sub_one_eq_mul_geom _ q (Nat.one_le_pow _ _ (by omega))]
+    exact dvd_mul_of_dvd_left h2 _
+  have hmod : (13 ^ (k + 4 * 5 ^ expB n * q) - 1) % (5 ^ n) = (13 ^ k - 1) % (5 ^ n) := by
+    have h13 : 13 ^ (k + 4 * 5 ^ expB n * q) - 1 =
+        (13 ^ k - 1) + 13 ^ k * (13 ^ (4 * 5 ^ expB n * q) - 1) := by
+      rw [pow_add]
+      zify [hge1, hge2, show 1 ≤ 13 ^ k * 13 ^ (4 * 5 ^ expB n * q) by nlinarith]
+      ring
+    rw [h13, Nat.add_mod, Nat.mul_mod, Nat.mod_eq_zero_of_dvd hdvd, mul_zero, Nat.zero_mod,
+      add_zero, Nat.mod_mod]
+  rw [Nat.gcd_comm, Nat.gcd_rec, hmod, ← Nat.gcd_rec, Nat.gcd_comm]
+
+private lemma g2_mod_eq {n k1 k2 : ℕ} (hn : 3 ≤ n) (h : k1 % 2 ^ expA n = k2 % 2 ^ expA n) :
+    g2 n k1 = g2 n k2 := by
+  have h1 : g2 n k1 = g2 n (k1 % 2 ^ expA n) := by
+    conv_lhs => rw [← Nat.mod_add_div k1 (2 ^ expA n)]
+    exact g2_periodic n _ _ hn
+  have h2 : g2 n k2 = g2 n (k2 % 2 ^ expA n) := by
+    conv_lhs => rw [← Nat.mod_add_div k2 (2 ^ expA n)]
+    exact g2_periodic n _ _ hn
+  rw [h1, h2, h]
+
+private lemma g5_mod_eq {n k1 k2 : ℕ} (hn : 3 ≤ n)
+    (h : k1 % (4 * 5 ^ expB n) = k2 % (4 * 5 ^ expB n)) :
+    g5 n k1 = g5 n k2 := by
+  have h1 : g5 n k1 = g5 n (k1 % (4 * 5 ^ expB n)) := by
+    conv_lhs => rw [← Nat.mod_add_div k1 (4 * 5 ^ expB n)]
+    exact g5_periodic n _ _ hn
+  have h2 : g5 n k2 = g5 n (k2 % (4 * 5 ^ expB n)) := by
+    conv_lhs => rw [← Nat.mod_add_div k2 (4 * 5 ^ expB n)]
+    exact g5_periodic n _ _ hn
+  rw [h1, h2, h]
+
+/-- Sum of `g2 n (4 * t)` over `t ∈ range (2 ^ (expA n - 2))` equals `2 * (n - 2) * 2 ^ expA n` for `n ≥ 3`. -/
+private lemma sum_g2_mul_four (n : ℕ) (hn : 3 ≤ n) :
+    ∑ t ∈ range (2 ^ (expA n - 2)), g2 n (4 * t) = 2 * (n - 2) * 2 ^ expA n := by
+  by_cases h3 : n = 3
+  · subst h3
+    have : expA 3 = 2 := by decide
+    simp [this, g2]
+  · have hn4 : 4 ≤ n := by omega
+    have hA : expA n = n - 2 := by unfold expA; omega
+    have hgen : ∀ m d : ℕ, 2 ≤ d → d + m + 2 = n →
+        ∑ t ∈ range (2 ^ m), g2 n (2 ^ d * t) = 2 ^ n + m * 2 ^ (n - 1) := by
+      intro m
+      induction m with
+      | zero =>
+        intro d _ _
+        simp [g2]
+      | succ m ih =>
+        intro d hd hsum
+        have hsplit' : ∑ t ∈ range (2 ^ (m + 1)), g2 n (2 ^ d * t) =
+            ∑ u ∈ range (2 ^ m), (g2 n (2 ^ d * (2 * u)) + g2 n (2 ^ d * (2 * u + 1))) := by
+          have h2 : 2 ^ (m + 1) = 2 * 2 ^ m := by rw [pow_succ, mul_comm]
+          rw [h2]
+          generalize (2 ^ m) = N
+          induction N with
+          | zero => simp
+          | succ N ihN =>
+            rw [Nat.mul_succ, sum_range_succ, sum_range_succ, sum_range_succ, ihN]
+            ring
+        rw [hsplit', sum_add_distrib]
+        have heven : ∑ u ∈ range (2 ^ m), g2 n (2 ^ d * (2 * u)) =
+            2 ^ n + m * 2 ^ (n - 1) := by
+          have hrew : ∀ u, 2 ^ d * (2 * u) = 2 ^ (d + 1) * u := fun u => by rw [pow_succ]; ring
+          simp_rw [hrew]
+          exact ih (d + 1) (by omega) (by omega)
+        have hodd : ∀ u ∈ range (2 ^ m), g2 n (2 ^ d * (2 * u + 1)) = 2 ^ (d + 2) := by
+          intro u _
+          unfold g2
+          rw [gcd_pow13_sub_one_two d (2 * u + 1) n ⟨u, rfl⟩]
+          congr 1
+          omega
+        rw [heven, sum_congr rfl hodd, sum_const, card_range, smul_eq_mul]
+        have hpow : 2 ^ m * 2 ^ (d + 2) = 2 ^ (n - 1) := by
+          rw [← pow_add]; congr 1; omega
+        rw [hpow]
+        ring
+    have hres := hgen (n - 4) 2 (le_refl 2) (by omega)
+    rw [hA]
+    have h4eq : ∀ t, 4 * t = 2 ^ 2 * t := fun t => by ring
+    have hsub : n - 2 - 2 = n - 4 := by omega
+    rw [hsub]
+    simp_rw [h4eq]
+    rw [hres]
+    have h2n : 2 ^ n = 2 * 2 ^ (n - 1) := by
+      conv_lhs => rw [show n = (n - 1) + 1 by omega, pow_succ, mul_comm]
+    have h2n1 : 2 ^ (n - 1) = 2 * 2 ^ (n - 2) := by
+      conv_lhs => rw [show n - 1 = (n - 2) + 1 by omega, pow_succ, mul_comm]
+    rw [h2n, h2n1]
+    have hcoef : n - 4 + 2 = n - 2 := by omega
+    calc
+      2 * (2 * 2 ^ (n - 2)) + (n - 4) * (2 * 2 ^ (n - 2))
+          = (n - 4 + 2) * (2 * 2 ^ (n - 2)) := by ring
+      _ = 2 * (n - 2) * 2 ^ (n - 2) := by rw [hcoef]; ring
+
+/-- Sum of `g5 n (4 * k)` over `k ∈ range (5 ^ expB n)` equals `(4 * n + 1) * 5 ^ expB n` for `n ≥ 3`. -/
+private lemma sum_g5_mul_four (n : ℕ) (hn : 3 ≤ n) :
+    ∑ k ∈ range (5 ^ expB n), g5 n (4 * k) = (4 * n + 1) * 5 ^ expB n := by
+  have hB : expB n = n - 1 := rfl
+  have hgen : ∀ m d : ℕ, d + m + 1 = n →
+      ∑ k ∈ range (5 ^ m), g5 n (4 * 5 ^ d * k) = 5 ^ n + 4 * m * 5 ^ (n - 1) := by
+    intro m
+    induction m with
+    | zero =>
+      intro d _
+      simp [g5]
+    | succ m ih =>
+      intro d hsum
+      have hsplit : ∑ k ∈ range (5 ^ (m + 1)), g5 n (4 * 5 ^ d * k) =
+          ∑ u ∈ range (5 ^ m),
+            (g5 n (4 * 5 ^ d * (5 * u)) +
+             g5 n (4 * 5 ^ d * (5 * u + 1)) +
+             g5 n (4 * 5 ^ d * (5 * u + 2)) +
+             g5 n (4 * 5 ^ d * (5 * u + 3)) +
+             g5 n (4 * 5 ^ d * (5 * u + 4))) := by
+        have h5 : 5 ^ (m + 1) = 5 * 5 ^ m := by rw [pow_succ, mul_comm]
+        rw [h5]
+        generalize (5 ^ m) = N
+        induction N with
+        | zero => simp
+        | succ N ihN =>
+          rw [Nat.mul_succ, sum_range_succ, sum_range_succ, sum_range_succ,
+            sum_range_succ, sum_range_succ, sum_range_succ, ihN]
+          ring
+      rw [hsplit, sum_add_distrib, sum_add_distrib, sum_add_distrib, sum_add_distrib]
+      have h0 : ∑ u ∈ range (5 ^ m), g5 n (4 * 5 ^ d * (5 * u)) = 5 ^ n + 4 * m * 5 ^ (n - 1) := by
+        have hrew : ∀ u, 4 * 5 ^ d * (5 * u) = 4 * 5 ^ (d + 1) * u := fun u => by rw [pow_succ]; ring
+        simp_rw [hrew]
+        exact ih (d + 1) (by omega)
+      have hrem : ∀ r ∈ ({1, 2, 3, 4} : Finset ℕ),
+          ∀ u ∈ range (5 ^ m), g5 n (4 * 5 ^ d * (5 * u + r)) = 5 ^ (d + 1) := by
+        intro r hr u _
+        unfold g5
+        have hnd5 : ¬ 5 ∣ (5 * u + r) := by
+          simp at hr
+          rcases hr with rfl | rfl | rfl | rfl <;> omega
+        rw [gcd_pow13_sub_one_five_four d (5 * u + r) n hnd5]
+        congr 1; omega
+      rw [h0,
+        sum_congr rfl (hrem 1 (by simp)), sum_congr rfl (hrem 2 (by simp)),
+        sum_congr rfl (hrem 3 (by simp)), sum_congr rfl (hrem 4 (by simp)),
+        sum_const, card_range, smul_eq_mul]
+      have hpow : 5 ^ m * 5 ^ (d + 1) = 5 ^ (n - 1) := by
+        rw [← pow_add]; congr 1; omega
+      rw [hpow]
+      ring
+  have hres := hgen (n - 1) 0 (by omega)
+  rw [hB]
+  simp only [pow_zero, mul_one] at hres
+  rw [hres]
+  have h5n : 5 ^ n = 5 * 5 ^ (n - 1) := by
+    conv_lhs => rw [show n = (n - 1) + 1 by omega, pow_succ, mul_comm]
+  rw [h5n]
+  have hcoef : 5 + 4 * (n - 1) = 4 * n + 1 := by omega
+  calc
+    5 * 5 ^ (n - 1) + 4 * (n - 1) * 5 ^ (n - 1)
+        = (5 + 4 * (n - 1)) * 5 ^ (n - 1) := by ring
+    _ = (4 * n + 1) * 5 ^ (n - 1) := by rw [hcoef]
+
+/-- Sum of `g2 n k` over `k ∈ range (2 ^ expA n)` with `¬ 4 ∣ k` equals `4 * 2 ^ expA n` for `n ≥ 3`. -/
+private lemma sum_g2_not_four (n : ℕ) (hn : 3 ≤ n) :
+    ∑ k ∈ (range (2 ^ expA n)).filter (fun k => ¬ 4 ∣ k), g2 n k = 4 * 2 ^ expA n := by
+  have hA2 : 2 ≤ expA n := by unfold expA; omega
+  have hpow : 2 ^ expA n = 4 * 2 ^ (expA n - 2) := by
+    rw [show (4 : ℕ) = 2 ^ 2 by decide, ← pow_add]; congr 1; omega
+  have hsum_mod4 : ∀ N : ℕ,
+      ∑ k ∈ (range (4 * N)).filter (fun k => ¬ 4 ∣ k), g2 n k =
+      ∑ u ∈ range N, (g2 n (4 * u + 1) + g2 n (4 * u + 2) + g2 n (4 * u + 3)) := by
+    intro N
+    rw [sum_filter]
+    induction N with
+    | zero => simp
+    | succ N ih =>
+      rw [Nat.mul_succ, sum_range_succ, sum_range_succ, sum_range_succ, sum_range_succ,
+        ih, sum_range_succ]
+      have h0 : 4 ∣ 4 * N := dvd_mul_right 4 N
+      have h1 : ¬ 4 ∣ 4 * N + 1 := by omega
+      have h2 : ¬ 4 ∣ 4 * N + 2 := by omega
+      have h3 : ¬ 4 ∣ 4 * N + 3 := by omega
+      simp [h0, h1, h2, h3]
+      ring
+  rw [hpow, hsum_mod4]
+  have hterm : ∀ u ∈ range (2 ^ (expA n - 2)),
+      g2 n (4 * u + 1) + g2 n (4 * u + 2) + g2 n (4 * u + 3) = 16 := by
+    intro u _
+    have h1 : g2 n (4 * u + 1) = 4 := by
+      unfold g2
+      have heq : 4 * u + 1 = 2 ^ 0 * (4 * u + 1) := by ring
+      rw [heq, gcd_pow13_sub_one_two 0 (4 * u + 1) n ⟨2 * u, by ring⟩]
+      have hmin : min n (0 + 2) = 2 := by omega
+      rw [hmin]; decide
+    have h2 : g2 n (4 * u + 2) = 8 := by
+      unfold g2
+      have heq : 4 * u + 2 = 2 ^ 1 * (2 * u + 1) := by ring
+      rw [heq, gcd_pow13_sub_one_two 1 (2 * u + 1) n ⟨u, rfl⟩]
+      have hmin : min n (1 + 2) = 3 := by omega
+      rw [hmin]; decide
+    have h3 : g2 n (4 * u + 3) = 4 := by
+      unfold g2
+      have heq : 4 * u + 3 = 2 ^ 0 * (4 * u + 3) := by ring
+      rw [heq, gcd_pow13_sub_one_two 0 (4 * u + 3) n ⟨2 * u + 1, by ring⟩]
+      have hmin : min n (0 + 2) = 2 := by omega
+      rw [hmin]; decide
+    rw [h1, h2, h3]
+  rw [sum_congr rfl hterm, sum_const, card_range, smul_eq_mul]
+  ring
+
+private lemma sum_range_mul_periodic (P N : ℕ) (f : ℕ → ℕ) (hf : ∀ k, f (k + P) = f k) :
+    ∑ k ∈ range (P * N), f k = N * ∑ a ∈ range P, f a := by
+  induction N with
+  | zero => simp
+  | succ N ih =>
+    rw [Nat.mul_succ, sum_range_add, ih]
+    have hshift : ∀ a ∈ range P, f (P * N + a) = f a := by
+      intro a _
+      clear ih
+      induction N with
+      | zero => simp
+      | succ M ihM =>
+        rw [Nat.mul_succ, add_assoc, add_comm P a, ← add_assoc, hf, ihM]
+    rw [sum_congr rfl hshift]
+    ring
+
+private lemma sum_filter_four_dvd (L : ℕ) (f : ℕ → ℕ) :
+    ∑ k ∈ (range (4 * L)).filter (fun k => 4 ∣ k), f k = ∑ m ∈ range L, f (4 * m) := by
+  rw [sum_filter]
+  induction L with
+  | zero => simp
+  | succ L ih =>
+    rw [Nat.mul_succ, sum_range_succ, sum_range_succ, sum_range_succ, sum_range_succ,
+      ih, sum_range_succ]
+    have h0 : 4 ∣ 4 * L := dvd_mul_right 4 L
+    have h1 : ¬ 4 ∣ 4 * L + 1 := by omega
+    have h2 : ¬ 4 ∣ 4 * L + 2 := by omega
+    have h3 : ¬ 4 ∣ 4 * L + 3 := by omega
+    simp [h0, h1, h2, h3]
+
+private lemma sum_range_mul_coprime (P Q : ℕ) (hP : 0 < P) (hQ : 0 < Q)
+    (hcop : Nat.Coprime P Q) (f g : ℕ → ℕ)
+    (hf : ∀ m, f m = f (m % P)) (hg : ∀ m, g m = g (m % Q)) :
+    ∑ m ∈ range (P * Q), f m * g m = (∑ a ∈ range P, f a) * (∑ b ∈ range Q, g b) := by
+  let φ : ℕ → ℕ × ℕ := fun m => (m % P, m % Q)
+  have hinj : Set.InjOn φ (range (P * Q) : Set ℕ) := by
+    intro x hx y hy hEq
+    have hxlt : x < P * Q := mem_range.mp hx
+    have hylt : y < P * Q := mem_range.mp hy
+    have hPeq : x % P = y % P := congrArg Prod.fst hEq
+    have hQeq : x % Q = y % Q := congrArg Prod.snd hEq
+    have hle_eq : ∀ u v : ℕ, u ≤ v → v < P * Q → u % P = v % P → u % Q = v % Q → u = v := by
+      intro u v huv hvlt huP huQ
+      have hdP : P ∣ v - u := by
+        have h1 : v = P * (v / P) + v % P := (Nat.div_add_mod v P).symm
+        have h2 : u = P * (u / P) + u % P := (Nat.div_add_mod u P).symm
+        have hdiv : u / P ≤ v / P := Nat.div_le_div_right huv
+        refine ⟨v / P - u / P, ?_⟩
+        rw [Nat.mul_sub]
+        omega
+      have hdQ : Q ∣ v - u := by
+        have h1 : v = Q * (v / Q) + v % Q := (Nat.div_add_mod v Q).symm
+        have h2 : u = Q * (u / Q) + u % Q := (Nat.div_add_mod u Q).symm
+        have hdiv : u / Q ≤ v / Q := Nat.div_le_div_right huv
+        refine ⟨v / Q - u / Q, ?_⟩
+        rw [Nat.mul_sub]
+        omega
+      have hdPQ : P * Q ∣ v - u := hcop.mul_dvd_of_dvd_of_dvd hdP hdQ
+      have hsub_lt : v - u < P * Q := by omega
+      have hzero : v - u = 0 := Nat.eq_zero_of_dvd_of_lt hdPQ hsub_lt
+      omega
+    rcases le_total x y with hxy | hyx
+    · exact hle_eq x y hxy hylt hPeq hQeq
+    · exact (hle_eq y x hyx hxlt hPeq.symm hQeq.symm).symm
+  have hsub : (range (P * Q)).image φ ⊆ range P ×ˢ range Q := by
+    intro p hp
+    rcases mem_image.mp hp with ⟨m, _, rfl⟩
+    exact mem_product.mpr ⟨mem_range.mpr (Nat.mod_lt m hP), mem_range.mpr (Nat.mod_lt m hQ)⟩
+  have hcard : (range P ×ˢ range Q).card ≤ ((range (P * Q)).image φ).card := by
+    rw [card_image_of_injOn hinj, card_product, card_range, card_range, card_range]
+  have himg : (range (P * Q)).image φ = range P ×ˢ range Q :=
+    eq_of_subset_of_card_le hsub hcard
+  rw [Finset.sum_mul_sum, ← Finset.sum_product' (s := range P) (t := range Q) (f := fun a b => f a * g b),
+    ← himg, Finset.sum_image (fun x hx y hy h => hinj hx hy h)]
+  refine Finset.sum_congr rfl fun m _ => ?_
+  dsimp [φ]
+  rw [← hf m, ← hg m]
+
+private lemma sum_gcd_ten_eq (n : ℕ) (hn : 3 ≤ n) :
+    ∑ k ∈ range (periodM n), Nat.gcd (13 ^ k - 1) (10 ^ n) =
+      (4 + 2 * (n - 2) * (4 * n + 1)) * periodM n := by
+  have hA2 : 2 ≤ expA n := by unfold expA; omega
+  have h4A : 4 ∣ 2 ^ expA n := by
+    rw [show (4 : ℕ) = 2 ^ 2 by decide]
+    exact Nat.pow_dvd_pow 2 hA2
+  have hA_split : 2 ^ expA n = 4 * 2 ^ (expA n - 2) := by
+    rw [show (4 : ℕ) = 2 ^ 2 by decide, ← pow_add]; congr 1; omega
+  simp_rw [gcd_ten_split]
+  rw [← Finset.sum_filter_add_sum_filter_not (range (periodM n)) (fun k => 4 ∣ k)]
+  have hpart_not4 :
+      ∑ k ∈ (range (periodM n)).filter (fun k => ¬ 4 ∣ k), g2 n k * g5 n k =
+      4 * periodM n := by
+    have hg5_one : ∀ k ∈ (range (periodM n)).filter (fun k => ¬ 4 ∣ k),
+        g2 n k * g5 n k = g2 n k := by
+      intro k hk
+      have hnd4 : ¬ 4 ∣ k := (mem_filter.mp hk).2
+      rw [g5, gcd_pow13_sub_one_five_not_four k n hnd4, mul_one]
+    rw [sum_congr rfl hg5_one, sum_filter]
+    have hper : ∀ k, (if ¬ 4 ∣ k + 2 ^ expA n then g2 n (k + 2 ^ expA n) else 0) =
+        (if ¬ 4 ∣ k then g2 n k else 0) := by
+      intro k
+      have h4iff : (4 ∣ k + 2 ^ expA n) ↔ (4 ∣ k) := Nat.dvd_add_left h4A
+      have hg2 : g2 n (k + 2 ^ expA n) = g2 n k := by
+        simpa using g2_periodic n k 1 hn
+      simp [h4iff, hg2]
+    unfold periodM
+    rw [sum_range_mul_periodic (2 ^ expA n) (5 ^ expB n) _ hper, ← sum_filter,
+      sum_g2_not_four n hn]
+    ring
+  have hpart_4 :
+      ∑ k ∈ (range (periodM n)).filter (fun k => 4 ∣ k), g2 n k * g5 n k =
+      2 * (n - 2) * (4 * n + 1) * periodM n := by
+    have hM4 : periodM n = 4 * (2 ^ (expA n - 2) * 5 ^ expB n) := by
+      unfold periodM; rw [hA_split]; ring
+    rw [hM4, sum_filter_four_dvd]
+    have hcop : Nat.Coprime (2 ^ (expA n - 2)) (5 ^ expB n) :=
+      (by decide : Nat.Coprime 2 5).pow _ _
+    have hf : ∀ m, g2 n (4 * m) = g2 n (4 * (m % 2 ^ (expA n - 2))) := by
+      intro m
+      apply g2_mod_eq hn
+      have h1 : (4 * m) % (4 * 2 ^ (expA n - 2)) = 4 * (m % 2 ^ (expA n - 2)) :=
+        Nat.mul_mod_mul_left 4 m (2 ^ (expA n - 2))
+      have h2 : (4 * (m % 2 ^ (expA n - 2))) % (4 * 2 ^ (expA n - 2)) =
+          4 * (m % 2 ^ (expA n - 2)) :=
+        Nat.mod_eq_of_lt (Nat.mul_lt_mul_of_pos_left (Nat.mod_lt m (by positivity)) (by decide))
+      rw [hA_split, h1, h2]
+    have hg : ∀ m, g5 n (4 * m) = g5 n (4 * (m % 5 ^ expB n)) := by
+      intro m
+      apply g5_mod_eq hn
+      have h1 : (4 * m) % (4 * 5 ^ expB n) = 4 * (m % 5 ^ expB n) :=
+        Nat.mul_mod_mul_left 4 m (5 ^ expB n)
+      have h2 : (4 * (m % 5 ^ expB n)) % (4 * 5 ^ expB n) =
+          4 * (m % 5 ^ expB n) :=
+        Nat.mod_eq_of_lt (Nat.mul_lt_mul_of_pos_left (Nat.mod_lt m (by positivity)) (by decide))
+      rw [h1, h2]
+    rw [sum_range_mul_coprime (2 ^ (expA n - 2)) (5 ^ expB n) (by positivity) (by positivity)
+      hcop (fun m => g2 n (4 * m)) (fun m => g5 n (4 * m)) hf hg,
+      sum_g2_mul_four n hn, sum_g5_mul_four n hn, hA_split]
+    ring
+  rw [hpart_4, hpart_not4]
+  ring
+
+/-! ### Part 4: Closed form, recurrence, and generating function -/
+
+private lemma a_formula (n : ℕ) (hn : 2 < n) :
+    a n = 2 * (n : ℤ) * (4 * n - 7) := by
+  have hn3 : 3 ≤ n := by omega
+  have hburn := burnside_general n (periodM n) (periodM_pos n) (ten_pow_dvd_pow13_periodM n hn3)
+  have hsum := sum_gcd_ten_eq n hn3
+  have hsumZ : ∑ k ∈ range (periodM n), (Nat.gcd (13 ^ k - 1) (10 ^ n) : ℤ) =
+      ((4 + 2 * (n - 2) * (4 * n + 1)) * periodM n : ℕ) := by
+    rw [← hsum]
+    push_cast
+    rfl
+  rw [hsumZ] at hburn
+  have hcoef : ((4 + 2 * (n - 2) * (4 * n + 1) : ℕ) : ℤ) =
+      2 * (n : ℤ) * (4 * n - 7) := by
+    have hsub : ((n - 2 : ℕ) : ℤ) = (n : ℤ) - 2 := by omega
+    push_cast
+    rw [hsub]
+    ring
+  have hEq : (periodM n : ℤ) * a n = (periodM n : ℤ) * (2 * (n : ℤ) * (4 * n - 7)) := by
+    rw [hburn, Nat.cast_mul, hcoef, mul_comm]
+  have hMne : (periodM n : ℤ) ≠ 0 := by
+    exact_mod_cast (periodM_pos n).ne'
+  exact mul_left_cancel₀ hMne hEq
+
+private lemma a_rec (n : ℕ) (hn : 5 < n) :
+    a n = 3 * a (n - 1) - 3 * a (n - 2) + a (n - 3) := by
+  rw [a_formula n (by omega), a_formula (n - 1) (by omega),
+    a_formula (n - 2) (by omega), a_formula (n - 3) (by omega)]
+  have h1 : ((n - 1 : ℕ) : ℤ) = (n : ℤ) - 1 := by omega
+  have h2 : ((n - 2 : ℕ) : ℤ) = (n : ℤ) - 2 := by omega
+  have h3 : ((n - 3 : ℕ) : ℤ) = (n : ℤ) - 3 := by omega
+  rw [h1, h2, h3]
+  ring
+
+private lemma coeff_series (k : ℕ) :
+    PowerSeries.coeff k series = if k = 0 then 0 else a k := by
+  simp [series]
+
+private lemma gf_eq :
+    ((X - 1) ^ 3 : PowerSeries ℤ) * series = 2 * X * (4 * X ^ 4 - 7 * X ^ 3 - 3 * X ^ 2 - 2) := by
+  have hlhs : ((X - 1) ^ 3 : PowerSeries ℤ) * series =
+      X ^ 3 * series - (3 : ℤ) • (X ^ 2 * series) + (3 : ℤ) • (X * series) - series := by
+    simp only [zsmul_eq_mul]; push_cast; ring
+  have hrhs : (2 * X * (4 * X ^ 4 - 7 * X ^ 3 - 3 * X ^ 2 - 2) : PowerSeries ℤ) =
+      (8 : ℤ) • X ^ 5 - (14 : ℤ) • X ^ 4 - (6 : ℤ) • X ^ 3 - (4 : ℤ) • X := by
+    simp only [zsmul_eq_mul]; push_cast; ring
+  rw [hlhs, hrhs]
+  ext k
+  have hX1 : PowerSeries.coeff k (X * series) = if 1 ≤ k then PowerSeries.coeff (k - 1) series else 0 := by
+    simpa [pow_one] using PowerSeries.coeff_X_pow_mul' (R := ℤ) (p := series) (n := 1) (d := k)
+  have hX2 : PowerSeries.coeff k (X ^ 2 * series) = if 2 ≤ k then PowerSeries.coeff (k - 2) series else 0 :=
+    PowerSeries.coeff_X_pow_mul' (R := ℤ) (p := series) (n := 2) (d := k)
+  have hX3 : PowerSeries.coeff k (X ^ 3 * series) = if 3 ≤ k then PowerSeries.coeff (k - 3) series else 0 :=
+    PowerSeries.coeff_X_pow_mul' (R := ℤ) (p := series) (n := 3) (d := k)
+  simp only [map_sub, map_add, map_zsmul]
+  simp only [zsmul_eq_mul, hX1, hX2, hX3, PowerSeries.coeff_X_pow, PowerSeries.coeff_X, coeff_series]
+  have ha1 : a 1 = 4 := a_one
+  have ha2 : a 2 = 12 := a_two
+  have ha3 : a 3 = 30 := by rw [a_formula 3 (by omega)]; norm_num
+  have ha4 : a 4 = 72 := by rw [a_formula 4 (by omega)]; norm_num
+  have ha5 : a 5 = 130 := by rw [a_formula 5 (by omega)]; norm_num
+  by_cases hk : k < 6
+  · interval_cases k
+    · simp
+    · simp [ha1]
+    · simp [ha1, ha2]
+    · simp [ha1, ha2, ha3]
+    · simp [ha1, ha2, ha3, ha4]
+    · simp [ha2, ha3, ha4, ha5]
+  · have hrec := a_rec k (by omega)
+    simp only [show k ≠ 0 by omega, show k ≠ 1 by omega, show k ≠ 3 by omega,
+      show k ≠ 4 by omega, show k ≠ 5 by omega,
+      show 1 ≤ k by omega, show 2 ≤ k by omega, show 3 ≤ k by omega,
+      show k - 1 ≠ 0 by omega, show k - 2 ≠ 0 by omega, show k - 3 ≠ 0 by omega,
+      ↓reduceIte]
+    push_cast
+    linarith
+
+end OMA_A221855
+
+theorem OMA.solution : type_of% @OMA.S_oeis_a221855.main :=
+  ⟨OMA_A221855.a_formula, OMA_A221855.a_rec, OMA_A221855.gf_eq⟩

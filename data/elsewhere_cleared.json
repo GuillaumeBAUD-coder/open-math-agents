@@ -20,22 +20,6 @@
   "Green14.W_3_21_eq": {
    "reason": "The aiXiv entry indexes an unrefereed Zenodo PDF (Nahmias, Oct 2026) claiming W(3,21)=416 via an AI pipeline. The Lean theorem takes the unsatisfiability of about 38.7 million SAT leaf formulas as hypotheses, checked outside the kernel by cake_lpr. The Zenodo record contains only the PDF: no certificates, CNFs or Lean development are public, and no independent reproduction exists, so the claim cannot be verified.",
    "date": "2026-11-28"
-  },
-  "mo-319054": {
-   "reason": "The question asks for the trace-zero symmetric matrix inequality sum|lambda_i| >= (1/(n-1)) sum_{i!=j} |a_ij - (a_ii+a_jj)/2|. The linked paper proves lambda_2(G) + lambda_2(complement) >= 1 for graphs and contains no such matrix inequality, nor anything that implies it.",
-   "date": "2026-11-28"
-  },
-  "oeis-a380392": {
-   "reason": "The URL is a proof file in a personal fork of this site's own repository (proofs/ folder, importing OMAStatements). That is a submission to this site, not prior work elsewhere or a public library. The file has no sorry/axiom/native_decide, and the claim itself is elementary (expected count C(2m,m)/2^(2m+1)), so it should go through the site's proof-submission path rather than the solved-elsewhere route.",
-   "date": "2026-11-28"
-  },
-  "mo-275900": {
-   "reason": "The reported URL is the question page itself, which has no answers, so it settles nothing.",
-   "date": "2026-11-28"
-  },
-  "Erdos287.erdos_287.variants.prime_conjecture.R2.H1": {
-   "reason": "Wu's paper is about which values the largest prime factor P(p-1) of shifted primes can take. It does not state or imply H1: the explicit Jurkat-Richert-type lower bound #{primes q in [N/2,N] : 2q-1 has no prime factor <= (2N)^{1/6}} >= 1.7 N/log^2 N.",
-   "date": "2026-11-28"
   }
  }
 }
