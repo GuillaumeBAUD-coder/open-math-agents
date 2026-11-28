@@ -1,4 +1,5 @@
 import OMAStatements.S_oeis_a055278
+open OMA.S_oeis_a055278
 
 /-!
 Proof of OEIS A055278: A055278 (n + 12) - A055278 n equals a cubic polynomial R n,
@@ -7,9 +8,9 @@ above degree 8 is periodic with period 12 and vanishes after checking k = 0..11 
 -/
 
 private lemma A_add_twelve (n : ℕ) :
-    OMA.S_oeis_a055278.A055278 (n + 12) =
-      OMA.S_oeis_a055278.A055278 n + ((n : ℤ) ^ 3 + 13 * (n : ℤ) ^ 2 + 93 * (n : ℤ) + 241) := by
-  unfold OMA.S_oeis_a055278.A055278
+    A055278 (n + 12) =
+      A055278 n + ((n : ℤ) ^ 3 + 13 * (n : ℤ) ^ 2 + 93 * (n : ℤ) + 241) := by
+  unfold A055278
   have hpoly :
       3 * ((n + 12 : ℕ) : ℤ) ^ 4 - 20 * ((n + 12 : ℕ) : ℤ) ^ 3 +
           54 * ((n + 12 : ℕ) : ℤ) ^ 2 - 60 * ((n + 12 : ℕ) : ℤ) + 32 =
@@ -20,16 +21,16 @@ private lemma A_add_twelve (n : ℕ) :
   rw [hpoly, Int.add_mul_ediv_right _ _ (by decide)]
 
 private def L_diff (k : ℕ) : ℤ :=
-  OMA.S_oeis_a055278.A055278 (k + 12) - 3 * OMA.S_oeis_a055278.A055278 (k + 11) +
-    2 * OMA.S_oeis_a055278.A055278 (k + 10) + OMA.S_oeis_a055278.A055278 (k + 9) -
-    OMA.S_oeis_a055278.A055278 (k + 7) - 2 * OMA.S_oeis_a055278.A055278 (k + 6) +
-    3 * OMA.S_oeis_a055278.A055278 (k + 5) - OMA.S_oeis_a055278.A055278 (k + 4)
+  A055278 (k + 12) - 3 * A055278 (k + 11) +
+    2 * A055278 (k + 10) + A055278 (k + 9) -
+    A055278 (k + 7) - 2 * A055278 (k + 6) +
+    3 * A055278 (k + 5) - A055278 (k + 4)
 
 private lemma L_diff_eq_zero (k : ℕ) : L_diff k = 0 := by
   induction k using Nat.strong_induction_on with
   | h k ih =>
     by_cases hk : k < 12
-    · interval_cases k <;> norm_num [L_diff, OMA.S_oeis_a055278.A055278]
+    · interval_cases k <;> norm_num [L_diff, A055278]
     · obtain ⟨m, rfl⟩ : ∃ m, k = m + 12 := ⟨k - 12, by omega⟩
       have hstep : L_diff (m + 12) = L_diff m := by
         unfold L_diff
@@ -50,7 +51,7 @@ private lemma L_diff_eq_zero (k : ℕ) : L_diff k = 0 := by
       exact ih m (by omega)
 
 theorem OMA.solution : type_of% @OMA.S_oeis_a055278.main := by
-  let F : PowerSeries ℤ := PowerSeries.mk fun n => OMA.S_oeis_a055278.A055278 (n + 4)
+  let F : PowerSeries ℤ := PowerSeries.mk fun n => A055278 (n + 4)
   let D : PowerSeries ℤ :=
     (1 - (PowerSeries.X : PowerSeries ℤ) ^ 2) *
       (1 - (PowerSeries.X : PowerSeries ℤ) ^ 3) *
@@ -72,14 +73,14 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a055278.main := by
     simp only [map_sub, map_add, PowerSeries.coeff_C_mul, PowerSeries.coeff_X_pow_mul',
       PowerSeries.coeff_X_pow, PowerSeries.coeff_one, PowerSeries.coeff_mk, F]
     rcases m with _ | _ | _ | _ | _ | _ | _ | _ | k
-    · norm_num [OMA.S_oeis_a055278.A055278]
-    · norm_num [OMA.S_oeis_a055278.A055278]
-    · norm_num [OMA.S_oeis_a055278.A055278]
-    · norm_num [OMA.S_oeis_a055278.A055278]
-    · norm_num [OMA.S_oeis_a055278.A055278]
-    · norm_num [OMA.S_oeis_a055278.A055278]
-    · norm_num [OMA.S_oeis_a055278.A055278]
-    · norm_num [OMA.S_oeis_a055278.A055278]
+    · norm_num [A055278]
+    · norm_num [A055278]
+    · norm_num [A055278]
+    · norm_num [A055278]
+    · norm_num [A055278]
+    · norm_num [A055278]
+    · norm_num [A055278]
+    · norm_num [A055278]
     · have h1 : 1 ≤ k + 8 := by omega
       have h2 : 2 ≤ k + 8 := by omega
       have h3 : 3 ≤ k + 8 := by omega
@@ -99,7 +100,7 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a055278.main := by
       exact L_diff_eq_zero k
   have hQ := congrArg (PowerSeries.map (Int.castRingHom ℚ)) hZ
   have hFmap : F.map (Int.castRingHom ℚ) =
-      PowerSeries.mk fun n => (OMA.S_oeis_a055278.A055278 (n + 4) : ℚ) := by
+      PowerSeries.mk fun n => (A055278 (n + 4) : ℚ) := by
     ext n
     simp only [F, PowerSeries.coeff_map, PowerSeries.coeff_mk, Int.coe_castRingHom]
   have hDmap : D.map (Int.castRingHom ℚ) =
