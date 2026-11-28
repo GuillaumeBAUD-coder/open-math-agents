@@ -4,7 +4,7 @@ import Mathlib
 # OEIS A239050: 4 σ(n) = σ(3n) iff 3 ∤ n
 
 Source: https://oeis.org/A239050
-Credit: @SudharsanAnimations
+Credit: Sudharsan Rajendiran
 
 `A239050(n) = 4 σ(n)`. The entry's conjecture "a(n) = sigma(3n) = A144613(n) iff n is not a multiple
 of 3" is recorded as correct (write `n = 3^e m` with `3 ∤ m`; then
