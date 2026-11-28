@@ -1,6 +1,13 @@
 import FormalConjectures.ErdosProblems.«420»
 import Mathlib
 
+/-! # Infinitely many factorial windows below the Rankin doubling threshold
+
+A finite prime-power budget produces an LCM seed. The simultaneous-residue theorem
+fills the exceptional offsets, and the resulting divisor certificates control the
+factorial-divisor ratio throughout the window.
+-/
+
 /- The finite certificate helpers are from Jordan Pollard's companion formalization,
 with the simultaneous-root theorem attributed in the excerpt below. -/
 
@@ -4500,7 +4507,7 @@ private lemma seed_budget_arithmetic {x : ℝ} {N w h r : ℕ} (hx : 0 < x)
           mul_le_mul_of_nonneg_right hh hM0
       _ ≤ (x * Real.log x / Real.log (Real.log x) ^ 2) *
           (25 * Real.log (Real.log x) / Real.log x) := mul_le_mul_of_nonneg_left hM (by positivity)
-      _ = _ := by field_simp <;> ring
+      _ = _ := by field_simp
   have ob := obstruction_budget_bound N z
   have hz' : (z : ℝ) ≤ 3 * ((w : ℝ) + 1) := by exact_mod_cast hz
   change (h : ℝ) * (((SeedAverage.primePowerObstructions N z).map (fun q => z / q)).sum : ℕ) ≤ _
@@ -4769,8 +4776,9 @@ private lemma eventual_rankin_inputs : ∀ᶠ x : ℝ in atTop,
       _ ≤ _ := mul_le_mul_of_nonneg_right hNx hL0.le
   have hLsqrt : L ≤ x ^ (1 / 2 : ℝ) := by
     have hxp : x ^ (1 / 4 : ℝ) ≤ x := by
-      rw [← Real.rpow_one x]
-      exact Real.rpow_le_rpow_of_exponent_le (by linarith : 1 ≤ x) (by norm_num)
+      calc
+        _ ≤ x ^ (1 : ℝ) := Real.rpow_le_rpow_of_exponent_le (by linarith) (by norm_num)
+        _ = _ := Real.rpow_one x
     have hsq : (x ^ (1 / 2 : ℝ)) ^ (2 : ℕ) = x := by
       rw [← Real.rpow_natCast, ← Real.rpow_mul hx0.le]; norm_num
     nlinarith only [hPow'', hxp, hsq, hL0.le, show 0 ≤ x ^ (1 / 2 : ℝ) by positivity]
@@ -4829,7 +4837,7 @@ private lemma eventual_rankin_inputs : ∀ᶠ x : ℝ in atTop,
     linarith
   have hUlog : Real.log U ≤ x / 8 := by
     have hj := Real.log_le_log (by exact_mod_cast hU0) hUhi
-    rw [Real.log_mul (by norm_num), Real.log_exp] at hj
+    rw [Real.log_mul (by norm_num : (2 : ℝ) ≠ 0) (Real.exp_ne_zero _), Real.log_exp] at hj
     linarith
   have hzExp : (z : ℝ) ≤ Real.exp (x / 10) := by
     have hlog : Real.log (x * L) ≤ x / 10 := by
@@ -4852,12 +4860,10 @@ private lemma eventual_rankin_inputs : ∀ᶠ x : ℝ in atTop,
   have hloglast : Real.log (2 * B) ≤ B / 32 := by
     rw [Real.log_mul (by norm_num) hB0.ne']
     linarith
-  exact ⟨by linarith, by dsimp [w]; omega, hNZ, hhz.trans hzZ, hwz.trans hzZ,
-    by
-      have hh' : z < U := by exact_mod_cast hzExp.trans_lt hUlo
-      dsimp [z] at hh'
-      omega,
-    hY, lcm_auxiliary_square hLCM.1 hU0 hUlog, Nat.floor_le (by positivity), hbudget,
+  have hw0 : 0 < w := Nat.mul_pos (by decide : 0 < 4) hh0
+  have hzU : z < U := by exact_mod_cast hzExp.trans_lt hUlo
+  have hwU : 2 * w + h < U := (Nat.le_succ (2 * w + h)).trans_lt hzU
+  exact ⟨by linarith, hw0, hNZ, hhz.trans hzZ, hwz.trans hzZ, hwU, hY, lcm_auxiliary_square hLCM.1 hU0 hUlog, Nat.floor_le (by positivity), hbudget,
     (show (2 * w : ℝ) ≤ (z : ℝ) by exact_mod_cast hwz).trans
       (hzExp.trans (Real.exp_le_exp.mpr (by linarith))), hLCM.1, hLCM.2,
     by linarith, (le_max_right _ _).trans hL, by linarith, hloglast⟩
