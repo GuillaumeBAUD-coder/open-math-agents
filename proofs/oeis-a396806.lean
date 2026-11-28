@@ -254,22 +254,12 @@ private lemma hdivpow_f0 (k n : ℕ) :
 
 private lemma sum_mul_choose (n : ℕ) (hn : 1 ≤ n) :
     ∑ k ∈ Finset.range (n + 1), k * Nat.choose n k = n * 2 ^ (n - 1) := by
-  have h : ∑ k ∈ Finset.range (n + 1), k * Nat.choose n k =
-      ∑ k ∈ Finset.range n, (k + 1) * Nat.choose n (k + 1) := by
-    rw [Finset.sum_range_succ']
-    simp
-  rw [h]
-  have hstep : ∀ k ∈ Finset.range n,
-      (k + 1) * Nat.choose n (k + 1) = n * Nat.choose (n - 1) k := by
-    intro k _
-    have h2 : n = (n - 1) + 1 := by omega
-    have h3 := Nat.add_one_mul_choose_eq (n - 1) k
-    rw [← h2] at h3
-    linarith
-  have hsum : ∑ i ∈ Finset.range n, Nat.choose (n - 1) i = 2 ^ (n - 1) := by
-    conv_lhs => rw [show n = (n - 1) + 1 by omega]
-    exact Nat.sum_range_choose (n - 1)
-  rw [Finset.sum_congr rfl hstep, ← Finset.mul_sum, hsum]
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' hn
+  rw [Finset.sum_range_succ']
+  simp only [Nat.add_sub_cancel, zero_mul, add_zero]
+  have h (k : ℕ) : (k + 1) * Nat.choose (m + 1) (k + 1) = (m + 1) * Nat.choose m k := by
+    rw [Nat.mul_comm (k + 1), ← Nat.add_one_mul_choose_eq]
+  simp_rw [h, ← Finset.mul_sum, Nat.sum_range_choose]
 
 private lemma hcomp_f0_f0_mod2 (n : ℕ) :
     hcomp f0 f0 n % 2 = idSeq n % 2 := by
@@ -312,36 +302,22 @@ end OMA.S_oeis_a396806
 open OMA.S_oeis_a396806 in
 theorem OMA.solution : type_of% @OMA.S_oeis_a396806.main := by
   intro a A hA ha0 heq
-  have hA_egf : A = egf a := hA
-  set a2 := hcomp a a
-  set a3 := hcomp a2 a
-  set a4 := hcomp a3 a
-  set a5 := hcomp a4 a
-  set a6 := hcomp a5 a
-  have ha20 : a2 0 = 0 := hcomp_zero ha0
-  have ha30 : a3 0 = 0 := hcomp_zero ha20
-  have ha40 : a4 0 = 0 := hcomp_zero ha30
-  have ha50 : a5 0 = 0 := hcomp_zero ha40
-  have ha60 : a6 0 = 0 := hcomp_zero ha50
-  have hrec : ∀ n : ℕ, 1 ≤ n → a n = (n : ℤ) * hcomp (fun _ => 1) a6 (n - 1) := by
-    have hA_eq : egf a = egf (fun n => if n = 0 then 0 else (n : ℤ) * hcomp (fun _ => 1) a6 (n - 1)) := by
-      calc egf a = A := hA_egf.symm
-        _ = PowerSeries.X *
-              PowerSeries.subst
-                (PowerSeries.subst A (PowerSeries.subst A (PowerSeries.subst A
-                  (PowerSeries.subst A (PowerSeries.subst A A)))))
-                (PowerSeries.exp ℚ) := heq
-        _ = PowerSeries.X * PowerSeries.subst (egf a6) (egf (fun _ => 1)) := by
-              rw [hA_egf, exp_eq_egf_one,
-                subst_egf a a ha0, subst_egf a2 a ha0, subst_egf a3 a ha0,
-                subst_egf a4 a ha0, subst_egf a5 a ha0]
-        _ = PowerSeries.X * egf (hcomp (fun _ => 1) a6) := by
-              rw [subst_egf (fun _ => 1) a6 ha60]
-        _ = egf (fun n => if n = 0 then 0 else (n : ℤ) * hcomp (fun _ => 1) a6 (n - 1)) :=
-              X_mul_egf _
-    intro n hn
-    have := congr_fun (egf_injective hA_eq) n
-    simpa [show n ≠ 0 by omega] using this
+  change A = egf a at hA
+  let B (k : ℕ) := (fun f : ℕ → ℤ => hcomp f a)^[k] a
+  have step (k : ℕ) : B (k + 1) = hcomp (B k) a := Function.iterate_succ_apply' _ k _
+  have hz (k : ℕ) : B k 0 = 0 := by
+    induction k with
+    | zero => exact ha0
+    | succ k ih => rw [step, hcomp_zero ih]
+  have transport (k : ℕ) : (PowerSeries.subst (egf a))^[k] (egf a) = egf (B k) := by
+    induction k with
+    | zero => rfl
+    | succ k ih => rw [Function.iterate_succ_apply', ih, subst_egf _ _ ha0, step]
+  have h : egf a = PowerSeries.X * PowerSeries.subst (egf (B 5)) (PowerSeries.exp ℚ) := by
+    rw [← transport 5, ← hA]
+    exact heq
+  rw [exp_eq_egf_one, subst_egf _ _ (hz 5), X_mul_egf] at h
+  have hrec := egf_injective h
   have hmod2 : ∀ n : ℕ, a n % 2 = f0 n % 2 := by
     intro n
     induction n using Nat.strong_induction_on with
@@ -349,24 +325,19 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a396806.main := by
       rcases Nat.eq_zero_or_pos n with rfl | hn
       · simp [ha0, f0]
       · have hprev : ∀ m ≤ n - 1, a m % 2 = f0 m % 2 := fun m hm => ih m (by omega)
-        have ha2m : ∀ m ≤ n - 1, a2 m % 2 = idSeq m % 2 := fun m hm =>
-          (hcomp_congr_mod2 hprev hprev m hm).trans (hcomp_f0_f0_mod2 m)
-        have ha3m : ∀ m ≤ n - 1, a3 m % 2 = f0 m % 2 := fun m hm => by
-          have := hcomp_congr_mod2 ha2m hprev m hm
-          rwa [hcomp_idSeq_left f0 rfl] at this
-        have ha4m : ∀ m ≤ n - 1, a4 m % 2 = idSeq m % 2 := fun m hm =>
-          (hcomp_congr_mod2 ha3m hprev m hm).trans (hcomp_f0_f0_mod2 m)
-        have ha5m : ∀ m ≤ n - 1, a5 m % 2 = f0 m % 2 := fun m hm => by
-          have := hcomp_congr_mod2 ha4m hprev m hm
-          rwa [hcomp_idSeq_left f0 rfl] at this
-        have ha6m : ∀ m ≤ n - 1, a6 m % 2 = idSeq m % 2 := fun m hm =>
-          (hcomp_congr_mod2 ha5m hprev m hm).trans (hcomp_f0_f0_mod2 m)
-        have hexp1 : hcomp (fun _ => 1) a6 (n - 1) % 2 = 1 := by
+        have toId {b : ℕ → ℤ} (hb : ∀ m ≤ n - 1, b m % 2 = f0 m % 2) :
+            ∀ m ≤ n - 1, hcomp b a m % 2 = idSeq m % 2 := fun m hm =>
+          (hcomp_congr_mod2 hb hprev m hm).trans (hcomp_f0_f0_mod2 m)
+        have toF {b : ℕ → ℤ} (hb : ∀ m ≤ n - 1, b m % 2 = idSeq m % 2) :
+            ∀ m ≤ n - 1, hcomp b a m % 2 = f0 m % 2 := fun m hm => by
+          simpa only [hcomp_idSeq_left f0 rfl] using hcomp_congr_mod2 hb hprev m hm
+        have hB : ∀ m ≤ n - 1, B 5 m % 2 = idSeq m % 2 :=
+          toId (toF (toId (toF (toId hprev))))
+        have hexp1 : hcomp (fun _ => 1) (B 5) (n - 1) % 2 = 1 := by
           have := hcomp_congr_mod2 (f1 := fun _ => 1) (f2 := fun _ => 1)
-            (fun _ _ => rfl) ha6m (n - 1) le_rfl
-          rw [hcomp_idSeq_right] at this
-          simpa using this
-        rw [hrec n hn, Int.mul_emod, hexp1, mul_one, Int.emod_emod]
+            (fun _ _ => rfl) hB (n - 1) le_rfl
+          rwa [hcomp_idSeq_right] at this
+        rw [congrFun hrec n, if_neg hn.ne', Int.mul_emod, hexp1, mul_one, Int.emod_emod]
         rfl
   intro n _
   have hm := hmod2 n
