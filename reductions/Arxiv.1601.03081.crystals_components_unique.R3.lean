@@ -12,6 +12,18 @@ elliptic-curve identification, and this reduction are our argument. -/
 namespace OMA.R_Arxiv_1601_03081_crystals_components_unique_R3
 open Arxiv.«1601.03081»
 
+private theorem cubic_strict : StrictMono (fun d : ℕ => (2*d+7)*(2*d^2+12*d+17)) := by
+  apply strictMono_nat_of_lt_succ
+  intro d
+  nlinarith
+
+private theorem para_strict : StrictMono (fun j : ℕ =>
+    (2*j^2+4*j+1)*(2*j^2+8*j+7)) := by
+  apply strictMono_nat_of_lt_succ
+  intro j
+  ring_nf
+  omega
+
 /-- Four types of sorted decompositions, from the crystal recurrence. -/
 def H1 : Prop := ∀ n a b : ℕ, IsCrystalWithComponents n a b → a≤b →
     (a=5 ∧ b=7) ∨ (∃ d : ℕ, a=2*d+7 ∧ b=2*d^2+12*d+17) ∨
@@ -29,18 +41,6 @@ its quotient is at least five and it lies past the cubic member. -/
 def H3 : Prop := ∀ n a b c e q : ℕ, IsCrystalWithComponents n a b → a≤b →
     IsCrystalWithComponents n c e → c≤e → 5≤q → 2*q<a →
     (a+b)^2=q*((a+1)*(b+1)) → a=c
-
-private theorem cubic_strict : StrictMono (fun d : ℕ => (2*d+7)*(2*d^2+12*d+17)) := by
-  apply strictMono_nat_of_lt_succ
-  intro d
-  nlinarith
-
-private theorem para_strict : StrictMono (fun j : ℕ =>
-    (2*j^2+4*j+1)*(2*j^2+8*j+7)) := by
-  apply strictMono_nat_of_lt_succ
-  intro j
-  ring_nf
-  omega
 
 /-- The cubic/parabolic intersection consists only of the identical pair (7,17). -/
 theorem cross (list : H2) (d j : ℕ)
