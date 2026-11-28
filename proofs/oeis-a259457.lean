@@ -8,8 +8,5 @@ import OMAStatements.S_oeis_a259457
 theorem OMA.solution : type_of% @OMA.S_oeis_a259457.main := by
   intro n hn
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 2 := ⟨n - 2, by omega⟩
-  simp only [OMA.S_oeis_a259457.a, show m + 2 - 1 = m + 1 by omega, show m + 2 - 2 = m by omega,
-    show m + 2 + 3 = (m + 3) + 2 by omega, show m + 1 + 3 = (m + 3) + 1 by omega,
-    Nat.factorial_succ]
-  push_cast
+  simp [OMA.S_oeis_a259457.a, Nat.factorial_succ]
   ring
