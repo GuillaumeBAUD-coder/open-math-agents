@@ -1,34 +1,19 @@
 import OMAReductions.R_Erdos931_erdos_931_variants_exists_prime_R1
 import Mathlib
 
--- Original proof: @ivillar. Prime-factor membership lemma: @menelikbaye-digitalmethod.
-
 open Finset
 
-private theorem primeFactor_window {q n k : ℕ} (hq : q.Prime) :
-    q ∈ (∏ i ∈ Icc 1 k, (n + i)).primeFactors ↔ ∃ i ∈ Icc 1 k, q ∣ n + i := by
-  have hpos : 0 < ∏ i ∈ Icc 1 k, (n + i) :=
-    Finset.prod_pos fun i hi => by have := (mem_Icc.mp hi).1; omega
-  rw [Nat.mem_primeFactors, hq.prime.dvd_finsetProd_iff]
-  exact ⟨fun h => h.2.1, fun h => ⟨hq, h, ne_of_gt hpos⟩⟩
+theorem L {q n k} :
+    q ∈ (∏ i ∈ Icc 1 k, (n + i)).primeFactors ↔ q.Prime ∧ ∃ i, (1 ≤ i ∧ i ≤ k) ∧ q ∣ n + i := by
+  simp +contextual [Nat.prime_iff, Prime.dvd_finsetProd_iff, prod_ne_zero_iff]
+  omega
 
 theorem OMA.solution : OMA.R_Erdos931_erdos_931_variants_exists_prime_R1.H1 := by
-  intro k₁ k₂ n₁ n₂ hle heq
-  constructor
-  · intro q hq hgt hbound
-    have hright := (primeFactor_window (n := n₂) (k := k₂) hq).2
-      ⟨q - n₂, mem_Icc.mpr ⟨by omega, by omega⟩, by rw [show n₂ + (q - n₂) = q by omega]⟩
-    rw [← heq] at hright
-    obtain ⟨i, hi, hd⟩ := (primeFactor_window hq).1 hright
-    have := mem_Icc.mp hi
-    have := Nat.le_of_dvd (by omega) hd
-    omega
-  · intro q hleft
-    have hq := Nat.prime_of_mem_primeFactors hleft
-    obtain ⟨i, hi, hd⟩ := (primeFactor_window hq).1 hleft
-    rw [heq] at hleft
-    obtain ⟨j, hj, he⟩ := (primeFactor_window hq).1 hleft
-    have := mem_Icc.mp hi
-    have := mem_Icc.mp hj
-    have := Nat.le_of_dvd (by omega) (Nat.dvd_sub he hd)
+  intro _ _ _ n h e
+  simp only [Finset.ext_iff, L] at *
+  refine ⟨fun q p a b => ?_, fun q ⟨p, i, x, d⟩ => ?_⟩
+  · have ⟨_, i, _, d⟩ := (e q).2 ⟨p, q - n, by omega, by simp [a.le]⟩
+    linarith [Nat.le_of_dvd (by omega) d]
+  · have ⟨_, j, _, f⟩ := (e q).1 ⟨p, i, x, d⟩
+    have := Nat.le_of_dvd (by omega) (Nat.dvd_sub f d)
     omega
