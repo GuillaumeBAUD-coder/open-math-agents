@@ -1,5 +1,6 @@
 import OMAStatements.S_oeis_a398812
 
+open Finset
 -- Problem: A398812, a(n)/n^2 -> 1 (A138808(n) <= n tau(n) <= 2 n sqrt n).
 -- Credit: @bnb9001
 
@@ -13,19 +14,19 @@ lemma card_divisors_le_two_sqrt (n : ℕ) : n.divisors.card ≤ 2 * Nat.sqrt n :
   set S1 := n.divisors.filter (fun d => d * d ≤ n)
   set S2 := n.divisors.filter (fun d => ¬ d * d ≤ n)
   have hsplit : S1.card + S2.card = n.divisors.card :=
-    Finset.card_filter_add_card_filter_not (s := n.divisors) (fun d => d * d ≤ n)
+    card_filter_add_card_filter_not (s := n.divisors) (fun d => d * d ≤ n)
   have h1 : S1.card ≤ Nat.sqrt n := by
-    calc S1.card ≤ (Finset.Icc 1 (Nat.sqrt n)).card := by
-          apply Finset.card_le_card
+    calc S1.card ≤ (Icc 1 (Nat.sqrt n)).card := by
+          apply card_le_card
           intro d hd
-          simp only [S1, Finset.mem_filter, Nat.mem_divisors] at hd
-          simp only [Finset.mem_Icc]
+          simp only [S1, mem_filter, Nat.mem_divisors] at hd
+          simp only [mem_Icc]
           exact ⟨Nat.pos_of_dvd_of_pos hd.1.1 hn, Nat.le_sqrt.2 hd.2⟩
       _ = Nat.sqrt n := by simp
   have h2 : S2.card ≤ S1.card := by
-    apply Finset.card_le_card_of_injOn (fun d => n / d)
+    apply card_le_card_of_injOn (fun d => n / d)
     · intro d hd
-      simp only [S2, S1, Finset.mem_coe, Finset.mem_filter, Nat.mem_divisors, not_le] at hd ⊢
+      simp only [S2, S1, mem_coe, mem_filter, Nat.mem_divisors, not_le] at hd ⊢
       obtain ⟨⟨hdn, hn0⟩, hdd⟩ := hd
       have hd0 : 0 < d := Nat.pos_of_dvd_of_pos hdn hn
       have hq : d * (n / d) = n := Nat.mul_div_cancel' hdn
@@ -38,7 +39,7 @@ lemma card_divisors_le_two_sqrt (n : ℕ) : n.divisors.card ≤ 2 * Nat.sqrt n :
       calc n / d * (n / d) ≤ d * (n / d) := Nat.mul_le_mul_right _ hlt.le
         _ = n := hq
     · intro x hx y hy hxy
-      simp only [S2, Finset.mem_coe, Finset.mem_filter, Nat.mem_divisors] at hx hy
+      simp only [S2, mem_coe, mem_filter, Nat.mem_divisors] at hx hy
       have := congrArg (fun t => n / t) hxy
       simp only at this
       rwa [Nat.div_div_self hx.1.1 hx.1.2, Nat.div_div_self hy.1.1 hy.1.2] at this
@@ -46,23 +47,23 @@ lemma card_divisors_le_two_sqrt (n : ℕ) : n.divisors.card ≤ 2 * Nat.sqrt n :
 
 lemma B_le (n : ℕ) : B n ≤ n * n.divisors.card := by
   unfold B
-  calc _ ≤ (n.divisors.biUnion (fun p => Finset.Icc 1 p ×ˢ Finset.Icc 1 (n / p))).card := by
-        apply Finset.card_le_card
+  calc _ ≤ (n.divisors.biUnion (fun p => Icc 1 p ×ˢ Icc 1 (n / p))).card := by
+        apply card_le_card
         intro xy hxy
-        simp only [Finset.mem_filter, Finset.mem_product, Finset.mem_Icc] at hxy
+        simp only [mem_filter, mem_product, mem_Icc] at hxy
         obtain ⟨⟨⟨hx1, -⟩, hy1, -⟩, p, hp, hxp, hyp⟩ := hxy
-        simp only [Finset.mem_biUnion, Finset.mem_product, Finset.mem_Icc]
+        simp only [mem_biUnion, mem_product, mem_Icc]
         exact ⟨p, hp, ⟨hx1, hxp⟩, hy1, hyp⟩
-    _ ≤ ∑ p ∈ n.divisors, (Finset.Icc 1 p ×ˢ Finset.Icc 1 (n / p)).card := Finset.card_biUnion_le
+    _ ≤ ∑ p ∈ n.divisors, (Icc 1 p ×ˢ Icc 1 (n / p)).card := card_biUnion_le
     _ = ∑ p ∈ n.divisors, n := by
-        refine Finset.sum_congr rfl fun p hp => ?_
-        rw [Finset.card_product, Nat.card_Icc, Nat.card_Icc, Nat.add_sub_cancel, Nat.add_sub_cancel]
+        refine sum_congr rfl fun p hp => ?_
+        rw [card_product, Nat.card_Icc, Nat.card_Icc, Nat.add_sub_cancel, Nat.add_sub_cancel]
         exact Nat.mul_div_cancel' (Nat.dvd_of_mem_divisors hp)
-    _ = n * n.divisors.card := by rw [Finset.sum_const, smul_eq_mul, mul_comm]
+    _ = n * n.divisors.card := by rw [sum_const, smul_eq_mul, mul_comm]
 
 lemma B_le_sq (n : ℕ) : B n ≤ n ^ 2 := by
   unfold B
-  calc _ ≤ (Finset.Icc 1 n ×ˢ Finset.Icc 1 n).card := Finset.card_filter_le _ _
+  calc _ ≤ (Icc 1 n ×ˢ Icc 1 n).card := card_filter_le _ _
     _ = n ^ 2 := by simp [sq]
 
 end OMA_A398812_Proof
