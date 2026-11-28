@@ -1,7 +1,4 @@
 import OMAReductions.R_RegularPrimes_isRegularPrime_iff_Bernoulli_R3_H2_R1_H2_R1
-import Mathlib.LinearAlgebra.Vandermonde
-import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
-import Mathlib.FieldTheory.Finite.Basic
 
 namespace OMA.RPVander
 
