@@ -1,11 +1,19 @@
 import "server-only";
 import katex from "katex";
+import { preload } from "react-dom";
+import katexMain from "katex/dist/fonts/KaTeX_Main-Regular.woff2?url";
+import katexMath from "katex/dist/fonts/KaTeX_Math-Italic.woff2?url";
 
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
 function tex(src: string, display: boolean) {
   try {
-    return katex.renderToString(src, { displayMode: display, throwOnError: false, strict: "ignore", trust: false, output: "html" });
+    const html = katex.renderToString(src, { displayMode: display, throwOnError: false, strict: "ignore", trust: false, output: "html" });
+    // KaTeX's @font-face rules have no font-display: typeset math stays invisible until its font arrives, and the
+    // browser asks for that font only once the page is laid out. A page that renders math preloads its two main fonts
+    // (React sends each preload once per page; outside a render this does nothing).
+    for (const href of [katexMain, katexMath]) preload(href, { as: "font", type: "font/woff2", crossOrigin: "" });
+    return html;
   } catch {
     return `<code>${esc(src)}</code>`;
   }
@@ -39,6 +47,19 @@ export function renderStatement(src: string): string {
   html = html.replace(/\u0000(\d+)\u0000/g, (_, i) => slots[Number(i)]);
   parts.push(html);
   return parts.join("");
+}
+
+/** A one-line title: $…$ math rendered inline with KaTeX, everything else escaped (no paragraphs, no links). */
+export function renderTitle(src: string): string {
+  const re = /\$\$([^$]+?)\$\$|\$([^$\n]+?)\$/g;
+  let out = "";
+  let last = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index)) + tex((m[1] ?? m[2])!, false);
+    last = m.index + m[0].length;
+  }
+  return out + esc(src.slice(last));
 }
 
 /** Plain text for meta descriptions. */
