@@ -1,5 +1,7 @@
 import OMAStatements.S_opg_something_like_picard_for_1_forms
 
+/- Shorter version of the original Lean disproof in upstream PR #37876. -/
+
 -- Problem: Something like Picard for 1-forms (Open Problem Garden, B. Elsner).
 -- Target: OMA.S_opg_something_like_picard_for_1_forms.main. This file REFUTES the formal statement.
 -- Why it is false as stated: the open sets U_j are not required to be connected. Take
@@ -15,6 +17,7 @@ import OMAStatements.S_opg_something_like_picard_for_1_forms
 -- nothing about it.
 
 open Filter Topology
+open Complex (exp)
 
 namespace OMA.P30
 
@@ -44,14 +47,11 @@ noncomputable def ll (j : Fin 4) (z : ℂ) : ℤ := ⌊((z⁻¹).im - (off j).2)
 
 /-- `exp (1/z)` plus a constant that depends only on the piece containing `z`. -/
 noncomputable def F (j : Fin 4) (z : ℂ) : ℂ :=
-  Complex.exp z⁻¹ + Cst (2 * kk j z + (off j).1) (2 * ll j z + (off j).2)
+  exp z⁻¹ + Cst (2 * kk j z + (off j).1) (2 * ll j z + (off j).2)
 
 lemma isOpen_Q (x y : ℤ) : IsOpen (Q x y) := by
-  have h1 : IsOpen {w : ℂ | |w.re - x| < 3 / 4} :=
-    isOpen_lt ((Complex.continuous_re.sub continuous_const).abs) continuous_const
-  have h2 : IsOpen {w : ℂ | |w.im - y| < 3 / 4} :=
-    isOpen_lt ((Complex.continuous_im.sub continuous_const).abs) continuous_const
-  exact h1.inter h2
+  exact (isOpen_lt ((Complex.continuous_re.sub continuous_const).abs) continuous_const).inter
+    (isOpen_lt ((Complex.continuous_im.sub continuous_const).abs) continuous_const)
 
 lemma isOpen_piece (j : Fin 4) (k l : ℤ) : IsOpen (piece j k l) :=
   Metric.isOpen_ball.inter
@@ -69,26 +69,22 @@ lemma mem_piece {j : Fin 4} {k l : ℤ} {z : ℂ} :
 lemma kk_eq {j : Fin 4} {k l : ℤ} {z : ℂ} (h : z ∈ piece j k l) : kk j z = k ∧ ll j z = l := by
   obtain ⟨-, -, h1, h2⟩ := mem_piece.1 h
   rw [abs_lt] at h1 h2
-  constructor
-  · unfold kk
-    rw [Int.floor_eq_iff]
-    constructor <;> linarith
-  · unfold ll
-    rw [Int.floor_eq_iff]
-    constructor <;> linarith
+  constructor <;> simp only [kk, ll, Int.floor_eq_iff] <;> constructor <;> linarith
 
 lemma F_eq {j : Fin 4} {k l : ℤ} {z : ℂ} (h : z ∈ piece j k l) :
-    F j z = Complex.exp z⁻¹ + Cst (2 * k + (off j).1) (2 * l + (off j).2) := by
+    F j z = exp z⁻¹ + Cst (2 * k + (off j).1) (2 * l + (off j).2) := by
   unfold F
   rw [(kk_eq h).1, (kk_eq h).2]
 
+private lemma exists_piece {j : Fin 4} {z : ℂ} (hz : z ∈ U j) : ∃ k l, z ∈ piece j k l := by
+  simpa only [U, Set.mem_iUnion] using hz
+
 lemma hasDerivAt_F {j : Fin 4} {z : ℂ} (h : z ∈ U j) :
-    HasDerivAt (F j) (Complex.exp z⁻¹ * (-(z ^ 2)⁻¹)) z := by
-  obtain ⟨k, hk⟩ := Set.mem_iUnion.1 h
-  obtain ⟨l, hl⟩ := Set.mem_iUnion.1 hk
+    HasDerivAt (F j) (exp z⁻¹ * (-(z ^ 2)⁻¹)) z := by
+  obtain ⟨k, l, hl⟩ := exists_piece h
   have hz : z ≠ 0 := (mem_piece.1 hl).2.1
-  have h1 : HasDerivAt (fun z : ℂ => Complex.exp z⁻¹ + Cst (2 * k + (off j).1) (2 * l + (off j).2))
-      (Complex.exp z⁻¹ * (-(z ^ 2)⁻¹)) z := ((hasDerivAt_inv hz).cexp).add_const _
+  have h1 : HasDerivAt (fun z : ℂ => exp z⁻¹ + Cst (2 * k + (off j).1) (2 * l + (off j).2))
+      (exp z⁻¹ * (-(z ^ 2)⁻¹)) z := ((hasDerivAt_inv hz).cexp).add_const _
   refine h1.congr_of_eventuallyEq ?_
   filter_upwards [(isOpen_piece j k l).mem_nhds hl] with w hw
   exact F_eq hw
@@ -107,7 +103,7 @@ lemma D_two {x x' : ℤ} (h : x < x') : 2 * D x ≤ D x' := by
   nlinarith [Real.exp_pos ((x : ℝ) + 1)]
 
 lemma norm_exp_lt {j : Fin 4} {k l : ℤ} {z : ℂ} (h : z ∈ piece j k l) :
-    ‖Complex.exp z⁻¹‖ < D (2 * k + (off j).1) := by
+    ‖exp z⁻¹‖ < D (2 * k + (off j).1) := by
   obtain ⟨-, -, h1, -⟩ := mem_piece.1 h
   rw [abs_lt] at h1
   rw [Complex.norm_exp]
@@ -118,17 +114,15 @@ lemma norm_exp_lt {j : Fin 4} {k l : ℤ} {z : ℂ} (h : z ∈ piece j k l) :
 
 lemma injOn_F (j : Fin 4) : Set.InjOn (F j) (U j) := by
   intro z₁ h₁ z₂ h₂ heq
-  obtain ⟨k₁, hk₁⟩ := Set.mem_iUnion.1 h₁
-  obtain ⟨l₁, hl₁⟩ := Set.mem_iUnion.1 hk₁
-  obtain ⟨k₂, hk₂⟩ := Set.mem_iUnion.1 h₂
-  obtain ⟨l₂, hl₂⟩ := Set.mem_iUnion.1 hk₂
+  obtain ⟨k₁, l₁, hl₁⟩ := exists_piece h₁
+  obtain ⟨k₂, l₂, hl₂⟩ := exists_piece h₂
   rw [F_eq hl₁, F_eq hl₂] at heq
   have hn₁ := norm_exp_lt hl₁
   have hn₂ := norm_exp_lt hl₂
-  have hre₁ := Complex.abs_re_le_norm (Complex.exp z₁⁻¹)
-  have hre₂ := Complex.abs_re_le_norm (Complex.exp z₂⁻¹)
-  have him₁ := Complex.abs_im_le_norm (Complex.exp z₁⁻¹)
-  have him₂ := Complex.abs_im_le_norm (Complex.exp z₂⁻¹)
+  have hre₁ := Complex.abs_re_le_norm (exp z₁⁻¹)
+  have hre₂ := Complex.abs_re_le_norm (exp z₂⁻¹)
+  have him₁ := Complex.abs_im_le_norm (exp z₁⁻¹)
+  have him₂ := Complex.abs_im_le_norm (exp z₂⁻¹)
   rw [abs_le] at hre₁ hre₂ him₁ him₂
   have hRe := congrArg Complex.re heq
   have hIm := congrArg Complex.im heq
@@ -159,7 +153,7 @@ lemma injOn_F (j : Fin 4) : Set.InjOn (F j) (U j) := by
       push_cast at hIm
       nlinarith
   subst hl
-  have hexp : Complex.exp z₁⁻¹ = Complex.exp z₂⁻¹ := add_right_cancel heq
+  have hexp : exp z₁⁻¹ = exp z₂⁻¹ := add_right_cancel heq
   obtain ⟨n, hn⟩ := Complex.exp_eq_exp_iff_exists_int.1 hexp
   obtain ⟨-, -, -, hi₁⟩ := mem_piece.1 hl₁
   obtain ⟨-, -, -, hi₂⟩ := mem_piece.1 hl₂
@@ -202,12 +196,7 @@ lemma cover {z : ℂ} (hz1 : ‖z‖ < 1) (hz0 : z ≠ 0) : ∃ j, z ∈ U j := 
   have ha' : (a + 2 * b) % 2 = a := by omega
   have hb' : (a + 2 * b) / 2 = b := by omega
   rw [mem_piece]
-  refine ⟨hz1, hz0, ?_, ?_⟩
-  · simp only [off, ha']
-    rw [abs_lt]
-    constructor <;> push_cast <;> linarith
-  · simp only [off, hb']
-    rw [abs_lt]
+  refine ⟨hz1, hz0, ?_, ?_⟩ <;> simp only [off, ha', hb', abs_lt] <;>
     constructor <;> push_cast <;> linarith
 
 lemma union_eq : (⋃ j, U j) = Metric.ball (0 : ℂ) 1 \ {0} := by
@@ -215,8 +204,7 @@ lemma union_eq : (⋃ j, U j) = Metric.ball (0 : ℂ) 1 \ {0} := by
   constructor
   · intro h
     obtain ⟨j, hj⟩ := Set.mem_iUnion.1 h
-    obtain ⟨k, hk⟩ := Set.mem_iUnion.1 hj
-    obtain ⟨l, hl⟩ := Set.mem_iUnion.1 hk
+    obtain ⟨k, l, hl⟩ := exists_piece hj
     obtain ⟨h1, h0, -, -⟩ := mem_piece.1 hl
     exact ⟨by simpa using h1, by simpa using h0⟩
   · rintro ⟨h1, h0⟩
@@ -225,7 +213,7 @@ lemma union_eq : (⋃ j, U j) = Metric.ball (0 : ℂ) 1 \ {0} := by
 
 /-- The glued derivative `-exp (1/z) / z^2` has an essential singularity at `0`. -/
 lemma not_meromorphic (g : ℂ → ℂ)
-    (hg : ∀ z : ℂ, ‖z‖ < 1 → z ≠ 0 → g z = Complex.exp z⁻¹ * (-(z ^ 2)⁻¹)) :
+    (hg : ∀ z : ℂ, ‖z‖ < 1 → z ≠ 0 → g z = exp z⁻¹ * (-(z ^ 2)⁻¹)) :
     ¬ MeromorphicAt g 0 := by
   rintro ⟨n, hn⟩
   obtain ⟨δ, hδ, hb⟩ := Metric.continuousAt_iff.1 hn.continuousAt 1 one_pos
@@ -253,9 +241,8 @@ lemma not_meromorphic (g : ℂ → ℂ)
     ((fun z : ℂ => (z - 0) ^ n • g z) 0)
   have hlt : ‖(((s⁻¹ : ℝ) : ℂ) - 0) ^ n • g ((s⁻¹ : ℝ) : ℂ)‖ <
       ‖(fun z : ℂ => (z - 0) ^ n • g z) 0‖ + 1 := by
-    have : ‖(fun z : ℂ => (z - 0) ^ n • g z) ((s⁻¹ : ℝ) : ℂ)‖ <
-        ‖(fun z : ℂ => (z - 0) ^ n • g z) 0‖ + 1 := by linarith
-    exact this
+    change ‖(fun z : ℂ => (z - 0) ^ n • g z) ((s⁻¹ : ℝ) : ℂ)‖ < _
+    linarith
   rw [hval, Complex.norm_real, Real.norm_eq_abs] at hlt
   have he : Real.exp s / s ^ n ≤ |(s⁻¹) ^ n * (Real.exp s * (-((s⁻¹) ^ 2)⁻¹))| := by
     have h2 : ((s⁻¹) ^ 2)⁻¹ = s ^ 2 := by rw [inv_pow, inv_inv]
@@ -269,14 +256,15 @@ lemma not_meromorphic (g : ℂ → ℂ)
 
 end OMA.P30
 
+open OMA.P30 in
 theorem OMA.disproof : ¬ (type_of% @OMA.S_opg_something_like_picard_for_1_forms.main) := by
   intro H
-  obtain ⟨g, hg, hmer⟩ := H 4 OMA.P30.U OMA.P30.F OMA.P30.isOpen_U OMA.P30.union_eq
-    (fun j z hz => (OMA.P30.hasDerivAt_F hz).differentiableAt.differentiableWithinAt)
-    OMA.P30.injOn_F
+  obtain ⟨g, hg, hmer⟩ := H 4 U F isOpen_U union_eq
+    (fun j z hz => (hasDerivAt_F hz).differentiableAt.differentiableWithinAt)
+    injOn_F
     (fun j k z hz => by
-      rw [(OMA.P30.hasDerivAt_F hz.1).deriv, (OMA.P30.hasDerivAt_F hz.2).deriv])
-  refine OMA.P30.not_meromorphic g ?_ hmer
+      rw [(hasDerivAt_F hz.1).deriv, (hasDerivAt_F hz.2).deriv])
+  refine not_meromorphic g ?_ hmer
   intro z hz1 hz0
-  obtain ⟨j, hj⟩ := OMA.P30.cover hz1 hz0
-  rw [hg j z hj, (OMA.P30.hasDerivAt_F hj).deriv]
+  obtain ⟨j, hj⟩ := cover hz1 hz0
+  rw [hg j z hj, (hasDerivAt_F hj).deriv]
