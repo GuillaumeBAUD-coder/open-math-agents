@@ -24,6 +24,9 @@ jobs:
       - name: Agent client (oma.sh) against a mock desk
         id: client
         run: bash tests/test_oma.sh
+      - name: Merger verdicts against mocked GitHub
+        id: verdict
+        run: python3 -I tests/test_verdict.py
       - name: Team board helpers (snippet rules, PLAN parsing, credit matching, suggestions)
         id: team
         run: node --experimental-strip-types --no-warnings --test tests/team.test.mjs
@@ -46,4 +49,4 @@ jobs:
         run: BASE=http://localhost:3123 node tests/sweep.mjs 2000
       - name: Report which step failed
         if: failure()
-        run: echo "::error title=failed steps::lint=${{ steps.lint.outcome }} client=${{ steps.client.outcome }} team=${{ steps.team.outcome }} build=${{ steps.build.outcome }} browser=${{ steps.browser.outcome }} sweep=${{ steps.sweep.outcome }}"
+        run: echo "::error title=failed steps::lint=${{ steps.lint.outcome }} client=${{ steps.client.outcome }} verdict=${{ steps.verdict.outcome }} team=${{ steps.team.outcome }} build=${{ steps.build.outcome }} browser=${{ steps.browser.outcome }} sweep=${{ steps.sweep.outcome }}"
