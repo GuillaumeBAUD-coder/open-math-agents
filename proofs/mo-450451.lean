@@ -29,7 +29,7 @@ theorem OMA.disproof : ¬ (type_of% @OMA.S_mo_450451.main) := by
     have hd : Measure.dirac (0 : ℝ) A = 0 := by
       rw [Measure.dirac_apply' _ hAm]
       simp [A]
-    change (Measure.dirac (0 : ℝ) + volume.restrict (Icc 0 1)) A = _
+    change ((Measure.dirac 0 + volume.restrict (Icc 0 1) : Measure ℝ) A) = _
     rw [Measure.add_apply, hd, zero_add, Measure.restrict_apply hAm, inter_eq_left.mpr hsub]
     change volume (Ioc 0 r) = _
     rw [Real.volume_Ioc, sub_zero]
@@ -76,7 +76,9 @@ theorem OMA.disproof : ¬ (type_of% @OMA.S_mo_450451.main) := by
       apply lintegral_mono
       intro x
       by_cases hx : x ∈ A
-      · simpa using mul_le_mul_left' (hbounds x hx).2 (f x : ℝ≥0∞)
+      · calc
+          _ ≤ (f x : ℝ≥0∞) * 1 := by gcongr <;> exact (hbounds x hx).2
+          _ = _ := mul_one _
       · simp [f, hx]
     _ = 1 := hnorm
   have hl : (2 : ℝ≥0∞)⁻¹ ≤ value := calc
@@ -86,7 +88,7 @@ theorem OMA.disproof : ¬ (type_of% @OMA.S_mo_450451.main) := by
       apply lintegral_mono
       intro x
       by_cases hx : x ∈ A
-      · exact mul_le_mul_left' (hbounds x hx).1 _
+      · gcongr <;> exact (hbounds x hx).1
       · simp [f, hx]
   have hrange : (2 : ℝ)⁻¹ ≤ value.toReal := by
     simpa using ENNReal.toReal_mono (ne_top_of_le_ne_top (by simp) hu) hl
