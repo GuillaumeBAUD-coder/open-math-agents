@@ -93,15 +93,6 @@ def unitCharacterSum {q : Nat} (a : (ZMod q)ˣ -> Complex)
     (chi : DirichletCharacter Complex q) : Complex := by
   letI : Fintype (ZMod q)ˣ := Fintype.ofFinite _
   exact ∑ x, a x * chi (x : ZMod q)
-def CharacterLargeSieveStatement : Prop :=
-  Exists fun C : Real =>
-    0 < C ∧
-      ∀ (M : Int) (N Q : Nat) (a : Int -> Complex), 1 <= Q ->
-        ∑ q ∈ Icc 1 Q, ((q : Real) / (q.totient : Real)) *
-            ∑ chi ∈ primitiveCharacters q,
-              ‖intervalCharacterSum a M N q chi‖ ^ 2 <=
-          C * ((N : Real) + (Q : Real) ^ 2) *
-            ∑ n ∈ Ioc M (M + (N : Int)), ‖a n‖ ^ 2
 end BombieriVinogradov.LargeSieve
 end
 end
@@ -139,18 +130,6 @@ def maximalBilinearNorm (a b : Nat -> Complex)
     ‖restrictedBilinearCharacterSum a b M N Y q chi‖
 def coefficientMass (a : Nat -> Complex) (M : Nat) : Real :=
   ∑ m ∈ Icc 1 M, ‖a m‖ ^ 2
-def MaximalBilinearLargeSieveStatement : Prop :=
-  Exists fun C : Real =>
-    0 < C ∧
-      ∀ (X M N Q : Nat) (a b : Nat -> Complex),
-        2 <= X -> 1 <= M -> 1 <= N -> 1 <= Q ->
-          ∑ q ∈ Icc 1 Q, ((q : Real) / (q.totient : Real)) *
-              ∑ chi ∈ primitiveCharacters q,
-                maximalBilinearNorm a b M N X chi <=
-            C * Real.log ((X * M * N : Nat) : Real) *
-              Real.sqrt (((M : Real) + (Q : Real) ^ 2) *
-                ((N : Real) + (Q : Real) ^ 2) *
-                coefficientMass a M * coefficientMass b N)
 def positiveIntervalCoefficients (a : Nat -> Complex) (n : Int) : Complex :=
   a n.toNat
 def positiveCharacterSum (a : Nat -> Complex) (M q : Nat)
@@ -212,15 +191,6 @@ theorem additiveParseval {q : Nat} [NeZero q] (f : ZMod q -> Complex) :
   simp [mul_ite]
   rw [← Finset.sum_mul]
   ring
-theorem additiveParseval_normSq {q : Nat} [NeZero q]
-    (f : ZMod q -> Complex) :
-    (∑ a : ZMod q, ‖additiveTransform f a‖ ^ 2) =
-      (q : Real) * ∑ x, ‖f x‖ ^ 2 := by
-  apply Complex.ofReal_injective
-  simp_rw [← Complex.normSq_eq_norm_sq]
-  push_cast
-  simpa only [Complex.normSq_eq_conj_mul_self, RCLike.star_def] using
-    (additiveParseval f)
 end BombieriVinogradov.LargeSieve
 end
 end
@@ -384,50 +354,6 @@ section
 open Finset
 open scoped BigOperators
 namespace BombieriVinogradov.LargeSieve
-theorem schurBound {ι : Type*} [Fintype ι] (k : ι -> ι -> Real)
-    (hk : ∀ i j, 0 <= k i j) (hsymm : ∀ i j, k i j = k j i)
-    {B : Real} (hrow : ∀ i, ∑ j, k i j <= B) (b : ι -> Real) :
-    ∑ i, ∑ j, b i * b j * k i j <= B * ∑ i, b i ^ 2 := by
-  classical
-  have hpoint (i j : ι) :
-      2 * (b i * b j * k i j) <= b i ^ 2 * k i j + b j ^ 2 * k i j := by
-    have hab : 2 * (b i * b j) <= b i ^ 2 + b j ^ 2 := by
-      nlinarith [sq_nonneg (b i - b j)]
-    nlinarith [mul_le_mul_of_nonneg_right hab (hk i j)]
-  have hcol (j : ι) : ∑ i, k i j <= B := by
-    calc
-      ∑ i, k i j = ∑ i, k j i := by
-        apply Finset.sum_congr rfl
-        intro i _
-        exact hsymm i j
-      _ <= B := hrow j
-  have hdouble :
-      2 * (∑ i, ∑ j, b i * b j * k i j) <=
-        2 * (B * ∑ i, b i ^ 2) := by
-    calc
-      2 * (∑ i, ∑ j, b i * b j * k i j) =
-          ∑ i, ∑ j, 2 * (b i * b j * k i j) := by
-        simp_rw [Finset.mul_sum]
-      _ <= ∑ i, ∑ j, (b i ^ 2 * k i j + b j ^ 2 * k i j) := by
-        exact Finset.sum_le_sum fun i _ => Finset.sum_le_sum fun j _ => hpoint i j
-      _ = (∑ i, b i ^ 2 * ∑ j, k i j) +
-          (∑ i, ∑ j, b j ^ 2 * k i j) := by
-        simp_rw [Finset.sum_add_distrib, Finset.mul_sum]
-      _ = (∑ i, b i ^ 2 * ∑ j, k i j) +
-          (∑ j, b j ^ 2 * ∑ i, k i j) := by
-        congr 1
-        rw [Finset.sum_comm]
-        simp_rw [Finset.mul_sum]
-      _ <= (∑ i, b i ^ 2 * B) + (∑ j, b j ^ 2 * B) := by
-        apply add_le_add
-        · exact Finset.sum_le_sum fun i _ =>
-            mul_le_mul_of_nonneg_left (hrow i) (sq_nonneg (b i))
-        · exact Finset.sum_le_sum fun j _ =>
-            mul_le_mul_of_nonneg_left (hcol j) (sq_nonneg (b j))
-      _ = 2 * (B * ∑ i, b i ^ 2) := by
-        simp_rw [← Finset.sum_mul]
-        ring
-  linarith
 theorem schurBoundFinset {ι : Type*} [DecidableEq ι] (s : Finset ι)
     (k : ι -> ι -> Real) (hk : ∀ i ∈ s, ∀ j ∈ s, 0 <= k i j)
     (hsymm : ∀ i ∈ s, ∀ j ∈ s, k i j = k j i)
@@ -483,64 +409,6 @@ noncomputable section
 open Complex Finset
 open scoped BigOperators ComplexConjugate
 namespace BombieriVinogradov.LargeSieve
-theorem complexEnergy_eq_gram {ρ ι : Type*} [Fintype ρ] [Fintype ι]
-    (A : ρ -> ι -> Complex) (b : ι -> Complex) :
-    (((∑ r, ‖∑ i, A r i * b i‖ ^ 2 : Real) : Real) : Complex) =
-      ∑ i, ∑ j, conj (b i) * b j *
-        ∑ r, conj (A r i) * A r j := by
-  have hterm (z : Complex) : ((‖z‖ ^ 2 : Real) : Complex) = conj z * z := by
-    rw [← Complex.normSq_eq_norm_sq, Complex.normSq_eq_conj_mul_self]
-  rw [Complex.ofReal_sum]
-  simp_rw [hterm]
-  simp_rw [map_sum, map_mul, Finset.sum_mul, Finset.mul_sum]
-  rw [Finset.sum_comm]
-  apply Finset.sum_congr rfl
-  intro i hi
-  rw [Finset.sum_comm]
-  apply Finset.sum_congr rfl
-  intro j hj
-  apply Finset.sum_congr rfl
-  intro r hr
-  ring
-theorem complexGramSchurBound {ρ ι : Type*} [Fintype ρ] [Fintype ι]
-    (A : ρ -> ι -> Complex) (b : ι -> Complex)
-    (k : ι -> ι -> Real)
-    (hk : ∀ i j, 0 <= k i j) (hsymm : ∀ i j, k i j = k j i)
-    {B : Real} (hrow : ∀ i, ∑ j, k i j <= B)
-    (hgram : ∀ i j, ‖∑ r, conj (A r i) * A r j‖ <= k i j) :
-    ∑ r, ‖∑ i, A r i * b i‖ ^ 2 <= B * ∑ i, ‖b i‖ ^ 2 := by
-  let G : Complex := ∑ i, ∑ j, conj (b i) * b j *
-    ∑ r, conj (A r i) * A r j
-  have henergy := complexEnergy_eq_gram A b
-  change ((∑ r, ‖∑ i, A r i * b i‖ ^ 2 : Real) : Complex) = G at henergy
-  have hre : ∑ r, ‖∑ i, A r i * b i‖ ^ 2 = G.re := by
-    calc
-      ∑ r, ‖∑ i, A r i * b i‖ ^ 2 =
-          (((∑ r, ‖∑ i, A r i * b i‖ ^ 2 : Real) : Complex)).re :=
-        (Complex.ofReal_re _).symm
-      _ = G.re := congrArg Complex.re henergy
-  calc
-    ∑ r, ‖∑ i, A r i * b i‖ ^ 2 = G.re := hre
-    _ <= ‖G‖ := Complex.re_le_norm G
-    _ <= ∑ i, ‖∑ j, conj (b i) * b j *
-          ∑ r, conj (A r i) * A r j‖ := by
-      exact norm_sum_le _ _
-    _ <= ∑ i, ∑ j, ‖conj (b i) * b j *
-          ∑ r, conj (A r i) * A r j‖ := by
-      exact Finset.sum_le_sum fun i hi => norm_sum_le _ _
-    _ = ∑ i, ∑ j, ‖b i‖ * ‖b j‖ *
-          ‖∑ r, conj (A r i) * A r j‖ := by
-      apply Finset.sum_congr rfl
-      intro i hi
-      apply Finset.sum_congr rfl
-      intro j hj
-      simp only [norm_mul, norm_conj]
-    _ <= ∑ i, ∑ j, ‖b i‖ * ‖b j‖ * k i j := by
-      exact Finset.sum_le_sum fun i hi => Finset.sum_le_sum fun j hj =>
-        mul_le_mul_of_nonneg_left (hgram i j)
-          (mul_nonneg (norm_nonneg _) (norm_nonneg _))
-    _ <= B * ∑ i, ‖b i‖ ^ 2 :=
-      schurBound k hk hsymm hrow (fun i => ‖b i‖)
 theorem complexEnergyFinset_eq_gram {ρ ι : Type*}
     [DecidableEq ρ] [DecidableEq ι] (sr : Finset ρ) (si : Finset ι)
     (A : ρ -> ι -> Complex) (b : ι -> Complex) :
@@ -1028,14 +896,6 @@ theorem abs_sub_lt_of_packingBin_eq {delta x y : Real} (hdelta : 0 < delta)
     exact (div_lt_one hdelta).mp hyxq
   rw [abs_lt]
   exact And.intro (by linarith) hxy
-theorem packingBin_injective {ι : Type*} {delta : Real} (hdelta : 0 < delta)
-    (x : ι -> Real) (hx : ∀ i, 0 <= x i)
-    (hsep : ∀ i j, Ne i j -> delta <= |x i - x j|) :
-    Function.Injective (fun i => packingBin delta (x i)) := by
-  intro i j hbin
-  by_contra hij
-  have hlt := abs_sub_lt_of_packingBin_eq hdelta (hx i) (hx j) hbin
-  exact (not_lt_of_ge (hsep i j hij)) hlt
 def fejerRankMajorant (N : Nat) (delta : Real) (k : Nat) : Real :=
   if k = 0 then 0
   else min (2 * (N : Real))
@@ -2063,10 +1923,6 @@ theorem characterLargeSieveNat (M : Int) (N Q : Nat) (a : Int -> Complex)
         ∑ n ∈ Ioc M (M + (N : Int)), ‖a n‖ ^ 2 := by
       rw [sum_int_Ioc_eq_sum_range (fun n => ‖a n‖ ^ 2) M N]
       rfl
-theorem characterLargeSieve : CharacterLargeSieveStatement := by
-  refine ⟨36, by norm_num, ?_⟩
-  intro M N Q a hQ
-  exact characterLargeSieveNat M N Q a hQ
 end BombieriVinogradov.LargeSieve
 end
 end
@@ -2544,21 +2400,6 @@ theorem fourier_logTrapezoid_integrable (eps L : Real)
   exact hmajorant.mono' hcontinuous.aestronglyMeasurable
     (ae_of_all volume fun xi =>
       norm_fourier_logTrapezoid_le_spectralMajorant eps L xi heps hL)
-theorem integral_norm_fourier_logTrapezoid_le (eps L : Real)
-    (heps : 0 < eps) (hL : 0 <= L) :
-    ∫ xi : Real, ‖𝓕 (logTrapezoid eps L) xi‖ <=
-      4 + 2 * Real.log ((L + 3 * eps) / eps) := by
-  have hA : 0 < L + 3 * eps := by linarith
-  have hepsA : eps <= L + 3 * eps := by linarith
-  have hfourier := fourier_logTrapezoid_integrable eps L heps hL
-  have hmajorant := spectralMajorant_integrable (L + 3 * eps) eps hA heps
-  calc
-    ∫ xi : Real, ‖𝓕 (logTrapezoid eps L) xi‖ <=
-        ∫ xi : Real, spectralMajorant (L + 3 * eps) eps xi := by
-      exact integral_mono hfourier.norm hmajorant fun xi =>
-        norm_fourier_logTrapezoid_le_spectralMajorant eps L xi heps hL
-    _ = 4 + 2 * Real.log ((L + 3 * eps) / eps) :=
-      integral_spectralMajorant (L + 3 * eps) eps hA heps hepsA
 theorem logTrapezoid_eq_one (eps L x : Real) (heps : 0 < eps)
     (hxlow : -eps <= x) (hxhigh : x <= L + eps) :
     logTrapezoid eps L x = 1 := by
@@ -2731,13 +2572,6 @@ theorem fourier_integerLogCutoff_integrable (Y : Nat) (hY : 1 <= Y) :
   exact fourier_logTrapezoid_integrable
     (integerLogEpsilon Y) (Real.log (Y : Real))
     (integerLogEpsilon_pos Y hY) (log_nat_nonneg Y hY)
-theorem integral_norm_fourier_integerLogCutoff_le (Y : Nat) (hY : 1 <= Y) :
-    ∫ xi : Real, ‖𝓕 (integerLogCutoff Y) xi‖ <=
-      4 + 2 * Real.log ((Real.log (Y : Real) + 3 * integerLogEpsilon Y) /
-        integerLogEpsilon Y) := by
-  exact integral_norm_fourier_logTrapezoid_le
-    (integerLogEpsilon Y) (Real.log (Y : Real))
-    (integerLogEpsilon_pos Y hY) (log_nat_nonneg Y hY)
 theorem one_div_succ_le_integerLogGap (Y : Nat) (hY : 1 <= Y) :
     1 / ((Y : Real) + 1) <= integerLogGap Y := by
   have hYpos : 0 < (Y : Real) := by exact_mod_cast (Nat.zero_lt_of_lt hY)
@@ -2802,11 +2636,6 @@ theorem log_integerLogCutoff_ratio_le (Y : Nat) (hY : 1 <= Y) :
       rw [Real.log_pow]
       norm_num
     _ <= 6 + 2 * Real.log ((Y : Real) + 1) := by linarith
-theorem integral_norm_fourier_integerLogCutoff_le_log (Y : Nat) (hY : 1 <= Y) :
-    ∫ xi : Real, ‖𝓕 (integerLogCutoff Y) xi‖ <=
-      16 + 4 * Real.log ((Y : Real) + 1) := by
-  exact (integral_norm_fourier_integerLogCutoff_le Y hY).trans
-    (by linarith [log_integerLogCutoff_ratio_le Y hY])
 end BombieriVinogradov.LogCutoff
 end
 end
@@ -3519,10 +3348,6 @@ theorem cutoffFactor_le_log_product (X M N : Nat)
   have hhalfLogZ : (1 / 2 : Real) <=
       Real.log ((X * M * N : Nat) : Real) := hhalfLogTwo.trans hlogTwoZ
   linarith
-theorem coefficientMass_nonneg (a : Nat -> Complex) (M : Nat) :
-    0 <= coefficientMass a M := by
-  unfold coefficientMass
-  positivity
 theorem sqrt_thirtySix_mul_product (U V : Real) (hU : 0 <= U) :
     Real.sqrt (36 * U) * Real.sqrt (36 * V) =
       36 * Real.sqrt (U * V) := by
@@ -3536,52 +3361,6 @@ theorem sqrt_thirtySix_mul_product (U V : Real) (hU : 0 <= U) :
     _ = Real.sqrt (36 ^ 2) * Real.sqrt (U * V) := by
       rw [Real.sqrt_mul (sq_nonneg (36 : Real))]
     _ = 36 * Real.sqrt (U * V) := by norm_num
-theorem maximalBilinearLargeSieve : MaximalBilinearLargeSieveStatement := by
-  refine ⟨1440, by norm_num, ?_⟩
-  intro X M N Q a b hX hM hN hQ
-  have hraw := weightedMaximalBilinear_le_cutoffFactor X M N Q a b hX hQ
-  rw [positiveCoefficientMass_eq_coefficientMass,
-    positiveCoefficientMass_eq_coefficientMass] at hraw
-  have hMterm : 0 <= ((M : Real) + (Q : Real) ^ 2) * coefficientMass a M := by
-    exact mul_nonneg (by positivity) (coefficientMass_nonneg a M)
-  have hsqrt :
-      Real.sqrt (36 * ((M : Real) + (Q : Real) ^ 2) * coefficientMass a M) *
-          Real.sqrt (36 * ((N : Real) + (Q : Real) ^ 2) * coefficientMass b N) =
-        36 * Real.sqrt (((M : Real) + (Q : Real) ^ 2) *
-          ((N : Real) + (Q : Real) ^ 2) *
-          coefficientMass a M * coefficientMass b N) := by
-    rw [show 36 * ((M : Real) + (Q : Real) ^ 2) * coefficientMass a M =
-        36 * (((M : Real) + (Q : Real) ^ 2) * coefficientMass a M) by ring,
-      show 36 * ((N : Real) + (Q : Real) ^ 2) * coefficientMass b N =
-        36 * (((N : Real) + (Q : Real) ^ 2) * coefficientMass b N) by ring,
-      sqrt_thirtySix_mul_product
-      (((M : Real) + (Q : Real) ^ 2) * coefficientMass a M)
-      (((N : Real) + (Q : Real) ^ 2) * coefficientMass b N)
-      hMterm]
-    congr 2
-    ring
-  have hcutoff := cutoffFactor_le_log_product X M N hX hM hN
-  calc
-    (∑ q ∈ Icc 1 Q, ((q : Real) / (q.totient : Real)) *
-        ∑ chi ∈ primitiveCharacters q,
-          maximalBilinearNorm a b M N X chi) <=
-        (16 + 4 * Real.log ((X : Real) + 1)) *
-          (Real.sqrt (36 * ((M : Real) + (Q : Real) ^ 2) * coefficientMass a M) *
-            Real.sqrt (36 * ((N : Real) + (Q : Real) ^ 2) * coefficientMass b N)) :=
-      hraw
-    _ = (16 + 4 * Real.log ((X : Real) + 1)) *
-        (36 * Real.sqrt (((M : Real) + (Q : Real) ^ 2) *
-          ((N : Real) + (Q : Real) ^ 2) *
-          coefficientMass a M * coefficientMass b N)) := by rw [hsqrt]
-    _ <= (40 * Real.log ((X * M * N : Nat) : Real)) *
-        (36 * Real.sqrt (((M : Real) + (Q : Real) ^ 2) *
-          ((N : Real) + (Q : Real) ^ 2) *
-          coefficientMass a M * coefficientMass b N)) := by
-      exact mul_le_mul_of_nonneg_right hcutoff (by positivity)
-    _ = 1440 * Real.log ((X * M * N : Nat) : Real) *
-        Real.sqrt (((M : Real) + (Q : Real) ^ 2) *
-          ((N : Real) + (Q : Real) ^ 2) *
-          coefficientMass a M * coefficientMass b N) := by ring
 end BombieriVinogradov.VaughanMeanValue
 end
 end
@@ -3623,11 +3402,6 @@ def vaughanS3 (u v y : Nat) (f : Nat -> Complex) : Complex :=
   weightedKernelSum (typeIIKernel u v) y f
 def vaughanS4 (u y : Nat) (f : Nat -> Complex) : Complex :=
   weightedKernelSum (lambdaHead u) y f
-def VaughanIdentityStatement : Prop :=
-  ∀ (u v y : Nat) (f : Nat -> Complex), 0 < u -> 0 < v -> 2 <= y ->
-    mangoldtSum y f =
-      vaughanS1 v y f - vaughanS2 u v y f +
-        vaughanS3 u v y f + vaughanS4 u y f
 end BombieriVinogradov.VaughanIdentity
 end
 end
@@ -4225,22 +3999,6 @@ def typeIIBlockMajorant (M N X Q : Nat) : Real :=
     (Real.sqrt (36 * (((2 * M : Nat) : Real) + (Q : Real) ^ 2) *
         (((2 * M : Nat) : Real) * Real.log ((2 * M : Nat) : Real) ^ 2)) *
       Real.sqrt (36 * ((N : Real) + (Q : Real) ^ 2) * (N : Real)))
-theorem typeIIDyadicMean_le_sum_majorants
-    (u v X Q : Nat) (hu : 1 <= u) (hX : 2 <= X) (hQ : 1 <= Q) :
-    typeIIDyadicMean u v X Q <=
-      ∑ k ∈ dyadicExponentSet X,
-        typeIIBlockMajorant (2 ^ k) (X / 2 ^ k) X Q := by
-  calc
-    typeIIDyadicMean u v X Q <=
-        ∑ k ∈ dyadicExponentSet X,
-          typeIIBlockMean u v (2 ^ k) (X / 2 ^ k) X Q :=
-      typeIIDyadicMean_le_sum_blockMeans u v X Q hu
-    _ <= ∑ k ∈ dyadicExponentSet X,
-        typeIIBlockMajorant (2 ^ k) (X / 2 ^ k) X Q := by
-      apply Finset.sum_le_sum
-      intro k hk
-      simpa [typeIIBlockMajorant] using
-        typeIIBlockMean_le u v (2 ^ k) (X / 2 ^ k) X Q hX hQ
 end BombieriVinogradov.VaughanMeanValue
 end
 end
@@ -4578,14 +4336,6 @@ theorem unitValue_pos {q : Nat} [NeZero q] (hq : 1 < q) (u : (ZMod q)ˣ) :
     have : q = 1 := by simpa [hzero] using hcoprime
     omega
   exact Nat.pos_of_ne_zero hne
-theorem unitFraction_ne_zero {q : Nat} [NeZero q]
-    (hq : 1 < q) (u : (ZMod q)ˣ) :
-    Ne (unitFraction u : Real) 0 := by
-  have hnum : Ne (unitFraction u).num 0 := by
-    rw [unitFraction_num]
-    exact_mod_cast (Nat.ne_of_gt (unitValue_pos hq u))
-  have hrat : Ne (unitFraction u) 0 := Rat.num_ne_zero.mp hnum
-  exact_mod_cast hrat
 theorem norm_phaseSum_unitFraction_le (N : Nat) {q : Nat} [NeZero q]
     (hq : 1 < q) (u : (ZMod q)ˣ) :
     ‖phaseSum N (unitFraction u : Real)‖ <=
@@ -5300,174 +5050,6 @@ theorem primitiveCharacters_card_le_totient (q : Nat) [NeZero q] :
     _ = q.totient := by
       rw [Finset.card_univ, ← Nat.card_eq_fintype_card]
       exact DirichletCharacter.card_eq_totient_of_hasEnoughRootsOfUnity Complex q
-theorem weighted_primitive_typeIOne_le {q : Nat} [NeZero q]
-    (hq : 1 < q) (v y : Nat) :
-    ((q : Real) / (q.totient : Real)) *
-        ∑ chi ∈ primitiveCharacters q,
-          ‖vaughanS1 v y (fun n => chi (n : ZMod q))‖ <=
-      (q : Real) * (v : Real) *
-        (4 * Real.sqrt (q : Real) * Real.log (2 * (q : Real)) *
-          Real.log ((y + 1 : Nat) : Real)) := by
-  classical
-  let B : Real := (v : Real) *
-    (4 * Real.sqrt (q : Real) * Real.log (2 * (q : Real)) *
-      Real.log ((y + 1 : Nat) : Real))
-  have hB : 0 <= B := by
-    dsimp [B]
-    have hlogq : 0 <= Real.log (2 * (q : Real)) := by
-      apply Real.log_nonneg
-      have : (1 : Real) <= (q : Real) := by exact_mod_cast hq.le
-      linarith
-    have hlogy : 0 <= Real.log ((y + 1 : Nat) : Real) := by
-      apply Real.log_nonneg
-      exact_mod_cast (show 1 <= y + 1 by omega)
-    positivity
-  have hchars :
-      ∑ chi ∈ primitiveCharacters q,
-          ‖vaughanS1 v y (fun n => chi (n : ZMod q))‖ <=
-        (q.totient : Real) * B := by
-    calc
-      ∑ chi ∈ primitiveCharacters q,
-          ‖vaughanS1 v y (fun n => chi (n : ZMod q))‖ <=
-          ∑ chi ∈ primitiveCharacters q, B := by
-        apply Finset.sum_le_sum
-        intro chi hchiMem
-        have hchi : DirichletCharacter.IsPrimitive chi := by
-          simpa [primitiveCharacters] using (Finset.mem_filter.mp hchiMem).2
-        rw [vaughanS1_eq_typeIOneCharacterSum]
-        exact norm_typeIOneCharacterSum_le hq hchi v y
-      _ = ((primitiveCharacters q).card : Real) * B := by simp
-      _ <= (q.totient : Real) * B := by
-        exact mul_le_mul_of_nonneg_right
-          (by exact_mod_cast primitiveCharacters_card_le_totient q) hB
-  have hphi : 0 < (q.totient : Real) := by
-    exact_mod_cast Nat.totient_pos.mpr (NeZero.pos q)
-  calc
-    ((q : Real) / (q.totient : Real)) *
-        ∑ chi ∈ primitiveCharacters q,
-          ‖vaughanS1 v y (fun n => chi (n : ZMod q))‖ <=
-        ((q : Real) / (q.totient : Real)) *
-          ((q.totient : Real) * B) := by
-      exact mul_le_mul_of_nonneg_left hchars (by positivity)
-    _ = (q : Real) * B := by field_simp
-    _ = (q : Real) * (v : Real) *
-        (4 * Real.sqrt (q : Real) * Real.log (2 * (q : Real)) *
-          Real.log ((y + 1 : Nat) : Real)) := by
-      dsimp [B]
-      ring
-def nontrivialTypeIOneMean (v y Q : Nat) : Real :=
-  ∑ q ∈ Icc 2 Q, ((q : Real) / (q.totient : Real)) *
-    ∑ chi ∈ primitiveCharacters q,
-      ‖vaughanS1 v y (fun n => chi (n : ZMod q))‖
-theorem nontrivialTypeIOneMean_le (v y Q : Nat) :
-    nontrivialTypeIOneMean v y Q <=
-      4 * (v : Real) * (Q : Real) ^ 2 * Real.sqrt (Q : Real) *
-        Real.log (2 * (Q : Real)) * Real.log ((y + 1 : Nat) : Real) := by
-  let D : Real := (Q : Real) * (v : Real) *
-    (4 * Real.sqrt (Q : Real) * Real.log (2 * (Q : Real)) *
-      Real.log ((y + 1 : Nat) : Real))
-  have hlogQ : 0 <= Real.log (2 * (Q : Real)) := by
-    by_cases hQ : Q = 0
-    · simp [hQ]
-    · apply Real.log_nonneg
-      have : (1 : Real) <= (Q : Real) := by
-        exact_mod_cast Nat.one_le_iff_ne_zero.mpr hQ
-      linarith
-  have hlogy : 0 <= Real.log ((y + 1 : Nat) : Real) := by
-    apply Real.log_nonneg
-    exact_mod_cast (show 1 <= y + 1 by omega)
-  have hD : 0 <= D := by
-    dsimp [D]
-    positivity
-  have hterm : ∀ q ∈ Icc 2 Q,
-      ((q : Real) / (q.totient : Real)) *
-          ∑ chi ∈ primitiveCharacters q,
-            ‖vaughanS1 v y (fun n => chi (n : ZMod q))‖ <= D := by
-    intro q hqMem
-    have hqBounds := Finset.mem_Icc.mp hqMem
-    let _ : NeZero q := ⟨(Nat.zero_lt_of_lt hqBounds.1).ne'⟩
-    have hbase := weighted_primitive_typeIOne_le
-      (show 1 < q by omega) v y
-    apply hbase.trans
-    dsimp [D]
-    have hqcast : (q : Real) <= (Q : Real) := by exact_mod_cast hqBounds.2
-    have hsqrt : Real.sqrt (q : Real) <= Real.sqrt (Q : Real) :=
-      Real.sqrt_le_sqrt hqcast
-    have hlog : Real.log (2 * (q : Real)) <=
-        Real.log (2 * (Q : Real)) := by
-      apply Real.log_le_log
-      · have : (0 : Real) < (q : Real) := by exact_mod_cast NeZero.pos q
-        positivity
-      · nlinarith
-    have hlogq : 0 <= Real.log (2 * (q : Real)) := by
-      apply Real.log_nonneg
-      have hqone : 1 <= q := by omega
-      have : (1 : Real) <= (q : Real) := by exact_mod_cast hqone
-      linarith
-    gcongr
-  unfold nontrivialTypeIOneMean
-  calc
-    ∑ q ∈ Icc 2 Q, ((q : Real) / (q.totient : Real)) *
-        ∑ chi ∈ primitiveCharacters q,
-          ‖vaughanS1 v y (fun n => chi (n : ZMod q))‖ <=
-        ∑ q ∈ Icc 2 Q, D := by
-      exact Finset.sum_le_sum hterm
-    _ = ((Icc 2 Q).card : Real) * D := by simp
-    _ <= (Q : Real) * D := by
-      apply mul_le_mul_of_nonneg_right _ hD
-      exact_mod_cast (show (Icc 2 Q).card <= Q by simp)
-    _ = 4 * (v : Real) * (Q : Real) ^ 2 * Real.sqrt (Q : Real) *
-        Real.log (2 * (Q : Real)) * Real.log ((y + 1 : Nat) : Real) := by
-      dsimp [D]
-      ring
-def typeIOneMean (v y Q : Nat) : Real :=
-  ∑ q ∈ Icc 1 Q, ((q : Real) / (q.totient : Real)) *
-    ∑ chi ∈ primitiveCharacters q,
-      ‖vaughanS1 v y (fun n => chi (n : ZMod q))‖
-theorem levelOne_typeIOne_le (v y : Nat) :
-    (((1 : Nat) : Real) / ((1 : Nat).totient : Real)) *
-        ∑ chi ∈ primitiveCharacters 1,
-          ‖vaughanS1 v y (fun n => chi (n : ZMod 1))‖ <=
-      3 * (y : Real) * Real.log ((y + 1 : Nat) : Real) ^ 2 := by
-  let B : Real := 3 * (y : Real) * Real.log ((y + 1 : Nat) : Real) ^ 2
-  have hB : 0 <= B := by
-    dsimp [B]
-    positivity
-  have hsum :
-      ∑ chi ∈ primitiveCharacters 1,
-          ‖vaughanS1 v y (fun n => chi (n : ZMod 1))‖ <= B := by
-    calc
-      ∑ chi ∈ primitiveCharacters 1,
-          ‖vaughanS1 v y (fun n => chi (n : ZMod 1))‖ <=
-          ∑ chi ∈ primitiveCharacters 1, B := by
-        apply Finset.sum_le_sum
-        intro chi hchi
-        rw [vaughanS1_eq_typeIOneCharacterSum]
-        exact norm_typeIOneCharacterSum_trivial v y 1 chi
-      _ = ((primitiveCharacters 1).card : Real) * B := by simp
-      _ <= B := by
-        have hcard : ((primitiveCharacters 1).card : Real) <= 1 := by
-          exact_mod_cast primitiveCharacters_card_le_totient 1
-        nlinarith
-  norm_num
-  simpa [B, Nat.cast_add, Nat.cast_one] using hsum
-theorem typeIOneMean_le (v y Q : Nat) (hQ : 1 <= Q) :
-    typeIOneMean v y Q <=
-      3 * (y : Real) * Real.log ((y + 1 : Nat) : Real) ^ 2 +
-        4 * (v : Real) * (Q : Real) ^ 2 * Real.sqrt (Q : Real) *
-          Real.log (2 * (Q : Real)) * Real.log ((y + 1 : Nat) : Real) := by
-  have hsplit : typeIOneMean v y Q =
-      (((1 : Nat) : Real) / ((1 : Nat).totient : Real)) *
-          ∑ chi ∈ primitiveCharacters 1,
-            ‖vaughanS1 v y (fun n => chi (n : ZMod 1))‖ +
-        nontrivialTypeIOneMean v y Q := by
-    unfold typeIOneMean nontrivialTypeIOneMean
-    rw [← Finset.insert_Icc_succ_left_eq_Icc hQ]
-    rw [Finset.sum_insert (by simp)]
-    simp
-  rw [hsplit]
-  exact add_le_add (levelOne_typeIOne_le v y)
-    (nontrivialTypeIOneMean_le v y Q)
 end BombieriVinogradov.VaughanMeanValue
 end
 end
@@ -6553,22 +6135,6 @@ noncomputable section
 open Finset
 open scoped BigOperators
 namespace BombieriVinogradov.VaughanIdentity
-theorem vaughanIdentity : VaughanIdentityStatement := by
-  intro u v y f hu hv hy
-  unfold mangoldtSum vaughanS1 vaughanS2 vaughanS3 vaughanS4 weightedKernelSum
-  rw [← Finset.sum_sub_distrib]
-  rw [← Finset.sum_add_distrib]
-  rw [← Finset.sum_add_distrib]
-  apply Finset.sum_congr rfl
-  intro n hn
-  have hcoeff := congrArg (fun kernel : ArithmeticFunction Real => kernel n)
-    (vaughanKernelIdentity u v)
-  change ((ArithmeticFunction.vonMangoldt n : Real) : Complex) * f n = _
-  rw [hcoeff]
-  change (((typeI1Kernel v n - typeI2Kernel u v n + typeIIKernel u v n +
-    lambdaHead u n : Real) : Complex) * f n) = _
-  push_cast
-  ring
 end BombieriVinogradov.VaughanIdentity
 end
 end
@@ -7009,10 +6575,6 @@ end
 section
 noncomputable section
 namespace BombieriVinogradov.VaughanMeanValue
-theorem maximalPsiNorm_eq_naturalEndpoint
-    (x : Real) (q : Nat) (chi : DirichletCharacter Complex q) :
-    maximalPsiNorm x chi = maximalMangoldtCharacterNorm (Nat.floor x) q chi := by
-  rfl
 theorem primitivePsiMean_eq_vaughanMean (x : Real) (Q : Nat) :
     primitivePsiMean x Q = vaughanMean (Nat.floor x) Q := by
   rfl
@@ -7804,11 +7366,6 @@ theorem upperLevelRatio_nonneg {x q : Real} (hx : 0 <= x) :
 theorem upperLevelRatio_pos {x q : Real} (hx : 0 < x) (hq : 0 < q) :
     0 < upperLevelRatio x q := by
   exact div_pos hx (sq_pos_of_pos hq)
-theorem one_le_upperLevelRatio {x q : Real}
-    (hq : 0 < q) (hqSqX : q ^ 2 <= x) :
-    1 <= upperLevelRatio x q := by
-  rw [upperLevelRatio, le_div_iff₀ (sq_pos_of_pos hq)]
-  simpa using hqSqX
 theorem upperLevelRatio_le_self {x q : Real}
     (hx : 0 <= x) (hq : 1 <= q) :
     upperLevelRatio x q <= x := by
