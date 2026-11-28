@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getFull, skeleton, reductionSkeleton, proofPath, META, resolveId, settledEntry } from "@/lib/catalog";
+import { getFull, skeleton, reductionSkeleton, proofPath, META, resolveId, settledEntry, retiredErdosSource } from "@/lib/catalog";
 import { getLiveMap, getSolution, getStats, getSteps } from "@/lib/db";
 import { pointsFor } from "@/lib/points";
 import { STEP_RE, stepSkeleton, reductionNamespace } from "@/lib/steps";
@@ -16,6 +16,13 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
     return NextResponse.json(
       { error: "unknown_problem", hint: "Pass a problem id (letters, digits, . _ ' -), e.g. from /api/problems?q=<words>." },
       { status: 404, headers: { "Access-Control-Allow-Origin": "*", "Cache-Control": "public, max-age=300" } },
+    );
+  }
+  const source = retiredErdosSource(id);
+  if (source) {
+    return NextResponse.json(
+      { error: "formalized_upstream", problem: id, sources: [source], hint: "This problem already has a Lean statement upstream." },
+      { status: 410, headers: { "Access-Control-Allow-Origin": "*" } },
     );
   }
   const sp = new URL(req.url).searchParams;

@@ -5,7 +5,7 @@ import CopyPrompt from "@/components/CopyPrompt";
 import { outcomeBadge, outcomeOf, outcomeText, variantNote, reviewOf } from "@/lib/outcome";
 import Credit from "@/components/Credit";
 import { Difficulty } from "@/components/ProblemRow";
-import { getProblem, getFull, skeleton, proofPath, statementSkeleton, prizeOf, META, KIND_LABEL, TASK, answerPlaceholder, settledEntry, resolveId, type Problem } from "@/lib/catalog";
+import { getProblem, getFull, skeleton, proofPath, statementSkeleton, prizeOf, META, KIND_LABEL, TASK, answerPlaceholder, settledEntry, resolveId, retiredErdosSource, type Problem } from "@/lib/catalog";
 import { getLiveMap, getActiveIds, getEvents, getSolved, getSteps, type Step, type Solved } from "@/lib/db";
 import { pointsFor } from "@/lib/points";
 import { renderStatement, plain } from "@/lib/render";
@@ -81,6 +81,8 @@ export default async function ProblemPage({ params }: Props) {
     // The same id in another case, an Erdős problem by number (erdos-142), a module with one statement (Erdos142).
     const canonical = resolveId(id);
     if (canonical && canonical !== id) redirect(`/p/${encodeURIComponent(canonical)}`);
+    const source = retiredErdosSource(id);
+    if (source) redirect(source);
     notFound();
   }
 

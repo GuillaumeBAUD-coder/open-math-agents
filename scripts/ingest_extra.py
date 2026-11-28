@@ -10,6 +10,7 @@ Everything already present in data/catalog.json (the Lean catalogue) is dropped,
 
 Usage: python3 -I scripts/ingest_extra.py <wp_unsolved.wiki> <wp_conjectures.wiki> <opg.json> <erdos problems.yaml> [out]
 """
+import gzip
 import json
 import math
 import os
@@ -46,6 +47,12 @@ for p in CATALOG["problems"]:
     if p.get("ref") and "wikipedia.org/wiki/" in p["ref"]:
         covered_wiki.add(norm(p["ref"].split("/wiki/")[1].split("#")[0].replace("_", " ")))
 covered_erdos = {p["erdos"] for p in CATALOG["problems"] if p.get("erdos")}
+
+# The proof catalogue omits upstream declarations with a linked proof. The pinned
+# source snapshot still contains their files, including statements split into parts.
+with gzip.open(os.path.join(HERE, "..", "data", "fc_files.json.gz"), "rt", encoding="utf-8") as snapshot:
+    erdos_files = {int(m[1]): path for path in json.load(snapshot)
+                   if (m := re.fullmatch(r"FormalConjectures/ErdosProblems/(\d+)\.lean", path))}
 
 # Names the Lean files and declarations already use (e.g. Wikipedia/BergeFulkersonConjecture.lean,
 # Erdos508.HadwigerNelsonProblem): a new entry whose normalized title starts with one of them is covered.
@@ -310,14 +317,20 @@ raw = open(ERDOS, encoding="utf-8").read()
 TAGF = {"number theory": "Number Theory", "graph theory": "Combinatorics", "combinatorics": "Combinatorics",
         "geometry": "Geometry", "analysis": "Real Functions", "additive combinatorics": "Combinatorics", "primes": "Number Theory",
         "ramsey theory": "Combinatorics", "probability": "Probability", "set theory": "Logic & Foundations"}
+upstream_erdos = []
 for b in re.split(r"\n(?=- number:)", raw):
     m = re.match(r'- number: "?(\d+)"?', b.strip())
     if not m:
         continue
     num = int(m.group(1))
     st = re.search(r'\n  status:\n    state: "([^"]+)"', b)
-    if not st or not st.group(1).startswith(("open", "falsifiable", "verifiable", "decidable")) or num in covered_erdos:
+    if not st:
         continue
+    eligible = st.group(1).startswith(("open", "falsifiable", "verifiable", "decidable")) and num not in covered_erdos
+    if not eligible:
+        local_statement = os.path.join(HERE, "..", "statements", f"erdos-{num}.lean")
+        if num not in erdos_files or not os.path.isfile(local_statement):
+            continue
     tags = re.findall(r'"([^"]+)"', (re.search(r"\n  tags: \[(.*?)\]", b) or [None, ""])[1])
     prize = (re.search(r'\n  prize: "([^"]*)"', b) or [None, None])[1]
     prize = None if prize in (None, "", "no") else prize
@@ -326,7 +339,16 @@ for b in re.split(r"\n(?=- number:)", raw):
                    fields=sorted({TAGF[t] for t in tags if t in TAGF}) or ["Combinatorics"], tags=tags, ref=f"https://www.erdosproblems.com/{num}",
                    prize=prize, erdos=num, erdosState=st.group(1), forumPosts=posts, statement="",
                    license="Metadata from teorth/erdosproblems; statement on erdosproblems.com")
-    add(e, [f"erdos{num}"])
+    if num in erdos_files:
+        # Keep the source metadata for any OMA statement that has already merged
+        # or merges before the next build. These are never new formalization tasks.
+        e["source"] = "Erdős Problems"
+        e["upstreamFile"] = erdos_files[num]
+        del e["kind"], e["category"]
+        upstream_erdos.append(e)
+        dropped["covered"] += 1
+    else:
+        add(e, [f"erdos{num}"])
 
 # ---- difficulty (heuristic, same scale as the Lean catalogue) ------------------------------------
 def prize_usd(p):
@@ -334,7 +356,7 @@ def prize_usd(p):
     return int(m.group(1)) if m else 0
 
 
-for e in entries.values():
+for e in [*entries.values(), *upstream_erdos]:
     d = 60
     d += 6 * e.get("stars", 0) if e["source"] == "Open Problem Garden" else 0
     d += min(20, 6 * math.log10(1 + prize_usd(e.get("prize")))) if e.get("prize") else 0
@@ -355,7 +377,7 @@ for e in problems:
     counts[e["source"]] = counts.get(e["source"], 0) + 1
 meta = {"counts": counts, "total": len(problems), "dropped": dropped,
         "note": "Open problems without a Lean statement yet. Status follows each source at the time of import; some may have been solved since."}
-json.dump({"meta": meta, "problems": problems}, open(OUT, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
+json.dump({"meta": meta, "problems": problems, "upstreamErdos": upstream_erdos}, open(OUT, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
 print(json.dumps(meta, ensure_ascii=False, indent=1))
 if os.environ.get("SHOW_PREFIX_DROPS"):
     for t, c in dropped_by_prefix:

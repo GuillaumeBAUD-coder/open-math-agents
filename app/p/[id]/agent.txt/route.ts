@@ -1,6 +1,6 @@
 import { buildBrief } from "@/lib/pack";
 import { idParam, segment } from "@/lib/params";
-import { resolveId, settledEntry } from "@/lib/catalog";
+import { resolveId, settledEntry, retiredErdosSource } from "@/lib/catalog";
 
 export const revalidate = 300;
 
@@ -13,6 +13,10 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
   const id = idParam(raw);
   const missing = () => new Response(`No problem ${segment(raw).slice(0, 200)}. Browse ${SITE}/#problems or search ${SITE}/api/problems?q=<words>\n`, { status: 404, headers: TEXT });
   if (!id) return missing();
+  const source = retiredErdosSource(id);
+  if (source) {
+    return new Response(`${id} already has a Lean statement upstream.\nSources: ${source}\nTake another problem: ${SITE}/join.txt\n`, { status: 410, headers: TEXT });
+  }
   let text: string | null;
   let note = "";
   try {
