@@ -3,6 +3,47 @@
   "policy": "solved = settled by a machine-checked proof or by the curated upstream source (formal-conjectures, erdosproblems.com); removed from the open problems and listed on /status. claimed = a solution has been announced (often by an AI lab) but is not verified or is disputed; kept, flagged, ranked lower and not handed out by default.",
   "entries": [
     {
+      "id": "erdos-634",
+      "status": "open",
+      "title": "Erdős Problem 634 — congruent triangle tilings",
+      "summary": "Beeson and Roșu classified every prime tile count. Koa Okano used Bonfioli’s geometry library to prove that the registered simplex tilings and congruent dissections are equivalent for every tile count. An independent Lean build verified that a prime count occurs exactly for 2, 3, and primes congruent to 1 modulo 4. The general classification for composite counts remains open.",
+      "date": "2026-11-28",
+      "sources": [
+        "https://arxiv.org/abs/2607.23453",
+        "https://github.com/mjbeeson/TriangleTilingPrimeLean/blob/7880520e81b39e48af61ebf59548ccccfe2d8371/TriangleTiling/Laczkovich/PrimeMain.lean#L142",
+        "https://github.com/KoaOkano/erdos-prize-formalizations/actions/runs/46179251096/job/141084859134",
+        "https://github.com/KoaOkano/erdos-prize-formalizations/pull/4"
+      ]
+    },
+    {
+      "id": "Erdos20.erdos_20",
+      "status": "claimed",
+      "title": "Erdős–Rado sunflower conjecture (Erdős Problem 20)",
+      "summary": "OpenAI published a Lean proof of the fixed-petal exponential bound for uniform finite families. A checked translation gives the strict threshold in this registry, including the small petal counts. Independent compilation of the linked proof and translation is in progress.",
+      "date": "2026-11-24",
+      "sources": [
+        "https://github.com/openai/math/tree/92b516ef8e2abf66c3db7aa31438d3010bc7956f/preprints/An-exponential-bound-for-sunflowers-November-24-2026",
+        "https://github.com/openai/math/blob/92b516ef8e2abf66c3db7aa31438d3010bc7956f/lean/OAI/Combinatorics/Sunflower/FixedBase.lean#L41-L48",
+        "https://github.com/KoaOkano/erdos-prize-formalizations/actions/runs/46107786050/job/140864321305",
+        "https://github.com/KoaOkano/erdos-prize-formalizations/pull/3"
+      ]
+    },
+    {
+      "id": "Erdos114.erdos_114",
+      "status": "solved",
+      "title": "Erdős–Herzog–Piranian lemniscate conjecture (Erdős Problem 114)",
+      "summary": "Teng Zhang proved the lemniscate length inequality in every positive degree and classified equality. Koa Okano translated Zhang’s inequality to the registered polynomial-evaluation statement. An independent Lean build compiled the full source and the translation. The theorem uses only propext, Classical.choice, and Quot.sound.",
+      "date": "2026-11-28",
+      "sources": [
+        "https://arxiv.org/abs/2611.12830",
+        "https://github.com/zhangteng2000/ehp-lemniscate-verification-20261108/blob/f40d41fa0a73b47d19f36574ed06c0fab387b5f1/lean/EHP/MainTheorem.lean#L42-L50",
+        "https://github.com/zhangteng2000/ehp-lemniscate-verification-20261108/blob/f40d41fa0a73b47d19f36574ed06c0fab387b5f1/lean/verification.json",
+        "https://github.com/KoaOkano/erdos-prize-formalizations/actions/runs/46158727510/job/141065205423",
+        "https://github.com/KoaOkano/erdos-prize-formalizations/actions/runs/46158727510/job/141021020452",
+        "https://github.com/KoaOkano/erdos-prize-formalizations/pull/1"
+      ]
+    },
+    {
       "id": "wp-riemann-hypothesis",
       "status": "solved",
       "title": "Riemann hypothesis",
