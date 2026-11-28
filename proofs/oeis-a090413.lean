@@ -3,91 +3,41 @@ import OMAStatements.S_oeis_a090413
 /-!
 Proof of OEIS A090413: the generating function satisfies
 (3*X - 8*X^2)*S^2 + (1 - 6*X)*S - 1 = 0, whose radical Q satisfies Q^2 = 1 + 4*X^2.
-Differentiating via a self-contained dPs helper gives an exact
+Differentiating (Mathlib's formal power series derivative) gives an exact
 linear differential equation whose n-th coefficient is the claimed recurrence
 for n >= 3.
 -/
 
 private noncomputable def dPs (f : PowerSeries ℚ) : PowerSeries ℚ :=
-  PowerSeries.mk fun n => ((n + 1 : ℕ) : ℚ) * PowerSeries.coeff (n + 1) f
+  PowerSeries.derivative ℚ f
+
+private lemma dPs_C (c : ℚ) : dPs (PowerSeries.C c) = 0 := by
+  simp only [dPs]; exact PowerSeries.derivative_C
+
+private lemma dPs_one : dPs (1 : PowerSeries ℚ) = 0 := by
+  simp only [dPs]; exact PowerSeries.derivative_one
+
+private lemma dPs_natCast (k : ℕ) : dPs (k : PowerSeries ℚ) = 0 := by
+  rw [← map_natCast PowerSeries.C k, dPs_C]
+
+private lemma dPs_X : dPs (PowerSeries.X : PowerSeries ℚ) = 1 := by
+  simp only [dPs]; exact PowerSeries.derivative_X
+
+private lemma dPs_add (f g : PowerSeries ℚ) : dPs (f + g) = dPs f + dPs g := by
+  simp only [dPs]; exact map_add _ _ _
+
+private lemma dPs_sub (f g : PowerSeries ℚ) : dPs (f - g) = dPs f - dPs g := by
+  simp only [dPs]; exact map_sub _ _ _
+
+private lemma dPs_mul (f g : PowerSeries ℚ) : dPs (f * g) = dPs f * g + f * dPs g := by
+  simp only [dPs]; rw [Derivation.leibniz, smul_eq_mul]; ring
+
+private lemma dPs_sq (f : PowerSeries ℚ) : dPs (f ^ 2) = 2 * f * dPs f := by
+  rw [pow_two, dPs_mul]; ring
 
 private lemma coeff_dPs (f : PowerSeries ℚ) (n : ℕ) :
     PowerSeries.coeff n (dPs f) = ((n + 1 : ℕ) : ℚ) * PowerSeries.coeff (n + 1) f := by
-  simp [dPs]
-
-private lemma dPs_C (c : ℚ) : dPs (PowerSeries.C c) = 0 := by
-  ext n
-  simp [coeff_dPs]
-
-private lemma dPs_one : dPs (1 : PowerSeries ℚ) = 0 := by
-  rw [← map_one PowerSeries.C]
-  exact dPs_C 1
-
-private lemma dPs_natCast (k : ℕ) : dPs (k : PowerSeries ℚ) = 0 := by
-  rw [← map_natCast PowerSeries.C k]
-  exact dPs_C (k : ℚ)
-
-private lemma dPs_X : dPs (PowerSeries.X : PowerSeries ℚ) = 1 := by
-  ext n
-  simp only [coeff_dPs, PowerSeries.coeff_X, PowerSeries.coeff_one]
-  cases n <;> simp
-
-private lemma dPs_add (f g : PowerSeries ℚ) : dPs (f + g) = dPs f + dPs g := by
-  ext n
-  simp only [coeff_dPs, map_add]
-  ring
-
-private lemma dPs_sub (f g : PowerSeries ℚ) : dPs (f - g) = dPs f - dPs g := by
-  ext n
-  simp only [coeff_dPs, map_sub]
-  ring
-
-private lemma dPs_mul (f g : PowerSeries ℚ) : dPs (f * g) = dPs f * g + f * dPs g := by
-  ext n
-  rw [coeff_dPs, map_add, PowerSeries.coeff_mul, PowerSeries.coeff_mul, PowerSeries.coeff_mul,
-    Finset.Nat.sum_antidiagonal_eq_sum_range_succ
-      (fun i j => PowerSeries.coeff i f * PowerSeries.coeff j g) (n + 1),
-    Finset.Nat.sum_antidiagonal_eq_sum_range_succ
-      (fun i j => PowerSeries.coeff i (dPs f) * PowerSeries.coeff j g) n,
-    Finset.Nat.sum_antidiagonal_eq_sum_range_succ
-      (fun i j => PowerSeries.coeff i f * PowerSeries.coeff j (dPs g)) n,
-    Finset.mul_sum]
-  have hsplit :
-      ∑ k ∈ Finset.range (n + 2),
-          ((n + 1 : ℕ) : ℚ) * (PowerSeries.coeff k f * PowerSeries.coeff (n + 1 - k) g) =
-        ∑ k ∈ Finset.range (n + 2),
-          (((k : ℚ) * PowerSeries.coeff k f) * PowerSeries.coeff (n + 1 - k) g +
-            PowerSeries.coeff k f *
-              (((n + 1 - k : ℕ) : ℚ) * PowerSeries.coeff (n + 1 - k) g)) := by
-    refine Finset.sum_congr rfl fun k hk => ?_
-    have hk_le : k ≤ n + 1 := Nat.lt_succ_iff.mp (Finset.mem_range.mp hk)
-    have hnat : (k : ℚ) + ((n + 1 - k : ℕ) : ℚ) = ((n + 1 : ℕ) : ℚ) := by
-      exact_mod_cast Nat.add_sub_of_le hk_le
-    rw [← hnat]
-    ring
-  rw [hsplit, Finset.sum_add_distrib]
-  have h1 :
-      ∑ k ∈ Finset.range (n + 2),
-          ((k : ℚ) * PowerSeries.coeff k f) * PowerSeries.coeff (n + 1 - k) g =
-        ∑ k ∈ Finset.range (n + 1), PowerSeries.coeff k (dPs f) * PowerSeries.coeff (n - k) g := by
-    rw [Finset.sum_range_succ']
-    simp only [Nat.cast_zero, zero_mul, add_zero]
-    refine Finset.sum_congr rfl fun k _ => ?_
-    rw [coeff_dPs, Nat.succ_sub_succ]
-  have h2 :
-      ∑ k ∈ Finset.range (n + 2),
-          PowerSeries.coeff k f * (((n + 1 - k : ℕ) : ℚ) * PowerSeries.coeff (n + 1 - k) g) =
-        ∑ k ∈ Finset.range (n + 1), PowerSeries.coeff k f * PowerSeries.coeff (n - k) (dPs g) := by
-    rw [Finset.sum_range_succ]
-    simp only [Nat.sub_self, Nat.cast_zero, zero_mul, mul_zero, add_zero]
-    refine Finset.sum_congr rfl fun k hk => ?_
-    have hk_le : k ≤ n := Nat.lt_succ_iff.mp (Finset.mem_range.mp hk)
-    rw [coeff_dPs, Nat.sub_add_comm hk_le]
-  rw [h1, h2]
-
-private lemma dPs_sq (f : PowerSeries ℚ) : dPs (f ^ 2) = 2 * f * dPs f := by
-  rw [pow_two, dPs_mul]
-  ring
+  simp only [dPs]; rw [PowerSeries.coeff_derivative]; push_cast; ring
 
 open PowerSeries in
 theorem OMA.solution : type_of% @OMA.S_oeis_a090413.main := by
