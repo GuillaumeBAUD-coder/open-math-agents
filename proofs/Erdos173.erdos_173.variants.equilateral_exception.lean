@@ -82,22 +82,17 @@ theorem no_three (a b c : ℝ) (hab : Even ⌊a / hh⌋ ↔ Even ⌊b / hh⌋)
     | exact mid b a c hab.symm hac (by nlinarith) (by nlinarith)
     | exact mid a c b hac hbc.symm (by nlinarith) (by nlinarith)
 
-theorem sq_of_dist (p q : ℝ²) (h : dist p q = 1) : (p 0 - q 0) ^ 2 + (p 1 - q 1) ^ 2 = 1 := by
-  rw [EuclideanSpace.dist_eq, Real.sqrt_eq_one, Fin.sum_univ_two, Real.dist_eq, Real.dist_eq,
-    sq_abs, sq_abs] at h
-  exact h
-
-theorem dist_of_sq (p q : ℝ²) (h : (p 0 - q 0) ^ 2 + (p 1 - q 1) ^ 2 = 1) : dist p q = 1 := by
+theorem dist_eq_one_iff (p q : ℝ²) :
+    dist p q = 1 ↔ (p 0 - q 0) ^ 2 + (p 1 - q 1) ^ 2 = 1 := by
   rw [EuclideanSpace.dist_eq, Real.sqrt_eq_one, Fin.sum_univ_two, Real.dist_eq, Real.dist_eq,
     sq_abs, sq_abs]
-  exact h
 
 /-- Three points at pairwise distance one: the vertical differences have squares summing to 3/2. -/
 theorem vertical (p q r : ℝ²) (h1 : dist p q = 1) (h2 : dist q r = 1) (h3 : dist p r = 1) :
     (p 1 - q 1) ^ 2 + (q 1 - r 1) ^ 2 + (p 1 - r 1) ^ 2 = 3 / 2 := by
-  have e1 := sq_of_dist p q h1
-  have e2 := sq_of_dist q r h2
-  have e3 := sq_of_dist p r h3
+  have e1 := (dist_eq_one_iff p q).1 h1
+  have e2 := (dist_eq_one_iff q r).1 h2
+  have e3 := (dist_eq_one_iff p r).1 h3
   set ax := p 0 - q 0 with hax
   set bx := q 0 - r 0 with hbx
   set a := p 1 - q 1 with ha
@@ -120,30 +115,24 @@ noncomputable def col (p : ℝ²) : Fin 2 := if Even ⌊p 1 / hh⌋ then 0 else 
 
 theorem col_eq (p q : ℝ²) (h : col p = col q) : Even ⌊p 1 / hh⌋ ↔ Even ⌊q 1 / hh⌋ := by
   unfold col at h
-  split_ifs at h with h1 h2 h2
-  · exact ⟨fun _ => h2, fun _ => h1⟩
-  · exact absurd h (by decide)
-  · exact absurd h (by decide)
-  · exact ⟨fun h' => absurd h' h1, fun h' => absurd h' h2⟩
+  split_ifs at h <;> simp_all [-Int.not_even_iff_odd]
 
 /-- The vertices of the triangle. -/
 noncomputable def pts : Fin 3 → ℝ² := ![!₂[0, 0], !₂[1, 0], !₂[1 / 2, hh]]
 
 theorem d01 : dist (pts 0) (pts 1) = 1 := by
-  apply dist_of_sq
+  apply (dist_eq_one_iff _ _).2
   simp [pts]
 
 theorem d12 : dist (pts 1) (pts 2) = 1 := by
-  apply dist_of_sq
+  apply (dist_eq_one_iff _ _).2
   simp [pts]
-  have := hh_sq
-  nlinarith
+  nlinarith [hh_sq]
 
 theorem d02 : dist (pts 0) (pts 2) = 1 := by
-  apply dist_of_sq
+  apply (dist_eq_one_iff _ _).2
   simp [pts]
-  have := hh_sq
-  nlinarith
+  nlinarith [hh_sq]
 
 theorem indep : AffineIndependent ℝ pts := by
   unfold pts
@@ -157,18 +146,8 @@ theorem indep : AffineIndependent ℝ pts := by
   have a1 := congrFun (congrArg (fun p : ℝ² => (p : Fin 2 → ℝ)) hr1) 1
   have b1 := congrFun (congrArg (fun p : ℝ² => (p : Fin 2 → ℝ)) hr2) 1
   simp at a0 a1 b1
-  have hr1ne : r1 ≠ 0 := by
-    intro h0
-    rw [h0] at a0
-    simp at a0
-  have hv1 : v 1 = 0 := by
-    rcases a1 with h | h
-    · exact absurd h hr1ne
-    · exact h
-  rw [hv1] at b1
-  have := hh_pos
-  simp at b1
-  linarith
+  have hv1 := a1.resolve_left (by intro h; simp [h] at a0)
+  simp [hv1, hh_pos.ne'] at b1
 
 end OMA
 
