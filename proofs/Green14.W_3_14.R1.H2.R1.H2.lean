@@ -2,7 +2,8 @@ import OMAReductions.R_Green14_W_3_14_R1_H2_R1
 
 /-! A kernel-replayed search certificate for the 185-position center-gap case.
 The sound search framework is adapted from the related proof in PR #6841.
-The branch tape was independently generated for the anchors 89 and 95. -/
+The branch tape was independently generated for the anchors 89 and 95.
+A balanced gate lookup has a separate soundness proof; each lookup checks the exact stored state. -/
 
 namespace OMA.W314Central95
 
@@ -237,21 +238,31 @@ private structure Gate where
   stop : Nat
   sound : Closed state
 
-private def gateLookup (s : State) (i : Nat) : List Gate → Option Nat
-  | [] => none
-  | g::gs =>
-    if i = g.start ∧ s = g.state then some g.stop else gateLookup s i gs
+private inductive GateTree
+  | empty
+  | node (gate : Gate) (left right : GateTree)
 
-private lemma lookup_sound (s : State) (i : Nat) (gs : List Gate) (j : Nat)
+private def gateLookup (s : State) (i : Nat) : GateTree → Option Nat
+  | .empty => none
+  | .node g left right =>
+    if i < g.start then gateLookup s i left
+    else if g.start < i then gateLookup s i right
+    else if s = g.state then some g.stop else none
+
+private lemma lookup_sound (s : State) (i : Nat) (gs : GateTree) (j : Nat)
     (h : gateLookup s i gs = some j) : Closed s := by
   induction gs with
-  | nil => simp [gateLookup] at h
-  | cons g gs ih =>
-    rw [gateLookup] at h
+  | empty => simp [gateLookup] at h
+  | node g left right ihLeft ihRight =>
+    simp only [gateLookup] at h
     split at h
-    · rename_i he
-      exact he.2.symm ▸ g.sound
-    · exact ih h
+    · exact ihLeft h
+    · split at h
+      · exact ihRight h
+      · split at h
+        · rename_i he
+          exact he.symm ▸ g.sound
+        · simp at h
 
 private inductive Action
   | unknown
@@ -313,7 +324,7 @@ private lemma actions_sound (word : Nat → Nat) (len : Nat) (s : State) (i : Na
     (hs : Compatible s c) (hb : NoBlueRuns c) : (actions word len s i).Sound c :=
   raw_sound s (inspect s) (word i) (decide (i < len)) c hs hb
 
-private def verifyWith (action : State → Nat → Action) (gs : List Gate) (s : State) : Nat → Nat → Nat
+private def verifyWith (action : State → Nat → Action) (gs : GateTree) (s : State) : Nat → Nat → Nat
   | 0, _ => 0
   | fuel+1, i =>
     match gateLookup s i gs with
@@ -328,7 +339,7 @@ private def verifyWith (action : State → Nat → Action) (gs : List Gate) (s :
         | 0 => 0
         | j+1 => verifyWith action gs (erase s p) fuel j
 
-private lemma verifyWith_sound (action : State → Nat → Action) (gs : List Gate)
+private lemma verifyWith_sound (action : State → Nat → Action) (gs : GateTree)
     (sound : ∀ s i c, Compatible s c → NoBlueRuns c → (action s i).Sound c)
     (fuel : Nat) (s : State) (i : Nat)
     (ok : verifyWith action gs s fuel i ≠ 0) : Closed s := by
@@ -388,12 +399,12 @@ private lemma compressed_sound (bytes : Array Nat) (len : Nat) (s : State) (i : 
   raw_sound s (inspect s) (branchPoint s (getNibble bytes i)) (decide (i < len)) c hs hb
 
 private def withSlice (bytes : Array Nat) (len : Nat) :=
-  verifyWith (compressedActions bytes len) []
+  verifyWith (compressedActions bytes len) .empty
 
 private def gateOfSlice (start stop may red : Nat) (bytes : Array Nat) (len : Nat)
     (h : withSlice bytes len (fromBoard may red) 64 0 ≠ 0) : Gate :=
   ⟨fromBoard may red, start, stop,
-   verifyWith_sound _ [] (compressed_sound bytes len) 64 (fromBoard may red) 0 h⟩
+   verifyWith_sound _ .empty (compressed_sound bytes len) 64 (fromBoard may red) 0 h⟩
 
 private def sparseWord (codes : List (Nat × Nat)) (index : Nat) : Nat :=
   ((codes.find? (fun x => x.1 == index)).getD (0,0)).2
@@ -1963,7 +1974,7 @@ set_option maxRecDepth 12000 in
 private def g304 : Gate :=
   gateOfSlice 226538 227711 0x1ffffffffffffffebffbb5d82a2aabfffff7cffffffffff 0x000000001820000100000000000000000 #[0xa513d252b2b51b99c1bd4bc4a6136cac95224a4caa92b88ca343dc3db539a2908c1299b34bc4d9b19b83accd393234c3b5a9904d1715213b844c1cc43a32017a6c4d1164168729d8c68c6964c51d375499bbc5615558c5dba957bd99d5d42d5c5da48195731092411b4b5aaddd9d91cbb4c449cca399144bcbab294892ddc7a8, 0xa7bb9243549dc121add1bbc25bd1acbbc853c85d2c2b182dbca4d26699c91662444b7ca4bc27693cb7db2bd6a075c668aa4330a85ac1042d603c71953bac226267309cd5744c171c2b0b47c101bac16785a9db69282bcd78a526ba7b7cca04773c132c9b9acd2ddc9118062206a03acc1c1bb00a7b120ca14641ccbb41b42220, 0x9092168dc759a313b46d5222b7cbc179d4a7b7bdcac4db8328db79cd39bdc6ccb7c3ac6c690b46c2a41c332c4743b3226236138b6d31c37aa20cbd474c5383a2c313714caa614c944c26583a993ac1736a99b669a6b3715c24399848a6b397c88b5cd24a6c9642442d329a2a343b6a5c69ca104b95b14a49a31d66028ca8175a, 0x2b543c348840274c235484b525086b9b65137576c966292dabc18354799b2449b849229addb5bc1418b9b9a2396c37221c18d86d2cb221cccbb7464bc836977b99b78b44a573ac55a338914158403c6d3078193cc1835c65c6c4b8c4caa30c1932d83d3629329275a546aab7ca3b1b32b48791684398a298b91c8db6391c27b6, 0x35362bb877b6623b1bbbb06cda8c19c1322164715c1c776936daa47add0bbc543a1c35437cc34a8ab7861bb583c9361d7833a31c6b0821c620a77525007c3b517445a79b4082a377212c] 1172 (by decide +kernel)
 
-private def gates : List Gate := [g0, g1, g2, g3, g4, g5, g6, g7, g8, g9, g10, g11, g12, g13, g14, g15, g16, g17, g18, g19, g20, g21, g22, g23, g24, g25, g26, g27, g28, g29, g30, g31, g32, g33, g34, g35, g36, g37, g38, g39, g40, g41, g42, g43, g44, g45, g46, g47, g48, g49, g50, g51, g52, g53, g54, g55, g56, g57, g58, g59, g60, g61, g62, g63, g64, g65, g66, g67, g68, g69, g70, g71, g72, g73, g74, g75, g76, g77, g78, g79, g80, g81, g82, g83, g84, g85, g86, g87, g88, g89, g90, g91, g92, g93, g94, g95, g96, g97, g98, g99, g100, g101, g102, g103, g104, g105, g106, g107, g108, g109, g110, g111, g112, g113, g114, g115, g116, g117, g118, g119, g120, g121, g122, g123, g124, g125, g126, g127, g128, g129, g130, g131, g132, g133, g134, g135, g136, g137, g138, g139, g140, g141, g142, g143, g144, g145, g146, g147, g148, g149, g150, g151, g152, g153, g154, g155, g156, g157, g158, g159, g160, g161, g162, g163, g164, g165, g166, g167, g168, g169, g170, g171, g172, g173, g174, g175, g176, g177, g178, g179, g180, g181, g182, g183, g184, g185, g186, g187, g188, g189, g190, g191, g192, g193, g194, g195, g196, g197, g198, g199, g200, g201, g202, g203, g204, g205, g206, g207, g208, g209, g210, g211, g212, g213, g214, g215, g216, g217, g218, g219, g220, g221, g222, g223, g224, g225, g226, g227, g228, g229, g230, g231, g232, g233, g234, g235, g236, g237, g238, g239, g240, g241, g242, g243, g244, g245, g246, g247, g248, g249, g250, g251, g252, g253, g254, g255, g256, g257, g258, g259, g260, g261, g262, g263, g264, g265, g266, g267, g268, g269, g270, g271, g272, g273, g274, g275, g276, g277, g278, g279, g280, g281, g282, g283, g284, g285, g286, g287, g288, g289, g290, g291, g292, g293, g294, g295, g296, g297, g298, g299, g300, g301, g302, g303, g304]
+private def gates : GateTree := (.node g152 (.node g76 (.node g38 (.node g19 (.node g9 (.node g4 (.node g2 (.node g1 (.node g0 .empty .empty) .empty) (.node g3 .empty .empty)) (.node g7 (.node g6 (.node g5 .empty .empty) .empty) (.node g8 .empty .empty))) (.node g14 (.node g12 (.node g11 (.node g10 .empty .empty) .empty) (.node g13 .empty .empty)) (.node g17 (.node g16 (.node g15 .empty .empty) .empty) (.node g18 .empty .empty)))) (.node g29 (.node g24 (.node g22 (.node g21 (.node g20 .empty .empty) .empty) (.node g23 .empty .empty)) (.node g27 (.node g26 (.node g25 .empty .empty) .empty) (.node g28 .empty .empty))) (.node g34 (.node g32 (.node g31 (.node g30 .empty .empty) .empty) (.node g33 .empty .empty)) (.node g36 (.node g35 .empty .empty) (.node g37 .empty .empty))))) (.node g57 (.node g48 (.node g43 (.node g41 (.node g40 (.node g39 .empty .empty) .empty) (.node g42 .empty .empty)) (.node g46 (.node g45 (.node g44 .empty .empty) .empty) (.node g47 .empty .empty))) (.node g53 (.node g51 (.node g50 (.node g49 .empty .empty) .empty) (.node g52 .empty .empty)) (.node g55 (.node g54 .empty .empty) (.node g56 .empty .empty)))) (.node g67 (.node g62 (.node g60 (.node g59 (.node g58 .empty .empty) .empty) (.node g61 .empty .empty)) (.node g65 (.node g64 (.node g63 .empty .empty) .empty) (.node g66 .empty .empty))) (.node g72 (.node g70 (.node g69 (.node g68 .empty .empty) .empty) (.node g71 .empty .empty)) (.node g74 (.node g73 .empty .empty) (.node g75 .empty .empty)))))) (.node g114 (.node g95 (.node g86 (.node g81 (.node g79 (.node g78 (.node g77 .empty .empty) .empty) (.node g80 .empty .empty)) (.node g84 (.node g83 (.node g82 .empty .empty) .empty) (.node g85 .empty .empty))) (.node g91 (.node g89 (.node g88 (.node g87 .empty .empty) .empty) (.node g90 .empty .empty)) (.node g93 (.node g92 .empty .empty) (.node g94 .empty .empty)))) (.node g105 (.node g100 (.node g98 (.node g97 (.node g96 .empty .empty) .empty) (.node g99 .empty .empty)) (.node g103 (.node g102 (.node g101 .empty .empty) .empty) (.node g104 .empty .empty))) (.node g110 (.node g108 (.node g107 (.node g106 .empty .empty) .empty) (.node g109 .empty .empty)) (.node g112 (.node g111 .empty .empty) (.node g113 .empty .empty))))) (.node g133 (.node g124 (.node g119 (.node g117 (.node g116 (.node g115 .empty .empty) .empty) (.node g118 .empty .empty)) (.node g122 (.node g121 (.node g120 .empty .empty) .empty) (.node g123 .empty .empty))) (.node g129 (.node g127 (.node g126 (.node g125 .empty .empty) .empty) (.node g128 .empty .empty)) (.node g131 (.node g130 .empty .empty) (.node g132 .empty .empty)))) (.node g143 (.node g138 (.node g136 (.node g135 (.node g134 .empty .empty) .empty) (.node g137 .empty .empty)) (.node g141 (.node g140 (.node g139 .empty .empty) .empty) (.node g142 .empty .empty))) (.node g148 (.node g146 (.node g145 (.node g144 .empty .empty) .empty) (.node g147 .empty .empty)) (.node g150 (.node g149 .empty .empty) (.node g151 .empty .empty))))))) (.node g229 (.node g191 (.node g172 (.node g162 (.node g157 (.node g155 (.node g154 (.node g153 .empty .empty) .empty) (.node g156 .empty .empty)) (.node g160 (.node g159 (.node g158 .empty .empty) .empty) (.node g161 .empty .empty))) (.node g167 (.node g165 (.node g164 (.node g163 .empty .empty) .empty) (.node g166 .empty .empty)) (.node g170 (.node g169 (.node g168 .empty .empty) .empty) (.node g171 .empty .empty)))) (.node g182 (.node g177 (.node g175 (.node g174 (.node g173 .empty .empty) .empty) (.node g176 .empty .empty)) (.node g180 (.node g179 (.node g178 .empty .empty) .empty) (.node g181 .empty .empty))) (.node g187 (.node g185 (.node g184 (.node g183 .empty .empty) .empty) (.node g186 .empty .empty)) (.node g189 (.node g188 .empty .empty) (.node g190 .empty .empty))))) (.node g210 (.node g201 (.node g196 (.node g194 (.node g193 (.node g192 .empty .empty) .empty) (.node g195 .empty .empty)) (.node g199 (.node g198 (.node g197 .empty .empty) .empty) (.node g200 .empty .empty))) (.node g206 (.node g204 (.node g203 (.node g202 .empty .empty) .empty) (.node g205 .empty .empty)) (.node g208 (.node g207 .empty .empty) (.node g209 .empty .empty)))) (.node g220 (.node g215 (.node g213 (.node g212 (.node g211 .empty .empty) .empty) (.node g214 .empty .empty)) (.node g218 (.node g217 (.node g216 .empty .empty) .empty) (.node g219 .empty .empty))) (.node g225 (.node g223 (.node g222 (.node g221 .empty .empty) .empty) (.node g224 .empty .empty)) (.node g227 (.node g226 .empty .empty) (.node g228 .empty .empty)))))) (.node g267 (.node g248 (.node g239 (.node g234 (.node g232 (.node g231 (.node g230 .empty .empty) .empty) (.node g233 .empty .empty)) (.node g237 (.node g236 (.node g235 .empty .empty) .empty) (.node g238 .empty .empty))) (.node g244 (.node g242 (.node g241 (.node g240 .empty .empty) .empty) (.node g243 .empty .empty)) (.node g246 (.node g245 .empty .empty) (.node g247 .empty .empty)))) (.node g258 (.node g253 (.node g251 (.node g250 (.node g249 .empty .empty) .empty) (.node g252 .empty .empty)) (.node g256 (.node g255 (.node g254 .empty .empty) .empty) (.node g257 .empty .empty))) (.node g263 (.node g261 (.node g260 (.node g259 .empty .empty) .empty) (.node g262 .empty .empty)) (.node g265 (.node g264 .empty .empty) (.node g266 .empty .empty))))) (.node g286 (.node g277 (.node g272 (.node g270 (.node g269 (.node g268 .empty .empty) .empty) (.node g271 .empty .empty)) (.node g275 (.node g274 (.node g273 .empty .empty) .empty) (.node g276 .empty .empty))) (.node g282 (.node g280 (.node g279 (.node g278 .empty .empty) .empty) (.node g281 .empty .empty)) (.node g284 (.node g283 .empty .empty) (.node g285 .empty .empty)))) (.node g296 (.node g291 (.node g289 (.node g288 (.node g287 .empty .empty) .empty) (.node g290 .empty .empty)) (.node g294 (.node g293 (.node g292 .empty .empty) .empty) (.node g295 .empty .empty))) (.node g301 (.node g299 (.node g298 (.node g297 .empty .empty) .empty) (.node g300 .empty .empty)) (.node g303 (.node g302 .empty .empty) (.node g304 .empty .empty))))))))
 
 private def topInstructions : List (Nat × Nat) := [(0,78), (1,106), (2,76), (3,87), (586,107), (2257,64), (2258,108), (3146,120), (3147,121), (3753,103), (4021,49), (5492,96), (5989,111), (6382,105), (7726,88), (7727,77), (9175,73), (9176,80), (9760,96), (11165,79), (11948,85), (11949,63), (13193,70), (14162,82), (15380,88), (15381,108), (15382,97), (16194,130), (17026,118), (18613,110), (18614,96), (19196,105), (19326,107), (20605,104), (20606,114), (21967,114), (21968,107), (23192,116), (24711,104), (24712,76), (24713,82), (25304,122), (25305,62), (26678,118), (28366,82), (28367,56), (28368,118), (29721,68), (31360,70), (32449,64), (33384,58), (34990,96), (34991,85), (34992,102), (36253,79), (37613,108), (37614,86), (38363,80), (38776,98), (40524,102), (40525,97), (41156,103), (42036,85), (43617,98), (43618,109), (44102,103), (45325,110), (45326,84), (47072,86), (47073,108), (47074,76), (47075,87), (47076,109), (48310,72), (50173,88), (50174,72), (50920,75), (52183,85), (52184,72), (53430,79), (54184,73), (54185,112), (56111,67), (57718,96), (57719,88), (58753,100), (58754,113), (60134,85), (60499,79), (60824,73), (62273,102), (62274,100), (62275,113), (63313,103), (64533,103), (65581,97), (65582,72), (67008,106), (67620,85), (69226,114), (69227,88), (70422,84), (70928,72), (70929,82), (71228,70), (72643,80), (74152,112), (74153,84), (75164,72), (76239,120), (78390,100), (78391,84), (78978,99), (80559,106), (80560,120), (81921,110), (82576,98), (84026,82), (84027,84), (84028,98), (84029,71), (85109,76), (86714,110), (86715,88), (88008,104), (88009,68), (90261,102), (90262,68), (91593,100), (92358,112), (93696,102), (93697,72), (93698,111), (94106,97), (95570,60), (95571,116), (96156,80), (97384,66), (97385,68), (99085,63), (99086,80), (99617,68), (101133,81), (102900,72), (102901,110), (102902,111), (104399,104), (104400,111), (105811,98), (107821,81), (107822,104), (108808,100), (110523,87), (110524,100), (111536,104), (113304,99), (113305,66), (114275,60), (114963,63), (117166,74), (117167,96), (117168,88), (117169,122), (117972,110), (118413,126), (119832,100), (120938,106), (120939,73), (122581,112), (122582,73), (124662,102), (124663,106), (124664,108), (126273,100), (127307,112), (129523,100), (129524,108), (129525,106), (129791,81), (131164,99), (131774,84), (133351,98), (133352,108), (134183,112), (134608,84), (135922,88), (135923,108), (135924,66), (136611,72), (138126,114), (140120,84), (140121,112), (141761,108), (141762,106), (143399,70), (143400,96), (143401,98), (143402,79), (144656,118), (144657,102), (145153,110), (145741,104), (145985,106), (147630,106), (147631,113), (148863,114), (149743,110), (151859,84), (151860,110), (152734,102), (153363,104), (153364,118), (154602,112), (156501,98), (156502,81), (157500,75), (159391,88), (159392,75), (160620,80), (160621,102), (160622,63), (163934,76), (163935,98), (163936,66), (163937,62), (164565,72), (166195,62), (166196,84), (166197,123), (167655,72), (169116,42), (169117,72), (169992,84), (171401,46), (172373,50), (172374,72), (172375,110), (172801,38), (176180,106), (176181,96), (176182,62), (176984,54), (178359,88), (178774,104), (179174,80), (180494,110), (180495,66), (181417,58), (181418,96), (182731,54), (182732,88), (183053,96), (185385,66), (185386,118), (188468,80), (188469,106), (188470,66), (188471,128), (189165,119), (189952,137), (190333,56), (191010,47), (192312,62), (192313,69), (193797,58), (194307,50), (194308,56), (194763,68), (194764,119), (195839,38), (198758,102), (198759,66), (198760,100), (199973,46), (201093,50), (203060,66), (203061,118), (204962,62), (206338,84), (206339,71), (206340,88), (207322,85), (209292,72), (209293,98), (210072,102), (211536,75), (212495,77), (212496,66), (213117,64), (214574,88), (214575,75), (214576,66), (214577,118), (216087,72), (217453,77), (217454,72), (218814,79), (220326,72), (220327,98), (220328,79), (222507,100), (222508,102), (223444,110), (225855,106)]
 

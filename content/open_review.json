@@ -56,14 +56,6 @@
    ],
    "note": "HasAddVCNDimAtMost C 2 2 means no convex C in R^3 can 2-shatter a 3x3 sumset grid a_i+b_j by translates, and the proof shows exactly that. The steps: shattering forbids opposite-sign convex dependencies, so the direction planes of a and b are distinct 2-planes; a normal form follows; then a covering of R^3 minus 0 by four facial cones forces a convex-combination contradiction between two translates. This is a genuine geometric argument, and the statement is the project's own faithful definition. The problem comes from formal-conjectures itself (section 'What's not in the literature', tagged open), not from an external source. Known neighbours are VC_2 <= 1 false (KitaKen1) and a finite bound of 2^{8(n+2)^n}-1 (KitaKen1). I found no prior proof of the bound 2. No earlier proof was found as of this review; corrections welcome."
   },
-  "WrittenOnTheWallII.GraphConjecture72.conjecture72": {
-   "date": "2026-11-27",
-   "pr": 620,
-   "evidence": [
-    "http://cms.uhd.edu/faculty/delavinae/research/wowII/all.html#conj72"
-   ],
-   "note": "The counterexample has 19 vertices in layers of sizes 7,2,1,2,7: consecutive layers are completely joined, the outer layers are cliques and the inner layers independent. I verified by brute force that the average eccentricity is 70/19, max lambda(v) = 4 (the middle vertex), and the largest induced tree has 5 vertices, while ceil(70/19+4/3) = 6. The definitions (eccent averaged, induced-subgraph indepNum of the neighbourhood, largest induced tree) are faithful to WOWII #72. Caveat: the WOWII site was unreachable from here, so the open status rests on the formal-conjectures transcription ('status O') and a web search that found no earlier refutation. No earlier proof was found as of this review; corrections welcome."
-  },
   "OeisA208425.conjecture_2": {
    "date": "2026-11-27",
    "pr": 2841,
@@ -267,6 +259,162 @@
     "https://oeis.org/A108629"
    ],
    "note": "The statement encodes the g.f. (1+x-sqrt(1-2x-3x^2-4x^3))/(2+2x+2x^2) over Q, taking the square-root branch with constant term 1 via binomialSeries(1/2) composed with -2X-3X^2-4X^3. With a(n) = coeff n, a(0)=0 and a(1)=1, which matches OEIS offset 1 (1,0,1,2,4,11,...). The recurrence is exactly R. J. Mathar's 'Conjecture D-finite with recurrence' (Jan 2020), stated for n>=6 where every index is defined; I checked it by hand at n=6 (66=66). The proof is a genuine algebraic derivation. It uses R^2 = 1+t to get 2(1+t)R' = t'R, substitutes R = 1+X-2(1+X+X^2)A to get a first-order linear ODE for A, and reads off coefficients. The entry still marks the recurrence as conjectural. The result is routine (any algebraic g.f. is D-finite), so its novelty is low, but no earlier proof exists in the source."
+  },
+  "mo-348551": {
+   "date": "2026-11-27",
+   "pr": 6004,
+   "evidence": [
+    "/home/user/open-math-agents/statements/mo-348551.lean",
+    "/home/user/open-math-agents/proofs/mo-348551.lean",
+    "https://mathoverflow.net/questions/348551",
+    "https://api.stackexchange.com/2.3/questions/348551/comments?site=mathoverflow"
+   ],
+   "note": "The question (no answers; only David Handelman's comment that it is unlikely to be tractable) asks to show that phi_i(k) = (lambda_i - lambda_{i+1})/k is unimodal, where lambda_j are the ordered eigenvalues of (A^T)^k A^k / rho(A)^{2k} and A is any entrywise nonnegative matrix. The formalisation is faithful: it requires positive Perron root (needed for the division, and noted in the comments), lists eigenvalues with multiplicity in decreasing order, uses k>0, and defines unimodality as nondecreasing up to k0 and nonincreasing after, which matches the source's definition. The disproof uses A = [1] (+) [[0,1],[1/4,0]] with rho=1. At even times the normalized Gram matrix is diag(1,16^-m,16^-m); at odd times it is diag(1,16^-m/16,16^-m) up to order. So phi_2 alternates between 0 and a positive value and cannot be unimodal for any k0, under the MO definition as well. The 2x2 irreducible block alone already gives a counterexample, so nonnegative matrices are definitely not unimodal in general. The argument is genuine and elementary. The only caveat is that the asker might have meant primitive matrices, but did not say so."
+  },
+  "oeis-a229623": {
+   "date": "2026-11-27",
+   "pr": 6136,
+   "evidence": [
+    "/home/user/oeis/oeisdata/seq/A229/A229623.seq",
+    "/home/user/oeis/oeisdata/seq/A229/A229621.seq",
+    "/home/user/open-math-agents/statements/oeis-a229623.lean",
+    "/home/user/open-math-agents/proofs/oeis-a229623.lean"
+   ],
+   "note": "The OEIS entry gives the data 0,1,...,9,11,101,...,929,1001,10001,... with offset 1, and Derek Orr's 2015 conjecture a(n) = 10^(n-18)+1 for n>20. The statement uses Nat.nth qualifies (n-1) with qualifies m := digits(m) palindrome and digits(m - digitsum m) palindrome, which matches: nth 0 = 0 and the 21st term is 1001 = 10^3+1. Range n>=21 is correct and there is no weakening. The proof is a real digit argument. For an L-digit palindrome m >= 10^4 the digit sum s < 10^(L/2). If m-s loses a digit, then m = 10^(L-1)+1. If the top half is unchanged, mirroring forces 10^(L/2) | s, which is impossible. Otherwise a borrow forces s = 10^q mod 10^(q+1) with s <= 18(q+1), also impossible. The finite range below 10^4 is checked with decide. Neither the entry nor A229621 marks the conjecture as proved, and I found no earlier proof."
+  },
+  "arxiv-2404.06445": {
+   "date": "2026-11-27",
+   "pr": 6168,
+   "evidence": [
+    "/home/user/open-math-agents/statements/arxiv-2404.06445.lean",
+    "/home/user/open-math-agents/proofs/arxiv-2404.06445.lean",
+    "https://arxiv.org/abs/2404.06445",
+    "https://arxiv.org/pdf/2404.06445v3",
+    "https://arxiv.org/abs/2611.29504v1",
+    "/tmp/claude-0/-home-user-open-math-agents/9a66cfa6-a77c-551f-a973-f3caa1e31938/scratchpad/w8/ext.py"
+   ],
+   "note": "Conjecture 8.9 ('Main Conjecture') of Mallik, Diwan and Kothari v3 says that every minimal k-extendable bipartite graph has |V_{k+1}| ≥ 2/(2k-1)·(m - n + 2k). The formal statement matches the paper's Section 8 definitions: connected, order ≥ 2k+2, has a k-matching, every k-matching extends to a perfect matching, minimal under edge deletion, V_{k+1} = vertices of degree exactly k+1, no extra order threshold. The disproof is an explicit 16-vertex bipartite graph with k = 3. H_A–L_B and L_A–H_B are complete (|H| = 3, |L| = 5), plus a perfect matching between L_A and L_B and one edge between H_A and H_B, for m = 36 and only 10 vertices of degree 4, below the bound 52/5 = 10.4. I checked this independently by brute force: the graph is connected and bipartite, every 3-matching extends to a perfect matching, every single-edge deletion destroys 3-extendability, and it is consistent with Lou's theorem and with the paper's Conjecture 8.10 (tight at 10). It does not use small-order degeneracy, since n = 16 ≥ 8. I found no earlier counterexample: the only later paper on these bounds (He, arXiv 2611.29504, confirming Conjecture 8.11 for k ≥ 3) does not address 8.9."
+  },
+  "oeis-a122251": {
+   "date": "2026-11-27",
+   "pr": 6028,
+   "evidence": [
+    "/home/user/oeis/oeisdata/seq/A122/A122251.seq",
+    "/home/user/oeis/oeisdata/seq/A122/A122249.seq",
+    "/home/user/oeis/oeisdata/seq/A122/A122250.seq",
+    "/home/user/open-math-agents/statements/oeis-a122251.lean",
+    "/home/user/open-math-agents/proofs/oeis-a122251.lean",
+    "https://arxiv.org/abs/2607.18644"
+   ],
+   "note": "The formal statement matches Paul Barry's 2006 general conjecture. For every prime p and every n, the reduced numerator of det[1/(1+p(i+j))] over 0≤i,j≤n equals (p^2)^{sum_{k=1..n} sum_{j=0..n} floor(k/p^j)}. I checked n=1, p=3: det = 9/112. The companion entry A122249 (p=2) still says 'Conjecture - requires proof', and I found no proof in the OEIS or in the literature I searched; arXiv 2607.18644 handles different Barry conjectures. The proof is a genuine argument. It eliminates the last pivot to get det_{t+1} = det_t·(p^t t!/prod_i(1+p(i+t)))^2/(1+2pt). It then uses a classical divisibility fact: the part of t! coprime to p divides the product of t consecutive terms of an arithmetic progression with step p. So the denominator is coprime to p and the numerator is exactly p^{2(t+v_p(t!))} at each step, which sums to the conjectured exponent. The argument is elementary, but I found no earlier source for it."
+  },
+  "oeis-a401159": {
+   "date": "2026-11-27",
+   "pr": 6077,
+   "evidence": [
+    "/home/user/oeis/oeisdata/seq/A401/A401159.seq",
+    "/home/user/oeis/oeisdata/seq/A086/A086601.seq",
+    "https://oeis.org/A247158/a247158.pdf",
+    "/home/user/open-math-agents/statements/oeis-a401159.lean",
+    "/home/user/open-math-agents/proofs/oeis-a401159.lean"
+   ],
+   "note": "T(n,m) is formalised as the number of labelled Bool-matrices on Fin n x Fin m with at most two trues per row and per column. The two conjectures (Mathar, Nov 18 2026) appear as T(n,2) = A086601(n) = (1+n+C(n,2))^2 and 8T(n,3) = 8+8n+22n^2+13n^3+n^4+3n^5+n^6. These match the entry: A086601 = A000124^2, the denominator 8 is cleared, and the restriction to n≥m is the triangle's own domain. The T(n,2) half is close to trivial, because a row of length 2 can never break its limit, so the two columns are independent subsets of size at most 2. The proof says exactly this. For T(n,3) the proof uses inclusion-exclusion over the triples of column-sets whose common intersection is nonempty, and derives T + n·n^3 = (1+n+C(n,2))^3 + C(n,2). Mathar's 2014 paper only tabulates the values and gives no closed forms. The entry is new and labels both formulas as conjectures, so this is a correct and faithful proof of two easy but recent conjectures; I found no earlier source."
+  },
+  "oeis-a057663": {
+   "date": "2026-11-27",
+   "pr": 6149,
+   "evidence": [
+    "/home/user/oeis/oeisdata/seq/A057/A057663.seq",
+    "/home/user/open-math-agents/statements/oeis-a057663.lean",
+    "/home/user/open-math-agents/proofs/oeis-a057663.lean"
+   ],
+   "note": "The statement is faithful to Gerasimov's 2019 conjecture: for k≥1, φ(k+2^k) = φ(k)+2^k holds exactly when k and k+2^k are both prime. The k≥1 restriction matches a sequence of positive integers. I found no other OEIS entry that mentions the identity, and A057663 still calls it a conjecture. The proof is genuine and elementary. Suppose N = k+2^k is composite with least prime factor p. Then N - φ(N) ≥ N/p ≥ sqrt(N) ≥ k, using k^2 ≤ k+2^k. That contradicts N - φ(N) = k - φ(k) < k. Hence N is prime, so φ(k) = k-1, which forces k to be prime. The conjecture is easy, but no earlier proof was found."
+  },
+  "mo-309804": {
+   "date": "2026-11-27",
+   "pr": 6224,
+   "evidence": [
+    "https://mathoverflow.net/questions/309804",
+    "https://api.stackexchange.com/2.3/questions/309804/answers?site=mathoverflow&filter=withbody",
+    "/home/user/open-math-agents/statements/mo-309804.lean",
+    "/home/user/open-math-agents/proofs/mo-309804.lean"
+   ],
+   "note": "The formal statement is faithful. A is real upper triangular with negative diagonal, so it is Hurwitz with real spectrum. X and P are symmetric positive definite (Mathlib PosDef includes symmetry), tr X = 1, AP+PA^T = -X, and the objective is tr(X(I+P)^{-1}). The set of values is nonempty and bounded by 1, so Lean's sSup convention cannot trivialise the claim, and the target 2trA/(2trA-1) lies in (0,1). On MathOverflow the question has only two partial answers (an orthogonal-invariance remark and first-order conditions) and comments, none of which settles it. The proof is a genuine argument. Using tr(XP^{-1}) = -2trA, a Kakutani fixed-point step (Brouwer/Kakutani code adapted from harfe's MIT repository, with attribution) gives a PSD trace-one state supported on a single eigenspace of P, whose eigenvalue c must equal -1/(2trA). That state attains 1/(1+c) = 2trA/(2trA-1), and a regularisation step approaches it from the positive definite side. The proof also gives the reverse inequality through a tangent bound, so it establishes the asker's numerically observed equality. I found no earlier solution."
+  },
+  "oeis-a033955": {
+   "date": "2026-11-27",
+   "pr": 6208,
+   "evidence": [
+    "/home/user/oeis/oeisdata/seq/A033/A033955.seq",
+    "/home/user/open-math-agents/statements/oeis-a033955.lean",
+    "/home/user/open-math-agents/proofs/oeis-a033955.lean"
+   ],
+   "note": "The statement is faithful to Alonso del Arte's conjecture (Jul 27 2026): for n>6 (1-based), the sum of prime(n) mod prime(k) over k<n exceeds prime(n). With the zero-based Nat.nth, 5<n is exactly the 1-based n>6, and the sum runs over the n smaller primes. The bound is strict and the threshold is correct, since a(6)=13=prime(6). The conjecture is recent and the entry gives no proof. The proof is genuine. For p ≥ 65536 it uses Mathlib's Chebyshev theta bounds to show that the primes in (p/3, p) contribute enough remainder. It then checks 256 ≤ p < 65536 with kernel-verified block certificates and 17 ≤ p < 256 with explicit rows."
+  },
+  "oeis-a283508": {
+   "date": "2026-11-27",
+   "pr": 6231,
+   "evidence": [
+    "/home/user/oeis/oeisdata/seq/A283/A283508.seq",
+    "/home/user/oeis/oeisdata/seq/A267/A267623.seq",
+    "/home/user/open-math-agents/statements/oeis-a283508.lean",
+    "/home/user/open-math-agents/proofs/oeis-a283508.lean"
+   ],
+   "note": "The formal model follows the entry's Mathematica program. The rule bit is selected at index centre + 2·(von Neumann neighbour count) in 643, all cells of the infinite grid update, the origin is read first through (n,0) as decimal digits, and Rule 187 is used for A267623. The statement packages all four empirical conjectures: Barker's generating function, closed form and recurrence, and Mathar's a(n) = A267623(n). The proof is a genuine, if easy, argument. Rule 643 turns on cells that have no ON neighbours, so after two steps the grid reaches a fixed pattern in which every cell is ON except the 8 around the origin. Rule 187 sends the single ON cell to a moving 'hole' row. Both give the digit string 1,0,1,1,1,..., and the three formulas follow. The entry still labels these as conjectures and I found no earlier written proof, so I confirm it, while noting that the content is a routine calculation."
+  },
+  "OeisA113258.conjecture": {
+   "date": "2026-11-27",
+   "pr": 5945,
+   "evidence": [
+    "/home/user/open-math-agents/proofs/OeisA113258.conjecture.lean",
+    "/home/user/google-deepmind/formal-conjectures/FormalConjectures/OEIS/113258.lean",
+    "/home/user/oeis/oeisdata/seq/A113/A113258.seq",
+    "https://oeis.org/A113258",
+    "https://github.com/epoch-research/LeanOpenProblems-results (runs/*/oeis_a113258_conjecture_0/scores.json, all scored I)"
+   ],
+   "note": "The DeepMind statement defines a n = sum_{i<n} (i+1)!^((n-i)!), which equals the OEIS formula sum_{i=1..n} (i!)^((n-i+1)!). It asks for some n > 4, b > 1, e > 1 with a n = b^e, which is exactly Vos Post's question 'Is there a nontrivial power after a(4) = 5^3?'. The disproof shows no later term is a perfect power. This is a substantial argument of about 7400 lines with no sorry and no custom axiom (CI audits axioms). It shows: (1) 2^((n-1)!) < a(n) < 2^((n-1)!) + 2^(4(n-2)!), so any exponent prime p must satisfy p >= n; (2) explicit prime-modulus witnesses rule out n = 5..8 and every (n,p) in the remaining finite range; (3) a formalised special case of Laurent's lower bound for linear forms in two logarithms (interpolation-determinant proof, `LaurentTwoLog`, `direct_log_bound`) bounds p for large n. I found no earlier resolution. The OEIS entry still asks the question, and all four Epoch OEIS-Open runs on this problem (OpenAI, GDM, Anthropic, Gemini) scored I (incorrect). This looks like a genuine new result, not a weakening."
+  },
+  "oeis-a214074": {
+   "date": "2026-11-27",
+   "pr": 6211,
+   "evidence": [
+    "/home/user/open-math-agents/statements/oeis-a214074.lean",
+    "/home/user/open-math-agents/proofs/oeis-a214074.lean",
+    "/home/user/oeis/oeisdata/seq/A214/A214074.seq",
+    "/home/user/oeis/oeisdata/seq/A214/A214180.seq",
+    "/home/user/oeis/oeisdata/seq/A214/A214707.seq",
+    "https://arxiv.org/abs/2608.11941",
+    "https://arxiv.org/abs/2607.24832"
+   ],
+   "note": "The statement faithfully encodes Kimberling's 2012 conjecture: for n >= 1, the least m > 0 with gcd(2^n - m, 3^n - m) = 1 is 3 if and only if n = 330k - 209 for some k >= 1. The integer gcd handles negative values correctly. The disproof takes n = 3438721 = 330*10421 - 209. Modulo the prime 487891, both 2^n and 3^n are 3; I re-checked this independently, and 487891 has no divisor below its square root. So 487891 divides gcd(2^n - 3, 3^n - 3), 3 is not in the set, and the 'if' direction fails; the exponent progression 3438721 + 5366790t gives infinitely many counterexamples. This is a genuine, non-trivial counterexample: the exhibited counterexample n ≈ 3.4 million lies far beyond the 1000-term b-file, and finding it needs a search for a prime obstruction of this size. The OEIS entry and the related entries (A214180, A214707-A214709) still list the conjecture unrefuted. Neither the Epoch OEIS-Open paper nor Fried's 2026 OEIS-conjecture paper mentions A214074. I found no earlier refutation."
+  },
+  "OeisA79727.conjecture2": {
+   "date": "2026-11-27",
+   "pr": 6898,
+   "evidence": [
+    "https://oeis.org/A079727",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/6898"
+   ],
+   "note": "The statement is that a(p(p-1)) = p^2 mod p^3 for primes p = 3, 5, 6 mod 7 (OeisA3625.A), with a(n) = sum_{k<=n} C(2k,k)^3. This is exactly Peter Bala's Conjecture 2 (July 2024) on OEIS A079727, which still lists it as a conjecture. I checked numerically that it holds for p = 3, 5, 13, 17, 19. The proof (about 3960 lines, no sorry or native_decide, with p=3 done separately) is a substantial original argument. It expands a(p(p-1)) mod p^3 in blocks and uses the supersingular CM curve y^2 = (x+21)(x^2+7) (Hasse invariant), a 2-isogeny and Picard-Fuchs/Wronskian identities. It is in the same family as the already-confirmed OeisA79727.conjecture3. Searches found only Zhi-Hong Sun's mod p^2 result for a(p-1) and unrelated mod p^3 supercongruences (e.g. arXiv:2408.09776, arXiv:2610.34160), no proof of this congruence. No earlier proof was found as of this review; corrections welcome."
+  },
+  "OeisA157237.conjecture": {
+   "date": "2026-11-27",
+   "pr": 6569,
+   "evidence": [
+    "https://oeis.org/A157237"
+   ],
+   "note": "The definition matches OEIS: a(n) counts (x,y), x,y>=1, with 2n-1-2^x-11*2^y prime and ≡ 1 (mod 6). The Lean 'iff' statement is Sun's conjecture exactly. The disproof is an explicit counterexample n=333811606269876, i.e. 2n-1 = 667623212539751, with every candidate difference shown ≡/≡ 1 mod 6 or given an explicit proper divisor. I independently checked that all 549 differences ≡ 1 (mod 6) are composite, so a(n)=0, and n is not one of the listed exceptions. OEIS records only verification below 1.5*10^8 and no counterexample, and searches found no earlier record of this number or a refutation. No earlier proof was found as of this review; corrections welcome."
+  },
+  "Erdos473.erdos_473.variants.finite": {
+   "date": "2026-11-27",
+   "pr": 6801,
+   "evidence": [
+    "https://www.erdosproblems.com/473",
+    "https://www.erdosproblems.com/forum/thread/473",
+    "https://arxiv.org/abs/2609.19114",
+    "https://oeis.org/A051252"
+   ],
+   "note": "The statement (for every n >= 2 there is a permutation of {1..n}, via Fin n ≃ Fin n shifted by 1, with all adjacent sums prime) is exactly Segal's finite question on erdosproblems.com/473. The page says it is open and 'true for infinitely many n' via bounded prime gaps; van Doorn in the forum knew no proof. The closest prior work is Y.-F. She (arXiv:2609.19114, 16 Sep 2026), who proves that prime circles of order 2n exist for all sufficiently large n. That would give the path version for all large n, but with an ineffective n0, so the all-n statement was not established. OEIS A051252 still says there is no proof for all n. The 10.6k-line proof is fully effective: strong induction with reflection primes, explicit prime counts in (33N/34, N] for N >= 9.1*10^19 via a certified sieve, and certified small cases. No sorry or axioms. No earlier complete proof was found as of this review; corrections welcome."
   }
  },
  "flagged": {
@@ -322,6 +470,181 @@
     "https://raw.githubusercontent.com/google-deepmind/formal-conjectures/main/FormalConjectures/ErdosProblems/40.lean"
    ],
    "reason": "The upstream erdos_40 is a 'question value' statement: {g | g -> infinity and Erdos40For g} = erdos_40.answer, where answer is a sorry placeholder. The PR proves only that this holds if answer is replaced by its own OMA.answer. OMA.answer is {g | g -> infinity and for all k there is T >= k such that every p in maximalProfiles k T violates a finite inequality against sqrt(i)/g(i)}. The proof gets there by rewriting with erdos40For_iff_finite (a compactness truncation to finite sets with representation count <= k) and finite_iff_profile_obstruction. So the 'answer' is a mechanical restatement of the defining predicate Erdos40For through finite truncations, not an explicit characterisation of the admissible g. The file header admits that the criterion 'does not settle whether there is any divergent denominator satisfying it', so it does not even settle the weaker variant or Erdős #28. The extra side results (log-band and fourth-root counterexamples) are partial and are not the stated problem. erdosproblems.com still lists #40 as open with 0 proof claims; this is a trivialised answer, not a solution."
+  },
+  "mo-407245": {
+   "date": "2026-11-27",
+   "pr": 6718,
+   "evidence": [
+    "/home/user/open-math-agents/statements/mo-407245.lean",
+    "/home/user/open-math-agents/proofs/mo-407245.lean",
+    "https://mathoverflow.net/questions/407245",
+    "https://api.stackexchange.com/2.3/questions/407245/comments?site=mathoverflow"
+   ],
+   "reason": "The MO question asks for the smallest l (as a function of k,n, or even an asymptotic bound) such that any l equipartitions of a kn-set force a pair to share a block in at least half of them. The formal statement does not give an answer: it defines threshold k n through hasOrthogonal k n 3 and hasOrthogonal k n 4, which are brute-force `decide` searches over every family of partitions, and only proves that the minimum is 3, 4 or nonexistent depending on those uncomputed predicates. The proof is the easy reduction: a pair that meets at most once can't reach r/2 for r=3,4, and repeating 4 pairwise orthogonal equipartitions cyclically defeats every r >= 3. Peter Taylor's comment under the question already gives this repetition idea (using Kirkman's 7 orthogonal partitions). The real content, namely for which (k,n) 3 or 4 mutually orthogonal equipartitions exist (for k=n this is the existence of 1 or 2 MOLS of order n, so e.g. k=n=6 gives 4), is left undetermined. The theorem therefore restates the question in terms of an unsolved design-existence predicate rather than settling it."
+  },
+  "mo-148821": {
+   "date": "2026-11-27",
+   "pr": 6761,
+   "evidence": [
+    "/home/user/open-math-agents/statements/mo-148821.lean",
+    "/home/user/open-math-agents/proofs/mo-148821.lean",
+    "https://api.stackexchange.com/2.3/questions/148821?site=mathoverflow&filter=withbody",
+    "https://mathoverflow.net/questions/148821"
+   ],
+   "reason": "The MathOverflow question (no answers, no comments) is open-ended: 'what can we say about |M_1 ∪ ... ∪ M_b| compared to a maximum b-matching, is anything known about the ratio?'. It gives no precise conjecture or candidate value, and the statement file says so itself. The formal 'answer' does not compute the ratio. It proves that p/q is guaranteed iff a finite integer certificate exists (`certified b p q`: labels, weights and linear inequalities over subsets of Fin b). That is an LP-duality/blow-up characterisation, which in effect restates the question as a finite linear program. It gives no explicit bound, does not even recover the 1/2 the asker noted for b = 1, 2, and says nothing about how the ratio behaves as b grows. The Lean proof (Farkas lemma plus a blow-up construction realising the dual) is a real argument, and legalRounds does faithfully encode successive maximal matchings. But it does not settle the source question, which is not a precise yes/no problem."
+  },
+  "oeis-a346214": {
+   "date": "2026-11-27",
+   "pr": 6086,
+   "evidence": [
+    "/home/user/open-math-agents/statements/oeis-a346214.lean",
+    "/home/user/open-math-agents/proofs/oeis-a346214.lean",
+    "/home/user/oeis/oeisdata/seq/A346/A346214.seq"
+   ],
+   "reason": "The disproof attacks only the second conjunct, the finite formula T(n,n-j) = A002884(n)/(A002884(j)·2^(n-(j-1)^2)), stated 'for j < 2n'. It refutes that at n = 2, j = 1, where T(2,1) = 1 but the formula gives 6/4. The range 'j < 2n' is plainly a typo by Critzer: it allows every j < n, and the formula already fails at n = 3, j = 2 (1 vs 14) and at n = 4, j = 2 (315 vs 420). It holds in the checked cases with 2j < n (n = 3, j = 1: 21; n = 4, j = 1: 1260; n = 5, j = 2: 104160), so the intended statement is evidently 'for n > 2j'. The formalisation copied the typo literally, and the counterexample exploits only that. The actual conjecture is the limiting distribution lim P(X_n = j) = ∏(1-2^-i)·2^((j-1)^2)/A002884(j), together with the corrected finite formula, and the PR does not touch it. So the conjecture has not really been refuted."
+  },
+  "oeis-a124352": {
+   "date": "2026-11-27",
+   "pr": 6143,
+   "evidence": [
+    "/home/user/open-math-agents/statements/oeis-a124352.lean",
+    "/home/user/open-math-agents/proofs/oeis-a124352.lean",
+    "/home/user/oeis/oeisdata/seq/A124/A124352.seq",
+    "/home/user/oeis/oeisdata/seq/A307/A307933.seq",
+    "/home/user/oeis/oeisdata/seq/A124/A124353.seq",
+    "/tmp/claude-0/-home-user-open-math-agents/9a66cfa6-a77c-551f-a973-f3caa1e31938/scratchpad/w8/a124352.py"
+   ],
+   "reason": "Barker's g.f./recurrence conjecture (and Mathar's equivalent form) is still marked as a conjecture in A124352 and A307933. The proof is a genuine 117-state transfer-matrix argument. However, the formal statement never mentions the antiprism or Hamiltonian paths. `a n` is defined as the output of an agent-written frontier/connectivity dynamic program (masks, addEdge, forget, closing), and the only link to the OEIS quantity is a docstring claim. The real mathematical step, that this program counts directed Hamiltonian paths of C_{2n}^2, is assumed rather than proved. Given the program, the recurrence is just Cayley-Hamilton bookkeeping. I ported the program to Python and it matches brute-force counts for n = 3..6 (240, 816, 2400, 6480) and the data up to n = 13, so it is very likely correct. But the Lean theorem does not certify the conjecture as stated: it proves a property of a custom algorithm, which is a degenerate encoding unless that algorithm is formally tied to the graph count."
+  },
+  "Erdos691.erdos_691": {
+   "date": "2026-11-27",
+   "pr": 7394,
+   "evidence": [
+    "https://www.erdosproblems.com/691",
+    "https://www.erdosproblems.com/forum/thread/691",
+    "https://github.com/google-deepmind/formal-conjectures/blob/main/FormalConjectures/ErdosProblems/691.lean",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/7394"
+   ],
+   "note": "Erdos asks for 'a necessary and sufficient condition' on A for M_A to have density 1, which is an open-ended request. The formal statement erdos_691.answer = (fun A => (multiples A).HasDensity 1) is satisfied by the tautological answer. So it accepts any equivalent predicate and cannot tell a real answer from a restatement. The submitted OMA.answer says that A meets every 'AdmissibleTest'. A test is an arbitrary infinite sequence of finite divisor-closed sets on prime blocks satisfying a harmonic-mass retention inequality, so the criterion quantifies over an uncountable family of obstruction certificates. It is a dual reformulation of the Behrend property, not an arithmetic condition on A. The forum thread notes that the analogous finite-approximation criterion is the classical Davenport-Erdos fact (Hall-Tenenbaum (1.3)) and does not count as a solution. The file says it is a port of github.com/Ghuffy1/erdos691, and erdosproblems.com/691 remains open. The proof is valid but does not solve the problem as posed."
+  },
+  "Erdos357.erdos_357.parts.ii.bigO_version_symm": {
+   "date": "2026-11-27",
+   "pr": 9741,
+   "evidence": [
+    "https://www.erdosproblems.com/357",
+    "https://www.erdosproblems.com/forum/thread/357",
+    "https://www.erdosproblems.com/forum/thread/357/proof-claims",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/9741"
+   ],
+   "note": "The question is 'how does f(n) grow / find a good explicit g with f = O(g)'. The real open problem is whether f(n) = o(n). The formal statement f =O[atTop] answer is trivially satisfied by answer(n) = n, since a strictly increasing sequence in [1,n] has at most n terms. So it is vacuous. The submitted answer (44273/90000)n + 2 sqrt n + 177792 is again linear, so the Big-O conclusion carries no information beyond the trivial bound; the sharper constant (about 0.4919 < 1/2, said to be from Chandler Snively's 2026 preprint) is invisible to the statement. Known upper bounds on the page and forum are (2/3 - 1/512)n (Coppersmith-Phillips), about 0.8727n (Beker), and a claimed n/2 + O(n^{2/3}) (Lenthall-Cleary, July 2026). The PR itself concedes that 'whether f(n)=o(n) remains open'. Not a solution."
+  },
+  "Erdos692.erdos_692.parts.ii": {
+   "date": "2026-11-27",
+   "pr": 9756,
+   "evidence": [
+    "https://www.erdosproblems.com/692",
+    "https://www.erdosproblems.com/forum/thread/692",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/9756"
+   ],
+   "note": "Erdos asks where, for fixed n, delta_1(n,m) attains its maximum. The formal statement only requires some function answer(n) at which the maximum over m > n+1 is attained. The submitted OMA.answer(n) is literally the argmax of the exact density, computed as residue counts mod m!, over the candidates m in [n+2, n+2+A+B], where A = (3^{2(n+1)^2})! and B is a factorial of a factorial. This is a brute-force argmax of the very quantity asked about, with a tower-type cutoff. It proves that the maximum exists and is attained below an astronomically large bound, but it gives no information about where the maximum lies, which is what Erdos asked; the PR concedes 'the cutoff is too large for practical computation'. erdosproblems.com/692 (Cambie: superpolynomially many local maxima) gives no closed form, and the question remains open."
+  },
+  "Erdos732.erdos_732.parts.i": {
+   "date": "2026-11-27",
+   "pr": 9192,
+   "evidence": [
+    "https://www.erdosproblems.com/732",
+    "https://www.erdosproblems.com/forum/thread/732",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/9192"
+   ],
+   "note": "Erdos asks whether there are reasonable necessary and sufficient conditions for a sequence (X_i) to be block-compatible, i.e. realizable as the block sizes of a pairwise balanced design. The formal 'question value' statement accepts any predicate equivalent to membership in blockSizeProfiles n. The submitted OMA.answer says that s is sorted and that a coefficient of prod over all T subset of [n] with |T|>=2 of (1 + x^{term T}) is positive. By the proof's own lemma coeff_pos, that coefficient is positive iff there is a family of blocks covering every pair exactly once with the size multiset s. So it is the definition of block-compatibility re-encoded as a generating function, i.e. exhaustive search. The PR says 'this criterion makes no efficiency claim'. This is a restatement, not a solution."
+  },
+  "Erdos1017.erdos_1017.upper_bound": {
+   "date": "2026-11-27",
+   "pr": 9637,
+   "evidence": [
+    "https://www.erdosproblems.com/1017",
+    "/home/user/google-deepmind/formal-conjectures/FormalConjectures/ErdosProblems/1017.lean"
+   ],
+   "note": "Erdős asks to 'estimate' (sharpen) the clique-partition number f(n,k) for k > n^2/4. The formal 'upper_bound' only asks for some function with f(n,k) <= answer(n,k). Any known bound satisfies it: the API lemma f <= k, or Erdős–Goodman–Pósa's n^2/4. The supplied OMA.answer is min(n^2/4, k - C(r,2) + 1) with r = n - (C(n,2)-k). That is EGP plus the elementary bound 'a clique on n-q vertices, then the remaining edges one by one'. No matching lower bound and no asymptotic estimate is given. The one-sided statement is essentially vacuous as a formalization of the problem, so problem 1017 is not solved."
+  },
+  "Erdos422.erdos_422.variants.growth_rate": {
+   "date": "2026-11-27",
+   "pr": 8401,
+   "evidence": [
+    "https://www.erdosproblems.com/422",
+    "/home/user/google-deepmind/formal-conjectures/FormalConjectures/ErdosProblems/422.lean"
+   ],
+   "note": "'How does f grow?' for Hofstadter's Q-sequence is formalized only as a one-sided bound f =O(answer), with answer supplied by the solver. OMA.answer = n, and the proof is f(n) <= n, which is built into the IsHofstadterQ predicate itself (it requires f(n-1) < n so that the recurrence is defined). The file also proves f(n) > c n infinitely often for c < 1/2, but the solution does not use it, and neither describes the actual growth (conjecturally f(n) ≈ n/2 with chaotic fluctuations). It is not even known that f is defined for all n. The answer is the trivial bound, so nothing about problem 422 is settled."
+  },
+  "Erdos450.erdos_450": {
+   "date": "2026-11-27",
+   "pr": 9481,
+   "evidence": [
+    "https://www.erdosproblems.com/450",
+    "https://github.com/google-deepmind/formal-conjectures/blob/main/FormalConjectures/ErdosProblems/450.lean"
+   ],
+   "note": "Erdős asks how large y(eps,n) must be, i.e. for an estimate of the threshold's size; the page discusses regimes such as y ~ 2n for eps << 1/n and no finite y at all for larger eps. The formal statement asks for exact equality windowThreshold eps n = answer eps n with an unconstrained answer function. The proof's OMA.answer is just a finite sup over residues x, r modulo P = lcm(n+1,...,2n-1) of a 'cutoff' solving the periodic counting inequality, i.e. the definition of the threshold re-expressed as a brute-force computation over one period. This proves only that the threshold is computable from periodicity and says nothing about how y(eps,n) grows in eps and n. The formalisation admits this tautological answer, so the open problem is not solved."
+  },
+  "arxiv-2205.09212": {
+   "date": "2026-11-27",
+   "pr": 7057,
+   "evidence": [
+    "https://arxiv.org/abs/2205.09212"
+   ],
+   "reason": "The source ('Primal Conjecture', §11 of Marrero–Acuña) is the vague implication 'phi_a op phi_b == phi_c (mod 9) => exists Z_a, Z_b with Z_a op Z_b = Z_c'. The paper then asks whether all members of the class are solutions or only some, and writes '... => ¬∀ Z_a, Z_b / Z_a op Z_b = Z_c'. The formal statement fixes the strongest reading: every z in column c is exactly x op y for some x, y in columns a, b. The disproof (5+6 -> 2, z=2) exploits a small-number edge case of exactly that reading. The paper itself signals the ∀ version need not hold, and the natural ∃ reading is trivially true. The source is not a well-posed problem, and the 'disproof' does not refute anything the authors claim."
+  },
+  "oeis-a026796": {
+   "date": "2026-11-27",
+   "pr": 9317,
+   "evidence": [
+    "https://oeis.org/A026796"
+   ],
+   "reason": "Beck's comment reads a(n+4) = b(n), with a = partitions with least part 3 and b = partitions with twice as many 1s as parts. The statement takes the n+4 literally, and the disproof only uses n=0: a(4)=0 but b(0)=1, from the empty partition. Numerically a(n+4)=b(n) fails at n=0,2,5,7,8,…, whereas a(n+3)=b(n) holds for every n<30 that I checked. So the comment has an evident off-by-one (the entry has offset 0 with a(0)=0 prepended in 2014), and the intended identity a(n+3)=b(n) is untouched. The disproof exploits the indexing slip, not a mathematical counterexample."
+  },
+  "oeis-a100682": {
+   "date": "2026-11-27",
+   "pr": 9279,
+   "evidence": [
+    "https://oeis.org/A100682"
+   ],
+   "reason": "A100682(n) = floor(C(n+3,4)^{1/4}) has offset 0, and Greathouse's comment reads a(n) = floor((n−3/2)/24^{1/4}) except n in {0,1,6,17,2403,5318}. Taken literally in A100682's indexing, as the statement does, the formula fails at almost every n (all n < 6000). The listed exceptions are exactly the n < 6000 where floor(C(n,4)^{1/4}) ≠ floor((n−3/2)/24^{1/4}), so the conjecture is about A000332 indexing, i.e. a(n) = floor((n+3/2)/24^{1/4}) with exceptions n+3 in the list. The disproof (n=2: a(2)=1 vs 0) exploits the shift by 3; the intended conjecture is untouched."
+  },
+  "oeis-a071283": {
+   "date": "2026-11-27",
+   "pr": 7806,
+   "evidence": [
+    "https://oeis.org/A071283",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/7806"
+   ],
+   "reason": "Barker's displayed g.f. is x^4*(x^19 + ... + x^5 + x^4)/(x^20 - 2x^10 + 1). The numerator polynomial already starts at x^4, so the extra x^4 factor is a transcription typo. The statement deliberately encodes the coefficient list with the doubled factor, so the series starts at x^8. The 'disproof' just observes a(4) = 1 against coefficient 0. I checked that the same g.f. without the extra x^4 reproduces all 80 data terms, and that the second conjunct, a(n) = 2a(n-10) - a(n-20), holds on the data. So the refutation exploits a typo, not the substance of Barker's conjecture, which is evidently correct up to the typo."
+  },
+  "oeis-a261387": {
+   "date": "2026-11-27",
+   "pr": 8794,
+   "evidence": [
+    "https://oeis.org/A261387",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/8794"
+   ],
+   "reason": "Sun's conjecture (i) is about n >= 1 (offset 1): a(n) > 0 except for n = 1, 2, 8. The formal statement asserts the equivalence for every n : N, including n = 0, where the right side '0 is not in {1,2,8}' is true but no 0 < k < m with k+m = 0 exists. The 'disproof' uses only this n = 0 case. It says nothing about Sun's conjecture (i) or (ii), which remain open. The mismatch is a domain/offset error in the formalization, and the proof exploits it."
+  },
+  "oeis-a293452": {
+   "date": "2026-11-27",
+   "pr": 6504,
+   "evidence": [
+    "https://oeis.org/A293452",
+    "https://oeis.org/A023855",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/6504"
+   ],
+   "reason": "The source formula 'T(n,1) = A023855(n)' is off by one. The OEIS data give T(n,1) = 0, 1, 2, 7, 10, 22, ..., while A023855 (offset 1) is 1, 2, 7, 10, 22, ..., so T(n,1) = A023855(n-1). The statement encodes the shifted literal formula, and the disproof just checks width 2 (one toppling against A023855(2) = 2). The PR body itself says the conjecture 'contain[s] an indexing shift', and the proof file also proves the corrected formula, but that is not the registered target. The refutation exploits a typo-level offset error, not the substance of the conjecture, which is evidently true."
+  },
+  "oeis-a377118": {
+   "date": "2026-11-27",
+   "pr": 9271,
+   "evidence": [
+    "https://oeis.org/A377118",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/9271"
+   ],
+   "reason": "The formal statement conjoins Kimberling's general claim with a literal transcription of his table of 'purely periodic' gap words, attached to the printed prime labels and with index 0 included (the offset is 0, and a(0) = 0 is divisible by every p). The disproof only uses that the gaps for p = 2 start 2, 1, 1, ... because of a(0). I computed that from index 1 the gaps for p = 2 are all 1. The printed labels are themselves scrambled: (9,4,1,2,8) is the period for p = 5, not 3, and (7,6,5,22) is the period for p = 11, not 5. The general claim is easy and true (the sequence mod p is periodic and contains a(0) = 0). So the refutation exploits the a(0) boundary and a garbled table, not a substantive mathematical conjecture."
   }
  },
  "known": {
@@ -1458,6 +1781,1170 @@
     "https://oeis.org/A283050"
    ],
    "reason": "The statement faithfully encodes R. J. Cano's conjecture (Feb 27 2017) that consecutive terms of A283050 (m>=2 with minFac(m)^2 | m) differ by between 1 and 4. However, the OEIS entry already contains the proof: 'The conjecture is true since all multiples of 4 are in this sequence' (Charles R Greathouse IV, Feb 28 2017). The 47-line PR proof uses exactly that argument (isTerm_four_mul: every 4(t+1) is a term), plus strict monotonicity of Nat.nth. The result is trivial and was proved a day after it was posed, so it was never open."
+  },
+  "oeis-a213382": {
+   "date": "2026-11-27",
+   "pr": 6763,
+   "evidence": [
+    "/home/user/oeis/oeisdata/seq/A213/A213382.seq",
+    "/home/user/open-math-agents/statements/oeis-a213382.lean",
+    "/home/user/open-math-agents/proofs/oeis-a213382.lean"
+   ],
+   "reason": "The statement faithfully encodes the conjecture that A176003 (3k-2 with k=1 or k prime) is a subsequence of A213382, i.e. (3k-2)^(3k-2) mod 3k = 3k-2. The A213382 entry itself already says 'The conjecture is correct' and gives the proof (Charles R Greathouse IV, Sep 12 2012): check small cases, then argue mod 3 (1^(3p-2)=1) and mod p ((-2)^(3p-2) = -2 by Fermat), combined by CRT. The Lean proof is exactly this argument (small cases k=1,2,3, then mod3 and modk lemmas plus Nat.modEq_and_modEq_iff_modEq_mul). Correct, but it was solved in the OEIS entry 14 years earlier."
+  },
+  "oeis-a087038": {
+   "date": "2026-11-27",
+   "pr": 6790,
+   "evidence": [
+    "/home/user/oeis/oeisdata/seq/A087/A087038.seq",
+    "/home/user/open-math-agents/statements/oeis-a087038.lean",
+    "/home/user/open-math-agents/proofs/oeis-a087038.lean"
+   ],
+   "reason": "The statement faithfully encodes Dean Hickerson's conjecture that x^x+n is prime for some x>1, for every n>=1, and the PR disproves it with n=125. The A087038 entry already records the disproof: Farideh Firoozbakht and M. F. Hasler (Nov 27 2009) showed that no such x exists for n=(6k-1)^3, with details in A087037. The statement file's own docstring even cites that disproof. The Lean argument is the standard one: odd x gives an even value, even x not divisible by 3 gives a multiple of 3, and x divisible by 6 gives a sum of two cubes u^3+5^3 that factors. A correct formalisation of a counterexample published in 2009."
+  },
+  "oeis-a348546": {
+   "date": "2026-11-27",
+   "pr": 6040,
+   "evidence": [
+    "/home/user/oeis/oeisdata/seq/A348/A348546.seq",
+    "/home/user/oeis/oeisdata/seq/A346/A346950.seq",
+    "/home/user/oeis/oeisdata/seq/A348/A348054.seq",
+    "/home/user/oeis/oeisdata/seq/A346/A346952.seq",
+    "/home/user/oeis/oeisdata/seq/A348/A348055.seq",
+    "/home/user/oeis/oeisdata/seq/A348/A348547.seq",
+    "https://stefanospezia.altervista.org/on-the-counting-of-the-k-digit-terms-in-increasing-sequences-of-positive-integers/",
+    "/home/user/open-math-agents/proofs/oeis-a348546.lean"
+   ],
+   "reason": "The statement faithfully defines a(n) (n-digit m with a divisor pair both ending in 3 and a divisor pair both ending in 7) and asks for lim a(n)/a(n-1) = 10. The Lean proof is a genuine 743-line sieve argument. It uses Dirichlet divergence of the sum of 1/p over primes = 3 and = 7 mod 10, then shows that almost all m = 9 mod 10 have prime divisors in both classes. However, the companion entries already settle the conjecture. A346950 (products of two numbers ending in 3) and A348054 (ending in 7) are both stated by Spezia (Mar 2026) to have density 1/10, and both lie inside the numbers = 9 mod 10, which have density 1/10. So their intersection A348544 also has density 1/10, and Spezia's Corollary 1 (positive density implies k-digit ratio -> 10) gives the A348546 limit at once. The analogous conjectures in A346952, A348055 and A348547 are already marked 'The conjecture is true' on that basis. It is a correct independent proof of a consequence of results already recorded in OEIS, not a new result."
+  },
+  "OeisA190969.conjecture_1": {
+   "date": "2026-11-27",
+   "pr": 6081,
+   "evidence": [
+    "/home/user/open-math-agents/proofs/OeisA190969.conjecture_1.lean",
+    "/home/user/google-deepmind/formal-conjectures/FormalConjectures/OEIS/190969.lean",
+    "/home/user/oeis/oeisdata/seq/A190/A190969.seq",
+    "/home/user/open-math-agents/data/catalog.json"
+   ],
+   "reason": "The upstream statement (sMod p 2 = 0 in ZMod(p^2), with -4096 invertible for odd p) faithfully encodes Zhi-Wei Sun's 2013 conjecture that sum_{k<p} a(4k) C(2k,k)^3/(-4096)^k = 0 mod p^2 for every odd prime p. The proof file's header says it is 'Ported from the verified Lean proof in Epoch AI's LeanOpenProblems-results, OEIS Open benchmark (T. Adamczewski, arXiv:2608.11941), run oeis-open-lite-gpt6astra, problem oeis_a190969_conjecture_0'. The only changes listed are a namespace, set_option scoping and a bridge to the catalogue statement. So this is a port of someone else's existing proof, not an original solution. The mathematics is a genuine 4961-line supercongruence proof (power-series and ODE uniqueness machinery), but it is credited elsewhere."
+  },
+  "arxiv-2508.01163": {
+   "date": "2026-11-27",
+   "pr": 6158,
+   "evidence": [
+    "/home/user/open-math-agents/statements/arxiv-2508.01163.lean",
+    "/home/user/open-math-agents/proofs/arxiv-2508.01163.lean",
+    "https://arxiv.org/abs/2508.01163",
+    "https://arxiv.org/abs/2605.07196"
+   ],
+   "reason": "The statement faithfully encodes the conjecture of Akbari, Elphick, Kumar, Pragada (arXiv:2508.01163) that 2n+(G) <= n-(G)(n-(G)+1) for every finite simple graph, using adjacency eigenvalues with multiplicity. The disproof uses the 15-vertex graph W_5 (K_5 joined to the Petersen graph KG(5,2) by incidence edges). It certifies n+ >= 11 via 11 integer vectors whose A-Gram matrix is positive diagonal, hence n- <= 4 and 22 > 20. The proof header states that this counterexample is taken from Hongzhang Chen and Jianxi Li, 'Counterexamples to a conjecture on graph inertia', arXiv:2605.07196 (posted May 8 2026), whose abstract confirms it refutes this conjecture. The Lean certificate is correct, but the disproof is a port of a published counterexample."
+  },
+  "oeis-a078712": {
+   "date": "2026-11-27",
+   "pr": 6203,
+   "evidence": [
+    "/home/user/oeis/oeisdata/seq/A078/A078712.seq",
+    "/home/user/open-math-agents/statements/oeis-a078712.lean",
+    "/home/user/open-math-agents/proofs/oeis-a078712.lean"
+   ],
+   "reason": "The recurrence a(0)=-3, a(1)=1, a(2)=-1, a(n+3)=a(n)-a(n+2) correctly matches (-3-2x)/(1+x-x^3), and the statement is Somos' conjecture a(p) = 1 mod p, so it is faithful. But the entry itself notes that a(n) = -A001608(-n), the Perrin sequence at negative index. The congruence A(-p) = -1 mod p for every prime p is part of the classical Perrin 'signature' of primes (Adams and Shanks, Math. Comp. 39 (1982)). It is also an instance of the general fact tr(M^p) = tr(M)^p = tr(M) mod p for integer matrices (Frobenius on power sums). The 45-line Lean proof is exactly this: a(n) = -tr(M^n) for the companion matrix, and ZMod.trace_pow_card gives tr(M^p) = (tr M)^p = (-1)^p = -1 mod p. So the 'conjecture' is a direct case of a textbook result."
+  },
+  "oeis-a141849": {
+   "date": "2026-11-27",
+   "pr": 6232,
+   "evidence": [
+    "/home/user/oeis/oeisdata/seq/A141/A141849.seq",
+    "/home/user/open-math-agents/statements/oeis-a141849.lean",
+    "/home/user/open-math-agents/proofs/oeis-a141849.lean"
+   ],
+   "reason": "Provvedi's comment says that p = 1 mod 11 iff ((x+1)^11-1)/x has 10 distinct linear factors over GF(p). The formalisation counts roots in ZMod p of sum_{j<11}(X+1)^j, which is Phi_11(X+1), and this is faithful, including the p=11 edge case where Phi_11 = (X-1)^10 has a single root. This is the standard theorem that, for p not dividing n, Phi_n splits into distinct linear factors over F_p iff F_p^* contains a primitive n-th root of unity iff p = 1 mod n (e.g. Washington, Cyclotomic Fields, Thm 2.13, or any algebraic number theory text on splitting of p in Q(zeta_n)). The Lean proof is exactly this argument: roots correspond to primitive 11th roots of unity, Cauchy's theorem gives one when 11 | p-1, and orderOf divides p-1 for the converse. It is correct, but it is a textbook fact presented as a conjecture."
+  },
+  "oeis-a272027": {
+   "date": "2026-11-27",
+   "pr": 6766,
+   "evidence": [
+    "/home/user/open-math-agents/statements/oeis-a272027.lean",
+    "/home/user/open-math-agents/proofs/oeis-a272027.lean",
+    "/home/user/oeis/oeisdata/seq/A272/A272027.seq"
+   ],
+   "reason": "The statement faithfully encodes Omar E. Pol's two conjectures (Oct 2018): 3σ(n) = σ(2n) iff n is odd, and (p+1)σ(n) = σ(pn) iff p does not divide n. The OEIS entry itself already settles them. Antti Karttunen (Nov 21 2019) notes that 'the above claims easily follow from the fact that sigma is multiplicative'. The Lean proof is exactly that argument. It writes n = p^a·m with p not dividing m, uses multiplicativity and σ(p^a) as a geometric sum, and reduces to S = p^a, which holds iff a = 0. This is a correct but elementary proof of a statement already called true in the entry, so it is not an open problem solved."
+  },
+  "oeis-a087037": {
+   "date": "2026-11-27",
+   "pr": 6793,
+   "evidence": [
+    "/home/user/open-math-agents/statements/oeis-a087037.lean",
+    "/home/user/open-math-agents/proofs/oeis-a087037.lean",
+    "/home/user/oeis/oeisdata/seq/A087/A087037.seq"
+   ],
+   "reason": "The statement encodes Dean Hickerson's conjecture that x^x + n is prime for some x > 0, for every n ≥ 1. The A087037 entry already contains its disproof, by Farideh Firoozbakht and M. F. Hasler (Nov 27 2009), and the statement file's own docstring says so. They showed that n = (6k-1)^3 never works. Odd x makes x^x + n even. Even x with x ≢ 0 (mod 3) makes it divisible by 3. x ≡ 0 (mod 3) lets it factor as a sum of cubes. The Lean disproof is exactly this argument for n = 125 (k = 1). It is a faithful port of a disproof already printed in the entry."
+  },
+  "Green15.green_15": {
+   "date": "2026-11-27",
+   "pr": 6014,
+   "evidence": [
+    "/home/user/google-deepmind/formal-conjectures/FormalConjectures/GreensOpenProblems/15.lean",
+    "/home/user/google-deepmind/formal-conjectures/FormalConjecturesForMathlib/Combinatorics/AP/Basic.lean",
+    "/home/user/open-math-agents/proofs/Green15.green_15.lean",
+    "https://api.github.com/repos/GuillaumeBAUD-coder/open-math-agents/pulls/6014",
+    "https://liamkruer.com/",
+    "https://liamkruer.com/assets/work/conjectures/problems/green-15/paper/proof.pdf"
+   ],
+   "reason": "The upstream statement is faithful. It asks for a K-Lipschitz f : ℕ → ℤ whose graph is IsAPOfLengthFree 3, and an AP of length 3 has card 3, so it must be nontrivial. The proof is not original. The PR description and the proof's header both say it follows 'the 4-uniform 6-letter substitution and finite-state descent invariant method of Jensen Kohlmeyer and Liam Kruer (2026)'. That paper is the draft 'A Lipschitz integer graph without three-term arithmetic progressions' (Sept 10 2026, liamkruer.com). It builds exactly this substitution with weights w, tags q = {0,1,3,4,9,10}, a bounded correction, a 3,688-state invariant and division-by-4 strong induction, and it ships its own Lean formalisation. The PR re-derives the same tables H, w, q, B, so it ports that existing proof. Caveat: the source is a non-peer-reviewed draft, and its Corollary 1.2 (an infinite additive-square-free word over a finite set of integers) would itself settle a long-standing open problem, so the underlying claim deserves expert scrutiny, but either way the credit is not new."
+  },
+  "MeynielConjecture.meyniel_conjecture.variants.soft": {
+   "date": "2026-11-27",
+   "pr": 6066,
+   "evidence": [
+    "/home/user/google-deepmind/formal-conjectures/FormalConjectures/Wikipedia/MeynielConjecture.lean",
+    "/home/user/open-math-agents/proofs/MeynielConjecture.meyniel_conjecture.variants.soft.lean",
+    "https://api.github.com/repos/GuillaumeBAUD-coder/open-math-agents/pulls/6066",
+    "https://raw.githubusercontent.com/jgeneson/weak-meyniel/main/README.md",
+    "https://www.researchgate.net/publication/418284188_The_weak_Meyniel_conjecture_is_true"
+   ],
+   "reason": "The upstream statement (∃ ε, C > 0 with c(G) ≤ C n^(1-ε) for all connected finite G) appears faithful. CopsWin lets the cops place first and the robber start anywhere, both sides may stay or move along an edge, and the robber reacts to the cops' move, which is standard cops-and-robbers. The PR states it is an attributed single-file port of Jesse Geneson's proof and Lean formalisation ('The weak Meyniel conjecture is true', Nov 2026, c(G) ≤ 31 n^{3/4} log(2n)), from github.com/jgeneson/weak-meyniel. That repository's README confirms the result. It also says the project already proves the upstream Formal Conjectures soft statement, with a proof that its cop number equals the upstream one. So the mathematical result and even the bridge to this exact Lean statement predate the PR, which only consolidates and adapts them."
+  },
+  "PetersenColoringConjecture.petersen_coloring_conjecture": {
+   "date": "2026-11-27",
+   "pr": 5994,
+   "evidence": [
+    "/home/user/google-deepmind/formal-conjectures/FormalConjectures/Wikipedia/PetersenColoringConjecture.lean",
+    "/home/user/open-math-agents/proofs/PetersenColoringConjecture.petersen_coloring_conjecture.lean",
+    "https://api.github.com/repos/GuillaumeBAUD-coder/open-math-agents/pulls/5994",
+    "https://arxiv.org/abs/2608.10028",
+    "https://arxiv.org/abs/2608.10012"
+   ],
+   "reason": "The upstream IsPetersenColoring definition requires the three edges at each vertex to map injectively onto the three edges at some Petersen vertex. For cubic graphs that is implied by Jaeger's definition (adjacent edges go to adjacent edges), so a formal counterexample is a genuine one, and IsBridgeless uses Mathlib's IsBridge, so I found no definitional loophole. The disproof is not original, though. The PR states that its 52-vertex counterexample (three 17-vertex 5-poles built from Petersen 4-poles around a central vertex) follows Goedgebeur, Jooken, Máčajová, Mattiolo, Mazzuoccolo and Ulyanov, arXiv:2608.10028 (Aug 2026), 'Disproving the Petersen Coloring Conjecture', which presents exactly two 52-vertex counterexamples with a theoretical proof. That abstract also cites an earlier 68-vertex counterexample announced on X (July 2026) and Putman's 112-vertex counterexamples (arXiv:2608.10012). The conjecture was already refuted, and this PR formalises a published counterexample."
+  },
+  "oeis-a183761": {
+   "date": "2026-11-27",
+   "pr": 6233,
+   "evidence": [
+    "/home/user/open-math-agents/statements/oeis-a183761.lean",
+    "/home/user/open-math-agents/proofs/oeis-a183761.lean",
+    "/home/user/oeis/oeisdata/seq/A183/A183761.seq"
+   ],
+   "reason": "Kimberling's 2012 conjecture says the count of nonsingular 0..n 2x2 matrices with lexicographically increasing rows equals the count of 0..n matrices with positive determinant. The formal statement encodes this faithfully, with strict lex order on rows and det = ad - bc. The OEIS entry already marks it true. David Radcliffe (Aug 13 2025): 'half of all 2 X 2 nonsingular 0..n matrices have rows in increasing order, and half of them have positive determinant', with a(n) = A062801(n)/2. The Lean proof is exactly Radcliffe's argument: the row swap is an involution that negates the determinant and reverses the row order, and nonsingular matrices have distinct rows. It is correct but already proved in the entry."
+  },
+  "oeis-a168670": {
+   "date": "2026-11-27",
+   "pr": 6749,
+   "evidence": [
+    "/home/user/oeis/oeisdata/seq/A168/A168670.seq",
+    "/home/user/open-math-agents/statements/oeis-a168670.lean",
+    "/home/user/open-math-agents/proofs/oeis-a168670.lean"
+   ],
+   "reason": "The formal statement matches the OEIS comment: for n>1 with n%11 in {1,8}, 36n^2+72n+35 is never p(p+2) with p and p+2 both prime. The OEIS entry itself already settles it: the next comment says 'This conjecture is evident' (Bruno Berselli, Jan 07 2013, modified Jul 07 2015). The reason is that 36n^2+72n+35 = (6n+5)(6n+7), which forces p = 6n+5, and 11 divides 6n+5 when n≡1 (mod 11) and divides 6n+7 when n≡8 (mod 11). The proof just replays this argument, so this is not a new result."
+  },
+  "oeis-a263450": {
+   "date": "2026-11-27",
+   "pr": 6772,
+   "evidence": [
+    "/home/user/oeis/oeisdata/seq/A263/A263450.seq",
+    "/home/user/open-math-agents/statements/oeis-a263450.lean",
+    "/home/user/open-math-agents/proofs/oeis-a263450.lean"
+   ],
+   "reason": "The formal statement is faithful. a(n) is the least k>0 such that prime(n)^k has a decimal 0, written with Nat.nth Nat.Prime (n-1) for offset 1, and the claim is that a(n)=1 infinitely often. The entry already proves Zak Seidov's conjecture: Robert Israel's comment of Oct 19 2015 notes that by Dirichlet's theorem infinitely many primes are ≡1 (mod 100), and all of them have a(n)=1. The PR formalises this argument from the entry, so it is not new."
+  },
+  "oeis-a140472": {
+   "date": "2026-11-27",
+   "pr": 6814,
+   "evidence": [
+    "/home/user/oeis/oeisdata/seq/A140/A140472.seq",
+    "/home/user/open-math-agents/statements/oeis-a140472.lean",
+    "/home/user/open-math-agents/proofs/oeis-a140472.lean"
+   ],
+   "reason": "The statement is faithful: a function satisfying a(0)=0, a(1)=1, a(n)=a(n-a(n-1))+a(floor(n/2)) exists, and every such function equals (n+2^v2(n))/2 for n>0, which is Jon Maiga's 2019 conjecture. The same entry contains a proof. M. F. Hasler (Oct 19-20 2019) shows that A285326/2, characterised by a(2n)=2a(n) and a(2n-1)=n, satisfies the recurrence, and he records the formula a(n)=A285326(n)/2 with 'see comments for the proof'. Hasler's PARI program (n+bitand(n,-n))\\2 is the same closed form. The result was proved in 2019, so the PR is not new."
+  },
+  "Constant1a.mem_Ico_c1a": {
+   "date": "2026-11-27",
+   "pr": 6085,
+   "evidence": [
+    "/home/user/open-math-agents/proofs/Constant1a.mem_Ico_c1a.lean",
+    "/home/user/google-deepmind/formal-conjectures/FormalConjectures/OptimizationConstants/1a.lean",
+    "https://teorth.github.io/optimizationproblems/constants/1a.html",
+    "https://github.com/teorth/optimizationproblems/pull/408",
+    "https://github.com/teorth/optimizationproblems/pull/418",
+    "https://api.github.com/repos/GuillaumeBAUD-coder/open-math-agents/pulls/6085"
+   ],
+   "reason": "The proof certifies C1a ≤ 167952950881157120/111769292050807609 ≈ 1.5026752680 < 1.5028628587. It does this with a 262,144-cell step function, checked by Kronecker substitution and decide +kernel. The Lean argument is sound, and the formal-conjectures definition of C1a is used unchanged. However, the target 1.5028628587 in formal-conjectures is out of date. Tao's optimization-constants page already lists certified constructions below it: EinsteinArena/AgentDiscover at 1.5027435320 (Oct 2026) and Atris at 1.5027434868. More importantly, the file and the PR body say the witness and the Lean bridge are adapted from Will Kirschenman's teorth/optimizationproblems PR #418, which refined Josh Hurst's PR #408. Both of those earlier PRs are Lean-verified and give stronger bounds: Hurst, opened Nov 26 2026, has 1.502664627575, and Kirschenman has 1.502664613439. The merged answer is a quantised copy of their witness that is about 1.1e-5 weaker than either. So this ports and weakens bounds that other people had already proved."
+  },
+  "oeis-a082994": {
+   "date": "2026-11-27",
+   "pr": 6759,
+   "evidence": [
+    "/home/user/open-math-agents/statements/oeis-a082994.lean",
+    "/home/user/open-math-agents/proofs/oeis-a082994.lean",
+    "/home/user/oeis/oeisdata/seq/A082/A082994.seq",
+    "https://oeis.org/A082994",
+    "https://www.jstor.org/stable/2310179"
+   ],
+   "reason": "The formal statement faithfully encodes the Ogilvy-Anderson claim quoted in A082994: if k > 0, k is not divisible by 10, k != rev(k) and k*rev(k) is a square, then k and rev(k) are both squares. The disproof uses k = 2178 (2178*8712 = 4356^2, and 2178 is not a square). But A082994 is by definition the list of counterexamples to this claim. Its first comment says these numbers 'are counterexamples to the following conjecture', and its data begins 288, 528, ..., 2178, ... The claim was already known to be false in 1957 (Amer. Math. Monthly problem E-1243, linked in the entry). Checking one listed term is not a new result."
+  },
+  "oeis-a068689": {
+   "date": "2026-11-27",
+   "pr": 6786,
+   "evidence": [
+    "/home/user/open-math-agents/statements/oeis-a068689.lean",
+    "/home/user/open-math-agents/proofs/oeis-a068689.lean",
+    "/home/user/oeis/oeisdata/seq/A068/A068689.seq",
+    "https://stdkmd.net/nrr/9/94449.htm",
+    "https://stdkmd.net/nrr/9/95559.htm",
+    "https://stdkmd.net/nrr/9/"
+   ],
+   "reason": "The statement is faithful. With sandwich d k = 9 d...d 9 (k >= 1 copies of a digit d < 10), primality forces d in {1,2,8}, which is Hilliard's 2005 comment in A068689. The proof is a genuine covering-set argument: modulo 3, 7, 11 and 13 the numbers repeat with period 6 in k (10^6 = 1 and 111111 = 0 modulo each prime), and `decide` checks the residues k mod 6 for every digit outside {1,2,8}. The result is standard and already recorded. Makoto Kamada's near-repdigit tables state 'No prime number of the form 944...449 exists' and 'No prime number of the form 955...559 exists', each with covering set {3,7,11,13}. 977...779 = 11 * 88...89 factors algebraically, which is why Kamada's index has no page for it. Inner digits 0, 3, 6 and 9 are trivially composite, as the entry itself notes. The OEIS 'conjecture' is a well-known covering-congruence fact, not an open problem."
+  },
+  "oeis-a000051": {
+   "date": "2026-11-27",
+   "pr": 6036,
+   "evidence": [
+    "/home/user/open-math-agents/statements/oeis-a000051.lean",
+    "/home/user/open-math-agents/proofs/oeis-a000051.lean",
+    "/home/user/oeis/oeisdata/seq/A000/A000051.seq",
+    "https://arxiv.org/abs/2606.09913"
+   ],
+   "reason": "The statement formalises the corrected Luschny permanent identity: the permanent of the (n+1)x(n+1) matrix M(j,k) = -floor((j-k-2)/(n+1)) equals 2^n + 1. The statement file itself says 'Sela Fried proved it in Theorem 1 of arXiv:2606.09913'. A000051 records 'The corrected Luschny's conjecture is true (see Fried link). - Sela Fried, Dec 02 2025'. The Lean proof (a recursion W(m+2) = 2W(m+1) on permutation weights) is a valid formalisation of an already-published result. It does not solve an open problem."
+  },
+  "arxiv-2003.13166": {
+   "date": "2026-11-27",
+   "pr": 6076,
+   "evidence": [
+    "/home/user/open-math-agents/statements/arxiv-2003.13166.lean",
+    "/home/user/open-math-agents/proofs/arxiv-2003.13166.lean",
+    "https://arxiv.org/abs/2003.13166",
+    "https://arxiv.org/abs/2004.01327"
+   ],
+   "reason": "The formal statement matches Potechin-Tsang Conjecture 1: S is symmetric, does not contain 1 and generates G, and |U| > |G|/2 implies some u in U has at least sqrt(|S|/2) neighbours in U. The disproof is a valid counterexample. In the dihedral group D_9 with S = three reflections {sr0, sr1, sr3}, a 10-element U has induced maximum degree 1, which is less than sqrt(3/2). However, the conjecture was refuted within days of being posed. Lehner and Verret, 'Counterexamples to \"A Conjecture on Induced Subgraphs of Cayley Graphs\" [arXiv:2003.13166]' (arXiv:2004.01327, April 2020; Ars Math. Contemp.), give several counterexamples. These include an infinite family of Cayley graphs of unbounded valency with an induced subgraph of maximum degree 1 on more than half the vertices. The PR exhibits one more small counterexample to an already-disproved conjecture."
+  },
+  "OeisA190969.conjecture_2": {
+   "date": "2026-11-27",
+   "pr": 6087,
+   "evidence": [
+    "/home/user/open-math-agents/proofs/OeisA190969.conjecture_2.lean",
+    "/home/user/google-deepmind/formal-conjectures/FormalConjectures/OEIS/190969.lean",
+    "/home/user/oeis/oeisdata/seq/A190/A190969.seq",
+    "https://arxiv.org/abs/2608.11941",
+    "https://github.com/epoch-research/LeanOpenProblems-results (runs/oeis-open-lite-gpt6astra-37ly1phzfwj2ech4/oeis_a190969_conjecture_0, scored C)"
+   ],
+   "reason": "The statement is faithful to Sun's conjecture in A190969. It says S(p) = sum_{k<p} a(4k) C(2k,k)^3 / (-4096)^k is 0 mod p^3 for odd primes p = 1, 2, 4 (mod 7), computed in ZMod (p^3); 4096 is invertible there because p is odd. The proof is not original, and its own header says so: 'Ported from the verified Lean proof in Epoch AI's LeanOpenProblems-results, OEIS Open benchmark (T. Adamczewski, arXiv:2608.11941), run oeis-open-lite-gpt6astra, problem oeis_a190969_conjecture_0'. The PR's own work is only a namespace wrapper and the bridge lemmas a_eq/sMod_eq to the catalogue statement. The Epoch results repository shows that run scored C (correct). The supercongruence was therefore already proved and published elsewhere before this PR."
+  },
+  "oeis-a053922": {
+   "date": "2026-11-27",
+   "pr": 6155,
+   "evidence": [
+    "/home/user/open-math-agents/statements/oeis-a053922.lean",
+    "/home/user/open-math-agents/proofs/oeis-a053922.lean",
+    "/home/user/oeis/oeisdata/seq/A053/A053922.seq"
+   ],
+   "reason": "The statement says (66...68)^2, with n sixes and n >= 0, has only the digits 2, 4 and 6. This is Dale's 2022 conjecture, faithfully encoded. But A053922 already contains Zhao Hui Du's Mar 11 2024 proof: (66...68)^2 = (4/9)(10^(2n)-1) + (16/9)(10^n-1) + 4 = 44...4 6 22...2 4. The Lean proof formalises exactly that digit pattern (pattern n = 4 :: replicate n 2 ++ 6 :: replicate n 4). Its own docstring says it uses 'Zhao Hui Du's square pattern'. This is an already-proved elementary identity."
+  },
+  "oeis-a292728": {
+   "date": "2026-11-27",
+   "pr": 6205,
+   "evidence": [
+    "/home/user/open-math-agents/statements/oeis-a292728.lean",
+    "/home/user/open-math-agents/proofs/oeis-a292728.lean",
+    "/home/user/oeis/oeisdata/seq/A292/A292728.seq",
+    "/home/user/oeis/oeisdata/seq/A292/A292727.seq",
+    "/home/user/oeis/oeisdata/seq/A000/A000009.seq"
+   ],
+   "reason": "The formalisation is faithful. A move picks two equal piles x and sends 1 <= y <= x stones between them; an emptied pile is dropped. Terminal states are reachable distinct-part partitions. Both iff conjectures are stated for n >= 1, with truncated subtraction harmless because a(n) <= A000009(n). The proof is genuine: a backward invariant (if every pile after a move is divisible by an odd d, so was every pile before it) makes [n] and pairs of odd parts unreachable; explicit constructions reach every distinct partition when n = 2^k, and every one except [p] when n is an odd prime. However, the substantive directions were already recorded in the companion entry A292727 (unreachable states, same game). There Charlie Neder (Jan 26 2019) gives as formulas, not conjectures, 'a(2^k) = 0' and 'for p an odd prime, a(p) = 1' (and a(2p) = (p+3)/2). These say every state, terminal ones included, is reachable for 2^k, and only [p] is unreachable for odd p. The converse directions follow from the one-line odd-divisor invariant. So both A292728 conjectures were essentially settled in the companion entry, and the PR mostly formalises known facts. Caveat: Neder's formulas carry no written proof in the entry, so this 'known' rests on an OEIS formula claim rather than a published paper."
+  },
+  "Erdos1088.erdos_1088": {
+   "date": "2026-11-27",
+   "pr": 4640,
+   "evidence": [
+    "https://www.erdosproblems.com/1088",
+    "https://www.erdosproblems.com/forum/thread/1088",
+    "https://github.com/H0W4RD-dev/erdos-1088-lean",
+    "https://github.com/H0W4RD-dev/erdos-1088-lean/commits/main",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/4640"
+   ],
+   "note": "The statement (for each fixed n>=3, log2 f_d(n) = o(d), with f_d(n) the least m such that every m-point set in R^d has an n-point subset with distinct distances) is a faithful rendering of erdosproblems.com/1088. However, the proof file says explicitly that it is a port of the public repository H0W4RD-dev/erdos-1088-lean (Howe, Huffman, Kohlmeyer, Kruer, with AI agents). It ports commit d164b38, and all eight commits of that repository are dated 10 Nov 2026, before this PR (27 Nov 2026). That repository already contains a manuscript and a kernel-checked Lean proof of f_d(n) <= n*2^{C_n sqrt(d) log d} against the same formal-conjectures statement. So the result is not new here. Note that it is unrefereed: the repository README says no human expert has reviewed the argument, and erdosproblems.com still lists the problem as open with no proof claim."
+  },
+  "Koethe.KotheConjecture": {
+   "date": "2026-11-27",
+   "pr": 6677,
+   "evidence": [
+    "https://arxiv.org/abs/2609.07996",
+    "https://github.com/google-deepmind/formal-conjectures/blob/main/FormalConjectures/Wikipedia/Koethe.lean",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/6677"
+   ],
+   "note": "The formal statement is faithful. Ideal R in Mathlib is a left ideal, and the claim is that the sum of two nil left ideals is nil; IsNil means every element is nilpotent. The disproof is a genuine ~2100-line construction with no sorry, axioms or native_decide. It builds an algebra over the algebraic closure of Q with a nil two-sided ideal I and an element W of M_2(I) that is not nilpotent, then uses upstream's isNil_iSup_of_kotheConjecture (column ideals) to refute the left-ideal form. But the PR body itself says it follows the nil-ring counterexample of Adamczewski, Bohmler and Marczinzik, 'A counterexample to Kothe's conjecture and a question of Rowen' (arXiv:2609.07996, submitted 7 Sep 2026). So the Kothe conjecture was already refuted in the literature before this PR (27 Nov 2026), and this is a formalization of that published counterexample."
+  },
+  "Erdos14.erdos_14.parts.i": {
+   "date": "2026-11-27",
+   "pr": 374,
+   "evidence": [
+    "https://www.erdosproblems.com/14",
+    "https://www.erdosproblems.com/forum/thread/14/proof-claims",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/374"
+   ],
+   "note": "The statement (for every A and every eps>0, the count of n<=N not uniquely a sum of two elements of A is >> N^{1/2-eps}) matches the first question of erdosproblems.com/14. The problem page now states the problem solved: one always has |[1,N] \\ B| >> N^{1/2}, with a link to a formalised proof on conjectures.io. Two conjectures.io proof claims were posted by T. Bloom on 2026-09-27, before this PR (26 Nov 2026). The proof header also attributes the argument to L. Kruer and J. Kohlmeyer's paper 'A uniform square-root lower bound for non-unique sums and a resolution of Erdos problem 14'. So this is a formalization of a known result."
+  },
+  "Erdos593.erdos_593": {
+   "date": "2026-11-27",
+   "pr": 6715,
+   "evidence": [
+    "https://arxiv.org/abs/2606.24882",
+    "https://www.erdosproblems.com/593",
+    "https://www.erdosproblems.com/forum/thread/593/proof-claims",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/6715"
+   ],
+   "note": "The statement asks for the set of finite 3-uniform hypergraphs on Fin n that appear in every 3-uniform hypergraph of chromatic number > aleph_0. The answer given is an explicit classification: after removing isolated vertices, the system is linear, every triple meets a bridge of the incidence (Levi) graph, and all Berge cycles are even. That is a genuine characterization, not a restatement. But it is exactly the classification of Eric Li, 'A Resolution of Erdos Problems 593 and 1177' (arXiv:2606.24882, v1 23 June 2026). Li posted it as a proof claim on erdosproblems.com/593, and the upstream docstring already cites it. The PR openly ports Li's Aristotle Lean development (ericlisg/erdos-593-1177-lean). So this is a formalization of a known (claimed, 2026) result."
+  },
+  "Erdos156.erdos_156": {
+   "date": "2026-11-27",
+   "pr": 6540,
+   "evidence": [
+    "https://www.erdosproblems.com/156",
+    "https://conjectures.io/results/86a1df7c-3b48-45e9-b28c-1690a27a8570",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/6540"
+   ],
+   "note": "The statement (the least size of a maximal Sidon subset of [1,N] is O(N^{1/3})) faithfully encodes the Erdos-Sarkozy-Sos question; IsMaximalSidonSetIn means inclusion-maximal within {1..N}. The file and PR say it is a port of the certified conjectures.io result 86a1df7c (solver JenW1N, Lean-verified 2 Nov 2026, certified 6 Nov 2026). That result's review found the statement faithful. erdosproblems.com/156 itself now says that 'a formalised proof that there does exist such a set can be found here', linking to that conjectures.io solution. So this is a re-formalisation of an already-published resolution."
+  },
+  "Erdos357.erdos_357.variants.monotone.parts.ii.bigO_version": {
+   "date": "2026-11-27",
+   "pr": 6876,
+   "evidence": [
+    "https://www.erdosproblems.com/357",
+    "https://www.erdosproblems.com/forum/thread/357",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/6876"
+   ],
+   "note": "The question asks for an explicit g with g = O(h), where h(n) is the longest weakly increasing sequence in [1,n] with distinct consecutive-block sums. The formal statement is trivially satisfiable (answer := 0, as upstream warns). The submitted answer sqrt(n) is the known lower bound: distinct singleton sums force h = f, and erdosproblems.com/357 records f(n) >= (2+o(1)) n^{1/2} (Weisenberg's forum comment, Aug 2025, via Straus's construction for [874]). The file says it is a 'PORT OF A PUBLIC PROOF, not a new result' from KitaKen1's repositories. Nothing about the open growth question is settled."
+  },
+  "Green93.green_93": {
+   "date": "2026-11-27",
+   "pr": 6565,
+   "evidence": [
+    "https://arxiv.org/abs/2609.26771",
+    "https://github.com/google-deepmind/formal-conjectures/blob/main/FormalConjectures/GreensOpenProblems/93.lean",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/6565"
+   ],
+   "note": "irreducibleProb 1 n is the fraction of monic 0/1 polynomials of degree n with constant term 1 that are irreducible, and the claim is that it tends to 1. This is faithfully the Odlyzko-Poonen conjecture as stated in Green's Problem 93. Breuillard-Varju proved it under GRH. Constantin Kogler, 'The Odlyzko-Poonen Conjecture on Irreducibility of Random Polynomials' (arXiv:2609.26771, 22 Sep 2026), states 'We prove the Odlyzko-Poonen conjecture unconditionally' and reports a Lean formalization. The merged proof is adapted from Kogler's ckkogler/odlyzko-poonen-lean, so it formalizes a result already published before this PR."
+  },
+  "Koethe.KotherConjecture.variants.two_by_two_matrix": {
+   "date": "2026-11-27",
+   "pr": 6683,
+   "evidence": [
+    "https://arxiv.org/abs/2609.07996",
+    "https://github.com/google-deepmind/formal-conjectures/blob/main/FormalConjectures/Wikipedia/Koethe.lean",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/6683"
+   ],
+   "note": "The statement says that for every nil two-sided ideal I of a ring R, M_2(I) is nil. This is a faithful form of the Kothe conjecture, equivalent to it by Krempa, as upstream records. The disproof uses the same construction as PR #6677: a nil ideal I in an explicit algebra over the algebraic closure of Q, and the square of a companion-type matrix with entries in I that is not nilpotent, applied directly via ULift. It is genuine, with no sorry or axioms. The PR states that it follows the counterexample of Adamczewski, Bohmler and Marczinzik (arXiv:2609.07996, 7 Sep 2026), which predates the PR. So this formalizes a published refutation."
+  },
+  "Green25.green_25.upper": {
+   "date": "2026-11-27",
+   "pr": 9455,
+   "evidence": [
+    "https://github.com/google-deepmind/formal-conjectures/blob/main/FormalConjectures/GreensOpenProblems/25.lean",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/9455"
+   ],
+   "note": "The statement asks for k(N) = o(N/log N) such that Property25 fails, i.e. for a lowering of the Erdos-Sarkozy-Sos upper bound in Green's Problem 25. The answer is k(N) = ceil(N^{23/40}). The pinned formal-conjectures file already contains this exact bound as green_25.variants.upper_pow_23_40, tagged 'research solved'. It records a formal proof at github.com/KitaKen1/green-25-upper-bound (commit 3a54a688, Green25UpperFC.lean), and the merged file is a port of exactly that commit; it even proves the stronger 'eventually fails' form. The PR acknowledges this and says Problem 25 itself is not settled. So this is a formalization of a known result."
+  },
+  "Erdos624.erdos_624": {
+   "date": "2026-11-27",
+   "pr": 6532,
+   "evidence": [
+    "https://www.erdosproblems.com/624",
+    "https://www.erdosproblems.com/forum/thread/624",
+    "https://conjectures.io/results/6f349986-c876-4902-8b27-52f19652d5cb",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/6532"
+   ],
+   "note": "H(n) is the least m such that some f : P(Fin n) -> Fin n has {f(A) : A subset of Y} = Fin n for every Y with |Y| >= m, and the claim is Tendsto (H n - log2 n) atTop atTop. This faithfully encodes erdosproblems.com/624 (Erdos-Hajnal, with log2 n <= H(n) < log2 n + (3+o(1)) log2 log2 n known). The merged OMA.disproof shows that H(n) - log2 n stays bounded along an unbounded sequence, which refutes the conjecture. But the file and PR say it is a port of the certified conjectures.io result 6f349986 (solver JenW1N, Lean-verified 16 Nov 2026, certified 19 Nov 2026), whose page records that the formal target was not weakened. So the refutation was already public before this PR (27 Nov 2026). It is unrefereed, and erdosproblems.com/624 has no proof claim yet."
+  },
+  "Erdos357.erdos_357.variants.monotone.parts.ii.littleO_version": {
+   "date": "2026-11-27",
+   "pr": 6913,
+   "evidence": [
+    "https://www.erdosproblems.com/357",
+    "https://www.erdosproblems.com/forum/thread/357",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/6913"
+   ],
+   "note": "The question asks for an explicit g with g = o(h). The formal statement is trivially satisfiable (answer := 0). The submitted answer sqrt(n)/log n is strictly weaker than the known lower bound: h = f, and erdosproblems.com/357 records f(n) >= (2+o(1)) n^{1/2} (Weisenberg, via Straus's construction). The file says it is a 'PORT OF A PUBLIC PROOF, not a new result' (KitaKen1), with only the step sqrt(n)/log n = o(sqrt n) added. So nothing open is resolved: the content is a known bound weakened by a log factor."
+  },
+  "Erdos1068.erdos_1068": {
+   "date": "2026-11-27",
+   "pr": 6568,
+   "evidence": [
+    "https://www.erdosproblems.com/1068",
+    "https://www.erdosproblems.com/forum/thread/1068",
+    "https://conjectures.io/results/d5e35e41-6e20-43fa-8e9a-acead5e2bd48",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/6568"
+   ],
+   "note": "The statement asks whether every graph (on a Type) with chromaticCardinal = aleph_1 has a countable induced subgraph that is infinitely connected, meaning nontrivial with infinitely many internally disjoint paths between any two vertices. This is a faithful rendering of the vertex-connectivity question that erdosproblems.com/1068 (and the forum, Jan 2026) says is intended. The disproof is a genuine ZFC construction on labelled tree nodes of height omega_1 (coloured by height; every N-colouring has a conflict), with no sorry. But the file and PR say it is a port of the certified conjectures.io result d5e35e41 (solver JenW1N, Lean-verified 12 Nov 2026, certified 19 Nov 2026). That page records the statement as reviewed and faithful and the countable case as previously open (Soukup 2015, Bowler-Pitz). The resolution was therefore public before this PR (27 Nov 2026), though unrefereed."
+  },
+  "PierceBirkhoff.pierce_birkhoff_conjecture": {
+   "date": "2026-11-27",
+   "pr": 5136,
+   "evidence": [
+    "https://en.wikipedia.org/wiki/Pierce%E2%80%93Birkhoff_conjecture",
+    "https://arxiv.org/abs/2609.10420"
+   ],
+   "note": "The formal statement is faithful. A finite closed semialgebraic cover with f polynomial on each piece forces f to be continuous (pasting lemma), so it is the Henriksen–Isbell piecewise-polynomial notion, and the conclusion is f = sup_i inf_j g_ij with finitely many polynomials. The merged file is a disproof, a 30-dimensional counterexample. Its own header calls it a port of Maxence Faldor's Lean disproof following Lai, Lim and Ren, 'Pierce-Birkhoff conjecture is false' (arXiv:2609.10420, 9 Sep 2026, Theorem 7). So the conjecture was already refuted in the literature (Wikipedia still lists it as open). This is a formalization of a known result."
+  },
+  "Koethe.KotherConjecture.variants.general_matrix": {
+   "date": "2026-11-27",
+   "pr": 6679,
+   "evidence": [
+    "https://arxiv.org/abs/2609.07996",
+    "https://github.com/tadamcz/koethe"
+   ],
+   "note": "The statement (for every ring R, nil two-sided ideal I and finite n, M_n(I) is nil) is Krempa's equivalent matrix form of the Köthe conjecture, so it is faithful. The disproof builds R = Q·1 + the nil algebra generated by three weighted shifts over a countable field, with a 2x2 matrix W = H^2 in M_2(I) that is not nilpotent. This is the same construction and the same Lean target as the earlier Lean disproof github.com/tadamcz/koethe (GPT-6 Astra/Epoch AI, Sep 2026; that one uses the algebraic closure of F_2, this one the algebraic closure of Q). It is also the construction of Adamczewski–Böhmler–Marczinzik, 'A counterexample to Köthe's conjecture and a question of Rowen' (arXiv:2609.07996, 7 Sep 2026). So it is a genuine refutation, but already published two-plus months before this PR (27 Nov 2026)."
+  },
+  "Erdos785.erdos_785.variants.chen_conjecture": {
+   "date": "2026-11-27",
+   "pr": 9156,
+   "evidence": [
+    "https://www.erdosproblems.com/785",
+    "https://arxiv.org/abs/2610.29963",
+    "https://arxiv.org/abs/2610.35027"
+   ],
+   "note": "The statement is Chen's conjecture on erdosproblems.com/785: if A+B contains all large integers and limsup A(x)B(x)/x < 3/2, then A(x)B(x)-x -> infinity. It adds harmless 0 ∉ A, B and infinitude hypotheses, so it is faithful. The proof's header says it follows Zihan Zhang, 'A sharp bound for additive complements' (arXiv:2610.29963, 21 Oct 2026), whose abstract proves exactly this with 3/2 sharp. It was proved independently by van Doorn, Liu and Tang (arXiv:2610.35027, 26 Oct 2026), whose abstract says it confirms Chen's conjecture. So this formalizes a result published a month before the PR."
+  },
+  "Erdos963.erdos_963.parts.i": {
+   "date": "2026-11-27",
+   "pr": 6964,
+   "evidence": [
+    "https://www.erdosproblems.com/963",
+    "https://www.erdosproblems.com/forum/thread/963"
+   ],
+   "note": "The statement f(n) ~ answer(n), with answer = log_2 n, is a faithful reading of 'estimate f(n)' (the order log n is easy, so the constant is the question). It is not a one-sided or trivial bound. But erdosproblems.com/963 itself says that KoishiChan sketched an argument in the comments proving f(n) ~ log_2 n (forum posts of 5 Dec 2025). The file's header says it is a port of Manuel Lopez's public Lean formalization (github.com/jmanuellb/erdos-963-lean) of that argument, 'not a new result'. So this is a known result."
+  },
+  "Erdos96.erdos_96": {
+   "date": "2026-11-27",
+   "pr": 357,
+   "evidence": [
+    "https://www.erdosproblems.com/96"
+   ],
+   "note": "The statement (the maximum number of unit distances among n points in convex position is O(n)) is the Erdős–Moser conjecture as stated on the problem page, and the disproof gives, for every k, a strictly convex set where every point has k unit neighbours. erdosproblems.com/96 marks the conjecture false: convex polygons with >> n log log n unit distances exist, and a formalised proof is linked. The file's own attribution says this is an independent formalization of the known refutation by Kruer, Kohlmeyer and Price (Sep 2026), 'not a new discovery'."
+  },
+  "Erdos1145.erdos_1145": {
+   "date": "2026-11-27",
+   "pr": 9806,
+   "evidence": [
+    "https://www.erdosproblems.com/1145",
+    "https://hexagonmath.org/2611.00758v1"
+   ],
+   "note": "The formal Erdos1145Prop (A, B infinite, nth(A)/nth(B) -> 1, A+B contains all large n ⇒ limsup 1_A*1_B = ∞) is faithful. The upstream version even allows 0, and a counterexample with positive sets refutes both readings. The disproof uses affine blocks at nested coprime scales with bounded representation counts. Its header says it formalizes the counterexample of Howe, Huffman, Kohlmeyer and Kruer, 'Balanced additive complements with bounded representation functions' (hexagonmath 2611.00758, 20–21 Nov 2026), whose abstract gives a negative answer to the Erdős–Sárközy conjecture. That preprint predates this PR (27 Nov 2026), although it is unrefereed and self-labelled as primarily AI-generated. erdosproblems.com/1145 has not been updated (still open)."
+  },
+  "OeisA179537.conjecture2": {
+   "date": "2026-11-27",
+   "pr": 9208,
+   "evidence": [
+    "https://oeis.org/A179537",
+    "https://arxiv.org/abs/1101.1946",
+    "https://arxiv.org/abs/1012.3898"
+   ],
+   "note": "The statement is faithful: a(n) = Σ C(n,k)^2 C(n-k,k)^2 (-16)^k, and for (p/7) = -1, Σ_{k<p} (-1)^k a(k) ≡ 0 (mod p^2). legendreSym 7 p is (p/7). The OEIS entry does not mark it as proved, but it follows directly from published theorems. Z.-W. Sun, J. Number Theory 132 (2012) (arXiv:1101.1946), Theorem 1.1(i), gives Σ_{k<p} (-1)^k W_k(-x) ≡ Σ_{k<p} C(2k,k)^3 x^k/16^k (mod p^2), where W_n(x) = Σ C(n,k)^2 C(n-k,k)^2 x^k; taking x = 16 turns the sum into Σ C(2k,k)^3. Z.-H. Sun (arXiv:1012.3898, abstract and Theorem 3.2) proved Σ_{k<p} C(2k,k)^3 ≡ 0 (mod p^2) for p ≡ 3,5,6 (mod 7), p > 3, and p = 3 is a direct check (225 ≡ 0 mod 9). The proof is an independent self-contained re-derivation, by the same reduction to Σ C(2k,k)^3 followed by a CM/Hasse-invariant argument, of a result already in the literature."
+  },
+  "OeisA79727.conjecture4": {
+   "date": "2026-11-27",
+   "pr": 6929,
+   "evidence": [
+    "https://oeis.org/A079727",
+    "https://github.com/TheJustinSunPrize/awards/issues/4912",
+    "https://arxiv.org/abs/1012.3898"
+   ],
+   "note": "The statement is faithful to Bala's Conjecture 4 (12 Jul 2024) on OEIS: if n is a product of distinct primes from A003625 (≡ 3,5,6 mod 7), then n^2 divides Σ_{k≤(n-1)/2} C(2k,k)^3. The empty product gives the trivial n = 1 case. The single-prime case is essentially Z.-H. Sun's theorem (arXiv:1012.3898). The squarefree-product statement was already claimed with a written proof and a companion Lean file by Jensen Kohlmeyer and Liam Kruer (manuscript dated 3 Oct 2026, posted publicly in TheJustinSunPrize/awards issue #4912 on 10 Oct 2026), more than a month before this PR. I did not verify that manuscript. The Lean proof here (block reduction plus a Clausen/Gauss hypergeometric argument) is complete, but the result was not new."
+  },
+  "Erdos108.erdos_108": {
+   "date": "2026-11-27",
+   "pr": 2420,
+   "evidence": [
+    "https://www.erdosproblems.com/108"
+   ],
+   "note": "The formal statement (for all r >= 4, k >= 2 a finite f such that χ(G) >= f gives a subgraph of girth >= r and χ >= k) is Erdős–Hajnal's question as stated. The disproof takes r = 5, k = 5: line graphs of random oriented multipartite graphs that are triangle-free with large χ, and whose C4-free subgraphs are 4-colourable. erdosproblems.com/108 already records the negative answer for r >= 5: triangle-free graphs of arbitrarily large chromatic number all of whose C4-free subgraphs are 3-colourable, with an exposition by Nguyen and Walczak. The file's header says it follows Kohlmeyer–Kruer and Nguyen–Walczak. So it is a formalization of a known disproof."
+  },
+  "Erdos1189.erdos_1189.parts.iii": {
+   "date": "2026-11-27",
+   "pr": 9669,
+   "evidence": [
+    "https://www.erdosproblems.com/1189",
+    "https://www.erdosproblems.com/forum/thread/1189/proof-claims"
+   ],
+   "note": "maxReciprocalSum(k) =Θ(log k) is a reasonable reading of 'determine or estimate max Σ 1/n_i over irreducible covering sets of size k'. The upper bound H_k is easy; the content is the matching lower construction. But the erdosproblems.com proof-claims page records a claim by Jeff Pickhardt / Omniscience Research Agent (submitted 2026-07-28) that 'the largest reciprocal sum is Θ(log k)', noting that Starfleet's earlier proof also existed. The file's header says the logarithmic order and the prime-block construction were published by Star Fleet Math, crediting earlier work of van Doorn. So the answer log k was already established before this PR; this is a fresh formalization of a known result."
+  },
+  "Erdos282.erdos_282.variants.graham": {
+   "date": "2026-11-27",
+   "pr": 5168,
+   "evidence": [
+    "https://www.erdosproblems.com/282",
+    "https://www.erdosproblems.com/forum/thread/282",
+    "https://github.com/ilpauzner/formal-conjectures/blob/9f462120f7a12b6ebd0286a53bdbde1d7b4e3781/FormalConjectures/ErdosProblems/282.lean"
+   ],
+   "note": "The statement faithfully asks whether the greedy algorithm (distinct denominators, per Bloom's clarification in the forum) terminates whenever Graham's representability condition holds for denominators ≡ a (mod d). The disproof is a genuine counterexample: x = 1/119, a = 1, d = 3, where gcd(119, 3) = 1 so x is representable. An explicit 6-step invariant keeps the greedy remainder positive forever. The file's own header says it is a port of Ilia Pauzner's counterexample, which already exists as a Lean disproof (credited 'using Gemini') in his public formal-conjectures fork. So the result is not original to this PR. Pauzner's counterexample is unpublished and not on erdosproblems.com, and I could not establish its date beyond the cited commit."
+  },
+  "Green31.green_31.upper": {
+   "date": "2026-11-27",
+   "pr": 6678,
+   "evidence": [
+    "https://people.maths.ox.ac.uk/greenbj/papers/open-problems.pdf",
+    "/home/user/google-deepmind/formal-conjectures/FormalConjectures/GreensOpenProblems/31.lean",
+    "https://arxiv.org/abs/2610.36207"
+   ],
+   "note": "The formal statement asks for F(N) <= answer(N) infinitely often, with answer(N) <= sqrt(N) + c N^{1/4} + C for some c < 0.94349 (Hou–Zhao, arXiv:2607.01169). The proof gives F(N) <= sqrt(N) + 0.9434 N^{1/4} for all N >= 10^24, by a new 13-kernel certificate for Hou–Zhao's smoothing method. That is valid but improves 0.94349 only to 0.9434. A stronger bound was already published: Carter, O'Bryant and Tao, 'On the diameter and distribution of Sidon sets' (arXiv:2610.36207, 26 Oct 2026), Corollary 1.2, give |A| <= N^{1/2} + 0.94304 N^{1/4} + 0.44466 for Sidon A ⊆ [1,N] with |A| >= 483. Together with the trivial case |A| < 483, this already satisfies the formal statement with c = 0.94304. The upstream reference to HZ26 as the record is out of date, so the improvement asked for was already known."
+  },
+  "Green35.green_35.lower": {
+   "date": "2026-11-27",
+   "pr": 7442,
+   "evidence": [
+    "https://people.maths.ox.ac.uk/greenbj/papers/open-problems.pdf",
+    "https://arxiv.org/abs/2210.16437",
+    "/home/user/google-deepmind/formal-conjectures/FormalConjectures/GreensOpenProblems/35.lean"
+   ],
+   "note": "The formal 'lower' statement only asks for a valid lower bound for c(p) that beats sqrt(4/7) ≈ 0.75593 at p = 2 (or 0.64 at p = ∞). That is a variant of Green's 'estimate c_p'. The proof gives c(2) >= 473/625 = 0.7568 by a polynomial-kernel Fourier argument, and sets the answer to 0 at every p ≠ 2. A better bound was in the literature long before. E. P. White, 'An almost-tight L^2 autoconvolution inequality' (arXiv:2210.16437, 2022), Theorem 1, proves 0.574635728 <= inf ||f*f||_2^2 for real-valued f on a unit interval with ∫f = 1, i.e. c(2) >= 0.75805; restricting to nonnegative f only raises the infimum. White also cites Martin–O'Bryant's earlier 0.574575 (c(2) >= 0.75801). Both exceed 0.7568, so 'improving sqrt(4/7)' was already done (the upstream docstring is out of date), and this bound is weaker than the known one."
+  },
+  "Erdos878.erdos_878.parts.v": {
+   "date": "2026-11-27",
+   "pr": 6296,
+   "evidence": [
+    "https://www.erdosproblems.com/878",
+    "https://www.erdosproblems.com/forum/thread/878",
+    "https://github.com/rivkalipko/erdos-878-asymptotics"
+   ],
+   "note": "The statement H ~ answer is an answer-style question, and the proof supplies the explicit equivalent H(x) ~ x * sum_{p <= (log x)^2} e^{-r_p(x)}/p * (r_p(x) + log p/(p-1)), where r_p(x) = log x - floor(log_p x) log p, proved with a Selberg-sieve tail bound. As an asymptotic formula this is a substantive, non-tautological answer to Erdős's 'find an asymptotic formula for H(x)'. However, the file's own header says it is a single-file port of rivkalipko/erdos-878-asymptotics (Rivka Lipkovitz with OpenAI Codex, PALOMAR-2026-11-19), a public Lean proof of exactly this formula that predates the 2026-11-27 merge. erdosproblems.com/878 has not been updated (0 proof claims, and no forum comment on part (v)). So this re-formalises an already-public result rather than giving a new one."
+  },
+  "Erdos1032.erdos_1032": {
+   "date": "2026-11-27",
+   "pr": 9127,
+   "evidence": [
+    "https://www.erdosproblems.com/1032",
+    "https://www.erdosproblems.com/forum/thread/1032",
+    "https://conjectures.io/results/e76a593e-d1f7-4946-b724-a86f2b8ec5f8"
+   ],
+   "note": "The formal statement is faithful: there exist c>0 and infinitely many n with a 4-critical graph (vertex- and edge-critical, chromatic number 4) on Fin n of minimum degree >= cn. The extra vertex-criticality is harmless because positive minimum degree excludes isolated vertices. The disproof shows every such graph has minimum degree o(n), using a bounded-depth list-colouring branching plus 2-SAT certificates whose union has linearly many edges, and edge-criticality then forces all edges into the union. The file's header says it formalises EthanYang's sparse-obstruction argument. That disproof was Lean-verified and approved on conjectures.io (verified 24 Oct 2026, certified 28 Oct 2026), before this 2026-11-27 merge. erdosproblems.com/1032 still lists the problem as open with 0 proof claims, but the result was already public, so this is a re-formalisation."
+  },
+  "Koethe.KotherConjecture.variants.le_KotherRadical": {
+   "date": "2026-11-27",
+   "pr": 6681,
+   "evidence": [
+    "https://arxiv.org/abs/2609.07996",
+    "https://github.com/tadamcz/koethe"
+   ],
+   "note": "The statement (every nil left ideal lies in the Köthe radical, the sum of all nil two-sided ideals) is a standard equivalent of Köthe's conjecture and is formalised faithfully (Ideal R = left ideal; IsNil = all elements nilpotent). The disproof builds a ring (a unital subring of a banded incidence algebra over the algebraic closure of Q, generated by three weighted shifts) with a nil two-sided ideal I such that a 2x2 companion-square matrix over I is not nilpotent. This is Krempa's matrix form, and the proof passes to the le_KotherRadical form through the upstream column-ideal lemmas. It contains no sorry or axioms. But Köthe's conjecture was already refuted in September 2026: Adamczewski-Böhmler-Marczinzik, arXiv:2609.07996 (7 Sep 2026), plus the GPT-6 Astra Lean disproof of the same Krempa matrix form (tadamcz/koethe), which uses a very similar shift-operator/pencil/common-zero construction. So this is a formalisation of a known result."
+  },
+  "OeisA114216.conjecture": {
+   "date": "2026-11-27",
+   "pr": 4837,
+   "evidence": [
+    "https://oeis.org/A114216",
+    "https://oeis.org/A114217",
+    "https://oeis.org/A114218"
+   ],
+   "note": "The formal statement 'a(n) != 1 for all n > 33900' is a faithful reading of OEIS A114216's question 'Is a(33900) the last term equal to 1?', and the recurrence matches OEIS (a(n) is the odd part of a(n-1)+prime(n)). The disproof kernel-checks a(78493252) = 1 (567791839 + 1579691809 = 2^31) using a wheel sieve with decide +kernel and no native_decide. That counterexample was already found by Donovan Johnson in May 2010 and is recorded in OEIS A114217 (term 78493252) and A114218 (k=31), as the proof header itself says. The A114216 comment is simply stale, so this formalises a known result."
+  },
+  "Green31.green_31.variants.upper_eventually": {
+   "date": "2026-11-27",
+   "pr": 6693,
+   "evidence": [
+    "https://arxiv.org/abs/2607.01169",
+    "https://www.erdosproblems.com/forum/thread/30",
+    "https://arxiv.org/abs/2610.36207"
+   ],
+   "note": "The statement asks for a bound F(N) <= answer(N) for all large N, with answer(N) - sqrt N <= c N^{1/4} + C for some c < 0.94349 (the Hou-Zhao constant). This faithfully encodes 'improve the [HZ26] upper bound', but that is a moving record, not Green's original threshold. The proof gives c = 0.9434 via an explicit 13-component certificate (sqrt(ab) ≈ 0.94335) inside Hou-Zhao's vector-valued smoothing framework, and appears sound (decide +kernel, no native_decide). However, smaller constants in the same framework were posted publicly before the 2026-11-27 merge, on the erdosproblems.com #30 forum: 0.94325 (JoshMadeiros, 17 Aug 2026, with Lean-checked covering inequalities) and 0.9428096 (johnakwei, 5 Oct 2026, which also argues 2*sqrt(2)/3 is the method's limit). Both are unrefereed, but they already beat 0.94349 by more than this proof does. This is a weaker re-derivation of an already-achieved improvement."
+  },
+  "Erdos36.erdos_36.variants.upper": {
+   "date": "2026-11-27",
+   "pr": 6429,
+   "evidence": [
+    "https://www.erdosproblems.com/36",
+    "https://github.com/google-deepmind/formal-conjectures/blob/main/FormalConjectures/ErdosProblems/36.lean"
+   ],
+   "note": "The formal statement asks for limsup M(N)/N <= c with c < 0.380926853433087, which is Haugland's old bound. erdosproblems.com/36 records that this was already beaten: the current record is c < 0.380876 (TTT-Discover, 2026), improving on AlphaEvolve [GGTW25] and Haugland. The proof establishes limsup <= 0.3809, using a 512-bin step function block-averaged from the atrislabs/records construction plus a probabilistic rounding argument. That is valid but weaker than the published record. The catalogue threshold is stale, so this proves an already-known (indeed already-improved) bound."
+  },
+  "Erdos1063.erdos_1063.better_upper": {
+   "date": "2026-11-27",
+   "pr": 9448,
+   "evidence": [
+    "https://www.erdosproblems.com/1063",
+    "https://github.com/google-deepmind/formal-conjectures/blob/main/FormalConjectures/ErdosProblems/1063.lean",
+    "https://raw.githubusercontent.com/lfsong-google/formal-conjectures/ff33e501bb78a90ae4703e22e052f8bb38e10146/FormalConjectures/ErdosProblems/1063.lean"
+   ],
+   "note": "The statement asks for an answer g with n_k = O(g) and g = o(k * lcm(1..k-1)), improving Cambie's bound; this is a reasonable reading of 'estimate n_k'. The proof gives g(k) = exp(k/log k * (log log k + log log log k + log 2)). The upstream formal-conjectures file itself records exactly this bound as research solved (erdos_1063.variants.subexponential_upper_bound), formally proved by the LEAP agent (lfsong-google fork, commit ff33e501). The OMA file's header says it is adapted from that proof, and it uses the same folded-pigeonhole/Chebyshev construction (n_le_folded_pigeonhole_product appears verbatim in the source). So this is a port of a known formal result."
+  },
+  "Erdos357.erdos_357.parts.ii.bigO_version": {
+   "date": "2026-11-27",
+   "pr": 6889,
+   "evidence": [
+    "https://www.erdosproblems.com/357",
+    "https://github.com/google-deepmind/formal-conjectures/blob/main/FormalConjectures/ErdosProblems/357.lean"
+   ],
+   "note": "This is an answer-style variant: find g with g = O(f), where f(n) is the largest increasing sequence in [1,n] with distinct consecutive-block sums. The proof takes g = sqrt n. That is exactly the order of Weisenberg's known lower bound f(n) >= (2+o(1)) sqrt n, cited on erdosproblems.com/357 and recorded upstream as solved (erdos_357.variants.weisenberg). The file declares itself a 'PORT OF A PUBLIC PROOF, not a new result' (KitaKen1/erdos-357-sqrt-lower-bound). The upstream note itself warns that such answer variants admit easy solutions, and this one adds nothing on how f grows (whether f(n) = o(n) is still open)."
+  },
+  "Green77.green_77": {
+   "date": "2026-11-27",
+   "pr": 9653,
+   "evidence": [
+    "https://github.com/openai/math/blob/main/lean/docs/191.md",
+    "https://github.com/google-deepmind/formal-conjectures/blob/main/FormalConjectures/GreensOpenProblems/77.lean"
+   ],
+   "note": "The statement 'exists o -> 0 with alpha(n) << n^{-2+o(n)}', where alpha(n) is the Heilbronn sup-min triangle area in the unit disc (Erdos507.alpha), faithfully encodes Green's question of whether there is always a triangle of area at most n^{-2+o(1)}. The disproof gives arbitrarily large n-point sets with every triangle of area >= n^{-2+eta} for a fixed eta > 0, then translates them into the disc. The file states it is a port of OpenAI's openai/math Lean development (OAI.Problem355.heilbronn_power_lower_bound, family 191, 'A power improvement in the Heilbronn triangle lower bound'), whose preprint is dated September 2026. So the power-saving lower bound refuting Green 77 was already public before this 2026-11-27 merge."
+  },
+  "Erdos357.erdos_357.parts.ii.littleO_version": {
+   "date": "2026-11-27",
+   "pr": 6897,
+   "evidence": [
+    "https://www.erdosproblems.com/357",
+    "https://github.com/google-deepmind/formal-conjectures/blob/main/FormalConjectures/ErdosProblems/357.lean"
+   ],
+   "note": "This is an answer-style variant: find g with g = o(f). The proof takes g = sqrt n / log n and combines the known sqrt n = O(f) (Weisenberg's f(n) >= (2+o(1)) sqrt n, on erdosproblems.com/357 and solved upstream) with the trivial sqrt n / log n = o(sqrt n). The file declares itself a port of a public proof (KitaKen1/erdos-357-sqrt-lower-bound). It is strictly weaker than the bigO variant and gives no new information about the growth of f, so it is a formalisation of a known result."
+  },
+  "Erdos143.erdos_143.parts.ii": {
+   "date": "2026-11-27",
+   "pr": 4915,
+   "evidence": [
+    "https://www.erdosproblems.com/143",
+    "https://github.com/google-deepmind/formal-conjectures/blob/main/FormalConjectures/ErdosProblems/143.lean"
+   ],
+   "note": "The statement says every well-separated A in (1, inf) (|kx - y| >= 1 for distinct x, y and k >= 1) has sum 1/(x log x) < inf, which is faithful to Erdős's first question. The proof disproves it with an explicit countable set of rationals in [2, inf) whose weight diverges, and checks that the set meets all the WellSeparatedSet hypotheses. The file states it is a port of Mattia Apicella's Lean development (mapice/erdos-143-candidate-disproof, commit 0f4b969). erdosproblems.com/143 already links that commit as 'a formalised negative answer to the first question', and the catalogue's erdosState is 'solved'. So this formalises a known result."
+  },
+  "Erdos14.erdos_14.parts.ii": {
+   "date": "2026-11-27",
+   "pr": 293,
+   "evidence": [
+    "https://www.erdosproblems.com/14",
+    "https://github.com/google-deepmind/formal-conjectures/blob/main/FormalConjectures/ErdosProblems/14.lean"
+   ],
+   "note": "The statement 'there exists A with |[1,N] \\ B| = o(sqrt N)', where B is the set of integers with exactly one representation as a sum of two elements of A, faithfully encodes Erdős's second question. The proof shows that every A has at least sqrt(N)/12000 non-uniquely represented integers for large N. The file says the argument and helper lemmas are adapted from L. Kruer and J. Kohlmeyer (liamkruer.com, Erdos14_PartII_Counterexample.lean). erdosproblems.com/14 already states that the answer to the second question is no (|[1,N] \\ B| >> N^{1/2}) and links a formalised proof, and the catalogue's erdosState is 'solved'. So this is a known result."
+  },
+  "MeanValueProblem.mean_value_problem": {
+   "date": "2026-11-27",
+   "pr": 6415,
+   "evidence": [
+    "https://github.com/tadamcz/mean-value-problem",
+    "https://arxiv.org/abs/2610.36158"
+   ],
+   "note": "The statement is Smale's mean value conjecture with K = 1 (the K argument is unused). It says that for deg p >= 2 and any z there is a critical point c with |p(z)-p(c)|/|z-c| <= |p'(z)|, which is faithful; Lean's x/0 = 0 convention only makes the claim easier. The proof refutes it with a large-degree polynomial approximating a model built on the cubic lemniscate |(z^3+36i)/sqrt 1297| <= 1. But the K = 1 conjecture was already disproved in September 2026: a GPT-6 Astra Lean disproof against the same formal-conjectures statement (tadamcz/mean-value-problem, a quartic four-petal version of the same normal-re-entry idea), explained in Adamczewski-Colbrook, arXiv:2610.36158 (26 Oct 2026), which gives an explicit degree-29,984 example. This proof uses a different lemniscate but proves a known result."
+  },
+  "Koethe.KotherConjecture.variants.matrixOver_KotherRadical": {
+   "date": "2026-11-27",
+   "pr": 6748,
+   "evidence": [
+    "https://arxiv.org/abs/2609.07996",
+    "https://github.com/tadamcz/koethe"
+   ],
+   "note": "The statement Nil*(M_n(R)) = M_n(Nil*(R)) for every finite index type n is a standard equivalent (Krempa) of Köthe's conjecture and is formalised faithfully. The proof file is identical to the le_KotherRadical disproof except for the final bridge: it reuses the same ring with a nil ideal I and a non-nilpotent W in M_2(I), and deduces a contradiction via isNil_kotheRadical and the ULift(Fin 2) reindexing. Köthe's conjecture, in exactly this matrix form, was already refuted in September 2026: Adamczewski-Böhmler-Marczinzik, arXiv:2609.07996, and the GPT-6 Astra Lean disproof of KotherConjecture.variants.general_matrix (tadamcz/koethe). So this is a formalisation of a known result."
+  },
+  "Erdos161.erdos_161.parts.ii": {
+   "date": "2026-11-27",
+   "pr": 9460,
+   "evidence": [
+    "https://www.erdosproblems.com/161",
+    "https://arxiv.org/abs/2611.33108"
+   ],
+   "note": "The statement says that for t >= 3 and all alpha, beta in (0, 1/2), F^{(t)}(n, alpha) = Theta(F^{(t)}(n, beta)), using balancedColoringThreshold. This faithfully encodes 'for fixed t >= 3, do all positive densities below 1/2 give the same asymptotic order?' (the 'one jump at 0' guess). The proof file itself says the result is Corollary 3 of Dhruv Mubayi, 'Large blow-ups of uniform hypergraphs', arXiv:2611.33108 (posted 24 Nov 2026), and it formalises Mubayi's blow-up theorem. Mubayi's abstract gives the order (log n)^{1/(k-1)} for every fixed 0 < alpha < 1/2 and refers to Erdős's $500 question. The t=3 case was already Conlon-Fox-Sudakov 2011. The published solution predates the 2026-11-27 merge, so this is a formalisation of a known result (the erdosproblems page is not yet updated)."
+  },
+  "WrittenOnTheWallII.GraphConjecture72.conjecture72": {
+   "date": "2026-11-27",
+   "pr": 620,
+   "evidence": [
+    "https://github.com/google-deepmind/formal-conjectures/pull/7666",
+    "https://github.com/google-deepmind/formal-conjectures/issues/7662",
+    "https://github.com/google-deepmind/formal-conjectures/pull/7675",
+    "https://vibemathed.com/problem/wowii-conjecture-72-two-induced-trees-pin-down-tree-g",
+    "https://data.palomar-registry.org/feed.xml"
+   ],
+   "reason": "The disproof is correct for the reading ceil(ecc_avg + maxL/3) <= tree(G), which the formal-conjectures reviewer confirmed against the source, but it is not new. RhudeJJJJ/Gebendorfer published a Lean-certified 31-vertex counterexample to exactly this reading in formal-conjectures PR #7666 / issue #7662 on 28 Oct 2026, and the reviewer approved it. VibeMathed records that 'the stronger reading that divides only L by three is false', going back to a 23 Jul 2026 post. A separate 19-vertex Palomar entry (PALOMAR-2026-11-26-000022) was also first published on 26 Nov 2026 at 04:44 UTC, before PR #620 was opened (26 Nov, 23:24 UTC). It should be listed as known, not as an open problem solved."
+  },
+  "Erdos174.erdos_174": {
+   "date": "2026-11-27",
+   "pr": 8153,
+   "evidence": [
+    "https://www.erdosproblems.com/174",
+    "https://github.com/openai/math/blob/main/CONTENTS.md",
+    "https://vibemathed.com/problem/euclidean-ramsey-sets-classification",
+    "https://github.com/google-deepmind/formal-conjectures/issues/7517"
+   ],
+   "reason": "The proof file itself says it is OpenAI's finite Euclidean Ramsey classification (September 2026, openai/math), ported in open-math-agents PR #5414 and adapted to this statement. OpenAI's manuscript 'A classification of finite Euclidean Ramsey configurations' (dated 23 Sep 2026, item 172 in openai/math CONTENTS) and VibeMathed (solveDate 2026-09-23, lean-checked) both predate the PR (27 Nov 2026). FC issue #7517 (22 Oct 2026) also cites it. The upstream 'open' tag and erdosproblems.com are out of date."
+  },
+  "Erdos664.erdos_664.variants.block_design": {
+   "date": "2026-11-27",
+   "pr": 4685,
+   "evidence": [
+    "https://arxiv.org/abs/2609.07736",
+    "https://www.erdosproblems.com/664",
+    "https://github.com/google-deepmind/formal-conjectures/issues/6470"
+   ],
+   "reason": "This is a disproof following Jiaxi Nie, 'Block Designs with Large Transversal-Block Intersections', arXiv:2609.07736 (7 Sep 2026). Nie constructs designs with blocks of size Omega(sqrt n) where every transversal meets some block in Omega(log n/log log n) points, which answers the [Er81] block-design version negatively. The Lean file is also ported from an earlier public formalization (peilinliu66-dev/jsp539-erdos664-formalization, with plby/lean-proofs container modules). The statement matches the source, but the problem was settled before the PR, and erdosproblems.com still reads open."
+  },
+  "opg-circular-flow-number-of-regular-class-1-graphs": {
+   "date": "2026-11-27",
+   "pr": 7972,
+   "evidence": [
+    "https://arxiv.org/abs/2001.02484",
+    "https://www.openproblemgarden.org/op/circular_flow_number_of_regular_class_1_graphs"
+   ],
+   "reason": "This is a disproof, and the proof file says it formalizes the p=3 counterexample of Mattiolo and Steffen, 'Edge colorings and circular flows on regular graphs', arXiv:2001.02484 (Jan 2020; J. Graph Theory 99, 2022). Their abstract: 'We further disprove the conjecture that every (2t+1)-regular class 1 graph has circular flow number at most 2+2/t.' It is also built on the Han–Li–Wu–Zhang counterexamples (JCTB 2018). The conjecture was refuted in the literature about six years before the PR; the Open Problem Garden page is out of date."
+  },
+  "opg-inverse-of-an-integer-matrix": {
+   "date": "2026-11-27",
+   "pr": 7131,
+   "evidence": [
+    "https://www.openproblemgarden.org/op/inverse_of_an_integer_matrix"
+   ],
+   "reason": "The source asks when [D X] (D diagonal with entries >= 2) has an integer right inverse; the poster guesses 'the integers in each row need to be relatively prime'. The statement turns this guess into an iff, and the disproof uses d=(2,2), X=[[1,0],[1,0]]: two equal primitive rows, so no right inverse. That is trivial. The question itself is classical: an integer m x N matrix has an integer right inverse iff the gcd of its m x m minors is 1, equivalently its Smith normal form is [I 0]. Also, 'need' can be read as necessity only, which is trivially true, so the iff reading strengthens the guess. Nothing open was resolved."
+  },
+  "opg-vertex-coloring-of-graph-fractional-powers": {
+   "date": "2026-11-27",
+   "pr": 7362,
+   "evidence": [
+    "https://arxiv.org/abs/1212.3898",
+    "https://www.openproblemgarden.org/op/vertex_coloring_of_graph_fractional_powers"
+   ],
+   "reason": "Iradmusa's conjecture (chi(G^{m/n}) = omega(G^{m/n}) for connected G with Delta >= 3 and 1 < m < n) was already disproved by Hartke, Liu and Petříčková, 'On coloring of fractional powers of graphs', arXiv:1212.3898 (2012). They give a graph H with chi(H^{3/5}) > omega(H^{3/5}) and show the conjecture holds for even m. The PR's counterexample, the triangular prism, is a new instance, but the conjecture was refuted more than a decade earlier; the OPG page was not updated."
+  },
+  "erdos-1045": {
+   "date": "2026-11-27",
+   "pr": 9568,
+   "evidence": [
+    "https://www.erdosproblems.com/1045"
+   ],
+   "reason": "The formal statement deliberately replaces Erdős's question (what is max Delta, and is the regular polygon extremal?) with Pommerenke's 1961 theorem Delta <= 2^{O(n)} n^n, as its own docstring says ('records the bound that is actually known, Pommerenke's'). The proof is a Hadamard/Chebyshev-style proof of that known bound (C=4). It proves a classical result, and the erdosproblems.com question (open for odd n) is untouched. It is also a mismatch with the source: it should not be credited as solving #1045."
+  },
+  "mo-448788": {
+   "date": "2026-11-27",
+   "pr": 6304,
+   "evidence": [
+    "https://mathoverflow.net/questions/448788"
+   ],
+   "reason": "The MO question is a reference request ('describe the standard groupoid model of O_n or direct me to literature'). The formal statement is the classical theorem that the C*-algebra of the Cuntz (Deaconu–Renault/boundary-path) groupoid is O_n for n = 1, 2, …, ∞: Renault 1980 (LNM 793, §III.2), Kumjian–Pask–Raeburn–Renault 1997, Paterson 2002. The statement's own docstring cites these. The Lean formalization is a large effort (about 4,500 lines), but the mathematics was settled decades before; it is not an open problem."
+  },
+  "oeis-a000188": {
+   "date": "2026-11-27",
+   "pr": 8769,
+   "evidence": [
+    "https://oeis.org/A000188",
+    "https://oeis.org/A000188/a000188.pdf"
+   ],
+   "reason": "Yanev's conjecture (2021), a(n) = sum_{k=1..n} A010052(n k), is marked in the entry 'Yanev's conjecture is true (see Fried link). - Sela Fried, Dec 01 2025', with the proof in Fried's 'Proofs of some conjectures of Yanev' (2025). The statement file itself says so. Settled before the PR (27 Nov 2026); elementary."
+  },
+  "oeis-a000579": {
+   "date": "2026-11-27",
+   "pr": 7791,
+   "evidence": [
+    "https://oeis.org/A000579",
+    "https://oeis.org/A000579/a000579.pdf"
+   ],
+   "reason": "Stephan's 2005 conjecture a(n+3) = sum_{k+l+m<=n} k l m with a(t) = C(t,6) is marked 'The conjecture is true (see Fried link). - Sela Fried, Nov 24 2025'. Settled before the PR; elementary."
+  },
+  "oeis-a001045": {
+   "date": "2026-11-27",
+   "pr": 8389,
+   "evidence": [
+    "https://oeis.org/A001045",
+    "https://oeis.org/A001045/a001045.pdf",
+    "https://oeis.org/A001045/a001045_1.pdf"
+   ],
+   "reason": "Both conjectures stated, Fossaceca's (multiples of 3 in (2^n, 2^{n+1})) and Copeland's (powers of the K3 adjacency matrix), are marked true in the entry by Sela Fried (Nov 09 2025 and Dec 03 2025, with PDFs). The statement docstring itself says 'both marked true there'. Settled before the PR; trivial."
+  },
+  "oeis-a005251": {
+   "date": "2026-11-27",
+   "pr": 9426,
+   "evidence": [
+    "https://oeis.org/A005251",
+    "https://oeis.org/A005251/a005251_2.pdf"
+   ],
+   "reason": "Dement's identity a(n+1) + |A078065(n)| = 2*A005314(n+1) is marked 'The conjecture is true (see Fried link). - Sela Fried, Nov 29 2025'. The statement docstring says so too. Settled before the PR; trivial induction."
+  },
+  "oeis-a007091": {
+   "date": "2026-11-27",
+   "pr": 6831,
+   "evidence": [
+    "https://oeis.org/A007091",
+    "https://oeis.org/A007091/a007091.pdf"
+   ],
+   "reason": "Sigrist's conjecture (n is a base-5 numeral read in decimal iff 2·S(n) = S(2n)) is marked 'Sigrist's conjecture is true ... See Fried link. - Sela Fried, Nov 03 2025', and the docstring notes this. Settled before the PR; elementary."
+  },
+  "oeis-a008676": {
+   "date": "2026-11-27",
+   "pr": 9264,
+   "evidence": [
+    "https://oeis.org/A008676"
+   ],
+   "reason": "Layman's 2009 formula for the number of partitions of n into parts 3 and 5, floor(2(n+3)/3) − floor(3(n+3)/5), is unmarked in the entry. It is an algebraic rewriting of Popoviciu's classical 1953 formula N(n) = n/15 − {2n/3} − {2n/5} + 1 for nonnegative solutions of 3a+5b=n: with r = 2n mod 5, {(3n+9)/5} = (4−r)/5. I checked numerically that the two formulas agree for n < 2000. Settled in the classical literature; trivial."
+  },
+  "oeis-a037250": {
+   "date": "2026-11-27",
+   "pr": 6655,
+   "evidence": [
+    "https://oeis.org/A037250"
+   ],
+   "reason": "Dale's 2019 conjecture (a linear recurrence with signature (6,−15,20,−15,6,−1) for a degree-5 polynomial sequence) is marked in the entry: 'This conjecture is true since for any series a(n) = P(n) ... - Georg Fischer, Feb 17 2021'. Settled before the PR; trivial (the proof is one ring call)."
+  },
+  "oeis-a051960": {
+   "date": "2026-11-27",
+   "pr": 6444,
+   "evidence": [
+    "https://oeis.org/A051960",
+    "https://sites.math.rutgers.edu/~zeilberg/tokhniot/oMathar1maple12.txt"
+   ],
+   "reason": "Mathar's 2014 recurrence (n+1)a(n) − 2(n+2)a(n−1) − 4(2n−3)a(n−2) = 0 is marked in the entry 'conjectured by R. J. Mathar, Oct 02 2014, verified by Robert Israel, Sep 30 2015'; see also Ekhad–Yang 2017. Settled before the PR; trivial."
+  },
+  "oeis-a054116": {
+   "date": "2026-11-27",
+   "pr": 9430,
+   "evidence": [
+    "https://oeis.org/A054116"
+   ],
+   "reason": "Mathar's recurrence a(n) − (n+1)a(n−1) + n·a(n−2) = 0 was proved in the entry: 'The conjectured recurrence holds for n>=4 ... - Eiver Rodríguez, Nov 06 2026'. The statement docstring cites this range. Settled three weeks before the PR; trivial."
+  },
+  "oeis-a061243": {
+   "date": "2026-11-27",
+   "pr": 9246,
+   "evidence": [
+    "https://oeis.org/A061243"
+   ],
+   "reason": "The conjecture a(n) = n + A002034(n) is noted in the entry with Dean Hickerson's proof (Oct 07 2001: (n+1)…(n+r) ≡ r! mod n). The statement docstring says so. Settled; trivial."
+  },
+  "oeis-a071010": {
+   "date": "2026-11-27",
+   "pr": 7916,
+   "evidence": [
+    "https://oeis.org/A071010",
+    "https://math.stackexchange.com/questions/3021276"
+   ],
+   "reason": "The entry's conjecture (n not a sum of 2 squares ⇒ 4 | sigma(n)) is unmarked there, but it is a classical elementary fact. An answer on Math.SE 3021276 (4 Dec 2018) proves exactly this general statement, via a prime p ≡ 3 mod 4 with odd exponent, for which sigma(p^odd) is divisible by p+1. Settled before the PR; trivial."
+  },
+  "oeis-a088982": {
+   "date": "2026-11-27",
+   "pr": 7739,
+   "evidence": [
+    "https://oeis.org/A088982"
+   ],
+   "reason": "The entry already contains the proof: 'This conjecture is equivalent to saying that there is at least one prime index between prime(x) and prime(x+1), which is trivially true because both are odd for x > 1 ... - M. F. Hasler, Jul 31 2015'. The Lean proof follows the same argument. Settled; trivial."
+  },
+  "oeis-a182133": {
+   "date": "2026-11-27",
+   "pr": 6694,
+   "evidence": [
+    "https://oeis.org/A182133"
+   ],
+   "reason": "The entry says: 'The conjecture is true (follows from Korselt's criterion). - Charles R Greathouse IV, Jul 05 2017'. The Lean proof is exactly Korselt. Settled; trivial."
+  },
+  "oeis-a184674": {
+   "date": "2026-11-27",
+   "pr": 9428,
+   "evidence": [
+    "https://oeis.org/A184674"
+   ],
+   "reason": "Mathar's 2011 conjecture a(n) = A014616(n−1) is marked 'The above conjecture is true. - Stefano Spezia, Apr 04 2023'; the statement docstring cites this. Settled; trivial."
+  },
+  "oeis-a242191": {
+   "date": "2026-11-27",
+   "pr": 8852,
+   "evidence": [
+    "https://oeis.org/A242191"
+   ],
+   "reason": "Mathar's 2014 closed form is marked 'Conjecture is true, because the probability that the highest is k is (k/6)^n − ((k−1)/6)^n ... - Robert Israel, Mar 09 2020'. The statement docstring notes it. Settled; trivial."
+  },
+  "oeis-a252491": {
+   "date": "2026-11-27",
+   "pr": 8539,
+   "evidence": [
+    "https://oeis.org/A252491",
+    "https://oeis.org/A086766"
+   ],
+   "reason": "The statement, p prime and (10^{p^2}−1)/(10^p−1) not prime ⇒ A086766(10^{p−1}) = 0, is exactly the Corollary proved by Farideh Firoozbakht in A086766 (Jan 07 2015: 'If p is a prime number then a(10^(p-1))=0 or (10^(p^2)-1)/(10^p-1) is a prime number'; 'M. F. Hasler has checked proofs'). A252491 cites it as a fact, not a conjecture. Settled in 2015; trivial (cyclotomic factorization)."
+  },
+  "oeis-a280321": {
+   "date": "2026-11-27",
+   "pr": 6835,
+   "evidence": [
+    "https://oeis.org/A280321",
+    "https://oeis.org/history?seq=A280321"
+   ],
+   "reason": "Barker's conjectures (a(n) = (2n+1)^2 for n>1, recurrence, g.f.) are marked in the entry 'Barker's conjectures are true ... - Sela Fried, Feb 01 2026', with a complete proof, approved the same day. Settled before the PR; trivial."
+  },
+  "oeis-a306362": {
+   "date": "2026-11-27",
+   "pr": 7032,
+   "evidence": [
+    "https://oeis.org/A306362"
+   ],
+   "reason": "The entry contains the proof: 'A317298(n) end with 3 only when n ends with 1 ... (10*n+1)*(20*n+3), which is composite for n > 0. Therefore the conjecture is true. - Bruno Berselli, Feb 11 2019'. Settled; trivial."
+  },
+  "oeis-a343009": {
+   "date": "2026-11-27",
+   "pr": 7081,
+   "evidence": [
+    "https://oeis.org/A343009"
+   ],
+   "reason": "Ordowski's conjecture ((n^{2n}−1)/(n^2−1) is a Fermat pseudoprime to base n for n>2) is proved in the entry by Jianing Song (Aug 28 2022): it is composite via cyclotomic factors, and 2n | a(n)−1. The statement docstring itself says so. Settled; elementary."
+  },
+  "oeis-a369275": {
+   "date": "2026-11-27",
+   "pr": 9820,
+   "evidence": [
+    "https://oeis.org/A369275"
+   ],
+   "reason": "Mathar's conjecture (no six consecutive increasing sines at integers) is marked 'Mathar's conjecture is true ... - Charles R Greathouse IV, Dec 10 2024'; the statement docstring says so. Settled; trivial."
+  },
+  "Erdos160.erdos_160.better_upper": {
+   "date": "2026-11-27",
+   "pr": 8017,
+   "evidence": [
+    "https://www.erdosproblems.com/160",
+    "https://www.erdosproblems.com/forum/thread/160/proof-claims",
+    "https://arxiv.org/abs/2607.20752",
+    "https://github.com/google-deepmind/formal-conjectures/blob/9097e2f90e66d2f6244209cb1c07f7120d17ec53/FormalConjectures/ErdosProblems/160.lean",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/8017"
+   ],
+   "reason": "The formal target asks for some f with h = O(f) and f = o(n^(2/3)), i.e. any improvement on LeechLattice's n^(2/3). That is faithful to the sub-question, but the improvement was already known. erdosproblems.com/160 records Hunter's bound h(N) << N^(log 3/log 22 + o(1)) (about N^0.355). Proof claims dated 2026-07-15 (N^(1/3+o(1)), Itabe) and 2026-07-24 (exponent 1/4, Shi-Dong, arXiv:2607.20752) go further. The PR's 9-colouring of Z/41 on base-41 digits gives n^(log 9/log 41), about n^0.59, which is weaker than all of these. The pinned upstream file is simply stale."
+  },
+  "Erdos36.erdos_36.variants.lower": {
+   "date": "2026-11-27",
+   "pr": 7270,
+   "evidence": [
+    "https://www.erdosproblems.com/36",
+    "https://www.erdosproblems.com/forum/thread/36/proof-claims",
+    "https://github.com/google-deepmind/formal-conjectures/blob/9097e2f90e66d2f6244209cb1c07f7120d17ec53/FormalConjectures/ErdosProblems/36.lean",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/7270"
+   ],
+   "reason": "The statement asks for a constant c > 0.379005 (White 2022) with c <= liminf M(N)/N, and it is faithful. The PR proves c = 0.38 with an original Lean Fourier-dual certificate (about 4500 lines). However, the erdosproblems.com/36 proof-claims page already lists stronger lower bounds before this PR (27 Nov 2026): 0.38055470 by Liam Price with GPT Pro (submitted 2026-07-20) and 0.3805634 by Drynshock with GPT 6 Pro (2026-09-19). So the improvement over 0.379005 was publicly claimed earlier and is stronger than the PR's 0.38."
+  },
+  "opg-bene-conjecture": {
+   "date": "2026-11-27",
+   "pr": 7359,
+   "evidence": [
+    "https://www.openproblemgarden.org/op/bene_conjecture",
+    "https://arxiv.org/abs/2607.15296",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/7359"
+   ],
+   "reason": "The statement faithfully encodes the partition-stabilizer form on Open Problem Garden: u uniform, u ^ phi(u) = 0, and (phi S(u))^n transitive for some n >= 2 imply (phi S(u))^(2n-1) = Sym(E). The disproof is an explicit 50-element counterexample (blocks of size 5, n = 3). But arXiv:2607.15296, 'Benes and Shuffle-Exchange Counterexamples' (2 Jul 2026), already refutes 'the graph-theoretic Benes inequality R(L) <= 2F(L) and its partition-stabilizer form as stated on Open Problem Garden'. The PR body itself says it follows 'the known refutation'. So this formalizes a known counterexample family."
+  },
+  "opg-inequality-for-square-summable-complex-series": {
+   "date": "2026-11-27",
+   "pr": 9117,
+   "evidence": [
+    "https://www.openproblemgarden.org/op/inequality_for_square_summable_complex_series",
+    "https://doi.org/10.4171/EM/278",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/9117"
+   ],
+   "reason": "This is Retkes's inequality for square-summable complex sequences. It was solved long before the PR. An Open Problem Garden comment of 3 Nov 2013 proves it by a direct Cauchy-Schwarz argument (the dyadic decomposition 2^k(2l+1) partitions the indices), and the poster acknowledged the solution and offered the prize in Oct 2014. The statement file itself also says 'Ibragimov and Salimova proved the inequality' (doi:10.4171/EM/278). The result is known and the proof is elementary."
+  },
+  "opg-strong-matchings-and-covers": {
+   "date": "2026-11-27",
+   "pr": 8237,
+   "evidence": [
+    "https://www.openproblemgarden.org/op/strong_matchings_and_covers",
+    "https://arxiv.org/abs/2511.13709",
+    "https://www.combinatorics.org/ojs/index.php/eljc/article/view/v33i2p11",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/8237"
+   ],
+   "reason": "The statement faithfully encodes Aharoni's conjecture: every hypergraph with edge sizes <= k has a strongly maximal matching and a strongly minimal cover, with cardinal comparisons. The disproof builds a hypergraph with edges of size 2 and 3 that has no strongly maximal matching. The proof header states that the construction is that of Hollom and Randall Shaw, 'Counterexamples to conjectures on strong maximality and minimality' (arXiv:2511.13709, 17 Nov 2025; Electron. J. Combin. 33(2) P2.11, 2026), which explicitly refutes this conjecture of Aharoni. So this is a formalization of a published counterexample."
+  },
+  "erdos-1039": {
+   "date": "2026-11-27",
+   "pr": 9133,
+   "evidence": [
+    "https://www.erdosproblems.com/1039",
+    "https://www.erdosproblems.com/forum/thread/1039",
+    "https://github.com/KitaKen1/erdos1039-lean",
+    "https://vibemathed.com",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/9133"
+   ],
+   "reason": "The statement (there is c > 0 such that the lemniscate {|f| < 1} contains a disc of radius c/n) faithfully encodes the question 'is rho(f) >> 1/n?'. It was answered before the PR. Liam Price posted the GPT-5.5 Pro argument on the forum on 7 May 2026 (disc of radius (log 2)/n around some zero). Nat Sothanaphan vouched for it on 8 May 2026, and KentaKitamura published a Lean formalization (KitaKen1/erdos1039-lean) on 15 May 2026. VibeMathed lists the problem as resolved on 2026-05-17. The PR body and the proof file say it is a port of that development."
+  },
+  "mo-100712": {
+   "date": "2026-11-27",
+   "pr": 9235,
+   "evidence": [
+    "https://mathoverflow.net/questions/100712",
+    "https://mathoverflow.net/a/110098",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/9235"
+   ],
+   "reason": "The statement faithfully encodes the coefficientwise q-series identity over Q(q). It was proved on MathOverflow by Peter Mueller's answer of 19 Oct 2012: reduce to sum_s [a,s]_q [b,s]_q (q)_s q^((a-s)(b-s)) = 1, then induct with the q-Pascal rule. The PR body says the file formalizes 'Peter Mueller's published coefficient induction'. Known."
+  },
+  "mo-308189": {
+   "date": "2026-11-27",
+   "pr": 9830,
+   "evidence": [
+    "https://mathoverflow.net/questions/308189",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/9830"
+   ],
+   "reason": "The statement is a faithful transcription of the MO question (degree n >= 1, no zeros in |z| < 1, |alpha zP' + zP' - c P| <= c max|P| with c = n - (|a0|-1)/(|a0|+1)). The disproof takes P = z + 2, alpha = 1, z = -1, where the LHS is 8/3 > 2 >= RHS. The question was already answered negatively in a comment of 6 Sep 2018. That comment takes P = lambda(2 + z) with alpha = 1 and lets lambda grow, showing the inequality fails (it suggests n >= 2 is needed). This is the same degree-1 family. Known, and trivial."
+  },
+  "mo-434155": {
+   "date": "2026-11-27",
+   "pr": 9454,
+   "evidence": [
+    "https://mathoverflow.net/questions/434155",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/9454"
+   ],
+   "reason": "The statement says that the number of mu with lambda_{i+1} <= mu_i <= lambda_i is prod_i (lambda_i - lambda_{i+1} + 1). This is the standard reading of 'mu interlaces lambda' and matches the MO question. The answer was given the day the question was asked: David E Speyer's comment of 8 Nov 2022 gives exactly this product, noting that each mu_j can be chosen independently, and Sam Hopkins confirmed it. The proof is a 10-line product of interval cardinalities. Known and trivial."
+  },
+  "mo-487213": {
+   "date": "2026-11-27",
+   "pr": 7219,
+   "evidence": [
+    "https://mathoverflow.net/questions/487213",
+    "https://doi.org/10.1007/s11083-010-9188-7",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/7219"
+   ],
+   "reason": "The statement (finite interval orders are well-quasi-ordered under induced subposet embedding) is faithful to Stanley's question, and the disproof is valid. It realises the double-ended forks as interval graphs, orients them into interval orders, and notes that an induced subposet embedding induces an embedding of incomparability graphs. However, the PR itself says it 'formalizes the known double-ended-fork antichain'. Infinite antichains of interval graphs, and even of unit interval graphs (Lozin-Mayhill, Order 2011), are in the literature, and they transfer immediately to interval orders and semiorders by that one-line observation. The MO thread has no posted answer (a deleted one aside), but the mathematics was already settled. Known."
+  },
+  "wpc-mahler-conjecture": {
+   "date": "2026-11-27",
+   "pr": 8170,
+   "evidence": [
+    "https://en.wikipedia.org/wiki/Mahler_volume",
+    "https://github.com/openai/math",
+    "https://github.com/openai/math/tree/main/preprints/The-symmetric-Mahler-conjecture-and-its-equality-cases-September-22-2026",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/8170"
+   ],
+   "reason": "The statement is faithful: vol(K) * vol(K°) >= 4^n/n! for compact convex origin-symmetric K with nonempty interior. But OpenAI's Math Release claims this result. Entry 087 of the openai/math index, 'The symmetric Mahler conjecture and its equality cases' (preprint dated 22 Sep 2026), proves the symmetric Mahler conjecture, and the polar-product symplectic-width Lean development is in that repository. The proof file's header and the PR body say the 25-module embedding development is adapted from openai/math at revision 3344da5 (24 Nov 2026). So the PR ports a result that was claimed before it was opened."
+  },
+  "oeis-a000139": {
+   "date": "2026-11-27",
+   "pr": 7393,
+   "evidence": [
+    "https://oeis.org/A000139",
+    "https://oeis.org/A324964",
+    "https://oeis.org/A022341",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/7393"
+   ],
+   "reason": "The statement (A000139(n) is odd iff n is an odd fibbinary number) is faithful to Peter Bala's July 2025 comment. However, A324964, created 24 Apr 2019, is defined as 'A000139(n) mod 2; Characteristic function of odd fibbinary numbers (A022341)', so the characterization was already recorded. It also follows routinely from Kummer/Lucas, which is what the proof does. The PR body itself says it is 'a new Lean formalization of that known identity'. Known."
+  },
+  "oeis-a000392": {
+   "date": "2026-11-27",
+   "pr": 8267,
+   "evidence": [
+    "https://oeis.org/A000392",
+    "https://oeis.org/A036561",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/8267"
+   ],
+   "reason": "Layman's 2007 conjecture (the sum of S(n) equals S2(n+2,3)) is settled in the entry itself. Fred Daniel Kline's comment of 2 Oct 2014 notes that it follows from identifying S(n) with the first n rows of A036561, and the statement file says so ('Status: known result'). The proof formalizes exactly that argument. Known, and elementary."
+  },
+  "oeis-a000781": {
+   "date": "2026-11-27",
+   "pr": 6619,
+   "evidence": [
+    "https://oeis.org/A000781",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/6619"
+   ],
+   "reason": "The statement faithfully encodes Mathar's 2013 four-term recurrence for 3C(n) - C(n-1) - 1 for n >= 5. The OEIS entry already says 'The conjecture of R. J. Mathar is true' with a proof sketch via (n+1)C(n) = 2(2n-1)C(n-1), signed Roberto Blanco Gomez, 1 Oct 2026; the entry was last edited 4 Oct 2026, before the PR. The site's imported row includes that remark. Known, and trivial."
+  },
+  "oeis-a002293": {
+   "date": "2026-11-27",
+   "pr": 11701,
+   "evidence": [
+    "https://oeis.org/A002293",
+    "https://arxiv.org/abs/1809.09158",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/11701"
+   ],
+   "reason": "The statement (3-uniform words over [n] avoiding 231 and 221 are counted by C(4n,n)/(3n+1)) faithfully encodes the OEIS comment. But that comment is out of date. Defant and Kravitz, 'Stack-sorting for Words' (arXiv:1809.09158; v2 of 8 Dec 2018), prove via generating trees that the l-uniform words avoiding 231 and 221 are counted by the (l+1)-Catalan numbers. The statement file and the PR body both cite it as 'Theorem 3.6'. The Lean proof (a Raney cycle-lemma bijection) is a new formalization of a known theorem."
+  },
+  "oeis-a007645": {
+   "date": "2026-11-27",
+   "pr": 9244,
+   "evidence": [
+    "https://oeis.org/A007645",
+    "https://oeis.org/A002383",
+    "https://oeis.org/A162471",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/9244"
+   ],
+   "reason": "Tisdale's conjecture says that the primes = 0, 1 mod 3 are exactly the union of A002383 (primes of the form k^2+k+1) and A162471 (other prime divisors of numbers k^2+k+1). That is precisely the classical fact that the prime divisors of k^2+k+1 = Phi_3(k) are 3 and the primes = 1 mod 3, a standard consequence of the cyclic group (Z/p)^* (order-3 elements). The statement is faithful and the proof is the textbook argument. Known (classical); trivial."
+  },
+  "oeis-a014484": {
+   "date": "2026-11-27",
+   "pr": 9397,
+   "evidence": [
+    "https://oeis.org/A014484",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/9397"
+   ],
+   "reason": "Mathar's 2013 recurrence for the e.g.f. (1+2x)/(1-2x)^4 is marked 'Conjecture verified by Robert Israel, Jul 11 2018' in the entry, and the statement file notes this. The formal statement uses Stephan's closed form (n+2)!(2n+3)2^n/6. Known, and trivial."
+  },
+  "oeis-a034178": {
+   "date": "2026-11-27",
+   "pr": 7773,
+   "evidence": [
+    "https://oeis.org/A034178",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/7773"
+   ],
+   "reason": "The statement bundles three descriptions of A034178: Bryant's divisor pairs, Barrera's sqrt(k)+sqrt(k+n), and Arndt's g.f. sum x^(m^2)/(1-x^(2m)). All three are already marked proved in the entry: Fernandes (21 Jan 2026) for Bryant and Barrera, and Sela Fried (4 Nov 2025) for Arndt. The statement file says 'all marked true there'. Known, and elementary."
+  },
+  "oeis-a053645": {
+   "date": "2026-11-27",
+   "pr": 6446,
+   "evidence": [
+    "https://oeis.org/A053645",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/6446"
+   ],
+   "reason": "Kurkov's 2019 recurrence a(n) = (1 - A036987(n-1))(1 + a(n-1)) is already marked 'Kurkov's conjecture is true (see Fried link)' by Sela Fried, 20 Nov 2025, in the entry. The formal statement is faithful. Known, and trivial."
+  },
+  "oeis-a082274": {
+   "date": "2026-11-27",
+   "pr": 9827,
+   "evidence": [
+    "https://oeis.org/A082274",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/9827"
+   ],
+   "reason": "The statement says that palindromes n with n+2 also a palindrome are exactly 1..7 and the repdigits 9...9. It is faithful, but the entry already contains a proof of the conjecture ('The above conjecture is true...') signed Felix Frohlich, 22 Jul 2014. The statement file notes this. Known, and elementary."
+  },
+  "oeis-a097814": {
+   "date": "2026-11-27",
+   "pr": 6668,
+   "evidence": [
+    "https://oeis.org/A097814",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/6668"
+   ],
+   "reason": "Mathar's 2014 recurrence for the e.g.f. exp(3x)/(1-3x) is marked 'Mathar's conjecture is true (see Fried link)' by Sela Fried, 8 Dec 2025, in the entry. The statement (via a(n) = 3n a(n-1) + 3^n) is faithful. Known, and trivial."
+  },
+  "oeis-a108225": {
+   "date": "2026-11-27",
+   "pr": 8850,
+   "evidence": [
+    "https://oeis.org/A108225",
+    "https://oeis.org/A006894",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/8850"
+   ],
+   "reason": "Mathar's 2007 conjecture a(n) = A006894(n) + 1 is formalized faithfully, with A006894 given by its recorded recurrence b(n+1) = b(n)(b(n)+1)/2 + 1. The entry already gives a(n) = A072638(n-1) + 2 (J. S. Seneschal, 17 Jul 2025), and A006894 records a(n) = A072638(n-1) + 1 (Krizek, 2009). Together these are exactly the conjecture. In any case the proof is a two-line simultaneous induction. Treated as known (and trivial)."
+  },
+  "oeis-a171141": {
+   "date": "2026-11-27",
+   "pr": 6712,
+   "evidence": [
+    "https://oeis.org/A171141",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/6712"
+   ],
+   "reason": "The conjecture says that for n > 6 with n = 6 or 33 mod 41, (6n+5)(6n+7) is not a twin-prime product. It is already resolved in the entry: 'This conjecture is evident ... 6*a(2k)+7 = 41*(6k-1) and 6*a(2k+1)+5 = 41*(6k+1)' [Bruno Berselli, Jan 07 2013]. The formal statement (the one-directional reading) is fine. Known, and trivial."
+  },
+  "oeis-a182085": {
+   "date": "2026-11-27",
+   "pr": 6690,
+   "evidence": [
+    "https://oeis.org/A182085",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/6690"
+   ],
+   "reason": "The conjecture says that if 30k+7, 60k+13 and 150k+31 are all prime, their product is a Carmichael number. It is already settled in the entry: 'The conjecture follows from Korselt's criterion' (Charles R Greathouse IV, 2 Oct 2012). The proof is exactly Korselt. Known, and trivial."
+  },
+  "oeis-a182959": {
+   "date": "2026-11-27",
+   "pr": 9405,
+   "evidence": [
+    "https://oeis.org/A182959",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/9405"
+   ],
+   "reason": "Mathar's 2020 second-order recurrence for A182959 is already settled in the entry. Peter Bala (15 May 2023) gives the closed form and a first-order recurrence, and notes 'Mathar's conjectured second order recurrence above follows from this'. The statement uses Bala's closed form and only eventual validity (it fails at n = 2, 3). Known, and trivial."
+  },
+  "oeis-a208658": {
+   "date": "2026-11-27",
+   "pr": 9921,
+   "evidence": [
+    "https://oeis.org/A208658",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/9921"
+   ],
+   "reason": "Barker's 2012 closed form and g.f. for the row sums of A208657 are already marked 'The above conjectures are true' by Stefano Spezia (19 Nov 2023) in the entry, and the statement file says so. Known, and trivial."
+  },
+  "oeis-a306345": {
+   "date": "2026-11-27",
+   "pr": 6584,
+   "evidence": [
+    "https://oeis.org/A306345",
+    "https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/6584"
+   ],
+   "reason": "The statement (a(n) = 0 iff n = 1 or n = p^2) is faithful. But the entry already contains Charlie Neder's proof ('Conjecture is true, since ... 2k+1 can be factored into k parts > 1 ...', 12 Feb 2019), and the PR body says it formalizes that established result. Known, and elementary."
   }
  },
  "reviewed": "2026-11-27"
