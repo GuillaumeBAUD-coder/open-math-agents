@@ -543,7 +543,8 @@ private theorem recurrence (m : ℕ) :
   have h3 : 3 ≤ m+5 := by omega
   have h4 : 4 ≤ m+5 := by omega
   have h5 : 5 ≤ m+5 := by omega
-  simp only [map_add, K_large _ (by omega : 3<m+5)] at h
+  have hlarge : 3 < m + 5 := by omega
+  simp only [map_add, K_large _ hlarge] at h
   simp only [map_add,map_sub,M_cf_ofNat (m+5) 2,M_cf_ofNat (m+5) 3,
     M_cf_ofNat (m+5) 5,M_cf_ofNat (m+5) 6,M_cf_ofNat (m+5) 9,
     M_cf_ofNat (m+5) 11,M_cf_ofNat (m+5) 13,
