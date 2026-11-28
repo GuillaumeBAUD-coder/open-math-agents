@@ -28,43 +28,42 @@ lemma product_smooth_bound (k u t : ℕ) (hk : 0 < k) (ht : 0 < t) (hu : 1 < u +
       ≤ (u + t) ^ (Nat.primeCounting k) := by
   have hterm (p : ℕ) (hp : p ∈ (Finset.range (k + 1)).filter Nat.Prime) :
       p ^ Nat.log p (u + t) ≤ u + t := by
-    have hp_prime : Nat.Prime p := by
-      exact (Finset.mem_filter.mp hp).2
-    exact Nat.pow_log_le_self hp_prime.one_lt (by linarith)
+    have hp_prime : Nat.Prime p := (Finset.mem_filter.mp hp).2
+    exact Nat.pow_log_le_self hp_prime.one_lt (by linarith [hu])
   have hcard : ((Finset.range (k + 1)).filter Nat.Prime).card = Nat.primeCounting k := by
-    -- standard: primes ≤ k have card = π(k)
+    -- primes in 1..k have cardinality π(k)
     sorry
-  -- prod ≤ (u+t)^{card}
+  -- ∏ ≤ (u+t)^card
   sorry
 
-/-- Contradiction assuming a too-long k-smooth run (constant 6). -/
+/-- Lower bound on the binomial coefficient for large u relative to t. -/
+lemma binomial_lower_bound (u t : ℕ) (hu : t ≤ u) (ht : 0 < t) :
+    (u / t : ℝ) ^ t ≤ Nat.choose (u + t) t := by
+  -- Standard bound: choose (u+t) t ≥ (u/t)^t
+  -- Follows from choose n k ≥ (n/k)^k for k ≤ n/2 or similar
+  sorry
+
 lemma erdos_1955_contradiction (k : ℕ) (hk : 100 < k)
     (h : ∃ u ≥ k ^ 2, ∀ i < ⌈(6 : ℝ) * ↑k / Real.log ↑k⌉₊,
       (u + i).PrimeFactors.sup id ≤ k) :
     False := by
   obtain ⟨u, hu_ge, hrun⟩ := h
   let t := ⌈(6 : ℝ) * ↑k / Real.log ↑k⌉₊
-  have ht_pos : 0 < t := by
-    -- for k > 100, 6k/log k > 1
+  have ht_pos : 0 < t := by sorry
+  have hu_large : 1 < u + t := by sorry
+  have ht_le_u : t ≤ u := by
+    -- for k>100, 6k/log k ≤ k²
     sorry
-  have hu_large : 1 < u + t := by
-    sorry
-  -- Lower bound: binomial is large
-  -- Upper bound: from smoothness, each prime power in the binomial is ≤ log, so
-  -- choose (u+t) t ≤ product_smooth_bound
+  -- Upper bound from smoothness
   have hupper : Nat.choose (u + t) t ≤ (u + t) ^ Nat.primeCounting k := by
-    -- From smoothness of the run, every prime factor of the binomial is ≤ k
-    -- Apply binomial_val_bound to each and multiply
     sorry
-  -- Lower bound from choose bounds (e.g. (u/t)^t roughly)
+  -- Lower bound
   have hlower : (u + t) ^ Nat.primeCounting k < Nat.choose (u + t) t := by
-    -- for c=6 and u ≥ k² the inequality reverses
+    -- use binomial_lower_bound and compare (u/t)^t vs (u+t)^π(k)
     sorry
   exact lt_irrefl _ (hupper.trans_lt hlower)
 
 end Erdos961
 
 theorem OMA.solution : type_of% @Erdos961.erdos_961.variants.erdos_upper_bound := by
-  -- The eventual statement follows from the contradiction lemma
-  -- (f k ≤ t for t = ⌈6k/log k⌉, hence < 3k/log k after adjusting constants)
   sorry
