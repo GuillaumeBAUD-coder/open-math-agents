@@ -30,7 +30,11 @@ lemma binomial_val_bound (u t p : ℕ) (hp : Nat.Prime p) (hpu : p ≤ u + t) (h
 lemma product_smooth_bound (k u t : ℕ) (hk : 0 < k) (ht : 0 < t) :
     ∏ p in (Finset.range (k + 1)).filter Nat.Prime, p ^ (Nat.log p (u + t))
       ≤ (u + t) ^ (Nat.primeCounting k) := by
-  -- Each term p^{log_p (u+t)} ≤ u+t, and there are π(k) primes
+  -- Each p^{log_p m} ≤ m for m = u+t > 1
+  -- Number of terms in the product is exactly π(k)
+  have hcard : ((Finset.range (k + 1)).filter Nat.Prime).card = Nat.primeCounting k := by
+    sorry -- Mathlib has primeCounting_eq_card_filter or similar
+  -- Then use Finset.prod_le_prod and the bound on each term
   sorry
 
 /-- Main contradiction for large constant (c > 6 works) -/
