@@ -76,7 +76,7 @@ private theorem ternary_strictMono : StrictMono ternary := by
   suffices h : ∀ (j : ℕ), ∀ i < j, ternary i < ternary j from fun i j hij => h j i hij
   intro j
   induction j using Nat.strong_induction_on with
-  | ind j ih =>
+  | h j ih =>
     intro i hij
     rw [ternary_rec i, ternary_rec j]
     obtain hlt | heq := lt_or_eq_of_le (Nat.div_le_div_right (c := 2) hij.le)
@@ -87,7 +87,7 @@ private theorem ternary_strictMono : StrictMono ternary := by
 
 private theorem good_ternary (n : ℕ) : ¬ 3 ∣ central (ternary n) := by
   induction n using Nat.strong_induction_on with
-  | ind n ih =>
+  | h n ih =>
     by_cases hn : n = 0
     · subst n
       decide
@@ -99,7 +99,7 @@ private theorem good_ternary (n : ℕ) : ¬ 3 ∣ central (ternary n) := by
 
 private theorem good_ternary_surj (m : ℕ) : ¬ 3 ∣ central m → ∃ n, ternary n = m := by
   induction m using Nat.strong_induction_on with
-  | ind m ih =>
+  | h m ih =>
     intro h
     by_cases hm : m = 0
     · exact ⟨0, by subst m; rfl⟩
