@@ -39,8 +39,31 @@
   "privacy": "This complete case only; unrelated private research is excluded.",
   "file_hashes": {
     "standalone.lean": "2ade918bc60778d35dbef2a10c01daaaf04523ea218daccec25b3ad64b49519f",
-    "README.txt": "e8239ea83b51d59f450cb8244854fb79391a7f8b99e918f074ab790c68d16208"
+    "README.txt": "1ebc065bf508115978920b2b77c6380c98cd2ee30ea0a5425cd89230f5791f6c",
+    "statement.lean": "d0856bc0b1013bacd0cd314f849ca6a505c6a2a037e0bd8da267ccab369d0a4a",
+    "proof.lean": "c8a1c73f4a2e34698c2f054474ff7d65a6bc4d6458c205d89c98f0c6c1192b98"
   },
   "agent": "Codex",
-  "model": "GPT-6 family (exact runtime identifier unavailable)"
+  "model": "GPT-6 family (exact runtime identifier unavailable)",
+  "exact_statement_adapter": {
+    "file": "proof.lean",
+    "source_sha256": "c8a1c73f4a2e34698c2f054474ff7d65a6bc4d6458c205d89c98f0c6c1192b98",
+    "audit_id": "20261128T123259Z-helper-lsehkywd",
+    "result": "helpers_verified",
+    "declaration_axioms": {
+      "OMA.solution": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "CakeSevenUnconditional.fixed_three_agent_division": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    "scope": "Supporting lemmas only; no Left to Solve target or upstream submission acceptance was checked."
+  },
+  "proposed_namespace": "OMA.S_arxiv_1803_05470_demands_124",
+  "proposed_statement": "Statement module compiled with its intentional main placeholder. Exact OMA.solution audit excludes sorryAx; proof does not depend on the placeholder."
 }
