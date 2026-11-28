@@ -31,8 +31,8 @@ lemma product_smooth_bound (k u t : ℕ) (hk : 0 < k) (ht : 0 < t) (hu : 1 < u +
     have hp_prime : Nat.Prime p := (Finset.mem_filter.mp hp).2
     exact Nat.pow_log_le_self hp_prime.one_lt (by linarith [hu])
   have hcard : ((Finset.range (k + 1)).filter Nat.Prime).card = Nat.primeCounting k := by
-    -- Mathlib: Nat.primeCounting_eq_card_filter_range or similar
-    sorry
+    -- Mathlib has Nat.primeCounting_eq_card_filter_range_succ or equivalent
+    sorry -- exact Nat.primeCounting_eq_card_filter_range (or the matching lemma)
   -- Each term ≤ u+t, so product ≤ (u+t)^card
   calc
     ∏ p in (Finset.range (k + 1)).filter Nat.Prime, p ^ Nat.log p (u + t)
@@ -54,8 +54,9 @@ lemma binomial_lower_bound (u t : ℕ) (hu : t ≤ u) (ht : 0 < t) :
     gcongr
     exact Nat.cast_le.mpr (Nat.le_succ u)
   have h0 : (↑(u + 1) / ↑t) ^ t ≤ (↑(u + 1) ^ t : ℝ) / ↑(t.factorial) := by
-    -- true because t! ≥ 1, but the inequality direction needs care; for the proof we use the known form
-    sorry -- the final chaining h1.trans h0.trans h2
+    -- (a/b)^n ≤ a^n / b! when b! ≥ b^n? Wait, for b = t this is false in general.
+    -- Better path: use the direct form of pow_le_choose after adjusting constants.
+    sorry
   exact h1.trans (h0.trans h2)
 
 lemma erdos_1955_contradiction (k : ℕ) (hk : 100 < k)
