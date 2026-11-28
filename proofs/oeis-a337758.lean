@@ -93,7 +93,7 @@ theorem coeff_mul_of_zero_below (n : ℕ) (f g : PowerSeries R)
   rw [Finset.sum_eq_single (n, 0)]
   · simp
   · intro p hp hne
-    have hp' := Finset.mem_antidiagonal.mp hp
+    have hp' := Finset.HasAntidiagonal.mem_antidiagonal.mp hp
     have hlt : p.1 < n := by
       by_contra hn
       have h1 : p.1 = n := by omega
@@ -108,7 +108,7 @@ theorem agree_mul {n : ℕ} {f g u v : PowerSeries R}
   simp only [coeff_mul]
   apply Finset.sum_congr rfl
   intro p hp
-  have hsum := Finset.mem_antidiagonal.mp hp
+  have hsum := Finset.HasAntidiagonal.mem_antidiagonal.mp hp
   rw [hf p.1 (by omega), hu p.2 (by omega)]
 
 theorem agree_pow {n : ℕ} {f g : PowerSeries R} (h : Agree n f g) (m : ℕ) :
@@ -900,7 +900,7 @@ theorem coeff_T_sq_other (n : ℕ) (hn : ¬ P2 n) (hnn : ¬ P22 n) : coeff n (T 
   intro p hp
   rw [coeff_T, coeff_T]
   by_cases ha : P2 p.1 <;> by_cases hb : P2 p.2 <;> simp only [ha, hb, if_true, if_false, mul_zero, zero_mul]
-  have he := Finset.mem_antidiagonal.mp hp
+  have he := Finset.HasAntidiagonal.mem_antidiagonal.mp hp
   rcases P2_add ha hb with h | h
   · exact False.elim (hn (he ▸ h))
   · exact False.elim (hnn (he ▸ h))
@@ -923,13 +923,13 @@ theorem coeff_T_sq_power (k : ℕ) : coeff (2 ^ (k + 1)) (T ^ 2) = 1 := by
     obtain ⟨i, hi⟩ := ha
     obtain ⟨j, hj⟩ := hb
     have he : 2 ^ i + 2 ^ j = 2 ^ (k + 1) := by
-      simpa only [hi, hj] using Finset.mem_antidiagonal.mp hp
+      simpa only [hi, hj] using Finset.HasAntidiagonal.mem_antidiagonal.mp hp
     obtain ⟨hij, hki⟩ := (sum_powers_eq_power_iff i j (k + 1)).mp he
     have hik : i = k := by omega
     have hjk : j = k := by omega
     exact False.elim (hne (Prod.ext (by simpa [hik] using hi) (by simpa [hjk] using hj)))
   · intro hnot
-    exact False.elim (hnot (by simp [Finset.mem_antidiagonal, pow_succ, Nat.mul_two]))
+    exact False.elim (hnot (by simp [Finset.HasAntidiagonal.mem_antidiagonal, pow_succ, Nat.mul_two]))
 
 theorem coeff_T_sq_pair {i j : ℕ} (hij : i < j) : coeff (2 ^ i + 2 ^ j) (T ^ 2) = 2 := by
   classical
@@ -942,11 +942,11 @@ theorem coeff_T_sq_pair {i j : ℕ} (hij : i < j) : coeff (2 ^ i + 2 ^ j) (T ^ 2
     change (2 : ℕ) ^ i = 2 ^ j at hh
     have := power_two_injective hh
     omega
-  have hsub : ({p, q} : Finset (ℕ × ℕ)) ⊆ Finset.antidiagonal (2 ^ i + 2 ^ j) := by
+  have hsub : ({p, q} : Finset (ℕ × ℕ)) ⊆ Finset.HasAntidiagonal.antidiagonal (2 ^ i + 2 ^ j) := by
     intro r hr
     simp only [Finset.mem_insert, Finset.mem_singleton] at hr
-    rcases hr with rfl | rfl <;> simp [p, q, Finset.mem_antidiagonal, add_comm]
-  have hz : ∀ r ∈ Finset.antidiagonal (2 ^ i + 2 ^ j), r ∉ ({p, q} : Finset (ℕ × ℕ)) →
+    rcases hr with rfl | rfl <;> simp [p, q, Finset.HasAntidiagonal.mem_antidiagonal, add_comm]
+  have hz : ∀ r ∈ Finset.HasAntidiagonal.antidiagonal (2 ^ i + 2 ^ j), r ∉ ({p, q} : Finset (ℕ × ℕ)) →
       coeff r.1 T * coeff r.2 T = 0 := by
     intro r hr hnot
     rw [coeff_T, coeff_T]
@@ -954,7 +954,7 @@ theorem coeff_T_sq_pair {i j : ℕ} (hij : i < j) : coeff (2 ^ i + 2 ^ j) (T ^ 2
     obtain ⟨a, ha⟩ := ha
     obtain ⟨b, hb⟩ := hb
     have he : 2 ^ a + 2 ^ b = 2 ^ i + 2 ^ j := by
-      simpa only [ha, hb] using Finset.mem_antidiagonal.mp hr
+      simpa only [ha, hb] using Finset.HasAntidiagonal.mem_antidiagonal.mp hr
     rcases (sum_powers_eq_pair_iff a b i j hij).mp he with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
     · exact False.elim (hnot (by
         simp only [Finset.mem_insert, Finset.mem_singleton]
