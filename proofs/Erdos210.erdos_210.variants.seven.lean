@@ -172,7 +172,7 @@ private lemma noFive {s : Finset ℝ²} (hs : s.card = 7)
   have ordinary : (cuts s).filter (fun L => w L = 2) = ordinaryLines s := by
     ext L
     simp only [Finset.mem_filter, mem_ordinaryLines, cuts, Finset.mem_image, Finset.mem_offDiag,
-      Prod.exists, and_assoc, exists_and_left]
+      Prod.exists, and_assoc, exists_and_left, lineOf, w, onLine]
   have part := Finset.sum_filter_add_sum_filter_not (s := cuts s)
     (p := fun L => w L = 2) (f := fun L => w L * (w L - 1))
   have evenPart : ∑ L ∈ (cuts s).filter (fun L => w L = 2), w L * (w L - 1) =
