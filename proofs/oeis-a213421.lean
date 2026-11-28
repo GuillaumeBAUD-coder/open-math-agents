@@ -70,3 +70,4 @@ theorem sol : type_of% @OMA.S_oeis_a213421.main := by
 end OMA.P213421
 
 theorem OMA.solution : type_of% @OMA.S_oeis_a213421.main := OMA.P213421.sol
+
