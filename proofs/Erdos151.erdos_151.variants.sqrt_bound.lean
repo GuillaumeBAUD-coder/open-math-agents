@@ -21,29 +21,27 @@ theorem OMA.solution : type_of% @Erdos151.erdos_151.variants.sqrt_bound := by
     by_contra! hmiss
     have hadj : ∀ w ∈ t, G.Adj v w := fun w hw =>
       (G.mem_neighborFinset v w).mp (Finset.notMem_compl.mp (hmiss w hw))
-    have hvNot : v ∉ t := fun hvt => G.irrefl (hadj v hvt)
     have hins : G.IsClique ((insert v t : Finset (Fin n)) : Set (Fin n)) := by
       rw [Finset.coe_insert, SimpleGraph.isClique_insert]
       exact ⟨ht.1.1, fun w hw _ => hadj w hw⟩
-    exact hvNot (ht.1.2 hins (Finset.subset_insert v t) (Finset.mem_insert_self v t))
+    exact G.irrefl (hadj v (ht.1.2 hins (Finset.subset_insert v t) (Finset.mem_insert_self v t)))
   · push Not at h
     obtain ⟨s, hs⟩ := G.maximumIndepSet_exists
     let closed (v : Fin n) := insert v (G.neighborFinset v)
     have hcover : (Finset.univ : Finset (Fin n)) ⊆ s.biUnion closed := by
       intro w _
-      by_cases hw : w ∈ s
-      · exact Finset.mem_biUnion.mpr ⟨w, hw, Finset.mem_insert_self w _⟩
-      · have hadj : ∃ v ∈ s, G.Adj w v := by
-          by_contra! hno
-          have hins : G.IsIndepSet (insert w (s : Set (Fin n))) := by
-            rw [← SimpleGraph.isClique_compl, SimpleGraph.isClique_insert]
-            exact ⟨(SimpleGraph.isClique_compl (G := G)).mpr hs.isIndepSet,
-              fun v hv hne => (G.compl_adj w v).mpr ⟨hne, hno v hv⟩⟩
-          have hmax := hs.isMaximalIndepSet s
-          exact hw (hmax.2 hins (Set.subset_insert w _) (Set.mem_insert w _))
-        obtain ⟨v, hv, hwv⟩ := hadj
-        exact Finset.mem_biUnion.mpr
-          ⟨v, hv, Finset.mem_insert_of_mem ((G.mem_neighborFinset v w).mpr hwv.symm)⟩
+      by_contra hw
+      have hno : ∀ v ∈ s, ¬ G.Adj w v := by
+        intro v hv hwv
+        exact hw (Finset.mem_biUnion.mpr
+          ⟨v, hv, Finset.mem_insert_of_mem ((G.mem_neighborFinset v w).mpr hwv.symm)⟩)
+      have hins : G.IsIndepSet (insert w (s : Set (Fin n))) := by
+        rw [← SimpleGraph.isClique_compl, SimpleGraph.isClique_insert]
+        exact ⟨(SimpleGraph.isClique_compl (G := G)).mpr hs.isIndepSet,
+          fun v hv hne => (G.compl_adj w v).mpr ⟨hne, hno v hv⟩⟩
+      exact hw (Finset.mem_biUnion.mpr
+        ⟨w, (hs.isMaximalIndepSet s).2 hins (Set.subset_insert w _) (Set.mem_insert w _),
+          Finset.mem_insert_self w _⟩)
     have hcard : n ≤ s.card * n.sqrt := by
       have hsize : n ≤ (s.biUnion closed).card := by
         simpa using Finset.card_le_card hcover
@@ -53,14 +51,12 @@ theorem OMA.solution : type_of% @Erdos151.erdos_151.variants.sqrt_bound := by
       exact (Finset.card_insert_le v _).trans (h v)
     have hsqrt : n.sqrt ≤ s.card := by
       by_contra! hlt
-      have hmul : s.card * n.sqrt < n.sqrt * n.sqrt :=
-        Nat.mul_lt_mul_of_pos_right hlt (Nat.zero_lt_of_lt hlt)
-      exact (not_lt_of_ge ((Nat.sqrt_le n).trans hcard)) hmul
+      exact (not_lt_of_ge ((Nat.sqrt_le n).trans hcard))
+        (Nat.mul_lt_mul_of_pos_right hlt (Nat.zero_lt_of_lt hlt))
     apply complement_bound s hsqrt
     intro t ht
     obtain ⟨a, b, ha, hb, hab⟩ := Finset.one_lt_card_iff.mp ht.2
     by_cases hsa : a ∈ s
-    · by_cases hsb : b ∈ s
-      · exact (hs.isIndepSet hsa hsb hab (ht.1.1 ha hb hab)).elim
-      · exact ⟨b, hb, Finset.mem_compl.mpr hsb⟩
+    · exact ⟨b, hb, Finset.mem_compl.mpr
+        (fun hsb => hs.isIndepSet hsa hsb hab (ht.1.1 ha hb hab))⟩
     · exact ⟨a, ha, Finset.mem_compl.mpr hsa⟩

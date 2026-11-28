@@ -265,87 +265,8 @@ theorem exists_unique_series : ∃! f : PowerSeries R,
   rintro f ⟨hf, hf1, he⟩
   exact normalized_unique hf series_constant hf1 series_linear (he.trans series_equation.symm)
 
-lemma output_map {S : Type*} [CommRing S] (h : R →+* S) (f : PowerSeries R) :
-    (output f).map h = output (f.map h) := by
-  have hm : (output f).map h = (f.map h).subst ((argument f).map h) :=
-    map_subst (argument_hasSubst f) f
-  rw [hm]
-  have hthree : (PowerSeries.map h) (3 : PowerSeries R) = (3 : PowerSeries S) :=
-    map_ofNat (PowerSeries.map h) 3
-  simp [output, argument, hthree]
-
-/-- The construction commutes with coefficient maps; in particular its rational solution is integral. -/
-theorem series_map {S : Type*} [CommRing S] (h : R →+* S) :
-    (series : PowerSeries R).map h = (series : PowerSeries S) := by
-  have h0 : constantCoeff ((series : PowerSeries R).map h) = 0 := by
-    rw [← coeff_zero_eq_constantCoeff_apply, coeff_map, coeff_zero_eq_constantCoeff_apply,
-      series_constant, map_zero]
-  apply normalized_unique h0 series_constant (by simp [series_linear]) series_linear
-  rw [← output_map, series_equation, series_equation]
-  simp
-
-/-- The series with coefficient one at every positive index over the field with two elements. -/
-def allOnes : PowerSeries (ZMod 2) := X * mk 1
-
-lemma allOnes_equation : output allOnes = X ^ 2 := by
-  let s := allOnes
-  let h := argument s
-  have hs : s * (1 - X) = X := by
-    dsimp [s, allOnes]
-    rw [mul_assoc, mk_one_mul_one_sub_eq_one, mul_one]
-  have htwo : (2 : PowerSeries (ZMod 2)) = 0 := by
-    calc
-      (2 : PowerSeries (ZMod 2)) = C (2 : ZMod 2) := (map_ofNat C 2).symm
-      _ = C (0 : ZMod 2) := congrArg C (by decide)
-      _ = 0 := map_zero C
-  have hh : h * (1 - X) ^ 2 = X ^ 2 := by
-    calc
-      h * (1 - X) ^ 2 =
-          X * (s * (1 - X)) * (1 - X) - 3 * X * (s * (1 - X)) ^ 2 := by
-            dsimp [h, argument]
-            ring
-      _ = X ^ 2 - 4 * X ^ 3 := by rw [hs]; ring
-      _ = X ^ 2 := by linear_combination -(2 * X ^ 3) * htwo
-  have hi : (1 - h) * (1 - X) ^ 2 = 1 := by
-    linear_combination -hh - X * htwo
-  have hc : s.subst h * (1 - h) = h := by
-    have hsub : HasSubst h := argument_hasSubst s
-    have ht := congrArg (substAlgHom hsub) hs
-    simpa only [map_mul, map_sub, map_one, coe_substAlgHom, subst_X hsub] using ht
-  change s.subst h = X ^ 2
-  calc
-    s.subst h = s.subst h * ((1 - h) * (1 - X) ^ 2) := by rw [hi, mul_one]
-    _ = h * (1 - X) ^ 2 := by rw [← mul_assoc, hc]
-    _ = X ^ 2 := hh
-
-/-- Hanna's oddness conclusion for any normalized integral solution of the exact source equation. -/
-theorem source_oddness (f : PowerSeries ℤ) (hf : constantCoeff f = 0)
-    (hf1 : coeff 1 f = 1) (he : f.subst (X * f - 3 * X * f ^ 2) = X ^ 2) :
-    ∀ n : ℕ, 1 ≤ n → Odd (coeff n f) := by
-  let hom := Int.castRingHom (ZMod 2)
-  let g := f.map hom
-  have hg0 : constantCoeff g = 0 := by
-    simp [g, ← coeff_zero_eq_constantCoeff_apply, hf]
-  have hg1 : coeff 1 g = 1 := by simp [g, hf1]
-  have hg : output g = X ^ 2 := by
-    change output f = X ^ 2 at he
-    have hm := congrArg (PowerSeries.map hom) he
-    rw [output_map] at hm
-    simpa [g] using hm
-  have hgs : g = allOnes := normalized_unique hg0 (by simp [allOnes]) hg1
-    (by simp [allOnes]) (hg.trans allOnes_equation.symm)
-  intro n hn
-  rw [← ZMod.intCast_eq_one_iff_odd]
-  have ht := congrArg (coeff n) hgs
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hn
-  simpa [g, hom, allOnes, Nat.add_comm] using ht
-
 /-- The integer sequence at its official OEIS indices (with $a(0)=0$). -/
 def a (n : ℕ) : ℤ := coeff n series
-
-/-- All terms of OEIS A396843 are odd. -/
-theorem all_terms_odd (n : ℕ) (hn : 1 ≤ n) : Odd (a n) :=
-  source_oddness series series_constant series_linear series_equation n hn
 
 /-- An integral series with the exact OEIS normalization exists and is unique. -/
 theorem source_existence : ∃! f : PowerSeries ℤ,
@@ -390,11 +311,6 @@ lemma polynomialStage_coe (n : ℕ) : (polynomialStage n : PowerSeries ℤ) = st
       rw [← Polynomial.coeff_coe, ← hsub]
       rfl
 
-lemma a_eq_polynomial (n : ℕ) : a n = (polynomialStage n).coeff n := by
-  have h := coeff_eq_of_dvd (series_approximation (R := ℤ) n) (by omega : n < n + 2)
-  rw [← polynomialStage_coe] at h
-  simpa only [a, Polynomial.coeff_coe] using h
-
 lemma polynomialStage_0 : polynomialStage 0 = Polynomial.X := rfl
 
 lemma polynomialStage_1 : polynomialStage 1 = Polynomial.X + 3 * Polynomial.X ^ 2 := by
@@ -407,69 +323,14 @@ lemma polynomialStage_1 : polynomialStage 1 = Polynomial.X + 3 * Polynomial.X ^ 
   simp only [← Polynomial.C_mul_X_pow_eq_monomial, map_neg, map_ofNat]
   ring
 
-lemma polynomialStage_2 : polynomialStage 2 =
-    Polynomial.X + 3 * Polynomial.X ^ 2 + 15 * Polynomial.X ^ 3 := by
-  rw [polynomialStage, polynomialStage_1]
-  have hc : ((Polynomial.X + 3 * Polynomial.X ^ 2 : Polynomial ℤ).comp
-      (Polynomial.X * (Polynomial.X + 3 * Polynomial.X ^ 2) -
-        3 * Polynomial.X * (Polynomial.X + 3 * Polynomial.X ^ 2) ^ 2)).coeff 4 = -15 := by
-    conv_lhs => arg 1; simp; ring_nf
-    norm_num
-  rw [hc]
-  simp only [← Polynomial.C_mul_X_pow_eq_monomial, map_neg, map_ofNat]
-  ring
-
-lemma polynomialStage_3 : polynomialStage 3 =
-    Polynomial.X + 3 * Polynomial.X ^ 2 + 15 * Polynomial.X ^ 3 + 117 * Polynomial.X ^ 4 := by
-  rw [polynomialStage, polynomialStage_2]
-  have hc : ((Polynomial.X + 3 * Polynomial.X ^ 2 + 15 * Polynomial.X ^ 3 : Polynomial ℤ).comp
-      (Polynomial.X * (Polynomial.X + 3 * Polynomial.X ^ 2 + 15 * Polynomial.X ^ 3) -
-        3 * Polynomial.X * (Polynomial.X + 3 * Polynomial.X ^ 2 + 15 * Polynomial.X ^ 3) ^ 2)).coeff 5 =
-      -117 := by
-    conv_lhs => arg 1; simp; ring_nf
-    norm_num
-  rw [hc]
-  simp only [← Polynomial.C_mul_X_pow_eq_monomial, map_neg, map_ofNat]
-  ring
-
-lemma polynomialStage_4 : polynomialStage 4 =
-    Polynomial.X + 3 * Polynomial.X ^ 2 + 15 * Polynomial.X ^ 3 +
-      117 * Polynomial.X ^ 4 + 975 * Polynomial.X ^ 5 := by
-  rw [polynomialStage, polynomialStage_3]
-  have hc : ((Polynomial.X + 3 * Polynomial.X ^ 2 + 15 * Polynomial.X ^ 3 +
-      117 * Polynomial.X ^ 4 : Polynomial ℤ).comp
-      (Polynomial.X * (Polynomial.X + 3 * Polynomial.X ^ 2 + 15 * Polynomial.X ^ 3 +
-        117 * Polynomial.X ^ 4) - 3 * Polynomial.X *
-          (Polynomial.X + 3 * Polynomial.X ^ 2 + 15 * Polynomial.X ^ 3 + 117 * Polynomial.X ^ 4) ^ 2)).coeff 6 =
-      -975 := by
-    conv_lhs => arg 1; simp; ring_nf
-    norm_num
-  rw [hc]
-  simp only [← Polynomial.C_mul_X_pow_eq_monomial, map_neg, map_ofNat]
-  ring
-
 lemma a_eq_polynomial_of_lt (n m : ℕ) (h : n < m + 2) : a n = (polynomialStage m).coeff n := by
   have ht := coeff_eq_of_dvd (series_approximation (R := ℤ) m) h
   rw [← polynomialStage_coe] at ht
   simpa only [a, Polynomial.coeff_coe] using ht
 
-lemma a_0 : a 0 = 0 := by
-  simpa only [a, coeff_zero_eq_constantCoeff_apply] using (series_constant (R := ℤ))
-lemma a_1 : a 1 = 1 := series_linear
 lemma a_2 : a 2 = 3 := by
   rw [a_eq_polynomial_of_lt 2 1 (by omega), polynomialStage_1]
   norm_num [Polynomial.coeff_X]
-lemma a_3 : a 3 = 15 := by
-  rw [a_eq_polynomial_of_lt 3 2 (by omega), polynomialStage_2]
-  norm_num [Polynomial.coeff_X]
-lemma a_4 : a 4 = 117 := by
-  rw [a_eq_polynomial_of_lt 4 3 (by omega), polynomialStage_3]
-  norm_num [Polynomial.coeff_X]
-lemma a_5 : a 5 = 975 := by
-  rw [a_eq_polynomial_of_lt 5 4 (by omega), polynomialStage_4]
-  norm_num [Polynomial.coeff_X]
-
-
 end
 end A396843Proof
 namespace OMA.A396843
