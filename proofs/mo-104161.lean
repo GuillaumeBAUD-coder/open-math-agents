@@ -36,7 +36,7 @@ theorem fails : ¬ (type_of% @OMA.S_mo_104161.main) := by
     intro p q r h
     have hr : r = 24 - p - q := by omega
     rw [hr]
-    exact sameBlocks ⟨p, by omega⟩ ⟨q, by omega⟩
+    exact sameBlocks ⟨p, by omega⟩ ⟨q, by change q < 25 - p; omega⟩
   obtain ⟨t, ht⟩ := reconstruction 24 firstWord secondWord agree
   obtain ⟨i, hi⟩ := differentRotations ⟨t % 24, Nat.mod_lt _ (by decide)⟩
   apply hi
