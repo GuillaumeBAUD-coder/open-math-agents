@@ -1,9 +1,10 @@
 import OMAStatements.S_oeis_a152661
 import Mathlib
+open OMA.S_oeis_a152661
 
 theorem OMA.solution : type_of% @OMA.S_oeis_a152661.main := by
   refine ⟨fun t => ?_, fun t => ?_⟩
-  · simp only [OMA.S_oeis_a152661.sameParity]
+  · simp only [sameParity]
     rw [show t + 4 - 2 = t + 1 + 1 by omega, show t + 3 - 2 = t + 1 by omega,
       show t + 2 - 2 = t by omega]
     obtain ⟨j, rfl | rfl⟩ := Nat.even_or_odd' t
@@ -19,7 +20,7 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a152661.main := by
       simp only [Nat.factorial_succ]
       push_cast
       ring
-  · simp only [OMA.S_oeis_a152661.sameParity, OMA.S_oeis_a152661.evenOddPairs]
+  · simp only [sameParity, evenOddPairs]
     rw [show t + 2 - 2 = t by omega, show t + 1 - 1 = t by omega]
     obtain ⟨j, rfl | rfl⟩ := Nat.even_or_odd' t
     · simp only [show (2 * j + 2) / 2 = j + 1 by omega, show (2 * j + 2 + 1) / 2 = j + 1 by omega,
