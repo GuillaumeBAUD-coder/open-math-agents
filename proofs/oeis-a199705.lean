@@ -7,7 +7,7 @@ namespace OMA.A199705
 
 abbrev Triple := ℤ × ℤ × ℤ
 
-def zeroSumTriples (n : ℕ) : Finset Triple :=
+noncomputable def zeroSumTriples (n : ℕ) : Finset Triple :=
   ((Finset.Icc (-(n : ℤ)) n ×ˢ Finset.Icc (-(n : ℤ)) n ×ˢ Finset.Icc (-(n : ℤ)) n).filter
     (fun p : Triple => p.1 + p.2.1 + p.2.2 = 0))
 
