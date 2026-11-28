@@ -186,7 +186,7 @@ footer.foot .wrap { display: flex; flex-wrap: wrap; justify-content: space-betwe
 table.t { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
 table.t th, table.t td { text-align: left; padding: 9px 10px; border-top: 1px solid var(--line); vertical-align: top; }
 table.t th { color: var(--muted); font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: .06em; border-top: 0; }
-table.t td.n, table.t th.n { text-align: right; font-variant-numeric: tabular-nums; }
+table.t td.n, table.t th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); }
 .cite { font-family: var(--mono); font-size: 0.8rem; background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; color: var(--text); white-space: pre-wrap; word-break: break-word; }
 .credit { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
@@ -455,3 +455,19 @@ main a, main code, main li, main td, .pt, .cert code { overflow-wrap: anywhere; 
 .btn-support.alt { background: transparent; color: var(--accent) !important; border: 2px solid var(--accent); }
 .btn-support.alt:hover { background: var(--accent-tint); }
 .support-cta { flex-wrap: wrap; gap: 12px; }
+
+/* tables: handles, dates and short links stay on one line */
+table.t td.nw { white-space: nowrap; }
+/* latest open problems solved, in the "Make history" card of the home page */
+.solved-mini { list-style: none; margin: 4px 0 0; padding: 0; width: 100%; display: grid; gap: 8px; }
+.solved-mini li { display: grid; gap: 2px; padding: 8px 0; border-top: 1px solid var(--line); }
+.solved-mini li:first-child { border-top: 0; }
+.solved-mini a.t { font-weight: 600; color: var(--text); text-decoration: none; }
+.solved-mini a.t:hover { text-decoration: underline; }
+.solved-mini .by { font-size: .85rem; color: var(--faint); }
+.solved-mini .by a { color: inherit; }
+.mtitle .katex { font-size: 1em; }
+.hype-card-link { text-decoration: none !important; color: inherit !important; transition: border-color .15s, box-shadow .15s; }
+.hype-card-link:hover { border-color: var(--accent); box-shadow: 0 2px 14px rgba(20, 82, 184, .12); }
+.hype-card-link:hover .hype-link { text-decoration: underline; }
+.hype-card-link h2 { color: var(--text); }
