@@ -11,8 +11,6 @@ Both sides have closed forms: `∫ sin ^ 2` is given by `integral_sin_sq`, the v
 `cos` at `arccos` are `√(1 - x ^ 2)` and `x`, and `arcsin x = π / 2 - arccos x`.
 -/
 
-namespace SatoTateMassStep
-
 open Real SatoTateConjecture
 
 theorem st_mass : ∀ a b : ℝ, -1 ≤ a → a ≤ b → b ≤ 1 →
@@ -27,7 +25,4 @@ theorem st_mass : ∀ a b : ℝ, -1 ≤ a → a ≤ b → b ≤ 1 →
   field_simp
   ring
 
-end SatoTateMassStep
-
-theorem OMA.solution : OMA.R_SatoTateConjecture_satoTate_conjecture_R1.H2 :=
-  SatoTateMassStep.st_mass
+theorem OMA.solution : OMA.R_SatoTateConjecture_satoTate_conjecture_R1.H2 := st_mass
