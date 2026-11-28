@@ -6,12 +6,12 @@
       "id": "erdos-634",
       "status": "open",
       "title": "Erdős Problem 634 — congruent triangle tilings",
-      "summary": "The prime counts are classified. Beeson and Roșu proved that the possible primes are 2, 3, and the primes congruent to 1 modulo 4. Koa Okano translated the registered simplex tiling into a geometric dissection using Bonfioli’s library. Lean compiled the original source and verified the registered exclusion of primes greater than 3 congruent to 3 modulo 4. The full classification of composite counts remains open.",
+      "summary": "Beeson and Roșu classified every prime tile count. Koa Okano used Bonfioli’s geometry library to prove that the registered simplex tilings and congruent dissections are equivalent for every tile count. An independent Lean build verified that a prime count occurs exactly for 2, 3, and primes congruent to 1 modulo 4. The general classification for composite counts remains open.",
       "date": "2026-11-28",
       "sources": [
         "https://arxiv.org/abs/2607.23453",
         "https://github.com/mjbeeson/TriangleTilingPrimeLean/blob/7880520e81b39e48af61ebf59548ccccfe2d8371/TriangleTiling/Laczkovich/PrimeMain.lean#L142",
-        "https://github.com/KoaOkano/erdos-prize-formalizations/actions/runs/46114346156/job/141017729789",
+        "https://github.com/KoaOkano/erdos-prize-formalizations/actions/runs/46179251096/job/141084859134",
         "https://github.com/KoaOkano/erdos-prize-formalizations/pull/4"
       ]
     },
