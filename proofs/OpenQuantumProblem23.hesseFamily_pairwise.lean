@@ -10,14 +10,11 @@ set_option maxHeartbeats 1000000 in
 theorem OMA.solution : type_of% @OpenQuantumProblem23.hesseFamily_pairwise := by
   intro i j hij
   have hs : hesseS ^ 2 = (1 / 2 : ℝ) := Real.sq_sqrt (by norm_num)
-  have hs4 : hesseS ^ 4 = (1 / 4 : ℝ) := by
-    rw [show 4 = 2 * 2 by decide, pow_mul, hs]; norm_num
   have hr2 : Real.sqrt 3 ^ 2 = 3 := Real.sq_sqrt (by norm_num)
-  have hr4 : Real.sqrt 3 ^ 4 = 9 := by
-    rw [show 4 = 2 * 2 by decide, pow_mul, hr2]; norm_num
+  have fourth (x : ℝ) : x ^ 4 = (x ^ 2) ^ 2 := pow_mul x 2 2
   have hw2 : ω ^ 2 = star ω := by
     apply Complex.ext <;> norm_num [ω, pow_two, Complex.mul_re, Complex.mul_im] <;> nlinarith [hr2]
   fin_cases i <;> fin_cases j <;> simp at hij <;>
     simp only [overlapSq, hesseFamily, vec3, Fin.sum_univ_three, hw2];
   all_goals simp [Complex.normSq_apply, ω, sicOverlapSq] <;>
-    ring_nf <;> norm_num [hs, hs4, hr2, hr4]
+    ring_nf <;> norm_num [fourth, hs, hr2]

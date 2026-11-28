@@ -2,6 +2,8 @@ import OMAStatements.S_oeis_a024459
 import Mathlib.RingTheory.PowerSeries.Basic
 import Mathlib.Tactic
 
+-- Original Lean proof: @eliayousf.
+
 namespace OpenMath.A024459
 
 open Finset PowerSeries
@@ -63,32 +65,34 @@ private theorem d_recur (n : ℕ) :
     simp only [d_odd]
     simpa only [Nat.add_assoc, Nat.add_left_comm, Nat.add_comm] using product_recur (k+2) (k+2)
 
+private noncomputable def fibResidual : ℤ⟦X⟧ := (1-X-X^2) * mk a
+
 private theorem first_coeff (n : ℕ) :
-    coeff n (((1-X-X^2 : ℤ⟦X⟧) * mk a)) =
+    coeff n fibResidual =
       a n - (if 1 ≤ n then a (n-1) else 0) - (if 2 ≤ n then a (n-2) else 0) := by
   have hp : (1-X-X^2 : ℤ⟦X⟧) = 1-X^1-X^2 := by simp
-  rw [hp]
+  rw [fibResidual, hp]
   simp only [sub_mul, one_mul, map_sub, coeff_X_pow_mul', coeff_mk]
 
 private theorem first_shifted (n : ℕ) :
-    coeff (n+2) (((1-X-X^2 : ℤ⟦X⟧) * mk a)) = d n := by
+    coeff (n+2) fibResidual = d n := by
   rw [first_coeff, if_pos (by omega), if_pos (by omega),
     show n+2-1 = n+1 by omega, show n+2-2 = n by omega, d]
 
-private theorem second_coeff (n : ℕ) (P : ℤ⟦X⟧) :
-    coeff n ((1-C 2*X^2-C 2*X^4+X^6 : ℤ⟦X⟧) * P) =
-      coeff n P - 2*(if 2 ≤ n then coeff (n-2) P else 0) -
-        2*(if 4 ≤ n then coeff (n-4) P else 0) + (if 6 ≤ n then coeff (n-6) P else 0) := by
-  simp only [sub_mul, add_mul, one_mul, map_add, map_sub, mul_assoc, coeff_C_mul, coeff_X_pow_mul']
-
-private theorem expanded_formula : ((1-X-X^2 : ℤ⟦X⟧) * (1-C 2*X^2-C 2*X^4+X^6)) * mk a =
-    X + C 2 * X^2 + X^3 - C 3 * X^4 := by
-  rw [mul_comm (1-X-X^2 : ℤ⟦X⟧), mul_assoc]
+/-- Mathar's ordinary generating function, with numerator and denominator both negated. -/
+theorem main : type_of% @OMA.S_oeis_a024459.main := by
+  have hden :
+      ((1+X^2 : ℤ⟦X⟧) * (1+X-X^2) * (1-X-X^2)^2) =
+        (1-X-X^2) * (1-C 2*X^2-C 2*X^4+X^6) := by
+    simp
+    ring
+  rw [hden, mul_comm (1-X-X^2 : ℤ⟦X⟧), mul_assoc]
+  change _ * fibResidual = _
   ext n
-  rw [second_coeff]
+  simp only [sub_mul, add_mul, one_mul, map_add, map_sub, mul_assoc, coeff_C_mul, coeff_X_pow_mul']
   by_cases hn : n < 8
   · interval_cases n <;>
-      simp only [map_add, map_sub, coeff_X, coeff_X_pow, coeff_C_mul] <;>
+      simp only [coeff_X, coeff_X_pow] <;>
       norm_num [first_coeff, a, weightedSum, lucas, fibonacci, Finset.sum_range_succ]
   · obtain ⟨k, rfl⟩ : ∃ k : ℕ, n = k + 8 := ⟨n - 8, by omega⟩
     rw [if_pos (by omega), if_pos (by omega), if_pos (by omega),
@@ -97,19 +101,8 @@ private theorem expanded_formula : ((1-X-X^2 : ℤ⟦X⟧) * (1-C 2*X^2-C 2*X^4+
       show k+6+2-4 = (k+2)+2 by omega, first_shifted,
       show k+6+2-6 = k+2 by omega, first_shifted]
     rw [d_recur]
-    simp only [map_add, map_sub, coeff_X, coeff_C_mul, coeff_X_pow]
+    simp only [coeff_X, coeff_X_pow]
     split_ifs <;> omega
-
-/-- Mathar's ordinary generating function, with numerator and denominator both negated. -/
-theorem main : ((1+X^2 : ℤ⟦X⟧) * (1+X-X^2) * (1-X-X^2)^2) * mk a =
-    X + C 2 * X^2 + X^3 - C 3 * X^4 := by
-  have hden :
-      ((1+X^2 : ℤ⟦X⟧) * (1+X-X^2) * (1-X-X^2)^2) =
-        (1-X-X^2) * (1-C 2*X^2-C 2*X^4+X^6) := by
-    simp
-    ring
-  rw [hden]
-  exact expanded_formula
 
 end OpenMath.A024459
 

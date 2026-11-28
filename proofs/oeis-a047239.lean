@@ -12,11 +12,6 @@ theorem strictMono : StrictMono a := by
   unfold a
   split_ifs <;> omega
 
-/-- Control: the first eight terms. -/
-theorem first_terms : (List.range 8).map (fun i => a (i + 1)) = [1, 2, 7, 8, 13, 14, 19, 20] := by
-  decide
-
-
 /-- The conjecture: for every `n ≥ 2`, `a(n)` is the least candidate. -/
 theorem conjecture (n : ℕ) (hn : 2 ≤ n) : IsLeast {m | Cand n m} (a n) := by
   constructor

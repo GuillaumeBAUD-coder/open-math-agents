@@ -33,54 +33,20 @@ lemma s2_mul : s2 * (cm * f2) = 1 := by
   apply invOfUnit_mul
   simp [cm, f2]
 
-lemma e1 (S : ℤ⟦X⟧) : S * (cm * f1) = S - C 3 * (X ^ 1 * S) + C 3 * (X ^ 2 * S)
-    - C 5 * (X ^ 3 * S) + C 6 * (X ^ 4 * S) - C 2 * (X ^ 5 * S) + C 4 * (X ^ 6 * S) := by
-  unfold cm f1
-  simp only [map_ofNat]
-  ring
-
-lemma e2 (S : ℤ⟦X⟧) : S * (cm * f2) = S - C 3 * (X ^ 1 * S) + C 3 * (X ^ 2 * S)
-    - C 3 * (X ^ 3 * S) + C 2 * (X ^ 4 * S) := by
-  unfold cm f2
-  simp only [map_ofNat]
-  ring
-
-lemma c1 (n : ℕ) : coeff n (s1 * (cm * f1)) = coeff n s1
-    - 3 * (if 1 ≤ n then coeff (n - 1) s1 else 0) + 3 * (if 2 ≤ n then coeff (n - 2) s1 else 0)
-    - 5 * (if 3 ≤ n then coeff (n - 3) s1 else 0) + 6 * (if 4 ≤ n then coeff (n - 4) s1 else 0)
-    - 2 * (if 5 ≤ n then coeff (n - 5) s1 else 0) + 4 * (if 6 ≤ n then coeff (n - 6) s1 else 0) := by
-  rw [e1]
-  simp only [map_add, map_sub, coeff_C_mul, coeff_X_pow_mul']
-
-lemma c2 (n : ℕ) : coeff n (s2 * (cm * f2)) = coeff n s2
-    - 3 * (if 1 ≤ n then coeff (n - 1) s2 else 0) + 3 * (if 2 ≤ n then coeff (n - 2) s2 else 0)
-    - 3 * (if 3 ≤ n then coeff (n - 3) s2 else 0) + 2 * (if 4 ≤ n then coeff (n - 4) s2 else 0) := by
-  rw [e2]
-  simp only [map_add, map_sub, coeff_C_mul, coeff_X_pow_mul']
-
-lemma vals1 : coeff 1 s1 = 3 ∧ coeff 4 s1 = 33 := by
-  have h : ∀ n, coeff n (s1 * (cm * f1)) = if n = 0 then 1 else 0 := by
-    intro n; rw [s1_mul, coeff_one]
-  have h0 := h 0
-  have h1 := h 1
-  have h2 := h 2
-  have h3 := h 3
-  have h4 := h 4
-  rw [c1] at h0 h1 h2 h3 h4
-  norm_num at h0 h1 h2 h3 h4
-  constructor <;> linarith
-
-lemma vals2 : coeff 4 s2 = 25 := by
-  have h : ∀ n, coeff n (s2 * (cm * f2)) = if n = 0 then 1 else 0 := by
-    intro n; rw [s2_mul, coeff_one]
-  have h0 := h 0
-  have h1 := h 1
-  have h2 := h 2
-  have h3 := h 3
-  have h4 := h 4
-  rw [c2] at h0 h1 h2 h3 h4
-  norm_num at h0 h1 h2 h3 h4
-  linarith
+lemma vals : coeff 1 s1 = 3 ∧ coeff 4 s1 = 33 ∧ coeff 4 s2 = 25 := by
+  have h1 := s1_mul
+  have h2 := s2_mul
+  simp only [cm, f1, f2, map_ofNat] at h1 h2
+  ring_nf at h1 h2
+  have g := fun n => And.intro (congrArg (coeff n) h1) (congrArg (coeff n) h2)
+  obtain ⟨a0, b0⟩ := g 0
+  obtain ⟨a1, b1⟩ := g 1
+  obtain ⟨a2, b2⟩ := g 2
+  obtain ⟨a3, b3⟩ := g 3
+  obtain ⟨a4, b4⟩ := g 4
+  simp [coeff_X_pow, coeff_X, ← map_ofNat C, coeff_mul_C, coeff_X_pow_mul',
+    coeff_mul_X_pow', -eq_intCast, coeff_one] at a0 a1 a2 a3 a4 b0 b1 b2 b3 b4
+  refine ⟨?_, ?_, ?_⟩ <;> linarith
 
 end OMA.P_oeis_a003477
 
@@ -89,6 +55,6 @@ theorem OMA.disproof : ¬ (type_of% @OMA.S_oeis_a003477.main) := by
   intro h
   have h4 := h 4 le_rfl
   simp only [a_eq, b_eq, show 4 - 3 = 1 from rfl, Finset.sum_range_one, zero_add] at h4
-  obtain ⟨v1, v4⟩ := vals1
-  rw [v4, vals2, v1] at h4
+  obtain ⟨v1, v4, w4⟩ := vals
+  rw [v4, w4, v1] at h4
   norm_num at h4
