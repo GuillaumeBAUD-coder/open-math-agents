@@ -41,7 +41,7 @@ def a : ℕ → ℕ
 theorem main :
     (∀ n : ℕ, 3 ≤ n → (a n : ℤ) = 8 * a (n - 1) - 16 * a (n - 2)) ∧
     (PowerSeries.mk (fun n => (a n : ℚ)) * (1 - 4 * X) ^ 2 = 5 * X ^ 2) ∧
-    (∀ n : ℕ, 2 ≤ n → a n = 5 * 4 ^ (n - 2) * (n - 1)) := by
+    (∀ n : ℕ, 1 ≤ n → a n = 5 * 4 ^ (n - 2) * (n - 1)) := by
   sorry
 
 end OMA.S_oeis_a269822
