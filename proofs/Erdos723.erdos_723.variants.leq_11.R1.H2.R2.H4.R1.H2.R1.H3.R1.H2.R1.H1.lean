@@ -330,52 +330,6 @@ theorem normal_four_pairs (S : Finset (Fin 6)) (F : Finset (Finset (Fin 6)))
       ((Finset.univ \ S).map e.toEmbedding)) = _
     rw [moved,outside]
 
-theorem normal_four_with_triple (S T : Finset (Fin 6)) (F : Finset (Finset (Fin 6)))
-    (four : S.card = 4)
-    (three : T.card = 3) (outer : (Finset.univ \ S) ⊆ T)
-    (full : F = insert S (insert T (available S \ T.powersetCard 2))) :
-    ∃ e : Equiv.Perm (Fin 6),
-      F.map (transform e) = insert firstFour (insert (insert 0 outerPair)
-        (available firstFour \ (insert 0 outerPair).powersetCard 2)) := by
-  let D := Finset.univ \ S
-  have card_two : D.card = 2 := by
-    change (Finset.univ \ S).card = 2
-    rw [Finset.card_sdiff_of_subset (Finset.subset_univ S),Finset.card_univ,Fintype.card_fin,four]
-  have residue : (T \ D).card = 1 := by rw [Finset.card_sdiff_of_subset outer,three,card_two]
-  obtain ⟨u,hu⟩ := Finset.card_eq_one.mp residue
-  have mem : u ∈ T \ D := hu ▸ Finset.mem_singleton_self u
-  have inS : u ∈ S := by
-    by_contra absent
-    have belongs : u ∈ D := Finset.mem_sdiff.mpr ⟨Finset.mem_univ _,absent⟩
-    exact (Finset.mem_sdiff.mp mem).2 belongs
-  have expandT : T = insert u D := by
-    ext x
-    rw [Finset.mem_insert]
-    constructor
-    · intro onT
-      by_cases inD : x ∈ D
-      · exact Or.inr inD
-      · have on : x ∈ T \ D := Finset.mem_sdiff.mpr ⟨onT,inD⟩
-        rw [hu] at on
-        exact Or.inl (Finset.mem_singleton.mp on)
-    · rintro (left | right)
-      · exact left.symm ▸ (Finset.mem_sdiff.mp mem).1
-      · exact outer right
-  obtain ⟨e,marked,chosen⟩ := relabel_four S four u inS
-  have moved := moves_four S e chosen
-  have outside : D.map e.toEmbedding = outerPair := by
-    change (Finset.univ \ S).map e.toEmbedding = outerPair
-    rw [Finset.map_sdiff,Finset.map_univ_equiv,moved]
-    rfl
-  have tripleRelabeled : T.map e.toEmbedding = insert 0 outerPair := by
-    rw [expandT,Finset.map_insert,Equiv.toEmbedding_apply,marked,outside]
-  refine ⟨e,?_⟩
-  rw [full,Finset.map_insert,Finset.map_insert,Finset.map_sdiff,move_available]
-  change insert (S.map e.toEmbedding) (insert (T.map e.toEmbedding)
-    (available (S.map e.toEmbedding) \ (T.powersetCard 2).map (transform e))) = _
-  unfold transform
-  rw [← Finset.powersetCard_map,moved,tripleRelabeled]
-
 end WeightNineteenFourRelabel
 
 namespace WeightNineteenFourNormalize
