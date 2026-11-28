@@ -30,7 +30,7 @@ export type Problem = {
   /** Where the details live in D1: 0 the core tables, 1 the packed MathOverflow tables. */
   shard: number;
   /** A solution has been announced but is not verified (or is disputed). */
-  claim?: { summary: string; date: string; sources: string[] };
+  claim?: { summary: string; date: string; sources: string[]; silent?: boolean };
   /** Editorial note (e.g. why a related result does not settle this one). */
   note?: { summary: string; sources: string[] };
 };
@@ -52,7 +52,8 @@ export type FullProblem = Problem & {
   formalizedHere?: boolean;
 };
 
-export type Override = { id: string; status: "solved" | "claimed" | "open"; title?: string; summary: string; date: string; sources: string[] };
+/** silent: added automatically (announcement watch); it changes what the desk hands out but is not shown on the site. */
+export type Override = { id: string; status: "solved" | "claimed" | "open"; title?: string; summary: string; date: string; sources: string[]; silent?: boolean };
 const OVERRIDES = (overridesRaw as unknown as { reviewed: string; entries: Override[] }).entries;
 export const STATUS_REVIEWED = (overridesRaw as unknown as { reviewed: string }).reviewed;
 const OV = new Map(OVERRIDES.map((o) => [o.id, o]));
@@ -77,14 +78,14 @@ export const MO_BUCKETS = cards.meta.moBuckets;
 (cards as { rows: CardRow[] | null }).rows = null;
 
 /** Problems settled recently (verified), removed from the open list and shown on /status. */
-export const SETTLED: (Override & { problem?: Problem })[] = OVERRIDES.filter((o) => o.status === "solved").map((o) => ({ ...o, problem: ALL.find((p) => p.id === o.id) }));
+export const SETTLED: (Override & { problem?: Problem })[] = OVERRIDES.filter((o) => o.status === "solved" && !o.silent).map((o) => ({ ...o, problem: ALL.find((p) => p.id === o.id) }));
 /** Problems with an announced but unverified solution: kept, flagged, ranked lower. */
-export const CLAIMED: Override[] = OVERRIDES.filter((o) => o.status === "claimed");
+export const CLAIMED: Override[] = OVERRIDES.filter((o) => o.status === "claimed" && !o.silent);
 
 export const PROBLEMS: Problem[] = ALL.filter((p) => OV.get(p.id)?.status !== "solved").map((p) => {
   const o = OV.get(p.id);
   if (!o) return p;
-  if (o.status === "claimed") return { ...p, fame: Math.max(1, p.fame - 30), claim: { summary: o.summary, date: o.date, sources: o.sources } };
+  if (o.status === "claimed") return { ...p, fame: Math.max(1, p.fame - 30), claim: { summary: o.summary, date: o.date, sources: o.sources, silent: Boolean(o.silent) } };
   return { ...p, title: o.title ?? p.title, note: { summary: o.summary, sources: o.sources } };
 });
 const count = (k: Kind) => PROBLEMS.filter((p) => p.kind === k).length;
@@ -100,6 +101,20 @@ export const META = {
 };
 /** Every open problem, stated in Lean or not. */
 export const OPEN_TOTAL = META.counts.open + META.counts.unformalized;
+
+export type Tally = { left: Record<Kind, number>; solved: Record<Kind, number>; total: number };
+/**
+ * The catalogue's count of each kind split in two: what is still left, and what was proved here (left + solved = the
+ * count of that kind, always). The kinds are fixed when the catalogue is built; the solved list is live. A problem
+ * proved here therefore leaves its column ("open", "known"...) the moment it enters "solved". The home page, /board and
+ * /programs all count this way, from the same solved list (getStats().solved), so their numbers agree.
+ */
+export function tally(ps: Problem[], solved: Set<string>): Tally {
+  const zero = () => ({ open: 0, known: 0, warmup: 0, unformalized: 0 }) as Record<Kind, number>;
+  const t: Tally = { left: zero(), solved: zero(), total: ps.length };
+  for (const p of ps) (solved.has(p.id) ? t.solved : t.left)[p.kind]++;
+  return t;
+}
 const BY_ID = new Map(PROBLEMS.map((p) => [p.id, p]));
 
 export const KIND_LABEL: Record<Kind, string> = {
@@ -122,6 +137,45 @@ export const isProvable = (p: Problem) => p.kind !== "unformalized";
 
 export function getProblem(id: string) {
   return BY_ID.get(id);
+}
+
+/** A problem taken out of the catalogue because it was settled (listed on /status), or null. Its old links still work:
+ * they lead to /status instead of a 404. */
+export function settledEntry(id: string): Override | null {
+  const o = OV.get(id);
+  return o && o.status === "solved" && !o.silent ? o : null;
+}
+
+let LOWER: Map<string, string> | null = null;
+/**
+ * The catalogue id that a URL with a slightly wrong id most likely means, or null (then the page is a 404): the same
+ * id in another case (erdos142.erdos_142), an Erdős problem by number written like the ids of the unformalized ones
+ * (erdos-142, erdos_142 → Erdos142.erdos_142), or a module holding a single statement (Erdos142 → Erdos142.erdos_142).
+ * Only asked for ids that are not in the catalogue; the lower-case index is built on first use.
+ */
+export function resolveId(raw: string): string | null {
+  if (BY_ID.has(raw)) return raw;
+  if (!LOWER) {
+    LOWER = new Map();
+    for (const p of PROBLEMS) LOWER.set(p.id.toLowerCase(), p.id);
+  }
+  const low = raw.toLowerCase();
+  const same = LOWER.get(low);
+  if (same) return same;
+  const erdos = /^erdos[-_]?(\d{1,4})$/.exec(low);
+  if (erdos) {
+    const n = Number(erdos[1]);
+    return LOWER.get(`erdos${n}.erdos_${n}`) ?? LOWER.get(`erdos-${n}`) ?? null;
+  }
+  const prefix = `${low}.`;
+  const under: string[] = [];
+  for (const [k, id] of LOWER) {
+    if (k.startsWith(prefix) && !k.slice(prefix.length).includes(".")) {
+      under.push(id);
+      if (under.length > 1) return null;
+    }
+  }
+  return under[0] ?? null;
 }
 
 /** The problem with its statement, Lean source and references (one D1 read). */

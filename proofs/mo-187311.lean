@@ -169,94 +169,14 @@ theorem OMA.solution : type_of% @OMA.S_mo_187311.main := by
 
 namespace MO187311Eisen
 
-noncomputable def F (m : ℕ) : ℤ[X] := X ^ (2 * m) + 2 * X ^ m + 2
-
-private theorem lower_degree (m : ℕ) (hm : 0 < m) :
-    (2 * X ^ m + 2 : ℤ[X]).natDegree < 2 * m := by
-  calc
-    _ ≤ max (2 * X ^ m : ℤ[X]).natDegree (2 : ℤ[X]).natDegree := natDegree_add_le ..
-    _ ≤ m := by simp [natDegree_mul]
-    _ < _ := by omega
-
-theorem monic (m : ℕ) (hm : 0 < m) : (F m).Monic := by
-  rw [F, add_assoc]
-  apply monic_X_pow_add
-  exact lt_of_le_of_lt degree_le_natDegree (WithBot.coe_lt_coe.mpr (lower_degree m hm))
-
-theorem natDegree_F (m : ℕ) (hm : 0 < m) : (F m).natDegree = 2 * m := by
-  rw [F, add_assoc, natDegree_add_eq_left_of_natDegree_lt, natDegree_X_pow]
-  simpa using lower_degree m hm
-
-theorem irreducible_map (m : ℕ) (hm : 0 < m) :
-    Irreducible ((F m).map (Int.castRingHom ℚ)) := by
-  have hmon := monic m hm
-  have hd : (F m).degree = (2 * m : ℕ) := by
-    rw [degree_eq_natDegree hmon.ne_zero, natDegree_F m hm]
-  have hpos : 0 < 2 * m := by omega
-  apply (IsPrimitive.Int.irreducible_iff_irreducible_map_cast hmon.isPrimitive).mp
-  apply irreducible_of_eisenstein_criterion
-    (Ideal.isPrime_span_singleton_of_prime (show Prime (2 : ℤ) by norm_num))
-  · rw [hmon.leadingCoeff, Ideal.mem_span_singleton]
-    decide
-  · intro k hk
-    rw [hd] at hk
-    have hkNat : k < 2 * m := WithBot.coe_lt_coe.mp hk
-    rw [Ideal.mem_span_singleton]
-    cases k with
-    | zero => simp [F, coeff_X_pow, hm.ne, hpos.ne]
-    | succ k =>
-      simp [F, coeff_X_pow, hkNat.ne]
-      split <;> simp
-  · rw [hd]
-    exact_mod_cast hpos
-  · rw [Ideal.span_singleton_pow, Ideal.mem_span_singleton]
-    simp [F, coeff_X_pow, hm.ne, hpos.ne]
-  · exact hmon.isPrimitive
-
 end MO187311Eisen
 
 namespace MO187311Family
 open Polynomial
 
-/-- Two inequivalent representations with the primitive factor written explicitly. -/
-theorem representations (m : ℕ) :
-    ∃ a b c d : ℤ[X],
-      (a ≠ b ∧ a ≠ -b ∧ a ≠ c ∧ a ≠ -c ∧ a ≠ d ∧ a ≠ -d ∧
-       b ≠ c ∧ b ≠ -c ∧ b ≠ d ∧ b ≠ -d ∧ c ≠ d ∧ c ≠ -d) ∧
-      a^2+b^2 = C 5 * (X^(2*m)+2*X^m+2) ∧ c^2+d^2 = a^2+b^2 := by
-  let t : ℤ[X] := X^m + 1
-  refine ⟨t+2,2*t-1,t-2,2*t+1,?_,?_,?_⟩
-  · have ht : t.eval 1 = 2 := by simp [t]
-    repeat' constructor
-    all_goals
-      intro h
-      have he := congrArg (Polynomial.eval (1 : ℤ)) h
-      norm_num [eval_add, eval_sub, eval_mul, eval_neg, ht] at he
-  · dsimp [t]
-    rw [show 2*m=m+m by omega, pow_add]
-    norm_num
-    ring
-  · ring
-
 end MO187311Family
 
 namespace MO187311Family
 open Polynomial MO187311Eisen
-
-/-- The examples in the question exist in every positive even degree. -/
-theorem all_even_degrees (m : ℕ) (hm : 0 < m) :
-    ∃ a b c d p : ℤ[X],
-      (a ≠ b ∧ a ≠ -b ∧ a ≠ c ∧ a ≠ -c ∧ a ≠ d ∧ a ≠ -d ∧
-       b ≠ c ∧ b ≠ -c ∧ b ≠ d ∧ b ≠ -d ∧ c ≠ d ∧ c ≠ -d) ∧
-      a^2+b^2 = p ∧ c^2+d^2 = p ∧ p.natDegree = 2*m ∧
-      p.content = 5 ∧ Irreducible (p.map (Int.castRingHom ℚ)) := by
-  obtain ⟨a,b,c,d,hd,h₁,h₂⟩ := representations m
-  change a^2+b^2 = C 5 * F m at h₁
-  refine ⟨a,b,c,d,C 5 * F m,hd,h₁,h₂.trans h₁,?_,?_,?_⟩
-  · rw [natDegree_C_mul (by norm_num : (5:ℤ) ≠ 0), natDegree_F m hm]
-  · rw [content_C_mul, (monic m hm).isPrimitive.content_eq_one, mul_one]
-    decide
-  · rw [Polynomial.map_mul, map_C, irreducible_mul_iff]
-    exact Or.inr ⟨irreducible_map m hm, isUnit_C.mpr (isUnit_iff_ne_zero.mpr (by norm_num))⟩
 
 end MO187311Family

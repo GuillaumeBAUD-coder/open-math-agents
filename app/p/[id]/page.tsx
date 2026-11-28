@@ -5,7 +5,7 @@ import CopyPrompt from "@/components/CopyPrompt";
 import { outcomeBadge, outcomeOf, outcomeText, variantNote, reviewOf } from "@/lib/outcome";
 import Credit from "@/components/Credit";
 import { Difficulty } from "@/components/ProblemRow";
-import { getProblem, getFull, skeleton, proofPath, statementSkeleton, prizeOf, META, KIND_LABEL, TASK, answerPlaceholder, type Problem } from "@/lib/catalog";
+import { getProblem, getFull, skeleton, proofPath, statementSkeleton, prizeOf, META, KIND_LABEL, TASK, answerPlaceholder, settledEntry, resolveId, type Problem } from "@/lib/catalog";
 import { getLiveMap, getActiveIds, getEvents, getSolved, getSteps, type Step, type Solved } from "@/lib/db";
 import { pointsFor } from "@/lib/points";
 import { renderStatement, plain } from "@/lib/render";
@@ -14,6 +14,7 @@ import { findStep, rootProblem } from "@/lib/stepinfo";
 import { SITE, REPO_URL } from "@/lib/site";
 import { ago } from "@/lib/time";
 import { pendingFor } from "@/lib/pending";
+import { idParam } from "@/lib/params";
 
 export const revalidate = 120;
 export const dynamicParams = true;
@@ -22,7 +23,8 @@ export function generateStaticParams() { return []; }
 type Props = { params: Promise<{ id: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const id = decodeURIComponent((await params).id);
+  const id = idParam((await params).id);
+  if (!id) return {};
   const p = await getFull(id);
   if (p) return { title: p.title, description: plain(p.statement || p.lean || p.title, 180), alternates: { canonical: `/p/${encodeURIComponent(p.id)}` } };
   const st = parseStep(id);
@@ -66,13 +68,19 @@ function Tree({ target, steps, solvedIds, live }: { target: string; steps: Step[
 }
 
 export default async function ProblemPage({ params }: Props) {
-  const id = decodeURIComponent((await params).id);
+  const id = idParam((await params).id);
+  if (!id) notFound();
   const p = await getFull(id);
   const isStep = !p && STEP_RE.test(id);
   if (!p && !isStep) {
     // A reduction id (X.R1, as the feed lists "split it into steps"): its page is the page of what it splits.
     const red = id.match(/^(.+)\.R\d{1,2}$/);
     if (red && (getProblem(red[1]) || (STEP_RE.test(red[1]) && rootProblem(red[1])))) redirect(`/p/${encodeURIComponent(red[1])}`);
+    // Settled since (taken out of the catalogue): its old links lead to the entry that says how, not to a 404.
+    if (settledEntry(id)) redirect(`/status#${encodeURIComponent(id)}`);
+    // The same id in another case, an Erdős problem by number (erdos-142), a module with one statement (Erdos142).
+    const canonical = resolveId(id);
+    if (canonical && canonical !== id) redirect(`/p/${encodeURIComponent(canonical)}`);
     notFound();
   }
 
@@ -98,6 +106,9 @@ export default async function ProblemPage({ params }: Props) {
   let title: string, body: React.ReactNode, lean: string, file: string, sk: string, points: number, root: Problem | undefined;
   const unformal = p?.kind === "unformalized";
   const pending = solution ? [] : pendingFor(id);
+  // What the waiting pull requests submitted (a statement is not a proof); older entries without a kind fall back to the
+  // problem's kind.
+  const pendingStatement = pending.length > 0 && (pending.some((x) => x.kind) ? pending.every((x) => x.kind === "statement") : p?.kind === "unformalized");
   if (p && unformal) {
     title = p.title; lean = ""; file = `statements/${p.id}.lean`; sk = statementSkeleton(p); points = 0; root = p;
     body = (
@@ -193,9 +204,9 @@ export default async function ProblemPage({ params }: Props) {
           )}
           {pending.length > 0 && (
             <div className="panel" style={{ borderColor: "#E8C547" }}>
-              <h4 style={{ color: "#a16207" }}>{unformal ? "Lean statement submitted · awaiting review" : "Proof accepted by the Lean checker · awaiting review"}</h4>
+              <h4 style={{ color: "#a16207" }}>{pendingStatement ? "Lean statement submitted · awaiting review" : "Proof accepted by the Lean checker · awaiting review"}</h4>
               <p style={{ margin: "0 0 8px" }}>
-                {unformal
+                {pendingStatement
                   ? "A formalization of this statement in Lean was submitted and compiles. A maintainer checks that it says exactly what the problem says before it is merged; then the problem becomes provable here."
                   : p?.kind === "open"
                     ? "A proof of this open problem passed the Lean checker. Before an open problem is marked solved, a maintainer checks that the Lean statement says exactly what the problem says (a mistranslated statement is the usual reason an \u201copen problem\u201d falls easily). Until then it stays listed as open; once the review is done, the proof is merged and credited to its author."
@@ -207,7 +218,7 @@ export default async function ProblemPage({ params }: Props) {
               </p>
             </div>
           )}
-          {p?.claim && (
+          {p?.claim && !p.claim.silent && (
             <div className="panel" style={{ borderColor: "var(--text)" }}>
               <h4 style={{ color: "var(--accent)" }}>A solution has been claimed · not verified</h4>
               <p style={{ margin: "0 0 8px" }}>{p.claim.summary}</p>

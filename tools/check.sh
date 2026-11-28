@@ -10,7 +10,10 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 if [ -n "${2:-}" ]; then OUT="$(cd "$(dirname "$2")" && pwd)/$(basename "$2")"; else OUT=/dev/stdout; fi
 FC="${OMA_FC:-$ROOT/.oma/formal-conjectures}"
 LINT="$(python3 -I "$ROOT/tools/lint.py" "$FILE" "$ROOT/data/catalog.json")"; LINT_OK=$?
-emit() { python3 -I -c 'import json,sys; d=json.loads(sys.argv[1]); d.update(verdict=sys.argv[2], reason=sys.argv[3], log=sys.argv[4][-6000:]); print(json.dumps(d, ensure_ascii=False))' "$LINT" "$1" "$2" "${3:-}" > "$OUT"; }
+# Only the end of the log is kept, and it is cut here: one argument may not exceed 128 KB, and a long compiler log used
+# to make python fail to start, leaving an empty verdict ("checker produced no verdict") for a proof that just failed.
+emit() { local L="${3:-}"; [ "${#L}" -le 6000 ] || L="${L: -6000}"
+  python3 -I -c 'import json,sys; d=json.loads(sys.argv[1]); d.update(verdict=sys.argv[2], reason=sys.argv[3], log=sys.argv[4][-6000:]); print(json.dumps(d, ensure_ascii=False))' "$LINT" "$1" "$2" "$L" > "$OUT"; }
 if [ $LINT_OK -ne 0 ]; then emit rejected "lint: $(python3 -I -c 'import json,sys;print("; ".join(json.loads(sys.argv[1])["errors"]))' "$LINT")"; exit 1; fi
 field() { python3 -I -c 'import json,sys;print(json.loads(sys.argv[1])[sys.argv[2]])' "$LINT" "$1"; }
 MODULE="$(field imports)"; THM="$(field theorem)"
@@ -40,7 +43,10 @@ if [ -d "$ROOT/statements" ]; then
 fi
 TYPE="$(field type)"
 if [ "$MODULE" != "Mathlib" ]; then
-  LOG="$(timeout 2400 lake build "$MODULE" 2>&1)" || { emit fault "could not build imported module $MODULE" "$LOG"; exit 2; }
+  # Builds only what the submission imports: one problem file, or a chain of merged reductions (seconds to a few
+  # minutes when formal-conjectures' libraries come prebuilt, as in CI). 20 minutes, so that with the 30 for the
+  # submission itself a check ends with a verdict inside its job's 60-minute limit.
+  LOG="$(timeout 1200 lake build "$MODULE" 2>&1)" || { emit fault "could not build imported module $MODULE" "$LOG"; exit 2; }
 fi
 SUB="OMASubmission_$$.lean"
 # A problem that asks for a value: audit with the placeholder's value skipped (tools/oma_audit.lean).

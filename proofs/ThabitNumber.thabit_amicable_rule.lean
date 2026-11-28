@@ -39,15 +39,11 @@ theorem OMA.thabit_core {t N P Q R : ℕ} (ht : 2 ≤ t) (hN : N = 2 * t)
     rw [ArithmeticFunction.isMultiplicative_sigma.map_mul_of_coprime hNR,
       OMA.sigma_prime hr]
   generalize ArithmeticFunction.sigma 1 N = S at hS hsA hsB
-  have zS : (S : ℤ) = 4 * t - 1 := by have : (S : ℤ) + 1 = 4 * t := by exact_mod_cast hS
-                                      linarith
-  have zP : (P : ℤ) = 3 * t - 1 := by have : (P : ℤ) + 1 = 3 * t := by exact_mod_cast hP
-                                      linarith
-  have zQ : (Q : ℤ) = 6 * t - 1 := by have : (Q : ℤ) + 1 = 6 * t := by exact_mod_cast hQ
-                                      linarith
-  have zR : (R : ℤ) = 18 * (t * t) - 1 := by
-    have : (R : ℤ) + 1 = 18 * (t * t) := by exact_mod_cast hR
-    linarith
+  zify at hS hP hQ hR
+  have zS : (S : ℤ) = 4 * t - 1 := by omega
+  have zP : (P : ℤ) = 3 * t - 1 := by omega
+  have zQ : (Q : ℤ) = 6 * t - 1 := by omega
+  have zR : (R : ℤ) = 18 * (t * t) - 1 := by omega
   refine ⟨?_, ?_, ?_⟩
   · rw [hsA, hN]
     zify

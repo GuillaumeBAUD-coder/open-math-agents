@@ -467,3 +467,7 @@ table.t td.nw { white-space: nowrap; }
 .solved-mini .by { font-size: .85rem; color: var(--faint); }
 .solved-mini .by a { color: inherit; }
 .mtitle .katex { font-size: 1em; }
+.hype-card-link { text-decoration: none !important; color: inherit !important; transition: border-color .15s, box-shadow .15s; }
+.hype-card-link:hover { border-color: var(--accent); box-shadow: 0 2px 14px rgba(20, 82, 184, .12); }
+.hype-card-link:hover .hype-link { text-decoration: underline; }
+.hype-card-link h2 { color: var(--text); }
