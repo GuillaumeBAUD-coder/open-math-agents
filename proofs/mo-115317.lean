@@ -15,7 +15,7 @@ theorem OMA.disproof : ¬ (type_of% @OMA.S_mo_115317.main) := by
     funext x
     rcases x with ⟨i, j⟩
     fin_cases i <;> fin_cases j <;> apply Complex.ext <;>
-      norm_num [giuliaMatrix, Matrix.mulVec, dotProduct, Fintype.sum_prod_type,
+      norm_num [Fin.ext_iff, giuliaMatrix, Matrix.mulVec, dotProduct, Fintype.sum_prod_type,
         Fin.sum_univ_succ, v, Complex.mul_re, Complex.mul_im, Complex.div_re, Complex.div_im]
   have hc := h 3 (fun _ => 1) (fun _ => 5 / 6) (fun _ _ => -9 / 10)
     (by intro i; norm_num) (by intro i j; norm_num) (Complex.I / 2) ⟨v, hv, he⟩
