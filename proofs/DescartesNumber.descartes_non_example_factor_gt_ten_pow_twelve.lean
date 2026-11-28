@@ -44,8 +44,6 @@ decreasing_by all_goals omega
 private def passesTrialProduct (p : ℕ) : Bool :=
   (p < 2) || (p.minFac != p) || (trialProduct % p == 0)
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 5000000 in
 private theorem trial_certificate : check passesTrialProduct 0 1001 = true := by decide +kernel
 
 private theorem prime_dvd_trialProduct (p : ℕ) (hp : p.Prime) (hle : p ≤ 1000) :
@@ -247,8 +245,6 @@ private def checkMasks : List ℕ → ℕ → ℕ → Bool
   | [], P, D => admissible P D 0 && admissible P D 1 && admissible P D 2 && admissible P D 3
   | p::ps, P, D => checkMasks ps P D && checkMasks ps (P*p) (D*(p-1))
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 5000000 in
 private theorem mask_certificate : checkMasks smallPrimes 1 1 = true := by decide +kernel
 
 private theorem mask_sound (ps : List ℕ) (P D : ℕ) (hnd : ps.Nodup)
@@ -415,358 +411,216 @@ theorem lower_of_checked
     rw [hw]
     decide
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block15_0 : check (fun i => passes (15*(2*i+1))) 0 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block15_1 : check (fun i => passes (15*(2*i+1))) 1024 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block15_2 : check (fun i => passes (15*(2*i+1))) 2048 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block15_3 : check (fun i => passes (15*(2*i+1))) 3072 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block15_4 : check (fun i => passes (15*(2*i+1))) 4096 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block15_5 : check (fun i => passes (15*(2*i+1))) 5120 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block15_6 : check (fun i => passes (15*(2*i+1))) 6144 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block15_7 : check (fun i => passes (15*(2*i+1))) 7168 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block15_8 : check (fun i => passes (15*(2*i+1))) 8192 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block15_9 : check (fun i => passes (15*(2*i+1))) 9216 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block15_10 : check (fun i => passes (15*(2*i+1))) 10240 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block15_11 : check (fun i => passes (15*(2*i+1))) 11264 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block15_12 : check (fun i => passes (15*(2*i+1))) 12288 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block15_13 : check (fun i => passes (15*(2*i+1))) 13312 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block15_14 : check (fun i => passes (15*(2*i+1))) 14336 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block15_15 : check (fun i => passes (15*(2*i+1))) 15360 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block15_16 : check (fun i => passes (15*(2*i+1))) 16384 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block15_17 : check (fun i => passes (15*(2*i+1))) 17408 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block15_18 : check (fun i => passes (15*(2*i+1))) 18432 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block15_19 : check (fun i => passes (15*(2*i+1))) 19456 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block15_20 : check (fun i => passes (15*(2*i+1))) 20480 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block15_21 : check (fun i => passes (15*(2*i+1))) 21504 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block15_22 : check (fun i => passes (15*(2*i+1))) 22528 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block15_23 : check (fun i => passes (15*(2*i+1))) 23552 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block15_24 : check (fun i => passes (15*(2*i+1))) 24576 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block15_25 : check (fun i => passes (15*(2*i+1))) 25600 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block15_26 : check (fun i => passes (15*(2*i+1))) 26624 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block15_27 : check (fun i => passes (15*(2*i+1))) 27648 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block15_28 : check (fun i => passes (15*(2*i+1))) 28672 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block15_29 : check (fun i => passes (15*(2*i+1))) 29696 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block15_30 : check (fun i => passes (15*(2*i+1))) 30720 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block15_31 : check (fun i => passes (15*(2*i+1))) 31744 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block15_32 : check (fun i => passes (15*(2*i+1))) 32768 565 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block21_0 : check (fun i => passes (21*(2*i+1))) 0 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block21_1 : check (fun i => passes (21*(2*i+1))) 1024 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block21_2 : check (fun i => passes (21*(2*i+1))) 2048 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block21_3 : check (fun i => passes (21*(2*i+1))) 3072 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block21_4 : check (fun i => passes (21*(2*i+1))) 4096 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block21_5 : check (fun i => passes (21*(2*i+1))) 5120 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block21_6 : check (fun i => passes (21*(2*i+1))) 6144 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block21_7 : check (fun i => passes (21*(2*i+1))) 7168 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block21_8 : check (fun i => passes (21*(2*i+1))) 8192 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block21_9 : check (fun i => passes (21*(2*i+1))) 9216 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block21_10 : check (fun i => passes (21*(2*i+1))) 10240 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block21_11 : check (fun i => passes (21*(2*i+1))) 11264 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block21_12 : check (fun i => passes (21*(2*i+1))) 12288 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block21_13 : check (fun i => passes (21*(2*i+1))) 13312 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block21_14 : check (fun i => passes (21*(2*i+1))) 14336 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block21_15 : check (fun i => passes (21*(2*i+1))) 15360 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block21_16 : check (fun i => passes (21*(2*i+1))) 16384 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block21_17 : check (fun i => passes (21*(2*i+1))) 17408 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block21_18 : check (fun i => passes (21*(2*i+1))) 18432 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block21_19 : check (fun i => passes (21*(2*i+1))) 19456 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block21_20 : check (fun i => passes (21*(2*i+1))) 20480 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block21_21 : check (fun i => passes (21*(2*i+1))) 21504 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block21_22 : check (fun i => passes (21*(2*i+1))) 22528 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block21_23 : check (fun i => passes (21*(2*i+1))) 23552 258 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block429_0 : check (fun i => passes (429*(2*i+1))) 0 1024 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block429_1 : check (fun i => passes (429*(2*i+1))) 1024 142 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block561_0 : check (fun i => passes (561*(2*i+1))) 0 891 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block663_0 : check (fun i => passes (663*(2*i+1))) 0 754 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block85085_0 : check (fun i => passes (85085*(2*i+1))) 0 6 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block627_0 : check (fun i => passes (627*(2*i+1))) 0 797 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block741_0 : check (fun i => passes (741*(2*i+1))) 0 675 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block95095_0 : check (fun i => passes (95095*(2*i+1))) 0 5 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block759_0 : check (fun i => passes (759*(2*i+1))) 0 659 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block897_0 : check (fun i => passes (897*(2*i+1))) 0 557 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block115115_0 : check (fun i => passes (115115*(2*i+1))) 0 4 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block22287_0 : check (fun i => passes (22287*(2*i+1))) 0 22 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block957_0 : check (fun i => passes (957*(2*i+1))) 0 522 = true := by
   decide +kernel
 
-set_option maxRecDepth 4096 in
-set_option maxHeartbeats 12000000 in
 private theorem block871131_0 : check (fun i => passes (871131*(2*i+1))) 0 1 = true := by
   decide +kernel
 
