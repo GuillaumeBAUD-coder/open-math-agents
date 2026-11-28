@@ -31,16 +31,7 @@ def ind (c d j : ℤ) : ℤ := if c < j ∧ j ≤ d then 1 else 0
 lemma ind_mul (c d c' d' j : ℤ) :
     ind c d j * ind c' d' j = ind (max c c') (min d d') j := by
   unfold ind
-  by_cases h1 : c < j ∧ j ≤ d
-  · by_cases h2 : c' < j ∧ j ≤ d'
-    · have h3 : max c c' < j ∧ j ≤ min d d' := ⟨max_lt h1.1 h2.1, le_min h1.2 h2.2⟩
-      rw [if_pos h1, if_pos h2, if_pos h3, mul_one]
-    · have h3 : ¬ (max c c' < j ∧ j ≤ min d d') := fun h =>
-        h2 ⟨lt_of_le_of_lt (le_max_right _ _) h.1, h.2.trans (min_le_right _ _)⟩
-      rw [if_pos h1, if_neg h2, if_neg h3, mul_zero]
-  · have h3 : ¬ (max c c' < j ∧ j ≤ min d d') := fun h =>
-      h1 ⟨lt_of_le_of_lt (le_max_left _ _) h.1, h.2.trans (min_le_left _ _)⟩
-    rw [if_neg h1, if_neg h3, zero_mul]
+  split_ifs <;> omega
 
 lemma sum_ind (lo hi c d : ℤ) :
     ∑ j ∈ Ioc lo hi, ind c d j = ((min hi d - max lo c).toNat : ℤ) := by
@@ -76,31 +67,17 @@ lemma cover (t N a : ℤ) (ht : 0 < t) (ha1 : 1 ≤ a) (haN : a ≤ N) :
     unfold phi U
     ring
   simp only [e, Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum, sum_ind]
-  rcases le_or_gt a t with h1 | h1
-  · simp (disch := omega) only [max_eq_left, max_eq_right, min_eq_left, min_eq_right,
+  obtain h | h | h | h | h : a ≤ t ∨ t < a ∧ a ≤ 2 * t ∨ 2 * t < a ∧ a ≤ 3 * t ∨
+    3 * t < a ∧ a ≤ 4 * t ∨ 4 * t < a := by omega
+  all_goals simp (disch := omega) only [max_eq_left, max_eq_right, min_eq_left, min_eq_right,
       Int.toNat_of_nonneg, Int.toNat_of_nonpos, Nat.cast_zero]
-    omega
-  rcases le_or_gt a (2 * t) with h2 | h2
-  · simp (disch := omega) only [max_eq_left, max_eq_right, min_eq_left, min_eq_right,
-      Int.toNat_of_nonneg, Int.toNat_of_nonpos, Nat.cast_zero]
-    omega
-  rcases le_or_gt a (3 * t) with h3 | h3
-  · simp (disch := omega) only [max_eq_left, max_eq_right, min_eq_left, min_eq_right,
-      Int.toNat_of_nonneg, Int.toNat_of_nonpos, Nat.cast_zero]
-    omega
-  rcases le_or_gt a (4 * t) with h4 | h4
-  · simp (disch := omega) only [max_eq_left, max_eq_right, min_eq_left, min_eq_right,
-      Int.toNat_of_nonneg, Int.toNat_of_nonpos, Nat.cast_zero]
-    omega
-  · simp (disch := omega) only [max_eq_left, max_eq_right, min_eq_left, min_eq_right,
-      Int.toNat_of_nonneg, Int.toNat_of_nonpos, Nat.cast_zero]
-    omega
+  all_goals omega
 
 lemma phi_sq (t j : ℤ) (ht : 0 ≤ t) :
     phi t j ^ 2 = 1681 - 1485 * ind (-2 * t) (-t) j + 819 * ind (-t) 0 j
       - 237 * ind 0 t j + 83 * ind t (2 * t) j := by
   unfold phi ind
-  split_ifs <;> first | omega | norm_num
+  split_ifs <;> omega
 
 lemma sum_phi_sq (t N : ℤ) (ht : 0 < t) (hN : 2 * t ≤ N) :
     ∑ j ∈ Ioc (-2 * t) N, phi t j ^ 2 = 1681 * N + 2542 * t := by
@@ -198,21 +175,11 @@ lemma pair_bound (A : Finset ℕ) (hS : IsSidon (A : Set ℕ)) (F : ℕ → ℕ 
           exact hgz e (by simpa using he)
   have hR : ∑ p ∈ A.offDiag.filter (fun p => ¬ p.1 < p.2), F p.1 p.2 =
       ∑ p ∈ A.offDiag.filter (fun p => p.1 < p.2), F p.1 p.2 := by
-    apply Finset.sum_nbij' Prod.swap Prod.swap
+    refine Finset.sum_nbij' Prod.swap Prod.swap ?_ ?_ (fun p _ => p.swap_swap) (fun p _ => p.swap_swap)
+      fun p _ => hsymm p.1 p.2 <;>
     · intro p hp
-      simp only [Finset.mem_filter, Finset.mem_offDiag] at hp
-      simp only [Finset.mem_filter, Finset.mem_offDiag, Prod.fst_swap, Prod.snd_swap]
+      simp only [Finset.mem_filter, Finset.mem_offDiag, Prod.fst_swap, Prod.snd_swap] at hp ⊢
       exact ⟨⟨hp.1.2.1, hp.1.1, fun h => hp.1.2.2 h.symm⟩, by omega⟩
-    · intro p hp
-      simp only [Finset.mem_filter, Finset.mem_offDiag] at hp
-      simp only [Finset.mem_filter, Finset.mem_offDiag, Prod.fst_swap, Prod.snd_swap]
-      exact ⟨⟨hp.1.2.1, hp.1.1, fun h => hp.1.2.2 h.symm⟩, by omega⟩
-    · intro p _
-      exact Prod.swap_swap p
-    · intro p _
-      exact Prod.swap_swap p
-    · intro p _
-      exact hsymm p.1 p.2
   have h2 : ∑ p ∈ A.offDiag, F p.1 p.2 ≤ 2 * ∑ e ∈ Finset.range n, g e := by
     rw [← Finset.sum_filter_add_sum_filter_not A.offDiag (fun p => p.1 < p.2), hR]
     linarith
@@ -233,11 +200,10 @@ theorem core (A : Finset ℕ) (N t : ℕ) (ht : 0 < t) (h2t : 2 * t ≤ N)
         ∑ a ∈ A, ∑ j ∈ Ioc (-2 * (t : ℤ)) N, phi t j * U t a j := by
       simp only [Finset.mul_sum]
       exact Finset.sum_comm
+    have := Finset.card_nsmul_le_sum A _ _ fun a ha => cover t N a htz (hmem a ha).1 (hmem a ha).2
     rw [e]
-    calc 164 * (t : ℤ) * A.card = ∑ _a ∈ A, 164 * (t : ℤ) := by
-          rw [Finset.sum_const, nsmul_eq_mul]
-          ring
-      _ ≤ _ := Finset.sum_le_sum fun a ha => cover t N a htz (hmem a ha).1 (hmem a ha).2
+    rw [nsmul_eq_mul] at this
+    linarith
   have hcs := Finset.sum_mul_sq_le_sq_mul_sq (Ioc (-2 * (t : ℤ)) N) (fun j => phi t j)
     (fun j => ∑ a ∈ A, U t a j)
   have hsymm : ∀ a b : ℕ, ∑ j ∈ Ioc (-2 * (t : ℤ)) N, U t a j * U t b j =
@@ -245,13 +211,7 @@ theorem core (A : Finset ℕ) (N t : ℕ) (ht : 0 < t) (h2t : 2 * t ≤ N)
     fun a b => Finset.sum_congr rfl fun j _ => mul_comm _ _
   have hdiag : ∀ a ∈ A, ∑ j ∈ Ioc (-2 * (t : ℤ)) N, U t a j * U t a j ≤ 10 * (t : ℤ) := by
     intro a ha
-    have h := corr_le t N a a htz (hmem a ha).1 le_rfl (hmem a ha).2
-    have hc : cc t ((a : ℤ) - a) = 10 * t := by
-      unfold cc
-      rw [if_pos (by omega)]
-      ring
-    rw [hc] at h
-    exact h
+    simpa [cc, htz.le] using corr_le t N a a htz (hmem a ha).1 le_rfl (hmem a ha).2
   have hoff : ∀ a ∈ A, ∀ b ∈ A, a < b →
       ∑ j ∈ Ioc (-2 * (t : ℤ)) N, U t a j * U t b j ≤ cc t (((b - a - 1 : ℕ) : ℤ) + 1) := by
     intro a ha b hb hab
@@ -396,26 +356,16 @@ theorem bound (N : ℕ) (hN : 100000000 ≤ N) (A : Finset ℕ) (hA : A ⊆ Fins
       rw [← hy4, h4]
       nlinarith [mul_le_mul_of_nonneg_right hy100 (by positivity : (0 : ℝ) ≤ y ^ 3)]
     exact_mod_cast h5
-  have hc := core A N ⌈16 / 25 * y ^ 3⌉₊ ht h2t hA hS
-  have hcR : (164 * (⌈16 / 25 * y ^ 3⌉₊ : ℝ) * A.card) ^ 2 ≤
-      (1681 * y ^ 4 + 2542 * (⌈16 / 25 * y ^ 3⌉₊ : ℝ)) *
-        (16 * (⌈16 / 25 * y ^ 3⌉₊ : ℝ) ^ 2 + 10 * (⌈16 / 25 * y ^ 3⌉₊ : ℝ) * A.card) := by
+  generalize ⌈16 / 25 * y ^ 3⌉₊ = τ at h1 h2 ht h2t
+  have hcR : (164 * (τ : ℝ) * A.card) ^ 2 ≤ (1681 * y ^ 4 + 2542 * (τ : ℝ)) *
+      (16 * (τ : ℝ) ^ 2 + 10 * (τ : ℝ) * A.card) := by
     rw [hy4]
-    exact_mod_cast hc
+    exact_mod_cast core A N τ ht h2t hA hS
   rw [← hy, ← hy2]
   by_contra hcon
   push Not at hcon
-  have hτ0 : (0 : ℝ) < (⌈16 / 25 * y ^ 3⌉₊ : ℝ) := by exact_mod_cast ht
-  have hend := endgame y (⌈16 / 25 * y ^ 3⌉₊ : ℝ) (A.card : ℝ) hy100 h1 h2 hcon
-  have e1 : (164 * (⌈16 / 25 * y ^ 3⌉₊ : ℝ) * A.card) ^ 2 =
-      (⌈16 / 25 * y ^ 3⌉₊ : ℝ) * (26896 * (⌈16 / 25 * y ^ 3⌉₊ : ℝ) * (A.card : ℝ) ^ 2) := by ring
-  have e2 : (1681 * y ^ 4 + 2542 * (⌈16 / 25 * y ^ 3⌉₊ : ℝ)) *
-      (16 * (⌈16 / 25 * y ^ 3⌉₊ : ℝ) ^ 2 + 10 * (⌈16 / 25 * y ^ 3⌉₊ : ℝ) * A.card) =
-      (⌈16 / 25 * y ^ 3⌉₊ : ℝ) * ((1681 * y ^ 4 + 2542 * (⌈16 / 25 * y ^ 3⌉₊ : ℝ)) *
-        (16 * (⌈16 / 25 * y ^ 3⌉₊ : ℝ) + 10 * A.card)) := by ring
-  rw [e1, e2] at hcR
-  have := le_of_mul_le_mul_left hcR hτ0
-  linarith
+  have hτ0 : (0 : ℝ) < τ := by exact_mod_cast ht
+  nlinarith [mul_lt_mul_of_pos_left (endgame y τ A.card hy100 h1 h2 hcon) hτ0]
 
 lemma h_le (N : ℕ) (hN : 100000000 ≤ N) :
     (Erdos30.h N : ℝ) ≤ Real.sqrt N + 49 / 50 * Real.sqrt (Real.sqrt N) := by
