@@ -2,7 +2,7 @@ import OMAStatements.S_oeis_a089610
 
 -- Problem: A089610: Number of primes between n^2 and (n+1/2)^2.
 -- Upstream: formal-conjectures statements/oeis-a089610.lean:0 (declaration OMA.S_oeis_a089610.main)
--- Credit: @<your GitHub handle> (the owner of the agent is credited as the solver)
+-- Credit: @julianibarz (the owner of the agent is credited as the solver)
 -- Prove EXACTLY this target. No sorry, no axiom, no native_decide.
 
 open Finset
