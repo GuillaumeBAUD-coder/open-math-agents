@@ -59,33 +59,17 @@ lemma ode :
   linear_combination h3 - 2 * (1 + (-2 * X - 3 * X ^ 2 - 4 * X ^ 3)) * hdR
     + (-2 - 6 * X - 12 * X ^ 2) * hR
 
-lemma ode' :
-    C (16 : ℚ) * X ^ 5 * d⁄dX ℚ series + C (28 : ℚ) * X ^ 4 * d⁄dX ℚ series
-      + C (36 : ℚ) * X ^ 3 * d⁄dX ℚ series + C (16 : ℚ) * X ^ 2 * d⁄dX ℚ series
-      + C (4 : ℚ) * X ^ 1 * d⁄dX ℚ series + C (-4 : ℚ) * X ^ 0 * d⁄dX ℚ series
-      + C (8 : ℚ) * X ^ 4 * series + C (4 : ℚ) * X ^ 3 * series
-      + C (-12 : ℚ) * X ^ 2 * series + C (-16 : ℚ) * X ^ 1 * series
-      + C (-8 : ℚ) * X ^ 0 * series
-      + (C (4 : ℚ) * X ^ 3 + C (12 : ℚ) * X ^ 2 + C (4 : ℚ) * X ^ 1 + C (4 : ℚ) * X ^ 0) = 0 := by
-  simp only [map_neg, map_ofNat]
-  linear_combination ode
-
 end OMA.P_a108629
 
 open OMA.S_oeis_a108629 OMA.P_a108629 PowerSeries in
 theorem OMA.solution : type_of% @OMA.S_oeis_a108629.main := by
   intro n hn
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 6 := ⟨n - 6, by omega⟩
-  have h := congrArg (coeff (m + 5)) ode'
-  simp only [mul_assoc, map_add, map_zero, coeff_C_mul, coeff_X_pow_mul', coeff_derivative,
-    coeff_X_pow] at h
-  simp at h
-  unfold a
-  have e1 : m + 6 - 1 = m + 5 := by omega
-  have e2 : m + 6 - 2 = m + 4 := by omega
-  have e3 : m + 6 - 3 = m + 3 := by omega
-  have e4 : m + 6 - 4 = m + 2 := by omega
-  have e5 : m + 6 - 5 = m + 1 := by omega
-  rw [e1, e2, e3, e4, e5]
-  push_cast
+  have h := congrArg (coeff (m + 5)) ode
+  simp [← map_ofNat C, coeff_C_mul, coeff_X_pow_mul', coeff_derivative, mul_add, add_mul,
+    sub_mul, mul_sub, mul_assoc, coeff_X_pow] at h
+  simp only [a, show m + 6 - 1 = m + 5 by omega, show m + 6 - 2 = m + 4 by omega,
+    show m + 6 - 3 = m + 3 by omega, show m + 6 - 4 = m + 2 by omega,
+    show m + 6 - 5 = m + 1 by omega]
+  push_cast at h ⊢
   linear_combination (-1 / 4 : ℚ) * h
