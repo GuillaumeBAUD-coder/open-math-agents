@@ -7,7 +7,7 @@ import Mathlib
 A wheel sieve verifies a table of prime counts. Legendre's
 recurrence stops when the remaining interval contains no composite with two
 surviving prime factors. Meissel's semiprime correction gives the exact count.
-Blocks of 2,310 count survivors of the first five primes, and a smaller bitmap
+Blocks of 30,030 count survivors of the first six primes, and a smaller bitmap
 supplies the frequently used initial prime counts.
 
 The Meissel identity comes from Physbuzz's published reduction for A247824.
@@ -17,11 +17,11 @@ Palomar source: https://github.com/veljjanoski/oeis100475-palomar/tree/096820035
 Reference: https://github.com/GuillaumeBAUD-coder/open-math-agents/pull/9315
 -/
 
-namespace ShortPeriod
+namespace ShortPeriod30030
 
 open Finset
 
-def cop (n : ℕ) : Bool := decide (n%2≠0 ∧ n%3≠0 ∧ n%5≠0 ∧ n%7≠0 ∧ n%11≠0)
+def cop (n : ℕ) : Bool := decide (n%2≠0 ∧ n%3≠0 ∧ n%5≠0 ∧ n%7≠0 ∧ n%11≠0 ∧ n%13≠0)
 
 private def pop (x : ℕ) : ℕ :=
   let a := x - ((x >>> 1) &&& 0x5555555555555555)
@@ -29,12 +29,12 @@ private def pop (x : ℕ) : ℕ :=
   let c := (b+(b >>> 4)) &&& 0x0f0f0f0f0f0f0f0f
   ((c*0x0101010101010101) >>> 56)%256
 
+private def packet (i : ℕ) : ℕ := (if i < 7 then (if i < 3 then (if i < 1 then 0x17c808228220808a208017108200220a080288201648228200a00a288200159228800a08a080200014c2882020882882820013f0a20a00a2802802801328202082208282282012520808a08808220a201190808228028228a00010c800a28808228800a010108800820228a202000f58020828008a20a0800e7a28008028220a08a00dc208202282008088200d08808020a2020822800c4820220a00a00a28000b628228820a082088200ab0208a20200808828009f208a20008a280280009228a20a00a0080822008702208088288082200079a20808220828208a006d00a00a208282280200620a08208820028a000056208828808008a202004a08a28028020220a0003e88208282280208080031228800220a20a082002608028228800800a2001a8028208820a00a08000d800228a202088288000028208a20a08a0002 else (if i < 2 then 0x30728808200a20a000202fa8828228a00200a2002ec828208820a08a08802e0202202202088288202d40208a00808a2802802c7028a00208a20828202bc202208082288080202af0820a0822880822802a2a00a00a088282280029620808808020228a2028c0200828800208a20027ea08828028028820a027208a208282082208002660a288082202202080258228820228a00a00a024d08828020820208a002418820220a200088280236828208800a082200022928028a20a0820082021d8028220808a280080210220a20a002288082020328200a008288282201f78820a08a0082020801eba20208828028208001df20a08a28020008a001d30a00a2082802822001c5008a28808220a20a01ba08208828220800a001ad022882822882080801a1a08820228a000088019520028208a20a002201898008028a20a08820 else 0x48f8228028228a00a000482a20808228820a080047608820028a202088204680808208a20a08a28045c028028220a088208045020228200808a288004450020a202082280280438220800a00a288282042d08820a002088202204208a202088088282080413a20808a08028020a040620a00a208082282203fb0808828808220a0003eda08220828208a00a03e200228828028020a003d68a08800228a0020803ca828828008220208803bc28028020a20a08a203b1082022802080822803a6008220820a082088039a28208a00800a2802038f8228820200a088000381228a202088088282037600a20a08a200280003678a20808a20828228035c200808a20800220a034f00a08228828028a003440200a288082208200337a08a088202280202032a08028828208a20a0031e8a08020028a208080312a20028228020800a)) else (if i < 5 then (if i < 4 then 0x616a008088282288208060a08a08020228a202005ff0828008208820a0805f2828028008a20a00a05e620828208220008a205da8808220220a0820805cd820220a00a00a28805c128028820008a088205b60220a0020882082805aa208820a082280280059c28a20a08a008082205908220808a280082200583220a00028808228a057700a0082882022882056d0a08a00020208820055f208828828208220a055500a28020028a002005498a20828028220008053ba08808220a20a082052f288282288008002205228828228800a08a000517820228a200080280050b28008a20a00a280004fd8028a20a0882082804f1228220808820808204e400a20a082288202204d88200a00a2802022804cc800a08a08820008a04c020200828828200a204b40208a2802802882004a8a082008282202208049c08a08808220a2080 else 0x79f20208208820228a207940208808828200a200786808a28028028a208077c00a2080822820080076f8820808220a20a080763220828008a00a00a075628808228020a08a0074a8820228200208828073d828008a20208a280073120020a20a08a2002072582280208082288080719200a20a002088282070d28a00000a280282207028820a00a0880022006f3a20208828828208a06e820808a20028008a006da0a08a2082822822006cf808228800020a00a06c408228808028a002006b70a28828220020a0806ac8088202288202080069e28820208a20a08a006928028028820808a200686028208220800a288067a08220a2020802882066d8228a00a00a008280661200820a08a0882020656282200088288202006498a00a08a20028028063da202082208280202063020808a288082208206230a08228828228200) else (if i < 6 then 0x92a0a20208028828008091d820a08228008028a090f20a08a008282282209040808828008220a2008f7a00228800228a00a08eb00828028228820a008e08a00820208a2020008d2828828208220208a08c628020028a00a08a008bb0828020220008a2808ae808220a20808228808a228228800a002208208958228820a08208820088a028a200088280082087e08a20a00a280080208708220a088208282280865220808a20800200a085920a0822802822800084e0a00a288202088000841a00a08820028a202083408828828200a20a008288a08028020820a08081a220828228220808a080f08808220a008082208030028228a00a0022807f7808028820a08808807eb00228a202088208207de8208220a0882802807d1028220a08a20820207c628200808a280080207bb082020822882820007aca00a00a288282288 else 0xab0008a20208a2802800aa320820a08a20828200a9980208002288082200a8aa20208208828228a0a8000800a08028220820a740a00a08800228a200a67008828828208a00a0a5b08a20028008a20a00a4f82208280282208080a42a28800220a00a0820a3728828028200200820a298828220820a08a080a1e82022882020802800a1128208820a08a08020a068008a20800a2002809fa228220000a28808209ed20a20a080088282209e10a00a00a2082820809d4820808a08820228209ca00208820820208a009bd0a08228028028a2009b1208a20808220220809a508a28808220020a009988028828228a00a00098aa08820228820808a0980080202288202008209738808208a20a008280966028028a20208a208095a28208220808a0880094d8220220a082288200940228a00800a288280093528800208a0082022))) else (if i < 11 then (if i < 9 then (if i < 8 then 0xc3b20020a00a08a20820c2f8028220008a288080c22220a00a0822082820c1628800a00228828020c098820a08a088002280bfda2000882802820820bf120a00828008028a20be50a088208202282200bda808a20008200820a0bce08228828208200a00bc20a288202288002080bb5a08820028a2020880ba708828200a20a08a20b9c80280288208082200b90828228200808a0080b8408220a20808228020b778028a00a00a288080b6a228820a0880882020b5e28220208820828200b508a20a08a280200280b44220a08a2002022800b3900808a28808000a20b2e0200228828220a000b1f200a28828228820a0b1408208820220a20200b078808828208a208080af9a28028028a00a00a0aee20808228220808020ae28808020a20a082200ad5808208a00a00a2880ac828228020a08808820abc0228a00208828820 else 0xdc10808228220808a280db7800220200a0802880daa28028a00200a28820d9f0220820a08a080200d9222882020802882820d8608a20a00a08028020d798a20008a200282280d6d220800a08808220a0d5f20a08028828228a00d550800a208282088000d48a08a0082022822020d3e08028820008a00a00d318a28008028a202080d24a2082822022080880d1728808220820a08220d0a8820228a00a00a080cfe028228820808a0800cf320208a20200828800ce68208a202088280280cd8028a20a08a0082820ccc00220808a28808220cc002208082288202280cb3a00a00a2082802880ca820208208820020a20c9d02088288082088200c8fa08228028028220a0c8408800828228220800c788a28000220a20a000c6d228008228800a0080c6028828208820a00a00c540820208a202088280c47828208220a08a080) else (if i < 10 then 0xf4da20808200a20a0020f4028828228200200a20f338820228800a08a080f27820020a2020882880f1a28200a20808a28020f0e8028800a082208280f0322822080820880800ef720a20808228008220ee98a00a00a288082280edc020a08808820228a0ed020208820820208a20ec40a08a280280280200eb8a08a2082020820080ead00a28808020a20200ea08228828220a00a000e92a08828220820a0820e8708820228a20008800e7a8828208a00808a200e6e028028a20a0022080e6308028220808828800e558220a20a082208280e49208200a0082882820e3c28020a08a08820220e318a002088280280080e25820208a28028000a0e1820a00a20828228020e0d0008228808220a200e00a08208828220a0080df400a28028228820800de90a08800228a002080ddb820828208a20a0820dce20028008a20a08a2 else 0x10d408028828228a00a010c70a20828208820a0810bc208820028220208810af28800208a00a08a210a480280282202088201096828220220808a288108b00220820a0822802107e8228800a00a088281074208820800a080202106828a2020082880820105c8a20a08808028020104da20a08a208282082104120808a288082202010350a08220820228a001028a002288280288202101d08a08800220a202010108828828208020a081002028028028a20a08a0ff600820228220808a20feb8008220820a002280fdf808208a00a0082880fd228228820208a00820fc60208a202088088280fbb200220a08a2802000fae28a00808a20828020fa48200008a208082200f95a20a0822882802880f8900a00228808228820f7c0a08a088202282200f6f008828028208a20a0f6400a28000028a20a00f598820028228020808)) else (if i < 13 then (if i < 12 then 0x125e0a008288082288201250a08808820228a202124508820028208820a012398a28028008220a00122da20820228200008a122228808020a202082012148828220a00a00a281207828228820808208811fc20228a002088008211ef8208a2080822802811e2028a20a00a20808211d5282208088288082211ca0220a0802082820811bda00a00a28820228011b120a08a080202288011a50208828828008a201199200a28028020a202118d08a208282280208011808208808220a20a081173208828228a00800a116728028228800a00a0115c0800228a20208028114f828008a20a08a200114208008a20a08a208211368228220808828800112a220a00a082288200111d28a00200a280282211110820a08a088202081105820200028828208a10f820208a08028028a210ee0808a0002822022010e1800a28808220a208 else 0x13e5820008a08020228a13db20200808808200a213ce0a08828028028a2013c2808a20828208200813b608a20808220220a013aa8228820028a00a00139ca28808028820208a1391088202202202088213838828208820a082281378020028a20a08a000136c28228020808a280013608200a20a002288081353228a002008288282134728820a08a0082020133a0a20208828828208132d220808a28020028a132000a08a208280282213160008228808020a201308a08228808228800a12fc00228828228020a012f08808820228a2000812e3828020208a20a00a12d728008028820a088212cc0828208220800a2012c0808200a20208228812b328228200a00a088212a80220800a08a08820129b028a200088288282129000a00a08a200280212838820a082208280281276220808a08808220a126a2080822802822820) else (if i < 14 then 0x157228a202080088280015658a20808a280080281557a20a00a208082282154a20808828808220a2153f0a08220820208a001531a00a28028228020a152608a08820208a0020151a0828828008a20208150ba28028020a20a08a1501008282200208082214f58808220a2080820814e9828228a00800a20014dd28228820a002088014d10028a2020882880814c4208a20a08a20028014b708220a088208282214ab8220808a28800220149ea00a082280280288149300200a288282008214870a00a088202288201479208028828208a20a146e08a08028020a208014628a200282282208001455a28808220a00a080144820828228a00a0022143c0828008820a08a0814308002282202088288142520208200a088280214188028a20208a20820140c220220808a28008213ff20820a082288282013f18a00a00a08828228 else 0x167f0000000000002000167028828228820a08a016638820228a200088281657028208820a00a280164c08008a20a008208216408228220008a208081633200a20a082088282162720200a00a2882022161c8800808a088200281610a00208820828200a160320a082280280288215f70a0822080822822015eb808a08808220220815df08028028228a00a015d20a28800228820a0815c7808020228820208815b920828208a20a00a215ad8028028220208a2015a1820228200808a088159508020a202082288215888220a00800a28828157d228800a082008202))))
 private def withinPeriod (n : ℕ) : ℕ :=
-  let word := (0x1df000000000000002001d10228828228820a0801c4a08820228a20008801b628028208a20a00a201aa8008028a20a08820019c828228220808a208018f08200a20a082288201828228200a00a288200176228800a08a088200016828a2020882882820015a0a20a08a28028028014c820a082208282282013f20808a08808220a201330808228028228a000124a00a28808228820a011808808820228a2020010a8820828208a20a0800fba28028028220a08a00ef20820228200808a200e38808020a2020822800d5828220a00a00a28800c728228820a082088200ba0228a2020880882800ad208a20808a280280009f28a20a00a2080822009382208088288082200084a20a08220828208a007700a00a2882822802006a0a08a08820228a00005d208828828008a202005008a28028020a20a000438a208282280208080035228808220a20a082002808828228a00800a2001b8028228820a00a08000e800228a202088288000028208a20a08a2002 >>> (80*(n/64)))%(2^80)
+  let word := (packet (n/2048) >>> (80*((n%2048)/64)))%(2^80)
   (word >>> 64)+pop (word%(2^(n%64+1)))
 
-def wheel (n : ℕ) : ℕ := (n/2310)*480+withinPeriod (n%2310)
-
+def wheel (n : ℕ) : ℕ := (n/30030)*5760+withinPeriod (n%30030)
 private def check (r : ℕ) : Bool :=
   wheel (r+1) == wheel r + (if cop (r+1) then 1 else 0)
 
@@ -44,100 +44,115 @@ private theorem glue {lo a b : ℕ} (u : valid lo a) (v : valid (lo+a) b) : vali
   rw [← List.range'_append_1,List.all_append,u,v]
   rfl
 
-private theorem b0 : valid 0 72 := by unfold valid; decide +kernel
+private theorem halve (lo n : ℕ) (h : valid lo (n/2))
+    (k : valid (lo+n/2) (n-n/2)) : valid lo n := by
+  simpa only [show n/2+(n-n/2)=n by omega] using glue h k
+private def covered (lo hi : ℕ) : Prop := ∀ j, lo≤j → j < hi → check j=true
+private theorem checked {lo hi : ℕ} (h : valid lo (hi-lo)) : covered lo hi := by
+  intro j lower upper
+  exact List.all_eq_true.mp h j (List.mem_range'_1.mpr ⟨lower,by omega⟩)
+private theorem joinCoverage {lo mid hi : ℕ} (l : covered lo mid) (r : covered mid hi) :
+    covered lo hi := by
+  intro j lower upper
+  by_cases h : j < mid
+  · exact l j lower h
+  · exact r j (by omega) upper
 
-private theorem b72 : valid 72 72 := by unfold valid; decide +kernel
+private theorem c0 : covered 0 938 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem b144 : valid 144 72 := by unfold valid; decide +kernel
+private theorem c938 : covered 938 1876 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem b216 : valid 216 72 := by unfold valid; decide +kernel
+private theorem c1876 : covered 1876 2814 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem b288 : valid 288 72 := by unfold valid; decide +kernel
+private theorem c2814 : covered 2814 3753 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem b360 : valid 360 72 := by unfold valid; decide +kernel
+private theorem c3753 : covered 3753 4691 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem b432 : valid 432 72 := by unfold valid; decide +kernel
+private theorem c4691 : covered 4691 5630 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem b504 : valid 504 73 := by unfold valid; decide +kernel
+private theorem c5630 : covered 5630 6568 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem b577 : valid 577 72 := by unfold valid; decide +kernel
+private theorem c6568 : covered 6568 7507 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem b649 : valid 649 72 := by unfold valid; decide +kernel
+private theorem c7507 : covered 7507 8445 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem b721 : valid 721 72 := by unfold valid; decide +kernel
+private theorem c8445 : covered 8445 9384 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem b793 : valid 793 73 := by unfold valid; decide +kernel
+private theorem c9384 : covered 9384 10322 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem b866 : valid 866 72 := by unfold valid; decide +kernel
+private theorem c10322 : covered 10322 11261 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem b938 : valid 938 72 := by unfold valid; decide +kernel
+private theorem c11261 : covered 11261 12199 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem b1010 : valid 1010 72 := by unfold valid; decide +kernel
+private theorem c12199 : covered 12199 13138 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem b1082 : valid 1082 73 := by unfold valid; decide +kernel
+private theorem c13138 : covered 13138 14076 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem b1155 : valid 1155 72 := by unfold valid; decide +kernel
+private theorem c14076 : covered 14076 15015 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem b1227 : valid 1227 72 := by unfold valid; decide +kernel
+private theorem c15015 : covered 15015 15953 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem b1299 : valid 1299 72 := by unfold valid; decide +kernel
+private theorem c15953 : covered 15953 16891 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem b1371 : valid 1371 72 := by unfold valid; decide +kernel
+private theorem c16891 : covered 16891 17829 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem b1443 : valid 1443 72 := by unfold valid; decide +kernel
+private theorem c17829 : covered 17829 18768 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem b1515 : valid 1515 72 := by unfold valid; decide +kernel
+private theorem c18768 : covered 18768 19706 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem b1587 : valid 1587 72 := by unfold valid; decide +kernel
+private theorem c19706 : covered 19706 20645 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem b1659 : valid 1659 73 := by unfold valid; decide +kernel
+private theorem c20645 : covered 20645 21583 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem b1732 : valid 1732 72 := by unfold valid; decide +kernel
+private theorem c21583 : covered 21583 22522 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem b1804 : valid 1804 72 := by unfold valid; decide +kernel
+private theorem c22522 : covered 22522 23460 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem b1876 : valid 1876 72 := by unfold valid; decide +kernel
+private theorem c23460 : covered 23460 24399 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem b1948 : valid 1948 73 := by unfold valid; decide +kernel
+private theorem c24399 : covered 24399 25337 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem b2021 : valid 2021 72 := by unfold valid; decide +kernel
+private theorem c25337 : covered 25337 26276 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem b2093 : valid 2093 72 := by unfold valid; decide +kernel
+private theorem c26276 : covered 26276 27214 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem b2165 : valid 2165 72 := by unfold valid; decide +kernel
+private theorem c27214 : covered 27214 28153 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem b2237 : valid 2237 73 := by unfold valid; decide +kernel
+private theorem c28153 : covered 28153 29091 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem allrows : valid 0 2310 := (glue (lo:=0) (a:=1155) (b:=1155) (glue (lo:=0) (a:=577) (b:=578) (glue (lo:=0) (a:=288) (b:=289) (glue (lo:=0) (a:=144) (b:=144) (glue (lo:=0) (a:=72) (b:=72) b0 b72) (glue (lo:=144) (a:=72) (b:=72) b144 b216)) (glue (lo:=288) (a:=144) (b:=145) (glue (lo:=288) (a:=72) (b:=72) b288 b360) (glue (lo:=432) (a:=72) (b:=73) b432 b504))) (glue (lo:=577) (a:=289) (b:=289) (glue (lo:=577) (a:=144) (b:=145) (glue (lo:=577) (a:=72) (b:=72) b577 b649) (glue (lo:=721) (a:=72) (b:=73) b721 b793)) (glue (lo:=866) (a:=144) (b:=145) (glue (lo:=866) (a:=72) (b:=72) b866 b938) (glue (lo:=1010) (a:=72) (b:=73) b1010 b1082)))) (glue (lo:=1155) (a:=577) (b:=578) (glue (lo:=1155) (a:=288) (b:=289) (glue (lo:=1155) (a:=144) (b:=144) (glue (lo:=1155) (a:=72) (b:=72) b1155 b1227) (glue (lo:=1299) (a:=72) (b:=72) b1299 b1371)) (glue (lo:=1443) (a:=144) (b:=145) (glue (lo:=1443) (a:=72) (b:=72) b1443 b1515) (glue (lo:=1587) (a:=72) (b:=73) b1587 b1659))) (glue (lo:=1732) (a:=289) (b:=289) (glue (lo:=1732) (a:=144) (b:=145) (glue (lo:=1732) (a:=72) (b:=72) b1732 b1804) (glue (lo:=1876) (a:=72) (b:=73) b1876 b1948)) (glue (lo:=2021) (a:=144) (b:=145) (glue (lo:=2021) (a:=72) (b:=72) b2021 b2093) (glue (lo:=2165) (a:=72) (b:=73) b2165 b2237)))))
+private theorem c29091 : covered 29091 30030 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem wheel_shift (q r : ℕ) : wheel (2310*q+r)=q*480+wheel r := by
-  simp [wheel,Nat.mul_add_div (by decide : 0<2310),Nat.add_mul,Nat.add_assoc]
+set_option maxRecDepth 16000 in
+private theorem allrows : covered 0 30030 := (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage c0 c938) (joinCoverage c1876 c2814)) (joinCoverage (joinCoverage c3753 c4691) (joinCoverage c5630 c6568))) (joinCoverage (joinCoverage (joinCoverage c7507 c8445) (joinCoverage c9384 c10322)) (joinCoverage (joinCoverage c11261 c12199) (joinCoverage c13138 c14076)))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage c15015 c15953) (joinCoverage c16891 c17829)) (joinCoverage (joinCoverage c18768 c19706) (joinCoverage c20645 c21583))) (joinCoverage (joinCoverage (joinCoverage c22522 c23460) (joinCoverage c24399 c25337)) (joinCoverage (joinCoverage c26276 c27214) (joinCoverage c28153 c29091)))))
 
-private theorem cop_shift (q r : ℕ) : cop (2310*q+r)=cop r := by
-  have m2 : (2310*q+r)%2 = r%2 := by rw [show 2310*q=2*(1155*q) by ring,Nat.mul_add_mod]
-  have m3 : (2310*q+r)%3 = r%3 := by rw [show 2310*q=3*(770*q) by ring,Nat.mul_add_mod]
-  have m5 : (2310*q+r)%5 = r%5 := by rw [show 2310*q=5*(462*q) by ring,Nat.mul_add_mod]
-  have m7 : (2310*q+r)%7 = r%7 := by rw [show 2310*q=7*(330*q) by ring,Nat.mul_add_mod]
-  have m11 : (2310*q+r)%11 = r%11 := by rw [show 2310*q=11*(210*q) by ring,Nat.mul_add_mod]
-  simp only [cop,m2,m3,m5,m7,m11]
+private theorem wheel_shift (q r : ℕ) : wheel (30030*q+r)=q*5760+wheel r := by
+  simp [wheel,Nat.mul_add_div (by decide : 0<30030),Nat.add_mul,Nat.add_assoc]
+
+private theorem cop_shift (q r : ℕ) : cop (30030*q+r)=cop r := by
+  have m2 : (30030*q+r)%2 = r%2 := by rw [show 30030*q=2*(15015*q) by ring,Nat.mul_add_mod]
+  have m3 : (30030*q+r)%3 = r%3 := by rw [show 30030*q=3*(10010*q) by ring,Nat.mul_add_mod]
+  have m5 : (30030*q+r)%5 = r%5 := by rw [show 30030*q=5*(6006*q) by ring,Nat.mul_add_mod]
+  have m7 : (30030*q+r)%7 = r%7 := by rw [show 30030*q=7*(4290*q) by ring,Nat.mul_add_mod]
+  have m11 : (30030*q+r)%11 = r%11 := by rw [show 30030*q=11*(2730*q) by ring,Nat.mul_add_mod]
+  have m13 : (30030*q+r)%13 = r%13 := by rw [show 30030*q=13*(2310*q) by ring,Nat.mul_add_mod]
+  simp only [cop,m2,m3,m5,m7,m11,m13]
 
 theorem wheel_succ (t : ℕ) :
     wheel (t+1)=wheel t+(if cop (t+1) then 1 else 0) := by
-  let r := t%2310
-  let q := t/2310
-  have split : t=2310*q+r := (Nat.div_add_mod t 2310).symm
-  have h : (List.range 2310).all check=true := by rw [List.range_eq_range'];exact allrows
-  have item := List.all_eq_true.mp h r (List.mem_range.mpr (Nat.mod_lt t (by decide)))
+  let r := t%30030
+  let q := t/30030
+  have split : t=30030*q+r := (Nat.div_add_mod t 30030).symm
+  have item := allrows r (Nat.zero_le _) (Nat.mod_lt t (by decide))
   have step : wheel (r+1)=wheel r+(if cop (r+1) then 1 else 0) := beq_iff_eq.mp item
   rw [split,Nat.add_assoc,wheel_shift,wheel_shift,cop_shift,step,Nat.add_assoc]
 
-private theorem cop_iff (n : ℕ) : cop n=true ↔ ∀ p ∈ Nat.primesLE 11, ¬ p ∣ n := by
-  have ps : Nat.primesLE 11 = ({2,3,5,7,11} : Finset ℕ) := by decide +kernel
+private theorem cop_iff (n : ℕ) : cop n=true ↔ ∀ p ∈ Nat.primesLE 13, ¬ p ∣ n := by
+  have ps : Nat.primesLE 13 = ({2,3,5,7,11,13} : Finset ℕ) := by decide +kernel
   rw [ps]
   simp [cop,Nat.dvd_iff_mod_eq_zero]
 
 theorem count_rough (t : ℕ) :
-    ((Icc 1 t).filter (fun n => ∀ p ∈ Nat.primesLE 11, ¬ p ∣ n)).card = wheel t := by
+    ((Icc 1 t).filter (fun n => ∀ p ∈ Nat.primesLE 13, ¬ p ∣ n)).card = wheel t := by
   induction t with
   | zero => decide +kernel
   | succ n ih =>
@@ -147,14 +162,14 @@ theorem count_rough (t : ℕ) :
       omega
     have fresh : n+1 ∉ Icc 1 n := by simp
     rw [interval,Finset.filter_insert,wheel_succ,←ih]
-    by_cases hp : ∀ p ∈ Nat.primesLE 11, ¬p ∣ n+1
+    by_cases hp : ∀ p ∈ Nat.primesLE 13, ¬p ∣ n+1
     · rw [if_pos hp,(cop_iff _).mpr hp]
       exact Finset.card_insert_of_notMem (fun mem => fresh (Finset.mem_filter.mp mem).1)
     · have no : cop (n+1)=false := Bool.eq_false_iff.mpr (mt (cop_iff _).mp hp)
       rw [if_neg hp,no]
       simp
 
-end ShortPeriod
+end ShortPeriod30030
 
 
 /- Certified wheel indices for counting primes using the eight reduced classes modulo thirty. -/
@@ -1131,2056 +1146,392 @@ private theorem joinCoverage {lo mid hi : ℕ} (l : covered lo mid) (r : covered
   · exact l j lower isLeft
   · exact r j (by omega) upper
 
-private theorem batch0 : covered 0 38 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span0 : covered 0 310 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch38 : covered 38 77 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span310 : covered 310 621 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch77 : covered 77 116 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span621 : covered 621 932 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch116 : covered 116 155 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span932 : covered 932 1243 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch155 : covered 155 193 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span1243 : covered 1243 1554 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch193 : covered 193 232 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span1554 : covered 1554 1865 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch232 : covered 232 271 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span1865 : covered 1865 2176 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch271 : covered 271 310 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span2176 : covered 2176 2487 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch310 : covered 310 348 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span2487 : covered 2487 2797 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch348 : covered 348 387 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span2797 : covered 2797 3108 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch387 : covered 387 426 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span3108 : covered 3108 3419 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch426 : covered 426 465 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span3419 : covered 3419 3730 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch465 : covered 465 504 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span3730 : covered 3730 4041 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch504 : covered 504 543 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span4041 : covered 4041 4352 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch543 : covered 543 582 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span4352 : covered 4352 4663 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch582 : covered 582 621 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span4663 : covered 4663 4974 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch621 : covered 621 659 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span4974 : covered 4974 5284 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch659 : covered 659 698 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span5284 : covered 5284 5595 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch698 : covered 698 737 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span5595 : covered 5595 5906 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch737 : covered 737 776 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span5906 : covered 5906 6217 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch776 : covered 776 815 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span6217 : covered 6217 6528 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch815 : covered 815 854 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span6528 : covered 6528 6839 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch854 : covered 854 893 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span6839 : covered 6839 7150 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch893 : covered 893 932 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span7150 : covered 7150 7461 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch932 : covered 932 970 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span7461 : covered 7461 7771 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch970 : covered 970 1009 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span7771 : covered 7771 8082 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch1009 : covered 1009 1048 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span8082 : covered 8082 8393 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch1048 : covered 1048 1087 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span8393 : covered 8393 8704 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch1087 : covered 1087 1126 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span8704 : covered 8704 9015 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch1126 : covered 1126 1165 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span9015 : covered 9015 9326 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch1165 : covered 1165 1204 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span9326 : covered 9326 9637 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch1204 : covered 1204 1243 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span9637 : covered 9637 9948 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch1243 : covered 1243 1281 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span9948 : covered 9948 10258 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch1281 : covered 1281 1320 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span10258 : covered 10258 10569 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch1320 : covered 1320 1359 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span10569 : covered 10569 10880 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch1359 : covered 1359 1398 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span10880 : covered 10880 11191 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch1398 : covered 1398 1437 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span11191 : covered 11191 11502 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch1437 : covered 1437 1476 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span11502 : covered 11502 11813 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch1476 : covered 1476 1515 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span11813 : covered 11813 12124 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch1515 : covered 1515 1554 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span12124 : covered 12124 12435 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch1554 : covered 1554 1592 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span12435 : covered 12435 12745 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch1592 : covered 1592 1631 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span12745 : covered 12745 13056 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch1631 : covered 1631 1670 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span13056 : covered 13056 13367 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch1670 : covered 1670 1709 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span13367 : covered 13367 13678 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch1709 : covered 1709 1748 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span13678 : covered 13678 13989 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch1748 : covered 1748 1787 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span13989 : covered 13989 14300 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch1787 : covered 1787 1826 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span14300 : covered 14300 14611 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch1826 : covered 1826 1865 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span14611 : covered 14611 14922 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch1865 : covered 1865 1903 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span14922 : covered 14922 15232 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch1903 : covered 1903 1942 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span15232 : covered 15232 15543 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch1942 : covered 1942 1981 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span15543 : covered 15543 15854 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch1981 : covered 1981 2020 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span15854 : covered 15854 16165 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch2020 : covered 2020 2059 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span16165 : covered 16165 16476 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch2059 : covered 2059 2098 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span16476 : covered 16476 16787 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch2098 : covered 2098 2137 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span16787 : covered 16787 17098 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch2137 : covered 2137 2176 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span17098 : covered 17098 17409 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch2176 : covered 2176 2214 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span17409 : covered 17409 17719 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch2214 : covered 2214 2253 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span17719 : covered 17719 18030 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch2253 : covered 2253 2292 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span18030 : covered 18030 18341 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch2292 : covered 2292 2331 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span18341 : covered 18341 18652 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch2331 : covered 2331 2370 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span18652 : covered 18652 18963 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch2370 : covered 2370 2409 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span18963 : covered 18963 19274 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch2409 : covered 2409 2448 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span19274 : covered 19274 19585 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch2448 : covered 2448 2487 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span19585 : covered 19585 19896 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch2487 : covered 2487 2525 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span19896 : covered 19896 20206 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch2525 : covered 2525 2564 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span20206 : covered 20206 20517 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch2564 : covered 2564 2603 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span20517 : covered 20517 20828 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch2603 : covered 2603 2642 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span20828 : covered 20828 21139 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch2642 : covered 2642 2680 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span21139 : covered 21139 21450 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch2680 : covered 2680 2719 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span21450 : covered 21450 21761 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch2719 : covered 2719 2758 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span21761 : covered 21761 22072 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch2758 : covered 2758 2797 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span22072 : covered 22072 22383 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch2797 : covered 2797 2835 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span22383 : covered 22383 22693 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch2835 : covered 2835 2874 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span22693 : covered 22693 23004 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch2874 : covered 2874 2913 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span23004 : covered 23004 23315 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch2913 : covered 2913 2952 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span23315 : covered 23315 23626 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch2952 : covered 2952 2991 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span23626 : covered 23626 23937 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch2991 : covered 2991 3030 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span23937 : covered 23937 24248 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch3030 : covered 3030 3069 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span24248 : covered 24248 24559 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch3069 : covered 3069 3108 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span24559 : covered 24559 24870 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch3108 : covered 3108 3146 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span24870 : covered 24870 25180 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch3146 : covered 3146 3185 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span25180 : covered 25180 25491 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch3185 : covered 3185 3224 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span25491 : covered 25491 25802 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch3224 : covered 3224 3263 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span25802 : covered 25802 26113 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch3263 : covered 3263 3302 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span26113 : covered 26113 26424 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch3302 : covered 3302 3341 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span26424 : covered 26424 26735 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch3341 : covered 3341 3380 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span26735 : covered 26735 27046 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch3380 : covered 3380 3419 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span27046 : covered 27046 27357 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch3419 : covered 3419 3457 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span27357 : covered 27357 27667 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch3457 : covered 3457 3496 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span27667 : covered 27667 27978 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch3496 : covered 3496 3535 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span27978 : covered 27978 28289 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch3535 : covered 3535 3574 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span28289 : covered 28289 28600 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch3574 : covered 3574 3613 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span28600 : covered 28600 28911 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch3613 : covered 3613 3652 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span28911 : covered 28911 29222 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch3652 : covered 3652 3691 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span29222 : covered 29222 29533 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch3691 : covered 3691 3730 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span29533 : covered 29533 29844 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch3730 : covered 3730 3768 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span29844 : covered 29844 30154 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch3768 : covered 3768 3807 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span30154 : covered 30154 30465 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch3807 : covered 3807 3846 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span30465 : covered 30465 30776 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch3846 : covered 3846 3885 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span30776 : covered 30776 31087 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch3885 : covered 3885 3924 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span31087 : covered 31087 31398 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch3924 : covered 3924 3963 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span31398 : covered 31398 31709 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch3963 : covered 3963 4002 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span31709 : covered 31709 32020 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch4002 : covered 4002 4041 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span32020 : covered 32020 32331 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch4041 : covered 4041 4079 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span32331 : covered 32331 32641 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch4079 : covered 4079 4118 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span32641 : covered 32641 32952 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch4118 : covered 4118 4157 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span32952 : covered 32952 33263 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch4157 : covered 4157 4196 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span33263 : covered 33263 33574 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch4196 : covered 4196 4235 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span33574 : covered 33574 33885 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch4235 : covered 4235 4274 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span33885 : covered 33885 34196 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch4274 : covered 4274 4313 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span34196 : covered 34196 34507 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch4313 : covered 4313 4352 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span34507 : covered 34507 34818 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch4352 : covered 4352 4390 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span34818 : covered 34818 35128 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch4390 : covered 4390 4429 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span35128 : covered 35128 35439 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch4429 : covered 4429 4468 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span35439 : covered 35439 35750 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch4468 : covered 4468 4507 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span35750 : covered 35750 36061 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch4507 : covered 4507 4546 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span36061 : covered 36061 36372 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch4546 : covered 4546 4585 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span36372 : covered 36372 36683 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch4585 : covered 4585 4624 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span36683 : covered 36683 36994 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch4624 : covered 4624 4663 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span36994 : covered 36994 37305 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch4663 : covered 4663 4701 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span37305 : covered 37305 37615 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch4701 : covered 4701 4740 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span37615 : covered 37615 37926 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch4740 : covered 4740 4779 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span37926 : covered 37926 38237 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch4779 : covered 4779 4818 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span38237 : covered 38237 38548 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch4818 : covered 4818 4857 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span38548 : covered 38548 38859 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch4857 : covered 4857 4896 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span38859 : covered 38859 39170 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch4896 : covered 4896 4935 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span39170 : covered 39170 39481 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch4935 : covered 4935 4974 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
+set_option maxRecDepth 12000 in
+private theorem span39481 : covered 39481 39792 := checked (by apply halve <;> apply halve <;> apply halve <;> apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
 
-private theorem batch4974 : covered 4974 5012 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch5012 : covered 5012 5051 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch5051 : covered 5051 5090 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch5090 : covered 5090 5129 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch5129 : covered 5129 5167 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch5167 : covered 5167 5206 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch5206 : covered 5206 5245 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch5245 : covered 5245 5284 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch5284 : covered 5284 5322 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch5322 : covered 5322 5361 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch5361 : covered 5361 5400 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch5400 : covered 5400 5439 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch5439 : covered 5439 5478 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch5478 : covered 5478 5517 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch5517 : covered 5517 5556 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch5556 : covered 5556 5595 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch5595 : covered 5595 5633 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch5633 : covered 5633 5672 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch5672 : covered 5672 5711 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch5711 : covered 5711 5750 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch5750 : covered 5750 5789 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch5789 : covered 5789 5828 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch5828 : covered 5828 5867 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch5867 : covered 5867 5906 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch5906 : covered 5906 5944 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch5944 : covered 5944 5983 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch5983 : covered 5983 6022 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch6022 : covered 6022 6061 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch6061 : covered 6061 6100 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch6100 : covered 6100 6139 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch6139 : covered 6139 6178 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch6178 : covered 6178 6217 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch6217 : covered 6217 6255 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch6255 : covered 6255 6294 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch6294 : covered 6294 6333 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch6333 : covered 6333 6372 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch6372 : covered 6372 6411 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch6411 : covered 6411 6450 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch6450 : covered 6450 6489 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch6489 : covered 6489 6528 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch6528 : covered 6528 6566 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch6566 : covered 6566 6605 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch6605 : covered 6605 6644 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch6644 : covered 6644 6683 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch6683 : covered 6683 6722 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch6722 : covered 6722 6761 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch6761 : covered 6761 6800 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch6800 : covered 6800 6839 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch6839 : covered 6839 6877 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch6877 : covered 6877 6916 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch6916 : covered 6916 6955 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch6955 : covered 6955 6994 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch6994 : covered 6994 7033 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch7033 : covered 7033 7072 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch7072 : covered 7072 7111 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch7111 : covered 7111 7150 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch7150 : covered 7150 7188 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch7188 : covered 7188 7227 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch7227 : covered 7227 7266 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch7266 : covered 7266 7305 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch7305 : covered 7305 7344 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch7344 : covered 7344 7383 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch7383 : covered 7383 7422 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch7422 : covered 7422 7461 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch7461 : covered 7461 7499 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch7499 : covered 7499 7538 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch7538 : covered 7538 7577 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch7577 : covered 7577 7616 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch7616 : covered 7616 7654 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch7654 : covered 7654 7693 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch7693 : covered 7693 7732 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch7732 : covered 7732 7771 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch7771 : covered 7771 7809 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch7809 : covered 7809 7848 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch7848 : covered 7848 7887 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch7887 : covered 7887 7926 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch7926 : covered 7926 7965 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch7965 : covered 7965 8004 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch8004 : covered 8004 8043 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch8043 : covered 8043 8082 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch8082 : covered 8082 8120 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch8120 : covered 8120 8159 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch8159 : covered 8159 8198 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch8198 : covered 8198 8237 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch8237 : covered 8237 8276 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch8276 : covered 8276 8315 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch8315 : covered 8315 8354 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch8354 : covered 8354 8393 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch8393 : covered 8393 8431 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch8431 : covered 8431 8470 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch8470 : covered 8470 8509 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch8509 : covered 8509 8548 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch8548 : covered 8548 8587 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch8587 : covered 8587 8626 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch8626 : covered 8626 8665 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch8665 : covered 8665 8704 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch8704 : covered 8704 8742 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch8742 : covered 8742 8781 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch8781 : covered 8781 8820 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch8820 : covered 8820 8859 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch8859 : covered 8859 8898 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch8898 : covered 8898 8937 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch8937 : covered 8937 8976 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch8976 : covered 8976 9015 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch9015 : covered 9015 9053 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch9053 : covered 9053 9092 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch9092 : covered 9092 9131 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch9131 : covered 9131 9170 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch9170 : covered 9170 9209 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch9209 : covered 9209 9248 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch9248 : covered 9248 9287 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch9287 : covered 9287 9326 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch9326 : covered 9326 9364 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch9364 : covered 9364 9403 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch9403 : covered 9403 9442 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch9442 : covered 9442 9481 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch9481 : covered 9481 9520 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch9520 : covered 9520 9559 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch9559 : covered 9559 9598 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch9598 : covered 9598 9637 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch9637 : covered 9637 9675 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch9675 : covered 9675 9714 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch9714 : covered 9714 9753 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch9753 : covered 9753 9792 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch9792 : covered 9792 9831 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch9831 : covered 9831 9870 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch9870 : covered 9870 9909 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch9909 : covered 9909 9948 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch9948 : covered 9948 9986 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch9986 : covered 9986 10025 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch10025 : covered 10025 10064 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch10064 : covered 10064 10103 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch10103 : covered 10103 10141 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch10141 : covered 10141 10180 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch10180 : covered 10180 10219 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch10219 : covered 10219 10258 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch10258 : covered 10258 10296 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch10296 : covered 10296 10335 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch10335 : covered 10335 10374 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch10374 : covered 10374 10413 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch10413 : covered 10413 10452 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch10452 : covered 10452 10491 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch10491 : covered 10491 10530 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch10530 : covered 10530 10569 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch10569 : covered 10569 10607 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch10607 : covered 10607 10646 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch10646 : covered 10646 10685 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch10685 : covered 10685 10724 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch10724 : covered 10724 10763 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch10763 : covered 10763 10802 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch10802 : covered 10802 10841 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch10841 : covered 10841 10880 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch10880 : covered 10880 10918 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch10918 : covered 10918 10957 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch10957 : covered 10957 10996 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch10996 : covered 10996 11035 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch11035 : covered 11035 11074 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch11074 : covered 11074 11113 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch11113 : covered 11113 11152 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch11152 : covered 11152 11191 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch11191 : covered 11191 11229 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch11229 : covered 11229 11268 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch11268 : covered 11268 11307 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch11307 : covered 11307 11346 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch11346 : covered 11346 11385 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch11385 : covered 11385 11424 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch11424 : covered 11424 11463 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch11463 : covered 11463 11502 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch11502 : covered 11502 11540 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch11540 : covered 11540 11579 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch11579 : covered 11579 11618 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch11618 : covered 11618 11657 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch11657 : covered 11657 11696 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch11696 : covered 11696 11735 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch11735 : covered 11735 11774 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch11774 : covered 11774 11813 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch11813 : covered 11813 11851 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch11851 : covered 11851 11890 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch11890 : covered 11890 11929 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch11929 : covered 11929 11968 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch11968 : covered 11968 12007 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch12007 : covered 12007 12046 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch12046 : covered 12046 12085 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch12085 : covered 12085 12124 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch12124 : covered 12124 12162 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch12162 : covered 12162 12201 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch12201 : covered 12201 12240 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch12240 : covered 12240 12279 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch12279 : covered 12279 12318 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch12318 : covered 12318 12357 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch12357 : covered 12357 12396 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch12396 : covered 12396 12435 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch12435 : covered 12435 12473 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch12473 : covered 12473 12512 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch12512 : covered 12512 12551 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch12551 : covered 12551 12590 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch12590 : covered 12590 12628 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch12628 : covered 12628 12667 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch12667 : covered 12667 12706 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch12706 : covered 12706 12745 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch12745 : covered 12745 12783 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch12783 : covered 12783 12822 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch12822 : covered 12822 12861 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch12861 : covered 12861 12900 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch12900 : covered 12900 12939 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch12939 : covered 12939 12978 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch12978 : covered 12978 13017 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch13017 : covered 13017 13056 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch13056 : covered 13056 13094 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch13094 : covered 13094 13133 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch13133 : covered 13133 13172 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch13172 : covered 13172 13211 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch13211 : covered 13211 13250 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch13250 : covered 13250 13289 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch13289 : covered 13289 13328 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch13328 : covered 13328 13367 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch13367 : covered 13367 13405 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch13405 : covered 13405 13444 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch13444 : covered 13444 13483 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch13483 : covered 13483 13522 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch13522 : covered 13522 13561 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch13561 : covered 13561 13600 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch13600 : covered 13600 13639 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch13639 : covered 13639 13678 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch13678 : covered 13678 13716 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch13716 : covered 13716 13755 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch13755 : covered 13755 13794 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch13794 : covered 13794 13833 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch13833 : covered 13833 13872 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch13872 : covered 13872 13911 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch13911 : covered 13911 13950 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch13950 : covered 13950 13989 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch13989 : covered 13989 14027 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch14027 : covered 14027 14066 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch14066 : covered 14066 14105 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch14105 : covered 14105 14144 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch14144 : covered 14144 14183 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch14183 : covered 14183 14222 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch14222 : covered 14222 14261 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch14261 : covered 14261 14300 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch14300 : covered 14300 14338 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch14338 : covered 14338 14377 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch14377 : covered 14377 14416 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch14416 : covered 14416 14455 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch14455 : covered 14455 14494 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch14494 : covered 14494 14533 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch14533 : covered 14533 14572 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch14572 : covered 14572 14611 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch14611 : covered 14611 14649 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch14649 : covered 14649 14688 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch14688 : covered 14688 14727 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch14727 : covered 14727 14766 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch14766 : covered 14766 14805 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch14805 : covered 14805 14844 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch14844 : covered 14844 14883 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch14883 : covered 14883 14922 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch14922 : covered 14922 14960 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch14960 : covered 14960 14999 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch14999 : covered 14999 15038 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch15038 : covered 15038 15077 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch15077 : covered 15077 15115 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch15115 : covered 15115 15154 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch15154 : covered 15154 15193 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch15193 : covered 15193 15232 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch15232 : covered 15232 15270 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch15270 : covered 15270 15309 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch15309 : covered 15309 15348 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch15348 : covered 15348 15387 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch15387 : covered 15387 15426 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch15426 : covered 15426 15465 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch15465 : covered 15465 15504 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch15504 : covered 15504 15543 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch15543 : covered 15543 15581 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch15581 : covered 15581 15620 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch15620 : covered 15620 15659 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch15659 : covered 15659 15698 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch15698 : covered 15698 15737 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch15737 : covered 15737 15776 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch15776 : covered 15776 15815 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch15815 : covered 15815 15854 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch15854 : covered 15854 15892 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch15892 : covered 15892 15931 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch15931 : covered 15931 15970 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch15970 : covered 15970 16009 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch16009 : covered 16009 16048 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch16048 : covered 16048 16087 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch16087 : covered 16087 16126 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch16126 : covered 16126 16165 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch16165 : covered 16165 16203 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch16203 : covered 16203 16242 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch16242 : covered 16242 16281 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch16281 : covered 16281 16320 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch16320 : covered 16320 16359 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch16359 : covered 16359 16398 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch16398 : covered 16398 16437 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch16437 : covered 16437 16476 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch16476 : covered 16476 16514 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch16514 : covered 16514 16553 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch16553 : covered 16553 16592 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch16592 : covered 16592 16631 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch16631 : covered 16631 16670 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch16670 : covered 16670 16709 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch16709 : covered 16709 16748 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch16748 : covered 16748 16787 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch16787 : covered 16787 16825 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch16825 : covered 16825 16864 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch16864 : covered 16864 16903 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch16903 : covered 16903 16942 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch16942 : covered 16942 16981 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch16981 : covered 16981 17020 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch17020 : covered 17020 17059 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch17059 : covered 17059 17098 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch17098 : covered 17098 17136 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch17136 : covered 17136 17175 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch17175 : covered 17175 17214 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch17214 : covered 17214 17253 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch17253 : covered 17253 17292 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch17292 : covered 17292 17331 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch17331 : covered 17331 17370 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch17370 : covered 17370 17409 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch17409 : covered 17409 17447 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch17447 : covered 17447 17486 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch17486 : covered 17486 17525 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch17525 : covered 17525 17564 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch17564 : covered 17564 17602 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch17602 : covered 17602 17641 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch17641 : covered 17641 17680 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch17680 : covered 17680 17719 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch17719 : covered 17719 17757 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch17757 : covered 17757 17796 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch17796 : covered 17796 17835 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch17835 : covered 17835 17874 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch17874 : covered 17874 17913 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch17913 : covered 17913 17952 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch17952 : covered 17952 17991 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch17991 : covered 17991 18030 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch18030 : covered 18030 18068 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch18068 : covered 18068 18107 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch18107 : covered 18107 18146 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch18146 : covered 18146 18185 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch18185 : covered 18185 18224 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch18224 : covered 18224 18263 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch18263 : covered 18263 18302 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch18302 : covered 18302 18341 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch18341 : covered 18341 18379 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch18379 : covered 18379 18418 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch18418 : covered 18418 18457 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch18457 : covered 18457 18496 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch18496 : covered 18496 18535 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch18535 : covered 18535 18574 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch18574 : covered 18574 18613 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch18613 : covered 18613 18652 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch18652 : covered 18652 18690 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch18690 : covered 18690 18729 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch18729 : covered 18729 18768 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch18768 : covered 18768 18807 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch18807 : covered 18807 18846 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch18846 : covered 18846 18885 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch18885 : covered 18885 18924 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch18924 : covered 18924 18963 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch18963 : covered 18963 19001 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch19001 : covered 19001 19040 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch19040 : covered 19040 19079 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch19079 : covered 19079 19118 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch19118 : covered 19118 19157 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch19157 : covered 19157 19196 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch19196 : covered 19196 19235 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch19235 : covered 19235 19274 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch19274 : covered 19274 19312 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch19312 : covered 19312 19351 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch19351 : covered 19351 19390 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch19390 : covered 19390 19429 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch19429 : covered 19429 19468 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch19468 : covered 19468 19507 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch19507 : covered 19507 19546 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch19546 : covered 19546 19585 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch19585 : covered 19585 19623 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch19623 : covered 19623 19662 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch19662 : covered 19662 19701 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch19701 : covered 19701 19740 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch19740 : covered 19740 19779 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch19779 : covered 19779 19818 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch19818 : covered 19818 19857 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch19857 : covered 19857 19896 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch19896 : covered 19896 19934 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch19934 : covered 19934 19973 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch19973 : covered 19973 20012 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch20012 : covered 20012 20051 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch20051 : covered 20051 20089 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch20089 : covered 20089 20128 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch20128 : covered 20128 20167 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch20167 : covered 20167 20206 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch20206 : covered 20206 20244 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch20244 : covered 20244 20283 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch20283 : covered 20283 20322 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch20322 : covered 20322 20361 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch20361 : covered 20361 20400 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch20400 : covered 20400 20439 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch20439 : covered 20439 20478 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch20478 : covered 20478 20517 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch20517 : covered 20517 20555 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch20555 : covered 20555 20594 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch20594 : covered 20594 20633 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch20633 : covered 20633 20672 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch20672 : covered 20672 20711 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch20711 : covered 20711 20750 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch20750 : covered 20750 20789 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch20789 : covered 20789 20828 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch20828 : covered 20828 20866 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch20866 : covered 20866 20905 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch20905 : covered 20905 20944 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch20944 : covered 20944 20983 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch20983 : covered 20983 21022 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch21022 : covered 21022 21061 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch21061 : covered 21061 21100 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch21100 : covered 21100 21139 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch21139 : covered 21139 21177 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch21177 : covered 21177 21216 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch21216 : covered 21216 21255 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch21255 : covered 21255 21294 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch21294 : covered 21294 21333 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch21333 : covered 21333 21372 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch21372 : covered 21372 21411 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch21411 : covered 21411 21450 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch21450 : covered 21450 21488 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch21488 : covered 21488 21527 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch21527 : covered 21527 21566 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch21566 : covered 21566 21605 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch21605 : covered 21605 21644 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch21644 : covered 21644 21683 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch21683 : covered 21683 21722 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch21722 : covered 21722 21761 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch21761 : covered 21761 21799 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch21799 : covered 21799 21838 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch21838 : covered 21838 21877 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch21877 : covered 21877 21916 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch21916 : covered 21916 21955 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch21955 : covered 21955 21994 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch21994 : covered 21994 22033 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch22033 : covered 22033 22072 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch22072 : covered 22072 22110 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch22110 : covered 22110 22149 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch22149 : covered 22149 22188 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch22188 : covered 22188 22227 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch22227 : covered 22227 22266 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch22266 : covered 22266 22305 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch22305 : covered 22305 22344 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch22344 : covered 22344 22383 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch22383 : covered 22383 22421 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch22421 : covered 22421 22460 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch22460 : covered 22460 22499 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch22499 : covered 22499 22538 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch22538 : covered 22538 22576 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch22576 : covered 22576 22615 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch22615 : covered 22615 22654 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch22654 : covered 22654 22693 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch22693 : covered 22693 22731 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch22731 : covered 22731 22770 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch22770 : covered 22770 22809 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch22809 : covered 22809 22848 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch22848 : covered 22848 22887 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch22887 : covered 22887 22926 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch22926 : covered 22926 22965 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch22965 : covered 22965 23004 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch23004 : covered 23004 23042 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch23042 : covered 23042 23081 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch23081 : covered 23081 23120 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch23120 : covered 23120 23159 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch23159 : covered 23159 23198 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch23198 : covered 23198 23237 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch23237 : covered 23237 23276 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch23276 : covered 23276 23315 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch23315 : covered 23315 23353 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch23353 : covered 23353 23392 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch23392 : covered 23392 23431 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch23431 : covered 23431 23470 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch23470 : covered 23470 23509 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch23509 : covered 23509 23548 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch23548 : covered 23548 23587 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch23587 : covered 23587 23626 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch23626 : covered 23626 23664 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch23664 : covered 23664 23703 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch23703 : covered 23703 23742 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch23742 : covered 23742 23781 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch23781 : covered 23781 23820 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch23820 : covered 23820 23859 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch23859 : covered 23859 23898 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch23898 : covered 23898 23937 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch23937 : covered 23937 23975 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch23975 : covered 23975 24014 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch24014 : covered 24014 24053 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch24053 : covered 24053 24092 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch24092 : covered 24092 24131 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch24131 : covered 24131 24170 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch24170 : covered 24170 24209 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch24209 : covered 24209 24248 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch24248 : covered 24248 24286 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch24286 : covered 24286 24325 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch24325 : covered 24325 24364 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch24364 : covered 24364 24403 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch24403 : covered 24403 24442 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch24442 : covered 24442 24481 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch24481 : covered 24481 24520 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch24520 : covered 24520 24559 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch24559 : covered 24559 24597 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch24597 : covered 24597 24636 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch24636 : covered 24636 24675 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch24675 : covered 24675 24714 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch24714 : covered 24714 24753 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch24753 : covered 24753 24792 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch24792 : covered 24792 24831 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch24831 : covered 24831 24870 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch24870 : covered 24870 24908 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch24908 : covered 24908 24947 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch24947 : covered 24947 24986 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch24986 : covered 24986 25025 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch25025 : covered 25025 25063 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch25063 : covered 25063 25102 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch25102 : covered 25102 25141 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch25141 : covered 25141 25180 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch25180 : covered 25180 25218 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch25218 : covered 25218 25257 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch25257 : covered 25257 25296 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch25296 : covered 25296 25335 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch25335 : covered 25335 25374 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch25374 : covered 25374 25413 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch25413 : covered 25413 25452 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch25452 : covered 25452 25491 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch25491 : covered 25491 25529 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch25529 : covered 25529 25568 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch25568 : covered 25568 25607 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch25607 : covered 25607 25646 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch25646 : covered 25646 25685 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch25685 : covered 25685 25724 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch25724 : covered 25724 25763 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch25763 : covered 25763 25802 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch25802 : covered 25802 25840 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch25840 : covered 25840 25879 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch25879 : covered 25879 25918 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch25918 : covered 25918 25957 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch25957 : covered 25957 25996 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch25996 : covered 25996 26035 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch26035 : covered 26035 26074 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch26074 : covered 26074 26113 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch26113 : covered 26113 26151 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch26151 : covered 26151 26190 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch26190 : covered 26190 26229 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch26229 : covered 26229 26268 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch26268 : covered 26268 26307 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch26307 : covered 26307 26346 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch26346 : covered 26346 26385 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch26385 : covered 26385 26424 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch26424 : covered 26424 26462 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch26462 : covered 26462 26501 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch26501 : covered 26501 26540 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch26540 : covered 26540 26579 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch26579 : covered 26579 26618 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch26618 : covered 26618 26657 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch26657 : covered 26657 26696 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch26696 : covered 26696 26735 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch26735 : covered 26735 26773 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch26773 : covered 26773 26812 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch26812 : covered 26812 26851 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch26851 : covered 26851 26890 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch26890 : covered 26890 26929 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch26929 : covered 26929 26968 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch26968 : covered 26968 27007 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch27007 : covered 27007 27046 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch27046 : covered 27046 27084 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch27084 : covered 27084 27123 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch27123 : covered 27123 27162 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch27162 : covered 27162 27201 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch27201 : covered 27201 27240 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch27240 : covered 27240 27279 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch27279 : covered 27279 27318 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch27318 : covered 27318 27357 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch27357 : covered 27357 27395 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch27395 : covered 27395 27434 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch27434 : covered 27434 27473 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch27473 : covered 27473 27512 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch27512 : covered 27512 27550 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch27550 : covered 27550 27589 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch27589 : covered 27589 27628 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch27628 : covered 27628 27667 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch27667 : covered 27667 27705 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch27705 : covered 27705 27744 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch27744 : covered 27744 27783 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch27783 : covered 27783 27822 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch27822 : covered 27822 27861 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch27861 : covered 27861 27900 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch27900 : covered 27900 27939 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch27939 : covered 27939 27978 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch27978 : covered 27978 28016 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch28016 : covered 28016 28055 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch28055 : covered 28055 28094 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch28094 : covered 28094 28133 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch28133 : covered 28133 28172 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch28172 : covered 28172 28211 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch28211 : covered 28211 28250 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch28250 : covered 28250 28289 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch28289 : covered 28289 28327 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch28327 : covered 28327 28366 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch28366 : covered 28366 28405 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch28405 : covered 28405 28444 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch28444 : covered 28444 28483 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch28483 : covered 28483 28522 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch28522 : covered 28522 28561 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch28561 : covered 28561 28600 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch28600 : covered 28600 28638 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch28638 : covered 28638 28677 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch28677 : covered 28677 28716 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch28716 : covered 28716 28755 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch28755 : covered 28755 28794 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch28794 : covered 28794 28833 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch28833 : covered 28833 28872 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch28872 : covered 28872 28911 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch28911 : covered 28911 28949 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch28949 : covered 28949 28988 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch28988 : covered 28988 29027 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch29027 : covered 29027 29066 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch29066 : covered 29066 29105 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch29105 : covered 29105 29144 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch29144 : covered 29144 29183 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch29183 : covered 29183 29222 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch29222 : covered 29222 29260 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch29260 : covered 29260 29299 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch29299 : covered 29299 29338 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch29338 : covered 29338 29377 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch29377 : covered 29377 29416 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch29416 : covered 29416 29455 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch29455 : covered 29455 29494 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch29494 : covered 29494 29533 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch29533 : covered 29533 29571 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch29571 : covered 29571 29610 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch29610 : covered 29610 29649 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch29649 : covered 29649 29688 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch29688 : covered 29688 29727 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch29727 : covered 29727 29766 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch29766 : covered 29766 29805 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch29805 : covered 29805 29844 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch29844 : covered 29844 29882 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch29882 : covered 29882 29921 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch29921 : covered 29921 29960 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch29960 : covered 29960 29999 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch29999 : covered 29999 30037 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch30037 : covered 30037 30076 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch30076 : covered 30076 30115 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch30115 : covered 30115 30154 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch30154 : covered 30154 30192 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch30192 : covered 30192 30231 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch30231 : covered 30231 30270 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch30270 : covered 30270 30309 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch30309 : covered 30309 30348 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch30348 : covered 30348 30387 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch30387 : covered 30387 30426 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch30426 : covered 30426 30465 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch30465 : covered 30465 30503 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch30503 : covered 30503 30542 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch30542 : covered 30542 30581 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch30581 : covered 30581 30620 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch30620 : covered 30620 30659 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch30659 : covered 30659 30698 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch30698 : covered 30698 30737 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch30737 : covered 30737 30776 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch30776 : covered 30776 30814 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch30814 : covered 30814 30853 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch30853 : covered 30853 30892 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch30892 : covered 30892 30931 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch30931 : covered 30931 30970 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch30970 : covered 30970 31009 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch31009 : covered 31009 31048 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch31048 : covered 31048 31087 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch31087 : covered 31087 31125 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch31125 : covered 31125 31164 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch31164 : covered 31164 31203 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch31203 : covered 31203 31242 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch31242 : covered 31242 31281 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch31281 : covered 31281 31320 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch31320 : covered 31320 31359 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch31359 : covered 31359 31398 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch31398 : covered 31398 31436 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch31436 : covered 31436 31475 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch31475 : covered 31475 31514 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch31514 : covered 31514 31553 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch31553 : covered 31553 31592 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch31592 : covered 31592 31631 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch31631 : covered 31631 31670 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch31670 : covered 31670 31709 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch31709 : covered 31709 31747 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch31747 : covered 31747 31786 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch31786 : covered 31786 31825 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch31825 : covered 31825 31864 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch31864 : covered 31864 31903 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch31903 : covered 31903 31942 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch31942 : covered 31942 31981 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch31981 : covered 31981 32020 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch32020 : covered 32020 32058 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch32058 : covered 32058 32097 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch32097 : covered 32097 32136 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch32136 : covered 32136 32175 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch32175 : covered 32175 32214 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch32214 : covered 32214 32253 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch32253 : covered 32253 32292 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch32292 : covered 32292 32331 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch32331 : covered 32331 32369 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch32369 : covered 32369 32408 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch32408 : covered 32408 32447 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch32447 : covered 32447 32486 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch32486 : covered 32486 32524 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch32524 : covered 32524 32563 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch32563 : covered 32563 32602 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch32602 : covered 32602 32641 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch32641 : covered 32641 32679 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch32679 : covered 32679 32718 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch32718 : covered 32718 32757 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch32757 : covered 32757 32796 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch32796 : covered 32796 32835 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch32835 : covered 32835 32874 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch32874 : covered 32874 32913 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch32913 : covered 32913 32952 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch32952 : covered 32952 32990 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch32990 : covered 32990 33029 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch33029 : covered 33029 33068 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch33068 : covered 33068 33107 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch33107 : covered 33107 33146 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch33146 : covered 33146 33185 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch33185 : covered 33185 33224 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch33224 : covered 33224 33263 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch33263 : covered 33263 33301 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch33301 : covered 33301 33340 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch33340 : covered 33340 33379 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch33379 : covered 33379 33418 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch33418 : covered 33418 33457 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch33457 : covered 33457 33496 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch33496 : covered 33496 33535 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch33535 : covered 33535 33574 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch33574 : covered 33574 33612 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch33612 : covered 33612 33651 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch33651 : covered 33651 33690 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch33690 : covered 33690 33729 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch33729 : covered 33729 33768 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch33768 : covered 33768 33807 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch33807 : covered 33807 33846 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch33846 : covered 33846 33885 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch33885 : covered 33885 33923 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch33923 : covered 33923 33962 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch33962 : covered 33962 34001 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch34001 : covered 34001 34040 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch34040 : covered 34040 34079 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch34079 : covered 34079 34118 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch34118 : covered 34118 34157 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch34157 : covered 34157 34196 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch34196 : covered 34196 34234 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch34234 : covered 34234 34273 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch34273 : covered 34273 34312 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch34312 : covered 34312 34351 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch34351 : covered 34351 34390 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch34390 : covered 34390 34429 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch34429 : covered 34429 34468 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch34468 : covered 34468 34507 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch34507 : covered 34507 34545 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch34545 : covered 34545 34584 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch34584 : covered 34584 34623 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch34623 : covered 34623 34662 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch34662 : covered 34662 34701 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch34701 : covered 34701 34740 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch34740 : covered 34740 34779 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch34779 : covered 34779 34818 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch34818 : covered 34818 34856 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch34856 : covered 34856 34895 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch34895 : covered 34895 34934 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch34934 : covered 34934 34973 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch34973 : covered 34973 35011 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch35011 : covered 35011 35050 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch35050 : covered 35050 35089 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch35089 : covered 35089 35128 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch35128 : covered 35128 35166 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch35166 : covered 35166 35205 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch35205 : covered 35205 35244 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch35244 : covered 35244 35283 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch35283 : covered 35283 35322 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch35322 : covered 35322 35361 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch35361 : covered 35361 35400 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch35400 : covered 35400 35439 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch35439 : covered 35439 35477 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch35477 : covered 35477 35516 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch35516 : covered 35516 35555 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch35555 : covered 35555 35594 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch35594 : covered 35594 35633 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch35633 : covered 35633 35672 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch35672 : covered 35672 35711 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch35711 : covered 35711 35750 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch35750 : covered 35750 35788 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch35788 : covered 35788 35827 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch35827 : covered 35827 35866 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch35866 : covered 35866 35905 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch35905 : covered 35905 35944 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch35944 : covered 35944 35983 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch35983 : covered 35983 36022 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch36022 : covered 36022 36061 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch36061 : covered 36061 36099 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch36099 : covered 36099 36138 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch36138 : covered 36138 36177 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch36177 : covered 36177 36216 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch36216 : covered 36216 36255 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch36255 : covered 36255 36294 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch36294 : covered 36294 36333 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch36333 : covered 36333 36372 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch36372 : covered 36372 36410 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch36410 : covered 36410 36449 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch36449 : covered 36449 36488 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch36488 : covered 36488 36527 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch36527 : covered 36527 36566 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch36566 : covered 36566 36605 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch36605 : covered 36605 36644 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch36644 : covered 36644 36683 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch36683 : covered 36683 36721 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch36721 : covered 36721 36760 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch36760 : covered 36760 36799 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch36799 : covered 36799 36838 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch36838 : covered 36838 36877 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch36877 : covered 36877 36916 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch36916 : covered 36916 36955 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch36955 : covered 36955 36994 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch36994 : covered 36994 37032 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch37032 : covered 37032 37071 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch37071 : covered 37071 37110 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch37110 : covered 37110 37149 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch37149 : covered 37149 37188 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch37188 : covered 37188 37227 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch37227 : covered 37227 37266 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch37266 : covered 37266 37305 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch37305 : covered 37305 37343 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch37343 : covered 37343 37382 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch37382 : covered 37382 37421 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch37421 : covered 37421 37460 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch37460 : covered 37460 37498 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch37498 : covered 37498 37537 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch37537 : covered 37537 37576 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch37576 : covered 37576 37615 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch37615 : covered 37615 37653 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch37653 : covered 37653 37692 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch37692 : covered 37692 37731 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch37731 : covered 37731 37770 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch37770 : covered 37770 37809 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch37809 : covered 37809 37848 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch37848 : covered 37848 37887 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch37887 : covered 37887 37926 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch37926 : covered 37926 37964 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch37964 : covered 37964 38003 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch38003 : covered 38003 38042 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch38042 : covered 38042 38081 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch38081 : covered 38081 38120 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch38120 : covered 38120 38159 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch38159 : covered 38159 38198 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch38198 : covered 38198 38237 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch38237 : covered 38237 38275 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch38275 : covered 38275 38314 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch38314 : covered 38314 38353 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch38353 : covered 38353 38392 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch38392 : covered 38392 38431 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch38431 : covered 38431 38470 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch38470 : covered 38470 38509 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch38509 : covered 38509 38548 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch38548 : covered 38548 38586 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch38586 : covered 38586 38625 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch38625 : covered 38625 38664 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch38664 : covered 38664 38703 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch38703 : covered 38703 38742 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch38742 : covered 38742 38781 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch38781 : covered 38781 38820 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch38820 : covered 38820 38859 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch38859 : covered 38859 38897 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch38897 : covered 38897 38936 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch38936 : covered 38936 38975 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch38975 : covered 38975 39014 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch39014 : covered 39014 39053 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch39053 : covered 39053 39092 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch39092 : covered 39092 39131 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch39131 : covered 39131 39170 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch39170 : covered 39170 39208 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch39208 : covered 39208 39247 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch39247 : covered 39247 39286 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch39286 : covered 39286 39325 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch39325 : covered 39325 39364 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch39364 : covered 39364 39403 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch39403 : covered 39403 39442 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch39442 : covered 39442 39481 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch39481 : covered 39481 39519 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch39519 : covered 39519 39558 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch39558 : covered 39558 39597 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch39597 : covered 39597 39636 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch39636 : covered 39636 39675 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch39675 : covered 39675 39714 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch39714 : covered 39714 39753 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-private theorem batch39753 : covered 39753 39792 := checked (by apply halve <;> apply halve <;> unfold valid <;> decide +kernel)
-
-set_option maxRecDepth 15000 in
-private theorem allrows : covered 0 39792 := (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch0 batch38) (joinCoverage batch77 batch116)) (joinCoverage (joinCoverage batch155 batch193) (joinCoverage batch232 batch271))) (joinCoverage (joinCoverage (joinCoverage batch310 batch348) (joinCoverage batch387 batch426)) (joinCoverage (joinCoverage batch465 batch504) (joinCoverage batch543 batch582)))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch621 batch659) (joinCoverage batch698 batch737)) (joinCoverage (joinCoverage batch776 batch815) (joinCoverage batch854 batch893))) (joinCoverage (joinCoverage (joinCoverage batch932 batch970) (joinCoverage batch1009 batch1048)) (joinCoverage (joinCoverage batch1087 batch1126) (joinCoverage batch1165 batch1204))))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch1243 batch1281) (joinCoverage batch1320 batch1359)) (joinCoverage (joinCoverage batch1398 batch1437) (joinCoverage batch1476 batch1515))) (joinCoverage (joinCoverage (joinCoverage batch1554 batch1592) (joinCoverage batch1631 batch1670)) (joinCoverage (joinCoverage batch1709 batch1748) (joinCoverage batch1787 batch1826)))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch1865 batch1903) (joinCoverage batch1942 batch1981)) (joinCoverage (joinCoverage batch2020 batch2059) (joinCoverage batch2098 batch2137))) (joinCoverage (joinCoverage (joinCoverage batch2176 batch2214) (joinCoverage batch2253 batch2292)) (joinCoverage (joinCoverage batch2331 batch2370) (joinCoverage batch2409 batch2448)))))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch2487 batch2525) (joinCoverage batch2564 batch2603)) (joinCoverage (joinCoverage batch2642 batch2680) (joinCoverage batch2719 batch2758))) (joinCoverage (joinCoverage (joinCoverage batch2797 batch2835) (joinCoverage batch2874 batch2913)) (joinCoverage (joinCoverage batch2952 batch2991) (joinCoverage batch3030 batch3069)))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch3108 batch3146) (joinCoverage batch3185 batch3224)) (joinCoverage (joinCoverage batch3263 batch3302) (joinCoverage batch3341 batch3380))) (joinCoverage (joinCoverage (joinCoverage batch3419 batch3457) (joinCoverage batch3496 batch3535)) (joinCoverage (joinCoverage batch3574 batch3613) (joinCoverage batch3652 batch3691))))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch3730 batch3768) (joinCoverage batch3807 batch3846)) (joinCoverage (joinCoverage batch3885 batch3924) (joinCoverage batch3963 batch4002))) (joinCoverage (joinCoverage (joinCoverage batch4041 batch4079) (joinCoverage batch4118 batch4157)) (joinCoverage (joinCoverage batch4196 batch4235) (joinCoverage batch4274 batch4313)))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch4352 batch4390) (joinCoverage batch4429 batch4468)) (joinCoverage (joinCoverage batch4507 batch4546) (joinCoverage batch4585 batch4624))) (joinCoverage (joinCoverage (joinCoverage batch4663 batch4701) (joinCoverage batch4740 batch4779)) (joinCoverage (joinCoverage batch4818 batch4857) (joinCoverage batch4896 batch4935))))))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch4974 batch5012) (joinCoverage batch5051 batch5090)) (joinCoverage (joinCoverage batch5129 batch5167) (joinCoverage batch5206 batch5245))) (joinCoverage (joinCoverage (joinCoverage batch5284 batch5322) (joinCoverage batch5361 batch5400)) (joinCoverage (joinCoverage batch5439 batch5478) (joinCoverage batch5517 batch5556)))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch5595 batch5633) (joinCoverage batch5672 batch5711)) (joinCoverage (joinCoverage batch5750 batch5789) (joinCoverage batch5828 batch5867))) (joinCoverage (joinCoverage (joinCoverage batch5906 batch5944) (joinCoverage batch5983 batch6022)) (joinCoverage (joinCoverage batch6061 batch6100) (joinCoverage batch6139 batch6178))))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch6217 batch6255) (joinCoverage batch6294 batch6333)) (joinCoverage (joinCoverage batch6372 batch6411) (joinCoverage batch6450 batch6489))) (joinCoverage (joinCoverage (joinCoverage batch6528 batch6566) (joinCoverage batch6605 batch6644)) (joinCoverage (joinCoverage batch6683 batch6722) (joinCoverage batch6761 batch6800)))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch6839 batch6877) (joinCoverage batch6916 batch6955)) (joinCoverage (joinCoverage batch6994 batch7033) (joinCoverage batch7072 batch7111))) (joinCoverage (joinCoverage (joinCoverage batch7150 batch7188) (joinCoverage batch7227 batch7266)) (joinCoverage (joinCoverage batch7305 batch7344) (joinCoverage batch7383 batch7422)))))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch7461 batch7499) (joinCoverage batch7538 batch7577)) (joinCoverage (joinCoverage batch7616 batch7654) (joinCoverage batch7693 batch7732))) (joinCoverage (joinCoverage (joinCoverage batch7771 batch7809) (joinCoverage batch7848 batch7887)) (joinCoverage (joinCoverage batch7926 batch7965) (joinCoverage batch8004 batch8043)))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch8082 batch8120) (joinCoverage batch8159 batch8198)) (joinCoverage (joinCoverage batch8237 batch8276) (joinCoverage batch8315 batch8354))) (joinCoverage (joinCoverage (joinCoverage batch8393 batch8431) (joinCoverage batch8470 batch8509)) (joinCoverage (joinCoverage batch8548 batch8587) (joinCoverage batch8626 batch8665))))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch8704 batch8742) (joinCoverage batch8781 batch8820)) (joinCoverage (joinCoverage batch8859 batch8898) (joinCoverage batch8937 batch8976))) (joinCoverage (joinCoverage (joinCoverage batch9015 batch9053) (joinCoverage batch9092 batch9131)) (joinCoverage (joinCoverage batch9170 batch9209) (joinCoverage batch9248 batch9287)))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch9326 batch9364) (joinCoverage batch9403 batch9442)) (joinCoverage (joinCoverage batch9481 batch9520) (joinCoverage batch9559 batch9598))) (joinCoverage (joinCoverage (joinCoverage batch9637 batch9675) (joinCoverage batch9714 batch9753)) (joinCoverage (joinCoverage batch9792 batch9831) (joinCoverage batch9870 batch9909)))))))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch9948 batch9986) (joinCoverage batch10025 batch10064)) (joinCoverage (joinCoverage batch10103 batch10141) (joinCoverage batch10180 batch10219))) (joinCoverage (joinCoverage (joinCoverage batch10258 batch10296) (joinCoverage batch10335 batch10374)) (joinCoverage (joinCoverage batch10413 batch10452) (joinCoverage batch10491 batch10530)))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch10569 batch10607) (joinCoverage batch10646 batch10685)) (joinCoverage (joinCoverage batch10724 batch10763) (joinCoverage batch10802 batch10841))) (joinCoverage (joinCoverage (joinCoverage batch10880 batch10918) (joinCoverage batch10957 batch10996)) (joinCoverage (joinCoverage batch11035 batch11074) (joinCoverage batch11113 batch11152))))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch11191 batch11229) (joinCoverage batch11268 batch11307)) (joinCoverage (joinCoverage batch11346 batch11385) (joinCoverage batch11424 batch11463))) (joinCoverage (joinCoverage (joinCoverage batch11502 batch11540) (joinCoverage batch11579 batch11618)) (joinCoverage (joinCoverage batch11657 batch11696) (joinCoverage batch11735 batch11774)))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch11813 batch11851) (joinCoverage batch11890 batch11929)) (joinCoverage (joinCoverage batch11968 batch12007) (joinCoverage batch12046 batch12085))) (joinCoverage (joinCoverage (joinCoverage batch12124 batch12162) (joinCoverage batch12201 batch12240)) (joinCoverage (joinCoverage batch12279 batch12318) (joinCoverage batch12357 batch12396)))))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch12435 batch12473) (joinCoverage batch12512 batch12551)) (joinCoverage (joinCoverage batch12590 batch12628) (joinCoverage batch12667 batch12706))) (joinCoverage (joinCoverage (joinCoverage batch12745 batch12783) (joinCoverage batch12822 batch12861)) (joinCoverage (joinCoverage batch12900 batch12939) (joinCoverage batch12978 batch13017)))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch13056 batch13094) (joinCoverage batch13133 batch13172)) (joinCoverage (joinCoverage batch13211 batch13250) (joinCoverage batch13289 batch13328))) (joinCoverage (joinCoverage (joinCoverage batch13367 batch13405) (joinCoverage batch13444 batch13483)) (joinCoverage (joinCoverage batch13522 batch13561) (joinCoverage batch13600 batch13639))))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch13678 batch13716) (joinCoverage batch13755 batch13794)) (joinCoverage (joinCoverage batch13833 batch13872) (joinCoverage batch13911 batch13950))) (joinCoverage (joinCoverage (joinCoverage batch13989 batch14027) (joinCoverage batch14066 batch14105)) (joinCoverage (joinCoverage batch14144 batch14183) (joinCoverage batch14222 batch14261)))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch14300 batch14338) (joinCoverage batch14377 batch14416)) (joinCoverage (joinCoverage batch14455 batch14494) (joinCoverage batch14533 batch14572))) (joinCoverage (joinCoverage (joinCoverage batch14611 batch14649) (joinCoverage batch14688 batch14727)) (joinCoverage (joinCoverage batch14766 batch14805) (joinCoverage batch14844 batch14883))))))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch14922 batch14960) (joinCoverage batch14999 batch15038)) (joinCoverage (joinCoverage batch15077 batch15115) (joinCoverage batch15154 batch15193))) (joinCoverage (joinCoverage (joinCoverage batch15232 batch15270) (joinCoverage batch15309 batch15348)) (joinCoverage (joinCoverage batch15387 batch15426) (joinCoverage batch15465 batch15504)))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch15543 batch15581) (joinCoverage batch15620 batch15659)) (joinCoverage (joinCoverage batch15698 batch15737) (joinCoverage batch15776 batch15815))) (joinCoverage (joinCoverage (joinCoverage batch15854 batch15892) (joinCoverage batch15931 batch15970)) (joinCoverage (joinCoverage batch16009 batch16048) (joinCoverage batch16087 batch16126))))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch16165 batch16203) (joinCoverage batch16242 batch16281)) (joinCoverage (joinCoverage batch16320 batch16359) (joinCoverage batch16398 batch16437))) (joinCoverage (joinCoverage (joinCoverage batch16476 batch16514) (joinCoverage batch16553 batch16592)) (joinCoverage (joinCoverage batch16631 batch16670) (joinCoverage batch16709 batch16748)))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch16787 batch16825) (joinCoverage batch16864 batch16903)) (joinCoverage (joinCoverage batch16942 batch16981) (joinCoverage batch17020 batch17059))) (joinCoverage (joinCoverage (joinCoverage batch17098 batch17136) (joinCoverage batch17175 batch17214)) (joinCoverage (joinCoverage batch17253 batch17292) (joinCoverage batch17331 batch17370)))))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch17409 batch17447) (joinCoverage batch17486 batch17525)) (joinCoverage (joinCoverage batch17564 batch17602) (joinCoverage batch17641 batch17680))) (joinCoverage (joinCoverage (joinCoverage batch17719 batch17757) (joinCoverage batch17796 batch17835)) (joinCoverage (joinCoverage batch17874 batch17913) (joinCoverage batch17952 batch17991)))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch18030 batch18068) (joinCoverage batch18107 batch18146)) (joinCoverage (joinCoverage batch18185 batch18224) (joinCoverage batch18263 batch18302))) (joinCoverage (joinCoverage (joinCoverage batch18341 batch18379) (joinCoverage batch18418 batch18457)) (joinCoverage (joinCoverage batch18496 batch18535) (joinCoverage batch18574 batch18613))))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch18652 batch18690) (joinCoverage batch18729 batch18768)) (joinCoverage (joinCoverage batch18807 batch18846) (joinCoverage batch18885 batch18924))) (joinCoverage (joinCoverage (joinCoverage batch18963 batch19001) (joinCoverage batch19040 batch19079)) (joinCoverage (joinCoverage batch19118 batch19157) (joinCoverage batch19196 batch19235)))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch19274 batch19312) (joinCoverage batch19351 batch19390)) (joinCoverage (joinCoverage batch19429 batch19468) (joinCoverage batch19507 batch19546))) (joinCoverage (joinCoverage (joinCoverage batch19585 batch19623) (joinCoverage batch19662 batch19701)) (joinCoverage (joinCoverage batch19740 batch19779) (joinCoverage batch19818 batch19857))))))))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch19896 batch19934) (joinCoverage batch19973 batch20012)) (joinCoverage (joinCoverage batch20051 batch20089) (joinCoverage batch20128 batch20167))) (joinCoverage (joinCoverage (joinCoverage batch20206 batch20244) (joinCoverage batch20283 batch20322)) (joinCoverage (joinCoverage batch20361 batch20400) (joinCoverage batch20439 batch20478)))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch20517 batch20555) (joinCoverage batch20594 batch20633)) (joinCoverage (joinCoverage batch20672 batch20711) (joinCoverage batch20750 batch20789))) (joinCoverage (joinCoverage (joinCoverage batch20828 batch20866) (joinCoverage batch20905 batch20944)) (joinCoverage (joinCoverage batch20983 batch21022) (joinCoverage batch21061 batch21100))))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch21139 batch21177) (joinCoverage batch21216 batch21255)) (joinCoverage (joinCoverage batch21294 batch21333) (joinCoverage batch21372 batch21411))) (joinCoverage (joinCoverage (joinCoverage batch21450 batch21488) (joinCoverage batch21527 batch21566)) (joinCoverage (joinCoverage batch21605 batch21644) (joinCoverage batch21683 batch21722)))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch21761 batch21799) (joinCoverage batch21838 batch21877)) (joinCoverage (joinCoverage batch21916 batch21955) (joinCoverage batch21994 batch22033))) (joinCoverage (joinCoverage (joinCoverage batch22072 batch22110) (joinCoverage batch22149 batch22188)) (joinCoverage (joinCoverage batch22227 batch22266) (joinCoverage batch22305 batch22344)))))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch22383 batch22421) (joinCoverage batch22460 batch22499)) (joinCoverage (joinCoverage batch22538 batch22576) (joinCoverage batch22615 batch22654))) (joinCoverage (joinCoverage (joinCoverage batch22693 batch22731) (joinCoverage batch22770 batch22809)) (joinCoverage (joinCoverage batch22848 batch22887) (joinCoverage batch22926 batch22965)))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch23004 batch23042) (joinCoverage batch23081 batch23120)) (joinCoverage (joinCoverage batch23159 batch23198) (joinCoverage batch23237 batch23276))) (joinCoverage (joinCoverage (joinCoverage batch23315 batch23353) (joinCoverage batch23392 batch23431)) (joinCoverage (joinCoverage batch23470 batch23509) (joinCoverage batch23548 batch23587))))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch23626 batch23664) (joinCoverage batch23703 batch23742)) (joinCoverage (joinCoverage batch23781 batch23820) (joinCoverage batch23859 batch23898))) (joinCoverage (joinCoverage (joinCoverage batch23937 batch23975) (joinCoverage batch24014 batch24053)) (joinCoverage (joinCoverage batch24092 batch24131) (joinCoverage batch24170 batch24209)))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch24248 batch24286) (joinCoverage batch24325 batch24364)) (joinCoverage (joinCoverage batch24403 batch24442) (joinCoverage batch24481 batch24520))) (joinCoverage (joinCoverage (joinCoverage batch24559 batch24597) (joinCoverage batch24636 batch24675)) (joinCoverage (joinCoverage batch24714 batch24753) (joinCoverage batch24792 batch24831))))))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch24870 batch24908) (joinCoverage batch24947 batch24986)) (joinCoverage (joinCoverage batch25025 batch25063) (joinCoverage batch25102 batch25141))) (joinCoverage (joinCoverage (joinCoverage batch25180 batch25218) (joinCoverage batch25257 batch25296)) (joinCoverage (joinCoverage batch25335 batch25374) (joinCoverage batch25413 batch25452)))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch25491 batch25529) (joinCoverage batch25568 batch25607)) (joinCoverage (joinCoverage batch25646 batch25685) (joinCoverage batch25724 batch25763))) (joinCoverage (joinCoverage (joinCoverage batch25802 batch25840) (joinCoverage batch25879 batch25918)) (joinCoverage (joinCoverage batch25957 batch25996) (joinCoverage batch26035 batch26074))))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch26113 batch26151) (joinCoverage batch26190 batch26229)) (joinCoverage (joinCoverage batch26268 batch26307) (joinCoverage batch26346 batch26385))) (joinCoverage (joinCoverage (joinCoverage batch26424 batch26462) (joinCoverage batch26501 batch26540)) (joinCoverage (joinCoverage batch26579 batch26618) (joinCoverage batch26657 batch26696)))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch26735 batch26773) (joinCoverage batch26812 batch26851)) (joinCoverage (joinCoverage batch26890 batch26929) (joinCoverage batch26968 batch27007))) (joinCoverage (joinCoverage (joinCoverage batch27046 batch27084) (joinCoverage batch27123 batch27162)) (joinCoverage (joinCoverage batch27201 batch27240) (joinCoverage batch27279 batch27318)))))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch27357 batch27395) (joinCoverage batch27434 batch27473)) (joinCoverage (joinCoverage batch27512 batch27550) (joinCoverage batch27589 batch27628))) (joinCoverage (joinCoverage (joinCoverage batch27667 batch27705) (joinCoverage batch27744 batch27783)) (joinCoverage (joinCoverage batch27822 batch27861) (joinCoverage batch27900 batch27939)))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch27978 batch28016) (joinCoverage batch28055 batch28094)) (joinCoverage (joinCoverage batch28133 batch28172) (joinCoverage batch28211 batch28250))) (joinCoverage (joinCoverage (joinCoverage batch28289 batch28327) (joinCoverage batch28366 batch28405)) (joinCoverage (joinCoverage batch28444 batch28483) (joinCoverage batch28522 batch28561))))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch28600 batch28638) (joinCoverage batch28677 batch28716)) (joinCoverage (joinCoverage batch28755 batch28794) (joinCoverage batch28833 batch28872))) (joinCoverage (joinCoverage (joinCoverage batch28911 batch28949) (joinCoverage batch28988 batch29027)) (joinCoverage (joinCoverage batch29066 batch29105) (joinCoverage batch29144 batch29183)))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch29222 batch29260) (joinCoverage batch29299 batch29338)) (joinCoverage (joinCoverage batch29377 batch29416) (joinCoverage batch29455 batch29494))) (joinCoverage (joinCoverage (joinCoverage batch29533 batch29571) (joinCoverage batch29610 batch29649)) (joinCoverage (joinCoverage batch29688 batch29727) (joinCoverage batch29766 batch29805)))))))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch29844 batch29882) (joinCoverage batch29921 batch29960)) (joinCoverage (joinCoverage batch29999 batch30037) (joinCoverage batch30076 batch30115))) (joinCoverage (joinCoverage (joinCoverage batch30154 batch30192) (joinCoverage batch30231 batch30270)) (joinCoverage (joinCoverage batch30309 batch30348) (joinCoverage batch30387 batch30426)))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch30465 batch30503) (joinCoverage batch30542 batch30581)) (joinCoverage (joinCoverage batch30620 batch30659) (joinCoverage batch30698 batch30737))) (joinCoverage (joinCoverage (joinCoverage batch30776 batch30814) (joinCoverage batch30853 batch30892)) (joinCoverage (joinCoverage batch30931 batch30970) (joinCoverage batch31009 batch31048))))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch31087 batch31125) (joinCoverage batch31164 batch31203)) (joinCoverage (joinCoverage batch31242 batch31281) (joinCoverage batch31320 batch31359))) (joinCoverage (joinCoverage (joinCoverage batch31398 batch31436) (joinCoverage batch31475 batch31514)) (joinCoverage (joinCoverage batch31553 batch31592) (joinCoverage batch31631 batch31670)))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch31709 batch31747) (joinCoverage batch31786 batch31825)) (joinCoverage (joinCoverage batch31864 batch31903) (joinCoverage batch31942 batch31981))) (joinCoverage (joinCoverage (joinCoverage batch32020 batch32058) (joinCoverage batch32097 batch32136)) (joinCoverage (joinCoverage batch32175 batch32214) (joinCoverage batch32253 batch32292)))))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch32331 batch32369) (joinCoverage batch32408 batch32447)) (joinCoverage (joinCoverage batch32486 batch32524) (joinCoverage batch32563 batch32602))) (joinCoverage (joinCoverage (joinCoverage batch32641 batch32679) (joinCoverage batch32718 batch32757)) (joinCoverage (joinCoverage batch32796 batch32835) (joinCoverage batch32874 batch32913)))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch32952 batch32990) (joinCoverage batch33029 batch33068)) (joinCoverage (joinCoverage batch33107 batch33146) (joinCoverage batch33185 batch33224))) (joinCoverage (joinCoverage (joinCoverage batch33263 batch33301) (joinCoverage batch33340 batch33379)) (joinCoverage (joinCoverage batch33418 batch33457) (joinCoverage batch33496 batch33535))))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch33574 batch33612) (joinCoverage batch33651 batch33690)) (joinCoverage (joinCoverage batch33729 batch33768) (joinCoverage batch33807 batch33846))) (joinCoverage (joinCoverage (joinCoverage batch33885 batch33923) (joinCoverage batch33962 batch34001)) (joinCoverage (joinCoverage batch34040 batch34079) (joinCoverage batch34118 batch34157)))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch34196 batch34234) (joinCoverage batch34273 batch34312)) (joinCoverage (joinCoverage batch34351 batch34390) (joinCoverage batch34429 batch34468))) (joinCoverage (joinCoverage (joinCoverage batch34507 batch34545) (joinCoverage batch34584 batch34623)) (joinCoverage (joinCoverage batch34662 batch34701) (joinCoverage batch34740 batch34779))))))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch34818 batch34856) (joinCoverage batch34895 batch34934)) (joinCoverage (joinCoverage batch34973 batch35011) (joinCoverage batch35050 batch35089))) (joinCoverage (joinCoverage (joinCoverage batch35128 batch35166) (joinCoverage batch35205 batch35244)) (joinCoverage (joinCoverage batch35283 batch35322) (joinCoverage batch35361 batch35400)))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch35439 batch35477) (joinCoverage batch35516 batch35555)) (joinCoverage (joinCoverage batch35594 batch35633) (joinCoverage batch35672 batch35711))) (joinCoverage (joinCoverage (joinCoverage batch35750 batch35788) (joinCoverage batch35827 batch35866)) (joinCoverage (joinCoverage batch35905 batch35944) (joinCoverage batch35983 batch36022))))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch36061 batch36099) (joinCoverage batch36138 batch36177)) (joinCoverage (joinCoverage batch36216 batch36255) (joinCoverage batch36294 batch36333))) (joinCoverage (joinCoverage (joinCoverage batch36372 batch36410) (joinCoverage batch36449 batch36488)) (joinCoverage (joinCoverage batch36527 batch36566) (joinCoverage batch36605 batch36644)))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch36683 batch36721) (joinCoverage batch36760 batch36799)) (joinCoverage (joinCoverage batch36838 batch36877) (joinCoverage batch36916 batch36955))) (joinCoverage (joinCoverage (joinCoverage batch36994 batch37032) (joinCoverage batch37071 batch37110)) (joinCoverage (joinCoverage batch37149 batch37188) (joinCoverage batch37227 batch37266)))))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch37305 batch37343) (joinCoverage batch37382 batch37421)) (joinCoverage (joinCoverage batch37460 batch37498) (joinCoverage batch37537 batch37576))) (joinCoverage (joinCoverage (joinCoverage batch37615 batch37653) (joinCoverage batch37692 batch37731)) (joinCoverage (joinCoverage batch37770 batch37809) (joinCoverage batch37848 batch37887)))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch37926 batch37964) (joinCoverage batch38003 batch38042)) (joinCoverage (joinCoverage batch38081 batch38120) (joinCoverage batch38159 batch38198))) (joinCoverage (joinCoverage (joinCoverage batch38237 batch38275) (joinCoverage batch38314 batch38353)) (joinCoverage (joinCoverage batch38392 batch38431) (joinCoverage batch38470 batch38509))))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch38548 batch38586) (joinCoverage batch38625 batch38664)) (joinCoverage (joinCoverage batch38703 batch38742) (joinCoverage batch38781 batch38820))) (joinCoverage (joinCoverage (joinCoverage batch38859 batch38897) (joinCoverage batch38936 batch38975)) (joinCoverage (joinCoverage batch39014 batch39053) (joinCoverage batch39092 batch39131)))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage batch39170 batch39208) (joinCoverage batch39247 batch39286)) (joinCoverage (joinCoverage batch39325 batch39364) (joinCoverage batch39403 batch39442))) (joinCoverage (joinCoverage (joinCoverage batch39481 batch39519) (joinCoverage batch39558 batch39597)) (joinCoverage (joinCoverage batch39636 batch39675) (joinCoverage batch39714 batch39753))))))))))
+set_option maxRecDepth 12000 in
+private theorem allrows : covered 0 39792 := (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage span0 span310) (joinCoverage span621 span932)) (joinCoverage (joinCoverage span1243 span1554) (joinCoverage span1865 span2176))) (joinCoverage (joinCoverage (joinCoverage span2487 span2797) (joinCoverage span3108 span3419)) (joinCoverage (joinCoverage span3730 span4041) (joinCoverage span4352 span4663)))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage span4974 span5284) (joinCoverage span5595 span5906)) (joinCoverage (joinCoverage span6217 span6528) (joinCoverage span6839 span7150))) (joinCoverage (joinCoverage (joinCoverage span7461 span7771) (joinCoverage span8082 span8393)) (joinCoverage (joinCoverage span8704 span9015) (joinCoverage span9326 span9637))))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage span9948 span10258) (joinCoverage span10569 span10880)) (joinCoverage (joinCoverage span11191 span11502) (joinCoverage span11813 span12124))) (joinCoverage (joinCoverage (joinCoverage span12435 span12745) (joinCoverage span13056 span13367)) (joinCoverage (joinCoverage span13678 span13989) (joinCoverage span14300 span14611)))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage span14922 span15232) (joinCoverage span15543 span15854)) (joinCoverage (joinCoverage span16165 span16476) (joinCoverage span16787 span17098))) (joinCoverage (joinCoverage (joinCoverage span17409 span17719) (joinCoverage span18030 span18341)) (joinCoverage (joinCoverage span18652 span18963) (joinCoverage span19274 span19585)))))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage span19896 span20206) (joinCoverage span20517 span20828)) (joinCoverage (joinCoverage span21139 span21450) (joinCoverage span21761 span22072))) (joinCoverage (joinCoverage (joinCoverage span22383 span22693) (joinCoverage span23004 span23315)) (joinCoverage (joinCoverage span23626 span23937) (joinCoverage span24248 span24559)))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage span24870 span25180) (joinCoverage span25491 span25802)) (joinCoverage (joinCoverage span26113 span26424) (joinCoverage span26735 span27046))) (joinCoverage (joinCoverage (joinCoverage span27357 span27667) (joinCoverage span27978 span28289)) (joinCoverage (joinCoverage span28600 span28911) (joinCoverage span29222 span29533))))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage (joinCoverage span29844 span30154) (joinCoverage span30465 span30776)) (joinCoverage (joinCoverage span31087 span31398) (joinCoverage span31709 span32020))) (joinCoverage (joinCoverage (joinCoverage span32331 span32641) (joinCoverage span32952 span33263)) (joinCoverage (joinCoverage span33574 span33885) (joinCoverage span34196 span34507)))) (joinCoverage (joinCoverage (joinCoverage (joinCoverage span34818 span35128) (joinCoverage span35439 span35750)) (joinCoverage (joinCoverage span36061 span36372) (joinCoverage span36683 span36994))) (joinCoverage (joinCoverage (joinCoverage span37305 span37615) (joinCoverage span37926 span38237)) (joinCoverage (joinCoverage span38548 span38859) (joinCoverage span39170 span39481)))))))
 
 theorem fast_correct (n : ℕ) (bound : n ≤ 4775000) : fast n = Nat.primeCounting n := by
   induction n with
@@ -3487,7 +1838,7 @@ def advance (p : ℕ) (f : ℕ → ℕ) (x : ℕ) :=
 
 private def evalPhi (table : ℕ → ℕ) : List ℕ → ℕ → ℕ
   | [], t => t
-  | p :: ps, t => if p=11 then ShortPeriod.wheel t else if t < p then (if t=0 then 0 else 1) else
+  | p :: ps, t => if p=13 then ShortPeriod30030.wheel t else if t < p then (if t=0 then 0 else 1) else
       if t < (p+1)^2 then 1 + table t - table p else
         evalPhi table ps t - evalPhi table ps (t/p)
 
@@ -3512,11 +1863,11 @@ private theorem refine_row {bound p : ℕ} (tab : ℕ → ℕ) (ok : ∀ t, t �
     (pos : 0 < p) (cap : (p+1)^2 ≤ bound+1) : ∀ t,
     (p::ps).foldr advance id t = evalPhi tab (p::ps) t := by
   intro t
-  by_cases hbase : p=11
+  by_cases hbase : p=13
   · subst p
-    have val : (11::ps).foldr advance id t = ShortPeriod.wheel t := by
+    have val : (13::ps).foldr advance id t = ShortPeriod30030.wheel t := by
       rw [←lst]
-      exact (legendre_range 11 t).trans (ShortPeriod.count_rough t)
+      exact (legendre_range 13 t).trans (ShortPeriod30030.count_rough t)
     simpa [evalPhi] using val
   by_cases sm : t < p
   · simp [List.foldr_cons,advance,evalPhi,hbase,sm]
@@ -3533,7 +1884,7 @@ private theorem merge_filter (f : ℕ → Bool) (lo a b : ℕ) (l r : List ℕ)
   rw [←List.range'_append_1,List.filter_append,hl,hr]
 
 private theorem eval_delta (tab : ℕ → ℕ) (ps : List ℕ) (p n q old dec ans : ℕ)
-    (notWheel : p≠11) (le : p ≤ n) (sq : (p+1)^2 ≤ n) (div : n/p = q)
+    (notWheel : p≠13) (le : p ≤ n) (sq : (p+1)^2 ≤ n) (div : n/p = q)
     (base : evalPhi tab ps n = old) (cut : evalPhi tab ps q = dec) (sub : old-dec=ans) :
     evalPhi tab (p::ps) n = ans := by
   rw [evalPhi,if_neg notWheel,if_neg (not_lt.mpr le),if_neg (not_lt.mpr sq),div,base,cut,sub]
@@ -3624,7 +1975,7 @@ private theorem prime_ok (n : ℕ) (hn : n≤4775000) : prime n=true ↔ n.Prime
 
 
 private theorem takeStep {ps : List ℕ} {p q prev cut ans : ℕ}
-    (notWheel : p≠11) (base : F ps 10425579253=prev) (part : F ps q=cut) (div : 10425579253/p=q)
+    (notWheel : p≠13) (base : F ps 10425579253=prev) (part : F ps q=cut) (div : 10425579253/p=q)
     (le : p≤10425579253) (sq : (p+1)^2≤10425579253) (sub : prev-cut=ans) :
     F (p::ps) 10425579253=ans := eval_delta tab ps p 10425579253 q prev cut ans notWheel le sq div base part sub
 
@@ -3657,9 +2008,7 @@ private theorem c5 : F ps4 947779932=216635412 := by decide +kernel
 private theorem v5 : F ps5 10425579253=2166354132 := by decide +kernel
 
 private def ps6 : List ℕ := 13::ps5
-private theorem c6 : F ps5 801967634=166642626 := by decide +kernel
-private theorem v6 : F ps6 10425579253=1999711506 :=
-  takeStep (p:=13) (by decide) v5 c6 rfl (by decide) (by decide) rfl
+private theorem v6 : F ps6 10425579253=1999711506 := by decide +kernel
 
 private def ps7 : List ℕ := 17::ps6
 private theorem c7 : F ps6 613269367=117630090 := by decide +kernel
