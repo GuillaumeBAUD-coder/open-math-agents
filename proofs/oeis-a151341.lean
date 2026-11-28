@@ -21,18 +21,11 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a151341.main := by
   have hm : ∀ k : ℕ, ((k : ℚ) + 4) * motzkin (k + 2)
       = (2 * (k : ℚ) + 5) * motzkin (k + 1) + 3 * ((k : ℚ) + 1) * motzkin k := by
     intro k
-    have hk : ((k : ℚ) + 4) ≠ 0 := by positivity
-    have e : motzkin (k + 2) = ((2 * (k : ℚ) + 5) * motzkin (k + 1)
-        + 3 * ((k : ℚ) + 1) * motzkin k) / (k + 4 : ℚ) := by
-      first | rfl | rw [motzkin] | simp [motzkin]
-    rw [e]
+    rw [motzkin]
     field_simp
   intro n hn
   obtain ⟨k, rfl⟩ : ∃ k, n = k + 2 := ⟨n - 2, by omega⟩
-  have e1 : k + 2 - 1 = k + 1 := by omega
-  have e2 : k + 2 - 2 = k := by omega
-  rw [e1, e2]
-  simp only [a]
+  simp only [a, Nat.add_sub_cancel, show k + 2 - 2 = k by omega]
   have hA : (((k + 1 : ℕ) : ℚ) + 2) * (catalan (k + 2) : ℚ)
       = 2 * (2 * ((k + 1 : ℕ) : ℚ) + 1) * (catalan (k + 1) : ℚ) := hc (k + 1)
   have hB := hc k
