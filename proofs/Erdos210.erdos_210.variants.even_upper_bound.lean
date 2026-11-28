@@ -172,7 +172,7 @@ private lemma construction (m : ℕ) (hm : 3 ≤ m) : Erdos210.f (m+m) ≤ m := 
       have hh := hlim (hp i) (hq j) (hp k) (he ▸ left_mem_affineSpan_pair _ _ _)
         (he ▸ right_mem_affineSpan_pair _ _ _) pk (pq_ne i j)
       exact (hh.elim (fun h => hki (pinj h.symm)) (pq_ne k j)).elim
-    have param (z : ℝ²) (hz : z ∈ S) : (∃ i, P i = z) ∨ ∃ i, Q i = z := by
+    have param (z : ℝ²) (hz : z ∈ S) : (∃ i : Fin m, P i = z) ∨ ∃ i : Fin m, Q i = z := by
       simpa [S,V,W] using hz
     rcases param a ha with ⟨i,rfl⟩ | ⟨i,rfl⟩ <;> rcases param b hb with ⟨j,rfl⟩ | ⟨j,rfl⟩
     · have hij : i ≠ j := fun he => hab (congrArg P he)
