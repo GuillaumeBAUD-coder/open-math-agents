@@ -1,17 +1,16 @@
 import OMAReductions.R_Erdos1135_erdos_1135_R2
 
 /-!
-# The minimum in a possible Collatz cycle
+# A finite cycle search for each reduced odd count
 
-The first hypothesis bounds the gap between powers of two and three. The
-second is a finite orbit search for each fixed number of odd inputs. The
-power-gap hypothesis has a separate proof using the LABO-COLLATZ
-formalisation of a lower bound for two logarithms.
+Write the primitive period k and its odd count s as k = p d and s = q d
+with p and q coprime. A possible nontrivial cycle has q ≥ 1636 and its
+minimum n satisfies n > 330911 and n ≡ 3 (mod 4).
 
-For a cycle with minimum n, length k and s odd inputs, the elementary
-estimate is (3n+1)(2^k−3^s) ≤ s·2^k. Finite descent and power comparisons
-exclude n≤100000 and s≤970. The remaining search bound grows
-subexponentially in s. The number s is unbounded.
+H1 bounds the relative gap between powers of two and three by C(q).
+It has a separate proof using the LABO-COLLATZ two-logarithm estimate.
+In H2 both the seed and the repetition count d have explicit bounds in q.
+The reduced odd count q itself is unbounded.
 -/
 
 namespace OMA.R_Erdos1135_erdos_1135_R2_H2_R1
@@ -23,16 +22,18 @@ def H1 : Prop :=
     else 2 ^ (2 * 10 ^ 12 * (Nat.log 2 s + 1) ^ 5) + 1)
   ∀ k s : ℕ, 94 ≤ s → 3 ^ s < 2 ^ k → 2 ^ k ≤ (2 ^ k - 3 ^ s) * C s
 
-/-- For fixed s this asks for finitely many seed and time checks. -/
+/-- At each reduced odd count q, all possible primitive periods and seeds
+lie in explicit finite ranges. -/
 def H2 : Prop :=
-  let C := fun s : ℕ => min (2 ^ (s / 13)) (if s < 10 ^ 100 then 10 ^ 101 + 1
-    else 2 ^ (2 * 10 ^ 12 * (Nat.log 2 s + 1) ^ 5) + 1)
+  let C := fun q : ℕ => min (2 ^ (q / 13)) (if q < 10 ^ 100 then 10 ^ 101 + 1
+    else 2 ^ (2 * 10 ^ 12 * (Nat.log 2 q + 1) ^ 5) + 1)
   let T := fun n : ℕ => if n % 2 = 0 then n / 2 else (3 * n + 1) / 2
-  ∀ s n k : ℕ, 971 ≤ s → 100000 < n → n % 4 = 3 → 3 * n + 1 ≤ s * C s →
-    0 < k → k < 2 * s → 3 ^ s < 2 ^ k → 2 ^ k * 100000 ^ s ≤ 300001 ^ s →
-    (3 * n + 1) * (2 ^ k - 3 ^ s) ≤ s * 2 ^ k →
-    ((range k).filter fun i => T^[i] n % 2 = 1).card = s →
-    (∀ i < k, n ≤ T^[i] n) → T^[k] n ≠ n
+  ∀ q p d n : ℕ, 1636 ≤ q → p.Coprime q → 0 < p → p < 2 * q →
+    330911 < n → n % 4 = 3 → 3 * n + 1 ≤ q * C q →
+    0 < d → d < C q * (Nat.log 2 (1 + 2 * q * C q) / 5 + 1) →
+    3 ^ q < 2 ^ p → (3 * n + 1) * (2 ^ p - 3 ^ q) ≤ q * 2 ^ p →
+    ((range (p*d)).filter fun i => T^[i] n % 2 = 1).card = q*d →
+    (∀ i < p*d, n ≤ T^[i] n) → T^[p*d] n ≠ n
 
 lemma decode {T : ℕ → ℕ} (hT : ∀ x, T x = if x % 2 = 0 then x / 2 else (3 * x + 1) / 2)
     (F : ℕ → ℕ) (S : Finset ℕ) (n : ℕ) (hz : F 0 = n)
@@ -157,11 +158,11 @@ lemma no_small_phase (T : ℕ → ℕ) (hT : T = fun x => if x % 2 = 0 then x / 
   omega
 
 
-set_option maxRecDepth 16000 in
-set_option maxHeartbeats 3200000 in
-lemma minimum_above_100000 (T : ℕ → ℕ)
+set_option maxRecDepth 20000 in
+set_option maxHeartbeats 6400000 in
+lemma minimum_above_330911 (T : ℕ → ℕ)
     (hT : T = fun x => if x % 2 = 0 then x / 2 else (3 * x + 1) / 2)
-    (y : ℕ) (hfour : y % 4 = 3) (hl : ∀ j, y ≤ T^[j] y) : 100000 < y := by
+    (y : ℕ) (hfour : y % 4 = 3) (hl : ∀ j, y ≤ T^[j] y) : 330911 < y := by
   let hit (n : ℕ) := Nat.rec (motive := fun _ => ℕ → Bool) (fun x => decide (x < n))
     (fun _ f x => decide (x < n) || f (T x))
   have witnessed (n t x : ℕ) (h : hit n t x = true) : ∃ j, T^[j] x < n := by
@@ -174,21 +175,26 @@ lemma minimum_above_100000 (T : ℕ → ℕ)
       · exact ⟨0, hh⟩
       · obtain ⟨j, hj⟩ := ih (T x) hh
         exact ⟨j + 1, by rw [iterate_succ_apply]; exact hj⟩
-  have checked : ∀ a : Fin 100, ∀ b : Fin 250,
-      let z := 4 * (a.val * 250 + b.val) + 3
-      hit z 136 z = true := by
+  have checked : ∀ a : Fin 383, ∀ b : Fin 216,
+      let z := 4 * (a.val * 216 + b.val) + 3
+      hit z 164 z = true := by
     subst T
     dsimp only [hit]
     decide +kernel
   by_contra! hy
-  let a : Fin 100 := ⟨y / 4 / 250, by omega⟩
-  let b : Fin 250 := ⟨y / 4 % 250, by omega⟩
+  let a : Fin 383 := ⟨y / 4 / 216, by omega⟩
+  let b : Fin 216 := ⟨y / 4 % 216, by omega⟩
   have hc := checked a b
-  have hh : 4 * (a.val * 250 + b.val) + 3 = y := by dsimp [a,b]; omega
+  have hh : 4 * (a.val * 216 + b.val) + 3 = y := by dsimp [a,b]; omega
   dsimp only at hc
   rw [hh] at hc
-  obtain ⟨j, hj⟩ := witnessed y 136 y hc
+  obtain ⟨j, hj⟩ := witnessed y 164 y hc
   exact (not_lt_of_ge (hl j)) hj
+
+lemma minimum_above_100000 (T : ℕ → ℕ)
+    (hT : T = fun x => if x % 2 = 0 then x / 2 else (3 * x + 1) / 2)
+    (y : ℕ) (hfour : y % 4 = 3) (hl : ∀ j, y ≤ T^[j] y) : 100000 < y :=
+  lt_trans (by decide : 100000 < 330911) (minimum_above_330911 T hT y hfour hl)
 
 set_option maxRecDepth 16000 in
 set_option maxHeartbeats 3200000 in
@@ -211,6 +217,95 @@ lemma least_mod_four (T : ℕ → ℕ) (hT : ∀ x, T x = if x % 2 = 0 then x / 
   rw [ht, hT, if_pos hz] at h2
   omega
 
+set_option maxRecDepth 20000 in
+set_option maxHeartbeats 3200000 in
+private theorem first_band_powers : ∀ q : Fin 1636,
+    let A := 2 ^ ((3 ^ q.val).log2+1)
+    q.val * A < (3*330912+1) * (A-3^q.val) := by decide +kernel
+
+lemma first_band_minimum {n p q : ℕ} (hq : q < 1636) (hc : 3^q < 2^p)
+    (hgap : (3*n+1)*(2^p-3^q) ≤ q*2^p) : n ≤ 330911 := by
+  let A := 2 ^ ((3 ^ q).log2+1)
+  have hA := first_band_powers ⟨q,hq⟩
+  change q * A < (3*330912+1) * (A-3^q) at hA
+  have hp : A ≤ 2^p := Nat.pow_le_pow_right (by decide)
+    ((Nat.log2_lt (by positivity : 3^q ≠ 0)).mpr hc)
+  have hs : 3^q < A := by
+    apply (Nat.log2_lt (by positivity : 3^q ≠ 0)).mp
+    omega
+  obtain ⟨d,hd⟩ := Nat.exists_eq_add_of_le hp
+  by_contra! hn
+  have hdiff : 2^p-3^q = (A-3^q)+d := by omega
+  have hadd := Nat.mul_le_mul_right d (show q ≤ 3*330912+1 by omega)
+  have hn' := Nat.mul_le_mul_right (2^p-3^q) (show 3*330912+1 ≤ 3*n+1 by omega)
+  rw [hdiff] at hn' hgap
+  rw [hd] at hgap
+  nlinarith only [hA,hadd,hn',hgap]
+
+/-- Bernoulli's inequality after clearing denominators. -/
+lemma scaled_bernoulli (B D j : ℕ) : (B + j * D) * B ^ j ≤ B * (B + D) ^ j := by
+  induction j with
+  | zero => simp
+  | succ j ih =>
+    rw [pow_succ, pow_succ]
+    calc
+      (B + (j + 1) * D) * (B ^ j * B) ≤ ((B + j * D) * B ^ j) * (B + D) := by
+        nlinarith only [Nat.zero_le (j * D ^ 2 * B ^ j)]
+      _ ≤ _ := by simpa only [mul_assoc] using Nat.mul_le_mul_right (B + D) ih
+
+/-- A relative gap of at least one part in C gives a doubling in C repetitions. -/
+lemma gap_doubling {A B C : ℕ} (hb : 0 < B) (hab : B < A) (hg : A ≤ (A-B)*C) :
+    2 * B ^ C ≤ A ^ C := by
+  let D := A-B
+  have he : B+D = A := by dsimp only [D]; omega
+  have hd : B ≤ C*D := by rw [Nat.mul_comm]; exact hab.le.trans hg
+  have h : B * (2 * B ^ C) ≤ B * A ^ C := calc
+    _ = (B+B) * B ^ C := by ring
+    _ ≤ (B+C*D) * B ^ C := Nat.mul_le_mul_right _ (Nat.add_le_add_left hd B)
+    _ ≤ B * (B+D) ^ C := scaled_bernoulli B D C
+    _ = _ := by rw [he]
+  exact le_of_mul_le_mul_left h hb
+
+/-- In a primitive cycle the correction from distinct odd inputs is at most
+linear after taking the sixth power. Successive blocks of C repetitions
+double, which bounds the multiplicity of any reduced length-to-odd-count ratio. -/
+lemma cycle_multiplier_bound {A B C q d : ℕ} (hb : 0 < B) (hab : B < A)
+    (hg : A ≤ (A-B)*C) (hpack : (A^d)^6 ≤ (2*(q*d)+1)*(B^d)^6) :
+    d < C * (Nat.log 2 (1 + 2*q*C) / 5 + 1) := by
+  have hC : 0 < C := by
+    by_contra! h
+    have := Nat.eq_zero_of_le_zero h
+    simp_all
+  let t := d / C
+  let r := d % C
+  have he : C*t+r = d := Nat.div_add_mod d C
+  have hblocks : 2^t * B^d ≤ A^d := calc
+    _ = (2 * B^C)^t * B^r := by
+      conv_lhs => rw [← he, pow_add, pow_mul]
+      rw [mul_pow]; ring
+    _ ≤ (A^C)^t * A^r := Nat.mul_le_mul
+      (Nat.pow_le_pow_left (gap_doubling hb hab hg) t) (Nat.pow_le_pow_left hab.le r)
+    _ = _ := by rw [← pow_mul, ← pow_add, he]
+  have h6 := Nat.pow_le_pow_left hblocks 6
+  rw [mul_pow] at h6
+  have hu := le_of_mul_le_mul_right (h6.trans hpack) (by positivity : 0 < (B^d)^6)
+  rw [← pow_mul] at hu
+  have ht : d < C*(t+1) := Nat.lt_mul_div_succ d hC
+  have ht2 : t+1 ≤ 2^t := by
+    induction t with
+    | zero => decide
+    | succ j ih => rw [pow_succ]; omega
+  have hpad : 2*(q*d)+1 ≤ (1+2*q*C)*(t+1) := by
+    nlinarith only [Nat.mul_le_mul_left (2*q) ht.le, Nat.zero_le t]
+  have hpow : 2^(5*t)*2^t ≤ (1+2*q*C)*2^t := calc
+    _ = 2^(t*6) := by rw [← pow_add]; congr 1; omega
+    _ ≤ 2*(q*d)+1 := hu
+    _ ≤ (1+2*q*C)*(t+1) := hpad
+    _ ≤ _ := Nat.mul_le_mul_left _ ht2
+  have hlog := Nat.le_log_of_pow_le (by decide : 1 < 2)
+    (le_of_mul_le_mul_right hpow (by positivity : 0 < 2^t))
+  exact ht.trans_le (Nat.mul_le_mul_left C (by omega))
+
 /-- Route a cycle to its minimum, preserving its return time. -/
 theorem main : H1 → H2 → OMA.R_Erdos1135_erdos_1135_R2.H2 := by
   classical
@@ -225,48 +320,89 @@ theorem main : H1 → H2 → OMA.R_Erdos1135_erdos_1135_R2.H2 := by
   obtain ⟨j, hj⟩ : ∃ j, T^[j] n = y := Nat.find_spec hex
   have hy : 2048 < y := hj ▸ no_small_phase T rfl n k (by omega) hk hfix j
   have hmin (i : ℕ) : y ≤ T^[i] y := Nat.find_min' hex ⟨i + j, by rw [iterate_add_apply, hj]⟩
-  have hcy : T^[k] y = y := by rw [← hj, ← iterate_add_apply, Nat.add_comm k j, iterate_add_apply, hfix]
+  have hreturn : T^[k] y = y := by rw [← hj, ← iterate_add_apply, Nat.add_comm k j, iterate_add_apply, hfix]
+  let L := minimalPeriod T y
+  have hL : 0 < L := (show IsPeriodicPt T k y from hreturn).minimalPeriod_pos hk
+  have hcy : T^[L] y = y := iterate_minimalPeriod
   let odds := fun d => (range d).filter fun i => T^[i] y % 2 = 1
-  let s := (odds k).card
+  let s := (odds L).card
   have hrec := OMA.R_Erdos1135_erdos_1135_R2.shortcut_rec (T := T) (fun _ => rfl) y
   have ha := OMA.R_Erdos1135_erdos_1135_R2.affine_identity (x := fun i => T^[i] y) (odds := odds)
-    hrec (fun _ => rfl) k
-  change 2 ^ k * T^[k] y = 3 ^ s * y + _ at ha
+    hrec (fun _ => rfl) L
+  change 2 ^ L * T^[L] y = 3 ^ s * y + _ at ha
   rw [hcy] at ha
   have hypos : 0 < y := by omega
-  have hle := le_of_mul_le_mul_right (by omega : 3 ^ s * y ≤ 2 ^ k * y) hypos
-  have hc : 3 ^ s < 2 ^ k := by
+  have hle := le_of_mul_le_mul_right (by omega : 3 ^ s * y ≤ 2 ^ L * y) hypos
+  have hc : 3 ^ s < 2 ^ L := by
     have h3 : 3 ^ s % 2 = 1 := by rw [Nat.pow_mod]; norm_num
-    have h2 : 2 ^ k % 2 = 0 := by
-      obtain ⟨p, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : k ≠ 0)
-      simp [pow_succ]
+    have h2 : 2 ^ L % 2 = 0 := by
+      obtain ⟨a, ha⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : L ≠ 0)
+      simp [ha, pow_succ]
     omega
-  have hcB (B : ℕ) (hB : ∀ i, B ≤ T^[i] y) : 2 ^ k * B ^ s ≤ (3 * B + 1) ^ s := by
-    have H := OMA.R_Erdos1135_erdos_1135_R2.slope_upper B (fun i => T^[i] y) odds hrec (fun _ => rfl) hB k
-    change (2 ^ k * T^[k] y) * B ^ s ≤ (3 * B + 1) ^ s * y at H
+  have hcB (B : ℕ) (hB : ∀ i, B ≤ T^[i] y) : 2 ^ L * B ^ s ≤ (3 * B + 1) ^ s := by
+    have H := OMA.R_Erdos1135_erdos_1135_R2.slope_upper B (fun i => T^[i] y) odds hrec (fun _ => rfl) hB L
+    change (2 ^ L * T^[L] y) * B ^ s ≤ (3 * B + 1) ^ s * y at H
     rw [hcy, mul_right_comm] at H
     exact le_of_mul_le_mul_right H hypos
   have hy4 := least_mod_four T (fun _ => rfl) y (by omega) hmin
-  have hyB := minimum_above_100000 T rfl y hy4 hmin
-  have hu : 2 ^ k * 100000 ^ s ≤ 300001 ^ s := hcB 100000 (fun i => hyB.le.trans (hmin i))
-  have hs : 971 ≤ s := by
+  have hyB := minimum_above_330911 T rfl y hy4 hmin
+  let d := Nat.gcd L s
+  let p := L / d
+  let q := s / d
+  have hd : 0 < d := Nat.gcd_pos_of_pos_left _ hL
+  have hpd : p*d = L := Nat.div_mul_cancel (Nat.gcd_dvd_left L s)
+  have hqd : q*d = s := Nat.div_mul_cancel (Nat.gcd_dvd_right L s)
+  have hp : 0 < p := by
+    by_contra! h
+    have hz := Nat.eq_zero_of_le_zero h
+    rw [hz, Nat.zero_mul] at hpd
+    omega
+  have hred : 3^q < 2^p := by
+    apply (Nat.pow_lt_pow_iff_left (by omega : d ≠ 0)).mp
+    simpa only [← pow_mul, hpd, hqd] using hc
+  have hslope (B : ℕ) (hB : ∀ i, B ≤ T^[i] y) : 2^p * B^q ≤ (3*B+1)^q := by
+    apply (Nat.pow_le_pow_iff_left (by omega : d ≠ 0)).mp
+    simpa only [mul_pow, ← pow_mul, hpd, hqd] using hcB B hB
+  have hnum := hslope y hmin
+  have htriv : 2^p ≤ (2^p-3^q)*2^p :=
+    Nat.le_mul_of_pos_left _ (by omega)
+  have hlocal := (minimum_bound hred hnum htriv).1
+  have hq : 1636 ≤ q := by
     by_contra! hsmall
-    have h := short_odd_counts ⟨s, hsmall⟩
-    have hlog := (Nat.log2_lt (by positivity : 3 ^ s ≠ 0)).mpr hc
-    have hp : 2 ^ ((3 ^ s).log2 + 1) ≤ 2 ^ k := Nat.pow_le_pow_right (by decide) hlog
-    exact (not_lt_of_ge hu) (lt_of_lt_of_le h (Nat.mul_le_mul_right _ hp))
-  have hlen : k < 2 * s := by
-    have hh := Nat.pow_lt_pow_left (by decide : 300001 < 4 * 100000) (by omega : s ≠ 0)
+    exact (not_le_of_gt hyB) (first_band_minimum hsmall hred hlocal)
+  have hu : 2^p * 100000^q ≤ 300001^q := hslope 100000 (fun i => by have := hmin i; omega)
+  have hlen : p < 2*q := by
+    have hh := Nat.pow_lt_pow_left (by decide : 300001 < 4 * 100000) (by omega : q ≠ 0)
     rw [mul_pow, show (4 : ℕ) = 2 ^ 2 by decide, ← pow_mul] at hh
-    exact (Nat.pow_lt_pow_iff_right (by decide : 1 < 2)).mp (Nat.lt_of_mul_lt_mul_right (hu.trans_lt hh))
-  obtain ⟨hlocal, huniform⟩ := minimum_bound hc (hcB y hmin) (hgap k s (by omega) hc)
-  exact hsearch s y k hs hyB hy4 huniform hk hlen hc hu hlocal rfl (fun i _ => hmin i) hcy
+    exact (Nat.pow_lt_pow_iff_right (by decide : 1 < 2)).mp
+      (Nat.lt_of_mul_lt_mul_right (hu.trans_lt hh))
+  have hpack : (2^L)^6 ≤ (2*s+1)*(3^s)^6 := by
+    by_contra! htest
+    have hprod := OMA.R_Erdos1135_erdos_1135_R2.product_identity (x := fun i => T^[i] y)
+      (odds := odds) hrec (fun _ => rfl) L
+    have hinj : Set.InjOn (fun i : ℕ => T^[i] y) (odds L) := by
+      intro i hi j hj he
+      exact (iterate_eq_iterate_iff_of_lt_minimalPeriod
+        (mem_range.mp (mem_filter.mp hi).1) (mem_range.mp (mem_filter.mp hj).1)).mp he
+    have hdrop := OMA.R_Erdos1135_erdos_1135_R2.parity_drop 0 (fun i : ℕ => T^[i] y) L
+      (odds L) hypos (fun i hi => (mem_filter.mp hi).2)
+      (fun i _ => by have := hmin i; omega) hinj hprod (by simpa only [Nat.zero_add,
+        Nat.mul_zero, Nat.one_mul] using htest)
+    rw [hcy] at hdrop
+    exact (lt_irrefl y) hdrop
+  have hg := hgap p q (by omega) hred
+  have huniform := (minimum_bound hred hnum hg).2
+  have hmult := cycle_multiplier_bound (d := d) (q := q) (by positivity : 0 < 3^q) hred hg
+    (by simpa only [← pow_mul, hpd, hqd] using hpack)
+  exact hsearch q p d y hq (Nat.coprime_div_gcd_div_gcd hd) hp hlen hyB hy4 huniform
+    hd hmult hred hlocal (by rw [hpd, hqd]) (fun i _ => hmin i) (by rwa [hpd])
 
 /-- The remaining search follows from the original cycle exclusion. -/
 theorem necessary (h : OMA.R_Erdos1135_erdos_1135_R2.H2) : H2 := by
   let T := fun v : ℕ => if v % 2 = 0 then v / 2 else (3 * v + 1) / 2
-  intro s n k _ hn _ _ hk _ _ _ _ _ _ hfix
-  exact OMA.R_Erdos1135_erdos_1135_R2.no_large_cycle h (T := T) (fun _ => rfl) n k hk
-    (no_small_phase T rfl n k (by omega) hk hfix) hfix
+  intro q p d n _ _ hp _ hn _ _ hd _ _ _ _ _ hfix
+  have hk : 0 < p*d := Nat.mul_pos hp hd
+  exact OMA.R_Erdos1135_erdos_1135_R2.no_large_cycle h (T := T) (fun _ => rfl) n (p*d) hk
+    (no_small_phase T rfl n (p*d) (by omega) hk hfix) hfix
 
 end OMA.R_Erdos1135_erdos_1135_R2_H2_R1
