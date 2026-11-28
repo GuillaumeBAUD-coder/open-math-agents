@@ -4,7 +4,7 @@ import Mathlib
 # OEIS A061100: Squares with digital root 4
 
 Source: https://oeis.org/A061100
-Credit: @SudharsanAnimations
+Credit: Sudharsan Rajendiran
 
 Colin Barker (Feb 2013) conjectured the closed form a(n) = (16-72n+81n^2)/4 for n even and
 a(n) = (25-90n+81n^2)/4 for n odd (and the rational g.f.
