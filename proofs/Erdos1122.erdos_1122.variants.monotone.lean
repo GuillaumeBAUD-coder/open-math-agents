@@ -32,11 +32,11 @@ theorem OMA.solution : type_of% @Erdos1122.erdos_1122.variants.monotone := by
       | succ j ih => have := hgap j; push_cast; linarith
     have hb (i : ℕ) : e ≤ (((i : ℝ) + K) * f 2 + f 3) / (2 : ℝ) ^ i := by
       refine (le_div_iff₀ (by positivity)).2 ?_
-      have hK : K ≤ 2 ^ (K + 1) :=
-        K.lt_two_pow_self.le.trans (Nat.pow_le_pow_right (by decide) (by omega))
+      have hK : K ≤ 2^(K+1) := (Nat.le_succ K).trans (K+1).lt_two_pow_self.le
       have hcmp : q (2 ^ i) ≤ 2 ^ (i + K + 1) + 1 := by
-        calc 1 + K * 2 ^ i ≤ 1 + 2 ^ (K + 1) * 2 ^ i := Nat.add_le_add_left (Nat.mul_le_mul_right _ hK) _
-          _ = 2 ^ (i + K + 1) + 1 := by rw [← pow_add, show K + 1 + i = i + K + 1 by omega, Nat.add_comm]
+        rw [show i+K+1 = K+1+i by omega, pow_add]
+        simpa [q, Nat.add_comm 1] using
+          Nat.add_le_add_right (Nat.mul_le_mul_right (2^i) hK) 1
       have h1 := hlin (2 ^ i); have h2 := hle (by dsimp [q]; omega) hcmp; have h3 := hgr (i + K)
       push_cast at h1 h3; linarith
     have hlim : Tendsto (fun i : ℕ => (((i : ℝ) + K) * f 2 + f 3) / (2 : ℝ) ^ i) atTop (𝓝 0) := by
@@ -102,18 +102,15 @@ theorem OMA.solution : type_of% @Erdos1122.erdos_1122.variants.monotone := by
     have hfl := hle (pow_pos (by decide : 0 < 2) k) hlo
     have hfh := hle (pow_pos hn t) hhi
     rw [hpow 2 (by decide), hpow n hn] at hfl hfh
-    have hll : (k : ℝ) * Real.log 2 ≤ t * Real.log n := by
-      simpa only [Nat.cast_pow, Nat.cast_ofNat, Real.log_pow] using
-        Real.log_le_log (show (0 : ℝ) < ((2 ^ k : ℕ) : ℝ) by positivity)
-          (show ((2 ^ k : ℕ) : ℝ) ≤ ((n ^ t : ℕ) : ℝ) by exact_mod_cast hlo)
-    have hlh : (t : ℝ) * Real.log n ≤ ((k + 1 : ℕ) : ℝ) * Real.log 2 := by
-      simpa only [Nat.cast_pow, Nat.cast_ofNat, Real.log_pow] using
-        Real.log_le_log (show (0 : ℝ) < ((n ^ t : ℕ) : ℝ) by positivity)
-          (show ((n ^ t : ℕ) : ℝ) ≤ ((2 ^ (k + 1) : ℕ) : ℝ) by exact_mod_cast hhi)
-    have hcl1 : (k : ℝ) * f 2 ≤ t * (c * Real.log n) := by
-      rw [← hcl]; simpa only [mul_left_comm] using mul_le_mul_of_nonneg_left hll hc
-    have hch1 : (t : ℝ) * (c * Real.log n) ≤ ((k + 1 : ℕ) : ℝ) * f 2 := by
-      rw [← hcl]; simpa only [mul_left_comm] using mul_le_mul_of_nonneg_left hlh hc
+    have logs {a b i j : ℕ} (ha : 0 < a) (h : a^i ≤ b^j) :
+        (i : ℝ) * (c * Real.log a) ≤ j * (c * Real.log b) := by
+      have hR : (a : ℝ)^i ≤ (b : ℝ)^j := by exact_mod_cast h
+      simpa only [Real.log_pow, mul_left_comm] using
+        mul_le_mul_of_nonneg_left (Real.log_le_log (pow_pos (by exact_mod_cast ha) i) hR) hc
+    have hcl1 := logs (by decide : 0 < (2 : ℕ)) hlo
+    have hch1 := logs hn hhi
+    norm_cast at hcl1 hch1
+    rw [hcl] at hcl1 hch1
     push_cast at hfh hch1; rw [mul_sub]; exact abs_le.2 ⟨by nlinarith, by nlinarith⟩
   by_contra hne
   have hpos := abs_pos.2 (sub_ne_zero.2 hne)
