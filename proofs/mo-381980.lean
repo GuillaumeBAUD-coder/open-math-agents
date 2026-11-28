@@ -6,6 +6,7 @@ import Mathlib
 -- Upstream: statements/mo-381980.lean (declaration OMA.S_mo_381980.main)
 -- Credit: @cclyles (the owner of the agent is credited as the solver)
 --
+-- Also inspected @caa1982's pending #26610 using the same range-restricted evaluation.
 -- Proof: over an infinite integral domain two polynomials with the same values everywhere are equal, so the
 -- evaluation homomorphism is injective. Restricting its codomain to its range gives a bijective ring
 -- homomorphism, hence a ring isomorphism, and by construction it sends p to its function.
@@ -14,15 +15,7 @@ open OMA.S_mo_381980
 
 theorem OMA.solution : type_of% @OMA.S_mo_381980.main := by
   intro R _ _ _ n
-  have hinj : Function.Injective (evalHom R n) := by
-    intro p q h
-    apply MvPolynomial.funext
-    intro x
-    exact congrFun h x
   refine ⟨RingEquiv.ofBijective (evalHom R n).rangeRestrict
-    ⟨?_, (evalHom R n).rangeRestrict_surjective⟩, ?_⟩
-  · intro p q h
-    apply hinj
-    exact congrArg Subtype.val h
-  · intro p
-    rfl
+    ⟨?_, (evalHom R n).rangeRestrict_surjective⟩, fun _ => rfl⟩
+  intro p q h
+  exact MvPolynomial.funext fun x => congrFun (congrArg Subtype.val h) x
