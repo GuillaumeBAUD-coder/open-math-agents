@@ -1449,14 +1449,618 @@ theorem quadratic_from_primes (primes : OMA.R_Erdos1095_erdos_1095_variants_lowe
 
 end RoughBinomial
 
+/- Pairs of nearby reciprocal ordinates bound the rational-point count
+through the polynomial height n^4 ≤ k^11. -/
+namespace RoughBinomial
+
+/-- The difference of two reciprocal ordinates is a rational function with two linear factors. -/
+theorem curve_difference_at {x h : ℝ} (n w : ℝ) (xp : 0 < x) (hn : 0 ≤ h) :
+    n * w * h / (x * (x+h)) = w*n/x - w*n/(x+h) := by
+  have sum_pos := add_pos_of_pos_of_nonneg xp hn
+  field_simp
+  ring
+
+/-- Uniform two-sided spacing for the first difference on a window of width at most its start. -/
+theorem curve_difference_sharp {k H u v h n w : ℝ} (kp : 0 < k) (ku : k ≤ u)
+    (uv : u < v) (vh : v ≤ k+H) (hk : H ≤ k) (hp : 0 < h) (hl : h ≤ k)
+    (np : 0 ≤ n) (wp : 0 ≤ w) :
+    let F (x : ℝ) := n*w*h/(x*(x+h))
+    n*w*h*(v-u)/(12*k^3) ≤ F u - F v ∧ F u - F v ≤ 2*n*w*h*(v-u)/k^3 := by
+  dsimp only
+  have up := kp.trans_le ku
+  have vp := up.trans uv
+  have uh := add_pos up hp
+  have wh := add_pos vp hp
+  have mass : 0 ≤ n*w*h*(v-u) := mul_nonneg (mul_nonneg (mul_nonneg np wp) hp.le) (sub_nonneg.mpr uv.le)
+  have small : k^3 ≤ u*(u+h)*v := by
+    calc k^3 = k*k*k := by ring
+         _ ≤ u*(u+h)*v := mul_le_mul (mul_le_mul ku (by linarith) kp.le up.le) (ku.trans uv.le) kp.le (by positivity)
+  have big : u*(u+h)*v ≤ 12*k^3 := by
+    calc u*(u+h)*v ≤ (2*k)*(3*k)*(2*k) := by gcongr <;> linarith
+         _ = 12*k^3 := by ring
+  have first : 1 ≤ (u+v+h)/(v+h) := (le_div_iff₀ wh).mpr (by linarith)
+  have second : (u+v+h)/(v+h) ≤ 2 := (div_le_iff₀ wh).mpr (by linarith)
+  have evaluate : n*w*h/(u*(u+h)) - n*w*h/(v*(v+h)) =
+      (n*w*h*(v-u)/(u*(u+h)*v)) * ((u+v+h)/(v+h)) := by
+    field_simp
+    ring
+  rw [evaluate]
+  have dz := mul_pos (mul_pos up uh) vp
+  have val := div_nonneg mass dz.le
+  constructor
+  · calc
+      _ ≤ n*w*h*(v-u)/(u*(u+h)*v) := div_le_div_of_nonneg_left mass dz big
+      _ ≤ _ := le_mul_of_one_le_right val first
+  · calc
+      _ ≤ (n*w*h*(v-u)/(u*(u+h)*v)) * 2 := mul_le_mul_of_nonneg_left second val
+      _ ≤ (n*w*h*(v-u)/k^3) * 2 := mul_le_mul_of_nonneg_right (div_le_div_of_nonneg_left mass (pow_pos kp 3) small) (by norm_num)
+      _ = _ := by ring
+
+theorem curve_difference {k H u v h n w : ℝ} (kp : 0 < k) (ku : k ≤ u)
+    (uv : u < v) (vh : v ≤ k+H) (hk : H ≤ k) (hp : 0 < h) (hl : h ≤ k)
+    (np : 0 ≤ n) (wp : 0 ≤ w) :
+    let F (x : ℝ) := n*w*h/(x*(x+h))
+    F u = w*n/u - w*n/(u+h) ∧ n*w*h*(v-u)/(32*k^3) ≤ F u - F v ∧
+      F u - F v ≤ 4*n*w*h*(v-u)/k^3 := by
+  dsimp only
+  obtain ⟨lo,hi⟩ := curve_difference_sharp kp ku uv vh hk hp hl np wp
+  have mass : 0 ≤ n*w*h*(v-u) := mul_nonneg (mul_nonneg (mul_nonneg np wp) hp.le) (sub_nonneg.mpr uv.le)
+  refine ⟨curve_difference_at n w (kp.trans_le ku) hp.le, ?_, ?_⟩
+  · exact (div_le_div_of_nonneg_left mass (by positivity) (by linarith [pow_pos kp 3])).trans lo
+  · apply hi.trans
+    apply div_le_div_of_nonneg_right _ (pow_nonneg kp.le 3)
+    nlinarith only [mass]
+
+end RoughBinomial
+
+namespace RoughBinomial
+open Finset
+
+/-- A finite set of ordinary integers contained in a real interval of length D has at most D+1 members. -/
+theorem nat_card_of_diameter (S : Finset ℕ) (D : ℝ) (hD : 0 ≤ D)
+    (diam : ∀ x∈S, ∀ y∈S, (y:ℝ) - x ≤ D) : (S.card : ℝ) ≤ D+1 := by
+  classical
+  by_cases nonempty : S.Nonempty
+  · let a := S.min' nonempty
+    let b := S.max' nonempty
+    have am : a∈S := min'_mem _ _
+    have bm : b∈S := max'_mem _ _
+    have sub : S ⊆ Icc a b := fun x hx => mem_Icc.mpr ⟨S.min'_le x hx,S.le_max' x hx⟩
+    have card := card_le_card sub
+    rw [Nat.card_Icc] at card
+    have ab : a ≤ b := S.min'_le _ bm
+    have cast : (S.card:ℝ) + a ≤ (b:ℝ)+1 := by exact_mod_cast (show S.card+a≤ b+1 by omega)
+    have upper := (le_sub_iff_add_le.mpr cast)
+    linarith only [upper,diam a am b bm]
+  · rw [Finset.not_nonempty_iff_eq_empty.mp nonempty]
+    simp only [card_empty,Nat.cast_zero]
+    linarith
+
+/-- For monotone separated real values near integer centres, count both the occupied centres and each fibre. -/
+theorem count_integer_bands (U : Finset ℕ) (F : ℕ → ℝ) (label : ℕ → ℕ) (rate D η : ℝ)
+    (lp : 0 < rate) (dn : 0 ≤ D) (ep : 0 ≤ η) (close : ∀ u∈U, |F u - label u| ≤ η)
+    (diam : ∀ u∈U, ∀ v∈U, F u - F v ≤ D)
+    (slope : ∀ u∈U, ∀ v∈U, u< v → rate*((v:ℝ)-u) ≤ F u - F v) :
+    (U.card : ℝ) ≤ (D + 2*η + 1)*(2*η/rate+1) := by
+  classical
+  have cells := nat_card_of_diameter (U.image label) (D+2*η) (by positivity) (by
+    intro a ha b hb
+    obtain ⟨x,xm,rfl⟩ := mem_image.mp ha
+    obtain ⟨y,ym,rfl⟩ := mem_image.mp hb
+    have left := (abs_le.mp (close x xm)).2
+    have right := (abs_le.mp (close y ym)).1
+    linarith only [left,right,diam y ym x xm])
+  have within (z : ℕ) : (((U.filter fun u => label u=z).card : ℕ):ℝ) ≤ 2*η/rate+1 := by
+    apply nat_card_of_diameter _ _ (by positivity)
+    intro x hx y hy
+    obtain ⟨xm,xl⟩ := mem_filter.mp hx
+    obtain ⟨ym,yl⟩ := mem_filter.mp hy
+    by_cases lt : x< y
+    · have nearx := (abs_le.mp (close x xm)).2
+      have neary := (abs_le.mp (close y ym)).1
+      rw [xl] at nearx
+      rw [yl] at neary
+      apply (le_div_iff₀ lp).mpr
+      linarith only [mul_comm rate ((y:ℝ)-x),slope x xm y ym lt,nearx,neary]
+    · have wrong : (y:ℝ) ≤ x := by exact_mod_cast (Nat.le_of_not_gt lt)
+      exact (sub_nonpos.mpr wrong).trans (by positivity)
+  calc
+    _ = ∑ z ∈ U.image label, (((U.filter fun u => label u=z).card:ℕ):ℝ) := by
+      exact_mod_cast U.card_eq_sum_card_image label
+    _ ≤ ∑ _ ∈ U.image label, (2*η/rate+1) := sum_le_sum fun z _ => within z
+    _ = ((U.image label).card:ℝ)*(2*η/rate+1) := by simp; ring
+    _ ≤ _ := mul_le_mul_of_nonneg_right cells (by positivity)
+
+end RoughBinomial
+
+namespace RoughBinomial
+open Finset
+
+/-- Bound pairs from one denominator column by the oscillation and spacing of the first difference. -/
+theorem shifted_near_pairs {k n H w h : ℕ} {η : ℝ} (kp : 0 < k) (np : 0 < n)
+    (wp : 0 < w) (hp : 0 < h) (hk : h ≤ k) (width : H ≤ k) (ep : 0 ≤ η)
+    (U : Finset ℕ) (sub : U ⊆ Icc k (k+H))
+    (near : ∀ u ∈ U, ∃ a b : ℕ,
+      (0 ≤ (a:ℝ) - (w:ℝ)*n/u ∧ (a:ℝ) - (w:ℝ)*n/u ≤ η) ∧
+      (0 ≤ (b:ℝ) - (w:ℝ)*n/((u:ℝ)+h) ∧ (b:ℝ) - (w:ℝ)*n/((u:ℝ)+h) ≤ η)) :
+    (U.card:ℝ) ≤ (2*(n:ℝ)*w*h*H/(k:ℝ)^3+2*η+1) *
+      (24*η*(k:ℝ)^3/((n:ℝ)*w*h)+1) := by
+  classical
+  let F (u : ℕ) := (n:ℝ)*w*h/((u:ℝ)*(u+h))
+  let rate := (n:ℝ)*w*h/(12*(k:ℝ)^3)
+  let diam := 2*(n:ℝ)*w*h*H/(k:ℝ)^3
+  have rate_pos : 0 < rate := by dsimp [rate]; positivity
+  have diam_nonneg : 0 ≤ diam := by dsimp [diam]; positivity
+  have spacing (u : ℕ) (hu : u ∈ U) (v : ℕ) (hv : v ∈ U) (uv : u < v) :
+      rate*((v:ℝ)-u) ≤ F u-F v ∧ F u-F v ≤ diam := by
+    have bu := mem_Icc.mp (sub hu)
+    have bv := mem_Icc.mp (sub hv)
+    have t := curve_difference_sharp (k := (k:ℝ)) (u := (u:ℝ)) (v := (v:ℝ))
+      (n := (n:ℝ)) (w := (w:ℝ)) (h := (h:ℝ)) (H := (H:ℝ)) (by exact_mod_cast kp)
+      (by exact_mod_cast bu.1) (by exact_mod_cast uv) (by exact_mod_cast bv.2)
+      (by exact_mod_cast width) (by exact_mod_cast hp) (by exact_mod_cast hk) (Nat.cast_nonneg _) (Nat.cast_nonneg _)
+    refine ⟨?_,t.2.trans ?_⟩
+    · apply le_trans _ t.1
+      dsimp [rate]
+      exact le_of_eq (by ring)
+    · dsimp [diam]
+      apply div_le_div_of_nonneg_right _ (by positivity)
+      apply mul_le_mul_of_nonneg_left _ (by positivity)
+      have e : (v:ℝ) ≤ k+H := by exact_mod_cast bv.2
+      have f : (k:ℝ) ≤ u := by exact_mod_cast bu.1
+      linarith
+  have witness (u : ℕ) : ∃ m : ℕ, u ∉ U ∨ |F u - m| ≤ η := by
+    by_cases hu : u ∈ U
+    · obtain ⟨a,b,ha,hb⟩ := near u hu
+      have up : 0 < u := kp.trans_le (mem_Icc.mp (sub hu)).1
+      have identity : F u = (w:ℝ)*n/u - (w:ℝ)*n/((u:ℝ)+h) :=
+        curve_difference_at n w (by exact_mod_cast up) (Nat.cast_nonneg _)
+      refine ⟨a-b,Or.inr ?_⟩
+      by_cases ab : b ≤ a
+      · rw [Nat.cast_sub ab,identity,abs_le]
+        constructor <;> linarith only [ha.1,ha.2,hb.1,hb.2]
+      · have less : (a:ℝ) ≤ b := by exact_mod_cast (Nat.le_of_not_ge ab)
+        rw [Nat.sub_eq_zero_of_le (Nat.le_of_not_ge ab),Nat.cast_zero,sub_zero]
+        have fp : 0 ≤ F u := by dsimp [F]; positivity
+        rw [abs_of_nonneg fp,identity]
+        linarith only [ha.1,hb.2,less]
+    · exact ⟨0,Or.inl hu⟩
+  choose label possible using witness
+  have labels (u : ℕ) (hu : u ∈ U) := (possible u).resolve_left (fun absent => absent hu)
+  have oscill (u : ℕ) (hu : u ∈ U) (v : ℕ) (hv : v ∈ U) : F u-F v ≤ diam := by
+    rcases lt_trichotomy u v with lt|rfl|gt
+    · exact (spacing u hu v hv lt).2
+    · simpa only [sub_self] using diam_nonneg
+    · have gap := (spacing v hv u hu gt).1
+      have diff : 0 ≤ (u:ℝ)-v := sub_nonneg.mpr (by exact_mod_cast gt.le)
+      linarith only [gap,mul_nonneg rate_pos.le diff,diam_nonneg]
+  have count := count_integer_bands U F label rate diam η rate_pos diam_nonneg ep labels oscill
+    (fun u hu v hv uv => (spacing u hu v hv uv).1)
+  have eq : 2*η/rate = 24*η*(k:ℝ)^3/((n:ℝ)*w*h) := by
+    dsimp [rate]
+    rw [div_div_eq_mul_div]
+    ring
+  simpa only [eq,diam] using count
+
+
+open scoped Classical in
+/-- Apply the pair bound to exactly one of the denominator columns in the original near-point definition. -/
+theorem fixed_column_shift {k n H w h : ℕ} (kp : 0 < k) (np : 0 < n)
+    (wp : 0 < w) (hp : 0 < h) (hk : h ≤ k) (width : H ≤ k) :
+    let V : Finset ℕ := (Ioc k (k+H)).filter fun (u : ℕ) =>
+      ∃ a : ℕ, 0 < (a:ℝ)/w-(n:ℝ)/u ∧ (a:ℝ)/w-(n:ℝ)/u ≤ (H:ℝ)/k
+    let η := (w:ℝ)*H/k
+    ((V.filter fun u => u+h ∈ V).card:ℝ) ≤
+      (2*(n:ℝ)*w*h*H/(k:ℝ)^3+2*η+1) * (24*η*(k:ℝ)^3/((n:ℝ)*w*h)+1) := by
+  classical
+  intro V η
+  apply shifted_near_pairs kp np wp hp hk width (by dsimp [η]; positivity)
+  · intro u hu
+    have inside := (mem_filter.mp (mem_filter.mp hu).1).1
+    obtain ⟨lo,hi⟩ := mem_Ioc.mp inside
+    exact mem_Icc.mpr ⟨lo.le,hi⟩
+  · intro u hu
+    have scale (v a : ℕ) (z : 0 < (a:ℝ)/w-(n:ℝ)/v ∧ (a:ℝ)/w-(n:ℝ)/v ≤ (H:ℝ)/k) :
+        0 ≤ (a:ℝ)-(w:ℝ)*n/v ∧ (a:ℝ)-(w:ℝ)*n/v ≤ η := by
+      have wpos : 0 < (w:ℝ) := by exact_mod_cast wp
+      have id : (w:ℝ)*((a:ℝ)/w-(n:ℝ)/v) = (a:ℝ)-(w:ℝ)*n/v := by
+        rw [mul_sub,mul_div_cancel₀ _ wpos.ne',←mul_div_assoc]
+      have wy : (w:ℝ)*((H:ℝ)/k) = η := by dsimp [η]; ring
+      rw [←id,←wy]
+      exact ⟨mul_nonneg wpos.le z.1.le,mul_le_mul_of_nonneg_left z.2 wpos.le⟩
+    obtain ⟨ua,va⟩ := mem_filter.mp hu
+    obtain ⟨a,ha⟩ := (mem_filter.mp ua).2
+    obtain ⟨b,hb⟩ := (mem_filter.mp va).2
+    exact ⟨a,b,scale u a ha,by simpa only [Nat.cast_add] using scale (u+h) b hb⟩
+
+end RoughBinomial
+
+namespace RoughBinomial
+open Finset
+
+/-- Cauchy--Schwarz on consecutive blocks converts many points to many nearby pairs. -/
+theorem short_shift_pairs {k H D : ℕ} (dp : 0 < D) (U : Finset ℕ) (sub : U ⊆ Ioc k (k+H)) :
+    U.card^2 ≤ (H/D+1) * (U.card + 2 * ∑ h ∈ Ico 1 D, (U.filter fun u => u+h ∈ U).card) := by
+  let b (u : ℕ) := (u-k)/D
+  let B := range (H/D+1)
+  let C (j : ℕ) := (U.filter fun u => b u = j).card
+  let P (u v : ℕ) : ℕ := if u < v ∧ v-u < D then 1 else 0
+  have maps (u : ℕ) (hu : u ∈ U) : b u ∈ B := by
+    have x := mem_Ioc.mp (sub hu)
+    apply mem_range.mpr
+    exact Nat.lt_succ_of_le (Nat.div_le_div_right (by omega : u-k ≤ H))
+  have total : U.card = ∑ j ∈ B, C j := card_eq_sum_card_fiberwise maps
+  have cs : U.card^2 ≤ (H/D+1) * ∑ j ∈ B, C j ^ 2 := by
+    rw [total]
+    simpa [B] using sum_mul_sq_le_sq_mul_sq B (fun _ => 1) C
+  have energy : ∑ j ∈ B, C j ^ 2 = ∑ u ∈ U, C (b u) := by
+    rw [← sum_fiberwise_of_maps_to maps (fun u => C (b u))]
+    apply sum_congr rfl
+    intro j _
+    rw [sq, eq_comm]
+    exact sum_const_nat (fun i hi => congrArg C (mem_filter.mp hi).2)
+  have close {u v : ℕ} (hu : u ∈ U) (hv : v ∈ U) (eq : b u = b v) : u-v < D ∧ v-u < D := by
+    have lu := (mem_Ioc.mp (sub hu)).1
+    have lv := (mem_Ioc.mp (sub hv)).1
+    have du := Nat.mod_add_div (u-k) D
+    have dv := Nat.mod_add_div (v-k) D
+    change (u-k)/D = (v-k)/D at eq
+    rw [eq] at du
+    have ru := Nat.mod_lt (u-k) dp
+    have rv := Nat.mod_lt (v-k) dp
+    omega
+  have bound : (∑ u ∈ U, C (b u)) ≤ U.card + 2*(∑ u ∈ U, ∑ v ∈ U, P u v) := by
+    calc
+      _ ≤ ∑ u ∈ U, ∑ v ∈ U, ((if v=u then 1 else 0) + P u v + P v u) := by
+        apply sum_le_sum
+        intro u hu
+        change (U.filter (fun v => b v = b u)).card ≤ _
+        rw [card_filter]
+        apply sum_le_sum
+        intro v hv
+        split
+        · rename_i eq
+          obtain ⟨ab,ba⟩ := close hv hu eq
+          rcases lt_trichotomy u v with lt|rfl|gt
+          · simp [P,lt,ab,lt.ne',not_lt_of_gt lt]
+          · simp [P]
+          · simp [P,gt,ba]
+        · omega
+      _ = _ := by
+        simp_rw [sum_add_distrib]
+        have diag : (∑ u ∈ U, ∑ v ∈ U, (if v=u then 1 else 0 : ℕ)) = U.card := by simp
+        have flip : (∑ u ∈ U, ∑ v ∈ U, P v u) = ∑ u ∈ U, ∑ v ∈ U, P u v := sum_comm
+        rw [diag,flip]
+        omega
+  have forward : (∑ u ∈ U, ∑ v ∈ U, P u v) ≤ ∑ h ∈ Ico 1 D, (U.filter fun u => u+h ∈ U).card := by
+    simp_rw [card_filter]
+    rw [sum_comm (s := Ico 1 D) (t := U)]
+    apply sum_le_sum
+    intro u _
+    change (∑ v ∈ U, if u < v ∧ v-u < D then 1 else 0) ≤ _
+    rw [← card_filter, ← card_filter]
+    apply card_le_card_of_injOn (fun v => v-u)
+    · intro v hv
+      obtain ⟨vm,uv,small⟩ := mem_filter.mp hv
+      apply mem_filter.mpr
+      change (v-u ∈ Ico 1 D) ∧ u+(v-u) ∈ U
+      refine ⟨mem_Ico.mpr ⟨by omega,small⟩,?_⟩
+      rwa [show u+(v-u) = v by omega]
+    · intro v hv z hz eq
+      have uv := (mem_filter.mp hv).2.1
+      have uz := (mem_filter.mp hz).2.1
+      change v-u = z-u at eq
+      omega
+  rw [energy] at cs
+  exact cs.trans (Nat.mul_le_mul_left _ (bound.trans (by omega)))
+
+end RoughBinomial
+
+namespace RoughBinomial
+open Finset
+
+/-- A uniform bound for shifts from b^6 to b^14 forces a sparse denominator column. -/
+theorem column_count_nat {k H b : ℕ} (bmin : 2 ≤ b) (wide : b^14 ≤ H)
+    (U : Finset ℕ) (sub : U ⊆ Ioc k (k+H))
+    (pairs : ∀ h ∈ Ico (b^6) (b^14), (U.filter fun u => u+h ∈ U).card * b^5 ≤ 125*H) :
+    b^2*U.card ≤ 23*H := by
+  let A (h : ℕ) := (U.filter fun u => u+h ∈ U).card
+  let D := b^14
+  let M := b^6
+  have bp : 0 < b := by omega
+  have dp : 0 < D := pow_pos bp _
+  have mp : 1 ≤ M := Nat.one_le_pow _ _ bp
+  have md : M ≤ D := Nat.pow_le_pow_right bp (by decide : 6 ≤ 14)
+  have uH : U.card ≤ H := (card_le_card sub).trans (by simp)
+  have cnt (h : ℕ) : A h ≤ H := (card_le_card (filter_subset _ U)).trans uH
+  have t1 : (∑ h ∈ Ico 1 M,A h) * b^5 ≤ D*H := by
+    have part : (∑ h ∈ Ico 1 M, A h) ≤ M*H := by
+      calc _ ≤ ∑ _ ∈ Ico 1 M, H := sum_le_sum fun h _ => cnt h
+           _ ≤ M*H := by simpa using Nat.mul_le_mul_right H (Nat.sub_le M 1)
+    have powers : M*b^5 ≤ D := by
+      change b^6 * b^5 ≤ b^14
+      rw [←pow_add]
+      exact Nat.pow_le_pow_right bp (by decide)
+    calc _ ≤ M*H*b^5 := Nat.mul_le_mul_right _ part
+         _ = (M*b^5)*H := by ring
+         _ ≤ _ := Nat.mul_le_mul_right _ powers
+  have t2 : (∑ h ∈ Ico M D,A h) * b^5 ≤ D*(125*H) := by
+    rw [sum_mul]
+    calc _ ≤ ∑ _ ∈ Ico M D,(125*H) := sum_le_sum fun h hh => pairs h hh
+         _ ≤ D*(125*H) := by simpa using Nat.mul_le_mul_right (125*H) (Nat.sub_le D M)
+  have ts : (∑ h ∈ Ico 1 D,A h) * b^5 ≤ 126*(D*H) := by
+    rw [←sum_Ico_consecutive A mp md,add_mul]
+    exact (add_le_add t1 t2).trans_eq (by ring)
+  have b4 : b^4 ≤ D := Nat.pow_le_pow_right bp (by decide : 4 ≤ 14)
+  have plain : U.card * b^4 ≤ D*H := (Nat.mul_le_mul uH b4).trans_eq (Nat.mul_comm _ _)
+  have t4 : (∑ h ∈ Ico 1 D,A h) * b^4 ≤ 126*(D*H) :=
+    (Nat.mul_le_mul_left _ (Nat.pow_le_pow_right bp (by decide : 4 ≤ 5))).trans ts
+  have sumH : (U.card+2*∑ h ∈ Ico 1 D,A h)*b^4 ≤ 253*(D*H) := by
+    rw [add_mul,mul_assoc]
+    omega
+  have divisions : (H/D+1)*D ≤ 2*H := by
+    have hd : D ≤ H := wide
+    have := Nat.div_mul_le_self H D
+    rw [add_mul,one_mul]
+    omega
+  have CS := short_shift_pairs dp U sub
+  apply (Nat.pow_le_pow_iff_left (n := 2) (by decide)).mp
+  calc
+    _ = U.card^2*b^4 := by ring
+    _ ≤ ((H/D+1)*(U.card+2*∑ h ∈ Ico 1 D,A h))*b^4 := Nat.mul_le_mul_right _ CS
+    _ ≤ (H/D+1)*(253*(D*H)) := by rw [mul_assoc]; exact Nat.mul_le_mul_left _ sumH
+    _ = ((H/D+1)*D)*(253*H) := by ring
+    _ ≤ (2*H)*(253*H) := Nat.mul_le_mul_right _ divisions
+    _ ≤ (23*H)^2 := by nlinarith only [sq_nonneg (H:ℤ)]
+
+theorem column_count_real {k H b : ℕ} (bmin : 2 ≤ b) (wide : b^14 ≤ H)
+    (U : Finset ℕ) (sub : U ⊆ Ioc k (k+H))
+    (pairs : ∀ h ∈ Ico (b^6) (b^14), ((U.filter fun u => u+h ∈ U).card:ℝ) ≤ 125*(H:ℝ)/(b:ℝ)^5) :
+    b^2*U.card ≤ 40*H := by
+  have pos : 0 < (b:ℝ)^5 := by exact_mod_cast pow_pos (by omega : 0 < b) 5
+  have h := column_count_nat bmin wide U sub (fun h hh => by
+    exact_mod_cast (le_div_iff₀ pos).mp (pairs h hh))
+  omega
+
+end RoughBinomial
+
+namespace RoughBinomial
+open Finset
+
+/-- Scale the fixed-step spacing estimate after expanding its two main factors. -/
+theorem scaled_pair_bound {H r η e : ℝ} (rp : 0< r) (ep : 0≤ η) (hn : 0≤ H)
+    (e₁ : e≤1) (density : η≤ e) (slope : r≤ e) (quot : η/r ≤ H*e) (room : 1≤ H*e) :
+    (2*H*r+2*η+1) * (24*η/r+1) ≤ 125*H*e := by
+  have expand : (2*H*r+2*η+1)*(24*η/r+1) = 48*(H*η)+2*(H*r)+(2*η+1)*(24*(η/r))+2*η+1 := by
+    field_simp
+    ring
+  rw [expand]
+  have mixed : (2*η+1)*(24*(η/r)) ≤ 3*(24*(H*e)) := by
+    apply mul_le_mul _ _ (by positivity) (by norm_num)
+    · linarith only [density,e₁]
+    · linarith only [quot]
+  linarith only [mixed,mul_le_mul_of_nonneg_left density hn,mul_le_mul_of_nonneg_left slope hn,density,e₁,room]
+
+open scoped Classical in
+/-- A fixed denominator and a moderate shift leave at most 125H/b⁵ pairs in the polynomial height range. -/
+theorem polynomial_column_pairs {b k n H w h : ℕ} (bp : 2≤ b) (scale : b^80≤ k) (window : H=k/b^10)
+    (low : k^2≤ n*b) (top : n*b^20≤ k^3) (wp : 0< w) (wb : w≤ b) (hl : b^6≤ h) (hu : h≤ b^14) :
+    let V := (Ioc k (k+H)).filter fun (u : ℕ) =>
+      ∃ a : ℕ, 0 < (a:ℝ)/w-(n:ℝ)/u ∧ (a:ℝ)/w-(n:ℝ)/u ≤ (H:ℝ)/k
+    ((V.filter fun u => u+h ∈ V).card:ℝ) ≤ 125*(H:ℝ)/(b:ℝ)^5 := by
+  have bpos : 0< b := by omega
+  have kp := (pow_pos bpos 80).trans_le scale
+  have hp := (pow_pos bpos 6).trans_le hl
+  have np : 0< n := by
+    by_contra! z
+    have : n=0 := by omega
+    simp [this,kp.ne'] at low
+  have hk := hu.trans ((Nat.pow_le_pow_right bpos (by decide : 14≤80)).trans scale)
+  have width : H≤ k := by rw [window]; exact Nat.div_le_self _ _
+  have eta_small : w*H*b^5≤ k := by
+    calc
+      _ ≤ b*H*b^5 := Nat.mul_le_mul_right _ (Nat.mul_le_mul_right _ wb)
+      _ = H*b^6 := by ring
+      _ ≤ H*b^10 := Nat.mul_le_mul_left _ (Nat.pow_le_pow_right bpos (by decide : 6≤10))
+      _ ≤ k := by rw [window]; exact Nat.div_mul_le_self _ _
+  have r_small : n*w*h*b^5≤ k^3 := by
+    calc
+      _ ≤ n*b*b^14*b^5 := by gcongr
+      _ = n*b^20 := by ring
+      _ ≤ k^3 := top
+  have q_small : k^2*b^5≤ n*h := by
+    calc
+      _ ≤ n*b*b^5 := Nat.mul_le_mul_right _ low
+      _ = n*b^6 := by ring
+      _ ≤ _ := Nat.mul_le_mul_left _ hl
+  have headroom : b^5≤ H := by
+    rw [window,Nat.le_div_iff_mul_le (pow_pos bpos 10),←pow_add]
+    exact (Nat.pow_le_pow_right bpos (by decide : 5+10≤80)).trans scale
+  let η := (w:ℝ)*H/k
+  let r := (n:ℝ)*w*h/(k:ℝ)^3
+  let e := 1/(b:ℝ)^5
+  have bR : 0<(b:ℝ) := by exact_mod_cast bpos
+  have kR : 0<(k:ℝ) := by exact_mod_cast kp
+  have nR : 0<(n:ℝ) := by exact_mod_cast np
+  have wR : 0<(w:ℝ) := by exact_mod_cast wp
+  have hR : 0<(h:ℝ) := by exact_mod_cast hp
+  have rp : 0< r := by dsimp [r]; positivity
+  have e₁ : e≤1 := by
+    apply (div_le_iff₀ (pow_pos bR 5)).mpr
+    simpa using (show (1:ℝ)≤(b:ℝ)^5 by exact_mod_cast (pow_pos bpos 5))
+  have en : η≤ e := by
+    dsimp [η,e]
+    apply (div_le_div_iff₀ kR (pow_pos bR 5)).mpr
+    simpa only [one_mul] using (show (w:ℝ)*H*(b:ℝ)^5≤ k by exact_mod_cast eta_small)
+  have rn : r≤ e := by
+    dsimp [r,e]
+    apply (div_le_div_iff₀ (pow_pos kR 3) (pow_pos bR 5)).mpr
+    simpa only [one_mul] using (show (n:ℝ)*w*h*(b:ℝ)^5≤(k:ℝ)^3 by exact_mod_cast r_small)
+  have rat : η/r≤(H:ℝ)*e := by
+    have qR : (k:ℝ)^2*(b:ℝ)^5≤(n:ℝ)*h := by exact_mod_cast q_small
+    have r₁ : (k:ℝ)^2/((n:ℝ)*h)≤ e := by apply (div_le_div_iff₀ (mul_pos nR hR) (pow_pos bR 5)).mpr; simpa only [one_mul] using qR
+    calc
+      η/r = (H:ℝ)*((k:ℝ)^2/((n:ℝ)*h)) := by dsimp [η,r]; field_simp
+      _ ≤ _ := mul_le_mul_of_nonneg_left r₁ (Nat.cast_nonneg H)
+  have room : 1≤(H:ℝ)*e := by
+    dsimp [e]
+    rw [mul_one_div]
+    apply (le_div_iff₀ (pow_pos bR 5)).mpr
+    simpa only [one_mul] using (show (b:ℝ)^5≤ H by exact_mod_cast headroom)
+  have bound := scaled_pair_bound rp (by dsimp [η]; positivity) (Nat.cast_nonneg H) e₁ en rn rat room
+  apply (fixed_column_shift kp np wp hp hk width).trans
+  dsimp [r,η,e] at bound
+  convert! bound using 1 <;> (try field_simp)
+
+end RoughBinomial
+
+namespace RoughBinomial
+open scoped Classical
+open Finset
+
+/-- A uniform power saving for the genuine one-sided near-point count in a polynomial height range. -/
+theorem polynomial_near_density {b k n H : ℕ} (bp : 2≤ b) (scale : b^80≤ k) (window : H=k/b^10)
+    (low : k^2≤ n*b) (top : n*b^20≤ k^3) :
+    b*(((Ioc k (k+H)).filter (fun (u : ℕ) => ∃ w ∈ Icc 2 b, ∃ a : ℕ, 0 < (a:ℝ)/w-(n:ℝ)/u ∧ (a:ℝ)/w-(n:ℝ)/u ≤ (H:ℝ)/k))).card ≤ 40*H := by
+  classical
+  let col (w : ℕ) := (Ioc k (k+H)).filter fun (u : ℕ) =>
+    ∃ a : ℕ, 0 < (a:ℝ)/w-(n:ℝ)/u ∧ (a:ℝ)/w-(n:ℝ)/u ≤ (H:ℝ)/k
+  have cover : ((Ioc k (k+H)).filter (fun (u : ℕ) => ∃ w ∈ Icc 2 b, ∃ a : ℕ, 0 < (a:ℝ)/w-(n:ℝ)/u ∧ (a:ℝ)/w-(n:ℝ)/u ≤ (H:ℝ)/k)) ⊆ (Icc 2 b).biUnion col := by
+    intro u hu
+    simp only [mem_filter] at hu
+    obtain ⟨hw,w,wm,p,hh⟩ := hu
+    exact mem_biUnion.mpr ⟨w,wm,mem_filter.mpr ⟨hw,p,hh⟩⟩
+  have bpos : 0 < b := by omega
+  have wide : b^14≤ H := by
+    rw [window,Nat.le_div_iff_mul_le (pow_pos bpos 10),←pow_add]
+    exact (Nat.pow_le_pow_right bpos (by decide : 14+10≤80)).trans scale
+  have mass (w : ℕ) (wm : w∈Icc 2 b) : b^2*(col w).card ≤ 40*H := by
+    have wr := mem_Icc.mp wm
+    apply column_count_real bp wide (col w) (filter_subset _ _)
+    intro h hm
+    exact polynomial_column_pairs bp scale window low top (by omega) wr.2 (mem_Ico.mp hm).1 (mem_Ico.mp hm).2.le
+  have count : (((Ioc k (k+H)).filter (fun (u : ℕ) => ∃ w ∈ Icc 2 b, ∃ a : ℕ, 0 < (a:ℝ)/w-(n:ℝ)/u ∧ (a:ℝ)/w-(n:ℝ)/u ≤ (H:ℝ)/k))).card ≤ ∑ w∈Icc 2 b,(col w).card :=
+    (card_le_card cover).trans card_biUnion_le
+  have all : b*(b*(((Ioc k (k+H)).filter (fun (u : ℕ) => ∃ w ∈ Icc 2 b, ∃ a : ℕ, 0 < (a:ℝ)/w-(n:ℝ)/u ∧ (a:ℝ)/w-(n:ℝ)/u ≤ (H:ℝ)/k))).card) ≤ b*(40*H) := calc
+    _ = b^2*(((Ioc k (k+H)).filter (fun (u : ℕ) => ∃ w ∈ Icc 2 b, ∃ a : ℕ, 0 < (a:ℝ)/w-(n:ℝ)/u ∧ (a:ℝ)/w-(n:ℝ)/u ≤ (H:ℝ)/k))).card := by ring
+    _ ≤ b^2*(∑ w∈Icc 2 b,(col w).card) := Nat.mul_le_mul_left _ count
+    _ = ∑ w∈Icc 2 b,b^2*(col w).card := mul_sum _ _ _
+    _ ≤ ∑ _∈Icc 2 b,40*H := sum_le_sum mass
+    _ ≤ b*(40*H) := by
+      simp only [sum_const,nsmul_eq_mul,Nat.card_Icc,Nat.cast_id]
+      exact Nat.mul_le_mul_right (40*H) (by omega)
+  exact Nat.le_of_mul_le_mul_left all bpos
+
+end RoughBinomial
+
+namespace RoughBinomial
+open scoped Classical
+open Finset Filter Real
+
+/-- The dyadic denominator cutoff eventually exceeds any fixed multiple of the logarithm. -/
+theorem log_small_for_weight (δ : ℝ) (dp : 0< δ) : ∀ᶠ k : ℕ in atTop,
+    log (k:ℝ) ≤ δ*((2^(Nat.log 2 k/80):ℕ):ℝ) := by
+  obtain ⟨N,large⟩ := exists_nat_ge (160/δ)
+  filter_upwards [eventually_ge_atTop (2^(80*(2*N)):ℕ)] with k kp
+  have kp' := (pow_pos (by decide : 0<2) (80*(2*N))).trans_le kp
+  let d := Nat.log 2 k
+  let e := d/80
+  have room : 2*N≤ e := by
+    have := Nat.le_log_of_pow_le (by decide : 1<2) kp
+    dsimp [e,d]
+    omega
+  have hlog : d+1 ≤ 160*(2^(e-N)) := calc
+    _ ≤ 80*(e+1) := by dsimp [e]; omega
+    _ ≤ 160*(e-N+1) := by omega
+    _ ≤ _ := Nat.mul_le_mul_left _ Nat.lt_two_pow_self
+  have top := Nat.lt_pow_succ_log_self (by decide : 1<2) k
+  have scale : 160 ≤ δ*(2:ℝ)^N := by
+    have nle : (N:ℝ)≤(2:ℝ)^N := by exact_mod_cast (Nat.lt_two_pow_self (n:=N)).le
+    have := (div_le_iff₀ dp).mp (large.trans nle)
+    linarith only [this,mul_comm ((2:ℝ)^N) δ]
+  calc
+    log (k:ℝ) ≤ log ((2:ℝ)^(d+1)) := log_le_log (by exact_mod_cast kp') (by exact_mod_cast top.le)
+    _ = ((d+1:ℕ):ℝ)*log 2 := log_pow _ _
+    _ ≤ ((d+1:ℕ):ℝ)*1 := mul_le_mul_of_nonneg_left (by linarith [log_le_sub_one_of_pos (by norm_num : 0<(2:ℝ))]) (by positivity)
+    _ ≤ 160*(2:ℝ)^(e-N) := by simpa only [mul_one] using (show ((d+1:ℕ):ℝ) ≤ 160*(2:ℝ)^(e-N) by exact_mod_cast hlog)
+    _ ≤ δ*(2:ℝ)^N*(2:ℝ)^(e-N) := mul_le_mul_of_nonneg_right scale (by positivity)
+    _ = δ*((2^(Nat.log 2 k/80):ℕ):ℝ) := by
+      rw [mul_assoc,←pow_add,Nat.add_sub_of_le (by omega : N≤ e)]
+      push_cast
+      rfl
+
+/-- The polynomial-height portion of the public one-sided rational-point hypothesis. -/
+theorem near_density_to_eleven_quarters (δ ε : ℝ) (dp : 0< δ) (ep : 0< ε) :
+    ∀ᶠ k : ℕ in atTop, ∀ n : ℕ,
+      δ*(k:ℝ)^2 / log (k:ℝ) ≤ n → n^4 ≤ k^11 →
+      let b := 2^(Nat.log 2 k/80)
+      let H := k/b^10
+      ((((Ioc k (k+H)).filter (fun (u : ℕ) => ∃ w ∈ Icc 2 b, ∃ a : ℕ, 0 < (a:ℝ)/w-(n:ℝ)/u ∧ (a:ℝ)/w-(n:ℝ)/u ≤ (H:ℝ)/k))).card:ℝ) ≤ ε*H := by
+  obtain ⟨N,large⟩ := exists_nat_ge (40/ε)
+  filter_upwards [eventually_ge_atTop 2,log_small_for_weight δ dp,weight_tendsto.eventually_ge_atTop (max 2 N)] with k high lim weight
+  intro n floor upper b H
+  change max 2 N≤ b at weight
+  have bp : 2≤ b := (le_max_left _ _).trans weight
+  have kpos : 0< k := by omega
+  have bscale : b^80≤ k := weight_power_le kpos
+  have cover : n*b^20≤ k^3 := by
+    apply (Nat.pow_le_pow_iff_left (n:=4) (by decide)).mp
+    calc
+      (n*b^20)^4 = n^4*b^80 := by ring
+      _ ≤ k^11*k := Nat.mul_le_mul upper bscale
+      _ = (k^3)^4 := by ring
+  have first : k^2≤ n*b := by
+    have lp := Real.log_pos (show 1<(k:ℝ) by exact_mod_cast high)
+    have h := (div_le_iff₀ lp).mp floor
+    have raw := h.trans (mul_le_mul_of_nonneg_left lim (Nat.cast_nonneg n))
+    change δ*(k:ℝ)^2≤(n:ℝ)*(δ*(b:ℝ)) at raw
+    have eq : (n:ℝ)*(δ*(b:ℝ))=δ*((n:ℝ)*b) := by ring
+    rw [eq] at raw
+    exact_mod_cast (le_of_mul_le_mul_left raw dp)
+  have few := polynomial_near_density bp bscale (H:=H) rfl first cover
+  have scale : 40≤ ε*(b:ℝ) := by
+    have nle : N≤ b := (le_max_right _ _).trans weight
+    have nR : (N:ℝ)≤(b:ℝ) := by exact_mod_cast nle
+    have := (div_le_iff₀ ep).mp (large.trans nR)
+    linarith only [this,mul_comm (b:ℝ) ε]
+  apply le_of_mul_le_mul_left (a:=(b:ℝ)) _ (by exact_mod_cast (show 0< b by omega))
+  calc
+    _ ≤ 40*(H:ℝ) := by exact_mod_cast few
+    _ ≤ ε*b*(H:ℝ) := mul_le_mul_of_nonneg_right scale (Nat.cast_nonneg H)
+    _ = _ := by ring
+
+end RoughBinomial
+
+namespace RoughBinomial
+open Filter Finset
+
+/-- In the new reduction, the prime-counting input alone forces an eleven-quarters lower exponent. -/
+theorem eleven_quarters_from_primes (primes : OMA.R_Erdos1095_erdos_1095_variants_lower_solved_R1.H1) :
+    ∀ᶠ k : ℕ in atTop, k^11 < (Erdos1095.g k)^4 := by
+  obtain ⟨a,ap,abundant⟩ := many_products primes
+  obtain ⟨δ,dp,bottom⟩ := quadratic_from_primes primes
+  filter_upwards [eventually_ge_atTop 1,abundant,bottom,eventually_g_attained,
+      near_density_to_eleven_quarters δ (a/2) dp (by positivity)] with k kp many floor spec few
+  by_contra! upper
+  let b := 2^(Nat.log 2 k/80)
+  let H := k/b^10
+  have pos : 0< H := many.1
+  have thin := few (Erdos1095.g k) floor upper
+  have gap : (a/2)*(H:ℝ)< a*H := mul_lt_mul_of_pos_right (by linarith) (by exact_mod_cast pos)
+  have count := card_le_card (products_subset_nearPoints (H:=H) (W:=b) (show 0< k from kp) spec.2)
+  have lt := thin.trans_lt (gap.trans_le many.2)
+  exact (Nat.not_lt_of_ge count) (by exact_mod_cast lt)
+
+end RoughBinomial
+
 namespace OMA.R_Erdos1095_erdos_1095_variants_lower_solved_R1
 open Filter Finset Real RoughBinomial
 
 /-- The rational-point density estimate for the reciprocal curve on integer
-windows. The coefficient c in the upper range for n may depend on δ and ε. -/
+windows above height k^(11/4). The coefficient c may depend on ε. -/
 def H2 : Prop :=
-  ∀ δ : ℝ, 0 < δ → ∀ ε : ℝ, 0 < ε → ∃ c : ℝ, 0 < c ∧
-    ∀ᶠ k : ℕ in atTop, ∀ n : ℕ, k+1 < n → δ*(k:ℝ)^2/log k ≤ n →
+  ∀ ε : ℝ, 0 < ε → ∃ c : ℝ, 0 < c ∧
+    ∀ᶠ k : ℕ in atTop, ∀ n : ℕ, k+1 < n → k^11 < n^4 →
       (n:ℝ) < exp (c * log k ^ 2) →
       let W : ℕ := 2^(Nat.log 2 k / 80)
       let H : ℕ := k/W^10
@@ -1468,12 +2072,14 @@ theorem main : H1 → H2 → type_of% @Erdos1095.erdos_1095.variants.lower_solve
   intro primes curves
   obtain ⟨A, ap, many⟩ := many_products primes
   obtain ⟨δ, dp, floor⟩ := quadratic_from_primes primes
-  obtain ⟨c, cp, few⟩ := curves δ dp (A/2) (by positivity)
+  obtain ⟨c, cp, few⟩ := curves (A/2) (by positivity)
   refine ⟨c,cp,lower_of_density_bounds _ _ A (A/2) (by linarith) _ _
     (fun k => ⌈δ*(k:ℝ)^2/log k⌉₊) eventually_g_attained ?_ many ?_⟩
   · filter_upwards [floor] with k fk
     exact Nat.ceil_le.mpr fk
-  · filter_upwards [few] with k fk n hn above top
-    exact fk n hn (Nat.ceil_le.mp above) top
+  · filter_upwards [few,near_density_to_eleven_quarters δ (A/2) dp (by positivity)] with k fk small n hn above top
+    by_cases low : n^4 ≤ k^11
+    · exact small n (Nat.ceil_le.mp above) low
+    · exact fk n hn (Nat.lt_of_not_ge low) top
 
 end OMA.R_Erdos1095_erdos_1095_variants_lower_solved_R1
