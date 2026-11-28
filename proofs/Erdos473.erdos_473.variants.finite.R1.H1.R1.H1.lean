@@ -5,6 +5,8 @@ import OMAReductions.R_Erdos473_erdos_473_variants_finite_R1_H1_R1
 -- (u, v) with both 2u+3, 2u+3+2m, 2v+3, 2v+3+2m prime and (v-u) coprime to m;
 -- each leaf is checked by kernel decide.
 
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 8000000 in
 theorem OMA.solution : OMA.R_Erdos473_erdos_473_variants_finite_R1_H1_R1.H1 := by
   intro m h10 h5000 he
   obtain ⟨k, rfl⟩ : ∃ k, m = 2 * k := ⟨m / 2, by omega⟩
