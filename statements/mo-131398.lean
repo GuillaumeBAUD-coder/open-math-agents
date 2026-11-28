@@ -15,7 +15,7 @@ noncomputable def boundedMonomialCount (d n k : ℕ) : ℕ :=
   ((∑ j ∈ Finset.Icc 1 (d - 1), (X : ℕ[X]) ^ j) ^ (n + 1)).coeff (k * d)
 
 /-- The proposed monomial-count recurrence for positive k ≤ n. -/
-theorem main (d n k : ℕ) (hd : 2 ≤ d) (hk : 1 ≤ k) (hkn : k ≤ n) :
+theorem main : ∀ d n k : ℕ, 2 ≤ d → 1 ≤ k → k ≤ n →
     boundedMonomialCount d n k =
       (d - 1).choose n +
         ∑ j ∈ Finset.Icc 1 (n - k),
