@@ -16,10 +16,16 @@ Uses Mathlib's Kummer theorem (`padicValNat_choose`). -/
 lemma binomial_val_bound (u t p : ℕ) (hp : Nat.Prime p) (hpu : p ≤ u + t) (ht : 0 < t) :
     padicValNat p (Nat.choose (u + t) t) ≤ Nat.log p (u + t) := by
   haveI : Fact p.Prime := ⟨hp⟩
-  -- padicValNat_choose gives the number of carries ≤ log bound
-  have hlog : Nat.log p (u + t) < Nat.log p (u + t) + 1 := Nat.lt_succ_self _
-  -- The number of carries is at most the number of digits, which is ≤ log_p (u+t)
-  sorry -- fill with: exact Nat.le_of_lt_succ (padicValNat_choose.trans_le ...)
+  -- Number of carries ≤ number of base-p digits of (u+t), which is ≤ log_p (u+t) + 1
+  -- but the strict bound we need is ≤ log (after adjusting)
+  have hkn : t ≤ u + t := Nat.le_add_left t u
+  have hnb : Nat.log p (u + t) < Nat.log p (u + t) + 1 := Nat.lt_succ_self _
+  -- padicValNat_choose equates the valuation to the cardinality of the carry set
+  -- The carry set is a subset of Ico 1 (log + 1), hence card ≤ log
+  sorry -- replace with:
+  -- rw [padicValNat_choose hkn hnb]
+  -- exact Finset.card_le_card (Finset.filter_subset _ _)
+  -- then bound by card of Ico which is log
 
 /-- Product over primes ≤ k of maximal powers is ≤ (u+t)^{π(k)} -/
 lemma product_smooth_bound (k u t : ℕ) (hk : 0 < k) (ht : 0 < t) :
