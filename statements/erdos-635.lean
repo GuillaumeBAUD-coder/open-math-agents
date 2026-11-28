@@ -4,7 +4,7 @@ import Mathlib
 # Erdős Problem 635
 
 Source: https://www.erdosproblems.com/635
-Credit: @SudharsanAnimations
+Credit: Sudharsan Rajendiran
 
 Let `t ≥ 1` and let `A ⊆ {1, …, N}` be such that whenever `a, b ∈ A` with `b - a ≥ t` we have
 `b - a ∤ b`. How large can `|A|` be? Is it true that `|A| ≤ (1/2 + o_t(1)) N`?
