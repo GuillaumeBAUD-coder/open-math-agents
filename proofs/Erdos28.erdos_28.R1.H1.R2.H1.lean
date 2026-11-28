@@ -369,55 +369,6 @@ namespace OMA.Erdos28Six
 open Finset
 open scoped Classical
 
-/-- A finite initial part of an infinite set can have arbitrarily large geometric
-mass while its right endpoint makes the remaining geometric series negligible. -/
-theorem large_mass (A : Set ℕ) (inf : A.Infinite) (Y K : ℕ) :
-    ∃ (r : ℝ) (D : ℕ), 0< r ∧ r<1 ∧ K≤ D ∧
-      (r^2)^D≤1-r^2 ∧
-      (Y:ℝ)<∑ a∈(Iic D).filter (·∈A), (r^2)^a := by
-  classical
-  obtain ⟨S,hSA,card⟩ := inf.exists_subset_card_eq (2*Y+1)
-  let V := S.sup id
-  let u : ℝ := 4*(V:ℝ)+4
-  have hu : 1< u := by dsimp [u]; linarith [Nat.cast_nonneg (α:=ℝ) V]
-  let r := 1-1/u
-  have hr : 0< r := by
-    dsimp [r]
-    have := (div_lt_one (by linarith : 0< u)).mpr hu
-    linarith
-  have hr1 : r<1 := by dsimp [r]; have := one_div_pos.mpr (by linarith : 0< u); linarith
-  have wpos : 0< r^2 := sq_pos_of_pos hr
-  have wlt : r^2<1 := by nlinarith [mul_pos hr (sub_pos.mpr hr1)]
-  obtain ⟨d,hd⟩ := exists_pow_lt_of_lt_one (sub_pos.mpr wlt) wlt
-  let D := max d (max K V)
-  have dD : d≤ D := le_max_left _ _
-  have kD : K≤ D := (le_max_left _ _).trans (le_max_right _ _)
-  have vD : V≤ D := (le_max_right _ _).trans (le_max_right _ _)
-  have tail : (r^2)^D≤1-r^2 := (pow_le_pow_of_le_one wpos.le wlt.le dD).trans hd.le
-  have inD : S⊆(Iic D).filter (·∈A) := by
-    intro a ha
-    exact mem_filter.mpr ⟨mem_Iic.mpr ((show a≤ V from le_sup (f:=id) ha).trans vD),hSA ha⟩
-  have half (a : ℕ) (ha : a∈S) : (1/2:ℝ)≤(r^2)^a := by
-    have hav : (a:ℝ)≤ V := by exact_mod_cast (show a≤ V from le_sup (f:=id) ha)
-    have rat : (2*a:ℝ)/u ≤ 1/2 := by
-      apply (div_le_iff₀ (by linarith : 0< u)).mpr
-      dsimp [u]
-      linarith
-    have hb := one_add_mul_sub_le_pow (by linarith : (-1:ℝ)≤ r) (2*a)
-    have he : r-1= -(1/u) := by dsimp [r]; ring
-    rw [he] at hb
-    norm_num at hb
-    rw [← pow_mul]
-    rw [div_eq_mul_inv] at rat
-    linarith
-  have sumS := sum_le_sum half
-  have full := sum_le_sum_of_subset_of_nonneg inD (fun i _ _ => pow_nonneg wpos.le i)
-  have lb : (Y:ℝ)<∑ _a∈S,(1/2:ℝ) := by
-    simp only [sum_const,nsmul_eq_mul,card]
-    push_cast
-    linarith
-  exact ⟨r,D,hr,hr1,kD,tail,lb.trans_le (sumS.trans full)⟩
-
 end OMA.Erdos28Six
 
 namespace OMA.Erdos28Six
@@ -532,154 +483,12 @@ theorem late_mass (D : ℕ) (t : ℝ) (ht : 0≤ t) (ht1 : t<1) (tail : t^D≤1-
   apply (le_of_mul_le_mul_right · (by linarith : 0<1-t))
   simpa only [one_mul] using (hgeom.le.trans (by linarith [pow_nonneg ht (2*D+1)]))
 
-/-- Under an ordered cap of five, the squared error has diagonal, prefix, and
-truncation corrections with respective total weights at most X, K, and one. -/
-theorem error_bounds (T : Finset ℕ) (D K : ℕ) (sub : T⊆Iic D)
-    (cap : ∀ n, K≤ n → sumRep (T:Set ℕ) n≤5)
-    (cover : ∀ n, K≤ n → n≤ D → 0< sumRep (T:Set ℕ) n)
-    (t : ℝ) (ht : 0≤ t) (ht1 : t<1) (tail : t^D≤1-t) :
-    let X := ∑ a∈T,t^a
-    let L := range (2*D+1)
-    (∑ n∈L, (sumRep (T:Set ℕ) n:ℝ)^2*t^n) ≤ 5*X^2+((K:ℝ)+3)^2*K ∧
-    (∑ n∈L, ((sumRep (T:Set ℕ) n:ℝ)-3)^2*t^n) ≤ X^2/2+4*X+((K:ℝ)+3)^2*K+9 := by
-  classical
-  let v (n : ℕ) := (sumRep (T:Set ℕ) n:ℝ)
-  let M := ((K:ℝ)+3)^2
-  let L := range (2*D+1)
-  let f (n : ℕ) := if n< K then t^n else 0
-  let g (n : ℕ) := if D< n then t^n else 0
-  let h (n : ℕ) := if ∃a∈T, a+a=n then t^n else 0
-  let X := ∑ a∈T,t^a
-  have vpos (n : ℕ) : 0≤ v n := Nat.cast_nonneg _
-  have wt (n : ℕ) : 0≤ t^n := pow_nonneg ht n
-  have mass : (∑ n∈L, v n*t^n)=X^2 := mass_sq T D sub t
-  have pref : (∑ n∈L,f n)≤ K := small_prefix_mass K _ t ht ht1.le
-  have ztail : (∑ n∈L,g n)≤1 := late_mass D t ht ht1 tail
-  have diag : (∑ n∈L,h n)≤ X := diag_mass T _ t ht ht1.le
-  have Mp : M*(∑ n∈L,f n) ≤ M*K := mul_le_mul_of_nonneg_left pref (sq_nonneg ((K:ℝ)+3))
-  have prv (n : ℕ) (hn : n< K) : v n≤ K := by
-    dsimp only [v]
-    exact_mod_cast (show sumRep (T:Set ℕ) n≤ K from (rep_limit _ _).trans (by omega))
-  have last (n : ℕ) (hn : K≤ n) : v n≤5 := by
-    dsimp only [v]
-    exact_mod_cast cap n hn
-  have bound4 (n : ℕ) : (v n)^2*t^n ≤5*(v n*t^n)+M*f n := by
-    by_cases p : n< K
-    · have hk := prv n p
-      have raw : (v n)^2≤5*v n+M := by
-        dsimp [M]
-        nlinarith [vpos n,mul_nonneg (by linarith : 0≤(K:ℝ)+3-v n)
-          (by nlinarith [vpos n] : 0≤(K:ℝ)+3+v n)]
-      have m := mul_le_mul_of_nonneg_right raw (wt n)
-      simp only [f,if_pos p]
-      linarith
-    · have hk := last n (by omega)
-      have raw : (v n)^2≤5*v n := by nlinarith [mul_nonneg (by linarith : 0≤5-v n) (vpos n)]
-      have m := mul_le_mul_of_nonneg_right raw (wt n)
-      simp [f,p]
-      linarith
-  have boundE (n : ℕ) :
-      (v n-3)^2*t^n ≤ (1/2)*(v n*t^n)+4*h n+M*f n+9*g n := by
-    have hh : 0≤ h n := by dsimp [h]; split <;> positivity
-    have hf : 0≤ f n := by dsimp [f]; split <;> positivity
-    have hg : 0≤ g n := by dsimp [g]; split <;> positivity
-    by_cases p : n< K
-    · have hk := prv n p
-      have raw : (v n-3)^2≤ M := by
-        dsimp [M]
-        nlinarith [mul_nonneg (by linarith : 0≤(K:ℝ)+3-(v n-3))
-          (by nlinarith [vpos n] : 0≤(K:ℝ)+3+(v n-3))]
-      have m := mul_le_mul_of_nonneg_right raw (wt n)
-      simp only [f,if_pos p]
-      nlinarith [mul_nonneg (vpos n) (wt n)]
-    · have hn : K≤ n := by omega
-      by_cases q : D< n
-      · have hk := last n hn
-        have raw : (v n-3)^2≤9 := by nlinarith [mul_nonneg (by linarith : 0≤6-v n) (vpos n)]
-        have m := mul_le_mul_of_nonneg_right raw (wt n)
-        simp only [f,g,p,q,if_false,if_true,mul_zero,add_zero]
-        nlinarith [mul_nonneg (vpos n) (wt n)]
-      · have raw := deviation (T:Set ℕ) n (cover n hn (by omega)) (cap n hn)
-        have m := mul_le_mul_of_nonneg_right raw (wt n)
-        by_cases w : ∃ a∈T, a+a=n
-        · have ws : ∃ a∈(T:Set ℕ),a+a=n := w
-          rw [if_pos ws] at m
-          change (v n-3)^2*t^n≤(v n/2+4*1)*t^n at m
-          simp only [h,f,g,if_pos w,if_neg p,if_neg q,mul_zero,add_zero]
-          linarith
-        · have ws : ¬∃ a∈(T:Set ℕ),a+a=n := w
-          rw [if_neg ws] at m
-          change (v n-3)^2*t^n≤(v n/2+4*0)*t^n at m
-          simp only [h,f,g,if_neg w,if_neg p,if_neg q,mul_zero,add_zero]
-          linarith
-  dsimp only
-  constructor
-  · change (∑ n∈L,(v n)^2*t^n) ≤5*X^2+M*K
-    have a := sum_le_sum (fun n (_:n∈L) => bound4 n)
-    rw [sum_add_distrib,←mul_sum,←mul_sum,mass] at a
-    linarith only [a,Mp]
-  · change (∑ n∈L,(v n-3)^2*t^n) ≤ X^2/2+4*X+M*K+9
-    have a := sum_le_sum (fun n (_:n∈L) => boundE n)
-    simp only [sum_add_distrib,←mul_sum,mass] at a
-    linarith only [a,Mp,diag,ztail]
-
 end OMA.Erdos28Six
 
 namespace OMA.Erdos28Six
 
 open Finset AdditiveCombinatorics
 open scoped Classical Pointwise
-
-/-- Every asymptotic basis of order two has arbitrarily large integers with
-at least six ordered representations as a sum of two members. -/
-theorem six_frequently (A : Set ℕ) (cof : (A+A)ᶜ.Finite) (K₀ : ℕ) :
-    ∃ n≥ K₀, 6 ≤ sumRep A n := by
-  classical
-  by_contra! bad
-  let F := cof.toFinset
-  let K := K₀+F.sup id+1
-  have old (n : ℕ) (h : K≤ n) : K₀≤ n := by dsimp [K] at h; omega
-  have cap (n : ℕ) (h : K≤ n) : sumRep A n≤5 := by have := bad n (old n h); omega
-  have cov (n : ℕ) (h : K≤ n) : 0< sumRep A n := by
-    have good : n∈A+A := by
-      by_contra missing
-      have fail : n∈F := cof.mem_toFinset.mpr missing
-      have hm : n≤ F.sup id := le_sup (f:=id) fail
-      dsimp [K] at h
-      omega
-    obtain ⟨a,ha,b,hb,he⟩ := good
-    rw [sumRep_def]
-    exact card_pos.mpr ⟨(a,b),mem_filter.mpr ⟨Finset.HasAntidiagonal.mem_antidiagonal.mpr he,ha,hb⟩⟩
-  have inf : A.Infinite := by
-    intro fA
-    exact (Set.infinite_of_finite_compl cof) (fA.add fA)
-  let C := (K+3)^2*K
-  obtain ⟨r,D,hr,hr1,hKD,tail,hX⟩ := large_mass A inf (300000+C) K
-  let T := (Iic D).filter (·∈A)
-  have sub : T⊆Iic D := filter_subset _ _
-  have sa : (T:Set ℕ)⊆A := fun n hn => (mem_filter.mp hn).2
-  have cT (n : ℕ) (hn : K≤ n) : sumRep (T:Set ℕ) n≤5 := (rep_subset sa n).trans (cap n hn)
-  have pT (n : ℕ) (hn : K≤ n) (hnD : n≤ D) : 0< sumRep (T:Set ℕ) n := by
-    rw [rep_initial A D n hnD]
-    exact cov n hn
-  have hq : r^2<1 := by nlinarith [mul_pos hr (sub_pos.mpr hr1)]
-  let X := ∑ a∈T,(r^2)^a
-  let U := energy ((gen T r)^2)
-  let V := energy ((gen T r)^2-baseline D r)
-  have effects := error_bounds T D K sub cT pT (r^2) (sq_nonneg r) hq tail
-  obtain ⟨u,v⟩ := energy_forms T D sub r
-  dsimp only at effects
-  rw [←u,←v] at effects
-  have cR : (C:ℝ)=((K:ℝ)+3)^2*K := by simp [C]
-  have bounds : U≤5*X^2+C ∧ V≤ X^2/2+4*X+C+9 := by simpa only [U,V,X,cR] using effects
-  have wave := finite_spectral T r hr.le hr1.le D
-  change X^2≤ U/100+(1/40)*X^2+3*V/4+X^2/3+24000*X at wave
-  change ((300000+C:ℕ):ℝ)< X at hX
-  push_cast at hX
-  have nonneg : 0≤(C:ℝ) := by positivity
-  have large : 300000≤ X := by linarith
-  nlinarith only [wave,bounds.1,bounds.2,hX,nonneg,
-    mul_nonneg (show 0≤ X by linarith) (sub_nonneg.mpr large)]
 
 end OMA.Erdos28Six
 
@@ -1026,17 +835,6 @@ theorem six_positive_lower_density (A : Set ℕ) (cof : (A+A)ᶜ.Finite) (g : �
     nlinarith only [shareN,comp]
   dsimp only [H] at final
   exact_mod_cast final
-
-/-- The Erdős–Turán conclusion holds whenever the six-fold sums have lower natural
-density zero, stated through arbitrarily sparse finite prefixes. -/
-theorem unbounded_of_sparse_six (A : Set ℕ) (cof : (A+A)ᶜ.Finite)
-    (sparse : ∀ c j : ℕ, ∃N≥ j, c*((range N).filter (fun n=>6 ≤ sumRep A n)).card< N) :
-    ∀ g j : ℕ, ∃ n≥ j, g< sumRep A n := by
-  intro g j
-  by_contra! cap
-  obtain ⟨N₀,density⟩ := six_positive_lower_density A cof g ⟨j,cap⟩
-  obtain ⟨N,hN,thin⟩ := sparse (1024*(g+3)^4) N₀
-  exact (Nat.not_lt_of_ge (density N hN)) thin
 
 end OMA.Erdos28PositiveDensity
 
