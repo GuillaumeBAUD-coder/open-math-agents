@@ -6,6 +6,10 @@ import Mathlib
 Source: https://oeis.org/A383700
 Credit: @ivillar
 
+Status: known result. The entry records: Conjecture verified using the differential equation
+y + (124*x - 31)*y' + (240*x^2 - 120*x + 15)*y'' + (64*x^3 - 48*x^2 + 12*x - 1)*y''' = 0 satisfied by the
+e.g.f. (Robert Israel, Mar 12 2026).
+
 A383700 (offset 0): a(n) is the coefficient of x^2 in the expansion of
 (x+1) * (x+5) * ... * (x+4*n-3); data 0, 0, 1, 15, 254, 5130, 122119, ...
 
