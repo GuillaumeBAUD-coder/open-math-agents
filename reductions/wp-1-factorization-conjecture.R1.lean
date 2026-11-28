@@ -12,7 +12,8 @@ import OMAStatements.S_wp_1_factorization_conjecture
 -- What is left:
 --   H1: the dense range 12n/7 ≤ k ≤ 2n - 3, a known theorem (Chetwynd–Hilton 1985, "Regular graphs of high
 --       degree are 1-factorizable", Proc. LMS 50, 193–206).
---   H2: the open middle range of the conjecture, n (or n - 1) ≤ k < 12n/7. Proved for all sufficiently
+--   k = 1 (a perfect matching is its own colour class).
+--   H2: the open middle range of the conjecture, n (or n - 1) ≤ k < 12n/7, with 2 ≤ k ≤ 2n - 3 (so n ≥ 3). Proved for all sufficiently
 --       large n by Csaba–Kühn–Lo–Osthus–Treglown (Mem. AMS 2016), open in general.
 
 namespace OMA.R_wp_1_factorization_conjecture_R1
@@ -25,7 +26,7 @@ def H1 : Prop :=
       G.IsRegularOfDegree k → Nonempty (G.lineGraph.Coloring (Fin k))
 
 def H2 : Prop :=
-  ∀ n k : ℕ, ((Odd n ∧ n ≤ k) ∨ (Even n ∧ n - 1 ≤ k)) → 7 * k < 12 * n →
+  ∀ n k : ℕ, ((Odd n ∧ n ≤ k) ∨ (Even n ∧ n - 1 ≤ k)) → 7 * k < 12 * n → 2 ≤ k → k + 3 ≤ 2 * n →
     ∀ (G : SimpleGraph (Fin (2 * n))) [DecidableRel G.Adj],
       G.IsRegularOfDegree k → Nonempty (G.lineGraph.Coloring (Fin k))
 
@@ -219,6 +220,12 @@ lemma second_case {V : Type*} [Fintype V] [DecidableEq V] (G : SimpleGraph V) [D
     simp only [d, dif_neg (nz _ _ hy), dif_neg (nz _ _ hz), Subtype.mk.injEq] at e
     exact Einj (hc _ _ _ (Einj.ne hy.ne) (Einj.ne hz.ne) e)
 
+lemma one_case {V : Type*} [Fintype V] (G : SimpleGraph V) [DecidableRel G.Adj]
+    (hG : G.IsRegularOfDegree 1) : Nonempty (G.lineGraph.Coloring (Fin 1)) :=
+  coloring_of_pair G (fun _ _ => 0) (fun _ _ => rfl) fun v y z hy hz _ =>
+    Finset.card_le_one.1 (by rw [card_neighborFinset_eq_degree, hG v]) y
+      ((G.mem_neighborFinset _ _).2 hy) z ((G.mem_neighborFinset _ _).2 hz)
+
 theorem main : H1 → H2 → type_of% @OMA.S_wp_1_factorization_conjecture.main := by
   intro h1 h2 n k hk G _ hG
   rcases Nat.eq_zero_or_pos n with rfl | hn
@@ -240,8 +247,10 @@ theorem main : H1 → H2 → type_of% @OMA.S_wp_1_factorization_conjecture.main 
         · simp at he
         · exact h
     exact factorable_of_coloring G _ hG (second_case G j hj hV hG).some
+  by_cases hD : k = 1
+  · subst hD; exact factorable_of_coloring G _ hG (one_case G hG).some
   by_cases hC : 12 * (j + 1) ≤ 7 * k
   · exact factorable_of_coloring G k hG (h1 (j + 1) k hC (by omega) G hG).some
-  · exact factorable_of_coloring G k hG (h2 (j + 1) k hk (by omega) G hG).some
+  · exact factorable_of_coloring G k hG (h2 (j + 1) k hk (by omega) (by rcases hk with ⟨-, h⟩ | ⟨-, h⟩ <;> omega) (by omega) G hG).some
 
 end OMA.R_wp_1_factorization_conjecture_R1
