@@ -247,44 +247,41 @@ private def swapOddEquiv : ℤ × ℤ ≃ ℤ × ℤ where
     · rfl
     · dsimp only; omega
 
+private lemma tsum_split {α β γ : Type*} (e : α ⊕ β ≃ γ) {f : γ → ℝ} (hf : Summable f) :
+    (∑' c, f c) = (∑' a, f (e (Sum.inl a))) + ∑' b, f (e (Sum.inr b)) := by
+  have hs := (e.summable_iff (f := f)).mpr hf
+  exact (e.tsum_eq f).symm.trans
+    ((hs.comp_injective Sum.inl_injective).tsum_sum (hs.comp_injective Sum.inr_injective))
+
 private lemma agm_step_arith {q : ℝ} (hq0 : 0 ≤ q) (hq1 : q < 1) :
     ((theta3 q) ^ 2 + (theta4 q) ^ 2) / 2 = (theta3 (q ^ 2)) ^ 2 := by
   have hq2_0 : 0 ≤ q ^ 2 := sq_nonneg q
   have hq2_1 : q ^ 2 < 1 := by nlinarith
   let F : ℤ × ℤ → ℝ := fun p => q ^ (p.1.natAbs ^ 2 + p.2.natAbs ^ 2)
   let G : ℤ × ℤ → ℝ := fun p => (-1 : ℝ) ^ (p.1 + p.2).natAbs * F p
-  have hFsum := (parityPairEquiv.summable_iff (f := F)).mpr (summable_q_pair hq0 hq1)
-  have hF1 := hFsum.comp_injective Sum.inl_injective
-  have hF2 := hFsum.comp_injective Sum.inr_injective
-  have hGsum := (parityPairEquiv.summable_iff (f := G)).mpr (summable_q_pair_signed hq0 hq1)
-  have hG1 := hGsum.comp_injective Sum.inl_injective
-  have hG2 := hGsum.comp_injective Sum.inr_injective
   have h3split : (theta3 q) ^ 2 =
       (theta3 (q ^ 2)) ^ 2 + ∑' p : ℤ × ℤ, F (parityPairEquiv (Sum.inr p)) := by
     rw [theta3_sq_eq_prod hq0 hq1]
     change (∑' p : ℤ × ℤ, F p) = _
-    rw [← parityPairEquiv.tsum_eq F]
-    change (∑' x : (ℤ × ℤ) ⊕ (ℤ × ℤ), (F ∘ parityPairEquiv) x) = _
-    rw [hF1.tsum_sum hF2, theta3_sq_eq_prod hq2_0 hq2_1]
+    rw [tsum_split parityPairEquiv (f := F) (summable_q_pair hq0 hq1), theta3_sq_eq_prod hq2_0 hq2_1]
     congr 1
     refine tsum_congr fun p => ?_
-    simp only [Function.comp_apply, parityPairEquiv, Equiv.coe_fn_mk, Sum.elim_inl, F,
+    simp only [parityPairEquiv, Equiv.coe_fn_mk, Sum.elim_inl, F,
       natAbs_sq_add_sub, pow_mul]
   have h4split : (theta4 q) ^ 2 =
       (theta3 (q ^ 2)) ^ 2 - ∑' p : ℤ × ℤ, F (parityPairEquiv (Sum.inr p)) := by
     rw [theta4_sq_eq_prod hq0 hq1]
     change (∑' p : ℤ × ℤ, G p) = _
-    rw [← parityPairEquiv.tsum_eq G]
-    change (∑' x : (ℤ × ℤ) ⊕ (ℤ × ℤ), (G ∘ parityPairEquiv) x) = _
-    rw [hG1.tsum_sum hG2, theta3_sq_eq_prod hq2_0 hq2_1, sub_eq_add_neg, ← tsum_neg]
+    rw [tsum_split parityPairEquiv (f := G) (summable_q_pair_signed hq0 hq1),
+      theta3_sq_eq_prod hq2_0 hq2_1, sub_eq_add_neg, ← tsum_neg]
     congr 1
     · refine tsum_congr fun p => ?_
       have hev : Even ((p.1 + p.2 + (p.1 - p.2)).natAbs) := Int.natAbs_even.mpr ⟨p.1, by ring⟩
-      simp only [Function.comp_apply, parityPairEquiv, Equiv.coe_fn_mk, Sum.elim_inl, G, F]
+      simp only [parityPairEquiv, Equiv.coe_fn_mk, Sum.elim_inl, G, F]
       rw [hev.neg_one_pow, one_mul, natAbs_sq_add_sub, pow_mul]
     · refine tsum_congr fun p => ?_
       have hodd : Odd ((p.1 + p.2 + 1 + (p.1 - p.2)).natAbs) := Int.natAbs_odd.mpr ⟨p.1, by ring⟩
-      simp only [Function.comp_apply, parityPairEquiv, Equiv.coe_fn_mk, Sum.elim_inr, G, F]
+      simp only [parityPairEquiv, Equiv.coe_fn_mk, Sum.elim_inr, G, F]
       rw [hodd.neg_one_pow]
       ring
   linarith
@@ -295,22 +292,18 @@ private lemma agm_step_geom {q : ℝ} (hq0 : 0 ≤ q) (hq1 : q < 1) :
   have hq2_1 : q ^ 2 < 1 := by nlinarith
   let H : ℤ × ℤ → ℝ := fun p =>
     (-1 : ℝ) ^ p.2.natAbs * q ^ (p.1.natAbs ^ 2 + p.2.natAbs ^ 2)
-  have hHsum := (parityPairEquiv.summable_iff (f := H)).mpr (summable_q_pair_half hq0 hq1)
-  have hH1 := hHsum.comp_injective Sum.inl_injective
-  have hH2 := hHsum.comp_injective Sum.inr_injective
   have hsplit : theta3 q * theta4 q =
       (theta4 (q ^ 2)) ^ 2 + ∑' p : ℤ × ℤ, H (parityPairEquiv (Sum.inr p)) := by
     rw [theta3_mul_theta4_eq_prod hq0 hq1]
     change (∑' p : ℤ × ℤ, H p) = _
-    rw [← parityPairEquiv.tsum_eq H]
-    change (∑' x : (ℤ × ℤ) ⊕ (ℤ × ℤ), (H ∘ parityPairEquiv) x) = _
-    rw [hH1.tsum_sum hH2, theta4_sq_eq_prod hq2_0 hq2_1]
+    rw [tsum_split parityPairEquiv (f := H) (summable_q_pair_half hq0 hq1),
+      theta4_sq_eq_prod hq2_0 hq2_1]
     congr 1
     refine tsum_congr fun p => ?_
     have hsign : (-1 : ℝ) ^ (p.1 - p.2).natAbs = (-1 : ℝ) ^ (p.1 + p.2).natAbs := by
       have h1 : p.1 - p.2 = p.1 + (-p.2) := by ring
       rw [h1, ← neg_one_pow_add_natAbs, Int.natAbs_neg, neg_one_pow_add_natAbs]
-    simp only [Function.comp_apply, parityPairEquiv, Equiv.coe_fn_mk, Sum.elim_inl, H]
+    simp only [parityPairEquiv, Equiv.coe_fn_mk, Sum.elim_inl, H]
     rw [hsign, natAbs_sq_add_sub, pow_mul]
   have hodd_zero : (∑' p : ℤ × ℤ, H (parityPairEquiv (Sum.inr p))) = 0 := by
     let T : ℝ := ∑' p : ℤ × ℤ, H (parityPairEquiv (Sum.inr p))
@@ -409,7 +402,6 @@ private lemma summable_thetaB :
 private lemma thetaC_eq_add : thetaC = thetaA + thetaB := by
   let f (m : ℤ) := Real.exp (-Real.pi * (1 / 2) * (m : ℝ) ^ 2)
   let e := evenOddIntEquiv
-  have hs : Summable (f ∘ e) := (e.summable_iff (f := f)).2 summable_thetaC
   have heven : (∑' n : ℤ, f (e (Sum.inl n))) = thetaA := by
     unfold thetaA
     refine tsum_congr fun n => congrArg Real.exp ?_
@@ -424,11 +416,7 @@ private lemma thetaC_eq_add : thetaC = thetaA + thetaB := by
     push_cast
     ring
   change (∑' m : ℤ, f m) = thetaA + thetaB
-  calc
-    _ = ∑' t : ℤ ⊕ ℤ, (f ∘ e) t := (e.tsum_eq f).symm
-    _ = (∑' n : ℤ, f (e (Sum.inl n))) + ∑' n : ℤ, f (e (Sum.inr n)) :=
-      (hs.comp_injective Sum.inl_injective).tsum_sum (hs.comp_injective Sum.inr_injective)
-    _ = _ := congrArg₂ (· + ·) heven hodd
+  rw [tsum_split e (f := f) summable_thetaC, heven, hodd]
 
 private lemma thetaB_eq : thetaB = (√2 - 1) * thetaA := by
   have hpois := Real.tsum_exp_neg_mul_int_sq (by norm_num : (0 : ℝ) < 2)
@@ -482,22 +470,17 @@ private lemma thetaB_sq :
 
 private lemma theta3_q0_sq_eq_AB : (theta3 q0) ^ 2 = thetaA ^ 2 + thetaB ^ 2 := by
   let F : ℤ × ℤ → ℝ := fun p => q0 ^ (p.1.natAbs ^ 2 + p.2.natAbs ^ 2)
-  have hsum := (parityPairEquiv.summable_iff (f := F)).mpr (summable_q_pair q0_pos.le q0_lt_one)
-  have h1 := hsum.comp_injective Sum.inl_injective
-  have h2 := hsum.comp_injective Sum.inr_injective
   rw [theta3_sq_eq_prod q0_pos.le q0_lt_one]
   change (∑' p : ℤ × ℤ, F p) = _
-  rw [← parityPairEquiv.tsum_eq F]
-  change (∑' x : (ℤ × ℤ) ⊕ (ℤ × ℤ), (F ∘ parityPairEquiv) x) = _
-  rw [h1.tsum_sum h2, thetaA_sq, thetaB_sq]
+  rw [tsum_split parityPairEquiv (f := F) (summable_q_pair q0_pos.le q0_lt_one), thetaA_sq, thetaB_sq]
   congr 1
   · refine tsum_congr fun p => ?_
-    simp only [Function.comp_apply, parityPairEquiv, Equiv.coe_fn_mk, Sum.elim_inl, F,
+    simp only [parityPairEquiv, Equiv.coe_fn_mk, Sum.elim_inl, F,
       pow_add, q0_pow_natAbs_sq, ← Real.exp_add, Int.cast_add, Int.cast_sub]
     congr 1
     ring
   · refine tsum_congr fun p => ?_
-    simp only [Function.comp_apply, parityPairEquiv, Equiv.coe_fn_mk, Sum.elim_inr, F,
+    simp only [parityPairEquiv, Equiv.coe_fn_mk, Sum.elim_inr, F,
       pow_add, q0_pow_natAbs_sq, ← Real.exp_add, Int.cast_add, Int.cast_sub, Int.cast_one]
     congr 1
     ring
@@ -505,26 +488,21 @@ private lemma theta3_q0_sq_eq_AB : (theta3 q0) ^ 2 = thetaA ^ 2 + thetaB ^ 2 := 
 private lemma theta4_q0_sq_eq_AB : (theta4 q0) ^ 2 = thetaA ^ 2 - thetaB ^ 2 := by
   let G : ℤ × ℤ → ℝ := fun p =>
     (-1 : ℝ) ^ (p.1 + p.2).natAbs * q0 ^ (p.1.natAbs ^ 2 + p.2.natAbs ^ 2)
-  have hsum := (parityPairEquiv.summable_iff (f := G)).mpr
-    (summable_q_pair_signed q0_pos.le q0_lt_one)
-  have h1 := hsum.comp_injective Sum.inl_injective
-  have h2 := hsum.comp_injective Sum.inr_injective
   rw [theta4_sq_eq_prod q0_pos.le q0_lt_one]
   change (∑' p : ℤ × ℤ, G p) = _
-  rw [← parityPairEquiv.tsum_eq G]
-  change (∑' x : (ℤ × ℤ) ⊕ (ℤ × ℤ), (G ∘ parityPairEquiv) x) = _
-  rw [h1.tsum_sum h2, thetaA_sq, thetaB_sq, sub_eq_add_neg, ← tsum_neg]
+  rw [tsum_split parityPairEquiv (f := G) (summable_q_pair_signed q0_pos.le q0_lt_one),
+    thetaA_sq, thetaB_sq, sub_eq_add_neg, ← tsum_neg]
   congr 1
   · refine tsum_congr fun p => ?_
     have hev : Even ((p.1 + p.2 + (p.1 - p.2)).natAbs) := Int.natAbs_even.mpr ⟨p.1, by ring⟩
-    simp only [Function.comp_apply, parityPairEquiv, Equiv.coe_fn_mk, Sum.elim_inl, G]
+    simp only [parityPairEquiv, Equiv.coe_fn_mk, Sum.elim_inl, G]
     rw [hev.neg_one_pow, one_mul, pow_add, q0_pow_natAbs_sq, q0_pow_natAbs_sq, ← Real.exp_add]
     congr 1
     push_cast
     ring
   · refine tsum_congr fun p => ?_
     have hodd : Odd ((p.1 + p.2 + 1 + (p.1 - p.2)).natAbs) := Int.natAbs_odd.mpr ⟨p.1, by ring⟩
-    simp only [Function.comp_apply, parityPairEquiv, Equiv.coe_fn_mk, Sum.elim_inr, G]
+    simp only [parityPairEquiv, Equiv.coe_fn_mk, Sum.elim_inr, G]
     rw [hodd.neg_one_pow, pow_add, q0_pow_natAbs_sq, q0_pow_natAbs_sq, ← Real.exp_add]
     have hexp : -Real.pi * ((p.1 + p.2 + 1 : ℤ) : ℝ) ^ 2 + -Real.pi * ((p.1 - p.2 : ℤ) : ℝ) ^ 2 =
         -2 * Real.pi * (((p.1 : ℝ) + 1 / 2) ^ 2 + ((p.2 : ℝ) + 1 / 2) ^ 2) := by
@@ -588,59 +566,40 @@ private lemma q0_pow_two_pow_lt_third (n : ℕ) : q0 ^ (2 ^ n) < 1 / 3 := by
   rw [pow_one] at hle
   exact hle.trans_lt q0_lt_third
 
+private lemma theta_step_div {q d : ℝ} (hq0 : 0 ≤ q) (hq3 : q < 1 / 3) (hd : 0 < d) :
+    (((theta3 q) ^ 2 / d + (theta4 q) ^ 2 / d) / 2,
+      √((theta3 q) ^ 2 / d * ((theta4 q) ^ 2 / d))) =
+    ((theta3 (q ^ 2)) ^ 2 / d, (theta4 (q ^ 2)) ^ 2 / d) := by
+  have hq1 : q < 1 := by linarith
+  apply Prod.ext
+  · dsimp only
+    rw [← agm_step_arith hq0 hq1]
+    ring
+  · dsimp only
+    have hnn := div_nonneg (mul_nonneg (theta3_pos hq0 hq1).le (theta4_pos hq0 hq3).le) hd.le
+    rw [show (theta3 q) ^ 2 / d * ((theta4 q) ^ 2 / d) = (theta3 q * theta4 q / d) ^ 2 by ring,
+      Real.sqrt_sq hnn, agm_step_geom hq0 hq1]
+
 private lemma agmSeq_succ (k : ℕ) :
     agmSeq (k + 1) =
       ((theta3 (q0 ^ (2 ^ (k + 1)))) ^ 2 / (theta4 q0) ^ 2,
        (theta4 (q0 ^ (2 ^ (k + 1)))) ^ 2 / (theta4 q0) ^ 2) := by
-  have h4pos : 0 < theta4 q0 := theta4_pos q0_pos.le q0_lt_third
-  have h4sq_pos : 0 < (theta4 q0) ^ 2 := sq_pos_of_pos h4pos
-  have h4sq_ne : (theta4 q0) ^ 2 ≠ 0 := h4sq_pos.ne'
+  have hd : 0 < (theta4 q0) ^ 2 := sq_pos_of_pos (theta4_pos q0_pos.le q0_lt_third)
   induction k with
   | zero =>
-    have hq2 : q0 ^ (2 ^ 1) = q0 ^ 2 := by norm_num
-    rw [agmSeq, agmSeq, hq2]
-    have h1 : (1 : ℝ) = (theta4 q0) ^ 2 / (theta4 q0) ^ 2 := (div_self h4sq_ne).symm
-    have h2 : √2 = (theta3 q0) ^ 2 / (theta4 q0) ^ 2 := by
-      rw [theta3_q0_sq_eq_sqrt2, mul_div_cancel_right₀ _ h4sq_ne]
-    ext
-    · dsimp only
-      rw [h1, h2]
-      calc
-        ((theta4 q0) ^ 2 / (theta4 q0) ^ 2 + (theta3 q0) ^ 2 / (theta4 q0) ^ 2) / 2
-            = (((theta3 q0) ^ 2 + (theta4 q0) ^ 2) / 2) / (theta4 q0) ^ 2 := by ring
-        _ = (theta3 (q0 ^ 2)) ^ 2 / (theta4 q0) ^ 2 := by
-            rw [agm_step_arith q0_pos.le q0_lt_one]
-    · dsimp only
-      rw [h1, h2]
-      have hmul : (theta4 q0) ^ 2 / (theta4 q0) ^ 2 * ((theta3 q0) ^ 2 / (theta4 q0) ^ 2) =
-          (theta3 q0 * theta4 q0 / (theta4 q0) ^ 2) ^ 2 := by ring
-      have hnn : 0 ≤ theta3 q0 * theta4 q0 / (theta4 q0) ^ 2 :=
-        div_nonneg (mul_nonneg (theta3_pos q0_pos.le q0_lt_one).le h4pos.le) h4sq_pos.le
-      rw [hmul, Real.sqrt_sq hnn, agm_step_geom q0_pos.le q0_lt_one]
+    have h1 : (theta4 q0) ^ 2 / (theta4 q0) ^ 2 = 1 := div_self hd.ne'
+    have h2 : (theta3 q0) ^ 2 / (theta4 q0) ^ 2 = √2 := by
+      rw [theta3_q0_sq_eq_sqrt2, mul_div_cancel_right₀ _ hd.ne']
+    simpa only [agmSeq, h1, h2, zero_add, pow_one, add_comm (1 : ℝ), mul_comm (1 : ℝ)] using
+      theta_step_div q0_pos.le q0_lt_third hd
   | succ k ih =>
     let r : ℝ := q0 ^ (2 ^ (k + 1))
-    have hr0 : 0 ≤ r := pow_nonneg q0_pos.le _
-    have hr3 : r < 1 / 3 := q0_pow_two_pow_lt_third (k + 1)
-    have hr1 : r < 1 := by linarith
-    have hr_sq : r ^ 2 = q0 ^ (2 ^ (k + 2)) := by
+    have hr : r ^ 2 = q0 ^ (2 ^ (k + 2)) := by
       dsimp only [r]
       rw [← pow_mul]
       rfl
-    rw [agmSeq, ih]
-    ext
-    · dsimp only
-      rw [← hr_sq]
-      calc
-        ((theta3 r) ^ 2 / (theta4 q0) ^ 2 + (theta4 r) ^ 2 / (theta4 q0) ^ 2) / 2
-            = (((theta3 r) ^ 2 + (theta4 r) ^ 2) / 2) / (theta4 q0) ^ 2 := by ring
-        _ = (theta3 (r ^ 2)) ^ 2 / (theta4 q0) ^ 2 := by rw [agm_step_arith hr0 hr1]
-    · dsimp only
-      rw [← hr_sq]
-      have hmul : (theta3 r) ^ 2 / (theta4 q0) ^ 2 * ((theta4 r) ^ 2 / (theta4 q0) ^ 2) =
-          (theta3 r * theta4 r / (theta4 q0) ^ 2) ^ 2 := by ring
-      have hnn : 0 ≤ theta3 r * theta4 r / (theta4 q0) ^ 2 :=
-        div_nonneg (mul_nonneg (theta3_pos hr0 hr1).le (theta4_pos hr0 hr3).le) h4sq_pos.le
-      rw [hmul, Real.sqrt_sq hnn, agm_step_geom hr0 hr1]
+    rw [agmSeq, ih, ← hr]
+    exact theta_step_div (pow_nonneg q0_pos.le _) (q0_pow_two_pow_lt_third (k + 1)) hd
 
 theorem OMA.solution : type_of% @OMA.S_oeis_a014549.main := by
   rw [tsum_A104794_eq_theta4_sq, ← Filter.tendsto_add_atTop_iff_nat 1]
