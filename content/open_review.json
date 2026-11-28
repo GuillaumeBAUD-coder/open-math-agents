@@ -22748,6 +22748,30 @@
     "https://oeis.org/A165025"
    ],
    "reason": "This disproof exploits a printed-range slip. It shows Barker's g.f. and recurrence are inconsistent, because the recurrence printed for n>7 fails at n=9 (3 vs 0). But the g.f.'s numerator degree means the recurrence can only hold from n>=12 on. I checked that the g.f. reproduces all listed data and that the recurrence holds from n>=12. So the intended conjectures are consistent with the data and are not refuted."
+  },
+  "oeis-a214123": {
+   "date": "2026-11-28",
+   "pr": 22995,
+   "evidence": [
+    "https://oeis.org/A214123"
+   ],
+   "reason": "The formalized 'conjecture' is White's explanatory remark, not a conjecture: a(n)=1 when 2n-1 is prime holds by the definition (k=1 gives 2n-1), a((p+1)/2)=1 is a reindexing, and the third part is conditional on the twin prime conjecture and follows at once (twin primes p, p+2 give a((p+1)/2)=a((p+3)/2)=1). The statement is faithful but trivial; the proof is a few lines."
+  },
+  "mo-288972": {
+   "date": "2026-11-28",
+   "pr": 29873,
+   "evidence": [
+    "https://mathoverflow.net/questions/288972"
+   ],
+   "reason": "The question asks for the fastest way to recover an orthogonal O from A=(O_ij^2). The statement is an author-designed theorem: a particular sign-search (charts, candidates, search) has at most 2^(n choose 2) leaves and returns exactly the witnesses. It says itself that this is an upper bound with no claim of optimality, while the question already notes row/column sign reductions of the 2^(n^2) search. A weak, self-chosen bound that does not resolve the question."
+  },
+  "mo-155384": {
+   "date": "2026-11-28",
+   "pr": 29864,
+   "evidence": [
+    "https://mathoverflow.net/questions/155384"
+   ],
+   "reason": "The question asks for an explicit 'simple' expression for det(V_N^* V_N). The first conjunct is just the Leibniz expansion of the Gram determinant, whose entries are N on the diagonal and geometric sums ((z_j/z_i)^N-1)/(z_j/z_i-1) off it; it is no simpler than the determinant. The second (for L-th roots of unity, a monic degree-k polynomial in N on each residue class mod L) follows directly from it. The existing answer already gives a Cauchy-Binet formula. Faithful but trivial, and it does not answer the question."
   }
  },
  "known": {
@@ -41766,6 +41790,206 @@
     "https://github.com/dreadpiratechan/erdos-1186"
    ],
    "reason": "delta_3 = 117/2192 (the PRS conjecture) had already been proved publicly before this site solve. Carlos Toledo's report (five exact certificates, machine-verified twice) proves it, and notes an earlier claim by Star Fleet Math by 15 July 2026. Chandler Snively formalized the certificates in Lean (github.com/dreadpiratechan/erdos-1186, aiXiv:2610.02762). The site reduction headers say the cut estimates follow Toledo's proof and Snively's release."
+  },
+  "mo-429774": {
+   "date": "2026-11-28",
+   "pr": 29956,
+   "evidence": [
+    "https://mathoverflow.net/questions/429774",
+    "https://github.com/connoranderson/open-math-agents/blob/ec4e4914aa2b2a625d938fdb10bd51eb4bda3a48/proofs/mo-429774.lean"
+   ],
+   "reason": "Faithful formalization of KhashF's questions (parity lower bound, eventual equality, large odd k minimize, k=n-1 gives TV->1); MO has no answers, only comments pointing to Diaconis-Shahshahani. But the proof file says it is a port, mathematics unchanged, of @connoranderson's complete proof published earlier on connoranderson's fork (linked from statement PR #25113); PR author @rodolfoquint claims no new discovery. By the brief's rule (adapts an earlier public solution) this is known."
+  },
+  "oeis-a120114": {
+   "date": "2026-11-28",
+   "pr": 29948,
+   "evidence": [
+    "https://oeis.org/A120114"
+   ],
+   "reason": "Rotondo's two conjectures are formalized faithfully. But the entry itself already contains Robert Israel's comment (Dec 03 2024): a(n) is the product of the primes p such that 2n+3 or 2n+4 is a power of p, which is the classical lcm(1..m+1)=lcm(1..m)*p-if-prime-power fact; both conjectures (even a(n)/2 Mersenne prime; a(n) in {1,2} => 2n+3 odd non-prime-power dividing lcm of smaller odd numbers) follow at once. The site proof uses exactly this."
+  },
+  "oeis-a207937": {
+   "date": "2026-11-28",
+   "pr": 29949,
+   "evidence": [
+    "https://oeis.org/A207937",
+    "https://isitsolved.com/journal"
+   ],
+   "reason": "Faithful (n X 7 binary arrays avoiding 001/100 in rows and 001/110 in columns; Barker's g.f. and degree-7 polynomial). But isitsolved iis:2611.00300 proving Barker's A207937 g.f. by transfer matrix was filed 2026-11-28 11:52 UTC, about an hour before the site proof commit (12:53 UTC). The site polynomial closed form follows from the g.f."
+  },
+  "mo-369944": {
+   "date": "2026-11-28",
+   "pr": 16035,
+   "evidence": [
+    "https://mathoverflow.net/questions/369944"
+   ],
+   "reason": "The statement (compact K, subspace M of C(K), continuous positive functional on M with no positive extension) is a faithful existential answer. But fedja's comment on the question already gives such an example (f -> -f(0) on the zero-integral subspace of C[0,1]), and the asker thanked him. The site uses another easy witness on [-1,1]."
+  },
+  "mo-434426": {
+   "date": "2026-11-28",
+   "pr": 16123,
+   "evidence": [
+    "https://mathoverflow.net/questions/434426"
+   ],
+   "reason": "Faithful (a>1, double series of 1/(s_m(s_m+s_n)), s_m=a^m/m, = a^2/(2(a-1)^4)). The question's comments (mathworker21 and a correction) already give the full proof: symmetrize T(m,n)+T(n,m)=1/(s_m s_n), so twice the sum is (Sum m/a^m)^2; the asker accepted it. The site proof is that argument."
+  },
+  "oeis-a182960": {
+   "date": "2026-11-28",
+   "pr": 29953,
+   "evidence": [
+    "https://oeis.org/A182960",
+    "https://doi.org/10.5281/zenodo.23433599"
+   ],
+   "reason": "Faithful (a(n) via the log-derivative recursion of exp(Sum C(6n-1,2n-1)x^n/n), b(n)=[x^n]A^n, b(p)-b(1) in p^3 Z for p>=5). But Roberto Blanco Gomez, 'Full supercongruence towers for exponential transforms of factorial ratios...' (Zenodo 23433599, 2026-10-17) lists A182960 among the Bala conjectures it proves for all levels (p>=5). The site proof (Jacobsthal-Kazandzidis route) came on 2026-11-28."
+  },
+  "mse-4893052": {
+   "date": "2026-11-28",
+   "pr": 29943,
+   "evidence": [
+    "https://math.stackexchange.com/questions/4893052",
+    "https://github.com/connoranderson/open-math-agents/commit/9ee7f81d4cbbb99b81f83ca0ff381bcdd5e3366a"
+   ],
+   "reason": "Faithful (joint law of side/perimeter ratios of the inscribed and tangential triangles of 3 uniform circle points, null events assigned 0). The MSE answer gives only a sketch (angles uniform on the simplex, 'haven't worked out the details'). The proof file states it is @connoranderson's original proof from his fork commit 9ee7f81, resubmitted by @CubeJerry as a 'proof companion', so it adapts an earlier public solution (known by the brief's rule)."
+  },
+  "oeis-a334509": {
+   "date": "2026-11-28",
+   "pr": 29937,
+   "evidence": [
+    "https://oeis.org/A334509",
+    "https://github.com/blakestone-x/math/blob/main/A334501/README.md"
+   ],
+   "reason": "Faithful (eventual period of a single seed under Rule 41 on a ring of width n; Spezia's n*4/gcd(n,4) for n>6, Barker's recurrence and g.f.). Blake Stone's blakestone-x/math note 'Exact periods of five elementary cellular automata on a ring' proves p_41(n)=4n/gcd(4,n) for n>=7 with the small values and derives all of Barker's g.f.s; its folder commit dates from Nov 27 2026 (as recorded for the sibling A334514 in an earlier batch), before the site proof (2026-11-28 12:52 UTC)."
+  },
+  "wp-gaussian-moat-problem": {
+   "date": "2026-11-28",
+   "pr": 29915,
+   "evidence": [
+    "https://en.wikipedia.org/wiki/Gaussian_moat",
+    "https://github.com/openai/math"
+   ],
+   "reason": "Statement (an injective bounded-step sequence of Gaussian primes exists) is a fair encoding of the moat problem, and the site proves its negation. But the proof file says its mathematical development is OpenAI's Apache-2.0 Lean formalization, ported to this Mathlib with renames, plus glue; the statement itself cites the claimed OpenAI 2026 proof. So it is a port of an earlier public solution."
+  },
+  "oeis-a333579": {
+   "date": "2026-11-28",
+   "pr": 14982,
+   "evidence": [
+    "https://oeis.org/A333579",
+    "https://doi.org/10.5281/zenodo.23429107"
+   ],
+   "reason": "Faithful (a(n)=[x^n]((1+x+x^2)/(1-x+x^2))^n; a(p)==2 mod p^3 and a(p^k)==a(p^(k-1)) mod p^(2k), p>=5). Blanco Gomez, 'Exponential transforms and supercongruences...' (Zenodo 23429107, 2026-10-17): Theorem A proves the mod p^(2r) towers for A333579 and Theorem B proves a(p)==2 (mod p^3) and the b(m,n) family. Both predate the site proof (2026-11-28 00:00 UTC)."
+  },
+  "oeis-a393866": {
+   "date": "2026-11-28",
+   "pr": 29906,
+   "evidence": [
+    "https://oeis.org/A393866",
+    "https://oeis.org/A393867"
+   ],
+   "reason": "Faithful (uses the example's indexing [x^n] xA'/A; the literal [x^n]A'/A fails at n=2, as the statement notes). But the same claim, divisibility of the log-derivative coefficients A393867(n) by prime(n) (plus oddness), was already proved on this site as oeis-a393867 at 2026-11-28 12:36 UTC, 14 minutes before this proof (12:50 UTC): a duplicate of an earlier site solve."
+  },
+  "oeis-a181411": {
+   "date": "2026-11-28",
+   "pr": 29911,
+   "evidence": [
+    "https://oeis.org/A181411",
+    "https://github.com/rkka02/open-math-agents/blob/1dc4a8086fb6dcc809f3a29d5732713328c18a33/proofs/oeis-a181411.lean"
+   ],
+   "reason": "Faithful (Kotesovec: Sum_k binom(n,k) sigma(n+k) ~ (pi^2/4) n 2^n). The proof file states it is a port, 'all mathematical code retained unchanged', of @rkka02's complete proof pinned on rkka02's fork (linked from statement PR #24831), submitted by @rodolfoquint. By the brief's rule this adapts an earlier public solution."
+  },
+  "oeis-a077653": {
+   "date": "2026-11-28",
+   "pr": 29153,
+   "evidence": [
+    "https://oeis.org/A077653",
+    "https://github.com/thatnealpatel/proofs/blob/main/Proofs/Enumerative/A077653Refutation.lean"
+   ],
+   "reason": "Disproof of Cloitre's general conjecture with the seed (2,2,4) = 2*(1,1,2): the orbit is unbounded but M(n) grows like 2 sqrt(n), never floor(sqrt(n+w)) (I checked to n=2e5). This is a scaling counterexample. thatnealpatel/proofs already has Proofs/Enumerative/A077653Refutation.lean (sorry-free) refuting it with the scaled seed (0,0,2); it was in the library listing made 2026-11-28 10:35 UTC, before the site proof (12:26 UTC)."
+  },
+  "mo-316603": {
+   "date": "2026-11-28",
+   "pr": 29885,
+   "evidence": [
+    "https://mathoverflow.net/questions/316603",
+    "https://doi.org/10.1090/S0894-0347-02-00398-3"
+   ],
+   "reason": "The question (norm of P_1...P_n...P_1 for unit columns a_i) is answered by the formula ||P|| = 1 - ||(A^T)^-1 L||^-2, with L the unit lower Gram triangle, and ||P||<1. This is the rank-one matrix case of the Xu-Zikatanov identity for the norm of a successive-subspace-correction / alternating-projection sweep (J. Amer. Math. Soc. 15 (2002) 573-597; also in the Kaczmarz literature, e.g. Oswald-Zhou 2015). The statement is faithful and the Lean proof is self-contained, but the result is classical. The MO answer only gives a heuristic."
+  },
+  "mo-222329": {
+   "date": "2026-11-28",
+   "pr": 29879,
+   "evidence": [
+    "https://mathoverflow.net/questions/222329"
+   ],
+   "reason": "Faithful (countable group, left Folner sequence, phi(uv^-1)-kernels PSD on every F_n imply phi positive definite). A comment on the question (score 2) gives the elementary proof: for finite F, eventually some right translate F*a lies in F_n, so the kernel on F is a principal submatrix of one on F_n. The site proof follows exactly that."
+  },
+  "oeis-a177118": {
+   "date": "2026-11-28",
+   "pr": 16296,
+   "evidence": [
+    "https://oeis.org/A177118"
+   ],
+   "reason": "Faithful (Choulet recurrence a(n+1)=Sum a(p)a(n-p) - 2(n+1), a(0)=1, a(1)=5; Mathar's P-recurrence for n>=5). But the entry already says 'Conjecture verified using differential equation ... satisfied by the g.f. - Robert Israel, Jan 07 2026', and Dubickas, Mathematics 14 (2026) 2177, covers all Choulet sequences. The site uses the same algebraic-g.f. ODE route."
+  },
+  "arxiv-2611.01282": {
+   "date": "2026-11-28",
+   "pr": 16381,
+   "evidence": [
+    "https://arxiv.org/abs/2611.01282"
+   ],
+   "reason": "The statement is Theorem 1 of the source, which the paper itself proves by construction (distinct covering systems with minimum moduli 8, 9, 10, 11 and the stated lcms); the open part (minimality, Conjecture 1) is explicitly not formalized. The site proof just kernel-checks Zhang's published ancillary residue lists. Not an open problem; a verified certificate of a published result."
+  },
+  "oeis-a221564": {
+   "date": "2026-11-28",
+   "pr": 13681,
+   "evidence": [
+    "https://oeis.org/A221564"
+   ],
+   "reason": "Faithful (FO4C3 shuffle on n cards with orientation; minimalPeriod; a(3k+1)=2k for k>=1). But Andrew Howroyd's comment and formula in the entry (Apr 27 2020) already settle it: the top card flips each move and the rest split into three cycles of length 2*floor((n-1)/3) or 2*ceil((n-1)/3), giving a(3n+1)=2n. The site proof formalizes that cycle decomposition."
+  },
+  "mo-143764": {
+   "date": "2026-11-28",
+   "pr": 29876,
+   "evidence": [
+    "https://mathoverflow.net/questions/143764",
+    "https://github.com/connoranderson/open-math-agents/blob/c62fb638d00b4affe6f2f5c682a9b0bae73f9c3b/proofs/mo-143764.lean"
+   ],
+   "reason": "Faithful (zeta primitive 2l-th root of unity, entries alpha_i^j beta_j^i zeta^(ij), det nonzero for all sign vectors); the MO question has no answers (only computer checks to l<=12). But the proof file says it is a port, 'all mathematical source unchanged', of @connoranderson's complete proof pinned on his fork (statement PR #24580), submitted by @rodolfoquint, who claims no new discovery. Known by the brief's port rule; the mathematics itself appears new to the site ecosystem."
+  },
+  "mo-178688": {
+   "date": "2026-11-28",
+   "pr": 16835,
+   "evidence": [
+    "https://mathoverflow.net/questions/178688"
+   ],
+   "reason": "The statement (Q-linear independence implies distinct reals and distinct equal-length multiset sums) is exactly the sufficient condition both MO answers give: 'even linearly independent over Q should be enough', and the second answer gives the exact criterion. The proof is immediate from linear independence. Known and trivial."
+  },
+  "oeis-a338633": {
+   "date": "2026-11-28",
+   "pr": 29851,
+   "evidence": [
+    "https://oeis.org/A338633",
+    "https://oeis.org/A158119",
+    "https://oeis.org/A000699"
+   ],
+   "reason": "Faithful (CF tails R_k with A-1=xR_0, R_k(A-(k+2)^3 x R_{k+1})=1; a(n) odd iff n is a power of 2). Since k^3 == k^2 (mod 2), the CF reduces mod 2 to the k^2 one, so the claim is the same parity statement as A158119, proved on this site earlier (oeis-a158119, 2026-11-28 06:48 UTC, with the k^2 continued fraction as definition) than this proof (12:48 UTC). It also follows from A000699's recurrence a(n)=(n-1)Sum a(i)a(n-i), which gives a(2m) == a(m), a(odd>1) even, via Hanna's CF formula there."
+  },
+  "oeis-a273782": {
+   "date": "2026-11-28",
+   "pr": 27980,
+   "evidence": [
+    "https://oeis.org/A273782",
+    "https://oeis.org/A273780",
+    "https://doi.org/10.5281/zenodo.24384895"
+   ],
+   "reason": "Faithful (Rule 929, 5-neighbour outer totalistic, first differences of the ON count; 8(n+1) for n>3, recurrence, g.f.). But it follows from the earlier site solve oeis-a273780 (same author, proof merged 15:44 UTC, before this one at 15:51 UTC): c(n)=(2n+1)^2 for n>=4 gives c(n+1)-c(n)=8(n+1). The partial-sum companion oeis-a273781 was merged at 13:48 UTC. Cohen's Zenodo 24384895 (20 Nov 2026) also proves the Rule 929 = Rule 913 pattern."
+  },
+  "oeis-a177117": {
+   "date": "2026-11-28",
+   "pr": 16300,
+   "evidence": [
+    "https://oeis.org/A177117"
+   ],
+   "reason": "Faithful (Choulet recurrence with a(0)=1, a(1)=4, k=-2; Mathar's P-recurrence for n>=5). The entry already has 'Conjecture verified using differential equation ... satisfied by the g.f. - Robert Israel, Jan 07 2026'. The whole Choulet family is also covered by Dubickas, Mathematics 14 (2026) 2177. The site proof is the same algebraic-g.f. ODE argument."
   }
  },
  "reviewed": "2026-11-28"
