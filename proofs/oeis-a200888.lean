@@ -4,8 +4,22 @@ import Mathlib
 /-! Proof for OEIS A200888: arrays are built from the front. Let `A_m(t)` count valid arrays of length `m + 1` starting with `t`, and `B_m(t)` those whose second entry is `≥ t`. Prepending `t` to an array starting with `y` is valid iff `y ≤ t`, or the array's second entry is `≥ y`; this gives `A_(m+1)(t) = Σ_(y ≤ t) A_m(y) + Σ_(t < y ≤ n) B_m(y)` and `B_(m+1)(t) = A_m(t) + Σ_(t < y ≤ n) B_m(y)`, `A_0 = B_0 = 1`. Both are explicit polynomials in `(t, n)` (Faulhaber sums), so `a(n) = Σ_(t ≤ n) A_4(t)` is an explicit polynomial and the g.f. follows coefficientwise.
 Credit: Sudharsan Rajendiran -/
 
+namespace OMA.Old200888
+
+/-- `ok l`: no interior entry of `l` is greater than both of its neighbours. -/
+def ok : List ℕ → Bool
+  | a :: b :: c :: t => !(decide (a < b) && decide (c < b)) && ok (b :: c :: t)
+  | _ => true
+
+/-- A200888(n): the number of arrays `x(0..4)` of 5 elements in `0..n` without any interior element
+greater than both neighbours. -/
+def a (n : ℕ) : ℕ :=
+  ((Fintype.piFinset fun _ : Fin 5 => Finset.range (n + 1)).filter (fun v => ok (List.ofFn v))).card
+
+end OMA.Old200888
+
 namespace OMA.P200888
-open OMA.S_oeis_a200888 Finset
+open OMA.Old200888 Finset
 
 /-- the second entry, if any, is at least the first. -/
 def geS : List ℕ → Bool
@@ -272,12 +286,10 @@ lemma closed (n : ℕ) : (a n : ℚ) = (2/15 : ℚ) * (n : ℚ) ^ 5 + (11/6 : �
   rw [sum_congr rfl (fun y hy => (cl4 n y (by simp at hy; omega)).1), sum_pa4]
   ring
 
-end OMA.P200888
-
-set_option maxRecDepth 200000 in
-set_option maxHeartbeats 2000000 in
 open PowerSeries in
-theorem OMA.solution : type_of% @OMA.S_oeis_a200888.main := by
+lemma gf_old :
+    (PowerSeries.mk fun n => if n = 0 then (0 : ℚ) else (a n : ℚ)) * (1 - X) ^ 6 =
+      X * (21 - 5 * X + 11 * X ^ 2 - 16 * X ^ 3 + 6 * X ^ 4 - X ^ 5) := by
   ext m
   have hX : ((1 - X) ^ 6 : PowerSeries ℚ) = C (1 : ℚ) * X ^ 0 + C (-6 : ℚ) * X ^ 1 + C (15 : ℚ) * X ^ 2 + C (-20 : ℚ) * X ^ 3 + C (15 : ℚ) * X ^ 4 + C (-6 : ℚ) * X ^ 5 + C (1 : ℚ) * X ^ 6 := by
     simp only [map_neg, map_one, map_ofNat, map_natCast]; ring
@@ -287,12 +299,12 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a200888.main := by
   rw [hN]
   simp only [mul_add, map_add, coeff_mk, mul_left_comm _ (C _), coeff_C_mul, coeff_mul_X_pow', coeff_X_pow, coeff_mul_C, coeff_X,
     Nat.zero_le, if_true, Nat.sub_zero]
-  have t1 : (OMA.S_oeis_a200888.a 1 : ℚ) = 21 := by rw [OMA.P200888.closed]; norm_num
-  have t2 : (OMA.S_oeis_a200888.a 2 : ℚ) = 121 := by rw [OMA.P200888.closed]; norm_num
-  have t3 : (OMA.S_oeis_a200888.a 3 : ℚ) = 422 := by rw [OMA.P200888.closed]; norm_num
-  have t4 : (OMA.S_oeis_a200888.a 4 : ℚ) = 1121 := by rw [OMA.P200888.closed]; norm_num
-  have t5 : (OMA.S_oeis_a200888.a 5 : ℚ) = 2507 := by rw [OMA.P200888.closed]; norm_num
-  have t6 : (OMA.S_oeis_a200888.a 6 : ℚ) = 4977 := by rw [OMA.P200888.closed]; norm_num
+  have t1 : (OMA.Old200888.a 1 : ℚ) = 21 := by rw [OMA.P200888.closed]; norm_num
+  have t2 : (OMA.Old200888.a 2 : ℚ) = 121 := by rw [OMA.P200888.closed]; norm_num
+  have t3 : (OMA.Old200888.a 3 : ℚ) = 422 := by rw [OMA.P200888.closed]; norm_num
+  have t4 : (OMA.Old200888.a 4 : ℚ) = 1121 := by rw [OMA.P200888.closed]; norm_num
+  have t5 : (OMA.Old200888.a 5 : ℚ) = 2507 := by rw [OMA.P200888.closed]; norm_num
+  have t6 : (OMA.Old200888.a 6 : ℚ) = 4977 := by rw [OMA.P200888.closed]; norm_num
   rcases Nat.lt_or_ge m 7 with hm | hm
   · interval_cases m <;> norm_num [t1, t2, t3, t4, t5, t6, ]
   · obtain ⟨p, rfl⟩ : ∃ p, m = p + 7 := ⟨m - 7, by omega⟩
@@ -303,3 +315,45 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a200888.main := by
     rw [OMA.P200888.closed (p + 7), OMA.P200888.closed (p + 6), OMA.P200888.closed (p + 5), OMA.P200888.closed (p + 4), OMA.P200888.closed (p + 3), OMA.P200888.closed (p + 2), OMA.P200888.closed (p + 1)]
     push_cast
     ring
+
+lemma ofFn5 (v : Fin 5 → ℕ) : List.ofFn v = [v 0, v 1, v 2, v 3, v 4] := by
+  simp [List.ofFn_succ]
+lemma bridge (n : ℕ) : OMA.S_oeis_a200888.a n = OMA.Old200888.a n := by
+  unfold OMA.S_oeis_a200888.a OMA.Old200888.a
+  apply Finset.card_nbij' (fun (x : Fin 5 → Fin (n + 1)) i => (x i : ℕ))
+    (fun v i => (⟨min (v i) n, by omega⟩ : Fin (n + 1)))
+  · intro x hx
+    simp only [Finset.coe_filter, Finset.mem_univ, true_and, Set.mem_setOf_eq, Fintype.mem_piFinset,
+      Finset.mem_range] at hx ⊢
+    refine ⟨fun i => (x i).isLt, ?_⟩
+    rw [ofFn5]; unfold OMA.S_oeis_a200888.NoPeak at hx; simp only [Fin.lt_iff_val_lt_val] at hx
+    simp [OMA.Old200888.ok, decide_eq_false_iff_not]; omega
+  · intro v hv
+    simp only [Finset.coe_filter, Finset.mem_univ, true_and, Set.mem_setOf_eq, Fintype.mem_piFinset,
+      Finset.mem_range] at hv ⊢
+    obtain ⟨hr, hv⟩ := hv
+    have h0 := hr 0; have h1 := hr 1; have h2 := hr 2; have h3 := hr 3; have h4 := hr 4
+    rw [ofFn5] at hv; simp [OMA.Old200888.ok, decide_eq_false_iff_not] at hv
+    unfold OMA.S_oeis_a200888.NoPeak; simp only [Fin.lt_iff_val_lt_val]
+    omega
+  · intro x _; funext i; apply Fin.ext; simp; exact Nat.le_of_lt_succ (x i).isLt
+  · intro v hv
+    simp only [Finset.coe_filter, Set.mem_setOf_eq, Fintype.mem_piFinset, Finset.mem_range] at hv
+    funext i; have := hv.1 i; simp; omega
+
+lemma rec_new (n : ℕ) (hn : 6 < n) : (OMA.S_oeis_a200888.a n : ℤ) = 6 * OMA.S_oeis_a200888.a (n - 1) - 15 * OMA.S_oeis_a200888.a (n - 2) + 20 * OMA.S_oeis_a200888.a (n - 3) - 15 * OMA.S_oeis_a200888.a (n - 4) + 6 * OMA.S_oeis_a200888.a (n - 5) - OMA.S_oeis_a200888.a (n - 6) := by
+  obtain ⟨p, rfl⟩ : ∃ p, n = p + 7 := ⟨n - 7, by omega⟩
+  simp only [show p + 7 - 1 = p + 6 by omega, show p + 7 - 2 = p + 5 by omega, show p + 7 - 3 = p + 4 by omega, show p + 7 - 4 = p + 3 by omega, show p + 7 - 5 = p + 2 by omega, show p + 7 - 6 = p + 1 by omega]
+  simp only [bridge]
+  rw [← @Int.cast_inj ℚ]
+  push_cast
+  simp only [closed]
+  push_cast
+  ring
+
+end OMA.P200888
+
+open PowerSeries in
+theorem OMA.solution : type_of% @OMA.S_oeis_a200888.main := by
+  refine ⟨?_, OMA.P200888.rec_new⟩
+  simp only [OMA.P200888.bridge]; exact OMA.P200888.gf_old
