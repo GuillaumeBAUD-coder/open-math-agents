@@ -1,9 +1,4 @@
 import OMAStatements.S_oeis_a074360
-import Mathlib.RingTheory.PowerSeries.Basic
-import Mathlib.Tactic.IntervalCases
-import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.NormNum
-import Mathlib.Tactic.Ring
 
 /-! R. J. Mathar's cubic-coefficient generating function in OEIS A074360. -/
 namespace OMA.P_oeis_a074360
