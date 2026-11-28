@@ -38,8 +38,7 @@ import Mathlib.Topology.Order.IntermediateValue
 import Mathlib.Tactic.Choose
 import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
-import Lean.Elab.Tactic.NormCast
-import Lean.Elab.Tactic.Omega
+import Mathlib.Tactic.Order
 import Mathlib.Data.Finset.Sort
 import Mathlib.Data.List.Sort
 import Mathlib.Data.Fin.Tuple.Basic
@@ -52,7 +51,6 @@ import Mathlib.Order.Interval.Finset.Nat
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 import Mathlib.Order.Fin.Basic
 import Mathlib.Order.Interval.Set.LinearOrder
-import Aesop
 import Mathlib.Data.Fin.Basic
 import Mathlib.Data.Fintype.Fin
 
@@ -1415,11 +1413,11 @@ end CakeSevenComplete
 
 
 /-! Actual kernel-verified 1716-entry table, shared checker definitions above. -/
-set_option maxRecDepth 1000000
-set_option maxHeartbeats 0
 
 namespace CakeQuantileSeven
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_000 : List Certificate := [
   ([0, 0, 0, 0, 0, 0, 7], 3, [(2, 0, 1), (0, 1, 1), (4, 4, 1)]),
   ([0, 0, 0, 0, 0, 1, 6], 3, [(4, 1, 1), (0, 2, 1), (2, 5, 1)]),
@@ -1454,9 +1452,13 @@ def chunk_000 : List Certificate := [
   ([0, 0, 0, 0, 5, 0, 2], 3, [(0, 0, 1), (2, 2, 1), (5, 1, 1)]),
   ([0, 0, 0, 0, 5, 1, 1], 3, [(0, 0, 1), (2, 2, 1), (5, 1, 1)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_000_checked : chunk_000.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_001 : List Certificate := [
   ([0, 0, 0, 0, 5, 2, 0], 6, [(0, 0, 1), (1, 2, 1), (2, 3, 1), (3, 5, 1), (6, 4, 1), (5, 1, 1)]),
   ([0, 0, 0, 0, 6, 0, 1], 3, [(2, 1, 1), (0, 3, 1), (5, 2, 1)]),
@@ -1491,9 +1493,13 @@ def chunk_001 : List Certificate := [
   ([0, 0, 0, 1, 5, 1, 0], 3, [(2, 1, 1), (0, 3, 1), (5, 2, 1)]),
   ([0, 0, 0, 1, 6, 0, 0], 3, [(2, 2, 1), (0, 4, 1), (5, 3, 1)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_001_checked : chunk_001.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_002 : List Certificate := [
   ([0, 0, 0, 2, 0, 0, 5], 3, [(2, 2, 1), (0, 4, 1), (4, 5, 1)]),
   ([0, 0, 0, 2, 0, 1, 4], 3, [(4, 3, 1), (0, 4, 1), (2, 5, 1)]),
@@ -1528,9 +1534,13 @@ def chunk_002 : List Certificate := [
   ([0, 0, 0, 3, 2, 0, 2], 24, [(0, 0, 5), (1, 2, 4), (2, 3, 2), (4, 0, 2), (4, 1, 2), (6, 2, 1), (6, 3, 3), (5, 1, 5)]),
   ([0, 0, 0, 3, 2, 1, 1], 22, [(0, 0, 3), (1, 1, 1), (1, 2, 2), (1, 3, 2), (2, 3, 3), (4, 0, 2), (4, 1, 1), (6, 2, 3), (6, 4, 2), (5, 1, 3)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_002_checked : chunk_002.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_003 : List Certificate := [
   ([0, 0, 0, 3, 2, 2, 0], 14, [(0, 0, 2), (1, 2, 1), (1, 3, 1), (2, 3, 2), (1, 4, 1), (4, 0, 1), (4, 1, 1), (6, 2, 2), (6, 5, 1), (5, 1, 2)]),
   ([0, 0, 0, 3, 3, 0, 1], 20, [(0, 0, 4), (1, 3, 1), (2, 3, 3), (1, 4, 2), (4, 1, 3), (6, 1, 1), (6, 4, 2), (5, 2, 4)]),
@@ -1565,9 +1575,13 @@ def chunk_003 : List Certificate := [
   ([0, 0, 1, 0, 0, 6, 0], 3, [(3, 1, 1), (1, 2, 1), (6, 4, 1)]),
   ([0, 0, 1, 0, 1, 0, 5], 3, [(2, 2, 1), (0, 3, 1), (4, 5, 1)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_003_checked : chunk_003.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_004 : List Certificate := [
   ([0, 0, 1, 0, 1, 1, 4], 3, [(4, 3, 1), (2, 4, 1), (0, 5, 1)]),
   ([0, 0, 1, 0, 1, 2, 3], 22, [(1, 2, 3), (3, 2, 1), (0, 3, 5), (3, 4, 2), (4, 4, 3), (2, 5, 5), (6, 1, 2), (6, 2, 1)]),
@@ -1602,9 +1616,13 @@ def chunk_004 : List Certificate := [
   ([0, 0, 1, 1, 1, 4, 0], 3, [(1, 4, 1), (3, 5, 1), (6, 3, 1)]),
   ([0, 0, 1, 1, 2, 0, 3], 16, [(0, 1, 1), (2, 2, 1), (4, 0, 1), (2, 3, 1), (0, 4, 5), (4, 4, 1), (2, 5, 3), (4, 5, 3)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_004_checked : chunk_004.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_005 : List Certificate := [
   ([0, 0, 1, 1, 2, 1, 2], 28, [(0, 2, 5), (0, 3, 3), (1, 3, 2), (0, 4, 1), (2, 4, 4), (3, 4, 2), (2, 5, 5), (4, 5, 2), (6, 3, 2), (5, 2, 2)]),
   ([0, 0, 1, 1, 2, 2, 1], 18, [(0, 1, 2), (1, 1, 1), (2, 2, 1), (1, 3, 4), (2, 3, 1), (3, 4, 2), (6, 2, 2), (6, 4, 3), (5, 2, 2)]),
@@ -1639,9 +1657,13 @@ def chunk_005 : List Certificate := [
   ([0, 0, 1, 3, 1, 2, 0], 11, [(1, 2, 1), (1, 3, 1), (1, 4, 1), (1, 5, 1), (4, 2, 3), (6, 1, 4)]),
   ([0, 0, 1, 3, 2, 0, 1], 22, [(0, 0, 2), (1, 1, 2), (0, 3, 3), (1, 4, 1), (2, 4, 3), (4, 1, 3), (6, 3, 2), (6, 4, 1), (5, 2, 5)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_005_checked : chunk_005.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_006 : List Certificate := [
   ([0, 0, 1, 3, 2, 1, 0], 22, [(0, 0, 2), (1, 1, 2), (0, 3, 3), (1, 4, 1), (2, 4, 3), (4, 1, 3), (6, 3, 2), (6, 4, 1), (5, 2, 5)]),
   ([0, 0, 1, 3, 3, 0, 0], 26, [(0, 0, 1), (1, 1, 1), (0, 2, 1), (1, 4, 1), (2, 4, 4), (0, 5, 3), (1, 5, 2), (4, 2, 4), (6, 1, 4), (5, 3, 5)]),
@@ -1676,9 +1698,13 @@ def chunk_006 : List Certificate := [
   ([0, 0, 2, 0, 4, 0, 1], 3, [(2, 3, 1), (0, 4, 1), (5, 2, 1)]),
   ([0, 0, 2, 0, 4, 1, 0], 3, [(0, 3, 1), (2, 4, 1), (5, 2, 1)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_006_checked : chunk_006.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_007 : List Certificate := [
   ([0, 0, 2, 0, 5, 0, 0], 3, [(2, 2, 1), (0, 4, 1), (5, 3, 1)]),
   ([0, 0, 2, 1, 0, 0, 4], 3, [(4, 3, 1), (0, 4, 1), (2, 5, 1)]),
@@ -1713,9 +1739,13 @@ def chunk_007 : List Certificate := [
   ([0, 0, 2, 3, 1, 1, 0], 22, [(0, 0, 2), (0, 1, 2), (1, 3, 2), (0, 4, 1), (1, 4, 1), (3, 0, 3), (4, 3, 3), (6, 1, 3), (5, 2, 5)]),
   ([0, 0, 2, 3, 2, 0, 0], 42, [(0, 0, 3), (1, 2, 6), (0, 3, 4), (1, 5, 2), (2, 5, 4), (4, 1, 3), (4, 2, 5), (6, 4, 7), (6, 5, 1), (5, 3, 7)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_007_checked : chunk_007.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_008 : List Certificate := [
   ([0, 0, 2, 4, 0, 0, 1], 3, [(1, 4, 1), (4, 2, 1), (6, 3, 1)]),
   ([0, 0, 2, 4, 0, 1, 0], 3, [(1, 3, 1), (4, 4, 1), (6, 2, 1)]),
@@ -1750,9 +1780,13 @@ def chunk_008 : List Certificate := [
   ([0, 0, 3, 2, 0, 1, 1], 8, [(0, 0, 2), (3, 0, 1), (3, 1, 1), (4, 2, 1), (6, 3, 1), (5, 1, 2)]),
   ([0, 0, 3, 2, 0, 2, 0], 8, [(0, 0, 2), (3, 0, 1), (3, 1, 1), (4, 3, 1), (6, 2, 1), (5, 1, 2)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_008_checked : chunk_008.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_009 : List Certificate := [
   ([0, 0, 3, 2, 1, 0, 1], 22, [(0, 0, 5), (1, 3, 1), (1, 4, 2), (3, 1, 3), (4, 1, 2), (4, 3, 1), (6, 3, 3), (5, 2, 5)]),
   ([0, 0, 3, 2, 1, 1, 0], 22, [(0, 0, 5), (1, 3, 2), (1, 4, 1), (3, 1, 3), (4, 3, 3), (6, 1, 2), (6, 4, 1), (5, 2, 5)]),
@@ -1787,9 +1821,13 @@ def chunk_009 : List Certificate := [
   ([0, 0, 5, 0, 1, 0, 1], 3, [(0, 0, 1), (3, 3, 1), (5, 2, 1)]),
   ([0, 0, 5, 0, 1, 1, 0], 3, [(0, 0, 1), (3, 3, 1), (5, 2, 1)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_009_checked : chunk_009.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_010 : List Certificate := [
   ([0, 0, 5, 0, 2, 0, 0], 3, [(0, 0, 1), (3, 1, 1), (5, 3, 1)]),
   ([0, 0, 5, 1, 0, 0, 1], 3, [(0, 0, 1), (3, 3, 1), (5, 2, 1)]),
@@ -1824,9 +1862,13 @@ def chunk_010 : List Certificate := [
   ([0, 1, 0, 0, 3, 2, 1], 11, [(0, 1, 4), (2, 2, 1), (2, 3, 1), (2, 4, 1), (2, 5, 1), (5, 2, 3)]),
   ([0, 1, 0, 0, 3, 3, 0], 20, [(0, 1, 3), (2, 2, 1), (2, 3, 2), (0, 4, 1), (1, 4, 3), (2, 5, 1), (3, 5, 3), (6, 1, 1), (6, 3, 2), (5, 2, 3)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_010_checked : chunk_010.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_011 : List Certificate := [
   ([0, 1, 0, 0, 4, 0, 2], 3, [(0, 2, 1), (2, 3, 1), (5, 1, 1)]),
   ([0, 1, 0, 0, 4, 1, 1], 3, [(0, 2, 1), (2, 3, 1), (5, 1, 1)]),
@@ -1861,9 +1903,13 @@ def chunk_011 : List Certificate := [
   ([0, 1, 0, 2, 0, 3, 1], 8, [(1, 2, 1), (1, 3, 2), (3, 3, 1), (3, 4, 1), (6, 1, 1), (6, 4, 2)]),
   ([0, 1, 0, 2, 0, 4, 0], 3, [(3, 3, 1), (1, 4, 1), (6, 5, 1)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_011_checked : chunk_011.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_012 : List Certificate := [
   ([0, 1, 0, 2, 1, 0, 3], 21, [(0, 2, 1), (4, 0, 1), (4, 1, 1), (0, 3, 1), (0, 4, 5), (4, 4, 3), (2, 5, 7), (4, 5, 1), (4, 6, 1)]),
   ([0, 1, 0, 2, 1, 1, 2], 5, [(0, 2, 1), (4, 1, 1), (1, 4, 1), (2, 5, 1), (6, 3, 1)]),
@@ -1898,9 +1944,13 @@ def chunk_012 : List Certificate := [
   ([0, 1, 1, 0, 0, 0, 5], 3, [(2, 2, 1), (0, 3, 1), (4, 4, 1)]),
   ([0, 1, 1, 0, 0, 1, 4], 3, [(0, 3, 1), (4, 4, 1), (2, 5, 1)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_012_checked : chunk_012.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_013 : List Certificate := [
   ([0, 1, 1, 0, 0, 2, 3], 8, [(2, 2, 1), (0, 3, 1), (1, 3, 1), (0, 4, 1), (4, 4, 1), (2, 5, 1), (3, 5, 1), (6, 2, 1)]),
   ([0, 1, 1, 0, 0, 3, 2], 16, [(3, 0, 1), (3, 2, 1), (1, 3, 3), (3, 3, 3), (1, 4, 1), (1, 5, 1), (3, 6, 1), (6, 2, 5)]),
@@ -1935,9 +1985,13 @@ def chunk_013 : List Certificate := [
   ([0, 1, 1, 1, 2, 2, 0], 18, [(0, 2, 1), (0, 4, 1), (1, 4, 2), (2, 4, 2), (1, 5, 3), (3, 5, 2), (6, 3, 5), (5, 2, 2)]),
   ([0, 1, 1, 1, 3, 0, 1], 8, [(0, 1, 1), (2, 3, 2), (0, 4, 2), (5, 2, 1), (5, 3, 1), (5, 4, 1)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_013_checked : chunk_013.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_014 : List Certificate := [
   ([0, 1, 1, 1, 3, 1, 0], 8, [(0, 1, 1), (2, 3, 2), (0, 4, 2), (5, 2, 1), (5, 3, 1), (5, 4, 1)]),
   ([0, 1, 1, 1, 4, 0, 0], 3, [(2, 3, 1), (0, 5, 1), (5, 4, 1)]),
@@ -1972,9 +2026,13 @@ def chunk_014 : List Certificate := [
   ([0, 1, 2, 0, 1, 3, 0], 8, [(3, 1, 1), (3, 4, 2), (1, 5, 2), (6, 0, 1), (6, 4, 1), (6, 5, 1)]),
   ([0, 1, 2, 0, 2, 0, 2], 21, [(0, 2, 2), (0, 3, 1), (2, 3, 1), (3, 0, 4), (0, 4, 2), (3, 5, 1), (4, 5, 1), (2, 6, 1), (4, 6, 1), (6, 1, 2), (5, 1, 5)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_014_checked : chunk_014.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_015 : List Certificate := [
   ([0, 1, 2, 0, 2, 1, 1], 28, [(0, 1, 2), (0, 2, 2), (0, 3, 2), (2, 3, 1), (3, 0, 3), (0, 4, 3), (3, 5, 3), (3, 6, 3), (5, 1, 9)]),
   ([0, 1, 2, 0, 2, 2, 0], 33, [(2, 3, 3), (3, 0, 1), (0, 4, 3), (1, 4, 5), (0, 5, 2), (2, 5, 2), (3, 5, 4), (6, 2, 3), (6, 3, 5), (5, 0, 2), (5, 1, 3)]),
@@ -2009,9 +2067,13 @@ def chunk_015 : List Certificate := [
   ([0, 1, 3, 0, 1, 1, 1], 21, [(0, 1, 2), (0, 2, 2), (0, 3, 1), (3, 2, 6), (0, 4, 1), (0, 5, 1), (3, 6, 1), (5, 0, 1), (5, 1, 6)]),
   ([0, 1, 3, 0, 1, 2, 0], 8, [(0, 1, 1), (3, 2, 3), (0, 5, 1), (6, 0, 1), (5, 1, 2)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_015_checked : chunk_015.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_016 : List Certificate := [
   ([0, 1, 3, 0, 2, 0, 1], 8, [(0, 1, 1), (0, 3, 1), (0, 4, 1), (3, 1, 2), (5, 2, 3)]),
   ([0, 1, 3, 0, 2, 1, 0], 16, [(0, 1, 3), (0, 4, 1), (3, 0, 1), (3, 1, 3), (3, 2, 1), (0, 5, 1), (6, 3, 1), (5, 2, 5)]),
@@ -2046,9 +2108,13 @@ def chunk_016 : List Certificate := [
   ([0, 2, 0, 0, 0, 2, 3], 8, [(0, 2, 1), (0, 3, 1), (1, 4, 1), (4, 4, 2), (2, 5, 2), (3, 5, 1)]),
   ([0, 2, 0, 0, 0, 3, 2], 16, [(2, 0, 1), (1, 2, 1), (1, 3, 3), (3, 3, 3), (1, 4, 1), (3, 5, 1), (3, 6, 1), (6, 2, 5)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_016_checked : chunk_016.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_017 : List Certificate := [
   ([0, 2, 0, 0, 0, 4, 1], 3, [(3, 2, 1), (1, 4, 1), (6, 3, 1)]),
   ([0, 2, 0, 0, 0, 5, 0], 3, [(3, 3, 1), (1, 4, 1), (6, 2, 1)]),
@@ -2083,9 +2149,13 @@ def chunk_017 : List Certificate := [
   ([0, 2, 0, 1, 3, 1, 0], 8, [(1, 3, 1), (2, 3, 1), (0, 4, 1), (2, 4, 1), (0, 5, 1), (6, 4, 1), (5, 2, 1), (5, 3, 1)]),
   ([0, 2, 0, 1, 4, 0, 0], 3, [(2, 3, 1), (0, 5, 1), (5, 4, 1)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_017_checked : chunk_017.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_018 : List Certificate := [
   ([0, 2, 0, 2, 0, 0, 3], 16, [(0, 2, 1), (4, 0, 1), (4, 1, 1), (0, 4, 4), (2, 4, 2), (2, 5, 2), (4, 5, 4), (2, 6, 1)]),
   ([0, 2, 0, 2, 0, 1, 2], 21, [(0, 2, 4), (4, 0, 3), (4, 1, 2), (1, 4, 1), (2, 4, 2), (2, 5, 2), (3, 5, 1), (6, 1, 2), (6, 3, 3), (5, 0, 1)]),
@@ -2120,9 +2190,13 @@ def chunk_018 : List Certificate := [
   ([0, 2, 1, 0, 2, 1, 1], 21, [(2, 0, 1), (0, 2, 1), (0, 3, 3), (2, 3, 2), (3, 0, 4), (2, 4, 1), (6, 1, 1), (6, 4, 4), (5, 1, 4)]),
   ([0, 2, 1, 0, 2, 2, 0], 18, [(2, 3, 4), (3, 0, 2), (0, 4, 2), (1, 4, 2), (2, 5, 1), (6, 4, 1), (6, 5, 4), (5, 0, 1), (5, 3, 1)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_018_checked : chunk_018.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_019 : List Certificate := [
   ([0, 2, 1, 0, 3, 0, 1], 21, [(0, 3, 7), (2, 3, 1), (2, 4, 4), (2, 5, 1), (2, 6, 1), (5, 0, 1), (5, 1, 1), (5, 2, 1), (5, 4, 4)]),
   ([0, 2, 1, 0, 3, 1, 0], 16, [(0, 3, 5), (2, 3, 1), (2, 4, 3), (2, 5, 1), (6, 1, 1), (5, 0, 1), (5, 2, 1), (5, 4, 3)]),
@@ -2157,9 +2231,13 @@ def chunk_019 : List Certificate := [
   ([0, 2, 2, 0, 2, 0, 1], 5, [(0, 3, 1), (2, 4, 1), (4, 0, 1), (6, 1, 1), (5, 2, 1)]),
   ([0, 2, 2, 0, 2, 1, 0], 33, [(2, 0, 2), (0, 3, 3), (0, 4, 2), (3, 1, 5), (2, 5, 3), (4, 0, 2), (4, 1, 3), (6, 0, 4), (6, 2, 3), (6, 4, 1), (5, 2, 5)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_019_checked : chunk_019.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_020 : List Certificate := [
   ([0, 2, 2, 0, 3, 0, 0], 8, [(0, 2, 1), (0, 3, 1), (0, 5, 1), (2, 5, 2), (5, 4, 3)]),
   ([0, 2, 2, 1, 0, 0, 2], 18, [(0, 2, 2), (2, 0, 2), (3, 2, 2), (4, 0, 2), (4, 3, 3), (6, 0, 1), (6, 1, 3), (6, 2, 1), (5, 1, 2)]),
@@ -2194,9 +2272,13 @@ def chunk_020 : List Certificate := [
   ([0, 3, 0, 0, 0, 4, 0], 3, [(1, 3, 1), (3, 5, 1), (6, 4, 1)]),
   ([0, 3, 0, 0, 1, 0, 3], 11, [(2, 0, 1), (2, 1, 1), (0, 4, 3), (2, 4, 1), (4, 5, 4), (2, 6, 1)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_020_checked : chunk_020.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_021 : List Certificate := [
   ([0, 3, 0, 0, 1, 1, 2], 8, [(2, 0, 1), (2, 1, 2), (4, 1, 1), (4, 5, 1), (4, 6, 1), (6, 0, 2)]),
   ([0, 3, 0, 0, 1, 2, 1], 8, [(2, 0, 2), (2, 1, 1), (4, 1, 2), (6, 0, 1), (6, 3, 1), (6, 4, 1)]),
@@ -2231,9 +2313,13 @@ def chunk_021 : List Certificate := [
   ([0, 3, 1, 0, 0, 1, 2], 16, [(2, 0, 3), (3, 2, 1), (4, 1, 4), (2, 4, 1), (4, 5, 1), (2, 6, 1), (6, 0, 3), (6, 1, 2)]),
   ([0, 3, 1, 0, 0, 2, 1], 8, [(2, 0, 2), (3, 2, 1), (4, 1, 2), (6, 0, 1), (6, 1, 1), (6, 4, 1)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_021_checked : chunk_021.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_022 : List Certificate := [
   ([0, 3, 1, 0, 0, 3, 0], 11, [(2, 0, 3), (3, 2, 1), (4, 0, 1), (4, 1, 2), (6, 1, 2), (6, 4, 1), (6, 5, 1)]),
   ([0, 3, 1, 0, 1, 0, 2], 8, [(2, 0, 2), (2, 1, 1), (4, 0, 1), (4, 5, 1), (4, 6, 1), (6, 1, 2)]),
@@ -2268,9 +2354,13 @@ def chunk_022 : List Certificate := [
   ([0, 3, 3, 1, 0, 0, 0], 26, [(0, 4, 4), (2, 0, 4), (3, 0, 1), (3, 1, 1), (3, 2, 1), (3, 4, 1), (4, 2, 4), (4, 3, 1), (6, 1, 4), (6, 5, 1), (5, 3, 4)]),
   ([0, 3, 4, 0, 0, 0, 0], 6, [(0, 3, 1), (2, 1, 1), (3, 2, 1), (4, 5, 1), (6, 4, 1), (5, 0, 1)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_022_checked : chunk_022.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_023 : List Certificate := [
   ([0, 4, 0, 0, 0, 0, 3], 3, [(2, 0, 1), (4, 1, 1), (6, 2, 1)]),
   ([0, 4, 0, 0, 0, 1, 2], 3, [(2, 0, 1), (4, 1, 1), (6, 2, 1)]),
@@ -2305,9 +2395,13 @@ def chunk_023 : List Certificate := [
   ([0, 4, 2, 0, 0, 0, 1], 3, [(2, 1, 1), (4, 2, 1), (6, 0, 1)]),
   ([0, 4, 2, 0, 0, 1, 0], 3, [(2, 2, 1), (4, 1, 1), (6, 0, 1)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_023_checked : chunk_023.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_024 : List Certificate := [
   ([0, 4, 2, 0, 1, 0, 0], 3, [(2, 1, 1), (4, 2, 1), (6, 0, 1)]),
   ([0, 4, 2, 1, 0, 0, 0], 3, [(2, 1, 1), (4, 2, 1), (6, 0, 1)]),
@@ -2342,9 +2436,13 @@ def chunk_024 : List Certificate := [
   ([1, 0, 0, 0, 0, 6, 0], 3, [(3, 2, 1), (1, 3, 1), (6, 1, 1)]),
   ([1, 0, 0, 0, 1, 0, 5], 3, [(4, 2, 1), (2, 3, 1), (0, 4, 1)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_024_checked : chunk_024.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_025 : List Certificate := [
   ([1, 0, 0, 0, 1, 1, 4], 3, [(2, 3, 1), (0, 4, 1), (4, 5, 1)]),
   ([1, 0, 0, 0, 1, 2, 3], 22, [(1, 2, 3), (3, 2, 1), (2, 3, 5), (0, 4, 5), (3, 5, 2), (4, 5, 3), (6, 1, 2), (6, 2, 1)]),
@@ -2379,9 +2477,13 @@ def chunk_025 : List Certificate := [
   ([1, 0, 0, 1, 1, 4, 0], 3, [(1, 3, 1), (3, 4, 1), (6, 5, 1)]),
   ([1, 0, 0, 1, 2, 0, 3], 16, [(0, 1, 1), (1, 2, 1), (2, 3, 1), (0, 4, 1), (4, 4, 5), (0, 5, 3), (2, 5, 3), (2, 6, 1)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_025_checked : chunk_025.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_026 : List Certificate := [
   ([1, 0, 0, 1, 2, 1, 2], 28, [(1, 2, 1), (2, 2, 4), (0, 3, 5), (0, 4, 4), (1, 4, 1), (3, 4, 2), (2, 5, 5), (4, 5, 2), (6, 3, 2), (5, 2, 2)]),
   ([1, 0, 0, 1, 2, 2, 1], 18, [(0, 1, 2), (2, 2, 3), (0, 3, 1), (1, 3, 4), (3, 4, 1), (3, 5, 1), (6, 4, 4), (5, 2, 2)]),
@@ -2416,9 +2518,13 @@ def chunk_026 : List Certificate := [
   ([1, 0, 0, 3, 1, 2, 0], 11, [(1, 2, 4), (4, 1, 3), (6, 1, 1), (6, 3, 1), (6, 4, 1), (6, 5, 1)]),
   ([1, 0, 0, 3, 2, 0, 1], 24, [(0, 1, 5), (1, 3, 1), (1, 4, 3), (2, 4, 2), (4, 1, 2), (4, 2, 2), (6, 3, 4), (5, 2, 5)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_026_checked : chunk_026.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_027 : List Certificate := [
   ([1, 0, 0, 3, 2, 1, 0], 22, [(0, 1, 3), (1, 3, 1), (1, 4, 2), (2, 4, 3), (1, 5, 2), (4, 1, 2), (4, 2, 1), (6, 2, 1), (6, 3, 4), (5, 2, 3)]),
   ([1, 0, 0, 3, 3, 0, 0], 20, [(0, 1, 1), (0, 2, 1), (0, 3, 1), (1, 3, 3), (1, 4, 1), (2, 4, 3), (4, 1, 3), (6, 2, 3), (5, 5, 4)]),
@@ -2453,9 +2559,13 @@ def chunk_027 : List Certificate := [
   ([1, 0, 1, 0, 4, 0, 1], 3, [(2, 3, 1), (0, 4, 1), (5, 2, 1)]),
   ([1, 0, 1, 0, 4, 1, 0], 3, [(0, 3, 1), (2, 4, 1), (5, 2, 1)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_027_checked : chunk_027.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_028 : List Certificate := [
   ([1, 0, 1, 0, 5, 0, 0], 3, [(2, 2, 1), (0, 3, 1), (5, 5, 1)]),
   ([1, 0, 1, 1, 0, 0, 4], 3, [(0, 3, 1), (2, 4, 1), (4, 5, 1)]),
@@ -2490,9 +2600,13 @@ def chunk_028 : List Certificate := [
   ([1, 0, 1, 3, 1, 1, 0], 8, [(0, 1, 1), (1, 3, 1), (1, 4, 1), (4, 2, 2), (6, 3, 2), (5, 2, 1)]),
   ([1, 0, 1, 3, 2, 0, 0], 22, [(0, 1, 2), (1, 2, 3), (0, 4, 3), (2, 5, 3), (4, 3, 3), (6, 2, 2), (6, 4, 1), (5, 3, 2), (5, 4, 1), (5, 5, 2)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_028_checked : chunk_028.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_029 : List Certificate := [
   ([1, 0, 1, 4, 0, 0, 1], 3, [(1, 4, 1), (4, 3, 1), (6, 2, 1)]),
   ([1, 0, 1, 4, 0, 1, 0], 3, [(1, 4, 1), (4, 2, 1), (6, 3, 1)]),
@@ -2527,9 +2641,13 @@ def chunk_029 : List Certificate := [
   ([1, 0, 2, 2, 0, 1, 1], 42, [(0, 2, 3), (0, 3, 4), (1, 3, 2), (3, 0, 3), (1, 4, 3), (4, 2, 7), (3, 5, 3), (1, 6, 2), (3, 6, 1), (6, 1, 3), (6, 3, 4), (5, 1, 7)]),
   ([1, 0, 2, 2, 0, 2, 0], 5, [(0, 2, 1), (1, 3, 1), (3, 5, 1), (6, 4, 1), (5, 1, 1)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_029_checked : chunk_029.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_030 : List Certificate := [
   ([1, 0, 2, 2, 1, 0, 1], 18, [(0, 1, 3), (0, 3, 1), (0, 4, 1), (1, 4, 2), (3, 1, 2), (4, 3, 2), (6, 3, 2), (5, 2, 5)]),
   ([1, 0, 2, 2, 1, 1, 0], 18, [(0, 1, 3), (1, 3, 1), (0, 4, 2), (1, 4, 1), (3, 1, 2), (4, 3, 2), (6, 3, 2), (5, 2, 5)]),
@@ -2564,9 +2682,13 @@ def chunk_030 : List Certificate := [
   ([1, 0, 4, 0, 1, 0, 1], 3, [(0, 1, 1), (3, 3, 1), (5, 2, 1)]),
   ([1, 0, 4, 0, 1, 1, 0], 3, [(0, 1, 1), (3, 3, 1), (5, 2, 1)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_030_checked : chunk_030.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_031 : List Certificate := [
   ([1, 0, 4, 0, 2, 0, 0], 3, [(0, 1, 1), (3, 3, 1), (5, 2, 1)]),
   ([1, 0, 4, 1, 0, 0, 1], 3, [(0, 1, 1), (3, 3, 1), (5, 2, 1)]),
@@ -2601,9 +2723,13 @@ def chunk_031 : List Certificate := [
   ([1, 1, 0, 0, 5, 0, 0], 3, [(2, 2, 1), (0, 3, 1), (5, 5, 1)]),
   ([1, 1, 0, 1, 0, 0, 4], 3, [(2, 3, 1), (0, 4, 1), (4, 5, 1)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_031_checked : chunk_031.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_032 : List Certificate := [
   ([1, 1, 0, 1, 0, 1, 3], 8, [(1, 3, 1), (0, 4, 2), (2, 4, 1), (2, 5, 1), (4, 5, 2), (3, 6, 1)]),
   ([1, 1, 0, 1, 0, 2, 2], 18, [(1, 3, 3), (0, 4, 2), (1, 4, 2), (3, 4, 1), (3, 5, 3), (4, 5, 2), (2, 6, 2), (3, 6, 1), (6, 3, 2)]),
@@ -2638,9 +2764,13 @@ def chunk_032 : List Certificate := [
   ([1, 1, 0, 4, 0, 0, 1], 3, [(1, 4, 1), (4, 2, 1), (6, 3, 1)]),
   ([1, 1, 0, 4, 0, 1, 0], 3, [(1, 2, 1), (4, 3, 1), (6, 4, 1)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_032_checked : chunk_032.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_033 : List Certificate := [
   ([1, 1, 0, 4, 1, 0, 0], 3, [(1, 3, 1), (4, 2, 1), (6, 4, 1)]),
   ([1, 1, 0, 5, 0, 0, 0], 3, [(1, 5, 1), (4, 4, 1), (6, 3, 1)]),
@@ -2675,9 +2805,13 @@ def chunk_033 : List Certificate := [
   ([1, 1, 1, 2, 1, 0, 1], 35, [(0, 3, 9), (0, 4, 2), (1, 4, 3), (3, 0, 1), (3, 1, 1), (4, 2, 1), (4, 3, 3), (3, 6, 1), (6, 4, 3), (5, 2, 11)]),
   ([1, 1, 1, 2, 1, 1, 0], 28, [(0, 3, 7), (1, 4, 3), (3, 0, 2), (3, 1, 1), (4, 1, 1), (4, 3, 2), (6, 4, 3), (5, 2, 9)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_033_checked : chunk_033.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_034 : List Certificate := [
   ([1, 1, 1, 2, 2, 0, 0], 18, [(0, 2, 3), (0, 3, 1), (0, 4, 1), (1, 5, 2), (2, 5, 2), (4, 3, 2), (6, 3, 2), (5, 4, 4), (5, 5, 1)]),
   ([1, 1, 1, 3, 0, 0, 1], 16, [(1, 3, 5), (4, 0, 1), (4, 2, 1), (4, 4, 3), (4, 6, 1), (6, 1, 1), (6, 3, 1), (6, 4, 3)]),
@@ -2712,9 +2846,13 @@ def chunk_034 : List Certificate := [
   ([1, 1, 3, 0, 2, 0, 0], 8, [(0, 2, 3), (3, 3, 2), (5, 3, 1), (5, 4, 1), (5, 5, 1)]),
   ([1, 1, 3, 1, 0, 0, 1], 16, [(0, 3, 5), (3, 0, 1), (3, 1, 1), (3, 2, 1), (3, 3, 1), (4, 4, 1), (3, 6, 1), (5, 2, 5)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_034_checked : chunk_034.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_035 : List Certificate := [
   ([1, 1, 3, 1, 0, 1, 0], 8, [(0, 3, 2), (3, 0, 1), (3, 1, 1), (3, 3, 1), (5, 2, 3)]),
   ([1, 1, 3, 1, 1, 0, 0], 8, [(0, 2, 3), (3, 3, 2), (5, 3, 1), (5, 4, 1), (5, 5, 1)]),
@@ -2749,9 +2887,13 @@ def chunk_035 : List Certificate := [
   ([1, 2, 0, 1, 2, 0, 1], 28, [(2, 0, 1), (2, 1, 3), (0, 3, 5), (1, 4, 2), (2, 4, 1), (3, 0, 2), (4, 0, 2), (6, 1, 2), (5, 2, 5), (5, 4, 5)]),
   ([1, 2, 0, 1, 2, 1, 0], 28, [(2, 0, 3), (2, 1, 1), (0, 3, 5), (1, 4, 2), (2, 4, 1), (3, 0, 2), (4, 1, 2), (6, 1, 2), (5, 2, 5), (5, 4, 5)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_035_checked : chunk_035.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_036 : List Certificate := [
   ([1, 2, 0, 1, 3, 0, 0], 8, [(2, 0, 1), (2, 1, 1), (0, 4, 2), (2, 4, 1), (5, 5, 3)]),
   ([1, 2, 0, 2, 0, 0, 2], 28, [(2, 0, 2), (3, 0, 2), (4, 0, 3), (4, 1, 3), (0, 5, 2), (1, 5, 2), (4, 5, 3), (2, 6, 7), (6, 1, 2), (5, 1, 2)]),
@@ -2786,9 +2928,13 @@ def chunk_036 : List Certificate := [
   ([1, 2, 1, 3, 0, 0, 0], 11, [(1, 5, 3), (4, 2, 1), (4, 4, 3), (6, 1, 1), (6, 3, 1), (6, 4, 1), (6, 5, 1)]),
   ([1, 2, 2, 0, 0, 0, 2], 21, [(0, 3, 1), (2, 0, 1), (3, 2, 4), (4, 0, 2), (4, 3, 2), (0, 5, 3), (2, 6, 3), (6, 3, 1), (5, 1, 4)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_036_checked : chunk_036.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_037 : List Certificate := [
   ([1, 2, 2, 0, 0, 1, 1], 18, [(0, 3, 2), (2, 0, 2), (3, 2, 5), (4, 0, 1), (4, 3, 1), (6, 3, 2), (5, 1, 5)]),
   ([1, 2, 2, 0, 0, 2, 0], 18, [(0, 3, 2), (2, 0, 2), (3, 2, 5), (4, 0, 1), (4, 3, 1), (6, 3, 2), (5, 1, 5)]),
@@ -2823,9 +2969,13 @@ def chunk_037 : List Certificate := [
   ([1, 3, 0, 2, 0, 0, 1], 8, [(2, 1, 1), (2, 2, 1), (4, 2, 2), (4, 3, 1), (6, 1, 2), (6, 4, 1)]),
   ([1, 3, 0, 2, 0, 1, 0], 8, [(2, 2, 2), (4, 1, 2), (4, 4, 1), (6, 1, 1), (6, 2, 1), (6, 3, 1)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_037_checked : chunk_037.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_038 : List Certificate := [
   ([1, 3, 0, 2, 1, 0, 0], 16, [(2, 2, 5), (4, 0, 1), (4, 1, 1), (4, 2, 1), (4, 3, 1), (4, 4, 1), (6, 1, 5), (5, 5, 1)]),
   ([1, 3, 0, 3, 0, 0, 0], 11, [(1, 4, 2), (2, 2, 1), (4, 1, 2), (4, 2, 1), (4, 4, 1), (6, 3, 1), (6, 5, 3)]),
@@ -2860,9 +3010,13 @@ def chunk_038 : List Certificate := [
   ([1, 4, 1, 1, 0, 0, 0], 3, [(2, 3, 1), (4, 1, 1), (6, 2, 1)]),
   ([1, 4, 2, 0, 0, 0, 0], 3, [(2, 2, 1), (4, 3, 1), (6, 1, 1)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_038_checked : chunk_038.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_039 : List Certificate := [
   ([1, 5, 0, 0, 0, 0, 1], 3, [(2, 2, 1), (4, 3, 1), (6, 1, 1)]),
   ([1, 5, 0, 0, 0, 1, 0], 3, [(2, 1, 1), (4, 2, 1), (6, 3, 1)]),
@@ -2897,9 +3051,13 @@ def chunk_039 : List Certificate := [
   ([2, 0, 0, 1, 0, 3, 1], 11, [(1, 0, 1), (1, 3, 2), (3, 3, 2), (1, 4, 1), (3, 5, 1), (3, 6, 1), (6, 4, 3)]),
   ([2, 0, 0, 1, 0, 4, 0], 3, [(1, 3, 1), (3, 5, 1), (6, 4, 1)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_039_checked : chunk_039.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_040 : List Certificate := [
   ([2, 0, 0, 1, 1, 0, 3], 32, [(1, 0, 2), (1, 2, 2), (1, 3, 2), (3, 4, 5), (4, 4, 2), (0, 5, 5), (4, 5, 2), (1, 6, 1), (2, 6, 5), (4, 6, 1), (5, 0, 5)]),
   ([2, 0, 0, 1, 1, 1, 2], 18, [(1, 0, 3), (3, 4, 3), (0, 5, 2), (2, 5, 1), (4, 5, 2), (1, 6, 2), (2, 6, 1), (3, 6, 2), (5, 0, 2)]),
@@ -2934,9 +3092,13 @@ def chunk_040 : List Certificate := [
   ([2, 0, 1, 0, 0, 0, 4], 3, [(4, 3, 1), (0, 4, 1), (2, 5, 1)]),
   ([2, 0, 1, 0, 0, 1, 3], 22, [(3, 0, 2), (1, 3, 2), (0, 4, 1), (2, 4, 3), (3, 4, 1), (0, 5, 2), (1, 5, 3), (3, 6, 2), (4, 6, 3), (5, 0, 3)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_040_checked : chunk_040.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_041 : List Certificate := [
   ([2, 0, 1, 0, 0, 2, 2], 35, [(1, 0, 4), (0, 3, 3), (1, 3, 1), (2, 4, 3), (3, 4, 4), (1, 5, 5), (3, 5, 2), (3, 6, 4), (4, 6, 3), (6, 3, 3), (5, 0, 3)]),
   ([2, 0, 1, 0, 0, 3, 1], 11, [(1, 0, 1), (1, 3, 3), (3, 3, 1), (3, 4, 1), (3, 5, 1), (3, 6, 1), (6, 4, 3)]),
@@ -2971,9 +3133,13 @@ def chunk_041 : List Certificate := [
   ([2, 0, 1, 3, 0, 1, 0], 21, [(1, 0, 1), (1, 4, 5), (4, 1, 1), (4, 3, 6), (6, 2, 1), (6, 3, 2), (6, 4, 3), (6, 5, 1), (1, 6, 1)]),
   ([2, 0, 1, 3, 1, 0, 0], 8, [(1, 0, 1), (1, 4, 2), (4, 3, 1), (4, 4, 1), (6, 3, 2), (5, 5, 1)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_041_checked : chunk_041.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_042 : List Certificate := [
   ([2, 0, 1, 4, 0, 0, 0], 3, [(1, 5, 1), (4, 4, 1), (6, 3, 1)]),
   ([2, 0, 2, 0, 0, 0, 3], 16, [(0, 2, 1), (3, 1, 2), (3, 2, 1), (4, 4, 3), (0, 5, 2), (1, 5, 1), (2, 6, 3), (5, 0, 3)]),
@@ -3008,9 +3174,13 @@ def chunk_042 : List Certificate := [
   ([2, 0, 3, 2, 0, 0, 0], 16, [(0, 2, 5), (1, 5, 1), (3, 3, 3), (4, 3, 2), (4, 5, 1), (6, 5, 1), (5, 4, 3)]),
   ([2, 0, 4, 0, 0, 0, 1], 3, [(0, 3, 1), (3, 4, 1), (5, 2, 1)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_042_checked : chunk_042.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_043 : List Certificate := [
   ([2, 0, 4, 0, 0, 1, 0], 3, [(0, 3, 1), (3, 4, 1), (5, 2, 1)]),
   ([2, 0, 4, 0, 1, 0, 0], 3, [(0, 2, 1), (3, 4, 1), (5, 3, 1)]),
@@ -3045,9 +3215,13 @@ def chunk_043 : List Certificate := [
   ([2, 1, 0, 2, 0, 1, 1], 14, [(1, 0, 3), (3, 0, 3), (4, 2, 1), (4, 3, 1), (2, 6, 2), (4, 6, 1), (5, 1, 3)]),
   ([2, 1, 0, 2, 0, 2, 0], 14, [(1, 3, 1), (3, 0, 3), (1, 4, 2), (2, 5, 1), (4, 3, 1), (6, 2, 2), (6, 5, 1), (5, 1, 3)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_043_checked : chunk_043.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_044 : List Certificate := [
   ([2, 1, 0, 2, 1, 0, 1], 7, [(1, 0, 1), (0, 3, 1), (3, 0, 1), (4, 1, 1), (2, 6, 1), (5, 2, 1), (5, 4, 1)]),
   ([2, 1, 0, 2, 1, 1, 0], 14, [(1, 0, 1), (0, 3, 1), (2, 1, 1), (3, 0, 3), (1, 5, 1), (4, 1, 1), (6, 3, 1), (1, 6, 1), (5, 2, 2), (5, 4, 2)]),
@@ -3082,9 +3256,13 @@ def chunk_044 : List Certificate := [
   ([2, 1, 2, 0, 1, 0, 1], 28, [(0, 3, 2), (1, 0, 2), (2, 1, 2), (3, 0, 5), (3, 1, 3), (3, 3, 1), (4, 3, 2), (6, 3, 2), (5, 1, 2), (5, 2, 7)]),
   ([2, 1, 2, 0, 1, 1, 0], 28, [(0, 3, 2), (1, 0, 2), (2, 1, 2), (3, 0, 5), (3, 1, 1), (3, 3, 3), (4, 1, 2), (6, 3, 2), (5, 1, 2), (5, 2, 7)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_044_checked : chunk_044.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_045 : List Certificate := [
   ([2, 1, 2, 0, 2, 0, 0], 28, [(0, 3, 2), (1, 0, 2), (2, 0, 2), (3, 1, 2), (3, 2, 7), (4, 3, 2), (6, 3, 2), (5, 0, 3), (5, 1, 5), (5, 3, 1)]),
   ([2, 1, 2, 1, 0, 0, 1], 28, [(0, 3, 2), (1, 0, 2), (2, 1, 2), (3, 0, 5), (3, 1, 4), (4, 1, 1), (4, 3, 1), (6, 3, 2), (5, 2, 7), (5, 3, 2)]),
@@ -3119,9 +3297,13 @@ def chunk_045 : List Certificate := [
   ([2, 2, 1, 0, 0, 0, 2], 35, [(1, 0, 3), (2, 2, 3), (3, 0, 3), (4, 0, 1), (4, 1, 4), (4, 2, 1), (0, 5, 3), (4, 5, 4), (2, 6, 7), (6, 2, 3), (5, 1, 3)]),
   ([2, 2, 1, 0, 0, 1, 1], 54, [(1, 0, 4), (2, 2, 8), (3, 0, 11), (3, 1, 2), (4, 2, 7), (4, 3, 1), (1, 6, 2), (6, 3, 6), (5, 1, 13)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_045_checked : chunk_045.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_046 : List Certificate := [
   ([2, 2, 1, 0, 0, 2, 0], 18, [(1, 0, 2), (2, 2, 2), (3, 0, 3), (3, 3, 2), (4, 2, 2), (6, 2, 1), (6, 3, 1), (5, 1, 5)]),
   ([2, 2, 1, 0, 1, 0, 1], 18, [(1, 0, 1), (2, 1, 3), (3, 0, 4), (4, 1, 2), (4, 3, 1), (1, 6, 1), (6, 2, 1), (6, 3, 1), (5, 2, 4)]),
@@ -3156,9 +3338,13 @@ def chunk_046 : List Certificate := [
   ([2, 4, 0, 0, 1, 0, 0], 3, [(2, 3, 1), (4, 4, 1), (6, 2, 1)]),
   ([2, 4, 0, 1, 0, 0, 0], 3, [(2, 3, 1), (4, 4, 1), (6, 2, 1)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_046_checked : chunk_046.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_047 : List Certificate := [
   ([2, 4, 1, 0, 0, 0, 0], 3, [(2, 4, 1), (4, 2, 1), (6, 3, 1)]),
   ([2, 5, 0, 0, 0, 0, 0], 3, [(2, 2, 1), (4, 4, 1), (6, 3, 1)]),
@@ -3193,9 +3379,13 @@ def chunk_047 : List Certificate := [
   ([3, 0, 0, 2, 1, 0, 1], 16, [(1, 0, 4), (1, 3, 1), (3, 0, 2), (3, 1, 2), (1, 5, 1), (3, 6, 1), (5, 1, 4), (5, 4, 1)]),
   ([3, 0, 0, 2, 1, 1, 0], 8, [(1, 0, 1), (1, 1, 2), (3, 0, 2), (5, 1, 1), (5, 3, 1), (5, 4, 1)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_047_checked : chunk_047.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_048 : List Certificate := [
   ([3, 0, 0, 2, 2, 0, 0], 11, [(1, 0, 2), (1, 1, 1), (1, 3, 1), (3, 1, 3), (5, 0, 2), (5, 4, 1), (5, 5, 1)]),
   ([3, 0, 0, 3, 0, 0, 1], 11, [(1, 0, 1), (1, 1, 1), (1, 3, 1), (3, 0, 2), (4, 1, 2), (1, 6, 1), (6, 3, 1), (5, 4, 2)]),
@@ -3230,9 +3420,13 @@ def chunk_048 : List Certificate := [
   ([3, 0, 2, 0, 2, 0, 0], 16, [(1, 0, 5), (3, 0, 1), (3, 1, 3), (3, 2, 1), (5, 1, 3), (5, 3, 1), (5, 4, 1), (5, 5, 1)]),
   ([3, 0, 2, 1, 0, 0, 1], 8, [(1, 1, 2), (3, 0, 3), (5, 1, 1), (5, 2, 1), (5, 3, 1)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_048_checked : chunk_048.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_049 : List Certificate := [
   ([3, 0, 2, 1, 0, 1, 0], 8, [(1, 1, 2), (3, 0, 3), (5, 1, 1), (5, 2, 1), (5, 3, 1)]),
   ([3, 0, 2, 1, 1, 0, 0], 16, [(1, 1, 5), (3, 0, 2), (3, 1, 1), (3, 2, 1), (3, 3, 1), (5, 0, 4), (5, 4, 1), (5, 5, 1)]),
@@ -3267,9 +3461,13 @@ def chunk_049 : List Certificate := [
   ([3, 1, 1, 0, 0, 2, 0], 8, [(1, 0, 2), (3, 0, 1), (3, 2, 1), (3, 3, 1), (5, 1, 3)]),
   ([3, 1, 1, 0, 1, 0, 1], 8, [(1, 1, 2), (3, 0, 3), (5, 1, 1), (5, 2, 1), (5, 3, 1)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_049_checked : chunk_049.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_050 : List Certificate := [
   ([3, 1, 1, 0, 1, 1, 0], 8, [(1, 1, 2), (3, 0, 3), (5, 1, 1), (5, 2, 1), (5, 3, 1)]),
   ([3, 1, 1, 0, 2, 0, 0], 8, [(1, 0, 2), (2, 0, 1), (3, 1, 1), (3, 2, 1), (5, 1, 2), (5, 5, 1)]),
@@ -3304,9 +3502,13 @@ def chunk_050 : List Certificate := [
   ([3, 3, 1, 0, 0, 0, 0], 26, [(1, 1, 4), (2, 0, 4), (3, 0, 1), (3, 1, 1), (3, 2, 1), (3, 4, 1), (3, 5, 1), (4, 2, 4), (6, 4, 4), (5, 3, 5)]),
   ([3, 4, 0, 0, 0, 0, 0], 9, [(1, 0, 1), (2, 5, 2), (3, 4, 1), (4, 1, 1), (4, 2, 1), (6, 3, 2), (5, 4, 1)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_050_checked : chunk_050.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_051 : List Certificate := [
   ([4, 0, 0, 0, 0, 0, 3], 6, [(3, 1, 1), (4, 0, 1), (1, 4, 1), (0, 5, 1), (2, 6, 1), (5, 2, 1)]),
   ([4, 0, 0, 0, 0, 1, 2], 3, [(1, 1, 1), (3, 2, 1), (5, 0, 1)]),
@@ -3341,9 +3543,13 @@ def chunk_051 : List Certificate := [
   ([4, 0, 2, 0, 0, 0, 1], 3, [(1, 0, 1), (3, 1, 1), (5, 2, 1)]),
   ([4, 0, 2, 0, 0, 1, 0], 3, [(1, 0, 1), (3, 1, 1), (5, 2, 1)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_051_checked : chunk_051.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_052 : List Certificate := [
   ([4, 0, 2, 0, 1, 0, 0], 3, [(1, 2, 1), (3, 1, 1), (5, 0, 1)]),
   ([4, 0, 2, 1, 0, 0, 0], 3, [(1, 2, 1), (3, 0, 1), (5, 1, 1)]),
@@ -3378,9 +3584,13 @@ def chunk_052 : List Certificate := [
   ([5, 0, 0, 1, 0, 0, 1], 3, [(1, 0, 1), (3, 1, 1), (5, 2, 1)]),
   ([5, 0, 0, 1, 0, 1, 0], 3, [(1, 0, 1), (3, 1, 1), (5, 2, 1)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_052_checked : chunk_052.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def chunk_053 : List Certificate := [
   ([5, 0, 0, 1, 1, 0, 0], 3, [(1, 0, 1), (3, 2, 1), (5, 1, 1)]),
   ([5, 0, 0, 2, 0, 0, 0], 3, [(1, 1, 1), (3, 0, 1), (5, 2, 1)]),
@@ -3403,9 +3613,13 @@ def chunk_053 : List Certificate := [
   ([6, 1, 0, 0, 0, 0, 0], 3, [(1, 2, 1), (3, 1, 1), (5, 0, 1)]),
   ([7, 0, 0, 0, 0, 0, 0], 3, [(1, 4, 1), (3, 0, 1), (5, 3, 1)])
 ]
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem chunk_053_checked : chunk_053.all checkCertificate = true := by
   decide
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 def certificates : List Certificate :=
   chunk_000 ++
   chunk_001 ++
@@ -3462,11 +3676,15 @@ def certificates : List Certificate :=
   chunk_052 ++
   chunk_053
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem append_checked (xs ys : List Certificate)
     (hx : xs.all checkCertificate = true) (hy : ys.all checkCertificate = true) :
     (xs ++ ys).all checkCertificate = true :=
   (List.all_append).trans (congrArg₂ Bool.and hx hy)
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem all_certificates_checked : certificates.all checkCertificate = true := by
   exact (append_checked chunk_000 (chunk_001 ++ chunk_002 ++ chunk_003 ++ chunk_004 ++ chunk_005 ++ chunk_006 ++ chunk_007 ++ chunk_008 ++ chunk_009 ++ chunk_010 ++ chunk_011 ++ chunk_012 ++ chunk_013 ++ chunk_014 ++ chunk_015 ++ chunk_016 ++ chunk_017 ++ chunk_018 ++ chunk_019 ++ chunk_020 ++ chunk_021 ++ chunk_022 ++ chunk_023 ++ chunk_024 ++ chunk_025 ++ chunk_026 ++ chunk_027 ++ chunk_028 ++ chunk_029 ++ chunk_030 ++ chunk_031 ++ chunk_032 ++ chunk_033 ++ chunk_034 ++ chunk_035 ++ chunk_036 ++ chunk_037 ++ chunk_038 ++ chunk_039 ++ chunk_040 ++ chunk_041 ++ chunk_042 ++ chunk_043 ++ chunk_044 ++ chunk_045 ++ chunk_046 ++ chunk_047 ++ chunk_048 ++ chunk_049 ++ chunk_050 ++ chunk_051 ++ chunk_052 ++ chunk_053) chunk_000_checked
     (append_checked chunk_001 (chunk_002 ++ chunk_003 ++ chunk_004 ++ chunk_005 ++ chunk_006 ++ chunk_007 ++ chunk_008 ++ chunk_009 ++ chunk_010 ++ chunk_011 ++ chunk_012 ++ chunk_013 ++ chunk_014 ++ chunk_015 ++ chunk_016 ++ chunk_017 ++ chunk_018 ++ chunk_019 ++ chunk_020 ++ chunk_021 ++ chunk_022 ++ chunk_023 ++ chunk_024 ++ chunk_025 ++ chunk_026 ++ chunk_027 ++ chunk_028 ++ chunk_029 ++ chunk_030 ++ chunk_031 ++ chunk_032 ++ chunk_033 ++ chunk_034 ++ chunk_035 ++ chunk_036 ++ chunk_037 ++ chunk_038 ++ chunk_039 ++ chunk_040 ++ chunk_041 ++ chunk_042 ++ chunk_043 ++ chunk_044 ++ chunk_045 ++ chunk_046 ++ chunk_047 ++ chunk_048 ++ chunk_049 ++ chunk_050 ++ chunk_051 ++ chunk_052 ++ chunk_053) chunk_001_checked
@@ -3523,6 +3741,8 @@ theorem all_certificates_checked : certificates.all checkCertificate = true := b
     (append_checked chunk_052 (chunk_053) chunk_052_checked
     chunk_053_checked)))))))))))))))))))))))))))))))))))))))))))))))))))))
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 theorem all_compositions_present : certificates.map Prod.fst = compositions 7 7 := by
   rfl
 
@@ -3532,6 +3752,8 @@ end CakeQuantileSeven
 namespace CakeSevenUnconditional
 open MeasureTheory
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 /-- Unconditional four-cut division for the fixed three-agent demands (2,1,4)/7. -/
 theorem fixed_three_agent_division (μ : Fin 3 → Measure ℝ)
     (hprob : ∀ i, IsProbabilityMeasure (μ i))
@@ -3545,6 +3767,8 @@ theorem fixed_three_agent_division (μ : Fin 3 → Measure ℝ)
 end CakeSevenUnconditional
 
 
+set_option maxRecDepth 1000000 in
+set_option maxHeartbeats 0 in
 /-- Exact-type adapter for the proposed fixed-demand statement. -/
 theorem OMA.solution : type_of% @OMA.S_arxiv_1803_05470_demands_124.main := by
   intro μ hprob hatom hcake

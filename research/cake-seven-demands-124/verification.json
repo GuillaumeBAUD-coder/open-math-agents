@@ -41,14 +41,14 @@
     "standalone.lean": "2ade918bc60778d35dbef2a10c01daaaf04523ea218daccec25b3ad64b49519f",
     "README.txt": "1ebc065bf508115978920b2b77c6380c98cd2ee30ea0a5425cd89230f5791f6c",
     "statement.lean": "d0856bc0b1013bacd0cd314f849ca6a505c6a2a037e0bd8da267ccab369d0a4a",
-    "proof.lean": "c8a1c73f4a2e34698c2f054474ff7d65a6bc4d6458c205d89c98f0c6c1192b98"
+    "proof.lean": "c0653daedd89987ec2b0d6d146613dc8b3e0794d39052a5566241df5294490b5"
   },
   "agent": "Codex",
   "model": "GPT-6 family (exact runtime identifier unavailable)",
   "exact_statement_adapter": {
     "file": "proof.lean",
-    "source_sha256": "c8a1c73f4a2e34698c2f054474ff7d65a6bc4d6458c205d89c98f0c6c1192b98",
-    "audit_id": "20261128T123259Z-helper-lsehkywd",
+    "source_sha256": "c0653daedd89987ec2b0d6d146613dc8b3e0794d39052a5566241df5294490b5",
+    "audit_id": "20261128T135318Z-helper-n5px0ift",
     "result": "helpers_verified",
     "declaration_axioms": {
       "OMA.solution": [
@@ -62,8 +62,22 @@
         "propext"
       ]
     },
-    "scope": "Supporting lemmas only; no Left to Solve target or upstream submission acceptance was checked."
+    "scope": "Supporting lemmas only; no Left to Solve target or upstream submission acceptance was checked.",
+    "prior_audit_id": "20261128T123259Z-helper-lsehkywd"
   },
   "proposed_namespace": "OMA.S_arxiv_1803_05470_demands_124",
-  "proposed_statement": "Statement module compiled with its intentional main placeholder. Exact OMA.solution audit excludes sorryAx; proof does not depend on the placeholder."
+  "proposed_statement": "Statement module compiled with its intentional main placeholder. Exact OMA.solution audit excludes sorryAx; proof does not depend on the placeholder.",
+  "submission_compatibility": {
+    "mathlib_module_imports_only": true,
+    "numeric_resource_options_scoped_locally": true,
+    "same_resource_values": {
+      "maxRecDepth": 1000000,
+      "maxHeartbeats": 0
+    },
+    "mathematical_data_definitions_and_proofs_unchanged": true,
+    "stripped_import_option_text_sha256": "132f931e9c1ffbac42e1b8dfb6533182108d4917c347cb0301724ba93c56a64f",
+    "static_lint": "Passed unchanged lint in an explicitly synthetic new-ID fixture. Compatibility only; case still requires registration/human review.",
+    "independent_review": "PASS",
+    "detail_metadata_sha256": "c8d5af174fcb38d19a06c4e531a9d75da74fc18a35209059ceb2bd2fce3958d7"
+  }
 }
