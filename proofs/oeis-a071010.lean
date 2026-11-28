@@ -1,8 +1,4 @@
 import OMAStatements.S_oeis_a071010
-import Mathlib.NumberTheory.SumTwoSquares
-import Mathlib.Tactic
-import Mathlib.Algebra.Ring.GeomSum
-import Mathlib.Data.ZMod.Basic
 
 open Finset ArithmeticFunction in
 theorem OMA.solution : type_of% @OMA.S_oeis_a071010.main := by
