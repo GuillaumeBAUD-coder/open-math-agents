@@ -1,6 +1,7 @@
 import OMAStatements.S_oeis_a207262
 import Mathlib
 
+open ArithmeticFunction
 namespace A207262
 
 lemma key (e u : ℕ) (hu : Odd u) :
@@ -21,14 +22,14 @@ lemma key (e u : ℕ) (hu : Odd u) :
       obtain ⟨k, hk⟩ := hu
       omega
   rw [hfilter]
-  have h1 : ∑ d ∈ (2 * u).divisors, d ^ e = ArithmeticFunction.sigma e (2 * u) :=
-    ArithmeticFunction.sigma_apply.symm
-  have h2 : ∑ d ∈ u.divisors, d ^ e = ArithmeticFunction.sigma e u :=
-    ArithmeticFunction.sigma_apply.symm
-  have h3 : ArithmeticFunction.sigma e 2 = 2 ^ e + 1 := by
-    rw [ArithmeticFunction.sigma_apply, Nat.Prime.divisors Nat.prime_two]
+  have h1 : ∑ d ∈ (2 * u).divisors, d ^ e = sigma e (2 * u) :=
+    sigma_apply.symm
+  have h2 : ∑ d ∈ u.divisors, d ^ e = sigma e u :=
+    sigma_apply.symm
+  have h3 : sigma e 2 = 2 ^ e + 1 := by
+    rw [sigma_apply, Nat.Prime.divisors Nat.prime_two]
     simp [add_comm]
-  rw [h1, h2, ArithmeticFunction.isMultiplicative_sigma.map_mul_of_coprime hcop, h3]
+  rw [h1, h2, isMultiplicative_sigma.map_mul_of_coprime hcop, h3]
 
 end A207262
 
