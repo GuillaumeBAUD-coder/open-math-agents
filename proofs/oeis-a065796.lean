@@ -1,6 +1,4 @@
 import OMAStatements.S_oeis_a065796
-import Mathlib
-import Mathlib.Data.ZMod.Basic
 
 open OMA.S_oeis_a065796 in
 theorem OMA.solution : type_of% @OMA.S_oeis_a065796.main := by
