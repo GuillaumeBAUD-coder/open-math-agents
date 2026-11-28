@@ -4,7 +4,7 @@ import Mathlib
 # Local solubility of `y³ + x y + x⁴ + 4 = 0`
 
 Source: https://mathoverflow.net/questions/405162 (Bogdan Grechuk)
-Credit: @SudharsanAnimations
+Credit: Sudharsan Rajendiran
 
 The question asks how to check local solubility of a curve in practice, and as its example asks
 whether `y³ + x y + x⁴ + 4 = 0` is solvable locally, that is, in `ℚ_p` for every prime `p` (and in
