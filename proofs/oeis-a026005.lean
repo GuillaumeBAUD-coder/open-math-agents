@@ -1,11 +1,7 @@
 import OMAStatements.S_oeis_a026005
-import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.Positivity
-import Mathlib.Tactic.Ring
+import Mathlib
 
 -- Credit: @erood (Lean proof with Codex)
-
-namespace OMA.A026005Proof
 
 open OMA.S_oeis_a026005
 
@@ -41,9 +37,7 @@ theorem ratio (n : ℕ) : a (n + 1) =
   field_simp
   ring
 
-end OMA.A026005Proof
-
-open OMA.S_oeis_a026005 OMA.A026005Proof
+open OMA.S_oeis_a026005
 
 theorem OMA.solution : type_of% @OMA.S_oeis_a026005.main := by
   intro k
