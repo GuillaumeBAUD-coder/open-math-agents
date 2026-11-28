@@ -301,5 +301,7 @@ theorem OMA.solution : type_of% @Erdos1032.erdos_1032.variants.dirac_six := by
     rw [iso.minDegree_eq]
     exact OMA.diracJoin_minDegree k
   have hR : (k : ℝ) + 4 ≤ (G.minDegree : ℝ) := by exact_mod_cast hlo
-  simp only [n, m, Nat.cast_add, Nat.cast_ofNat]
-  linarith
+  calc
+    (n : ℝ) / 2 = (k : ℝ) + 3 := by simp only [n, m, Nat.cast_add, Nat.cast_ofNat]; ring
+    _ < (k : ℝ) + 4 := by linarith
+    _ ≤ (G.minDegree : ℝ) := hR
