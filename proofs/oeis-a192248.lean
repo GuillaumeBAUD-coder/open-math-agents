@@ -9,7 +9,11 @@ import Mathlib
 
 namespace OMAA192248Helpers
 
-open Polynomial OMA.S_oeis_a192248
+open OMA.S_oeis_a192248
+
+section
+
+open Polynomial
 
 /-- Constant part of the reduction of p(n,x). -/
 noncomputable def cc : ℕ → ℚ
@@ -62,6 +66,8 @@ theorem a_eq (n : ℕ) : a (n + 1) = cc n := by
   rw [Nat.add_sub_cancel, reduce_eq, coeff_add, coeff_C_mul, coeff_X_zero, coeff_C]
   simp
 
+end
+
 theorem c_rec (j : ℕ) :
     cc (j + 11) - 6 * cc (j + 10) + 10 * cc (j + 9) + 5 * cc (j + 8) - 25 * cc (j + 7) + 4 * cc (j + 6) + 26 * cc (j + 5) - 5 * cc (j + 4) - 15 * cc (j + 3) + 4 * cc (j + 1) + cc j = 0 := by
   have step (k : ℕ) : cc (j + k + 1) =
@@ -75,25 +81,18 @@ theorem c_rec (j : ℕ) :
   push_cast
   ring
 
-theorem key : PowerSeries.mk cc * ((PowerSeries.X - 1) * (PowerSeries.X ^ 2 + PowerSeries.X - 1) ^ 5) =
-    -(-1 + 5 * PowerSeries.X - 20 * PowerSeries.X ^ 2 + 30 * PowerSeries.X ^ 3 -
-      25 * PowerSeries.X ^ 4 + 8 * PowerSeries.X ^ 5) := by
-  set F := PowerSeries.mk cc
-  have e1 : F * ((PowerSeries.X - 1) * (PowerSeries.X ^ 2 + PowerSeries.X - 1) ^ 5) =
-      F - PowerSeries.C (6 : ℚ) * (PowerSeries.X ^ 1 * F) + PowerSeries.C (10 : ℚ) * (PowerSeries.X ^ 2 * F) + PowerSeries.C (5 : ℚ) * (PowerSeries.X ^ 3 * F) - PowerSeries.C (25 : ℚ) * (PowerSeries.X ^ 4 * F) + PowerSeries.C (4 : ℚ) * (PowerSeries.X ^ 5 * F) + PowerSeries.C (26 : ℚ) * (PowerSeries.X ^ 6 * F) - PowerSeries.C (5 : ℚ) * (PowerSeries.X ^ 7 * F) - PowerSeries.C (15 : ℚ) * (PowerSeries.X ^ 8 * F) + PowerSeries.C (4 : ℚ) * (PowerSeries.X ^ 10 * F) + PowerSeries.C (1 : ℚ) * (PowerSeries.X ^ 11 * F) := by
-    simp only [map_ofNat, map_one]
-    ring
-  have e2 : (-(-1 + 5 * PowerSeries.X - 20 * PowerSeries.X ^ 2 + 30 * PowerSeries.X ^ 3 -
-      25 * PowerSeries.X ^ 4 + 8 * PowerSeries.X ^ 5) : PowerSeries ℚ) =
-      PowerSeries.X ^ 0 - PowerSeries.C (5 : ℚ) * PowerSeries.X ^ 1 +
-        PowerSeries.C (20 : ℚ) * PowerSeries.X ^ 2 - PowerSeries.C (30 : ℚ) * PowerSeries.X ^ 3 +
-        PowerSeries.C (25 : ℚ) * PowerSeries.X ^ 4 - PowerSeries.C (8 : ℚ) * PowerSeries.X ^ 5 := by
-    simp only [map_ofNat]
-    ring
-  rw [e1, e2]
+open PowerSeries in
+theorem key : mk cc * ((X - 1) * (X ^ 2 + X - 1) ^ 5) =
+    -(-1 + 5 * X - 20 * X ^ 2 + 30 * X ^ 3 - 25 * X ^ 4 + 8 * X ^ 5) := by
+  set F := mk cc
+  have expand : F * ((X - 1) * (X ^ 2 + X - 1) ^ 5) =
+      F - 6 * (X ^ 1 * F) + 10 * (X ^ 2 * F) + 5 * (X ^ 3 * F) - 25 * (X ^ 4 * F) +
+        4 * (X ^ 5 * F) + 26 * (X ^ 6 * F) - 5 * (X ^ 7 * F) - 15 * (X ^ 8 * F) +
+        4 * (X ^ 10 * F) + X ^ 11 * F := by ring
+  rw [expand]
   ext n
-  simp only [F, map_add, map_sub, PowerSeries.coeff_C_mul, PowerSeries.coeff_mk,
-    PowerSeries.coeff_X_pow_mul', PowerSeries.coeff_X_pow]
+  simp only [F, map_add, map_sub, map_neg, ← map_ofNat (C : ℚ →+* PowerSeries ℚ),
+    coeff_C_mul, coeff_mk, coeff_X_pow_mul', coeff_X_pow, coeff_X, coeff_one]
   by_cases hn : n ≤ 10
   · interval_cases n <;> norm_num [cc, c, Nat.fib_add_two]
   · obtain ⟨j, rfl⟩ : ∃ j, n = j + 11 := ⟨n - 11, by omega⟩
