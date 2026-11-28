@@ -1,22 +1,11 @@
 import OMAStatements.S_mo_250663
-import Mathlib
+
+/-! Retains @caa1982’s diagonal counterexample from PR25542.
+Evaluates the finite-product norm directly through its supremum formula. -/
 
 open OMA.S_mo_250663
 open Matrix
 open scoped Matrix.Norms.L2Operator
-
-lemma mo250663_norm2 (a b : ℝ) (ha : 0 ≤ a) (hb : 0 ≤ b) :
-    ‖(![a, b] : Fin 2 → ℝ)‖ = max a b := by
-  apply le_antisymm
-  · apply (pi_norm_le_iff_of_nonneg (le_trans ha (le_max_left a b))).2
-    intro i; fin_cases i
-    · simp [abs_of_nonneg ha]
-    · simp [abs_of_nonneg hb]
-  · apply max_le
-    · have := norm_le_pi_norm (![a, b] : Fin 2 → ℝ) 0
-      simpa [abs_of_nonneg ha] using this
-    · have := norm_le_pi_norm (![a, b] : Fin 2 → ℝ) 1
-      simpa [abs_of_nonneg hb] using this
 
 lemma mo250663_inv (v w : Fin 2 → ℝ) (h : ∀ i, v i * w i = 1) :
     (diagonal v)⁻¹ = diagonal w := by
@@ -43,8 +32,5 @@ theorem OMA.disproof : ¬ (type_of% @OMA.S_mo_250663.main) := by
     exact mo250663_inv _ _ (by intro i; fin_cases i <;> norm_num)
   unfold condNum at h1
   rw [e1, e2, e3, l2_opNorm_diagonal, l2_opNorm_diagonal, l2_opNorm_diagonal,
-    l2_opNorm_diagonal, mo250663_norm2 _ _ (by norm_num) (by norm_num),
-    mo250663_norm2 _ _ (by norm_num) (by norm_num),
-    mo250663_norm2 _ _ (by norm_num) (by norm_num),
-    mo250663_norm2 _ _ (by norm_num) (by norm_num)] at h1
-  norm_num at h1
+    l2_opNorm_diagonal] at h1
+  norm_num [Pi.norm_def, Finset.univ_fin2] at h1

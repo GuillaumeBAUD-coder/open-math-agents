@@ -1,6 +1,9 @@
 import OMAStatements.S_mo_302653
 
 /-!
+Shortens the existing counterexample by @treybeathard-jpg: transfer compactness through
+the retained homeomorphism and use singleton subsingletonness for the final contradiction.
+
 Counterexample to sobriety of compact subspaces of sober spaces:
 equip Option Nat with the topology whose nonempty open sets contain none
 and have finite complement in Option.some, and take S = Set.range Option.some.
@@ -100,13 +103,6 @@ theorem OMA.disproof : ¬ (type_of% @OMA.S_mo_302653.main) := by
     have hpre : (f ⁻¹' U)ᶜ = CofiniteTopology.of.symm ⁻¹' (Option.some ⁻¹' U)ᶜ := rfl
     rw [hpre]
     exact hfin.preimage CofiniteTopology.of.symm.injective.injOn
-  have hS_compact : IsCompact S := by
-    have hrange : Set.range f = S := by
-      ext x
-      simp only [Set.mem_range, f, S]
-      exact ⟨fun ⟨y, hy⟩ => ⟨_, hy⟩, fun ⟨y, hy⟩ => ⟨CofiniteTopology.of y, by simpa using hy⟩⟩
-    rw [← hrange, ← Set.image_univ]
-    exact (TopologicalSpace.NoetherianSpace.isCompact (Set.univ : Set (CofiniteTopology ℕ))).image hf_cont
   let e : CofiniteTopology ℕ ≃ₜ S :=
     { toFun := fun n => ⟨f n, CofiniteTopology.of.symm n, rfl⟩
       invFun := fun x => CofiniteTopology.of (x.1.getD 0)
@@ -136,14 +132,14 @@ theorem OMA.disproof : ¬ (type_of% @OMA.S_mo_302653.main) := by
           · ext ⟨x, n, hn⟩
             subst hn
             simp }
-  have _ : QuasiSober S := (h (Option ℕ) S hS_compact).2
+  let : CompactSpace S := e.compactSpace
+  have _ : QuasiSober S := (h (Option ℕ) S (isCompact_iff_compactSpace.mpr inferInstance)).2
   have _ : QuasiSober (CofiniteTopology ℕ) := e.isClosedEmbedding.quasiSober
   have hgen := genericPoint_closure (CofiniteTopology ℕ)
   rw [isClosed_singleton.closure_eq] at hgen
-  have h01 : CofiniteTopology.of (0 : ℕ) = CofiniteTopology.of (1 : ℕ) := by
-    have h0 : CofiniteTopology.of (0 : ℕ) ∈ ({genericPoint (CofiniteTopology ℕ)} : Set (CofiniteTopology ℕ)) :=
-      hgen.symm ▸ Set.mem_univ _
-    have h1 : CofiniteTopology.of (1 : ℕ) ∈ ({genericPoint (CofiniteTopology ℕ)} : Set (CofiniteTopology ℕ)) :=
-      hgen.symm ▸ Set.mem_univ _
-    exact h0.trans h1.symm
-  exact absurd (CofiniteTopology.of.injective h01) (by decide)
+  have hsub : (Set.univ : Set (CofiniteTopology ℕ)).Subsingleton := by
+    rw [← hgen]
+    exact Set.subsingleton_singleton
+  have h01 := hsub (Set.mem_univ (CofiniteTopology.of (0 : ℕ)))
+    (Set.mem_univ (CofiniteTopology.of (1 : ℕ)))
+  exact Nat.zero_ne_one (CofiniteTopology.of.injective h01)

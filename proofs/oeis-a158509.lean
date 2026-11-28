@@ -1,80 +1,78 @@
 import OMAStatements.S_oeis_a158509
+import Mathlib
 
-namespace OMA.A158509Proof
+/-
+A158509: if P = prime(n-1) has P + 5 a square and P + 5 = prime(n+1) - 1, then
+prime(n) = P + 2, P ends in 1 and prime(n) ends in 3.
 
-lemma not_prime_of_dvd (d r : ℕ) (hd : d ∣ r) (h1 : 2 ≤ d) (h2 : d < r) : ¬ r.Prime := by
-  intro hr
-  rcases hr.eq_one_or_self_of_dvd d hd with h | h <;> omega
+Let Q = prime(n) and R = prime(n+1) = P + 6, so P < Q < P + 6. P is odd (P = 2 gives 7, not a
+square), hence Q is P + 2 or P + 4. With P + 5 = m^2, P + 4 = (m - 1)(m + 1) is composite, so
+Q = P + 2. Modulo 10 a square is 0, 1, 4, 5, 6 or 9, so the odd number P = m^2 - 5 ends in 1, 5
+or 9. It cannot end in 5 (then P = 5 and 10 is not a square) or in 9 (then 5 divides R = P + 6).
+-/
 
-lemma core (i : ℕ) (hsq : IsSquare (Nat.nth Nat.Prime i + 5))
-    (heq : Nat.nth Nat.Prime i + 5 = Nat.nth Nat.Prime (i + 2) - 1) :
-    Nat.nth Nat.Prime (i + 1) = Nat.nth Nat.Prime i + 2 ∧ Nat.nth Nat.Prime i % 10 = 1 ∧
-      Nat.nth Nat.Prime (i + 1) % 10 = 3 := by
-  have hmono := Nat.nth_strictMono Nat.infinite_setOfPred_prime
-  have hp := Nat.prime_nth_prime i
-  have hq := Nat.prime_nth_prime (i + 1)
-  have hs := Nat.prime_nth_prime (i + 2)
-  have l1 : Nat.nth Nat.Prime i < Nat.nth Nat.Prime (i + 1) := hmono (by omega)
-  have l2 : Nat.nth Nat.Prime (i + 1) < Nat.nth Nat.Prime (i + 2) := hmono (by omega)
-  generalize Nat.nth Nat.Prime i = p at *
-  generalize Nat.nth Nat.Prime (i + 1) = q at *
-  generalize hS : Nat.nth Nat.Prime (i + 2) = s at *
-  obtain ⟨r, hr⟩ := hsq
-  have p2 := hp.two_le
-  have hs6 : s = p + 6 := by omega
-  subst hs6
-  -- p is odd
-  have hpodd : p % 2 = 1 := by
-    rcases hp.eq_two_or_odd with h | h
-    · subst h
-      have : r ≤ 2 := by nlinarith
-      interval_cases r <;> omega
-    · exact h
-  have hr3 : 3 ≤ r := by nlinarith
-  -- q = p + 2
-  have hq2 : q = p + 2 := by
-    have hq1 : q ≠ p + 1 := by
-      intro h; subst h
-      exact not_prime_of_dvd 2 (p + 1) (by omega) le_rfl (by omega) hq
-    have hq3 : q ≠ p + 3 := by
-      intro h; subst h
-      exact not_prime_of_dvd 2 (p + 3) (by omega) le_rfl (by omega) hq
-    have hq5 : q ≠ p + 5 := by
-      intro h; subst h
-      exact not_prime_of_dvd 2 (p + 5) (by omega) le_rfl (by omega) hq
-    have hq4 : q ≠ p + 4 := by
-      intro h; subst h
-      obtain ⟨u, rfl⟩ : ∃ u, r = u + 1 := ⟨r - 1, by omega⟩
-      have hfac : p + 4 = (u + 2) * u := by nlinarith
-      exact not_prime_of_dvd (u + 2) (p + 4) ⟨u, hfac⟩ (by omega) (by nlinarith) hq
+namespace OMA.P158509
+
+lemma core (P Q R m : ℕ) (hP : P.Prime) (hQ : Q.Prime) (hR : R.Prime) (hPQ : P < Q) (hQR : Q < R)
+    (hm : P + 5 = m * m) (heq : P + 5 = R - 1) :
+    Q = P + 2 ∧ P % 10 = 1 ∧ Q % 10 = 3 := by
+  have hR6 : R = P + 6 := by
+    have := hR.two_le
     omega
-  subst hq2
-  -- last digits
-  have h5p : ¬ 5 ∣ p := fun h => by
-    rcases hp.eq_one_or_self_of_dvd 5 h with h' | h'
-    · omega
-    · subst h'
-      have : r ≤ 3 := by nlinarith
-      interval_cases r <;> omega
-  have h5q : ¬ 5 ∣ p + 2 := fun h => by
-    rcases hq.eq_one_or_self_of_dvd 5 h with h' | h'
-    · omega
-    · nlinarith
-  have h5s : ¬ 5 ∣ p + 6 := fun h => by
-    rcases hs.eq_one_or_self_of_dvd 5 h with h' | h' <;> omega
-  have hmod : (r * r) % 5 = ((r % 5) * (r % 5)) % 5 := by simp [Nat.mul_mod]
-  have hr5 : r % 5 < 5 := Nat.mod_lt _ (by norm_num)
-  have key : p % 10 = 1 := by
-    generalize r % 5 = x at hmod hr5
-    interval_cases x <;> omega
-  omega
+  have hP2 : P ≠ 2 := by
+    rintro rfl
+    have h3 : m < 3 := by nlinarith
+    interval_cases m <;> omega
+  have hPodd : P % 2 = 1 := hP.eq_two_or_odd.resolve_left hP2
+  have hQodd : Q % 2 = 1 := hQ.eq_two_or_odd.resolve_left (by have := hP.two_le; omega)
+  have hQ2 : Q = P + 2 := by
+    rcases (by omega : Q = P + 2 ∨ Q = P + 4) with h | h
+    · exact h
+    · exfalso
+      obtain ⟨t, rfl⟩ : ∃ t, m = t + 1 := ⟨m - 1, by
+        rcases Nat.eq_zero_or_pos m with rfl | h0
+        · omega
+        · omega⟩
+      have ht : t * (t + 2) = P + 4 := by nlinarith
+      have ht2 : 2 ≤ t := by
+        by_contra hlt
+        have : t ≤ 1 := by omega
+        interval_cases t <;> omega
+      rw [h, ← ht] at hQ
+      exact Nat.not_prime_mul (by omega) (by omega) hQ
+  have h10 : (m * m) % 10 = ((m % 10) * (m % 10)) % 10 := Nat.mul_mod m m 10
+  have hlt : m % 10 < 10 := Nat.mod_lt _ (by norm_num)
+  have hP5 : P % 10 ≠ 5 := by
+    intro h5
+    have hd : 5 ∣ P := by omega
+    have hP5' : 5 = P := (Nat.prime_dvd_prime_iff_eq Nat.prime_five hP).1 hd
+    subst hP5'
+    have h4 : m < 4 := by nlinarith
+    interval_cases m <;> omega
+  have hP9 : P % 10 ≠ 9 := by
+    intro h9
+    have hd : 5 ∣ R := by omega
+    have := (Nat.prime_dvd_prime_iff_eq Nat.prime_five hR).1 hd
+    omega
+  have hP1 : P % 10 = 1 := by
+    interval_cases hmm : m % 10 <;> omega
+  exact ⟨hQ2, hP1, by omega⟩
 
-end OMA.A158509Proof
-
-theorem OMA.solution : type_of% @OMA.S_oeis_a158509.main := by
+lemma main' (prime : ℕ → ℕ) (hprime : ∀ k, prime k = Nat.nth Nat.Prime (k - 1)) :
+    ∀ n : ℕ, 2 ≤ n → IsSquare (prime (n - 1) + 5) → prime (n - 1) + 5 = prime (n + 1) - 1 →
+      prime n = prime (n - 1) + 2 ∧ prime (n - 1) % 10 = 1 ∧ prime n % 10 = 3 := by
   intro n hn hsq heq
-  obtain ⟨i, rfl⟩ : ∃ i, n = i + 2 := ⟨n - 2, by omega⟩
-  unfold OMA.S_oeis_a158509.prime at *
-  simp only [show i + 2 + 1 - 1 = i + 2 by omega,
-    show i + 2 - 1 = i + 1 by omega] at *
-  exact OMA.A158509Proof.core i hsq heq
+  obtain ⟨j, rfl⟩ : ∃ j, n = j + 2 := ⟨n - 2, by omega⟩
+  simp only [hprime] at hsq heq ⊢
+  rw [show j + 2 - 1 - 1 = j by omega] at hsq heq ⊢
+  rw [show j + 2 + 1 - 1 = j + 2 by omega] at heq
+  rw [show j + 2 - 1 = j + 1 by omega]
+  obtain ⟨m, hm⟩ := hsq
+  exact core _ _ _ m (Nat.prime_nth_prime j) (Nat.prime_nth_prime (j + 1))
+    (Nat.prime_nth_prime (j + 2))
+    (Nat.nth_strictMono Nat.infinite_setOfPred_prime (by omega))
+    (Nat.nth_strictMono Nat.infinite_setOfPred_prime (by omega)) hm heq
+
+end OMA.P158509
+
+theorem OMA.solution : type_of% @OMA.S_oeis_a158509.main := OMA.P158509.main' OMA.S_oeis_a158509.prime (fun _ => rfl)

@@ -3,6 +3,8 @@ import { json, UUID, guarded } from "@/lib/desk";
 import { roleTask, suggestFor } from "@/lib/collab";
 import { beatTeam } from "@/lib/team";
 import { OFFLINE_LEASE, dbDown, degradedBeat } from "@/lib/deskoffline";
+import EVENT from "@/content/event.json";
+import { inEvent, valueOnly } from "@/lib/event";
 
 /**
  * POST /api/desk/beat?lease=<lease>[&since=<note id>][&problem=<id>] every 7 minutes. Keeps the lease alive and answers
@@ -19,6 +21,14 @@ async function h(req: Request) {
   if (OFFLINE_LEASE.test(lease)) return json(degradedBeat(true), 200);
   if (!UUID.test(lease)) return json({ error: "bad_lease" }, 400);
   if (!deskOnline) return json({ error: "desk_offline" }, 503);
+  // During the live event every agent works on it (owner's rule): a heartbeat for another problem answers stop, so
+  // tools/oma.sh drops it and takes the next problem, which the desk routes to the event. Only beats that name their
+  // problem (tools/oma.sh beat) are stopped; the submission beat names none, so a finished proof can still be sent.
+  const named = (u.searchParams.get("problem") ?? "").slice(0, 200);
+  const t = Date.now();
+  if (named && t >= Date.parse(EVENT.start) && t < Date.parse(EVENT.end) && (!inEvent(named) || valueOnly(named))) {
+    return json({ stop: true, status: "event", hint: `Live event until ${EVENT.end}: every agent works on the event's Erdős problems. Finish and submit a proof you already have (submission is not blocked), otherwise drop ${named} and run tools/oma.sh next.` }, 410);
+  }
   const since = Math.max(0, Math.min(Number(u.searchParams.get("since") ?? 0) || 0, Number.MAX_SAFE_INTEGER));
   let r: Awaited<ReturnType<typeof beatTeam>>;
   try {
@@ -29,6 +39,12 @@ async function h(req: Request) {
   }
   if (r.error) return json(r, 404);
   if (r.stop) return json(r, 410);
+  // Same rule when the database says which problem the lease is on (supabase/pending-review/026): covers tools that do
+  // not pass ?problem=. Until 026 is applied, r.problem is absent and nothing changes.
+  const onProblem = (r as { problem?: string }).problem;
+  if (onProblem && t >= Date.parse(EVENT.start) && t < Date.parse(EVENT.end) && (!inEvent(onProblem) || valueOnly(onProblem))) {
+    return json({ stop: true, status: "event", hint: `Live event until ${EVENT.end}: every agent works on the event's Erdős problems. Finish and submit a proof you already have (submission is not blocked), otherwise drop ${onProblem} and run tools/oma.sh next.` }, 410);
+  }
   const { boardOn, board, role_change, ...rest } = r;
   if (!boardOn) return json({ ...rest, roleTask: roleTask(r.role) }, 200);
   const id = (u.searchParams.get("problem") ?? "").slice(0, 200) || "<id>";
