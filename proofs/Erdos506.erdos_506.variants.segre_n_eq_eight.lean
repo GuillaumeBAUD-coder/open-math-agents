@@ -86,11 +86,12 @@ theorem pts_not_collinear : ¬ Collinear ℝ (pts : Set (EuclideanSpace ℝ (Fin
   have ha0 := congrArg (fun p : EuclideanSpace ℝ (Fin 2) => p 0) ha
   have ha1 := congrArg (fun p : EuclideanSpace ℝ (Fin 2) => p 1) ha
   have hb0 := congrArg (fun p : EuclideanSpace ℝ (Fin 2) => p 0) hb
-  change (-1 : ℝ) = a * v 0 - 1 at ha0
-  change (1 : ℝ) = a * v 1 - 1 at ha1
-  change (1 : ℝ) = b * v 0 - 1 at hb0
-  have ha' : a ≠ 0 := by rintro rfl; norm_num at ha1
-  have hv0 : v 0 = 0 := (mul_eq_zero.mp (by linarith : a * v 0 = 0)).resolve_left ha'
+  change (x 1 : ℝ) = a * v 0 + (x 0 : ℝ) at ha0
+  change (y 1 : ℝ) = a * v 1 + (y 0 : ℝ) at ha1
+  change (x 2 : ℝ) = b * v 0 + (x 0 : ℝ) at hb0
+  norm_num [x, y] at ha0 ha1 hb0
+  have hane : a ≠ 0 := by intro h; norm_num [h] at ha1
+  have hv0 := ha0.resolve_left hane
   norm_num [hv0] at hb0
 
 noncomputable def candidate (m : Fin 18) : Sphere (EuclideanSpace ℝ (Fin 2)) :=
