@@ -19,7 +19,12 @@ try {
       if (!pr.labels.some((l) => l.name === "needs-human-review")) continue;
       const id = String(pr.title).trim();
       if (!/^[\w.\-]+$/.test(id) || id.length > 200) continue;
-      (items[id] ??= []).push({ pr: pr.number, user: pr.user.login, at: pr.created_at.slice(0, 10) });
+      // What was submitted decides the label on the site (a statement is not a proof), not the problem's kind today.
+      const fr = await fetch(`https://api.github.com/repos/${REPO}/pulls/${pr.number}/files?per_page=5`, { headers });
+      const files = fr.ok ? await fr.json() : [];
+      const file = Array.isArray(files) && files.length ? String(files[0].filename) : "";
+      const kind = file.startsWith("statements/") ? "statement" : file.startsWith("reductions/") ? "reduction" : "proof";
+      (items[id] ??= []).push({ pr: pr.number, user: pr.user.login, at: pr.created_at.slice(0, 10), kind });
       n++;
     }
     if (prs.length < 100) break;
