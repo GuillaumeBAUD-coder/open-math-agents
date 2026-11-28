@@ -7,6 +7,10 @@ If the difference is odd, the smaller prime must be 2. For a positive even
 difference `k`, either `k + 3` or `k + 5` being prime gives an explicit pair.
 For the remaining differences, the two primes have the same nonzero residue
 modulo 3 when `3 ∣ k`. Otherwise the smaller prime is congruent to `k` modulo 3.
+
+The theorem `unbounded_minimum_start` shows why a finite list of smaller primes
+cannot cover either remaining case. It applies in every residue class with an even
+representative, including 0, 2 and 4 modulo 6.
 -/
 
 namespace OMA.R_oeis_a007921_R1
@@ -99,5 +103,67 @@ theorem converse (hall : type_of% @OMA.S_oeis_a007921.main) : H1 ∧ H2 := by
     have := prime_mod_three hq (by omega)
     have := prime_mod_three hp (by omega)
     omega
+
+/-- For even `a`, some residue `r` and its translate `r + a` are both units modulo `m`. -/
+private lemma coprime_pair (m a : ℕ) (hm : m ≠ 0) (ha : Even a) :
+    ∃ r : ℕ, r.Coprime m ∧ (r + a).Coprime m := by
+  -- For a prime divisor of m, exactly one of a and b is divisible by that prime.
+  let S := m.primeFactors.filter (fun p => ¬ p ∣ a)
+  let b := ∏ p ∈ S, p
+  have hab : a.Coprime b := by
+    apply Nat.coprime_prod_right_iff.mpr
+    intro p hp
+    obtain ⟨hpM, hpa⟩ := Finset.mem_filter.mp hp
+    exact ((Nat.prime_of_mem_primeFactors hpM).coprime_iff_not_dvd.mpr hpa).symm
+  have aux (c : ℕ) (hc : c = 1 ∨ c = 2) : (b + c * a).Coprime m := by
+    apply Nat.Coprime.symm
+    refine Nat.coprime_of_dvd ?_
+    intro p hp hpm hsum
+    by_cases hpa : p ∣ a
+    · have hpb : p ∣ b := (Nat.dvd_add_iff_left (dvd_mul_of_dvd_right hpa c)).mpr hsum
+      exact Nat.not_coprime_of_dvd_of_dvd hp.one_lt hpa hpb hab
+    · have hps : p ∈ S := Finset.mem_filter.mpr ⟨Nat.mem_primeFactors.mpr ⟨hp, hpm, hm⟩, hpa⟩
+      have hpb : p ∣ b := Finset.dvd_prod_of_mem id hps
+      have hprod : p ∣ c * a := (Nat.dvd_add_iff_right hpb).mpr hsum
+      have hpc := (hp.dvd_mul.mp hprod).resolve_right hpa
+      rcases hc with rfl | rfl
+      · exact hp.not_dvd_one hpc
+      · have hp2 := (Nat.prime_dvd_prime_iff_eq hp Nat.prime_two).mp hpc
+        exact hpa (hp2 ▸ ha.two_dvd)
+  exact ⟨b + a, by simpa using aux 1 (Or.inl rfl),
+    by simpa [two_mul, Nat.add_assoc] using aux 2 (Or.inr rfl)⟩
+
+/-- In each residue class with an even representative modulo a positive modulus, there is a fixed
+prime `q > B` and arbitrarily large even differences `k` with `q + k` prime. At the same time, every
+`k + s` with `2 ≤ s ≤ B` is composite, so no such `s` can be the smaller prime. -/
+theorem unbounded_minimum_start (m a B : ℕ) (hm : 0 < m) (ha : Even a) :
+    ∃ q > B, q.Prime ∧ ∀ N : ℕ, ∃ k > N, Even k ∧ Nat.ModEq m k a ∧
+      (q + k).Prime ∧ ∀ s : ℕ, 2 ≤ s → s ≤ B → ¬ (k + s).Prime := by
+  -- If k is congruent to a modulo M, then a + s divides k + s for 2 ≤ s ≤ B.
+  let M := m * (a + B).factorial
+  have hM : M ≠ 0 := Nat.mul_ne_zero hm.ne' (Nat.factorial_ne_zero _)
+  obtain ⟨r, hr, hra⟩ := coprime_pair M a hM ha
+  -- Dirichlet gives one fixed smaller prime q and unbounded larger primes p.
+  obtain ⟨q, hqB, hq, hqr⟩ := Nat.forall_exists_prime_gt_and_modEq (max B 2) hM hr
+  refine ⟨q, by omega, hq, ?_⟩
+  intro N
+  obtain ⟨p, hpN, hp, hpr⟩ := Nat.forall_exists_prime_gt_and_modEq (q + max N a) hM hra
+  let k := p - q
+  have hqk : q + k = p := by dsimp [k]; omega
+  have hkN : N < k := by dsimp [k]; omega
+  have hka : a < k := by dsimp [k]; omega
+  have hkM : Nat.ModEq M k a := hqr.add_left_cancel (hqk ▸ hpr)
+  have he : Even k := by
+    have := hq.eq_two_or_odd
+    have := hp.eq_two_or_odd
+    rw [Nat.even_iff]
+    omega
+  refine ⟨k, hkN, he, hkM.of_dvd (dvd_mul_right m _), hqk ▸ hp, ?_⟩
+  intro s hs hsB hprime
+  have hd : a + s ∣ M :=
+    dvd_mul_of_dvd_right (Nat.dvd_factorial (by omega) (by omega)) m
+  have hks : a + s ∣ k + s := ((hkM.add_right s).dvd_iff hd).mpr (dvd_refl _)
+  have := hprime.eq_one_or_self_of_dvd _ hks
+  omega
 
 end OMA.R_oeis_a007921_R1
