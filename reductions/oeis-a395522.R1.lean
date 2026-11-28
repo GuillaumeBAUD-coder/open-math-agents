@@ -106,7 +106,12 @@ theorem main : H1 → H2 → H3 → type_of% @OMA.S_oeis_a395522.main := by
   · subst k
     refine ⟨1, 1, by decide, by decide, ?_⟩
     intro m _
-    exact ⟨fun x => by simp, fun t ht _ => ht⟩
+    constructor
+    · unfold isPeriod
+      intro x
+      exact (Nat.mod_one (iterFib m (x + 1))).trans (Nat.mod_one (iterFib m x)).symm
+    · intro t ht _
+      exact ht
   have large : 1 < k := by omega
   obtain ⟨s, a, c, first, last, nextlast, steps⟩ := chains k large
   have fixed : ∀ x y : ℕ, x % (24 * 5 ^ a) = y % (24 * 5 ^ a) →
