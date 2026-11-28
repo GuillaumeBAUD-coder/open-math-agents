@@ -4,18 +4,42 @@
 # where that check rejected the commit. Covers every labelled pull request (all pages), LANES at a time, each lane in its
 # own copy of main. Needs: GH_TOKEN REPO [OMA_SITE] [LANES]; the current directory holds base/ (main).
 set -uo pipefail
+# The merger (backlog.yml, tools/merger_loop.sh v2) is the only caller now; an older merger still running from before
+# tools/merger.v2 existed must not report twice, so it does nothing here.
+if [ -e base/tools/merger.v2 ] && [ -z "${MERGER_V2:-}" ]; then exit 0; fi
+if [ -e base/tools/merger.v3 ] && [ -z "${MERGER_V3:-}" ]; then exit 0; fi   # the v3 merger has taken over
 LANES=${LANES:-3}
 gh api --paginate "repos/$REPO/issues?state=open&labels=needs-human-review&per_page=100&sort=created&direction=asc" \
   --jq '.[] | select(.pull_request) | .number' > all.txt || true
+# shared API budget: stop before it runs low (the verdicts of new proofs come first)
+MINB=${BACKLOG_MIN_BUDGET:-0}
+# Proofs whose statement was already checked (content/open_review.json: confirmed first, then the others) go first:
+# a confirmed proof of an open problem counts on the site only once it is merged.
+python3 -I - all.txt base/content/open_review.json <<'PY2' || true
+import json, sys
+nums = [l.strip() for l in open(sys.argv[1]) if l.strip()]
+try:
+    rv = json.load(open(sys.argv[2]))
+except Exception:
+    rv = {}
+first = [str(v.get("pr")) for sec in ("confirmed", "known", "flagged") for v in rv.get(sec, {}).values() if v.get("pr")]
+order = list(dict.fromkeys([n for n in first if n in set(nums)] + nums))
+open(sys.argv[1], "w").write("".join(n + "\n" for n in order))
+PY2
 echo "$(wc -l < all.txt) pull requests in this batch"
 lane() {  # $1 = lane number; works in lane_$1/ with its own base/ copy and prs.txt
   cd "lane_$1" || return
   N=0
   while read -r PR; do
+    if [ "$MINB" -gt 0 ] && [ $((N % 10)) = 0 ]; then
+      R0=$(gh api rate_limit --jq .resources.core.remaining 2>/dev/null || echo 9999)
+      [ "$R0" -lt "$MINB" ] && { echo "budget low ($R0 left): stopping this pass"; break; }
+    fi
   N=$((N+1))
   gh api "repos/$REPO/pulls/$PR" > pr.json || continue
   # merged or closed meanwhile (by a verdict or another lane): nothing to do
   [ "$(jq -r .state pr.json)" = open ] || continue
+  [ "$(jq -r .base.ref pr.json)" = main ] || continue   # only pull requests into main are merged
   jq -e '.labels | map(.name) | index("needs-human-review")' pr.json >/dev/null || continue
   SHA=$(jq -r .head.sha pr.json)
   gh api "repos/$REPO/pulls/$PR/files" > files.json || continue
@@ -64,7 +88,7 @@ lane() {  # $1 = lane number; works in lane_$1/ with its own base/ copy and prs.
   if [ "$MERGED" = 1 ]; then
     gh pr comment "$PR" --repo "$REPO" --body "$MSG" >/dev/null
     gh pr edit "$PR" --repo "$REPO" --remove-label needs-human-review >/dev/null 2>&1
-    bash base/tools/credit.sh "$PR" >/dev/null 2>&1 || echo "#$PR: credit will be retried by the site"
+    CREDIT_FILES=files.json bash base/tools/credit.sh "$PR" >/dev/null 2>&1 || echo "#$PR: credit will be retried by the site"
     echo "#$PR: merged ($KIND)"
   fi
   done < prs.txt
