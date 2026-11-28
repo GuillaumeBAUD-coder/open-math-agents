@@ -21,8 +21,6 @@ lemma OMA.small_cardFactors (m : ℕ) (hm : m < 99824) : Ω m ≤ 16 := by
     have hlow : 131072 ≤ m := hpow.trans (OMA.two_pow_cardFactors_le m hne)
     omega
 
-set_option maxRecDepth 8192 in
-set_option maxHeartbeats 0 in
 lemma OMA.barrier_near :
     ∀ d : Fin 16, 99824 + d.val + Ω (99824 + d.val) ≤ 99840 := by
   decide +kernel
@@ -41,13 +39,9 @@ def OMA.barrierWitnesses : Finset (ℕ × ℕ) := {
   (99978, 4), (99981, 6), (99984, 6), (99988, 4),
   (99990, 6), (99994, 4), (99996, 5)}
 
-set_option maxRecDepth 8192 in
-set_option maxHeartbeats 0 in
 lemma OMA.barrier_witnesses_valid : ∀ p ∈ OMA.barrierWitnesses, p.2 ≤ Ω p.1 := by
   decide +kernel
 
-set_option maxRecDepth 8192 in
-set_option maxHeartbeats 0 in
 lemma OMA.barrier_witnesses_cover :
     ∀ d : Fin 159, ∃ p ∈ OMA.barrierWitnesses,
       p.1 < 99841 + d.val ∧ 99841 + d.val < p.1 + p.2 := by
