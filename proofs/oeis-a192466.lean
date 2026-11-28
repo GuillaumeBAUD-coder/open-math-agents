@@ -1,5 +1,6 @@
 import OMAStatements.S_oeis_a192466
 import Mathlib
+open OMA.S_oeis_a192466
 
 -- Proof of Colin Barker's conjectures in OEIS A192466 (statement by @ivillar).
 -- Idea: x^2 - x - 2 = (x - 2)(x + 1), so the remainder r = c1*x + c0 of f modulo it satisfies
@@ -56,9 +57,9 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a192466.main := by
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 5 := ⟨n - 5, by omega⟩
   simp only [show m + 5 - 1 = m + 4 by omega, show m + 5 - 2 = m + 3 by omega,
     show m + 5 - 3 = m + 2 by omega, show m + 5 - 4 = m + 1 by omega]
-  have : (OMA.S_oeis_a192466.a (m + 5) : ℚ) = 6 * OMA.S_oeis_a192466.a (m + 4) -
-      7 * OMA.S_oeis_a192466.a (m + 3) - 6 * OMA.S_oeis_a192466.a (m + 2) +
-      8 * OMA.S_oeis_a192466.a (m + 1) := by
+  have : (a (m + 5) : ℚ) = 6 * a (m + 4) -
+      7 * a (m + 3) - 6 * a (m + 2) +
+      8 * a (m + 1) := by
     rw [OMAA192466Helpers.a_closed, OMAA192466Helpers.a_closed, OMAA192466Helpers.a_closed,
       OMAA192466Helpers.a_closed, OMAA192466Helpers.a_closed]
     ring
