@@ -22772,6 +22772,55 @@
     "https://mathoverflow.net/questions/155384"
    ],
    "reason": "The question asks for an explicit 'simple' expression for det(V_N^* V_N). The first conjunct is just the Leibniz expansion of the Gram determinant, whose entries are N on the diagonal and geometric sums ((z_j/z_i)^N-1)/(z_j/z_i-1) off it; it is no simpler than the determinant. The second (for L-th roots of unity, a monic degree-k polynomial in N on each residue class mod L) follows directly from it. The existing answer already gives a Cauchy-Binet formula. Faithful but trivial, and it does not answer the question."
+  },
+  "oeis-a000695": {
+   "date": "2026-11-28",
+   "pr": 35304,
+   "evidence": [
+    "https://oeis.org/A000695",
+    "https://oeis.org/A000695/a000695.jpg"
+   ],
+   "reason": "The disproof only exploits the literal wording of Rascoe's tree rule ('all leaves ... grow the maximum number of children'). A vertex that grew one child at an odd stage is no longer a leaf, so it is never filled; that gives 8 nodes at k=3, n=4 instead of 9. The statement's own docstring says Rascoe's linked illustration fills those spare positions and gets 16 at k=4. So the intended construction is not refuted. This is a wording slip, not a counterexample to the conjecture."
+  },
+  "oeis-a072944": {
+   "date": "2026-11-28",
+   "pr": 35310,
+   "evidence": [
+    "https://oeis.org/A072944"
+   ],
+   "reason": "The disproof uses x=2^(b+2), whose orbit 2^m, 3*2^(m-1), 5*2^(m-1), 2^(m+2) has N(x)<=4, so N(x)/(C log x) cannot tend to 1 along all x. This refutes the literal wording of Cloitre's 'N(x) is asymptotic to C*log(x)' by a trivial family. The evident intended claim (typical or maximal growth of N with 3/10<C<4/10) is untouched. Side note: the entry's 'N(4)=5' disagrees with its own definition, which gives N(4)=4."
+  },
+  "oeis-a389535": {
+   "date": "2026-11-28",
+   "pr": 35306,
+   "evidence": [
+    "https://oeis.org/A389535"
+   ],
+   "reason": "Hanna's 'conjecture' (7), A(x)^5 == A(x^5) (mod 5), holds for every power series with integer coefficients: (Sum a_i x^i)^5 == Sum a_i^5 x^(5i) (Frobenius), and a_i^5 == a_i (Fermat). The proof is exactly this freshman's-dream argument and never uses the functional equation. The statement is faithful but trivial."
+  },
+  "oeis-a238580": {
+   "date": "2026-11-28",
+   "pr": 35274,
+   "evidence": [
+    "https://oeis.org/A238580"
+   ],
+   "reason": "The disproof only uses a(29)=1. That value is in the entry's own data (terms 28 and 29 are both 1), but 29 is missing from the printed exception list 1,2,4,7,8,10,28,34,37,77. This is a slip in the printed list; the substantive part of Sun's conjecture (a(n)>0 for all n) is untouched."
+  },
+  "mse-4084662": {
+   "date": "2026-11-28",
+   "pr": 35196,
+   "evidence": [
+    "https://math.stackexchange.com/questions/4084662"
+   ],
+   "reason": "After Kowalsky's theorem settles kappa^aleph0 = kappa, the asker says the question 'is still open for the other cardinals'. The formalization weakens this to the existence of a single uncountable kappa with kappa^aleph0 != kappa. The proof takes the easiest such case, kappa = beth_omega (a strong limit), using a countable union of bounded-support subspaces of R^I. It is a correct and nontrivial partial result, but the general question, e.g. aleph_1 < 2^aleph0, is untouched."
+  },
+  "mo-426045": {
+   "date": "2026-11-28",
+   "pr": 35180,
+   "evidence": [
+    "https://mathoverflow.net/questions/426045"
+   ],
+   "reason": "The question asks, vaguely, for 'non-trivial conditions' on K and Y ensuring K_f inside Y. The formalization recasts it as a uniform guarantee over all admissible f and shows the asker's own sufficient condition (Y contains the open r-tube of K) is also necessary. Necessity uses the single test function max(d_K - delta, 0), so the result is elementary. It also drops compactness of X. This reinterpretation answers no non-trivial condition and largely restates the question's sufficient condition."
   }
  },
  "known": {
@@ -41990,6 +42039,174 @@
     "https://oeis.org/A177117"
    ],
    "reason": "Faithful (Choulet recurrence with a(0)=1, a(1)=4, k=-2; Mathar's P-recurrence for n>=5). The entry already has 'Conjecture verified using differential equation ... satisfied by the g.f. - Robert Israel, Jan 07 2026'. The whole Choulet family is also covered by Dubickas, Mathematics 14 (2026) 2177. The site proof is the same algebraic-g.f. ODE argument."
+  },
+  "oeis-a032115": {
+   "date": "2026-11-28",
+   "pr": 35379,
+   "evidence": [
+    "https://oeis.org/A032115",
+    "https://isitsolved.com/journal"
+   ],
+   "reason": "Mathar's recurrence fails at n=5 (the left side is 2) and is proved for n>=6 from Howroyd's e.g.f. isitsolved iis:2611.00219 (filed 2026-11-28 03:18 UTC) already decided A032115 exactly from its e.g.f.: 'true for n>5; false at n=5'. The site proof was committed at about 14:00 UTC the same day. The disproof part is only an index slip caused by a(0) being prepended."
+  },
+  "oeis-a295479": {
+   "date": "2026-11-28",
+   "pr": 35402,
+   "evidence": [
+    "https://github.com/thatnealpatel/proofs/blob/main/Proofs/Combinatorics/A295479Bala.lean",
+    "https://github.com/rbajaj5/a183068-supercongruence/blob/main/RESULT_INDEX.md"
+   ],
+   "reason": "Bala's half-index integrality of A295479 with x!=Gamma(x+1) is already proved, sorry-free in Lean, in thatnealpatel/proofs (Proofs/Combinatorics/A295479Bala.lean). The method is the same: the half-Gamma identity plus Landau's floor criterion. rbajaj5/a183068-supercongruence (A364183-INTEGRAL, Aug 2026) also records an elementary proof of 'A295479 at the half-index'."
+  },
+  "oeis-a075885": {
+   "date": "2026-11-28",
+   "pr": 35282,
+   "evidence": [
+    "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S3/ArithSums/HannaA075885FloorGrowth.lean",
+    "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/Problems/hanna-a075885.md"
+   ],
+   "reason": "Hanna's root limit a(n)^(1/n) -> L (the Luroth geometric mean) is already proved, sorry-free, in trureturing D5/S3/ArithSums/HannaA075885FloorGrowth.lean. It is present at trureturing commit 3fe303d (2026-11-28 10:31 UTC), before the site commit at 16:13 UTC. Same approach: P(n) <= a(n) <= (n+1)P(n) plus a Tannery-type limit."
+  },
+  "oeis-a340061": {
+   "date": "2026-11-28",
+   "pr": 35336,
+   "evidence": [
+    "https://oeis.org/A340061",
+    "https://oeis.org/A066633"
+   ],
+   "reason": "Pol's conjecture says the number of m's among the divisors of row n is Sum_{k>=1} p(n-km). This is the classical count of parts equal to m in all partitions of n: the Jovovic g.f. x^m/(1-x^m)*Prod 1/(1-x^j) and Arregui's formula in A066633. A066633 also states the divisor-block correspondence as a fact (Pol, Feb 2021). So it is an immediate corollary of a known formula."
+  },
+  "oeis-a279699": {
+   "date": "2026-11-28",
+   "pr": 35298,
+   "evidence": [
+    "https://oeis.org/A279699",
+    "https://oeis.org/A279698",
+    "https://github.com/lefttosolve2/open-math-agents/blob/main/proofs/oeis-a279698.lean"
+   ],
+   "reason": "Faithful Rule 185 model, and the proof is valid and independent. But the sister entry A279698 (the same x-axis cells read from the left edge to the origin, equal to these by the reflection symmetry this statement itself records) was proved on the site about 40 minutes earlier (2026-11-28 15:34 UTC, longling12). Its 0/1-digit values fix every axis cell, so Wu's formulas here follow from that earlier solve by digit reversal. Treated as known, consistent with A283405 and A278753."
+  },
+  "oeis-a068873": {
+   "date": "2026-11-28",
+   "pr": 35283,
+   "evidence": [
+    "https://oeis.org/A068873",
+    "https://oeis.org/A068873/b068873.txt"
+   ],
+   "reason": "The 27 'conjectured' values a(50)..a(76) (Alcover, 2020) are exactly the terms in Corneth's b-file for n=1..10000, which is part of the entry. The comment is stale, not an open problem. The Lean proof is a finite window certificate for already tabulated values."
+  },
+  "oeis-a111967": {
+   "date": "2026-11-28",
+   "pr": 35234,
+   "evidence": [
+    "https://oeis.org/A111967",
+    "https://oeis.org/A111967/a111967.pdf"
+   ],
+   "reason": "The entry links R. J. Mathar's note 'OEIS A111967', whose abstract reads: 'We proof a conjecture of Paul Barry of 2005 concerning the row sums of the triangular matrix in A111967'. That conjecture (the row sums are the Fredholm-Rueppel sequence A036987) is exactly what is formalized, so it was already proved in the source."
+  },
+  "oeis-a295470": {
+   "date": "2026-11-28",
+   "pr": 35232,
+   "evidence": [
+    "https://github.com/thatnealpatel/proofs/blob/main/Proofs/Combinatorics/A295470Bala.lean",
+    "https://github.com/rbajaj5/a183068-supercongruence/blob/main/RESULT_INDEX.md"
+   ],
+   "reason": "Bala's half-index integrality of A295470 with x!=Gamma(x+1) is already proved, sorry-free in Lean, in thatnealpatel/proofs (Proofs/Combinatorics/A295470Bala.lean), by the half-Gamma identity plus Landau's criterion. rbajaj5/a183068-supercongruence also lists A295470 among the Bober half-index records it proves."
+  },
+  "oeis-a283405": {
+   "date": "2026-11-28",
+   "pr": 35211,
+   "evidence": [
+    "https://oeis.org/A283405",
+    "https://oeis.org/A283407"
+   ],
+   "reason": "A283405 is the same Rule 637 axis cells (origin to right edge) as A283407, read in base 10 instead of base 2. A283407 was proved on the site at 2026-11-28 08:57 UTC by longling12. The proof file says its grid evaluator, axis strip and edge triangle 'are adapted from @longling12's proof of A283407'. So it is a re-reading of an earlier site solve."
+  },
+  "oeis-a278753": {
+   "date": "2026-11-28",
+   "pr": 35175,
+   "evidence": [
+    "https://oeis.org/A278753",
+    "https://oeis.org/A278755"
+   ],
+   "reason": "A278753 is the same Rule 65 axis cells (left edge to origin) as A278755, read in base 10 instead of base 2. A278755 was proved on the site at 2026-11-28 08:56 UTC by jleguina (PR 22347). The proof states its state-transition and axis lemmas are 'adapted from jleguina's merged proof of A278755'. The mirror half A278754 was also solved earlier (longling12)."
+  },
+  "oeis-a112243": {
+   "date": "2026-11-28",
+   "pr": 35264,
+   "evidence": [
+    "https://oeis.org/A112243",
+    "https://isitsolved.com/journal"
+   ],
+   "reason": "The entry itself settles it: Peter Bala (Jul 15 2022) gives the ODE (4x^2-4x+1)A' + (2x^2-2x-1)A = 0 and remarks 'Mathar's conjectured recurrence follows easily from this'. isitsolved iis:2611.00230 (2026-11-28 04:26 UTC, before the site commit at 05:04 UTC) also lists A112243 as already settled. The proof here is exactly that ODE-to-recurrence route."
+  },
+  "mo-161445": {
+   "date": "2026-11-28",
+   "pr": 35315,
+   "evidence": [
+    "https://mathoverflow.net/questions/161445"
+   ],
+   "reason": "The disproof (A'G_5 is Hamiltonian) was already on MathOverflow in 2014. One answer reports a Sage computation that A'G_4 is not Hamiltonian but A'G_5 and A'G_6 are. The asker's own answer cites 'Cayley digraphs and (1,j,n)-sequencings of the alternating groups A_n', which shows A'G_n is Hamiltonian for all n>=3 except n=4."
+  },
+  "mo-124716": {
+   "date": "2026-11-28",
+   "pr": 35289,
+   "evidence": [
+    "https://mathoverflow.net/questions/124716"
+   ],
+   "reason": "Faithful, and MO has no answers, but the claim is an immediate corollary of classical Perron-Frobenius theory. D+kP is a Metzler matrix, so D+kP+cI is nonnegative for large c. Its Perron root dominates every diagonal entry, so D+kP has a real eigenvalue >= a_n + k*P_nn > 0. The stochastic, irreducible and real-spectrum hypotheses are not needed."
+  },
+  "opg-funcolidal-products-inside-an-inward-reloid": {
+   "date": "2026-11-28",
+   "pr": 35322,
+   "evidence": [
+    "https://www.openproblemgarden.org/op/funcolidal_products_inside_an_inward_reloid",
+    "https://www.openproblemgarden.org/op/funcoid_corresponding_to_inward_reloid"
+   ],
+   "reason": "Faithful encoding of funcoids, products and (RLD)_in. But the claim follows at once from Porton's solved problem (FCD)(RLD)_in f = f (OPG 'Funcoid corresponding to inward reloid', solved by Porton), together with (FCD)(A x^RLD B) = A x^FCD B and monotonicity of (FCD). The 25-line Lean proof is the direct elementwise version of this. The OPG 'open' label is stale."
+  },
+  "opg-a-conjecture-on-iterated-circumcentres": {
+   "date": "2026-11-28",
+   "pr": 35268,
+   "evidence": [
+    "https://arxiv.org/abs/2407.19767",
+    "https://www.openproblemgarden.org/op/a_conjecture_on_iterated_circumcentres"
+   ],
+   "reason": "Goddyn's conjecture (a periodic iterated-circumcentre sequence in R^d has period 2d+4) was proved by Kanda-Koizumi (arXiv:2407.19767, 2024) and independently by Lidon Ardanuy. The proof file itself says it follows 'Roger Lidon Ardanuy, On Goddyn's iterated circumcenters conjecture, Theorem 1'."
+  },
+  "mo-210790": {
+   "date": "2026-11-28",
+   "pr": 35199,
+   "evidence": [
+    "https://mathoverflow.net/questions/210790",
+    "https://doi.org/10.4064/cm-23-1-165-171"
+   ],
+   "reason": "The question is open-ended ('what is a good upper bound on rank(M_f)') and has no answers. The formal answer rank <= n <= (8d)^(2/3), with Sylvester full-rank examples of norm <= 5n^(3/2), never uses the rank. The four corner evaluations bound the bilinear +-1 cross term by 4d, and the classical Brown-Spencer (Gale-Berlekamp) switching bound n^(3/2) then gives it, as the statement itself says. Hadamard examples are likewise classical. This is a corollary of known results, not a new theorem."
+  },
+  "mo-331797": {
+   "date": "2026-11-28",
+   "pr": 35203,
+   "evidence": [
+    "https://mathoverflow.net/questions/331797"
+   ],
+   "reason": "Faithful (p=4N+2, sum over odd sigma <= p/2-2). The comments on the question already give the solution: alpoge says to write r == aq, divide the denominator into the numerator and sum the resulting geometric series, and LSpice corrects this to mod 2p. The proof file credits that reduction. What remains is a routine evaluation of a finite cosine sum that fixes the two signs."
+  },
+  "mse-1955917": {
+   "date": "2026-11-28",
+   "pr": 35200,
+   "evidence": [
+    "https://math.stackexchange.com/questions/1955917",
+    "https://math.stackexchange.com/a/5141397"
+   ],
+   "reason": "Faithful. The question already has an answer (posted 2026-06-22) giving a complete proof: normalize a^a b^b c^c = 1 and prove the claim (a^a b^b)^(1/(a+b)) <= 1 - c log c/(s-1) by one-variable calculus. The proof file says the normalization and cyclic reduction 'follow the Math Stack Exchange answer at https://math.stackexchange.com/a/5141397'."
+  },
+  "mo-264107": {
+   "date": "2026-11-28",
+   "pr": 35185,
+   "evidence": [
+    "https://mathoverflow.net/questions/264107"
+   ],
+   "reason": "Faithful. The identity mu(a) = Sum_{I: meet of coatoms a_i = a} (-1)^|I| is Rota's Crosscut Theorem applied to [a,1] with its coatoms. Comments on the question point this out and cite Stanley, EC1 2nd ed., Corollary 3.9.4."
   }
  },
  "reviewed": "2026-11-28"
