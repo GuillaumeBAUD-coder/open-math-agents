@@ -40777,7 +40777,7 @@ theorem first_column (hc : G.Connected) (cut : Graph189CutSides.CutSides G A B S
   next low =>
     split
     next middle =>
-      rcases middle with large|⟨many,over⟩
+      rcases middle with large|⟨many,aboveCutoff⟩
       · have h := Graph189CutColumnCaps.below_threshold hc cut smaller cp xs ys
           (t:=0) (by omega) (by omega) hi
         omega
@@ -41443,7 +41443,7 @@ theorem first_column (hc : G.Connected) (cut : Graph189CutSides.CutSides G A B S
   next low =>
     split
     next middle =>
-      rcases middle with large|⟨many,over⟩
+      rcases middle with large|⟨many,aboveCutoff⟩
       · have h := Graph189CutColumnCaps.below_threshold hc cut smaller cp xs ys
           (t:=0) (by omega) (by omega) hi
         omega
