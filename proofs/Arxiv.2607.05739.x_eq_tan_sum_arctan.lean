@@ -24,20 +24,16 @@ lemma scaled_coordinates (n : ℕ) :
     have hp : gaussProd (n + 1) = gaussProd n * (⟨1, (n + 1 : ℕ)⟩ : GaussianInt) := by
       unfold gaussProd
       rw [prod_Icc_succ_top (by omega)]
-    have ha : (A (n + 1) : ℝ) = A n - t * B n := by
-      simp [A, B, hp, t, sub_eq_add_neg]
-      ring
-    have hb : (B (n + 1) : ℝ) = t * A n + B n := by
-      simp [A, B, hp, t]
-      ring
     refine ⟨c * Real.cos (Real.arctan t), mul_pos hc ht, ?_, ?_⟩
-    · rw [sum_Icc_succ_top (by omega), Real.cos_add, hcos, hsin, ha]
+    · rw [sum_Icc_succ_top (by omega), Real.cos_add, hcos, hsin]
       change _ - _ * Real.sin (Real.arctan t) = _
       rw [hs]
+      simp [A, B, hp, t]
       ring
-    · rw [sum_Icc_succ_top (by omega), Real.sin_add, hcos, hsin, hb]
+    · rw [sum_Icc_succ_top (by omega), Real.sin_add, hcos, hsin]
       change _ + _ * Real.sin (Real.arctan t) = _
       rw [hs]
+      simp [A, B, hp, t]
       ring
 
 end OMA
