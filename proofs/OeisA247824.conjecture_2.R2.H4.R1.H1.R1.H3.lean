@@ -5,6 +5,7 @@ import OMAReductions.R_OeisA247824_conjecture_2_R2_H4_R1_H1_R1
 -- H3 := 473516370 ≤ Nat.primeCounting 10425579253
 
 theorem OMA.solution : OMA.R_OeisA247824_conjecture_2_R2_H4_R1_H1_R1.H3 := by
-  -- Lower bound on primeCounting at 10425579253
-  -- Relative extensions exist; absolute lower bound still needs certification
+  -- Relative short-interval extensions exist on main
+  -- (e.g. primeCounting 10425580969 = primeCounting 10425579253 + 81)
+  -- Absolute lower bound 473516370 still requires a sieve or reduction certificate
   sorry
