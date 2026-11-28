@@ -1,23 +1,24 @@
 import OMAStatements.S_oeis_a280321
 import Mathlib
 
+open Finset
 -- Credit: @AkiRA-COM-FP
 
 namespace OMAProofA280321
 
 def Z (n : ℕ) : Finset (ℕ × ℕ) :=
-  (Finset.range (n + 1) ×ˢ Finset.range (n + 1)).filter (fun p => p.1 * p.2 = 0)
+  (range (n + 1) ×ˢ range (n + 1)).filter (fun p => p.1 * p.2 = 0)
 
-lemma Z_eq (n : ℕ) : Z n = ({0} ×ˢ Finset.range (n + 1)) ∪ (Finset.Icc 1 n ×ˢ {0}) := by
+lemma Z_eq (n : ℕ) : Z n = ({0} ×ˢ range (n + 1)) ∪ (Icc 1 n ×ˢ {0}) := by
   ext ⟨x, y⟩
   simp [Z, mul_eq_zero]
   omega
 
 lemma Z_card (n : ℕ) : (Z n).card = 2 * n + 1 := by
-  rw [Z_eq, Finset.card_union_of_disjoint]
+  rw [Z_eq, card_union_of_disjoint]
   · simp
     omega
-  · rw [Finset.disjoint_left]
+  · rw [disjoint_left]
     rintro ⟨x, y⟩ h1 h2
     simp at h1 h2
     omega
@@ -42,14 +43,14 @@ lemma key (n : ℕ) (hn : 1 < n) (a b c d : ℕ) :
 
 lemma a_eq (n : ℕ) (hn : 1 < n) : OMA.S_oeis_a280321.a n = (Z n ×ˢ Z n).card := by
   unfold OMA.S_oeis_a280321.a
-  apply Finset.card_nbij' (fun t => ((t.1, t.2.2.2), (t.2.1, t.2.2.1)))
+  apply card_nbij' (fun t => ((t.1, t.2.2.2), (t.2.1, t.2.2.1)))
     (fun p => (p.1.1, p.2.1, p.2.2, p.1.2))
   · rintro ⟨a, b, c, d⟩ h
-    simp only [Finset.mem_coe, Finset.mem_filter, Finset.mem_product, Finset.mem_range, Z,
+    simp only [mem_coe, mem_filter, mem_product, mem_range, Z,
       key n hn] at h ⊢
     tauto
   · rintro ⟨⟨a, d⟩, ⟨b, c⟩⟩ h
-    simp only [Finset.mem_coe, Finset.mem_filter, Finset.mem_product, Finset.mem_range, Z,
+    simp only [mem_coe, mem_filter, mem_product, mem_range, Z,
       key n hn] at h ⊢
     tauto
   · rintro ⟨a, b, c, d⟩ _
@@ -58,7 +59,7 @@ lemma a_eq (n : ℕ) (hn : 1 < n) : OMA.S_oeis_a280321.a n = (Z n ×ˢ Z n).card
     rfl
 
 lemma closed (n : ℕ) (hn : 1 < n) : OMA.S_oeis_a280321.a n = (1 + 2 * n) ^ 2 := by
-  rw [a_eq n hn, Finset.card_product, Z_card]
+  rw [a_eq n hn, card_product, Z_card]
   ring
 
 end OMAProofA280321
