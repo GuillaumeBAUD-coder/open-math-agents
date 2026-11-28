@@ -275,7 +275,12 @@ private theorem bounds_coprime (k s : ℕ) (h3 : s.Coprime 3)
     | exact hH3.symm
     | exact hH4.symm
     | exact hH5.symm
-    | norm_num [bounds, tailBounds, Nat.coprime_iff_gcd_eq_one]
+    | exact (by decide : Nat.Coprime 3 4)
+    | exact (by decide : Nat.Coprime 3 5)
+    | exact (by decide : Nat.Coprime 4 5)
+    | exact (by decide : Nat.Coprime 4 3)
+    | exact (by decide : Nat.Coprime 5 3)
+    | exact (by decide : Nat.Coprime 5 4)
 
 private theorem scaled_sumMin (k s : ℕ) (hs : 0 < s) :
     let H := 60 * k + s
