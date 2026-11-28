@@ -40,10 +40,5 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a203164.main := by
     simp only [coeff_C_mul, coeff_X_pow, coeff_mk]
     rcases Nat.lt_or_ge n 8 with h | h
     · interval_cases n <;> decide
-    · rw [if_pos (by omega), if_pos (by omega)]
-      simp only [if_neg (show n ≠ 1 by omega), if_neg (show n ≠ 2 by omega),
-        if_neg (show n ≠ 3 by omega), if_neg (show n ≠ 4 by omega), if_neg (show n ≠ 5 by omega),
-        if_neg (show n ≠ 6 by omega), if_neg (show n ≠ 7 by omega)]
-      obtain ⟨k, rfl⟩ : ∃ k, n = k + 8 := ⟨n - 8, by omega⟩
-      rw [show k + 8 - 4 = k + 4 by omega, show k + 8 - 8 = k by omega, OMA.rec]
-      ring
+    · obtain ⟨k, rfl⟩ : ∃ k, n = k + 8 := ⟨n - 8, by omega⟩
+      simp [OMA.rec]
