@@ -4,7 +4,7 @@ import Mathlib
 # OEIS A055231: a(nm) = a(n) a(m) / (gcd(n, a(m)) gcd(m, a(n)))
 
 Source: https://oeis.org/A055231
-Credit: @SudharsanAnimations
+Credit: Sudharsan Rajendiran
 
 A055231(n) is the powerfree part of `n`: the product of the primes that divide `n` exactly once.
 Velin Yanev conjectured (Feb 2019) that `a(nm) = a(n) a(m) / (gcd(n, a(m)) gcd(m, a(n)))` for all
