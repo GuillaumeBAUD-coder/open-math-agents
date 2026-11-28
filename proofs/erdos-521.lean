@@ -357,36 +357,6 @@ lemma cb_sq (p : ℕ) : (Nat.centralBinom p : ℝ) ^ 2 * (2 * p + 1) ≤ 16 ^ p 
       _ ≤ 4 * (16 ^ p * (4 * ((p : ℝ) + 1) ^ 2)) := by linarith
       _ = 16 ^ (p + 1) * ((p : ℝ) + 1) ^ 2 := by rw [pow_succ]; ring
 
-/-- lower bound `16^p ≤ 4 p c_p^2` for `p ≥ 1`. -/
-lemma cb_sq_low (p : ℕ) (hp : 1 ≤ p) : (16 : ℝ) ^ p ≤ 4 * p * (Nat.centralBinom p : ℝ) ^ 2 := by
-  induction p, hp using Nat.le_induction with
-  | base => rw [show Nat.centralBinom 1 = 2 by rfl]; norm_num
-  | succ p hp ih =>
-    have h := Nat.succ_mul_centralBinom_succ p
-    have hc : (Nat.centralBinom (p + 1) : ℝ) = 2 * (2 * p + 1) * Nat.centralBinom p / (p + 1) := by
-      rw [eq_div_iff (by positivity)]
-      have : ((p + 1 : ℕ) : ℝ) * Nat.centralBinom (p + 1) = 2 * (2 * p + 1) * Nat.centralBinom p := by
-        exact_mod_cast h
-      push_cast at this; linarith
-    rw [hc]
-    have hp1 : (0 : ℝ) < (p : ℝ) + 1 := by positivity
-    have e : 4 * ((p + 1 : ℕ) : ℝ) * (2 * (2 * p + 1) * Nat.centralBinom p / (p + 1)) ^ 2
-        = 16 * (2 * (p : ℝ) + 1) ^ 2 / (p + 1) * (Nat.centralBinom p : ℝ) ^ 2 := by
-      push_cast; field_simp; ring
-    rw [e, pow_succ]
-    have key : 4 * (p : ℝ) ≤ (2 * (p : ℝ) + 1) ^ 2 / (p + 1) * (p : ℝ)⁻¹ * (p:ℝ) * (p + 1) / (p + 1) := by
-      have hp0 : (0 : ℝ) < p := by exact_mod_cast hp
-      rw [mul_assoc ((2 * (p : ℝ) + 1) ^ 2 / (p + 1)), inv_mul_cancel₀ hp0.ne', mul_one,
-        mul_div_assoc, div_self hp1.ne', mul_one, le_div_iff₀ hp1]
-      nlinarith
-    have hp0 : (0 : ℝ) < p := by exact_mod_cast hp
-    have hc0 : (0 : ℝ) ≤ (Nat.centralBinom p : ℝ) ^ 2 := by positivity
-    have : (2 * (p : ℝ) + 1) ^ 2 / (p + 1) ≥ 4 * p := by
-      rw [ge_iff_le, le_div_iff₀ hp1]; nlinarith
-    calc (16 : ℝ) ^ p * 16 ≤ (4 * p * (Nat.centralBinom p : ℝ) ^ 2) * 16 := by linarith
-      _ ≤ 16 * (2 * (p : ℝ) + 1) ^ 2 / (p + 1) * (Nat.centralBinom p : ℝ) ^ 2 := by
-        rw [mul_div_assoc]; nlinarith
-
 /-- `C(h, ⌈h/2⌉)` -/
 def cc (h : ℕ) : ℕ := h.choose ((h + 1) / 2)
 
@@ -419,70 +389,9 @@ lemma cc_upper (h : ℕ) : (cc h : ℝ) ^ 2 * (h + 1) ≤ 4 ^ h := by
     have : (0 : ℝ) ≤ (Nat.centralBinom (p + 1) : ℝ) ^ 2 := by positivity
     nlinarith
 
-lemma cc_lower (h : ℕ) : (4 : ℝ) ^ h ≤ 2 * (h + 1) * (cc h : ℝ) ^ 2 := by
-  obtain ⟨p, rfl | rfl⟩ := Nat.even_or_odd' h
-  · rw [cc_even]
-    rcases Nat.eq_zero_or_pos p with hp | hp
-    · subst hp; simp
-    · have := cb_sq_low p hp
-      have h16 : (4 : ℝ) ^ (2 * p) = 16 ^ p := by rw [pow_mul]; norm_num
-      rw [h16]; push_cast
-      have : (0 : ℝ) ≤ (Nat.centralBinom p : ℝ) ^ 2 := by positivity
-      nlinarith
-  · rw [cc_odd]
-    have := cb_sq_low (p + 1) (by omega)
-    have h16 : (4 : ℝ) ^ (2 * p + 1) = 16 ^ (p + 1) / 4 := by
-      rw [pow_succ, pow_mul, pow_succ]; ring
-    rw [h16]; push_cast at this ⊢
-    nlinarith
-
 lemma N2_origin' (L : ℕ) : (N2 L 0 0 : ℝ) =
     ∑ h ∈ range (L + 1), (L.choose h : ℝ) * ((cc h : ℝ) * (cc (L - h) : ℝ)) := by
   rw [N2_origin]; push_cast; rfl
-
-theorem N2_lower (L : ℕ) : (4 : ℝ) ^ L / (L + 2) ≤ N2 L 0 0 := by
-  rw [N2_origin']
-  have hL : (0 : ℝ) < L + 2 := by positivity
-  have each : ∀ h ∈ range (L + 1), (L.choose h : ℝ) * (2 ^ L / (L + 2)) ≤
-      (L.choose h : ℝ) * ((cc h : ℝ) * (cc (L - h) : ℝ)) := by
-    intro h hh
-    rw [mem_range] at hh
-    apply mul_le_mul_of_nonneg_left _ (by positivity)
-    have a := cc_lower h
-    have b := cc_lower (L - h)
-    have hLh : ((L - h : ℕ) : ℝ) = L - h := by rw [Nat.cast_sub (by omega)]
-    rw [hLh] at b
-    set x := (cc h : ℝ)
-    set y := (cc (L - h) : ℝ)
-    have hx : 0 ≤ x := by positivity
-    have hy : 0 ≤ y := by positivity
-    -- (x y)^2 ≥ 4^L / (4 (h+1)(L-h+1)) ≥ 4^L/(L+2)^2
-    have h4 : (4 : ℝ) ^ L = 4 ^ h * 4 ^ (L - h) := by rw [← pow_add]; congr 1; omega
-    have hh0 : (0 : ℝ) ≤ h := by positivity
-    have hh1 : (h : ℝ) ≤ L := by exact_mod_cast (by omega : h ≤ L)
-    have prod : (4 : ℝ) ^ L ≤ (L + 2) ^ 2 * (x * y) ^ 2 := by
-      have amgm : 4 * ((h : ℝ) + 1) * (L - h + 1) ≤ (L + 2) ^ 2 := by
-        nlinarith [sq_nonneg (((h : ℝ) + 1) - (L - h + 1))]
-      have := mul_le_mul a b (by positivity) (by positivity)
-      rw [h4]
-      calc (4 : ℝ) ^ h * 4 ^ (L - h) ≤ 2 * (h + 1) * x ^ 2 * (2 * ((L : ℝ) - h + 1) * y ^ 2) := this
-        _ = (4 * ((h : ℝ) + 1) * (L - h + 1)) * (x * y) ^ 2 := by ring
-        _ ≤ (L + 2) ^ 2 * (x * y) ^ 2 := by
-          apply mul_le_mul_of_nonneg_right amgm (by positivity)
-    have h2 : ((2 : ℝ) ^ L) ^ 2 = 4 ^ L := by rw [← pow_mul, mul_comm, pow_mul]; norm_num
-    rw [div_le_iff₀ hL]
-    have hxy : 0 ≤ x * y * (L + 2) := by positivity
-    have : ((2 : ℝ) ^ L) ^ 2 ≤ (x * y * (L + 2)) ^ 2 := by rw [h2]; nlinarith
-    have := (pow_le_pow_iff_left₀ (by positivity) hxy two_ne_zero).mp this
-    linarith
-  have := sum_le_sum each
-  rw [← sum_mul] at this
-  have hs : ∑ h ∈ range (L + 1), (L.choose h : ℝ) = 2 ^ L := by
-    exact_mod_cast Nat.sum_range_choose L
-  rw [hs] at this
-  calc (4 : ℝ) ^ L / (L + 2) = 2 ^ L * (2 ^ L / (L + 2)) := by
-        rw [show (4 : ℝ) ^ L = 2 ^ L * 2 ^ L by rw [← mul_pow]; norm_num]; ring
-    _ ≤ _ := this
 
 /-- `∑ C(L,h)/(h+1) ≤ 2^(L+1)/(L+1)`. -/
 lemma sum_choose_div (L : ℕ) :
@@ -501,61 +410,6 @@ lemma sum_choose_div (L : ℕ) :
     simp
   calc _ ≤ _ := this
     _ = 2 ^ (L + 1) := by exact_mod_cast Nat.sum_range_choose (L + 1)
-
-theorem N2_upper (L : ℕ) : (N2 L 0 0 : ℝ) ≤ 2 * 4 ^ L / (L + 1) := by
-  rw [N2_origin']
-  have each : ∀ h ∈ range (L + 1), (L.choose h : ℝ) * ((cc h : ℝ) * (cc (L - h) : ℝ)) ≤
-      2 ^ L * ((L.choose h : ℝ) / (h + 1) + ((L.choose (L - h)) : ℝ) / ((L - h : ℕ) + 1)) / 2 := by
-    intro h hh
-    rw [mem_range] at hh
-    have a := cc_upper h
-    have b := cc_upper (L - h)
-    set x := (cc h : ℝ)
-    set y := (cc (L - h) : ℝ)
-    set A := (h : ℝ) + 1
-    set B := ((L - h : ℕ) : ℝ) + 1
-    have hA : 0 < A := by positivity
-    have hB : 0 < B := by positivity
-    have hsym : (L.choose (L - h) : ℝ) = L.choose h := by rw [Nat.choose_symm (by omega)]
-    rw [hsym]
-    have h4 : (4 : ℝ) ^ L = 4 ^ h * 4 ^ (L - h) := by rw [← pow_add]; congr 1; omega
-    have h2 : ((2 : ℝ) ^ L) ^ 2 = 4 ^ L := by rw [← pow_mul, mul_comm, pow_mul]; norm_num
-    -- (x y)^2 A B ≤ 4^L, hence x y ≤ 2^L / sqrt(A B) ≤ 2^L (1/A + 1/B)/2
-    have hxy2 : (x * y) ^ 2 * (A * B) ≤ ((2 : ℝ) ^ L) ^ 2 := by
-      rw [h2, h4]
-      have := mul_le_mul a b (by positivity) (by positivity)
-      calc (x * y) ^ 2 * (A * B) = x ^ 2 * A * (y ^ 2 * B) := by ring
-        _ ≤ _ := this
-    have hx : 0 ≤ x := by positivity
-    have hy : 0 ≤ y := by positivity
-    have hc : (0 : ℝ) ≤ L.choose h := by positivity
-    have key : x * y ≤ 2 ^ L * (1 / A + 1 / B) / 2 := by
-      -- 2 xy ≤ 2^L (A+B)/(AB) since 2 sqrt(AB) ≤ A + B
-      have hAB : 0 < A * B := by positivity
-      have s1 : (x * y * (A * B)) ^ 2 ≤ ((2 : ℝ) ^ L) ^ 2 * (A * B) := by nlinarith
-      have s2 : (2 * x * y * (A * B)) ^ 2 ≤ ((2 : ℝ) ^ L * (A + B)) ^ 2 := by
-        have : 4 * (A * B) ≤ (A + B) ^ 2 := by nlinarith [sq_nonneg (A - B)]
-        nlinarith
-      have s3 : 2 * x * y * (A * B) ≤ (2 : ℝ) ^ L * (A + B) := by
-        exact (pow_le_pow_iff_left₀ (by positivity) (by positivity) two_ne_zero).mp s2
-      rw [show (2 : ℝ) ^ L * (1 / A + 1 / B) / 2 = (2 : ℝ) ^ L * (A + B) / (2 * (A * B)) by
-        field_simp; ring]
-      rw [le_div_iff₀ (by positivity)]; linarith
-    calc (L.choose h : ℝ) * (x * y) ≤ (L.choose h : ℝ) * (2 ^ L * (1 / A + 1 / B) / 2) :=
-          mul_le_mul_of_nonneg_left key hc
-      _ = _ := by ring
-  have := sum_le_sum each
-  rw [← sum_div, ← mul_sum, sum_add_distrib] at this
-  have s1 := sum_choose_div L
-  have s2 : ∑ h ∈ range (L + 1), ((L.choose (L - h)) : ℝ) / ((L - h : ℕ) + 1) =
-      ∑ h ∈ range (L + 1), (L.choose h : ℝ) / (h + 1) := by
-    exact sum_range_reflect (fun h => (L.choose h : ℝ) / (h + 1)) (L + 1)
-  rw [s2] at this
-  calc _ ≤ _ := this
-    _ ≤ 2 ^ L * (2 ^ (L + 1) / (L + 1) + 2 ^ (L + 1) / (L + 1)) / 2 := by
-        gcongr
-    _ = 2 * 4 ^ L / (L + 1) := by
-        rw [show (4 : ℝ) ^ L = 2 ^ L * 2 ^ L by rw [← mul_pow]; norm_num, pow_succ]; ring
 
 end E521
 
@@ -702,8 +556,6 @@ def Uc {L : ℕ} (q : Fin L → Bool × Bool) (j : ℕ) : ℤ :=
 def Vc {L : ℕ} (q : Fin L → Bool × Bool) (j : ℕ) : ℤ :=
   ∑ i ∈ range j, if h : i < L then dV (q ⟨i, h⟩) else 0
 
-lemma st_sq (b : Bool) : st b * st b = 1 := by cases b <;> simp [st]
-
 lemma aS_even {L : ℕ} (q : Fin L → Bool × Bool) (j : ℕ) (hj : j < L) :
     aS q (2 * j) = st (q ⟨j, hj⟩).1 := by
   unfold aS
@@ -801,14 +653,6 @@ lemma good2_iff : ∀ (L : ℕ) (u v : ℤ) (q : Fin L → Bool × Bool),
       have := h (j + 1) (by omega)
       rw [hU, hV] at this
       constructor <;> linarith [this.1, this.2]
-
-lemma weakP_good2 {L : ℕ} (q : Fin L → Bool × Bool) (h : weakP L q) : good2 L 0 0 q := by
-  rw [good2_iff]
-  intro j hj
-  have := h (2 * j) (by omega)
-  obtain ⟨e1, e2⟩ := Tk_even q j hj
-  rw [e1, e2] at this
-  constructor <;> linarith [this.1, this.2]
 
 end E521
 
@@ -1280,158 +1124,6 @@ lemma cb_sq (p : ℕ) : (Nat.centralBinom p : ℝ) ^ 2 * (2 * p + 1) ≤ 16 ^ p 
       _ ≤ 4 * (16 ^ p * (4 * ((p : ℝ) + 1) ^ 2)) := by linarith
       _ = 16 ^ (p + 1) * ((p : ℝ) + 1) ^ 2 := by rw [pow_succ]; ring
 
-lemma choose_half_sq (M : ℕ) : ((M.choose (M / 2) : ℕ) : ℝ) ^ 2 * M ≤ 4 ^ M := by
-  obtain ⟨p, rfl | rfl⟩ := Nat.even_or_odd' M
-  · have h2 : 2 * p / 2 = p := by omega
-    rw [h2, ← Nat.centralBinom_eq_two_mul_choose]
-    have := cb_sq p
-    have h16 : (4 : ℝ) ^ (2 * p) = 16 ^ p := by rw [pow_mul]; norm_num
-    rw [h16]; push_cast
-    have : (0 : ℝ) ≤ (Nat.centralBinom p : ℝ) ^ 2 := by positivity
-    nlinarith
-  · have h2 : (2 * p + 1) / 2 = p := by omega
-    rw [h2]
-    have hsum : Nat.centralBinom (p + 1) = 2 * (2 * p + 1).choose p := by
-      rw [Nat.centralBinom_eq_two_mul_choose, show 2 * (p + 1) = (2 * p + 1) + 1 by ring,
-        Nat.choose_succ_succ, Nat.choose_symm_of_eq_add (show 2 * p + 1 = (p + 1) + p by omega)]
-      ring
-    have := cb_sq (p + 1)
-    have hc : ((2 * p + 1).choose p : ℝ) = Nat.centralBinom (p + 1) / 2 := by
-      rw [hsum]; push_cast; ring
-    rw [hc]
-    have h16 : (4 : ℝ) ^ (2 * p + 1) = 16 ^ (p + 1) / 4 := by
-      rw [pow_succ, pow_mul, pow_succ]; ring
-    rw [h16]; push_cast at this ⊢
-    have : (0 : ℝ) ≤ (Nat.centralBinom (p + 1) : ℝ) ^ 2 := by positivity
-    nlinarith
-
-/-- The antichain step: with the outside signs fixed, the inside sign patterns giving a sum in
-`[t, t + 2)` form an antichain. -/
-lemma lo_fiber {κ : Type*} [Fintype κ] [DecidableEq κ] (a : κ → ℝ) (ha : ∀ i, 1 ≤ |a i|)
-    (c t : ℝ) :
-    ((univ.filter fun ε : κ → ℤˣ => t ≤ c + ssum ε a ∧ c + ssum ε a < t + 2).card)
-      ≤ (Fintype.card κ).choose (Fintype.card κ / 2) := by
-  classical
-  -- sign of each weight
-  set s : κ → ℤˣ := fun i => if 0 ≤ a i then 1 else -1 with hs
-  have hsa : ∀ i, ((s i : ℤ) : ℝ) * a i = |a i| := by
-    intro i; simp only [hs]; split_ifs with h
-    · simp [abs_of_nonneg h]
-    · simp [abs_of_neg (not_le.mp h)]
-  set T : (κ → ℤˣ) → Finset κ := fun ε => univ.filter fun i => ε i = s i with hT
-  have hval : ∀ (ε : κ → ℤˣ) i, ε i = s i ∨ ε i = -s i := by
-    intro ε i
-    rcases Int.units_eq_one_or (ε i) with h | h <;> rcases Int.units_eq_one_or (s i) with h' | h' <;>
-      simp [h, h']
-  have hTinj : Function.Injective T := by
-    intro ε ε' h
-    funext i
-    have hi := congrArg (fun F => i ∈ F) h
-    simp only [hT, mem_filter, mem_univ, true_and, eq_iff_iff] at hi
-    rcases hval ε i with h1 | h1 <;> rcases hval ε' i with h2 | h2
-    · rw [h1, h2]
-    · exfalso; have := hi.mp h1; rw [this] at h2
-      exact absurd h2 (by rcases Int.units_eq_one_or (s i) with h | h <;> simp [h])
-    · exfalso; have := hi.mpr h2; rw [this] at h1
-      exact absurd h1 (by rcases Int.units_eq_one_or (s i) with h | h <;> simp [h])
-    · rw [h1, h2]
-  -- sum formula: ssum ε a = 2 ∑_{T ε} |a| - ∑ |a|
-  have hsum : ∀ ε : κ → ℤˣ, ssum ε a = 2 * ∑ i ∈ T ε, |a i| - ∑ i, |a i| := by
-    intro ε
-    unfold ssum
-    have : ∀ i, ((ε i : ℤ) : ℝ) * a i = 2 * (if ε i = s i then |a i| else 0) - |a i| := by
-      intro i
-      rcases hval ε i with h | h
-      · rw [if_pos h, h, hsa]; ring
-      · rw [if_neg (by rw [h]; rcases Int.units_eq_one_or (s i) with h' | h' <;> simp [h']), h]
-        push_cast; rw [neg_mul, hsa]; ring
-    simp_rw [this]
-    rw [Finset.sum_sub_distrib, ← Finset.mul_sum, Finset.sum_ite, Finset.sum_const_zero, add_zero]
-  set F := univ.filter fun ε : κ → ℤˣ => t ≤ c + ssum ε a ∧ c + ssum ε a < t + 2 with hF
-  have hanti : IsAntichain (· ⊆ ·) (SetLike.coe (F.image T)) := by
-    intro A hA B hB hAB hsub
-    simp only [coe_image, Set.mem_image, mem_coe] at hA hB
-    obtain ⟨ε, hε, rfl⟩ := hA
-    obtain ⟨ε', hε', rfl⟩ := hB
-    have hne : T ε ⊂ T ε' := Finset.ssubset_iff_subset_ne.mpr ⟨hsub, hAB⟩
-    obtain ⟨j, hj', hj⟩ := Finset.exists_of_ssubset hne
-    have hdiff : ∑ i ∈ T ε', |a i| - ∑ i ∈ T ε, |a i| ≥ 1 := by
-      rw [← Finset.sum_sdiff hsub]
-      have : |a j| ≤ ∑ i ∈ T ε' \ T ε, |a i| :=
-        Finset.single_le_sum (f := fun i => |a i|) (fun i _ => abs_nonneg _)
-          (Finset.mem_sdiff.mpr ⟨hj', hj⟩)
-      linarith [ha j]
-    simp only [hF, mem_filter, mem_univ, true_and] at hε hε'
-    rw [hsum] at hε hε'
-    linarith [hε.1, hε'.2]
-  have := hanti.sperner
-  rwa [Finset.card_image_of_injective _ hTinj] at this
-
-/-- **Erdős's Littlewood–Offord bound.** -/
-theorem lo_interval {ι : Type*} [Fintype ι] [DecidableEq ι] (a : ι → ℝ) (I : Finset ι)
-    (hI : ∀ i ∈ I, 1 ≤ |a i|) (hIne : I.Nonempty) (t : ℝ) :
-    ((univ.filter fun ε : ι → ℤˣ => t ≤ ssum ε a ∧ ssum ε a < t + 2).card : ℝ)
-      ≤ 2 ^ Fintype.card ι / √(I.card) := by
-  classical
-  set p : ι → Prop := fun i => i ∈ I
-  let e := Equiv.piEquivPiSubtypeProd p (fun _ => ℤˣ)
-  let κ := {i // p i}
-  let ν := {i // ¬ p i}
-  have hsplit : ∀ ε : ι → ℤˣ, ssum ε a = (∑ j : ν, (((e ε).2 j : ℤ) : ℝ) * a j)
-      + ssum (e ε).1 (fun i : κ => a i) := by
-    intro ε
-    unfold ssum
-    rw [add_comm]
-    convert (Fintype.sum_subtype_add_sum_subtype p (fun i => ((ε i : ℤ) : ℝ) * a i)).symm <;> rfl
-  -- count via the equivalence
-  have hcount : ((univ.filter fun ε : ι → ℤˣ => t ≤ ssum ε a ∧ ssum ε a < t + 2).card : ℝ)
-      = ∑ o : ν → ℤˣ, ((univ.filter fun ε : κ → ℤˣ =>
-          t ≤ (∑ j : ν, ((o j : ℤ) : ℝ) * a j) + ssum ε (fun i : κ => a i) ∧
-          (∑ j : ν, ((o j : ℤ) : ℝ) * a j) + ssum ε (fun i : κ => a i) < t + 2).card : ℝ) := by
-    rw [Finset.card_filter]
-    push_cast
-    rw [← e.symm.sum_comp, Fintype.sum_prod_type, Finset.sum_comm]
-    refine Finset.sum_congr rfl (fun o _ => ?_)
-    rw [Finset.card_filter]; push_cast
-    refine Finset.sum_congr rfl (fun ε _ => ?_)
-    simp only [hsplit, Equiv.apply_symm_apply]
-  have hfib : ∀ o : ν → ℤˣ, ((univ.filter fun ε : κ → ℤˣ =>
-          t ≤ (∑ j : ν, ((o j : ℤ) : ℝ) * a j) + ssum ε (fun i : κ => a i) ∧
-          (∑ j : ν, ((o j : ℤ) : ℝ) * a j) + ssum ε (fun i : κ => a i) < t + 2).card : ℝ)
-        ≤ (Fintype.card κ).choose (Fintype.card κ / 2) := by
-    intro o
-    exact_mod_cast lo_fiber (fun i : κ => a i) (fun i => hI i i.2) _ t
-  have hκ : Fintype.card κ = I.card := by
-    simp only [κ, p]; exact Fintype.card_coe I
-  have hν : Fintype.card (ν → ℤˣ) * 2 ^ I.card = 2 ^ Fintype.card ι := by
-    rw [Fintype.card_fun, Fintype.card_units_int, ← hκ, ← pow_add]
-    congr 1
-    rw [add_comm, Fintype.card_subtype_compl]
-    have := Fintype.card_subtype_le p
-    show Fintype.card {x // p x} + _ = _
-    omega
-  rw [hcount]
-  have hM : (0 : ℝ) < I.card := by exact_mod_cast hIne.card_pos
-  calc _ ≤ ∑ _o : ν → ℤˣ, (((Fintype.card κ).choose (Fintype.card κ / 2) : ℕ) : ℝ) :=
-        Finset.sum_le_sum (fun o _ => hfib o)
-    _ = Fintype.card (ν → ℤˣ) * ((I.card.choose (I.card / 2) : ℕ) : ℝ) := by
-        rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, hκ]
-    _ ≤ 2 ^ Fintype.card ι / √(I.card) := by
-        rw [le_div_iff₀ (Real.sqrt_pos.mpr hM)]
-        have h1 := choose_half_sq I.card
-        have hsq : ((I.card.choose (I.card / 2) : ℕ) : ℝ) * √(I.card) ≤ 2 ^ I.card := by
-          have h0 : 0 ≤ ((I.card.choose (I.card / 2) : ℕ) : ℝ) * √(I.card) := by positivity
-          have : (((I.card.choose (I.card / 2) : ℕ) : ℝ) * √(I.card)) ^ 2 ≤ (2 ^ I.card) ^ 2 := by
-            rw [mul_pow, Real.sq_sqrt hM.le, ← pow_mul, mul_comm I.card 2, pow_mul]; norm_num
-            linarith
-          exact (pow_le_pow_iff_left₀ h0 (by positivity) (by norm_num)).mp this
-        have hν' : (Fintype.card (ν → ℤˣ) : ℝ) * 2 ^ I.card = 2 ^ Fintype.card ι := by
-          exact_mod_cast hν
-        calc (Fintype.card (ν → ℤˣ) : ℝ) * ((I.card.choose (I.card / 2) : ℕ) : ℝ) * √(I.card)
-            = (Fintype.card (ν → ℤˣ) : ℝ) * (((I.card.choose (I.card / 2) : ℕ) : ℝ) * √(I.card)) := by ring
-          _ ≤ (Fintype.card (ν → ℤˣ) : ℝ) * 2 ^ I.card := by gcongr
-          _ = _ := hν'
-
 end R522
 
 end S_RR0
@@ -1475,9 +1167,6 @@ lemma EE_const (c : ℝ) : EE (ι := ι) (fun _ => c) = c := by
 lemma EE_add (f g : (ι → ℤˣ) → ℝ) : EE (fun ε => f ε + g ε) = EE f + EE g := by
   unfold EE; rw [Finset.sum_add_distrib, add_div]
 
-lemma EE_sub (f g : (ι → ℤˣ) → ℝ) : EE (fun ε => f ε - g ε) = EE f - EE g := by
-  unfold EE; rw [Finset.sum_sub_distrib, sub_div]
-
 lemma EE_smul (c : ℝ) (f : (ι → ℤˣ) → ℝ) : EE (fun ε => c * f ε) = c * EE f := by
   unfold EE; rw [← Finset.mul_sum, mul_div_assoc]
 
@@ -1517,29 +1206,6 @@ lemma PP_or_le (S T : (ι → ℤˣ) → Prop) : PP (fun ε => S ε ∨ T ε) �
   rw [← EE_add]
   exact EE_mono (fun ε => by split_ifs <;> simp_all)
 
-lemma PP_exists_le {κ : Type*} (s : Finset κ) (S : κ → (ι → ℤˣ) → Prop) :
-    PP (fun ε => ∃ k ∈ s, S k ε) ≤ ∑ k ∈ s, PP (S k) := by
-  classical
-  unfold PP
-  rw [← EE_sum]
-  refine EE_mono (fun ε => ?_)
-  split_ifs with h
-  · obtain ⟨k, hk, hS⟩ := h
-    calc (1 : ℝ) = if S k ε then 1 else 0 := by rw [if_pos hS]
-      _ ≤ ∑ j ∈ s, if S j ε then (1 : ℝ) else 0 :=
-          Finset.single_le_sum (f := fun j => if S j ε then (1 : ℝ) else 0)
-            (fun j _ => by split_ifs <;> norm_num) hk
-  · exact Finset.sum_nonneg (fun j _ => by split_ifs <;> norm_num)
-
-lemma PP_compl (S : (ι → ℤˣ) → Prop) : PP (fun ε => ¬ S ε) = 1 - PP S := by
-  classical
-  unfold PP
-  have key : ∀ g : (ι → ℤˣ) → ℝ, (∀ ε, g ε = 1 - (if S ε then 1 else 0)) →
-      EE g = 1 - EE (fun ε => if S ε then (1 : ℝ) else 0) := by
-    intro g hg
-    rw [show g = fun ε => 1 - (if S ε then (1 : ℝ) else 0) from funext hg, EE_sub, EE_const]
-  exact key _ (fun ε => by by_cases h : S ε <;> simp [h])
-
 /-- Markov. -/
 lemma markov {f : (ι → ℤˣ) → ℝ} (hf : ∀ ε, 0 ≤ f ε) {t : ℝ} (ht : 0 < t) :
     PP (fun ε => t ≤ f ε) ≤ EE f / t := by
@@ -1548,13 +1214,6 @@ lemma markov {f : (ι → ℤˣ) → ℝ} (hf : ∀ ε, 0 ≤ f ε) {t : ℝ} (h
   unfold PP
   rw [mul_comm, ← EE_smul]
   exact EE_mono (fun ε => by split_ifs with h <;> nlinarith [hf ε])
-
-/-- Markov with indicators bounded above by a function. -/
-lemma PP_le_EE {S : (ι → ℤˣ) → Prop} {f : (ι → ℤˣ) → ℝ} (hf : ∀ ε, 0 ≤ f ε)
-    (h : ∀ ε, S ε → 1 ≤ f ε) : PP S ≤ EE f := by
-  classical
-  unfold PP
-  exact EE_mono (fun ε => by split_ifs with hs; exacts [h ε hs, hf ε])
 
 /-- Chebyshev. -/
 lemma chebyshev (f : (ι → ℤˣ) → ℝ) {t : ℝ} (ht : 0 < t) :
@@ -1578,13 +1237,6 @@ lemma flipAt_invol (i : ι) : Function.Involutive (flipAt i) := by
 lemma sum_flip {M : Type*} [AddCommMonoid M] (i : ι) (f : (ι → ℤˣ) → M) :
     ∑ ε, f (flipAt i ε) = ∑ ε, f ε :=
   Equiv.sum_comp (flipAt_invol i).toPerm f
-
-lemma EE_coord (i : ι) : EE (ι := ι) (fun ε => ((ε i : ℤ) : ℝ)) = 0 := by
-  unfold EE
-  have h := sum_flip i (fun ε => ((ε i : ℤ) : ℝ))
-  simp only [flipAt, Function.update_self, Units.val_neg, Int.cast_neg, Finset.sum_neg_distrib] at h
-  have : ∑ ε : ι → ℤˣ, ((ε i : ℤ) : ℝ) = 0 := by linarith
-  rw [this, zero_div]
 
 lemma EE_coord_mul (i j : ι) (hij : i ≠ j) :
     EE (ι := ι) (fun ε => ((ε i : ℤ) : ℝ) * ((ε j : ℤ) : ℝ)) = 0 := by
@@ -1625,97 +1277,7 @@ lemma cheb_ssum (c : ι → ℝ) {t : ℝ} (ht : 0 < t) :
   have := chebyshev (fun ε => ssum ε c) ht
   rwa [EE_ssum_sq] at this
 
-/-- Weighted Cauchy–Schwarz: if `E X_j² ≤ μ_j²` then `E (∑ w_j |X_j|)² ≤ (∑ w_j μ_j)²`. -/
-lemma EE_wsum_sq {κ : Type*} (s : Finset κ) (w μ : κ → ℝ) (X : κ → (ι → ℤˣ) → ℝ)
-    (hw : ∀ k ∈ s, 0 ≤ w k) (hμ : ∀ k ∈ s, 0 < μ k) (hX : ∀ k ∈ s, EE (fun ε => X k ε ^ 2) ≤ μ k ^ 2) :
-    EE (fun ε => (∑ k ∈ s, w k * |X k ε|) ^ 2) ≤ (∑ k ∈ s, w k * μ k) ^ 2 := by
-  set W := ∑ k ∈ s, w k * μ k with hW
-  have hW0 : 0 ≤ W := Finset.sum_nonneg (fun k hk => mul_nonneg (hw k hk) (hμ k hk).le)
-  have hpt : ∀ ε, (∑ k ∈ s, w k * |X k ε|) ^ 2 ≤ W * ∑ k ∈ s, w k * (X k ε ^ 2 / μ k) := by
-    intro ε
-    have := Finset.sum_mul_sq_le_sq_mul_sq s (fun k => √(w k * μ k)) (fun k => √(w k / μ k) * |X k ε|)
-    have e1 : ∀ k ∈ s, √(w k * μ k) * (√(w k / μ k) * |X k ε|) = w k * |X k ε| := by
-      intro k hk
-      rw [← mul_assoc, ← Real.sqrt_mul (mul_nonneg (hw k hk) (hμ k hk).le)]
-      have : w k * μ k * (w k / μ k) = w k ^ 2 := by field_simp [(hμ k hk).ne']
-      rw [this, Real.sqrt_sq (hw k hk)]
-    have e2 : ∀ k ∈ s, √(w k * μ k) ^ 2 = w k * μ k := fun k hk =>
-      Real.sq_sqrt (mul_nonneg (hw k hk) (hμ k hk).le)
-    have e3 : ∀ k ∈ s, (√(w k / μ k) * |X k ε|) ^ 2 = w k * (X k ε ^ 2 / μ k) := by
-      intro k hk
-      rw [mul_pow, Real.sq_sqrt (div_nonneg (hw k hk) (hμ k hk).le), sq_abs]; ring
-    rw [Finset.sum_congr rfl e1, Finset.sum_congr rfl e2, Finset.sum_congr rfl e3] at this
-    exact this
-  calc EE (fun ε => (∑ k ∈ s, w k * |X k ε|) ^ 2)
-      ≤ EE (fun ε => W * ∑ k ∈ s, w k * (X k ε ^ 2 / μ k)) := EE_mono hpt
-    _ = W * ∑ k ∈ s, w k * (EE (fun ε => X k ε ^ 2) / μ k) := by
-        rw [EE_smul, EE_sum]; congr 1
-        refine Finset.sum_congr rfl (fun k _ => ?_)
-        rw [show (fun ε => w k * (X k ε ^ 2 / μ k)) = (fun ε => (w k / μ k) * X k ε ^ 2) by
-          ext ε; ring, EE_smul]; ring
-    _ ≤ W * ∑ k ∈ s, w k * (μ k ^ 2 / μ k) := by
-        gcongr with k hk
-        · exact hw k hk
-        · exact (hμ k hk).le
-        · exact hX k hk
-    _ = W ^ 2 := by
-        rw [sq, hW]; congr 1
-        refine Finset.sum_congr rfl (fun k hk => ?_)
-        field_simp [(hμ k hk).ne']
-
 /-! ### Independence of disjoint coordinate sets -/
-
-/-- `f` only depends on the coordinates in `A`. -/
-def DepOn (A : Finset ι) (f : (ι → ℤˣ) → ℝ) : Prop :=
-  ∀ ε ε' : ι → ℤˣ, (∀ i ∈ A, ε i = ε' i) → f ε = f ε'
-
-lemma EE_mul_indep (A : Finset ι) (f g : (ι → ℤˣ) → ℝ) (hf : DepOn A f)
-    (hg : DepOn Aᶜ g) : EE (fun ε => f ε * g ε) = EE f * EE g := by
-  classical
-  set p : ι → Prop := fun i => i ∈ A
-  let e := Equiv.piEquivPiSubtypeProd p (fun _ => ℤˣ)
-  -- glue two partial sign vectors
-  let glue : ({i // p i} → ℤˣ) → ({i // ¬ p i} → ℤˣ) → (ι → ℤˣ) := fun α β => e.symm (α, β)
-  have hglue1 : ∀ α β, ∀ i (hi : p i), glue α β i = α ⟨i, hi⟩ := by
-    intro α β i hi; simp [glue, e, Equiv.piEquivPiSubtypeProd, hi]
-  have hglue2 : ∀ α β, ∀ i (hi : ¬ p i), glue α β i = β ⟨i, hi⟩ := by
-    intro α β i hi; simp [glue, e, Equiv.piEquivPiSubtypeProd, hi]
-  -- choose a reference point
-  let β0 : {i // ¬ p i} → ℤˣ := fun _ => 1
-  let α0 : {i // p i} → ℤˣ := fun _ => 1
-  have hf' : ∀ α β, f (glue α β) = f (glue α β0) := by
-    intro α β; apply hf; intro i hi
-    rw [hglue1 α β i hi, hglue1 α β0 i hi]
-  have hg' : ∀ α β, g (glue α β) = g (glue α0 β) := by
-    intro α β; apply hg; intro i hi
-    have hi' : ¬ p i := by simpa [p] using hi
-    rw [hglue2 α β i hi', hglue2 α0 β i hi']
-  have hsum : ∀ F : (ι → ℤˣ) → ℝ, ∑ ε, F ε = ∑ α, ∑ β, F (glue α β) := by
-    intro F
-    rw [← e.symm.sum_comp, Fintype.sum_prod_type]
-  have hcard : (2 : ℝ) ^ Fintype.card ι
-      = (2 : ℝ) ^ Fintype.card {i // p i} * (2 : ℝ) ^ Fintype.card {i // ¬ p i} := by
-    rw [← pow_add, Fintype.card_subtype_compl]
-    congr 1; have := Fintype.card_subtype_le p; omega
-  have hA : ∑ ε, f ε = (∑ α, f (glue α β0)) * 2 ^ Fintype.card {i // ¬ p i} := by
-    rw [hsum]; simp_rw [hf']
-    rw [Finset.sum_mul]; congr 1; ext α
-    rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, mul_comm]
-    congr 1
-    rw [Fintype.card_fun, Fintype.card_units_int]; push_cast; rfl
-  have hB : ∑ ε, g ε = (∑ β, g (glue α0 β)) * 2 ^ Fintype.card {i // p i} := by
-    rw [hsum, Finset.sum_comm]; simp_rw [hg']
-    rw [Finset.sum_mul]; congr 1; ext β
-    rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, mul_comm]
-    congr 1
-    rw [Fintype.card_fun, Fintype.card_units_int]; push_cast; rfl
-  have hAB : ∑ ε, f ε * g ε = (∑ α, f (glue α β0)) * (∑ β, g (glue α0 β)) := by
-    rw [hsum]
-    simp_rw [hf', hg']
-    rw [Finset.sum_mul_sum]
-  unfold EE
-  rw [hAB, hA, hB, hcard]
-  field_simp
 
 end R522
 
@@ -1770,9 +1332,6 @@ lemma integrable_mom (k : ℕ) (ψ : SchwartzMap ℝ ℂ) :
 
 lemma mom_nonneg (k : ℕ) (ψ : SchwartzMap ℝ ℂ) : 0 ≤ Mom k ψ :=
   integral_nonneg (fun u => by positivity)
-
-lemma mom_zero (ψ : SchwartzMap ℝ ℂ) : Mom 0 ψ = ∫ u : ℝ, ‖𝓕 (ψ : ℝ → ℂ) u‖ := by
-  simp [Mom]
 
 /-! ### The sign-vector side -/
 
@@ -2445,12 +2004,6 @@ lemma wedge_real {ρ : ℝ} (hρ1 : -1 < ρ) (hρ2 : ρ < 1) :
   rw [measureReal_def, wedge hρ1 hρ2, ENNReal.toReal_ofReal]
   have := Real.arccos_nonneg ρ; positivity
 
-lemma wedge'_real {ρ : ℝ} (hρ1 : -1 < ρ) (hρ2 : ρ < 1) :
-    (γ.prod γ).real {z : ℝ × ℝ | z.1 < 0 ∧ 0 < ρ * z.1 + √(1 - ρ ^ 2) * z.2}
-      = Real.arccos ρ / (2 * π) := by
-  rw [measureReal_def, wedge' hρ1 hρ2, ENNReal.toReal_ofReal]
-  have := Real.arccos_nonneg ρ; positivity
-
 /-- Strips for the second coordinate. -/
 theorem strip_Y (ρ σ : ℝ) (h : ρ ^ 2 + σ ^ 2 = 1) (a b : ℝ) (hab : a ≤ b) :
     (γ.prod γ).real {z : ℝ × ℝ | ρ * z.1 + σ * z.2 ∈ Set.Icc a b} ≤ (b - a) / √(2 * π) := by
@@ -2816,10 +2369,6 @@ namespace R522
 def Kc {ι : Type*} [Fintype ι] (a b : ι → ℝ) (u v : ℝ) : ℝ :=
   ∏ i, Real.cos (2 * π * (u * a i + v * b i))
 
-lemma Kc_abs_le_one {ι : Type*} [Fintype ι] (a b : ι → ℝ) (u v : ℝ) : |Kc a b u v| ≤ 1 := by
-  unfold Kc; rw [Finset.abs_prod]
-  exact Finset.prod_le_one (fun i _ => abs_nonneg _) (fun i _ => Real.abs_cos_le_one _)
-
 /-- Fourier tail mass. -/
 def Tail (ψ : SchwartzMap ℝ ℂ) (U : ℝ) : ℝ :=
   ∫ u, Set.indicator {u : ℝ | U < |u|} (fun u => ‖𝓕 (ψ : ℝ → ℂ) u‖) u
@@ -2840,9 +2389,6 @@ lemma integral_ind_le (c R : ℝ) (hR : 0 ≤ R) :
 lemma integrable_ind_gt (ψ : SchwartzMap ℝ ℂ) (U : ℝ) :
     Integrable (Set.indicator {u : ℝ | U < |u|} (fun u => ‖𝓕 (ψ : ℝ → ℂ) u‖)) :=
   (fourier_integrable ψ).norm.indicator (measurableSet_lt measurable_const measurable_abs)
-
-lemma integrable_ind_le_f (ψ : SchwartzMap ℝ ℂ) (U c : ℝ) :
-    Integrable (Set.indicator {u : ℝ | |u| ≤ U} (fun _ => c)) := integrable_ind_le c U
 
 /-- **Two-point local estimate.** -/
 theorem llt_two {ι : Type*} [Fintype ι] [DecidableEq ι] (ψ₁ ψ₂ : SchwartzMap ℝ ℂ)
@@ -5491,10 +5037,6 @@ def signEquiv (n : ℕ) : (range n → Bool) ≃ (Fin n → ℤˣ) where
     simp only [ofSigns, toSigns]
     rcases units_eq (ε j) with h | h <;> simp [h]
 
-lemma toSigns_val (n : ℕ) (r : range n → Bool) (j : Fin n) :
-    (((toSigns n r j : ℤˣ) : ℤ) : ℝ) = if r ⟨j, mem_range.mpr j.2⟩ then 1 else -1 := by
-  unfold toSigns; split_ifs <;> simp
-
 /-- the forward signs of a pattern. -/
 def extR (n : ℕ) (r : range n → Bool) (j : ℕ) : ℝ :=
   if h : j < n then (if r ⟨j, mem_range.mpr h⟩ then 1 else -1) else 0
@@ -5604,26 +5146,6 @@ section S_P5
 open Finset MeasureTheory
 
 namespace E521
-
-/-- `μ (|∑_{j<l} ε_j| ≥ x) ≤ 2 exp (-x²/(2l))`. -/
-lemma block_hoeffding (l : ℕ) (hl : 1 ≤ l) {x : ℝ} (hx : 0 < x) :
-    μS.real {ω | x ≤ |∑ j ∈ range l, eR ω j|} ≤ 2 * Real.exp (-(x ^ 2 / (2 * l))) := by
-  classical
-  have hcyl : {ω | x ≤ |∑ j ∈ range l, eR ω j|} =
-      rs (range l) ⁻¹' {r | x ≤ |∑ j ∈ range l, extR l r j|} := by
-    ext ω; simp only [Set.mem_setOf_eq, Set.mem_preimage]
-    congr! 2
-    apply sum_congr rfl; intro j hj; rw [mem_range] at hj; rw [extR_rs _ _ hj]
-  rw [hcyl, μS_range_bridge]
-  have e : ∀ ε : Fin l → ℤˣ, ∑ j ∈ range l, extR l (ofSigns l ε) j = R522.ssum ε (fun _ => (1 : ℝ)) := by
-    intro ε
-    unfold R522.ssum
-    rw [Fin.sum_univ_eq_sum_range (fun j => extR l (ofSigns l ε) j) l |>.symm]
-    apply Fintype.sum_congr; intro j; rw [extR_ofSigns _ ε j j.2]; ring
-  simp_rw [e]
-  have h := R522.hoeffding (ι := Fin l) (fun _ => (1 : ℝ)) hx
-  simp only [one_pow, sum_const, card_univ, Fintype.card_fin, nsmul_eq_mul, mul_one] at h
-  exact h
 
 end E521
 
@@ -5999,17 +5521,6 @@ lemma DN_ne_zero (N : ℕ) : DN N ≠ 0 := by
   · simp at this
   · intro b _ hb; rw [if_neg (Ne.symm hb)]
   · intro h0; exact absurd (mem_range.mpr (by omega)) h0
-
-lemma DN_pos_roots (N : ℕ) : (DN N * DN N).roots.countP (0 < ·) = 0 := by
-  rw [Multiset.countP_eq_zero]
-  intro x hx hx0
-  have hr := isRoot_of_mem_roots hx
-  rw [IsRoot, eval_mul, mul_self_eq_zero] at hr
-  unfold DN at hr
-  rw [eval_finset_sum] at hr
-  have : 0 < ∑ i ∈ range (N + 1), eval x (X ^ i : ℝ[X]) := by
-    apply sum_pos (fun i _ => by rw [eval_pow, eval_X]; exact pow_pos hx0 i) ⟨0, by simp⟩
-  linarith
 
 /-- **Positive roots** of `f = ∑_{j≤n} e_j X^j`: at most `#{k < p : Ip(c_k, c_{k+1})} + 1`, when
 the forward partial sums are `≥ 1` on `[p, n]`, the backward two-fold sums are `≥ 0`, and `N ≥ n²+n+1`. -/
