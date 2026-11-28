@@ -1,0 +1,66 @@
+{
+  "status": "COMPLETE EXACT-TYPE ADAPTER VERIFIED; NEW TARGET REGISTRATION AND HUMAN STATEMENT REVIEW REQUIRED",
+  "recorded_at": "2026-11-28T13:07:52.866028+00:00",
+  "proposed_namespace": "OMA.S_arxiv_2510_24280_conjecture13",
+  "proposed_module": "OMAStatements.S_arxiv_2510_24280_conjecture13",
+  "claim": "Original Conjecture13 of arXiv2510.24280v2, with the exact approved finite-set step/outcome bodies under the new namespace.",
+  "pins": {
+    "lean": "v4.33.1",
+    "formal_conjectures": "9097e2f90e66d2f6244209cb1c07f7120d17ec53",
+    "mathlib": "0df444a360eaa60ab8c11dca51a86af692955474"
+  },
+  "source_body_sha256": "ee408ea21c90ae94b394a91cac29835bea199fd334f5345bf7e99aa0317e9784",
+  "transformation": {
+    "generic_namespace_from": "OMA.S_arxiv_2510_24280",
+    "generic_namespace_to": "OMA.S_arxiv_2510_24280_conjecture13",
+    "omitted_duplicate_model_block_sha256": "e0f7430c4a94b84852b32b248b145b511682e012dc07ce065adfbcbca4319f16",
+    "all_remaining_math_unchanged_after_inverse_rename": true,
+    "approved_definition_bodies_exact": true
+  },
+  "file_hashes": {
+    "statement.lean": "062d4fcba4f34aeca9223302a4eab636c94a7e9dac133f3e3ed2fa027d37826c",
+    "proof.lean": "75bb33b3c0a3d8e58958c039c4c4aef101298905cc9930c93a7ba8c81c861054"
+  },
+  "statement_module_build": {
+    "returncode": 0,
+    "only_diagnostic": "Expected declaration uses sorry warning for statement-only main.",
+    "not_a_proof_acceptance": true
+  },
+  "audit_id": "20261128T130646Z-helper-2f26ktz7",
+  "audit_result": "helpers_verified",
+  "audit_scope": "Supporting lemmas only; no Left to Solve target or upstream submission acceptance was checked.",
+  "declaration_axioms": {
+    "OMA.solution": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Conj13Complete.conjecture_13_generic": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "independent_source_review": {
+    "result": "PASS",
+    "report_sha256": "2d42e92921ca46bd222038fe33e3be76121460479b13caefc5522ebdfa560a91",
+    "scope": "Literal model definitions, full retained math, quantifiers, namespace mapping, exact-type wrapper, and placeholder independence; read-only, not a duplicate compile."
+  },
+  "preserved_release_file_hashes": {
+    "standalone.lean": "ee408ea21c90ae94b394a91cac29835bea199fd334f5345bf7e99aa0317e9784",
+    "README.txt": "680cadee900dbf88f59b7580d7baa21112894311e85b2daa20c6eebdd13b3b10",
+    "verification.json": "cfcbeecf8bee9ec3f11df667edaf491b4bbd7a944eb6bb20ad062f83cd356a59"
+  },
+  "reproduce": {
+    "workspace": "Use pinned formal-conjectures Lake workspace from pins.",
+    "stage_statement": "Copy statement.lean to OMAStatements/S_arxiv_2510_24280_conjecture13.lean.",
+    "commands": [
+      "mkdir -p .lake/build/lib/lean/OMAStatements",
+      "lake env lean -j1 -o .lake/build/lib/lean/OMAStatements/S_arxiv_2510_24280_conjecture13.olean OMAStatements/S_arxiv_2510_24280_conjecture13.lean",
+      "lake env lean -j1 /absolute/path/to/proof.lean"
+    ],
+    "axiom_audit": "Append #print axioms OMA.solution and #print axioms Conj13Complete.conjecture_13_generic to a copy of proof.lean. Neither includes sorryAx."
+  },
+  "registry_acceptance_claim": false,
+  "public_actions_by_adapter_agent": false
+}
