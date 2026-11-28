@@ -34,23 +34,36 @@ theorem hasDerivAt_v (n : ℕ) (l : ℝ) : HasDerivAt (v n) (d n l) l := by
   induction n with
   | zero => exact hasDerivAt_id l
   | succ n ih =>
-    have h := (hasDerivAt_id l).mul ((hasDerivAt_const l (1 : ℝ)).sub ih.neg.exp)
-    convert h using 1
-    · rfl
-    · simp only [d, id_eq, Pi.sub_apply, Pi.neg_apply]
+    have hExp : HasDerivAt (fun x : ℝ => Real.exp (-v n x))
+        (Real.exp (-v n l) * -d n l) l := ih.neg.exp
+    have h : HasDerivAt (fun x : ℝ => x * (1 - Real.exp (-v n x)))
+        (1 * (1 - Real.exp (-v n l)) + l * (0 - Real.exp (-v n l) * -d n l)) l :=
+      (hasDerivAt_id l).mul ((hasDerivAt_const l (1 : ℝ)).sub hExp)
+    have hc : 1 * (1 - Real.exp (-v n l)) + l * (0 - Real.exp (-v n l) * -d n l) =
+        d (n + 1) l := by
+      rw [d]
       ring
+    rw [hc] at h
+    exact h
 
 theorem hasDerivAt_d (n : ℕ) (l : ℝ) : HasDerivAt (d n) (e n l) l := by
   induction n with
   | zero => exact hasDerivAt_const l (1 : ℝ)
   | succ n ih =>
-    have hExp := (hasDerivAt_v n l).neg.exp
-    have h := ((hasDerivAt_const l (1 : ℝ)).sub hExp).add
-      (((hasDerivAt_id l).mul hExp).mul ih)
-    convert h using 1
-    · rfl
-    · simp only [e, id_eq, Pi.mul_apply, Pi.neg_apply]
+    have hExp : HasDerivAt (fun x : ℝ => Real.exp (-v n x))
+        (Real.exp (-v n l) * -d n l) l := (hasDerivAt_v n l).neg.exp
+    have h : HasDerivAt (fun x : ℝ => 1 - Real.exp (-v n x) + x * Real.exp (-v n x) * d n x)
+        (0 - Real.exp (-v n l) * -d n l +
+          ((1 * Real.exp (-v n l) + l * (Real.exp (-v n l) * -d n l)) * d n l +
+            l * Real.exp (-v n l) * e n l)) l :=
+      ((hasDerivAt_const l (1 : ℝ)).sub hExp).add (((hasDerivAt_id l).mul hExp).mul ih)
+    have hc : 0 - Real.exp (-v n l) * -d n l +
+        ((1 * Real.exp (-v n l) + l * (Real.exp (-v n l) * -d n l)) * d n l +
+          l * Real.exp (-v n l) * e n l) = e (n + 1) l := by
+      rw [e]
       ring
+    rw [hc] at h
+    exact h
 
 theorem v_pos (n : ℕ) {l : ℝ} (hl : 0 < l) : 0 < v n l := by
   induction n with
@@ -227,11 +240,13 @@ private theorem hasDerivAt_moment (n : ℕ) (x : ℝ) :
         mul_le_mul_of_nonneg_right (pow_le_one₀ ht.1.le ht.2) (exp_pos _).le
       _ ≤ exp (|x| + 1) := by rw [one_mul]; exact exp_le_exp.mpr hyt
   · refine Eventually.of_forall fun t _ y _ => ?_
-    convert (((hasDerivAt_id y).neg.mul_const t).exp.const_mul ((-t) ^ n)) using 1
-    · rfl
-    · change (-t) ^ (n + 1) * exp (-y * t) = (-t) ^ n * (exp (-y * t) * (-1 * t))
+    have h : HasDerivAt (fun z : ℝ => (-t) ^ n * exp (-z * t))
+        ((-t) ^ n * (exp (-y * t) * (-1 * t))) y :=
+      ((hasDerivAt_id y).neg.mul_const t).exp.const_mul ((-t) ^ n)
+    have heq : (-t) ^ n * (exp (-y * t) * (-1 * t)) = (-t) ^ (n + 1) * exp (-y * t) := by
       rw [pow_succ]
       ring
+    exact heq ▸ h
 
 private theorem hasDerivAt_q (x : ℝ) : HasDerivAt q (moment 1 x) x := by
   have heq : moment 0 = q := by
@@ -256,10 +271,10 @@ theorem q_pos (x : ℝ) : 0 < q x := by
 theorem q_eq (x : ℝ) (hx : 0 < x) : q x = (1 - exp (-x)) / x := by
   have hd (t : ℝ) :
       HasDerivAt (fun t : ℝ => exp (-x * t) / -x) (exp (-x * t)) t := by
-    convert ((hasDerivAt_id t).const_mul (-x)).exp.div_const (-x) using 1
-    · rfl
-    · change exp (-x * t) = exp (-x * t) * (-x * 1) / -x
-      rw [mul_one, mul_div_cancel_right₀ _ (neg_ne_zero.mpr hx.ne')]
+    have h : HasDerivAt (fun s : ℝ => exp (-x * s) / -x)
+        (exp (-x * t) * (-x * 1) / -x) t :=
+      ((hasDerivAt_id t).const_mul (-x)).exp.div_const (-x)
+    rwa [mul_one, mul_div_cancel_right₀ _ (neg_ne_zero.mpr hx.ne')] at h
   rw [q, integral_eq_sub_of_hasDerivAt (fun t _ => hd t) (hi (by fun_prop))]
   simp only [mul_one, mul_zero, exp_zero]
   ring
@@ -282,10 +297,15 @@ theorem hasDerivAt_g (x : ℝ) : HasDerivAt g (g1 x) x := by
     (hasDerivAt_q x).log (q_pos x).ne'
 
 theorem hasDerivAt_g1 (x : ℝ) : HasDerivAt g1 (g2 x) x := by
-  change HasDerivAt (fun y => moment 1 y / q y)
-    (moment 2 x / q x - (moment 1 x / q x) ^ 2) x
-  convert (hasDerivAt_moment 1 x).div (hasDerivAt_q x) (q_pos x).ne' using 1
-  field_simp [(q_pos x).ne']
+  have hq : q x ≠ 0 := (q_pos x).ne'
+  have h : HasDerivAt g1
+      ((moment 2 x * q x - moment 1 x * moment 1 x) / (q x) ^ 2) x :=
+    (hasDerivAt_moment 1 x).div (hasDerivAt_q x) hq
+  have hc : moment 2 x * q x / (q x) ^ 2 = moment 2 x / q x := by
+    rw [pow_two, ← div_div, mul_div_cancel_right₀ _ hq]
+  have heq : (moment 2 x * q x - moment 1 x * moment 1 x) / (q x) ^ 2 = g2 x := by
+    rw [g2, g1, sub_div, hc, ← pow_two (moment 1 x), ← div_pow]
+  exact heq ▸ h
 
 private theorem centered_integral :
     (∫ t in (0 : ℝ)..1, (t - 1 / 2) ^ 2) = 1 / 12 := by
@@ -484,12 +504,18 @@ theorem comp_iter_concave (n : ℕ) :
   · intro x _
     exact (hasDerivAt_g (v (n + 1) x)).comp x (hasDerivAt_v (n + 1) x)
   · intro x _
-    have hh := (hasDerivAt_g1 (v (n + 1) x)).comp x (hasDerivAt_v (n + 1) x)
-    have h := hh.fun_mul (hasDerivAt_d (n + 1) x)
-    convert h using 1
-    · rfl
-    · simp only [Function.comp_apply]
+    have hh : HasDerivAt (fun y : ℝ => g1 (v (n + 1) y))
+        (g2 (v (n + 1) x) * d (n + 1) x) x :=
+      (hasDerivAt_g1 (v (n + 1) x)).comp x (hasDerivAt_v (n + 1) x)
+    have h : HasDerivAt (fun y : ℝ => g1 (v (n + 1) y) * d (n + 1) y)
+        (g2 (v (n + 1) x) * d (n + 1) x * d (n + 1) x +
+          g1 (v (n + 1) x) * e (n + 1) x) x :=
+      hh.fun_mul (hasDerivAt_d (n + 1) x)
+    have hc : g2 (v (n + 1) x) * d (n + 1) x * d (n + 1) x +
+        g1 (v (n + 1) x) * e (n + 1) x =
+        g2 (v (n + 1) x) * (d (n + 1) x) ^ 2 + g1 (v (n + 1) x) * e (n + 1) x := by
       ring
+    rwa [hc] at h
   · intro x hx
     obtain ⟨hv, hvbound, _, _, he⟩ := iter_bounds n hx.1 hx.2.le
     have he₀ : 0 ≤ e (n + 1) x := le_trans (by positivity) he
