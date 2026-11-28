@@ -198,26 +198,16 @@ lemma a_zero : a 0 = 1 := by
 lemma series_product :
     mk a * (1 - C 3 * X + C 4 * X ^ 3 - X ^ 4 - X ^ 5) =
       1 + X - X ^ 2 - X ^ 3 + X ^ 4 + X ^ 6 := by
-  have h₁ : mk a * (C 3 * X) = C 3 * (mk a * X ^ 1) := by ring
-  have h₃ : mk a * (C 4 * X ^ 3) = C 4 * (mk a * X ^ 3) := by ring
   obtain ⟨_, b₀, b₁, b₂, b₃, b₄, b₅⟩ := initial_floors
-  have a₁ : a 1 = 4 := by norm_num [a_succ 0, b₀, a_zero]
-  have a₂ : a 2 = 11 := by norm_num [a_succ 1, b₁, a₁]
-  have a₃ : a 3 = 28 := by norm_num [a_succ 2, b₂, a₂]
-  have a₄ : a 4 = 70 := by norm_num [a_succ 3, b₃, a₃]
-  have a₅ : a 5 = 171 := by norm_num [a_succ 4, b₄, a₄]
-  have a₆ : a 6 = 417 := by norm_num [a_succ 5, b₅, a₅]
+  have h : a 1 = 4 ∧ a 2 = 11 ∧ a 3 = 28 ∧ a 4 = 70 ∧ a 5 = 171 ∧ a 6 = 417 := by
+    norm_num [a_succ, b₀, b₁, b₂, b₃, b₄, b₅, a_zero]
+  have r (k : ℕ) : a (k + 7) = 3 * a (k + 6) - 4 * a (k + 4) + a (k + 3) + a (k + 2) := by
+    simpa using recurrence (k + 7) (by omega)
+  simp only [map_ofNat]
+  ring_nf
   ext n
-  simp only [mul_sub, mul_add, mul_one, h₁, h₃, map_add, map_sub, coeff_C_mul,
-    coeff_mul_X_pow', coeff_X_pow, coeff_X, coeff_one, coeff_mk]
-  by_cases hn : 6 < n
-  · simp only [if_pos (show 1 ≤ n by omega), if_pos (show 3 ≤ n by omega),
-      if_pos (show 4 ≤ n by omega), if_pos (show 5 ≤ n by omega),
-      if_neg (show n ≠ 0 by omega), if_neg (show n ≠ 1 by omega),
-      if_neg (show n ≠ 2 by omega), if_neg (show n ≠ 3 by omega),
-      if_neg (show n ≠ 4 by omega), if_neg (show n ≠ 6 by omega)]
-    linarith [recurrence n hn]
-  · interval_cases n <;> norm_num [a_zero, a₁, a₂, a₃, a₄, a₅, a₆]
+  rcases n with _ | _ | _ | _ | _ | _ | _ | n <;> simp [coeff_mul_X_pow', coeff_X_pow, coeff_X,
+    ← map_ofNat C, coeff_mul_C, coeff_X_pow_mul', -eq_intCast, r, a_zero, h] <;> ring
 
 end OMA.A020964
 
