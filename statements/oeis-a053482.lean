@@ -6,6 +6,10 @@ import Mathlib
 Source: https://oeis.org/A053482
 Credit: @ivillar
 
+Status: known result. The entry records the formula a(n) = 3*n*a(n-2)-2*n*(n-1)*a(n-2)+1, derived from the
+array T(n,k) of its comments, with the remark that it proves the conjecture (Richard Choulet,
+Dec 17 2012).
+
 A029767(n) = (n-1)!*(2^n - 1) for n ≥ 1 (1, 3, 14, 90, 744, ...). A053482 (offset 0) is its
 binomial transform, taken from the first positive index: by the formula in the entry,
 a(n) = Sum_{k=0..n} C(n,k)*k!*(2^(k+1) - 1) = Sum_{k=0..n} C(n,k)*A029767(k+1);
