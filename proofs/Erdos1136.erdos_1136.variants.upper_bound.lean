@@ -14,7 +14,7 @@ theorem OMA.solution : type_of% @Erdos1136.erdos_1136.variants.upper_bound := by
   refine ⟨M + 1, k.lt_two_pow_self.le.trans (Nat.le_succ _), ?_⟩
   let U := range (M + 1)
   let S := U.filter (· ∈ A)
-  have hs : S ⊆ U := filter_subset ..
+  have hs := filter_subset (· ∈ A) U
   have hle : S.card ≤ (U \ S).card := by
     apply card_le_card_of_injOn (fun x => M - x)
     · intro x hx
@@ -28,8 +28,10 @@ theorem OMA.solution : type_of% @Erdos1136.erdos_1136.variants.upper_bound := by
       change M - x = M - y at h
       omega
   rw [card_sdiff_of_subset hs, card_range] at hle
+  change S.card ≤ M + 1 - S.card at hle
   have hS : (S : Set ℕ) = A ∩ Set.Iio (M + 1) := by ext; simp [S, U, and_comm]
   simp only [partialDensity, inter_univ, univ_inter, ← hS,
     ncard_coe_finset, ncard_Iio_nat]
   rw [div_le_iff₀ (by positivity), one_div_mul_eq_div, le_div_iff₀ zero_lt_two]
-  exact_mod_cast (show S.card * 2 ≤ M+1 by omega)
+  norm_cast
+  omega
