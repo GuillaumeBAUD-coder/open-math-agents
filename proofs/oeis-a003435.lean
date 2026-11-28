@@ -1,5 +1,6 @@
 import OMAStatements.S_oeis_a003435
 import Mathlib
+open OMA.S_oeis_a003435
 
 namespace A003435
 
@@ -34,9 +35,9 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a003435.main := by
     have : (0 : ℚ) ≤ (m : ℚ) := by positivity
     intro h; linarith
   have key : (2 * ((m : ℚ) + 5) - 3) *
-      (OMA.S_oeis_a003435.a (m + 5) -
-        (4 * ((m : ℚ) + 5) ^ 2 - 2 * ((m : ℚ) + 5) + 5) * OMA.S_oeis_a003435.a (m + 4) +
-        2 * ((m : ℚ) + 5 - 1) * (4 * ((m : ℚ) + 5) - 17) * OMA.S_oeis_a003435.a (m + 3) +
-        12 * ((m : ℚ) + 5 - 1) * ((m : ℚ) + 5 - 2) * OMA.S_oeis_a003435.a (m + 2)) = 0 := by
+      (a (m + 5) -
+        (4 * ((m : ℚ) + 5) ^ 2 - 2 * ((m : ℚ) + 5) + 5) * a (m + 4) +
+        2 * ((m : ℚ) + 5 - 1) * (4 * ((m : ℚ) + 5) - 17) * a (m + 3) +
+        12 * ((m : ℚ) + 5 - 1) * ((m : ℚ) + 5 - 2) * a (m + 2)) = 0 := by
     linear_combination h1 - 3 * h2
   exact (mul_eq_zero.mp key).resolve_left hne
