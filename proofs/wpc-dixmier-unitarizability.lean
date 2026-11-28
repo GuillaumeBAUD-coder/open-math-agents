@@ -32,31 +32,11 @@ def SimilarToUnitary {G : Type u} [Group G]
     (π : G →* (H →L[ℂ] H)) : Prop :=
   ∃ S : H ≃L[ℂ] H, ∀ (g : G) (x : H), ‖S (π g (S.symm x))‖ = ‖x‖
 
-/-- A uniformly 101-bounded nonunitarizable representation on a separable
-complete complex Hilbert space, with its universe explicit. -/
-def NonamenableWitness (G : Type u) [Group G] : Prop :=
-  ∃ (H : Type v) (_ : NormedAddCommGroup H) (_ : InnerProductSpace ℂ H)
-    (_ : CompleteSpace H) (_ : TopologicalSpace.SeparableSpace H)
-    (π : G →* (H →L[ℂ] H)),
-    (∀ g : G, ‖π g‖ ≤ 101) ∧ ¬ SimilarToUnitary π
-
 /-- Unitarizability at an explicitly quantified Hilbert-space universe. -/
 def Unitarizable (G : Type u) [Group G] : Prop :=
   ∀ (H : Type v) [NormedAddCommGroup H] [InnerProductSpace ℂ H]
     [CompleteSpace H] (π : G →* (H →L[ℂ] H)),
     (∃ C : ℝ, ∀ g, ‖π g‖ ≤ C) → SimilarToUnitary π
-
-/-- Every countable discrete nonamenable group has a bounded nonunitarizable witness. -/
-def MainTheorem : Prop :=
-  ∀ (G : Type u) [Group G] [Countable G] [TopologicalSpace G]
-    [DiscreteTopology G], ¬ Amenable G → NonamenableWitness.{u, v} G
-
-/-- A nonunitarizable witness contradicts unitarizability. -/
-theorem witness_not_unitarizable {G : Type u} [Group G]
-    (h : NonamenableWitness.{u, v} G) : ¬ Unitarizable.{u, v} G := by
-  rcases h with ⟨H, hnorm, hinner, hcomplete, hsep, π, hbound, hnot⟩
-  intro hunit
-  exact hnot (hunit H π ⟨101, hbound⟩)
 
 end Dixmier
 
@@ -158,20 +138,6 @@ theorem rankOne_sum_energy (v : I → EuclideanSpace ℂ K) (hv : ∀ i, ‖v i�
       rw [rankOne_inner_re]
       positivity
 
-def coefficientMatrix (W : EuclideanSpace ℂ (K × K)) : Matrix K K ℂ :=
-  fun a b => W (a,b)
-
-/-- The coefficient norm is the unnormalized trace definition of
-Hilbert–Schmidt squared norm. -/
-theorem coefficient_norm_sq_eq_trace (W : EuclideanSpace ℂ (K × K)) :
-    ‖W‖^2 = (Matrix.trace (Matrix.conjTranspose (coefficientMatrix W) * coefficientMatrix W)).re := by
-  rw [EuclideanSpace.norm_sq_eq]
-  simp only [Matrix.trace, Matrix.diag, Matrix.mul_apply, Matrix.conjTranspose_apply,
-    coefficientMatrix, Complex.star_def, ← Complex.normSq_eq_conj_mul_self,
-    Complex.normSq_eq_norm_sq, Fintype.sum_prod_type]
-  simp only [← Complex.ofReal_sum, Complex.ofReal_re]
-  exact Finset.sum_comm (f := fun (a b : K) => ‖W (a,b)‖^2)
-
 omit [Fintype K] in
 theorem kernelCoefficients_offsupport (v : I → EuclideanSpace ℂ K) (s : I → G)
     {g : G} (hg : g ∉ Finset.univ.image s) : kernelCoefficients v s g = 0 := by
@@ -179,13 +145,6 @@ theorem kernelCoefficients_offsupport (v : I → EuclideanSpace ℂ K) (s : I �
   apply Finset.sum_eq_zero
   intro i hi
   exact (hg (Finset.mem_image.mpr ⟨i, mem_univ _, (mem_filter.mp hi).2⟩)).elim
-
-theorem kernel_energy_summable (v : I → EuclideanSpace ℂ K) (s : I → G) :
-    Summable (fun g => ‖kernelCoefficients v s g‖^2) := by
-  classical
-  apply summable_of_ne_finset_zero (s := Finset.univ.image s)
-  intro g hg
-  simp [kernelCoefficients_offsupport v s hg]
 
 /-- The kernel-energy lower bound preserves every colliding product label. -/
 theorem kernel_energy_ge_card (v : I → EuclideanSpace ℂ K) (hv : ∀ i, ‖v i‖ = 1)
@@ -427,8 +386,6 @@ theorem energy_summable (A : Op G K) :
     Summable (fun s => ‖coefficients (block A 1 s)‖^2) :=
   row_summable (row A 1)
 
-theorem energy_nonneg (A : Op G K) : 0 ≤ energy A := tsum_nonneg (fun _ => sq_nonneg _)
-
 theorem energy_le_row (A : Op G K) :
     energy A ≤ (Fintype.card K : ℝ) * ‖row A 1‖^2 :=
   row_energy_le (row A 1)
@@ -503,32 +460,6 @@ theorem kernel_obstruction {A T : Op G K} (hA : A ∈ Commutant)
     (pow_le_pow_left₀ (norm_nonneg _) hL 2) (Nat.cast_nonneg (Fintype.card K)))
   nlinarith [energy_split_le A C]
 
-/-- Pointwise distance inequality for positive fibre dimension. -/
-theorem kernel_distance_pointwise [Nonempty K] {A T : Op G K} (hA : A ∈ Commutant)
-    {κ : ℝ} (hκ : 0 ≤ κ) (hr : ‖row T 1‖ ≤ κ) (hc : ‖col (A-T) 1‖ ≤ κ)
-    {C : Op G K} (hC : C ∈ Commutant) :
-    (1/2 : ℝ) * Real.sqrt (energy A / Fintype.card K) - κ ≤ ‖T-C‖ := by
-  have hk : (0 : ℝ) < Fintype.card K := Nat.cast_pos.mpr Fintype.card_pos
-  have he := kernel_obstruction hA hκ hr hc hC
-  have hdiv : energy A / Fintype.card K ≤ 4 * (κ + ‖T-C‖)^2 := by
-    apply (div_le_iff₀ hk).mpr
-    nlinarith [he]
-  have hs := Real.sq_sqrt (div_nonneg (energy_nonneg A) hk.le)
-  have hh : 0 ≤ κ + ‖T-C‖ := add_nonneg hκ (norm_nonneg _)
-  have hsqrt : Real.sqrt (energy A / Fintype.card K) ≤ 2 * (κ + ‖T-C‖) := by
-    nlinarith [Real.sqrt_nonneg (energy A / Fintype.card K)]
-  linarith
-
-/-- The distance obstruction for the metric distance to
-all bounded translation-commuting operators. -/
-theorem kernel_distance [Nonempty K] {A T : Op G K} (hA : A ∈ Commutant)
-    {κ : ℝ} (hκ : 0 ≤ κ) (hr : ‖row T 1‖ ≤ κ) (hc : ‖col (A-T) 1‖ ≤ κ) :
-    (1/2 : ℝ) * Real.sqrt (energy A / Fintype.card K) - κ ≤ Metric.infDist T Commutant := by
-  apply (Metric.le_infDist (s := Commutant) ⟨0, fun g => Commute.zero_left _⟩).mpr
-  intro C hC
-  simpa only [dist_eq_norm] using kernel_distance_pointwise hA hκ hr hc hC
-
-
 end KernelObstruction
 end Dixmier
 
@@ -602,20 +533,6 @@ theorem equal_coboundaries_iff_commute_sub (U : G →* R) (T B : R) (g : G) :
 /-- Algebraic upper triangular operator product, without any norm assertion. -/
 def triangular (a b : R) : R × R → R × R :=
   fun x => (a * x.1 + b * a * x.2, a * x.2)
-
-theorem triangular_cocycle_mul (U : G →* R) (D : G → R)
-    (hD : ∀ g h, D (g * h) = D g + conjugate U g (D h))
-    (g h : G) (x : R × R) :
-    triangular (U g) (D g) (triangular (U h) (D h) x) =
-      triangular (U (g * h)) (D (g * h)) x := by
-  have hinv : U g⁻¹ * U g = 1 := by rw [← map_mul]; simp
-  have hinv_assoc (z : R) : U g⁻¹ * (U g * z) = z := by
-    rw [← mul_assoc, hinv, one_mul]
-  simp only [triangular, map_mul, hD, conjugate, Prod.mk.injEq]
-  constructor
-  · simp only [add_mul, mul_add, mul_assoc, hinv_assoc]
-    abel
-  · simp only [mul_assoc]
 
 end Ring
 end Dixmier
@@ -1105,21 +1022,6 @@ theorem carrier_separable [Countable G] (k : ℕ → ℕ) :
   have : TopologicalSpace.SeparableSpace (Total G k) := HilbertSum.separableSpace
   infer_instance
 
-/-- The direct-sum obstruction with all Hilbert-space structure and separability
-explicit in the conclusion. -/
-theorem separable_direct_sum_obstruction [Countable G] (k : ℕ → ℕ) (hk : ∀ j, 0 < k j)
-    (A T : ∀ j, Stage G k j →L[ℂ] Stage G k j)
-    (hA : ∀ j, A j ∈ KernelObstruction.Commutant)
-    {κ : ℝ} (hκ : 0 ≤ κ)
-    (hr : ∀ j, ‖KernelObstruction.row (T j) 1‖ ≤ κ)
-    (hc : ∀ j, ‖KernelObstruction.col (A j-T j) 1‖ ≤ κ)
-    (hb : ∀ j g, ‖coboundary KernelObstruction.translation (T j) g‖ ≤ κ)
-    (he : Tendsto (fun j => KernelObstruction.energy (A j) / k j) atTop atTop) :
-    TopologicalSpace.SeparableSpace (Carrier G k) ∧
-    ∃ π : G →* (Carrier G k →L[ℂ] Carrier G k),
-      (∀ g, ‖π g‖ ≤ 1 + κ) ∧ ¬ SimilarToUnitary π :=
-  ⟨carrier_separable k, direct_sum_obstruction k hk A T hA hκ hr hc hb he⟩
-
 end DirectSumObstruction
 end Dixmier
 
@@ -1608,11 +1510,6 @@ def leftRegular : G →* (ScalarL2 G →L[ℂ] ScalarL2 G) where
 @[simp] theorem leftRegular_apply (g : G) (ξ : ScalarL2 G) (x : G) :
     leftRegular g ξ x = ξ (g⁻¹ * x) := rfl
 
-theorem left_right_commute (g t : G) : Commute (leftRegular g) (rightRegular t) := by
-  change leftRegular g * rightRegular t = rightRegular t * leftRegular g
-  ext ξ x
-  simp [mul_assoc]
-
 def Word (I : Type u) : ℕ → Type u
   | 0 => PUnit
   | n + 1 => I × Word I n
@@ -2089,21 +1986,6 @@ theorem exists_contracting_sum (hG : ¬ Amenable G) :
   refine ⟨S, h1, hd2, t / S.card, div_pos ht hdR, (div_lt_one hdR).mpr htd, ?_⟩
   rw [mul_div_cancel₀ _ hdR.ne']
   exact hAt.le
-
-/-- A contracting average with e ∈ S, d ≥ 2, and 0 < ρ < 1. -/
-theorem contracting_average (hG : ¬ Amenable G) :
-    ∃ S : Finset G, 1 ∈ S ∧ 2 ≤ S.card ∧
-      ∃ ρ : ℝ, 0 < ρ ∧ ρ < 1 ∧
-        ‖((S.card : ℂ)⁻¹) • (∑ g ∈ S, rightRegular g)‖ ≤ ρ := by
-  obtain ⟨S, h1, hd, ρ, hρ, hρ1, hsum⟩ := exists_contracting_sum hG
-  refine ⟨S, h1, hd, ρ, hρ, hρ1, ?_⟩
-  have hdR : (0 : ℝ) < S.card := by exact_mod_cast (by omega : 0 < S.card)
-  rw [norm_smul, norm_inv]
-  simp only [Complex.norm_natCast]
-  calc
-    (S.card : ℝ)⁻¹ * ‖∑ g ∈ S, rightRegular g‖ ≤ (S.card : ℝ)⁻¹ * ((S.card : ℝ) * ρ) :=
-      mul_le_mul_of_nonneg_left hsum (inv_nonneg.mpr hdR.le)
-    _ = ρ := by field_simp
 
 /-- Sparse splitting from nonamenability. A single S and ρ work for every
 positive word length; all words remain separate labels, even when their group products agree. -/
@@ -2667,16 +2549,6 @@ theorem reciprocal_dimension_ratio_tendsto {d : ℕ} (hd : 2 ≤ d) {ρ : ℝ}
     · exact_mod_cast fiberDimension_pos hd hρ ℓ
     · exact pow_pos (by exact_mod_cast (by omega : 0 < d)) _
   simpa only [Function.comp_def, inv_div] using tendsto_inv_nhdsGT_zero.comp ht
-
-/-- A kernel energy satisfying the cardinality lower bound has
-unbounded energy per fibre dimension. -/
-theorem energy_ratio_tendsto {d : ℕ} (hd : 2 ≤ d) {ρ : ℝ}
-    (hρ : 0 < ρ) (hρ1 : ρ < 1) (E : ℕ → ℝ)
-    (hE : ∀ ℓ, (d : ℝ)^ℓ ≤ E ℓ) :
-    Tendsto (fun ℓ => E ℓ / (fiberDimension d ρ ℓ : ℝ)) atTop atTop := by
-  apply tendsto_atTop_mono _ (reciprocal_dimension_ratio_tendsto hd hρ hρ1)
-  intro ℓ
-  exact div_le_div_of_nonneg_right (hE ℓ) (Nat.cast_nonneg _)
 
 end Dixmier
 
@@ -3461,85 +3333,6 @@ universe u
 open Filter
 variable {G : Type u} [Group G] [Countable G] [TopologicalSpace G] [DiscreteTopology G]
 
-/-- A uniformly 101-bounded representation on a separable Hilbert space,
-not similar to a unitary representation, constructed from nonamenability. -/
-theorem nonamenable_witness (hG : ¬ Amenable G) : NonamenableWitness.{u,u} G := by
-  classical
-  obtain ⟨S, hS, hd, ρ, hρ, hρ1, hmask⟩ := sparse_splitting_of_nonamenable hG
-  let d := S.card
-  let k : ℕ → ℕ := fun j => fiberDimension d ρ (j+1)
-  let r : ℕ → ℕ := fun j => endpointCapacity d ρ (j+1)
-  let Labels : ℕ → Type u := fun j => Word S (j+1)
-  let s : ∀ j, Labels j → G := fun j => wordProduct (fun x : S => (x : G)) (j+1)
-  have hlabel (j : ℕ) : Fintype.card (Labels j) = d^(j+1) := by
-    simp [Labels, word_card, d]
-  have hn (j : ℕ) : 2 ≤ Fintype.card (Labels j) := by
-    rw [hlabel]
-    have hp : 1 ≤ d^j := one_le_pow₀ (by omega : 1 ≤ d)
-    rw [pow_succ']
-    dsimp [d] at *
-    nlinarith
-  have hr (j : ℕ) : 1 ≤ r j := endpointCapacity_pos hd hρ (j+1)
-  have hk (j : ℕ) : 0 < k j := fiberDimension_pos hd hρ (j+1)
-  have hdim (j : ℕ) : FrameParameters.dimension (Fintype.card (Labels j)) (r j) = k j := by
-    simp [FrameParameters.dimension, hlabel, k, fiberDimension, r, Nat.cast_pow]
-  have hframes (j : ℕ) : ∃ v : Labels j → EuclideanSpace ℂ (Fin (k j)),
-      (∀ i, ‖v i‖ = 1) ∧
-      FiniteSynthesis.FrameBound v (min (2*r j) (Fintype.card (Labels j))) 10 := by
-    have h := SignMatrix.frames_for_fintype (hn j) (hr j)
-    rw [hdim j] at h
-    exact h
-  choose v hvunit hvframe using hframes
-  have hmasks (j : ℕ) : ∃ a : G → Labels j → Bool,
-      (∀ x, (rowOnes a x).card ≤ r j) ∧ ∀ y, (columnZeros a (s j) y).card ≤ r j :=
-    hmask (j+1) (by omega)
-  choose a har hac using hmasks
-  let A : ∀ j, DirectSumObstruction.Stage G k j →L[ℂ] DirectSumObstruction.Stage G k j :=
-    fun j => Masked.constant (v j) (s j)
-  let T : ∀ j, DirectSumObstruction.Stage G k j →L[ℂ] DirectSumObstruction.Stage G k j :=
-    fun j => Masked.oriented (v j) (s j) (a j)
-  have hA (j : ℕ) : A j ∈ KernelObstruction.Commutant := Masked.constant_commutant _ _
-  have hrow (j : ℕ) : ‖KernelObstruction.row (T j) 1‖ ≤ 100 := by
-    have h := Masked.local_row_bound (v j) (s j) (a j) (by norm_num : (0 : ℝ) ≤ 10) (hvframe j) (har j) 1
-    norm_num at h
-    exact h
-  have hcol (j : ℕ) : ‖KernelObstruction.col (A j-T j) 1‖ ≤ 100 := by
-    have h := Masked.local_column_bound (v j) (s j) (a j) (by norm_num : (0 : ℝ) ≤ 10) (hvframe j) (hac j) 1
-    norm_num at h
-    exact h
-  have hdiff (j : ℕ) (g : G) : ‖coboundary KernelObstruction.translation (T j) g‖ ≤ 100 := by
-    have h := Masked.difference_norm_le (v j) (s j) (a j) (by norm_num : (0 : ℝ) ≤ 10) (hvframe j) (har j) (hac j) g
-    norm_num at h
-    exact h
-  have henergy (j : ℕ) : (d : ℝ)^(j+1) ≤ KernelObstruction.energy (A j) := by
-    have h := Masked.constant_energy_ge_card (v j) (hvunit j) (s j)
-    rw [hlabel] at h
-    simpa only [Nat.cast_pow] using h
-  have hratio : Tendsto (fun j => KernelObstruction.energy (A j) / k j) atTop atTop := by
-    have hbase := (reciprocal_dimension_ratio_tendsto hd hρ hρ1).comp (tendsto_add_atTop_nat 1)
-    apply tendsto_atTop_mono _ hbase
-    intro j
-    exact div_le_div_of_nonneg_right (henergy j) (Nat.cast_nonneg _)
-  obtain ⟨π, hπbound, hπnot⟩ := DirectSumObstruction.direct_sum_obstruction k hk A T hA
-    (by norm_num : (0 : ℝ) ≤ 100) hrow hcol hdiff hratio
-  let : TopologicalSpace.SeparableSpace (DirectSumObstruction.Carrier G k) :=
-    DirectSumObstruction.carrier_separable k
-  refine ⟨DirectSumObstruction.Carrier G k, inferInstance, inferInstance, inferInstance, inferInstance,
-    π, ?_, hπnot⟩
-  intro g
-  convert hπbound g using 1
-  norm_num
-
-/-- The conclusion at the common group/Hilbert-space universe. -/
-theorem main_theorem : MainTheorem.{u,u} := by
-  intro G _ _ _ _ hG
-  exact nonamenable_witness hG
-
-/-- Unitarizability implies amenability, without a common similarity bound. -/
-theorem amenable_of_unitarizable (hG : Unitarizable.{u,u} G) : Amenable G := by
-  by_contra hnot
-  exact witness_not_unitarizable (nonamenable_witness hnot) hG
-
 end Dixmier
 
 end
@@ -3584,35 +3377,6 @@ theorem amenable_of_mulEquiv (e : G ≃* Q) (hQ : Amenable Q) : Amenable G := by
       ext q
       simp [meanPullback_apply, leftTranslate, map_mul, map_inv]
     simpa only [LinearMap.comp_apply, hc] using hi (e g) (meanPullback e f)
-
-omit [TopologicalSpace G] [DiscreteTopology G] [TopologicalSpace Q] [DiscreteTopology Q] in
-/-- Reindexing the group does not change the Hilbert space, bound or similarities. -/
-theorem witness_of_mulEquiv (e : G ≃* Q) (hQ : NonamenableWitness.{v,w} Q) :
-    NonamenableWitness.{u,w} G := by
-  rcases hQ with ⟨H, hnorm, hinner, hcomplete, hsep, π, hb, hn⟩
-  refine ⟨H, hnorm, hinner, hcomplete, hsep, π.comp e.toMonoidHom, fun g => hb (e g), ?_⟩
-  rintro ⟨S, hS⟩
-  apply hn
-  refine ⟨S, ?_⟩
-  intro q x
-  simpa only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, e.apply_symm_apply] using hS (e.symm q) x
-
-/-- The main theorem with independent group and Hilbert-space universes. -/
-theorem main_theorem_all_universes : MainTheorem.{u,v} := by
-  intro G _ _ _ _ hG
-  let Q := Shrink.{v} G
-  let e : G ≃* Q := Shrink.mulEquiv.symm
-  let : Countable Q := e.surjective.countable
-  let : TopologicalSpace Q := ⊥
-  let : DiscreteTopology Q := ⟨rfl⟩
-  have hQ : ¬ Amenable Q := fun h => hG (amenable_of_mulEquiv e h)
-  exact witness_of_mulEquiv e (nonamenable_witness hQ)
-
-/-- Unitarizability implies amenability, with no uniform similarity bound. -/
-theorem amenable_of_unitarizable_all_universes [Countable G]
-    (h : Unitarizable.{u,v} G) : Amenable G := by
-  by_contra hn
-  exact witness_not_unitarizable (main_theorem_all_universes G hn) h
 
 end Dixmier
 
