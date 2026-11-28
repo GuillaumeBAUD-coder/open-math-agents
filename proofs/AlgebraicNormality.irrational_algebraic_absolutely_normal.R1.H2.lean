@@ -61,10 +61,6 @@ def ofBlock (b : ℕ) (w : ℕ → ℕ) : ℕ → ℕ
   | 0 => 0
   | k + 1 => b * ofBlock b w k + w k
 
-/-- The proportion of indices `m < n` such that the fractional part of `s m` lies in `S`. -/
-noncomputable def visitFreq (s : ℕ → ℝ) (S : Set ℝ) [DecidablePred (· ∈ S)] (n : ℕ) : ℝ :=
-  (((Finset.range n).filter fun m => Int.fract (s m) ∈ S).card : ℝ) / n
-
 theorem digitPrefix_zero (b : ℕ) (y : ℝ) : digitPrefix b 0 y = 0 := by
   simp [digitPrefix, Int.fract_lt_one]
 
@@ -78,19 +74,6 @@ theorem digitPrefix_succ {b : ℕ} (hb : 0 < b) (k : ℕ) (y : ℝ) :
     ring
   rw [← h]
   exact (Nat.div_add_mod _ _).symm
-
-theorem digitPrefix_lt {b : ℕ} (hb : 0 < b) (k : ℕ) (y : ℝ) : digitPrefix b k y < b ^ k := by
-  have hB : (0 : ℝ) < (b : ℝ) ^ k := by positivity
-  rw [digitPrefix, Nat.floor_lt (mul_nonneg hB.le (Int.fract_nonneg y))]
-  push_cast
-  exact mul_lt_of_lt_one_right hB (Int.fract_lt_one y)
-
-theorem digitPrefix_eq_iff {b : ℕ} (hb : 0 < b) (k m : ℕ) (y : ℝ) :
-    digitPrefix b k y = m ↔
-      Int.fract y ∈ Set.Ico ((m : ℝ) / (b : ℝ) ^ k) (((m : ℝ) + 1) / (b : ℝ) ^ k) := by
-  have hB : (0 : ℝ) < (b : ℝ) ^ k := by positivity
-  rw [digitPrefix, Nat.floor_eq_iff (mul_nonneg hB.le (Int.fract_nonneg y)), Set.mem_Ico,
-    div_le_iff₀ hB, lt_div_iff₀ hB, mul_comm (Int.fract y)]
 
 theorem digitPrefix_add {b : ℕ} (i j : ℕ) (x : ℝ) :
     digitPrefix b (i + j) x = digitPrefix b j ((b : ℝ) ^ i * x) + b ^ j * digitPrefix b i x := by
@@ -176,249 +159,12 @@ theorem exists_extend {b k : ℕ} (hb : 0 < b) (wf : Fin k → ℕ) (hwf : ∀ j
   split_ifs
   exacts [hwf _, hb]
 
-/-- A block of digits at position `i` corresponds to a `b`-adic interval for `b ^ i * x`. -/
-theorem block_iff {b : ℕ} (hb : 0 < b) {w : ℕ → ℕ} (hw : ∀ j, w j < b) (k i : ℕ) (x : ℝ) :
-    (∀ j : Fin k, digitSeq b x (i + j) = w j) ↔
-      Int.fract ((b : ℝ) ^ i * x) ∈ Set.Ico ((ofBlock b w k : ℝ) / (b : ℝ) ^ k)
-        (((ofBlock b w k : ℝ) + 1) / (b : ℝ) ^ k) := by
-  rw [← digitPrefix_eq_iff hb, ← forall_digitSeq_eq_iff hb hw, Fin.forall_iff]
-  simp only [digitSeq_add]
-
-theorem visitFreq_mono {s : ℕ → ℝ} {S T : Set ℝ} [DecidablePred (· ∈ S)]
-    [DecidablePred (· ∈ T)] (h : ∀ y ∈ Set.Ico (0 : ℝ) 1, y ∈ S → y ∈ T)
-    (n : ℕ) : visitFreq s S n ≤ visitFreq s T n := by
-  refine div_le_div_of_nonneg_right (Nat.cast_le.2 (Finset.card_le_card fun m hm => ?_))
-    (Nat.cast_nonneg _)
-  rw [Finset.mem_filter] at hm ⊢
-  exact ⟨hm.1, h _ ⟨Int.fract_nonneg _, Int.fract_lt_one _⟩ hm.2⟩
-
-theorem visitFreq_congr {s : ℕ → ℝ} {S T : Set ℝ} [DecidablePred (· ∈ S)]
-    [DecidablePred (· ∈ T)] (h : S = T) : visitFreq s S = visitFreq s T := by
-  subst h
-  congr
-
-theorem visitFreq_union {s : ℕ → ℝ} {S T : Set ℝ} [DecidablePred (· ∈ S)]
-    [DecidablePred (· ∈ T)] (h : Disjoint S T) (n : ℕ) :
-    visitFreq s (S ∪ T) n = visitFreq s S n + visitFreq s T n := by
-  rw [visitFreq, visitFreq, visitFreq, ← add_div, ← Nat.cast_add, ← Finset.card_union_of_disjoint]
-  · simp only [Set.mem_union, Finset.filter_or]
-  · exact Finset.disjoint_filter.2 fun _ _ h1 h2 => Set.disjoint_left.1 h h1 h2
-
-/-- Frequencies of unions of consecutive `b`-adic intervals. -/
-theorem tendsto_visitFreq_Ico {b : ℕ} {s : ℕ → ℝ}
-    (hA : ∀ k, ∀ m < b ^ k, Tendsto (visitFreq s (Set.Ico ((m : ℝ) / (b : ℝ) ^ k)
-      (((m : ℝ) + 1) / (b : ℝ) ^ k))) atTop (𝓝 (1 / (b : ℝ) ^ k)))
-    (k : ℕ) {m₁ m₂ : ℕ} (h₁₂ : m₁ ≤ m₂) (h₂ : m₂ ≤ b ^ k) :
-    Tendsto (visitFreq s (Set.Ico ((m₁ : ℝ) / (b : ℝ) ^ k) ((m₂ : ℝ) / (b : ℝ) ^ k))) atTop
-      (𝓝 (((m₂ : ℝ) - m₁) / (b : ℝ) ^ k)) := by
-  induction m₂, h₁₂ using Nat.le_induction with
-  | base =>
-    rw [sub_self, zero_div]
-    refine tendsto_const_nhds.congr fun n => ?_
-    simp [visitFreq]
-  | succ m₂ h ih =>
-    have hdiv : (m₁ : ℝ) / (b : ℝ) ^ k ≤ (m₂ : ℝ) / (b : ℝ) ^ k :=
-      div_le_div_of_nonneg_right (Nat.cast_le.2 h) (by positivity)
-    have hdiv' : (m₂ : ℝ) / (b : ℝ) ^ k ≤ ((m₂ : ℝ) + 1) / (b : ℝ) ^ k :=
-      div_le_div_of_nonneg_right (by linarith) (by positivity)
-    have hset : Set.Ico ((m₁ : ℝ) / (b : ℝ) ^ k) (((m₂ + 1 : ℕ) : ℝ) / (b : ℝ) ^ k) =
-        Set.Ico ((m₁ : ℝ) / (b : ℝ) ^ k) ((m₂ : ℝ) / (b : ℝ) ^ k) ∪
-          Set.Ico ((m₂ : ℝ) / (b : ℝ) ^ k) (((m₂ : ℝ) + 1) / (b : ℝ) ^ k) := by
-      rw [Set.Ico_union_Ico_eq_Ico hdiv hdiv']
-      push_cast
-      rfl
-    have hsum := ((ih (by omega)).add (hA k m₂ (by omega))).congr
-      (f₂ := visitFreq s (Set.Ico ((m₁ : ℝ) / (b : ℝ) ^ k) (((m₂ + 1 : ℕ) : ℝ) / (b : ℝ) ^ k)))
-      fun n => by rw [visitFreq_congr hset, visitFreq_union Set.Ico_disjoint_Ico_same]
-    convert hsum using 2
-    push_cast
-    ring
-
-/-- `x` is normal in base `b` iff every `b`-adic interval has the expected frequency. -/
-theorem isNormalInBase_iff_tendsto {b : ℕ} (hb : 0 < b) (x : ℝ) :
-    IsNormalInBase b x ↔ ∀ k, ∀ m < b ^ k,
-      Tendsto (visitFreq (fun n => (b : ℝ) ^ n * x) (Set.Ico ((m : ℝ) / (b : ℝ) ^ k)
-        (((m : ℝ) + 1) / (b : ℝ) ^ k))) atTop (𝓝 (1 / (b : ℝ) ^ k)) := by
-  constructor
-  · intro h k m hm
-    obtain ⟨w, hw, rfl⟩ := exists_ofBlock_eq hb k m hm
-    refine (h k (fun j => w j) fun j => hw j).congr fun n => ?_
-    simp only [visitFreq]
-    congr 3
-    exact Finset.filter_congr fun i _ => block_iff hb hw k i x
-  · intro h k wf hwf
-    obtain ⟨w, hw, hwf'⟩ := exists_extend hb wf hwf
-    refine (h k _ (ofBlock_lt hw k)).congr fun n => ?_
-    simp only [visitFreq, hwf']
-    congr 3
-    exact (Finset.filter_congr fun i _ => block_iff hb hw k i x).symm
-
-
-theorem exists_one_div_pow_lt {b : ℕ} (hb : 2 ≤ b) {ε : ℝ} (hε : 0 < ε) :
-    ∃ k : ℕ, 1 / (b : ℝ) ^ k < ε := by
-  obtain ⟨k, hk⟩ := exists_pow_lt_of_lt_one hε
-    ((div_lt_one (by positivity)).2 (by exact_mod_cast (by omega : 1 < b)) : (1 : ℝ) / b < 1)
-  exact ⟨k, by rwa [div_pow, one_pow] at hk⟩
-
-theorem add_one_div_pow_le_one {b k m : ℕ} (hm : m < b ^ k) :
-    ((m : ℝ) + 1) / (b : ℝ) ^ k ≤ 1 :=
-  div_le_one_of_le₀ (by exact_mod_cast Nat.succ_le_of_lt hm) (by positivity)
-
-
-/-- Frequencies of `b`-adic intervals determine uniform distribution modulo one. -/
-theorem tendsto_Ico_iff_isEquidistributedModuloOne {b : ℕ} (hb : 2 ≤ b) (s : ℕ → ℝ) :
-    (∀ k, ∀ m < b ^ k, Tendsto (visitFreq s (Set.Ico ((m : ℝ) / (b : ℝ) ^ k)
-      (((m : ℝ) + 1) / (b : ℝ) ^ k))) atTop (𝓝 (1 / (b : ℝ) ^ k))) ↔
-    IsEquidistributedModuloOne s := by
-  constructor
-  · intro hA c d hcd hsub
-    have hc0 : 0 ≤ c := (hsub ⟨le_rfl, hcd⟩).1
-    have hd1 : d ≤ 1 := (hsub ⟨hcd, le_rfl⟩).2
-    have hd0 : 0 ≤ d := hc0.trans hcd
-    change Tendsto (visitFreq s (Set.Icc c d)) atTop (𝓝 ((d - c) / (1 - 0)))
-    rw [sub_zero, div_one, tendsto_order]
-    refine ⟨fun a ha => ?_, fun a ha => ?_⟩
-    · obtain ⟨k, hk⟩ := exists_one_div_pow_lt hb (show 0 < (d - c - a) / 2 by linarith)
-      have hB : (0 : ℝ) < (b : ℝ) ^ k := by positivity
-      set B := (b : ℝ) ^ k with hBdef
-      set m₂ := ⌊d * B⌋₊ with hm₂def
-      set m₁ := min ⌈c * B⌉₊ m₂ with hm₁def
-      have hm₂ : m₂ ≤ b ^ k := Nat.floor_le_of_le (by
-        push_cast
-        exact mul_le_of_le_one_left hB.le hd1)
-      have hlim := tendsto_visitFreq_Ico hA k (min_le_right ⌈c * B⌉₊ m₂) hm₂
-      have h1 : (m₁ : ℝ) < c * B + 1 :=
-        (Nat.cast_le.2 (min_le_left _ _)).trans_lt (Nat.ceil_lt_add_one (mul_nonneg hc0 hB.le))
-      have h2 : d * B - 1 < m₂ := Nat.sub_one_lt_floor _
-      have h3 : 2 < d * B - c * B - a * B := by
-        have := (div_lt_iff₀ hB).1 hk
-        linarith
-      have hgt : a < ((m₂ : ℝ) - m₁) / B := by
-        rw [lt_div_iff₀ hB]
-        linarith
-      refine (hlim.eventually (lt_mem_nhds hgt)).mono fun n hn => hn.trans_le (visitFreq_mono ?_ n)
-      rintro y - ⟨hy1, hy2⟩
-      have hlt : m₁ < m₂ := by exact_mod_cast (div_lt_div_iff_of_pos_right hB).1 (hy1.trans_lt hy2)
-      have hm₁ : m₁ = ⌈c * B⌉₊ := by
-        rw [hm₁def]
-        refine min_eq_left ?_
-        by_contra hne
-        rw [not_le] at hne
-        rw [hm₁def, min_eq_right hne.le] at hlt
-        exact lt_irrefl _ hlt
-      constructor
-      · calc c ≤ (m₁ : ℝ) / B := by
-              rw [le_div_iff₀ hB, hm₁]
-              exact Nat.le_ceil _
-          _ ≤ y := hy1
-      · calc y ≤ (m₂ : ℝ) / B := hy2.le
-          _ ≤ d := by
-              rw [div_le_iff₀ hB]
-              exact Nat.floor_le (mul_nonneg hd0 hB.le)
-    · obtain ⟨k, hk⟩ := exists_one_div_pow_lt hb (show 0 < (a - (d - c)) / 2 by linarith)
-      have hB : (0 : ℝ) < (b : ℝ) ^ k := by positivity
-      set B := (b : ℝ) ^ k with hBdef
-      have hBnat : ((b ^ k : ℕ) : ℝ) = B := by push_cast; rfl
-      set m₁ := ⌊c * B⌋₊ with hm₁def
-      set m₂ := min (⌊d * B⌋₊ + 1) (b ^ k) with hm₂def
-      have hm₁ : m₁ ≤ b ^ k := Nat.floor_le_of_le (by
-        rw [hBnat]
-        exact mul_le_of_le_one_left hB.le (hcd.trans hd1))
-      have hm₁₂ : m₁ ≤ m₂ := le_min
-        ((Nat.floor_le_floor (mul_le_mul_of_nonneg_right hcd hB.le)).trans (Nat.le_succ _)) hm₁
-      have hlim := tendsto_visitFreq_Ico hA k hm₁₂ (min_le_right _ _)
-      have h1 : c * B - 1 < m₁ := Nat.sub_one_lt_floor _
-      have h2 : (m₂ : ℝ) ≤ d * B + 1 := by
-        have : (m₂ : ℝ) ≤ ((⌊d * B⌋₊ + 1 : ℕ) : ℝ) := Nat.cast_le.2 (min_le_left _ _)
-        push_cast at this
-        linarith [Nat.floor_le (mul_nonneg hd0 hB.le)]
-      have h3 : 2 < a * B - d * B + c * B := by
-        have := (div_lt_iff₀ hB).1 hk
-        linarith
-      have hlt : ((m₂ : ℝ) - m₁) / B < a := by
-        rw [div_lt_iff₀ hB]
-        linarith
-      refine (hlim.eventually (gt_mem_nhds hlt)).mono fun n hn => (visitFreq_mono ?_ n).trans_lt hn
-      rintro y ⟨-, hy1⟩ ⟨hcy, hyd⟩
-      constructor
-      · calc (m₁ : ℝ) / B ≤ c := by
-              rw [div_le_iff₀ hB]
-              exact Nat.floor_le (mul_nonneg hc0 hB.le)
-          _ ≤ y := hcy
-      · rw [lt_div_iff₀ hB, hm₂def, Nat.cast_min, lt_min_iff]
-        constructor
-        · push_cast
-          linarith [mul_le_mul_of_nonneg_right hyd hB.le, Nat.lt_floor_add_one (d * B)]
-        · rw [hBnat]
-          exact mul_lt_of_lt_one_left hB hy1
-  · intro hud k m hm
-    have hB : (0 : ℝ) < (b : ℝ) ^ k := by positivity
-    have hc0 : 0 ≤ (m : ℝ) / (b : ℝ) ^ k := by positivity
-    have hcd : (m : ℝ) / (b : ℝ) ^ k ≤ ((m : ℝ) + 1) / (b : ℝ) ^ k :=
-      div_le_div_of_nonneg_right (by linarith) hB.le
-    have hd1 := add_one_div_pow_le_one hm
-    have h1 : Tendsto (visitFreq s (Set.Icc _ _)) atTop _ :=
-      hud _ _ hcd (Set.Icc_subset_Icc hc0 hd1)
-    have h2 : Tendsto (visitFreq s (Set.Icc _ _)) atTop _ :=
-      hud _ _ le_rfl (Set.Icc_subset_Icc (hc0.trans hcd) hd1)
-    have hsplit (n : ℕ) : visitFreq s (Set.Ico ((m : ℝ) / (b : ℝ) ^ k)
-        (((m : ℝ) + 1) / (b : ℝ) ^ k)) n =
-        visitFreq s (Set.Icc ((m : ℝ) / (b : ℝ) ^ k) (((m : ℝ) + 1) / (b : ℝ) ^ k)) n -
-          visitFreq s (Set.Icc (((m : ℝ) + 1) / (b : ℝ) ^ k) (((m : ℝ) + 1) / (b : ℝ) ^ k)) n := by
-      rw [eq_sub_iff_add_eq, ← visitFreq_union (Set.disjoint_left.2 fun y hy hy' =>
-        lt_irrefl y (hy.2.trans_le hy'.1))]
-      exact congrFun (visitFreq_congr (Set.Ico_union_Icc_eq_Icc hcd le_rfl)) n
-    convert (h1.sub h2).congr fun n => (hsplit n).symm using 2
-    ring
-
-/-- A real number $\xi$ is normal in base $b$ if and only if $(b^n \xi)_{n \ge 0}$ is uniformly
-distributed modulo $1$ [Wal49], [Bug12, Theorem 4.14]. -/
-theorem isNormalInBase_iff_isEquidistributedModuloOne (b : ℕ) (hb : 2 ≤ b) (ξ : ℝ) :
-    IsNormalInBase b ξ ↔ IsEquidistributedModuloOne fun n => (b : ℝ) ^ n * ξ :=
-  (isNormalInBase_iff_tendsto (by omega) ξ).trans (tendsto_Ico_iff_isEquidistributedModuloOne hb _)
-
-
 end WallBridge
 
 
 namespace NormalDivision
 
 open WallBridge (digitPrefix)
-
-private theorem digitPrefix_mod {b : ℕ} (hb : 0 < b) (k : ℕ) (y : ℝ) :
-    (digitPrefix b k y : ℤ) = ⌊(b : ℝ)^k*y⌋ % (b^k : ℕ) := by
-  have BposR : 0 < (b : ℝ)^k := by positivity
-  have hy : (b : ℝ)^k*y = (b : ℝ)^k*Int.fract y + (((b^k : ℕ) : ℤ)*⌊y⌋ : ℤ) := by
-    push_cast
-    rw [← mul_add, Int.fract_add_floor]
-  rw [hy, Int.floor_add_intCast, Int.add_mul_emod_self_left]
-  have h0 : 0 ≤ (b : ℝ)^k*Int.fract y := mul_nonneg BposR.le (Int.fract_nonneg _)
-  rw [← Int.natCast_floor_eq_floor h0]
-  apply (Int.emod_eq_of_lt (Int.natCast_nonneg _) ?_).symm
-  exact_mod_cast (by
-    unfold digitPrefix
-    rw [Nat.floor_lt h0]
-    push_cast
-    exact mul_lt_of_lt_one_right BposR (Int.fract_lt_one y) : digitPrefix b k y < b^k)
-
-theorem digitPrefix_mul {b m : ℕ} (hb : 0 < b) (hm : 0 < m) (k : ℕ) (y : ℝ) :
-    ∃ c : ℕ, c < m ∧ digitPrefix b k ((m:ℝ)*y) = (m * digitPrefix b k y + c) % b^k := by
-  let u := (b : ℝ)^k*y
-  let c := ⌊(m:ℝ)*Int.fract u⌋₊
-  have hmR : (0 : ℝ) < m := by exact_mod_cast hm
-  have hnon : 0 ≤ (m:ℝ)*Int.fract u := mul_nonneg hmR.le (Int.fract_nonneg _)
-  refine ⟨c, (Nat.floor_lt hnon).mpr (mul_lt_of_lt_one_right hmR (Int.fract_lt_one u)), ?_⟩
-  have hf : ⌊(b:ℝ)^k*((m:ℝ)*y)⌋ = (m:ℤ)*⌊u⌋+c := by
-    have hprod : (b:ℝ)^k*(m*y) = (m:ℝ)*Int.fract u + (((m:ℤ)*⌊u⌋ : ℤ):ℝ) := by
-      push_cast
-      rw [← mul_add, Int.fract_add_floor]
-      dsimp [u]
-      ring
-    rw [hprod, Int.floor_add_intCast, ← Int.natCast_floor_eq_floor hnon, add_comm]
-  apply Nat.cast_injective (R := ℤ)
-  rw [digitPrefix_mod hb, hf, Int.natCast_emod, Nat.cast_add, Nat.cast_mul, digitPrefix_mod hb]
-  change (↑m * ⌊u⌋ + ↑c) % ↑(b^k) = (↑m * (⌊u⌋ % ↑(b^k)) + ↑c) % ↑(b^k)
-  simp [Int.add_emod, Int.mul_emod]
 
 end NormalDivision
 
@@ -724,50 +470,6 @@ private theorem window_eq_prefix {b k : ℕ} (hb : 0 < b) (x : ℝ) (wf : Fin k 
       WallBridge.digitPrefix b k ((b : ℝ)^i*x) = WallBridge.ofBlock b w k := by
   rw [window_eq_digits, ← WallBridge.forall_digitSeq_eq_iff hb hw, Fin.forall_iff]
   simp only [WallBridge.digitSeq_add, he]
-
-/-- A prescribed quotient block has at most `m` possible blocks in its multiple.
-The extra unit makes the upper bound valid at every sufficiently large sample size. -/
-theorem div_freq_eventually {b m : ℕ} {x : ℝ} (hb : 0 < b) (hm : 0 < m)
-    (hx : IsNormalInBase b x) (k : ℕ) (w : Fin k → Fin b) :
-    ∀ᶠ N in atTop, freq (digits hb ((m : ℝ)⁻¹*x)) w N ≤ ((m : ℝ)+1)/(b : ℝ)^k := by
-  classical
-  obtain ⟨W, hW, he⟩ := WallBridge.exists_extend hb (fun j => (w j).val) fun j => (w j).isLt
-  let a := WallBridge.ofBlock b W k
-  let q (c : ℕ) := (m*a+c) % b^k
-  let hit (c N : ℕ) := (Finset.range N).filter fun i =>
-    WallBridge.digitPrefix b k ((b : ℝ)^i*x) = q c
-  let g (c N : ℕ) : ℝ := ((hit c N).card : ℝ) / N
-  have hg (c : ℕ) : Tendsto (g c) atTop (𝓝 (1 / (b : ℝ)^k)) := by
-    obtain ⟨u, hu, hq⟩ := WallBridge.exists_ofBlock_eq hb k (q c) (Nat.mod_lt _ (pow_pos hb _))
-    let v (j : Fin k) : Fin b := ⟨u j, hu j⟩
-    refine ((normal_iff_freq hb x).mp hx k v).congr fun N => ?_
-    unfold freq g hit
-    congr 3
-    exact Finset.filter_congr fun i _ => hq ▸ window_eq_prefix hb x v u hu (fun _ => rfl) i
-  have hbnd (N : ℕ) : freq (digits hb ((m : ℝ)⁻¹*x)) w N ≤ ∑ c ∈ Finset.range m, g c N := by
-    have hsub : ((Finset.range N).filter fun i => window (digits hb ((m : ℝ)⁻¹*x)) i k = w) ⊆
-        (Finset.range m).biUnion (fun c => hit c N) := by
-      intro i hi
-      obtain ⟨hiN, hwi⟩ := Finset.mem_filter.mp hi
-      have ha := (window_eq_prefix hb _ w W hW he i).mp hwi
-      obtain ⟨c, hc, hcarry⟩ := NormalDivision.digitPrefix_mul hb hm k ((b : ℝ)^i*((m : ℝ)⁻¹*x))
-      have hm' : (m : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hm.ne'
-      have hmprod : (m : ℝ)*((b : ℝ)^i*((m : ℝ)⁻¹*x)) = (b : ℝ)^i*x := by
-        field_simp
-      change WallBridge.digitPrefix _ _ _ = (m*WallBridge.digitPrefix b k _+c) % _ at hcarry
-      rw [hmprod, ha] at hcarry
-      exact Finset.mem_biUnion.mpr ⟨c, Finset.mem_range.mpr hc, Finset.mem_filter.mpr ⟨hiN,hcarry⟩⟩
-    unfold g freq
-    rw [← Finset.sum_div]
-    apply div_le_div_of_nonneg_right _ (Nat.cast_nonneg _)
-    exact_mod_cast (Finset.card_le_card hsub).trans Finset.card_biUnion_le
-  have hlim : Tendsto (fun N => ∑ c ∈ Finset.range m, g c N) atTop
-      (𝓝 ((m : ℝ) * (1 / (b : ℝ)^k))) := by
-    simpa using tendsto_finsetSum (Finset.range m) (fun c _ => hg c)
-  have hlt : (m : ℝ) * (1 / (b : ℝ)^k) < ((m : ℝ)+1)/(b : ℝ)^k := by
-    rw [← mul_div_assoc, mul_one]
-    exact div_lt_div_of_pos_right (by linarith) (by positivity)
-  exact (hlim.eventually_le_const hlt).mono fun N hN => (hbnd N).trans hN
 
 end DivBlocks
 
