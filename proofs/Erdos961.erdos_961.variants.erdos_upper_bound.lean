@@ -86,17 +86,21 @@ lemma erdos_1955_contradiction (k : ℕ) (hk : 100 < k)
     False := by
   obtain ⟨u, hu_ge, hrun⟩ := h
   let t := ⌈(6 : ℝ) * ↑k / Real.log ↑k⌉₊
-  have ht_pos : 0 < t := by sorry
-  have hu_large : 1 < u + t := by sorry
+  have ht_pos : 0 < t := by
+    -- 6k / log k > 1 for k > 100
+    sorry -- elementary for k > 100
+  have hu_large : 1 < u + t := by
+    linarith [hu_ge, ht_pos]
   have ht_le_u : t ≤ u := by
-    -- for k>100, 6k/log k ≤ k²
+    -- 6k / log k ≤ k² for k > 100
     sorry
-  -- Upper bound from smoothness
+  -- Upper bound from smoothness + product_smooth_bound
   have hupper : Nat.choose (u + t) t ≤ (u + t) ^ Nat.primeCounting k := by
+    -- every prime factor ≤ k by the run assumption, then apply the product lemma
     sorry
-  -- Lower bound
+  -- Lower bound via binomial_lower_bound
   have hlower : (u + t) ^ Nat.primeCounting k < Nat.choose (u + t) t := by
-    -- use binomial_lower_bound and compare (u/t)^t vs (u+t)^π(k)
+    -- (u/t)^t is much larger than (u+t)^π(k) when t ~ 6k/log k and u ≥ k²
     sorry
   exact lt_irrefl _ (hupper.trans_lt hlower)
 
