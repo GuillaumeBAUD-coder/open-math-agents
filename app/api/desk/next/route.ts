@@ -8,7 +8,7 @@ import { STEP_RE, stepSkeleton } from "@/lib/steps";
 import { SITE, REPO } from "@/lib/site";
 import { teamFields, type TeamNote } from "@/lib/collab";
 import EVENT from "@/content/event.json";
-import { inEvent, isEventStep, valueOnly } from "@/lib/event";
+import { guideFor, inEvent, isEventStep, valueOnly } from "@/lib/event";
 import IMPACT from "@/content/impact.json";
 import { getPending, pendingError } from "@/lib/pendingprs";
 import { countHandout, dbDown, DEGRADED_NEXT, offlineLease, offlineScores } from "@/lib/deskoffline";
@@ -157,6 +157,7 @@ async function handle(req: Request) {
       ...teamFields(r, { boardOn: r.boardOn, id: s.id, handle: handleName, deadEnds: r.deadEnds }),
       ...(steered ? { steered } : {}),
       ...(event ? { event } : {}),
+      ...(eventLive && guideFor(s.id) ? { guide: guideFor(s.id) } : {}),
       ...(r.degraded ? DEGRADED_NEXT : {}),
     });
   }
@@ -242,6 +243,7 @@ async function handle(req: Request) {
     next: nextHints(r.lease!, proofPath(p), p.id),
     ...teamFields(r, { boardOn: r.boardOn, id: p.id, handle: handleName, deadEnds: r.deadEnds }),
     ...(event ? { event } : {}),
+    ...(eventLive && guideFor(p.id) ? { guide: guideFor(p.id) } : {}),
     ...(r.degraded ? DEGRADED_NEXT : {}),
   });
 }

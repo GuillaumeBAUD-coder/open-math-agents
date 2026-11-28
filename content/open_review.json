@@ -23149,6 +23149,22 @@
     "https://mathoverflow.net/questions/445819"
    ],
    "reason": "A degenerate loophole. The disproof takes n = N = 0: RP^0 -> S^0 is a constant map, and there is no unit tangent vector v orthogonal to x in R^1, so the existential claim fails vacuously. Petrunin's question (does every embedding RP^n -> S^N have normal curvature >= sqrt((n-1)/(n+1)) somewhere) is meaningful only for n >= 1 (really n >= 2), and that case is untouched."
+  },
+  "oeis-a069932": {
+   "date": "2026-11-28",
+   "pr": 34667,
+   "evidence": [
+    "https://oeis.org/A069932"
+   ],
+   "reason": "The entry's conjecture is Sum a(k) = C n log n + o(n log n) 'with C = 1.5...', but the statement only asks for some C>0, so it is weaker than the source. The proof's own witness is Landau's constant prod_p(1+1/(p(p-1))) = zeta(2)zeta(3)/zeta(6) = 1.9436..., so the printed C = 1.5... is wrong (numerically the ratio is 1.743 at n=65537 and 1.782 at 10^6, rising slowly). The asymptotic also follows routinely from Landau (1900) by double counting. Record as 'asymptotic proved, printed constant refuted', not as a verification of the conjecture as stated."
+  },
+  "oeis-a221078": {
+   "date": "2026-11-28",
+   "pr": 34641,
+   "evidence": [
+    "https://oeis.org/A221078"
+   ],
+   "reason": "Weaker than the source. Bala: 'Let p be prime. a(n) mod p for n>=1 is purely periodic... the period appears to be p-1 (p=4m+1) or 2(p-1) (p=4m+3).' The statement only proves that p-1 resp. 2(p-1) is a period (not that it is the minimal period; numerically it is minimal for p<=29) and silently restricts to odd primes. For p=2 the claim is false (a(n) mod 2 = 1,0,0,0,... is not purely periodic), which the file does not mention. A correct partial result (an easy Fermat argument), not a full verification of the conjecture as printed."
   }
  },
  "known": {
@@ -42793,6 +42809,141 @@
     "https://www.erdosproblems.com/740"
    ],
    "reason": "The proof header credits the erdosproblems forum proof claim for 740. Johan Land's claim (2026-09-06) is exactly this construction: the comparability graph of the tree of injective countable sequences with coinfinite range (after Bowler-Pitz) has chromatic number aleph_1, while every triangle-free subgraph is countably colorable. The Lean text formalizes that claim, and the refutation of the FC statement (r=3) is faithful to the unrestricted-cardinal question."
+  },
+  "oeis-a278988": {
+   "date": "2026-11-28",
+   "pr": 34808,
+   "evidence": [
+    "https://oeis.org/A278988",
+    "https://oeis.org/A278987",
+    "https://oeis.org/A000478",
+    "https://oeis.org/A000247"
+   ],
+   "reason": "Barker's closed form follows in one line from formulas already in OEIS: the parent array A278987 states T(b,n)=Sum_{j=1..b} A008299(n,j), and the columns have explicit closed forms (j=2: A000247 = 2^(n-1)-n-1; j=3: A000478 = (1+n+n^2)/2-(1/2+n/4)2^n+3^n/6, Steyer 2005). Summing 1+A000247+A000478 gives exactly Barker's formula; the recurrence follows. Statement itself is faithful (n>3, n>9)."
+  },
+  "oeis-a014307": {
+   "date": "2026-11-28",
+   "pr": 34807,
+   "evidence": [
+    "https://oeis.org/A014307",
+    "https://mathoverflow.net/a/499110"
+   ],
+   "reason": "Kurkov's R(n,k,m) conjecture (m=2 case formalized) is marked true in the entry itself: '[Conjecture is true, see MathOverflow link. - Mikhail Kurkov, Mar 29 2026]', link mathoverflow.net/a/499110. Statement is faithful (e.g.f. A satisfies A^2(2-e^x)=e^x)."
+  },
+  "oeis-a078111": {
+   "date": "2026-11-28",
+   "pr": 34784,
+   "evidence": [
+    "https://oeis.org/A078111",
+    "https://arxiv.org/abs/2607.24832"
+   ],
+   "reason": "Greathouse's asymptotic is proved by Sela Fried (arXiv:2607.24832, Theorem 17; OEIS link a078111.pdf) and the entry says 'Greathouse IV's conjecture is true (see Fried link)'. The statement file itself cites Fried's theorem."
+  },
+  "Erdos477.erdos_477.variants.X_pow_three": {
+   "date": "2026-11-28",
+   "pr": 34744,
+   "evidence": [
+    "https://www.erdosproblems.com/forum/thread/477/proof-claims",
+    "https://www.erdosproblems.com/477"
+   ],
+   "reason": "This is a disproof: it constructs a complement A of the integer cubes (Z = A (+) {m^3}). The erdosproblems.com/477 proof-claims page already lists exactly this result, claimed 2026-09-25 by Shan, Xu, Liang, Dai and Chen (GPT 5.6 Sol): cubes are a direct additive factor of Z via the square sieve and cubic character sums for small gaps plus a greedy construction, the same route as this Lean file (square sieve, cubic field Q(c^(1/3)), greedy criterion adapted from the pipeline-math note / plby lean-proofs). Formalization otherwise faithful."
+  },
+  "oeis-a130595": {
+   "date": "2026-11-28",
+   "pr": 34737,
+   "evidence": [
+    "https://oeis.org/A130595"
+   ],
+   "reason": "Gerdemann's recurrence T(n,k)=(n-k+1)T(n-1,k-1)+(k-1)T(n-1,k) already has a proof in the entry itself ('Proof from Anders Claesson, Nov 29 2015 ... QED'). Statement faithful (inverse Pascal matrix, 1<=k<=n)."
+  },
+  "oeis-a259565": {
+   "date": "2026-11-28",
+   "pr": 34531,
+   "evidence": [
+    "https://github.com/thatnealpatel/proofs/blob/main/Proofs/Combinatorics/A259565LeastAmongSquarefree.lean",
+    "https://oeis.org/A259565"
+   ],
+   "reason": "Zumkeller's conjecture (A259565 permutes the odd numbers) is already fully proved in Lean in thatnealpatel/proofs, Proofs/Combinatorics/A259565LeastAmongSquarefree.lean (commit 39d62b2, 2026-10-25, 0 sorry, theorems a_odd/a_injOn/exists_a_eq/a_bijOn), a month before this site proof (2026-11-28). Statement itself is faithful to the greedy definition."
+  },
+  "oeis-a217596": {
+   "date": "2026-11-28",
+   "pr": 34723,
+   "evidence": [
+    "https://oeis.org/A217596"
+   ],
+   "reason": "Mathar's third-order recurrence is settled in the entry itself: Peter Bala (Feb 15 2015) derives a second-order recurrence with Maple's sumrecursion (Zeilberger) from Kruchinin's binomial sum and states 'Mathar's conjectured third-order recurrence follows from this.' The statement restricts to n>=4 because the recurrence fails at n=3 on the data (documented, a correct reading, not a loophole)."
+  },
+  "arxiv-2102.03030": {
+   "date": "2026-11-28",
+   "pr": 34718,
+   "evidence": [
+    "https://arxiv.org/abs/2102.03030"
+   ],
+   "reason": "The source paper itself proves its Conjecture 3.1: Proposition 4.2 of Fruhwirth-Malina-Mitaroff gives E[G_n]/sqrt(n) ~ sqrt(pi/2) - 1/(3 sqrt n); the statement file says so. E[G_n] is Ramanujan's Q-function, whose asymptotic is classical (Knuth). Statement faithful."
+  },
+  "mo-140819": {
+   "date": "2026-11-28",
+   "pr": 18188,
+   "evidence": [
+    "https://github.com/jamesschreib/imbalance-conjecture",
+    "https://arxiv.org/abs/2608.09191",
+    "https://mathoverflow.net/questions/140819"
+   ],
+   "reason": "Proof file states it is adapted from James Alexander Schreib's public Lean formalization of the Imbalance Conjecture (github.com/jamesschreib/imbalance-conjecture) with the mathematical proof in Schreib-Yavari arXiv:2608.09191. Earlier public proof, so known."
+  },
+  "oeis-a378578": {
+   "date": "2026-11-28",
+   "pr": 34687,
+   "evidence": [
+    "https://github.com/the-omega-institute/trureturing/blob/dev/D5/S1/Recurrence/Parity/StripThreeTernaryCatalanParity.lean",
+    "https://oeis.org/A378578"
+   ],
+   "reason": "Hanna's parity conjecture is already proved in Lean in trureturing (D5/S1/Recurrence/Parity/StripThreeTernaryCatalanParity.lean, commit 00ae991, 2026-09-09, 0 sorry, theorem hanna_conjecture: a n % 2 = (C(3n,n)/(2n+1)) % 2). It is also nearly immediate: removing factors of 3 preserves parity, so A == 1 + xA^3 (mod 2), the ternary-tree g.f."
+  },
+  "oeis-a343252": {
+   "date": "2026-11-28",
+   "pr": 34674,
+   "evidence": [
+    "https://doi.org/10.5281/zenodo.23455399",
+    "https://oeis.org/A343249",
+    "https://oeis.org/A343252"
+   ],
+   "reason": "Lien-Hung Su, 'Denominator Profiles and Prime-Power Thresholds in Binomial Coefficients' (Zenodo 23455399, 2026-10-19) determines the least cutoff for all five families A343249-A343253 (p = 2,3,5,7,11), and Su sketches the same argument in a comment on A343249 (denominator divides gcd(n,k), Lucas at k=q^e). Statement faithful (a(n)=1 for powers of 7, matching data a(7)=1)."
+  },
+  "oeis-a341522": {
+   "date": "2026-11-28",
+   "pr": 34670,
+   "evidence": [
+    "https://oeis.org/A341522"
+   ],
+   "reason": "The formula a(n)=1+2n+2^A007814(1+n) is marked in the entry itself as '[Conjectured by LODA-miner, and easily seen to be correct]' by Antti Karttunen (Feb 23 2021). The statement abstracts A003961/A005940/A156552 by partial defining equations (satisfied by the real functions, so it implies the real claim and is not vacuous). Trivial 30-line proof."
+  },
+  "oeis-a372018": {
+   "date": "2026-11-28",
+   "pr": 34661,
+   "evidence": [
+    "https://github.com/the-omega-institute/trureturing/blob/dev/D5/S1/Recurrence/Algebraic/CubicOddBisection.lean",
+    "https://oeis.org/A372018"
+   ],
+   "reason": "Mathar's a(2n+1)=2*A371364(n) is already proved in Lean in trureturing D5/S1/Recurrence/Algebraic/CubicOddBisection.lean (commit 69c99ba, 2026-09-10, 0 sorry; odd_coeff_identity_of_equations uses the same cubic xA^3-A^2+3xA+1=0 and B(1-4xB)^2=1-3xB, B=T/x). Statement's reading of the missing index as n is right per the data."
+  },
+  "oeis-a386658": {
+   "date": "2026-11-28",
+   "pr": 34617,
+   "evidence": [
+    "https://github.com/the-omega-institute/trureturing/blob/dev/D5/S3/Combinatorics/HannaLambertW/OeisA386658LambertWEgfModSix.lean",
+    "https://oeis.org/A386658"
+   ],
+   "reason": "Hanna's mod-6 pattern [4,3,0,3,0,5] for n>=6 is already proved in Lean in trureturing D5/S3/Combinatorics/HannaLambertW/OeisA386658LambertWEgfModSix.lean (commit 607344834be, 2026-10-22, 0 sorry; claim indexes the pattern from n=6, identical to this statement's n%6 table). Statement uses the entry's explicit (non-conjectural) binomial formula as definition."
+  },
+  "mo-481234": {
+   "date": "2026-11-28",
+   "pr": 34608,
+   "evidence": [
+    "https://mathoverflow.net/questions/481234",
+    "https://mathoverflow.net/a/481253"
+   ],
+   "reason": "Already answered on MathOverflow: the question (Pinelis) was edited to say it 'has now been answered, quite elementarily, by Ilya Bogdanov' via his accepted answer 481253 on the linked question 481225; the statement file itself records this. Statement (probability measure on {x+y+z=3/2} in [0,1]^3 with uniform marginals) is faithful."
   }
  },
  "reviewed": "2026-11-28"
