@@ -1,12 +1,12 @@
 import OMAStatements.S_oeis_a034448
 
 section
-open Finset Nat
+open Finset Nat OMA.S_oeis_a034448
 
 theorem U_mul {m n : ℕ} (hmn : m.Coprime n) :
-    OMA.S_oeis_a034448.unitarySum (m * n) =
-      OMA.S_oeis_a034448.unitarySum m * OMA.S_oeis_a034448.unitarySum n := by
-  unfold OMA.S_oeis_a034448.unitarySum
+    unitarySum (m * n) =
+      unitarySum m * unitarySum n := by
+  unfold unitarySum
   rw [Finset.sum_filter, Finset.sum_filter, Finset.sum_filter, Finset.sum_mul_sum,
     hmn.divisors_mul, Finset.sum_map]
   refine (Finset.sum_attach (Nat.divisors m ×ˢ Nat.divisors n)
@@ -45,8 +45,8 @@ theorem U_mul {m n : ℕ} (hmn : m.Coprime n) :
   · rw [if_neg (fun h => h1 (key.1 h).1), if_neg h1, zero_mul]
 
 theorem U_prime_pow {p e : ℕ} (hp : p.Prime) :
-    OMA.S_oeis_a034448.unitarySum (p ^ (e + 1)) = 1 + p ^ (e + 1) := by
-  unfold OMA.S_oeis_a034448.unitarySum
+    unitarySum (p ^ (e + 1)) = 1 + p ^ (e + 1) := by
+  unfold unitarySum
   rw [Finset.sum_filter, Nat.divisors_prime_pow hp, Finset.sum_map]
   have : ∀ i ∈ range (e + 1 + 1), (if (p ^ i).Coprime (p ^ (e + 1) / p ^ i) then p ^ i else 0) =
       (if i = 0 then 1 else 0) + (if i = e + 1 then p ^ (e + 1) else 0) := by
@@ -69,12 +69,12 @@ theorem U_prime_pow {p e : ℕ} (hp : p.Prime) :
 
 open UniqueFactorizationMonoid ArithmeticFunction in
 theorem main_aux : ∀ n : ℕ, 0 < n →
-    OMA.S_oeis_a034448.unitarySum n * sigma 1 (n / radical n) =
+    unitarySum n * sigma 1 (n / radical n) =
       sigma 1 (n ^ 2 / radical n) := by
   intro n
   induction n using Nat.recOnPosPrimePosCoprime with
   | zero => intro h; omega
-  | one => intro _; simp [OMA.S_oeis_a034448.unitarySum, Finset.sum_filter]
+  | one => intro _; simp [unitarySum, Finset.sum_filter]
   | prime_pow p k hp hk =>
     intro _
     obtain ⟨e, rfl⟩ : ∃ e, k = e + 1 := ⟨k - 1, by omega⟩
