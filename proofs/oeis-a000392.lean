@@ -1,9 +1,7 @@
 import OMAStatements.S_oeis_a000392
 import Mathlib
 
-namespace OMA.Helpers
-
-open Finset
+open Finset OMA.S_oeis_a000392
 
 theorem pow23_inj {i j a b : ℕ} (h : 2 ^ i * 3 ^ j = 2 ^ a * 3 ^ b) : i = a ∧ j = b := by
   have h2 := congrArg (fun x => Nat.factorization x 2) h
@@ -18,11 +16,10 @@ def layer (m : ℕ) : Finset ℕ := (antidiagonal m).image (fun p => 2 ^ p.1 * 3
 theorem mem_layer (m x : ℕ) : x ∈ layer m ↔ ∃ i j, i + j = m ∧ 2 ^ i * 3 ^ j = x := by
   simp [layer, Finset.HasAntidiagonal.mem_antidiagonal]
 
-theorem mem_S (n x : ℕ) :
-    x ∈ OMA.S_oeis_a000392.S (n + 1) ↔ ∃ i j, i + j ≤ n ∧ 2 ^ i * 3 ^ j = x := by
+theorem mem_S (n x : ℕ) : x ∈ S (n + 1) ↔ ∃ i j, i + j ≤ n ∧ 2 ^ i * 3 ^ j = x := by
   induction n generalizing x with
   | zero =>
-    simp only [OMA.S_oeis_a000392.S, mem_singleton]
+    simp only [S, mem_singleton]
     constructor
     · rintro rfl
       exact ⟨0, 0, le_refl _, by norm_num⟩
@@ -32,8 +29,7 @@ theorem mem_S (n x : ℕ) :
       subst hi hj
       norm_num
   | succ n ih =>
-    show x ∈ OMA.S_oeis_a000392.S (n + 1) ∪ (OMA.S_oeis_a000392.S (n + 1)).image (fun x => 2 * x) ∪
-      (OMA.S_oeis_a000392.S (n + 1)).image (fun x => 3 * x) ↔ _
+    show x ∈ S (n + 1) ∪ (S (n + 1)).image (fun x => 2 * x) ∪ (S (n + 1)).image (fun x => 3 * x) ↔ _
     simp only [mem_union, mem_image, ih]
     constructor
     · rintro ((⟨i, j, hij, rfl⟩ | ⟨y, ⟨i, j, hij, rfl⟩, rfl⟩) | ⟨y, ⟨i, j, hij, rfl⟩, rfl⟩)
@@ -50,8 +46,7 @@ theorem mem_S (n x : ℕ) :
         · obtain ⟨i', rfl⟩ : ∃ i', i = i' + 1 := ⟨i - 1, by omega⟩
           exact Or.inl (Or.inr ⟨2 ^ i' * 3 ^ j, ⟨i', j, by omega, rfl⟩, by ring⟩)
 
-theorem S_succ (n : ℕ) :
-    OMA.S_oeis_a000392.S (n + 2) = OMA.S_oeis_a000392.S (n + 1) ∪ layer (n + 1) := by
+theorem S_succ (n : ℕ) : S (n + 2) = S (n + 1) ∪ layer (n + 1) := by
   ext x
   rw [mem_union, mem_S (n + 1), mem_S n, mem_layer]
   constructor
@@ -63,7 +58,7 @@ theorem S_succ (n : ℕ) :
     · exact ⟨i, j, by omega, rfl⟩
     · exact ⟨i, j, by omega, rfl⟩
 
-theorem disj (n : ℕ) : Disjoint (OMA.S_oeis_a000392.S (n + 1)) (layer (n + 1)) := by
+theorem disj (n : ℕ) : Disjoint (S (n + 1)) (layer (n + 1)) := by
   rw [Finset.disjoint_left]
   intro x hx hx'
   rw [mem_S] at hx
@@ -93,10 +88,9 @@ theorem sum_antidiag (m : ℕ) :
     simp only [pow_succ] at ih ⊢
     omega
 
-theorem sum_S (n : ℕ) :
-    2 * (∑ x ∈ OMA.S_oeis_a000392.S (n + 1), x) + 2 ^ (n + 3) = 3 ^ (n + 2) + 1 := by
+theorem sum_S (n : ℕ) : 2 * (∑ x ∈ S (n + 1), x) + 2 ^ (n + 3) = 3 ^ (n + 2) + 1 := by
   induction n with
-  | zero => simp [OMA.S_oeis_a000392.S]
+  | zero => simp [S]
   | succ n ih =>
     rw [S_succ, Finset.sum_union (disj n), sum_layer]
     have h := sum_antidiag (n + 1)
@@ -124,13 +118,11 @@ theorem stirling3 (n : ℕ) : 2 * Nat.stirlingSecond (n + 3) 3 + 2 ^ (n + 3) = 3
     simp only [pow_succ] at ih h2 ⊢
     omega
 
-end OMA.Helpers
-
 theorem OMA.solution : type_of% @OMA.S_oeis_a000392.main := by
   intro n hn
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
-  have h1 := OMA.Helpers.stirling3 m
-  have h2 := OMA.Helpers.sum_S m
+  have h1 := stirling3 m
+  have h2 := sum_S m
   show Nat.stirlingSecond (m + 1 + 2) 3 = _
   rw [show m + 1 + 2 = m + 3 by ring]
   omega
