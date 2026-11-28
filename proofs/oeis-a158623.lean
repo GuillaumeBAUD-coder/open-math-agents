@@ -96,24 +96,12 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a158623.main := by
   have f3 := A158623.term_formula (n + 3) (by omega)
   have f6 := A158623.term_formula (n + 6) (by omega)
   have f9 := A158623.term_formula (n + 9) (by omega)
-  by_cases h : n % 3 = 1
-  · have e0 := f0.1 h
-    have e3 := f3.1 (by omega)
-    have e6 := f6.1 (by omega)
-    have e9 := f9.1 (by omega)
-    zify at e0 e3 e6 e9
-    have key : (2 : ℤ) * ((OMA.S_oeis_a158623.term (n + 9) : ℤ) -
-        (3 * (OMA.S_oeis_a158623.term (n + 6) : ℤ) - 3 * (OMA.S_oeis_a158623.term (n + 3) : ℤ)
-          + (OMA.S_oeis_a158623.term n : ℤ))) = 0 := by
-      linear_combination e9 - 3 * e6 + 3 * e3 - e0
-    omega
-  · have e0 := f0.2 h
-    have e3 := f3.2 (by omega)
-    have e6 := f6.2 (by omega)
-    have e9 := f9.2 (by omega)
-    zify at e0 e3 e6 e9
-    have key : (2 : ℤ) * ((OMA.S_oeis_a158623.term (n + 9) : ℤ) -
-        (3 * (OMA.S_oeis_a158623.term (n + 6) : ℤ) - 3 * (OMA.S_oeis_a158623.term (n + 3) : ℤ)
-          + (OMA.S_oeis_a158623.term n : ℤ))) = 0 := by
-      linear_combination e9 - 3 * e6 + 3 * e3 - e0
-    omega
+  by_cases h : n % 3 = 1 <;>
+    [(have e0 := f0.1 h; have e3 := f3.1 (by omega); have e6 := f6.1 (by omega); have e9 := f9.1 (by omega));
+     (have e0 := f0.2 h; have e3 := f3.2 (by omega); have e6 := f6.2 (by omega); have e9 := f9.2 (by omega))] <;>
+  zify at e0 e3 e6 e9 <;>
+  have key : (2 : ℤ) * ((OMA.S_oeis_a158623.term (n + 9) : ℤ) -
+      (3 * (OMA.S_oeis_a158623.term (n + 6) : ℤ) - 3 * (OMA.S_oeis_a158623.term (n + 3) : ℤ)
+        + (OMA.S_oeis_a158623.term n : ℤ))) = 0 := by
+    linear_combination e9 - 3 * e6 + 3 * e3 - e0
+  all_goals omega
