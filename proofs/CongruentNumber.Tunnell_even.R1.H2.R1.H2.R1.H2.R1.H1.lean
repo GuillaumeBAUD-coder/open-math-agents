@@ -749,11 +749,6 @@ lemma isConnected_compl_lattice : IsConnected (L.lattice : Set ℂ)ᶜ :=
 lemma add_notMem_lattice {z ω : ℂ} (hz : z ∉ L.lattice) (hω : ω ∈ L.lattice) :
     z + ω ∉ L.lattice := fun h ↦ hz ((Submodule.add_mem_iff_left _ hω).mp h)
 
-lemma zero_mem_lattice : (0 : ℂ) ∈ L.lattice := L.lattice.zero_mem
-
-lemma ne_zero_of_notMem_lattice {z : ℂ} (hz : z ∉ L.lattice) : z ≠ 0 :=
-  fun h ↦ hz (h ▸ zero_mem_lattice L)
-
 /-- A function on `ℂ ∖ Λ` with vanishing derivative is constant there. -/
 lemma eq_of_hasDerivAt_zero {g : ℂ → ℂ} (hg : ∀ z ∉ L.lattice, HasDerivAt g 0 z) {z w : ℂ}
     (hz : z ∉ L.lattice) (hw : w ∉ L.lattice) : g z = g w :=
@@ -796,29 +791,6 @@ lemma eta_add {ω ω' : ℂ} (hω : ω ∈ L.lattice) (hω' : ω' ∈ L.lattice)
   have h3 := zeta_add_eta L hω h0
   rw [← add_assoc, h2, h3] at h1
   linear_combination -h1
-
-lemma eta_neg {ω : ℂ} (hω : ω ∈ L.lattice) : eta L (-ω) = -eta L ω := by
-  have := eta_add L hω (neg_mem hω)
-  rw [add_neg_cancel, eta_zero] at this
-  linear_combination -this
-
-lemma eta_sub {ω ω' : ℂ} (hω : ω ∈ L.lattice) (hω' : ω' ∈ L.lattice) :
-    eta L (ω - ω') = eta L ω - eta L ω' := by
-  rw [sub_eq_add_neg, eta_add L hω (neg_mem hω'), eta_neg L hω', sub_eq_add_neg]
-
-lemma eta_zsmul {ω : ℂ} (hω : ω ∈ L.lattice) (n : ℤ) : eta L (n * ω) = n * eta L ω := by
-  induction n using Int.induction_on with
-  | zero => simp
-  | succ n ih =>
-    have hn : (n : ℂ) * ω ∈ L.lattice := by
-      simpa [zsmul_eq_mul] using L.lattice.smul_mem (n : ℤ) hω
-    push_cast at ih ⊢
-    rw [add_mul, one_mul, eta_add L hn hω, ih]; ring
-  | pred n ih =>
-    have hn : (-(n : ℂ)) * ω ∈ L.lattice := by
-      simpa [zsmul_eq_mul] using L.lattice.smul_mem (-(n : ℤ)) hω
-    push_cast at ih ⊢
-    rw [sub_mul, one_mul, eta_sub L hn hω, ih]; ring
 
 /-- `η(ω) = 2 ζ(ω/2)` when `ω/2 ∉ Λ`. -/
 lemma eta_eq_two_mul_zeta_half {ω : ℂ} (hω : ω ∈ L.lattice) (hω2 : ω / 2 ∉ L.lattice) :
@@ -886,15 +858,6 @@ lemma sigma_add_ω₁ (z : ℂ) :
 lemma sigma_add_ω₂ (z : ℂ) :
     sigma L (z + L.ω₂) = -exp (eta L L.ω₂ * (z + L.ω₂ / 2)) * sigma L z :=
   sigma_add_of_half_notMem L L.ω₂_mem_lattice L.ω₂_div_two_notMem_lattice z
-
-/-- The inverse form: `σ(z - ω) = -exp (-η(ω) (z - ω/2)) σ(z)` for `ω ∈ Λ`, `ω/2 ∉ Λ`. -/
-lemma sigma_sub_of_half_notMem {ω : ℂ} (hω : ω ∈ L.lattice) (hω2 : ω / 2 ∉ L.lattice) (z : ℂ) :
-    sigma L (z - ω) = -exp (-(eta L ω * (z - ω / 2))) * sigma L z := by
-  have h := sigma_add_of_half_notMem L hω hω2 (z - ω)
-  rw [sub_add_cancel, show z - ω + ω / 2 = z - ω / 2 by ring] at h
-  have : exp (-(eta L ω * (z - ω / 2))) * exp (eta L ω * (z - ω / 2)) = 1 := by
-    rw [← exp_add]; simp
-  linear_combination exp (-(eta L ω * (z - ω / 2))) * h - sigma L (z - ω) * this
 
 end LSG.Weierstrass
 
@@ -1208,12 +1171,7 @@ variable (L : PeriodPair)
 lemma intCast_mul_mem {ω : ℂ} (hω : ω ∈ L.lattice) (k : ℤ) : (k : ℂ) * ω ∈ L.lattice := by
   simpa [zsmul_eq_mul] using L.lattice.smul_mem k hω
 
-lemma natCast_mul_mem {ω : ℂ} (hω : ω ∈ L.lattice) (k : ℕ) : (k : ℂ) * ω ∈ L.lattice := by
-  simpa using (intCast_mul_mem L) hω k
-
 lemma ω₁_ne_zero : L.ω₁ ≠ 0 := by simpa using L.indep.ne_zero 0
-
-lemma ω₂_ne_zero : L.ω₂ ≠ 0 := by simpa using L.indep.ne_zero 1
 
 /-- Integer coordinates with respect to `ω₁, ω₂` are unique. -/
 lemma int_coords_eq {a b c d : ℤ} (h : (a : ℂ) * L.ω₁ + b * L.ω₂ = c * L.ω₁ + d * L.ω₂) :
@@ -1236,9 +1194,6 @@ lemma isPreconnected_compl_lattice : IsPreconnected (L.lattice : Set ℂ)ᶜ :=
     (by rw [Complex.rank_real_complex]; norm_num)).isPreconnected
 
 lemma isOpen_compl_lattice : IsOpen (L.lattice : Set ℂ)ᶜ := L.isClosed_lattice.isOpen_compl
-
-lemma add_mem_lattice_iff {z ω : ℂ} (hω : ω ∈ L.lattice) : z + ω ∈ L.lattice ↔ z ∈ L.lattice :=
-  L.lattice.add_mem_iff_left hω
 
 /- ### `℘` is unbounded (near `0`) -/
 
@@ -1290,12 +1245,6 @@ lemma exists_norm_weierstrassP_gt (M : ℝ) : ∃ z, z ∉ L.lattice ∧ M < ‖
   rw [sub_neg_eq_add, norm_neg, hnorm, add_comm] at this
   have hM := le_abs_self M
   linarith
-
-lemma infinite_image_weierstrassP : (℘[L] '' (L.lattice : Set ℂ)ᶜ).Infinite := by
-  intro hfin
-  obtain ⟨R, hR⟩ := isBounded_iff_forall_norm_le.mp hfin.isBounded
-  obtain ⟨z, hz, hM⟩ := (exists_norm_weierstrassP_gt L) R
-  exact absurd (hR _ ⟨z, hz, rfl⟩) (not_le.mpr hM)
 
 /- ### `℘'' = 6 ℘² - g₂/2` -/
 
@@ -1369,45 +1318,6 @@ lemma derivWeierstrassP_half {ω : ℂ} (hω : ω ∈ L.lattice) : ℘'[L] (ω /
   rw [L.derivWeierstrassP_neg] at h1
   linear_combination h1 / 2
 
-/-- `e = ℘(ω/2)` is a root of `4X³ - g₂X - g₃`. -/
-lemma weierstrassP_half_cubic {ω : ℂ} (hω : ω ∈ L.lattice) (h2 : ω / 2 ∉ L.lattice) :
-    4 * ℘[L] (ω / 2) ^ 3 - L.g₂ * ℘[L] (ω / 2) - L.g₃ = 0 := by
-  have := L.derivWeierstrassP_sq (ω / 2) h2
-  rw [(derivWeierstrassP_half L) hω] at this
-  linear_combination -this
-
-/-- If `g₂, g₃` are algebraic, so is `℘(ω/2)`. -/
-lemma isAlgebraic_weierstrassP_half (hg₂ : IsAlgebraic ℚ L.g₂) (hg₃ : IsAlgebraic ℚ L.g₃)
-    {ω : ℂ} (hω : ω ∈ L.lattice) (h2 : ω / 2 ∉ L.lattice) : IsAlgebraic ℚ (℘[L] (ω / 2)) := by
-  set F := IntermediateField.adjoin ℚ ({L.g₂, L.g₃} : Set ℂ)
-  have : FiniteDimensional ℚ F := IntermediateField.finiteDimensional_adjoin (by
-    rintro x (rfl | rfl)
-    · exact hg₂.isIntegral
-    · exact hg₃.isIntegral)
-  have m₂ : L.g₂ ∈ F := IntermediateField.subset_adjoin _ _ (by simp)
-  have m₃ : L.g₃ ∈ F := IntermediateField.subset_adjoin _ _ (by simp)
-  have hF : IsAlgebraic F (℘[L] (ω / 2)) := by
-    refine ⟨4 * Polynomial.X ^ 3 - Polynomial.C ⟨L.g₂, m₂⟩ * Polynomial.X
-      - Polynomial.C ⟨L.g₃, m₃⟩, ?_, ?_⟩
-    · intro hp
-      have := congrArg (Polynomial.coeff · 3) hp
-      simp at this
-    · simpa [map_ofNat] using (weierstrassP_half_cubic L) hω h2
-  exact hF.restrictScalars (R := ℚ)
-
-lemma half_add_mul_notMem {ω : ℂ} (hω : ω ∈ L.lattice) (h2 : ω / 2 ∉ L.lattice) (k : ℤ) :
-    ω / 2 + k * ω ∉ L.lattice := by
-  rwa [(add_mem_lattice_iff L) ((intCast_mul_mem L) hω k)]
-
-lemma weierstrassP_half_add_mul {ω : ℂ} (hω : ω ∈ L.lattice) (k : ℤ) :
-    ℘[L] (ω / 2 + k * ω) = ℘[L] (ω / 2) :=
-  L.weierstrassP_add_coe (ω / 2) ⟨_, (intCast_mul_mem L) hω k⟩
-
-lemma derivWeierstrassP_half_add_mul {ω : ℂ} (hω : ω ∈ L.lattice) (k : ℤ) :
-    ℘'[L] (ω / 2 + k * ω) = 0 := by
-  rw [L.derivWeierstrassP_add_coe (ω / 2) ⟨_, intCast_mul_mem L hω k⟩,
-    derivWeierstrassP_half L hω]
-
 /- ### Primitive periods -/
 
 /-- Every nonzero period is a positive integer multiple of a period `ω₀` with `ω₀/2 ∉ Λ`. -/
@@ -1442,136 +1352,6 @@ theorem exists_primitive {ω : ℂ} (hω : ω ∈ L.lattice) (h0 : ω ≠ 0) :
 section AlgIndep
 
 variable {K : Type*} [Field K] [Algebra K ℂ]
-
-lemma mvPoly_one_eq_zero (c : MvPolynomial (Fin 1) ℂ) {Y : Set ℂ} (hY : Y.Infinite)
-    (h : ∀ y ∈ Y, MvPolynomial.eval ![y] c = 0) : c = 0 := by
-  obtain ⟨t, ht, htc⟩ := hY.exists_subset_card_eq (c.degreeOf 0 + 1)
-  refine MvPolynomial.eq_zero_of_eval_zero_at_prod_finset c (fun _ => t) ?_ ?_
-  · intro i
-    fin_cases i
-    simp [htc]
-  · intro x hx
-    have hx' : x = ![x 0] := by ext i; fin_cases i; rfl
-    rw [hx']
-    exact h _ (ht (hx 0))
-
-/-- A polynomial in two variables vanishing on infinitely many horizontal lines' worth of
-infinitely many points is zero: if for infinitely many `y` the polynomial `P(·, y)` has infinitely
-many roots, then `P = 0`. -/
-theorem mvPoly_eq_zero_of_infinite_fibres (P : MvPolynomial (Fin 2) K) {Y : Set ℂ}
-    (hY : Y.Infinite) (hfib : ∀ y ∈ Y, {x : ℂ | MvPolynomial.aeval ![x, y] P = 0}.Infinite) :
-    P = 0 := by
-  set P' := MvPolynomial.map (algebraMap K ℂ) P
-  have hP' : ∀ v : Fin 2 → ℂ, MvPolynomial.aeval v P = MvPolynomial.eval v P' := by
-    intro v
-    rw [MvPolynomial.aeval_def, MvPolynomial.eval₂_eq_eval_map]
-  suffices hP0 : P' = 0 by
-    exact MvPolynomial.map_injective _ (algebraMap K ℂ).injective (hP0.trans (map_zero _).symm)
-  set Q := MvPolynomial.finSuccEquiv ℂ 1 P'
-  have hQy : ∀ y ∈ Y, Polynomial.map (MvPolynomial.eval ![y]) Q = 0 := by
-    intro y hy
-    apply Polynomial.eq_zero_of_infinite_isRoot
-    refine (hfib y hy).mono ?_
-    intro x hx
-    simp only [Set.mem_ofPred_eq] at hx ⊢
-    rw [hP'] at hx
-    rw [Polynomial.IsRoot, ← MvPolynomial.eval_eq_eval_mv_eval']
-    exact hx
-  have hQ : Q = 0 := by
-    refine Polynomial.ext fun j => ?_
-    simp only [Polynomial.coeff_zero]
-    refine mvPoly_one_eq_zero _ hY fun y hy => ?_
-    have := congrArg (Polynomial.coeff · j) (hQy y hy)
-    simpa [Polynomial.coeff_map] using this
-  exact (MvPolynomial.finSuccEquiv ℂ 1).injective (hQ.trans (map_zero _).symm)
-
-/-- Variant of `mvPoly_eq_zero_of_infinite_fibres` with the roles of the variables swapped. -/
-theorem mvPoly_eq_zero_of_infinite_fibres' (P : MvPolynomial (Fin 2) K) {X : Set ℂ}
-    (hX : X.Infinite) (hfib : ∀ x ∈ X, {y : ℂ | MvPolynomial.aeval ![x, y] P = 0}.Infinite) :
-    P = 0 := by
-  set σ := Equiv.swap (0 : Fin 2) 1
-  have hsw : ∀ x y : ℂ, MvPolynomial.aeval ![y, x] (MvPolynomial.rename σ P) =
-      MvPolynomial.aeval ![x, y] P := by
-    intro x y
-    rw [MvPolynomial.aeval_rename]
-    congr 2
-    funext i
-    fin_cases i <;> rfl
-  have : MvPolynomial.rename σ P = 0 :=
-    mvPoly_eq_zero_of_infinite_fibres _ hX fun x hx => by simpa [hsw] using hfib x hx
-  exact MvPolynomial.rename_injective σ σ.injective (by rw [this, map_zero])
-
-/-- **`z` and `℘(z)` are algebraically independent** over any field `K → ℂ`. -/
-theorem algIndep_id_weierstrassP (P : MvPolynomial (Fin 2) K)
-    (hP : ∀ z, z ∉ L.lattice → MvPolynomial.aeval ![z, ℘[L] z] P = 0) : P = 0 := by
-  refine mvPoly_eq_zero_of_infinite_fibres P (infinite_image_weierstrassP L) ?_
-  rintro _ ⟨z₀, hz₀, rfl⟩
-  refine Set.infinite_of_injective_forall_mem (f := fun k : ℤ => z₀ + k * L.ω₁) ?_ ?_
-  · intro k l hkl
-    have := (ω₁_ne_zero L)
-    simp only [add_right_inj] at hkl
-    exact_mod_cast mul_right_cancel₀ this hkl
-  · intro k
-    have hmem := (intCast_mul_mem L) L.ω₁_mem_lattice k
-    have hz : z₀ + k * L.ω₁ ∉ L.lattice := by rwa [(add_mem_lattice_iff L) hmem]
-    have := hP _ hz
-    rwa [L.weierstrassP_add_coe z₀ ⟨_, hmem⟩] at this
-
-/-- For `ω ≠ 0` there is a period `ω'` with `‖exp (2πi ω'/ω)‖ ≠ 1`. -/
-lemma exists_norm_exp_ne_one {ω : ℂ} (h0 : ω ≠ 0) :
-    ∃ ω' ∈ L.lattice, ‖cexp (2 * π * I / ω * ω')‖ ≠ 1 := by
-  by_contra! H
-  have him : ∀ ω' ∈ L.lattice, (ω' / ω).im = 0 := by
-    intro ω' hω'
-    have := H ω' hω'
-    rw [Complex.norm_exp, Real.exp_eq_one_iff] at this
-    have he : 2 * π * I / ω * ω' = 2 * π * I * (ω' / ω) := by field_simp
-    rw [he] at this
-    generalize ω' / ω = u at this ⊢
-    have hu : (2 * (π : ℂ) * I * u).re = -(2 * π) * u.im := by simp [Complex.mul_re]
-    rw [hu] at this
-    rcases mul_eq_zero.mp this with h | h
-    · exact absurd h (by have := Real.pi_pos; linarith)
-    · exact h
-  have hre : ∀ ω' ∈ L.lattice, ω' = ((ω' / ω).re : ℂ) * ω := by
-    intro ω' hω'
-    have : ((ω' / ω).re : ℂ) = ω' / ω := Complex.ext (by simp) (by simp [him ω' hω'])
-    rw [this]; field_simp
-  obtain ⟨s, hs1⟩ : ∃ s : ℝ, L.ω₁ = s * ω := ⟨_, hre _ L.ω₁_mem_lattice⟩
-  obtain ⟨t, ht2⟩ : ∃ t : ℝ, L.ω₂ = t * ω := ⟨_, hre _ L.ω₂_mem_lattice⟩
-  have := LinearIndependent.pair_iff.mp L.indep t (-s)
-    (by simp only [Complex.real_smul]; rw [hs1, ht2]; push_cast; ring)
-  have hs : s = 0 := by simpa using this.2
-  exact (ω₁_ne_zero L) (by rw [hs1, hs]; simp)
-
-/-- **`℘(z)` and `exp (2πi z/ω)` are algebraically independent** over any field `K → ℂ`, for
-a nonzero period `ω`. -/
-theorem algIndep_weierstrassP_exp {ω : ℂ} (h0 : ω ≠ 0) (P : MvPolynomial (Fin 2) K)
-    (hP : ∀ z, z ∉ L.lattice → MvPolynomial.aeval ![℘[L] z, cexp (2 * π * I / ω * z)] P = 0) :
-    P = 0 := by
-  obtain ⟨ω', hω', hc⟩ := (exists_norm_exp_ne_one L) h0
-  set c := cexp (2 * π * I / ω * ω')
-  refine mvPoly_eq_zero_of_infinite_fibres' P (infinite_image_weierstrassP L) ?_
-  rintro _ ⟨z₀, hz₀, rfl⟩
-  have hexp : ∀ k : ℕ,
-      cexp (2 * π * I / ω * (z₀ + k * ω')) = cexp (2 * π * I / ω * z₀) * c ^ k := by
-    intro k
-    rw [← Complex.exp_nat_mul, ← Complex.exp_add]
-    congr 1; ring
-  refine Set.infinite_of_injective_forall_mem
-    (f := fun k : ℕ => cexp (2 * π * I / ω * (z₀ + k * ω'))) ?_ ?_
-  · intro k l hkl
-    simp only [hexp] at hkl
-    have h' := congrArg norm hkl
-    simp only [norm_mul, norm_pow] at h'
-    have hn : ‖cexp (2 * π * I / ω * z₀)‖ ≠ 0 := by simp [Complex.exp_ne_zero]
-    have h'' := mul_left_cancel₀ hn h'
-    exact pow_right_injective₀ (norm_pos_iff.mpr (Complex.exp_ne_zero _)) hc h''
-  · intro k
-    have hmem := (natCast_mul_mem L) hω' k
-    have hz : z₀ + k * ω' ∉ L.lattice := by rwa [(add_mem_lattice_iff L) hmem]
-    have := hP _ hz
-    rwa [L.weierstrassP_add_coe z₀ ⟨_, hmem⟩] at this
 
 end AlgIndep
 
@@ -2219,19 +1999,6 @@ theorem eq_const_of_simple_pole {f : ℂ → ℂ} {S : Set ℂ} (a : ℂ) (hS : 
     exact hfG v hv
   · exact hfG u (fun h => h.elim hu hua)
 
-/-- An elliptic function bounded near each point of its (discrete) singular set is constant. -/
-theorem eq_const_of_locBdd {f : ℂ → ℂ} {S : Set ℂ} (hS : Discr S)
-    (hSinv : ∀ u ∈ S, ∀ ω ∈ L.lattice, u + ω ∈ S)
-    (hper : ∀ u ∉ S, ∀ ω ∈ L.lattice, f (u + ω) = f u)
-    (hd : ∀ x ∉ S, DifferentiableAt ℂ f x) (hb : ∀ s ∈ S, LocBdd f s) :
-    ∃ C, ∀ u ∉ S, f u = C := by
-  by_cases h0 : (0 : ℂ) ∈ S
-  · exact eq_const_of_simple_pole L 0 hS hSinv hper hd (fun s hs _ => hb s hs)
-      ((LocBdd.of_continuousAt (f := fun u => u - 0) (by fun_prop)).mul (hb 0 h0))
-  · exact eq_const_of_simple_pole L 0 hS hSinv hper hd (fun s hs _ => hb s hs)
-      (LocBdd.of_continuousAt (((continuous_id.sub continuous_const).continuousAt).mul
-        (hd 0 h0).continuousAt))
-
 end LSG.Weierstrass
 
 end
@@ -2333,30 +2100,6 @@ theorem sigma_add {ω : ℂ} (hω : ω ∈ L.lattice) (z : ℂ) :
   · rw [sigmaSign_of_half_notMem L h2, sigma_add_of_half_notMem L hω h2 z]
     ring
 
-/-- `σ'(ω) = ε(ω) exp (η(ω) ω/2)` for `ω ∈ Λ`. -/
-lemma deriv_sigma_of_mem {ω : ℂ} (hω : ω ∈ L.lattice) :
-    deriv (sigma L) ω = sigmaSign L ω * exp (eta L ω * (ω / 2)) := by
-  have h1 : HasDerivAt (fun z ↦ sigma L (z + ω)) (deriv (sigma L) (0 + ω)) 0 :=
-    (differentiable_sigma L (0 + ω)).hasDerivAt.comp_add_const 0 ω
-  have hE : HasDerivAt (fun z ↦ exp (eta L ω * (z + ω / 2)))
-      (exp (eta L ω * (0 + ω / 2)) * (eta L ω * 1)) 0 :=
-    (((hasDerivAt_id' (0 : ℂ)).add_const (ω / 2)).const_mul (eta L ω)).cexp
-  have h2 := ((hasDerivAt_const (0 : ℂ) (sigmaSign L ω)).mul hE).mul (hasDerivAt_sigma_zero L)
-  have h3 : HasDerivAt (fun z ↦ sigma L (z + ω)) (((0 * exp (eta L ω * (0 + ω / 2)) +
-      sigmaSign L ω * (exp (eta L ω * (0 + ω / 2)) * (eta L ω * 1))) * sigma L 0 +
-      sigmaSign L ω * exp (eta L ω * (0 + ω / 2)) * 1)) 0 := by
-    refine h2.congr_of_eventuallyEq (Filter.Eventually.of_forall fun z ↦ ?_)
-    exact sigma_add L hω z
-  have := h1.unique h3
-  rw [zero_add] at this
-  rw [this, sigma_zero, zero_add]
-  ring
-
-/-- The zeros of `σ` are simple. -/
-lemma deriv_sigma_ne_zero_of_mem {ω : ℂ} (hω : ω ∈ L.lattice) : deriv (sigma L) ω ≠ 0 := by
-  rw [deriv_sigma_of_mem L hω]
-  exact mul_ne_zero (sigmaSign_ne_zero L ω) (exp_ne_zero _)
-
 end LSG.Weierstrass
 
 end
@@ -2406,18 +2149,8 @@ lemma differentiableAt_weierstrassP {z : ℂ} (hz : z ∉ L.lattice) :
     DifferentiableAt ℂ ℘[L] z :=
   L.differentiableOn_weierstrassP.differentiableAt ((isOpen_compl_lattice L).mem_nhds hz)
 
-lemma continuousAt_weierstrassP {z : ℂ} (hz : z ∉ L.lattice) : ContinuousAt ℘[L] z :=
-  (differentiableAt_weierstrassP L hz).continuousAt
-
-lemma continuousAt_derivWeierstrassP {z : ℂ} (hz : z ∉ L.lattice) : ContinuousAt ℘'[L] z :=
-  (differentiableAt_derivWeierstrassP L hz).continuousAt
-
 lemma weierstrassP_add_mem (u : ℂ) {ω : ℂ} (hω : ω ∈ L.lattice) : ℘[L] (u + ω) = ℘[L] u :=
   L.weierstrassP_add_coe u ⟨ω, hω⟩
-
-lemma derivWeierstrassP_add_mem (u : ℂ) {ω : ℂ} (hω : ω ∈ L.lattice) :
-    ℘'[L] (u + ω) = ℘'[L] u :=
-  L.derivWeierstrassP_add_coe u ⟨ω, hω⟩
 
 /-- `℘(u) = ℘₀(u) + 1/u²`, `℘₀` the series without the `0`-term. -/
 lemma weierstrassP_eq_except_zero (u : ℂ) : ℘[L] u = L.weierstrassPExcept 0 u + 1 / u ^ 2 := by
@@ -2426,18 +2159,8 @@ lemma weierstrassP_eq_except_zero (u : ℂ) : ℘[L] u = L.weierstrassPExcept 0 
     sub_zero] at this
   rw [← this]
 
-/-- `℘'(u) = ℘'₀(u) - 2/u³`. -/
-lemma derivWeierstrassP_eq_except_zero (u : ℂ) : ℘'[L] u = L.derivWeierstrassPExcept 0 u - 2 / u ^ 3 := by
-  have := L.derivWeierstrassPExcept_def ⟨0, L.lattice.zero_mem⟩ u
-  simp only [sub_zero] at this
-  rw [this]
-  ring
-
 lemma continuousAt_weierstrassPExcept_zero : ContinuousAt (L.weierstrassPExcept 0) 0 :=
   (L.analyticAt_weierstrassPExcept 0).continuousAt
-
-lemma continuousAt_derivWeierstrassPExcept_zero : ContinuousAt (L.derivWeierstrassPExcept 0) 0 :=
-  (L.analyticAt_derivWeierstrassPExcept 0).continuousAt
 
 /-- `σ(u + ω) / σ(u)` is a nonvanishing multiplier. -/
 lemma sigma_add' {ω : ℂ} (hω : ω ∈ L.lattice) (u : ℂ) :
@@ -2883,21 +2606,6 @@ noncomputable def quasiPeriods (L : PeriodPair) : L.lattice →+ ℂ where
 /-- The logarithmic derivative of the integer-multiplication elliptic unit. -/
 noncomputable def multiplicationZeta (L : PeriodPair) (a : ℕ) (z : ℂ) : ℂ :=
   (a:ℂ) * zeta L ((a:ℂ)*z) - (a:ℂ)^2 * zeta L z
-
-lemma multiplicationZeta_periodic (L : PeriodPair) (a : ℕ) (z : ℂ) (l : L.lattice)
-    (hz : z ∉ L.lattice) (haz : (a:ℂ)*z ∉ L.lattice) :
-    multiplicationZeta L a (z+l) = multiplicationZeta L a z := by
-  have H : increment L (a • l) = (a:ℂ) * increment L l :=
-    (map_nsmul (quasiPeriods L) a l).trans (nsmul_eq_mul a _)
-  have e : (a:ℂ)*(l:ℂ) = ((a • l : L.lattice):ℂ) := by simp [nsmul_eq_mul]
-  unfold multiplicationZeta
-  rw [mul_add, e, zeta_shift L haz, zeta_shift L hz, H]
-  ring
-
-lemma multiplicationZeta_odd (L : PeriodPair) (a : ℕ) (z : ℂ) :
-    multiplicationZeta L a (-z) = -multiplicationZeta L a z := by
-  simp only [multiplicationZeta, mul_neg, zeta_neg]
-  ring
 
 end TunnellEllipticZeta
 
