@@ -1,11 +1,11 @@
 import OMAStatements.S_oeis_a270112
 import Mathlib
 
-set_option maxRecDepth 100000
-set_option maxHeartbeats 0
 namespace OMA.S_oeis_a270112
 open PowerSeries
 
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 100000000 in
 def V {S : Type} [Fintype S] (R : S → S → Prop) [DecidableRel R] : ℕ → S → ℕ
   | 0, _ => 1
   | n + 1, s => ∑ t, if R s t then V R n t else 0
@@ -13,6 +13,8 @@ def V {S : Type} [Fintype S] (R : S → S → Prop) [DecidableRel R] : ℕ → S
 section generic
 variable {S : Type} [Fintype S] [DecidableEq S] (R : S → S → Prop) [DecidableRel R]
 
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 100000000 in
 theorem rec_gen (m : ℕ) (c : ℕ → ℤ)
     (h0 : ∀ s, ∑ j ∈ Finset.range (m + 1), c j * (V R j s : ℤ) = 0) :
     ∀ n s, ∑ j ∈ Finset.range (m + 1), c j * (V R (n + j) s : ℤ) = 0 := by
@@ -35,6 +37,8 @@ theorem rec_gen (m : ℕ) (c : ℕ → ℤ)
       simpa [← Finset.mul_sum] using this
     · simp [h]
 
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 100000000 in
 theorem rec_w (m : ℕ) (c : ℕ → ℤ) (w : S → ℤ)
     (h0 : ∀ s, ∑ j ∈ Finset.range (m + 1), c j * (V R j s : ℤ) = 0) (n : ℕ) :
     ∑ j ∈ Finset.range (m + 1), c j * (∑ s, w s * (V R (n + j) s : ℤ)) = 0 := by
@@ -50,24 +54,46 @@ theorem rec_w (m : ℕ) (c : ℕ → ℤ) (w : S → ℤ)
   ring
 end generic
 
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 100000000 in
 abbrev Row := Fin 2 → Fin 8
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 100000000 in
 def hh (r : Row) : ℕ := if (r 0 : ℕ) + (r 1 : ℕ) = 7 then 1 else 0
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 100000000 in
 def vv (r r' : Row) : ℕ :=
   (if (r 0 : ℕ) + (r' 0 : ℕ) = 7 then 1 else 0) + (if (r 1 : ℕ) + (r' 1 : ℕ) = 7 then 1 else 0)
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 100000000 in
 def cst (r r' : Row) : ℕ := vv r r' + hh r'
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 100000000 in
 def tot {n : ℕ} (x : Fin (n + 1) → Row) : ℕ := ∑ i : Fin n, cst (x i.castSucc) (x i.succ)
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 100000000 in
 abbrev St := Row × Fin 2
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 100000000 in
 def Rel (s t : St) : Prop := (t.2 : ℕ) + cst s.1 t.1 = s.2
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 100000000 in
 instance : DecidableRel Rel := fun s t => by unfold Rel; infer_instance
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 100000000 in
 def T (n : ℕ) (s : St) : ℕ :=
   (Finset.univ.filter (fun x : Fin (n + 1) → Row => x 0 = s.1 ∧ tot x ≤ s.2)).card
 
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 100000000 in
 theorem tot_succ {n : ℕ} (x : Fin (n + 2) → Row) :
     tot x = cst (x 0) (x 1) + tot (Fin.tail x) := by
   unfold tot
   rw [Fin.sum_univ_succ]
   congr 1
 
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 100000000 in
 theorem fiber (n : ℕ) (r r' : Row) (b : ℕ) :
     (Finset.univ.filter (fun x : Fin (n + 2) → Row => (x 0 = r ∧ tot x ≤ b) ∧ x 1 = r')).card =
     (Finset.univ.filter (fun x : Fin (n + 1) → Row => x 0 = r' ∧ tot x + cst r r' ≤ b)).card := by
@@ -102,6 +128,8 @@ theorem fiber (n : ℕ) (r r' : Row) (b : ℕ) :
     intro x hx
     exact Fin.tail_cons _ _
 
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 100000000 in
 theorem T_eq (n : ℕ) (s : St) : T n s = V Rel n s := by
   induction n generalizing s with
   | zero =>
@@ -151,12 +179,16 @@ theorem T_eq (n : ℕ) (s : St) : T n s = V Rel n s := by
       intro x _ hx
       omega
 
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 100000000 in
 theorem pairs_eq (m : ℕ) (x : Fin (m + 1) → Row) : pairsTotallingSeven m x = hh (x 0) + tot x := by
   unfold pairsTotallingSeven tot cst vv hh
   rw [Finset.card_filter, Finset.card_filter, Fin.sum_univ_succ, Fintype.sum_prod_type]
   simp only [Fin.sum_univ_two, Finset.sum_add_distrib]
   ring
 
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 100000000 in
 theorem cnt (m : ℕ) (B : Fin 2) :
     (Finset.univ.filter (fun x : Fin (m + 1) → Row => hh (x 0) + tot x ≤ (B : ℕ))).card =
     ∑ s : St, if (s.2 : ℕ) + hh s.1 = (B : ℕ) then T m s else 0 := by
@@ -196,9 +228,13 @@ theorem cnt (m : ℕ) (B : Fin 2) :
     subst h1
     omega
 
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 100000000 in
 def w (s : St) : ℤ :=
   (if (s.2 : ℕ) + hh s.1 = 1 then 1 else 0) - (if (s.2 : ℕ) + hh s.1 = 0 then 1 else 0)
 
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 100000000 in
 theorem a_eq (m : ℕ) : (a (m + 1) : ℤ) = ∑ s : St, w s * (V Rel m s : ℤ) := by
   have h1 : (Finset.univ.filter (fun x : Fin (m + 1) → Row => pairsTotallingSeven m x = 1)) =
       SDiff.sdiff (Finset.univ.filter (fun x : Fin (m + 1) → Row => hh (x 0) + tot x ≤ ((1 : Fin 2) : ℕ)))
@@ -227,12 +263,20 @@ theorem a_eq (m : ℕ) : (a (m + 1) : ℤ) = ∑ s : St, w s * (V Rel m s : ℤ)
   simp only [Fin.val_zero, Fin.val_one]
   split_ifs <;> omega
 
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 100000000 in
 def A (m : ℕ) : ℤ := ∑ s : St, w s * (V Rel m s : ℤ)
 
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 100000000 in
 theorem a_eq' (m : ℕ) : (a (m + 1) : ℤ) = A m := a_eq m
 
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 100000000 in
 def cc : ℕ → ℤ := fun j => [(0 : ℤ), 0, 1849, -86, 1].getD j 0
 
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 100000000 in
 theorem hrecA (k : ℕ) : A (k + 4) = 86 * A (k + 3) - 1849 * A (k + 2) := by
   have h := rec_w Rel 4 cc w (by decide +kernel) k
   have e0 : cc 0 = 0 := rfl
@@ -244,11 +288,21 @@ theorem hrecA (k : ℕ) : A (k + 4) = 86 * A (k + 3) - 1849 * A (k + 2) := by
   unfold A
   linarith
 
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 100000000 in
 theorem vA0 : A 0 = 8 := by unfold A; decide +kernel
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 100000000 in
 theorem vA1 : A 1 = 1344 := by unfold A; decide +kernel
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 100000000 in
 theorem vA2 : A 2 = 100800 := by unfold A; decide +kernel
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 100000000 in
 theorem vA3 : A 3 = 6183744 := by unfold A; decide +kernel
 
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 100000000 in
 theorem closedA (j : ℕ) : (A (j + 1) : ℚ) = ((1344 : ℚ) + (43008 / 43 : ℚ) * (j : ℚ)) * (43 : ℚ) ^ j := by
   induction j using Nat.strong_induction_on with
   | _ j ih =>
@@ -266,11 +320,15 @@ theorem closedA (j : ℕ) : (A (j + 1) : ℚ) = ((1344 : ℚ) + (43008 / 43 : �
       push_cast
       ring
 
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 100000000 in
 theorem closed (j : ℕ) : (a (j + 2) : ℚ) = ((1344 : ℚ) + (43008 / 43 : ℚ) * (j : ℚ)) * (43 : ℚ) ^ j := by
   have h : (a (j + 1 + 1) : ℚ) = A (j + 1) := by exact_mod_cast a_eq' (j + 1)
   rw [h]
   exact closedA j
 
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 100000000 in
 theorem gfgen (ρ n1 n2 n3 : ℚ) (b : ℕ → ℚ) (h0 : b 0 = 0) (h1 : b 1 = n1)
     (h2 : b 2 - 2 * ρ * b 1 = n2) (h3 : b 3 - 2 * ρ * b 2 + ρ ^ 2 * b 1 = n3)
     (h4 : ∀ n, b (n + 4) - 2 * ρ * b (n + 3) + ρ ^ 2 * b (n + 2) = 0) :
@@ -294,6 +352,8 @@ theorem gfgen (ρ n1 n2 n3 : ℚ) (b : ℕ → ℚ) (h0 : b 0 = 0) (h1 : b 1 = n
     linarith [h4 n, h0, h1, show c2 * b 0 = 0 by rw [h0]; ring]
 
 
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 100000000 in
 theorem hrecQ (j : ℕ) :
     (a (j + 4) : ℚ) = 86 * (a (j + 3) : ℚ) - 1849 * (a (j + 2) : ℚ) := by
   have c4 : (a (j + 4) : ℚ) = ((1344 : ℚ) + (43008 / 43 : ℚ) * ((j + 2 : ℕ) : ℚ)) * (43 : ℚ) ^ (j + 2) := closed (j + 2)
@@ -303,18 +363,24 @@ theorem hrecQ (j : ℕ) :
   push_cast
   ring
 
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 100000000 in
 theorem ha1 : (a 1 : ℚ) = 8 := by
   have := a_eq' 0
   rw [vA0] at this
   have h : (a 1 : ℤ) = 8 := this
   exact_mod_cast h
 
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 100000000 in
 theorem ha2 : (a 2 : ℚ) = 1344 := by
   have := a_eq' 1
   rw [vA1] at this
   have h : (a 2 : ℤ) = 1344 := this
   exact_mod_cast h
 
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 100000000 in
 theorem ha3 : (a 3 : ℚ) = 100800 := by
   have := a_eq' 2
   rw [vA2] at this
@@ -324,6 +390,8 @@ theorem ha3 : (a 3 : ℚ) = 100800 := by
 end OMA.S_oeis_a270112
 
 open OMA.S_oeis_a270112 in
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 100000000 in
 theorem OMA.solution : type_of% @OMA.S_oeis_a270112.main := by
   refine ⟨?_, ?_, ?_⟩
   · intro n hn
