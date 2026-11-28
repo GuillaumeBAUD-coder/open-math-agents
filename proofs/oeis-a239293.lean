@@ -1,4 +1,5 @@
 import OMAStatements.S_oeis_a239293
+open OMA.S_oeis_a239293
 
 theorem OMA_pw (n : ℕ) (hn : 1 ≤ n) : n ^ (n + 1) ≡ (if Odd (n + 1) then n else 1) [MOD n + 1] := by
   have h1 : (n : ℤ) ≡ -1 [ZMOD (n + 1 : ℕ)] := by
@@ -15,11 +16,11 @@ theorem OMA_pw (n : ℕ) (hn : 1 ≤ n) : n ^ (n + 1) ≡ (if Odd (n + 1) then n
 
 theorem OMA.solution : type_of% @OMA.S_oeis_a239293.main := by
   intro n hn
-  unfold OMA.S_oeis_a239293.a
+  unfold a
   have hpw := OMA_pw n hn
   constructor
   · intro h
-    have hne : {c : ℕ | n < c ∧ OMA.S_oeis_a239293.IsComposite c ∧ n ^ c ≡ n [MOD c]}.Nonempty := by
+    have hne : {c : ℕ | n < c ∧ IsComposite c ∧ n ^ c ≡ n [MOD c]}.Nonempty := by
       by_contra hc
       rw [Set.not_nonempty_iff_eq_empty] at hc
       rw [hc] at h
@@ -42,7 +43,7 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a239293.main := by
     exact hcomp.2 Nat.prime_two
   · rintro ⟨ho, hcomp⟩
     rw [if_pos ho] at hpw
-    have hmem : n + 1 ∈ {c : ℕ | n < c ∧ OMA.S_oeis_a239293.IsComposite c ∧ n ^ c ≡ n [MOD c]} :=
+    have hmem : n + 1 ∈ {c : ℕ | n < c ∧ IsComposite c ∧ n ^ c ≡ n [MOD c]} :=
       ⟨by omega, hcomp, hpw⟩
     apply le_antisymm (Nat.sInf_le hmem)
     have := Nat.sInf_mem ⟨_, hmem⟩
