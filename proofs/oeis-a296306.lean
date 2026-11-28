@@ -4,6 +4,9 @@ import Mathlib
 /-!
 # A296306: the three conjectures
 
+Following @ivillar (#27661), retain all three arguments and use the standard
+natural subtraction parity and power-product identities for their helpers.
+
 Write n = 2^e·m with m odd. The odd divisors of n are the divisors of m, so the odd power sum is
 σ_k(m), and σ_k(n) = σ_k(2^e)·σ_k(m); this gives the divisibility. For k = 2 the quotient is
 σ_2(2^e) = Σ_{i≤e} 4^i = (4^(e+1) − 1)/3, the geometric value with j = e + 1, and in particular
@@ -17,7 +20,7 @@ open Finset Nat ArithmeticFunction
 theorem core (k e m : ℕ) (hm : Odd m) :
     OMA.S_oeis_a296306.oddSum k (2 ^ e * m) = sigma k m ∧
       sigma k (2 ^ e * m) = sigma k (2 ^ e) * sigma k m := by
-  have hm0 : m ≠ 0 := by rintro rfl; simp at hm
+  have hm0 : m ≠ 0 := hm.pos.ne'
   have hcop : Nat.Coprime (2 ^ e) m := Nat.Coprime.pow_left e (Nat.coprime_two_left.mpr hm)
   refine ⟨?_, isMultiplicative_sigma.map_mul_of_coprime hcop⟩
   unfold OMA.S_oeis_a296306.oddSum
@@ -36,14 +39,13 @@ theorem core (k e m : ℕ) (hm : Odd m) :
 theorem sigma2_pow (e : ℕ) : sigma 2 (2 ^ e) = OMA.S_oeis_a296306.geometric (e + 1) := by
   rw [sigma_apply_prime_pow Nat.prime_two]
   unfold OMA.S_oeis_a296306.geometric
-  have h : ∀ j ∈ Finset.range (e + 1), 2 ^ (j * 2) = 4 ^ j := by
-    intro j _; rw [mul_comm, pow_mul]; norm_num
-  rw [Finset.sum_congr rfl h, Nat.geomSum_eq (by norm_num)]
+  simp_rw [pow_mul']
+  exact Nat.geomSum_eq (by norm_num) (e + 1)
 
 theorem a_core (e m : ℕ) (hm : Odd m) :
     OMA.S_oeis_a296306.a (2 ^ e * m) = OMA.S_oeis_a296306.geometric (e + 1) := by
   obtain ⟨h1, h2⟩ := core 2 e m hm
-  have hm0 : m ≠ 0 := by rintro rfl; simp at hm
+  have hm0 : m ≠ 0 := hm.pos.ne'
   unfold OMA.S_oeis_a296306.a
   rw [h1, h2, Nat.mul_div_cancel _ ((sigma_pos_iff).mpr (Nat.pos_of_ne_zero hm0)), sigma2_pow]
 
@@ -78,7 +80,5 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a296306.main := by
       rw [hsplit, Nat.mul_sub]
     have hodd : Odd (2 ^ (h - e) - m) := by
       have he2 : Even (2 ^ (h - e)) := (Nat.even_pow' (by omega)).mpr even_two
-      rcases he2 with ⟨t, ht⟩
-      rcases hm with ⟨u, hu⟩
-      exact ⟨t - u - 1, by omega⟩
+      exact Nat.Even.sub_odd hmlt.le he2 hm
     rw [hrest, PA296306.a_core e m hm, PA296306.a_core e _ hodd]

@@ -1,16 +1,8 @@
 import OMAStatements.S_oeis_a217948
 
--- Problem: A217948: List of numbers 2n for which the riffle permutation permutes all except the first and last of the 2n cards.
--- Upstream: formal-conjectures statements/oeis-a217948.lean:0 (declaration OMA.S_oeis_a217948.main)
--- Credit: @agchua (the owner of the agent is credited as the solver)
--- Prove EXACTLY this target. No sorry, no axiom, no native_decide.
--- Idea: put N = 2n - 1. For 2 <= r <= N the riffle keeps r in 2..N and multiplies r - 1 by 2
--- modulo N, so the k-th iterate of r is the card 1 + (2^k (r - 1) mod N). One orbit on 2..N
--- therefore means that every x in 1..N-1 is congruent to a power of 2 modulo N. Then every such x
--- is a unit mod N, so N is prime, and the powers 2^j with j < ord(2) already give all N - 1
--- nonzero residues, so ord(2) = N - 1. Conversely, if N is prime and ord(2) = N - 1, then for
--- u = r - 1 the N - 1 elements 2^j u (j < N - 1) are distinct and nonzero, hence they are all
--- nonzero residues, and s - 1 is one of them.
+/-! The riffle-orbit characterization, following @agchua (#22070).
+Retain the modular iteration and forward argument. In the converse, use the
+primitive-root power theorem on the quotient of the two nonzero residues. -/
 
 open OMA.S_oeis_a217948 in
 theorem OMA.solution : type_of% @OMA.S_oeis_a217948.main := by
@@ -123,13 +115,6 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a217948.main := by
     rw [Finset.mem_Icc] at hr hs
     obtain ⟨hr1, hr2⟩ := hr
     obtain ⟨hs1, hs2⟩ := hs
-    have h2ne : (2 : ZMod (2 * n - 1)) ≠ 0 := by
-      intro h0
-      have h2 : ((2 : ℕ) : ZMod (2 * n - 1)) = ((0 : ℕ) : ZMod (2 * n - 1)) := by
-        rw [Nat.cast_ofNat, Nat.cast_zero]
-        exact h0
-      have h20 := hcast _ 2 0 (by omega) (by omega) h2
-      omega
     have hu : ((r - 1 : ℕ) : ZMod (2 * n - 1)) ≠ 0 := by
       intro h0
       have h2 : ((r - 1 : ℕ) : ZMod (2 * n - 1)) = ((0 : ℕ) : ZMod (2 * n - 1)) := by
@@ -144,35 +129,13 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a217948.main := by
         exact h0
       have h20 := hcast _ (s - 1) 0 (by omega) (by omega) h2
       omega
-    have hinj : Set.InjOn
-        (fun j : ℕ => (2 : ZMod (2 * n - 1)) ^ j * ((r - 1 : ℕ) : ZMod (2 * n - 1)))
-        (Finset.range (2 * n - 1 - 1) : Set ℕ) := by
-      intro i hi j hj hij
-      have hij' : (2 : ZMod (2 * n - 1)) ^ i = 2 ^ j := mul_right_cancel₀ hu hij
-      have hi' : i ∈ Set.Iio (orderOf (2 : ZMod (2 * n - 1))) := by
-        rw [hord, Set.mem_Iio]
-        exact Finset.mem_range.mp (Finset.mem_coe.mp hi)
-      have hj' : j ∈ Set.Iio (orderOf (2 : ZMod (2 * n - 1))) := by
-        rw [hord, Set.mem_Iio]
-        exact Finset.mem_range.mp (Finset.mem_coe.mp hj)
-      exact pow_injOn_Iio_orderOf hi' hj' hij'
-    have hT : (Finset.range (2 * n - 1 - 1)).image
-        (fun j : ℕ => (2 : ZMod (2 * n - 1)) ^ j * ((r - 1 : ℕ) : ZMod (2 * n - 1))) =
-        Finset.univ.erase 0 := by
-      apply Finset.eq_of_subset_of_card_le
-      · intro y hy
-        rw [Finset.mem_image] at hy
-        obtain ⟨j, _, rfl⟩ := hy
-        exact Finset.mem_erase.mpr ⟨mul_ne_zero (pow_ne_zero _ h2ne) hu, Finset.mem_univ _⟩
-      · have c1 := Finset.card_image_of_injOn hinj
-        have c2 : (Finset.univ.erase (0 : ZMod (2 * n - 1))).card = 2 * n - 1 - 1 := by
-          rw [Finset.card_erase_of_mem (Finset.mem_univ _), Finset.card_univ, ZMod.card]
-        rw [Finset.card_range] at c1
-        omega
-    have hvmem : ((s - 1 : ℕ) : ZMod (2 * n - 1)) ∈ Finset.univ.erase 0 :=
-      Finset.mem_erase.mpr ⟨hv, Finset.mem_univ _⟩
-    rw [← hT, Finset.mem_image] at hvmem
-    obtain ⟨j, _, hj⟩ := hvmem
+    have : NeZero (2 * n - 1 - 1) := ⟨by omega⟩
+    have hroot : IsPrimitiveRoot (2 : ZMod (2 * n - 1)) (2 * n - 1 - 1) := by
+      rw [← hord]
+      exact IsPrimitiveRoot.orderOf _
+    obtain ⟨j, _, hj⟩ := hroot.eq_pow_of_pow_eq_one
+      (ZMod.pow_card_sub_one_eq_one (div_ne_zero hv hu))
+    have hj := (eq_div_iff hu).mp hj
     obtain ⟨g1, g2, g3⟩ := hiter n r j hn hr1 hr2
     refine ⟨j, ?_⟩
     have hj' : (((riffle n)^[j] r - 1 : ℕ) : ZMod (2 * n - 1)) =

@@ -1,17 +1,15 @@
 import OMAStatements.S_oeis_a200312
-import Mathlib
 
 open OMA.S_oeis_a200312 in
 theorem OMA.solution : type_of% @OMA.S_oeis_a200312.main := by
-  have z (n : ℕ) : ((n : ℤ) + 2) * catalan (n + 1) = 2 * (2 * n + 1) * catalan n := by
-    have := Nat.succ_mul_centralBinom_succ n
-    rw [← succ_mul_catalan_eq_centralBinom, ← succ_mul_catalan_eq_centralBinom] at this
-    exact_mod_cast Nat.eq_of_mul_eq_mul_left n.succ_pos (by ring_nf at this ⊢; linarith)
   intro n hn
-  obtain ⟨k, rfl⟩ : ∃ k, n = k + 2 := ⟨n - 2, by omega⟩
-  have c1 := z (k + 1)
-  have c0 := z k
-  simp only [a, b, show k + 2 - 1 = k + 1 by omega, show k + 2 - 2 = k by omega]
-  push_cast at *
-  linear_combination ((k : ℤ) + 2) * ((b (k + 1) : ℤ) + 3 * (b k : ℤ)) * c1 +
-    6 * (2 * (k : ℤ) + 3) * (b k : ℤ) * c0
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hn
+  have r (j : ℕ) : ((j:ℤ)+2) * catalan (j+1) = 2*(2*j+1) * catalan j := by
+    have h1 := succ_mul_catalan_eq_centralBinom (j+1)
+    have h2 := succ_mul_catalan_eq_centralBinom j
+    have h3 := j.succ_mul_centralBinom_succ
+    zify at h1 h2 h3
+    exact mul_left_cancel₀ (by positivity : (j:ℤ)+1 ≠ 0) (by linear_combination (j+1)*h1 + h3 - 2*(2*j+1)*h2)
+  have r1 := r (k+1)
+  simp [a, b, add_assoc] at r1 ⊢
+  linear_combination (k+2)*(b (k+1)+3*b k)*r1 + 6*(2*k+3)*b k*r k

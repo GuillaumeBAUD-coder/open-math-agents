@@ -1,52 +1,42 @@
 import OMAStatements.S_mo_282089
 
-open OMA.S_mo_282089 Finset Polynomial
+open Finset Polynomial OMA.S_mo_282089
 
-private theorem totalWeight (n : ℕ) :
-    2 * weight (range n) = n * (n + 1) := by
-  calc
-    2 * weight (range n) = (∑ i ∈ range (n + 1), i) * 2 := by
-      rw [Finset.sum_range_succ' (fun i : ℕ => i) n]
-      simp [weight, mul_comm]
-    _ = n * (n + 1) := by
-      rw [Finset.sum_range_id_mul_two, Nat.add_sub_cancel]
-      exact Nat.mul_comm _ _
+namespace ZeroSignSums
 
-private theorem coefficientCount (n k : ℕ) :
-    (generating n).coeff k = ((range n).powerset.filter (fun s => k = weight s)).card := by
-  unfold generating
-  rw [Finset.prod_one_add]
-  simp only [Finset.prod_pow_eq_pow_sum, weight, Polynomial.finsetSum_coeff,
-    Polynomial.coeff_X_pow, Finset.sum_boole, Nat.cast_id]
-  congr 1
+theorem coefficient (n k : ℕ) :
+    (generating n).coeff k = ((range n).powerset.filter fun s => weight s = k).card := by
+  rw [generating, prod_one_add, finsetSum_coeff]
+  simp only [Finset.prod_pow_eq_pow_sum, Polynomial.coeff_X_pow]
+  simp [weight, eq_comm]
 
-theorem OMA.solution : type_of% @OMA.S_mo_282089.main := by
-  intro n
-  have ht := totalWeight n
-  have hsplit (s : Finset ℕ) (hs : s ⊆ range n) :
-      weight (range n \ s) + weight s = weight (range n) := by
-    unfold weight
-    exact Finset.sum_sdiff hs
-  by_cases hparity : n * (n + 1) / 2 % 2 = 0
-  · rw [if_pos hparity, coefficientCount]
-    unfold ways
-    congr 1
-    ext s
-    simp only [Finset.mem_filter, Finset.mem_powerset]
-    constructor
-    · rintro ⟨hs, hbalance⟩
-      refine ⟨hs, ?_⟩
-      have := hsplit s hs
-      omega
-    · rintro ⟨hs, htarget⟩
-      refine ⟨hs, ?_⟩
-      have := hsplit s hs
-      omega
-  · rw [if_neg hparity]
-    unfold ways
-    apply Finset.card_eq_zero.mpr
-    apply Finset.eq_empty_iff_forall_notMem.mpr
+theorem total (n : ℕ) : weight (range n) = n * (n + 1) / 2 := by
+  have h := sum_range_id (n + 1)
+  rw [Finset.sum_range_succ' ] at h
+  simpa [weight, Nat.mul_comm] using h
+
+theorem count (n : ℕ) :
+    ways n = if n * (n + 1) / 2 % 2 = 0
+             then (generating n).coeff (n * (n + 1) / 4) else 0 := by
+  have splitSum (s : Finset ℕ) (hs : s ∈ (range n).powerset) :
+      weight (range n \ s) + weight s = n * (n + 1) / 2 := by
+    rw [← total]
+    exact sum_sdiff (f := fun i => i + 1) (mem_powerset.mp hs)
+  unfold ways
+  split
+  · rename_i heven
+    rw [coefficient]
+    apply congrArg Finset.card
+    apply filter_congr
     intro s hs
-    simp only [Finset.mem_filter, Finset.mem_powerset] at hs
-    have := hsplit s hs.1
+    have := splitSum s hs
     omega
+  · rename_i hodd
+    rw [Finset.card_eq_zero, Finset.filter_eq_empty_iff]
+    intro s hs
+    have := splitSum s hs
+    omega
+
+end ZeroSignSums
+
+theorem OMA.solution : type_of% @OMA.S_mo_282089.main := ZeroSignSums.count
