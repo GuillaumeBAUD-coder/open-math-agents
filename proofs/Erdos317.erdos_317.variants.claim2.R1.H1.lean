@@ -2,85 +2,52 @@ import OMAReductions.R_Erdos317_erdos_317_variants_claim2_R1
 
 -- Step Erdos317.erdos_317.variants.claim2.R1.H1: hypothesis H1 of reduction Erdos317.erdos_317.variants.claim2.R1
 -- Credit: @volskew90
--- H1 := ∀ n : ℕ, 1 ≤ n → ∃ u : ℕ, n < u ∧ IsPrimePow u ∧ (Icc 1 n).lcm id = (Icc 1 (u - 1)).lcm id
+-- Take u the least prime power above n; every k in (n, u) is not a prime power, so it splits
+-- into two coprime factors below k and divides lcm(1, ..., k - 1): the lcm never grows.
+
+open Finset
+
+private lemma dvd_lcm_pred {k : ℕ} (hk : 2 ≤ k) (hnp : ¬ IsPrimePow k) :
+    k ∣ (Icc 1 (k - 1)).lcm id := by
+  have hk0 : k ≠ 0 := by omega
+  have hp : (Nat.minFac k).Prime := Nat.minFac_prime (by omega)
+  set p := Nat.minFac k
+  have hab := Nat.ordProj_mul_ordCompl_eq_self k p
+  have hcop : Nat.Coprime (ordProj[p] k) (ordCompl[p] k) := (Nat.coprime_ordCompl hp hk0).pow_left _
+  have he : 0 < k.factorization p := hp.factorization_pos_of_dvd hk0 (Nat.minFac_dvd k)
+  have ha1 : 1 < ordProj[p] k := Nat.one_lt_pow he.ne' hp.one_lt
+  have hb0 : ordCompl[p] k ≠ 0 := right_ne_zero_of_mul (hab ▸ hk0)
+  have hb1 : 1 < ordCompl[p] k :=
+    Nat.one_lt_iff_ne_zero_and_ne_one.2 ⟨hb0, fun hb =>
+      hnp ⟨p, k.factorization p, hp.prime, he, by rw [hb, mul_one] at hab; exact hab⟩⟩
+  have halt : ordProj[p] k < k := by
+    have := lt_mul_of_one_lt_right (zero_lt_one.trans ha1) hb1
+    rwa [hab] at this
+  have hblt : ordCompl[p] k < k := by
+    have := lt_mul_of_one_lt_left (zero_lt_one.trans hb1) ha1
+    rwa [hab] at this
+  have hda := dvd_lcm (s := Icc 1 (k - 1)) (f := id) (mem_Icc.2 ⟨ha1.le, Nat.le_sub_one_of_lt halt⟩)
+  have hdb := dvd_lcm (s := Icc 1 (k - 1)) (f := id) (mem_Icc.2 ⟨hb1.le, Nat.le_sub_one_of_lt hblt⟩)
+  have := hcop.mul_dvd_of_dvd_of_dvd hda hdb
+  rwa [hab] at this
 
 theorem OMA.solution : OMA.R_Erdos317_erdos_317_variants_claim2_R1.H1 := by
   intro n hn
-  obtain ⟨q, hnq, hq⟩ := Nat.exists_infinite_primes (n + 1)
-  have hne : {u : ℕ | n < u ∧ IsPrimePow u}.Nonempty :=
-    ⟨q, by omega, q, 1, Nat.prime_iff.mp hq, Nat.one_pos, pow_one q⟩
-  set u := Nat.find hne with hu_def
-  have hu : n < u ∧ IsPrimePow u := Nat.find_spec hne
-  obtain ⟨hnu, hppu⟩ := hu
-  have hmin : ∀ m, n < m → m < u → ¬ IsPrimePow m := by
-    intro m h1 h2 h3
-    have hle := Nat.find_min' hne (show m ∈ {u : ℕ | n < u ∧ IsPrimePow u} from ⟨h1, h3⟩)
-    omega
-  have key : ∀ m, n ≤ m → m ≤ u - 1 →
-      (Finset.Icc 1 m).lcm id = (Finset.Icc 1 n).lcm id := by
-    intro m hnm
-    induction m, hnm using Nat.le_induction with
+  have hex : ∃ u, n < u ∧ IsPrimePow u :=
+    ⟨2 ^ (n + 1), Nat.lt_two_pow_self.trans_le (Nat.pow_le_pow_right (by norm_num) (by omega)),
+      2, n + 1, Nat.prime_two.prime, by omega, rfl⟩
+  have hu := Nat.find_spec hex
+  refine ⟨Nat.find hex, hu.1, hu.2, ?_⟩
+  have step : ∀ m, n ≤ m → m < Nat.find hex → (Icc 1 m).lcm id = (Icc 1 n).lcm id := by
+    intro m hm
+    induction m, hm using Nat.le_induction with
     | base => intro _; rfl
-    | succ m hnm ih =>
+    | succ m hm ih =>
       intro hmu
-      have hL := ih (by omega : m ≤ u - 1)
-      have h2v : 2 ≤ m + 1 := by omega
-      have hnp : ¬ IsPrimePow (m + 1) := hmin (m + 1) (by omega) (by omega)
-      set p := (m + 1).minFac with hp_def
-      have hpp : p.Prime := Nat.minFac_prime (by omega : m + 1 ≠ 1)
-      have hpP : Prime p := Nat.prime_iff.mp hpp
-      have he : 0 < (m + 1).factorization p := by
-        by_contra hz
-        push_neg at hz
-        have hz0 : (m + 1).factorization p = 0 := by omega
-        rw [Nat.factorization_eq_zero_iff] at hz0
-        rcases hz0 with h | h | h
-        · exact h hpp
-        · exact h (Nat.minFac_dvd _)
-        · omega
-      set a := p ^ ((m + 1).factorization p) with ha_def
-      have ha_dvd : a ∣ m + 1 :=
-        (Nat.Prime.pow_dvd_iff_le_factorization hpp (by omega : m + 1 ≠ 0)).mpr le_rfl
-      set b := (m + 1) / a with hb_def
-      have hab : a * b = m + 1 := Nat.mul_div_cancel' ha_dvd
-      have ha1 : 1 < a := by
-        have h1 : p ^ 1 ≤ a := Nat.pow_le_pow_right hpp.pos he
-        rw [pow_one] at h1
-        have := hpp.two_le
-        omega
-      have hb1 : 1 < b := by
-        by_contra hbc
-        push_neg at hbc
-        have hb1' : b = 1 := by
-          rcases Nat.eq_zero_or_pos b with h0 | hpos
-          · rw [h0, mul_zero] at hab; omega
-          · omega
-        rw [hb1', mul_one] at hab
-        exact hnp ⟨p, (m + 1).factorization p, hpP, he, ha_def ▸ hab⟩
-      have hpb : ¬ p ∣ b := by
-        intro hpb
-        have h1 : a * p ∣ a * b := Nat.mul_dvd_mul_left a hpb
-        rw [hab] at h1
-        have e1 : p ^ ((m + 1).factorization p + 1) = a * p := by rw [pow_succ, ha_def]
-        rw [← e1] at h1
-        have hle := (Nat.Prime.pow_dvd_iff_le_factorization hpp (by omega : m + 1 ≠ 0)).mp h1
-        omega
-      have hco : Nat.Coprime a b := by
-        rw [ha_def, Nat.coprime_pow_left_iff he, Nat.Prime.coprime_iff_not_dvd hpp]
-        exact hpb
-      have h2a : 2 * a ≤ m + 1 := by nlinarith [hab, hb1, ha1]
-      have h2b : 2 * b ≤ m + 1 := by nlinarith [hab, hb1, ha1]
-      have ham : a ∈ Finset.Icc 1 m := Finset.mem_Icc.mpr ⟨by omega, by omega⟩
-      have hbm : b ∈ Finset.Icc 1 m := Finset.mem_Icc.mpr ⟨by omega, by omega⟩
-      have hadvd : a ∣ (Finset.Icc 1 m).lcm id := Finset.dvd_lcm ham
-      have hbdvd : b ∣ (Finset.Icc 1 m).lcm id := Finset.dvd_lcm hbm
-      have hvdvd : m + 1 ∣ (Finset.Icc 1 m).lcm id :=
-        hab ▸ hco.mul_dvd_of_dvd_of_dvd hadvd hbdvd
-      have hIcc : Finset.Icc 1 (m + 1) = insert (m + 1) (Finset.Icc 1 m) := by
-        ext x
-        simp only [Finset.mem_Icc, Finset.mem_insert]
-        omega
-      rw [hIcc, Finset.lcm_insert, id_eq, ← hL]
-      exact Nat.dvd_antisymm
-        (lcm_dvd_iff.mpr ⟨hL ▸ hvdvd, dvd_refl _⟩) (dvd_lcm_right _ _)
-  exact ⟨u, hnu, hppu, (key (u - 1) (by omega) le_rfl).symm⟩
+      have hnp : ¬ IsPrimePow (m + 1) := fun h => Nat.find_min hex hmu ⟨by omega, h⟩
+      have hdvd := dvd_lcm_pred (by omega) hnp
+      rw [Nat.add_sub_cancel] at hdvd
+      have hins : Icc 1 (m + 1) = insert (m + 1) (Icc 1 m) := by ext x; simp; omega
+      rw [hins, lcm_insert, ← ih (by omega)]
+      exact Nat.dvd_antisymm (lcm_dvd hdvd dvd_rfl) (dvd_lcm_right _ _)
+  exact (step (Nat.find hex - 1) (by omega) (by omega)).symm
