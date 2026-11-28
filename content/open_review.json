@@ -22708,6 +22708,46 @@
     "https://oeis.org/A215461"
    ],
    "reason": "Trivial. Writing 2n = 3 + (2n-3), 5 + (2n-5) or 7 + (2n-7) according to n mod 3 puts an odd multiple of 3 greater than 3 as the second summand, which is a nonprime. The proof is exactly this ten-line argument. The 'conjecture, verified to 10^9' line in the entry is an author remark with an immediate proof."
+  },
+  "oeis-a275482": {
+   "date": "2026-11-28",
+   "pr": 35126,
+   "evidence": [
+    "https://oeis.org/A275482"
+   ],
+   "reason": "This disproof exploits a printed-range slip. The comment says 'permutation of the nonnegative numbers', but the sequence starts at a(1)=1 and its programs search only positive k, so 0 can never occur. The Lean disproof just shows that 0 is not in the image. The intended conjecture, that every positive integer occurs, is not addressed."
+  },
+  "oeis-a227015": {
+   "date": "2026-11-28",
+   "pr": 34846,
+   "evidence": [
+    "https://oeis.org/A227015"
+   ],
+   "reason": "This disproof exploits a printed-range slip. It shows Barker's g.f. and recurrence are inconsistent, because the recurrence printed for n>2 fails at n=8 (a(8)=487 vs 484). But the g.f.'s numerator degree means the recurrence can only hold from n>=11 on. I checked that the g.f. reproduces all listed data and that the recurrence holds from n>=11. So the intended conjectures are consistent with the data and are not refuted."
+  },
+  "oeis-a320666": {
+   "date": "2026-11-28",
+   "pr": 34853,
+   "evidence": [
+    "https://oeis.org/A320666"
+   ],
+   "reason": "This disproof exploits a printed-range slip. It shows Barker's g.f. and recurrence are inconsistent, because the recurrence printed for n>9 fails at n=10 (61 vs 62). But the g.f.'s numerator degree means the recurrence can only hold from n>=11 on. I checked that the g.f. reproduces all listed data and that the recurrence holds from n>=11. So the intended conjectures are consistent with the data and are not refuted."
+  },
+  "oeis-a135909": {
+   "date": "2026-11-28",
+   "pr": 34841,
+   "evidence": [
+    "https://oeis.org/A135909"
+   ],
+   "reason": "This disproof exploits a printed-range slip. It shows Barker's g.f. and recurrence are inconsistent, because the recurrence printed for n>6 fails at n=8 (15 vs 14). But the g.f.'s numerator degree means the recurrence can only hold from n>=10 on. I checked that the g.f. reproduces all listed data and that the recurrence holds from n>=10. So the intended conjectures are consistent with the data and are not refuted."
+  },
+  "oeis-a165025": {
+   "date": "2026-11-28",
+   "pr": 34843,
+   "evidence": [
+    "https://oeis.org/A165025"
+   ],
+   "reason": "This disproof exploits a printed-range slip. It shows Barker's g.f. and recurrence are inconsistent, because the recurrence printed for n>7 fails at n=9 (3 vs 0). But the g.f.'s numerator degree means the recurrence can only hold from n>=12 on. I checked that the g.f. reproduces all listed data and that the recurrence holds from n>=12. So the intended conjectures are consistent with the data and are not refuted."
   }
  },
  "known": {
@@ -41587,6 +41627,145 @@
     "https://oeis.org/A140320"
    ],
    "reason": "The main conjecture a(n) = 2n*3^(n-1)+1 is the p = 3 case of the formula already in the companion entry A137576: 'if p is an odd prime then a((p^k-1)/2) = 1 + k*phi(p^k)'. The growth conjuncts are the consequences stated in A140320 together with the prime case. Also, A137576 is defined through Jianing Song's divisor-sum formula rather than its own definition A002326*A006694+1 (a formula, not the conjecture)."
+  },
+  "oeis-a069755": {
+   "date": "2026-11-28",
+   "pr": 35150,
+   "evidence": [
+    "https://oeis.org/A069755",
+    "https://arxiv.org/abs/1706.04378"
+   ],
+   "reason": "Barker's closed form for the Frobenius number of three consecutive triangular numbers is proved by Robles-Pérez and Rosales, arXiv:1706.04378. That paper is linked from the entry and quotes the A069755 conjecture, formulas (2)-(4), before proving it. The Lean statement is faithful (Mathlib FrobeniusNumber of {T n, T(n+1), T(n+2)}, n >= 2), but the result was settled in 2017."
+  },
+  "oeis-a173693": {
+   "date": "2026-11-28",
+   "pr": 35121,
+   "evidence": [
+    "https://oeis.org/A173693",
+    "https://github.com/thatnealpatel/proofs/blob/main/Proofs/Enumerative/A173693CeilSatisfies.lean"
+   ],
+   "reason": "thatnealpatel/proofs already holds a sorry-free Lean proof of Mathar's order-36 recurrence for ceil(A107293(n)/2), with the same parity-period-31 argument. That file was in the repository tree snapshot taken before 13:47 UTC on 2026-11-28; the site proof merged at 16:07 UTC the same day. The statement itself is faithful (offset 0, n >= 36)."
+  },
+  "oeis-a289107": {
+   "date": "2026-11-28",
+   "pr": 35113,
+   "evidence": [
+    "https://oeis.org/A289107",
+    "https://github.com/thatnealpatel/proofs/blob/main/Proofs/Combinatorics/A289107LengthIterateParsing.lean"
+   ],
+   "reason": "Kimberling's conjecture that the iterate lengths of 00->0010, 01->011, 10->000 from 00 satisfy the recurrence is already proved, sorry-free, in thatnealpatel/proofs. That file is in a tree snapshot taken before 13:47 UTC on 2026-11-28; the site merge was at 16:06 UTC. The site proof also credits @blakestone-x. The statement (left-to-right nonoverlapping StringReplace, with 11 kept) is faithful."
+  },
+  "oeis-a281738": {
+   "date": "2026-11-28",
+   "pr": 35122,
+   "evidence": [
+    "https://oeis.org/A281738",
+    "https://oeis.org/A281735",
+    "https://github.com/lefttosolve2/open-math-agents/pull/32902"
+   ],
+   "reason": "Faithful: it reads the x-axis cells (0..n, 0) of the 2D 5-neighbour Rule 390 automaton as a binary number. But the site's earlier solve of the sister entry A281735 (same Rule 390 x-axis, left half in base 10, by connoranderson; PR #32902 merged 17:42 UTC, before this one's 19:05 UTC merge) already fixes every axis cell state for all n. With the reflection symmetry of the rule, that gives this g.f. and period-2 recurrence immediately."
+  },
+  "oeis-a392387": {
+   "date": "2026-11-28",
+   "pr": 35110,
+   "evidence": [
+    "https://oeis.org/A392387",
+    "https://github.com/the-omega-institute/trureturing/blob/dev/Problems/posske-2026-a392387-xx-chain-nullspace-2p.md"
+   ],
+   "reason": "trureturing settled a(2p) = 2(6^((p-1)/2)+1) for odd primes p on 2026-09-26 (commit 41baac8c 'op(a392387): prove a(2p) = ...'; Problems/posske-2026-a392387-xx-chain-nullspace-2p.md). It uses the same subset-of-cosines reading of the entry, including the empty set. The site statement is faithful to that comment's count, but the result was already public."
+  },
+  "oeis-a383424": {
+   "date": "2026-11-28",
+   "pr": 35092,
+   "evidence": [
+    "https://oeis.org/A383424",
+    "https://arxiv.org/abs/2610.04842"
+   ],
+   "reason": "Kimberling's gap-set conjecture {2,3,5,7,8} is Theorem 4 of A. Ashburn, arXiv:2610.04842 (v1, 4 Oct 2026). That paper is linked from the entry and proves all of A383423-A383427 with Walnut. The Lean statement (Fibonacci word A003849 and Lucas word A383422, both 0-indexed) is faithful, but the result was already published."
+  },
+  "oeis-a383425": {
+   "date": "2026-11-28",
+   "pr": 35097,
+   "evidence": [
+    "https://oeis.org/A383425",
+    "https://arxiv.org/abs/2610.04842"
+   ],
+   "reason": "Kimberling's gap-set conjecture {1,2,3,4,5} is Theorem 4 of A. Ashburn, arXiv:2610.04842 (v1, 4 Oct 2026). That paper is linked from the entry and proves all of A383423-A383427 with Walnut. The Lean statement (Fibonacci word A003849 and Lucas word A383422, both 0-indexed) is faithful, but the result was already published."
+  },
+  "oeis-a383426": {
+   "date": "2026-11-28",
+   "pr": 35104,
+   "evidence": [
+    "https://oeis.org/A383426",
+    "https://arxiv.org/abs/2610.04842"
+   ],
+   "reason": "Kimberling's gap-set conjecture {3,7,8,10} is Theorem 4 of A. Ashburn, arXiv:2610.04842 (v1, 4 Oct 2026). That paper is linked from the entry and proves all of A383423-A383427 with Walnut. The Lean statement (Fibonacci word A003849 and Lucas word A383422, both 0-indexed) is faithful, but the result was already published."
+  },
+  "oeis-a383427": {
+   "date": "2026-11-28",
+   "pr": 35109,
+   "evidence": [
+    "https://oeis.org/A383427",
+    "https://arxiv.org/abs/2610.04842"
+   ],
+   "reason": "Kimberling's gap-set conjecture {1,2,3,5,6} is Theorem 4 of A. Ashburn, arXiv:2610.04842 (v1, 4 Oct 2026). That paper is linked from the entry and proves all of A383423-A383427 with Walnut. The Lean statement (Fibonacci word A003849 and Lucas word A383422, both 0-indexed) is faithful, but the result was already published."
+  },
+  "oeis-a277560": {
+   "date": "2026-11-28",
+   "pr": 35081,
+   "evidence": [
+    "https://oeis.org/A277560",
+    "https://oeis.org/A277936",
+    "https://github.com/lefttosolve2/open-math-agents/pull/23298"
+   ],
+   "reason": "The proof header says it is adapted from the site's earlier merged proof of the sister entry A277936 (PR #23298, the same 2D Rule 7 automaton read in base 2). After stage 0 the whole plane is ON at odd stages and OFF at even ones, so Barker's g.f. and recurrence are immediate. The statement omits Barker's third closed form because of an evident sign typo (-1 - 10^n), which the header explains."
+  },
+  "mse-490449": {
+   "date": "2026-11-28",
+   "pr": 35068,
+   "evidence": [
+    "https://math.stackexchange.com/questions/490449",
+    "https://mathoverflow.net/questions/142111",
+    "https://mathoverflow.net/a/142624"
+   ],
+   "reason": "Faithful for positive finite measures: setwise convergence is equivalent to convergence of the integrals of every bounded measurable f. But the asker's MathOverflow cross-post 142111 (linked in the MSE comments) has an accepted 2013 answer giving exactly this argument: norm boundedness plus uniform approximation by the simple functions floor(nf)/n. The Lean proof follows the same route. This is a classical fact."
+  },
+  "mo-299752": {
+   "date": "2026-11-28",
+   "pr": 35024,
+   "evidence": [
+    "https://mathoverflow.net/questions/299752",
+    "https://math.stackexchange.com/questions/3438302",
+    "https://math.stackexchange.com/questions/2555706"
+   ],
+   "reason": "The maximum of lambda_min(Q)/lambda_max(P) is 1/lambda_max(P_I), attained at Q = I. This follows from the integral representation P(Q) - lambda_min(Q) P(I) >= 0, which is an accepted answer on MSE 3438302 (2019) and is also stated in MSE 2555706, a standard robust-control fact. The site proof adds a parametrization of all optimizing pairs, but the asked maximum and the optimal Q were already public."
+  },
+  "mo-281977": {
+   "date": "2026-11-28",
+   "pr": 35019,
+   "evidence": [
+    "https://mathoverflow.net/questions/281977"
+   ],
+   "reason": "The formal answer has two parts. A constant C depending on w exists, which is trivial by compactness and positivity. No uniform C exists, by the counterexample w = (t-1/4)^2/2 + epsilon in dimension 1. That second part is exactly the counterexample 'w(x) = epsilon + c|x-y|^2' already given in the comments under the MO answer (2017). The first conjunct is vacuous in content, and the substantive negative answer was already in the thread."
+  },
+  "mo-453796": {
+   "date": "2026-11-28",
+   "pr": 34985,
+   "evidence": [
+    "https://mathoverflow.net/questions/453796",
+    "https://mathoverflow.net/a/460063"
+   ],
+   "reason": "NP-hardness of the cardinality-constrained ratio problem was shown in icecuber's 2023 MO answer by a reduction from PARTITION. The site statement formalizes that reduction with integer weights, and the header credits icecuber. The extra conjuncts are also already in the thread or elementary: C(n,k) <= n^k feasible sets for fixed K is in the comments, and the scan of breakpoints when some numerator is nonnegative is elementary."
+  },
+  "Erdos1186.erdos_1186.variants.prs_conjecture": {
+   "date": "2026-11-28",
+   "pr": 17620,
+   "evidence": [
+    "https://www.erdosproblems.com/1186",
+    "https://carlostoledo.co/reports/delta3.html",
+    "https://github.com/dreadpiratechan/erdos-1186"
+   ],
+   "reason": "delta_3 = 117/2192 (the PRS conjecture) had already been proved publicly before this site solve. Carlos Toledo's report (five exact certificates, machine-verified twice) proves it, and notes an earlier claim by Star Fleet Math by 15 July 2026. Chandler Snively formalized the certificates in Lean (github.com/dreadpiratechan/erdos-1186, aiXiv:2610.02762). The site reduction headers say the cut estimates follow Toledo's proof and Snively's release."
   }
  },
  "reviewed": "2026-11-28"
