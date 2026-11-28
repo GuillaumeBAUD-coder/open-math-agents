@@ -1,174 +1,23 @@
 import OMAStatements.S_oeis_a172066
-
+import Mathlib
 open PowerSeries
-
-private theorem derivative_numeral (m : ℕ) [m.AtLeastTwo] :
-    derivative ℚ (no_index (OfNat.ofNat m : ℚ⟦X⟧)) = 0 := by
-  rw [← map_ofNat C m]
-  exact derivative_C
-
-private noncomputable def θ (f : ℚ⟦X⟧) : ℚ⟦X⟧ := X * derivative ℚ f
-
-private theorem coeff_θ (f : ℚ⟦X⟧) (m : ℕ) :
-    coeff m (θ f) = (m : ℚ) * coeff m f := by
-  cases m with
-  | zero => simp [θ]
-  | succ m =>
-    rw [θ, coeff_succ_X_mul, coeff_derivative, mul_comm]
-    simp only [Nat.cast_add, Nat.cast_one]
-
-private theorem coeff_sq_X_mul (f : ℚ⟦X⟧) (m : ℕ) :
-    coeff (m + 2) (X ^ 2 * f) = coeff m f := by
-  rw [pow_two, mul_assoc, coeff_succ_X_mul, coeff_succ_X_mul]
-
-private theorem coeff_ofNat_mul (k : ℕ) [k.AtLeastTwo] (f : ℚ⟦X⟧) (m : ℕ) :
-    coeff m ((no_index (OfNat.ofNat k : ℚ⟦X⟧)) * f) =
-      (no_index (OfNat.ofNat k : ℚ)) * coeff m f := by
-  rw [← map_ofNat C k, coeff_C_mul]
-
-private theorem θ_two (f : ℚ⟦X⟧) :
-    θ (θ f) = X * derivative ℚ f + X ^ 2 * derivative ℚ (derivative ℚ f) := by
-  simp only [θ, Derivation.leibniz, derivative_X, smul_eq_mul]
-  ring
-
-private theorem θ_three (f : ℚ⟦X⟧) :
-    θ (θ (θ f)) = X * derivative ℚ f + 3 * X ^ 2 * derivative ℚ (derivative ℚ f) +
-      X ^ 3 * derivative ℚ (derivative ℚ (derivative ℚ f)) := by
-  rw [θ_two, θ]
-  simp only [pow_two, pow_three, map_add, Derivation.leibniz,
-    derivative_X, derivative_one, smul_eq_mul]
-  ring
-
-private theorem generating_function_ode (S c G : ℚ⟦X⟧)
-    (hSq : S ^ 2 = 1 - 4 * X)
-    (hS0 : coeff 0 S = 1)
-    (hc : 2 * X * c = 1 - S)
-    (hG : G * (3 * S - 1 + 4 * X) = 2 * c ^ 9) :
-    (90 * θ G + 28 * θ (θ G) + 2 * θ (θ (θ G))) +
-      X * (-1200 * G - 636 * θ G - 115 * θ (θ G) - 7 * θ (θ (θ G))) +
-      X ^ 2 * (-1056 * G - 500 * θ G - 78 * θ (θ G) - 4 * θ (θ (θ G))) = 0 := by
-  have h2_ne : (2 : ℚ⟦X⟧) ≠ 0 := by
-    rw [← map_ofNat C 2]
-    intro h
-    have := congrArg (coeff 0) h
-    simp only [coeff_C, ↓reduceIte, map_zero] at this
-    norm_num at this
-  have h4_ne : (4 : ℚ⟦X⟧) ≠ 0 := by
-    rw [← map_ofNat C 4]
-    intro h
-    have := congrArg (coeff 0) h
-    simp only [coeff_C, ↓reduceIte, map_zero] at this
-    norm_num at this
-  have h2X_ne : (2 : ℚ⟦X⟧) * X ≠ 0 := by
-    intro h
-    have := congrArg (coeff 1) h
-    rw [← map_ofNat C 2, coeff_C_mul, coeff_X, if_pos rfl, map_zero] at this
-    norm_num at this
-  have hS_ne : S ≠ 0 := by
-    intro h
-    rw [h, map_zero] at hS0
-    norm_num at hS0
-  have h1S_ne : (1 + S : ℚ⟦X⟧) ≠ 0 := by
-    intro h
-    have := congrArg (coeff 0) h
-    simp only [map_add, coeff_one, ↓reduceIte, hS0, map_zero] at this
-    norm_num at this
-  have h3S_ne : (3 - S : ℚ⟦X⟧) ≠ 0 := by
-    intro h
-    have := congrArg (coeff 0) h
-    rw [map_sub, ← map_ofNat C 3, coeff_C, if_pos rfl, hS0, map_zero] at this
-    norm_num at this
-  have h1Sc : (1 + S) * c = 2 := by
-    apply mul_left_cancel₀ h2X_ne
-    linear_combination (1 + S) * hc - hSq
-  have hSderiv : S * derivative ℚ S = -2 := by
-    have hd := congrArg (derivative ℚ) hSq
-    simp [derivative_numeral, Derivation.leibniz, smul_eq_mul] at hd
-    apply mul_left_cancel₀ h2_ne
-    linear_combination hd
-  have hcderiv : S * derivative ℚ c = c ^ 2 := by
-    have hd := congrArg (derivative ℚ) h1Sc
-    simp [derivative_numeral, Derivation.leibniz, smul_eq_mul] at hd
-    apply mul_left_cancel₀ h2_ne
-    linear_combination S * c * hd - c ^ 2 * hSderiv - S * derivative ℚ c * h1Sc
-  have hGS : G * S * (3 - S) = 2 * c ^ 9 := by
-    linear_combination hG - G * hSq
-  let Q : ℚ⟦X⟧ := (1 + S) * (3 - S)
-  let B : ℚ⟦X⟧ := S ^ 2 * Q
-  let A1 : ℚ⟦X⟧ := 6 + 56 * S - 22 * S ^ 2
-  let A2 : ℚ⟦X⟧ := 108 + 1080 * S + 3272 * S ^ 2 - 2888 * S ^ 3 + 572 * S ^ 4
-  let A3 : ℚ⟦X⟧ := 3240 + 34560 * S + 136872 * S ^ 2 + 162048 * S ^ 3 - 304200 * S ^ 4 + 129024 * S ^ 5 - 17160 * S ^ 6
-  let G1 := derivative ℚ G
-  let G2 := derivative ℚ G1
-  let G3 := derivative ℚ G2
-  have hB_ne : B ≠ 0 := mul_ne_zero (pow_ne_zero 2 hS_ne) (mul_ne_zero h1S_ne h3S_ne)
-  have hG1 : B * G1 = A1 * G := by
-    have hd := congrArg (derivative ℚ) hGS
-    simp only [map_sub, derivative_numeral, Derivation.leibniz,
-      Derivation.leibniz_pow, nsmul_eq_mul, smul_eq_mul, Nat.cast_ofNat] at hd
-    norm_num at hd
-    linear_combination S * (1 + S) * hd + 18 * (1 + S) * c ^ 8 * hcderiv +
-      18 * c ^ 9 * h1Sc - 18 * hGS - G * (1 + S) * (3 - 2 * S) * hSderiv
-  have hBderiv : derivative ℚ B = -12 - 12 * S + 8 * S ^ 2 := by
-    have hd : derivative ℚ B = derivative ℚ (S ^ 2 * ((1 + S) * (3 - S))) := rfl
-    simp only [map_add, map_sub, derivative_numeral, derivative_one, Derivation.leibniz,
-      Derivation.leibniz_pow, nsmul_eq_mul, smul_eq_mul, Nat.cast_ofNat] at hd
-    linear_combination hd + (6 + 6 * S - 4 * S ^ 2) * hSderiv
-  have hA1deriv : S * derivative ℚ A1 = -112 + 88 * S := by
-    have hd : derivative ℚ A1 = derivative ℚ (6 + 56 * S - 22 * S ^ 2) := rfl
-    simp only [map_add, map_sub, derivative_numeral, Derivation.leibniz,
-      Derivation.leibniz_pow, nsmul_eq_mul, smul_eq_mul, Nat.cast_ofNat] at hd
-    linear_combination S * hd + (56 - 44 * S) * hSderiv
-  have hG2 : B ^ 2 * G2 = A2 * G := by
-    have hd := congrArg (derivative ℚ) hG1
-    simp only [Derivation.leibniz, smul_eq_mul] at hd
-    linear_combination B * hd + (A1 - derivative ℚ B) * hG1 +
-      G * S * Q * hA1deriv - G * A1 * hBderiv
-  have hA2deriv : S * derivative ℚ A2 = -2160 - 13088 * S + 17328 * S ^ 2 - 4576 * S ^ 3 := by
-    have hd : derivative ℚ A2 = derivative ℚ (108 + 1080 * S + 3272 * S ^ 2 - 2888 * S ^ 3 + 572 * S ^ 4) := rfl
-    simp only [map_add, map_sub, derivative_numeral, Derivation.leibniz,
-      Derivation.leibniz_pow, nsmul_eq_mul, smul_eq_mul, Nat.cast_ofNat] at hd
-    linear_combination S * hd + (1080 + 6544 * S - 8664 * S ^ 2 + 2288 * S ^ 3) * hSderiv
-  have hG3 : B ^ 3 * G3 = A3 * G := by
-    have hd := congrArg (derivative ℚ) hG2
-    simp only [Derivation.leibniz, Derivation.leibniz_pow, nsmul_eq_mul, smul_eq_mul,
-      Nat.cast_ofNat] at hd
-    linear_combination B * hd + A2 * hG1 - 2 * derivative ℚ B * hG2 +
-      G * S * Q * hA2deriv - 2 * G * A2 * hBderiv
-  have h4X : (4 : ℚ⟦X⟧) * X = 1 - S ^ 2 := by linear_combination hSq
-  have hP : (-1200 * X - 1056 * X ^ 2) * B ^ 3 + (120 * X - 758 * X ^ 2 - 582 * X ^ 3) * B ^ 2 * A1 +
-      (34 * X ^ 2 - 136 * X ^ 3 - 90 * X ^ 4) * B * A2 + (2 * X ^ 3 - 7 * X ^ 4 - 4 * X ^ 5) * A3 = 0 := by
-    apply mul_left_cancel₀ (pow_ne_zero 5 h4_ne)
-    rw [mul_zero]
-    have h4eq : (4 : ℚ⟦X⟧) ^ 5 * ((-1200 * X - 1056 * X ^ 2) * B ^ 3 + (120 * X - 758 * X ^ 2 - 582 * X ^ 3) * B ^ 2 * A1 +
-        (34 * X ^ 2 - 136 * X ^ 3 - 90 * X ^ 4) * B * A2 + (2 * X ^ 3 - 7 * X ^ 4 - 4 * X ^ 5) * A3) =
-        (-307200 * (4 * X) - 67584 * (4 * X) ^ 2) * B ^ 3 + (30720 * (4 * X) - 48512 * (4 * X) ^ 2 - 9312 * (4 * X) ^ 3) * B ^ 2 * A1 +
-        (2176 * (4 * X) ^ 2 - 2176 * (4 * X) ^ 3 - 360 * (4 * X) ^ 4) * B * A2 + (32 * (4 * X) ^ 3 - 28 * (4 * X) ^ 4 - 4 * (4 * X) ^ 5) * A3 := by ring
-    rw [h4eq, h4X]
-    simp only [B, Q, A1, A2, A3]
-    ring
-  rw [θ_three, θ_two]
-  dsimp only [θ]
-  apply mul_left_cancel₀ (pow_ne_zero 3 hB_ne)
-  rw [mul_zero]
-  have hC : B ^ 3 * ((90 * (X * G1) + 28 * (X * G1 + X ^ 2 * G2) + 2 * (X * G1 + 3 * X ^ 2 * G2 + X ^ 3 * G3)) +
-      X * (-1200 * G - 636 * (X * G1) - 115 * (X * G1 + X ^ 2 * G2) - 7 * (X * G1 + 3 * X ^ 2 * G2 + X ^ 3 * G3)) +
-      X ^ 2 * (-1056 * G - 500 * (X * G1) - 78 * (X * G1 + X ^ 2 * G2) - 4 * (X * G1 + 3 * X ^ 2 * G2 + X ^ 3 * G3))) =
-      ((-1200 * X - 1056 * X ^ 2) * B ^ 3 +
-        (120 * X - 758 * X ^ 2 - 582 * X ^ 3) * B ^ 2 * A1 +
-        (34 * X ^ 2 - 136 * X ^ 3 - 90 * X ^ 4) * B * A2 +
-        (2 * X ^ 3 - 7 * X ^ 4 - 4 * X ^ 5) * A3) * G := by
-    linear_combination (120 * X - 758 * X ^ 2 - 582 * X ^ 3) * B ^ 2 * hG1 +
-      (34 * X ^ 2 - 136 * X ^ 3 - 90 * X ^ 4) * B * hG2 +
-      (2 * X ^ 3 - 7 * X ^ 4 - 4 * X ^ 5) * hG3
-  rw [hC, hP, zero_mul]
-
 theorem OMA.solution : type_of% @OMA.S_oeis_a172066.main := by
-  intro S c G hSq hS0 hc hG n hn
-  obtain ⟨m, rfl⟩ : ∃ m, n = m + 2 := ⟨n - 2, by omega⟩
-  have hcoef := congrArg (coeff (m + 2)) (generating_function_ode S c G hSq hS0 hc hG)
-  simp only [map_add, map_sub, map_neg, neg_mul, coeff_succ_X_mul, coeff_sq_X_mul,
-    coeff_ofNat_mul, coeff_θ, map_zero] at hcoef
-  simp only [show m + 2 - 1 = m + 1 by omega, show m + 2 - 2 = m by omega]
-  push_cast at hcoef ⊢
-  linear_combination hcoef
+  intro S c G h1 _ h2 h3 n hn
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' hn
+  have z (k : ℕ) [k.AtLeastTwo] : d⁄dX ℚ (OfNat.ofNat k) = 0 := Derivation.map_natCast _ k
+  have hD : (-2097152*X^18 + 7340032*X^19 + 4194304*X^20)*G = 524288*X^9 - 5242880*X^10 + 17301504*X^11 - 18874368*X^12 - 1572864*X^13 + 6291456*X^14 + (-524288*X^9 + 4194304*X^10 - 9961472*X^11 + 5242880*X^12 + 3670016*X^13 - 1048576*X^14)*S := by
+    linear_combination (-262144*X^18 + 1048576*X^19 - 786432*X^18*S)*h3 + (-1024*X^9 + 4096*X^10 + (-2048*X^10 + 8192*X^11)*c + (-4096*X^11 + 16384*X^12)*c^2 + (-8192*X^12 + 32768*X^13)*c^3 + (-16384*X^13 + 65536*X^14)*c^4 + (-32768*X^14 + 131072*X^15)*c^5 + (-65536*X^15 + 262144*X^16)*c^6 + (-131072*X^16 + 524288*X^17)*c^7 + (-262144*X^17 + 1048576*X^18)*c^8 + (5120*X^9 - 32768*X^10)*S + (8192*X^10 - 57344*X^11)*S*c + (12288*X^11 - 98304*X^12)*S*c^2 + (16384*X^12 - 163840*X^13)*S*c^3 + (16384*X^13 - 262144*X^14)*S*c^4 - 393216*X^15*S*c^5 + (-65536*X^15 - 524288*X^16)*S*c^6 + (-262144*X^16 - 524288*X^17)*S*c^7 - 786432*X^17*S*c^8 + (-4096*X^9 + 114688*X^10)*S^2 + 172032*X^11*S^2*c + (12288*X^11 + 245760*X^12)*S^2*c^2 + (40960*X^12 + 327680*X^13)*S^2*c^3 + (98304*X^13 + 393216*X^14)*S^2*c^4 + (196608*X^14 + 393216*X^15)*S^2*c^5 + (327680*X^15 + 262144*X^16)*S^2*c^6 + 393216*X^16*S^2*c^7 + (-28672*X^9 - 229376*X^10)*S^3 + (-57344*X^10 - 286720*X^11)*S^3*c + (-102400*X^11 - 327680*X^12)*S^3*c^2 + (-163840*X^12 - 327680*X^13)*S^3*c^3 + (-229376*X^13 - 262144*X^14)*S^3*c^4 + (-262144*X^14 - 131072*X^15)*S^3*c^5 - 196608*X^15*S^3*c^6 + (100352*X^9 + 286720*X^10)*S^4 + (143360*X^10 + 286720*X^11)*S^4*c + (184320*X^11 + 245760*X^12)*S^4*c^2 + (204800*X^12 + 163840*X^13)*S^4*c^3 + (180224*X^13 + 65536*X^14)*S^4*c^4 + 98304*X^14*S^4*c^5 + (-157696*X^9 - 229376*X^10)*S^5 + (-172032*X^10 - 172032*X^11)*S^5*c + (-159744*X^11 - 98304*X^12)*S^5*c^2 + (-114688*X^12 - 32768*X^13)*S^5*c^3 - 49152*X^13*S^5*c^4 + (143360*X^9 + 114688*X^10)*S^6 + (114688*X^10 + 57344*X^11)*S^6*c + (69632*X^11 + 16384*X^12)*S^6*c^2 + 24576*X^12*S^6*c^3 + (-77824*X^9 - 32768*X^10)*S^7 + (-40960*X^10 - 8192*X^11)*S^7*c - 12288*X^11*S^7*c^2 + (23552*X^9 + 4096*X^10)*S^8 + 6144*X^10*S^8*c - 3072*X^9*S^9)*h2 + (525312*X^9 - 3145728*X^10 + 4718592*X^11 - 1572864*X^13 + 2359296*X^18*G + (-530432*X^9 + 2109440*X^10 - 1523712*X^11 - 851968*X^12 + 262144*X^13)*S + (534528*X^9 - 1155072*X^10 + 98304*X^11 + 393216*X^12)*S^2 + (-505856*X^9 + 430080*X^10 + 196608*X^11 - 65536*X^12)*S^3 + (405504*X^9 - 49152*X^10 - 98304*X^11)*S^4 + (-247808*X^9 - 45056*X^10 + 16384*X^11)*S^5 + (104448*X^9 + 24576*X^10)*S^6 + (-26624*X^9 - 4096*X^10)*S^7 + 3072*X^9*S^8)*h1
+  have e1 := congrArg (d⁄dX ℚ) h1
+  have e2 := congrArg (d⁄dX ℚ) hD
+  simp [Derivation.leibniz, Derivation.leibniz_pow, z] at e1 e2
+  have h : d⁄dX ℚ G * (2*X - 23*X^2 + 90*X^3 - 121*X^4 - 20*X^5 + 93*X^6 + 14*X^7 - 8*X^8) + G * (18 - 194*X + 696*X^2 - 804*X^3 - 266*X^4 + 582*X^5 + 120*X^6 - 44*X^7) = 18 + 6*X :=
+    mul_left_cancel₀ (show (X^26*(1099511627776 - 4398046511104*X) : ℚ⟦X⟧) ≠ 0 from mul_ne_zero (pow_ne_zero _ X_ne_zero) (fun h => by simpa [← map_ofNat (C : ℚ →+* _)] using congrArg constantCoeff h)) (by linear_combination (-1048576*X^9 + 12582912*X^10 - 53477376*X^11 + 90177536*X^12 - 34603008*X^13 - 31457280*X^14 + 8388608*X^15)*e2 - (-9437184*X^8 + 123731968*X^9 - 571473920*X^10 + 1042284544*X^11 - 428867584*X^12 - 425721856*X^13 + 121634816*X^14)*hD + (274877906944*X^18 - 4398046511104*X^19 + 28037546508288*X^20 - 89060441849856*X^21 + 139363098820608*X^22 - 72567767433216*X^23 - 54425825574912*X^24 + 59373627899904*X^25 + 2473901162496*X^26 - 7696581394432*X^27 + 1099511627776*X^28)*(S*e1 - 2*d⁄dX ℚ S*h1))
+  have d1 := congrArg (d⁄dX ℚ) h
+  have d2 := congrArg (d⁄dX ℚ) d1
+  simp [Derivation.leibniz, Derivation.leibniz_pow, z] at d1 d2
+  have h : (d⁄dX ℚ) ((d⁄dX ℚ) (d⁄dX ℚ G)) * (2*X^3 - 7*X^4 - 4*X^5) + (d⁄dX ℚ) (d⁄dX ℚ G) * (34*X^2 - 136*X^3 - 90*X^4) + d⁄dX ℚ G * (120*X - 758*X^2 - 582*X^3) + G * (-1200*X - 1056*X^2) = 0 :=
+    mul_left_cancel₀ (show (1 - 16*X + 102*X^2 - 324*X^3 + 507*X^4 - 264*X^5 - 198*X^6 + 216*X^7 + 9*X^8 - 28*X^9 + 4*X^10 : ℚ⟦X⟧) ≠ 0 from fun h => by simpa [← map_ofNat (C : ℚ →+* _)] using congrArg constantCoeff h) (by linear_combination (-2*X + 14*X^2 - 30*X^3 + 20*X^4 - 2*X^5)*h + (6*X - 40*X^2 + 76*X^3 - 30*X^4 - 14*X^5 + 2*X^6)*d1 + (X^2 - 8*X^3 + 19*X^4 - 10*X^5 - 7*X^6 + 2*X^7)*d2)
+  have h := congrArg (coeff (m+2)) h
+  rcases m with _|_|_|m <;>
+  simp [pow_succ, mul_sub, mul_add, ← mul_assoc, coeff_succ_mul_X, coeff_X, coeff_derivative, ← map_ofNat (C : ℚ →+* _)] at h ⊢ <;>
+  linarith
