@@ -26,8 +26,10 @@ const prizeUsd = (p) => { const m = (p ?? "").replace(/,/g, "").match(/[$£](\d+
 // problem is already proved, disproved or solved is a known result, not an open problem. Main statements and their
 // parts only: for a variant, the status describes the main problem, not the variant. Same rule in tools/lint.py.
 const SETTLED_STATE = /^(proved|disproved|solved)\b/;
+// A problem proved here stays an open problem solved here: erdosproblems.com then marks it solved because of our proof.
+const provedHere = (id) => fs.existsSync(path.join(ROOT, "proofs", `${id}.lean`));
 function settledUpstream(p) {
-  if (p.kind !== "open" || !SETTLED_STATE.test(p.erdosState ?? "") || /\.variants?\./.test(p.id)) return p;
+  if (p.kind !== "open" || !SETTLED_STATE.test(p.erdosState ?? "") || /\.variants?\./.test(p.id) || provedHere(p.id)) return p;
   return { ...p, kind: "known", category: "research solved (per erdosproblems.com)" };
 }
 

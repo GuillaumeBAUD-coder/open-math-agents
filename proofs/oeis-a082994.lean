@@ -4,9 +4,5 @@ import OMAStatements.S_oeis_a082994
 
 theorem OMA.disproof : ¬ (type_of% @OMA.S_oeis_a082994.main) := by
   intro h
-  have hr : OMA.S_oeis_a082994.rev10 2178 = 8712 := by
-    simp [OMA.S_oeis_a082994.rev10, Nat.ofDigits]
-  have h2 := (h 2178 (by norm_num) (by norm_num) (by rw [hr]; norm_num)
-    ⟨4356, by rw [hr]⟩).1
-  obtain ⟨r, hr2⟩ := h2
-  rcases (show r ≤ 46 ∨ 47 ≤ r by omega) with h3 | h3 <;> nlinarith
+  obtain ⟨r, hr⟩ := (h 2178 (by decide) (by decide) (by decide) ⟨4356, by decide⟩).1
+  rcases (show r ≤ 46 ∨ 47 ≤ r by omega) with hlo | hhi <;> nlinarith
