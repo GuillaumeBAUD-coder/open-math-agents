@@ -40,16 +40,7 @@ private lemma starEmbed_injective (n s M : ℕ) (hsM : s + M < n) (c : Fin (M + 
   simp only [starEmbed] at h
   split_ifs at h with hx hy hxy hxc hyc
   · exact hx.trans hy.symm
-  all_goals
-    try (exfalso; have := congrArg Fin.val h; dsimp at this; omega)
-  · apply Fin.ext
-    have := congrArg Fin.val h
-    dsimp at this
-    omega
-  · apply Fin.ext
-    have := congrArg Fin.val h
-    dsimp at this
-    omega
+  all_goals exact Fin.ext (by have := congrArg Fin.val h; dsimp at this; omega)
 
 private lemma starEmbed_adj {n s M : ℕ} (hsM : s + M < n) (c : Fin (M + 1))
     {u v : Fin n} (h : ((starGraph c).map (starEmbed n s M hsM c)).Adj u v) :
@@ -71,23 +62,7 @@ private lemma pathEmbed_injective (n s M : ℕ) (hsM : s + M < n) :
     Function.Injective (pathEmbed n s M hsM) := by
   intro x y h
   simp only [pathEmbed] at h
-  split_ifs at h with hx hy
-  · apply Fin.ext
-    have := congrArg Fin.val h
-    dsimp at this
-    omega
-  · exfalso
-    have := congrArg Fin.val h
-    dsimp at this
-    omega
-  · exfalso
-    have := congrArg Fin.val h
-    dsimp at this
-    omega
-  · apply Fin.ext
-    have := congrArg Fin.val h
-    dsimp at this
-    omega
+  split_ifs at h <;> exact Fin.ext (by have := congrArg Fin.val h; dsimp at this; omega)
 
 private lemma fin_covBy_iff {k : ℕ} {a b : Fin k} : a ⋖ b ↔ a.val + 1 = b.val := by
   constructor
@@ -111,19 +86,8 @@ private lemma pathEmbed_adj {n s M : ℕ} (hsM : s + M < n)
     EdgeInRegion s M u v ∧ M - 1 ≤ (u.val - s) + (v.val - s) := by
   rcases h with ⟨huv, a, b, hab, rfl, rfl⟩
   rw [pathGraph_adj_iff] at hab
-  rcases hab with h1 | h1
-  · simp only [pathEmbed, EdgeInRegion]
-    split_ifs with ha hb
-    · omega
-    · refine ⟨⟨by dsimp; omega, by dsimp; omega, by dsimp; omega⟩, by dsimp; omega⟩
-    · refine ⟨⟨by dsimp; omega, by dsimp; omega, by dsimp; omega⟩, by dsimp; omega⟩
-    · omega
-  · simp only [pathEmbed, EdgeInRegion]
-    split_ifs with ha hb
-    · omega
-    · refine ⟨⟨by dsimp; omega, by dsimp; omega, by dsimp; omega⟩, by dsimp; omega⟩
-    · refine ⟨⟨by dsimp; omega, by dsimp; omega, by dsimp; omega⟩, by dsimp; omega⟩
-    · omega
+  rcases hab with h1 | h1 <;> simp only [pathEmbed, EdgeInRegion] <;> split_ifs <;>
+    first | omega | exact ⟨⟨by dsimp; omega, by dsimp; omega, by dsimp; omega⟩, by dsimp; omega⟩
 
 private lemma disjoint_edgeSet_of_adj {V : Type*} {G₁ G₂ : SimpleGraph V}
     (h : ∀ u v : V, G₁.Adj u v → ¬ G₂.Adj u v) :
@@ -141,9 +105,7 @@ private lemma map_iso_adj {V W U : Type*} {G : SimpleGraph V} {H : SimpleGraph W
   · rintro ⟨huv, a, b, hab, rfl, rfl⟩
     exact ⟨huv, e a, e b, e.map_rel_iff.mpr hab, rfl, rfl⟩
   · rintro ⟨huv, a, b, hab, rfl, rfl⟩
-    refine ⟨huv, e.symm a, e.symm b, e.symm.map_rel_iff.mpr hab, ?_, ?_⟩
-    · simp
-    · simp
+    refine ⟨huv, e.symm a, e.symm b, e.symm.map_rel_iff.mpr hab, ?_, ?_⟩ <;> simp
 
 private lemma packStride (n : ℕ) (T : (k : ℕ) → SimpleGraph (Fin k)) :
     ∀ M s : ℕ, s + M < n →
@@ -159,10 +121,8 @@ private lemma packStride (n : ℕ) (T : (k : ℕ) → SimpleGraph (Fin k)) :
     intro s hsM hT
     by_cases hM0 : M = 0
     · subst hM0
-      refine ⟨fun k => False.elim (by rcases k.2 with ⟨h1, h2, _⟩; omega), ?_, ?_, ?_⟩
-      · intro k; exfalso; rcases k.2 with ⟨h1, h2, _⟩; omega
-      · intro k; exfalso; rcases k.2 with ⟨h1, h2, _⟩; omega
-      · intro k; exfalso; rcases k.2 with ⟨h1, h2, _⟩; omega
+      refine ⟨fun k => False.elim (by rcases k.2 with ⟨h1, h2, _⟩; omega), ?_, ?_, ?_⟩ <;>
+        intro k <;> exfalso <;> rcases k.2 with ⟨h1, h2, _⟩ <;> omega
     · have hM1 : 1 ≤ M := by omega
       have htop_mem : M + 1 ∈ StrideSet M := ⟨by omega, le_refl _, rfl⟩
       have hsub : ∀ k ∈ StrideSet (M - 2), k ∈ StrideSet M := by
@@ -322,9 +282,8 @@ end OMA_Erdos743_StarsOrPaths
 theorem OMA.solution : type_of% @Erdos743.erdos_743.variants.stars_or_paths := by
   intro n T hT
   by_cases hn : n < 2
-  · refine ⟨fun k => False.elim (by rcases k.2 with ⟨h1, h2⟩; omega), ?_, ?_⟩
-    · intro k; exfalso; rcases k.2 with ⟨h1, h2⟩; omega
-    · intro k; exfalso; rcases k.2 with ⟨h1, h2⟩; omega
+  · refine ⟨fun k => False.elim (by rcases k.2 with ⟨h1, h2⟩; omega), ?_, ?_⟩ <;>
+      intro k <;> exfalso <;> rcases k.2 with ⟨h1, h2⟩ <;> omega
   · have hn : 2 ≤ n := Nat.le_of_not_lt hn
     let Meven := 2 * (n / 2) - 1
     let Modd := 2 * ((n - 1) / 2)
