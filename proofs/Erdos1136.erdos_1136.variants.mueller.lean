@@ -43,6 +43,7 @@ theorem OMA.solution : type_of% @Erdos1136.erdos_1136.variants.mueller := by
     · rw [add_comm]; exact hlt j i v u k h
   · let χ (n : ℕ) : ℕ := if n ∈ muellerSet then 1 else 0
     let C (n : ℕ) := ∑ k ∈ Finset.range n, χ k
+    have Csucc (n : ℕ) : C (n+1) = C n + χ n := Finset.sum_range_succ χ n
     have hev (n : ℕ) : 2 * n ∈ muellerSet ↔ n ∈ muellerSet := by
       rw [hmem, hmem]
       refine ⟨fun ⟨i, t, hi⟩ => ?_, fun ⟨i, t, hi⟩ => ⟨i + 1, t, by rw [pow_succ', mul_assoc, ← hi]⟩⟩
@@ -61,10 +62,7 @@ theorem OMA.solution : type_of% @Erdos1136.erdos_1136.variants.mueller := by
       | succ n ih =>
         have h1 : χ (2 * n) = χ n := by simp [χ, hev]
         have h2 : χ (2 * n + 1) = n % 2 := by simp [χ, hod]; split <;> omega
-        rw [show 2 * (n + 1) = 2 * n + 1 + 1 by omega,
-          show C (2 * n + 1 + 1) = C (2 * n) + χ (2 * n) + χ (2 * n + 1) by
-            simp only [C, Finset.sum_range_succ],
-          ih, h1, h2, show C (n + 1) = C n + χ n from Finset.sum_range_succ χ n]
+        rw [show 2*(n+1) = 2*n+1+1 by omega, Csucc (2*n+1), Csucc (2*n), ih, h1, h2, Csucc n]
         omega
     let T (n : ℕ) : ℝ := 2 * (C n : ℝ) - n
     have hrec (n : ℕ) : |T n| ≤ |T (n / 2)| + 2 := by
@@ -72,16 +70,13 @@ theorem OMA.solution : type_of% @Erdos1136.erdos_1136.variants.mueller := by
       have hCn : C q + q / 2 ≤ C n ∧ C n ≤ C q + q / 2 + 1 := by
         rcases (by omega : n = 2 * q ∨ n = 2 * q + 1) with hn | hn
         · rw [hn, hdbl]; exact ⟨le_rfl, Nat.le_succ _⟩
-        · rw [hn, show C (2 * q + 1) = C (2 * q) + χ (2 * q) from Finset.sum_range_succ χ _, hdbl]
+        · rw [hn, Csucc (2*q), hdbl]
           have : χ (2 * q) ≤ 1 := by dsimp [χ]; split <;> decide
           omega
-      have : (C q : ℝ) + (q / 2 : ℕ) ≤ C n := by exact_mod_cast hCn.1
-      have : (C n : ℝ) ≤ (C q : ℝ) + (q / 2 : ℕ) + 1 := by exact_mod_cast hCn.2
-      have : (2 : ℝ) * q ≤ n := by exact_mod_cast (show 2 * q ≤ n by omega)
-      have : (n : ℝ) ≤ 2 * q + 1 := by exact_mod_cast (show n ≤ 2 * q + 1 by omega)
-      have : (q : ℝ) ≤ 2 * (q / 2 : ℕ) + 1 := by exact_mod_cast (show q ≤ 2 * (q / 2) + 1 by omega)
-      have : (2 : ℝ) * (q / 2 : ℕ) ≤ q := by exact_mod_cast (show 2 * (q / 2) ≤ q by omega)
-      change |T n| ≤ |T q| + 2
+      have lo : 2 * (C q : ℝ) + n ≤ 2 * (C n : ℝ) + q + 2 := by
+        exact_mod_cast (show 2 * C q + n ≤ 2 * C n + q + 2 by omega)
+      have hi : 2 * (C n : ℝ) + q ≤ 2 * (C q : ℝ) + n + 2 := by
+        exact_mod_cast (show 2 * C n + q ≤ 2 * C q + n + 2 by omega)
       exact abs_le.mpr
         ⟨by dsimp [T]; linarith [neg_abs_le (T q)], by dsimp [T]; linarith [le_abs_self (T q)]⟩
     have hT (n : ℕ) : |T n| ≤ 8 * Real.sqrt n := by
