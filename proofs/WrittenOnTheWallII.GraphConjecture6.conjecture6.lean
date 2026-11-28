@@ -52,11 +52,9 @@ lemma ls_ge_of_cds [Nontrivial α] (G : SimpleGraph α) [DecidableRel G.Adj] (D 
     exact ⟨G.ne_of_adj h, Or.inl (Or.inl ⟨hx, hy, h⟩)⟩
   have key : ∀ y, Relation.ReflTransGen (RD G D) d0 y → H.Reachable d0 y := by
     intro y h
-    induction h with
-    | refl => exact Reachable.refl _
-    | tail _ hbc ih =>
-      obtain ⟨hb, hc, hbc'⟩ := hbc
-      exact ih.trans (hHadjD _ _ hb hc hbc').reachable
+    rw [reachable_iff_reflTransGen]
+    refine Relation.ReflTransGen.mono ?_ d0 y h
+    exact fun x z hz => hHadjD x z hz.1 hz.2.1 hz.2.2
   have hreachD : ∀ x ∈ D, H.Reachable d0 x := fun x hx => key x (hconn d0 hd0 x hx)
   have hHconn : H.Connected := by
     have hpre : ∀ x, H.Reachable d0 x := by
@@ -106,11 +104,7 @@ lemma ls_ge_of_cds [Nontrivial α] (G : SimpleGraph α) [DecidableRel G.Adj] (D 
       exact ⟨hSspan w, hdeg w hw⟩
     have := Finset.card_le_card hsub
     rw [card_compl] at this
-    have h2 : D.card ≤ Fintype.card α := card_le_univ D
-    have h3 : ((Fintype.card α - D.card : ℕ) : ℝ) ≤
-        ((S.verts.toFinset.filter (fun v => S.degree v = 1)).card : ℝ) := by exact_mod_cast this
-    rw [Nat.cast_sub h2] at h3
-    exact h3
+    simpa only [Nat.cast_sub (card_le_univ D)] using (Nat.cast_le (α := ℝ)).2 this
   unfold Ls
   refine le_trans hmem (le_csSup ?_ ⟨S, ⟨hSspan, hStree⟩, ?_⟩)
   · refine ⟨Fintype.card α, ?_⟩
@@ -142,26 +136,20 @@ lemma exists_grow (G : SimpleGraph α) (hG : G.Connected) {T : Finset α}
   exact ⟨u, v, d, hd, hnu, hv.1, hv.2, hadj, h⟩
 
 lemma rtg_mono (G : SimpleGraph α) {D D' : Finset α} (h : D ⊆ D') {x y : α}
-    (hxy : Relation.ReflTransGen (RD G D) x y) : Relation.ReflTransGen (RD G D') x y :=
-  by
-    induction hxy with
-    | refl => exact Relation.ReflTransGen.refl
-    | tail _ hab ih => exact ih.tail ⟨h hab.1, h hab.2.1, hab.2.2⟩
+    (hxy : Relation.ReflTransGen (RD G D) x y) : Relation.ReflTransGen (RD G D') x y := by
+  refine Relation.ReflTransGen.mono ?_ x y hxy
+  exact fun _ _ h' => ⟨h h'.1, h h'.2.1, h'.2.2⟩
 
 lemma conn_insert (G : SimpleGraph α) {D : Finset α} (hD : ∀ x ∈ D, ∀ y ∈ D,
     Relation.ReflTransGen (RD G D) x y) {u d : α} (hd : d ∈ D) (hud : G.Adj u d) :
     ∀ x ∈ insert u D, ∀ y ∈ insert u D, Relation.ReflTransGen (RD G (insert u D)) x y := by
   have hsub : D ⊆ insert u D := subset_insert _ _
-  have h1 : Relation.ReflTransGen (RD G (insert u D)) u d :=
-    Relation.ReflTransGen.single ⟨mem_insert_self _ _, hsub hd, hud⟩
-  have h2 : Relation.ReflTransGen (RD G (insert u D)) d u :=
-    Relation.ReflTransGen.single ⟨hsub hd, mem_insert_self _ _, hud.symm⟩
   intro x hx y hy
   rw [mem_insert] at hx hy
   rcases hx with rfl | hx <;> rcases hy with rfl | hy
-  · exact Relation.ReflTransGen.refl
-  · exact h1.trans (rtg_mono G hsub (hD d hd y hy))
-  · exact (rtg_mono G hsub (hD x hx d hd)).trans h2
+  · exact .refl
+  · exact .trans (.single ⟨mem_insert_self _ _, hsub hd, hud⟩) (rtg_mono G hsub (hD d hd y hy))
+  · exact .trans (rtg_mono G hsub (hD x hx d hd)) (.single ⟨hsub hd, mem_insert_self _ _, hud.symm⟩)
   · exact rtg_mono G hsub (hD x hx y hy)
 
 /-- Greedy growth of a connected set together with an independent set. -/
@@ -191,9 +179,7 @@ lemma greedy_indep (G : SimpleGraph α) (hG : G.Connected) : ∀ t : ℕ, ∀ T 
     obtain ⟨u, v, m, hm, _, hvM, hvadj, hum, huv⟩ := exists_grow G hG hMne hdom
     have hvT : v ∉ T := by
       intro h
-      rcases hcov v h with h' | ⟨m', hm', h'⟩
-      · exact hvM h'
-      · exact hvadj m' hm' h'
+      exact (hcov v h).elim hvM (fun ⟨m', hm', h'⟩ => hvadj m' hm' h')
     let T' := insert v (insert u T)
     let M' := insert v M
     apply ih T' M'
@@ -299,15 +285,11 @@ lemma exists_cds_match [Nontrivial α] (G : SimpleGraph α) (hG : G.Connected) :
   · rw [edgeSet_subgraphOfAdj, Set.ncard_singleton, card_pair hne]
   · intro a ha b hb
     simp only [mem_insert, mem_singleton] at ha hb
-    have h1 : Relation.ReflTransGen (RD G {u, v}) u v :=
-      Relation.ReflTransGen.single ⟨by simp, by simp, huv⟩
-    have h2 : Relation.ReflTransGen (RD G {u, v}) v u :=
-      Relation.ReflTransGen.single ⟨by simp, by simp, huv.symm⟩
     rcases ha with rfl | rfl <;> rcases hb with rfl | rfl
-    · exact Relation.ReflTransGen.refl
-    · exact h1
-    · exact h2
-    · exact Relation.ReflTransGen.refl
+    · exact .refl
+    · exact .single ⟨by simp, by simp, huv⟩
+    · exact .single ⟨by simp, by simp, huv.symm⟩
+    · exact .refl
 
 lemma exists_cds_indep [Nontrivial α] (G : SimpleGraph α) (hG : G.Connected) :
     ∃ D N : Finset α, IsCDS G D ∧ G.IsIndepSet (N : Set α) ∧ D.card + 1 ≤ 2 * N.card := by
@@ -347,16 +329,14 @@ theorem main [Nontrivial α] (G : SimpleGraph α) [DecidableRel G.Adj] (h : G.Co
   have L1 := ls_ge_of_cds G D1 hD1
   have L2 := ls_ge_of_cds G D2 hD2
   have hμ := le_matchingNumber G Q hQ
-  have hα : N.card ≤ G.indepNum := hN.card_le_indepNum
-  have hα' : (N.card : ℝ) ≤ G.indepNum := by exact_mod_cast hα
+  have hα : (N.card : ℝ) ≤ G.indepNum := by exact_mod_cast hN.card_le_indepNum
   have hNc' : (D2.card : ℝ) + 1 ≤ 2 * N.card := by exact_mod_cast hNc
   have hQe' : 2 * (Q.edgeSet.ncard : ℝ) = D1.card := by exact_mod_cast hQe
   by_cases hc : (G.indepNum : ℝ) ≤ matchingNumber G
   · linarith
   · push_neg at hc
     have hk : Q.edgeSet.ncard < G.indepNum := by
-      have : (Q.edgeSet.ncard : ℝ) < G.indepNum := lt_of_le_of_lt hμ hc
-      exact_mod_cast this
+      exact_mod_cast (lt_of_le_of_lt hμ hc)
     have hk' : (Q.edgeSet.ncard : ℝ) + 1 ≤ G.indepNum := by exact_mod_cast hk
     linarith
 
