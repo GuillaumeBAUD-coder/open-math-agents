@@ -1,7 +1,5 @@
 import OMAStatements.S_oeis_a086004
-import Mathlib.Data.Nat.Digits.Lemmas
-import Mathlib.Data.Nat.Prime.Basic
-import Mathlib.Tactic
+import Mathlib
 
 open OMA.S_oeis_a086004
 
