@@ -62,26 +62,19 @@ private noncomputable def A : PowerSeries ℤ := PowerSeries.mk a
 private noncomputable def T : PowerSeries ℤ := PowerSeries.mk fun n => (n : ℤ) + 1
 
 private theorem A_quad : A = 1 + PowerSeries.C 3 * Xz + Xz * A^2 + Xz^2 * T := by
+  have convolution (n : ℕ) : coeff n (A ^ 2) = ∑ p ∈ range (n + 1), a p * a (n - p) := by
+    simp only [A, pow_two, coeff_mul, coeff_mk]
+    exact Finset.Nat.sum_antidiagonal_eq_sum_range_succ (fun i j => a i * a j) n
+  have ca (n : ℕ) : coeff n A = a n := by rw [A, coeff_mk]
   ext n
-  rcases n with _ | _ | n
-  · simp [A, Xz, a, aList]
-  · have ht : coeff 1 (Xz^2*T) = 0 := by rw [coeff_X_pow_mul']; simp
-    have hs : coeff 0 (A^2) = 1 := by
-      rw [coeff_zero_eq_constantCoeff_apply]
-      simp [A, a, aList]
-    simp only [map_add, coeff_C_mul, coeff_succ_X_mul, coeff_one, hs, ht]
-    norm_num [A, a, aList]
-  · simp only [map_add, coeff_C_mul, coeff_X, coeff_one, coeff_succ_X_mul,
-      coeff_X_pow_mul', A, coeff_mk, Xz]
-    have h0 : n.succ.succ ≠ 0 := by omega
-    have h1 : n.succ.succ ≠ 1 := by omega
-    have h2 : 2 ≤ n.succ.succ := by omega
-    have hn : n.succ.succ - 2 = n := by omega
-    simp only [h0, h1, h2, hn, if_false, if_true, mul_zero, add_zero, zero_add, T, coeff_mk]
-    rw [pow_two, coeff_mul]
-    simp only [coeff_mk]
-    rw [Finset.Nat.sum_antidiagonal_eq_sum_range_succ (fun i j => a i * a j) (n+1)]
-    exact convRec n
+  cases n with
+  | zero => simp [A, Xz, a, aList]
+  | succ n =>
+    simp only [map_add, coeff_C_mul, coeff_X, coeff_one, coeff_succ_X_mul,
+      coeff_X_pow_mul', ca, convolution, T, coeff_mk]
+    cases n with
+    | zero => norm_num [a, aList]
+    | succ m => simpa (disch := omega) [Nat.succ_eq_add_one, Nat.add_sub_assoc] using convRec m
 
 private theorem T_clear : (1-Xz)^2 * T = 1 := by
   have firstDiff : (1-Xz) * T = PowerSeries.mk 1 := by
@@ -100,15 +93,9 @@ private noncomputable def G : PowerSeries ℤ :=
     PowerSeries.C 16*Xz^3 - PowerSeries.C 12*Xz^4
 
 private theorem squareRelation : B^2 = G := by
-  have hquad : A - 1 - PowerSeries.C 3*Xz - Xz*A^2 = Xz^2*T := by
-    linear_combination A_quad
-  have hclear : (1-Xz)^2 * (A - 1 - PowerSeries.C 3*Xz - Xz*A^2) = Xz^2 := by
-    rw [hquad]
-    calc
-      _ = Xz^2 * ((1-Xz)^2*T) := by ring
-      _ = _ := by rw [T_clear, mul_one]
-  simp only [B, G, map_ofNat] at hclear ⊢
-  linear_combination -4*Xz*hclear
+  have h := A_quad
+  simp only [B, G, map_ofNat] at h ⊢
+  linear_combination (-4*Xz*(1-Xz)^2)*h - (4*Xz^3)*T_clear
 
 private theorem derivativeMul (f g : PowerSeries ℤ) :
     D (f*g) = f*D g + g*D f := by
@@ -142,15 +129,13 @@ private theorem differential : P*D A + Q*A = R := by
   have hder := congrArg (D) squareRelation
   rw [PowerSeries.derivative_pow] at hder
   have h : 2*G*D B = (D G)*B := by
-    calc
-      _ = ((2 : ℕ) * B^(2-1) * D B)*B := by rw [← squareRelation]; norm_num; ring
-      _ = _ := by rw [hder]
+    norm_num at hder
+    linear_combination B*hder - (2*D B)*squareRelation
   rw [derivativeB, derivativeG] at h
   have hfour : (4 : PowerSeries ℤ) ≠ 0 := by
-    intro heq
-    have hc := congrArg (constantCoeff (R := ℤ)) heq
-    simp only [map_ofNat, map_zero] at hc
-    omega
+    intro h
+    have hc := congrArg (constantCoeff (R := ℤ)) h
+    norm_num [map_ofNat] at hc
   apply mul_left_cancel₀ hfour
   simp only [P, Q, R, term, B, G, map_one, map_neg, map_ofNat] at h ⊢
   linear_combination -h
