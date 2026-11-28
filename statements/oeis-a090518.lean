@@ -4,7 +4,7 @@ import Mathlib
 # OEIS A090518: no term is zero
 
 Source: https://oeis.org/A090518
-Credit: @SudharsanAnimations
+Credit: Sudharsan Rajendiran
 
 `A090517(n)` (for `n ≥ 1`) is the least `k` such that `⌊10^n / k⌋` is prime, and `A090518(n)` is
 the prime `⌊10^n / A090517(n)⌋`, or `0` if `A090517(n) = 0`. The OEIS entry conjectures that no
