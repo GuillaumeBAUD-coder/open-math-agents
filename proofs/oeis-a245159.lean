@@ -254,17 +254,15 @@ theorem gf_from_recur (f : ℕ → ℚ) (h0 : f 0 = 0) (h1 : f 1 = 1) (h2 : f 2 
         425 * X ^ 6 - 124 * X ^ 7) := by
   set F := mk f
   have denominator : F * ((1 - X) ^ 2 * (1 - 2 * X) ^ 2 * (1 - 3 * X) ^ 2 * (1 - 5 * X)) =
-      F - C (17 : ℚ) * (X ^ 1 * F) + C (118 : ℚ) * (X ^ 2 * F) -
-        C (434 : ℚ) * (X ^ 3 * F) + C (913 : ℚ) * (X ^ 4 * F) -
-        C (1097 : ℚ) * (X ^ 5 * F) + C (696 : ℚ) * (X ^ 6 * F) -
-        C (180 : ℚ) * (X ^ 7 * F) := by
+      F - C 17 * (X ^ 1 * F) + C 118 * (X ^ 2 * F) -
+        C 434 * (X ^ 3 * F) + C 913 * (X ^ 4 * F) -
+        C 1097 * (X ^ 5 * F) + C 696 * (X ^ 6 * F) - C 180 * (X ^ 7 * F) := by
     simp only [map_ofNat]
     ring
   have numerator : (X * (1 - 16 * X + 103 * X ^ 2 - 346 * X ^ 3 + 656 * X ^ 4 -
       710 * X ^ 5 + 425 * X ^ 6 - 124 * X ^ 7) : PowerSeries ℚ) =
-      X ^ 1 - C (16 : ℚ) * X ^ 2 + C (103 : ℚ) * X ^ 3 - C (346 : ℚ) * X ^ 4 +
-        C (656 : ℚ) * X ^ 5 - C (710 : ℚ) * X ^ 6 + C (425 : ℚ) * X ^ 7 -
-        C (124 : ℚ) * X ^ 8 := by
+      X ^ 1 - C 16 * X ^ 2 + C 103 * X ^ 3 - C 346 * X ^ 4 +
+        C 656 * X ^ 5 - C 710 * X ^ 6 + C 425 * X ^ 7 - C 124 * X ^ 8 := by
     simp only [map_ofNat]
     ring
   rw [denominator, numerator]
@@ -272,12 +270,9 @@ theorem gf_from_recur (f : ℕ → ℚ) (h0 : f 0 = 0) (h1 : f 1 = 1) (h2 : f 2 
   simp only [F, map_add, map_sub, coeff_C_mul, coeff_X_pow_mul', coeff_mk, coeff_X_pow]
   rcases Nat.lt_or_ge n 9 with h | h
   · interval_cases n <;> norm_num [h0, h1, h2, h3, h4, h5, h6, h7, h8]
-  · have recurrence := hr (n - 9)
-    have shift (k : ℕ) (hk : k ≤ 9) : n - 9 + k = n - (9 - k) := by omega
-    simp (disch := omega) only [shift] at recurrence
-    norm_num at recurrence
-    simp (disch := omega) only [if_pos, if_neg, mul_zero, add_zero, sub_zero]
-    linear_combination recurrence
+  · obtain ⟨m, rfl⟩ : ∃ m, n = m + 9 := ⟨n - 9, by omega⟩
+    simp (disch := omega) [Nat.add_sub_assoc]
+    linear_combination hr m
 
 end A245159Algebra
 
@@ -298,28 +293,10 @@ private noncomputable def num : PowerSeries ℚ :=
     425 * X ^ 6 - 124 * X ^ 7)
 
 private lemma closed_gf : mk closed * den = num := by
-  have hmul : mk closed * den =
-      mk closed - C 17 * (mk closed * X ^ 1) + C 118 * (mk closed * X ^ 2) -
-      C 434 * (mk closed * X ^ 3) + C 913 * (mk closed * X ^ 4) -
-      C 1097 * (mk closed * X ^ 5) + C 696 * (mk closed * X ^ 6) -
-      C 180 * (mk closed * X ^ 7) := by
-    simp only [den, map_ofNat]
-    ring
-  have hnum : num =
-      X ^ 1 - C 16 * X ^ 2 + C 103 * X ^ 3 - C 346 * X ^ 4 +
-      C 656 * X ^ 5 - C 710 * X ^ 6 + C 425 * X ^ 7 - C 124 * X ^ 8 := by
-    simp only [num, map_ofNat]
-    ring
-  rw [hmul, hnum]
-  apply PowerSeries.ext
+  apply A245159Algebra.gf_from_recur <;> try (norm_num [closed]; done)
   intro n
-  simp only [map_add, map_sub, coeff_C_mul, coeff_mul_X_pow', coeff_X_pow, coeff_mk]
-  by_cases h : n < 9
-  · interval_cases n <;> norm_num [closed]
-  · obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le (show 9 ≤ n by omega)
-    rw [Nat.add_comm 9 k]
-    simp (disch := omega) [closed, Nat.add_sub_assoc, pow_add]
-    ring
+  simp (disch := omega) [closed, pow_add]
+  ring
 
 lemma closed_from_gf
     (h : mk (fun n => if n = 0 then (0 : ℚ) else (a n : ℚ)) *
