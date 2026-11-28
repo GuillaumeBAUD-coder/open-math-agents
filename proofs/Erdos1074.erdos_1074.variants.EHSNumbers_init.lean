@@ -57,17 +57,13 @@ open OMA.E1074 in
 theorem OMA.solution : type_of% @Erdos1074.erdos_1074.variants.EHSNumbers_init := by
   classical
   obtain ⟨c8, c9, c13, c14, c15, c16, c17⟩ := counts
-  have h0 : Nat.nth P 0 = 8 := c8 ▸ Nat.nth_count (p := P) m8
-  have h1 : Nat.nth P 1 = 9 := c9 ▸ Nat.nth_count (p := P) m9
-  have h2 : Nat.nth P 2 = 13 := c13 ▸ Nat.nth_count (p := P) m13
-  have h3 : Nat.nth P 3 = 14 := c14 ▸ Nat.nth_count (p := P) m14
-  have h4 : Nat.nth P 4 = 15 := c15 ▸ Nat.nth_count (p := P) m15
-  have h5 : Nat.nth P 5 = 16 := c16 ▸ Nat.nth_count (p := P) m16
-  have h6 : Nat.nth P 6 = 17 := c17 ▸ Nat.nth_count (p := P) m17
+  have atIndex {n k : ℕ} (h : P n) (e : Nat.count P n = k) : Nat.nth P k = n :=
+    e ▸ Nat.nth_count (p := P) h
   change Nat.nth P '' Set.Icc 0 6 = _
   have hI : Set.Icc 0 6 = ({0, 1, 2, 3, 4, 5, 6} : Set ℕ) := by
     ext i
     simp only [Set.mem_Icc, Set.mem_insert_iff, Set.mem_singleton_iff]
     omega
   rw [hI]
-  simp [Set.image_insert_eq, h0, h1, h2, h3, h4, h5, h6]
+  simp [Set.image_insert_eq, atIndex m8 c8, atIndex m9 c9, atIndex m13 c13, atIndex m14 c14,
+    atIndex m15 c15, atIndex m16 c16, atIndex m17 c17]
