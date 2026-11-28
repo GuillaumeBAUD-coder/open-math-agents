@@ -18,6 +18,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Wikipedia catalogue import
+        run: python3 -I tests/test_ingest_extra.py
       - name: Submission gate (lint)
         id: lint
         run: python3 -I tests/test_lint.py

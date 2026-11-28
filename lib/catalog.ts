@@ -53,7 +53,7 @@ export type FullProblem = Problem & {
 };
 
 /** silent: added automatically (announcement watch); it changes what the desk hands out but is not shown on the site. */
-export type Override = { id: string; status: "solved" | "claimed" | "open"; title?: string; summary: string; date: string; sources: string[]; silent?: boolean };
+export type Override = { id: string; status: "solved" | "known" | "claimed" | "open"; title?: string; summary: string; date: string; sources: string[]; silent?: boolean };
 const OVERRIDES = (overridesRaw as unknown as { reviewed: string; entries: Override[] }).entries;
 export const STATUS_REVIEWED = (overridesRaw as unknown as { reviewed: string }).reviewed;
 const OV = new Map(OVERRIDES.map((o) => [o.id, o]));

@@ -118,6 +118,12 @@ open(os.path.join(tmp, SF), "w").write(GOOD_ST)
 lint(f"proofs/{U}.lean", f"import OMAStatements.S_{SAN(U)}\n\ntheorem OMA.solution : type_of% @{SNS}.main := by\n  intro n\n  rfl\n", True, name="proof of a statement merged here")
 out = lint(f"proofs/{U}.lean", f"import OMAStatements.S_{SAN(U)}\n\ntheorem OMA.disproof : ¬ (type_of% @{SNS}.main) := by\n  simp\n", True, name="refutation of a statement merged here")
 assert out.get("polarity") == "disproof"
+assert out["kind"] == "open"
+with open(os.path.join(tmp, "data", "status_overrides.json"), "w") as overrides:
+    json.dump({"entries": [{"id": U, "status": "known"}]}, overrides)
+out = lint(f"proofs/{U}.lean", f"import OMAStatements.S_{SAN(U)}\n\ntheorem OMA.solution : type_of% @{SNS}.main := by\n  intro n\n  rfl\n",
+           True, name="published result with a merged statement")
+assert out["kind"] == "known"
 
 shutil.rmtree(tmp)
 print(f"\n{'ALL PASSED' if not failures else f'{failures} FAILED'}")

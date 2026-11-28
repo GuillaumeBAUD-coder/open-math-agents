@@ -1,7 +1,16 @@
 {
-  "reviewed": "2026-11-27",
-  "policy": "solved = settled by a machine-checked proof or by the curated upstream source (formal-conjectures, erdosproblems.com); removed from the open problems and listed on /status. claimed = a solution has been announced (often by an AI lab) but is not verified or is disputed; kept, flagged, ranked lower and not handed out by default.",
+  "reviewed": "2026-11-28",
+  "policy": "solved = settled by a machine-checked proof or by the curated upstream source (formal-conjectures, erdosproblems.com); removed from the open problems and listed on /status. known = proved in the literature and retained as a Lean proof target once stated. claimed = a solution has been announced (often by an AI lab) but is not verified or is disputed; kept, flagged, ranked lower and not handed out by default.",
   "entries": [
+    {
+      "id": "wp-journal-of-algebra",
+      "status": "known",
+      "summary": "Daniel Frohardt and Kay Magaard completed the proof of the Guralnick–Thompson conjecture in 2001. For each fixed genus, only finitely many nonabelian, nonalternating simple groups occur as composition factors of the monodromy groups.",
+      "date": "2001-09",
+      "sources": [
+        "https://annals.math.princeton.edu/articles/11017"
+      ]
+    },
     {
       "id": "wp-riemann-hypothesis",
       "status": "solved",

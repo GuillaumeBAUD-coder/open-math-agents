@@ -10,6 +10,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import zlib from "node:zlib";
+import { createHash } from "node:crypto";
 
 const ROOT = path.join(path.dirname(new URL(import.meta.url).pathname), "..");
 const D = (f) => JSON.parse(fs.readFileSync(path.join(ROOT, "data", f), "utf8"));
@@ -18,6 +19,7 @@ const extra = D("extra.json");
 const e2 = D("extra2.json");
 const statements = D("statements.json");
 const overrides = D("status_overrides.json").entries;
+const known = new Set(overrides.filter((o) => o.status === "known").map((o) => o.id));
 const e3 = JSON.parse(zlib.gunzipSync(fs.readFileSync(path.join(ROOT, "data", "extra3.json.gz"))).toString("utf8"));
 
 const lg = (x) => Math.log10(1 + x);
@@ -50,7 +52,13 @@ function fameOf(p) {
 }
 const formalized = (p) => {
   const st = statements[p.id];
-  return st ? { ...p, kind: "open", category: "research open (formalized here)", decl: st.decl, module: st.module, lean: st.lean, file: st.file, formalizedHere: true } : p;
+  if (!st) return p;
+  const isKnown = known.has(p.id);
+  return {
+    ...p, kind: isKnown ? "known" : "open",
+    category: isKnown ? "research solved (proved in literature)" : "research open (formalized here)",
+    decl: st.decl, module: st.module, lean: st.lean, file: st.file, formalizedHere: true,
+  };
 };
 
 const core = [
@@ -141,7 +149,10 @@ for (const p of core) {
 }
 const files = JSON.parse(zlib.gunzipSync(fs.readFileSync(path.join(ROOT, "data", "fc_files.json.gz"))).toString("utf8"));
 for (const [p, content] of Object.entries(files)) parts(content).forEach((s, i) => out.push(`INSERT INTO upstream_file VALUES (${q(p)}, ${i}, ${q(s)});`));
-const version = `${catalog.meta.upstreamCommit.slice(0, 12)}-${core.length}-${Object.keys(statements).length}`;
+// Metadata edits can change the SQL without adding or removing rows.
+const coreHash = createHash("sha256");
+for (const line of out) coreHash.update(line).update("\n");
+const version = `${catalog.meta.upstreamCommit.slice(0, 12)}-${core.length}-${Object.keys(statements).length}-${coreHash.digest("hex").slice(0, 16)}`;
 out.push(`INSERT OR REPLACE INTO meta VALUES ('version', ${q(version)});`);
 fs.writeFileSync(path.join(ROOT, "data", "gen", "catalog.sql"), out.join("\n") + "\n");
 fs.writeFileSync(path.join(ROOT, "data", "gen", "version.txt"), version + "\n");
