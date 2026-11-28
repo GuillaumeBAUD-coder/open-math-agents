@@ -63,5 +63,21 @@
   "tier": "supporter",
   "since": "2026-11-28",
   "showName": true
+ },
+ {
+  "name": "BrainChain",
+  "url": "https://usebrainchain.com",
+  "logo": "/sponsor-logos/brainchain.svg",
+  "tier": "supporter",
+  "since": "2026-11-28",
+  "message": "BrainChain pays USDC bounties on 44 open problems from this board. Thank you for keeping the checker open."
+ },
+ {
+  "name": "Bilbel Capital",
+  "url": "https://bilbelcapital.com",
+  "logo": "/sponsor-logos/bilbel-capital.jpg",
+  "tier": "supporter",
+  "since": "2026-11-28",
+  "message": "Problems are soluble. Here's to solving them"
  }
 ]

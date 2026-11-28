@@ -2,50 +2,48 @@ import FormalConjectures.WrittenOnTheWallII.Test
 
 open SimpleGraph Matrix Polynomial WrittenOnTheWallII.Test
 
+set_option maxHeartbeats 1000000 in
 theorem OMA.solution : type_of% @WrittenOnTheWallII.Test.house_cvetkovic := by
   classical
+  let f : ℝ[X] := X^3 - 2*X^2 - 2*X + 2
   let A := HouseGraph.adjMatrix ℝ
   have hA : A = !![0,1,0,1,0; 1,0,1,0,0; 0,1,0,1,1; 1,0,1,0,1; 0,0,1,1,0] := by
-    ext i j; fin_cases i <;> fin_cases j <;>
-      norm_num [A, adjMatrix_apply, HouseGraph, fromEdgeSet_adj, Sym2.eq_iff, Fin.ext_iff]
-  have hroot {t b c d e : ℝ} (h0 : t = b + d) (h1 : t * b = 1 + c) (h2 : t * c = b + d + e)
-      (h3 : t * d = c + 1 + e) (h4 : t * e = c + d) : A.charpoly.eval t = 0 := by
-    rw [Matrix.eval_charpoly, ← Matrix.exists_mulVec_eq_zero_iff]
-    refine ⟨![1, b, c, d, e], fun h => by have := congrFun h (0 : Fin 5); norm_num at this, ?_⟩
-    rw [Matrix.sub_mulVec, sub_eq_zero, hA]; ext i
-    fin_cases i <;>
-      norm_num [Matrix.mulVec, dotProduct, Fin.sum_univ_succ, Matrix.scalar, Matrix.diagonal] <;>
-      linarith
-  let f (t : ℝ) := t ^ 3 - 2 * t ^ 2 - 2 * t + 2
-  have hf : Continuous f := by fun_prop
-  have hfr {t : ℝ} (h : f t = 0) : A.charpoly.eval t = 0 := by
-    apply hroot (b := 1) (c := t - 1) (d := t - 1) (e := t * (t - 2)) <;>
-      dsimp [f] at h <;> nlinarith
-  obtain ⟨a, ha, za⟩ := intermediate_value_Icc (show (-3 / 2 : ℝ) ≤ -1 by norm_num)
-    hf.continuousOn (show (0 : ℝ) ∈ Set.Icc (f (-3 / 2)) (f (-1)) by norm_num [f])
-  obtain ⟨b, hb, zb⟩ := intermediate_value_Icc' (show (1 / 2 : ℝ) ≤ 1 by norm_num)
-    hf.continuousOn (show (0 : ℝ) ∈ Set.Icc (f 1) (f (1 / 2)) by norm_num [f])
-  obtain ⟨c, hc, zc⟩ := intermediate_value_Icc (show (2 : ℝ) ≤ 3 by norm_num)
-    hf.continuousOn (show (0 : ℝ) ∈ Set.Icc (f 2) (f 3) by norm_num [f])
-  have z0 : A.charpoly.eval 0 = 0 := by
-    apply hroot (b := -1) (c := -1) (d := 1) (e := 0) <;> norm_num
-  have zm : A.charpoly.eval (-2) = 0 := by
-    apply hroot (b := -1) (c := 1) (d := -1) (e := 0) <;> norm_num
-  let R : Multiset ℝ := (-2) ::ₘ a ::ₘ 0 ::ₘ b ::ₘ c ::ₘ 0
-  have nd : R.Nodup := by
-    simp [R, Multiset.nodup_cons, not_or]; (repeat' constructor) <;>
-      linarith [ha.1, ha.2, hb.1, hb.2, hc.1, hc.2]
-  have rs : A.charpoly.roots = R :=
-    Polynomial.roots_eq_of_natDegree_le_card_of_ne_zero (S := ⟨R, nd⟩)
-      (fun x hx => by
-        rcases (by simpa [R] using hx) with rfl | rfl | rfl | rfl | rfl
-        exacts [zm, hfr za, z0, hfr zb, hfr zc])
-      (by rw [Matrix.charpoly_natDegree_eq_dim]; simp [R, Finset.card]) A.charpoly_monic.ne_zero
+    ext i j
+    change (if HouseGraph.Adj i j then (1 : ℝ) else 0) = _
+    fin_cases i <;> fin_cases j <;>
+      norm_num [HouseGraph, fromEdgeSet_adj, Sym2.eq_iff, Fin.ext_iff]
+  have hp : A.charpoly = X * (X+2) * f := by
+    rw [hA]
+    simp [f, Matrix.charpoly, Matrix.det_succ_row_zero, Fin.sum_univ_succ,
+      Matrix.charmatrix_apply, Fin.succAbove]
+    ring
+  obtain ⟨a, ha, hfa⟩ := intermediate_value_Icc (by norm_num : (-3/2 : ℝ) ≤ -1)
+    f.continuous.continuousOn (show 0 ∈ Set.Icc (f.eval (-3/2)) (f.eval (-1)) by norm_num [f])
+  obtain ⟨b, hb, hfb⟩ := intermediate_value_Icc' (by norm_num : (1/2 : ℝ) ≤ 1)
+    f.continuous.continuousOn (show 0 ∈ Set.Icc (f.eval 1) (f.eval (1/2)) by norm_num [f])
+  obtain ⟨c, hc, hfc⟩ := intermediate_value_Icc (by norm_num : (2 : ℝ) ≤ 3)
+    f.continuous.continuousOn (show 0 ∈ Set.Icc (f.eval 2) (f.eval 3) by norm_num [f])
+  have hlt : (-2 : ℝ) < a ∧ a < 0 ∧ 0 < b ∧ b < c := by
+    rcases ha with ⟨ha₁,ha₂⟩
+    rcases hb with ⟨hb₁,hb₂⟩
+    exact ⟨by linarith, by linarith, by linarith, by linarith [hc.1]⟩
+  rcases hlt with ⟨ha₁,ha₂,hb₁,hb₂⟩
+  have hp' : A.charpoly.roots = (-2) ::ₘ a ::ₘ 0 ::ₘ b ::ₘ c ::ₘ 0 := by
+    refine roots_eq_of_natDegree_le_card_of_ne_zero
+      (S := ⟨(-2) ::ₘ a ::ₘ 0 ::ₘ b ::ₘ c ::ₘ 0, ?_⟩) ?_ (by change A.charpoly.natDegree ≤ 5; simp) (Matrix.charpoly_monic _).ne_zero
+    · simp only [Multiset.nodup_cons, Multiset.mem_cons, Multiset.notMem_zero, or_false, not_or,
+        Multiset.nodup_zero, and_true]
+      repeat' apply And.intro
+      all_goals intro h
+      all_goals first | linarith | exact h
+    · intro x hx
+      simp only [Finset.mem_mk, Multiset.mem_cons, Multiset.notMem_zero, or_false] at hx
+      rcases hx with rfl | rfl | rfl | rfl | rfl <;> simp [hp, hfa, hfb, hfc]
   change A.charpoly.roots.countP (fun x => 0 = x) +
-    min (A.charpoly.roots.countP (fun x => 0 < x)) (A.charpoly.roots.countP (fun x => 0 > x)) = 3
-  rw [rs]
-  have ha' : a < 0 := by linarith [ha.2]
-  have hb' : 0 < b := by linarith [hb.1]
-  have hc' : 0 < c := by linarith [hc.1]
-  simp only [R, Multiset.countP_cons, Multiset.countP_zero]
-  norm_num [ha', hb', hc', ha'.not_gt, hb'.not_gt, hc'.not_gt, ha'.ne', hb'.ne, hc'.ne]
+     min (A.charpoly.roots.countP (fun x => 0 < x))
+         (A.charpoly.roots.countP (fun x => 0 > x)) = 3
+  rw [hp']
+  have hc₀ : 0 < c := hb₁.trans hb₂
+  simp only [Multiset.countP_cons, Multiset.countP_zero]
+  norm_num [ha₂, ha₂.ne, ha₂.ne', ha₂.not_gt,
+    hb₁, hb₁.ne, hb₁.ne', hb₁.not_gt, hc₀, hc₀.ne, hc₀.ne', hc₀.not_gt]

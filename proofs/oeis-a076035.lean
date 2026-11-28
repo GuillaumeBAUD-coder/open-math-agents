@@ -1,35 +1,13 @@
 import OMAStatements.S_oeis_a076035
 import Mathlib
 
-/-!
-# A076035: Mathar's relation a(n) = 4·A076025(n)
-
-With D = 1 − 4xC(x): 1/D = 1 + 4·xC/D, and (1 − 3xC)/D = (D + xC)/D = 1 + xC/D. For n > 0 the
-constant term 1 does not contribute, so [xⁿ] 1/D = 4·[xⁿ] (1 − 3xC)/D (this is the
-generating-function argument mentioned in the entry).
--/
-
-open OMA.S_oeis_a076035 PowerSeries in
+open PowerSeries OMA.S_oeis_a076035 in
 theorem OMA.solution : type_of% @OMA.S_oeis_a076035.main := by
   intro n hn
-  set C' := catalanGF
-  set D := S_oeis_a076035.denominator with hDdef
-  have hD : constantCoeff D ≠ 0 := by
-    rw [hDdef]; unfold S_oeis_a076035.denominator; simp
-  have hinv : D * D⁻¹ = 1 := PowerSeries.mul_inv_cancel D hD
-  have h4 : (C 4 : ℚ⟦X⟧) = 4 := map_ofNat C 4
-  have e1 : D⁻¹ = 1 + C 4 * (X * C' * D⁻¹) := by
-    have hsum : D + 4 * X * C' = 1 := by
-      rw [hDdef]; unfold S_oeis_a076035.denominator; ring
-    calc D⁻¹ = (D + 4 * X * C') * D⁻¹ := by rw [hsum, one_mul]
-      _ = D * D⁻¹ + C 4 * (X * C' * D⁻¹) := by rw [h4]; ring
-      _ = 1 + C 4 * (X * C' * D⁻¹) := by rw [hinv]
-  have e2 : (1 - 3 * X * C') * D⁻¹ = 1 + X * C' * D⁻¹ := by
-    have hsum : 1 - 3 * X * C' = D + X * C' := by
-      rw [hDdef]; unfold S_oeis_a076035.denominator; ring
-    rw [hsum, add_mul, hinv]
-  unfold a b
-  rw [← hDdef, e2]
-  conv_lhs => rw [e1]
-  rw [map_add, map_add, coeff_C_mul, coeff_one, if_neg (by omega)]
-  ring
+  have h : denominator⁻¹ - C 4 * ((1 - 3 * X * catalanGF) * denominator⁻¹) = C (-3) * (denominator * denominator⁻¹) := by
+    simp only [denominator, map_neg, map_ofNat]
+    ring
+  rw [PowerSeries.mul_inv_cancel _ (by simp [denominator]), mul_one] at h
+  have := congrArg (coeff n) h
+  rw [map_sub, coeff_C_mul, coeff_C, if_neg (by omega), sub_eq_zero] at this
+  exact this

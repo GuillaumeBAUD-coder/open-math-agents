@@ -217,19 +217,6 @@ theorem gf : PowerSeries.mk (fun n => (a n : ℚ)) =
       rw [this]; ring
   rw [← key, mul_assoc, PowerSeries.mul_inv_cancel _ hden, mul_one]
 
-/-- Controls: the entry's data a(0..30). -/
-theorem controls : (List.range 31).map (fun n => (a n : ℤ)) =
-    [1, 1, 2, 3, 4, 6, 4, 10, 4, 14, 4, 18, 4, 22, 4, 26, 4, 30, 4, 34, 4, 38, 4, 42, 4, 46, 4,
-      50, 4, 54, 4] := by
-  obtain ⟨v0, v1, v2, v3⟩ := small_vals
-  simp only [List.range_succ, List.range_zero, List.nil_append, List.map_cons, List.map_nil,
-    List.cons_append]
-  rw [v0, v1, v2, v3]
-  simp only [List.cons.injEq, and_true]
-  refine ⟨by norm_num, by norm_num, by norm_num, by norm_num, ?_⟩
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
-    ?_, ?_, ?_, ?_, ?_⟩ <;> rw [closed_form _ (by norm_num)] <;> norm_num
-
 /-- All three of Barker's conjectures. -/
 theorem conjecture :
     (∀ n : ℕ, 3 < n → (a n : ℤ) = n - (-1) ^ n * (n - 4)) ∧

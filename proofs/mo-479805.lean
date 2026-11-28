@@ -4,6 +4,10 @@ import Mathlib
 /-!
 # MathOverflow 479805 — a binomial cdf ratio inequality
 
+Retains @koolkao's beta-integral proof from open-math-agents PR #24532.
+The derivative calculation uses the product and power rules directly; the
+quadratic moment inequality follows from the standard discriminant criterion.
+
 `h(n) = (F_n(k) + F_n(k+1)) / ((n-k)(F_n(k-1) + F_n(k)))` is non-increasing in `n ≥ k+1`
 (`F_n` the cdf of `Bin(n,p)`, `0 < p < 1`, `k ≥ 1`). Proof: beta-integral representation of `F_n(k)`,
 one integration by parts, and three positivity facts for the moments
@@ -18,23 +22,15 @@ open intervalIntegral Finset OMA.S_mo_479805
 lemma ibp (m l : ℕ) (x : ℝ) :
     ((m : ℝ) + 1) * ∫ s in (0 : ℝ)..x, s ^ m * (1 - s) ^ (l + 1) =
       x ^ (m + 1) * (1 - x) ^ (l + 1) + ((l : ℝ) + 1) * ∫ s in (0 : ℝ)..x, s ^ (m + 1) * (1 - s) ^ l := by
-  have hd : ∀ s ∈ Set.uIcc (0 : ℝ) x,
+  have hd (s : ℝ) :
       HasDerivAt (fun s : ℝ => s ^ (m + 1) * (1 - s) ^ (l + 1))
         (((m : ℝ) + 1) * (s ^ m * (1 - s) ^ (l + 1)) - ((l : ℝ) + 1) * (s ^ (m + 1) * (1 - s) ^ l)) s := by
-    intro s _
-    have h1 : HasDerivAt (fun s : ℝ => s ^ (m + 1)) (((m + 1 : ℕ) : ℝ) * s ^ m) s := by
-      simpa using hasDerivAt_pow (m + 1) s
-    have h2 : HasDerivAt (fun s : ℝ => (1 - s) ^ (l + 1)) (((l + 1 : ℕ) : ℝ) * (1 - s) ^ l * (-1)) s := by
-      have hc : HasDerivAt (fun s : ℝ => 1 - s) (-1) s := by
-        simpa using (hasDerivAt_id s).const_sub (1 : ℝ)
-      have := (hasDerivAt_pow (l + 1) (1 - s)).comp s hc
-      simpa [Function.comp_def] using this
-    refine (h1.mul h2).congr_deriv ?_
-    push_cast; ring
-  have hint : IntervalIntegrable (fun s : ℝ => ((m : ℝ) + 1) * (s ^ m * (1 - s) ^ (l + 1)) -
-      ((l : ℝ) + 1) * (s ^ (m + 1) * (1 - s) ^ l)) MeasureTheory.volume 0 x := by
-    apply Continuous.intervalIntegrable; fun_prop
-  have := integral_eq_sub_of_hasDerivAt hd hint
+    refine (((hasDerivAt_id s).pow (m + 1)).mul
+      (((hasDerivAt_id s).const_sub 1).pow (l + 1))).congr_deriv ?_
+    simp
+    ring
+  have := integral_eq_sub_of_hasDerivAt (a := 0) (b := x) (fun s _ => hd s)
+    (by apply Continuous.intervalIntegrable; fun_prop)
   rw [integral_sub, integral_const_mul, integral_const_mul] at this
   · simp at this; linarith
   · apply Continuous.intervalIntegrable; fun_prop
@@ -125,13 +121,15 @@ lemma F2 (l : ℕ) {x : ℝ} (hx0 : 0 ≤ x) (hx1 : x ≤ 1) (t : ℕ) :
 
 lemma F3 (l : ℕ) {x : ℝ} (hx0 : 0 < x) (hx1 : x < 1) (t : ℕ) :
     0 ≤ A l x t * A l x (t + 2) - A l x (t + 1) ^ 2 := by
-  have hq := quad_nonneg l hx0.le hx1.le t (A l x (t + 1) ^ 2) (-2 * A l x t * A l x (t + 1))
-    (A l x t ^ 2) (fun s _ _ => by nlinarith [sq_nonneg (A l x (t + 1) - A l x t * s)])
-  have hp := A_pos l hx0 hx1 t
-  have : 0 ≤ A l x t * (A l x t * A l x (t + 2) - A l x (t + 1) ^ 2) := by nlinarith
-  by_contra h
-  have h' := mul_neg_of_pos_of_neg hp (lt_of_not_ge h)
-  linarith
+  have hq (c : ℝ) :
+      0 ≤ A l x t * (c * c) + (-2 * A l x (t + 1)) * c + A l x (t + 2) := by
+    have := quad_nonneg l hx0.le hx1.le t (c * c) (-2 * c) 1
+      (fun s _ _ => by nlinarith [sq_nonneg (c - s)])
+    nlinarith
+  have h := discrim_le_zero hq
+  dsimp [discrim] at h
+  nlinarith
+
 
 
 /-- `h(n) = (F_n(k) + F_n(k+1)) / ((n-k)(F_n(k-1) + F_n(k)))`. -/
