@@ -4,7 +4,7 @@ import Mathlib
 # OEIS A356492: determinants of prime Toeplitz matrices
 
 Source: https://oeis.org/A356492
-Credit: @SudharsanAnimations
+Credit: Sudharsan Rajendiran
 
 `A356492(n)` is the determinant of the symmetric Toeplitz matrix `M(n)` whose first row is
 `prime(n), prime(n-1), …, prime(1)`. Robert Israel conjectured that `a(n)` is prime only for
