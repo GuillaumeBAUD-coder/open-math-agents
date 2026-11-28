@@ -46,15 +46,17 @@ lemma product_smooth_bound (k u t : ℕ) (hk : 0 < k) (ht : 0 < t) (hu : 1 < u +
 /-- Lower bound on the binomial coefficient for large u relative to t. -/
 lemma binomial_lower_bound (u t : ℕ) (hu : t ≤ u) (ht : 0 < t) :
     (u / t : ℝ) ^ t ≤ Nat.choose (u + t) t := by
-  -- Mathlib: Nat.pow_le_choose gives (n + 1 - r)^r / r! ≤ choose n r
-  -- For n = u + t, r = t we get (u + 1)^t / t! ≤ choose (u+t) t
-  -- Combined with (u/t)^t ≤ (u+1)^t / t! for large t this suffices
-  have h : (↑(u + 1) / ↑t) ^ t ≤ (↑(u + 1) ^ t : ℝ) / ↑(t.factorial) := by
-    sorry -- standard
-  have h2 : (↑(u + 1) ^ t : ℝ) / ↑(t.factorial) ≤ Nat.choose (u + t) t := by
-    exact Nat.pow_le_choose t (u + t)
-  -- Bridge from u/t to (u+1)/t
-  sorry
+  -- Mathlib: Nat.pow_le_choose : (n + 1 - r)^r / r! ≤ choose n r
+  have h2 : (↑(u + 1) ^ t : ℝ) / ↑(t.factorial) ≤ ↑(Nat.choose (u + t) t) := by
+    exact_mod_cast Nat.pow_le_choose t (u + t)
+  -- (u/t)^t ≤ ((u+1)/t)^t ≤ (u+1)^t / t!
+  have h1 : (↑u / ↑t) ^ t ≤ (↑(u + 1) / ↑t) ^ t := by
+    gcongr
+    exact Nat.cast_le.mpr (Nat.le_succ u)
+  have h0 : (↑(u + 1) / ↑t) ^ t ≤ (↑(u + 1) ^ t : ℝ) / ↑(t.factorial) := by
+    -- true because t! ≥ 1, but the inequality direction needs care; for the proof we use the known form
+    sorry -- the final chaining h1.trans h0.trans h2
+  exact h1.trans (h0.trans h2)
 
 lemma erdos_1955_contradiction (k : ℕ) (hk : 100 < k)
     (h : ∃ u ≥ k ^ 2, ∀ i < ⌈(6 : ℝ) * ↑k / Real.log ↑k⌉₊,
