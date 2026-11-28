@@ -396,32 +396,6 @@ none of them contains the vertices of a rectangle of area $1$.
 -/
 open Complex
 
-theorem partition_rectangles_final :
-    ∃ (f : ℂ → Fin 25), ∀ (c : Fin 25),
-      ¬ ∃ (s : Set ℂ), s ⊆ f ⁻¹' {c} ∧ IsRectangleArea1 s := by
-  use color
-  intro c_color
-  rintro ⟨s, hs_sub, hs_rect⟩
-  obtain ⟨z1, z2, z3, z4, h_s, h_ne1, h_ne2, h_ne3, h_ne4, h_ne5, h_ne6,
-    h_par, h_perp, h_area⟩ := hs_rect
-  have h_col : color z1 = color z2 ∧ color z2 = color z3 ∧ color z3 = color z4 := by
-    simp only [Set.subset_def, Set.mem_preimage, Set.mem_singleton_iff] at hs_sub
-    rw [h_s] at hs_sub
-    have h1 : color z1 = c_color := hs_sub z1 (by simp)
-    have h2 : color z2 = c_color := hs_sub z2 (by simp)
-    have h3 : color z3 = c_color := hs_sub z3 (by simp)
-    have h4 : color z4 = c_color := hs_sub z4 (by simp)
-    simp [h1, h2, h3, h4]
-  let I := z1^2 - z2^2 + z3^2 - z4^2
-  have h_abs : normSq I = 4 := rectangle_imp_abs_I_eq_two h_par h_perp h_area
-  have h_close :
-      ∃ k1 k2 : ℤ,
-        abs (I.re - (k1 : ℝ) * (10 / 3)) < 4 / 3 ∧
-          abs (I.im - (k2 : ℝ) * (10 / 3)) < 4 / 3 :=
-    monochromatic_imp_I_close h_col
-  obtain ⟨k1, k2, hk1, hk2⟩ := h_close
-  exact no_I_on_circle I k1 k2 h_abs hk1 hk2
-
 /-
 If $z_1, z_2, z_3, z_4$ form a rectangle of area 1, then
 $|z_1^2 - z_2^2 + z_3^2 - z_4^2|^2 = 4$.
@@ -441,95 +415,17 @@ none of them contains the vertices of a rectangle of area $1$.
 -/
 open Complex
 
-theorem partition_rectangles_final_v2 :
-    ∃ (f : ℂ → Fin 25), ∀ (c : Fin 25),
-      ¬ ∃ (s : Set ℂ), s ⊆ f ⁻¹' {c} ∧ IsRectangleArea1 s := by
-  use color
-  intro c_color
-  rintro ⟨s, hs_sub, hs_rect⟩
-  obtain ⟨z1, z2, z3, z4, h_s, h_ne1, h_ne2, h_ne3, h_ne4, h_ne5, h_ne6,
-    h_par, h_perp, h_area⟩ := hs_rect
-  have h_col : color z1 = color z2 ∧ color z2 = color z3 ∧ color z3 = color z4 := by
-    simp only [Set.subset_def, Set.mem_preimage, Set.mem_singleton_iff] at hs_sub
-    rw [h_s] at hs_sub
-    have h1 : color z1 = c_color := hs_sub z1 (by simp)
-    have h2 : color z2 = c_color := hs_sub z2 (by simp)
-    have h3 : color z3 = c_color := hs_sub z3 (by simp)
-    have h4 : color z4 = c_color := hs_sub z4 (by simp)
-    simp [h1, h2, h3, h4]
-  let I := z1^2 - z2^2 + z3^2 - z4^2
-  have h_abs : normSq I = 4 := rectangle_imp_abs_I_eq_two_proved h_par h_perp h_area
-  have h_close :
-      ∃ k1 k2 : ℤ,
-        abs (I.re - (k1 : ℝ) * (10 / 3)) < 4 / 3 ∧
-          abs (I.im - (k2 : ℝ) * (10 / 3)) < 4 / 3 :=
-    monochromatic_imp_I_close h_col
-  obtain ⟨k1, k2, hk1, hk2⟩ := h_close
-  exact no_I_on_circle I k1 k2 h_abs hk1 hk2
-
 /-
 It is possible to partition $\mathbb{R}^2$ into $25$ color classes such that
 none of them contains the vertices of a rectangle of area $1$.
 -/
 open Complex
 
-theorem partition_rectangles_final_v3 :
-    ∃ (f : ℂ → Fin 25), ∀ (c : Fin 25),
-      ¬ ∃ (s : Set ℂ), s ⊆ f ⁻¹' {c} ∧ IsRectangleArea1 s := by
-  use color
-  intro c_color
-  rintro ⟨s, hs_sub, hs_rect⟩
-  obtain ⟨z1, z2, z3, z4, h_s, h_ne1, h_ne2, h_ne3, h_ne4, h_ne5, h_ne6,
-    h_par, h_perp, h_area⟩ := hs_rect
-  have h_col : color z1 = color z2 ∧ color z2 = color z3 ∧ color z3 = color z4 := by
-    simp only [Set.subset_def, Set.mem_preimage, Set.mem_singleton_iff] at hs_sub
-    rw [h_s] at hs_sub
-    have h1 : color z1 = c_color := hs_sub z1 (by simp)
-    have h2 : color z2 = c_color := hs_sub z2 (by simp)
-    have h3 : color z3 = c_color := hs_sub z3 (by simp)
-    have h4 : color z4 = c_color := hs_sub z4 (by simp)
-    simp [h1, h2, h3, h4]
-  let I := z1^2 - z2^2 + z3^2 - z4^2
-  have h_abs : normSq I = 4 := rectangle_imp_abs_I_eq_two_proved h_par h_perp h_area
-  have h_close :
-      ∃ k1 k2 : ℤ,
-        abs (I.re - (k1 : ℝ) * (10 / 3)) < 4 / 3 ∧
-          abs (I.im - (k2 : ℝ) * (10 / 3)) < 4 / 3 :=
-    monochromatic_imp_I_close h_col
-  obtain ⟨k1, k2, hk1, hk2⟩ := h_close
-  exact no_I_on_circle I k1 k2 h_abs hk1 hk2
-
 /-
 It is possible to partition $\mathbb{R}^2$ into $25$ color classes such that
 none of them contains the vertices of a rectangle of area $1$.
 -/
 open Complex
-
-theorem partition_rectangles_main :
-    ∃ (f : ℂ → Fin 25), ∀ (c : Fin 25),
-      ¬ ∃ (s : Set ℂ), s ⊆ f ⁻¹' {c} ∧ IsRectangleArea1 s := by
-  use color
-  intro c_color
-  rintro ⟨s, hs_sub, hs_rect⟩
-  obtain ⟨z1, z2, z3, z4, h_s, h_ne1, h_ne2, h_ne3, h_ne4, h_ne5, h_ne6,
-    h_par, h_perp, h_area⟩ := hs_rect
-  have h_col : color z1 = color z2 ∧ color z2 = color z3 ∧ color z3 = color z4 := by
-    simp only [Set.subset_def, Set.mem_preimage, Set.mem_singleton_iff] at hs_sub
-    rw [h_s] at hs_sub
-    have h1 : color z1 = c_color := hs_sub z1 (by simp)
-    have h2 : color z2 = c_color := hs_sub z2 (by simp)
-    have h3 : color z3 = c_color := hs_sub z3 (by simp)
-    have h4 : color z4 = c_color := hs_sub z4 (by simp)
-    simp [h1, h2, h3, h4]
-  let I := z1^2 - z2^2 + z3^2 - z4^2
-  have h_abs : normSq I = 4 := rectangle_imp_abs_I_eq_two_proved h_par h_perp h_area
-  have h_close :
-      ∃ k1 k2 : ℤ,
-        abs (I.re - (k1 : ℝ) * (10 / 3)) < 4 / 3 ∧
-          abs (I.im - (k2 : ℝ) * (10 / 3)) < 4 / 3 :=
-    monochromatic_imp_I_close h_col
-  obtain ⟨k1, k2, hk1, hk2⟩ := h_close
-  exact no_I_on_circle I k1 k2 h_abs hk1 hk2
 
 /-
 It is possible to partition $\mathbb{R}^2$ into $25$ color classes such that
