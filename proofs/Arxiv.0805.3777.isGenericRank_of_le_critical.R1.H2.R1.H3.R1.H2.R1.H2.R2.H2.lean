@@ -245,7 +245,7 @@ private def fullMark {m : ℕ} (g : Group m) : Option (Color m) → Mark m
 
 private def smallMark {m : ℕ} (a : Color m) : Mark m := .inl (none,a)
 
-private def node {m : ℕ} (s : Group m→ℂ) (v : Group m→Color m→ℂ)
+private def node {m : ℕ} (s : Group m→ℂ) (v : Group m → Color m→ℂ)
     (x : Color m→ℂ) : Mark m→ℂ :=
   Sum.elim (fun p => p.1.elim (x p.2) (fun g => v g p.2)) s
 
@@ -262,7 +262,7 @@ private lemma smallMark_injective {m : ℕ} : Function.Injective (@smallMark m) 
   intro a b h
   simpa only [smallMark, Sum.inl.injEq, Prod.mk.injEq, true_and] using h
 
-private noncomputable def moments {m : ℕ} (s : Group m→ℂ) (v : Group m→Color m→ℂ) (x : Color m→ℂ)
+private noncomputable def moments {m : ℕ} (s : Group m→ℂ) (v : Group m → Color m→ℂ) (x : Color m→ℂ)
     (a : Color m) (g : Group m) : ℂ :=
   2*x a*(v g a-s g)/((x a+v g a)*(x a-s g))
 
@@ -272,7 +272,7 @@ private noncomputable def fullNumerator {m : ℕ} (t : Mark m→ℂ)
 
 -- After clearing the simple poles, each coordinate of a full block has a prescribed set of roots.
 private lemma full_numerator_shape {m : ℕ}
-    (s : Group m→ℂ) (v : Group m→Color m→ℂ) (x : Color m→ℂ)
+    (s : Group m→ℂ) (v : Group m → Color m→ℂ) (x : Color m→ℂ)
     (t : Mark m→ℂ) (ht : t = node s v x)
     (distinct : Function.Injective t) (regular : ∀ j i,t j+t i≠0)
     (f : Mark m→Option (Color m)→ℂ)
@@ -324,7 +324,7 @@ private lemma full_numerator_shape {m : ℕ}
     rw [z,mul_zero] at e
     simpa only [ht, node, Sum.elim_inl, Option.elim_some] using e
   have factor {z : Group m→ℂ} {w : ℂ} {p : ℂ[X]}
-      (inj : Function.Injective z) (opposite : ∀ j,w≠z j) (degree : p.natDegree≤m+1)
+      (inj : Function.Injective z) (opposite : ∀ j,w≠z j) (degree : p.natDegree ≤ m+1)
       (roots : ∀ j,p.eval (z j)=0) (extra : p.eval w=0) :
       p=C p.leadingCoeff*(nodePoly z*(X-C w)) := by
     let y : Option (Group m)→ℂ := fun q => q.elim w z
@@ -376,7 +376,7 @@ private noncomputable def smallNumerator {m : ℕ} (x : Color m→ℂ)
 
 -- The last relation samples the small block and each full block’s short node. Compare the leading coefficients after interpolation at each color.
 private lemma small_numerator_moments {m : ℕ}
-    (s : Group m→ℂ) (v : Group m→Color m→ℂ) (x : Color m→ℂ)
+    (s : Group m→ℂ) (v : Group m → Color m→ℂ) (x : Color m→ℂ)
     (t : Mark m→ℂ) (ht : t = node s v x)
     (distinct : Function.Injective t) (regular : ∀ j i,t j+t i≠0)
     (f : Mark m→Option (Color m)→ℂ)
@@ -405,7 +405,7 @@ private lemma small_numerator_moments {m : ℕ}
     regular j i ((congrArg (·+t i) h).trans (neg_add_cancel _))
   have xNonzero (a : Color m) : x a≠0 := fun h => regular (smallMark a) (smallMark a)
     (by simp only [tX, h, add_zero])
-  have cap (c : Option (Color m)) : (U c).natDegree≤m+1 := by
+  have cap (c : Option (Color m)) : (U c).natDegree ≤ m+1 := by
     simpa only [U, smallNumerator, Fintype.card_fin, Nat.add_one_sub_one] using
       numerator_degree (fun a => -x a) (fun a => f (smallMark a) c)
   have top (c : Option (Color m)) : (U c).coeff (m+1)=-(∑ g,f (.inr g) c) := by
@@ -461,7 +461,7 @@ private lemma small_numerator_moments {m : ℕ}
         rw [←tS,←tX]
         exact differ (by simp only [smallMark, ne_eq, reduceCtorEq, not_false_eq_true])
   let W := U (some a)+∑ g,C (ρ g)*residueCorrection E (D a) (s g)
-  have degW : W.natDegree≤m+1 := by
+  have degW : W.natDegree ≤ m+1 := by
     apply (natDegree_add_le _ _).trans
     apply max_le (cap _)
     apply natDegree_sum_le_of_forall_le
@@ -553,7 +553,7 @@ private lemma zero_residues {I : Type*} [Fintype I] [DecidableEq I]
 
 -- Normalize the resulting equations using the nonzero node differences, then recover each residue.
 private lemma block_kernel {m : ℕ}
-    (s : Group m→ℂ) (v : Group m→Color m→ℂ) (x : Color m→ℂ)
+    (s : Group m→ℂ) (v : Group m → Color m→ℂ) (x : Color m→ℂ)
     (test : ∀ α : Group m→ℂ, ∀ β : ℂ,
       (∀ a, (∑ g,moments s v x a g*α g)=(1-∏ g, (1-moments s v x a g))*β) →
       α=0 ∧ β=0)
@@ -841,15 +841,15 @@ private lemma testMatrix_apply {m : ℕ} (d : Color m→Group m→ℂ) (α : Gro
   ring
 
 -- At the initial parameters the selected rows are unit vectors and one row with two ones. Preserve this minor while perturbing to distinct positive nodes.
-private lemma good_nodes {m : ℕ} (hm : 2≤m) :
-    ∃ s : Group m→ℂ, ∃ v : Group m→Color m→ℂ, ∃ x : Color m→ℂ,
+private lemma good_nodes {m : ℕ} (hm : 2 ≤ m) :
+    ∃ s : Group m→ℂ, ∃ v : Group m → Color m→ℂ, ∃ x : Color m→ℂ,
       Function.Injective (node s v x) ∧ (∀ j i,node s v x j+node s v x i≠0) ∧
       ∀ α : Group m→ℂ, ∀ β : ℂ,
         (∀ a, (∑ g,moments s v x a g*α g)=(1-∏ g,(1-moments s v x a g))*β) →
           α=0 ∧ β=0 := by
   classical
   let active (a : Color m) (g : Group m) : Prop :=
-    (a.val<m ∧ a.val=g.val) ∨ (a.val=m ∧ (g.val=0 ∨ g.val=1))
+    (a.val < m ∧ a.val=g.val) ∨ (a.val=m ∧ (g.val=0 ∨ g.val=1))
   let center : Mark m→ℝ := fun i => match i with
     | .inr _ => 1
     | .inl (none,_) => 2
@@ -899,7 +899,7 @@ private lemma good_nodes {m : ℕ} (hm : 2≤m) :
       exact sub_eq_zero.mp eq.symm
     have test (a : Color m) :
         (∑ g,d 0 a g*α g)=(1-∏ g,(1-d 0 a g))*β := by
-      by_cases b : a.val<m
+      by_cases b : a.val < m
       · have he : selectRow (some (⟨a.val,b⟩ : Group m))=a := Fin.ext rfl
         simpa only [he] using z (some ⟨a.val,b⟩)
       · by_cases c : a.val=m
@@ -1025,7 +1025,7 @@ private lemma selector_small {m : ℕ} (f : Mark m→ℂ) :
     Finset.sum_const_zero, add_zero, smallMark]
 
 -- Reindex the block system for the merged conic tangent criterion.
-private lemma local_witness (m : ℕ) (hm : 2≤m) :
+private lemma local_witness (m : ℕ) (hm : 2 ≤ m) :
     let h := m+3
     let b := h*(h-2)-1
     let u := h-2
