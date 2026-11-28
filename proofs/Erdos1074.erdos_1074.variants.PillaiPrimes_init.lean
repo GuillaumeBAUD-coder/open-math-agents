@@ -50,34 +50,22 @@ end OMA.E1074P
 open OMA.E1074P in
 theorem OMA.solution : type_of% @Erdos1074.erdos_1074.variants.PillaiPrimes_init := by
   classical
-  have h0 : Nat.nth P 0 = 23 := by
-    have := Nat.nth_count (p := P) (memP 23 (by norm_num) (by decide))
-    rwa [count_eq 23 (by norm_num)] at this
-  have h1 : Nat.nth P 1 = 29 := by
-    have := Nat.nth_count (p := P) (memP 29 (by norm_num) (by decide))
-    rwa [count_eq 29 (by norm_num)] at this
-  have h2 : Nat.nth P 2 = 59 := by
-    have := Nat.nth_count (p := P) (memP 59 (by norm_num) (by decide))
-    rwa [count_eq 59 (by norm_num)] at this
-  have h3 : Nat.nth P 3 = 61 := by
-    have := Nat.nth_count (p := P) (memP 61 (by norm_num) (by decide))
-    rwa [count_eq 61 (by norm_num)] at this
-  have h4 : Nat.nth P 4 = 67 := by
-    have := Nat.nth_count (p := P) (memP 67 (by norm_num) (by decide))
-    rwa [count_eq 67 (by norm_num)] at this
-  have h5 : Nat.nth P 5 = 71 := by
-    have := Nat.nth_count (p := P) (memP 71 (by norm_num) (by decide))
-    rwa [count_eq 71 (by norm_num)] at this
+  have nth_of_table (n i : ℕ) (hn : n < 72)
+      (hm : n ∈ ({23, 29, 59, 61, 67, 71} : Finset ℕ))
+      (hi : ((Finset.range n).filter (· ∈ ({23, 29, 59, 61, 67, 71} : Finset ℕ))).card = i) :
+      Nat.nth P i = n := by
+    have h := Nat.nth_count (p := P) (memP n hn hm)
+    rwa [count_eq n (by omega), hi] at h
+  have h0 := nth_of_table 23 0 (by decide) (by decide) (by decide)
+  have h1 := nth_of_table 29 1 (by decide) (by decide) (by decide)
+  have h2 := nth_of_table 59 2 (by decide) (by decide) (by decide)
+  have h3 := nth_of_table 61 3 (by decide) (by decide) (by decide)
+  have h4 := nth_of_table 67 4 (by decide) (by decide) (by decide)
+  have h5 := nth_of_table 71 5 (by decide) (by decide) (by decide)
   change Nat.nth P '' Set.Icc 0 5 = _
-  ext x
-  simp only [Set.mem_image, Set.mem_Icc, Set.mem_insert_iff, Set.mem_singleton_iff]
-  constructor
-  · rintro ⟨k, ⟨-, hk⟩, rfl⟩
-    interval_cases k <;> simp [h0, h1, h2, h3, h4, h5]
-  · rintro (rfl | rfl | rfl | rfl | rfl | rfl)
-    · exact ⟨0, by norm_num, h0⟩
-    · exact ⟨1, by norm_num, h1⟩
-    · exact ⟨2, by norm_num, h2⟩
-    · exact ⟨3, by norm_num, h3⟩
-    · exact ⟨4, by norm_num, h4⟩
-    · exact ⟨5, by norm_num, h5⟩
+  have hI : Set.Icc 0 5 = ({0, 1, 2, 3, 4, 5} : Set ℕ) := by
+    ext i
+    simp only [Set.mem_Icc, Set.mem_insert_iff, Set.mem_singleton_iff]
+    omega
+  rw [hI]
+  simp [Set.image_insert_eq, h0, h1, h2, h3, h4, h5]

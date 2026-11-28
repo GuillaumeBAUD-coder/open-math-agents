@@ -5,7 +5,7 @@
     {
       "id": "backer",
       "name": "Backer",
-      "price": 100,
+      "price": 200,
       "period": "one-time",
       "perks": [
         "Logo size: standard size",
