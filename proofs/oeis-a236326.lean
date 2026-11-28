@@ -128,4 +128,3 @@ open OMA.A236326Proof in
 theorem OMA.solution : type_of% @OMA.S_oeis_a236326.main :=
   ⟨part1, part2, part3, fun n _ => a_form n⟩
 
-#print axioms OMA.solution
