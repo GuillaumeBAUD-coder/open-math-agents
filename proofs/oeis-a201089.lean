@@ -36,7 +36,7 @@ instance (n : ℕ) (b c : ℤ) : Decidable (validMiddle n b c) := inferInstanceA
 def weight (n : ℕ) (b c : ℤ) : ℤ :=
   if validMiddle n b c then L n b c * L n c b else 0
 
-def countSum (n : ℕ) : ℤ :=
+noncomputable def countSum (n : ℕ) : ℤ :=
   ∑ b ∈ Icc (-(n : ℤ)) n, ∑ c ∈ Icc (-(n : ℤ)) n, weight n b c
 
 def M (n : ℕ) : ℤ := 2*n+1
@@ -102,14 +102,14 @@ private lemma arrays_mem_iff (n : ℕ) (x : Fin 4 → ℤ) :
     show (2 : Fin 3).succ = (3 : Fin 4) from rfl]
   omega
 
-private def endpoints (n : ℕ) (b c : ℤ) : Finset (ℤ × ℤ) :=
+private noncomputable def endpoints (n : ℕ) (b c : ℤ) : Finset (ℤ × ℤ) :=
   if validMiddle n b c then
     Icc (lo n b c) (hi n b c) ×ˢ Icc (lo n c b) (hi n c b)
   else ∅
 
 private abbrev Choices := Σ _ : ℤ, Σ _ : ℤ, ℤ × ℤ
 
-private def choices (n : ℕ) : Finset Choices :=
+private noncomputable def choices (n : ℕ) : Finset Choices :=
   (Icc (-(n : ℤ)) n).sigma fun b =>
     (Icc (-(n : ℤ)) n).sigma fun c => endpoints n b c
 
