@@ -21,10 +21,38 @@ gh() { timeout 90 "$GH_BIN" "$@"; }
 export -f gh
 ROOT="$PWD"; mkdir -p "$ROOT/done" "$ROOT/remerge"
 export CREDIT_RETRY_FILE="$ROOT/credit_retry.txt"; touch "$CREDIT_RETRY_FILE"
+# Credit ledger: credit.sh appends a line per merge (tools/ledger_entry.py), tools/ledger_post.sh sends them to the site.
+export LEDGER_FILE="$ROOT/ledger.jsonl"; touch "$LEDGER_FILE"
 SELF="$ROOT/base/tools/merger_loop.sh"; SELF_SHA=$(sha1sum "$SELF" | cut -d' ' -f1)
+# Hand-over without a gap: a job lasts at most 6 hours and a new one waits in GitHub's runner queue (behind hundreds of
+# proof checks) before it starts, so the next merger is started early (every 20 minutes, no concurrency group) and
+# waits on standby until the running merger ends. A job that finds a merger with more than 75 minutes left, or another
+# standby, stops at once (a few seconds of a runner).
+INITIAL_BACK=10800
+if [ -z "${MERGER_RESUME:-}" ] && [ -n "${GITHUB_RUN_ID:-}" ]; then
+  TOOK_OVER=0
+  while :; do
+    gh api "repos/$REPO/actions/workflows/backlog.yml/runs?status=in_progress&per_page=30" \
+      --jq '.workflow_runs[] | [.id, (.run_started_at // .created_at)] | @tsv' > mergers.tsv 2>/dev/null || { sleep 30; continue; }
+    MINE=$(awk -F'\t' -v me="$GITHUB_RUN_ID" '$1 == me {print $2}' mergers.tsv); MINE=${MINE:-$(date -u +%FT%TZ)}
+    OLDEST=$(awk -F'\t' -v me="$GITHUB_RUN_ID" '$1 != me' mergers.tsv | sort -t$'\t' -k2 | head -n 1)
+    [ -n "$OLDEST" ] || break                                   # no other merger: this one works
+    OSTART=$(printf '%s' "$OLDEST" | cut -f2)
+    [[ "$OSTART" > "$MINE" ]] && break                          # the others started after this one: this one works
+    LEFT=$(( $(date -u -d "$OSTART" +%s) + ${MERGER_SECONDS:-20400} + 300 - $(date -u +%s) ))
+    OTHERS=$(awk -F'\t' -v me="$GITHUB_RUN_ID" -v o="$OSTART" -v m="$MINE" '$1 != me && $2 > o && $2 < m' mergers.tsv | wc -l)
+    if [ "$OTHERS" -gt 0 ] || [ "$LEFT" -gt 4500 ]; then
+      echo "merger: another merger is running (${LEFT}s left, $OTHERS on standby): nothing to do"; exit 0
+    fi
+    echo "merger: standby, the running merger ends in about ${LEFT}s"; TOOK_OVER=1; sleep 60
+  done
+  # taking over from a merger that just ended: it handled everything but the last minutes
+  [ "$TOOK_OVER" = 1 ] && INITIAL_BACK=2400
+fi
 if [ -n "${MERGER_RESUME:-}" ]; then
   # restarted by an older version of this loop after an update: same job, same deadline, same state
   START=$MERGER_START; END=$MERGER_END; BPID=${MERGER_BPID:-}; LAST_BACKLOG=${MERGER_LAST_BACKLOG:-0}; LAST_SCAN=0
+  INITIAL_BACK=${MERGER_INITIAL_BACK:-10800}
   touch "$ROOT/watch.txt" "$ROOT/prev_inprog.tsv"
   echo "merger: resumed on version $SELF_SHA"
 else
@@ -33,7 +61,7 @@ else
   BPID=""; LAST_BACKLOG=0; LAST_SCAN=0
 fi
 touch "$ROOT/queue.tsv"
-SLOTS=${SLOTS:-4}; BATCH=${BATCH:-40}; declare -A SPID; LAST_REFRESH=0; LAST_OLD=0; OLDJOBS=1; LAST_CREDIT=0; REQ_SHA=""; LAST_PENDING=0
+SLOTS=${SLOTS:-4}; BATCH=${BATCH:-40}; declare -A SPID; LAST_REFRESH=0; LAST_OLD=0; OLDJOBS=1; LAST_CREDIT=0; REQ_SHA=""; LAST_PENDING=0; CPID=""
 iso() { date -u -d "@$1" +%Y-%m-%dT%H:%M:%SZ; }
 JQ_RUN='[.id, .head_sha, .run_attempt, .html_url, .updated_at, (.conclusion // ""), (.display_title // "")] | @tsv'
 remaining() { gh api rate_limit --jq '"\(.resources.core.remaining) \(.resources.core.reset)"' 2>/dev/null || echo "999 0"; }
@@ -50,8 +78,9 @@ refresh() {  # main moved on (merges): pull it and sync each verdict slot's copy
   done
 }
 scan() {  # completed runs created in the last $1 seconds, in 30-minute slices (at most 1,000 runs per query)
-  local NOW A B; NOW=$(date -u +%s)
-  for (( A = NOW - $1; A < NOW; A += 1800 )); do
+  local NOW A B FLOOR; NOW=$(date -u +%s); FLOOR=$(( START - INITIAL_BACK ))
+  A=$(( NOW - $1 )); [ "$A" -lt "$FLOOR" ] && A=$FLOOR      # never before what this merger is responsible for
+  for (( ; A < NOW; A += 1800 )); do
     B=$(( A + 1800 ))
     gh api --paginate "repos/$REPO/actions/workflows/check-proof.yml/runs?status=completed&per_page=100&created=$(iso $A)..$(iso $B)" \
       --jq ".workflow_runs[] | select(.conclusion != \"cancelled\") | $JQ_RUN" 2>/dev/null || true
@@ -76,14 +105,27 @@ publish_pending() {  # the open pull requests, by problem id (their title), to t
 verdict() {  # $1 run id, $2 head sha, $3 attempt, $4 url, $5 old (1/0), $6 slot, $7 conclusion, $8 title, $9 mode
   local ID="$1" SHA="$2" ATT="$3" URL="$4" OLD="$5" B="$ROOT/base_$6" W="$ROOT/work_$6" CONC="$7" TITLE="$8" MODE="${9:-}" PR
   rm -rf "$W"; mkdir -p "$W"; ln -s "$B" "$W/base"
+  # green = accepted, but only for a run of the current check-proof (it ends with the step "Fail unless accepted"):
+  # an old copy of the workflow on another branch is green whatever the verdict and is titled with the PR title, so
+  # its title must never be trusted; those runs (and anything unusual) go through the artifact, whose pr.txt is the
+  # run's own pull request number. Kind and polarity come from the trusted re-lint either way.
+  local GREEN_PR=""
   if [ "$CONC" = success ] && [[ "$TITLE" =~ ^check-proof\ \#([0-9]+)$ ]]; then
-    # green = accepted (check-proof fails every other verdict); kind and polarity come from the trusted re-lint
-    mkdir -p "$W/artifact"; echo "${BASH_REMATCH[1]}" > "$W/artifact/pr.txt"; echo '{"verdict":"accepted","reason":""}' > "$W/artifact/verdict.json"
+    GREEN_PR="${BASH_REMATCH[1]}"
+    [ "$(gh api "repos/$REPO/actions/runs/$ID/jobs" --jq '[.jobs[].steps[]? | select(.name == "Fail unless accepted" and .conclusion == "success")] | length' 2>/dev/null)" -ge 1 ] 2>/dev/null || GREEN_PR=""
+  fi
+  if [ -n "$GREEN_PR" ]; then
+    mkdir -p "$W/artifact"; echo "$GREEN_PR" > "$W/artifact/pr.txt"; echo '{"verdict":"accepted","reason":""}' > "$W/artifact/verdict.json"
+  elif [ "$MODE" = batch ]; then
+    # a batch checker verdict, read from a trusted batch-check run by tools/batch_verdicts.sh (attempt 3: never re-run)
+    [ -s "$ROOT/batch/$ID/verdict.json" ] || return 0
+    cp -r "$ROOT/batch/$ID" "$W/artifact"
   elif ! gh run download "$ID" --repo "$REPO" -n verdict -D "$W/artifact" >/dev/null 2>&1; then
     # not finished yet (left the in-progress list for a re-run or a queue) or no artifact: look again later
     echo "$ID" >> "$ROOT/watch.txt"; rm -f "$ROOT/done/$ID.$ATT"; return 0
   fi
   PR=$(head -c 12 "$W/artifact/pr.txt" 2>/dev/null | tr -cd '0-9'); [ -n "$PR" ] || return 0
+  [ -e "$ROOT/done/pr.$PR.$SHA" ] && return 0   # this head already has its verdict (from check-proof or the batch checker)
   local RM; RM=$(cat "$ROOT/remerge/$PR" 2>/dev/null || echo 0)
   [ "$MODE" = remerge ] && [ "$RM" = 0 ] && RM=1               # requeued: accepted and reported before, merge again
   if [ "$OLD" = 1 ] && gh api "repos/$REPO/issues/$PR/comments?per_page=100" --jq '.[].body' 2>/dev/null | grep -qF "$URL"; then
@@ -98,11 +140,14 @@ verdict() {  # $1 run id, $2 head sha, $3 attempt, $4 url, $5 old (1/0), $6 slot
   grep -qE 'REJECTED|already on main' "$W/log.txt" && echo "$PR" >> "$ROOT/rejected.txt"
   [ -e "$W/rerun.flag" ] && echo "$ID" >> "$ROOT/watch.txt"   # a fault re-runs the check: same run id, next attempt
   if [ -e "$W/remerge.flag" ]; then                               # merge refused: try the same verdict again later
-    echo $((RM + 1)) > "$ROOT/remerge/$PR"; rm -f "$ROOT/done/$ID.$ATT"; echo "$ID" >> "$ROOT/watch.txt"
+    echo $((RM + 1)) > "$ROOT/remerge/$PR"; rm -f "$ROOT/done/$ID.$ATT"
+    [ "$MODE" = batch ] || echo "$ID" >> "$ROOT/watch.txt"        # a batch verdict comes back with the next pass
   fi
+  [ -e "$W/remerge.flag" ] || [ -e "$W/rerun.flag" ] || touch "$ROOT/done/pr.$PR.$SHA"
   git -C "$B" clean -fdq -- proofs reductions statements 2>/dev/null || true
 }
 refresh
+LLID="$$-$(date +%s%N)"; echo "$LLID" > "$ROOT/ledger_loop.id"; bash "$ROOT/base/tools/ledger_post.sh" loop "$LLID" & LLOOP=$!
 while [ "$(date -u +%s)" -lt "$END" ]; do
   NOW=$(date -u +%s); budget
   : > cand.tsv
@@ -122,6 +167,12 @@ while [ "$(date -u +%s)" -lt "$END" ]; do
     gh api "repos/$REPO/actions/runs/$WID" --jq "select(.status == \"completed\" and .conclusion != \"cancelled\") | $JQ_RUN" >> cand.tsv 2>/dev/null || true
   done
   : > watch.txt
+  # 3b. verdicts of the batch checker (batch-check.yml), every 90 seconds at most (tools/batch_verdicts.sh: ~4 API calls)
+  if [ -f base/tools/batch_verdicts.sh ] && [ $(( NOW - ${LAST_BATCH:-0} )) -ge 90 ]; then
+    # three hours back even after a hand-over: a queue lost with the previous merger is found again (cheaply: verdicts
+    # of pull requests merged or closed since are dropped without an API call)
+    LAST_BATCH=$NOW; ROOT="$ROOT" START="$START" FLOOR=$(( START - 10800 )) timeout 240 bash base/tools/batch_verdicts.sh >> cand.tsv 2>> batchv.log || true
+  fi
   # verdict jobs queued by the old per-proof trigger still run: leave their commits to them (no double report)
   if [ "$OLDJOBS" = 1 ] && [ $(( NOW - LAST_OLD )) -ge 300 ]; then
     LAST_OLD=$NOW; : > pending.txt
@@ -133,7 +184,7 @@ while [ "$(date -u +%s)" -lt "$END" ]; do
     LAST_REFRESH=$NOW; refresh
     if [ "$(sha1sum "$SELF" | cut -d' ' -f1)" != "$SELF_SHA" ]; then
       echo "merger: new version on main, restarting in place"
-      export MERGER_RESUME=1 MERGER_START=$START MERGER_END=$END MERGER_BPID=$BPID MERGER_LAST_BACKLOG=$LAST_BACKLOG
+      export MERGER_RESUME=1 MERGER_START=$START MERGER_END=$END MERGER_BPID=$BPID MERGER_LAST_BACKLOG=$LAST_BACKLOG MERGER_INITIAL_BACK=$INITIAL_BACK
       exec bash "$SELF"
     fi
   fi
@@ -148,6 +199,7 @@ while [ "$(date -u +%s)" -lt "$END" ]; do
   while IFS=$'\t' read -r ID SHA ATT URL UPD CONC TITLE MODE; do
     [ -n "$ID" ] || continue
     [ -n "$CONC" ] || { echo "$ID" >> watch.txt; continue; }   # not finished yet
+    [ "$CONC" = skipped ] && continue   # check-proof switched off (vars.OMA_CHECK_PROOF): the batch checker answers
     [ -e "done/$ID.$ATT" ] && continue
     [ "$OLDJOBS" = 1 ] && grep -qx "$SHA" pending.txt 2>/dev/null && { touch "done/$ID.$ATT"; continue; }   # an old verdict job reports it
     N=$(printf '%s' "$TITLE" | grep -oE '[0-9]+$' || echo 999999)
@@ -167,10 +219,14 @@ while [ "$(date -u +%s)" -lt "$END" ]; do
   done < batch.tsv
   for i in $(seq 1 "$SLOTS"); do [ -n "${SPID[$i]:-}" ] && wait "${SPID[$i]}" 2>/dev/null; SPID[$i]=""; done
   # 6. credits the site did not record (it answered an error): retry every 10 minutes
-  if [ -s "$CREDIT_RETRY_FILE" ] && [ $(( NOW - LAST_CREDIT )) -ge 600 ]; then
-    LAST_CREDIT=$NOW; sort -u "$CREDIT_RETRY_FILE" > credit_todo.txt; : > "$CREDIT_RETRY_FILE"
-    for P in $(cat credit_todo.txt); do ( cd "$ROOT/base_1" && bash tools/credit.sh "$P" >/dev/null 2>&1 ) || true; done
-    echo "merger: retried $(wc -l < credit_todo.txt) credits, $(sort -u "$CREDIT_RETRY_FILE" | wc -l) still failing"
+  # in the background and at most 5 minutes per pass, never blocking the verdicts (the site may be down for hours)
+  if [ -s "$CREDIT_RETRY_FILE" ] && [ $(( NOW - LAST_CREDIT )) -ge 600 ] && { [ -z "${CPID:-}" ] || ! kill -0 "$CPID" 2>/dev/null; }; then
+    LAST_CREDIT=$NOW; sort -u "$CREDIT_RETRY_FILE" > credit_all.txt; head -n 30 credit_all.txt > credit_todo.txt
+    tail -n +31 credit_all.txt > "$CREDIT_RETRY_FILE"
+    ( C="$ROOT/credit_work"; rm -rf "$C"; mkdir -p "$C"; cd "$C"
+      timeout 300 bash -c 'for P in $(cat "$1"); do bash "$2/tools/credit.sh" "$P" >/dev/null 2>&1 || true; done' _ "$ROOT/credit_todo.txt" "$ROOT/base" || true
+      echo "merger: retried $(wc -l < "$ROOT/credit_todo.txt") credits in the background" ) &
+    CPID=$!
   fi
   # 7. every 15 minutes: the open pull requests to the site, so no agent is sent to a problem with a proof waiting
   if [ $(( NOW - LAST_PENDING )) -ge 900 ]; then LAST_PENDING=$NOW; publish_pending; fi
@@ -183,5 +239,6 @@ while [ "$(date -u +%s)" -lt "$END" ]; do
   fi
   [ -s queue.tsv ] || sleep 30
 done
+echo stop > "$ROOT/ledger_loop.id"; kill "$LLOOP" 2>/dev/null; bash "$ROOT/base/tools/ledger_post.sh" once   # last lines
 wait
 echo "merger: time is up; the next scheduled run takes over"
