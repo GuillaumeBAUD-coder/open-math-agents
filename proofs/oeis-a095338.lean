@@ -1,6 +1,7 @@
 import OMAStatements.S_oeis_a095338
 import Mathlib
 
+open Finset
 /- Double counting, as in the argument recorded in the OEIS entry (Bertran Steinsky): the total
    number of leaves is the sum over vertices v of the number of graphs in which v has degree 1.
    Such a graph is determined by the unique neighbour u of v (n - 1 choices) and an arbitrary
@@ -67,28 +68,28 @@ theorem oma_build_adj_sub {n : ℕ} (v u : Fin n) (H : SimpleGraph {w : Fin n //
     refine ⟨fun e => H.ne_of_adj h (Subtype.ext e), Or.inl (Or.inr ⟨x.2, y.2, h⟩)⟩
 
 theorem oma_count (n : ℕ) (v : Fin n) :
-    (Finset.univ.filter fun G : SimpleGraph (Fin n) => G.degree v = 1).card =
+    (univ.filter fun G : SimpleGraph (Fin n) => G.degree v = 1).card =
       (n - 1) * 2 ^ (n - 1).choose 2 := by
   have hsub : Fintype.card {w : Fin n // w ≠ v} = n - 1 := by
     rw [Fintype.card_subtype_compl, Fintype.card_fin, Fintype.card_subtype_eq]
-  have hfil : (Finset.univ.filter fun w : Fin n => w ≠ v).card = n - 1 := by
-    rw [Finset.filter_ne' Finset.univ v, Finset.card_erase_of_mem (Finset.mem_univ v),
-      Finset.card_univ, Fintype.card_fin]
-  have hprod : ((Finset.univ.filter fun w : Fin n => w ≠ v) ×ˢ
-      (Finset.univ : Finset (SimpleGraph {w : Fin n // w ≠ v}))).card =
+  have hfil : (univ.filter fun w : Fin n => w ≠ v).card = n - 1 := by
+    rw [filter_ne' univ v, card_erase_of_mem (mem_univ v),
+      card_univ, Fintype.card_fin]
+  have hprod : ((univ.filter fun w : Fin n => w ≠ v) ×ˢ
+      (univ : Finset (SimpleGraph {w : Fin n // w ≠ v}))).card =
       (n - 1) * 2 ^ (n - 1).choose 2 := by
-    rw [Finset.card_product, hfil, Finset.card_univ, oma_card_graphs, hsub]
+    rw [card_product, hfil, card_univ, oma_card_graphs, hsub]
   rw [← hprod]
   symm
-  refine Finset.card_bij (fun p _ => oma_build v p.1 p.2) ?_ ?_ ?_
+  refine card_bij (fun p _ => oma_build v p.1 p.2) ?_ ?_ ?_
   · rintro ⟨u, H⟩ hp
-    simp only [Finset.mem_product, Finset.mem_filter, Finset.mem_univ, true_and] at hp
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and]
+    simp only [mem_product, mem_filter, mem_univ, true_and] at hp
+    simp only [mem_filter, mem_univ, true_and]
     rw [SimpleGraph.degree_eq_one_iff_existsUnique_adj]
     exact ⟨u, (oma_build_adj_v v u hp.1 H u).mpr rfl,
       fun b hb => (oma_build_adj_v v u hp.1 H b).mp hb⟩
   · rintro ⟨u, H⟩ hp ⟨u', H'⟩ hp' heq
-    simp only [Finset.mem_product, Finset.mem_filter, Finset.mem_univ, true_and] at hp hp'
+    simp only [mem_product, mem_filter, mem_univ, true_and] at hp hp'
     simp only at heq
     have huu : u = u' := by
       have h1 := (oma_build_adj_v v u hp.1 H u).mpr rfl
@@ -100,12 +101,12 @@ theorem oma_count (n : ℕ) (v : Fin n) :
       rw [← oma_build_adj_sub v u H x y, ← oma_build_adj_sub v u H' x y, heq]
     rw [hH]
   · intro G hG
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hG
+    simp only [mem_filter, mem_univ, true_and] at hG
     rw [SimpleGraph.degree_eq_one_iff_existsUnique_adj] at hG
     obtain ⟨u, hu, huniq⟩ := hG
     have huv : u ≠ v := (G.ne_of_adj hu).symm
     refine ⟨(u, G.comap Subtype.val), ?_, ?_⟩
-    · simp only [Finset.mem_product, Finset.mem_filter, Finset.mem_univ, true_and, and_true]
+    · simp only [mem_product, mem_filter, mem_univ, true_and, and_true]
       exact huv
     · ext a b
       simp only
@@ -124,10 +125,10 @@ theorem oma_count (n : ℕ) (v : Fin n) :
 theorem OMA.solution : type_of% @OMA.S_oeis_a095338.main := by
   intro n _
   unfold OMA.S_oeis_a095338.a OMA.S_oeis_a095338.leaves
-  simp only [Finset.card_filter]
-  rw [Finset.sum_comm]
-  simp only [← Finset.card_filter]
-  simp only [oma_count, Finset.sum_const, Finset.card_univ, Fintype.card_fin, smul_eq_mul]
+  simp only [card_filter]
+  rw [sum_comm]
+  simp only [← card_filter]
+  simp only [oma_count, sum_const, card_univ, Fintype.card_fin, smul_eq_mul]
   ring
 
 end
