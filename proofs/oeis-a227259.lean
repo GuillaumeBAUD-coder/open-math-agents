@@ -311,7 +311,25 @@ lemma budgetVec_iterate (n : ℕ) : budgetVec n = budgetTransfer^[n] (fun _ => 1
 
 lemma transfer_embed (v : Fin 5 → ℤ) : transfer (embed v) = embed (budgetTransfer v) := by
   funext q
-  fin_cases q <;> norm_num [transfer, Fin.sum_univ_four, dfaStep, embed, budgetTransfer] <;> ring
+  unfold transfer
+  rw [Fin.sum_univ_four]
+  fin_cases q
+  · change v 0 + 0 + (v 3 + v 2 - v 1) + (v 4 + v 1 - v 0) = v 4 + v 3 + v 2
+    ring
+  · change v 0 + 0 + 0 + 0 = v 0
+    ring
+  · change v 0 + v 1 + (v 3 + v 2 - v 1) + (v 4 + v 1 - v 0) =
+      (v 4 + v 3 + v 2) + (v 1 + v 0) - v 0
+    ring
+  · change v 1 + v 1 + (v 3 + v 2 - v 1) + v 2 =
+      (v 3 + v 2 + v 1) + (v 2 + v 1 + v 0) - (v 1 + v 0)
+    ring
+  · change v 0 + v 1 + 0 + 0 = v 1 + v 0
+    ring
+  · change v 0 + v 1 + 0 + v 2 = v 2 + v 1 + v 0
+    ring
+  · change (0 : ℤ) + 0 + 0 + 0 = 0
+    ring
 
 lemma countVec_embed (n : ℕ) : countVec n = embed (budgetVec n) := by
   induction n with
