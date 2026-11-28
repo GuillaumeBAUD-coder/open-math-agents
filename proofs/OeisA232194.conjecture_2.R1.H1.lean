@@ -8,8 +8,6 @@ import OMAReductions.R_OeisA232194_conjecture_2_R1
 -- defining sum, so the whole step is discharged by `decide +kernel` after splitting the
 -- membership hypothesis.
 
-set_option maxHeartbeats 1000000 in
-set_option maxRecDepth 4000 in
 theorem OMA.solution : OMA.R_OeisA232194_conjecture_2_R1.H1 := by
   intro n hn
   simp only [Finset.mem_insert, Finset.mem_singleton] at hn
