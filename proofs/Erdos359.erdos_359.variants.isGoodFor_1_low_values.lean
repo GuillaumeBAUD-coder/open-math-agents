@@ -1,5 +1,6 @@
 import FormalConjectures.ErdosProblems.«359»
 
+open Finset
 namespace OMA359
 
 def B (i : ℕ) : ℕ := [1, 2, 4, 5, 8, 10, 14, 15].getD i 0
@@ -11,25 +12,25 @@ lemma P1 : ∀ j < 7, B j < B (j + 1) := by decide
 set_option synthInstance.maxSize 1000 in
 set_option synthInstance.maxHeartbeats 200000 in
 lemma P2 : ∀ j < 7, ∀ a < 7, ∀ b < 7, a ≤ b → b ≤ j →
-    B (j + 1) ≠ ∑ i ∈ Finset.Icc a b, B i := by decide
+    B (j + 1) ≠ ∑ i ∈ Icc a b, B i := by decide
 
 set_option synthInstance.maxSize 1000 in
 set_option synthInstance.maxHeartbeats 200000 in
 lemma P3 : ∀ j < 7, ∀ m < 15, B j < m → m < B (j + 1) →
-    ∃ a < 7, ∃ b < 7, a ≤ b ∧ b ≤ j ∧ m = ∑ i ∈ Finset.Icc a b, B i := by decide
+    ∃ a < 7, ∃ b < 7, a ≤ b ∧ b ≤ j ∧ m = ∑ i ∈ Icc a b, B i := by decide
 
 lemma step (A : ℕ → ℕ)
     (hA : ∀ j, IsLeast
-      {m : ℕ | A j < m ∧ ∀ a b, Finset.Icc a b ⊆ Finset.Iic j → m ≠ ∑ i ∈ Finset.Icc a b, A i}
+      {m : ℕ | A j < m ∧ ∀ a b, Icc a b ⊆ Iic j → m ≠ ∑ i ∈ Icc a b, A i}
       (A <| j + 1))
     (j : ℕ) (hj : j < 7) (h : ∀ i ≤ j, A i = B i) : A (j + 1) = B (j + 1) := by
-  have key : ∀ a b, a ≤ b → b ≤ j → ∑ i ∈ Finset.Icc a b, A i = ∑ i ∈ Finset.Icc a b, B i := by
+  have key : ∀ a b, a ≤ b → b ≤ j → ∑ i ∈ Icc a b, A i = ∑ i ∈ Icc a b, B i := by
     intro a b _ hb
-    apply Finset.sum_congr rfl
+    apply sum_congr rfl
     intro i hi
-    exact h i (le_trans (Finset.mem_Icc.mp hi).2 hb)
+    exact h i (le_trans (mem_Icc.mp hi).2 hb)
   have hL : IsLeast
-      {m : ℕ | A j < m ∧ ∀ a b, Finset.Icc a b ⊆ Finset.Iic j → m ≠ ∑ i ∈ Finset.Icc a b, A i}
+      {m : ℕ | A j < m ∧ ∀ a b, Icc a b ⊆ Iic j → m ≠ ∑ i ∈ Icc a b, A i}
       (B (j + 1)) := by
     constructor
     · refine ⟨?_, ?_⟩
@@ -37,13 +38,13 @@ lemma step (A : ℕ → ℕ)
       · intro a b hab
         by_cases hba : a ≤ b
         · have hbj : b ≤ j := by
-            have := hab (Finset.mem_Icc.mpr ⟨hba, le_rfl⟩)
+            have := hab (mem_Icc.mpr ⟨hba, le_rfl⟩)
             simpa using this
           rw [key a b hba hbj]
           exact P2 j hj a (by omega) b (by omega) hba hbj
-        · have : Finset.Icc a b = ∅ := Finset.Icc_eq_empty hba
+        · have : Icc a b = ∅ := Icc_eq_empty hba
           rw [this]
-          simp only [Finset.sum_empty]
+          simp only [sum_empty]
           have : 0 < B (j + 1) := by
             have := P1 j hj
             omega
@@ -56,8 +57,8 @@ lemma step (A : ℕ → ℕ)
         P3 j hj m (by have := Ble (j + 1) (by omega); omega) hB hlt
       apply hm2 a b
       · intro x hx
-        have := Finset.mem_Icc.mp hx
-        simp only [Finset.mem_Iic]; omega
+        have := mem_Icc.mp hx
+        simp only [mem_Iic]; omega
       · rw [key a b hab hbj]; exact hmeq
   exact (hA j).unique hL |>.symm ▸ rfl
 
