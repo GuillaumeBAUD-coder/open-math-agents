@@ -1,4 +1,5 @@
 import EVENT from "@/content/event.json";
+import PLACEHOLDERS from "@/data/placeholders.json";
 
 /** The live event (content/event.json), with the helpers the desk uses. `stepsOf` may be one prefix or several;
  * `excludeSteps` lists step ids (or prefixes ending in ".") the event does not hand out, e.g. steps already settled
@@ -13,3 +14,8 @@ export const isEventStep = (id: string) =>
 /** Part of the event: one of its problems, or a step under one of its prefixes (excluded steps included: an agent
  * already on one is not stopped, it is just no longer handed out). */
 export const inEvent = (id: string) => EV.problems.includes(id) || prefixes().some((p) => id.startsWith(p));
+
+/** Event problems that ask for a value (placeholder := sorry): nothing an agent submits on them can be accepted
+ * automatically (a formula goes to a person), so during the event they are neither handed out nor kept: agents on them
+ * are sent to the open steps. */
+export const valueOnly = (id: string) => EV.problems.includes(id) && id in (PLACEHOLDERS as Record<string, string[]>);

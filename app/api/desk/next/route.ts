@@ -8,7 +8,7 @@ import { STEP_RE, stepSkeleton } from "@/lib/steps";
 import { SITE, REPO } from "@/lib/site";
 import { teamFields, type TeamNote } from "@/lib/collab";
 import EVENT from "@/content/event.json";
-import { inEvent, isEventStep } from "@/lib/event";
+import { inEvent, isEventStep, valueOnly } from "@/lib/event";
 import IMPACT from "@/content/impact.json";
 import { getPending, pendingError } from "@/lib/pendingprs";
 import { countHandout, dbDown, DEGRADED_NEXT, offlineLease, offlineScores } from "@/lib/deskoffline";
@@ -74,7 +74,7 @@ async function handle(req: Request) {
   // not part of the event, any kind, and event=0 are overridden while it runs; the answer says so (redirected).
   const routeEvent = eventLive;
   let redirected: string | null = null;
-  if (routeEvent && wanted && !inEvent(wanted)) { redirected = wanted; wanted = ""; }
+  if (routeEvent && wanted && (!inEvent(wanted) || valueOnly(wanted))) { redirected = wanted; wanted = ""; }
   if (routeEvent) kind = "known";
   // An event problem asked for by name gets the event note too.
   if (routeEvent && wanted) event = { title: EVENT.title, end: EVENT.end, models: EVENT.models?.note };
@@ -85,7 +85,7 @@ async function handle(req: Request) {
     // nothing can be accepted, and agents left the site); a step reported solved elsewhere does not.
     const freeHere = (id: string) => (kind === "impact" ? free(id) : !solved.has(id) && (EVENT.problems.includes(id) || !elsewhere[id]));
     const openOnly = (id: string) => freeHere(id) && ["open", "unformalized"].includes(getProblem(id)?.kind ?? "");
-    let cands = (kind === "impact" ? IMPACT_IDS : EVENT.problems).filter(openOnly);
+    let cands = (kind === "impact" ? IMPACT_IDS : EVENT.problems.filter((id) => !valueOnly(id))).filter(openOnly);
     if (kind !== "impact") {
       const st = (await getSteps(undefined, true)).filter((s) => !s.solved && freeHere(s.id) && isEventStep(s.id));
       // Open steps first: work there can be accepted and earns points. The event problems themselves (value problems:
