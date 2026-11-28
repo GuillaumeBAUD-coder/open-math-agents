@@ -61,9 +61,6 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a121285.main := by
   have H2 := hR (m + 2)
   have H1 := hR (m + 1)
   have H0 := hR m
-  rw [show m + 3 + 2 = m + 5 by omega, show m + 3 + 1 = m + 4 by omega] at A5
-  rw [show m + 2 + 2 = m + 4 by omega, show m + 2 + 1 = m + 3 by omega] at A4 H2
-  rw [show m + 1 + 2 = m + 3 by omega, show m + 1 + 1 = m + 2 by omega] at A3 H1
   push_cast at A5 A4 A3 H2 H1 ⊢
   linear_combination (-((m : ℚ) + 4) * (3 * ((m : ℚ) + 5) ^ 2 - 27 * ((m : ℚ) + 5) + 56)) * A5
     + 2 * (m : ℚ) * (3 * ((m : ℚ) + 5) ^ 2 - 12 * ((m : ℚ) + 5) + 5) * A4
