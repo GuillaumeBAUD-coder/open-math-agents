@@ -36,6 +36,12 @@ private theorem j2_coeff (n k : ℕ) : (J2^n).coeff k = (2:ℤ)^k*(n.choose k:�
       rw [pow_succ]
       ring
 
+private theorem mul_choose_step (m k : ℕ) :
+    (m+1)*m.choose k=(m+1).choose (k+1)*(k+1) := by
+  first
+  | exact Nat.succ_mul_choose_eq m k
+  | exact Nat.add_one_mul_choose_eq m k
+
 private theorem numerator_dvd (m k : ℕ) (hk : 1 ≤ k) :
     m ∣ m.choose k * m.choose (k-1) := by
   cases m with
@@ -49,8 +55,8 @@ private theorem numerator_dvd (m k : ℕ) (hk : 1 ≤ k) :
       cases k with
       | zero => simp [Nat.choose_one_right]
       | succ k =>
-        have h1 := congrArg (fun v : ℕ => (v : ℤ)) (Nat.succ_mul_choose_eq m (k+1))
-        have h2 := congrArg (fun v : ℕ => (v : ℤ)) (Nat.succ_mul_choose_eq m k)
+        have h1 := congrArg (fun v : ℕ => (v : ℤ)) (mul_choose_step m (k+1))
+        have h2 := congrArg (fun v : ℕ => (v : ℤ)) (mul_choose_step m k)
         push_cast at h1 h2
         have hd : ((m+1 : ℕ) : ℤ) ∣
             ((m+1).choose (k+2) : ℤ) * ((m+1).choose (k+1) : ℤ) := by
