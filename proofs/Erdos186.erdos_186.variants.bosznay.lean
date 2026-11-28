@@ -24,14 +24,9 @@ theorem encode_strictMono (k : ℕ) : StrictMono (encode k) := by
 theorem moments {k j : ℕ} {T : Finset ℕ} (hj : j ≤ k) (hT : T ⊆ Icc 1 k)
     (heq : (∑ i ∈ T, encode k i) = T.card * encode k j) :
     (∑ i ∈ T, i) = T.card * j ∧ (∑ i ∈ T, i ^ 2) = T.card * j ^ 2 := by
-  have hcard : T.card ≤ k := by
-    calc
-      T.card ≤ (Icc 1 k).card := card_le_card hT
-      _ = k := by simp [Nat.card_Icc]
+  have hcard : T.card ≤ k := (card_le_card hT).trans_eq (by simp [Nat.card_Icc])
   have hj_sq : T.card * j ^ 2 ≤ k ^ 3 := by
-    calc
-      T.card * j ^ 2 ≤ k * k ^ 2 := Nat.mul_le_mul hcard (pow_le_pow_left' hj 2)
-      _ = k ^ 3 := by ring
+    simpa only [pow_succ' k 2] using Nat.mul_le_mul hcard (pow_le_pow_left' hj 2)
   have hsum_sq : (∑ i ∈ T, i ^ 2) ≤ k ^ 3 := by
     calc
       (∑ i ∈ T, i ^ 2) ≤ ∑ _i ∈ T, k ^ 2 :=
@@ -57,7 +52,8 @@ theorem equal_of_moments {j : ℕ} {T : Finset ℕ}
     (h₂ : (∑ i ∈ T, i ^ 2) = T.card * j ^ 2)
     {i : ℕ} (hi : i ∈ T) : i = j := by
   have h₁' : (∑ x ∈ T, (x : ℤ)) = (T.card : ℤ) * (j : ℤ) := by
-    simpa only [Nat.cast_sum, Nat.cast_mul] using congrArg (fun n : ℕ => (n : ℤ)) h₁
+    rw [← Nat.cast_sum]
+    exact_mod_cast h₁
   have h₂' : (∑ x ∈ T, (x : ℤ) ^ 2) = (T.card : ℤ) * (j : ℤ) ^ 2 := by
     exact_mod_cast h₂
   have hzero : (∑ x ∈ T, ((x : ℤ) - (j : ℤ)) ^ 2) = 0 := by
@@ -91,20 +87,11 @@ theorem nonAveraging (k : ℕ) : Erdos186.NonAveraging ((Icc 1 k).image (encode 
   exact (mem_erase.mp (hS (mem_image_of_mem (encode k) hi))).1 (congrArg (encode k) hij)
 
 theorem encode_bound {k : ℕ} (hk : 1 ≤ k) : encode k k ≤ (2 * k) ^ 4 := by
-  have hk₂ : 1 ≤ k ^ 2 := by
-    simpa using (pow_le_pow_left' hk 2)
-  have hk_le : k ≤ k ^ 2 := by
-    simpa [pow_two] using Nat.mul_le_mul_left k hk
-  have hsq_le : k ^ 2 ≤ k ^ 4 := by
-    calc
-      k ^ 2 ≤ k ^ 2 * k ^ 2 := by simpa using Nat.mul_le_mul_left (k ^ 2) hk₂
-      _ = k ^ 4 := by ring
-  calc
-    encode k k = k ^ 4 + k + k ^ 2 := by unfold encode; ring
-    _ ≤ 3 * k ^ 4 := by omega
-    _ ≤ (2 * k) ^ 4 := by
-      rw [mul_pow]
-      omega
+  have h1 : k ≤ k^4 := by simpa using Nat.pow_le_pow_right hk (show 1 ≤ 4 by decide)
+  have h2 : k^2 ≤ k^4 := Nat.pow_le_pow_right hk (by decide)
+  unfold encode
+  rw [mul_pow]
+  nlinarith
 
 theorem lower_bound {N k : ℕ} (hk : 1 ≤ k) (hN : (2 * k) ^ 4 ≤ N) :
     k ≤ Erdos186.F N := by
@@ -117,9 +104,7 @@ theorem lower_bound {N k : ℕ} (hk : 1 ≤ k) (hN : (2 * k) ^ 4 ≤ N) :
       ((encode_bound hk).trans hN)⟩
     exact (show 1 ≤ encode k 1 by simp [encode]).trans ((encode_strictMono k).monotone hi₁)
   have hcard : A.card = k := by
-    dsimp [A]
-    rw [card_image_of_injective _ (encode_strictMono k).injective]
-    simp [Nat.card_Icc]
+    simp [A, card_image_of_injective _ (encode_strictMono k).injective, Nat.card_Icc]
   rw [← hcard]
   exact Erdos186.card_le_F hA (nonAveraging k)
 
@@ -131,16 +116,13 @@ theorem OMA.solution : type_of% @Erdos186.erdos_186.variants.bosznay := by
   let r := (N : ℝ) ^ ((1 : ℝ) / 4)
   have hr : 0 ≤ r := Real.rpow_nonneg (Nat.cast_nonneg _) _
   have hr_pow : r ^ 4 = (N : ℝ) := by
-    calc
-      r ^ 4 = (N : ℝ) ^ (((1 : ℝ) / 4) * (4 : ℕ)) :=
-        (Real.rpow_mul_natCast (Nat.cast_nonneg _) _ _).symm
-      _ = (N : ℝ) := by norm_num
+    rw [← Real.rpow_natCast, ← Real.rpow_mul (Nat.cast_nonneg _)]
+    norm_num
   have hr_large : 4 ≤ r := by
-    by_contra! h
-    have hp : r ^ 4 < (4 : ℝ) ^ 4 := pow_lt_pow_left₀ h hr (by decide)
-    rw [hr_pow] at hp
-    norm_num at hp
-    exact (not_lt_of_ge hN) hp
+    apply (pow_le_pow_iff_left₀ (by norm_num) hr (by decide : (4 : ℕ) ≠ 0)).mp
+    rw [hr_pow]
+    norm_num
+    exact_mod_cast hN
   let k := ⌊r / 2⌋₊
   have hk : 1 ≤ k := Nat.le_floor (by norm_num; linarith)
   have hk_upper : (k : ℝ) ≤ r / 2 := Nat.floor_le (by positivity)
