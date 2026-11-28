@@ -319,9 +319,9 @@ lemma odd_quarter_power_test {q m : ℕ} (hq : q.Prime) (large : 5<q)
   obtain ⟨zero,rank⟩ := first_zero hq (by omega) (show Odd (2*m+1) from ⟨m,rfl⟩) period
   have unit : ¬ q ∣ Nat.fib (m+1) := by
     intro test
-    have rd := rank_dvd_index (show 0<m+1 by omega) test
+    have rd := rank_dvd_index (Nat.succ_pos m) test
     rw [rank] at rd
-    have := Nat.le_of_dvd (show 0<m+1 by omega) rd
+    have := Nat.le_of_dvd (Nat.succ_pos m) rd
     omega
   rw [Nat.fib_two_mul_add_one] at zero ⊢
   have d : q-1=4*((q-1)/4) := by omega
