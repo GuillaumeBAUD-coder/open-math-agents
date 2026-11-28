@@ -1,68 +1,50 @@
 import OMAStatements.S_oeis_a130770
 import Mathlib
 
-namespace A130770
-
-lemma caseA (k : ℕ) :
-    ((((3 * k + 1 : ℕ) : ℚ) - 1) ^ 2 / (((3 * k + 1 : ℕ) : ℚ) ^ 2 + ((3 * k + 1 : ℕ) : ℚ) + 1)).den
-      = 3 * k ^ 2 + 3 * k + 1 := by
-  have hpos : (0 : ℚ) < 3 * (k : ℚ) ^ 2 + 3 * k + 1 := by positivity
-  have e : (((3 * k + 1 : ℕ) : ℚ) - 1) ^ 2 / (((3 * k + 1 : ℕ) : ℚ) ^ 2 + ((3 * k + 1 : ℕ) : ℚ) + 1)
-      = ((3 * (k : ℤ) ^ 2 : ℤ) : ℚ) / ((3 * (k : ℤ) ^ 2 + 3 * k + 1 : ℤ) : ℚ) := by
-    push_cast
-    rw [div_eq_div_iff (by positivity) (by positivity)]
-    ring
-  rw [e]
-  have hcop : Nat.Coprime (3 * (k : ℤ) ^ 2).natAbs (3 * (k : ℤ) ^ 2 + 3 * k + 1).natAbs := by
-    have hg : Int.gcd (3 * (k : ℤ) ^ 2) (3 * (k : ℤ) ^ 2 + 3 * k + 1) = 1 :=
-      Int.isCoprime_iff_gcd_eq_one.mp ⟨3 * k + 2, -(3 * k - 1), by ring⟩
-    exact hg
-  have h := Rat.den_div_eq_of_coprime (a := 3 * (k : ℤ) ^ 2) (b := 3 * (k : ℤ) ^ 2 + 3 * k + 1)
-    (by positivity) hcop
-  exact_mod_cast h
-
-lemma caseB (m : ℕ) (h3 : ¬ 3 ∣ m) :
-    ((((m + 1 : ℕ) : ℚ) - 1) ^ 2 / (((m + 1 : ℕ) : ℚ) ^ 2 + ((m + 1 : ℕ) : ℚ) + 1)).den
-      = m ^ 2 + 3 * m + 3 := by
-  have e : (((m + 1 : ℕ) : ℚ) - 1) ^ 2 / (((m + 1 : ℕ) : ℚ) ^ 2 + ((m + 1 : ℕ) : ℚ) + 1)
-      = (((m : ℤ) ^ 2 : ℤ) : ℚ) / (((m : ℤ) ^ 2 + 3 * m + 3 : ℤ) : ℚ) := by
-    push_cast
-    rw [div_eq_div_iff (by positivity) (by positivity)]
-    ring
-  rw [e]
-  have hc1 : Nat.Coprime m (m ^ 2 + 3 * m + 3) := by
-    have h : m ^ 2 + 3 * m + 3 = m * (m + 3) + 3 := by ring
-    rw [h, Nat.coprime_mul_left_add_right]
-    exact (Nat.Coprime.symm ((Nat.Prime.coprime_iff_not_dvd Nat.prime_three).mpr h3))
-  have hcop : Nat.Coprime ((m : ℤ) ^ 2).natAbs ((m : ℤ) ^ 2 + 3 * m + 3).natAbs := by
-    have e1 : ((m : ℤ) ^ 2).natAbs = m ^ 2 := by
-      rw [Int.natAbs_pow, Int.natAbs_natCast]
-    have e2 : ((m : ℤ) ^ 2 + 3 * m + 3).natAbs = m ^ 2 + 3 * m + 3 := by
-      have : ((m : ℤ) ^ 2 + 3 * m + 3) = ((m ^ 2 + 3 * m + 3 : ℕ) : ℤ) := by push_cast; ring
-      rw [this, Int.natAbs_natCast]
-    rw [e1, e2]
-    exact Nat.Coprime.pow_left 2 hc1
-  have h := Rat.den_div_eq_of_coprime (a := (m : ℤ) ^ 2) (b := (m : ℤ) ^ 2 + 3 * m + 3)
-    (by positivity) hcop
-  exact_mod_cast h
-
-end A130770
+lemma OMA.den_eq (a b : ℤ) (hb : 0 < b) (h : IsCoprime a b) : (((a : ℚ) / b).den : ℤ) = b := by
+  have h' : Nat.Coprime a.natAbs b.natAbs := Int.isCoprime_iff_gcd_eq_one.mp h
+  have := Rat.den_div_eq_of_coprime hb h'
+  exact_mod_cast this
 
 theorem OMA.solution : type_of% @OMA.S_oeis_a130770.main := by
   intro n hn
-  unfold OMA.S_oeis_a130770.a OMA.S_oeis_a130770.A046163
-  by_cases h : n % 3 = 1
-  · obtain ⟨k, rfl⟩ : ∃ k, n = 3 * k + 1 := ⟨n / 3, by omega⟩
-    rw [A130770.caseA]
-    have e : (3 * k + 1) ^ 2 + (3 * k + 1) + 1 = 3 * (3 * k ^ 2 + 3 * k + 1) := by ring
-    rw [e, Nat.lcm_eq_right (Dvd.intro _ rfl), Nat.mul_div_cancel_left _ (by norm_num)]
-  · obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
-    have h3 : ¬ 3 ∣ m := by omega
-    rw [A130770.caseB m h3]
-    have e : (m + 1) ^ 2 + (m + 1) + 1 = m ^ 2 + 3 * m + 3 := by ring
-    rw [e]
-    have hc : Nat.Coprime 3 (m ^ 2 + 3 * m + 3) := by
-      have h' : m ^ 2 + 3 * m + 3 = 3 * (m + 1) + m ^ 2 := by ring
-      rw [h', Nat.coprime_mul_left_add_right]
-      exact Nat.Coprime.pow_right 2 ((Nat.Prime.coprime_iff_not_dvd Nat.prime_three).mpr h3)
-    rw [hc.lcm_eq_mul, Nat.mul_div_cancel_left _ (by norm_num)]
+  obtain ⟨x, rfl⟩ : ∃ x, n = x + 1 := ⟨n - 1, by omega⟩
+  simp only [OMA.S_oeis_a130770.a, OMA.S_oeis_a130770.A046163]
+  have hN : (x + 1) ^ 2 + (x + 1) + 1 = x ^ 2 + 3 * x + 3 := by ring
+  rw [hN]
+  by_cases h3 : 3 ∣ x
+  · obtain ⟨y, rfl⟩ := h3
+    have hq : ((((3 * y + 1 : ℕ) : ℚ) - 1) ^ 2 / (((3 * y + 1 : ℕ) : ℚ) ^ 2 + ((3 * y + 1 : ℕ) : ℚ) + 1)) =
+        ((3 * (y : ℤ) ^ 2 : ℤ) : ℚ) / ((3 * (y : ℤ) ^ 2 + 3 * (y : ℤ) + 1 : ℤ) : ℚ) := by
+      push_cast
+      have : (3 * (y : ℚ) ^ 2 + 3 * y + 1) ≠ 0 := by positivity
+      field_simp
+      ring
+    rw [hq]
+    have hc : IsCoprime (3 * (y : ℤ) ^ 2) (3 * (y : ℤ) ^ 2 + 3 * (y : ℤ) + 1) :=
+      ⟨3 * (y : ℤ) + 2, 1 - 3 * (y : ℤ), by ring⟩
+    have hd := OMA.den_eq _ _ (by positivity) hc
+    have e : (3 * y) ^ 2 + 3 * (3 * y) + 3 = 3 * (3 * y ^ 2 + 3 * y + 1) := by ring
+    rw [e, Nat.lcm_eq_right (dvd_mul_right 3 _), Nat.mul_div_cancel_left _ (by norm_num)]
+    zify
+    push_cast at hd ⊢
+    exact hd.symm
+  · have hq : ((((x + 1 : ℕ) : ℚ) - 1) ^ 2 / (((x + 1 : ℕ) : ℚ) ^ 2 + ((x + 1 : ℕ) : ℚ) + 1)) =
+        (((x ^ 2 : ℕ) : ℤ) : ℚ) / (((x ^ 2 + 3 * x + 3 : ℕ) : ℤ) : ℚ) := by
+      push_cast
+      ring
+    rw [hq]
+    have cx3 : Nat.Coprime x 3 := (Nat.coprime_comm.1 ((Nat.Prime.coprime_iff_not_dvd Nat.prime_three).2 h3))
+    have c1 : Nat.Coprime x (x ^ 2 + 3 * x + 3) := by
+      rw [show x ^ 2 + 3 * x + 3 = 3 + x * (x + 3) by ring, Nat.coprime_add_mul_left_right]
+      exact cx3
+    have c2 : Nat.Coprime 3 (x ^ 2 + 3 * x + 3) := by
+      rw [show x ^ 2 + 3 * x + 3 = x ^ 2 + 3 * (x + 1) by ring, Nat.coprime_add_mul_left_right]
+      exact Nat.Coprime.pow_right 2 cx3.symm
+    have hc : IsCoprime ((x ^ 2 : ℕ) : ℤ) ((x ^ 2 + 3 * x + 3 : ℕ) : ℤ) :=
+      Nat.isCoprime_iff_coprime.2 (Nat.Coprime.pow_left 2 c1)
+    have hd := OMA.den_eq _ _ (by positivity) hc
+    rw [Nat.Coprime.lcm_eq_mul c2, Nat.mul_div_cancel_left _ (by norm_num)]
+    zify
+    push_cast at hd ⊢
+    exact hd.symm
