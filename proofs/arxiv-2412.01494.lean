@@ -1,6 +1,8 @@
 import OMAStatements.S_arxiv_2412_01494
 import Mathlib
 
+/- Shorter version of the original Lean disproof in upstream PR #34904. -/
+
 namespace OMA.P_arxiv_2412_01494
 
 open OMA.S_arxiv_2412_01494
@@ -66,6 +68,12 @@ def eqMom : Fin 3 → ℝ := fun i =>
   | 0 => 1
   | _ => 0
 
+private lemma valid_rates (i : Fin 3) (hi : i ≠ 0) : 0 < sRates i ∧ sRates i < 2 := by
+  fin_cases i
+  · exact absurd rfl hi
+  · norm_num [sRates]
+  · norm_num [sRates]
+
 lemma C1_valid : IsValidLBCollision C1 := by
   refine ⟨?_, ?_, M1, sRates, eqMom, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · intro i j; fin_cases i <;> fin_cases j <;> norm_num [C1]
@@ -74,10 +82,7 @@ lemma C1_valid : IsValidLBCollision C1 := by
     norm_num [M1]
   · intro j; fin_cases j <;> rfl
   · rfl
-  · intro i hi; fin_cases i
-    · exact absurd rfl hi
-    · norm_num [sRates]
-    · norm_num [sRates]
+  · exact valid_rates
   · rfl
   · ext i j
     fin_cases i <;> fin_cases j <;>
@@ -92,10 +97,7 @@ lemma C2_valid : IsValidLBCollision C2 := by
     norm_num [M2]
   · intro j; fin_cases j <;> rfl
   · rfl
-  · intro i hi; fin_cases i
-    · exact absurd rfl hi
-    · norm_num [sRates]
-    · norm_num [sRates]
+  · exact valid_rates
   · rfl
   · ext i j
     fin_cases i <;> fin_cases j <;>
@@ -120,8 +122,7 @@ lemma C1_ne_C2 : C1 ≠ C2 := by
 
 end OMA.P_arxiv_2412_01494
 
+open OMA.P_arxiv_2412_01494 in
 theorem OMA.disproof : ¬ (type_of% @OMA.S_arxiv_2412_01494.main) := by
   intro h
-  have heq := h 3 OMA.P_arxiv_2412_01494.cD1Q3 OMA.P_arxiv_2412_01494.C1 OMA.P_arxiv_2412_01494.C2
-    OMA.P_arxiv_2412_01494.C1_valid OMA.P_arxiv_2412_01494.C2_valid OMA.P_arxiv_2412_01494.fds_eq
-  exact OMA.P_arxiv_2412_01494.C1_ne_C2 heq
+  exact C1_ne_C2 (h 3 cD1Q3 C1 C2 C1_valid C2_valid fds_eq)
