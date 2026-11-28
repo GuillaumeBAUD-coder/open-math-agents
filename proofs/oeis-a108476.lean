@@ -15,50 +15,14 @@ lemma c_rec (n : ℕ) : c (n + 3) = 6 * c (n + 2) + 12 * c (n + 1) - 8 * c n := 
   simp only [c, A002605, A026150]
   ring
 
-lemma coeff_Xpow (f : ℕ → ℚ) (k d : ℕ) :
-    coeff d (mk f * X ^ k) = if k ≤ d then f (d - k) else 0 := by
-  rw [coeff_mul_X_pow', coeff_mk]
-
 lemma key : mk (fun n => (c n : ℚ)) * (1 - 6 * X - 12 * X ^ 2 + 8 * X ^ 3 : PowerSeries ℚ) =
     1 - 4 * X := by
-  have hpoly : (1 - 6 * X - 12 * X ^ 2 + 8 * X ^ 3 : PowerSeries ℚ) =
-      X ^ 0 - C (6 : ℚ) * X ^ 1 - C (12 : ℚ) * X ^ 2 + C (8 : ℚ) * X ^ 3 := by
-    simp only [map_ofNat]
-    ring
-  have hrhs : (1 - 4 * X : PowerSeries ℚ) = X ^ 0 - C (4 : ℚ) * X ^ 1 := by
-    simp only [map_ofNat]
-    ring
-  rw [hpoly, hrhs]
-  ext d
-  have e : mk (fun n => (c n : ℚ)) * (X ^ 0 - C (6 : ℚ) * X ^ 1 - C (12 : ℚ) * X ^ 2 +
-      C (8 : ℚ) * X ^ 3) =
-      mk (fun n => (c n : ℚ)) * X ^ 0 - C (6 : ℚ) * (mk (fun n => (c n : ℚ)) * X ^ 1) -
-        C (12 : ℚ) * (mk (fun n => (c n : ℚ)) * X ^ 2) +
-          C (8 : ℚ) * (mk (fun n => (c n : ℚ)) * X ^ 3) := by
-    ring
-  rw [e]
-  simp only [map_sub, map_add, coeff_C_mul, coeff_Xpow, coeff_X_pow]
-  have c0 : c 0 = 1 := by decide
-  have c1 : c 1 = 2 := by decide
-  have c2 : c 2 = 24 := by decide
-  rcases d with _ | _ | _ | m
-  · simp [c0]
-  · simp [c0, c1]
-    norm_num
-  · simp [c0, c1, c2]
-    norm_num
-  · have h := c_rec m
-    have hq : (c (m + 3) : ℚ) = 6 * c (m + 2) + 12 * c (m + 1) - 8 * c m := by exact_mod_cast h
-    have e0 : (0 : ℕ) ≤ m + 1 + 1 + 1 := by omega
-    have e1 : (1 : ℕ) ≤ m + 1 + 1 + 1 := by omega
-    have e2 : (2 : ℕ) ≤ m + 1 + 1 + 1 := by omega
-    have e3 : (3 : ℕ) ≤ m + 1 + 1 + 1 := by omega
-    have e4 : ¬ (m + 1 + 1 + 1 = 0) := by omega
-    have e5 : ¬ (m + 1 + 1 + 1 = 1) := by omega
-    simp only [if_pos e0, if_pos e1, if_pos e2, if_pos e3, if_neg e4, if_neg e5]
-    rw [show m + 1 + 1 + 1 - 0 = m + 3 by omega, show m + 1 + 1 + 1 - 1 = m + 2 by omega,
-      show m + 1 + 1 + 1 - 2 = m + 1 by omega, show m + 1 + 1 + 1 - 3 = m by omega]
-    linear_combination hq
+  have r (k : ℕ) : (c (k + 3) : ℚ) = 6 * c (k + 2) + 12 * c (k + 1) - 8 * c k := by
+    exact_mod_cast c_rec k
+  ring_nf
+  ext n
+  rcases n with _ | _ | _ | n <;> simp [coeff_mul_X_pow', coeff_X, ← map_ofNat C,
+    coeff_mul_C, r, show c 0 = 1 by decide, show c 1 = 2 by decide, show c 2 = 24 by decide] <;> ring
 
 lemma solve : ∀ n : ℕ, a n = A002605 (n + 1) * A026150 n := by
   have hu : IsUnit (1 - 6 * X - 12 * X ^ 2 + 8 * X ^ 3 : PowerSeries ℚ) := by
