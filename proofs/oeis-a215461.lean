@@ -29,4 +29,3 @@ end OMA.A215461Proof
 
 theorem OMA.solution : type_of% @OMA.S_oeis_a215461.main := OMA.A215461Proof.main_proof
 
-#print axioms OMA.solution
