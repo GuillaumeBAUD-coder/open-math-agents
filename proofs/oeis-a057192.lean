@@ -1,7 +1,4 @@
 import OMAStatements.S_oeis_a057192
-import Mathlib.Data.Nat.ModEq
-import Mathlib.Data.Nat.Prime.Nth
-import Mathlib.Tactic.NormNum.Prime
 
 /-!
 Refutation of Aguirre's parity conjecture as stated for OEIS A057192.
