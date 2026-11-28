@@ -4,7 +4,7 @@ import Mathlib
 # OEIS A240434: closed form of the binomial transform of the sums of even squares
 
 Source: https://oeis.org/A240434
-Credit: @SudharsanAnimations
+Credit: Sudharsan Rajendiran
 
 A240434 is the binomial transform of A002492, the sum of the first `n` even squares. Colin Barker
 conjectured (Apr 2014) `a(n) = 2^(n-1) n (5 + 6n + n^2)/3` and the g.f. `-4x(x-1)/(2x-1)^4`. We state
