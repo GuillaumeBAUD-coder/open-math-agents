@@ -763,9 +763,6 @@ theorem dense_candidates_mersenne {b r : ℕ} (hb : b + 1 = 2 ^ r) :
   · exact fun z hz => mersenne_on_trace_line hb (hline z hz)
   · exact trace_line_ratio S hline
 
-theorem dense_candidates_one_three : DenseCandidates 1 3 :=
-  dense_candidates_mersenne (r := 2) (by decide)
-
 private theorem projective_order_large {F K : Type*} [Field F] [Field K] [Finite F] [Finite K]
     [Algebra F K] {p k : ℕ} (hp : p % 3 = 2)
     (hq : Nat.card F = p ^ (3 ^ k)) (h3 : Module.finrank F K = 3)
@@ -1570,276 +1567,6 @@ theorem cofinal_locus_one_four : CofinalLocusLowerBound 1 4 := by
 
 open Module
 
-private def cubicAlternant {R : Type*} [CommRing R] (a b : ℕ) (x y z : R) : R :=
-  (y ^ a - x ^ a) * (z ^ b - x ^ b) - (y ^ b - x ^ b) * (z ^ a - x ^ a)
-
-private theorem cubicAlternant_map {R S : Type*} [CommRing R] [CommRing S] (f : R →+* S)
-    (a b : ℕ) (x y z : R) :
-    f (cubicAlternant a b x y z) = cubicAlternant a b (f x) (f y) (f z) := by
-  simp only [cubicAlternant, map_sub, map_mul, map_pow]
-
-private theorem cubicAlternant_cycle {R : Type*} [CommRing R] (a b : ℕ) (x y z : R) :
-    cubicAlternant a b y z x = cubicAlternant a b x y z := by
-  unfold cubicAlternant
-  ring
-
-private theorem cubicAlternant_normalize {K : Type*} [Field K] {q : ℕ} (hq : 1 ≤ q)
-    (a b : ℕ) {x : K} (hx : x ≠ 0)
-    (h : cubicAlternant a b x (x ^ q) (x ^ (q ^ 2)) = 0) :
-    collinearity a b (x ^ (q - 1)) ((x ^ (q - 1)) ^ (q + 1)) := by
-  let z := x ^ (q - 1)
-  let w := z ^ (q + 1)
-  have hz : x ^ q = x * z := by rw [← pow_succ', Nat.sub_add_cancel hq]
-  have hw : x ^ (q ^ 2) = x * w := by
-    have he : (q - 1) * (q + 1) + 1 = q ^ 2 := by
-      rw [Nat.sub_mul, one_mul, show q * (q + 1) = q ^ 2 + q by ring]
-      have : 1 ≤ q ^ 2 := Nat.one_le_pow _ _ hq
-      omega
-    rw [show w = (x ^ (q - 1)) ^ (q + 1) from rfl, ← pow_mul, ← pow_succ', he]
-  rw [hz, hw] at h
-  change (z ^ a - 1) * (w ^ b - 1) = (z ^ b - 1) * (w ^ a - 1)
-  apply sub_eq_zero.mp
-  have he : cubicAlternant a b x (x * z) (x * w) =
-      x ^ (a + b) * ((z ^ a - 1) * (w ^ b - 1) - (z ^ b - 1) * (w ^ a - 1)) := by
-    simp only [cubicAlternant, mul_pow, pow_add]
-    ring
-  exact (mul_eq_zero.mp (he.symm.trans h)).resolve_left (pow_ne_zero _ hx)
-
-private noncomputable def frobeniusChartForm {F K : Type*} [Field F] [Field K] [Algebra F K]
-    (B : Basis (Fin 3) F K) (i : ℕ) : MvPolynomial (Fin 2) K :=
-  MvPolynomial.C (B 0 ^ (Nat.card F ^ i)) +
-    MvPolynomial.C (B 1 ^ (Nat.card F ^ i)) * MvPolynomial.X 0 +
-    MvPolynomial.C (B 2 ^ (Nat.card F ^ i)) * MvPolynomial.X 1
-
-/-- The determinant in the affine chart with first basis coordinate 1. -/
-noncomputable def frobeniusChart {F K : Type*} [Field F] [Field K] [Algebra F K]
-    (B : Basis (Fin 3) F K) (a b : ℕ) : MvPolynomial (Fin 2) K :=
-  cubicAlternant a b (frobeniusChartForm B 0) (frobeniusChartForm B 1) (frobeniusChartForm B 2)
-
-private theorem eval_frobeniusChartForm {F K : Type*} [Field F] [Field K] [Finite F] [Algebra F K]
-    (B : Basis (Fin 3) F K) (i : ℕ) (t : Fin 2 → F) :
-    MvPolynomial.eval (algebraMap F K ∘ t) (frobeniusChartForm B i) =
-      (B.equivFun.symm (Fin.cons 1 t)) ^ (Nat.card F ^ i) := by
-  classical
-  let := Fintype.ofFinite F
-  let q := Nat.card F
-  let σ := FiniteField.frobeniusAlgHom F K
-  have hσ (v : K) : σ v = v ^ q := by
-    dsimp [σ, q]
-    rw [Nat.card_eq_fintype_card]
-    rfl
-  have H (v : K) : (σ ^ i) v = v ^ (q ^ i) := by
-    induction i generalizing v with
-    | zero => simp
-    | succ i ih =>
-      rw [pow_succ, AlgHom.mul_apply, hσ, ih, ← pow_mul, pow_succ']
-  rw [← H, Basis.equivFun_symm_apply, Fin.sum_univ_three]
-  have h₁ : Fin.cons (α := fun _ => F) 1 t 1 = t 0 := by
-    exact Fin.cons_succ (α := fun _ => F) (x := (1 : F)) (p := t) (i := (0 : Fin 2))
-  have h₂ : Fin.cons (α := fun _ => F) 1 t 2 = t 1 := by
-    exact Fin.cons_succ (α := fun _ => F) (x := (1 : F)) (p := t) (i := (1 : Fin 2))
-  simp only [Fin.cons_zero, one_smul, h₁, h₂, map_add, AlgHom.map_smul_of_tower]
-  simp only [frobeniusChartForm, map_add, map_mul, MvPolynomial.eval_C, MvPolynomial.eval_X,
-    Function.comp_apply, H, q, Algebra.smul_def]
-  ring
-
-/-- Cyclic Frobenius permutes the three forms, so the chart polynomial descends. -/
-theorem frobeniusChart_descends {F K : Type*} [Field F] [Field K] [Finite F] [Finite K]
-    [Algebra F K] (h3 : Module.finrank F K = 3) (B : Basis (Fin 3) F K) (a b : ℕ) :
-    ∃ P : MvPolynomial (Fin 2) F, MvPolynomial.map (algebraMap F K) P = frobeniusChart B a b := by
-  classical
-  let := Fintype.ofFinite F
-  let := Fintype.ofFinite K
-  let q := Nat.card F
-  let σ := FiniteField.frobeniusAlgHom F K
-  have hσ (v : K) : σ v = v ^ q := by
-    dsimp [σ, q]
-    rw [Nat.card_eq_fintype_card]
-    rfl
-  have hrot (i : ℕ) : MvPolynomial.map σ.toRingHom (frobeniusChartForm B i) =
-      frobeniusChartForm B (i + 1) := by
-    simp only [frobeniusChartForm, map_add, map_mul, MvPolynomial.map_C, MvPolynomial.map_X,
-      AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, hσ, ← pow_mul, pow_succ]
-    rfl
-  have hcard : Fintype.card K = q ^ 3 := by
-    rw [← Nat.card_eq_fintype_card, Module.natCard_eq_pow_finrank (K := F) (V := K), h3]
-  have hback : frobeniusChartForm B 3 = frobeniusChartForm B 0 := by
-    simp only [frobeniusChartForm, pow_zero, pow_one]
-    rw [← hcard, FiniteField.pow_card, FiniteField.pow_card, FiniteField.pow_card]
-  have hfix : MvPolynomial.map σ.toRingHom (frobeniusChart B a b) = frobeniusChart B a b := by
-    unfold frobeniusChart
-    rw [cubicAlternant_map (MvPolynomial.map σ.toRingHom), hrot, hrot, hrot]
-    change cubicAlternant a b (frobeniusChartForm B 1) (frobeniusChartForm B 2)
-      (frobeniusChartForm B 3) = _
-    rw [hback, cubicAlternant_cycle]
-  apply MvPolynomial.mem_range_map_iff_coeffs_subset.mpr
-  intro v hv
-  obtain ⟨e, -, rfl⟩ := MvPolynomial.mem_coeffs_iff.mp hv
-  apply OMA707Singer.mem_range_of_pow_card_eq
-  have h := congrArg (MvPolynomial.coeff e) hfix
-  rw [MvPolynomial.coeff_map] at h
-  exact (hσ _).symm.trans h
-
-private theorem projective_eq_scalar {F K : Type*} [Field F] [Field K] [Finite F]
-    [Algebra F K] {x y : K} (hy : y ≠ 0)
-    (h : x ^ (Nat.card F - 1) = y ^ (Nat.card F - 1)) :
-    ∃ c : F, x = algebraMap F K c * y := by
-  let q := Nat.card F
-  have hq : 1 ≤ q := Finite.one_lt_card.le
-  have he : (x / y) ^ q = x / y := by
-    nth_rw 1 [← Nat.sub_add_cancel hq]
-    rw [pow_succ, div_pow, h, div_self (pow_ne_zero _ hy), one_mul]
-  obtain ⟨c, hc⟩ := OMA707Singer.mem_range_of_pow_card_eq _ he
-  exact ⟨c, ((eq_div_iff hy).mp hc).symm⟩
-
-/-- Affine rational points of a bivariate polynomial over a finite field. -/
-noncomputable def affineCurvePoints {F : Type*} [Field F] [Finite F]
-    (P : MvPolynomial (Fin 2) F) : Finset (Fin 2 → F) := by
-  let := Fintype.ofFinite (Fin 2 → F)
-  exact univ.filter fun t => MvPolynomial.eval t P = 0
-
-/-- An affine zero of the conjugate determinant yields a projective point.
-    The first coordinate of the chart is 1, so this map is injective. -/
-theorem chart_card_le_locus {F K : Type*} [Field F] [Field K] [Finite F] [Finite K]
-    [Algebra F K] (B : Basis (Fin 3) F K) (a b : ℕ)
-    {P : MvPolynomial (Fin 2) F} (hP : MvPolynomial.map (algebraMap F K) P = frobeniusChart B a b) :
-    (affineCurvePoints P).card ≤ (determinantLocus F K a b).card := by
-  let := Fintype.ofFinite (Fin 2 → F)
-  let := Fintype.ofFinite (Projective F K)
-  let x (t : Fin 2 → F) := B.equivFun.symm (Fin.cons 1 t)
-  have hx0 (t : Fin 2 → F) : x t ≠ 0 := by
-    intro h
-    have he : B.equivFun (x t) = Fin.cons 1 t := B.equivFun.apply_symm_apply _
-    rw [h, map_zero] at he
-    exact zero_ne_one (congrFun he 0)
-  let z (t : Fin 2 → F) : Projective F K :=
-    ⟨(Units.mk0 (x t) (hx0 t)) ^ (Nat.card F - 1), Units.mk0 (x t) (hx0 t), rfl⟩
-  have hzinj : Function.Injective z := by
-    intro s t he
-    have hh := congrArg (fun v : Projective F K => (v.val : K)) he
-    obtain ⟨c, hc⟩ := projective_eq_scalar (hx0 t) hh
-    have hcoords : Fin.cons 1 s = c • Fin.cons 1 t := by
-      rw [← Algebra.smul_def] at hc
-      have hs : B.equivFun (x s) = Fin.cons 1 s := B.equivFun.apply_symm_apply _
-      have ht : B.equivFun (x t) = Fin.cons 1 t := B.equivFun.apply_symm_apply _
-      have hh := congrArg B.equivFun hc
-      change B.equivFun (x s) = B.equivFun (c • x t) at hh
-      rw [map_smul, hs, ht] at hh
-      exact hh
-    have hc1 : c = 1 := by simpa using (congrFun hcoords 0).symm
-    rw [hc1, one_smul] at hcoords
-    funext i
-    simpa using congrFun hcoords i.succ
-  apply card_le_card_of_injOn z _ hzinj.injOn
-  intro t ht
-  have ht' : MvPolynomial.eval t P = 0 := (mem_filter.mp ht).2
-  have hz : MvPolynomial.eval (algebraMap F K ∘ t) (frobeniusChart B a b) = 0 := by
-    rw [← hP, MvPolynomial.eval_map, ← MvPolynomial.eval₂_comp, ht', map_zero]
-  unfold frobeniusChart at hz
-  rw [cubicAlternant_map (MvPolynomial.eval (algebraMap F K ∘ t)),
-    eval_frobeniusChartForm, eval_frobeniusChartForm, eval_frobeniusChartForm,
-    pow_zero, pow_one, pow_one] at hz
-  apply mem_filter.mpr
-  exact ⟨mem_univ _, cubicAlternant_normalize Finite.one_lt_card.le a b (hx0 t) hz⟩
-
-/-- To obtain the cofinal incidence bound, it suffices to count rational zeros
-    in one affine chart of the descended cubic Frobenius determinant. -/
-theorem cofinal_locus_of_chart_count {a b : ℕ}
-    (h : ∃ p C : ℕ, 2 ≤ p ∧ p % 3 = 2 ∧ ∀ T : ℕ,
-      ∃ (k : ℕ) (F K : Type) (_ : Field F) (_ : Field K) (_ : Finite F) (_ : Finite K)
-        (_ : Algebra F K), T ≤ k ∧ Nat.card F = p ^ (3 ^ k) ∧ Module.finrank F K = 3 ∧
-        ∃ (B : Basis (Fin 3) F K) (P : MvPolynomial (Fin 2) F),
-          MvPolynomial.map (algebraMap F K) P = frobeniusChart B a b ∧
-          Nat.card F ≤ C * (affineCurvePoints P).card) :
-    CofinalLocusLowerBound a b := by
-  obtain ⟨p, C, hp, hp3, hc⟩ := h
-  refine ⟨p, C, hp, hp3, fun T => ?_⟩
-  obtain ⟨k, F, K, iF, iK, fF, fK, iA, hk, hq, h3, B, P, hP, hcard⟩ := hc T
-  exact ⟨k, F, K, iF, iK, fF, fK, iA, hk, hq, h3,
-    hcard.trans (Nat.mul_le_mul_left C (chart_card_le_locus B a b hP))⟩
-
-private def cubicVandermonde {R : Type*} [CommRing R] (x y z : R) : R :=
-  (y - x) * (z - x) * (z - y)
-
-private theorem cubicVandermonde_dvd {R : Type*} [CommRing R] (a b : ℕ) (x y z : R) :
-    cubicVandermonde x y z ∣ cubicAlternant a b x y z := by
-  obtain ⟨A, hA⟩ : (X - C x) ∣ (X ^ a - C (x ^ a) : R[X]) := by
-    apply dvd_iff_isRoot.mpr
-    simp [IsRoot.def]
-  obtain ⟨B, hB⟩ : (X - C x) ∣ (X ^ b - C (x ^ b) : R[X]) := by
-    apply dvd_iff_isRoot.mpr
-    simp [IsRoot.def]
-  have hAy (v : R) : v ^ a - x ^ a = (v - x) * A.eval v := by
-    simpa using congrArg (evalRingHom v) hA
-  have hBy (v : R) : v ^ b - x ^ b = (v - x) * B.eval v := by
-    simpa using congrArg (evalRingHom v) hB
-  let P := C (A.eval y) * B - C (B.eval y) * A
-  have hy : P.eval y = 0 := by simp [P, mul_comm]
-  obtain ⟨r, hr⟩ : z - y ∣ P.eval z := by
-    simpa only [hy, sub_zero] using sub_dvd_eval_sub z y P
-  have hz : A.eval y * B.eval z - B.eval y * A.eval z = (z - y) * r := by
-    simpa [P] using hr
-  refine ⟨r, ?_⟩
-  unfold cubicAlternant cubicVandermonde
-  rw [hAy y, hBy z, hBy y, hAy z, mul_assoc (y - x), mul_assoc (y - x), ← mul_sub]
-  linear_combination (y - x) * (z - x) * hz
-
-private noncomputable def vandermondePoly : MvPolynomial (Fin 3) ℤ :=
-  cubicVandermonde (MvPolynomial.X 0) (MvPolynomial.X 1) (MvPolynomial.X 2)
-
-private noncomputable def alternantPoly (a b : ℕ) : MvPolynomial (Fin 3) ℤ :=
-  cubicAlternant a b (MvPolynomial.X 0) (MvPolynomial.X 1) (MvPolynomial.X 2)
-
-/-- The integer polynomial remaining after removing the three diagonal factors. -/
-noncomputable def alternantQuotient (a b : ℕ) : MvPolynomial (Fin 3) ℤ :=
-  Classical.choose (cubicVandermonde_dvd a b
-    (MvPolynomial.X 0 : MvPolynomial (Fin 3) ℤ) (MvPolynomial.X 1) (MvPolynomial.X 2))
-
-private theorem alternantQuotient_spec (a b : ℕ) :
-    alternantPoly a b = vandermondePoly * alternantQuotient a b :=
-  Classical.choose_spec (cubicVandermonde_dvd a b
-    (MvPolynomial.X 0 : MvPolynomial (Fin 3) ℤ) (MvPolynomial.X 1) (MvPolynomial.X 2))
-
-private theorem vandermondePoly_ne_zero : vandermondePoly ≠ 0 := by
-  have h (i j : Fin 3) (hij : i ≠ j) :
-      (MvPolynomial.X i : MvPolynomial (Fin 3) ℤ) - MvPolynomial.X j ≠ 0 :=
-    sub_ne_zero.mpr (MvPolynomial.X_injective.ne hij)
-  exact mul_ne_zero (mul_ne_zero (h 1 0 (by decide)) (h 2 0 (by decide))) (h 2 1 (by decide))
-
-theorem alternantQuotient_cycle (a b : ℕ) :
-    MvPolynomial.rename (finRotate 3) (alternantQuotient a b) = alternantQuotient a b := by
-  have h0 : finRotate 3 0 = 1 := by decide
-  have h1 : finRotate 3 1 = 2 := by decide
-  have h2 : finRotate 3 2 = 0 := by decide
-  have hA : MvPolynomial.rename (finRotate 3) (alternantPoly a b) = alternantPoly a b := by
-    unfold alternantPoly
-    simp only [cubicAlternant, map_sub, map_mul, map_pow, MvPolynomial.rename_X, h0, h1, h2]
-    ring
-  have hV : MvPolynomial.rename (finRotate 3) vandermondePoly = vandermondePoly := by
-    simp only [vandermondePoly, cubicVandermonde, map_mul, map_sub, MvPolynomial.rename_X, h0, h1, h2]
-    ring
-  rw [alternantQuotient_spec, map_mul, hV] at hA
-  exact mul_left_cancel₀ vandermondePoly_ne_zero hA
-
-theorem alternantQuotient_degree (a b : ℕ) : (alternantQuotient a b).totalDegree ≤ a + b - 3 := by
-  by_cases h0 : alternantQuotient a b = 0
-  · simp [h0]
-  have hA : (alternantPoly a b).IsHomogeneous (a + b) := by
-    unfold alternantPoly cubicAlternant
-    have h (i j : Fin 3) (n : ℕ) :
-        ((MvPolynomial.X i : MvPolynomial (Fin 3) ℤ) ^ n - MvPolynomial.X j ^ n).IsHomogeneous n :=
-      (MvPolynomial.isHomogeneous_X_pow i n).sub (MvPolynomial.isHomogeneous_X_pow j n)
-    exact ((h 1 0 a).mul (h 2 0 b)).sub (by simpa only [Nat.add_comm b a] using (h 1 0 b).mul (h 2 0 a))
-  have hV : vandermondePoly.IsHomogeneous 3 := by
-    have h (i j : Fin 3) :
-        ((MvPolynomial.X i : MvPolynomial (Fin 3) ℤ) - MvPolynomial.X j).IsHomogeneous 1 :=
-      (MvPolynomial.isHomogeneous_X _ _).sub (MvPolynomial.isHomogeneous_X _ _)
-    exact ((h 1 0).mul (h 2 0)).mul (h 2 1)
-  have h := hA.totalDegree (by rw [alternantQuotient_spec]; exact mul_ne_zero vandermondePoly_ne_zero h0)
-  rw [alternantQuotient_spec, MvPolynomial.totalDegree_mul_of_isDomain vandermondePoly_ne_zero h0,
-    hV.totalDegree vandermondePoly_ne_zero] at h
-  omega
-
 end Erdos707H1
 
 /-
@@ -2233,15 +1960,6 @@ theorem WeightedDegreeLE.monomialXY {w n : ℕ} {ij : ℕ × ℕ} (h : ij.1 + w 
     WeightedDegreeLE w n (monomialXY ij : R[X][Y]) :=
   WeightedDegreeLE.C_mul_X_pow ((Nat.add_le_add_right (natDegree_X_pow_le _) _).trans h)
 
-/-- Distinct monomials `Xⁱ Yʲ` are linearly independent. -/
-theorem eq_zero_of_sum_smul_monomialXY_eq_zero {K : Type*} [Field K] {s : Finset (ℕ × ℕ)}
-    {c : ℕ × ℕ → K} (h : ∑ ij ∈ s, c ij • (monomialXY ij : K[X][Y]) = 0) {ij : ℕ × ℕ}
-    (hij : ij ∈ s) : c ij = 0 := by
-  have := congrArg (fun g : K[X][Y] => (g.coeff ij.2).coeff ij.1) h
-  simp only [finset_sum_coeff, coeff_smul, smul_eq_mul, coeff_coeff_monomialXY, mul_ite,
-    mul_one, mul_zero, Finset.sum_ite_eq', Polynomial.coeff_zero, Prod.mk.eta] at this
-  simpa [hij] using this
-
 /-- A polynomial of `Y`-degree `< m` whose coefficients all have degree `≤ N` lies in the span of
 the monomials `Xⁱ Yʲ` with `i ≤ N` and `j < m`. -/
 theorem mem_span_monomialXY_of_natDegree_lt {K : Type*} [Field K] [DecidableEq K[X][Y]]
@@ -2496,14 +2214,6 @@ theorem natDegree_coeff_add_le_totalDegree (f : R[X][Y]) (j : ℕ) (hj : f.coeff
   simpa [Finsupp.sum_add_index, Finsupp.sum_single_index] using
     MvPolynomial.le_totalDegree (MvPolynomial.mem_support_iff.mpr hne)
 
-/-- The degree of each coefficient of `f` is at most the total degree of the corresponding
-polynomial in two variables. -/
-theorem natDegree_coeff_le_totalDegree (f : R[X][Y]) (j : ℕ) :
-    (f.coeff j).natDegree ≤ (equivMvPolynomial R f).totalDegree := by
-  by_cases hj : f.coeff j = 0
-  · simp [hj]
-  · exact (Nat.le_add_right _ _).trans (natDegree_coeff_add_le_totalDegree f j hj)
-
 /-- The `Y`-degree of `f` is at most the total degree of the corresponding polynomial in two
 variables. -/
 theorem natDegree_le_totalDegree (f : R[X][Y]) :
@@ -2520,47 +2230,6 @@ namespace MvPolynomial
 open Polynomial.Bivariate
 
 variable {K : Type*} [Field K]
-
-/-- **A weak Bézout bound.** If `f, g ∈ K[X₀, X₁]` have total degree at most `d`, `f` is
-irreducible and `f ∤ g`, then `f` and `g` have finitely many common zeros in `K²`, at most
-`2 d³` of them. -/
-theorem finite_zeroSet_inter_of_not_dvd {f g : MvPolynomial (Fin 2) K} (hf : Irreducible f)
-    (hfg : ¬ f ∣ g) {d : ℕ} (hdf : f.totalDegree ≤ d) (hdg : g.totalDegree ≤ d) :
-    {p : Fin 2 → K | eval p f = 0 ∧ eval p g = 0}.Finite ∧
-      {p : Fin 2 → K | eval p f = 0 ∧ eval p g = 0}.ncard ≤ 2 * d ^ 3 := by
-  classical
-  set e := equivMvPolynomial K
-  set Z := {p : Fin 2 → K | eval p f = 0 ∧ eval p g = 0}
-  have key : ∀ T : Finset (Fin 2 → K), ↑T ⊆ Z → T.card ≤ 2 * d ^ 3 := by
-    intro T hT
-    have hf' : Irreducible (e.symm f) := (MulEquiv.irreducible_iff e.symm.toMulEquiv).mpr hf
-    have hfg' : ¬ e.symm f ∣ e.symm g := fun h => hfg (by simpa using map_dvd e h)
-    have hdf' : (e (e.symm f)).totalDegree ≤ d := by simpa using hdf
-    have hdg' : (e (e.symm g)).totalDegree ≤ d := by simpa using hdg
-    have hinj : Function.Injective fun p : Fin 2 → K => (p 0, p 1) := by
-      intro p q h
-      simp only [Prod.mk.injEq] at h
-      funext i
-      fin_cases i <;> simp [h.1, h.2]
-    rw [← Finset.card_image_of_injective T hinj]
-    refine card_le_of_evalEval_eq_zero_of_not_dvd hf' hfg'
-      (fun i => (natDegree_coeff_le_totalDegree _ i).trans hdf')
-      (fun i => (natDegree_coeff_le_totalDegree _ i).trans hdg')
-      ((natDegree_le_totalDegree _).trans hdf') ((natDegree_le_totalDegree _).trans hdg') _ ?_
-    simp only [Finset.mem_image]
-    rintro _ ⟨p, hp, rfl⟩
-    have := hT hp
-    simp only [Set.mem_setOf_eq, Z] at this
-    rw [← eval_equivMvPolynomial, ← eval_equivMvPolynomial]
-    simpa [e] using this
-  have hfin : Z.Finite := by
-    by_contra hinf
-    obtain ⟨T, hT, hcard⟩ := Set.Infinite.exists_subset_card_eq hinf (2 * d ^ 3 + 1)
-    have := key T hT
-    omega
-  refine ⟨hfin, ?_⟩
-  rw [← hfin.coe_toFinset, Set.ncard_coe_finset]
-  exact key _ (by simp)
 
 end MvPolynomial
 
@@ -4232,10 +3901,6 @@ theorem coeff_derivX (g : R[X][Y]) (j : ℕ) : (derivX g).coeff j = derivative (
 theorem derivX_add (g h : R[X][Y]) : derivX (g + h) = derivX g + derivX h := by
   ext1 j; simp
 
-/-- `∂_X` commutes with subtraction. -/
-theorem derivX_sub (g h : R[X][Y]) : derivX (g - h) = derivX g - derivX h := by
-  ext1 j; simp
-
 /-- `∂_X` commutes with scalar multiplication by `R`. -/
 theorem derivX_smul (c : R) (g : R[X][Y]) : derivX (c • g) = c • derivX g := by
   ext1 j; simp
@@ -4326,21 +3991,6 @@ theorem branchEval_smul (a : K) (β : PowerSeries K) (c : K) (g : K[X][Y]) :
   rw [Algebra.smul_def, map_mul, Algebra.smul_def]
   congr 1
   simp [branchEval, Polynomial.algebraMap_apply]
-
-/-- The derivative of `h(a + s)` is `h'(a + s)`. -/
-theorem derivative_aeval_C_add_X (a : K) (h : K[X]) :
-    PowerSeries.derivative K (aeval (PowerSeries.C a + PowerSeries.X : PowerSeries K) h) =
-      aeval (PowerSeries.C a + PowerSeries.X : PowerSeries K) (derivative h) := by
-  induction h using Polynomial.induction_on' with
-  | add p q hp hq => simp [hp, hq]
-  | monomial n c =>
-    simp only [aeval_monomial, derivative_monomial, Derivation.leibniz, smul_eq_mul,
-      PowerSeries.derivative_pow, map_add, PowerSeries.derivative_C, PowerSeries.derivative_X,
-      zero_add, mul_one]
-    rw [show (algebraMap K (PowerSeries K) c) = PowerSeries.C c from rfl,
-      PowerSeries.derivative_C, mul_zero, add_zero, map_mul, map_natCast,
-      show (algebraMap K (PowerSeries K) c) = PowerSeries.C c from rfl]
-    ring
 
 /-- **The chain rule along a branch**: the derivative of `g(a + s, β(s))` is
 `g_X(a + s, β(s)) + g_Y(a + s, β(s)) β'(s)`. -/
@@ -6504,56 +6154,6 @@ section
 
 namespace E707Geometry
 open Polynomial
-/-- Sawin axis section: the polynomial quotient has a simple zero outside both other axes. -/
-theorem transverse {K : Type*} [Field K] [IsSepClosed K] {m c e : ℕ}
-    [NeZero (m : K)] (hc : 0 < c) (hcm : c < m) (F : K[X])
-    (hid : F * (X^c-1) = X^e*(X^m-1)) :
-    ∃ t : K, t ≠ 0 ∧ t^c ≠ 1 ∧ F.eval t = 0 ∧ F.derivative.eval t ≠ 0 := by
-  obtain ⟨t,ht⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot K m
-  have hm : 0 < m := by omega
-  have ht0 : t ≠ 0 := by intro h; simpa [h, hm.ne'] using ht.pow_eq_one
-  have htc : t^c ≠ 1 := fun h => (Nat.not_dvd_of_pos_of_lt hc hcm) ((ht.pow_eq_one_iff_dvd c).mp h)
-  have hv := congrArg (eval t) hid
-  simp [ht.pow_eq_one] at hv
-  have hF : F.eval t = 0 := hv.resolve_right (sub_ne_zero.mpr htc)
-  refine ⟨t, ht0, htc, hF, ?_⟩
-  intro hd
-  have hdv := congrArg (fun P : K[X] => P.derivative.eval t) hid
-  simp [derivative_mul, derivative_sub, derivative_X_pow, ht.pow_eq_one, hd,hF,
-    ht0, NeZero.ne (m:K)] at hdv
-
-/-- The specialized alternant divided by the specialized Vandermonde. -/
-theorem determinantAxis {K : Type*} [Field K] [IsSepClosed K] {a b c : ℕ}
-    (hc : 0 < c) (hca : c ≤ a) (hab : a ≤ b) (hlt : c < b-a)
-    [NeZero ((b-a : ℕ) : K)] (F : K[X])
-    (hspec : F * (X^c * (X^c-1)) = X^b-X^a) :
-    ∃ t : K, t ≠ 0 ∧ t^c ≠ 1 ∧ F.eval t = 0 ∧ F.derivative.eval t ≠ 0 := by
-  apply transverse (m := b-a) (e := a-c) hc hlt
-  apply mul_left_cancel₀ (pow_ne_zero c (X_ne_zero : (X : K[X]) ≠ 0))
-  calc
-    X^c * (F * (X^c - 1)) = F * (X^c * (X^c-1)) := by ring
-    _ = X^b-X^a := hspec
-    _ = X^c*(X^(a-c)*(X^(b-a)-1)) := by
-      rw [← mul_assoc, ← pow_add, Nat.add_sub_of_le hca, mul_sub, ← pow_add,
-        Nat.add_sub_of_le hab, mul_one]
-
-
-/-- Specialization at y=0 of the alternant/Vandermonde identity in K[x][y]. -/
-theorem axisOfAlternant {K : Type*} [Field K] [IsSepClosed K] {a b c : ℕ}
-    (hc : 0 < c) (hca : c ≤ a) (hab : a ≤ b) (hlt : c < b-a)
-    [NeZero ((b-a : ℕ) : K)] (P : (K[X])[X])
-    (hP : let x := C (X : K[X]); let y : (K[X])[X] := X
-          P*((x^c-1)*(y^c-1)*(y^c-x^c)) =
-          (x^a-1)*(y^b-1)-(y^a-1)*(x^b-1)) :
-    ∃ t : K, t ≠ 0 ∧ t^c ≠ 1 ∧ (P.eval 0).eval t = 0 ∧
-      (P.eval 0).derivative.eval t ≠ 0 := by
-  apply determinantAxis hc hca hab hlt
-  have he := congrArg (eval (0 : K[X])) hP
-  have ha : a ≠ 0 := by omega
-  have hb : b ≠ 0 := by omega
-  simp [ha,hb,hc.ne'] at he
-  linear_combination he
-
 end E707Geometry
 
 
@@ -6566,21 +6166,6 @@ section
 
 namespace E707Monge
 open E707Geometry Polynomial
-/-- Axis section of the actual quotient: the transverse point is constructed,
-    not an assumption on its specialization. -/
-theorem existsSmoothAxis {K : Type*} [Field K] [IsSepClosed K] (c u v : ℕ)
-    (hc : 0<c) (hu : c ≤ c*u) (huv : c*u ≤ c*v) (hlt : c<c*v-c*u)
-    [NeZero ((c*v-c*u:ℕ):K)] :
-    let F := altQuot (1+(X:K[X])^c) (X^c) 0 u v
-    ∃ t : K, t ≠ 0 ∧ t^c ≠ 1 ∧ F.eval t = 0 ∧ F.derivative.eval t ≠ 0 := by
-  intro F
-  apply determinantAxis hc hu huv hlt
-  have hu0 : u ≠ 0 := by rintro rfl; simp at hu; omega
-  have hv0 : v ≠ 0 := by rintro rfl; simp at hlt
-  have h := altQuot_spec (1 : K[X]) (X^c) 0 u v
-  simp only [one_mul,mul_zero,zero_mul,add_zero,zero_sub,one_pow,zero_pow hu0,zero_pow hv0,sub_zero] at h
-  simp only [F,pow_mul]
-  linear_combination h
 end E707Monge
 
 end
@@ -6604,38 +6189,6 @@ theorem mapQ {R S : Type*} [CommRing R] [CommRing S] (f : R →+* S) (s t w : R)
     | succ n ih => dsimp only [cubicRem] at *; simp [ih]
   simp only [altQuot,map_sub,map_mul,(h u).2.1,(h u).2.2,(h v).2.1,(h v).2.2]
 
-theorem primeAtRoot {R : Type*} [CommRing R] [IsDomain R] [WfDvdMonoid R]
-    (e : R →+* K) (P : R) (hn : P ≠ 0) (hz : e P = 0) :
-    ∃ i : R, Irreducible i ∧ i ∣ P ∧ e i = 0 := by
-  induction P using WfDvdMonoid.induction_on_irreducible with
-  | zero => contradiction
-  | unit u hu => exact False.elim ((hu.map e).ne_zero hz)
-  | mul a i ha hi ih =>
-    rw [map_mul,mul_eq_zero] at hz
-    rcases hz with h|h
-    · exact ⟨i,hi,dvd_mul_right _ _,h⟩
-    · obtain ⟨j,hj,hd,he⟩ := ih ha h
-      exact ⟨j,hj,hd.trans (dvd_mul_left _ _),he⟩
-
-/-- A geometric component crossing the axis away from the diagonals, unconditionally.
-    The cyclic invariance of this component is a separate question. -/
-theorem existsAxisFactor [IsAlgClosed K] (c u v : ℕ)
-    (hc : 0<c) (hu : c ≤ c*u) (huv : c*u ≤ c*v) (hlt : c<c*v-c*u)
-    [NeZero ((c*v-c*u:ℕ):K)] :
-    ∃ (t : K) (f g : K[X][X]), t≠0 ∧ t^c ≠ 1 ∧ Irreducible f ∧ planeQ c u v = f*g ∧
-      (f.eval 0).eval t = 0 ∧ (f.eval 0).derivative.eval t ≠ 0 ∧ (g.eval 0).eval t ≠ 0 := by
-  let Q := planeQ (K:=K) c u v
-  have haxis : Q.eval 0 = altQuot (1+(X:K[X])^c) (X^c) 0 u v := by
-    change evalRingHom 0 _ = _
-    simp only [Q,planeQ,mapQ,map_add,map_mul,coe_evalRingHom,eval_one,eval_C,eval_pow,eval_X,zero_pow hc.ne',mul_zero,add_zero]
-  obtain ⟨t,ht,htc,hz,hd⟩ := existsSmoothAxis (K:=K) c u v hc hu huv hlt
-  rw [← haxis] at hz hd
-  have hn : Q ≠ 0 := by intro h; simp [h] at hd
-  let e := (evalRingHom t).comp (evalRingHom (0 : K[X]))
-  obtain ⟨f,hf,⟨g,hg⟩,he⟩ := primeAtRoot e Q hn hz
-  change (f.eval 0).eval t = 0 at he
-  rw [hg,eval_mul,derivative_mul,eval_add,eval_mul,eval_mul,he,zero_mul,add_zero] at hd
-  exact ⟨t,f,g,ht,htc,hf,hg,he,left_ne_zero_of_mul hd,right_ne_zero_of_mul hd⟩
 end E707Monge
 
 end
@@ -6701,27 +6254,6 @@ theorem section_spec (t : K) (c u v : ℕ) :
     (C (t^(c*u))*X^(c*v) - C (t^(c*v))*X^(c*u)) + (X^(c*u)-X^(c*v)) := by
   simpa only [sectionQ,sectionV,pow_mul,map_pow,one_pow,one_mul,mul_one] using
     altQuot_spec (1 : K[X]) (C (t^c)) (X^c) u v
-
-/-- Lower signature length of the explicit quotient at a nontrivial root of t^(b-a)=1. -/
-theorem lowerOrder (t : K) (c u v : ℕ) (hc : 0<c) (huv : c*u<c*v)
-    (ht : t ≠ 0) (htc : t^c ≠ 1) (hroot : t^(c*u)=t^(c*v)) (hne : t^(c*u) ≠ 1) :
-    (sectionQ t c u v).natTrailingDegree = c*u := by
-  let d := c*v-c*u
-  have hsum : c*u+d=c*v := by dsimp [d];omega
-  have hd : d≠0 := by dsimp [d];omega
-  have hV : (sectionV t c).eval 0 ≠ 0 := by simp [sectionV,hc.ne',ht,sub_ne_zero.mpr htc.symm]
-  let T := (C (t^(c*u))-1)*((X:K[X])^d-1)
-  have hT : T.eval 0 ≠ 0 := by simp [T,hd,sub_ne_zero.mpr hne.symm]
-  have nonz (p : K[X]) (h : p.eval 0 ≠ 0) : p ≠ 0 := by rintro rfl; simp at h
-  have tvr (p : K[X]) (h : p.eval 0 ≠ 0) : p.natTrailingDegree = 0 := by
-    apply natTrailingDegree_eq_zero.mpr; right; simpa only [coeff_zero_eq_eval_zero] using h
-  have he : sectionQ t c u v * sectionV t c = T*X^(c*u) := by
-    rw [section_spec,← hroot,← hsum,pow_add]; unfold T; ring
-  have hn : sectionQ t c u v ≠ 0 := by
-    intro h; rw [h,zero_mul] at he
-    exact (mul_ne_zero (nonz T hT) (pow_ne_zero _ X_ne_zero)) he.symm
-  have hh := congrArg natTrailingDegree he
-  simpa only [natTrailingDegree_mul hn (nonz _ hV),natTrailingDegree_mul_X_pow (nonz T hT),tvr _ hV,tvr _ hT,zero_add,add_zero] using hh
 
 /-- At a root of t^a=1 outside t^c=1 the degree drops to a-2c. -/
 theorem upperDegree (t : K) (c u v : ℕ) (hc : 0<c) (ha : 0<c*u)
@@ -7105,20 +6637,6 @@ noncomputable def rowEquiv (A : Matrix n n K) (ha : IsUnit A.det) :
     (by ext1 i; simp only [AlgHom.comp_apply,aeval_X,AlgHom.id_apply]; change aeval (rowForm A) (rowForm A⁻¹ i) = X i; rw [substRows, Matrix.nonsing_inv_mul _ ha,rowForm_one])
     (by ext1 i; simp only [AlgHom.comp_apply,aeval_X,AlgHom.id_apply]; change aeval (rowForm A⁻¹) (rowForm A i) = X i; rw [substRows, Matrix.mul_nonsing_inv _ ha,rowForm_one])
 
-/-- The Vandermonde twist is an automorphism for any three distinct conjugates. -/
-theorem vandermondeMajor [IsAlgClosed K] (c u v : ℕ) (hc : 0<c) (hca : c<c*u)
-    (hab : 2*(c*u)<c*v) (hgcd : (c*u).gcd (c*v)=c) [NeZero ((c*u:ℕ):K)]
-    (e : K ≃+* K) (t : Fin 3 → K) (ht : Function.Injective t)
-    (he : ∀ i, e (t i) = t (finRotate 3 i)) :
-    let L := rowForm (vandermonde t)
-    ∃ G : MvPolynomial (Fin 3) K, Irreducible G ∧ G ∣ aeval L (E707Monge.homQ (K:=K) c u v) ∧
-      Associated G (map (e : K →+* K) G) := by
-  intro L
-  have hcyc (i) : map (e : K →+* K) (L i) = L (finRotate 3 i) := by
-    simp [L,rowForm,vandermonde_apply,he]
-  obtain ⟨H,hi,_,_,hd,hs⟩ := twistedMajor c u v hc hca hab hgcd e L hcyc
-  let E := rowEquiv (vandermonde t) (isUnit_iff_ne_zero.mpr (det_vandermonde_ne_zero_iff.mpr ht))
-  exact ⟨_,hi.map E.toMulEquiv,hd,hs⟩
 end E707Geometry
 
 
@@ -7153,15 +6671,6 @@ variable {F K : Type*} [Field F] [Fintype F] [Field K] [Fintype K] [Algebra F K]
   refine ⟨x, ?_⟩
   intro i j he
   fin_cases i <;> fin_cases j <;> first | rfl | exact False.elim (h1 (by simpa [σ,pow_succ,pow_mul] using he)) | exact False.elim (h2 (by simpa [σ,pow_succ,pow_mul] using he)) | exact False.elim (h12 (by simpa [σ,pow_succ,pow_mul] using he)) | exact False.elim (h1 (by simpa [σ,pow_succ,pow_mul] using he.symm)) | exact False.elim (h2 (by simpa [σ,pow_succ,pow_mul] using he.symm)) | exact False.elim (h12 (by simpa [σ,pow_succ,pow_mul] using he.symm)) 
-theorem cubicVandermonde (h3 : Module.finrank F K = 3) :
-    ∃ x : K, (Matrix.of (fun i j : Fin 3 => (x^j.val)^((Fintype.card F)^i.val))).det ≠ 0 := by
-  obtain ⟨x,hx⟩ := cubicOrbit h3
-  refine ⟨x,?_⟩
-  have he : Matrix.of (fun i j : Fin 3 => (x^j.val)^((Fintype.card F)^i.val)) =
-      Matrix.vandermonde (fun i : Fin 3 => x^((Fintype.card F)^i.val)) := by
-    ext i j; simp [Matrix.vandermonde_apply, ← pow_mul,Nat.mul_comm]
-  rw [he]; exact Matrix.det_vandermonde_ne_zero_iff.mpr hx
-
 end E707Partial
 
 end
@@ -7710,7 +7219,6 @@ lemma ddDiag (t : K) (m : ℕ) : 2 * dd t t t (m+2) = ((m+2:ℕ):K)*(m+1:ℕ)*t^
   induction m with
   | zero => norm_num [dd,sec]
   | succ m h => rw [dd,secDiag,pow_succ]; push_cast at *; linear_combination t*h
-lemma sec0 (t : K) (m : ℕ) : sec 0 t (m+1) = t^m := by simp [sec]
 lemma ddTwo (t : K) (m : ℕ) : dd 0 t t (m+2) = (m+1:ℕ)*t^m := by simp [dd,secDiag]
 lemma ddOne (t : K) (m : ℕ) : dd 0 0 t (m+2) = t^m := by simp [dd,sec]
 
