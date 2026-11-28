@@ -4,7 +4,9 @@ import OMAReductions.R_Erdos142_erdos_142_variants_lower_R1_H2_R2
 Choose q shifts in [0, 2N) independently and uniformly. A fixed target x + N is missed by
 one shift with probability 1 - |S| / 2N, so the expected number of uncovered targets is at
 most N (1 - |S| / 2N)^q < N exp(-q |S| / 2N) < 1. We run this as a counting argument on
-the finite set of shift tuples. -/
+the finite set of shift tuples.
+This proof builds on Salofe’s original proof in PR 5279 and weizj99’s
+revision in PR 32350. -/
 
 namespace OMA.Helpers
 
@@ -14,45 +16,33 @@ open Finset
 theorem count_bound (N q s : ℕ) (hN : 0 < N) (hsN : s ≤ N)
     (h : 2 * (N : ℝ) * Real.log (N : ℝ) < (q : ℝ) * (s : ℝ)) :
     N * (2 * N - s) ^ q < (2 * N) ^ q := by
-  have hNr : (0 : ℝ) < N := by exact_mod_cast hN
-  have hsr : (s : ℝ) ≤ N := by exact_mod_cast hsN
-  have hMpos : (0 : ℝ) < 2 * N := by positivity
-  set a : ℝ := (s : ℝ) / (2 * N) with ha
-  have ha1 : a ≤ 1 := by
-    rw [ha, div_le_one hMpos]
+  let m : ℝ := 2 * N
+  let density : ℝ := s / m
+  have hm : 0 < m := by dsimp [m]; positivity
+  have hlog : Real.log N < q * density := by
+    rw [show density = s / m from rfl, mul_div_assoc', lt_div_iff₀ hm]
+    simpa [m, mul_comm] using h
+  have hsmall : (N : ℝ) * Real.exp (-(q * density)) < 1 := by
+    rw [← Real.exp_log (by positivity : (0 : ℝ) < N), ← Real.exp_add, ← Real.exp_zero,
+      Real.exp_lt_exp]
     linarith
-  have hcast : (((2 * N - s : ℕ)) : ℝ) = (2 * N) * (1 - a) := by
+  have hbase : ((2 * N - s : ℕ) : ℝ) ≤ m * Real.exp (-density) := by
     rw [Nat.cast_sub (by omega)]
     push_cast
-    rw [ha]
-    field_simp
-  have hexp : (1 - a) ^ q ≤ Real.exp (-(q * a)) := by
-    calc (1 - a) ^ q ≤ Real.exp (-a) ^ q := by
-          apply pow_le_pow_left₀ (by linarith)
-          linarith [Real.add_one_le_exp (-a)]
-      _ = Real.exp (-(q * a)) := by
-          rw [← Real.exp_nat_mul]
-          ring_nf
-  have hlog : Real.log N < q * a := by
-    rw [ha, mul_div_assoc', lt_div_iff₀ hMpos]
-    linarith
-  have hlt : Real.exp (-(q * a)) < 1 / N := by
-    rw [one_div, ← Real.exp_log hNr, ← Real.exp_neg, Real.exp_lt_exp]
-    linarith
-  have hkey : (N : ℝ) * (1 - a) ^ q < 1 := by
-    calc (N : ℝ) * (1 - a) ^ q ≤ N * Real.exp (-(q * a)) :=
-          mul_le_mul_of_nonneg_left hexp hNr.le
-      _ < N * (1 / N) := mul_lt_mul_of_pos_left hlt hNr
-      _ = 1 := by field_simp
-  have hreal : ((N * (2 * N - s) ^ q : ℕ) : ℝ) < (((2 * N) ^ q : ℕ) : ℝ) := by
-    rw [Nat.cast_mul, Nat.cast_pow, hcast, mul_pow, Nat.cast_pow]
-    have hpow : (0 : ℝ) < (2 * N) ^ q := by positivity
-    have e2 : (((2 * N : ℕ)) : ℝ) = 2 * (N : ℝ) := by push_cast; ring
-    rw [e2]
-    calc (N : ℝ) * ((2 * N) ^ q * (1 - a) ^ q) = (2 * N) ^ q * ((N : ℝ) * (1 - a) ^ q) := by ring
-      _ < (2 * N) ^ q * 1 := mul_lt_mul_of_pos_left hkey hpow
-      _ = (2 * N) ^ q := mul_one _
-  exact_mod_cast hreal
+    change m - s ≤ m * Real.exp (-density)
+    have he := mul_le_mul_of_nonneg_left (Real.add_one_le_exp (-density)) hm.le
+    have hd : m * density = s := by dsimp [density]; field_simp
+    nlinarith
+  have hp := pow_le_pow_left₀ (Nat.cast_nonneg _) hbase q
+  rw [mul_pow, ← Real.exp_nat_mul, mul_neg] at hp
+  have hfinal : (N : ℝ) * ((2 * N - s : ℕ) : ℝ) ^ q < m ^ q := by
+    calc
+      _ ≤ (N : ℝ) * (m ^ q * Real.exp (-(q * density))) :=
+        mul_le_mul_of_nonneg_left hp (Nat.cast_nonneg _)
+      _ = m ^ q * ((N : ℝ) * Real.exp (-(q * density))) := by ring
+      _ < m ^ q := by simpa using mul_lt_mul_of_pos_left hsmall (pow_pos hm q)
+  exact_mod_cast (show (N : ℝ) * ((2 * N - s : ℕ) : ℝ) ^ q < ((2 * N : ℕ) : ℝ) ^ q by
+    push_cast; exact hfinal)
 
 end OMA.Helpers
 
@@ -68,49 +58,39 @@ theorem OMA.solution : OMA.R_Erdos142_erdos_142_variants_lower_R1_H2_R2.H2 := by
     intro x hx
     obtain ⟨hx1, hx2⟩ := mem_Icc.mp hx
     let C := univ.filter (fun r : Fin (2 * N) => ¬ ∀ b ∈ S, r.val + b ≠ x + N)
+    have sub (b : ℕ) (hb : b ∈ S) : (x + N - b) % (2 * N) = x + N - b := by
+      have := mem_Icc.mp (hS hb)
+      exact Nat.mod_eq_of_lt (by omega)
     have hC : S.card ≤ C.card := by
       apply card_le_card_of_injOn
         (fun b => (⟨(x + N - b) % (2 * N), Nat.mod_lt _ (by omega)⟩ : Fin (2 * N)))
       · intro b hb
-        rw [mem_coe] at hb
-        have hb' := mem_Icc.mp (hS hb)
-        rw [mem_coe, mem_filter]
-        refine ⟨mem_univ _, ?_⟩
-        intro hall
-        apply hall b hb
-        simp only
-        rw [Nat.mod_eq_of_lt (by omega)]
+        have := (mem_Icc.mp (hS hb)).2
+        refine mem_filter.mpr ⟨mem_univ _, fun hall => hall b hb ?_⟩
+        change (x + N - b) % (2 * N) + b = x + N
+        rw [sub b hb]; omega
+      · intro b hb c hc he
+        have hb' := (mem_Icc.mp (hS hb)).2
+        have hc' := (mem_Icc.mp (hS hc)).2
+        have e := congrArg Fin.val he
+        change (x + N - b) % (2 * N) = (x + N - c) % (2 * N) at e
+        rw [sub b hb, sub c hc] at e
         omega
-      · intro b hb b' hb' heq
-        rw [mem_coe] at hb hb'
-        have h1 := mem_Icc.mp (hS hb)
-        have h2 := mem_Icc.mp (hS hb')
-        have hv := congrArg Fin.val heq
-        simp only at hv
-        rw [Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)] at hv
-        omega
-    have hsum := card_filter_add_card_filter_not (s := (univ : Finset (Fin (2 * N))))
-      (fun r : Fin (2 * N) => ∀ b ∈ S, r.val + b ≠ x + N)
-    rw [card_univ, Fintype.card_fin] at hsum
-    change (A x).card + C.card = 2 * N at hsum
+    have hs : (A x).card + C.card = 2 * N := by
+      simpa only [A, C, card_univ, Fintype.card_fin] using
+        card_filter_add_card_filter_not (s := (univ : Finset (Fin (2 * N))))
+          (fun r => ∀ b ∈ S, r.val + b ≠ x + N)
     omega
   let Bad : ℕ → Finset (Fin q → Fin (2 * N)) := fun x => Fintype.piFinset (fun _ => A x)
   let U := (Icc 1 N).biUnion Bad
   have hU : U.card < (univ : Finset (Fin q → Fin (2 * N))).card := by
     calc U.card ≤ ∑ x ∈ Icc 1 N, (Bad x).card := card_biUnion_le
       _ ≤ ∑ x ∈ Icc 1 N, (2 * N - S.card) ^ q := by
-          apply sum_le_sum
-          intro x hx
-          change (Fintype.piFinset fun _ : Fin q => A x).card ≤ _
-          rw [Fintype.card_piFinset_const]
-          exact Nat.pow_le_pow_left (hA x hx) q
-      _ = N * (2 * N - S.card) ^ q := by
-          rw [sum_const, Nat.card_Icc, smul_eq_mul]
-          simp
+          exact sum_le_sum fun x hx => by
+            simpa only [Bad, Fintype.card_piFinset_const] using Nat.pow_le_pow_left (hA x hx) q
+      _ = N * (2 * N - S.card) ^ q := by simp
       _ < (2 * N) ^ q := count_bound N q S.card hN hsN h
-      _ = (univ : Finset (Fin q → Fin (2 * N))).card := by
-          rw [card_univ]
-          simp
+      _ = _ := by simp
   obtain ⟨f, -, hf⟩ := exists_mem_notMem_of_card_lt_card hU
   refine ⟨fun t => (f t).val, ?_⟩
   intro x hx
