@@ -4,7 +4,7 @@ import Mathlib
 # OEIS A076771: even numbers are not eventually all sums of two non-coprime odd composites
 
 Source: https://oeis.org/A076771
-Credit: @SudharsanAnimations
+Credit: Sudharsan Rajendiran
 
 A076771 lists the even numbers representable as the sum of two non-coprime odd composites. It was
 conjectured that there is no N such that every even number n > N is represented; the entry records that
