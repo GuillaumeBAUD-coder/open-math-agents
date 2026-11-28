@@ -4518,7 +4518,7 @@ lemma tendsto_mul_ceil_div :
 
 noncomputable def S (f : ℕ → 𝕜) (ε : ℝ) (N : ℕ) : 𝕜 := (∑ n ∈ Finset.Ico ⌈ε * N⌉₊ N, f n) / N
 
-lemma S_sub_S {f : ℕ → 𝕜} {ε : ℝ} {N : ℕ} (hε : ε ≤ 1) : S f 0 N - S f ε N = cumsum f ⌈ε * N⌉₊ / N := by
+lemma S_sub_S {f : ℕ → 𝕜} {ε : ℝ} {N : ℕ} (hε : ε ≤ 1) : _root_.S f 0 N - _root_.S f ε N = cumsum f ⌈ε * N⌉₊ / N := by
   have hceilN : ⌈ε * N⌉₊ ≤ N := by
     simp only [Nat.ceil_le]
     exact mul_le_of_le_one_left N.cast_nonneg hε
@@ -4528,10 +4528,10 @@ lemma S_sub_S {f : ℕ → 𝕜} {ε : ℝ} {N : ℕ} (hε : ε ≤ 1) : S f 0 N
     omega
   have r2 : Disjoint (Finset.range ⌈ε * N⌉₊) (Finset.Ico ⌈ε * N⌉₊ N) := by
     rw [Finset.range_eq_Ico] ; apply Finset.Ico_disjoint_Ico_consecutive
-  simp [S, r1, Finset.sum_union r2, cumsum, add_div]
+  simp [_root_.S, r1, Finset.sum_union r2, cumsum, add_div]
 
 lemma tendsto_S_S_zero {f : ℕ → ℝ} (hpos : 0 ≤ f) (hcheby : cheby f) :
-    TendstoUniformlyOnFilter (S f) (S f 0) (𝓝[>] 0) atTop := by
+    TendstoUniformlyOnFilter (_root_.S f) (_root_.S f 0) (𝓝[>] 0) atTop := by
   rw [Metric.tendstoUniformlyOnFilter_iff] ; intro δ hδ
   obtain ⟨C, hC⟩ := hcheby
   have l1 : ∀ᶠ (p : ℝ × ℕ) in 𝓝[>] 0 ×ˢ atTop, C * ⌈p.1 * p.2⌉₊ / p.2 < δ := by
@@ -4553,7 +4553,7 @@ theorem WienerIkeharaTheorem' {f : ℕ → ℝ} (hpos : 0 ≤ f)
     (hG' : Set.EqOn G (fun s ↦ LSeries f s - A / (s - 1)) {s | 1 < s.re}) :
     Tendsto (fun N => cumsum f N / N) atTop (𝓝 A) := by
 
-  convert_to Tendsto (S f 0) atTop (𝓝 A) ; · ext N ; simp [S, cumsum]
+  convert_to Tendsto (_root_.S f 0) atTop (𝓝 A) ; · ext N ; simp [_root_.S, cumsum]
   apply (tendsto_S_S_zero hpos hcheby).tendsto_of_eventually_tendsto
   · have L0 : Ioc 0 1 ∈ 𝓝[>] (0 : ℝ) := inter_mem_nhdsWithin _ (Iic_mem_nhds zero_lt_one)
     apply eventually_of_mem L0
@@ -4605,7 +4605,7 @@ section PNTX_Conseq
 
 section PNTConseq
 open ArithmeticFunction hiding log
-open Nat hiding log
+open _root_.Nat hiding log
 open Finset
 open BigOperators Filter Real Classical Asymptotics MeasureTheory intervalIntegral
 open scoped ArithmeticFunction.Moebius ArithmeticFunction.Omega Chebyshev
@@ -4630,9 +4630,9 @@ theorem WeakPNT' : Tendsto (fun N ↦ (∑ n ∈ Iic N, Λ n) / N) atTop (nhds 1
   apply Tendsto.add WeakPNT
   convert squeeze_zero (f := fun N ↦ Λ N / N) (g := fun N ↦ log N / N) (t₀ := atTop) ?_ ?_ ?_
   · intro N
-    exact div_nonneg vonMangoldt_nonneg (cast_nonneg N)
+    exact div_nonneg vonMangoldt_nonneg (Nat.cast_nonneg N)
   · intro N
-    exact div_le_div_of_nonneg_right vonMangoldt_le_log (cast_nonneg N)
+    exact div_le_div_of_nonneg_right vonMangoldt_le_log (Nat.cast_nonneg N)
   have := Real.tendsto_pow_log_div_pow_atTop 1 1 Real.zero_lt_one
   simp only [rpow_one] at this
   exact Tendsto.comp this tendsto_natCast_atTop_atTop
@@ -4646,7 +4646,7 @@ theorem WeakPNT'' : ψ ~[atTop] (fun x ↦ x) := by
       · convert! Tendsto.comp WeakPNT' tendsto_nat_floor_atTop
         infer_instance
       rw [eventually_iff]
-      simp only [ne_eq, cast_eq_zero, floor_eq_zero, not_lt, mem_atTop_sets,
+      simp only [ne_eq, Nat.cast_eq_zero, Nat.floor_eq_zero, not_lt, mem_atTop_sets,
         Set.mem_setOf_eq]
       use 1
       simp only [imp_self, implies_true]
@@ -4662,7 +4662,7 @@ theorem WeakPNT'' : ψ ~[atTop] (fun x ↦ x) := by
     · apply LE.le.trans _ ((inv_le_iff_one_le_mul₀' hε).mp hb)
       linarith [Nat.lt_floor_add_one b]
     rw [sub_nonneg]
-    exact floor_le hb'
+    exact Nat.floor_le hb'
 
 /-- `√x · log x = o(x)` as `x → ∞`. -/
 lemma isLittleO_sqrt_mul_log : (fun x : ℝ ↦ x.sqrt * x.log) =o[atTop] _root_.id := by
