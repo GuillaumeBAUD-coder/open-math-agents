@@ -5,29 +5,13 @@ import FormalConjectures.ErdosProblems.«12»
 -- Credit: @michielkosters (the owner of the agent is credited as the solver)
 -- Prove EXACTLY this target. No sorry, no axiom, no native_decide.
 
-section Erdos12Sarkozy
-
 open Filter Set
+
+section Erdos12Sarkozy
 
 private noncomputable def chooseM (f : ℕ → ℕ) (hf : Tendsto f atTop atTop) (P prevN : ℕ) : ℕ :=
   let C := Classical.choose (eventually_atTop.mp (tendsto_atTop.mp hf (4 * P + 1)))
   max 2 (max prevN C)
-
-private lemma two_le_chooseM (f : ℕ → ℕ) (hf : Tendsto f atTop atTop) (P prevN : ℕ) :
-    2 ≤ chooseM f hf P prevN :=
-  le_max_left _ _
-
-private lemma prevN_le_chooseM (f : ℕ → ℕ) (hf : Tendsto f atTop atTop) (P prevN : ℕ) :
-    prevN ≤ chooseM f hf P prevN :=
-  le_trans (le_max_left _ _) (le_max_right _ _)
-
-private lemma lt_f_of_chooseM_le (f : ℕ → ℕ) (hf : Tendsto f atTop atTop) (P prevN n : ℕ)
-    (hn : chooseM f hf P prevN ≤ n) : 4 * P < f n := by
-  have hC := Classical.choose_spec (eventually_atTop.mp (tendsto_atTop.mp hf (4 * P + 1)))
-  have hle : Classical.choose (eventually_atTop.mp (tendsto_atTop.mp hf (4 * P + 1))) ≤ n :=
-    le_trans (le_trans (le_max_right _ _) (le_max_right _ _)) hn
-  have hfn := hC n hle
-  omega
 
 private noncomputable def state (f : ℕ → ℕ) (hf : Tendsto f atTop atTop) : ℕ → ℕ × ℕ
   | 0 => (1, 0)
@@ -55,260 +39,137 @@ private noncomputable def N_seq (f : ℕ → ℕ) (hf : Tendsto f atTop atTop) (
 private noncomputable def blk_seq (f : ℕ → ℕ) (hf : Tendsto f atTop atTop) (k : ℕ) : Finset ℕ :=
   (Finset.Ico (m_seq f hf k) (2 * m_seq f hf k)).image (fun t => 1 + 2 * P_seq f hf k * t)
 
-private lemma P_seq_pos (f : ℕ → ℕ) (hf : Tendsto f atTop atTop) : ∀ k, 1 ≤ P_seq f hf k
-  | 0 => le_rfl
+private lemma m_ge (f : ℕ → ℕ) (hf : Tendsto f atTop atTop) (k : ℕ) :
+    2 ≤ m_seq f hf k ∧ prevN_seq f hf k ≤ m_seq f hf k :=
+  ⟨le_max_left _ _, le_trans (le_max_left _ _) (le_max_right _ _)⟩
+
+private lemma lt_f (f : ℕ → ℕ) (hf : Tendsto f atTop atTop) (k n : ℕ)
+    (hn : m_seq f hf k ≤ n) : 4 * P_seq f hf k < f n :=
+  Classical.choose_spec (eventually_atTop.mp (tendsto_atTop.mp hf (4 * P_seq f hf k + 1))) n
+    (le_trans (le_trans (le_max_right _ _) (le_max_right _ _)) hn)
+
+private lemma P_seq_pos (f : ℕ → ℕ) (hf : Tendsto f atTop atTop) : ∀ k, 0 < P_seq f hf k
+  | 0 => one_pos
   | k + 1 => by
-    have hk := P_seq_pos f hf k
-    have hprod : 1 ≤ ∏ a ∈ blk_seq f hf k, a := by
-      apply Finset.one_le_prod'
-      intro a ha
-      rw [blk_seq, Finset.mem_image] at ha
-      rcases ha with ⟨t, _, rfl⟩
-      omega
-    change 1 ≤ P_seq f hf k * ∏ a ∈ blk_seq f hf k, a
-    nlinarith
+    change 0 < P_seq f hf k * ∏ a ∈ blk_seq f hf k, a
+    refine Nat.mul_pos (P_seq_pos f hf k) (Finset.prod_pos fun a ha => ?_)
+    obtain ⟨t, _, rfl⟩ := Finset.mem_image.mp ha
+    omega
 
-private lemma P_seq_dvd_succ (f : ℕ → ℕ) (hf : Tendsto f atTop atTop) (k : ℕ) :
-    P_seq f hf k ∣ P_seq f hf (k + 1) :=
-  dvd_mul_right _ _
-
-private lemma mem_blk_dvd_P_seq_succ (f : ℕ → ℕ) (hf : Tendsto f atTop atTop) (k a : ℕ)
-    (ha : a ∈ blk_seq f hf k) : a ∣ P_seq f hf (k + 1) := by
-  have hd : a ∣ ∏ x ∈ blk_seq f hf k, x := Finset.dvd_prod_of_mem _ ha
-  exact dvd_trans hd (dvd_mul_left _ _)
-
-private lemma mem_blk_dvd_P_seq (f : ℕ → ℕ) (hf : Tendsto f atTop atTop) {i k : ℕ}
-    (hik : i < k) {a : ℕ} (ha : a ∈ blk_seq f hf i) : a ∣ P_seq f hf k := by
+private lemma mem_blk_dvd_P_seq (f : ℕ → ℕ) (hf : Tendsto f atTop atTop) {i k a : ℕ}
+    (hik : i < k) (ha : a ∈ blk_seq f hf i) : a ∣ P_seq f hf k := by
   induction k with
   | zero => omega
   | succ k ih =>
-    rcases Nat.lt_or_eq_of_le (Nat.lt_succ_iff.mp hik) with hlt | rfl
-    · exact dvd_trans (ih hlt) (P_seq_dvd_succ f hf k)
-    · exact mem_blk_dvd_P_seq_succ f hf i a ha
+    rcases Nat.lt_succ_iff_lt_or_eq.mp hik with h | rfl
+    · exact dvd_trans (ih h) (dvd_mul_right _ _)
+    · exact dvd_trans (Finset.dvd_prod_of_mem _ ha) (dvd_mul_left _ _)
 
-private lemma prevN_seq_succ (f : ℕ → ℕ) (hf : Tendsto f atTop atTop) (k : ℕ) :
-    prevN_seq f hf (k + 1) = N_seq f hf k :=
-  rfl
+private lemma MN (f : ℕ → ℕ) (hf : Tendsto f atTop atTop) (k : ℕ) :
+    prevN_seq f hf k < M_seq f hf k ∧ M_seq f hf k < N_seq f hf k := by
+  have := P_seq_pos f hf k
+  obtain ⟨h1, h2⟩ := m_ge f hf k
+  unfold M_seq N_seq
+  constructor <;> nlinarith
 
-private lemma prevN_lt_M_seq (f : ℕ → ℕ) (hf : Tendsto f atTop atTop) (k : ℕ) :
-    prevN_seq f hf k < M_seq f hf k := by
-  have hP := P_seq_pos f hf k
-  have hm2 : 2 ≤ m_seq f hf k := two_le_chooseM f hf (P_seq f hf k) (prevN_seq f hf k)
-  have hmN : prevN_seq f hf k ≤ m_seq f hf k := prevN_le_chooseM f hf (P_seq f hf k) (prevN_seq f hf k)
-  change prevN_seq f hf k < 2 * P_seq f hf k * m_seq f hf k
-  nlinarith
-
-private lemma M_seq_lt_N_seq (f : ℕ → ℕ) (hf : Tendsto f atTop atTop) (k : ℕ) :
-    M_seq f hf k < N_seq f hf k := by
-  have hP := P_seq_pos f hf k
-  have hm2 : 2 ≤ m_seq f hf k := two_le_chooseM f hf (P_seq f hf k) (prevN_seq f hf k)
-  change 2 * P_seq f hf k * m_seq f hf k < 4 * P_seq f hf k * m_seq f hf k
-  nlinarith
-
-private lemma N_seq_lt_M_seq_succ (f : ℕ → ℕ) (hf : Tendsto f atTop atTop) (k : ℕ) :
-    N_seq f hf k < M_seq f hf (k + 1) := by
-  rw [← prevN_seq_succ]
-  exact prevN_lt_M_seq f hf (k + 1)
-
-private lemma N_seq_lt_M_seq (f : ℕ → ℕ) (hf : Tendsto f atTop atTop) {i j : ℕ}
+private lemma N_lt_M (f : ℕ → ℕ) (hf : Tendsto f atTop atTop) {i j : ℕ}
     (hij : i < j) : N_seq f hf i < M_seq f hf j := by
   induction j with
   | zero => omega
   | succ j ih =>
-    rcases Nat.lt_or_eq_of_le (Nat.lt_succ_iff.mp hij) with hlt | rfl
-    · exact lt_trans (ih hlt) (lt_trans (M_seq_lt_N_seq f hf j) (N_seq_lt_M_seq_succ f hf j))
-    · exact N_seq_lt_M_seq_succ f hf i
+    have h : N_seq f hf j < M_seq f hf (j + 1) := (MN f hf (j + 1)).1
+    rcases Nat.lt_succ_iff_lt_or_eq.mp hij with h' | rfl
+    · exact (ih h').trans ((MN f hf j).2.trans h)
+    · exact h
 
-private lemma N_seq_strictMono (f : ℕ → ℕ) (hf : Tendsto f atTop atTop) :
-    StrictMono (N_seq f hf) := by
-  intro i j hij
-  exact lt_trans (N_seq_lt_M_seq f hf hij) (M_seq_lt_N_seq f hf j)
+private lemma M_mono (f : ℕ → ℕ) (hf : Tendsto f atTop atTop) : StrictMono (M_seq f hf) :=
+  fun i _ h => (MN f hf i).2.trans (N_lt_M f hf h)
 
-private lemma le_M_seq (f : ℕ → ℕ) (hf : Tendsto f atTop atTop) (k : ℕ) :
-    k ≤ M_seq f hf k := by
-  induction k with
-  | zero => exact Nat.zero_le _
-  | succ k ih =>
-    have h1 := lt_trans (M_seq_lt_N_seq f hf k) (N_seq_lt_M_seq_succ f hf k)
-    omega
-
-private lemma le_N_seq (f : ℕ → ℕ) (hf : Tendsto f atTop atTop) (k : ℕ) :
-    k ≤ N_seq f hf k :=
-  le_trans (le_M_seq f hf k) (le_of_lt (M_seq_lt_N_seq f hf k))
-
-private lemma mem_blk_bounds (f : ℕ → ℕ) (hf : Tendsto f atTop atTop) {k x : ℕ}
-    (hx : x ∈ blk_seq f hf k) : M_seq f hf k < x ∧ x < N_seq f hf k := by
-  rw [blk_seq, Finset.mem_image] at hx
-  rcases hx with ⟨t, ht, rfl⟩
+private lemma mem_blk (f : ℕ → ℕ) (hf : Tendsto f atTop atTop) {k x : ℕ}
+    (hx : x ∈ blk_seq f hf k) :
+    M_seq f hf k < x ∧ x < N_seq f hf k ∧ x % 2 = 1 ∧ 5 ≤ x := by
+  obtain ⟨t, ht, rfl⟩ := Finset.mem_image.mp hx
   rw [Finset.mem_Ico] at ht
-  have hP := P_seq_pos f hf k
+  have := P_seq_pos f hf k
+  have := (m_ge f hf k).1
   unfold M_seq N_seq
-  constructor <;> nlinarith
+  exact ⟨by nlinarith, by nlinarith, by rw [mul_assoc]; omega, by nlinarith⟩
 
-private lemma mem_blk_odd (f : ℕ → ℕ) (hf : Tendsto f atTop atTop) {k x : ℕ}
-    (hx : x ∈ blk_seq f hf k) : x % 2 = 1 := by
-  rw [blk_seq, Finset.mem_image] at hx
-  rcases hx with ⟨t, _, rfl⟩
-  rw [mul_assoc]
-  omega
-
-private lemma mem_blk_five_le (f : ℕ → ℕ) (hf : Tendsto f atTop atTop) {k x : ℕ}
-    (hx : x ∈ blk_seq f hf k) : 5 ≤ x := by
-  have hP := P_seq_pos f hf k
-  have hm : 2 ≤ m_seq f hf k := two_le_chooseM f hf (P_seq f hf k) (prevN_seq f hf k)
-  rw [blk_seq, Finset.mem_image] at hx
-  rcases hx with ⟨t, ht, rfl⟩
-  rw [Finset.mem_Ico] at ht
-  nlinarith
-
-private lemma mem_blk_mod_P (f : ℕ → ℕ) (hf : Tendsto f atTop atTop) {i k x : ℕ}
-    (hik : i < k) {a : ℕ} (ha : a ∈ blk_seq f hf i) (hx : x ∈ blk_seq f hf k) :
-    ∃ q : ℕ, x = 1 + a * q := by
-  have hdvd : a ∣ P_seq f hf k := mem_blk_dvd_P_seq f hf hik ha
-  rcases hdvd with ⟨r, hr⟩
-  rw [blk_seq, Finset.mem_image] at hx
-  rcases hx with ⟨t, _, rfl⟩
-  refine ⟨2 * r * t, ?_⟩
-  rw [hr]
-  ring
+private lemma mem_blk_mod_P (f : ℕ → ℕ) (hf : Tendsto f atTop atTop) {i k x a : ℕ}
+    (hik : i < k) (ha : a ∈ blk_seq f hf i) (hx : x ∈ blk_seq f hf k) :
+    ∃ q, x = 1 + a * q := by
+  obtain ⟨r, hr⟩ := mem_blk_dvd_P_seq f hf hik ha
+  obtain ⟨t, _, rfl⟩ := Finset.mem_image.mp hx
+  exact ⟨2 * r * t, by rw [hr]; ring⟩
 
 private lemma blk_order (f : ℕ → ℕ) (hf : Tendsto f atTop atTop) {i j x y : ℕ}
     (hx : x ∈ blk_seq f hf i) (hy : y ∈ blk_seq f hf j) (hxy : x < y) : i ≤ j := by
-  by_contra hji
-  have hji' : j < i := Nat.lt_of_not_ge hji
-  have hyN : y < N_seq f hf j := (mem_blk_bounds f hf hy).2
-  have hMx : M_seq f hf i < x := (mem_blk_bounds f hf hx).1
-  have hNM : N_seq f hf j < M_seq f hf i := N_seq_lt_M_seq f hf hji'
+  by_contra h
+  have := N_lt_M f hf (not_le.mp h)
+  have := mem_blk f hf hx
+  have := mem_blk f hf hy
   omega
 
 private lemma blk_card (f : ℕ → ℕ) (hf : Tendsto f atTop atTop) (k : ℕ) :
     (blk_seq f hf k).card = m_seq f hf k := by
-  rw [blk_seq, Finset.card_image_of_injective]
-  · rw [Nat.card_Ico]
-    omega
+  rw [blk_seq, Finset.card_image_of_injective, Nat.card_Ico]
+  · omega
   · intro t1 t2 ht
-    have hP := P_seq_pos f hf k
+    have := P_seq_pos f hf k
     nlinarith
 
 private noncomputable def A_set (f : ℕ → ℕ) (hf : Tendsto f atTop atTop) : Set ℕ :=
   ⋃ k, (blk_seq f hf k : Set ℕ)
 
-private lemma A_set_infinite (f : ℕ → ℕ) (hf : Tendsto f atTop atTop) :
-    (A_set f hf).Infinite := by
-  rw [Set.infinite_iff_exists_gt]
-  intro B
-  refine ⟨1 + 2 * P_seq f hf B * m_seq f hf B, ?_, ?_⟩
-  · rw [A_set, Set.mem_iUnion]
-    refine ⟨B, ?_⟩
-    rw [Finset.mem_coe, blk_seq, Finset.mem_image]
-    refine ⟨m_seq f hf B, Finset.mem_Ico.mpr ⟨le_rfl, ?_⟩, rfl⟩
-    have hm : 2 ≤ m_seq f hf B := two_le_chooseM f hf (P_seq f hf B) (prevN_seq f hf B)
-    omega
-  · have hP := P_seq_pos f hf B
-    have hm : 2 ≤ m_seq f hf B := two_le_chooseM f hf (P_seq f hf B) (prevN_seq f hf B)
-    have hB := le_M_seq f hf B
-    change B < 1 + 2 * P_seq f hf B * m_seq f hf B
-    unfold M_seq at hB
-    nlinarith
-
 private lemma A_set_isGood (f : ℕ → ℕ) (hf : Tendsto f atTop atTop) :
     Erdos12.IsGood (A_set f hf) := by
-  refine ⟨A_set_infinite f hf, ?_⟩
+  refine ⟨infinite_of_forall_exists_gt fun B => ⟨1 + M_seq f hf B, mem_iUnion.mpr ⟨B,
+    Finset.mem_image.mpr ⟨m_seq f hf B, Finset.mem_Ico.mpr ⟨le_rfl, by have := m_ge f hf B; omega⟩,
+    rfl⟩⟩, by have : B ≤ M_seq f hf B := (M_mono f hf).id_le B; omega⟩, ?_⟩
   intro a ha b hb c hc hdvd hab hac
-  rw [A_set, Set.mem_iUnion] at ha hb hc
-  rcases ha with ⟨i, ha⟩
-  rcases hb with ⟨j, hb⟩
-  rcases hc with ⟨k, hc⟩
-  rw [Finset.mem_coe] at ha hb hc
-  have hij : i ≤ j := blk_order f hf ha hb hab
-  have hik : i ≤ k := blk_order f hf ha hc hac
-  suffices h : ∀ (j' k' : ℕ) (b' c' : ℕ),
-      j' ≤ k' → i ≤ j' → b' ∈ blk_seq f hf j' → c' ∈ blk_seq f hf k' →
-      a ∣ b' + c' → a < b' → a < c' → False by
-    rcases le_total j k with hjk | hkj
-    · exact False.elim (h j k b c hjk hij hb hc hdvd hab hac)
-    · exact False.elim (h k j c b hkj hik hc hb (by simpa [add_comm] using hdvd) hac hab)
-  intro j' k' b' c' hjk hij' hb' hc' hdvd' hab' hac'
-  rcases lt_or_eq_of_le hij' with hij_lt | rfl
-  · have hik_lt : i < k' := lt_of_lt_of_le hij_lt hjk
-    rcases mem_blk_mod_P f hf hij_lt ha hb' with ⟨q1, hq1⟩
-    rcases mem_blk_mod_P f hf hik_lt ha hc' with ⟨q2, hq2⟩
-    have hsum : b' + c' = 2 + a * (q1 + q2) := by rw [hq1, hq2]; ring
-    rw [hsum] at hdvd'
-    have hdvd2 : a ∣ 2 := (Nat.dvd_add_left ⟨q1 + q2, rfl⟩).mp hdvd'
-    have ha2 : a ≤ 2 := Nat.le_of_dvd (by decide) hdvd2
-    have ha5 := mem_blk_five_le f hf ha
+  rw [A_set, mem_iUnion] at ha hb hc
+  obtain ⟨i, ha⟩ := ha
+  obtain ⟨j, hb⟩ := hb
+  obtain ⟨k, hc⟩ := hc
+  wlog hjk : j ≤ k generalizing b c j k
+  · exact (this c b (by rwa [add_comm]) hac hab k hc j hb (by omega)).symm
+  obtain ⟨ha1, -, ha2, ha3⟩ := mem_blk f hf ha
+  obtain ⟨-, hb1, hb2, -⟩ := mem_blk f hf hb
+  obtain ⟨-, hc1, hc2, -⟩ := mem_blk f hf hc
+  have hN : N_seq f hf i = 2 * M_seq f hf i := by unfold N_seq M_seq; ring
+  rcases (blk_order f hf ha hb hab).lt_or_eq with hij | rfl
+  · obtain ⟨q1, rfl⟩ := mem_blk_mod_P f hf hij ha hb
+    obtain ⟨q2, rfl⟩ := mem_blk_mod_P f hf (hij.trans_le hjk) ha hc
+    have := Nat.le_of_dvd two_pos ((Nat.dvd_add_right (dvd_mul_right a (q1 + q2))).mp
+      (by convert hdvd using 1; ring))
     omega
-  · rcases lt_or_eq_of_le hjk with hjk_lt | rfl
-    · rcases mem_blk_mod_P f hf hjk_lt ha hc' with ⟨q, hq⟩
-      have hsum : b' + c' = (b' + 1) + a * q := by rw [hq]; ring
-      rw [hsum] at hdvd'
-      have hdvd1 : a ∣ b' + 1 := (Nat.dvd_add_left ⟨q, rfl⟩).mp hdvd'
-      rcases hdvd1 with ⟨s, hs⟩
-      have haM := (mem_blk_bounds f hf ha).1
-      have hbN := (mem_blk_bounds f hf hb').2
-      have hN : N_seq f hf i = 2 * M_seq f hf i := by unfold N_seq M_seq; ring
-      have hs2 : 2 ≤ s := by nlinarith
-      nlinarith
-    · rcases hdvd' with ⟨s, hs⟩
-      have haM := (mem_blk_bounds f hf ha).1
-      have hbN := (mem_blk_bounds f hf hb').2
-      have hcN := (mem_blk_bounds f hf hc').2
-      have hN : N_seq f hf i = 2 * M_seq f hf i := by unfold N_seq M_seq; ring
-      have hs3 : s = 3 := by nlinarith
-      have ha_odd := mem_blk_odd f hf ha
-      have hb_odd := mem_blk_odd f hf hb'
-      have hc_odd := mem_blk_odd f hf hc'
-      rw [hs3] at hs
-      omega
+  rcases hjk.lt_or_eq with hjk | rfl
+  · obtain ⟨q, rfl⟩ := mem_blk_mod_P f hf hjk ha hc
+    obtain ⟨s, hs⟩ := (Nat.dvd_add_right (dvd_mul_right a q)).mp
+      (by convert hdvd using 1; ring : a ∣ a * q + (b + 1))
+    have : 2 ≤ s := by nlinarith
+    nlinarith
+  obtain ⟨s, hs⟩ := hdvd
+  have : s = 3 := by nlinarith
+  subst this
+  omega
 
 end Erdos12Sarkozy
 
 theorem OMA.solution : type_of% @Erdos12.erdos_12.variants.erdos_sarkozy := by
   intro f hf
-  refine ⟨A_set f hf, A_set_isGood f hf, ?_⟩
-  rw [Set.infinite_iff_exists_gt]
-  intro B
-  let k := B + 1
-  let N := N_seq f hf k
-  refine ⟨N, ?_, ?_⟩
-  · change (N : ℝ) / f N < ((A_set f hf ∩ Set.Icc 1 N).ncard : ℝ)
-    have hP := P_seq_pos f hf k
-    have hm : 2 ≤ m_seq f hf k := two_le_chooseM f hf (P_seq f hf k) (prevN_seq f hf k)
-    have hmN : m_seq f hf k ≤ N := by
-      change m_seq f hf k ≤ 4 * P_seq f hf k * m_seq f hf k
-      nlinarith
-    have hfN : 4 * P_seq f hf k < f N := lt_f_of_chooseM_le f hf _ _ N hmN
-    have hNpos : 0 < N := by
-      change 0 < 4 * P_seq f hf k * m_seq f hf k
-      nlinarith
-    have hsub : (blk_seq f hf k : Set ℕ) ⊆ A_set f hf ∩ Set.Icc 1 N := by
-      intro x hx
-      rw [Finset.mem_coe] at hx
-      refine ⟨?_, ?_, ?_⟩
-      · rw [A_set, Set.mem_iUnion]
-        exact ⟨k, hx⟩
-      · have := mem_blk_five_le f hf hx
-        omega
-      · exact le_of_lt (mem_blk_bounds f hf hx).2
-    have hfin : (A_set f hf ∩ Set.Icc 1 N).Finite :=
-      (Set.finite_Icc 1 N).subset Set.inter_subset_right
-    have hcard : m_seq f hf k ≤ (A_set f hf ∩ Set.Icc 1 N).ncard := by
-      rw [← blk_card f hf k, ← Set.ncard_coe_finset]
-      exact Set.ncard_le_ncard hsub hfin
-    have h1 : (N : ℝ) / (f N : ℝ) < (N : ℝ) / ((4 * P_seq f hf k : ℕ) : ℝ) := by
-      apply div_lt_div_of_pos_left
-      · exact Nat.cast_pos.mpr hNpos
-      · exact Nat.cast_pos.mpr (by nlinarith)
-      · exact Nat.cast_lt.mpr hfN
-    have h2 : (N : ℝ) / ((4 * P_seq f hf k : ℕ) : ℝ) = (m_seq f hf k : ℝ) := by
-      have hNeq : N = 4 * P_seq f hf k * m_seq f hf k := rfl
-      rw [hNeq]
-      push_cast
-      have hPne : (P_seq f hf k : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
-      field_simp
-    have h3 : (m_seq f hf k : ℝ) ≤ ((A_set f hf ∩ Set.Icc 1 N).ncard : ℝ) :=
-      Nat.cast_le.mpr hcard
-    linarith
-  · have hN := le_N_seq f hf k
+  refine ⟨A_set f hf, A_set_isGood f hf, infinite_of_forall_exists_gt fun B =>
+    ⟨N_seq f hf (B + 1), ?_, ?_⟩⟩
+  · have := P_seq_pos f hf (B + 1)
+    have := (m_ge f hf (B + 1)).1
+    have hN : N_seq f hf (B + 1) = 4 * P_seq f hf (B + 1) * m_seq f hf (B + 1) := rfl
+    have hf' := lt_f f hf (B + 1) (N_seq f hf (B + 1)) (by nlinarith)
+    have hcard : m_seq f hf (B + 1) ≤ (A_set f hf ∩ Icc 1 (N_seq f hf (B + 1))).ncard := by
+      rw [← blk_card, ← ncard_coe_finset]
+      exact ncard_le_ncard (fun x hx => ⟨mem_iUnion.mpr ⟨_, hx⟩, by have := mem_blk f hf hx; omega,
+        by have := mem_blk f hf hx; omega⟩) ((finite_Icc _ _).subset inter_subset_right)
+    rw [mem_ofPred_eq, div_lt_iff₀ (by exact_mod_cast (by omega : 0 < f (N_seq f hf (B + 1))))]
+    exact_mod_cast (by nlinarith : N_seq f hf (B + 1) < _ * f (N_seq f hf (B + 1)))
+  · have : B + 1 ≤ M_seq f hf (B + 1) := (M_mono f hf).id_le _
+    have := (MN f hf (B + 1)).2
     omega
