@@ -1,8 +1,0 @@
-{
-  "issuer": "lefttosolve.com",
-  "keyId": "lts-ed25519-2026-11",
-  "algorithm": "Ed25519",
-  "publicKey": "wTRtKHLvzKnMFP3StO6RQ_TGlHE2esHKnE5JEhZTTA0",
-  "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAwTRtKHLvzKnMFP3StO6RQ/TGlHE2esHKnE5JEhZTTA0=\n-----END PUBLIC KEY-----",
-  "signs": "canonical JSON of the 'certificate' object: keys sorted, no whitespace, UTF-8"
-}
