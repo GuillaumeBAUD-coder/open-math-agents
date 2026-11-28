@@ -63,9 +63,19 @@ lemma binomial_lower_bound (u t : ℕ) (hu : t ≤ u) (ht : 0 < t) :
       induction t with
       | zero => contradiction
       | succ n ih =>
-        -- t! = (n+1)! = (n+1) * n! ≤ (n+1) * n^n ≤ (n+1)^{n+1}
-        sorry -- fill induction
-    -- Rearrange: (a / t)^t ≤ a^t / t!  follows from hfact
+        have : (n + 1).factorial = (n + 1) * n.factorial := Nat.factorial_succ n
+        rw [this]
+        push_cast
+        calc
+          (↑(n + 1) : ℝ) * ↑(n.factorial) ≤ (↑(n + 1) : ℝ) * (↑n : ℝ) ^ n := by
+            gcongr
+            exact ih
+          _ ≤ (↑(n + 1) : ℝ) * (↑(n + 1) : ℝ) ^ n := by
+            gcongr
+            exact Nat.cast_le.mpr (Nat.le_succ n)
+          _ = (↑(n + 1) : ℝ) ^ (n + 1) := by
+            ring
+    -- Rearrange
     field_simp [ht.ne']
     exact hfact
   exact h1.trans (hmid.trans h2)
