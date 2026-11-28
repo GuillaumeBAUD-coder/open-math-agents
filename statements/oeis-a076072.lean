@@ -12,9 +12,9 @@ Conjecture: No entry is zero. (At least one multiple of n can be formed by using
 
 namespace OMA.S_oeis_a076072
 
-/-- Multiset of base-10 digits of the next `n` integers `n + 1, ..., 2 * n`. -/
+/-- Multiset of base-10 digits of row `n` in the partition `1 | 2, 3 | 4, 5, 6 | ...` of the positive integers. -/
 def nextDigits (n : ℕ) : Multiset ℕ :=
-  (Finset.Icc (n + 1) (2 * n)).sum (fun k => (Nat.digits 10 k : Multiset ℕ))
+  (Finset.Icc (n * (n - 1) / 2 + 1) (n * (n + 1) / 2)).sum (fun k => (Nat.digits 10 k : Multiset ℕ))
 
 /-- Largest positive multiple of `n` whose base-10 digits form the multiset `nextDigits n`, or 0. -/
 noncomputable def a (n : ℕ) : ℕ :=
