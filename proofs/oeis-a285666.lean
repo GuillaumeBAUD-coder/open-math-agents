@@ -7,4 +7,3 @@ theorem OMA.disproof : ¬ (type_of% @OMA.S_oeis_a285666.main) := by
   revert this
   decide +kernel
 
-#print axioms OMA.disproof
