@@ -58,12 +58,16 @@ lemma binomial_lower_bound (u t : ℕ) (hu : t ≤ u) (ht : 0 < t) :
   -- (u + 1)^t / t^t ≤ (u + 1)^t / t!
   -- which rearranges to t! ≤ t^t (true for t ≥ 1)
   have hmid : (↑(u + 1) / ↑t) ^ t ≤ (↑(u + 1) ^ t : ℝ) / ↑(t.factorial) := by
-    -- Equivalent (after multiplying both sides by t^t * t!) to t! ≤ t^t
-    -- which is true for all t ≥ 1
+    -- Equivalent to t! ≤ t^t
     have hfact : ↑(t.factorial) ≤ (↑t : ℝ) ^ t := by
-      sorry -- standard: factorial ≤ t^t
-    -- then rearrange
-    sorry
+      induction t with
+      | zero => contradiction
+      | succ n ih =>
+        -- t! = (n+1)! = (n+1) * n! ≤ (n+1) * n^n ≤ (n+1)^{n+1}
+        sorry -- fill induction
+    -- Rearrange: (a / t)^t ≤ a^t / t!  follows from hfact
+    field_simp [ht.ne']
+    exact hfact
   exact h1.trans (hmid.trans h2)
 
 lemma erdos_1955_contradiction (k : ℕ) (hk : 100 < k)
