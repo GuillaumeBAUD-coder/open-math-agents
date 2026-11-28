@@ -63,3 +63,4 @@ theorem OMA.solution : OMA.R_Erdos142_erdos_142_variants_lower_R1_H2_R4.H2 := by
   refine ⟨a - 4 * 4 ^ j1, d, hd, fun i hi => ?_⟩
   obtain ⟨b, hb, e⟩ := all i hi
   rwa [show a - 4 * 4 ^ j1 + i * d = b by omega]
+
