@@ -1,66 +1,64 @@
 import OMAStatements.S_oeis_a270361
+import Mathlib
 
-namespace OMA.P_oeis_a270361
+/-
+A270361: for an odd prime p there is at most one odd prime q < p with p*q - 1 a square.
 
-/-- If `p * q - 1 = a * a` with odd primes `q < p`, then `a` is even and `a < p`. -/
-lemma root_facts (p q : ℕ) (hp : p.Prime) (hpo : Odd p) (hq : q.Prime) (hqo : Odd q)
-    (hlt : q < p) (hsq : IsSquare (p * q - 1)) :
-    ∃ a : ℕ, p * q = a * a + 1 ∧ Even a ∧ a < p := by
-  obtain ⟨a, ha⟩ := hsq
-  have hpos : 1 ≤ p * q := Nat.mul_pos hp.pos hq.pos
-  have hpq : p * q = a * a + 1 := by omega
-  refine ⟨a, hpq, ?_, ?_⟩
-  · have hodd : Odd (a * a + 1) := hpq ▸ hpo.mul hqo
-    have : Even (a * a) := by
-      rcases Nat.even_or_odd (a * a) with h | h
-      · exact h
-      · exact absurd hodd (by rw [Nat.not_odd_iff_even]; exact h.add_one)
-    rcases Nat.even_mul.mp this with h | h <;> exact h
-  · by_contra h
-    push Not at h
-    nlinarith
+If p*q = m^2 + 1 with p, q odd and q < p, then m is even and m < p. Given two such
+pairs (q, m) and (q', m'), p divides m^2 - m'^2 = (m - m')(m + m'). If p divides m - m',
+then m = m' because both are below p, hence q = q'. Otherwise p divides m + m', and
+0 < m + m' < 2p gives m + m' = p, which is impossible: m + m' is even and p is odd.
+-/
 
-end OMA.P_oeis_a270361
+namespace OMA.P270361
 
-/-- Two square roots `a, b < p` of `-1` mod `p` satisfy `a = b` or `a + b = p`; the latter is
-impossible since both are even and `p` is odd. -/
-theorem OMA.solution : type_of% @OMA.S_oeis_a270361.main := by
-  intro p hp hpo q₁ ⟨h1p, h1o, h1lt, h1s⟩ q₂ ⟨h2p, h2o, h2lt, h2s⟩
-  obtain ⟨a, ha, hae, hap⟩ := OMA.P_oeis_a270361.root_facts p q₁ hp hpo h1p h1o h1lt h1s
-  obtain ⟨b, hb, hbe, hbp⟩ := OMA.P_oeis_a270361.root_facts p q₂ hp hpo h2p h2o h2lt h2s
-  have hpZ : Prime (p : ℤ) := Nat.prime_iff_prime_int.mp hp
-  have key : (p : ℤ) ∣ ((a : ℤ) - b) * ((a : ℤ) + b) :=
-    ⟨(q₁ : ℤ) - q₂, by
-      have ha' : (p : ℤ) * q₁ = a * a + 1 := by exact_mod_cast ha
-      have hb' : (p : ℤ) * q₂ = b * b + 1 := by exact_mod_cast hb
-      linear_combination hb' - ha'⟩
-  rcases hpZ.dvd_or_dvd key with h | h
-  · have hab : (a : ℤ) - b = 0 := by
-      apply Int.eq_zero_of_abs_lt_dvd h
-      rw [abs_lt]; constructor <;> omega
-    have : a = b := by omega
-    subst this
-    have : p * q₁ = p * q₂ := by rw [ha, hb]
-    exact Nat.eq_of_mul_eq_mul_left hp.pos this
-  · exfalso
-    obtain ⟨c, hc⟩ := h
-    have hp2 : (2 : ℤ) ≤ p := by exact_mod_cast hp.two_le
-    have hc2 : c < 2 := by
-      by_contra hc2
-      push Not at hc2
-      have : (p : ℤ) * 2 ≤ p * c := by nlinarith
-      omega
-    have hc0 : 0 < c := by
-      by_contra hc0
-      push Not at hc0
-      have : (p : ℤ) * c ≤ 0 := by nlinarith
-      have ha0 : a = 0 := by omega
-      subst ha0
-      have : 2 * 2 ≤ p * q₁ := Nat.mul_le_mul hp.two_le h1p.two_le
-      omega
-    have hc1 : c = 1 := by omega
-    subst hc1
-    obtain ⟨x, hx⟩ := hae
-    obtain ⟨y, hy⟩ := hbe
-    obtain ⟨z, hz⟩ := hpo
+lemma key (p q m : ℕ) (hp : p.Prime) (ho : Odd p) (hq : q.Prime) (hqo : Odd q) (hqp : q < p)
+    (hm : p * q - 1 = m * m) : Even m ∧ m < p ∧ p * q = m * m + 1 := by
+  have h1 : p * q = m * m + 1 := by
+    have : 0 < p * q := Nat.mul_pos hp.pos hq.pos
     omega
+  refine ⟨?_, ?_, h1⟩
+  · by_contra hne
+    rw [Nat.not_even_iff_odd] at hne
+    have h2 : Odd (m * m + 1) := h1 ▸ ho.mul hqo
+    exact (Nat.not_even_iff_odd.2 h2) ((hne.mul hne).add_one)
+  · by_contra hge
+    nlinarith [Nat.mul_le_mul (not_lt.1 hge) (not_lt.1 hge), Nat.mul_lt_mul_of_pos_left hqp hp.pos]
+
+lemma main' : ∀ p : ℕ, p.Prime → Odd p →
+    {q : ℕ | q.Prime ∧ Odd q ∧ q < p ∧ IsSquare (p * q - 1)}.Subsingleton := by
+  intro p hp ho q ⟨hq, hqo, hqp, m, hm⟩ q' ⟨hq', hqo', hqp', m', hm'⟩
+  obtain ⟨he, hl, h1⟩ := key p q m hp ho hq hqo hqp hm
+  obtain ⟨he', hl', h1'⟩ := key p q' m' hp ho hq' hqo' hqp' hm'
+  have e1 : (p : ℤ) * q = m * m + 1 := by exact_mod_cast h1
+  have e2 : (p : ℤ) * q' = m' * m' + 1 := by exact_mod_cast h1'
+  have hd : (p : ℤ) ∣ ((m : ℤ) - m') * (m + m') := ⟨(q : ℤ) - q', by linear_combination e2 - e1⟩
+  rcases (Nat.prime_iff_prime_int.1 hp).dvd_or_dvd hd with h | h
+  · have h0 : (m : ℤ) - m' = 0 :=
+      Int.eq_zero_of_abs_lt_dvd h (by rw [abs_lt]; constructor <;> omega)
+    have hmm : m = m' := by omega
+    subst hmm
+    exact Nat.eq_of_mul_eq_mul_left hp.pos (h1.trans h1'.symm)
+  · exfalso
+    have h' : p ∣ m + m' := by exact_mod_cast h
+    obtain ⟨k, hk⟩ := h'
+    obtain ⟨a, ha⟩ := he
+    obtain ⟨b, hb⟩ := he'
+    obtain ⟨c, hc⟩ := ho
+    have h2 := hp.two_le
+    have h3 := hq.two_le
+    have hk1 : k = 1 := by
+      have hk2 : k < 2 := by
+        by_contra hk2
+        nlinarith [Nat.mul_le_mul_left p (not_lt.1 hk2)]
+      interval_cases k
+      · have : m = 0 := by omega
+        subst this
+        nlinarith
+      · rfl
+    subst hk1
+    omega
+
+end OMA.P270361
+
+theorem OMA.solution : type_of% @OMA.S_oeis_a270361.main := OMA.P270361.main'

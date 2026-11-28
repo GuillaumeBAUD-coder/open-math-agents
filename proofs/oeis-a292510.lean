@@ -71,10 +71,6 @@ theorem conjecture (n : ℕ) (hn : 5 < n) : a n = 7 := by
   by_contra hlt
   exact not_splits n k hn hk1 (by omega) hk
 
-/-- Controls from the entry: a(3) = 4, a(4) = 7, a(5) = 6 (splits found by the entry). -/
-lemma control_splits : Splits 3 4 ∧ Splits 4 7 ∧ Splits 5 6 := by
-  refine ⟨⟨{4}, by decide, by decide⟩, splits_seven 4, ⟨{1, 2, 4, 5}, by decide, by decide⟩⟩
-
 end OMA.S_oeis_a292510
 
 theorem OMA.solution : type_of% @OMA.S_oeis_a292510.main :=

@@ -525,10 +525,6 @@ def affineSimplex {n : ℕ} (v : Fin (n + 1) → E) :
     ((continuous_apply i).comp continuous_subtype_val).smul continuous_const)
 
 
-theorem affineSimplex_apply {n : ℕ} (v : Fin (n + 1) → E)
-    (x : stdSimplex ℝ (Fin (n + 1))) : affineSimplex v x = ∑ i, x i • v i := rfl
-
-
 @[simp]
 theorem affineSimplex_vertex {n : ℕ} (v : Fin (n + 1) → E) (i : Fin (n + 1)) :
     affineSimplex v (stdSimplex.vertex i) = v i := by
@@ -556,13 +552,6 @@ theorem range_affineSimplex_subset {n : ℕ} (v : Fin (n + 1) → E) {s : Set E}
     (hs : Convex ℝ s) (hv : ∀ i, v i ∈ s) : Set.range (affineSimplex v) ⊆ s := by
   rintro _ ⟨x, rfl⟩
   exact hs.sum_mem (fun i _ ↦ x.property.1 i) x.property.2 (fun i _ ↦ hv i)
-
-
-def affineSimplexIn {s : Set E} (hs : Convex ℝ s) {n : ℕ} (v : Fin (n + 1) → s) :
-    C(stdSimplex ℝ (Fin (n + 1)), s) :=
-  ⟨fun x ↦ ⟨affineSimplex (fun i ↦ (v i : E)) x,
-      range_affineSimplex_subset _ hs (fun i ↦ (v i).property) ⟨x, rfl⟩⟩,
-    (affineSimplex (fun i ↦ (v i : E))).continuous.subtype_mk _⟩
 
 
 def affineSingularSimplex {n : ℕ} (v : Fin (n + 1) → E) :
@@ -647,17 +636,6 @@ theorem δ_affineSingularSimplex {n : ℕ} (v : Fin (n + 2) → E) (i : Fin (n +
       affineSimplex (v ∘ i.succAbove)
   exact affineSimplex_comp_map v i.succAbove
 
-
-def affineSingularSimplexIn {s : Set E} (hs : Convex ℝ s) {n : ℕ}
-    (v : Fin (n + 1) → s) : TopCat.toSSet.obj (TopCat.of s) _⦋n⦌ :=
-  ((TopCat.of s).toSSetObjEquiv (op ⦋n⦌)).symm (affineSimplexIn hs v)
-
-
-theorem affineSingularSimplexIn_inclusion {s : Set E} (hs : Convex ℝ s) {n : ℕ}
-    (v : Fin (n + 1) → s) :
-    (TopCat.toSSet.map (TopCat.ofHom (⟨Subtype.val, continuous_subtype_val⟩ : C(s, E)))).app
-      (op ⦋n⦌) (affineSingularSimplexIn hs v) =
-        affineSingularSimplex (fun i ↦ (v i : E)) := rfl
 
 end DifferentialGeometry.Homology
 end
@@ -800,17 +778,6 @@ theorem affineCone_straightening (p : E) (n : ℕ) :
     affineStraightening_affineSingularSimplex]
 
 
-theorem straightening_affineCone (p : E) (n : ℕ) :
-    (CategoryTheory.CategoryStruct.comp ((SSet.chainComplexMap (affineStraightening (E := E)) R).f n) (affineCone R p n)) =
-      affineCone R p n := by
-  apply SSet.chainComplex_hom_ext
-  intro σ
-  rw [← Category.assoc, SSet.ι_chainComplexMap_f, ι_affineCone, ι_affineCone]
-  change (TopCat.toSSet.obj (TopCat.of E)).ιChainComplex
-      (affineSingularSimplex (Fin.cons p
-        (singularSimplexVertices (affineSingularSimplex (singularSimplexVertices σ))))) = _
-  rw [singularSimplexVertices_affineSingularSimplex]
-
 end DifferentialGeometry.Homology
 end
 end
@@ -918,13 +885,6 @@ def affineSubdivision :
 theorem affineSubdivision_f (n : ℕ) :
     (affineSubdivision (E := E) R).f n = affineSubdivisionMap R n := rfl
 
-
-theorem affineSubdivision_comp_straightening :
-    (CategoryTheory.CategoryStruct.comp (affineSubdivision (E := E) R) (SSet.chainComplexMap (affineStraightening (E := E)) R)) =
-      affineSubdivision R := by
-  apply HomologicalComplex.hom_f_injective
-  funext n
-  exact affineSubdivisionMap_straightening (E := E) R n
 
 end DifferentialGeometry.Homology
 end
@@ -1109,34 +1069,6 @@ def smallSingularSimplices : (TopCat.toSSet.obj X).Subcomplex where
     exact hi ⟨stdSimplex.map f.unop z, rfl⟩
 
 
-theorem mem_smallSingularSimplices_iff {n : SimplexCategoryᵒᵖ}
-    (σ : (TopCat.toSSet.obj X).obj n) :
-    σ ∈ (smallSingularSimplices X U).obj n ↔
-      ∃ i, Set.range (X.toSSetObjEquiv n σ) ⊆ U i := Iff.rfl
-
-theorem smallSingularSimplices_eq_iSup_range :
-    smallSingularSimplices X U =
-      ⨆ i, SSet.Subcomplex.range
-        (TopCat.toSSet.map (TopCat.ofHom (⟨Subtype.val, continuous_subtype_val⟩ :
-          C(U i, X)))) := by
-  ext n σ
-  simp only [Subfunctor.iSup_obj, Set.mem_iUnion, Subfunctor.range_obj,
-    Set.mem_range, mem_smallSingularSimplices_iff]
-  constructor
-  · rintro ⟨i, hi⟩
-    let τ : C(stdSimplex ℝ (Fin (n.unop.len + 1)), U i) :=
-      ⟨fun z ↦ ⟨X.toSSetObjEquiv n σ z, hi ⟨z, rfl⟩⟩,
-        (X.toSSetObjEquiv n σ).continuous.subtype_mk _⟩
-    refine ⟨i, ((TopCat.of (U i)).toSSetObjEquiv n).symm τ, ?_⟩
-    apply (X.toSSetObjEquiv n).injective
-    ext z
-    rfl
-  · rintro ⟨i, τ, rfl⟩
-    refine ⟨i, ?_⟩
-    rintro _ ⟨z, rfl⟩
-    exact (((TopCat.of (U i)).toSSetObjEquiv n) τ z).property
-
-
 theorem smallSingularSimplices_le {κ : Type w} (V : κ → Set X)
     (hUV : ∀ i, ∃ j, U i ⊆ V j) :
     smallSingularSimplices X U ≤ smallSingularSimplices X V := by
@@ -1145,23 +1077,6 @@ theorem smallSingularSimplices_le {κ : Type w} (V : κ → Set X)
   obtain ⟨j, hj⟩ := hUV i
   exact ⟨j, hi.trans hj⟩
 
-
-theorem smallSingularSimplices_eq_top (hU : ∃ i, U i = Set.univ) :
-    smallSingularSimplices X U = ⊤ := by
-  obtain ⟨i, hi⟩ := hU
-  apply top_unique
-  intro n σ _
-  exact ⟨i, hi ▸ Set.subset_univ _⟩
-
-
-theorem smallSingularSimplices_obj_zero (hU : ∀ x : X, ∃ i, x ∈ U i) :
-    (smallSingularSimplices X U).obj (op ⦋0⦌) = Set.univ := by
-  apply Set.eq_univ_of_forall
-  intro σ
-  obtain ⟨i, hi⟩ := hU (X.toSSetObjEquiv _ σ default)
-  refine ⟨i, ?_⟩
-  rintro _ ⟨z, rfl⟩
-  simpa only [Subsingleton.elim z default] using hi
 
 variable {X U} {Y : TopCat.{u}} {κ : Type w} {V : κ → Set Y}
 
@@ -1229,29 +1144,6 @@ theorem mono_smallChainMap_f (n : ℕ) : Mono ((smallChainMap X U R).f n) := by
 
 theorem mono_smallChainMap : Mono (smallChainMap X U R) :=
   HomologicalComplex.mono_of_mono_f _ (mono_smallChainMap_f X U R)
-
-
-theorem isIso_smallChainMap_f_zero (hU : ∀ x : X, ∃ i, x ∈ U i) :
-    IsIso ((smallChainMap X U R).f 0) := by
-  refine ⟨⟨smallChainProjection X U R 0, smallChainMap_projection X U R 0, ?_⟩⟩
-  apply SSet.chainComplex_hom_ext
-  intro σ
-  have hσ : σ ∈ (smallSingularSimplices X U).obj (op ⦋0⦌) := by
-    rw [smallSingularSimplices_obj_zero X U hU]
-    exact Set.mem_univ _
-  change (CategoryTheory.CategoryStruct.comp (Sigma.ι _ σ) (((CategoryTheory.CategoryStruct.comp (Sigma.desc _) (_))))) = _
-  rw [← Category.assoc, Sigma.ι_desc]
-  simp only [dif_pos hσ]
-  exact (ι_smallChainMap_f X U R ⟨σ, hσ⟩).trans (Category.comp_id _).symm
-
-
-theorem smallChainMap_naturality (f : X ⟶ Y)
-    (hf : ∀ i, ∃ j, Set.MapsTo f (U i) (V j)) :
-    (CategoryTheory.CategoryStruct.comp (SSet.chainComplexMap (smallSingularSimplicesMap f hf) R) (smallChainMap Y V R)) =
-      (CategoryTheory.CategoryStruct.comp (smallChainMap X U R) (((singularChainComplexFunctor (ModuleCat.{u} k)).obj R).map f)) := by
-  change (CategoryTheory.CategoryStruct.comp (((SSet.chainComplexFunctor _).obj R).map _) (((SSet.chainComplexFunctor _).obj R).map _)) =
-    (CategoryTheory.CategoryStruct.comp (((SSet.chainComplexFunctor _).obj R).map _) (((SSet.chainComplexFunctor _).obj R).map _))
-  rw [← Functor.map_comp, ← Functor.map_comp, smallSingularSimplicesMap_ι]
 
 
 def smallChainRefinement {κ : Type w} (V : κ → Set X)
@@ -1557,14 +1449,6 @@ theorem affineSubdivisionMap_naturality_linear (n : ℕ) :
       SSet.ι_chainComplexMap_f, ι_affineSubdivisionMap_succ, singularSimplexBarycenter_map_linear]
 
 
-theorem affineSubdivision_naturality_linear :
-    (CategoryTheory.CategoryStruct.comp (affineSubdivision (E := E) R) (((_root_.SSet.chainComplexMap ((TopCat.toSSet.map
-  (TopCat.ofHom (ContinuousMap.mk f (ContinuousLinearMap.continuous f))))) R)))) = (CategoryTheory.CategoryStruct.comp (((_root_.SSet.chainComplexMap ((TopCat.toSSet.map
-  (TopCat.ofHom (ContinuousMap.mk f (ContinuousLinearMap.continuous f))))) R))) (affineSubdivision (E := E') R)) := by
-  apply HomologicalComplex.hom_f_injective
-  funext n
-  exact affineSubdivisionMap_naturality_linear f R n
-
 private theorem difference_naturality_linear (n : ℕ) :
     (CategoryTheory.CategoryStruct.comp ((affineSubdivision (E := E) R - (_root_.SSet.chainComplexMap (affineStraightening (E := E)) R)).f n) (((_root_.SSet.chainComplexMap ((TopCat.toSSet.map
   (TopCat.ofHom (ContinuousMap.mk f (ContinuousLinearMap.continuous f))))) R)).f n)) =
@@ -1685,19 +1569,6 @@ def singularSubspaceChainIso :
       ((smallSingularSimplices X (fun _ : Unit ↦ s)) : SSet).chainComplex R :=
   ((SSet.chainComplexFunctor (ModuleCat.{u} k)).obj R).mapIso (singularSubspaceIso X s)
 
-
-theorem ι_singularSubspaceChainIso_hom_f {n : ℕ}
-    (σ : TopCat.toSSet.obj (TopCat.of s) _⦋n⦌) :
-    (CategoryTheory.CategoryStruct.comp ((TopCat.toSSet.obj (TopCat.of s)).ιChainComplex σ) ((singularSubspaceChainIso X s R).hom.f n)) =
-      ((smallSingularSimplices X (fun _ : Unit ↦ s)) : SSet).ιChainComplex (singularSubspaceEquiv X s (op ⦋n⦌) σ) :=
-  SSet.ι_chainComplexMap_f _ _ _ R σ
-
-
-theorem ι_singularSubspaceChainIso_inv_f {n : ℕ} (σ : ((smallSingularSimplices X (fun _ : Unit ↦ s)) : SSet) _⦋n⦌) :
-    (CategoryTheory.CategoryStruct.comp (((smallSingularSimplices X (fun _ : Unit ↦ s)) : SSet).ιChainComplex σ) ((singularSubspaceChainIso X s R).inv.f n)) =
-      (TopCat.toSSet.obj (TopCat.of s)).ιChainComplex
-        ((singularSubspaceEquiv X s (op ⦋n⦌)).symm σ) :=
-  SSet.ι_chainComplexMap_f _ _ _ R σ
 
 @[simp]
 theorem singularSubspaceChainIso_hom_inclusion :
@@ -1941,22 +1812,12 @@ private def simplexEmbedding (n : ℕ) :
     SimplexCategory.toTop.{u}.obj ⦋n⦌ ⟶ TopCat.of (simplexAmbient.{u} n) :=
   TopCat.ofHom ⟨fun x ↦ ⟨x.down.val⟩,
     continuous_uliftUp.comp (continuous_subtype_val.comp continuous_uliftDown)⟩
-private theorem simplexEmbedding_naturality {n m : ℕ} (f : ⦋n⦌ ⟶ ⦋m⦌) :
-    (CategoryTheory.CategoryStruct.comp (SimplexCategory.toTop.map f) (simplexEmbedding m)) =
-      (CategoryTheory.CategoryStruct.comp (simplexEmbedding n) (TopCat.ofHom (⟨simplexCoordinatesMap f,
-        (simplexCoordinatesMap f).continuous⟩ : C(simplexAmbient n, simplexAmbient m)))) := rfl
-
 private def simplexSupportedIso (n : ℕ) :
     TopCat.toSSet.obj (SimplexCategory.toTop.{u}.obj ⦋n⦌) ≅
       (smallSingularSimplices (TopCat.of (simplexAmbient.{u} n))
         (fun _ : Unit ↦ simplexRegion n) : SSet) :=
   TopCat.toSSet.mapIso (TopCat.isoOfHomeo (simplexRegionHomeo n)) ≪≫
     singularSubspaceIso _ _
-
-private theorem simplexSupportedIso_inclusion (n : ℕ) :
-    (CategoryTheory.CategoryStruct.comp ((simplexSupportedIso.{u} n).hom) ((smallSingularSimplices (TopCat.of (simplexAmbient.{u} n))
-          (fun _ : Unit ↦ simplexRegion n)).ι)) =
-      TopCat.toSSet.map (simplexEmbedding n) := rfl
 
 private def simplexSupportedMap {n m : ℕ} (f : ⦋n⦌ ⟶ ⦋m⦌) :
     (smallSingularSimplices (TopCat.of (simplexAmbient.{u} n))
@@ -2374,18 +2235,6 @@ theorem singularSubdivision_naturality :
   exact singularSubdivisionMap_naturality R X f n
 
 
-theorem singularSubdivisionHomotopyMap_naturality (n : ℕ) :
-    (CategoryTheory.CategoryStruct.comp (singularSubdivisionHomotopyMap R X n) ((SSet.chainComplexMap (TopCat.toSSet.map f) R).f (n + 1))) =
-      (CategoryTheory.CategoryStruct.comp ((SSet.chainComplexMap (TopCat.toSSet.map f) R).f n) (singularSubdivisionHomotopyMap R Y n)) := by
-  apply SSet.chainComplex_hom_ext
-  intro σ
-  rw [← Category.assoc, ι_singularSubdivisionHomotopyMap, Category.assoc]
-  rw [← Category.assoc ((TopCat.toSSet.obj X).ιChainComplex σ),
-    SSet.ι_chainComplexMap_f, ι_singularSubdivisionHomotopyMap]
-  have h := HomologicalComplex.congr_hom (pushforward_postcomp R X f σ) (n + 1)
-  simp only [HomologicalComplex.comp_f] at h
-  rw [h]
-
 end DifferentialGeometry.Homology
 end
 end
@@ -2778,14 +2627,6 @@ instance (n : ℕ) : Fintype (BarycentricFlag n) := by
   | succ n hn => exact inferInstanceAs (Fintype (Fin (n + 2) × BarycentricFlag n))
 
 
-theorem card_barycentricFlag (n : ℕ) : Fintype.card (BarycentricFlag n) = (n + 1).factorial := by
-  induction n with
-  | zero => rfl
-  | succ n hn =>
-    change Fintype.card (Fin (n + 2) × BarycentricFlag n) = (n + 1 + 1).factorial
-    rw [Fintype.card_prod, Fintype.card_fin, hn, Nat.factorial_succ (n + 1)]
-
-
 def barycentricFlagSign (n : ℕ) : BarycentricFlag n → ℤ :=
   match n with
   | 0 => fun _ ↦ 1
@@ -2951,14 +2792,6 @@ theorem dist_barycentricPieceVertices_le (n : ℕ) (v : Fin (n + 1) → E)
         nlinarith
 
 
-theorem dist_affineBarycentricPiece_le (n : ℕ) (v : Fin (n + 1) → E)
-    (p : BarycentricFlag n) {D : ℝ} (hv : ∀ i j, dist (v i) (v j) ≤ D)
-    (x y : stdSimplex ℝ (Fin (n + 1))) :
-    dist (affineSimplex (barycentricPieceVertices n v p) x)
-        (affineSimplex (barycentricPieceVertices n v p) y) ≤
-      (n : ℝ) / (n + 1) * D :=
-  dist_affineSimplex_le _ (dist_barycentricPieceVertices_le n v p hv) x y
-
 end DifferentialGeometry.Homology
 end
 end
@@ -3093,26 +2926,6 @@ theorem exists_small_precomp_radius {n : ℕ} (σ : TopCat.toSSet.obj X _⦋n⦌
   refine ⟨i, ?_⟩
   rintro _ ⟨b, rfl⟩
   exact hi (hτ b a)
-
-theorem exists_uniform_small_precomp_radius {n : ℕ}
-    (F : Finset (TopCat.toSSet.obj X _⦋n⦌)) :
-    ∃ δ : ℝ, 0 < δ ∧ ∀ σ ∈ F, ∀ (m : ℕ)
-      (τ : C(stdSimplex ℝ (Fin (m + 1)), stdSimplex ℝ (Fin (n + 1)))),
-      (∀ a b, dist (τ a) (τ b) < δ) →
-        ((X.toSSetObjEquiv (op ⦋m⦌)).symm
-          ((X.toSSetObjEquiv (op ⦋n⦌) σ).comp τ)) ∈
-            (smallSingularSimplices X U).obj (op ⦋m⦌) := by
-  classical
-  induction F using Finset.induction_on with
-  | empty => exact ⟨1, zero_lt_one, by simp⟩
-  | @insert σ F hσ hF =>
-    obtain ⟨δ, hδ, hδF⟩ := hF
-    obtain ⟨ε, hε, hεσ⟩ := exists_small_precomp_radius X U hopen hcover σ
-    refine ⟨min δ ε, lt_min hδ hε, ?_⟩
-    intro ρ hρ m τ hτ
-    obtain rfl | hρ := Finset.mem_insert.mp hρ
-    · exact hεσ m τ (fun a b ↦ (hτ a b).trans_le (min_le_right _ _))
-    · exact hδF ρ hρ m τ (fun a b ↦ (hτ a b).trans_le (min_le_left _ _))
 
 end DifferentialGeometry.Homology
 end
@@ -3466,33 +3279,6 @@ variable {C : Type*} [Category* C] [Abelian C]
   (sq : IsPushout f g r s)
 
 
-abbrev pushoutShortComplex : ShortComplex C :=
-  ShortComplex.mk (biprod.lift f (-g)) (biprod.desc r s) (by
-    rw [biprod.lift_desc, Preadditive.neg_comp, sq.w, add_neg_cancel])
-
-
-def pushoutSumIsCokernel :
-    IsColimit (CokernelCofork.ofπ (pushoutShortComplex sq).g (pushoutShortComplex sq).zero) :=
-  Cofork.IsColimit.mk _
-    (fun c => sq.desc ((CategoryTheory.CategoryStruct.comp (biprod.inl) (Cofork.π c))) ((CategoryTheory.CategoryStruct.comp (biprod.inr) (Cofork.π c))) <|
-      sub_eq_zero.1 <| by
-        rw [← Category.assoc, ← Category.assoc, ← Preadditive.sub_comp,
-          sub_eq_add_neg, ← Preadditive.neg_comp, ← biprod.lift_eq, Cofork.condition c,
-          zero_comp])
-    (fun c => by apply biprod.hom_ext' <;> simp [pushoutShortComplex, sq.inl_desc, sq.inr_desc])
-    (fun c m hm => by
-      apply sq.hom_ext
-      · have h := congrArg (fun φ => (CategoryTheory.CategoryStruct.comp (biprod.inl) (φ))) hm
-        simpa [pushoutShortComplex, sq.inl_desc] using h
-      · have h := congrArg (fun φ => (CategoryTheory.CategoryStruct.comp (biprod.inr) (φ))) hm
-        simpa [pushoutShortComplex, sq.inr_desc] using h)
-
-theorem pushoutShortExact [Mono f] : (pushoutShortComplex sq).ShortExact where
-  exact := ShortComplex.exact_of_g_is_cokernel _ (pushoutSumIsCokernel sq)
-  mono_f := by
-    exact mono_of_mono_fac (show (CategoryTheory.CategoryStruct.comp ((pushoutShortComplex sq).f) (biprod.fst)) = f from biprod.lift_fst _ _)
-  epi_g := epi_of_isColimit_cofork (pushoutSumIsCokernel sq)
-
 end DifferentialGeometry.ShortComplex
 end
 end
@@ -3518,17 +3304,6 @@ theorem unionChainSquare :
   have sq : _root_.SSet.Subcomplex.BicartSq (A ⊓ B) A B (A ⊔ B) := ⟨rfl, rfl⟩
   exact ((_root_.SSet.chainComplexFunctor (ModuleCat.{u} k)).obj R).map_isPushout sq.isPushout
 
-
-abbrev unionChainShortComplex : ShortComplex (ChainComplex (ModuleCat.{u} k) ℕ) :=
-  DifferentialGeometry.ShortComplex.pushoutShortComplex (unionChainSquare A B R)
-
-
-theorem unionChainShortExact : (unionChainShortComplex A B R).ShortExact := by
-  have : Mono (_root_.SSet.chainComplexMap
-      (_root_.SSet.Subcomplex.homOfLE (show A ⊓ B ≤ A from inf_le_left)) R) := by
-    unfold _root_.SSet.chainComplexMap
-    infer_instance
-  exact DifferentialGeometry.ShortComplex.pushoutShortExact (unionChainSquare A B R)
 
 def unionRelativeChainIso :
     cokernel (_root_.SSet.chainComplexMap
@@ -3638,30 +3413,6 @@ theorem subspaceSmallSquare :
 
 variable {k : Type u} [Ring k] (R : ModuleCat.{u} k)
 
-
-theorem subspaceSmallChainSquare :
-    IsPushout
-      (SSet.chainComplexMap (TopCat.toSSet.map
-        (subspaceInclusion X (show s ∩ t ⊆ s from Set.inter_subset_left))) R)
-      (SSet.chainComplexMap (TopCat.toSSet.map
-        (subspaceInclusion X (show s ∩ t ⊆ t from Set.inter_subset_right))) R)
-      (SSet.chainComplexMap (firstSubspaceToSmall X s t) R)
-      (SSet.chainComplexMap (secondSubspaceToSmall X s t) R) :=
-  ((SSet.chainComplexFunctor (ModuleCat.{u} k)).obj R).map_isPushout (subspaceSmallSquare X s t)
-
-
-abbrev subspaceSmallShortComplex : ShortComplex (ChainComplex (ModuleCat.{u} k) ℕ) :=
-  DifferentialGeometry.ShortComplex.pushoutShortComplex (subspaceSmallChainSquare X s t R)
-
-
-theorem subspaceSmallShortExact : (subspaceSmallShortComplex X s t R).ShortExact := by
-  have : Mono (subspaceInclusion X (show s ∩ t ⊆ s from Set.inter_subset_left)) :=
-    (TopCat.mono_iff_injective _).mpr (Set.inclusion_injective (show s ∩ t ⊆ s from Set.inter_subset_left))
-  have : Mono (SSet.chainComplexMap (TopCat.toSSet.map
-      (subspaceInclusion X (show s ∩ t ⊆ s from Set.inter_subset_left))) R) := by
-    unfold SSet.chainComplexMap
-    infer_instance
-  exact DifferentialGeometry.ShortComplex.pushoutShortExact (subspaceSmallChainSquare X s t R)
 
 end DifferentialGeometry.Homology
 end

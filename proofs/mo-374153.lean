@@ -1,6 +1,9 @@
 import OMAStatements.S_mo_374153
 import Mathlib
 
+/-! Retains @caa1982’s tripod counterexample. Standard open-segment membership supplies
+positive coefficients; each nonzero ray parameter handles the separating-set signs uniformly. -/
+
 open OMA.S_mo_374153
 
 /-- The tripod: three segments from the origin. -/
@@ -56,16 +59,8 @@ lemma key_sep {V : Type} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
 
 lemma seg_coeffs {V : Type} [AddCommGroup V] [Module ℝ V] (P A B : V) (hA : P ≠ A) (hB : P ≠ B)
     (h : P ∈ segment ℝ A B) : ∃ α β : ℝ, 0 < α ∧ 0 < β ∧ α • (A - P) + β • (B - P) = 0 := by
-  obtain ⟨α, β, ha, hb, hab, rfl⟩ := h
-  have ha' : 0 < α := by
-    rcases ha.lt_or_eq with h | h
-    · exact h
-    · exfalso; apply hB; rw [← h, zero_smul, zero_add, show β = 1 by linarith, one_smul]
-  have hb' : 0 < β := by
-    rcases hb.lt_or_eq with h | h
-    · exact h
-    · exfalso; apply hA; rw [← h, zero_smul, add_zero, show α = 1 by linarith, one_smul]
-  refine ⟨α, β, ha', hb', ?_⟩
+  obtain ⟨α, β, ha, hb, hab, rfl⟩ := mem_openSegment_of_ne_left_right hA.symm hB.symm h
+  refine ⟨α, β, ha, hb, ?_⟩
   calc α • (A - (α • A + β • B)) + β • (B - (α • A + β • B))
       = (α • A + β • B) - (α + β) • (α • A + β • B) := by module
     _ = 0 := by rw [hab, one_smul, sub_self]
@@ -97,26 +92,15 @@ theorem OMA.disproof : ¬ (type_of% @OMA.S_mo_374153.main) := by
   have hcov : ∀ p ∈ tripod, p ≠ 0 → p ∈ u ∪ v := by
     intro p hp hp0
     obtain ⟨θ, hθ, h | h | h⟩ := tripod_cases p hp <;> subst h
-    · have : θ ≠ 0 := fun h => hp0 (by simp [h])
-      left; simp only [u, Set.mem_ofPred_eq, abs_zero]; positivity
-    · have : θ ≠ 0 := fun h => hp0 (by simp [h])
-      right; simp only [v, Set.mem_ofPred_eq, abs_of_nonneg hθ]; positivity
-    · have : θ ≠ 0 := fun h => hp0 (by simp [h])
-      right; simp only [v, Set.mem_ofPred_eq, abs_zero]
-      have : 0 < θ := lt_of_le_of_ne hθ (Ne.symm this)
-      linarith
+    all_goals
+      have hpos : 0 < θ := lt_of_le_of_ne hθ (by intro he; apply hp0; simp [← he])
+      simp [u, v, abs_of_pos hpos, hpos]
   have hcov' : ∀ p ∈ tripod, p ≠ 0 → p ∈ u' ∪ v' := by
     intro p hp hp0
     obtain ⟨θ, hθ, h | h | h⟩ := tripod_cases p hp <;> subst h
-    · have : θ ≠ 0 := fun h => hp0 (by simp [h])
-      right; simp only [v', Set.mem_ofPred_eq, abs_of_nonneg hθ]
-      exact lt_of_le_of_ne hθ (Ne.symm this)
-    · have : θ ≠ 0 := fun h => hp0 (by simp [h])
-      left; simp only [u', Set.mem_ofPred_eq, abs_zero]
-      exact lt_of_le_of_ne hθ (Ne.symm this)
-    · have : θ ≠ 0 := fun h => hp0 (by simp [h])
-      right; simp only [v', Set.mem_ofPred_eq, abs_neg, abs_of_nonneg hθ]
-      exact lt_of_le_of_ne hθ (Ne.symm this)
+    all_goals
+      have hpos : 0 < θ := lt_of_le_of_ne hθ (by intro he; apply hp0; simp [← he])
+      simp [u', v', abs_of_pos hpos, hpos]
   have sab := key_sep ι hι hconv o a b rfl u v hu hv huv hcov
     (by simp only [u, a, Set.mem_ofPred_eq]; norm_num) (by simp only [v, b, Set.mem_ofPred_eq]; norm_num)
   have sac := key_sep ι hι hconv o a c rfl u v hu hv huv hcov

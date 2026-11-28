@@ -1,17 +1,17 @@
 import OMAStatements.S_oeis_a182416
 import Mathlib
 
+/-! Following @justusklocke-cloud (#12940), retain the Fermat and Chinese-remainder
+argument and the k = 2 witness. Split coprimality with each product using the
+standard product-coprimality equivalence. -/
+
 namespace A182416Proof
 open OMA.S_oeis_a182416
 
 lemma fermat (π a M : ℕ) (hπ : π.Prime) (ha : a.Coprime π) (hdiv : (π - 1) ∣ M) :
     a ^ M ≡ 1 [MOD π] := by
   obtain ⟨c, rfl⟩ := hdiv
-  have h := Nat.ModEq.pow_totient ha
-  rw [Nat.totient_prime hπ] at h
-  have h2 := h.pow c
-  rw [one_pow, ← pow_mul] at h2
-  exact h2
+  simpa [pow_mul] using (Nat.ModEq.pow_card_sub_one_eq_one hπ ha).pow c
 
 lemma first (k : ℕ) (hk : AllPrime k) : Carmichael (N k) := by
   obtain ⟨hp, hq, hr⟩ := hk
@@ -43,12 +43,8 @@ lemma first (k : ℕ) (hk : AllPrime k) : Carmichael (N k) := by
     exact Nat.not_prime_mul (by omega) (by omega)
   · intro a ha
     rw [hN] at ha
-    have hap : a.Coprime (p k) :=
-      Nat.Coprime.coprime_dvd_right ⟨q k * r k, by ring⟩ ha
-    have haq : a.Coprime (q k) :=
-      Nat.Coprime.coprime_dvd_right ⟨p k * r k, by ring⟩ ha
-    have har : a.Coprime (r k) :=
-      Nat.Coprime.coprime_dvd_right ⟨p k * q k, by ring⟩ ha
+    simp only [Nat.coprime_mul_iff_right] at ha
+    rcases ha with ⟨⟨hap, haq⟩, har⟩
     have e1 := fermat (p k) a (N k - 1) hp hap dp
     have e2 := fermat (q k) a (N k - 1) hq haq dq
     have e3 := fermat (r k) a (N k - 1) hr har dr
@@ -73,14 +69,8 @@ lemma second : Carmichael (N 2) := by
     exact Nat.not_prime_mul (by norm_num) (by norm_num)
   · intro a ha
     rw [hN] at ha
-    have ha7 : a.Coprime 7 :=
-      Nat.Coprime.coprime_dvd_right ⟨19 * 397 * 661, by norm_num⟩ ha
-    have ha19 : a.Coprime 19 :=
-      Nat.Coprime.coprime_dvd_right ⟨7 * 397 * 661, by norm_num⟩ ha
-    have ha397 : a.Coprime 397 :=
-      Nat.Coprime.coprime_dvd_right ⟨7 * 19 * 661, by norm_num⟩ ha
-    have ha661 : a.Coprime 661 :=
-      Nat.Coprime.coprime_dvd_right ⟨7 * 19 * 397, by norm_num⟩ ha
+    simp only [Nat.coprime_mul_iff_right] at ha
+    rcases ha with ⟨⟨⟨ha7, ha19⟩, ha397⟩, ha661⟩
     rw [hNm]
     have e1 := fermat 7 a 34901460 h7 ha7 (by norm_num)
     have e2 := fermat 19 a 34901460 h19 ha19 (by norm_num)

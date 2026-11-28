@@ -22,18 +22,6 @@ theorem two_ne : (2 : PowerSeries ℚ) ≠ 0 := by
 
 noncomputable def cat : PowerSeries ℚ := map (Nat.castRingHom ℚ) catalanSeries
 
-theorem cat_eq : cat ^ 2 * X + 1 = cat := by
-  have := congrArg (map (Nat.castRingHom ℚ)) catalanSeries_sq_mul_X_add_one
-  simpa [cat] using this
-
-theorem catalan_subst (u : PowerSeries ℚ) (hu : constantCoeff u = 0) :
-    (catalanSeries.map (Nat.castRingHom ℚ)).subst u ^ 2 * u + 1 =
-      (catalanSeries.map (Nat.castRingHom ℚ)).subst u := by
-  have ha := HasSubst.of_constantCoeff_zero' hu
-  have hc := congrArg (substAlgHom ha) cat_eq
-  rw [map_add, map_mul, map_pow, map_one, substAlgHom_X, coe_substAlgHom] at hc
-  exact hc
-
 noncomputable def A : PowerSeries ℚ := PowerSeries.mk fun n => (a n : ℚ)
 
 theorem T_coeff (j : ℕ) :

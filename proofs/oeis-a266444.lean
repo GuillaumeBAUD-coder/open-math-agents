@@ -174,27 +174,6 @@ theorem gf : PowerSeries.mk (fun n => (a n : ℚ)) =
       ring
   rw [← key, mul_assoc, PowerSeries.mul_inv_cancel _ hden, mul_one]
 
-/-- Controls: the entry's data a(0..33). -/
-theorem controls : (List.range 34).map a =
-    [1, 0, 0, 0, 1, 0, 1, 0, 1, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1,
-      0, 1] := by
-  obtain ⟨v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13⟩ := values
-  have he : ∀ s, 6 ≤ s → s ≤ 16 → a (2 * s) = 0 := fun s hs _ => a_even_big s (by omega)
-  have ho : ∀ s, 6 ≤ s → s ≤ 16 → a (2 * s + 1) = 1 := fun s hs _ => a_odd_big s hs
-  simp only [List.range_succ, List.range_zero, List.nil_append, List.map_cons, List.map_nil,
-    List.cons_append]
-  rw [v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13,
-    he 7 (by norm_num) (by norm_num), ho 7 (by norm_num) (by norm_num),
-    he 8 (by norm_num) (by norm_num), ho 8 (by norm_num) (by norm_num),
-    he 9 (by norm_num) (by norm_num), ho 9 (by norm_num) (by norm_num),
-    he 10 (by norm_num) (by norm_num), ho 10 (by norm_num) (by norm_num),
-    he 11 (by norm_num) (by norm_num), ho 11 (by norm_num) (by norm_num),
-    he 12 (by norm_num) (by norm_num), ho 12 (by norm_num) (by norm_num),
-    he 13 (by norm_num) (by norm_num), ho 13 (by norm_num) (by norm_num),
-    he 14 (by norm_num) (by norm_num), ho 14 (by norm_num) (by norm_num),
-    he 15 (by norm_num) (by norm_num), ho 15 (by norm_num) (by norm_num),
-    he 16 (by norm_num) (by norm_num), ho 16 (by norm_num) (by norm_num)]
-
 /-- All three of Barker's conjectures. -/
 theorem conjecture :
     (∀ n : ℕ, 11 < n → (a n : ℚ) = (1 - (-1) ^ n) / 2) ∧

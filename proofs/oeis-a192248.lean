@@ -1,7 +1,7 @@
 import OMAStatements.S_oeis_a192248
 import Mathlib
 
--- Proof of R. J. Mathar's conjecture in OEIS A192248 (statement by @ivillar).
+-- Proof of R. J. Mathar's conjecture in OEIS A192248 (original formalization by @ivillar).
 -- Idea: modulo x^2 - x - 1, x^(k+1) reduces to F(k+1)*x + F(k), so the reduction of p(n,x) has constant
 -- term cc(n) with cc(n+1) = cc(n) + c(n+2)*F(n). The g.f. identity amounts to the order-11 recurrence
 -- with characteristic polynomial (x-1)*(x^2+x-1)^5 for cc (plus the first 11 terms). Writing every F(n+i)
@@ -64,38 +64,14 @@ theorem a_eq (n : ℕ) : a (n + 1) = cc n := by
 
 theorem c_rec (j : ℕ) :
     cc (j + 11) - 6 * cc (j + 10) + 10 * cc (j + 9) + 5 * cc (j + 8) - 25 * cc (j + 7) + 4 * cc (j + 6) + 26 * cc (j + 5) - 5 * cc (j + 4) - 15 * cc (j + 3) + 4 * cc (j + 1) + cc j = 0 := by
-  have e11 : cc (j + 11) = cc (j + 10) + c (j + 12) * (Nat.fib (j + 10) : ℚ) := rfl
-  have e10 : cc (j + 10) = cc (j + 9) + c (j + 11) * (Nat.fib (j + 9) : ℚ) := rfl
-  have e9 : cc (j + 9) = cc (j + 8) + c (j + 10) * (Nat.fib (j + 8) : ℚ) := rfl
-  have e8 : cc (j + 8) = cc (j + 7) + c (j + 9) * (Nat.fib (j + 7) : ℚ) := rfl
-  have e7 : cc (j + 7) = cc (j + 6) + c (j + 8) * (Nat.fib (j + 6) : ℚ) := rfl
-  have e6 : cc (j + 6) = cc (j + 5) + c (j + 7) * (Nat.fib (j + 5) : ℚ) := rfl
-  have e5 : cc (j + 5) = cc (j + 4) + c (j + 6) * (Nat.fib (j + 4) : ℚ) := rfl
-  have e4 : cc (j + 4) = cc (j + 3) + c (j + 5) * (Nat.fib (j + 3) : ℚ) := rfl
-  have e3 : cc (j + 3) = cc (j + 2) + c (j + 4) * (Nat.fib (j + 2) : ℚ) := rfl
-  have e2 : cc (j + 2) = cc (j + 1) + c (j + 3) * (Nat.fib (j + 1) : ℚ) := rfl
-  have e1 : cc (j + 1) = cc j + c (j + 2) * (Nat.fib j : ℚ) := rfl
-  have f10 : (Nat.fib (j + 10) : ℚ) = Nat.fib (j + 8) + Nat.fib (j + 9) := by
-    rw [show j + 10 = (j + 8) + 2 from rfl, Nat.fib_add_two]; push_cast; ring
-  have f9 : (Nat.fib (j + 9) : ℚ) = Nat.fib (j + 7) + Nat.fib (j + 8) := by
-    rw [show j + 9 = (j + 7) + 2 from rfl, Nat.fib_add_two]; push_cast; ring
-  have f8 : (Nat.fib (j + 8) : ℚ) = Nat.fib (j + 6) + Nat.fib (j + 7) := by
-    rw [show j + 8 = (j + 6) + 2 from rfl, Nat.fib_add_two]; push_cast; ring
-  have f7 : (Nat.fib (j + 7) : ℚ) = Nat.fib (j + 5) + Nat.fib (j + 6) := by
-    rw [show j + 7 = (j + 5) + 2 from rfl, Nat.fib_add_two]; push_cast; ring
-  have f6 : (Nat.fib (j + 6) : ℚ) = Nat.fib (j + 4) + Nat.fib (j + 5) := by
-    rw [show j + 6 = (j + 4) + 2 from rfl, Nat.fib_add_two]; push_cast; ring
-  have f5 : (Nat.fib (j + 5) : ℚ) = Nat.fib (j + 3) + Nat.fib (j + 4) := by
-    rw [show j + 5 = (j + 3) + 2 from rfl, Nat.fib_add_two]; push_cast; ring
-  have f4 : (Nat.fib (j + 4) : ℚ) = Nat.fib (j + 2) + Nat.fib (j + 3) := by
-    rw [show j + 4 = (j + 2) + 2 from rfl, Nat.fib_add_two]; push_cast; ring
-  have f3 : (Nat.fib (j + 3) : ℚ) = Nat.fib (j + 1) + Nat.fib (j + 2) := by
-    rw [show j + 3 = (j + 1) + 2 from rfl, Nat.fib_add_two]; push_cast; ring
-  have f2 : (Nat.fib (j + 2) : ℚ) = Nat.fib j + Nat.fib (j + 1) := by
-    rw [Nat.fib_add_two]; push_cast; ring
-  rw [e11, e10, e9, e8, e7, e6, e5, e4, e3, e2, e1]
-  rw [f10, f9, f8, f7, f6, f5, f4, f3, f2]
-  simp only [c]
+  have step (k : ℕ) : cc (j + k + 1) =
+      cc (j + k) + c (j + k + 2) * (Nat.fib (j + k) : ℚ) := rfl
+  have shift (k : ℕ) : (Nat.fib (j + k + 2) : ℚ) =
+      (Nat.fib j : ℚ) * Nat.fib (k + 1) + (Nat.fib (j + 1) : ℚ) * Nat.fib (k + 2) := by
+    exact_mod_cast Nat.fib_add j (k + 1)
+  rw [step 10, step 9, step 8, step 7, step 6, step 5, step 4, step 3, step 2, step 1, step 0]
+  rw [shift 8, shift 7, shift 6, shift 5, shift 4, shift 3, shift 2, shift 1, shift 0]
+  norm_num [c, Nat.fib_add_two]
   push_cast
   ring
 

@@ -70,21 +70,6 @@ theorem a_even (n : ℕ) (h : n % 2 = 0) : 9 * (a n : ℤ) = 10 ^ (n / 2 + 1) - 
   push_cast
   exact geom (s + 1)
 
-/-- Controls: the entry's terms a(0..11). -/
-theorem val_even (n N : ℕ) (h : n % 2 = 0) (hN : 9 * (N : ℤ) = 10 ^ (n / 2 + 1) - 1) :
-    a n = N := by
-  have := a_even n h
-  have e : (a n : ℤ) = N := by linarith
-  exact_mod_cast e
-
-theorem first_terms :
-    a 0 = 1 ∧ a 1 = 0 ∧ a 2 = 11 ∧ a 3 = 0 ∧ a 4 = 111 ∧ a 5 = 0 ∧ a 6 = 1111 ∧ a 7 = 0 ∧
-      a 8 = 11111 ∧ a 9 = 0 ∧ a 10 = 111111 ∧ a 11 = 0 :=
-  ⟨val_even 0 1 rfl (by norm_num), a_odd 1 rfl, val_even 2 11 rfl (by norm_num), a_odd 3 rfl,
-    val_even 4 111 rfl (by norm_num), a_odd 5 rfl, val_even 6 1111 rfl (by norm_num),
-    a_odd 7 rfl, val_even 8 11111 rfl (by norm_num), a_odd 9 rfl,
-    val_even 10 111111 rfl (by norm_num), a_odd 11 rfl⟩
-
 /-- Barker's recurrence. -/
 theorem recurrence (n : ℕ) (hn : 3 < n) :
     (a n : ℤ) = 11 * a (n - 2) - 10 * a (n - 4) := by

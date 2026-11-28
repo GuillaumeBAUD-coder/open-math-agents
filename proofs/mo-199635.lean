@@ -1,6 +1,9 @@
 import OMAStatements.S_mo_199635
 import Mathlib
 
+/-! Retains @caa1982's orthogonal-group counterexample from merged PR25882.
+A common two-coordinate rotation lemma replaces the repeated eigenvector contradictions. -/
+
 open OMA.S_mo_199635
 open Matrix
 
@@ -17,14 +20,15 @@ lemma mo199635_det (A : Matrix (Fin 3) (Fin 3) ℂ) (hA : Aᵀ * A = 1) (hd : A.
   have : (2 : ℂ) * (A - 1).det = 0 := by linear_combination h2
   simpa using this
 
-lemma mo199635_two {a b : ℂ} (h1 : a + b = 0) (h2 : a - b = 0) : a = 0 ∧ b = 0 := by
-  have ha : (2 : ℂ) * a = 0 := by linear_combination h1 + h2
-  have hb : (2 : ℂ) * b = 0 := by linear_combination h1 - h2
-  exact ⟨by simpa using ha, by simpa using hb⟩
-
-lemma mo199635_negself {a : ℂ} (h : a = -a) : a = 0 := by
-  have : (2 : ℂ) * a = 0 := by linear_combination h
-  simpa using this
+lemma mo199635_rotation {a b : ℂ}
+    (h : (-b = a ∧ a = b) ∨ (b = a ∧ a = -b)) : a = 0 ∧ b = 0 := by
+  rcases h with ⟨h1, h2⟩ | ⟨h1, h2⟩
+  · constructor
+    · linear_combination (h2 - h1) / 2
+    · linear_combination -(h1 + h2) / 2
+  · constructor
+    · linear_combination (h2 - h1) / 2
+    · linear_combination (h1 + h2) / 2
 
 noncomputable def mo199635_mkU (M : Matrix (Fin 3 ⊕ Fin 3) (Fin 3 ⊕ Fin 3) ℂ) (h : Mᵀ * M = 1) :
     GL (Fin 3 ⊕ Fin 3) ℂ :=
@@ -106,45 +110,45 @@ theorem OMA.disproof : ¬ (type_of% @OMA.S_mo_199635.main) := by
   have e3 := hv g3 m3
   have e4 := hv g4 m4
   have ca : v (Sum.inl 0) = 0 ∧ v (Sum.inl 1) = 0 := by
+    apply mo199635_rotation
     rcases e1 with e | e
     all_goals
       have q0 := congrFun e (Sum.inl 0)
       have q1 := congrFun e (Sum.inl 1)
-      simp [g1, mo199635_mkU, fromBlocks_mulVec, mulVec, dotProduct, Fin.sum_univ_three,
+      simp [g1, mo199635_mkU, mulVec, dotProduct, Fin.sum_univ_three,
         Rz] at q0 q1
-      apply mo199635_two
-      · first | linear_combination q0 | linear_combination -q0 | linear_combination q1 | linear_combination -q1 | linear_combination q0 + q1 | linear_combination q0 - q1 | linear_combination -q0 + q1 | linear_combination -q0 - q1
-      · first | linear_combination q0 | linear_combination -q0 | linear_combination q1 | linear_combination -q1 | linear_combination q0 + q1 | linear_combination q0 - q1 | linear_combination -q0 + q1 | linear_combination -q0 - q1
+    · exact Or.inl ⟨q0, q1⟩
+    · exact Or.inr ⟨q0, q1⟩
   have cb : v (Sum.inl 1) = 0 ∧ v (Sum.inl 2) = 0 := by
+    apply mo199635_rotation
     rcases e2 with e | e
     all_goals
       have q0 := congrFun e (Sum.inl 1)
       have q1 := congrFun e (Sum.inl 2)
-      simp [g2, mo199635_mkU, fromBlocks_mulVec, mulVec, dotProduct, Fin.sum_univ_three,
+      simp [g2, mo199635_mkU, mulVec, dotProduct, Fin.sum_univ_three,
         Rx] at q0 q1
-      apply mo199635_two
-      · first | linear_combination q0 | linear_combination -q0 | linear_combination q1 | linear_combination -q1 | linear_combination q0 + q1 | linear_combination q0 - q1 | linear_combination -q0 + q1 | linear_combination -q0 - q1
-      · first | linear_combination q0 | linear_combination -q0 | linear_combination q1 | linear_combination -q1 | linear_combination q0 + q1 | linear_combination q0 - q1 | linear_combination -q0 + q1 | linear_combination -q0 - q1
+    · exact Or.inl ⟨q0, q1⟩
+    · exact Or.inr ⟨q0, q1⟩
   have cc : v (Sum.inr 0) = 0 ∧ v (Sum.inr 1) = 0 := by
+    apply mo199635_rotation
     rcases e3 with e | e
     all_goals
       have q0 := congrFun e (Sum.inr 0)
       have q1 := congrFun e (Sum.inr 1)
-      simp [g3, mo199635_mkU, fromBlocks_mulVec, mulVec, dotProduct, Fin.sum_univ_three,
+      simp [g3, mo199635_mkU, mulVec, dotProduct, Fin.sum_univ_three,
         Rz] at q0 q1
-      apply mo199635_two
-      · first | linear_combination q0 | linear_combination -q0 | linear_combination q1 | linear_combination -q1 | linear_combination q0 + q1 | linear_combination q0 - q1 | linear_combination -q0 + q1 | linear_combination -q0 - q1
-      · first | linear_combination q0 | linear_combination -q0 | linear_combination q1 | linear_combination -q1 | linear_combination q0 + q1 | linear_combination q0 - q1 | linear_combination -q0 + q1 | linear_combination -q0 - q1
+    · exact Or.inl ⟨q0, q1⟩
+    · exact Or.inr ⟨q0, q1⟩
   have cd : v (Sum.inr 1) = 0 ∧ v (Sum.inr 2) = 0 := by
+    apply mo199635_rotation
     rcases e4 with e | e
     all_goals
       have q0 := congrFun e (Sum.inr 1)
       have q1 := congrFun e (Sum.inr 2)
-      simp [g4, mo199635_mkU, fromBlocks_mulVec, mulVec, dotProduct, Fin.sum_univ_three,
+      simp [g4, mo199635_mkU, mulVec, dotProduct, Fin.sum_univ_three,
         Rx] at q0 q1
-      apply mo199635_two
-      · first | linear_combination q0 | linear_combination -q0 | linear_combination q1 | linear_combination -q1 | linear_combination q0 + q1 | linear_combination q0 - q1 | linear_combination -q0 + q1 | linear_combination -q0 - q1
-      · first | linear_combination q0 | linear_combination -q0 | linear_combination q1 | linear_combination -q1 | linear_combination q0 + q1 | linear_combination q0 - q1 | linear_combination -q0 + q1 | linear_combination -q0 - q1
+    · exact Or.inl ⟨q0, q1⟩
+    · exact Or.inr ⟨q0, q1⟩
   apply hv0
   funext k
   rcases k with k | k <;> fin_cases k

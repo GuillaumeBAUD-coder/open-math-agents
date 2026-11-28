@@ -1,6 +1,11 @@
 import OMAStatements.S_oeis_a293482
 import Mathlib
 
+/-! Fifth-power residues, following @caa1982 (#23284).
+The cyclic unit-group counts and prime-power cases are retained. Surjectivity
+of a coprime power map now gives its full range directly, and the coprimality
+calculation uses the prime-divisibility API without redundant reversals. -/
+
 open OMA.S_oeis_a293482
 
 
@@ -18,12 +23,9 @@ theorem card_cyc (n k : ℕ) [NeZero n] (hc : IsCyclic (ZMod n)ˣ) :
 theorem card_cop (n k : ℕ) [NeZero n] (h : (Nat.totient n).Coprime k) :
     Nat.card (Set.range fun x : (ZMod n)ˣ => x ^ k) = Nat.totient n := by
   have h' : (Nat.card (ZMod n)ˣ).Coprime k := by
-    rw [Nat.card_eq_fintype_card, ZMod.card_units_eq_totient]; exact h
-  have : (Set.range fun x : (ZMod n)ˣ => x ^ k) = Set.univ := by
-    apply Set.eq_univ_of_forall
-    intro y
-    exact ⟨(powCoprime h').symm y, (powCoprime h').apply_symm_apply y⟩
-  rw [this, Nat.card_univ, Nat.card_eq_fintype_card, ZMod.card_units_eq_totient]
+    simpa [Nat.card_eq_fintype_card, ZMod.card_units_eq_totient] using h
+  rw [Set.range_eq_univ.mpr h'.pow_left_bijective.surjective, Nat.card_univ,
+    Nat.card_eq_fintype_card, ZMod.card_units_eq_totient]
 
 theorem odd_pp (k p e : ℕ) (hk : k.Prime) (hp : p.Prime) (hp2 : p ≠ 2) (he : 1 ≤ e) :
     Nat.card (Set.range fun x : (ZMod (p ^ e))ˣ => x ^ k) =
@@ -33,18 +35,14 @@ theorem odd_pp (k p e : ℕ) (hk : k.Prime) (hp : p.Prime) (hp2 : p ≠ 2) (he :
 
 theorem gcd_one (k p e : ℕ) (hk : k.Prime) (hp : p.Prime) (h0 : p % k ≠ 0) (h1 : p % k ≠ 1) :
     (p ^ (e - 1) * (p - 1)).gcd k = 1 := by
-  rw [Nat.gcd_comm]
-  apply (Nat.coprime_comm.1 ((Nat.Prime.coprime_iff_not_dvd hk).2 _)).symm
+  apply (hk.coprime_iff_not_dvd.mpr ?_).symm
   intro hd
-  rcases (Nat.Prime.dvd_mul hk).1 hd with h | h
-  · have := hk.dvd_of_dvd_pow h
-    exact h0 (Nat.mod_eq_zero_of_dvd this)
-  · have h2 := hp.two_le
-    have hmod : (p - 1) % k = 0 := Nat.mod_eq_zero_of_dvd h
-    have hk2 := hk.two_le
-    have e : p = (p - 1) + 1 := by omega
-    apply h1
-    rw [e, Nat.add_mod, hmod, zero_add, Nat.mod_mod, Nat.one_mod_eq_one.2 (by omega)]
+  rcases hk.dvd_mul.mp hd with h | h
+  · exact h0 (Nat.mod_eq_zero_of_dvd (hk.dvd_of_dvd_pow h))
+  · apply h1
+    conv_lhs => rw [← Nat.sub_add_cancel hp.one_lt.le]
+    rw [Nat.add_mod, Nat.mod_eq_zero_of_dvd h]
+    simp [Nat.mod_eq_of_lt hk.one_lt]
 
 theorem gcd_k (k p e : ℕ) (hp : p.Prime) (h1 : p % k = 1) :
     (p ^ (e - 1) * (p - 1)).gcd k = k := by

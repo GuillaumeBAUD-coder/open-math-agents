@@ -214,19 +214,6 @@ theorem gf : PowerSeries.mk (fun n => if n = 0 then (0 : ℤ) else (a n : ℤ)) 
     rw [h]
     ring
 
-/-- Controls: the entry's data a(1..16). -/
-theorem controls : (List.range 16).map (fun i => a (i + 1)) =
-    [2, 6, 13, 28, 56, 108, 204, 376, 685, 1230, 2190, 3864, 6774, 11802, 20461, 35312] := by
-  simp only [List.range_succ, List.range_zero, List.nil_append, List.map_cons, List.map_nil,
-    List.cons_append]
-  rw [closed 1 (by norm_num), closed 2 (by norm_num), closed 3 (by norm_num),
-    closed 4 (by norm_num), closed 5 (by norm_num), closed 6 (by norm_num),
-    closed 7 (by norm_num), closed 8 (by norm_num), closed 9 (by norm_num),
-    closed 10 (by norm_num), closed 11 (by norm_num), closed 12 (by norm_num),
-    closed 13 (by norm_num), closed 14 (by norm_num), closed 15 (by norm_num),
-    closed 16 (by norm_num)]
-  decide
-
 /-- Both of Wu's conjectures. -/
 theorem conjecture :
     (∀ n : ℕ, 6 < n → (a n : ℤ) = 2 * a (n - 1) + 2 * a (n - 2) - 4 * a (n - 3) -

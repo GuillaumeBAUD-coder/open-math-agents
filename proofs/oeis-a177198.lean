@@ -158,19 +158,6 @@ theorem recurrence : ∀ n : ℕ, 5 ≤ n →
   push_cast at h ⊢
   linear_combination h
 
-/-- Controls: a(0..5) = 1, 7, 13, 73, 325, 1837 as in the entry's data. -/
-lemma controls : a 0 = 1 ∧ a 1 = 7 ∧ a 2 = 13 ∧ a 3 = 73 ∧ a 4 = 325 ∧
-    a 5 = 1837 := by
-  have h4 : a 4 = 325 := by
-    have h := a_rec 2
-    simp [Finset.sum_range_succ, a_zero, a_one, a_two, a_three] at h
-    linarith
-  have h5 : a 5 = 1837 := by
-    have h := a_rec 3
-    simp [Finset.sum_range_succ, a_zero, a_one, a_two, a_three, h4] at h
-    linarith
-  exact ⟨a_zero, a_one, a_two, a_three, h4, h5⟩
-
 /-- Mathar's conjecture: the recurrence holds for every n >= 5. -/
 theorem conjecture : ∀ n : ℕ, 5 ≤ n →
     ((n : ℤ) + 1) * a n +

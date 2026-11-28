@@ -1,14 +1,8 @@
 import OMAStatements.S_oeis_a085430
 
--- Problem: OEIS A085430, McEachen's conjecture: a(p) divides p - 1 for every odd prime p
--- Statement: statements/oeis-a085430.lean (declaration OMA.S_oeis_a085430.main)
--- Credit: @schulzee (agent: Claude Code, model claude-fable-5-2)
---
--- Proof. By Cauchy's theorem and Lagrange's theorem, GL(m,2) has an element of prime order p
--- exactly when p divides the order of GL(m,2), which is the product of 2^m - 2^i for i < m.
--- For odd p this holds exactly when p divides 2^d - 1 for some 1 <= d <= m, that is, when the
--- multiplicative order of 2 modulo p is at most m. So a(p) is the order of 2 modulo p, and
--- this order divides p - 1 by Fermat's little theorem.
+/-! Following @schulzee (#26911), retain the general-linear-group cardinality
+and least-dimension argument. Use finite-unit order facts directly for the
+positivity and divisibility of the order of 2 modulo the odd prime. -/
 
 namespace OMA.A085430
 
@@ -33,21 +27,15 @@ lemma dvd_card_iff (p : ℕ) (hp : p.Prime) (hp2 : p ≠ 2) (m : ℕ) :
     p ∣ Nat.card (GL (Fin m) (ZMod 2)) ↔ orderOf (2 : ZMod p) ≤ m := by
   have : Fact p.Prime := ⟨hp⟩
   have hcop : Nat.Coprime p 2 := (Nat.coprime_primes hp Nat.prime_two).mpr hp2
-  have h2ne : (2 : ZMod p) ≠ 0 := by
-    intro h
-    have : ((2 : ℕ) : ZMod p) = 0 := by exact_mod_cast h
-    rw [ZMod.natCast_eq_zero_iff] at this
-    exact hp2 ((Nat.prime_dvd_prime_iff_eq hp Nat.prime_two).mp this)
+  have hunit : IsUnit (2 : ZMod p) :=
+    (ZMod.isUnit_iff_coprime 2 p).mpr hcop.symm
   have hpow : ∀ d : ℕ, p ∣ 2 ^ d - 1 ↔ orderOf (2 : ZMod p) ∣ d := by
     intro d
     rw [orderOf_dvd_iff_pow_eq_one, ← ZMod.natCast_eq_zero_iff,
       Nat.cast_sub (Nat.one_le_two_pow), sub_eq_zero]
     push_cast
     rfl
-  have hopos : 0 < orderOf (2 : ZMod p) := by
-    apply orderOf_pos_iff.mpr
-    rw [isOfFinOrder_iff_pow_eq_one]
-    exact ⟨p - 1, by have := hp.two_le; omega, ZMod.pow_card_sub_one_eq_one h2ne⟩
+  have hopos : 0 < orderOf (2 : ZMod p) := hunit.isOfFinOrder.orderOf_pos
   rw [Matrix.card_GL_field, ZMod.card, Prime.dvd_finsetProd_iff (Nat.prime_iff.mp hp)]
   constructor
   · rintro ⟨i, -, hi⟩
@@ -80,12 +68,9 @@ theorem result (p : ℕ) (hp : p.Prime) (hp2 : p ≠ 2) (m : ℕ)
   have h2 : m ≤ orderOf (2 : ZMod p) := hm.2 ((hset _).mpr le_rfl)
   have hmo : m = orderOf (2 : ZMod p) := le_antisymm h2 h1
   rw [hmo]
-  have h2ne : (2 : ZMod p) ≠ 0 := by
-    intro h
-    have : ((2 : ℕ) : ZMod p) = 0 := by exact_mod_cast h
-    rw [ZMod.natCast_eq_zero_iff] at this
-    exact hp2 ((Nat.prime_dvd_prime_iff_eq hp Nat.prime_two).mp this)
-  exact orderOf_dvd_of_pow_eq_one (ZMod.pow_card_sub_one_eq_one h2ne)
+  have hunit : IsUnit (2 : ZMod p) :=
+    (ZMod.isUnit_iff_coprime 2 p).mpr ((Nat.coprime_primes Nat.prime_two hp).mpr hp2.symm)
+  exact ZMod.orderOf_dvd_card_sub_one hunit.ne_zero
 
 end OMA.A085430
 

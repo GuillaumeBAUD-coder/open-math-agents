@@ -45,10 +45,6 @@ theorem Be {α : Type*} [Fintype α] [IsEmpty α] (f : α → ℝ) :
 theorem ml {α : Type*} [Fintype α] [Nonempty α] (c : ℝ) :
     mean (fun _ : α => c) = c := by
   exact Fintype.expect_const c
-@[simp]
-theorem Fw {α : Type*} [Fintype α] :
-    mean (fun _ : α => (0 : ℝ)) = 0 := by
-  simp [mean]
 theorem tX {α : Type*} [Fintype α] (f g : α → ℝ) :
     mean (fun x => f x + g x) = mean f + mean g := by
   exact Finset.expect_add_distrib Finset.univ f g
@@ -1452,12 +1448,6 @@ def iJ
     exact B.c4 g
       (Finset.mem_filter.mp hg).1
 @[simp]
-theorem Cz
-    (B : ah J K H)
-    (P : Finset K → Prop) [DecidablePred P] :
-    (B.iJ P).edges = B.edges.filter P :=
-  rfl
-@[simp]
 theorem rj
     (B : ah J K H)
     (P : Finset K → Prop) [DecidablePred P]
@@ -1465,12 +1455,6 @@ theorem rj
     g ∈ (B.iJ P).edges ↔
       g ∈ B.edges ∧ P g := by
   simp [iJ]
-@[simp]
-theorem Ap
-    (B : ah J K H)
-    (P : Finset K → Prop) [DecidablePred P] :
-    (B.iJ P).projection = B.projection :=
-  rfl
 theorem po
     (B : ah J K H)
     (P : Finset K → Prop) [DecidablePred P] :
@@ -1565,31 +1549,6 @@ noncomputable def a0
     (B : ah J K H)
     (p : Finset J → ℝ) : ℝ :=
   ∏ g ∈ B.edges, p (g.image B.projection)
-@[simp]
-theorem ys
-    (B : ah J K H)
-    (P : Finset K → Prop) [DecidablePred P]
-    (p : Finset J → ℝ) :
-    (B.iJ P).a0 p =
-      ∏ g ∈ B.edges.filter P,
-        p (g.image B.projection) :=
-  rfl
-@[simp]
-theorem yA
-    (B : ah J K H)
-    (d : ℕ) (p : Finset J → ℝ) :
-    (B.bu d).a0 p =
-      ∏ g ∈ B.edges.filter (fun g => g.card < d),
-        p (g.image B.projection) :=
-  rfl
-@[simp]
-theorem xp
-    (B : ah J K H)
-    (g₀ : Finset K) (p : Finset J → ℝ) :
-    (B.a8 g₀).a0 p =
-      ∏ g ∈ B.edges.filter (fun g => g ⊂ g₀),
-        p (g.image B.projection) :=
-  rfl
 theorem lW
     (B : ah J K H)
     (p : Finset J → ℝ)
@@ -2467,62 +2426,6 @@ noncomputable def gl
   | n + 1 =>
       gl a t lower n +
         kP a t lower n
-noncomputable def fu
-    (a t : ℝ) : ℕ → ℕ → ℝ
-  | 0 => fun _ => 0
-  | d + 1 =>
-      gl a t
-        (fu a t d)
-@[simp]
-theorem zO
-    (a t : ℝ) (lower : ℕ → ℝ) :
-    gl a t lower 0 = 0 :=
-  rfl
-@[simp]
-theorem t6
-    (a t : ℝ) (lower : ℕ → ℝ) (n : ℕ) :
-    gl a t lower (n + 1) =
-      gl a t lower n +
-        kP a t lower n :=
-  rfl
-@[simp]
-theorem wt
-    (a t : ℝ) (n : ℕ) :
-    fu a t 0 n = 0 :=
-  rfl
-@[simp]
-theorem pG
-    (a t : ℝ) (d n : ℕ) :
-    fu a t (d + 1) n =
-      gl a t
-        (fu a t d) n :=
-  rfl
-@[simp]
-theorem qs
-    (a : ℝ) (lower : ℕ → ℝ)
-    (rE : ∀ n, lower n = 0) :
-    ∀ n, gl a 0 lower n = 0 := by
-  intro n
-  induction n with
-  | zero =>
-      simp
-  | succ n Gp =>
-      rw [t6, Gp]
-      simp [kP, rE]
-@[simp]
-theorem vo
-    (a : ℝ) :
-    ∀ d n, fu a 0 d n = 0 := by
-  intro d
-  induction d with
-  | zero =>
-      intro n
-      simp
-  | succ d Gq =>
-      intro n
-      rw [pG]
-      exact qs a
-        (fu a 0 d) Gq n
 end av.ag
 end
 section
@@ -2751,23 +2654,6 @@ theorem uZ
       intro n
       rw [dx]
       exact py α μ d _ ih n
-noncomputable def oR
-    (α : ℕ → ℝ) (power : ℕ → ℕ) (t : ℝ) (d : ℕ) : ℝ :=
-  (t * (α d) ^ (power d)) ^ 2
-noncomputable def my
-    (α : ℕ → ℝ) (bK t7 : ℕ) (t : ℝ) : ℝ :=
-  (t *
-      (bh α bK) ^ t7) ^ 2
-@[simp]
-theorem xP
-    (α : ℕ → ℝ) (power : ℕ → ℕ) (d : ℕ) :
-    oR α power 0 d = 0 := by
-  simp [oR]
-@[simp]
-theorem wU
-    (α : ℕ → ℝ) (bK t7 : ℕ) :
-    my α bK t7 0 = 0 := by
-  simp [my]
 def aZ
     (bK bU d : ℕ) : ℕ :=
   (bU + 1) * 2 ^ (bK - d)
@@ -3067,31 +2953,6 @@ theorem vr {Ω : Type*}
     aq P (fun y => c * f y) x =
       c * aq P f x := by
   exact (Finset.mul_expect (P.part x) f c).symm
-@[simp]
-theorem A2 {Ω : Type*}
-    [Fintype Ω] [DecidableEq Ω]
-    (P : Finpartition (Finset.univ : Finset Ω))
-    (c : ℝ) (x : Ω) :
-    aq P (fun _ => c) x = c := by
-  rw [aq]
-  exact Finset.expect_const (by simp) c
-@[simp]
-theorem vs {Ω : Type*}
-    [Fintype Ω] [DecidableEq Ω]
-    (P : Finpartition (Finset.univ : Finset Ω))
-    (f : Ω → ℝ) (x : Ω) :
-    aq P (aq P f) x =
-      aq P f x := by
-  rw [aq]
-  calc
-    Finset.expect (P.part x) (aq P f) =
-        Finset.expect (P.part x)
-          (fun _ => aq P f x) := by
-      apply Finset.expect_congr rfl
-      intro y hy
-      exact cY P f hy
-    _ = aq P f x :=
-      Finset.expect_const (by simp) _
 theorem oe {Ω : Type*}
     [Fintype Ω] [DecidableEq Ω]
     (P : Finpartition (Finset.univ : Finset Ω))
@@ -3179,23 +3040,6 @@ abbrev ab (Ω : Type*) [Fintype Ω] [DecidableEq Ω] :=
   Finpartition (Finset.univ : Finset Ω)
 namespace ab
 variable {Ω : Type*} [Fintype Ω] [DecidableEq Ω]
-theorem u6 {P Q : ab Ω}
-    (h : ∀ x, P.part x = Q.part x) : P = Q := by
-  apply Finpartition.ext
-  ext s
-  constructor
-  · intro hs
-    obtain ⟨x, hx⟩ := P.nonempty_of_mem_parts hs
-    have zR : Q.part x = s :=
-      (h x).symm.trans (P.part_eq_of_mem hs hx)
-    rw [← zR]
-    exact Q.part_mem.2 (Finset.mem_univ x)
-  · intro hs
-    obtain ⟨x, hx⟩ := Q.nonempty_of_mem_parts hs
-    have zR : P.part x = s :=
-      (h x).trans (Q.part_eq_of_mem hs hx)
-    rw [← zR]
-    exact P.part_mem.2 (Finset.mem_univ x)
 theorem gj {P Q : ab Ω}
     (h : P ≤ Q) (x : Ω) :
     P.part x ⊆ Q.part x := by
@@ -3216,8 +3060,6 @@ theorem pH {P Q : ab Ω} :
     exact h x
 def indiscrete : ab Ω :=
   ⊤
-def discrete : ab Ω :=
-  ⊥
 @[simp]
 theorem uC (x : Ω) :
     (indiscrete : ab Ω).part x = Finset.univ := by
@@ -3229,13 +3071,6 @@ theorem uC (x : Ω) :
   exact Finset.mem_singleton.mp
     (Finpartition.parts_top_subset
       (Finset.univ : Finset Ω) jO)
-@[simp]
-theorem D5 (x : Ω) :
-    (discrete : ab Ω).part x = {x} := by
-  apply Finpartition.part_eq_of_mem
-  · rw [discrete, Finpartition.mem_bot_iff]
-    exact ⟨x, Finset.mem_univ x, rfl⟩
-  · exact Finset.mem_singleton_self x
 def aO (P : ab Ω) : ℕ :=
   P.parts.card
 noncomputable def representative
@@ -3245,10 +3080,6 @@ theorem jP
     (P : ab Ω) (a : P.parts) :
     P.representative a ∈ a.1 :=
   Classical.choose_spec (P.nonempty_of_mem_parts a.2)
-@[simp]
-theorem BL :
-    aO (discrete : ab Ω) = Fintype.card Ω := by
-  simp [aO, discrete]
 @[simp]
 theorem A3 [Nonempty Ω] :
     aO (indiscrete : ab Ω) = 1 := by
@@ -3401,20 +3232,6 @@ theorem vu {F G : Finset (Finset Ω)}
 theorem pq (F : Finset (Finset Ω)) :
     aO (generatedBy F) ≤ 2 ^ F.card := by
   exact Finpartition.card_atomise_le
-@[simp]
-theorem CA :
-    generatedBy (∅ : Finset (Finset Ω)) =
-      indiscrete := by
-  apply u6
-  intro x
-  ext y
-  simp [fI, uC]
-abbrev Bj (P : ab Ω) : Setoid Ω :=
-  Setoid.ker P.part
-@[simp]
-theorem DF (P : ab Ω) (x y : Ω) :
-    Bj P x y ↔ P.part x = P.part y :=
-  Iff.rfl
 def sJ {Λ : Type*} [Fintype Λ] [DecidableEq Λ]
     (f : Ω → Λ) (Q : ab Λ) : Setoid Ω where
   r x y := Q.part (f x) = Q.part (f y)
@@ -3471,13 +3288,6 @@ theorem zf {Λ : Type*}
   intro x y hy
   rw [gb] at hy ⊢
   exact gj h (f x) hy
-@[simp]
-theorem pullback_id (P : ab Ω) :
-    pullback id P = P := by
-  apply u6
-  intro x
-  ext y
-  simp only [gb, id_eq]
 end ab
 end av.ag
 end
@@ -3755,13 +3565,6 @@ def ea (S : aE Ω)
   partition :=
     ab.join S.partition
       (ab.generatedBy ({A} : Finset (Finset Ω)))
-@[simp]
-theorem BZ (S : aE Ω)
-    (A : aW Ω) :
-    (S.ea A).partition =
-      ab.join S.partition
-        (ab.generatedBy ({A} : Finset (Finset Ω))) :=
-  rfl
 theorem xd (S : aE Ω)
     (A : aW Ω) :
     (S.ea A).partition ≤ S.partition :=
@@ -3773,24 +3576,6 @@ theorem rH (S : aE Ω)
     (ab.vO S.partition
       (ab.generatedBy ({A} : Finset (Finset Ω))))
   exact qC A
-@[simp]
-theorem zT (S : aE Ω)
-    (f : Ω → ℝ) (x : Ω) :
-    aq S.partition (S.residual f) x = 0 := by
-  change
-    aq S.partition
-      (fun y => f y - aq S.partition f y) x = 0
-  rw [sx]
-  rw [vs]
-  ring
-@[simp]
-theorem D6 (S : aE Ω) (f : Ω → ℝ) :
-    mean (S.residual f) = 0 := by
-  change
-    mean (fun x => f x - aq S.partition f x) = 0
-  rw [zI]
-  rw [iR]
-  ring
 theorem qD
     (S : aE Ω) (f : Ω → ℝ)
     (A : aW Ω) (x : Ω) :
@@ -3903,83 +3688,6 @@ theorem rJ [Nonempty Ω]
   have tN :=
     S.nq f A
   linarith
-def q1 (S : aE Ω)
-    (f : Ω → ℝ) (dK : Finset (aW Ω))
-    (ε : ℝ) : Prop :=
-  ∀ A ∈ dK, |S.b2 f A| ≤ ε
-theorem lr
-    (S : aE Ω) (f : Ω → ℝ)
-    (dK : Finset (aW Ω)) {ε : ℝ}
-    (h : ¬ S.q1 f dK ε) :
-    ∃ A ∈ dK, ε < |S.b2 f A| := by
-  classical
-  by_contra Fb
-  apply h
-  intro A hA
-  by_contra hle
-  apply Fb
-  exact ⟨A, hA, lt_of_not_ge hle⟩
-noncomputable def mA
-    (S : aE Ω) (f : Ω → ℝ)
-    (dK : Finset (aW Ω)) (ε : ℝ) :
-    aW Ω := by
-  classical
-  exact
-    if h : S.q1 f dK ε then ∅
-    else
-      Classical.choose
-        (S.lr f dK h)
-noncomputable def kn
-    (S : aE Ω) (f : Ω → ℝ)
-    (dK : Finset (aW Ω)) (ε : ℝ) :
-    ℕ → aE Ω
-  | 0 => S
-  | n + 1 =>
-      let T := kn S f dK ε n
-      T.ea (T.mA f dK ε)
-@[simp]
-theorem B0
-    (S : aE Ω) (f : Ω → ℝ)
-    (dK : Finset (aW Ω)) (ε : ℝ) :
-    S.kn f dK ε 0 = S :=
-  rfl
-@[simp]
-theorem B1
-    (S : aE Ω) (f : Ω → ℝ)
-    (dK : Finset (aW Ω)) (ε : ℝ)
-    (n : ℕ) :
-    S.kn f dK ε (n + 1) =
-      (S.kn f dK ε n).ea
-        ((S.kn f dK ε n).mA
-          f dK ε) :=
-  rfl
-noncomputable def kG
-    (S : aE Ω) (f : Ω → ℝ)
-    (dK : Finset (aW Ω)) (ε : ℝ)
-    (n : ℕ) :
-    Finset (aW Ω) := by
-  classical
-  exact (Finset.range n).image fun i =>
-    (S.kn f dK ε i).mA
-      f dK ε
-@[simp]
-theorem Au
-    (S : aE Ω) (f : Ω → ℝ)
-    (dK : Finset (aW Ω)) (ε : ℝ) :
-    S.kG f dK ε 0 = ∅ := by
-  simp [kG]
-@[simp]
-theorem Av
-    (S : aE Ω) (f : Ω → ℝ)
-    (dK : Finset (aW Ω)) (ε : ℝ)
-    (n : ℕ) :
-    S.kG f dK ε (n + 1) =
-      insert
-        ((S.kn f dK ε n).mA
-          f dK ε)
-        (S.kG f dK ε n) := by
-  classical
-  simp [kG, Finset.range_add_one]
 end aE
 end av.ag
 end
@@ -3991,17 +3699,6 @@ def dc {G : Type*} {r : ℕ}
   cases r with
   | zero => exact Fin.elim0 i
   | succ n => exact fun j => x (i.succAbove j)
-@[simp]
-theorem u8 {G : Type*} {n : ℕ}
-    (i : Fin (n + 1)) (x : Fin (n + 1) → G) (j : Fin n) :
-    dc i x j = x (i.succAbove j) :=
-  rfl
-@[simp]
-theorem zz {G : Type*} {n : ℕ}
-    (i : Fin (n + 1)) (a : G) (x : Fin n → G) :
-    dc i (Fin.insertNth i a x) = x := by
-  funext j
-  simp only [u8, Fin.insertNth_apply_succAbove]
 abbrev cU (G : Type*) (r : ℕ) :=
   (i : Fin r) → (Fin (r - 1) → G) → ℝ
 def eC {G : Type*} {r : ℕ}
@@ -4017,23 +3714,6 @@ theorem eC.le_one
     (hu : eC u) :
     ∀ i x, u i x ≤ 1 :=
   hu.2
-theorem qE
-    {G : Type*} {r : ℕ} {c : ℝ}
-    (Gx : 0 ≤ c) (Gy : c ≤ 1) :
-    eC (fun _ : Fin r => fun _ : Fin (r - 1) → G => c) :=
-  ⟨fun _ _ => Gx, fun _ _ => Gy⟩
-@[simp]
-theorem A4
-    {G : Type*} {r : ℕ} :
-    eC
-      (fun _ : Fin r => fun _ : Fin (r - 1) → G => (0 : ℝ)) :=
-  qE (by positivity) (by norm_num)
-@[simp]
-theorem Bl
-    {G : Type*} {r : ℕ} :
-    eC
-      (fun _ : Fin r => fun _ : Fin (r - 1) → G => (1 : ℝ)) :=
-  qE (by positivity) le_rfl
 noncomputable def gd
     {G : Type*} [Fintype G] [AddCommGroup G]
     (r : ℕ) (f g : G → ℝ) (u : cU G r) : ℝ :=
@@ -4087,188 +3767,19 @@ theorem lu.symm
   intro u Gz GA
   rw [vY, abs_neg]
   exact h u Gz GA
-@[simp]
-theorem B2
-    {G : Type*} [Fintype G] [AddCommGroup G]
-    (r : ℕ) (f g : G → ℝ) :
-    gd r f g
-      (fun _ : Fin r => fun _ : Fin (r - 1) → G => (1 : ℝ)) =
-    mean (fun x : Fin r → G =>
-      f (∑ i, x i) - g (∑ i, x i)) := by
-  simp [gd]
 end av.ag
 end
 section
 namespace av.ag
 open scoped BigOperators
-def gQ {G : Type*} [AddCommGroup G]
-    (n : ℕ) (z : G) (y : Fin n → G) : Fin (n + 1) → G :=
-  Fin.cons (z - ∑ i, y i) y
-@[simp]
-theorem B3 {G : Type*} [AddCommGroup G]
-    (n : ℕ) (z : G) (y : Fin n → G) :
-    gQ n z y 0 = z - ∑ i, y i :=
-  rfl
-@[simp]
-theorem B4 {G : Type*} [AddCommGroup G]
-    (n : ℕ) (z : G) (y : Fin n → G) (i : Fin n) :
-    gQ n z y i.succ = y i :=
-  rfl
-@[simp]
-theorem CB {G : Type*} [AddCommGroup G]
-    (n : ℕ) (z : G) (y : Fin n → G) :
-    ∑ i, gQ n z y i = z := by
-  simp [gQ, Fin.sum_univ_succ]
-noncomputable def jy
-    {G : Type*} [Fintype G] [AddCommGroup G] (z : G) : ℝ := by
-  classical
-  exact if z = 0 then (Fintype.card G : ℝ) else 0
-@[simp]
-theorem BN
-    {G : Type*} [Fintype G] [AddCommGroup G] :
-    jy (G := G) 0 = Fintype.card G := by
-  classical
-  simp [jy]
-@[simp]
-theorem Bm
-    {G : Type*} [Fintype G] [AddCommGroup G]
-    {z : G} (hz : z ≠ 0) :
-    jy z = 0 := by
-  classical
-  simp [jy, hz]
-noncomputable def ig
-    {G : Type*} [Fintype G] [AddCommGroup G]
-    (r : ℕ) (w : (Fin r → G) → ℝ) (z : G) : ℝ := by
-  cases r with
-  | zero =>
-      exact jy z * w (fun i => Fin.elim0 i)
-  | succ n =>
-      exact mean fun y : Fin n → G => w (gQ n z y)
-@[simp]
-theorem oh
-    {G : Type*} [Fintype G] [AddCommGroup G]
-    (w : (Fin 0 → G) → ℝ) (z : G) :
-    ig 0 w z =
-      jy z * w (fun i => Fin.elim0 i) :=
-  rfl
-@[simp]
-theorem nF
-    {G : Type*} [Fintype G] [AddCommGroup G]
-    (n : ℕ) (w : (Fin (n + 1) → G) → ℝ) (z : G) :
-    ig (n + 1) w z =
-      mean fun y : Fin n → G => w (gQ n z y) :=
-  rfl
 def cN {G : Type*} {r : ℕ}
     (u : cU G r) (x : Fin r → G) : ℝ :=
   ∏ i, u i (dc i x)
-@[simp]
-theorem wy {G : Type*} {r : ℕ} (x : Fin r → G) :
-    cN
-      (fun _ : Fin r => fun _ : Fin (r - 1) → G => (1 : ℝ)) x = 1 := by
-  simp [cN]
-@[simp]
-theorem B5
-    {G : Type*} {r : ℕ} (u v : cU G r)
-    (x : Fin r → G) :
-    cN (fun i y => u i y * v i y) x =
-      cN u x * cN v x := by
-  simp [cN, Finset.prod_mul_distrib]
-noncomputable def ho
-    {G : Type*} [Fintype G] [AddCommGroup G]
-    (r : ℕ) (u : cU G r) (z : G) : ℝ :=
-  ig r (cN u) z
-@[simp]
-theorem xe
-    {G : Type*} [Fintype G] [AddCommGroup G]
-    (u : cU G 0) (z : G) :
-    ho 0 u z = jy z := by
-  simp [ho, cN]
-@[simp]
-theorem oi
-    {G : Type*} [Fintype G] [AddCommGroup G]
-    (n : ℕ) (u : cU G (n + 1)) (z : G) :
-    ho (n + 1) u z =
-      mean fun y : Fin n → G =>
-        cN u (gQ n z y) :=
-  rfl
-theorem u9
-    {G : Type*} [Fintype G] [AddCommGroup G]
-    (r : ℕ) (c : ℝ) (w : (Fin r → G) → ℝ) (z : G) :
-    ig r (fun x => c * w x) z =
-      c * ig r w z := by
-  cases r with
-  | zero =>
-      rw [oh, oh]
-      ring
-  | succ n =>
-      rw [nF, nF]
-      exact k0 c (fun y : Fin n → G =>
-        w (gQ n z y))
-@[simp]
-theorem yC
-    {G : Type*} [Fintype G] [AddCommGroup G]
-    (r : ℕ) (z : G) :
-    ig r (fun _ => (0 : ℝ)) z = 0 := by
-  simpa using u9 r 0 (fun _ => (1 : ℝ)) z
-@[simp]
-theorem y5
-    {G : Type*} [Fintype G] [AddCommGroup G]
-    (n : ℕ) (c : ℝ) (z : G) :
-    ig (n + 1) (fun _ => c) z = c := by
-  rw [nF]
-  exact ml c
-@[simp]
-theorem xQ
-    {G : Type*} [Fintype G] [AddCommGroup G]
-    (n : ℕ) (z : G) :
-    ho (n + 1)
-      (fun _ : Fin (n + 1) => fun _ : Fin n → G => (1 : ℝ)) z = 1 := by
-  rw [oi]
-  calc
-    mean (fun y : Fin n → G =>
-        cN
-          (fun _ : Fin (n + 1) => fun _ : Fin n → G => (1 : ℝ))
-          (gQ n z y)) =
-        mean (fun _ : Fin n → G => (1 : ℝ)) := by
-      apply congrArg mean
-      funext y
-      exact wy (gQ n z y)
-    _ = 1 := ml 1
-@[simp]
-theorem xw
-    {G : Type*} [Fintype G] [AddCommGroup G]
-    (n : ℕ) (z : G) :
-    ho (n + 1)
-      (fun _ : Fin (n + 1) => fun _ : Fin n → G => (0 : ℝ)) z = 0 := by
-  rw [oi]
-  simp [cN]
 end av.ag
 end
 section
 namespace av.ag
 open scoped Pointwise
-noncomputable def eD
-    {Ω : Type*} [Fintype Ω] (f q : Ω → ℝ) : ℝ :=
-  mean (fun x => f x * q x)
-theorem uM
-    {Ω : Type*} [Fintype Ω]
-    (f g q : Ω → ℝ) :
-    eD (f + g) q =
-      eD f q + eD g q := by
-  rw [eD, eD, eD, ← tX]
-  apply congrArg mean
-  funext x
-  simp only [Pi.add_apply]
-  ring
-theorem uw
-    {Ω : Type*} [Fintype Ω]
-    (c : ℝ) (f q : Ω → ℝ) :
-    eD (c • f) q = c * eD f q := by
-  rw [eD, eD, ← k0]
-  apply congrArg mean
-  funext x
-  simp only [Pi.smul_apply, smul_eq_mul]
-  ring
 def qW {Ω : Type*} (g : Ω → ℝ) : Prop :=
   (∀ x, 0 ≤ g x) ∧ ∀ x, g x ≤ 1
 theorem qW.nonneg
@@ -4279,107 +3790,11 @@ theorem qW.le_one
     {Ω : Type*} {g : Ω → ℝ} (hg : qW g) :
     ∀ x, g x ≤ 1 :=
   hg.2
-noncomputable def uN
-    {Ω : Type*} [Fintype Ω] (q : Ω → ℝ) :
-    (Ω → ℝ) →ₗ[ℝ] ℝ where
-  toFun f := eD f q
-  map_add' f g := uM f g q
-  map_smul' c f := by
-    simpa [smul_eq_mul] using uw c f q
-noncomputable def ub
-    {Ω : Type*} [Fintype Ω] (q : Ω → ℝ) :
-    (Ω → ℝ) →L[ℝ] ℝ :=
-  (uN q).toContinuousLinearMap
-@[simp]
-theorem Aw
-    {Ω : Type*} [Fintype Ω] (q f : Ω → ℝ) :
-    ub q f = eD f q :=
-  rfl
-noncomputable def w2
-    {Ω τ : Type*} [Fintype Ω] [Fintype τ]
-    (q : τ → Ω → ℝ) :
-    (Ω → ℝ) →L[ℝ] (τ → ℝ) :=
-  ContinuousLinearMap.pi (fun t => ub (q t))
-@[simp]
-theorem Ao
-    {Ω τ : Type*} [Fintype Ω] [Fintype τ]
-    (q : τ → Ω → ℝ) (f : Ω → ℝ) (t : τ) :
-    w2 q f t = eD f (q t) :=
-  rfl
-noncomputable def kd
-    {Ω τ : Type*} [Fintype τ]
-    (q : τ → Ω → ℝ) (c : τ → ℝ) : Ω → ℝ :=
-  ∑ t, c t • q t
-@[simp]
-theorem zg
-    {Ω τ : Type*} [Fintype τ] (q : τ → Ω → ℝ) :
-    kd q 0 = 0 := by
-  classical
-  ext x
-  simp [kd]
-def jQ {Ω : Type*} (q : Ω → ℝ) : Ω → ℝ :=
-  fun x => max (q x) 0
-@[simp]
-theorem B6
-    {Ω : Type*} (q : Ω → ℝ) (x : Ω) :
-    jQ q x = max (q x) 0 :=
-  rfl
-@[simp]
-theorem Ax
-    {Ω : Type*} {q : Ω → ℝ} {x : Ω}
-    (hx : 0 ≤ q x) :
-    jQ q x = q x :=
-  max_eq_left hx
-@[simp]
-theorem Ay
-    {Ω : Type*} {q : Ω → ℝ} {x : Ω}
-    (hx : q x ≤ 0) :
-    jQ q x = 0 :=
-  max_eq_right hx
-@[simp]
-theorem CD {Ω : Type*} :
-    jQ (0 : Ω → ℝ) = 0 := by
-  ext x
-  simp [jQ]
-noncomputable def lv
-    {Ω : Type*} (q : Ω → ℝ) : Ω → ℝ :=
-  fun x => if 0 ≤ q x then 1 else 0
-@[simp]
-theorem yD
-    {Ω : Type*} (q : Ω → ℝ) (x : Ω) :
-    lv q x * q x =
-      jQ q x := by
-  by_cases hx : 0 ≤ q x
-  · simp [lv, jQ, hx]
-  · have GB : q x ≤ 0 := le_of_not_ge hx
-    simp [lv, jQ, hx, GB]
-@[simp]
-theorem Az
-    {Ω : Type*} [Fintype Ω] (q : Ω → ℝ) :
-    eD (fun _ : Ω => (1 : ℝ)) q = mean q := by
-  simp [eD]
 end av.ag
 end
 section
 namespace av.ag
 open scoped BigOperators Polynomial
-def zU
-    {Ω τ : Type*} (q : τ → Ω → ℝ)
-    {n : ℕ} (s : Fin n → τ) : Ω → ℝ :=
-  fun x => ∏ i, q (s i) x
-@[simp]
-theorem B7
-    {Ω τ : Type*} (q : τ → Ω → ℝ)
-    {n : ℕ} (s : Fin n → τ) (x : Ω) :
-    zU q s x = ∏ i, q (s i) x :=
-  rfl
-@[simp]
-theorem y6
-    {Ω τ : Type*} [Fintype τ]
-    (q : τ → Ω → ℝ) (c : τ → ℝ) (x : Ω) :
-    kd q c x = ∑ t, c t * q t x := by
-  classical
-  simp [kd]
 end av.ag
 end
 section
@@ -4566,11 +3981,6 @@ theorem tw
           hB, hb]
     | true =>
         exact (hi hb).elim
-noncomputable def qF
-    (G : Type*) [Fintype G] [DecidableEq G] (r : ℕ) :
-    Finset (aW (Fin r → G)) := by
-  classical
-  exact Finset.univ.image dL
 namespace aE
 noncomputable def et
     {G : Type*} [Fintype G] [DecidableEq G] {r : ℕ}
@@ -4658,161 +4068,11 @@ open scoped BigOperators
 variable {Ω ι : Type*}
   [Fintype Ω] [DecidableEq Ω]
 namespace aE
-def jG
-    (S : aE Ω) (f : ι → Ω → ℝ)
-    (dK : Finset (aW Ω)) (ε : ℝ) : Prop :=
-  ∀ i, S.q1 (f i) dK ε
-theorem m0
-    (S : aE Ω) (f : ι → Ω → ℝ)
-    (dK : Finset (aW Ω)) {ε : ℝ}
-    (h : ¬S.jG f dK ε) :
-    ∃ i : ι, ∃ A ∈ dK,
-      ε < |S.b2 (f i) A| := by
-  classical
-  unfold jG at h
-  obtain ⟨i, hi⟩ := not_forall.mp h
-  obtain ⟨A, hA, x8⟩ :=
-    S.lr (f i) dK hi
-  exact ⟨i, A, hA, x8⟩
-structure uO
-    (S : aE Ω) (f : ι → Ω → ℝ)
-    (dK : Finset (aW Ω)) (ε : ℝ) where
-  index : ι
-  x9 : aW Ω
-  FT : x9 ∈ dK
-  xf :
-    ε < |S.b2 (f index) x9|
-noncomputable def sK
-    (S : aE Ω) (f : ι → Ω → ℝ)
-    (dK : Finset (aW Ω)) (ε : ℝ)
-    (h : ¬S.jG f dK ε) :
-    S.uO f dK ε := by
-  classical
-  let hex :=
-    S.m0 f dK h
-  let i : ι := Classical.choose hex
-  let hi := Classical.choose_spec hex
-  let A : aW Ω := Classical.choose hi
-  have hA :=
-    (Classical.choose_spec hi).1
-  have x8 :=
-    (Classical.choose_spec hi).2
-  exact ⟨i, A, hA, x8⟩
-noncomputable def iS
-    (S : aE Ω) (f : ι → Ω → ℝ)
-    (dK : Finset (aW Ω)) (ε : ℝ) :
-    aW Ω := by
-  classical
-  exact
-    if h : S.jG f dK ε then ∅
-    else (S.sK f dK ε h).x9
-noncomputable def gm
-    (S : aE Ω) (f : ι → Ω → ℝ)
-    (dK : Finset (aW Ω)) (ε : ℝ) :
-    ℕ → aE Ω
-  | 0 => S
-  | n + 1 =>
-      let T := gm S f dK ε n
-      T.ea (T.iS f dK ε)
-@[simp]
-theorem zV
-    (S : aE Ω) (f : ι → Ω → ℝ)
-    (dK : Finset (aW Ω)) (ε : ℝ) :
-    S.gm f dK ε 0 = S :=
-  rfl
-@[simp]
-theorem zW
-    (S : aE Ω) (f : ι → Ω → ℝ)
-    (dK : Finset (aW Ω)) (ε : ℝ) (n : ℕ) :
-    S.gm f dK ε (n + 1) =
-      (S.gm f dK ε n).ea
-        ((S.gm f dK ε n).iS
-          f dK ε) :=
-  rfl
-noncomputable def gW
-    (S : aE Ω) (f : ι → Ω → ℝ)
-    (dK : Finset (aW Ω)) (ε : ℝ) (n : ℕ) :
-    Finset (aW Ω) := by
-  classical
-  exact (Finset.range n).image fun i =>
-    (S.gm f dK ε i).iS
-      f dK ε
-@[simp]
-theorem yE
-    (S : aE Ω) (f : ι → Ω → ℝ)
-    (dK : Finset (aW Ω)) (ε : ℝ) :
-    S.gW f dK ε 0 = ∅ := by
-  simp [gW]
-@[simp]
-theorem yF
-    (S : aE Ω) (f : ι → Ω → ℝ)
-    (dK : Finset (aW Ω)) (ε : ℝ) (n : ℕ) :
-    S.gW f dK ε (n + 1) =
-      insert
-        ((S.gm f dK ε n).iS
-          f dK ε)
-        (S.gW f dK ε n) := by
-  classical
-  simp [gW, Finset.range_add_one]
 end aE
 end av.ag
 end
 section
 namespace av.ag
-noncomputable def fi
-    (G : Type*) [Fintype G] [DecidableEq G] (r : ℕ)
-    (A : aW (Fin r → G)) :
-    b7 G r := by
-  classical
-  exact
-    if hA : A ∈ qF G r then
-      Classical.choose
-        (show ∃ b : b7 G r,
-            dL b = A by
-          obtain ⟨b, _hb, CQ⟩ :=
-            Finset.mem_image.mp hA
-          exact ⟨b, CQ⟩)
-    else
-      fun _ => false
-abbrev mC
-    {G : Type*} [Fintype G] [DecidableEq G] {r : ℕ}
-    (F : Finset (aW (Fin r → G))) :=
-  F → Fin r
-@[simp]
-theorem Bn
-    {G : Type*} [Fintype G] [DecidableEq G] {r : ℕ}
-    (F : Finset (aW (Fin r → G))) :
-    Fintype.card (mC F) = r ^ F.card := by
-  simp [mC]
-noncomputable def ta
-    {G : Type*} [Fintype G] [DecidableEq G] {r : ℕ}
-    (F : Finset (aW (Fin r → G)))
-    (y : Fin r → G) (w : mC F) (i : Fin r) :
-    aW (Fin (r - 1) → G) := by
-  classical
-  exact Finset.univ.filter fun z =>
-    ∀ A : F,
-      (y ∈ A.1 →
-        fi G r A.1
-            ⟨i, z⟩ = true) ∧
-      (y ∉ A.1 → w A = i →
-        fi G r A.1
-            ⟨i, z⟩ = false)
-@[simp]
-theorem AA
-    {G : Type*} [Fintype G] [DecidableEq G] {r : ℕ}
-    (F : Finset (aW (Fin r → G)))
-    (y : Fin r → G) (w : mC F) (i : Fin r)
-    (z : Fin (r - 1) → G) :
-    z ∈ ta F y w i ↔
-      ∀ A : F,
-        (y ∈ A.1 →
-          fi G r A.1
-              ⟨i, z⟩ = true) ∧
-        (y ∉ A.1 → w A = i →
-          fi G r A.1
-              ⟨i, z⟩ = false) := by
-  simp [ta]
 end av.ag
 end
 section
@@ -4864,15 +4124,6 @@ def h3
     ec e → G :=
   fun v => x v.1
 @[simp]
-theorem tR
-    {G : Type*} {k r : ℕ} (e : al k r)
-    (x : Fin k → G) :
-    (dM e x).2 =
-      h3 e x := by
-  funext v
-  simp [dM, pd,
-    h3]
-@[simp]
 theorem nt
     {G : Type*} {k r : ℕ} (e : al k r)
     (y : Fin r → G)
@@ -4880,15 +4131,6 @@ theorem nt
     aI e
         ((dM e).symm (y, z)) = y := by
   rw [← tQ]
-  simp
-@[simp]
-theorem tp
-    {G : Type*} {k r : ℕ} (e : al k r)
-    (y : Fin r → G)
-    (z : ec e → G) :
-    h3 e
-        ((dM e).symm (y, z)) = z := by
-  rw [← tR]
   simp
 theorem va
     {G : Type*} [Fintype G] {k r : ℕ}
@@ -5015,17 +4257,6 @@ noncomputable def eB
     (D : bj (G := G) k r)
     (e : al k r) : ℝ :=
   (D e).card / Fintype.card (Fin r → G)
-def h4
-    {G : Type*} [DecidableEq G] (k r : ℕ) :
-    bj (G := G) k r :=
-  fun _ => ∅
-@[simp]
-theorem zA
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k r : ℕ} (e : al k r) :
-    eB
-        (h4 (G := G) k r) e = 0 := by
-  simp [eB, h4]
 end a2
 def ep (k r : ℕ) : Prop :=
   ∀ ε : ℝ, 0 < ε →
@@ -5054,31 +4285,12 @@ theorem qH {k N : ℕ} {f : ZMod N → ℝ}
     (hf : ∀ x, 0 ≤ f x) (a d : ZMod N) :
     0 ≤ cr k N f a d := by
   exact Finset.prod_nonneg fun j _ => hf (gK a d j)
-@[simp]
-theorem A5 (k N : ℕ) (c : ℝ) (a d : ZMod N) :
-    cr k N (fun _ => c) a d = c ^ k := by
-  simp [cr]
-@[simp]
-theorem BO (k N : ℕ) [NeZero N] (c : ℝ) :
-    eU k N (fun _ => c) = c ^ k := by
-  simp [eU, fq]
 end av.ag
 end
 section
 namespace av.ag
 open scoped BigOperators
-structure tS (ι R : Type*) [Zero R] where
-  constant : R
-  AF : ι → R
 namespace tS
-def eval {ι R : Type*} [Fintype ι] [Semiring R]
-    (ψ : tS ι R) (x : ι → R) : R :=
-  ψ.constant + ∑ i, ψ.AF i * x i
-@[simp]
-theorem eval_zero {ι R : Type*} [Fintype ι] [Semiring R]
-    (ψ : tS ι R) :
-    ψ.eval (fun _ => 0) = ψ.constant := by
-  simp [eval]
 end tS
 end av.ag
 end
@@ -5326,88 +4538,11 @@ end
 section
 namespace av.ag
 open scoped BigOperators
-noncomputable def sy
-    {R : Type*} [CommRing R] (a : R) (ha : IsUnit a) :
-    R ≃+ R :=
-  DistribMulAction.toAddEquiv R ha.unit
-@[simp]
-theorem zB
-    {R : Type*} [CommRing R] (a : R) (ha : IsUnit a)
-    (x : R) :
-    sy a ha x = a * x := by
-  change (ha.unit : R) * x = a * x
-  rw [IsUnit.unit_spec]
-def qI
-    {ι G : Type*} [AddCommGroup G] (e : ι → G ≃+ G) :
-    (ι → G) ≃ (ι → G) where
-  toFun x i := e i (x i)
-  invFun x i := (e i).symm (x i)
-  left_inv x := by
-    funext i
-    exact (e i).symm_apply_apply (x i)
-  right_inv x := by
-    funext i
-    exact (e i).apply_symm_apply (x i)
-@[simp]
-theorem yH
-    {ι G : Type*} [AddCommGroup G] (e : ι → G ≃+ G)
-    (x : ι → G) (i : ι) :
-    qI e x i = e i (x i) :=
-  rfl
-@[simp]
-theorem xg
-    {ι G : Type*} [AddCommGroup G] (e : ι → G ≃+ G)
-    (x : ι → G) (i : ι) :
-    (qI e).symm x i =
-      (e i).symm (x i) :=
-  rfl
 end av.ag
 end
 section
 namespace av.ag
 open scoped BigOperators
-theorem n1
-    {k N : ℕ}
-    (hN : Nat.Coprime N (Nat.factorial (k - 1)))
-    (i j : Fin k) (hij : i ≠ j) :
-    IsUnit (((i : ℤ) - (j : ℤ) : ℤ) : ZMod N) := by
-  rw [ZMod.coe_int_isUnit_iff_isCoprime,
-    Int.isCoprime_iff_nat_coprime]
-  have Bk :
-      (i : ℤ) - (j : ℤ) ≠ 0 := by
-    intro h
-    apply hij
-    apply Fin.ext
-    exact_mod_cast sub_eq_zero.mp h
-  have lx :
-      0 < Int.natAbs ((i : ℤ) - (j : ℤ)) :=
-    Int.natAbs_pos.mpr Bk
-  have hle :
-      Int.natAbs ((i : ℤ) - (j : ℤ)) ≤ k - 1 := by
-    have hi : (i : ℕ) ≤ k - 1 := by omega
-    have hj : (j : ℕ) ≤ k - 1 := by omega
-    exact Int.natAbs_coe_sub_coe_le_of_le hi hj
-  have FU :
-      Int.natAbs ((i : ℤ) - (j : ℤ)) ∣
-        Nat.factorial (k - 1) :=
-    Nat.dvd_factorial lx hle
-  simpa using hN.coprime_dvd_right FU
-noncomputable def nH
-    {k N : ℕ}
-    (hN : Nat.Coprime N (Nat.factorial (k - 1)))
-    (i j : Fin k) (hij : i ≠ j) :
-    ZMod N ≃+ ZMod N :=
-  sy
-    ((((i : ℤ) - (j : ℤ) : ℤ) : ZMod N))
-    (n1 hN i j hij)
-@[simp]
-theorem y8
-    {k N : ℕ}
-    (hN : Nat.Coprime N (Nat.factorial (k - 1)))
-    (i j : Fin k) (hij : i ≠ j) (x : ZMod N) :
-    nH hN i j hij x =
-      (((i : ℤ) - (j : ℤ) : ℤ) : ZMod N) * x := by
-  simp [nH]
 noncomputable def finSuccAboveEquiv {n : ℕ} (j : Fin (n + 1)) :
     Fin n ≃ {i : Fin (n + 1) // i ≠ j} :=
   Equiv.ofBijective
@@ -5420,11 +4555,6 @@ noncomputable def finSuccAboveEquiv {n : ℕ} (j : Fin (n + 1)) :
       intro i
       obtain ⟨t, ht⟩ := Fin.exists_succAbove_eq i.2
       exact ⟨t, Subtype.ext ht⟩⟩
-@[simp]
-theorem y9
-    {n : ℕ} (j : Fin (n + 1)) (t : Fin n) :
-    (finSuccAboveEquiv j t).1 = j.succAbove t :=
-  rfl
 noncomputable def cf
     {n : ℕ} {G : Type*}
     (j : Fin (n + 1))
@@ -5441,23 +4571,6 @@ theorem xh
         (finSuccAboveEquiv j t) =
       y t := by
   simp [cf]
-noncomputable def tc
-    {n N : ℕ}
-    (hN : Nat.Coprime N (Nat.factorial n))
-    (j : Fin (n + 1)) (t : Fin n) :
-    ZMod N ≃+ ZMod N :=
-  nH
-    (by simpa using hN) (j.succAbove t) j
-    (Fin.succAbove_ne j t)
-@[simp]
-theorem zX
-    {n N : ℕ}
-    (hN : Nat.Coprime N (Nat.factorial n))
-    (j : Fin (n + 1)) (t : Fin n) (x : ZMod N) :
-    tc hN j t x =
-      ((((j.succAbove t : ℤ) - (j : ℤ) : ℤ) :
-        ZMod N) * x) := by
-  simp [tc]
 end av.ag
 end
 section
@@ -5468,35 +4581,6 @@ end
 section
 namespace av.ag
 open scoped BigOperators
-def sA
-    (k N : ℕ) (f g : ZMod N → ℝ)
-    (j i : Fin k) (x : Fin k → ZMod N) : ℝ :=
-  (if i < j then
-      f (f8 k N i (bO x i))
-    else 1) *
-  (if j < i then
-      g (f8 k N i (bO x i))
-    else 1)
-@[simp]
-theorem zY
-    (k N : ℕ) (f g : ZMod N → ℝ)
-    (j : Fin k) (x : Fin k → ZMod N) :
-    sA k N f g j j x = 1 := by
-  simp [sA]
-@[simp]
-theorem yI
-    {k : ℕ} {G : Type*}
-    (x : Fin k → G) (i : Fin k) (a : G) :
-    bO (Function.update x i a) i =
-      bO x i := by
-  funext q
-  simp [bO, q.2]
-theorem p7
-    {n : ℕ} {G : Type*}
-    (i : Fin (n + 1)) (a : G) (x : Fin (n + 1) → G) :
-    Fin.insertNth i a (dc i x) =
-      Function.update x i a := by
-  exact Fin.insertNth_removeNth i a x
 end av.ag
 end
 section
@@ -5507,236 +4591,21 @@ end
 section
 namespace av.ag
 open scoped BigOperators
-noncomputable def f0
-    {G : Type*} {n : ℕ} (j : Fin (n + 1))
-    (x : b9 (fun _ : Fin (n + 1) => G) j) :
-    Fin n → G :=
-  fun t => x (finSuccAboveEquiv j t)
-@[simp]
-theorem oz
-    {G : Type*} {n : ℕ} (j : Fin (n + 1))
-    (y : Fin n → G) :
-    f0 j (cf j y) = y := by
-  funext t
-  simp [f0]
-@[simp]
-theorem oA
-    {G : Type*} {n : ℕ} (j : Fin (n + 1))
-    (x : b9 (fun _ : Fin (n + 1) => G) j) :
-    cf j (f0 j x) = x := by
-  funext i
-  change
-    x (finSuccAboveEquiv j
-      ((finSuccAboveEquiv j).symm i)) = x i
-  rw [(finSuccAboveEquiv j).apply_symm_apply]
-@[simp]
-theorem xi
-    {G : Type*} {n : ℕ} (j : Fin (n + 1))
-    (x : Fin (n + 1) → G) (t : Fin n) :
-    f0 j (bO x j) t =
-      x (j.succAbove t) :=
-  rfl
-noncomputable def ix
-    {G : Type*} {n : ℕ}
-    (H : cm
-      (fun _ : Fin (n + 1) => G))
-    (j : Fin (n + 1)) :
-    (Fin n → G) → ℝ :=
-  fun y => H.dt j (cf j y)
-abbrev gX
-    (G : Type*) (n : ℕ)
-    [Fintype G] [DecidableEq G] :=
-  (j : Fin (n + 1)) →
-    aE (Fin n → G)
-noncomputable def pM
-    {G : Type*} [Fintype G] [DecidableEq G] {n : ℕ}
-    (H : cm
-      (fun _ : Fin (n + 1) => G))
-    (S : gX G n) :
-    cm (fun _ : Fin (n + 1) => G) where
-  dt j x :=
-    (S j).structured (ix H j)
-      (f0 j x)
-@[simp]
-theorem vZ
-    {G : Type*} [Fintype G] [DecidableEq G] {n : ℕ}
-    (H : cm
-      (fun _ : Fin (n + 1) => G))
-    (S : gX G n)
-    (j : Fin (n + 1)) (y : Fin n → G) :
-    (pM H S).dt j
-        (cf j y) =
-      (S j).structured (ix H j) y := by
-  simp [pM]
-def pN
-    {G : Type*} {k : ℕ}
-    (H K : cm
-      (fun _ : Fin k => G))
-    (j i : Fin k) (x : Fin k → G) : ℝ :=
-  (if i < j then H.dt i (bO x i) else 1) *
-  (if j < i then K.dt i (bO x i) else 1)
-@[simp]
-theorem yt
-    {G : Type*} {k : ℕ}
-    (H K : cm
-      (fun _ : Fin k => G))
-    (j : Fin k) (x : Fin k → G) :
-    pN H K j j x = 1 := by
-  simp [pN]
-def uP
-    {G : Type*} {n : ℕ} (t : Fin n) (a : G)
-    (z : Fin (n - 1) → G) :
-    Fin n → G := by
-  cases n with
-  | zero => exact Fin.elim0 t
-  | succ m => exact Fin.insertNth t a z
-@[simp]
-theorem v3
-    {G : Type*} {n : ℕ}
-    (t : Fin n) (a : G) (y : Fin n → G) :
-    uP t a (dc t y) =
-      Function.update y t a := by
-  cases n with
-  | zero => exact Fin.elim0 t
-  | succ m =>
-      exact p7 t a y
 end av.ag
 end
 section
 namespace av.ag
 open scoped BigOperators
-noncomputable local instance AH
-    (k r : ℕ) : LinearOrder (al k r) := by
-  classical
-  exact (Fintype.equivFin (al k r)).linearOrder
 abbrev eg
     (G : Type*) [Fintype G] [DecidableEq G]
     (k r : ℕ) :=
   (e : al k r) →
     aE (Fin r → G)
-noncomputable def pr
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k r : ℕ}
-    (H : bQ G k r)
-    (S : eg G k r) :
-    bQ G k r where
-  dt e :=
-    (S e).structured (H.dt e)
-@[simp]
-theorem wA
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k r : ℕ}
-    (H : bQ G k r)
-    (S : eg G k r)
-    (e : al k r) (y : Fin r → G) :
-    (pr H S).dt e y =
-      (S e).structured (H.dt e) y :=
-  rfl
-noncomputable def pO
-    {G : Type*} {k r : ℕ}
-    (H K : bQ G k r)
-    (e f : al k r) (x : Fin k → G) : ℝ :=
-  (if f < e then
-      H.dt f (aI f x)
-    else 1) *
-    (if e < f then
-      K.dt f (aI f x)
-    else 1)
-@[simp]
-theorem yu
-    {G : Type*} {k r : ℕ}
-    (H K : bQ G k r)
-    (e : al k r) (x : Fin k → G) :
-    pO H K e e x = 1 := by
-  simp [pO]
 end av.ag
 end
 section
 namespace av.ag
-def qJ
-    (G : Type*) [Fintype G] [DecidableEq G]
-    (k r : ℕ) :
-    eg G k r :=
-  fun _ => ⟨ab.indiscrete⟩
-@[simp]
-theorem u0
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k r : ℕ} (e : al k r) :
-    (qJ G k r e).partition =
-      ab.indiscrete :=
-  rfl
-structure cb
-    (G : Type*) [Fintype G] [DecidableEq G]
-    (k r : ℕ)
-    (H : bQ G k r)
-    (ε : ℝ) where
-  state : eg G k r
-  generators :
-    (e : al k r) →
-      Finset (aW (Fin r → G))
-  wB : al k r → ℕ
-  wC : al k r → ℕ
-  El :
-    ∀ e, 1 < (wB e : ℝ) * ε ^ 2
-  DH :
-    ∀ e, wC e < wB e
-  AI :
-    ∀ e, (state e).partition =
-      ab.generatedBy (generators e)
-  Bo :
-    ∀ e, generators e ⊆ qF G r
-  CE :
-    ∀ e, (generators e).card ≤ wC e
-  regular :
-    ∀ e, (state e).q3
-      (H.dt e) ε
-  E1 :
-    |H.gJ -
-        (pr H state).gJ| ≤
-      (Fintype.card (al k r) : ℝ) * ε
-  D7 :
-    ∀ e, ab.aO (state e).partition ≤
-      2 ^ wC e
 namespace cb
-abbrev rL
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k r : ℕ} {H : bQ G k r}
-    {ε : ℝ}
-    (R : cb
-      G k r H ε) :=
-  (e : al k r) →
-    mC (R.generators e)
-@[simp]
-theorem CF
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k r : ℕ} {H : bQ G k r}
-    {ε : ℝ}
-    (R : cb
-      G k r H ε) :
-    Fintype.card R.rL =
-      ∏ e : al k r,
-        r ^ (R.generators e).card := by
-  simp [rL]
-abbrev qX
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k r : ℕ} {H : bQ G k r}
-    {ε : ℝ}
-    (R : cb
-      G k r H ε) :=
-  (e : al k r) →
-    (R.state e).partition.parts
-@[simp]
-theorem B8
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k r : ℕ} {H : bQ G k r}
-    {ε : ℝ}
-    (R : cb
-      G k r H ε) :
-    Fintype.card R.qX =
-      ∏ e : al k r,
-        ab.aO
-          (R.state e).partition := by
-  simp [qX, ab.aO]
 end cb
 end av.ag
 end
@@ -5849,90 +4718,21 @@ open scoped BigOperators
 namespace aM
 abbrev bj {k : ℕ} (V : Fin k → Type*) :=
   (j : Fin k) → Finset (b9 V j)
-noncomputable def deleteEdges {k : ℕ} {V : Fin k → Type*}
-    (H : aM V) (bG : bj V) :
-    aM V := by
-  classical
-  exact
-    { edge := fun j x => H.edge j x ∧ x ∉ bG j }
-@[simp]
-theorem deleteEdges_edge {k : ℕ} {V : Fin k → Type*}
-    (H : aM V) (bG : bj V)
-    (j : Fin k) (x : b9 V j) :
-    (H.deleteEdges bG).edge j x ↔
-      H.edge j x ∧ x ∉ bG j := by
-  classical
-  simp [deleteEdges]
-@[simp]
-theorem yv {k : ℕ}
-    {V : Fin k → Type*} [∀ i, Fintype (V i)]
-    (H : aM V) (bG : bj V)
-    (x : (i : Fin k) → V i) :
-    x ∈ (H.deleteEdges bG).ff ↔
-      x ∈ H.ff ∧
-        ∀ j, bO x j ∉ bG j := by
-  classical
-  simp only [nC, deleteEdges_edge, forall_and]
-def h4 {k : ℕ} (V : Fin k → Type*) :
-    bj V :=
-  fun _ => ∅
-@[simp]
-theorem CI {k : ℕ} {V : Fin k → Type*}
-    (j : Fin k) (x : b9 V j) :
-    x ∉ h4 V j := by
-  simp [h4]
-@[simp]
-theorem xR {k : ℕ}
-    {V : Fin k → Type*} [∀ i, Fintype (V i)]
-    (H : aM V) :
-    (H.deleteEdges (h4 V)).ff =
-      H.ff := by
-  classical
-  ext x
-  simp
 def fh {k : ℕ} {V : Fin k → Type*}
     (bG : bj V) : ℕ :=
   ∑ j, (bG j).card
-@[simp]
-theorem BP {k : ℕ} (V : Fin k → Type*) :
-    fh (h4 V) = 0 := by
-  simp [fh, h4]
 def ik {k : ℕ} (V : Fin k → Type*)
     [∀ i, Fintype (V i)] : ℕ :=
   ∑ j, Fintype.card (b9 V j)
-@[simp]
-theorem AJ (k n : ℕ) (j : Fin k) :
-    Fintype.card
-        (b9 (fun _ : Fin k => Fin n) j) =
-      n ^ (k - 1) := by
-  simp [b9, Fintype.card_pi]
-@[simp]
-theorem Bp (k n : ℕ) :
-    ik (fun _ : Fin k => Fin n) =
-      k * n ^ (k - 1) := by
-  simp [ik]
 noncomputable def iU {k : ℕ}
     {V : Fin k → Type*} [∀ i, Fintype (V i)]
     (bG : bj V) (j : Fin k) : ℝ :=
   ((bG j).card : ℝ) /
     Fintype.card (b9 V j)
-@[simp]
-theorem zZ {k n : ℕ}
-    (bG :
-      bj (fun _ : Fin k => Fin n))
-    (j : Fin k) :
-    iU bG j =
-      ((bG j).card : ℝ) / (n ^ (k - 1) : ℕ) := by
-  simp [iU]
 noncomputable def eO {k : ℕ}
     {V : Fin k → Type*} [∀ i, Fintype (V i)]
     (bG : bj V) : ℝ :=
   (fh bG : ℝ) / (ik V : ℝ)
-@[simp]
-theorem yJ {k : ℕ}
-    (V : Fin k → Type*) [∀ i, Fintype (V i)] :
-    eO (h4 V) = 0 := by
-  simp [eO]
 end aM
 end av.ag
 end
@@ -5940,227 +4740,14 @@ section
 namespace av.ag
 open scoped BigOperators
 namespace aE
-noncomputable def td
-    {Ω : Type*} [Fintype Ω] [DecidableEq Ω]
-    (S : aE Ω) (f : Ω → ℝ) (τ : ℝ) :
-    aW Ω := by
-  classical
-  exact Finset.univ.filter fun x => S.structured f x < τ
-@[simp]
-theorem AK
-    {Ω : Type*} [Fintype Ω] [DecidableEq Ω]
-    (S : aE Ω) (f : Ω → ℝ) (τ : ℝ)
-    (x : Ω) :
-    x ∈ S.td f τ ↔
-      S.structured f x < τ := by
-  simp [td]
-noncomputable def gf
-    {Ω : Type*} [Fintype Ω] [DecidableEq Ω]
-    (S : aE Ω) (f : Ω → ℝ) (τ : ℝ) :
-    Finset Ω := by
-  classical
-  exact Finset.univ.filter fun x =>
-    f x = 1 ∧ S.structured f x < τ
-@[simp]
-theorem tB
-    {Ω : Type*} [Fintype Ω] [DecidableEq Ω]
-    (S : aE Ω) (f : Ω → ℝ) (τ : ℝ)
-    (x : Ω) :
-    x ∈ S.gf f τ ↔
-      f x = 1 ∧ S.structured f x < τ := by
-  simp [gf]
 end aE
-noncomputable def gL
-    {G : Type*} {n : ℕ} (j : Fin (n + 1)) :
-    b9 (fun _ : Fin (n + 1) => G) j ≃
-      (Fin n → G) where
-  toFun := f0 j
-  invFun := cf j
-  left_inv := oA j
-  right_inv := oz j
-noncomputable def iy
-    {G : Type*} [Fintype G] [DecidableEq G] {n : ℕ}
-    (H : aM
-      (fun _ : Fin (n + 1) => G))
-    (S : gX G n) (τ : ℝ) :
-    aM.bj
-      (fun _ : Fin (n + 1) => G) :=
-  fun j =>
-    ((S j).gf
-      (ix H.cD j) τ).map
-        (gL j).symm.toEmbedding
-@[simp]
-theorem zi
-    {G : Type*} [Fintype G] [DecidableEq G] {n : ℕ}
-    (H : aM
-      (fun _ : Fin (n + 1) => G))
-    (S : gX G n) (τ : ℝ)
-    (j : Fin (n + 1)) :
-    (iy H S τ j).card =
-      ((S j).gf
-        (ix H.cD j) τ).card := by
-  classical
-  simp [iy]
-@[simp]
-theorem yw
-    {G : Type*} [Fintype G] [DecidableEq G] {n : ℕ}
-    (H : aM
-      (fun _ : Fin (n + 1) => G))
-    (S : gX G n) (τ : ℝ)
-    (j : Fin (n + 1))
-    (x : b9 (fun _ : Fin (n + 1) => G) j) :
-    x ∈ iy H S τ j ↔
-      f0 j x ∈
-        (S j).gf
-          (ix H.cD j) τ := by
-  classical
-  constructor
-  · intro hx
-    obtain ⟨y, hy, Em⟩ := Finset.mem_map.mp hx
-    have heq :
-        y = f0 j x := by
-      change y = (gL j) x
-      calc
-        y =
-            (gL j)
-              ((gL j).symm y) :=
-          ((gL j).apply_symm_apply y).symm
-        _ = (gL j) x :=
-          congrArg (gL j) Em
-    simpa [heq] using hy
-  · intro hx
-    apply Finset.mem_map.mpr
-    refine ⟨f0 j x, hx, ?_⟩
-    exact (gL j).symm_apply_apply x
 end av.ag
 end
 section
 namespace av.ag
-def oB
-    {k r : ℕ} (e : al k r) (i : Fin r) :
-    al k (r - 1) := by
-  cases r with
-  | zero => exact Fin.elim0 i
-  | succ n =>
-      exact (Fin.succAboveOrderEmb i).trans e
-@[simp]
-theorem xj
-    {G : Type*} {k r : ℕ}
-    (e : al k r) (i : Fin r)
-    (x : Fin k → G) :
-    aI (oB e i) x =
-      dc i (aI e x) := by
-  cases r with
-  | zero => exact Fin.elim0 i
-  | succ n =>
-      rfl
 namespace a2
-noncomputable def q5
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k r : ℕ}
-    (D : bj (G := G) k (r - 1))
-    (e : al k r) (i : Fin r) :
-    Finset (Fin r → G) := by
-  classical
-  exact Finset.univ.filter fun y =>
-    dc i y ∈ D (oB e i)
-@[simp]
-theorem Bq
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k r : ℕ}
-    (D : bj (G := G) k (r - 1))
-    (e : al k r) (i : Fin r)
-    (y : Fin r → G) :
-    y ∈ q5 D e i ↔
-      dc i y ∈
-        D (oB e i) := by
-  simp [q5]
-noncomputable def tL
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k r : ℕ}
-    (D : bj (G := G) k (r - 1)) :
-    bj (G := G) k r := by
-  classical
-  exact fun e =>
-    Finset.univ.biUnion fun i =>
-      q5 D e i
-@[simp]
-theorem A6
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k r : ℕ}
-    (D : bj (G := G) k (r - 1))
-    (e : al k r) (y : Fin r → G) :
-    y ∈ tL D e ↔
-      ∃ i : Fin r,
-        dc i y ∈
-          D (oB e i) := by
-  classical
-  simp [tL]
-noncomputable def vP
-    {ι G : Type*} [Fintype ι]
-    [Fintype G] [DecidableEq G]
-    {k r : ℕ}
-    (D : ι → bj (G := G) k r) :
-    bj (G := G) k r := by
-  classical
-  exact fun e =>
-    Finset.univ.biUnion fun t => D t e
-@[simp]
-theorem CJ
-    {ι G : Type*} [Fintype ι]
-    [Fintype G] [DecidableEq G]
-    {k r : ℕ}
-    (D : ι → bj (G := G) k r)
-    (e : al k r) (y : Fin r → G) :
-    y ∈ vP D e ↔
-      ∃ t : ι, y ∈ D t e := by
-  classical
-  simp [vP]
-noncomputable def iy
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k r : ℕ}
-    (H : a2 G k r)
-    (S : eg G k r)
-    (τ : ℝ) :
-    bj (G := G) k r :=
-  fun e =>
-    (S e).gf
-      (H.cD.dt e) τ
-@[simp]
-theorem zC
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k r : ℕ}
-    (H : a2 G k r)
-    (S : eg G k r)
-    (τ : ℝ) (e : al k r)
-    (y : Fin r → G) :
-    y ∈ iy H S τ e ↔
-      H.cD.dt e y = 1 ∧
-        (S e).structured
-          (H.cD.dt e) y < τ := by
-  exact
-    (S e).tB
-      (H.cD.dt e) τ y
 end a2
 namespace cb
-abbrev za
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k r : ℕ} {H : bQ G k r}
-    {ε : ℝ}
-    (R : cb
-      G k r H ε) :=
-  R.qX × R.rL
-@[simp]
-theorem DI
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k r : ℕ} {H : bQ G k r}
-    {ε : ℝ}
-    (R : cb
-      G k r H ε) :
-    Fintype.card R.za =
-      Fintype.card R.qX *
-        Fintype.card R.rL := by
-  simp [za]
 end cb
 end av.ag
 end
@@ -6278,16 +4865,6 @@ noncomputable def fJ
   ⟨(au P e).part x,
     (au P e).part_mem.2
       (Finset.mem_univ x)⟩
-@[simp]
-theorem zD
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k j : ℕ}
-    (P : af G k j)
-    (e : al k (j + 1))
-    (x : Fin (j + 1) → G) :
-    (fJ P e x).1 =
-      (au P e).part x :=
-  rfl
 noncomputable def eJ
     {G : Type*} [Fintype G] [DecidableEq G]
     {k j : ℕ}
@@ -7605,16 +6182,6 @@ theorem Cc
     (eF C top).bl = top := by
   simp [bl, eF]
 @[simp]
-theorem CK
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k r : ℕ}
-    (C : aa G k r)
-    (top : af G k (r + 1)) :
-    (eF C top).ed = C := by
-  cases C with
-  | mk partition =>
-      simp [ed, eF]
-@[simp]
 theorem eY
     {G : Type*} [Fintype G] [DecidableEq G]
     {k r : ℕ}
@@ -7622,16 +6189,6 @@ theorem eY
     (top : af G k r) :
     (bb C top).bl = top := by
   simp [bl, bb]
-@[simp]
-theorem xS
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k r : ℕ}
-    (C : aa G k (r + 1))
-    (top : af G k (r + 1))
-    (j : Fin (r + 1)) :
-    (bb C top).partition j.castSucc =
-      C.partition j.castSucc := by
-  simp [bb]
 @[simp]
 theorem aT
     {G : Type*} [Fintype G] [DecidableEq G]
@@ -7651,16 +6208,6 @@ theorem dB
     (eF C top).partition (Fin.last (r + 1)) =
       top := by
   simp [eF]
-@[simp]
-theorem vR
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k r : ℕ}
-    (C : aa G k r)
-    (top : af G k r)
-    (i : Fin r) :
-    (bb C top).partition i.castSucc =
-      C.partition i.castSucc := by
-  simp [bb]
 @[simp]
 theorem zj
     {G : Type*} [Fintype G] [DecidableEq G]
@@ -7724,8 +6271,6 @@ structure ak
 namespace ak
 end ak
 abbrev cV (r : ℕ) := Fin r → ℝ
-abbrev dr (r : ℕ) := Fin r → ℕ
-abbrev gC (r : ℕ) := Fin r → ℕ
 def il
     {G : Type*} [Fintype G] [DecidableEq G]
     {k r : ℕ}
@@ -7736,227 +6281,6 @@ def il
       (C.partition j.castSucc)
       (C.partition j.succ)
       (ε j)
-def fv
-    (k r : ℕ)
-    (ε : cV r)
-    (m : dr r) : Prop :=
-  ∀ j : Fin r,
-    (Fintype.card (al k (j.1 + 1)) : ℝ) <
-      (m j : ℝ) * (ε j) ^ 2
-def p9
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k r : ℕ}
-    (aQ an : aa G k r)
-    (steps : gC r) : Prop :=
-  ∀ (j : Fin r) (e : al k j.1),
-    ab.aO
-        (aQ.partition j.castSucc e) ≤
-      (2 ^ (j.1 + 1)) ^ (steps j) *
-        ab.aO
-          (an.partition j.castSucc e)
-structure ly
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k r : ℕ}
-    (an : aa G k r)
-    (ε : cV r)
-    (m : dr r) where
-  steps : gC r
-  aQ : aa G k r
-  dy : aQ.db an
-  uQ :
-    aQ.bl = an.bl
-  sL : ∀ j, steps j < m j
-  regular :
-    il aQ ε
-  aO :
-    p9
-      aQ an steps
-theorem oW
-    {G : Type*} [Fintype G] [DecidableEq G] [Nonempty G]
-    {k r : ℕ}
-    (C : aa G k r)
-    (ε : cV r)
-    (m : dr r)
-    (hε : ∀ j, 0 ≤ ε j)
-    (gS : fv k r ε m) :
-    Nonempty (ly C ε m) := by
-  induction r with
-  | zero =>
-      let steps : gC 0 :=
-        fun j => Fin.elim0 j
-      refine ⟨{
-        steps := steps
-        aQ := C
-        dy := aa.db.refl C
-        uQ := rfl
-        sL := ?_
-        regular := ?_
-        aO := ?_ }⟩
-      · intro j
-        exact Fin.elim0 j
-      · intro j
-        exact Fin.elim0 j
-      · intro j
-        exact Fin.elim0 j
-  | succ r ih =>
-      let hK : aa G k r :=
-        C.ed
-      let upper : af G k (r + 1) :=
-        C.bl
-      have wF : 0 ≤ ε (Fin.last r) :=
-        hε (Fin.last r)
-      have Bs :
-          (Fintype.card (al k (r + 1)) : ℝ) <
-            (m (Fin.last r) : ℝ) *
-              (ε (Fin.last r)) ^ 2 := by
-        have hb := gS (Fin.last r)
-        change
-          (Fintype.card (al k (r + 1)) : ℝ) <
-            (m (Fin.last r) : ℝ) *
-              (ε (Fin.last r)) ^ 2 at hb
-        exact hb
-      obtain ⟨n, lower, hn, zk,
-          zl, xx⟩ :=
-        eP
-          hK.bl upper wF Bs
-      let eE : aa G k r :=
-        hK.bb lower
-      have xy :
-          eE.db hK := by
-        exact aa.oD
-          hK lower zk
-      let εlower : cV r :=
-        fun j => ε j.castSucc
-      let z1 : dr r :=
-        fun j => m j.castSucc
-      have uf : ∀ j, 0 ≤ εlower j := by
-        intro j
-        exact hε j.castSucc
-      have z2 :
-          fv k r εlower z1 := by
-        intro j
-        exact gS j.castSucc
-      obtain ⟨aA⟩ :=
-        ih eE εlower z1 uf z2
-      let aQ : aa G k (r + 1) :=
-        aA.aQ.eF upper
-      let steps : gC (r + 1) :=
-        fun j =>
-          Fin.lastCases n aA.steps j
-      have rN :
-          aA.aQ.bl = lower := by
-        calc
-          aA.aQ.bl =
-              eE.bl :=
-            aA.uQ
-          _ = lower :=
-            aa.eY
-              hK lower
-      refine ⟨{
-        steps := steps
-        aQ := aQ
-        dy := ?_
-        uQ := ?_
-        sL := ?_
-        regular := ?_
-        aO := ?_ }⟩
-      · have z3 :
-            aA.aQ.db hK :=
-          aa.db.trans
-            aA.dy xy
-        have Cd :
-            aQ.db
-              (hK.eF upper) := by
-          exact aa.g3
-            z3
-            (aP.refl upper)
-        simpa [aQ, hK, upper] using Cd
-      · simp [aQ, upper]
-      · intro j
-        cases j using Fin.lastCases with
-        | last =>
-            simpa [steps] using hn
-        | cast i =>
-            simpa [steps] using
-              aA.sL i
-      · intro j
-        cases j using Fin.lastCases with
-        | last =>
-            have m5 :
-                a3
-                  aA.aQ.bl
-                  upper (ε (Fin.last r)) := by
-              rw [rN]
-              exact zl
-            simp only [aQ,
-              aa.aT,
-              aa.dB,
-              Fin.succ_last]
-            change
-              @a3
-                G _ _ k r
-                (aA.aQ.partition
-                  (Fin.last r))
-                upper (ε (Fin.last r))
-            exact m5
-        | cast i =>
-            have hi := aA.regular i
-            simp only [aQ, εlower,
-              aa.aT,
-              Fin.succ_castSucc]
-            change
-              @a3
-                G _ _ k i.1
-                (aA.aQ.partition i.castSucc)
-                (aA.aQ.partition i.succ)
-                (ε i.castSucc)
-            exact hi
-      · intro j
-        cases j using Fin.lastCases with
-        | last =>
-            intro e
-            have m5 :
-                ab.aO
-                    (aA.aQ.bl e) ≤
-                  (2 ^ (r + 1)) ^ n *
-                    ab.aO
-                      (hK.bl e) := by
-              rw [rN]
-              exact xx e
-            simp only [aQ, steps,
-              aa.aT,
-              Fin.lastCases_last]
-            change al k r at e
-            change
-              ab.aO
-                  (aA.aQ.partition
-                    (Fin.last r) e) ≤
-                (2 ^ (r + 1)) ^ n *
-                  ab.aO
-                    (C.partition
-                      (Fin.last r).castSucc e)
-            exact m5
-        | cast i =>
-            intro e
-            change al k i.1 at e
-            have hi := aA.aO i e
-            simp only [eE, hK,
-              aa.bb,
-              aa.ed,
-              Fin.lastCases_castSucc] at hi
-            simp only [aQ, steps, εlower, z1,
-              aa.aT,
-              Fin.lastCases_castSucc]
-            change
-              ab.aO
-                  (aA.aQ.partition
-                    i.castSucc e) ≤
-                (2 ^ (i.1 + 1)) ^
-                    aA.steps i *
-                  ab.aO
-                    (C.partition
-                      i.castSucc.castSucc e)
-            exact hi
 end av.ag
 end
 section
@@ -7967,12 +6291,6 @@ def bx
     (P : ab Ω) (x : Ω) :
     P.parts :=
   ⟨P.part x, P.part_mem.2 (Finset.mem_univ x)⟩
-@[simp]
-theorem BQ
-    {Ω : Type*} [Fintype Ω] [DecidableEq Ω]
-    (P : ab Ω) (x : Ω) :
-    (bx P x).1 = P.part x :=
-  rfl
 @[simp]
 theorem d6
     {Ω : Type*} [Fintype Ω] [DecidableEq Ω]
@@ -8247,40 +6565,6 @@ theorem ti
     (a : upper.parts) (x : Ω) :
     0 ≤ iY aQ an upper a x :=
   sq_nonneg _
-noncomputable def vw
-    {Ω : Type*} [Fintype Ω] [DecidableEq Ω]
-    (aQ an upper : ab Ω)
-    (a : upper.parts) (β : ℝ) :
-    Finset an.parts :=
-  nK an
-    (iY aQ an upper a) β
-noncomputable def qM
-    {Ω : Type*} [Fintype Ω] [DecidableEq Ω]
-    (aQ an upper : ab Ω)
-    (a : upper.parts) (β : ℝ) :
-    Finset Ω :=
-  d7 an
-    (vw aQ an upper a β)
-@[simp]
-theorem zm
-    {Ω : Type*} [Fintype Ω] [DecidableEq Ω]
-    (aQ an upper : ab Ω)
-    (a : upper.parts) (β : ℝ) (x : Ω) :
-    x ∈ qM aQ an upper a β ↔
-      β <
-        aq an
-          (iY aQ an upper a) x := by
-  exact
-    jU an
-      (iY aQ an upper a) β x
-noncomputable def mK
-    {Ω : Type*} [Fintype Ω] [DecidableEq Ω]
-    (aQ an upper : ab Ω)
-    (a : upper.parts) (α β : ℝ) :
-    Finset Ω :=
-  cO an
-      (aB upper a) α ∪
-    qM aQ an upper a β
 theorem qN
     {Ω : Type*} [Fintype Ω] [DecidableEq Ω]
     (A B C : Finset Ω) :
@@ -8309,21 +6593,6 @@ theorem qN
         by_cases CW : x ∈ A ∩ B <;> simp [CW])
       (by
         by_cases Er : x ∈ C <;> simp [Er])
-def w4
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k j : ℕ}
-    (P : af G k j)
-    (e : al k j) (x : Fin j → G) :
-    (P e).parts :=
-  bx (P e) x
-@[simp]
-theorem A8
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k j : ℕ}
-    (P : af G k j)
-    (e : al k j) (x : Fin j → G) :
-    (w4 P e x).1 = (P e).part x :=
-  rfl
 noncomputable def eK
     {G : Type*} [Fintype G] [DecidableEq G]
     {k j : ℕ}
@@ -8380,18 +6649,6 @@ theorem rt
       (fun x =>
         eK aQ an e upper a x ^ 2)
       b gr
-noncomputable def ps
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k j : ℕ}
-    (aQ an : af G k j)
-    (e : al k (j + 1))
-    (upper : ab (Fin (j + 1) → G))
-    (a : upper.parts) (α β : ℝ) :
-    Finset (Fin (j + 1) → G) :=
-  mK
-    (au aQ e)
-    (au an e)
-    upper a α β
 def oj
     {G : Type*} [Fintype G] [DecidableEq G]
     {k j : ℕ}
@@ -8483,31 +6740,6 @@ end
 section
 namespace av.ag
 open scoped BigOperators
-noncomputable def rO
-    {Ω : Type*} [Fintype Ω] [DecidableEq Ω]
-    (k3 jH : ab Ω)
-    (b : k3.parts) :
-    jH.parts :=
-  bx jH
-    (k3.representative b)
-noncomputable def ro
-    {Ω : Type*} [Fintype Ω] [DecidableEq Ω]
-    (k3 jH : ab Ω)
-    (a : jH.parts) :
-    Finset k3.parts := by
-  classical
-  exact
-    (Finset.univ : Finset k3.parts).filter fun b =>
-      rO k3 jH b = a
-@[simp]
-theorem zE
-    {Ω : Type*} [Fintype Ω] [DecidableEq Ω]
-    (k3 jH : ab Ω)
-    (a : jH.parts) (b : k3.parts) :
-    b ∈ ro k3 jH a ↔
-      rO k3 jH b = a := by
-  classical
-  simp [ro]
 namespace ak
 noncomputable def cz
     {G : Type*} [Fintype G] [DecidableEq G]
@@ -8560,9 +6792,6 @@ end
 section
 namespace av.ag
 open scoped BigOperators
-noncomputable local instance yM
-    (k r : ℕ) : LinearOrder (al k r) :=
-  (Fintype.equivFin (al k r)).linearOrder
 namespace aE
 end aE
 def lh
@@ -8633,76 +6862,6 @@ theorem ke
       mm (rP s F)
     _ = ∑ i ∈ s, mean (aN (F i)) :=
       x3 s (fun i => aN (F i))
-noncomputable def kg
-    {Ω : Type*} [Fintype Ω] [DecidableEq Ω]
-    (aQ an upper : ab Ω)
-    (α β : ℝ) : Finset Ω := by
-  classical
-  exact
-    (Finset.univ : Finset upper.parts).biUnion fun a =>
-      a.1 ∩ mK aQ an upper a α β
-@[simp]
-theorem tU
-    {Ω : Type*} [Fintype Ω] [DecidableEq Ω]
-    (aQ an upper : ab Ω)
-    (α β : ℝ) (x : Ω) :
-    x ∈ kg aQ an upper α β ↔
-      x ∈ mK aQ an upper
-        (bx upper x) α β := by
-  classical
-  constructor
-  · intro hx
-    rw [kg] at hx
-    obtain ⟨a, _ha, wG⟩ :=
-      Finset.mem_biUnion.mp hx
-    have Ce : x ∈ a.1 :=
-      (Finset.mem_inter.mp wG).1
-    have ug :
-        x ∈ mK
-          aQ an upper a α β :=
-      (Finset.mem_inter.mp wG).2
-    have iX :
-        bx upper x = a :=
-      (d6 upper x a).2 Ce
-    simpa [iX] using ug
-  · intro ug
-    rw [kg]
-    apply Finset.mem_biUnion.mpr
-    refine
-      ⟨bx upper x, Finset.mem_univ _, ?_⟩
-    apply Finset.mem_inter.mpr
-    exact
-      ⟨upper.mem_part (Finset.mem_univ x), ug⟩
-noncomputable def nM
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k j : ℕ}
-    (aQ an : af G k j)
-    (e : al k (j + 1))
-    (upper : ab (Fin (j + 1) → G))
-    (α β : ℝ) :
-    Finset (Fin (j + 1) → G) :=
-  kg
-    (au aQ e)
-    (au an e)
-    upper α β
-@[simp]
-theorem q6
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k j : ℕ}
-    (aQ an : af G k j)
-    (e : al k (j + 1))
-    (upper : ab (Fin (j + 1) → G))
-    (α β : ℝ) (x : Fin (j + 1) → G) :
-    x ∈ nM
-        aQ an e upper α β ↔
-      x ∈ ps
-        aQ an e upper
-          (bx upper x) α β := by
-  exact
-    tU
-      (au aQ e)
-      (au an e)
-      upper α β x
 abbrev ct (r : ℕ) :=
   (j : Fin r) ×' al r (j.1 + 1)
 theorem qO
@@ -8796,42 +6955,6 @@ section
 namespace av.ag
 open scoped BigOperators
 namespace ak
-noncomputable def qv
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k r : ℕ}
-    (P : ak G k r)
-    (j : Fin r)
-    (e : al k (j.1 + 1))
-    (α β : ℝ) :
-    Finset (Fin (j.1 + 1) → G) :=
-  nM
-    (P.aQ.partition j.castSucc)
-    (P.an.partition j.castSucc)
-    e
-    (P.an.partition j.succ e)
-    α β
-@[simp]
-theorem v5
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k r : ℕ}
-    (P : ak G k r)
-    (j : Fin r)
-    (e : al k (j.1 + 1))
-    (α β : ℝ) (x : Fin (j.1 + 1) → G) :
-    x ∈ P.qv j e α β ↔
-      x ∈ ps
-        (P.aQ.partition j.castSucc)
-        (P.an.partition j.castSucc)
-        e
-        (P.an.partition j.succ e)
-        (bx
-          (P.an.partition j.succ e) x)
-        α β := by
-  exact
-    q6
-      (P.aQ.partition j.castSucc)
-      (P.an.partition j.castSucc)
-      e (P.an.partition j.succ e) α β x
 end ak
 namespace ai
 end ai
@@ -8904,19 +7027,6 @@ theorem xB
   simp only [rank, wH]
   omega
 end aj
-def jj
-    {k r : ℕ}
-    (s : Finset (aj k r)) : Prop :=
-  ∀ (e : aj k r), e ∈ s →
-    ∀ (lx : 0 < e.ay.1)
-      (i : Fin (e.ay.1 + 1)),
-      e.boundary lx i ∈ s
-theorem rQ
-    {k r : ℕ} :
-    jj
-      (∅ : Finset (aj k r)) := by
-  intro e he
-  simp at he
 def bX
     {G : Type*} [Fintype G] [DecidableEq G]
     {k r : ℕ}
@@ -8968,24 +7078,6 @@ noncomputable def c9
     {C : aa G k r}
     (A : ai G k r C) : ℝ :=
   fw A Finset.univ
-@[simp]
-theorem xC
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k r : ℕ}
-    {C : aa G k r}
-    (A : ai G k r C)
-    (x : Fin k → G) :
-    bV A ∅ x = 1 := by
-  simp [bV]
-@[simp]
-theorem lZ
-    {G : Type*} [Fintype G] [DecidableEq G] [Nonempty G]
-    {k r : ℕ}
-    {C : aa G k r}
-    (A : ai G k r C) :
-    fw A ∅ = 1 := by
-  change mean (fun _x : Fin k → G => (1 : ℝ)) = 1
-  exact ml 1
 theorem qP
     {G : Type*} [Fintype G] [DecidableEq G]
     {k r : ℕ}
@@ -9007,19 +7099,6 @@ def aV
     (e : aj k r) :
     af G k e.ay.1 :=
   C.partition e.ay.castSucc
-noncomputable def tG
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k r : ℕ}
-    (P : ak G k r)
-    (A : ai G k r P.aQ)
-    (e : aj k r) : ℝ :=
-  eJ
-    (aV P.an e)
-    e.face
-    (aB
-      (P.aQ.partition e.ay.succ e.face)
-      (A.atom e.ay.succ e.face))
-    (aI e.face A.witness)
 theorem l8
     {G : Type*} [Fintype G] [DecidableEq G]
     {k r : ℕ}
@@ -9083,28 +7162,6 @@ theorem l8
         exact yN
       simpa [f, j, aV,
         aa.Dy] using CZ
-noncomputable def oY
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k r : ℕ}
-    (P : ak G k r)
-    (A : ai G k r P.aQ)
-    (s : Finset (aj k r)) : ℝ := by
-  classical
-  exact
-    if jj s then
-      fw A s
-    else
-      ∏ e ∈ s, tG P A e
-@[simp]
-theorem xD
-    {G : Type*} [Fintype G] [DecidableEq G] [Nonempty G]
-    {k r : ℕ}
-    (P : ak G k r)
-    (A : ai G k r P.aQ) :
-    oY P A ∅ = 1 := by
-  rw [oY,
-    if_pos rQ,
-    lZ]
 end av.ag
 end
 section
@@ -9296,28 +7353,6 @@ theorem l9
   · rw [dS,
       c0 _ _ hy,
       mul_zero, mul_zero]
-noncomputable def l0
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k r : ℕ}
-    (P : ak G k r)
-    (A : ai G k r P.an)
-    (s : Finset (aj k r)) : ℝ := by
-  classical
-  exact
-    if jj s then
-      fw A s
-    else
-      ∏ e ∈ s, bq P A e
-@[simp]
-theorem wd
-    {G : Type*} [Fintype G] [DecidableEq G] [Nonempty G]
-    {k r : ℕ}
-    (P : ak G k r)
-    (A : ai G k r P.an) :
-    l0 P A ∅ = 1 := by
-  rw [l0,
-    if_pos rQ,
-    lZ]
 end av.ag
 end
 section
@@ -11704,14 +9739,6 @@ abbrev eZ
       simp only [aj.rank]
       exact e.ay.2
     omega⟩
-@[simp]
-theorem xT
-    {k r : ℕ}
-    (e : aj k r)
-    (d : cd e.ay.1) :
-    (eZ e d).1 =
-      d.ay.1 + 1 :=
-  rfl
 abbrev de
     {k r : ℕ}
     (e : aj k r)
@@ -11798,16 +9825,6 @@ noncomputable def fl
     (x : Fin (e.ay.1 + 1) → G) :
     (aY C e).parts :=
   bx (aY C e) x
-@[simp]
-theorem w6
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k r : ℕ}
-    (C : aa G k r)
-    (e : aj k r)
-    (x : Fin (e.ay.1 + 1) → G) :
-    (fl C e x).1 =
-      (aY C e).part x :=
-  rfl
 noncomputable def gv
     {G : Type*} [Fintype G] [DecidableEq G]
     {k r : ℕ}
@@ -11828,18 +9845,6 @@ theorem qR
     gv C e x y ^ 2 =
       gv C e x y :=
   kS _ _ _
-@[simp]
-theorem wV
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k r : ℕ}
-    (C : aa G k r)
-    (e : aj k r)
-    (x : Fin (e.ay.1 + 1) → G) :
-    gv C e x x = 1 := by
-  apply dg
-  exact
-    (aY C e).mem_part
-      (Finset.mem_univ x)
 noncomputable def gU
     {G : Type*} [Fintype G] [DecidableEq G]
     {k r : ℕ}
@@ -12034,12 +10039,6 @@ def fF
     ⟨d.ay.1,
       lt_trans d.ay.2 e.ay.2⟩
   face := de e d
-@[simp]
-theorem vT
-    (e : aj k r)
-    (d : cd e.ay.1) :
-    (fF e d).rank = d.rank := by
-  rfl
 theorem lS
     (e : aj k r)
     (d : cd e.ay.1) :
@@ -12755,93 +10754,6 @@ end
 section
 namespace av.ag
 open scoped BigOperators
-noncomputable def ju
-    {G : Type*} [Fintype G] [DecidableEq G] [Nonempty G]
-    {k r : ℕ}
-    (C : aa G k r)
-    (ε : cV r)
-    (aG : dr r)
-    (hε : ∀ j, 0 ≤ ε j)
-    (gS :
-      fv k r ε aG) :
-    ly C ε aG :=
-  Classical.choice
-    (oW
-      C ε aG hε gS)
-noncomputable def f3
-    {G : Type*} [Fintype G] [DecidableEq G] [Nonempty G]
-    {k r : ℕ}
-    (initial : aa G k r)
-    (ε : ℕ → cV r)
-    (aG : ℕ → dr r)
-    (hε : ∀ n j, 0 ≤ ε n j)
-    (gS :
-      ∀ n, fv
-        k r (ε n) (aG n)) :
-    ℕ → aa G k r
-  | 0 => initial
-  | n + 1 =>
-      (ju
-        (f3
-          initial ε aG hε gS n)
-        (ε n) (aG n) (hε n) (gS n)).aQ
-@[simp]
-theorem we
-    {G : Type*} [Fintype G] [DecidableEq G] [Nonempty G]
-    {k r : ℕ}
-    (initial : aa G k r)
-    (ε : ℕ → cV r)
-    (aG : ℕ → dr r)
-    (hε : ∀ n j, 0 ≤ ε n j)
-    (gS :
-      ∀ n, fv
-        k r (ε n) (aG n)) :
-    f3
-      initial ε aG hε gS 0 = initial :=
-  rfl
-@[simp]
-theorem wg
-    {G : Type*} [Fintype G] [DecidableEq G] [Nonempty G]
-    {k r : ℕ}
-    (initial : aa G k r)
-    (ε : ℕ → cV r)
-    (aG : ℕ → dr r)
-    (hε : ∀ n j, 0 ≤ ε n j)
-    (gS :
-      ∀ n, fv
-        k r (ε n) (aG n))
-    (n : ℕ) :
-    f3
-        initial ε aG hε gS (n + 1) =
-      (ju
-        (f3
-          initial ε aG hε gS n)
-        (ε n) (aG n) (hε n) (gS n)).aQ :=
-  rfl
-def fR
-    {r : ℕ}
-    (aG : ℕ → dr r)
-    (j : Fin r) : ℕ → ℕ
-  | 0 => 1
-  | n + 1 =>
-      (2 ^ (j.1 + 1)) ^ (aG n j) *
-        fR aG j n
-@[simp]
-theorem v7
-    {r : ℕ}
-    (aG : ℕ → dr r)
-    (j : Fin r) :
-    fR aG j 0 = 1 :=
-  rfl
-@[simp]
-theorem v8
-    {r : ℕ}
-    (aG : ℕ → dr r)
-    (j : Fin r) (n : ℕ) :
-    fR aG j (n + 1) =
-      (2 ^ (j.1 + 1)) ^ (aG n j) *
-        fR aG j n :=
-  rfl
 end av.ag
 end
 section
@@ -15042,18 +12954,6 @@ theorem nQ
         (F (bE
           k j initialBound F n) : ℝ) :=
   rfl
-@[simp]
-theorem zH
-    (k j initialBound n : ℕ) (F : aF) :
-    gg
-        k j initialBound F n =
-      Nat.ceil
-          ((Fintype.card
-              (al k (j + 1)) : ℝ) /
-            (fx
-              k j initialBound F n) ^ 2) +
-        1 :=
-  rfl
 theorem k6
     (F : aF) (M : ℕ) :
     0 < dC F M := by
@@ -15268,43 +13168,8 @@ end av.ag
 end
 section
 namespace av.ag
-structure gx
-    (F : aF) (depth : ℕ) where
-  level : Fin (depth + 1) → ℕ
-  step_eq :
-    ∀ i : Fin depth,
-      level i.castSucc = F (level i.succ)
 namespace gx
 end gx
-def d2
-    (F : aF) (depth tk : ℕ) :
-    gx F depth where
-  level q :=
-    (F.toFun ^[depth - q.1]) tk
-  step_eq := by
-    intro i
-    have wL :
-        depth - i.castSucc.1 =
-          (depth - i.succ.1) + 1 := by
-      simp only [Fin.val_castSucc, Fin.val_succ]
-      omega
-    rw [wL]
-    exact Function.iterate_succ_apply'
-      F.toFun (depth - i.succ.1) tk
-@[simp]
-theorem jc
-    (F : aF) (depth tk : ℕ) :
-    (d2
-      F depth tk).level (Fin.last depth) =
-        tk := by
-  simp [d2]
-@[simp]
-theorem vU
-    (F : aF) (depth tk : ℕ) :
-    (d2
-      F depth tk).level 0 =
-        (F.toFun ^[depth]) tk := by
-  simp [d2]
 noncomputable def f4
     (k r : ℕ)
     (initialBound : Fin (r + 1) → ℕ)
@@ -15605,90 +13470,6 @@ theorem vf
         (bE
           k j initialBound F n) :=
   rfl
-noncomputable def e9
-    (k j : ℕ) (F : aF) : ℕ → ℕ
-  | 0 => md k j F 0
-  | M + 1 =>
-      max
-        (e9 k j F M)
-        (md k j F (M + 1))
-theorem me
-    (k j : ℕ) (F : aF) :
-    Monotone
-      (e9 k j F) := by
-  apply monotone_nat_of_le_succ
-  intro M
-  rw [e9]
-  exact le_max_left _ _
-noncomputable def dn
-    (k : ℕ) (F : aF) (M : ℕ) : ℕ → ℕ
-  | 0 => 0
-  | r + 1 =>
-      max
-        (dn k F M r)
-        (e9 k r F M)
-theorem ll
-    (k r : ℕ) (F : aF) :
-    Monotone
-      (fun M =>
-        dn
-          k F M r) := by
-  intro a b hab
-  induction r with
-  | zero =>
-      simp [dn]
-  | succ r ih =>
-      simp only [dn]
-      exact max_le_max ih
-        (me
-          k r F hab)
-noncomputable def nR
-    (k r : ℕ) (F : aF) :
-    aF where
-  toFun M :=
-    max (M + 1)
-      (max (F M)
-        (dn
-          k F M r))
-  monotone' := by
-    intro a b hab
-    exact max_le_max
-      (Nat.add_le_add_right hab 1)
-      (max_le_max
-        (F.monotone hab)
-        (ll
-          k r F hab))
-  nP := by
-    intro M
-    exact le_max_left _ _
-@[simp]
-theorem zb
-    (k r : ℕ) (F : aF) (M : ℕ) :
-    nR k r F M =
-      max (M + 1)
-        (max (F M)
-          (dn
-            k F M r)) :=
-  rfl
-noncomputable def ba
-    (k r : ℕ) (F : aF) :
-    ℕ → aF
-  | 0 => F
-  | gF + 1 =>
-      nR k r
-        (ba k r F gF)
-@[simp]
-theorem wX
-    (k r : ℕ) (F : aF) :
-    ba k r F 0 = F :=
-  rfl
-@[simp]
-theorem wY
-    (k r : ℕ) (F : aF) (gF : ℕ) :
-    ba k r F (gF + 1) =
-      nR k r
-        (ba k r F gF) :=
-  rfl
 def kx : (n : ℕ) → (Fin n → ℕ) → ℕ
   | 0, _ => 0
   | n + 1, value =>
@@ -15711,119 +13492,6 @@ theorem um :
               (fun q => value q.castSucc) i).trans
               (le_max_left _ _)
 namespace bg
-noncomputable def ky
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k r : ℕ}
-    {initial : aa G k r}
-    {initialBound : Fin (r + 1) → ℕ}
-    {F : aF}
-    {γ : Fin r → ℝ}
-    {gF : ℕ}
-    (R : bg
-      G k r initial initialBound
-        (ba k r F gF) γ)
-    (j : Fin r) :
-    gx
-      (ba k r F (gF + 1)) 1 :=
-  d2
-    (ba k r F (gF + 1)) 1
-    (c6
-      k r initialBound
-        (ba k r F gF)
-        R.index j)
-@[simp]
-theorem xV
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k r : ℕ}
-    {initial : aa G k r}
-    {initialBound : Fin (r + 1) → ℕ}
-    {F : aF}
-    {γ : Fin r → ℝ}
-    {gF : ℕ}
-    (R : bg
-      G k r initial initialBound
-        (ba k r F gF) γ)
-    (j : Fin r) :
-    (ky R j).level (Fin.last 1) =
-      c6
-        k r initialBound
-          (ba k r F gF)
-          R.index j := by
-  exact jc
-    (ba k r F (gF + 1)) 1
-    (c6
-      k r initialBound
-        (ba k r F gF)
-        R.index j)
-@[simp]
-theorem xW
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k r : ℕ}
-    {initial : aa G k r}
-    {initialBound : Fin (r + 1) → ℕ}
-    {F : aF}
-    {γ : Fin r → ℝ}
-    {gF : ℕ}
-    (R : bg
-      G k r initial initialBound
-        (ba k r F gF) γ)
-    (j : Fin r) :
-    (ky R j).level 0 =
-      ba k r F (gF + 1)
-        (c6
-          k r initialBound
-            (ba k r F gF)
-            R.index j) := by
-  simp [ky]
-noncomputable def lF
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k r : ℕ}
-    {initial : aa G k r}
-    {initialBound : Fin (r + 1) → ℕ}
-    {F : aF}
-    {γ : Fin r → ℝ}
-    {gF : ℕ}
-    (R : bg
-      G k r initial initialBound
-        (ba k r F gF) γ) : ℕ :=
-  kx (r + 1)
-    (eh
-      k r initialBound
-        (ba k r F gF)
-        R.index)
-noncomputable def se
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k r : ℕ}
-    {initial : aa G k r}
-    {initialBound : Fin (r + 1) → ℕ}
-    {F : aF}
-    {γ : Fin r → ℝ}
-    {gF : ℕ}
-    (R : bg
-      G k r initial initialBound
-        (ba k r F gF) γ) :
-    gx
-      (ba k r F (gF + 1)) r :=
-  d2
-    (ba k r F (gF + 1)) r
-    (lF R)
-@[simp]
-theorem w7
-    {G : Type*} [Fintype G] [DecidableEq G]
-    {k r : ℕ}
-    {initial : aa G k r}
-    {initialBound : Fin (r + 1) → ℕ}
-    {F : aF}
-    {γ : Fin r → ℝ}
-    {gF : ℕ}
-    (R : bg
-      G k r initial initialBound
-        (ba k r F gF) γ) :
-    (se R).level (Fin.last r) =
-      lF R := by
-  exact jc
-    (ba k r F (gF + 1)) r
-    (lF R)
 end bg
 end av.ag
 end
@@ -16089,26 +13757,6 @@ def oq
   | .node bW lower =>
       Fin.lastCases a9
         (ia bW lower)
-@[simp]
-theorem DS
-    {k r length : ℕ}
-    {aR : ℕ → ℝ}
-    {aG : ℕ → ℕ}
-    {next : Fin length → aJ k r}
-    (a9 : ℕ)
-    (ia :
-      ∀ i : Fin length,
-        (next i).br → Fin (r + 1) → ℕ)
-    (bW : Fin length)
-    (lower : (next bW).br) :
-    oq (aR := aR) (aG := aG)
-        a9 ia
-        (aJ.br.node
-          (aR := aR) (aG := aG)
-          bW lower) =
-      Fin.lastCases a9
-        (ia bW lower) :=
-  rfl
 @[simp]
 theorem lM
     {k r length : ℕ}
@@ -16441,36 +14089,6 @@ noncomputable def ez
   ey k r
     (i4
       initialBound F a9 bm n)
-@[simp]
-theorem zt
-    {k r : ℕ}
-    (initialBound : Fin (r + 2) → ℕ)
-    (F : aF)
-    (a9 : ℕ)
-    (bm :
-      (bound : Fin (r + 1) → ℕ) →
-        Bounded k r bound F (F a9)) :
-    fN
-      initialBound F a9 bm 0 = 1 :=
-  rfl
-@[simp]
-theorem zu
-    {k r : ℕ}
-    (initialBound : Fin (r + 2) → ℕ)
-    (F : aF)
-    (a9 : ℕ)
-    (bm :
-      (bound : Fin (r + 1) → ℕ) →
-        Bounded k r bound F (F a9))
-    (n : ℕ) :
-    fN
-        initialBound F a9 bm (n + 1) =
-      (2 ^ (r + 1)) ^
-          ez
-            initialBound F a9 bm n *
-        fN
-          initialBound F a9 bm n :=
-  rfl
 theorem j9
     {k r : ℕ}
     (initialBound : Fin (r + 2) → ℕ)
@@ -17600,18 +15218,6 @@ def nb
     aj k (n + 1) where
   ay := Fin.last n
   face := e
-@[simp]
-theorem zc
-    {k n : ℕ} (e : al k (n + 1)) :
-    (nb e).rank = n + 1 := by
-  rfl
-@[simp]
-theorem wh
-    {k n : ℕ} (e : al k (n + 1)) :
-    (nb e).ay.succ =
-      Fin.last (n + 1) := by
-  apply Fin.ext
-  rfl
 theorem jx
     {G : Type*} [Fintype G] [DecidableEq G]
     {k n : ℕ}
@@ -18941,13 +16547,6 @@ noncomputable def cx
     (x : b9 (fun _ : Fin (n + 1) => G) j) :
     Fin n → G :=
   fun t => x (finSuccAboveEquiv j t)
-@[simp]
-theorem vJ
-    {G : Type*} {n : ℕ} (j : Fin (n + 1))
-    (x : Fin (n + 1) → G) (t : Fin n) :
-    cx j (bO x j) t =
-      x (j.succAbove t) :=
-  rfl
 theorem nW
     {G : Type*} [AddCommGroup G] {n : ℕ}
     {x y : Fin (n + 1) → G}
@@ -19114,12 +16713,6 @@ theorem sh
         cS (r + 2) N
           (dI r N A q)
     simp
-@[simp]
-theorem Al
-    (r N : ℕ) [NeZero N] (A : Finset (ZMod N)) :
-    Fintype.card (dz r N A) =
-      A.card * N ^ r := by
-  simp [dz, ZMod.card]
 theorem n9
     (r N : ℕ) [NeZero N] (A : Finset (ZMod N))
     (bG :

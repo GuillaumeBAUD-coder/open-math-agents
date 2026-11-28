@@ -1,10 +1,12 @@
 import OMAReductions.R_Erdos910_erdos_910_parts_i_R1
 
--- Step Erdos910.erdos_910.parts.i.R1.H1: hypothesis H1 of reduction Erdos910.erdos_910.parts.i.R1.
--- Written with Claude Code (AI-assisted).
--- If X is compact, the half-open segment [a, b) ⊆ X is connected, nontrivial and not compact;
--- if X is not compact, the closed segment [a, b] ⊆ X is connected, nontrivial and compact.
--- Either way Y and X differ in compactness, so they are not homeomorphic.
+/-!
+Shorter compactness-transfer proof for the line-segment case of Erdos 910.
+Original construction by @luciusacarr, PR #26526, written with Claude Code.
+The construction is unchanged: use a half-open segment when X is compact,
+and a closed segment otherwise. @rodolfoquint shortened only the helper
+using Mathlib's invariance of compactness under a homeomorphism.
+-/
 
 namespace OMA.E910H1
 
@@ -13,15 +15,10 @@ variable {n : ℕ}
 theorem not_homeo_of_compact {X Y : Set (EuclideanSpace ℝ (Fin n))}
     (hY : IsCompact Y ↔ ¬ IsCompact X) : ¬ Nonempty (Y ≃ₜ X) := by
   rintro ⟨e⟩
-  by_cases hX : IsCompact X
-  · have hYc : ¬ IsCompact Y := fun h => (hY.mp h) hX
-    haveI : CompactSpace X := isCompact_iff_compactSpace.mp hX
-    haveI : CompactSpace Y := e.symm.compactSpace
-    exact hYc (isCompact_iff_compactSpace.mpr inferInstance)
-  · have hYc : IsCompact Y := hY.mpr hX
-    haveI : CompactSpace Y := isCompact_iff_compactSpace.mp hYc
-    haveI : CompactSpace X := e.compactSpace
-    exact hX (isCompact_iff_compactSpace.mpr inferInstance)
+  have h : IsCompact Y ↔ IsCompact X := by
+    rw [isCompact_iff_isCompact_univ (s := Y), isCompact_iff_isCompact_univ (s := X)]
+    simpa only [Set.preimage_univ] using (e.isCompact_preimage (s := Set.univ))
+  tauto
 
 end OMA.E910H1
 

@@ -78,14 +78,6 @@ theorem a_eq (n v : ℕ) (hv : v < 2 ^ 17) (hg : GoodB v)
   have hgood : Good v := (good_iff v hv).mpr hg
   rw [a, ← hcount, Nat.nth_count hgood]
 
-/-- Control: the first sixteen terms listed in the entry, `a(1..16)`, and `a(17..20)`. -/
-theorem first_terms :
-    a 1 = 0 ∧ a 2 = 4 ∧ a 3 = 16 ∧ a 4 = 20 ∧ a 5 = 32 ∧ a 6 = 36 ∧ a 7 = 48 ∧ a 8 = 52 ∧
-    a 9 = 64 ∧ a 10 = 68 ∧ a 11 = 80 ∧ a 12 = 84 ∧ a 13 = 96 ∧ a 14 = 100 ∧ a 15 = 112 ∧
-    a 16 = 116 ∧ a 17 = 256 ∧ a 18 = 260 ∧ a 19 = 272 ∧ a 20 = 276 := by
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
-    exact a_eq _ _ (by norm_num) (by decide) (by decide +kernel)
-
 theorem a_2049 : a 2049 = 65536 := a_eq _ _ (by norm_num) (by decide) (by decide +kernel)
 theorem a_2048 : a 2048 = 32628 := a_eq _ _ (by norm_num) (by decide) (by decide +kernel)
 theorem a_2033 : a 2033 = 32512 := a_eq _ _ (by norm_num) (by decide) (by decide +kernel)

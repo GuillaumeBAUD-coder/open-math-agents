@@ -42,8 +42,8 @@
    "date": "2026-11-28"
   },
   "oeis-a003319": {
-   "reason": "Sorry-free `result` proves that c(n) (number of indecomposable permutations of Fin n) equals U(n-2,0) for n >= 2, with U the same A370380 recurrence as the site's. The library's iff invariance condition is equivalent to the site's 'maps [0,j) into [0,j)' for bijections.",
-   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d/D5/S1/Recurrence/Algebraic/IndecomposablePermutationDoubleArray.lean",
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: The trureturing page points to D5/S1/Recurrence/Algebraic/IndecomposablePermutationDoubleArray.lean (commit 687878c). Its theorem 'result' proves c n = U (n-2) 0 for n >= 2, with c the count of indecomposable permutations (equivalent to the site's definition) and U literally A370380. It imports only Mathlib, and text search finds no sorry, axiom or native_decide.",
+   "source": "https://www.trureturing.org/research/oeis-a003319-kurkov-double-array/",
    "date": "2026-11-28"
   },
   "oeis-a188475": {
@@ -82,8 +82,8 @@
    "date": "2026-11-28"
   },
   "oeis-a228558": {
-   "reason": "Sorry-free `result_a228558`: 21 | 17^k+4^k and Prime((17^k+4^k)/21) imply Prime k. This is identical to the site's statement.",
-   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d/D5/S3/Arith/Congruence/PricePrimeQuotientExponent.lean",
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: The trureturing page points to D5/S3/Arith/Congruence/PricePrimeQuotientExponent.lean (commit 687878c). Its theorem result_a228558 proves: 21 | 17^k + 4^k and (17^k+4^k)/21 prime imply k prime, exactly the statement. It imports only Mathlib, and text search finds no sorry, axiom or native_decide.",
+   "source": "https://www.trureturing.org/research/oeis-a228558-price-seventeen-four-prime-exponent/",
    "date": "2026-11-28"
   },
   "oeis-a007820": {
@@ -577,8 +577,8 @@
    "date": "2026-11-28"
   },
   "oeis-a389536": {
-   "reason": "Sorry-free Lean file proves the unique series with x A(x) = A(x^2+2x^3), a(1)=1 (`generating_equation`, `generating_unique`) and `hanna_conjecture`: for n>1, a(n) == 2 mod 4 iff n=2^k+1, else 0 mod 4. The site's coefficient recursion defines the same series, so only a routine bridge is left.",
-   "source": "https://github.com/the-omega-institute/trureturing/blob/dev/D5/S1/Recurrence/Invariants/SubstitutionSquareCubeModFour.lean",
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: trureturing D5/S1/Recurrence/Invariants/SubstitutionSquareCubeModFour.lean (commit c5c1546; the URL is its blueprint page) proves hanna_conjecture: for n > 1, a(n) mod 4 = 2 iff n = 2^k+1, and a(n) mod 4 = 0 otherwise. Its a satisfies xA = A(x^2+2x^3) with a(1) = 1, the same sequence as the site's b-recursion (index shift checked). Mathlib-only imports, no sorry, axiom or native_decide.",
+   "source": "https://the-omega-institute.github.io/trureturing-mdbook/Blueprint/D5/S1/Recurrence/Invariants/SubstitutionSquareCubeModFour.html",
    "date": "2026-11-28"
   },
   "oeis-a380060": {
@@ -887,8 +887,8 @@
    "date": "2026-11-28"
   },
   "oeis-a233123": {
-   "reason": "Sorry-free result proves Barker's g.f. (1-4x)(1-12x)A(x) = x(1-8x) (with the order-3 recurrence lemma) for the literal normalized 2-column strip count; the site's recurrence and closed form 6a(n+1) = 4^n(3^(n+1)+3) follow, and the site's transfer-count encoding matches numerically (1, 8, 80, 896, ...), leaving only an encoding bridge.",
-   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S3/Combinatorics/TraceAvoidingArrays/HardinA233123SquareStrip.lean",
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: D5/S3/Combinatorics/TraceAvoidingArrays/HardinA233123SquareStrip.lean (commit 687878c; no sorry, axiom or native_decide in it or its 8 local imports) proves Barker's g.f. X(1-8X)/((1-4X)(1-12X)) for the literal normalized 2-column arrays. I checked that the site's 72-state transfer definition matches 6a(n+1) = 4^n(3^(n+1)+3) and the recurrence for n < 200, which with the order-<=72 linear recurrence makes them equal for all n.",
+   "source": "https://www.trureturing.org/research/hardin233123/",
    "date": "2026-11-28"
   },
   "oeis-a005590": {
@@ -2382,8 +2382,8 @@
    "date": "2026-11-28"
   },
   "oeis-a368635": {
-   "reason": "google-deepmind/formal-conjectures marks its Lean statement of this conjecture 'research solved' at the pinned commit 9097e2f: FC 368635.lean `conjecture`: Odd a(n) iff n=2^k-1, matching statements/oeis-a368635.lean; Lean proof by Wentao Li, lean-oeis-proofs (github.com/VictorLiwentao/lean-oeis-proofs).",
-   "source": "https://github.com/google-deepmind/formal-conjectures/tree/9097e2f90e66d2f6244209cb1c07f7120d17ec53/FormalConjectures/OEIS",
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: VictorLiwentao/lean-oeis-proofs A368635.lean (commit 9d4a205) defines a by a(n) = (5 if n even else 1) * conv(a)(n-1), shown equivalent (is_oeis_iff_coeff, coeff_eq_recurrence) to A = 1 + 3xA^2 - 2xA(-x)^2. It proves a_odd_iff_mersenne: a n odd iff n+1 is a power of 2. The site's coeff obeys the same recurrence, so this is the statement; Mathlib-only imports, no sorry, axiom or native_decide.",
+   "source": "https://github.com/VictorLiwentao/lean-oeis-proofs/blob/9d4a205da2a4094800f9c600a7b0b5223eda51ce/LeanOeisProofs/NewFormalization/A368635.lean",
    "date": "2026-11-28"
   },
   "oeis-a265225": {
@@ -4754,6 +4754,671 @@
   "oeis-a309515": {
    "reason": "Proved in an isitsolved.com journal preprint (iis:2611.00231), checked against the exact statement: Row A309515: Barker's g.f. is proved from an exact partition g.f., and his recurrence is proved for n > 18 (RG has degree 16). The site states exactly this g.f. and recurrence.",
    "source": "https://isitsolved.com/journal",
+   "date": "2026-11-28"
+  },
+  "AlspachConjecture.alspach_conjecture": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Bryant, Horsley and Pettersson (Proc. London Math. Soc. 108 (2014), doi 10.1112/plms/pdt051) prove that K_n with n odd decomposes into cycles of any lengths 3<=m_i<=n summing to C(n,2), which is exactly the site's statement (the file itself marks it research solved).",
+   "source": "https://arxiv.org/abs/1204.3709",
+   "date": "2026-11-28"
+  },
+  "AlspachConjecture.alspach_conjecture.R1.H3": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: H3 asks for a decomposition of K_n (n odd, n>=15) for length lists satisfying extra ancestor-list conditions; this is a special case of the odd-order theorem proved by Bryant-Horsley-Pettersson (Proc. LMS 2014), so it follows at once.",
+   "source": "https://arxiv.org/abs/1204.3709",
+   "date": "2026-11-28"
+  },
+  "AlspachConjecture.alspach_conjecture.variants.even.R1.H2": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: H2 is the even case of Alspach (K_n minus any perfect matching, n even >=4) restricted to lists with an odd length; BHP14 prove the even case for all admissible lists (all perfect matchings of K_n are equivalent under vertex permutations), so it follows at once.",
+   "source": "https://arxiv.org/abs/1204.3709",
+   "date": "2026-11-28"
+  },
+  "AlspachConjecture.alspach_conjecture.variants.even.R2.H2": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: H2 is an implication whose conclusion is that every admissible list is realized by K_n minus some perfect matching (n even >=15); that conclusion is BHP14's even-order theorem, so H2 holds outright.",
+   "source": "https://arxiv.org/abs/1204.3709",
+   "date": "2026-11-28"
+  },
+  "AlspachConjecture.alspach_conjecture.variants.even.R2.H3.R1.H1": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Its conclusion is that an admissible list (with further restrictions) is realized by K_n minus some perfect matching for even n>=15, which is a special case of BHP14's even-order theorem, so it follows at once.",
+   "source": "https://arxiv.org/abs/1204.3709",
+   "date": "2026-11-28"
+  },
+  "AlspachConjecture.alspach_conjecture.variants.even.R3.H1": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: The graph is K_q pulled back along Prod.fst on Fin q x Bool, i.e. the cocktail-party graph K_{2q} minus a perfect matching, with lengths 3..2q summing to C(2q,2)-q; BHP14's even-order theorem gives the decomposition (via the obvious isomorphism), so it follows at once.",
+   "source": "https://arxiv.org/abs/1204.3709",
+   "date": "2026-11-28"
+  },
+  "AlspachConjecture.alspach_conjecture.variants.long_cycles": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: The statement is the odd-order Alspach theorem restricted to lengths >= (n+5)/2, a special case of the result proved by Bryant-Horsley-Pettersson (Proc. LMS 2014).",
+   "source": "https://arxiv.org/abs/1204.3709",
+   "date": "2026-11-28"
+  },
+  "AlspachConjecture.alspach_conjecture.variants.long_cycles.R1.H2.R1.H2": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: H2 asks for a decomposition of K_n (n odd >=13) into long cycles with a lower bound on their number; this is a special case of the odd-order theorem proved by Bryant-Horsley-Pettersson (Proc. LMS 2014).",
+   "source": "https://arxiv.org/abs/1204.3709",
+   "date": "2026-11-28"
+  },
+  "ArtinPrimitiveRootsConjecture.conditional_artin_primitive_roots.parts.i": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Lenstra-Moree-Stevenhagen (the linked paper) state Hooley's 1967 theorem: under RH for the Dedekind zeta functions of Q(zeta_k, a^(1/k)) (exactly HooleyHypothesis), the density of primes with a as primitive root equals E(a)A(a), which is positive for a not a square and a != -1 (A(a)>0, E(a) nonzero, density nonnegative).",
+   "source": "https://arxiv.org/html/1112.4816v4",
+   "date": "2026-11-28"
+  },
+  "ArtinPrimitiveRootsConjecture.conditional_artin_primitive_roots.variants.part_ii_power_squarefreePart_modeq_one": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: For a=b^m with m odd maximal and squarefree part of b = D = 1 mod 4, Hooley's theorem under the same Kummer-field RH gives density A(a)E(a); eq. (1.2) gives A(a)=A*prod_{p|m} p(p-2)/(p^2-p-1) and eq. (1.4) of the linked paper gives E(a)=1-prod_{p|D,p|m}(-1/(p-2))prod_{p|D,p∤m}(-1/(p^2-p-1)), which matches the site's entanglementFactor term by term.",
+   "source": "https://arxiv.org/abs/1112.4816",
+   "date": "2026-11-28"
+  },
+  "Arxiv.2605.02731.dean_conjecture.variants.six_le": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Luo-Ma-Zhao (arXiv 2601.13552) prove that every graph with minimum degree >= k >= 6 has cycles of every even residue r mod k (exceptions only miss r=2), in particular r=0, which is exactly the statement; it is a preprint, but the later independent paper arXiv 2605.02731 (the site's own source) accepts it and leaves only k=5 open.",
+   "source": "https://arxiv.org/abs/2601.13552",
+   "date": "2026-11-28"
+  },
+  "BollobasEldridgeCatlinConjecture.bollobas_eldridge_catlin_conjecture.variants.maxDegree_three_large_n": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Csaba-Shokoufandeh-Szemeredi (DIMACS TR 99-58, Combinatorica 23 (2003)) prove the conjecture when Delta(G1)=3 for n large. The remaining cases Delta(G1)<=2 follow for every n from Aigner-Brandt 1993 (Delta1=2 needs Delta2<=(n-2)/3) and Sauer-Spencer (Delta1<=1), both published, so the statement with Delta(G1)<=3 follows at once.",
+   "source": "https://archive.dimacs.rutgers.edu/TechnicalReports/abstracts/1999/99-58.html",
+   "date": "2026-11-28"
+  },
+  "CarmichaelTotient.carchimaelTotient_bound": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Ford's Theorem 6 (Ramanujan J. 1998, linked PDF): if a totient value m has multiplicity 1 then m >= 10^(10^10). A counterexample n would make phi(n) such a value, and phi(n) <= n, so every 0<n<10^(10^10) has another m with phi(m)=phi(n).",
+   "source": "https://www.ford126.web.illinois.edu/wwwpapers/totients.pdf",
+   "date": "2026-11-28"
+  },
+  "CongruentNumber.Tunnell_odd": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Tunnell, Invent. Math. 72 (1983) (the DOI) proves unconditionally, using Coates-Wiles, that an odd squarefree congruent n satisfies #{n=2x^2+y^2+32z^2} = (1/2)#{n=2x^2+y^2+8z^2}, which is exactly the statement.",
+   "source": "https://doi.org/10.1007/BF01389327",
+   "date": "2026-11-28"
+  },
+  "ConjugacyClassSizes.conjClassSizes_iff_sym_three_solvable": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: The link is J. P. Zhang, 'Finite groups with many conjugate elements', J. Algebra 170 (1994) 608-624. It proves that a nontrivial finite solvable group whose conjugacy classes have pairwise distinct sizes is isomorphic to S_3, which is exactly the statement (also proved by Knorr-Lempken-Thielcke 1995).",
+   "source": "https://www.sciencedirect.com/science/article/pii/S0021869384713561",
+   "date": "2026-11-28"
+  },
+  "Constant14.c14_ge_4": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Tao's page links Lin-Rado (J. ACM 1965), which determines every 3-state 2-symbol machine (BB(3)), so ZFC decides halting for all machines with <=3 states; with the known independent machines (the set is nonempty), C14 >= 4.",
+   "source": "https://teorth.github.io/optimizationproblems/constants/14a.html",
+   "date": "2026-11-28"
+  },
+  "Constant14.c14_ge_5": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Tao's page links Brady (Math. Comp. 1983), which determines BB(4) and settles every 4-state machine (since also re-verified in the Coq development of the BB(5) paper), so ZFC decides all machines with <=4 states and C14 >= 5.",
+   "source": "https://teorth.github.io/optimizationproblems/constants/14a.html",
+   "date": "2026-11-28"
+  },
+  "Constant14.c14_lower_bound": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Tao's page links Blanchard et al. (arXiv 2509.12337), whose Coq-verified determination of BB(5) decides every machine with <=5 states by arithmetic arguments that go through in ZFC, so C14 >= 6; the site's own file marks this research solved.",
+   "source": "https://teorth.github.io/optimizationproblems/constants/14a.html",
+   "date": "2026-11-28"
+  },
+  "Constant14.c14_le_432": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: The reported page only cites Wade's unverified 2025 compiler output for 432. But Glazer's K230 has an axiom-free Rocq proof that a 230-state 2-symbol machine halts iff ZFC is inconsistent (the site's own c14_upper_bound, research solved), and by Goedel II this gives C14 <= 230 <= 432.",
+   "source": "https://github.com/elliotglazer/k230-rocq",
+   "date": "2026-11-28"
+  },
+  "Constant14.c14_upper_bound_improved": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: The repo has a mm0-c-checked proof in PA (Metamath Zero, no added axioms) that a fixed machine with 215 working states and a separate halt state halts from the blank tape iff ZFC proves falsity. With ZFC consistent and Goedel II, ZFC can neither prove nor refute its halting, so C14 <= 215 < 230. Caveat: this is a recent unrefereed formal development whose 23-file MM0 spec I did not audit.",
+   "source": "https://github.com/elliotglazer/k215-pa",
+   "date": "2026-11-28"
+  },
+  "Constant7b.c7b_upper_bound": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Tao's page links Bruiltet (Acta Arith. 104 (2002) 243-281): h(p/q) >= 10^75 implies |Gamma(1/4)-p/q| > (qe)^(-10^143). So Gamma(1/4) is not LiouvilleWith p for any p > 10^143, and the site's irrationalityExponent (sSup of such p) is <= 10^143.",
+   "source": "https://teorth.github.io/optimizationproblems/constants/7b.html",
+   "date": "2026-11-28"
+  },
+  "CramerConjecture.cramer_conjecture.variants.baker_harman_pintz": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: The PDF is Baker-Harman-Pintz, Proc. LMS 83 (2001); Theorem 1 says [x - x^0.525, x] contains a prime for x > x0. Taking x about p_n + 2p_n^0.525 gives p_{n+1}-p_n = O(p_n^0.525), which is the statement.",
+   "source": "https://www.cs.umd.edu/~gasarch/BLOGPAPERS/BakerHarmanPintz.pdf",
+   "date": "2026-11-28"
+  },
+  "EllipticCurveRank.RatEllipticCurve._08375_le_density_rank_zero_one": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Bhargava-Shankar (arXiv 1312.7859), Theorem 4, proved in Section 6: for curves y^2=x^3+Ax+B with the p^4|A, p^6|B minimality condition, ordered by max(4|A|^3,27B^2), the lower density with rank 0 or 1 is >= .5501*7/8+.4499*19/24 >= .8375. This matches the site's liminf statement.",
+   "source": "https://arxiv.org/html/1312.7859",
+   "date": "2026-11-28"
+  },
+  "EllipticCurveRank.RatEllipticCurve.avg_rank_lt_0885": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Bhargava-Shankar (arXiv 1312.7859), Theorem 3, shows the limsup of the average rank over the same height ordering is at most .88497 < .885. This is exactly the statement.",
+   "source": "https://arxiv.org/html/1312.7859",
+   "date": "2026-11-28"
+  },
+  "Erdos1.erdos_1.variants.least_N_9": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Borwein-Mossinghoff, 'Newman polynomials with prescribed vanishing and integer sets with distinct subset sums' (Math. Comp. 72 (2003), the linked PDF), show the Conway-Guy sequence gives the optimal largest element for m <= 9. For m=9 that is 161, so 161 is the least N admitting a 9-element sum-distinct subset of [1,N].",
+   "source": "https://www.cecm.sfu.ca/~pborwein/PAPERS/P170.pdf",
+   "date": "2026-11-28"
+  },
+  "Erdos1013.erdos_1013.variants.upper": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Hefty-Horn-King-Pfender (arXiv 2510.19718, v3 Feb 2026) prove R(3,k) >= (1/2+o(1))k^2/log k. The resulting triangle-free graphs have chi >= n/alpha ~ K on n ~ (2+o(1))K^2 log K vertices, and deleting vertices lowers chi one step at a time, so h3(K) <= (2+o(1))K^2 log K. It is a preprint, but it is the source the site itself cites for this variant.",
+   "source": "https://arxiv.org/html/2510.19718v3",
+   "date": "2026-11-28"
+  },
+  "Erdos1057.erdos_1057.variants.lichtman_lower_bound": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Lichtman (arXiv 2211.09641), Corollary 1.2: there are at least x^{0.3389...} Carmichael numbers up to x for x large. The exponent is .4736(1-15/(32 sqrt e)) = 0.33895 > 0.3389, which gives the strict inequality eventually.",
+   "source": "https://arxiv.org/abs/2211.09641",
+   "date": "2026-11-28"
+  },
+  "Erdos1081.erdos_1081": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Odoni (Acta Arith. 39 (1981) 145-162, the linked PDF), Theorem 1: the number of n <= x that are sums of two positive squarefull numbers exceeds a x (log x)^{-1/2} exp(b log log x / log log log x) for large x. So A(x)/(x/sqrt(log x)) -> infinity and no c>0 gives the asymptotic.",
+   "source": "https://matwbn.icm.edu.pl/ksiazki/aa/aa39/aa3925.pdf",
+   "date": "2026-11-28"
+  },
+  "Erdos1100.erdos_1100.variants.normal_order": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Erdos-Tenenbaum (J. Number Theory 31 (1989), the linked PDF), Corollaire 2 (1.12): (log n)^{log3-1+o(1)} < f(n) < (log n)^{log2-1/2+o(1)} for almost all n (density 1), where f(n) counts coprime consecutive divisor pairs, i.e. tauPerp. This is exactly the statement.",
+   "source": "https://www.renyi.hu/~p_erdos/1989-37.pdf",
+   "date": "2026-11-28"
+  },
+  "Erdos114.erdos_114.variants.large_n": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Tao (arXiv 2512.12455), building on Fryntov-Nazarov, proves the Erdos-Herzog-Piranian conjecture for all sufficiently large n: the lemniscate {|p|=1} of a monic degree-n polynomial is at most as long as that of z^n-1. This is exactly the statement (length = 1-dim Hausdorff measure). It is a recent preprint.",
+   "source": "https://arxiv.org/abs/2512.12455",
+   "date": "2026-11-28"
+  },
+  "Erdos1162.erdos_1162.variants.roney_dougal_tracey": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Roney-Dougal and Tracey (arXiv 2503.05416) prove that S_n has 2^{n^2/16+o(n^2)} subgroups, settling Pyber's conjecture. That is log_2 f(n) ~ n^2/16, exactly the statement.",
+   "source": "https://arxiv.org/abs/2503.05416",
+   "date": "2026-11-28"
+  },
+  "Erdos1182.erdos_1182.variants.small_values.R1.H2.R1.H1.R1.H3": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: I decoded the bit patterns. For n=9 the complement is the 9-edge graph drawn first in the 'r(K3,H)=17' list on p.17 of Brandt-Brinkmann-Harmuth (EJC 5 (1998) R7); for n=10 it is the first of the two 12-edge complements on p.18 with r(K3,H)=19 and 33 edges (I checked both isomorphisms by hand). BBH's computer-assisted result r(K3,G)=2n-1 is exactly 'every triangle-free graph on 2n-1 vertices has G in its complement'.",
+   "source": "https://ftp.gwdg.de/pub/misc/EMIS/journals/EJC/Volume_5/PDF/v5i1r7.pdf#page=17",
+   "date": "2026-11-28"
+  },
+  "Erdos131.erdos_131.variants.pham_zakharov": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Pham-Zakharov (arXiv 2410.14624) show the largest non-averaging subset of [N] has size N^{1/4+o(1)}. A non-dividing set is non-averaging (if sum S = |S| a then a divides sum S), so F(N) <= N^{1/4+o(1)}, which is the statement.",
+   "source": "https://arxiv.org/abs/2410.14624",
+   "date": "2026-11-28"
+  },
+  "Erdos184.erdos_184.variants.bucic_montgomery": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Bucic-Montgomery (arXiv 2211.07689) prove that every n-vertex graph decomposes into O(n log* n) cycles and edges. The site asks only for a bound f = O(n log* n) on the size of an edge-disjoint cycle/edge decomposition, so this is exactly the statement.",
+   "source": "https://arxiv.org/abs/2211.07689",
+   "date": "2026-11-28"
+  },
+  "Erdos186.erdos_186.variants.pham_zakharov": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Pham-Zakharov (arXiv 2410.14624) prove that the largest non-averaging subset of {1..N} (no element is the average of >= 2 others) has size N^{1/4+o(1)}, which gives the stated bound for every eps > 0.",
+   "source": "https://arxiv.org/abs/2410.14624",
+   "date": "2026-11-28"
+  },
+  "Erdos19.erdos_19.variants.large_n": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Kang-Kelly-Kuhn-Methuku-Osthus (Annals of Math. 198 (2023), the link) prove the Erdos-Faber-Lovasz conjecture for all large n: a union of n cliques of size n that pairwise share at most one vertex has chromatic number n. That is exactly the EFLConfig statement.",
+   "source": "https://annals.math.princeton.edu/2023/198-2/p02",
+   "date": "2026-11-28"
+  },
+  "Erdos207.erdos_207": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Kwan-Sah-Sawhney-Simkin (arXiv 2201.04554, Annals 2024) prove Erdos's 1973 conjecture: for every g and every large n = 1,3 mod 6 there is a Steiner triple system in which any j triples (2<=j<=g) span at least j+3 points. This matches IsBlockDesign 2 3 plus the girth condition.",
+   "source": "https://arxiv.org/abs/2201.04554",
+   "date": "2026-11-28"
+  },
+  "Erdos210.erdos_210.variants.green_tao": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Green-Tao, 'On sets defining few ordinary lines' (arXiv 1208.4714, DCG 2013), prove that for n large every set of n non-collinear points in the plane spans at least n/2 ordinary lines. So f(n) >= n/2, i.e. n <= 2 f(n).",
+   "source": "https://arxiv.org/abs/1208.4714",
+   "date": "2026-11-28"
+  },
+  "Erdos233.erdos_233.variants.upper_bound_unconditional": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: The remark announces Alpoge's proof of RH/GRH, whose Lean formalization is mirrored at leanprover-community/riemann-hypothesis. There Comparator checks that src/Main.lean proves Mathlib's RiemannHypothesis using only propext, Quot.sound and Classical.choice (I did not rebuild it). With RH, Cramer's 1936 theorem gives sum_{p_n<=x} d_n^2 << x log^3 x, i.e. sum_{n<N} d_n^2 = O(N log^4 N), the statement.",
+   "source": "https://alpo.ge/remark.pdf",
+   "date": "2026-11-28"
+  },
+  "Erdos387.erdos_387": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Bui-Naprienko-Pratt-Zaharescu (arXiv 2605.21221), Corollary 1.7: for every fixed c>0 there is C(n,k) with 1<=k<n having no divisor in (cn,n]. This is exactly the negated statement. It is a recent preprint by established authors.",
+   "source": "https://arxiv.org/abs/2605.21221",
+   "date": "2026-11-28"
+  },
+  "Erdos402.erdos_402": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: erdosproblems.com/402 records that Graham's conjecture (some a,b in A with gcd(a,b) <= a/|A|) was proved for all finite sets by Balasubramanian-Soundararajan (Duke Math. J. 1996), after Szegedy and Zaharescu for large sets. The site's statement, with a=b allowed, is the same.",
+   "source": "https://www.erdosproblems.com/402",
+   "date": "2026-11-28"
+  },
+  "Erdos448.erdos_448.variants.hall_tenenbaum_distribution": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Tenenbaum's survey (Erdos Centennial 2013, the link) records that Hall-Tenenbaum (Divisors, 1988, Ch. 4) proved tau+(n)/tau(n) has a limiting distribution function nu, with z/sqrt(log(2/z)) << nu(z) << z log(2/z). A limiting distribution is exactly the statement: F monotone with limits 0 and 1, and density F(z) at continuity points.",
+   "source": "https://tenenb.perso.math.cnrs.fr/PPP/Erdos-100.pdf",
+   "date": "2026-11-28"
+  },
+  "Erdos5.erdos_5.variants.banks_freiberg_maynard": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Banks-Freiberg-Maynard (arXiv 1404.5094, Proc. LMS 2016), Theorem 1.1: for any nine nonnegative reals b1<=...<=b9, some difference b_j-b_i is a limit point of d_n/log p_n. Normalising by log p_n or log n gives the same finite limit points, so this is the statement.",
+   "source": "https://arxiv.org/abs/1404.5094",
+   "date": "2026-11-28"
+  },
+  "Erdos5.erdos_5.variants.banks_freiberg_maynard_measure": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Banks-Freiberg-Maynard (arXiv 1404.5094), Corollary 1.2: lambda([0,T] intersect L) >= (1-o(1))T/8 as T -> infinity (ineffective o(1)). This is exactly the statement for every eps>0 and large T.",
+   "source": "https://arxiv.org/abs/1404.5094",
+   "date": "2026-11-28"
+  },
+  "Erdos5.erdos_5.variants.merikoski_measure": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Merikoski (arXiv 1811.03008, J. LMS), Corollary 2: for all T>0 the Lebesgue measure of L intersect [0,T] is >= T/3, where L is the set of limit points of d_n/log p_n (the same finite limit points as with log n). This is the statement.",
+   "source": "https://arxiv.org/html/1811.03008",
+   "date": "2026-11-28"
+  },
+  "Erdos507.erdos_507.variants.upper_cpz24": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Cohen-Pohoata-Zakharov (arXiv 2409.07658) show any n points in the unit square contain a triangle of area at most n^{-7/6+o(1)}. Rescaling the unit disk into a unit square costs only a constant factor, so alpha(n) << n^{-7/6+o(1)}, which is the statement. erdosproblems.com/507 records this as the current bound.",
+   "source": "https://arxiv.org/abs/2409.07658",
+   "date": "2026-11-28"
+  },
+  "Erdos542.erdos_542.variants.chen": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Chen (Acta Sci. Math. Szeged 62 (1996), the link), Theorem 2: rho(n) < 1.0170166 + 14.21/(n-58) for n >= 59. His Note derives rho(n) < 1.017099 < rho(11) = 1/3+1/4+1/5+1/7+1/11 for n >= 172509 (my check: 1.0170990 < 4699/4620 = 1.01709957), which covers the statement for n > 172509.",
+   "source": "https://acta.hu/download.phtml?id=2350",
+   "date": "2026-11-28"
+  },
+  "Erdos570.erdos_570": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Cambie-Freschi-Morawski-Petrova-Pokrovskiy (arXiv 2601.10238) prove that for every k, every graph H with m edges and no isolated vertices has R(C_k,H) <= 2m + floor((k-1)/2) once m is large in terms of k. This is exactly the statement, and erdosproblems.com/570 records it as solved.",
+   "source": "https://arxiv.org/abs/2601.10238",
+   "date": "2026-11-28"
+  },
+  "Erdos6.erdos_6.variants.increasing": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Banks-Freiberg-Turnage-Butterbaugh (arXiv 1311.7003, Acta Arith. 2015) use Maynard-Tao to produce, for every m, infinitely many runs of m+1 consecutive primes with strictly increasing gaps d_n < d_{n+1} < ... < d_{n+m}. This is the statement.",
+   "source": "https://arxiv.org/abs/1311.7003",
+   "date": "2026-11-28"
+  },
+  "Erdos633.erdos_633": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Beeson-Laczkovich-Zhang, 'Solution of Erdos Problem 633' (arXiv 2604.03609), give the complete classification of triangles that tile only into a square number of congruent triangles, and erdosproblems.com/633 accepts it. The site's answer slot is still sorry, so the classification has to be encoded before the Lean statement can be closed.",
+   "source": "https://arxiv.org/html/2604.03609",
+   "date": "2026-11-28"
+  },
+  "Erdos67.erdos_67.variants.complex": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Tao (arXiv 1509.05363, Discrete Analysis 2016) proves the Erdos discrepancy problem for sequences of unit vectors in any real or complex Hilbert space, not only for +-1 sequences. That includes f: N -> S^1 in C, so sup over d,m of |sum_{k<=m} f(kd)| is infinite, which is the statement.",
+   "source": "https://arxiv.org/abs/1509.05363",
+   "date": "2026-11-28"
+  },
+  "Erdos692.erdos_692.variants.cambie_local_maxima": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Cambie (arXiv 2501.10333), Theorem 3: (delta_1(n,m))_{m>=n+2} has omega(exp(n^c)) local maxima. The proof gives strict increases at primes p and strict decreases at 2q, interleaved p1<2q1<p2<..., so each gap holds a maximal plateau in the site's sense. That gives >= n^k of them for large n.",
+   "source": "https://arxiv.org/html/2501.10333",
+   "date": "2026-11-28"
+  },
+  "Erdos697.erdos_697.parts.i": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: The linked erdosproblems.com/697 records that Hall (J. Number Theory 1992, 'On some conjectures of Erdos in Asterisque I') proved the threshold beta = 1/log 2: delta(m,alpha) -> 0 for alpha < 1/log 2. This is the statement, and the site's own file cites the same source.",
+   "source": "https://www.erdosproblems.com/697",
+   "date": "2026-11-28"
+  },
+  "Erdos697.erdos_697.parts.ii": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Same source: erdosproblems.com/697 records Hall's 1992 theorem with beta = 1/log 2, which also gives delta(m,alpha) -> 1 for alpha > 1/log 2. This is the statement.",
+   "source": "https://www.erdosproblems.com/697",
+   "date": "2026-11-28"
+  },
+  "Erdos70.erdos_70.variants.omega_times_two_four": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Jones, 'Partitioning triples and partially ordered sets' (PAMS 136 (2008), the DOI), proves P -> (omega+omega+1, 4)^3 for every partial order with P -> (omega)^1_omega. R qualifies, since a subset of R with no increasing omega-sequence is countable. Dropping the top point of a red omega*2+1 chain gives an order-embedding of omega*2, so lambda -> (omega*2, 4)^3, which is the site's RealCardinalRamsey3 (omega*2) 4. The site/formal-conjectures label it 'open', apparently overlooking this.",
+   "source": "https://doi.org/10.1090/S0002-9939-07-09170-8",
+   "date": "2026-11-28"
+  },
+  "Erdos70.erdos_70.variants.omega_times_two_four.R1.H1": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Jones, 'Even more on partitioning triples of countable ordinals' (PAMS 146 (2018) 3529-3539, the DOI) proves omega_1 -> (omega+omega+1, n)^3 for every finite n (as Larson's survey and the publisher abstract report; I could not open the full text, AMS blocks bots). Removing the last point of a red set of type omega*2+1 gives order type omega*2, so H1 follows at once.",
+   "source": "https://doi.org/10.1090/proc/13503",
+   "date": "2026-11-28"
+  },
+  "Erdos723.erdos_723.variants.leq_11.R1.H2": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: H2 says there is no 111x111 incidence structure with 11 points per line, 11 lines per point and unique meets/joins, i.e. no projective plane of order 10. Bright et al., 'A SAT-based resolution of Lam's problem' (arXiv 2012.04715, AAAI 2021), proves this with verifiable SAT certificates, confirming Lam-Thiel-Swiercz 1989.",
+   "source": "https://arxiv.org/abs/2012.04715",
+   "date": "2026-11-28"
+  },
+  "Erdos723.erdos_723.variants.leq_11.R1.H2.R2.H3.R1.H2.R1.H2.R1.H1.R1.H1.R1.H2.R1.H2.R1.H2.R1.H2": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: H2 forbids a normalized weight-16-codeword configuration: 8 lines meeting S (|S|=16) in 4 points and 72 in 2, pairwise meeting once, all of size 11. Bright et al., IJCAI 2020 (the link), show with DRAT certificates that already the first 80 rows of such a plane are unsatisfiable in all ten of Carter's starting cases. H2's 'valid' implies all their encoded constraints and the extra normalization only narrows it, so H2 follows (relying on Carter's case classification).",
+   "source": "https://www.ijcai.org/proceedings/2020/0203.pdf",
+   "date": "2026-11-28"
+  },
+  "Erdos78.erdos_78.variants.cohen": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Cohen (arXiv 1506.04428, STOC 2016) builds strongly explicit (poly(log n)-time) graphs on n vertices with no clique or independent set of size 2^{(log log n)^{O(1)}}. These are in particular computable in time polynomial in n, which is the site's weak explicitness, so some C>0 works.",
+   "source": "https://arxiv.org/abs/1506.04428",
+   "date": "2026-11-28"
+  },
+  "Erdos787.erdos_787.variants.beker": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Beker (arXiv 2501.10203), Theorem 1.2: for every c in (0,1/68), every large finite A in Z has B in A with |B| >= (log|A|)^{1+c} and b1+b2 not in A for distinct b1,b2 in B. A finite set of reals maps to integers by an injective Q-linear map that preserves all relations b1+b2=a, so the same bound holds for g(R,n).",
+   "source": "https://arxiv.org/html/2501.10203v2",
+   "date": "2026-11-28"
+  },
+  "Erdos824.erdos_824.variants.pollack_pomerance": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Pollack-Pomerance, 'Some problems of Erdos on the sum-of-divisors function' (Trans. AMS Ser. B 3 (2016), the DOI), Section 6, prove that the number h(x) of coprime pairs a<b<x with sigma(a)=sigma(b) satisfies h(x)/x -> infinity. erdosproblems.com/824 records this as the complete proof.",
+   "source": "https://doi.org/10.1090/btran/10",
+   "date": "2026-11-28"
+  },
+  "Erdos88.erdos_88.variants.kwan_sah_sauermann_sawhney": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Kwan-Sah-Sauermann-Sawhney (Forum Math. Pi 11 (2023), the DOI), Theorem 1.1: for fixed C, eta and large n, any n-vertex graph with no clique or independent set of size >= C log_2 n has, for every 0 <= m <= (1-eta)e(G), an induced subgraph with exactly m edges. This is the statement.",
+   "source": "https://doi.org/10.1017/fmp.2023.17",
+   "date": "2026-11-28"
+  },
+  "Erdos933.erdos_933.variants.mahler": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: The linked erdosproblems.com/933 records Mahler's theorem (the p-adic Thue-Siegel / Ridout bound on the {2,3}-part of n(n+1)) that 2^k 3^l < n^{1+o(1)}, where 2^k 3^l is the {2,3}-part of n(n+1). This is exactly the statement with c(n) = o(1).",
+   "source": "https://www.erdosproblems.com/933",
+   "date": "2026-11-28"
+  },
+  "Erdos946.erdos_946.variants.hildebrand_lower_bound": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Hildebrand, 'The divisor function at consecutive integers' (Pacific J. Math. 129 (1987), the link), proves #{n <= x : tau(n)=tau(n+1)} >> x/(log log x)^3, which is the stated big-O lower bound.",
+   "source": "https://msp.org/pjm/1987/129-2/pjm-v129-n2-p06-s.pdf",
+   "date": "2026-11-28"
+  },
+  "Erdos950.erdos_950.variants.debruijn_erdos_turan": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: The link is Gorodetsky's accepted MathOverflow answer, which proves sum_{n<x} f(n)^2 ~ x by partial fractions, PNT and Brun-Titchmarsh-type sieve bounds (a few routine details left out). The first part, sum_{n<x} f(n) = sum_{p<x} H_{x-p} ~ pi(x) log x ~ x, is elementary. The answer is unrefereed but is a clear, essentially complete argument by a specialist, cited by erdosproblems.com/950.",
+   "source": "https://mathoverflow.net/a/508499",
+   "date": "2026-11-28"
+  },
+  "Erdos968.erdos_968.variants.infinite_increasingTriples.R2.H2": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: H2 is Linnik's theorem (there is L with a prime p = a mod q, p <= q^L, for all q >= 2 and (a,q)=1), a classical result. The linked repo's archive proves exactly this as MissingLinnik.CurrentPaper.linnik (Statements.lean: Linnik). A text search of all 163 .lean files finds sorry only in the statement-only ChallengeCurrent.lean, which the solution files do not import, and no axiom or native_decide.",
+   "source": "https://github.com/twonth/missing-linnik-lean/tree/c75b0659de0a25de109b4d512bf566b636f6036e",
+   "date": "2026-11-28"
+  },
+  "Erdos977.erdos_977.variants.stewart": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Stewart, 'On divisors of Lucas and Lehmer numbers' (Acta Math. 211 (2013), the linked PDF), proves P(2^n-1) > n exp(log n/(104 log log n)) = n^{1+1/(104 log log n)} for large n. This is the statement.",
+   "source": "https://uwaterloo.ca/pure-mathematics/sites/default/files/uploads/documents/s11511-013-0105-y.pdf",
+   "date": "2026-11-28"
+  },
+  "Erdos985.erdos_985": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: McGown-Trevino-Trudgian (arXiv 1508.05182, Theorem 1) show under GRH that the least prime primitive root of p is < sqrt(p)-2 for p > 2791. GRH for Dirichlet L-functions now has a Comparator-checked Lean proof (leanprover-community/riemann-hypothesis, cited in the site's own file). I checked by computer that every odd prime p < 3000 has a prime primitive root q < p.",
+   "source": "https://arxiv.org/abs/1508.05182",
+   "date": "2026-11-28"
+  },
+  "FermatCatalanConjecture.fermat_catalan.variants.darmon_granville": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Darmon-Granville, 'On the equations z^m = F(x,y) and Ax^p + By^q = Cz^r' (Bull. LMS 27 (1995), the linked PDF), prove that for fixed exponents with 1/p+1/q+1/r < 1 there are only finitely many primitive (coprime) solutions. Pairwise coprime positive solutions of a^m+b^n=c^k are among these.",
+   "source": "https://www.math.mcgill.ca/darmon/pub/Articles/Research/12.Granville/paper.pdf",
+   "date": "2026-11-28"
+  },
+  "Green14.W_3_14": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Ahmed-Kullmann-Snevily (arXiv 1102.5433), Table 1, lists w(2;3,14) = 186 among the known exact values (Kouril/Ahmed) and re-derives it with SAT solvers (unsatisfiable instance F(3,14;186), Table 9). Green's W(3,14) is w(2;3,14), so the statement holds.",
+   "source": "https://arxiv.org/html/1102.5433",
+   "date": "2026-11-28"
+  },
+  "Green14.W_3_17": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Ahmed-Kullmann-Snevily (arXiv 1102.5433), Table 1, gives w(2;3,17) = 279 as a known exact value, re-confirmed by their SAT runs on F(3,17;279) (earlier by Kouril's special-purpose search). Green's W(3,17) is w(2;3,17).",
+   "source": "https://arxiv.org/html/1102.5433",
+   "date": "2026-11-28"
+  },
+  "Green14.W_3_18": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Ahmed-Kullmann-Snevily (arXiv 1102.5433, Discrete Appl. Math. 2014), Table 1, lists the exact value w(2;3,18)=312, with w(2;3,t) defined exactly as the site's W(3,t) (red 3-AP or blue t-AP in every 2-colouring of {1..n}).",
+   "source": "https://arxiv.org/html/1102.5433",
+   "date": "2026-11-28"
+  },
+  "Green23.green_23": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Frantzikinakis-Klurman-Moreira (Forum Math. Pi) prove every finite colouring of the positive integers has x,y of the same colour with x^2+y^2=z^2, which is exactly the statement (positive x,y, same colour, x^2+y^2 a square).",
+   "source": "https://arxiv.org/abs/2309.10636",
+   "date": "2026-11-28"
+  },
+  "Green46.green_46.variants.lower": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Ford-Green-Konyagin-Maynard-Tao (JAMS 2018) define Y(x) as the largest y such that residue classes a_p mod p (p<=x) cover [1,y] and prove (1.2) Y(x) >> x log x log_3 x / log_2 x, which is exactly bestLower << maxY.",
+   "source": "https://arxiv.org/abs/1412.5029",
+   "date": "2026-11-28"
+  },
+  "Green5.green_5.variants.kedlaya": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Kedlaya, 'Large product-free subsets of finite groups', JCTA 77 (1997) 339-343, proves every finite group of order n has a product-free subset of size >> n^{11/14}; for the finitely many small groups any {g}, g != e, works, so a uniform c>0 exists.",
+   "source": "https://www.sciencedirect.com/science/article/pii/S0097316597927151",
+   "date": "2026-11-28"
+  },
+  "Green97.green_97.variants.eberhard_manners_mrazovic": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Eberhard-Manners-Mrazovic (arXiv 1510.05987, JEMS) prove the number of pairs of bijections pi1,pi2 : [n] -> Z/nZ with pi1+pi2 bijective is (e^{-1/2}+o(1)) n!^3/n^{n-1} for odd n, exactly numAdditiveTriples along odd n.",
+   "source": "https://arxiv.org/html/1510.05987v3",
+   "date": "2026-11-28"
+  },
+  "HopfAlgebraCohomology.cohomology_finite_of_isCocomm": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Friedlander-Suslin, Invent. Math. 127 (1997), Theorem 1.1: for a finite group scheme G and finite-dimensional rational G-module M, H^*(G,M) is a finite H^*(G,k)-module. Finite group schemes are the same as finite-dimensional cocommutative Hopf algebras (the paper's opening remark), so this is exactly the statement.",
+   "source": "https://dornsife.usc.edu/ericmfriedlander/wp-content/uploads/sites/233/2023/06/10.pdf",
+   "date": "2026-11-28"
+  },
+  "KaplanskyUInvariant.u_invariant_values.variants.two_pow_add_one": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Vishik, 'Fields of u-invariant 2^r+1' (Manin Festschrift, Progr. Math. 270, 2009), Corollary 5.2: for any r >= 3 there is a field of u-invariant 2^r+1. The construction is in characteristic 0, matching IsUInvariant (char != 2).",
+   "source": "https://math.nyu.edu/~tschinke/.manin/submitted/vishik.pdf",
+   "date": "2026-11-28"
+  },
+  "LatinSquare.oddOrderLeq9LatinSquareTransversal": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Wanless's data page, from the exhaustive McKay-McLeod-Wanless enumeration (Des. Codes Cryptogr. 2006), gives the minimum number of transversals over all Latin squares of orders 3, 5, 7 and 9 as 3, 3, 3 and 68, all positive. Order 1 is trivial, so every odd-order Latin square with n <= 9 has a transversal.",
+   "source": "https://users.monash.edu.au/~iwanless/data/transversals/",
+   "date": "2026-11-28"
+  },
+  "LocalUniformization.local_uniformization_after_finite_extension": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Knaf-Kuhlmann, Adv. Math. 221 (2009) (arXiv math/0702856), main theorem: every place of an algebraic function field F|K in any characteristic admits local uniformization in a finite extension E of F, with the ground field unchanged. Their simple-point model is in particular regular, which gives the Lean conclusion.",
+   "source": "https://arxiv.org/abs/math/0702856",
+   "date": "2026-11-28"
+  },
+  "LocalUniformization.local_uniformization_of_charZero": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: The linked paper (Heinzer-Rotthaus-style study of completions, arXiv math/0310192) does not prove it itself, but its abstract states exactly Zariski's local uniformization theorem in characteristic 0 (Ann. of Math. 41, 1940). That published theorem gives regular algebraic local rings dominated by V with fraction field K, i.e. the Lean statement.",
+   "source": "https://arxiv.org/abs/math/0310192",
+   "date": "2026-11-28"
+  },
+  "OeisA212496.conjecture_1": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Disproved: Mossinghoff-Trudgian, 'Oscillations in weighted arithmetic sums' (Int. J. Number Theory), prove that S_0(x) = sum_{n<=x} (-1)^{n-Omega(n)} < 0 infinitely often. Since (-1)^{n-Omega} = (-1)^{n+Omega}, this is a(n) < 0 for infinitely many n > 4.",
+   "source": "https://arxiv.org/abs/2007.14537",
+   "date": "2026-11-28"
+  },
+  "OeisA2326.conjecture2.R2.H1": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Crandall-Dilcher-Pomerance (Math. Comp. 1997) confirm the only base-2 Wieferich primes below 4e12 are 1093 and 3511, both > 1000. So every odd prime p <= 1000 has ord_{p^2}(2) = p*ord_p(2), and by the standard lifting-the-exponent lemma ord_{p^{k+1}}(2) = p*ord_{p^k}(2) for all k >= 1, which is exactly H1.",
+   "source": "https://www.reed.edu/physics/faculty/crandall/papers/S0025-5718-97-00791-6.pdf",
+   "date": "2026-11-28"
+  },
+  "PartitionParity.ahlgren.odd": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Radu, 'A proof of Subbarao's conjecture' (Crelle 672, 2012), Corollary 1.6: combining his Theorem 1.3 with Ahlgren's result, the number of n <= X with n = r (mod t) and p(n) odd is >> sqrt(X)/log X for every progression, which is the statement.",
+   "source": "https://www3.risc.jku.at/publications/download/risc_4509/subbrev.pdf",
+   "date": "2026-11-28"
+  },
+  "PartitionParity.ono_swaminathan.quadratic": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Ono-Swaminathan, arXiv 2509.09553v4, Theorem 1: for square-free 1 < D = 23 (mod 24), both parities occur infinitely often among p((Dm^2+1)/24) with (m,6)=1, exactly the statement. It is a preprint by specialists that the source file already records as the proof.",
+   "source": "https://arxiv.org/html/2509.09553v4",
+   "date": "2026-11-28"
+  },
+  "PartitionParity.subbarao.even": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Ono, 'Parity of the partition function in arithmetic progressions', Crelle 472 (1996): every arithmetic progression contains infinitely many N with p(N) even, exactly the statement.",
+   "source": "https://uva.theopenscholar.com/files/ken-ono/files/011.pdf",
+   "date": "2026-11-28"
+  },
+  "RamanujanTau.ramanujan_petersson": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Deligne, 'La conjecture de Weil. I', Publ. Math. IHES 43 (1974), proves the Weil conjectures and deduces from them the Ramanujan-Petersson conjecture |tau(p)| <= 2 p^{11/2} for all primes p, exactly the statement.",
+   "source": "https://www.numdam.org/articles/10.1007/BF02684373/",
+   "date": "2026-11-28"
+  },
+  "RiemannHypothesis.lagarias_criterion": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Lagarias, 'An elementary problem equivalent to the Riemann hypothesis' (arXiv math/0008177, Amer. Math. Monthly 2002), Theorem 1.1: RH holds iff sigma(n) <= H_n + exp(H_n) log H_n for all n >= 1, with equality only at n = 1. That is exactly the strict inequality for n > 1.",
+   "source": "https://arxiv.org/abs/math/0008177",
+   "date": "2026-11-28"
+  },
+  "SerreMultiplicityConjectures.intersectionMultiplicity_eq_zero_of_lt": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Roberts's 1985 Rennes exposition derives the vanishing chi(M,N) = 0 when dim M + dim N < dim R for regular local R (via local Chern characters, as a complete-intersection case). It cites his published proof [Bull. AMS 13 (1985)] and the independent Gillet-Soule K-theoretic proof. The theorem is established.",
+   "source": "https://www.numdam.org/article/PSMIR_1985___4_25_0.pdf",
+   "date": "2026-11-28"
+  },
+  "SerreMultiplicityConjectures.intersectionMultiplicity_pos_of_equalCharacteristic": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Skalit (JPAA 2019, arXiv 1510.05146) restates Serre's theorem [Algebre locale, multiplicites]: positivity holds when the completion of A is a power series ring over a field. Every regular local ring containing a field has such a completion (Cohen), and chi and dimensions are unchanged under completion, so the equal-characteristic case follows at once.",
+   "source": "https://arxiv.org/html/1510.05146",
+   "date": "2026-11-28"
+  },
+  "SerreMultiplicityConjectures.supportDim_add_supportDim_le_ringKrullDim": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Skalit (arXiv 1510.05146), Conjecture 1.1(a) and the remark after it: the dimension inequality dim M + dim N <= dim A for every regular local ring A with l(M tensor N) finite 'was settled by Serre' (Algebre locale, multiplicites). That is exactly the statement; the URL cites rather than reproves it.",
+   "source": "https://arxiv.org/html/1510.05146",
+   "date": "2026-11-28"
+  },
+  "SnakeInBox.coil_small_dimensions": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Ostergard-Pettersson, 'On the maximum length of coil-in-the-box codes in dimension 8' (Discrete Appl. Math. 2014), establish by exhaustive search that the maximum coil length in Q_8 is 96. The values 4, 6, 8, 14, 26, 48 for n = 2..7 were known earlier, and n = 0, 1 give 0 since Q_0 and Q_1 have no cycles.",
+   "source": "https://doi.org/10.1016/j.dam.2014.07.010",
+   "date": "2026-11-28"
+  },
+  "SquarePacking.least_twenty_one_circle_packing_in_square": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Nurmela-Ostergard, 'More optimal packings of equal circles in a square', DCG 22 (1999), give computer-aided optimality proofs for 21 <= n <= 27 (cited as such by Markot et al. 2021 and the Szabo-Markot-Csendes survey). This determines the minimal square for 21 unit circles, s = 2 + 2/m_21, as an explicit algebraic number from the proven-optimal configuration.",
+   "source": "https://doi.org/10.1007/PL00009472",
+   "date": "2026-11-28"
+  },
+  "SteinerSystems.infinitely_many_steiner_t5": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Keevash, 'The existence of designs' (arXiv 1401.3665): for fixed t and k, S(t,k,n) exists for all sufficiently large n satisfying the divisibility conditions. For t = 5, k = 6 there are infinitely many admissible n (an arithmetic progression), giving infinitely many S(5,6,n) with 5 < 6 < n.",
+   "source": "https://arxiv.org/abs/1401.3665",
+   "date": "2026-11-28"
+  },
+  "SymbolLengthMilnorKTheory.symbol_length_problem.variants.zero_mem_of_lt": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Voevodsky (Annals 174, 2011) proves the norm residue isomorphism K^M_n(F)/p = H^n(F, mu_p^{tensor n}). C(x_1..x_m) has cohomological dimension m (Tsen-Lang; Serre, Galois Cohomology II.4.2), so for n > m the group is 0, i.e. 0 is a symbol-length bound.",
+   "source": "https://doi.org/10.4007/annals.2011.174.1.11",
+   "date": "2026-11-28"
+  },
+  "arxiv-2001.06439": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Goncalves-Madrid-Ramos (arXiv 2608.00813), Corollary 3: for p >= 1 the sequence beta_k(p) = E((X_1+...+X_k)/k)^p of i.i.d. nonnegative variables is log-convex. The short proof (an explicit averaging matrix plus Jensen) checks out, and I verified the matrix identities numerically. Infinite-moment cases are trivial, as the statement notes.",
+   "source": "https://arxiv.org/abs/2608.00813",
+   "date": "2026-11-28"
+  },
+  "mo-10356": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: W. B. Johnson's MO answer gives a counterexample: E = l2 (+) c0, E* = l2 (+) l1, T(x,y) = (0, Mazur(R x)), where R is a norm- and coordinatewise-continuous retraction onto the ball. T is norm- and weak*-continuous but not weak-continuous (e_n -> 0 weakly in l2, but its image does not tend to 0 weakly in l1). I checked the argument; it refutes main, which asserts 'yes'.",
+   "source": "https://mathoverflow.net/a/11649",
+   "date": "2026-11-28"
+  },
+  "mo-118616": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Avraham-Re'em and Kosloff (arXiv 2605.12360, accepted in BLMS) prove that for countable amenable G, D_2(G,lambda) = D_2(G,rho) iff G is an FC-group. Inversion swaps the two spaces, so inclusion is equivalent to equality. So the answer is no in general (e.g. the Heisenberg group), with a full classification in the amenable case the asker singled out.",
+   "source": "https://arxiv.org/abs/2605.12360",
+   "date": "2026-11-28"
+  },
+  "mo-294813": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: The linked MO thread (q. 147270) answers both parts: fluctuation theory (Sparre Andersen/Spitzer) expresses the law of sup_k S_k/k through P(S_k > ka). For Exp(1) variables it gives the exact value E sup_k S_k/k = zeta(2) = pi^2/6, plus a general bound 2*sqrt(2)*sigma via Kolmogorov's inequality.",
+   "source": "https://mathoverflow.net/questions/147270/expected-supremum-of-average",
+   "date": "2026-11-28"
+  },
+  "mo-298479": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Canonne's survey (Topics and Techniques in Distribution Testing, FnT) states that Paninski's Lemma 2 Efron-Stein variance bound is flawed for exactly the reason the asker suspects: (S - S^(t))^2 can be 4 and those events were overlooked. It shows the claimed bound fails against the exact uniform-case variance and gives a correct alternative variance bound.",
+   "source": "https://ccanonne.github.io/files/misc/main-survey-fnt.pdf",
+   "date": "2026-11-28"
+  },
+  "mo-323233": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Hollenbach-Wegener (arXiv 1912.01529), Theorem 1.1: in an infinite irreducible Coxeter system of finite rank, C_W(c) = <c> for every Coxeter element c. The finite irreducible case is the classical result they cite. Together these give exactly the statement (irreducible = connected Coxeter graph; c = product of all generators once each).",
+   "source": "https://arxiv.org/abs/1912.01529",
+   "date": "2026-11-28"
+  },
+  "mo-333870": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: The URL is the question page, and its answer gives a short correct proof: M's quadratic form agrees with Lambda's on the hyperplane {y^T Lambda z = 0}, so it is >= lambda_1|z|^2 on a codimension-1 subspace, and Courant-Fischer gives mu_2 >= lambda_1. That is exactly the statement: the second-smallest eigenvalue of the Schur matrix is at least lambda_min(A).",
+   "source": "https://mathoverflow.net/questions/333870",
+   "date": "2026-11-28"
+  },
+  "mo-392283": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: MO answer 515234 (LLM-assisted, score 0) proves non-injectivity of every integer-valued cubic on Z^2. It changes coordinates along a tangent direction so that g(x,-y) = g(x,y) becomes a solvable Pell equation, and treats the cube-of-a-linear-form case separately. I checked the steps (coefficient formulas, Pell solution, indefiniteness, square-polynomial argument, degenerate case); only routine integrality bookkeeping with rational coefficients is left implicit.",
+   "source": "https://mathoverflow.net/a/515234",
+   "date": "2026-11-28"
+  },
+  "mo-423552": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: fedja's comment gives a complete argument: with theta_1 fixed, each cyclic-order component of the configuration space is convex in the angles, and E is a sum of strictly convex functions 1/(2 sin(u/2)) of angle differences, so it is strictly convex modulo rotation. It therefore has at most one critical point per component, which must be the square. So there are no other critical points.",
+   "source": "https://mathoverflow.net/questions/423552/#comment1088562_423552",
+   "date": "2026-11-28"
+  },
+  "mo-462055": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Schoenberg, 'Metric spaces and positive definite functions' (TAMS 1938), Theorem 1: a (not necessarily metric) space with distance d embeds isometrically in Hilbert space iff exp(-lambda d^2) is positive definite for all lambda > 0. Applied to d_ij^2 = -log C_ij (zero diagonal, symmetric), n points embed in R^n. The converse is the positive definiteness of the Gaussian kernel, which gives the stated equivalence.",
+   "source": "https://doi.org/10.1090/S0002-9947-1938-1501980-0",
+   "date": "2026-11-28"
+  },
+  "mo-506150": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: McMullen's Upper Bound Theorem (Mathematika 1970) bounds the facets of any d-polytope with n vertices by those of the cyclic polytope C(n,d), i.e. O(n^{floor(d/2)}). That is exactly an upper bound in terms of n (and d) for 0/1 polytopes, as asked; lower-dimensional cases follow by applying it in their affine hull.",
+   "source": "https://doi.org/10.1112/S0025579300002850",
+   "date": "2026-11-28"
+  },
+  "mse-1285815": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: MSE answer 5142349 proves the inequality. Banach's polarization theorem (van der Corput-Schaake) reduces mixed derivatives to k-th derivatives along lines t -> g(sqrt(a^2+t^2)). A Taylor-remainder kernel is shown nonnegative by a Lagrange-inversion lemma, and its total mass is (1/k!) d^k/dt^k (a^2+t^2)^{k/2} <= 1. I checked the steps; it is score 0 but follows the Serre/Tao argument it credits.",
+   "source": "https://math.stackexchange.com/a/5142349",
+   "date": "2026-11-28"
+  },
+  "mse-511808": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Green-Tao (arXiv math/0405581, JTNB) use Chen's theorem: there are infinitely many primes p with p+2 prime or a product of two primes. That implies at once that p+2 has at most 20 prime factors for infinitely many primes p.",
+   "source": "https://arxiv.org/abs/math/0405581",
+   "date": "2026-11-28"
+  },
+  "oeis-a000212": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Fried, 'Proofs of ten conjectures from the OEIS' (J. Integer Seq. 29, 2026), Theorem 14 and Corollary 15. Regions = 1 + n + sum over points of (m_p - 1), so maximizers have no triple points and balanced vertex counts (a,b,c); the interior crossings then number ab+bc+ca = floor(n^2/3), and maximizers exist. That is exactly the statement.",
+   "source": "https://cs.uwaterloo.ca/journals/JIS/VOL29/Fried/fried21.pdf",
+   "date": "2026-11-28"
+  },
+  "oeis-a002321": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: The linked path (...GranvikMertensArray.result.lean) returns 404, but the same commit has D5/S3/Arith/GranvikMertensArray.lean. It proves T 1 k = 2 + M(k) for k >= 2, for a T shown equal (via a uniqueness lemma) to any array satisfying granvikRule, which matches the site's A192763 recursion; a proven symmetry lemma gives T n 1 = T 1 n. Text search of the file and its 26 local imports finds no sorry, axiom or native_decide.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/687878cf845802aba2692eeb304cb960d1306431/D5/S3/Arith/GranvikMertensArray.result.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a002464": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: The OEIS internal page records Alex McGaw's proof (2023): reindex the published Abramson-Moser formula (1966) and identify the inner sum with (-1)^(n+k) A080246(n-1,k-1). I checked numerically that this closed form matches the site's A080246 recurrence and that the identity equals the brute-force count (n <= 9) and the Abramson-Moser formula (n < 40).",
+   "source": "https://oeis.org/A002464/internal",
+   "date": "2026-11-28"
+  },
+  "oeis-a005158": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Razumov-Stroganov (arXiv math-ph/0504022, Theor. Math. Phys. 2006) prove A_HT(2m+1) = m!(3m)!/((2m)!)^2 A_HT(2m), Robbins' odd-order conjecture. Combined with Kuperberg's even-order product formula, recalled in the same section, this gives Robbins' recurrence for every n > 1; I checked the algebra and the values 1, 2, 3, 10, 25, 140, ...",
+   "source": "https://arxiv.org/abs/math-ph/0504022",
+   "date": "2026-11-28"
+  },
+  "oeis-a008474": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: trureturing file D5/S3/Factorization/IanakievPrimeExponentSumIterationReachesFive.lean (commit 85a28c1) proves ianakiev_a008474 : forall m > 4, exists t, F^[t] m = 5, with F n = sum over primeFactors of (p + factorization p), identical to the site's a. It imports only Mathlib, and text search finds no sorry, axiom or native_decide.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/85a28c11817d891b7cb6f164929673716c3a3ef1/D5/S3/Factorization/IanakievPrimeExponentSumIterationReachesFive.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a028836": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: The OEIS entry records Peter Bala's proof: the iterated digit sum (digital root) of N equals that of N+9, so a(n+4) = a(n) + 9 with initial terms 1, 2, 4, 8. This gives Barker's g.f. and the recurrence a(n) = a(n-1) + a(n-4) - a(n-5); I checked both numerically against the site's definition.",
+   "source": "https://oeis.org/A028836",
+   "date": "2026-11-28"
+  },
+  "oeis-a052542": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: The OEIS entry gives the proof (John Tyler Rascoe): the g.f. (1-x^2)/(1-2x-x^2) equals 1/(1 - 2x/(1-x^2)), which is the g.f. of compositions into odd parts each in two colours (2x/(1-x^2) per part). That is exactly the sum of 2^(number of parts) over odd compositions of n, for n >= 1.",
+   "source": "https://oeis.org/A052542",
+   "date": "2026-11-28"
+  },
+  "oeis-a071870": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Kim, 'Two remarks on the largest prime factors of n and n+1' (J. Integer Seq. 23, 2020), gives an alternative proof (after Balog 2001) that infinitely many n satisfy P(n) > P(n+1) > P(n+2). That is exactly Erdos's conjecture as stated.",
+   "source": "https://cs.uwaterloo.ca/journals/JIS/VOL23/Kim/kim22.html",
+   "date": "2026-11-28"
+  },
+  "oeis-a074915": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: The OEIS entry records Robert Israel's proof: for primes p, q < sqrt(x) not dividing x, pq is a nonprime in RRS(x). At most log_2 x primes divide x, so the count of nonprimes is >= (pi(sqrt x) - log_2 x)^2/2, which tends to infinity. Hence each fibre {x : count = n} is bounded.",
+   "source": "https://oeis.org/A074915",
+   "date": "2026-11-28"
+  },
+  "oeis-a090826": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Ekhad-Yang (Zeilberger's oMathar1maple12), Theorem 19, rigorously derives from the g.f. (1-sqrt(1-4x))/(2-2x-2x^2) = C(x)*x/(1-x-x^2), the Catalan-Fibonacci convolution, the recurrence n a(n) + (6-5n) a(n-1) + (3n-6) a(n-2) + (4n-6) a(n-3) = 0. That is exactly the statement; I checked it numerically for 3 <= n < 150.",
+   "source": "https://sites.math.rutgers.edu/~zeilberg/tokhniot/oMathar1maple12.txt",
+   "date": "2026-11-28"
+  },
+  "oeis-a099500": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Granville-Selfridge, 'Product of integers in an interval, modulo squares' (Electron. J. Combin. 8, 2001, #R5), prove Kaplansky's conjecture: between any two consecutive positive squares there is a set of distinct integers whose product is twice a square. That is exactly the statement (the empty set cannot work, since its product is 1).",
+   "source": "https://www.combinatorics.org/ojs/index.php/eljc/article/view/v8i1r5",
+   "date": "2026-11-28"
+  },
+  "oeis-a114965": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Cohn, 'The diophantine equation x^2 + C = y^n' (Acta Arith. 65, 1993), solves the equation for 77 values C <= 100, including C = 34, with no solutions for n >= 3. Bugeaud-Mignotte-Siksek (Compositio 2006, Section 1 and Table 16) confirm 34 is among Cohn's cases and has no solutions. The square case is elementary, since 34 = 1*34 = 2*17 has no factorization into factors of equal parity, so n^2 + 34 is never a perfect power.",
+   "source": "https://matwbn.icm.edu.pl/ksiazki/aa/aa65/aa6546.pdf#page=12",
+   "date": "2026-11-28"
+  },
+  "oeis-a129995": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: The OEIS entry states that (n+1)(n^2+2)...(n^k+k)/k! is integer-valued for k = 4 (from Moses's computations and Andrews's comments). For k = 4 this is a finite check: divisibility of the integer polynomial by 24 depends only on n mod 24, and I verified all 24 residues.",
+   "source": "https://oeis.org/A129995",
+   "date": "2026-11-28"
+  },
+  "oeis-a182531": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: The OEIS entry records Falk Huffner's proof. In a paw-free graph every component containing a triangle is exactly K3; two K3s can be replaced by K3,3, and a single K3 by three pendant edges in a triangle-free component. So for n >= 4 the extremal number equals the triangle-free maximum floor(n^2/4) by Mantel, and n <= 3 is checked directly. That is exactly the stated formula; I checked the argument.",
+   "source": "https://oeis.org/A182531",
+   "date": "2026-11-28"
+  },
+  "oeis-a243901": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Pan-Sun, 'Consecutive primes and Legendre symbols' (arXiv 1406.5951, published version): for every m and delta_1, delta_2 in {1,-1} there are infinitely many n with (p_{n+i}/p_{n+j}) = delta_1 and (p_{n+j}/p_{n+i}) = delta_2 for all 0 <= i < j <= m. Taking delta_1 = delta_2 = 1 gives Sun's conjecture exactly.",
+   "source": "https://arxiv.org/pdf/1406.5951#page=2",
+   "date": "2026-11-28"
+  },
+  "oeis-a258902": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Fried's proof (the OEIS-linked a258902.pdf, also arXiv 2607.24832 Theorem 48) derives from y' = 1/(1-y-y^2) the ODE (19-42x-36x^2)y'' - (21+36x)y' + 4y + 2 = 0. That gives 19a_{n+2} - (42n+21)a_{n+1} + (4-36n^2)a_n = 0 for n >= 1, which is Mathar's recurrence for n >= 3 after shifting; I checked it numerically.",
+   "source": "https://oeis.org/A258902/a258902.pdf",
+   "date": "2026-11-28"
+  },
+  "oeis-a267794": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: The OEIS entry records Zabolotskii's proof of the upper bound. After a positive term and k zeros, the all-zero k-block already occurred at the start, so the next term is positive. Existence of a run of exactly k zeros is immediate from the opening terms: s(0..k) = 0, s(k+1) = 1, then k zeros, then a positive term. Together this is the statement for every k >= 1.",
+   "source": "https://oeis.org/A267794",
+   "date": "2026-11-28"
+  },
+  "oeis-a326925": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: blakestone-x/math A326925Even (commit 2acae8b, Lean 4.19 + pinned Mathlib; ChatGPT-assisted but kernel-checked) uses the same quotient-rule derivative and f = (1-X)/(1-X-X^2). It proves the n-th derivative numerator is +-n! P_{n+1}, irreducible for even n, and for n = 2k-1 equal to (2k-1)! U_k V_k with U_k, V_k irreducible of degree k. That gives both clauses for row n; text search of all 13 files finds no sorry, axiom or native_decide.",
+   "source": "https://github.com/blakestone-x/math/tree/2acae8bd092d0fec3726be6fea9eed42875fa085/A326925Even",
+   "date": "2026-11-28"
+  },
+  "oeis-a375786": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: trureturing D5/S3/Arith/OeisA375786CuboidMinimumVolume.lean (commit 7467bd9) proves 'claim': for n >= 1 the lexicographically least (x,y) cuboid with xy+yz+xz = 3n^2 has minimum volume among all such cuboids, which is the second conjunct. The first (a lex-least admissible triple exists) is immediate, since the cube (n,n,n) is admissible and the set is finite. Mathlib-only imports, no sorry, axiom or native_decide.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/7467bd909d6636929b0839d640949cbc25fe5b99/D5/S3/Arith/OeisA375786CuboidMinimumVolume.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a401248": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: trureturing D5/S3/Factorization/TwoDenseDivisorBlockMinimum.lean (commit c5c1546; URL is its blueprint page) proves 'claim': for n > 0 the length of the first 2-dense divisor block (head of row n) is <= the length of every block. So the minimum block length equals the first block's length, A384222(n,1), exactly Conjecture 1. Text search of the file and its 2 local imports finds no sorry, axiom or native_decide.",
+   "source": "https://the-omega-institute.github.io/trureturing-mdbook/Blueprint/D5/S3/Factorization/TwoDenseDivisorBlockMinimum.html",
+   "date": "2026-11-28"
+  },
+  "oeis-a397434": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: trureturing D5/S3/ArithSums/A397434ThresholdAnf.lean (commit 5fc209a) proves a_eq_succ_iff_mod_four: for n >= 1, a n = a (n+1) iff n % 4 = 2. Its a counts monomials whose coefficient sum_{j>=t} C(d,j) mod 2 (reduced by a proven lemma to C(d-1,t-1) mod 2) is 1, with t = ceil(n/2), which is the site's Mobius-inversion coefficient count. Mathlib-only imports, no sorry, axiom or native_decide.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/5fc209a521b439f45d0b6a2260efd56349ca35fb/D5/S3/ArithSums/A397434ThresholdAnf.lean#L347",
+   "date": "2026-11-28"
+  },
+  "opg-approximation-ratio-for-maximum-edge-disjoint-paths-problem": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Chuzhoy-Kim-Nimavat (arXiv 1611.05429, STOC 2017) prove Edge-Disjoint Paths is 2^{Omega(sqrt(log n))}-hard to approximate even on sub-cubic planar graphs unless NP has n^{O(log n)}-time algorithms. That is exactly: for some c > 0, a polynomial-time 2^{c sqrt(log n)}-approximation on planar instances would give quasi-polynomial-time SAT.",
+   "source": "https://arxiv.org/abs/1611.05429",
+   "date": "2026-11-28"
+  },
+  "opg-cores-of-strongly-regular-graphs": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Roberson, 'Homomorphisms of strongly regular graphs' (Algebraic Combinatorics 2, 2019): every endomorphism of a primitive SRG is an automorphism or an optimal colouring onto a maximum clique, so either all endomorphisms are bijective or chi = omega. Imprimitive SRGs (disjoint unions of cliques, complete multipartite graphs, and the trivial cases) have chi = omega. This confirms Cameron-Kazanidis exactly as stated.",
+   "source": "https://alco.centre-mersenne.org/articles/10.5802/alco.50/",
+   "date": "2026-11-28"
+  },
+  "opg-real-roots-of-the-flow-polynomial": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Disproved: Haggard-Pearce-Royle, 'Computing Tutte polynomials' (ACM TOMS 2010), Section 3, give counterexamples to Welsh's conjecture. A generalised Petersen graph has nonzero flow polynomial (x-1)(x-2)(x-3)Q(x) with real roots near 4.0252 and 4.2331, both greater than 4.",
+   "source": "https://whileydave.com/publications/HPR10_TOMS_preprint.pdf",
+   "date": "2026-11-28"
+  },
+  "opg-shuffle-exchange-conjecture-graph-theoretic-form": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Disproved: Chojecki (arXiv 2607.15296, unrefereed, ulam.ai), Proposition 18, gives an explicit k-regular mask M_k (k >= 3) with no 5-step route, so the 5-stage graph for (k,n) = (3,3) is not rearrangeable and r(3,3) != 2n-1 = 5. I checked that 5-step routes there are exactly routings of the site's 5-stage (SE(3,3))^4, and verified the short block-partition proof by hand.",
+   "source": "https://arxiv.org/html/2607.15296",
    "date": "2026-11-28"
   }
  }

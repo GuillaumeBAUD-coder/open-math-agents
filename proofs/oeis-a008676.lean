@@ -22,16 +22,8 @@ lemma step (n : ℕ) : a (n + 15) = a n + 1 := by
     · rintro (⟨hx, hy⟩ | ⟨u, v, ⟨⟨hu, hv⟩, h⟩, hx, hy⟩)
       · refine ⟨⟨by omega, by omega⟩, by omega⟩
       · refine ⟨⟨by omega, by omega⟩, by omega⟩
-  have hnot : ((2 * n) % 5, (n + 15 - 3 * ((2 * n) % 5)) / 5) ∉
-      (representations n).image (fun p : ℕ × ℕ => (p.1 + 5, p.2)) := by
-    simp only [Finset.mem_image, Prod.mk.injEq, Prod.exists, not_exists, not_and]
-    intro u v _ hu
-    omega
-  have hinj : Function.Injective (fun p : ℕ × ℕ => (p.1 + 5, p.2)) := by
-    rintro ⟨u, v⟩ ⟨u', v'⟩ h
-    simp only [Prod.mk.injEq] at h ⊢
-    omega
-  rw [hset, Finset.card_insert_of_notMem hnot, Finset.card_image_of_injective _ hinj]
+  rw [hset, Finset.card_insert_of_notMem (by simp; omega),
+    Finset.card_image_of_injective _ fun ⟨u, v⟩ ⟨u', v'⟩ h => by simp at h ⊢; omega]
 
 set_option maxRecDepth 100000 in
 open OMA.S_oeis_a008676 in
@@ -50,11 +42,6 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a008676.main := by
       have h1 := ih m (by omega)
       rw [A008676.step]
       push_cast
-      have e1 : (2 * ((m : ℤ) + 15 + 3)) / 3 = (2 * ((m : ℤ) + 3)) / 3 + 10 := by
-        rw [show 2 * ((m : ℤ) + 15 + 3) = 2 * ((m : ℤ) + 3) + 10 * 3 by ring,
-          Int.add_mul_ediv_right _ _ (by norm_num)]
-      have e2 : (3 * ((m : ℤ) + 15 + 3)) / 5 = (3 * ((m : ℤ) + 3)) / 5 + 9 := by
-        rw [show 3 * ((m : ℤ) + 15 + 3) = 3 * ((m : ℤ) + 3) + 9 * 5 by ring,
-          Int.add_mul_ediv_right _ _ (by norm_num)]
-      rw [e1, e2, h1]
-      ring
+      have : 2 * ((m : ℤ) + 15 + 3) / 3 = 2 * ((m : ℤ) + 3) / 3 + 10 := by omega
+      have : 3 * ((m : ℤ) + 15 + 3) / 5 = 3 * ((m : ℤ) + 3) / 5 + 9 := by omega
+      omega

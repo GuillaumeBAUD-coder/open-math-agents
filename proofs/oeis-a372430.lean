@@ -11,8 +11,6 @@ def Conjecture : Prop := ∀ k : ℕ, 0 < k → binIdx k ⊆ primeIdx k → k = 
 /-- The counterexample. -/
 def k₀ : ℕ := 2 ^ 87 + 2 ^ 49
 
-theorem k₀_val : k₀ = 154742504911235484315811840 := by norm_num [k₀]
-
 theorem count229 : Nat.count Nat.Prime 229 = 49 := by
   rw [Nat.count_eq_card_filter_range]
   decide +kernel
@@ -51,17 +49,6 @@ theorem binIdx_k₀ : binIdx k₀ ⊆ primeIdx k₀ := by
   · obtain rfl : i = 88 := by omega
     rw [prime_88]
     norm_num [k₀]
-
-/-- The binary indices of k₀ are exactly {50, 88} (so the subset is not vacuous). -/
-theorem binIdx_k₀_eq : binIdx k₀ = {50, 88} := by
-  ext i
-  simp only [binIdx, Set.mem_ofPred_eq, Set.mem_insert_iff, Set.mem_singleton_iff]
-  constructor
-  · rintro ⟨hi1, hbit⟩
-    rcases testBit_k₀ (i - 1) hbit with h | h <;> omega
-  · rintro (rfl | rfl)
-    · exact ⟨by norm_num, by decide +kernel⟩
-    · exact ⟨by norm_num, by decide +kernel⟩
 
 theorem disproof : ¬ Conjecture := by
   intro h

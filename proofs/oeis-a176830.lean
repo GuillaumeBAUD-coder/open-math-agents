@@ -4,10 +4,12 @@ import OMAStatements.S_oeis_a176830
 Differentiating a polynomial square identity gives a first-order linear
 differential equation and hence the asserted coefficient recurrence. -/
 
+-- Original Lean proof: @romechenko.
+
 namespace A176830Proof
 
 open OMA.S_oeis_a176830 PowerSeries Finset
-open scoped PowerSeries
+private noncomputable abbrev D := PowerSeries.derivative (R := ℤ)
 
 private theorem prefixLength : ∀ n : ℕ, (aList n).length = n + 1
   | 0 => rfl
@@ -82,22 +84,13 @@ private theorem A_quad : A = 1 + PowerSeries.C 3 * Xz + Xz * A^2 + Xz^2 * T := b
     exact convRec n
 
 private theorem T_clear : (1-Xz)^2 * T = 1 := by
-  rw [show (1-Xz)^2*T = T - PowerSeries.C 2*(Xz*T) + Xz^2*T by
-    simp only [map_ofNat]; ring]
-  ext n
-  rcases n with _ | _ | n
-  · simp only [map_sub, map_add, coeff_C_mul, coeff_zero_X_mul, coeff_X_pow_mul', T,
-      coeff_mk, coeff_one]
-    norm_num
-  · simp only [map_sub, map_add, coeff_C_mul, coeff_succ_X_mul, coeff_X_pow_mul', T,
-      coeff_mk, coeff_one]
-    norm_num
-  · have h2 : 2 ≤ n.succ.succ := by omega
-    have hz : n.succ.succ ≠ 0 := by omega
-    simp only [map_sub, map_add, coeff_C_mul, coeff_succ_X_mul, coeff_X_pow_mul', T,
-      coeff_mk, coeff_one, h2, hz, if_true, if_false]
-    simp only [show n.succ.succ - 2 = n by omega, Nat.cast_succ]
-    ring
+  have firstDiff : (1-Xz) * T = PowerSeries.mk 1 := by
+    ext n
+    cases n <;> simp [sub_mul, T, Xz, Nat.cast_succ]
+  have secondDiff : (1-Xz) * PowerSeries.mk 1 = 1 := by
+    ext n
+    cases n <;> simp [sub_mul, Xz]
+  rw [pow_two, mul_assoc, firstDiff, secondDiff]
 
 private noncomputable def B : PowerSeries ℤ :=
   (1-Xz) - PowerSeries.C 2 * Xz * (1-Xz) * A
@@ -118,17 +111,17 @@ private theorem squareRelation : B^2 = G := by
   linear_combination -4*Xz*hclear
 
 private theorem derivativeMul (f g : PowerSeries ℤ) :
-    d⁄dX ℤ (f*g) = f*d⁄dX ℤ g + g*d⁄dX ℤ f := by
-  simpa only [smul_eq_mul] using (PowerSeries.derivative ℤ).leibniz f g
+    D (f*g) = f*D g + g*D f := by
+  simpa only [smul_eq_mul] using (D).leibniz f g
 
-private theorem derivativeB : d⁄dX ℤ B =
-    -1 - 2*(1-2*Xz)*A - 2*Xz*(1-Xz)*d⁄dX ℤ A := by
+private theorem derivativeB : D B =
+    -1 - 2*(1-2*Xz)*A - 2*Xz*(1-Xz)*D A := by
   simp only [B, map_sub, Derivation.map_one_eq_zero, derivative_X, derivativeMul,
     derivative_C]
   simp only [map_ofNat]
   ring
 
-private theorem derivativeG : d⁄dX ℤ G = -6 - 6*Xz + 48*Xz^2 - 48*Xz^3 := by
+private theorem derivativeG : D G = -6 - 6*Xz + 48*Xz^2 - 48*Xz^3 := by
   simp only [G, map_sub, map_add, Derivation.map_one_eq_zero, derivative_X, derivativeMul,
     derivative_C, derivative_pow]
   norm_num
@@ -145,12 +138,12 @@ private noncomputable def Q : PowerSeries ℤ :=
 private noncomputable def R : PowerSeries ℤ :=
   term 1 0 + term 3 1 + term (-12) 2 + term 16 3 + term (-6) 4
 
-private theorem differential : P*d⁄dX ℤ A + Q*A = R := by
-  have hder := congrArg (PowerSeries.derivative ℤ) squareRelation
+private theorem differential : P*D A + Q*A = R := by
+  have hder := congrArg (D) squareRelation
   rw [PowerSeries.derivative_pow] at hder
-  have h : 2*G*d⁄dX ℤ B = (d⁄dX ℤ G)*B := by
+  have h : 2*G*D B = (D G)*B := by
     calc
-      _ = ((2 : ℕ) * B^(2-1) * d⁄dX ℤ B)*B := by rw [← squareRelation]; norm_num; ring
+      _ = ((2 : ℕ) * B^(2-1) * D B)*B := by rw [← squareRelation]; norm_num; ring
       _ = _ := by rw [hder]
   rw [derivativeB, derivativeG] at h
   have hfour : (4 : PowerSeries ℤ) ≠ 0 := by
@@ -170,28 +163,25 @@ private theorem coeffTerm (c : ℤ) (k n : ℕ) :
     coeff n (term c k) = if n = k then c else 0 :=
   coeff_C_mul_X_pow c k n
 
+private theorem coeffDerivativeTerm (c : ℤ) (k n : ℕ) (h : k ≤ n + 1) :
+    coeff n (term c k * D A) = c * ((n : ℤ) + 1 - k) * a (n + 1 - k) := by
+  rw [coeffTermMul]
+  by_cases hk : k ≤ n
+  · simp [hk, coeff_derivative, A, Nat.cast_sub hk, show n - k + 1 = n + 1 - k by omega]
+    ring
+  · have he : k = n + 1 := by omega
+    subst k
+    simp [if_neg hk]
+
 theorem coefficientRec (n : ℕ) (hn : 5 ≤ n) :
     ((n : ℤ)+1)*a n + (-7*(n : ℤ)+2)*a (n-1) + 3*((n : ℤ)+1)*a (n-2)
       + (19*(n : ℤ)-62)*a (n-3) + 4*(-7*(n : ℤ)+29)*a (n-4)
       + 12*((n : ℤ)-5)*a (n-5) = 0 := by
-  by_cases h5eq : n = 5
-  · subst n
-    decide +kernel
   have h := congrArg (coeff n) differential
-  simp only [P, Q, R, add_mul, map_add, coeffTermMul, coeffTerm,
-    coeff_derivative, A, coeff_mk] at h
-  have h1 : 1 ≤ n := by omega
-  have h2 : 2 ≤ n := by omega
-  have h3 : 3 ≤ n := by omega
-  have h4 : 4 ≤ n := by omega
-  have h6 : 6 ≤ n := by omega
-  have hne (k : ℕ) (hk : k ≤ 4) : n ≠ k := by omega
-  have index (j : ℕ) (hj : j+1 ≤ n) : n-(j+1)+1 = n-j := by omega
-  simp only [Nat.zero_le, h1, h2, h3, h4, hn, h6, if_true, hne 0 (by decide),
-    hne 1 (by decide), hne 2 (by decide), hne 3 (by decide), hne 4 (by decide), if_false,
-    index 0 h1, index 1 h2, index 2 h3, index 3 h4, index 4 hn, index 5 h6,
-    Nat.sub_zero, Nat.cast_sub h1, Nat.cast_sub h2, Nat.cast_sub h3,
-    Nat.cast_sub h4, Nat.cast_sub hn, Nat.cast_sub h6, Nat.cast_ofNat] at h
+  simp (disch := omega) only [P, Q, R, add_mul, map_add, coeffDerivativeTerm] at h
+  have idx (k : ℕ) (hk : 0 < k) : n + 1 - k = n - (k - 1) := by omega
+  simp (disch := omega) only [coeffTermMul, coeffTerm, A, coeff_mk, if_pos, if_neg, idx] at h
+  norm_num at h
   linear_combination h
 
 end A176830Proof

@@ -1,5 +1,6 @@
 import OMAStatements.S_oeis_a152601
 
+-- Original Lean proof: @grp06.
 /-! A telescoping certificate for Mathar's recurrence in https://oeis.org/A152601. -/
 
 namespace OMA152601
@@ -57,10 +58,7 @@ private theorem scale (n : ℕ) : (a n : ℚ) = 2 ^ n * u n := by
     norm_num
   unfold w
   rw [hpow]
-  calc
-    _ = ((n + k).choose (2 * k) : ℚ) * (catalan k : ℚ) *
-        (2 ^ (n - k) * ((2 : ℚ) ^ k * (3 / 2) ^ k)) := by rw [hfactor]; ring
-    _ = _ := by ring
+  linear_combination -(((n + k).choose (2 * k) : ℚ) * catalan k * 2 ^ (n - k)) * hfactor
 
 private theorem local_relation (n k x y z t : ℚ) (hn : 2 ≤ n) (hk : 0 ≤ k)
     (h₁ : (n + k) * y = (n - k) * x)
@@ -117,10 +115,7 @@ theorem recurrence_of_shift (hshift : ShiftIdentity) :
     simp only [pow_add]
     norm_num
     linear_combination (4 * (2 : ℚ) ^ m) * heq
-  have hi : ((↑(m + 2) : ℤ) + 1) * (a (m + 2) : ℤ) +
-      8 * (-2 * (↑(m + 2) : ℤ) + 1) * (a (m + 1) : ℤ) +
-      4 * ((↑(m + 2) : ℤ) - 2) * (a m : ℤ) = 0 := by exact_mod_cast hq
-  exact hi
+  exact_mod_cast hq
 
 private theorem catalan_step (j : ℕ) :
     ((j : ℚ) + 2) * (catalan (j + 1) : ℚ) =
@@ -146,20 +141,14 @@ private theorem shift_identity : ShiftIdentity := by
     have hAq := congrArg (fun n : ℕ => (n : ℚ)) hA
     have hBq := congrArg (fun n : ℕ => (n : ℚ)) hB
     push_cast at hAq hBq
-    have hBinom :
-        (2 * ((j : ℚ) + 1)) * (2 * (j : ℚ) + 1) *
-            ((m + 2 + (j + 1)).choose (2 * (j + 1)) : ℚ) =
-          ((m : ℚ) + j + 2) * ((m : ℚ) + j + 3) *
-            ((m + 1 + j).choose (2 * j) : ℚ) := by
-      linear_combination (-((m : ℚ) + j + 3)) * hAq - (2 * (j : ℚ) + 1) * hBq
     have hCore :
         ((j : ℚ) + 1) * ((j : ℚ) + 2) *
             ((m + 2 + (j + 1)).choose (2 * (j + 1)) : ℚ) * (catalan (j + 1) : ℚ) =
           ((m : ℚ) + j + 2) * ((m : ℚ) + j + 3) *
             ((m + 1 + j).choose (2 * j) : ℚ) * (catalan j : ℚ) := by
       linear_combination
-        (((j : ℚ) + 1) * ((m + 2 + (j + 1)).choose (2 * (j + 1)) : ℚ)) *
-          catalan_step j + (catalan j : ℚ) * hBinom
+        (((j : ℚ) + 1) * ((m + 2 + (j + 1)).choose (2 * (j + 1)) : ℚ)) * catalan_step j -
+        (catalan j : ℚ) * (((m : ℚ) + j + 3) * hAq + (2 * (j : ℚ) + 1) * hBq)
     change ((↑(j + 1) : ℚ) * (↑(j + 1) + 1) * w (m + 2) (j + 1)) =
       (3 / 2) * ((m : ℚ) + 2 + ↑(j + 1)) * ((m : ℚ) + 2 + ↑(j + 1) - 1) * w (m + 1) j
     unfold w

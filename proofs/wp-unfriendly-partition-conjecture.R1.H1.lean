@@ -20,11 +20,8 @@ open SimpleGraph Finset
 
 private def neighborSubtypeEquiv {V : Type} (G : SimpleGraph V) (N : V → Finset V)
     (hN : ∀ v w, w ∈ N v ↔ G.Adj v w) (v : V) (P : V → Prop) [DecidablePred P] :
-    {w : V // G.Adj v w ∧ P w} ≃ ↥((N v).filter P) where
-  toFun x := ⟨x.1, Finset.mem_filter.mpr ⟨(hN v x.1).mpr x.2.1, x.2.2⟩⟩
-  invFun y := ⟨y.1, (hN v y.1).mp (Finset.mem_filter.mp y.2).1, (Finset.mem_filter.mp y.2).2⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
+    {w : V // G.Adj v w ∧ P w} ≃ ↥((N v).filter P) :=
+  Equiv.subtypeEquivRight fun w => by simp only [Finset.mem_filter, hN]
 
 private def UnfriendlyAt {V : Type} (N : V → Finset V) (f : V → Bool) (v : V) : Prop :=
   ((N v).filter fun w => f w = f v).card ≤ ((N v).filter fun w => f w ≠ f v).card
@@ -67,7 +64,7 @@ private lemma cutScore_split {V : Type} [DecidableEq V] (G : SimpleGraph V) [Dec
   rw [h1, h2, h3]
   omega
 
-private lemma bool_not_ne_iff (a b : Bool) : ((!a) ≠ b) ↔ b = a := by
+private lemma bool_not_ne_iff (a b : Bool) : (b ≠ !a) ↔ b = a := by
   cases a <;> cases b <;> decide
 
 private lemma unfriendly_of_max_cutScore {V : Type} [DecidableEq V] (G : SimpleGraph V)
@@ -76,60 +73,33 @@ private lemma unfriendly_of_max_cutScore {V : Type} [DecidableEq V] (G : SimpleG
     (hmax : ∀ f' : V → Bool, cutScore G S f' ≤ cutScore G S f)
     {v : V} (hvS : v ∈ S) (hNS : N v ⊆ S) :
     UnfriendlyAt N f v := by
-  have hle : cutScore G S (fun u => if u = v then !f v else f u) ≤ cutScore G S f :=
-    hmax (fun u => if u = v then !f v else f u)
-  rw [cutScore_split G S hvS (fun u => if u = v then !f v else f u),
-      cutScore_split G S hvS f] at hle
+  let flip (w : V) := if w = v then !f v else f w
+  have hle := hmax flip
   have hrest :
-      (∑ u ∈ S.erase v, ∑ w ∈ S.erase v,
-          if G.Adj u w ∧ (if u = v then !f v else f u) ≠ (if w = v then !f v else f w)
-          then 1 else 0) =
+      (∑ u ∈ S.erase v, ∑ w ∈ S.erase v, if G.Adj u w ∧ flip u ≠ flip w then 1 else 0) =
         (∑ u ∈ S.erase v, ∑ w ∈ S.erase v, if G.Adj u w ∧ f u ≠ f w then 1 else 0) := by
     refine Finset.sum_congr rfl fun u hu => Finset.sum_congr rfl fun w hw => ?_
-    have huv : u ≠ v := Finset.ne_of_mem_erase hu
-    have hwv : w ≠ v := Finset.ne_of_mem_erase hw
-    simp [huv, hwv]
-  have hmem : ∀ w, (w ∈ S.erase v ∧ G.Adj v w) ↔ w ∈ N v := by
-    intro w
-    constructor
-    · rintro ⟨_, hvw⟩
-      exact (hN v w).mpr hvw
-    · intro hwN
-      have hvw : G.Adj v w := (hN v w).mp hwN
-      exact ⟨Finset.mem_erase.mpr ⟨hvw.ne', hNS hwN⟩, hvw⟩
-  have hdiff :
-      (∑ w ∈ S.erase v, if G.Adj v w ∧ f v ≠ f w then 1 else 0) =
-        ((N v).filter fun w => f w ≠ f v).card := by
+    simp [flip, Finset.ne_of_mem_erase hu, Finset.ne_of_mem_erase hw]
+  have hmem (w : V) : (w ∈ S.erase v ∧ G.Adj v w) ↔ w ∈ N v := by
+    rw [hN]
+    exact ⟨And.right, fun hvw => ⟨Finset.mem_erase.mpr ⟨hvw.ne', hNS ((hN v w).mpr hvw)⟩, hvw⟩⟩
+  have incident (g : V → Bool) :
+      (∑ w ∈ S.erase v, if G.Adj v w ∧ g v ≠ g w then 1 else 0) =
+        ((N v).filter fun w => g w ≠ g v).card := by
     rw [Finset.card_filter, ← Finset.sum_filter, ← Finset.sum_filter]
     congr 1
+    ext w
+    simp only [Finset.mem_filter, ← and_assoc, hmem, ne_comm]
+  have hflip : ((N v).filter fun w => flip w ≠ flip v) =
+      ((N v).filter fun w => f w = f v) := by
     ext w
     simp only [Finset.mem_filter]
-    constructor
-    · rintro ⟨hwT, hvw, hne⟩
-      exact ⟨(hmem w).mp ⟨hwT, hvw⟩, hne.symm⟩
-    · rintro ⟨hwN, hne⟩
-      exact ⟨((hmem w).mpr hwN).1, ((hmem w).mpr hwN).2, hne.symm⟩
-  have hsame :
-      (∑ w ∈ S.erase v,
-          if G.Adj v w ∧ (if v = v then !f v else f v) ≠ (if w = v then !f v else f w)
-          then 1 else 0) =
-        ((N v).filter fun w => f w = f v).card := by
-    rw [Finset.card_filter, ← Finset.sum_filter, ← Finset.sum_filter]
-    congr 1
-    ext w
-    simp only [Finset.mem_filter, ite_true]
-    constructor
-    · rintro ⟨hwT, hvw, hne⟩
-      have hwv : w ≠ v := Finset.ne_of_mem_erase hwT
-      simp only [if_neg hwv, bool_not_ne_iff] at hne
-      exact ⟨(hmem w).mp ⟨hwT, hvw⟩, hne⟩
-    · rintro ⟨hwN, heq⟩
-      obtain ⟨hwT, hvw⟩ := (hmem w).mpr hwN
-      have hwv : w ≠ v := Finset.ne_of_mem_erase hwT
-      refine ⟨hwT, hvw, ?_⟩
-      simp only [if_neg hwv, bool_not_ne_iff]
-      exact heq
-  rw [hrest, hdiff, hsame] at hle
+    apply and_congr_right
+    intro hw
+    simpa only [flip, if_pos rfl, if_neg ((hN v w).mp hw).ne'] using
+      bool_not_ne_iff (f v) (f w)
+  rw [cutScore_split G S hvS flip, cutScore_split G S hvS f,
+    hrest, incident flip, incident f, hflip] at hle
   unfold UnfriendlyAt
   omega
 
@@ -188,21 +158,13 @@ private theorem isClosed_unfriendlyAt {V : Type} [DecidableEq V] (N : V → Fins
       ((N v).attach.filter fun w => f w.1 = f v).card ≤
         ((N v).attach.filter fun w => f w.1 ≠ f v).card
     unfold UnfriendlyAt
-    have c1 :
-        ((N v).attach.filter fun w => f w.1 = f v).card =
-          ((N v).filter fun w => f w = f v).card := by
+    have card_attach (P : V → Prop) [DecidablePred P] :
+        ((N v).attach.filter fun w => P w.1).card = ((N v).filter P).card := by
       rw [← Finset.card_map ⟨Subtype.val, Subtype.val_injective⟩]
       congr 1
       ext x
       simp [and_comm]
-    have c2 :
-        ((N v).attach.filter fun w => f w.1 ≠ f v).card =
-          ((N v).filter fun w => f w ≠ f v).card := by
-      rw [← Finset.card_map ⟨Subtype.val, Subtype.val_injective⟩]
-      congr 1
-      ext x
-      simp [and_comm]
-    rw [c1, c2]
+    rw [card_attach (fun w => f w = f v), card_attach (fun w => f w ≠ f v)]
   rw [heq]
   exact hclosed_good.preimage hcont
 

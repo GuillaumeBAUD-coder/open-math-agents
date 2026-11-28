@@ -4,6 +4,8 @@ import Mathlib
 /-!
 # oeis-a184138: counting the n X 3 arrays
 
+Original Lean proof: @physbuzz.
+
 Split an array (a list of rows) into its first row and the rest. The local conditions
 are a chain condition, and each lexicographic comparison of consecutive columns is decided at the first position
 where the two differ, so it only adds a flag saying whether the comparison is still pending. The
@@ -210,42 +212,70 @@ theorem f_closed (n : ℕ) : ∀ b0 b1 (i0 i1 i2 : Fin 2),
       (try simp only [ih]) <;>
       simp [PCv, T00, T01, T10, T11] <;> ring
 
+private def P (x : ℚ) : ℚ :=
+  (1 / 5040) * x ^ 7 + (1 / 240) * x ^ 6 + (5 / 144) * x ^ 5 + (5 / 48) * x ^ 4 +
+    (73 / 180) * x ^ 3 + (107 / 120) * x ^ 2 + (131 / 84) * x + 1
+
 set_option maxHeartbeats 4000000 in
-theorem a_closed (n : ℕ) (hn : 1 ≤ n) : (a n : ℚ) = ((1 : ℚ) / 5040) * (n : ℚ) ^ 7 + ((1 : ℚ) / 240) * (n : ℚ) ^ 6 + ((5 : ℚ) / 144) * (n : ℚ) ^ 5 + ((5 : ℚ) / 48) * (n : ℚ) ^ 4 + ((73 : ℚ) / 180) * (n : ℚ) ^ 3 + ((107 : ℚ) / 120) * (n : ℚ) ^ 2 + ((131 : ℚ) / 84) * (n : ℚ) ^ 1 + (1 : ℚ) := by
+theorem a_closed (n : ℕ) (hn : 1 ≤ n) : (a n : ℚ) = P n := by
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
   rw [a_succ]; push_cast
   rw [sumk]
   simp only [Fin.sum_univ_two, f_closed]
-  simp [PCv, T11]
+  simp [PCv, T11, P]
   ring
 
-lemma av (k : ℕ) : (a (k + 1) : ℚ) = ((1 : ℚ) / 5040) * ((k : ℚ) + 1) ^ 7 + ((1 : ℚ) / 240) * ((k : ℚ) + 1) ^ 6 + ((5 : ℚ) / 144) * ((k : ℚ) + 1) ^ 5 + ((5 : ℚ) / 48) * ((k : ℚ) + 1) ^ 4 + ((73 : ℚ) / 180) * ((k : ℚ) + 1) ^ 3 + ((107 : ℚ) / 120) * ((k : ℚ) + 1) ^ 2 + ((131 : ℚ) / 84) * ((k : ℚ) + 1) ^ 1 + (1 : ℚ) := by
-  rw [a_closed (k + 1) (by omega)]; push_cast; ring
+private lemma av (k : ℕ) : (a (k + 1) : ℚ) = P ((k : ℚ) + 1) := by
+  simpa using a_closed (k + 1) (by omega)
 
-open PowerSeries in
-theorem full :
-    (∀ n ≥ 1, (a n : ℚ) = (1 / 5040) * n ^ 7 + (1 / 240) * n ^ 6 + (5 / 144) * n ^ 5 + (5 / 48) * n ^ 4 + (73 / 180) * n ^ 3 + (107 / 120) * n ^ 2 + (131 / 84) * n + 1) ∧
-    (PowerSeries.mk (fun n => (a (n + 1) : ℚ)) * (1 - X) ^ 8 =
-      4 - 18 * X + 45 * X ^ 2 - 62 * X ^ 3 + 52 * X ^ 4 - 27 * X ^ 5 + 8 * X ^ 6 - 1 * X ^ 7) ∧
-    (∀ n > 8, (a n : ℤ) = 8 * a (n - 1) - 28 * a (n - 2) + 56 * a (n - 3) - 70 * a (n - 4) + 56 * a (n - 5) - 28 * a (n - 6) + 8 * a (n - 7) - 1 * a (n - 8)) := by
-  refine ⟨fun n hn => by rw [a_closed n hn]; ring, ?_, fun n hn => ?_⟩
-  · have hX : (PowerSeries.mk fun n => (a (n + 1) : ℚ)) * (1 - X) ^ 8 =
-        PowerSeries.mk (fun n => (a (n + 1) : ℚ)) + C (-8 : ℚ) * (PowerSeries.mk (fun n => (a (n + 1) : ℚ)) * X ^ 1) + C (28 : ℚ) * (PowerSeries.mk (fun n => (a (n + 1) : ℚ)) * X ^ 2) + C (-56 : ℚ) * (PowerSeries.mk (fun n => (a (n + 1) : ℚ)) * X ^ 3) + C (70 : ℚ) * (PowerSeries.mk (fun n => (a (n + 1) : ℚ)) * X ^ 4) + C (-56 : ℚ) * (PowerSeries.mk (fun n => (a (n + 1) : ℚ)) * X ^ 5) + C (28 : ℚ) * (PowerSeries.mk (fun n => (a (n + 1) : ℚ)) * X ^ 6) + C (-8 : ℚ) * (PowerSeries.mk (fun n => (a (n + 1) : ℚ)) * X ^ 7) + C (1 : ℚ) * (PowerSeries.mk (fun n => (a (n + 1) : ℚ)) * X ^ 8) := by
-      simp only [map_neg, map_ofNat, map_one, neg_mul, one_mul]; ring
-    rw [hX, show (4 - 18 * X + 45 * X ^ 2 - 62 * X ^ 3 + 52 * X ^ 4 - 27 * X ^ 5 + 8 * X ^ 6 - 1 * X ^ 7 : PowerSeries ℚ) = C (4 : ℚ) * X ^ 0 + C (-18 : ℚ) * X ^ 1 + C (45 : ℚ) * X ^ 2 + C (-62 : ℚ) * X ^ 3 + C (52 : ℚ) * X ^ 4 + C (-27 : ℚ) * X ^ 5 + C (8 : ℚ) * X ^ 6 + C (-1 : ℚ) * X ^ 7 by
-      simp only [map_neg, map_ofNat, map_one, neg_mul, one_mul, pow_zero, mul_one]; ring]
-    ext k
-    simp only [map_add, coeff_C_mul, coeff_mul_X_pow', coeff_mk, coeff_C_mul_X_pow]
-    rcases Nat.lt_or_ge k 8 with h | h
-    · interval_cases k <;> simp [av] <;> norm_num
-    · obtain ⟨m, rfl⟩ : ∃ m, k = m + 8 := ⟨k - 8, by omega⟩
-      simp only [show m + 8 - 1 = m + 7 by omega, show m + 8 - 2 = m + 6 by omega, show m + 8 - 3 = m + 5 by omega, show m + 8 - 4 = m + 4 by omega, show m + 8 - 5 = m + 3 by omega, show m + 8 - 6 = m + 2 by omega, show m + 8 - 7 = m + 1 by omega, show m + 8 - 8 = m + 0 by omega, show 1 ≤ m + 8 by omega, show 2 ≤ m + 8 by omega, show 3 ≤ m + 8 by omega, show 4 ≤ m + 8 by omega, show 5 ≤ m + 8 by omega, show 6 ≤ m + 8 by omega, show 7 ≤ m + 8 by omega, show 8 ≤ m + 8 by omega, if_true, show m + 8 ≠ 0 by omega, show m + 8 ≠ 1 by omega, show m + 8 ≠ 2 by omega, show m + 8 ≠ 3 by omega, show m + 8 ≠ 4 by omega, show m + 8 ≠ 5 by omega, show m + 8 ≠ 6 by omega, show m + 8 ≠ 7 by omega, if_false, av, coeff_C]
-      first | (push_cast; ring) | (simp; push_cast; ring) | simp
-  · obtain ⟨m, rfl⟩ : ∃ m, n = m + 9 := ⟨n - 9, by omega⟩
-    simp only [show m + 9 - 1 = m + 7 + 1 by omega, show m + 9 - 2 = m + 6 + 1 by omega, show m + 9 - 3 = m + 5 + 1 by omega, show m + 9 - 4 = m + 4 + 1 by omega, show m + 9 - 5 = m + 3 + 1 by omega, show m + 9 - 6 = m + 2 + 1 by omega, show m + 9 - 7 = m + 1 + 1 by omega, show m + 9 - 8 = m + 0 + 1 by omega, show m + 9 = m + 8 + 1 by omega]
-    have : ((a (m + 8 + 1) : ℤ) : ℚ) = 8 * (a (m + 7 + 1) : ℚ) - 28 * (a (m + 6 + 1) : ℚ) + 56 * (a (m + 5 + 1) : ℚ) - 70 * (a (m + 4 + 1) : ℚ) + 56 * (a (m + 3 + 1) : ℚ) - 28 * (a (m + 2 + 1) : ℚ) + 8 * (a (m + 1 + 1) : ℚ) - 1 * (a (m + 0 + 1) : ℚ) := by
-      push_cast; rw [av, av, av, av, av, av, av, av, av]; push_cast; ring
-    exact_mod_cast this
+open PowerSeries
+
+private noncomputable def series : PowerSeries ℚ := mk fun n => (a (n + 1) : ℚ)
+
+private noncomputable def numerator : PowerSeries ℚ :=
+  C 4 + C (-18) * X ^ 1 + C 45 * X ^ 2 + C (-62) * X ^ 3 +
+    C 52 * X ^ 4 + C (-27) * X ^ 5 + C 8 * X ^ 6 + C (-1) * X ^ 7
+
+private lemma coeff_product (n : ℕ) :
+    coeff n (series * (1 - X) ^ 8) =
+      let t (i : ℕ) := if i ≤ n then (a (n - i + 1) : ℚ) else 0
+      (a (n + 1) : ℚ) + (-8) * t 1 + 28 * t 2 + (-56) * t 3 + 70 * t 4 +
+        (-56) * t 5 + 28 * t 6 + (-8) * t 7 + t 8 := by
+  have h : series * (1 - X) ^ 8 = series +
+      C (-8) * (series * X ^ 1) + C 28 * (series * X ^ 2) +
+      C (-56) * (series * X ^ 3) + C 70 * (series * X ^ 4) +
+      C (-56) * (series * X ^ 5) + C 28 * (series * X ^ 6) +
+      C (-8) * (series * X ^ 7) + series * X ^ 8 := by
+    simp only [map_neg, map_ofNat, neg_mul]
+    ring
+  rw [h]
+  simp only [series, map_add, coeff_C_mul, coeff_mul_X_pow', coeff_mk]
+
+-- The same vanishing coefficients give the generating function and recurrence.
+private lemma vanish (n : ℕ) (hn : 8 ≤ n) : coeff n (series * (1 - X) ^ 8) = 0 := by
+  simp (disch := omega) only [coeff_product, if_pos, av, Nat.cast_sub]
+  unfold P
+  ring
+
+private lemma gf : series * (1 - X) ^ 8 = numerator := by
+  ext n
+  rcases Nat.lt_or_ge n 8 with h | h
+  · rw [coeff_product]
+    interval_cases n <;> norm_num [numerator, coeff_C, coeff_C_mul_X_pow, av, P]
+  · rw [vanish n h]
+    simp (disch := omega) only [numerator, map_add, coeff_C, coeff_C_mul_X_pow, if_neg, add_zero]
+
+theorem full : type_of% @OMA.S_oeis_a184138.main := by
+  refine ⟨a_closed, ?_, ?_⟩
+  · simpa only [series, numerator, pow_one, map_neg, map_ofNat, map_one, neg_mul, one_mul,
+      sub_eq_add_neg] using gf
+  · intro n hn
+    have h := vanish (n - 1) (by omega)
+    rw [coeff_product] at h
+    have idx (j : ℕ) (hj : j + 1 ≤ n) : n - 1 - j + 1 = n - j := by omega
+    simp (disch := omega) only [if_pos, idx, Nat.sub_add_cancel] at h
+    qify
+    linear_combination h
 
 end OMA.P_oeis_a184138
 

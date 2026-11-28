@@ -289,23 +289,6 @@ theorem conjecture :
       (10 * X ^ 5 - 11 * X ^ 4 + X ^ 3 + 10 * X ^ 2 - 10 * X + 1 : PowerSeries ℤ) :=
   ⟨recurrence, gf⟩
 
-/-- Controls: the entry's terms a(0..14). -/
-theorem controls : a 0 = 1 ∧ a 1 = 0 ∧ a 2 = 11 ∧ a 3 = 101 ∧ a 4 = 1010 ∧ a 5 = 10101 ∧
-    a 6 = 101010 ∧ a 7 = 1010101 ∧ a 8 = 10101010 ∧ a 9 = 101010101 ∧ a 10 = 1010101010 ∧
-    a 11 = 10101010101 ∧ a 12 = 101010101010 ∧ a 13 = 1010101010101 ∧
-    a 14 = 10101010101010 := by
-  obtain ⟨v3, v4, v5⟩ := a_values
-  refine ⟨a_zero, a_one, a_two, v3, v4, v5, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · rw [a_form 6 (by norm_num)]; decide
-  · rw [a_form 7 (by norm_num)]; decide
-  · rw [a_form 8 (by norm_num)]; decide
-  · rw [a_form 9 (by norm_num)]; decide
-  · rw [a_form 10 (by norm_num)]; decide
-  · rw [a_form 11 (by norm_num)]; decide
-  · rw [a_form 12 (by norm_num)]; decide
-  · rw [a_form 13 (by norm_num)]; decide
-  · rw [a_form 14 (by norm_num)]; decide
-
 end OMA.S_oeis_a284235
 
 theorem OMA.solution : type_of% @OMA.S_oeis_a284235.main :=

@@ -1,21 +1,12 @@
 import OMAStatements.S_oeis_a052227
 
-open OMA.S_oeis_a052227
-
-private theorem a_factorials (n : ℕ) :
-    a n = (4 * n + 1) * ((3 * n).factorial : ℚ) /
-      (n.factorial * (2 * n + 1).factorial) := by
-  unfold a
-  rw [Nat.cast_choose ℚ (show n ≤ 3 * n by omega),
-    show 3 * n - n = 2 * n by omega, Nat.factorial_succ]
-  push_cast
-  field_simp
-
+open OMA.S_oeis_a052227 in
 theorem OMA.solution : type_of% @OMA.S_oeis_a052227.main := by
   intro n hn
-  obtain ⟨k, rfl⟩ : ∃ k, n = k + 2 := ⟨n - 2, by omega⟩
-  rw [show k + 2 - 1 = k + 1 by omega, show k + 2 - 2 = k by omega]
-  simp only [a_factorials, Nat.mul_add, Nat.add_assoc]
-  simp only [Nat.factorial, Nat.cast_mul, Nat.cast_succ]
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hn
+  have c (j : ℕ) : ((3*j).choose j : ℚ) = (3*j).factorial / (j.factorial * (2*j).factorial) := by
+    rw [Nat.cast_choose ℚ (by omega), show 3*j-j = 2*j by omega]
+  simp only [a, c]
+  simp [mul_add, Nat.factorial_succ]
   field_simp
   ring

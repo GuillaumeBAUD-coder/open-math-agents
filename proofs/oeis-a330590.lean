@@ -1,6 +1,11 @@
 import OMAStatements.S_oeis_a330590
 import Mathlib
 
+/-! Fixed divisors of power differences, following @caa1982 (#23263).
+Use the standard prime-factor divisor count and power/order congruence APIs.
+The classification of fixed divisors and the final counting argument remain
+unchanged. -/
+
 open OMA.S_oeis_a330590
 
 
@@ -25,17 +30,16 @@ theorem prime_of_PP (n : ℕ) (hn : 2 ≤ n) : ∀ p ∈ PP n, p.Prime := fun p 
 
 theorem card_div_prod (s : Finset ℕ) (hs : ∀ p ∈ s, p.Prime) :
     (Nat.divisors (∏ p ∈ s, p)).card = 2 ^ s.card := by
-  induction s using Finset.induction_on with
-  | empty => simp
-  | insert q s hq ih =>
-    rw [Finset.prod_insert hq, Nat.Coprime.card_divisors_mul, Finset.card_insert_of_notMem hq,
-      ih (fun p hp => hs p (Finset.mem_insert_of_mem hp)), (hs q (Finset.mem_insert_self q s)).divisors,
-      pow_succ]
-    · rw [Finset.card_pair (hs q (Finset.mem_insert_self q s)).one_lt.ne]; ring
-    · apply Nat.Coprime.prod_right
-      intro p hp
-      exact (Nat.coprime_primes (hs q (Finset.mem_insert_self q s)) (hs p (Finset.mem_insert_of_mem hp))).2
-        (fun h => hq (h ▸ hp))
+  have hn : ∀ p ∈ s, p ≠ 0 := fun p hp => (hs p hp).ne_zero
+  rw [Nat.card_divisors (Finset.prod_ne_zero_iff.mpr hn), Nat.primeFactors_prod hs,
+    ← Finset.prod_const]
+  apply Finset.prod_congr rfl
+  intro p hp
+  rw [Nat.factorization_prod_apply hn, Finset.sum_eq_single p]
+  · simp [(hs p hp).factorization]
+  · intro q hq hqp
+    simp [(hs q hq).factorization, Ne.symm hqp]
+  · exact fun h => (h hp).elim
 
 theorem prime_dvd_pow_sub (n : ℕ) (hn : 2 ≤ n) (p : ℕ) (hp : p.Prime) (hd : (p - 1) ∣ (n - 1))
     (x : ℤ) : (p : ℤ) ∣ x ^ n - x := by
@@ -82,17 +86,12 @@ theorem order_dvd (n : ℕ) (hn : 2 ≤ n) (p : ℕ) (hp : p.Prime) (h : ∀ x :
   have hord : orderOf g = p - 1 := by
     rw [orderOf_eq_card_of_forall_mem_zpowers hg, Nat.card_eq_fintype_card, ZMod.card_units]
   rw [← hord]
-  apply orderOf_dvd_of_pow_eq_one
   have hx := h ((g : ZMod p).val : ℤ)
   rw [← ZMod.intCast_zmod_eq_zero_iff_dvd] at hx
   push_cast at hx
   rw [ZMod.natCast_zmod_val] at hx
-  have e : (g : ZMod p) ^ n = g := sub_eq_zero.1 hx
-  apply Units.ext
-  have e2 : (g : ZMod p) ^ (n - 1) * g = 1 * g := by
-    rw [← pow_succ, Nat.sub_add_cancel (by omega), e, one_mul]
-  have := mul_right_cancel₀ (Units.ne_zero g) e2
-  simpa using this
+  have e : g ^ n = g ^ 1 := Units.ext (by simpa using sub_eq_zero.mp hx)
+  exact (Nat.modEq_iff_dvd' (by omega : 1 ≤ n)).mp (pow_eq_pow_iff_modEq.mp e).symm
 
 theorem dvd_prod_of_good (n : ℕ) (hn : 2 ≤ n) (m : ℕ) (hm : 0 < m) (h : ∀ x : ℤ, (m : ℤ) ∣ x ^ n - x) :
     m ∣ ∏ p ∈ PP n, p := by

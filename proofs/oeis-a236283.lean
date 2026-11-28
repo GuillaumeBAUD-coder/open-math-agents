@@ -1,56 +1,18 @@
 import OMAStatements.S_oeis_a236283
 
+-- Original proof: @rtflynn. Cyclic-group kernel count simplification: @rgoldman73-dev.
+
 namespace A236283P
 open MulAction OMA.S_oeis_a236283 DihedralGroup
 
-lemma two_unit (n : ℕ) (h : Odd n) : IsUnit (2 : ZMod n) := by
-  have := (ZMod.isUnit_iff_coprime 2 n).mpr (Nat.coprime_two_left.mpr h)
-  simpa using this
-
-lemma half_cases (t : ℕ) (ht : 0 < t) (y : ZMod (t + t)) (hy : 2 * y = 0) :
-    y = 0 ∨ y = (t : ZMod (t + t)) := by
-  haveI : NeZero (t + t) := ⟨by omega⟩
-  have hv := ZMod.natCast_zmod_val y
-  have h2 : ((2 * y.val : ℕ) : ZMod (t + t)) = 0 := by
-    push_cast
-    rw [hv]
-    exact hy
-  rw [ZMod.natCast_eq_zero_iff] at h2
-  obtain ⟨c, hc⟩ := h2
-  have hlt := ZMod.val_lt y
-  have hc2 : c < 2 := by nlinarith
-  interval_cases c
-  · left
-    rw [← hv, show y.val = 0 by omega]
-    simp
-  · right
-    rw [← hv, show y.val = t by omega]
-
 lemma cardT (n : ℕ) [NeZero n] :
     Nat.card {y : ZMod n // 2 * y = 0} = if Even n then 2 else 1 := by
+  have e : {y : ZMod n // 2 * y = 0} ≃ (nsmulAddMonoidHom 2 : ZMod n →+ ZMod n).ker :=
+    Equiv.subtypeEquivRight (fun y => by simp [nsmul_eq_mul])
+  rw [Nat.card_congr e, IsAddCyclic.card_nsmulAddMonoidHom_ker, Nat.card_zmod]
   split_ifs with h
-  · obtain ⟨t, rfl⟩ := h
-    have ht : 0 < t := by
-      have := NeZero.pos (t + t)
-      omega
-    rw [Nat.card_eq_two_iff]
-    have htz : 2 * (t : ZMod (t + t)) = 0 := by
-      rw [show (2 : ZMod (t + t)) * t = ((t + t : ℕ) : ZMod (t + t)) by push_cast; ring]
-      exact ZMod.natCast_self _
-    refine ⟨⟨0, by simp⟩, ⟨(t : ZMod (t + t)), htz⟩, ?_, ?_⟩
-    · intro e
-      have e2 := congrArg (fun z : {y : ZMod (t + t) // 2 * y = 0} => ZMod.val z.1) e
-      simp only [ZMod.val_zero] at e2
-      rw [ZMod.val_cast_of_lt (by omega)] at e2
-      omega
-    · ext ⟨y, hy⟩
-      simp only [Set.mem_insert_iff, Set.mem_singleton_iff, Set.mem_univ, iff_true,
-        Subtype.ext_iff]
-      exact half_cases t ht y hy
-  · have hu := two_unit n (Nat.not_even_iff_odd.mp h)
-    have h0 : ∀ y : {y : ZMod n // 2 * y = 0}, y.1 = 0 := fun y => hu.mul_right_eq_zero.mp y.2
-    exact Nat.card_eq_one_iff_unique.mpr
-      ⟨⟨fun a b => Subtype.ext (by rw [h0 a, h0 b])⟩, ⟨⟨0, by simp⟩⟩⟩
+  · exact Nat.gcd_eq_right (even_iff_two_dvd.mp h)
+  · exact Nat.coprime_two_right.mpr (Nat.not_even_iff_odd.mp h)
 
 lemma smul_apply_r (n k : ℕ) (i : ZMod n) (x : Fin k → ZMod n) (j : Fin k) :
     (r i • x) j = x j + i := rfl
@@ -205,3 +167,4 @@ end A236283P
 
 theorem OMA.solution : type_of% @OMA.S_oeis_a236283.main :=
   ⟨A236283P.cf, A236283P.rec, A236283P.gf⟩
+

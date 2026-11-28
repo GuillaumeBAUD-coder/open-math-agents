@@ -2,6 +2,11 @@ import OMAStatements.S_oeis_a326579
 import Mathlib.FieldTheory.Finite.Basic
 import Mathlib.Tactic
 
+/-! Bernoulli denominators and Carmichael numbers, following @Volkopat (#24463).
+The denominator of a reduced fraction is now read directly using Mathlib's
+coprime numerator/denominator theorem. The Bernoulli and Korselt arguments
+and the exact registered conclusion are retained. -/
+
 namespace OMA.P_oeis_a326579
 
 open OMA.S_oeis_a326579
@@ -254,14 +259,9 @@ private lemma den_eq_mul_den_iff {q : ℚ} {n : ℕ} (hn : 1 ≤ n) :
   · intro h
     exact ⟨((n : ℚ) * q).den, h⟩
   · intro ⟨d, hd⟩
-    have hd_pos : 0 < d := by
-      rcases Nat.eq_zero_or_pos d with rfl | hpos
-      · have := q.den_nz; omega
-      · exact hpos
-    have hcop : Nat.Coprime q.num.natAbs d := by
-      have hred := q.reduced
-      rw [hd] at hred
-      exact hred.coprime_dvd_right (dvd_mul_left d n)
+    have hd_pos : 0 < d := Nat.pos_of_mul_pos_left (hd ▸ q.den_pos)
+    have hcop : Nat.Coprime q.num.natAbs d :=
+      q.reduced.coprime_dvd_right (hd.symm ▸ dvd_mul_left d n)
     have hmul_eq : (n : ℚ) * q = (q.num : ℚ) / (d : ℚ) := by
       have hnQ : (n : ℚ) ≠ 0 := by exact_mod_cast (show n ≠ 0 by omega)
       have hdQ : (d : ℚ) ≠ 0 := by exact_mod_cast hd_pos.ne'
@@ -269,27 +269,9 @@ private lemma den_eq_mul_den_iff {q : ℚ} {n : ℕ} (hn : 1 ≤ n) :
       push_cast
       field_simp
     have hden_eq : ((n : ℚ) * q).den = d := by
-      have h1 : ((n : ℚ) * q).den ∣ d := by
-        rw [rat_den_dvd_iff_exists_int _ hd_pos]
-        refine ⟨q.num, ?_⟩
-        rw [hmul_eq]
-        have hdQ : (d : ℚ) ≠ 0 := by exact_mod_cast hd_pos.ne'
-        field_simp
-      have h2 : d ∣ ((n : ℚ) * q).den := by
-        set r := (n : ℚ) * q
-        have hdQ : (d : ℚ) ≠ 0 := by exact_mod_cast hd_pos.ne'
-        have hrQ : (r.den : ℚ) ≠ 0 := by exact_mod_cast r.den_nz
-        have hcrossQ : (q.num : ℚ) * (r.den : ℚ) = (r.num : ℚ) * (d : ℚ) := by
-          have hreq : (r.num : ℚ) / (r.den : ℚ) = (q.num : ℚ) / (d : ℚ) := by
-            rw [Rat.num_div_den r, ← hmul_eq]
-          field_simp at hreq
-          linarith
-        have hcrossZ : q.num * (r.den : ℤ) = r.num * (d : ℤ) := by exact_mod_cast hcrossQ
-        have hdvdZ : (d : ℤ) ∣ q.num * (r.den : ℤ) := ⟨r.num, by linarith⟩
-        have hdvdN : d ∣ q.num.natAbs * r.den := by
-          simpa [Int.natAbs_mul] using Int.natAbs_dvd_natAbs.mpr hdvdZ
-        exact hcop.symm.dvd_of_dvd_mul_left hdvdN
-      exact Nat.dvd_antisymm h1 h2
+      rw [hmul_eq]
+      exact_mod_cast Rat.den_div_eq_of_coprime (a := q.num) (b := (d : ℤ))
+        (by exact_mod_cast hd_pos) (by simpa using hcop)
     rw [hden_eq, hd]
 
 private lemma dvd_den_bernoulli_iff_korselt {m : ℕ} (hm2 : 2 ≤ m) :

@@ -1,10 +1,8 @@
 import OMAStatements.S_oeis_a284937
 
+-- Original proof by @jleguina.
+
 namespace OMA.S_oeis_a284937
-
-
-
-
 
 theorem iter_succ (k : ℕ) : iter (k + 1) = (iter k).flatMap sigma := by
   unfold iter
@@ -26,36 +24,25 @@ theorem len_iter (k : ℕ) : k + 1 ≤ (iter k).length := by
     have := len_flatMap (iter k)
     omega
 
-theorem iter_step (k : ℕ) : ∃ t, iter (k + 1) = iter k ++ t := by
-  induction k with
-  | zero => exact ⟨[1], by simp [iter, sigma]⟩
-  | succ k ih =>
-    obtain ⟨t, ht⟩ := ih
-    refine ⟨t.flatMap sigma, ?_⟩
-    rw [iter_succ (k + 1), ht, List.flatMap_append, ← iter_succ, ht]
+theorem iter_step : ∀ k : ℕ, iter k <+: iter (k + 1)
+  | 0 => ⟨[1], by decide⟩
+  | k + 1 => by simpa only [iter_succ] using (iter_step k).flatMap sigma
 
-theorem iter_mono {j k : ℕ} (h : j ≤ k) : ∃ t, iter k = iter j ++ t := by
+theorem iter_mono {j k : ℕ} (h : j ≤ k) : iter j <+: iter k := by
   induction k, h using Nat.le_induction with
-  | base => exact ⟨[], by simp⟩
-  | succ k _ ih =>
-    obtain ⟨t, ht⟩ := ih
-    obtain ⟨s, hs⟩ := iter_step k
-    exact ⟨t ++ s, by rw [hs, ht, List.append_assoc]⟩
+  | base => exact List.prefix_rfl
+  | succ k _ ih => exact ih.trans (iter_step k)
 
-/-- Every iterate long enough to contain position i agrees with A284935 there. -/
+/-- Every sufficiently long iterate agrees with A284935 at the position read. -/
 theorem agree (K i : ℕ) (h1 : 1 ≤ i) (h2 : i ≤ (iter K).length) :
     A284935 i = (iter K).getD (i - 1) 0 := by
-  unfold A284935
+  have hi := len_iter i
+  rw [A284935, List.getD_eq_getElem _ _ (by omega), List.getD_eq_getElem _ _ (by omega)]
   rcases le_total i K with h | h
-  · obtain ⟨t, ht⟩ := iter_mono h
-    have := len_iter i
-    rw [ht, List.getD_append _ _ _ _ (by omega)]
-  · obtain ⟨t, ht⟩ := iter_mono h
-    rw [ht, List.getD_append _ _ _ _ (by omega)]
+  · exact (iter_mono h).getElem (by omega)
+  · exact ((iter_mono h).getElem (by omega)).symm
 
-/-- Both images have as many 1s as half their length, so the block of an image word ending at a
-1 (position L, counted from 0) has 2 * (number of 1s) - (L + 1) in {0, 1, 2}: the block is an
-image followed by nothing, by 1 or by 11. -/
+/-- Each complete morphism block contributes equal numbers of zeros and ones. -/
 theorem key (u : List ℕ) (L : ℕ) (hL : (u.flatMap sigma).getD L 0 = 1) :
     L + 1 ≤ 2 * ((u.flatMap sigma).take (L + 1)).count 1 ∧
       2 * ((u.flatMap sigma).take (L + 1)).count 1 ≤ L + 3 := by
@@ -63,28 +50,16 @@ theorem key (u : List ℕ) (L : ℕ) (hL : (u.flatMap sigma).getD L 0 = 1) :
   | nil => simp at hL
   | cons x u ih =>
     rw [List.flatMap_cons] at hL ⊢
-    rcases x with _ | x
-    · simp only [sigma, List.cons_append, List.nil_append] at hL ⊢
-      rcases L with _ | _ | L
-      · simp at hL
-      · simp
-      · rw [List.getD_cons_succ, List.getD_cons_succ] at hL
-        have := ih L hL
-        simp only [List.take_succ_cons, List.count_cons] at this ⊢
-        simp
-        omega
-    · simp only [sigma, List.cons_append, List.nil_append] at hL ⊢
-      rcases L with _ | _ | _ | _ | L
-      · simp
-      · simp
-      · simp at hL
-      · simp at hL
-      · rw [List.getD_cons_succ, List.getD_cons_succ, List.getD_cons_succ,
-          List.getD_cons_succ] at hL
-        have := ih L hL
-        simp only [List.take_succ_cons, List.count_cons] at this ⊢
-        simp
-        omega
+    by_cases h : L < (sigma x).length
+    · rw [List.getD_append _ _ _ _ h] at hL
+      rw [List.take_append_of_le_length (by omega)]
+      cases x <;> simp [sigma] at h <;> interval_cases L <;> simp_all [sigma]
+    · rw [List.getD_append_right _ _ _ _ (by omega)] at hL
+      have hi := ih _ hL
+      rw [List.take_append, List.take_of_length_le (by omega), List.count_append,
+        show L + 1 - (sigma x).length = L - (sigma x).length + 1 by omega]
+      have hb : (sigma x).length = 2 * (sigma x).count 1 := by cases x <;> simp [sigma]
+      omega
 
 theorem count_eq (K m : ℕ) (hm : m ≤ (iter K).length) :
     Nat.count (fun i => 1 ≤ i ∧ A284935 i = 1) (m + 1) = ((iter K).take m).count 1 := by
@@ -96,9 +71,7 @@ theorem count_eq (K m : ℕ) (hm : m ≤ (iter K).length) :
       Option.toList_some, List.count_append, List.count_singleton]
     have hag := agree K (m + 1) (by omega) (by omega)
     rw [Nat.add_sub_cancel, List.getD_eq_getElem (iter K) 0 hlt] at hag
-    by_cases h : (iter K)[m] = 1
-    · simp [h, hag]
-    · simp [h, hag]
+    simp [hag]
 
 theorem iter_last (k : ℕ) : ∃ t, iter k = t ++ [k % 2] := by
   induction k with
@@ -135,24 +108,18 @@ theorem infinite_ones : (Set.ofPred (fun i => 1 ≤ i ∧ A284935 i = 1)).Infini
 
 theorem conjecture : ∀ n : ℕ, 1 ≤ n → (2 * n : ℤ) - a n ∈ ({0, 1, 2} : Set ℤ) := by
   intro n hn
-  have hinf := infinite_ones
-  have hp : 1 ≤ a n ∧ A284935 (a n) = 1 := Nat.nth_mem_of_infinite hinf (n - 1)
-  have hc : Nat.count (fun i => 1 ≤ i ∧ A284935 i = 1) (a n) = n - 1 :=
-    Nat.count_nth_of_infinite hinf (n - 1)
+  have hp : 1 ≤ a n ∧ A284935 (a n) = 1 := Nat.nth_mem_of_infinite infinite_ones (n - 1)
+  have hc := Nat.count_nth_succ_of_infinite infinite_ones (n - 1)
+  change Nat.count _ (a n + 1) = n - 1 + 1 at hc
   obtain ⟨m, hm⟩ : ∃ m, a n = m + 1 := ⟨a n - 1, by omega⟩
-  rw [hm] at hp hc
+  rw [hm] at hp hc ⊢
   have hlen := len_iter (m + 1)
-  have h1 := count_eq (m + 1) (m + 1) (by omega)
-  rw [Nat.count_succ, hc, if_pos hp] at h1
-  have hag := agree (m + 1) (m + 1) (by omega) (by omega)
-  rw [Nat.add_sub_cancel] at hag
-  have hw : (iter (m + 1)).getD m 0 = 1 := by rw [← hag]; exact hp.2
-  rw [iter_succ] at hw h1
+  have hw : (iter (m + 1)).getD m 0 = 1 := hp.2
+  have hcnt := (count_eq (m + 1) (m + 1) (by omega)).symm.trans hc
+  rw [iter_succ] at hw hcnt
   have hk := key (iter m) m hw
-  rw [← h1] at hk
-  simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
-  rw [hm]
-  push_cast
+  rw [hcnt] at hk
+  simp
   omega
 
 /-- Control: a(n) at the position m + 1 of a 1 in the fourth iterate (54 letters). -/

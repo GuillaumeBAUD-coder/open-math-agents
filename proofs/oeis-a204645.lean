@@ -230,21 +230,6 @@ lemma a_eq_Q (n : ℕ) (hn : 1 ≤ n) : (a n : ℚ) = Q n := by
       have hq := Q_rec k
       linarith
 
-/-- Controls: the entry's data a(1..28). -/
-theorem controls : (List.range 28).map (fun i => a (i + 1)) = [16, 32, 56, 90, 137, 200, 283,
-    390, 526, 696, 906, 1162, 1471, 1840, 2277, 2790, 3388, 4080, 4876, 5786, 6821, 7992, 9311,
-    10790, 12442, 14280, 16318, 18570] := by
-  have h : ∀ i, ((a (i + 1) : ℚ)) = Q (i + 1) := fun i => a_eq_Q (i + 1) (by omega)
-  have e : (fun i => a (i + 1)) = (fun i => ((Q (i + 1)).num.toNat)) := by
-    funext i
-    rw [← h i]
-    simp
-  rw [e]
-  simp only [List.range_succ, List.range_zero, List.nil_append, List.map_cons, List.map_nil,
-    List.cons_append, List.map_append]
-  norm_num [Q]
-  all_goals decide
-
 /-- Barker's g.f.: Sum_{n >= 1} a(n) x^n * (1 - x)^5 (1 + x) = x(16 - 32x + 8x^2 + 26x^3 -
 23x^4 + 6x^5). -/
 theorem gf : PowerSeries.mk (fun n => if n = 0 then (0 : ℚ) else (a n : ℚ)) *

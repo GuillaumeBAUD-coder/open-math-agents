@@ -2,7 +2,7 @@ import OMAStatements.S_oeis_a265942
 
 -- Problem: A265942: G.f. A(x) satisfies: x = Sum_{n>=1} x^n * A(-n*x).
 -- Upstream: formal-conjectures statements/oeis-a265942.lean:0 (declaration OMA.S_oeis_a265942.main)
--- Credit: @agchua (the owner of the agent is credited as the solver)
+-- Original Lean proof: @agchua.
 -- Prove EXACTLY this target. No sorry, no axiom, no native_decide.
 -- Proof idea: strong induction. For n = r + 3 write a(n) = F 0 + F 1 + F 2 + Sum_{j<r} F (3+j),
 -- with F k = (-1)^(n-k+1) * (n-k+1)^k * a(k). For k = 3 + j the induction gives a(k) = 4q + 2,
@@ -46,33 +46,26 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a265942.main := by
     | _ n ih =>
       intro hn
       obtain ⟨r, rfl⟩ : ∃ r, n = r + 2 + 1 := ⟨n - 3, by omega⟩
-      obtain ⟨F, hF⟩ : ∃ F : ℕ → ℤ, ∀ k, F k =
-          (-1 : ℤ) ^ (r + 2 + 1 - k + 1) * ((r + 2 + 1 - k + 1 : ℕ) : ℤ) ^ k * a k :=
-        ⟨_, fun _ => rfl⟩
-      have e2 : a (r + 2 + 1) = ∑ k ∈ Finset.range (r + 2 + 1), F k := by
+      let F (k : ℕ) : ℤ :=
+        (-1 : ℤ) ^ (r + 2 + 1 - k + 1) * ((r + 2 + 1 - k + 1 : ℕ) : ℤ) ^ k * a k
+      have hsum : a (r + 2 + 1) = F 0 + F 1 + F 2 + ∑ j ∈ Finset.range r, F (3 + j) := by
         rw [hrec (r + 2)]
-        exact Finset.sum_congr rfl (fun k _ => (hF k).symm)
-      have e3 : ∑ k ∈ Finset.range (r + 2 + 1), F k =
-          F 0 + F 1 + F 2 + ∑ j ∈ Finset.range r, F (3 + j) := by
-        rw [show r + 2 + 1 = 3 + r by ring, Finset.sum_range_add]
+        change ∑ k ∈ Finset.range (r + 2 + 1), F k = _
+        rw [show r + 2 + 1 = 3 + r by omega, Finset.sum_range_add]
         simp only [Finset.sum_range_succ, Finset.sum_range_zero, zero_add]
-      have hF0 : F 0 = (-1 : ℤ) ^ r := by
-        rw [hF, h0, show r + 2 + 1 - 0 + 1 = r + 4 by omega]
-        push_cast
-        ring
-      have hF1 : F 1 = -((-1 : ℤ) ^ r * ((r : ℤ) + 3)) := by
-        rw [hF, h1, show r + 2 + 1 - 1 + 1 = r + 3 by omega]
-        push_cast
-        ring
-      have hF2 : F 2 = (-1 : ℤ) ^ r * ((r : ℤ) + 2) ^ 2 := by
-        rw [hF, h2, show r + 2 + 1 - 2 + 1 = r + 2 by omega]
+      have hstart : F 0 + F 1 + F 2 = (-1 : ℤ) ^ r * ((r : ℤ) + 1) * (r + 2) := by
+        simp only [F, h0, h1, h2,
+          show r + 2 + 1 - 0 + 1 = r + 4 by omega,
+          show r + 2 + 1 - 1 + 1 = r + 3 by omega,
+          show r + 2 + 1 - 2 + 1 = r + 2 by omega]
         push_cast
         ring
       have T : ∀ j : ℕ, j < r → 4 ∣ F (3 + j) - 2 * ((r + 1 - j : ℕ) : ℤ) := by
         intro j hj
         have ha := ih (3 + j) (by omega) (by omega)
         obtain ⟨q, hq⟩ : ∃ q : ℤ, a (3 + j) = 4 * q + 2 := ⟨a (3 + j) / 4, by omega⟩
-        rw [hF, hq, show r + 2 + 1 - (3 + j) + 1 = r + 1 - j by omega]
+        dsimp only [F]
+        rw [hq, show r + 2 + 1 - (3 + j) + 1 = r + 1 - j by omega]
         have hpar : (2 : ℤ) ∣ ((r + 1 - j : ℕ) : ℤ) ^ (3 + j) - ((r + 1 - j : ℕ) : ℤ) := by
           rcases Int.even_or_odd ((r + 1 - j : ℕ) : ℤ) with hx | hx
           · exact (Even.sub (hx.pow_of_ne_zero (n := 3 + j) (by omega)) hx).two_dvd
@@ -89,7 +82,7 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a265942.main := by
         rw [← Finset.sum_sub_distrib]
         exact Finset.dvd_sum (fun j hj => T j (Finset.mem_range.mp hj))
       have hbase : 4 ∣ F 0 + F 1 + F 2 + ((r : ℤ) ^ 2 + 3 * r) - 2 := by
-        rw [hF0, hF1, hF2]
+        rw [hstart]
         rcases Nat.even_or_odd r with he | ho
         · rw [he.neg_one_pow]
           obtain ⟨t, rfl⟩ := he
@@ -98,7 +91,7 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a265942.main := by
           exact ⟨-1, by ring⟩
       have hsplit : a (r + 2 + 1) - 2 = (F 0 + F 1 + F 2 + ((r : ℤ) ^ 2 + 3 * r) - 2) +
           (∑ j ∈ Finset.range r, F (3 + j) - ∑ j ∈ Finset.range r, 2 * ((r + 1 - j : ℕ) : ℤ)) := by
-        rw [e2, e3, Sar r]
+        rw [hsum, Sar r]
         ring
       have hfin : 4 ∣ a (r + 2 + 1) - 2 := by
         rw [hsplit]
