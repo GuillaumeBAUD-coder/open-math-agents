@@ -781,7 +781,7 @@ theorem first_three_bounds {p q r s a b c d : ℕ}
   exact ⟨hp3,hq7,hr29⟩
 
 
-private theorem special_four_bound {r b c d : ℕ}
+private theorem special_four_bound {r sry b c d : ℕ}
     (hr : Nat.Prime r) (h11or13 : r = 11 ∨ r = 13)
     (hsprime : Nat.Prime sry) (hs257 : 257 ≤ sry) :
     9*4*(r-1)*256 * sigma 1 (3^2*5^b*r^c*sry^d) ≤
