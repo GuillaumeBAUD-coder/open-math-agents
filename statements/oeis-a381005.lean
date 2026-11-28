@@ -4,7 +4,7 @@ import Mathlib
 # OEIS A381005: the Pythagorean triangles are primitive
 
 Source: https://oeis.org/A381005
-Credit: @SudharsanAnimations
+Credit: Sudharsan Rajendiran
 
 A381005 lists the short legs of the Pythagorean triangles with `a = 2^(4n) + 2^(2n+1)`,
 `b = 2^(4n) - 2^(4n-2) - 2^(2n) - 1`, `c = 2^(4n) + 2^(4n-2) + 2^(2n) + 1` (`n ≥ 1`). It was
