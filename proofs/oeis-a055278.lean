@@ -1,5 +1,6 @@
 import OMAStatements.S_oeis_a055278
 
+open PowerSeries
 /-!
 Proof of OEIS A055278: A055278 (n + 12) - A055278 n equals a cubic polynomial R n,
 which is annihilated by (1 - X^2)*(1 - X^3)*(1 - X)^3. Thus the coefficient recurrence
@@ -50,27 +51,27 @@ private lemma L_diff_eq_zero (k : ℕ) : L_diff k = 0 := by
       exact ih m (by omega)
 
 theorem OMA.solution : type_of% @OMA.S_oeis_a055278.main := by
-  let F : PowerSeries ℤ := PowerSeries.mk fun n => OMA.S_oeis_a055278.A055278 (n + 4)
+  let F : PowerSeries ℤ := mk fun n => OMA.S_oeis_a055278.A055278 (n + 4)
   let D : PowerSeries ℤ :=
-    (1 - (PowerSeries.X : PowerSeries ℤ) ^ 2) *
-      (1 - (PowerSeries.X : PowerSeries ℤ) ^ 3) *
-      (1 - (PowerSeries.X : PowerSeries ℤ)) ^ 3
-  have hZ : F * D = (PowerSeries.X : PowerSeries ℤ) ^ 3 + (PowerSeries.X : PowerSeries ℤ) ^ 2 + 1 := by
-    have hC2 : (2 : PowerSeries ℤ) = PowerSeries.C (2 : ℤ) := by
-      rw [← Nat.cast_ofNat, ← map_natCast (PowerSeries.C (R := ℤ)), Nat.cast_ofNat]
-    have hC3 : (3 : PowerSeries ℤ) = PowerSeries.C (3 : ℤ) := by
-      rw [← Nat.cast_ofNat, ← map_natCast (PowerSeries.C (R := ℤ)), Nat.cast_ofNat]
-    have hFD : F * D = F - PowerSeries.C 3 * ((PowerSeries.X : PowerSeries ℤ) ^ 1 * F) +
-        PowerSeries.C 2 * (PowerSeries.X ^ 2 * F) + PowerSeries.X ^ 3 * F - PowerSeries.X ^ 5 * F -
-        PowerSeries.C 2 * (PowerSeries.X ^ 6 * F) + PowerSeries.C 3 * (PowerSeries.X ^ 7 * F) -
-        PowerSeries.X ^ 8 * F := by
+    (1 - (X : PowerSeries ℤ) ^ 2) *
+      (1 - (X : PowerSeries ℤ) ^ 3) *
+      (1 - (X : PowerSeries ℤ)) ^ 3
+  have hZ : F * D = (X : PowerSeries ℤ) ^ 3 + (X : PowerSeries ℤ) ^ 2 + 1 := by
+    have hC2 : (2 : PowerSeries ℤ) = C (2 : ℤ) := by
+      rw [← Nat.cast_ofNat, ← map_natCast (C (R := ℤ)), Nat.cast_ofNat]
+    have hC3 : (3 : PowerSeries ℤ) = C (3 : ℤ) := by
+      rw [← Nat.cast_ofNat, ← map_natCast (C (R := ℤ)), Nat.cast_ofNat]
+    have hFD : F * D = F - C 3 * ((X : PowerSeries ℤ) ^ 1 * F) +
+        C 2 * (X ^ 2 * F) + X ^ 3 * F - X ^ 5 * F -
+        C 2 * (X ^ 6 * F) + C 3 * (X ^ 7 * F) -
+        X ^ 8 * F := by
       dsimp [D]
       rw [← hC2, ← hC3]
       ring
     rw [hFD]
     ext m
-    simp only [map_sub, map_add, PowerSeries.coeff_C_mul, PowerSeries.coeff_X_pow_mul',
-      PowerSeries.coeff_X_pow, PowerSeries.coeff_one, PowerSeries.coeff_mk, F]
+    simp only [map_sub, map_add, coeff_C_mul, coeff_X_pow_mul',
+      coeff_X_pow, coeff_one, coeff_mk, F]
     rcases m with _ | _ | _ | _ | _ | _ | _ | _ | k
     · norm_num [OMA.S_oeis_a055278.A055278]
     · norm_num [OMA.S_oeis_a055278.A055278]
@@ -97,16 +98,16 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a055278.main := by
         show k + 8 - 8 + 4 = k + 4 by omega, show k + 8 + 4 = k + 12 by omega,
         add_zero]
       exact L_diff_eq_zero k
-  have hQ := congrArg (PowerSeries.map (Int.castRingHom ℚ)) hZ
+  have hQ := congrArg (map (Int.castRingHom ℚ)) hZ
   have hFmap : F.map (Int.castRingHom ℚ) =
-      PowerSeries.mk fun n => (OMA.S_oeis_a055278.A055278 (n + 4) : ℚ) := by
+      mk fun n => (OMA.S_oeis_a055278.A055278 (n + 4) : ℚ) := by
     ext n
-    simp only [F, PowerSeries.coeff_map, PowerSeries.coeff_mk, Int.coe_castRingHom]
+    simp only [F, coeff_map, coeff_mk, Int.coe_castRingHom]
   have hDmap : D.map (Int.castRingHom ℚ) =
-      (1 - (PowerSeries.X : PowerSeries ℚ) ^ 2) *
-        (1 - (PowerSeries.X : PowerSeries ℚ) ^ 3) *
-        (1 - (PowerSeries.X : PowerSeries ℚ)) ^ 3 := by
+      (1 - (X : PowerSeries ℚ) ^ 2) *
+        (1 - (X : PowerSeries ℚ) ^ 3) *
+        (1 - (X : PowerSeries ℚ)) ^ 3 := by
     dsimp [D]
-    simp only [map_mul, map_pow, map_sub, map_one, PowerSeries.map_X]
+    simp only [map_mul, map_pow, map_sub, map_one, map_X]
   rw [map_mul, hFmap, hDmap] at hQ
-  simpa only [map_add, map_pow, map_one, PowerSeries.map_X] using hQ
+  simpa only [map_add, map_pow, map_one, map_X] using hQ
