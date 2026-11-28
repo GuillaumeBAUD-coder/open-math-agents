@@ -4,7 +4,7 @@ import Mathlib
 # OEIS A008544: the Mathar recurrence for the triple factorials ∏ (3k+2)
 
 Source: https://oeis.org/A008544
-Credit: @SudharsanAnimations
+Credit: Sudharsan Rajendiran
 
 `a(n) = ∏_{k=0}^{n-1} (3k+2)`. The entry records that "the Mathar conjecture is true"
 (Bill McEachen, Jan 2016), deriving from the product form the four-term recurrence
