@@ -294,7 +294,7 @@ lemma champ7 : Machine.multiStep (mkM champT) init0 7 = none :=
 
 def champ : _root_.BusyBeaver.Candidate 2 :=
   ⟨Bool, Bool, inferInstance, rfl, inferInstance, inferInstance, rfl, inferInstance,
-    mkM champT, ⟨⟨6, champ7⟩⟩⟩
+    mkM champT, (Machine.isHalting_iff_exists_haltsAt _).2 ⟨6, champ7⟩⟩
 
 lemma champ_number : champ.M.haltingNumber = ((6 : ℕ) : ENat) :=
   Machine.haltingNumber_def (mkM champT) 6 (Option.isSome_iff_exists.1 (by decide +kernel)) champ7
