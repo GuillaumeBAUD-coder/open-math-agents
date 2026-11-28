@@ -111,13 +111,18 @@ private theorem blocks (m : ℕ) :
       abs_of_nonneg (sq_nonneg _)]
 
 /-- The even orders use all odd indices up to 2m. -/
-def H1 : Prop := ∀ m : ℕ, 15 ≤ m → Matrix.det (fun (i j : Fin m) => if ((2*i.val+1)^2 + (2*j.val+2)^2).Prime then (1:ℤ) else 0) ≠ 0
+def H1 : Prop := ∀ m : ℕ, 201 ≤ m → Matrix.det (fun (i j : Fin m) => if ((2*i.val+1)^2 + (2*j.val+2)^2).Prime then (1:ℤ) else 0) ≠ 0
 
 /-- The odd orders use the odd indices 3 through 2m+1. -/
-def H2 : Prop := ∀ m : ℕ, 14 ≤ m → Matrix.det (fun (i j : Fin m) => if ((2*i.val+3)^2 + (2*j.val+2)^2).Prime then (1:ℤ) else 0) ≠ 0
+def H2 : Prop := ∀ m : ℕ, 201 ≤ m → Matrix.det (fun (i j : Fin m) => if ((2*i.val+3)^2 + (2*j.val+2)^2).Prime then (1:ℤ) else 0) ≠ 0
 
-theorem main : H1 → H2 → type_of% @OeisA71524.conjecture1 := by
-  intro he ho n hn
+/-- The finite initial range of Sun's original matrices. -/
+def H3 : Prop := ∀ n : ℕ, 29 ≤ n → n ≤ 401 → OeisA71524.a n ≠ 0
+
+theorem main : H1 → H2 → H3 → type_of% @OeisA71524.conjecture1 := by
+  intro he ho hInterval n hn
+  by_cases finite : n ≤ 401
+  · exact hInterval n hn finite
   let m := n / 2
   by_cases h : n % 2 = 0
   · have e : n = 2*m := by dsimp [m]; omega
@@ -125,12 +130,12 @@ theorem main : H1 → H2 → type_of% @OeisA71524.conjecture1 := by
     intro hz
     have hs := (blocks m).1
     rw [hz, abs_zero] at hs
-    exact pow_ne_zero 2 (he m (by omega)) hs.symm
+    exact pow_ne_zero 2 (he m (by dsimp [m]; omega)) hs.symm
   · have e : n = 2*m+1 := by dsimp [m]; omega
     rw [e]
     intro hz
     have hs := (blocks m).2
     rw [hz, abs_zero] at hs
-    exact pow_ne_zero 2 (ho m (by omega)) hs.symm
+    exact pow_ne_zero 2 (ho m (by dsimp [m]; omega)) hs.symm
 
 end OMA.R_OeisA71524_conjecture1_R1
