@@ -7,12 +7,17 @@
 # when the agent exits, start it again after a pause. Your model budget is spent until you stop it.
 #
 # OMA_AGENT_CMD is the command that runs one agent session with a prompt as its last argument.
+# Set OMA_CLEANROOM=1 to delegate Lean verification inside tools/cleanroom/run-cleanroom.sh.
 # Default (Claude Code, headless): claude -p with a narrow set of allowed tools.
 set -euo pipefail
 SITE="${OMA_SITE:-https://lefttosolve.com}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SESSION=oma-fleet
 KIND="${OMA_KIND:-known}"
+if [[ ! "$KIND" =~ ^(open|known|warmup|step|any|formalize)$ ]]; then
+  echo "fleet: invalid OMA_KIND: $KIND" >&2
+  exit 1
+fi
 CMD="${OMA_AGENT_CMD:-claude -p --permission-mode acceptEdits --allowedTools Read Edit Write Bash(tools/oma.sh:*) Bash(lake:*) Bash(git:*) Bash(gh:*) Bash(curl:*) Bash(python3:*) Bash(ls:*) Bash(cat:*) Bash(grep:*) --}"
 command -v tmux >/dev/null || { echo "fleet: needs tmux"; exit 1; }
 
@@ -29,8 +34,7 @@ status) tmux list-windows -t "$SESSION" 2>/dev/null || echo "fleet: not running"
     W="$ROOT/.oma/fleet/$i"
     [ -d "$W" ] || git -C "$ROOT" worktree add -q --detach "$W"
     PROMPT="Read $SITE/join.txt and follow it. You are fleet worker $i of $N. The formal-conjectures checkout is shared at $ROOT/.oma/formal-conjectures (export OMA_FC to it; do not run setup again). Take problems with: tools/oma.sh next --kind $KIND. Keep going until the desk says nothing matches."
-    Q="$(printf '%q' "$PROMPT")"
-    tmux new-window -t "$SESSION" -n "w$i" "cd $(printf '%q' "$W") && export OMA_FC=$(printf '%q' "$ROOT/.oma/formal-conjectures") OMA_AGENT=$(printf '%q' "${OMA_AGENT:-claude-code}") OMA_MODEL=$(printf '%q' "${OMA_MODEL:-unknown}"); while true; do $CMD $Q || true; echo 'worker $i: session ended, restarting in 60 s'; sleep 60; done"
+    tmux new-window -t "$SESSION" -n "w$i" "cd $(printf '%q' "$W") && export OMA_FC=$(printf '%q' "$ROOT/.oma/formal-conjectures") OMA_AGENT=$(printf '%q' "${OMA_AGENT:-claude-code}") OMA_MODEL=$(printf '%q' "${OMA_MODEL:-unknown}") OMA_CLEANROOM=$(printf '%q' "${OMA_CLEANROOM:-0}") OMA_WORKER_CMD=$(printf '%q' "$CMD") OMA_WORKER_PROMPT=$(printf '%q' "$PROMPT"); while true; do bash -c 'eval \"\$OMA_WORKER_CMD \\\"\\\$1\\\"\"' _ \"\$OMA_WORKER_PROMPT\" || true; echo 'worker $i: session ended, restarting in 60 s'; sleep 60; done"
   done
   tmux kill-window -t "$SESSION:w0"
   echo "fleet: $N workers started (tmux attach -t $SESSION to watch; tools/fleet.sh stop to stop)"
