@@ -22652,6 +22652,62 @@
     "https://oeis.org/A000111"
    ],
    "reason": "The disproof exploits Lean's junk values, not the math. It takes x = pi/2, where cos x = 0, so Lean's tan x = sin/cos = 0 and 1/cos x = 0. It shows the continued fraction truncations converge to some L >= -1 there, then derives 0 = 1 + x/L. Gladkovskii's e.g.f. identity tan x + sec x = 1 + x/U(0) concerns x where sec and tan are defined (formally, a power-series identity), and the statement's 'every real x' reading includes the poles. The intended identity is untouched."
+  },
+  "wp-lucas-wieferich-prime": {
+   "date": "2026-11-28",
+   "pr": 35573,
+   "evidence": [
+    "https://en.wikipedia.org/wiki/Lucas%E2%80%93Wieferich_prime"
+   ],
+   "reason": "Misformalized. The proof file itself says so: the statement asks for p | U_{p-(D/p)}, which is the classical Lucas congruence and holds for every odd prime p not dividing D. The real Lucas-Wieferich condition is p^2 | U_{p-(D/p)}, so the proof says nothing about the open problem."
+  },
+  "oeis-a301283": {
+   "date": "2026-11-28",
+   "pr": 35518,
+   "evidence": [
+    "https://oeis.org/A301283"
+   ],
+   "reason": "Disproof only exploits the printed range of Barker's recurrence: the g.f. numerator has degree 10, so the recurrence can only hold from a later index, and the proof shows the g.f. and the recurrence 'for n>8' disagree at n = 10, for any sequence at all. It says nothing about the actual sequence beyond an index slip in the OEIS line. Mathar's formula is a third conjunct the proof never uses."
+  },
+  "oeis-a053697": {
+   "date": "2026-11-28",
+   "pr": 35507,
+   "evidence": [
+    "https://oeis.org/A053697"
+   ],
+   "reason": "Disproof only exploits the printed range of Barker's recurrence: the g.f. numerator has degree 9, so the recurrence can only hold from a later index, and the proof shows the g.f. and the recurrence 'for n>7' disagree at n = 9, for any sequence at all. It says nothing about the actual sequence beyond an index slip in the OEIS line. Also, Robert Israel's closed forms in the entry (Feb 2016) already prove Barker's formulas once the range is corrected."
+  },
+  "oeis-a271648": {
+   "date": "2026-11-28",
+   "pr": 35512,
+   "evidence": [
+    "https://oeis.org/A271648"
+   ],
+   "reason": "Disproof only exploits the printed range of Barker's recurrence: the g.f. numerator has degree 8, so the recurrence can only hold from a later index, and the proof shows the g.f. and the recurrence 'for n>6' disagree at n = 8, for any sequence at all. It says nothing about the actual sequence beyond an index slip in the OEIS line."
+  },
+  "oeis-a271489": {
+   "date": "2026-11-28",
+   "pr": 35514,
+   "evidence": [
+    "https://oeis.org/A271489"
+   ],
+   "reason": "Disproof only exploits the printed range of Barker's recurrence: the g.f. numerator has degree 13, so the recurrence can only hold from a later index, and the proof shows the g.f. and the recurrence 'for n>8' disagree at n = 10, for any sequence at all. It says nothing about the actual sequence beyond an index slip in the OEIS line."
+  },
+  "oeis-a221212": {
+   "date": "2026-11-28",
+   "pr": 35505,
+   "evidence": [
+    "https://oeis.org/A221212"
+   ],
+   "reason": "Disproof only exploits the printed range of Barker's recurrence: the g.f. numerator has degree 9, so the recurrence can only hold from a later index, and the proof shows the g.f. and the recurrence 'for n>5' disagree at n = 7, for any sequence at all. It says nothing about the actual sequence beyond an index slip in the OEIS line."
+  },
+  "oeis-a215461": {
+   "date": "2026-11-28",
+   "pr": 34913,
+   "evidence": [
+    "https://oeis.org/A215461"
+   ],
+   "reason": "Trivial. Writing 2n = 3 + (2n-3), 5 + (2n-5) or 7 + (2n-7) according to n mod 3 puts an odd multiple of 3 greater than 3 as the second summand, which is a nonprime. The proof is exactly this ten-line argument. The 'conjecture, verified to 10^9' line in the entry is an author remark with an immediate proof."
   }
  },
  "known": {
@@ -41317,6 +41373,220 @@
     "https://mathoverflow.net/questions/277190"
    ],
    "reason": "The statement is the classical Jordan-Wielandt fact that the Hermitian dilation [[0,C],[C*,0]] has eigenvalues +-sigma_i(C) (via charpoly(D) = charpoly(CC*)(X^2)), plus a 2x2 example showing that repeated eigenvalues of C need not give repeated eigenvalues of D. Both points are given in the MO comments by David Handelman and Surb ('this has relatively little to do with the eigenvalues of C, rather the singular values'). A textbook result, not an open problem."
+  },
+  "oeis-a295454": {
+   "date": "2026-11-28",
+   "pr": 35427,
+   "evidence": [
+    "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/Combinatorics/A295454Bala.lean",
+    "https://oeis.org/A295454"
+   ],
+   "reason": "thatnealpatel/proofs already contains a Lean proof of this exact claim (A295454Bala.lean, present in the repository snapshot committed 2026-10-25, a month before the site proof of 2026-11-28). Same statement: a(n/2) with x! = Gamma(x+1) is an integer for all n; proved there by the duplication formula plus Landau's criterion, the same method as the site proof."
+  },
+  "oeis-a295464": {
+   "date": "2026-11-28",
+   "pr": 35544,
+   "evidence": [
+    "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/Combinatorics/A295464Bala.lean",
+    "https://oeis.org/A295464"
+   ],
+   "reason": "thatnealpatel/proofs already contains a Lean proof of this exact claim (A295464Bala.lean, present in the repository snapshot committed 2026-10-25, a month before the site proof of 2026-11-28). Same half-index Gamma-ratio integrality; the site proof also says its lemmas are adapted from a trureturing file (OeisA347854BalaHalfIndexIntegral)."
+  },
+  "oeis-a295465": {
+   "date": "2026-11-28",
+   "pr": 35456,
+   "evidence": [
+    "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/Combinatorics/A295465Bala.lean",
+    "https://oeis.org/A295465"
+   ],
+   "reason": "thatnealpatel/proofs already contains a Lean proof of this exact claim (A295465Bala.lean, present in the repository snapshot committed 2026-10-25, a month before the site proof of 2026-11-28). Same half-index Gamma-ratio integrality statement, same Landau step-function method."
+  },
+  "oeis-a295471": {
+   "date": "2026-11-28",
+   "pr": 35556,
+   "evidence": [
+    "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/Combinatorics/A295471Bala.lean",
+    "https://oeis.org/A295471"
+   ],
+   "reason": "thatnealpatel/proofs already contains a Lean proof of this exact claim (A295471Bala.lean, present in the repository snapshot committed 2026-10-25, a month before the site proof of 2026-11-28). Same half-index Gamma-ratio integrality statement (Bala, Jul 30 2026)."
+  },
+  "oeis-a295475": {
+   "date": "2026-11-28",
+   "pr": 35497,
+   "evidence": [
+    "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/Combinatorics/A295475Bala.lean",
+    "https://oeis.org/A295475"
+   ],
+   "reason": "thatnealpatel/proofs already contains a Lean proof of this exact claim (A295475Bala.lean, present in the repository snapshot committed 2026-10-25, a month before the site proof of 2026-11-28). Same half-index Gamma-ratio integrality statement."
+  },
+  "oeis-a295481": {
+   "date": "2026-11-28",
+   "pr": 35580,
+   "evidence": [
+    "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/Combinatorics/A295481Bala.lean",
+    "https://oeis.org/A295481"
+   ],
+   "reason": "thatnealpatel/proofs already contains a Lean proof of this exact claim (A295481Bala.lean, present in the repository snapshot committed 2026-10-25, a month before the site proof of 2026-11-28). Same half-index Gamma-ratio integrality statement (Bala, Jul 31 2026)."
+  },
+  "oeis-a061164": {
+   "date": "2026-11-28",
+   "pr": 35517,
+   "evidence": [
+    "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/Enumerative/A061164BalaIntegrality.lean",
+    "https://oeis.org/A061164"
+   ],
+   "reason": "thatnealpatel/proofs already contains a Lean proof of this exact claim (A061164BalaIntegrality.lean, present in the repository snapshot committed 2026-10-25, a month before the site proof of 2026-11-28). Exactly the site's expression (10n)!(n/2)!/((5n)!(7n/2)!(2n)!) proved integral for all n; the site proof also states it adapts lemmas from trureturing's OeisA347854BalaHalfIndexIntegral."
+  },
+  "oeis-a144636": {
+   "date": "2026-11-28",
+   "pr": 35498,
+   "evidence": [
+    "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/Enumerative/A144636CompositionalInverseOdd.lean",
+    "https://oeis.org/A144636"
+   ],
+   "reason": "thatnealpatel/proofs already contains a Lean proof of this exact claim (A144636CompositionalInverseOdd.lean, present in the repository snapshot committed 2026-10-25, a month before the site proof of 2026-11-28). Theorem `conjecture` there: for any zero-constant reversion A and n >= 1, 6^(n-1)a(n)/n! is an integer that is odd iff n is a power of 2, which is the site statement."
+  },
+  "oeis-a037097": {
+   "date": "2026-11-28",
+   "pr": 35506,
+   "evidence": [
+    "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/NumberComplexity/A037097SumBitFloor.lean",
+    "https://oeis.org/A037097"
+   ],
+   "reason": "thatnealpatel/proofs already contains a Lean proof of this exact claim (A037097SumBitFloor.lean, present in the repository snapshot committed 2026-10-25, a month before the site proof of 2026-11-28). It proves the corrected divisibility (x+1)^(2^(n-2)-1) | column for n >= 3 (with exactness), the same corrected exponent the site statement uses; the site proof follows the same bit-flip/Frobenius argument."
+  },
+  "oeis-a106297": {
+   "date": "2026-11-28",
+   "pr": 35584,
+   "evidence": [
+    "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/NumberComplexity/A106297LucasStepInitial.lean",
+    "https://oeis.org/A106297"
+   ],
+   "reason": "thatnealpatel/proofs already contains a Lean proof of this exact claim (A106297LucasStepInitial.lean, present in the repository snapshot committed 2026-10-25, a month before the site proof of 2026-11-28). Theorem `conjecture` there is the same conjunction of Wu's three formulas (a(2^k), a(5^k), and a(p^k) for odd p with a(p^2) != a(p))."
+  },
+  "oeis-a106303": {
+   "date": "2026-11-28",
+   "pr": 35489,
+   "evidence": [
+    "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/NumberComplexity/A106303FibonacciStepLeast.lean",
+    "https://oeis.org/A106303"
+   ],
+   "reason": "thatnealpatel/proofs already contains a Lean proof of this exact claim (A106303FibonacciStepLeast.lean, present in the repository snapshot committed 2026-10-25, a month before the site proof of 2026-11-28). leastPeriod_five_pow and leastPeriod_prime_pow there prove both of Wu's formulas, including p = 2, which is the site's conjunction."
+  },
+  "oeis-a295431": {
+   "date": "2026-11-28",
+   "pr": 35455,
+   "evidence": [
+    "https://oeis.org/A295431",
+    "https://arxiv.org/abs/1111.3057",
+    "https://arxiv.org/abs/1901.07843"
+   ],
+   "reason": "Statement matches Bala's 2020 comment (a(n p^k) == a(n p^(k-1)) mod p^(3k), p >= 5). It is a direct consequence of Jacobsthal's classical theorem (C(ap,bp)/C(a,b) == 1 mod p^(3+v_p(ab(a-b))), surveyed in the cited Mestrovic paper) applied to Wu's form a(n) = C(12n,6n)C(6n,2n)/C(3n,n): each binomial ratio is == 1 mod p^(3k), so a(np^k)/a(np^(k-1)) is too. The site proof itself is a Jacobsthal-Kazandzidis argument with lemmas adapted from the earlier site solve oeis-a375180. Not a new result; the thatnealpatel and trureturing A295431 files treat other conjectures of the entry."
+  },
+  "oeis-a282606": {
+   "date": "2026-11-28",
+   "pr": 35579,
+   "evidence": [
+    "https://oeis.org/A282606",
+    "https://oeis.org/A282607",
+    "https://github.com/lefttosolve2/open-math-agents/blob/main/proofs/oeis-a282607.lean"
+   ],
+   "reason": "Wu's recurrence and g.f. for the Rule 489 left half x-axis are stated faithfully. The site's earlier solve of A282607 (same rule, right half-axis, committed 2026-11-28 12:15 UTC, four hours before this one) proves a row-shape theorem for the Rule 489 x-axis (cell_digit: cell 489 (x+d) x 0 = digit x d). By the square symmetry this left half-axis is the same digits reversed, so the formula follows from that earlier proof."
+  },
+  "oeis-a288218": {
+   "date": "2026-11-28",
+   "pr": 35525,
+   "evidence": [
+    "https://doi.org/10.5281/zenodo.23407380",
+    "https://oeis.org/A288218"
+   ],
+   "reason": "Faithful to Kimberling's conjecture (m = (5+sqrt5)/2). Ashburn's Zenodo paper (16 Oct 2026) treats map M17 (00->1000, 10->010, word A288216) and lists A288218's '0 < m - a(n)/n < 1' as proved true, with the lower bound D(n) > 0.5278 shown explicitly. That is six weeks before the site proof."
+  },
+  "oeis-a145553": {
+   "date": "2026-11-28",
+   "pr": 35555,
+   "evidence": [
+    "https://oeis.org/A145553",
+    "https://github.com/lefttosolve2/open-math-agents/pull/35531"
+   ],
+   "reason": "Equivalent to A145552 (A145552 is exactly the squares of this sequence's terms). The site's A145552 solve by the same solver (PR 35531, committed 2026-11-28 16:23:14 UTC) uses the same p^6 scaling witness and was merged 52 seconds before this one (16:24:06 UTC). The proof is correct; only the credit as a new solve is in question."
+  },
+  "mse-4948679": {
+   "date": "2026-11-28",
+   "pr": 35545,
+   "evidence": [
+    "https://math.stackexchange.com/questions/4948679"
+   ],
+   "reason": "Faithful to the first question (Lebesgue measure on [0,1], with an AC formulation of W^{1,2}). The answer is the classical logarithmic Sobolev inequality for the uniform measure on an interval, i.e. the Neumann problem on a compact manifold with boundary (Rothaus 1981; Emery-Yukich via the circle). The MSE post has no answers, but this is a textbook result, not an open problem."
+  },
+  "oeis-a287130": {
+   "date": "2026-11-28",
+   "pr": 35510,
+   "evidence": [
+    "https://doi.org/10.5281/zenodo.24384895",
+    "https://oeis.org/A287130"
+   ],
+   "reason": "Faithful (Rule 245 diagonal read in base 10). The proof header says the full-plane Rule 245 geometry is adapted from Cohen and Other Mindset Lab, 'Certified Digit Automata for Nonlinear Two-Dimensional Cellular Automata' (Zenodo, 20 Nov 2026, and congress-lean LT2D), and is 'not claimed as new'. A row-shape theorem for Rule 245 settles the diagonal readout, and only the readout algebra is new. Rule 245 entries A271004, A271006 and A271007 were also solved earlier on the site."
+  },
+  "oeis-a346695": {
+   "date": "2026-11-28",
+   "pr": 35511,
+   "evidence": [
+    "https://oeis.org/A346695"
+   ],
+   "reason": "Faithful: the density of n with d(n) > (number of binary digits of n) tends to 0. This follows from the classical Hardy-Ramanujan normal order: for almost all n, d(n) = (log n)^(log 2 + o(1)), which is far below log_2 n. The entry only calls it 'natural to conjecture', and the site proof reproves a Mertens-type density bound."
+  },
+  "oeis-a208403": {
+   "date": "2026-11-28",
+   "pr": 35496,
+   "evidence": [
+    "https://isitsolved.com/journal/fafd94cffcb4",
+    "https://oeis.org/A208403"
+   ],
+   "reason": "Faithful (row-major new values, three named neighbours). isitsolved iis:2611.00260 (round 6 of Hardin width-3 recurrences, filed 2026-11-28 08:00 UTC) lists A208403 as 'Barker g.f. proved; Hardin recurrence (n>3) proved'. The site proof was committed at 16:22 UTC, and the closed form follows directly from the g.f."
+  },
+  "mo-179145": {
+   "date": "2026-11-28",
+   "pr": 35487,
+   "evidence": [
+    "https://mathoverflow.net/questions/179145"
+   ],
+   "reason": "The statement (H is the family of maximal independent sets of some graph iff H is an antichain and conformal) is exactly the characterization in the 2014 MO answer (an antichain such that every pairwise-covered set lies in an edge), i.e. Gilmore's classical criterion for clique hypergraphs. Faithful, including infinite V (no Zorn is needed)."
+  },
+  "oeis-a101902": {
+   "date": "2026-11-28",
+   "pr": 35465,
+   "evidence": [
+    "https://oeis.org/A101902"
+   ],
+   "reason": "Faithful. The entry already contains a proof of completeness (Ivan Neretin, Dec 14 2016): seven parametric families mod 7 cover all large n and the small n are checked by hand. The site proof does the same with four families mod 8 plus a bounded check."
+  },
+  "wp-eilenberg-ganea-conjecture": {
+   "date": "2026-11-28",
+   "pr": 35454,
+   "evidence": [
+    "https://github.com/openai/math",
+    "https://en.wikipedia.org/wiki/Eilenberg%E2%80%93Ganea_conjecture"
+   ],
+   "reason": "The statement says its definitions come from openai/math (lean/ComparatorChallenges/EilenbergGanea.lean), which formalizes a counterexample. The proof file is headed 'Port of openai/math@3344da5'. So the disproof is an adaptation of an earlier public solution."
+  },
+  "oeis-a096597": {
+   "date": "2026-11-28",
+   "pr": 35438,
+   "evidence": [
+    "https://doi.org/10.1016/0304-3975(93)90319-O",
+    "https://oeis.org/A096597"
+   ],
+   "reason": "Faithful (T(n,m) with max(parts, rows, columns) = m, last floor(n/2) entries equal to 3*A091360). The reduction is short: for k < n/2 there is a unique long axis, with three choices, and the rest is a plane partition of k on the quadrant minus its corner. That count is the one-cell case of Sagan's 1993 hook generating function for skew plane partitions (Theorem 2.1), which the proof formalizes and cites. Hasler's 2018 formula line in the entry also states it."
+  },
+  "oeis-a140320": {
+   "date": "2026-11-28",
+   "pr": 35417,
+   "evidence": [
+    "https://oeis.org/A137576",
+    "https://oeis.org/A140320"
+   ],
+   "reason": "The main conjecture a(n) = 2n*3^(n-1)+1 is the p = 3 case of the formula already in the companion entry A137576: 'if p is an odd prime then a((p^k-1)/2) = 1 + k*phi(p^k)'. The growth conjuncts are the consequences stated in A140320 together with the prime case. Also, A137576 is defined through Jianing Song's divisor-sum formula rather than its own definition A002326*A006694+1 (a formula, not the conjecture)."
   }
  },
  "reviewed": "2026-11-28"
