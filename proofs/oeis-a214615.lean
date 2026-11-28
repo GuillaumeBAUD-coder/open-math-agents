@@ -16,11 +16,7 @@ theorem main' : ∀ n : ℕ, 2 ≤ n →
     a n - a (n - 1) + ((n : ℤ) - 1) ^ 2 * a (n - 2) = 0 := by
   intro n hn
   obtain ⟨k, rfl⟩ : ∃ k, n = k + 2 := ⟨n - 2, by omega⟩
-  rw [show k + 2 - 1 = k + 1 by omega, show k + 2 - 2 = k by omega]
-  unfold a
-  rw [meixner]
-  simp only [eval_sub, eval_mul, eval_X, eval_C, one_mul]
-  push_cast
+  simp [a, meixner]
   ring
 
 end OMA.P_oeis_a214615
