@@ -53,11 +53,6 @@ theorem childSpan_succ (M g r₀ h : ℕ) :
       length M g r₀ (h + 2) + g + span M g r₀ (h + 1) := by
   simp [childSpan, Nat.add_assoc]
 
-theorem span_succ_succ (M g r₀ h : ℕ) :
-    span M g r₀ (h + 2) =
-      M * (length M g r₀ (h + 2) + g + span M g r₀ (h + 1)) + (M - 1) * g := by
-  rw [show h + 2 = (h + 1) + 1 by omega, span_succ, childSpan_succ]
-
 theorem threshold_le_length (M g r₀ h : ℕ) : r₀ ≤ length M g r₀ h := by
   cases h with
   | zero => exact le_rfl
@@ -69,9 +64,6 @@ theorem gap_add_span_le_length (M g r₀ h : ℕ) :
 theorem length_pos (M g r₀ h : ℕ) (hr₀ : 0 < r₀) :
     0 < length M g r₀ h := hr₀.trans_le (threshold_le_length _ _ _ _)
 
-theorem length_le_childSpan (M g r₀ h : ℕ) :
-    length M g r₀ (h + 1) ≤ childSpan M g r₀ h := Nat.le_add_right _ _
-
 /-- The key padding estimate: an entire child block occupies no more than twice
 its incoming window length, independently of the size of the complete tree. -/
 theorem childSpan_le_twice_length (M g r₀ h : ℕ) :
@@ -79,42 +71,6 @@ theorem childSpan_le_twice_length (M g r₀ h : ℕ) :
   have hp := gap_add_span_le_length M g r₀ h
   dsimp [childSpan]
   split_ifs <;> omega
-
-theorem childSpan_pos (M g r₀ h : ℕ) (hr₀ : 0 < r₀) :
-    0 < childSpan M g r₀ h :=
-  (length_pos M g r₀ (h + 1) hr₀).trans_le (length_le_childSpan _ _ _ _)
-
-theorem childSpan_le_span (M g r₀ h : ℕ) (hM : 1 ≤ M) :
-    childSpan M g r₀ h ≤ span M g r₀ (h + 1) := by
-  rw [span_succ]
-  calc
-    childSpan M g r₀ h ≤ M * childSpan M g r₀ h := by
-      simpa using Nat.mul_le_mul_right (childSpan M g r₀ h) hM
-    _ ≤ _ := Nat.le_add_right _ _
-
-theorem span_pos (M g r₀ h : ℕ) (hM : 1 ≤ M) (hr₀ : 0 < r₀) :
-    0 < span M g r₀ (h + 1) :=
-  (childSpan_pos M g r₀ h hr₀).trans_le (childSpan_le_span M g r₀ h hM)
-
-theorem span_le_length_succ (M g r₀ h : ℕ) :
-    span M g r₀ h ≤ length M g r₀ (h + 1) := by
-  exact (Nat.le_add_left _ _).trans (gap_add_span_le_length _ _ _ _)
-
-theorem span_le_span_succ (M g r₀ h : ℕ) (hM : 1 ≤ M) :
-    span M g r₀ h ≤ span M g r₀ (h + 1) :=
-  (span_le_length_succ M g r₀ h).trans
-    ((length_le_childSpan M g r₀ h).trans (childSpan_le_span M g r₀ h hM))
-
-theorem monotone_span (M g r₀ : ℕ) (hM : 1 ≤ M) : Monotone (span M g r₀) :=
-  monotone_nat_of_le_succ (fun h => span_le_span_succ M g r₀ h hM)
-
-theorem monotone_length (M g r₀ : ℕ) (hM : 1 ≤ M) : Monotone (length M g r₀) := by
-  apply monotone_nat_of_le_succ
-  intro h
-  cases h with
-  | zero => exact threshold_le_length _ _ _ _
-  | succ h =>
-    exact max_le_max le_rfl (Nat.add_le_add_left (span_le_span_succ M g r₀ h hM) g)
 
 end Problem310.WindowRecursion
 
@@ -166,45 +122,6 @@ theorem terminalAddress_injective {I : Type u_I} {A : Type u_A} {X : Type u_X} {
     simpa only [hleaf] using h
   by_contra hne
   exact hseparate hchild hne (hrefine (hlevel i) hkey)
-
-/-- Selector trials in different child windows use different tables; within a
-window coarse-key separation gives different entries. -/
-theorem selectorAddress_injective {I : Type u_I} {A : Type u_A} {X : Type u_X} {K : Type u_K}
-    (child : I → A) (point : I → X) (key : A → X → K)
-    (hseparate : ∀ {i j : I}, child i = child j → i ≠ j →
-      key (child i) (point i) ≠ key (child i) (point j)) :
-    Function.Injective (fun i => (child i, key (child i) (point i))) := by
-  intro i j hij
-  have hchild : child i = child j := congrArg Prod.fst hij
-  have hkey : key (child i) (point i) = key (child i) (point j) := by
-    have h := congrArg Prod.snd hij
-    simpa only [hchild] using h
-  by_contra hne
-  exact hseparate hchild hne hkey
-
-/-- Freshness is against the entire exposed center-address set, not merely the
-entries on the center's actual route. -/
-theorem selectorAddress_ne_centerAddress {I : Type u_I} {A : Type u_A} {X : Type u_X} {K : Type u_K}
-    (child : I → A) (point : I → X) (key : A → X → K) (x : X)
-    (hfresh : ∀ i, key (child i) (point i) ≠ key (child i) x)
-    (i : I) (a : A) :
-    (child i, key (child i) (point i)) ≠ (a, key a x) := by
-  intro h
-  have hchild : child i = a := congrArg Prod.fst h
-  have hkey := congrArg Prod.snd h
-  apply hfresh i
-  simpa only [hchild] using hkey
-
-/-- Consequently all selected trial addresses are disjoint from the exposed
-center addresses, as required by finite-product conditioning. -/
-theorem disjoint_selector_center_ranges {I : Type u_I} {A : Type u_A} {X : Type u_X} {K : Type u_K}
-    (child : I → A) (point : I → X) (key : A → X → K) (x : X)
-    (hfresh : ∀ i, key (child i) (point i) ≠ key (child i) x) :
-    Disjoint (Set.range (fun i => (child i, key (child i) (point i))))
-      (Set.range (fun a => (a, key a x))) := by
-  rw [Set.disjoint_left]
-  rintro z ⟨i, rfl⟩ ⟨a, ha⟩
-  exact selectorAddress_ne_centerAddress child point key x hfresh i a ha.symm
 
 end Problem310.AddressInjectivity
 
@@ -314,9 +231,6 @@ instance (q d : ℕ) : Fintype (Edge q d) := by
 @[simp] theorem edge_nonempty {q d : ℕ} (e : Edge q d) : e.val ≠ [] :=
   ((mem_edgePaths_iff q d e.val).mp e.property).1
 
-theorem edge_length_le {q d : ℕ} (e : Edge q d) : e.val.length ≤ d :=
-  ((mem_edgePaths_iff q d e.val).mp e.property).2
-
 /-- Convert a nonempty bounded path into the finite edge type. -/
 def mkEdge {q d : ℕ} (p : List (Fin q)) (hne : p ≠ []) (hlen : p.length ≤ d) :
     Edge q d := ⟨p, (mem_edgePaths_iff q d p).mpr ⟨hne, hlen⟩⟩
@@ -339,65 +253,6 @@ def childEdge {q d : ℕ} (P : List (Fin q)) (hP : P.length < d) (i : Fin q) :
 
 @[simp] theorem childEdge_val {q d : ℕ} (P : List (Fin q))
     (hP : P.length < d) (i : Fin q) : (childEdge P hP i).val = P ++ [i] := rfl
-
-/-- Child edges at fixed parent are distinct. -/
-theorem childEdge_injective {q d : ℕ} (P : List (Fin q)) (hP : P.length < d) :
-    Function.Injective (childEdge P hP) := by
-  intro i j hij
-  have h : P ++ [i] = P ++ [j] := congrArg Subtype.val hij
-  simpa using h
-
-/-- The incoming edge of a subtree and all its descendants form one consecutive
-block in the depth-first edge preorder. -/
-theorem subtree_block (q d : ℕ) (p : List (Fin q)) (hne : p ≠ []) (hlen : p.length ≤ d) :
-    ∃ pre post : List (List (Fin q)),
-      edgePaths q d = pre ++
-        (p :: (edgePaths q (d - p.length)).map (fun s => p ++ s)) ++ post := by
-  induction d generalizing p with
-  | zero =>
-      have : p = [] := List.length_eq_zero_iff.mp (by omega)
-      exact (hne this).elim
-  | succ d ih =>
-      cases p with
-      | nil => exact (hne rfl).elim
-      | cons i p =>
-          have hip : i ∈ List.finRange q := List.mem_finRange i
-          obtain ⟨L, R, hLR⟩ := List.mem_iff_append.mp hip
-          let block := fun j : Fin q => [j] :: (edgePaths q d).map (List.cons j)
-          have hsplit : edgePaths q (d + 1) =
-              L.flatMap block ++ block i ++ R.flatMap block := by
-            rw [edgePaths_succ, hLR]
-            simp [block, List.flatMap_append, List.append_assoc]
-          by_cases hp : p = []
-          · subst p
-            refine ⟨L.flatMap block, R.flatMap block, ?_⟩
-            simpa [block] using hsplit
-          · have hpl : p.length ≤ d := by simpa using hlen
-            obtain ⟨A, B, hAB⟩ := ih p hp hpl
-            refine ⟨L.flatMap block ++ [i] :: A.map (List.cons i),
-              B.map (List.cons i) ++ R.flatMap block, ?_⟩
-            rw [hsplit]
-            simp only [block, hAB, List.map_append, List.map_cons,
-              List.map_map, Function.comp_def, List.length_cons, Nat.add_sub_add_right]
-            simp only [List.cons_append, List.append_assoc]
-
-/-- In the subtree decomposition, the prefix length is exactly the preorder index. -/
-theorem subtree_block_index (q d : ℕ) (p : List (Fin q))
-    (hne : p ≠ []) (hlen : p.length ≤ d) :
-    ∃ pre post : List (List (Fin q)),
-      edgePaths q d = pre ++
-        (p :: (edgePaths q (d - p.length)).map (fun s => p ++ s)) ++ post ∧
-      pre.length = (edgePaths q d).idxOf p := by
-  obtain ⟨pre, post, heq⟩ := subtree_block q d p hne hlen
-  refine ⟨pre, post, heq, ?_⟩
-  have hnod : (pre ++ p ::
-      ((edgePaths q (d - p.length)).map (fun s => p ++ s) ++ post)).Nodup := by
-    simpa [heq, List.append_assoc] using nodup_edgePaths q d
-  have hnot : p ∉ pre := by
-    intro hp
-    have hdis := (List.nodup_append.mp hnod).2.2
-    exact hdis p hp p (by simp) rfl
-  simp [heq, List.append_assoc, List.idxOf_append_of_notMem hnot]
 
 end Problem310.TreePreorder
 
@@ -432,9 +287,6 @@ def rank {K : ℕ} : ℕ → List (Fin K) → ℕ
   cases d <;> rfl
 @[simp] theorem rank_cons {K : ℕ} (d : ℕ) (i : Fin K) (p : List (Fin K)) :
     rank (d + 1) (i :: p) = 1 + i.val * size K d + rank d p := rfl
-
-theorem size_pos (K d : ℕ) : 0 < size K d := by
-  cases d <;> simp [size]
 
 /-- Every valid node has rank strictly below the total number of nodes. -/
 theorem rank_lt_size {K d : ℕ} {p : List (Fin K)} (hp : p.length ≤ d) :
@@ -486,14 +338,6 @@ theorem rank_append_bounds {K d : ℕ} {p q : List (Fin K)}
   have hq : q.length ≤ d - p.length := by simp only [List.length_append] at hpq; omega
   rw [rank_append hp]
   exact ⟨Nat.le_add_right _ _, Nat.add_lt_add_left (rank_lt_size hq) _⟩
-
-/-- Every strict descendant occurs after its ancestor in preorder. -/
-theorem rank_lt_rank_append {K d : ℕ} {p q : List (Fin K)}
-    (hpq : (p ++ q).length ≤ d) (hq : q ≠ []) : rank d p < rank d (p ++ q) := by
-  have hp : p.length ≤ d := by simp only [List.length_append] at hpq; omega
-  have hqd : q.length ≤ d - p.length := by simp only [List.length_append] at hpq; omega
-  rw [rank_append hp]
-  exact Nat.lt_add_of_pos_right (rank_pos hqd hq)
 
 /-- The entire subtree of an earlier child precedes the entire subtree of a later child. -/
 theorem rank_cons_lt_rank_cons {K d : ℕ} {i j : Fin K} {p q : List (Fin K)}
@@ -618,27 +462,11 @@ theorem edgeRank_add_one {K d : ℕ} {p : List (Fin K)}
   unfold edgeRank
   omega
 
-theorem edgeRank_lt {K d : ℕ} {p : List (Fin K)}
-    (hp : p.length ≤ d) (hne : p ≠ []) : edgeRank d p < size K d - 1 := by
-  have := rank_lt_size hp
-  have := rank_pos hp hne
-  unfold edgeRank
-  omega
-
 theorem edgeRank_injective_on {K d : ℕ} {p q : List (Fin K)}
     (hp : p.length ≤ d) (hq : q.length ≤ d) (hp0 : p ≠ []) (hq0 : q ≠ [])
     (heq : edgeRank d p = edgeRank d q) : p = q := by
   apply rank_injective_on hp hq
   rw [← edgeRank_add_one hp hp0, ← edgeRank_add_one hq hq0, heq]
-
-theorem edgeRank_lt_edgeRank_append {K d : ℕ} {p q : List (Fin K)}
-    (hpq : (p ++ q).length ≤ d) (hp0 : p ≠ []) (hq0 : q ≠ []) :
-    edgeRank d p < edgeRank d (p ++ q) := by
-  have hlt := rank_lt_rank_append hpq hq0
-  have hp : p.length ≤ d := by simp only [List.length_append] at hpq; omega
-  have hpos := rank_pos hp hp0
-  unfold edgeRank
-  omega
 
 theorem edgeRank_sibling_descendants_lt {K d : ℕ} {P p q : List (Fin K)} {i j : Fin K}
     (hij : i < j) (hp : (P ++ i :: p).length ≤ d)
@@ -710,55 +538,11 @@ abbrev length (P : List (Fin q)) : ℕ := W.r (d + 1 - P.length)
 
 def window (P : List (Fin q)) : Finset ℕ := Finset.Icc (W.a P) (W.b P)
 
-def testIndex (P : List (Fin q)) (k : Fin (W.length P)) : ℕ := W.a P + k.val
-
-lemma start_le_end (P : List (Fin q)) (hP : ValidWindowEdge d P) : W.a P ≤ W.b P := by
-  have hlen := W.length_pos P hP
-  have hend := W.endpoint P hP
-  omega
-
 lemma card_window (P : List (Fin q)) (hP : ValidWindowEdge d P) :
     (W.window P).card = W.length P := by
   rw [window, Nat.card_Icc]
   have hend := W.endpoint P hP
   dsimp [length]
-  omega
-
-lemma testIndex_mem (P : List (Fin q)) (hP : ValidWindowEdge d P)
-    (k : Fin (W.length P)) : W.testIndex P k ∈ W.window P := by
-  apply Finset.mem_Icc.mpr
-  have hend := W.endpoint P hP
-  have hk := k.isLt
-  dsimp [testIndex, length] at *
-  omega
-
-lemma testIndex_three (P : List (Fin q)) (hP : ValidWindowEdge d P)
-    (k : Fin (W.length P)) : 3 ≤ W.testIndex P k := by
-  have hstart := W.start_three P hP
-  dsimp [testIndex]
-  omega
-
-lemma testIndex_injective (P : List (Fin q)) : Function.Injective (W.testIndex P) := by
-  intro i j h
-  apply Fin.ext
-  dsimp [testIndex] at h
-  omega
-
-/-- Every tested point sees at most `2*r+2` finest-grid exponent levels. -/
-lemma testIndex_padding (P : List (Fin q)) (hP : ValidWindowEdge d P)
-    (k : Fin (W.length P)) :
-    W.bstar P + 2 ≤ W.testIndex P k + (2 * W.length P + 2) := by
-  have hpad := W.padding P hP
-  dsimp [testIndex, length]
-  omega
-
-/-- The global finite-index set may include every edge window. -/
-def indices : Set ℕ := {n | ∃ P : List (Fin q), ValidWindowEdge d P ∧ n ∈ W.window P}
-
-lemma indices_positive : ∀ n ∈ W.indices, 1 ≤ n := by
-  rintro n ⟨P, hP, hn⟩
-  have hstart := W.start_three P hP
-  have hnlow := (Finset.mem_Icc.mp hn).1
   omega
 
 end WindowData
@@ -780,42 +564,6 @@ namespace Problem310
 
 /-- The integer label of the half-open periodic grid cell containing a point. -/
 def periodicGridKey (q x : ℝ) : ℤ := ⌊q * Int.fract x⌋
-
-/-- Two points separated from each other in both directions around the circle
-cannot occupy the same cell of a periodic grid. -/
-theorem periodicGridKey_ne_of_separated {q x y : ℝ} (hq : 2 ≤ q)
-    (hlo : q⁻¹ ≤ y - x) (hhi : y - x ≤ 1 - q⁻¹) :
-    periodicGridKey q x ≠ periodicGridKey q y := by
-  have hqpos : 0 < q := by linarith
-  have hi : 0 < q⁻¹ := inv_pos.mpr hqpos
-  have hxy : x ≤ y := by linarith
-  have hfloorle : ⌊x⌋ ≤ ⌊y⌋ := Int.floor_mono hxy
-  have hfloorupper : ⌊y⌋ < ⌊x⌋ + 2 := by
-    apply Int.floor_lt.mpr
-    have hx := Int.lt_floor_add_one x
-    push_cast
-    linarith
-  intro heq
-  unfold periodicGridKey at heq
-  have hxlo := Int.floor_le (q * Int.fract x)
-  have hxhi := Int.lt_floor_add_one (q * Int.fract x)
-  have hylo := Int.floor_le (q * Int.fract y)
-  have hyhi := Int.lt_floor_add_one (q * Int.fract y)
-  rw [← heq] at hylo hyhi
-  have hdlo : q * (Int.fract y - Int.fract x) < 1 := by linarith
-  have hdhi : q * (Int.fract x - Int.fract y) < 1 := by linarith
-  have hmul : q * q⁻¹ = 1 := mul_inv_cancel₀ hqpos.ne'
-  have hcase : ⌊y⌋ = ⌊x⌋ ∨ ⌊y⌋ = ⌊x⌋ + 1 := by omega
-  rcases hcase with h | h
-  · unfold Int.fract at hdlo
-    rw [h] at hdlo
-    have := mul_le_mul_of_nonneg_left hlo hqpos.le
-    nlinarith
-  · unfold Int.fract at hdhi
-    rw [h] at hdhi
-    push_cast at hdhi
-    have := mul_le_mul_of_nonneg_left hhi hqpos.le
-    nlinarith
 
 /-- The periodic label is the residue of the label on the real-line grid. -/
 theorem periodicGridKey_eq_emod (q : ℕ) (hq : 0 < q) (x : ℝ) :
@@ -860,16 +608,6 @@ def dyadicGridKey (b : ℕ) (x : ℝ) : ℤ := periodicGridKey ((2 : ℝ) ^ (b +
     dyadicGridKey b (x + 1) = dyadicGridKey b x := by
   simp [dyadicGridKey, periodicGridKey, Int.fract_add_one]
 
-theorem dyadicGridKey_nonneg (b : ℕ) (x : ℝ) : 0 ≤ dyadicGridKey b x := by
-  unfold dyadicGridKey periodicGridKey
-  exact Int.floor_nonneg.mpr (mul_nonneg (by positivity) (Int.fract_nonneg x))
-
-theorem dyadicGridKey_lt (b : ℕ) (x : ℝ) : dyadicGridKey b x < (2 : ℤ) ^ (b + 2) := by
-  unfold dyadicGridKey periodicGridKey
-  apply Int.floor_lt.mpr
-  push_cast
-  nlinarith [Int.fract_lt_one x, pow_pos (by norm_num : (0 : ℝ) < 2) (b + 2)]
-
 /-- Fine dyadic grid labels determine all coarser labels by integer division. -/
 theorem dyadicGridKey_nested {b B : ℕ} (hb : b ≤ B) (x : ℝ) :
     dyadicGridKey B x / (2 : ℤ) ^ (B - b) = dyadicGridKey b x := by
@@ -884,67 +622,8 @@ theorem dyadicGridKey_nested {b B : ℕ} (hb : b ≤ B) (x : ℝ) :
     (n := (2 : ℕ) ^ (B - b)) (by positivity) ((2 : ℝ) ^ (b + 2) * Int.fract x)
   simpa using h
 
-theorem dyadicGridKey_ne_of_coarse_ne {b B : ℕ} {x y : ℝ} (hb : b ≤ B)
-    (h : dyadicGridKey b x ≠ dyadicGridKey b y) :
-    dyadicGridKey B x ≠ dyadicGridKey B y := by
-  intro hxy
-  apply h
-  rw [← dyadicGridKey_nested hb x, ← dyadicGridKey_nested hb y, hxy]
-
 private theorem half_pow_antitone : Antitone (fun n : ℕ ↦ ((2 : ℝ)⁻¹) ^ n) :=
   pow_right_anti₀ (by norm_num) (by norm_num)
-
-private theorem grid_resolution_bound (b : ℕ) :
-    2 ≤ (2 : ℝ) ^ (b + 2) := by
-  have := pow_le_pow_right₀ (by norm_num : (1 : ℝ) ≤ 2) (show 1 ≤ b + 2 by omega)
-  simpa using this
-
-private theorem grid_width_eq (b : ℕ) :
-    ((2 : ℝ) ^ (b + 2))⁻¹ = ((2 : ℝ)⁻¹) ^ (b + 2) := by
-  simp only [inv_pow]
-
-/-- The center and any requested point in a window occupy different cells. -/
-theorem dyadicGridKey_center_ne {a b n : ℕ} {x t : ℝ}
-    (ha : 3 ≤ a) (han : a ≤ n) (hnb : n ≤ b)
-    (ht : t ∈ Set.Icc (1 : ℝ) 2) :
-    dyadicGridKey b x ≠ dyadicGridKey b (x + t * ((2 : ℝ)⁻¹) ^ n) := by
-  apply periodicGridKey_ne_of_separated (grid_resolution_bound b)
-  · rw [grid_width_eq]
-    have hn := half_pow_antitone (show n ≤ b + 2 by omega)
-    have hp : 0 ≤ ((2 : ℝ)⁻¹) ^ n := by positivity
-    nlinarith [ht.1]
-  · rw [grid_width_eq]
-    have hn := half_pow_antitone (show 3 ≤ n by omega)
-    have hb := half_pow_antitone (show 2 ≤ b + 2 by omega)
-    norm_num at hn hb
-    have hp : 0 ≤ ((2 : ℝ)⁻¹) ^ n := by positivity
-    nlinarith [ht.2]
-
-/-- Different indices in a window supply different selector addresses. -/
-theorem dyadicGridKey_pair_ne {a b n m : ℕ} {x t : ℝ}
-    (ha : 3 ≤ a) (han : a ≤ n) (hnm : n < m) (hmb : m ≤ b)
-    (ht : t ∈ Set.Icc (1 : ℝ) 2) :
-    dyadicGridKey b (x + t * ((2 : ℝ)⁻¹) ^ m) ≠
-      dyadicGridKey b (x + t * ((2 : ℝ)⁻¹) ^ n) := by
-  apply periodicGridKey_ne_of_separated (grid_resolution_bound b)
-  · rw [grid_width_eq]
-    have hm := half_pow_antitone (show m ≤ b + 2 by omega)
-    have hnm' := half_pow_antitone (show n + 1 ≤ m by omega)
-    dsimp only at hnm'
-    rw [pow_succ] at hnm'
-    norm_num at hnm'
-    have hp : 0 ≤ ((2 : ℝ)⁻¹) ^ m := by positivity
-    have hd : ((2 : ℝ)⁻¹) ^ m ≤ ((2 : ℝ)⁻¹) ^ n - ((2 : ℝ)⁻¹) ^ m := by
-      linarith
-    have hmultip := mul_le_mul_of_nonneg_right ht.1 (show 0 ≤ ((2 : ℝ)⁻¹) ^ n - ((2 : ℝ)⁻¹) ^ m by linarith)
-    nlinarith
-  · rw [grid_width_eq]
-    have hn := half_pow_antitone (show 3 ≤ n by omega)
-    have hb := half_pow_antitone (show 2 ≤ b + 2 by omega)
-    norm_num at hn hb
-    have hpn : 0 ≤ ((2 : ℝ)⁻¹) ^ n := by positivity
-    have hpm : 0 ≤ t * ((2 : ℝ)⁻¹) ^ m := mul_nonneg (by linarith [ht.1]) (by positivity)
-    nlinarith [ht.2]
 
 /-- The no-crossing stability condition for a later window preserves an earlier key. -/
 theorem dyadicGridKey_eq_of_stable {a b n : ℕ} {x t : ℝ}
@@ -966,17 +645,6 @@ theorem dyadicGridKey_eq_of_stable {a b n : ℕ} {x t : ℝ}
         simpa using hk.2
       linarith⟩)
   simpa [dyadicGridKey] using hkey.symm
-
-/-- All the trial addresses in one dyadic window are distinct. -/
-theorem dyadicGridKey_injOn_window {a b : ℕ} {x t : ℝ}
-    (ha : 3 ≤ a) (ht : t ∈ Set.Icc (1 : ℝ) 2) :
-    Set.InjOn (fun n : ℕ ↦ dyadicGridKey b (x + t * ((2 : ℝ)⁻¹) ^ n))
-      (Set.Icc a b) := by
-  intro n hn m hm heq
-  rcases lt_trichotomy n m with h | h | h
-  · exact False.elim (dyadicGridKey_pair_ne ha hn.1 h hm.2 ht heq.symm)
-  · exact h
-  · exact False.elim (dyadicGridKey_pair_ne ha hm.1 h hn.2 ht heq)
 
 end Problem310
 
@@ -1161,13 +829,6 @@ lemma periodicKey_dyadic_eq_of_refine {b B : ℕ} {x y : ℝ} (hb : b ≤ B)
       periodicKey ((2 : ℝ) ^ (b + 2)) y := by
   rw [periodicKey_dyadic_refine hb x, periodicKey_dyadic_refine hb y, heq]
 
-lemma periodicKey_dyadic_ne_refine {b B : ℕ} {x y : ℝ} (hb : b ≤ B)
-    (hne : periodicKey ((2 : ℝ) ^ (b + 2)) x ≠
-      periodicKey ((2 : ℝ) ^ (b + 2)) y) :
-    periodicKey ((2 : ℝ) ^ (B + 2)) x ≠
-      periodicKey ((2 : ℝ) ^ (B + 2)) y := by
-  exact fun heq => hne (periodicKey_dyadic_eq_of_refine hb heq)
-
 lemma periodicKey_nonneg {q : ℝ} (hq : 0 ≤ q) (x : ℝ) :
     0 ≤ periodicKey q x := by
   exact Int.floor_nonneg.mpr (mul_nonneg hq (Int.fract_nonneg x))
@@ -1222,10 +883,6 @@ lemma dyadicKey_eq_of_refine {b B : ℕ} {x y : ℝ} (hb : b ≤ B)
   apply (dyadicKey_eq_iff b x y).mpr
   exact periodicKey_dyadic_eq_of_refine hb ((dyadicKey_eq_iff B x y).mp heq)
 
-lemma dyadicKey_ne_refine {b B : ℕ} {x y : ℝ} (hb : b ≤ B)
-    (hne : dyadicKey b x ≠ dyadicKey b y) : dyadicKey B x ≠ dyadicKey B y :=
-  fun heq => hne (dyadicKey_eq_of_refine hb heq)
-
 lemma dyadicKey_add_one (b : ℕ) (x : ℝ) : dyadicKey b (x + 1) = dyadicKey b x := by
   rw [dyadicKey_eq_iff]
   exact periodicKey_add_one _ _
@@ -1248,38 +905,6 @@ lemma measurable_dyadicKey (b : ℕ) : Measurable (dyadicKey b) := by
       (dyadicKey b x).isLt
     simp only [lift, dif_pos hlt, dyadicKey]
   simpa only [Function.comp_def, heq] using h
-
-/-- The left endpoint of a cell has exactly that finite address. -/
-lemma dyadicKey_cell_left (b : ℕ) (k : Fin (2 ^ (b + 2))) :
-    dyadicKey b ((k.val : ℝ) / (2 : ℝ) ^ (b + 2)) = k := by
-  have hq : (0 : ℝ) < 2 ^ (b + 2) := by positivity
-  have hk0 : (0 : ℝ) ≤ k.val := by positivity
-  have hkq : (k.val : ℝ) < (2 : ℝ) ^ (b + 2) := by exact_mod_cast k.isLt
-  have hfract : Int.fract ((k.val : ℝ) / (2 : ℝ) ^ (b + 2)) =
-      (k.val : ℝ) / (2 : ℝ) ^ (b + 2) :=
-    Int.fract_eq_self.mpr ⟨div_nonneg hk0 hq.le, (div_lt_one hq).mpr hkq⟩
-  apply Fin.ext
-  dsimp [dyadicKey, periodicKey]
-  push_cast
-  rw [hfract]
-  have hmul : (2 : ℝ) ^ (b + 2) * ((k.val : ℝ) / (2 : ℝ) ^ (b + 2)) =
-      (k.val : ℝ) := by field_simp
-  rw [hmul]
-  simp
-
-lemma dyadicKey_surjective (b : ℕ) : Function.Surjective (dyadicKey b) := by
-  intro k
-  exact ⟨(k.val : ℝ) / (2 : ℝ) ^ (b + 2), dyadicKey_cell_left b k⟩
-
-/-- Every function determined by the finest address is literally a finite table.
-The table is obtained by evaluating at the cell's left endpoint. -/
-lemma factors_through_dyadicKey {α : Type u_α} {b : ℕ} (f : ℝ → α)
-    (hf : ∀ x y, dyadicKey b x = dyadicKey b y → f x = f y) :
-    ∃ F : Fin (2 ^ (b + 2)) → α, ∀ x, f x = F (dyadicKey b x) := by
-  refine ⟨fun k => f ((k.val : ℝ) / (2 : ℝ) ^ (b + 2)), ?_⟩
-  intro x
-  apply hf
-  exact (dyadicKey_cell_left b (dyadicKey b x)).symm
 
 end Problem310.GridSeparation
 
@@ -1369,18 +994,6 @@ instance outcomeLaw_probability (S : Type u_S) (T : Type u_T) [Fintype S] [Finty
     selectorLaw S {ω} = ((2 : ENNReal)⁻¹) ^ Fintype.card S := by
   simp [selectorLaw, Measure.pi_singleton]
 
-theorem selectorLaw_singleton_pos (S : Type u_S) [Fintype S] (ω : S → Bool) :
-    0 < selectorLaw S {ω} := by
-  rw [selectorLaw_singleton]
-  exact ENNReal.pow_pos (by simp) _
-
-/-- Every center-exposure pattern that actually occurs has positive selector mass. -/
-theorem selectorLaw_pos_of_nonempty (S : Type u_S) [Fintype S]
-    {A : Set (S → Bool)} (hA : A.Nonempty) : 0 < selectorLaw S A := by
-  obtain ⟨ω, hω⟩ := hA
-  exact (selectorLaw_singleton_pos S ω).trans_le
-    (measure_mono (Set.singleton_subset_iff.mpr hω))
-
 @[simp] theorem terminalLaw_singleton (T : Type u_T) [Fintype T]
     (p : ℝ) (hp0 : 0 ≤ p) (hp1 : p ≤ 1) (ω : T → Bool) :
     terminalLaw T p hp0 hp1 {ω} =
@@ -1390,15 +1003,6 @@ theorem selectorLaw_pos_of_nonempty (S : Type u_S) [Fintype S]
   intro t _
   cases h : ω t <;> simp
 
-theorem terminalLaw_singleton_pos (T : Type u_T) [Fintype T]
-    (p : ℝ) (hp0 : 0 ≤ p) (hp1 : p ≤ 1) (hp : 0 < p) (hp' : p < 1)
-    (ω : T → Bool) : 0 < terminalLaw T p hp0 hp1 {ω} := by
-  rw [terminalLaw_singleton]
-  apply pos_iff_ne_zero.mpr
-  apply Finset.prod_ne_zero_iff.mpr
-  intro t _
-  exact (ENNReal.ofReal_pos.mpr (by split <;> linarith)).ne'
-
 @[simp] theorem outcomeLaw_singleton (S : Type u_S) (T : Type u_T) [Fintype S] [Fintype T]
     (p : ℝ) (hp0 : 0 ≤ p) (hp1 : p ≤ 1) (ω : (S → Bool) × (T → Bool)) :
     outcomeLaw S T p hp0 hp1 {ω} =
@@ -1406,13 +1010,6 @@ theorem terminalLaw_singleton_pos (T : Type u_T) [Fintype T]
   cases ω with
   | mk s t =>
     rw [outcomeLaw, ← Set.singleton_prod_singleton, Measure.prod_prod]
-
-theorem outcomeLaw_singleton_pos (S : Type u_S) (T : Type u_T) [Fintype S] [Fintype T]
-    (p : ℝ) (hp0 : 0 ≤ p) (hp1 : p ≤ 1) (hp : 0 < p) (hp' : p < 1)
-    (ω : (S → Bool) × (T → Bool)) : 0 < outcomeLaw S T p hp0 hp1 {ω} := by
-  rw [outcomeLaw_singleton]
-  exact ENNReal.mul_pos (selectorLaw_singleton_pos S ω.1).ne'
-    (terminalLaw_singleton_pos T p hp0 hp1 hp hp' ω.2).ne'
 
 end Problem310.ConcreteLabels
 
@@ -1693,15 +1290,6 @@ lemma measure_cylinder_of_local {M d : ℕ} {Ω : Type u_Ω} [MeasurableSpace Ω
   rw [Fintype.prod_sigma]
   simp
 
-lemma measure_cylinder {M d : ℕ} {Ω : Type u_Ω} [MeasurableSpace Ω]
-    (μ : Measure Ω) (S : Address M → Ω → Bool)
-    (hIndep : iIndepFun S μ)
-    (hfair : ∀ a b, μ (S a ⁻¹' {b}) = (2 : ENNReal)⁻¹)
-    (f : Path M d) :
-    μ (cylinder S f) = ∏ k : Fin d, ((2 : ENNReal)⁻¹) ^ ((f k).val + 1) :=
-  measure_cylinder_of_local μ S f (hIndep.precomp (address_injective f))
-    (fun _ b => hfair _ b)
-
 lemma cylinder_disjoint_of_prefix {M d : ℕ} {Ω : Type u_Ω}
     (S : Address M → Ω → Bool) (f g : Path M d) (k : Fin d)
     (hprefix : pathPrefix f k = pathPrefix g k) (hlt : f k < g k) :
@@ -1776,23 +1364,6 @@ lemma sum_geometric_weights (M : ℕ) :
               ring
         _ = 1 := by rw [hq, mul_one]; exact ih
   exact ENNReal.eq_sub_of_add_eq (by finiteness) (hadd M)
-
-/-- Probability that a full depth-`d` center path never chooses the default child.
-The event is expressed as the union of its explicit nondefault path cylinders. -/
-theorem measure_no_default {M d : ℕ} {Ω : Type u_Ω} [MeasurableSpace Ω]
-    (μ : Measure Ω) (S : Address M → Ω → Bool)
-    (hS : ∀ a, Measurable (S a)) (hIndep : iIndepFun S μ)
-    (hfair : ∀ a b, μ (S a ⁻¹' {b}) = (2 : ENNReal)⁻¹) :
-    μ (⋃ f : Path M d, cylinder S f) =
-      (1 - ((2 : ENNReal)⁻¹) ^ M) ^ d := by
-  classical
-  rw [measure_iUnion (cylinders_pairwiseDisjoint S) (measurableSet_cylinder S hS),
-    tsum_fintype]
-  simp_rw [measure_cylinder μ S hIndep hfair]
-  calc
-    _ = (∑ i : Fin M, ((2 : ENNReal)⁻¹) ^ (i.val + 1)) ^ d :=
-      (Fintype.sum_pow (fun i : Fin M => ((2 : ENNReal)⁻¹) ^ (i.val + 1)) d).symm
-    _ = _ := by rw [sum_geometric_weights]
 
 /-- Local independence suffices: only the finitely many addresses on each
 prescribed path are required to be independent and fair. -/
@@ -1931,24 +1502,6 @@ theorem chooseChild_of_local_success (S : Fin M → Bool) (i : Fin M)
     chooseChild S = i.castSucc :=
   (chooseChild_eq_nondefault_iff S i).mpr ⟨hi, hprev⟩
 
-/-- Every nondefault child preceding the chosen child was rejected. -/
-theorem chooseChild_reject_before (S : Fin M → Bool) (j : Fin M)
-    (hj : j.castSucc < chooseChild S) : S j = false := by
-  have h := Fin.find_min (p := fun i => Fin.lastCases true S i = true)
-    (show ∃ i, Fin.lastCases true S i = true from ⟨Fin.last M, by simp⟩) hj
-  simpa using h
-
-/-- A nondefault chosen child has a successful selector. -/
-theorem chooseChild_success (S : Fin M → Bool) (i : Fin M)
-    (hi : chooseChild S = i.castSucc) : S i = true :=
-  ((chooseChild_eq_nondefault_iff S i).mp hi).1
-
-/-- The default is avoided exactly when some nondefault selector succeeds. -/
-theorem chooseChild_ne_default_iff (S : Fin M → Bool) :
-    chooseChild S ≠ Fin.last M ↔ ∃ i, S i = true := by
-  rw [ne_eq, chooseChild_eq_default_iff]
-  simp only [not_forall, Bool.not_eq_false]
-
 /-- Pointwise equality of selectors preserves the complete child choice. -/
 theorem chooseChild_congr (S T : Fin M → Bool) (h : ∀ i, S i = T i) :
     chooseChild S = chooseChild T := by
@@ -2038,21 +1591,6 @@ theorem routeFrom_eq_local_route (choose : List ι → X → ι)
   have hp := routeFrom_eq_of_choices_eq choose k P x y hchoice
   rw [hU] at hp
   rw [routeFrom_add, routeFrom_succ, hp, hi]
-
-/-- Generic local-success implication used by random routing: once the prefix is
-preserved and child `i` is selected, the local terminal predicate is exactly the
-terminal predicate of the actual root route. -/
-theorem terminal_success_of_local_success (choose : List ι → X → ι)
-    (terminal : List ι → X → Prop) (k r : ℕ) (P U : List ι)
-    (x y : X) (i : ι)
-    (hU : routeFrom choose k P x = U)
-    (hchoice : ∀ l < k,
-      choose (routeFrom choose l P x) y = choose (routeFrom choose l P x) x)
-    (hi : choose U y = i)
-    (hlocal : terminal (routeFrom choose r (U ++ [i]) y) y) :
-    terminal (routeFrom choose (k + 1 + r) P y) y := by
-  rw [routeFrom_eq_local_route choose k r P U x y i hU hchoice hi]
-  exact hlocal
 
 /-- Every earlier routed node is a prefix of every later routed node. -/
 theorem routeFrom_prefix_of_le (choose : List ι → X → ι)
@@ -2174,26 +1712,6 @@ theorem noDefault_iff_exists_choices {M : ℕ}
       (List.ofFn (fun i => (f i).castSucc)) x).mpr (by
         simpa only [List.length_ofFn, List.getElem_ofFn] using hf)
     simpa only [List.length_ofFn] using hc
-
-/-- Two different immediate child subtrees cannot share a descendant. -/
-theorem child_eq_of_prefix {P L : List ι} {i j : ι}
-    (hi : (P ++ [i]).IsPrefix L) (hj : (P ++ [j]).IsPrefix L) : i = j := by
-  obtain ⟨s, hs⟩ := hi
-  obtain ⟨t, ht⟩ := hj
-  have h : P ++ (i :: s) = P ++ (j :: t) := by
-    simpa only [List.append_assoc, List.singleton_append] using hs.trans ht.symm
-  exact (List.cons.inj (List.append_cancel_left h)).1
-
-/-- Local terminal leaves in different child subtrees have distinct addresses,
-regardless of how the selectors route inside either subtree. -/
-theorem routeFrom_ne_of_distinct_children (choose : List ι → X → ι)
-    (r s : ℕ) (P : List ι) (x y : X) {i j : ι} (hij : i ≠ j) :
-    routeFrom choose r (P ++ [i]) x ≠ routeFrom choose s (P ++ [j]) y := by
-  intro heq
-  apply hij
-  apply child_eq_of_prefix (prefix_routeFrom choose r (P ++ [i]) x)
-  rw [heq]
-  exact prefix_routeFrom choose s (P ++ [j]) y
 
 /-- A first default on a finite route has a well-defined first occurrence. -/
 theorem exists_first_default (choose : List ι → X → ι)
@@ -2344,21 +1862,6 @@ theorem measure_adaptive_failures
   simp only [s, apply_ite, measure_univ]
   simp [Finset.prod_ite]
 
-/-- Looking up one terminal label at a selector-dependent address preserves its
-marginal law. This is the pointwise mean-density identity for the routed set. -/
-theorem measure_adaptive_label
-    {A : Type u_A} {K : Type u_K} {B : Type u_B} [MeasurableSpace A] [Fintype K]
-    [MeasurableSpace B] (μ : Measure A) (ν : Measure B)
-    [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
-    (addr : A → K) (s : Set B) (hs : MeasurableSet s)
-    (hmeas : MeasurableSet {z : A × (K → B) | z.2 (addr z.1) ∈ s}) :
-    (μ.prod (Measure.pi (fun _ : K => ν)))
-      {z : A × (K → B) | z.2 (addr z.1) ∈ s} = ν s := by
-  have h := measure_adaptive_constraints (I := Unit) μ ν
-    (fun a _ => addr a) (fun _ _ _ _ => Subsingleton.elim _ _)
-    (fun _ _ => s) (fun _ _ => hs) (by simpa using hmeas)
-  simpa using h
-
 end Problem310.AdaptiveLabels
 
 end OAI
@@ -2398,11 +1901,6 @@ theorem lengthAt_map_idxOf {α : Type u_α} [BEq α] [LawfulBEq α]
     (f : α → ℕ) {L : List α} {x : α} (hx : x ∈ L) :
     lengthAt (L.map f) (L.idxOf x) = f x :=
   lengthAt_map_of_getElem? f (List.getElem?_idxOf hx)
-
-theorem lengthAt_pos {L : List ℕ} {i : ℕ} (hi : i < L.length)
-    (hL : ∀ r ∈ L, 0 < r) : 0 < lengthAt L i := by
-  simp only [lengthAt, List.getElem?_eq_getElem hi, Option.getD_some]
-  exact hL _ (List.getElem_mem hi)
 
 theorem sum_lengthAt (L : List ℕ) :
     (∑ i ∈ Finset.range L.length, lengthAt L i) = L.sum := by
@@ -2487,75 +1985,15 @@ theorem gap_of_lt (len : ℕ → ℕ) (g : ℕ) {i j : ℕ} (hij : i < j) :
   rw [consecutive_gap] at hm
   omega
 
-theorem finish_lt_start (len : ℕ → ℕ) (g : ℕ) {i j : ℕ} (hij : i < j) :
-    finish len g i < start len g j := by
-  have := gap_of_lt len g hij
-  omega
-
-theorem start_le_finish {len : ℕ → ℕ} {g i : ℕ} (hi : 0 < len i) :
-    start len g i ≤ finish len g i := by
-  have := finish_add_one len g i
-  omega
-
-theorem finish_lt_of_lt {len : ℕ → ℕ} {g i j : ℕ}
-    (hij : i < j) (hj : 0 < len j) : finish len g i < finish len g j :=
-  (finish_lt_start len g hij).trans_le (start_le_finish hj)
-
-theorem finish_le_of_le {len : ℕ → ℕ} {g i j : ℕ}
-    (hij : i ≤ j) (hj : 0 < len j) : finish len g i ≤ finish len g j := by
-  rcases hij.eq_or_lt with rfl | hij
-  · rfl
-  · exact (finish_lt_of_lt hij hj).le
-
-theorem finish_strictMono {len : ℕ → ℕ} (g : ℕ) (hlen : ∀ i, 0 < len i) :
-    StrictMono (finish len g) := fun _ j hij => finish_lt_of_lt hij (hlen j)
-
 @[simp] theorem mem_window {len : ℕ → ℕ} {g i n : ℕ} :
     n ∈ window len g i ↔ start len g i ≤ n ∧ n ≤ finish len g i :=
   Finset.mem_Icc
-
-theorem three_le_of_mem {len : ℕ → ℕ} {g i n : ℕ}
-    (hn : n ∈ window len g i) : 3 ≤ n :=
-  (three_le_start len g i).trans (mem_window.mp hn).1
-
-theorem indices_separated {len : ℕ → ℕ} {g i j n m : ℕ}
-    (hij : i < j) (hn : n ∈ window len g i) (hm : m ∈ window len g j) : n + g < m := by
-  have hb := gap_of_lt len g hij
-  have hni := (mem_window.mp hn).2
-  have hmj := (mem_window.mp hm).1
-  omega
-
-theorem disjoint_windows (len : ℕ → ℕ) (g : ℕ) {i j : ℕ} (hij : i ≠ j) :
-    Disjoint (window len g i) (window len g j) := by
-  apply Finset.disjoint_left.mpr
-  intro n hn hm
-  rcases lt_or_gt_of_ne hij with h | h
-  · have := indices_separated h hn hm
-    omega
-  · have := indices_separated h hm hn
-    omega
 
 @[simp] theorem card_window (len : ℕ → ℕ) (g i : ℕ) :
     (window len g i).card = len i := by
   rw [window, Nat.card_Icc]
   have := finish_add_one len g i
   omega
-
-/-- Disjoint windows contribute exactly the sum of their lengths. -/
-theorem card_windows (len : ℕ → ℕ) (g : ℕ) (S : Finset ℕ) :
-    (S.biUnion (window len g)).card = ∑ i ∈ S, len i := by
-  rw [Finset.card_biUnion]
-  · simp only [card_window]
-  · intro i _ j _ hij
-    exact disjoint_windows len g hij
-
-theorem card_equal_windows {len : ℕ → ℕ} (g : ℕ) (S : Finset ℕ) (r : ℕ)
-    (hlen : ∀ i ∈ S, len i = r) :
-    (S.biUnion (window len g)).card = S.card * r := by
-  rw [card_windows]
-  calc
-    (∑ i ∈ S, len i) = ∑ _i ∈ S, r := Finset.sum_congr rfl hlen
-    _ = S.card * r := by simp
 
 /-- Prefix-sum formula relative to any incoming edge. -/
 theorem start_add (len : ℕ → ℕ) (g i m : ℕ) :
@@ -2578,38 +2016,6 @@ theorem block_endpoint_le {len : ℕ → ℕ} {g i m r : ℕ}
     (hbudget : (∑ k ∈ Finset.range (m + 1), (len (i + k) + g)) ≤ 2 * r + g) :
     finish len g (i + m) + 1 ≤ start len g i + 2 * r := by
   have := block_endpoint len g i m
-  omega
-
-/-- An endpoint anywhere in a child block satisfies the same padding bound;
-no positivity assumptions on individual list entries are necessary. -/
-theorem local_endpoint_bound {len : ℕ → ℕ} {g i m r j : ℕ}
-    (hbudget : (∑ k ∈ Finset.range (m + 1), (len (i + k) + g)) ≤ 2 * r + g)
-    (hj : j ≤ i + m) :
-    finish len g j + 1 ≤ start len g i + 2 * r := by
-  have he := block_endpoint_le hbudget
-  have hj' := finish_mono len g hj
-  omega
-
-/-- Convert a bound on the sum of a child block's padded lengths into the
-subtree-resolution bound used by the scale discretization. -/
-theorem block_padding {len : ℕ → ℕ} {g i m r : ℕ}
-    (hlen : 0 < len (i + m))
-    (hbudget : (∑ k ∈ Finset.range (m + 1), (len (i + k) + g)) ≤ 2 * r + g) :
-    finish len g (i + m) - start len g i + 1 ≤ 2 * r := by
-  have heq := block_endpoint len g i m
-  have hlow := start_mono len g (Nat.le_add_right i m)
-  have hend := finish_add_one len g (i + m)
-  omega
-
-/-- Every grid in a child block has resolution controlled by the incoming window.
-This is in the additive form required by the common-representative bound. -/
-theorem local_resolution_bound {len : ℕ → ℕ} {g i m r j n : ℕ}
-    (hlen : 0 < len (i + m))
-    (hbudget : (∑ k ∈ Finset.range (m + 1), (len (i + k) + g)) ≤ 2 * r + g)
-    (hj : j ≤ i + m) (hn : start len g i ≤ n) :
-    finish len g j + 2 ≤ n + (2 * r + 2) := by
-  have he := block_endpoint_le hbudget
-  have hj' := finish_le_of_le (g := g) hj hlen
   omega
 
 end Problem310.WindowPlacement
@@ -2714,18 +2120,6 @@ lemma exists_tree_parameters (p : ℝ) (hp : 0 < p) :
   obtain ⟨d, hd, hsmall⟩ := exists_positive_depth p
     (1 - ((2 : ℝ)⁻¹) ^ (M - 1)) hp (by linarith) (by linarith)
   exact ⟨M, d, hM, hd, hmargin, hsmall⟩
-
-/-- Choose a gap after the finite tree has been fixed. The expression is `K 2^(2-g)`
-written without subtraction in a natural-number exponent. -/
-lemma exists_gap (p : ℝ) (hp : 0 < p) (K : ℕ) :
-    ∃ g : ℕ, 1 ≤ g ∧ (K : ℝ) * 4 * ((2 : ℝ)⁻¹) ^ g < p := by
-  have hlim : Tendsto (fun g : ℕ => (K : ℝ) * 4 * ((2 : ℝ)⁻¹) ^ g)
-      atTop (𝓝 0) := by
-    simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one
-      (by norm_num : (0 : ℝ) ≤ (2 : ℝ)⁻¹)
-      (by norm_num : (2 : ℝ)⁻¹ < 1)).const_mul ((K : ℝ) * 4)
-  obtain ⟨g, hg⟩ := eventually_atTop.mp (hlim.eventually_lt_const hp)
-  exact ⟨max 1 g, le_max_left _ _, hg _ (le_max_right _ _)⟩
 
 /-- The elementary Bernoulli miss probability is bounded by an exponential. -/
 lemma one_sub_pow_le_exp (u : ℝ) (hu : u ≤ 1) (N : ℕ) :
@@ -3018,50 +2412,6 @@ open MeasureTheory
 
 namespace Problem310.ExposureMoments
 
-/-- Joint masses of complete finite/countable patterns determine the law after
-restriction to an exposure event. No division by the mass of the event is needed. -/
-theorem map_restrict_eq_smul_of_fibers
-    {A : Type u_A} {V : Type u_V} [MeasurableSpace A] [MeasurableSpace V]
-    [Countable V] [MeasurableSingletonClass V]
-    (μ : Measure A) (ν : Measure V) (E : Set A) (f : A → V)
-    (hf : Measurable f)
-    (hjoint : ∀ v, μ (E ∩ {a | f a = v}) = μ E * ν {v}) :
-    Measure.map f (μ.restrict E) = μ E • ν := by
-  apply Measure.ext_of_singleton
-  intro v
-  rw [Measure.map_apply hf (measurableSet_singleton v),
-    Measure.restrict_apply (hf (measurableSet_singleton v)), Measure.smul_apply]
-  change μ ({a | f a = v} ∩ E) = μ E * ν {v}
-  rw [Set.inter_comm]
-  exact hjoint v
-
-/-- The exposure factorization extends from pattern events to every nonnegative
-function of the fresh pattern, including the active-test generating function. -/
-theorem lintegral_restrict_comp_of_fibers
-    {A : Type u_A} {V : Type u_V} [MeasurableSpace A] [MeasurableSpace V]
-    [Countable V] [MeasurableSingletonClass V]
-    (μ : Measure A) (ν : Measure V) (E : Set A) (f : A → V)
-    (hf : Measurable f)
-    (hjoint : ∀ v, μ (E ∩ {a | f a = v}) = μ E * ν {v})
-    (g : V → ENNReal) (hg : Measurable g) :
-    (∫⁻ a in E, g (f a) ∂μ) = μ E * ∫⁻ v, g v ∂ν := by
-  rw [← lintegral_map hg hf,
-    map_restrict_eq_smul_of_fibers μ ν E f hf hjoint,
-    lintegral_smul_measure]
-  rfl
-
-/-- A supplied fresh-pattern moment can be used unchanged after center exposure. -/
-theorem lintegral_restrict_comp_eq_of_fibers
-    {A : Type u_A} {V : Type u_V} [MeasurableSpace A] [MeasurableSpace V]
-    [Countable V] [MeasurableSingletonClass V]
-    (μ : Measure A) (ν : Measure V) (E : Set A) (f : A → V)
-    (hf : Measurable f)
-    (hjoint : ∀ v, μ (E ∩ {a | f a = v}) = μ E * ν {v})
-    (g : V → ENNReal) (hg : Measurable g) (q : ENNReal)
-    (hmoment : (∫⁻ v, g v ∂ν) = q) :
-    (∫⁻ a in E, g (f a) ∂μ) = μ E * q := by
-  rw [lintegral_restrict_comp_of_fibers μ ν E f hf hjoint g hg, hmoment]
-
 end Problem310.ExposureMoments
 
 end OAI
@@ -3185,47 +2535,6 @@ theorem measure_le_of_finite_exposure
     _ ≤ badBound + ∑ a : A, goodBound * μ {ω | f ω = a} :=
       add_le_add le_rfl (Finset.sum_le_sum fun a _ => hlocal a)
     _ = badBound + goodBound := by rw [← Finset.mul_sum, hmass, mul_one]
-
-/-- A finite family of trial failures yields a mass-weighted bound on one
-exposure atom. This formulation avoids dividing by the atom probability. -/
-theorem measure_inter_le_of_finite_cover
-    {Ω : Type u_Ω} {I : Type u_I} [MeasurableSpace Ω]
-    (μ : Measure Ω) (E atom : Set Ω) (R : Finset I) (F : I → Set Ω)
-    (q : ENNReal)
-    (hcover : E ∩ atom ⊆ ⋃ i ∈ R, F i ∩ atom)
-    (htrial : ∀ i ∈ R, μ (F i ∩ atom) ≤ q * μ atom) :
-    μ (E ∩ atom) ≤ (R.card : ENNReal) * q * μ atom := by
-  calc
-    μ (E ∩ atom) ≤ μ (⋃ i ∈ R, F i ∩ atom) := measure_mono hcover
-    _ ≤ ∑ i ∈ R, μ (F i ∩ atom) := measure_biUnion_finset_le R _
-    _ ≤ ∑ _i ∈ R, q * μ atom := Finset.sum_le_sum htrial
-    _ = (R.card : ENNReal) * q * μ atom := by
-      simp only [Finset.sum_const, nsmul_eq_mul]
-      exact (mul_assoc _ _ _).symm
-
-/-- The raw-failure estimate: an exceptional exposure has mass at most `p`,
-and on every other exposure a finite union bound has conditional mass at most
-`p`. The final estimate is `2*p`, irrespective of the number of atoms. -/
-theorem measure_le_two_mul_of_exposure_covers
-    {Ω : Type u_Ω} {A : Type u_A} {I : Type u_I} [MeasurableSpace Ω] [Fintype A]
-    (μ : Measure Ω) [IsProbabilityMeasure μ]
-    (f : Ω → A) (hf : ∀ a, MeasurableSet {ω | f ω = a})
-    (E : Set Ω) (good : Set A) (R : A → Finset I)
-    (F : A → I → Set Ω) (q : A → ENNReal) (p : ENNReal)
-    (hbad : μ {ω | f ω ∉ good} ≤ p)
-    (hcover : ∀ a ∈ good,
-      E ∩ {ω | f ω = a} ⊆ ⋃ i ∈ R a, F a i ∩ {ω | f ω = a})
-    (htrial : ∀ a ∈ good, ∀ i ∈ R a,
-      μ (F a i ∩ {ω | f ω = a}) ≤ q a * μ {ω | f ω = a})
-    (hbudget : ∀ a ∈ good, ((R a).card : ENNReal) * q a ≤ p) :
-    μ E ≤ 2 * p := by
-  have hlocal (a : A) (ha : a ∈ good) :
-      μ (E ∩ {ω | f ω = a}) ≤ p * μ {ω | f ω = a} := by
-    exact (measure_inter_le_of_finite_cover μ E {ω | f ω = a}
-      (R a) (F a) (q a) (hcover a ha) (htrial a ha)).trans
-        (mul_le_mul_left (hbudget a ha) _)
-  simpa only [two_mul] using
-    measure_le_of_finite_exposure μ f hf E good p p hbad hlocal
 
 end Problem310.ExposureUnionBound
 
@@ -3727,113 +3036,6 @@ open scoped BigOperators ENNReal
 
 namespace Problem310.RepresentativeFailure
 
-/-- A deterministic finite representative list turns a pointwise failure bound
-into an all-parameters bound. No measurability of the existential event is
-needed: the outer-measure union bound is sufficient. -/
-theorem failure_le_card_mul {Ω : Type u_Ω} {T : Type u_T} [MeasurableSpace Ω]
-    (μ : Measure Ω) (A : Set Ω) (K : Set T) (R : Finset T)
-    (failure test : Ω → T → Prop) (q : ℝ≥0∞)
-    (htransfer : ∀ ω ∈ A, ∀ t ∈ K, failure ω t → ∃ r ∈ R, test ω r)
-    (hbound : ∀ r ∈ R, μ {ω | ω ∈ A ∧ test ω r} ≤ q) :
-    μ {ω | ω ∈ A ∧ ∃ t ∈ K, failure ω t} ≤ R.card * q := by
-  classical
-  have hsub : {ω | ω ∈ A ∧ ∃ t ∈ K, failure ω t} ⊆
-      ⋃ r ∈ R, {ω | ω ∈ A ∧ test ω r} := by
-    rintro ω ⟨hω, t, ht, hf⟩
-    obtain ⟨r, hr, htest⟩ := htransfer ω hω t ht hf
-    exact mem_iUnion.mpr ⟨r, mem_iUnion.mpr ⟨hr, hω, htest⟩⟩
-  calc
-    μ {ω | ω ∈ A ∧ ∃ t ∈ K, failure ω t}
-        ≤ μ (⋃ r ∈ R, {ω | ω ∈ A ∧ test ω r}) := measure_mono hsub
-    _ ≤ ∑ r ∈ R, μ {ω | ω ∈ A ∧ test ω r} := measure_biUnion_finset_le _ _
-    _ ≤ ∑ _r ∈ R, q := Finset.sum_le_sum hbound
-    _ = R.card * q := by simp [nsmul_eq_mul]
-
-/-- Predicate agreement for the finite representative list supplies the
-transfer hypothesis in the local-routing argument. -/
-theorem local_failure_le_card_mul {Ω : Type u_Ω} {T : Type u_T} {I : Type u_I} [MeasurableSpace Ω]
-    (μ : Measure Ω) (A : Set Ω) (K : Set T) (R : Finset T)
-    (failure : Ω → T → Prop) (localHit : Ω → I → T → Prop) (q : ℝ≥0∞)
-    (hlocal : ∀ ω ∈ A, ∀ t ∈ K, failure ω t → ∀ i, ¬ localHit ω i t)
-    (hreps : ∀ t ∈ K, ∃ r ∈ R,
-      ∀ ω ∈ A, ∀ i, localHit ω i r ↔ localHit ω i t)
-    (hbound : ∀ r ∈ R, μ {ω | ω ∈ A ∧ ∀ i, ¬ localHit ω i r} ≤ q) :
-    μ {ω | ω ∈ A ∧ ∃ t ∈ K, failure ω t} ≤ R.card * q := by
-  apply failure_le_card_mul μ A K R failure (fun ω t => ∀ i, ¬ localHit ω i t) q ?_ hbound
-  intro ω hω t ht hf
-  obtain ⟨r, hr, hagree⟩ := hreps t ht
-  refine ⟨r, hr, ?_⟩
-  intro i hi
-  exact hlocal ω hω t ht hf i ((hagree ω hω i).mp hi)
-
-/-- The multiplicative form used for an exposure atom: a per-representative
-joint bound `q * μ A` and an entropy budget `card R * q ≤ p` give the
-all-scales joint bound `p * μ A`. -/
-theorem local_failure_le_mul_mass {Ω : Type u_Ω} {T : Type u_T} {I : Type u_I} [MeasurableSpace Ω]
-    (μ : Measure Ω) (A : Set Ω) (K : Set T) (R : Finset T)
-    (failure : Ω → T → Prop) (localHit : Ω → I → T → Prop) (p q : ℝ≥0∞)
-    (hlocal : ∀ ω ∈ A, ∀ t ∈ K, failure ω t → ∀ i, ¬ localHit ω i t)
-    (hreps : ∀ t ∈ K, ∃ r ∈ R,
-      ∀ ω ∈ A, ∀ i, localHit ω i r ↔ localHit ω i t)
-    (hbound : ∀ r ∈ R, μ {ω | ω ∈ A ∧ ∀ i, ¬ localHit ω i r} ≤ q * μ A)
-    (hbudget : R.card * q ≤ p) :
-    μ {ω | ω ∈ A ∧ ∃ t ∈ K, failure ω t} ≤ p * μ A := by
-  calc
-    μ {ω | ω ∈ A ∧ ∃ t ∈ K, failure ω t} ≤ R.card * (q * μ A) :=
-      local_failure_le_card_mul μ A K R failure localHit (q * μ A) hlocal hreps hbound
-    _ = (R.card * q) * μ A := (mul_assoc _ _ _).symm
-    _ ≤ p * μ A := mul_le_mul hbudget le_rfl (by positivity) (by positivity)
-
-/-- Sum restricted failure estimates over exposure atoms and pay once for the
-exceptional event on which the first default does not exist. The mass bound
-is separated out so this works for finite partitions, subpartitions, and
-any finite-family construction with total mass at most one. -/
-theorem failure_le_bad_add_atom_bound {Ω : Type u_Ω} {J : Type u_J} [MeasurableSpace Ω] [Fintype J]
-    (μ : Measure Ω) (F D : Set Ω) (A : J → Set Ω) (p q : ℝ≥0∞)
-    (hcover : F ⊆ D ∪ ⋃ j, A j)
-    (hbad : μ D ≤ q)
-    (hatom : ∀ j, μ (F ∩ A j) ≤ p * μ (A j))
-    (hmass : ∑ j, μ (A j) ≤ 1) : μ F ≤ q + p := by
-  classical
-  have hsub : F ⊆ D ∪ ⋃ j, F ∩ A j := by
-    intro ω hω
-    rcases hcover hω with hD | hA
-    · exact Or.inl hD
-    · obtain ⟨j, hj⟩ := mem_iUnion.mp hA
-      exact Or.inr (mem_iUnion.mpr ⟨j, hω, hj⟩)
-  calc
-    μ F ≤ μ (D ∪ ⋃ j, F ∩ A j) := measure_mono hsub
-    _ ≤ μ D + μ (⋃ j, F ∩ A j) := measure_union_le _ _
-    _ ≤ q + ∑ j, μ (F ∩ A j) :=
-      add_le_add hbad (measure_iUnion_fintype_le μ (fun j => F ∩ A j))
-    _ ≤ q + ∑ j, p * μ (A j) := add_le_add le_rfl (Finset.sum_le_sum fun j _ => hatom j)
-    _ = q + p * ∑ j, μ (A j) := by rw [Finset.mul_sum]
-    _ ≤ q + p * 1 := add_le_add le_rfl (mul_le_mul le_rfl hmass (by positivity) (by positivity))
-    _ = q + p := by rw [mul_one]
-
-/-- The all-scales probability estimate, abstracted from the
-finite table construction. Good exposure atoms may have different trial
-types, representatives and fixed-scale failure probabilities. -/
-theorem raw_failure_le_two_budgets {Ω : Type u_Ω} {T : Type u_T} {J : Type u_J} [MeasurableSpace Ω] [Fintype J]
-    (μ : Measure Ω) (K : Set T) (D : Set Ω) (A : J → Set Ω)
-    (I : J → Type u_I) (R : J → Finset T) (failure : Ω → T → Prop)
-    (localHit : ∀ j, Ω → I j → T → Prop) (p q : ℝ≥0∞) (rate : J → ℝ≥0∞)
-    (hcover : univ ⊆ D ∪ ⋃ j, A j) (hbad : μ D ≤ q)
-    (hmass : ∑ j, μ (A j) ≤ 1)
-    (hlocal : ∀ j, ∀ ω ∈ A j, ∀ t ∈ K, failure ω t → ∀ i, ¬ localHit j ω i t)
-    (hreps : ∀ j, ∀ t ∈ K, ∃ r ∈ R j,
-      ∀ ω ∈ A j, ∀ i, localHit j ω i r ↔ localHit j ω i t)
-    (hbound : ∀ j, ∀ r ∈ R j,
-      μ {ω | ω ∈ A j ∧ ∀ i, ¬ localHit j ω i r} ≤ rate j * μ (A j))
-    (hbudget : ∀ j, (R j).card * rate j ≤ p) :
-    μ {ω | ∃ t ∈ K, failure ω t} ≤ q + p := by
-  apply failure_le_bad_add_atom_bound μ {ω | ∃ t ∈ K, failure ω t} D A p q
-    ((subset_univ _).trans hcover) hbad ?_ hmass
-  intro j
-  have h := local_failure_le_mul_mass μ (A j) K (R j) failure (localHit j) p (rate j)
-    (hlocal j) (hreps j) (hbound j) (hbudget j)
-  simpa only [Set.ofPred_and, Set.ofPred_mem_eq, Set.inter_comm] using h
-
 end Problem310.RepresentativeFailure
 
 end
@@ -3852,25 +3054,6 @@ universe u_I u_K u_B
 open MeasureTheory ProbabilityTheory
 
 namespace Problem310.SelectedCoordinateLaw
-
-/-- Reading any injective family of coordinates of an iid finite table is
-measure preserving onto the corresponding smaller product table. -/
-theorem measurePreserving_injective_coordinates
-    {I : Type u_I} {K : Type u_K} {B : Type u_B} [Fintype I] [Fintype K] [MeasurableSpace B]
-    (ν : Measure B) [IsProbabilityMeasure ν]
-    (addr : I → K) (hinj : Function.Injective addr) :
-    MeasurePreserving (fun ω : K → B => fun i => ω (addr i))
-      (Measure.pi (fun _ : K => ν)) (Measure.pi (fun _ : I => ν)) := by
-  have hind : iIndepFun (fun k (ω : K → B) => ω k)
-      (Measure.pi (fun _ : K => ν)) :=
-    iIndepFun_pi (fun _ => measurable_id.aemeasurable)
-  refine ⟨measurable_pi_iff.mpr (fun i => measurable_pi_apply (addr i)), ?_⟩
-  have h := (hind.precomp hinj).map_fun_eq_pi_map
-    (fun i => (measurable_pi_apply (addr i)).aemeasurable)
-  rw [h]
-  congr 1
-  funext i
-  exact (measurePreserving_eval (fun _ : K => ν) (addr i)).map_eq
 
 end Problem310.SelectedCoordinateLaw
 
@@ -3895,80 +3078,12 @@ def packedSpan (g : ℕ) (L : List ℕ) : ℕ := L.sum + (L.length - 1) * g
 @[simp] theorem packedSpan_singleton (g r : ℕ) : packedSpan g [r] = r := by
   simp [packedSpan]
 
-theorem packedSpan_append (g : ℕ) (L K : List ℕ) (hL : L ≠ []) (hK : K ≠ []) :
-    packedSpan g (L ++ K) = packedSpan g L + g + packedSpan g K := by
-  have hLl : 1 ≤ L.length := List.length_pos_iff.mpr hL
-  have hKl : 1 ≤ K.length := List.length_pos_iff.mpr hK
-  have hlen : L.length + K.length - 1 = (L.length - 1) + 1 + (K.length - 1) := by
-    omega
-  simp only [packedSpan, List.sum_append, List.length_append, hlen, Nat.add_mul, one_mul]
-  omega
-
-theorem packedSpan_cons (g r : ℕ) (L : List ℕ) (hL : L ≠ []) :
-    packedSpan g (r :: L) = r + g + packedSpan g L := by
-  simpa using packedSpan_append g [r] L (by simp) hL
-
-theorem packedSpan_flatten_replicate (M g : ℕ) (L : List ℕ)
-    (hM : 1 ≤ M) (hL : L ≠ []) :
-    packedSpan g ((List.replicate M L).flatten) = M * packedSpan g L + (M - 1) * g := by
-  have hLl : 1 ≤ L.length := List.length_pos_iff.mpr hL
-  have hlen : M * L.length - 1 = M * (L.length - 1) + (M - 1) := by
-    have he : M * L.length = M * (L.length - 1) + M := by
-      calc
-        M * L.length = M * ((L.length - 1) + 1) := by rw [Nat.sub_add_cancel hLl]
-        _ = M * (L.length - 1) + M := by ring
-    omega
-  simp only [packedSpan, List.sum_flatten, List.map_replicate, List.sum_replicate,
-    List.length_flatten, nsmul_eq_mul, Nat.cast_id]
-  rw [hlen]
-  ring
-
 /-- The deterministic list of incoming-window lengths in full preorder. -/
 def preorderLengths (M g r₀ : ℕ) : ℕ → List ℕ
   | 0 => []
   | h + 1 => (List.replicate M (length M g r₀ (h + 1) :: preorderLengths M g r₀ h)).flatten
 
 @[simp] theorem preorderLengths_zero (M g r₀ : ℕ) : preorderLengths M g r₀ 0 = [] := rfl
-
-theorem preorderLengths_succ (M g r₀ h : ℕ) :
-    preorderLengths M g r₀ (h + 1) =
-      (List.replicate M (length M g r₀ (h + 1) :: preorderLengths M g r₀ h)).flatten := rfl
-
-theorem preorderLengths_succ_ne_nil (M g r₀ h : ℕ) (hM : 1 ≤ M) :
-    preorderLengths M g r₀ (h + 1) ≠ [] := by
-  cases M with
-  | zero => omega
-  | succ M => simp [preorderLengths, List.replicate_succ, List.flatten_cons]
-
-/-- The numeric recursive span is exactly the actual packed span of the
-preorder list; it is not merely a formal upper bound. -/
-theorem packedSpan_preorderLengths (M g r₀ h : ℕ) (hM : 1 ≤ M) :
-    packedSpan g (preorderLengths M g r₀ h) = span M g r₀ h := by
-  induction h with
-  | zero => simp
-  | succ h ih =>
-    rw [preorderLengths_succ, packedSpan_flatten_replicate M g _ hM (by simp), span_succ]
-    congr 1
-    congr 1
-    cases h with
-    | zero => simp
-    | succ h =>
-      rw [packedSpan_cons g _ _ (preorderLengths_succ_ne_nil M g r₀ h hM), ih,
-        childSpan_succ]
-
-/-- Every emitted window is at least the chosen entropy threshold. -/
-theorem threshold_le_of_mem_preorderLengths (M g r₀ h r : ℕ)
-    (hr : r ∈ preorderLengths M g r₀ h) : r₀ ≤ r := by
-  induction h with
-  | zero => simp at hr
-  | succ h ih =>
-    rw [preorderLengths_succ] at hr
-    obtain ⟨L, hL, hr⟩ := List.mem_flatten.mp hr
-    have heq := (List.mem_replicate.mp hL).2
-    subst L
-    rcases List.mem_cons.mp hr with rfl | hr
-    · exact threshold_le_length _ _ _ _
-    · exact ih hr
 
 end Problem310.WindowRecursion
 
@@ -4108,11 +3223,6 @@ abbrev GridAddress {E : Type u_E} (b : E → ℕ) := Σ e : E, Fin (2 ^ (b e + 2
 def centerAddress {E : Type u_E} (b : E → ℕ) (x : ℝ) (e : E) : GridAddress b :=
   ⟨e, dyadicKey (b e) x⟩
 
-theorem centerAddress_injective {E : Type u_E} (b : E → ℕ) (x : ℝ) :
-    Function.Injective (centerAddress b x) := by
-  intro i j h
-  exact congrArg Sigma.fst h
-
 /-- Refinement preserves all equalities needed to recover a coarse key. -/
 theorem dyadicKey_eq_of_refine {b B : ℕ} {x y : ℝ} (hb : b ≤ B)
     (h : dyadicKey B x = dyadicKey B y) : dyadicKey b x = dyadicKey b y := by
@@ -4135,17 +3245,6 @@ theorem trialAddress_ne_center {I : Type u_I} {E : Type u_E} (b : E → ℕ) (ed
   have hk : dyadicKey (b (edge i)) (x + t * (2 : ℝ)⁻¹ ^ n i) =
       dyadicKey (b (edge i)) x := Fin.ext hv
   exact (dyadicKey_ne_center (hnlo i) (hnhi i) htlo hthi) hk.symm
-
-/-- The entire fresh trial-coordinate set is disjoint from the full center
-exposure, including tables outside the center's actual route. -/
-theorem trialAddress_disjoint_center {I : Type u_I} {E : Type u_E} (b : E → ℕ) (edge : I → E)
-    (n : I → ℕ) (x t : ℝ) (htlo : 1 ≤ t) (hthi : t ≤ 2)
-    (hnlo : ∀ i, 3 ≤ n i) (hnhi : ∀ i, n i ≤ b (edge i)) :
-    Disjoint (Set.range (trialAddress b edge n x t))
-      (Set.range (centerAddress b x)) := by
-  rw [Set.disjoint_left]
-  rintro z ⟨i, rfl⟩ ⟨e, he⟩
-  exact trialAddress_ne_center b edge n x t htlo hthi hnlo hnhi i e he.symm
 
 /-- Distinct table/index pairs give distinct fresh selector coordinates. -/
 theorem trialAddress_injective {I : Type u_I} {E : Type u_E} (b : E → ℕ) (edge : I → E)
@@ -4203,14 +3302,6 @@ def windowTrialIndex {M r : ℕ} (a : Fin M → ℕ) (i : WindowTrial M r) : ℕ
 
 @[simp] theorem card_windowTrial (M r : ℕ) :
     Fintype.card (WindowTrial M r) = M * r := by simp [WindowTrial]
-
-theorem windowTrialIndex_bounds {M r : ℕ} (a : Fin M → ℕ)
-    (ha : ∀ i, 3 ≤ a i) (i : WindowTrial M r) :
-    3 ≤ windowTrialIndex a i ∧ windowTrialIndex a i ≤ a i.1 + r - 1 := by
-  have h := i.2.isLt
-  have h' := ha i.1
-  dsimp [windowTrialIndex]
-  omega
 
 theorem windowTrial_pair_injective {M r : ℕ} {E : Type u_E}
     (a : Fin M → ℕ) (edge : Fin M → E) (hedge : Function.Injective edge) :
@@ -4362,44 +3453,12 @@ lemma center_selectorAddress_injective {M d : ℕ} (b : Node M d → Fin M → �
   intro e f h
   exact congrArg Sigma.fst h
 
-lemma selectorAddress_ne_center {M d : ℕ} (b : Node M d → Fin M → ℕ)
-    (P : Node M d) (i : Fin M) {x t : ℝ} {n : ℕ}
-    (hn : 3 ≤ n) (hnb : n ≤ b P i) (ht : t ∈ Set.Icc (1 : ℝ) 2) :
-    selectorAddress b P i x ≠ selectorAddress b P i (x + t * ((2 : ℝ)⁻¹) ^ n) := by
-  intro h
-  have hk := (Sigma.mk.inj h).2
-  exact GridSeparation.dyadicKey_ne_center hn hnb ht.1 ht.2 (eq_of_heq hk)
-
 lemma dyadicKey_eq_of_refine {b B : ℕ} (hb : b ≤ B) {x y : ℝ}
     (hkey : GridSeparation.dyadicKey B x = GridSeparation.dyadicKey B y) :
     GridSeparation.dyadicKey b x = GridSeparation.dyadicKey b y := by
   apply (GridSeparation.dyadicKey_eq_iff b x y).mpr
   exact GridSeparation.periodicKey_dyadic_eq_of_refine hb
     ((GridSeparation.dyadicKey_eq_iff B x y).mp hkey)
-
-/-- Any selector lookup at a coarser resolution is determined by a finest key. -/
-lemma selectorValue_eq_of_key_eq {M d : ℕ} (b : Node M d → Fin M → ℕ)
-    (ω : SelectorTable b) (P : List (Child M)) (i : Fin M) (B : ℕ)
-    (hlevel : ∀ h : P.length < d, b ⟨P, h⟩ i ≤ B) {x y : ℝ}
-    (hkey : GridSeparation.dyadicKey B x = GridSeparation.dyadicKey B y) :
-    selectorValue b ω P i x = selectorValue b ω P i y := by
-  by_cases h : P.length < d
-  · simp only [selectorValue, dif_pos h]
-    apply congrArg ω
-    unfold selectorAddress
-    congr 1
-    exact dyadicKey_eq_of_refine (hlevel h) hkey
-  · simp only [selectorValue, dif_neg h]
-
-/-- At a fixed leaf, the finer key also determines the terminal table lookup. -/
-lemma terminal_lookup_eq_of_key_eq {M d : ℕ} (b : Leaf M d → ℕ)
-    (ω : TerminalTable b) (L : Leaf M d) (B : ℕ) (hlevel : b L ≤ B) {x y : ℝ}
-    (hkey : GridSeparation.dyadicKey B x = GridSeparation.dyadicKey B y) :
-    ω (terminalAddress b L x) = ω (terminalAddress b L y) := by
-  apply congrArg ω
-  unfold terminalAddress
-  congr 1
-  exact dyadicKey_eq_of_refine hlevel hkey
 
 end Problem310.FiniteTableModel
 
@@ -4419,40 +3478,6 @@ noncomputable section
 namespace Problem310.Auxiliary
 
 open Set MeasureTheory
-
-/-- Periodicity is preserved under topological closure. -/
-theorem closure_periodic (B : Set ℝ)
-    (hB : ∀ x : ℝ, x + 1 ∈ B ↔ x ∈ B) :
-    ∀ x : ℝ, x + 1 ∈ closure B ↔ x ∈ closure B := by
-  have heq : (Homeomorph.addRight (1 : ℝ)) ⁻¹' B = B := by
-    ext x
-    exact hB x
-  have hc := (Homeomorph.addRight (1 : ℝ)).preimage_closure B
-  rw [heq] at hc
-  intro x
-  change x ∈ (Homeomorph.addRight (1 : ℝ)) ⁻¹' closure B ↔ x ∈ closure B
-  rw [hc]
-
-/-- A periodic set whose closure adds no density has arbitrarily economical open
-periodic enlargements. Finite unions of grid cells satisfy the closure hypothesis. -/
-theorem exists_open_periodic_enlargement (B : Set ℝ)
-    (hBp : ∀ x : ℝ, x + 1 ∈ B ↔ x ∈ B)
-    (hBm : volume (closure B ∩ Icc (0 : ℝ) 1) = volume (B ∩ Icc (0 : ℝ) 1))
-    (ε : ℝ) (hε : 0 < ε) :
-    ∃ V : Set ℝ, IsOpen V ∧
-      (∀ x : ℝ, x + 1 ∈ V ↔ x ∈ V) ∧ B ⊆ V ∧
-      volume (V ∩ Icc (0 : ℝ) 1) ≤
-        volume (B ∩ Icc (0 : ℝ) 1) + ENNReal.ofReal ε := by
-  obtain ⟨V, hVo, hVp, hBV, hVm⟩ := exists_open_periodic_superset
-    (closure B) isClosed_closure (closure_periodic B hBp) ε hε
-  exact ⟨V, hVo, hVp, subset_closure.trans hBV, by simpa [hBm] using hVm⟩
-
-/-- Null frontier is a simple sufficient condition for the closure-density hypothesis. -/
-theorem density_closure_eq_of_null_frontier (B : Set ℝ)
-    (hB : volume (frontier B) = 0) :
-    volume (closure B ∩ Icc (0 : ℝ) 1) = volume (B ∩ Icc (0 : ℝ) 1) := by
-  apply measure_congr
-  exact (closure_ae_eq_of_null_frontier hB).inter Filter.EventuallyEq.rfl
 
 /-- Enlarging the test set can only remove exceptional centers. -/
 theorem exceptionalCenters_antitone {B V : Set ℝ} (hBV : B ⊆ V)
@@ -4525,51 +3550,6 @@ namespace Problem310.OrderedRouting
 
 variable {M : ℕ} (ν : Measure Bool) [IsProbabilityMeasure ν]
 
-/-- All nondefault selectors fail precisely on one product cylinder. -/
-theorem measure_chooseChild_default :
-    Measure.pi (fun _ : Fin M => ν) {S | chooseChild S = Fin.last M} =
-      (ν {false}) ^ M := by
-  have heq : {S : Fin M → Bool | chooseChild S = Fin.last M} =
-      Set.pi Set.univ (fun _ : Fin M => ({false} : Set Bool)) := by
-    ext S
-    simp [chooseChild_eq_default_iff, Set.mem_pi]
-  rw [heq, Measure.pi_pi]
-  simp
-
-/-- The first-success choice has the geometric child law. -/
-theorem measure_chooseChild_nondefault (i : Fin M) :
-    Measure.pi (fun _ : Fin M => ν) {S | chooseChild S = i.castSucc} =
-      ν {true} * (ν {false}) ^ i.val := by
-  classical
-  let f : Fin M → Set Bool := fun j => if j = i then {true} else {false}
-  have heq : {S : Fin M → Bool | chooseChild S = i.castSucc} =
-      Set.pi (↑(Finset.Iic i) : Set (Fin M)) f := by
-    ext S
-    change (chooseChild S = i.castSucc) ↔ ∀ j ∈ Finset.Iic i, S j ∈ f j
-    rw [chooseChild_eq_nondefault_iff]
-    constructor
-    · rintro ⟨hi, hprev⟩ j hj
-      have hji : j ≤ i := Finset.mem_Iic.mp hj
-      by_cases h : j = i
-      · subst j
-        simpa [f] using hi
-      · simpa [f, h] using hprev j (lt_of_le_of_ne hji h)
-    · intro h
-      constructor
-      · simpa [f] using h i (Finset.mem_Iic.mpr le_rfl)
-      · intro j hj
-        simpa [f, ne_of_lt hj] using h j (Finset.mem_Iic.mpr (le_of_lt hj))
-  rw [heq, Measure.pi_pi_finset, ← Finset.Iio_insert]
-  rw [Finset.prod_insert (by simp)]
-  have hprod : (∏ j ∈ Finset.Iio i, ν (f j)) = (ν {false}) ^ i.val := by
-    calc
-      (∏ j ∈ Finset.Iio i, ν (f j)) = ∏ _j ∈ Finset.Iio i, ν {false} := by
-        apply Finset.prod_congr rfl
-        intro j hj
-        simp [f, ne_of_lt (Finset.mem_Iio.mp hj)]
-      _ = (ν {false}) ^ i.val := by simp
-  simpa [f] using congrArg (fun z => ν {true} * z) hprod
-
 end Problem310.OrderedRouting
 
 end OAI
@@ -4639,14 +3619,6 @@ theorem noDefault_iff_mem_cylinders {M d : ℕ} {Ω : Type u_Ω}
   · rintro ⟨f, hf⟩
     refine ⟨f, fun k hk => ?_⟩
     simpa only [centerChoice, pathPrefix_eq_take_ofFn] using hf ⟨k, hk⟩
-
-/-- The equality is also available as a set rewrite for probability measures. -/
-theorem noDefault_event_eq_cylinders {M d : ℕ} {Ω : Type u_Ω}
-    (S : Address M → Ω → Bool) :
-    {ω | ∀ k < d, centerChoice S (RoutingPath.routeFrom (centerChoice S) k [] ω) ω ≠
-      Fin.last M} = ⋃ f : Path M d, cylinder S f := by
-  ext ω
-  exact noDefault_iff_mem_cylinders S ω
 
 /-- Change the auxiliary parameter space without changing any node choices. -/
 theorem routeFrom_change_parameter {ι : Type u_ι} {X : Type u_X} {Y : Type u_Y}
@@ -4722,19 +3694,6 @@ theorem select_eq_of_earlier_agreement
     exact chooseChild_preserved (fun j => S P j x) (fun j => S P j y) i hc
       (fun j hj => hagree j (Fin.castSucc_le_castSucc_iff.mpr hj))
 
-/-- Stable earlier selector addresses preserve the path before its first default. -/
-theorem route_eq_of_earlier_selector_agreement
-    (S : List (Fin (M + 1)) → Fin M → X → Bool)
-    (k : ℕ) (P : List (Fin (M + 1))) (x y : X)
-    (hnd : ∀ l < k, select S (routeFrom (select S) l P x) x ≠ Fin.last M)
-    (hagree : ∀ l < k, ∀ j : Fin M,
-      j.castSucc ≤ select S (routeFrom (select S) l P x) x →
-      S (routeFrom (select S) l P x) j x = S (routeFrom (select S) l P x) j y) :
-    routeFrom (select S) k P y = routeFrom (select S) k P x := by
-  apply routeFrom_eq_of_choices_eq
-  intro l hl
-  exact select_eq_of_earlier_agreement S _ x y (hnd l hl) (hagree l hl)
-
 /-- At a center's default node, preserving the earlier selectors rejects those children. -/
 theorem rejects_earlier_at_default
     (S : List (Fin (M + 1)) → Fin M → X → Bool)
@@ -4745,29 +3704,6 @@ theorem rejects_earlier_at_default
   intro j hj
   rw [← hagree j hj]
   exact (chooseChild_eq_default_iff (fun j => S U j x)).mp hdefault j
-
-/-- The local-hit implication, with its geometric input isolated as
-selector agreement. Later sibling selectors and off-prefix choices are unrestricted. -/
-theorem terminal_success_of_stable_local_success
-    (S : List (Fin (M + 1)) → Fin M → X → Bool)
-    (terminal : List (Fin (M + 1)) → X → Prop)
-    (k r : ℕ) (P U : List (Fin (M + 1))) (x y : X) (i : Fin M)
-    (hU : routeFrom (select S) k P x = U)
-    (hnd : ∀ l < k, select S (routeFrom (select S) l P x) x ≠ Fin.last M)
-    (hprefix : ∀ l < k, ∀ j : Fin M,
-      j.castSucc ≤ select S (routeFrom (select S) l P x) x →
-      S (routeFrom (select S) l P x) j x = S (routeFrom (select S) l P x) j y)
-    (hdefault : select S U x = Fin.last M)
-    (hearlier : ∀ j < i, S U j x = S U j y)
-    (hi : S U i y = true)
-    (hlocal : terminal (routeFrom (select S) r (U ++ [i.castSucc]) y) y) :
-    terminal (routeFrom (select S) (k + 1 + r) P y) y := by
-  apply terminal_success_of_local_success (select S) terminal k r P U x y i.castSucc hU
-  · intro l hl
-    exact select_eq_of_earlier_agreement S _ x y (hnd l hl) (hprefix l hl)
-  · exact chooseChild_of_local_success (fun j => S U j y) i
-      (rejects_earlier_at_default S U x y i hdefault hearlier) hi
-  · exact hlocal
 
 end Problem310.StableRouting
 
@@ -4807,37 +3743,6 @@ theorem route_eq_of_key_eq (choose : List ι → X → ι)
     omega
   · exact hxy
 
-/-- A terminal output on a routed subtree factors through a common key
-provided every choice and every possible terminal output does. -/
-theorem terminal_eq_of_key_eq (choose : List ι → X → ι)
-    (terminal : List ι → X → V) (key : X → K) (r : ℕ) (P : List ι)
-    (hchoice : ∀ Q : List ι, P.IsPrefix Q → Q.length < P.length + r →
-      ∀ x y : X, key x = key y → choose Q x = choose Q y)
-    (hterminal : ∀ Q : List ι, P.IsPrefix Q → Q.length = P.length + r →
-      ∀ x y : X, key x = key y → terminal Q x = terminal Q y)
-    {x y : X} (hxy : key x = key y) :
-    terminal (routeFrom choose r P x) x = terminal (routeFrom choose r P y) y := by
-  have hroute := route_eq_of_key_eq choose key r P hchoice hxy
-  rw [hroute]
-  exact hterminal _ (prefix_routeFrom choose r P y)
-    (length_routeFrom choose r P y) x y hxy
-
-/-- An incoming selector multiplied by a local terminal predicate also
-factors through that key. This includes a child which is already a leaf. -/
-theorem local_predicate_eq_of_key_eq (choose : List ι → X → ι)
-    (terminal : List ι → X → Bool) (incoming : X → Bool)
-    (key : X → K) (r : ℕ) (P : List ι)
-    (hchoice : ∀ Q : List ι, P.IsPrefix Q → Q.length < P.length + r →
-      ∀ x y : X, key x = key y → choose Q x = choose Q y)
-    (hterminal : ∀ Q : List ι, P.IsPrefix Q → Q.length = P.length + r →
-      ∀ x y : X, key x = key y → terminal Q x = terminal Q y)
-    (hincoming : ∀ x y : X, key x = key y → incoming x = incoming y)
-    {x y : X} (hxy : key x = key y) :
-    (incoming x && terminal (routeFrom choose r P x) x) =
-      (incoming y && terminal (routeFrom choose r P y) y) := by
-  rw [hincoming x y hxy,
-    terminal_eq_of_key_eq choose terminal key r P hchoice hterminal hxy]
-
 /-- A single table evaluated at any coarser grid is a function of the finest key. -/
 theorem table_eq_of_finest_key {b B : ℕ} (hb : b ≤ B)
     (table : Fin (2 ^ (b + 2)) → V) {x y : ℝ}
@@ -4849,62 +3754,6 @@ theorem table_eq_of_finest_key {b B : ℕ} (hb : b ≤ B)
   exact periodicKey_dyadic_eq_of_refine hb hxy
 
 variable {J : Type u_J}
-
-/-- An arbitrary deterministic rule applied to selector-table lookups depends
-only on a common finer key. In particular this applies to first-success routing. -/
-theorem choice_eq_of_finest_key (b : J → ℕ) (B : ℕ)
-    (tables : ∀ j, Fin (2 ^ (b j + 2)) → Bool)
-    (rule : (J → Bool) → ι) (hb : ∀ j, b j ≤ B) {x y : ℝ}
-    (hxy : ⌊(2 : ℝ) ^ (B + 2) * Int.fract x⌋ =
-      ⌊(2 : ℝ) ^ (B + 2) * Int.fract y⌋) :
-    rule (fun j => tables j (dyadicKey (b j) x)) =
-      rule (fun j => tables j (dyadicKey (b j) y)) := by
-  apply congrArg rule
-  funext j
-  exact table_eq_of_finest_key (hb j) (tables j) hxy
-
-/-- A table-based node rule, with no restriction on which deterministic
-first-success/default convention the rule uses. -/
-def gridChoice (b : List ι → J → ℕ)
-    (tables : ∀ Q j, Fin (2 ^ (b Q j + 2)) → Bool)
-    (rule : List ι → (J → Bool) → ι) (Q : List ι) (x : ℝ) : ι :=
-  rule Q (fun j => tables Q j (dyadicKey (b Q j) x))
-
-def gridTerminal (c : List ι → ℕ)
-    (tables : ∀ Q, Fin (2 ^ (c Q + 2)) → Bool) (Q : List ι) (x : ℝ) : Bool :=
-  tables Q (dyadicKey (c Q) x)
-
-/-- The incoming selector and every table in a child subtree may have different
-resolutions. A bound on all those resolutions gives exactly the common-key
-factorization needed for deterministic scale representatives. -/
-theorem grid_local_predicate_factors
-    (b : List ι → J → ℕ) (c : List ι → ℕ) (bIn B : ℕ)
-    (selectors : ∀ Q j, Fin (2 ^ (b Q j + 2)) → Bool)
-    (terminals : ∀ Q, Fin (2 ^ (c Q + 2)) → Bool)
-    (incoming : Fin (2 ^ (bIn + 2)) → Bool)
-    (rule : List ι → (J → Bool) → ι) (r : ℕ) (P : List ι)
-    (hb : ∀ Q : List ι, P.IsPrefix Q → Q.length < P.length + r →
-      ∀ j, b Q j ≤ B)
-    (hc : ∀ Q : List ι, P.IsPrefix Q → Q.length = P.length + r → c Q ≤ B)
-    (hIn : bIn ≤ B) {x y : ℝ}
-    (hxy : ⌊(2 : ℝ) ^ (B + 2) * Int.fract x⌋ =
-      ⌊(2 : ℝ) ^ (B + 2) * Int.fract y⌋) :
-    (incoming (dyadicKey bIn x) &&
-      gridTerminal c terminals (routeFrom (gridChoice b selectors rule) r P x) x) =
-    (incoming (dyadicKey bIn y) &&
-      gridTerminal c terminals (routeFrom (gridChoice b selectors rule) r P y) y) := by
-  apply local_predicate_eq_of_key_eq
-    (gridChoice b selectors rule) (gridTerminal c terminals)
-    (fun z => incoming (dyadicKey bIn z))
-    (fun z => ⌊(2 : ℝ) ^ (B + 2) * Int.fract z⌋) r P
-  · intro Q hPQ hlen u v huv
-    exact choice_eq_of_finest_key (b Q) B (selectors Q) (rule Q)
-      (hb Q hPQ hlen) huv
-  · intro Q hPQ hlen u v huv
-    exact table_eq_of_finest_key (hc Q hPQ hlen) (terminals Q) huv
-  · intro u v huv
-    exact table_eq_of_finest_key hIn incoming huv
-  · exact hxy
 
 end Problem310.LocalPredicateFactor
 
@@ -4924,44 +3773,6 @@ universe u_I u_A u_X u_K
 noncomputable section
 
 namespace Problem310.AddressInjectivity
-
-/-- The terminal-address bridge specialized to the canonical recursive router.
-This applies separately to every selector outcome, with no probabilistic
-independence assumption on the selected leaves. -/
-theorem routedTerminalAddress_injective {I : Type u_I} {A : Type u_A} {X : Type u_X} {K : Type u_K}
-    (choose : List A → X → A) (r : ℕ) (U : List A)
-    (child : I → A) (point : I → X)
-    (base : A → ℕ) (level : List A → ℕ) (key : ℕ → X → K)
-    (hlevel : ∀ i, base (child i) ≤
-      level (RoutingPath.routeFrom choose r (U ++ [child i]) (point i)))
-    (hrefine : ∀ {b B : ℕ} {x y : X}, b ≤ B →
-      key B x = key B y → key b x = key b y)
-    (hseparate : ∀ {i j : I}, child i = child j → i ≠ j →
-      key (base (child i)) (point i) ≠ key (base (child i)) (point j)) :
-    Function.Injective (fun i =>
-      (RoutingPath.routeFrom choose r (U ++ [child i]) (point i),
-       key (level (RoutingPath.routeFrom choose r (U ++ [child i]) (point i)))
-         (point i))) := by
-  apply terminalAddress_injective U child point
-    (fun i => RoutingPath.routeFrom choose r (U ++ [child i]) (point i))
-    base level key
-  · intro i
-    exact RoutingPath.prefix_routeFrom choose r (U ++ [child i]) (point i)
-  · exact hlevel
-  · exact hrefine
-  · exact hseparate
-
-/-- In particular, routes starting in distinct child subtrees always end at
-distinct leaves, even at different spatial points. -/
-theorem routed_leaves_ne_of_child_ne {A : Type u_A} {X : Type u_X}
-    (choose : List A → X → A) (r s : ℕ) (U : List A)
-    {i j : A} (hij : i ≠ j) (x y : X) :
-    RoutingPath.routeFrom choose r (U ++ [i]) x ≠
-      RoutingPath.routeFrom choose s (U ++ [j]) y := by
-  intro h
-  exact hij (child_eq_of_common_descendant
-    (RoutingPath.prefix_routeFrom choose r (U ++ [i]) x)
-    (h.symm ▸ RoutingPath.prefix_routeFrom choose s (U ++ [j]) y))
 
 end Problem310.AddressInjectivity
 
@@ -4985,74 +3796,6 @@ namespace Problem310.OrderedRoutePreservation
 open OrderedRouting RoutingPath
 
 variable {M : ℕ} {X : Type u_X}
-
-/-- The node-choice function induced by ordered selector tables. -/
-def routingChoice (S : List (Fin (M + 1)) → X → Fin M → Bool) :
-    List (Fin (M + 1)) → X → Fin (M + 1) :=
-  fun P x => chooseChild (S P x)
-
-/-- Agreement of exactly the selector entries queried along a nondefault
-center path preserves its common prefix. Later siblings need not agree. -/
-theorem preserved_prefix (S : List (Fin (M + 1)) → X → Fin M → Bool)
-    (k : ℕ) (P : List (Fin (M + 1))) (x y : X)
-    (hnd : ∀ l < k,
-      routingChoice S (routeFrom (routingChoice S) l P x) x ≠ Fin.last M)
-    (hstable : ∀ l < k, ∀ j : Fin M,
-      j.castSucc ≤ routingChoice S (routeFrom (routingChoice S) l P x) x →
-      S (routeFrom (routingChoice S) l P x) x j =
-        S (routeFrom (routingChoice S) l P x) y j) :
-    routeFrom (routingChoice S) k P y = routeFrom (routingChoice S) k P x := by
-  apply routeFrom_eq_of_choices_eq
-  intro l hl
-  let Q := routeFrom (routingChoice S) l P x
-  let i := (routingChoice S Q x).castPred (hnd l hl)
-  have hi : routingChoice S Q x = i.castSucc :=
-    (Fin.castSucc_castPred _ (hnd l hl)).symm
-  have hy : chooseChild (S Q y) = i.castSucc := by
-    apply chooseChild_preserved (S Q x) (S Q y) i hi
-    intro j hji
-    apply hstable l hl j
-    rw [hi]
-    simpa using hji
-  exact hy.trans hi.symm
-
-/-- At a default center node, stable earlier sibling selectors remain rejected,
-so the successful local selector chooses the tested child. -/
-theorem child_of_default_local_success
-    (S : List (Fin (M + 1)) → X → Fin M → Bool)
-    (U : List (Fin (M + 1))) (x y : X) (i : Fin M)
-    (hdefault : routingChoice S U x = Fin.last M)
-    (hstable : ∀ j < i, S U x j = S U y j)
-    (hsuccess : S U y i = true) : routingChoice S U y = i.castSucc := by
-  apply chooseChild_of_local_success
-  · intro j hji
-    rw [← hstable j hji]
-    exact (chooseChild_eq_default_iff (S U x)).mp hdefault j
-  · exact hsuccess
-
-/-- The full deterministic route-preservation implication of the random routing
-construction, independent of the numerical grid and probability implementations. -/
-theorem terminal_success_of_stable_local_test
-    (S : List (Fin (M + 1)) → X → Fin M → Bool)
-    (terminal : List (Fin (M + 1)) → X → Prop)
-    (k r : ℕ) (P U : List (Fin (M + 1))) (x y : X) (i : Fin M)
-    (hU : routeFrom (routingChoice S) k P x = U)
-    (hnd : ∀ l < k,
-      routingChoice S (routeFrom (routingChoice S) l P x) x ≠ Fin.last M)
-    (hancestors : ∀ l < k, ∀ j : Fin M,
-      j.castSucc ≤ routingChoice S (routeFrom (routingChoice S) l P x) x →
-      S (routeFrom (routingChoice S) l P x) x j =
-        S (routeFrom (routingChoice S) l P x) y j)
-    (hdefault : routingChoice S U x = Fin.last M)
-    (hearlier : ∀ j < i, S U x j = S U y j)
-    (hsuccess : S U y i = true)
-    (hterminal : terminal (routeFrom (routingChoice S) r (U ++ [i.castSucc]) y) y) :
-    terminal (routeFrom (routingChoice S) (k + 1 + r) P y) y := by
-  have hp := preserved_prefix S k P x y hnd hancestors
-  rw [hU] at hp
-  have hi := child_of_default_local_success S U x y i hdefault hearlier hsuccess
-  rw [routeFrom_add, routeFrom_succ, hp, hi]
-  exact hterminal
 
 end Problem310.OrderedRoutePreservation
 
@@ -5098,24 +3841,6 @@ open MeasureTheory ProbabilityTheory
 open scoped BigOperators ENNReal
 
 namespace Problem310.CenterExposure
-
-/-- Center and fresh addresses together are injective if each family is
-injective and their coordinate ranges are disjoint. -/
-theorem injective_sum_addresses {C : Type u_C} {I : Type u_I} {K : Type u_K}
-    (center : C → K) (fresh : I → K)
-    (hc : Function.Injective center) (hf : Function.Injective fresh)
-    (hdisj : ∀ c i, center c ≠ fresh i) :
-    Function.Injective (Sum.elim center fresh) := by
-  intro a b hab
-  cases a with
-  | inl c =>
-      cases b with
-      | inl d => exact congrArg Sum.inl (hc hab)
-      | inr i => exact False.elim (hdisj c i hab)
-  | inr i =>
-      cases b with
-      | inl c => exact False.elim (hdisj c i hab.symm)
-      | inr j => exact congrArg Sum.inr (hf hab)
 
 /-- Center constraints do not alter the product law of distinct fresh
 coordinates. This unnormalized identity avoids all conditional-expectation
@@ -5288,59 +4013,6 @@ theorem childBlock_budget (M g r₀ h : ℕ) (hM : 1 ≤ M) :
   rw [paddedSum_childBlock M g r₀ h hM]
   exact Nat.add_le_add_right (childSpan_le_twice_length M g r₀ h) g
 
-/-- Any consecutive rank slice having the child-block padded sum inherits padding.
-The caller only needs to identify its rank slice with the child's preorder block. -/
-theorem block_padding_of_child_sum {len : ℕ → ℕ} {g i m M r₀ h : ℕ}
-    (hM : 1 ≤ M) (hlen : 0 < len (i + m))
-    (hsum : (∑ k ∈ Finset.range (m + 1), (len (i + k) + g)) =
-      paddedSum g (WindowRecursion.length M g r₀ (h + 1) :: preorderLengths M g r₀ h)) :
-    WindowPlacement.finish len g (i + m) - WindowPlacement.start len g i + 1 ≤
-      2 * WindowRecursion.length M g r₀ (h + 1) := by
-  apply WindowPlacement.block_padding hlen
-  rw [hsum]
-  exact childBlock_budget M g r₀ h hM
-
-/-- The endpoint form needed by the concrete window metadata avoids natural
-subtraction and needs no positivity premise on an arbitrary rank sequence. -/
-theorem block_endpoint_bound_of_child_sum {len : ℕ → ℕ} {g i m M r₀ h : ℕ}
-    (hM : 1 ≤ M)
-    (hsum : (∑ k ∈ Finset.range (m + 1), (len (i + k) + g)) =
-      paddedSum g (WindowRecursion.length M g r₀ (h + 1) :: preorderLengths M g r₀ h)) :
-    WindowPlacement.finish len g (i + m) + 1 ≤ WindowPlacement.start len g i +
-      2 * WindowRecursion.length M g r₀ (h + 1) := by
-  have heq := WindowPlacement.block_endpoint len g i m
-  have hbudget := childBlock_budget M g r₀ h hM
-  rw [← hsum] at hbudget
-  omega
-
-/-- Every serialized window retains the common threshold, including descendants. -/
-theorem threshold_le_of_mem_preorderLengths (M g r₀ h : ℕ) :
-    ∀ r ∈ preorderLengths M g r₀ h, r₀ ≤ r := by
-  induction h with
-  | zero => simp [preorderLengths]
-  | succ h ih =>
-      intro r hr
-      simp only [preorderLengths, List.mem_flatten, List.mem_replicate] at hr
-      obtain ⟨L, ⟨_, rfl⟩, hr⟩ := hr
-      rcases List.mem_cons.mp hr with heq | hr
-      · subst r
-        exact WindowRecursion.threshold_le_length _ _ _ _
-      · exact ih r hr
-
-/-- No child block is empty: its incoming window is always the first entry. -/
-theorem childBlock_ne_nil (M g r₀ h : ℕ) :
-    WindowRecursion.length M g r₀ (h + 1) :: preorderLengths M g r₀ h ≠ [] := by
-  simp
-
-/-- Positivity needed to turn padded rank sums into inclusive endpoint bounds. -/
-theorem positive_of_mem_childBlock {M g r₀ h r : ℕ} (hr₀ : 0 < r₀)
-    (hr : r ∈ WindowRecursion.length M g r₀ (h + 1) :: preorderLengths M g r₀ h) :
-    0 < r := by
-  rcases List.mem_cons.mp hr with heq | hr
-  · subst r
-    exact WindowRecursion.length_pos _ _ _ _ hr₀
-  · exact hr₀.trans_le (threshold_le_of_mem_preorderLengths _ _ _ _ r hr)
-
 end Problem310.WindowSpanSum
 
 end OAI
@@ -5381,29 +4053,11 @@ def finish {q d : ℕ} (g r₀ : ℕ) (e : Edge q d) : ℕ :=
 def window {q d : ℕ} (g r₀ : ℕ) (e : Edge q d) : Finset ℕ :=
   WindowPlacement.window (lengthAt q d g r₀) g (edgeIndex e)
 
-theorem edgeIndex_lt {q d : ℕ} (e : Edge q d) : edgeIndex e < edgeCount q d := by
-  simpa only [edgeIndex, length_edgePaths] using (List.idxOf_lt_length_iff.mpr e.property)
-
-theorem edgeHeight_pos {q d : ℕ} (e : Edge q d) : 0 < edgeHeight e := by
-  have := edge_length_le e
-  unfold edgeHeight
-  omega
-
 @[simp] theorem lengthAt_edgeIndex {q d : ℕ} (g r₀ : ℕ) (e : Edge q d) :
     lengthAt q d g r₀ (edgeIndex e) = WindowRecursion.length q g r₀ (edgeHeight e) := by
   simp only [lengthAt, lengths, WindowPlacement.lengthAt, edgeIndex,
     List.getElem?_map, List.getElem?_idxOf e.property, Option.map_some, Option.getD_some,
     edgeHeight]
-
-theorem lengthAt_edgeIndex_pos {q d : ℕ} (g : ℕ) {r₀ : ℕ}
-    (hr₀ : 0 < r₀) (e : Edge q d) : 0 < lengthAt q d g r₀ (edgeIndex e) := by
-  rw [lengthAt_edgeIndex]
-  exact WindowRecursion.length_pos q g r₀ _ hr₀
-
-theorem threshold_le_window_length {q d : ℕ} (g r₀ : ℕ) (e : Edge q d) :
-    r₀ ≤ lengthAt q d g r₀ (edgeIndex e) := by
-  rw [lengthAt_edgeIndex]
-  exact WindowRecursion.threshold_le_length q g r₀ _
 
 @[simp] theorem card_window {q d : ℕ} (g r₀ : ℕ) (e : Edge q d) :
     (window g r₀ e).card = WindowRecursion.length q g r₀ (edgeHeight e) := by
@@ -5412,21 +4066,9 @@ theorem threshold_le_window_length {q d : ℕ} (g r₀ : ℕ) (e : Edge q d) :
 theorem three_le_start {q d : ℕ} (g r₀ : ℕ) (e : Edge q d) : 3 ≤ start g r₀ e :=
   WindowPlacement.three_le_start _ _ _
 
-theorem start_le_finish {q d : ℕ} (g : ℕ) {r₀ : ℕ}
-    (hr₀ : 0 < r₀) (e : Edge q d) : start g r₀ e ≤ finish g r₀ e :=
-  WindowPlacement.start_le_finish (lengthAt_edgeIndex_pos g hr₀ e)
-
 @[simp] theorem mem_window {q d : ℕ} {g r₀ n : ℕ} {e : Edge q d} :
     n ∈ window g r₀ e ↔ start g r₀ e ≤ n ∧ n ≤ finish g r₀ e :=
   WindowPlacement.mem_window
-
-theorem three_le_of_mem {q d : ℕ} {g r₀ n : ℕ} {e : Edge q d}
-    (hn : n ∈ window g r₀ e) : 3 ≤ n :=
-  WindowPlacement.three_le_of_mem hn
-
-theorem gap_of_index_lt {q d : ℕ} (g r₀ : ℕ) {e f : Edge q d}
-    (h : edgeIndex e < edgeIndex f) : finish g r₀ e + g < start g r₀ f :=
-  WindowPlacement.gap_of_lt _ _ h
 
 @[simp] theorem child_height {q d : ℕ} (P : List (Fin q)) (hP : P.length < d)
     (i : Fin q) : edgeHeight (childEdge P hP i) = d - P.length := by
@@ -5799,32 +4441,6 @@ theorem expected_density_selectedSet
   simp only [pointwise_probability_selectedSet P ν addr]
   simp
 
-/-- The standard Boolean Bernoulli law has the expected real-parameter masses. -/
-theorem bernoulli_true_mass (p : unitInterval) :
-    ProbabilityTheory.bernoulliMeasure true false p {true} =
-      ENNReal.ofReal (p : ℝ) := by
-  rw [ProbabilityTheory.bernoulliMeasure_apply_of_mem_of_notMem p
-    (measurableSet_singleton true) (by simp) (by simp)]
-  exact (ENNReal.ofReal_eq_coe_nnreal p.property.1).symm
-
-theorem bernoulli_false_mass (p : unitInterval) :
-    ProbabilityTheory.bernoulliMeasure true false p {false} =
-      ENNReal.ofReal (1 - (p : ℝ)) := by
-  rw [ProbabilityTheory.bernoulliMeasure_apply_of_notMem_of_mem p
-    (measurableSet_singleton false) (by simp) (by simp)]
-  exact (ENNReal.ofReal_eq_coe_nnreal (sub_nonneg.mpr p.property.2)).symm
-
-/-- Bernoulli specialization with exactly the `ofReal p` density budget. -/
-theorem expected_density_bernoulli
-    {A : Type u_A} {K : Type u_K} [Fintype A] [MeasurableSpace A] [MeasurableSingletonClass A]
-    [Fintype K] [MeasurableSpace K] [MeasurableSingletonClass K]
-    (P : Measure A) [IsProbabilityMeasure P] (p : unitInterval)
-    (addr : A → ℝ → K) (haddr : ∀ a, Measurable (addr a)) :
-    (∫⁻ z, volume (selectedSet addr z ∩ Set.Icc (0 : ℝ) 1)
-      ∂(P.prod (Measure.pi (fun _ : K =>
-        ProbabilityTheory.bernoulliMeasure true false p)))) = ENNReal.ofReal (p : ℝ) := by
-  rw [expected_density_selectedSet P _ addr haddr, bernoulli_true_mass]
-
 end Problem310.RandomSetDensity
 
 end
@@ -5926,31 +4542,6 @@ theorem volume_gridStableCenters_compl_gap_le {ι : Type u_ι} [Fintype ι]
       (Fintype.card ι : ℝ) * (4 * ((2 : ℝ)⁻¹) ^ g) := by
     simp only [ha, dyadic_grid_gap_budget, Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
   rwa [heq] at h
-
-/-- The same bound holds when windows are separated by at least the chosen gap.
-This can be indexed by all ordered pairs of windows, not just predecessor pairs. -/
-theorem volume_gridStableCenters_compl_gap_le_of_le {ι : Type u_ι} [Fintype ι]
-    (a b : ι → ℕ) (g : ℕ) (hg : 2 ≤ g)
-    (ha : ∀ i, b i + g + 1 ≤ a i) :
-    volume ((gridStableCenters a b)ᶜ ∩ Icc (0 : ℝ) 1) ≤
-      ENNReal.ofReal ((Fintype.card ι : ℝ) * (4 * ((2 : ℝ)⁻¹) ^ g)) := by
-  apply (volume_gridStableCenters_compl_period_le a b (fun i ↦ by have := ha i; omega)).trans
-  apply ENNReal.ofReal_le_ofReal
-  calc
-    (∑ i, (2 : ℝ) ^ (b i + 2) * (2 * ((2 : ℝ)⁻¹) ^ (a i)))
-      ≤ ∑ i : ι, 4 * ((2 : ℝ)⁻¹) ^ g := by
-        apply Finset.sum_le_sum
-        intro i hi
-        have hp := pow_right_anti₀ (by norm_num : (0 : ℝ) ≤ 2⁻¹)
-          (by norm_num : (2 : ℝ)⁻¹ ≤ 1) (ha i)
-        calc
-          (2 : ℝ) ^ (b i + 2) * (2 * ((2 : ℝ)⁻¹) ^ (a i))
-            ≤ (2 : ℝ) ^ (b i + 2) * (2 * ((2 : ℝ)⁻¹) ^ (b i + g + 1)) := by
-              exact mul_le_mul_of_nonneg_left
-                (mul_le_mul_of_nonneg_left hp (by norm_num)) (by positivity)
-          _ = 4 * ((2 : ℝ)⁻¹) ^ g := dyadic_grid_gap_budget (b i) g
-    _ = (Fintype.card ι : ℝ) * (4 * ((2 : ℝ)⁻¹) ^ g) := by
-      simp only [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
 
 /-- Any prescribed finite number of stability conditions has arbitrarily small
 exceptional density once the unused gap is sufficiently long. -/
@@ -6064,34 +4655,6 @@ noncomputable section
 
 namespace Problem310.AddressInjectivity
 
-/-- Terminal addresses of actual local dyadic routes are distinct, including
-when terminal leaves are represented by a finite subtype or a fixed-length
-vector. `path` forgets that finite representation. This is the concrete bridge
-to the injective-address hypothesis of the adaptive-label product law. -/
-theorem dyadic_routed_terminalAddress_injective {I : Type u_I} {A : Type u_A} {L : Type u_L}
-    (choose : List A → ℝ → A) (r : ℕ) (U : List A)
-    (child : I → A) (n : I → ℕ) (leaf : I → L) (path : L → List A)
-    (b : A → ℕ) (B : L → ℕ) (x t : ℝ)
-    (hpath : ∀ i, path (leaf i) = RoutingPath.routeFrom choose r
-      (U ++ [child i]) (x + t * (2 : ℝ)⁻¹ ^ n i))
-    (htlo : 1 ≤ t) (hthi : t ≤ 2)
-    (hnlo : ∀ i, 3 ≤ n i) (hnhi : ∀ i, n i ≤ b (child i))
-    (hrefine : ∀ i, b (child i) ≤ B (leaf i))
-    (hpair : Function.Injective (fun i => (child i, n i))) :
-    Function.Injective (TrialAddresses.trialAddress B leaf n x t) := by
-  apply TrialAddresses.terminalAddress_injective child n leaf b B x t
-    htlo hthi hnlo hnhi hrefine
-  · intro i j hij
-    have hr : RoutingPath.routeFrom choose r (U ++ [child i])
-          (x + t * (2 : ℝ)⁻¹ ^ n i) =
-        RoutingPath.routeFrom choose r (U ++ [child j])
-          (x + t * (2 : ℝ)⁻¹ ^ n j) := by
-      rw [← hpath i, ← hpath j, hij]
-    exact child_eq_of_common_descendant
-      (RoutingPath.prefix_routeFrom choose r (U ++ [child i]) _)
-      (hr.symm ▸ RoutingPath.prefix_routeFrom choose r (U ++ [child j]) _)
-  · exact hpair
-
 end Problem310.AddressInjectivity
 
 end
@@ -6140,19 +4703,6 @@ def selectorEndpoints (W : WindowData (M + 1) d g r₀) : Node M d → Fin M →
 def terminalEndpoints (W : WindowData (M + 1) d g r₀) : Leaf M d → ℕ :=
   fun L => W.b L.val
 
-lemma selectorEndpoints_descendant_le
-    (W : WindowData (M + 1) d g r₀) (A : List (Child M))
-    (hA : ValidWindowEdge d A) (P : Node M d) (i : Fin M)
-    (hprefix : A.IsPrefix P.val) : selectorEndpoints W P i ≤ W.bstar A := by
-  exact (W.descendant_bounds A (selectorEdge P i) hA (selectorEdge_valid P i)
-    (hprefix.trans (List.prefix_append _ _))).2
-
-lemma terminalEndpoints_descendant_le
-    (W : WindowData (M + 1) d g r₀) (hd : 0 < d) (A : List (Child M))
-    (hA : ValidWindowEdge d A) (L : Leaf M d)
-    (hprefix : A.IsPrefix L.val) : terminalEndpoints W L ≤ W.bstar A := by
-  exact (W.descendant_bounds A L.val hA (leaf_valid hd L) hprefix).2
-
 lemma incoming_le_terminalEndpoints
     (W : WindowData (M + 1) d g r₀) (P : Node M d) (i : Fin M) (L : Leaf M d)
     (hprefix : (selectorEdge P i).IsPrefix L.val) :
@@ -6160,17 +4710,6 @@ lemma incoming_le_terminalEndpoints
   have hd : 0 < d := by have := P.property; omega
   exact (W.descendant_bounds (selectorEdge P i) L.val
     (selectorEdge_valid P i) (leaf_valid hd L) hprefix).1
-
-lemma selectorEndpoints_self_le
-    (W : WindowData (M + 1) d g r₀) (P : Node M d) (i : Fin M) :
-    selectorEndpoints W P i ≤ W.bstar (selectorEdge P i) := by
-  exact (W.descendant_bounds _ _ (selectorEdge_valid P i) (selectorEdge_valid P i)
-    (by exact ⟨[], by simp⟩)).2
-
-lemma child_window_length
-    (W : WindowData (M + 1) d g r₀) (P : Node M d) (i : Fin M) :
-    W.length (selectorEdge P i) = W.r (d - P.val.length) := by
-  simp [WindowData.length, selectorEdge]
 
 lemma selector_window_endpoint
     (W : WindowData (M + 1) d g r₀) (P : Node M d) (i : Fin M) :
@@ -6254,12 +4793,6 @@ def centerCompletion {M d : ℕ} (b : Node M d → Fin M → ℕ) (x : ℝ)
   funext e
   exact (center_selectorAddress_injective b x).extend_apply ξ (fun _ => false) e
 
-/-- Every exposure assignment has a representative selector table. -/
-theorem centerExposure_surjective {M d : ℕ}
-    (b : Node M d → Fin M → ℕ) (x : ℝ) :
-    Function.Surjective (centerExposure b x) :=
-  fun ξ => ⟨centerCompletion b x ξ, centerExposure_completion b x ξ⟩
-
 /-- Even the extended selector function is fixed by center exposure: invalid
 nodes use the same constant false value in both outcomes. -/
 theorem selectorValue_eq_of_centerExposure_eq {M d : ℕ}
@@ -6299,17 +4832,6 @@ theorem centerRoute_decision_eq_of_centerExposure_eq {M d : ℕ}
     centerChoice b x (routeFrom (centerChoice b x) n P ω) ω =
       centerChoice b x (routeFrom (centerChoice b x) n P ω') ω' :=
   route_decision_congr_at _ _ ω ω' (centerChoice_eq_of_centerExposure_eq b x h) n P
-
-/-- First-default events can be defined entirely on the finite exposure space. -/
-theorem firstDefaultAt_centerCompletion {M d : ℕ}
-    (b : Node M d → Fin M → ℕ) (x : ℝ) (ω : SelectorTable b)
-    (k : ℕ) (P : List (Child M)) :
-    FirstDefaultAt (centerChoice b x) (Fin.last M) d k P ω ↔
-      FirstDefaultAt (centerChoice b x) (Fin.last M) d k P
-        (centerCompletion b x (centerExposure b x ω)) := by
-  apply firstDefaultAt_congr
-  apply centerChoice_eq_of_centerExposure_eq
-  simp
 
 /-- A good exposure atom has one fixed first-default stage and node, uniformly
 for every completion of all unexposed selector coordinates. -/
@@ -6535,79 +5057,6 @@ theorem ancestor_selector_gap (W : WindowData q d g r₀)
 
 variable {M : ℕ}
 
-/-- Canonical finite-table selectors satisfy the key-factor hypothesis of the
-window-routing lemma whenever their endpoint map is taken from `W`. -/
-theorem selectorValue_factors_window_key (W : WindowData (M + 1) d g r₀)
-    (bS : FiniteTableModel.Node M d → Fin M → ℕ)
-    (ωS : FiniteTableModel.SelectorTable bS)
-    (hbS : ∀ (P : FiniteTableModel.Node M d) (j : Fin M),
-      bS P j = W.b (P.val ++ [j.castSucc]))
-    (P : List (Fin (M + 1))) (hP : P.length < d) (j : Fin M) (u v : ℝ)
-    (hkey : dyadicKey (W.b (P ++ [j.castSucc])) u =
-      dyadicKey (W.b (P ++ [j.castSucc])) v) :
-    FiniteTableModel.selectorValue bS ωS P j u =
-      FiniteTableModel.selectorValue bS ωS P j v := by
-  have heq : dyadicKey (bS ⟨P, hP⟩ j) u = dyadicKey (bS ⟨P, hP⟩ j) v := by
-    rw [hbS ⟨P, hP⟩ j]
-    exact hkey
-  simp only [FiniteTableModel.selectorValue, dif_pos hP]
-  exact congrArg (fun key => ωS ⟨((⟨P, hP⟩ : FiniteTableModel.Node M d), j), key⟩) heq
-
-
-/-- The actual window geometry turns uniform stable-grid agreement into the
-local-route identity at a first-default node. This is the concrete geometric
-input to the local-hit implication; no probability assumptions are used. -/
-theorem route_eq_local_of_window_stability (W : WindowData (M + 1) d g r₀)
-    (S : List (Fin (M + 1)) → Fin M → ℝ → Bool)
-    (hS : ∀ (P : List (Fin (M + 1))), P.length < d →
-      ∀ (j : Fin M) (u v : ℝ),
-        dyadicKey (W.b (P ++ [j.castSucc])) u =
-          dyadicKey (W.b (P ++ [j.castSucc])) v → S P j u = S P j v)
-    (x t : ℝ) (n k r : ℕ) (i : Fin M)
-    (hdepth : k + 1 + r = d) (_ht : t ∈ Set.Icc (1 : ℝ) 2)
-    (hn : n ∈ W.window (routeFrom (select S) k [] x ++ [i.castSucc]))
-    (hstable : ∀ E : List (Fin (M + 1)), ValidWindowEdge d E →
-      W.b E + g < n → dyadicKey (W.b E) x =
-        dyadicKey (W.b E) (x + t * ((2 : ℝ)⁻¹ ^ n)))
-    (hnd : ∀ l < k, select S (routeFrom (select S) l [] x) x ≠ Fin.last M)
-    (hdefault : select S (routeFrom (select S) k [] x) x = Fin.last M)
-    (hi : S (routeFrom (select S) k [] x) i (x + t * ((2 : ℝ)⁻¹ ^ n)) = true) :
-    routeFrom (select S) d [] (x + t * ((2 : ℝ)⁻¹ ^ n)) =
-      routeFrom (select S) r (routeFrom (select S) k [] x ++ [i.castSucc])
-        (x + t * ((2 : ℝ)⁻¹ ^ n)) := by
-  have hk : k < d := by omega
-  have hnlow : W.a (routeFrom (select S) k [] x ++ [i.castSucc]) ≤ n :=
-    (Finset.mem_Icc.mp hn).1
-  have hvalid (l : ℕ) (hl : l < d) (j : Fin M) :
-      ValidWindowEdge d (routeFrom (select S) l [] x ++ [j.castSucc]) := by
-    constructor
-    · simp
-    · simp only [List.length_append, length_routeFrom, List.length_nil,
-        List.length_singleton, zero_add]
-      omega
-  have hprefix : ∀ l < k, ∀ j : Fin M,
-      j.castSucc ≤ select S (routeFrom (select S) l [] x) x →
-      S (routeFrom (select S) l [] x) j x =
-        S (routeFrom (select S) l [] x) j (x + t * ((2 : ℝ)⁻¹ ^ n)) := by
-    intro l hl j hj
-    apply hS _ (by simpa only [length_routeFrom, List.length_nil, zero_add] using hl.trans hk)
-    apply hstable _ (hvalid l (hl.trans hk) j)
-    exact (ancestor_selector_gap W (select S) x hl hk i.castSucc j.castSucc hj).trans_le hnlow
-  have hearlier : ∀ j < i,
-      S (routeFrom (select S) k [] x) j x =
-        S (routeFrom (select S) k [] x) j (x + t * ((2 : ℝ)⁻¹ ^ n)) := by
-    intro j hj
-    apply hS _ (by simpa only [length_routeFrom, List.length_nil, zero_add] using hk)
-    apply hstable _ (hvalid k hk j)
-    exact (W.gap_sibling (routeFrom (select S) k [] x) j.castSucc i.castSucc []
-      (by simpa using hj) (hvalid k hk j) (hvalid k hk i)).trans_le hnlow
-  rw [← hdepth]
-  apply terminal_success_of_stable_local_success S
-    (fun Q _ => Q = routeFrom (select S) r
-      (routeFrom (select S) k [] x ++ [i.castSucc]) (x + t * ((2 : ℝ)⁻¹ ^ n)))
-    k r [] (routeFrom (select S) k [] x) x (x + t * ((2 : ℝ)⁻¹ ^ n)) i
-    rfl hnd hprefix hdefault hearlier hi rfl
-
 end Problem310.WindowLocalHit
 
 end
@@ -6627,53 +5076,6 @@ namespace Problem310.StableKeyRouting
 open FiniteTableModel StableRouting RoutingPath
 
 variable {M d : ℕ}
-
-/-- Agreement of the precise table key is enough to preserve a total selector lookup;
-nodes outside the finite routing tree consult no table. -/
-theorem selectorValue_eq_of_own_key_eq (b : Node M d → Fin M → ℕ)
-    (ω : SelectorTable b) (P : List (Child M)) (i : Fin M) (x y : ℝ)
-    (hkey : ∀ h : P.length < d,
-      GridSeparation.dyadicKey (b ⟨P, h⟩ i) x = GridSeparation.dyadicKey (b ⟨P, h⟩ i) y) :
-    selectorValue b ω P i x = selectorValue b ω P i y := by
-  by_cases h : P.length < d
-  · simp only [selectorValue, dif_pos h]
-    apply congrArg ω
-    unfold selectorAddress
-    congr 1
-    exact hkey h
-  · simp only [selectorValue, dif_neg h]
-
-/-- Concrete finite-table version of the local-hit routing lemma. The geometric input
-is only equality of the grid keys used in earlier routing decisions. -/
-theorem terminal_success_of_stable_keys
-    (b : Node M d → Fin M → ℕ) (ω : SelectorTable b)
-    (terminal : List (Child M) → ℝ → Prop)
-    (k r : ℕ) (P U : List (Child M)) (x y : ℝ) (i : Fin M)
-    (hU : routeFrom (select (selectorValue b ω)) k P x = U)
-    (hnd : ∀ l < k,
-      select (selectorValue b ω) (routeFrom (select (selectorValue b ω)) l P x) x ≠ Fin.last M)
-    (hprefix : ∀ l < k, ∀ j : Fin M,
-      j.castSucc ≤ select (selectorValue b ω)
-        (routeFrom (select (selectorValue b ω)) l P x) x →
-      ∀ h : (routeFrom (select (selectorValue b ω)) l P x).length < d,
-      GridSeparation.dyadicKey
-        (b ⟨routeFrom (select (selectorValue b ω)) l P x, h⟩ j) x =
-      GridSeparation.dyadicKey
-        (b ⟨routeFrom (select (selectorValue b ω)) l P x, h⟩ j) y)
-    (hdefault : select (selectorValue b ω) U x = Fin.last M)
-    (hearlier : ∀ j < i, ∀ h : U.length < d,
-      GridSeparation.dyadicKey (b ⟨U, h⟩ j) x =
-        GridSeparation.dyadicKey (b ⟨U, h⟩ j) y)
-    (hi : selectorValue b ω U i y = true)
-    (hlocal : terminal
-      (routeFrom (select (selectorValue b ω)) r (U ++ [i.castSucc]) y) y) :
-    terminal (routeFrom (select (selectorValue b ω)) (k + 1 + r) P y) y := by
-  apply terminal_success_of_stable_local_success (selectorValue b ω) terminal k r P U x y i
-    hU hnd ?_ hdefault ?_ hi hlocal
-  · intro l hl j hj
-    exact selectorValue_eq_of_own_key_eq b ω _ j x y (hprefix l hl j hj)
-  · intro j hj
-    exact selectorValue_eq_of_own_key_eq b ω U j x y (hearlier j hj)
 
 end Problem310.StableKeyRouting
 
@@ -6800,31 +5202,6 @@ theorem measure_exposed_adaptive_failures_eq_lintegral
   simp only [Set.mem_ofPred_eq, Set.mem_inter_iff, Set.mem_prod,
     Set.mem_univ, and_true]
   exact and_comm
-
-/-- Fixed-scale failure on an exposure atom is its mass times the fresh-selector
-moment. The selected terminal addresses may depend on every selector coordinate. -/
-theorem measure_exposed_adaptive_failures
-    {A : Type u_A} {I : Type u_I} {K : Type u_K} [MeasurableSpace A] [Fintype I] [Fintype K]
-    (μ : Measure A) [SFinite μ] (ν : Measure Bool) [IsProbabilityMeasure ν]
-    (E : Set A) (addr : A → I → K)
-    (hinj : ∀ a, Function.Injective (addr a))
-    (fresh : A → I → Bool) (hfresh : Measurable fresh)
-    (σ : Measure (I → Bool))
-    (hjoint : ∀ v, μ (E ∩ {a | fresh a = v}) = μ E * σ {v})
-    (q : ENNReal)
-    (hmoment : (∫⁻ v, (ν {false}) ^
-      (Finset.univ.filter (fun i => v i = true)).card ∂σ) = q)
-    (hmeas : MeasurableSet {z : A × (K → Bool) |
-      ∀ i, fresh z.1 i = true → z.2 (addr z.1 i) = false}) :
-    (μ.prod (Measure.pi (fun _ : K => ν)))
-      {z : A × (K → Bool) | z.1 ∈ E ∧
-        ∀ i, fresh z.1 i = true → z.2 (addr z.1 i) = false} = μ E * q := by
-  rw [measure_exposed_adaptive_failures_eq_lintegral μ ν E addr hinj
-    (fun a i => fresh a i = true) hmeas]
-  exact ExposureMoments.lintegral_restrict_comp_eq_of_fibers μ σ E fresh hfresh
-    hjoint (fun v => (ν {false}) ^
-      (Finset.univ.filter (fun i => v i = true)).card)
-    (measurable_of_countable _) q hmoment
 
 /-- Exact fixed-scale miss probability on a center-exposure atom. Selector
 lookups are fair, fresh and pairwise distinct. Terminal addresses may depend
@@ -6974,47 +5351,6 @@ theorem map_weights_subtreeBlock (q d : ℕ) (r : ℕ → ℕ) (p : List (Fin q)
   congr 1
   omega
 
-/-- The incoming edge and descendant weights form a contiguous block of the
-full weighted preorder, ready for the numerical child-span estimate. -/
-theorem weights_subtree_infix (q d : ℕ) (r : ℕ → ℕ) (p : List (Fin q))
-    (hp : p ≠ []) (hlen : p.length ≤ d) :
-    (r (d + 1 - p.length) :: weights q (d - p.length) r) <:+: weights q d r := by
-  have h := (subtreeBlock_infix q d p hp hlen).map (fun v => r (d + 1 - v.length))
-  rwa [map_weights_subtreeBlock q d r p hlen] at h
-
-/-- A nonempty contiguous block in a duplicate-free list starts at the index
-of its first entry. -/
-theorem take_drop_idxOf_of_infix {α : Type u_α} [BEq α] [LawfulBEq α]
-    (l : List α) (hl : l.Nodup) (a : α) (u : List α) (h : (a :: u) <:+: l) :
-    (l.drop (l.idxOf a)).take (u.length + 1) = a :: u := by
-  obtain ⟨s, t, rfl⟩ := h
-  simp only [List.append_assoc] at hl ⊢
-  have hnot : a ∉ s := by
-    intro ha
-    exact (List.nodup_append.mp hl).2.2 a ha a (by simp) rfl
-  rw [List.idxOf_append_of_notMem hnot]
-  simp
-
-/-- Exact contiguous slice of the preorder belonging to one rooted child block. -/
-theorem subtreeBlock_eq_slice (q d : ℕ) (p : List (Fin q))
-    (hp : p ≠ []) (hlen : p.length ≤ d) :
-    ((edgePaths q d).drop ((edgePaths q d).idxOf p)).take
-      (1 + edgeCount q (d - p.length)) = subtreeBlock q d p := by
-  have h := take_drop_idxOf_of_infix (edgePaths q d) (nodup_edgePaths q d) p
-    ((edgePaths q (d - p.length)).map (fun v => p ++ v))
-    (subtreeBlock_infix q d p hp hlen)
-  simpa only [List.length_map, length_edgePaths, Nat.add_comm, subtreeBlock] using h
-
-/-- The weighted preorder slice at an edge is its incoming weight followed by
-exactly one residual-height weighted subtree. -/
-theorem weights_slice (q d : ℕ) (r : ℕ → ℕ) (p : List (Fin q))
-    (hp : p ≠ []) (hlen : p.length ≤ d) :
-    ((weights q d r).drop ((edgePaths q d).idxOf p)).take
-      (1 + edgeCount q (d - p.length)) =
-      r (d + 1 - p.length) :: weights q (d - p.length) r := by
-  rw [weights, ← List.map_drop, ← List.map_take, subtreeBlock_eq_slice q d p hp hlen]
-  exact map_weights_subtreeBlock q d r p hlen
-
 /-- The path-dependent weight list is exactly the numerical preorder list. -/
 theorem weights_eq_preorderLengths (q g r₀ d : ℕ) :
     weights q d (WindowRecursion.length q g r₀) =
@@ -7024,32 +5360,6 @@ theorem weights_eq_preorderLengths (q g r₀ d : ℕ) :
   | succ d ih =>
     rw [weights_succ, WindowSpanSum.preorderLengths, ih]
     simp [List.flatMap]
-
-/-- The exact padded sum of the actual subtree slice in global preorder. -/
-theorem paddedSum_weights_slice (q g r₀ d : ℕ) (hq : 1 ≤ q) (p : List (Fin q))
-    (hp : p ≠ []) (hlen : p.length ≤ d) :
-    WindowSpanSum.paddedSum g
-      (((weights q d (WindowRecursion.length q g r₀)).drop
-        ((edgePaths q d).idxOf p)).take (1 + edgeCount q (d - p.length))) =
-      WindowRecursion.childSpan q g r₀ (d - p.length) + g := by
-  rw [weights_slice q d _ p hp hlen, weights_eq_preorderLengths]
-  have heq : d + 1 - p.length = (d - p.length) + 1 := by omega
-  rw [heq]
-  exact WindowSpanSum.paddedSum_childBlock q g r₀ (d - p.length) hq
-
-/-- The arithmetic padding budget now applies to an actual subtree slice,
-not merely to an abstract recursively defined list of lengths. -/
-theorem paddedSum_weights_slice_le (q g r₀ d : ℕ) (hq : 1 ≤ q) (p : List (Fin q))
-    (hp : p ≠ []) (hlen : p.length ≤ d) :
-    WindowSpanSum.paddedSum g
-      (((weights q d (WindowRecursion.length q g r₀)).drop
-        ((edgePaths q d).idxOf p)).take (1 + edgeCount q (d - p.length))) ≤
-      2 * WindowRecursion.length q g r₀ (d + 1 - p.length) + g := by
-  rw [paddedSum_weights_slice q g r₀ d hq p hp hlen]
-  have heq : d + 1 - p.length = (d - p.length) + 1 := by omega
-  rw [heq]
-  exact Nat.add_le_add_right
-    (WindowRecursion.childSpan_le_twice_length q g r₀ (d - p.length)) g
 
 /-- Full-list decomposition at the genuine edge index. This is the direct
 interface for constructing separated windows from the weighted preorder. -/
@@ -7227,11 +5537,6 @@ lemma measurable_routedAddress {M d : ℕ} (bS : Node M d → Fin M → ℕ)
     (bT : Leaf M d → ℕ) (ω : SelectorTable bS) (x : ℝ) :
     routedAddress bS bT ω (x + 1) = routedAddress bS bT ω x := by
   simp [routedAddress]
-
-lemma measurableSet_routedSet {M d : ℕ} (bS : Node M d → Fin M → ℕ)
-    (bT : Leaf M d → ℕ) (ω : SelectorTable bS × TerminalTable bT) :
-    MeasurableSet (routedSet bS bT ω) :=
-  RandomSetDensity.measurableSet_selectedSet _ (measurable_routedAddress bS bT) ω
 
 lemma routedSet_periodic {M d : ℕ} (bS : Node M d → Fin M → ℕ)
     (bT : Leaf M d → ℕ) (ω : SelectorTable bS × TerminalTable bT) (x : ℝ) :
@@ -7828,9 +6133,6 @@ def windowData (q d g r₀ : ℕ) (hq : 1 ≤ q) (hr₀ : 1 ≤ r₀) :
     have hstart := WindowPlacement.three_le_start (lengthAt q d g r₀) g (edgeRank d P)
     omega
 
-theorem exists_windowData (q d g r₀ : ℕ) (hq : 1 ≤ q) (hr₀ : 1 ≤ r₀) :
-    Nonempty (WindowData q d g r₀) := ⟨windowData q d g r₀ hq hr₀⟩
-
 end Problem310.WindowConstruction
 
 end
@@ -7952,32 +6254,6 @@ theorem routedPath_eq_centerRoute {M d : ℕ}
     routeFrom (selectorChoice b ω) n P x = routeFrom (centerChoice b x) n P ω :=
   routeFrom_congr_at _ _ x ω (fun _ => rfl) n P
 
-/-- The actual finite terminal leaf at the center is fixed on each exposure atom. -/
-theorem routedLeaf_eq_of_centerExposure_eq {M d : ℕ}
-    (b : Node M d → Fin M → ℕ) (x : ℝ) {ω ω' : SelectorTable b}
-    (h : centerExposure b x ω = centerExposure b x ω') :
-    routedLeaf b ω x = routedLeaf b ω' x := by
-  apply Subtype.ext
-  change routeFrom (selectorChoice b ω) d [] x = routeFrom (selectorChoice b ω') d [] x
-  rw [routedPath_eq_centerRoute, routedPath_eq_centerRoute]
-  exact centerRoute_eq_of_centerExposure_eq b x h d []
-
-/-- Therefore the actual terminal table address at the center is fixed as well. -/
-theorem routedAddress_eq_of_centerExposure_eq {M d : ℕ}
-    (bS : Node M d → Fin M → ℕ) (bT : Leaf M d → ℕ) (x : ℝ)
-    {ω ω' : SelectorTable bS} (h : centerExposure bS x ω = centerExposure bS x ω') :
-    routedAddress bS bT ω x = routedAddress bS bT ω' x := by
-  simp only [routedAddress, routedLeaf_eq_of_centerExposure_eq bS x h]
-
-/-- The bad-exposure event in the atom average is exactly the actual raw router's
-no-default event, in the notation of `RoutedSetDensity`. -/
-theorem badExposure_iff_actual_no_default {M d : ℕ}
-    (b : Node M d → Fin M → ℕ) (x : ℝ) (ω : SelectorTable b) :
-    ¬ GoodExposure b x (centerExposure b x ω) ↔
-      ∀ k < d, selectorChoice b ω (routeFrom (selectorChoice b ω) k [] x) x ≠ Fin.last M := by
-  rw [badExposure_centerExposure_iff]
-  simp only [routedPath_eq_centerRoute, selectorChoice_eq_centerChoice]
-
 /-- A good exposure supplies the actual bounded first-default node, fixed before
 any remaining selector or terminal-table coordinates are revealed. -/
 theorem actual_firstDefaultNode_on_atom {M d : ℕ}
@@ -8073,28 +6349,6 @@ universe u_ι
 noncomputable section
 namespace Problem310.FiniteTableModel
 
-/-- Stable geometry preserves the full dependent selector address. -/
-theorem selectorAddress_eq_of_grid_stability {ι : Type u_ι} {a b : ι → ℕ}
-    {M d : ℕ} (bS : Node M d → Fin M → ℕ) {x t : ℝ}
-    (hx : x ∈ gridStableCenters a b) (e : ι) (P : Node M d) (i : Fin M)
-    {n : ℕ} (hresolution : bS P i ≤ b e) (hindex : a e ≤ n)
-    (ht : t ∈ Set.Icc (1 : ℝ) 2) :
-    selectorAddress bS P i (x + t * ((2 : ℝ)⁻¹) ^ n) = selectorAddress bS P i x := by
-  unfold selectorAddress
-  rw [gridStableCenters_preserves_fin hx e hresolution hindex ht]
-
-/-- Therefore every completion of the random tables preserves the earlier
-selector evaluations at a stable center. -/
-theorem selectorValue_eq_of_grid_stability {ι : Type u_ι} {a b : ι → ℕ}
-    {M d : ℕ} (bS : Node M d → Fin M → ℕ) (ω : SelectorTable bS) {x t : ℝ}
-    (hx : x ∈ gridStableCenters a b) (e : ι) (P : Node M d) (i : Fin M)
-    {n : ℕ} (hresolution : bS P i ≤ b e) (hindex : a e ≤ n)
-    (ht : t ∈ Set.Icc (1 : ℝ) 2) :
-    selectorValue bS ω P.val i (x + t * ((2 : ℝ)⁻¹) ^ n) =
-      selectorValue bS ω P.val i x := by
-  rw [selectorValue_valid, selectorValue_valid,
-    selectorAddress_eq_of_grid_stability bS hx e P i hresolution hindex ht]
-
 end Problem310.FiniteTableModel
 
 end
@@ -8161,30 +6415,6 @@ namespace OAI
 
 noncomputable section
 namespace Problem310
-
-/-- Uniform stability for a finite sequence of windows. The gap is selected
-before any window lengths are fixed. -/
-theorem exists_window_stability (K : ℕ) (p : ℝ) (hp : 0 < p) :
-    ∃ g : ℕ, 2 ≤ g ∧ ∀ len : ℕ → ℕ, ∃ G : Set ℝ,
-      MeasurableSet G ∧ (∀ x : ℝ, x + 1 ∈ G ↔ x ∈ G) ∧
-      MeasureTheory.volume (Gᶜ ∩ Set.Icc (0 : ℝ) 1) ≤ ENNReal.ofReal p ∧
-      ∀ x ∈ G, ∀ f e : ℕ, f < e → e < K →
-        ∀ n ∈ WindowPlacement.window len g e, ∀ t ∈ Set.Icc (1 : ℝ) 2,
-          GridSeparation.dyadicKey (WindowPlacement.finish len g f)
-            (x + t * ((2 : ℝ)⁻¹) ^ n) =
-          GridSeparation.dyadicKey (WindowPlacement.finish len g f) x := by
-  obtain ⟨g, hg, hstable⟩ := exists_uniform_grid_stability (ι := Fin K) p hp
-  refine ⟨g, hg, fun len ↦ ?_⟩
-  obtain ⟨G, hGm, hGp, hGbudget, hGkey⟩ :=
-    hstable (fun i : Fin K ↦ WindowPlacement.finish len g i.val)
-  refine ⟨G, hGm, hGp, hGbudget, ?_⟩
-  intro x hx f e hfe heK n hn t ht
-  have hfK : f < K := hfe.trans heK
-  apply hGkey x hx ⟨f, hfK⟩ n ?_ t ht
-  have hgap := WindowPlacement.gap_of_lt len g hfe
-  have hstart := (WindowPlacement.mem_window.mp hn).1
-  dsimp
-  omega
 
 end Problem310
 
