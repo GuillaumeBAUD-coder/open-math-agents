@@ -38,18 +38,7 @@ private lemma starEmbed_injective (n s M : ℕ) (hsM : s + M < n) (c : Fin (M + 
     Function.Injective (starEmbed n s M hsM c) := by
   intro x y h
   simp only [starEmbed] at h
-  split_ifs at h with hx hy hxy hxc hyc
-  · exact hx.trans hy.symm
-  all_goals
-    try (exfalso; have := congrArg Fin.val h; dsimp at this; omega)
-  · apply Fin.ext
-    have := congrArg Fin.val h
-    dsimp at this
-    omega
-  · apply Fin.ext
-    have := congrArg Fin.val h
-    dsimp at this
-    omega
+  split_ifs at h <;> simp only [Fin.ext_iff] at * <;> omega
 
 private lemma starEmbed_adj {n s M : ℕ} (hsM : s + M < n) (c : Fin (M + 1))
     {u v : Fin n} (h : ((starGraph c).map (starEmbed n s M hsM c)).Adj u v) :
@@ -71,59 +60,15 @@ private lemma pathEmbed_injective (n s M : ℕ) (hsM : s + M < n) :
     Function.Injective (pathEmbed n s M hsM) := by
   intro x y h
   simp only [pathEmbed] at h
-  split_ifs at h with hx hy
-  · apply Fin.ext
-    have := congrArg Fin.val h
-    dsimp at this
-    omega
-  · exfalso
-    have := congrArg Fin.val h
-    dsimp at this
-    omega
-  · exfalso
-    have := congrArg Fin.val h
-    dsimp at this
-    omega
-  · apply Fin.ext
-    have := congrArg Fin.val h
-    dsimp at this
-    omega
-
-private lemma fin_covBy_iff {k : ℕ} {a b : Fin k} : a ⋖ b ↔ a.val + 1 = b.val := by
-  constructor
-  · rintro ⟨hab, hno⟩
-    have hab' : a.val < b.val := hab
-    by_contra hne
-    have hlt : a.val + 1 < b.val := by omega
-    exact hno (c := ⟨a.val + 1, by omega⟩) (show a.val < a.val + 1 by omega) hlt
-  · intro h
-    refine ⟨show a.val < b.val by omega, fun c hac hcb => ?_⟩
-    have hac' : a.val < c.val := hac
-    have hcb' : c.val < b.val := hcb
-    omega
-
-private lemma pathGraph_adj_iff {k : ℕ} {a b : Fin k} :
-    (pathGraph k).Adj a b ↔ a.val + 1 = b.val ∨ b.val + 1 = a.val := by
-  simp only [pathGraph, SimpleGraph.hasse_adj, fin_covBy_iff]
+  split_ifs at h <;> simp only [Fin.ext_iff] at * <;> omega
 
 private lemma pathEmbed_adj {n s M : ℕ} (hsM : s + M < n)
     {u v : Fin n} (h : ((pathGraph (M + 1)).map (pathEmbed n s M hsM)).Adj u v) :
     EdgeInRegion s M u v ∧ M - 1 ≤ (u.val - s) + (v.val - s) := by
   rcases h with ⟨huv, a, b, hab, rfl, rfl⟩
-  rw [pathGraph_adj_iff] at hab
-  rcases hab with h1 | h1
-  · simp only [pathEmbed, EdgeInRegion]
-    split_ifs with ha hb
-    · omega
-    · refine ⟨⟨by dsimp; omega, by dsimp; omega, by dsimp; omega⟩, by dsimp; omega⟩
-    · refine ⟨⟨by dsimp; omega, by dsimp; omega, by dsimp; omega⟩, by dsimp; omega⟩
-    · omega
-  · simp only [pathEmbed, EdgeInRegion]
-    split_ifs with ha hb
-    · omega
-    · refine ⟨⟨by dsimp; omega, by dsimp; omega, by dsimp; omega⟩, by dsimp; omega⟩
-    · refine ⟨⟨by dsimp; omega, by dsimp; omega, by dsimp; omega⟩, by dsimp; omega⟩
-    · omega
+  rw [pathGraph_adj] at hab
+  simp only [pathEmbed, EdgeInRegion]
+  split_ifs <;> dsimp <;> omega
 
 private lemma disjoint_edgeSet_of_adj {V : Type*} {G₁ G₂ : SimpleGraph V}
     (h : ∀ u v : V, G₁.Adj u v → ¬ G₂.Adj u v) :
@@ -141,9 +86,7 @@ private lemma map_iso_adj {V W U : Type*} {G : SimpleGraph V} {H : SimpleGraph W
   · rintro ⟨huv, a, b, hab, rfl, rfl⟩
     exact ⟨huv, e a, e b, e.map_rel_iff.mpr hab, rfl, rfl⟩
   · rintro ⟨huv, a, b, hab, rfl, rfl⟩
-    refine ⟨huv, e.symm a, e.symm b, e.symm.map_rel_iff.mpr hab, ?_, ?_⟩
-    · simp
-    · simp
+    refine ⟨huv, e.symm a, e.symm b, e.symm.map_rel_iff.mpr hab, by simp, by simp⟩
 
 private lemma packStride (n : ℕ) (T : (k : ℕ) → SimpleGraph (Fin k)) :
     ∀ M s : ℕ, s + M < n →
@@ -159,10 +102,8 @@ private lemma packStride (n : ℕ) (T : (k : ℕ) → SimpleGraph (Fin k)) :
     intro s hsM hT
     by_cases hM0 : M = 0
     · subst hM0
-      refine ⟨fun k => False.elim (by rcases k.2 with ⟨h1, h2, _⟩; omega), ?_, ?_, ?_⟩
-      · intro k; exfalso; rcases k.2 with ⟨h1, h2, _⟩; omega
-      · intro k; exfalso; rcases k.2 with ⟨h1, h2, _⟩; omega
-      · intro k; exfalso; rcases k.2 with ⟨h1, h2, _⟩; omega
+      refine ⟨fun k => False.elim (by rcases k.2 with ⟨h1, h2, _⟩; omega), ?_, ?_, ?_⟩ <;>
+        intro k <;> rcases k.2 with ⟨h1, h2, _⟩ <;> omega
     · have hM1 : 1 ≤ M := by omega
       have htop_mem : M + 1 ∈ StrideSet M := ⟨by omega, le_refl _, rfl⟩
       have hsub : ∀ k ∈ StrideSet (M - 2), k ∈ StrideSet M := by
@@ -322,28 +263,20 @@ end OMA_Erdos743_StarsOrPaths
 theorem OMA.solution : type_of% @Erdos743.erdos_743.variants.stars_or_paths := by
   intro n T hT
   by_cases hn : n < 2
-  · refine ⟨fun k => False.elim (by rcases k.2 with ⟨h1, h2⟩; omega), ?_, ?_⟩
-    · intro k; exfalso; rcases k.2 with ⟨h1, h2⟩; omega
-    · intro k; exfalso; rcases k.2 with ⟨h1, h2⟩; omega
+  · refine ⟨fun k => False.elim (by rcases k.2 with ⟨h1, h2⟩; omega), ?_, ?_⟩ <;>
+      intro k <;> rcases k.2 with ⟨h1, h2⟩ <;> omega
   · have hn : 2 ≤ n := Nat.le_of_not_lt hn
     let Meven := 2 * (n / 2) - 1
     let Modd := 2 * ((n - 1) / 2)
     have hMeven : 0 + Meven < n := by omega
     have hModd : 0 + Modd < n := by omega
-    have hTeven : ∀ k ∈ OMA_Erdos743_StarsOrPaths.StrideSet Meven,
-        (∃ c : Fin k, T k = SimpleGraph.starGraph c) ∨ Nonempty (T k ≃g SimpleGraph.pathGraph k) := by
-      intro k hk
-      rcases hk with ⟨h1, h2, _⟩
-      exact (hT k ⟨h1, by omega⟩).2
-    have hTodd : ∀ k ∈ OMA_Erdos743_StarsOrPaths.StrideSet Modd,
-        (∃ c : Fin k, T k = SimpleGraph.starGraph c) ∨ Nonempty (T k ≃g SimpleGraph.pathGraph k) := by
-      intro k hk
-      rcases hk with ⟨h1, h2, _⟩
-      exact (hT k ⟨h1, by omega⟩).2
+    have hTM : ∀ M, M < n → ∀ k ∈ OMA_Erdos743_StarsOrPaths.StrideSet M,
+        (∃ c : Fin k, T k = SimpleGraph.starGraph c) ∨ Nonempty (T k ≃g SimpleGraph.pathGraph k) :=
+      fun M hM k ⟨h1, h2, _⟩ => (hT k ⟨h1, by omega⟩).2
     obtain ⟨fe, hfe_inj, hfe_reg, hfe_disj⟩ :=
-      OMA_Erdos743_StarsOrPaths.packStride n T Meven 0 hMeven hTeven
+      OMA_Erdos743_StarsOrPaths.packStride n T Meven 0 hMeven (hTM _ (by omega))
     obtain ⟨fo, hfo_inj, hfo_reg, hfo_disj⟩ :=
-      OMA_Erdos743_StarsOrPaths.packStride n T Modd 0 hModd hTodd
+      OMA_Erdos743_StarsOrPaths.packStride n T Modd 0 hModd (hTM _ (by omega))
     have hmem_even : ∀ k : Set.Icc 2 n, (k : ℕ) % 2 = 0 →
         (k : ℕ) ∈ OMA_Erdos743_StarsOrPaths.StrideSet Meven := by
       intro k hk
@@ -403,3 +336,4 @@ theorem OMA.solution : type_of% @Erdos743.erdos_743.variants.stars_or_paths := b
         subst hu; subst hv
         have hdisj := hfo_disj ⟨k.1, hmem_odd k hk⟩ ⟨l.1, hmem_odd l hl⟩ hkl
         exact Set.disjoint_left.mp hdisj (show s(u₁, v₁) ∈ _ from h1) (show s(u₁, v₁) ∈ _ from h2)
+
