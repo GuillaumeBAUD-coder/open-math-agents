@@ -1,6 +1,8 @@
 import OMAReductions.R_Erdos423_erdos_423_variants_upper_bound_R1
 import Mathlib
 
+/-! Reduction from block sums to differences of a strictly convex sequence. -/
+
 -- Even-indexed prefix sums turn positive differences into block sums
 -- of length at least two, without any loss from singleton sums.
 -- Credit: @Cristian-Andrei-Pomenea
@@ -109,6 +111,7 @@ theorem main : H1 → H2 →
       apply (Set.finite_Iic
         (∑ t ∈ Icc 1 m, a t)).subset
       rintro s ⟨i, j, hi, hij, hj, rfl⟩
+      change (∑ l ∈ Icc i j, a l) ≤ (∑ t ∈ Icc 1 m, a t)
       apply Finset.sum_le_sum_of_subset
       intro t ht
       rw [mem_Icc] at ht ⊢
