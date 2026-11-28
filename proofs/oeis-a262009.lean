@@ -1,5 +1,6 @@
 import OMAStatements.S_oeis_a262009
 import Mathlib
+open OMA.S_oeis_a262009
 
 /-!
 # A262009: the 2-adic valuation of Hanna's divisor sum
@@ -50,8 +51,8 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a262009.main := by
   have hrest : 2 ^ (2 * v + 2) ∣ ∑ d ∈ n.divisors.erase 1, 2 ^ (d ^ 2) * (n ^ 2 / d ^ 2) :=
     Finset.dvd_sum fun d hd => A262009Proof.term_dvd n d hn0 hd
   obtain ⟨K, hK⟩ := hrest
-  have ha : OMA.S_oeis_a262009.a n = 2 ^ (2 * v + 1) * (m ^ 2 + 2 * K) := by
-    unfold OMA.S_oeis_a262009.a
+  have ha : a n = 2 ^ (2 * v + 1) * (m ^ 2 + 2 * K) := by
+    unfold a
     rw [← Finset.add_sum_erase _ _ (Nat.one_mem_divisors.mpr hn0), hK]
     simp only [one_pow, pow_one, Nat.div_one]
     rw [hnm]
@@ -59,12 +60,12 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a262009.main := by
   have hodd : Odd (m ^ 2 + 2 * K) := by
     have : Odd m := Nat.odd_iff.mpr (by omega)
     exact (this.pow).add_even (even_two_mul K)
-  have hval : padicValNat 2 (OMA.S_oeis_a262009.a n) = 2 * v + 1 := by
+  have hval : padicValNat 2 (a n) = 2 * v + 1 := by
     rw [ha, padicValNat.mul (by positivity) hodd.pos.ne', padicValNat.prime_pow,
       padicValNat.eq_zero_of_not_dvd (fun h => by
         rcases hodd with ⟨k, hk⟩; omega)]
   refine ⟨?_, m ^ 2 + 2 * K, hodd, ?_⟩
-  · unfold OMA.S_oeis_a262009.A037227
+  · unfold A037227
     rw [hval, ← hv]
-  · unfold OMA.S_oeis_a262009.A037227
+  · unfold A037227
     rw [ha, ← hv]
