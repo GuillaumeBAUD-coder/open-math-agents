@@ -1,165 +1,96 @@
 import OMAStatements.S_oeis_a006694
-
-/-!
-# A006694: `a ((3^n - 1) / 2) = n`
-
-The nonzero residues modulo `3^n` split into `n` orbits under multiplication by `2`, indexed by
-the exact power of `3` dividing each residue.
--/
-
+open ZMod
 namespace OMA.S_oeis_a006694
-
-lemma orderOf_two_zmod_three : orderOf (2 : ZMod 3) = 2 :=
-  orderOf_eq_prime (by decide) (by decide)
-
-lemma orderOf_two_zmod (m : ℕ) : orderOf (2 : ZMod (3 ^ (m + 1))) = 2 * 3 ^ m := by
-  have heven : 2 ∣ orderOf (2 : ZMod (3 ^ (m + 1))) := by
-    have hd : 3 ∣ 3 ^ (m + 1) := dvd_pow_self 3 (by omega)
-    have h := orderOf_map_dvd (ZMod.castHom hd (ZMod 3)).toMonoidHom (2 : ZMod (3 ^ (m + 1)))
-    have h2 : (ZMod.castHom hd (ZMod 3)).toMonoidHom (2 : ZMod (3 ^ (m + 1))) = 2 :=
-      map_ofNat (ZMod.castHom hd (ZMod 3)) 2
-    rwa [h2, orderOf_two_zmod_three] at h
-  have h4 : orderOf ((2 : ZMod (3 ^ (m + 1))) ^ 2) = 3 ^ m := by
-    have h := ZMod.orderOf_one_add_mul_prime (p := 3) Nat.prime_three (by decide) 1
-      (by decide) m
-    have e : (1 + ((3 : ℕ) : ZMod (3 ^ (m + 1))) * ((1 : ℤ) : ZMod (3 ^ (m + 1))))
-        = (2 : ZMod (3 ^ (m + 1))) ^ 2 := by
-      push_cast
-      ring
-    rwa [e] at h
-  rw [orderOf_pow' _ two_ne_zero, Nat.gcd_eq_right heven] at h4
-  have := Nat.div_mul_cancel heven
+abbrev Z (m:ℕ) := ZMod (3^(m+1))
+lemma o : orderOf (2:ZMod 3) = 2 := orderOf_eq_prime (by decide) (by decide)
+lemma C {u m:ℕ} (h:¬3∣u) : Nat.Coprime u (3^m) := Nat.prime_three.coprime_pow_of_not_dvd h
+lemma B {n z:ℕ} (hz:z≠0) (h:z<3^n) : padicValNat 3 z < n :=
+  (Nat.pow_lt_pow_iff_right (by decide:1<3)).mp
+    (lt_of_le_of_lt (Nat.le_of_dvd (Nat.pos_of_ne_zero hz) pow_padicValNat_dvd) h)
+lemma O (m:ℕ) : orderOf (2:Z m) = 2*3^m := by
+  have e : 2∣orderOf (2:Z m) := by
+    have dv : 3∣3^(m+1) := dvd_pow_self 3 (by omega)
+    have ch := ZMod.castHom dv (ZMod 3)
+    have h := orderOf_map_dvd ch.toMonoidHom (2:Z m)
+    have h2 : ch.toMonoidHom (2:Z m) = 2 := map_ofNat ch 2
+    rwa [h2, o] at h
+  have f : orderOf ((2:Z m)^2) = 3^m := by
+    have h := orderOf_one_add_mul_prime Nat.prime_three (by decide) 1 (by decide) m
+    have q : (1+((3:ℕ):Z m)*((1:ℤ):Z m)) = (2:Z m)^2 := by ring
+    rwa [q] at h
+  rw [orderOf_pow' _ two_ne_zero, Nat.gcd_eq_right e] at f
   omega
-
-lemma coprime_three_pow {u m : ℕ} (hu : ¬ 3 ∣ u) : Nat.Coprime u (3 ^ m) :=
-  Nat.Coprime.pow_right m ((Nat.prime_three.coprime_iff_not_dvd.mpr hu).symm)
-
-/-- Every residue prime to `3` is a power of `2` times any other one, modulo `3^(m+1)`. -/
-lemma exists_two_pow (m u w : ℕ) (hu : ¬ 3 ∣ u) (hw : ¬ 3 ∣ w) :
-    ∃ k : ℕ, (w : ZMod (3 ^ (m + 1))) = 2 ^ k * (u : ZMod (3 ^ (m + 1))) := by
-  have h2 : Nat.Coprime 2 (3 ^ (m + 1)) := coprime_three_pow (by decide)
-  set g : (ZMod (3 ^ (m + 1)))ˣ := ZMod.unitOfCoprime 2 h2 with hg
-  have hgval : (g : ZMod (3 ^ (m + 1))) = 2 := by
-    rw [hg, ZMod.coe_unitOfCoprime]
-    norm_num
-  have hord : orderOf g = 2 * 3 ^ m := by
-    rw [← orderOf_units, hgval, orderOf_two_zmod]
-  have hcard : Nat.card (ZMod (3 ^ (m + 1)))ˣ = 2 * 3 ^ m := by
-    rw [Nat.card_eq_fintype_card, ZMod.card_units_eq_totient,
-      Nat.totient_prime_pow Nat.prime_three (by omega)]
-    simp [Nat.mul_comm]
-  have htop : Subgroup.zpowers g = ⊤ := by
-    apply Subgroup.eq_top_of_card_eq
-    rw [Nat.card_zpowers, hord, hcard]
-  set U := ZMod.unitOfCoprime u (coprime_three_pow (m := m + 1) hu) with hU
-  set W := ZMod.unitOfCoprime w (coprime_three_pow (m := m + 1) hw) with hW
-  have hmem : W * U⁻¹ ∈ Submonoid.powers g := by
-    rw [mem_powers_iff_mem_zpowers, htop]
-    trivial
-  obtain ⟨k, hk⟩ := hmem
-  refine ⟨k, ?_⟩
-  have hk' : g ^ k = W * U⁻¹ := hk
-  have : W = g ^ k * U := by rw [hk', inv_mul_cancel_right]
-  have := congrArg (fun z : (ZMod (3 ^ (m + 1)))ˣ => (z : ZMod (3 ^ (m + 1)))) this
-  simpa [hU, hW, hgval] using this
-
-/-- The power of `3` in a nonzero residue is the same for `x` and `2^k x`. -/
-lemma val2 (n k : ℕ) (x y : ZMod (3 ^ n)) (hx : x ≠ 0) (hy : y ≠ 0)
-    (h : y = 2 ^ k * x) : padicValNat 3 y.val = padicValNat 3 x.val := by
-  have : NeZero (3 ^ n) := ⟨pow_ne_zero n (by decide)⟩
-  have hx0 : x.val ≠ 0 := (ZMod.val_ne_zero x).mpr hx
-  have hy0 : y.val ≠ 0 := (ZMod.val_ne_zero y).mpr hy
-  have hmod : y.val ≡ 2 ^ k * x.val [MOD 3 ^ n] := by
-    rw [← ZMod.natCast_eq_natCast_iff]
-    push_cast
-    rw [ZMod.natCast_zmod_val, ZMod.natCast_zmod_val, h]
-  have key : ∀ j, j ≤ n → (3 ^ j ∣ y.val ↔ 3 ^ j ∣ x.val) := by
-    intro j hj
-    have hm := hmod.of_dvd (pow_dvd_pow 3 hj)
-    rw [hm.dvd_iff dvd_rfl]
-    have hc : Nat.Coprime (3 ^ j) (2 ^ k) :=
-      Nat.Coprime.pow j k (by decide)
-    exact hc.dvd_mul_left
-  have hlt : ∀ z : ℕ, z ≠ 0 → z < 3 ^ n → padicValNat 3 z < n := by
-    intro z hz hzn
-    have hle : 3 ^ padicValNat 3 z ≤ z := Nat.le_of_dvd (Nat.pos_of_ne_zero hz) pow_padicValNat_dvd
-    exact (Nat.pow_lt_pow_iff_right (by decide : 1 < 3)).mp (lt_of_le_of_lt hle hzn)
-  have hxn := hlt _ hx0 (ZMod.val_lt x)
-  have hyn := hlt _ hy0 (ZMod.val_lt y)
-  apply le_antisymm
-  · exact (padicValNat_dvd_iff_le hx0).mp ((key _ hyn.le).mp pow_padicValNat_dvd)
-  · exact (padicValNat_dvd_iff_le hy0).mp ((key _ hxn.le).mpr pow_padicValNat_dvd)
-
-lemma card_cosets (n N : ℕ) (hN : N = 3 ^ n) :
-    Nat.card (Quot (fun x y : {x : ZMod N // x ≠ 0} => SameCoset N x.1 y.1)) = n := by
+lemma E (m u w:ℕ) (hu:¬3∣u) (hw:¬3∣w) :
+    ∃ k, (w:Z m) = 2^k*(u:ZMod _) := by
+  set g : (Z m)ˣ := unitOfCoprime 2 (C (by decide)) with hg
+  have v : (g:Z m) = 2 := by simp [hg]
+  have t : Subgroup.zpowers g = ⊤ := Subgroup.eq_top_of_card_eq _ (by
+    rw [Nat.card_zpowers, ← orderOf_units, v, O, Nat.card_eq_fintype_card,
+      card_units_eq_totient, Nat.totient_prime_pow Nat.prime_three (by omega)]
+    simp [Nat.mul_comm])
+  set U := unitOfCoprime u (C hu) with hU
+  set W := unitOfCoprime w (C hw) with hW
+  have q : W*U⁻¹∈Submonoid.powers g := by simp [mem_powers_iff_mem_zpowers, t]
+  obtain ⟨k, hk⟩ := q
+  beta_reduce at hk
+  have j : W = g^k*U := by rw [hk, inv_mul_cancel_right]
+  exact ⟨k, by simpa [hU, hW, v] using congrArg Units.val j⟩
+lemma K (n N:ℕ) (hN:N = 3^n) :
+    Nat.card (Quot (fun x y : {x:ZMod N//x≠0} => SameCoset _ x.1 y.1)) = n := by
   subst hN
-  have : NeZero (3 ^ n) := ⟨pow_ne_zero n (by decide)⟩
-  have hx0 : ∀ x : {x : ZMod (3 ^ n) // x ≠ 0}, x.1.val ≠ 0 :=
-    fun x => (ZMod.val_ne_zero x.1).mpr x.2
-  have hlt : ∀ x : {x : ZMod (3 ^ n) // x ≠ 0}, padicValNat 3 x.1.val < n := by
-    intro x
-    have hle : 3 ^ padicValNat 3 x.1.val ≤ x.1.val :=
-      Nat.le_of_dvd (Nat.pos_of_ne_zero (hx0 x)) pow_padicValNat_dvd
-    exact (Nat.pow_lt_pow_iff_right (by decide : 1 < 3)).mp
-      (lt_of_le_of_lt hle (ZMod.val_lt x.1))
-  let f : Quot (fun x y : {x : ZMod (3 ^ n) // x ≠ 0} => SameCoset (3 ^ n) x.1 y.1) → Fin n :=
-    Quot.lift (fun x => ⟨padicValNat 3 x.1.val, hlt x⟩) (by
+  have : NeZero (3^n) := ⟨pow_ne_zero n (by decide)⟩
+  have z0 (x:{x:ZMod (3^n)//x≠0}) : x.1.val≠0 := (val_ne_zero x.1).mpr x.2
+  have lt (x:{x:ZMod (3^n)//x≠0}) : padicValNat 3 x.1.val < n :=
+    B (z0 x) (val_lt x.1)
+  let f : Quot (fun x y : {x:ZMod (3^n)//x≠0} => SameCoset _ x.1 y.1) → Fin n :=
+    Quot.lift (fun x => ⟨padicValNat 3 x.1.val, lt x⟩) (by
       rintro x y ⟨k, hk⟩
-      exact Fin.ext (val2 n k x.1 y.1 x.2 y.2 hk).symm)
-  have hf : Function.Bijective f := by
+      have e : padicValNat 3 y.1.val = padicValNat 3 x.1.val := by
+        have x0 : x.1.val≠0 := (val_ne_zero x.1).mpr x.2
+        have y0 : y.1.val≠0 := (val_ne_zero y.1).mpr y.2
+        have md : y.1.val≡2^k*x.1.val[MOD 3^n] := by
+          rw [← natCast_eq_natCast_iff]; push_cast; rw [natCast_zmod_val, natCast_zmod_val, hk]
+        have ky (j:ℕ) (hj:j≤n) : 3^j∣y.1.val↔3^j∣x.1.val := by
+          have hm := md.of_dvd (pow_dvd_pow 3 hj)
+          rw [hm.dvd_iff dvd_rfl]
+          exact (Nat.Coprime.pow j k (by decide)).dvd_mul_left
+        have xn := B x0 (val_lt x.1)
+        have yn := B y0 (val_lt y.1)
+        exact le_antisymm ((padicValNat_dvd_iff_le x0).mp ((ky _ yn.le).mp pow_padicValNat_dvd))
+          ((padicValNat_dvd_iff_le y0).mp ((ky _ xn.le).mpr pow_padicValNat_dvd))
+      exact Fin.ext e.symm)
+  have bj : Function.Bijective f := by
     constructor
-    · intro p q
-      induction p using Quot.ind with | _ x => ?_
-      induction q using Quot.ind with | _ y => ?_
-      intro hpq
-      have hv : padicValNat 3 x.1.val = padicValNat 3 y.1.val := congrArg Fin.val hpq
-      apply Quot.sound
-      have hn : n ≠ 0 := by
-        have := hlt x
-        omega
-      obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
-      have split : ∀ z : ℕ, z ≠ 0 → ∃ u, z = 3 ^ padicValNat 3 z * u ∧ ¬ 3 ∣ u := by
-        intro z hz
-        obtain ⟨u, hu⟩ : 3 ^ padicValNat 3 z ∣ z := pow_padicValNat_dvd
-        refine ⟨u, hu, ?_⟩
-        rintro ⟨t, ht⟩
-        apply pow_succ_padicValNat_not_dvd (p := 3) hz
-        refine ⟨t, ?_⟩
-        rw [pow_succ, mul_assoc, ← ht]
-        exact hu
-      obtain ⟨u, hu, hu3⟩ := split _ (hx0 x)
-      obtain ⟨w, hw, hw3⟩ := split _ (hx0 y)
+    · intro p q pq
+      obtain ⟨x, rfl⟩ := Quot.exists_rep p
+      obtain ⟨y, rfl⟩ := Quot.exists_rep q
+      have hv : padicValNat 3 x.1.val = padicValNat 3 y.1.val := congrArg Fin.val pq
+      obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (n:=n) (by have := lt x; omega)
+      have sp (z:ℕ) (hz:z≠0) : ∃ u, z = 3^padicValNat 3 z*u∧¬3∣u := by
+        rw [← Nat.factorization_def z Nat.prime_three]
+        exact ⟨_, (Nat.ordProj_mul_ordCompl_eq_self z 3).symm,
+          Nat.not_dvd_ordCompl Nat.prime_three hz⟩
+      obtain ⟨u, hu, hu3⟩ := sp _ (z0 x)
+      obtain ⟨w, hw, hw3⟩ := sp _ (z0 y)
       rw [← hv] at hw
-      obtain ⟨k, hk⟩ := exists_two_pow m u w hu3 hw3
-      refine ⟨k, ?_⟩
-      have ex : x.1 = ((3 ^ padicValNat 3 x.1.val * u : ℕ) : ZMod (3 ^ (m + 1))) := by
-        rw [← hu, ZMod.natCast_zmod_val]
-      have ey : y.1 = ((3 ^ padicValNat 3 x.1.val * w : ℕ) : ZMod (3 ^ (m + 1))) := by
-        rw [← hw, ZMod.natCast_zmod_val]
-      generalize padicValNat 3 x.1.val = v at ex ey
-      rw [ex, ey]
-      push_cast at hk ⊢
-      rw [hk]
-      ring
+      obtain ⟨k, hk⟩ := E m u w hu3 hw3
+      exact Quot.sound ⟨k, by
+        rw [← natCast_zmod_val x.1, ← natCast_zmod_val y.1, hu, hw, hv]
+        push_cast at ⊢
+        rw [hk]
+        ring⟩
     · intro i
-      have hpow : 3 ^ i.val < 3 ^ n := Nat.pow_lt_pow_right (by decide) i.2
-      have hval : ((3 ^ i.val : ℕ) : ZMod (3 ^ n)).val = 3 ^ i.val :=
-        ZMod.val_natCast_of_lt hpow
-      have hne : ((3 ^ i.val : ℕ) : ZMod (3 ^ n)) ≠ 0 := by
-        intro h
-        rw [h, ZMod.val_zero] at hval
-        exact pow_ne_zero i.val (by decide : (3 : ℕ) ≠ 0) hval.symm
-      refine ⟨Quot.mk _ ⟨_, hne⟩, Fin.ext ?_⟩
-      show padicValNat 3 ((3 ^ i.val : ℕ) : ZMod (3 ^ n)).val = i.val
-      rw [hval]
-      exact padicValNat.prime_pow i.val
-  rw [Nat.card_eq_of_bijective f hf, Nat.card_eq_fintype_card, Fintype.card_fin]
-
+      have pw : 3^i.val < 3^n := Nat.pow_lt_pow_right (by decide) i.2
+      have hv : ((3^i.val:ℕ):ZMod (3^n)).val = 3^i.val := val_natCast_of_lt pw
+      have ne : ((3^i.val:ℕ):ZMod (3^n))≠0 :=
+        (val_ne_zero _).mp (by rw [hv]; exact pow_ne_zero _ (by decide))
+      exact ⟨Quot.mk _ ⟨_, ne⟩, Fin.ext (show padicValNat 3 ((3^i.val:ℕ):ZMod (3^n)).val = i.val from by
+        rw [hv]; exact padicValNat.prime_pow _)⟩
+  rw [Nat.card_eq_of_bijective f bj]
+  simp
 end OMA.S_oeis_a006694
-
 theorem OMA.solution : type_of% @OMA.S_oeis_a006694.main := by
   intro n
-  refine OMA.S_oeis_a006694.card_cosets n _ ?_
-  have hodd : (3 ^ n) % 2 = 1 := by rw [Nat.pow_mod]; simp
-  have hpos : 0 < 3 ^ n := pow_pos (by decide) n
-  omega
+  have o : (3^n)%2 = 1 := by simp [Nat.pow_mod]
+  have p : 0 < 3^n := by positivity
+  exact OMA.S_oeis_a006694.K n (2*((3^n-1)/2)+1) (by omega)
