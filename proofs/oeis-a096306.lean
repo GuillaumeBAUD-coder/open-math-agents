@@ -5,32 +5,23 @@ open OMA.S_oeis_a096306
 
 private def small (t : ℕ) := t + max ((Nat.digits 10 t).foldl max 0) 1
 
-private lemma fold_le (ds : List ℕ) (x : ℕ) (hx : x ≤ 9)
-    (h : ∀ d ∈ ds, d ≤ 9) : ds.foldl max x ≤ 9 := by
+private lemma fold_le (ds : List ℕ) (x b : ℕ) :
+    ds.foldl max x ≤ b ↔ x ≤ b ∧ ∀ d ∈ ds, d ≤ b := by
   induction ds generalizing x with
-  | nil => exact hx
-  | cons a ds ih => exact ih _ (max_le hx (h a (by simp))) (by grind)
-
-private lemma seed_le (ds : List ℕ) (x : ℕ) : x ≤ ds.foldl max x := by
-  induction ds generalizing x with
-  | nil => rfl
-  | cons a ds ih => exact (le_max_left x a).trans (ih _)
-
-private lemma mem_le (ds : List ℕ) (x d : ℕ) (h : d ∈ ds) : d ≤ ds.foldl max x := by
-  induction ds generalizing x with
-  | nil => simp at h
-  | cons a ds ih =>
-    rcases List.mem_cons.mp h with rfl | h
-    · exact (le_max_right x d).trans (seed_le _ _)
-    · exact ih _ h
+  | nil => simp
+  | cons d ds ih => simp [ih, max_le_iff, and_assoc]
 
 private lemma step_bounds (n : ℕ) (hn : 0 < n) : n < step n ∧ step n ≤ n + 9 := by
-  have dn := Nat.getLast_digit_ne_zero 10 hn.ne'
-  have hm := mem_le (Nat.digits 10 n) 0 _ (List.getLast_mem (Nat.digits_ne_nil_iff_ne_zero.mpr hn.ne'))
-  have hl := fold_le (Nat.digits 10 n) 0 (by decide) (fun _ h => by
-    have := Nat.digits_lt_base (by decide : 1 < 10) h
-    omega)
-  unfold step
+  let ds := Nat.digits 10 n
+  have hp : 0 < ds.foldl max 0 := by
+    apply Nat.pos_of_ne_zero
+    intro hz
+    have h := ((fold_le ds 0 0).mp hz.le).2 _
+      (List.getLast_mem (Nat.digits_ne_nil_iff_ne_zero.mpr hn.ne'))
+    exact Nat.getLast_digit_ne_zero 10 hn.ne' (Nat.eq_zero_of_le_zero h)
+  have hl := (fold_le ds 0 9).mpr
+    ⟨by decide, fun d hd => Nat.le_of_lt_succ (Nat.digits_lt_base (by decide : 1 < 10) hd)⟩
+  change n < n + ds.foldl max 0 ∧ n + ds.foldl max 0 ≤ n + 9
   omega
 
 private lemma zeros (k x : ℕ) : (List.replicate k 0).foldl max x = x := by
@@ -54,8 +45,7 @@ private lemma cross (B n : ℕ) (hn : 0 < n) (hB : n < B + 9) :
   · exact ⟨0, h, hB⟩
   · have b := step_bounds n hn
     obtain ⟨j, hj, hj'⟩ := cross B (step n) (by omega) (by omega)
-    exact ⟨j + 1, by simpa only [Function.iterate_succ_apply] using hj,
-      by simpa only [Function.iterate_succ_apply] using hj'⟩
+    exact ⟨j + 1, by simpa only [Function.iterate_succ_apply] using And.intro hj hj'⟩
 termination_by B - n
 decreasing_by omega
 
