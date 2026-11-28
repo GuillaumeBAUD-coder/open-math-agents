@@ -3,7 +3,8 @@ import Mathlib
 /-!
 # At What Frequency Should the Kelly Bettor Bet?
 
-Source: https://arxiv.org/abs/1801.06737 (C.-H. Hsieh, B. R. Barmish and J. A. Gubner), Conjecture 2.
+Source: https://arxiv.org/abs/1801.06737 (C.-H. Hsieh, B. R. Barmish and J. A. Gubner),
+Conjectures 1 and 2.
 Credit: @ricnov
 
 Setting (Section II of the paper). The returns `X k`, `k = 0, 1, ...`, are i.i.d. random variables
@@ -11,7 +12,10 @@ with `Xmin ≤ X k ≤ Xmax`, where `Xmin` and `Xmax` are support points and `-1
 A fraction `K ∈ [0, 1]` of the account is bet at stage 0 and left at risk for `n` periods. The total
 return is `X_n = ∏_{k < n} (1 + X k) - 1`, the expected logarithmic growth per period is
 `g_n(K) = (1/n) E[log(1 + K X_n)]`, and `g_n^* = max_{K ∈ [0, 1]} g_n(K)`. The standing assumption
-of the paper is `E[X 0] > 0`.
+of the paper is `E[X 0] > 0`. The paper states two conjectures for this setting (Section V).
+
+Conjecture 1: the optimal expected logarithmic growth `g_n^*` is non-increasing in `n`; i.e., for
+all `n ≥ 1`, `g_n^* ≥ g_{n+1}^*`.
 
 The returns satisfy the sufficient attractiveness inequality if `E[1 / (1 + X 0)] ≤ 1`. The paper
 proves that this inequality guarantees `g_1^* = g_n^*` for all `n ≥ 1` (Sufficiency Theorem), and
@@ -19,6 +23,8 @@ states
 
 Conjecture 2: satisfaction of the sufficient attractiveness inequality is necessary for the
 condition `g_1^* = g_n^*` to hold for all `n ≥ 1`.
+
+`main` is the conjunction of the two conjectures.
 
 Conventions.
 * `g_n(1)` is `-∞` when a total loss has positive probability, which a real-valued integral cannot
@@ -47,8 +53,9 @@ noncomputable def gStar {Ω : Type} [MeasurableSpace Ω] (P : Measure Ω) (X : �
     (n : ℕ) : ℝ :=
   ⨆ K : Set.Ico (0 : ℝ) 1, g P X n K
 
-/-- Conjecture 2 of Hsieh, Barmish and Gubner: if `g_n^* = g_1^*` for all `n ≥ 1`, then the
-sufficient attractiveness inequality `E[1 / (1 + X 0)] ≤ 1` holds. -/
+/-- Conjectures 1 and 2 of Hsieh, Barmish and Gubner. First, `g_n^* ≥ g_{n+1}^*` for all `n ≥ 1`.
+Second, if `g_n^* = g_1^*` for all `n ≥ 1`, then the sufficient attractiveness inequality
+`E[1 / (1 + X 0)] ≤ 1` holds. -/
 theorem main : ∀ (Ω : Type) [MeasurableSpace Ω] (P : Measure Ω) [IsProbabilityMeasure P]
     (X : ℕ → Ω → ℝ) (Xmin Xmax : ℝ),
     (∀ k, Measurable (X k)) → iIndepFun X P → (∀ k, IdentDistrib (X k) (X 0) P P) →
@@ -57,8 +64,9 @@ theorem main : ∀ (Ω : Type) [MeasurableSpace Ω] (P : Measure Ω) [IsProbabil
     (∀ ε : ℝ, 0 < ε → 0 < P {ω | X 0 ω < Xmin + ε}) →
     (∀ ε : ℝ, 0 < ε → 0 < P {ω | Xmax - ε < X 0 ω}) →
     0 < ∫ ω, X 0 ω ∂P →
-    (∀ n : ℕ, 1 ≤ n → gStar P X n = gStar P X 1) →
-    ∫⁻ ω, (ENNReal.ofReal (1 + X 0 ω))⁻¹ ∂P ≤ 1 := by
+    (∀ n : ℕ, 1 ≤ n → gStar P X (n + 1) ≤ gStar P X n) ∧
+      ((∀ n : ℕ, 1 ≤ n → gStar P X n = gStar P X 1) →
+        ∫⁻ ω, (ENNReal.ofReal (1 + X 0 ω))⁻¹ ∂P ≤ 1) := by
   sorry
 
 end OMA.S_arxiv_1801_06737
