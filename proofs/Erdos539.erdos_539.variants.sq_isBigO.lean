@@ -35,13 +35,7 @@ lemma card_le_sq (A : Finset ℕ) :
       _ = #B * #B := Finset.card_product _ _
   · simp only [not_exists, not_and, not_not] at h
     have hsub : A ⊆ {0} := fun x hx ↦ by simp [h x hx]
-    have hA : #A ≤ 1 := (Finset.card_le_card hsub).trans (by simp)
-    rcases Nat.eq_zero_or_pos #A with h0 | hpos
-    · rw [h0]; exact Nat.zero_le _
-    · obtain ⟨x, hx⟩ := Finset.card_pos.mp hpos
-      have hBpos : 0 < #B := Finset.card_pos.mpr
-        ⟨x / x.gcd x, Finset.mem_image.mpr ⟨(x, x), Finset.mem_product.mpr ⟨hx, hx⟩, rfl⟩⟩
-      nlinarith
+    rcases Finset.subset_singleton_iff.mp hsub with rfl | rfl <;> simp [B]
 
 lemma sqrt_le_threshold (n : ℕ) : Nat.sqrt n ≤ Erdos539.cofactorThreshold n := by
   unfold Erdos539.cofactorThreshold

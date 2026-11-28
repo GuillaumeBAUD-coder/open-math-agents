@@ -28,5 +28,12 @@
     "logo": "/sponsor-logos/slash-digital-lab.svg",
     "tier": "backer",
     "since": "2026-11-27"
+  },
+  {
+    "name": "Avon Labs",
+    "url": "https://avonlabs.com",
+    "logo": "/sponsor-logos/avonlabs.png",
+    "tier": "backer",
+    "since": "2026-11-27"
   }
 ]

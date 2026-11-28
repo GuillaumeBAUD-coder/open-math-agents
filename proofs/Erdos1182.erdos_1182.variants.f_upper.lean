@@ -207,52 +207,6 @@ end OMA
 
 namespace OMA
 
-lemma chernoff_tail {V : Type*} [Fintype V] [DecidableEq V]
-    (p : ℝ) (hp0 : 0 ≤ p) (hp1 : p ≤ 1) (F : Finset (Sym2 V)) (m : ℕ) :
-    ∑ S ∈ (Finset.univ : Finset (Sym2 V)).powerset.filter
-        (fun S => (S ∩ F).card ≤ m),
-        p ^ S.card * (1 - p) ^ (Fintype.card (Sym2 V) - S.card) ≤
-      (2 : ℝ) ^ m * (1 - p / 2) ^ F.card := by
-  classical
-  let Ω := (Finset.univ : Finset (Sym2 V)).powerset
-  let w : Finset (Sym2 V) → ℝ := fun S =>
-    p ^ S.card * (1 - p) ^ (Fintype.card (Sym2 V) - S.card)
-  have hw : ∀ S, 0 ≤ w S := by
-    intro S
-    dsimp [w]
-    positivity
-  have hterm : ∀ S ∈ Ω.filter (fun S => (S ∩ F).card ≤ m),
-      w S ≤ (2 : ℝ) ^ m * (w S * (1 / 2 : ℝ) ^ (S ∩ F).card) := by
-    intro S hS
-    have hk : (S ∩ F).card ≤ m := (Finset.mem_filter.mp hS).2
-    have hpow : 1 ≤ (2 : ℝ) ^ m * (1 / 2 : ℝ) ^ (S ∩ F).card := by
-      have hm : m = (m - (S ∩ F).card) + (S ∩ F).card := by omega
-      rw [hm, pow_add]
-      have hbase : (2 : ℝ) ^ (m - (S ∩ F).card) ≥ 1 := by
-        exact one_le_pow₀ (by norm_num : (1 : ℝ) ≤ 2)
-      have hcancel : (2 : ℝ) ^ (S ∩ F).card * (1 / 2 : ℝ) ^ (S ∩ F).card = 1 := by
-        rw [← mul_pow]
-        norm_num
-      rw [mul_assoc, hcancel, mul_one]
-      exact hbase
-    have hw0 := hw S
-    nlinarith
-  calc
-    ∑ S ∈ Ω.filter (fun S => (S ∩ F).card ≤ m), w S ≤
-        ∑ S ∈ Ω.filter (fun S => (S ∩ F).card ≤ m),
-          (2 : ℝ) ^ m * (w S * (1 / 2 : ℝ) ^ (S ∩ F).card) := by
-            exact Finset.sum_le_sum hterm
-    _ ≤ ∑ S ∈ Ω, (2 : ℝ) ^ m * (w S * (1 / 2 : ℝ) ^ (S ∩ F).card) := by
-            apply Finset.sum_le_sum_of_subset_of_nonneg
-            · intro S hS; exact (Finset.mem_filter.mp hS).1
-            · intro S hS hnot
-              positivity
-    _ = (2 : ℝ) ^ m * ∑ S ∈ Ω,
-          w S * (1 / 2 : ℝ) ^ (S ∩ F).card := by rw [Finset.mul_sum]
-    _ = (2 : ℝ) ^ m * (1 - p / 2) ^ F.card := by
-          rw [show ∑ S ∈ Ω, w S * (1 / 2 : ℝ) ^ (S ∩ F).card =
-            (1 - p / 2) ^ F.card by simpa [Ω, w] using weight_chernoff p F]
-
 lemma embedding_card_le (n N : ℕ) : Fintype.card (Fin n ↪ Fin N) ≤ N ^ n := by
   calc
     Fintype.card (Fin n ↪ Fin N) ≤ Fintype.card (Fin n → Fin N) := by
@@ -274,27 +228,6 @@ lemma astat_pos (n : ℕ) (hn : 2 ≤ n) : 0 < Astat n := by
   have hlpos : 0 < Real.log n := Real.log_pos (by exact_mod_cast hn)
   positivity
 
-lemma astat_cube (n : ℕ) (hn : 2 ≤ n) :
-    (Astat n) ^ 3 = (n : ℝ) ^ 5 * (Real.log n) ^ 2 := by
-  have hnpos : 0 < (n : ℝ) := by positivity
-  have hlpos : 0 < Real.log n := Real.log_pos (by exact_mod_cast hn)
-  unfold Astat
-  have hn3 : ((n : ℝ) ^ (5/3:ℝ)) ^ 3 = (n : ℝ) ^ 5 := by
-    calc
-      ((n : ℝ) ^ (5/3:ℝ)) ^ 3 = ((n : ℝ) ^ (5/3:ℝ)) ^ (3:ℝ) :=
-        (Real.rpow_natCast ((n : ℝ) ^ (5/3:ℝ)) 3).symm
-      _ = (n : ℝ) ^ ((5/3:ℝ) * 3) := (Real.rpow_mul hnpos.le (5/3:ℝ) (3:ℝ)).symm
-      _ = (n : ℝ) ^ (5:ℝ) := by norm_num
-      _ = (n : ℝ) ^ 5 := Real.rpow_natCast (n : ℝ) 5
-  have hl3 : (Real.log n ^ (2/3:ℝ)) ^ 3 = (Real.log n) ^ 2 := by
-    calc
-      (Real.log n ^ (2/3:ℝ)) ^ 3 = (Real.log n ^ (2/3:ℝ)) ^ (3:ℝ) :=
-        (Real.rpow_natCast (Real.log n ^ (2/3:ℝ)) 3).symm
-      _ = (Real.log n) ^ ((2/3:ℝ) * 3) := (Real.rpow_mul hlpos.le (2/3:ℝ) (3:ℝ)).symm
-      _ = (Real.log n) ^ (2:ℝ) := by norm_num
-      _ = (Real.log n) ^ 2 := Real.rpow_natCast (Real.log n) 2
-  rw [mul_pow, hn3, hl3]
-
 lemma log_le_sq (n : ℕ) : Real.log n ≤ (n : ℝ) ^ 2 := by
   by_cases h0 : n = 0
   · subst n
@@ -302,19 +235,6 @@ lemma log_le_sq (n : ℕ) : Real.log n ≤ (n : ℝ) ^ 2 := by
   · have hp : 0 < (n : ℝ) := by exact_mod_cast (Nat.pos_of_ne_zero h0)
     have h := Real.log_le_sub_one_of_pos hp
     nlinarith [sq_nonneg ((n : ℝ) - 1)]
-
-lemma astat_ge (n : ℕ) (hn : 2 ≤ n) : (n : ℝ) * Real.log n ≤ Astat n := by
-  have hnpos : 0 < (n : ℝ) := by positivity
-  have hlpos : 0 < Real.log n := Real.log_pos (by exact_mod_cast hn)
-  have hlogle := log_le_sq n
-  have hcub : ((n : ℝ) * Real.log n) ^ 3 ≤ (Astat n) ^ 3 := by
-    rw [mul_pow, astat_cube n hn]
-    have h1 : (Real.log n) ^ 3 ≤ (n : ℝ) ^ 2 * (Real.log n) ^ 2 := by
-      have hmul := mul_le_mul_of_nonneg_right hlogle (sq_nonneg (Real.log n))
-      simpa [pow_succ, pow_two, mul_assoc, mul_left_comm, mul_comm] using hmul
-    have h2 := mul_le_mul_of_nonneg_left h1 (by positivity : 0 ≤ (n : ℝ) ^ 3)
-    nlinarith
-  exact (pow_le_pow_iff_left₀ (by positivity) (astat_pos n hn).le (by norm_num : (3 : ℕ) ≠ 0)).mp hcub
 
 end OMA
 
