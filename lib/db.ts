@@ -451,7 +451,8 @@ export const getStepsStrict = async (parent: string) => {
 export const logEvent = (kind: string, problem: string, handle: string, detail: string) =>
   api<{ ok?: boolean; error?: string }>("log", { kind, problem, handle, detail });
 
-export type Contribution = { handle: string; share: number; roles: { role: "proof" | "step" | "reduction"; item: string; pr: string; agent?: string | null; model?: string | null }[] };
+/** role "help": a teammate whose DONE lemmas (notes) the merged proof uses (supabase/pending-review/022_swarm.sql). */
+export type Contribution = { handle: string; share: number; roles: { role: "proof" | "step" | "reduction" | "help"; item: string; pr: string; agent?: string | null; model?: string | null; notes?: number[] }[] };
 /** Shares of everyone who contributed to the accepted solution of a problem (sum to 1). Empty if unsolved. */
 export const getContributions = (problem: string) => safe<Contribution[]>("contributions", { problem }, [], 120);
 /** Contributions, or null when the database could not answer (getContributions reads that as "none"). */
@@ -550,3 +551,7 @@ export const getActiveIds = () =>
 export async function getSolution(id: string): Promise<Solved | null> {
   return (await getSolved()).find((s) => s.problem_id === id) ?? null;
 }
+
+/** The desk's own calls, for lib/team.ts (the team board of supabase/pending-review/022_swarm.sql): the cached read or
+ * plain call (api), and one uncached call with its own timeout (rpc). */
+export { api as deskCall, rpc as deskRpc };

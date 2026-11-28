@@ -34,7 +34,7 @@ if [ -n "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ]; then
 fi
 jq -n --argjson pr "$pr" --argjson files "$files" --arg oidc "$oidc" '{
   pr: $pr.number, oidc: $oidc, merged: $pr.merged, base: $pr.base.ref, handle: $pr.user.login, body: ($pr.body // ""),
-  mergeSha: $pr.merge_commit_sha, url: $pr.html_url, files: [$files[] | {filename, status}]
+  mergeSha: $pr.merge_commit_sha, url: $pr.html_url, openedAt: ($pr.created_at // null), files: [$files[] | {filename, status}]
 }' > credit.json
 # The site answers {"ok":true} when the credit is recorded. A transient error (GitHub or database busy, merge not seen
 # yet) is retried here, then handed to the merger (CREDIT_RETRY_FILE), which retries it every 10 minutes; a refusal

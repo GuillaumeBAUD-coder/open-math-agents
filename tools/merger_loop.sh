@@ -116,11 +116,16 @@ verdict() {  # $1 run id, $2 head sha, $3 attempt, $4 url, $5 old (1/0), $6 slot
   fi
   if [ -n "$GREEN_PR" ]; then
     mkdir -p "$W/artifact"; echo "$GREEN_PR" > "$W/artifact/pr.txt"; echo '{"verdict":"accepted","reason":""}' > "$W/artifact/verdict.json"
+  elif [ "$MODE" = batch ]; then
+    # a batch checker verdict, read from a trusted batch-check run by tools/batch_verdicts.sh (attempt 3: never re-run)
+    [ -s "$ROOT/batch/$ID/verdict.json" ] || return 0
+    cp -r "$ROOT/batch/$ID" "$W/artifact"
   elif ! gh run download "$ID" --repo "$REPO" -n verdict -D "$W/artifact" >/dev/null 2>&1; then
     # not finished yet (left the in-progress list for a re-run or a queue) or no artifact: look again later
     echo "$ID" >> "$ROOT/watch.txt"; rm -f "$ROOT/done/$ID.$ATT"; return 0
   fi
   PR=$(head -c 12 "$W/artifact/pr.txt" 2>/dev/null | tr -cd '0-9'); [ -n "$PR" ] || return 0
+  [ -e "$ROOT/done/pr.$PR.$SHA" ] && return 0   # this head already has its verdict (from check-proof or the batch checker)
   local RM; RM=$(cat "$ROOT/remerge/$PR" 2>/dev/null || echo 0)
   [ "$MODE" = remerge ] && [ "$RM" = 0 ] && RM=1               # requeued: accepted and reported before, merge again
   if [ "$OLD" = 1 ] && gh api "repos/$REPO/issues/$PR/comments?per_page=100" --jq '.[].body' 2>/dev/null | grep -qF "$URL"; then
@@ -135,8 +140,10 @@ verdict() {  # $1 run id, $2 head sha, $3 attempt, $4 url, $5 old (1/0), $6 slot
   grep -qE 'REJECTED|already on main' "$W/log.txt" && echo "$PR" >> "$ROOT/rejected.txt"
   [ -e "$W/rerun.flag" ] && echo "$ID" >> "$ROOT/watch.txt"   # a fault re-runs the check: same run id, next attempt
   if [ -e "$W/remerge.flag" ]; then                               # merge refused: try the same verdict again later
-    echo $((RM + 1)) > "$ROOT/remerge/$PR"; rm -f "$ROOT/done/$ID.$ATT"; echo "$ID" >> "$ROOT/watch.txt"
+    echo $((RM + 1)) > "$ROOT/remerge/$PR"; rm -f "$ROOT/done/$ID.$ATT"
+    [ "$MODE" = batch ] || echo "$ID" >> "$ROOT/watch.txt"        # a batch verdict comes back with the next pass
   fi
+  [ -e "$W/remerge.flag" ] || [ -e "$W/rerun.flag" ] || touch "$ROOT/done/pr.$PR.$SHA"
   git -C "$B" clean -fdq -- proofs reductions statements 2>/dev/null || true
 }
 refresh
@@ -160,6 +167,12 @@ while [ "$(date -u +%s)" -lt "$END" ]; do
     gh api "repos/$REPO/actions/runs/$WID" --jq "select(.status == \"completed\" and .conclusion != \"cancelled\") | $JQ_RUN" >> cand.tsv 2>/dev/null || true
   done
   : > watch.txt
+  # 3b. verdicts of the batch checker (batch-check.yml), every 90 seconds at most (tools/batch_verdicts.sh: ~4 API calls)
+  if [ -f base/tools/batch_verdicts.sh ] && [ $(( NOW - ${LAST_BATCH:-0} )) -ge 90 ]; then
+    # three hours back even after a hand-over: a queue lost with the previous merger is found again (cheaply: verdicts
+    # of pull requests merged or closed since are dropped without an API call)
+    LAST_BATCH=$NOW; ROOT="$ROOT" START="$START" FLOOR=$(( START - 10800 )) timeout 240 bash base/tools/batch_verdicts.sh >> cand.tsv 2>> batchv.log || true
+  fi
   # verdict jobs queued by the old per-proof trigger still run: leave their commits to them (no double report)
   if [ "$OLDJOBS" = 1 ] && [ $(( NOW - LAST_OLD )) -ge 300 ]; then
     LAST_OLD=$NOW; : > pending.txt
@@ -186,6 +199,7 @@ while [ "$(date -u +%s)" -lt "$END" ]; do
   while IFS=$'\t' read -r ID SHA ATT URL UPD CONC TITLE MODE; do
     [ -n "$ID" ] || continue
     [ -n "$CONC" ] || { echo "$ID" >> watch.txt; continue; }   # not finished yet
+    [ "$CONC" = skipped ] && continue   # check-proof switched off (vars.OMA_CHECK_PROOF): the batch checker answers
     [ -e "done/$ID.$ATT" ] && continue
     [ "$OLDJOBS" = 1 ] && grep -qx "$SHA" pending.txt 2>/dev/null && { touch "done/$ID.$ATT"; continue; }   # an old verdict job reports it
     N=$(printf '%s' "$TITLE" | grep -oE '[0-9]+$' || echo 999999)
