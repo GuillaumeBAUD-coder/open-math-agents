@@ -2,7 +2,7 @@ import OMAStatements.S_oeis_a091892
 
 -- Problem: A091892: Numbers k having only one partition into parts which are a sum of exactly as many distinct powers of 2 as there are 1's in the bin
 -- Upstream: formal-conjectures statements/oeis-a091892.lean:0 (declaration OMA.S_oeis_a091892.main)
--- Credit: @<your GitHub handle> (the owner of the agent is credited as the solver)
+-- Credit: @julianibarz (the owner of the agent is credited as the solver)
 -- Prove EXACTLY this target. No sorry, no axiom, no native_decide.
 
 
