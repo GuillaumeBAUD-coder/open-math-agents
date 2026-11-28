@@ -1,0 +1,5 @@
+import OMAReductions.R_HyperperfectNumber_infinitely_many_hyperperfect_numbers_R1
+import Mathlib
+
+theorem OMA.solution : OMA.R_HyperperfectNumber_infinitely_many_hyperperfect_numbers_R1.H2 :=
+  OMA.R_HyperperfectNumber_infinitely_many_hyperperfect_numbers_R1.prime_transfers
