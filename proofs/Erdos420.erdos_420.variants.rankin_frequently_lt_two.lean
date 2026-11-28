@@ -3618,7 +3618,7 @@ end LongGapsBetweenPrimes
 
 
 
-/-! A finite averaging bound for failures of divisibility by a fixed modulus. -/
+/- A finite averaging bound for failures of divisibility by a fixed modulus. -/
 
 namespace SeedAverage
 
@@ -3774,7 +3774,7 @@ theorem exists_seed_of_obstructions (M w h r : Nat) (qs : List Nat)
 end SeedAverage
 
 
-/-!
+/-
 # Divisor certificates on a translated arithmetic progression
 
 This finite lemma assembles the two kinds of divisor certificate used in
@@ -3856,7 +3856,7 @@ theorem cofactor_gt_of_divisor
 end TranslatedDivisorCover
 
 
-/-! A finite seed for short windows using the prime powers above the LCM cutoff. -/
+/- A finite seed for short windows using the prime powers above the LCM cutoff. -/
 
 namespace SeedAverage
 
@@ -3922,7 +3922,7 @@ theorem exists_lcm_seed_card (x w h r : ℕ)
 end SeedAverage
 
 
-/-! The change in the logarithm of the divisor count on multiplying by b. -/
+/- The change in the logarithm of the divisor count on multiplying by b. -/
 
 namespace FactorialGain
 
@@ -4072,7 +4072,7 @@ The imported simultaneous-residue and linear-root lemmas are due to OpenAI,
 "Improved Long Gaps Between Primes", commit 03a1190d0bc5502d9f54eeb60ad3e45e22b0df0b.
 -/
 
-/-!
+/-
 # Applying the simultaneous-residue theorem to factorial-window divisors
 
 This adapter imports the original proof of the simultaneous-residue theorem
@@ -4198,7 +4198,7 @@ theorem eventually_exclude_small_cofactors : ∀ᶠ x : ℝ in Filter.atTop,
 end TranslatedDivisorCover
 
 
-/-! The simultaneous-residue theorem and the explicit prime-power budget
+/- The simultaneous-residue theorem and the explicit prime-power budget
 give an actual upper bound on the factorial divisor ratio in a translated window. -/
 
 namespace CertifiedFactorialWindow
@@ -4315,9 +4315,9 @@ private lemma primeBandMass_dyadic (N k : ℕ) (hN : 2 ≤ N)
         (3 * (2 * (M : ℝ)) / Real.log (2 * (M : ℝ))) / M =
             6 / Real.log (2 * (M : ℝ)) := by field_simp; ring
         _ ≤ _ := div_le_div_of_nonneg_left (by norm_num) hlog (by exact_mod_cast hlogM)
-    have hinc := add_le_add ih hband
-    push_cast
-    linarith
+    calc
+      _ ≤ 6 * (k : ℝ) / Real.log N + 6 / Real.log N := add_le_add ih hband
+      _ = _ := by push_cast; rw [← add_div]; ring
 
 private def higherPowerBand (N U : ℕ) : Finset ℕ := by
   classical
@@ -4493,14 +4493,14 @@ private lemma seed_budget_arithmetic {x : ℝ} {N w h r : ℕ} (hx : 0 < x)
   let M : ℝ := primeBandMass N z + ∑ q ∈ higherPowerBand N z, (q : ℝ)⁻¹
   have hM0 : 0 ≤ M := by dsimp [M, primeBandMass]; positivity
   apply (Nat.cast_le (α := ℝ)).mp
-  push_cast
+  simp only [Nat.cast_mul, Nat.cast_add, Nat.cast_one]
   have hhz : (h : ℝ) * M ≤ 25 * x / Real.log (Real.log x) := by
     calc
       _ ≤ (x * Real.log x / Real.log (Real.log x) ^ 2) * M :=
           mul_le_mul_of_nonneg_right hh hM0
       _ ≤ (x * Real.log x / Real.log (Real.log x) ^ 2) *
           (25 * Real.log (Real.log x) / Real.log x) := mul_le_mul_of_nonneg_left hM (by positivity)
-      _ = _ := by field_simp; ring
+      _ = _ := by field_simp <;> ring
   have ob := obstruction_budget_bound N z
   have hz' : (z : ℝ) ≤ 3 * ((w : ℝ) + 1) := by exact_mod_cast hz
   change (h : ℝ) * (((SeedAverage.primePowerObstructions N z).map (fun q => z / q)).sum : ℕ) ≤ _
@@ -4521,8 +4521,9 @@ private lemma lcm_log_window_range {N : ℕ} {x : ℝ} (hx : 16 ≤ x)
   rw [Chebyshev.psi_eq_log_lcmUpto] at hlo hhi
   have hl2 : (1 / 2 : ℝ) ≤ Real.log 2 := by linarith [Real.log_two_gt_d9]
   have hl4 : Real.log 4 ≤ 2 := by
-    rw [show (4 : ℝ) = 2 ^ (2 : ℕ) by norm_num, Real.log_pow]
-    linarith [Real.log_le_sub_one_of_pos (show (0 : ℝ) < 2 by norm_num)]
+    rw [Real.log_four_eq]
+    have h := Real.log_le_sub_one_of_pos (show (0 : ℝ) < 2 by norm_num)
+    linarith
   have hcoef := mul_le_mul_of_nonneg_left hl2 (by linarith [hN.1] : 0 ≤ (N : ℝ) - 1)
   have hcoef' := mul_le_mul_of_nonneg_right (show Real.log 4 + 4 ≤ 6 by linarith) hN0
   exact ⟨by linarith [hN.1], by linarith [hN.2]⟩
@@ -4628,7 +4629,10 @@ private lemma mass_at_rankin_scale {x : ℝ} {N z : ℕ}
     have hzlog0 : 0 ≤ Real.log z := Real.log_nonneg (by exact_mod_cast hz0)
     have hl2' : 0 < Real.log 2 := by linarith
     have hfl := Nat.floor_le (div_nonneg hzlog0 hl2'.le)
-    rw [Real.log_div_log, Real.natFloor_logb_natCast] at hfl
+    rw [Real.log_div_log] at hfl
+    have hfloor : ⌊Real.logb 2 (z : ℝ)⌋₊ = Nat.log 2 z := by
+      simpa using Real.natFloor_logb_natCast 2 z
+    rw [hfloor, ← Real.log_div_log] at hfl
     apply hfl.trans
     apply (div_le_iff₀ (by positivity)).2
     have h := mul_le_mul_of_nonneg_left hl2 (show 0 ≤ 3 * L by positivity)
@@ -4656,7 +4660,10 @@ private lemma mass_at_rankin_scale {x : ℝ} {N z : ℕ}
     have hBN : (N : ℝ) ≤ B * (N : ℝ) := by
       simpa using mul_le_mul_of_nonneg_right hB (show (0 : ℝ) ≤ N by positivity)
     nlinarith only [hmul, hrpow, hsmall, hNx, hBN]
-  linarith [add_le_add hprime htail]
+  change primeBandMass N z + _ ≤ 25 * B / L
+  calc
+    _ ≤ 24 * B / L + B / L := add_le_add hprime htail
+    _ = _ := by rw [← add_div]; ring
 
 open LongGapsBetweenPrimes in
 private lemma eventual_rankin_inputs : ∀ᶠ x : ℝ in atTop,
@@ -4680,7 +4687,7 @@ private lemma eventual_rankin_inputs : ∀ᶠ x : ℝ in atTop,
   have hd := sieveDelta_pos
   have hl2hi : Real.log 2 ≤ 1 := by linarith [Real.log_le_sub_one_of_pos (by norm_num : (0 : ℝ) < 2)]
   have hl4hi : Real.log 4 ≤ 2 := by
-    rw [show (4 : ℝ) = 2 ^ (2 : ℕ) by norm_num, Real.log_pow]
+    rw [Real.log_four_eq]
     linarith
   obtain ⟨P, hP⟩ := Filter.eventually_atTop.mp
     (Chebyshev.eventually_primeCounting_le (by norm_num : (0 : ℝ) < 1))
@@ -4688,7 +4695,7 @@ private lemma eventual_rankin_inputs : ∀ᶠ x : ℝ in atTop,
   have hBSquare := (Real.isLittleO_pow_log_id_atTop (n := 2)).bound (show (0 : ℝ) < 1 by norm_num)
   have hBLog := hlogloglim.eventually hLogSmall
   have hLLog := hloglim.eventually hBSquare
-  have hPow := (Real.isLittleO_log_rpow_rpow_atTop 2 (s := 1/4) (by norm_num)).bound
+  have hPow := (isLittleO_log_rpow_rpow_atTop 2 (s := 1/4) (by norm_num)).bound
     (show (0 : ℝ) < 1/100 by norm_num)
   filter_upwards [Filter.eventually_ge_atTop (max 100 (max (P + 1) (2 / sieveDelta))),
     hloglim.eventually_ge_atTop (max 4 (Real.log 9)),
@@ -4703,10 +4710,12 @@ private lemma eventual_rankin_inputs : ∀ᶠ x : ℝ in atTop,
   let r : ℕ := ⌊sieveDelta * x⌋₊
   let U : ℕ := ⌊Real.exp (x / 10)⌋₊ + 1
   let z := 2 * w + h + 1
-  have hx100 : 100 ≤ x := (le_max_left ..).trans hx
+  have hx100 : 100 ≤ x := (le_max_left (100 : ℝ) _).trans hx
   have hx0 : 0 < x := by linarith
-  have hL4 : 4 ≤ L := (le_max_left ..).trans hL
-  have hB100 : 100 ≤ B := (le_max_left ..).trans hB
+  change max 4 (Real.log 9) ≤ L at hL
+  change max 100 (150 / sieveDelta) ≤ B at hB
+  have hL4 : 4 ≤ L := (le_max_left (4 : ℝ) _).trans hL
+  have hB100 : 100 ≤ B := (le_max_left (100 : ℝ) _).trans hB
   have hL0 : 0 < L := by linarith
   have hB0 : 0 < B := by linarith
   have hSmall : L ≤ x / 100 := by
@@ -4714,7 +4723,9 @@ private lemma eventual_rankin_inputs : ∀ᶠ x : ℝ in atTop,
   have hBSq : B ^ 2 ≤ L := by simpa [L, B, Real.norm_of_nonneg hL0.le] using hBsq
   have hBLog' : Real.log B ≤ B / 100 := by
     have hb := Real.log_nonneg (show 1 ≤ B by linarith)
-    simpa [L, B, Real.norm_of_nonneg hB0.le, Real.norm_of_nonneg hb, div_eq_inv_mul] using hBlo
+    change ‖Real.log B‖ ≤ 1 / 100 * ‖B‖ at hBlo
+    rw [Real.norm_of_nonneg hb, Real.norm_of_nonneg hB0.le] at hBlo
+    linarith
   have hPow'' : 100 * L ^ 2 ≤ x ^ (1 / 4 : ℝ) := by
     have hR : 0 ≤ x ^ (1 / 4 : ℝ) := by positivity
     have hrs : 0 ≤ Real.log x ^ (2 : ℝ) := by positivity
@@ -4749,14 +4760,17 @@ private lemma eventual_rankin_inputs : ∀ᶠ x : ℝ in atTop,
         dsimp [H]
         rw [← mul_div_assoc]
         apply (div_le_iff₀ (sq_pos_of_pos hB0)).2
-        have hB2 : (20 : ℝ) ≤ B ^ 2 := by nlinarith
+        have hB2 : (20 : ℝ) ≤ B ^ 2 := by
+          have ht := pow_le_pow_left₀ (by norm_num : (0 : ℝ) ≤ 100) hB100 2
+          norm_num at ht
+          linarith
         have hp := mul_le_mul_of_nonneg_right hB2 (by positivity : 0 ≤ x / 2 * L)
-        linarith
+        nlinarith only [hp]
       _ ≤ _ := mul_le_mul_of_nonneg_right hNx hL0.le
   have hLsqrt : L ≤ x ^ (1 / 2 : ℝ) := by
     have hxp : x ^ (1 / 4 : ℝ) ≤ x := by
-      simpa using (Real.rpow_le_rpow_of_exponent_le (by linarith : 1 ≤ x)
-        (show (1/4 : ℝ) ≤ 1 by norm_num))
+      rw [← Real.rpow_one x]
+      exact Real.rpow_le_rpow_of_exponent_le (by linarith : 1 ≤ x) (by norm_num)
     have hsq : (x ^ (1 / 2 : ℝ)) ^ (2 : ℕ) = x := by
       rw [← Real.rpow_natCast, ← Real.rpow_mul hx0.le]; norm_num
     nlinarith only [hPow'', hxp, hsq, hL0.le, show 0 ≤ x ^ (1 / 2 : ℝ) by positivity]
@@ -4770,9 +4784,11 @@ private lemma eventual_rankin_inputs : ∀ᶠ x : ℝ in atTop,
         norm_num
   have hzZ : z ≤ sieveZ x := by
     apply Nat.le_floor (hzPow.trans ?_)
-    rw [← Real.rpow_natCast]
+    rw [← Real.rpow_natCast x 6]
     exact Real.rpow_le_rpow_of_exponent_le (by linarith) (by norm_num)
-  have hNZ : N ≤ sieveZ x := by omega
+  have hhz : h ≤ z := by dsimp [z]; omega
+  have hwz : 2 * w ≤ z := by dsimp [z]; omega
+  have hNZ : N ≤ sieveZ x := hhlo.trans (hhz.trans hzZ)
   have hPE : ∀ m : ℕ, N ≤ m → (Nat.primeCounting m : ℝ) ≤ 3 * m / Real.log m := by
     intro m hm
     have hmR : (N : ℝ) ≤ m := by exact_mod_cast hm
@@ -4784,8 +4800,8 @@ private lemma eventual_rankin_inputs : ∀ᶠ x : ℝ in atTop,
     have hm1 : 1 ≤ m := by omega
     apply div_le_div_of_nonneg_right _ (Real.log_nonneg (by exact_mod_cast hm1))
     exact mul_le_mul_of_nonneg_right (by linarith) (by positivity)
-  have hmass := mass_at_rankin_scale (by linarith) hN2 hNx (by linarith) (by linarith)
-    hlogN hz hz0 hzPow hPow'' hPE
+  have hmass := mass_at_rankin_scale (by linarith) hN2 hNx
+    (show 1 ≤ L by linarith) (show 1 ≤ B by linarith) hlogN hz hz0 hzPow hPow'' hPE
   have hrlo : 75 * x / B ≤ (r : ℝ) := by
     have hdx : 2 / sieveDelta ≤ x :=
       ((le_max_right (P + 1) _).trans (le_max_right (100 : ℝ) _)).trans hx
@@ -4836,10 +4852,13 @@ private lemma eventual_rankin_inputs : ∀ᶠ x : ℝ in atTop,
   have hloglast : Real.log (2 * B) ≤ B / 32 := by
     rw [Real.log_mul (by norm_num) hB0.ne']
     linarith
-  exact ⟨by linarith, by dsimp [w]; omega, hNZ, by omega, by omega,
-    by have hh' : z < U := by exact_mod_cast hzExp.trans_lt hUlo; dsimp [z] at hh'; omega,
+  exact ⟨by linarith, by dsimp [w]; omega, hNZ, hhz.trans hzZ, hwz.trans hzZ,
+    by
+      have hh' : z < U := by exact_mod_cast hzExp.trans_lt hUlo
+      dsimp [z] at hh'
+      omega,
     hY, lcm_auxiliary_square hLCM.1 hU0 hUlog, Nat.floor_le (by positivity), hbudget,
-    (show (2 * w : ℝ) ≤ (z : ℝ) by exact_mod_cast (show 2 * w ≤ z by dsimp [z]; omega)).trans
+    (show (2 * w : ℝ) ≤ (z : ℝ) by exact_mod_cast hwz).trans
       (hzExp.trans (Real.exp_le_exp.mpr (by linarith))), hLCM.1, hLCM.2,
     by linarith, (le_max_right _ _).trans hL, by linarith, hloglast⟩
 
