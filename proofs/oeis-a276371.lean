@@ -1,13 +1,4 @@
 import OMAStatements.S_oeis_a276371
-import Mathlib.RingTheory.PowerSeries.Derivative
-import Mathlib.Data.Nat.Choose.Cast
-import Mathlib.Algebra.BigOperators.NatAntidiagonal
-import Mathlib.Data.ZMod.Basic
-import Mathlib.Algebra.BigOperators.Field
-import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.Ring
-import Mathlib.Tactic.NormNum
 
 /-!
 Paul D. Hanna's sequence A276371 and Peter Bala's totient-period conjecture.
