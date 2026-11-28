@@ -1,4 +1,5 @@
 import FormalConjectures.ErdosProblems.«628»
+import Mathlib.Tactic.Tauto
 
 -- Problem: Erdős Problem 628 — k 5 a 3 b 3
 -- Upstream: formal-conjectures FormalConjectures/ErdosProblems/628.lean:61 (declaration Erdos628.erdos_628.variants.k_5_a_3_b_3)
@@ -65,8 +66,6 @@ lemma complete_vertex (h4 : ¬ G.Colorable 4) {a b c : V} (hab : G.Adj a b) (hbc
     ∃ x, x ≠ a ∧ x ≠ b ∧ x ≠ c ∧ f x = i ∧ G.Adj x a ∧ G.Adj x b ∧ G.Adj x c := by
   by_contra hne
   set T : Set V := {a, b, c} with hT
-  have hmem : ∀ x, x ∉ T ↔ x ≠ a ∧ x ≠ b ∧ x ≠ c := by
-    intro x; simp [hT]
   have key : ∀ t, Ind G {x | x = t ∨ (x ∉ T ∧ f x = i ∧ ¬ G.Adj x t)} := by
     rintro t x y (rfl | ⟨hx, hfx, hxt⟩) (rfl | ⟨hy, hfy, hyt⟩) hxy
     · exact hxy.ne rfl
@@ -80,21 +79,13 @@ lemma complete_vertex (h4 : ¬ G.Colorable 4) {a b c : V} (hab : G.Adj a b) (hbc
     rcases fin2_cases i with rfl | rfl <;> rcases fin2_cases (f x) with h | h <;>
       rcases fin2_cases (f y) with h' | h' <;> simp_all
   · intro x
-    by_cases hx : x ∈ T
-    · rw [hT] at hx
-      rcases hx with rfl | rfl | rfl
-      · exact Or.inl (Or.inl rfl)
-      · exact Or.inr (Or.inl (Or.inl rfl))
-      · exact Or.inr (Or.inr (Or.inl (Or.inl rfl)))
-    · by_cases hfx : f x = i
-      · obtain ⟨hxa, hxb, hxc⟩ := (hmem x).1 hx
-        by_cases ha : G.Adj x a
-        · by_cases hb : G.Adj x b
-          · exact Or.inr (Or.inr (Or.inl (Or.inr ⟨hx, hfx, fun hc =>
-              hne ⟨x, hxa, hxb, hxc, hfx, ha, hb, hc⟩⟩)))
-          · exact Or.inr (Or.inl (Or.inr ⟨hx, hfx, hb⟩))
-        · exact Or.inl (Or.inr ⟨hx, hfx, ha⟩)
-      · exact Or.inr (Or.inr (Or.inr ⟨hx, hfx⟩))
+    have memT : x ∈ T ↔ x = a ∨ x = b ∨ x = c := by simp [hT]
+    have not_all : ¬(x ∉ T ∧ f x = i ∧ G.Adj x a ∧ G.Adj x b ∧ G.Adj x c) := by
+      rintro ⟨hx,hfx,ha,hb,hc⟩
+      simp only [memT, not_or] at hx
+      exact hne ⟨x,hx.1,hx.2.1,hx.2.2,hfx,ha,hb,hc⟩
+    simp only [Set.mem_setOf_eq]
+    tauto
 
 lemma complete2 (h4 : ¬ G.Colorable 4) (H : ∀ s : Set V, TwoCol G s ∨ TwoCol G sᶜ)
     {a b c : V} (hab : G.Adj a b) (hbc : G.Adj b c) (hac : G.Adj a c) :
@@ -239,7 +230,7 @@ lemma caseB (h4 : ¬ G.Colorable 4) (h3 : G.CliqueFree 3)
         obtain ⟨u', hu'u, hru', hdu'⟩ := pred G hu hd
         have e := ih (by omega) u' hru' hdu'
         have hne := hf u' u (Or.inl ⟨hru', by omega⟩) (Or.inl ⟨hu, by omega⟩) hu'u
-        have hne' : (f u').val ≠ (f u).val := fun h => hne (Fin.ext h)
+        have hne' := Fin.val_injective.ne hne
         have := (f u).isLt
         have := (f u').isLt
         omega
@@ -252,9 +243,9 @@ lemma caseB (h4 : ¬ G.Colorable 4) (h3 : G.CliqueFree 3)
     have n1 := hf y' y (Or.inl ⟨hry', by omega⟩) hyY hy'y
     have n2 := hf w' w (Or.inl ⟨hrw', by omega⟩) hwY hw'w
     have n3 := hf y w hyY hwY hyw
-    have n1' : (f y').val ≠ (f y).val := fun h => n1 (Fin.ext h)
-    have n2' : (f w').val ≠ (f w).val := fun h => n2 (Fin.ext h)
-    have n3' : (f y).val ≠ (f w).val := fun h => n3 (Fin.ext h)
+    have n1' := Fin.val_injective.ne n1
+    have n2' := Fin.val_injective.ne n2
+    have n3' := Fin.val_injective.ne n3
     have := (f y).isLt
     have := (f w).isLt
     have := (f y').isLt
@@ -296,18 +287,10 @@ lemma caseB (h4 : ¬ G.Colorable 4) (h3 : G.CliqueFree 3)
     · rintro a b ⟨ha, -⟩ ⟨hb, -⟩ hab
       exact h3 {y, a, b} (is3Clique_triple_iff.mpr ⟨ha, hb, hab⟩)
     · intro u
-      by_cases hu : u ∈ Y
-      · by_cases hb : u ∈ B
-        · by_cases hp : G.dist v u % 2 = k % 2
-          · exact Or.inl (Or.inr (Or.inl ⟨hb, hp⟩))
-          · exact Or.inr (Or.inr (Or.inl ⟨hb, hp⟩))
-        · rcases hu with hu | hu | hu
-          · exact (hb hu).elim
-          · exact Or.inl (Or.inr (Or.inr hu))
-          · exact Or.inr (Or.inr (Or.inr ⟨hu, hb⟩))
-      · rcases fin2_cases (f u) with h | h
-        · exact Or.inl (Or.inl ⟨hu, h⟩)
-        · exact Or.inr (Or.inl ⟨hu, h⟩)
+      have hy : u ∈ Y ↔ u ∈ B ∨ u = y ∨ G.Adj y u := Iff.rfl
+      have hf' := fin2_cases (f u)
+      simp only [Set.mem_setOf_eq]
+      tauto
 
 lemma main (h4 : ¬ G.Colorable 4) (h5 : G.CliqueFree 5)
     (H : ∀ s : Set V, TwoCol G s ∨ TwoCol G sᶜ) : False := by
