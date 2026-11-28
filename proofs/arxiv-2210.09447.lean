@@ -1,6 +1,8 @@
 import OMAStatements.S_arxiv_2210_09447
 import Mathlib
 
+/- Shorter version of the original Lean disproof in upstream PR #35868. -/
+
 namespace OMA.P_arxiv_2210_09447
 
 open OMA.S_arxiv_2210_09447
@@ -171,127 +173,10 @@ lemma M0_pure : IsPureOrderIdeal M0 6 := by
     · convert mkChain_mem_6 1 using 1
       funext j; fin_cases j <;> rfl
 
-private lemma filter_chainSet_eq (k : Fin 7) (d : Fin 7) :
-    (chainSet k).filter (fun m => monDeg m = d.val) = {mkChain k d} := by
-  ext m
-  simp only [Finset.mem_filter, chainSet, Finset.mem_image, Finset.mem_univ, true_and,
-    Finset.mem_singleton]
-  constructor
-  · rintro ⟨⟨a, rfl⟩, hdeg⟩
-    rw [monDeg_mkChain] at hdeg
-    have ha : a = d := Fin.ext hdeg
-    rw [ha]
-  · rintro rfl
-    exact ⟨⟨d, rfl⟩, monDeg_mkChain k d⟩
-
-private lemma filter_boxSet_card (d : ℕ) :
-    (boxSet.filter (fun m => monDeg m = d)).card =
-      ((Finset.univ : Finset (Fin 3 × Fin 3 × Fin 3)).filter
-        (fun t => t.1.val + t.2.1.val + t.2.2.val = d)).card := by
-  have heq : boxSet.filter (fun m => monDeg m = d) =
-      ((Finset.univ : Finset (Fin 3 × Fin 3 × Fin 3)).filter
-        (fun t => t.1.val + t.2.1.val + t.2.2.val = d)).image
-        (fun t => mkBox t.1 t.2.1 t.2.2) := by
-    ext m
-    simp only [Finset.mem_filter, boxSet, Finset.mem_image, Finset.mem_univ, true_and]
-    constructor
-    · rintro ⟨⟨t, rfl⟩, hdeg⟩
-      rw [monDeg_mkBox] at hdeg
-      exact ⟨t, hdeg, rfl⟩
-    · rintro ⟨t, hdeg, rfl⟩
-      exact ⟨⟨t, rfl⟩, by rw [monDeg_mkBox]; exact hdeg⟩
-  rw [heq, Finset.card_image_of_injective]
-  intro t1 t2 h
-  have h0 := congrFun h 0
-  have h1 := congrFun h 1
-  have h2 := congrFun h 2
-  simp only [mkBox] at h0 h1 h2
-  ext
-  · exact h0
-  · exact h1
-  · exact h2
-
-private lemma oSeq_M0_eq (d : Fin 7) (hd : 0 < d.val) :
-    oSeq M0 d.val =
-      ((Finset.univ : Finset (Fin 3 × Fin 3 × Fin 3)).filter
-        (fun t => t.1.val + t.2.1.val + t.2.2.val = d.val)).card + 4 := by
-  unfold oSeq M0
-  simp only [Finset.filter_union]
-  have hc3 := filter_chainSet_eq 3 d
-  have hc4 := filter_chainSet_eq 4 d
-  have hc5 := filter_chainSet_eq 5 d
-  have hc6 := filter_chainSet_eq 6 d
-  rw [hc3, hc4, hc5, hc6]
-  have hnotB : ∀ k : Fin 7, 3 ≤ k.val → mkChain k d ∉ boxSet.filter (fun m => monDeg m = d.val) := by
-    intro k hk hmem
-    have hb := (Finset.mem_filter.mp hmem).1
-    obtain ⟨t, _, heq⟩ := Finset.mem_image.mp hb
-    have hval := congrFun heq k
-    simp only [mkBox, mkChain, ↓reduceIte] at hval
-    have hzero : (match k.val with | 0 => t.1.val | 1 => t.2.1.val | 2 => t.2.2.val | _ => 0) = 0 := by
-      rcases k with ⟨kv, hkv⟩
-      interval_cases kv <;> simp_all
-    omega
-  have hneC : ∀ k1 k2 : Fin 7, k1 ≠ k2 → mkChain k1 d ≠ mkChain k2 d := by
-    intro k1 k2 hne heq
-    have hv := congrFun heq k1
-    simp only [mkChain, ↓reduceIte, hne] at hv
-    omega
-  have hd1 : Disjoint (boxSet.filter (fun m => monDeg m = d.val)) {mkChain 3 d} :=
-    Finset.disjoint_singleton_right.mpr (hnotB 3 (by decide))
-  have hd2 : Disjoint (boxSet.filter (fun m => monDeg m = d.val) ∪ {mkChain 3 d}) {mkChain 4 d} := by
-    rw [Finset.disjoint_singleton_right, Finset.mem_union, Finset.mem_singleton]
-    rintro (h | h)
-    · exact hnotB 4 (by decide) h
-    · exact hneC 4 3 (by decide) h
-  have hd3 : Disjoint (boxSet.filter (fun m => monDeg m = d.val) ∪ {mkChain 3 d} ∪ {mkChain 4 d}) {mkChain 5 d} := by
-    rw [Finset.disjoint_singleton_right, Finset.mem_union, Finset.mem_union,
-      Finset.mem_singleton, Finset.mem_singleton]
-    rintro ((h | h) | h)
-    · exact hnotB 5 (by decide) h
-    · exact hneC 5 3 (by decide) h
-    · exact hneC 5 4 (by decide) h
-  have hd4 : Disjoint (boxSet.filter (fun m => monDeg m = d.val) ∪ {mkChain 3 d} ∪ {mkChain 4 d} ∪ {mkChain 5 d}) {mkChain 6 d} := by
-    rw [Finset.disjoint_singleton_right, Finset.mem_union, Finset.mem_union, Finset.mem_union,
-      Finset.mem_singleton, Finset.mem_singleton, Finset.mem_singleton]
-    rintro (((h | h) | h) | h)
-    · exact hnotB 6 (by decide) h
-    · exact hneC 6 3 (by decide) h
-    · exact hneC 6 4 (by decide) h
-    · exact hneC 6 5 (by decide) h
-  rw [Finset.card_union_of_disjoint hd4, Finset.card_union_of_disjoint hd3,
-    Finset.card_union_of_disjoint hd2, Finset.card_union_of_disjoint hd1,
-    Finset.card_singleton, Finset.card_singleton, Finset.card_singleton, Finset.card_singleton,
-    filter_boxSet_card]
-
-lemma oSeq_M0_4 : oSeq M0 4 = 10 := by
-  have h := oSeq_M0_eq 4 (by decide)
-  have hb : ((Finset.univ : Finset (Fin 3 × Fin 3 × Fin 3)).filter
-      (fun t => t.1.val + t.2.1.val + t.2.2.val = (4 : Fin 7).val)).card = 6 := by decide
-  change oSeq M0 (4 : Fin 7).val = 10
-  rw [h, hb]
-
-lemma oSeq_M0_5 : oSeq M0 5 = 7 := by
-  have h := oSeq_M0_eq 5 (by decide)
-  have hb : ((Finset.univ : Finset (Fin 3 × Fin 3 × Fin 3)).filter
-      (fun t => t.1.val + t.2.1.val + t.2.2.val = (5 : Fin 7).val)).card = 3 := by decide
-  change oSeq M0 (5 : Fin 7).val = 7
-  rw [h, hb]
-
-lemma oSeq_M0_6 : oSeq M0 6 = 5 := by
-  have h := oSeq_M0_eq 6 (by decide)
-  have hb : ((Finset.univ : Finset (Fin 3 × Fin 3 × Fin 3)).filter
-      (fun t => t.1.val + t.2.1.val + t.2.2.val = (6 : Fin 7).val)).card = 1 := by decide
-  change oSeq M0 (6 : Fin 7).val = 5
-  rw [h, hb]
-
 end OMA.P_arxiv_2210_09447
 
+open OMA.P_arxiv_2210_09447 OMA.S_arxiv_2210_09447 in
 theorem OMA.disproof : ¬ (type_of% @OMA.S_arxiv_2210_09447.main) := by
   intro h
-  have hlc := h 7 6 OMA.P_arxiv_2210_09447.M0 OMA.P_arxiv_2210_09447.M0_pure 5 (by norm_num) (by norm_num)
-  have h51 : (5 : ℕ) - 1 = 4 := rfl
-  have h52 : (5 : ℕ) + 1 = 6 := rfl
-  rw [h51, h52, OMA.P_arxiv_2210_09447.oSeq_M0_4, OMA.P_arxiv_2210_09447.oSeq_M0_5,
-    OMA.P_arxiv_2210_09447.oSeq_M0_6] at hlc
-  omega
+  exact (by decide +kernel : ¬ (oSeq M0 (5 - 1) * oSeq M0 (5 + 1) ≤ (oSeq M0 5) ^ 2))
+    (h 7 6 M0 M0_pure 5 (by decide) (by decide))
