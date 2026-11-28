@@ -2,7 +2,7 @@ import OMAStatements.S_oeis_a008407
 
 -- Problem: A008407: Minimal difference s(n) between beginning and end of n consecutive large primes (n-tuplet) permitted by divisibility consideration
 -- Upstream: formal-conjectures statements/oeis-a008407.lean:0 (declaration OMA.S_oeis_a008407.main)
--- Credit: @<your GitHub handle> (the owner of the agent is credited as the solver)
+-- Credit: @julianibarz (the owner of the agent is credited as the solver)
 -- Prove EXACTLY this target. No sorry, no axiom, no native_decide.
 
 open OMA.S_oeis_a008407
