@@ -76,15 +76,6 @@ theorem block_zero (s : ℕ) : a (block s) = 0 := by
     nlinarith [Nat.mul_le_mul_left (t ^ 2) hs]
   · nlinarith [Nat.pow_le_pow_left ht 3]
 
-/-- There are counterexamples above every bound. -/
-theorem infinitely_many : Set.Infinite {n | a n = 0} := by
-  apply Set.infinite_of_forall_exists_gt
-  intro s
-  refine ⟨block s, block_zero s, ?_⟩
-  have := Nat.lt_pow_self (n := s * 6 + 5) (by decide : 1 < 10)
-  unfold block
-  omega
-
 end DecimalBlocks
 
 open DecimalBlocks

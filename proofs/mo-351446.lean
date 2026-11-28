@@ -21,7 +21,7 @@ theorem OMA.solution : type_of% @OMA.S_mo_351446.main := by
   have hgap : 0 < 1 - ∑ i, α i := by linarith
   have hk1 : (1 : ℝ) ≤ (k : ℝ) := by exact_mod_cast hk
   have hk0 : (0 : ℝ) < (k : ℝ) + 1 := by linarith
-  obtain ⟨δ, hδdef⟩ : ∃ δ : ℝ, δ = min (α i₀) ((1 - ∑ i, α i) / ((k : ℝ) + 1)) := ⟨_, rfl⟩
+  set δ := min (α i₀) ((1 - ∑ i, α i) / ((k : ℝ) + 1)) with hδdef
   have hδpos : 0 < δ := by
     rw [hδdef]
     exact lt_min (hα i₀).1 (div_pos hgap hk0)
@@ -30,36 +30,26 @@ theorem OMA.solution : type_of% @OMA.S_mo_351446.main := by
     rw [hδdef]
     exact (min_le_left _ _).trans (hi₀ i)
   have hδk : (k : ℝ) * δ + δ ≤ 1 - ∑ i, α i := by
-    have h1 : δ ≤ (1 - ∑ i, α i) / ((k : ℝ) + 1) := by
-      rw [hδdef]
-      exact min_le_right _ _
-    have h2 := (le_div_iff₀ hk0).mp h1
-    have h3 : δ * ((k : ℝ) + 1) = (k : ℝ) * δ + δ := by ring
-    linarith
+    have := (le_div_iff₀ hk0).mp (hδdef.le.trans (min_le_right _ _))
+    nlinarith
   refine Set.infinite_of_forall_exists_gt (fun a => ?_)
-  obtain ⟨x, hxdef⟩ : ∃ x : ℕ → (Fin k → ℝ),
-      ∀ j i, x j i = Int.fract ((j : ℝ) * ((a : ℝ) + 1) * α i) := ⟨_, fun j i => rfl⟩
+  let x : ℕ → Fin k → ℝ := fun j i => Int.fract ((j : ℝ) * ((a : ℝ) + 1) * α i)
   have hx : ∀ j, x j ∈ Set.pi Set.univ (fun _ : Fin k => Set.Icc (0 : ℝ) 1) := by
     intro j i _
-    rw [hxdef]
+    dsimp only [x]
     exact ⟨Int.fract_nonneg _, (Int.fract_lt_one _).le⟩
   obtain ⟨y, -, φ, hφ, hlim⟩ :=
     (isCompact_univ_pi (fun _ : Fin k => isCompact_Icc)).tendsto_subseq hx
   obtain ⟨N, hN⟩ := Metric.tendsto_atTop.mp hlim (δ / 2) (by positivity)
   have h1 := hN N le_rfl
   have h2 := hN (N + 1) (Nat.le_succ N)
-  rw [dist_pi_lt_iff (by positivity)] at h1 h2
+  dsimp only [Function.comp_apply] at h1 h2
   have hφlt : φ N < φ (N + 1) := hφ (Nat.lt_succ_self N)
+  have hd : dist (x (φ (N + 1))) (x (φ N)) < δ :=
+    (dist_triangle_right _ _ y).trans_lt (by linarith)
   have hdiff : ∀ i, -δ < x (φ (N + 1)) i - x (φ N) i ∧ x (φ (N + 1)) i - x (φ N) i < δ := by
     intro i
-    have e1 : |x (φ N) i - y i| < δ / 2 := by
-      have := h1 i
-      rwa [Real.dist_eq] at this
-    have e2 : |x (φ (N + 1)) i - y i| < δ / 2 := by
-      have := h2 i
-      rwa [Real.dist_eq] at this
-    rw [abs_lt] at e1 e2
-    constructor <;> linarith [e1.1, e1.2, e2.1, e2.2]
+    simpa only [Real.dist_eq, abs_lt] using (dist_pi_lt_iff hδpos).mp hd i
   have hn : (((φ (N + 1) - φ N) * (a + 1) + 1 : ℕ) : ℝ) =
       ((φ (N + 1) : ℝ) - (φ N : ℝ)) * ((a : ℝ) + 1) + 1 := by
     push_cast [Nat.cast_sub hφlt.le]
@@ -80,7 +70,7 @@ theorem OMA.solution : type_of% @OMA.S_mo_351446.main := by
     have e3 : (((φ (N + 1) : ℝ) - (φ N : ℝ)) * ((a : ℝ) + 1) + 1) * α i =
         (φ (N + 1) : ℝ) * ((a : ℝ) + 1) * α i - (φ N : ℝ) * ((a : ℝ) + 1) * α i + α i := by
       ring
-    rw [hxdef, hxdef]
+    dsimp only [x]
     push_cast
     linarith
   have h5 : a + 1 ≤ (φ (N + 1) - φ N) * (a + 1) := Nat.le_mul_of_pos_left _ (by omega)

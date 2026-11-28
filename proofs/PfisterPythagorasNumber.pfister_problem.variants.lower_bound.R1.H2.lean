@@ -1,496 +1,358 @@
 import OMAReductions.R_PfisterPythagorasNumber_pfister_problem_variants_lower_bound_R1
+import Mathlib
 
--- Problem: Pfister's problem on the Pythagoras number of R(X_1, ..., X_n) (step R1.H2, Cassels 1964)
--- Credit: @luciusacarr
+/-!
+# Cassels (1964) 实有理函数域添变量平方和下界定理的精简形式化证明
+-/
+
+open scoped BigOperators Polynomial
+open Polynomial Finset
 
 section
 
-open Polynomial
+-- 形式实性：有限平方和为零蕴涵各项皆为零
+private def FormReal (R : Type*) [CommRing R] : Prop :=
+  ∀ (n : ℕ) (g : Fin n → R), ∑ i, g i * g i = 0 → ∀ i, g i = 0
 
-private lemma formally_real_mvpoly {k n : ℕ} (p : Fin n → MvPolynomial (Fin k) ℝ)
-    (hp : ∑ i, p i * p i = 0) : ∀ i, p i = 0 := by
-  have hev : ∀ (x : Fin k → ℝ) (i : Fin n), MvPolynomial.eval x (p i) = 0 := by
-    intro x
-    have hsum : ∑ i : Fin n, MvPolynomial.eval x (p i) ^ 2 = 0 := by
-      have h0 := congrArg (MvPolynomial.eval x) hp
-      simpa [map_sum, map_mul, pow_two] using h0
-    have hsq := (Finset.sum_eq_zero_iff_of_nonneg (fun i _ => sq_nonneg _)).1 hsum
-    exact fun i => sq_eq_zero_iff.1 (hsq i (Finset.mem_univ i))
-  intro i
-  exact MvPolynomial.funext fun x => by simpa using hev x i
+private lemma formReal_real : FormReal ℝ := fun _ g h i =>
+  mul_self_eq_zero.mp ((sum_eq_zero_iff_of_nonneg fun j _ => mul_self_nonneg (g j)).mp h i (mem_univ i))
 
-private lemma formally_real_mvratfunc {k n : ℕ} (c : Fin n → MvRatFunc (Fin k) ℝ)
-    (hc : ∑ i, c i * c i = 0) : ∀ i, c i = 0 := by
-  choose num den hden hfrac using fun i => IsFractionRing.div_surjective (MvPolynomial (Fin k) ℝ) (c i)
-  let B : MvPolynomial (Fin k) ℝ := ∏ j : Fin n, den j
-  have hB : B ≠ 0 := Finset.prod_ne_zero_iff.2 fun j _ => mem_nonZeroDivisors_iff_ne_zero.1 (hden j)
-  let p : Fin n → MvPolynomial (Fin k) ℝ := fun i => num i * ∏ j ∈ Finset.univ.erase i, den j
-  have hp_eq : ∀ i, algebraMap (MvPolynomial (Fin k) ℝ) (MvRatFunc (Fin k) ℝ) (p i) =
-      algebraMap (MvPolynomial (Fin k) ℝ) (MvRatFunc (Fin k) ℝ) B * c i := by
-    intro i
-    have hBi : B = den i * ∏ j ∈ Finset.univ.erase i, den j := by
-      dsimp only [B]
-      rw [← Finset.mul_prod_erase Finset.univ den (Finset.mem_univ i)]
-    have hdi0 : algebraMap (MvPolynomial (Fin k) ℝ) (MvRatFunc (Fin k) ℝ) (den i) ≠ 0 :=
-      (map_ne_zero_iff _ (IsFractionRing.injective _ _)).2
-        (mem_nonZeroDivisors_iff_ne_zero.1 (hden i))
-    rw [← hfrac i]
-    simp only [p, map_mul, map_prod, hBi]
-    field_simp [hdi0]
-  have hp_sum : ∑ i, p i * p i = 0 := by
-    apply IsFractionRing.injective (MvPolynomial (Fin k) ℝ) (MvRatFunc (Fin k) ℝ)
-    simp only [map_sum, map_mul, map_zero]
-    have hmul : ∑ i : Fin n, algebraMap _ (MvRatFunc (Fin k) ℝ) (p i) *
-          algebraMap _ (MvRatFunc (Fin k) ℝ) (p i) =
-        algebraMap _ (MvRatFunc (Fin k) ℝ) B * algebraMap _ (MvRatFunc (Fin k) ℝ) B *
-          ∑ i : Fin n, c i * c i := by
-      simp only [hp_eq, Finset.mul_sum]
-      refine Finset.sum_congr rfl fun i _ => ?_
-      ring
-    rw [hc, mul_zero] at hmul
-    exact hmul
-  have hp0 := formally_real_mvpoly p hp_sum
-  have hBK : algebraMap (MvPolynomial (Fin k) ℝ) (MvRatFunc (Fin k) ℝ) B ≠ 0 :=
-    (map_ne_zero_iff _ (IsFractionRing.injective _ _)).2 hB
-  intro i
-  have hmul := hp_eq i
-  rw [hp0 i, map_zero] at hmul
-  exact (mul_eq_zero.1 hmul.symm).resolve_left hBK
+private lemma formReal_equiv {R S : Type*} [CommRing R] [CommRing S] (e : R ≃+* S) (hR : FormReal R) :
+    FormReal S := fun n g h i => by
+  have h' : ∑ j, e.symm (g j) * e.symm (g j) = 0 := e.injective (by simp [map_sum, map_mul, h])
+  simpa using congrArg e (hR n _ h' i)
 
-private lemma coeff_two_mul_sq {K : Type*} [CommRing K] {D : ℕ} {f : Polynomial K}
-    (hf : f.natDegree ≤ D) : (f * f).coeff (2 * D) = f.coeff D * f.coeff D := by
-  rw [Polynomial.coeff_mul]
-  rw [Finset.sum_eq_single (D, D)]
-  · rintro ⟨a, b⟩ hab hne
-    have hab' : a + b = 2 * D := by simpa using hab
-    have hne' : a ≠ D ∨ b ≠ D := by
-      by_contra h
-      push Not at h
-      exact hne (Prod.ext h.1 h.2)
-    have hcases : D < a ∨ D < b := by omega
-    rcases hcases with ha | hb
-    · rw [Polynomial.coeff_eq_zero_of_natDegree_lt (lt_of_le_of_lt hf ha), zero_mul]
-    · rw [Polynomial.coeff_eq_zero_of_natDegree_lt (lt_of_le_of_lt hf hb), mul_zero]
-  · intro h
-    exfalso
-    apply h
-    simp [Nat.two_mul]
+private lemma coeff_sq_2d {R : Type*} [CommRing R] (p : R[X]) (d : ℕ) (hd : p.natDegree ≤ d) :
+    (p * p).coeff (d + d) = p.coeff d * p.coeff d := by
+  rw [coeff_mul]
+  refine sum_eq_single (d, d) (fun ⟨u, v⟩ huv hne => ?_) (fun h => by simp at h)
+  have huv' : u + v = d + d := by simpa using huv
+  have hlt : d < u ∨ d < v := by
+    by_contra h
+    exact hne (by ext <;> omega)
+  rcases hlt with hu | hv
+  · rw [coeff_eq_zero_of_natDegree_lt (hd.trans_lt hu), zero_mul]
+  · rw [coeff_eq_zero_of_natDegree_lt (hd.trans_lt hv), mul_zero]
 
-private lemma formally_real_poly {k n : ℕ} (s : Fin n → Polynomial (MvRatFunc (Fin k) ℝ))
-    (hs : ∑ i, s i * s i = 0) : ∀ i, s i = 0 := by
-  by_contra hne
-  push Not at hne
-  obtain ⟨i0, hi0⟩ := hne
-  let D : ℕ := Finset.univ.sup fun i => (s i).natDegree
-  have hle : ∀ i, (s i).natDegree ≤ D := fun i =>
-    Finset.le_sup (f := fun i => (s i).natDegree) (Finset.mem_univ i)
-  have hsum : ∑ i : Fin n, (s i).coeff D * (s i).coeff D = 0 := by
-    have hcoeff := congrArg (fun p => Polynomial.coeff p (2 * D)) hs
-    simp only [Polynomial.finsetSum_coeff, Polynomial.coeff_zero] at hcoeff
-    have hsq : ∑ i : Fin n, (s i * s i).coeff (2 * D) =
-        ∑ i : Fin n, (s i).coeff D * (s i).coeff D :=
-      Finset.sum_congr rfl fun i _ => coeff_two_mul_sq (hle i)
-    rwa [hsq] at hcoeff
-  have hc0 := formally_real_mvratfunc (fun i => (s i).coeff D) hsum
-  have hD_mem : ∃ i, (s i).natDegree = D := by
-    obtain ⟨j, _, hj⟩ := Finset.exists_mem_eq_sup Finset.univ ⟨i0, Finset.mem_univ i0⟩
-      (fun i => (s i).natDegree)
-    exact ⟨j, hj.symm⟩
-  obtain ⟨j, hj⟩ := hD_mem
-  have hj0 : s j ≠ 0 := by
-    intro hz
-    rw [hz, Polynomial.natDegree_zero] at hj
-    have hle0 := hle i0
-    rw [← hj] at hle0
-    have hdeg0 : (s i0).natDegree = 0 := Nat.eq_zero_of_le_zero hle0
-    have hs0 := Polynomial.eq_C_of_natDegree_eq_zero hdeg0
-    have hc_i0 := hc0 i0
-    rw [← hj] at hc_i0
-    exact hi0 (by rw [hs0, hc_i0, map_zero])
-  have hlead := hc0 j
-  rw [← hj] at hlead
-  exact hj0 (Polynomial.leadingCoeff_eq_zero.1 hlead)
+private lemma formReal_poly {R : Type*} [CommRing R] (hR : FormReal R) : FormReal R[X] := by
+  intro n g hsum i₀
+  by_contra hi₀
+  let fn : Fin n → ℕ := fun j => (g j).natDegree
+  let d : ℕ := univ.sup fn
+  have hle : ∀ j, (g j).natDegree ≤ d := fun j => le_sup (f := fn) (mem_univ j)
+  have h0 : ∀ j, (g j).coeff d = 0 := hR n (fun j => (g j).coeff d) <| by
+    have h1 := congrArg (fun p : R[X] => p.coeff (d + d)) hsum
+    simp only [finsetSum_coeff, coeff_zero] at h1
+    exact (sum_congr rfl fun j _ => coeff_sq_2d (g j) d (hle j)).symm.trans h1
+  obtain ⟨j₁, _, hj₁⟩ := exists_mem_eq_sup univ ⟨i₀, mem_univ i₀⟩ fn
+  change d = (g j₁).natDegree at hj₁
+  by_cases hd0 : d = 0
+  · have hdeg0 : (g i₀).natDegree = 0 := Nat.eq_zero_of_le_zero (hd0 ▸ hle i₀)
+    have hc0 : (g i₀).coeff 0 = 0 := hd0 ▸ h0 i₀
+    rw [eq_C_of_natDegree_eq_zero hdeg0, hc0, map_zero] at hi₀
+    exact hi₀ rfl
+  · have hpos : 0 < (g j₁).natDegree := by omega
+    have hnz : g j₁ ≠ 0 := fun h => by simp [h] at hpos
+    have hlead : (g j₁).coeff d ≠ 0 := by rw [hj₁]; exact leadingCoeff_ne_zero.mpr hnz
+    exact hlead (h0 j₁)
 
-private lemma cassels_deg_zero {k m : ℕ} (fK : MvRatFunc (Fin k) ℝ)
-    (q : Polynomial (MvRatFunc (Fin k) ℝ)) (hq0 : q ≠ 0) (hq_deg : q.natDegree = 0)
-    (p : Fin (m + 1) → Polynomial (MvRatFunc (Fin k) ℝ))
-    (heq : q * q * (Polynomial.C fK + Polynomial.X ^ 2) = ∑ i, p i * p i) :
-    IsSumSqOfLength m fK := by
-  obtain ⟨c, rfl⟩ : ∃ c : MvRatFunc (Fin k) ℝ, q = Polynomial.C c :=
-    ⟨q.coeff 0, Polynomial.eq_C_of_natDegree_eq_zero hq_deg⟩
-  have hc0 : c ≠ 0 := by simpa using hq0
-  have hp_deg : ∀ i : Fin (m + 1), (p i).natDegree ≤ 1 := by
-    by_contra hgt
-    push Not at hgt
-    let D : ℕ := Finset.univ.sup fun i => (p i).natDegree
-    have hD2 : 2 ≤ D := by
-      obtain ⟨i1, hi1⟩ := hgt
-      exact le_trans hi1 (Finset.le_sup (f := fun i => (p i).natDegree) (Finset.mem_univ i1))
-    have hle : ∀ i, (p i).natDegree ≤ D := fun i =>
-      Finset.le_sup (f := fun i => (p i).natDegree) (Finset.mem_univ i)
-    have hA_deg : (Polynomial.C c * Polynomial.C c * (Polynomial.C fK + Polynomial.X ^ 2)).natDegree ≤ 2 := by
-      calc
-        (Polynomial.C c * Polynomial.C c * (Polynomial.C fK + Polynomial.X ^ 2)).natDegree
-            ≤ (Polynomial.C c * Polynomial.C c).natDegree + (Polynomial.C fK + Polynomial.X ^ 2).natDegree :=
-              Polynomial.natDegree_mul_le
-        _ ≤ 0 + max (Polynomial.C fK).natDegree (Polynomial.X ^ 2).natDegree := by
-              gcongr
-              · rw [← Polynomial.C_mul, Polynomial.natDegree_C]
-              · exact Polynomial.natDegree_add_le _ _
-        _ ≤ 2 := by simp [Polynomial.natDegree_C]
-    have hcoeff0 : (Polynomial.C c * Polynomial.C c * (Polynomial.C fK + Polynomial.X ^ 2)).coeff (2 * D) = 0 :=
-      Polynomial.coeff_eq_zero_of_natDegree_lt (by omega)
-    have hsum : ∑ i : Fin (m + 1), (p i).coeff D * (p i).coeff D = 0 := by
-      have hc := congrArg (fun r => Polynomial.coeff r (2 * D)) heq
-      rw [hcoeff0, Polynomial.finsetSum_coeff] at hc
-      have hsq : ∑ i : Fin (m + 1), (p i * p i).coeff (2 * D) =
-          ∑ i : Fin (m + 1), (p i).coeff D * (p i).coeff D :=
-        Finset.sum_congr rfl fun i _ => coeff_two_mul_sq (hle i)
-      exact hsq.symm.trans hc.symm
-    have hc_zero := formally_real_mvratfunc (fun i => (p i).coeff D) hsum
-    obtain ⟨j, _, hj⟩ := Finset.exists_mem_eq_sup Finset.univ Finset.univ_nonempty
-      (fun i => (p i).natDegree)
-    have hj0 : p j ≠ 0 := by
-      intro hz
-      rw [hz, Polynomial.natDegree_zero] at hj
-      omega
-    have hlead := hc_zero j
-    dsimp only [D] at hlead
-    rw [hj] at hlead
-    exact hj0 (Polynomial.leadingCoeff_eq_zero.1 hlead)
-  let a0 : Fin (m + 1) → MvRatFunc (Fin k) ℝ := fun i => (p i).coeff 1
-  let b : Fin (m + 1) → MvRatFunc (Fin k) ℝ := fun i => (p i).coeff 0
-  have hp_form : ∀ i, p i = Polynomial.C (a0 i) * Polynomial.X + Polynomial.C (b i) := by
-    intro i
-    ext n
-    rcases n with _ | _ | n
-    · simp [b]
-    · simp [a0]
-    · have := Polynomial.coeff_eq_zero_of_natDegree_lt (lt_of_le_of_lt (hp_deg i) (by omega : 1 < n + 2))
-      simp [this]
-  have hL_eq : Polynomial.C c * Polynomial.C c * (Polynomial.C fK + Polynomial.X ^ 2) =
-      Polynomial.C (c * c * fK) + Polynomial.C (c * c) * Polynomial.X ^ 2 := by
-    rw [← Polynomial.C_mul, mul_add, ← Polynomial.C_mul]
-  have hp_sq : ∀ i, p i * p i =
-      Polynomial.C (a0 i * a0 i) * Polynomial.X ^ 2 +
-      Polynomial.C (2 * (a0 i * b i)) * Polynomial.X +
-      Polynomial.C (b i * b i) := by
-    intro i
-    rw [hp_form i]
-    have h1 : (Polynomial.C (a0 i) * Polynomial.X + Polynomial.C (b i)) *
-        (Polynomial.C (a0 i) * Polynomial.X + Polynomial.C (b i)) =
-        (Polynomial.C (a0 i) * Polynomial.C (a0 i)) * Polynomial.X ^ 2 +
-        (2 * (Polynomial.C (a0 i) * Polynomial.C (b i))) * Polynomial.X +
-        Polynomial.C (b i) * Polynomial.C (b i) := by ring
-    rw [h1, ← Polynomial.C_mul, ← Polynomial.C_mul, ← Polynomial.C_mul]
-    have h2 : (2 : Polynomial (MvRatFunc (Fin k) ℝ)) = Polynomial.C 2 :=
-      (Polynomial.C_ofNat (R := MvRatFunc (Fin k) ℝ) 2).symm
-    rw [h2, ← Polynomial.C_mul]
-  have coeff_C_X_pow (r : MvRatFunc (Fin k) ℝ) (n : ℕ) :
-      (Polynomial.C r * Polynomial.X ^ 2).coeff n = if n = 2 then r else 0 :=
-    Polynomial.coeff_C_mul_X_pow r 2 n
-  have coeff_C_X (r : MvRatFunc (Fin k) ℝ) (n : ℕ) :
-      (Polynomial.C r * Polynomial.X).coeff n = if n = 1 then r else 0 :=
-    Polynomial.coeff_C_mul_X r n
-  have ha_sq : c * c = ∑ i : Fin (m + 1), a0 i * a0 i := by
-    have h2 := congrArg (fun r => Polynomial.coeff r 2) heq
-    have hlhs : (Polynomial.C c * Polynomial.C c * (Polynomial.C fK + Polynomial.X ^ 2)).coeff 2 = c * c := by
-      rw [hL_eq]
-      simp only [Polynomial.coeff_add, Polynomial.coeff_C, coeff_C_X_pow, ↓reduceIte,
-        OfNat.ofNat_ne_zero, zero_add]
-    have hrhs : (∑ i : Fin (m + 1), p i * p i).coeff 2 = ∑ i : Fin (m + 1), a0 i * a0 i := by
-      rw [Polynomial.finsetSum_coeff]
-      refine Finset.sum_congr rfl fun i _ => ?_
-      rw [hp_sq i]
-      simp only [Polynomial.coeff_add, coeff_C_X_pow, coeff_C_X, Polynomial.coeff_C, ↓reduceIte,
-        OfNat.ofNat_ne_one, OfNat.ofNat_ne_zero, add_zero]
-    rw [← hlhs, ← hrhs, h2]
-  have hab : ∑ i : Fin (m + 1), a0 i * b i = 0 := by
-    have h1 := congrArg (fun r => Polynomial.coeff r 1) heq
-    have hlhs : (Polynomial.C c * Polynomial.C c * (Polynomial.C fK + Polynomial.X ^ 2)).coeff 1 = 0 := by
-      rw [hL_eq]
-      simp only [Polynomial.coeff_add, Polynomial.coeff_C, coeff_C_X_pow, one_ne_zero,
-        OfNat.one_ne_ofNat, ↓reduceIte, add_zero]
-    have hrhs : (∑ i : Fin (m + 1), p i * p i).coeff 1 = 2 * ∑ i : Fin (m + 1), a0 i * b i := by
-      rw [Polynomial.finsetSum_coeff, Finset.mul_sum]
-      refine Finset.sum_congr rfl fun i _ => ?_
-      rw [hp_sq i]
-      simp only [Polynomial.coeff_add, coeff_C_X_pow, coeff_C_X, Polynomial.coeff_C,
-        OfNat.one_ne_ofNat, ↓reduceIte, one_ne_zero, zero_add, add_zero]
-    rw [hlhs, hrhs] at h1
-    exact (mul_eq_zero.1 h1.symm).resolve_left (by norm_num)
-  have hb_sq : c * c * fK = ∑ i : Fin (m + 1), b i * b i := by
-    have h0 := congrArg (fun r => Polynomial.coeff r 0) heq
-    have hlhs : (Polynomial.C c * Polynomial.C c * (Polynomial.C fK + Polynomial.X ^ 2)).coeff 0 = c * c * fK := by
-      rw [hL_eq]
-      simp only [Polynomial.coeff_add, Polynomial.coeff_C, coeff_C_X_pow, ↓reduceIte,
-        OfNat.zero_ne_ofNat, add_zero]
-    have hrhs : (∑ i : Fin (m + 1), p i * p i).coeff 0 = ∑ i : Fin (m + 1), b i * b i := by
-      rw [Polynomial.finsetSum_coeff]
-      refine Finset.sum_congr rfl fun i _ => ?_
-      rw [hp_sq i]
-      simp only [Polynomial.coeff_add, coeff_C_X_pow, coeff_C_X, Polynomial.coeff_C,
-        OfNat.zero_ne_ofNat, zero_ne_one, ↓reduceIte, zero_add]
-    rw [← hlhs, ← hrhs, h0]
-  have hsign : ∃ a : Fin (m + 1) → MvRatFunc (Fin k) ℝ,
-      c * c = ∑ i, a i * a i ∧ ∑ i, a i * b i = 0 ∧ a 0 + c ≠ 0 := by
-    by_cases hpos : a0 0 + c ≠ 0
-    · exact ⟨a0, ha_sq, hab, hpos⟩
-    · refine ⟨fun i => -a0 i, ?_, ?_, ?_⟩
-      · simp only [neg_mul_neg]; exact ha_sq
-      · simp only [neg_mul, Finset.sum_neg_distrib, neg_eq_zero]; exact hab
-      · push Not at hpos
-        intro hneg
-        have h2c : (2 : MvRatFunc (Fin k) ℝ) * c = 0 := by linear_combination hpos + hneg
-        exact hc0 ((mul_eq_zero.1 h2c).resolve_left (by norm_num))
-  obtain ⟨a, ha_sq', hab', hh⟩ := hsign
-  set h : MvRatFunc (Fin k) ℝ := a 0 + c
-  let v : Fin (m + 1) → MvRatFunc (Fin k) ℝ := fun i => a i + if i = 0 then c else 0
-  let t : MvRatFunc (Fin k) ℝ := b 0 / h
-  let w : Fin (m + 1) → MvRatFunc (Fin k) ℝ := fun i => b i - t * v i
-  have hv_sq : ∑ i : Fin (m + 1), v i * v i = 2 * c * h := by
-    have hexp : ∑ i : Fin (m + 1), v i * v i =
-        (∑ i : Fin (m + 1), a i * a i) + 2 * c * a 0 + c * c := by
-      have hsub : ∀ i : Fin (m + 1), v i * v i =
-          a i * a i + (if i = 0 then 2 * c * a 0 + c * c else 0) := by
-        intro i
-        by_cases hi : i = 0
-        · subst hi; simp [v]; ring
-        · simp [v, hi]
-      simp_rw [hsub]
-      simp [Finset.sum_add_distrib]
-      ring
-    rw [hexp, ← ha_sq']
-    dsimp [h]
+private lemma formReal_mv : ∀ k : ℕ, FormReal (MvPolynomial (Fin k) ℝ)
+  | 0 => formReal_equiv (MvPolynomial.isEmptyRingEquiv ℝ (Fin 0)).symm formReal_real
+  | k + 1 => formReal_equiv (MvPolynomial.finSuccEquiv ℝ k).symm (formReal_poly (formReal_mv k))
+
+-- 分式域有限族通分消去公分母引理
+private lemma clear_denom (A K : Type*) [CommRing A] [IsDomain A] [Field K] [Algebra A K]
+    [IsFractionRing A K] {n : ℕ} (g : Fin n → K) :
+    ∃ (D : A) (B : Fin n → A), D ≠ 0 ∧ (∀ i, B i = 0 → g i = 0) ∧
+      algebraMap A K (∑ i, B i * B i) =
+        (∑ i, g i * g i) * (algebraMap A K D * algebraMap A K D) := by
+  classical
+  choose z hz using fun j => IsLocalization.surj (nonZeroDivisors A) (g j)
+  let s : Fin n → nonZeroDivisors A := fun j => (z j).2
+  let D : A := ∏ j, (s j : A)
+  let R : Fin n → A := fun j => ∏ l ∈ univ.erase j, (s l : A)
+  have hs : ∀ j, (s j : A) ≠ 0 := fun j => nonZeroDivisors.ne_zero (s j).2
+  have hR : ∀ j, R j ≠ 0 := fun j => prod_ne_zero_iff.mpr fun l _ => hs l
+  have hmul : ∀ j, g j * algebraMap A K D = algebraMap A K ((z j).1 * R j) := fun j => by
+    dsimp only [D]
+    rw [← mul_prod_erase univ (fun l => (s l : A)) (mem_univ j), map_mul, ← mul_assoc]
+    change (g j * algebraMap A K (z j).2) * _ = _
+    rw [hz j, ← map_mul]
+  refine ⟨D, fun j => (z j).1 * R j, prod_ne_zero_iff.mpr fun j _ => hs j, fun i hBi => ?_, ?_⟩
+  · have ha0 : (z i).1 = 0 := (mul_eq_zero.mp hBi).resolve_right (hR i)
+    have hgi : g i * algebraMap A K (s i : A) = 0 := by
+      change g i * algebraMap A K (z i).2 = 0
+      rw [hz i, ha0, map_zero]
+    have hsiK : algebraMap A K (s i : A) ≠ 0 :=
+      fun h => hs i (IsFractionRing.injective A K (h.trans (map_zero _).symm))
+    exact (mul_eq_zero.mp hgi).resolve_right hsiK
+  · rw [map_sum, sum_mul]
+    refine sum_congr rfl fun j _ => ?_
+    rw [map_mul, ← hmul j]
     ring
-  have hvb : ∑ i : Fin (m + 1), v i * b i = c * b 0 := by
-    have hsub : ∀ i : Fin (m + 1), v i * b i = a i * b i + (if i = 0 then c * b 0 else 0) := by
-      intro i
-      by_cases hi : i = 0
-      · subst hi; simp [v]; ring
-      · simp [v, hi]
-    simp_rw [hsub]
-    simp [Finset.sum_add_distrib, hab']
-  have hw_sq : ∑ i : Fin (m + 1), w i * w i = c * c * fK := by
-    have hexp : ∑ i : Fin (m + 1), w i * w i =
-        (∑ i : Fin (m + 1), b i * b i) - 2 * t * (∑ i : Fin (m + 1), v i * b i) +
-          t * t * (∑ i : Fin (m + 1), v i * v i) := by
-      have hsub : ∀ i : Fin (m + 1), w i * w i =
-          b i * b i - 2 * t * (v i * b i) + t * t * (v i * v i) := by
-        intro i; dsimp [w]; ring
-      simp_rw [hsub, Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum]
-    rw [hexp, ← hb_sq, hvb, hv_sq]
-    dsimp [t, h]
-    have hh' : a 0 + c ≠ 0 := hh
-    change (c * c * fK - 2 * (b 0 / (a 0 + c)) * (c * b 0) +
-      (b 0 / (a 0 + c)) * (b 0 / (a 0 + c)) * (2 * c * (a 0 + c))) = c * c * fK
-    field_simp [hh']
-    ring
-  have hw0 : w 0 = 0 := by
-    dsimp [w, v, t, h]
-    have hh' : a 0 + c ≠ 0 := hh
-    change b 0 - b 0 / (a 0 + c) * (a 0 + c) = 0
-    rw [div_mul_cancel₀ _ hh', sub_self]
-  refine ⟨fun j => w j.succ / c, ?_⟩
-  rw [Fin.sum_univ_succ, hw0, zero_mul, zero_add] at hw_sq
-  have hc0' : c ≠ 0 := hc0
-  have hrhs_eq : ∑ j : Fin m, (w j.succ / c) * (w j.succ / c) =
-      (∑ j : Fin m, w j.succ * w j.succ) / (c * c) := by
-    rw [Finset.sum_div]
-    refine Finset.sum_congr rfl fun j _ => ?_
-    ring
-  rw [hrhs_eq, hw_sq, mul_div_cancel_left₀ _ (mul_ne_zero hc0' hc0')]
 
-private lemma cassels_descent {k m : ℕ} (fK : MvRatFunc (Fin k) ℝ)
-    (q : Polynomial (MvRatFunc (Fin k) ℝ)) (hq0 : q ≠ 0) (hq1 : 1 ≤ q.natDegree)
-    (p : Fin (m + 1) → Polynomial (MvRatFunc (Fin k) ℝ))
-    (heq : q * q * (Polynomial.C fK + Polynomial.X ^ 2) = ∑ i, p i * p i) :
-    ∃ q' : Polynomial (MvRatFunc (Fin k) ℝ), q' ≠ 0 ∧ q'.natDegree < q.natDegree ∧
-      ∃ p' : Fin (m + 1) → Polynomial (MvRatFunc (Fin k) ℝ),
-        q' * q' * (Polynomial.C fK + Polynomial.X ^ 2) = ∑ i, p' i * p' i := by
-  let K := MvRatFunc (Fin k) ℝ
-  let A : Polynomial K := Polynomial.C fK + Polynomial.X ^ 2
-  let r : Fin (m + 1) → Polynomial K := fun i => p i / q
-  let s : Fin (m + 1) → Polynomial K := fun i => p i % q
-  have hdiv : ∀ i, p i = q * r i + s i := fun i => (EuclideanDomain.div_add_mod (p i) q).symm
-  by_cases hs0 : ∀ i, s i = 0
-  · refine ⟨1, one_ne_zero, by simpa using (by omega : 0 < q.natDegree), r, ?_⟩
-    have hmul : q * q * A = q * q * ∑ i : Fin (m + 1), r i * r i := by
-      rw [heq, Finset.mul_sum]
-      refine Finset.sum_congr rfl fun i _ => ?_
-      have hp_eq : p i = q * r i := by simpa [hs0 i] using hdiv i
-      rw [hp_eq]; ring
-    simpa using mul_left_cancel₀ (mul_ne_zero hq0 hq0) hmul
-  · have hs_ne : ∃ i, s i ≠ 0 := by push Not at hs0; exact hs0
-    let S : Polynomial K := ∑ i, s i * s i
-    have hS0 : S ≠ 0 := by
-      intro hS
-      obtain ⟨i0, hi0⟩ := hs_ne
-      exact hi0 (formally_real_poly s hS i0)
-    have hS_deg : S.natDegree < 2 * q.natDegree := by
-      have hs_deg : ∀ i : Fin (m + 1), (s i * s i).natDegree ≤ 2 * (q.natDegree - 1) := by
-        intro i
-        by_cases hsi : s i = 0
-        · simp [hsi]
-        · have hlt : (s i).natDegree < q.natDegree :=
-            Polynomial.natDegree_mod_lt (p i) (by omega : q.natDegree ≠ 0)
-          rw [Polynomial.natDegree_mul hsi hsi]
-          omega
-      calc
-        S.natDegree ≤ Finset.fold max 0 (Polynomial.natDegree ∘ fun i => s i * s i) Finset.univ :=
-          Polynomial.natDegree_sum_le Finset.univ _
-        _ ≤ 2 * (q.natDegree - 1) := by
-          rw [Finset.fold_max_le]
-          refine ⟨by omega, fun i _ => hs_deg i⟩
-        _ < 2 * q.natDegree := by omega
-    let QV : Polynomial K := A - ∑ i, r i * r i
-    let BUV : Polynomial K := 2 * (A * q - ∑ i, p i * r i)
-    let q' : Polynomial K := QV * q - BUV
-    let p' : Fin (m + 1) → Polynomial K := fun i => QV * p i - BUV * r i
-    have hQ_new : q' * q' * A = ∑ i, p' i * p' i := by
-      have hid : q' * q' * A - ∑ i, p' i * p' i =
-          QV * QV * (q * q * A - ∑ i, p i * p i) -
-          QV * BUV * (2 * (A * q - ∑ i, p i * r i) - BUV) +
-          BUV * BUV * ((A - ∑ i, r i * r i) - QV) := by
-        have hsub : ∀ i, p' i * p' i =
-            QV * QV * (p i * p i) - 2 * QV * BUV * (p i * r i) + BUV * BUV * (r i * r i) := by
-          intro i; dsimp [p']; ring
-        simp_rw [hsub, Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum]
-        dsimp [q']
-        ring
-      have hzero : q' * q' * A - ∑ i, p' i * p' i = 0 := by
-        rw [hid, heq]
-        dsimp [QV, BUV]
-        ring
-      exact sub_eq_zero.1 hzero
-    have hprod : -q' * q = S := by
-      have hid : -q' * q = (q * q * A - ∑ i, p i * p i) + ∑ i, (p i - q * r i) * (p i - q * r i) := by
-        have hsub : ∀ i, (p i - q * r i) * (p i - q * r i) =
-            p i * p i - 2 * q * (p i * r i) + q * q * (r i * r i) := by
-          intro i; ring
-        simp_rw [hsub, Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum]
-        dsimp [q', QV, BUV]
-        ring
-      rw [hid, heq, sub_self, zero_add]
-      refine Finset.sum_congr rfl fun i _ => ?_
-      have hsi : p i - q * r i = s i := by
-        have := hdiv i
-        linear_combination this
-      rw [hsi]
-    have hq'0 : q' ≠ 0 := by
-      intro hz
-      rw [hz, neg_zero, zero_mul] at hprod
-      exact hS0 hprod.symm
-    have hdeg_lt : q'.natDegree < q.natDegree := by
-      have hm := Polynomial.natDegree_mul (neg_ne_zero.2 hq'0) hq0
-      rw [Polynomial.natDegree_neg, hprod] at hm
-      omega
-    exact ⟨q', hq'0, hdeg_lt, p', hQ_new⟩
+private lemma formReal_frac (A K : Type*) [CommRing A] [IsDomain A] [Field K] [Algebra A K]
+    [IsFractionRing A K] (hA : FormReal A) : FormReal K := fun n g hsum i => by
+  obtain ⟨_, B, _, hB0, hK⟩ := clear_denom A K g
+  rw [hsum, zero_mul, ← map_zero (algebraMap A K)] at hK
+  exact hB0 i (hA n B (IsFractionRing.injective A K hK) i)
 
-private lemma finRotate_castSucc {k : ℕ} (j : Fin k) :
-    finRotate (k + 1) (Fin.castSucc j) = j.succ := by
-  ext
-  simp
+private lemma two_ne_zero_of_formReal {F : Type*} [Field F] (hF : FormReal F) : (2 : F) ≠ 0 :=
+  fun h2 => one_ne_zero <| hF 2 (fun _ => 1) (by rw [Fin.sum_univ_two, mul_one, one_add_one_eq_two, h2]) 0
 
-private lemma eval_G_eq (k : ℕ) (f : MvPolynomial (Fin k) ℝ) :
-    let α : MvPolynomial (Fin (k + 1)) ℝ ≃ₐ[ℝ] Polynomial (MvPolynomial (Fin k) ℝ) :=
-      (MvPolynomial.renameEquiv ℝ (finRotate (k + 1))).trans (MvPolynomial.finSuccEquiv ℝ k)
-    let Φ : MvPolynomial (Fin (k + 1)) ℝ →+* Polynomial (MvRatFunc (Fin k) ℝ) :=
-      (Polynomial.mapRingHom (algebraMap (MvPolynomial (Fin k) ℝ) (MvRatFunc (Fin k) ℝ))).comp
-        α.toRingHom
-    Φ (MvPolynomial.rename Fin.castSucc f + MvPolynomial.X (Fin.last k) ^ 2) =
-      Polynomial.C (algebraMap (MvPolynomial (Fin k) ℝ) (MvRatFunc (Fin k) ℝ) f) + Polynomial.X ^ 2 := by
-  intro α Φ
-  have hXlast : α (MvPolynomial.X (Fin.last k)) = Polynomial.X := by
-    change MvPolynomial.finSuccEquiv ℝ k
-      (MvPolynomial.rename (finRotate (k + 1)) (MvPolynomial.X (Fin.last k))) = Polynomial.X
-    rw [MvPolynomial.rename_X, finRotate_last, MvPolynomial.finSuccEquiv_X_zero]
-  have hren : α (MvPolynomial.rename Fin.castSucc f) = Polynomial.C f := by
-    induction f using MvPolynomial.induction_on with
-    | C a =>
-        rw [MvPolynomial.rename_C]
-        change α (algebraMap ℝ (MvPolynomial (Fin (k + 1)) ℝ) a) = Polynomial.C (algebraMap ℝ _ a)
-        rw [AlgEquiv.commutes]
-        rfl
-    | add u v hu hv =>
-        rw [map_add, map_add, hu, hv, Polynomial.C_add]
-    | mul_X u j hu =>
-        rw [map_mul, map_mul, hu, MvPolynomial.rename_X]
-        have hXj : α (MvPolynomial.X (Fin.castSucc j)) = Polynomial.C (MvPolynomial.X j) := by
-          change MvPolynomial.finSuccEquiv ℝ k
-            (MvPolynomial.rename (finRotate (k + 1)) (MvPolynomial.X (Fin.castSucc j))) =
-            Polynomial.C (MvPolynomial.X j)
-          rw [MvPolynomial.rename_X, finRotate_castSucc, MvPolynomial.finSuccEquiv_X_succ]
-        rw [hXj, ← Polynomial.C_mul]
-  have hG : α (MvPolynomial.rename Fin.castSucc f + MvPolynomial.X (Fin.last k) ^ 2) =
-      Polynomial.C f + Polynomial.X ^ 2 := by
-    rw [map_add, map_pow, hren, hXlast]
-  change Polynomial.map (algebraMap _ _)
-    (α (MvPolynomial.rename Fin.castSucc f + MvPolynomial.X (Fin.last k) ^ 2)) = _
-  rw [hG, Polynomial.map_add, Polynomial.map_pow, Polynomial.map_C, Polynomial.map_X]
+-- Cassels 反射降次恒等式
+private lemma refl_id {R : Type*} [CommRing R] {n : ℕ} (P D : R[X]) (A Q : Fin n → R[X])
+    (hPD : ∑ i, A i * A i = P * (D * D)) :
+    let B := fun i => A i - D * Q i
+    let N := ∑ i, B i * B i
+    let M := P * D - ∑ i, A i * Q i
+    let D' := P * D - 2 * (∑ i, A i * Q i) + D * (∑ i, Q i * Q i)
+    let A' := fun j => (P - ∑ i, Q i * Q i) * A j - 2 * M * Q j
+    D * D' = N ∧ D ^ 4 * (∑ j, A' j * A' j) = D ^ 4 * (P * (D' * D')) := by
+  intro B N M D' A'
+  have hDD' : D * D' = N := by
+    calc D * D' = (∑ i, A i * A i) - 2 * D * (∑ i, A i * Q i) + D * D * (∑ i, Q i * Q i) := by
+          rw [hPD]; dsimp [D']; ring
+      _ = ∑ i, (A i * A i - 2 * D * (A i * Q i) + D * D * (Q i * Q i)) := by
+          simp only [mul_sum, sum_add_distrib, sum_sub_distrib]
+      _ = N := sum_congr rfl fun i _ => by dsimp [B]; ring
+  refine ⟨hDD', ?_⟩
+  let AB := ∑ i, A i * B i
+  have hAB : AB = D * M := by
+    calc AB = ∑ i, (A i * A i - D * (A i * Q i)) := sum_congr rfl fun i _ => by dsimp [B]; ring
+      _ = P * (D * D) - D * (∑ i, A i * Q i) := by rw [sum_sub_distrib, mul_sum, hPD]
+      _ = D * M := by dsimp [M]; ring
+  have hDA' : ∀ j, D * D * A' j = 2 * AB * B j - N * A j := fun j => by
+    have hDQ : D * Q j = A j - B j := by dsimp [B]; ring
+    calc D * D * A' j = D * (D * P - D * (∑ i, Q i * Q i)) * A j - 2 * (D * M) * (D * Q j) := by
+          dsimp [A']; ring
+      _ = (D * (D * P - D * (∑ i, Q i * Q i)) - 2 * AB) * A j + 2 * AB * B j := by
+          rw [← hAB, hDQ]; ring
+      _ = (- (D * D')) * A j + 2 * AB * B j := by rw [hAB]; dsimp [M, D']; ring
+      _ = 2 * AB * B j - N * A j := by rw [hDD']; ring
+  calc D ^ 4 * (∑ j, A' j * A' j) = ∑ j, (D * D * A' j) * (D * D * A' j) := by
+        rw [mul_sum]; exact sum_congr rfl fun _ _ => by ring
+    _ = ∑ j, (4 * AB * AB * (B j * B j) - 4 * AB * N * (A j * B j) + N * N * (A j * A j)) :=
+        sum_congr rfl fun j _ => by rw [hDA' j]; ring
+    _ = 4 * AB * AB * N - 4 * AB * N * AB + N * N * (∑ j, A j * A j) := by
+        simp only [sum_add_distrib, sum_sub_distrib, ← mul_sum]; rfl
+    _ = D ^ 4 * (P * (D' * D')) := by rw [hPD, ← hDD']; ring
+
+-- Cassels 降分母强归纳引理
+private lemma poly_descent {F : Type*} [Field F] (hF : FormReal F) {n : ℕ} (P : F[X]) :
+    ∀ (deg : ℕ) (D : F[X]), D ≠ 0 → D.natDegree = deg →
+      (∃ A : Fin n → F[X], ∑ i, A i * A i = P * (D * D)) →
+      ∃ f : Fin n → F[X], ∑ i, f i * f i = P := by
+  intro deg
+  induction deg using Nat.strong_induction_on with
+  | h deg ih =>
+    intro D hD hdeg ⟨A, hA⟩
+    by_cases hdeg0 : deg = 0
+    · have hD0 : D.natDegree = 0 := hdeg.trans hdeg0
+      have hc0 : D.coeff 0 ≠ 0 := fun hc => hD ((eq_C_of_natDegree_eq_zero hD0).trans (by simp [hc]))
+      refine ⟨fun i => C (D.coeff 0)⁻¹ * A i, ?_⟩
+      have hDC : D = C (D.coeff 0) := eq_C_of_natDegree_eq_zero hD0
+      have hu : C (D.coeff 0)⁻¹ * C (D.coeff 0) = (1 : F[X]) := by
+        rw [← map_mul, inv_mul_cancel₀ hc0, map_one]
+      calc ∑ i, (C (D.coeff 0)⁻¹ * A i) * (C (D.coeff 0)⁻¹ * A i)
+          = (C (D.coeff 0)⁻¹ * C (D.coeff 0)⁻¹) * (P * (C (D.coeff 0) * C (D.coeff 0))) := by
+            rw [← hDC, ← hA, mul_sum]; exact sum_congr rfl fun _ _ => by ring
+        _ = (C (D.coeff 0)⁻¹ * C (D.coeff 0)) * (C (D.coeff 0)⁻¹ * C (D.coeff 0)) * P := by ring
+        _ = P := by rw [hu, one_mul, one_mul]
+    · let lc := D.leadingCoeff
+      have hlc : lc ≠ 0 := leadingCoeff_ne_zero.mpr hD
+      let Dm : F[X] := C lc⁻¹ * D
+      have hmon : Dm.Monic := by rw [Monic, leadingCoeff_mul, leadingCoeff_C, inv_mul_cancel₀ hlc]
+      have hDm_nz : Dm ≠ 0 := hmon.ne_zero
+      have hDm_deg : Dm.natDegree = deg := by rw [natDegree_C_mul (inv_ne_zero hlc), hdeg]
+      have hDm1 : Dm ≠ 1 := fun h1 => hdeg0 (by rw [← hDm_deg, h1, natDegree_one])
+      let Am : Fin n → F[X] := fun i => C lc⁻¹ * A i
+      have hAm : ∑ i, Am i * Am i = P * (Dm * Dm) := by
+        calc ∑ i, (C lc⁻¹ * A i) * (C lc⁻¹ * A i)
+            = (C lc⁻¹ * C lc⁻¹) * (P * (D * D)) := by
+              rw [← hA, mul_sum]; exact sum_congr rfl fun _ _ => by ring
+          _ = P * (Dm * Dm) := by dsimp [Dm]; ring
+      let Q : Fin n → F[X] := fun i => Am i /ₘ Dm
+      let B : Fin n → F[X] := fun i => Am i - Dm * Q i
+      by_cases hallB : ∀ i, B i = 0
+      · refine ⟨Q, mul_left_cancel₀ (pow_ne_zero 2 hDm_nz) ?_⟩
+        calc Dm ^ 2 * (∑ i, Q i * Q i) = ∑ i, Am i * Am i := by
+              rw [mul_sum]
+              exact sum_congr rfl fun i _ => by rw [sub_eq_zero.mp (hallB i)]; ring
+          _ = Dm ^ 2 * P := by rw [hAm]; ring
+      · simp only [not_forall] at hallB
+        obtain ⟨i₀, hi₀⟩ := hallB
+        let N : F[X] := ∑ i, B i * B i
+        have hN_nz : N ≠ 0 := fun hN => hi₀ (formReal_poly hF n B hN i₀)
+        have hN_deg : N.natDegree ≤ 2 * (deg - 1) :=
+          natDegree_sum_le_of_forall_le univ _ fun i _ => by
+            by_cases hBi : B i = 0
+            · simp [hBi]
+            · have hmod : B i = Am i %ₘ Dm := by
+                have hd := modByMonic_add_div (Am i) Dm; dsimp [B, Q]; linear_combination -hd
+              have hlt : (B i).natDegree < deg := by
+                rw [← hDm_deg, hmod]; exact natDegree_modByMonic_lt (Am i) hmon hDm1
+              exact natDegree_mul_le.trans (by omega)
+        let M : F[X] := P * Dm - ∑ i, Am i * Q i
+        let D' : F[X] := P * Dm - 2 * (∑ i, Am i * Q i) + Dm * (∑ i, Q i * Q i)
+        let A' : Fin n → F[X] := fun j => (P - ∑ i, Q i * Q i) * Am j - 2 * M * Q j
+        obtain ⟨hDD', hA'sq⟩ := refl_id P Dm Am Q hAm
+        change Dm * D' = N at hDD'
+        change Dm ^ 4 * (∑ j, A' j * A' j) = Dm ^ 4 * (P * (D' * D')) at hA'sq
+        have hD'_nz : D' ≠ 0 := fun h0 => hN_nz (by rw [← hDD', h0, mul_zero])
+        have hadd : Dm.natDegree + D'.natDegree = N.natDegree := by
+          rw [← hDD', natDegree_mul hDm_nz hD'_nz]
+        exact ih D'.natDegree (by omega) D' hD'_nz rfl
+          ⟨A', mul_left_cancel₀ (pow_ne_zero 4 hDm_nz) hA'sq⟩
+
+private lemma lin_sq {R : Type*} [CommRing R] (a b : R) :
+    ((C a * X + C b) * (C a * X + C b)).coeff 2 = a * a ∧
+    ((C a * X + C b) * (C a * X + C b)).coeff 1 = 2 * (a * b) ∧
+    ((C a * X + C b) * (C a * X + C b)).coeff 0 = b * b := by
+  have h : (C a * X + C b) * (C a * X + C b) =
+      C (a * a) * X ^ 2 + C (2 * (a * b)) * X ^ 1 + C (b * b) * X ^ 0 := by
+    simp only [map_mul, map_ofNat, pow_zero, pow_one]; ring
+  rw [h]
+  refine ⟨?_, ?_, ?_⟩ <;> simp only [coeff_add, coeff_C_mul_X_pow] <;> simp
+
+-- Householder 正交反射消去一个平方项
+private lemma elim_sq {F : Type*} [Field F] (hF : FormReal F) (m : ℕ) (c : F)
+    (f : Fin (m + 1) → F[X]) (hf : ∑ j, f j * f j = C c + X ^ 2) : IsSumSqOfLength m c := by
+  have hdeg1 : ∀ j, (f j).natDegree ≤ 1 := by
+    by_contra hnot
+    simp only [not_forall, not_le] at hnot
+    obtain ⟨j₀, hj₀⟩ := hnot
+    let fn : Fin (m + 1) → ℕ := fun j => (f j).natDegree
+    let d : ℕ := univ.sup fn
+    have hd2 : 2 ≤ d := (Nat.succ_le_of_lt hj₀).trans (le_sup (f := fn) (mem_univ j₀))
+    have hle : ∀ j, (f j).natDegree ≤ d := fun j => le_sup (f := fn) (mem_univ j)
+    have hsum0 : ∑ j, (f j).coeff d * (f j).coeff d = 0 := by
+      have h1 := congrArg (fun p : F[X] => p.coeff (d + d)) hf
+      rw [finsetSum_coeff, coeff_add, coeff_C, if_neg (by omega),
+        coeff_X_pow, if_neg (by omega), add_zero] at h1
+      exact (sum_congr rfl fun j _ => coeff_sq_2d (f j) d (hle j)).symm.trans h1
+    have hall0 := hF (m + 1) (fun j => (f j).coeff d) hsum0
+    obtain ⟨j₁, _, hj₁⟩ := exists_mem_eq_sup univ ⟨0, mem_univ 0⟩ fn
+    change d = (f j₁).natDegree at hj₁
+    have hpos : 0 < (f j₁).natDegree := by omega
+    have hlead : (f j₁).coeff d ≠ 0 := by
+      rw [hj₁]
+      exact leadingCoeff_ne_zero.mpr fun h => by simp [h] at hpos
+    exact hlead (hall0 j₁)
+  let a : Fin (m + 1) → F := fun j => (f j).coeff 1
+  let b : Fin (m + 1) → F := fun j => (f j).coeff 0
+  have hlin : ∀ j, f j = C (a j) * X + C (b j) := fun j => eq_X_add_C_of_natDegree_le_one (hdeg1 j)
+  have ha_sq : ∑ j, a j * a j = 1 := by
+    have h2 := congrArg (fun p : F[X] => p.coeff 2) hf
+    rw [finsetSum_coeff, coeff_add, coeff_C, if_neg (by decide), zero_add,
+      coeff_X_pow, if_pos rfl] at h2
+    exact (sum_congr rfl fun j _ => by rw [hlin j, (lin_sq (a j) (b j)).1]).symm.trans h2
+  have hab : ∑ j, a j * b j = 0 := by
+    have h1 := congrArg (fun p : F[X] => p.coeff 1) hf
+    rw [finsetSum_coeff, coeff_add, coeff_C, if_neg (by decide), zero_add,
+      coeff_X_pow, if_neg (by decide)] at h1
+    have h2ab : 2 * ∑ j, a j * b j = 0 := by
+      rw [mul_sum, ← h1]
+      exact sum_congr rfl fun j _ => by rw [hlin j, (lin_sq (a j) (b j)).2.1]
+    exact (mul_eq_zero.mp h2ab).resolve_left (two_ne_zero_of_formReal hF)
+  have hb_sq : ∑ j, b j * b j = c := by
+    have h0 := congrArg (fun p : F[X] => p.coeff 0) hf
+    rw [finsetSum_coeff, coeff_add, coeff_C, if_pos rfl, coeff_X_pow,
+      if_neg (by decide), add_zero] at h0
+    exact (sum_congr rfl fun j _ => by rw [hlin j, (lin_sq (a j) (b j)).2.2]).symm.trans h0
+  by_cases ha0 : a 0 = 1
+  · have hai0 : ∀ i : Fin m, a i.succ = 0 := hF m (fun i => a i.succ) <| by
+      rw [Fin.sum_univ_succ, ha0, mul_one] at ha_sq; linear_combination ha_sq
+    have hb0 : b 0 = 0 := by
+      rw [Fin.sum_univ_succ, ha0, one_mul,
+        sum_eq_zero fun i _ => by rw [hai0 i, zero_mul], add_zero] at hab
+      exact hab
+    exact ⟨fun i => b i.succ, by rw [← hb_sq, Fin.sum_univ_succ, hb0, mul_zero, zero_add]⟩
+  · have h1a : 1 - a 0 ≠ 0 := sub_ne_zero.mpr (Ne.symm ha0)
+    let u : Fin (m + 1) → F := Fin.cons (a 0 - 1) (fun i => a i.succ)
+    let t : F := b 0 / (1 - a 0)
+    let b' : Fin (m + 1) → F := fun j => b j + t * u j
+    have hb'0 : b' 0 = 0 := by
+      simp only [b', t, u, Fin.cons_zero]
+      have hd : b 0 / (1 - a 0) * (a 0 - 1) = -b 0 := by field_simp [h1a]; ring
+      linear_combination hd
+    have hu_sq : ∑ j, u j * u j = 2 * (1 - a 0) := by
+      have hs := Fin.sum_univ_succ (fun j => a j * a j); rw [ha_sq] at hs
+      rw [Fin.sum_univ_succ]; simp only [u, Fin.cons_zero, Fin.cons_succ]
+      linear_combination -hs
+    have hub : ∑ j, u j * b j = -b 0 := by
+      have hs := Fin.sum_univ_succ (fun j => a j * b j); rw [hab] at hs
+      rw [Fin.sum_univ_succ]; simp only [u, Fin.cons_zero, Fin.cons_succ]
+      linear_combination -hs
+    have hb'_sq : ∑ j, b' j * b' j = c := by
+      have hexp : ∀ j, b' j * b' j = b j * b j + 2 * t * (u j * b j) + t * t * (u j * u j) :=
+        fun j => by dsimp [b']; ring
+      calc ∑ j, b' j * b' j
+          = (∑ j, b j * b j) + 2 * t * (∑ j, u j * b j) + t * t * (∑ j, u j * u j) := by
+            simp only [hexp, sum_add_distrib, ← mul_sum]
+        _ = c := by rw [hb_sq, hub, hu_sq]; dsimp [t]; field_simp [h1a]; ring
+    exact ⟨fun i => b' i.succ, by rw [← hb'_sq, Fin.sum_univ_succ, hb'0, mul_zero, zero_add]⟩
+
+private def swapLast (k : ℕ) : Fin (k + 1) ≃ Fin (k + 1) where
+  toFun := Fin.lastCases 0 Fin.succ
+  invFun := Fin.cases (Fin.last k) Fin.castSucc
+  left_inv := Fin.lastCases (by simp) (fun _ => by simp)
+  right_inv := Fin.cases (by simp) (fun _ => by simp)
+
+private lemma finSucc_rename_succ (k : ℕ) (q : MvPolynomial (Fin k) ℝ) :
+    (MvPolynomial.finSuccEquiv ℝ k) (MvPolynomial.rename Fin.succ q) = C q := by
+  induction q using MvPolynomial.induction_on with
+  | C _ => simp [MvPolynomial.finSuccEquiv_apply]
+  | add _ _ hp hr => simp [map_add, hp, hr]
+  | mul_X _ _ hp => simp [map_mul, hp, MvPolynomial.rename_X, MvPolynomial.finSuccEquiv_X_succ]
 
 end
 
-theorem OMA.solution : OMA.R_PfisterPythagorasNumber_pfister_problem_variants_lower_bound_R1.H2 := by
-  intro k m f hnot hsq
-  obtain ⟨g, hg⟩ := hsq
-  choose num den hden hfrac using fun i =>
-    IsFractionRing.div_surjective (MvPolynomial (Fin (k + 1)) ℝ) (g i)
-  let Q : MvPolynomial (Fin (k + 1)) ℝ := ∏ j : Fin (m + 1), den j
-  have hQ0 : Q ≠ 0 :=
-    Finset.prod_ne_zero_iff.2 fun j _ => mem_nonZeroDivisors_iff_ne_zero.1 (hden j)
-  let P : Fin (m + 1) → MvPolynomial (Fin (k + 1)) ℝ :=
-    fun i => num i * ∏ j ∈ Finset.univ.erase i, den j
-  let G : MvPolynomial (Fin (k + 1)) ℝ :=
-    MvPolynomial.rename Fin.castSucc f + MvPolynomial.X (Fin.last k) ^ 2
-  have hP_eq : ∀ i, algebraMap (MvPolynomial (Fin (k + 1)) ℝ) (MvRatFunc (Fin (k + 1)) ℝ) (P i) =
-      algebraMap (MvPolynomial (Fin (k + 1)) ℝ) (MvRatFunc (Fin (k + 1)) ℝ) Q * g i := by
-    intro i
-    have hQi : Q = den i * ∏ j ∈ Finset.univ.erase i, den j := by
-      dsimp only [Q]
-      rw [← Finset.mul_prod_erase Finset.univ den (Finset.mem_univ i)]
-    have hdi0 : algebraMap (MvPolynomial (Fin (k + 1)) ℝ) (MvRatFunc (Fin (k + 1)) ℝ) (den i) ≠ 0 :=
-      (map_ne_zero_iff _ (IsFractionRing.injective _ _)).2
-        (mem_nonZeroDivisors_iff_ne_zero.1 (hden i))
-    rw [← hfrac i]
-    simp only [P, map_mul, map_prod, hQi]
-    field_simp [hdi0]
-  have hpoly_eq : Q * Q * G = ∑ i : Fin (m + 1), P i * P i := by
-    apply IsFractionRing.injective (MvPolynomial (Fin (k + 1)) ℝ) (MvRatFunc (Fin (k + 1)) ℝ)
-    simp only [map_sum, map_mul]
-    calc
-      algebraMap _ _ Q * algebraMap _ _ Q * algebraMap _ _ G
-          = algebraMap _ _ Q * algebraMap _ _ Q * ∑ i : Fin (m + 1), g i * g i := by
-              rw [hg]
-      _ = ∑ i : Fin (m + 1), algebraMap _ _ (P i) * algebraMap _ _ (P i) := by
-          rw [Finset.mul_sum]
-          refine Finset.sum_congr rfl fun i _ => ?_
-          rw [hP_eq i]
-          ring
-  let α : MvPolynomial (Fin (k + 1)) ℝ ≃ₐ[ℝ] Polynomial (MvPolynomial (Fin k) ℝ) :=
-    (MvPolynomial.renameEquiv ℝ (finRotate (k + 1))).trans (MvPolynomial.finSuccEquiv ℝ k)
-  let Φ : MvPolynomial (Fin (k + 1)) ℝ →+* Polynomial (MvRatFunc (Fin k) ℝ) :=
-    (Polynomial.mapRingHom (algebraMap (MvPolynomial (Fin k) ℝ) (MvRatFunc (Fin k) ℝ))).comp
-      α.toRingHom
-  have hΦ_inj : Function.Injective Φ :=
-    (Polynomial.map_injective _
-      (IsFractionRing.injective (MvPolynomial (Fin k) ℝ) (MvRatFunc (Fin k) ℝ))).comp α.injective
-  have hΦ_G : Φ G = Polynomial.C (algebraMap _ _ f) + Polynomial.X ^ 2 := eval_G_eq k f
-  have hsol : ∃ q : Polynomial (MvRatFunc (Fin k) ℝ), q ≠ 0 ∧
-      ∃ p : Fin (m + 1) → Polynomial (MvRatFunc (Fin k) ℝ),
-        q * q * (Polynomial.C (algebraMap _ _ f) + Polynomial.X ^ 2) = ∑ i, p i * p i := by
-    refine ⟨Φ Q, fun h => hQ0 (hΦ_inj (by simpa using h)), fun i => Φ (P i), ?_⟩
-    have hmap := congrArg Φ hpoly_eq
-    simpa only [map_mul, map_sum, hΦ_G] using hmap
-  have hex_deg : ∃ d : ℕ, ∃ q : Polynomial (MvRatFunc (Fin k) ℝ), q ≠ 0 ∧ q.natDegree = d ∧
-      ∃ p : Fin (m + 1) → Polynomial (MvRatFunc (Fin k) ℝ),
-        q * q * (Polynomial.C (algebraMap _ _ f) + Polynomial.X ^ 2) = ∑ i, p i * p i := by
-    obtain ⟨q, hq0, p, hp⟩ := hsol
-    exact ⟨q.natDegree, q, hq0, rfl, p, hp⟩
-  classical
-  let d := Nat.find hex_deg
-  obtain ⟨q, hq0, hq_deg, p, heq⟩ := Nat.find_spec hex_deg
-  rcases Nat.eq_zero_or_pos d with hd0 | hd_pos
-  · exact hnot (cassels_deg_zero (algebraMap _ _ f) q hq0 (by omega) p heq)
-  · obtain ⟨q', hq'0, hlt, p', heq'⟩ := cassels_descent (algebraMap _ _ f) q hq0 (by omega) p heq
-    exact Nat.find_min hex_deg (hq_deg ▸ hlt) ⟨q', hq'0, rfl, p', heq'⟩
+-- 主定理：完成 Cassels (1964) 添变量平方和下界步骤证明
+theorem OMA.solution :
+    OMA.R_PfisterPythagorasNumber_pfister_problem_variants_lower_bound_R1.H2 := by
+  intro k m f hnot ⟨g1, hg1⟩
+  apply hnot
+  let Rk := MvPolynomial (Fin k) ℝ
+  let F := MvRatFunc (Fin k) ℝ
+  let Rk1 := MvPolynomial (Fin (k + 1)) ℝ
+  let F1 := MvRatFunc (Fin (k + 1)) ℝ
+  have hF : FormReal F := formReal_frac Rk F (formReal_mv k)
+  let e1 : Rk1 ≃+* Rk[X] :=
+    (MvPolynomial.renameEquiv ℝ (swapLast k)).trans (MvPolynomial.finSuccEquiv ℝ k)
+  let toFX : Rk1 →+* F[X] := (mapRingHom (algebraMap Rk F)).comp e1.toRingHom
+  have hinj : Function.Injective ((algebraMap F[X] (RatFunc F)).comp toFX) :=
+    (IsFractionRing.injective F[X] (RatFunc F)).comp
+      ((Polynomial.map_injective _ (IsFractionRing.injective Rk F)).comp e1.injective)
+  let Ψ : F1 →+* RatFunc F := IsFractionRing.lift hinj
+  have hCS : toFX (MvPolynomial.rename Fin.castSucc f) = C (algebraMap Rk F f) := by
+    have he1 : e1 (MvPolynomial.rename Fin.castSucc f) = C f := by
+      change (MvPolynomial.finSuccEquiv ℝ k) ((MvPolynomial.renameEquiv ℝ (swapLast k)) _) = C f
+      rw [MvPolynomial.renameEquiv_apply, MvPolynomial.rename_rename,
+        show swapLast k ∘ Fin.castSucc = Fin.succ by ext; simp [swapLast], finSucc_rename_succ]
+    change Polynomial.map (algebraMap Rk F) (e1 (MvPolynomial.rename Fin.castSucc f)) = _
+    rw [he1, map_C]
+  have hL : toFX (MvPolynomial.X (Fin.last k)) = X := by
+    have he1 : e1 (MvPolynomial.X (Fin.last k)) = X := by
+      change (MvPolynomial.finSuccEquiv ℝ k) ((MvPolynomial.renameEquiv ℝ (swapLast k)) _) = X
+      rw [MvPolynomial.renameEquiv_apply, MvPolynomial.rename_X,
+        show swapLast k (Fin.last k) = 0 by simp [swapLast], MvPolynomial.finSuccEquiv_X_zero]
+    change Polynomial.map (algebraMap Rk F) (e1 (MvPolynomial.X (Fin.last k))) = X
+    rw [he1, map_X]
+  let c : F := algebraMap Rk F f
+  let P : F[X] := C c + X ^ 2
+  have hΨ : Ψ (algebraMap Rk1 F1
+      (MvPolynomial.rename Fin.castSucc f + MvPolynomial.X (Fin.last k) ^ 2)) =
+      algebraMap F[X] (RatFunc F) P := by
+    rw [IsFractionRing.lift_algebraMap]
+    change algebraMap F[X] (RatFunc F) (toFX _) = _
+    rw [map_add, map_pow, hCS, hL]
+  let g : Fin (m + 1) → RatFunc F := fun j => Ψ (g1 j)
+  have hg : ∑ j, g j * g j = algebraMap F[X] (RatFunc F) P := by
+    rw [← hΨ, hg1, map_sum]
+    exact sum_congr rfl fun j _ => (map_mul Ψ (g1 j) (g1 j)).symm
+  obtain ⟨D, B, hD, _, hK⟩ := clear_denom F[X] (RatFunc F) g
+  rw [hg, ← map_mul, ← map_mul] at hK
+  obtain ⟨pf, hpf⟩ := poly_descent hF P D.natDegree D hD rfl
+    ⟨B, IsFractionRing.injective F[X] (RatFunc F) hK⟩
+  exact elim_sq hF m c pf hpf

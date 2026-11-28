@@ -1,56 +1,42 @@
 import FormalConjectures.ErdosProblems.«1114»
 
-/-! Select one Rolle root in each gap and exhaust the derivative roots by a degree bound. -/
+-- Shorter proof of Erdos1114.erdos_1114.variants.rolle via exact root-set equality
+-- Credit: @raider99k
 
 open Finset Polynomial
 
 theorem OMA.solution : type_of% @Erdos1114.erdos_1114.variants.rolle := by
-  classical
-  intro N a d hd f hdegree hroots
-  let x (k : ℕ) : ℝ := a + d * k
-  have mono : StrictMono x := by
-    intro i j hij
-    dsimp [x]
-    gcongr
-  have existsRoot (i : Fin N) :
-      ∃ z ∈ Set.Ioo (x i) (x ((i : ℕ) + 1)), f.derivative.eval z = 0 :=
-    exists_hasDerivAt_eq_zero (mono (Nat.lt_succ_self _)) f.continuous.continuousOn
-      ((hroots _ i.isLt.le).trans (hroots _ i.isLt).symm) fun z _ => f.hasDerivAt z
-  choose y hy hzero using existsRoot
-  have distinct (i j : Fin N) (hij : i < j) :
-      x ((i : ℕ) + 1) ≤ x j :=
-    mono.monotone (Nat.succ_le_of_lt hij)
-  have rootsNotZero : f.derivative ≠ 0 := by
-    intro h
-    simpa [hdegree] using derivative_eq_zero.mp h
-  have memRoots (z : ℝ) :
-      z ∈ f.derivative.roots.toFinset ↔ f.derivative.eval z = 0 := by
-    simp [mem_roots rootsNotZero, IsRoot]
-  have yMono : StrictMono y :=
-    fun i j hij => (hy i).2.trans ((distinct i j hij).trans_lt (hy j).1)
-  have exhausted : univ.image y = f.derivative.roots.toFinset := by
-    apply eq_of_subset_of_card_le
-    · intro z hz
-      obtain ⟨i, _, rfl⟩ := mem_image.mp hz
-      exact (memRoots _).2 (hzero i)
-    · rw [card_image_of_injective _ yMono.injective, card_univ, Fintype.card_fin]
-      have hd' := natDegree_derivative_le f
-      rw [hdegree, Nat.add_sub_cancel] at hd'
-      exact (Multiset.toFinset_card_le _).trans ((card_roots' _).trans hd')
-  have index (z : ℝ) (hz : f.derivative.eval z = 0) : ∃ i, y i = z := by
-    have hm : z ∈ univ.image y := exhausted ▸ (memRoots z).2 hz
-    obtain ⟨i, _, hi⟩ := mem_image.mp hm
-    exact ⟨i, hi⟩
-  refine ⟨fun k hk => ?_, fun z hz => ?_⟩
-  · let i : Fin N := ⟨k, hk⟩
-    refine ⟨y i, ⟨by simpa [x, i] using hy i, hzero i⟩, ?_⟩
-    rintro z ⟨hz, hz0⟩
-    obtain ⟨j, rfl⟩ := index z hz0
-    have hz' : y j ∈ Set.Ioo (x i) (x ((i : ℕ) + 1)) := by simpa [x, i] using hz
-    rcases lt_trichotomy i j with hij | rfl | hji
-    · exact (hz'.2.not_ge ((distinct i j hij).trans (hy j).1.le)).elim
-    · rfl
-    · exact ((hy j).2.not_ge ((distinct j i hji).trans hz'.1.le)).elim
-  · obtain ⟨i, rfl⟩ := index z hz
-    exact ⟨i, i.isLt, by simpa [x] using hy i⟩
-
+  intro N a d hd f hdeg hr
+  have hstep {j k : ℕ} (h : j < k) : a + d * (j + 1) ≤ a + d * k := by
+    nlinarith [show (j : ℝ) + 1 ≤ k by exact_mod_cast h]
+  have hex (k : Fin N) : ∃ x ∈ Set.Ioo (a + d * k) (a + d * (k + 1)), f.derivative.eval x = 0 :=
+    exists_hasDerivAt_eq_zero (by linarith) f.continuous.continuousOn
+      (by rw [hr k k.2.le, ← Nat.cast_succ, hr (k + 1) k.2]) fun x _ => f.hasDerivAt x
+  choose c hc0 hc1 using hex
+  have hinj : Function.Injective c := fun i j hij => by
+    by_contra hne
+    rcases lt_or_gt_of_ne (Fin.val_ne_of_ne hne) with h | h
+    · linarith [(hc0 i).2, (hc0 j).1, hstep h]
+    · linarith [(hc0 j).2, (hc0 i).1, hstep h]
+  have hf' : f.derivative ≠ 0 := fun h => by
+    have := derivative_eq_zero.mp h; omega
+  have hsub : univ.image c ⊆ f.derivative.roots.toFinset := by
+    intro x hx
+    obtain ⟨k, _, rfl⟩ := mem_image.mp hx
+    exact Multiset.mem_toFinset.mpr ((mem_roots hf').mpr (hc1 k))
+  have heq : univ.image c = f.derivative.roots.toFinset :=
+    eq_of_subset_of_card_le hsub <| by
+      rw [card_image_of_injective _ hinj, card_fin]
+      have := natDegree_derivative_le f
+      have := card_roots' f.derivative
+      exact (Multiset.toFinset_card_le _).trans (by omega)
+  have hall : ∀ x, f.derivative.eval x = 0 → ∃ k : Fin N, c k = x := fun x hx => by
+    simpa [← heq] using Multiset.mem_toFinset.mpr ((mem_roots hf').mpr hx)
+  refine ⟨fun k hk => ⟨c ⟨k, hk⟩, ⟨hc0 ⟨k, hk⟩, hc1 ⟨k, hk⟩⟩, fun y ⟨hy, hy0⟩ => ?_⟩, fun x hx => ?_⟩
+  · obtain ⟨j, rfl⟩ := hall y hy0
+    rcases lt_trichotomy j.1 k with h | h | h
+    · linarith [(hc0 j).2, hy.1, hstep h]
+    · exact congrArg c (Fin.ext h)
+    · linarith [(hc0 j).1, hy.2, hstep h]
+  · obtain ⟨k, rfl⟩ := hall x hx
+    exact ⟨k, k.2, hc0 k⟩

@@ -1,5 +1,7 @@
 import OMAStatements.S_oeis_a014549
 
+-- Original Lean proof: @treybeathard-jpg.
+
 open OMA.S_oeis_a014549 Filter Topology Real
 
 private noncomputable def q0 : ℝ := Real.exp (-Real.pi)
@@ -148,25 +150,9 @@ private lemma theta4_pos {q : ℝ} (hq0 : 0 ≤ q) (hq3 : q < 1 / 3) : 0 < theta
 
 private lemma neg_one_pow_add_natAbs (x y : ℤ) :
     (-1 : ℝ) ^ x.natAbs * (-1 : ℝ) ^ y.natAbs = (-1 : ℝ) ^ (x + y).natAbs := by
-  rcases Int.even_or_odd x with ⟨a, ha⟩ | ⟨a, ha⟩ <;>
-    rcases Int.even_or_odd y with ⟨b, hb⟩ | ⟨b, hb⟩
-  · have hx : Even x.natAbs := Int.natAbs_even.mpr ⟨a, ha⟩
-    have hy : Even y.natAbs := Int.natAbs_even.mpr ⟨b, hb⟩
-    have hxy : Even (x + y).natAbs := Int.natAbs_even.mpr ⟨a + b, by omega⟩
-    rw [hx.neg_one_pow, hy.neg_one_pow, hxy.neg_one_pow, one_mul]
-  · have hx : Even x.natAbs := Int.natAbs_even.mpr ⟨a, ha⟩
-    have hy : Odd y.natAbs := Int.natAbs_odd.mpr ⟨b, hb⟩
-    have hxy : Odd (x + y).natAbs := Int.natAbs_odd.mpr ⟨a + b, by omega⟩
-    rw [hx.neg_one_pow, hy.neg_one_pow, hxy.neg_one_pow, one_mul]
-  · have hx : Odd x.natAbs := Int.natAbs_odd.mpr ⟨a, ha⟩
-    have hy : Even y.natAbs := Int.natAbs_even.mpr ⟨b, hb⟩
-    have hxy : Odd (x + y).natAbs := Int.natAbs_odd.mpr ⟨a + b, by omega⟩
-    rw [hx.neg_one_pow, hy.neg_one_pow, hxy.neg_one_pow, mul_one]
-  · have hx : Odd x.natAbs := Int.natAbs_odd.mpr ⟨a, ha⟩
-    have hy : Odd y.natAbs := Int.natAbs_odd.mpr ⟨b, hb⟩
-    have hxy : Even (x + y).natAbs := Int.natAbs_even.mpr ⟨a + b + 1, by omega⟩
-    rw [hx.neg_one_pow, hy.neg_one_pow, hxy.neg_one_pow]
-    norm_num
+  have h (z : ℤ) : (-1 : ℝ) ^ z = (-1 : ℝ) ^ z.natAbs := by
+    simp only [neg_one_zpow_eq_ite, neg_one_pow_eq_ite, Int.natAbs_even]
+  simp only [← h, zpow_add₀ (neg_ne_zero.mpr (one_ne_zero : (1 : ℝ) ≠ 0))]
 
 private lemma natAbs_sq_add_sub (u v : ℤ) :
     (u + v).natAbs ^ 2 + (u - v).natAbs ^ 2 = 2 * (u.natAbs ^ 2 + v.natAbs ^ 2) := by
@@ -364,32 +350,21 @@ private lemma q0_lt_third : q0 < 1 / 3 := by
 
 private lemma q0_lt_one : q0 < 1 := by linarith [q0_lt_third]
 
+private lemma exp_pow_natAbs_sq (c : ℝ) (m : ℤ) :
+    Real.exp c ^ (m.natAbs ^ 2) = Real.exp (c * (m : ℝ) ^ 2) := by
+  rw [← Real.exp_nat_mul]
+  have h : ((m.natAbs ^ 2 : ℕ) : ℤ) = m ^ 2 := by
+    rw [Nat.cast_pow, Int.natAbs_sq]
+  rw [← Int.cast_natCast, h, Int.cast_pow, mul_comm]
+
 private lemma q0_pow_natAbs_sq (m : ℤ) :
-    q0 ^ (m.natAbs ^ 2) = Real.exp (-Real.pi * (m : ℝ) ^ 2) := by
-  rw [q0, ← Real.exp_nat_mul]
-  congr 1
-  have hsqz : ((m.natAbs ^ 2 : ℕ) : ℤ) = m ^ 2 := by
-    rw [Nat.cast_pow]
-    exact Int.natAbs_sq m
-  have hsq : ((m.natAbs ^ 2 : ℕ) : ℝ) = (m : ℝ) ^ 2 := by
-    rw [← Int.cast_natCast, hsqz, Int.cast_pow]
-  rw [hsq]
-  ring
+    q0 ^ (m.natAbs ^ 2) = Real.exp (-Real.pi * (m : ℝ) ^ 2) :=
+  exp_pow_natAbs_sq _ m
 
 private lemma summable_exp_neg_mul_int_sq {c : ℝ} (hc : 0 < c) :
-    Summable fun n : ℤ => Real.exp (-c * (n : ℝ) ^ 2) := by
-  have hr0 : 0 ≤ Real.exp (-c) := (Real.exp_pos _).le
-  have hr1 : Real.exp (-c) < 1 := Real.exp_lt_one_iff.mpr (by linarith)
-  refine (summable_theta3 hr0 hr1).congr fun n => ?_
-  rw [← Real.exp_nat_mul]
-  congr 1
-  have hsqz : ((n.natAbs ^ 2 : ℕ) : ℤ) = n ^ 2 := by
-    rw [Nat.cast_pow]
-    exact Int.natAbs_sq n
-  have hsq : ((n.natAbs ^ 2 : ℕ) : ℝ) = (n : ℝ) ^ 2 := by
-    rw [← Int.cast_natCast, hsqz, Int.cast_pow]
-  rw [hsq]
-  ring
+    Summable fun n : ℤ => Real.exp (-c * (n : ℝ) ^ 2) :=
+  (summable_theta3 (Real.exp_pos (-c)).le
+    (Real.exp_lt_one_iff.mpr (neg_neg_of_pos hc))).congr (exp_pow_natAbs_sq (-c))
 
 private def evenOddIntEquiv : ℤ ⊕ ℤ ≃ ℤ where
   toFun := Sum.elim (fun n => 2 * n) (fun n => 2 * n + 1)
@@ -432,26 +407,28 @@ private lemma summable_thetaB :
   ring
 
 private lemma thetaC_eq_add : thetaC = thetaA + thetaB := by
-  have hsum := (evenOddIntEquiv.summable_iff (f := fun m : ℤ =>
-    Real.exp (-Real.pi * (1 / 2) * (m : ℝ) ^ 2))).mpr summable_thetaC
-  have h1 := hsum.comp_injective Sum.inl_injective
-  have h2 := hsum.comp_injective Sum.inr_injective
-  rw [thetaC, ← evenOddIntEquiv.tsum_eq (fun m : ℤ => Real.exp (-Real.pi * (1 / 2) * (m : ℝ) ^ 2))]
-  change (∑' x : ℤ ⊕ ℤ,
-    ((fun m : ℤ => Real.exp (-Real.pi * (1 / 2) * (m : ℝ) ^ 2)) ∘ evenOddIntEquiv) x) =
-    thetaA + thetaB
-  rw [h1.tsum_sum h2, thetaA, thetaB]
-  congr 1
-  · refine tsum_congr fun n => ?_
-    simp only [Function.comp_apply, evenOddIntEquiv, Equiv.coe_fn_mk, Sum.elim_inl, Int.cast_mul,
-      Int.cast_ofNat]
-    congr 1
+  let f (m : ℤ) := Real.exp (-Real.pi * (1 / 2) * (m : ℝ) ^ 2)
+  let e := evenOddIntEquiv
+  have hs : Summable (f ∘ e) := (e.summable_iff (f := f)).2 summable_thetaC
+  have heven : (∑' n : ℤ, f (e (Sum.inl n))) = thetaA := by
+    unfold thetaA
+    refine tsum_congr fun n => congrArg Real.exp ?_
+    change -Real.pi * (1 / 2) * ((2 * n : ℤ) : ℝ) ^ 2 = -2 * Real.pi * (n : ℝ) ^ 2
+    push_cast
     ring
-  · refine tsum_congr fun n => ?_
-    simp only [Function.comp_apply, evenOddIntEquiv, Equiv.coe_fn_mk, Sum.elim_inr, Int.cast_add,
-      Int.cast_mul, Int.cast_ofNat, Int.cast_one]
-    congr 1
+  have hodd : (∑' n : ℤ, f (e (Sum.inr n))) = thetaB := by
+    unfold thetaB
+    refine tsum_congr fun n => congrArg Real.exp ?_
+    change -Real.pi * (1 / 2) * ((2 * n + 1 : ℤ) : ℝ) ^ 2 =
+      -2 * Real.pi * ((n : ℝ) + 1 / 2) ^ 2
+    push_cast
     ring
+  change (∑' m : ℤ, f m) = thetaA + thetaB
+  calc
+    _ = ∑' t : ℤ ⊕ ℤ, (f ∘ e) t := (e.tsum_eq f).symm
+    _ = (∑' n : ℤ, f (e (Sum.inl n))) + ∑' n : ℤ, f (e (Sum.inr n)) :=
+      (hs.comp_injective Sum.inl_injective).tsum_sum (hs.comp_injective Sum.inr_injective)
+    _ = _ := congrArg₂ (· + ·) heven hodd
 
 private lemma thetaB_eq : thetaB = (√2 - 1) * thetaA := by
   have hpois := Real.tsum_exp_neg_mul_int_sq (by norm_num : (0 : ℝ) < 2)
@@ -557,19 +534,9 @@ private lemma theta4_q0_sq_eq_AB : (theta4 q0) ^ 2 = thetaA ^ 2 - thetaB ^ 2 := 
     ring
 
 private lemma theta3_q0_sq_eq_sqrt2 : (theta3 q0) ^ 2 = √2 * (theta4 q0) ^ 2 := by
-  have hsq2 : √2 ^ 2 = 2 := Real.sq_sqrt (by norm_num)
+  have h : √2 ^ 2 = 2 := Real.sq_sqrt (by norm_num)
   rw [theta3_q0_sq_eq_AB, theta4_q0_sq_eq_AB, thetaB_eq]
-  have hsub : thetaA ^ 2 - ((√2 - 1) * thetaA) ^ 2 = (2 * √2 - 2) * thetaA ^ 2 := by
-    calc
-      thetaA ^ 2 - ((√2 - 1) * thetaA) ^ 2 = (2 * √2 - √2 ^ 2) * thetaA ^ 2 := by ring
-      _ = (2 * √2 - 2) * thetaA ^ 2 := by rw [hsq2]
-  rw [hsub]
-  calc
-    thetaA ^ 2 + ((√2 - 1) * thetaA) ^ 2 = (2 + √2 ^ 2 - 2 * √2) * thetaA ^ 2 := by ring
-    _ = (4 - 2 * √2) * thetaA ^ 2 := by rw [hsq2]; ring
-    _ = (2 * 2 - 2 * √2) * thetaA ^ 2 := by ring
-    _ = (2 * √2 ^ 2 - 2 * √2) * thetaA ^ 2 := by rw [hsq2]
-    _ = √2 * ((2 * √2 - 2) * thetaA ^ 2) := by ring
+  linear_combination ((√2 - 1) * thetaA ^ 2) * h
 
 private def repsSigmaEquiv : (Σ k : ℕ, ↥(reps k)) ≃ ℤ × ℤ where
   toFun p := p.2.1

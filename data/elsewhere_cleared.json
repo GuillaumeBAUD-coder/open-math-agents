@@ -76,6 +76,30 @@
   "oeis-a236327": {
    "reason": "Fried's note proves only the length formulas for A236327 (type C, m = 5), i.e. Barker's recurrence and g.f. The site's own text already records those as proved via this same Fried link. The remaining conjecture, that all 120 permutations of the 5 centre points give non-expanded loops, is not addressed: the note fixes one ordering of the centres and never considers permutations or the shape of the loops.",
    "date": "2026-11-28"
+  },
+  "Erdos142.erdos_142.variants.lower.R1.H2.R3.H1": {
+   "reason": "H1 is Theorem 1.1 (k>=4) of an AI-generated OpenAI manuscript (openai/math, 23 Sep 2026). It is unrefereed, it has no Lean formalization in that repo's formalization catalogue, and the repo's README warns unformalized results may have issues. erdosproblems.com/3 still lists Leng-Sah-Sawhney's exp((log log N)^c) saving as the best bound, so nobody has checked this proof.",
+   "date": "2026-11-28"
+  },
+  "Erdos448.erdos_448.variants.erdos_tenenbaum": {
+   "reason": "Erdos-Tenenbaum 1981 (the link), Theorem 1, proves only the upper half: the upper density of {tau+(n) < a tau(n)} is <= c(eps) a^{1-eps}, i.e. liminf of log(upper density)/log a >= 1. The matching lower bound (upper density >= a^{1+o(1)}) is not in this paper. It comes from Hall-Tenenbaum, Divisors (1988) Ch. 4, quoted as (15) in Tenenbaum's 2013 survey, which would settle the statement.",
+   "date": "2026-11-28"
+  },
+  "mo-158514": {
+   "reason": "The question asks for the community's opinion and its motivations, which no proof settles. The link is OpenAI's AI-generated, unrefereed preprint claiming undecidability of H10 over Q, which reports describe as not independently verified.",
+   "date": "2026-11-28"
+  },
+  "mo-415983": {
+   "reason": "The link is McMullen's Upper Bound Theorem (Mathematika 1970) for general d-polytopes. Applied to sections with at most 2n facets it only gives a generic upper bound that ignores the diagonal constraint. It does not determine the maximal number of vertices of the cube section asked for, and the paper does not address cube sections.",
+   "date": "2026-11-28"
+  },
+  "mo-431129": {
+   "reason": "Answer 431136 belongs to a different question (MO 430838, on analysis in ZF+DC). It says nothing about lower bounds for power-sum polynomials, so it does not address the statement.",
+   "date": "2026-11-28"
+  },
+  "oeis-a039827": {
+   "reason": "Almkvist (JNT 32, 1989) proves unimodality of products of (1-q^{rk})/(1-q^k), including prod (1+q^i+q^{2i}). Unimodality does not determine the number of distinct coefficient values (which needs strict increase apart from exactly two repeats on the half-range), so it does not give a(n) = n(n+1)/2 - 1, the recurrence or the g.f.",
+   "date": "2026-11-28"
   }
  }
 }

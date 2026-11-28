@@ -63,29 +63,14 @@ lemma advance_certificate :
         (g.val % 2 = 1 ∨ p = true) ∧ (g.val / 2 = 1 ∨ q = true) := by
   decide
 
-lemma advance_logic (f : Flag) (r : Row) (P Q : Prop) :
-      ((f.val % 2 = 1 ∨
-          (bits r 0).val < (bits r 1).val ∨
-          ((bits r 0).val = (bits r 1).val ∧ P)) ∧
-       (f.val / 2 = 1 ∨
-          (bits r 1).val < (bits r 2).val ∨
-          ((bits r 1).val = (bits r 2).val ∧ Q))) ↔
-      ∃ g : Flag, advance f r = some g ∧
-        (g.val % 2 = 1 ∨ P) ∧ (g.val / 2 = 1 ∨ Q) := by
-  classical
-  by_cases hp : P <;> by_cases hq : Q
-  · simpa [hp, hq] using advance_certificate f r true true
-  · simpa [hp, hq] using advance_certificate f r true false
-  · simpa [hp, hq] using advance_certificate f r false true
-  · simpa [hp, hq] using advance_certificate f r false false
-
 lemma columnsGood_cons (f : Flag) (r : Row) (rs : List Row) :
     columnsGood f (r :: rs) ↔
       ∃ g : Flag, advance f r = some g ∧ columnsGood g rs := by
-  simpa only [columnsGood, column, List.map_cons, lexLE] using
-    advance_logic f r
-      (lexLE (column rs 0) (column rs 1))
-      (lexLE (column rs 1) (column rs 2))
+  have h := advance_certificate f r
+    (decide (lexLE (column rs 0) (column rs 1)))
+    (decide (lexLE (column rs 1) (column rs 2)))
+  simp only [decide_eq_true_eq] at h
+  simpa only [columnsGood, column, List.map_cons, lexLE] using h
 
 def edge (q q' : State) (o : Symbol) : Prop :=
   q.1.val ≤ q'.1.val ∧ label q.1 q'.1 = o ∧ advance q.2 q'.1 = some q'.2
@@ -154,15 +139,9 @@ lemma nfaFrom_nil (S : Finset State) : nfaFrom S [] ↔ S.Nonempty := by
 
 lemma nfaFrom_cons (S : Finset State) (o : Symbol) (w : List Symbol) :
     nfaFrom S (o :: w) ↔ nfaFrom (nextSet S o) w := by
-  constructor
-  · rintro ⟨q, hq, q', he, hw⟩
-    refine ⟨q', ?_, hw⟩
-    simp only [nextSet, Finset.mem_filter, Finset.mem_univ, true_and]
-    exact ⟨q, hq, he⟩
-  · rintro ⟨q', hq', hw⟩
-    have hx : ∃ q ∈ S, edge q q' o := (Finset.mem_filter.mp hq').2
-    rcases hx with ⟨q, hq, he⟩
-    exact ⟨q, hq, q', he, hw⟩
+  simp only [nfaFrom, nfaRun, nextSet, Finset.mem_filter, Finset.mem_univ, true_and]
+  exact ⟨fun ⟨q, hq, q', he, hw⟩ => ⟨q', ⟨q, hq, he⟩, hw⟩,
+    fun ⟨q', ⟨q, hq, he⟩, hw⟩ => ⟨q, hq, q', he, hw⟩⟩
 
 /-- The reachable subsets of the 32-state source-array automaton. -/
 def reachableStates (i : Fin 19) : Finset State :=
@@ -278,19 +257,13 @@ def embed (v : Fin 5 → ℤ) (q : Fin 7) : ℤ :=
 
 def gfSequence (n : ℕ) : ℤ := if n = 0 then 0 else dfaCount n
 
-def wordConsEquiv (α : Type) (n : ℕ) : (α × (Fin n → α)) ≃ (Fin (n+1) → α) where
-  toFun p := Fin.cons p.1 p.2
-  invFun w := (w 0, Fin.tail w)
-  left_inv p := by cases p; rfl
-  right_inv w := by funext i; refine Fin.cases ?_ (fun j => ?_) i <;> rfl
-
 lemma countVec_word_sum (n : ℕ) (q : Fin 7) :
     countVec n q = ∑ w : Fin n → Fin 4,
       terminal ((List.ofFn w).foldl dfaStep q) := by
   induction n generalizing q with
   | zero => simp [countVec]
   | succ n ih =>
-    rw [countVec, transfer, ← (wordConsEquiv (Fin 4) n).sum_comp]
+    rw [countVec, transfer, ← (Fin.consEquiv (fun _ : Fin (n+1) => Fin 4)).sum_comp]
     rw [Fintype.sum_prod_type]
     apply Finset.sum_congr rfl
     intro o ho
@@ -307,7 +280,7 @@ lemma budget_zero (k : ℕ) : budget 0 k = 1 := by simp [budget]
 lemma budget_succ (n k : ℕ) : budget (n+1) k =
     ∑ c : Fin 3, if c.val ≤ k then budget n (k-c.val) else 0 := by
   unfold budget
-  rw [← (wordConsEquiv (Fin 3) n).sum_comp, Fintype.sum_prod_type]
+  rw [← (Fin.consEquiv (fun _ : Fin (n+1) => Fin 3)).sum_comp, Fintype.sum_prod_type]
   apply Finset.sum_congr rfl
   intro c hc
   change (∑ w : Fin n → Fin 3,
@@ -444,14 +417,6 @@ lemma dfaGeneratingSeries_mul :
       show k+6 ≠ 4 by omega, show k+6 ≠ 5 by omega]
     linarith
 
-lemma dfaGeneratingSeries_eq :
-    dfaGeneratingSeries =
-      (PowerSeries.X * (3 - 6*PowerSeries.X + 8*PowerSeries.X^2 -
-        5*PowerSeries.X^3 + PowerSeries.X^4)) * ((1 - PowerSeries.X)^5)⁻¹ := by
-  apply (PowerSeries.eq_mul_inv_iff_mul_eq (by simp)).2
-  exact dfaGeneratingSeries_mul
-
-
 lemma actualImage_iff_dfa (w : List Symbol) :
     actualImage w ↔ w.foldl dfaStep (0 : Fin 7) ≠ 6 :=
   (actualImage_iff_nfa w).trans (nfaFrom_initial_iff_dfa w)
@@ -481,17 +446,10 @@ lemma generatingSeries_eq_dfaGeneratingSeries : generatingSeries = dfaGenerating
   · simp only [hn, ↓reduceIte]
     exact_mod_cast arrayCount_eq_dfaCount n
 
-/-- Both conjectures in the source entry: the ternary-word count and rational generating function. -/
-theorem main_result :
-    (∀ n : ℕ, 1 ≤ n → arrayCount n = ternaryCount n) ∧
-    generatingSeries =
-      (PowerSeries.X * (3 - 6*PowerSeries.X + 8*PowerSeries.X^2 -
-        5*PowerSeries.X^3 + PowerSeries.X^4)) * ((1 - PowerSeries.X)^5)⁻¹ := by
-  exact ⟨fun n _ => arrayCount_eq_ternaryCount n,
-    generatingSeries_eq_dfaGeneratingSeries.trans dfaGeneratingSeries_eq⟩
-
 end OMA.A227259Proof
 
-
+open OMA.A227259Proof in
 theorem OMA.solution : type_of% @OMA.S_oeis_a227259.main :=
-  OMA.A227259Proof.main_result
+  ⟨fun n _ => arrayCount_eq_ternaryCount n,
+    generatingSeries_eq_dfaGeneratingSeries.trans
+      ((PowerSeries.eq_mul_inv_iff_mul_eq (by simp)).2 dfaGeneratingSeries_mul)⟩

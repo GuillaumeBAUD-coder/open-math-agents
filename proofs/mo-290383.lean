@@ -26,20 +26,8 @@ theorem OMA.disproof : ¬ (type_of% @OMA.S_mo_290383.main) := by
     omega
   have hdP := hdet P hPr
   have hdQ := hdet Q hQr
-  rw [Matrix.det_fin_two] at hdP hdQ
-  have e00 := congrFun (congrFun hM 0) 0
-  have e01 := congrFun (congrFun hM 0) 1
-  have e10 := congrFun (congrFun hM 1) 0
-  have e11 := congrFun (congrFun hM 1) 1
-  simp only [Matrix.sub_apply, Matrix.one_apply_eq, ne_eq, zero_ne_one, one_ne_zero,
-    not_false_eq_true, Matrix.one_apply_ne] at e00 e01 e10 e11
-  have q00 := hQ 0 0
-  have q11 := hQ 1 1
-  have p00 : P 0 0 = 1 + Q 0 0 := by linarith
-  have p01 : P 0 1 = Q 0 1 := by linarith
-  have p10 : P 1 0 = Q 1 0 := by linarith
-  have p11 : P 1 1 = 1 + Q 1 1 := by linarith
-  rw [p00, p01, p10, p11] at hdP
-  have key : (1 + Q 0 0) * (1 + Q 1 1) - Q 0 1 * Q 1 0
-      = 1 + Q 0 0 + Q 1 1 + (Q 0 0 * Q 1 1 - Q 0 1 * Q 1 0) := by ring
-  linarith
+  have hPQ : P = 1 + Q := sub_eq_iff_eq_add.mp hM.symm
+  rw [hPQ, Matrix.det_fin_two] at hdP
+  rw [Matrix.det_fin_two] at hdQ
+  simp [Matrix.add_apply] at hdP
+  nlinarith [hQ 0 0, hQ 1 1]

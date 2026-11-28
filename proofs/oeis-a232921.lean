@@ -225,17 +225,6 @@ theorem conjecture :
       (-3) * (Real.sqrt 3 * ((1 - Real.sqrt 3) ^ n - (1 + Real.sqrt 3) ^ n)) / 2 :=
   ⟨gf, closed_form⟩
 
-/-- Controls: the entry's terms a(1..13), from the recurrence and a(1), a(2). -/
-theorem controls : a 1 = 9 ∧ a 2 = 18 ∧ a 3 = 54 ∧ a 4 = 144 ∧ a 5 = 396 ∧ a 6 = 1080 ∧
-    a 7 = 2952 ∧ a 8 = 8064 ∧ a 9 = 22032 ∧ a 10 = 60192 ∧ a 11 = 164448 ∧ a 12 = 449280 ∧
-    a 13 = 1227456 := by
-  have r0 := a_rec 0; have r1 := a_rec 1; have r2 := a_rec 2; have r3 := a_rec 3
-  have r4 := a_rec 4; have r5 := a_rec 5; have r6 := a_rec 6; have r7 := a_rec 7
-  have r8 := a_rec 8; have r9 := a_rec 9; have r10 := a_rec 10
-  have h1 := a_one; have h2 := a_two
-  norm_num at r0 r1 r2 r3 r4 r5 r6 r7 r8 r9 r10
-  omega
-
 end OMA.S_oeis_a232921
 
 theorem OMA.solution : type_of% @OMA.S_oeis_a232921.main :=

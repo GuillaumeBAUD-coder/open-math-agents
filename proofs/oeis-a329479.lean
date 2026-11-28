@@ -1,5 +1,7 @@
 import OMAStatements.S_oeis_a329479
-import Mathlib
+import Mathlib.Algebra.BigOperators.Ring.Finset
+
+-- Original Lean proof: @justusklocke-cloud.
 
 namespace A329479Aux
 
@@ -62,103 +64,38 @@ lemma a_eq (n : ℕ) : OMA.S_oeis_a329479.a (n + 1) = G n (1, 1) := by
   · rw [if_pos h, if_pos ((cond_iff _).mpr h)]
   · rw [if_neg h, if_neg (fun h' => h ((cond_iff _).mp h'))]
 
-lemma gs_00 (m : ℕ) : G (m + 1) (0, 0) = G m (1, 1) + G m (0, 0) := by
-  have h1 : stp (0, 0) true = (1, 1) := by decide
-  have h0 : stp (0, 0) false = (0, 0) := by decide
-  rw [G_succ, h1, h0]
+private abbrev State := ZMod 3 × ZMod 3
 
-lemma gs_01 (m : ℕ) : G (m + 1) (0, 1) = G m (1, 0) + G m (0, 2) := by
-  have h1 : stp (0, 1) true = (1, 0) := by decide
-  have h0 : stp (0, 1) false = (0, 2) := by decide
-  rw [G_succ, h1, h0]
+/-- Number of paths of length k from s to t under the two bit transitions. -/
+private def paths : ℕ → State → State → ℤ
+  | 0, s, t => if s = t then 1 else 0
+  | k + 1, s, t => paths k (stp s true) t + paths k (stp s false) t
 
-lemma gs_02 (m : ℕ) : G (m + 1) (0, 2) = G m (1, 2) + G m (0, 1) := by
-  have h1 : stp (0, 2) true = (1, 2) := by decide
-  have h0 : stp (0, 2) false = (0, 1) := by decide
-  rw [G_succ, h1, h0]
+private lemma G_shift (n k : ℕ) (s : State) :
+    G (n + k) s = ∑ t : State, paths k s t * G n t := by
+  induction k generalizing s with
+  | zero => simp [paths, ite_mul]
+  | succ k ih =>
+    rw [show n + (k + 1) = n + k + 1 by omega, G_succ]
+    simp only [ih, ← Finset.sum_add_distrib, paths, add_mul]
 
-lemma gs_10 (m : ℕ) : G (m + 1) (1, 0) = G m (2, 1) + G m (1, 0) := by
-  have h1 : stp (1, 0) true = (2, 1) := by decide
-  have h0 : stp (1, 0) false = (1, 0) := by decide
-  rw [G_succ, h1, h0]
+private lemma paths_recur : ∀ t : State,
+    paths 8 (1, 1) t = 2 * paths 7 (1, 1) t + 2 * paths 6 (1, 1) t - 5 * paths 5 (1, 1) t -
+      2 * paths 4 (1, 1) t + 10 * paths 3 (1, 1) t - 4 * paths 2 (1, 1) t -
+      4 * paths 1 (1, 1) t + 8 * paths 0 (1, 1) t := by decide
 
-lemma gs_11 (m : ℕ) : G (m + 1) (1, 1) = G m (2, 0) + G m (1, 2) := by
-  have h1 : stp (1, 1) true = (2, 0) := by decide
-  have h0 : stp (1, 1) false = (1, 2) := by decide
-  rw [G_succ, h1, h0]
-
-lemma gs_12 (m : ℕ) : G (m + 1) (1, 2) = G m (2, 2) + G m (1, 1) := by
-  have h1 : stp (1, 2) true = (2, 2) := by decide
-  have h0 : stp (1, 2) false = (1, 1) := by decide
-  rw [G_succ, h1, h0]
-
-lemma gs_20 (m : ℕ) : G (m + 1) (2, 0) = G m (0, 1) + G m (2, 0) := by
-  have h1 : stp (2, 0) true = (0, 1) := by decide
-  have h0 : stp (2, 0) false = (2, 0) := by decide
-  rw [G_succ, h1, h0]
-
-lemma gs_21 (m : ℕ) : G (m + 1) (2, 1) = G m (0, 0) + G m (2, 2) := by
-  have h1 : stp (2, 1) true = (0, 0) := by decide
-  have h0 : stp (2, 1) false = (2, 2) := by decide
-  rw [G_succ, h1, h0]
-
-lemma gs_22 (m : ℕ) : G (m + 1) (2, 2) = G m (0, 2) + G m (2, 1) := by
-  have h1 : stp (2, 2) true = (0, 2) := by decide
-  have h0 : stp (2, 2) false = (2, 1) := by decide
-  rw [G_succ, h1, h0]
-
-lemma T1 (m : ℕ) : G (m + 1) (1, 1) = G m (1, 2) + G m (2, 0) := by
-  rw [gs_11 m]
-  ring
-
-lemma T2 (m : ℕ) : G (m + 2) (1, 1) = G m (0, 1) + G m (1, 1) + G m (2, 0) + G m (2, 2) := by
-  have h : G (m + 2) (1, 1) = G (m + 1) (1, 2) + G (m + 1) (2, 0) := T1 (m + 1)
-  rw [h, gs_12 m, gs_20 m]
-  ring
-
-lemma T3 (m : ℕ) : G (m + 3) (1, 1) = G m (0, 1) + 2 * G m (0, 2) + G m (1, 0) + G m (1, 2) + 2 * G m (2, 0) + G m (2, 1) := by
-  have h : G (m + 3) (1, 1) = G (m + 1) (0, 1) + G (m + 1) (1, 1) + G (m + 1) (2, 0) + G (m + 1) (2, 2) := T2 (m + 1)
-  rw [h, gs_01 m, gs_11 m, gs_20 m, gs_22 m]
-  ring
-
-lemma T4 (m : ℕ) : G (m + 4) (1, 1) = G m (0, 0) + 4 * G m (0, 1) + G m (0, 2) + 2 * G m (1, 0) + G m (1, 1) + 2 * G m (1, 2) + 2 * G m (2, 0) + G m (2, 1) + 2 * G m (2, 2) := by
-  have h : G (m + 4) (1, 1) = G (m + 1) (0, 1) + 2 * G (m + 1) (0, 2) + G (m + 1) (1, 0) + G (m + 1) (1, 2) + 2 * G (m + 1) (2, 0) + G (m + 1) (2, 1) := T3 (m + 1)
-  rw [h, gs_01 m, gs_02 m, gs_10 m, gs_12 m, gs_20 m, gs_21 m]
-  ring
-
-lemma T5 (m : ℕ) : G (m + 5) (1, 1) = 2 * G m (0, 0) + 3 * G m (0, 1) + 6 * G m (0, 2) + 6 * G m (1, 0) + 3 * G m (1, 1) + 2 * G m (1, 2) + 3 * G m (2, 0) + 4 * G m (2, 1) + 3 * G m (2, 2) := by
-  have h : G (m + 5) (1, 1) = G (m + 1) (0, 0) + 4 * G (m + 1) (0, 1) + G (m + 1) (0, 2) + 2 * G (m + 1) (1, 0) + G (m + 1) (1, 1) + 2 * G (m + 1) (1, 2) + 2 * G (m + 1) (2, 0) + G (m + 1) (2, 1) + 2 * G (m + 1) (2, 2) := T4 (m + 1)
-  rw [h, gs_00 m, gs_01 m, gs_02 m, gs_10 m, gs_11 m, gs_12 m, gs_20 m, gs_21 m, gs_22 m]
-  ring
-
-lemma T6 (m : ℕ) : G (m + 6) (1, 1) = 6 * G m (0, 0) + 9 * G m (0, 1) + 6 * G m (0, 2) + 9 * G m (1, 0) + 4 * G m (1, 1) + 9 * G m (1, 2) + 6 * G m (2, 0) + 9 * G m (2, 1) + 6 * G m (2, 2) := by
-  have h : G (m + 6) (1, 1) = 2 * G (m + 1) (0, 0) + 3 * G (m + 1) (0, 1) + 6 * G (m + 1) (0, 2) + 6 * G (m + 1) (1, 0) + 3 * G (m + 1) (1, 1) + 2 * G (m + 1) (1, 2) + 3 * G (m + 1) (2, 0) + 4 * G (m + 1) (2, 1) + 3 * G (m + 1) (2, 2) := T5 (m + 1)
-  rw [h, gs_00 m, gs_01 m, gs_02 m, gs_10 m, gs_11 m, gs_12 m, gs_20 m, gs_21 m, gs_22 m]
-  ring
-
-lemma T7 (m : ℕ) : G (m + 7) (1, 1) = 15 * G m (0, 0) + 12 * G m (0, 1) + 15 * G m (0, 2) + 18 * G m (1, 0) + 15 * G m (1, 1) + 10 * G m (1, 2) + 10 * G m (2, 0) + 15 * G m (2, 1) + 18 * G m (2, 2) := by
-  have h : G (m + 7) (1, 1) = 6 * G (m + 1) (0, 0) + 9 * G (m + 1) (0, 1) + 6 * G (m + 1) (0, 2) + 9 * G (m + 1) (1, 0) + 4 * G (m + 1) (1, 1) + 9 * G (m + 1) (1, 2) + 6 * G (m + 1) (2, 0) + 9 * G (m + 1) (2, 1) + 6 * G (m + 1) (2, 2) := T6 (m + 1)
-  rw [h, gs_00 m, gs_01 m, gs_02 m, gs_10 m, gs_11 m, gs_12 m, gs_20 m, gs_21 m, gs_22 m]
-  ring
-
-lemma T8 (m : ℕ) : G (m + 8) (1, 1) = 30 * G m (0, 0) + 25 * G m (0, 1) + 30 * G m (0, 2) + 30 * G m (1, 0) + 25 * G m (1, 1) + 30 * G m (1, 2) + 25 * G m (2, 0) + 36 * G m (2, 1) + 25 * G m (2, 2) := by
-  have h : G (m + 8) (1, 1) = 15 * G (m + 1) (0, 0) + 12 * G (m + 1) (0, 1) + 15 * G (m + 1) (0, 2) + 18 * G (m + 1) (1, 0) + 15 * G (m + 1) (1, 1) + 10 * G (m + 1) (1, 2) + 10 * G (m + 1) (2, 0) + 15 * G (m + 1) (2, 1) + 18 * G (m + 1) (2, 2) := T7 (m + 1)
-  rw [h, gs_00 m, gs_01 m, gs_02 m, gs_10 m, gs_11 m, gs_12 m, gs_20 m, gs_21 m, gs_22 m]
-  ring
+theorem recurrence : type_of% @OMA.S_oeis_a329479.main := by
+  intro n
+  rw [a_eq (n+8), a_eq (n+7), a_eq (n+6), a_eq (n+5), a_eq (n+4),
+    a_eq (n+3), a_eq (n+2), a_eq (n+1), a_eq n]
+  have initial := G_shift n 0 (1, 1)
+  rw [Nat.add_zero] at initial
+  rw [G_shift n 8, G_shift n 7, G_shift n 6, G_shift n 5, G_shift n 4,
+    G_shift n 3, G_shift n 2, G_shift n 1, initial]
+  simp only [Finset.mul_sum, ← mul_assoc, ← Finset.sum_add_distrib, ← Finset.sum_sub_distrib,
+    ← add_mul, ← sub_mul]
+  exact Finset.sum_congr rfl fun t _ => congrArg (· * G n t) (paths_recur t)
 
 end A329479Aux
 
-open A329479Aux in
-theorem OMA.solution : type_of% @OMA.S_oeis_a329479.main := by
-  intro n
-  have e1 : OMA.S_oeis_a329479.a (n + 1) = G n (1, 1) := a_eq n
-  have e2 : OMA.S_oeis_a329479.a (n + 2) = G (n + 1) (1, 1) := a_eq (n + 1)
-  have e3 : OMA.S_oeis_a329479.a (n + 3) = G (n + 2) (1, 1) := a_eq (n + 2)
-  have e4 : OMA.S_oeis_a329479.a (n + 4) = G (n + 3) (1, 1) := a_eq (n + 3)
-  have e5 : OMA.S_oeis_a329479.a (n + 5) = G (n + 4) (1, 1) := a_eq (n + 4)
-  have e6 : OMA.S_oeis_a329479.a (n + 6) = G (n + 5) (1, 1) := a_eq (n + 5)
-  have e7 : OMA.S_oeis_a329479.a (n + 7) = G (n + 6) (1, 1) := a_eq (n + 6)
-  have e8 : OMA.S_oeis_a329479.a (n + 8) = G (n + 7) (1, 1) := a_eq (n + 7)
-  have e9 : OMA.S_oeis_a329479.a (n + 9) = G (n + 8) (1, 1) := a_eq (n + 8)
-  rw [e9, e8, e7, e6, e5, e4, e3, e2, e1, T8 n, T7 n, T6 n, T5 n, T4 n, T3 n, T2 n, T1 n]
-  ring
+theorem OMA.solution : type_of% @OMA.S_oeis_a329479.main := A329479Aux.recurrence

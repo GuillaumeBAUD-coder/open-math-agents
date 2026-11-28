@@ -1,5 +1,4 @@
 import OMAStatements.S_mo_88509
-import Mathlib
 
 -- Problem mo-88509: (1) if A is a real m x m matrix with det (A - A^T) != 0 then m is even and m <= 2 rank A;
 -- (2) for every k there is a real 2k x 2k matrix A with det (A - A^T) != 0 and rank A = k.
@@ -63,11 +62,8 @@ theorem OMA.solution : type_of% @OMA.S_mo_88509.main := by
     rw [hS, Matrix.fromBlocks_multiply, hneg]
     simp
   have hdetS : (M - Mᵀ).det ≠ 0 := by
-    intro h0
-    have h1 : (M - Mᵀ).det * (M - Mᵀ).det = (-1 : Matrix (Fin k ⊕ Fin k) (Fin k ⊕ Fin k) ℝ).det := by
-      rw [← Matrix.det_mul, hSS]
-    rw [h0, mul_zero, Matrix.det_neg, Matrix.det_one, mul_one] at h1
-    exact pow_ne_zero _ (by norm_num : (-1 : ℝ) ≠ 0) h1.symm
+    apply Matrix.det_ne_zero_of_right_inverse (B := -(M - Mᵀ))
+    rw [Matrix.mul_neg, hSS, neg_neg]
   have hA : (M.submatrix finSumFinEquiv.symm finSumFinEquiv.symm) -
       (M.submatrix finSumFinEquiv.symm finSumFinEquiv.symm)ᵀ =
       (M - Mᵀ).submatrix finSumFinEquiv.symm finSumFinEquiv.symm := by
