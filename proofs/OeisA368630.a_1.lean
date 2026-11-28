@@ -16,17 +16,6 @@ def Original (r s : ℕ) (F : ℚ⟦X⟧) : Prop :=
   F.constantCoeff = 1 ∧
     F.subst (X * (F⁻¹) ^ r) = (exp ℚ).subst (X * F ^ s)
 
-/-- All three congruences, with the exceptional odd index one excluded. -/
-def Congruences (a : ℕ → ℤ) : Prop :=
-  (∀ n, a n % 3 = 1) ∧ (∀ n, a (2 * n) % 2 = 1) ∧
-    (∀ n, 1 ≤ n → a (2 * n + 1) % 2 = 0)
-
-/-- The full source-faithful obligation, including existence and uniqueness. -/
-def Target (r s : ℕ) : Prop :=
-  (∃! F : ℚ⟦X⟧, Original r s F) ∧
-    ∀ F : ℚ⟦X⟧, Original r s F →
-      ∃ a : ℕ → ℤ, egf a = F ∧ Congruences a
-
 lemma constantCoeff_subst_of_zero (F G : ℚ⟦X⟧) (hG : G.constantCoeff = 0) :
     PowerSeries.constantCoeff (F.subst G) = F.constantCoeff := by
   change MvPowerSeries.constantCoeff (F.subst G) = F.constantCoeff
@@ -132,12 +121,6 @@ theorem auxiliary_original {r s : ℕ} {F B : ℚ⟦X⟧}
     X * F⁻¹ ^ r * (F ^ r * F ^ s) = X * ((F⁻¹ * F) ^ r) * F ^ s := by ring
     _ = X * F ^ s := by rw [hiF, one_pow, mul_one]
 
-/-- Exact equivalence with the auxiliary-series formulation listed by OEIS. -/
-theorem original_iff_auxiliary (r s : ℕ) (F : ℚ⟦X⟧) :
-    Original r s F ↔ ∃ B : ℚ⟦X⟧, B.constantCoeff = 1 ∧
-      B = F.subst (X * B ^ r) ∧ F = (exp ℚ).subst (X * B ^ (r + s)) := by
-  exact ⟨original_auxiliary, fun ⟨_, h0, hB, hF⟩ => auxiliary_original h0 hB hF⟩
-
 namespace Hurwitz
 variable {R : Type*} [CommRing R]
 /-- Differentiation shifts an EGF coefficient sequence. -/
@@ -149,36 +132,11 @@ def product (a b : ℕ → R) : ℕ → R
 @[simp] lemma product_zero (a b : ℕ → R) : product a b 0 = a 0 * b 0 := rfl
 lemma product_succ (a b : ℕ → R) (n : ℕ) :
     product a b (n + 1) = product (shift a) b n + product a (shift b) n := rfl
-lemma shift_product (a b : ℕ → R) :
-    shift (product a b) = product (shift a) b + product a (shift b) := rfl
 lemma product_comm (a b : ℕ → R) : product a b = product b a := by
   funext n
   induction n generalizing a b with
   | zero => simp [mul_comm]
   | succ n ih => rw [product_succ, product_succ, ih (shift a) b, ih a (shift b), add_comm]
-lemma product_add_left (a b c : ℕ → R) :
-    product (a + b) c = product a c + product b c := by
-  funext n
-  induction n generalizing a b c with
-  | zero => simp [add_mul]
-  | succ n ih =>
-    change product (shift a + shift b) c n + product (a + b) (shift c) n = _
-    rw [ih, ih]
-    simp only [Pi.add_apply, product_succ]
-    ring
-lemma product_add_right (a b c : ℕ → R) :
-    product a (b + c) = product a b + product a c := by
-  rw [product_comm, product_add_left]
-  rw [product_comm b a, product_comm c a]
-lemma product_assoc (a b c : ℕ → R) :
-    product (product a b) c = product a (product b c) := by
-  funext n
-  induction n generalizing a b c with
-  | zero => simp [mul_assoc]
-  | succ n ih =>
-    simp only [product_succ, shift_product, product_add_left, product_add_right, Pi.add_apply]
-    rw [ih, ih, ih]
-    ring
 lemma map_product {S : Type*} [CommRing S] (φ : R →+* S) (a b : ℕ → R) :
     φ ∘ product a b = product (φ ∘ a) (φ ∘ b) := by
   funext n
@@ -189,26 +147,6 @@ lemma map_product {S : Type*} [CommRing S] (φ : R →+* S) (a b : ℕ → R) :
     change φ (product (shift a) b n + product a (shift b) n) = _
     rw [map_add, ih, ih]
     rfl
-lemma square_succ_two (a : ℕ → ZMod 2) (n : ℕ) : product a a (n + 1) = 0 := by
-  rw [product_succ, product_comm (shift a) a]
-  have h : (2 : ZMod 2) = 0 := by decide
-  calc
-    product a (shift a) n + product a (shift a) n = 2 * product a (shift a) n := by ring
-    _ = 0 := by rw [h, zero_mul]
-lemma cube_succ_three (a : ℕ → ZMod 3) (n : ℕ) :
-    product (product a a) a (n + 1) = 0 := by
-  rw [product_succ, shift_product, product_add_left]
-  simp only [Pi.add_apply]
-  have ht : product (product (shift a) a) a = product (product a a) (shift a) := by
-    rw [product_comm (shift a) a, product_comm (product a (shift a)) a, ← product_assoc]
-  have hu : product (product a (shift a)) a = product (product a a) (shift a) := by
-    rw [product_comm (product a (shift a)) a, ← product_assoc]
-  rw [ht, hu]
-  have h : (3 : ZMod 3) = 0 := by decide
-  calc
-    _ = 3 * product (product a a) (shift a) n := by ring
-    _ = 0 := by rw [h, zero_mul]
-
 end Hurwitz
 
 namespace Hurwitz
@@ -245,57 +183,12 @@ lemma jet_egf (a : ℕ → ℤ) : jet (egf a) = Int.castRingHom ℚ ∘ a := by
   simp only [jet, egf, coeff_mk, Function.comp_apply, Int.coe_castRingHom]
   have hn : (n.factorial : ℚ) ≠ 0 := by exact_mod_cast n.factorial_ne_zero
   field_simp
-lemma jet_egf_square (a : ℕ → ℤ) (n : ℕ) :
-    jet (egf a ^ 2) n = ((product a a n : ℤ) : ℚ) := by
-  rw [pow_two, jet_product, jet_egf, ← map_product]
-  rfl
-lemma jet_egf_cube (a : ℕ → ℤ) (n : ℕ) :
-    jet (egf a ^ 3) n = ((product (product a a) a n : ℤ) : ℚ) := by
-  have hp : egf a ^ 3 = (egf a * egf a) * egf a := by ring
-  rw [hp, jet_product, jet_product, jet_egf, ← map_product, ← map_product]
-  rfl
-lemma square_intCast_two (a : ℕ → ℤ) (n : ℕ) :
-    ((product a a (n + 1) : ℤ) : ZMod 2) = 0 := by
-  change (Int.castRingHom (ZMod 2) ∘ product a a) (n + 1) = 0
-  rw [map_product]
-  exact square_succ_two _ _
-lemma cube_intCast_three (a : ℕ → ℤ) (n : ℕ) :
-    ((product (product a a) a (n + 1) : ℤ) : ZMod 3) = 0 := by
-  change (Int.castRingHom (ZMod 3) ∘ product (product a a) a) (n + 1) = 0
-  rw [map_product, map_product]
-  exact cube_succ_three _ _
-/-- Every positive EGF coefficient of a square is an even integer. -/
-theorem egf_square_positive (a : ℕ → ℤ) (n : ℕ) :
-    ∃ c : ℤ, jet (egf a ^ 2) (n + 1) = (c : ℚ) ∧ (c : ZMod 2) = 0 :=
-  ⟨product a a (n + 1), jet_egf_square a (n + 1), square_intCast_two a n⟩
-/-- Every positive EGF coefficient of a cube is an integer divisible by three. -/
-theorem egf_cube_positive (a : ℕ → ℤ) (n : ℕ) :
-    ∃ c : ℤ, jet (egf a ^ 3) (n + 1) = (c : ℚ) ∧ (c : ZMod 3) = 0 :=
-  ⟨product (product a a) a (n + 1), jet_egf_cube a (n + 1), cube_intCast_three a n⟩
 end Hurwitz
 
 namespace Hurwitz
 open PowerSeries
 variable {R : Type*} [CommRing R]
 def unitSequence : ℕ → R := fun n => if n = 0 then 1 else 0
-lemma product_zero_right (a : ℕ → R) : product a 0 = 0 := by
-  funext n
-  induction n generalizing a with
-  | zero => simp
-  | succ n ih =>
-    change product (shift a) 0 n + product a 0 n = 0
-    rw [ih, ih]
-    simp
-lemma shift_unit : shift (unitSequence : ℕ → R) = 0 := by
-  funext n
-  simp [shift, unitSequence]
-lemma product_unit (a : ℕ → R) : product a unitSequence = a := by
-  funext n
-  induction n generalizing a with
-  | zero => simp [unitSequence]
-  | succ n ih =>
-    rw [product_succ, shift_unit, product_zero_right, Pi.zero_apply, add_zero, ih]
-    rfl
 lemma jet_X_mul_succ (F : ℚ⟦X⟧) (n : ℕ) :
     jet (X * F) (n + 1) = (n + 1) * jet F n := by
   simp only [jet, coeff_succ_X_mul, Nat.factorial_succ, Nat.cast_mul]
@@ -654,8 +547,6 @@ lemma b_fixed (r : ℕ) : auxiliaryOperator r (b r) = b r := by
 /-- EGF coefficients of the normalized source solution. -/
 def a (r : ℕ) : ℕ → ℤ := expSequence (power (b r) 3)
 
-lemma a_zero (r : ℕ) : a r 0 = 1 := expSequence_zero _
-
 lemma b_zero (r : ℕ) : b r 0 = 1 := by
   rw [← congrFun (b_fixed r) 0]
   exact (composition_zero _ _).trans (expSequence_zero _)
@@ -698,11 +589,6 @@ theorem eq_egf {r s : ℕ} (hrs : r + s = 3) {F : ℚ⟦X⟧} (hF : Original r s
   rw [hAj, jet_egf, heq, ← map_power, ← map_expSequence]
   rfl
 
-/-- Existence and uniqueness for the original normalized equation, with integral EGF coefficients. -/
-theorem exists_unique_original (r s : ℕ) (hrs : r + s = 3) :
-    ∃! F : ℚ⟦X⟧, Original r s F := by
-  exact ⟨egf (a r), original r s hrs, fun _ hF => eq_egf hrs hF⟩
-
 end Source
 
 lemma isGeneratingSequence_iff (c : ℕ → ℤ) :
@@ -735,13 +621,6 @@ lemma a_eq_constructed : OeisA368630.a = Source.a 2 :=
   exists_unique_sequence_proof.unique a_spec_proof constructed_spec
 
 open Hurwitz
-
-lemma primary_b_1 : Source.b 2 1 = 1 := by
-  have h := congrFun (Source.b_fixed 2) 1
-  norm_num [auxiliaryOperator, composition, Finset.sum_range_succ, power, product,
-    shift, logDerivative, unitSequence, expSequence_zero, expSequence_succ,
-    Source.b_zero] at h
-  exact h.symm
 
 lemma constructed_a_1 : Source.a 2 1 = 1 := by
   norm_num [Source.a, expSequence_succ, expSequence_zero, logDerivative, power,
