@@ -627,24 +627,12 @@ theorem large_radius (G : SimpleGraph α) (hconn : G.Connected)
       · omega
       · intro i hi
         have hi' : i < 4 := by omega
-        interval_cases i <;> simp only [H] <;> first | exact e_bv | exact e_bv.symm | exact e_v1 | exact e_v1.symm | exact e_12 | exact e_12.symm | exact e_23 | exact e_23.symm
+        interval_cases i <;> simp only [H] <;> first | assumption | exact .symm ‹_›
       · intro i j hj hij
         have hi' : i < 5 := by omega
         interval_cases j <;> interval_cases i <;> try omega
         all_goals simp only [H]
-        all_goals first
-            | exact ⟨n_b1, q_b1⟩
-            | exact ⟨fun hh => n_b1 hh.symm, fun hh => q_b1 hh.symm⟩
-            | exact ⟨n_b2, q_b2⟩
-            | exact ⟨fun hh => n_b2 hh.symm, fun hh => q_b2 hh.symm⟩
-            | exact ⟨n_b3, q_b3⟩
-            | exact ⟨fun hh => n_b3 hh.symm, fun hh => q_b3 hh.symm⟩
-            | exact ⟨n_v2, q_v2⟩
-            | exact ⟨fun hh => n_v2 hh.symm, fun hh => q_v2 hh.symm⟩
-            | exact ⟨n_v3, q_v3⟩
-            | exact ⟨fun hh => n_v3 hh.symm, fun hh => q_v3 hh.symm⟩
-            | exact ⟨n_13, q_13⟩
-            | exact ⟨fun hh => n_13 hh.symm, fun hh => q_13 hh.symm⟩
+        all_goals first | exact ⟨‹_›, ‹_›⟩ | exact ⟨fun hh => absurd hh.symm ‹_›, fun hh => absurd hh.symm ‹_›⟩
       · intro b' h1' h2'
         exact hta b' (by omega)
       · intro a' b' h1' h2' h3'
@@ -677,24 +665,12 @@ theorem large_radius (G : SimpleGraph α) (hconn : G.Connected)
       · omega
       · intro i hi
         have hi' : i < 3 := by omega
-        interval_cases i <;> simp only [H] <;> first | exact e_bv | exact e_bv.symm | exact e_v1 | exact e_v1.symm | exact e_12 | exact e_12.symm | exact e_23 | exact e_23.symm
+        interval_cases i <;> simp only [H] <;> first | assumption | exact .symm ‹_›
       · intro i j hj hij
         have hi' : i < 4 := by omega
         interval_cases j <;> interval_cases i <;> try omega
         all_goals simp only [H]
-        all_goals first
-            | exact ⟨n_b1, q_b1⟩
-            | exact ⟨fun hh => n_b1 hh.symm, fun hh => q_b1 hh.symm⟩
-            | exact ⟨n_b2, q_b2⟩
-            | exact ⟨fun hh => n_b2 hh.symm, fun hh => q_b2 hh.symm⟩
-            | exact ⟨n_b3, q_b3⟩
-            | exact ⟨fun hh => n_b3 hh.symm, fun hh => q_b3 hh.symm⟩
-            | exact ⟨n_v2, q_v2⟩
-            | exact ⟨fun hh => n_v2 hh.symm, fun hh => q_v2 hh.symm⟩
-            | exact ⟨n_v3, q_v3⟩
-            | exact ⟨fun hh => n_v3 hh.symm, fun hh => q_v3 hh.symm⟩
-            | exact ⟨n_13, q_13⟩
-            | exact ⟨fun hh => n_13 hh.symm, fun hh => q_13 hh.symm⟩
+        all_goals first | exact ⟨‹_›, ‹_›⟩ | exact ⟨fun hh => absurd hh.symm ‹_›, fun hh => absurd hh.symm ‹_›⟩
       · intro b' h1' h2'
         exact hta b' (by omega)
       · intro a' b' h1' h2' h3'
@@ -735,24 +711,12 @@ theorem large_radius (G : SimpleGraph α) (hconn : G.Connected)
         · omega
         · intro i hi
           have hi' : i < 4 := by omega
-          interval_cases i <;> simp only [H] <;> first | exact e_bv | exact e_bv.symm | exact e_v1 | exact e_v1.symm | exact e_12 | exact e_12.symm | exact e_23 | exact e_23.symm
+          interval_cases i <;> simp only [H] <;> first | assumption | exact .symm ‹_›
         · intro i j hj hij
           have hi' : i < 5 := by omega
           interval_cases j <;> interval_cases i <;> try omega
           all_goals simp only [H]
-          all_goals first
-              | exact ⟨n_b1, q_b1⟩
-              | exact ⟨fun hh => n_b1 hh.symm, fun hh => q_b1 hh.symm⟩
-              | exact ⟨n_b2, q_b2⟩
-              | exact ⟨fun hh => n_b2 hh.symm, fun hh => q_b2 hh.symm⟩
-              | exact ⟨n_b3, q_b3⟩
-              | exact ⟨fun hh => n_b3 hh.symm, fun hh => q_b3 hh.symm⟩
-              | exact ⟨n_v2, q_v2⟩
-              | exact ⟨fun hh => n_v2 hh.symm, fun hh => q_v2 hh.symm⟩
-              | exact ⟨n_v3, q_v3⟩
-              | exact ⟨fun hh => n_v3 hh.symm, fun hh => q_v3 hh.symm⟩
-              | exact ⟨n_13, q_13⟩
-              | exact ⟨fun hh => n_13 hh.symm, fun hh => q_13 hh.symm⟩
+          all_goals first | exact ⟨‹_›, ‹_›⟩ | exact ⟨fun hh => absurd hh.symm ‹_›, fun hh => absurd hh.symm ‹_›⟩
         · intro b' h1' h2'
           exact hta b' (by omega)
         · intro a' b' h1' h2' h3'
@@ -786,24 +750,12 @@ theorem large_radius (G : SimpleGraph α) (hconn : G.Connected)
           · omega
           · intro i hi
             have hi' : i < 4 := by omega
-            interval_cases i <;> simp only [H] <;> first | exact e_bv | exact e_bv.symm | exact e_v1 | exact e_v1.symm | exact e_12 | exact e_12.symm | exact e_23 | exact e_23.symm
+            interval_cases i <;> simp only [H] <;> first | assumption | exact .symm ‹_›
           · intro i j hj hij
             have hi' : i < 5 := by omega
             interval_cases j <;> interval_cases i <;> try omega
             all_goals simp only [H]
-            all_goals first
-                | exact ⟨n_b1, q_b1⟩
-                | exact ⟨fun hh => n_b1 hh.symm, fun hh => q_b1 hh.symm⟩
-                | exact ⟨n_b2, q_b2⟩
-                | exact ⟨fun hh => n_b2 hh.symm, fun hh => q_b2 hh.symm⟩
-                | exact ⟨n_b3, q_b3⟩
-                | exact ⟨fun hh => n_b3 hh.symm, fun hh => q_b3 hh.symm⟩
-                | exact ⟨n_v2, q_v2⟩
-                | exact ⟨fun hh => n_v2 hh.symm, fun hh => q_v2 hh.symm⟩
-                | exact ⟨n_v3, q_v3⟩
-                | exact ⟨fun hh => n_v3 hh.symm, fun hh => q_v3 hh.symm⟩
-                | exact ⟨n_13, q_13⟩
-                | exact ⟨fun hh => n_13 hh.symm, fun hh => q_13 hh.symm⟩
+            all_goals first | exact ⟨‹_›, ‹_›⟩ | exact ⟨fun hh => absurd hh.symm ‹_›, fun hh => absurd hh.symm ‹_›⟩
           · intro b' h1' h2'
             exact hta b' (by omega)
           · intro a' b' h1' h2' h3'
@@ -840,24 +792,12 @@ theorem large_radius (G : SimpleGraph α) (hconn : G.Connected)
           · omega
           · intro i hi
             have hi' : i < 2 := by omega
-            interval_cases i <;> simp only [H] <;> first | exact e_bv | exact e_bv.symm | exact e_v1 | exact e_v1.symm | exact e_12 | exact e_12.symm | exact e_23 | exact e_23.symm
+            interval_cases i <;> simp only [H] <;> first | assumption | exact .symm ‹_›
           · intro i j hj hij
             have hi' : i < 3 := by omega
             interval_cases j <;> interval_cases i <;> try omega
             all_goals simp only [H]
-            all_goals first
-                | exact ⟨n_b1, q_b1⟩
-                | exact ⟨fun hh => n_b1 hh.symm, fun hh => q_b1 hh.symm⟩
-                | exact ⟨n_b2, q_b2⟩
-                | exact ⟨fun hh => n_b2 hh.symm, fun hh => q_b2 hh.symm⟩
-                | exact ⟨n_b3, q_b3⟩
-                | exact ⟨fun hh => n_b3 hh.symm, fun hh => q_b3 hh.symm⟩
-                | exact ⟨n_v2, q_v2⟩
-                | exact ⟨fun hh => n_v2 hh.symm, fun hh => q_v2 hh.symm⟩
-                | exact ⟨n_v3, q_v3⟩
-                | exact ⟨fun hh => n_v3 hh.symm, fun hh => q_v3 hh.symm⟩
-                | exact ⟨n_13, q_13⟩
-                | exact ⟨fun hh => n_13 hh.symm, fun hh => q_13 hh.symm⟩
+            all_goals first | exact ⟨‹_›, ‹_›⟩ | exact ⟨fun hh => absurd hh.symm ‹_›, fun hh => absurd hh.symm ‹_›⟩
           · intro b' h1' h2'
             exact hta b' (by omega)
           · intro a' b' h1' h2' h3'
@@ -891,24 +831,12 @@ theorem large_radius (G : SimpleGraph α) (hconn : G.Connected)
         · omega
         · intro i hi
           have hi' : i < 3 := by omega
-          interval_cases i <;> simp only [H] <;> first | exact e_bv | exact e_bv.symm | exact e_v1 | exact e_v1.symm | exact e_12 | exact e_12.symm | exact e_23 | exact e_23.symm
+          interval_cases i <;> simp only [H] <;> first | assumption | exact .symm ‹_›
         · intro i j hj hij
           have hi' : i < 4 := by omega
           interval_cases j <;> interval_cases i <;> try omega
           all_goals simp only [H]
-          all_goals first
-              | exact ⟨n_b1, q_b1⟩
-              | exact ⟨fun hh => n_b1 hh.symm, fun hh => q_b1 hh.symm⟩
-              | exact ⟨n_b2, q_b2⟩
-              | exact ⟨fun hh => n_b2 hh.symm, fun hh => q_b2 hh.symm⟩
-              | exact ⟨n_b3, q_b3⟩
-              | exact ⟨fun hh => n_b3 hh.symm, fun hh => q_b3 hh.symm⟩
-              | exact ⟨n_v2, q_v2⟩
-              | exact ⟨fun hh => n_v2 hh.symm, fun hh => q_v2 hh.symm⟩
-              | exact ⟨n_v3, q_v3⟩
-              | exact ⟨fun hh => n_v3 hh.symm, fun hh => q_v3 hh.symm⟩
-              | exact ⟨n_13, q_13⟩
-              | exact ⟨fun hh => n_13 hh.symm, fun hh => q_13 hh.symm⟩
+          all_goals first | exact ⟨‹_›, ‹_›⟩ | exact ⟨fun hh => absurd hh.symm ‹_›, fun hh => absurd hh.symm ‹_›⟩
         · intro b' h1' h2'
           exact hta b' (by omega)
         · intro a' b' h1' h2' h3'
@@ -937,24 +865,12 @@ theorem large_radius (G : SimpleGraph α) (hconn : G.Connected)
         · omega
         · intro i hi
           have hi' : i < 2 := by omega
-          interval_cases i <;> simp only [H] <;> first | exact e_bv | exact e_bv.symm | exact e_v1 | exact e_v1.symm | exact e_12 | exact e_12.symm | exact e_23 | exact e_23.symm
+          interval_cases i <;> simp only [H] <;> first | assumption | exact .symm ‹_›
         · intro i j hj hij
           have hi' : i < 3 := by omega
           interval_cases j <;> interval_cases i <;> try omega
           all_goals simp only [H]
-          all_goals first
-              | exact ⟨n_b1, q_b1⟩
-              | exact ⟨fun hh => n_b1 hh.symm, fun hh => q_b1 hh.symm⟩
-              | exact ⟨n_b2, q_b2⟩
-              | exact ⟨fun hh => n_b2 hh.symm, fun hh => q_b2 hh.symm⟩
-              | exact ⟨n_b3, q_b3⟩
-              | exact ⟨fun hh => n_b3 hh.symm, fun hh => q_b3 hh.symm⟩
-              | exact ⟨n_v2, q_v2⟩
-              | exact ⟨fun hh => n_v2 hh.symm, fun hh => q_v2 hh.symm⟩
-              | exact ⟨n_v3, q_v3⟩
-              | exact ⟨fun hh => n_v3 hh.symm, fun hh => q_v3 hh.symm⟩
-              | exact ⟨n_13, q_13⟩
-              | exact ⟨fun hh => n_13 hh.symm, fun hh => q_13 hh.symm⟩
+          all_goals first | exact ⟨‹_›, ‹_›⟩ | exact ⟨fun hh => absurd hh.symm ‹_›, fun hh => absurd hh.symm ‹_›⟩
         · intro b' h1' h2'
           exact hta b' (by omega)
         · intro a' b' h1' h2' h3'
