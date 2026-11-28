@@ -4306,7 +4306,7 @@ lemma chunk_1_0_2 : budgetChunk 1 1 0 0 2 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma search_negative_1 : budgetSearch 1 1 0 = false := by
-  rw [budgetSearch_eq_chunk (by decide)]
+  rw [@budgetSearch_eq_chunk 1 1 0 (by decide)]
   exact chunk_1_0_2
 
 set_option maxRecDepth 1000000 in
@@ -4317,7 +4317,7 @@ lemma chunk_2_0_4 : budgetChunk 2 2 1 0 4 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma search_negative_2 : budgetSearch 2 2 1 = false := by
-  rw [budgetSearch_eq_chunk (by decide)]
+  rw [@budgetSearch_eq_chunk 2 2 1 (by decide)]
   exact chunk_2_0_4
 
 set_option maxRecDepth 1000000 in
@@ -4328,7 +4328,7 @@ lemma chunk_3_0_8 : budgetChunk 3 3 4 0 8 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma search_negative_3 : budgetSearch 3 3 4 = false := by
-  rw [budgetSearch_eq_chunk (by decide)]
+  rw [@budgetSearch_eq_chunk 3 3 4 (by decide)]
   exact chunk_3_0_8
 
 set_option maxRecDepth 1000000 in
@@ -4339,7 +4339,7 @@ lemma chunk_4_0_16 : budgetChunk 4 4 7 0 16 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma search_negative_4 : budgetSearch 4 4 7 = false := by
-  rw [budgetSearch_eq_chunk (by decide)]
+  rw [@budgetSearch_eq_chunk 4 4 7 (by decide)]
   exact chunk_4_0_16
 
 set_option maxRecDepth 1000000 in
@@ -4350,7 +4350,7 @@ lemma chunk_5_0_32 : budgetChunk 5 5 10 0 32 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma search_negative_5 : budgetSearch 5 5 10 = false := by
-  rw [budgetSearch_eq_chunk (by decide)]
+  rw [@budgetSearch_eq_chunk 5 5 10 (by decide)]
   exact chunk_5_0_32
 
 set_option maxRecDepth 1000000 in
@@ -4361,7 +4361,7 @@ lemma chunk_6_0_64 : budgetChunk 6 6 16 0 64 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma search_negative_6 : budgetSearch 6 6 16 = false := by
-  rw [budgetSearch_eq_chunk (by decide)]
+  rw [@budgetSearch_eq_chunk 6 6 16 (by decide)]
   exact chunk_6_0_64
 
 set_option maxRecDepth 1000000 in
@@ -4372,7 +4372,7 @@ lemma chunk_7_0_128 : budgetChunk 7 7 20 0 128 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma search_negative_7 : budgetSearch 7 7 20 = false := by
-  rw [budgetSearch_eq_chunk (by decide)]
+  rw [@budgetSearch_eq_chunk 7 7 20 (by decide)]
   exact chunk_7_0_128
 
 set_option maxRecDepth 1000000 in
@@ -4398,8 +4398,8 @@ lemma chunk_8_192_64 : budgetChunk 8 8 27 192 64 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma search_negative_8 : budgetSearch 8 8 27 = false := by
-  rw [budgetSearch_eq_chunk (by decide)]
-  exact (budgetChunk_add (budgetChunk_add chunk_8_0_64 chunk_8_64_64) (budgetChunk_add chunk_8_128_64 chunk_8_192_64))
+  rw [@budgetSearch_eq_chunk 8 8 27 (by decide)]
+  exact (@budgetChunk_add 8 8 27 0 128 128 (@budgetChunk_add 8 8 27 0 64 64 chunk_8_0_64 chunk_8_64_64) (@budgetChunk_add 8 8 27 128 64 64 chunk_8_128_64 chunk_8_192_64))
 
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
@@ -4424,7 +4424,7 @@ lemma chunk_9_164_1 : budgetChunk 9 9 34 164 1 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma state_9_8_0_165_34 : budgetDfs 9 8 0 165 34 = false := by
-  apply budgetDfs_false_of_children
+  apply (@budgetDfs_false_of_children 9 7 0 165 34)
   intro down hd
   have he : maskChoices (zeroMask 0 165) (oneMask 0 165) 9
       (34 - weight 9 165 - fastBound 9 7) = [280, 408, 312, 440, 284, 412, 316, 444, 281, 409, 313, 441, 285, 413, 317] := by decide +kernel
@@ -4450,7 +4450,7 @@ lemma state_9_8_0_165_34 : budgetDfs 9 8 0 165 34 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma chunk_9_165_1 : budgetChunk 9 9 34 165 1 = false := by
-  exact budgetChunk_one state_9_8_0_165_34
+  exact (@budgetChunk_one 9 9 34 165 state_9_8_0_165_34)
 
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
@@ -4465,7 +4465,7 @@ lemma chunk_9_168_1 : budgetChunk 9 9 34 168 1 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma state_9_8_0_169_34 : budgetDfs 9 8 0 169 34 = false := by
-  apply budgetDfs_false_of_children
+  apply (@budgetDfs_false_of_children 9 7 0 169 34)
   intro down hd
   have he : maskChoices (zeroMask 0 169) (oneMask 0 169) 9
       (34 - weight 9 169 - fastBound 9 7) = [262, 390, 294, 422, 270, 398, 302, 430, 263, 391, 295, 423, 271, 399, 303] := by decide +kernel
@@ -4491,12 +4491,12 @@ lemma state_9_8_0_169_34 : budgetDfs 9 8 0 169 34 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma chunk_9_169_1 : budgetChunk 9 9 34 169 1 = false := by
-  exact budgetChunk_one state_9_8_0_169_34
+  exact (@budgetChunk_one 9 9 34 169 state_9_8_0_169_34)
 
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma state_9_8_0_170_34 : budgetDfs 9 8 0 170 34 = false := by
-  apply budgetDfs_false_of_children
+  apply (@budgetDfs_false_of_children 9 7 0 170 34)
   intro down hd
   have he : maskChoices (zeroMask 0 170) (oneMask 0 170) 9
       (34 - weight 9 170 - fastBound 9 7) = [257, 385, 289, 417, 265, 393, 297, 425, 259, 387, 291, 419, 267, 395, 299, 427] := by decide +kernel
@@ -4523,7 +4523,7 @@ lemma state_9_8_0_170_34 : budgetDfs 9 8 0 170 34 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma chunk_9_170_1 : budgetChunk 9 9 34 170 1 = false := by
-  exact budgetChunk_one state_9_8_0_170_34
+  exact (@budgetChunk_one 9 9 34 170 state_9_8_0_170_34)
 
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
@@ -4653,7 +4653,7 @@ lemma chunk_9_296_2 : budgetChunk 9 9 34 296 2 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma state_9_8_0_298_34 : budgetDfs 9 8 0 298 34 = false := by
-  apply budgetDfs_false_of_children
+  apply (@budgetDfs_false_of_children 9 7 0 298 34)
   intro down hd
   have he : maskChoices (zeroMask 0 298) (oneMask 0 298) 9
       (34 - weight 9 298 - fastBound 9 7) = [193, 449, 225, 481, 201, 457, 233, 489, 195, 451, 227, 483, 203, 459, 235] := by decide +kernel
@@ -4679,7 +4679,7 @@ lemma state_9_8_0_298_34 : budgetDfs 9 8 0 298 34 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma chunk_9_298_1 : budgetChunk 9 9 34 298 1 = false := by
-  exact budgetChunk_one state_9_8_0_298_34
+  exact (@budgetChunk_one 9 9 34 298 state_9_8_0_298_34)
 
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
@@ -4724,7 +4724,7 @@ lemma chunk_9_328_2 : budgetChunk 9 9 34 328 2 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma state_9_8_0_330_34 : budgetDfs 9 8 0 330 34 = false := by
-  apply budgetDfs_false_of_children
+  apply (@budgetDfs_false_of_children 9 7 0 330 34)
   intro down hd
   have he : maskChoices (zeroMask 0 330) (oneMask 0 330) 9
       (34 - weight 9 330 - fastBound 9 7) = [49, 305, 113, 369, 57, 313, 121, 377, 51, 307, 115, 371, 59, 315, 123] := by decide +kernel
@@ -4750,7 +4750,7 @@ lemma state_9_8_0_330_34 : budgetDfs 9 8 0 330 34 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma chunk_9_330_1 : budgetChunk 9 9 34 330 1 = false := by
-  exact budgetChunk_one state_9_8_0_330_34
+  exact (@budgetChunk_one 9 9 34 330 state_9_8_0_330_34)
 
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
@@ -4925,8 +4925,8 @@ lemma chunk_9_496_16 : budgetChunk 9 9 34 496 16 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma search_negative_9 : budgetSearch 9 9 34 = false := by
-  rw [budgetSearch_eq_chunk (by decide)]
-  exact (budgetChunk_add (budgetChunk_add chunk_9_0_128 (budgetChunk_add (budgetChunk_add chunk_9_128_32 (budgetChunk_add (budgetChunk_add (budgetChunk_add chunk_9_160_4 (budgetChunk_add (budgetChunk_add chunk_9_164_1 chunk_9_165_1) chunk_9_166_2)) (budgetChunk_add (budgetChunk_add (budgetChunk_add chunk_9_168_1 chunk_9_169_1) (budgetChunk_add chunk_9_170_1 chunk_9_171_1)) (budgetChunk_add chunk_9_172_2 chunk_9_174_2))) (budgetChunk_add (budgetChunk_add chunk_9_176_4 (budgetChunk_add chunk_9_180_2 chunk_9_182_2)) (budgetChunk_add chunk_9_184_4 chunk_9_188_4)))) (budgetChunk_add (budgetChunk_add (budgetChunk_add chunk_9_192_8 (budgetChunk_add chunk_9_200_4 chunk_9_204_4)) (budgetChunk_add (budgetChunk_add chunk_9_208_4 chunk_9_212_4) (budgetChunk_add chunk_9_216_4 chunk_9_220_4))) (budgetChunk_add (budgetChunk_add chunk_9_224_8 (budgetChunk_add chunk_9_232_4 chunk_9_236_4)) (budgetChunk_add chunk_9_240_8 chunk_9_248_8))))) (budgetChunk_add (budgetChunk_add (budgetChunk_add chunk_9_256_32 (budgetChunk_add (budgetChunk_add chunk_9_288_8 (budgetChunk_add (budgetChunk_add chunk_9_296_2 (budgetChunk_add chunk_9_298_1 chunk_9_299_1)) (budgetChunk_add chunk_9_300_2 chunk_9_302_2))) (budgetChunk_add chunk_9_304_8 (budgetChunk_add chunk_9_312_4 chunk_9_316_4)))) (budgetChunk_add (budgetChunk_add (budgetChunk_add chunk_9_320_8 (budgetChunk_add (budgetChunk_add chunk_9_328_2 (budgetChunk_add chunk_9_330_1 chunk_9_331_1)) (budgetChunk_add chunk_9_332_2 chunk_9_334_2))) (budgetChunk_add (budgetChunk_add chunk_9_336_4 (budgetChunk_add chunk_9_340_2 chunk_9_342_2)) (budgetChunk_add (budgetChunk_add chunk_9_344_2 chunk_9_346_2) chunk_9_348_4))) (budgetChunk_add (budgetChunk_add chunk_9_352_8 (budgetChunk_add (budgetChunk_add chunk_9_360_2 (budgetChunk_add chunk_9_362_1 chunk_9_363_1)) chunk_9_364_4)) (budgetChunk_add chunk_9_368_8 chunk_9_376_8)))) (budgetChunk_add (budgetChunk_add (budgetChunk_add chunk_9_384_16 (budgetChunk_add (budgetChunk_add chunk_9_400_4 chunk_9_404_4) chunk_9_408_8)) (budgetChunk_add (budgetChunk_add chunk_9_416_8 (budgetChunk_add (budgetChunk_add chunk_9_424_2 chunk_9_426_2) chunk_9_428_4)) (budgetChunk_add chunk_9_432_8 chunk_9_440_8))) (budgetChunk_add (budgetChunk_add chunk_9_448_16 (budgetChunk_add chunk_9_464_8 chunk_9_472_8)) (budgetChunk_add (budgetChunk_add chunk_9_480_8 chunk_9_488_8) chunk_9_496_16)))))
+  rw [@budgetSearch_eq_chunk 9 9 34 (by decide)]
+  exact (@budgetChunk_add 9 9 34 0 256 256 (@budgetChunk_add 9 9 34 0 128 128 chunk_9_0_128 (@budgetChunk_add 9 9 34 128 64 64 (@budgetChunk_add 9 9 34 128 32 32 chunk_9_128_32 (@budgetChunk_add 9 9 34 160 16 16 (@budgetChunk_add 9 9 34 160 8 8 (@budgetChunk_add 9 9 34 160 4 4 chunk_9_160_4 (@budgetChunk_add 9 9 34 164 2 2 (@budgetChunk_add 9 9 34 164 1 1 chunk_9_164_1 chunk_9_165_1) chunk_9_166_2)) (@budgetChunk_add 9 9 34 168 4 4 (@budgetChunk_add 9 9 34 168 2 2 (@budgetChunk_add 9 9 34 168 1 1 chunk_9_168_1 chunk_9_169_1) (@budgetChunk_add 9 9 34 170 1 1 chunk_9_170_1 chunk_9_171_1)) (@budgetChunk_add 9 9 34 172 2 2 chunk_9_172_2 chunk_9_174_2))) (@budgetChunk_add 9 9 34 176 8 8 (@budgetChunk_add 9 9 34 176 4 4 chunk_9_176_4 (@budgetChunk_add 9 9 34 180 2 2 chunk_9_180_2 chunk_9_182_2)) (@budgetChunk_add 9 9 34 184 4 4 chunk_9_184_4 chunk_9_188_4)))) (@budgetChunk_add 9 9 34 192 32 32 (@budgetChunk_add 9 9 34 192 16 16 (@budgetChunk_add 9 9 34 192 8 8 chunk_9_192_8 (@budgetChunk_add 9 9 34 200 4 4 chunk_9_200_4 chunk_9_204_4)) (@budgetChunk_add 9 9 34 208 8 8 (@budgetChunk_add 9 9 34 208 4 4 chunk_9_208_4 chunk_9_212_4) (@budgetChunk_add 9 9 34 216 4 4 chunk_9_216_4 chunk_9_220_4))) (@budgetChunk_add 9 9 34 224 16 16 (@budgetChunk_add 9 9 34 224 8 8 chunk_9_224_8 (@budgetChunk_add 9 9 34 232 4 4 chunk_9_232_4 chunk_9_236_4)) (@budgetChunk_add 9 9 34 240 8 8 chunk_9_240_8 chunk_9_248_8))))) (@budgetChunk_add 9 9 34 256 128 128 (@budgetChunk_add 9 9 34 256 64 64 (@budgetChunk_add 9 9 34 256 32 32 chunk_9_256_32 (@budgetChunk_add 9 9 34 288 16 16 (@budgetChunk_add 9 9 34 288 8 8 chunk_9_288_8 (@budgetChunk_add 9 9 34 296 4 4 (@budgetChunk_add 9 9 34 296 2 2 chunk_9_296_2 (@budgetChunk_add 9 9 34 298 1 1 chunk_9_298_1 chunk_9_299_1)) (@budgetChunk_add 9 9 34 300 2 2 chunk_9_300_2 chunk_9_302_2))) (@budgetChunk_add 9 9 34 304 8 8 chunk_9_304_8 (@budgetChunk_add 9 9 34 312 4 4 chunk_9_312_4 chunk_9_316_4)))) (@budgetChunk_add 9 9 34 320 32 32 (@budgetChunk_add 9 9 34 320 16 16 (@budgetChunk_add 9 9 34 320 8 8 chunk_9_320_8 (@budgetChunk_add 9 9 34 328 4 4 (@budgetChunk_add 9 9 34 328 2 2 chunk_9_328_2 (@budgetChunk_add 9 9 34 330 1 1 chunk_9_330_1 chunk_9_331_1)) (@budgetChunk_add 9 9 34 332 2 2 chunk_9_332_2 chunk_9_334_2))) (@budgetChunk_add 9 9 34 336 8 8 (@budgetChunk_add 9 9 34 336 4 4 chunk_9_336_4 (@budgetChunk_add 9 9 34 340 2 2 chunk_9_340_2 chunk_9_342_2)) (@budgetChunk_add 9 9 34 344 4 4 (@budgetChunk_add 9 9 34 344 2 2 chunk_9_344_2 chunk_9_346_2) chunk_9_348_4))) (@budgetChunk_add 9 9 34 352 16 16 (@budgetChunk_add 9 9 34 352 8 8 chunk_9_352_8 (@budgetChunk_add 9 9 34 360 4 4 (@budgetChunk_add 9 9 34 360 2 2 chunk_9_360_2 (@budgetChunk_add 9 9 34 362 1 1 chunk_9_362_1 chunk_9_363_1)) chunk_9_364_4)) (@budgetChunk_add 9 9 34 368 8 8 chunk_9_368_8 chunk_9_376_8)))) (@budgetChunk_add 9 9 34 384 64 64 (@budgetChunk_add 9 9 34 384 32 32 (@budgetChunk_add 9 9 34 384 16 16 chunk_9_384_16 (@budgetChunk_add 9 9 34 400 8 8 (@budgetChunk_add 9 9 34 400 4 4 chunk_9_400_4 chunk_9_404_4) chunk_9_408_8)) (@budgetChunk_add 9 9 34 416 16 16 (@budgetChunk_add 9 9 34 416 8 8 chunk_9_416_8 (@budgetChunk_add 9 9 34 424 4 4 (@budgetChunk_add 9 9 34 424 2 2 chunk_9_424_2 chunk_9_426_2) chunk_9_428_4)) (@budgetChunk_add 9 9 34 432 8 8 chunk_9_432_8 chunk_9_440_8))) (@budgetChunk_add 9 9 34 448 32 32 (@budgetChunk_add 9 9 34 448 16 16 chunk_9_448_16 (@budgetChunk_add 9 9 34 464 8 8 chunk_9_464_8 chunk_9_472_8)) (@budgetChunk_add 9 9 34 480 16 16 (@budgetChunk_add 9 9 34 480 8 8 chunk_9_480_8 chunk_9_488_8) chunk_9_496_16)))))
 
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
@@ -5136,8 +5136,8 @@ lemma chunk_10_896_128 : budgetChunk 10 10 41 896 128 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma search_negative_10 : budgetSearch 10 10 41 = false := by
-  rw [budgetSearch_eq_chunk (by decide)]
-  exact (budgetChunk_add (budgetChunk_add (budgetChunk_add chunk_10_0_128 chunk_10_128_128) (budgetChunk_add (budgetChunk_add chunk_10_256_64 (budgetChunk_add (budgetChunk_add (budgetChunk_add chunk_10_320_8 (budgetChunk_add chunk_10_328_4 chunk_10_332_4)) (budgetChunk_add (budgetChunk_add chunk_10_336_4 chunk_10_340_4) chunk_10_344_8)) (budgetChunk_add (budgetChunk_add chunk_10_352_8 (budgetChunk_add chunk_10_360_4 chunk_10_364_4)) chunk_10_368_16))) (budgetChunk_add (budgetChunk_add chunk_10_384_32 (budgetChunk_add chunk_10_416_16 chunk_10_432_16)) (budgetChunk_add chunk_10_448_32 chunk_10_480_32)))) (budgetChunk_add (budgetChunk_add (budgetChunk_add chunk_10_512_64 (budgetChunk_add (budgetChunk_add chunk_10_576_16 (budgetChunk_add chunk_10_592_8 chunk_10_600_8)) chunk_10_608_32)) (budgetChunk_add (budgetChunk_add chunk_10_640_32 (budgetChunk_add (budgetChunk_add chunk_10_672_8 (budgetChunk_add chunk_10_680_4 chunk_10_684_4)) chunk_10_688_16)) (budgetChunk_add (budgetChunk_add chunk_10_704_16 chunk_10_720_16) chunk_10_736_32))) (budgetChunk_add (budgetChunk_add (budgetChunk_add chunk_10_768_32 chunk_10_800_32) (budgetChunk_add (budgetChunk_add chunk_10_832_16 chunk_10_848_16) chunk_10_864_32)) chunk_10_896_128)))
+  rw [@budgetSearch_eq_chunk 10 10 41 (by decide)]
+  exact (@budgetChunk_add 10 10 41 0 512 512 (@budgetChunk_add 10 10 41 0 256 256 (@budgetChunk_add 10 10 41 0 128 128 chunk_10_0_128 chunk_10_128_128) (@budgetChunk_add 10 10 41 256 128 128 (@budgetChunk_add 10 10 41 256 64 64 chunk_10_256_64 (@budgetChunk_add 10 10 41 320 32 32 (@budgetChunk_add 10 10 41 320 16 16 (@budgetChunk_add 10 10 41 320 8 8 chunk_10_320_8 (@budgetChunk_add 10 10 41 328 4 4 chunk_10_328_4 chunk_10_332_4)) (@budgetChunk_add 10 10 41 336 8 8 (@budgetChunk_add 10 10 41 336 4 4 chunk_10_336_4 chunk_10_340_4) chunk_10_344_8)) (@budgetChunk_add 10 10 41 352 16 16 (@budgetChunk_add 10 10 41 352 8 8 chunk_10_352_8 (@budgetChunk_add 10 10 41 360 4 4 chunk_10_360_4 chunk_10_364_4)) chunk_10_368_16))) (@budgetChunk_add 10 10 41 384 64 64 (@budgetChunk_add 10 10 41 384 32 32 chunk_10_384_32 (@budgetChunk_add 10 10 41 416 16 16 chunk_10_416_16 chunk_10_432_16)) (@budgetChunk_add 10 10 41 448 32 32 chunk_10_448_32 chunk_10_480_32)))) (@budgetChunk_add 10 10 41 512 256 256 (@budgetChunk_add 10 10 41 512 128 128 (@budgetChunk_add 10 10 41 512 64 64 chunk_10_512_64 (@budgetChunk_add 10 10 41 576 32 32 (@budgetChunk_add 10 10 41 576 16 16 chunk_10_576_16 (@budgetChunk_add 10 10 41 592 8 8 chunk_10_592_8 chunk_10_600_8)) chunk_10_608_32)) (@budgetChunk_add 10 10 41 640 64 64 (@budgetChunk_add 10 10 41 640 32 32 chunk_10_640_32 (@budgetChunk_add 10 10 41 672 16 16 (@budgetChunk_add 10 10 41 672 8 8 chunk_10_672_8 (@budgetChunk_add 10 10 41 680 4 4 chunk_10_680_4 chunk_10_684_4)) chunk_10_688_16)) (@budgetChunk_add 10 10 41 704 32 32 (@budgetChunk_add 10 10 41 704 16 16 chunk_10_704_16 chunk_10_720_16) chunk_10_736_32))) (@budgetChunk_add 10 10 41 768 128 128 (@budgetChunk_add 10 10 41 768 64 64 (@budgetChunk_add 10 10 41 768 32 32 chunk_10_768_32 chunk_10_800_32) (@budgetChunk_add 10 10 41 832 32 32 (@budgetChunk_add 10 10 41 832 16 16 chunk_10_832_16 chunk_10_848_16) chunk_10_864_32)) chunk_10_896_128)))
 
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
@@ -5212,7 +5212,7 @@ lemma chunk_11_660_1 : budgetChunk 11 11 50 660 1 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma state_11_10_0_661_50 : budgetDfs 11 10 0 661 50 = false := by
-  apply budgetDfs_false_of_children
+  apply (@budgetDfs_false_of_children 11 9 0 661 50)
   intro down hd
   have he : maskChoices (zeroMask 0 661) (oneMask 0 661) 11
       (50 - weight 11 661 - fastBound 11 9) = [1120, 1632, 1248, 1760, 1136, 1648, 1264, 1776, 1124, 1636, 1252, 1764, 1140, 1652, 1268, 1780, 1121, 1633, 1249, 1761, 1137, 1649, 1265, 1777, 1125, 1637, 1253, 1765, 1141, 1653, 1269] := by decide +kernel
@@ -5254,12 +5254,12 @@ lemma state_11_10_0_661_50 : budgetDfs 11 10 0 661 50 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma chunk_11_661_1 : budgetChunk 11 11 50 661 1 = false := by
-  exact budgetChunk_one state_11_10_0_661_50
+  exact (@budgetChunk_one 11 11 50 661 state_11_10_0_661_50)
 
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma state_11_10_0_662_50 : budgetDfs 11 10 0 662 50 = false := by
-  apply budgetDfs_false_of_children
+  apply (@budgetDfs_false_of_children 11 9 0 662 50)
   intro down hd
   have he : maskChoices (zeroMask 0 662) (oneMask 0 662) 11
       (50 - weight 11 662 - fastBound 11 9) = [1121, 1633, 1249, 1761, 1137, 1649, 1265, 1777, 1125, 1637, 1253, 1765, 1141, 1653, 1269, 1123, 1635, 1251, 1763, 1139, 1651, 1267, 1127, 1639, 1255, 1143] := by decide +kernel
@@ -5296,12 +5296,12 @@ lemma state_11_10_0_662_50 : budgetDfs 11 10 0 662 50 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma chunk_11_662_1 : budgetChunk 11 11 50 662 1 = false := by
-  exact budgetChunk_one state_11_10_0_662_50
+  exact (@budgetChunk_one 11 11 50 662 state_11_10_0_662_50)
 
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma state_11_10_0_663_50 : budgetDfs 11 10 0 663 50 = false := by
-  apply budgetDfs_false_of_children
+  apply (@budgetDfs_false_of_children 11 9 0 663 50)
   intro down hd
   have he : maskChoices (zeroMask 0 663) (oneMask 0 663) 11
       (50 - weight 11 663 - fastBound 11 9) = [1120, 1632, 1248, 1760, 1136, 1648, 1264, 1776, 1124, 1636, 1252, 1764, 1140, 1652, 1268, 1122, 1634, 1250, 1762, 1138, 1650, 1266, 1126, 1638, 1254, 1142, 1121, 1633, 1249, 1761, 1137, 1649, 1265, 1125, 1637, 1253, 1141, 1123, 1635, 1251, 1139, 1127] := by decide +kernel
@@ -5354,7 +5354,7 @@ lemma state_11_10_0_663_50 : budgetDfs 11 10 0 663 50 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma chunk_11_663_1 : budgetChunk 11 11 50 663 1 = false := by
-  exact budgetChunk_one state_11_10_0_663_50
+  exact (@budgetChunk_one 11 11 50 663 state_11_10_0_663_50)
 
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
@@ -5364,7 +5364,7 @@ lemma chunk_11_664_2 : budgetChunk 11 11 50 664 2 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma state_11_10_0_666_50 : budgetDfs 11 10 0 666 50 = false := by
-  apply budgetDfs_false_of_children
+  apply (@budgetDfs_false_of_children 11 9 0 666 50)
   intro down hd
   have he : maskChoices (zeroMask 0 666) (oneMask 0 666) 11
       (50 - weight 11 666 - fastBound 11 9) = [1121, 1633, 1249, 1761, 1137, 1649, 1265, 1777, 1129, 1641, 1257, 1769, 1145, 1657, 1273, 1123, 1635, 1251, 1763, 1139, 1651, 1267, 1131, 1643, 1259, 1147] := by decide +kernel
@@ -5411,7 +5411,7 @@ namespace A344719Small
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma chunk_11_666_1 : budgetChunk 11 11 50 666 1 = false := by
-  exact budgetChunk_one state_11_10_0_666_50
+  exact (@budgetChunk_one 11 11 50 666 state_11_10_0_666_50)
 
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
@@ -5436,7 +5436,7 @@ lemma chunk_11_676_1 : budgetChunk 11 11 50 676 1 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma state_11_10_0_677_50 : budgetDfs 11 10 0 677 50 = false := by
-  apply budgetDfs_false_of_children
+  apply (@budgetDfs_false_of_children 11 9 0 677 50)
   intro down hd
   have he : maskChoices (zeroMask 0 677) (oneMask 0 677) 11
       (50 - weight 11 677 - fastBound 11 9) = [1048, 1560, 1176, 1688, 1080, 1592, 1208, 1720, 1052, 1564, 1180, 1692, 1084, 1596, 1212, 1724, 1049, 1561, 1177, 1689, 1081, 1593, 1209, 1721, 1053, 1565, 1181, 1693, 1085, 1597, 1213] := by decide +kernel
@@ -5478,7 +5478,7 @@ lemma state_11_10_0_677_50 : budgetDfs 11 10 0 677 50 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma chunk_11_677_1 : budgetChunk 11 11 50 677 1 = false := by
-  exact budgetChunk_one state_11_10_0_677_50
+  exact (@budgetChunk_one 11 11 50 677 state_11_10_0_677_50)
 
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
@@ -5493,7 +5493,7 @@ lemma chunk_11_680_1 : budgetChunk 11 11 50 680 1 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma state_11_9_681_1190_45 : budgetDfs 11 9 681 1190 45 = false := by
-  apply budgetDfs_false_of_children
+  apply (@budgetDfs_false_of_children 11 8 681 1190 45)
   intro down hd
   have he : maskChoices (zeroMask 681 1190) (oneMask 681 1190) 11
       (45 - weight 11 1190 - fastBound 11 8) = [272, 1296, 400, 1424, 304, 1328, 432, 1456, 276, 1300, 404, 1428, 308, 1332, 436, 274, 1298, 402, 1426, 306, 1330, 434, 278, 1302, 406, 310] := by decide +kernel
@@ -5530,7 +5530,7 @@ lemma state_11_9_681_1190_45 : budgetDfs 11 9 681 1190 45 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma state_11_10_0_681_50 : budgetDfs 11 10 0 681 50 = false := by
-  apply budgetDfs_false_of_children
+  apply (@budgetDfs_false_of_children 11 9 0 681 50)
   intro down hd
   have he : maskChoices (zeroMask 0 681) (oneMask 0 681) 11
       (50 - weight 11 681 - fastBound 11 9) = [1030, 1542, 1158, 1670, 1062, 1574, 1190, 1702, 1038, 1550, 1166, 1678, 1070, 1582, 1198, 1710, 1031, 1543, 1159, 1671, 1063, 1575, 1191, 1703, 1039, 1551, 1167, 1679, 1071, 1583, 1199] := by decide +kernel
@@ -5572,12 +5572,12 @@ lemma state_11_10_0_681_50 : budgetDfs 11 10 0 681 50 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma chunk_11_681_1 : budgetChunk 11 11 50 681 1 = false := by
-  exact budgetChunk_one state_11_10_0_681_50
+  exact (@budgetChunk_one 11 11 50 681 state_11_10_0_681_50)
 
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma state_11_9_682_1193_45 : budgetDfs 11 9 682 1193 45 = false := by
-  apply budgetDfs_false_of_children
+  apply (@budgetDfs_false_of_children 11 8 682 1193 45)
   intro down hd
   have he : maskChoices (zeroMask 682 1193) (oneMask 682 1193) 11
       (45 - weight 11 1193 - fastBound 11 8) = [260, 1284, 388, 1412, 292, 1316, 420, 1444, 268, 1292, 396, 1420, 300, 1324, 428, 261, 1285, 389, 1413, 293, 1317, 421, 269, 1293, 397, 301] := by decide +kernel
@@ -5624,7 +5624,7 @@ namespace A344719Small
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma state_11_10_0_682_50 : budgetDfs 11 10 0 682 50 = false := by
-  apply budgetDfs_false_of_children
+  apply (@budgetDfs_false_of_children 11 9 0 682 50)
   intro down hd
   have he : maskChoices (zeroMask 0 682) (oneMask 0 682) 11
       (50 - weight 11 682 - fastBound 11 9) = [1025, 1537, 1153, 1665, 1057, 1569, 1185, 1697, 1033, 1545, 1161, 1673, 1065, 1577, 1193, 1705, 1027, 1539, 1155, 1667, 1059, 1571, 1187, 1699, 1035, 1547, 1163, 1675, 1067, 1579, 1195, 1707] := by decide +kernel
@@ -5667,7 +5667,7 @@ lemma state_11_10_0_682_50 : budgetDfs 11 10 0 682 50 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma chunk_11_682_1 : budgetChunk 11 11 50 682 1 = false := by
-  exact budgetChunk_one state_11_10_0_682_50
+  exact (@budgetChunk_one 11 11 50 682 state_11_10_0_682_50)
 
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
@@ -5732,7 +5732,7 @@ lemma chunk_11_712_2 : budgetChunk 11 11 50 712 2 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma state_11_10_0_714_50 : budgetDfs 11 10 0 714 50 = false := by
-  apply budgetDfs_false_of_children
+  apply (@budgetDfs_false_of_children 11 9 0 714 50)
   intro down hd
   have he : maskChoices (zeroMask 0 714) (oneMask 0 714) 11
       (50 - weight 11 714 - fastBound 11 9) = [1073, 1585, 1201, 1713, 1137, 1649, 1265, 1777, 1081, 1593, 1209, 1721, 1145, 1657, 1273, 1075, 1587, 1203, 1715, 1139, 1651, 1267, 1083, 1595, 1211, 1147] := by decide +kernel
@@ -5779,7 +5779,7 @@ namespace A344719Small
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma chunk_11_714_1 : budgetChunk 11 11 50 714 1 = false := by
-  exact budgetChunk_one state_11_10_0_714_50
+  exact (@budgetChunk_one 11 11 50 714 state_11_10_0_714_50)
 
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
@@ -5804,7 +5804,7 @@ lemma chunk_11_722_1 : budgetChunk 11 11 50 722 1 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma state_11_9_723_1612_44 : budgetDfs 11 9 723 1612 44 = false := by
-  apply budgetDfs_false_of_children
+  apply (@budgetDfs_false_of_children 11 8 723 1612 44)
   intro down hd
   have he : maskChoices (zeroMask 723 1612) (oneMask 723 1612) 11
       (44 - weight 11 1612 - fastBound 11 8) = [289, 1313, 801, 353, 297, 293] := by decide +kernel
@@ -5821,7 +5821,7 @@ lemma state_11_9_723_1612_44 : budgetDfs 11 9 723 1612 44 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma state_11_10_0_723_50 : budgetDfs 11 10 0 723 50 = false := by
-  apply budgetDfs_false_of_children
+  apply (@budgetDfs_false_of_children 11 9 0 723 50)
   intro down hd
   have he : maskChoices (zeroMask 0 723) (oneMask 0 723) 11
       (50 - weight 11 723 - fastBound 11 9) = [1036, 1548, 1164, 1676, 1100, 1612, 1228, 1740, 1052, 1564, 1180, 1692, 1116, 1628, 1244, 1038, 1550, 1166, 1678, 1102, 1614, 1230, 1054, 1566, 1182, 1118, 1037, 1549, 1165, 1677, 1101, 1613, 1229, 1053, 1565, 1181, 1117, 1039, 1551, 1167, 1103, 1055] := by decide +kernel
@@ -5874,7 +5874,7 @@ lemma state_11_10_0_723_50 : budgetDfs 11 10 0 723 50 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma chunk_11_723_1 : budgetChunk 11 11 50 723 1 = false := by
-  exact budgetChunk_one state_11_10_0_723_50
+  exact (@budgetChunk_one 11 11 50 723 state_11_10_0_723_50)
 
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
@@ -5884,7 +5884,7 @@ lemma chunk_11_724_1 : budgetChunk 11 11 50 724 1 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma state_11_10_0_725_50 : budgetDfs 11 10 0 725 50 = false := by
-  apply budgetDfs_false_of_children
+  apply (@budgetDfs_false_of_children 11 9 0 725 50)
   intro down hd
   have he : maskChoices (zeroMask 0 725) (oneMask 0 725) 11
       (50 - weight 11 725 - fastBound 11 9) = [1024, 1536, 1152, 1664, 1088, 1600, 1216, 1728, 1040, 1552, 1168, 1680, 1104, 1616, 1232, 1744, 1028, 1540, 1156, 1668, 1092, 1604, 1220, 1732, 1044, 1556, 1172, 1684, 1108, 1620, 1236, 1748, 1025, 1537, 1153, 1665, 1089, 1601, 1217, 1729, 1041, 1553, 1169, 1681, 1105, 1617, 1233, 1745, 1029, 1541, 1157, 1669, 1093, 1605, 1221, 1733, 1045, 1557, 1173, 1685, 1109, 1621, 1237] := by decide +kernel
@@ -5958,7 +5958,7 @@ lemma state_11_10_0_725_50 : budgetDfs 11 10 0 725 50 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma chunk_11_725_1 : budgetChunk 11 11 50 725 1 = false := by
-  exact budgetChunk_one state_11_10_0_725_50
+  exact (@budgetChunk_one 11 11 50 725 state_11_10_0_725_50)
 
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
@@ -5978,7 +5978,7 @@ lemma chunk_11_728_2 : budgetChunk 11 11 50 728 2 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma state_11_8_1609_292_39 : budgetDfs 11 8 1609 292 39 = false := by
-  apply budgetDfs_false_of_children
+  apply (@budgetDfs_false_of_children 11 7 1609 292 39)
   intro down hd
   have he : maskChoices (zeroMask 1609 292) (oneMask 1609 292) 11
       (39 - weight 11 292 - fastBound 11 7) = [1171, 1427, 1203, 1175] := by decide +kernel
@@ -5993,7 +5993,7 @@ lemma state_11_8_1609_292_39 : budgetDfs 11 8 1609 292 39 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma state_11_9_730_1609_44 : budgetDfs 11 9 730 1609 44 = false := by
-  apply budgetDfs_false_of_children
+  apply (@budgetDfs_false_of_children 11 8 730 1609 44)
   intro down hd
   have he : maskChoices (zeroMask 730 1609) (oneMask 730 1609) 11
       (44 - weight 11 1609 - fastBound 11 8) = [292, 1316, 804, 356, 300, 293] := by decide +kernel
@@ -6020,7 +6020,7 @@ namespace A344719Small
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma state_11_8_1171_292_39 : budgetDfs 11 8 1171 292 39 = false := by
-  apply budgetDfs_false_of_children
+  apply (@budgetDfs_false_of_children 11 7 1171 292 39)
   intro down hd
   have he : maskChoices (zeroMask 1171 292) (oneMask 1171 292) 11
       (39 - weight 11 292 - fastBound 11 7) = [1609, 1865, 1641, 1613] := by decide +kernel
@@ -6035,7 +6035,7 @@ lemma state_11_8_1171_292_39 : budgetDfs 11 8 1171 292 39 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma state_11_9_730_1171_44 : budgetDfs 11 9 730 1171 44 = false := by
-  apply budgetDfs_false_of_children
+  apply (@budgetDfs_false_of_children 11 8 730 1171 44)
   intro down hd
   have he : maskChoices (zeroMask 730 1171) (oneMask 730 1171) 11
       (44 - weight 11 1171 - fastBound 11 8) = [292, 1316, 420, 308, 294, 293] := by decide +kernel
@@ -6052,7 +6052,7 @@ lemma state_11_9_730_1171_44 : budgetDfs 11 9 730 1171 44 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma state_11_10_0_730_50 : budgetDfs 11 10 0 730 50 = false := by
-  apply budgetDfs_false_of_children
+  apply (@budgetDfs_false_of_children 11 9 0 730 50)
   intro down hd
   have he : maskChoices (zeroMask 0 730) (oneMask 0 730) 11
       (50 - weight 11 730 - fastBound 11 9) = [1025, 1537, 1153, 1665, 1089, 1601, 1217, 1729, 1041, 1553, 1169, 1681, 1105, 1617, 1233, 1745, 1033, 1545, 1161, 1673, 1097, 1609, 1225, 1737, 1049, 1561, 1177, 1689, 1113, 1625, 1241, 1027, 1539, 1155, 1667, 1091, 1603, 1219, 1731, 1043, 1555, 1171, 1683, 1107, 1619, 1235, 1035, 1547, 1163, 1675, 1099, 1611, 1227, 1051, 1563, 1179, 1115] := by decide +kernel
@@ -6120,7 +6120,7 @@ lemma state_11_10_0_730_50 : budgetDfs 11 10 0 730 50 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma chunk_11_730_1 : budgetChunk 11 11 50 730 1 = false := by
-  exact budgetChunk_one state_11_10_0_730_50
+  exact (@budgetChunk_one 11 11 50 730 state_11_10_0_730_50)
 
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
@@ -6230,7 +6230,7 @@ lemma chunk_11_840_2 : budgetChunk 11 11 50 840 2 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma state_11_10_0_842_50 : budgetDfs 11 10 0 842 50 = false := by
-  apply budgetDfs_false_of_children
+  apply (@budgetDfs_false_of_children 11 9 0 842 50)
   intro down hd
   have he : maskChoices (zeroMask 0 842) (oneMask 0 842) 11
       (50 - weight 11 842 - fastBound 11 9) = [1073, 1585, 1329, 1841, 1137, 1649, 1393, 1905, 1081, 1593, 1337, 1849, 1145, 1657, 1401, 1075, 1587, 1331, 1843, 1139, 1651, 1395, 1083, 1595, 1339, 1147] := by decide +kernel
@@ -6267,7 +6267,7 @@ lemma state_11_10_0_842_50 : budgetDfs 11 10 0 842 50 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma chunk_11_842_1 : budgetChunk 11 11 50 842 1 = false := by
-  exact budgetChunk_one state_11_10_0_842_50
+  exact (@budgetChunk_one 11 11 50 842 state_11_10_0_842_50)
 
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
@@ -6452,7 +6452,7 @@ lemma chunk_11_1188_1 : budgetChunk 11 11 50 1188 1 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma state_11_10_0_1189_50 : budgetDfs 11 10 0 1189 50 = false := by
-  apply budgetDfs_false_of_children
+  apply (@budgetDfs_false_of_children 11 9 0 1189 50)
   intro down hd
   have he : maskChoices (zeroMask 0 1189) (oneMask 0 1189) 11
       (50 - weight 11 1189 - fastBound 11 9) = [792, 1816, 920, 1944, 824, 1848, 952, 1976, 796, 1820, 924, 1948, 828, 1852, 956, 793, 1817, 921, 1945, 825, 1849, 953, 797, 1821, 925, 829] := by decide +kernel
@@ -6489,7 +6489,7 @@ lemma state_11_10_0_1189_50 : budgetDfs 11 10 0 1189 50 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma chunk_11_1189_1 : budgetChunk 11 11 50 1189 1 = false := by
-  exact budgetChunk_one state_11_10_0_1189_50
+  exact (@budgetChunk_one 11 11 50 1189 state_11_10_0_1189_50)
 
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
@@ -6504,7 +6504,7 @@ lemma chunk_11_1192_1 : budgetChunk 11 11 50 1192 1 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma state_11_10_0_1193_50 : budgetDfs 11 10 0 1193 50 = false := by
-  apply budgetDfs_false_of_children
+  apply (@budgetDfs_false_of_children 11 9 0 1193 50)
   intro down hd
   have he : maskChoices (zeroMask 0 1193) (oneMask 0 1193) 11
       (50 - weight 11 1193 - fastBound 11 9) = [774, 1798, 902, 1926, 806, 1830, 934, 1958, 782, 1806, 910, 1934, 814, 1838, 942, 775, 1799, 903, 1927, 807, 1831, 935, 783, 1807, 911, 815] := by decide +kernel
@@ -6551,12 +6551,12 @@ namespace A344719Small
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma chunk_11_1193_1 : budgetChunk 11 11 50 1193 1 = false := by
-  exact budgetChunk_one state_11_10_0_1193_50
+  exact (@budgetChunk_one 11 11 50 1193 state_11_10_0_1193_50)
 
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma state_11_9_1194_809_45 : budgetDfs 11 9 1194 809 45 = false := by
-  apply budgetDfs_false_of_children
+  apply (@budgetDfs_false_of_children 11 8 1194 809 45)
   intro down hd
   have he : maskChoices (zeroMask 1194 809) (oneMask 1194 809) 11
       (45 - weight 11 809 - fastBound 11 8) = [68, 580, 324, 836, 100, 612, 356, 868, 76, 588, 332, 844, 108, 620, 364, 69, 581, 325, 837, 101, 613, 357, 77, 589, 333, 109] := by decide +kernel
@@ -6593,7 +6593,7 @@ lemma state_11_9_1194_809_45 : budgetDfs 11 9 1194 809 45 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma state_11_10_0_1194_50 : budgetDfs 11 10 0 1194 50 = false := by
-  apply budgetDfs_false_of_children
+  apply (@budgetDfs_false_of_children 11 9 0 1194 50)
   intro down hd
   have he : maskChoices (zeroMask 0 1194) (oneMask 0 1194) 11
       (50 - weight 11 1194 - fastBound 11 9) = [769, 1793, 897, 1921, 801, 1825, 929, 1953, 777, 1801, 905, 1929, 809, 1833, 937, 1961, 771, 1795, 899, 1923, 803, 1827, 931, 1955, 779, 1803, 907, 1931, 811, 1835, 939] := by decide +kernel
@@ -6635,7 +6635,7 @@ lemma state_11_10_0_1194_50 : budgetDfs 11 10 0 1194 50 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma chunk_11_1194_1 : budgetChunk 11 11 50 1194 1 = false := by
-  exact budgetChunk_one state_11_10_0_1194_50
+  exact (@budgetChunk_one 11 11 50 1194 state_11_10_0_1194_50)
 
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
@@ -6780,7 +6780,7 @@ lemma chunk_11_1320_1 : budgetChunk 11 11 50 1320 1 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma state_11_10_0_1321_50 : budgetDfs 11 10 0 1321 50 = false := by
-  apply budgetDfs_false_of_children
+  apply (@budgetDfs_false_of_children 11 9 0 1321 50)
   intro down hd
   have he : maskChoices (zeroMask 0 1321) (oneMask 0 1321) 11
       (50 - weight 11 1321 - fastBound 11 9) = [198, 1222, 454, 1478, 230, 1254, 486, 1510, 206, 1230, 462, 1486, 238, 1262, 494, 199, 1223, 455, 1479, 231, 1255, 487, 207, 1231, 463, 239] := by decide +kernel
@@ -6817,12 +6817,12 @@ lemma state_11_10_0_1321_50 : budgetDfs 11 10 0 1321 50 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma chunk_11_1321_1 : budgetChunk 11 11 50 1321 1 = false := by
-  exact budgetChunk_one state_11_10_0_1321_50
+  exact (@budgetChunk_one 11 11 50 1321 state_11_10_0_1321_50)
 
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma state_11_10_0_1322_50 : budgetDfs 11 10 0 1322 50 = false := by
-  apply budgetDfs_false_of_children
+  apply (@budgetDfs_false_of_children 11 9 0 1322 50)
   intro down hd
   have he : maskChoices (zeroMask 0 1322) (oneMask 0 1322) 11
       (50 - weight 11 1322 - fastBound 11 9) = [193, 1217, 449, 1473, 225, 1249, 481, 1505, 201, 1225, 457, 1481, 233, 1257, 489, 1513, 195, 1219, 451, 1475, 227, 1251, 483, 1507, 203, 1227, 459, 1483, 235, 1259, 491] := by decide +kernel
@@ -6864,7 +6864,7 @@ lemma state_11_10_0_1322_50 : budgetDfs 11 10 0 1322 50 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma chunk_11_1322_1 : budgetChunk 11 11 50 1322 1 = false := by
-  exact budgetChunk_one state_11_10_0_1322_50
+  exact (@budgetChunk_one 11 11 50 1322 state_11_10_0_1322_50)
 
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
@@ -6904,7 +6904,7 @@ lemma chunk_11_1352_2 : budgetChunk 11 11 50 1352 2 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma state_11_10_0_1354_50 : budgetDfs 11 10 0 1354 50 = false := by
-  apply budgetDfs_false_of_children
+  apply (@budgetDfs_false_of_children 11 9 0 1354 50)
   intro down hd
   have he : maskChoices (zeroMask 0 1354) (oneMask 0 1354) 11
       (50 - weight 11 1354 - fastBound 11 9) = [49, 1073, 305, 1329, 113, 1137, 369, 1393, 57, 1081, 313, 1337, 121, 1145, 377, 1401, 51, 1075, 307, 1331, 115, 1139, 371, 1395, 59, 1083, 315, 1339, 123, 1147, 379] := by decide +kernel
@@ -6956,7 +6956,7 @@ namespace A344719Small
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma chunk_11_1354_1 : budgetChunk 11 11 50 1354 1 = false := by
-  exact budgetChunk_one state_11_10_0_1354_50
+  exact (@budgetChunk_one 11 11 50 1354 state_11_10_0_1354_50)
 
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
@@ -6986,7 +6986,7 @@ lemma chunk_11_1368_2 : budgetChunk 11 11 50 1368 2 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma state_11_10_0_1370_50 : budgetDfs 11 10 0 1370 50 = false := by
-  apply budgetDfs_false_of_children
+  apply (@budgetDfs_false_of_children 11 9 0 1370 50)
   intro down hd
   have he : maskChoices (zeroMask 0 1370) (oneMask 0 1370) 11
       (50 - weight 11 1370 - fastBound 11 9) = [1, 1025, 257, 1281, 65, 1089, 321, 1345, 17, 1041, 273, 1297, 81, 1105, 337, 1361, 9, 1033, 265, 1289, 73, 1097, 329, 1353, 25, 1049, 281, 1305, 89, 1113, 345, 1369, 3, 1027, 259, 1283, 67, 1091, 323, 1347, 19, 1043, 275, 1299, 83, 1107, 339, 1363, 11, 1035, 267, 1291, 75, 1099, 331, 1355, 27, 1051, 283, 1307, 91, 1115, 347] := by decide +kernel
@@ -7060,7 +7060,7 @@ lemma state_11_10_0_1370_50 : budgetDfs 11 10 0 1370 50 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma chunk_11_1370_1 : budgetChunk 11 11 50 1370 1 = false := by
-  exact budgetChunk_one state_11_10_0_1370_50
+  exact (@budgetChunk_one 11 11 50 1370 state_11_10_0_1370_50)
 
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
@@ -7260,7 +7260,7 @@ lemma chunk_11_1624_2 : budgetChunk 11 11 50 1624 2 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma state_11_9_1626_403_44 : budgetDfs 11 9 1626 403 44 = false := by
-  apply budgetDfs_false_of_children
+  apply (@budgetDfs_false_of_children 11 8 1626 403 44)
   intro down hd
   have he : maskChoices (zeroMask 1626 403) (oneMask 1626 403) 11
       (44 - weight 11 403 - fastBound 11 8) = [1060, 1316, 1188, 1076, 1062, 1061] := by decide +kernel
@@ -7277,7 +7277,7 @@ lemma state_11_9_1626_403_44 : budgetDfs 11 9 1626 403 44 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma state_11_10_0_1626_50 : budgetDfs 11 10 0 1626 50 = false := by
-  apply budgetDfs_false_of_children
+  apply (@budgetDfs_false_of_children 11 9 0 1626 50)
   intro down hd
   have he : maskChoices (zeroMask 0 1626) (oneMask 0 1626) 11
       (50 - weight 11 1626 - fastBound 11 9) = [385, 1409, 897, 1921, 449, 1473, 961, 1985, 401, 1425, 913, 1937, 465, 1489, 977, 393, 1417, 905, 1929, 457, 1481, 969, 409, 1433, 921, 473, 387, 1411, 899, 1923, 451, 1475, 963, 403, 1427, 915, 467, 395, 1419, 907, 459, 411] := by decide +kernel
@@ -7340,7 +7340,7 @@ namespace A344719Small
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma chunk_11_1626_1 : budgetChunk 11 11 50 1626 1 = false := by
-  exact budgetChunk_one state_11_10_0_1626_50
+  exact (@budgetChunk_one 11 11 50 1626 state_11_10_0_1626_50)
 
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
@@ -7560,7 +7560,7 @@ lemma chunk_11_1864_2 : budgetChunk 11 11 50 1864 2 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma state_11_10_0_1866_50 : budgetDfs 11 10 0 1866 50 = false := by
-  apply budgetDfs_false_of_children
+  apply (@budgetDfs_false_of_children 11 9 0 1866 50)
   intro down hd
   have he : maskChoices (zeroMask 0 1866) (oneMask 0 1866) 11
       (50 - weight 11 1866 - fastBound 11 9) = [49, 1073, 561, 1585, 305, 1329, 817, 1841, 113, 1137, 625, 1649, 369, 1393, 881, 57, 1081, 569, 1593, 313, 1337, 825, 121, 1145, 633, 377, 51, 1075, 563, 1587, 307, 1331, 819, 115, 1139, 627, 371, 59, 1083, 571, 315, 123] := by decide +kernel
@@ -7613,7 +7613,7 @@ lemma state_11_10_0_1866_50 : budgetDfs 11 10 0 1866 50 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma chunk_11_1866_1 : budgetChunk 11 11 50 1866 1 = false := by
-  exact budgetChunk_one state_11_10_0_1866_50
+  exact (@budgetChunk_one 11 11 50 1866 state_11_10_0_1866_50)
 
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
@@ -7758,8 +7758,8 @@ lemma chunk_11_2032_16 : budgetChunk 11 11 50 2032 16 = false := by
 set_option maxRecDepth 1000000 in
 set_option maxHeartbeats 0 in
 lemma search_negative_11 : budgetSearch 11 11 50 = false := by
-  rw [budgetSearch_eq_chunk (by decide)]
-  exact (budgetChunk_add (budgetChunk_add (budgetChunk_add (budgetChunk_add chunk_11_0_128 chunk_11_128_128) (budgetChunk_add chunk_11_256_128 chunk_11_384_128)) (budgetChunk_add (budgetChunk_add (budgetChunk_add chunk_11_512_64 (budgetChunk_add (budgetChunk_add chunk_11_576_16 (budgetChunk_add chunk_11_592_8 (budgetChunk_add chunk_11_600_4 chunk_11_604_4))) (budgetChunk_add chunk_11_608_16 chunk_11_624_16))) (budgetChunk_add (budgetChunk_add (budgetChunk_add chunk_11_640_16 (budgetChunk_add (budgetChunk_add chunk_11_656_4 (budgetChunk_add (budgetChunk_add chunk_11_660_1 chunk_11_661_1) (budgetChunk_add chunk_11_662_1 chunk_11_663_1))) (budgetChunk_add (budgetChunk_add chunk_11_664_2 (budgetChunk_add chunk_11_666_1 chunk_11_667_1)) chunk_11_668_4))) (budgetChunk_add (budgetChunk_add (budgetChunk_add chunk_11_672_4 (budgetChunk_add (budgetChunk_add chunk_11_676_1 chunk_11_677_1) chunk_11_678_2)) (budgetChunk_add (budgetChunk_add (budgetChunk_add chunk_11_680_1 chunk_11_681_1) (budgetChunk_add chunk_11_682_1 chunk_11_683_1)) (budgetChunk_add chunk_11_684_2 chunk_11_686_2))) (budgetChunk_add (budgetChunk_add chunk_11_688_4 (budgetChunk_add chunk_11_692_2 chunk_11_694_2)) (budgetChunk_add (budgetChunk_add chunk_11_696_2 (budgetChunk_add chunk_11_698_1 chunk_11_699_1)) chunk_11_700_4)))) (budgetChunk_add (budgetChunk_add (budgetChunk_add chunk_11_704_8 (budgetChunk_add (budgetChunk_add chunk_11_712_2 (budgetChunk_add chunk_11_714_1 chunk_11_715_1)) chunk_11_716_4)) (budgetChunk_add (budgetChunk_add (budgetChunk_add chunk_11_720_2 (budgetChunk_add chunk_11_722_1 chunk_11_723_1)) (budgetChunk_add (budgetChunk_add chunk_11_724_1 chunk_11_725_1) (budgetChunk_add chunk_11_726_1 chunk_11_727_1))) (budgetChunk_add (budgetChunk_add chunk_11_728_2 (budgetChunk_add chunk_11_730_1 chunk_11_731_1)) chunk_11_732_4))) (budgetChunk_add (budgetChunk_add chunk_11_736_8 (budgetChunk_add (budgetChunk_add chunk_11_744_2 (budgetChunk_add chunk_11_746_1 chunk_11_747_1)) chunk_11_748_4)) (budgetChunk_add chunk_11_752_8 (budgetChunk_add chunk_11_760_4 chunk_11_764_4)))))) (budgetChunk_add (budgetChunk_add (budgetChunk_add chunk_11_768_32 (budgetChunk_add (budgetChunk_add chunk_11_800_8 (budgetChunk_add (budgetChunk_add chunk_11_808_2 chunk_11_810_2) chunk_11_812_4)) (budgetChunk_add chunk_11_816_8 chunk_11_824_8))) (budgetChunk_add (budgetChunk_add (budgetChunk_add chunk_11_832_8 (budgetChunk_add (budgetChunk_add chunk_11_840_2 (budgetChunk_add chunk_11_842_1 chunk_11_843_1)) chunk_11_844_4)) (budgetChunk_add (budgetChunk_add chunk_11_848_4 chunk_11_852_4) (budgetChunk_add (budgetChunk_add chunk_11_856_2 chunk_11_858_2) chunk_11_860_4))) (budgetChunk_add (budgetChunk_add chunk_11_864_8 (budgetChunk_add (budgetChunk_add chunk_11_872_2 chunk_11_874_2) chunk_11_876_4)) (budgetChunk_add chunk_11_880_8 chunk_11_888_8)))) (budgetChunk_add (budgetChunk_add (budgetChunk_add chunk_11_896_16 (budgetChunk_add chunk_11_912_8 chunk_11_920_8)) (budgetChunk_add (budgetChunk_add chunk_11_928_8 (budgetChunk_add (budgetChunk_add chunk_11_936_2 chunk_11_938_2) chunk_11_940_4)) (budgetChunk_add chunk_11_944_8 chunk_11_952_8))) (budgetChunk_add (budgetChunk_add chunk_11_960_16 (budgetChunk_add chunk_11_976_8 (budgetChunk_add chunk_11_984_4 chunk_11_988_4))) (budgetChunk_add (budgetChunk_add chunk_11_992_8 (budgetChunk_add chunk_11_1000_4 chunk_11_1004_4)) chunk_11_1008_16)))))) (budgetChunk_add (budgetChunk_add (budgetChunk_add chunk_11_1024_128 (budgetChunk_add (budgetChunk_add chunk_11_1152_32 (budgetChunk_add (budgetChunk_add (budgetChunk_add chunk_11_1184_4 (budgetChunk_add (budgetChunk_add chunk_11_1188_1 chunk_11_1189_1) chunk_11_1190_2)) (budgetChunk_add (budgetChunk_add (budgetChunk_add chunk_11_1192_1 chunk_11_1193_1) (budgetChunk_add chunk_11_1194_1 chunk_11_1195_1)) (budgetChunk_add chunk_11_1196_2 chunk_11_1198_2))) (budgetChunk_add (budgetChunk_add chunk_11_1200_4 (budgetChunk_add chunk_11_1204_2 (budgetChunk_add chunk_11_1206_1 chunk_11_1207_1))) (budgetChunk_add (budgetChunk_add chunk_11_1208_2 chunk_11_1210_2) chunk_11_1212_4)))) (budgetChunk_add (budgetChunk_add (budgetChunk_add chunk_11_1216_8 (budgetChunk_add (budgetChunk_add chunk_11_1224_2 (budgetChunk_add chunk_11_1226_1 chunk_11_1227_1)) chunk_11_1228_4)) (budgetChunk_add chunk_11_1232_8 (budgetChunk_add chunk_11_1240_4 chunk_11_1244_4))) (budgetChunk_add (budgetChunk_add chunk_11_1248_8 (budgetChunk_add chunk_11_1256_4 chunk_11_1260_4)) (budgetChunk_add chunk_11_1264_8 chunk_11_1272_8))))) (budgetChunk_add (budgetChunk_add (budgetChunk_add chunk_11_1280_32 (budgetChunk_add (budgetChunk_add chunk_11_1312_8 (budgetChunk_add (budgetChunk_add (budgetChunk_add chunk_11_1320_1 chunk_11_1321_1) (budgetChunk_add chunk_11_1322_1 chunk_11_1323_1)) chunk_11_1324_4)) (budgetChunk_add chunk_11_1328_8 (budgetChunk_add chunk_11_1336_4 chunk_11_1340_4)))) (budgetChunk_add (budgetChunk_add (budgetChunk_add chunk_11_1344_8 (budgetChunk_add (budgetChunk_add chunk_11_1352_2 (budgetChunk_add chunk_11_1354_1 chunk_11_1355_1)) chunk_11_1356_4)) (budgetChunk_add (budgetChunk_add chunk_11_1360_4 chunk_11_1364_4) (budgetChunk_add (budgetChunk_add chunk_11_1368_2 (budgetChunk_add chunk_11_1370_1 chunk_11_1371_1)) chunk_11_1372_4))) (budgetChunk_add (budgetChunk_add chunk_11_1376_8 (budgetChunk_add (budgetChunk_add chunk_11_1384_2 chunk_11_1386_2) chunk_11_1388_4)) (budgetChunk_add (budgetChunk_add chunk_11_1392_4 chunk_11_1396_4) (budgetChunk_add chunk_11_1400_4 chunk_11_1404_4))))) (budgetChunk_add (budgetChunk_add (budgetChunk_add chunk_11_1408_16 (budgetChunk_add chunk_11_1424_8 chunk_11_1432_8)) (budgetChunk_add (budgetChunk_add chunk_11_1440_8 (budgetChunk_add (budgetChunk_add chunk_11_1448_2 (budgetChunk_add chunk_11_1450_1 chunk_11_1451_1)) chunk_11_1452_4)) (budgetChunk_add (budgetChunk_add chunk_11_1456_4 chunk_11_1460_4) (budgetChunk_add chunk_11_1464_4 chunk_11_1468_4)))) (budgetChunk_add (budgetChunk_add chunk_11_1472_16 (budgetChunk_add (budgetChunk_add chunk_11_1488_4 chunk_11_1492_4) (budgetChunk_add chunk_11_1496_4 chunk_11_1500_4))) (budgetChunk_add (budgetChunk_add chunk_11_1504_8 (budgetChunk_add chunk_11_1512_4 chunk_11_1516_4)) (budgetChunk_add chunk_11_1520_8 chunk_11_1528_8)))))) (budgetChunk_add (budgetChunk_add (budgetChunk_add chunk_11_1536_64 (budgetChunk_add (budgetChunk_add chunk_11_1600_16 (budgetChunk_add (budgetChunk_add chunk_11_1616_4 chunk_11_1620_4) (budgetChunk_add (budgetChunk_add chunk_11_1624_2 (budgetChunk_add chunk_11_1626_1 chunk_11_1627_1)) chunk_11_1628_4))) (budgetChunk_add (budgetChunk_add chunk_11_1632_8 chunk_11_1640_8) (budgetChunk_add chunk_11_1648_8 chunk_11_1656_8)))) (budgetChunk_add (budgetChunk_add (budgetChunk_add chunk_11_1664_16 (budgetChunk_add chunk_11_1680_8 (budgetChunk_add chunk_11_1688_4 chunk_11_1692_4))) (budgetChunk_add (budgetChunk_add (budgetChunk_add chunk_11_1696_4 chunk_11_1700_4) (budgetChunk_add (budgetChunk_add chunk_11_1704_2 (budgetChunk_add chunk_11_1706_1 chunk_11_1707_1)) (budgetChunk_add chunk_11_1708_2 chunk_11_1710_2))) (budgetChunk_add (budgetChunk_add chunk_11_1712_4 chunk_11_1716_4) (budgetChunk_add chunk_11_1720_4 chunk_11_1724_4)))) (budgetChunk_add (budgetChunk_add chunk_11_1728_16 (budgetChunk_add (budgetChunk_add chunk_11_1744_4 (budgetChunk_add chunk_11_1748_2 chunk_11_1750_2)) (budgetChunk_add (budgetChunk_add chunk_11_1752_2 (budgetChunk_add chunk_11_1754_1 chunk_11_1755_1)) chunk_11_1756_4))) (budgetChunk_add (budgetChunk_add chunk_11_1760_8 (budgetChunk_add chunk_11_1768_4 chunk_11_1772_4)) (budgetChunk_add chunk_11_1776_8 chunk_11_1784_8))))) (budgetChunk_add (budgetChunk_add (budgetChunk_add chunk_11_1792_32 (budgetChunk_add (budgetChunk_add chunk_11_1824_8 (budgetChunk_add chunk_11_1832_4 chunk_11_1836_4)) chunk_11_1840_16)) (budgetChunk_add (budgetChunk_add (budgetChunk_add chunk_11_1856_8 (budgetChunk_add (budgetChunk_add chunk_11_1864_2 (budgetChunk_add chunk_11_1866_1 chunk_11_1867_1)) chunk_11_1868_4)) (budgetChunk_add (budgetChunk_add chunk_11_1872_4 (budgetChunk_add chunk_11_1876_2 chunk_11_1878_2)) (budgetChunk_add (budgetChunk_add chunk_11_1880_2 chunk_11_1882_2) chunk_11_1884_4))) (budgetChunk_add (budgetChunk_add chunk_11_1888_8 (budgetChunk_add (budgetChunk_add chunk_11_1896_2 chunk_11_1898_2) chunk_11_1900_4)) (budgetChunk_add chunk_11_1904_8 chunk_11_1912_8)))) (budgetChunk_add (budgetChunk_add chunk_11_1920_32 (budgetChunk_add (budgetChunk_add chunk_11_1952_8 (budgetChunk_add chunk_11_1960_4 chunk_11_1964_4)) (budgetChunk_add chunk_11_1968_8 chunk_11_1976_8))) (budgetChunk_add (budgetChunk_add chunk_11_1984_16 (budgetChunk_add chunk_11_2000_8 chunk_11_2008_8)) (budgetChunk_add (budgetChunk_add chunk_11_2016_8 chunk_11_2024_8) chunk_11_2032_16)))))))
+  rw [@budgetSearch_eq_chunk 11 11 50 (by decide)]
+  exact (@budgetChunk_add 11 11 50 0 1024 1024 (@budgetChunk_add 11 11 50 0 512 512 (@budgetChunk_add 11 11 50 0 256 256 (@budgetChunk_add 11 11 50 0 128 128 chunk_11_0_128 chunk_11_128_128) (@budgetChunk_add 11 11 50 256 128 128 chunk_11_256_128 chunk_11_384_128)) (@budgetChunk_add 11 11 50 512 256 256 (@budgetChunk_add 11 11 50 512 128 128 (@budgetChunk_add 11 11 50 512 64 64 chunk_11_512_64 (@budgetChunk_add 11 11 50 576 32 32 (@budgetChunk_add 11 11 50 576 16 16 chunk_11_576_16 (@budgetChunk_add 11 11 50 592 8 8 chunk_11_592_8 (@budgetChunk_add 11 11 50 600 4 4 chunk_11_600_4 chunk_11_604_4))) (@budgetChunk_add 11 11 50 608 16 16 chunk_11_608_16 chunk_11_624_16))) (@budgetChunk_add 11 11 50 640 64 64 (@budgetChunk_add 11 11 50 640 32 32 (@budgetChunk_add 11 11 50 640 16 16 chunk_11_640_16 (@budgetChunk_add 11 11 50 656 8 8 (@budgetChunk_add 11 11 50 656 4 4 chunk_11_656_4 (@budgetChunk_add 11 11 50 660 2 2 (@budgetChunk_add 11 11 50 660 1 1 chunk_11_660_1 chunk_11_661_1) (@budgetChunk_add 11 11 50 662 1 1 chunk_11_662_1 chunk_11_663_1))) (@budgetChunk_add 11 11 50 664 4 4 (@budgetChunk_add 11 11 50 664 2 2 chunk_11_664_2 (@budgetChunk_add 11 11 50 666 1 1 chunk_11_666_1 chunk_11_667_1)) chunk_11_668_4))) (@budgetChunk_add 11 11 50 672 16 16 (@budgetChunk_add 11 11 50 672 8 8 (@budgetChunk_add 11 11 50 672 4 4 chunk_11_672_4 (@budgetChunk_add 11 11 50 676 2 2 (@budgetChunk_add 11 11 50 676 1 1 chunk_11_676_1 chunk_11_677_1) chunk_11_678_2)) (@budgetChunk_add 11 11 50 680 4 4 (@budgetChunk_add 11 11 50 680 2 2 (@budgetChunk_add 11 11 50 680 1 1 chunk_11_680_1 chunk_11_681_1) (@budgetChunk_add 11 11 50 682 1 1 chunk_11_682_1 chunk_11_683_1)) (@budgetChunk_add 11 11 50 684 2 2 chunk_11_684_2 chunk_11_686_2))) (@budgetChunk_add 11 11 50 688 8 8 (@budgetChunk_add 11 11 50 688 4 4 chunk_11_688_4 (@budgetChunk_add 11 11 50 692 2 2 chunk_11_692_2 chunk_11_694_2)) (@budgetChunk_add 11 11 50 696 4 4 (@budgetChunk_add 11 11 50 696 2 2 chunk_11_696_2 (@budgetChunk_add 11 11 50 698 1 1 chunk_11_698_1 chunk_11_699_1)) chunk_11_700_4)))) (@budgetChunk_add 11 11 50 704 32 32 (@budgetChunk_add 11 11 50 704 16 16 (@budgetChunk_add 11 11 50 704 8 8 chunk_11_704_8 (@budgetChunk_add 11 11 50 712 4 4 (@budgetChunk_add 11 11 50 712 2 2 chunk_11_712_2 (@budgetChunk_add 11 11 50 714 1 1 chunk_11_714_1 chunk_11_715_1)) chunk_11_716_4)) (@budgetChunk_add 11 11 50 720 8 8 (@budgetChunk_add 11 11 50 720 4 4 (@budgetChunk_add 11 11 50 720 2 2 chunk_11_720_2 (@budgetChunk_add 11 11 50 722 1 1 chunk_11_722_1 chunk_11_723_1)) (@budgetChunk_add 11 11 50 724 2 2 (@budgetChunk_add 11 11 50 724 1 1 chunk_11_724_1 chunk_11_725_1) (@budgetChunk_add 11 11 50 726 1 1 chunk_11_726_1 chunk_11_727_1))) (@budgetChunk_add 11 11 50 728 4 4 (@budgetChunk_add 11 11 50 728 2 2 chunk_11_728_2 (@budgetChunk_add 11 11 50 730 1 1 chunk_11_730_1 chunk_11_731_1)) chunk_11_732_4))) (@budgetChunk_add 11 11 50 736 16 16 (@budgetChunk_add 11 11 50 736 8 8 chunk_11_736_8 (@budgetChunk_add 11 11 50 744 4 4 (@budgetChunk_add 11 11 50 744 2 2 chunk_11_744_2 (@budgetChunk_add 11 11 50 746 1 1 chunk_11_746_1 chunk_11_747_1)) chunk_11_748_4)) (@budgetChunk_add 11 11 50 752 8 8 chunk_11_752_8 (@budgetChunk_add 11 11 50 760 4 4 chunk_11_760_4 chunk_11_764_4)))))) (@budgetChunk_add 11 11 50 768 128 128 (@budgetChunk_add 11 11 50 768 64 64 (@budgetChunk_add 11 11 50 768 32 32 chunk_11_768_32 (@budgetChunk_add 11 11 50 800 16 16 (@budgetChunk_add 11 11 50 800 8 8 chunk_11_800_8 (@budgetChunk_add 11 11 50 808 4 4 (@budgetChunk_add 11 11 50 808 2 2 chunk_11_808_2 chunk_11_810_2) chunk_11_812_4)) (@budgetChunk_add 11 11 50 816 8 8 chunk_11_816_8 chunk_11_824_8))) (@budgetChunk_add 11 11 50 832 32 32 (@budgetChunk_add 11 11 50 832 16 16 (@budgetChunk_add 11 11 50 832 8 8 chunk_11_832_8 (@budgetChunk_add 11 11 50 840 4 4 (@budgetChunk_add 11 11 50 840 2 2 chunk_11_840_2 (@budgetChunk_add 11 11 50 842 1 1 chunk_11_842_1 chunk_11_843_1)) chunk_11_844_4)) (@budgetChunk_add 11 11 50 848 8 8 (@budgetChunk_add 11 11 50 848 4 4 chunk_11_848_4 chunk_11_852_4) (@budgetChunk_add 11 11 50 856 4 4 (@budgetChunk_add 11 11 50 856 2 2 chunk_11_856_2 chunk_11_858_2) chunk_11_860_4))) (@budgetChunk_add 11 11 50 864 16 16 (@budgetChunk_add 11 11 50 864 8 8 chunk_11_864_8 (@budgetChunk_add 11 11 50 872 4 4 (@budgetChunk_add 11 11 50 872 2 2 chunk_11_872_2 chunk_11_874_2) chunk_11_876_4)) (@budgetChunk_add 11 11 50 880 8 8 chunk_11_880_8 chunk_11_888_8)))) (@budgetChunk_add 11 11 50 896 64 64 (@budgetChunk_add 11 11 50 896 32 32 (@budgetChunk_add 11 11 50 896 16 16 chunk_11_896_16 (@budgetChunk_add 11 11 50 912 8 8 chunk_11_912_8 chunk_11_920_8)) (@budgetChunk_add 11 11 50 928 16 16 (@budgetChunk_add 11 11 50 928 8 8 chunk_11_928_8 (@budgetChunk_add 11 11 50 936 4 4 (@budgetChunk_add 11 11 50 936 2 2 chunk_11_936_2 chunk_11_938_2) chunk_11_940_4)) (@budgetChunk_add 11 11 50 944 8 8 chunk_11_944_8 chunk_11_952_8))) (@budgetChunk_add 11 11 50 960 32 32 (@budgetChunk_add 11 11 50 960 16 16 chunk_11_960_16 (@budgetChunk_add 11 11 50 976 8 8 chunk_11_976_8 (@budgetChunk_add 11 11 50 984 4 4 chunk_11_984_4 chunk_11_988_4))) (@budgetChunk_add 11 11 50 992 16 16 (@budgetChunk_add 11 11 50 992 8 8 chunk_11_992_8 (@budgetChunk_add 11 11 50 1000 4 4 chunk_11_1000_4 chunk_11_1004_4)) chunk_11_1008_16)))))) (@budgetChunk_add 11 11 50 1024 512 512 (@budgetChunk_add 11 11 50 1024 256 256 (@budgetChunk_add 11 11 50 1024 128 128 chunk_11_1024_128 (@budgetChunk_add 11 11 50 1152 64 64 (@budgetChunk_add 11 11 50 1152 32 32 chunk_11_1152_32 (@budgetChunk_add 11 11 50 1184 16 16 (@budgetChunk_add 11 11 50 1184 8 8 (@budgetChunk_add 11 11 50 1184 4 4 chunk_11_1184_4 (@budgetChunk_add 11 11 50 1188 2 2 (@budgetChunk_add 11 11 50 1188 1 1 chunk_11_1188_1 chunk_11_1189_1) chunk_11_1190_2)) (@budgetChunk_add 11 11 50 1192 4 4 (@budgetChunk_add 11 11 50 1192 2 2 (@budgetChunk_add 11 11 50 1192 1 1 chunk_11_1192_1 chunk_11_1193_1) (@budgetChunk_add 11 11 50 1194 1 1 chunk_11_1194_1 chunk_11_1195_1)) (@budgetChunk_add 11 11 50 1196 2 2 chunk_11_1196_2 chunk_11_1198_2))) (@budgetChunk_add 11 11 50 1200 8 8 (@budgetChunk_add 11 11 50 1200 4 4 chunk_11_1200_4 (@budgetChunk_add 11 11 50 1204 2 2 chunk_11_1204_2 (@budgetChunk_add 11 11 50 1206 1 1 chunk_11_1206_1 chunk_11_1207_1))) (@budgetChunk_add 11 11 50 1208 4 4 (@budgetChunk_add 11 11 50 1208 2 2 chunk_11_1208_2 chunk_11_1210_2) chunk_11_1212_4)))) (@budgetChunk_add 11 11 50 1216 32 32 (@budgetChunk_add 11 11 50 1216 16 16 (@budgetChunk_add 11 11 50 1216 8 8 chunk_11_1216_8 (@budgetChunk_add 11 11 50 1224 4 4 (@budgetChunk_add 11 11 50 1224 2 2 chunk_11_1224_2 (@budgetChunk_add 11 11 50 1226 1 1 chunk_11_1226_1 chunk_11_1227_1)) chunk_11_1228_4)) (@budgetChunk_add 11 11 50 1232 8 8 chunk_11_1232_8 (@budgetChunk_add 11 11 50 1240 4 4 chunk_11_1240_4 chunk_11_1244_4))) (@budgetChunk_add 11 11 50 1248 16 16 (@budgetChunk_add 11 11 50 1248 8 8 chunk_11_1248_8 (@budgetChunk_add 11 11 50 1256 4 4 chunk_11_1256_4 chunk_11_1260_4)) (@budgetChunk_add 11 11 50 1264 8 8 chunk_11_1264_8 chunk_11_1272_8))))) (@budgetChunk_add 11 11 50 1280 128 128 (@budgetChunk_add 11 11 50 1280 64 64 (@budgetChunk_add 11 11 50 1280 32 32 chunk_11_1280_32 (@budgetChunk_add 11 11 50 1312 16 16 (@budgetChunk_add 11 11 50 1312 8 8 chunk_11_1312_8 (@budgetChunk_add 11 11 50 1320 4 4 (@budgetChunk_add 11 11 50 1320 2 2 (@budgetChunk_add 11 11 50 1320 1 1 chunk_11_1320_1 chunk_11_1321_1) (@budgetChunk_add 11 11 50 1322 1 1 chunk_11_1322_1 chunk_11_1323_1)) chunk_11_1324_4)) (@budgetChunk_add 11 11 50 1328 8 8 chunk_11_1328_8 (@budgetChunk_add 11 11 50 1336 4 4 chunk_11_1336_4 chunk_11_1340_4)))) (@budgetChunk_add 11 11 50 1344 32 32 (@budgetChunk_add 11 11 50 1344 16 16 (@budgetChunk_add 11 11 50 1344 8 8 chunk_11_1344_8 (@budgetChunk_add 11 11 50 1352 4 4 (@budgetChunk_add 11 11 50 1352 2 2 chunk_11_1352_2 (@budgetChunk_add 11 11 50 1354 1 1 chunk_11_1354_1 chunk_11_1355_1)) chunk_11_1356_4)) (@budgetChunk_add 11 11 50 1360 8 8 (@budgetChunk_add 11 11 50 1360 4 4 chunk_11_1360_4 chunk_11_1364_4) (@budgetChunk_add 11 11 50 1368 4 4 (@budgetChunk_add 11 11 50 1368 2 2 chunk_11_1368_2 (@budgetChunk_add 11 11 50 1370 1 1 chunk_11_1370_1 chunk_11_1371_1)) chunk_11_1372_4))) (@budgetChunk_add 11 11 50 1376 16 16 (@budgetChunk_add 11 11 50 1376 8 8 chunk_11_1376_8 (@budgetChunk_add 11 11 50 1384 4 4 (@budgetChunk_add 11 11 50 1384 2 2 chunk_11_1384_2 chunk_11_1386_2) chunk_11_1388_4)) (@budgetChunk_add 11 11 50 1392 8 8 (@budgetChunk_add 11 11 50 1392 4 4 chunk_11_1392_4 chunk_11_1396_4) (@budgetChunk_add 11 11 50 1400 4 4 chunk_11_1400_4 chunk_11_1404_4))))) (@budgetChunk_add 11 11 50 1408 64 64 (@budgetChunk_add 11 11 50 1408 32 32 (@budgetChunk_add 11 11 50 1408 16 16 chunk_11_1408_16 (@budgetChunk_add 11 11 50 1424 8 8 chunk_11_1424_8 chunk_11_1432_8)) (@budgetChunk_add 11 11 50 1440 16 16 (@budgetChunk_add 11 11 50 1440 8 8 chunk_11_1440_8 (@budgetChunk_add 11 11 50 1448 4 4 (@budgetChunk_add 11 11 50 1448 2 2 chunk_11_1448_2 (@budgetChunk_add 11 11 50 1450 1 1 chunk_11_1450_1 chunk_11_1451_1)) chunk_11_1452_4)) (@budgetChunk_add 11 11 50 1456 8 8 (@budgetChunk_add 11 11 50 1456 4 4 chunk_11_1456_4 chunk_11_1460_4) (@budgetChunk_add 11 11 50 1464 4 4 chunk_11_1464_4 chunk_11_1468_4)))) (@budgetChunk_add 11 11 50 1472 32 32 (@budgetChunk_add 11 11 50 1472 16 16 chunk_11_1472_16 (@budgetChunk_add 11 11 50 1488 8 8 (@budgetChunk_add 11 11 50 1488 4 4 chunk_11_1488_4 chunk_11_1492_4) (@budgetChunk_add 11 11 50 1496 4 4 chunk_11_1496_4 chunk_11_1500_4))) (@budgetChunk_add 11 11 50 1504 16 16 (@budgetChunk_add 11 11 50 1504 8 8 chunk_11_1504_8 (@budgetChunk_add 11 11 50 1512 4 4 chunk_11_1512_4 chunk_11_1516_4)) (@budgetChunk_add 11 11 50 1520 8 8 chunk_11_1520_8 chunk_11_1528_8)))))) (@budgetChunk_add 11 11 50 1536 256 256 (@budgetChunk_add 11 11 50 1536 128 128 (@budgetChunk_add 11 11 50 1536 64 64 chunk_11_1536_64 (@budgetChunk_add 11 11 50 1600 32 32 (@budgetChunk_add 11 11 50 1600 16 16 chunk_11_1600_16 (@budgetChunk_add 11 11 50 1616 8 8 (@budgetChunk_add 11 11 50 1616 4 4 chunk_11_1616_4 chunk_11_1620_4) (@budgetChunk_add 11 11 50 1624 4 4 (@budgetChunk_add 11 11 50 1624 2 2 chunk_11_1624_2 (@budgetChunk_add 11 11 50 1626 1 1 chunk_11_1626_1 chunk_11_1627_1)) chunk_11_1628_4))) (@budgetChunk_add 11 11 50 1632 16 16 (@budgetChunk_add 11 11 50 1632 8 8 chunk_11_1632_8 chunk_11_1640_8) (@budgetChunk_add 11 11 50 1648 8 8 chunk_11_1648_8 chunk_11_1656_8)))) (@budgetChunk_add 11 11 50 1664 64 64 (@budgetChunk_add 11 11 50 1664 32 32 (@budgetChunk_add 11 11 50 1664 16 16 chunk_11_1664_16 (@budgetChunk_add 11 11 50 1680 8 8 chunk_11_1680_8 (@budgetChunk_add 11 11 50 1688 4 4 chunk_11_1688_4 chunk_11_1692_4))) (@budgetChunk_add 11 11 50 1696 16 16 (@budgetChunk_add 11 11 50 1696 8 8 (@budgetChunk_add 11 11 50 1696 4 4 chunk_11_1696_4 chunk_11_1700_4) (@budgetChunk_add 11 11 50 1704 4 4 (@budgetChunk_add 11 11 50 1704 2 2 chunk_11_1704_2 (@budgetChunk_add 11 11 50 1706 1 1 chunk_11_1706_1 chunk_11_1707_1)) (@budgetChunk_add 11 11 50 1708 2 2 chunk_11_1708_2 chunk_11_1710_2))) (@budgetChunk_add 11 11 50 1712 8 8 (@budgetChunk_add 11 11 50 1712 4 4 chunk_11_1712_4 chunk_11_1716_4) (@budgetChunk_add 11 11 50 1720 4 4 chunk_11_1720_4 chunk_11_1724_4)))) (@budgetChunk_add 11 11 50 1728 32 32 (@budgetChunk_add 11 11 50 1728 16 16 chunk_11_1728_16 (@budgetChunk_add 11 11 50 1744 8 8 (@budgetChunk_add 11 11 50 1744 4 4 chunk_11_1744_4 (@budgetChunk_add 11 11 50 1748 2 2 chunk_11_1748_2 chunk_11_1750_2)) (@budgetChunk_add 11 11 50 1752 4 4 (@budgetChunk_add 11 11 50 1752 2 2 chunk_11_1752_2 (@budgetChunk_add 11 11 50 1754 1 1 chunk_11_1754_1 chunk_11_1755_1)) chunk_11_1756_4))) (@budgetChunk_add 11 11 50 1760 16 16 (@budgetChunk_add 11 11 50 1760 8 8 chunk_11_1760_8 (@budgetChunk_add 11 11 50 1768 4 4 chunk_11_1768_4 chunk_11_1772_4)) (@budgetChunk_add 11 11 50 1776 8 8 chunk_11_1776_8 chunk_11_1784_8))))) (@budgetChunk_add 11 11 50 1792 128 128 (@budgetChunk_add 11 11 50 1792 64 64 (@budgetChunk_add 11 11 50 1792 32 32 chunk_11_1792_32 (@budgetChunk_add 11 11 50 1824 16 16 (@budgetChunk_add 11 11 50 1824 8 8 chunk_11_1824_8 (@budgetChunk_add 11 11 50 1832 4 4 chunk_11_1832_4 chunk_11_1836_4)) chunk_11_1840_16)) (@budgetChunk_add 11 11 50 1856 32 32 (@budgetChunk_add 11 11 50 1856 16 16 (@budgetChunk_add 11 11 50 1856 8 8 chunk_11_1856_8 (@budgetChunk_add 11 11 50 1864 4 4 (@budgetChunk_add 11 11 50 1864 2 2 chunk_11_1864_2 (@budgetChunk_add 11 11 50 1866 1 1 chunk_11_1866_1 chunk_11_1867_1)) chunk_11_1868_4)) (@budgetChunk_add 11 11 50 1872 8 8 (@budgetChunk_add 11 11 50 1872 4 4 chunk_11_1872_4 (@budgetChunk_add 11 11 50 1876 2 2 chunk_11_1876_2 chunk_11_1878_2)) (@budgetChunk_add 11 11 50 1880 4 4 (@budgetChunk_add 11 11 50 1880 2 2 chunk_11_1880_2 chunk_11_1882_2) chunk_11_1884_4))) (@budgetChunk_add 11 11 50 1888 16 16 (@budgetChunk_add 11 11 50 1888 8 8 chunk_11_1888_8 (@budgetChunk_add 11 11 50 1896 4 4 (@budgetChunk_add 11 11 50 1896 2 2 chunk_11_1896_2 chunk_11_1898_2) chunk_11_1900_4)) (@budgetChunk_add 11 11 50 1904 8 8 chunk_11_1904_8 chunk_11_1912_8)))) (@budgetChunk_add 11 11 50 1920 64 64 (@budgetChunk_add 11 11 50 1920 32 32 chunk_11_1920_32 (@budgetChunk_add 11 11 50 1952 16 16 (@budgetChunk_add 11 11 50 1952 8 8 chunk_11_1952_8 (@budgetChunk_add 11 11 50 1960 4 4 chunk_11_1960_4 chunk_11_1964_4)) (@budgetChunk_add 11 11 50 1968 8 8 chunk_11_1968_8 chunk_11_1976_8))) (@budgetChunk_add 11 11 50 1984 32 32 (@budgetChunk_add 11 11 50 1984 16 16 chunk_11_1984_16 (@budgetChunk_add 11 11 50 2000 8 8 chunk_11_2000_8 chunk_11_2008_8)) (@budgetChunk_add 11 11 50 2016 16 16 (@budgetChunk_add 11 11 50 2016 8 8 chunk_11_2016_8 chunk_11_2024_8) chunk_11_2032_16)))))))
 
 end A344719Small
 
