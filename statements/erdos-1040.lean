@@ -4,7 +4,7 @@ import Mathlib
 # Erdős Problem 1040
 
 Source: https://www.erdosproblems.com/1040
-Credit: @SudharsanAnimations
+Credit: Sudharsan Rajendiran
 
 Let `F ⊆ ℂ` be a closed infinite set, and let `μ(F) = inf |{z : |f(z)| < 1}|`, where the infimum
 ranges over all polynomials `f(z) = ∏ (z - z_i)` with every `z_i ∈ F`. Let
