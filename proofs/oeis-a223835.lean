@@ -2,14 +2,17 @@ import OMAStatements.S_oeis_a223835
 import Mathlib
 
 /-!
-Proof of A223835 (Barker's conjectured g.f. and recurrence), for the statement with arrays as
-lists of rows. Credit: @prathameshnium (agent: Claude Code, model claude-opus-5-5)
+Proof of A223835 (Hardin's empirical formula and Barker's g.f. and recurrence).
+Credit: @prathameshnium (agent: Claude Code, model claude-opus-5-5)
+Against the merged statement (rows as a list): the bridge `OMABridgeA223835.a_eq` shows it counts exactly the
+arrays of the Fin-function formulation proved below.
 
-Method: a generic library (below) reads arrays row by row with a finite automaton whose state is the
-last row and, for every line through it, whether that line has already descended; it proves that
-the automaton accepts exactly the arrays of the statement. The table (56 live states) is checked by
-`decide +kernel`; the counts satisfy (E - 1)^6 = 0 from shift 3 on (kernel-checked at one shift,
-lifted to all), which gives the polynomial closed form, the recurrence and the g.f.
+Method: arrays are read row by row by a finite automaton whose state is the last row and, for every
+line through it, whether that line has already descended. A generic library (below) proves that the
+automaton accepts exactly the arrays of the statement; its table (56 live states) is checked by
+`decide +kernel`. The counts from every state satisfy (E - 1)^6 = 0 from shift 3 on, checked by the
+kernel at one shift and lifted to all shifts; that gives Hardin's polynomial, and from it Barker's
+recurrence and g.f.
 -/
 
 /-!
@@ -766,347 +769,48 @@ theorem rec_poly (x : ℕ → ℤ) (D J n0 : ℕ) (cc : ℕ → ℤ) (Pz : ℤ �
 
 end TMLib
 
-/-! ## Bridge for statements that give arrays as lists of rows (unimodal via take/drop) -/
 
-namespace PB
+/-! Our own formulation (Fin-function arrays, no-valley conditions) and its proof. -/
+namespace OMAOurA223835
 
-open UniLib
+open PowerSeries
 
-/-- Unimodal list: weakly increasing up to some position `m`, weakly decreasing from `m` on. -/
-def UniL (s : List ℕ) : Prop := ∃ m, (s.take m).Pairwise (· ≤ ·) ∧ (s.drop m).Pairwise (· ≥ ·)
+/-- Every row is unimodal. -/
+def RowsUnimodal {n : ℕ} (x : Fin n → Fin 5 → Fin 2) : Prop :=
+  ∀ i : Fin n, ∀ j1 j2 j3 : Fin 5, j1 < j2 → j2 < j3 → ¬ (x i j2 < x i j1 ∧ x i j2 < x i j3)
 
-/-- No valley, by positions. -/
-def NVL (s : List ℕ) : Prop :=
-  ∀ i j l, i < j → j < l → l < s.length → ¬ (s.getD j 0 < s.getD i 0 ∧ s.getD j 0 < s.getD l 0)
+instance {n : ℕ} (x : Fin n → Fin 5 → Fin 2) : Decidable (RowsUnimodal x) := by
+  unfold RowsUnimodal; infer_instance
 
-theorem gd {s : List ℕ} {i : ℕ} (h : i < s.length) : s.getD i 0 = s[i] := by
-  simp [List.getD_eq_getElem?_getD, h]
+/-- Every column is nondecreasing downwards. -/
+def ColumnsNondecreasing {n : ℕ} (x : Fin n → Fin 5 → Fin 2) : Prop :=
+  ∀ i1 i2 : Fin n, ∀ j : Fin 5, i1 ≤ i2 → x i1 j ≤ x i2 j
 
-theorem uniL_iff (s : List ℕ) : UniL s ↔ NVL s := by
-  constructor
-  · rintro ⟨m, h1, h2⟩ i j l hij hjl hl ⟨a1, a2⟩
-    rw [List.pairwise_iff_getElem] at h1 h2
-    rw [gd (s := s) (i := j) (by omega), gd (s := s) (i := i) (by omega)] at a1
-    rw [gd (s := s) (i := j) (by omega), gd (s := s) (i := l) (by omega)] at a2
-    by_cases hjm : j < m
-    · have := h1 i j (by rw [List.length_take]; omega) (by rw [List.length_take]; omega) hij
-      rw [List.getElem_take, List.getElem_take] at this
-      omega
-    · have := h2 (j - m) (l - m) (by rw [List.length_drop]; omega) (by rw [List.length_drop]; omega)
-        (by omega)
-      rw [List.getElem_drop, List.getElem_drop] at this
-      have e1 : m + (j - m) = j := by omega
-      have e2 : m + (l - m) = l := by omega
-      simp only [e1, e2] at this
-      omega
-  · intro h
-    by_cases h0 : s.length = 0
-    · have hs : s = [] := List.eq_nil_of_length_eq_zero h0
-      subst hs
-      exact ⟨0, by simp, by simp⟩
-    · obtain ⟨M, hM, hmax⟩ := Finset.exists_max_image (Finset.range s.length) (fun t => s.getD t 0)
-        ⟨0, by simp; omega⟩
-      simp only [Finset.mem_range] at hM hmax
-      refine ⟨M, ?_, ?_⟩
-      · rw [List.pairwise_iff_getElem]
-        intro a c ha hc hac
-        rw [List.length_take] at ha hc
-        rw [List.getElem_take, List.getElem_take]
-        have hv := h a c M hac (by omega) hM
-        have hm := hmax a (by omega)
-        rw [gd (s := s) (i := a) (by omega), gd (s := s) (i := c) (by omega),
-          gd (s := s) (i := M) hM] at hv
-        rw [gd (s := s) (i := a) (by omega), gd (s := s) (i := M) hM] at hm
-        omega
-      · rw [List.pairwise_iff_getElem]
-        intro a c ha hc hac
-        rw [List.length_drop] at ha hc
-        rw [List.getElem_drop, List.getElem_drop]
-        have hm := hmax (M + c) (by omega)
-        rw [gd (s := s) (i := M + c) (by omega), gd (s := s) (i := M) hM] at hm
-        by_cases ha0 : a = 0
-        · subst ha0
-          simpa using hm
-        · have hv := h M (M + a) (M + c) (by omega) (by omega) (by omega)
-          rw [gd (s := s) (i := M) hM, gd (s := s) (i := M + a) (by omega),
-            gd (s := s) (i := M + c) (by omega)] at hv
-          omega
+instance {n : ℕ} (x : Fin n → Fin 5 → Fin 2) : Decidable (ColumnsNondecreasing x) := by
+  unfold ColumnsNondecreasing; infer_instance
 
-/-- No valley for a list given by a function. -/
-theorem nvl_ofFn {L : ℕ} (g : Fin L → ℕ) :
-    NVL (List.ofFn g) ↔ ∀ a c d : Fin L, a < c → c < d → ¬ (g c < g a ∧ g c < g d) := by
-  unfold NVL
-  simp only [List.length_ofFn]
-  have hg : ∀ t (h : t < L), (List.ofFn g).getD t 0 = g ⟨t, h⟩ := by
-    intro t h; simp [List.getD_eq_getElem?_getD, List.getElem?_ofFn, h]
-  constructor
-  · intro H a c d hac hcd
-    have := H a c d hac hcd d.isLt
-    rwa [hg a a.isLt, hg c c.isLt, hg d d.isLt] at this
-  · intro H a c d hac hcd hd
-    rw [hg a (by omega), hg c (by omega), hg d hd]
-    exact H ⟨a, by omega⟩ ⟨c, by omega⟩ ⟨d, hd⟩ hac hcd
+/-- Every diagonal (cells with `j - i` constant, read by increasing `i`) is unimodal. -/
+def DiagonalsUnimodal {n : ℕ} (x : Fin n → Fin 5 → Fin 2) : Prop :=
+  ∀ i1 i2 i3 : Fin n, ∀ j1 j2 j3 : Fin 5, i1 < i2 → i2 < i3 → (j1 : ℕ) + i2 = j2 + i1 →
+    (j2 : ℕ) + i3 = j3 + i2 → ¬ (x i2 j2 < x i1 j1 ∧ x i2 j2 < x i3 j3)
 
-section rows
+instance {n : ℕ} (x : Fin n → Fin 5 → Fin 2) : Decidable (DiagonalsUnimodal x) := by
+  unfold DiagonalsUnimodal; infer_instance
 
-variable {n k b : ℕ}
+/-- Every antidiagonal (cells with `i + j` constant, read by increasing `i`) is unimodal. -/
+def AntidiagonalsUnimodal {n : ℕ} (x : Fin n → Fin 5 → Fin 2) : Prop :=
+  ∀ i1 i2 i3 : Fin n, ∀ j1 j2 j3 : Fin 5, i1 < i2 → i2 < i3 → (i1 : ℕ) + j1 = i2 + j2 →
+    (i2 : ℕ) + j2 = i3 + j3 → ¬ (x i2 j2 < x i1 j1 ∧ x i2 j2 < x i3 j3)
 
-theorem rows_pb (x : Fin n → Fin k → Fin b) (X : ℕ → ℕ → ℕ)
-    (hX : ∀ (i : Fin n) (j : Fin k), ((x i j : Fin b) : ℕ) = X i j) :
-    (∀ r ∈ List.ofFn x, UniL (List.ofFn fun j => (r j : ℕ))) ↔ RowsOK n k X := by
-  rw [List.forall_mem_ofFn_iff, ← rows_fin x X hX]
-  apply forall_congr'
-  intro i
-  rw [uniL_iff, nvl_ofFn]
-  simp only [Fin.lt_iff_val_lt_val]
+instance {n : ℕ} (x : Fin n → Fin 5 → Fin 2) : Decidable (AntidiagonalsUnimodal x) := by
+  unfold AntidiagonalsUnimodal; infer_instance
 
-theorem colsU_pb (x : Fin n → Fin k → Fin b) (X : ℕ → ℕ → ℕ)
-    (hX : ∀ (i : Fin n) (j : Fin k), ((x i j : Fin b) : ℕ) = X i j) :
-    (∀ j : Fin k, UniL ((List.ofFn x).map fun r => (r j : ℕ))) ↔ Uni 0 n k X := by
-  rw [← colu_fin x X hX]
-  simp only [List.map_ofFn, uniL_iff, nvl_ofFn, Function.comp_apply, Fin.lt_iff_val_lt_val]
-  constructor
-  · intro h i1 i2 i3 j h12 h23; exact h j i1 i2 i3 h12 h23
-  · intro h j i1 i2 i3 h12 h23; exact h i1 i2 i3 j h12 h23
+/-- A223835(n): the number of `n X 5` arrays with entries 0..1 whose rows, diagonals and antidiagonals are unimodal and whose columns are nondecreasing. -/
+def a (n : ℕ) : ℕ :=
+  (Finset.univ.filter (fun x : Fin n → Fin 5 → Fin 2 => RowsUnimodal x ∧ ColumnsNondecreasing x ∧ DiagonalsUnimodal x ∧ AntidiagonalsUnimodal x)).card
 
-theorem chain_pb (x : Fin n → Fin k → Fin b) :
-    (List.ofFn x).IsChain (fun r s => ∀ j : Fin k, r j ≤ s j) ↔
-      ∀ i1 i2 : Fin n, ∀ j : Fin k, i1 ≤ i2 → x i1 j ≤ x i2 j := by
-  rw [List.isChain_iff_getElem]
-  simp only [List.length_ofFn, List.getElem_ofFn]
-  constructor
-  · intro h i1 i2 j h12
-    obtain ⟨d, hd⟩ : ∃ d, i2.val = i1.val + d := ⟨i2.val - i1.val, by rw [Fin.le_def] at h12; omega⟩
-    induction d generalizing i2 with
-    | zero =>
-      have : i2 = i1 := Fin.ext (by omega)
-      rw [this]
-    | succ d ih =>
-      have hlt : i1.val + d < n := by omega
-      have h1 := ih ⟨i1.val + d, hlt⟩ (by rw [Fin.le_def]; simp) rfl
-      have h2 := h (i1.val + d) (by omega) j
-      have e : (⟨i1.val + d + 1, by omega⟩ : Fin n) = i2 := Fin.ext (by simp; omega)
-      rw [e] at h2
-      exact le_trans h1 h2
-  · intro h i hi j
-    exact h ⟨i, by omega⟩ ⟨i + 1, hi⟩ j (by rw [Fin.le_def]; simp)
 
-end rows
 
-section lines
-
-variable {k b : ℕ}
-
-/-- Entry `(i, j)` of a list of rows, `0` outside. -/
-def XL (l : List (Fin k → Fin b)) (i j : ℕ) : ℕ :=
-  match l[i]? with
-  | some r => if h : j < k then (r ⟨j, h⟩ : ℕ) else 0
-  | none => 0
-
-def adiagG (k b : ℕ) : List (Fin k → Fin b) → ℕ → List ℕ
-  | [], _ => []
-  | r :: l, j => if h : j < k then (r ⟨j, h⟩ : ℕ) :: (if j = 0 then [] else adiagG k b l (j - 1)) else []
-
-def diagG (k b : ℕ) : List (Fin k → Fin b) → ℕ → List ℕ
-  | [], _ => []
-  | r :: l, j => if h : j < k then (r ⟨j, h⟩ : ℕ) :: diagG k b l (j + 1) else []
-
-theorem XL_cons_zero (r : Fin k → Fin b) (l : List (Fin k → Fin b)) (j : ℕ) (h : j < k) :
-    XL (r :: l) 0 j = (r ⟨j, h⟩ : ℕ) := by
-  simp [XL, h]
-
-theorem XL_cons_succ (r : Fin k → Fin b) (l : List (Fin k → Fin b)) (t j : ℕ) :
-    XL (r :: l) (t + 1) j = XL l t j := by
-  simp [XL]
-
-theorem XL_drop (l : List (Fin k → Fin b)) (i t j : ℕ) : XL (l.drop i) t j = XL l (i + t) j := by
-  simp [XL, List.getElem?_drop]
-
-theorem XL_ofFn {n : ℕ} (x : Fin n → Fin k → Fin b) (i j : ℕ) (hi : i < n) (hj : j < k) :
-    XL (List.ofFn x) i j = (x ⟨i, hi⟩ ⟨j, hj⟩ : ℕ) := by
-  simp [XL, List.getElem?_ofFn, hi, hj]
-
-theorem adiag_len (l : List (Fin k → Fin b)) :
-    ∀ j, (adiagG k b l j).length = if j < k then min (j + 1) l.length else 0 := by
-  induction l with
-  | nil => intro j; simp [adiagG]
-  | cons r l ih =>
-    intro j
-    by_cases hj : j < k
-    · by_cases j0 : j = 0
-      · subst j0; simp [adiagG, hj]
-      · simp only [adiagG, dif_pos hj, if_neg j0, List.length_cons, ih (j - 1),
-          if_pos (show j - 1 < k by omega), if_pos hj]
-        omega
-    · simp [adiagG, hj]
-
-theorem adiag_get (l : List (Fin k → Fin b)) :
-    ∀ j t, t < (adiagG k b l j).length → (adiagG k b l j).getD t 0 = XL l t (j - t) := by
-  induction l with
-  | nil => intro j t h; simp [adiagG] at h
-  | cons r l ih =>
-    intro j t h
-    by_cases hj : j < k
-    · rcases t with _ | t
-      · simp [adiagG, hj, XL_cons_zero r l j hj]
-      · by_cases j0 : j = 0
-        · subst j0; simp [adiagG, hj] at h
-        · simp only [adiagG, dif_pos hj, if_neg j0, List.length_cons] at h ⊢
-          rw [List.getD_cons_succ, ih (j - 1) t (by omega), XL_cons_succ]
-          congr 1
-          omega
-    · simp [adiagG, hj] at h
-
-theorem diag_len (l : List (Fin k → Fin b)) :
-    ∀ j, (diagG k b l j).length = if j < k then min (k - j) l.length else 0 := by
-  induction l with
-  | nil => intro j; simp [diagG]
-  | cons r l ih =>
-    intro j
-    by_cases hj : j < k
-    · simp only [diagG, dif_pos hj, List.length_cons, ih (j + 1), if_pos hj]
-      by_cases hj1 : j + 1 < k
-      · rw [if_pos hj1]; omega
-      · rw [if_neg hj1]; omega
-    · simp [diagG, hj]
-
-theorem diag_get (l : List (Fin k → Fin b)) :
-    ∀ j t, t < (diagG k b l j).length → (diagG k b l j).getD t 0 = XL l t (j + t) := by
-  induction l with
-  | nil => intro j t h; simp [diagG] at h
-  | cons r l ih =>
-    intro j t h
-    by_cases hj : j < k
-    · rcases t with _ | t
-      · simp [diagG, hj, XL_cons_zero r l j hj]
-      · simp only [diagG, dif_pos hj, List.length_cons] at h ⊢
-        rw [List.getD_cons_succ, ih (j + 1) t (by omega), XL_cons_succ]
-        congr 1
-        omega
-    · simp [diagG, hj] at h
-
-variable (l : List (Fin k → Fin b)) (X : ℕ → ℕ → ℕ)
-  (hX : ∀ i < l.length, ∀ j < k, XL l i j = X i j)
-include hX
-
-theorem anti_pb (e : ℕ) (he : e + 1 = k) :
-    ((∀ j < k, UniL (adiagG k b l j)) ∧ (∀ i, UniL (adiagG k b (l.drop i) e))) ↔
-      Uni 1 l.length k X := by
-  simp only [uniL_iff]
-  constructor
-  · rintro ⟨hA, hB⟩ i1 i2 i3 j1 j2 j3 h12 h23 h3 hj1 hj2 hj3 e1 e2
-    have c1 : i1 + j1 = i2 + j2 := by omega
-    have c2 : i2 + j2 = i3 + j3 := by omega
-    by_cases hc : i1 + j1 < k
-    · have hlen := adiag_len l (i1 + j1)
-      rw [if_pos hc] at hlen
-      have := hA (i1 + j1) hc i1 i2 i3 h12 h23 (by rw [hlen]; omega)
-      rw [adiag_get l _ i1 (by rw [hlen]; omega), adiag_get l _ i2 (by rw [hlen]; omega),
-        adiag_get l _ i3 (by rw [hlen]; omega)] at this
-      rw [show i1 + j1 - i1 = j1 by omega, show i1 + j1 - i2 = j2 by omega,
-        show i1 + j1 - i3 = j3 by omega, hX i1 (by omega) j1 hj1, hX i2 (by omega) j2 hj2,
-        hX i3 h3 j3 hj3] at this
-      exact this
-    · set i := i1 + j1 - e with hi
-      have hlen := adiag_len (l.drop i) e
-      rw [if_pos (by omega), List.length_drop] at hlen
-      have := hB i (i1 - i) (i2 - i) (i3 - i) (by omega) (by omega) (by rw [hlen]; omega)
-      rw [adiag_get _ _ (i1 - i) (by rw [hlen]; omega), adiag_get _ _ (i2 - i) (by rw [hlen]; omega),
-        adiag_get _ _ (i3 - i) (by rw [hlen]; omega), XL_drop, XL_drop, XL_drop] at this
-      rw [show i + (i1 - i) = i1 by omega, show i + (i2 - i) = i2 by omega,
-        show i + (i3 - i) = i3 by omega, show e - (i1 - i) = j1 by omega,
-        show e - (i2 - i) = j2 by omega, show e - (i3 - i) = j3 by omega,
-        hX i1 (by omega) j1 hj1, hX i2 (by omega) j2 hj2, hX i3 h3 j3 hj3] at this
-      exact this
-  · intro hU
-    refine ⟨fun j hj t1 t2 t3 h12 h23 h3 => ?_, fun i t1 t2 t3 h12 h23 h3 => ?_⟩
-    · have hlen := adiag_len l j
-      rw [if_pos hj] at hlen
-      rw [hlen] at h3
-      rw [adiag_get l j t1 (by rw [hlen]; omega), adiag_get l j t2 (by rw [hlen]; omega),
-        adiag_get l j t3 (by rw [hlen]; omega), hX t1 (by omega) (j - t1) (by omega),
-        hX t2 (by omega) (j - t2) (by omega), hX t3 (by omega) (j - t3) (by omega)]
-      exact hU t1 t2 t3 (j - t1) (j - t2) (j - t3) h12 h23 (by omega) (by omega) (by omega)
-        (by omega) (by omega) (by omega)
-    · have hlen := adiag_len (l.drop i) e
-      rw [if_pos (by omega), List.length_drop] at hlen
-      rw [hlen] at h3
-      rw [adiag_get _ e t1 (by rw [hlen]; omega), adiag_get _ e t2 (by rw [hlen]; omega),
-        adiag_get _ e t3 (by rw [hlen]; omega), XL_drop, XL_drop, XL_drop,
-        hX (i + t1) (by omega) (e - t1) (by omega), hX (i + t2) (by omega) (e - t2) (by omega),
-        hX (i + t3) (by omega) (e - t3) (by omega)]
-      exact hU (i + t1) (i + t2) (i + t3) (e - t1) (e - t2) (e - t3) (by omega) (by omega) (by omega)
-        (by omega) (by omega) (by omega) (by omega) (by omega)
-
-theorem diag_pb (hk : 0 < k) :
-    ((∀ j < k, UniL (diagG k b l j)) ∧ (∀ i, UniL (diagG k b (l.drop i) 0))) ↔
-      Uni (-1) l.length k X := by
-  simp only [uniL_iff]
-  constructor
-  · rintro ⟨hA, hB⟩ i1 i2 i3 j1 j2 j3 h12 h23 h3 hj1 hj2 hj3 e1 e2
-    have c1 : j1 + i2 = j2 + i1 := by omega
-    have c2 : j2 + i3 = j3 + i2 := by omega
-    by_cases hc : i1 ≤ j1
-    · set j := j1 - i1 with hjdef
-      have hjk : j < k := by omega
-      have hlen := diag_len l j
-      rw [if_pos hjk] at hlen
-      have := hA j hjk i1 i2 i3 h12 h23 (by rw [hlen]; omega)
-      rw [diag_get l j i1 (by rw [hlen]; omega), diag_get l j i2 (by rw [hlen]; omega),
-        diag_get l j i3 (by rw [hlen]; omega)] at this
-      rw [show j + i1 = j1 by omega, show j + i2 = j2 by omega, show j + i3 = j3 by omega,
-        hX i1 (by omega) j1 hj1, hX i2 (by omega) j2 hj2, hX i3 h3 j3 hj3] at this
-      exact this
-    · set i := i1 - j1 with hidef
-      have hlen := diag_len (l.drop i) 0
-      rw [if_pos (by omega), List.length_drop] at hlen
-      have := hB i j1 j2 j3 (by omega) (by omega) (by rw [hlen]; omega)
-      rw [diag_get _ 0 j1 (by rw [hlen]; omega), diag_get _ 0 j2 (by rw [hlen]; omega),
-        diag_get _ 0 j3 (by rw [hlen]; omega), XL_drop, XL_drop, XL_drop] at this
-      rw [show i + j1 = i1 by omega, show i + j2 = i2 by omega, show i + j3 = i3 by omega,
-        show 0 + j1 = j1 by omega, show 0 + j2 = j2 by omega, show 0 + j3 = j3 by omega,
-        hX i1 (by omega) j1 hj1, hX i2 (by omega) j2 hj2, hX i3 h3 j3 hj3] at this
-      exact this
-  · intro hU
-    refine ⟨fun j hj t1 t2 t3 h12 h23 h3 => ?_, fun i t1 t2 t3 h12 h23 h3 => ?_⟩
-    · have hlen := diag_len l j
-      rw [if_pos hj] at hlen
-      rw [hlen] at h3
-      rw [diag_get l j t1 (by rw [hlen]; omega), diag_get l j t2 (by rw [hlen]; omega),
-        diag_get l j t3 (by rw [hlen]; omega), hX t1 (by omega) (j + t1) (by omega),
-        hX t2 (by omega) (j + t2) (by omega), hX t3 (by omega) (j + t3) (by omega)]
-      exact hU t1 t2 t3 (j + t1) (j + t2) (j + t3) h12 h23 (by omega) (by omega) (by omega)
-        (by omega) (by omega) (by omega)
-    · have hlen := diag_len (l.drop i) 0
-      rw [if_pos hk, List.length_drop] at hlen
-      rw [hlen] at h3
-      rw [diag_get _ 0 t1 (by rw [hlen]; omega), diag_get _ 0 t2 (by rw [hlen]; omega),
-        diag_get _ 0 t3 (by rw [hlen]; omega), XL_drop, XL_drop, XL_drop,
-        hX (i + t1) (by omega) (0 + t1) (by omega), hX (i + t2) (by omega) (0 + t2) (by omega),
-        hX (i + t3) (by omega) (0 + t3) (by omega)]
-      exact hU (i + t1) (i + t2) (i + t3) (0 + t1) (0 + t2) (0 + t3) (by omega) (by omega)
-        (by omega) (by omega) (by omega) (by omega) (by omega) (by omega)
-
-end lines
-
-theorem natcard_lists {R : Type} [Fintype R] (n : ℕ) (Q : List R → Prop) [DecidablePred Q] :
-    Nat.card {l : List R // l.length = n ∧ Q l} =
-      (Finset.univ.filter (fun x : Fin n → R => Q (List.ofFn x))).card := by
-  rw [← Fintype.card_subtype, ← Nat.card_eq_fintype_card]
-  symm
-  apply Nat.card_congr
-  refine Equiv.ofBijective (fun x => ⟨List.ofFn x.1, List.length_ofFn, x.2⟩) ⟨?_, ?_⟩
-  · intro x y h
-    exact Subtype.ext (List.ofFn_injective (congrArg Subtype.val h))
-  · rintro ⟨l, hl, hq⟩
-    subst hl
-    refine ⟨⟨fun i => l[i.val], by rw [List.ofFn_getElem]; exact hq⟩, ?_⟩
-    apply Subtype.ext
-    simp only [List.ofFn_getElem]
-
-end PB
-
-namespace OMA.S_oeis_a223835
 
 open UniLib Finset PowerSeries
 
@@ -1119,44 +823,18 @@ def faL : List (List Bool) := [[], [false, false, false, false, false], [false, 
 set_option maxRecDepth 400000 in
 theorem table_ok : TableOK false true true 5 2 56 dl rowL fcL fdL faL := by decide +kernel
 
-theorem uni_eq (s : List ℕ) : Unimodal s ↔ PB.UniL s := Iff.rfl
-
-theorem adiag_eq (l : List (Fin 5 → Fin 2)) : ∀ j, adiagFrom l j = PB.adiagG 5 2 l j := by
-  induction l with
-  | nil => intro j; simp [adiagFrom, PB.adiagG]
-  | cons r l ih => intro j; simp only [adiagFrom, PB.adiagG, ih]
-
-theorem diag_eq (l : List (Fin 5 → Fin 2)) : ∀ j, diagFrom l j = PB.diagG 5 2 l j := by
-  induction l with
-  | nil => intro j; simp [diagFrom, PB.diagG]
-  | cons r l ih => intro j; simp only [diagFrom, PB.diagG, ih]
-
 theorem pred_iff (n : ℕ) (x : Fin n → Fin 5 → Fin 2) :
-    IsSolution (List.ofFn x) ↔ P false true true n 5 (Xw 5 2 (fun i => finFunctionFinEquiv (x i))) := by
+    (RowsUnimodal x ∧ ColumnsNondecreasing x ∧ DiagonalsUnimodal x ∧ AntidiagonalsUnimodal x) ↔ P false true true n 5 (Xw 5 2 (fun i => finFunctionFinEquiv (x i))) := by
   have hX := arr_val x
-  have hXL : ∀ i < (List.ofFn x).length, ∀ j < 5,
-      PB.XL (List.ofFn x) i j = Xw 5 2 (fun i => finFunctionFinEquiv (x i)) i j := by
-    intro i hi j hj
-    rw [List.length_ofFn] at hi
-    rw [PB.XL_ofFn x i j hi hj]
-    exact hX ⟨i, hi⟩ ⟨j, hj⟩
-  have hA := PB.anti_pb (List.ofFn x) _ hXL 4 rfl
-  rw [List.length_ofFn] at hA
-  have hD := PB.diag_pb (List.ofFn x) _ hXL (by norm_num)
-  rw [List.length_ofFn] at hD
-  unfold IsSolution
-  simp only [uni_eq, adiag_eq, diag_eq]
-  rw [PB.rows_pb x _ hX]
-  rw [PB.chain_pb x, colnd_fin x _ hX]
+  unfold RowsUnimodal ColumnsNondecreasing DiagonalsUnimodal AntidiagonalsUnimodal
+  rw [rows_fin x _ hX, colnd_fin x _ hX, diag_fin x _ hX, anti_fin x _ hX]
   unfold P
   rw [if_neg (by decide)]
-  exact ⟨fun ⟨h0, h1, h2, h3, h4, h5⟩ => ⟨h0, h1, fun _ => hD.1 ⟨h4, h5⟩, fun _ => hA.1 ⟨h2, h3⟩⟩, fun ⟨h0, h1, hd, ha⟩ => ⟨h0, h1, (hA.2 (ha rfl)).1, (hA.2 (ha rfl)).2, (hD.2 (hd rfl)).1, (hD.2 (hd rfl)).2⟩⟩
+  exact ⟨fun ⟨h0, h1, h2, h3⟩ => ⟨h0, h1, fun _ => h2, fun _ => h3⟩, fun ⟨h0, h1, h2, h3⟩ => ⟨h0, h1, h2 rfl, h3 rfl⟩⟩
 
-open Classical in
 theorem a_eq (n : ℕ) (hn : 1 ≤ n) : a n = TMLib.cnt (δA 5 2 56 dl) (fun q => decide (q ≠ 56)) n 0 := by
   unfold a
-  rw [PB.natcard_lists n IsSolution, count_arrays (fun x => IsSolution (List.ofFn x)) (pred_iff n),
-    count_words false true true 5 2 56 dl rowL fcL fdL faL table_ok n hn]
+  rw [count_arrays _ (pred_iff n), count_words false true true 5 2 56 dl rowL fcL fdL faL table_ok n hn]
 
 theorem cl : ∀ q < 57, ∀ a : Fin (2 ^ 5), δA 5 2 56 dl q a < 57 := by
   have h : ∀ q, q < 57 → ∀ c, c < 2 ^ 5 → δt 56 dl q c < 57 := by decide +kernel
@@ -1206,9 +884,8 @@ theorem cast_count (n : ℕ) (hn : 3 ≤ n) : (a n : ℚ) = 2/15 * (n : ℚ) ^ 5
   push_cast at h'
   linarith
 
-
-theorem recurrence (n : ℕ) (hn : 8 < n) : (a n : ℤ) = 6 * a (n - 1) - 15 * a (n - 2) + 20 * a (n - 3) - 15 * a (n - 4) + 6 * a (n - 5) - 1 * a (n - 6) := by
-  have key : (a n : ℚ) = 6 * a (n - 1) - 15 * a (n - 2) + 20 * a (n - 3) - 15 * a (n - 4) + 6 * a (n - 5) - 1 * a (n - 6) := by
+theorem recurrence (n : ℕ) (hn : 8 < n) : (a n : ℤ) = 6 * a (n - 1) - 15 * a (n - 2) + 20 * a (n - 3) - 15 * a (n - 4) + 6 * a (n - 5) - a (n - 6) := by
+  have key : (a n : ℚ) = 6 * a (n - 1) - 15 * a (n - 2) + 20 * a (n - 3) - 15 * a (n - 4) + 6 * a (n - 5) - a (n - 6) := by
     rw [cast_count n (by omega), cast_count (n - 1) (by omega), cast_count (n - 2) (by omega), cast_count (n - 3) (by omega), cast_count (n - 4) (by omega), cast_count (n - 5) (by omega), cast_count (n - 6) (by omega)]
     push_cast [Nat.cast_sub (show 1 ≤ n by omega), Nat.cast_sub (show 2 ≤ n by omega), Nat.cast_sub (show 3 ≤ n by omega), Nat.cast_sub (show 4 ≤ n by omega), Nat.cast_sub (show 5 ≤ n by omega), Nat.cast_sub (show 6 ≤ n by omega)]
     ring
@@ -1216,7 +893,7 @@ theorem recurrence (n : ℕ) (hn : 8 < n) : (a n : ℤ) = 6 * a (n - 1) - 15 * a
 
 def pQ (t : ℚ) : ℚ := 2/15 * t ^ 5 + 1/6 * t ^ 4 + 19/6 * t ^ 3 + 28/3 * t ^ 2 + 126/5 * t - 36
 
-theorem fdp (t : ℚ) : pQ (t + 1) - 6 * pQ (t - 1 + 1) + 15 * pQ (t - 2 + 1) - 20 * pQ (t - 3 + 1) + 15 * pQ (t - 4 + 1) - 6 * pQ (t - 5 + 1) + pQ (t - 6 + 1) = 0 := by
+theorem fd (t : ℚ) : pQ t - 6 * pQ (t - 1) + 15 * pQ (t - 2) - 20 * pQ (t - 3) + 15 * pQ (t - 4) - 6 * pQ (t - 5) + pQ (t - 6) = 0 := by
   unfold pQ
   ring
 
@@ -1245,39 +922,396 @@ theorem v8 : a 8 = 7436 := by
   rw [a_eq 8 (by norm_num), ← TMLib.cntV_eq (δA 5 2 56 dl) (fun q => decide (q ≠ 56)) 57 cl 8 0 (by norm_num)]
   decide +kernel
 
-theorem gf : PowerSeries.mk (fun n => (a (n + 1) : ℚ)) * (1 - X) ^ 6 = 16 - 10 * X - 21 * X ^ 2 + 36 * X ^ 3 + 9 * X ^ 4 - 18 * X ^ 5 + 2 * X ^ 6 + 2 * X ^ 7 := by
-  set f : ℕ → ℚ := fun n => (a (n + 1) : ℚ) with hf
-  have hfd : ∀ m, 3 ≤ m + 1 → f m = pQ ((m : ℚ) + 1) := by
+theorem gf : PowerSeries.mk (fun n => if n = 0 then (0 : ℚ) else (a n : ℚ)) * (1 - X) ^ 6 =
+    X * (16 - 10 * X - 21 * X ^ 2 + 36 * X ^ 3 + 9 * X ^ 4 - 18 * X ^ 5 + 2 * X ^ 6 + 2 * X ^ 7) := by
+  set f : ℕ → ℚ := fun n => if n = 0 then (0 : ℚ) else (a n : ℚ) with hf
+  have hfd : ∀ m, 3 ≤ m → f m = pQ m := by
     intro m hm
     rw [hf]
     simp only
-    rw [cast_count (m + 1) hm]
-    unfold pQ
-    push_cast <;> ring
+    rw [if_neg (by omega), cast_count m hm]
+    rfl
   let A : PowerSeries ℚ := PowerSeries.mk f
   have hleft : A * (1 - X) ^ 6 = A - A * X ^ 1 * C 6 + A * X ^ 2 * C 15 - A * X ^ 3 * C 20 + A * X ^ 4 * C 15 - A * X ^ 5 * C 6 + A * X ^ 6 := by
-    simp only [map_ofNat] <;> ring
-  have hright : (16 - 10 * X - 21 * X ^ 2 + 36 * X ^ 3 + 9 * X ^ 4 - 18 * X ^ 5 + 2 * X ^ 6 + 2 * X ^ 7 : PowerSeries ℚ) = C 16 - C 10 * X ^ 1 - C 21 * X ^ 2 + C 36 * X ^ 3 + C 9 * X ^ 4 - C 18 * X ^ 5 + C 2 * X ^ 6 + C 2 * X ^ 7 := by
-    simp only [map_ofNat] <;> ring
+    simp only [map_ofNat]
+    ring
+  have hright : (X : PowerSeries ℚ) * (16 - 10 * X - 21 * X ^ 2 + 36 * X ^ 3 + 9 * X ^ 4 - 18 * X ^ 5 + 2 * X ^ 6 + 2 * X ^ 7) = C 16 * X ^ 1 - C 10 * X ^ 2 - C 21 * X ^ 3 + C 36 * X ^ 4 + C 9 * X ^ 5 - C 18 * X ^ 6 + C 2 * X ^ 7 + C 2 * X ^ 8 := by
+    simp only [map_ofNat]
+    ring
   change A * (1 - X) ^ 6 = _
   rw [hleft, hright]
   apply PowerSeries.ext
   intro d
   simp only [map_add, map_sub, map_neg, coeff_mul_C, coeff_mul_X_pow', coeff_C_mul, coeff_C,
     coeff_X_pow, A, coeff_mk]
-  by_cases hd : d < 8
+  by_cases hd : d < 9
   · interval_cases d <;> simp [hf, v1, v2, v3, v4, v5, v6, v7, v8] <;> norm_num
   · simp (disch := omega) only [if_pos, if_neg]
     rw [hfd d (by omega), hfd (d - 1) (by omega), hfd (d - 2) (by omega), hfd (d - 3) (by omega), hfd (d - 4) (by omega), hfd (d - 5) (by omega), hfd (d - 6) (by omega)]
     simp (disch := omega) only [Nat.cast_sub, Nat.cast_ofNat, Nat.cast_one]
-    linear_combination fdp (d : ℚ)
+    linear_combination fd (d : ℚ)
 
 theorem main_proof :
-    (PowerSeries.mk (fun n => (a (n + 1) : ℚ)) * (1 - X) ^ 6 =
-      16 - 10 * X - 21 * X ^ 2 + 36 * X ^ 3 + 9 * X ^ 4 - 18 * X ^ 5 + 2 * X ^ 6 + 2 * X ^ 7) ∧
-    (∀ n > 8, (a n : ℤ) = 6 * a (n - 1) - 15 * a (n - 2) + 20 * a (n - 3) - 15 * a (n - 4) + 6 * a (n - 5) - 1 * a (n - 6)) :=
-  ⟨gf, fun n hn => recurrence n hn⟩
+    (∀ n : ℕ, 2 < n → (a n : ℚ) = 2/15 * (n : ℚ) ^ 5 + 1/6 * (n : ℚ) ^ 4 + 19/6 * (n : ℚ) ^ 3 + 28/3 * (n : ℚ) ^ 2 + 126/5 * (n : ℚ) - 36) ∧
+    PowerSeries.mk (fun n => if n = 0 then (0 : ℚ) else (a n : ℚ)) * (1 - X) ^ 6 =
+      X * (16 - 10 * X - 21 * X ^ 2 + 36 * X ^ 3 + 9 * X ^ 4 - 18 * X ^ 5 + 2 * X ^ 6 + 2 * X ^ 7) ∧
+    ∀ n : ℕ, 8 < n → (a n : ℤ) = 6 * a (n - 1) - 15 * a (n - 2) + 20 * a (n - 3) - 15 * a (n - 4) + 6 * a (n - 5) - a (n - 6) :=
+  ⟨fun n hn => cast_count n (by omega), gf, recurrence⟩
 
-end OMA.S_oeis_a223835
+end OMAOurA223835
 
-theorem OMA.solution : type_of% @OMA.S_oeis_a223835.main := OMA.S_oeis_a223835.main_proof
+/-!
+Bridge to the merged statement (statements/oeis-a223835.lean): it counts arrays given as LISTS of rows, with
+unimodality defined by `take`/`drop`, and diagonals produced by `diagFrom`/`adiagFrom`. We show it counts exactly
+the arrays counted by `OMAOurA223835.a` (functions `Fin n → Fin 5 → Fin 2`, "no valley" conditions).
+-/
+
+namespace OMABridgeA223835
+
+open OMA.S_oeis_a223835 (Unimodal adiagFrom diagFrom IsSolution)
+
+/-- No valley: no `i < j < k` with `s[j] < s[i]` and `s[j] < s[k]`. -/
+def NoValley (s : List ℕ) : Prop :=
+  ∀ i j k (hk : k < s.length) (hij : i < j) (hjk : j < k),
+    ¬ (s[j]'(by omega) < s[i]'(by omega) ∧ s[j]'(by omega) < s[k])
+
+theorem unimodal_iff (s : List ℕ) : Unimodal s ↔ NoValley s := by
+  constructor
+  · rintro ⟨m, h1, h2⟩ i j k hk hij hjk ⟨hji, hjk'⟩
+    by_cases hjm : j < m
+    · have hle := List.pairwise_iff_getElem.mp h1 i j (by simp; omega) (by simp; omega) hij
+      simp only [List.getElem_take] at hle
+      omega
+    · obtain ⟨t, rfl⟩ : ∃ t, j = m + t := ⟨j - m, by omega⟩
+      obtain ⟨u, rfl⟩ : ∃ u, k = m + u := ⟨k - m, by omega⟩
+      have hge := List.pairwise_iff_getElem.mp h2 t u (by simp; omega) (by simp; omega) (by omega)
+      simp only [List.getElem_drop] at hge
+      omega
+  · intro hnv
+    rcases Nat.eq_zero_or_pos s.length with h0 | hpos
+    · refine ⟨0, ?_, ?_⟩ <;> simp [List.length_eq_zero_iff.mp h0]
+    · haveI : Nonempty (Fin s.length) := ⟨⟨0, hpos⟩⟩
+      obtain ⟨p, -, hp⟩ := Finset.exists_max_image Finset.univ (fun i : Fin s.length => s[i])
+        Finset.univ_nonempty
+      have hmax : ∀ i (hi : i < s.length), s[i] ≤ s[p] := fun i hi => hp ⟨i, hi⟩ (Finset.mem_univ _)
+      refine ⟨p, ?_, ?_⟩
+      · rw [List.pairwise_iff_getElem]
+        intro i j hi hj hij
+        simp only [List.length_take] at hi hj
+        simp only [List.getElem_take]
+        by_contra hlt
+        have h3 := hmax i (by omega)
+        exact hnv i j p p.2 hij (by omega) ⟨by omega, by omega⟩
+      · rw [List.pairwise_iff_getElem]
+        intro t u ht hu htu
+        simp only [List.length_drop] at ht hu
+        simp only [List.getElem_drop]
+        by_contra hlt
+        have h3 := hmax (p + t) (by omega)
+        have h4 := hmax (p + u) (by omega)
+        rcases Nat.eq_zero_or_pos t with rfl | htpos
+        · simp only [Nat.add_zero] at hlt h3
+          omega
+        · exact hnv p (p + t) (p + u) (by omega) (by omega) (by omega) ⟨by omega, by omega⟩
+
+/-- Cell `(i, j)` of a list of rows, as a natural number (`0` outside). -/
+def cell (L : List (Fin 5 → Fin 2)) (i j : ℕ) : ℕ :=
+  if h : i < L.length then (if h' : j < 5 then ((L[i]'h) ⟨j, h'⟩ : ℕ) else 0) else 0
+
+theorem cell_cons_zero (r : Fin 5 → Fin 2) (l : List (Fin 5 → Fin 2)) (j : ℕ) (h : j < 5) :
+    cell (r :: l) 0 j = (r ⟨j, h⟩ : ℕ) := by
+  simp [cell, h]
+
+theorem cell_cons_succ (r : Fin 5 → Fin 2) (l : List (Fin 5 → Fin 2)) (t j : ℕ) :
+    cell (r :: l) (t + 1) j = cell l t j := by
+  simp [cell]
+
+theorem cell_drop (L : List (Fin 5 → Fin 2)) (i t j : ℕ) : cell (L.drop i) t j = cell L (i + t) j := by
+  unfold cell
+  by_cases h : i + t < L.length
+  · have h' : t < (L.drop i).length := by simp; omega
+    rw [dif_pos h', dif_pos h]
+    simp [List.getElem_drop]
+  · have h' : ¬ t < (L.drop i).length := by simp; omega
+    rw [dif_neg h', dif_neg h]
+
+theorem diag_len : ∀ (L : List (Fin 5 → Fin 2)) (j : ℕ), (diagFrom L j).length = min L.length (5 - j)
+  | [], j => by simp [diagFrom]
+  | r :: l, j => by
+    unfold diagFrom
+    split_ifs with h
+    · simp only [List.length_cons, diag_len l (j + 1)]; omega
+    · simp only [List.length_nil, List.length_cons]; omega
+
+theorem diag_get : ∀ (L : List (Fin 5 → Fin 2)) (j t : ℕ) (ht : t < (diagFrom L j).length),
+    (diagFrom L j)[t] = cell L t (j + t)
+  | [], j, t, ht => by simp [diagFrom] at ht
+  | r :: l, j, t, ht => by
+    unfold diagFrom at ht ⊢
+    split_ifs at ht ⊢ with h
+    · cases t with
+      | zero => simp [cell_cons_zero r l j h]
+      | succ t =>
+        simp only [List.getElem_cons_succ, cell_cons_succ]
+        rw [diag_get l (j + 1) t (by simp at ht; omega)]
+        congr 1; omega
+    · simp at ht
+
+theorem adiag_len : ∀ (L : List (Fin 5 → Fin 2)) (j : ℕ),
+    (adiagFrom L j).length = if j < 5 then min L.length (j + 1) else 0
+  | [], j => by simp [adiagFrom]
+  | r :: l, j => by
+    unfold adiagFrom
+    split_ifs with h h0
+    · subst h0; simp only [List.length_cons, List.length_nil, if_pos (show (0 : ℕ) < 5 by norm_num)]; omega
+    · simp only [List.length_cons, adiag_len l (j - 1), if_pos (show j - 1 < 5 by omega), if_pos h]; omega
+    · simp only [List.length_nil, if_neg h]
+
+theorem adiag_get : ∀ (L : List (Fin 5 → Fin 2)) (j t : ℕ) (ht : t < (adiagFrom L j).length),
+    (adiagFrom L j)[t] = cell L t (j - t)
+  | [], j, t, ht => by simp [adiagFrom] at ht
+  | r :: l, j, t, ht => by
+    unfold adiagFrom at ht ⊢
+    split_ifs at ht ⊢ with h h0
+    · cases t with
+      | zero => simp [cell_cons_zero r l j h]
+      | succ t => simp at ht
+    · cases t with
+      | zero => simp [cell_cons_zero r l j h]
+      | succ t =>
+        simp only [List.getElem_cons_succ, cell_cons_succ]
+        rw [adiag_get l (j - 1) t (by simp at ht; omega)]
+        congr 1; omega
+    · simp at ht
+
+/-- Cells of `List.ofFn x`. -/
+theorem cell_ofFn {n : ℕ} (x : Fin n → Fin 5 → Fin 2) (i j : ℕ) (hi : i < n) (hj : j < 5) :
+    cell (List.ofFn x) i j = (x ⟨i, hi⟩ ⟨j, hj⟩ : ℕ) := by
+  simp [cell, hi, hj]
+
+theorem novalley_iff (s : List ℕ) (f : ℕ → ℕ) (hf : ∀ t (ht : t < s.length), s[t] = f t) :
+    NoValley s ↔ ∀ t1 t2 t3, t1 < t2 → t2 < t3 → t3 < s.length → ¬ (f t2 < f t1 ∧ f t2 < f t3) := by
+  unfold NoValley
+  constructor
+  · intro h t1 t2 t3 h12 h23 h3
+    have := h t1 t2 t3 h3 h12 h23
+    rwa [hf, hf, hf] at this
+  · intro h i j k hk hij hjk
+    rw [hf, hf, hf]
+    exact h i j k hij hjk hk
+
+section arr
+variable {n : ℕ} (x : Fin n → Fin 5 → Fin 2)
+
+/-- The array as a function on `ℕ × ℕ` (`0` outside). -/
+def C (i j : ℕ) : ℕ := cell (List.ofFn x) i j
+
+theorem C_eq (i j : ℕ) (hi : i < n) (hj : j < 5) : C x i j = (x ⟨i, hi⟩ ⟨j, hj⟩ : ℕ) :=
+  cell_ofFn x i j hi hj
+
+theorem rows_iff :
+    (∀ r ∈ List.ofFn x, Unimodal (List.ofFn fun j => (r j : ℕ))) ↔ OMAOurA223835.RowsUnimodal x := by
+  rw [List.forall_mem_ofFn_iff]
+  unfold OMAOurA223835.RowsUnimodal
+  apply forall_congr'
+  intro i
+  rw [unimodal_iff, novalley_iff _ (fun t => if h : t < 5 then (x i ⟨t, h⟩ : ℕ) else 0)
+    (fun t ht => by simp at ht; simp [ht])]
+  simp only [List.length_ofFn]
+  constructor
+  · intro h j1 j2 j3 h12 h23 hv
+    have := h j1 j2 j3 h12 h23 j3.2
+    simp only [j1.2, j2.2, j3.2, dif_pos] at this
+    exact this ⟨Fin.lt_def.mp hv.1, Fin.lt_def.mp hv.2⟩
+  · intro h t1 t2 t3 h12 h23 h3 hv
+    simp only [show t1 < 5 by omega, show t2 < 5 by omega, h3, dif_pos] at hv
+    exact h ⟨t1, by omega⟩ ⟨t2, by omega⟩ ⟨t3, h3⟩ (Fin.mk_lt_mk.mpr h12) (Fin.mk_lt_mk.mpr h23)
+      ⟨Fin.lt_def.mpr hv.1, Fin.lt_def.mpr hv.2⟩
+
+theorem cols_iff :
+    (List.ofFn x).IsChain (fun r s => ∀ j : Fin 5, r j ≤ s j) ↔ OMAOurA223835.ColumnsNondecreasing x := by
+  haveI : IsTrans (Fin 5 → Fin 2) (fun r s => ∀ j : Fin 5, r j ≤ s j) :=
+    ⟨fun _ _ _ h1 h2 j => le_trans (h1 j) (h2 j)⟩
+  rw [List.isChain_iff_pairwise, List.pairwise_ofFn]
+  unfold OMAOurA223835.ColumnsNondecreasing
+  constructor
+  · intro h i1 i2 j hle
+    rcases lt_or_eq_of_le hle with hlt | rfl
+    · exact h i1 i2 hlt j
+    · exact le_refl _
+  · intro h i1 i2 hlt j
+    exact h i1 i2 j (le_of_lt hlt)
+
+/-- Every diagonal, as a statement about cells. -/
+def DiagNV : Prop :=
+  ∀ i1 i2 i3 j1 j2 j3 : ℕ, i1 < i2 → i2 < i3 → i3 < n → j1 < 5 → j2 < 5 → j3 < 5 →
+    j1 + i2 = j2 + i1 → j2 + i3 = j3 + i2 → ¬ (C x i2 j2 < C x i1 j1 ∧ C x i2 j2 < C x i3 j3)
+
+def AntiNV : Prop :=
+  ∀ i1 i2 i3 j1 j2 j3 : ℕ, i1 < i2 → i2 < i3 → i3 < n → j1 < 5 → j2 < 5 → j3 < 5 →
+    i1 + j1 = i2 + j2 → i2 + j2 = i3 + j3 → ¬ (C x i2 j2 < C x i1 j1 ∧ C x i2 j2 < C x i3 j3)
+
+theorem diag_ours : OMAOurA223835.DiagonalsUnimodal x ↔ DiagNV x := by
+  unfold OMAOurA223835.DiagonalsUnimodal DiagNV
+  constructor
+  · intro h i1 i2 i3 j1 j2 j3 h12 h23 h3 hj1 hj2 hj3 e1 e2 hv
+    rw [C_eq x i1 j1 (by omega) hj1, C_eq x i2 j2 (by omega) hj2, C_eq x i3 j3 h3 hj3] at hv
+    exact h ⟨i1, by omega⟩ ⟨i2, by omega⟩ ⟨i3, h3⟩ ⟨j1, hj1⟩ ⟨j2, hj2⟩ ⟨j3, hj3⟩
+      (Fin.mk_lt_mk.mpr h12) (Fin.mk_lt_mk.mpr h23) e1 e2 ⟨Fin.lt_def.mpr hv.1, Fin.lt_def.mpr hv.2⟩
+  · intro h i1 i2 i3 j1 j2 j3 h12 h23 e1 e2 hv
+    have := h i1 i2 i3 j1 j2 j3 h12 h23 i3.2 j1.2 j2.2 j3.2 e1 e2
+    rw [C_eq x i1 j1 i1.2 j1.2, C_eq x i2 j2 i2.2 j2.2, C_eq x i3 j3 i3.2 j3.2] at this
+    exact this ⟨Fin.lt_def.mp hv.1, Fin.lt_def.mp hv.2⟩
+
+theorem anti_ours : OMAOurA223835.AntidiagonalsUnimodal x ↔ AntiNV x := by
+  unfold OMAOurA223835.AntidiagonalsUnimodal AntiNV
+  constructor
+  · intro h i1 i2 i3 j1 j2 j3 h12 h23 h3 hj1 hj2 hj3 e1 e2 hv
+    rw [C_eq x i1 j1 (by omega) hj1, C_eq x i2 j2 (by omega) hj2, C_eq x i3 j3 h3 hj3] at hv
+    exact h ⟨i1, by omega⟩ ⟨i2, by omega⟩ ⟨i3, h3⟩ ⟨j1, hj1⟩ ⟨j2, hj2⟩ ⟨j3, hj3⟩
+      (Fin.mk_lt_mk.mpr h12) (Fin.mk_lt_mk.mpr h23) e1 e2 ⟨Fin.lt_def.mpr hv.1, Fin.lt_def.mpr hv.2⟩
+  · intro h i1 i2 i3 j1 j2 j3 h12 h23 e1 e2 hv
+    have := h i1 i2 i3 j1 j2 j3 h12 h23 i3.2 j1.2 j2.2 j3.2 e1 e2
+    rw [C_eq x i1 j1 i1.2 j1.2, C_eq x i2 j2 i2.2 j2.2, C_eq x i3 j3 i3.2 j3.2] at this
+    exact this ⟨Fin.lt_def.mp hv.1, Fin.lt_def.mp hv.2⟩
+
+/-- The diagonal starting at row `i0`, column `j0`, has no valley. -/
+theorem diagFrom_nv (i0 j0 : ℕ) :
+    Unimodal (diagFrom ((List.ofFn x).drop i0) j0) ↔
+      ∀ t1 t2 t3, t1 < t2 → t2 < t3 → i0 + t3 < n → j0 + t3 < 5 →
+        ¬ (C x (i0 + t2) (j0 + t2) < C x (i0 + t1) (j0 + t1) ∧ C x (i0 + t2) (j0 + t2) < C x (i0 + t3) (j0 + t3)) := by
+  rw [unimodal_iff, novalley_iff _ (fun t => C x (i0 + t) (j0 + t))
+    (fun t ht => by rw [diag_get]; unfold C; rw [cell_drop])]
+  rw [diag_len]
+  simp only [List.length_drop, List.length_ofFn]
+  constructor
+  · intro h t1 t2 t3 h12 h23 h3 h3' ; exact h t1 t2 t3 h12 h23 (by omega)
+  · intro h t1 t2 t3 h12 h23 h3; exact h t1 t2 t3 h12 h23 (by omega) (by omega)
+
+theorem adiagFrom_nv (i0 j0 : ℕ) (hj0 : j0 < 5) :
+    Unimodal (adiagFrom ((List.ofFn x).drop i0) j0) ↔
+      ∀ t1 t2 t3, t1 < t2 → t2 < t3 → i0 + t3 < n → t3 ≤ j0 →
+        ¬ (C x (i0 + t2) (j0 - t2) < C x (i0 + t1) (j0 - t1) ∧ C x (i0 + t2) (j0 - t2) < C x (i0 + t3) (j0 - t3)) := by
+  rw [unimodal_iff, novalley_iff _ (fun t => C x (i0 + t) (j0 - t))
+    (fun t ht => by rw [adiag_get]; unfold C; rw [cell_drop])]
+  rw [adiag_len, if_pos hj0]
+  simp only [List.length_drop, List.length_ofFn]
+  constructor
+  · intro h t1 t2 t3 h12 h23 h3 h3'; exact h t1 t2 t3 h12 h23 (by omega)
+  · intro h t1 t2 t3 h12 h23 h3; exact h t1 t2 t3 h12 h23 (by omega) (by omega)
+
+theorem diag_iff :
+    ((∀ j < 5, Unimodal (diagFrom (List.ofFn x) j)) ∧ (∀ i, Unimodal (diagFrom ((List.ofFn x).drop i) 0)))
+      ↔ OMAOurA223835.DiagonalsUnimodal x := by
+  rw [diag_ours]
+  have top : ∀ j, Unimodal (diagFrom (List.ofFn x) j) ↔ Unimodal (diagFrom ((List.ofFn x).drop 0) j) := by
+    intro j; rw [List.drop_zero]
+  simp only [top, diagFrom_nv]
+  unfold DiagNV
+  constructor
+  · rintro ⟨hT, hL⟩ i1 i2 i3 j1 j2 j3 h12 h23 h3 hj1 hj2 hj3 e1 e2
+    by_cases hc : i1 ≤ j1
+    · -- start on the top row, at column j1 - i1
+      have := hT (j1 - i1) (by omega) i1 i2 i3 h12 h23 (by omega) (by omega)
+      simp only [Nat.zero_add] at this
+      rwa [show j1 - i1 + i1 = j1 by omega, show j1 - i1 + i2 = j2 by omega,
+        show j1 - i1 + i3 = j3 by omega] at this
+    · -- start on the left column, at row i1 - j1
+      have := hL (i1 - j1) j1 j2 j3 (by omega) (by omega) (by omega) (by omega)
+      simp only [Nat.zero_add] at this
+      rwa [show i1 - j1 + j1 = i1 by omega, show i1 - j1 + j2 = i2 by omega,
+        show i1 - j1 + j3 = i3 by omega] at this
+  · intro h
+    refine ⟨fun j _ t1 t2 t3 h12 h23 h3 h3' => ?_, fun i t1 t2 t3 h12 h23 h3 h3' => ?_⟩
+    · simp only [Nat.zero_add]
+      exact h t1 t2 t3 (j + t1) (j + t2) (j + t3) h12 h23 (by omega) (by omega) (by omega) h3'
+        (by omega) (by omega)
+    · simp only [Nat.zero_add]
+      exact h (i + t1) (i + t2) (i + t3) t1 t2 t3 (by omega) (by omega) h3 (by omega) (by omega) (by omega)
+        (by omega) (by omega)
+
+theorem anti_iff :
+    ((∀ j < 5, Unimodal (adiagFrom (List.ofFn x) j)) ∧ (∀ i, Unimodal (adiagFrom ((List.ofFn x).drop i) 4)))
+      ↔ OMAOurA223835.AntidiagonalsUnimodal x := by
+  rw [anti_ours]
+  have top : ∀ j, Unimodal (adiagFrom (List.ofFn x) j) ↔ Unimodal (adiagFrom ((List.ofFn x).drop 0) j) := by
+    intro j; rw [List.drop_zero]
+  unfold AntiNV
+  constructor
+  · rintro ⟨hT, hR⟩ i1 i2 i3 j1 j2 j3 h12 h23 h3 hj1 hj2 hj3 e1 e2
+    by_cases hc : i1 + j1 ≤ 4
+    · -- start on the top row, at column i1 + j1
+      have := (adiagFrom_nv x 0 (i1 + j1) (by omega)).mp ((top _).mp (hT (i1 + j1) (by omega)))
+        i1 i2 i3 h12 h23 (by omega) (by omega)
+      simp only [Nat.zero_add] at this
+      rwa [show i1 + j1 - i1 = j1 by omega, show i1 + j1 - i2 = j2 by omega,
+        show i1 + j1 - i3 = j3 by omega] at this
+    · -- start on the right column, at row i1 + j1 - 4
+      have := (adiagFrom_nv x (i1 + j1 - 4) 4 (by omega)).mp (hR (i1 + j1 - 4))
+        (i1 - (i1 + j1 - 4)) (i2 - (i1 + j1 - 4)) (i3 - (i1 + j1 - 4)) (by omega) (by omega) (by omega) (by omega)
+      rwa [show i1 + j1 - 4 + (i1 - (i1 + j1 - 4)) = i1 by omega,
+        show i1 + j1 - 4 + (i2 - (i1 + j1 - 4)) = i2 by omega,
+        show i1 + j1 - 4 + (i3 - (i1 + j1 - 4)) = i3 by omega,
+        show 4 - (i1 - (i1 + j1 - 4)) = j1 by omega, show 4 - (i2 - (i1 + j1 - 4)) = j2 by omega,
+        show 4 - (i3 - (i1 + j1 - 4)) = j3 by omega] at this
+  · intro h
+    refine ⟨fun j hj => (top j).mpr ((adiagFrom_nv x 0 j hj).mpr ?_),
+      fun i => (adiagFrom_nv x i 4 (by norm_num)).mpr ?_⟩
+    · intro t1 t2 t3 h12 h23 h3 h3'
+      simp only [Nat.zero_add]
+      exact h t1 t2 t3 (j - t1) (j - t2) (j - t3) h12 h23 (by omega) (by omega) (by omega) (by omega)
+        (by omega) (by omega)
+    · intro t1 t2 t3 h12 h23 h3 h3'
+      exact h (i + t1) (i + t2) (i + t3) (4 - t1) (4 - t2) (4 - t3) (by omega) (by omega) h3
+        (by omega) (by omega) (by omega) (by omega) (by omega)
+
+theorem sol_iff : IsSolution (List.ofFn x) ↔
+    (OMAOurA223835.RowsUnimodal x ∧ OMAOurA223835.ColumnsNondecreasing x ∧
+      OMAOurA223835.DiagonalsUnimodal x ∧ OMAOurA223835.AntidiagonalsUnimodal x) := by
+  unfold IsSolution
+  rw [rows_iff, cols_iff, ← diag_iff, ← anti_iff]
+  tauto
+
+end arr
+
+/-- Lists of `n` rows are functions `Fin n → row`. -/
+def e (n : ℕ) : {l : List (Fin 5 → Fin 2) // l.length = n ∧ IsSolution l} ≃
+    {x : Fin n → Fin 5 → Fin 2 // IsSolution (List.ofFn x)} where
+  toFun l := ⟨fun i => l.1[i.1]'(by rw [l.2.1]; exact i.2), by
+    have h : List.ofFn (fun i : Fin n => l.1[i.1]'(by rw [l.2.1]; exact i.2)) = l.1 := by
+      apply List.ext_getElem <;> simp [l.2.1]
+    rw [h]; exact l.2.2⟩
+  invFun x := ⟨List.ofFn x.1, by simp, x.2⟩
+  left_inv l := by
+    apply Subtype.ext
+    apply List.ext_getElem <;> simp [l.2.1]
+  right_inv x := by
+    apply Subtype.ext
+    funext i
+    simp
+
+theorem a_eq (n : ℕ) : OMA.S_oeis_a223835.a n = OMAOurA223835.a n := by
+  unfold OMA.S_oeis_a223835.a OMAOurA223835.a
+  rw [← Fintype.card_subtype, ← Nat.card_eq_fintype_card]
+  exact Nat.card_congr ((e n).trans (Equiv.subtypeEquivRight (fun x => sol_iff x)))
+
+end OMABridgeA223835
+
+open PowerSeries in
+theorem OMA.solution : type_of% @OMA.S_oeis_a223835.main := by
+  obtain ⟨-, hgf, hrec⟩ := OMAOurA223835.main_proof
+  have hA : ∀ n, OMA.S_oeis_a223835.a n = OMAOurA223835.a n := OMABridgeA223835.a_eq
+  refine ⟨?_, ?_⟩
+  · simp only [hA]
+    have hmk : PowerSeries.mk (fun n => if n = 0 then (0 : ℚ) else (OMAOurA223835.a n : ℚ)) =
+        X * PowerSeries.mk (fun n => (OMAOurA223835.a (n + 1) : ℚ)) := by
+      ext d
+      cases d with
+      | zero => simp
+      | succ d => simp [coeff_succ_X_mul]
+    rw [hmk, mul_assoc] at hgf
+    exact mul_left_cancel₀ X_ne_zero hgf
+  · intro n hn
+    simp only [hA]
+    have := hrec n hn
+    linarith
