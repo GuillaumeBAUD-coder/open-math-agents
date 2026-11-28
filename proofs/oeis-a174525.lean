@@ -1,39 +1,32 @@
 import OMAStatements.S_oeis_a174525
 import Mathlib
 
-/-!
-# OEIS A174525: every odd square `N > 1` is a base in which `ab` and `ba` are different squares
+/-
+A174525: every odd square N other than 1 is a term.
 
-Write `N = (2u + 1)²` with `u ≥ 1` and take the digits
-
-  `a = u²`,   `b = 4u² + 2u + 1 = N - 2u`.
-
-Then `a N + b = (u (2u + 1) + 1)²` and `b N + a = (N - u)² = (4u² + 3u + 1)²`, both digits lie in
-`[1, N)`, and the two numbers differ because `a < b`.
+Write N = (2t+1)^2 with t >= 1 and take a = t^2, b = 4t^2 + 2t + 1. Both lie in [1, N), and
+  a N + b = (2t^2 + t + 1)^2,   b N + a = (4t^2 + 3t + 1)^2,
+which differ because a < b and N > 1.
 -/
 
-open OMA.S_oeis_a174525
+namespace OMA.P174525
 
-theorem OMA.solution : type_of% @OMA.S_oeis_a174525.main := by
+lemma main' : ∀ N : ℕ, IsSquare N → Odd N → N ≠ 1 →
+    ∃ a b : ℕ, 1 ≤ a ∧ a < N ∧ 1 ≤ b ∧ b < N ∧
+      IsSquare (a * N + b) ∧ IsSquare (b * N + a) ∧ a * N + b ≠ b * N + a := by
   rintro N ⟨r, rfl⟩ hodd hne
-  -- `r` is odd and at least `3`
-  have hr : r % 2 = 1 := by
-    rcases Nat.mod_two_eq_zero_or_one r with h | h
-    · exfalso
-      obtain ⟨j, hj⟩ := hodd
-      have : (r * r) % 2 = 0 := by rw [Nat.mul_mod, h]
-      omega
+  obtain ⟨t, rfl⟩ : Odd r := (Nat.odd_mul.1 hodd).1
+  have ht : 1 ≤ t := by
+    rcases Nat.eq_zero_or_pos t with rfl | h
+    · simp at hne
     · exact h
-  obtain ⟨u, rfl⟩ : ∃ u, r = 2 * u + 1 := ⟨r / 2, by omega⟩
-  have hu : 1 ≤ u := by
-    rcases Nat.eq_zero_or_pos u with rfl | h
-    · exact absurd rfl hne
-    · exact h
-  have huu : 1 ≤ u * u := Nat.mul_pos hu hu
-  refine ⟨u * u, 4 * (u * u) + 2 * u + 1, huu, by nlinarith, by omega, by nlinarith,
-    ⟨u * (2 * u + 1) + 1, by ring⟩, ⟨4 * (u * u) + 3 * u + 1, by ring⟩, ?_⟩
-  -- the two numbers differ: `a < b` and `N > 1`
-  have h1 : u * u < 4 * (u * u) + 2 * u + 1 := by omega
-  have h2 : 1 < (2 * u + 1) * (2 * u + 1) := by nlinarith
+  refine ⟨t ^ 2, 4 * t ^ 2 + 2 * t + 1, by nlinarith, by nlinarith, by nlinarith, by nlinarith,
+    ⟨2 * t ^ 2 + t + 1, by ring⟩, ⟨4 * t ^ 2 + 3 * t + 1, by ring⟩, ?_⟩
   intro h
   nlinarith
+
+end OMA.P174525
+
+theorem OMA.solution : type_of% @OMA.S_oeis_a174525.main := by
+  intro N h1 h2 h3
+  exact OMA.P174525.main' N h1 h2 h3

@@ -42,21 +42,6 @@ private lemma aval (t : ℕ) : (a t : ℤ) =
     ∑ k ∈ Finset.range (2 * t + 1), (if state t ((k : ℤ) - t) then (10 : ℤ) ^ (2 * t - k) else 0) := by
   unfold a; push_cast; rfl
 
-private lemma geo2_0 (t : ℕ) : ((10 : ℤ) ^ 2 - 1) * ∑ k ∈ Finset.range (2 * t + 1),
-    (if k % 2 = 0 then (10 : ℤ) ^ (2 * t - k) else 0) = (10 : ℤ) ^ (2 * t + 2) - 1 := by
-  induction t with
-  | zero => simp <;> decide
-  | succ t ih =>
-    rw [show 2 * (t + 1) + 1 = 2 * t + 1 + 1 + 1 by ring, Finset.sum_range_succ, Finset.sum_range_succ]
-    have hsh : ∑ k ∈ Finset.range (2 * t + 1), (if k % 2 = 0 then (10 : ℤ) ^ (2 * (t + 1) - k) else 0) =
-        (10 : ℤ) ^ 2 * ∑ k ∈ Finset.range (2 * t + 1), (if k % 2 = 0 then (10 : ℤ) ^ (2 * t - k) else 0) := by
-      rw [Finset.mul_sum]; apply Finset.sum_congr rfl; intro k hk; simp at hk
-      rw [show 2 * (t + 1) - k = (2 * t - k) + 2 by omega, pow_add]; split_ifs <;> ring
-    rw [hsh, show (2 * t + 1) % 2 = 1 by omega, show (2 * t + 1 + 1) % 2 = 0 by omega,
-      show 2 * (t + 1) - (2 * t + 1) = 1 by omega, show 2 * (t + 1) - (2 * t + 1 + 1) = 0 by omega]
-    norm_num
-    linear_combination (10 : ℤ) ^ 2 * ih
-
 private lemma geo2_1 (t : ℕ) : ((10 : ℤ) ^ 2 - 1) * ∑ k ∈ Finset.range (2 * t + 1),
     (if k % 2 = 1 then (10 : ℤ) ^ (2 * t - k) else 0) = (10 : ℤ) ^ (2 * t + 1) - (10 : ℤ) := by
   induction t with

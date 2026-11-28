@@ -1,6 +1,7 @@
 import OMAStatements.S_oeis_a181666
 
--- Original Lean proof: @agchua.
+-- Original Lean proof: @agchua (#23223); shorter argument: @MMexicann (#29835).
+-- Use the standard prime-complement identity for the final odd-part calculation.
 -- The 3-divisibility condition forces an even exponent gap. The factorization at 2 records the smaller exponent.
 
 namespace OMA.A181666
@@ -54,6 +55,4 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a181666.main := by
     have hq : 0 < (4 ^ k - 1) / 3 :=
       Nat.pos_of_ne_zero fun h => ho (h ▸ dvd_zero _)
     refine ⟨Nat.mul_pos (by positivity) hq, k, ?_⟩
-    rw [oddPart, Nat.factorization_mul (by positivity) hq.ne',
-      Finsupp.add_apply, Nat.Prime.factorization_pow Nat.prime_two, Finsupp.single_eq_same,
-      Nat.factorization_eq_zero_of_not_dvd ho, Nat.add_zero, Nat.mul_div_cancel_left _ (by positivity)]
+    exact Nat.ordCompl_pow_mul_of_not_dvd j Nat.prime_two ho

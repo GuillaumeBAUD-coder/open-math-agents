@@ -3,6 +3,9 @@ import Mathlib.Data.Nat.Prime.Factorial
 import Mathlib.Tactic
 
 /-!
+Following @KoaOkano (#10671), retain the factorial-totient construction.
+Use the prime-factor union API and direct positivity of a product factor.
+
 Write F=n!. Every prime dividing φ(F) already divides F. Multiplication
 of F by φ(F)^j therefore preserves its set of prime factors, multiplying
 the totient by exactly φ(F)^j. This gives any positive power of φ(F),
@@ -34,18 +37,14 @@ lemma totient_power (n j : ℕ) :
   let F := n.factorial
   let h := F.totient
   have hF : F ≠ 0 := Nat.factorial_ne_zero _
-  have ht : h ≠ 0 := (Nat.totient_pos.mpr (Nat.factorial_pos _)).ne'
-  have hB : F*h^j ≠ 0 := mul_ne_zero hF (pow_ne_zero _ ht)
+  have ht : h ≠ 0 := Nat.totient_eq_zero.not.mpr hF
   have same : (F*h^j).primeFactors = F.primeFactors := by
-    ext q
-    simp only [Nat.mem_primeFactors, hB, hF, ne_eq, not_false_eq_true, and_true]
-    constructor
-    · rintro ⟨hq, dv⟩
-      rcases hq.dvd_mul.mp dv with h1 | h2
-      · exact ⟨hq, h1⟩
-      · exact ⟨hq, primes_closed n q hq (hq.dvd_of_dvd_pow h2)⟩
-    · rintro ⟨hq, dv⟩
-      exact ⟨hq, dvd_mul_of_dvd_left dv _⟩
+    rw [Nat.primeFactors_mul hF (pow_ne_zero _ ht)]
+    apply Finset.union_eq_left.mpr
+    intro q hq
+    have hp := Nat.prime_of_mem_primeFactors hq
+    exact Nat.mem_primeFactors.mpr ⟨hp,
+      primes_closed n q hp (hp.dvd_of_dvd_pow (Nat.dvd_of_mem_primeFactors hq)), hF⟩
   have left := Nat.totient_mul_prod_primeFactors (F*h^j)
   have right := Nat.totient_mul_prod_primeFactors F
   rw [same] at left
@@ -61,12 +60,7 @@ lemma totient_power (n j : ℕ) :
 lemma multiplier (n j : ℕ) (hn : 0 < n) :
     ∃ m : ℕ, 0 < m ∧ (m*n).totient = n.factorial.totient^(j+1) := by
   obtain ⟨v, hv⟩ := Nat.dvd_factorial hn (le_refl n)
-  have hvpos : 0 < v := by
-    by_contra! hh
-    have hzero : v=0 := by omega
-    have := Nat.factorial_ne_zero n
-    simp [hzero] at hv
-    contradiction
+  have hvpos : 0 < v := Nat.pos_of_mul_pos_left (hv ▸ Nat.factorial_pos n)
   have hφ := Nat.totient_pos.mpr (Nat.factorial_pos n)
   refine ⟨v*n.factorial.totient^j, by positivity, ?_⟩
   have he : v*n.factorial.totient^j*n = n.factorial*n.factorial.totient^j := by

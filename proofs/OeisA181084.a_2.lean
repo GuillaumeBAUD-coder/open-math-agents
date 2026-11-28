@@ -1,19 +1,9 @@
 import FormalConjectures.OEIS.«181084»
 
-/-! Only finitely many powers contribute; evaluate the surviving coefficients directly. -/
+open PowerSeries OeisA181084 Finset
 
-open PowerSeries OeisA181084 in
 theorem OMA.solution : type_of% @OeisA181084.a_2 := by
-  unfold a hannaExp
-  rw [coeff_subst' (.of_constantCoeff_zero' (by simp [hannaLog])),
-    finsum_eq_sum_of_support_subset (s := Finset.range 3)]
-  · norm_num [Finset.sum_range_succ, coeff_exp, pow_succ, coeff_mul,
-      Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk, hannaLog,
-      Finset.sum_Icc_succ_top, Nat.factorial, Nat.choose]
-  · intro d hd
-    by_contra h
-    apply hd
-    apply smul_eq_zero_of_right
-    exact X_pow_dvd_iff.1 (pow_dvd_pow_of_dvd (X_dvd_iff.2 (by simp [hannaLog])) d)
-      2 (by simp at h; omega)
-
+  rw [a, hannaExp, coeff_subst' ⟨1, rfl⟩,
+    finsum_eq_sum_of_support_subset _ (s := {0,1,2}) fun d ↦ Not.imp_symm fun h ↦ by
+      simp [X_pow_dvd_iff.1 (pow_dvd_pow_of_dvd (X_dvd_iff.2 rfl : X ∣ hannaLog _) d) 2 (by grind)]]
+  norm_num [pow_succ, coeff_mul, Nat.antidiagonal_succ, hannaLog, sum_Icc_succ_top]
