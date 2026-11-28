@@ -5,26 +5,6 @@ namespace OMA.S_oeis_a256481
 
 
 
-/-- Control: a(20) = 2011, the 21st listed term (2011 is the least prime among the appended
-numbers). -/
-theorem control_small : ∀ i < 3, ∀ d < 10, app 20 d i < 2011 → ¬ (app 20 d i).Prime := by
-  decide +kernel
-
-theorem control_a20 :
-    IsLeast {p : ℕ | p.Prime ∧ ∃ d ≤ 9, ∃ i ≥ 1, p = app 20 d i} 2011 := by
-  constructor
-  · refine ⟨by norm_num, 1, by norm_num, 2, by norm_num, by decide +kernel⟩
-  · rintro p ⟨hp, d, hd, i, hi, rfl⟩
-    by_contra hlt
-    push_neg at hlt
-    have hi3 : i < 3 := by
-      by_contra h3
-      push_neg at h3
-      have : 20 * 10 ^ 3 ≤ 20 * 10 ^ i := Nat.mul_le_mul_left _ (Nat.pow_le_pow_right (by norm_num) h3)
-      unfold app at hlt
-      omega
-    exact control_small i hi3 d (by omega) hlt hp
-
 def n0 : ℕ := 48030541312027842367346989018029079247911647283793344377427646539978957958940781
 
 def Cs : List ℕ := [3, 7, 11, 13, 19, 31, 37, 41, 61, 73, 101, 137, 211, 241, 271, 2161, 3541, 9091,

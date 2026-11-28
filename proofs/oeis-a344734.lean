@@ -1,6 +1,8 @@
 import OMAStatements.S_oeis_a344734
 import Mathlib
 
+-- Original proof by @caa1982.
+
 open OMA.S_oeis_a344734
 
 namespace OMA.P_oeis_a344734
@@ -30,67 +32,48 @@ lemma c_val (q r d : ℕ) (hd : Nat.Coprime d 10) (hr : Nat.count (fun k => Nat.
   rw [show 4 * q + r + 1 - 1 = 4 * q + r by omega, ← hc]
   exact Nat.nth_count hp
 
-lemma sInf_eq (m x0 : ℕ) (h0 : 0 < x0) (hd : m ∣ 10 * x0 + 1)
-    (hmin : ∀ x, 0 < x → m ∣ 10 * x + 1 → x0 ≤ x) :
-    sInf {x : ℕ | 0 < x ∧ m ∣ 10 * x + 1} = x0 := by
-  apply le_antisymm
-  · exact Nat.sInf_le ⟨h0, hd⟩
-  · exact le_csInf ⟨x0, h0, hd⟩ (fun x hx => hmin x hx.1 hx.2)
+-- In residue class r, d is the unit modulo 10 and k is its positive inverse.
+private def residue : Fin 4 → ℕ := ![1, 3, 7, 9]
+private def inverse : Fin 4 → ℕ := ![1, 7, 3, 9]
+private def offset : Fin 4 → ℕ := ![0, 2, 2, 8]
 
-lemma a1 (q : ℕ) (hq : 1 ≤ q) : a (4 * q + 0 + 1) = q := by
-  unfold a; rw [c_val q 0 1 (by decide) (by decide)]
-  apply sInf_eq _ _ (by omega) ⟨1, by ring⟩
-  intro x hx hdx
-  have := Nat.le_of_dvd (by omega) hdx
+private lemma table : ∀ r : Fin 4,
+    Nat.Coprime (residue r) 10 ∧ Nat.count (Nat.Coprime · 10) (residue r) = r.val ∧
+      residue r * inverse r = 10 * offset r + 1 ∧ 1 ≤ inverse r ∧ inverse r < 10 ∧
+      r.val ≤ offset r := by decide
+
+private lemma affine (q : ℕ) (r : Fin 4) (hn : 0 < 4 * q + r.val) :
+    a (4 * q + r.val + 1) = inverse r * q + offset r := by
+  obtain ⟨hc, hr, hd, hk, hk10, hb⟩ := table r
+  unfold a
+  rw [c_val q r.val _ hc hr]
+  have hq : q ≤ inverse r * q := by simpa using Nat.mul_le_mul_right q hk
+  have he : 10 * (inverse r * q + offset r) + 1 = (10 * q + residue r) * inverse r := by
+    nlinarith
+  refine IsLeast.csInf_eq ⟨⟨by omega, ⟨inverse r, he⟩⟩, ?_⟩
+  rintro x ⟨_, j, hj⟩
+  have hm : (10 * q + residue r) * inverse r ≡ (10 * q + residue r) * j [MOD 10] := by
+    rw [← he, ← hj]
+    simp [Nat.ModEq, Nat.add_mod]
+  have hmod := Nat.ModEq.cancel_left_of_coprime ((shift q _).2 hc).symm hm
+  change inverse r % 10 = j % 10 at hmod
+  rw [Nat.mod_eq_of_lt hk10] at hmod
+  have hij := hmod.trans_le (Nat.mod_le j 10)
+  have := Nat.mul_le_mul_left (10 * q + residue r) hij
   omega
-
-lemma a3 (q : ℕ) : a (4 * q + 1 + 1) = 7 * q + 2 := by
-  unfold a; rw [c_val q 1 3 (by decide) (by decide)]
-  apply sInf_eq _ _ (by omega) ⟨7, by ring⟩
-  intro x hx ⟨k, hk⟩
-  by_contra hlt
-  have hk7 : k < 7 := by
-    by_contra h7
-    have : (10 * q + 3) * 7 ≤ (10 * q + 3) * k := Nat.mul_le_mul_left _ (by omega)
-    omega
-  interval_cases k <;> omega
-
-lemma a7 (q : ℕ) : a (4 * q + 2 + 1) = 3 * q + 2 := by
-  unfold a; rw [c_val q 2 7 (by decide) (by decide)]
-  apply sInf_eq _ _ (by omega) ⟨3, by ring⟩
-  intro x hx ⟨k, hk⟩
-  by_contra hlt
-  have hk7 : k < 3 := by
-    by_contra h7
-    have : (10 * q + 7) * 3 ≤ (10 * q + 7) * k := Nat.mul_le_mul_left _ (by omega)
-    omega
-  interval_cases k <;> omega
-
-lemma a9 (q : ℕ) : a (4 * q + 3 + 1) = 9 * q + 8 := by
-  unfold a; rw [c_val q 3 9 (by decide) (by decide)]
-  apply sInf_eq _ _ (by omega) ⟨9, by ring⟩
-  intro x hx ⟨k, hk⟩
-  by_contra hlt
-  have hk7 : k < 9 := by
-    by_contra h7
-    have : (10 * q + 9) * 9 ≤ (10 * q + 9) * k := Nat.mul_le_mul_left _ (by omega)
-    omega
-  interval_cases k <;> omega
 
 end OMA.P_oeis_a344734
 
 open OMA.P_oeis_a344734 in
 theorem OMA.solution : type_of% @OMA.S_oeis_a344734.main := by
   intro n hn
-  obtain ⟨q, r, hr, rfl⟩ : ∃ q r, r < 4 ∧ n = 4 * q + r + 1 :=
-    ⟨(n - 1) / 4, (n - 1) % 4, Nat.mod_lt _ (by norm_num), by omega⟩
-  obtain ⟨p, rfl⟩ : ∃ p, q = p + 2 := ⟨q - 2, by omega⟩
-  have e4 : 4 * (p + 2) + r + 1 - 4 = 4 * (p + 1) + r + 1 := by omega
-  have e8 : 4 * (p + 2) + r + 1 - 8 = 4 * p + r + 1 := by omega
-  rw [e4, e8]
-  interval_cases r
-  · rw [a1 _ (by omega), a1 _ (by omega), a1 _ (by omega)]; push_cast; ring
-  · rw [a3, a3, a3]; push_cast; ring
-  · rw [a7, a7, a7]; push_cast; ring
-  · rw [a9, a9, a9]; push_cast; ring
-
+  obtain ⟨q, r, rfl⟩ : ∃ q : ℕ, ∃ r : Fin 4, n = 4 * q + r.val + 1 :=
+    ⟨(n - 1) / 4, ⟨(n - 1) % 4, by omega⟩, by
+      change n = 4 * ((n - 1) / 4) + (n - 1) % 4 + 1
+      omega⟩
+  obtain ⟨p, rfl⟩ : ∃ p, q = p + 2 := ⟨q - 2, by have := r.isLt; omega⟩
+  have e4 : 4 * (p + 2) + r.val + 1 - 4 = 4 * (p + 1) + r.val + 1 := by omega
+  have e8 : 4 * (p + 2) + r.val + 1 - 8 = 4 * p + r.val + 1 := by omega
+  rw [e4, e8, affine _ _ (by omega), affine _ _ (by omega), affine _ _ (by omega)]
+  push_cast
+  ring

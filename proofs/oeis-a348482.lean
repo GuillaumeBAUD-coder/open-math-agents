@@ -1,5 +1,11 @@
 import OMAStatements.S_oeis_a348482
 
+/-!
+Original proof: @thtsben2, PR #27732.
+Proof simplification: @rgoldman73-dev. Use Mathlib's sum of iterated
+polynomial derivatives to invert the operator p ↦ p - derivative p.
+-/
+
 open Finset Polynomial OMA.S_oeis_a348482
 
 namespace OMA.A348482
@@ -31,13 +37,8 @@ private lemma first_identity (n : ℕ) (_hn : 0 < n) :
   rw [← h]
   calc
     T n 1 = ∑ k ∈ range n, (T n (k + 1) - T n (k + 2)) := by
-      have telescope (m : ℕ) :
-          (∑ k ∈ range m, (T n (k + 1) - T n (k + 2))) =
-            T n 1 - T n (m + 1) := by
-        induction m with
-        | zero => simp
-        | succ m ih => rw [sum_range_succ, ih]; ring
-      rw [telescope, t_zero_of_lt (Nat.lt_succ_self n), sub_zero]
+      simpa [t_zero_of_lt (Nat.lt_succ_self n)] using
+        (sum_range_sub' (fun k => T n (k + 1)) n).symm
     _ = ∑ k ∈ range n, T n k / ((k : ℚ) + 2) := by
       refine sum_congr rfl fun k hk => ?_
       have hkn := mem_range.mp hk
@@ -73,38 +74,17 @@ private lemma row_sub_derivative_succ (n : ℕ) :
     rw [coeff_X_mul, row_sub_derivative_coeff]
     simp [coeff_one]
 
-private lemma derivative_telescopes (q : ℚ[X]) (n : ℕ) :
-    (∑ i ∈ range n, (derivative)^[i] q) -
-      derivative (∑ i ∈ range n, (derivative)^[i] q) = q - (derivative)^[n] q := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [sum_range_succ, derivative_add, Function.iterate_succ_apply']
-    calc
-      _ = ((∑ i ∈ range n, (derivative)^[i] q) -
-            derivative (∑ i ∈ range n, (derivative)^[i] q)) +
-            (derivative)^[n] q - derivative ((derivative)^[n] q) := by abel
-      _ = _ := by rw [ih]; abel
-
 private lemma sub_derivative_inj {u v : ℚ[X]}
     (h : u - derivative u = v - derivative v) : u = v := by
-  have hd : derivative (u - v) = u - v := by
-    rw [derivative_sub]
-    linear_combination -h
-  have hi (m : ℕ) : (derivative)^[m] (u - v) = u - v := by
-    induction m with
-    | zero => rfl
-    | succ m ih => rw [Function.iterate_succ_apply', ih, hd]
-  have hz := iterate_derivative_eq_zero (p := u - v) (Nat.lt_succ_self (u - v).natDegree)
-  exact sub_eq_zero.mp ((hi ((u - v).natDegree + 1)).symm.trans hz)
+  have h' := congrArg sumIDeriv h
+  simp only [map_sub, sumIDeriv_derivative] at h'
+  linear_combination h' - sumIDeriv_eq_self_add u + sumIDeriv_eq_self_add v
 
 private lemma recurrence_succ (n : ℕ) :
     p (n + 1) = (X + 1) * p n + 1 +
       ∑ i ∈ Icc 1 n, (derivative)^[i] (p n) := by
   have hd : (p n).natDegree ≤ n :=
     natDegree_le_iff_coeff_eq_zero.mpr fun k hk => by rw [coeff_row, t_zero_of_lt hk]
-  have hz : (derivative)^[n + 1] (p n) = 0 :=
-    iterate_derivative_eq_zero (by omega)
   have hsplit : range (n + 1) = insert 0 (Icc 1 n) := by
     ext i
     simp only [mem_range, mem_insert, mem_Icc]
@@ -120,8 +100,8 @@ private lemma recurrence_succ (n : ℕ) :
   apply sub_derivative_inj
   rw [row_sub_derivative_succ, derivative_add, derivative_add, derivative_mul,
     derivative_X, derivative_one, one_mul, mul_sub]
-  have ht := derivative_telescopes (p n) (n + 1)
-  rw [hz, sub_zero] at ht
+  have ht := sumIDeriv_eq_self_add (p n)
+  rw [sumIDeriv_apply_of_le hd] at ht
   linear_combination -ht
 
 private lemma t_top_step {n k : ℕ} (hk : k ≤ n + 1) :

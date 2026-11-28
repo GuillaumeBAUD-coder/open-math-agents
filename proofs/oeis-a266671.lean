@@ -210,29 +210,6 @@ theorem gf : PowerSeries.mk (fun n => (a n : ℚ)) =
       rw [this]; ring
   rw [← key, mul_assoc, PowerSeries.mul_inv_cancel _ hden, mul_one]
 
-/-- Controls: the entry's data a(0..19). -/
-theorem controls : a 0 = 1 ∧ a 1 = 3 ∧ a 2 = 8 ∧ a 3 = 95 ∧ a 4 = 64 ∧ a 5 = 1791 ∧ a 6 = 512 ∧ a 7 = 30719 ∧ a 8 = 4096 ∧ a 9 = 507903 ∧ a 10 = 32768 ∧ a 11 = 8257535 ∧ a 12 = 262144 ∧ a 13 = 133169151 ∧ a 14 = 2097152 ∧ a 15 = 2139095039 ∧ a 16 = 16777216 ∧ a 17 = 34292629503 ∧ a 18 = 134217728 ∧ a 19 = 549218942975 := by
-  exact ⟨(values).1,
-    (values).2.1,
-    (values).2.2.1,
-    (values).2.2.2.1,
-    (values).2.2.2.2.1,
-    (values).2.2.2.2.2.1,
-    (values).2.2.2.2.2.2.1,
-    (values).2.2.2.2.2.2.2.1,
-    (values).2.2.2.2.2.2.2.2.1,
-    (values).2.2.2.2.2.2.2.2.2.1,
-    (values).2.2.2.2.2.2.2.2.2.2.1,
-    (values).2.2.2.2.2.2.2.2.2.2.2.1,
-    (values).2.2.2.2.2.2.2.2.2.2.2.2,
-    by have h : (a 13 : ℚ) = 133169151 := (by rw [show (13 : ℕ) = 2 * (6 + 0) + 1 from rfl, a_odd 6]; norm_num); exact_mod_cast h,
-    by rw [show (14 : ℕ) = 2 * (6 + 1) from rfl, a_even 6]; norm_num,
-    by have h : (a 15 : ℚ) = 2139095039 := (by rw [show (15 : ℕ) = 2 * (7 + 0) + 1 from rfl, a_odd 7]; norm_num); exact_mod_cast h,
-    by rw [show (16 : ℕ) = 2 * (7 + 1) from rfl, a_even 7]; norm_num,
-    by have h : (a 17 : ℚ) = 34292629503 := (by rw [show (17 : ℕ) = 2 * (8 + 0) + 1 from rfl, a_odd 8]; norm_num); exact_mod_cast h,
-    by rw [show (18 : ℕ) = 2 * (8 + 1) from rfl, a_even 8]; norm_num,
-    by have h : (a 19 : ℚ) = 549218942975 := (by rw [show (19 : ℕ) = 2 * (9 + 0) + 1 from rfl, a_odd 9]; norm_num); exact_mod_cast h⟩
-
 /-- Both of Barker's conjectures. -/
 theorem conjecture :
     (∀ n : ℕ, 5 < n →

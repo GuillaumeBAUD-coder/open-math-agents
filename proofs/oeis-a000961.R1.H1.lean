@@ -1,10 +1,8 @@
 import OMAReductions.R_oeis_a000961_R1
 
--- Step oeis-a000961.R1.H1: hypothesis H1 of reduction oeis-a000961.R1
--- Credit: @GarnetCullet
--- Each k coprime to p contributes 1 modulo p^(e+1) (Euler), each multiple of p contributes 0
--- (the exponent phi(m) is at least e+1). Counting the non-multiples of p below p*s gives
--- (p-1)*s, so both sides carry the factor p^e*(p-1), which cancels.
+/-! Following @GarnetCullet (#27018), retain the local Euler-power-sum argument.
+Count the nonzero residues in each block directly, and use the standard
+consecutive-number coprimality equivalence for cancellation. -/
 
 namespace OMA.P_oeis_a000961_R1_H1
 
@@ -13,22 +11,13 @@ def g (p k : ℕ) : ℕ := if p ∣ k then 0 else 1
 
 theorem sum_g_block (p : ℕ) (hp : p.Prime) (a : ℕ) :
     (∑ j ∈ Finset.range p, g p (p * a + j)) = p - 1 := by
-  obtain ⟨r, hr⟩ : ∃ r, p = r + 1 := ⟨p - 1, by have := hp.one_lt; omega⟩
-  have hdiv : ∀ j, p ∣ p * a + j ↔ p ∣ j := fun j =>
-    Nat.dvd_add_right (dvd_mul_right p a)
-  rw [hr, Finset.sum_range_succ']
-  have h0 : g (r + 1) ((r + 1) * a + 0) = 0 := by simp [g]
-  rw [h0, add_zero]
-  have : ∀ j ∈ Finset.range r, g (r + 1) ((r + 1) * a + (j + 1)) = 1 := by
-    intro j hj
-    have hj' := Finset.mem_range.mp hj
-    have hnd : ¬ (r + 1) ∣ j + 1 := fun h =>
-      absurd (Nat.le_of_dvd (by omega) h) (by omega)
-    have := (hdiv (j + 1))
-    rw [hr] at this
-    simp [g, this, hnd]
-  rw [Finset.sum_congr rfl this]
-  simp
+  calc
+    _ = ∑ j ∈ Finset.range p, if j = 0 then 0 else 1 := by
+      apply Finset.sum_congr rfl
+      intro j hj
+      simp only [g, Nat.dvd_add_right (dvd_mul_right p a), Nat.dvd_iff_mod_eq_zero,
+        Nat.mod_eq_of_lt (Finset.mem_range.mp hj)]
+    _ = p - 1 := by simp [Finset.sum_ite, Finset.filter_ne', hp.pos]
 
 theorem sum_g (p : ℕ) (hp : p.Prime) (s : ℕ) :
     (∑ k ∈ Finset.range (p * s), g p k) = (p - 1) * s := by
@@ -80,10 +69,8 @@ theorem OMA.solution : OMA.R_oeis_a000961_R1.H1 := by
   have htot : (p ^ (e + 1) * t).totient = p ^ e * ((p - 1) * t.totient) := by
     rw [Nat.totient_mul hq, Nat.totient_prime_pow_succ hp]; ring
   have hp0 : p ^ e ≠ 0 := pow_ne_zero _ hp.ne_zero
-  have hcop : Nat.gcd p (p - 1) = 1 := by
-    have : ¬ p ∣ p - 1 := fun h =>
-      absurd (Nat.le_of_dvd (by have := hp.two_le; omega) h) (by have := hp.two_le; omega)
-    exact (Nat.Prime.coprime_iff_not_dvd hp).mpr this
+  have hcop : Nat.gcd p (p - 1) = 1 :=
+    (Nat.coprime_self_sub_right hp.one_le).mpr (Nat.coprime_one_right p)
   rw [htot] at hsum ⊢
   constructor
   · intro h

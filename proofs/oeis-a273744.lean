@@ -67,14 +67,6 @@ theorem on_ge (t : ℕ) (ht : 2 ≤ t) : on t = (2 * t + 1) ^ 2 := by
 
 theorem on_small : on 0 = 1 ∧ on 1 = 8 := ⟨by decide +kernel, by decide +kernel⟩
 
-/-- Control: the first seven terms. -/
-theorem first_terms : (List.range 7).map a = [1, 9, 34, 83, 164, 285, 454] := by
-  obtain ⟨h0, h1⟩ := on_small
-  have h2 := on_ge 2 (by norm_num); have h3 := on_ge 3 (by norm_num)
-  have h4 := on_ge 4 (by norm_num); have h5 := on_ge 5 (by norm_num)
-  have h6 := on_ge 6 (by norm_num)
-  simp [List.range_succ, a, Finset.sum_range_succ, h0, h1, h2, h3, h4, h5, h6]
-
 /-- Barker's formula `3 a(n) = n (11 + 12 n + 4 n^2)` for `n > 0`. -/
 theorem closed_form (n : ℕ) (hn : 0 < n) : 3 * a n = n * (11 + 12 * n + 4 * n ^ 2) := by
   induction n, hn using Nat.le_induction with

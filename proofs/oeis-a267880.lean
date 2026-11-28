@@ -1,86 +1,60 @@
 import OMAStatements.S_oeis_a267880
-import Mathlib
 
-open OMA.S_oeis_a267880
+/-!
+# A267880: the middle column of Rule 233
 
-private def live (t : ℕ) (i : ℤ) : Prop :=
-    (t = 0 ∧ (i = 0)) ∨
-    (t = 1 ∧ (i ≠ -1 ∧ i ≠ 0 ∧ i ≠ 1)) ∨
-    (t = 2 ∧ (i ≠ -1 ∧ i ≠ 1)) ∨
-    (t = 3 ∧ (i ≠ 0)) ∨
-    (4 ≤ t ∧ t % 2 = 0) ∨
-    (4 ≤ t ∧ t % 2 = 1)
+Rule 233 turns a cell ON when at least two of the three cells above it are ON, or when all three
+are OFF. Every cell is ON from stage 4 on, so `a (n + 4) = 2 * a (n + 3) + 1`.
+-/
 
-private lemma table (l c r : Bool) :
-    eca 233 l c r = true ↔ (c = true ∧ r = true) ∨ (l = false ∧ c = false ∧ r = false) ∨ (l = true ∧ r = true) ∨ (l = true ∧ c = true) := by
+namespace OMA.S_oeis_a267880
+
+open PowerSeries
+
+lemma eca_iff (l c r : Bool) : eca 233 l c r = true ↔ (l = true ∧ c = true) ∨
+    (l = true ∧ r = true) ∨ (c = true ∧ r = true) ∨ ¬(l = true ∨ c = true ∨ r = true) := by
   cases l <;> cases c <;> cases r <;> decide
 
-set_option maxHeartbeats 4000000 in
-private lemma state_iff (t : ℕ) (i : ℤ) : state t i = true ↔ live t i := by
-  induction t generalizing i with
-  | zero => simp [state, live]
-  | succ t ih =>
-    rw [state, table]
-    simp only [Bool.eq_false_iff, ne_eq, ih]
-    rcases Nat.lt_or_ge t 4 with h | h
-    · simp only [live]
-      interval_cases t <;> omega
-    · simp only [live, eq_false (show ¬ t = 0 by omega), eq_false (show ¬ t = 1 by omega), eq_false (show ¬ t = 2 by omega), eq_false (show ¬ t = 3 by omega), eq_false (show ¬ t + 1 = 0 by omega), eq_false (show ¬ t + 1 = 1 by omega), eq_false (show ¬ t + 1 = 2 by omega), eq_false (show ¬ t + 1 = 3 by omega), eq_true (show 4 ≤ t by omega), eq_true (show 4 ≤ t + 1 by omega), false_and, false_or, or_false, true_and]
-      omega
+lemma state_on (t : ℕ) : ∀ i : ℤ, state (t + 4) i = true := by
+  have r1 : ∀ i : ℤ, state 1 i = true ↔ i < -1 ∨ 1 < i := fun i => by
+    simp only [state, eca_iff, decide_eq_true_eq]; omega
+  have r2 : ∀ i : ℤ, state 2 i = true ↔ i ≠ -1 ∧ i ≠ 1 := fun i => by
+    rw [state, eca_iff]; simp only [r1]; omega
+  have r3 : ∀ i : ℤ, state 3 i = true ↔ i ≠ 0 := fun i => by
+    rw [state, eca_iff]; simp only [r2]; omega
+  induction t with
+  | zero => intro i; rw [state, eca_iff]; simp only [r3]; omega
+  | succ t ih => intro i; rw [state, ih, ih, ih]; rfl
 
+lemma a_step (n : ℕ) : a (n + 4) = 2 * a (n + 3) + 1 := by
+  unfold a
+  rw [Finset.sum_range_succ, Finset.mul_sum, if_pos (state_on n 0), Nat.sub_self]
+  congr 1
+  refine Finset.sum_congr rfl fun t ht => ?_
+  rw [Nat.succ_sub (Finset.mem_range_succ_iff.mp ht), pow_succ']
+  split_ifs <;> rfl
 
-private lemma step (n : ℕ) : (a (n + 1) : ℤ) = (2 : ℤ) * a n + (if state (n + 1) 0 then 1 else 0) := by
-  unfold a; push_cast; rw [Finset.sum_range_succ]; congr 1
-  · rw [Finset.mul_sum]; apply Finset.sum_congr rfl; intro t ht; simp at ht
-    rw [show n + 1 - t = (n - t) + 1 by omega, pow_succ]; split_ifs <;> ring
-  · simp
+end OMA.S_oeis_a267880
 
-private lemma cen (t : ℕ) (ht : 4 ≤ t) : state (t + 1) 0 = state t 0 := by
-  apply Bool.eq_iff_iff.mpr; rw [state_iff, state_iff]; simp only [live]; omega
-
-private lemma v0 : a 0 = 1 := by decide
-
-private lemma v1 : a 1 = 2 := by decide
-
-private lemma v2 : a 2 = 5 := by decide
-
-private lemma v3 : a 3 = 10 := by decide
-
-private lemma v4 : a 4 = 21 := by decide
-
-private lemma v5 : a 5 = 43 := by decide
-
-private lemma v6 : a 6 = 87 := by decide
-
-private lemma recur (n : ℕ) (hn : 4 < n) : (a n : ℤ) = (3 : ℤ) * a (n - 1) + (-2 : ℤ) * a (n - 2) := by
-  by_cases h : 5 < n
-  · obtain ⟨m, rfl⟩ : ∃ m, n = m + 6 := ⟨n - 6, by omega⟩
-    simp only [show m + 6 - 1 = m + 5 by omega, show m + 6 - 2 = m + 4 by omega]
-    have h1 := step (m + 5)
-    have h2 := step (m + 4)
-    have h3 := cen (m + 5) (by omega)
-    rw [show m + 5 + 1 = m + 6 by ring] at h1
-    rw [show m + 4 + 1 = m + 5 by ring] at h2
-    rw [show m + 5 + 1 = m + 6 by ring] at h3
-    rw [h3] at h1
-    linear_combination h1 - h2
-  · interval_cases n <;> norm_num [v0, v1, v2, v3, v4, v5, v6]
-
-open PowerSeries in
-private lemma gf : mk (fun n => (a n : ℤ)) * ((1 - X) * (1 - 2 * X)) = (1 - X + X ^ 2 - X ^ 3 + X ^ 4 : PowerSeries ℤ) := by
-  set F : PowerSeries ℤ := mk (fun n => (a n : ℤ)) with hF
-  have product : F * ((1 - X) * (1 - 2 * X)) = F + (-3 : ℤ) • (F * X ^ 1) + (2 : ℤ) • (F * X ^ 2) := by
-    simp only [zsmul_eq_mul]; push_cast; ring
-  have rhs : (1 - X + X ^ 2 - X ^ 3 + X ^ 4 : PowerSeries ℤ) = (1 : ℤ) • X ^ 0 + (-1 : ℤ) • X ^ 1 + (1 : ℤ) • X ^ 2 + (-1 : ℤ) • X ^ 3 + (1 : ℤ) • X ^ 4 := by
-    simp only [zsmul_eq_mul]; push_cast; ring
-  rw [product, rhs]
-  ext n
-  simp only [map_add, map_sub, map_zsmul, coeff_mul_X_pow', hF, coeff_mk, coeff_X_pow, smul_eq_mul]
-  by_cases h : 4 < n
-  · have hr := recur n (by omega)
-    simp only [show 1 ≤ n by omega, show 2 ≤ n by omega, show n ≠ 0 by omega, show n ≠ 1 by omega, show n ≠ 2 by omega, show n ≠ 3 by omega, show n ≠ 4 by omega, if_true, if_false]
-    linarith
-  · interval_cases n <;> simp [v0, v1, v2, v3, v4, v5, v6]
-
+open OMA.S_oeis_a267880 PowerSeries in
 theorem OMA.solution : type_of% @OMA.S_oeis_a267880.main := by
-  exact ⟨fun n hn => by have := recur n hn; linarith, gf⟩
+  have R : ∀ n, (a (n + 5) : ℤ) = 3 * a (n + 4) - 2 * a (n + 3) := fun n => by
+    have h1 : a (n + 5) = 2 * a (n + 4) + 1 := a_step (n + 1)
+    have h2 := a_step n
+    omega
+  refine ⟨fun n hn => ?_, ?_⟩
+  · obtain ⟨m, rfl⟩ : ∃ m, n = m + 5 := ⟨n - 5, by omega⟩
+    exact R m
+  · have e : ∀ B : ℤ⟦X⟧, B * ((1 - X) * (1 - 2 * X)) = B - C 3 * (B * X ^ 1) + C 2 * (B * X ^ 2) :=
+      fun B => by simp only [map_ofNat]; ring
+    rw [e]
+    ext n
+    simp only [map_add, map_sub, coeff_C_mul, coeff_mul_X_pow', coeff_X_pow, coeff_one, coeff_X,
+      coeff_mk]
+    rcases n with _ | _ | _ | _ | _ | n
+    · norm_num [show a 0 = 1 by decide]
+    · norm_num [show a 0 = 1 by decide, show a 1 = 2 by decide]
+    · norm_num [show a 0 = 1 by decide, show a 1 = 2 by decide, show a 2 = 5 by decide]
+    · norm_num [show a 1 = 2 by decide, show a 2 = 5 by decide, show a 3 = 10 by decide]
+    · norm_num [show a 2 = 5 by decide, show a 3 = 10 by decide, show a 4 = 21 by decide]
+    · simp [R n]

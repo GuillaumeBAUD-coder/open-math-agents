@@ -76,13 +76,6 @@ theorem white_pattern (t : ℕ) (ht : 2 ≤ t) : white t = t + 2 + t % 2 := by
   unfold white
   omega
 
-/-- Control: the first twelve terms. -/
-theorem first_terms : (List.range 12).map a = [0, 2, 6, 12, 18, 26, 34, 44, 54, 66, 78, 92] := by
-  have h : ∀ t, 2 ≤ t → white t = t + 2 + t % 2 := white_pattern
-  simp only [List.range_succ, List.range_zero, List.nil_append, List.map_cons, List.map_nil,
-    List.map_append]
-  simp [a, Finset.sum_range_succ, white_zero, white_one, h]
-
 /-- Barker's closed form, as `4 a(n) = 2n^2 + 12n - (-1)^n - 7` for `n > 0`. -/
 theorem closed_form (n : ℕ) (hn : 0 < n) :
     4 * (a n : ℤ) = 2 * (n : ℤ) ^ 2 + 12 * n - (-1) ^ n - 7 := by

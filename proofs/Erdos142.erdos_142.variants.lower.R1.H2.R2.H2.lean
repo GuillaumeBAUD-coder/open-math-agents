@@ -18,7 +18,6 @@ theorem count_bound (N q s : ℕ) (hN : 0 < N) (hsN : s ≤ N)
   have hsr : (s : ℝ) ≤ N := by exact_mod_cast hsN
   have hMpos : (0 : ℝ) < 2 * N := by positivity
   set a : ℝ := (s : ℝ) / (2 * N) with ha
-  have ha0 : 0 ≤ a := by positivity
   have ha1 : a ≤ 1 := by
     rw [ha, div_le_one hMpos]
     linarith
@@ -38,11 +37,8 @@ theorem count_bound (N q s : ℕ) (hN : 0 < N) (hsN : s ≤ N)
     rw [ha, mul_div_assoc', lt_div_iff₀ hMpos]
     linarith
   have hlt : Real.exp (-(q * a)) < 1 / N := by
-    have h1 : Real.exp (-(q * a)) < Real.exp (-Real.log N) :=
-      Real.exp_lt_exp.mpr (by linarith)
-    have h2 : Real.exp (-Real.log N) = 1 / N := by
-      rw [Real.exp_neg, Real.exp_log hNr, one_div]
-    rwa [h2] at h1
+    rw [one_div, ← Real.exp_log hNr, ← Real.exp_neg, Real.exp_lt_exp]
+    linarith
   have hkey : (N : ℝ) * (1 - a) ^ q < 1 := by
     calc (N : ℝ) * (1 - a) ^ q ≤ N * Real.exp (-(q * a)) :=
           mul_le_mul_of_nonneg_left hexp hNr.le
@@ -58,9 +54,11 @@ theorem count_bound (N q s : ℕ) (hN : 0 < N) (hsN : s ≤ N)
       _ = (2 * N) ^ q := mul_one _
   exact_mod_cast hreal
 
-theorem cover (N q : ℕ) (S : Finset ℕ) (hN : 0 < N) (hS : S ⊆ Icc 1 N)
-    (h : 2 * (N : ℝ) * Real.log (N : ℝ) < (q : ℝ) * (S.card : ℝ)) :
-    ∃ shifts : Fin q → ℕ, ∀ x ∈ Icc 1 N, ∃ t : Fin q, ∃ b ∈ S, x + N = shifts t + b := by
+end OMA.Helpers
+
+open Finset OMA.Helpers in
+theorem OMA.solution : OMA.R_Erdos142_erdos_142_variants_lower_R1_H2_R2.H2 := by
+  intro N q S hN _ hS h
   have hsN : S.card ≤ N := by
     have := card_le_card hS
     simpa using this
@@ -123,9 +121,3 @@ theorem cover (N q : ℕ) (S : Finset ℕ) (hN : 0 < N) (hS : S ⊆ Icc 1 N)
   simp only [A, mem_filter, mem_univ, true_and, not_forall, not_not] at ht
   obtain ⟨b, hb, hbeq⟩ := ht
   exact ⟨t, b, hb, hbeq.symm⟩
-
-end OMA.Helpers
-
-theorem OMA.solution : OMA.R_Erdos142_erdos_142_variants_lower_R1_H2_R2.H2 := by
-  intro N q S hN _ hS h
-  exact OMA.Helpers.cover N q S hN hS h

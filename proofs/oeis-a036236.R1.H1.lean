@@ -1,44 +1,16 @@
 import OMAReductions.R_oeis_a036236_R1
 import Mathlib.NumberTheory.LSeries.PrimesInAP
 
-/-!
-# Proof of `oeis-a036236.R1.H1`
-
-Proves that for every `j ≥ 1`, there are infinitely many positive integers `k` such that
-`2 ^ k % k = 2 ^ j`.
-
-Write `j = 2 ^ v * m` with `m` odd. By Dirichlet's theorem on primes in arithmetic progressions
-(`Nat.forall_exists_prime_gt_and_modEq`), for any bound `B` there exists a prime
-`p > max B (2 ^ j + j)` with `p ≡ 1 [MOD m.totient]`. Set `k = j * p > B`. Then:
-1. `2 ^ (j * p) ≡ 2 ^ j [MOD p]` by Fermat's little theorem;
-2. `2 ^ (j * p) ≡ 2 ^ j [MOD 2 ^ v]` because both are divisible by `2 ^ v` (since `v ≤ j ≤ j * p`);
-3. `2 ^ (j * p) ≡ 2 ^ j [MOD m]` by Euler's theorem since `m.totient ∣ p - 1 ∣ j * (p - 1)` and
-   `Nat.Coprime 2 m`.
-Since `p`, `2 ^ v`, and `m` are pairwise coprime, `2 ^ k ≡ 2 ^ j [MOD k]`, and since `2 ^ j < k`,
-`2 ^ k % k = 2 ^ j`.
--/
-
-namespace OeisA036236R1H1Proof
-
-private lemma le_two_pow (v : ℕ) : v ≤ 2 ^ v := by
-  induction v with
-  | zero => simp
-  | succ v ih =>
-    rw [pow_succ]
-    have := Nat.one_le_two_pow (n := v)
-    omega
-
-end OeisA036236R1H1Proof
+/-! Following @ppleskov (#27071), retain the Dirichlet-prime construction and
+three-modulus congruence argument. Use standard positivity, exponential bound,
+and coprimality-below-a-prime lemmas for the auxiliary inequalities. -/
 
 theorem OMA.solution : OMA.R_oeis_a036236_R1.H1 := by
   intro j hj
   apply Set.infinite_of_forall_exists_gt
   intro B
   obtain ⟨v, m, hm_odd, hj_eq⟩ := Nat.exists_eq_two_pow_mul_odd (by omega : j ≠ 0)
-  have hm_pos : 0 < m := by
-    by_contra h0
-    have : m = 0 := by omega
-    subst this; simp at hm_odd
+  have hm_pos : 0 < m := hm_odd.pos
   have htot_ne : m.totient ≠ 0 := (Nat.totient_pos.mpr hm_pos).ne'
   obtain ⟨p, hp_gt, hp_prime, hp_mod⟩ :=
     Nat.forall_exists_prime_gt_and_modEq (max B (2 ^ j + j)) htot_ne (Nat.coprime_one_left m.totient)
@@ -67,7 +39,7 @@ theorem OMA.solution : OMA.R_oeis_a036236_R1.H1 := by
     simp [Nat.cast_pow, hflt]
   -- Step 2: 2 ^ (j * p) ≡ 2 ^ j [MOD 2 ^ v]
   have hv_le_j : v ≤ j := by
-    calc v ≤ 2 ^ v := OeisA036236R1H1Proof.le_two_pow v
+    calc v ≤ 2 ^ v := (Nat.lt_two_pow_self (n := v)).le
       _ = 2 ^ v * 1 := (mul_one _).symm
       _ ≤ 2 ^ v * m := Nat.mul_le_mul_left _ hm_pos
       _ = j := hj_eq.symm
@@ -97,13 +69,9 @@ theorem OMA.solution : OMA.R_oeis_a036236_R1.H1 := by
     have h1 : 2 ^ k ≡ 2 ^ j [MOD 2 ^ v * m] :=
       (Nat.modEq_and_modEq_iff_modEq_mul hcop_2v_m).mp ⟨hmod_2v, hmod_m⟩
     rwa [← hj_eq] at h1
-  have hcop_j_p : j.Coprime p := by
-    have hnot : ¬ (p ∣ j) := by
-      intro hd
-      have hle : p ≤ j := Nat.le_of_dvd (by omega) hd
-      have hlt : j < p := lt_of_le_of_lt (Nat.le_add_left j (2 ^ j)) hp_gt2j
-      omega
-    exact (hp_prime.coprime_iff_not_dvd.mpr hnot).symm
+  have hcop_j_p : j.Coprime p :=
+    (Nat.coprime_of_lt_prime (n := j) (by omega)
+      ((Nat.le_add_left j (2 ^ j)).trans_lt hp_gt2j) hp_prime).symm
   have hmod_k : 2 ^ k ≡ 2 ^ j [MOD k] :=
     (Nat.modEq_and_modEq_iff_modEq_mul hcop_j_p).mp ⟨hmod_j, hmod_p⟩
   refine ⟨k, ⟨hk_pos, ?_⟩, hk_gtB⟩

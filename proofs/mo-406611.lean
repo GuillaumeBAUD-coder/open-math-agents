@@ -25,11 +25,8 @@ theorem hmul : (1 - A) * (1 + A) = 1 := by
 
 theorem hinv : (1 - A)⁻¹ = 1 + A := Matrix.inv_eq_right_inv hmul
 
-theorem hdet : (1 - A).det ≠ 0 := by
-  intro h0
-  have h := congrArg Matrix.det hmul
-  rw [Matrix.det_mul, Matrix.det_one, h0, zero_mul] at h
-  exact zero_ne_one h
+-- Apply the standard determinant consequence of the existing right inverse.
+theorem hdet : (1 - A).det ≠ 0 := Matrix.det_ne_zero_of_right_inverse hmul
 
 theorem hnn : ∀ i j, 0 ≤ A i j := by
   intro i j
