@@ -1,6 +1,8 @@
 import OMAStatements.S_oeis_a238952
 import Mathlib
 
+open Finset Nat
+
 namespace A238952Proof
 
 lemma step_div (n i : ℕ) (hn : 1 ≤ n) : n / i - (n - 1) / i = if i ∣ n then 1 else 0 := by
@@ -16,10 +18,10 @@ lemma rhs_eq (n : ℕ) (hn : 1 ≤ n) :
     intro i _
     rw [step_div n i hn]
     split_ifs <;> simp
-  rw [Finset.sum_congr rfl h1, ← Finset.sum_filter]
-  apply Finset.sum_congr _ (fun _ _ => rfl)
+  rw [sum_congr rfl h1, ← sum_filter]
+  apply sum_congr _ (fun _ _ => rfl)
   ext i
-  simp only [Finset.mem_filter, Finset.mem_Icc, Nat.mem_properDivisors]
+  simp only [mem_filter, mem_Icc, mem_properDivisors]
   constructor
   · rintro ⟨⟨h1, h2⟩, h3⟩
     exact ⟨h3, by omega⟩
@@ -47,11 +49,11 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a238952.main := by
   unfold OMA.S_oeis_a238952.arcs
   rw [A238952Proof.rhs_eq n hn]
   have hn0 : n ≠ 0 := by omega
-  rw [← Nat.insert_self_properDivisors hn0, Finset.sum_insert Nat.self_notMem_properDivisors]
+  rw [← insert_self_properDivisors hn0, sum_insert self_notMem_properDivisors]
   have h2 : ∀ i ∈ n.properDivisors, i.divisors.card = i.properDivisors.card + 1 := by
     intro i hi
-    have hi0 : i ≠ 0 := (Nat.pos_of_mem_properDivisors hi).ne'
-    rw [← Nat.insert_self_properDivisors hi0,
-      Finset.card_insert_of_notMem Nat.self_notMem_properDivisors]
-  rw [Finset.sum_congr rfl h2, Finset.sum_add_distrib, Finset.sum_const, smul_eq_mul, mul_one]
+    have hi0 : i ≠ 0 := (pos_of_mem_properDivisors hi).ne'
+    rw [← insert_self_properDivisors hi0,
+      card_insert_of_notMem self_notMem_properDivisors]
+  rw [sum_congr rfl h2, sum_add_distrib, sum_const, smul_eq_mul, mul_one]
   exact Nat.add_comm _ _

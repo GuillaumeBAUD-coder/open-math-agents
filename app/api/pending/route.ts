@@ -18,7 +18,7 @@ const STATES = new Set(["checking", "verdict", "rejected", "review"]);
  * Only a request proved by the workflow's GitHub OIDC token is accepted.
  */
 export async function POST(req: Request) {
-  const b = (await req.json().catch(() => null)) as { oidc?: string; items?: unknown[]; prs?: unknown[]; queue?: { running?: unknown; queued?: unknown } } | null;
+  const b = (await req.json().catch(() => null)) as { oidc?: string; items?: unknown[]; prs?: unknown[]; queue?: { running?: unknown; queued?: unknown; perHour?: unknown } } | null;
   if (!b || !Array.isArray(b.items) || typeof b.oidc !== "string") return json({ error: "bad_request" }, 400);
   if (!(await verifyWorkflowToken(b.oidc))) return json({ error: "unauthorized" }, 401);
   const items = b.items
@@ -43,7 +43,7 @@ export async function POST(req: Request) {
         ...(typeof x.reason === "string" && x.reason ? { reason: x.reason.replace(/\s+/g, " ").slice(0, 300) } : {}),
       }));
     const n = (v: unknown) => (Number.isInteger(v) && (v as number) >= 0 ? (v as number) : null);
-    const queue = { running: n(b.queue?.running) ?? 0, queued: n(b.queue?.queued) };
+    const queue = { running: n(b.queue?.running) ?? 0, queued: n(b.queue?.queued), perHour: n(b.queue?.perHour) };
     await kv.put(PRS_KEY, JSON.stringify({ at, queue, prs: list }), { expirationTtl: 7200 });
     prs = list.length;
   }
@@ -54,12 +54,13 @@ export async function POST(req: Request) {
 export async function GET(req: Request) {
   const handle = new URL(req.url).searchParams.get("handle") ?? "";
   if (!HANDLE_RE.test(handle)) return json({ error: "bad_request", hint: "GET /api/pending?handle=<your GitHub handle>" }, 400);
-  const { list, items } = await submissionsOf(handle, await getProfile(handle));
+  const { list, items, now } = await submissionsOf(handle, await getProfile(handle));
   return NextResponse.json(
     {
       handle,
       asOf: list?.at ?? null,
-      queue: list ? { ...list.queue, minutesPerCheck: 2, note: "Checks run in GitHub's queue, roughly in the order the pull requests were opened; waits are estimates." } : null,
+      queue: list ? { ...list.queue, note: "Checks start roughly in the order the pull requests were opened; waits are estimates at the pace of the last hour (perHour verdicts)." } : null,
+      sentNow: now ? { waitingBefore: now.waiting, expectedMinutes: now.minutes } : null,
       submissions: items.map((s) => ({ ...s, meaning: STATE_TEXT[s.state] })),
     },
     { headers: { "Cache-Control": "public, s-maxage=60", "Access-Control-Allow-Origin": "*" } },

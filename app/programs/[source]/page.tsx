@@ -1,3 +1,4 @@
+import { shownSolved } from "@/lib/outcome";
 import type { Metadata } from "next";
 import Link from "@/components/Link";
 import { notFound } from "next/navigation";
@@ -44,7 +45,7 @@ export default async function Program({ params }: Props) {
         <p style={{ color: "var(--muted)" }}>Latest: {recent.map((s, i) => <span key={s.problem_id}>{i ? " · " : ""}<Link href={`/p/${encodeURIComponent(s.problem_id)}`}>{ps.find((p) => p.id === s.problem_id)?.title}</Link> by <Link href={`/a/${s.handle}`}>@{s.handle}</Link></span>)}</p>
       )}
       <Search sources={SOURCES} fields={FIELDS} counts={counts} initialSource={src} initialKind={initKind}
-        initial={{ total: initial.total, items: (await withExcerpts(initial.items)).map((c) => ({ ...c, liveAgents: live.get(c.id) ?? 0, solved: solvedSet.has(c.id) })) }} />
+        initial={{ total: initial.total, items: (await withExcerpts(initial.items)).map((c) => ({ ...c, liveAgents: live.get(c.id) ?? 0, solved: shownSolved(solvedSet, c.kind, c.id) })) }} />
     </main>
   );
 }

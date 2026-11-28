@@ -2,7 +2,7 @@ import OMAStatements.S_oeis_a192752
 
 namespace OMA.P192752
 
-open Polynomial OMA.S_oeis_a192752
+open Polynomial OMA.S_oeis_a192752 Nat
 
 /-- Coordinates of the reduction of `p n` in the basis `1, x`. -/
 def w : ℕ → ℤ × ℤ
@@ -44,31 +44,31 @@ lemma a_eq (n : ℕ) : a n = (w n).1 := by
   unfold a
   rw [rem]; simp
 
-lemma fibz (m : ℕ) : (Nat.fib (m + 2) : ℤ) = (Nat.fib (m + 1) : ℤ) + (Nat.fib m : ℤ) := by
-  rw [Nat.fib_add_two]
+lemma fibz (m : ℕ) : (fib (m + 2) : ℤ) = (fib (m + 1) : ℤ) + (fib m : ℤ) := by
+  rw [fib_add_two]
   push_cast
   ring
 
-lemma key : ∀ n : ℕ, (w n).1 = (Nat.fib (n + 3) : ℤ) + 5 * (Nat.fib (n + 2) : ℤ) - 2 * (Nat.fib (n + 1) : ℤ) - 4 ∧
-    (w n).2 = (Nat.fib (n + 4) : ℤ) + 5 * (Nat.fib (n + 3) : ℤ) - 2 * (Nat.fib (n + 2) : ℤ) - 4 * (n : ℤ) - 11 := by
+lemma key : ∀ n : ℕ, (w n).1 = (fib (n + 3) : ℤ) + 5 * (fib (n + 2) : ℤ) - 2 * (fib (n + 1) : ℤ) - 4 ∧
+    (w n).2 = (fib (n + 4) : ℤ) + 5 * (fib (n + 3) : ℤ) - 2 * (fib (n + 2) : ℤ) - 4 * (n : ℤ) - 11 := by
   intro n
   induction n with
   | zero =>
-    have h1 : Nat.fib 1 = 1 := rfl
-    have h2 : Nat.fib 2 = 1 := rfl
-    have h3 : Nat.fib 3 = 2 := rfl
-    have h4 : Nat.fib 4 = 3 := rfl
+    have h1 : fib 1 = 1 := rfl
+    have h2 : fib 2 = 1 := rfl
+    have h3 : fib 3 = 2 := rfl
+    have h4 : fib 4 = 3 := rfl
     constructor <;> simp [w, h1, h2, h3, h4]
   | succ n ih =>
     obtain ⟨hu, hv⟩ := ih
-    have f3 : (Nat.fib (n + 3) : ℤ) = (Nat.fib (n + 2) : ℤ) + (Nat.fib (n + 1) : ℤ) := fibz (n + 1)
-    have f4 : (Nat.fib (n + 4) : ℤ) = (Nat.fib (n + 3) : ℤ) + (Nat.fib (n + 2) : ℤ) := fibz (n + 2)
-    have f5 : (Nat.fib (n + 5) : ℤ) = (Nat.fib (n + 4) : ℤ) + (Nat.fib (n + 3) : ℤ) := fibz (n + 3)
+    have f3 : (fib (n + 3) : ℤ) = (fib (n + 2) : ℤ) + (fib (n + 1) : ℤ) := fibz (n + 1)
+    have f4 : (fib (n + 4) : ℤ) = (fib (n + 3) : ℤ) + (fib (n + 2) : ℤ) := fibz (n + 2)
+    have f5 : (fib (n + 5) : ℤ) = (fib (n + 4) : ℤ) + (fib (n + 3) : ℤ) := fibz (n + 3)
     constructor
-    · show (w (n + 1)).1 = (Nat.fib (n + 4) : ℤ) + 5 * (Nat.fib (n + 3) : ℤ) - 2 * (Nat.fib (n + 2) : ℤ) - 4
+    · show (w (n + 1)).1 = (fib (n + 4) : ℤ) + 5 * (fib (n + 3) : ℤ) - 2 * (fib (n + 2) : ℤ) - 4
       simp only [w, hv]
       linarith
-    · show (w (n + 1)).2 = (Nat.fib (n + 5) : ℤ) + 5 * (Nat.fib (n + 4) : ℤ) - 2 * (Nat.fib (n + 3) : ℤ) - 4 * ((n : ℤ) + 1) - 11
+    · show (w (n + 1)).2 = (fib (n + 5) : ℤ) + 5 * (fib (n + 4) : ℤ) - 2 * (fib (n + 3) : ℤ) - 4 * ((n : ℤ) + 1) - 11
       simp only [w, hu, hv]
       linarith
 

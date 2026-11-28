@@ -1,5 +1,9 @@
 import OMAStatements.S_mo_253925
 
+/-! Original interval-envelope proof by @jared-jasinski (PR #12466).
+The slope and continuity helpers now apply Mathlib's concavity APIs directly;
+the interval-maximizer endpoint argument reuses the adjacent-slope inequality. -/
+
 namespace OMA.P_mo_253925
 
 open OMA.S_mo_253925 Set
@@ -7,29 +11,7 @@ open OMA.S_mo_253925 Set
 private lemma slope_le_of_concave {G : ℝ → ℝ} (hG : ConcaveOn ℝ Set.univ G)
     {u a v : ℝ} (hu : u < a) (hv : a < v) :
     (G v - G a) / (v - a) ≤ (G a - G u) / (a - u) := by
-  have h1 : 0 < a - u := sub_pos.mpr hu
-  have h2 : 0 < v - a := sub_pos.mpr hv
-  have h3 : 0 < v - u := by linarith
-  have hw1 : 0 ≤ (v - a) / (v - u) := div_nonneg h2.le h3.le
-  have hw2 : 0 ≤ (a - u) / (v - u) := div_nonneg h1.le h3.le
-  have hsum : (v - a) / (v - u) + (a - u) / (v - u) = 1 := by
-    rw [← add_div]
-    have : v - a + (a - u) = v - u := by ring
-    rw [this, div_self h3.ne']
-  have hcomb : (v - a) / (v - u) * u + (a - u) / (v - u) * v = a := by
-    field_simp [h3.ne']
-    ring
-  have hconc := hG.2 (mem_univ u) (mem_univ v) hw1 hw2 hsum
-  simp only [smul_eq_mul] at hconc
-  rw [hcomb] at hconc
-  rw [div_le_div_iff₀ h2 h1]
-  have hmul : ((v - a) / (v - u) * G u + (a - u) / (v - u) * G v) * (v - u) ≤ G a * (v - u) :=
-    mul_le_mul_of_nonneg_right hconc h3.le
-  have hlhs : ((v - a) / (v - u) * G u + (a - u) / (v - u) * G v) * (v - u) =
-      (v - a) * G u + (a - u) * G v := by
-    field_simp [h3.ne']
-  rw [hlhs] at hmul
-  nlinarith
+  exact hG.slope_anti_adjacent (mem_univ u) (mem_univ v) hu hv
 
 private lemma exists_supergradient_right {G : ℝ → ℝ} (hG : ConcaveOn ℝ Set.univ G) (a : ℝ) :
     let s := sSup {r : ℝ | ∃ v : ℝ, a < v ∧ r = (G v - G a) / (v - a)}
@@ -96,11 +78,7 @@ private lemma exists_supergradient_left {G : ℝ → ℝ} (hG : ConcaveOn ℝ Se
     linarith
 
 private lemma concave_continuous {G : ℝ → ℝ} (hG : ConcaveOn ℝ Set.univ G) : Continuous G := by
-  have hconv : ConvexOn ℝ Set.univ (-G) := hG.neg
-  have hcont : ContinuousOn (-G) Set.univ := hconv.continuousOn isOpen_univ
-  have hcont' : Continuous (-G) := continuousOn_univ.mp hcont
-  have hcont'' : Continuous (-(-G)) := hcont'.neg
-  rwa [neg_neg] at hcont''
+  exact continuousOn_univ.mp (hG.continuousOn isOpen_univ)
 
 private lemma geps_attained {G : ℝ → ℝ} (hG : ConcaveOn ℝ Set.univ G) {ε : ℝ} (hε : 0 ≤ ε)
     (x : ℝ) :
@@ -135,33 +113,10 @@ private lemma exists_h_at {G : ℝ → ℝ} (hG : ConcaveOn ℝ Set.univ G) {ε 
       have hxstar_eq : xstar = x - ε := by
         by_contra hne
         have hlt : x - ε < xstar := lt_of_le_of_ne hxstar_mem.1 (Ne.symm hne)
-        have h1 : 0 < xstar - (x - ε) := sub_pos.mpr hlt
-        have h2 : 0 < (x - ε) - y0 := sub_pos.mpr hy0_lt
-        have h3 : 0 < xstar - y0 := by linarith
-        have hw1 : 0 ≤ (xstar - (x - ε)) / (xstar - y0) := div_nonneg h1.le h3.le
-        have hw2 : 0 ≤ ((x - ε) - y0) / (xstar - y0) := div_nonneg h2.le h3.le
-        have hsum : (xstar - (x - ε)) / (xstar - y0) + ((x - ε) - y0) / (xstar - y0) = 1 := by
-          rw [← add_div]
-          have : xstar - (x - ε) + ((x - ε) - y0) = xstar - y0 := by ring
-          rw [this, div_self h3.ne']
-        have hcomb :
-            (xstar - (x - ε)) / (xstar - y0) * y0 +
-              ((x - ε) - y0) / (xstar - y0) * xstar = x - ε := by
-          field_simp [h3.ne']
-          ring
-        have hconc := hG.2 (mem_univ y0) (mem_univ xstar) hw1 hw2 hsum
-        simp only [smul_eq_mul] at hconc
-        rw [hcomb] at hconc
-        have hle_end : G (x - ε) ≤ G xstar := hmax (x - ε) ⟨le_rfl, by linarith⟩
-        have hw1_pos : 0 < (xstar - (x - ε)) / (xstar - y0) := div_pos h1 h3
-        have hstrict :
-            G xstar < (xstar - (x - ε)) / (xstar - y0) * G y0 +
-              ((x - ε) - y0) / (xstar - y0) * G xstar := by
-          have : (xstar - (x - ε)) / (xstar - y0) * G xstar +
-              ((x - ε) - y0) / (xstar - y0) * G xstar = G xstar := by
-            rw [← add_mul, hsum, one_mul]
-          linarith [mul_lt_mul_of_pos_left hy0 hw1_pos]
-        linarith
+        have he : G (x - ε) ≤ G xstar := hmax (x - ε) ⟨le_rfl, by linarith⟩
+        exact (not_lt_of_ge (div_nonneg (sub_nonneg.mpr he) (sub_pos.mpr hlt).le))
+          ((slope_le_of_concave hG hy0_lt hlt).trans_lt
+            (div_neg_of_neg_of_pos (sub_neg.mpr (he.trans_lt hy0)) (sub_pos.mpr hy0_lt)))
       obtain ⟨hsup, hleft⟩ := exists_supergradient_left hG (x - ε)
       set s := sInf {r : ℝ | ∃ u : ℝ, u < x - ε ∧ r = (G (x - ε) - G u) / (x - ε - u)}
       have hs_neg : s < 0 := by
@@ -177,33 +132,10 @@ private lemma exists_h_at {G : ℝ → ℝ} (hG : ConcaveOn ℝ Set.univ G) {ε 
       have hxstar_eq : xstar = x + ε := by
         by_contra hne
         have hlt : xstar < x + ε := lt_of_le_of_ne hxstar_mem.2 hne
-        have h1 : 0 < y0 - (x + ε) := sub_pos.mpr hy0_gt
-        have h2 : 0 < (x + ε) - xstar := sub_pos.mpr hlt
-        have h3 : 0 < y0 - xstar := by linarith
-        have hw1 : 0 ≤ (y0 - (x + ε)) / (y0 - xstar) := div_nonneg h1.le h3.le
-        have hw2 : 0 ≤ ((x + ε) - xstar) / (y0 - xstar) := div_nonneg h2.le h3.le
-        have hsum : (y0 - (x + ε)) / (y0 - xstar) + ((x + ε) - xstar) / (y0 - xstar) = 1 := by
-          rw [← add_div]
-          have : y0 - (x + ε) + ((x + ε) - xstar) = y0 - xstar := by ring
-          rw [this, div_self h3.ne']
-        have hcomb :
-            (y0 - (x + ε)) / (y0 - xstar) * xstar +
-              ((x + ε) - xstar) / (y0 - xstar) * y0 = x + ε := by
-          field_simp [h3.ne']
-          ring
-        have hconc := hG.2 (mem_univ xstar) (mem_univ y0) hw1 hw2 hsum
-        simp only [smul_eq_mul] at hconc
-        rw [hcomb] at hconc
-        have hle_end : G (x + ε) ≤ G xstar := hmax (x + ε) ⟨by linarith, le_rfl⟩
-        have hw2_pos : 0 < ((x + ε) - xstar) / (y0 - xstar) := div_pos h2 h3
-        have hstrict :
-            G xstar < (y0 - (x + ε)) / (y0 - xstar) * G xstar +
-              ((x + ε) - xstar) / (y0 - xstar) * G y0 := by
-          have : (y0 - (x + ε)) / (y0 - xstar) * G xstar +
-              ((x + ε) - xstar) / (y0 - xstar) * G xstar = G xstar := by
-            rw [← add_mul, hsum, one_mul]
-          linarith [mul_lt_mul_of_pos_left hy0 hw2_pos]
-        linarith
+        have he : G (x + ε) ≤ G xstar := hmax (x + ε) ⟨by linarith, le_rfl⟩
+        exact (not_lt_of_ge ((slope_le_of_concave hG hlt hy0_gt).trans
+          (div_nonpos_of_nonpos_of_nonneg (sub_nonpos.mpr he) (sub_pos.mpr hlt).le)))
+          (div_pos (sub_pos.mpr (he.trans_lt hy0)) (sub_pos.mpr hy0_gt))
       obtain ⟨hsup, hright⟩ := exists_supergradient_right hG (x + ε)
       set s := sSup {r : ℝ | ∃ v : ℝ, x + ε < v ∧ r = (G v - G (x + ε)) / (v - (x + ε))}
       have hs_pos : 0 < s := by

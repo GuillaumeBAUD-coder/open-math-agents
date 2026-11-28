@@ -7,7 +7,7 @@ Source: https://oeis.org/A301517
 Credit: @dwilfand-sys (smaller witness and proof)
 -/
 
-open Finset OMA.S_oeis_a301517
+open Finset OMA.S_oeis_a301517 Nat
 
 theorem OMA.disproof : ¬ (type_of% @OMA.S_oeis_a301517.main) := by
   intro h
@@ -16,23 +16,23 @@ theorem OMA.disproof : ¬ (type_of% @OMA.S_oeis_a301517.main) := by
   have hw : w ≠ 0 := by decide
   have hf : w.primeFactorsList = l := by
     symm
-    apply List.Perm.eq_of_pairwise' (r := (· ≤ ·)) (by decide) (Nat.primeFactorsList_sorted w).pairwise
-    apply Nat.primeFactorsList_unique (by decide)
+    apply List.Perm.eq_of_pairwise' (r := (· ≤ ·)) (by decide) (primeFactorsList_sorted w).pairwise
+    apply primeFactorsList_unique (by decide)
     norm_num [l, List.forall_mem_cons]
   have hs : squarefreeSum w = 1008 := by
-    rw [squarefreeSum, Nat.sum_divisors_filter_squarefree hw, Nat.factors_eq]
+    rw [squarefreeSum, sum_divisors_filter_squarefree hw, factors_eq]
     change ∑ s ∈ w.primeFactors.powerset, s.val.prod = _
     calc
       _ = ∏ p ∈ w.primeFactors, (1+p) := by
-        rw [Finset.prod_one_add]
-        exact Finset.sum_congr rfl fun s _ ↦ Finset.prod_val s
-      _ = _ := by rw [← Nat.toFinset_factors, hf]; decide
+        rw [prod_one_add]
+        exact sum_congr rfl fun s _ ↦ prod_val s
+      _ = _ := by rw [← toFinset_factors, hf]; decide
   have ht : ∑ d ∈ w.divisors, d = 72399600 := by
-    rw [Nat.sum_divisors hw]
-    simp only [← Nat.primeFactorsList_count_eq, ← Nat.toFinset_factors, hf]
+    rw [sum_divisors hw]
+    simp only [← primeFactorsList_count_eq, ← toFinset_factors, hf]
     decide
   have split : squarefreeSum w + nonsquarefreeSum w = ∑ d ∈ w.divisors, d :=
-    Finset.sum_filter_add_sum_filter_not _ _ _
+    sum_filter_add_sum_filter_not _ _ _
   apply (show ¬ Nat.Prime 268 by norm_num)
   apply h w 268 (by decide) (by decide)
   have hn : nonsquarefreeSum w = 72398592 := by omega

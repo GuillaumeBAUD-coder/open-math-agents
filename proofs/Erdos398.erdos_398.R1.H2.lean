@@ -1,10 +1,8 @@
 import OMAReductions.R_Erdos398_erdos_398_R1
-import Mathlib.Data.Nat.Sqrt
-import Mathlib.Algebra.Ring.Parity
+import Mathlib
 
 /-! Brocard's equation as a consecutive-factor equation, and a checked prefix. -/
 
-namespace OMA.Erdos398Brocard
 set_option maxRecDepth 20000 in
 set_option maxHeartbeats 2000000 in
 private theorem finite_sqrt_values :
@@ -21,7 +19,5 @@ theorem finite_prefix (n : ℕ) (hn : n < 128) :
   rw [hEq]
   simpa only [Set.mem_insert_iff, Set.mem_singleton_iff] using finite_sqrt_values ⟨n, hn⟩
 
-end OMA.Erdos398Brocard
-
 theorem OMA.solution : OMA.R_Erdos398_erdos_398_R1.H2 :=
-  OMA.Erdos398Brocard.finite_prefix
+  finite_prefix

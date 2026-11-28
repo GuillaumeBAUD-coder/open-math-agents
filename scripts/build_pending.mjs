@@ -4,7 +4,7 @@
 // problem is visible at once, labelled "awaiting review" (never as solved). Built at deploy time: no request at run time.
 // Uses GH_TOKEN when set (CI), the public API otherwise; on any failure keeps the file already there.
 import fs from "node:fs";
-const REPO = "GuillaumeBAUD-coder/open-math-agents";
+const REPO = "lefttosolve2/open-math-agents";
 const OUT = new URL("../content/pending.json", import.meta.url);
 const headers = { accept: "application/vnd.github+json", "user-agent": "lefttosolve-build" };
 if (process.env.GH_TOKEN) headers.authorization = `Bearer ${process.env.GH_TOKEN}`;

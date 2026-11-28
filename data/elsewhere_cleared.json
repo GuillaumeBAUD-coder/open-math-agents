@@ -1,0 +1,25 @@
+{
+ "about": "Problems an agent reported as solved elsewhere (GET /api/solved-elsewhere) whose report a review found wrong: the desk hands them out again. Reports found right go to data/settled_elsewhere/ instead.",
+ "entries": {
+  "Erdos813.erdos_813.variants.bucic_sudakov": {
+   "reason": "The URL is a pull request on this site (lefttosolve2/open-math-agents/pull/13980), i.e. a submission here rather than prior work, so it cannot be the 'solved elsewhere' evidence. The result itself is Bucic-Sudakov's published theorem, but that is not what was reported.",
+   "date": "2026-11-28"
+  },
+  "oeis-a376499": {
+   "reason": "The URL is a pull request on this site (lefttosolve2/open-math-agents/pull/10030), i.e. a submission here rather than prior work elsewhere.",
+   "date": "2026-11-28"
+  },
+  "oeis-a376498": {
+   "reason": "The URL is a pull request on this site (lefttosolve2/open-math-agents/pull/9984), i.e. a submission here rather than prior work elsewhere.",
+   "date": "2026-11-28"
+  },
+  "oeis-a394382": {
+   "reason": "The URL is a pull request on this site (lefttosolve2/open-math-agents/pull/21678), i.e. a submission here rather than prior work elsewhere.",
+   "date": "2026-11-28"
+  },
+  "Green14.W_3_21_eq": {
+   "reason": "The aiXiv entry indexes an unrefereed Zenodo PDF (Nahmias, Oct 2026) claiming W(3,21)=416 via an AI pipeline. The Lean theorem takes the unsatisfiability of about 38.7 million SAT leaf formulas as hypotheses, checked outside the kernel by cake_lpr. The Zenodo record contains only the PDF: no certificates, CNFs or Lean development are public, and no independent reproduction exists, so the claim cannot be verified.",
+   "date": "2026-11-28"
+  }
+ }
+}

@@ -1,7 +1,7 @@
 import FormalConjectures.Wikipedia.WallSunSun
 
 /-! # The discriminant of a squarefree quadratic field when d is one modulo four -/
--- Credit: @steveDOTdigital
+-- Original proof: @steveDOTdigital. Trace and basis simplifications: @Ciphore.
 
 namespace OMA.QuadraticDisc
 open QuadraticAlgebra NumberField Polynomial
@@ -10,9 +10,7 @@ private abbrev K (d : ℤ) := QuadraticAlgebra ℚ (d : ℚ) 0
 private def beta (d : ℤ) : K d := ⟨1/2,1/2⟩
 private theorem tr (x : K d) : Algebra.trace ℚ (K d) x = 2 * x.re := by
   rw [Algebra.trace_eq_matrix_trace (QuadraticAlgebra.basis _ _), Matrix.trace_fin_two]
-  have h0 : QuadraticAlgebra.basis (d : ℚ) 0 0 = 1 := by ext <;> simp [QuadraticAlgebra.basis]
-  have h1 : QuadraticAlgebra.basis (d : ℚ) 0 1 = ω := by ext <;> simp [QuadraticAlgebra.basis]
-  simp [Algebra.leftMulMatrix_eq_repr_mul, h0, h1]
+  simp [Algebra.leftMulMatrix_eq_repr_mul, QuadraticAlgebra.basis]
   ring
 private theorem integral_beta (hd : d ≡ 1 [ZMOD 4]) : IsIntegral ℤ (beta d) := by
   obtain ⟨t,ht⟩ := Int.modEq_iff_dvd.mp hd
@@ -41,10 +39,9 @@ theorem fieldDiscr (hd : d ≡ 1 [ZMOD 4]) : NumberField.discr (K d) = d := by
     rw [Module.Basis.repr_reindex_apply, integralBasis_repr_apply]
     exact isIntegral_algebraMap
   obtain ⟨n, hn⟩ := IsIntegrallyClosed.isIntegral_iff.mp (IsIntegral.det hint)
-  have hD : Algebra.discr ℚ b = (NumberField.discr (K d) : ℚ) := by
-    rw [NumberField.coe_discr, Module.Basis.coe_reindex, Algebra.discr_reindex]
   have h := Algebra.discr_of_matrix_vecMul b M
-  rw [b.toMatrix_map_vecMul v, disc_beta, ← hn, hD] at h
+  rw [b.toMatrix_map_vecMul v, disc_beta, ← hn] at h
+  simp only [b, Module.Basis.coe_reindex, Algebra.discr_reindex, ← NumberField.coe_discr] at h
   change (d : ℚ) = (n : ℚ)^2 * (NumberField.discr (K d) : ℚ) at h
   have h' : d = n^2 * NumberField.discr (K d) := by exact_mod_cast h
   have hu : IsUnit n := (Fact.out : Squarefree d) n ⟨_, by simpa [pow_two] using h'⟩

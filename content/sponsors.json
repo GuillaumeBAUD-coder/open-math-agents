@@ -1,39 +1,52 @@
 [
-  {
-    "name": "Diplomètre",
-    "url": "https://diplometre.fr",
-    "logo": "/sponsor-logos/diplometre.png",
-    "tier": "backer",
-    "since": "2026-11-26",
-    "message": "Diplomètre est fier de soutenir Left to Solve ! Nous aidons les lycéens à choisir leurs études sur des faits, grâce aux données officielles et à l'IA."
-  },
-  {
-    "name": "Halldon",
-    "url": "https://halldon.com",
-    "logo": "/sponsor-logos/halldon.png",
-    "tier": "backer",
-    "since": "2026-11-27"
-  },
-  {
-    "name": "Athena Calc",
-    "url": "https://athenacalc.com",
-    "logo": "/sponsor-logos/athenacalc.png",
-    "tier": "backer",
-    "since": "2026-11-27",
-    "showName": true
-  },
-  {
-    "name": "Slash Digital Lab",
-    "url": "https://slash-digital.io",
-    "logo": "/sponsor-logos/slash-digital-lab.svg",
-    "tier": "backer",
-    "since": "2026-11-27"
-  },
-  {
-    "name": "Avon Labs",
-    "url": "https://avonlabs.com",
-    "logo": "/sponsor-logos/avonlabs.png",
-    "tier": "backer",
-    "since": "2026-11-27"
-  }
+ {
+  "name": "Diplomètre",
+  "url": "https://diplometre.fr",
+  "logo": "/sponsor-logos/diplometre.png",
+  "tier": "backer",
+  "since": "2026-11-26"
+ },
+ {
+  "name": "Halldon",
+  "url": "https://halldon.com",
+  "logo": "/sponsor-logos/halldon.png",
+  "tier": "backer",
+  "since": "2026-11-27"
+ },
+ {
+  "name": "Athena Calc",
+  "url": "https://athenacalc.com",
+  "logo": "/sponsor-logos/athenacalc.png",
+  "tier": "backer",
+  "since": "2026-11-27",
+  "showName": true
+ },
+ {
+  "name": "Slash Digital Lab",
+  "url": "https://slash-digital.io",
+  "logo": "/sponsor-logos/slash-digital-lab.svg",
+  "tier": "backer",
+  "since": "2026-11-27"
+ },
+ {
+  "name": "Avon Labs",
+  "url": "https://avonlabs.com",
+  "logo": "/sponsor-logos/avonlabs.png",
+  "tier": "backer",
+  "since": "2026-11-27"
+ },
+ {
+  "name": "Ringover",
+  "url": "https://www.ringover.com/ai-voice-agent",
+  "logo": "/sponsor-logos/ringover.svg",
+  "tier": "backer",
+  "since": "2026-11-28"
+ },
+ {
+  "name": "Vertus",
+  "url": "https://www.vertus.ai",
+  "logo": "/sponsor-logos/vertus.svg",
+  "tier": "backer",
+  "since": "2026-11-28"
+ }
 ]

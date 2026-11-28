@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "@/components/Link";
+import Title from "@/components/Title";
 import { notFound, redirect } from "next/navigation";
 import CopyPrompt from "@/components/CopyPrompt";
 import { outcomeBadge, outcomeOf, outcomeText, variantNote, reviewOf } from "@/lib/outcome";
@@ -155,7 +156,7 @@ export default async function ProblemPage({ params }: Props) {
         <Link href="/#problems">Problems</Link> / {root ? <Link href={`/programs/${encodeURIComponent(root.source)}`}>{root.source}</Link> : "Steps"}
         {step && <> / <Link href={`/p/${encodeURIComponent(step.parent)}`}>parent</Link></>}
       </div>
-      <h1 className="ptitle">{title}</h1>
+      <h1 className="ptitle"><Title id={id} title={title} /></h1>
       <div className="meta" style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
         {solution ? <span className="badge solved" title={outcomeText(outcomeOf(p?.kind, id)).explain}>{outcomeBadge(p?.kind, solution.polarity, id)} · checked by Lean here</span> : null}
         {p ? <span className={`badge ${p.kind}`}>{solution && p.kind === "known" ? "Known result" : KIND_LABEL[p.kind]}</span> : <span className="badge known">Step of a reduction</span>}
@@ -175,13 +176,21 @@ export default async function ProblemPage({ params }: Props) {
         );
       })()}
 
+      {/* the main action, right under the title on phones (on wider screens it is in the right-hand column) */}
+      {!solution && (
+        <div className="cta-top">
+          <b>Put your agent on this problem</b>
+          <CopyPrompt text={prompt} label="Copy" />
+        </div>
+      )}
+
       <div className="pgrid">
         <div>
           {solution && <Credit c={solution} title={title} first={p?.kind === "open" || Boolean(p?.formalizedHere)} kind={p?.kind ?? null} />}
           {(() => {
             const rv = reviewOf(id);
             if (!rv || !(p?.kind === "open" || p?.kind === "unformalized")) return null;
-            const head = rv.state === "confirmed" ? "Statement check: confirmed" : rv.state === "misstated" ? "Statement check: the formal statement does not say what the problem says" : "Statement check: already settled in the literature";
+            const head = rv.state === "confirmed" ? ((rv as { routine?: boolean }).routine ? "Statement check: confirmed · routine result (a finite check, an identity or a short argument)" : "Statement check: confirmed") : rv.state === "misstated" ? "Statement check: the formal statement does not say what the problem says" : "Statement check: already settled in the literature";
             const text = "note" in rv ? rv.note : "reason" in rv ? rv.reason : "";
             return (
               <div className="panel">
@@ -242,10 +251,10 @@ export default async function ProblemPage({ params }: Props) {
             {p?.kind === "known" && (
               <p className="callout">{solution
                 ? "This result was already proved in the literature. The Lean proof credited above is a machine-checked proof of it, written here: a formalization, not the solution of an open problem."
-                : "This result is already known to be true (or settled) in the literature, but nobody has a machine-checked proof of it yet. A Lean proof is a real contribution (a formalization, not a new theorem), and the most realistic target for an agent."}</p>
+                : "This result is already known to be true (or settled) in the literature, but there is no Lean proof of it yet (a proof checked in another system, if any, does not count here). A Lean proof is a real contribution (a formalization, not a new theorem), and the most realistic target for an agent."}</p>
             )}
             {p && prizeOf(p) && <p style={{ color: "var(--muted)", fontSize: ".85rem" }}>The {prizeOf(p)!.label} prize is offered by {prizeOf(p)!.by} and paid by them, not by this site, which takes no cut. {prizeOf(p)!.claim}: <a href={prizeOf(p)!.url} target="_blank" rel="noreferrer">details</a>.</p>}
-            {p?.erdosState && <p style={{ color: "var(--muted)", fontSize: ".9rem" }}>erdosproblems.com status{p && variantNote(p.id, p.title, p.erdosState) ? " of the main problem" : ""}: <b>{p.erdosState}</b>{p.forumPosts ? ` · ${p.forumPosts} forum posts` : ""}</p>}
+            {p?.erdosState && <p style={{ color: "var(--muted)", fontSize: ".9rem" }}>erdosproblems.com status{p && variantNote(p.id, p.title, p.erdosState) ? " of the main problem" : ""}: <b>{p.erdosState}</b>{p.forumPosts ? ` · ${p.forumPosts.toLocaleString("en-US")} forum ${p.forumPosts === 1 ? "post" : "posts"}` : ""}</p>}
           </div>
 
           {!unformal && (
@@ -303,13 +312,31 @@ export default async function ProblemPage({ params }: Props) {
           </div>
           <div className="panel">
             <h4>Activity</h4>
-            {events.length ? (
-              <ul className="feed">
-                {events.map((e) => (
-                  <li key={e.id}><time>{ago(e.created_at)}</time><span><Link href={`/a/${e.handle}`}>@{e.handle}</Link> · {e.kind === "accepted" ? (outcomeOf(p?.kind) === "open" ? "SOLVED IT" : "proved it in Lean") : e.kind === "submit" && statementPhase(e.created_at) ? "sent a Lean statement" : VERB[e.kind] ?? e.kind}{e.kind === "release" && e.detail ? ` (${e.detail.replace(/_/g, " ")})` : ""}</span></li>
-                ))}
-              </ul>
-            ) : <p style={{ color: "var(--faint)", margin: 0 }}>No activity yet.</p>}
+            {events.length ? (() => {
+              // Runs of the same action by the same person ("took it", "took it", "took it") read as one line "× 3";
+              // past five lines the rest folds away.
+              const line = (e: (typeof events)[number]) => `${e.kind === "accepted" ? (outcomeOf(p?.kind) === "open" ? "SOLVED IT" : "proved it in Lean") : e.kind === "submit" && statementPhase(e.created_at) ? "sent a Lean statement" : VERB[e.kind] ?? e.kind}${e.kind === "release" && e.detail ? ` (${e.detail.replace(/_/g, " ")})` : ""}`;
+              const runs: { e: (typeof events)[number]; text: string; n: number }[] = [];
+              for (const e of events) {
+                const text = line(e), last = runs[runs.length - 1];
+                if (last && last.e.handle === e.handle && last.text === text) last.n++;
+                else runs.push({ e, text, n: 1 });
+              }
+              const li = (r: (typeof runs)[number]) => (
+                <li key={r.e.id}><time>{ago(r.e.created_at)}</time><span><Link href={`/a/${r.e.handle}`}>@{r.e.handle}</Link> · {r.text}{r.n > 1 ? ` × ${r.n}` : ""}</span></li>
+              );
+              return (
+                <>
+                  <ul className="feed">{runs.slice(0, 5).map(li)}</ul>
+                  {runs.length > 5 && (
+                    <details className="more-feed">
+                      <summary>Show {runs.length - 5} older</summary>
+                      <ul className="feed">{runs.slice(5).map(li)}</ul>
+                    </details>
+                  )}
+                </>
+              );
+            })() : <p style={{ color: "var(--faint)", margin: 0 }}>No activity yet.</p>}
           </div>
           {upstream && (
             <p style={{ color: "var(--faint)", fontSize: ".82rem", padding: "0 4px" }}>

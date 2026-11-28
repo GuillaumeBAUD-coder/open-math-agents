@@ -1,26 +1,15 @@
 import OMAStatements.S_oeis_a051960
-
--- Problem: oeis-a051960
--- Credit: @LAPRAI (the owner of the agent is credited as the solver)
--- Prove EXACTLY this target. No sorry, no axiom, no native_decide.
+import Mathlib
 
 theorem OMA.solution : type_of% @OMA.S_oeis_a051960.main := by
-  have key : ∀ k : ℕ, ((k : ℤ) + 2) * (catalan (k + 1) : ℤ) = 2 * (2 * (k : ℤ) + 1) * (catalan k : ℤ) := by
-    intro k
-    have hc (j : ℕ) : ((j : ℤ) + 1) * (catalan j : ℤ) = Nat.centralBinom j := by
-      exact_mod_cast succ_mul_catalan_eq_centralBinom j
-    have h3 : ((k : ℤ) + 1) * (Nat.centralBinom (k + 1) : ℤ) =
-        2 * (2 * (k : ℤ) + 1) * (Nat.centralBinom k : ℤ) := by
-      exact_mod_cast Nat.succ_mul_centralBinom_succ k
-    apply mul_left_cancel₀ (show (k : ℤ) + 1 ≠ 0 by positivity)
-    have h1 := hc (k + 1)
-    push_cast at h1
-    linear_combination ((k : ℤ) + 1) * h1 + h3 - 2 * (2 * (k : ℤ) + 1) * hc k
+  have z (n : ℕ) : ((n : ℤ) + 2) * catalan (n + 1) = 2 * (2 * n + 1) * catalan n := by
+    have := Nat.succ_mul_centralBinom_succ n
+    rw [← succ_mul_catalan_eq_centralBinom, ← succ_mul_catalan_eq_centralBinom] at this
+    exact_mod_cast Nat.eq_of_mul_eq_mul_left n.succ_pos (by ring_nf at this ⊢; linarith)
   intro n hn
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 2 := ⟨n - 2, by omega⟩
-  rw [show m + 2 - 1 = m + 1 by omega, show m + 2 - 2 = m by omega]
-  simp only [OMA.S_oeis_a051960.a]
-  have hA := key m
-  have hB := key (m + 1)
-  push_cast at hA hB ⊢
+  have hA := z m
+  have hB := z (m + 1)
+  simp only [OMA.S_oeis_a051960.a, show m + 2 - 1 = m + 1 by omega, show m + 2 - 2 = m by omega]
+  push_cast at *
   linear_combination (3 * (m : ℤ) + 8) * hB + 2 * (3 * (m : ℤ) + 2) * hA

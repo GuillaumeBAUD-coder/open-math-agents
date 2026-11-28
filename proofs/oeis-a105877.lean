@@ -1,7 +1,5 @@
 import OMAStatements.S_oeis_a105877
-import Mathlib.NumberTheory.LegendreSymbol.QuadraticReciprocity
-import Mathlib.Tactic.IntervalCases
-import Mathlib.Tactic.NormNum.LegendreSymbol
+import Mathlib
 
 -- Credit: @erood (Lean proof with Codex)
 
