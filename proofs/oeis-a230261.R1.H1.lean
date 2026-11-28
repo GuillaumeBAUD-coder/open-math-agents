@@ -1,0 +1,76 @@
+import OMAReductions.R_oeis_a230261_R1
+import Mathlib
+
+theorem OMA.solution : OMA.R_oeis_a230261_R1.H1 := by
+  intro n h1 h2
+  interval_cases n
+  · exact ⟨5, 2, by norm_num⟩
+  · exact ⟨7, 2, by norm_num⟩
+  · exact ⟨7, 4, by norm_num⟩
+  · exact ⟨11, 2, by norm_num⟩
+  · exact ⟨13, 2, by norm_num⟩
+  · exact ⟨13, 4, by norm_num⟩
+  · exact ⟨17, 2, by norm_num⟩
+  · exact ⟨17, 4, by norm_num⟩
+  · exact ⟨17, 6, by norm_num⟩
+  · exact ⟨23, 2, by norm_num⟩
+  · exact ⟨23, 4, by norm_num⟩
+  · exact ⟨23, 6, by norm_num⟩
+  · exact ⟨11, 20, by norm_num⟩
+  · exact ⟨31, 2, by norm_num⟩
+  · exact ⟨31, 4, by norm_num⟩
+  · exact ⟨31, 6, by norm_num⟩
+  · exact ⟨37, 2, by norm_num⟩
+  · exact ⟨37, 4, by norm_num⟩
+  · exact ⟨41, 2, by norm_num⟩
+  · exact ⟨41, 4, by norm_num⟩
+  · exact ⟨41, 6, by norm_num⟩
+  · exact ⟨47, 2, by norm_num⟩
+  · exact ⟨47, 4, by norm_num⟩
+  · exact ⟨47, 6, by norm_num⟩
+  · exact ⟨53, 2, by norm_num⟩
+  · exact ⟨53, 4, by norm_num⟩
+  · exact ⟨53, 6, by norm_num⟩
+  · exact ⟨41, 20, by norm_num⟩
+  · exact ⟨61, 2, by norm_num⟩
+  · exact ⟨61, 4, by norm_num⟩
+  · exact ⟨61, 6, by norm_num⟩
+  · exact ⟨67, 2, by norm_num⟩
+  · exact ⟨67, 4, by norm_num⟩
+  · exact ⟨67, 6, by norm_num⟩
+  · exact ⟨73, 2, by norm_num⟩
+  · exact ⟨73, 4, by norm_num⟩
+  · exact ⟨73, 6, by norm_num⟩
+  · exact ⟨61, 20, by norm_num⟩
+  · exact ⟨67, 16, by norm_num⟩
+  · exact ⟨83, 2, by norm_num⟩
+  · exact ⟨83, 4, by norm_num⟩
+  · exact ⟨83, 6, by norm_num⟩
+  · exact ⟨67, 24, by norm_num⟩
+  · exact ⟨73, 20, by norm_num⟩
+  · exact ⟨67, 28, by norm_num⟩
+  · exact ⟨73, 24, by norm_num⟩
+  · exact ⟨97, 2, by norm_num⟩
+  · exact ⟨97, 4, by norm_num⟩
+  · exact ⟨101, 2, by norm_num⟩
+  · exact ⟨103, 2, by norm_num⟩
+  · exact ⟨103, 4, by norm_num⟩
+  · exact ⟨107, 2, by norm_num⟩
+  · exact ⟨107, 4, by norm_num⟩
+  · exact ⟨107, 6, by norm_num⟩
+  · exact ⟨67, 48, by norm_num⟩
+  · exact ⟨101, 16, by norm_num⟩
+  · exact ⟨103, 16, by norm_num⟩
+  · exact ⟨101, 20, by norm_num⟩
+  · exact ⟨107, 16, by norm_num⟩
+  · exact ⟨101, 24, by norm_num⟩
+  · exact ⟨107, 20, by norm_num⟩
+  · exact ⟨101, 28, by norm_num⟩
+  · exact ⟨107, 24, by norm_num⟩
+  · exact ⟨131, 2, by norm_num⟩
+  · exact ⟨131, 4, by norm_num⟩
+  · exact ⟨131, 6, by norm_num⟩
+  · exact ⟨83, 56, by norm_num⟩
+  · exact ⟨107, 34, by norm_num⟩
+  · exact ⟨97, 46, by norm_num⟩
+  · exact ⟨97, 48, by norm_num⟩
