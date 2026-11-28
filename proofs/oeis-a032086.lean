@@ -38,12 +38,7 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a032086.main := by
       show m + 5 - 3 = m + 2 by omega]
     exact PA032086.rec m
   refine ⟨hrec, ?_, ?_, ?_⟩
-  · have v0 : OMA.S_oeis_a032086.a 0 = 0 := by simp [OMA.S_oeis_a032086.a]
-    have v1 : OMA.S_oeis_a032086.a 1 = 3 := by simp [OMA.S_oeis_a032086.a]
-    have v2 : OMA.S_oeis_a032086.a 2 = 3 := by rw [PA032086.a_ge 2 (by omega)]; norm_num
-    have v3 : OMA.S_oeis_a032086.a 3 = 9 := by rw [PA032086.a_ge 3 (by omega)]; norm_num
-    have v4 : OMA.S_oeis_a032086.a 4 = 36 := by rw [PA032086.a_ge 4 (by omega)]; norm_num
-    have hexp : ((1 - C 3 * X) * (1 - C 3 * X ^ 2)) * OMA.S_oeis_a032086.series =
+  · have hexp : ((1 - C 3 * X) * (1 - C 3 * X ^ 2)) * OMA.S_oeis_a032086.series =
         OMA.S_oeis_a032086.series - C 3 * (X ^ 1 * OMA.S_oeis_a032086.series) -
           C 3 * (X ^ 2 * OMA.S_oeis_a032086.series) + C 9 * (X ^ 3 * OMA.S_oeis_a032086.series) := by
       have h9 : (C 9 : ℚ⟦X⟧) = C 3 * C 3 := by rw [← map_mul]; norm_num
@@ -54,10 +49,9 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a032086.main := by
     unfold OMA.S_oeis_a032086.series
     simp only [map_sub, map_add, coeff_C_mul, coeff_X_pow_mul', coeff_mk, coeff_X_pow, coeff_X]
     rcases Nat.lt_or_ge n 5 with hn | hn
-    · interval_cases n <;> simp [v0, v1, v2, v3, v4] <;> norm_num
-    · rw [if_pos (by omega), if_pos (by omega), if_pos (by omega), hrec n (by omega)]
-      simp only [show n ≠ 1 by omega, show n ≠ 2 by omega, show n ≠ 3 by omega,
-        show n ≠ 4 by omega, if_false]
+    · interval_cases n <;> norm_num [OMA.S_oeis_a032086.a]
+    · obtain ⟨k, rfl⟩ : ∃ k, n = k + 5 := ⟨n - 5, by omega⟩
+      simp [hrec]
       ring
   · intro n hn he
     rw [PA032086.a_ge n (by omega), show (n + 1) / 2 = n / 2 by obtain ⟨k, rfl⟩ := he; omega]
