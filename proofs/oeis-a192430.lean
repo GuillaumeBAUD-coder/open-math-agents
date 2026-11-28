@@ -8,7 +8,11 @@ import Mathlib
 
 namespace OMAA192430Helpers
 
-open Polynomial OMA.S_oeis_a192430
+open OMA.S_oeis_a192430
+
+section
+
+open Polynomial
 
 def cd : ℕ → ℤ × ℤ
   | 0 => (1, 0)
@@ -46,6 +50,8 @@ theorem a_eq (n : ℕ) : a n = (cd n).1 := by
   rw [reduce_eq, coeff_add, coeff_C_mul, coeff_X_zero, coeff_C]
   simp
 
+end
+
 theorem rc (n : ℕ) : (cd (n + 2)).1 = 2 * (cd (n + 1)).2 + (cd n).1 := rfl
 
 theorem rd (n : ℕ) : (cd (n + 2)).2 = 2 * (cd (n + 1)).1 + 2 * (cd (n + 1)).2 + (cd n).2 := rfl
@@ -54,27 +60,16 @@ theorem c_rec (n : ℕ) : (cd (n + 4)).1 = 2 * (cd (n + 3)).1 + 6 * (cd (n + 2))
     2 * (cd (n + 1)).1 - (cd n).1 := by
   linear_combination rc (n + 2) + 2 * rd (n + 1) - 2 * rc (n + 1) - rc n
 
-theorem key : PowerSeries.mk (fun n => ((cd n).1 : ℚ)) *
-    (PowerSeries.X ^ 4 + 2 * PowerSeries.X ^ 3 - 6 * PowerSeries.X ^ 2 - 2 * PowerSeries.X + 1) =
-    -(PowerSeries.X ^ 3 + 5 * PowerSeries.X ^ 2 + PowerSeries.X - 1) := by
-  set F := PowerSeries.mk (fun n => ((cd n).1 : ℚ))
-  have e1 : F * (PowerSeries.X ^ 4 + 2 * PowerSeries.X ^ 3 - 6 * PowerSeries.X ^ 2 -
-      2 * PowerSeries.X + 1) =
-      F - PowerSeries.C (2 : ℚ) * (PowerSeries.X ^ 1 * F) -
-        PowerSeries.C (6 : ℚ) * (PowerSeries.X ^ 2 * F) +
-        PowerSeries.C (2 : ℚ) * (PowerSeries.X ^ 3 * F) +
-        PowerSeries.C (1 : ℚ) * (PowerSeries.X ^ 4 * F) := by
-    simp only [map_ofNat, map_one]
-    ring
-  have e2 : (-(PowerSeries.X ^ 3 + 5 * PowerSeries.X ^ 2 + PowerSeries.X - 1) : PowerSeries ℚ) =
-      PowerSeries.X ^ 0 - PowerSeries.C (1 : ℚ) * PowerSeries.X ^ 1 -
-        PowerSeries.C (5 : ℚ) * PowerSeries.X ^ 2 - PowerSeries.C (1 : ℚ) * PowerSeries.X ^ 3 := by
-    simp only [map_ofNat, map_one]
-    ring
-  rw [e1, e2]
+open PowerSeries in
+theorem key : mk (fun n => ((cd n).1 : ℚ)) * (X ^ 4 + 2 * X ^ 3 - 6 * X ^ 2 - 2 * X + 1) =
+    -(X ^ 3 + 5 * X ^ 2 + X - 1) := by
+  set F := mk (fun n => ((cd n).1 : ℚ))
+  have expand : F * (X ^ 4 + 2 * X ^ 3 - 6 * X ^ 2 - 2 * X + 1) =
+      F - 2 * (X ^ 1 * F) - 6 * (X ^ 2 * F) + 2 * (X ^ 3 * F) + X ^ 4 * F := by ring
+  rw [expand]
   ext n
-  simp only [F, map_add, map_sub, PowerSeries.coeff_C_mul, PowerSeries.coeff_mk,
-    PowerSeries.coeff_X_pow_mul', PowerSeries.coeff_X_pow]
+  simp only [F, map_add, map_sub, map_neg, ← map_ofNat (C : ℚ →+* PowerSeries ℚ),
+    coeff_C_mul, coeff_mk, coeff_X_pow_mul', coeff_X_pow, coeff_X, coeff_one]
   by_cases hn : n ≤ 3
   · interval_cases n <;> norm_num [cd]
   · obtain ⟨j, rfl⟩ : ∃ j, n = j + 4 := ⟨n - 4, by omega⟩
