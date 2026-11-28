@@ -1,11 +1,7 @@
 import OMAReductions.R_Erdos398_erdos_398_R1
-import Mathlib.Data.Nat.Sqrt
-import Mathlib.Algebra.Ring.Parity
+import Mathlib
 
 /-! Brocard's equation as a consecutive-factor equation, and a checked prefix. -/
-
-namespace OMA.Erdos398Brocard
-
 
 theorem consecutive_factor_iff (n : ℕ) (hn : 4 ≤ n) :
     (∃ m : ℕ, n.factorial + 1 = m ^ 2) ↔
@@ -27,7 +23,5 @@ theorem consecutive_factor_iff (n : ℕ) (hn : 4 ≤ n) :
     rw [hProduct]
     ring
 
-end OMA.Erdos398Brocard
-
 theorem OMA.solution : OMA.R_Erdos398_erdos_398_R1.H1 :=
-  OMA.Erdos398Brocard.consecutive_factor_iff
+  consecutive_factor_iff

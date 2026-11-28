@@ -1,103 +1,69 @@
 import FormalConjectures.WrittenOnTheWallII.Test
-import Mathlib.Tactic
+import Mathlib
 
--- Problem: Testing Graph Invariants — petersen cvetkovic
--- Upstream: formal-conjectures FormalConjectures/WrittenOnTheWallII/Test.lean:392 (declaration WrittenOnTheWallII.Test.petersen_cvetkovic)
--- Credit: @Genbox (the owner of the agent is credited as the solver)
--- Prove EXACTLY this target. No sorry, no axiom, no native_decide.
+/-!
+The Petersen graph's Cvetković bound, first formalized by @Genbox in PR #409.
+This revision certifies a rational eigenbasis and inverse, then uses characteristic
+polynomial identities to count the eigenvalues 3, 1 (five times), and -2 (four times).
+The finite matrix identities are proved by ordinary kernel reduction.
+-/
 
-namespace OMA.PetersenCvetkovic
-
-open SimpleGraph WrittenOnTheWallII.Test Matrix
-
-theorem cubicZ : ∀ p : PetersenVertex × PetersenVertex,
-    (PetersenGraph.adjMatrix ℤ * PetersenGraph.adjMatrix ℤ * PetersenGraph.adjMatrix ℤ
-      - 2 • (PetersenGraph.adjMatrix ℤ * PetersenGraph.adjMatrix ℤ) - 5 • PetersenGraph.adjMatrix ℤ
-      + 6 • (1 : Matrix PetersenVertex PetersenVertex ℤ)) p.1 p.2 = 0 := by
+open SimpleGraph WrittenOnTheWallII.Test Matrix Polynomial
+namespace OMA.Petersen
+def vertex : Fin 10 → PetersenVertex := ![⟨{0,1},by decide⟩,⟨{0,2},by decide⟩,⟨{0,3},by decide⟩,⟨{0,4},by decide⟩,⟨{1,2},by decide⟩,⟨{1,3},by decide⟩,⟨{1,4},by decide⟩,⟨{2,3},by decide⟩,⟨{2,4},by decide⟩,⟨{3,4},by decide⟩]
+noncomputable def e : Fin 10 ≃ PetersenVertex := Equiv.ofBijective vertex (by decide +kernel)
+def P : Matrix (Fin 10) (Fin 10) ℚ := !![1,0,0,1,1,1,0,-1/2,-1/2,-1/2;
+    1,1,1,0,0,1,-1,-1/2,1/2,-1/2;
+    1,-1,0,-1,0,-1,-1,-1/2,-1/2,1/2;
+    1,0,-1,0,-1,-1,-1,-3/2,1/2,1/2;
+    1,-1,-1,-1,-1,-1,1,1,0,-1;
+    1,1,0,0,0,0,1,1,-1,0;
+    1,0,1,0,0,0,1,0,0,0;
+    1,0,0,1,0,0,0,1,0,0;
+    1,0,0,0,1,0,0,0,1,0;
+    1,0,0,0,0,1,0,0,0,1]
+def Q : Matrix (Fin 10) (Fin 10) ℚ := !![1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10,1/10;
+    -1/6,1/6,-1/6,1/6,-1/6,1/2,-1/6,-1/6,1/6,-1/6;
+    -1/6,1/6,1/6,-1/6,-1/6,-1/6,1/2,1/6,-1/6,-1/6;
+    1/6,-1/6,-1/6,1/6,-1/6,-1/6,1/6,1/2,-1/6,-1/6;
+    1/6,-1/6,1/6,-1/6,-1/6,1/6,-1/6,-1/6,1/2,-1/6;
+    1/6,1/6,-1/6,-1/6,1/6,-1/6,-1/6,-1/6,-1/6,1/2;
+    1/15,-4/15,-4/15,1/15,1/15,1/15,2/5,-4/15,1/15,1/15;
+    -4/15,1/15,1/15,-4/15,1/15,1/15,-4/15,2/5,1/15,1/15;
+    -4/15,1/15,-4/15,1/15,1/15,-4/15,1/15,1/15,2/5,1/15;
+    -4/15,-4/15,1/15,1/15,-4/15,1/15,1/15,1/15,1/15,2/5]
+def d : Fin 10 → ℚ := ![3,1,1,1,1,1,-2,-2,-2,-2]
+theorem certificate : P * Q = 1 ∧
+    ((PetersenGraph.adjMatrix ℚ).submatrix vertex vertex) * P = P * diagonal d := by
   decide +kernel
+theorem charpolyQ : ((PetersenGraph.adjMatrix ℚ).submatrix vertex vertex).charpoly =
+    (diagonal d).charpoly := by
+  calc
+    _ = (((PetersenGraph.adjMatrix ℚ).submatrix vertex vertex) * (P*Q)).charpoly := by
+      rw [certificate.1, mul_one]
+    _ = (P * (diagonal d * Q)).charpoly := by rw [← mul_assoc, certificate.2, mul_assoc]
+    _ = ((diagonal d * Q) * P).charpoly := charpoly_mul_comm _ _
+    _ = _ := by rw [mul_assoc, mul_eq_one_comm.mp certificate.1, mul_one]
 
-theorem cubicR :
-    (PetersenGraph.adjMatrix ℝ * PetersenGraph.adjMatrix ℝ * PetersenGraph.adjMatrix ℝ
-      - 2 • (PetersenGraph.adjMatrix ℝ * PetersenGraph.adjMatrix ℝ) - 5 • PetersenGraph.adjMatrix ℝ
-      + 6 • (1 : Matrix PetersenVertex PetersenVertex ℝ)) = 0 := by
-  have hZ : (PetersenGraph.adjMatrix ℤ * PetersenGraph.adjMatrix ℤ * PetersenGraph.adjMatrix ℤ
-      - 2 • (PetersenGraph.adjMatrix ℤ * PetersenGraph.adjMatrix ℤ) - 5 • PetersenGraph.adjMatrix ℤ
-      + 6 • (1 : Matrix PetersenVertex PetersenVertex ℤ)) = 0 := Matrix.ext fun i j => cubicZ (i, j)
-  have hmap : (Int.castRingHom ℝ).mapMatrix (PetersenGraph.adjMatrix ℤ) = PetersenGraph.adjMatrix ℝ := by
+theorem charpolyR : (PetersenGraph.adjMatrix ℝ).charpoly =
+    ∏ i : Fin 10, (X - C ((d i : ℚ) : ℝ)) := by
+  have hmap : ((PetersenGraph.adjMatrix ℚ).submatrix vertex vertex).map (Rat.castHom ℝ) =
+      (PetersenGraph.adjMatrix ℝ).submatrix vertex vertex := by
     ext i j
-    simp only [RingHom.mapMatrix_apply, Matrix.map_apply, adjMatrix_apply]
+    simp only [Matrix.map_apply, submatrix_apply, adjMatrix_apply]
     split_ifs <;> simp
-  have hR := congrArg (Int.castRingHom ℝ).mapMatrix hZ
-  simpa only [map_add, map_sub, map_mul, map_nsmul, map_one, map_zero, hmap] using hR
+  rw [← Matrix.charpoly_reindex e.symm]
+  change ((PetersenGraph.adjMatrix ℝ).submatrix vertex vertex).charpoly = _
+  rw [← hmap, Matrix.charpoly_map, charpolyQ, Matrix.charpoly_diagonal]
+  simp only [Polynomial.map_prod, Polynomial.map_sub, Polynomial.map_X, Polynomial.map_C]
+  rfl
 
-theorem eig (hA : (PetersenGraph.adjMatrix ℝ).IsHermitian) (i : PetersenVertex) :
-    hA.eigenvalues i = 3 ∨ hA.eigenvalues i = 1 ∨ hA.eigenvalues i = -2 := by
-  set A := PetersenGraph.adjMatrix ℝ with hAdef
-  set v := ⇑(hA.eigenvectorBasis i) with hvdef
-  set t := hA.eigenvalues i
-  have hv : A *ᵥ v = t • v := hA.mulVec_eigenvectorBasis i
-  have hv0 : v ≠ 0 := by
-    intro h
-    apply (hA.eigenvectorBasis.orthonormal.ne_zero i)
-    ext k
-    simpa using congrFun h k
-  have h0 : (A * A * A - 2 • (A * A) - 5 • A + 6 • (1 : Matrix PetersenVertex PetersenVertex ℝ)) *ᵥ v = 0 := by
-    rw [hAdef, cubicR]; simp
-  have h1 : (A * A * A - 2 • (A * A) - 5 • A + 6 • (1 : Matrix PetersenVertex PetersenVertex ℝ)) *ᵥ v
-      = (t^3 - 2*t^2 - 5*t + 6) • v := by
-    simp only [Matrix.add_mulVec, Matrix.sub_mulVec, ← Matrix.mulVec_mulVec, Matrix.smul_mulVec,
-      Matrix.one_mulVec, hv, Matrix.mulVec_smul, smul_smul]
-    rw [← sub_eq_zero]
-    ext k
-    simp [nsmul_eq_mul]
-    ring
-  rw [h1] at h0
-  rcases smul_eq_zero.mp h0 with h | h
-  · have : (t - 3) * (t - 1) * (t + 2) = 0 := by linear_combination h
-    rcases mul_eq_zero.mp this with h' | h'
-    · rcases mul_eq_zero.mp h' with h'' | h''
-      · left; linarith
-      · right; left; linarith
-    · right; right; linarith
-  · exact absurd h hv0
+end OMA.Petersen
+open OMA.Petersen
 
-theorem key (S : Multiset ℝ) (h : ∀ x ∈ S, x = 3 ∨ x = 1 ∨ x = -2) :
-    S.countP (fun x => 0 = x) = 0 ∧
-    S.countP (fun x => 0 < x) = S.countP (· = 3) + S.countP (· = 1) ∧
-    S.countP (fun x => 0 > x) = S.countP (· = -2) ∧
-    Multiset.card S = S.countP (· = 3) + S.countP (· = 1) + S.countP (· = -2) ∧
-    S.sum = 3 * (S.countP (· = 3) : ℝ) + S.countP (· = 1) - 2 * S.countP (· = -2) := by
-  induction S using Multiset.induction_on with
-  | empty => simp
-  | cons a S ih =>
-    obtain ⟨h1, h2, h3, h4, h5⟩ := ih (fun x hx => h x (Multiset.mem_cons_of_mem hx))
-    rcases h a (Multiset.mem_cons_self a S) with rfl | rfl | rfl <;>
-      refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;> simp [Multiset.countP_cons, h1, h2, h3, h4, h5] <;> norm_num <;> ring
-
-theorem main : cvetkovic PetersenGraph = 4 := by
-  have hA : (PetersenGraph.adjMatrix ℝ).IsHermitian := isHermitian_adjMatrix (G := PetersenGraph) (R := ℝ)
-  have hr : (PetersenGraph.adjMatrix ℝ).charpoly.roots = Finset.univ.val.map hA.eigenvalues := by
-    rw [hA.roots_charpoly_eq_eigenvalues]; simp
-  have hmem : ∀ x ∈ Finset.univ.val.map hA.eigenvalues, x = 3 ∨ x = 1 ∨ x = -2 := by
-    intro x hx
-    obtain ⟨i, -, rfl⟩ := Multiset.mem_map.mp hx
-    exact eig hA i
-  obtain ⟨h1, h2, h3, h4, h5⟩ := key _ hmem
-  have hcard : Multiset.card (Finset.univ.val.map hA.eigenvalues) = 10 := by
-    simp only [Multiset.card_map, Finset.card_val, Finset.card_univ, card_petersenVertex]
-  have hsum : (Finset.univ.val.map hA.eigenvalues).sum = 0 := by
-    rw [← Finset.sum_eq_multiset_sum]
-    have ht := hA.trace_eq_sum_eigenvalues
-    simp only [RCLike.ofReal_real_eq_id, id] at ht
-    rw [← ht, trace_adjMatrix]
+theorem OMA.solution : type_of% @WrittenOnTheWallII.Test.petersen_cvetkovic := by
   unfold cvetkovic
-  rw [hr, h1, h2, h3]
-  rw [hsum] at h5
-  have h6 : 3 * (Multiset.countP (· = (3:ℝ)) (Finset.univ.val.map hA.eigenvalues)) + Multiset.countP (· = (1:ℝ)) (Finset.univ.val.map hA.eigenvalues) = 2 * Multiset.countP (· = (-2:ℝ)) (Finset.univ.val.map hA.eigenvalues) := by
-    exact_mod_cast (by linarith : (3 * (Multiset.countP (· = (3:ℝ)) (Finset.univ.val.map hA.eigenvalues) : ℝ) + Multiset.countP (· = (1:ℝ)) (Finset.univ.val.map hA.eigenvalues) = 2 * Multiset.countP (· = (-2:ℝ)) (Finset.univ.val.map hA.eigenvalues)))
-  omega
+  rw [charpolyR, Polynomial.roots_prod]
+  · norm_num [d, Fin.sum_univ_succ, Multiset.countP_add]
+  · exact Finset.prod_ne_zero_iff.mpr (fun i _ => X_sub_C_ne_zero _)
 
-end OMA.PetersenCvetkovic
-
-theorem OMA.solution : type_of% @WrittenOnTheWallII.Test.petersen_cvetkovic :=
-  OMA.PetersenCvetkovic.main

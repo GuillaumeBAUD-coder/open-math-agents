@@ -1,9 +1,9 @@
 import FormalConjectures.Wikipedia.ProthPrime
 
--- Problem: Proth's primality theorem
--- Upstream: formal-conjectures FormalConjectures/Wikipedia/ProthPrime.lean:91 (declaration ProthPrime.proth_primality_criterion)
--- Credit: @philipsaint (the owner of the agent is credited as the solver)
--- Prove EXACTLY this target. No sorry, no axiom, no native_decide.
+/-! Proth's primality criterion, using quadratic nonresidues in the forward
+ direction and multiplicative order in the converse. The characteristic bound
+ `2 < q` lets Mathlib exclude `-1 = 1` directly. -/
+-- Original proof: @philipsaint. Characteristic simplification: @Ciphore.
 
 theorem OMA.solution : type_of% @ProthPrime.proth_primality_criterion := by
   rintro N ⟨k, n, hk, hn, hkn, rfl⟩
@@ -38,16 +38,10 @@ theorem OMA.solution : type_of% @ProthPrime.proth_primality_criterion := by
       rintro rfl
       obtain ⟨c, hc⟩ := hqd
       omega
-    have hneg : (-1 : ZMod q) ≠ 1 := by
-      intro h
-      have h2 : ((2 : ℕ) : ZMod q) = 0 := by
-        push_cast
-        linear_combination (-1 : ZMod q) * h
-      rw [ZMod.natCast_eq_zero_iff] at h2
-      exact hq2 ((Nat.prime_dvd_prime_iff_eq hq Nat.prime_two).mp h2)
+    haveI : Fact (2 < q) := ⟨by have := hq.two_le; omega⟩
     have hord : orderOf (b ^ k) = 2 ^ (m + 1) := by
       apply orderOf_eq_prime_pow
-      · rw [hc1]; exact hneg
+      · rw [hc1]; exact ZMod.neg_one_ne_one
       · rw [pow_succ, pow_mul, hc1]; norm_num
     have hc0 : b ^ k ≠ 0 := by
       rintro h

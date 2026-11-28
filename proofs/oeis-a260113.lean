@@ -320,8 +320,8 @@ open Finset
 def config (n k w d : ℕ) : Prop :=
   ∃ s, legal s ∧ fits s n ∧ s.card = k ∧ band s w ∧ gap s d
 
-theorem config_product {n k w d b} (hc : config n k w d) (hb : 0 < b)
-    (h2 : b.gcd 2 = 1) (h3 : b.gcd 3 = 1) :
+theorem config_product {n k w d b} (hc : config n k w d) (hb : 0 < b := by decide)
+    (h2 : b.gcd 2 = 1 := by decide) (h3 : b.gcd 3 = 1 := by decide) :
     config (b*n) (k*b) (b*w+b/2) (b*d-b/2) := by
   obtain ⟨s,hl,hf,hc,hw,hd⟩ := hc
   obtain ⟨hl',hf',hc'⟩ := product_spec hl hf hb h2 h3
@@ -338,7 +338,7 @@ theorem config_product {n k w d b} (hc : config n k w d) (hb : 0 < b)
   omega
 
 theorem config_paste {n k w d m l v e} (hs : config n k w d) (ht : config m l v e)
-    (h : v < d) : config (n+m) (k+l) (max w v) (min d e) := by
+    (h : v < d := by decide) : config (n+m) (k+l) (max w v) (min d e) := by
   obtain ⟨s,hl,hf,hc,hw,hd⟩ := hs
   obtain ⟨t,tl,tf,tc,tw,td⟩ := ht
   have gs : gap s (v+1) := by
@@ -364,7 +364,7 @@ theorem config_paste {n k w d m l v e} (hs : config n k w d) (ht : config m l v 
       simp only [shift]
       omega
 
-lemma config_reaches {n k w d} (h : config n k w d) (hk : k = 4*n/3) : reaches n := by
+lemma config_reaches {n k w d} (h : config n k w d) (hk : k = 4*n/3 := by decide) : reaches n := by
   obtain ⟨s,hl,hf,hc,_,_⟩ := h
   exact ⟨s,hl,hf,hc.trans hk⟩
 
@@ -385,332 +385,240 @@ lemma config_of_test (s : Finset Cell) {n k w d}
 end OMA.QueenConstruction
 
 namespace OMA.QueenConstruction
-private def cells_corner6 : Finset Cell := ([(0,3), (0,4), (1,0), (2,0), (3,5), (4,5), (5,1), (5,2)] : List Cell).toFinset
-
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem corner6 : config 6 8 4 1 :=
-  config_of_test cells_corner6 (by decide +kernel)
-
-private def cells_corner7 : Finset Cell := ([(0,2), (0,5), (1,0), (2,6), (3,3), (4,0), (5,6), (6,1), (6,4)] : List Cell).toFinset
+  config_of_test ([(0,3), (0,4), (1,0), (2,0), (3,5), (4,5), (5,1), (5,2)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem corner7 : config 7 9 5 0 :=
-  config_of_test cells_corner7 (by decide +kernel)
-
-private def cells_corner8 : Finset Cell := ([(0,0), (1,2), (1,3), (2,6), (3,6), (4,1), (5,1), (6,4), (6,5), (7,7)] : List Cell).toFinset
+  config_of_test ([(0,2), (0,5), (1,0), (2,6), (3,3), (4,0), (5,6), (6,1), (6,4)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem corner8 : config 8 10 4 0 :=
-  config_of_test cells_corner8 (by decide +kernel)
-
-private def cells_corner9 : Finset Cell := ([(0,3), (0,4), (1,0), (2,0), (3,5), (3,8), (4,1), (5,1), (6,6), (6,7), (7,2), (8,2)] : List Cell).toFinset
+  config_of_test ([(0,0), (1,2), (1,3), (2,6), (3,6), (4,1), (5,1), (6,4), (6,5), (7,7)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem corner9 : config 9 12 6 0 :=
-  config_of_test cells_corner9 (by decide +kernel)
-
-private def cells_corner10 : Finset Cell := ([(0,1), (0,5), (1,7), (2,2), (3,0), (4,3), (4,6), (5,8), (5,9), (6,0), (7,2), (8,4), (9,7)] : List Cell).toFinset
+  config_of_test ([(0,3), (0,4), (1,0), (2,0), (3,5), (3,8), (4,1), (5,1), (6,6), (6,7), (7,2), (8,2)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem corner10 : config 10 13 6 0 :=
-  config_of_test cells_corner10 (by decide +kernel)
-
-private def cells_corner11 : Finset Cell := ([(0,1), (0,6), (1,4), (2,0), (2,2), (3,8), (4,9), (5,4), (6,10), (7,3), (8,10), (9,3), (10,5), (10,7)] : List Cell).toFinset
+  config_of_test ([(0,1), (0,5), (1,7), (2,2), (3,0), (4,3), (4,6), (5,8), (5,9), (6,0), (7,2), (8,4), (9,7)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem corner11 : config 11 14 6 0 :=
-  config_of_test cells_corner11 (by decide +kernel)
-
-private def cells_corner12 : Finset Cell := ([(0,4), (0,6), (1,2), (1,8), (2,0), (3,11), (4,1), (5,10), (6,1), (7,10), (8,0), (9,11), (10,3), (10,9), (11,5), (11,7)] : List Cell).toFinset
+  config_of_test ([(0,1), (0,6), (1,4), (2,0), (2,2), (3,8), (4,9), (5,4), (6,10), (7,3), (8,10), (9,3), (10,5), (10,7)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem corner12 : config 12 16 8 1 :=
-  config_of_test cells_corner12 (by decide +kernel)
-
-private def cells_corner13 : Finset Cell := ([(0,7), (0,9), (1,2), (1,4), (2,0), (3,11), (4,0), (5,11), (6,6), (7,1), (8,12), (9,1), (10,12), (11,8), (11,10), (12,3), (12,5)] : List Cell).toFinset
+  config_of_test ([(0,4), (0,6), (1,2), (1,8), (2,0), (3,11), (4,1), (5,10), (6,1), (7,10), (8,0), (9,11), (10,3), (10,9), (11,5), (11,7)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem corner13 : config 13 17 9 0 :=
-  config_of_test cells_corner13 (by decide +kernel)
-
-private def cells_corner14 : Finset Cell := ([(0,2), (1,6), (2,1), (3,10), (3,11), (4,5), (4,8), (5,3), (6,0), (6,12), (7,3), (8,7), (9,2), (10,13), (11,6), (12,4), (12,9), (13,13)] : List Cell).toFinset
+  config_of_test ([(0,7), (0,9), (1,2), (1,4), (2,0), (3,11), (4,0), (5,11), (6,6), (7,1), (8,12), (9,1), (10,12), (11,8), (11,10), (12,3), (12,5)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem corner14 : config 14 18 8 0 :=
-  config_of_test cells_corner14 (by decide +kernel)
-
-private def cells_corner15 : Finset Cell := ([(0,7), (1,9), (1,10), (2,1), (3,13), (4,0), (5,3), (5,8), (6,0), (7,2), (7,12), (8,14), (9,6), (9,11), (10,14), (11,1), (12,13), (13,4), (13,5), (14,7)] : List Cell).toFinset
+  config_of_test ([(0,2), (1,6), (2,1), (3,10), (3,11), (4,5), (4,8), (5,3), (6,0), (6,12), (7,3), (8,7), (9,2), (10,13), (11,6), (12,4), (12,9), (13,13)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem corner15 : config 15 20 10 1 :=
-  config_of_test cells_corner15 (by decide +kernel)
-
-private def cells_corner16 : Finset Cell := ([(0,8), (0,12), (1,6), (2,4), (2,9), (3,1), (3,13), (4,10), (5,0), (6,15), (7,3), (8,11), (9,0), (10,3), (11,15), (12,6), (13,2), (13,14), (14,11), (15,5), (15,7)] : List Cell).toFinset
+  config_of_test ([(0,7), (1,9), (1,10), (2,1), (3,13), (4,0), (5,3), (5,8), (6,0), (7,2), (7,12), (8,14), (9,6), (9,11), (10,14), (11,1), (12,13), (13,4), (13,5), (14,7)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem corner16 : config 16 21 12 1 :=
-  config_of_test cells_corner16 (by decide +kernel)
-
-private def cells_corner17 : Finset Cell := ([(0,7), (0,10), (1,12), (1,14), (2,0), (3,15), (4,8), (5,0), (6,3), (6,5), (7,1), (9,15), (10,11), (10,13), (11,16), (12,8), (13,1), (14,16), (15,2), (15,4), (16,6), (16,9)] : List Cell).toFinset
+  config_of_test ([(0,8), (0,12), (1,6), (2,4), (2,9), (3,1), (3,13), (4,10), (5,0), (6,15), (7,3), (8,11), (9,0), (10,3), (11,15), (12,6), (13,2), (13,14), (14,11), (15,5), (15,7)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem corner17 : config 17 22 13 1 :=
-  config_of_test cells_corner17 (by decide +kernel)
-
-private def cells_corner18 : Finset Cell := ([(0,9), (0,11), (1,4), (1,15), (2,1), (3,10), (4,16), (5,10), (6,0), (7,3), (7,5), (8,0), (9,17), (10,12), (10,14), (11,17), (12,7), (13,1), (14,7), (15,16), (16,2), (16,13), (17,6), (17,8)] : List Cell).toFinset
+  config_of_test ([(0,7), (0,10), (1,12), (1,14), (2,0), (3,15), (4,8), (5,0), (6,3), (6,5), (7,1), (9,15), (10,11), (10,13), (11,16), (12,8), (13,1), (14,16), (15,2), (15,4), (16,6), (16,9)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem corner18 : config 18 24 14 1 :=
-  config_of_test cells_corner18 (by decide +kernel)
-
-private def cells_corner19 : Finset Cell := ([(0,14), (1,7), (1,10), (2,5), (2,15), (3,2), (4,0), (4,12), (5,16), (6,4), (7,17), (8,1), (9,9), (10,17), (11,1), (12,14), (13,2), (14,6), (14,18), (15,16), (16,3), (16,13), (17,8), (17,11), (18,4)] : List Cell).toFinset
+  config_of_test ([(0,9), (0,11), (1,4), (1,15), (2,1), (3,10), (4,16), (5,10), (6,0), (7,3), (7,5), (8,0), (9,17), (10,12), (10,14), (11,17), (12,7), (13,1), (14,7), (15,16), (16,2), (16,13), (17,6), (17,8)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem corner19 : config 19 25 14 0 :=
-  config_of_test cells_corner19 (by decide +kernel)
-
-private def cells_corner20 : Finset Cell := ([(0,13), (0,14), (1,2), (1,4), (2,8), (2,9), (3,18), (4,16), (5,1), (6,16), (7,12), (8,0), (9,0), (10,19), (11,19), (12,7), (13,3), (14,18), (15,3), (16,1), (17,10), (17,11), (18,15), (18,17), (19,5), (19,6)] : List Cell).toFinset
+  config_of_test ([(0,14), (1,7), (1,10), (2,5), (2,15), (3,2), (4,0), (4,12), (5,16), (6,4), (7,17), (8,1), (9,9), (10,17), (11,1), (12,14), (13,2), (14,6), (14,18), (15,16), (16,3), (16,13), (17,8), (17,11), (18,4)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem corner20 : config 20 26 15 1 :=
-  config_of_test cells_corner20 (by decide +kernel)
-
-private def cells_corner21 : Finset Cell := ([(0,6), (0,18), (1,8), (1,11), (2,3), (3,5), (3,7), (4,17), (5,20), (6,20), (7,10), (8,16), (9,4), (10,1), (10,19), (11,16), (12,4), (13,10), (14,0), (15,0), (16,3), (17,13), (17,15), (18,17), (19,9), (19,12), (20,2), (20,14)] : List Cell).toFinset
+  config_of_test ([(0,13), (0,14), (1,2), (1,4), (2,8), (2,9), (3,18), (4,16), (5,1), (6,16), (7,12), (8,0), (9,0), (10,19), (11,19), (12,7), (13,3), (14,18), (15,3), (16,1), (17,10), (17,11), (18,15), (18,17), (19,5), (19,6)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem corner21 : config 21 28 18 1 :=
-  config_of_test cells_corner21 (by decide +kernel)
-
-private def cells_corner22 : Finset Cell := ([(0,0), (1,6), (2,11), (2,13), (3,16), (4,18), (5,7), (5,15), (6,18), (7,3), (7,10), (8,0), (9,16), (10,1), (11,5), (11,17), (12,20), (13,1), (14,9), (15,12), (16,2), (16,14), (17,4), (17,21), (18,8), (18,19), (19,12), (20,9), (21,20)] : List Cell).toFinset
+  config_of_test ([(0,6), (0,18), (1,8), (1,11), (2,3), (3,5), (3,7), (4,17), (5,20), (6,20), (7,10), (8,16), (9,4), (10,1), (10,19), (11,16), (12,4), (13,10), (14,0), (15,0), (16,3), (17,13), (17,15), (18,17), (19,9), (19,12), (20,2), (20,14)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem corner22 : config 22 29 14 0 :=
-  config_of_test cells_corner22 (by decide +kernel)
-
-private def cells_corner23 : Finset Cell := ([(0,9), (0,14), (1,5), (2,5), (3,15), (4,19), (5,6), (5,10), (6,22), (7,18), (7,20), (8,0), (9,15), (10,3), (11,1), (11,21), (12,19), (13,7), (14,22), (15,2), (15,4), (16,0), (17,12), (17,16), (18,3), (19,7), (20,17), (21,17), (22,8), (22,13)] : List Cell).toFinset
+  config_of_test ([(0,0), (1,6), (2,11), (2,13), (3,16), (4,18), (5,7), (5,15), (6,18), (7,3), (7,10), (8,0), (9,16), (10,1), (11,5), (11,17), (12,20), (13,1), (14,9), (15,12), (16,2), (16,14), (17,4), (17,21), (18,8), (18,19), (19,12), (20,9), (21,20)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem corner23 : config 23 30 16 1 :=
-  config_of_test cells_corner23 (by decide +kernel)
-
-private def cells_corner24 : Finset Cell := ([(0,8), (0,14), (1,19), (2,4), (3,7), (3,13), (4,1), (4,21), (5,6), (6,12), (6,18), (7,20), (8,23), (9,0), (10,3), (11,6), (12,17), (13,20), (14,23), (15,0), (16,3), (17,5), (17,11), (18,17), (19,2), (19,22), (20,10), (20,16), (21,19), (22,4), (23,9), (23,15)] : List Cell).toFinset
+  config_of_test ([(0,9), (0,14), (1,5), (2,5), (3,15), (4,19), (5,6), (5,10), (6,22), (7,18), (7,20), (8,0), (9,15), (10,3), (11,1), (11,21), (12,19), (13,7), (14,22), (15,2), (15,4), (16,0), (17,12), (17,16), (18,3), (19,7), (20,17), (21,17), (22,8), (22,13)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem corner24 : config 24 32 18 1 :=
-  config_of_test cells_corner24 (by decide +kernel)
-
-private def cells_corner25 : Finset Cell := ([(0,10), (1,10), (2,6), (3,9), (4,5), (5,16), (5,20), (6,11), (6,22), (7,15), (8,5), (9,7), (9,21), (10,23), (10,24), (11,18), (12,12), (13,6), (14,0), (14,1), (15,3), (15,17), (16,19), (17,9), (18,2), (18,13), (19,4), (19,8), (20,19), (21,15), (22,18), (23,14), (24,14)] : List Cell).toFinset
+  config_of_test ([(0,8), (0,14), (1,19), (2,4), (3,7), (3,13), (4,1), (4,21), (5,6), (6,12), (6,18), (7,20), (8,23), (9,0), (10,3), (11,6), (12,17), (13,20), (14,23), (15,0), (16,3), (17,5), (17,11), (18,17), (19,2), (19,22), (20,10), (20,16), (21,19), (22,4), (23,9), (23,15)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem corner25 : config 25 33 16 0 :=
-  config_of_test cells_corner25 (by decide +kernel)
-
-private def cells_corner26 : Finset Cell := ([(0,7), (0,16), (1,12), (1,18), (2,0), (3,11), (3,21), (4,1), (4,19), (5,5), (6,20), (7,10), (8,10), (9,2), (10,15), (10,22), (11,24), (12,0), (13,2), (14,8), (15,25), (16,25), (17,3), (18,3), (19,20), (20,24), (21,8), (22,5), (23,13), (23,14), (24,6), (24,23), (25,9), (25,17)] : List Cell).toFinset
+  config_of_test ([(0,10), (1,10), (2,6), (3,9), (4,5), (5,16), (5,20), (6,11), (6,22), (7,15), (8,5), (9,7), (9,21), (10,23), (10,24), (11,18), (12,12), (13,6), (14,0), (14,1), (15,3), (15,17), (16,19), (17,9), (18,2), (18,13), (19,4), (19,8), (20,19), (21,15), (22,18), (23,14), (24,14)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem corner26 : config 26 34 18 0 :=
-  config_of_test cells_corner26 (by decide +kernel)
-
-private def cells_corner27 : Finset Cell := ([(0,3), (0,11), (1,19), (2,6), (2,14), (3,19), (4,13), (5,4), (5,10), (6,21), (7,5), (8,25), (9,1), (10,24), (11,17), (11,18), (12,2), (13,0), (13,26), (14,24), (15,8), (15,9), (16,2), (17,25), (18,1), (19,21), (20,5), (21,16), (21,22), (22,13), (23,7), (24,12), (24,20), (25,7), (26,15), (26,23)] : List Cell).toFinset
+  config_of_test ([(0,7), (0,16), (1,12), (1,18), (2,0), (3,11), (3,21), (4,1), (4,19), (5,5), (6,20), (7,10), (8,10), (9,2), (10,15), (10,22), (11,24), (12,0), (13,2), (14,8), (15,25), (16,25), (17,3), (18,3), (19,20), (20,24), (21,8), (22,5), (23,13), (23,14), (24,6), (24,23), (25,9), (25,17)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem corner27 : config 27 36 18 1 :=
-  config_of_test cells_corner27 (by decide +kernel)
-
-private def cells_corner28 : Finset Cell := ([(0,13), (0,15), (1,6), (1,8), (2,2), (3,5), (4,12), (4,22), (5,19), (6,23), (7,3), (8,3), (9,21), (9,25), (10,4), (11,14), (11,20), (12,10), (13,24), (14,24), (15,4), (16,7), (17,0), (17,1), (18,17), (19,23), (20,7), (21,18), (21,27), (22,10), (23,5), (24,9), (24,16), (25,11), (25,26), (26,19), (27,17)] : List Cell).toFinset
+  config_of_test ([(0,3), (0,11), (1,19), (2,6), (2,14), (3,19), (4,13), (5,4), (5,10), (6,21), (7,5), (8,25), (9,1), (10,24), (11,17), (11,18), (12,2), (13,0), (13,26), (14,24), (15,8), (15,9), (16,2), (17,25), (18,1), (19,21), (20,5), (21,16), (21,22), (22,13), (23,7), (24,12), (24,20), (25,7), (26,15), (26,23)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem corner28 : config 28 37 18 0 :=
-  config_of_test cells_corner28 (by decide +kernel)
-
-private def cells_corner29 : Finset Cell := ([(0,14), (1,7), (1,12), (2,18), (3,8), (4,0), (4,2), (5,17), (5,22), (6,3), (7,25), (8,15), (8,23), (9,9), (10,20), (11,10), (12,4), (13,4), (14,1), (14,27), (15,24), (16,24), (17,18), (18,8), (19,19), (20,5), (20,13), (21,3), (22,25), (23,6), (23,11), (24,26), (24,28), (25,20), (26,10), (27,16), (27,21), (28,14)] : List Cell).toFinset
+  config_of_test ([(0,13), (0,15), (1,6), (1,8), (2,2), (3,5), (4,12), (4,22), (5,19), (6,23), (7,3), (8,3), (9,21), (9,25), (10,4), (11,14), (11,20), (12,10), (13,24), (14,24), (15,4), (16,7), (17,0), (17,1), (18,17), (19,23), (20,7), (21,18), (21,27), (22,10), (23,5), (24,9), (24,16), (25,11), (25,26), (26,19), (27,17)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem corner29 : config 29 38 18 0 :=
-  config_of_test cells_corner29 (by decide +kernel)
-
-private def cells_corner30 : Finset Cell := ([(0,10), (0,12), (1,21), (2,13), (2,23), (3,4), (3,18), (4,26), (5,8), (6,2), (7,20), (8,1), (8,24), (9,7), (9,15), (10,29), (11,3), (12,29), (13,27), (14,9), (15,20), (16,2), (17,0), (18,26), (19,0), (20,14), (20,22), (21,5), (21,28), (22,9), (23,27), (24,21), (25,3), (26,11), (26,25), (27,6), (27,16), (28,8), (29,17), (29,19)] : List Cell).toFinset
+  config_of_test ([(0,14), (1,7), (1,12), (2,18), (3,8), (4,0), (4,2), (5,17), (5,22), (6,3), (7,25), (8,15), (8,23), (9,9), (10,20), (11,10), (12,4), (13,4), (14,1), (14,27), (15,24), (16,24), (17,18), (18,8), (19,19), (20,5), (20,13), (21,3), (22,25), (23,6), (23,11), (24,26), (24,28), (25,20), (26,10), (27,16), (27,21), (28,14)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem corner30 : config 30 40 22 1 :=
-  config_of_test cells_corner30 (by decide +kernel)
-
-private def cells_corner31 : Finset Cell := ([(0,11), (0,13), (1,8), (2,25), (3,9), (3,23), (4,16), (4,18), (5,2), (5,10), (6,22), (7,3), (8,6), (8,29), (9,27), (10,25), (11,30), (12,4), (13,30), (14,4), (15,15), (16,26), (17,0), (18,26), (19,0), (20,5), (21,3), (22,1), (22,24), (23,27), (24,8), (25,20), (25,28), (26,12), (26,14), (27,7), (27,21), (28,5), (29,22), (30,17), (30,19)] : List Cell).toFinset
+  config_of_test ([(0,10), (0,12), (1,21), (2,13), (2,23), (3,4), (3,18), (4,26), (5,8), (6,2), (7,20), (8,1), (8,24), (9,7), (9,15), (10,29), (11,3), (12,29), (13,27), (14,9), (15,20), (16,2), (17,0), (18,26), (19,0), (20,14), (20,22), (21,5), (21,28), (22,9), (23,27), (24,21), (25,3), (26,11), (26,25), (27,6), (27,16), (28,8), (29,17), (29,19)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem corner31 : config 31 41 23 0 :=
-  config_of_test cells_corner31 (by decide +kernel)
-
-private def cells_corner32 : Finset Cell := ([(0,14), (0,18), (1,11), (1,20), (2,8), (3,23), (4,3), (4,25), (5,12), (6,21), (7,8), (8,1), (9,13), (10,23), (11,0), (11,19), (12,4), (12,29), (13,22), (14,10), (15,31), (16,21), (17,15), (18,5), (18,30), (19,1), (20,31), (21,7), (21,24), (22,12), (23,2), (23,17), (24,15), (25,6), (25,27), (26,10), (27,22), (28,16), (29,9), (29,26), (30,13), (31,16)] : List Cell).toFinset
+  config_of_test ([(0,11), (0,13), (1,8), (2,25), (3,9), (3,23), (4,16), (4,18), (5,2), (5,10), (6,22), (7,3), (8,6), (8,29), (9,27), (10,25), (11,30), (12,4), (13,30), (14,4), (15,15), (16,26), (17,0), (18,26), (19,0), (20,5), (21,3), (22,1), (22,24), (23,27), (24,8), (25,20), (25,28), (26,12), (26,14), (27,7), (27,21), (28,5), (29,22), (30,17), (30,19)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem corner32 : config 32 42 21 1 :=
-  config_of_test cells_corner32 (by decide +kernel)
-
-private def cells_corner33 : Finset Cell := ([(0,1), (1,5), (1,8), (2,14), (2,19), (3,12), (4,6), (4,7), (5,20), (6,16), (7,23), (8,28), (8,30), (9,15), (9,22), (10,31), (11,3), (12,23), (13,32), (14,32), (15,29), (16,11), (16,21), (17,3), (18,0), (19,0), (20,9), (21,29), (22,1), (23,10), (23,17), (24,2), (24,4), (25,9), (26,16), (27,12), (28,25), (28,26), (29,20), (30,13), (30,18), (31,24), (31,27), (32,31)] : List Cell).toFinset
+  config_of_test ([(0,14), (0,18), (1,11), (1,20), (2,8), (3,23), (4,3), (4,25), (5,12), (6,21), (7,8), (8,1), (9,13), (10,23), (11,0), (11,19), (12,4), (12,29), (13,22), (14,10), (15,31), (16,21), (17,15), (18,5), (18,30), (19,1), (20,31), (21,7), (21,24), (22,12), (23,2), (23,17), (24,15), (25,6), (25,27), (26,10), (27,22), (28,16), (29,9), (29,26), (30,13), (31,16)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem corner33 : config 33 44 22 1 :=
-  config_of_test cells_corner33 (by decide +kernel)
-
-private def cells_corner34 : Finset Cell := ([(0,5), (1,10), (1,13), (2,20), (2,22), (3,16), (3,27), (4,2), (5,5), (6,3), (7,24), (7,29), (8,9), (9,23), (10,33), (11,1), (11,7), (12,33), (13,2), (14,9), (15,18), (15,19), (16,4), (17,32), (18,11), (18,28), (19,25), (20,31), (21,0), (22,3), (23,31), (24,4), (25,32), (26,0), (27,12), (27,26), (28,14), (28,30), (29,6), (29,21), (30,17), (31,25), (32,23), (33,8), (33,15)] : List Cell).toFinset
+  config_of_test ([(0,1), (1,5), (1,8), (2,14), (2,19), (3,12), (4,6), (4,7), (5,20), (6,16), (7,23), (8,28), (8,30), (9,15), (9,22), (10,31), (11,3), (12,23), (13,32), (14,32), (15,29), (16,11), (16,21), (17,3), (18,0), (19,0), (20,9), (21,29), (22,1), (23,10), (23,17), (24,2), (24,4), (25,9), (26,16), (27,12), (28,25), (28,26), (29,20), (30,13), (30,18), (31,24), (31,27), (32,31)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem corner34 : config 34 45 26 0 :=
-  config_of_test cells_corner34 (by decide +kernel)
-
-private def cells_corner35 : Finset Cell := ([(0,22), (1,15), (2,5), (2,25), (3,7), (4,14), (4,16), (5,6), (5,26), (6,17), (7,22), (8,0), (9,0), (10,3), (10,23), (11,27), (12,30), (12,32), (13,19), (14,33), (15,10), (15,13), (16,33), (18,1), (19,21), (19,24), (20,1), (21,15), (22,2), (22,4), (23,7), (24,11), (24,31), (25,34), (26,34), (27,12), (28,17), (29,8), (29,28), (30,18), (30,20), (31,27), (32,9), (32,29), (33,19), (34,12)] : List Cell).toFinset
+  config_of_test ([(0,5), (1,10), (1,13), (2,20), (2,22), (3,16), (3,27), (4,2), (5,5), (6,3), (7,24), (7,29), (8,9), (9,23), (10,33), (11,1), (11,7), (12,33), (13,2), (14,9), (15,18), (15,19), (16,4), (17,32), (18,11), (18,28), (19,25), (20,31), (21,0), (22,3), (23,31), (24,4), (25,32), (26,0), (27,12), (27,26), (28,14), (28,30), (29,6), (29,21), (30,17), (31,25), (32,23), (33,8), (33,15)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem corner35 : config 35 46 23 1 :=
-  config_of_test cells_corner35 (by decide +kernel)
-
-private def cells_corner36 : Finset Cell := ([(0,6), (1,15), (1,24), (2,21), (3,23), (3,27), (4,7), (4,16), (5,10), (6,2), (7,25), (8,6), (9,0), (9,30), (10,32), (11,18), (11,26), (12,1), (13,21), (14,4), (14,13), (15,2), (16,32), (17,34), (18,1), (19,3), (20,33), (21,22), (21,31), (22,14), (23,34), (24,9), (24,17), (25,3), (26,5), (26,35), (27,29), (28,10), (29,33), (30,25), (31,19), (31,28), (32,8), (32,12), (33,14), (34,11), (34,20), (35,29)] : List Cell).toFinset
+  config_of_test ([(0,22), (1,15), (2,5), (2,25), (3,7), (4,14), (4,16), (5,6), (5,26), (6,17), (7,22), (8,0), (9,0), (10,3), (10,23), (11,27), (12,30), (12,32), (13,19), (14,33), (15,10), (15,13), (16,33), (18,1), (19,21), (19,24), (20,1), (21,15), (22,2), (22,4), (23,7), (24,11), (24,31), (25,34), (26,34), (27,12), (28,17), (29,8), (29,28), (30,18), (30,20), (31,27), (32,9), (32,29), (33,19), (34,12)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem corner36 : config 36 48 24 1 :=
-  config_of_test cells_corner36 (by decide +kernel)
-
-private def cells_corner37 : Finset Cell := ([(0,1), (0,8), (1,12), (1,17), (2,21), (3,21), (4,6), (5,14), (6,16), (6,23), (7,2), (8,4), (8,31), (9,33), (10,30), (11,33), (12,9), (12,25), (13,34), (14,0), (15,0), (16,22), (17,10), (17,29), (18,18), (19,7), (19,26), (20,14), (21,36), (22,36), (23,2), (24,11), (24,27), (25,3), (26,6), (27,3), (28,5), (28,32), (29,34), (30,13), (30,20), (31,22), (32,30), (33,15), (34,15), (35,19), (35,24), (36,28), (36,35)] : List Cell).toFinset
+  config_of_test ([(0,6), (1,15), (1,24), (2,21), (3,23), (3,27), (4,7), (4,16), (5,10), (6,2), (7,25), (8,6), (9,0), (9,30), (10,32), (11,18), (11,26), (12,1), (13,21), (14,4), (14,13), (15,2), (16,32), (17,34), (18,1), (19,3), (20,33), (21,22), (21,31), (22,14), (23,34), (24,9), (24,17), (25,3), (26,5), (26,35), (27,29), (28,10), (29,33), (30,25), (31,19), (31,28), (32,8), (32,12), (33,14), (34,11), (34,20), (35,29)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem corner37 : config 37 49 24 0 :=
-  config_of_test cells_corner37 (by decide +kernel)
-
-private def cells_corner38 : Finset Cell := ([(0,1), (1,11), (2,15), (2,27), (3,11), (4,7), (4,21), (5,0), (6,20), (6,29), (7,9), (7,14), (8,34), (9,13), (9,25), (10,34), (11,2), (11,32), (12,6), (13,33), (14,36), (15,0), (16,4), (17,6), (18,18), (19,19), (20,31), (21,33), (22,37), (23,1), (24,4), (25,31), (26,5), (26,35), (27,3), (28,12), (28,24), (29,3), (30,23), (30,28), (31,8), (31,17), (32,37), (33,16), (33,30), (34,26), (35,10), (35,22), (36,26), (37,36)] : List Cell).toFinset
+  config_of_test ([(0,1), (0,8), (1,12), (1,17), (2,21), (3,21), (4,6), (5,14), (6,16), (6,23), (7,2), (8,4), (8,31), (9,33), (10,30), (11,33), (12,9), (12,25), (13,34), (14,0), (15,0), (16,22), (17,10), (17,29), (18,18), (19,7), (19,26), (20,14), (21,36), (22,36), (23,2), (24,11), (24,27), (25,3), (26,6), (27,3), (28,5), (28,32), (29,34), (30,13), (30,20), (31,22), (32,30), (33,15), (34,15), (35,19), (35,24), (36,28), (36,35)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem corner38 : config 38 50 26 0 :=
-  config_of_test cells_corner38 (by decide +kernel)
-
-private def cells_corner39 : Finset Cell := ([(0,2), (0,10), (1,17), (1,22), (2,19), (3,26), (4,5), (5,11), (5,14), (6,20), (7,15), (7,32), (8,26), (9,4), (9,31), (10,25), (11,37), (12,5), (13,1), (14,38), (15,18), (16,29), (16,35), (17,13), (18,38), (19,8), (19,30), (20,0), (21,25), (22,3), (22,9), (23,20), (24,0), (25,37), (26,33), (27,1), (28,13), (29,7), (29,34), (30,12), (31,6), (31,23), (32,18), (33,24), (33,27), (34,33), (35,12), (36,19), (37,16), (37,21), (38,28), (38,36)] : List Cell).toFinset
+  config_of_test ([(0,1), (1,11), (2,15), (2,27), (3,11), (4,7), (4,21), (5,0), (6,20), (6,29), (7,9), (7,14), (8,34), (9,13), (9,25), (10,34), (11,2), (11,32), (12,6), (13,33), (14,36), (15,0), (16,4), (17,6), (18,18), (19,19), (20,31), (21,33), (22,37), (23,1), (24,4), (25,31), (26,5), (26,35), (27,3), (28,12), (28,24), (29,3), (30,23), (30,28), (31,8), (31,17), (32,37), (33,16), (33,30), (34,26), (35,10), (35,22), (36,26), (37,36)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem corner39 : config 39 52 26 1 :=
-  config_of_test cells_corner39 (by decide +kernel)
-
-private def cells_corner40 : Finset Cell := ([(0,1), (1,7), (2,21), (2,23), (3,15), (3,26), (4,8), (4,24), (5,30), (5,31), (6,34), (7,10), (7,17), (8,38), (9,1), (10,27), (11,0), (12,3), (12,20), (13,13), (13,37), (14,2), (15,5), (16,11), (16,32), (17,39), (18,33), (19,12), (20,34), (21,39), (22,0), (23,19), (23,36), (24,29), (25,27), (26,7), (27,38), (28,2), (29,5), (30,14), (31,14), (32,29), (33,6), (34,4), (34,28), (35,33), (36,22), (36,35), (37,12), (38,9), (38,25), (39,16), (39,18)] : List Cell).toFinset
+  config_of_test ([(0,2), (0,10), (1,17), (1,22), (2,19), (3,26), (4,5), (5,11), (5,14), (6,20), (7,15), (7,32), (8,26), (9,4), (9,31), (10,25), (11,37), (12,5), (13,1), (14,38), (15,18), (16,29), (16,35), (17,13), (18,38), (19,8), (19,30), (20,0), (21,25), (22,3), (22,9), (23,20), (24,0), (25,37), (26,33), (27,1), (28,13), (29,7), (29,34), (30,12), (31,6), (31,23), (32,18), (33,24), (33,27), (34,33), (35,12), (36,19), (37,16), (37,21), (38,28), (38,36)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem corner40 : config 40 53 30 0 :=
-  config_of_test cells_corner40 (by decide +kernel)
-
-private def cells_corner41 : Finset Cell := ([(0,20), (1,18), (2,5), (2,13), (3,3), (4,0), (5,29), (6,8), (6,25), (7,17), (7,19), (8,1), (8,24), (9,34), (10,28), (10,31), (11,34), (12,38), (13,4), (14,22), (15,10), (15,14), (16,2), (17,11), (18,40), (19,4), (20,7), (20,33), (21,36), (22,0), (23,29), (24,38), (25,26), (25,30), (26,18), (27,36), (28,2), (29,6), (30,9), (30,12), (31,6), (32,16), (32,39), (33,21), (33,23), (34,15), (34,32), (35,11), (36,40), (37,37), (38,27), (38,35), (39,22), (40,20)] : List Cell).toFinset
+  config_of_test ([(0,1), (1,7), (2,21), (2,23), (3,15), (3,26), (4,8), (4,24), (5,30), (5,31), (6,34), (7,10), (7,17), (8,38), (9,1), (10,27), (11,0), (12,3), (12,20), (13,13), (13,37), (14,2), (15,5), (16,11), (16,32), (17,39), (18,33), (19,12), (20,34), (21,39), (22,0), (23,19), (23,36), (24,29), (25,27), (26,7), (27,38), (28,2), (29,5), (30,14), (31,14), (32,29), (33,6), (34,4), (34,28), (35,33), (36,22), (36,35), (37,12), (38,9), (38,25), (39,16), (39,18)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem corner41 : config 41 54 26 0 :=
-  config_of_test cells_corner41 (by decide +kernel)
-
-private def cells_host12 : Finset Cell := ([(0,5), (0,7), (1,3), (1,9), (2,11), (3,0), (4,10), (5,1), (6,10), (7,1), (8,11), (9,0), (10,2), (10,8), (11,4), (11,6)] : List Cell).toFinset
+  config_of_test ([(0,20), (1,18), (2,5), (2,13), (3,3), (4,0), (5,29), (6,8), (6,25), (7,17), (7,19), (8,1), (8,24), (9,34), (10,28), (10,31), (11,34), (12,38), (13,4), (14,22), (15,10), (15,14), (16,2), (17,11), (18,40), (19,4), (20,7), (20,33), (21,36), (22,0), (23,29), (24,38), (25,26), (25,30), (26,18), (27,36), (28,2), (29,6), (30,9), (30,12), (31,6), (32,16), (32,39), (33,21), (33,23), (34,15), (34,32), (35,11), (36,40), (37,37), (38,27), (38,35), (39,22), (40,20)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem host12 : config 12 16 9 2 :=
-  config_of_test cells_host12 (by decide +kernel)
-
-private def cells_host15 : Finset Cell := ([(0,3), (0,7), (1,14), (2,11), (2,12), (3,5), (3,9), (4,1), (5,13), (6,0), (7,2), (8,13), (9,1), (10,14), (11,0), (12,8), (12,10), (13,4), (13,6), (14,2)] : List Cell).toFinset
+  config_of_test ([(0,5), (0,7), (1,3), (1,9), (2,11), (3,0), (4,10), (5,1), (6,10), (7,1), (8,11), (9,0), (10,2), (10,8), (11,4), (11,6)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem host15 : config 15 20 13 2 :=
-  config_of_test cells_host15 (by decide +kernel)
-
-private def cells_host18 : Finset Cell := ([(0,11), (1,4), (1,5), (2,7), (2,14), (3,9), (3,16), (4,6), (5,15), (6,15), (7,0), (8,0), (9,17), (10,17), (11,2), (12,2), (13,11), (14,1), (14,8), (15,3), (15,10), (16,12), (16,13), (17,6)] : List Cell).toFinset
+  config_of_test ([(0,3), (0,7), (1,14), (2,11), (2,12), (3,5), (3,9), (4,1), (5,13), (6,0), (7,2), (8,13), (9,1), (10,14), (11,0), (12,8), (12,10), (13,4), (13,6), (14,2)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem host18 : config 18 24 13 2 :=
-  config_of_test cells_host18 (by decide +kernel)
-
-private def cells_host24 : Finset Cell := ([(0,5), (0,19), (1,13), (1,14), (2,16), (2,20), (3,6), (4,8), (4,12), (5,21), (6,23), (7,1), (8,17), (9,2), (10,0), (11,22), (12,1), (13,23), (14,21), (15,6), (16,22), (17,0), (18,2), (19,11), (19,15), (20,17), (21,3), (21,7), (22,9), (22,10), (23,4), (23,18)] : List Cell).toFinset
+  config_of_test ([(0,11), (1,4), (1,5), (2,7), (2,14), (3,9), (3,16), (4,6), (5,15), (6,15), (7,0), (8,0), (9,17), (10,17), (11,2), (12,2), (13,11), (14,1), (14,8), (15,3), (15,10), (16,12), (16,13), (17,6)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem host24 : config 24 32 19 3 :=
-  config_of_test cells_host24 (by decide +kernel)
-
-private def cells_host45 : Finset Cell := ([(0,15), (0,33), (1,20), (1,28), (2,41), (3,19), (3,23), (4,27), (4,30), (5,12), (5,13), (6,35), (7,35), (8,44), (9,18), (9,39), (10,4), (11,1), (12,44), (13,38), (14,2), (15,4), (16,34), (16,37), (17,22), (18,42), (19,6), (20,3), (21,43), (22,8), (22,36), (23,1), (24,41), (25,38), (26,2), (27,22), (28,7), (28,10), (29,40), (30,42), (31,6), (32,0), (33,43), (34,40), (35,5), (35,26), (36,0), (37,9), (38,9), (39,31), (39,32), (40,14), (40,17), (41,21), (41,25), (42,3), (43,16), (43,24), (44,11), (44,29)] : List Cell).toFinset
+  config_of_test ([(0,5), (0,19), (1,13), (1,14), (2,16), (2,20), (3,6), (4,8), (4,12), (5,21), (6,23), (7,1), (8,17), (9,2), (10,0), (11,22), (12,1), (13,23), (14,21), (15,6), (16,22), (17,0), (18,2), (19,11), (19,15), (20,17), (21,3), (21,7), (22,9), (22,10), (23,4), (23,18)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem host45 : config 45 60 39 5 :=
-  config_of_test cells_host45 (by decide +kernel)
-
-private def cells_host48 : Finset Cell := ([(0,18), (0,36), (1,13), (1,33), (2,17), (2,24), (3,12), (3,38), (4,25), (4,28), (5,45), (6,37), (6,43), (7,20), (7,26), (8,15), (8,16), (9,39), (10,44), (11,44), (12,1), (13,39), (14,42), (15,42), (16,6), (17,46), (18,41), (19,2), (20,0), (21,7), (22,47), (23,7), (24,40), (25,0), (26,40), (27,47), (28,45), (29,6), (30,1), (31,41), (32,5), (33,5), (34,8), (35,46), (36,3), (37,3), (38,8), (39,31), (39,32), (40,21), (40,27), (41,4), (41,10), (42,2), (43,19), (43,22), (44,9), (44,35), (45,23), (45,30), (46,14), (46,34), (47,11), (47,29)] : List Cell).toFinset
+  config_of_test ([(0,15), (0,33), (1,20), (1,28), (2,41), (3,19), (3,23), (4,27), (4,30), (5,12), (5,13), (6,35), (7,35), (8,44), (9,18), (9,39), (10,4), (11,1), (12,44), (13,38), (14,2), (15,4), (16,34), (16,37), (17,22), (18,42), (19,6), (20,3), (21,43), (22,8), (22,36), (23,1), (24,41), (25,38), (26,2), (27,22), (28,7), (28,10), (29,40), (30,42), (31,6), (32,0), (33,43), (34,40), (35,5), (35,26), (36,0), (37,9), (38,9), (39,31), (39,32), (40,14), (40,17), (41,21), (41,25), (42,3), (43,16), (43,24), (44,11), (44,29)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem host48 : config 48 64 40 7 :=
-  config_of_test cells_host48 (by decide +kernel)
-
-private def cells_host63 : Finset Cell := ([(0,43), (0,47), (1,40), (1,41), (2,13), (2,52), (3,0), (3,36), (4,45), (5,11), (5,25), (6,28), (7,5), (8,44), (9,23), (9,35), (10,18), (11,56), (12,7), (13,12), (13,32), (14,45), (15,3), (16,34), (17,46), (17,61), (18,42), (18,53), (19,4), (20,4), (21,8), (22,54), (23,14), (23,33), (24,7), (25,2), (26,60), (27,31), (28,56), (29,59), (30,5), (31,24), (31,38), (32,57), (33,3), (34,6), (35,31), (36,2), (37,60), (38,55), (39,29), (39,48), (40,8), (41,54), (42,58), (43,58), (44,9), (44,20), (45,1), (45,16), (46,28), (47,59), (48,17), (49,30), (49,50), (50,55), (51,6), (52,44), (53,27), (53,39), (54,18), (55,57), (56,34), (57,37), (57,51), (58,17), (59,26), (59,62), (60,10), (60,49), (61,21), (61,22), (62,15), (62,19)] : List Cell).toFinset
+  config_of_test ([(0,18), (0,36), (1,13), (1,33), (2,17), (2,24), (3,12), (3,38), (4,25), (4,28), (5,45), (6,37), (6,43), (7,20), (7,26), (8,15), (8,16), (9,39), (10,44), (11,44), (12,1), (13,39), (14,42), (15,42), (16,6), (17,46), (18,41), (19,2), (20,0), (21,7), (22,47), (23,7), (24,40), (25,0), (26,40), (27,47), (28,45), (29,6), (30,1), (31,41), (32,5), (33,5), (34,8), (35,46), (36,3), (37,3), (38,8), (39,31), (39,32), (40,21), (40,27), (41,4), (41,10), (42,2), (43,19), (43,22), (44,9), (44,35), (45,23), (45,30), (46,14), (46,34), (47,11), (47,29)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem host63 : config 63 84 50 1 :=
-  config_of_test cells_host63 (by decide +kernel)
-
-private def cells_host6 : Finset Cell := ([(0,1), (0,2), (1,5), (2,5), (3,0), (4,0), (5,3), (5,4)] : List Cell).toFinset
+  config_of_test ([(0,43), (0,47), (1,40), (1,41), (2,13), (2,52), (3,0), (3,36), (4,45), (5,11), (5,25), (6,28), (7,5), (8,44), (9,23), (9,35), (10,18), (11,56), (12,7), (13,12), (13,32), (14,45), (15,3), (16,34), (17,46), (17,61), (18,42), (18,53), (19,4), (20,4), (21,8), (22,54), (23,14), (23,33), (24,7), (25,2), (26,60), (27,31), (28,56), (29,59), (30,5), (31,24), (31,38), (32,57), (33,3), (34,6), (35,31), (36,2), (37,60), (38,55), (39,29), (39,48), (40,8), (41,54), (42,58), (43,58), (44,9), (44,20), (45,1), (45,16), (46,28), (47,59), (48,17), (49,30), (49,50), (50,55), (51,6), (52,44), (53,27), (53,39), (54,18), (55,57), (56,34), (57,37), (57,51), (58,17), (59,26), (59,62), (60,10), (60,49), (61,21), (61,22), (62,15), (62,19)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem host6 : config 6 8 4 1 :=
-  config_of_test cells_host6 (by decide +kernel)
-
-private def cells_corner1 : Finset Cell := ([(0,0)] : List Cell).toFinset
+  config_of_test ([(0,1), (0,2), (1,5), (2,5), (3,0), (4,0), (5,3), (5,4)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem corner1 : config 1 1 0 0 :=
-  config_of_test cells_corner1 (by decide +kernel)
-
-private def cells_corner2 : Finset Cell := ([(0,0), (1,1)] : List Cell).toFinset
+  config_of_test ([(0,0)] : List Cell).toFinset (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 10000000 in
 theorem corner2 : config 2 2 0 0 :=
-  config_of_test cells_corner2 (by decide +kernel)
+  config_of_test ([(0,0), (1,1)] : List Cell).toFinset (by decide +kernel)
 
 end OMA.QueenConstruction
 
 namespace OMA.QueenConstruction
-lemma config_weaken {n k w d w' d'} (hc : config n k w d) (hw : w ≤ w') (hd : d' ≤ d) :
+lemma config_weaken {n k w d w' d'} (hc : config n k w d) (hw : w ≤ w' := by decide) (hd : d' ≤ d := by decide) :
     config n k w' d' := by
   obtain ⟨s,hl,hf,hc,wb,db⟩ := hc
   refine ⟨s,hl,hf,hc,?_,?_⟩
@@ -725,890 +633,260 @@ end OMA.QueenConstruction
 
 namespace OMA.QueenConstruction
 
-private theorem board6 : reaches 6 :=
-  config_reaches corner6 (by decide)
-
-private theorem board7 : reaches 7 :=
-  config_reaches (config_paste (config_product (b := 1) host6 (by decide) (by decide) (by decide)) corner1 (by decide)) (by decide)
-
-private theorem board8 : reaches 8 :=
-  config_reaches corner8 (by decide)
-
-private theorem board9 : reaches 9 :=
-  config_reaches corner9 (by decide)
-
-private theorem board10 : reaches 10 :=
-  config_reaches corner10 (by decide)
-
-private theorem board11 : reaches 11 :=
-  config_reaches corner11 (by decide)
-
-private theorem board12 : reaches 12 :=
-  config_reaches host12 (by decide)
-
-private theorem board13 : reaches 13 :=
-  config_reaches corner13 (by decide)
-
-private theorem board14 : reaches 14 :=
-  config_reaches corner14 (by decide)
-
-private theorem board15 : reaches 15 :=
-  config_reaches host15 (by decide)
-
-private theorem board16 : reaches 16 :=
-  config_reaches corner16 (by decide)
-
-private theorem board17 : reaches 17 :=
-  config_reaches corner17 (by decide)
-
-private theorem board18 : reaches 18 :=
-  config_reaches host18 (by decide)
-
-private theorem board19 : reaches 19 :=
-  config_reaches (config_paste (config_product (b := 1) host18 (by decide) (by decide) (by decide)) corner1 (by decide)) (by decide)
-
-private theorem board20 : reaches 20 :=
-  config_reaches corner20 (by decide)
-
-private theorem board21 : reaches 21 :=
-  config_reaches corner21 (by decide)
-
-private theorem board22 : reaches 22 :=
-  config_reaches corner22 (by decide)
-
-private theorem board23 : reaches 23 :=
-  config_reaches corner23 (by decide)
-
-private theorem board24 : reaches 24 :=
-  config_reaches host24 (by decide)
-
-private theorem board25 : reaches 25 :=
-  config_reaches corner25 (by decide)
-
-private theorem board26 : reaches 26 :=
-  config_reaches corner26 (by decide)
-
-private theorem board27 : reaches 27 :=
-  config_reaches corner27 (by decide)
-
-private theorem board28 : reaches 28 :=
-  config_reaches corner28 (by decide)
-
-private theorem board29 : reaches 29 :=
-  config_reaches corner29 (by decide)
-
-private theorem board30 : reaches 30 :=
-  config_reaches (config_product (b := 5) host6 (by decide) (by decide) (by decide)) (by decide)
-
-private theorem board31 : reaches 31 :=
-  config_reaches (config_paste (config_product (b := 5) host6 (by decide) (by decide) (by decide)) corner1 (by decide)) (by decide)
-
-private theorem board32 : reaches 32 :=
-  config_reaches corner32 (by decide)
-
-private theorem board33 : reaches 33 :=
-  config_reaches corner33 (by decide)
-
-private theorem board34 : reaches 34 :=
-  config_reaches corner34 (by decide)
-
-private theorem board35 : reaches 35 :=
-  config_reaches corner35 (by decide)
-
-private theorem board36 : reaches 36 :=
-  config_reaches corner36 (by decide)
-
-private theorem board37 : reaches 37 :=
-  config_reaches corner37 (by decide)
-
-private theorem board38 : reaches 38 :=
-  config_reaches corner38 (by decide)
-
-private theorem board39 : reaches 39 :=
-  config_reaches corner39 (by decide)
-
-private theorem board40 : reaches 40 :=
-  config_reaches corner40 (by decide)
-
-private theorem board41 : reaches 41 :=
-  config_reaches corner41 (by decide)
-
-private theorem board42 : reaches 42 :=
-  config_reaches (config_product (b := 7) host6 (by decide) (by decide) (by decide)) (by decide)
-
-private theorem board43 : reaches 43 :=
-  config_reaches (config_paste (config_product (b := 7) host6 (by decide) (by decide) (by decide)) corner1 (by decide)) (by decide)
-
-private theorem board44 : reaches 44 :=
-  config_reaches (config_paste (config_product (b := 7) host6 (by decide) (by decide) (by decide)) corner2 (by decide)) (by decide)
-
-private theorem board45 : reaches 45 :=
-  config_reaches host45 (by decide)
-
-private theorem board46 : reaches 46 :=
-  config_reaches (config_paste (config_product (b := 1) host45 (by decide) (by decide) (by decide)) corner1 (by decide)) (by decide)
-
-private theorem board47 : reaches 47 :=
-  config_reaches (config_paste (config_product (b := 1) host45 (by decide) (by decide) (by decide)) corner2 (by decide)) (by decide)
-
-private theorem board48 : reaches 48 :=
-  config_reaches host48 (by decide)
-
-private theorem board49 : reaches 49 :=
-  config_reaches (config_paste (config_product (b := 1) host48 (by decide) (by decide) (by decide)) corner1 (by decide)) (by decide)
-
-private theorem board50 : reaches 50 :=
-  config_reaches (config_paste (config_product (b := 1) host48 (by decide) (by decide) (by decide)) corner2 (by decide)) (by decide)
-
-private theorem board51 : reaches 51 :=
-  config_reaches (config_paste (config_product (b := 1) host45 (by decide) (by decide) (by decide)) corner6 (by decide)) (by decide)
-
-private theorem board52 : reaches 52 :=
-  config_reaches (config_paste (config_product (b := 1) host45 (by decide) (by decide) (by decide)) (config_paste (config_product (b := 1) host6 (by decide) (by decide) (by decide)) corner1 (by decide)) (by decide)) (by decide)
-
-private theorem board53 : reaches 53 :=
-  config_reaches (config_paste (config_product (b := 1) host45 (by decide) (by decide) (by decide)) corner8 (by decide)) (by decide)
-
-private theorem board54 : reaches 54 :=
-  config_reaches (config_paste (config_product (b := 1) host48 (by decide) (by decide) (by decide)) corner6 (by decide)) (by decide)
-
-private theorem board55 : reaches 55 :=
-  config_reaches (config_paste (config_product (b := 1) host48 (by decide) (by decide) (by decide)) corner7 (by decide)) (by decide)
-
-private theorem board56 : reaches 56 :=
-  config_reaches (config_paste (config_product (b := 1) host48 (by decide) (by decide) (by decide)) corner8 (by decide)) (by decide)
-
-private theorem board57 : reaches 57 :=
-  config_reaches (config_paste (config_product (b := 1) host48 (by decide) (by decide) (by decide)) corner9 (by decide)) (by decide)
-
-private theorem board58 : reaches 58 :=
-  config_reaches (config_paste (config_product (b := 1) host48 (by decide) (by decide) (by decide)) corner10 (by decide)) (by decide)
-
-private theorem board59 : reaches 59 :=
-  config_reaches (config_paste (config_product (b := 1) host48 (by decide) (by decide) (by decide)) corner11 (by decide)) (by decide)
-
-private theorem board60 : reaches 60 :=
-  config_reaches (config_product (b := 5) host12 (by decide) (by decide) (by decide)) (by decide)
-
-private theorem board61 : reaches 61 :=
-  config_reaches (config_paste (config_product (b := 5) host12 (by decide) (by decide) (by decide)) corner1 (by decide)) (by decide)
-
-private theorem board62 : reaches 62 :=
-  config_reaches (config_paste (config_product (b := 5) host12 (by decide) (by decide) (by decide)) corner2 (by decide)) (by decide)
-
-private theorem board63 : reaches 63 :=
-  config_reaches host63 (by decide)
-
-private theorem board64 : reaches 64 :=
-  config_reaches (config_paste (config_product (b := 1) host63 (by decide) (by decide) (by decide)) corner1 (by decide)) (by decide)
-
-private theorem board65 : reaches 65 :=
-  config_reaches (config_paste (config_product (b := 1) host63 (by decide) (by decide) (by decide)) corner2 (by decide)) (by decide)
-
-private theorem board66 : reaches 66 :=
-  config_reaches (config_product (b := 11) host6 (by decide) (by decide) (by decide)) (by decide)
-
-private theorem board67 : reaches 67 :=
-  config_reaches (config_paste (config_product (b := 5) host12 (by decide) (by decide) (by decide)) corner7 (by decide)) (by decide)
-
-private theorem board68 : reaches 68 :=
-  config_reaches (config_paste (config_product (b := 5) host12 (by decide) (by decide) (by decide)) corner8 (by decide)) (by decide)
-
-private theorem board69 : reaches 69 :=
-  config_reaches (config_paste (config_product (b := 5) host12 (by decide) (by decide) (by decide)) corner9 (by decide)) (by decide)
-
-private theorem board70 : reaches 70 :=
-  config_reaches (config_paste (config_product (b := 5) host12 (by decide) (by decide) (by decide)) corner10 (by decide)) (by decide)
-
-private theorem board71 : reaches 71 :=
-  config_reaches (config_paste (config_product (b := 5) host12 (by decide) (by decide) (by decide)) corner11 (by decide)) (by decide)
-
-private theorem board72 : reaches 72 :=
-  config_reaches (config_paste (config_product (b := 11) host6 (by decide) (by decide) (by decide)) corner6 (by decide)) (by decide)
-
-private theorem board73 : reaches 73 :=
-  config_reaches (config_paste (config_product (b := 11) host6 (by decide) (by decide) (by decide)) corner7 (by decide)) (by decide)
-
-private theorem board74 : reaches 74 :=
-  config_reaches (config_paste (config_product (b := 11) host6 (by decide) (by decide) (by decide)) corner8 (by decide)) (by decide)
-
-private theorem board75 : reaches 75 :=
-  config_reaches (config_product (b := 5) host15 (by decide) (by decide) (by decide)) (by decide)
-
-private theorem board76 : reaches 76 :=
-  config_reaches (config_paste (config_product (b := 5) host15 (by decide) (by decide) (by decide)) corner1 (by decide)) (by decide)
-
-private theorem board77 : reaches 77 :=
-  config_reaches (config_paste (config_product (b := 5) host15 (by decide) (by decide) (by decide)) corner2 (by decide)) (by decide)
-
-private theorem board78 : reaches 78 :=
-  config_reaches (config_product (b := 13) host6 (by decide) (by decide) (by decide)) (by decide)
-
-private theorem board79 : reaches 79 :=
-  config_reaches (config_paste (config_product (b := 13) host6 (by decide) (by decide) (by decide)) corner1 (by decide)) (by decide)
-
-private theorem board80 : reaches 80 :=
-  config_reaches (config_paste (config_product (b := 13) host6 (by decide) (by decide) (by decide)) corner2 (by decide)) (by decide)
-
-private theorem board81 : reaches 81 :=
-  config_reaches (config_paste (config_product (b := 5) host15 (by decide) (by decide) (by decide)) corner6 (by decide)) (by decide)
-
-private theorem board82 : reaches 82 :=
-  config_reaches (config_paste (config_product (b := 5) host15 (by decide) (by decide) (by decide)) corner7 (by decide)) (by decide)
-
-private theorem board83 : reaches 83 :=
-  config_reaches (config_paste (config_product (b := 5) host15 (by decide) (by decide) (by decide)) corner8 (by decide)) (by decide)
-
-private theorem board84 : reaches 84 :=
-  config_reaches (config_product (b := 7) host12 (by decide) (by decide) (by decide)) (by decide)
-
-private theorem board85 : reaches 85 :=
-  config_reaches (config_paste (config_product (b := 13) host6 (by decide) (by decide) (by decide)) corner7 (by decide)) (by decide)
-
-private theorem board86 : reaches 86 :=
-  config_reaches (config_paste (config_product (b := 13) host6 (by decide) (by decide) (by decide)) corner8 (by decide)) (by decide)
-
-private theorem board87 : reaches 87 :=
-  config_reaches (config_paste (config_product (b := 13) host6 (by decide) (by decide) (by decide)) corner9 (by decide)) (by decide)
-
-private theorem board88 : reaches 88 :=
-  config_reaches (config_paste (config_product (b := 13) host6 (by decide) (by decide) (by decide)) corner10 (by decide)) (by decide)
-
-private theorem board89 : reaches 89 :=
-  config_reaches (config_paste (config_product (b := 13) host6 (by decide) (by decide) (by decide)) corner11 (by decide)) (by decide)
-
-private theorem board90 : reaches 90 :=
-  config_reaches (config_product (b := 5) host18 (by decide) (by decide) (by decide)) (by decide)
-
-private theorem board91 : reaches 91 :=
-  config_reaches (config_paste (config_product (b := 7) host12 (by decide) (by decide) (by decide)) corner7 (by decide)) (by decide)
-
-private theorem board92 : reaches 92 :=
-  config_reaches (config_paste (config_product (b := 7) host12 (by decide) (by decide) (by decide)) corner8 (by decide)) (by decide)
-
-private theorem board93 : reaches 93 :=
-  config_reaches (config_paste (config_product (b := 7) host12 (by decide) (by decide) (by decide)) corner9 (by decide)) (by decide)
-
-private theorem board94 : reaches 94 :=
-  config_reaches (config_paste (config_product (b := 7) host12 (by decide) (by decide) (by decide)) corner10 (by decide)) (by decide)
-
-private theorem board95 : reaches 95 :=
-  config_reaches (config_paste (config_product (b := 7) host12 (by decide) (by decide) (by decide)) corner11 (by decide)) (by decide)
-
-private theorem board96 : reaches 96 :=
-  config_reaches (config_paste (config_product (b := 7) host12 (by decide) (by decide) (by decide)) host12 (by decide)) (by decide)
-
-private theorem board97 : reaches 97 :=
-  config_reaches (config_paste (config_product (b := 7) host12 (by decide) (by decide) (by decide)) corner13 (by decide)) (by decide)
-
-private theorem board98 : reaches 98 :=
-  config_reaches (config_paste (config_product (b := 7) host12 (by decide) (by decide) (by decide)) corner14 (by decide)) (by decide)
-
-private theorem board99 : reaches 99 :=
-  config_reaches (config_paste (config_product (b := 7) host12 (by decide) (by decide) (by decide)) corner15 (by decide)) (by decide)
-
-private theorem board100 : reaches 100 :=
-  config_reaches (config_paste (config_product (b := 5) host18 (by decide) (by decide) (by decide)) corner10 (by decide)) (by decide)
-
-private theorem board101 : reaches 101 :=
-  config_reaches (config_paste (config_product (b := 5) host18 (by decide) (by decide) (by decide)) corner11 (by decide)) (by decide)
-
-private theorem board102 : reaches 102 :=
-  config_reaches (config_product (b := 17) host6 (by decide) (by decide) (by decide)) (by decide)
-
-private theorem board103 : reaches 103 :=
-  config_reaches (config_paste (config_product (b := 17) host6 (by decide) (by decide) (by decide)) corner1 (by decide)) (by decide)
-
-private theorem board104 : reaches 104 :=
-  config_reaches (config_paste (config_product (b := 17) host6 (by decide) (by decide) (by decide)) corner2 (by decide)) (by decide)
-
-private theorem board105 : reaches 105 :=
-  config_reaches (config_product (b := 7) host15 (by decide) (by decide) (by decide)) (by decide)
-
-private theorem board106 : reaches 106 :=
-  config_reaches (config_paste (config_product (b := 7) host15 (by decide) (by decide) (by decide)) corner1 (by decide)) (by decide)
-
-private theorem board107 : reaches 107 :=
-  config_reaches (config_paste (config_product (b := 7) host15 (by decide) (by decide) (by decide)) corner2 (by decide)) (by decide)
-
-private theorem board108 : reaches 108 :=
-  config_reaches (config_paste (config_product (b := 17) host6 (by decide) (by decide) (by decide)) corner6 (by decide)) (by decide)
-
-private theorem board109 : reaches 109 :=
-  config_reaches (config_paste (config_product (b := 17) host6 (by decide) (by decide) (by decide)) corner7 (by decide)) (by decide)
-
-private theorem board110 : reaches 110 :=
-  config_reaches (config_paste (config_product (b := 17) host6 (by decide) (by decide) (by decide)) corner8 (by decide)) (by decide)
-
-private theorem board111 : reaches 111 :=
-  config_reaches (config_paste (config_product (b := 7) host15 (by decide) (by decide) (by decide)) corner6 (by decide)) (by decide)
-
-private theorem board112 : reaches 112 :=
-  config_reaches (config_paste (config_product (b := 17) host6 (by decide) (by decide) (by decide)) corner10 (by decide)) (by decide)
-
-private theorem board113 : reaches 113 :=
-  config_reaches (config_paste (config_product (b := 17) host6 (by decide) (by decide) (by decide)) corner11 (by decide)) (by decide)
-
-private theorem board114 : reaches 114 :=
-  config_reaches (config_product (b := 19) host6 (by decide) (by decide) (by decide)) (by decide)
-
-private theorem board115 : reaches 115 :=
-  config_reaches (config_paste (config_product (b := 19) host6 (by decide) (by decide) (by decide)) corner1 (by decide)) (by decide)
-
-private theorem board116 : reaches 116 :=
-  config_reaches (config_paste (config_product (b := 17) host6 (by decide) (by decide) (by decide)) corner14 (by decide)) (by decide)
-
-private theorem board117 : reaches 117 :=
-  config_reaches (config_paste (config_product (b := 7) host15 (by decide) (by decide) (by decide)) host12 (by decide)) (by decide)
-
-private theorem board118 : reaches 118 :=
-  config_reaches (config_paste (config_product (b := 7) host15 (by decide) (by decide) (by decide)) corner13 (by decide)) (by decide)
-
-private theorem board119 : reaches 119 :=
-  config_reaches (config_paste (config_product (b := 7) host15 (by decide) (by decide) (by decide)) corner14 (by decide)) (by decide)
-
-private theorem board120 : reaches 120 :=
-  config_reaches (config_product (b := 5) host24 (by decide) (by decide) (by decide)) (by decide)
-
-private theorem board121 : reaches 121 :=
-  config_reaches (config_paste (config_product (b := 19) host6 (by decide) (by decide) (by decide)) corner7 (by decide)) (by decide)
-
-private theorem board122 : reaches 122 :=
-  config_reaches (config_paste (config_product (b := 19) host6 (by decide) (by decide) (by decide)) corner8 (by decide)) (by decide)
-
-private theorem board123 : reaches 123 :=
-  config_reaches (config_paste (config_product (b := 19) host6 (by decide) (by decide) (by decide)) corner9 (by decide)) (by decide)
-
-private theorem board124 : reaches 124 :=
-  config_reaches (config_paste (config_product (b := 19) host6 (by decide) (by decide) (by decide)) corner10 (by decide)) (by decide)
-
-private theorem board125 : reaches 125 :=
-  config_reaches (config_paste (config_product (b := 19) host6 (by decide) (by decide) (by decide)) corner11 (by decide)) (by decide)
-
-private theorem board126 : reaches 126 :=
-  config_reaches (config_product (b := 7) host18 (by decide) (by decide) (by decide)) (by decide)
-
-private theorem board127 : reaches 127 :=
-  config_reaches (config_paste (config_product (b := 19) host6 (by decide) (by decide) (by decide)) corner13 (by decide)) (by decide)
-
-private theorem board128 : reaches 128 :=
-  config_reaches (config_paste (config_product (b := 19) host6 (by decide) (by decide) (by decide)) corner14 (by decide)) (by decide)
-
-private theorem board129 : reaches 129 :=
-  config_reaches (config_paste (config_product (b := 5) host24 (by decide) (by decide) (by decide)) corner9 (by decide)) (by decide)
-
-private theorem board130 : reaches 130 :=
-  config_reaches (config_paste (config_product (b := 5) host24 (by decide) (by decide) (by decide)) corner10 (by decide)) (by decide)
-
-private theorem board131 : reaches 131 :=
-  config_reaches (config_paste (config_product (b := 5) host24 (by decide) (by decide) (by decide)) corner11 (by decide)) (by decide)
-
-private theorem board132 : reaches 132 :=
-  config_reaches (config_product (b := 11) host12 (by decide) (by decide) (by decide)) (by decide)
-
-private theorem board133 : reaches 133 :=
-  config_reaches (config_paste (config_product (b := 7) host18 (by decide) (by decide) (by decide)) corner7 (by decide)) (by decide)
-
-private theorem board134 : reaches 134 :=
-  config_reaches (config_paste (config_product (b := 7) host18 (by decide) (by decide) (by decide)) corner8 (by decide)) (by decide)
-
-private theorem board135 : reaches 135 :=
-  config_reaches (config_paste (config_product (b := 5) host24 (by decide) (by decide) (by decide)) corner15 (by decide)) (by decide)
-
-private theorem board136 : reaches 136 :=
-  config_reaches (config_paste (config_product (b := 5) host24 (by decide) (by decide) (by decide)) corner16 (by decide)) (by decide)
-
-private theorem board137 : reaches 137 :=
-  config_reaches (config_paste (config_product (b := 7) host18 (by decide) (by decide) (by decide)) corner11 (by decide)) (by decide)
-
-private theorem board138 : reaches 138 :=
-  config_reaches (config_product (b := 23) host6 (by decide) (by decide) (by decide)) (by decide)
-
-private theorem board139 : reaches 139 :=
-  config_reaches (config_paste (config_product (b := 7) host18 (by decide) (by decide) (by decide)) corner13 (by decide)) (by decide)
-
-private theorem board140 : reaches 140 :=
-  config_reaches (config_paste (config_product (b := 7) host18 (by decide) (by decide) (by decide)) corner14 (by decide)) (by decide)
-
-private theorem board141 : reaches 141 :=
-  config_reaches (config_paste (config_product (b := 7) host18 (by decide) (by decide) (by decide)) corner15 (by decide)) (by decide)
-
-private theorem board142 : reaches 142 :=
-  config_reaches (config_paste (config_product (b := 11) host12 (by decide) (by decide) (by decide)) corner10 (by decide)) (by decide)
-
-private theorem board143 : reaches 143 :=
-  config_reaches (config_paste (config_product (b := 11) host12 (by decide) (by decide) (by decide)) corner11 (by decide)) (by decide)
-
-private theorem board144 : reaches 144 :=
-  config_reaches (config_paste (config_product (b := 11) host12 (by decide) (by decide) (by decide)) host12 (by decide)) (by decide)
-
-private theorem board145 : reaches 145 :=
-  config_reaches (config_paste (config_product (b := 23) host6 (by decide) (by decide) (by decide)) corner7 (by decide)) (by decide)
-
-private theorem board146 : reaches 146 :=
-  config_reaches (config_paste (config_product (b := 23) host6 (by decide) (by decide) (by decide)) corner8 (by decide)) (by decide)
-
-private theorem board147 : reaches 147 :=
-  config_reaches (config_paste (config_product (b := 11) host12 (by decide) (by decide) (by decide)) host15 (by decide)) (by decide)
-
-private theorem board148 : reaches 148 :=
-  config_reaches (config_paste (config_product (b := 11) host12 (by decide) (by decide) (by decide)) corner16 (by decide)) (by decide)
-
-private theorem board149 : reaches 149 :=
-  config_reaches (config_paste (config_product (b := 11) host12 (by decide) (by decide) (by decide)) corner17 (by decide)) (by decide)
-
-private theorem board150 : reaches 150 :=
-  config_reaches (config_product (b := 25) host6 (by decide) (by decide) (by decide)) (by decide)
-
-private theorem board151 : reaches 151 :=
-  config_reaches (config_paste (config_product (b := 23) host6 (by decide) (by decide) (by decide)) corner13 (by decide)) (by decide)
-
-private theorem board152 : reaches 152 :=
-  config_reaches (config_paste (config_product (b := 11) host12 (by decide) (by decide) (by decide)) corner20 (by decide)) (by decide)
-
-private theorem board153 : reaches 153 :=
-  config_reaches (config_paste (config_product (b := 23) host6 (by decide) (by decide) (by decide)) corner15 (by decide)) (by decide)
-
-private theorem board154 : reaches 154 :=
-  config_reaches (config_paste (config_product (b := 11) host12 (by decide) (by decide) (by decide)) corner22 (by decide)) (by decide)
-
-private theorem board155 : reaches 155 :=
-  config_reaches (config_paste (config_product (b := 11) host12 (by decide) (by decide) (by decide)) corner23 (by decide)) (by decide)
-
-private theorem board156 : reaches 156 :=
-  config_reaches (config_product (b := 13) host12 (by decide) (by decide) (by decide)) (by decide)
-
-private theorem board157 : reaches 157 :=
-  config_reaches (config_paste (config_product (b := 11) host12 (by decide) (by decide) (by decide)) corner25 (by decide)) (by decide)
-
-private theorem board158 : reaches 158 :=
-  config_reaches (config_paste (config_product (b := 25) host6 (by decide) (by decide) (by decide)) corner8 (by decide)) (by decide)
-
-private theorem board159 : reaches 159 :=
-  config_reaches (config_paste (config_product (b := 25) host6 (by decide) (by decide) (by decide)) corner9 (by decide)) (by decide)
-
-private theorem board160 : reaches 160 :=
-  config_reaches (config_paste (config_product (b := 25) host6 (by decide) (by decide) (by decide)) corner10 (by decide)) (by decide)
-
-private theorem board161 : reaches 161 :=
-  config_reaches (config_paste (config_product (b := 25) host6 (by decide) (by decide) (by decide)) corner11 (by decide)) (by decide)
-
-private theorem board162 : reaches 162 :=
-  config_reaches (config_paste (config_product (b := 25) host6 (by decide) (by decide) (by decide)) host12 (by decide)) (by decide)
-
-private theorem board163 : reaches 163 :=
-  config_reaches (config_paste (config_product (b := 25) host6 (by decide) (by decide) (by decide)) corner13 (by decide)) (by decide)
-
-private theorem board164 : reaches 164 :=
-  config_reaches (config_paste (config_product (b := 25) host6 (by decide) (by decide) (by decide)) corner14 (by decide)) (by decide)
-
-private theorem board165 : reaches 165 :=
-  config_reaches (config_product (b := 11) host15 (by decide) (by decide) (by decide)) (by decide)
-
-private theorem board166 : reaches 166 :=
-  config_reaches (config_paste (config_product (b := 25) host6 (by decide) (by decide) (by decide)) corner16 (by decide)) (by decide)
-
-private theorem board167 : reaches 167 :=
-  config_reaches (config_paste (config_product (b := 13) host12 (by decide) (by decide) (by decide)) corner11 (by decide)) (by decide)
-
-private theorem board168 : reaches 168 :=
-  config_reaches (config_product (b := 7) host24 (by decide) (by decide) (by decide)) (by decide)
-
-private theorem board169 : reaches 169 :=
-  config_reaches (config_paste (config_product (b := 13) host12 (by decide) (by decide) (by decide)) corner13 (by decide)) (by decide)
-
-private theorem board170 : reaches 170 :=
-  config_reaches (config_paste (config_product (b := 13) host12 (by decide) (by decide) (by decide)) corner14 (by decide)) (by decide)
-
-private theorem board171 : reaches 171 :=
-  config_reaches (config_paste (config_product (b := 13) host12 (by decide) (by decide) (by decide)) host15 (by decide)) (by decide)
-
-private theorem board172 : reaches 172 :=
-  config_reaches (config_paste (config_product (b := 13) host12 (by decide) (by decide) (by decide)) corner16 (by decide)) (by decide)
-
-private theorem board173 : reaches 173 :=
-  config_reaches (config_paste (config_product (b := 13) host12 (by decide) (by decide) (by decide)) corner17 (by decide)) (by decide)
-
-private theorem board174 : reaches 174 :=
-  config_reaches (config_product (b := 29) host6 (by decide) (by decide) (by decide)) (by decide)
-
-private theorem board175 : reaches 175 :=
-  config_reaches (config_paste (config_product (b := 13) host12 (by decide) (by decide) (by decide)) corner19 (by decide)) (by decide)
-
-private theorem board176 : reaches 176 :=
-  config_reaches (config_paste (config_product (b := 13) host12 (by decide) (by decide) (by decide)) corner20 (by decide)) (by decide)
-
-private theorem board177 : reaches 177 :=
-  config_reaches (config_paste (config_product (b := 11) host15 (by decide) (by decide) (by decide)) host12 (by decide)) (by decide)
-
-private theorem board178 : reaches 178 :=
-  config_reaches (config_paste (config_product (b := 13) host12 (by decide) (by decide) (by decide)) corner22 (by decide)) (by decide)
-
-private theorem board179 : reaches 179 :=
-  config_reaches (config_paste (config_product (b := 13) host12 (by decide) (by decide) (by decide)) corner23 (by decide)) (by decide)
-
-private theorem board180 : reaches 180 :=
-  config_reaches (config_paste (config_product (b := 13) host12 (by decide) (by decide) (by decide)) host24 (by decide)) (by decide)
-
-private theorem board181 : reaches 181 :=
-  config_reaches (config_paste (config_product (b := 11) host15 (by decide) (by decide) (by decide)) corner16 (by decide)) (by decide)
-
-private theorem board182 : reaches 182 :=
-  config_reaches (config_paste (config_product (b := 11) host15 (by decide) (by decide) (by decide)) corner17 (by decide)) (by decide)
-
-private theorem board183 : reaches 183 :=
-  config_reaches (config_paste (config_product (b := 7) host24 (by decide) (by decide) (by decide)) host15 (by decide)) (by decide)
-
-private theorem board184 : reaches 184 :=
-  config_reaches (config_paste (config_product (b := 7) host24 (by decide) (by decide) (by decide)) corner16 (by decide)) (by decide)
-
-private theorem board185 : reaches 185 :=
-  config_reaches (config_paste (config_product (b := 7) host24 (by decide) (by decide) (by decide)) corner17 (by decide)) (by decide)
-
-private theorem board186 : reaches 186 :=
-  config_reaches (config_product (b := 31) host6 (by decide) (by decide) (by decide)) (by decide)
-
-private theorem board187 : reaches 187 :=
-  config_reaches (config_paste (config_product (b := 29) host6 (by decide) (by decide) (by decide)) corner13 (by decide)) (by decide)
-
-private theorem board188 : reaches 188 :=
-  config_reaches (config_paste (config_product (b := 7) host24 (by decide) (by decide) (by decide)) corner20 (by decide)) (by decide)
-
-private theorem board189 : reaches 189 :=
-  config_reaches (config_paste (config_product (b := 29) host6 (by decide) (by decide) (by decide)) host15 (by decide)) (by decide)
-
-private theorem board190 : reaches 190 :=
-  config_reaches (config_paste (config_product (b := 29) host6 (by decide) (by decide) (by decide)) corner16 (by decide)) (by decide)
-
-private theorem board191 : reaches 191 :=
-  config_reaches (config_paste (config_product (b := 29) host6 (by decide) (by decide) (by decide)) corner17 (by decide)) (by decide)
-
-private theorem board192 : reaches 192 :=
-  config_reaches (config_paste (config_product (b := 29) host6 (by decide) (by decide) (by decide)) host18 (by decide)) (by decide)
-
-private theorem board193 : reaches 193 :=
-  config_reaches (config_paste (config_product (b := 29) host6 (by decide) (by decide) (by decide)) corner19 (by decide)) (by decide)
-
-private theorem board194 : reaches 194 :=
-  config_reaches (config_paste (config_product (b := 31) host6 (by decide) (by decide) (by decide)) corner8 (by decide)) (by decide)
-
-private theorem board195 : reaches 195 :=
-  config_reaches (config_product (b := 13) host15 (by decide) (by decide) (by decide)) (by decide)
-
-private theorem board196 : reaches 196 :=
-  config_reaches (config_paste (config_product (b := 29) host6 (by decide) (by decide) (by decide)) corner22 (by decide)) (by decide)
-
-private theorem board197 : reaches 197 :=
-  config_reaches (config_paste (config_product (b := 31) host6 (by decide) (by decide) (by decide)) corner11 (by decide)) (by decide)
-
-private theorem board198 : reaches 198 :=
-  config_reaches (config_product (b := 11) host18 (by decide) (by decide) (by decide)) (by decide)
-
-private theorem board199 : reaches 199 :=
-  config_reaches (config_paste (config_product (b := 31) host6 (by decide) (by decide) (by decide)) corner13 (by decide)) (by decide)
-
-private theorem board200 : reaches 200 :=
-  config_reaches (config_paste (config_product (b := 31) host6 (by decide) (by decide) (by decide)) corner14 (by decide)) (by decide)
-
-private theorem board201 : reaches 201 :=
-  config_reaches (config_paste (config_product (b := 31) host6 (by decide) (by decide) (by decide)) host15 (by decide)) (by decide)
-
-private theorem board202 : reaches 202 :=
-  config_reaches (config_paste (config_product (b := 31) host6 (by decide) (by decide) (by decide)) corner16 (by decide)) (by decide)
-
-private theorem board203 : reaches 203 :=
-  config_reaches (config_paste (config_product (b := 31) host6 (by decide) (by decide) (by decide)) corner17 (by decide)) (by decide)
-
-private theorem board204 : reaches 204 :=
-  config_reaches (config_product (b := 17) host12 (by decide) (by decide) (by decide)) (by decide)
-
-private theorem board205 : reaches 205 :=
-  config_reaches (config_paste (config_product (b := 31) host6 (by decide) (by decide) (by decide)) corner19 (by decide)) (by decide)
-
-private theorem board206 : reaches 206 :=
-  config_reaches (config_paste (config_product (b := 31) host6 (by decide) (by decide) (by decide)) corner20 (by decide)) (by decide)
-
-private theorem board207 : reaches 207 :=
-  config_reaches (config_paste (config_product (b := 13) host15 (by decide) (by decide) (by decide)) host12 (by decide)) (by decide)
-
-private theorem board208 : reaches 208 :=
-  config_reaches (config_paste (config_product (b := 31) host6 (by decide) (by decide) (by decide)) corner22 (by decide)) (by decide)
-
-private theorem board209 : reaches 209 :=
-  config_reaches (config_paste (config_product (b := 11) host18 (by decide) (by decide) (by decide)) corner11 (by decide)) (by decide)
-
-private theorem board210 : reaches 210 :=
-  config_reaches (config_product (b := 35) host6 (by decide) (by decide) (by decide)) (by decide)
-
-private theorem board211 : reaches 211 :=
-  config_reaches (config_paste (config_product (b := 13) host15 (by decide) (by decide) (by decide)) corner16 (by decide)) (by decide)
-
-private theorem board212 : reaches 212 :=
-  config_reaches (config_paste (config_product (b := 13) host15 (by decide) (by decide) (by decide)) corner17 (by decide)) (by decide)
-
-private theorem board213 : reaches 213 :=
-  config_reaches (config_paste (config_product (b := 11) host18 (by decide) (by decide) (by decide)) host15 (by decide)) (by decide)
-
-private theorem board214 : reaches 214 :=
-  config_reaches (config_paste (config_product (b := 11) host18 (by decide) (by decide) (by decide)) corner16 (by decide)) (by decide)
-
-private theorem board215 : reaches 215 :=
-  config_reaches (config_paste (config_product (b := 11) host18 (by decide) (by decide) (by decide)) corner17 (by decide)) (by decide)
-
 theorem small_boards {n : ℕ} (h : 6 ≤ n) (h' : n < 216) : reaches n := by
   interval_cases n
-  · exact board6
-  · exact board7
-  · exact board8
-  · exact board9
-  · exact board10
-  · exact board11
-  · exact board12
-  · exact board13
-  · exact board14
-  · exact board15
-  · exact board16
-  · exact board17
-  · exact board18
-  · exact board19
-  · exact board20
-  · exact board21
-  · exact board22
-  · exact board23
-  · exact board24
-  · exact board25
-  · exact board26
-  · exact board27
-  · exact board28
-  · exact board29
-  · exact board30
-  · exact board31
-  · exact board32
-  · exact board33
-  · exact board34
-  · exact board35
-  · exact board36
-  · exact board37
-  · exact board38
-  · exact board39
-  · exact board40
-  · exact board41
-  · exact board42
-  · exact board43
-  · exact board44
-  · exact board45
-  · exact board46
-  · exact board47
-  · exact board48
-  · exact board49
-  · exact board50
-  · exact board51
-  · exact board52
-  · exact board53
-  · exact board54
-  · exact board55
-  · exact board56
-  · exact board57
-  · exact board58
-  · exact board59
-  · exact board60
-  · exact board61
-  · exact board62
-  · exact board63
-  · exact board64
-  · exact board65
-  · exact board66
-  · exact board67
-  · exact board68
-  · exact board69
-  · exact board70
-  · exact board71
-  · exact board72
-  · exact board73
-  · exact board74
-  · exact board75
-  · exact board76
-  · exact board77
-  · exact board78
-  · exact board79
-  · exact board80
-  · exact board81
-  · exact board82
-  · exact board83
-  · exact board84
-  · exact board85
-  · exact board86
-  · exact board87
-  · exact board88
-  · exact board89
-  · exact board90
-  · exact board91
-  · exact board92
-  · exact board93
-  · exact board94
-  · exact board95
-  · exact board96
-  · exact board97
-  · exact board98
-  · exact board99
-  · exact board100
-  · exact board101
-  · exact board102
-  · exact board103
-  · exact board104
-  · exact board105
-  · exact board106
-  · exact board107
-  · exact board108
-  · exact board109
-  · exact board110
-  · exact board111
-  · exact board112
-  · exact board113
-  · exact board114
-  · exact board115
-  · exact board116
-  · exact board117
-  · exact board118
-  · exact board119
-  · exact board120
-  · exact board121
-  · exact board122
-  · exact board123
-  · exact board124
-  · exact board125
-  · exact board126
-  · exact board127
-  · exact board128
-  · exact board129
-  · exact board130
-  · exact board131
-  · exact board132
-  · exact board133
-  · exact board134
-  · exact board135
-  · exact board136
-  · exact board137
-  · exact board138
-  · exact board139
-  · exact board140
-  · exact board141
-  · exact board142
-  · exact board143
-  · exact board144
-  · exact board145
-  · exact board146
-  · exact board147
-  · exact board148
-  · exact board149
-  · exact board150
-  · exact board151
-  · exact board152
-  · exact board153
-  · exact board154
-  · exact board155
-  · exact board156
-  · exact board157
-  · exact board158
-  · exact board159
-  · exact board160
-  · exact board161
-  · exact board162
-  · exact board163
-  · exact board164
-  · exact board165
-  · exact board166
-  · exact board167
-  · exact board168
-  · exact board169
-  · exact board170
-  · exact board171
-  · exact board172
-  · exact board173
-  · exact board174
-  · exact board175
-  · exact board176
-  · exact board177
-  · exact board178
-  · exact board179
-  · exact board180
-  · exact board181
-  · exact board182
-  · exact board183
-  · exact board184
-  · exact board185
-  · exact board186
-  · exact board187
-  · exact board188
-  · exact board189
-  · exact board190
-  · exact board191
-  · exact board192
-  · exact board193
-  · exact board194
-  · exact board195
-  · exact board196
-  · exact board197
-  · exact board198
-  · exact board199
-  · exact board200
-  · exact board201
-  · exact board202
-  · exact board203
-  · exact board204
-  · exact board205
-  · exact board206
-  · exact board207
-  · exact board208
-  · exact board209
-  · exact board210
-  · exact board211
-  · exact board212
-  · exact board213
-  · exact board214
-  · exact board215
+  · exact config_reaches corner6
+  · exact config_reaches (config_paste (config_product (b := 1) host6) corner1)
+  · exact config_reaches corner8
+  · exact config_reaches corner9
+  · exact config_reaches corner10
+  · exact config_reaches corner11
+  · exact config_reaches host12
+  · exact config_reaches corner13
+  · exact config_reaches corner14
+  · exact config_reaches host15
+  · exact config_reaches corner16
+  · exact config_reaches corner17
+  · exact config_reaches host18
+  · exact config_reaches (config_paste (config_product (b := 1) host18) corner1)
+  · exact config_reaches corner20
+  · exact config_reaches corner21
+  · exact config_reaches corner22
+  · exact config_reaches corner23
+  · exact config_reaches host24
+  · exact config_reaches corner25
+  · exact config_reaches corner26
+  · exact config_reaches corner27
+  · exact config_reaches corner28
+  · exact config_reaches corner29
+  · exact config_reaches (config_product (b := 5) host6)
+  · exact config_reaches (config_paste (config_product (b := 5) host6) corner1)
+  · exact config_reaches corner32
+  · exact config_reaches corner33
+  · exact config_reaches corner34
+  · exact config_reaches corner35
+  · exact config_reaches corner36
+  · exact config_reaches corner37
+  · exact config_reaches corner38
+  · exact config_reaches corner39
+  · exact config_reaches corner40
+  · exact config_reaches corner41
+  · exact config_reaches (config_product (b := 7) host6)
+  · exact config_reaches (config_paste (config_product (b := 7) host6) corner1)
+  · exact config_reaches (config_paste (config_product (b := 7) host6) corner2)
+  · exact config_reaches host45
+  · exact config_reaches (config_paste (config_product (b := 1) host45) corner1)
+  · exact config_reaches (config_paste (config_product (b := 1) host45) corner2)
+  · exact config_reaches host48
+  · exact config_reaches (config_paste (config_product (b := 1) host48) corner1)
+  · exact config_reaches (config_paste (config_product (b := 1) host48) corner2)
+  · exact config_reaches (config_paste (config_product (b := 1) host45) corner6)
+  · exact config_reaches (config_paste (config_product (b := 1) host45) (config_paste (config_product (b := 1) host6) corner1))
+  · exact config_reaches (config_paste (config_product (b := 1) host45) corner8)
+  · exact config_reaches (config_paste (config_product (b := 1) host48) corner6)
+  · exact config_reaches (config_paste (config_product (b := 1) host48) corner7)
+  · exact config_reaches (config_paste (config_product (b := 1) host48) corner8)
+  · exact config_reaches (config_paste (config_product (b := 1) host48) corner9)
+  · exact config_reaches (config_paste (config_product (b := 1) host48) corner10)
+  · exact config_reaches (config_paste (config_product (b := 1) host48) corner11)
+  · exact config_reaches (config_product (b := 5) host12)
+  · exact config_reaches (config_paste (config_product (b := 5) host12) corner1)
+  · exact config_reaches (config_paste (config_product (b := 5) host12) corner2)
+  · exact config_reaches host63
+  · exact config_reaches (config_paste (config_product (b := 1) host63) corner1)
+  · exact config_reaches (config_paste (config_product (b := 1) host63) corner2)
+  · exact config_reaches (config_product (b := 11) host6)
+  · exact config_reaches (config_paste (config_product (b := 5) host12) corner7)
+  · exact config_reaches (config_paste (config_product (b := 5) host12) corner8)
+  · exact config_reaches (config_paste (config_product (b := 5) host12) corner9)
+  · exact config_reaches (config_paste (config_product (b := 5) host12) corner10)
+  · exact config_reaches (config_paste (config_product (b := 5) host12) corner11)
+  · exact config_reaches (config_paste (config_product (b := 11) host6) corner6)
+  · exact config_reaches (config_paste (config_product (b := 11) host6) corner7)
+  · exact config_reaches (config_paste (config_product (b := 11) host6) corner8)
+  · exact config_reaches (config_product (b := 5) host15)
+  · exact config_reaches (config_paste (config_product (b := 5) host15) corner1)
+  · exact config_reaches (config_paste (config_product (b := 5) host15) corner2)
+  · exact config_reaches (config_product (b := 13) host6)
+  · exact config_reaches (config_paste (config_product (b := 13) host6) corner1)
+  · exact config_reaches (config_paste (config_product (b := 13) host6) corner2)
+  · exact config_reaches (config_paste (config_product (b := 5) host15) corner6)
+  · exact config_reaches (config_paste (config_product (b := 5) host15) corner7)
+  · exact config_reaches (config_paste (config_product (b := 5) host15) corner8)
+  · exact config_reaches (config_product (b := 7) host12)
+  · exact config_reaches (config_paste (config_product (b := 13) host6) corner7)
+  · exact config_reaches (config_paste (config_product (b := 13) host6) corner8)
+  · exact config_reaches (config_paste (config_product (b := 13) host6) corner9)
+  · exact config_reaches (config_paste (config_product (b := 13) host6) corner10)
+  · exact config_reaches (config_paste (config_product (b := 13) host6) corner11)
+  · exact config_reaches (config_product (b := 5) host18)
+  · exact config_reaches (config_paste (config_product (b := 7) host12) corner7)
+  · exact config_reaches (config_paste (config_product (b := 7) host12) corner8)
+  · exact config_reaches (config_paste (config_product (b := 7) host12) corner9)
+  · exact config_reaches (config_paste (config_product (b := 7) host12) corner10)
+  · exact config_reaches (config_paste (config_product (b := 7) host12) corner11)
+  · exact config_reaches (config_paste (config_product (b := 7) host12) host12)
+  · exact config_reaches (config_paste (config_product (b := 7) host12) corner13)
+  · exact config_reaches (config_paste (config_product (b := 7) host12) corner14)
+  · exact config_reaches (config_paste (config_product (b := 7) host12) corner15)
+  · exact config_reaches (config_paste (config_product (b := 5) host18) corner10)
+  · exact config_reaches (config_paste (config_product (b := 5) host18) corner11)
+  · exact config_reaches (config_product (b := 17) host6)
+  · exact config_reaches (config_paste (config_product (b := 17) host6) corner1)
+  · exact config_reaches (config_paste (config_product (b := 17) host6) corner2)
+  · exact config_reaches (config_product (b := 7) host15)
+  · exact config_reaches (config_paste (config_product (b := 7) host15) corner1)
+  · exact config_reaches (config_paste (config_product (b := 7) host15) corner2)
+  · exact config_reaches (config_paste (config_product (b := 17) host6) corner6)
+  · exact config_reaches (config_paste (config_product (b := 17) host6) corner7)
+  · exact config_reaches (config_paste (config_product (b := 17) host6) corner8)
+  · exact config_reaches (config_paste (config_product (b := 7) host15) corner6)
+  · exact config_reaches (config_paste (config_product (b := 17) host6) corner10)
+  · exact config_reaches (config_paste (config_product (b := 17) host6) corner11)
+  · exact config_reaches (config_product (b := 19) host6)
+  · exact config_reaches (config_paste (config_product (b := 19) host6) corner1)
+  · exact config_reaches (config_paste (config_product (b := 17) host6) corner14)
+  · exact config_reaches (config_paste (config_product (b := 7) host15) host12)
+  · exact config_reaches (config_paste (config_product (b := 7) host15) corner13)
+  · exact config_reaches (config_paste (config_product (b := 7) host15) corner14)
+  · exact config_reaches (config_product (b := 5) host24)
+  · exact config_reaches (config_paste (config_product (b := 19) host6) corner7)
+  · exact config_reaches (config_paste (config_product (b := 19) host6) corner8)
+  · exact config_reaches (config_paste (config_product (b := 19) host6) corner9)
+  · exact config_reaches (config_paste (config_product (b := 19) host6) corner10)
+  · exact config_reaches (config_paste (config_product (b := 19) host6) corner11)
+  · exact config_reaches (config_product (b := 7) host18)
+  · exact config_reaches (config_paste (config_product (b := 19) host6) corner13)
+  · exact config_reaches (config_paste (config_product (b := 19) host6) corner14)
+  · exact config_reaches (config_paste (config_product (b := 5) host24) corner9)
+  · exact config_reaches (config_paste (config_product (b := 5) host24) corner10)
+  · exact config_reaches (config_paste (config_product (b := 5) host24) corner11)
+  · exact config_reaches (config_product (b := 11) host12)
+  · exact config_reaches (config_paste (config_product (b := 7) host18) corner7)
+  · exact config_reaches (config_paste (config_product (b := 7) host18) corner8)
+  · exact config_reaches (config_paste (config_product (b := 5) host24) corner15)
+  · exact config_reaches (config_paste (config_product (b := 5) host24) corner16)
+  · exact config_reaches (config_paste (config_product (b := 7) host18) corner11)
+  · exact config_reaches (config_product (b := 23) host6)
+  · exact config_reaches (config_paste (config_product (b := 7) host18) corner13)
+  · exact config_reaches (config_paste (config_product (b := 7) host18) corner14)
+  · exact config_reaches (config_paste (config_product (b := 7) host18) corner15)
+  · exact config_reaches (config_paste (config_product (b := 11) host12) corner10)
+  · exact config_reaches (config_paste (config_product (b := 11) host12) corner11)
+  · exact config_reaches (config_paste (config_product (b := 11) host12) host12)
+  · exact config_reaches (config_paste (config_product (b := 23) host6) corner7)
+  · exact config_reaches (config_paste (config_product (b := 23) host6) corner8)
+  · exact config_reaches (config_paste (config_product (b := 11) host12) host15)
+  · exact config_reaches (config_paste (config_product (b := 11) host12) corner16)
+  · exact config_reaches (config_paste (config_product (b := 11) host12) corner17)
+  · exact config_reaches (config_product (b := 25) host6)
+  · exact config_reaches (config_paste (config_product (b := 23) host6) corner13)
+  · exact config_reaches (config_paste (config_product (b := 11) host12) corner20)
+  · exact config_reaches (config_paste (config_product (b := 23) host6) corner15)
+  · exact config_reaches (config_paste (config_product (b := 11) host12) corner22)
+  · exact config_reaches (config_paste (config_product (b := 11) host12) corner23)
+  · exact config_reaches (config_product (b := 13) host12)
+  · exact config_reaches (config_paste (config_product (b := 11) host12) corner25)
+  · exact config_reaches (config_paste (config_product (b := 25) host6) corner8)
+  · exact config_reaches (config_paste (config_product (b := 25) host6) corner9)
+  · exact config_reaches (config_paste (config_product (b := 25) host6) corner10)
+  · exact config_reaches (config_paste (config_product (b := 25) host6) corner11)
+  · exact config_reaches (config_paste (config_product (b := 25) host6) host12)
+  · exact config_reaches (config_paste (config_product (b := 25) host6) corner13)
+  · exact config_reaches (config_paste (config_product (b := 25) host6) corner14)
+  · exact config_reaches (config_product (b := 11) host15)
+  · exact config_reaches (config_paste (config_product (b := 25) host6) corner16)
+  · exact config_reaches (config_paste (config_product (b := 13) host12) corner11)
+  · exact config_reaches (config_product (b := 7) host24)
+  · exact config_reaches (config_paste (config_product (b := 13) host12) corner13)
+  · exact config_reaches (config_paste (config_product (b := 13) host12) corner14)
+  · exact config_reaches (config_paste (config_product (b := 13) host12) host15)
+  · exact config_reaches (config_paste (config_product (b := 13) host12) corner16)
+  · exact config_reaches (config_paste (config_product (b := 13) host12) corner17)
+  · exact config_reaches (config_product (b := 29) host6)
+  · exact config_reaches (config_paste (config_product (b := 13) host12) corner19)
+  · exact config_reaches (config_paste (config_product (b := 13) host12) corner20)
+  · exact config_reaches (config_paste (config_product (b := 11) host15) host12)
+  · exact config_reaches (config_paste (config_product (b := 13) host12) corner22)
+  · exact config_reaches (config_paste (config_product (b := 13) host12) corner23)
+  · exact config_reaches (config_paste (config_product (b := 13) host12) host24)
+  · exact config_reaches (config_paste (config_product (b := 11) host15) corner16)
+  · exact config_reaches (config_paste (config_product (b := 11) host15) corner17)
+  · exact config_reaches (config_paste (config_product (b := 7) host24) host15)
+  · exact config_reaches (config_paste (config_product (b := 7) host24) corner16)
+  · exact config_reaches (config_paste (config_product (b := 7) host24) corner17)
+  · exact config_reaches (config_product (b := 31) host6)
+  · exact config_reaches (config_paste (config_product (b := 29) host6) corner13)
+  · exact config_reaches (config_paste (config_product (b := 7) host24) corner20)
+  · exact config_reaches (config_paste (config_product (b := 29) host6) host15)
+  · exact config_reaches (config_paste (config_product (b := 29) host6) corner16)
+  · exact config_reaches (config_paste (config_product (b := 29) host6) corner17)
+  · exact config_reaches (config_paste (config_product (b := 29) host6) host18)
+  · exact config_reaches (config_paste (config_product (b := 29) host6) corner19)
+  · exact config_reaches (config_paste (config_product (b := 31) host6) corner8)
+  · exact config_reaches (config_product (b := 13) host15)
+  · exact config_reaches (config_paste (config_product (b := 29) host6) corner22)
+  · exact config_reaches (config_paste (config_product (b := 31) host6) corner11)
+  · exact config_reaches (config_product (b := 11) host18)
+  · exact config_reaches (config_paste (config_product (b := 31) host6) corner13)
+  · exact config_reaches (config_paste (config_product (b := 31) host6) corner14)
+  · exact config_reaches (config_paste (config_product (b := 31) host6) host15)
+  · exact config_reaches (config_paste (config_product (b := 31) host6) corner16)
+  · exact config_reaches (config_paste (config_product (b := 31) host6) corner17)
+  · exact config_reaches (config_product (b := 17) host12)
+  · exact config_reaches (config_paste (config_product (b := 31) host6) corner19)
+  · exact config_reaches (config_paste (config_product (b := 31) host6) corner20)
+  · exact config_reaches (config_paste (config_product (b := 13) host15) host12)
+  · exact config_reaches (config_paste (config_product (b := 31) host6) corner22)
+  · exact config_reaches (config_paste (config_product (b := 11) host18) corner11)
+  · exact config_reaches (config_product (b := 35) host6)
+  · exact config_reaches (config_paste (config_product (b := 13) host15) corner16)
+  · exact config_reaches (config_paste (config_product (b := 13) host15) corner17)
+  · exact config_reaches (config_paste (config_product (b := 11) host18) host15)
+  · exact config_reaches (config_paste (config_product (b := 11) host18) corner16)
+  · exact config_reaches (config_paste (config_product (b := 11) host18) corner17)
 
 theorem corners17 {m : ℕ} (h : 6 ≤ m) (h' : m ≤ 17) : config m (4*m/3) 13 0 := by
   interval_cases m
-  · exact config_weaken corner6 (by decide) (by decide)
-  · exact config_weaken corner7 (by decide) (by decide)
-  · exact config_weaken corner8 (by decide) (by decide)
-  · exact config_weaken corner9 (by decide) (by decide)
-  · exact config_weaken corner10 (by decide) (by decide)
-  · exact config_weaken corner11 (by decide) (by decide)
-  · exact config_weaken corner12 (by decide) (by decide)
-  · exact config_weaken corner13 (by decide) (by decide)
-  · exact config_weaken corner14 (by decide) (by decide)
-  · exact config_weaken corner15 (by decide) (by decide)
-  · exact config_weaken corner16 (by decide) (by decide)
-  · exact config_weaken corner17 (by decide) (by decide)
+  · exact config_weaken corner6
+  · exact config_weaken corner7
+  · exact config_weaken corner8
+  · exact config_weaken corner9
+  · exact config_weaken corner10
+  · exact config_weaken corner11
+  · exact config_weaken corner12
+  · exact config_weaken corner13
+  · exact config_weaken corner14
+  · exact config_weaken corner15
+  · exact config_weaken corner16
+  · exact config_weaken corner17
 
 theorem corners29 {m : ℕ} (h : 6 ≤ m) (h' : m ≤ 29) : config m (4*m/3) 18 0 := by
   interval_cases m
-  · exact config_weaken corner6 (by decide) (by decide)
-  · exact config_weaken corner7 (by decide) (by decide)
-  · exact config_weaken corner8 (by decide) (by decide)
-  · exact config_weaken corner9 (by decide) (by decide)
-  · exact config_weaken corner10 (by decide) (by decide)
-  · exact config_weaken corner11 (by decide) (by decide)
-  · exact config_weaken corner12 (by decide) (by decide)
-  · exact config_weaken corner13 (by decide) (by decide)
-  · exact config_weaken corner14 (by decide) (by decide)
-  · exact config_weaken corner15 (by decide) (by decide)
-  · exact config_weaken corner16 (by decide) (by decide)
-  · exact config_weaken corner17 (by decide) (by decide)
-  · exact config_weaken corner18 (by decide) (by decide)
-  · exact config_weaken corner19 (by decide) (by decide)
-  · exact config_weaken corner20 (by decide) (by decide)
-  · exact config_weaken corner21 (by decide) (by decide)
-  · exact config_weaken corner22 (by decide) (by decide)
-  · exact config_weaken corner23 (by decide) (by decide)
-  · exact config_weaken corner24 (by decide) (by decide)
-  · exact config_weaken corner25 (by decide) (by decide)
-  · exact config_weaken corner26 (by decide) (by decide)
-  · exact config_weaken corner27 (by decide) (by decide)
-  · exact config_weaken corner28 (by decide) (by decide)
-  · exact config_weaken corner29 (by decide) (by decide)
+  · exact config_weaken corner6
+  · exact config_weaken corner7
+  · exact config_weaken corner8
+  · exact config_weaken corner9
+  · exact config_weaken corner10
+  · exact config_weaken corner11
+  · exact config_weaken corner12
+  · exact config_weaken corner13
+  · exact config_weaken corner14
+  · exact config_weaken corner15
+  · exact config_weaken corner16
+  · exact config_weaken corner17
+  · exact config_weaken corner18
+  · exact config_weaken corner19
+  · exact config_weaken corner20
+  · exact config_weaken corner21
+  · exact config_weaken corner22
+  · exact config_weaken corner23
+  · exact config_weaken corner24
+  · exact config_weaken corner25
+  · exact config_weaken corner26
+  · exact config_weaken corner27
+  · exact config_weaken corner28
+  · exact config_weaken corner29
 
 end OMA.QueenConstruction
 

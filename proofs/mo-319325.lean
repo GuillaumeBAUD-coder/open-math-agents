@@ -1,5 +1,14 @@
 import OMAStatements.S_mo_319325
 
+/-!
+Original counterexample by @Git-Tim1 (PR #10756), to the statement by
+@con123-gif (PR #9686). The alternating triangular Lyapunov construction
+is retained. Positive definiteness uses the finite dot-product criterion
+and two explicit sum-of-squares lower bounds; subsequence uniqueness uses
+Mathlib's filter APIs directly. The alternating scale tends to zero by
+Tendsto.if', eliminating the auxiliary squeeze estimate.
+-/
+
 open Filter Topology
 open scoped MatrixOrder
 
@@ -32,28 +41,12 @@ private lemma t_pos (k : ℕ) : 0 < t k := by
   · have hs := s_pos k
     linarith
 
-private lemma t_le (k : ℕ) : t k ≤ (3 / 2 : ℝ) * s k := by
-  unfold t
-  split_ifs
-  · have hs := s_pos k
-    linarith
-  · exact le_rfl
-
 private lemma A_hurwitz : OMA.S_mo_319325.hurwitz A := by
   intro z hz
-  rw [spectrum.mem_iff] at hz
-  have hdet : (algebraMap ℂ (Matrix (Fin 2) (Fin 2) ℂ) z - A.map Complex.ofReal).det = 0 := by
-    by_contra hne
-    exact hz ((Matrix.isUnit_iff_isUnit_det _).mpr (isUnit_iff_ne_zero.mpr hne))
-  have hcalc :
-      (algebraMap ℂ (Matrix (Fin 2) (Fin 2) ℂ) z - A.map Complex.ofReal).det = (z + 1) ^ 2 := by
-    rw [Matrix.det_fin_two]
-    simp [A, Algebra.algebraMap_eq_smul_one]
-    ring
-  rw [hcalc, sq] at hdet
-  have hz1 : z + 1 = 0 := mul_self_eq_zero.mp hdet
-  have hz' : z = -1 := eq_neg_of_add_eq_zero_left hz1
-  simp [hz']
+  rw [spectrum.mem_iff, Matrix.isUnit_iff_isUnit_det, isUnit_iff_ne_zero, not_not] at hz
+  have heq : z + 1 = 0 := sq_eq_zero_iff.mp (by
+    convert hz using 1; simp [Matrix.det_fin_two, A, Algebra.algebraMap_eq_smul_one]; ring)
+  simp [eq_neg_of_add_eq_zero_left heq]
 
 private lemma P_posDef (k : ℕ) : (P k).PosDef := by
   rw [P, Matrix.posDef_diagonal_iff]
@@ -63,38 +56,22 @@ private lemma P_posDef (k : ℕ) : (P k).PosDef := by
   · exact pow_pos (t_pos k) 2
 
 private lemma X_posDef (k : ℕ) : (X k).PosDef := by
-  refine ⟨?_, ?_⟩
-  · ext i j
-    fin_cases i <;> fin_cases j <;> simp [X]
+  apply Matrix.PosDef.of_dotProduct_mulVec_pos
+  · ext i j; fin_cases i <;> fin_cases j <;> simp [X]
   · intro x hx
-    have hsum : (x.sum fun i xi => x.sum fun j xj => star xi * X k i j * xj) =
-        (2 * s k ^ 2 - t k ^ 2 / 2) * (x 0) ^ 2 + 2 * t k ^ 2 * (x 1 - x 0 / 2) ^ 2 := by
-      rw [Finsupp.sum_fintype _ _ (by simp)]
-      simp only [Fin.sum_univ_two]
-      rw [Finsupp.sum_fintype _ _ (by simp), Finsupp.sum_fintype _ _ (by simp)]
-      simp [Fin.sum_univ_two, X]
-      ring
-    rw [hsum]
-    have hs : 0 < s k := s_pos k
-    have ht : 0 < t k := t_pos k
-    have htle : t k ≤ (3 / 2 : ℝ) * s k := t_le k
-    have htsq : t k ^ 2 ≤ (9 / 4 : ℝ) * s k ^ 2 := by nlinarith
-    have hc1 : 0 < 2 * s k ^ 2 - t k ^ 2 / 2 := by nlinarith
-    have hc2 : 0 < 2 * t k ^ 2 := by positivity
-    by_cases h0 : x 0 = 0
-    · have h1 : x 1 ≠ 0 := by
-        intro h1
-        apply hx
-        ext i
-        fin_cases i
-        · exact h0
-        · exact h1
-      have h1sq : 0 < (x 1) ^ 2 := sq_pos_of_ne_zero h1
-      simp only [h0]
-      nlinarith
-    · have h0sq : 0 < (x 0) ^ 2 := sq_pos_of_ne_zero h0
-      have hsq2 : 0 ≤ (x 1 - x 0 / 2) ^ 2 := sq_nonneg _
-      nlinarith
+    have hne : x 0 ≠ 0 ∨ x 1 ≠ 0 := by
+      by_contra! h
+      exact hx (by ext i; fin_cases i <;> simp [h])
+    have hsum : 0 < x 0 ^ 2 + x 1 ^ 2 := by
+      rcases hne with h | h <;> nlinarith [sq_pos_of_ne_zero h, sq_nonneg (x 0), sq_nonneg (x 1)]
+    have hs : 0 < s k ^ 2 := sq_pos_of_pos (s_pos k)
+    simp only [dotProduct, Matrix.mulVec, Fin.sum_univ_two, Pi.star_apply, star_trivial]
+    change 0 < x 0 * (2 * s k ^ 2 * x 0 + -(t k ^ 2) * x 1) +
+      x 1 * (-(t k ^ 2) * x 0 + 2 * t k ^ 2 * x 1)
+    unfold t
+    split_ifs
+    · nlinarith [mul_pos hs hsum, mul_nonneg hs.le (sq_nonneg (x 0 - x 1))]
+    · nlinarith [mul_pos hs hsum, mul_nonneg hs.le (sq_nonneg (2 * x 0 - 3 * x 1))]
 
 private lemma lyapunov (k : ℕ) : A * P k + P k * A.transpose = -(X k) := by
   ext i j
@@ -140,13 +117,9 @@ private lemma tendsto_s_sq : Tendsto (fun k => s k ^ 2) atTop (𝓝 0) := by
   simpa using tendsto_s.pow 2
 
 private lemma tendsto_t_sq : Tendsto (fun k => t k ^ 2) atTop (𝓝 0) := by
-  refine squeeze_zero (g := fun k => (9 / 4 : ℝ) * s k ^ 2)
-    (fun k => sq_nonneg (t k)) (fun k => ?_) ?_
-  · have hs := s_pos k
-    have ht := t_pos k
-    have htle := t_le k
-    nlinarith
-  · simpa using tendsto_s_sq.const_mul (9 / 4 : ℝ)
+  have ht : Tendsto t atTop (𝓝 0) :=
+    tendsto_s.if' (by simpa using tendsto_s.const_mul (3 / 2 : ℝ))
+  simpa using ht.pow 2
 
 private lemma tendsto_P : Tendsto P atTop (𝓝 0) := by
   refine tendsto_pi_nhds.mpr fun i => tendsto_pi_nhds.mpr fun j => ?_
@@ -199,16 +172,10 @@ theorem OMA.disproof : ¬ (type_of% @OMA.S_mo_319325.main) := by
       rw [Nat.not_even_iff_odd]
       exact ⟨m, rfl⟩
     simp [OMA.Mo319325.t, hnot, hsm]
-  have hL1 : L 0 1 = (-1 : ℝ) := by
-    have h1 := h01.comp heven_tendsto
-    have h2 : Tendsto (fun _ : ℕ => (-1 : ℝ)) atTop (𝓝 (-1 : ℝ)) := tendsto_const_nhds
-    change Tendsto (fun m => OMA.S_mo_319325.normalized (OMA.Mo319325.P (2 * m)) (OMA.Mo319325.X (2 * m)) 0 1) atTop (𝓝 (L 0 1)) at h1
-    rw [heven_val] at h1
-    exact tendsto_nhds_unique h1 h2
-  have hL2 : L 0 1 = (-(3 / 2 : ℝ)) := by
-    have h1 := h01.comp hodd_tendsto
-    have h2 : Tendsto (fun _ : ℕ => (-(3 / 2 : ℝ))) atTop (𝓝 (-(3 / 2 : ℝ))) := tendsto_const_nhds
-    change Tendsto (fun m => OMA.S_mo_319325.normalized (OMA.Mo319325.P (2 * m + 1)) (OMA.Mo319325.X (2 * m + 1)) 0 1) atTop (𝓝 (L 0 1)) at h1
-    rw [hodd_val] at h1
-    exact tendsto_nhds_unique h1 h2
+  have hL1 : L 0 1 = (-1 : ℝ) :=
+    tendsto_nhds_unique (by simpa only [Function.comp_def, heven_val] using h01.comp heven_tendsto)
+      tendsto_const_nhds
+  have hL2 : L 0 1 = (-(3 / 2 : ℝ)) :=
+    tendsto_nhds_unique (by simpa only [Function.comp_def, hodd_val] using h01.comp hodd_tendsto)
+      tendsto_const_nhds
   linarith

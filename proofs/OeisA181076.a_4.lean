@@ -1,34 +1,19 @@
 import FormalConjectures.OEIS.«181076»
 
+/-! Only finitely many powers contribute; evaluate the surviving coefficients directly. -/
 
-open PowerSeries OeisA181076
-
-namespace OMA.A181076
-
-lemma subst_coeff_sum (g f : ℚ⟦X⟧) (hg : g.constantCoeff = 0) (n : ℕ) :
-    coeff n (subst g f) = ∑ d ∈ Finset.range (n+1), coeff d f * coeff n (g^d) := by
-  rw [coeff_subst' (HasSubst.of_constantCoeff_zero' hg)]
-  simp only [smul_eq_mul]
-  apply finsum_eq_sum_of_support_subset
-  intro d hd
-  apply Finset.mem_range.mpr
-  by_contra hn
-  have hnd : n < d := by omega
-  have hz : coeff n (g^d) = 0 := coeff_of_lt_order _
-    ((by exact_mod_cast hnd : (n : ℕ∞) < d).trans_le
-      (le_order_pow_of_constantCoeff_eq_zero d hg))
-  exact hd (by simp [hz])
-
-lemma log_const (f : ℕ → ℕ → ℤ) : (hannaLog f).constantCoeff = 0 := by
-  simp [hannaLog, ← coeff_zero_eq_constantCoeff_apply]
-
-end OMA.A181076
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 1000000 in
+open PowerSeries OeisA181076 in
 theorem OMA.solution : type_of% @OeisA181076.a_4 := by
   unfold a hannaExp
-  rw [OMA.A181076.subst_coeff_sum _ _ (OMA.A181076.log_const _) 4]
-  norm_num [Finset.sum_range_succ, coeff_exp, pow_succ, coeff_mul,
-    Finset.Nat.antidiagonal_succ, Finset.Nat.antidiagonal_zero,
-    hannaLog, coeff_mk, Finset.sum_Icc_succ_top, Nat.factorial]
+  rw [coeff_subst' (.of_constantCoeff_zero' (by simp [hannaLog])),
+    finsum_eq_sum_of_support_subset (s := Finset.range 5)]
+  · simp [Finset.sum_range_succ, coeff_exp, pow_succ, coeff_mul,
+      Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk, Nat.factorial]
+    norm_num [hannaLog, Finset.sum_Icc_succ_top]
+  · intro d hd
+    by_contra h
+    apply hd
+    apply smul_eq_zero_of_right
+    exact X_pow_dvd_iff.1 (pow_dvd_pow_of_dvd (X_dvd_iff.2 (by simp [hannaLog])) d)
+      4 (by simp at h; omega)
+

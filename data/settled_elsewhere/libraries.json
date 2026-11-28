@@ -1,0 +1,1965 @@
+{
+ "about": "Open problems of the catalogue already proved or refuted in a public proof library or source (trureturing, thatnealpatel/proofs, rbajaj5/a183068-supercongruence, OEIS entries, Zenodo preprints), checked against the exact statement on 28 Nov 2026. scripts/build_data.mjs relabels them known results; the desk does not hand them out.",
+ "entries": {
+  "oeis-a258903": {
+   "reason": "Sorry-free theorem `result` proves for every m>0 an onset N and period T | phi(m) (built with T = phi(m)) with a258903(n+T) == a258903(n) mod m; same formula as the site, so period phi(M) follows trivially.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d/D5/S1/Recurrence/Periodic/BalaDivisorFactorialTotientPeriod.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a065091": {
+   "reason": "Sorry-free `conjecture_false` refutes Ordowski's conjecture: for p=198139 the odd composite m=198151 < 198173 (next prime) satisfies the same congruence, contradicting the site's second conjunct.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2/Proofs/NumberComplexity/A065091Refutation.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a119259": {
+   "reason": "Informal proof candidate: every ray of A119258 has the cubic tower a(np^r) == a(np^(r-1)) mod p^(3r) for all p >= 5, which the note says closes A119259. Part (1), a(p) == 3 mod p^3, is the case n=k=1 since a(1)=3.",
+   "source": "https://github.com/rbajaj5/a183068-supercongruence/blob/main/related-results/BalaAugustCoefficientPacket.md",
+   "date": "2026-11-28"
+  },
+  "oeis-a364515": {
+   "reason": "Informal proof candidate: the rational gamma-ratio theorem gives the full p^(3r) tower for p >= 5 on every row s >= 3 of A364513. The note says explicitly that this proves the conjectures on A364515 (row 4) through A364517.",
+   "source": "https://github.com/rbajaj5/a183068-supercongruence/blob/main/related-results/RationalGammaRatioCubicTowers.md",
+   "date": "2026-11-28"
+  },
+  "oeis-a397345": {
+   "reason": "Sorry-free `parity_q5` proves a(5,n) odd iff n+1 = 2^k. `source_iff` identifies a(5,.) as the unique solution of Hanna's exp equation with weight (5n^2-1)/(5n^2). This is the same sequence the site encodes by its integer (U, L) recursion.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d/D5/S1/Recurrence/Residue/ParametricExponentialSquareCongruence.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a397348": {
+   "reason": "Sorry-free `parity_q3` and `source_iff` (q=3): any f with mk f = exp(x + sum (3n^2-1)/(3n^2) f(n) x^n) equals a(3,.), and a(3,n) is odd iff n+1 = 2^k. This is exactly the site's statement.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d/D5/S1/Recurrence/Residue/ParametricExponentialSquareCongruence.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a231329": {
+   "reason": "Sorry-free `result_a231329`: 23 | 19^k+4^k and Prime((19^k+4^k)/23) imply Prime k. This is identical to the site's statement.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d/D5/S3/Arith/Congruence/PricePrimeQuotientExponent.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a363560": {
+   "reason": "Sorry-free `hanna_conjecture` gives 3 | a(n) for n>0 with n%7 != 1. `generating_unique` shows that any integer series with A(0)=1 and A^3 = 1+X(A+A^2+A^9) is the library's series, which covers the site's universally quantified A.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d/D5/S1/Recurrence/Invariants/CubicNinthPowerSubstitutionModThree.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a003319": {
+   "reason": "Sorry-free `result` proves that c(n) (number of indecomposable permutations of Fin n) equals U(n-2,0) for n >= 2, with U the same A370380 recurrence as the site's. The library's iff invariance condition is equivalent to the site's 'maps [0,j) into [0,j)' for bijections.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d/D5/S1/Recurrence/Algebraic/IndecomposablePermutationDoubleArray.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a188475": {
+   "reason": "Sorry-free `result` uses the identical q and hankel definitions and proves det(hankel(n+1)) = (2n^3+3n^2+n+3)/3 for all n. This is verbatim the site's statement.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d/D5/S3/Combinatorics/CatalanPowerHankel/BarryA188475.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a363559": {
+   "reason": "Sorry-free OeisA363559PowerOfTwo.result and OeisA363559Prime.result (via coeffA_pow_two / coeffA_prime in OeisA363558PowerOfTwo.lean) prove a(2^n)=9^(2^n) for n>0 and a(p)=p*3^(p-1)+9^p for primes p>3. The bilateral series is the same as the site's, computed over C instead of Z.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d/D5/S1/Recurrence/HannaBilateral/OeisA363559Prime.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a242258": {
+   "reason": "Despite the 'Sorry' folder, the file has no sorry or axiom. `A242258_conjecture` proves greedyResidue (P n) [P(n-1),...,P(1)] = 0 for n >= 3, with the same foldl 'subtract if <=' algorithm and partition counts as the site.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2/Proofs/Sorry/Combinatorics/A242258DistinctGreedyAlgorithm.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a343502": {
+   "reason": "Sorry-free `result` proves that every k >= 1 with tau(tau k) and tau(k+1) prime, other than 2 and 3, is composite. The site's extra case k=0 is vacuous because tau(tau 0)=0 is not prime.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d/D5/S3/Arith/Divisors/OeisA343502DivisorCountPrimes.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a363569": {
+   "reason": "Sorry-free OeisA363569PowerOfTwo.result and OeisA363569Prime.result (coeffA with c = i over C) prove a(2^n)=1 for n>0 and a(p)=p(-1)^((p-1)/2)-1 for primes p>3. This is the same bilateral series and the same pair of claims as the site.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d/D5/S1/Recurrence/HannaBilateral/OeisA363569Prime.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a007228": {
+   "reason": "Sorry-free `a_odd_iff`, with the same a(n) = 3*C(4n,n)/(n+1), proves for n >= 1 that a(n) is odd iff n = 4m+3 with C(4m+3,m) odd. This is the site's statement.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2/Proofs/Enumerative/A007228FibbinaryParity.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a088212": {
+   "reason": "Sorry-free `seidov_conjecture`, with the same a n = sInf {k | 1<k and n+k^2 prime}, proves that every k >= 2 equals a n for some n >= 1 (by CRT plus Dirichlet). This is identical to the site's statement.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2/Proofs/Enumerative/A088212MinPrimeEquals.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a228558": {
+   "reason": "Sorry-free `result_a228558`: 21 | 17^k+4^k and Prime((17^k+4^k)/21) imply Prime k. This is identical to the site's statement.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d/D5/S3/Arith/Congruence/PricePrimeQuotientExponent.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a007820": {
+   "reason": "Sorry-free `result` proves (2n+1)^2 | Nat.stirlingSecond (2(2n+1)) (2n+1) for all n. This is verbatim the site's statement.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d/D5/S1/Recurrence/Parity/CentralStirlingOddSquareDivisibility.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a117187": {
+   "reason": "Sorry-free `result` proves Mathar's recurrence, with the same coefficients as the site, for the coefficients of (1+X)c(X^2)/((1-X^2c(X^2))sqrt(1-4X^2)) for all n >= 3, including uniqueness of the square-root branch. The site's Q-series hypotheses pin down the same unique G, so only a routine Z-to-Q transfer is left.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d/D5/S3/Constants/Moments/A117187MatharRecurrence.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a221130": {
+   "reason": "Sorry-free `a221130_isLeast` proves IsLeast {w | for all i<n, InT (w+i)} (2^(2n-1)+n) for n >= 1. InT matches the site's IsForm, so this is identical to the site's statement.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2/Proofs/Combinatorics/A221130LeastLie.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a289916": {
+   "reason": "Sorry-free `result` proves that the coefficients of Barker's rational g.f. are strictly increasing. Deriving Barker's g.f. from the NAME definition (reciprocal of the rounded alternating series) is not in Lean but is proved in Ma-Zhang, doi:10.5281/zenodo.24369110 (Corollary 8), and is routine because round(9(k+1)/7) is quasi-linear.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d/D5/S1/Recurrence/Algebraic/OEISA289916StrictIncrease.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a059894": {
+   "reason": "Sorry-free `result` proves both Stephan conjectures (the recurrence for a(2n), a(2n+1), and wt(a n) = wt(A054429 n) = zeros(n)+1) for the same digit-list definition of a. The library's complementRest equals the site's rev on n >= 1.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d/D5/S1/Digit/StephanComplementReverseRecurrence.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a084261": {
+   "reason": "Sorry-free `result` proves Mathar's recurrence 2a(n) - 4a(n-1) + (2-n)a(n-2) + (n-2)a(n-3) = 0 for n >= 3, with a(n) = sum C(n,2k) k!. This is the site's binomial transform of interlaced factorials, and n = k+3 gives the site's form.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d/D5/S1/Recurrence/MatharA084261.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a002067": {
+   "reason": "Sorry-free `result` proves that every sequence with a(0)=1 and the site's recurrence equals the hafnian of u(i,j)=i over perfect matchings of Fin(2n), and also a weighted Dyck sum. The site's sum over fixed-point-free involutions is the same as the library's sum over perfect-matching subgraphs (standard bijection).",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d/D5/S3/Combinatorics/PerfectMatchings/CallanA002067Hafnian.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a386830": {
+   "reason": "Sorry-free `result` proves Mathar's recurrence 8n(2n-3)a(n) + 6(-108n^2+207n-80)a(n-1) + 405(3n-2)(3n-4)a(n-2) = 0 for n >= 2, with the same a(n). The site's polynomial coefficients are these products expanded.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d/D5/S3/ArithSums/MatharA386830.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a274010": {
+   "reason": "Sorry-free `stechkin_eq_tau_add_tau_sub_two` proves a(n) = tau(n) + tau(n-1) - 2 in Z for n >= 2, with the identical filter definition. This is verbatim the site's statement.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2/Proofs/NumberComplexity/A274010FloorStechkinFunction.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a008368": {
+   "reason": "Sorry-free `result` proves (1-X)(1-X^2)^2(1-X^3) * sum A(n)X^n = 1-X^5, where A(n) counts signed-permutation orbits on the fcc contact-graph shell at distance n. Each orbit has a unique sorted nonnegative representative, so this is the site's count up to a routine bridge.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d/D5/S3/StatisticalMechanics/FccPointGroupShells.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a379764": {
+   "reason": "Sorry-free `result` proves that a normalized solution of Hanna's bilateral theta_4 equation exists and that every rational solution has integer coefficients satisfying both conjectures (odd iff square; == (-1)^(n-1) mod 4 iff square; 4 | a(n) otherwise). The site's integer formulation forces a(1)=1, so it is covered.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d/D5/S1/Recurrence/Bilateral/HannaThetaFourModFour.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a396844": {
+   "reason": "REFUTED. Sorry-free `hanna_conjecture_false` with `generating_equation` shows that the unique integer solution of A(xA - 4xA^2) = x^2 has a(17) == 4 mod 16, although 17 is not of the form 2*4^k+1. This falsifies the site's 'otherwise 16 | a(n)' clause.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d/D5/S1/Recurrence/Parity/ScaledQuadraticReversionModSixteen.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a393173": {
+   "reason": "Sorry-free `result` proves existence of A in Q[[X]] with A(0)=1 and [x^n] 1/(A - n^2 x) = 0, and that every such A has integer coefficients with a(n) odd iff n is a power of 2. The site's Z-series version maps into this, since A - n^2X is a unit.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d/D5/S1/Recurrence/Invariants/HannaA393173PowerTwoParity.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a387118": {
+   "reason": "Sorry-free `result` proves that the count of partitions with non-choosable initial intervals (decreasing order) equals the count with non-superdiagonal increasing listing. The predicates ChoosableInitial and Superdiagonal are verbatim the site's.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d/D5/S1/Words/Compositions/WisemanA387118.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a288476": {
+   "reason": "Sorry-free `result` proves that the length of the n-th iterate of the same left-to-right scanner from 00 equals the recurrence a(n+3)=a(n+2)+4a(n+1)-2a(n) with initial values 2,4,8. Both the scanner and the recurrence match the site's.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d/D5/S1/Words/KimberlingA288476Length.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a341249": {
+   "reason": "REFUTED. Sorry-free `conjecture_false` gives the counterexample n=2: a(2)=6 and rs*2 - a(2) = 4*sqrt2 - 2 > 2, with the same r, s, a as the site. trureturing D5/S0/Certificates/KimberlingA341249BoundRefutation.lean also refutes it.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2/Proofs/Enumerative/A341249Refutation.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a270236": {
+   "reason": "Sorry-free `mathar_f1` proves T(n,n-1) = 2 + n(n-1)/2, and `mathar_f2` proves T(n+1,n-1) = 2 + n(n+1)(3n^2-5n+26)/24 in N, both for n>1, over RGF words (stored reversed, which does not change label counts). The N quotient is exact, so the site's Q form follows.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d/D5/S1/Recurrence/Invariants/RestrictedGrowthLabelOccurrences.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a104863": {
+   "reason": "REFUTED. Sorry-free `result : ¬ claim`, with the identical definition of a and the same claim for n >= 17, shows the claim fails at n=17 (a(17)=935, but a(15)+a(13)+1=937).",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d/D5/S0/Certificates/StephanFloorSqrtRecurrenceRefutation.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a393170": {
+   "reason": "Sorry-free `a393170_conjecture` proves that every A in Z[[X]] with A(0)=1 and [x^n] invOfUnit(A - nX) = 0 for n>0 has a(n) odd iff n is a power of 2. Ring.inverse equals invOfUnit here, so this is the site's statement.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d/D5/S3/Arith/SelfReferentialInverseSeriesParity.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a365794": {
+   "reason": "REFUTED. Sorry-free `conjecture_false` uses the OEIS Stirling-sum formula a(n) = sum 2^(n-k) prod(4j+3) S2(n,k): all terms are odd and a(n+2) == -a(n) mod 4, so no period dividing phi(4)=2 exists. The identification with the e.g.f. (3-2e^(2x))^(-3/4) is a routine e.g.f. computation that is not formalized there.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2/Proofs/Enumerative/A365794Refutation.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a026002": {
+   "reason": "Sorry-free `bergot_conjecture` proves m(n,n) = D(n-1,n+1) for n >= 1. Bergot's array has the same border n(n-1)+1 and interior recurrence as the site's mm, and the Delannoy recurrence matches the site's D.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2/Proofs/Enumerative/A026002DelannoyBergot.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a116387": {
+   "reason": "Sorry-free `result` proves Mathar's six-term recurrence for n >= 5 for the coefficients of 1/(sqrt(1-2x-3x^2)(2-M)), with the square root and the Motzkin series characterized uniquely as in the site. The site's expanded coefficients equal Mathar's factored ones.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d/D5/S1/Recurrence/Algebraic/MatharA116387SixTermRecurrence.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a107099": {
+   "reason": "Sorry-free `result` proves that the half-iterate A(A(x)) = x+4x^3 (with a(1)=1) exists, has integer coefficients, and has [x^n]A == 0 mod 3 unless n = 3^k. The library's IsGF also asks for an odd series, but its public `half_unique` needs only A(0)=0, A'(0)=1 and the equation, so the site's version follows.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d/D5/S1/Recurrence/Invariants/HannaHalfIterateCubicModThree.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a131853": {
+   "reason": "Sorry-free `zumkeller_a131853` proves z m = 0 implies 5 | m for all m. The library's z (binaryRec: bit + i*w) is the same map as the site's (n%2 - w.im, w.re).",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d/D5/S1/Digit/ZumkellerBinaryGaussianEvaluationZeroMultipleOfFive.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a393867": {
+   "reason": "Sorry-free `a393867_odd` (all terms odd) and `hanna_conjecture` in PrimePowerShiftLogDerivative.lean (prime(n) | a393867(n) for n>1) cover both parts, with a393867 n = [x^(n-1)] F'/F = [x^n] XF'/F. `generating_unique` covers any F with F(0)=1 satisfying the recurrence.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d/D5/S1/Recurrence/Parity/PrimePowerShiftLogDerivativeOdd.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a007226": {
+   "reason": "Sorry-free `a_odd_iff`, with the same a(n) = 2C(3n,n)/(n+1), proves a(n) odd iff n = 4m+1 with m Fibbinary. This is trivially equivalent to the site's 'n odd and n AND n/2 = 0' (odd Fibbinary numbers are exactly 4m+1 with m Fibbinary).",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2/Proofs/Enumerative/A007226FibbinaryParity.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a113409": {
+   "reason": "Sorry-free `result`, with the same binomial-sum a(n), proves Mathar's recurrence (n+2)a(n) - 2(n+1)a(n-1) + (n-4)a(n-2) + 2a(n-3) + 4(2-n)a(n-4) = 0 for all n >= 4. This is verbatim the site's statement.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d/D5/S1/Recurrence/MatharCentralBinomialTransformRecurrence.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a274479": {
+   "reason": "Sorry-free `result` proves that A(x)^2 = A(x^2/(1-2x-4x^2)) with A(0)=0, a(1)=1 has a solution and that every rational solution has integer coefficients == 1 mod 3 for n >= 1. The site's Z version maps to such a solution.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d/D5/S1/Recurrence/Invariants/HannaGeometricSquareSubstitutionModThree.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a164660": {
+   "reason": "Sorry-free `result` proves Browne's a(n+1) = floor product = (-1)^(n/rad n). The lemma row_sum_evaluation (private, sorry-free) gives the integral of T_(n+1) by n mod 4, which matches Lang's closed form for r(m), m >= 2; r(0)=1 and r(1)=1/2 are direct. The site's moment equals the library's rowSum.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d/D5/S3/ArithSums/BrowneA164660ChebyshevFloorProduct.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a298865": {
+   "reason": "Sorry-free `a298865_conjecture` proves that for positive nonsquare n, x^2-y^2=n has a unique solution with x>y>=0 iff n is a prime or 4*prime and n != 2. The site's unrestricted-n iff follows, since primes and 4p are positive nonsquares and 0 is a square.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2/Proofs/NumberComplexity/A298865PerfectSquareThere.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a054656": {
+   "reason": "Sorry-free `a_eq_entry` proves the exact case split (2 if n-6 and n-4 are both prime; 1 if one of n-6, n-4, n-1 is prime; else 0) for n >= 23. Its `a` counts the same primes <= n absent from every distinct-prime partition as the site's ncard.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2/Proofs/Enumerative/A054656PrimesOccurPartition.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a069187": {
+   "reason": "REFUTED as printed. The library is sorry-free despite its folder name. `a069187_iff` proves core(k) = ceil(sqrt k) iff k=1 or k=s^2(s^2+1) with s^2+1 squarefree, and `one_mem_not_A071253` shows that k=1 is a term not of the form m^2(m^2+1), so the site's literal iff fails at n=1.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2/Proofs/Sorry/Enumerative/A069187PositiveSatisfyCore.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a395833": {
+   "reason": "Both site clauses are proved sorry-free in trureturing: hanna_conjecture_a395833 gives (2n-1) | a(n) for n>=1 (DiagonalExponentSelfDivisibility) and 3 | a(n) for n>=2 (NegativePowerDiagonalModPrime, p=3 instance of the general diagonal theorem).",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S1/Recurrence/Residue/DiagonalExponentSelfDivisibility.lean https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S1/Recurrence/Residue/NegativePowerDiagonalModPrime.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a046699": {
+   "reason": "Sorry-free theorem conolly_succ_eq_add_limitWord: a(n+1) = a(n) + A215530(a(n)+n) for n>=1, with a computed by the Conolly recurrence and A215530 as the limit of 01 under s -> s s 0; exactly the site's statement.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/Combinatorics/A046699ConollyOffsetLimit.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a379204": {
+   "reason": "Sorry-free hanna_conjecture (a(n) even for n>1) and hanna_conjecture_mod_four (a(n) = 2 mod 4 iff n=(k-1)^2+1, k>1) for the unique solution of the same bilateral functional equation (finite-window encoding, with generating_unique); same two conjectures as the site.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S1/Recurrence/Parity/BilateralQuarticPowerThetaModFour.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a094603": {
+   "reason": "Sorry-free rightRun_eq_rightRun_two_pow_padicValNat: the rightmost black run in row n of Rule 30 equals that of row 2^(v2 n) for all n>=1, i.e. a(n)=A094604(A007814(n)); same as the site.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/Combinatorics/A094603LengthRightmostRun.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a100056": {
+   "reason": "Sorry-free refutation conjecture_false: at n=5, p(5)=(5,2,4,1,3) gives a(5)=10 but permutation (3,1,5,2,4) has jump sum 11, so the site's IsGreatest claim is false (checked by hand).",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/Sorry/Combinatorics/A100056Refutation.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a363104": {
+   "reason": "Sorry-free hanna_conjecture: for n>=1, a(n) = 2 mod 4 iff n is a square and = 0 mod 4 iff nonsquare, for the unique solution (generating_unique) of the same bilateral equation in finite-window form; matches the site's statement.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S1/Recurrence/Bilateral/BilateralQuarterShiftThetaModFour.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a288470": {
+   "reason": "Paper proof (not Lean; labelled 'complete proof candidate', review pending) of a(mp^r) = a(mp^(r-1)) mod p^(2r) for every odd prime p and m,r>=1, via Legendre carries plus Jacobsthal-Kazandzidis; this implies the site's p>=5 statement and the argument checks out on reading.",
+   "source": "https://github.com/rbajaj5/a183068-supercongruence/blob/e6955c6a329a713e7ed7b3f1dca165f587131c90/related-results/A288470OddPrimeTower.md",
+   "date": "2026-11-28"
+  },
+  "oeis-a388713": {
+   "reason": "Sorry-free WisemanA388713.result: for all n,k the number of partitions of n with max k whose ascending parts are superdiagonal equals the number with max k whose descending parts have choosable initial intervals (pointwise equivalence from WisemanA388712, also sorry-free); same identity as the site.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S1/Words/Compositions/WisemanA388713.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a004981": {
+   "reason": "Sorry-free bala_conjecture / a_prime_mul_modEq: a(pn) = a(n) mod p^2 for every prime p = 1 mod 4, with the identical definition a(n) = 2^n prod(4k+1)/n! in N; exactly the site's statement.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/Enumerative/A004981ProdPrimePeter.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a210445": {
+   "reason": "Theorem sun_conjecture proves a(n)<n for n>1 and 2a(n)<n for n>47 (least k with kn practical) via Melfi's lemma; it sits in the library's Proofs/Sorry tree only because a shared import carries an unrelated quarantined sorry (Coleman's conjecture), which the proof does not use per the file's axiom notes.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/Sorry/Enumerative/A210445MinPracticalSun.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a399155": {
+   "reason": "Sorry-free stepsMax_le_stepsMin: for n>=2 the largest-prime-factor subtraction walk takes no more steps to reach 0 than the smallest-prime-factor walk; same claim as the site (fuel-based step count is equivalent).",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/NumberComplexity/A399155CountsStepsReach.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a126762": {
+   "reason": "Sorry-free refutation: at n=363 the least k>363 with 363^k mod k = 363 is 366, but 363^365 mod 366 = 123 != 1, so the two least witnesses differ and the site's statement is false.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S0/Certificates/OrdowskiLeastWitnessRefutation.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a239907": {
+   "reason": "Sorry-free result: n - sum_k (-1)^(k+1) cn(n,k) = n - b(n), with b(n) counting i < n.size where v2(floor(n/2^i)+1) is odd. That is the site's A329320 under its own valuation definition of A035263; the index ranges differ only by zero terms.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S1/Digit/KurkovRunAlternatingCount.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a130095": {
+   "reason": "Both libraries prove sorry-free that a(n)/a(n-1) tends to phi^2 for a(n) = sum over d|n of F(2d-1), the same definition and limit as the site.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S3/Arith/Divisors/OeisA130095RatioLimit.lean https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/Enumerative/A130095SumTendsPhi.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a373725": {
+   "reason": "Sorry-free A011776_four_mul_sq_sub_one_eq: for prime p != 3 with 2p-1 prime, the largest e with n^e | n! is equal at n=4p^2-1 and n=4p^2. This agrees with the site's multiplicity n n! for n>=2.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/NumberComplexity/A373725MaxPrimeAlso.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a299406": {
+   "reason": "Sorry-free result: A(n) = liouville(n) * B(n) for n>0, with A = zeta*lift6 zeta*lift2 mu*lift3 mu (the Dirichlet-series coefficients) and B = mu*lift3 zeta (A210826). The site's defining identities force a=A and b=B by inverting units, so this trivially implies the site's claim.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S3/Arith/SchulteLiouvilleCubeMobius.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a294417": {
+   "reason": "Sorry-free conjecture_A294417: a(n+1)/a(n) -> golden ratio (error <= 18/n) for the entry's mex-defined complementary pair. The library does not formally show that every complementary pair satisfying the site's hypotheses is that pair; this is a routine induction, since b(n) must be the next non-a value, but a formal bridge is still needed.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/Analysis/A294417DefineComplementaryLeast.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a389542": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: The linked blueprint page documents the-omega-institute/trureturing D5/S1/Recurrence/Parity/QuadraticSquareReversionModFour.lean. That file proves hanna_conjecture (a(n) mod 4 = 2 iff n = 2^k+1, else 0) for the normalized solution, plus generating_unique, so the result holds for every A in the site's hypothesis. Its two-file closure contains no sorry or axiom. The math (A = X + 2XK mod 4 with K the Catalan series) is correct, and I confirmed the pattern numerically to n=44.",
+   "source": "https://the-omega-institute.github.io/trureturing-mdbook/Blueprint/D5/S1/Recurrence/Parity/QuadraticSquareReversionModFour.html",
+   "date": "2026-11-28"
+  },
+  "oeis-a219562": {
+   "reason": "Paper proofs (not Lean; marked proof candidates) of both clauses. The p^5 prime-level clause has an elementary proof I checked: C(p+k-1,k)^4 = p^4/k^4 mod p^5 and sum k^-4 = 0 mod p. The tower a(p^r-1) = a(p^(r-1)-1) mod p^(3r+3) for p>=5, r>=2 is proved by a critical-shell argument.",
+   "source": "https://github.com/rbajaj5/a183068-supercongruence/blob/e6955c6a329a713e7ed7b3f1dca165f587131c90/related-results/A219562EnhancedTower.md https://github.com/rbajaj5/a183068-supercongruence/blob/e6955c6a329a713e7ed7b3f1dca165f587131c90/related-results/BalaOeisSupercongruenceQueue.md",
+   "date": "2026-11-28"
+  },
+  "oeis-a387737": {
+   "reason": "Sorry-free a387737_eq_a387736_add_one: for n>=4, A387737(n) = A387736(n) + 1, with both defined as partition counts (largest part >= n/2, plus the respective part conditions). The site's count over increasing smaller-part vectors f is a direct re-encoding of the same two partition classes.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/Combinatorics/A387737CountsPartitionsLargest.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a068991": {
+   "reason": "Sorry-free a068991_conjecture: every squarefree k>0 with sum_{d|k} sigma(d)/phi(d) an integer divides the denominator of B_{2k}. This is the same statement as the site's.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/Enumerative/A068991SquarefreeSuchSum.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a183068": {
+   "reason": "The whole rbajaj5 repo is a written (non-Lean) proof of Bala's supercongruence a(np^r) = a(np^(r-1)) mod p^(2r) for every prime p, including p=2, and n,r>=1, using Legendre carries plus Jacobsthal-Kazandzidis scaling. It is labelled a machine-audited draft with specialist review pending, and it matches the site's statement.",
+   "source": "https://github.com/rbajaj5/a183068-supercongruence/blob/e6955c6a329a713e7ed7b3f1dca165f587131c90/PROOF.md",
+   "date": "2026-11-28"
+  },
+  "oeis-a133907": {
+   "reason": "Sorry-free result: A133907(n) is the least prime p with sum_{k<=n} k^(p-1) = n mod p, which is claim 1. Claim 2 (A317358(n) <= a(n)) follows at once, because a(n) is a member k>1 of A317358's defining set.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S3/Arith/Congruence/OrdowskiBinomialPowerSumLeastPrime.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a087412": {
+   "reason": "Sorry-free a_three_pow and card_zmod_three_pow: for e>=2 the number of residue pairs with x^3 + y^3 = 1 mod 3^e is 2*3^e. This is Howroyd's conjecture exactly as the site states it.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/NumberComplexity/A087412PairsCount.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a187941": {
+   "reason": "Sorry-free prime_or_eq_one_of_a_eq_two_pow: for n>=1, if the least positive integer with exactly n even divisors is 2^n, then n is prime or n=1. This is the site's n>0 reading; the file's 'refutation' concerns only n=0. For composite n=pq, 2^p*3^(q-1) beats 2^n.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/Sorry/NumberComplexity/A187941Refutation.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a389540": {
+   "reason": "Sorry-free generating_unique, for A(0)=0, a(1)=1 and A.subst(2X - 2A) = 2A^2 (the same equation as the site, with smul spelling), and hanna_conjecture: for n>=1, a(n) is odd iff n is a power of 2.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S1/Recurrence/Invariants/HalfScaledReflectionParity.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a011558": {
+   "reason": "Sorry-free mathar_conjecture: the number of partitions of n into distinct parts from A084215 = {1,2,5,10,20,...} equals A011558(n+1). The site's Selection record (1?, 2?, a set of exponents for 5*2^j) is a direct encoding of those partitions.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/Enumerative/A011558PartitionsDistinctParts.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a048868": {
+   "reason": "Sorry-free even_of_nonprimeCount_lt_primeCount: if the reduced residues 1<=k<=n coprime to n contain more primes than nonprimes, then n is even (via an injection primes -> nonprimes for odd n). Identical to the site's statement.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/Enumerative/A048868GcdPrimeNonprime.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a181278": {
+   "reason": "Sorry-free refutation of Barker's recurrence at n=4: a(1..4)=0,3,11,48, and 48 != 4*11 + 4*3 - 16*0 = 56. The site's second conjunct at k=0 is exactly this instance, and it also contradicts the site's own first conjunct, whose numerator at n=4 is -8 rather than 0. So the site's main is false.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S1/Words/Patterns/BarkerBinaryGramRecurrenceRefutation.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a058383": {
+   "reason": "Sorry-free totient_add_totient_sub_one_eq_iff: for x>=7, phi(x) + phi(x-1) = floor((4x-3)/3) iff x is a prime 1 + 2^a 3^b with a,b>0. Identical to the site's statement.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/Enumerative/A058383FloorPrimeForm.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a286062": {
+   "reason": "Sorry-free length_iterate_step: the n-th iterate of the leftmost 00->001, 1->011 rewrite (lone 0 kept) starting from 00 has length a(n), with a(n)=2a(n-1)+a(n-2)-a(n-3) from 2,3,6. The library's step function is clause-for-clause the site's rewrite.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/Sorry/Combinatorics/A286062RewriteBinaryWord.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a396805": {
+   "reason": "The site's mod-5 claim (a(n) = n mod 5 for all n>=1) is false. The OEIS entry now gives the corrected rule a(n) = 2 mod 5 at n = 20t+3 and 20t+4 (t>=1), derived in Su's paper, so the first counterexample is n=23, and trureturing independently records a(23) = 2 mod 5. trureturing's Lean proofs themselves cover only the mod-2 and mod-3 conjectures.",
+   "source": "https://oeis.org/A396805 (comment of Lien-Hung Su, Nov 18 2026; Zenodo doi:10.5281/zenodo.23564835) ; https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/Problems/oeis-a396805-iterate-exponential-parity.md",
+   "date": "2026-11-28"
+  },
+  "oeis-a025527": {
+   "reason": "Sorry-free result: for every prime p and m=p-1, m!/lcm(1..m) = phi(m!)/phi(lcm(1..m)) as rationals (both share the same prime factors). The site's Nat quotients are exact divisions, so the site's statement follows directly.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S3/Factorization/KlineFactorialLcmTotient.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a029795": {
+   "reason": "Sorry-free conjecture_false refutes the claim that a(n) = m+n eventually, even for an integer shift m: that would make every large k a term, but 2*10^e never has the same digit set as its cube. The site's version (natural m) implies the refuted one, so the site's statement is false.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/Enumerative/A029795Refutation.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a351858": {
+   "reason": "Sorry-free result: [x^n] (1+x+x^2)^(3n) ((1+x)^(2n))^(-1) in Q[[X]] equals sum_{k<=n/2} C(3n,k) C(n-k,k) for all n. This is Bala's formula conjecture exactly as the site states it; the separate supercongruence comment is not part of the site's statement.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S1/Recurrence/BalaTrinomialCoefficientIdentity.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a357510": {
+   "reason": "Paper proof (not Lean), which I checked: each summand at n=p-1 is k*C^2*C^2 = p^2/k - 2p^3/k^2 mod p^4. So a(p-1) = p^2 H_{p-1} - 2p^3 sum k^-2 mod p^4, and this is 0 for p>=5 by Wolstenholme and sum k^-2 = 0 mod p. That is exactly the site's statement.",
+   "source": "https://github.com/rbajaj5/a183068-supercongruence/blob/e6955c6a329a713e7ed7b3f1dca165f587131c90/related-results/AperyOddMomentPrimeClassification.md",
+   "date": "2026-11-28"
+  },
+  "oeis-a159021": {
+   "reason": "Sorry-free isSquare_a_iff: for a(0)=19, a(n+1)=a(n)+floor(sqrt a(n)), a(n) is a square iff a(n)=(7*2^k)^2. The forward direction is the site's statement.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/NumberComplexity/A159021FloorSqrtPerfect.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a078173": {
+   "reason": "Sorry-free layman_conjecture: for n>=1, over positive solutions r<=s<=t of rst = n(r+s+t), max t = n(n+2) and max s = 2n. The site's IsGreatest statement is the same.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/NumberComplexity/A078173LaymanSolutionsMaximum.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a309221": {
+   "reason": "Sorry-free result: for n>=1, E(n)*2^(3n-3) is an integer, where E(n) is the expected number of distinct squares visited by an n-step uniform knight walk (start included), proved via the 8-fold symmetry giving 8 | S(n). The site's a(n) is the same quantity (with a(0)=1), so its statement follows.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S3/StatisticalMechanics/RandomWalks/KnightWalkRangeIntegrality.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a264201": {
+   "reason": "Sorry-free a_rec: a(n) = 4a(n-1) + 9a(n-2) + 18a(n-3) - 81a(n-4) - 162a(n-5) - 243a(n-6) for n>=6, where a(n) = 3^(n-1) * sum of g(n) (it imports only Mathlib). The site's scaled list values is the same g(n) construction, so the site's statement follows.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/Sorry/Enumerative/A264201SameConstructionSum.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a374571": {
+   "reason": "Sorry-free generating_equation and generating_unique for A = A(x^2) - x A(x^2)^2 with a(0)=1 (same subst form as the site), plus hanna_conjecture: for n>0, a(n) is odd iff n is Fibbinary. Together these give both conjuncts of the site's statement.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S1/Recurrence/Parity/FibbinarySquareSubstitutionParity.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a227781": {
+   "reason": "Sorry-free A227781_eq_four_iff (level 4 iff 8|n, for n>0) and A227781_eq_three_iff (level 3 iff n = 4 mod 8), where A227781 is the sInf of the k such that k squares sum to -1 mod n. For n>0 that set is nonempty, so these are equivalent to the site's IsLeast form.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/NumberComplexity/A227781LeastSumSquares.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a025191": {
+   "reason": "Sorry-free a025191_conjecture: for every n, a(n+1) = A027914(n+1) - A027914(n) and a(n+1) = (A081673(n+1) - A081673(n))/2, with the same trinomial-array definitions and the same A081673 e.g.f. Since it imports only Mathlib, this is the site's statement for n>=1.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/Sorry/Enumerative/A025191Sum.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a222014": {
+   "reason": "Sorry-free generating_unique for the same equation A = sum_k k! x^k A^(k^2) / prod_{j<=k}(1 + j x A^k), in finite-window form with unit inverses, and hanna_conjecture: a(n) is odd iff n+1 = 2^k. Any A satisfying the site's IsA222014 has constant term 1 and the same summands, so the site's statement follows.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S1/Recurrence/Parity/FactorialSquareExponentSumParity.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a363561": {
+   "reason": "Sorry-free results for c = sqrt 2: a(2^m) = 2^(2^m) for m>0, and a(p) = p*2^((p-1)/2) + 2^p for primes p>3. Here a is the coefficient of the same bilateral sum (finite window, computed over C), matching the site's real-coefficient A term by term, so both conjuncts are settled.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S1/Recurrence/HannaBilateral/OeisA363561PowerOfTwo.lean https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S1/Recurrence/HannaBilateral/OeisA363561Prime.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a006308": {
+   "reason": "Sorry-free a006308_conjecture: for odd primes p and g of order p(p-1) mod p^2, -[x^(p-2)] of the same Gauss-period polynomial is p(p-1)/2. two_mul_sum_cube_mod gives 2*sum_{k<p} (k^3 mod p) = p(p-1). Together these give both site conjuncts.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/NumberComplexity/A006308OddPrimePrimitive.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a186335": {
+   "reason": "Sorry-free result: for n>=4, n a(n) + (1-2n) a(n-1) + 5(1-n) a(n-2) + 3(2n-3) a(n-3) + 5(n-2) a(n-4) = 0, with a(n) given by the entry's binomial double sum. The site's step-polynomial/moment encoding is, by its own docstring, the same double sum.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S1/Recurrence/Algebraic/MatharA186335FiveTermRecurrence.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a333592": {
+   "reason": "Corollary 4 (paper) gives a(np^r) = a(np^(r-1)) mod p^(3r) for p>=5. It writes a(N) = sum_{k<N} C(N+k-1,k)^2 + C(2N,N)^2/4, so the first term follows from Coster's published Theorem 4 (B=2) and the endpoint from Jacobsthal scaling. The prefix-Cartier note independently proves the whole family.",
+   "source": "https://github.com/rbajaj5/a183068-supercongruence/blob/e6955c6a329a713e7ed7b3f1dca165f587131c90/related-results/BalaAugustMixedBinomialFollowOn.md https://github.com/rbajaj5/a183068-supercongruence/blob/e6955c6a329a713e7ed7b3f1dca165f587131c90/related-results/MixedNegativeBinomialCubicTower.md",
+   "date": "2026-11-28"
+  },
+  "oeis-a329479": {
+   "reason": "Sorry-free result: for n>=9, a(n) satisfies Kagey's order-8 recurrence (2,2,-5,-2,10,-4,-4,8), where a(n) counts monic degree-n 0/1 polynomials vanishing mod 3 at every integer. The site's Horner-in-ZMod 3 word count is the same count, shifted by n -> n+9.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S3/Combinatorics/BinaryNullPolynomials/KageyA329479Recurrence.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a225004": {
+   "reason": "Sorry-free Lean `result`: every positive multiple m of n with tau(m) < 2 tau(n) divides n^2; this applies in particular to the greatest such m, which is the site's statement.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/dev/D5/S3/Factorization/DivisorDoublingMultipleDividesSquare.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a157100": {
+   "reason": "Sorry-free Lean `result` proves the exact five-term recurrence for all n >= 4, with the same generating function (1+X)c(X(1-X^2)) over Q.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/dev/D5/S1/Recurrence/Algebraic/MatharA157100FiveTermRecurrence.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a192205": {
+   "reason": "Sorry-free Lean `result` proves (sum_{i<=3n} |coeff_i((1-x-x^2+x^3)^n)|)^(1/n) -> 16*sqrt(3)/9, the same root-limit statement as the site (integer abs values vs complex norms coincide).",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/dev/D5/S3/Analytic/Polynomial/A192205RootLimit.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a363558": {
+   "reason": "Two sorry-free Lean results (OeisA363558PowerOfTwo.result: a(2^n)=4^(2^n) for n>0; OeisA363558Prime.result: a(p)=p*2^(p-1)+4^p for primes p>3) for the same bilateral series with c=2; together they are the site's conjunction.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/dev/D5/S1/Recurrence/HannaBilateral/OeisA363558PowerOfTwo.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a001108": {
+   "reason": "Sorry-free Lean `result`: for n>0, T(n)=n(n+1)/2 is a square iff sigma(n) and sigma(T(n)) are both odd. Combined with the classical (Pell) fact defining A001108 (T(n) square iff n=a(k)), this settles Krizek's conjecture; a Lean proof would still need that Pell bridge.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/dev/D5/S3/Arith/KrizekTriangularSquareSigmaParity.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a380558": {
+   "reason": "Sorry-free Lean `result` proves uniqueness of the series with A(0)=0, a(1)=0, A(x-A(x)) = x^2/(1-x^2) and that a(n) is odd iff n=2 or n=2m with 3*2^j<=m<4*2^j; this is exactly the site's parity characterization.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/dev/D5/S1/Recurrence/Parity/A380558.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a054096": {
+   "reason": "Sorry-free Lean `result`: any T satisfying the A054090 defining equations and any B satisfying the A006183 offset-1 recurrence have T(n,2)=B(n-1) for n>=2; the site's T and A006183 satisfy those hypotheses, so this is Stephan's conjecture.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/dev/D5/S1/Recurrence/StephanTriangleSecondColumn.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a008287": {
+   "reason": "Sorry-free Lean `result` is verbatim the site's statement: T(n,k) = Sum_{j<=k} (-2)^j C(n,j) C(3n-2j,k-j) for k<=3n, same T over Z[X].",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/dev/D5/S1/Recurrence/SchulteQuadrinomialAlternatingBinomialExpansion.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a364822": {
+   "reason": "Two sorry-free Lean results (TebniA364822: integral a(p) == 2 mod p for primes p>2; TebniA364822PowerOfTwo: integral a(2^m) == 1 mod 2^m for all m) with the same e.g.f. cosh/(1-2 sinh); together they are the site's conjunction.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/dev/D5/S1/Recurrence/Residue/TebniA364822.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a361034": {
+   "reason": "Sorry-free Lean `claim`/`result` is identical to the site statement: a(n)=2520(4n)!/(n!(n+2)!^3) is odd iff n=2^k-2 with k>=1 (thatnealpatel/proofs also has A361034OddSome.lean).",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/dev/D5/S3/Arith/FactorialRatio/BalaA361034Parity.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a322327": {
+   "reason": "Sorry-free Lean `result` proves, for every integer k, coprime multiplicativity of a_k(n)=A005361(n)*k^omega(n) and a_k(p^e)=k*e; a_k(1)=1 is immediate (empty product, k^0), so the site's statement follows.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/dev/D5/S3/Arith/SchulteExponentProductOmegaPowerMultiplicative.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a196226": {
+   "reason": "Refuted: sorry-free Lean `result : ¬ claim`, where claim is the disjunction of the three Layman congruences (same membership predicate 2|m and sigma(m) mod m = 3+m/2, same thresholds 14/22/38); m=690 breaks all three, so the site's conjunction is false.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/dev/D5/S0/Certificates/LaymanDivisorPowerCongruenceRefutation.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a120069": {
+   "reason": "Sorry-free Lean `result` proves Groux's part (den of the partial sum = den of C(n)/4^(n-1)). Staunton's second part, den = 2^(A283208(n)-2), then follows from the classical v2(Catalan(n)) = s2(n+1)-1 (Kummer; Deutsch-Sagan 2006) and A283208(n) = 2n+1-s2(n+1); the library does not formalize that second step.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/dev/D5/S3/ArithSums/GrouxA120069Denominator.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a373312": {
+   "reason": "Sorry-free Lean file proves existence and uniqueness of the integer series with A(0)=0, a(1)=1, A^2 = A(x A/(1-A)^2) (`generating_unique`) and `hanna_conjecture`: for n>=1, a(n) is odd iff n=2^k-1 (n=0 is trivial). That is the site's statement up to the routine psComp/subst bridge.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/dev/D5/S1/Recurrence/Invariants/UnitReversionSquareParity.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a355872": {
+   "reason": "Sorry-free Lean file proves existence and uniqueness of the series solving x = Sum_n (-x)^(n^2) A^((n-1)^2), `hanna_conjecture` (a(k) == 2 mod 4), `hanna_conjecture_mod_eight` (2 and 6 mod 8), and `mod_sixteen_identity` A == 2x/(1+x^4) mod 16, which gives the site's mod-16 clause. Together these are all the site's clauses.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/dev/D5/S1/Recurrence/Parity/BilateralThetaReversionModSixteen.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a397244": {
+   "reason": "Sorry-free Lean file proves uniqueness of the series with A(0)=1, a(1)=1 and (2n)[x^n]A^(2n) = (2n-1)[x^n]A^(2n+1) for n>1 (`generating_unique`), and `hanna_conjecture_a397244`: for n>0, a(n) is odd iff n = 2f+1 with f Fibbinary. That is the site's statement.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/dev/D5/S1/Recurrence/Residue/QuadraticPowerDiagonalFibbinaryParity.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a386844": {
+   "reason": "Sorry-free Lean `result : P` includes R3(n)=0 for n>=3, which is exactly the site's recurrence (3n(2n-1) = 6n^2-3n and 399(3n-4)(3n-5) expanded), for the same binomial-sum definition of a(n).",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/dev/D5/S3/ArithSums/MatharA386844.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a389536": {
+   "reason": "Sorry-free Lean file proves the unique series with x A(x) = A(x^2+2x^3), a(1)=1 (`generating_equation`, `generating_unique`) and `hanna_conjecture`: for n>1, a(n) == 2 mod 4 iff n=2^k+1, else 0 mod 4. The site's coefficient recursion defines the same series, so only a routine bridge is left.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/dev/D5/S1/Recurrence/Invariants/SubstitutionSquareCubeModFour.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a380060": {
+   "reason": "Sorry-free Lean `result : claim`: a solution over Q exists, and every solution has integral coefficients with a(n) == 2 mod 4 iff n is a square, and 4 | a(n) for nonsquare n. The site's integer-series version follows by a routine Z->Q transfer.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/dev/D5/S1/Recurrence/Invariants/HannaBilateralThetaModFour.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a343260": {
+   "reason": "Sorry-free Lean `bala_conjecture`: for primes p>=5 and r>=1, a(p^r) == 1 mod p^(2r), with a(n) = (Chebyshev.C Z n).eval(n+1), which is the same `term` as the site's.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/main/Proofs/NumberComplexity/A343260ChebyshevPolynomialFirst.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a293406": {
+   "reason": "Sorry-free Lean `ratio_tendsto_goldenRatio`: a(n+1)/a(n) -> phi for the mex-constructed complementary pair, whose b is shown to be least-unused (`b_isLeast`). The site quantifies over every pair satisfying the hypotheses; that pair is unique, so only a routine uniqueness bridge is left.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/main/Proofs/Enumerative/A293406ComplementaryEquationIncreasing.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a264200": {
+   "reason": "Lean `a_rec` (no sorry in code; the one 'sorry' hit is the word in a comment) proves a(n) = 3a(n-1)+4a(n-2)-8a(n-3)-8a(n-4) for n>=4, with a(k+1) = 2^k * sum(g(k+1)), Kimberling's set g. The site encodes the same quantity through scaled lists, so only a routine bridge is left.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/main/Proofs/Sorry/Enumerative/A264200Sum.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a145996": {
+   "reason": "Sorry-free Lean `A145996_complete`: for every integer k, F_k has a rational root iff k is in {0,1,2,4,243}. It uses the identical quintic, so it implies the site's statement for natural k.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/main/Proofs/NumberComplexity/A145996JasinskiQuinticRational.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a387724": {
+   "reason": "Sorry-free Lean `a387724_conjecture`: (k in A387724 and 2k <= sigma(k)) iff k=6, and every other term lies in A337382 (sigma(A003961 k) < 2 sigma(k)). Since the site's shiftedSigma equals sigma(A003961 n) (same nextPrime), this gives all three site clauses.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/main/Proofs/NumberComplexity/A387724SigmaCompletelyMultiplicative.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a064414": {
+   "reason": "Sorry-free Lean `kleinwaks_A064414` is the site's statement verbatim: for j>0, every positive Fibonacci-type sequence has a term divisible by j iff j^2 = Sum_{d|j} phi(d)*alpha(d), with alpha = the Fibonacci entry point.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/main/Proofs/Enumerative/A064414FibonacciTypeDivisor.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a245664": {
+   "reason": "Sorry-free Lean `gribble_conjecture`: for odd primes p<q with q=2kp+1, k>=1 and 2k+3<=p, the explicit block {p,q} witnesses that p+q is prime-partitionable and in A245664. That is the site's hypotheses (2k <= p-3) and conclusion, and the explicit witness {p,q} consists of odd primes.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/main/Proofs/Combinatorics/A245664OddPrimesSome.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a057475": {
+   "reason": "Refuted: sorry-free Lean `conjecture_false : ¬ Conjecture`, where Conjecture is verbatim the site's statement (every m>0 equals some a(n), with the same a). The value 49 never occurs.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/main/Proofs/NumberComplexity/A057475Refutation.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a365777": {
+   "reason": "Refuted: sorry-free Lean `conjecture_false` shows every term is odd and a(n+2) == 3a(n) mod 4, so no eventual period divides phi(4)=2. The library defines a(n) by the entry's recurrence a(n+1) = 3a(n) + Sum C(n,j) 2^j a(n+1-j), which follows from the e.g.f. ODE (2-e^{2x})A' = 3A. It does not formalize that EGF link, an elementary step.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/main/Proofs/Enumerative/A365777Refutation.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a276371": {
+   "reason": "Refuted: sorry-free Lean `balaConjecture_false`. The residues mod 4 repeat 1,1,3,3, so no divisor of phi(4)=2 is an eventual period. The library also characterizes the e.g.f. by constant term 1 and A^4(2-exp(2x)) = exp(2x), the site's own characterization.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/main/Proofs/Enumerative/A276371Refutation.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a231897": {
+   "reason": "Sorry-free Lean `exists_sq_binary_weight`: for every n there is m (namely 2^n-1) with wt(m^2)=n, using the same wt = binary digit sum. This is verbatim the site's statement.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/main/Proofs/NumberComplexity/A231897ThereBinaryWeight.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a006531": {
+   "reason": "Sorry-free Lean `semiorder_add_totient_modEq`: a(n+phi(m)) == a(n) mod m for n >= m, for the same Bala Catalan-factorial-Stirling formula. Taking T = phi(k) > 0 gives the site's statement.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/main/Proofs/Enumerative/A006531SemiorderMod.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a238977": {
+   "reason": "Lean `a_add_three_modEq_one_iff` (no sorry, despite the folder name) proves: for n>0, a(n+3) == 1 mod n iff gcd(n,6)=1. It uses the same definition a(n+3) = (I(n+3)-I(n))/3 with a(0..2) = 0,0,1.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/main/Proofs/Sorry/Enumerative/A238977InvolutionBalaFormula.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a365782": {
+   "reason": "Refuted: sorry-free Lean `conjecture_false` uses the entry's Stirling formula a(n) = Sum 2^(n-k) prod_{j<k}(4j+1) S(n,k) and proves a(n) == 1+2C(n,2) mod 4, so no eventual period divides phi(4)=2. The library does not formalize the link from the formula to the e.g.f. (1-2(e^{2x}-1))^(-1/4); it is a direct binomial-series expansion.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/main/Proofs/Enumerative/A365782Refutation.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a016957": {
+   "reason": "Sorry-free Lean `rascoe_conjecture` proves all three site clauses: some, but not all, A088827 terms are of the form 6n+4, and 6n+4 is in A088827 iff n+1 is an odd value of A186423. This matches the site's k = t-1 indexing, and the library's extra 0<k in A088827 is harmless.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/main/Proofs/Enumerative/A016957ContainsSomeBut.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a111205": {
+   "reason": "Sorry-free Lean `a111205_infinite`: infinitely many nonsquare composites k have gcd(k, 2*floor(sqrt k)+1) > 1 (witnesses k = (3t+4)^2+2). This is equivalent to the site's set, with r = floor(sqrt k) strictly between squares.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/main/Proofs/NumberComplexity/A111205ThereInfinitelyMany.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a002104": {
+   "reason": "The library is about a different claim (Bala's prime-power congruences, proved in A002104PeterBalaConjectures.lean). The OEIS entry itself proves Mathar's recurrence: Munarini shows A=-exp(x)log(1-x) satisfies (1-x)A'' - (3-2x)A' + (2-x)A = 0, 'from the second one, we have the recurrence conjectured above'.",
+   "source": "https://oeis.org/A002104 (%F line: From Emanuele Munarini, Dec 16 2017)",
+   "date": "2026-11-28"
+  },
+  "oeis-a114214": {
+   "reason": "Sorry-free Lean `d_eq_a007306`/`d_eq_stern`: the diagonal sum d(n) = Sum_k (T(n-k,k) mod 2) equals A007306(floor(n/2)+1) = stern(2 floor(n/2)+1). The site's T entries are the same, and its Farey-edge recursion gives edge(m) = (s(m),s(m+1)), so fareyDenominator(n/2) is that same value.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/main/Proofs/Enumerative/A114214SumFloorMod.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a351857": {
+   "reason": "Informal, unreviewed 'complete elementary proof candidate': A_{alpha,beta}(np^r) == A_{alpha,beta}(np^(r-1)) mod p^(3r) for all p>=5 and all integers alpha, beta. Since 1/((1-x)(1-x^2))^2 = (1+x)^(-2)(1-x)^(-4), A351857 is the case alpha=-2, beta=-4, which is exactly the site's statement.",
+   "source": "https://github.com/rbajaj5/a183068-supercongruence/blob/main/related-results/CoefficientFramingCubicTower.md",
+   "date": "2026-11-28"
+  },
+  "oeis-a270913": {
+   "reason": "Informal proof (Theorem 1 / Corollary 2, a short log-expansion argument): [x^p] prod(1+x^m)^p == p+1 mod p^2 for every odd prime p. The site's p=2 case is a direct check: a(2)=3 == 3 mod 4.",
+   "source": "https://github.com/rbajaj5/a183068-supercongruence/blob/main/related-results/ModularProductPrimeCoefficientPacket.md",
+   "date": "2026-11-28"
+  },
+  "oeis-a132303": {
+   "reason": "Informal, unreviewed 'complete elementary proof candidate' with exactly the site's statement: A(np^r) == A(np^(r-1)) mod p^(2r) for all primes p>=5 and n,r>=1, with A(N) = sum of cubes of the trinomial coefficients.",
+   "source": "https://github.com/rbajaj5/a183068-supercongruence/blob/main/related-results/A132303TrinomialCubeTower.md",
+   "date": "2026-11-28"
+  },
+  "oeis-a082758": {
+   "reason": "The library row is about a different claim (Bala's p^(2k) supercongruence, via Pan-Sun). The OEIS entry itself marks the site's g.f. identity a(n) = [x^n]((1+x+x^3+x^4)/(1-x)^2)^n as true: the double-sum form satisfies Luschny's second-order recurrence, verified with Zeilberger's MultiZeilberger (MulZeil).",
+   "source": "https://oeis.org/A082758 (%F line: [added Aug 29 2025: The conjecture is true. ...])",
+   "date": "2026-11-28"
+  },
+  "oeis-a352657": {
+   "reason": "Informal, unreviewed proof candidate: B_c(np^r) == B_c(np^(r-1))^p mod p^(4r) for all primes p, with c=3 giving A352657 Conjecture 2. Conjecture 1 (the Gauss congruence mod p^r) follows by a standard induction: a == b mod p^k implies a^p == b^p mod p^(k+1), and Fermat gives the base case.",
+   "source": "https://github.com/rbajaj5/a183068-supercongruence/blob/main/related-results/SymmetricBoxPlanePartitionTower.md",
+   "date": "2026-11-28"
+  },
+  "oeis-a255672": {
+   "reason": "Informal proof (Theorem 4): for the product prod(1-x^m)^(-mN), a(np^r) == a(np^(r-1)) mod p^(2r) for every odd prime p and all n,r>=1. That is exactly the site's statement.",
+   "source": "https://github.com/rbajaj5/a183068-supercongruence/blob/main/related-results/ModularProductPrimeCoefficientPacket.md",
+   "date": "2026-11-28"
+  },
+  "oeis-a364516": {
+   "reason": "Informal, unreviewed proof candidate (Theorem 2, Corollary 5): every fixed row s>=3 of A364513, V_s(N) = ((s-2)/s) times a balanced factorial ratio, satisfies V_s(np^r) == V_s(np^(r-1)) mod p^(3r) for p>=5. Row s=6 is exactly the site's (2/3)(8n)!(3n)!^2/((6n)!(4n)!(2n)!n!^2), and the note names A364516 explicitly.",
+   "source": "https://github.com/rbajaj5/a183068-supercongruence/blob/main/related-results/RationalGammaRatioCubicTowers.md",
+   "date": "2026-11-28"
+  },
+  "oeis-a073023": {
+   "reason": "Library proves cloitre_conjecture_false: S(102)=1025 < 102^(3/2), refuting the identical statement (same a, same real rpow inequality for n>100). Site's main is false.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/NumberComplexity/A073023Refutation.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a004982": {
+   "reason": "Sorry-free bala_conjecture: for prime p = 1 mod 4 and n>0, a(pn) = a(n) mod p^2, with the same a(n) = 2^n prod(4k+3)/n! definition.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/Enumerative/A004982ProdPrimePeter.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a153772": {
+   "reason": "Sorry-free a153772_third_largest: for n>=6, a(n) is a natural m first hitting 1 at step n+1 with exactly two larger such numbers (ncard = 2), same as the site's OrbitLength(n+2) formulation.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/Enumerative/A153772ThirdLargestPositive.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a383377": {
+   "reason": "Sorry-free: generating_unique (any series with constant coeff 1 satisfying the same coefficientwise abs-reciprocal equation equals the constructed one) plus hanna_conjecture (Even (a n) for n>1); the site's unit A has constant coeff 1 from the n=0 equation, so it follows directly.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S1/Recurrence/Invariants/AbsoluteReciprocalGeometricParity.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a101462": {
+   "reason": "Sorry-free conjecture_false: p = 509203 is prime and 2^k - 509203 is never prime (covering set 3,5,7,13,17,241), refuting the site's for-all-primes statement.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/NumberComplexity/A101462Refutation.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a097602": {
+   "reason": "Sorry-free zumkeller_a097602: for m>=1, m^2 occurs in A097602 iff m mod 3 != 0; the site's m=0 case is trivial since all terms are >= 1, and the recurrence determines a on n>=1.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S1/Recurrence/Invariants/SquareCountingRecurrenceSquarePositions.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a301976": {
+   "reason": "Sorry-free barker_a301976 (order-4 recurrence for n>4) and kagey_a301976_mod10 (a(n) mod 10 = 3 for n>2) for no-leaf subgraphs of the 3 x n grid; the site's third conjunct (rational g.f.) is a routine corollary of the recurrence plus a(1..4).",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S1/Words/Patterns/GridNoLeafSubgraphRecurrence.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a222013": {
+   "reason": "Sorry-free generating_unique (any series satisfying the coefficientwise functional equation is the constructed one) and hanna_conjecture: Odd (a n) iff n+1 = 2^k; site's T k*prod = ... form equals the library's unit-inverse term.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S1/Recurrence/Parity/FactorialProductSumCatalanParity.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a277216": {
+   "reason": "Sorry-free a277216_conjecture: for n>0, (Nat.digits 10 (sigma 1 n)).prod = n iff n = 1 or n = 210, exactly the site's statement.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/NumberComplexity/A277216ProductDecimalDigits.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a294532": {
+   "reason": "Sorry-free a294532_guide_conjecture (all 34 guide profiles) plus a294565_entry_ratio_tendsto_goldenRatio (the s=-2 variant): a(n+1)/a(n) -> golden ratio for the mex-defined complementary pair; the site quantifies over any strictly increasing complementary (a,b) with the same start, which coincide with the library's pair, so only a routine uniqueness bridge remains.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/Enumerative/A294532FamilyCoveringGuide.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a005329": {
+   "reason": "Sorry-free a005329_eq_inverseBinomial_a075272 with the same A075271 recursion; library's A075272 is BM(A075271), shown equal to 2*A075271(n-1) (the site's c), and (-1)^(n+k) = (-1)^(n-k).",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/Enumerative/A005329LaymanBinomialTransform.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a369378": {
+   "reason": "Sorry-free theorem result: for n>0 and k<2^n, 2^(2^n+1)-1+2^k is not prime (Fermat-number divisor 2^(2^j)+1), identical to the site's main.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S3/Arith/Primes/OeisA369378FermatCovering.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a380709": {
+   "reason": "Sorry-free generating_equation (existence), generating_unique, a_zero and hanna_conjecture (a(n) = C(4n-1,n) mod 2 for n>0) for A = 1 + X*abs(1/A)^3; gives both conjuncts of the site's main.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S1/Recurrence/Parity/AbsoluteReciprocalCubeParity.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a188570": {
+   "reason": "Sorry-free not_twentythree_dvd_a188570 / kimberlingConjecture_false: 23 divides no term of A188570 (same step recursion as the site), so the site's first conjunct fails at p = 23 and main is refuted.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/Enumerative/A188570Refutation.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a402341": {
+   "reason": "Sorry-free theorem result: for every even n, the coefficient of X^(15n/2) in (1+...+X^15)^n is positive and has 2-adic valuation equal to the binary digit sum of 15n/2, identical to the site's main.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S3/Combinatorics/BinomialBases/HussainA402341CentralCoefficientValuation.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a221018": {
+   "reason": "Sorry-free theorem result: for k>=2 with k-1, k, k+1 all dividing F(k), k mod 10 is 0, 2 or 8; the site's k=1 case is vacuous since 2 does not divide F(1).",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S3/Arith/Congruence/WuAdjacentFibonacciResidues.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a380708": {
+   "reason": "Sorry-free generating_equation, generating_unique and hanna_conjecture: for A = 1 + X*abs(1/A)^2 and n>0, a(n) odd iff n = 2f+1 with f fibbinary (n &&& n>>>1 = 0, equivalent to the site's no-adjacent-bits definition).",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S1/Recurrence/Residue/AbsoluteReciprocalSquareFibbinaryParity.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a139555": {
+   "reason": "Sorry-free theorem conjecture: for n>60, the number of k in [1,n] coprime to n that are 1 or prime powers is < phi(n) (two least non-dividing primes p*q <= n via a Bonse-type bound), same as the site's main.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/NumberComplexity/A139555GcdPrimePower.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a322844": {
+   "reason": "Sorry-free claims for the same serpentine matrix: |trace of 2nd exterior power| = n^2(3(1+n^2)-2(2+n^2)eps)/12 for n>1, and (SpeziaSerpentineHigherExteriorTrace.lean) all exterior traces of order >2 vanish (rank-2 factorization); library uses charpoly coefficients, equal to the site's principal-minor sums by the standard identity.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S3/Quantum/Matrix/SpeziaSerpentineSecondExteriorTrace.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a100691": {
+   "reason": "Sorry-free a100691Data_add_three: for the DATA recurrence (2a(n-1)+a(n-3)+6 from 1,4,12,30, the site's walks) a(n)+3 = A193641(n+2) for n>0, which is the site's main; the site's transfer-recursion words agrees with the library's fintype wordCount (A193641), a routine bridge. (Library also shows the literal NAME reading fails at n=5.)",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/Sorry/Enumerative/A100691MatharCountsWords.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a006972": {
+   "reason": "Sorry-free theorem result: Rotondo's criterion (distinct odd primes p,q,r with p+1=ad, q+1=bd, r+1=cd, d the gcd, abcd | pqr+1) implies pqr is Lucas-Carmichael; same statement up to gcd associativity and positivity side conditions that follow from the hypotheses.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S3/Arith/Congruence/RotondoLucasCarmichaelCriterion.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a245786": {
+   "reason": "Sorry-free theorem result : not claim: n = 275890944 is in A245786 but not a gcd(sigma(n),n) record (beaten by m = 142990848), refuting the site's subsequence claim.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S0/Certificates/KrizekIntegralityGcdRecordRefutation.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a045650": {
+   "reason": "Sorry-free tendsto_a_div_exp proves a(n)/e^n -> 1 (via a(n+1) = ceil(e^(n+1)) + n) for the positive non-representable numbers. WARNING: the site's P omits 0 < m, so 0 counts and the site's a(n) is the library's a(n-1) ~ e^(n-1); the site's main is then false and its negation follows from the library's a_succ (statement needs a fix).",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/Sorry/Analysis/A045650FormFloorLog.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a144837": {
+   "reason": "Sorry-free theorem conjecture: for a(n) = Lucas(5^n), n >= 1 and r <= n, 5^(n+r+1) divides a(n+1)-a(n); identical to the site (also in trureturing D5/S1/Recurrence/BalaLucasFiveAdicCongruence.lean).",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/Enumerative/A144837LucasDividesEquivalently.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a058128": {
+   "reason": "Sorry-free rotondo_conjecture (the only 'sorry' is in a doc comment): for even n >= 2, a(n) = (n^n-n)/(n-1)^2 is prime or composite with n^a(n) = n mod a(n), identical to the site's main.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/Sorry/NumberComplexity/A058128Rotondo.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a380678": {
+   "reason": "Sorry-free generating_unique (any B with B(0)=0 satisfying B(x - B^2/(1-B^2)) = x is the constructed series) and hanna_conjecture: for n>=1, a(n) odd iff n+2 = 3*2^m or 4*2^m; same as the site (Ring.inverse = invOfUnit for this unit).",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S1/Recurrence/Parity/QuadraticSquareReversionDyadicSupportParity.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a288523": {
+   "reason": "Sorry-free length_iterate_eq_a: the length of the n-th iterate of 00->0101, 10->010 from 00 equals the order-4 recurrence 2,4,5,8,11,...; the library's step is clause-for-clause the site's rewrite.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/Combinatorics/A288523LengthIterateParsing.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a191873": {
+   "reason": "Sorry-free theorem result: for n>=3 the zero-diagonal rectangle-free maximum d exists, equals Mathlib's zarankiewicz n n 2 2 (the unrestricted maximum), and d+1 is the least forcing count; this gives the site's d = z = k-1 after identifying zarankiewicz with the site's IsGreatest weights.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S3/Combinatorics/Graph/Incidence/AlekseyevA191873ZeroDiagonal.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a006068": {
+   "reason": "Sorry-free theorem result: Kurkov's recurrence a(n) = a(A063946(n) - msb(A063946(n))) + msb(n) for n>0, with a the inverse Gray code (recursive XOR prefix, equal to the site's fold of n>>>k); A063946(n) > 0 so msb agrees with the site's A053644.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S1/Digit/Admissibility/KurkovGrayInverseRecurrence.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a001917": {
+   "reason": "Sorry-free conjecture_false refutes Shevelev's k*a(n) = A006694((p^k-1)/2) at the Wieferich prime p = 1093, k = 2 (at least 3282 cosets vs 2*3); the site's divisor-sum form of A006694 gives the same counterexample (3 + 3279 != 6), so the site's main is false.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/NumberComplexity/A001917Refutation.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a289004": {
+   "reason": "Sorry-free conjecture_false: with the same rewrite rules (00->0010, 01->001, 10->010, others copied) and the same order-10 recurrence, the 22nd iterate has 268184 letters vs reference 268182, refuting the site's main.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/Enumerative/A289004Refutation.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a091258": {
+   "reason": "Sorry-free a091258_range_eq: the set of reduced denominators of sigma_3(n)/sigma_1(n), n>=1, equals the positive integers whose prime factors are all 1 mod 3 (A004611), exactly the site's set equality.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/NumberComplexity/A091258SigmaThreeDenominator.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a375439": {
+   "reason": "Sorry-free generating_unique (any B with B(0)=0 and 3B = 3(x+x^2) + 2B^3 + B(x^3) is the constructed series) and hanna_conjecture: for n>=1, a(n) odd iff n = 3^k or 2*3^k; the site's n=0 case is trivial since a(0)=0.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S1/Recurrence/Invariants/CubicTernarySubstitutionParity.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a168597": {
+   "reason": "OEIS FORMULA line (Andrew R. Epstein, Jul 18 2026): Bala's p^(2k) supercongruence follows from the Pan-Sun theorem (arXiv:2012.05121) on A002426, since a = T^2 and T(np^k) - T(np^(k-1)) already has p-adic valuation >= 2k for p >= 5; rbajaj5's data/bala_110_campaign.tsv also lists it as published-source.",
+   "source": "https://oeis.org/A168597",
+   "date": "2026-11-28"
+  },
+  "oeis-a174193": {
+   "reason": "Sorry-free theorem result: for the series A with 2X^2(1-X)(1-4X)^2 A = P - B*sqrt(1-4X), Mathar's order-4 recurrence holds for all n>=4 with the same coefficients; coeff n A is the site's a(n) (sqrt with constant 1 is 1-2xC(x)).",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S1/Recurrence/Algebraic/MatharA174193OrderFourRecurrence.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a233123": {
+   "reason": "Sorry-free result proves Barker's g.f. (1-4x)(1-12x)A(x) = x(1-8x) (with the order-3 recurrence lemma) for the literal normalized 2-column strip count; the site's recurrence and closed form 6a(n+1) = 4^n(3^(n+1)+3) follow, and the site's transfer-count encoding matches numerically (1, 8, 80, 896, ...), leaving only an encoding bridge.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S3/Combinatorics/TraceAvoidingArrays/HardinA233123SquareStrip.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a005590": {
+   "reason": "Sorry-free theorem result: for the same recursion, a(3n) = 0 iff n has no two adjacent 1 bits (No11: (n>>>j) % 4 != 3 for all j), equivalent to the site's land n (n/2) = 0.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S1/Recurrence/StephanA005590ZeroSetCharacterization.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a328919": {
+   "reason": "Sorry-free a_eq_zero_iff (preperiod 0 iff n = 1 or 12) and a_two_pow_first_occurrence (a(2^e) = e and a(n) != e for 0<n<2^e), with the same sInf-of-periodicFrom preperiod; together these are the site's two conjuncts.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/NumberComplexity/A328919SigmaModPurely.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a179875": {
+   "reason": "Sorry-free theorem result: for n>=1, the antiharmonic means of the totatives of n and n+1 agree iff mu(n) = 1 and mu(n+1) = -1; same definitions (sums over coprime k in [1,n]) as the site.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S3/ArithSums/EldarAntiharmonicAdjacency.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a288317": {
+   "reason": "Sorry-free length_w_init (lengths 2,4,7,12,22,40) and length_w_rec (order-4 recurrence for index >= 5) for 00->0001, 1->00 from 00 (step matches the site's rewrite), giving the site's reference sequence; the library also notes the NAME's n>=4 range fails at n=4, consistent with the site's a(4)=22.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/Sorry/Enumerative/A288317ObtainedLeftRight.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a014865": {
+   "reason": "Sorry-free a014865_odd_and_dvd_three_five_seven and not_prime_of_dvd_s: every k>0 with k | s(k) (same s recursion) is odd, k>1 is divisible by 3, 5 or 7, and k>7 is not prime; these are the site's three conjuncts.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/NumberComplexity/A014865OddCorollaryPrime.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a046528": {
+   "reason": "Sorry-free theorem result: for n>0, n is a product of distinct Mersenne primes iff sigma(n)^b = tau(n)^a for some a,b >= 1; identical to the site (prime q = 2^k-1 vs p+1 = 2^k is the same condition).",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S3/Arith/Mersenne/KrizekSigmaTauRationalPowerMersenne.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a119967": {
+   "reason": "Sorry-free result : not claim: Mathar's printed recurrence (same coefficients as the site) has strictly positive residual for every n>=4 on Barry's sum a(n) = sum C(n,2k)C(k,floor(k/2)). The site's g.f.-defined a has the same values (checked 1,1,2,4,9,21,...), and the residual at n=4 is 54, so the site's main is false.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S1/Recurrence/MatharA119967Refutation.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a211480": {
+   "reason": "Sorry-free partition_conjecture (with A211480Signed/Support/Arithmetic/Lattice, all sorry-free): for all n >= 0 the number of signed triples in [-n,n]^3 with w+2x+3y = 1 equals the number of partitions of 4n+2 into exactly 3 parts; the site's sorted-triple count p3 is the same class.",
+   "source": "https://github.com/thatnealpatel/proofs/blob/39d62b2756138ba92e60b82067aac771d7624ff5/Proofs/Enumerative/A211480Claims.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a380710": {
+   "reason": "Sorry-free generating_equation, generating_unique and hanna_conjecture: for A = 1 + x*A*abs(1/A^2) (constant coeff 1 forced), a(n) is odd iff n is a power of 2 for n>0; gives both conjuncts of the site's main.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S1/Recurrence/Invariants/AbsoluteReciprocalSquareParity.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a356508": {
+   "reason": "Sorry-free theorem result: a solution exists, every coefficientwise solution of 2 = prod (1+x^n A)(1+x^(n-1)/A) (over Q) is the integral one, and for n>0 a(n) = 2 mod 4 iff n = 2k with p(k) odd, else 0 mod 4; the site's integer A maps to such a solution.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/3fe303d426ff72bfc902c69963b1db4065659313/D5/S1/Recurrence/Invariants/HannaProductPartitionModFour.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a067299": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 9.28: the listed recurrence is proved for n>=2 (the proof is conditional on a formula stated in the entry, Start F in Table 1).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a071684": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 8.22: the listed recurrence is proved for n>=5 (the proof is conditional on a formula stated in the entry, Start F in Table 1).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a071715": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 7.61: the listed recurrence is proved for n>=3, the range of the Lean statement.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a071717": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 9.30: the recurrence holds for all n>=4 and fails at n=3. The Lean statement is the corrected n>=4 version, which is exactly what the proposition proves (the proof is unconditional).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a071722": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 7.62: the listed recurrence is proved for n>=3, as in the Lean statement.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a072100": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 9.31: the listed recurrence is proved for n>=4 (the proof is conditional on a formula stated in the entry, Start F in Table 1).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a073155": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 7.63: the listed recurrence is proved for n>=4 (the proof is conditional on a formula stated in the entry, Start F in Table 1).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a073591": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 7.33: the listed recurrence is proved for n>=3, as in the Lean statement.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a080243": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 8.1: the listed recurrence is proved for n>=2 (the proof is conditional on a formula stated in the entry, Start F in Table 1).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a080244": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 6.5 (disproof): Mathar's recurrence as written fails at every n checkable with the entry's terms (offset 1); the version with n replaced by n-1 in the coefficients is proved for n>=6.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a080894": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 9.8: the listed recurrence is proved for n>=3 (the proof is conditional on a formula stated in the entry, Start F in Table 1).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a081181": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 8.39: the listed recurrence is proved for n>=3, as in the Lean statement; the proof starts from the binomial formula that the Lean statement uses as its definition.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a081204": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 8.40: the listed recurrence is proved, both of them (n>=2 and n>=3), which is exactly the conjunction in the Lean statement; the proof starts from the binomial formula that the Lean statement uses as its definition.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a081205": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 8.41: the listed recurrence is proved for n>=2, as in the Lean statement; the proof starts from the binomial formula that the Lean statement uses as its definition.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a081207": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 8.2: the listed recurrence is proved for n>=4, as in the Lean statement; the proof starts from Barry's g.f., which the Lean statement uses as its definition.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a081669": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 8.38: the recurrence holds for all n>=5 and fails at n=4 (L(4)=12). The proof is conditional on the entry's e.g.f. e^{2x}-1+e^x I0(2x).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a081672": {
+   "reason": "Settled at once by Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Not proved in the paper: Section 3 lists A081672 among the exclusions because the entry already records a proof (R. Israel, 2016: the e.g.f. ODE implies Mathar's recurrence). It is likely settled by that, not by this paper. Note that the Lean statement uses n>=4 because the recurrence fails at n=3.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a081673": {
+   "reason": "Settled at once by Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Not proved in the paper: Section 3 lists A081673 among the exclusions because the entry already records a proof (R. Israel, Jun 03 2016, an e.g.f. ODE that implies the recursion). It is likely settled by that, not by this paper.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a085387": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 8.35: the listed recurrence is proved for n>=5, as in the Lean statement.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a089324": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 9.32: the listed recurrence is proved for n>=6 (the proof is conditional on a formula stated in the entry, Start F in Table 1).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a091699": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 9.33: the listed recurrence is proved for n>=3, as in the Lean statement. The proof is conditional on P. D. Hanna's g.f. in the entry, while the Lean statement defines a(n) by row sums of the inverse triangle.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a091916": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 8.23: Stephan's 'for n>5, a(n+3)=3a(n)' is true, in fact for all n>=3. The proof is conditional on R. Knott's g.f. (1+x+x^2+2x^5)/(1-3x^3) in the entry.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a095981": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 8.24: the listed recurrence is proved for n>=7 (the proof is conditional on a formula stated in the entry, Start F in Table 1).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a097188": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 8.20: the listed recurrence is proved for n>=1 (the proof is conditional on a formula stated in the entry, Start F in Table 1).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a097192": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 8.21: the listed recurrence is proved for n>=1 (the proof is conditional on a formula stated in the entry, Start F in Table 1).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a097204": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 8.37: the listed recurrence is proved for n>=4, as in the Lean statement; the proof starts from the e.g.f. e^x/(1-x)-e^{2x}, which is equivalent to the binomial-transform definition.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a097331": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 8.3: the listed recurrence is proved for n>=3, as in the Lean statement.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a098519": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 9.35: the listed recurrence is proved for n>=2 (the proof is conditional on a formula stated in the entry, Start F in Table 1).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a098520": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 9.36: the listed recurrence is proved for n>=2 (the proof is conditional on a formula stated in the entry, Start F in Table 1).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a098521": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 8.4: the listed recurrence is proved for n>=4 (the proof is conditional on a formula stated in the entry, Start F in Table 1).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a098557": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 9.7: the recurrence holds for all n>=3 and fails at n=2 (the proof is unconditional, from the e.g.f. in the name).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a098664": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 8.5: the listed recurrence is proved for n>=3 (the proof is conditional on a formula stated in the entry, Start F in Table 1).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a100095": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 8.6: the listed recurrence is proved for n>=5 (the proof is conditional on a formula stated in the entry, Start F in Table 1).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a100096": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 8.7: the listed recurrence is proved for n>=4 (the proof is conditional on a formula stated in the entry, Start F in Table 1).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a100097": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 8.8: the listed recurrence is proved for n>=5 (the proof is conditional on a formula stated in the entry, Start F in Table 1).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a100099": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 8.9: the listed recurrence is proved for n>=4 (the proof is conditional on a formula stated in the entry, Start F in Table 1).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a101601": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 9.38: the listed recurrence is proved for n>=2, as in the Lean statement.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a102882": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 8.12: the listed recurrence is proved for n>=4, as in the Lean statement.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a103138": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 9.40: the listed recurrence is proved for n>=3, as in the Lean statement; the proof starts from the entry's closed-form g.f., which is equivalent to the Schroeder-number g.f. used in Lean.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a103769": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 6.7 (disproof): the recurrence as printed, which is what the Lean statement formalizes, is false for every n>=4 (the leading coefficient must be 4n(2n+1)); the corrected recurrence is proved for n>=4. The Lean file itself notes LHS = -81756 at n=4.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a103821": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 9.41: the listed recurrence is proved for n>=3 (the proof is conditional on a formula stated in the entry, Start F in Table 1).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a104624": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 8.14: the listed recurrence is proved for n>=3.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a104625": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 9.42: the listed recurrence is proved for n>=6, as in the Lean statement.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a105864": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 7.64: the listed recurrence is proved for n>=4, as in the Lean statement.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a105865": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 8.16: the listed recurrence is proved for n>=4, as in the Lean statement.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a114190": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 10.10: the listed recurrence is proved for n>=5, as in the Lean statement.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a117186": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 7.65: the listed recurrence is proved for n>=4. This is the recurrence the Lean statement formalizes; the other conjecture in the entry, a(n)=A058622(n)+A058622(n+1), is not treated.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a124753": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 8.42: the listed recurrence is proved for n>=6, as in the Lean statement.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a132900": {
+   "reason": "Settled at once by Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Not proved in the paper: it is excluded in Sections 3 and 11 as a consequence of facts in the entry. The recurrence follows from a(n)=3^n A001006(n) and the Motzkin recurrence (n+2)M(n)=(2n+1)M(n-1)+3(n-1)M(n-2). It is effectively settled, but not by a proposition of this paper.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a135334": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 10.14: the recurrence holds for all n>=4 and fails at n=3. The proof is conditional on E. Deutsch's g.f. in the entry.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a141342": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 10.15: the listed recurrence is proved for n>=4 (the proof is conditional on a formula stated in the entry, Start F in Table 1).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a176006": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 10.23: the listed recurrence is proved for n>=3, as in the Lean statement; the proof starts from the entry's g.f., which the Lean statement uses as its definition.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a160823": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 10.17: the listed recurrence is proved for n>=5, as in the Lean statement; the proof starts from the entry's g.f., which the Lean statement uses as its definition.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a162533": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 10.19: the listed recurrence is proved for n>=5.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a165201": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 10.20: the recurrence holds for all n>=4 and fails at n=3. The Lean statement is the corrected n>=4 version, which is exactly what is proved (the proof is unconditional).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a174107": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 10.22: the listed recurrence is proved for n>=4, as in the Lean statement.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a184120": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 10.25: the listed recurrence is proved for n>=4, as in the Lean statement.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a186239": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 8.26: the listed recurrence is proved for n>=4.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a188314": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 10.26: the listed recurrence is proved for n>=5, as in the Lean statement.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a188464": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 10.27: the listed recurrence is proved for n>=4, as in the Lean statement; the proof starts from the entry's g.f., which the Lean statement uses as its definition.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a202020": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 10.8 (disproof): the conjecture as written (two a(n-4) terms) is false for every n>=4; the corrected recurrence, with -4(14n-11)a(n-3), is proved for n>=4.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a215973": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 8.18: the listed recurrence is proved for n>=4 (the proof is conditional on a formula stated in the entry, Start F in Table 1).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a254314": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 8.19: the listed recurrence is proved for n>=5 (the proof is conditional on a formula stated in the entry, Start F in Table 1).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a276310": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 8.32: the listed recurrence is proved for n>=3.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a276314": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 8.33: the listed recurrence is proved for n>=4.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a001724": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 7.39: the listed recurrence is proved for n>=5 (the proof is conditional on a formula stated in the entry, Start F in Table 1).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a027175": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 7.19: the listed recurrence is proved (with the inhomogeneous term -12(3n-1)) for n>=3 (the proof is conditional on a formula stated in the entry, Start F in Table 1).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a045739": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Theorem 5.4: the listed recurrence is proved for n>=7, by a Zeilberger certificate of order 4 (the proof is conditional on a formula stated in the entry, Start F in Table 1).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a047618": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 7.71: a(n)+a(n+1)+a(n+2)=8n-1 for n>=1, and equivalently the stated recurrence for n>=3 (the proof is unconditional).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a053532": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 9.5: the listed recurrence is proved for n>=4, as in the Lean statement.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a063140": {
+   "reason": "Settled at once by Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 9.65/Table 3 proves Barker's a(n)=24n-20 (n>=2) and a(n)=2a(n-1)-a(n-2) (n>=4). It does not write out the listed conjecture, Spezia's e.g.f. 20+x+4e^x(6x-5). Section 9.4 says such extra e.g.f. conjectures 'follow from Theorem 9.2 in the same way, but we do not write them out'. The e.g.f. is immediate from the closed form with a(1)=g=5 (and a(0)=0).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a063168": {
+   "reason": "Settled at once by Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 9.65/Table 3 proves McEachen's a(n)=a(n-1)+30 for n>=3. The listed conjecture is Chai Wah Wu's a(n)=2a(n-1)-a(n-2) for n>3 and g.f. x(x^2+22x+7)/(x-1)^2. It is an immediate corollary (with a(1)=7, a(2)=36), but the paper does not state it explicitly.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a075045": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Theorem 5.1(ii): J.-F. Alcover's recurrence holds for all n>=2; part (i) also proves van Hoeij's g.f. The proof is conditional on S. Manyama's formula in the entry.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a096471": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 8.36: the listed recurrence is proved for n>=7 (the proof is conditional on a formula stated in the entry, Start F in Table 1).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a097332": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 9.34: the listed recurrence is proved for n>=3, as in the Lean statement.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a219692": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 9.3: the recurrence holds for all n>=3 and fails at n=2, matching the Lean range n>=3. The proof is conditional on M. van Hoeij's hypergeometric g.f. in the entry, while the Lean statement uses the sum definition. Remark 9.4 says a proof very probably exists in the literature already.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a242566": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 8.28: the listed recurrence is proved for n>=4 (the proof is conditional on a formula stated in the entry, Start F in Table 1).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a243255": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 9.12: the listed recurrence is proved for n>=4.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a243760": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 8.29: the listed recurrence is proved for n>=6 (the proof is conditional on a formula stated in the entry, Start F in Table 1).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a243814": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 8.30: the listed recurrence is proved for n>=6 (the proof is conditional on a formula stated in the entry, Start F in Table 1).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a261196": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop 8.31: the listed recurrence is proved for n>=3 (the proof is conditional on a formula stated in the entry, Start F in Table 1).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a005654": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 7.8 proves Mathar's order-4 recurrence for all n >= 5 from Somos's formula a(n) = (C(2n-1,n) + C(n-1,floor(n/2)))/2, exactly the Lean statement.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a007901": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 7.51: Mathar's recurrence holds for all n >= 8 and fails at n = 5,6,7 (L(n) = -24, 36, 12), proved from Stanley's g.f. in the entry.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a022917": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Thm. 5.5 proves Mathar's order-5 recurrence for all n >= 5 from the definition (with a Lean certificate); matches the Lean statement.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a048775": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 7.21 proves Mathar's recurrence for all n >= 5 from a(n) = C(2n+1,n+1) - (n+1), exactly the Lean statement.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a000483": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 7.37 proves both Mathar recurrences (orders 3 and 4), for n >= 9 and n >= 10 (first one for all n != 6), from Jovovic's e.g.f. -(x+log(1-x))^3/6.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a000907": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 6.3: Mathar's first-order recurrence is false as written for every n; the index-shifted version (n-1)(4n+1)a(n) = (n+1)(2n+1)(4n+5)a(n-1) is proved for n >= 2.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a001784": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 6.4: both Mathar recurrences (orders 3 and 1) are false as written; after n -> n+1 they are proved for n >= 4 and n >= 2, from Kotesovec's closed form.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a002867": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 7.2 proves a(n) - 2a(n-1) - 4n(n-1)a(n-2) = 0 for all n >= 2 from the definition, exactly the Lean statement.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a047098": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Not proved in the paper: Section 3 excludes A047098 as already settled by R. Israel (2026). The OEIS entry records that Israel verified Mathar's recurrence (the Lean statement) from a differential equation for the g.f. (Mar 13 2026), so it is probably settled elsewhere rather than open.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a001338": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 7.67 (Zeilberger certificate from the name) proves Mathar's recurrence for all n >= 4 and shows it fails at n = 3; the Lean statement is exactly the n >= 4 version.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a003440": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Thm. 5.2 (ii)-(iii) proves Stephan's g.f. and Mathar's order-5 recurrence (n >= 5) for Hanna's formula h(n), and shows h(n) counts Levrel's binary words; the paper identifies the entry with that sequence from its 30 terms, since the entry's own definition is vague.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a005559": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 7.4 proves Mathar's recurrence for all n >= 3 from Hanna's binomial formula, the same definition and range as the Lean statement.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a005560": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 7.5 proves Mathar's recurrence for all n >= 4 from Hanna's formula with the offset shifted by 2 (Remark 6.9), as in the Lean statement.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a005561": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 7.6 proves Mathar's recurrence for all n >= 5 from Hanna's formula shifted by the offset 3 (Remark 6.9), matching the Lean statement.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a005562": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 7.7 proves Mathar's recurrence for all n >= 6 from Hanna's formula shifted by the offset 4 (Remark 6.9), matching the Lean statement.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a014533": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 9.15 proves Mathar's recurrence for all n >= 3 (the natural range), working from Ramirez's algebraic g.f. given in the entry.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a024812": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Not treated in the paper: Section 3 lists A024812 among the entries excluded because they were already settled by others. The OEIS entry records M. Buran's counterexample to Barker's recurrence at n = 15 (Mar 24 2026), so the Lean statement looks disproved elsewhere.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a024998": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 9.44 proves Mathar's recurrence for all n >= 4 from the walk definition (Lemma 9.1), matching the Lean statement.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a025175": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 7.59 proves Mathar's recurrence for all n >= 3 from the Jacobi g.f., with a(n) = 4^n P_n^(1,1)(1/2) (the normalisation the terms use).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a025180": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 9.45 proves Mathar's recurrence for all n >= 5 from the walk definition (Lemma 9.1, unconditional).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a025181": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 9.46 proves both Mathar recurrences from the walk definition, for n >= 8 and n >= 5: the same two statements and ranges as the Lean conjunction.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a025182": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 9.47 proves both Mathar recurrences (orders 4 and 2) for n >= 8 and n >= 6 from the walk definition.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a025245": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 9.16 proves Mathar's recurrence for all n >= 5 (the natural range), working from Somos's algebraic g.f. given in the entry.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a025248": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 9.17: Mathar's recurrence holds for all n >= 5 and fails at n = 4, proved from Somos's g.f.; this matches the corrected (n >= 5) Lean statement.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a025249": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 9.18 proves Mathar's recurrence for all n >= 4 (the natural range), working from Somos's g.f. given in the entry.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a025251": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 9.19: Mathar's order-5 recurrence holds for all n >= 7 and fails at n = 6, proved from Somos's g.f.; this matches the corrected (n >= 7) Lean statement.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a025256": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 9.20: Mathar's recurrence holds for all n >= 6 and fails at n = 5, proved from Jovovic's g.f.; this matches the corrected (n >= 6) Lean statement.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a025257": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 9.21 proves Mathar's recurrence for all n >= 5 (the natural range), working from Jovovic's g.f. for A025257.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a025258": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 9.22: Mathar's recurrence holds for all n >= 6 and fails at n = 5, proved from the g.f. in the entry; this matches the corrected (n >= 6) Lean statement.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a025269": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 7.45 proves Mathar's recurrence for all n >= 5, unconditionally from the defining convolution.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a025567": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 7.55 proves Mathar's recurrence L1 for n >= 5 (and a second one, L2, for n >= 3) from van Hoeij's g.f., which the Lean file also uses as its definition.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a025754": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 7.52 proves n a(n) - 9(9n-10) a(n-1) = 0 for all n >= 2 from the g.f. (10-(1-81x)^(1/9))/9, and shows it fails at n = 1; this matches the Lean statement (n >= 2).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a025757": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 9.10 proves Mathar's order-4 recurrence for all n >= 4 (the natural range), working from the algebraic g.f. stated in the entry.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a025758": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 9.9 proves Mathar's order-5 recurrence for all n >= 5 from the g.f. 5/(4+(1-25x)^(1/5)), the same definition and range as the Lean statement.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a026013": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 7.10 proves Mathar's recurrence for all n >= 3 from Greubel's binomial formula a(n) = C(2n,n-1) - C(2n,n-4) (a reflection-principle count).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a026017": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 7.11 proves Mathar's recurrence for all n >= 5 from Eldar's formula a(n) = C(2n-1,n-2) - C(2n-1,n-5), a reflection-principle count of the paths in the Lean definition.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a026018": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 7.12 proves Mathar's recurrence for all n >= 6 from Eldar's formula a(n) = C(2n-1,n-3) - C(2n-1,n-6) (reflection principle); it matches the Lean statement.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a026023": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 9.48 proves Mathar's recurrence for all n >= 3, unconditionally from the walk definition (Lemma 9.1).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a026026": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 7.14 proves Mathar's recurrence for all n >= 4 from Krause's binomial formula a(n) = C(2n-3,n-2) - C(2n-3,n-6) given in the entry.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a026027": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 7.15 proves Mathar's recurrence for all n >= 5 from Stephan's formula a(n) = C(2n-1,n-2) - C(2n-1,n-6). The Lean file defines a(n) through the entry's Catalan g.f. instead; the two agree, a standard reflection identity.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a026029": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 7.16 proves Mathar's recurrence for all n >= 2 from Barry's formula a(n) = C(2n,n) - C(2n,n-4), a reflection-principle count of the walks in the Lean definition.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a026030": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 7.17 proves Mathar's order-4 recurrence for all n >= 5 from Stephan's formula a(n) = C(2n,n-1) - C(2n,n-5).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a026031": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 7.18 proves Mathar's order-4 recurrence for all n >= 6 from Stephan's formula a(n) = C(2n,n-2) - C(2n,n-6).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a026070": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 9.49 proves Mathar's order-5 recurrence for all n >= 8 (the natural range, offset 3), unconditionally from the walk definition.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a026071": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 9.50 proves Mathar's order-4 recurrence for all n >= 8 (the natural range, offset 4), unconditionally from the walk definition.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a026083": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 9.51 proves Mathar's recurrence for all n >= 7 from the walk definition, matching the Lean statement.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a026084": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 9.52 proves Mathar's recurrence for all n >= 7 (the natural range, offset 4), unconditionally from the walk definition.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a026085": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 9.53 proves Mathar's order-5 recurrence for all n >= 9 (the natural range, offset 4), unconditionally from the walk definition.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a026086": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 9.54 proves Mathar's order-5 recurrence for all n >= 9 (the natural range, offset 4), unconditionally from the walk definition.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a026087": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 9.55 proves Mathar's order-4 recurrence for all n >= 8 (the natural range, offset 4), unconditionally from the walk definition.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a026110": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 9.56 proves Mathar's order-4 recurrence for all n >= 8 (the natural range, offset 4), unconditionally from the walk definition.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a026122": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 9.57 proves Mathar's recurrence for all n >= 5 (the natural range, offset 2), unconditionally from the walk definition.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a026125": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 9.58 proves Mathar's order-4 recurrence for all n >= 7 (the natural range, offset 3), unconditionally from the walk definition.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a026126": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 9.59 proves Mathar's order-4 recurrence for all n >= 8 (the natural range, offset 4), unconditionally from the walk definition.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a026135": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 7.53 proves Mathar's recurrence for all n >= 3, working from Callan's g.f. given in the entry.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a026165": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 7.54 proves Mathar's order-4 recurrence for all n >= 4 from Jovovic's binomial-sum formula (and also Kotesovec's order-2 recurrence); it matches the Lean statement, whose definition is the path count.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a026327": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 9.60 proves Mathar's order-4 recurrence for all n >= 6 (the natural range, offset 2), unconditionally from the walk definition.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a026328": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 9.61 proves Mathar's order-4 recurrence for all n >= 7 (the natural range, offset 3), unconditionally from the walk definition.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a026329": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 9.62 proves Mathar's order-4 recurrence for all n >= 8 (the natural range, offset 4), unconditionally from the walk definition.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a026672": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 6.2: Mathar's recurrence is false as written with the entry's offset 2 (L(5) = 6, and it fails at every checkable n); the version with n -> n-1 is proved for n >= 5 from Deleham's g.f.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a034863": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 7.20 proves Mathar's recurrence for all n >= 6 from the closed form in the name, matching the Lean statement.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a051286": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Not proved in the paper: Sections 3, 10 and 11(4) exclude A051286 as already settled (Scambler's peakless grand Motzkin interpretation, proved by Elizalde in 2021). The site's text here is Munarini's 2017 note that Mathar's recurrence follows from a differential equation for the g.f., which is a proof note rather than an open conjecture.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a127632": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 8.25 proves Mathar's order-3 recurrence for all n >= 3, unconditionally from A(x) = c(x c(x)) (the quartic (A^2-2A+2)^2 = (1-4x)A^4); this is the Lean statement.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a081798": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 8.48 proves both Mathar recurrences (orders 3 and 4) for n >= 3 and n >= 4, unconditionally from the defining sum. L2 was proved by hand (the engine timed out on it).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a054109": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 7.32 proves Mathar's recurrence for all n >= 2 from Cloitre's alternating sum of central binomials, which is equivalent to the Barry sum the Lean file uses (C(2k+1,k+1) = C(2k+2,k+1)/2).",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a055217": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 7.56 proves Mathar's recurrence for all n >= 3 (offset-0 indexing a(n) = partial sum for (1+x+x^2)^(n+1)), unconditionally; this is the Lean b(n) = a(n+1) statement.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a055392": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 9.43 proves Mathar's order-5 recurrence for all n >= 6 (the natural range), working from the algebraic equation A = x + 2A^3 + A^4 stated in the entry.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a059279": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 7.57 proves Mathar's recurrence for all n >= 3, unconditionally from the defining g.f.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a063116": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 9.65 / Table 3 proves a(n) = 16n - 14 for n >= 2 (and a(n) = 2a(n-1) - a(n-2), n >= 4) from the cusp-form dimension formula. Sycamore's conjecture is that closed form: T(4n-2) - T(4n-6) = 16n - 14 is an elementary identity.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a063395": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 7.60 proves Mathar's recurrence for all n >= 3 (the natural range), working from Stephan's g.f. given in the entry.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a064088": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 7.58 proves Mathar's recurrence for all n >= 2 from the g.f. 1/(1 - x c(5x)) given in the entry, and also Kotesovec's asymptotic formula.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a064089": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 9.25 proves Mathar's recurrence for all n >= 2 (the natural range), working from the C(6;n) g.f. stated in the entry.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a064091": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 9.26 proves Mathar's recurrence for all n >= 2 (the natural range), working from the C(8;n) g.f. stated in the entry.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a064092": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 9.27 proves Mathar's recurrence for all n >= 2 (the natural range), working from the C(9;n) g.f. stated in the entry.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a064386": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 7.73 (disproof): Barker's g.f. is proved, but his recurrence 'for n > 7' fails at n = 9 (a(9) = 57, right side 49), so the Lean conjunction, whose third conjunct claims it for every n >= 8, is false. The first conjunct (exceptional exponents) is not addressed.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a065942": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 7.26 proves Mathar's order-3 recurrence for all n >= 3 from a(n) = C(2n - floor((n+1)/2), floor(n/2)) = T(2n,n), as in the Lean statement.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "oeis-a066052": {
+   "reason": "Settled in Roberto Blanco Gómez, 'Proofs and corrections of 306 conjectures in the OEIS' (Zenodo, 2 October 2026), or by the proof its entry already records: Prop. 7.31 proves both Mathar recurrences unconditionally from a(n) = n! - (number of involutions), for n >= 3 and n >= 4: the same ranges as the Lean conjunction.",
+   "source": "https://zenodo.org/records/23112421",
+   "date": "2026-11-28"
+  },
+  "mo-82223": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Bradley (arXiv:1603.08964), Theorem 1(II) (from Bradley-Bryc) and Theorem 2(II) (Peyre), gives sigma-fields with rho(A,B) strictly larger than tau(A,B), the indicator-correlation sup that is the site's delta. Since rho is the sup of rho over finite sub-sigma-fields (simple functions are dense in L^2) while tau only decreases on sub-sigma-fields, some finite pair has rho > delta, so the site's equality is false. Disproved.",
+   "source": "https://arxiv.org/abs/1603.08964",
+   "date": "2026-11-28"
+  },
+  "mo-415111": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: David Speyer's comments give a correct dimension count: there are only n^2 real parameters but binom(n,k) minors (e.g. binom(8,4)=70>64), and when the majorization inequalities are strict they still hold on an open set of the hyperplane, so many majorized tuples are not minor tuples. This disproves the 'if and only if'; the asker accepted the argument.",
+   "source": "https://mathoverflow.net/questions/415111/schur-horn-theorem-for-principal-submatrices#comment1064595_415111",
+   "date": "2026-11-28"
+  },
+  "oeis-a055938": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Yura (arXiv:2607.22202, published in RIMS Kokyuroku Bessatsu B103) proves in Proposition 3.7 that y_{n+1}-y_n = 1 if n is in A055938 and 3 otherwise, with y_1=2, where y_n=A055938(n). That is exactly Stephan's recursion b(n)=a(n) (Theorem 4.1 also gives the A080578 relation).",
+   "source": "https://arxiv.org/abs/2607.22202",
+   "date": "2026-11-28"
+  },
+  "oeis-a350583": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Fang (arXiv:2604.06242) proves the Andrews-Dixit-Schultz-Yee conjecture that the series Sum (-1)^m q^(2mn+m)/((1+q^n)(1-q^(2m-1))) is odd (her (1.2) is the same expansion as the site's index sum) with a short, checkable q-series argument; Cui-Tang (arXiv:2604.08839) prove it independently. Both are preprints, but the proof is elementary.",
+   "source": "https://arxiv.org/abs/2604.06242",
+   "date": "2026-11-28"
+  },
+  "RiemannHypothesis.robin_criterion": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: This is Robin's 1984 theorem, a published result. The linked repo kimihiro64/Robin1984 (pinned commit) proves Robin1984.riemannHypothesis_iff_nativeRobinInequalityAll, and its Solution.lean derives the Mathlib-only statement (forall n > 5040, sigma(n) < e^gamma n log log n) <-> RiemannHypothesis from it. A text scan of the pinned project and vendored sources found no sorry, axiom or native_decide; I did not build it.",
+   "source": "https://github.com/kimihiro64/Robin1984/blob/e3697139babfe0f6cc7a76a08bf41a92aa7a2978/Robin1984/Equivalence/Equivalence.lean#L30",
+   "date": "2026-11-28"
+  },
+  "mo-350476": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: The MO answer 350489 identifies L with the lower ideals of a poset P, so J_L = Sum_I |I| and M_L = Sum_I (l - |I|). For P = an a-antichain below a b-chain it gets |J_L - M_L| = b(2^a - a - 1), which is at least l = a+b for a=b=3 (12 vs 6). That disproves the site's strict bound; I checked the computation.",
+   "source": "https://mathoverflow.net/a/350489",
+   "date": "2026-11-28"
+  },
+  "mse-3709724": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: The answer shows the asymptotic part fails for n=4: the difference tends to 7/48. I confirmed this with 80-digit numerics (0.1458333 at x=10^6), and for n=5 the difference even diverges. So the site's conjunction (bound AND difference -> 0 for every n >= 3) is false.",
+   "source": "https://math.stackexchange.com/a/5145729",
+   "date": "2026-11-28"
+  },
+  "oeis-a001156": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: The OEIS entry itself records the proven Hardy-Ramanujan (1917; rigorous, Wright 1934) asymptotic a(n) ~ 3^(-1/2)(4 pi n)^(-7/6) zeta(3/2)^(2/3) exp(3*2^(-4/3) pi^(1/3) zeta(3/2)^(2/3) n^(1/3)). There alpha = 7/6, beta = 3.307412 and 1/c = 17.496, so the Bohman-Froberg-Riesel conjecture with alpha = 1.16022, beta = 3.30716, 1/c = 18.79656 is false as stated, and its intended asymptotic form is known.",
+   "source": "https://oeis.org/A001156",
+   "date": "2026-11-28"
+  },
+  "oeis-a129453": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: blakestone-x/math A129453/Proof.lean proves square_quotient: G(n) = C(n,k) G(k) G(n-k) t^2 with G(n) = prod_{i,j<=n} gcd(i,j). That is the site's table 2 n identity. There is no sorry, the published build log shows only standard axioms, and the argument is elementary and correct: v_p(G(u)) = Sum_r floor(u/p^r)^2, and with the carries x^2-y^2-z^2-(x-y-z) is even and nonnegative.",
+   "source": "https://github.com/blakestone-x/math/tree/c662a3ae7284ba5a20ee6ef1c04297638b3f694f/A129453",
+   "date": "2026-11-28"
+  },
+  "oeis-a286667": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Dekking's comment on A286667 and the formula in A286665 show that A286665 is Sturmian with slope 2-sqrt(2), so the 1s have density 2-sqrt(2) and their positions satisfy a(n)/n -> 1/(2-sqrt(2)) = 1+sqrt(1/2). The frequency computation is standard and easy to check: Pell-word letter frequencies are sqrt(2)/2 and 1-sqrt(2)/2, and the {0->01} transform gives 1s density 1/(1+sqrt(2)/2).",
+   "source": "https://oeis.org/A286667",
+   "date": "2026-11-28"
+  },
+  "oeis-a336687": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Ren's note (OEIS attachment) shows that any solution has m < e^16 (about 8.9e6), using the Nicolas-Robin bound log tau(n) <= 1.5379 log 2 log n/log log n and sigma(n) <= n(1+log n). I checked each numeric step (0.385 + 0.462 + ... < 1). I also ran an exhaustive check myself for m <= 8.9e6 and found only 1, 468, 3240, so the 'iff' holds.",
+   "source": "https://oeis.org/A336687/a336687.pdf",
+   "date": "2026-11-28"
+  },
+  "oeis-a209723": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Ma-Zhang's Zenodo note (10.5281/zenodo.23903301) proves T(n,k) = b(n)+b(k)-2 for all widths, with b = A029744 shifted. The proof is short and correct: the row-compatibility graph is two K_{1,2} stars plus 2b(k)-4 disjoint edges. With k=4 this gives exactly Barker's parity formulas and g.f.; I checked the argument and brute-forced T(n,k) for k<=7, n<=11.",
+   "source": "https://doi.org/10.5281/zenodo.23903301",
+   "date": "2026-11-28"
+  },
+  "oeis-a209725": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: The same note's Theorem 1 gives T(n,6) = b(n)+b(6)-2 = b(n)+10, which is exactly Barker's parity formulas and g.f. x(12+x-23x^2)/((1-x)(1-2x^2)). The two-stars-plus-edges argument is correct, and I brute-force checked the formula.",
+   "source": "https://doi.org/10.5281/zenodo.23903301",
+   "date": "2026-11-28"
+  },
+  "oeis-a209726": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: The same note's Theorem 1 gives T(n,7) = b(n)+b(7)-2 = b(n)+14, which is exactly Barker's parity formulas and g.f. x(16+x-31x^2)/((1-x)(1-2x^2)). The argument is correct, and I brute-force checked the formula.",
+   "source": "https://doi.org/10.5281/zenodo.23903301",
+   "date": "2026-11-28"
+  },
+  "mo-343532": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Letac-Wesolowski (Ann. Probab. 2000) give the GIG/gamma property: X ~ GIG(-p), Y ~ Gamma(p) independent implies X+Y ~ GIG(p). With u = e^x, f21 and f12 are GIG(-lambda) and GIG(lambda) for lambda = a1-a2, so conditioning on X+Y gives the explicit monotone coupling p_x(y) = e^{a lambda}/Gamma(lambda) e^{-lambda y}(1-e^{y-x})^{lambda-1} exp(e^{a-x}-e^{a-y}) 1_{y<=x}. It reduces to the asker's p^(1) at lambda=1, and I verified it numerically for lambda=2.5. The PDF is a scan, so I relied on the known theorem statement.",
+   "source": "https://pages.mini.pw.edu.pl/~wesolowskij/publikacje/2000LetWes.pdf",
+   "date": "2026-11-28"
+  },
+  "opg-monotone-4-term-arithmetic-progressions": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Ho (arXiv:2609.12780) constructs a permutation of the positive integers with no subsequence a, a+r, a+2r, a+3r for any nonzero r, so it has no increasing or decreasing 4AP. That refutes the site's main. I read the short proof (reverse-colex order and the recursive Extension lemma) and found it correct; there is a linked Lean formalization, and formal-conjectures records Erdos 196 as answered no.",
+   "source": "https://arxiv.org/abs/2609.12780",
+   "date": "2026-11-28"
+  },
+  "mo-426935": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Schreib-Yavari (arXiv:2608.09191v3) prove the Imbalance Conjecture: a capacity lemma gives every Erdos-Gallai inequality for M_G, and parity follows from |p-q| = p+q mod 2. I checked each step of the 4-page proof and it is correct; a Lean formalization is also linked.",
+   "source": "https://arxiv.org/abs/2608.09191",
+   "date": "2026-11-28"
+  },
+  "oeis-a267442": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Blair's math-proofs repo proves a267442_eq_a043545 (for n>0) in lean/Mathproofs/Dynamics/Rule129MiddleColumn.lean, and the four-module closure has no sorry or axiom. The argument is elementary and correct: Rule 129 = complement of Rule 126 for n>=1, Rule 126's center cell is C(n, floor(n/2)) mod 2, and by Lucas that is odd iff n = 2^m-1.",
+   "source": "https://github.com/derekblair/math-proofs/tree/master/preprints/rule129",
+   "date": "2026-11-28"
+  },
+  "Erdos5.erdos_5.variants.hildebrand_maier.R1.H1.R1.H1.R1.H2": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: H2 (Bombieri-Vinogradov in the given form implies, for every C>0, positive lower density of n with p_n - p_{n-1} > C log p_{n-1}) is exactly OAI.LargePrimeGaps.index_density_of_bombieriVinogradov at the linked lines. OAI's BombieriVinogradov/endpointError and largeGapIndices unfold to the same expressions as the site's, and the 31-module closure has no sorry or axiom. The theorem is used in the PrimeGaps comparator challenge, which two independent groups report passing Comparator (one with the nanoda kernel).",
+   "source": "https://github.com/openai/math/blob/3344da59991ed94f9ba711217b29c1d760badfa6/lean/OAI/NumberTheory/PrimeGaps/DetectorMoments.lean#L288-L332",
+   "date": "2026-11-28"
+  },
+  "oeis-a003185": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: a(n+1)-a(n) = (4n+5)*8 = 32n+40. Martin's dimension formula (arXiv math/0306128, J. Number Theory 2005) for Gamma_0(96) has index 192, 16 cusps, no elliptic points and genus 9, so dim S_k = 8(k-1) + 16(k/2-1) = 16k-24 for even k>=4. At k = 2n+4 that is 32n+40, so the conjecture follows at once.",
+   "source": "https://arxiv.org/pdf/math/0306128",
+   "date": "2026-11-28"
+  },
+  "Green91.green_91.variants.fknss.R1.H1.R1.H3": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: H3 is FKNSS Lemma 2.4 (Comm. AMS 2 (2022), stated on the linked page and proved in the paper) applied at iterations 1..T+1 from the fixed initial bisection: whp all T+1 iterates of the alpha-swap have |X-Y| = o(n) <= eps*n. Projecting the joint (graph, random swap) event to the graph gives the existential trajectory. The site's swapStep encodes Definition 2.2 exactly (floor(alpha n) least-friendly vertices with fixed tie-break, then arbitrary floor(alpha^4 n)-subsets).",
+   "source": "https://research-explorer.ista.ac.at/download/17077/17230/2022_CommAMS_Ferber.pdf#page=6",
+   "date": "2026-11-28"
+  },
+  "opg-a-sequence-defined-on-multisets": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Erickson's array process is the infinite-base inventory (counting) sequence: an array with distinct first row and positive second row is S_1 of a multiset of positive integers, and one step counts all entries. Cain-Enin (arXiv:2004.00209), building on Bronstein-Fraenkel 1994, prove that every positive start reaches an inventory loop (Cor. 4.5.1) and that no loop is longer than three (Cor. 5.5.1, from the full enumeration in Thms 5.3/5.5). That is exactly the site's period-1/2/3 statement.",
+   "source": "https://arxiv.org/abs/2004.00209",
+   "date": "2026-11-28"
+  },
+  "OeisA212496.conjecture_5": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Mossinghoff-Trudgian (arXiv:2007.14537), Theorem 1.3 / (1.14), prove unconditionally that S_1(x) x^{1/2} > 0.019349 for infinitely many integers x, where S_1(x) = Sum_{n<=x} (-1)^{n-Omega(n)}/n = b(x). So b(n) > 0 > -1/sqrt(n) infinitely often, which disproves conjecture_5.",
+   "source": "https://arxiv.org/abs/2007.14537",
+   "date": "2026-11-28"
+  },
+  "opg-edge-disjoint-hamilton-cycles": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Kuhn-Lapinskas-Osthus-Patel, 'Proof of a conjecture of Thomassen on Hamilton cycles in highly connected tournaments', Proc. LMS 2014 (doi 10.1112/plms/pdu019), prove that every strongly C k^2 log^2 k-connected tournament has k edge-disjoint Hamilton cycles. That gives the required f(k).",
+   "source": "https://doi.org/10.1112/plms/pdu019",
+   "date": "2026-11-28"
+  },
+  "arxiv-2203.02443": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Ivanisvili-Zhang (arXiv:2609.27843) prove Holmes-Holroyd-Ramirez Conjecture 1 for all m and r, with the same greedy arrangement as the site's: a_{2i} at i and a_{2i+1} at m-1-i. They show the window-sum vector of the greedy log-arrangement majorizes every other arrangement's and apply Karamata. I read the 10-page elementary argument and found no gap, and brute force over all arrangements (m<=8, random inputs) found no violation.",
+   "source": "https://arxiv.org/abs/2609.27843",
+   "date": "2026-11-28"
+  },
+  "OeisA212496.conjecture_4": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Mossinghoff-Trudgian (arXiv:2007.14537), Theorem 1.3 / (1.14), prove unconditionally that S_1(x) x^{1/2} > 0.019349 for infinitely many integers x, with S_1(x) = Sum_{n<=x} (-1)^{n-Omega(n)}/n = b(x). So b(n) > 0 for infinitely many n, which disproves Sun's b(n) < 0 for all n (their (1.9)).",
+   "source": "https://arxiv.org/abs/2007.14537",
+   "date": "2026-11-28"
+  },
+  "erdos-791": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Kohonen (J. Number Theory 174 (2017); arXiv:1606.04770) gives 2-bases of size k = 42t+7 with range >= 510t^2, so liminf n(k)/k^2 >= 85/294 > 1/4. Since g(n) = min{k : n(k) >= n} and n(k) is monotone, limsup g(n)/sqrt(n) <= sqrt(294/85) ~ 1.86 < 2, which refutes g(n) ~ 2 sqrt(n) (Mrose's 2/7 already did).",
+   "source": "https://arxiv.org/abs/1606.04770",
+   "date": "2026-11-28"
+  },
+  "mo-185796": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: The linked paper, Stoyanov, Math. Scientist 28 (2003) 19-27, Theorem 1, constructs n binary variables realizing any prescribed independence/dependence structure (summarized by Sonin, Ann. Oper. Res. 2025). The published Balek-Mizera (Stat. Probab. Lett. 31 (1997)) states it exactly: for any subselection of the product identities there are events with prescribed probabilities satisfying only those, so every down-closed pattern of mutually independent subfamilies is realizable. The ResearchGate page itself returned 403, so I could not read Stoyanov's text directly.",
+   "source": "https://www.researchgate.net/publication/268868111_Sets_of_binary_random_variables_with_a_prescribed_independencedependence_structure",
+   "date": "2026-11-28"
+  },
+  "opg-geodesic-cycles-and-tuttes-theorem": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: The linked (unrefereed, machine-generated) note gives a counterexample: K4 with a degree-3 vertex added in each face. I checked every step and the argument is correct. Its 12 peripheral cycles are the triangles s_i b_j b_k; after a generic perturbation, geodesic cycles spanning the 11-dimensional cycle space force at least 11 of them to be geodesic. Then at most one core edge is non-tight, so some core triangle T_i is geodesic but not peripheral (s_i is isolated). This refutes the site's affirmative statement.",
+   "source": "https://github.com/graph-theory-AI/Graph-Theory-LLM-Proofs/blob/90ece5e70be9e29418fcc60b42002d58567631e6/to_review_astra/src/geodesic_cycles_and_tuttes_theorem/geodesic_cycles_and_tuttes_theorem.md",
+   "date": "2026-11-28"
+  },
+  "oeis-a233124": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: trureturing HardinA233124SquareStrip.lean defines a(n) as the literal count of n x 3 arrays over 0..5 (horizontal/vertical bonds excluding x and 5-x, top-left 0, Hardin's first-occurrence precedences). Its theorem result proves (1-8x)(1-40x+128x^2) Sum a(n)x^n = x(3-64x+192x^2), i.e. Barker's g.f. (the closed form follows by partial fractions). The 10-module closure has no sorry or axiom, though I did not build it.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/0bbd266d040a75a5576f9582802b9232461b9d60/D5/S3/Combinatorics/TraceAvoidingArrays/HardinA233124SquareStrip.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a233163": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: trureturing HardinA233163KingStrip.lean (literal n x 3 king-adjacency 8-colour count with the stated precedences) proves Sum a(n)x^n = x(3-64x+288x^2)/((1-8x)(1-16x)), and its closure has no sorry. Independently, Ma-Zhang's note (zenodo 24414706) proves T(n,k) = 2^{nk-4}(2^{n-2}+2^{k-2}-1) by a correct pair-partition plus normalization-fibre argument, which gives a(n) = 8^{n-2}(2^n+4).",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/0bbd266d040a75a5576f9582802b9232461b9d60/D5/S3/Combinatorics/TraceAvoidingArrays/HardinA233163KingStrip.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a233164": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: trureturing HardinA233164KingStrip.lean (literal n x 4 count) proves a(n) = 4^(2n-3)(2^n+12) for n>1, the recurrence, and the g.f. x(11-464x+3840x^2)/((1-16x)(1-32x)), with no sorry in its closure. It is also Corollary 6 (k=4) of the correct Ma-Zhang argument.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/0bbd266d040a75a5576f9582802b9232461b9d60/D5/S3/Combinatorics/TraceAvoidingArrays/HardinA233164KingStrip.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a233166": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: trureturing HardinA233166KingStrip.lean (literal n x 6 count, via 24 a(n) = 2^{6n-4} * #proper 4-colourings) proves Barker's g.f. and closed form 64^(n-1)(2^n+60), with no sorry in its closure. This matches the correct general formula T(n,6) = 2^{6n-4}(2^{n-2}+15).",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/0bbd266d040a75a5576f9582802b9232461b9d60/D5/S3/Combinatorics/TraceAvoidingArrays/HardinA233166KingStrip.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a233196": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: trureturing HardinA233196Strip.lean (literal n x 2 count with horizontal, vertical and antidiagonal bonds, matching the OEIS definition) proves (1-4x)(1-16x) Sum a(n)x^n = x(1-17x+40x^2), i.e. Barker's g.f. The closed form 2^(2n-7)(4^n+8) follows. There is no sorry in the closure.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/0bbd266d040a75a5576f9582802b9232461b9d60/D5/S3/Combinatorics/TraceAvoidingArrays/HardinA233196Strip.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a233251": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: trureturing HardinA233251TriangleStrip.lean (literal n x 3 count over 0..5 with horizontal and antidiagonal bonds, matching the OEIS definition) proves (1-8x)(1-48x) Sum a(n)x^n = x(3-64x). That is Barker's g.f., and the closed form 8^(n-1)(6^n+3)/3 follows. The closure has no sorry.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/0bbd266d040a75a5576f9582802b9232461b9d60/D5/S3/Combinatorics/TraceAvoidingArrays/HardinA233251TriangleStrip.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a233252": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: trureturing HardinA233252TriangleStrip.lean (literal n x 4 count over 0..5 with horizontal and antidiagonal bonds) proves the recurrence, (1-16x)(1-144x) Sum a(n)x^n = 2x(5-208x), and 9a(n+1) = 2^(4n+1)(4*9^(n+1)+9), which is Barker's closed form. The closure has no sorry.",
+   "source": "https://github.com/the-omega-institute/trureturing/blob/0bbd266d040a75a5576f9582802b9232461b9d60/D5/S3/Combinatorics/TraceAvoidingArrays/HardinA233252TriangleStrip.lean",
+   "date": "2026-11-28"
+  },
+  "oeis-a233162": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Ma-Zhang (zenodo 24414706), Corollary 5: a width-1 path of m cells has S(m-1,j-1) proper pair partitions with j classes and 2^{m-j} normalized colourings each. So L(m) = Sum_j 2^{m-j} S(m-1,j-1) = (5/32)2^m + 4^m/64 + 6^m/288, which is exactly Barker's 2^(m-6)(90+9*2^m+2*3^m)/9 and g.f. (a known Britnell-Wildon count). The argument is short and correct, and I checked values (e.g. L(5)=48).",
+   "source": "https://doi.org/10.5281/zenodo.24414706",
+   "date": "2026-11-28"
+  },
+  "oeis-a233165": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Ma-Zhang (zenodo 24414706) prove T(n,k) = 2^{nk-4}(2^{n-2}+2^{k-2}-1) for n,k >= 2. Every 2x2 square uses all 4 complementary pairs; the precedence rules force the first colour of each pair, giving a 2^{nk-4} fibre; Orrick's count gives 2^{n-2}+2^{k-2}-1 pair partitions. I checked the argument. At k=5 this gives 2^(5n-6)(2^n+28) and Barker's g.f.",
+   "source": "https://doi.org/10.5281/zenodo.24414706",
+   "date": "2026-11-28"
+  },
+  "oeis-a233167": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: The same correct Ma-Zhang argument (zenodo 24414706), T(n,k) = 2^{nk-4}(2^{n-2}+2^{k-2}-1), gives at k=7 T(n,7) = 2^(7n-6)(2^n+124) for n>=2 and Barker's g.f. 32x(39-13952x+1019904x^2)/((1-128x)(1-256x)), with L(7)=1248 for the first term.",
+   "source": "https://doi.org/10.5281/zenodo.24414706",
+   "date": "2026-11-28"
+  },
+  "oeis-a183899": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Smirnov's preprint (mindscanlabs/NAI-track-record hardin-sumsets) proves, via a correct profile lemma (coverage depends only on residue counts capped at s+1), that the nondecreasing count has the exact rational g.f. Sum over valid profiles of y^e/(1-y)^r. I reimplemented this independently: the profile sum for (q,s)=(5,3) reproduces the OEIS terms and equals Barker's g.f. x(1+51x^2-116x^3+74x^4-2x^5-5x^6-2x^7)/(1-x)^5 exactly as polynomials. That g.f. also gives the stated recurrence for n > numerator degree.",
+   "source": "https://github.com/mindscanlabs/NAI-track-record/tree/84eb1ef26783eaad5ad89c1d2910f6cc89d3fccc/hardin-sumsets",
+   "date": "2026-11-28"
+  },
+  "oeis-a183900": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Smirnov's preprint (mindscanlabs/NAI-track-record hardin-sumsets) proves, via a correct profile lemma (coverage depends only on residue counts capped at s+1), that the nondecreasing count has the exact rational g.f. Sum over valid profiles of y^e/(1-y)^r. I reimplemented this independently: the profile sum for (q,s)=(6,3) reproduces the OEIS terms and equals Barker's g.f. x(3+6x+31x^2-...-6x^9)/(1-x)^6 exactly as polynomials. That g.f. also gives the stated recurrence for n > numerator degree.",
+   "source": "https://github.com/mindscanlabs/NAI-track-record/tree/84eb1ef26783eaad5ad89c1d2910f6cc89d3fccc/hardin-sumsets",
+   "date": "2026-11-28"
+  },
+  "oeis-a183901": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Smirnov's preprint (mindscanlabs/NAI-track-record hardin-sumsets) proves, via a correct profile lemma (coverage depends only on residue counts capped at s+1), that the nondecreasing count has the exact rational g.f. Sum over valid profiles of y^e/(1-y)^r. I reimplemented this independently: the profile sum for (q,s)=(7,3) reproduces the OEIS terms and equals Barker's g.f. x(1-6x+150x^2-...-33x^9)/(1-x)^7 exactly as polynomials. That g.f. also gives the stated recurrence for n > numerator degree.",
+   "source": "https://github.com/mindscanlabs/NAI-track-record/tree/84eb1ef26783eaad5ad89c1d2910f6cc89d3fccc/hardin-sumsets",
+   "date": "2026-11-28"
+  },
+  "oeis-a183907": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Smirnov's preprint (mindscanlabs/NAI-track-record hardin-sumsets) proves, via a correct profile lemma (coverage depends only on residue counts capped at s+1), that the nondecreasing count has the exact rational g.f. Sum over valid profiles of y^e/(1-y)^r. I reimplemented this independently: the profile sum for (q,s)=(5,2) reproduces the OEIS terms and equals Barker's g.f. x(1-3x+20x^2-24x^3+3x^4+4x^5)/(1-x)^5 exactly as polynomials. That g.f. also gives the stated recurrence for n > numerator degree.",
+   "source": "https://github.com/mindscanlabs/NAI-track-record/tree/84eb1ef26783eaad5ad89c1d2910f6cc89d3fccc/hardin-sumsets",
+   "date": "2026-11-28"
+  },
+  "oeis-a183908": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Smirnov's preprint (mindscanlabs/NAI-track-record hardin-sumsets) proves, via a correct profile lemma (coverage depends only on residue counts capped at s+1), that the nondecreasing count has the exact rational g.f. Sum over valid profiles of y^e/(1-y)^r. I reimplemented this independently: the profile sum for (q,s)=(6,2) reproduces the OEIS terms and equals Barker's g.f. x(2-4x+19x^2-...-4x^7)/(1-x)^6 exactly as polynomials. That g.f. also gives the stated recurrence for n > numerator degree.",
+   "source": "https://github.com/mindscanlabs/NAI-track-record/tree/84eb1ef26783eaad5ad89c1d2910f6cc89d3fccc/hardin-sumsets",
+   "date": "2026-11-28"
+  },
+  "oeis-a183909": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Smirnov's preprint (mindscanlabs/NAI-track-record hardin-sumsets) proves, via a correct profile lemma (coverage depends only on residue counts capped at s+1), that the nondecreasing count has the exact rational g.f. Sum over valid profiles of y^e/(1-y)^r. I reimplemented this independently: the profile sum for (q,s)=(7,2) reproduces the OEIS terms and equals Barker's g.f. x(1-6x+36x^2-...+4x^9)/(1-x)^7 exactly as polynomials. That g.f. also gives the stated recurrence for n > numerator degree.",
+   "source": "https://github.com/mindscanlabs/NAI-track-record/tree/84eb1ef26783eaad5ad89c1d2910f6cc89d3fccc/hardin-sumsets",
+   "date": "2026-11-28"
+  },
+  "oeis-a183910": {
+   "reason": "Reported by an agent as solved elsewhere and confirmed by review: Smirnov's preprint (mindscanlabs/NAI-track-record hardin-sumsets) proves, via a correct profile lemma (coverage depends only on residue counts capped at s+1), that the nondecreasing count has the exact rational g.f. Sum over valid profiles of y^e/(1-y)^r. I reimplemented this independently: the profile sum for (q,s)=(8,2) reproduces the OEIS terms and equals Barker's g.f. x(2-11x+56x^2-...-10x^10)/(1-x)^8 exactly as polynomials. That g.f. also gives the stated recurrence for n > numerator degree.",
+   "source": "https://github.com/mindscanlabs/NAI-track-record/tree/84eb1ef26783eaad5ad89c1d2910f6cc89d3fccc/hardin-sumsets",
+   "date": "2026-11-28"
+  }
+ }
+}

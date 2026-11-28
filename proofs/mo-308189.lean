@@ -1,6 +1,13 @@
 import OMAStatements.S_mo_308189
 import Mathlib
 
+/-!
+A shorter version of @justusklocke-cloud's disproof in PR #9830, retaining the
+polynomial X + 2. Standard polynomial evaluation and norm simplification replace
+its explicit complex evaluation and absolute-value certificates.
+Source: https://mathoverflow.net/questions/308189
+-/
+
 theorem OMA.disproof : ¬ (type_of% @OMA.S_mo_308189.main) := by
   intro h
   have hdeg : (Polynomial.X + Polynomial.C (2 : ℂ)).natDegree = 1 :=
@@ -23,16 +30,6 @@ theorem OMA.disproof : ¬ (type_of% @OMA.S_mo_308189.main) := by
     norm_num
   have h1 := hall 1 (-1) (by simp) (by simp)
   rw [hrb] at h1
-  have hval : (1 : ℂ) * (-1) * (Polynomial.derivative (Polynomial.X + Polynomial.C (2 : ℂ))).eval (-1)
-      + (-1) * (Polynomial.derivative (Polynomial.X + Polynomial.C (2 : ℂ))).eval (-1)
-      - ((2 / 3 : ℝ) : ℂ) * (Polynomial.X + Polynomial.C (2 : ℂ)).eval (-1) = ((-(8 / 3) : ℝ) : ℂ) := by
-    simp only [Polynomial.derivative_add, Polynomial.derivative_X, Polynomial.derivative_C,
-      Polynomial.eval_add, Polynomial.eval_X, Polynomial.eval_C, Polynomial.eval_one,
-      Polynomial.eval_zero]
-    push_cast
-    ring
-  rw [hval, Complex.norm_real, Real.norm_eq_abs] at h1
-  have habs : |(-(8 / 3) : ℝ)| = 8 / 3 := by
-    rw [abs_neg]; exact abs_of_pos (by norm_num)
-  rw [habs] at h1
+  norm_num [Polynomial.derivative_add, Polynomial.derivative_X, Polynomial.derivative_C,
+    Polynomial.eval_add, Polynomial.eval_X, Polynomial.eval_C] at h1
   linarith

@@ -1,10 +1,5 @@
 import OMAReductions.R_PoincareConjecture_poincare_conjecture_R1_H2_R1_H1_R1_H2_R1_H1_R1
-import Mathlib.AlgebraicTopology.SingularHomology.Basic
-import Mathlib.CategoryTheory.Limits.Types.Pushouts
-import Mathlib.Algebra.Homology.HomologicalComplexLimits
-import Mathlib.Algebra.Category.Grp.Colimits
-import Mathlib.CategoryTheory.Limits.Preserves.SigmaConst
-
+import Mathlib
 
 /-!
 # Step H2 of the reduction PoincareConjecture.poincare_conjecture.R1.H2.R1.H1.R1.H2.R1.H1.R1
@@ -26,10 +21,8 @@ Only Mathlib is used; no upstream theorem is invoked.
 
 open CategoryTheory CategoryTheory.Limits AlgebraicTopology
 
-namespace OMA.Helpers
-
 /-- A monomorphism out of one pushout transports to any other pushout of the same span. -/
-theorem poincare_mono_transport {𝒞 : Type*} [Category 𝒞] {W X Y P P' Z : 𝒞} {f : W ⟶ X}
+theorem tr {𝒞 : Type*} [Category 𝒞] {W X Y P P' Z : 𝒞} {f : W ⟶ X}
     {g : W ⟶ Y} {inl : X ⟶ P} {inr : Y ⟶ P} {inl' : X ⟶ P'} {inr' : Y ⟶ P'}
     (h : IsPushout f g inl inr) (h' : IsPushout f g inl' inr') (k : P ⟶ Z) (k' : P' ⟶ Z)
     (hl : CategoryStruct.comp inl k = CategoryStruct.comp inl' k')
@@ -44,7 +37,7 @@ theorem poincare_mono_transport {𝒞 : Type*} [Category 𝒞] {W X Y P P' Z : �
 /-- Degreewise criterion: if on every simplex level the square of simplex sets is a pullback
 with injective right and bottom maps, the induced map from the pushout of singular chain
 complexes is a monomorphism. -/
-theorem poincare_chain_mono {A B D E : TopCat.{0}} (i : A ⟶ B) (j : A ⟶ D) (l : B ⟶ E)
+theorem cm {A B D E : TopCat.{0}} (i : A ⟶ B) (j : A ⟶ D) (l : B ⟶ E)
     (r : D ⟶ E)
     (hpb : ∀ m : SimplexCategoryᵒᵖ, IsPullback ((TopCat.toSSet.map i).app m)
       ((TopCat.toSSet.map j).app m) ((TopCat.toSSet.map l).app m) ((TopCat.toSSet.map r).app m))
@@ -80,7 +73,7 @@ theorem poincare_chain_mono {A B D E : TopCat.{0}} (i : A ⟶ B) (j : A ⟶ D) (
       ((HomologicalComplex.eval _ _ n).map (C.map j)) (F.map (pushout.inl t lT))
       (F.map (pushout.inr t lT)) := hPF
   have hmk : Mono (F.map (pushout.desc rT bT (hpb m).w)) := inferInstance
-  exact poincare_mono_transport hPC hPF' ((HomologicalComplex.eval _ _ n).map
+  exact tr hPC hPF' ((HomologicalComplex.eval _ _ n).map
       (pushout.desc (C.map l) (C.map r) w)) (F.map (pushout.desc rT bT (hpb m).w))
     ((((HomologicalComplex.eval _ _ n).map_comp _ _).symm.trans
         (congrArg (HomologicalComplex.eval _ _ n).map (pushout.inl_desc _ _ _))).trans
@@ -90,13 +83,10 @@ theorem poincare_chain_mono {A B D E : TopCat.{0}} (i : A ⟶ B) (j : A ⟶ D) (
       ((congrArg F.map (pushout.inr_desc rT bT (hpb m).w)).symm.trans (F.map_comp _ _)))
     hmk
 
-end OMA.Helpers
-
-open OMA.Helpers in
 theorem OMA.solution :
     OMA.R_PoincareConjecture_poincare_conjecture_R1_H2_R1_H1_R1_H2_R1_H1_R1.H2 := by
   intro X _ U V C i j l r h
-  refine poincare_chain_mono i j l r ?_ ?_ ?_ h
+  refine cm i j l r ?_ ?_ ?_ h
   · intro m
     rw [Types.isPullback_iff]
     refine ⟨?_, ?_, ?_⟩

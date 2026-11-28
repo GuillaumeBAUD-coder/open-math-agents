@@ -1,5 +1,6 @@
 import FormalConjectures.ErdosProblems.«1008»
 
+open Finset
 /-! A shared pair of left-side neighbors gives a four-cycle. -/
 
 open SimpleGraph
@@ -43,9 +44,9 @@ lemma folkman_edge_bound {A B : Type*} [Fintype A] [Fintype B]
     (hfree : ¬ (cycleGraph 4 ⊑ G)) :
     G.edgeSet.ncard ≤ Fintype.card B + (Fintype.card A).choose 2 := by
   classical
-  let left : Finset (A ⊕ B) := Finset.univ.map Function.Embedding.inl
-  let right : Finset (A ⊕ B) := Finset.univ.map Function.Embedding.inr
-  let neighbors (b : B) : Finset A := Finset.univ.filter fun a => G.Adj (.inl a) (.inr b)
+  let left : Finset (A ⊕ B) := univ.map Function.Embedding.inl
+  let right : Finset (A ⊕ B) := univ.map Function.Embedding.inr
+  let neighbors (b : B) : Finset A := univ.filter fun a => G.Adj (.inl a) (.inr b)
   let pairs (b : B) : Finset (Finset A) := (neighbors b).powersetCard 2
   have hbip : G.IsBipartiteWith (left : Set (A ⊕ B)) (right : Set (A ⊕ B)) := by
     constructor
@@ -63,41 +64,41 @@ lemma folkman_edge_bound {A B : Type*} [Fintype A] [Fintype B]
       | inr a =>
         have hn : ¬ G.Adj (.inr b) (.inr a) := fun h => by simpa using hG h
         simp [neighbors, hn]
-    rw [← G.card_neighborFinset_eq_degree, ← hmap, Finset.card_map]
+    rw [← G.card_neighborFinset_eq_degree, ← hmap, card_map]
   have hsum : G.edgeSet.ncard = ∑ b, (neighbors b).card := by
     rw [← G.coe_edgeFinset, Set.ncard_coe_finset,
       ← isBipartiteWith_sum_degrees_eq_card_edges' hbip]
-    simp only [right, Finset.sum_map]
-    exact Finset.sum_congr rfl fun b _ => (hdeg b).symm
-  have hdisj : ((Finset.univ : Finset B) : Set B).PairwiseDisjoint pairs := by
+    simp only [right, sum_map]
+    exact sum_congr rfl fun b _ => (hdeg b).symm
+  have hdisj : ((univ : Finset B) : Set B).PairwiseDisjoint pairs := by
     intro b _ b' _ hbb'
-    refine Finset.disjoint_left.mpr fun T hT hT' => hfree ?_
-    obtain ⟨hTb, hTcard⟩ := Finset.mem_powersetCard.mp hT
-    have hTb' := (Finset.mem_powersetCard.mp hT').1
-    obtain ⟨a, a', haa', rfl⟩ := Finset.card_eq_two.mp hTcard
+    refine disjoint_left.mpr fun T hT hT' => hfree ?_
+    obtain ⟨hTb, hTcard⟩ := mem_powersetCard.mp hT
+    have hTb' := (mem_powersetCard.mp hT').1
+    obtain ⟨a, a', haa', rfl⟩ := card_eq_two.mp hTcard
     refine fourCycle_of_two_common_neighbors G haa' hbb' ?_ ?_ ?_ ?_
-    · exact (Finset.mem_filter.mp (hTb (by simp))).2
-    · exact (Finset.mem_filter.mp (hTb' (by simp))).2
-    · exact (Finset.mem_filter.mp (hTb (by simp))).2
-    · exact (Finset.mem_filter.mp (hTb' (by simp))).2
-  have hsub : (Finset.univ : Finset B).biUnion pairs ⊆
-      (Finset.univ : Finset A).powersetCard 2 := by
+    · exact (mem_filter.mp (hTb (by simp))).2
+    · exact (mem_filter.mp (hTb' (by simp))).2
+    · exact (mem_filter.mp (hTb (by simp))).2
+    · exact (mem_filter.mp (hTb' (by simp))).2
+  have hsub : (univ : Finset B).biUnion pairs ⊆
+      (univ : Finset A).powersetCard 2 := by
     intro T hT
-    obtain ⟨b, _, hTb⟩ := Finset.mem_biUnion.mp hT
-    exact Finset.mem_powersetCard.mpr ⟨Finset.subset_univ _,
-      (Finset.mem_powersetCard.mp hTb).2⟩
+    obtain ⟨b, _, hTb⟩ := mem_biUnion.mp hT
+    exact mem_powersetCard.mpr ⟨subset_univ _,
+      (mem_powersetCard.mp hTb).2⟩
   have hpairs : (∑ b, (neighbors b).card.choose 2) ≤ (Fintype.card A).choose 2 := by
     calc
       _ = ∑ b, (pairs b).card := by
-        exact Finset.sum_congr rfl fun b _ => (Finset.card_powersetCard _ _).symm
-      _ = ((Finset.univ : Finset B).biUnion pairs).card := (Finset.card_biUnion hdisj).symm
-      _ ≤ ((Finset.univ : Finset A).powersetCard 2).card := Finset.card_le_card hsub
-      _ = _ := by rw [Finset.card_powersetCard, Finset.card_univ]
+        exact sum_congr rfl fun b _ => (card_powersetCard _ _).symm
+      _ = ((univ : Finset B).biUnion pairs).card := (card_biUnion hdisj).symm
+      _ ≤ ((univ : Finset A).powersetCard 2).card := card_le_card hsub
+      _ = _ := by rw [card_powersetCard, card_univ]
   calc
     G.edgeSet.ncard = ∑ b, (neighbors b).card := hsum
     _ ≤ ∑ b, (1 + (neighbors b).card.choose 2) :=
-      Finset.sum_le_sum fun b _ => degree_le_one_add_choose _
-    _ = Fintype.card B + (∑ b, (neighbors b).card.choose 2) := by simp [Finset.sum_add_distrib]
+      sum_le_sum fun b _ => degree_le_one_add_choose _
+    _ = Fintype.card B + (∑ b, (neighbors b).card.choose 2) := by simp [sum_add_distrib]
     _ ≤ _ := Nat.add_le_add_left hpairs _
 
 end OMA

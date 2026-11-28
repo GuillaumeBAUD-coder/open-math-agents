@@ -148,6 +148,7 @@ private lemma wz_step (n k : ℕ) (hn : 3 ≤ n) :
         · have hn2k3 : 2 * k + 3 ≤ n := by omega
           set a : ℕ := n - k - 3 with ha_def
           have ha_ge : k ≤ a := by omega
+          have hka : (k : ℚ) ≤ a := by exact_mod_cast ha_ge
           have hB_k_nat : a.choose k * k = a.choose (k - 1) * (a + 1 - k) := by
             have := Nat.choose_succ_right_eq a (k - 1)
             rwa [Nat.sub_add_cancel hkpos, show a - (k - 1) = a + 1 - k by omega] at this
@@ -164,12 +165,8 @@ private lemma wz_step (n k : ℕ) (hn : 3 ≤ n) :
           have hk_ne : (k : ℚ) ≠ 0 := by
             have : (1 : ℚ) ≤ (k : ℚ) := by exact_mod_cast hkpos
             linarith
-          have ha2k_ne : (a : ℚ) + 2 - (k : ℚ) ≠ 0 := by
-            have : (k : ℚ) ≤ (a : ℚ) := by exact_mod_cast ha_ge
-            linarith
-          have ha3k_ne : (a : ℚ) + 3 - (k : ℚ) ≠ 0 := by
-            have : (k : ℚ) ≤ (a : ℚ) := by exact_mod_cast ha_ge
-            linarith
+          have ha2k_ne : (a : ℚ) + 2 - (k : ℚ) ≠ 0 := by linarith
+          have ha3k_ne : (a : ℚ) + 3 - (k : ℚ) ≠ 0 := by linarith
           have hk2_ne : (k : ℚ) + 2 ≠ 0 := by positivity
           have hn_eq_a : (n : ℚ) = (a : ℚ) + (k : ℚ) + 3 := by
             have : n = a + k + 3 := by omega
@@ -231,14 +228,10 @@ private lemma wz_step (n k : ℕ) (hn : 3 ≤ n) :
             show k + 1 - 1 = k by omega]
           rw [hBa3, hBa2, hBa1, hBk, hBg0, catalan_rat_div k, hn_eq_a]
           push_cast
-          have ha1k_ne : (a : ℚ) + 1 - (k : ℚ) ≠ 0 := by
-            have : (k : ℚ) ≤ (a : ℚ) := by exact_mod_cast ha_ge
-            linarith
+          have ha1k_ne : (a : ℚ) + 1 - (k : ℚ) ≠ 0 := by linarith
           have hden0 : ((a : ℚ) + (k : ℚ) + 3 - 2 * (k : ℚ)) = (a : ℚ) + 3 - (k : ℚ) := by ring
           have hden1 : ((a : ℚ) + (k : ℚ) + 3 - 2 * ((k : ℚ) + 1)) = (a : ℚ) + 1 - (k : ℚ) := by ring
-          have ha3k_alt : 3 + (a : ℚ) - (k : ℚ) ≠ 0 := by
-            have : (k : ℚ) ≤ (a : ℚ) := by exact_mod_cast ha_ge
-            linarith
+          have ha3k_alt : 3 + (a : ℚ) - (k : ℚ) ≠ 0 := by linarith
           rw [hden0, hden1]
           field_simp [hk_ne, ha1k_ne, ha2k_ne, ha3k_ne, ha3k_alt, hk2_ne]
           ring
@@ -247,25 +240,9 @@ end Proof
 
 theorem OMA.solution : type_of% @OMA.S_oeis_a185087.main := by
   intro n hn
-  have hQ :
-      ((n : ℚ) + 4) * (OMA.S_oeis_a185087.a n : ℚ) -
-        (2 * (n : ℚ) + 5) * (OMA.S_oeis_a185087.a (n - 1) : ℚ) -
-        3 * ((n : ℚ) + 1) * (OMA.S_oeis_a185087.a (n - 2) : ℚ) +
-        2 * (2 * (n : ℚ) - 1) * (OMA.S_oeis_a185087.a (n - 3) : ℚ) = 0 := by
-    rw [a_eq_sum_fTerm (Nat.le_refl n),
-      a_eq_sum_fTerm (Nat.sub_le n 1),
-      a_eq_sum_fTerm (Nat.sub_le n 2),
-      a_eq_sum_fTerm (Nat.sub_le n 3)]
-    simp only [Finset.mul_sum]
-    rw [← Finset.sum_sub_distrib, ← Finset.sum_sub_distrib, ← Finset.sum_add_distrib]
-    have hsum :
-        ∑ k ∈ Finset.range (n / 2 + 2),
-          (((n : ℚ) + 4) * fTerm n k -
-            (2 * (n : ℚ) + 5) * fTerm (n - 1) k -
-            3 * ((n : ℚ) + 1) * fTerm (n - 2) k +
-            2 * (2 * (n : ℚ) - 1) * fTerm (n - 3) k) =
-          ∑ k ∈ Finset.range (n / 2 + 2), (gTerm n (k + 1) - gTerm n k) :=
-      Finset.sum_congr rfl fun k _ => wz_step n k hn
-    rw [hsum, Finset.sum_range_sub (gTerm n) (n / 2 + 2)]
-    rw [gTerm_zero, gTerm_lt (by omega), sub_zero]
-  exact_mod_cast hQ
+  qify
+  rw [a_eq_sum_fTerm le_rfl, a_eq_sum_fTerm (n.sub_le 1), a_eq_sum_fTerm (n.sub_le 2),
+    a_eq_sum_fTerm (n.sub_le 3)]
+  simp only [Finset.mul_sum, ← Finset.sum_sub_distrib, ← Finset.sum_add_distrib]
+  rw [Finset.sum_congr rfl fun k _ => wz_step n k hn, Finset.sum_range_sub (gTerm n),
+    gTerm_zero, gTerm_lt (by omega), sub_zero]

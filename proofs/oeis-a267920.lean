@@ -1,5 +1,6 @@
 import OMAStatements.S_oeis_a267920
 
+open PowerSeries
 open OMA.S_oeis_a267920
 
 -- Colin Barker's recurrence and generating function. Rule 243 has one moving
@@ -80,20 +81,20 @@ private theorem a_recurrence (n : ℕ) (hn : 2 < n) :
   omega
 
 private theorem generating :
-    series * ((1 - PowerSeries.X) * (1 - 100 * PowerSeries.X)) =
-      1 + 1000 * PowerSeries.X ^ 2 := by
-  have hd : series * ((1 - PowerSeries.X) * (1 - 100 * PowerSeries.X)) =
-      series - (series * PowerSeries.C (101 : ℤ)) * PowerSeries.X ^ 1 +
-        (series * PowerSeries.C (100 : ℤ)) * PowerSeries.X ^ 2 := by
+    series * ((1 - X) * (1 - 100 * X)) =
+      1 + 1000 * X ^ 2 := by
+  have hd : series * ((1 - X) * (1 - 100 * X)) =
+      series - (series * C (101 : ℤ)) * X ^ 1 +
+        (series * C (100 : ℤ)) * X ^ 2 := by
     simp only [pow_one, map_ofNat]
     ring
-  have hnum : (1 + 1000 * PowerSeries.X ^ 2 : PowerSeries ℤ) =
-      1 + PowerSeries.C (1000 : ℤ) * PowerSeries.X ^ 2 := by simp
+  have hnum : (1 + 1000 * X ^ 2 : PowerSeries ℤ) =
+      1 + C (1000 : ℤ) * X ^ 2 := by simp
   rw [hd, hnum]
-  apply PowerSeries.ext
+  apply ext
   intro n
-  simp only [map_add, map_sub, PowerSeries.coeff_mul_X_pow', PowerSeries.coeff_mul_C,
-    PowerSeries.coeff_C, PowerSeries.coeff_one, series, PowerSeries.coeff_mk]
+  simp only [map_add, map_sub, coeff_mul_X_pow', coeff_mul_C,
+    coeff_C, coeff_one, series, coeff_mk]
   by_cases hn : n < 3
   · interval_cases n <;> decide
   · have hr := a_recurrence n (by omega)

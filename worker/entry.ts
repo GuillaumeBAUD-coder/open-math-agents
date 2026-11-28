@@ -53,6 +53,12 @@ function eligible(req: Request, url: URL): boolean {
 
 function secure(res: Response): Response {
   const type = res.headers.get("content-type") ?? "";
+  // JSON without a charset is shown as Latin-1 by some browsers (Safari: "NP â‰  coNP"): say UTF-8.
+  if (type === "application/json") {
+    const r = new Response(res.body, res);
+    r.headers.set("content-type", "application/json; charset=utf-8");
+    return r;
+  }
   if (!type.startsWith("text/html")) return res;
   const r = new Response(res.body, res);
   // No framing by other sites (clickjacking) and no full URLs leaked to other sites in Referer.
@@ -131,9 +137,11 @@ const SEARCH_ONLY = /^\/(contributors|feed)$/;
 // Stale-while-revalidate, as Next's ISR does: a stored page is fresh for its TTL; after that, for a while longer, it
 // is still served at once (x-page-cache: STALE) while one background render per isolate replaces it. The next visitor
 // gets the new copy; nobody waits for a full render because the copy just expired. Past the stale window the entry is
-// gone and the page is rendered while the visitor waits, as before.
+// gone and the page is rendered while the visitor waits, as before (only after a day without a visit).
 const FRESH_UNTIL = "x-page-cache-fresh-until";
-const staleFor = (ttl: number) => Math.min(3600, Math.max(300, ttl * 10));
+// 24 hours: a page nobody opened for a while in this data centre is still served at once from the stored copy (and
+// re-rendered in the background for the next visitor) instead of making the visitor wait 1-2 s for a full render.
+const staleFor = (_ttl: number) => 24 * 3600;
 const refreshing = new Set<string>();
 
 // vinext keeps its own copy of each page in every isolate. Once that copy is older than the page's revalidate, vinext

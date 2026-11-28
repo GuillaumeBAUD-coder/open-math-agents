@@ -1,122 +1,100 @@
 import OMAStatements.S_oeis_a192744
+import Mathlib
 
-namespace OMA.S_oeis_a192744
+/-!
+Modulo the quadratic, two consecutive applications of the polynomial
+recursion give an inhomogeneous Fibonacci recursion for the constant
+coefficient. Its inhomogeneous term is the difference of two successive
+factorials. The proposed recurrences are combinations of shifts of this
+identity, with coefficients that cancel the factorial terms.
+-/
 
-open Polynomial
+namespace OMA.A192744
 
-private lemma hq_deg : (X ^ 2 - X - 1 : ℤ[X]).degree = 2 := by
-  have h1 : (X ^ 2 : ℤ[X]).degree = 2 := degree_X_pow 2
-  have h2 : (X + 1 : ℤ[X]).degree < (X ^ 2 : ℤ[X]).degree := by
-    rw [h1]
-    calc (X + 1 : ℤ[X]).degree
-        ≤ max (X : ℤ[X]).degree (1 : ℤ[X]).degree := degree_add_le _ _
-      _ ≤ max 1 0 := max_le_max degree_X_le degree_one_le
-      _ < 2 := by decide
-  have hq : (X ^ 2 - X - 1 : ℤ[X]) = X ^ 2 - (X + 1) := by ring
-  rw [hq, degree_sub_eq_left_of_degree_lt h2, h1]
+open Polynomial S_oeis_a192744
 
-private lemma hq_monic : (X ^ 2 - X - 1 : ℤ[X]).Monic := by
-  rw [Monic, leadingCoeff, natDegree_eq_of_degree_eq_some hq_deg]
-  simp [coeff_X_pow, coeff_X, coeff_one]
+/-- The quadratic used to reduce the sequence polynomials. -/
+noncomputable def q : ℤ[X] := X ^ 2 - X - 1
 
-private lemma linear_degree_lt (u v : ℤ) :
-    (C u + C v * X : ℤ[X]).degree < (X ^ 2 - X - 1 : ℤ[X]).degree := by
-  rw [hq_deg]
-  calc (C u + C v * X : ℤ[X]).degree
-      ≤ max (C u : ℤ[X]).degree (C v * X : ℤ[X]).degree := degree_add_le _ _
-    _ ≤ max 0 1 := by
-        apply max_le_max
-        · exact degree_C_le
-        · calc (C v * X : ℤ[X]).degree
-              ≤ (C v : ℤ[X]).degree + (X : ℤ[X]).degree := degree_mul_le _ _
-            _ ≤ 0 + 1 := add_le_add degree_C_le degree_X_le
-            _ = 1 := by decide
-    _ < 2 := by decide
+/-- Adding a constant to X leaves the degree at most one. -/
+lemma degree_linear_le (c : ℤ) : degree (X + C c) ≤ (1 : WithBot ℕ) := by
+  apply degree_add_le_of_degree_le
+  · rw [degree_X]
+    exact le_rfl
+  · exact degree_C_le.trans (by decide : (0 : WithBot ℕ) ≤ 1)
 
-private def ab : ℕ → ℤ × ℤ
-  | 0 => (1, 0)
-  | n + 1 => ((ab n).2 + ((n + 1).factorial : ℤ), (ab n).1 + (ab n).2)
+/-- The divisor has degree two. -/
+lemma degree_q : degree q = (2 : WithBot ℕ) := by
+  have h : degree (X + (1 : ℤ[X])) < (2 : WithBot ℕ) := by
+    simpa using (degree_linear_le 1).trans_lt (by decide : (1 : WithBot ℕ) < 2)
+  rw [q, sub_sub, degree_sub_eq_left_of_degree_lt]
+  · simp
+  · simpa using h
 
-private lemma p_decomp (n : ℕ) :
-    ∃ s : ℤ[X], (C (ab n).1 + C (ab n).2 * X) + (X ^ 2 - X - 1) * s = p n := by
-  induction n with
-  | zero =>
-    refine ⟨0, ?_⟩
-    simp [ab, p]
-  | succ n ih =>
-    rcases ih with ⟨s, hs⟩
-    refine ⟨X * s + C (ab n).2, ?_⟩
-    rw [p, ← hs]
-    simp only [ab, map_add]
+/-- The divisor is monic, as its degree-two term has coefficient one. -/
+lemma monic_q : q.Monic := by
+  rw [q, sub_sub]
+  exact monic_X_pow_sub (by
+    simpa using (degree_linear_le 1).trans_lt (by decide : (1 : WithBot ℕ) < 2))
+
+/-- The two-step difference reduces to a linear polynomial in X. -/
+lemma fib_step (n : ℕ) :
+    a (n + 2) - a (n + 1) - a n =
+      ((n + 2).factorial : ℤ) - ((n + 1).factorial : ℤ) := by
+  let f₁ : ℤ := (n + 1).factorial
+  let f₂ : ℤ := (n + 2).factorial
+  let r : ℤ[X] := X * C f₁ + C (f₂ - f₁)
+  have hr : r %ₘ q = r := by
+    apply (modByMonic_eq_self_iff monic_q).mpr
+    rw [degree_q]
+    apply (degree_add_le _ _).trans_lt
+    apply max_lt
+    · rw [mul_comm]
+      exact (degree_C_mul_X_le f₁).trans_lt (by decide : (1 : WithBot ℕ) < 2)
+    · exact (degree_C_le).trans_lt (by decide : (0 : WithBot ℕ) < 2)
+  have hp : p (n + 2) - p (n + 1) - p n = q * p n + r := by
+    rw [show p (n + 2) = X * p (n + 1) + C f₂ by rfl,
+      show p (n + 1) = X * p n + C f₁ by rfl]
+    simp only [q, r, map_sub]
     ring
+  have hmod := congrArg (fun g : ℤ[X] => g %ₘ q) hp
+  simp only [sub_modByMonic, add_modByMonic, self_mul_modByMonic monic_q, hr,
+    zero_add] at hmod
+  have hc := congrArg (fun g : ℤ[X] => g.coeff 0) hmod
+  simpa [a, q, r, f₁, f₂, coeff_sub, coeff_add, coeff_mul_C] using hc
 
-private lemma p_mod (n : ℕ) :
-    p n %ₘ (X ^ 2 - X - 1) = C (ab n).1 + C (ab n).2 * X := by
-  rcases p_decomp n with ⟨s, hs⟩
-  exact (div_modByMonic_unique s (C (ab n).1 + C (ab n).2 * X) hq_monic
-    ⟨hs, linear_degree_lt _ _⟩).2
-
-private lemma a_eq (n : ℕ) : a n = (ab n).1 := by
-  rw [a, p_mod]
-  simp [coeff_X]
-
-private lemma a_step (k : ℕ) :
-    a (k + 2) - a (k + 1) - a k = ((k : ℤ) + 1) * ((k + 1).factorial : ℤ) := by
-  have hf : ((k + 2).factorial : ℤ) = ((k : ℤ) + 2) * ((k + 1).factorial : ℤ) := by
-    rw [Nat.factorial_succ]
-    push_cast
-    ring
-  simp only [a_eq, ab]
-  rw [hf]
+/-- The factorial difference factors using the one-step factorial recursion. -/
+lemma scaled_step (n : ℕ) :
+    a (n + 2) - a (n + 1) - a n = ((n : ℤ) + 1)^2 * (n.factorial : ℤ) := by
+  rw [fib_step, Nat.factorial_succ (n + 1), Nat.factorial_succ n]
+  push_cast
   ring
 
-private theorem main_proved :
-    (∀ n : ℕ, 4 ≤ n →
-      a n + (-(n : ℤ) - 2) * a (n - 1) + 2 * ((n : ℤ) - 1) * a (n - 2) + 3 * a (n - 3)
-        + (-(n : ℤ) + 2) * a (n - 4) = 0) ∧
-    (∀ n : ℕ, 3 ≤ n →
-      (-(n : ℤ) + 2) * a n + ((n : ℤ) ^ 2 - (n : ℤ) - 1) * a (n - 1)
-        + (-(n : ℤ) ^ 2 + 3 * (n : ℤ) - 3) * a (n - 2) - ((n : ℤ) - 1) ^ 2 * a (n - 3) = 0) := by
-  refine ⟨?_, ?_⟩
+end OMA.A192744
+
+open OMA.S_oeis_a192744 OMA.A192744 in
+theorem OMA.solution : type_of% @OMA.S_oeis_a192744.main := by
+  constructor
   · intro n hn
     obtain ⟨k, rfl⟩ : ∃ k, n = k + 4 := ⟨n - 4, by omega⟩
-    have h1 : k + 4 - 1 = k + 3 := by omega
-    have h2 : k + 4 - 2 = k + 2 := by omega
-    have h3 : k + 4 - 3 = k + 1 := by omega
-    have h4 : k + 4 - 4 = k := by omega
-    rw [h1, h2, h3, h4]
-    have hs0 := a_step k
-    have hs1 := a_step (k + 1)
-    have hs2 := a_step (k + 2)
-    have hf2 : ((k + 2).factorial : ℤ) = ((k : ℤ) + 2) * ((k + 1).factorial : ℤ) := by
-      rw [Nat.factorial_succ]
-      push_cast
-      ring
-    have hf3 : ((k + 3).factorial : ℤ) = ((k : ℤ) + 3) * ((k + 2).factorial : ℤ) := by
-      rw [Nat.factorial_succ]
-      push_cast
-      ring
-    rw [hf2] at hs1
-    rw [hf3, hf2] at hs2
-    push_cast at hs1 hs2 ⊢
-    linear_combination hs2 - ((k : ℤ) + 5) * hs1 + ((k : ℤ) + 2) * hs0
+    simp only [show ∀ k : ℕ, k + 4 - 1 = k + 3 by omega,
+      show ∀ k : ℕ, k + 4 - 2 = k + 2 by omega,
+      show ∀ k : ℕ, k + 4 - 3 = k + 1 by omega,
+      show ∀ k : ℕ, k + 4 - 4 = k by omega, Nat.cast_add, Nat.cast_ofNat]
+    have h₀ := scaled_step k
+    have h₁ := scaled_step (k + 1)
+    have h₂ := scaled_step (k + 2)
+    rw [Nat.factorial_succ k] at h₁
+    rw [Nat.factorial_succ (k + 1), Nat.factorial_succ k] at h₂
+    push_cast at h₁ h₂
+    linear_combination h₂ - ((k : ℤ) + 5) * h₁ + ((k : ℤ) + 2) * h₀
   · intro n hn
     obtain ⟨k, rfl⟩ : ∃ k, n = k + 3 := ⟨n - 3, by omega⟩
-    have h1 : k + 3 - 1 = k + 2 := by omega
-    have h2 : k + 3 - 2 = k + 1 := by omega
-    have h3 : k + 3 - 3 = k := by omega
-    rw [h1, h2, h3]
-    have hs0 := a_step k
-    have hs1 := a_step (k + 1)
-    have hf2 : ((k + 2).factorial : ℤ) = ((k : ℤ) + 2) * ((k + 1).factorial : ℤ) := by
-      rw [Nat.factorial_succ]
-      push_cast
-      ring
-    rw [hf2] at hs1
-    push_cast at hs1 ⊢
-    linear_combination (-((k : ℤ) + 1)) * hs1 + ((k : ℤ) + 2) ^ 2 * hs0
-
-end OMA.S_oeis_a192744
-
-theorem OMA.solution : type_of% @OMA.S_oeis_a192744.main :=
-  OMA.S_oeis_a192744.main_proved
+    simp only [show ∀ k : ℕ, k + 3 - 1 = k + 2 by omega,
+      show ∀ k : ℕ, k + 3 - 2 = k + 1 by omega,
+      show ∀ k : ℕ, k + 3 - 3 = k by omega, Nat.cast_add, Nat.cast_ofNat]
+    have h₀ := scaled_step k
+    have h₁ := scaled_step (k + 1)
+    rw [Nat.factorial_succ k] at h₁
+    push_cast at h₁
+    linear_combination (-(k : ℤ) - 1) * h₁ + ((k : ℤ) + 2)^2 * h₀

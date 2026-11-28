@@ -7,13 +7,19 @@ import { computeWorld, LEDGER_SHARD, sameEntry, upsertEntry, type LedgerEntry, t
 export * from "@/lib/ledgercore";
 
 /**
- * The credit ledger in Workers KV (DESK_KV): one entry per merged pull request (lib/ledgercore.ts), written by the
- * merger through POST /api/ledger and by the backfill (tools/ledger_backfill.mjs). Sharded by pull request number,
- * 1000 per key ("ledger:v1:s<k>", value {v, list}); "ledger:v1:meta" lists the shards with their version, so a reader
- * fetches again only the shards that changed (in practice the latest one).
+ * The credit ledger in Workers KV (DESK_KV): one entry per merged pull request (lib/ledgercore.ts). Two families of
+ * keys, sharded by pull request number (1000 per key, value {v, list}), each with a meta listing its shards and their
+ * version, so a reader fetches again only the shards that changed:
+ *  - live: "ledger:v1:s<k>" and "ledger:v1:meta", written only by this site (POST /api/ledger, from the merger);
+ *  - backfill: "ledger:v1:b<k>" and "ledger:v1:bmeta", written only by a maintainer's import of
+ *    tools/ledger_backfill.mjs (Cloudflare API), never by the site: the two never overwrite each other's writes
+ *    (KV has no transactions, and an import racing the merger's posts on the same key lost entries).
+ * The reader takes the union by pull request (upsertEntry: the earliest merge time seen).
  */
 export const LEDGER_META = "ledger:v1:meta";
 export const ledgerShardKey = (k: number) => `ledger:v1:s${k}`;
+export const LEDGER_BACKFILL_META = "ledger:v1:bmeta";
+const backfillShardKey = (k: number) => `ledger:v1:b${k}`;
 export type LedgerMeta = { v: 1; shards: Record<string, { n: number; v: string }>; count: number; at: string };
 type Shard = { v: string; list: LedgerEntry[] };
 type KV = { get(k: string, o?: { type: "json"; cacheTtl?: number }): Promise<unknown>; put(k: string, v: string): Promise<void> };
@@ -26,7 +32,7 @@ function kv(): KV | null {
   }
 }
 
-const SHARDS = new Map<number, Shard>();
+const SHARDS = new Map<string, Shard>();
 /** Every shard up to the highest one listed: pull request numbers are dense, so shards 0..max all exist. */
 const shardRange = (meta: LedgerMeta | null) => {
   const ks = Object.keys(meta?.shards ?? {}).map(Number).filter(Number.isInteger);
@@ -37,7 +43,26 @@ let LEDGER: Ledger | null = null;
 let READING: Promise<Ledger> | null = null;
 const TTL = 60_000;
 
-/** Every entry (cached a minute per isolate; a failed read keeps the last one). */
+/** One family's shards, each fetched again only when its meta lists a new version (or does not list it). */
+async function readFamily(store: KV, metaKey: string, key: (k: number) => string): Promise<{ list: LedgerEntry[]; version: string; meta: LedgerMeta | null }> {
+  const meta = (await store.get(metaKey, { type: "json", cacheTtl: 60 })) as LedgerMeta | null;
+  const keys = shardRange(meta);
+  await Promise.all(keys.map(async (k) => {
+    // A shard the meta does not list (two writes raced on it): read again every time until a write lists it.
+    const want = meta?.shards?.[k]?.v;
+    if (want && SHARDS.get(key(k))?.v === want) return;
+    const got = (await store.get(key(k), { type: "json", cacheTtl: 60 })) as Shard | null;
+    // A copy older than the meta (another data centre's cache): kept, and asked again at the next read.
+    if (got && Array.isArray(got.list)) SHARDS.set(key(k), got);
+  }));
+  return {
+    list: keys.flatMap((k) => SHARDS.get(key(k))?.list ?? []),
+    version: keys.map((k) => `${k}:${SHARDS.get(key(k))?.v ?? "-"}`).join(","),
+    meta,
+  };
+}
+
+/** Every entry, backfill and live merged by pull request (cached a minute per isolate; a failed read keeps the last). */
 export function readLedger(): Promise<Ledger> {
   if (LEDGER && Date.now() - LEDGER.at < TTL) return Promise.resolve(LEDGER);
   if (READING) return READING;
@@ -46,19 +71,11 @@ export function readLedger(): Promise<Ledger> {
     try {
       const store = kv();
       if (!store) return (LEDGER = { at: Date.now(), list: [], version: "none", meta: null });
-      const meta = (await store.get(LEDGER_META, { type: "json", cacheTtl: 60 })) as LedgerMeta | null;
-      const keys = shardRange(meta);
-      await Promise.all(keys.map(async (k) => {
-        // A shard the meta does not list (two writes raced on it): read again every time until a write lists it.
-        const want = meta?.shards?.[k]?.v;
-        if (want && SHARDS.get(k)?.v === want) return;
-        const got = (await store.get(ledgerShardKey(k), { type: "json", cacheTtl: 60 })) as Shard | null;
-        // A copy older than the meta (another data centre's cache): kept, and asked again at the next read.
-        if (got && Array.isArray(got.list)) SHARDS.set(k, got);
-      }));
-      const list = keys.flatMap((k) => SHARDS.get(k)?.list ?? []);
-      const version = keys.map((k) => `${k}:${SHARDS.get(k)?.v ?? "-"}`).join(",");
-      return (LEDGER = { at: Date.now(), list, version, meta });
+      const [bf, live] = await Promise.all([readFamily(store, LEDGER_BACKFILL_META, backfillShardKey), readFamily(store, LEDGER_META, ledgerShardKey)]);
+      const byPr = new Map<number, LedgerEntry>();
+      for (const e of bf.list) byPr.set(e.pr, e);
+      for (const e of live.list) byPr.set(e.pr, upsertEntry(byPr.get(e.pr), e));
+      return (LEDGER = { at: Date.now(), list: [...byPr.values()], version: `b${bf.version}|s${live.version}`, meta: live.meta });
     } catch (e) {
       console.error("ledger read", e);
       if (LEDGER) return (LEDGER = { ...LEDGER, at: Date.now() - TTL / 2 });
@@ -119,7 +136,7 @@ async function write(entries: LedgerEntry[]): Promise<{ changed: number; total: 
     const list = [...byPr.values()].sort((a, b) => a.pr - b.pr);
     await store.put(ledgerShardKey(k), JSON.stringify({ v, list }));
     meta.shards[String(k)] = { n: list.length, v };
-    SHARDS.set(k, { v, list });
+    SHARDS.set(ledgerShardKey(k), { v, list });
     changed += n;
   }
   if (changed) {

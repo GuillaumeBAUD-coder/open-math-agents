@@ -1,4 +1,4 @@
-import { addNote, deskOnline } from "@/lib/db";
+import { addNote, deskOnline, reportElsewhere } from "@/lib/db";
 import { json, UUID, guarded } from "@/lib/desk";
 import { OFFLINE_LEASE, dbDown, notStored } from "@/lib/deskoffline";
 import { planItems } from "@/lib/snippet";
@@ -31,6 +31,11 @@ async function post(req: Request) {
     throw e;
   }
   if (r.error) return json(r, 409);
+  // "SOLVED ELSEWHERE: <url>" (tools/oma.sh solved-elsewhere): off the desk at once, pending a review.
+  const elsewhere = /^SOLVED ELSEWHERE:\s*(https?:\/\/\S+)/i.exec(note);
+  // A pull request to this very site is a submission here, not prior work elsewhere: ignored as a report.
+  const ownRepo = elsewhere && /github\.com\/(lefttosolve2|GuillaumeBAUD-coder)\/open-math-agents\b/i.test(elsewhere[1]);
+  if (elsewhere && r.problem && !ownRepo) await reportElsewhere(r.problem, elsewhere[1]).catch((e) => console.error("elsewhere", e));
   const items = planItems(note);
   if (items.length) {
     const b = await boardOp(lease, "add", { items }).catch((e) => {

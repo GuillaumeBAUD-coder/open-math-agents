@@ -2,34 +2,34 @@ import OMAStatements.S_oeis_a067360
 
 namespace OMA.P067360
 
-open OMA.S_oeis_a067360
+open OMA.S_oeis_a067360 Real
 
-noncomputable def th : ℝ := 2 * Real.arctan (1 / 4)
+noncomputable def th : ℝ := 2 * arctan (1 / 4)
 
-noncomputable def c (n : ℕ) : ℝ := 17 ^ n * Real.cos ((n : ℝ) * th)
+noncomputable def c (n : ℕ) : ℝ := 17 ^ n * cos ((n : ℝ) * th)
 
-lemma a_eq (n : ℕ) : a n = 17 ^ n * Real.sin ((n : ℝ) * th) := by
+lemma a_eq (n : ℕ) : a n = 17 ^ n * sin ((n : ℝ) * th) := by
   unfold a th
   congr 2
   ring
 
-lemma cos_sq : Real.cos (Real.arctan (1 / 4)) ^ 2 = 16 / 17 := by
-  rw [Real.cos_sq_arctan]
+lemma cos_sq : cos (arctan (1 / 4)) ^ 2 = 16 / 17 := by
+  rw [cos_sq_arctan]
   norm_num
 
-lemma cos_th : Real.cos th = 15 / 17 := by
+lemma cos_th : cos th = 15 / 17 := by
   unfold th
-  rw [Real.cos_two_mul, cos_sq]
+  rw [cos_two_mul, cos_sq]
   norm_num
 
-lemma sin_th : Real.sin th = 8 / 17 := by
+lemma sin_th : sin th = 8 / 17 := by
   unfold th
-  have hne : Real.cos (Real.arctan (1 / 4)) ≠ 0 := (Real.cos_arctan_pos _).ne'
-  have ht : Real.sin (Real.arctan (1 / 4)) = (1 / 4) * Real.cos (Real.arctan (1 / 4)) := by
-    rw [← Real.tan_arctan (1 / 4 : ℝ)]
-    rw [Real.arctan_tan] <;> first | exact (Real.tan_mul_cos hne).symm | skip
-    all_goals first | exact Real.neg_pi_div_two_lt_arctan _ | exact Real.arctan_lt_pi_div_two _
-  rw [Real.sin_two_mul, ht]
+  have hne : cos (arctan (1 / 4)) ≠ 0 := (cos_arctan_pos _).ne'
+  have ht : sin (arctan (1 / 4)) = (1 / 4) * cos (arctan (1 / 4)) := by
+    rw [← tan_arctan (1 / 4 : ℝ)]
+    rw [arctan_tan] <;> first | exact (tan_mul_cos hne).symm | skip
+    all_goals first | exact neg_pi_div_two_lt_arctan _ | exact arctan_lt_pi_div_two _
+  rw [sin_two_mul, ht]
   have := cos_sq
   nlinarith
 
@@ -37,7 +37,7 @@ lemma step (n : ℕ) : a (n + 1) = 15 * a n + 8 * c n ∧ c (n + 1) = 15 * c n -
   have e : ((n + 1 : ℕ) : ℝ) * th = (n : ℝ) * th + th := by push_cast; ring
   rw [a_eq, a_eq]
   unfold c
-  rw [e, Real.sin_add, Real.cos_add, cos_th, sin_th, pow_succ]
+  rw [e, sin_add, cos_add, cos_th, sin_th, pow_succ]
   constructor <;> ring
 
 lemma pow_plus (n : ℕ) :

@@ -17,22 +17,10 @@ section
 namespace CN1.Foundations
 open NumberField Module Polynomial
 def disc (m : ℕ) : ℕ := if m % 4 = 3 then m else 4 * m
-def principalForm (m : ℕ) (x y : ℤ) : ℤ :=
-  if m % 4 = 3 then x ^ 2 + x * y + ((m + 1) / 4 : ℕ) * y ^ 2 else x ^ 2 + m * y ^ 2
 variable {K : Type*} [Field K] [NumberField K]
 noncomputable def omega (m : ℕ) (α : K) : K := if m % 4 = 3 then (1 + α) / 2 else α
 lemma disc_of_three_mod_four {m : ℕ} (h : m % 4 = 3) : disc m = m := by simp [disc, h]
 lemma disc_of_not_three_mod_four {m : ℕ} (h : m % 4 ≠ 3) : disc m = 4 * m := by simp [disc, h]
-lemma omega_of_three_mod_four {m : ℕ} (α : K) (h : m % 4 = 3) : omega m α = (1 + α) / 2 := by
-  simp [omega, h]
-lemma omega_of_not_three_mod_four {m : ℕ} (α : K) (h : m % 4 ≠ 3) : omega m α = α := by
-  simp [omega, h]
-lemma principalForm_of_three_mod_four {m : ℕ} (h : m % 4 = 3) (x y : ℤ) :
-    principalForm m x y = x ^ 2 + x * y + ((m + 1) / 4 : ℕ) * y ^ 2 := by
-  simp [principalForm, h]
-lemma principalForm_of_not_three_mod_four {m : ℕ} (h : m % 4 ≠ 3) (x y : ℤ) :
-    principalForm m x y = x ^ 2 + m * y ^ 2 := by
-  simp [principalForm, h]
 lemma squarefree_not_four_dvd {m : ℕ} (hm : Squarefree m) : ¬ 4 ∣ m := fun h ↦ by
   have := Nat.isUnit_iff.mp (hm 2 (by simpa using h))
   omega
@@ -72,12 +60,6 @@ theorem exists_rat_add_rat_mul_alpha (x : K) : ∃ a b : ℚ, x = (a : K) + (b :
   refine ⟨(qBasis hα hK hm).repr x 0, (qBasis hα hK hm).repr x 1, ?_⟩
   conv_lhs => rw [← (qBasis hα hK hm).sum_repr x]
   rw [Fin.sum_univ_two, qBasis_zero, qBasis_one, Rat.smul_def, Rat.smul_def, mul_one]
-theorem rat_add_rat_mul_alpha_inj {a b a' b' : ℚ}
-    (h : (a : K) + (b : K) * α = (a' : K) + (b' : K) * α) : a = a' ∧ b = b' := by
-  have h1 := qBasis_repr hα hK hm ((a : K) + (b : K) * α) ![a, b] (by simp)
-  have h2 := qBasis_repr hα hK hm ((a' : K) + (b' : K) * α) ![a', b'] (by simp)
-  rw [h, h2] at h1
-  exact ⟨by simpa using (congrFun h1 0).symm, by simpa using (congrFun h1 1).symm⟩
 lemma leftMulMatrix_rat_add_rat_mul_alpha (a b : ℚ) :
     Algebra.leftMulMatrix (qBasis hα hK hm) ((a : K) + (b : K) * α) =
       !![a, -(m : ℚ) * b; b, a] := by
@@ -117,10 +99,6 @@ theorem omega_isIntegral : IsIntegral ℤ (omega m α) := by
       Int.coe_castRingHom]
     linear_combination (1 / 4 : K) * hα + (1 / 4 : K) * hcK
   · exact IsIntegral.of_pow two_pos (hα ▸ (isIntegral_natCast m).neg)
-include hα in
-theorem isIntegral_int_add_int_mul_omega (x y : ℤ) :
-    IsIntegral ℤ ((x : K) + (y : K) * omega m α) :=
-  (isIntegral_intCast x).add ((isIntegral_intCast y).mul (omega_isIntegral hα))
 lemma exists_int_eq_two_mul_of_sq {m : ℕ} (hm : Squarefree m) {b : ℚ} {k : ℤ}
     (h : (m : ℚ) * (2 * b) ^ 2 = k) : ∃ v : ℤ, (v : ℚ) = 2 * b := by
   have hm0 : (m : ℚ) ≠ 0 := by exact_mod_cast hm.ne_zero
@@ -204,27 +182,6 @@ theorem exists_int_add_int_mul_omega_of_isIntegral {x : K} (hx : IsIntegral ℤ 
     have hu' : (t : K) = 2 * (u : K) := by exact_mod_cast hu
     have hw' : (v : K) = 2 * (w : K) := by exact_mod_cast hw
     linear_combination (-1 / 2 : K) * ht' + (-α / 2) * hv' + (1 / 2 : K) * hu' + (α / 2) * hw'
-include hα hK in
-theorem int_add_int_mul_omega_inj (hm0 : m ≠ 0) {u v u' v' : ℤ}
-    (h : (u : K) + (v : K) * omega m α = (u' : K) + (v' : K) * omega m α) : u = u' ∧ v = v' := by
-  unfold omega at h
-  split_ifs at h with h3
-  · have e : ∀ x y : ℤ, (x : K) + (y : K) * ((1 + α) / 2) =
-        (((x : ℚ) + (y : ℚ) / 2 : ℚ) : K) + (((y : ℚ) / 2 : ℚ) : K) * α := by
-      intro x y; push_cast; ring
-    rw [e, e] at h
-    obtain ⟨h1, h2⟩ := rat_add_rat_mul_alpha_inj hα hK hm0 h
-    have hv : v = v' := by
-      have : (v : ℚ) = v' := by linarith
-      exact_mod_cast this
-    refine ⟨?_, hv⟩
-    have : (u : ℚ) = u' := by rw [hv] at h1; linarith
-    exact_mod_cast this
-  · have e : ∀ x y : ℤ, (x : K) + (y : K) * α = ((x : ℚ) : K) + ((y : ℚ) : K) * α := by
-      intro x y; push_cast; ring
-    rw [e, e] at h
-    obtain ⟨h1, h2⟩ := rat_add_rat_mul_alpha_inj hα hK hm0 h
-    exact ⟨by exact_mod_cast h1, by exact_mod_cast h2⟩
 noncomputable def omegaInt : 𝓞 K := ⟨omega m α, omega_isIntegral hα⟩
 lemma coe_omegaInt : (omegaInt hα : K) = omega m α := rfl
 lemma coe_int_add_int_mul_omegaInt (u v : ℤ) :
@@ -235,131 +192,12 @@ theorem exists_int_add_int_mul_omegaInt (z : 𝓞 K) :
     ∃ u v : ℤ, z = (u : 𝓞 K) + (v : 𝓞 K) * omegaInt hα := by
   obtain ⟨u, v, h⟩ := exists_int_add_int_mul_omega_of_isIntegral hα hK hm z.isIntegral_coe
   exact ⟨u, v, RingOfIntegers.ext (by rw [coe_int_add_int_mul_omegaInt]; exact h)⟩
-include hα hK in
-theorem int_add_int_mul_omegaInt_inj (hm0 : m ≠ 0) {u v u' v' : ℤ}
-    (h : (u : 𝓞 K) + (v : 𝓞 K) * omegaInt hα = (u' : 𝓞 K) + (v' : 𝓞 K) * omegaInt hα) :
-    u = u' ∧ v = v' := by
-  apply int_add_int_mul_omega_inj hα hK hm0
-  rw [← coe_int_add_int_mul_omegaInt hα, ← coe_int_add_int_mul_omegaInt hα, h]
-noncomputable def intBasis : Basis (Fin 2) ℤ (𝓞 K) :=
-  Basis.mk (v := ![1, omegaInt hα])
-    (by
-      rw [LinearIndependent.pair_iff]
-      intro s t hst
-      have h : (s : 𝓞 K) + (t : 𝓞 K) * omegaInt hα =
-          ((0 : ℤ) : 𝓞 K) + ((0 : ℤ) : 𝓞 K) * omegaInt hα := by
-        simpa [zsmul_eq_mul] using hst
-      exact int_add_int_mul_omegaInt_inj hα hK hm.ne_zero h)
-    (by
-      rintro z -
-      rw [Submodule.mem_span_range_iff_exists_fun]
-      obtain ⟨u, v, huv⟩ := exists_int_add_int_mul_omegaInt hα hK hm z
-      refine ⟨![u, v], ?_⟩
-      rw [huv, Fin.sum_univ_two]
-      simp [zsmul_eq_mul])
-lemma intBasis_zero : intBasis hα hK hm 0 = 1 := by simp [intBasis]
-lemma intBasis_one : intBasis hα hK hm 1 = omegaInt hα := by simp [intBasis]
 end RingOfIntegers
 section NormForm
 variable {m : ℕ} {α : K} (hα : α ^ 2 = -(m : K)) (hK : finrank ℚ K = 2) (hm0 : m ≠ 0)
-include hα hK hm0 in
-theorem norm_int_add_int_mul_omega (x y : ℤ) :
-    Algebra.norm ℚ ((x : K) + (y : K) * omega m α) = (principalForm m x y : ℚ) := by
-  unfold omega principalForm
-  split_ifs with h3
-  · have e : (x : K) + (y : K) * ((1 + α) / 2) =
-        (((x : ℚ) + (y : ℚ) / 2 : ℚ) : K) + (((y : ℚ) / 2 : ℚ) : K) * α := by push_cast; ring
-    rw [e, norm_rat_add_rat_mul_alpha hα hK hm0]
-    obtain ⟨c, hc⟩ : (4 : ℕ) ∣ m + 1 := by omega
-    have hc' : ((m + 1) / 4 : ℕ) = c := by omega
-    rw [hc']
-    push_cast
-    have hcq : (m : ℚ) + 1 = 4 * c := by exact_mod_cast hc
-    linear_combination ((y : ℚ) ^ 2 / 4) * hcq
-  · have e : (x : K) + (y : K) * α = ((x : ℚ) : K) + ((y : ℚ) : K) * α := by push_cast; ring
-    rw [e, norm_rat_add_rat_mul_alpha hα hK hm0]
-    push_cast; ring
-include hα hK hm0 in
-theorem trace_int_add_int_mul_omega (x y : ℤ) :
-    Algebra.trace ℚ K ((x : K) + (y : K) * omega m α) =
-      if m % 4 = 3 then (2 * x + y : ℚ) else (2 * x : ℚ) := by
-  unfold omega
-  split_ifs with h3
-  · have e : (x : K) + (y : K) * ((1 + α) / 2) =
-        (((x : ℚ) + (y : ℚ) / 2 : ℚ) : K) + (((y : ℚ) / 2 : ℚ) : K) * α := by push_cast; ring
-    rw [e, trace_rat_add_rat_mul_alpha hα hK hm0]; ring
-  · have e : (x : K) + (y : K) * α = ((x : ℚ) : K) + ((y : ℚ) : K) * α := by push_cast; ring
-    rw [e, trace_rat_add_rat_mul_alpha hα hK hm0]
-include hα hK hm0 in
-theorem norm_int_eq_principalForm {z : 𝓞 K} {x y : ℤ}
-    (h : z = (x : 𝓞 K) + (y : 𝓞 K) * omegaInt hα) :
-    Algebra.norm ℤ z = principalForm m x y := by
-  apply Int.cast_injective (α := ℚ)
-  rw [Algebra.coe_norm_int, h, coe_int_add_int_mul_omegaInt, norm_int_add_int_mul_omega hα hK hm0]
-theorem principalForm_nonneg (m : ℕ) (x y : ℤ) : 0 ≤ principalForm m x y := by
-  unfold principalForm
-  split_ifs with h3
-  · obtain ⟨c, hc⟩ : (4 : ℕ) ∣ m + 1 := by omega
-    have hc' : ((m + 1) / 4 : ℕ) = c := by omega
-    rw [hc']
-    have hc1 : (1 : ℤ) ≤ c := by omega
-    nlinarith [sq_nonneg (2 * x + y), sq_nonneg y]
-  · positivity
-theorem principalForm_eq_one {m : ℕ} (hm : Squarefree m) (hm1 : m ≠ 1) (hm3 : m ≠ 3) {x y : ℤ}
-    (h : principalForm m x y = 1) : y = 0 ∧ (x = 1 ∨ x = -1) := by
-  have hm0 := hm.ne_zero
-  unfold principalForm at h
-  split_ifs at h with h3
-  · obtain ⟨c, hc⟩ : (4 : ℕ) ∣ m + 1 := by omega
-    have hc' : ((m + 1) / 4 : ℕ) = c := by omega
-    rw [hc'] at h
-    have hm7 : (7 : ℤ) ≤ m := by omega
-    have hcz : (m : ℤ) + 1 = 4 * c := by exact_mod_cast hc
-    have hy : y = 0 := by
-      by_contra hy
-      have h1 : 0 < y ^ 2 := by positivity
-      have h2 : (1 : ℤ) ≤ y ^ 2 := by omega
-      nlinarith [sq_nonneg (2 * x + y)]
-    subst hy
-    refine ⟨rfl, Int.eq_one_or_neg_one_of_mul_eq_one (v := x) ?_⟩
-    nlinarith
-  · have hm2 : (2 : ℤ) ≤ m := by omega
-    have hy : y = 0 := by
-      by_contra hy
-      have h1 : 0 < y ^ 2 := by positivity
-      have h2 : (1 : ℤ) ≤ y ^ 2 := by omega
-      nlinarith
-    subst hy
-    refine ⟨rfl, Int.eq_one_or_neg_one_of_mul_eq_one (v := x) ?_⟩
-    nlinarith
 end NormForm
 section Units
 variable {m : ℕ} {α : K} (hα : α ^ 2 = -(m : K)) (hK : finrank ℚ K = 2) (hm : Squarefree m)
-include hα hK hm in
-theorem coe_unit_eq_one_or_neg_one (hm1 : m ≠ 1) (hm3 : m ≠ 3) (ε : (𝓞 K)ˣ) :
-    (ε : 𝓞 K) = 1 ∨ (ε : 𝓞 K) = -1 := by
-  obtain ⟨u, v, huv⟩ := exists_int_add_int_mul_omegaInt hα hK hm (ε : 𝓞 K)
-  have hN : IsUnit (Algebra.norm ℤ (ε : 𝓞 K)) := ε.isUnit.map (Algebra.norm ℤ)
-  rw [norm_int_eq_principalForm hα hK hm.ne_zero huv] at hN
-  have hQ : principalForm m u v = 1 := by
-    rcases Int.isUnit_iff.mp hN with h | h
-    · exact h
-    · have := principalForm_nonneg m u v; omega
-  obtain ⟨rfl, hu⟩ := principalForm_eq_one hm hm1 hm3 hQ
-  rw [huv]
-  rcases hu with rfl | rfl
-  · left; simp
-  · right; simp
-include hα hK hm in
-theorem eq_one_or_neg_one_of_norm_eq_one (hm1 : m ≠ 1) (hm3 : m ≠ 3) {z : 𝓞 K}
-    (h : Algebra.norm ℤ z = 1) : z = 1 ∨ z = -1 := by
-  obtain ⟨u, v, huv⟩ := exists_int_add_int_mul_omegaInt hα hK hm z
-  rw [norm_int_eq_principalForm hα hK hm.ne_zero huv] at h
-  obtain ⟨rfl, hu⟩ := principalForm_eq_one hm hm1 hm3 h
-  rw [huv]
-  rcases hu with rfl | rfl
-  · left; simp
-  · right; simp
 end Units
 end CN1.Foundations
 end
@@ -396,9 +234,6 @@ lemma jacobiChar_apply (n : ℕ) [NeZero n] (a : ZMod n) :
 theorem jacobiChar_intCast (n : ℕ) [NeZero n] (k : ℤ) :
     jacobiChar n (k : ZMod n) = (jacobiSym k n : ℂ) := by
   rw [jacobiChar_apply, jacobiSym_val_eq n _ k rfl]
-theorem jacobiChar_natCast (n : ℕ) [NeZero n] (k : ℕ) :
-    jacobiChar n (k : ZMod n) = (jacobiSym k n : ℂ) := by
-  rw [← Int.cast_natCast, jacobiChar_intCast]
 theorem jacobiChar_isQuadratic (n : ℕ) [NeZero n] : (jacobiChar n).IsQuadratic := by
   intro a
   rw [jacobiChar_apply]
@@ -408,8 +243,6 @@ noncomputable def chi4 : DirichletCharacter ℂ 4 := χ₄.ringHomComp (Int.cast
 noncomputable def chi8 : DirichletCharacter ℂ 8 := χ₈.ringHomComp (Int.castRingHom ℂ)
 noncomputable def chi8' : DirichletCharacter ℂ 8 := χ₈'.ringHomComp (Int.castRingHom ℂ)
 lemma chi4_apply (a : ZMod 4) : chi4 a = (χ₄ a : ℂ) := rfl
-lemma chi8_apply (a : ZMod 8) : chi8 a = (χ₈ a : ℂ) := rfl
-lemma chi8'_apply (a : ZMod 8) : chi8' a = (χ₈' a : ℂ) := rfl
 lemma chi4_isQuadratic : chi4.IsQuadratic := isQuadratic_χ₄.comp _
 lemma chi8_isQuadratic : chi8.IsQuadratic := isQuadratic_χ₈.comp _
 lemma chi8'_isQuadratic : chi8'.IsQuadratic := isQuadratic_χ₈'.comp _
@@ -500,31 +333,6 @@ theorem kroneckerChar_isQuadratic (m : ℕ) : (kroneckerChar m).IsQuadratic := b
     · exact chi8_isQuadratic
 lemma squarefree_mod_four_cases (hm : Squarefree m) : m % 4 = 1 ∨ m % 4 = 2 ∨ m % 4 = 3 := by
   have := squarefree_mod_four_ne_zero hm; omega
-theorem kroneckerChar_neg_one (hm : Squarefree m) : kroneckerChar m (-1) = -1 := by
-  have hcop : IsCoprime (-1 : ℤ) (disc m : ℤ) := isCoprime_one_left.neg_left
-  have hcast : (-1 : ZMod (disc m)) = ((-1 : ℤ) : ZMod (disc m)) := by simp
-  rw [hcast]
-  rcases squarefree_mod_four_cases hm with h1 | h2 | h3
-  · rw [kroneckerChar_apply_of_one_mod_four h1 hcop,
-      jacobiSym.at_neg_one (Nat.odd_iff.mpr (by omega)), χ₄_nat_one_mod_four h1,
-      χ₄_int_three_mod_four (by decide)]
-    simp
-  · rw [kroneckerChar_apply_of_two_mod_four h2 hcop,
-      jacobiSym.at_neg_one (Nat.odd_iff.mpr (by omega))]
-    have hm' : m / 2 % 4 = 1 ∨ m / 2 % 4 = 3 := by omega
-    rcases hm' with h | h
-    · rw [if_pos h, χ₄_nat_one_mod_four h, χ₈'_int_eq_if_mod_eight]
-      norm_num
-    · rw [if_neg (by omega), χ₄_nat_three_mod_four h, χ₈_int_eq_if_mod_eight]
-      norm_num
-  · rw [kroneckerChar_apply_of_three_mod_four h3 hcop,
-      jacobiSym.at_neg_one (Nat.odd_iff.mpr (by omega)), χ₄_nat_three_mod_four h3]
-    simp
-theorem kroneckerChar_ne_one (hm : Squarefree m) : kroneckerChar m ≠ 1 := by
-  intro h
-  have h1 := kroneckerChar_neg_one hm
-  rw [h, MulChar.one_apply isUnit_one.neg] at h1
-  norm_num at h1
 section Values
 variable {p : ℕ} [hp : Fact p.Prime]
 lemma jacobiSym_eq_legendreSym_neg_of_three_mod_four (h3 : m % 4 = 3) (hp2 : p ≠ 2) :
@@ -600,14 +408,6 @@ theorem kroneckerChar_apply_prime_eq_one_iff (hm : Squarefree m) (hp2 : p ≠ 2)
   have hne : ((-(m : ℤ) : ℤ) : ZMod p) ≠ 0 := by
     push_cast; exact neg_natCast_ne_zero_of_not_dvd_disc hpd
   have := legendreSym.eq_one_iff p hne
-  push_cast at this
-  rw [← this]
-  norm_cast
-theorem kroneckerChar_apply_prime_eq_neg_one_iff (hm : Squarefree m) (hp2 : p ≠ 2)
-    (hpd : ¬ p ∣ disc m) :
-    kroneckerChar m (p : ZMod (disc m)) = -1 ↔ ¬ IsSquare (-(m : ZMod p)) := by
-  rw [kroneckerChar_apply_prime_of_ne_two hm hp2 hpd]
-  have := legendreSym.eq_neg_one_iff p (a := -(m : ℤ))
   push_cast at this
   rw [← this]
   norm_cast
@@ -689,13 +489,6 @@ theorem minpoly_int_omegaInt (hm0 : m ≠ 0) :
   rw [← algebraMap_int_eq, ← minpoly.isIntegrallyClosed_eq_field_fractions' ℚ (omega_isIntegral hα),
     minpoly_rat_omega hα hm0]
   simp [Polynomial.map_add, Polynomial.map_mul, Polynomial.map_pow]
-include hα hK in
-theorem minpoly_omegaInt (hm0 : m ≠ 0) :
-    minpoly ℤ (omegaInt hα) =
-      if m % 4 = 3 then X ^ 2 - X + C (((m + 1) / 4 : ℕ) : ℤ) else X ^ 2 + C (m : ℤ) := by
-  rw [minpoly_int_omegaInt hα hm0]
-  unfold bInt cInt
-  split_ifs <;> simp <;> ring
 section Prime
 variable (p : ℕ) [hp : Fact p.Prime]
 include hα in
@@ -884,33 +677,6 @@ theorem ncard_primesOver_eq_one_of_kroneckerChar_eq_neg_one (hpd : ¬ p ∣ disc
       (Ideal.primesOverSpanEquivMonicFactorsMod (not_dvd_exponent_omegaInt hα hK hm p) ⟨P, hP⟩).2
     rw [Finset.mem_singleton] at hmem
     rw [hmem, natDegree_quad]
-include hα hK hm in
-theorem ncard_primesOver_eq_two_iff (hpd : ¬ p ∣ disc m) :
-    (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard = 2 ↔ kroneckerChar m (p : ZMod (disc m)) = 1 := by
-  rcases kroneckerChar_eq_one_or_neg_one p hpd with h | h
-  · simp only [h, iff_true]
-    exact (ncard_primesOver_eq_two_of_kroneckerChar_eq_one hα hK hm p hpd h).1
-  · rw [h, (ncard_primesOver_eq_one_of_kroneckerChar_eq_neg_one hα hK hm p hpd h).1]
-    norm_num
-include hα hK hm in
-theorem ncard_primesOver_eq_one_iff (hpd : ¬ p ∣ disc m) :
-    (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard = 1 ↔ kroneckerChar m (p : ZMod (disc m)) = -1 := by
-  rcases kroneckerChar_eq_one_or_neg_one p hpd with h | h
-  · rw [h, (ncard_primesOver_eq_two_of_kroneckerChar_eq_one hα hK hm p hpd h).1]
-    norm_num
-  · simp only [h, iff_true]
-    exact (ncard_primesOver_eq_one_of_kroneckerChar_eq_neg_one hα hK hm p hpd h).1
-include hα hK hm in
-theorem exists_prime_absNorm_eq_of_kroneckerChar_eq_one (hpd : ¬ p ∣ disc m)
-    (h1 : kroneckerChar m (p : ZMod (disc m)) = 1) :
-    ∃ P : Ideal (𝓞 K), P.IsPrime ∧ absNorm P = p := by
-  obtain ⟨hcard, hdeg⟩ := ncard_primesOver_eq_two_of_kroneckerChar_eq_one hα hK hm p hpd h1
-  obtain ⟨P, hP⟩ := Set.nonempty_of_ncard_ne_zero (s := primesOver (span {(p : ℤ)}) (𝓞 K))
-    (by rw [hcard]; norm_num)
-  have := hP.1
-  have := hP.2
-  refine ⟨P, hP.1, ?_⟩
-  rw [← Ideal.pow_inertiaDeg p P, hdeg P hP, pow_one]
 end Prime
 end Setup
 end CN1.Foundations

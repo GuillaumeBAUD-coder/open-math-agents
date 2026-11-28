@@ -1,6 +1,7 @@
 import OMAStatements.S_oeis_a052379
 import Mathlib
 
+open Finset
 -- Problem: oeis-a052379
 -- Credit: @JamesSlash (the owner of the agent is credited as the solver)
 
@@ -11,7 +12,7 @@ def good (k : ℕ) : Prop := ∀ d ∈ Nat.digits 10 k, d ≠ 0 ∧ d ≠ 1
 
 instance : DecidablePred good := fun k => by unfold good; infer_instance
 
-def H (m : ℕ) : Finset ℕ := (Finset.range (10 ^ m)).filter good
+def H (m : ℕ) : Finset ℕ := (range (10 ^ m)).filter good
 
 lemma good_step (q r : ℕ) (hr : 2 ≤ r ∧ r ≤ 9) : good (r + 10 * q) ↔ good q := by
   unfold good
@@ -21,10 +22,10 @@ lemma good_step (q r : ℕ) (hr : 2 ≤ r ∧ r ≤ 9) : good (r + 10 * q) ↔ g
   · exact fun h => h.2
   · exact fun h => ⟨⟨by omega, by omega⟩, h⟩
 
-lemma H_succ (m : ℕ) : H (m + 1) = insert 0 ((H m ×ˢ Finset.Icc 2 9).image (fun p => p.2 + 10 * p.1)) := by
+lemma H_succ (m : ℕ) : H (m + 1) = insert 0 ((H m ×ˢ Icc 2 9).image (fun p => p.2 + 10 * p.1)) := by
   ext k
-  simp only [H, Finset.mem_insert, Finset.mem_filter, Finset.mem_range, Finset.mem_image,
-    Finset.mem_product, Finset.mem_Icc, Prod.exists]
+  simp only [H, mem_insert, mem_filter, mem_range, mem_image,
+    mem_product, mem_Icc, Prod.exists]
   constructor
   · rintro ⟨hk, hg⟩
     rcases Nat.eq_zero_or_pos k with rfl | hpos
@@ -44,28 +45,28 @@ lemma H_card (m : ℕ) : 7 * (H m).card + 1 = 8 ^ (m + 1) := by
   induction m with
   | zero => decide
   | succ m ih =>
-    rw [H_succ, Finset.card_insert_of_notMem, Finset.card_image_of_injOn, Finset.card_product]
+    rw [H_succ, card_insert_of_notMem, card_image_of_injOn, card_product]
     · simp only [Nat.card_Icc]
       rw [pow_succ]; omega
     · rintro ⟨q1, r1⟩ h1 ⟨q2, r2⟩ h2 he
-      simp only [Finset.coe_product, Set.mem_prod, Finset.mem_coe, Finset.mem_Icc] at h1 h2
+      simp only [coe_product, Set.mem_prod, mem_coe, mem_Icc] at h1 h2
       simp only at he
       ext <;> simp <;> omega
-    · simp only [Finset.mem_image, Finset.mem_product, Finset.mem_Icc, not_exists, not_and]
+    · simp only [mem_image, mem_product, mem_Icc, not_exists, not_and]
       intro q r h; omega
 
 theorem sol : type_of% @OMA.S_oeis_a052379.main := by
   intro n
-  have e : (Finset.Icc 1 (10 ^ (n + 1) - 1)).filter (fun k => ∀ d ∈ Nat.digits 10 k, d ≠ 0 ∧ d ≠ 1)
+  have e : (Icc 1 (10 ^ (n + 1) - 1)).filter (fun k => ∀ d ∈ Nat.digits 10 k, d ≠ 0 ∧ d ≠ 1)
       = (H (n + 1)).erase 0 := by
     ext k
-    simp only [H, good, Finset.mem_filter, Finset.mem_Icc, Finset.mem_erase, Finset.mem_range]
+    simp only [H, good, mem_filter, mem_Icc, mem_erase, mem_range]
     have : 0 < 10 ^ (n + 1) := by positivity
     constructor
     · rintro ⟨⟨h1, h2⟩, h3⟩; exact ⟨by omega, by omega, h3⟩
     · rintro ⟨h1, h2, h3⟩; exact ⟨⟨by omega, by omega⟩, h3⟩
   unfold a A023001
-  rw [e, Finset.card_erase_of_mem (by simp [H, good])]
+  rw [e, card_erase_of_mem (by simp [H, good])]
   have h := H_card (n + 1)
   rw [show n + 1 + 1 = n + 2 by ring] at h
   generalize 8 ^ (n + 2) = x at h ⊢

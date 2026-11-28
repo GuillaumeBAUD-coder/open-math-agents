@@ -1,104 +1,94 @@
 import OMAStatements.S_oeis_a087403
-import Mathlib
 
 /-!
-# Disproof of the nonvanishing conjecture for OEIS A087403: a(100) = 0
+# Infinitely many zeros of OEIS A087403
 
-For n = 100 and c copies, 10 * K + 1 = V = 1 + 1000 + ... + 1000^c, a sum of N = c + 1 >= 2
-powers of 1000. With R = 1 + 10 + ... + 10^(N-1) and W = 10^(2N) + 10^N + 1 one has
-999 V = 1000^N - 1 = (10^N - 1) W = 9 R W, so 111 V = R W. If V were prime it would divide
-R (impossible, 0 < R < V) or W; in the latter case R divides 111, which forces N = 3, and
-then V = 1001001 = 3 * 333667. The case N = 2 gives V = 1001 = 7 * 11 * 13.
-So no candidate is prime and a(100) = sInf of the empty set = 0. This is in line with
-Farideh Firoozbakht's refutation recorded in OEIS A087403 (Jan 07 2015: a(10^m) = 0).
+The block 104040 already occurs in the disproof of OeisA86766.conjecture2.
+Its factorization extends to blocks of every length divisible by six. For each
+such length the block below has one digit 1, two digits 4, and zeros elsewhere.
 -/
 
-namespace OMA.P_oeis_a087403
+namespace DecimalBlocks
 
 open OMA.S_oeis_a087403 Finset
 
-lemma geom10 (N : ℕ) : 9 * (∑ j ∈ range N, 10 ^ j) + 1 = 10 ^ N := by
-  induction N with
-  | zero => simp
-  | succ N ih => rw [sum_range_succ, pow_succ]; omega
-
-lemma geom1000 (N : ℕ) : 999 * (∑ j ∈ range N, 1000 ^ j) + 1 = 1000 ^ N := by
-  induction N with
-  | zero => simp
-  | succ N ih => rw [sum_range_succ, pow_succ]; omega
-
-lemma value_eq (c : ℕ) : 10 * repeatDecimal 100 c + 1 = ∑ j ∈ range (c + 1), 1000 ^ j := by
-  have hd : (Nat.digits 10 100).length = 3 := by norm_num
-  unfold repeatDecimal
-  rw [hd, sum_range_succ', mul_sum]
-  simp only [pow_zero]
-  congr 1
-  apply sum_congr rfl
-  intro j _
-  rw [show (10 : ℕ) ^ 3 = 1000 by norm_num, pow_succ]
-  ring
-
-lemma not_prime_value (N : ℕ) (hN : 2 ≤ N) : ¬ (∑ j ∈ range N, 1000 ^ j).Prime := by
-  set V := ∑ j ∈ range N, 1000 ^ j with hV
-  set R := ∑ j ∈ range N, 10 ^ j with hR
-  set W := 10 ^ (2 * N) + 10 ^ N + 1 with hW
-  have g1 := geom10 N
-  have g2 := geom1000 N
-  rw [← hR] at g1
-  rw [← hV] at g2
-  have e1 : (1000 : ℕ) ^ N = (10 ^ N) ^ 3 := by
-    rw [← pow_mul, show (1000 : ℕ) = 10 ^ 3 by norm_num, ← pow_mul, mul_comm]
-  have e2 : (10 : ℕ) ^ (2 * N) = (10 ^ N) ^ 2 := by rw [← pow_mul, mul_comm]
-  have key : 9 * (111 * V) = 9 * (R * W) := by
-    have h3 : (9 * R + 1) ^ 3 = 9 * R * ((9 * R + 1) ^ 2 + (9 * R + 1) + 1) + 1 := by ring
-    rw [hW, e2, ← g1]
-    rw [e1, ← g1, h3] at g2
-    nlinarith [g2]
-  have key' : 111 * V = R * W := Nat.eq_of_mul_eq_mul_left (by norm_num) key
-  have hpow : 100 ≤ 10 ^ N := by
-    calc (100 : ℕ) = 10 ^ 2 := by norm_num
-      _ ≤ 10 ^ N := Nat.pow_le_pow_right (by norm_num) hN
-  have hRpos : 11 ≤ R := by omega
-  have hWbig : 112 ≤ W := by
-    have : 10000 ≤ 10 ^ (2 * N) := by rw [e2]; nlinarith
-    rw [hW]; omega
+/-- If both factors of a multiple of p exceed its multiplier, then p is composite. -/
+private lemma composite {p m a b : ℕ} (ha : m < a) (hb : m < b) (h : m * p = a * b) :
+    ¬ p.Prime := by
   intro hp
-  have hdvd : V ∣ R * W := ⟨111, by rw [← key']; ring⟩
-  rcases (Nat.Prime.dvd_mul hp).1 hdvd with h | h
-  · have hle : V ≤ R := Nat.le_of_dvd (by omega) h
-    have : 111 * V < R * W := by
-      calc 111 * V ≤ 111 * R := by omega
-        _ < R * W := by nlinarith
-    omega
-  · obtain ⟨t, ht⟩ := h
-    have hVpos : 0 < V := hp.pos
-    have h111 : 111 = R * t := by
-      have : V * 111 = V * (R * t) := by rw [mul_comm V 111, key', ht]; ring
-      exact Nat.eq_of_mul_eq_mul_left hVpos this
-    have hRle : R ≤ 111 := Nat.le_of_dvd (by norm_num) ⟨t, h111⟩
-    by_cases hN4 : 4 ≤ N
-    · have : 10000 ≤ 10 ^ N := by
-        calc (10000 : ℕ) = 10 ^ 4 := by norm_num
-          _ ≤ 10 ^ N := Nat.pow_le_pow_right (by norm_num) hN4
+  have excludes {x y : ℕ} (hx : 0 < x) (hy : m < y) (eq : m * p = x * y) : ¬ p ∣ x := by
+    intro hd
+    have := Nat.mul_le_mul_left m (Nat.le_of_dvd hx hd)
+    nlinarith [Nat.mul_lt_mul_of_pos_left hy hx]
+  exact (hp.dvd_mul.mp (h ▸ Nat.dvd_mul_left p m)).elim
+    (excludes (by omega) hb h) (excludes (by omega) ha (h.trans (mul_comm ..)))
+
+/-- If the decimal base and the initial block give a difference of two squares,
+every repetition has a nontrivial factorization. -/
+lemma zero_of_squares {n b u v : ℕ}
+    (base : 10 ^ (Nat.digits 10 n).length = b ^ 2)
+    (block : 10 * n = u ^ 2) (balance : u ^ 2 + 1 = b ^ 2 + v ^ 2)
+    (large : b ^ 2 + v ≤ u * b) (hb : 1 < b) : a n = 0 := by
+  apply Nat.sInf_eq_zero.mpr
+  right
+  apply Set.eq_empty_iff_forall_notMem.mpr
+  rintro p ⟨hp, r, hr, rfl⟩
+  let S := ∑ i ∈ range r, (b ^ 2) ^ i
+  let t := b ^ r
+  have ht : b ≤ t := Nat.le_self_pow hr.ne' b
+  have hz : 1 ≤ b ^ 2 := Nat.one_le_pow 2 b (by omega)
+  have hprod := Nat.mul_le_mul_left u ht
+  have hg : S * (b ^ 2 - 1) + 1 = t ^ 2 := by
+    dsimp only [S, t]
+    rw [geom_sum_mul_of_one_le hz, Nat.sub_add_cancel (Nat.one_le_pow r _ hz), pow_right_comm]
+  rw [repeatDecimal, base, ← mul_sum, ← mul_assoc, block] at hp
+  -- Multiplying the candidate by the radix minus one gives a difference of squares.
+  apply composite (m := b ^ 2 - 1) (a := u * t - v) (b := u * t + v) (by omega) (by omega) _ hp
+  change (b ^ 2 - 1) * (u ^ 2 * S + 1) = (u * t - v) * (u * t + v)
+  zify [show v ≤ u * t by omega, hz] at hg balance ⊢
+  linear_combination (u : ℤ) ^ 2 * hg - balance
+
+/-- Decimal expansion with a single 1 and two 4s. The gaps grow with s. -/
+def block (s : ℕ) := 10 ^ (s * 6 + 5) + 4 * 10 ^ (s * 4 + 3) + 4 * 10 ^ (s * 2 + 1)
+
+/-- Every positive number of repetitions of this block gives a composite candidate. -/
+theorem block_zero (s : ℕ) : a (block s) = 0 := by
+  let t := 10 ^ (s + 1)
+  have hlen : (Nat.digits 10 (block s)).length = s * 6 + 6 := by
+    apply le_antisymm
+    · apply (Nat.digits_length_le_iff (by decide) _).2
+      have hi : (10 : ℕ) ^ (s * 4 + 3) ≤ 10 ^ (s * 6 + 5) := by gcongr <;> omega
+      have hj : (10 : ℕ) ^ (s * 2 + 1) ≤ 10 ^ (s * 6 + 5) := by gcongr <;> omega
+      have pos : 0 < (10 : ℕ) ^ (s * 6 + 5) := by positivity
+      unfold block
+      rw [pow_succ 10 (s * 6 + 5)]
       omega
-    · have hN' : N = 2 ∨ N = 3 := by omega
-      rcases hN' with rfl | rfl
-      · rw [hV] at hp; norm_num [sum_range_succ] at hp
-      · rw [hV] at hp; norm_num [sum_range_succ] at hp
+    · exact (Nat.lt_digits_length_iff (by decide) _).2 (by unfold block; omega)
+  have ht : 10 ≤ t := Nat.le_self_pow (by omega) 10
+  apply zero_of_squares (b := t ^ 3) (u := t ^ 3 + 2 * t) (v := 2 * t ^ 2 + 1)
+  · simp only [hlen, t, ← pow_mul]
+    congr 1
+    omega
+  · simp only [block, t, pow_add, pow_mul, pow_one]
+    ring
+  · ring
+  · have hs := Nat.pow_le_pow_left ht 2
+    nlinarith [Nat.mul_le_mul_left (t ^ 2) hs]
+  · nlinarith [Nat.pow_le_pow_left ht 3]
 
-lemma a100 : a 100 = 0 := by
-  unfold a
-  have hempty : {p : ℕ | p.Prime ∧ ∃ copies : ℕ, 0 < copies ∧
-      p = 10 * repeatDecimal 100 copies + 1} = ∅ := by
-    ext p
-    simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_and]
-    rintro hp ⟨c, hc, rfl⟩
-    rw [value_eq] at hp
-    exact not_prime_value (c + 1) (by omega) hp
-  rw [hempty, Nat.sInf_empty]
+/-- There are counterexamples above every bound. -/
+theorem infinitely_many : Set.Infinite {n | a n = 0} := by
+  apply Set.infinite_of_forall_exists_gt
+  intro s
+  refine ⟨block s, block_zero s, ?_⟩
+  have := Nat.lt_pow_self (n := s * 6 + 5) (by decide : 1 < 10)
+  unfold block
+  omega
 
-end OMA.P_oeis_a087403
+end DecimalBlocks
+
+open DecimalBlocks
 
 theorem OMA.disproof : ¬ (type_of% @OMA.S_oeis_a087403.main) := by
   intro h
-  exact h 100 (by norm_num) OMA.P_oeis_a087403.a100
+  exact h _ (by decide : 0 < block 0) (block_zero 0)
