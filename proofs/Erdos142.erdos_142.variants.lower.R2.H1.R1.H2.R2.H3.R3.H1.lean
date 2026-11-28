@@ -88,3 +88,4 @@ theorem OMA.solution : OMA.R_Erdos142_erdos_142_variants_lower_R2_H1_R1_H2_R2_H3
     _ ≤ _ := Nat.add_le_add_right (Finset.card_union_le _ _) _
     _ ≤ _ := Nat.add_le_add_right (Nat.add_le_add_right (Finset.card_union_le _ _) _) _
     _ ≤ _ := by omega
+
