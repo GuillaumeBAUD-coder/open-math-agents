@@ -4,7 +4,7 @@ import Mathlib
 # OEIS A083451: n concatenated n times exceeds n^n
 
 Source: https://oeis.org/A083451
-Credit: @SudharsanAnimations
+Credit: Sudharsan Rajendiran
 
 `A083451(n) = (n concatenated n times) - n^n`. Amarnath Murthy conjectured that all terms are
 positive for `n > 1`; the entry records that this is true (Hauke Worpel): the concatenation has
