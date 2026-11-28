@@ -4,7 +4,7 @@ import Mathlib
 # OEIS A143727: near-prime numbers are multiples of 15
 
 Source: https://oeis.org/A143727
-Credit: @SudharsanAnimations
+Credit: Sudharsan Rajendiran
 
 A143727 lists the numbers `n` such that `n-2, n+2, n-4, n+4, n-8, n+8` are all prime. Harvey P. Dale
 conjectured (Aug 2026) that all terms are multiples of 15; the entry records that this is true
