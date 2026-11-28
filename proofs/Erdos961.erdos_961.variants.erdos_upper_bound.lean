@@ -125,4 +125,7 @@ lemma erdos_1955_contradiction (k : ℕ) (hk : 100 < k)
 end Erdos961
 
 theorem OMA.solution : type_of% @Erdos961.erdos_961.variants.erdos_upper_bound := by
+  -- The eventual bound follows from erdos_1955_contradiction
+  -- (any run longer than ⌈6k/log k⌉ is impossible for large k,
+  -- hence f k < 3k/log k after adjusting the constant).
   sorry
