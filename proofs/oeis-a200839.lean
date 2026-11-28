@@ -4,8 +4,22 @@ import Mathlib
 /-! Proof for OEIS A200839: build the array from the front. `E_m(s, t)` counts the ways to append `m` entries after a last entry `t` reached in step-state `s` (fresh, after an increase, after a decrease); summing over the next entry, split at `t`, gives a recursion in which every `E_m(s, t)` is an explicit polynomial in `n` and `t` (for `t ≤ n`), proved by induction using closed forms for the partial sums. Summing over the first entry gives an explicit polynomial of degree 4 for `a(n)`, and the g.f. follows coefficientwise.
 Credit: Sudharsan Rajendiran -/
 
+namespace OMA.Old200839
+
+/-- `ok l`: no three consecutive entries of `l` are strictly increasing or strictly decreasing. -/
+def ok : List ℕ → Bool
+  | a :: b :: c :: t => !((decide (a < b) && decide (b < c)) || (decide (b < a) && decide (c < b))) && ok (b :: c :: t)
+  | _ => true
+
+/-- A200839(n): the number of 0..n arrays `x(0..3)` of 4 elements without any two consecutive increases or two consecutive decreases, i.e. no three consecutive
+entries are strictly increasing or strictly decreasing. -/
+def a (n : ℕ) : ℕ :=
+  ((Fintype.piFinset fun _ : Fin 4 => Finset.range (n + 1)).filter (fun v => ok (List.ofFn v))).card
+
+end OMA.Old200839
+
 namespace OMA.P200839
-open OMA.S_oeis_a200839 Finset
+open OMA.Old200839 Finset
 
 def nxt (t x : ℕ) : ℕ := if t < x then 1 else if x < t then 2 else 0
 def bad (s t x : ℕ) : Bool := (decide (s = 1) && decide (t < x)) || (decide (s = 2) && decide (x < t))
@@ -356,12 +370,10 @@ lemma closed (n : ℕ) : (a n : ℚ) = (5 / 12 : ℚ) * (n : ℚ) ^ 4 + (19 / 6 
     exact EC3_0 n t (by omega)))]
   rw [S3_0]; push_cast; ring
 
-end OMA.P200839
-
-set_option maxRecDepth 200000 in
-set_option maxHeartbeats 2000000 in
 open PowerSeries in
-theorem OMA.solution : type_of% @OMA.S_oeis_a200839.main := by
+lemma gf_old :
+    (PowerSeries.mk fun n => if n = 0 then (0 : ℚ) else (a n : ℚ)) * (1 - X) ^ 5 =
+      X * (16 - 11 * X + 9 * X ^ 2 - 5 * X ^ 3 + X ^ 4) := by
   ext m
   have hX : ((1 - X) ^ 5 : PowerSeries ℚ) = C (1 : ℚ) * X ^ 0 + C (-5 : ℚ) * X ^ 1 + C (10 : ℚ) * X ^ 2 + C (-10 : ℚ) * X ^ 3 + C (5 : ℚ) * X ^ 4 + C (-1 : ℚ) * X ^ 5 := by
     simp only [map_neg, map_one, map_ofNat, map_natCast]; ring
@@ -371,12 +383,12 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a200839.main := by
   rw [hN]
   simp only [mul_add, map_add, coeff_mk, mul_left_comm _ (C _), coeff_C_mul, coeff_mul_X_pow', coeff_X_pow, coeff_mul_C, coeff_X,
     Nat.zero_le, if_true, Nat.sub_zero]
-  have t1 : (OMA.S_oeis_a200839.a 1 : ℚ) = 16 := by rw [OMA.P200839.closed]; norm_num
-  have t2 : (OMA.S_oeis_a200839.a 2 : ℚ) = 69 := by rw [OMA.P200839.closed]; norm_num
-  have t3 : (OMA.S_oeis_a200839.a 3 : ℚ) = 194 := by rw [OMA.P200839.closed]; norm_num
-  have t4 : (OMA.S_oeis_a200839.a 4 : ℚ) = 435 := by rw [OMA.P200839.closed]; norm_num
-  have t5 : (OMA.S_oeis_a200839.a 5 : ℚ) = 846 := by rw [OMA.P200839.closed]; norm_num
-  have t6 : (OMA.S_oeis_a200839.a 6 : ℚ) = 1491 := by rw [OMA.P200839.closed]; norm_num
+  have t1 : (OMA.Old200839.a 1 : ℚ) = 16 := by rw [OMA.P200839.closed]; norm_num
+  have t2 : (OMA.Old200839.a 2 : ℚ) = 69 := by rw [OMA.P200839.closed]; norm_num
+  have t3 : (OMA.Old200839.a 3 : ℚ) = 194 := by rw [OMA.P200839.closed]; norm_num
+  have t4 : (OMA.Old200839.a 4 : ℚ) = 435 := by rw [OMA.P200839.closed]; norm_num
+  have t5 : (OMA.Old200839.a 5 : ℚ) = 846 := by rw [OMA.P200839.closed]; norm_num
+  have t6 : (OMA.Old200839.a 6 : ℚ) = 1491 := by rw [OMA.P200839.closed]; norm_num
   rcases Nat.lt_or_ge m 6 with hm | hm
   · interval_cases m <;> norm_num [t1, t2, t3, t4, t5, t6, ]
   · obtain ⟨p, rfl⟩ : ∃ p, m = p + 6 := ⟨m - 6, by omega⟩
@@ -388,3 +400,65 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a200839.main := by
     rw [OMA.P200839.closed (p + 6), OMA.P200839.closed (p + 5), OMA.P200839.closed (p + 4), OMA.P200839.closed (p + 3), OMA.P200839.closed (p + 2), OMA.P200839.closed (p + 1)]
     push_cast
     ring
+
+lemma ofFn4 (v : Fin 4 → ℕ) : List.ofFn v = [v 0, v 1, v 2, v 3] := by
+  simp [List.ofFn_succ]
+lemma good_iff {n : ℕ} (x : Fin 4 → Fin (n + 1)) : OMA.S_oeis_a200839.Good x ↔
+    (¬ (x 0 < x 1 ∧ x 1 < x 2) ∧ ¬ (x 0 > x 1 ∧ x 1 > x 2)) ∧
+    (¬ (x 1 < x 2 ∧ x 2 < x 3) ∧ ¬ (x 1 > x 2 ∧ x 2 > x 3)) := by
+  constructor
+  · intro h; exact ⟨h 0 1 2 rfl rfl, h 1 2 3 rfl rfl⟩
+  · rintro ⟨h1, h2⟩ i j k hj hk
+    have hi : i.val < 2 := by have := k.isLt; omega
+    have : i = 0 ∨ i = 1 := by
+      rcases Nat.lt_succ_iff_lt_or_eq.1 hi with h | h
+      · left; exact Fin.ext (by simpa using h)
+      · right; exact Fin.ext (by simpa using h)
+    rcases this with rfl | rfl
+    · obtain rfl : j = 1 := Fin.ext (by simpa using hj)
+      obtain rfl : k = 2 := Fin.ext (by simpa using hk)
+      exact h1
+    · obtain rfl : j = 2 := Fin.ext (by simpa using hj)
+      obtain rfl : k = 3 := Fin.ext (by simpa using hk)
+      exact h2
+lemma bridge (n : ℕ) : OMA.S_oeis_a200839.a n = OMA.Old200839.a n := by
+  classical
+  unfold OMA.S_oeis_a200839.a OMA.Old200839.a
+  rw [Fintype.card_subtype]
+  apply Finset.card_nbij' (fun (x : Fin 4 → Fin (n + 1)) i => (x i : ℕ))
+    (fun v i => (⟨min (v i) n, by omega⟩ : Fin (n + 1)))
+  · intro x hx
+    simp only [Finset.coe_filter, Finset.mem_univ, true_and, Set.mem_setOf_eq, Fintype.mem_piFinset,
+      Finset.mem_range] at hx ⊢
+    refine ⟨fun i => (x i).isLt, ?_⟩
+    rw [ofFn4]; rw [good_iff] at hx; simp only [Fin.lt_iff_val_lt_val, gt_iff_lt] at hx
+    simp [OMA.Old200839.ok, decide_eq_false_iff_not]; omega
+  · intro v hv
+    simp only [Finset.coe_filter, Finset.mem_univ, true_and, Set.mem_setOf_eq, Fintype.mem_piFinset,
+      Finset.mem_range] at hv ⊢
+    obtain ⟨hr, hv⟩ := hv
+    have h0 := hr 0; have h1 := hr 1; have h2 := hr 2; have h3 := hr 3
+    rw [ofFn4] at hv; simp [OMA.Old200839.ok, decide_eq_false_iff_not] at hv
+    rw [good_iff]; simp only [Fin.lt_iff_val_lt_val, gt_iff_lt]
+    omega
+  · intro x _; funext i; apply Fin.ext; simp; exact Nat.le_of_lt_succ (x i).isLt
+  · intro v hv
+    simp only [Finset.coe_filter, Set.mem_setOf_eq, Fintype.mem_piFinset, Finset.mem_range] at hv
+    funext i; have := hv.1 i; simp; omega
+
+lemma rec_new (n : ℕ) (hn : 5 < n) : (OMA.S_oeis_a200839.a n : ℤ) = 5 * OMA.S_oeis_a200839.a (n - 1) - 10 * OMA.S_oeis_a200839.a (n - 2) + 10 * OMA.S_oeis_a200839.a (n - 3) - 5 * OMA.S_oeis_a200839.a (n - 4) + OMA.S_oeis_a200839.a (n - 5) := by
+  obtain ⟨p, rfl⟩ : ∃ p, n = p + 6 := ⟨n - 6, by omega⟩
+  simp only [show p + 6 - 1 = p + 5 by omega, show p + 6 - 2 = p + 4 by omega, show p + 6 - 3 = p + 3 by omega, show p + 6 - 4 = p + 2 by omega, show p + 6 - 5 = p + 1 by omega]
+  simp only [bridge]
+  rw [← @Int.cast_inj ℚ]
+  push_cast
+  simp only [closed]
+  push_cast
+  ring
+
+end OMA.P200839
+
+open PowerSeries in
+theorem OMA.solution : type_of% @OMA.S_oeis_a200839.main := by
+  refine ⟨?_, OMA.P200839.rec_new⟩
+  simp only [OMA.P200839.bridge]; exact OMA.P200839.gf_old
