@@ -1,69 +1,50 @@
 import OMAReductions.R_wp_nagata_s_conjecture_on_curves_R1
+import Mathlib
 
--- Step wp-nagata-s-conjecture-on-curves.R1.H1: hypothesis H1 of reduction wp-nagata-s-conjecture-on-curves.R1
--- Credit: @jaredwilder
--- H1 := ∀ {r : ℕ} (E : ℕ → MvPolynomial (Fin r × Fin 2) ℂ), (∀ n, E n ≠ 0) → ∃ p, outside E p
-
-theorem OMA.nagata_dense_nonzero {σ : Type} [Fintype σ] (P : MvPolynomial σ ℂ) (hP : P ≠ 0) :
-    Dense {x : σ → ℂ | MvPolynomial.eval x P ≠ 0} := by
-  have hc : {x : σ → ℂ | MvPolynomial.eval x P ≠ 0} = {x | MvPolynomial.eval x P = 0}ᶜ := rfl
-  rw [hc, ← interior_eq_empty_iff_dense_compl]
-  rw [Set.eq_empty_iff_forall_notMem]
-  intro x hx
-  rw [mem_interior_iff_mem_nhds, Metric.mem_nhds_iff] at hx
-  obtain ⟨ε, hε, hsub⟩ := hx
+private theorem dense_nonvanishing {ι : Type*} [Fintype ι]
+    (P : MvPolynomial ι ℂ) (hP : P ≠ 0) :
+    Dense {x : ι → ℂ | MvPolynomial.eval x P ≠ 0} := by
+  classical
+  apply Metric.dense_iff.mpr
+  intro x ε hε
+  by_contra h
   apply hP
   apply MvPolynomial.funext_set (fun i => Metric.ball (x i) ε)
-  · intro i
-    exact infinite_of_mem_nhds (x i) (Metric.ball_mem_nhds (x i) hε)
-  · intro y hy
-    have hy' : y ∈ Metric.ball x ε := by
-      rw [ball_pi x hε]
-      exact hy
-    have := hsub hy'
-    simp only [Set.mem_compl_iff, Set.mem_setOf_eq, not_not] at this
-    simp [this]
+    (fun i => infinite_of_mem_nhds (x i) (Metric.ball_mem_nhds _ hε))
+  intro y hy
+  rw [map_zero]
+  by_contra hn
+  apply h
+  exact ⟨y, Metric.mem_ball.mpr ((dist_pi_lt_iff hε).mpr
+    (fun i => Metric.mem_ball.mp (hy i (Set.mem_univ i)))), hn⟩
 
 theorem OMA.solution : OMA.R_wp_nagata_s_conjecture_on_curves_R1.H1 := by
-  unfold OMA.R_wp_nagata_s_conjecture_on_curves_R1.H1
-  intro r E hE
   classical
-  let D : MvPolynomial (Fin r × Fin 2) ℂ :=
-    ∏ ij ∈ (Finset.univ.filter (fun ij : Fin r × Fin r => ij.1 ≠ ij.2)),
-      (MvPolynomial.X (ij.1, 0) - MvPolynomial.X (ij.2, 0))
-  have hD : D ≠ 0 := by
-    rw [Finset.prod_ne_zero_iff]
-    intro ij hij
-    rw [Finset.mem_filter] at hij
-    rw [sub_ne_zero]
-    intro h
-    apply hij.2
-    have := MvPolynomial.X_injective h
-    exact congrArg Prod.fst this
-  let G : ℕ → MvPolynomial (Fin r × Fin 2) ℂ := fun n => Nat.casesOn n D E
-  have hG : ∀ n, G n ≠ 0 := by
-    intro n
-    cases n with
-    | zero => exact hD
-    | succ n => exact hE n
-  have hdense : Dense (⋂ n, {x : Fin r × Fin 2 → ℂ | MvPolynomial.eval x (G n) ≠ 0}) := by
-    apply dense_iInter_of_isOpen
-    · intro n
-      exact isOpen_ne_fun (MvPolynomial.continuous_eval _) continuous_const
-    · intro n
-      exact OMA.nagata_dense_nonzero _ (hG n)
-  obtain ⟨x, hx⟩ := hdense.nonempty
-  rw [Set.mem_iInter] at hx
+  intro r E hE
+  -- The extra polynomials separate the first coordinates of the marked points.
+  let F : ℕ ⊕ (Fin r × Fin r) → MvPolynomial (Fin r × Fin 2) ℂ
+    | .inl n => E n
+    | .inr (i, j) => if i = j then 1 else MvPolynomial.X (i, 0) - MvPolynomial.X (j, 0)
+  have hF (k) : F k ≠ 0 := by
+    cases k with
+    | inl n => exact hE n
+    | inr ij =>
+      rcases ij with ⟨i, j⟩
+      by_cases h : i = j
+      · simp [F, h]
+      · simp only [F, h, if_false]
+        exact sub_ne_zero.mpr (fun he => h (congrArg Prod.fst (MvPolynomial.X_injective he)))
+  let U (k) := {x : (Fin r × Fin 2) → ℂ | MvPolynomial.eval x (F k) ≠ 0}
+  have hd : Dense (⋂ k, U k) := dense_iInter_of_isOpen
+    (fun k => isOpen_ne_fun (MvPolynomial.continuous_eval (F k)) continuous_const)
+    (fun k => dense_nonvanishing (F k) (hF k))
+  obtain ⟨x, hx⟩ := hd.nonempty
+  have hall (k) : MvPolynomial.eval x (F k) ≠ 0 := Set.mem_iInter.mp hx k
   refine ⟨fun i j => x (i, j), ?_, ?_⟩
   · intro i j hij
     by_contra hne
-    have h0 : MvPolynomial.eval x D ≠ 0 := hx 0
-    rw [map_prod, Finset.prod_ne_zero_iff] at h0
-    have := h0 (i, j) (by simp [hne])
-    simp only [map_sub, MvPolynomial.eval_X] at this
-    apply this
-    have := congrFun hij 0
-    exact sub_eq_zero.mpr (by simpa using this)
+    have hc : x (i, 0) = x (j, 0) := congrFun hij 0
+    apply hall (.inr (i, j))
+    simp only [F, if_neg hne, map_sub, MvPolynomial.eval_X, hc, sub_self]
   · intro n
-    have := hx (n + 1)
-    simpa [G] using this
+    exact hall (.inl n)
