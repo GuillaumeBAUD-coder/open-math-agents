@@ -11,23 +11,16 @@ theorem OMA.solution : type_of% @RefactorableNumber.zelinsky_refactorable_progre
   intro m n₀ hm hn₀
   obtain ⟨hpos, hdvd⟩ := hn₀
   obtain ⟨p, hp, hlt, hmod⟩ := Nat.exists_prime_gt_modEq_one n₀ (Nat.one_le_iff_ne_zero.mp hm)
-  have hp2 : 2 ≤ p := hp.two_le
-  have hcop : Nat.Coprime n₀ (p ^ (p - 1)) := by
-    apply Nat.Coprime.pow_right
-    exact (Nat.coprime_comm.mp ((Nat.Prime.coprime_iff_not_dvd hp).mpr
-      (fun h => absurd (Nat.le_of_dvd hpos h) (not_le.mpr hlt))))
+  have hcop : Nat.Coprime n₀ (p ^ (p - 1)) :=
+    ((hp.coprime_iff_not_dvd.mpr fun hd => hlt.not_ge (Nat.le_of_dvd hpos hd)).symm).pow_right _
   have hcard : (p ^ (p - 1)).divisors.card = p := by
     rw [Nat.divisors_prime_pow hp, Finset.card_map, Finset.card_range]
+    have := hp.two_le
     omega
-  have hpow : 2 ≤ p ^ (p - 1) := by
-    calc 2 ≤ p := hp2
-      _ = p ^ 1 := (pow_one p).symm
-      _ ≤ p ^ (p - 1) := Nat.pow_le_pow_right (by omega) (by omega)
-  refine ⟨n₀ * p ^ (p - 1), ?_, ⟨?_, ?_⟩, ?_⟩
-  · nlinarith
-  · exact Nat.mul_pos hpos (by omega)
+  have hp0 : 0 < p ^ (p - 1) := pow_pos hp.pos _
+  have hd : p ∣ p ^ (p - 1) := dvd_pow_self p (by have := hp.two_le; omega)
+  refine ⟨n₀ * p ^ (p - 1), ?_, ⟨Nat.mul_pos hpos hp0, ?_⟩, ?_⟩
+  · nlinarith [Nat.le_of_dvd hp0 hd]
   · rw [hcop.card_divisors_mul, hcard]
-    exact Nat.mul_dvd_mul hdvd (dvd_pow_self p (by omega))
-  · have h1 : p ^ (p - 1) ≡ 1 [MOD m] := by
-      simpa using hmod.pow (p - 1)
-    simpa using Nat.ModEq.mul_left n₀ h1
+    exact Nat.mul_dvd_mul hdvd hd
+  · simpa using Nat.ModEq.mul_left n₀ (hmod.pow (p - 1))
