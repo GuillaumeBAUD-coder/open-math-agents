@@ -11,28 +11,18 @@ solutions of `z² + 1 = 5w²` gives `|y² - x³| = O(√x)` infinitely often. -/
 namespace OMA.HallDanilov
 
 /-- Arbitrarily large solutions of the negative Pell equation `z ^ 2 + 1 = 5 * w ^ 2`. -/
-lemma pell_large (N : ℕ) : ∃ z w : ℕ, N ≤ z ∧ z ^ 2 + 1 = 5 * w ^ 2 := by
+lemma pell_large (N : ℕ) : ∃ z w : ℕ, N ≤ z ∧ 1 ≤ w ∧ z ^ 2 + 1 = 5 * w ^ 2 := by
   induction N with
-  | zero => exact ⟨2, 1, by norm_num, by norm_num⟩
+  | zero => exact ⟨2, 1, by norm_num, le_rfl, by norm_num⟩
   | succ n ih =>
-    obtain ⟨z, w, hz, hzw⟩ := ih
-    refine ⟨9 * z + 20 * w, 4 * z + 9 * w, ?_, ?_⟩
-    · have : 1 ≤ w := by
-        rcases Nat.eq_zero_or_pos w with h0 | h0
-        · subst h0; simp at hzw
-        · exact h0
-      omega
-    · nlinarith [hzw]
+    obtain ⟨z, w, hz, hw, hzw⟩ := ih
+    exact ⟨9 * z + 20 * w, 4 * z + 9 * w, by omega, by omega, by nlinarith [hzw]⟩
 
 /-- Danilov-type identity, specialised to the Pell solutions. -/
 lemma key (z w : ℤ) (h : z ^ 2 + 1 = 5 * w ^ 2) :
     (25 * w * (z ^ 2 + 9 * z + 19)) ^ 2 - (5 * (z ^ 2 + 6 * z + 4)) ^ 3
       = 3375 * (2 * z + 11) := by
-  have h2 : w ^ 2 = (z ^ 2 + 1) / 5 := by omega
-  have e : (25 * w * (z ^ 2 + 9 * z + 19)) ^ 2
-      = 125 * (z ^ 2 + 9 * z + 19) ^ 2 * (5 * w ^ 2) := by ring
-  rw [e, ← h]
-  ring
+  linear_combination (-125 * (z ^ 2 + 9 * z + 19) ^ 2) * h
 
 end OMA.HallDanilov
 
@@ -44,9 +34,9 @@ theorem OMA.solution : type_of% @Hall.danilov := by
   have hev : ∀ᶠ n : ℕ in Filter.atTop, M ≤ ((n : ℝ)) ^ (2 * δ) :=
     ((tendsto_rpow_atTop (by linarith)).comp tendsto_natCast_atTop_atTop).eventually_ge_atTop M
   obtain ⟨N, hN⟩ := hev.exists_forall_of_atTop
-  obtain ⟨z, w, hz, hzw⟩ := pell_large (max N 1)
-  have hz1 : 1 ≤ z := le_trans (le_max_right _ _) hz
-  have hzN : N ≤ z := le_trans (le_max_left _ _) hz
+  obtain ⟨z, w, hz, -, hzw⟩ := pell_large (N + 1)
+  have hz1 : 1 ≤ z := by omega
+  have hzN : N ≤ z := by omega
   set x : ℤ := 5 * ((z : ℤ) ^ 2 + 6 * z + 4) with hx
   set y : ℤ := 25 * (w : ℤ) * ((z : ℤ) ^ 2 + 9 * z + 19) with hy
   have hkey : y ^ 2 - x ^ 3 = 3375 * (2 * (z : ℤ) + 11) :=
