@@ -6,7 +6,7 @@ pairs `{1,2}`, `{1,3}`, `{2,3}` on opposite sides. Any two of them tile with alt
 columns. In any tiling, the right/left colour is constant along rows and the top/bottom colour
 along columns, so the tile at `(i, j)` is determined by a row colour and a column colour; a
 finite check shows the three tiles cannot all occur.
-Credit: @SudharsanAnimations -/
+Credit: Sudharsan Rajendiran -/
 
 namespace OMA.P466776
 open OMA.S_mo_466776
