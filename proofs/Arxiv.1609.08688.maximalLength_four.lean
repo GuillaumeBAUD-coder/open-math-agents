@@ -57,16 +57,13 @@ lemma lt2b_of (a b : Fin 3 → ℕ) (h : lt₂ a b) : lt2b (f a) (f b) = true :=
   fin_cases i <;> fin_cases j <;> simp_all
 
 lemma mem_allT (a : Fin 3 → ℕ) (h : Set.range a ⊆ Set.Icc 1 4) : f a ∈ allT := by
-  have h0 := h ⟨0, rfl⟩
-  have h1 := h ⟨1, rfl⟩
-  have h2 := h ⟨2, rfl⟩
-  simp only [Set.mem_Icc] at h0 h1 h2
-  have m : ∀ x : ℕ, 1 ≤ x → x ≤ 4 → x ∈ L4 := by
-    intro x hx1 hx2
+  have m (i : Fin 3) : a i ∈ L4 := by
+    have hi := h ⟨i, rfl⟩
+    simp only [Set.mem_Icc] at hi
     simp only [L4, List.mem_cons, List.not_mem_nil, or_false]
     omega
   simp only [allT, f, List.mem_flatMap, List.mem_map]
-  exact ⟨a 0, m _ h0.1 h0.2, a 1, m _ h1.1 h1.2, a 2, m _ h2.1 h2.2, rfl⟩
+  exact ⟨a 0, m 0, a 1, m 1, a 2, m 2, rfl⟩
 
 lemma len_le (s : List (Fin 3 → ℕ)) (hr : ∀ a ∈ s, Set.range a ⊆ Set.Icc 1 4)
     (hs : IsIncreasing₂ s) : s.length ≤ 8 := by
@@ -90,11 +87,7 @@ lemma ex_inc : IsIncreasing₂ ex := by
   decide
 
 lemma ex_range : ∀ a ∈ ex, Set.range a ⊆ Set.Icc 1 4 := by
-  intro a ha
-  simp only [ex, List.mem_cons, List.not_mem_nil, or_false] at ha
-  rintro _ ⟨i, rfl⟩
-  rcases ha with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    fin_cases i <;> simp
+  norm_num [ex, Set.range_subset_iff, Fin.forall_fin_succ]
 
 lemma main : maximalLength 4 = 8 := by
   have hub : ∀ m ∈ { List.length s | (s) (_ : ∀ a ∈ s, Set.range a ⊆ Set.Icc 1 4)
