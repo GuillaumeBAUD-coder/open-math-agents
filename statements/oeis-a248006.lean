@@ -4,7 +4,7 @@ import Mathlib
 # OEIS A248006: least m with m + n dividing φ(mn)
 
 Source: https://oeis.org/A248006
-Credit: @SudharsanAnimations
+Credit: Sudharsan Rajendiran
 
 `A248006(n)` (for `n ≥ 3`) is the least positive integer `m` such that `m + n` divides `φ(m n)`.
 The entry conjectures that for every `n > 2`, `a(n)` exists and `a(n) ≤ n`, and records the proof:
