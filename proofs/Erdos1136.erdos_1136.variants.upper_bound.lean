@@ -11,12 +11,12 @@ theorem OMA.solution : type_of% @Erdos1136.erdos_1136.variants.upper_bound := by
   apply liminf_le_of_frequently_le (frequently_atTop.mpr ?_) (isBoundedUnder_of ⟨0, fun _ => by positivity⟩)
   intro k
   let M := 2 ^ k
-  refine ⟨M + 1, k.lt_two_pow_self.le.trans (Nat.le_succ _), ?_⟩
+  refine ⟨M + 1, k.lt_two_pow_self.le.step, ?_⟩
   let U := range (M + 1)
   let S := U.filter (· ∈ A)
-  have hs := filter_subset (· ∈ A) U
+  have hs : S ⊆ U := filter_subset ..
   have hle : S.card ≤ (U \ S).card := by
-    apply card_le_card_of_injOn (fun x => M - x)
+    apply card_le_card_of_injOn (M - ·)
     · intro x hx
       obtain ⟨hU, hmem⟩ := mem_filter.mp hx
       have hx' := mem_range.mp hU
@@ -27,11 +27,9 @@ theorem OMA.solution : type_of% @Erdos1136.erdos_1136.variants.upper_bound := by
       have h₂ := mem_range.mp (hs hy)
       change M - x = M - y at h
       omega
-  rw [card_sdiff_of_subset hs, card_range] at hle
-  change S.card ≤ M + 1 - S.card at hle
+  rw [card_sdiff_of_subset hs, Nat.le_sub_iff_add_le (Finset.card_le_card hs), ← mul_two, card_range] at hle
   have hS : (S : Set ℕ) = A ∩ Set.Iio (M + 1) := by ext; simp [S, U, and_comm]
   simp only [partialDensity, inter_univ, univ_inter, ← hS,
     ncard_coe_finset, ncard_Iio_nat]
   rw [div_le_iff₀ (by positivity), one_div_mul_eq_div, le_div_iff₀ zero_lt_two]
-  norm_cast
-  omega
+  exact_mod_cast hle
