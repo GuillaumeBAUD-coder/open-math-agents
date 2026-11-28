@@ -1,55 +1,49 @@
 import FormalConjectures.WrittenOnTheWallII.GraphConjecture25
+import Mathlib.Combinatorics.SimpleGraph.Prod
 
-/-! The 8x8 rook graph has b ≤ 16 while every vertex has 49 vertices at distance 2. -/
+open SimpleGraph Finset
 
-open SimpleGraph
-
-universe u
-
-private abbrev A := ULift.{u} (Fin 8)
-
-private def G : SimpleGraph (A.{u} × A.{u}) where
-  Adj v w := v ≠ w ∧ (v.1 = w.1 ∨ v.2 = w.2)
-  symm := ⟨fun _ _ h => ⟨h.1.symm, h.2.imp Eq.symm Eq.symm⟩⟩
-  loopless := ⟨fun _ h => h.1 rfl⟩
-
-theorem OMA.solution : type_of% @WrittenOnTheWallII.GraphConjecture25.conjecture25 := by
-  classical
-  intro all
-  have hcross {v w : A × A} (h1 : v.1 ≠ w.1) (h2 : v.2 ≠ w.2) :
-      G.Adj v (v.1, w.2) ∧ G.Adj w (v.1, w.2) :=
-    ⟨⟨fun h => by have := congrArg Prod.snd h; exact h2 this, Or.inl rfl⟩,
-     ⟨fun h => by have := congrArg Prod.fst h; exact h1 this.symm, Or.inr rfl⟩⟩
-  have hconn : G.Connected := ⟨fun v w => by
-    by_cases he : v = w; · exact he ▸ .refl _
-    by_cases h1 : v.1 = w.1; · exact (show G.Adj v w from ⟨he, Or.inl h1⟩).reachable
-    by_cases h2 : v.2 = w.2; · exact (show G.Adj v w from ⟨he, Or.inr h2⟩).reachable
-    exact (hcross h1 h2).1.reachable.trans (hcross h1 h2).2.reachable.symm⟩
-  have h := all G hconn
-  dsimp only at h
-  have hm : 49 ≤ (Finset.univ.image (distEven G)).min' (by simp) := by
-    apply Finset.le_min'; intro _ hk
-    obtain ⟨v, _, rfl⟩ := Finset.mem_image.mp hk
-    have hsub : (Finset.univ.erase v.1) ×ˢ (Finset.univ.erase v.2) ⊆
-        Finset.univ.filter fun w : A × A => Even (G.dist v w) := fun w hw => by
-      obtain ⟨h1, h2⟩ := Finset.mem_product.mp hw
-      have hr := Ne.symm (Finset.mem_erase.mp h1).1
-      have hc := Ne.symm (Finset.mem_erase.mp h2).1
-      have hd : G.edist v w = 2 :=
-        edist_eq_two_iff.2 ⟨fun h => hr (congrArg Prod.fst h), fun h => h.2.elim hr hc, (v.1, w.2), hcross hr hc⟩
-      exact Finset.mem_filter.2 ⟨Finset.mem_univ _, by simp [SimpleGraph.dist, hd]⟩
-    exact (by simp [A] : ((Finset.univ.erase v.1) ×ˢ (Finset.univ.erase v.2)).card = 49) ▸ Finset.card_le_card hsub
-  have hmR : (49 : ℝ) ≤ ((Finset.univ.image (distEven G)).min' (by simp) : ℕ) := by exact_mod_cast hm
-  have hbipN : G.largestInducedBipartiteSubgraphSize ≤ 16 := by
-    unfold largestInducedBipartiteSubgraphSize
-    refine csSup_le ⟨0, ∅, (induce_isBipartite_iff_exists_coloring G _).2 ⟨fun _ => 0, by simp⟩, rfl⟩ ?_
-    rintro _ ⟨s, hs, rfl⟩
-    obtain ⟨c, hc⟩ := (induce_isBipartite_iff_exists_coloring _ _).1 hs
-    let f : s → A × Fin 2 := fun v => (v.1.1, c v.1)
-    have hinj : Function.Injective f := fun v w h => Subtype.ext (by_contra fun hne => by
-      have h1 := congrArg Prod.fst h; have h2 := congrArg Prod.snd h
-      exact hc _ v.2 _ w.2 ⟨hne, Or.inl h1⟩ h2)
-    simpa [A] using Fintype.card_le_of_injective f hinj
-  have hbip : b G ≤ 16 := by unfold b; exact_mod_cast hbipN
-  have hc := Int.le_ceil ((1 + (((Finset.univ.image (distEven G)).min' (by simp) : ℕ) : ℝ)) / 3)
-  linarith
+universe u in
+theorem OMA.solution : type_of% @WrittenOnTheWallII.GraphConjecture25.conjecture25.{u} := by
+  intro h
+  let A := ULift.{u} (Fin 2)
+  let G : SimpleGraph (A × Fin 7) := ⊤ □ ⊤
+  let d := (univ.image (distEven G)).min' (univ_nonempty.image _)
+  have hh : 2 * (⌈(1 + (d : ℝ)) / 3⌉ : ℝ) ≤ (b G : ℝ) :=
+    h G (connected_top.boxProd connected_top)
+  have hd : 6 ≤ d := by
+    apply le_min'
+    intro n hn
+    obtain ⟨x, _, rfl⟩ := mem_image.mp hn
+    let z : A := if x.1 = ⟨0⟩ then ⟨1⟩ else ⟨0⟩
+    have hz : x.1 ≠ z := by
+      by_cases hx : x.1 = ⟨0⟩ <;> simp [z, hx] <;> decide
+    let U := (univ.erase x.2).image (fun j => (z, j))
+    have hU : U.card = 6 := by
+      rw [card_image_of_injective _ (fun _ _ h => congrArg Prod.snd h),
+        card_erase_of_mem (mem_univ _)]
+      decide
+    rw [← hU]
+    apply card_le_card
+    intro y hy
+    obtain ⟨j, hj, rfl⟩ := mem_image.mp hy
+    have hj' := (ne_of_mem_erase hj).symm
+    have he : G.edist x (z, j) = 2 := by simp [G, edist_top, hz, hj', one_add_one_eq_two]
+    exact mem_filter.mpr ⟨mem_univ _, by norm_num [SimpleGraph.dist, he]; decide⟩
+  have hB : largestInducedBipartiteSubgraphSize G ≤ 4 := by
+    apply csSup_le'
+    rintro _ ⟨s, ⟨c⟩, rfl⟩
+    let f : (↑s : Set (A × Fin 7)) → A × Fin 2 := fun x => (x.1.1, c x)
+    have hf : Function.Injective f := by
+      intro x y he
+      have h₁ : x.1.1 = y.1.1 := congrArg (Prod.fst : A × Fin 2 → A) he
+      apply Subtype.ext
+      apply Prod.ext h₁
+      by_contra h₂
+      apply c.valid _ (congrArg (Prod.snd : A × Fin 2 → Fin 2) he)
+      change G.Adj x.1 y.1
+      simp [G, h₁, h₂]
+    simpa [A] using Fintype.card_le_of_injective f hf
+  have hBR : (b G : ℝ) ≤ 4 := by unfold b; exact_mod_cast hB
+  have hdR : (6 : ℝ) ≤ d := by exact_mod_cast hd
+  linarith [Int.le_ceil ((1 + (d : ℝ)) / 3)]
