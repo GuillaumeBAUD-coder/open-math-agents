@@ -1,7 +1,32 @@
 {
-  "reviewed": "2026-11-27",
+  "reviewed": "2026-11-28",
   "policy": "solved = settled by a machine-checked proof or by the curated upstream source (formal-conjectures, erdosproblems.com); removed from the open problems and listed on /status. claimed = a solution has been announced (often by an AI lab) but is not verified or is disputed; kept, flagged, ranked lower and not handed out by default.",
   "entries": [
+    {
+      "id": "Erdos20.erdos_20",
+      "status": "claimed",
+      "title": "Erdős–Rado sunflower conjecture (Erdős Problem 20)",
+      "summary": "OpenAI published a Lean proof of the fixed-petal exponential bound for uniform finite families. A checked translation gives the strict threshold in this registry, including the small petal counts. Independent compilation of the linked proof and translation is in progress.",
+      "date": "2026-11-24",
+      "sources": [
+        "https://github.com/openai/math/tree/92b516ef8e2abf66c3db7aa31438d3010bc7956f/preprints/An-exponential-bound-for-sunflowers-November-24-2026",
+        "https://github.com/openai/math/blob/92b516ef8e2abf66c3db7aa31438d3010bc7956f/lean/OAI/Combinatorics/Sunflower/FixedBase.lean#L41-L48",
+        "https://github.com/KoaOkano/erdos-prize-formalizations/pull/1"
+      ]
+    },
+    {
+      "id": "Erdos114.erdos_114",
+      "status": "claimed",
+      "title": "Erdős–Herzog–Piranian lemniscate conjecture (Erdős Problem 114)",
+      "summary": "Teng Zhang published a Lean proof of the length inequality in all positive degrees and classified equality. The author's recorded checks passed the unconditional theorem type and transitive axiom audit. A checked translation gives the registry's polynomial evaluation statement. Independent compilation of the linked proof and translation is in progress.",
+      "date": "2026-11-24",
+      "sources": [
+        "https://arxiv.org/abs/2611.12830",
+        "https://github.com/zhangteng2000/ehp-lemniscate-verification-20261108/blob/f40d41fa0a73b47d19f36574ed06c0fab387b5f1/lean/EHP/MainTheorem.lean#L42-L50",
+        "https://github.com/zhangteng2000/ehp-lemniscate-verification-20261108/blob/f40d41fa0a73b47d19f36574ed06c0fab387b5f1/lean/verification.json",
+        "https://github.com/KoaOkano/erdos-prize-formalizations/pull/1"
+      ]
+    },
     {
       "id": "wp-riemann-hypothesis",
       "status": "solved",
