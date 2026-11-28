@@ -5,6 +5,10 @@ import OMAStatements.S_mo_243833
 -- (degree <= d), so the total degree is <= n d. Sharpness: A = diag(X_0^d, ..., X_0^d), whose
 -- adjugate has (0, 0) entry X_0^(n d).
 
+/-! Retains @Stefano299’s proof from #26359, following the source degree argument.
+Use the filtered finite-sum formula for the zero-degree row instead of manual erasure.
+The earlier @connoranderson #25024 companion was inspected and credited. -/
+
 open Matrix MvPolynomial in
 theorem OMA.solution : type_of% @OMA.S_mo_243833.main := by
   refine ⟨fun m n d A hA i j => ?_, fun m n d => ?_⟩
@@ -29,10 +33,7 @@ theorem OMA.solution : type_of% @OMA.S_mo_243833.main := by
         ≤ ∑ k, (if σ k = j then 0 else d) := Finset.sum_le_sum fun k _ => hle k
       _ = ∑ k, (if k = j then 0 else d) := Equiv.sum_comp σ (fun k => if k = j then 0 else d)
       _ = n * d := by
-        rw [← Finset.sum_erase_add _ _ (Finset.mem_univ j), if_pos rfl, add_zero,
-          Finset.sum_congr rfl (fun k hk => if_neg (Finset.ne_of_mem_erase hk)),
-          Finset.sum_const, Finset.card_erase_of_mem (Finset.mem_univ j), Finset.card_univ,
-          Fintype.card_fin, smul_eq_mul, Nat.add_sub_cancel]
+        simp [Finset.sum_ite, Finset.filter_ne', Fintype.card_fin]
   · refine ⟨diagonal (fun _ => X 0 ^ d), ?_, ?_, ?_⟩
     · intro i j
       by_cases h : i = j

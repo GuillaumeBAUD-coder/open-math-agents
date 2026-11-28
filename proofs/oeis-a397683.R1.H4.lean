@@ -1,7 +1,8 @@
 import OMAReductions.R_oeis_a397683_R1
 
--- Step oeis-a397683.R1.H4: hypothesis H4 of reduction oeis-a397683.R1
--- Credit: @luciusacarr
+-- Following @luciusacarr (#27449), retain the five residue-order obstructions.
+-- Replace the custom seventh-power lifting induction with the general library
+-- lemma used in @sntntHb's H3 proof (#28139), and use finite-field power APIs.
 -- H4 := ∀ k : ℕ, 1 ≤ k → f (7 ^ k) = 0
 
 /-! Let `x, x + 1` be units modulo `7^k` with common order `d`. Reducing modulo `7`,
@@ -16,20 +17,7 @@ namespace OMA.S397683H4
 
 theorem lte7 (a : ℤ) (ha : (7 : ℤ) ∣ a - 1) : ∀ i : ℕ, (7 : ℤ) ^ (i + 1) ∣ a ^ (7 ^ i) - 1 := by
   intro i
-  induction i with
-  | zero => simpa using ha
-  | succ i ih =>
-    set b := a ^ (7 ^ i) with hb
-    have hb1 : (7 : ℤ) ∣ b - 1 := (dvd_pow_self 7 (by omega)).trans ih
-    have h7 : (7 : ℤ) ∣ b ^ 6 + b ^ 5 + b ^ 4 + b ^ 3 + b ^ 2 + b + 1 := by
-      have : b ^ 6 + b ^ 5 + b ^ 4 + b ^ 3 + b ^ 2 + b + 1
-          = (b - 1) * (b ^ 5 + 2 * b ^ 4 + 3 * b ^ 3 + 4 * b ^ 2 + 5 * b + 6) + 7 := by ring
-      rw [this]
-      exact dvd_add (dvd_mul_of_dvd_left hb1 _) (dvd_refl 7)
-    have : a ^ (7 ^ (i + 1)) - 1 = (b - 1) * (b ^ 6 + b ^ 5 + b ^ 4 + b ^ 3 + b ^ 2 + b + 1) := by
-      rw [hb, pow_succ, pow_mul]; ring
-    rw [this, pow_succ]
-    exact mul_dvd_mul ih h7
+  simpa using dvd_sub_pow_of_dvd_sub ha i
 
 theorem up (z o k : ℕ) (hk : 1 ≤ k) (h : (z : ZMod 7) ^ o = 1) :
     (z : ZMod (7 ^ k)) ^ (o * 7 ^ (k - 1)) = 1 := by
@@ -53,10 +41,8 @@ theorem down (z d k : ℕ) (hk : 1 ≤ k) (h : (z : ZMod (7 ^ k)) ^ d = 1) : (z 
 theorem cast_mod (z : ℕ) : (z : ZMod 7) = ((z % 7 : ℕ) : ZMod 7) := (ZMod.natCast_mod z 7).symm
 
 theorem pow_mod6 (a : ZMod 7) (ha : a ≠ 0) (d : ℕ) : a ^ d = a ^ (d % 6) := by
-  have h6 : a ^ 6 = 1 := by
-    have key : ∀ b : ZMod 7, b ≠ 0 → b ^ 6 = 1 := by decide
-    exact key a ha
-  conv_lhs => rw [← Nat.div_add_mod d 6, pow_add, pow_mul, h6, one_pow, one_mul]
+  have : Fact (Nat.Prime 7) := ⟨by decide⟩
+  exact pow_eq_pow_mod d (ZMod.pow_card_sub_one_eq_one ha)
 
 theorem not_dvd_mul (q o k : ℕ) (hq : q.Prime) (hq7 : q ≠ 7) (hqo : ¬ q ∣ o) :
     ¬ q ∣ o * 7 ^ (k - 1) := by

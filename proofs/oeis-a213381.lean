@@ -2,6 +2,9 @@ import OMAStatements.S_oeis_a213381
 import Mathlib
 
 /-!
+Following @Mapika (#13393), with Robert Israel's argument retained.
+Use the unit and natural-cast APIs for the modular helper calculations.
+
 Robert Israel's argument (OEIS A213381, May 05 2015): since `n ≡ -2 (mod n+2)`,
 `n^n ≡ (-2)^n (mod n+2)`.
 * Zeros: `(n+2) ∣ n^n ↔ (n+2) ∣ 2^n ↔ n + 2 = 2^j` with `j ≤ n`.
@@ -22,11 +25,7 @@ lemma dvd_iff_two (n : ℕ) : (n + 2) ∣ n ^ n ↔ (n + 2) ∣ 2 ^ n := by
     linear_combination this
   push_cast
   rw [h, neg_pow]
-  constructor
-  · intro h0
-    have hu : IsUnit ((-1 : ZMod (n + 2)) ^ n) := (isUnit_neg_one).pow n
-    exact (hu.mul_right_eq_zero).mp h0
-  · intro h0; rw [h0, mul_zero]
+  exact (isUnit_neg_one.pow n).mul_right_eq_zero
 
 lemma part1 (n : ℕ) : a n = 0 ↔ ∃ x : ℕ, n = 2 ^ (x + 2) - 2 := by
   unfold a
@@ -89,17 +88,11 @@ lemma part3 (p : ℕ) (hp : p.Prime) (h2 : p ≠ 2) : a (p - 2) = (p - 1) / 2 :=
   have hy : ((p - 2 : ℕ) : ZMod p) = -2 := by
     rw [Nat.cast_sub (by omega), ZMod.natCast_self]; push_cast; ring
   have h2ne : (2 : ZMod p) ≠ 0 := by
-    intro h0
-    have : ((2 : ℕ) : ZMod p) = 0 := by exact_mod_cast h0
-    rw [ZMod.natCast_eq_zero_iff] at this
-    have := Nat.le_of_dvd (by norm_num) this
-    omega
+    exact ((ZMod.isUnit_iff_coprime 2 p).mpr (Nat.coprime_two_left.mpr (hp.odd_of_ne_two h2))).ne_zero
   have hyne : (-2 : ZMod p) ≠ 0 := neg_ne_zero.mpr h2ne
   have hhalf : (((p - 1) / 2 : ℕ) : ZMod p) * 2 = -1 := by
-    have : (p - 1) / 2 * 2 = p - 1 := by omega
-    have h' : (((p - 1) / 2 : ℕ) : ZMod p) * 2 = ((p - 1 : ℕ) : ZMod p) := by
-      exact_mod_cast congrArg (Nat.cast (R := ZMod p)) this
-    rw [h', Nat.cast_sub (by omega), ZMod.natCast_self]
+    rw [← Nat.cast_ofNat (R := ZMod p) (n := 2), ← Nat.cast_mul,
+      show (p - 1) / 2 * 2 = p - 1 by omega, Nat.cast_sub (by omega), ZMod.natCast_self]
     simp
   push_cast
   rw [hy]

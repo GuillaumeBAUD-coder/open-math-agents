@@ -18,8 +18,12 @@ noncomputable def L (M : Matrix ι ι F) (i : ι) : MvPolynomial ι F := ∑ j, 
 /-- The all-ones exponent vector. -/
 noncomputable def tt (ι : Type) [Fintype ι] [DecidableEq ι] : ι →₀ ℕ := ∑ j : ι, Finsupp.single j 1
 
+private lemma sum_apply (p : ι → ι →₀ ℕ) (j : ι) :
+    (∑ i, p i) j = ∑ i, p i j :=
+  map_sum (Finsupp.applyAddHom j) _ _
+
 lemma tt_apply (j : ι) : tt ι j = 1 := by
-  simp [tt, Finsupp.finset_sum_apply, Finsupp.single_apply]
+  simp [tt, sum_apply, Finsupp.single_apply]
 
 lemma tt_degree : (tt ι).degree = Fintype.card ι := by
   rw [tt, map_sum]
@@ -42,34 +46,11 @@ lemma totalDegree_prod_L (M : Matrix ι ι F) (u : Finset ι) :
 
 lemma sum_single_eq_tt_iff (φ : ι → ι) :
     (∑ i, Finsupp.single (φ i) 1 : ι →₀ ℕ) = tt ι ↔ Function.Bijective φ := by
-  have happ : ∀ j, (∑ i, Finsupp.single (φ i) 1 : ι →₀ ℕ) j = (univ.filter (fun i => φ i = j)).card := by
-    intro j
-    rw [Finsupp.finset_sum_apply, Finset.card_filter]
-    refine Finset.sum_congr rfl (fun i _ => ?_)
-    simp [Finsupp.single_apply]
-  constructor
-  · intro h
-    rw [Function.bijective_iff_existsUnique]
-    intro j
-    have hj := congrArg (fun f => f j) h
-    simp only [happ, tt_apply] at hj
-    obtain ⟨i, hi⟩ := Finset.card_eq_one.mp hj
-    refine ⟨i, ?_, ?_⟩
-    · have : i ∈ univ.filter (fun i => φ i = j) := by rw [hi]; exact Finset.mem_singleton_self i
-      exact (Finset.mem_filter.mp this).2
-    · intro k hk
-      have : k ∈ univ.filter (fun i => φ i = j) := Finset.mem_filter.mpr ⟨Finset.mem_univ k, hk⟩
-      rw [hi] at this
-      exact Finset.mem_singleton.mp this
-  · intro h
-    ext j
-    rw [happ, tt_apply]
-    obtain ⟨i, hi, hu⟩ := (Function.bijective_iff_existsUnique φ).mp h j
-    rw [Finset.card_eq_one]
-    refine ⟨i, ?_⟩
-    ext k
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_singleton]
-    exact ⟨fun hk => hu k hk, fun hk => hk ▸ hi⟩
+  rw [Function.bijective_iff_existsUnique, Finsupp.ext_iff]
+  simp only [tt_apply, sum_apply, Finsupp.single_apply]
+  exact forall_congr' fun j => by
+    rw [← Finset.card_filter, Finset.card_eq_one_iff_existsUnique]
+    simp
 
 lemma coeff_prod_L (M : Matrix ι ι F) : (∏ i, L M i).coeff (tt ι) = M.permanent := by
   simp only [L]

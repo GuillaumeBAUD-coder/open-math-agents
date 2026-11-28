@@ -1,5 +1,10 @@
 import OMAStatements.S_oeis_a067016
-import Mathlib
+import Mathlib.Tactic.IntervalCases
+import Mathlib.Tactic.Ring
+import Mathlib.Tactic.SplitIfs
+import Mathlib.Algebra.Ring.Commute
+
+-- Original proof by @ivillar.
 
 /-!
 # A067016: Barker's closed form and generating function
@@ -81,48 +86,31 @@ theorem a_eq_c : ∀ n, a n = c n := by
 
 end PA067016
 
-open PowerSeries in
+open OMA.S_oeis_a067016 PA067016 PowerSeries in
 theorem OMA.solution : type_of% @OMA.S_oeis_a067016.main := by
-  have hc : ∀ n, 4 ≤ n → (OMA.S_oeis_a067016.a n : ℤ) =
-      if n % 2 = 0 then 2 * (n : ℤ) - 1 else 2 * (n : ℤ) - 2 := by
-    intro n hn
-    rw [PA067016.a_eq_c, PA067016.c_big n hn]
-    split_ifs <;> omega
   refine ⟨fun n hn => ?_, ?_⟩
-  · rw [hc n hn]
-    rcases Nat.even_or_odd n with ⟨t, rfl⟩ | ⟨t, rfl⟩
-    · rw [if_pos (by omega), show (-1 : ℤ) ^ (t + t) = 1 by rw [← two_mul, pow_mul]; norm_num]
-      push_cast; ring
-    · rw [if_neg (by omega), show (-1 : ℤ) ^ (2 * t + 1) = -1 by rw [pow_succ, pow_mul]; norm_num]
-      push_cast; ring
-  · have hexp : ((1 - X) ^ 2 * (1 + X) : ℤ⟦X⟧) * PowerSeries.mk (fun n => (OMA.S_oeis_a067016.a n : ℤ)) =
-        PowerSeries.mk (fun n => (OMA.S_oeis_a067016.a n : ℤ)) -
-          X ^ 1 * PowerSeries.mk (fun n => (OMA.S_oeis_a067016.a n : ℤ)) -
-          X ^ 2 * PowerSeries.mk (fun n => (OMA.S_oeis_a067016.a n : ℤ)) +
-          X ^ 3 * PowerSeries.mk (fun n => (OMA.S_oeis_a067016.a n : ℤ)) := by ring
-    have hR : (1 + 3 * X - 2 * X ^ 2 - 4 * X ^ 3 + 6 * X ^ 4 + 2 * X ^ 5 - 2 * X ^ 6 : ℤ⟦X⟧) =
-        C 1 * X ^ 0 + C 3 * X ^ 1 - C 2 * X ^ 2 - C 4 * X ^ 3 + C 6 * X ^ 4 + C 2 * X ^ 5 -
-          C 2 * X ^ 6 := by
-      rw [show (C 3 : ℤ⟦X⟧) = 3 from map_ofNat C 3, show (C 2 : ℤ⟦X⟧) = 2 from map_ofNat C 2,
-        show (C 4 : ℤ⟦X⟧) = 4 from map_ofNat C 4, show (C 6 : ℤ⟦X⟧) = 6 from map_ofNat C 6, map_one]
+  · rw [a_eq_c, c_big n hn, neg_one_pow_eq_pow_mod_two]
+    rcases Nat.mod_two_eq_zero_or_one n with h | h <;> rw [h] <;> norm_num <;> omega
+  · have shift (n : ℕ) (hn : 4 ≤ n) : (a (n + 2) : ℤ) = a n + 4 := by
+      have h : a (n + 2) = a n + 4 := by
+        rw [a_eq_c, a_eq_c, c_big _ (by omega), c_big _ hn]
+        omega
+      exact_mod_cast h
+    let f := mk (fun n => (a n : ℤ))
+    change (1-X)^2 * (1+X) * f = _
+    rw [show (1-X)^2 * (1+X) * f = f - X^1*f - X^2*f + X^3*f by ring]
+    have hR : (1 + 3*X - 2*X^2 - 4*X^3 + 6*X^4 + 2*X^5 - 2*X^6 : ℤ⟦X⟧) =
+        C 1 * X^0 + C 3 * X^1 - C 2 * X^2 - C 4 * X^3 + C 6 * X^4 + C 2 * X^5 -
+          C 2 * X^6 := by
+      simp only [map_ofNat, map_one]
       ring
-    rw [hexp, hR]
+    rw [hR]
     ext n
-    simp only [map_sub, map_add, coeff_C_mul, coeff_X_pow_mul', coeff_mk, coeff_X_pow]
+    simp only [map_sub, map_add, coeff_C_mul, coeff_X_pow_mul', f, coeff_mk, coeff_X_pow]
     rcases Nat.lt_or_ge n 7 with hn | hn
-    · have v : ∀ m, (OMA.S_oeis_a067016.a m : ℤ) = (PA067016.c m : ℤ) := by
-        intro m; rw [PA067016.a_eq_c]
-      interval_cases n <;> simp [v, PA067016.c]
-    · rw [if_pos (by omega), if_pos (by omega), if_pos (by omega),
-        hc n (by omega), hc (n - 1) (by omega), hc (n - 2) (by omega), hc (n - 3) (by omega)]
-      simp only [show n ≠ 0 by omega, show n ≠ 1 by omega, show n ≠ 2 by omega, show n ≠ 3 by omega,
-        show n ≠ 4 by omega, show n ≠ 5 by omega, show n ≠ 6 by omega, if_false]
-      rcases Nat.mod_two_eq_zero_or_one n with h | h
-      · rw [if_pos h, if_neg (by omega), if_pos (by omega), if_neg (by omega)]
-        push_cast [Nat.cast_sub (show 1 ≤ n by omega), Nat.cast_sub (show 2 ≤ n by omega),
-          Nat.cast_sub (show 3 ≤ n by omega)]
-        ring
-      · rw [if_neg (by omega), if_pos (by omega), if_neg (by omega), if_pos (by omega)]
-        push_cast [Nat.cast_sub (show 1 ≤ n by omega), Nat.cast_sub (show 2 ≤ n by omega),
-          Nat.cast_sub (show 3 ≤ n by omega)]
-        ring
+    · interval_cases n <;> simp [a_eq_c, c]
+    · have h1 := shift (n - 2) (by omega)
+      have h2 := shift (n - 3) (by omega)
+      rw [show n - 2 + 2 = n by omega] at h1
+      rw [show n - 3 + 2 = n - 1 by omega] at h2
+      split_ifs <;> omega

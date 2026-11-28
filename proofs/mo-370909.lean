@@ -1,6 +1,14 @@
 import OMAStatements.S_mo_370909
 import Mathlib
 
+/-!
+Shortens @caa1982's proof from lefttosolve2/open-math-agents#26753
+(commit e6bec840a932f6e3cfe4e7dc9a695b53a9d7d668), retaining its pointwise
+logarithm estimate and Jensen argument. A standard inverse-power comparison
+replaces the manual integral-power calculation. Original question: Daniel Li,
+https://mathoverflow.net/questions/370909.
+-/
+
 open OMA.S_mo_370909 MeasureTheory
 
 lemma pointwise (t p : ℝ) (ht : 0 ≤ t) (hp : 1 < p) :
@@ -8,45 +16,33 @@ lemma pointwise (t p : ℝ) (ht : 0 ≤ t) (hp : 1 < p) :
   have hs : 0 < p - 1 := by linarith
   have hR : 0 ≤ 2 / (p - 1) * |t - 1| ^ p := by positivity
   rcases le_or_gt t 1 with h1 | h1
-  · have : t * Real.log t ≤ 0 := mul_nonpos_of_nonneg_of_nonpos ht (Real.log_nonpos ht h1)
-    have : 0 ≤ 2 * |t - 1| := by positivity
-    linarith
-  · set x := t - 1 with hx
-    have hx0 : 0 < x := by linarith
-    have habs : |t - 1| = x := abs_of_pos hx0
-    rw [habs]
-    have ht' : t = 1 + x := by linarith
+  · exact (mul_nonpos_of_nonneg_of_nonpos ht (Real.log_nonpos ht h1)).trans
+      (by positivity)
+  · let x := t - 1
+    have hx : 0 < x := by dsimp [x]; linarith
+    rw [abs_of_pos hx]
+    change t * Real.log t ≤ 2 * x + 2 / (p - 1) * x ^ p
     rcases le_or_gt x 1 with hx1 | hx1
-    · have hlog : Real.log t ≤ x := by
-        have := Real.log_le_sub_one_of_pos (by linarith : 0 < t); linarith
-      have hlog0 : 0 ≤ Real.log t := Real.log_nonneg h1.le
-      have h1' : t * Real.log t ≤ t * x := mul_le_mul_of_nonneg_left hlog ht
-      have h2' : 0 ≤ 2 / (p - 1) * x ^ p := by positivity
-      have h3' : t * x ≤ 2 * x := by rw [ht']; nlinarith
-      linarith
-    · -- t ≤ 2x, log t ≤ log 2 + log x, log x ≤ x^(p-1)/(p-1)
-      have ht2 : t ≤ 2 * x := by linarith
-      have hlogt : Real.log t ≤ Real.log (2 * x) := Real.log_le_log (by linarith) ht2
-      have hlog2x : Real.log (2 * x) = Real.log 2 + Real.log x :=
-        Real.log_mul (by norm_num) hx0.ne'
-      have hl2 : Real.log 2 < 1 := by
-        have := Real.log_two_lt_d9; norm_num at this ⊢; linarith
-      have hlx : Real.log x ≤ x ^ (p - 1) / (p - 1) := Real.log_le_rpow_div hx0.le hs
-      have hlogt0 : 0 ≤ Real.log t := Real.log_nonneg h1.le
-      have hxp : x ^ p = x * x ^ (p - 1) := by
-        rw [← Real.rpow_one_add' hx0.le (by linarith)]; congr 1; ring
-      have key : t * Real.log t ≤ 2 * x * (Real.log 2 + Real.log x) := by
-        rw [← hlog2x]
-        exact mul_le_mul ht2 hlogt hlogt0 (by linarith)
-      have key2 : 2 * x * (Real.log 2 + Real.log x) ≤ 2 * x + 2 / (p - 1) * x ^ p := by
-        rw [hxp]
-        have : 2 * x * Real.log x ≤ 2 * x * (x ^ (p - 1) / (p - 1)) :=
-          mul_le_mul_of_nonneg_left hlx (by linarith)
-        have : 2 * x * Real.log 2 ≤ 2 * x := by nlinarith
-        have e : 2 * x * (x ^ (p - 1) / (p - 1)) = 2 / (p - 1) * (x * x ^ (p - 1)) := by
-          field_simp
-        nlinarith
-      linarith
+    · have hl := Real.log_le_sub_one_of_pos (by linarith : 0 < t)
+      have hm := mul_le_mul_of_nonneg_left hl ht
+      rw [abs_of_pos (sub_pos.mpr h1)] at hR
+      dsimp [x] at hx hx1 ⊢
+      nlinarith
+    · have hl : Real.log t ≤ 1 + x ^ (p - 1) / (p - 1) := by
+        calc
+          Real.log t ≤ Real.log (2 * x) := Real.log_le_log (by linarith)
+            (by dsimp [x] at hx1 ⊢; linarith)
+          _ = Real.log 2 + Real.log x := Real.log_mul (by norm_num) hx.ne'
+          _ ≤ 1 + x ^ (p - 1) / (p - 1) := add_le_add
+            (by linarith [Real.log_two_lt_d9]) (Real.log_le_rpow_div hx.le hs)
+      calc
+        t * Real.log t ≤ 2 * x * (1 + x ^ (p - 1) / (p - 1)) :=
+          mul_le_mul (by dsimp [x] at hx1 ⊢; linarith) hl
+            (Real.log_nonneg h1.le) (by positivity)
+        _ = 2 * x + 2 / (p - 1) * x ^ p := by
+          rw [show x ^ p = x * x ^ (p - 1) by
+            rw [← Real.rpow_one_add' hx.le (by linarith)]; congr 1; ring]
+          ring
 
 theorem OMA.solution : type_of% @OMA.S_mo_370909.main := by
   intro Ω _ μ _ f p hp hfm hf0 hf1 hint
@@ -63,10 +59,8 @@ theorem OMA.solution : type_of% @OMA.S_mo_370909.main := by
       ((Real.continuous_rpow_const (by linarith : 0 ≤ p)).continuousOn) isClosed_Ici
       (ae_of_all _ (fun x => Set.mem_Ici.mpr (abs_nonneg _))) hgi hint
   have hL1 : ∫ x, |f x - 1| ∂μ ≤ (∫ x, |f x - 1| ^ p ∂μ) ^ (1 / p) := by
-    calc ∫ x, |f x - 1| ∂μ = ((∫ x, |f x - 1| ∂μ) ^ p) ^ (1 / p) := by
-          rw [one_div, Real.rpow_rpow_inv hI1 (by linarith)]
-      _ ≤ (∫ x, |f x - 1| ^ p ∂μ) ^ (1 / p) :=
-          Real.rpow_le_rpow (Real.rpow_nonneg hI1 _) hJ (by positivity)
+    simpa only [one_div] using
+      (Real.le_rpow_inv_iff_of_pos hI1 hIp (by linarith : 0 < p)).2 hJ
   have hRnn : 0 ≤ 2 * (∫ x, |f x - 1| ^ p ∂μ) ^ (1 / p) + 2 / (p - 1) * ∫ x, |f x - 1| ^ p ∂μ := by
     have hs : 0 < p - 1 := by linarith
     have := Real.rpow_nonneg hIp (1 / p)

@@ -58,10 +58,7 @@ lemma quad : (X - 2 * X ^ 2 + X ^ 3) * A ^ 2 + (2 * X - 1 - X ^ 2) * A +
       (1 + 6 * X - 16 * X ^ 2 + 8 * X ^ 3) =
       A ^ 2 * X ^ 1 - C (2 : ℤ) * (A ^ 2 * X ^ 2) + A ^ 2 * X ^ 3 + C (2 : ℤ) * (A * X ^ 1) - A -
         A * X ^ 2 + 1 + C (6 : ℤ) * X ^ 1 - C (16 : ℤ) * X ^ 2 + C (8 : ℤ) * X ^ 3 := by
-    rw [show (C (2 : ℤ) : ℤ⟦X⟧) = 2 from map_ofNat C 2,
-      show (C (6 : ℤ) : ℤ⟦X⟧) = 6 from map_ofNat C 6,
-      show (C (16 : ℤ) : ℤ⟦X⟧) = 16 from map_ofNat C 16,
-      show (C (8 : ℤ) : ℤ⟦X⟧) = 8 from map_ofNat C 8]
+    simp only [map_ofNat]
     ring
   rw [e]
   ext n
@@ -137,19 +134,11 @@ theorem recurrence (n : ℕ) (hn : 5 ≤ n) :
         C (87 : ℤ) * (X * d⁄dX ℤ A * X ^ 3) - C (96 : ℤ) * (X * d⁄dX ℤ A * X ^ 4) +
         C (32 : ℤ) * (X * d⁄dX ℤ A * X ^ 5) + A - C (5 : ℤ) * (A * X ^ 1) +
         C (9 : ℤ) * (A * X ^ 2) - C (9 : ℤ) * (A * X ^ 3) := by
-    rw [show (C (7 : ℤ) : ℤ⟦X⟧) = 7 from map_ofNat C 7,
-      show (C (17 : ℤ) : ℤ⟦X⟧) = 17 from map_ofNat C 17,
-      show (C (87 : ℤ) : ℤ⟦X⟧) = 87 from map_ofNat C 87,
-      show (C (96 : ℤ) : ℤ⟦X⟧) = 96 from map_ofNat C 96,
-      show (C (32 : ℤ) : ℤ⟦X⟧) = 32 from map_ofNat C 32,
-      show (C (5 : ℤ) : ℤ⟦X⟧) = 5 from map_ofNat C 5,
-      show (C (9 : ℤ) : ℤ⟦X⟧) = 9 from map_ofNat C 9]
+    simp only [map_ofNat]
     ring
   have eB : (1 + 13 * X - 48 * X ^ 2 + 48 * X ^ 3 - 16 * X ^ 4 : ℤ⟦X⟧) =
       1 + C (13 : ℤ) * X ^ 1 - C (48 : ℤ) * X ^ 2 + C (48 : ℤ) * X ^ 3 - C (16 : ℤ) * X ^ 4 := by
-    rw [show (C (13 : ℤ) : ℤ⟦X⟧) = 13 from map_ofNat C 13,
-      show (C (48 : ℤ) : ℤ⟦X⟧) = 48 from map_ofNat C 48,
-      show (C (16 : ℤ) : ℤ⟦X⟧) = 16 from map_ofNat C 16]
+    simp only [map_ofNat]
     ring
   have h := congrArg (coeff (m + 5)) ode
   rw [e, eB] at h

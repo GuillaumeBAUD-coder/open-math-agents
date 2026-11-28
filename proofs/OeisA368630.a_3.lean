@@ -20,46 +20,6 @@ lemma constantCoeff_subst_of_zero (F G : ℚ⟦X⟧) (hG : G.constantCoeff = 0) 
   · intro d hd
     simp [hG, hd]
 
-/-- Every solution of the original equation admits the auxiliary series stated in OEIS. -/
-theorem original_auxiliary {r s : ℕ} {F : ℚ⟦X⟧} (hF : Original r s F) :
-    ∃ B : ℚ⟦X⟧, B.constantCoeff = 1 ∧
-      B = F.subst (X * B ^ r) ∧
-      F = (exp ℚ).subst (X * B ^ (r + s)) := by
-  let G : ℚ⟦X⟧ := X * (F⁻¹) ^ r
-  have hG0 : G.constantCoeff = 0 := by simp [G]
-  have hG1 : G.coeff 1 = 1 := by
-    simp [G, PowerSeries.constantCoeff_inv, hF.1]
-  have hGu : IsUnit (G.coeff 1) := hG1 ▸ isUnit_one
-  let H := G.substInvOfIsUnit hGu
-  have hH0 : H.constantCoeff = 0 := by simp [H]
-  have hG : HasSubst G := HasSubst.of_constantCoeff_zero' hG0
-  have hH : HasSubst H := HasSubst.of_constantCoeff_zero' hH0
-  have hGH : G.subst H = X := PowerSeries.subst_substInvOfIsUnit_right G hG0 hGu
-  let B : ℚ⟦X⟧ := F.subst H
-  have hB0 : B.constantCoeff = 1 := by
-    rw [constantCoeff_subst_of_zero F H hH0, hF.1]
-  have hinv : F⁻¹ * F = 1 := PowerSeries.inv_mul_cancel F (by rw [hF.1]; norm_num)
-  have hcancel : G * F ^ r = X := by
-    dsimp [G]
-    rw [mul_assoc, ← mul_pow, hinv, one_pow, mul_one]
-  have hHB : H = X * B ^ r := by
-    have hc := congrArg (fun K : ℚ⟦X⟧ => K.subst H) hcancel
-    rw [subst_mul hH, subst_pow hH, hGH, subst_X hH] at hc
-    simpa [B] using hc.symm
-  refine ⟨B, hB0, ?_, ?_⟩
-  · change F.subst H = F.subst (X * B ^ r)
-    rw [hHB]
-  · have he := congrArg (fun K : ℚ⟦X⟧ => K.subst H) hF.2
-    rw [subst_comp_subst_apply hG hH, hGH, X_subst] at he
-    have hS : HasSubst (X * F ^ s) := by
-      apply HasSubst.of_constantCoeff_zero'
-      simp
-    rw [subst_comp_subst_apply hS hH, subst_mul hH, subst_X hH, subst_pow hH] at he
-    change F = (exp ℚ).subst (H * B ^ s) at he
-    rw [he]
-    congr 1
-    rw [hHB, pow_add, mul_assoc]
-
 /-- The auxiliary equations imply the original equation, without a recurrence assumption. -/
 theorem auxiliary_original {r s : ℕ} {F B : ℚ⟦X⟧}
     (hB0 : B.constantCoeff = 1)
@@ -133,21 +93,6 @@ lemma fixedPoint_eq (T : (ℕ → R) → ℕ → R) (hT : IsCausal T) (seed : �
   intro k hk
   simp [hk]
 
-/-- A causal coefficient operator has exactly one fixed point. -/
-theorem exists_unique_fixed_point (T : (ℕ → R) → ℕ → R) (hT : IsCausal T)
-    (seed : ℕ → R) : ∃! a : ℕ → R, T a = a := by
-  have hf : T (fixedPoint T seed) = fixedPoint T seed := by
-    funext n
-    exact (fixedPoint_eq T hT seed n).symm
-  refine ⟨fixedPoint T seed, hf, ?_⟩
-  intro a ha
-  funext n
-  induction n using Nat.strong_induction_on with
-  | h n ih =>
-    calc
-      a n = T a n := (congrFun ha n).symm
-      _ = T (fixedPoint T seed) n := hT n a (fixedPoint T seed) (fun k hk => ih k hk)
-      _ = fixedPoint T seed n := congrFun hf n
 end Causal
 
 namespace Hurwitz
@@ -264,9 +209,6 @@ lemma jet_injective : Function.Injective jet := by
   ext n
   have he := congrFun h n
   exact mul_left_cancel₀ (by exact_mod_cast n.factorial_ne_zero) he
-
-lemma qegf_jet (F : ℚ⟦X⟧) : qegf (jet F) = F :=
-  jet_injective (jet_qegf _)
 
 lemma jet_one : jet (1 : ℚ⟦X⟧) = unitSequence := by
   funext n
@@ -463,11 +405,6 @@ lemma composition_zero (a d : ℕ → R) : composition a d 0 = a 0 := by
 def auxiliaryOperator (r : ℕ) (b : ℕ → R) : ℕ → R :=
   composition (expSequence (power b 3)) (power b r)
 
-lemma map_auxiliaryOperator {S : Type*} [CommRing S] (φ : R →+* S) (r : ℕ)
-    (b : ℕ → R) :
-    φ ∘ auxiliaryOperator r b = auxiliaryOperator r (φ ∘ b) := by
-  simp only [auxiliaryOperator, map_composition, map_expSequence, map_power]
-
 /-- A coefficient of the source operator uses only strictly earlier input coefficients. -/
 theorem auxiliaryOperator_causal (r : ℕ) : Causal.IsCausal (auxiliaryOperator r (R := R)) := by
   intro n a b h
@@ -494,21 +431,12 @@ theorem auxiliaryOperator_causal (r : ℕ) : Causal.IsCausal (auxiliaryOperator 
       omega
     rw [ho, hi]
 
-lemma jet_subst_X (F D : ℚ⟦X⟧) :
-    jet (F.subst (X * D)) = composition (jet F) (jet D) := by
-  simpa only [qegf_jet] using jet_subst_qegf (jet F) (jet D)
-
-lemma jet_exp_X_power (B : ℚ⟦X⟧) (k : ℕ) :
-    jet ((exp ℚ).subst (X * B ^ k)) = expSequence (power (jet B) k) := by
-  have h := jet_exp_X_qegf (jet (B ^ k))
-  rw [qegf_jet, jet_pow] at h
-  exact h
 end Hurwitz
 
 namespace Source
 open Hurwitz PowerSeries
 
-/-- The unique integral auxiliary fixed point for the complementary-exponent family. -/
+/-- An integral auxiliary fixed point for the complementary-exponent family. -/
 def b (r : ℕ) : ℕ → ℤ := Causal.fixedPoint (auxiliaryOperator r) 0
 
 lemma b_fixed (r : ℕ) : auxiliaryOperator r (b r) = b r := by
@@ -541,70 +469,50 @@ theorem original (r s : ℕ) (hrs : r + s = 3) : Original r s (egf (a r)) := by
   · rw [hrs]
     exact generating_function r
 
-/-- Every normalized rational source solution is the constructed integer EGF. -/
-theorem eq_egf {r s : ℕ} (hrs : r + s = 3) {F : ℚ⟦X⟧} (hF : Original r s F) :
-    F = egf (a r) := by
-  obtain ⟨B, _, hB, hA⟩ := original_auxiliary hF
-  have hAj : jet F = expSequence (power (jet B) 3) := by
-    rw [hA, hrs, jet_exp_X_power]
-  have hBj : auxiliaryOperator r (jet B) = jet B := by
-    have he := congrArg jet hB
-    rw [jet_subst_X, jet_pow, hAj] at he
-    exact he.symm
-  have hm : auxiliaryOperator r (Int.castRingHom ℚ ∘ b r) = Int.castRingHom ℚ ∘ b r := by
-    rw [← map_auxiliaryOperator, b_fixed]
-  have heq : jet B = Int.castRingHom ℚ ∘ b r :=
-    (Causal.exists_unique_fixed_point (auxiliaryOperator r) (auxiliaryOperator_causal r)
-      (0 : ℕ → ℚ)).unique hBj hm
-  apply jet_injective
-  rw [hAj, jet_egf, heq, ← map_power, ← map_expSequence]
-  rfl
-
 end Source
 
 lemma isGeneratingSequence_iff (c : ℕ → ℤ) :
     IsGeneratingSequence c ↔ Original 2 1 (egf c) := by
   simp only [IsGeneratingSequence, Original, pow_one]
 
-lemma egf_injective : Function.Injective egf := fun c d h => by
-  funext n
-  have he := congrFun (congrArg Hurwitz.jet h) n
-  simp only [Hurwitz.jet_egf, Function.comp_apply, Int.coe_castRingHom] at he
-  exact_mod_cast he
-
 lemma constructed_spec : IsGeneratingSequence (Source.a 2) :=
   (isGeneratingSequence_iff _).2 (Source.original 2 1 rfl)
 
-theorem exists_unique_sequence_proof : ∃! c : ℕ → ℤ, IsGeneratingSequence c := by
-  refine ⟨Source.a 2, constructed_spec, fun c hc => egf_injective ?_⟩
-  exact Source.eq_egf (r := 2) (s := 1) rfl ((isGeneratingSequence_iff c).mp hc)
-
-lemma a_eq_constructed : OeisA368630.a = Source.a 2 :=
-  exists_unique_sequence_proof.unique
-    (Classical.epsilon_spec exists_unique_sequence_proof.exists) constructed_spec
-
-open Hurwitz
-
-lemma primary_b_1 : Source.b 2 1 = 1 := by
-  have h := congrFun (Source.b_fixed 2) 1
-  norm_num [auxiliaryOperator, composition, Finset.sum_range_succ, power, product,
-    shift, logDerivative, unitSequence, expSequence_zero, expSequence_succ,
-    Source.b_zero] at h
-  exact h.symm
-
-lemma primary_b_2 : Source.b 2 2 = 11 := by
-  have h := congrFun (Source.b_fixed 2) 2
-  norm_num [auxiliaryOperator, composition, Finset.sum_range_succ, power, product,
-    shift, logDerivative, unitSequence, expSequence_zero, expSequence_succ,
-    Source.b_zero, primary_b_1] at h
-  exact h.symm
-
-lemma constructed_a_3 : Source.a 2 3 = 136 := by
-  norm_num [Source.a, expSequence_succ, expSequence_zero, logDerivative, power,
-    product, shift, unitSequence, Source.b_zero, primary_b_1, primary_b_2]
-
 end OMA.A368630
 
+open PowerSeries OMA.A368630 in
 theorem OMA.solution : type_of% @OeisA368630.a_3 := by
-  rw [OMA.A368630.a_eq_constructed]
-  exact OMA.A368630.constructed_a_3
+  have hs : OeisA368630.IsGeneratingSequence OeisA368630.a :=
+    Classical.epsilon_spec ⟨Source.a 2, constructed_spec⟩
+  have h1 := congrArg (coeff 1) hs.2
+  rw [Hurwitz.coeff_subst_X_mul, Hurwitz.coeff_subst_X_mul] at h1
+  norm_num [Finset.sum_range_succ, coeff_zero_eq_constantCoeff,
+    constantCoeff_inv, hs.1] at h1
+  have hi : coeff 1 ((OeisA368630.egf OeisA368630.a)⁻¹) = -1 := by
+    have h := congrArg (coeff 1) (PowerSeries.mul_inv_cancel
+      (OeisA368630.egf OeisA368630.a) (by rw [hs.1]; norm_num))
+    rw [coeff_one_mul] at h
+    norm_num [constantCoeff_inv, hs.1, h1] at h
+    linarith
+  have h2 := congrArg (coeff 2) hs.2
+  rw [Hurwitz.coeff_subst_X_mul, Hurwitz.coeff_subst_X_mul] at h2
+  norm_num [Finset.sum_range_succ, coeff_zero_eq_constantCoeff,
+    coeff_one_pow, constantCoeff_inv, hs.1, h1, hi] at h2
+  have hf2 : coeff 2 (OeisA368630.egf OeisA368630.a) = 7 / 2 := by linarith
+  have hi2 : coeff 2 ((OeisA368630.egf OeisA368630.a)⁻¹) = -(5 / 2) := by
+    have h := congrArg (coeff 2) (PowerSeries.mul_inv_cancel
+      (OeisA368630.egf OeisA368630.a) (by rw [hs.1]; norm_num))
+    rw [coeff_mul, Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk] at h
+    norm_num [Finset.sum_range_succ, coeff_zero_eq_constantCoeff,
+      constantCoeff_inv, hs.1, h1, hi, hf2] at h
+    linarith
+  have hi22 : coeff 2 (((OeisA368630.egf OeisA368630.a)⁻¹) ^ 2) = -4 := by
+    rw [pow_two, coeff_mul, Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk]
+    norm_num [Finset.sum_range_succ, coeff_zero_eq_constantCoeff,
+      constantCoeff_inv, hs.1, hi, hi2]
+  have h3 := congrArg (coeff 3) hs.2
+  rw [Hurwitz.coeff_subst_X_mul, Hurwitz.coeff_subst_X_mul] at h3
+  norm_num [Finset.sum_range_succ, coeff_zero_eq_constantCoeff,
+    coeff_one_pow, constantCoeff_inv, hs.1, h1, hi, hf2, hi22] at h3
+  norm_num [OeisA368630.egf] at h3
+  exact_mod_cast (show (OeisA368630.a 3 : ℚ) = 136 by linarith)

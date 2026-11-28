@@ -132,16 +132,6 @@ theorem conjecture : ∀ N : ℕ, (∀ n k : Fin (N + 1), ∃ z : ℤ, (tri N)�
     (∀ n : Fin (N + 1), ∑ k, (tri N)⁻¹ n k = ((ruler ((n : ℕ) + 1) : ℕ) : ℚ)) :=
   fun N => ⟨integral N, row_sums N⟩
 
-/-- Control: the entry's row 3 of the inverse, 0, 2, -3, 4. -/
-theorem control_row3 : (tri 3)⁻¹ 3 = ![0, 2, -3, 4] := by
-  rw [inv_eq]
-  have hP : (pat 3)⁻¹ = !![1, 0, 0, 0; 0, 1, 0, 0; 0, -1, 1, 0; 0, 1, -1, 1] := by
-    apply inv_eq_right_inv
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp [pat, Matrix.mul_apply, Fin.sum_univ_four]
-  ext k
-  fin_cases k <;> simp [B, hP, mul_diagonal] <;> norm_num
-
 end OMA.S_oeis_a127710
 
 theorem OMA.solution : type_of% @OMA.S_oeis_a127710.main :=

@@ -15,22 +15,25 @@ namespace R02A136746
 
 open OMA.S_oeis_a136746
 
+def Tset : Finset ℕ := {1, 2, 3, 5, 6, 8, 12, 13, 14, 16, 17, 19, 23, 24, 25, 27, 28}
+
+
 set_option maxHeartbeats 1000000 in
 set_option maxRecDepth 8000 in
 /-- No 4-term progression in T, with the difference bounded (a + 3d <= 28 forces d <= 9). -/
-theorem key : ∀ a ∈ ({1, 2, 3, 5, 6, 8, 12, 13, 14, 16, 17, 19, 23, 24, 25, 27, 28} : Finset ℕ),
+theorem key : ∀ a ∈ Tset,
     ∀ d ∈ Finset.range 10, 0 < d →
-      a + d ∈ ({1, 2, 3, 5, 6, 8, 12, 13, 14, 16, 17, 19, 23, 24, 25, 27, 28} : Finset ℕ) →
-      a + 2 * d ∈ ({1, 2, 3, 5, 6, 8, 12, 13, 14, 16, 17, 19, 23, 24, 25, 27, 28} : Finset ℕ) →
-      a + 3 * d ∉ ({1, 2, 3, 5, 6, 8, 12, 13, 14, 16, 17, 19, 23, 24, 25, 27, 28} : Finset ℕ) := by
+      a + d ∈ Tset →
+      a + 2 * d ∈ Tset →
+      a + 3 * d ∉ Tset := by
   decide
 
-theorem bounds : ∀ x ∈ ({1, 2, 3, 5, 6, 8, 12, 13, 14, 16, 17, 19, 23, 24, 25, 27, 28} : Finset ℕ),
+theorem bounds : ∀ x ∈ Tset,
     1 ≤ x ∧ x ≤ 28 := by
   decide
 
 theorem noAP :
-    ¬ HasAP4 ({1, 2, 3, 5, 6, 8, 12, 13, 14, 16, 17, 19, 23, 24, 25, 27, 28} : Finset ℕ) := by
+    ¬ HasAP4 Tset := by
   intro h
   unfold HasAP4 at h
   obtain ⟨a, d, hd, h0, h1, h2, h3⟩ := h
@@ -38,13 +41,13 @@ theorem noAP :
   exact key a h0 d (Finset.mem_range.mpr (by omega)) hd h1 h2 h3
 
 theorem low : 17 ≤ A003003 28 := by
-  have hsub : ({1, 2, 3, 5, 6, 8, 12, 13, 14, 16, 17, 19, 23, 24, 25, 27, 28} : Finset ℕ) ⊆
+  have hsub : Tset ⊆
       Finset.Icc 1 28 := by
     intro x hx
     rw [Finset.mem_Icc]
     exact bounds x hx
   have hcard :
-      ({1, 2, 3, 5, 6, 8, 12, 13, 14, 16, 17, 19, 23, 24, 25, 27, 28} : Finset ℕ).card = 17 := by
+      Tset.card = 17 := by
     decide
   unfold A003003
   rw [← hcard]
