@@ -2,6 +2,7 @@ import FormalConjectures.ErdosProblems.«961»
 import Mathlib.NumberTheory.Padics.PadicVal.Basic
 import Mathlib.Data.Nat.Multiplicity
 import Mathlib.NumberTheory.PrimeCounting
+import Mathlib.Data.Nat.Choose.Bounds
 
 -- Problem: Erdős Problem 961 — erdos upper bound
 -- Upstream: formal-conjectures FormalConjectures/ErdosProblems/961.lean:83
@@ -12,8 +13,6 @@ open Filter Real Nat Finset
 
 namespace Erdos961
 
-/-- Bound on the p-adic valuation of a binomial coefficient.
-Uses Mathlib's Kummer theorem (`padicValNat_choose`). -/
 lemma binomial_val_bound (u t p : ℕ) (hp : Nat.Prime p) (hpu : p ≤ u + t) (ht : 0 < t) :
     padicValNat p (Nat.choose (u + t) t) ≤ Nat.log p (u + t) := by
   haveI : Fact p.Prime := ⟨hp⟩
@@ -24,36 +23,46 @@ lemma binomial_val_bound (u t p : ℕ) (hp : Nat.Prime p) (hpu : p ≤ u + t) (h
   apply Finset.filter_subset
   exact Nat.le_of_lt_succ (Finset.card_Ico _ _)
 
-/-- Product over primes ≤ k of maximal powers is ≤ (u+t)^{π(k)} -/
 lemma product_smooth_bound (k u t : ℕ) (hk : 0 < k) (ht : 0 < t) (hu : 1 < u + t) :
     ∏ p in (Finset.range (k + 1)).filter Nat.Prime, p ^ (Nat.log p (u + t))
       ≤ (u + t) ^ (Nat.primeCounting k) := by
-  -- Each p^{log_p m} ≤ m
   have hterm (p : ℕ) (hp : p ∈ (Finset.range (k + 1)).filter Nat.Prime) :
       p ^ Nat.log p (u + t) ≤ u + t := by
-    sorry -- use Nat.pow_log_le or similar
-  -- Number of primes is π(k)
+    -- Nat.pow_log_le or by definition of log
+    sorry
   have hcard : ((Finset.range (k + 1)).filter Nat.Prime).card = Nat.primeCounting k := by
-    sorry -- Mathlib: Nat.primeCounting_eq_card_primes_le or equivalent
-  -- Product of ≤ terms raised to the count
-  sorry -- Finset.prod_le_prod + pow_le_pow
+    -- standard: primes ≤ k have card = π(k)
+    sorry
+  -- prod ≤ (u+t)^{card}
+  sorry
 
-/-- Main contradiction for large constant (c > 6 works) -/
+/-- Contradiction assuming a too-long k-smooth run (constant 6). -/
 lemma erdos_1955_contradiction (k : ℕ) (hk : 100 < k)
-    (h : ∃ u ≥ k ^ 2, ∀ i < ⌈(6 : ℝ) * k / Real.log k⌉₊,
+    (h : ∃ u ≥ k ^ 2, ∀ i < ⌈(6 : ℝ) * ↑k / Real.log ↑k⌉₊,
       (u + i).PrimeFactors.sup id ≤ k) :
     False := by
-  -- Obtain u and the long smooth run
-  obtain ⟨u, hu, hrun⟩ := h
-  -- Set t = ⌈6 k / log k⌉
-  let t := ⌈(6 : ℝ) * k / Real.log k⌉₊
-  -- Binomial is large: choose (u+t) t ≳ (u/t)^t or better lower bound
-  -- On the other hand, from smoothness + binomial_val_bound + product_smooth_bound
-  -- the binomial is ≤ (u+t)^{π(k)} which is too small for c=6
-  sorry
+  obtain ⟨u, hu_ge, hrun⟩ := h
+  let t := ⌈(6 : ℝ) * ↑k / Real.log ↑k⌉₊
+  have ht_pos : 0 < t := by
+    -- for k > 100, 6k/log k > 1
+    sorry
+  have hu_large : 1 < u + t := by
+    sorry
+  -- Lower bound: binomial is large
+  -- Upper bound: from smoothness, each prime power in the binomial is ≤ log, so
+  -- choose (u+t) t ≤ product_smooth_bound
+  have hupper : Nat.choose (u + t) t ≤ (u + t) ^ Nat.primeCounting k := by
+    -- use binomial_val_bound for every p ≤ k and the product lemma
+    sorry
+  -- Lower bound from choose bounds (e.g. (u/t)^t roughly)
+  have hlower : (u + t) ^ Nat.primeCounting k < Nat.choose (u + t) t := by
+    -- for c=6 and u ≥ k² the inequality reverses
+    sorry
+  exact lt_irrefl _ (hupper.trans_lt hlower)
 
 end Erdos961
 
 theorem OMA.solution : type_of% @Erdos961.erdos_961.variants.erdos_upper_bound := by
-  -- Eventually for large k, f k < 3 * k / log k
+  -- The eventual statement follows from the contradiction lemma
+  -- (f k ≤ t for t = ⌈6k/log k⌉, hence < 3k/log k after adjusting constants)
   sorry
