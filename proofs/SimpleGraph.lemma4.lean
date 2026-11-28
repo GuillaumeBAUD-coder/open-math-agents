@@ -112,24 +112,13 @@ lemma multiplicity_eq_three {V : Type*} [Fintype V] [DecidableEq V]
 
 lemma cliqueFree_three_iff (G : SimpleGraph V) :
     G.CliqueFree 3 ↔ ∀ a b c : V, G.Adj a b → G.Adj b c → G.Adj c a → False := by
-  rw [SimpleGraph.cliqueFree_iff]
+  classical
   constructor
   · intro h a b c hab hbc hca
-    let f : Fin 3 → V := ![a, b, c]
-    have hAdj (i j : Fin 3) (hne : i ≠ j) : G.Adj (f i) (f j) := by
-      fin_cases i <;> fin_cases j <;> simp_all [f, hab.symm, hbc.symm, hca.symm]
-    have hf : Function.Injective f := by
-      intro i j heq
-      by_contra hij
-      have h := hAdj i j hij
-      rw [heq] at h
-      exact G.irrefl h
-    exact h.false ⟨⟨f, fun h ↦ hAdj _ _ (by simpa using h)⟩, hf⟩
-  · intro h
-    refine ⟨fun f ↦ h (f 0) (f 1) (f 2) ?_ ?_ ?_⟩
-    · exact f.toHom.map_adj (by decide : (completeGraph (Fin 3)).Adj 0 1)
-    · exact f.toHom.map_adj (by decide : (completeGraph (Fin 3)).Adj 1 2)
-    · exact f.toHom.map_adj (by decide : (completeGraph (Fin 3)).Adj 2 0)
+    exact h {a,b,c} (is3Clique_triple_iff.mpr ⟨hab,hca.symm,hbc⟩)
+  · intro h s hs
+    obtain ⟨a,b,c,hab,hac,hbc,-⟩ := is3Clique_iff.mp hs
+    exact h a b c hab hbc hac.symm
 
 def bridgeGraph {A B : Type*} (G : SimpleGraph A) (J : SimpleGraph B)
     (v : A) (w : B) : SimpleGraph (A ⊕ B) where
@@ -138,20 +127,8 @@ def bridgeGraph {A B : Type*} (G : SimpleGraph A) (J : SimpleGraph B)
     | .inr a, .inr b => J.Adj a b
     | .inl a, .inr b => a = v ∧ b = w
     | .inr b, .inl a => a = v ∧ b = w
-  symm := by
-    constructor
-    intro a b h
-    cases a <;> cases b
-    · exact h.symm
-    · exact h
-    · exact h
-    · exact h.symm
-  loopless := by
-    constructor
-    intro a
-    cases a
-    · exact G.loopless.irrefl _
-    · exact J.loopless.irrefl _
+  symm := ⟨fun a b h => by cases a <;> cases b <;> first | exact h | exact h.symm⟩
+  loopless := ⟨by rintro (a|b); exact G.irrefl; exact J.irrefl⟩
 
 lemma bridgeGraph_cliqueFree {A B : Type*} {G : SimpleGraph A} {J : SimpleGraph B}
     (hg : G.CliqueFree 3) (hj : J.CliqueFree 3) (v : A) (w : B) :
