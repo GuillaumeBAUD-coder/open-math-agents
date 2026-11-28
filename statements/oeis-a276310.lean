@@ -1,13 +1,12 @@
 import Mathlib
 
 /-!
-# A276310: Mathar's recurrence, corrected to n ≥ 3
+# A276310: Mathar's recurrence
 
 Source: https://oeis.org/A276310
 Credit: @ivillar
 
-Status: false as stated at n = 2 (the left side is -1 at n = 2 on the OEIS data); `main` is the
-corrected recurrence (n ≥ 3), which is proved.
+Status: recorded in the entry as a conjecture; no proof or verification is noted there.
 
 A276310 (offset 1): g.f. A(x) satisfies: x = A(x)-2*A(x)^2-2*A(x)^3;
 data 1, 2, 10, 60, 404, 2912, 21984, 171600, 1373680, 11215776, 93039648, 781936896, ...
@@ -17,15 +16,16 @@ Conjecture (R. J. Mathar, Sep 17 2016):
 
 Formalization: G is the formal power series over ℚ with zero constant term and x = G - 2*G^2 - 2*G^3 (the
 series reversion of x - 2*x^2 - 2*x^3);
-a(n) = [x^n] G. `main` is the corrected recurrence (n ≥ 3): on the data the left side of the recurrence as
-stated is -1 at n = 2, and it vanishes from n = 3 on.
+a(n) = [x^n] G. The sequence has offset 1 and the recurrence involves a(n-2), so it is stated for n ≥ 3,
+where every index is at least the offset; it is checked by the data, for example at n = 3:
+(18)*(10) + (-78)*(2) + (-24)*(1) = 0.
 -/
 
 namespace OMA.S_oeis_a276310
 
 open PowerSeries
 
-/-- The corrected recurrence (n ≥ 3): Mathar's recurrence, which fails at n = 2. -/
+/-- Mathar's conjectured recurrence for the coefficients of the g.f. of A276310, for n ≥ 3. -/
 theorem main : ∀ G : ℚ⟦X⟧, coeff 0 G = 0 →
     X = G - 2 * G ^ 2 - 2 * G ^ 3 →
     ∀ n : ℕ, 3 ≤ n →
