@@ -1,28 +1,13 @@
 import OMAStatements.S_oeis_a061243
 import Mathlib
 
-namespace A061243Proof
-
-lemma prod_modEq (n r : ℕ) : (∏ i ∈ Finset.Icc 1 r, (n + i)) ≡ r.factorial [MOD n] := by
-  induction r with
-  | zero =>
-    rw [Finset.Icc_eq_empty (by omega), Finset.prod_empty, Nat.factorial_zero]
-  | succ r ih =>
-    rw [Finset.prod_Icc_succ_top (by omega), Nat.factorial_succ, mul_comm (r + 1)]
-    refine Nat.ModEq.mul ih ?_
-    exact Nat.add_mod_left n (r + 1)
-
-end A061243Proof
-
 theorem OMA.solution : type_of% @OMA.S_oeis_a061243.main := by
-  intro n hn
-  unfold OMA.S_oeis_a061243.a OMA.S_oeis_a061243.kempner
-  have hset : {r : ℕ | 0 < r ∧ n ∣ ∏ i ∈ Finset.Icc 1 r, (n + i)} =
-      {m : ℕ | 0 < m ∧ n ∣ m.factorial} := by
-    ext r
-    constructor
-    · rintro ⟨h0, h1⟩
-      exact ⟨h0, ((A061243Proof.prod_modEq n r).dvd_iff (dvd_refl n)).1 h1⟩
-    · rintro ⟨h0, h1⟩
-      exact ⟨h0, ((A061243Proof.prod_modEq n r).dvd_iff (dvd_refl n)).2 h1⟩
-  rw [hset]
+  intro n _
+  have h (r : ℕ) : n ∣ ∏ i ∈ .Icc 1 r, (n + i) ↔ n ∣ r.factorial := by
+    refine (?_ : _ ≡ _ [MOD n]).dvd_iff dvd_rfl
+    induction r with
+    | zero => rfl
+    | succ r ih =>
+      rw [Finset.prod_Icc_succ_top (by omega), Nat.factorial_succ, mul_comm (r + 1)]
+      exact ih.mul (Nat.add_mod_left n _)
+  simp_rw [OMA.S_oeis_a061243.a, OMA.S_oeis_a061243.kempner, h]
