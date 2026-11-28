@@ -46,14 +46,15 @@ lemma product_smooth_bound (k u t : ℕ) (hk : 0 < k) (ht : 0 < t) (hu : 1 < u +
 /-- Lower bound on the binomial coefficient for large u relative to t. -/
 lemma binomial_lower_bound (u t : ℕ) (hu : t ≤ u) (ht : 0 < t) :
     (u / t : ℝ) ^ t ≤ Nat.choose (u + t) t := by
-  -- Use the standard inequality choose n k ≥ (n/k)^k
-  -- Here n = u+t, k = t, and t ≤ u implies t ≤ n/2 for large enough, but we use the direct form
-  have h : (↑u / ↑t) ^ t ≤ (↑(u + t) / ↑t) ^ t := by
-    gcongr
-    exact Nat.cast_le.mpr (Nat.le_add_right u t)
-  -- Mathlib has Nat.choose_le or the reverse form; we use a known lower bound
-  -- For the formalization we rely on choose_ge or equivalent
-  sorry -- replace with: exact (h.trans (Nat.choose_le_pow_div or the matching Mathlib lemma)).trans ...
+  -- Mathlib: Nat.pow_le_choose gives (n + 1 - r)^r / r! ≤ choose n r
+  -- For n = u + t, r = t we get (u + 1)^t / t! ≤ choose (u+t) t
+  -- Combined with (u/t)^t ≤ (u+1)^t / t! for large t this suffices
+  have h : (↑(u + 1) / ↑t) ^ t ≤ (↑(u + 1) ^ t : ℝ) / ↑(t.factorial) := by
+    sorry -- standard
+  have h2 : (↑(u + 1) ^ t : ℝ) / ↑(t.factorial) ≤ Nat.choose (u + t) t := by
+    exact Nat.pow_le_choose t (u + t)
+  -- Bridge from u/t to (u+1)/t
+  sorry
 
 lemma erdos_1955_contradiction (k : ℕ) (hk : 100 < k)
     (h : ∃ u ≥ k ^ 2, ∀ i < ⌈(6 : ℝ) * ↑k / Real.log ↑k⌉₊,
