@@ -23,17 +23,12 @@ private theorem closedForm (n : ℕ) :
 
 private theorem rotateVal {n : ℕ} (i : Fin n) :
     (finRotate n i).val = if i.val + 1 < n then i.val + 1 else 0 := by
-  obtain ⟨k, hk⟩ := i
-  cases n with
-  | zero => omega
-  | succ n =>
-    by_cases h : k < n
-    · rw [finRotate_of_lt h]
-      simp [show k + 1 < n + 1 by omega]
-    · have he : k = n := by omega
-      subst k
-      rw [finRotate_last']
-      simp
+  haveI := i.neZero
+  rw [finRotate_apply, Fin.val_add, Fin.val_one', Nat.add_mod_mod]
+  split
+  · exact Nat.mod_eq_of_lt ‹_›
+  · have := i.isLt
+    rw [show i.val + 1 = n by omega, Nat.mod_self]
 
 private theorem rotateTwiceNe {n : ℕ} (hn : 3 ≤ n) (i : Fin n) :
     finRotate n (finRotate n i) ≠ i := by
@@ -118,9 +113,8 @@ private theorem arrangementLowerBound (n : ℕ) (hn : 3 ≤ n) (σ : Equiv.Perm 
     σ.injective.comp ((finRotate n).injective.comp σ.symm.injective)
   have ht₂ (a : Fin n) : t (t a) ≠ a := by
     intro h
-    change σ (finRotate n (σ.symm (σ (finRotate n (σ.symm a))))) = a at h
-    rw [σ.symm_apply_apply] at h
-    exact rotateTwiceNe hn (σ.symm a) (σ.injective (h.trans (σ.apply_symm_apply a).symm))
+    apply rotateTwiceNe hn (σ.symm a)
+    simpa [t] using congrArg σ.symm h
   suffices ∃ a : Fin n, f n ≤ (a.val + 1) * ((t a).val + 1) by
     obtain ⟨a, ha⟩ := this
     exact ⟨σ.symm a, by simpa only [t, σ.apply_symm_apply] using ha⟩
@@ -155,14 +149,8 @@ private theorem arrangementLowerBound (n : ℕ) (hn : 3 ≤ n) (σ : Equiv.Perm 
     have hc : n - m ≤ m := by simpa using Fintype.card_le_of_injective down hdown
     have heven : n = 2 * m := by omega
     have hsize : n - m = m := by omega
-    have hsurj : Function.Surjective down := by
-      let fromLow : Fin m → Fin (n - m) := fun i => ⟨i.val, by rw [hsize]; exact i.isLt⟩
-      have hi : Function.Injective (down ∘ fromLow) := by
-        intro i j h
-        exact Fin.ext (congrArg (fun z : Fin (n - m) => z.val) (hdown h))
-      intro x
-      obtain ⟨j, hj⟩ := Finite.surjective_of_injective hi x
-      exact ⟨fromLow j, hj⟩
+    have hsurj := ((Fintype.bijective_iff_injective_and_card down).2
+      ⟨hdown, by simpa using hsize⟩).2
     -- Equality of the two counts makes the largest small value sit between two large values.
     let x : Fin n := ⟨m - 1, by omega⟩
     have hx : x.val + 1 = m := by change m - 1 + 1 = m; omega
