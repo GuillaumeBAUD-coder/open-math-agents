@@ -270,7 +270,7 @@ theorem core {F K : Type*} [Field F] [Field K] [Finite F] [Finite K] [Algebra F 
     intro i j h
     obtain ⟨a, ha⟩ := hA2 _ ((ZMod.natCast_eq_zero_iff _ _).1 <| by
       rw [hrel2, h, sub_self])
-    exact ⟨a, by rw [ha, hrel1]⟩
+    exact ⟨a, by rw [ha]; exact (hrel1 i j).symm⟩
   have hWmod : ∀ i j : ℕ, (j : ZMod n) = (i : ZMod n) → γ ^ i ∈ W → γ ^ j ∈ W := by
     intro i j h hi
     obtain ⟨a, ha⟩ := hQ i j h
@@ -352,14 +352,16 @@ theorem core {F K : Type*} [Field F] [Field K] [Finite F] [Finite K] [Algebra F 
       have h0 : {x : ZMod n | x ≠ 0} = ({0} : Set (ZMod n))ᶜ := by ext x; simp
       rw [h0, Set.ncard_compl, Set.ncard_singleton, Nat.card_zmod]
     clear hBmem
-    lift B to Finset ℕ using hfin
+    let Bf : Finset ℕ := hfin.toFinset
+    have hBf : (↑Bf : Set ℕ) = B := by ext x; simp [Bf]
+    rw [← hBf] at h1 ⊢
     rw [← Finset.coe_offDiag, Set.ncard_coe_finset, Finset.offDiag_card] at h1
     rw [Set.ncard_coe_finset]
-    have hk : B.card * B.card = q ^ 2 + q + B.card := by
-      have := Nat.le_mul_self B.card
+    have hk : Bf.card * Bf.card = q ^ 2 + q + Bf.card := by
+      have := Nat.le_mul_self Bf.card
       omega
-    have hz : ((B.card : ℤ) - (q + 1)) * ((B.card : ℤ) + q) = 0 := by
-      have hk' : (B.card : ℤ) * B.card = q ^ 2 + q + B.card := by exact_mod_cast hk
+    have hz : ((Bf.card : ℤ) - (q + 1)) * ((Bf.card : ℤ) + q) = 0 := by
+      have hk' : (Bf.card : ℤ) * Bf.card = q ^ 2 + q + Bf.card := by exact_mod_cast hk
       linear_combination hk'
     rcases mul_eq_zero.1 hz with h | h <;> omega
   exact ⟨B, hpds, hcard⟩
