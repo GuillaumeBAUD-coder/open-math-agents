@@ -4,8 +4,8 @@ import Mathlib
 # OEIS A002294: 4-uniform words avoiding 231 and 221
 
 Source: https://oeis.org/A002294
-`A002294 n = binomial(4n, n) / (3n + 1)`. Conjecture (Defant–Kravitz): this is the number of
-4-uniform words on the alphabet `[n]` (each letter used exactly 4 times) avoiding the
+`A002294 n = binomial(5n, n) / (4n + 1)`. Theorem 3.6 of Defant and Kravitz,
+Stack-sorting for words, counts the 4-uniform words on the alphabet `[n]` (each letter used exactly 4 times) avoiding the
 patterns `231` and `221`.
 
 Conventions. A word is `w : Fin (4n) → Fin n`. It contains `231` if there are positions
@@ -25,7 +25,7 @@ def count (n : ℕ) : ℕ :=
     (∀ i j k : Fin (4 * n), i < j → j < k → ¬ (w k < w i ∧ w i = w j))).card
 
 theorem main :
-    ∀ n : ℕ, count n * (3 * n + 1) = (4 * n).choose n := by
+    ∀ n : ℕ, count n * (4 * n + 1) = (5 * n).choose n := by
   sorry
 
 end OMA.S_oeis_a002294
