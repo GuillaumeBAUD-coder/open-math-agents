@@ -1,5 +1,7 @@
 import FormalConjectures.ErdosProblems.«559»
 
+/-! Tikhomirov's size-Ramsey lower bound for graphs of maximum degree three. -/
+
 open scoped BigOperators Classical
 open Filter Real SimpleGraph
 
@@ -26,7 +28,8 @@ private theorem exists_sparse_choices {J Ω : Type*} [Fintype J] [Fintype Ω]
       (assignments j s).card ≤ D^r * (Fintype.card Ω)^(h-r) := by
     have hsdiff : ((Finset.univ : Finset (Fin h)) \ s).card = h - r := by
       rw [Finset.card_sdiff_of_subset (Finset.subset_univ _), Finset.card_univ, Fintype.card_fin, hs]
-    rw [assignments, Fintype.card_piFinset]
+    change (Fintype.piFinset (fun i : Fin h => if i ∈ s then good j else Finset.univ)).card ≤ _
+    rw [Fintype.card_piFinset]
     have hprod :
         (∏ i : Fin h, (if i ∈ s then good j else Finset.univ).card) =
             (good j).card^r * (Fintype.card Ω)^(h-r) := by
@@ -155,19 +158,28 @@ private theorem card_matching_leaf_orders {V : Type*} [Fintype V]
   classical
   let S := Finset.univ.filter (fun σ : Equiv.Perm (Fin m) =>
     ∀ i : Fin m, G.Adj (f (leafOrder σ i.castSucc)) (f (leafOrder σ i.succ)))
-  let e (σ : S) : ParentMap G (f 0) Fin.castSucc :=
+  let e (σ : S) : ParentMap (n := m) G (f 0) Fin.castSucc :=
     ⟨f ∘ leafOrder σ.val, rfl, (Finset.mem_filter.mp σ.property).2⟩
   have he : Function.Injective e := by
     intro σ τ h
     apply Subtype.ext
     apply Equiv.ext
     intro i
-    have hz := congrArg (fun p : ParentMap G (f 0) Fin.castSucc => p.val i.succ) h
+    have hz := congrArg (fun p : ParentMap (n := m) G (f 0) Fin.castSucc => p.val i.succ) h
     have hi : f ((σ.val i).succ) = f ((τ.val i).succ) := hz
     exact Fin.succ_injective _ (hf hi)
-  have hc : S.card ≤ Fintype.card (ParentMap G (f 0) Fin.castSucc) := by
+  have hc : S.card ≤ Fintype.card (ParentMap (n := m) G (f 0) Fin.castSucc) := by
     simpa using Fintype.card_le_of_injective e he
   exact hc.trans (parentMap_card G (f 0) Fin.castSucc (fun i => by simp) hd)
+
+private noncomputable def rootedChoices {V Ω : Type*} [Fintype Ω] {n : ℕ}
+    (U : Ω → SimpleGraph (Fin (n+1))) (G : SimpleGraph V) (v : V) : Finset Ω :=
+  Finset.univ.filter (fun σ => ∃ f : (U σ).Copy G, f 0 = v)
+
+private theorem mem_rootedChoices {V Ω : Type*} [Fintype Ω] {n : ℕ}
+    {U : Ω → SimpleGraph (Fin (n+1))} {G : SimpleGraph V} {v : V} {σ : Ω} :
+    σ ∈ rootedChoices U G v ↔ ∃ f : (U σ).Copy G, f 0 = v := by
+  simp only [rootedChoices, Finset.mem_filter, Finset.mem_univ, true_and]
 
 set_option maxHeartbeats 4000000 in
 set_option maxRecDepth 4096 in
@@ -180,7 +192,7 @@ private theorem card_compatible_components {V : Type*} [Fintype V]
     (hpath : ∀ σ (i : Fin m),
        (U σ).Adj (leaf (leafOrder σ i.castSucc)) (leaf (leafOrder σ i.succ)))
     (hd : G.maxDegree ≤ d) :
-    (Finset.univ.filter (fun σ => ∃ f : (U σ).Copy G, f 0 = v)).card ≤ d^(n+m) := by
+    (rootedChoices U G v).card ≤ d^(n+m) := by
   classical
   let P := ParentMap G v parent
   let good (f : P) : Finset (Equiv.Perm (Fin m)) :=
@@ -189,11 +201,11 @@ private theorem card_compatible_components {V : Type*} [Fintype V]
         ∀ i : Fin m,
           G.Adj (f.val (leaf (leafOrder σ i.castSucc))) (f.val (leaf (leafOrder σ i.succ))))
     else ∅
-  let S := Finset.univ.filter (fun σ => ∃ f : (U σ).Copy G, f 0 = v)
+  let S := rootedChoices U G v
   let emb (σ : S) : (U σ.val).Copy G :=
-    Classical.choose (Finset.mem_filter.mp σ.property).2
+    Classical.choose (mem_rootedChoices.mp σ.property)
   have hroot (σ : S) : emb σ 0 = v :=
-    Classical.choose_spec (Finset.mem_filter.mp σ.property).2
+    Classical.choose_spec (mem_rootedChoices.mp σ.property)
   let pref (σ : S) : P :=
     ⟨emb σ, hroot σ, fun i => (emb σ).toHom.map_rel' (htree σ.val i)⟩
   have hmem (σ : S) : σ.val ∈ good (pref σ) := by
@@ -355,7 +367,8 @@ private theorem treeDegree {n : ℕ} (x : Fin (n+1)) (c : Finset ℕ)
   exact hc y (((binaryTree n).mem_neighborFinset x y).mp hy')
 
 private theorem degree_map_emb {V W : Type*} [Fintype V] [Fintype W]
-    (G : SimpleGraph V) (e : V ↪ W) (x : V) :
+    (G : SimpleGraph V) (e : V ↪ W) (x : V)
+    [DecidableRel G.Adj] [instMap : DecidableRel (G.map e).Adj] :
     (G.map e).degree (e x) = G.degree x := by
   classical
   rw [← SimpleGraph.card_neighborFinset_eq_degree, ← SimpleGraph.card_neighborFinset_eq_degree]
@@ -411,12 +424,14 @@ private theorem treeWithLeafCycle_cubic (k : ℕ) (hk : 1 ≤ k)
         · omega)
       simpa using he
     have hcycle : C.degree (f y) ≤ 2 := by
-      rw [degree_map_emb]
       have hm : 2 ≤ m+1 := by
         have := Nat.pow_le_pow_right (by decide : 0 < (2 : ℕ)) hk
         dsimp [m]
         omega
-      exact standard_cycle_degree hm y
+      calc
+        C.degree (f y) = (SimpleGraph.cycleGraph (m+1)).degree y :=
+          degree_map_emb _ f y (instMap := inferInstanceAs (DecidableRel C.Adj))
+        _ ≤ 2 := standard_cycle_degree hm y
     omega
   · have hcycle : C.degree x = 0 := by
       apply (SimpleGraph.degree_eq_zero_iff_notMem_support C x).mpr
@@ -532,10 +547,25 @@ private theorem leafCycle_matching (k : ℕ) (hk : 1 ≤ k)
     rw [← he, ← he']
     exact tree_edges_present (treeLeaves k) σ i
 
+set_option maxHeartbeats 4000000 in
+private theorem card_binary_components {V : Type*} [Fintype V] (G : SimpleGraph V)
+    (x : V) (k d : ℕ) (hd : G.maxDegree ≤ d) :
+    (rootedChoices (treeWithLeafCycle (treeLeaves k)) G x).card ≤
+        d^((2^(k+1)-2)+(2^k-1)) := by
+  classical
+  let w := 2^(k+1)-2
+  let m := 2^k-1
+  let U (σ : Equiv.Perm (Fin m)) : SimpleGraph (Fin (w+1)) :=
+    treeWithLeafCycle (treeLeaves k) σ
+  exact card_compatible_components (n := w) (m := m) (d := d) G x
+    (treeParent (n := w)) (fun i => treeParent_lt i) (treeLeaves k) U
+    (fun σ i => tree_edges_present (treeLeaves k) σ i)
+    (fun σ i => leaf_path_present (treeLeaves k) σ i) hd
+
 private def SparseRoots {h w : ℕ} (U : Fin h → SimpleGraph (Fin (w+1)) )
     (d r : ℕ) : Prop :=
   ∀ (η : ℕ) (H : SimpleGraph (Fin η)) (v : Fin η), H.maxDegree ≤ d →
-    (Finset.univ.filter (fun i : Fin h => ∃ f : (U i).Copy H, f 0 = v)).card < r
+    (rootedChoices U H v).card < r
 
 private def disjointTarget {h w : ℕ} (U : Fin h → SimpleGraph (Fin (w+1))) :
     SimpleGraph (Fin h × Fin (w+1)) where
@@ -719,14 +749,17 @@ private theorem reduce_to_test_host {η w : ℕ} {Ω : Type*}
     exact card_ball G x k d hd hG
   let e := Classical.choice ex
   let H' := H.map e
+  letI : DecidableRel H'.Adj := fun a b => Classical.propDecidable (H'.Adj a b)
   have hH : H.maxDegree ≤ d := (SimpleGraph.Copy.induce G B).isContained.maxDegree_mono.trans hG
   have hH' : H'.maxDegree ≤ d := by
     apply H'.maxDegree_le_of_forall_degree_le d
     intro v
     by_cases hv : ∃ w, e w = v
     · obtain ⟨w,rfl⟩ := hv
-      rw [degree_map_emb]
-      exact (H.degree_le_maxDegree w).trans hH
+      calc
+        H'.degree (e w) = H.degree w :=
+          degree_map_emb H e w (instMap := inferInstanceAs (DecidableRel H'.Adj))
+        _ ≤ d := (H.degree_le_maxDegree w).trans hH
     · have hz : H'.degree v = 0 := by
         apply (SimpleGraph.degree_eq_zero_iff_notMem_support H' v).mpr
         rintro ⟨w,hw⟩
@@ -739,10 +772,9 @@ private theorem reduce_to_test_host {η w : ℕ} {Ω : Type*}
   obtain ⟨f,hf⟩ := hσ
   have hmem (u : Fin (w+1)) : f u ∈ B := by
     obtain ⟨p,hp⟩ := radius σ u
-    have hq := ball_of_walk G (p.map f.toHom) (by simpa using hp : (p.map f.toHom).length ≤ k)
-    change ∃ i : Fin (k+1), ∃ f' : ParentMap (n := i.val) G x Fin.castSucc,
-      f'.val (Fin.last i.val) = f u
-    simpa only [SimpleGraph.Copy.coe_toHom, hf] using hq
+    let q : G.Walk (f 0) (f u) := p.map f.toHom
+    have hq : q.length ≤ k := (SimpleGraph.Walk.length_map f.toHom p).trans_le hp
+    exact ball_of_walk G (q.copy hf rfl) ((q.length_copy hf rfl).trans_le hq)
   let g (u : Fin (w+1)) : B := ⟨f u, hmem u⟩
   have hg : Function.Injective g := fun _ _ h => f.injective (congrArg Subtype.val h)
   let copy : (U σ).Copy H' :=
@@ -878,11 +910,10 @@ private theorem binaryFamily (k h d : ℕ) (hk : 1 ≤ k) (hd : 2 ≤ d)
   let Ω := Equiv.Perm (Fin m)
   let J := BoundedHost N d × Fin N
   let U (σ : Ω) := treeWithLeafCycle (treeLeaves k) σ
-  let good (j : J) := Finset.univ.filter (fun σ : Ω =>
-    ∃ f : (U σ).Copy j.1.val, f 0 = j.2)
-  have goodBound (j : J) : (good j).card ≤ d^(w+m) :=
-    card_compatible_components j.1.val j.2 treeParent treeParent_lt (treeLeaves k) U
-      (tree_edges_present (treeLeaves k)) (leaf_path_present (treeLeaves k)) j.1.property
+  let good (j : J) := rootedChoices U j.1.val j.2
+  have goodBound (j : J) : (good j).card ≤ d^(w+m) := by
+    rcases j with ⟨⟨G, hG⟩, x⟩
+    exact card_binary_components G x k d hG
   obtain ⟨φ,hφ⟩ := exists_sparse_choices h r (d^(w+m)) hr good goodBound margin
   refine ⟨U ∘ φ, ?_, ?_, ?_⟩
   · intro i
@@ -890,11 +921,11 @@ private theorem binaryFamily (k h d : ℕ) (hk : 1 ≤ k) (hd : 2 ≤ d)
   · intro η G x hG
     obtain ⟨H,y,hy⟩ := reduce_to_test_host U k d hd (leafCycle_walk k) G x hG
     have hsub :
-        (Finset.univ.filter (fun i : Fin h => ∃ f : (U (φ i)).Copy G, f 0 = x)) ⊆
+        rootedChoices (U ∘ φ) G x ⊆
           (Finset.univ.filter (fun i : Fin h => φ i ∈ good (H,y))) := by
       intro i hi
       exact Finset.mem_filter.mpr ⟨Finset.mem_univ _,
-        Finset.mem_filter.mpr ⟨Finset.mem_univ _, hy (φ i) (Finset.mem_filter.mp hi).2⟩⟩
+        mem_rootedChoices.mpr (hy (φ i) (mem_rootedChoices.mp hi))⟩
     exact (Finset.card_le_card hsub).trans_lt (hφ (H,y))
   · intro i
     exact leafCycle_matching k hk (φ i)
@@ -1033,15 +1064,14 @@ private theorem rareRoot {η h w d r : ℕ} (hh : 0 < h)
     (hSparse : SparseRoots U d r) (hH : H.maxDegree ≤ d) :
     ∃ i, h * (rootSet H (U i)).card ≤ 2 * edgeCount H * r := by
   classical
-  let selectors (v : H.support) := Finset.univ.filter (fun i : Fin h =>
-    ∃ f : (U i).Copy H, f 0 = v.val)
+  let selectors (v : H.support) := rootedChoices U H v.val
   let pc : (Σ i : Fin h, rootSet H (U i)) → Σ v : H.support, selectors v := fun p => by
     have hr := mem_rootSet.mp p.2.property
     have hmem : p.2.val ∈ H.support := by
       obtain ⟨f,hf⟩ := hr
       obtain ⟨u,hu⟩ := hU p.1
       exact ⟨f u, hf ▸ f.toHom.map_rel' hu⟩
-    exact ⟨⟨p.2.val, hmem⟩, ⟨p.1, Finset.mem_filter.mpr ⟨Finset.mem_univ _, hr⟩⟩⟩
+    exact ⟨⟨p.2.val, hmem⟩, ⟨p.1, mem_rootedChoices.mpr hr⟩⟩
   have hp : Function.Injective pc := by
     intro p q he
     have hi := congrArg (fun z : Σ v : H.support, selectors v => z.2.val) he
