@@ -19,27 +19,15 @@ private theorem monoSub (k : ℕ) : ∃ m ≥ k, ∀ f : Fin m → ℝ,
   have big : (k+k).choose k ≤ (univ : Finset (Fin m)).card := by
     simpa [m] using le_max_right k ((k+k).choose k)
   have hR := Combinatorics.Diagonal.hasRamseyProperty_choose k k c univ big
-  rcases hR with ⟨S,_,hS,hc⟩ | ⟨S,_,hS,hc⟩
+  rcases hR with ⟨S,_,hS,hc⟩ | ⟨S,_,hS,hc⟩ <;>
   · let e := S.orderEmbOfFin hS
-    refine ⟨e,Or.inr (antitone_iff_forall_lt.mpr ?_)⟩
-    intro i j hij
-    have he := e.strictMono hij
-    have hh := hc {e i,e j} (by
+    have hh {i j : Fin k} (hij : i < j) := pair (e.strictMono hij) ▸ hc {e i,e j} (by
       intro v hv; rcases Finset.mem_insert.mp hv with rfl | hv
       · exact S.orderEmbOfFin_mem hS i
-      · rw [Finset.mem_singleton.mp hv]; exact S.orderEmbOfFin_mem hS j) (by simp [he.ne])
-    rw [pair he] at hh
-    exact le_of_lt (lt_of_not_ge (of_decide_eq_false hh))
-  · let e := S.orderEmbOfFin hS
-    refine ⟨e,Or.inl (monotone_iff_forall_lt.mpr ?_)⟩
-    intro i j hij
-    have he := e.strictMono hij
-    have hh := hc {e i,e j} (by
-      intro v hv; rcases Finset.mem_insert.mp hv with rfl | hv
-      · exact S.orderEmbOfFin_mem hS i
-      · rw [Finset.mem_singleton.mp hv]; exact S.orderEmbOfFin_mem hS j) (by simp [he.ne])
-    rw [pair he] at hh
-    exact of_decide_eq_true hh
+      · rw [Finset.mem_singleton.mp hv]; exact S.orderEmbOfFin_mem hS j) (by simp [(e.strictMono hij).ne])
+    first
+    | exact ⟨e,Or.inr (antitone_iff_forall_lt.mpr fun i j hij => le_of_lt (lt_of_not_ge (of_decide_eq_false (hh hij))))⟩
+    | exact ⟨e,Or.inl (monotone_iff_forall_lt.mpr fun i j hij => of_decide_eq_true (hh hij))⟩
 
 private theorem selectCoords {d : ℕ} (J : Finset (Fin d)) (k : ℕ) :
     ∃ m ≥ k, ∀ f : Fin m → (ℝ^d), ∃ e : Fin k ↪o Fin m,
@@ -68,12 +56,7 @@ private theorem chain_dist {k d : ℕ} (p : Fin k ↪ (ℝ^d))
   have hs : dist (p i) (p j)^2 + dist (p j) (p l)^2 ≤ dist (p i) (p l)^2 := by
     simp only [EuclideanSpace.dist_sq_eq, Real.dist_eq, sq_abs, ← Finset.sum_add_distrib]
     apply Finset.sum_le_sum; intro t _
-    rcases h t with ht | ht
-    · have A := ht hij.le; have B := ht hjl.le
-      dsimp at A B
-      nlinarith [mul_nonneg (sub_nonneg.mpr A) (sub_nonneg.mpr B)]
-    · have A := ht hij.le; have B := ht hjl.le
-      dsimp at A B
+    rcases h t with ht | ht <;> have A := ht hij.le <;> have B := ht hjl.le <;> dsimp at A B <;>
       nlinarith [mul_nonneg (sub_nonneg.mpr A) (sub_nonneg.mpr B)]
   have hi := sq_pos_of_pos (dist_pos.mpr (p.injective.ne hij.ne))
   have hj := sq_pos_of_pos (dist_pos.mpr (p.injective.ne hjl.ne))
