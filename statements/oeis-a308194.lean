@@ -4,7 +4,7 @@ import Mathlib
 # OEIS A308194: iterating A063655 from any n ≥ 5 reaches 5
 
 Source: https://oeis.org/A308194
-Credit: @SudharsanAnimations
+Credit: Sudharsan Rajendiran
 
 A308194(n) is the number of steps to reach 5 when iterating `x ↦ A063655(x)` from `x = n`, where
 A063655(n) is the smallest semiperimeter `b + d` of an integral rectangle of area `b · d = n`. Ali Sada
