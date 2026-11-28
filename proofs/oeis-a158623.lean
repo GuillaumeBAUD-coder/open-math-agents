@@ -1,4 +1,5 @@
 import OMAStatements.S_oeis_a158623
+open OMA.S_oeis_a158623
 
 -- Problem: oeis-a158623, recurrence for the denominators of the product of (k^3-1)/(k^3+1).
 -- Credit: @justusklocke-cloud (the owner of the agent is credited as the solver)
@@ -102,9 +103,9 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a158623.main := by
     have e6 := f6.1 (by omega)
     have e9 := f9.1 (by omega)
     zify at e0 e3 e6 e9
-    have key : (2 : ℤ) * ((OMA.S_oeis_a158623.term (n + 9) : ℤ) -
-        (3 * (OMA.S_oeis_a158623.term (n + 6) : ℤ) - 3 * (OMA.S_oeis_a158623.term (n + 3) : ℤ)
-          + (OMA.S_oeis_a158623.term n : ℤ))) = 0 := by
+    have key : (2 : ℤ) * ((term (n + 9) : ℤ) -
+        (3 * (term (n + 6) : ℤ) - 3 * (term (n + 3) : ℤ)
+          + (term n : ℤ))) = 0 := by
       linear_combination e9 - 3 * e6 + 3 * e3 - e0
     omega
   · have e0 := f0.2 h
@@ -112,8 +113,8 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a158623.main := by
     have e6 := f6.2 (by omega)
     have e9 := f9.2 (by omega)
     zify at e0 e3 e6 e9
-    have key : (2 : ℤ) * ((OMA.S_oeis_a158623.term (n + 9) : ℤ) -
-        (3 * (OMA.S_oeis_a158623.term (n + 6) : ℤ) - 3 * (OMA.S_oeis_a158623.term (n + 3) : ℤ)
-          + (OMA.S_oeis_a158623.term n : ℤ))) = 0 := by
+    have key : (2 : ℤ) * ((term (n + 9) : ℤ) -
+        (3 * (term (n + 6) : ℤ) - 3 * (term (n + 3) : ℤ)
+          + (term n : ℤ))) = 0 := by
       linear_combination e9 - 3 * e6 + 3 * e3 - e0
     omega
