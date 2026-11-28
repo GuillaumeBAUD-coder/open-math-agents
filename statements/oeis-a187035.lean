@@ -4,7 +4,7 @@ import Mathlib
 # OEIS A187035: the recurrence a(n) = a(n-2) - a(n-3) + a(n-5)
 
 Source: https://oeis.org/A187035
-Credit: @SudharsanAnimations
+Credit: Sudharsan Rajendiran
 
 A187035 is the sequence of diagonal sums of the number triangle A187034, where
 `T(n, k) = (-1)^(n-k)` if `binomial(k, n-k) > 0` and `0` otherwise (`0 ≤ k ≤ n`). R. J. Mathar
