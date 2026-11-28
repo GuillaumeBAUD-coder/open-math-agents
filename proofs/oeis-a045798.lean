@@ -10,20 +10,8 @@ private def f (k : ℕ) : ℕ :=
     else 19
 
 private lemma gcd_mod20_ten (k : ℕ) : Nat.gcd k 10 = Nat.gcd (k % 20) 10 := by
-  have hdvd : (10 : ℕ) ∣ 20 * (k / 20) := dvd_mul_of_dvd_left (by decide : (10 : ℕ) ∣ 20) _
-  have hsplit : k % 20 + 20 * (k / 20) = k := Nat.mod_add_div k 20
-  apply Nat.dvd_antisymm
-  · apply Nat.dvd_gcd _ (Nat.gcd_dvd_right k 10)
-    have hg10 : Nat.gcd k 10 ∣ 20 * (k / 20) := dvd_trans (Nat.gcd_dvd_right k 10) hdvd
-    have hgk : Nat.gcd k 10 ∣ k % 20 + 20 * (k / 20) := by
-      rw [hsplit]
-      exact Nat.gcd_dvd_left k 10
-    exact (Nat.dvd_add_left hg10).mp hgk
-  · apply Nat.dvd_gcd _ (Nat.gcd_dvd_right (k % 20) 10)
-    have hg10 : Nat.gcd (k % 20) 10 ∣ 20 * (k / 20) :=
-      dvd_trans (Nat.gcd_dvd_right (k % 20) 10) hdvd
-    conv_rhs => rw [← hsplit]
-    exact dvd_add (Nat.gcd_dvd_left (k % 20) 10) hg10
+  rw [Nat.gcd_comm, Nat.gcd_rec, Nat.gcd_comm (k % 20), Nat.gcd_rec 10 (k % 20),
+    Nat.mod_mod_of_dvd _ (by norm_num : 10 ∣ 20)]
 
 private lemma oddish_iff (k : ℕ) :
     OMA.S_oeis_a045798.oddish k ↔ k % 20 = 11 ∨ k % 20 = 13 ∨ k % 20 = 17 ∨ k % 20 = 19 := by
