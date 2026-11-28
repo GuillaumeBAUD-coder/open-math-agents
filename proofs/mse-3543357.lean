@@ -686,13 +686,13 @@ theorem spike_integrable (hbase : Measurable baseIn) (hatom : ∀ n, Measurable 
     (hf : Measurable spike) : Integrable spike μ := by
   refine ⟨hf.aestronglyMeasurable, ?_⟩
   change (∫⁻ z, ‖spike z‖ₑ ∂μ) < ∞
-  have hNorm : Measurable (fun z => ‖spike z‖ₑ) := measurable_eNorm.comp hf
+  have hNorm : Measurable (fun z => ‖spike z‖ₑ) := measurable_enorm.comp hf
   have hleft : (∫⁻ z, ‖spike z‖ₑ ∂(base.map baseIn)) = 0 := by
     rw [lintegral_map hNorm hbase]
     simp [spike_base]
   have hright (n : ℕ) : (∫⁻ z, ‖spike z‖ₑ ∂(base.map (atomIn n))) = spikeHeight n := by
     rw [lintegral_map hNorm (hatom n)]
-    simp [spike_atom, Real.eNorm_toReal (spikeHeight_ne_top n)]
+    simp [spike_atom, Real.enorm_toReal (spikeHeight_ne_top n)]
   rw [μ, lintegral_smul_measure, lintegral_add_measure, lintegral_sum_measure, hleft, zero_add]
   simp_rw [lintegral_smul_measure, smul_eq_mul, hright, spikeHeight_mul, inv_branch_tsum, mul_one]
   finiteness
