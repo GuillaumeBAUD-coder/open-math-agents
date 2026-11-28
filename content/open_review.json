@@ -22528,6 +22528,56 @@
     "https://oeis.org/A361047"
    ],
    "reason": "Second review: The proved statement is the evident intended one (k>=0 suggests 0-based n), but it is not the printed conjecture, and the statement docstring misreports the OEIS indexing. Literal reading would be refuted by a(2). Disclose the index correction before announcing."
+  },
+  "oeis-a129454": {
+   "date": "2026-11-28",
+   "pr": 30029,
+   "evidence": [
+    "https://oeis.org/A129454",
+    "https://github.com/thatnealpatel/proofs/blob/main/Proofs/NumberComplexity/A129454Refutation.lean"
+   ],
+   "reason": "Disproof only exploits the printed index slip: a(n) is a product over [1,n-1]^3, but Bala's valuation formula uses floor(n/p^i). The site refutes it at n=2, p=2 (a(2)=1 while the formula gives 1). The corrected version v_p(a(n+1)) = sum floor(n/p^t)^3 is presumably what was meant; it is true and is already proved in thatnealpatel/proofs, which also records this same off-by-one refutation. So it is both an index-slip disproof and known."
+  },
+  "oeis-a159715": {
+   "date": "2026-11-28",
+   "pr": 30033,
+   "evidence": [
+    "https://oeis.org/A159715"
+   ],
+   "reason": "Trivial by construction: the statement defines a(n) := 2n*3^(n-2), the entry's closed formula, instead of the count of circular arrangements of two copies of 1..n with exactly one local maximum. Barker's second conjecture is then the definition itself, and the g.f. and recurrence are one-line algebra. The combinatorial content of the conjecture (count = 2n*3^(n-2)) is not formalized."
+  },
+  "oeis-a114698": {
+   "date": "2026-11-28",
+   "pr": 30005,
+   "evidence": [
+    "https://oeis.org/A114698",
+    "https://cs.uwaterloo.ca/journals/JIS/VOL17/Barbero/barbero15.html"
+   ],
+   "reason": "Trivial by construction: a(n) is defined as the entry's formula 1, 20n-22 instead of the trace of M(n)^-3 with M = (min(i,j)). The g.f. is then one-line algebra. Jeffery's recurrence as printed (n>1, a(0)=1, a(1)=18) is false at its first instance, and the statement replaces it by a 'corrected' range n>=3. The real content (the trace formula) is not formalized, and Barbero (JIS 17, 2014) treats Jeffery's trace conjectures in any case."
+  },
+  "oeis-a122047": {
+   "date": "2026-11-28",
+   "pr": 29995,
+   "evidence": [
+    "https://oeis.org/A122047"
+   ],
+   "reason": "Trivial by construction: a(n) is defined as Bickle's floor((n^3+6n^2+5n)/30) instead of the degree of the Somos-6 type polynomial P(n,x). Mathar's recurrence and g.f. then follow from a quasi-polynomial identity. The actual content (degree = that formula, cf. Hone's degree analysis cited in the entry) is not formalized."
+  },
+  "mo-267651": {
+   "date": "2026-11-28",
+   "pr": 25528,
+   "evidence": [
+    "https://mathoverflow.net/questions/267651"
+   ],
+   "reason": "The formal statement (finitely many prime pairs (p,q) whose progression p+kq has finitely many primes) is settled by Dirichlet's theorem: the set is empty, as the OP says explicitly ('Using the Dirichlet progression Theorem, the finite number ... is zero, of course'). The actual question asks for a proof avoiding Dirichlet, which this formalization does not capture; the site proof just invokes Dirichlet. Trivial/known."
+  },
+  "mo-256897": {
+   "date": "2026-11-28",
+   "pr": 30027,
+   "evidence": [
+    "https://mathoverflow.net/questions/256897"
+   ],
+   "reason": "The disproof only exploits sign non-uniqueness. With M = [e0, e1] and l = 1, the column -e0 is an order-2 minimizer (same outer product as +e0), but at order 3 (-e0)^(x3) = -e0^(x3), so +e0 does better. That refutes the literal 'any minimizer' reading but says nothing about the question asked (whether the order-2 optimal factors, up to sign, stay optimal for higher h, e.g. for non-orthogonal columns). No MO answers."
   }
  },
  "known": {
@@ -40556,6 +40606,212 @@
     "https://oeis.org/A121707/a121707_1.pdf"
    ],
    "reason": "Second review: Settled in substance since 2018: Reble proved that A121707 consists exactly of the anti-Carmichael numbers, and every a(n) is anti-Carmichael by Fermat's little theorem."
+  },
+  "oeis-a114589": {
+   "date": "2026-11-28",
+   "pr": 19658,
+   "evidence": [
+    "https://oeis.org/A114589",
+    "https://isitsolved.com/journal/376c7d060532"
+   ],
+   "reason": "Faithful: Mathar's P-recurrence for n>=4, with a(n) defined by the entry's g.f. (sqrt as binomial series). isitsolved iis:2611.00219 (Mathar P-recurrence batch, filed 2026-11-28 03:18 UTC) lists A114589 as 'true, all n>=4', before the site proof commit (15:54 UTC). Routine holonomic identity."
+  },
+  "oeis-a181933": {
+   "date": "2026-11-28",
+   "pr": 19736,
+   "evidence": [
+    "https://oeis.org/A181933",
+    "https://isitsolved.com/journal/376c7d060532"
+   ],
+   "reason": "Faithful: Mathar's recurrence for n>=4 with a(n) defined by Kruchinin's g.f. iis:2611.00219 (filed 2026-11-28 03:18 UTC) lists A181933 as 'true, all n>=4', before the site proof commit (15:54 UTC). Routine holonomic identity."
+  },
+  "oeis-a176479": {
+   "date": "2026-11-28",
+   "pr": 30044,
+   "evidence": [
+    "https://oeis.org/A176479",
+    "https://isitsolved.com/journal/376c7d060532"
+   ],
+   "reason": "Faithful: a(n)=(n+1)*A001003(n) via Mathlib's smallSchroder (index shift documented), Mathar's recurrence for n>=2. iis:2611.00219 (filed 2026-11-28 03:18 UTC) lists A176479 'true, all n>=2', before the site proof commit (10:16 UTC). Routine."
+  },
+  "oeis-a277761": {
+   "date": "2026-11-28",
+   "pr": 30048,
+   "evidence": [
+    "https://oeis.org/A277761",
+    "https://isitsolved.com/journal/"
+   ],
+   "reason": "Statement (Barker's g.f. and sqrt(3) closed form, n>=1) matches the entry. iis:2611.00246 (Hardin transfer-matrix round, filed 2026-11-28 05:39 UTC) lists A277761 'Barker g.f. proved; Hardin recurrence (n>3) proved', before the site proof commit (12:58 UTC); the closed form follows from the g.f. by partial fractions."
+  },
+  "oeis-a280474": {
+   "date": "2026-11-28",
+   "pr": 30034,
+   "evidence": [
+    "https://oeis.org/A280474",
+    "https://isitsolved.com/journal/"
+   ],
+   "reason": "Statement (Barker's g.f. and closed form, n>=1) matches the entry. iis:2611.00246 (filed 2026-11-28 05:39 UTC) lists A280474 'Barker g.f. proved; Hardin recurrence (n>6) proved', before the site proof commit (12:57 UTC); the closed form follows from the g.f."
+  },
+  "oeis-a279262": {
+   "date": "2026-11-28",
+   "pr": 30028,
+   "evidence": [
+    "https://oeis.org/A279262",
+    "https://isitsolved.com/journal/"
+   ],
+   "reason": "Statement (Barker's g.f. and sqrt(5) closed form) matches the entry. iis:2611.00237 (filed 2026-11-28 05:28 UTC) lists A279262 'Barker g.f. proved; Hardin recurrence (n>5) proved', before the site proof commit (12:57 UTC); the closed form follows from the g.f."
+  },
+  "oeis-a269284": {
+   "date": "2026-11-28",
+   "pr": 30008,
+   "evidence": [
+    "https://oeis.org/A269284",
+    "https://isitsolved.com/journal/"
+   ],
+   "reason": "Statement (Hardin recurrence n>=3, Barker g.f., closed form) matches the entry. iis:2611.00233 (filed 2026-11-28 04:57 UTC) lists A269284 'Barker g.f. proved; Hardin recurrence (n>2) proved', before the site proof commit (12:56 UTC); the closed form follows from the g.f."
+  },
+  "oeis-a268900": {
+   "date": "2026-11-28",
+   "pr": 29999,
+   "evidence": [
+    "https://oeis.org/A268900",
+    "https://isitsolved.com/journal/216940add78a"
+   ],
+   "reason": "Statement (recurrence n>=4, Barker g.f., closed form n>=2) matches the entry. iis:2611.00271 (filed 2026-11-28 09:04 UTC) lists A268900 'Barker g.f. proved; Hardin recurrence (n>3) proved', before the site proof commit (12:56 UTC); the closed form follows from the g.f."
+  },
+  "oeis-a275138": {
+   "date": "2026-11-28",
+   "pr": 29880,
+   "evidence": [
+    "https://oeis.org/A275138",
+    "https://isitsolved.com/journal/e9039b327f56"
+   ],
+   "reason": "Statement (Barker's g.f. and closed form for n>1) matches the entry. iis:2611.00264 (filed 2026-11-28 08:32 UTC) lists A275138 'Barker g.f. proved; Hardin recurrence (n>3) proved', before the site proof commit (12:49 UTC); the closed form follows from the g.f."
+  },
+  "oeis-a209095": {
+   "date": "2026-11-28",
+   "pr": 29827,
+   "evidence": [
+    "https://oeis.org/A209095",
+    "https://isitsolved.com/journal/fafd94cffcb4"
+   ],
+   "reason": "Statement (Barker's g.f. and sqrt(73) closed form for n>1) matches the entry. iis:2611.00260 (filed 2026-11-28 08:00 UTC) lists A209095 'Barker g.f. proved; Hardin recurrence (n>4) proved', before the site proof commit (12:47 UTC); the closed form follows from the g.f."
+  },
+  "oeis-a249621": {
+   "date": "2026-11-28",
+   "pr": 22963,
+   "evidence": [
+    "https://oeis.org/A249621",
+    "https://github.com/the-omega-institute/trureturing/blob/dev/Problems/oeis-a249621-square-prepend-one-append-twenty-five.md"
+   ],
+   "reason": "Statement (positive squares s with 1||s||25 a square end in 00 or 56) is faithful to Wu's conjecture. trureturing settled it in Sept 2026 (problem file oeis-a249621-square-prepend-one-append-twenty-five, Lean module D5/S1/Digit/Admissibility/SquarePrependOneAppendTwentyFive, theorem wu_a249621), by the same mod-400 residue argument the site proof uses. Routine."
+  },
+  "oeis-a380066": {
+   "date": "2026-11-28",
+   "pr": 30003,
+   "evidence": [
+    "https://oeis.org/A380066",
+    "https://github.com/the-omega-institute/trureturing/blob/dev/Problems/oeis-a380066-hanna-bilateral-product-mod-four.md"
+   ],
+   "reason": "The site clears the bilateral sum correctly (I checked that the n<0 terms become x^(n^2)A^(n^2)(1+xA^n)^-(n+1)(1+x^nA)^-(n+1) and the n=0 term 1/((1+x)(1+A))) and asks a(r) = 2 mod 4 for r>0. trureturing proved the same conjecture for all normalized integral solutions (module D5/S1/Recurrence/Bilateral/BilateralProductModFourUnitExponent, added 2026-10-22). Known."
+  },
+  "oeis-a375449": {
+   "date": "2026-11-28",
+   "pr": 29976,
+   "evidence": [
+    "https://oeis.org/A375449",
+    "https://github.com/the-omega-institute/trureturing/blob/dev/Problems/oeis-a375449-hanna-diagonal-parity.md"
+   ],
+   "reason": "Faithful: integral A with A(0)=0 and [x^n] xA'/(1-nA) = n^(n+1) for n>=1; a(n) odd iff n = 2^k-2 or 2^k-1 (k>1) for n>1. trureturing proved exactly this parity classification (module D5/S1/Recurrence/Invariants/HannaDiagonalDerivativeParity, added 2026-10-24). Known."
+  },
+  "oeis-a122399": {
+   "date": "2026-11-28",
+   "pr": 18693,
+   "evidence": [
+    "https://oeis.org/A122399",
+    "https://github.com/thatnealpatel/proofs/blob/main/Proofs/Enumerative/A122399BalaPrimeSum.lean",
+    "https://github.com/the-omega-institute/trureturing/blob/dev/Problems/oeis-a122399-stirling-power-factorial-prime-period.md"
+   ],
+   "reason": "Faithful (p-1 is a period of a(n) mod p for n>=1). Already proved in thatnealpatel/proofs (A122399BalaPrimeSum.lean, theorem bala_conjecture) and in trureturing (Sept 2026), by the same surjection formula plus Fermat argument. Routine."
+  },
+  "oeis-a305550": {
+   "date": "2026-11-28",
+   "pr": 18766,
+   "evidence": [
+    "https://oeis.org/A305550",
+    "https://github.com/the-omega-institute/trureturing/blob/dev/Problems/oeis-a305550-distinct-part-egf-totient-period.md"
+   ],
+   "reason": "Faithful: a(n) = sum S(n,j) j! q(j), with q the number of partitions into distinct parts; eventual phi(k)-periodicity mod k. trureturing proved this, and also Bala's general G(exp(x)-1) version (problem files oeis-a305550-*, Sept 2026). Known."
+  },
+  "oeis-a284475": {
+   "date": "2026-11-28",
+   "pr": 30056,
+   "evidence": [
+    "https://oeis.org/A284475",
+    "https://oeis.org/A204217",
+    "https://oeis.org/A000203"
+   ],
+   "reason": "Faithful, but the conjecture follows at once from companion entries. A000203 records that sigma(n) is the total number of parts in the partitions of n into equal parts. A204217 records that its g.f. coefficient is the total number of parts in the partitions of n into consecutive parts ('The conjectures are true. See Joerg Arndt's proof', Pol, Jun 14 2017). The difference is a(n) by definition."
+  },
+  "oeis-a046921": {
+   "date": "2026-11-28",
+   "pr": 25459,
+   "evidence": [
+    "https://oeis.org/A046921",
+    "https://www.jstor.org/stable/2690477"
+   ],
+   "reason": "Faithful to the comment 'Goldbach conjectured this sequence is never zero'. The disproof uses 5777 = 53*109, Stern's classical 1856 counterexample to Goldbach's other conjecture. The entry itself already records the zeros at 5777 and 5993 (Noe), and cites Hodges, Math. Mag. 66 (1993). Known."
+  },
+  "oeis-a162314": {
+   "date": "2026-11-28",
+   "pr": 18603,
+   "evidence": [
+    "https://oeis.org/A162314",
+    "https://doi.org/10.5281/zenodo.23726063",
+    "https://github.com/the-omega-institute/trureturing/blob/dev/Problems/oeis-a305550-integral-egf-substitution-totient-period.md"
+   ],
+   "reason": "Faithful: a(n) = 2^n * sum S(n,j) j! c_j from the e.g.f. exp(2x)/(2-exp(2x)); eventual phi(k)-periodicity mod k. Lien-Hung Su, Zenodo 23726063 (2026-10-29), Proposition 4.4, proves exactly this for A162314. It is also a case of Bala's general G(exp(x)-1) conjecture proved in trureturing (G(u) = (1+u)^2/(1-2u-u^2) is integral)."
+  },
+  "mo-309202": {
+   "date": "2026-11-28",
+   "pr": 15789,
+   "evidence": [
+    "https://mathoverflow.net/questions/309202"
+   ],
+   "reason": "The implication 'bounded continuous => UC implies all continuous => UC' for an arbitrary uniform space is refuted by the only MO answer. Take the uniformity generated by all bounded continuous functions on a non-pseudocompact space, e.g. an infinite discrete set; it is precompact, so unbounded continuous functions are not UC. The site's disproof is exactly this construction (comap of evaluation at bounded functions on a countable discrete type)."
+  },
+  "mo-142767": {
+   "date": "2026-11-28",
+   "pr": 13955,
+   "evidence": [
+    "https://mathoverflow.net/questions/142767"
+   ],
+   "reason": "Convergence of integrals of all uniformly continuous f does not imply setwise convergence. The MO answer and a comment give delta_(1/n) -> delta_0, and the site disproof uses delta_(1/(n+1)) on R^1. Known."
+  },
+  "mse-4398439": {
+   "date": "2026-11-28",
+   "pr": 29998,
+   "evidence": [
+    "https://math.stackexchange.com/questions/4398439"
+   ],
+   "reason": "Faithful to the Cirtoaje-Giugiuc inequality. The question already has an answer with a complete proof: reduction via 1/a+1/d >= b+c and a bound on 1/sqrt b + 1/sqrt c, then (p,q) variables and a case split at q = 19/40. The site proof formalizes the same route (its lemmas C1_q19 etc. follow that split)."
+  },
+  "mo-179231": {
+   "date": "2026-11-28",
+   "pr": 29984,
+   "evidence": [
+    "https://mathoverflow.net/questions/179231"
+   ],
+   "reason": "Statement (X^m - g irreducible in C[y][X] iff g is not a p-th power for any prime p | m) is faithful. The 4 | m clause of Capelli disappears over C since -4 = (1+i)^4, and edge cases g = 0 or constant behave correctly. It is the Vahlen-Capelli theorem, given in Dimitrov's comment on the question (the statement itself credits it). Classical, known."
+  },
+  "opg-partial-list-coloring": {
+   "date": "2026-11-28",
+   "pr": 30016,
+   "evidence": [
+    "http://www.openproblemgarden.org/op/partial_list_coloring",
+    "https://arxiv.org/abs/2609.23291"
+   ],
+   "reason": "Faithful formalization of the Albertson-Grossman-Haas conjecture. It was disproved by J. A. Noel, 'The Partial List Colouring Conjecture is False', arXiv:2609.23291 (2026-09-20): a 14-vertex graph with choice number 3 and a 2-list assignment colouring at most 9 < 28/3 vertices. The site proof formalizes exactly 'Noel's graph' (named in the proof file)."
   }
  },
  "reviewed": "2026-11-28"
