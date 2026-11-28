@@ -4,6 +4,12 @@ open OMA.S_mo_115849
 
 namespace OMA.Levinson
 
+private theorem vectorFiveTwo {α : Type*} (a b c d e : α) :
+    (![a, b, c, d, e] : Fin 5 → α) 2 = c := rfl
+
+private theorem vectorFiveThree {α : Type*} (a b c d e : α) :
+    (![a, b, c, d, e] : Fin 5 → α) 3 = d := rfl
+
 def A : Finset (Fin 5) := {0, 1}
 def B : Finset (Fin 5) := {2, 3}
 def C : Finset (Fin 5) := {0, 2}
@@ -43,7 +49,7 @@ theorem feasible {T : Finset (Finset (Fin 5))} (hT : T ⊆ SCD) :
     exact Finset.eq_of_subset_of_card_le hsub (by rw [hcard E (hT hE), hcard F (hT hF)])
   · have hall : ∀ E ∈ SCD, levinsonFacet E small := by
       norm_num [SCD, SD, S, A, B, C, D, levinsonFacet, small, Fin.sum_univ_succ,
-        Finset.forall_mem_insert, Finset.sum_insert, Fin.ext_iff]
+        Finset.forall_mem_insert, Finset.sum_insert, Fin.ext_iff, vectorFiveTwo, vectorFiveThree]
     classical
     have h : ∀ E ∈ T, levinsonFacet E small := fun E hE => hall E (hT hE)
     unfold levinsonIndicator
@@ -91,12 +97,12 @@ noncomputable def family : Fin 4 → levinsonFeasible 5 :=
 theorem values_C (i : Fin 4) : (family i).val probeC = (![1, 0, 1, 0] : Fin 4 → ℂ) i := by
   fin_cases i <;>
     norm_num [family, levinsonIndicator, levinsonFacet, SCD, SC, SD, S, A, B, C, D, probeC,
-      Fin.sum_univ_succ, Finset.forall_mem_insert, Finset.sum_insert, Fin.ext_iff]
+      Fin.sum_univ_succ, Finset.forall_mem_insert, Finset.sum_insert, Fin.ext_iff, vectorFiveTwo, vectorFiveThree]
 
 theorem values_D (i : Fin 4) : (family i).val probeD = (![1, 1, 0, 0] : Fin 4 → ℂ) i := by
   fin_cases i <;>
     norm_num [family, levinsonIndicator, levinsonFacet, SCD, SC, SD, S, A, B, C, D, probeD,
-      Fin.sum_univ_succ, Finset.forall_mem_insert, Finset.sum_insert, Fin.ext_iff]
+      Fin.sum_univ_succ, Finset.forall_mem_insert, Finset.sum_insert, Fin.ext_iff, vectorFiveTwo, vectorFiveThree]
 
 theorem family_injective : Function.Injective family := by
   intro i j he
