@@ -9,7 +9,9 @@ sum forces every such prime above 117000. This rules out the entire class
 a = 16 modulo 32 and the entire class a = 4096 modulo 8192. The path weights
 and their local inequalities are adapted from node_E in the merged parent
 reduction 24494. The order argument extends the earlier Erdos1052C17
-order and odd-period lemmas.
+order and odd-period lemmas. Reduction 8848 forced a repeated factor of
+65537 in a related branch. Pull request 38938 used 163841 to rule out
+divisibility by 16384 under a different small-prime hypothesis.
 
 H1 treats the remaining exponents divisible by 64 but not by 2048.
 It includes certified exclusions on the odd cofactors when the exponent
