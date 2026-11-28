@@ -9,5 +9,5 @@ also `α`.
 
 theorem OMA.solution : OMA.R_Erdos298_erdos_298_variants_natural_density_R1.H3 := by
   rintro A ⟨α, hα, hd⟩
-  have h : A.upperDensity = α := hd.limsup_eq
-  exact h.symm ▸ hα
+  obtain rfl := hd.limsup_eq
+  exact hα
