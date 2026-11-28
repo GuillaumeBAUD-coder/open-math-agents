@@ -1,5 +1,7 @@
 import OMAStatements.S_arxiv_1908_06697
 
+/- Shorter version of the original Lean proof in upstream PR #37963. -/
+
 /-!
 # Counterexamples to Thomassen's conjecture on decomposition of cubic graphs
 
@@ -21,6 +23,10 @@ along the bottom ring.
 namespace OMA.Thomassen1908
 
 open OMA.S_arxiv_1908_06697
+
+variable {M : ℕ}
+
+abbrev Vertex (M : ℕ) := Fin M × Fin 16
 
 /-- Fixed-length 3-tuple helper. -/
 def vec3 {α : Type} (a b c : α) (k : Fin 3) : α :=
@@ -63,14 +69,14 @@ lemma adjH'_symm : ∀ u v : Fin 16, adjH' u v = adjH' v u := by decide
 lemma adjH'_irrefl : ∀ u : Fin 16, adjH' u u = false := by decide
 
 /-- Cyclic successor on Fin M for M >= 3. -/
-def nxt {M : ℕ} (hM : 3 ≤ M) (i : Fin M) : Fin M :=
+def nxt (hM : 3 ≤ M) (i : Fin M) : Fin M :=
   ⟨(i.val + 1) % M, Nat.mod_lt _ (by omega)⟩
 
 /-- Cyclic predecessor on Fin M for M >= 3. -/
-def prv {M : ℕ} (hM : 3 ≤ M) (i : Fin M) : Fin M :=
+def prv (hM : 3 ≤ M) (i : Fin M) : Fin M :=
   ⟨(i.val + M - 1) % M, Nat.mod_lt _ (by omega)⟩
 
-lemma nxt_prv {M : ℕ} (hM : 3 ≤ M) (i : Fin M) : nxt hM (prv hM i) = i := by
+lemma nxt_prv (hM : 3 ≤ M) (i : Fin M) : nxt hM (prv hM i) = i := by
   ext; dsimp [nxt, prv]
   have hi := i.isLt
   by_cases h0 : i.val = 0
@@ -80,7 +86,7 @@ lemma nxt_prv {M : ℕ} (hM : 3 ≤ M) (i : Fin M) : nxt hM (prv hM i) = i := by
       Nat.mod_eq_of_lt (show i.val - 1 < M by omega),
       show i.val - 1 + 1 = i.val by omega, Nat.mod_eq_of_lt hi]
 
-lemma prv_nxt {M : ℕ} (hM : 3 ≤ M) (i : Fin M) : prv hM (nxt hM i) = i := by
+lemma prv_nxt (hM : 3 ≤ M) (i : Fin M) : prv hM (nxt hM i) = i := by
   ext; dsimp [nxt, prv]
   have hi := i.isLt
   by_cases hlast : i.val + 1 = M
@@ -89,7 +95,7 @@ lemma prv_nxt {M : ℕ} (hM : 3 ≤ M) (i : Fin M) : prv hM (nxt hM i) = i := by
       show i.val + 1 + M - 1 = i.val + M by omega,
       Nat.add_mod_right, Nat.mod_eq_of_lt hi]
 
-lemma nxt_ne_self {M : ℕ} (hM : 3 ≤ M) (i : Fin M) : nxt hM i ≠ i := by
+lemma nxt_ne_self (hM : 3 ≤ M) (i : Fin M) : nxt hM i ≠ i := by
   intro h
   have hv := congrArg Fin.val h
   dsimp [nxt] at hv
@@ -98,19 +104,19 @@ lemma nxt_ne_self {M : ℕ} (hM : 3 ≤ M) (i : Fin M) : nxt hM i ≠ i := by
   · rw [hlast, Nat.mod_self] at hv; omega
   · rw [Nat.mod_eq_of_lt (show i.val + 1 < M by omega)] at hv; omega
 
-lemma prv_ne_self {M : ℕ} (hM : 3 ≤ M) (i : Fin M) : prv hM i ≠ i := by
+lemma prv_ne_self (hM : 3 ≤ M) (i : Fin M) : prv hM i ≠ i := by
   intro h
   have := congrArg (nxt hM) h
   rw [nxt_prv] at this
   exact nxt_ne_self hM i this.symm
 
-lemma nxt_eq_iff_prv_eq {M : ℕ} (hM : 3 ≤ M) (i j : Fin M) :
+lemma nxt_eq_iff_prv_eq (hM : 3 ≤ M) (i j : Fin M) :
     nxt hM i = j ↔ i = prv hM j := by
   constructor
   · intro h; rw [← h, prv_nxt]
   · intro h; rw [h, nxt_prv]
 
-lemma nxt_iterate_val {M : ℕ} (hM : 3 ≤ M) (i : Fin M) (t : ℕ) :
+lemma nxt_iterate_val (hM : 3 ≤ M) (i : Fin M) (t : ℕ) :
     ((nxt hM)^[t] i).val = (i.val + t) % M := by
   induction t with
   | zero => simp [Nat.mod_eq_of_lt i.isLt]
@@ -119,12 +125,12 @@ lemma nxt_iterate_val {M : ℕ} (hM : 3 ≤ M) (i : Fin M) (t : ℕ) :
     dsimp [nxt]
     rw [ih, Nat.mod_add_mod, Nat.add_assoc]
 
-lemma nxt_iterate_self {M : ℕ} (hM : 3 ≤ M) (i : Fin M) :
+lemma nxt_iterate_self (hM : 3 ≤ M) (i : Fin M) :
     (nxt hM)^[M] i = i := by
   ext
   rw [nxt_iterate_val, Nat.add_mod_right, Nat.mod_eq_of_lt i.isLt]
 
-lemma exists_nxt_iterate {M : ℕ} (hM : 3 ≤ M) (i j : Fin M) :
+lemma exists_nxt_iterate (hM : 3 ≤ M) (i j : Fin M) :
     ∃ t : ℕ, t < M ∧ (nxt hM)^[t] i = j := by
   refine ⟨(j.val + M - i.val) % M, Nat.mod_lt _ (by omega), ?_⟩
   ext
@@ -134,17 +140,17 @@ lemma exists_nxt_iterate {M : ℕ} (hM : 3 ≤ M) (i j : Fin M) :
   rw [show i.val + (j.val + M - i.val) = j.val + M by omega, Nat.add_mod_right,
     Nat.mod_eq_of_lt hj]
 
-/-- Adjacency relation of the cubic graph G_M on Fin M × Fin 16. -/
-def GAdj {M : ℕ} (hM : 3 ≤ M) (x y : Fin M × Fin 16) : Prop :=
+/-- Adjacency relation of the cubic graph G_M on Vertex M. -/
+def GAdj (hM : 3 ≤ M) (x y : Vertex M) : Prop :=
   (x.1 = y.1 ∧ adjH' x.2 y.2 = true) ∨
   (y.1 = nxt hM x.1 ∧ ((x.2 = 1 ∧ y.2 = 0) ∨ (x.2 = 13 ∧ y.2 = 12))) ∨
   (x.1 = nxt hM y.1 ∧ ((y.2 = 1 ∧ x.2 = 0) ∨ (y.2 = 13 ∧ x.2 = 12)))
 
-instance instDecidableGAdj {M : ℕ} (hM : 3 ≤ M) : DecidableRel (GAdj hM) := by
+instance instDecidableGAdj (hM : 3 ≤ M) : DecidableRel (GAdj hM) := by
   intro x y; unfold GAdj; infer_instance
 
-/-- The cubic graph G_M on Fin M × Fin 16. -/
-def G {M : ℕ} (hM : 3 ≤ M) : SimpleGraph (Fin M × Fin 16) where
+/-- The cubic graph G_M on Vertex M. -/
+def G (hM : 3 ≤ M) : SimpleGraph (Vertex M) where
   Adj := GAdj hM
   symm := ⟨by
     intro x y h
@@ -159,11 +165,11 @@ def G {M : ℕ} (hM : 3 ≤ M) : SimpleGraph (Fin M × Fin 16) where
     · exact nxt_ne_self hM x.1 h1.symm
     · exact nxt_ne_self hM x.1 h1.symm⟩
 
-instance instDecidableG {M : ℕ} (hM : 3 ≤ M) : DecidableRel (G hM).Adj :=
+instance instDecidableG (hM : 3 ≤ M) : DecidableRel (G hM).Adj :=
   instDecidableGAdj hM
 
 /-- Explicit listing of the 3 neighbors of every vertex in G_M. -/
-def nbr3 {M : ℕ} (hM : 3 ≤ M) (x : Fin M × Fin 16) : Fin 3 → Fin M × Fin 16 :=
+def nbr3 (hM : 3 ≤ M) (x : Vertex M) : Fin 3 → Vertex M :=
   match x.2.val with
   | 0  => vec3 (x.1, 1)  (x.1, 7)  (prv hM x.1, 1)
   | 1  => vec3 (x.1, 0)  (x.1, 2)  (nxt hM x.1, 0)
@@ -182,7 +188,7 @@ def nbr3 {M : ℕ} (hM : 3 ≤ M) (x : Fin M × Fin 16) : Fin 3 → Fin M × Fin
   | 14 => vec3 (x.1, 13) (x.1, 15) (x.1, 10)
   | _  => vec3 (x.1, 14) (x.1, 8)  (x.1, 11)
 
-lemma nbr3_injective {M : ℕ} (hM : 3 ≤ M) (x : Fin M × Fin 16) :
+lemma nbr3_injective (hM : 3 ≤ M) (x : Vertex M) :
     Function.Injective (nbr3 hM x) := by
   rcases x with ⟨i, u⟩
   have h1 : prv hM i ≠ i := prv_ne_self hM i
@@ -191,7 +197,7 @@ lemma nbr3_injective {M : ℕ} (hM : 3 ≤ M) (x : Fin M × Fin 16) :
   fin_cases u <;> fin_cases a <;> fin_cases b <;> simp [nbr3, vec3] at hab ⊢
   all_goals first | exact h1 hab | exact h1 hab.symm | exact h2 hab | exact h2 hab.symm
 
-lemma G_adj_iff_nbr3 {M : ℕ} (hM : 3 ≤ M) (x y : Fin M × Fin 16) :
+lemma G_adj_iff_nbr3 (hM : 3 ≤ M) (x y : Vertex M) :
     (G hM).Adj x y ↔ ∃ k : Fin 3, y = nbr3 hM x k := by
   rcases x with ⟨i, u⟩
   rcases y with ⟨j, v⟩
@@ -222,7 +228,7 @@ lemma G_adj_iff_nbr3 {M : ℕ} (hM : 3 ≤ M) (x y : Fin M × Fin 16) :
         | exact Or.inr (Or.inl ⟨rfl, by simp⟩)
         | exact Or.inr (Or.inr ⟨(nxt_prv hM i).symm, by simp⟩)
 
-lemma G_isRegular3 {M : ℕ} (hM : 3 ≤ M) : (G hM).IsRegularOfDegree 3 := by
+lemma G_isRegular3 (hM : 3 ≤ M) : (G hM).IsRegularOfDegree 3 := by
   intro x
   have hset : (G hM).neighborFinset x = Finset.univ.image (nbr3 hM x) := by
     ext y
@@ -258,7 +264,7 @@ lemma H'_reaches_port_minus_two :
       bfsFrom bad (fun w => !bad w && isPort w) u = true := by
   decide
 
-lemma stepReach_sound {M : ℕ} (hM : 3 ≤ M) (S : Set (Fin M × Fin 16))
+lemma stepReach_sound (hM : 3 ≤ M) (S : Set (Vertex M))
     (i : Fin M) (bad : Fin 16 → Bool)
     (hbad : ∀ w, bad w = false → (i, w) ∉ S)
     (r0 : Fin 16 → Bool)
@@ -282,7 +288,7 @@ lemma stepReach_sound {M : ℕ} (hM : 3 ≤ M) (S : Set (Fin M × Fin 16))
       refine ⟨hvS, p, hp0, hreach.trans (SimpleGraph.Adj.reachable ?_)⟩
       exact Or.inl ⟨rfl, by rw [adjH'_symm]; exact decide_eq_true hwmem⟩
 
-lemma col_connected_of_disjoint {M : ℕ} (hM : 3 ≤ M) (S : Set (Fin M × Fin 16))
+lemma col_connected_of_disjoint (hM : 3 ≤ M) (S : Set (Vertex M))
     (i : Fin M) (hcol : ∀ w, (i, w) ∉ S) (u v : Fin 16) :
     ((G hM).induce Sᶜ).Reachable ⟨(i, u), hcol u⟩ ⟨(i, v), hcol v⟩ := by
   obtain ⟨_, p1, hp1, hr1⟩ := stepReach_sound hM S i (fun _ => false) (fun w _ => hcol w)
@@ -294,7 +300,7 @@ lemma col_connected_of_disjoint {M : ℕ} (hM : 3 ≤ M) (S : Set (Fin M × Fin 
   subst hp1'; subst hp2'
   exact hr1.symm.trans hr2
 
-lemma col_connected_of_at_most_one {M : ℕ} (hM : 3 ≤ M) (S : Set (Fin M × Fin 16))
+lemma col_connected_of_at_most_one (hM : 3 ≤ M) (S : Set (Vertex M))
     (i : Fin M) (a : Fin 16) (hcol : ∀ w, (i, w) ∈ S → w = a)
     (u v : Fin 16) (hu : (i, u) ∉ S) (hv : (i, v) ∉ S) :
     ((G hM).induce Sᶜ).Reachable ⟨(i, u), hu⟩ ⟨(i, v), hv⟩ := by
@@ -328,7 +334,7 @@ lemma col_connected_of_at_most_one {M : ℕ} (hM : 3 ≤ M) (S : Set (Fin M × F
   · have hall : ∀ w, (i, w) ∉ S := fun w hw => ha ((hcol w hw) ▸ hw)
     exact col_connected_of_disjoint hM S i hall u v
 
-lemma col_reaches_port_of_at_most_two {M : ℕ} (hM : 3 ≤ M) (S : Set (Fin M × Fin 16))
+lemma col_reaches_port_of_at_most_two (hM : 3 ≤ M) (S : Set (Vertex M))
     (i : Fin M) (a b : Fin 16) (hcol : ∀ w, (i, w) ∈ S → w = a ∨ w = b)
     (u : Fin 16) (hu : (i, u) ∉ S) :
     ∃ (p : Fin 16) (hp : (i, p) ∉ S), isPort p = true ∧
@@ -403,12 +409,12 @@ lemma set_ncard_le_two_subset_pair {α : Type} [Fintype α] [Nonempty α]
     rw [hab, Finset.mem_insert, Finset.mem_singleton] at this
     exact this
 
-def goodBridge {M : ℕ} (hM : 3 ≤ M) (S : Set (Fin M × Fin 16)) (i : Fin M) : Prop :=
+def goodBridge (hM : 3 ≤ M) (S : Set (Vertex M)) (i : Fin M) : Prop :=
   ((i, (1 : Fin 16)) ∉ S ∧ (nxt hM i, (0 : Fin 16)) ∉ S) ∨
   ((i, (13 : Fin 16)) ∉ S ∧ (nxt hM i, (12 : Fin 16)) ∉ S)
 
-lemma badBridge_unique {M : ℕ} (hM : 3 ≤ M) (S : Set (Fin M × Fin 16))
-    (s₁ s₂ : Fin M × Fin 16) (hsub : ∀ x ∈ S, x = s₁ ∨ x = s₂)
+lemma badBridge_unique (hM : 3 ≤ M) (S : Set (Vertex M))
+    (s₁ s₂ : Vertex M) (hsub : ∀ x ∈ S, x = s₁ ∨ x = s₂)
     (i j : Fin M) (hi : ¬ goodBridge hM S i) (hj : ¬ goodBridge hM S j) : i = j := by
   dsimp [goodBridge] at hi hj
   push Not at hi hj
@@ -418,7 +424,7 @@ lemma badBridge_unique {M : ℕ} (hM : 3 ≤ M) (S : Set (Fin M × Fin 16))
     by_cases h : (i, (13 : Fin 16)) ∈ S; exact Or.inl h; exact Or.inr (hi.2 h)
   have htop_j : (j, (1 : Fin 16)) ∈ S ∨ (nxt hM j, (0 : Fin 16)) ∈ S := by
     by_cases h : (j, (1 : Fin 16)) ∈ S; exact Or.inl h; exact Or.inr (hj.1 h)
-  have hdet : ∀ (k : Fin M) (x : Fin M × Fin 16),
+  have hdet : ∀ (k : Fin M) (x : Vertex M),
       (x = (k, 1) ∨ x = (nxt hM k, 0)) →
       k = if x.2 = 1 then x.1 else prv hM x.1 := by
     intro k x hx
@@ -458,8 +464,20 @@ lemma badBridge_unique {M : ℕ} (hM : 3 ≤ M) (S : Set (Fin M × Fin 16))
     · exact False.elim (hxi_ne_yi rfl)
   rw [hdet i xi hxi_p, hdet j xj hxj_p, hxi_eq_xj]
 
-lemma G_threeConnected_sameCol {M : ℕ} (hM : 3 ≤ M) (S : Set (Fin M × Fin 16))
-    (s₁ s₂ : Fin M × Fin 16) (hsub : ∀ x ∈ S, x = s₁ ∨ x = s₂) (hsame : s₁.1 = s₂.1) :
+private lemma iterate_ne (hM : 3 ≤ M) (i : Fin M) (t : ℕ) (ht : t < M - 1) :
+    (nxt hM)^[t + 1] i ≠ i := by
+  intro heq
+  have hv := congrArg Fin.val heq
+  rw [nxt_iterate_val] at hv
+  have hi := i.isLt
+  by_cases h : i.val + (t + 1) < M
+  · rw [Nat.mod_eq_of_lt h] at hv; omega
+  · rw [show i.val + (t + 1) = (i.val + (t + 1) - M) + M by omega,
+        Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)] at hv
+    omega
+
+lemma G_threeConnected_sameCol (hM : 3 ≤ M) (S : Set (Vertex M))
+    (s₁ s₂ : Vertex M) (hsub : ∀ x ∈ S, x = s₁ ∨ x = s₂) (hsame : s₁.1 = s₂.1) :
     ((G hM).induce Sᶜ).Connected := by
   set i₀ := s₁.1
   have hdisj : ∀ j : Fin M, j ≠ i₀ → ∀ w : Fin 16, (j, w) ∉ S := by
@@ -481,16 +499,7 @@ lemma G_threeConnected_sameCol {M : ℕ} (hM : 3 ≤ M) (S : Set (Fin M × Fin 1
       exact SimpleGraph.Reachable.refl _
     | succ t ih =>
       intro ht hcur
-      have hprev_ne : (nxt hM)^[t + 1] i₀ ≠ i₀ := by
-        intro heq
-        have hv := congrArg Fin.val heq
-        rw [nxt_iterate_val] at hv
-        have hi := i₀.isLt
-        by_cases h1 : i₀.val + (t + 1) < M
-        · rw [Nat.mod_eq_of_lt h1] at hv; omega
-        · rw [show i₀.val + (t + 1) = (i₀.val + (t + 1) - M) + M by omega,
-            Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)] at hv
-          omega
+      have hprev_ne := iterate_ne hM i₀ t (by omega)
       have hprev_disj := hdisj _ hprev_ne
       have hr1 := ih (by omega) (hprev_disj 0)
       have hr2 := col_connected_of_disjoint hM S _ hprev_disj 0 1
@@ -514,7 +523,7 @@ lemma G_threeConnected_sameCol {M : ℕ} (hM : 3 ≤ M) (S : Set (Fin M × Fin 1
         ⟨(j, 0), hdisj j hj 0⟩ := by
       simpa [hkeq] using h1
     exact h1'.trans (col_connected_of_disjoint hM S j (hdisj j hj) 0 w)
-  have hreach_all : ∀ z : (Sᶜ : Set (Fin M × Fin 16)),
+  have hreach_all : ∀ z : (Sᶜ : Set (Vertex M)),
       ((G hM).induce Sᶜ).Reachable ⟨(nxt hM i₀, 0), hbase_notS⟩ z := by
     rintro ⟨⟨j, w⟩, hz⟩
     by_cases hj : j = i₀
@@ -558,8 +567,8 @@ lemma G_threeConnected_sameCol {M : ℕ} (hM : 3 ≤ M) (S : Set (Fin M × Fin 1
     nonempty := ⟨⟨(nxt hM i₀, 0), hbase_notS⟩⟩
   }
 
-lemma G_threeConnected_diffCol {M : ℕ} (hM : 3 ≤ M) (S : Set (Fin M × Fin 16))
-    (s₁ s₂ : Fin M × Fin 16) (hsub : ∀ x ∈ S, x = s₁ ∨ x = s₂) (hsame : s₁.1 ≠ s₂.1) :
+lemma G_threeConnected_diffCol (hM : 3 ≤ M) (S : Set (Vertex M))
+    (s₁ s₂ : Vertex M) (hsub : ∀ x ∈ S, x = s₁ ∨ x = s₂) (hsame : s₁.1 ≠ s₂.1) :
     ((G hM).induce Sᶜ).Connected := by
   have hcol_conn : ∀ (i : Fin M) (u v : Fin 16) (hu : (i, u) ∉ S) (hv : (i, v) ∉ S),
       ((G hM).induce Sᶜ).Reachable ⟨(i, u), hu⟩ ⟨(i, v), hv⟩ := by
@@ -598,14 +607,7 @@ lemma G_threeConnected_diffCol {M : ℕ} (hM : 3 ≤ M) (S : Set (Fin M × Fin 1
       refine ⟨nxt hM i_bad, fun t ht => ?_⟩
       by_contra hnb
       have heq := badBridge_unique hM S s₁ s₂ hsub _ _ hnb hi_bad
-      have hv := congrArg Fin.val heq
-      rw [← Function.iterate_succ_apply (nxt hM) t i_bad, nxt_iterate_val] at hv
-      have hi := i_bad.isLt
-      by_cases h1 : i_bad.val + (t + 1) < M
-      · rw [Nat.mod_eq_of_lt h1] at hv; omega
-      · rw [show i_bad.val + (t + 1) = (i_bad.val + (t + 1) - M) + M by omega,
-          Nat.add_mod_right, Nat.mod_eq_of_lt (by omega)] at hv
-        omega
+      exact iterate_ne hM i_bad t ht (by rwa [Function.iterate_succ_apply])
     · push Not at hbad
       exact ⟨⟨0, by omega⟩, fun t _ => hbad _⟩
   obtain ⟨i₀, hi₀⟩ := hex_start
@@ -639,7 +641,7 @@ lemma G_threeConnected_diffCol {M : ℕ} (hM : 3 ≤ M) (S : Set (Fin M × Fin 1
           dsimp [SimpleGraph.induce, G, GAdj]
           exact Or.inr (Or.inl ⟨hstep, Or.inr ⟨rfl, rfl⟩⟩)
         exact (hr1.trans hadj.reachable).trans (hcol_conn _ 12 w h12' hw)
-  have hreach_all : ∀ z : (Sᶜ : Set (Fin M × Fin 16)),
+  have hreach_all : ∀ z : (Sᶜ : Set (Vertex M)),
       ((G hM).induce Sᶜ).Reachable ⟨(i₀, u₀), hu₀⟩ z := by
     rintro ⟨⟨j, w⟩, hz⟩
     obtain ⟨t, ht, hteq⟩ := exists_nxt_iterate hM i₀ j
@@ -650,7 +652,7 @@ lemma G_threeConnected_diffCol {M : ℕ} (hM : 3 ≤ M) (S : Set (Fin M × Fin 1
     nonempty := ⟨⟨(i₀, u₀), hu₀⟩⟩
   }
 
-lemma G_threeConnected {M : ℕ} (hM : 3 ≤ M) : ThreeConnected (G hM) := by
+lemma G_threeConnected (hM : 3 ≤ M) : ThreeConnected (G hM) := by
   have : Nonempty (Fin M) := ⟨⟨0, by omega⟩⟩
   refine ⟨?_, ?_⟩
   · simp [Fintype.card_prod]; omega
@@ -662,12 +664,12 @@ lemma G_threeConnected {M : ℕ} (hM : 3 ≤ M) : ThreeConnected (G hM) := by
 
 /-! ### Non-existence of a good colouring for odd M >= 3 -/
 
-lemma blue_unique {M : ℕ} (hM : 3 ≤ M) {c : Fin M × Fin 16 → Bool}
-    (hc : GoodColouring (G hM) c) {v w₁ w₂ : Fin M × Fin 16}
+lemma blue_unique (hM : 3 ≤ M) {c : Vertex M → Bool}
+    (hc : GoodColouring (G hM) c) {v w₁ w₂ : Vertex M}
     (hv : c v = true) (h1 : c w₁ = true) (h2 : c w₂ = true)
     (ha1 : (G hM).Adj v w₁) (ha2 : (G hM).Adj v w₂) : w₁ = w₂ := by
   by_contra hne
-  have hsub : ({w₁, w₂} : Set (Fin M × Fin 16)) ⊆ {w | (G hM).Adj v w ∧ c w = true} := by
+  have hsub : ({w₁, w₂} : Set (Vertex M)) ⊆ {w | (G hM).Adj v w ∧ c w = true} := by
     intro x hx
     rcases hx with rfl | rfl
     · exact ⟨ha1, h1⟩
@@ -677,8 +679,8 @@ lemma blue_unique {M : ℕ} (hM : 3 ≤ M) {c : Fin M × Fin 16 → Bool}
   have h1' := hc.1 v hv
   omega
 
-lemma red_has_red_nbr3 {M : ℕ} (hM : 3 ≤ M) {c : Fin M × Fin 16 → Bool}
-    (hc : GoodColouring (G hM) c) {v : Fin M × Fin 16} (hv : c v = false) :
+lemma red_has_red_nbr3 (hM : 3 ≤ M) {c : Vertex M → Bool}
+    (hc : GoodColouring (G hM) c) {v : Vertex M} (hv : c v = false) :
     c (nbr3 hM v 0) = false ∨ c (nbr3 hM v 1) = false ∨ c (nbr3 hM v 2) = false := by
   obtain ⟨w, hadj, hcw⟩ := hc.2.1 v hv
   obtain ⟨k, rfl⟩ := (G_adj_iff_nbr3 hM v w).mp hadj
@@ -687,8 +689,8 @@ lemma red_has_red_nbr3 {M : ℕ} (hM : 3 ≤ M) {c : Fin M × Fin 16 → Bool}
   · exact Or.inr (Or.inl hcw)
   · exact Or.inr (Or.inr hcw)
 
-lemma no_red_P4 {M : ℕ} (hM : 3 ≤ M) {c : Fin M × Fin 16 → Bool}
-    (hc : GoodColouring (G hM) c) {a b d e : Fin M × Fin 16}
+lemma no_red_P4 (hM : 3 ≤ M) {c : Vertex M → Bool}
+    (hc : GoodColouring (G hM) c) {a b d e : Vertex M}
     (hab : a ≠ b) (had : a ≠ d) (hae : a ≠ e) (hbd : b ≠ d) (hbe : b ≠ e) (hde : d ≠ e)
     (ca : c a = false) (cb : c b = false) (cd : c d = false) (ce : c e = false)
     (e1 : (G hM).Adj a b) (e2 : (G hM).Adj b d) (e3 : (G hM).Adj d e) : False := by
@@ -707,13 +709,13 @@ lemma no_red_P4 {M : ℕ} (hM : 3 ≤ M) {c : Fin M × Fin 16 → Bool}
     fin_cases i <;> simpa [vec4]
 
 /-- Helper: adjacency inside a single column i from adjH'. -/
-lemma col_adj {M : ℕ} (hM : 3 ≤ M) (i : Fin M) {u v : Fin 16} (h : adjH' u v = true) :
+lemma col_adj (hM : 3 ≤ M) (i : Fin M) {u v : Fin 16} (h : adjH' u v = true) :
     (G hM).Adj (i, u) (i, v) :=
   Or.inl ⟨rfl, h⟩
 
 /-- Embedding of the 8-vertex gadget H inside G_M. -/
-structure CopyH {M : ℕ} (hM : 3 ≤ M) where
-  v : Fin 8 → Fin M × Fin 16
+structure CopyH (hM : 3 ≤ M) where
+  v : Fin 8 → Vertex M
   inj : Function.Injective v
   e01 : (G hM).Adj (v 0) (v 1)
   e12 : (G hM).Adj (v 1) (v 2)
@@ -729,12 +731,12 @@ structure CopyH {M : ℕ} (hM : 3 ≤ M) where
   nbr3_6 : ∀ w, (G hM).Adj (v 6) w → w = v 5 ∨ w = v 7 ∨ w = v 2
   nbr3_7 : ∀ w, (G hM).Adj (v 7) w → w = v 6 ∨ w = v 0 ∨ w = v 3
 
-lemma CopyH.ne {M : ℕ} {hM : 3 ≤ M} (H : CopyH hM) {a b : Fin 8} (h : a ≠ b) :
+lemma CopyH.ne {hM : 3 ≤ M} (H : CopyH hM) {a b : Fin 8} (h : a ≠ b) :
     H.v a ≠ H.v b :=
   fun heq => h (H.inj heq)
 
-lemma CopyH.not_both_red {M : ℕ} {hM : 3 ≤ M} (H : CopyH hM)
-    {c : Fin M × Fin 16 → Bool} (hc : GoodColouring (G hM) c)
+lemma CopyH.not_both_red {hM : 3 ≤ M} (H : CopyH hM)
+    {c : Vertex M → Bool} (hc : GoodColouring (G hM) c)
     (h0 : c (H.v 0) = false) (h1 : c (H.v 1) = false) : False := by
   by_cases h2 : c (H.v 2) = false
   · have h3 : c (H.v 3) = true := by
@@ -806,8 +808,8 @@ lemma CopyH.not_both_red {M : ℕ} {hM : 3 ≤ M} (H : CopyH hM)
         (H.ne (by decide)) (H.ne (by decide)) (H.ne (by decide))
         h3f h4f h5f h6f H.e34 H.e45 H.e56
 
-lemma CopyH.red_adj_forces_blue {M : ℕ} {hM : 3 ≤ M} (H : CopyH hM)
-    {c : Fin M × Fin 16 → Bool} (hc : GoodColouring (G hM) c)
+lemma CopyH.red_adj_forces_blue {hM : 3 ≤ M} (H : CopyH hM)
+    {c : Vertex M → Bool} (hc : GoodColouring (G hM) c)
     (h0 : c (H.v 0) = true) (h1 : c (H.v 1) = false) (h2 : c (H.v 2) = false) :
     c (H.v 4) = true ∧ c (H.v 5) = true := by
   have h3f : c (H.v 3) = false := by
@@ -865,85 +867,46 @@ def revMap (k : Fin 8) : Fin 16 :=
 
 def botMap (k : Fin 8) : Fin 16 := ⟨k.val + 8, by omega⟩
 
-def topCopyH {M : ℕ} (hM : 3 ≤ M) (i : Fin M) : CopyH hM where
-  v k := (i, topMap k)
-  inj := fun a b h => by
+def topCopyH (hM : 3 ≤ M) (i : Fin M) : CopyH hM := by
+  refine ⟨fun k => (i, topMap k), ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · intro a b h
     have h2 : topMap a = topMap b := congrArg Prod.snd h
     exact Fin.ext (by simpa [topMap] using congrArg Fin.val h2)
-  e01 := col_adj hM i (by decide)
-  e12 := col_adj hM i (by decide)
-  e23 := col_adj hM i (by decide)
-  e34 := col_adj hM i (by decide)
-  e45 := col_adj hM i (by decide)
-  e56 := col_adj hM i (by decide)
-  e67 := col_adj hM i (by decide)
-  e70 := col_adj hM i (by decide)
-  e26 := col_adj hM i (by decide)
-  e37 := col_adj hM i (by decide)
-  nbr3_3 w hw := by
-    obtain ⟨k, rfl⟩ := (G_adj_iff_nbr3 hM _ w).mp hw
-    fin_cases k <;> simp [nbr3, vec3, topMap]
-  nbr3_6 w hw := by
-    obtain ⟨k, rfl⟩ := (G_adj_iff_nbr3 hM _ w).mp hw
-    fin_cases k <;> simp [nbr3, vec3, topMap]
-  nbr3_7 w hw := by
-    obtain ⟨k, rfl⟩ := (G_adj_iff_nbr3 hM _ w).mp hw
-    fin_cases k <;> simp [nbr3, vec3, topMap]
+  all_goals first
+    | exact col_adj hM i (by decide)
+    | (intro w hw
+       obtain ⟨k, rfl⟩ := (G_adj_iff_nbr3 hM _ w).mp hw
+       fin_cases k <;> simp [nbr3, vec3, topMap])
 
-def topRevCopyH {M : ℕ} (hM : 3 ≤ M) (i : Fin M) : CopyH hM where
-  v k := (i, revMap k)
-  inj := fun a b h => by
+
+def topRevCopyH (hM : 3 ≤ M) (i : Fin M) : CopyH hM := by
+  refine ⟨fun k => (i, revMap k), ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · intro a b h
     have h2 : revMap a = revMap b := congrArg Prod.snd h
     fin_cases a <;> fin_cases b <;> simp [revMap] at h2 ⊢
-  e01 := col_adj hM i (by decide)
-  e12 := col_adj hM i (by decide)
-  e23 := col_adj hM i (by decide)
-  e34 := col_adj hM i (by decide)
-  e45 := col_adj hM i (by decide)
-  e56 := col_adj hM i (by decide)
-  e67 := col_adj hM i (by decide)
-  e70 := col_adj hM i (by decide)
-  e26 := col_adj hM i (by decide)
-  e37 := col_adj hM i (by decide)
-  nbr3_3 w hw := by
-    obtain ⟨k, rfl⟩ := (G_adj_iff_nbr3 hM _ w).mp hw
-    fin_cases k <;> simp [nbr3, vec3, revMap]
-  nbr3_6 w hw := by
-    obtain ⟨k, rfl⟩ := (G_adj_iff_nbr3 hM _ w).mp hw
-    fin_cases k <;> simp [nbr3, vec3, revMap]
-  nbr3_7 w hw := by
-    obtain ⟨k, rfl⟩ := (G_adj_iff_nbr3 hM _ w).mp hw
-    fin_cases k <;> simp [nbr3, vec3, revMap]
+  all_goals first
+    | exact col_adj hM i (by decide)
+    | (intro w hw
+       obtain ⟨k, rfl⟩ := (G_adj_iff_nbr3 hM _ w).mp hw
+       fin_cases k <;> simp [nbr3, vec3, revMap])
 
-def botCopyH {M : ℕ} (hM : 3 ≤ M) (i : Fin M) : CopyH hM where
-  v k := (i, botMap k)
-  inj := fun a b h => by
+
+def botCopyH (hM : 3 ≤ M) (i : Fin M) : CopyH hM := by
+  refine ⟨fun k => (i, botMap k), ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · intro a b h
     have h2 : botMap a = botMap b := congrArg Prod.snd h
     have hv := congrArg Fin.val h2
     dsimp [botMap] at hv
     exact Fin.ext (by omega)
-  e01 := col_adj hM i (by decide)
-  e12 := col_adj hM i (by decide)
-  e23 := col_adj hM i (by decide)
-  e34 := col_adj hM i (by decide)
-  e45 := col_adj hM i (by decide)
-  e56 := col_adj hM i (by decide)
-  e67 := col_adj hM i (by decide)
-  e70 := col_adj hM i (by decide)
-  e26 := col_adj hM i (by decide)
-  e37 := col_adj hM i (by decide)
-  nbr3_3 w hw := by
-    obtain ⟨k, rfl⟩ := (G_adj_iff_nbr3 hM _ w).mp hw
-    fin_cases k <;> simp [nbr3, vec3, botMap]
-  nbr3_6 w hw := by
-    obtain ⟨k, rfl⟩ := (G_adj_iff_nbr3 hM _ w).mp hw
-    fin_cases k <;> simp [nbr3, vec3, botMap]
-  nbr3_7 w hw := by
-    obtain ⟨k, rfl⟩ := (G_adj_iff_nbr3 hM _ w).mp hw
-    fin_cases k <;> simp [nbr3, vec3, botMap]
+  all_goals first
+    | exact col_adj hM i (by decide)
+    | (intro w hw
+       obtain ⟨k, rfl⟩ := (G_adj_iff_nbr3 hM _ w).mp hw
+       fin_cases k <;> simp [nbr3, vec3, botMap])
+
 
 /-- Lemma H': in column i, not both (i, 4) and (i, 5) can be blue. -/
-lemma not_both_4_5_blue {M : ℕ} (hM : 3 ≤ M) {c : Fin M × Fin 16 → Bool}
+lemma not_both_4_5_blue (hM : 3 ≤ M) {c : Vertex M → Bool}
     (hc : GoodColouring (G hM) c) (i : Fin M)
     (h4 : c (i, 4) = true) (h5 : c (i, 5) = true) : False := by
   have h8 : c (i, 8) = false := by
@@ -959,7 +922,7 @@ lemma not_both_4_5_blue {M : ℕ} (hM : 3 ≤ M) {c : Fin M × Fin 16 → Bool}
   exact (botCopyH hM i).not_both_red hc h8 h9
 
 /-- Lemma H' applied to (i, 0): if (i, 0) is red, then (i, 1) is blue and (prv i, 1) is red. -/
-lemma col_zero_red {M : ℕ} (hM : 3 ≤ M) {c : Fin M × Fin 16 → Bool}
+lemma col_zero_red (hM : 3 ≤ M) {c : Vertex M → Bool}
     (hc : GoodColouring (G hM) c) (i : Fin M) (h0 : c (i, 0) = false) :
     c (i, 1) = true ∧ c (prv hM i, 1) = false := by
   have h1 : c (i, 1) = true := by
@@ -978,7 +941,7 @@ lemma col_zero_red {M : ℕ} (hM : 3 ≤ M) {c : Fin M × Fin 16 → Bool}
     exact False.elim (not_both_4_5_blue hM hc i h4 h5)
 
 /-- Lemma H' applied to (i, 1): if (i, 1) is red, then (i, 0) is blue and (nxt i, 0) is red. -/
-lemma col_one_red {M : ℕ} (hM : 3 ≤ M) {c : Fin M × Fin 16 → Bool}
+lemma col_one_red (hM : 3 ≤ M) {c : Vertex M → Bool}
     (hc : GoodColouring (G hM) c) (i : Fin M) (h1 : c (i, 1) = false) :
     c (i, 0) = true ∧ c (nxt hM i, 0) = false := by
   have h0 : c (i, 0) = true := by
@@ -998,7 +961,7 @@ lemma col_one_red {M : ℕ} (hM : 3 ≤ M) {c : Fin M × Fin 16 → Bool}
 
 /-- Key parity step along the top cycle: if (i, 0) is red, then (nxt i, 0) is blue and
 (nxt (nxt i), 0) is red. -/
-lemma top_parity_step {M : ℕ} (hM : 3 ≤ M) {c : Fin M × Fin 16 → Bool}
+lemma top_parity_step (hM : 3 ≤ M) {c : Vertex M → Bool}
     (hc : GoodColouring (G hM) c) (i : Fin M) (hi : c (i, 0) = false) :
     c (nxt hM i, 0) = true ∧ c (nxt hM (nxt hM i), 0) = false := by
   have h1t : c (i, 1) = true := (col_zero_red hM hc i hi).1
@@ -1018,7 +981,7 @@ lemma top_parity_step {M : ℕ} (hM : 3 ≤ M) {c : Fin M × Fin 16 → Bool}
   exact ⟨hnt, (col_one_red hM hc (nxt hM i) hn1f).2⟩
 
 /-- Main contradiction: G_M has no good colouring when M is odd and M >= 3. -/
-lemma no_good_colouring {M : ℕ} (hM : 3 ≤ M) (hodd : Odd M) (c : Fin M × Fin 16 → Bool) :
+lemma no_good_colouring (hM : 3 ≤ M) (hodd : Odd M) (c : Vertex M → Bool) :
     ¬ GoodColouring (G hM) c := by
   intro hc
   have hex : ∃ i : Fin M, c (i, 0) = false := by
@@ -1060,15 +1023,16 @@ lemma no_good_colouring {M : ℕ} (hM : 3 ≤ M) (hodd : Odd M) (c : Fin M × Fi
 
 end OMA.Thomassen1908
 
+open OMA.Thomassen1908 in
 theorem OMA.solution : type_of% @OMA.S_arxiv_1908_06697.main := by
   intro N
   let M := 2 * N + 3
   have hM : 3 ≤ M := by omega
   have hodd : Odd M := ⟨N + 1, by omega⟩
-  refine ⟨Fin M × Fin 16, inferInstance, OMA.Thomassen1908.G hM,
-    OMA.Thomassen1908.instDecidableG hM, ?_, ?_,
-    OMA.Thomassen1908.G_isRegular3 hM,
-    OMA.Thomassen1908.G_threeConnected hM,
-    OMA.Thomassen1908.no_good_colouring hM hodd⟩
+  refine ⟨Vertex M, inferInstance, G hM,
+    instDecidableG hM, ?_, ?_,
+    G_isRegular3 hM,
+    G_threeConnected hM,
+    no_good_colouring hM hodd⟩
   · simp [Fintype.card_prod, M]; omega
   · simp [Fintype.card_prod, M]; omega
