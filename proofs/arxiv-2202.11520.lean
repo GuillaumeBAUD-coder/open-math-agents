@@ -1,35 +1,18 @@
 import OMAStatements.S_arxiv_2202_11520
 import Mathlib
 
+/- Original Lean disproof by Volkopat in upstream PR #35899.
+   This revision uses matrix notation for the same counterexample. -/
+
 namespace OMA.P_arxiv_2202_11520
 
 open OMA.S_arxiv_2202_11520
 
 private def A_int : Matrix (Fin 3) (Fin 3) ℤ :=
-  Matrix.of fun i j =>
-    match i.val, j.val with
-    | 0, 0 => 0
-    | 0, 1 => -3
-    | 0, 2 => 1
-    | 1, 0 => 0
-    | 1, 1 => -1
-    | 1, 2 => 0
-    | 2, 0 => 3
-    | 2, 1 => -10
-    | _, _ => 1
+  !![0, -3, 1; 0, -1, 0; 3, -10, 1]
 
 private def B_int : Matrix (Fin 3) (Fin 3) ℤ :=
-  Matrix.of fun i j =>
-    match i.val, j.val with
-    | 0, 0 => 0
-    | 0, 1 => 1
-    | 0, 2 => -1
-    | 1, 0 => 4
-    | 1, 1 => -2
-    | 1, 2 => 10
-    | 2, 0 => 2
-    | 2, 1 => 1
-    | _, _ => 7
+  !![0, 1, -1; 4, -2, 10; 2, 1, 7]
 
 private def C_int : Matrix (Fin 3) (Fin 3) ℤ :=
   A_int * B_int - (2 : ℤ) • (B_int * A_int)
@@ -54,9 +37,8 @@ private lemma qComm_eq_map : qComm 2 A_cx B_cx = C_int.map (Int.cast : ℤ → �
   ring
 
 lemma trace_A_cx : Matrix.trace A_cx = 0 := by
-  simp only [Matrix.trace, Matrix.diag, A_cx, Matrix.map_apply, Fin.sum_univ_three, A_int,
-    Matrix.of_apply]
-  norm_num
+  have diag : A_int 0 0 = 0 ∧ A_int 1 1 = -1 ∧ A_int 2 2 = 1 := by decide
+  simp [Matrix.trace, Matrix.diag, A_cx, Fin.sum_univ_three, diag.1, diag.2.1, diag.2.2]
 
 private lemma frob_ineq_int :
     (5 : ℤ) * (∑ i : Fin 3, ∑ j : Fin 3, A_int i j * A_int i j) *
