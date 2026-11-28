@@ -26,7 +26,7 @@ noncomputable def enclosedArea (x y : ℝ → ℝ) :=
 
 /-- A smooth regular simple closed plane curve, parameterized with period 2π. -/
 def SmoothSimpleClosed (x y : ℝ → ℝ) : Prop :=
-  ContDiff ℝ ⊤ x ∧ ContDiff ℝ ⊤ y ∧
+  ContDiff ℝ ((⊤ : ENat) : WithTop ENat) x ∧ ContDiff ℝ ((⊤ : ENat) : WithTop ENat) y ∧
   Function.Periodic x (2 * π) ∧ Function.Periodic y (2 * π) ∧
   (∀ t, 0 < speed x y t) ∧
   InjOn (fun t => (x t, y t)) (Ico 0 (2 * π))
