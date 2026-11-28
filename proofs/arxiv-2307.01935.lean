@@ -1,5 +1,7 @@
 import OMAStatements.S_arxiv_2307_01935
 
+/- Shorter version of the original Lean disproof in upstream PR #37789. -/
+
 namespace OMA.P2307
 
 open OMA.S_arxiv_2307_01935
@@ -33,66 +35,29 @@ lemma hs4 : s ^ 4 = 4 := by
   rw [show s ^ 4 = (s ^ 2) ^ 2 by ring, hs2]
   norm_num
 
-lemma e0 : (1 : ℝ) * 1 / 0 ^ 3 = 0 := by norm_num
-
-lemma e1 : (1 : ℝ) * 1 / 2 ^ 3 = 1 / 8 := by norm_num
-
-lemma e2 : (1 : ℝ) * 1 / (2 * s) ^ 3 = s / 32 := by
-  have := hs0
-  rw [div_eq_iff (by positivity)]
-  rw [show s / 32 * (2 * s) ^ 3 = s ^ 4 / 4 by ring, hs4]
-  norm_num
-
 lemma e3 : (1 : ℝ) * 1 / s ^ 3 = s / 4 := by
   have := hs0
   rw [div_eq_iff (by positivity)]
   rw [show s / 4 * s ^ 3 = s ^ 4 / 4 by ring, hs4]
   norm_num
 
-lemma force0 : gravForce m r 1 0 = (-lam) • r 0 := by
+private noncomputable def distanceTable : Fin 5 → Fin 5 → ℝ :=
+  ![![0, 2, 2*s, 2, s], ![2, 0, 2, 2*s, s], ![2*s, 2, 0, 2, s],
+    ![2, 2*s, 2, 0, s], ![s, s, s, s, 0]]
+
+private lemma pair_distance (i j : Fin 5) : euclidDist (r i) (r j) = distanceTable i j := by
+  apply dist_eq
+  · have := hs0
+    fin_cases i <;> fin_cases j <;> simp [distanceTable] <;> positivity
+  · fin_cases i <;> fin_cases j <;> simp [r, distanceTable] <;> nlinarith [hs2]
+
+lemma force (i : Fin 5) : gravForce m r 1 i = (-lam) • r i := by
   unfold gravForce
   rw [Fin.sum_univ_five]
-  rw [dist_eq (r 0) (r 0) 0 le_rfl (by simp [r] <;> nlinarith [hs2]), dist_eq (r 1) (r 0) 2 (by norm_num) (by simp [r] <;> nlinarith [hs2]), dist_eq (r 2) (r 0) (2 * s) (by have := hs0; positivity) (by simp [r] <;> nlinarith [hs2]), dist_eq (r 3) (r 0) 2 (by norm_num) (by simp [r] <;> nlinarith [hs2]), dist_eq (r 4) (r 0) s hs0.le (by simp [r] <;> nlinarith [hs2])]
-  simp only [m, e0, e1, e2, e3]
-  funext c
-  fin_cases c <;> simp [r, lam] <;> ring
-
-lemma force1 : gravForce m r 1 1 = (-lam) • r 1 := by
-  unfold gravForce
-  rw [Fin.sum_univ_five]
-  rw [dist_eq (r 0) (r 1) 2 (by norm_num) (by simp [r] <;> nlinarith [hs2]), dist_eq (r 1) (r 1) 0 le_rfl (by simp [r] <;> nlinarith [hs2]), dist_eq (r 2) (r 1) 2 (by norm_num) (by simp [r] <;> nlinarith [hs2]), dist_eq (r 3) (r 1) (2 * s) (by have := hs0; positivity) (by simp [r] <;> nlinarith [hs2]), dist_eq (r 4) (r 1) s hs0.le (by simp [r] <;> nlinarith [hs2])]
-  simp only [m, e0, e1, e2, e3]
-  funext c
-  fin_cases c <;> simp [r, lam] <;> ring
-
-lemma force2 : gravForce m r 1 2 = (-lam) • r 2 := by
-  unfold gravForce
-  rw [Fin.sum_univ_five]
-  rw [dist_eq (r 0) (r 2) (2 * s) (by have := hs0; positivity) (by simp [r] <;> nlinarith [hs2]), dist_eq (r 1) (r 2) 2 (by norm_num) (by simp [r] <;> nlinarith [hs2]), dist_eq (r 2) (r 2) 0 le_rfl (by simp [r] <;> nlinarith [hs2]), dist_eq (r 3) (r 2) 2 (by norm_num) (by simp [r] <;> nlinarith [hs2]), dist_eq (r 4) (r 2) s hs0.le (by simp [r] <;> nlinarith [hs2])]
-  simp only [m, e0, e1, e2, e3]
-  funext c
-  fin_cases c <;> simp [r, lam] <;> ring
-
-lemma force3 : gravForce m r 1 3 = (-lam) • r 3 := by
-  unfold gravForce
-  rw [Fin.sum_univ_five]
-  rw [dist_eq (r 0) (r 3) 2 (by norm_num) (by simp [r] <;> nlinarith [hs2]), dist_eq (r 1) (r 3) (2 * s) (by have := hs0; positivity) (by simp [r] <;> nlinarith [hs2]), dist_eq (r 2) (r 3) 2 (by norm_num) (by simp [r] <;> nlinarith [hs2]), dist_eq (r 3) (r 3) 0 le_rfl (by simp [r] <;> nlinarith [hs2]), dist_eq (r 4) (r 3) s hs0.le (by simp [r] <;> nlinarith [hs2])]
-  simp only [m, e0, e1, e2, e3]
-  funext c
-  fin_cases c <;> simp [r, lam] <;> ring
-
-lemma force4 : gravForce m r 1 4 = (-lam) • r 4 := by
-  unfold gravForce
-  rw [Fin.sum_univ_five]
-  rw [dist_eq (r 0) (r 4) s hs0.le (by simp [r] <;> nlinarith [hs2]), dist_eq (r 1) (r 4) s hs0.le (by simp [r] <;> nlinarith [hs2]), dist_eq (r 2) (r 4) s hs0.le (by simp [r] <;> nlinarith [hs2]), dist_eq (r 3) (r 4) s hs0.le (by simp [r] <;> nlinarith [hs2]), dist_eq (r 4) (r 4) 0 le_rfl (by simp [r] <;> nlinarith [hs2])]
-  simp only [m, e0, e1, e2, e3]
-  funext c
-  fin_cases c <;> simp [r, lam] <;> ring
-
-lemma force : ∀ i, gravForce m r 1 i = (-lam) • r i := by
-  intro i
-  fin_cases i
-  exacts [force0, force1, force2, force3, force4]
+  have invCube : s⁻¹ ^ 3 = s / 4 := by simpa [div_eq_mul_inv] using e3
+  simp only [pair_distance]
+  fin_cases i <;> funext c <;> fin_cases c <;> simp [distanceTable, m, r, lam] <;>
+    ring_nf <;> rw [invCube] <;> ring
 
 lemma hb0 : bodyMasses bodyOf (0 : Fin 3) = {0, 1} := by decide
 
