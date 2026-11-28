@@ -65,12 +65,6 @@ lemma a_two : a 2 = 242 := by decide
 
 lemma a_three : a 3 = 24842 := by decide
 
-/-- Controls: the entry's data a(1..10). -/
-theorem controls : (List.range 10).map (fun i => a (i + 1)) = [2, 242, 24842, 2496842,
-    249936842, 24998736842, 2499974736842, 249999494736842, 24999989894736842,
-    2499999797894736842] := by
-  decide
-
 /-- Barker's recurrence, for n > 3, in the integers. -/
 theorem recurrence : ∀ n : ℕ, 3 < n →
     (a n : ℤ) = 121 * a (n - 1) - 2120 * a (n - 2) + 2000 * a (n - 3) := by

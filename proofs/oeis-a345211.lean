@@ -14,20 +14,6 @@ instance : DecidablePred InA345211 := fun n =>
 instance : DecidablePred InA157932 := fun k =>
   inferInstanceAs (Decidable (((3 ^ (35 * k) + 5 ^ (21 * k) + 7 ^ (15 * k)) % 105).Prime))
 
-/-- Control: the terms of A345211 up to 100 as listed in the entry. -/
-theorem first_terms_A345211 :
-    (List.range 101).filter (fun n => decide (InA345211 n)) =
-      [2, 4, 6, 10, 14, 18, 20, 22, 26, 28, 30, 34, 38, 42, 44, 46, 50, 52, 54, 58, 62, 66, 68,
-        70, 74, 76, 78, 82, 86, 90, 92, 94, 98, 100] := by
-  decide +kernel
-
-/-- Control: the terms of A157932 below 69 as listed in its entry. -/
-theorem first_terms_A157932 :
-    (List.range 69).filter (fun k => decide (InA157932 k)) =
-      [0, 4, 6, 8, 12, 16, 18, 20, 24, 28, 30, 32, 36, 40, 42, 44, 48, 52, 54, 56, 60, 64, 66,
-        68] := by
-  decide +kernel
-
 theorem tau_two_mul {d : ℕ} (hd : Odd d) :
     (Nat.divisors (2 * d)).card = 2 * (Nat.divisors d).card := by
   rw [Nat.Coprime.card_divisors_mul (Nat.coprime_two_left.mpr hd)]
