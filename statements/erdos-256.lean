@@ -4,7 +4,7 @@ import Mathlib
 # Erdős Problem 256
 
 Source: https://www.erdosproblems.com/256
-Credit: @SudharsanAnimations
+Credit: Sudharsan Rajendiran
 
 Let `n ≥ 1` and let `f(n)` be maximal such that for any integers `1 ≤ a_1 ≤ ⋯ ≤ a_n`,
 `max_{|z| = 1} |∏_i (1 - z^{a_i})| ≥ f(n)`. Is there a constant `c > 0` such that
