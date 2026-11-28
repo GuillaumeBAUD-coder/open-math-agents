@@ -23165,6 +23165,15 @@
     "https://oeis.org/A221078"
    ],
    "reason": "Weaker than the source. Bala: 'Let p be prime. a(n) mod p for n>=1 is purely periodic... the period appears to be p-1 (p=4m+1) or 2(p-1) (p=4m+3).' The statement only proves that p-1 resp. 2(p-1) is a period (not that it is the minimal period; numerically it is minimal for p<=29) and silently restricts to odd primes. For p=2 the claim is false (a(n) mod 2 = 1,0,0,0,... is not purely periodic), which the file does not mention. A correct partial result (an easy Fermat argument), not a full verification of the conjecture as printed."
+  },
+  "oeis-a270082": {
+   "date": "2026-11-28",
+   "pr": 26772,
+   "evidence": [
+    "https://oeis.org/A270082",
+    "https://doi.org/10.5281/zenodo.24384895"
+   ],
+   "reason": "Disproof exploits an index slip in Barker's printed range: the recurrence a(n)=a(n-2)+a(n-4)-a(n-6) is printed 'for n>9' but the g.f. (numerator degree 11) only implies it for n>11; data give a(11)=44 vs 48. The g.f. matches all 128 b-file-range data terms, and the recurrence holds for n>11, so the substantive conjecture is true; the disproof uses the n=11 slip. Also, Cohen (Zenodo 24384895) Lean-certifies the full Rule 62 evolution (A270080), so even the true version would be novelty-doubtful."
   }
  },
  "known": {
@@ -42944,6 +42953,162 @@
     "https://mathoverflow.net/a/481253"
    ],
    "reason": "Already answered on MathOverflow: the question (Pinelis) was edited to say it 'has now been answered, quite elementarily, by Ilya Bogdanov' via his accepted answer 481253 on the linked question 481225; the statement file itself records this. Statement (probability measure on {x+y+z=3/2} in [0,1]^3 with uniform marginals) is faithful."
+  },
+  "wp-ryser-s-conjecture-on-circulant-hadamard-matrices": {
+   "date": "2026-11-28",
+   "pr": 34610,
+   "evidence": [
+    "https://en.wikipedia.org/wiki/Ryser's_conjecture_on_circulant_Hadamard_matrices",
+    "https://github.com/openai/math"
+   ],
+   "reason": "Proof header says everything except a final Matrix.circulant bridge is copied unchanged from the site's merged proof of Arxiv.2104.00502.barker_conjecture, which is derived from openai/math (commits adc7f124, 3344da59). The source page itself reports the OpenAI 2026 claimed proof. Port of an earlier public proof, so known (also a duplicate of an earlier site solve)."
+  },
+  "wp-mahler-s-conjecture": {
+   "date": "2026-11-28",
+   "pr": 34586,
+   "evidence": [
+    "https://en.wikipedia.org/wiki/Mahler_volume",
+    "https://github.com/openai/math"
+   ],
+   "reason": "Proof header says the body is copied unchanged from the site's merged proof of wpc-mahler-conjecture, adapted from openai/math revision 3344da59; only a bridge for inner-product order and the ENNReal constant is new. Port of an earlier public proof (and an earlier site solve of the same statement), so known."
+  },
+  "mo-201602": {
+   "date": "2026-11-28",
+   "pr": 34511,
+   "evidence": [
+    "https://mathoverflow.net/questions/201602"
+   ],
+   "reason": "Statement is the easy direction (weak convergence implies pointwise convergence of characteristic functions); a comment on the question already says 'the converse of the continuity theorem is true and easy' with the one-line argument. The proof is a single Mathlib lemma (ProbabilityMeasure.tendsto_iff_tendsto_charFun). Known and trivial."
+  },
+  "mo-261486": {
+   "date": "2026-11-28",
+   "pr": 34614,
+   "evidence": [
+    "https://mathoverflow.net/questions/261486"
+   ],
+   "reason": "Disproof via n=136, 11^3 | d(136) (checked by kernel decide). But a comment on the question already gives n=279 with 5^3 | d, and another comment states v_q(d) is unbounded, so modified question 1 was already answered negatively in the source."
+  },
+  "oeis-a289239": {
+   "date": "2026-11-28",
+   "pr": 34444,
+   "evidence": [
+    "https://oeis.org/A289239",
+    "https://zenodo.org/records/23407381"
+   ],
+   "reason": "Disproof: |w_22| = 268184 but A289004(22) = 268182 (recomputed with Python re, matches). Ashburn, Zenodo 23407380 (16 Oct 2026), explicitly refutes this exact claim for A289239 ('false: |w22| = 268184, A289004(22) = 268182'); the site also has an earlier known disproof of A289004."
+  },
+  "oeis-a289242": {
+   "date": "2026-11-28",
+   "pr": 34445,
+   "evidence": [
+    "https://oeis.org/A289242",
+    "https://zenodo.org/records/23407381"
+   ],
+   "reason": "Same counterexample n=22 (268184 vs 268182), recomputed. Ashburn, Zenodo 23407380 (16 Oct 2026), refutes the A289242 length conjecture by the same n=22 counterexample."
+  },
+  "oeis-a357559": {
+   "date": "2026-11-28",
+   "pr": 34542,
+   "evidence": [
+    "https://oeis.org/A357559",
+    "https://data.palomar-registry.org/api/v1/results?q=A357559"
+   ],
+   "reason": "Statement is the formula-section conjecture n^2(2n+1)^3 | 3 a(2n). Palomar entry PALOMAR-2026-11-17-000001 (Wentao Li, published 2026-11-17, before the 2026-11-28 site commit) proves exactly this (formula_conjecture) and the stronger n^2(n+1)^3 | 6 S_3(n)."
+  },
+  "arxiv-2007.02618": {
+   "date": "2026-11-28",
+   "pr": 34418,
+   "evidence": [
+    "https://arxiv.org/abs/2007.02618"
+   ],
+   "reason": "The source paper (Altenberg and Cohen, 2020) is itself the disproof of Levinger concavity; the statement docstring says so. The Lean counterexample is the paper's 3x3 perturbation scaled by 100. Known."
+  },
+  "arxiv-2610.39051": {
+   "date": "2026-11-28",
+   "pr": 34538,
+   "evidence": [
+    "https://arxiv.org/abs/2610.39051"
+   ],
+   "reason": "The source paper (Oct 2026) states that the unrestricted Fasi-Higham positivity conjecture is false and gives exact rational counterexamples; the statement itself says 'disproved in arXiv:2610.39051'. The Lean file certifies one such coefficient sign; known."
+  },
+  "mo-490846": {
+   "date": "2026-11-28",
+   "pr": 34442,
+   "evidence": [
+    "https://mathoverflow.net/questions/490846"
+   ],
+   "reason": "MO answer posted 2026-05-15 proves conjecture (3): take S not in F of maximal weight and k outside S; the same maximal-weight argument is what the Lean proof formalizes. Statement is faithful to (3). Known from the source's answer."
+  },
+  "wp-is-the-line-graph-of-a-non-word-representable-graph-always-non-word-representabl": {
+   "date": "2026-11-28",
+   "pr": 34549,
+   "evidence": [
+    "https://en.wikipedia.org/wiki/Word-representable_graph#Open_problems",
+    "https://arxiv.org/abs/2509.03339"
+   ],
+   "reason": "Proof header credits Mozhui, Dwary and Krishna, arXiv:2509.03339 Theorem 3, for the line-graph counterexample (Groetzsch / Mycielski of C5) and Kitaev-Pyatkin for non-representability; the Lean file certifies that published counterexample. Known."
+  },
+  "oeis-a112284": {
+   "date": "2026-11-28",
+   "pr": 34579,
+   "evidence": [
+    "https://oeis.org/A112284",
+    "https://oeis.org/A112283"
+   ],
+   "reason": "Disproof at n=27: the row-27 coefficients first hit 1 at index 27, but 27 is not 1, a prime, or an odd prime square. The entry's own data already shows a(27)=1 (A112283(27)=27), and n=27 is the only mismatch in the printed data, so the source itself refutes the conjecture. Formalization (rows are unique since a(m) mod n is forced) is faithful."
+  },
+  "oeis-a156834": {
+   "date": "2026-11-28",
+   "pr": 34490,
+   "evidence": [
+    "https://github.com/thatnealpatel/proofs/blob/main/Proofs/NumberComplexity/A156834SumPhiPrime.lean",
+    "https://github.com/the-omega-institute/trureturing/blob/dev/D5/S3/Arith/Divisors/AdamsonA156834PrimeEquality.lean"
+   ],
+   "reason": "Same statement (a(n)=sum phi(d) C(d+n/d-2,d-1); a(n)=n iff n prime) is proved in thatnealpatel/proofs (A156834SumPhiPrime.a_eq_self_iff_prime) and in trureturing (AdamsonA156834PrimeEquality, problem file dated 2026-11-17). Known."
+  },
+  "oeis-a166602": {
+   "date": "2026-11-28",
+   "pr": 34403,
+   "evidence": [
+    "https://oeis.org/A067656",
+    "https://oeis.org/A166602"
+   ],
+   "reason": "Cross-referenced A067656 already states both equivalences in its comment/formula lines (Adamchuk 2006): n!B(2n) is an integer iff n+1 and 2n+1 are not prime, and for n>1 iff n(n+1)(2n+1)/6 divides (n!)^2. Mathar's conjecture is exactly the combination; it also follows quickly from von Staudt-Clausen. Known."
+  },
+  "oeis-a323206": {
+   "date": "2026-11-28",
+   "pr": 34528,
+   "evidence": [
+    "https://github.com/the-omega-institute/trureturing/blob/dev/D5/S1/Recurrence/Invariants/LuschnyA323206Parity.lean"
+   ],
+   "reason": "trureturing D5/S1/Recurrence/Invariants/LuschnyA323206Parity.lean (committed 2026-11-25, before the 2026-11-28 site commit) proves Luschny's parity conjecture for the same hypergeometric A(n,k). Known."
+  },
+  "oeis-a363166": {
+   "date": "2026-11-28",
+   "pr": 34465,
+   "evidence": [
+    "https://github.com/thatnealpatel/proofs/blob/main/Proofs/Combinatorics/A363166CountSetsHeap.lean"
+   ],
+   "reason": "thatnealpatel/proofs A363166CountSetsHeap.bouton_eq_triangular_sub_a063915 proves the Gomez Calderon conjecture a(n)=A000217(n)-A063915(n-1) by the same fibre-over-largest-heap argument. Note the site statement defines bouton by that fibre count rather than directly as P-positions (an equivalent rewriting). Known."
+  },
+  "oeis-a164005": {
+   "date": "2026-11-28",
+   "pr": 34495,
+   "evidence": [
+    "https://oeis.org/A164005",
+    "https://oeis.org/A100451"
+   ],
+   "reason": "The entry's own formula line (Greubel) gives a(n)=n(n+4) for n>=3, and A100451 has (n-2)(n+2) for n>=5 (Mathar), so a(n)=A100451(n+2) is immediate from printed formulas; small cases n<=2 agree by data. The underlying fact (row 5 of A163280 is k(k+4) for k>=3) is elementary. Known/trivial."
+  },
+  "oeis-a202303": {
+   "date": "2026-11-28",
+   "pr": 34497,
+   "evidence": [
+    "https://oeis.org/A031149",
+    "https://oeis.org/A023110",
+    "https://oeis.org/A202303"
+   ],
+   "reason": "Robert Israel's 2016 comment in A031149 already classifies all solutions (seven Pell families under M=[19,60;6,19]), from which Barker's recurrence for y^2 follows; A023110 even carries 'The conjectures are all correct; cf. Israel's comment' (Song, Nov 12 2026), and the proof says it follows Israel's families. Statement starts at n=23, correct since Fischer's inserted zero makes n=22 fail (checked on data)."
   }
  },
  "reviewed": "2026-11-28"
