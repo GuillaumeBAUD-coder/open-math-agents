@@ -22,10 +22,6 @@ namespace OMA.R_Erdos1221_erdos_1221_parts_iii_R1
 open Filter Erdos1221
 open scoped ENNReal
 
-/-- Number of the first `n` points in the arc `(x, x + len]` of the circle `ℝ/ℤ`. -/
-noncomputable def cnt (a : ℕ → ℝ) (n : ℕ) (x len : ℝ) : ℕ :=
-  ((Finset.range n).filter fun j => 0 < Int.fract (a j - x) ∧ Int.fract (a j - x) ≤ len).card
-
 /-- Larcher's finite-prefix discrepancy lower bound (the paper's Theorem 4.1). -/
 def H1 : Prop :=
   ∃ L₀ : ℕ, ∀ L : ℕ, L₀ ≤ L → ∀ z : ℕ → ℝ, (∀ i < L, 0 ≤ z i ∧ z i < 1) →
@@ -40,12 +36,12 @@ def H2 : Prop :=
     (∀ᶠ n : ℕ in atTop, ENNReal.ofReal (maxSpan a n r) / ENNReal.ofReal (minSpan a n r) ≤
         ENNReal.ofReal (1 + C / r)) →
     ∀ᶠ n : ℕ in atTop, ∀ x D : ℝ, 0 ≤ D → D ≤ Real.sqrt (A * r) / Real.log (r / A) ^ 2 →
-      |(cnt a n x (D / n) : ℝ) - D| ≤ 3 * A + C₁ * A / Real.log (r / A)
+      |(((Finset.range n).filter fun j => 0 < Int.fract (a j - x) ∧ Int.fract (a j - x) ≤ D / n).card : ℝ) - D| ≤ 3 * A + C₁ * A / Real.log (r / A)
 
 /-- From short-arc regularity to a list with small prefix discrepancies (the paper's Lemma 4.2). -/
 def H3 : Prop :=
   ∀ a : ℕ → ℝ, Function.Injective (fun k ↦ Int.fract (a k)) → ∀ B S : ℝ, 1 ≤ B → 2 ≤ S →
-    (∀ᶠ n : ℕ in atTop, ∀ x D : ℝ, 0 ≤ D → D ≤ S → |(cnt a n x (D / n) : ℝ) - D| ≤ B) →
+    (∀ᶠ n : ℕ in atTop, ∀ x D : ℝ, 0 ≤ D → D ≤ S → |(((Finset.range n).filter fun j => 0 < Int.fract (a j - x) ∧ Int.fract (a j - x) ≤ D / n).card : ℝ) - D| ≤ B) →
     ∃ z : ℕ → ℝ, (∀ i < ⌊S⌋₊, 0 ≤ z i ∧ z i < 1) ∧ ∀ j ≤ ⌊S⌋₊, ∀ u : ℝ, 0 ≤ u → u ≤ 1 →
       |(((Finset.range j).filter fun i => z i < u).card : ℝ) - j * u| ≤ B
 
