@@ -16,87 +16,89 @@ instance (p : ℤ × ℤ) : Decidable (corners p) := by unfold corners; infer_in
 instance (p : ℤ × ℤ) : Decidable (ring p) := by unfold ring; infer_instance
 instance (p : ℤ × ℤ) : Decidable (block p) := by unfold block; infer_instance
 
-/-- The local step, written out on the five relevant cells. -/
-lemma step_eq (f : ℤ × ℤ → Bool) (x y : ℤ) :
-    rule (f (x, y)) ((nbrs (x, y)).countP f) =
-      rule (f (x, y)) ((if f (x + 1, y) then 1 else 0) + (if f (x - 1, y) then 1 else 0) +
-        (if f (x, y + 1) then 1 else 0) + (if f (x, y - 1) then 1 else 0)) := by
-  simp only [nbrs, List.countP_cons, List.countP_nil]
-  congr 1
-  ring_nf
-
 def origin (p : ℤ × ℤ) : Prop := p.1 = 0 ∧ p.2 = 0
 
 instance (p : ℤ × ℤ) : Decidable (origin p) := by unfold origin; infer_instance
 
-lemma s0 (p : ℤ × ℤ) : state 0 p = decide (¬ ¬ origin p) := by
+lemma s0 (p : ℤ × ℤ) : state 0 p = decide (origin p) := by
   obtain ⟨x, y⟩ := p
   show decide ((x, y) = (0, 0)) = _
   exact decide_eq_decide.mpr (by unfold origin; simp)
 
+private def Outside (x y : ℤ) : Prop :=
+  ¬ origin (x, y) ∧ ¬ plus (x, y) ∧ ¬ corners (x, y) ∧ ¬ ring (x, y) ∧ ¬ block (x, y)
+
+private lemma outside (x y : ℤ) (h : x < -1 ∨ 1 < x ∨ y < -1 ∨ 1 < y) : Outside x y := by
+  simp only [Outside, origin, plus, corners, ring, block]
+  omega
+
+private lemma verifyGrid (x y : ℤ) {P : ℤ → ℤ → Prop}
+    (inside : ∀ i j : Fin 5, P ((i : ℕ) - (2 : ℤ)) ((j : ℕ) - (2 : ℤ)))
+    (far : Outside x y ∧ Outside (x + 1) y ∧ Outside (x - 1) y ∧
+      Outside x (y + 1) ∧ Outside x (y - 1) → P x y) : P x y := by
+  by_cases h : -2 ≤ x ∧ x ≤ 2 ∧ -2 ≤ y ∧ y ≤ 2
+  · let i : Fin 5 := ⟨(x + 2).toNat, by omega⟩
+    let j : Fin 5 := ⟨(y + 2).toNat, by omega⟩
+    have hi : (i : ℕ) - (2 : ℤ) = x := by dsimp [i]; omega
+    have hj : (j : ℕ) - (2 : ℤ) = y := by dsimp [j]; omega
+    simpa only [hi, hj] using inside i j
+  · exact far ⟨outside _ _ (by omega), outside _ _ (by omega), outside _ _ (by omega),
+      outside _ _ (by omega), outside _ _ (by omega)⟩
+
 lemma s1 (p : ℤ × ℤ) : state 1 p = decide (¬ plus p) := by
   obtain ⟨x, y⟩ := p
   show rule (state 0 (x, y)) ((nbrs (x, y)).countP (fun q => state 0 q)) = _
-  rw [show (fun q => state 0 q) = (fun q => decide (¬ ¬ origin q)) from funext s0, s0,
-    step_eq (fun q => decide (¬ ¬ origin q))]
-  by_cases h1 : origin (x, y) <;> by_cases h2 : origin (x + 1, y) <;>
-    by_cases h3 : origin (x - 1, y) <;> by_cases h4 : origin (x, y + 1) <;>
-    by_cases h5 : origin (x, y - 1) <;> by_cases h6 : plus (x, y) <;>
-    simp only [h1, h2, h3, h4, h5, h6, decide_true, decide_false, not_true, not_false_eq_true] <;>
-    first
-      | decide
-      | (exfalso; unfold origin plus at *; simp only at *; omega)
+  rw [show (fun q => state 0 q) = (fun q => decide (origin q)) from funext s0, s0]
+  apply verifyGrid x y
+  · decide
+  · intro h
+    unfold Outside at h
+    simp [nbrs, h]
+    decide
 
 lemma step_plus_corners (p : ℤ × ℤ) :
     rule (decide (¬ plus p)) ((nbrs p).countP (fun q => decide (¬ plus q))) =
       decide (¬ corners p) := by
   obtain ⟨x, y⟩ := p
-  rw [step_eq (fun q => decide (¬ plus q))]
-  by_cases h1 : plus (x, y) <;> by_cases h2 : plus (x + 1, y) <;> by_cases h3 : plus (x - 1, y) <;>
-    by_cases h4 : plus (x, y + 1) <;> by_cases h5 : plus (x, y - 1) <;>
-    by_cases h6 : corners (x, y) <;>
-    simp only [h1, h2, h3, h4, h5, h6, decide_true, decide_false, not_true, not_false_eq_true] <;>
-    first
-      | decide
-      | (exfalso; unfold plus corners at *; simp only at *; omega)
+  apply verifyGrid x y
+  · decide
+  · intro h
+    unfold Outside at h
+    simp [nbrs, h]
+    decide
 
 lemma step_corners_ring (p : ℤ × ℤ) :
     rule (decide (¬ corners p)) ((nbrs p).countP (fun q => decide (¬ corners q))) =
       decide (¬ ring p) := by
   obtain ⟨x, y⟩ := p
-  rw [step_eq (fun q => decide (¬ corners q))]
-  by_cases h1 : corners (x, y) <;> by_cases h2 : corners (x + 1, y) <;>
-    by_cases h3 : corners (x - 1, y) <;> by_cases h4 : corners (x, y + 1) <;>
-    by_cases h5 : corners (x, y - 1) <;> by_cases h6 : ring (x, y) <;>
-    simp only [h1, h2, h3, h4, h5, h6, decide_true, decide_false, not_true, not_false_eq_true] <;>
-    first
-      | decide
-      | (exfalso; unfold corners ring at *; simp only at *; omega)
+  apply verifyGrid x y
+  · decide
+  · intro h
+    unfold Outside at h
+    simp [nbrs, h]
+    decide
 
 lemma step_ring_block (p : ℤ × ℤ) :
     rule (decide (¬ ring p)) ((nbrs p).countP (fun q => decide (¬ ring q))) =
       decide (¬ block p) := by
   obtain ⟨x, y⟩ := p
-  rw [step_eq (fun q => decide (¬ ring q))]
-  by_cases h1 : ring (x, y) <;> by_cases h2 : ring (x + 1, y) <;> by_cases h3 : ring (x - 1, y) <;>
-    by_cases h4 : ring (x, y + 1) <;> by_cases h5 : ring (x, y - 1) <;> by_cases h6 : block (x, y) <;>
-    simp only [h1, h2, h3, h4, h5, h6, decide_true, decide_false, not_true, not_false_eq_true] <;>
-    first
-      | decide
-      | (exfalso; unfold ring block at *; simp only at *; omega)
+  apply verifyGrid x y
+  · decide
+  · intro h
+    unfold Outside at h
+    simp [nbrs, h]
+    decide
 
 lemma step_block_ring (p : ℤ × ℤ) :
     rule (decide (¬ block p)) ((nbrs p).countP (fun q => decide (¬ block q))) =
       decide (¬ ring p) := by
   obtain ⟨x, y⟩ := p
-  rw [step_eq (fun q => decide (¬ block q))]
-  by_cases h1 : block (x, y) <;> by_cases h2 : block (x + 1, y) <;>
-    by_cases h3 : block (x - 1, y) <;> by_cases h4 : block (x, y + 1) <;>
-    by_cases h5 : block (x, y - 1) <;> by_cases h6 : ring (x, y) <;>
-    simp only [h1, h2, h3, h4, h5, h6, decide_true, decide_false, not_true, not_false_eq_true] <;>
-    first
-      | decide
-      | (exfalso; unfold ring block at *; simp only at *; omega)
+  apply verifyGrid x y
+  · decide
+  · intro h
+    unfold Outside at h
+    simp [nbrs, h]
+    decide
 
 lemma state_succ (t : ℕ) (p : ℤ × ℤ) :
     state (t + 1) p = rule (state t p) ((nbrs p).countP (fun q => state t q)) := rfl

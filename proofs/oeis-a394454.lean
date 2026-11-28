@@ -1,8 +1,5 @@
 import OMAStatements.S_oeis_a394454
-import Mathlib.Algebra.Order.BigOperators.Group.Finset
-import Mathlib.Data.Nat.Prime.Infinite
-import Mathlib.Order.Interval.Finset.Nat
-import Mathlib.Tactic
+import Mathlib
 
 open OMA.S_oeis_a394454
 

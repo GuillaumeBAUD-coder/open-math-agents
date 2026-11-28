@@ -3,8 +3,6 @@ import OMAStatements.S_oeis_a101917
 open OMA.S_oeis_a101917 PowerSeries
 
 /-! The degree-57 coefficient contradicts Stephan's proposed identity. -/
-set_option maxRecDepth 20000 in
-set_option maxHeartbeats 4000000 in
 theorem OMA.disproof : ¬ (type_of% @OMA.S_oeis_a101917.main) := by
   intro h
   have h56 : coeff 57 (series * X) = coeff 56 series := by

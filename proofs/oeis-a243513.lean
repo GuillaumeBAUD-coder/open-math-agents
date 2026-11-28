@@ -1,763 +1,310 @@
 import OMAStatements.S_oeis_a243513
+import Mathlib
 
-namespace OMA.P_oeis_a243513
-open Classical
+/-!
+Once two successive letters differ, every later letter differs from the two before it. A valid
+word is read letter by letter; its state is the last two letters together with which of the
+symbols 0, 1, 2, 3 occur. Valid states fall into four classes: all zeros, largest symbol 1,
+largest symbol 2, largest symbol at least 3, and the number of continuations from one class to
+another depends only on the classes. The class counts are 1, 1, n and (3^n - 2n - 1)/4 for words
+of length n + 2, which gives 4 * count n = 7 + 3^n + 2n and then the generating function.
+-/
 
-private def inZ {m : ℕ} (w : Fin m → Fin 5) : Prop :=
-  ∀ i, (w i).val = 0
+namespace R243513
+open OMA.S_oeis_a243513
 
-private def inS1 {m : ℕ} (w : Fin m → Fin 5) : Prop :=
-  (∃ i, (w i).val = 1) ∧ ∀ i, (w i).val ≤ 1
+instance decValid (L : ℕ) : DecidablePred (@validWord L) := fun w => by
+  unfold validWord; infer_instance
 
-private def inS2 {m : ℕ} (w : Fin m → Fin 5) : Prop :=
-  (∃ i, (w i).val = 2) ∧ ∀ i, (w i).val ≤ 2
+abbrev St := Fin 5 × Fin 5 × Bool × Bool × Bool × Bool
 
-private def inS34 {m : ℕ} (w : Fin m → Fin 5) : Prop :=
-  ∃ i, 3 ≤ (w i).val
+def info {L : ℕ} (w : Fin (L + 1) → Fin 5) : St :=
+  (w ⟨L - 1, by omega⟩, w (Fin.last L), decide (∃ j, (w j).val = 0), decide (∃ j, (w j).val = 1),
+    decide (∃ j, (w j).val = 2), decide (∃ j, (w j).val = 3))
 
-private lemma validWord_zero {n : ℕ} {w : Fin (n + 1) → Fin 5}
-    (hw : OMA.S_oeis_a243513.validWord w) : (w 0).val = 0 := by
-  by_contra h0
-  obtain ⟨j, hj, _⟩ := hw.1 0 (Nat.pos_of_ne_zero h0)
-  have hj0 : j.val < 0 := hj
-  omega
+def ok : St → Fin 5 → Bool
+  | (a, b, r0, r1, r2, r3), x => decide ((0 < x.val → (x.val = 1 ∧ r0 = true) ∨
+      (x.val = 2 ∧ r1 = true) ∨ (x.val = 3 ∧ r2 = true) ∨ (x.val = 4 ∧ r3 = true)) ∧
+      (a ≠ b → x ≠ a ∧ x ≠ b))
 
-private lemma validWord_exists_of_le {m : ℕ} {w : Fin m → Fin 5}
-    (hw : OMA.S_oeis_a243513.validWord w) :
-    ∀ d : ℕ, ∀ (k : ℕ) (i : Fin m), (w i).val = k + d →
-      ∃ j : Fin m, j ≤ i ∧ (w j).val = k := by
-  intro d
-  induction d with
-  | zero =>
-    intro k i hi
-    exact ⟨i, le_rfl, by simpa using hi⟩
-  | succ d ih =>
-    intro k i hi
-    have hpos : 0 < (w i).val := by omega
-    obtain ⟨j', hj'i, hj'val⟩ := hw.1 i hpos
-    have hkd : (w j').val = k + d := by omega
-    obtain ⟨j, hjj', hjval⟩ := ih k j' hkd
-    exact ⟨j, le_trans hjj' (le_of_lt hj'i), hjval⟩
+def step : St → Fin 5 → St
+  | (_, b, r0, r1, r2, r3), x => (b, x, r0 || decide (x.val = 0), r1 || decide (x.val = 1),
+      r2 || decide (x.val = 2), r3 || decide (x.val = 3))
 
-private lemma validWord_last_ne {n : ℕ} {w : Fin (n + 2) → Fin 5}
-    (hw : OMA.S_oeis_a243513.validWord w) (hne : ∃ i, (w i).val ≠ 0) :
-    w ⟨n, by omega⟩ ≠ w ⟨n + 1, by omega⟩ := by
-  have step : ∀ k : ℕ, ∀ hk : k < n + 2, 1 ≤ k →
-      (∃ i : Fin (n + 2), i.val ≤ k ∧ (w i).val ≠ 0) →
-      w ⟨k - 1, by omega⟩ ≠ w ⟨k, hk⟩ := by
-    intro k
-    induction k with
-    | zero => intro _ h1; omega
-    | succ k ih =>
-      intro hk _ hne_k
-      by_cases hprev : ∀ i : Fin (n + 2), i.val ≤ k → (w i).val = 0
-      · obtain ⟨i, hik, hi0⟩ := hne_k
-        have hik_eq : i.val = k + 1 := by
-          by_contra hlt
-          exact hi0 (hprev i (by omega))
-        have hw_k : (w ⟨k, by omega⟩).val = 0 := hprev ⟨k, by omega⟩ (by dsimp; omega)
-        have hw_k1 : (w ⟨k + 1, hk⟩).val ≠ 0 := by
-          have hidx : i = ⟨k + 1, hk⟩ := Fin.ext hik_eq
-          rw [← hidx]
-          exact hi0
-        intro heq
-        apply hw_k1
-        have hval := congrArg Fin.val heq
-        dsimp at hval
-        omega
-      · have hk1 : 1 ≤ k := by
-          by_contra hk0
-          apply hprev
-          intro i hik
-          have hi0 : i = 0 := Fin.ext (by rw [Fin.val_zero]; omega)
-          subst hi0
-          exact validWord_zero hw
-        have hex : ∃ i : Fin (n + 2), i.val ≤ k ∧ (w i).val ≠ 0 := by
-          by_contra hnone
-          apply hprev
-          intro i hik
-          by_contra hi0
-          exact hnone ⟨i, hik, hi0⟩
-        have hih := ih (by omega) hk1 hex
-        have hj_eq : (⟨k, by omega⟩ : Fin (n + 2)).val = (⟨k - 1, by omega⟩ : Fin (n + 2)).val + 1 := by
-          dsimp; omega
-        have hk_eq : (⟨k + 1, hk⟩ : Fin (n + 2)).val = (⟨k, by omega⟩ : Fin (n + 2)).val + 1 := rfl
-        have h2 := hw.2 ⟨k - 1, by omega⟩ ⟨k, by omega⟩ ⟨k + 1, hk⟩ hj_eq hk_eq hih
-        exact h2.2.symm
-  exact step (n + 1) (by omega) (by omega) (by
-    obtain ⟨i, hi⟩ := hne
-    exact ⟨i, by omega, hi⟩)
+def cls : St → ℕ
+  | (a, b, _, _, r2, r3) => if a = b then 0 else if r3 then 3 else if r2 then 2 else 1
 
-private lemma validWord_init {m : ℕ} {w : Fin (m + 1) → Fin 5}
-    (hw : OMA.S_oeis_a243513.validWord w) : OMA.S_oeis_a243513.validWord (Fin.init w) := by
-  refine ⟨?_, ?_⟩
-  · intro i hi
-    obtain ⟨j, hji, hjval⟩ := hw.1 i.castSucc hi
-    let j' : Fin m := ⟨j.val, by have := j.isLt; have := i.isLt; omega⟩
-    have hj'_eq : j'.castSucc = j := Fin.ext rfl
-    refine ⟨j', ?_, ?_⟩
-    · change j'.val < i.val; exact hji
-    · dsimp only [Fin.init]; rw [hj'_eq]; exact hjval
-  · intro i j k hij hjk hne
-    exact hw.2 i.castSucc j.castSucc k.castSucc hij hjk hne
+def good : St → Bool
+  | (a, b, r0, r1, r2, r3) => decide (r0 = true ∧
+      ((a = 0 ∧ b = 0 ∧ r1 = false ∧ r2 = false ∧ r3 = false) ∨
+       (a = 0 ∧ b = 1 ∧ r1 = true ∧ r2 = false ∧ r3 = false) ∨
+       (a ≠ b ∧ a.val ≤ 2 ∧ b.val ≤ 2 ∧ r1 = true ∧ r2 = true ∧ r3 = false) ∨
+       (a ≠ b ∧ r1 = true ∧ r2 = true ∧ r3 = true)))
 
-private lemma validWord_snoc_iff {n : ℕ} (u : Fin (n + 2) → Fin 5) (c : Fin 5) :
-    OMA.S_oeis_a243513.validWord (Fin.snoc u c) ↔
-      OMA.S_oeis_a243513.validWord u ∧
-      (0 < c.val → ∃ j : Fin (n + 2), (u j).val + 1 = c.val) ∧
-      (u ⟨n, by omega⟩ ≠ u ⟨n + 1, by omega⟩ →
-        c ≠ u ⟨n, by omega⟩ ∧ c ≠ u ⟨n + 1, by omega⟩) := by
+def tm (k k' : ℕ) : ℕ :=
+  if k = 0 then (if k' = 0 ∨ k' = 1 then 1 else 0)
+  else if k = 1 then (if k' = 2 then 1 else 0)
+  else if k = 2 then (if k' = 2 ∨ k' = 3 then 1 else 0)
+  else if k' = 3 then 3 else 0
+
+theorem good_step : ∀ t : St, good t = true → ∀ x : Fin 5, ok t x = true →
+    good (step t x) = true := by
+  rintro ⟨a, b, r0, r1, r2, r3⟩
+  revert a b r0 r1 r2 r3
+  decide +kernel
+
+theorem trans_count : ∀ t : St, good t = true → ∀ k' < 4,
+    (∑ x : Fin 5, if ok t x = true ∧ cls (step t x) = k' then 1 else 0) = tm (cls t) k' := by
+  rintro ⟨a, b, r0, r1, r2, r3⟩
+  simp only [Fin.sum_univ_five]
+  revert a b r0 r1 r2 r3
+  decide +kernel
+
+theorem cls_lt : ∀ t : St, cls t < 4 := by
+  rintro ⟨a, b, r0, r1, r2, r3⟩
+  simp only [cls]
+  split_ifs <;> omega
+
+theorem snoc_val {L : ℕ} (w : Fin (L + 1) → Fin 5) (x : Fin 5) (i : Fin (L + 2)) (j : Fin (L + 1))
+    (h : i.val = j.val) : (Fin.snoc w x : Fin (L + 2) → Fin 5) i = w j := by
+  obtain rfl : i = Fin.castSucc j := Fin.ext h
+  exact Fin.snoc_castSucc ..
+
+theorem snoc_val' {L : ℕ} (w : Fin (L + 1) → Fin 5) (x : Fin 5) (i : Fin (L + 2))
+    (h : i.val = L + 1) : (Fin.snoc w x : Fin (L + 2) → Fin 5) i = x := by
+  obtain rfl : i = Fin.last (L + 1) := Fin.ext h
+  exact Fin.snoc_last ..
+
+theorem info_snoc {L : ℕ} (w : Fin (L + 1) → Fin 5) (x : Fin 5) :
+    info (Fin.snoc w x : Fin (L + 2) → Fin 5) = step (info w) x := by
+  have e2 : ∀ v, (∃ j, ((Fin.snoc w x : Fin (L + 2) → Fin 5) j).val = v) ↔
+      (∃ j, (w j).val = v) ∨ x.val = v := fun v =>
+    Fin.exists_fin_succ'.trans (by simp only [Fin.snoc_castSucc, Fin.snoc_last])
+  simp only [info, step, Prod.mk.injEq, e2, Bool.decide_or, Fin.snoc_last, and_true]
+  exact snoc_val w x _ _ (by simp)
+
+theorem rg_iff {ι : Type} (g : ι → ℕ) (m : ℕ) (hm : m < 5) :
+    (0 < m → (m = 1 ∧ ∃ j, g j = 0) ∨ (m = 2 ∧ ∃ j, g j = 1) ∨ (m = 3 ∧ ∃ j, g j = 2) ∨
+      (m = 4 ∧ ∃ j, g j = 3)) ↔ (0 < m → ∃ j, g j + 1 = m) := by
+  constructor
+  · intro h hm0
+    rcases h hm0 with ⟨h1, j, hj⟩ | ⟨h1, j, hj⟩ | ⟨h1, j, hj⟩ | ⟨h1, j, hj⟩ <;> exact ⟨j, by omega⟩
+  · intro h hm0
+    obtain ⟨j, hj⟩ := h hm0
+    have : m = 1 ∨ m = 2 ∨ m = 3 ∨ m = 4 := by omega
+    rcases this with h1 | h1 | h1 | h1
+    · exact Or.inl ⟨h1, j, by omega⟩
+    · exact Or.inr (Or.inl ⟨h1, j, by omega⟩)
+    · exact Or.inr (Or.inr (Or.inl ⟨h1, j, by omega⟩))
+    · exact Or.inr (Or.inr (Or.inr ⟨h1, j, by omega⟩))
+
+theorem valid_snoc {L : ℕ} (w : Fin (L + 1) → Fin 5) (x : Fin 5) :
+    validWord (Fin.snoc w x : Fin (L + 2) → Fin 5) ↔ validWord w ∧ ok (info w) x = true := by
+  have key1 : (∀ i : Fin (L + 2), 0 < ((Fin.snoc w x : Fin (L + 2) → Fin 5) i).val →
+      ∃ j, j < i ∧ ((Fin.snoc w x : Fin (L + 2) → Fin 5) j).val + 1 =
+        ((Fin.snoc w x : Fin (L + 2) → Fin 5) i).val) ↔
+      (∀ i : Fin (L + 1), 0 < (w i).val → ∃ j, j < i ∧ (w j).val + 1 = (w i).val) ∧
+      (0 < x.val → ∃ j, (w j).val + 1 = x.val) := by
+    constructor
+    · intro h
+      refine ⟨fun i hi => ?_, fun hx => ?_⟩
+      · have hi' : 0 < ((Fin.snoc w x : Fin (L + 2) → Fin 5) (Fin.castSucc i)).val := by
+          rwa [Fin.snoc_castSucc]
+        obtain ⟨j, hj1, hj2⟩ := h _ hi'
+        have hj3 := Fin.lt_def.mp hj1
+        have hj : j.val < L + 1 := by
+          have := i.isLt; simp only [Fin.val_castSucc] at hj3; omega
+        refine ⟨⟨j.val, hj⟩, Fin.lt_def.mpr ?_, ?_⟩
+        · simpa using hj3
+        · rwa [snoc_val w x j ⟨j.val, hj⟩ rfl, Fin.snoc_castSucc] at hj2
+      · have hx' : 0 < ((Fin.snoc w x : Fin (L + 2) → Fin 5) (Fin.last _)).val := by
+          rwa [Fin.snoc_last]
+        obtain ⟨j, hj1, hj2⟩ := h _ hx'
+        have hj : j.val < L + 1 := by
+          have := Fin.lt_def.mp hj1; simpa using this
+        refine ⟨⟨j.val, hj⟩, ?_⟩
+        rwa [snoc_val w x j ⟨j.val, hj⟩ rfl, Fin.snoc_last] at hj2
+    · rintro ⟨h1, h2⟩ i hi
+      by_cases hiL : i.val = L + 1
+      · rw [snoc_val' w x i hiL] at hi ⊢
+        obtain ⟨j, hj⟩ := h2 hi
+        refine ⟨Fin.castSucc j, Fin.lt_def.mpr ?_, ?_⟩
+        · have := j.isLt; simp only [Fin.val_castSucc]; omega
+        · rwa [Fin.snoc_castSucc]
+      · have hi' : i.val < L + 1 := by have := i.isLt; omega
+        rw [snoc_val w x i ⟨i.val, hi'⟩ rfl] at hi ⊢
+        obtain ⟨j, hj1, hj2⟩ := h1 _ hi
+        refine ⟨Fin.castSucc j, Fin.lt_def.mpr ?_, ?_⟩
+        · have := Fin.lt_def.mp hj1; simpa using this
+        · rwa [Fin.snoc_castSucc]
+  have key2 : (∀ i j k : Fin (L + 2), j.val = i.val + 1 → k.val = j.val + 1 →
+      (Fin.snoc w x : Fin (L + 2) → Fin 5) i ≠ (Fin.snoc w x : Fin (L + 2) → Fin 5) j →
+      (Fin.snoc w x : Fin (L + 2) → Fin 5) k ≠ (Fin.snoc w x : Fin (L + 2) → Fin 5) i ∧
+      (Fin.snoc w x : Fin (L + 2) → Fin 5) k ≠ (Fin.snoc w x : Fin (L + 2) → Fin 5) j) ↔
+      (∀ i j k : Fin (L + 1), j.val = i.val + 1 → k.val = j.val + 1 → w i ≠ w j →
+        w k ≠ w i ∧ w k ≠ w j) ∧
+      (w ⟨L - 1, by omega⟩ ≠ w (Fin.last L) →
+        x ≠ w ⟨L - 1, by omega⟩ ∧ x ≠ w (Fin.last L)) := by
+    constructor
+    · intro h
+      refine ⟨fun i j k hij hjk hne => ?_, fun hne => ?_⟩
+      · have := h (Fin.castSucc i) (Fin.castSucc j) (Fin.castSucc k) (by simpa using hij)
+          (by simpa using hjk)
+        simp only [Fin.snoc_castSucc] at this
+        exact this hne
+      · have hL : 1 ≤ L := by
+          by_contra h0
+          obtain rfl : L = 0 := by omega
+          exact hne rfl
+        have := h ⟨L - 1, by omega⟩ ⟨L, by omega⟩ (Fin.last _) (by show L = L - 1 + 1; omega) rfl
+        rw [snoc_val w x ⟨L - 1, by omega⟩ ⟨L - 1, by omega⟩ rfl,
+          snoc_val w x ⟨L, by omega⟩ (Fin.last L) rfl, Fin.snoc_last] at this
+        exact this hne
+    · rintro ⟨h1, h2⟩ i j k hij hjk
+      by_cases hk : k.val = L + 1
+      · rw [snoc_val' w x k hk, snoc_val w x i ⟨L - 1, by omega⟩ (by show i.val = L - 1; omega),
+          snoc_val w x j (Fin.last L) (by show j.val = L; omega)]
+        exact h2
+      · have := k.isLt
+        rw [snoc_val w x i ⟨i.val, by omega⟩ rfl, snoc_val w x j ⟨j.val, by omega⟩ rfl,
+          snoc_val w x k ⟨k.val, by omega⟩ rfl]
+        exact h1 _ _ _ hij hjk
+  have hC : ok (info w) x = true ↔ (0 < x.val → ∃ j, (w j).val + 1 = x.val) ∧
+      (w ⟨L - 1, by omega⟩ ≠ w (Fin.last L) →
+        x ≠ w ⟨L - 1, by omega⟩ ∧ x ≠ w (Fin.last L)) := by
+    simp only [ok, info, decide_eq_true_eq]
+    exact and_congr_left' (rg_iff (fun j => (w j).val) x.val x.isLt)
+  constructor
+  · rintro ⟨h1, h2⟩
+    obtain ⟨a1, a2⟩ := key1.1 h1
+    obtain ⟨b1, b2⟩ := key2.1 h2
+    exact ⟨⟨a1, b1⟩, hC.2 ⟨a2, b2⟩⟩
+  · rintro ⟨⟨a1, b1⟩, hc⟩
+    obtain ⟨a2, b2⟩ := hC.1 hc
+    exact ⟨key1.2 ⟨a1, a2⟩, key2.2 ⟨b1, b2⟩⟩
+
+theorem valid0 (w : Fin 1 → Fin 5) : validWord w ↔ w = fun _ => 0 := by
   constructor
   · intro hw
-    have hinit : OMA.S_oeis_a243513.validWord u := by
-      have h0 := validWord_init (m := n + 2) (w := (Fin.snoc u c : Fin (n + 3) → Fin 5)) hw
-      rwa [Fin.init_snoc] at h0
-    refine ⟨hinit, ?_, ?_⟩
-    · intro hc
-      obtain ⟨j, hj, hjval⟩ := hw.1 (Fin.last (n + 2)) (by simpa [Fin.snoc_last] using hc)
-      have hj_lt : j.val < n + 2 := by
-        change j.val < (Fin.last (n + 2)).val at hj
-        rw [Fin.val_last] at hj
-        exact hj
-      let j' : Fin (n + 2) := ⟨j.val, hj_lt⟩
-      have hj_eq : j = j'.castSucc := Fin.ext rfl
-      refine ⟨j', ?_⟩
-      rw [hj_eq, Fin.snoc_castSucc, Fin.snoc_last] at hjval
-      exact hjval
-    · intro hne
-      let i0 : Fin (n + 2) := ⟨n, by omega⟩
-      let j0 : Fin (n + 2) := ⟨n + 1, by omega⟩
-      have h2 := hw.2 i0.castSucc j0.castSucc (Fin.last (n + 2))
-        (by simp [i0, j0]) (by simp [j0, Fin.val_last])
-        (by simpa [Fin.snoc_castSucc] using hne)
-      simpa [Fin.snoc_castSucc, Fin.snoc_last] using h2
-  · rintro ⟨hu, h1, h2⟩
-    refine ⟨?_, ?_⟩
-    · intro i hi
-      by_cases hil : i.val < n + 2
-      · let i' : Fin (n + 2) := ⟨i.val, hil⟩
-        have hieq : i = i'.castSucc := Fin.ext rfl
-        rw [hieq, Fin.snoc_castSucc] at hi
-        obtain ⟨j, hji, hjval⟩ := hu.1 i' hi
-        refine ⟨j.castSucc, hji, ?_⟩
-        rw [hieq, Fin.snoc_castSucc, Fin.snoc_castSucc]
-        exact hjval
-      · have hieq : i = Fin.last (n + 2) :=
-          Fin.ext (by have := i.isLt; rw [Fin.val_last]; omega)
-        subst hieq
-        rw [Fin.snoc_last] at hi ⊢
-        obtain ⟨j, hjval⟩ := h1 hi
-        refine ⟨j.castSucc, ?_, ?_⟩
-        · change j.val < (Fin.last (n + 2)).val
-          rw [Fin.val_last]
-          exact j.isLt
-        · rw [Fin.snoc_castSucc]
-          exact hjval
-    · intro i j k hij hjk hne
-      by_cases hkl : k.val < n + 2
-      · let i' : Fin (n + 2) := ⟨i.val, by omega⟩
-        let j' : Fin (n + 2) := ⟨j.val, by omega⟩
-        let k' : Fin (n + 2) := ⟨k.val, hkl⟩
-        have hieq : i = i'.castSucc := Fin.ext rfl
-        have hjeq : j = j'.castSucc := Fin.ext rfl
-        have hkeq : k = k'.castSucc := Fin.ext rfl
-        have hne' : u i' ≠ u j' := by
-          rw [hieq, hjeq, Fin.snoc_castSucc, Fin.snoc_castSucc] at hne
-          exact hne
-        rw [hieq, hjeq, hkeq, Fin.snoc_castSucc, Fin.snoc_castSucc, Fin.snoc_castSucc]
-        exact hu.2 i' j' k' hij hjk hne'
-      · let i0 : Fin (n + 2) := ⟨n, by omega⟩
-        let j0 : Fin (n + 2) := ⟨n + 1, by omega⟩
-        have hkeq : k = Fin.last (n + 2) :=
-          Fin.ext (by have := k.isLt; rw [Fin.val_last]; omega)
-        have hkj : k.val = n + 2 := by rw [hkeq, Fin.val_last]
-        have hieq : i = i0.castSucc := Fin.ext (by dsimp [i0]; omega)
-        have hjeq : j = j0.castSucc := Fin.ext (by dsimp [j0]; omega)
-        have hne' : u i0 ≠ u j0 := by
-          rw [hieq, hjeq, Fin.snoc_castSucc, Fin.snoc_castSucc] at hne
-          exact hne
-        rw [hieq, hjeq, hkeq, Fin.snoc_castSucc, Fin.snoc_castSucc, Fin.snoc_last]
-        exact h2 hne'
+    funext i
+    obtain rfl : i = 0 := Subsingleton.elim i 0
+    have : (w 0).val = 0 := by
+      by_contra hne
+      obtain ⟨j, hj, -⟩ := hw.1 0 (Nat.pos_of_ne_zero hne)
+      exact Fin.not_lt_zero j hj
+    exact Fin.ext this
+  · rintro rfl
+    exact ⟨fun i hi => absurd hi (lt_irrefl 0), fun i j k hij _ => absurd hij (by
+      have := j.isLt; omega)⟩
 
-private noncomputable def W (n : ℕ) : Finset (Fin (n + 2) → Fin 5) :=
-  Finset.univ.filter OMA.S_oeis_a243513.validWord
+theorem good_info : ∀ {L : ℕ} {w : Fin (L + 1) → Fin 5}, validWord w → good (info w) = true
+  | 0, w, hw => by
+      obtain rfl := (valid0 w).1 hw
+      decide
+  | L + 1, w, hw => by
+      obtain ⟨v, y, rfl⟩ : ∃ v y, w = (Fin.snoc v y : Fin (L + 2) → Fin 5) :=
+        ⟨Fin.init w, w (Fin.last _), (Fin.snoc_init_self w).symm⟩
+      rw [valid_snoc] at hw
+      rw [info_snoc]
+      exact good_step _ (good_info hw.1) _ hw.2
 
-private noncomputable def Z (n : ℕ) : Finset (Fin (n + 2) → Fin 5) := (W n).filter inZ
-private noncomputable def S1 (n : ℕ) : Finset (Fin (n + 2) → Fin 5) := (W n).filter inS1
-private noncomputable def S2 (n : ℕ) : Finset (Fin (n + 2) → Fin 5) := (W n).filter inS2
-private noncomputable def S34 (n : ℕ) : Finset (Fin (n + 2) → Fin 5) := (W n).filter inS34
+def N (L k : ℕ) : ℕ :=
+  ∑ w : Fin (L + 1) → Fin 5, if validWord w ∧ cls (info w) = k then 1 else 0
 
-private lemma count_eq_W_card (n : ℕ) : OMA.S_oeis_a243513.count n = (W n).card := by
-  rw [OMA.S_oeis_a243513.count, Nat.card_eq_fintype_card, Fintype.card_subtype]
-  rfl
+theorem sum_cls (L : ℕ) (f : ℕ → ℕ) :
+    (∑ w : Fin (L + 1) → Fin 5, if validWord w then f (cls (info w)) else 0) =
+      ∑ k ∈ Finset.range 4, f k * N L k := by
+  simp only [N, Finset.mul_sum]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl (fun w _ => ?_)
+  by_cases hw : validWord w
+  · simp only [hw, true_and, ↓reduceIte, mul_ite, mul_one, mul_zero]
+    rw [Finset.sum_ite_eq]
+    simp [cls_lt]
+  · simp [hw]
 
-private lemma W_card_split (n : ℕ) :
-    (W n).card = (Z n).card + (S1 n).card + (S2 n).card + (S34 n).card := by
-  have huniv : ∀ w : Fin (n + 2) → Fin 5,
-      inZ w ∨ inS1 w ∨ inS2 w ∨ inS34 w := by
+theorem N_succ (L k' : ℕ) (hk : k' < 4) : N (L + 1) k' = ∑ k ∈ Finset.range 4, tm k k' * N L k := by
+  rw [← sum_cls L (fun k => tm k k')]
+  have e : N (L + 1) k' = ∑ p : Fin 5 × (Fin (L + 1) → Fin 5),
+      if validWord (Fin.snoc p.2 p.1 : Fin (L + 2) → Fin 5) ∧
+        cls (info (Fin.snoc p.2 p.1 : Fin (L + 2) → Fin 5)) = k' then 1 else 0 :=
+    (Equiv.sum_comp (Fin.snocEquiv fun _ => Fin 5) _).symm
+  rw [e, Fintype.sum_prod_type, Finset.sum_comm]
+  refine Finset.sum_congr rfl (fun w _ => ?_)
+  simp only [valid_snoc, info_snoc]
+  by_cases hw : validWord w
+  · simp only [hw, true_and, ↓reduceIte]
+    exact trans_count (info w) (good_info hw) k' hk
+  · simp only [hw, false_and, ↓reduceIte, Finset.sum_const_zero]
+
+theorem N_zero (k : ℕ) : N 0 k = if k = 0 then 1 else 0 := by
+  have hc : cls (info (fun _ => 0 : Fin 1 → Fin 5)) = 0 := by decide
+  have h : ∀ w : Fin 1 → Fin 5, (validWord w ∧ cls (info w) = k) ↔ (w = fun _ => 0) ∧ 0 = k := by
     intro w
-    by_cases h3 : ∃ i, 3 ≤ (w i).val
-    · right; right; right; exact h3
-    · have hle2 : ∀ i, (w i).val ≤ 2 := by
-        intro i
-        by_contra hgt
-        exact h3 ⟨i, by omega⟩
-      by_cases h2 : ∃ i, (w i).val = 2
-      · right; right; left; exact ⟨h2, hle2⟩
-      · have hle1 : ∀ i, (w i).val ≤ 1 := by
-          intro i
-          by_contra hgt
-          have : (w i).val = 2 := by have := hle2 i; omega
-          exact h2 ⟨i, this⟩
-        by_cases h1 : ∃ i, (w i).val = 1
-        · right; left; exact ⟨h1, hle1⟩
-        · left
-          intro i
-          by_contra h0
-          have : (w i).val = 1 := by have := hle1 i; omega
-          exact h1 ⟨i, this⟩
-  have hEq : W n = Z n ∪ S1 n ∪ S2 n ∪ S34 n := by
-    ext w
-    simp only [Z, S1, S2, S34, Finset.mem_union, Finset.mem_filter]
+    rw [valid0]
     constructor
-    · intro hw
-      rcases huniv w with h | h | h | h
-      · left; left; left; exact ⟨hw, h⟩
-      · left; left; right; exact ⟨hw, h⟩
-      · left; right; exact ⟨hw, h⟩
-      · right; exact ⟨hw, h⟩
-    · rintro (((⟨hw, _⟩ | ⟨hw, _⟩) | ⟨hw, _⟩) | ⟨hw, _⟩) <;> exact hw
-  have hdZ1 : Disjoint (Z n) (S1 n) := by
-    rw [Finset.disjoint_left]
-    rintro w hZ hS
-    obtain ⟨i, hi⟩ := (Finset.mem_filter.mp hS).2.1
-    have := (Finset.mem_filter.mp hZ).2 i
-    omega
-  have hdZ12 : Disjoint (Z n ∪ S1 n) (S2 n) := by
-    rw [Finset.disjoint_left]
-    rintro w hZS hS2
-    obtain ⟨i, hi⟩ := (Finset.mem_filter.mp hS2).2.1
-    rcases Finset.mem_union.mp hZS with hZ | hS1
-    · have := (Finset.mem_filter.mp hZ).2 i; omega
-    · have := (Finset.mem_filter.mp hS1).2.2 i; omega
-  have hdZ123 : Disjoint (Z n ∪ S1 n ∪ S2 n) (S34 n) := by
-    rw [Finset.disjoint_left]
-    rintro w hZ12 hS34
-    obtain ⟨i, hi⟩ := (Finset.mem_filter.mp hS34).2
-    rcases Finset.mem_union.mp hZ12 with hZS | hS2
-    · rcases Finset.mem_union.mp hZS with hZ | hS1
-      · have := (Finset.mem_filter.mp hZ).2 i; omega
-      · have := (Finset.mem_filter.mp hS1).2.2 i; omega
-    · have := (Finset.mem_filter.mp hS2).2.2 i; omega
-  rw [hEq, Finset.card_union_of_disjoint hdZ123, Finset.card_union_of_disjoint hdZ12,
-    Finset.card_union_of_disjoint hdZ1]
+    · rintro ⟨rfl, hk⟩
+      exact ⟨rfl, hc ▸ hk⟩
+    · rintro ⟨rfl, rfl⟩
+      exact ⟨rfl, hc⟩
+  simp only [N, h]
+  by_cases hk : k = 0
+  · subst hk; simp
+  · simp [hk, Ne.symm hk]
 
-private lemma card_filter_snoc (n : ℕ) (P : (Fin (n + 3) → Fin 5) → Prop) :
-    ((W (n + 1)).filter P).card =
-      ∑ u ∈ W n, (Finset.univ.filter (fun c : Fin 5 =>
-        OMA.S_oeis_a243513.validWord (Fin.snoc u c) ∧ P (Fin.snoc u c))).card := by
-  let S := (W n).sigma (fun u =>
-    Finset.univ.filter (fun c : Fin 5 =>
-      OMA.S_oeis_a243513.validWord (Fin.snoc u c) ∧ P (Fin.snoc u c)))
-  have hbij : S.card = ((W (n + 1)).filter P).card := by
-    refine Finset.card_bij (fun p _ => Fin.snoc p.1 p.2) ?_ ?_ ?_
-    · intro ⟨u, c⟩ hp
-      simp only [S, Finset.mem_sigma, Finset.mem_filter, Finset.mem_univ, true_and] at hp
-      simp only [W, Finset.mem_filter, Finset.mem_univ, true_and]
-      exact hp.2
-    · intro ⟨u1, c1⟩ _ ⟨u2, c2⟩ _ heq
-      obtain ⟨hu, hc⟩ := Fin.snoc_inj.mp heq
-      subst hu hc
-      rfl
-    · intro w hw
-      simp only [W, Finset.mem_filter, Finset.mem_univ, true_and] at hw
-      refine ⟨⟨Fin.init w, w (Fin.last (n + 2))⟩, ?_, Fin.snoc_init_self w⟩
-      simp only [S, Finset.mem_sigma, Finset.mem_filter, Finset.mem_univ, true_and,
-        W, Fin.snoc_init_self]
-      exact ⟨validWord_init hw.1, hw⟩
-  rw [← hbij, Finset.card_sigma]
-
-private lemma inZ_snoc {m : ℕ} (u : Fin m → Fin 5) (c : Fin 5) :
-    inZ (Fin.snoc u c : Fin (m + 1) → Fin 5) ↔ inZ u ∧ c = 0 := by
-  constructor
-  · intro h
-    refine ⟨fun i => ?_, Fin.ext (by simpa [Fin.snoc_last] using h (Fin.last m))⟩
-    simpa [Fin.snoc_castSucc] using h i.castSucc
-  · rintro ⟨hu, rfl⟩ i
-    by_cases hil : i.val < m
-    · let i' : Fin m := ⟨i.val, hil⟩
-      have hieq : i = i'.castSucc := Fin.ext rfl
-      rw [hieq, Fin.snoc_castSucc]
-      exact hu i'
-    · have hieq : i = Fin.last m := Fin.ext (by have := i.isLt; rw [Fin.val_last]; omega)
-      subst hieq
-      simp [Fin.snoc_last]
-
-private lemma forall_le_snoc {m : ℕ} (u : Fin m → Fin 5) (c : Fin 5) (k : ℕ) :
-    (∀ i, ((Fin.snoc u c : Fin (m + 1) → Fin 5) i).val ≤ k) ↔
-      (∀ i, (u i).val ≤ k) ∧ c.val ≤ k := by
-  constructor
-  · intro h
-    refine ⟨fun i => by simpa [Fin.snoc_castSucc] using h i.castSucc,
-      by simpa [Fin.snoc_last] using h (Fin.last m)⟩
-  · rintro ⟨hu, hc⟩ i
-    by_cases hil : i.val < m
-    · let i' : Fin m := ⟨i.val, hil⟩
-      have hieq : i = i'.castSucc := Fin.ext rfl
-      rw [hieq, Fin.snoc_castSucc]
-      exact hu i'
-    · have hieq : i = Fin.last m := Fin.ext (by have := i.isLt; rw [Fin.val_last]; omega)
-      subst hieq
-      simpa [Fin.snoc_last] using hc
-
-private lemma exists_eq_snoc {m : ℕ} (u : Fin m → Fin 5) (c : Fin 5) (k : ℕ) :
-    (∃ i, ((Fin.snoc u c : Fin (m + 1) → Fin 5) i).val = k) ↔
-      (∃ i, (u i).val = k) ∨ c.val = k := by
-  constructor
-  · rintro ⟨i, hi⟩
-    by_cases hil : i.val < m
-    · let i' : Fin m := ⟨i.val, hil⟩
-      have hieq : i = i'.castSucc := Fin.ext rfl
-      rw [hieq, Fin.snoc_castSucc] at hi
-      left; exact ⟨i', hi⟩
-    · have hieq : i = Fin.last m := Fin.ext (by have := i.isLt; rw [Fin.val_last]; omega)
-      subst hieq
-      right; simpa [Fin.snoc_last] using hi
-  · rintro (⟨i, hi⟩ | hc)
-    · exact ⟨i.castSucc, by simpa [Fin.snoc_castSucc] using hi⟩
-    · exact ⟨Fin.last m, by simpa [Fin.snoc_last] using hc⟩
-
-private lemma exists_ge_snoc {m : ℕ} (u : Fin m → Fin 5) (c : Fin 5) (k : ℕ) :
-    (∃ i, k ≤ ((Fin.snoc u c : Fin (m + 1) → Fin 5) i).val) ↔
-      (∃ i, k ≤ (u i).val) ∨ k ≤ c.val := by
-  constructor
-  · rintro ⟨i, hi⟩
-    by_cases hil : i.val < m
-    · let i' : Fin m := ⟨i.val, hil⟩
-      have hieq : i = i'.castSucc := Fin.ext rfl
-      rw [hieq, Fin.snoc_castSucc] at hi
-      left; exact ⟨i', hi⟩
-    · have hieq : i = Fin.last m := Fin.ext (by have := i.isLt; rw [Fin.val_last]; omega)
-      subst hieq
-      right; simpa [Fin.snoc_last] using hi
-  · rintro (⟨i, hi⟩ | hc)
-    · exact ⟨i.castSucc, by simpa [Fin.snoc_castSucc] using hi⟩
-    · exact ⟨Fin.last m, by simpa [Fin.snoc_last] using hc⟩
-
-private lemma card_Z_succ (n : ℕ) : (Z (n + 1)).card = (Z n).card := by
-  rw [Z, card_filter_snoc]
-  have hsum : ∀ u ∈ W n,
-      (Finset.univ.filter (fun c : Fin 5 =>
-        OMA.S_oeis_a243513.validWord (Fin.snoc u c) ∧ inZ (Fin.snoc u c))).card =
-        if inZ u then 1 else 0 := by
-    intro u hu
-    have hvu : OMA.S_oeis_a243513.validWord u := (Finset.mem_filter.mp hu).2
-    by_cases hZ : inZ u
-    · simp only [hZ, ↓reduceIte]
-      have hEq : Finset.univ.filter (fun c : Fin 5 =>
-          OMA.S_oeis_a243513.validWord (Fin.snoc u c) ∧ inZ (Fin.snoc u c)) = {0} := by
-        ext c
-        simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_singleton,
-          validWord_snoc_iff, inZ_snoc]
-        constructor
-        · rintro ⟨_, _, hc⟩; exact hc
-        · rintro rfl
-          refine ⟨⟨hvu, fun h => absurd h (by decide), fun h => ?_⟩, hZ, rfl⟩
-          exfalso
-          have h1 := hZ ⟨n, by omega⟩
-          have h2 := hZ ⟨n + 1, by omega⟩
-          exact h (Fin.ext (by omega))
-      rw [hEq, Finset.card_singleton]
-    · simp only [hZ, ↓reduceIte]
-      have hEq : Finset.univ.filter (fun c : Fin 5 =>
-          OMA.S_oeis_a243513.validWord (Fin.snoc u c) ∧ inZ (Fin.snoc u c)) = ∅ := by
-        ext c
-        simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.notMem_empty,
-          iff_false, not_and, inZ_snoc]
-        intro _ hzu _
-        exact hZ hzu
-      rw [hEq, Finset.card_empty]
-  rw [Finset.sum_congr rfl hsum, Finset.sum_boole, Nat.cast_id]
-  rfl
-
-private lemma card_S1_succ (n : ℕ) : (S1 (n + 1)).card = (Z n).card := by
-  rw [S1, card_filter_snoc]
-  have hsum : ∀ u ∈ W n,
-      (Finset.univ.filter (fun c : Fin 5 =>
-        OMA.S_oeis_a243513.validWord (Fin.snoc u c) ∧ inS1 (Fin.snoc u c))).card =
-        if inZ u then 1 else 0 := by
-    intro u hu
-    have hvu : OMA.S_oeis_a243513.validWord u := (Finset.mem_filter.mp hu).2
-    by_cases hZ : inZ u
-    · simp only [hZ, ↓reduceIte]
-      have hEq : Finset.univ.filter (fun c : Fin 5 =>
-          OMA.S_oeis_a243513.validWord (Fin.snoc u c) ∧ inS1 (Fin.snoc u c)) = {1} := by
-        ext c
-        simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_singleton,
-          validWord_snoc_iff, inS1, exists_eq_snoc, forall_le_snoc]
-        constructor
-        · rintro ⟨_, (⟨i, hi⟩ | hc1), _, _⟩
-          · have := hZ i; omega
-          · exact Fin.ext hc1
-        · rintro rfl
-          refine ⟨⟨hvu, fun _ => ⟨0, by rw [hZ 0]; decide⟩, fun h => ?_⟩,
-            Or.inr rfl, fun i => by rw [hZ i]; decide, by decide⟩
-          exfalso
-          have h1 := hZ ⟨n, by omega⟩
-          have h2 := hZ ⟨n + 1, by omega⟩
-          exact h (Fin.ext (by omega))
-      rw [hEq, Finset.card_singleton]
-    · simp only [hZ, ↓reduceIte]
-      have hEq : Finset.univ.filter (fun c : Fin 5 =>
-          OMA.S_oeis_a243513.validWord (Fin.snoc u c) ∧ inS1 (Fin.snoc u c)) = ∅ := by
-        ext c
-        simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.notMem_empty,
-          iff_false, not_and, validWord_snoc_iff, inS1, exists_eq_snoc, forall_le_snoc]
-        rintro ⟨_, _, hne⟩ _ hu_le1 hc_le1
-        have hne_u : ∃ i, (u i).val ≠ 0 := by
-          by_contra hz
-          apply hZ
-          intro i
-          by_contra hi
-          exact hz ⟨i, hi⟩
-        have hlast := validWord_last_ne hvu hne_u
-        obtain ⟨hcn, hcn1⟩ := hne hlast
-        have hn_le := hu_le1 ⟨n, by omega⟩
-        have hn1_le := hu_le1 ⟨n + 1, by omega⟩
-        have hne_val : (u ⟨n, by omega⟩).val ≠ (u ⟨n + 1, by omega⟩).val :=
-          fun h => hlast (Fin.ext h)
-        have hcn_val : c.val ≠ (u ⟨n, by omega⟩).val := fun h => hcn (Fin.ext h)
-        have hcn1_val : c.val ≠ (u ⟨n + 1, by omega⟩).val := fun h => hcn1 (Fin.ext h)
-        omega
-      rw [hEq, Finset.card_empty]
-  rw [Finset.sum_congr rfl hsum, Finset.sum_boole, Nat.cast_id]
-  rfl
-
-private lemma card_S2_succ (n : ℕ) : (S2 (n + 1)).card = (S1 n).card + (S2 n).card := by
-  have hdec1 : ∀ a b : Fin 5, a ≠ b → a.val ≤ 2 → b.val ≤ 2 →
-      (Finset.univ.filter (fun c : Fin 5 => c.val ≤ 2 ∧ c ≠ a ∧ c ≠ b)).card = 1 := by
-    decide
-  rw [S2, card_filter_snoc]
-  have hsum : ∀ u ∈ W n,
-      (Finset.univ.filter (fun c : Fin 5 =>
-        OMA.S_oeis_a243513.validWord (Fin.snoc u c) ∧ inS2 (Fin.snoc u c))).card =
-        (if inS1 u then 1 else 0) + (if inS2 u then 1 else 0) := by
-    intro u hu
-    have hvu : OMA.S_oeis_a243513.validWord u := (Finset.mem_filter.mp hu).2
-    by_cases h1 : inS1 u
-    · have h2not : ¬ inS2 u := by
-        intro h2
-        obtain ⟨i, hi⟩ := h2.1
-        have := h1.2 i
-        omega
-      simp only [h1, h2not, ↓reduceIte]
-      have hEq : Finset.univ.filter (fun c : Fin 5 =>
-          OMA.S_oeis_a243513.validWord (Fin.snoc u c) ∧ inS2 (Fin.snoc u c)) = {2} := by
-        ext c
-        simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_singleton,
-          validWord_snoc_iff, inS2, exists_eq_snoc, forall_le_snoc]
-        constructor
-        · rintro ⟨_, (⟨i, hi⟩ | hc2), _, _⟩
-          · have := h1.2 i; omega
-          · exact Fin.ext hc2
-        · rintro rfl
-          obtain ⟨j1, hj1⟩ := h1.1
-          refine ⟨⟨hvu, fun _ => ⟨j1, by omega⟩, fun _ => ?_⟩,
-            Or.inr rfl, fun i => le_trans (h1.2 i) (by decide), by decide⟩
-          have hn1 := h1.2 ⟨n, by omega⟩
-          have hn2 := h1.2 ⟨n + 1, by omega⟩
-          exact ⟨fun h => by have := congrArg Fin.val h; omega,
-            fun h => by have := congrArg Fin.val h; omega⟩
-      rw [hEq, Finset.card_singleton]
-    · by_cases h2 : inS2 u
-      · simp only [h1, h2, ↓reduceIte]
-        have hne_u : ∃ i, (u i).val ≠ 0 := by
-          obtain ⟨i, hi⟩ := h2.1
-          exact ⟨i, by omega⟩
-        have hlast := validWord_last_ne hvu hne_u
-        have hEq : Finset.univ.filter (fun c : Fin 5 =>
-            OMA.S_oeis_a243513.validWord (Fin.snoc u c) ∧ inS2 (Fin.snoc u c)) =
-            Finset.univ.filter (fun c : Fin 5 =>
-              c.val ≤ 2 ∧ c ≠ u ⟨n, by omega⟩ ∧ c ≠ u ⟨n + 1, by omega⟩) := by
-          ext c
-          simp only [Finset.mem_filter, Finset.mem_univ, true_and,
-            validWord_snoc_iff, inS2, exists_eq_snoc, forall_le_snoc]
-          constructor
-          · rintro ⟨⟨_, _, hne⟩, _, _, hcle⟩
-            obtain ⟨hcn, hcn1⟩ := hne hlast
-            exact ⟨hcle, hcn, hcn1⟩
-          · rintro ⟨hcle, hcn, hcn1⟩
-            refine ⟨⟨hvu, fun hcpos => ?_, fun _ => ⟨hcn, hcn1⟩⟩,
-              Or.inl h2.1, h2.2, hcle⟩
-            obtain ⟨i2, hi2⟩ := h2.1
-            obtain ⟨j, _, hj⟩ := validWord_exists_of_le hvu ((u i2).val - (c.val - 1))
-              (c.val - 1) i2 (by omega)
-            exact ⟨j, by omega⟩
-        rw [hEq]
-        exact hdec1 (u ⟨n, by omega⟩) (u ⟨n + 1, by omega⟩) hlast
-          (h2.2 ⟨n, by omega⟩) (h2.2 ⟨n + 1, by omega⟩)
-      · simp only [h1, h2, ↓reduceIte]
-        have hEq : Finset.univ.filter (fun c : Fin 5 =>
-            OMA.S_oeis_a243513.validWord (Fin.snoc u c) ∧ inS2 (Fin.snoc u c)) = ∅ := by
-          ext c
-          simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.notMem_empty,
-            iff_false, not_and, validWord_snoc_iff, inS2, exists_eq_snoc, forall_le_snoc]
-          rintro ⟨_, h1c, _⟩ (⟨i2, hi2⟩ | hc2) hu_le2 _
-          · exact h2 ⟨⟨i2, hi2⟩, hu_le2⟩
-          · obtain ⟨j, hj⟩ := h1c (by omega)
-            have hj1 : (u j).val = 1 := by omega
-            exact h1 ⟨⟨j, hj1⟩, fun i => by
-              by_contra hgt
-              have hi2_val : (u i).val = 2 := by have := hu_le2 i; omega
-              exact h2 ⟨⟨i, hi2_val⟩, hu_le2⟩⟩
-        rw [hEq, Finset.card_empty]
-  rw [Finset.sum_congr rfl hsum, Finset.sum_add_distrib, Finset.sum_boole, Finset.sum_boole,
-    Nat.cast_id, Nat.cast_id]
-  rfl
-
-private lemma card_S34_succ (n : ℕ) : (S34 (n + 1)).card = (S2 n).card + 3 * (S34 n).card := by
-  have hdec3 : ∀ a b : Fin 5, a ≠ b →
-      (Finset.univ.filter (fun c : Fin 5 => c ≠ a ∧ c ≠ b)).card = 3 := by
-    decide
-  rw [S34, card_filter_snoc]
-  have hsum : ∀ u ∈ W n,
-      (Finset.univ.filter (fun c : Fin 5 =>
-        OMA.S_oeis_a243513.validWord (Fin.snoc u c) ∧ inS34 (Fin.snoc u c))).card =
-        (if inS2 u then 1 else 0) + 3 * (if inS34 u then 1 else 0) := by
-    intro u hu
-    have hvu : OMA.S_oeis_a243513.validWord u := (Finset.mem_filter.mp hu).2
-    by_cases h2 : inS2 u
-    · have h3not : ¬ inS34 u := by
-        rintro ⟨i, hi⟩
-        have := h2.2 i
-        omega
-      simp only [h2, h3not, ↓reduceIte]
-      have hEq : Finset.univ.filter (fun c : Fin 5 =>
-          OMA.S_oeis_a243513.validWord (Fin.snoc u c) ∧ inS34 (Fin.snoc u c)) = {3} := by
-        ext c
-        simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_singleton,
-          validWord_snoc_iff, inS34, exists_ge_snoc]
-        constructor
-        · rintro ⟨⟨_, h1c, _⟩, (⟨i, hi⟩ | hc3)⟩
-          · have := h2.2 i; omega
-          · obtain ⟨j, hj⟩ := h1c (by omega)
-            have := h2.2 j
-            exact Fin.ext (by omega)
-        · rintro rfl
-          obtain ⟨i2, hi2⟩ := h2.1
-          refine ⟨⟨hvu, fun _ => ⟨i2, by omega⟩, fun _ => ?_⟩, Or.inr (by decide)⟩
-          have hn1 := h2.2 ⟨n, by omega⟩
-          have hn2 := h2.2 ⟨n + 1, by omega⟩
-          exact ⟨fun h => by have := congrArg Fin.val h; omega,
-            fun h => by have := congrArg Fin.val h; omega⟩
-      rw [hEq, Finset.card_singleton]
-    · by_cases h34 : inS34 u
-      · simp only [h2, h34, ↓reduceIte]
-        obtain ⟨i3, hi3⟩ := h34
-        have hne_u : ∃ i, (u i).val ≠ 0 := ⟨i3, by omega⟩
-        have hlast := validWord_last_ne hvu hne_u
-        have hEq : Finset.univ.filter (fun c : Fin 5 =>
-            OMA.S_oeis_a243513.validWord (Fin.snoc u c) ∧ inS34 (Fin.snoc u c)) =
-            Finset.univ.filter (fun c : Fin 5 => c ≠ u ⟨n, by omega⟩ ∧ c ≠ u ⟨n + 1, by omega⟩) := by
-          ext c
-          simp only [Finset.mem_filter, Finset.mem_univ, true_and,
-            validWord_snoc_iff, inS34, exists_ge_snoc]
-          constructor
-          · rintro ⟨⟨_, _, hne⟩, _⟩
-            exact hne hlast
-          · rintro ⟨hcn, hcn1⟩
-            refine ⟨⟨hvu, fun hcpos => ?_, fun _ => ⟨hcn, hcn1⟩⟩, Or.inl ⟨i3, hi3⟩⟩
-            have hcle : c.val - 1 ≤ (u i3).val := by
-              have := c.isLt
-              omega
-            obtain ⟨j, _, hj⟩ := validWord_exists_of_le hvu ((u i3).val - (c.val - 1))
-              (c.val - 1) i3 (by omega)
-            exact ⟨j, by omega⟩
-        rw [hEq]
-        simp only [zero_add, mul_one]
-        exact hdec3 (u ⟨n, by omega⟩) (u ⟨n + 1, by omega⟩) hlast
-      · simp only [h2, h34, ↓reduceIte]
-        have hEq : Finset.univ.filter (fun c : Fin 5 =>
-            OMA.S_oeis_a243513.validWord (Fin.snoc u c) ∧ inS34 (Fin.snoc u c)) = ∅ := by
-          ext c
-          simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.notMem_empty,
-            iff_false, not_and, validWord_snoc_iff, inS34, exists_ge_snoc]
-          rintro ⟨_, h1c, _⟩ (⟨i, hi⟩ | hc3)
-          · exact h34 ⟨i, hi⟩
-          · obtain ⟨j, hj⟩ := h1c (by omega)
-            have hle2 : ∀ i, (u i).val ≤ 2 := by
-              intro i
-              by_contra hgt
-              exact h34 ⟨i, by omega⟩
-            have hj2 : (u j).val = 2 := by
-              have := hle2 j
-              omega
-            exact h2 ⟨⟨j, hj2⟩, hle2⟩
-        rw [hEq, Finset.card_empty]
-  rw [Finset.sum_congr rfl hsum, Finset.sum_add_distrib, ← Finset.mul_sum,
-    Finset.sum_boole, Finset.sum_boole, Nat.cast_id, Nat.cast_id]
-  rfl
-
-private lemma base_cards :
-    (Z 0).card = 1 ∧ (S1 0).card = 1 ∧ (S2 0).card = 0 ∧ (S34 0).card = 0 := by
-  have hvalid0 : ∀ w : Fin 2 → Fin 5,
-      OMA.S_oeis_a243513.validWord w ↔ w = (fun _ => 0) ∨ w = ![0, 1] := by
-    intro w
-    constructor
-    · intro hw
-      have hw0 : (w 0).val = 0 := validWord_zero hw
-      have h1 : (w 1).val = 0 ∨ (w 1).val = 1 := by
-        by_cases hpos : 0 < (w 1).val
-        · obtain ⟨j, hj, hjval⟩ := hw.1 1 hpos
-          have hj0 : j = 0 := Fin.ext (by have := j.isLt; exact Nat.lt_one_iff.mp hj)
-          subst hj0
-          omega
-        · omega
-      rcases h1 with h10 | h11
-      · left; ext i; fin_cases i <;> simp [hw0, h10]
-      · right; ext i; fin_cases i <;> simp [hw0, h11]
-    · rintro (rfl | rfl)
-      · refine ⟨fun i hi => by simp at hi, fun i j k hij hjk _ => by
-          have := i.isLt; have := k.isLt; omega⟩
-      · refine ⟨fun i hi => ?_, fun i j k hij hjk _ => by
-          have := i.isLt; have := k.isLt; omega⟩
-        fin_cases i
-        · simp at hi
-        · exact ⟨0, by decide, by decide⟩
-  have hZ : Z 0 = {fun _ => 0} := by
-    ext w
-    simp only [Z, W, Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_singleton, hvalid0]
-    constructor
-    · rintro ⟨rfl | rfl, hz⟩
-      · rfl
-      · exfalso; have := hz 1; simp at this
-    · rintro rfl
-      exact ⟨Or.inl rfl, fun _ => rfl⟩
-  have hS1 : S1 0 = {![0, 1]} := by
-    ext w
-    simp only [S1, W, Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_singleton, hvalid0,
-      inS1]
-    constructor
-    · rintro ⟨rfl | rfl, ⟨i, hi⟩, _⟩
-      · simp at hi
-      · rfl
-    · rintro rfl
-      refine ⟨Or.inr rfl, ⟨1, rfl⟩, fun i => by fin_cases i <;> decide⟩
-  have hS2 : S2 0 = ∅ := by
-    ext w
-    simp only [S2, W, Finset.mem_filter, Finset.mem_univ, true_and, Finset.notMem_empty,
-      iff_false, not_and, hvalid0, inS2]
-    rintro (rfl | rfl) ⟨i, hi⟩ _
-    · simp at hi
-    · fin_cases i <;> simp at hi
-  have hS34 : S34 0 = ∅ := by
-    ext w
-    simp only [S34, W, Finset.mem_filter, Finset.mem_univ, true_and, Finset.notMem_empty,
-      iff_false, not_and, hvalid0, inS34]
-    rintro (rfl | rfl) ⟨i, hi⟩
-    · simp at hi
-    · fin_cases i <;> simp at hi
-  rw [hZ, hS1, hS2, hS34, Finset.card_singleton, Finset.card_singleton, Finset.card_empty]
-  exact ⟨rfl, rfl, rfl, rfl⟩
-
-private lemma state_cards (n : ℕ) :
-    (Z n).card = 1 ∧ (S1 n).card = 1 ∧ (S2 n).card = n ∧
-      4 * (S34 n).card + 1 + 2 * n = 3 ^ n := by
+theorem closed (n : ℕ) :
+    N (n + 1) 0 = 1 ∧ N (n + 1) 1 = 1 ∧ N (n + 1) 2 = n ∧ 4 * N (n + 1) 3 + 2 * n + 1 = 3 ^ n := by
+  have r : ∀ L, N (L + 1) 0 = N L 0 ∧ N (L + 1) 1 = N L 0 ∧ N (L + 1) 2 = N L 1 + N L 2 ∧
+      N (L + 1) 3 = N L 2 + 3 * N L 3 := by
+    intro L
+    refine ⟨?_, ?_, ?_, ?_⟩ <;> rw [N_succ _ _ (by norm_num)] <;>
+      simp [Finset.sum_range_succ, tm]
   induction n with
   | zero =>
-    obtain ⟨hz, hs1, hs2, hs34⟩ := base_cards
+    obtain ⟨a, b, c, d⟩ := r 0
+    simp only [N_zero] at a b c d
+    simp at a b c d ⊢
     omega
   | succ n ih =>
-    obtain ⟨hz, hs1, hs2, hs34⟩ := ih
-    have hz' := card_Z_succ n
-    have hs1' := card_S1_succ n
-    have hs2' := card_S2_succ n
-    have hs34' := card_S34_succ n
-    have hpow : 3 ^ (n + 1) = 3 * 3 ^ n := by ring
+    obtain ⟨a, b, c, d⟩ := r (n + 1)
+    rw [a, b, c, d, pow_succ]
     omega
 
-private lemma count_formula (n : ℕ) : 4 * OMA.S_oeis_a243513.count n = 7 + 3 ^ n + 2 * n := by
-  rw [count_eq_W_card, W_card_split]
-  obtain ⟨hz, hs1, hs2, hs34⟩ := state_cards n
+theorem count_eq (n : ℕ) : count n = ∑ k ∈ Finset.range 4, N (n + 1) k := by
+  have h := sum_cls (n + 1) (fun _ => 1)
+  simp only [one_mul] at h
+  rw [← h]
+  show Nat.card {w : Fin (n + 1 + 1) → Fin 5 // validWord w} = _
+  rw [Nat.card_eq_fintype_card, Fintype.card_subtype, Finset.card_filter]
+
+theorem count_formula (n : ℕ) : 4 * count n = 7 + 3 ^ n + 2 * n := by
+  obtain ⟨a, b, c, d⟩ := closed n
+  rw [count_eq]
+  simp only [Finset.sum_range_succ, Finset.sum_range_zero]
   omega
 
-end OMA.P_oeis_a243513
+end R243513
 
+open PowerSeries in
 theorem OMA.solution : type_of% @OMA.S_oeis_a243513.main := by
-  refine ⟨fun n _ => OMA.P_oeis_a243513.count_formula n, ?_⟩
-  let S := OMA.S_oeis_a243513.series
-  have hlhs : S * ((1 - PowerSeries.X) ^ 2 * (1 - 3 * PowerSeries.X)) =
-      S - PowerSeries.C (5 : ℚ) * (PowerSeries.X * S) +
-        PowerSeries.C (7 : ℚ) * (PowerSeries.X * (PowerSeries.X * S)) -
-        PowerSeries.C (3 : ℚ) * (PowerSeries.X * (PowerSeries.X * (PowerSeries.X * S))) := by
-    simp only [map_ofNat]
+  open OMA.S_oeis_a243513 R243513 in
+  refine ⟨fun n _ => count_formula n, ?_⟩
+  have hq : ∀ m, (count m : ℚ) = (7 + 3 ^ m + 2 * m) / 4 := by
+    intro m
+    have h' : (4 * count m : ℚ) = 7 + 3 ^ m + 2 * m := by exact_mod_cast count_formula m
+    linarith
+  rw [show ((1 - X) ^ 2 * (1 - 3 * X) : PowerSeries ℚ)
+        = 1 - C 5 * X ^ 1 + C 7 * X ^ 2 - C 3 * X ^ 3 by simp only [map_ofNat]; ring,
+      show (X * (3 - 10 * X + 6 * X ^ 2) : PowerSeries ℚ)
+        = C 3 * X ^ 1 - C 10 * X ^ 2 + C 6 * X ^ 3 by simp only [map_ofNat]; ring,
+      show ∀ p : PowerSeries ℚ, p * (1 - C 5 * X ^ 1 + C 7 * X ^ 2 - C 3 * X ^ 3)
+        = p - C 5 * (p * X ^ 1) + C 7 * (p * X ^ 2) - C 3 * (p * X ^ 3) from fun p => by ring]
+  ext n
+  simp only [series, map_sub, map_add, coeff_C_mul, coeff_mul_X_pow', coeff_mk]
+  rcases n with _ | _ | _ | _ | n
+  · simp
+  · simp [hq]; norm_num
+  · simp [hq]; norm_num
+  · simp [hq]; norm_num
+  · simp [hq]
     ring
-  have hrhs : PowerSeries.X * (3 - 10 * PowerSeries.X + 6 * PowerSeries.X ^ 2) =
-      PowerSeries.C (3 : ℚ) * PowerSeries.X -
-        PowerSeries.C (10 : ℚ) * PowerSeries.X ^ 2 +
-        PowerSeries.C (6 : ℚ) * PowerSeries.X ^ 3 := by
-    simp only [map_ofNat]
-    ring
-  change S * ((1 - PowerSeries.X) ^ 2 * (1 - 3 * PowerSeries.X)) =
-    PowerSeries.X * (3 - 10 * PowerSeries.X + 6 * PowerSeries.X ^ 2)
-  rw [hlhs, hrhs]
-  have hc1 : OMA.S_oeis_a243513.count 1 = 3 := by
-    have := OMA.P_oeis_a243513.count_formula 1; omega
-  have hc2 : OMA.S_oeis_a243513.count 2 = 5 := by
-    have := OMA.P_oeis_a243513.count_formula 2; omega
-  have hc3 : OMA.S_oeis_a243513.count 3 = 10 := by
-    have := OMA.P_oeis_a243513.count_formula 3; omega
-  have hcoeff0 : PowerSeries.coeff 0 OMA.S_oeis_a243513.series = 0 := by
-    simp [OMA.S_oeis_a243513.series]
-  have hcoeff : ∀ m : ℕ, 1 ≤ m →
-      PowerSeries.coeff m OMA.S_oeis_a243513.series = (OMA.S_oeis_a243513.count m : ℚ) := by
-    intro m hm
-    have hm0 : m ≠ 0 := by omega
-    simp [OMA.S_oeis_a243513.series, hm0]
-  ext m
-  by_cases hm4 : m < 4
-  · interval_cases m
-    · simp only [map_sub, map_add, PowerSeries.coeff_C_mul, PowerSeries.coeff_zero_X_mul,
-        PowerSeries.coeff_zero_X, PowerSeries.coeff_X_pow]
-      dsimp only [S]
-      rw [hcoeff0]
-      norm_num
-    · simp only [map_sub, map_add, PowerSeries.coeff_C_mul, PowerSeries.coeff_succ_X_mul,
-        PowerSeries.coeff_zero_X_mul, PowerSeries.coeff_X, PowerSeries.coeff_X_pow]
-      dsimp only [S]
-      rw [hcoeff0, hcoeff 1 (by omega), hc1]
-      norm_num
-    · simp only [map_sub, map_add, PowerSeries.coeff_C_mul, PowerSeries.coeff_succ_X_mul,
-        PowerSeries.coeff_zero_X_mul, PowerSeries.coeff_X, PowerSeries.coeff_X_pow]
-      dsimp only [S]
-      rw [hcoeff0, hcoeff 1 (by omega), hcoeff 2 (by omega), hc1, hc2]
-      norm_num
-    · simp only [map_sub, map_add, PowerSeries.coeff_C_mul, PowerSeries.coeff_succ_X_mul,
-        PowerSeries.coeff_X, PowerSeries.coeff_X_pow]
-      dsimp only [S]
-      rw [hcoeff0, hcoeff 1 (by omega), hcoeff 2 (by omega), hcoeff 3 (by omega), hc1, hc2, hc3]
-      norm_num
-  · obtain ⟨k, rfl⟩ : ∃ k, m = k + 4 := ⟨m - 4, by omega⟩
-    simp only [map_sub, map_add, PowerSeries.coeff_C_mul, PowerSeries.coeff_succ_X_mul,
-      PowerSeries.coeff_X, PowerSeries.coeff_X_pow]
-    have hne1 : k + 4 ≠ 1 := by omega
-    have hne2 : k + 4 ≠ 2 := by omega
-    have hne3 : k + 4 ≠ 3 := by omega
-    simp only [hne1, hne2, hne3, ↓reduceIte]
-    dsimp only [S]
-    rw [hcoeff (k + 4) (by omega), hcoeff (k + 3) (by omega),
-      hcoeff (k + 2) (by omega), hcoeff (k + 1) (by omega)]
-    have h4 : (4 : ℚ) * (OMA.S_oeis_a243513.count (k + 4) : ℚ) =
-        7 + 3 ^ (k + 4) + 2 * ((k + 4 : ℕ) : ℚ) := by
-      exact_mod_cast OMA.P_oeis_a243513.count_formula (k + 4)
-    have h3 : (4 : ℚ) * (OMA.S_oeis_a243513.count (k + 3) : ℚ) =
-        7 + 3 ^ (k + 3) + 2 * ((k + 3 : ℕ) : ℚ) := by
-      exact_mod_cast OMA.P_oeis_a243513.count_formula (k + 3)
-    have h2 : (4 : ℚ) * (OMA.S_oeis_a243513.count (k + 2) : ℚ) =
-        7 + 3 ^ (k + 2) + 2 * ((k + 2 : ℕ) : ℚ) := by
-      exact_mod_cast OMA.P_oeis_a243513.count_formula (k + 2)
-    have h1 : (4 : ℚ) * (OMA.S_oeis_a243513.count (k + 1) : ℚ) =
-        7 + 3 ^ (k + 1) + 2 * ((k + 1 : ℕ) : ℚ) := by
-      exact_mod_cast OMA.P_oeis_a243513.count_formula (k + 1)
-    push_cast at h4 h3 h2 h1
-    linear_combination (1 / 4 : ℚ) * (h4 - 5 * h3 + 7 * h2 - 3 * h1)

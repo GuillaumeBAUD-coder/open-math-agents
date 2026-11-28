@@ -1,9 +1,12 @@
 import FormalConjectures.Arxiv.«2604.08040».Conjecture5_5
 
--- Problem: Group structure via subgroup counts
--- Upstream: formal-conjectures FormalConjectures/Arxiv/2604.08040/Conjecture5_5.lean:120 (declaration Arxiv.«2604.08040».cyc_alternatingGroup_five)
--- Credit: @ldy985 (the owner of the agent is credited as the solver)
--- Prove EXACTLY this target. No sorry, no axiom, no native_decide.
+/-!
+# Counting the cyclic subgroups of A₅
+
+Based on the original finite certificate proof by @ldy985. Cyclic subgroup generation
+and membership use Mathlib's standard equivalences. The two computational certificates
+are Prop-valued definitions so Lean elaborates them sequentially.
+-/
 
 namespace OMA.P15
 
@@ -11,29 +14,24 @@ abbrev A5 := alternatingGroup (Fin 5)
 
 def P5 (g : A5) : Finset A5 := {1, g, g ^ 2, g ^ 3, g ^ 4}
 
-lemma ord30 : ∀ g : A5, g ^ 30 = 1 := by decide +kernel
+def small_order : ∀ g : A5, g ^ 1 = 1 ∨ g ^ 2 = 1 ∨ g ^ 3 = 1 ∨ g ^ 5 = 1 := by
+  decide +kernel
 
-lemma pow_mem_P5 : ∀ g : A5, ∀ m : Fin 30, g ^ (m : ℕ) ∈ P5 g := by decide +kernel
+lemma order_le (g : A5) : orderOf g ≤ 5 := by
+  rcases small_order g with h | h | h | h
+  all_goals exact (orderOf_le_of_pow_eq_one (by decide) h).trans (by decide)
 
-lemma card_image : (Finset.univ.image P5).card = 32 := by decide +kernel
+lemma pow_mem_P5 (g : A5) (m : Fin 5) : g ^ (m : ℕ) ∈ P5 g := by
+  fin_cases m <;> simp [P5]
+
+def card_image : (Finset.univ.image P5).card = 32 := by decide +kernel
 
 lemma mem_zp_iff (g h : A5) : h ∈ Subgroup.zpowers g ↔ h ∈ P5 g := by
   constructor
   · intro hh
-    obtain ⟨k, rfl⟩ := Subgroup.mem_zpowers_iff.mp hh
-    have h30z : g ^ (30 : ℤ) = 1 := by
-      rw [show (30 : ℤ) = ((30 : ℕ) : ℤ) by norm_num, zpow_natCast]
-      exact ord30 g
-    have h0 : 0 ≤ k % 30 := Int.emod_nonneg _ (by norm_num)
-    have hlt : k % 30 < 30 := Int.emod_lt_of_pos _ (by norm_num)
-    have hm : (((k % 30).toNat : ℕ) : ℤ) = k % 30 := Int.toNat_of_nonneg h0
-    have hlt' : (k % 30).toNat < 30 := by
-      have h1 : (((k % 30).toNat : ℕ) : ℤ) < 30 := by rw [hm]; exact hlt
-      exact_mod_cast h1
-    have key : g ^ k = g ^ ((k % 30).toNat) := by
-      rw [zpow_eq_zpow_emod k h30z, ← zpow_natCast, hm]
-    rw [key]
-    exact pow_mem_P5 g ⟨(k % 30).toNat, hlt'⟩
+    obtain ⟨k, hk, rfl⟩ := Finset.mem_image.mp (mem_zpowers_iff_mem_range_orderOf.mp hh)
+    exact pow_mem_P5 g ⟨k, (Finset.mem_range.mp hk).trans_le
+      (order_le g)⟩
   · intro hh
     have hh' := hh
     simp only [P5, Finset.mem_insert, Finset.mem_singleton] at hh'
@@ -49,17 +47,7 @@ lemma coe_eq (g : A5) : ((Subgroup.zpowers g : Subgroup A5) : Set A5) = ((P5 g :
   exact mem_zp_iff g h
 
 lemma gen_of_cyclic (H : Subgroup A5) (hH : IsCyclic H) : ∃ g : A5, Subgroup.zpowers g = H := by
-  obtain ⟨x, hx⟩ := IsCyclic.exists_generator (α := H)
-  refine ⟨(x : A5), ?_⟩
-  ext y
-  constructor
-  · intro hy
-    exact (Subgroup.zpowers_le.mpr x.2) hy
-  · intro hy
-    obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.mp (hx ⟨y, hy⟩)
-    have h2 := congrArg Subtype.val hk
-    simp only [Subgroup.coe_zpow] at h2
-    exact Subgroup.mem_zpowers_iff.mpr ⟨k, h2⟩
+  exact (H.isCyclic_iff_exists_zpowers_eq_top).mp hH
 
 theorem main : Arxiv.«2604.08040».cyc (alternatingGroup (Fin 5)) = 32 := by
   show Nat.card {H : Subgroup A5 // IsCyclic H} = 32

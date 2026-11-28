@@ -11,7 +11,6 @@ private def bernoulliTable : ℕ → List ℚ
 
 private def entry (n : ℕ) : ℚ := (bernoulliTable 33)[n]?.getD 0
 
-set_option maxRecDepth 10000 in
 private theorem recurrence : ∀ i : Fin 33, entry i = 1 -
     ∑ k ∈ Finset.range i.val, i.val.choose k / (i.val - k + 1) * entry k := by
   decide +kernel
@@ -24,7 +23,6 @@ private theorem correct (n : ℕ) (hn : n < 33) : bernoulli' n = entry n := by
   exact Finset.sum_congr rfl fun k hk => by
     rw [ih k (Finset.mem_range.mp hk) ((Finset.mem_range.mp hk).trans hn)]
 
-set_option maxRecDepth 10000 in
 theorem OMA.solution : OMA.R_RegularPrimes_not_isRegularPrime_37_R1.H1 := by
   change (37 : ℤ) ∣ (bernoulli' 32).num
   rw [correct 32 (by decide)]

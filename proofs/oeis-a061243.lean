@@ -1,9 +1,7 @@
 import OMAStatements.S_oeis_a061243
 import Mathlib
 
-namespace A061243Proof
-
-lemma prod_modEq (n r : ℕ) : (∏ i ∈ Finset.Icc 1 r, (n + i)) ≡ r.factorial [MOD n] := by
+private theorem prod_modEq (n r : ℕ) : (∏ i ∈ Finset.Icc 1 r, (n + i)) ≡ r.factorial [MOD n] := by
   induction r with
   | zero =>
     rw [Finset.Icc_eq_empty (by omega), Finset.prod_empty, Nat.factorial_zero]
@@ -12,17 +10,11 @@ lemma prod_modEq (n r : ℕ) : (∏ i ∈ Finset.Icc 1 r, (n + i)) ≡ r.factori
     refine Nat.ModEq.mul ih ?_
     exact Nat.add_mod_left n (r + 1)
 
-end A061243Proof
+open OMA.S_oeis_a061243 in
 
 theorem OMA.solution : type_of% @OMA.S_oeis_a061243.main := by
-  intro n hn
-  unfold OMA.S_oeis_a061243.a OMA.S_oeis_a061243.kempner
-  have hset : {r : ℕ | 0 < r ∧ n ∣ ∏ i ∈ Finset.Icc 1 r, (n + i)} =
-      {m : ℕ | 0 < m ∧ n ∣ m.factorial} := by
-    ext r
-    constructor
-    · rintro ⟨h0, h1⟩
-      exact ⟨h0, ((A061243Proof.prod_modEq n r).dvd_iff (dvd_refl n)).1 h1⟩
-    · rintro ⟨h0, h1⟩
-      exact ⟨h0, ((A061243Proof.prod_modEq n r).dvd_iff (dvd_refl n)).2 h1⟩
-  rw [hset]
+  intro n _
+  unfold a kempner
+  congr 2
+  ext r
+  exact and_congr_right fun _ => (prod_modEq n r).dvd_iff (dvd_refl n)

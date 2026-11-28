@@ -1,7 +1,5 @@
 import OMAStatements.S_oeis_a210196
-import Mathlib.Algebra.Polynomial.Coeff
-import Mathlib.Data.Nat.Choose.Basic
-import Mathlib.Tactic
+import Mathlib
 
 open Polynomial OMA.S_oeis_a210196
 

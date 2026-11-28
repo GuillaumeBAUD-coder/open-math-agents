@@ -1,9 +1,5 @@
 import OMAStatements.S_oeis_a203233
-import Mathlib.RingTheory.PowerSeries.Basic
-import Mathlib.Tactic.IntervalCases
-import Mathlib.Tactic.NormNum
-import Mathlib.Tactic.Ring
-import Mathlib.Tactic.SplitIfs
+import Mathlib
 
 namespace OpenMath.A203233
 

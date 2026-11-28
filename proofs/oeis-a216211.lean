@@ -622,154 +622,23 @@ instance boardFinite (n : ℕ) (p q : List (Fin 4)) : Finite (Board (n+1) p q) :
     let (t : Row p) : Finite (Board (n+1) (rowLower t.val) q) := ih _
     exact Finite.of_equiv _ (cutEquiv n p q).symm
 
-def dirNo : Fin 4 → Dir := ![.north,.south,.west,.east]
-
-def tileNo (k : ℕ) : Tile :=
-  ⟨Fin.ofNat 4 (k/16), dirNo (Fin.ofNat 4 (k/4)), dirNo (Fin.ofNat 4 k)⟩
-
-/-- Complete list of the directed logs that can cross one row. -/
-def logBook : List (List Tile) :=
-  ([[1],
-    [1,20,33],
-    [1,20,35,57],
-    [1,20,49],
-    [1,20,50,45],
-    [1,23,40,49],
-    [1,23,41],
-    [1,23,43,57],
-    [1,36,17],
-    [1,36,49],
-    [1,38,28,49],
-    [1,38,29],
-    [1,39,56,17],
-    [1,39,57],
-    [1,52,17],
-    [1,52,19,41],
-    [1,52,33],
-    [1,52,34,29],
-    [1,54,44,17],
-    [1,54,45],
-    [1,54,46,29],
-    [3,24,33],
-    [3,24,35,57],
-    [3,24,49],
-    [3,24,50,45],
-    [3,25],
-    [3,25,36,49],
-    [3,25,39,57],
-    [3,25,52,33],
-    [3,25,54,45],
-    [3,27,40,49],
-    [3,27,41],
-    [3,27,43,57],
-    [17],
-    [17,4,33],
-    [17,4,35,57],
-    [17,4,49],
-    [17,4,50,45],
-    [17,36,1],
-    [17,36,49],
-    [17,39,56,1],
-    [17,39,57],
-    [17,52,1],
-    [17,52,33],
-    [17,54,44,1],
-    [17,54,45],
-    [18,12,33],
-    [18,12,35,57],
-    [18,12,49],
-    [18,12,50,45],
-    [18,13],
-    [18,13,36,49],
-    [18,13,39,57],
-    [18,13,52,33],
-    [18,13,54,45],
-    [19,40,1],
-    [19,40,49],
-    [19,41],
-    [19,41,4,49],
-    [19,41,52,1],
-    [19,43,56,1],
-    [19,43,57],
-    [33],
-    [33,4,17],
-    [33,4,49],
-    [33,7,24,49],
-    [33,7,25],
-    [33,20,1],
-    [33,20,49],
-    [33,22,12,49],
-    [33,22,13],
-    [33,52,1],
-    [33,52,3,25],
-    [33,52,17],
-    [33,52,18,13],
-    [34,28,1],
-    [34,28,49],
-    [34,29],
-    [34,29,4,49],
-    [34,29,52,1],
-    [34,30,12,49],
-    [34,30,13],
-    [35,56,1],
-    [35,56,3,25],
-    [35,56,17],
-    [35,56,18,13],
-    [35,57],
-    [35,57,4,17],
-    [35,57,7,25],
-    [35,57,20,1],
-    [35,57,22,13],
-    [49],
-    [49,4,17],
-    [49,4,19,41],
-    [49,4,33],
-    [49,4,34,29],
-    [49,7,24,33],
-    [49,7,25],
-    [49,7,27,41],
-    [49,20,1],
-    [49,20,33],
-    [49,22,12,33],
-    [49,22,13],
-    [49,23,40,1],
-    [49,23,41],
-    [49,36,1],
-    [49,36,3,25],
-    [49,36,17],
-    [49,36,18,13],
-    [49,38,28,1],
-    [49,38,29],
-    [49,38,30,13],
-    [50,44,1],
-    [50,44,3,25],
-    [50,44,17],
-    [50,44,18,13],
-    [50,45],
-    [50,45,4,17],
-    [50,45,7,25],
-    [50,45,20,1],
-    [50,45,22,13],
-    [50,46,28,1],
-    [50,46,29],
-    [50,46,30,13]] : List (List ℕ)).map (List.map tileNo)
-
-set_option maxRecDepth 12000 in
-set_option maxHeartbeats 8000000 in
-lemma enumerate_four : enumerate 4 (some .top) [] = logBook := by decide
-
+/-- An ordered list records the columns crossed at the boundary between rows.
+Of the twenty profiles reached from the northwest corner, twelve can return to
+the southwest corner. Reflecting the columns pairs those twelve profiles. The
+symmetric and antisymmetric transition matrices each have size six, accounting
+for the two factors in the denominator. -/
 def profile : Fin 20 → List (Fin 4) :=
   ![[0],[0,1,2],[0,1,3],[0,2,1],[0,2,3],[0,3,1],[0,3,2],[1],[1,2,3],[1,3,2],[2],[3],[2,0,1],[2,1,0],[3,0,1],[3,1,0],[3,0,2],[3,1,2],[3,2,0],[3,2,1]]
 
 def edges : Fin 20 → List (Fin 20) :=
   ![[0,1,2,3,4,6,5,7,8,9,10,11],[1,2,10,11],[2,1,4,11,10],[3,5],[2,4,8,11],[3,5,6],[6,5,9],[7,8,9,0,4,6,10,11],[8,4,11],[9,6],[10,12,13,7,0,11,14,15],[11,14,16,15,17,19,18,10,12,13,7,0],[12,14],[13,0,15],[14,16,12],[15,18,13,0],[16,14,17],[16,17],[15,18,19,0,7],[19,18,7,0]]
 
-def rows (i : Fin 20) := logBook.filter fun w => rowUpper w == profile i
+def rows (i : Fin 20) := (enumerate 4 (some .top) []).filter fun w => rowUpper w == profile i
 
 lemma rows_mem (i : Fin 20) (w : List Tile) :
     w ∈ rows i ↔ RowFits w ∧ RowRun w ∧ rowUpper w = profile i := by
   rw [← mem_rowSet]
-  simp [rows, rowSet, enumerate_four]
+  simp [rows, rowSet]
 
 set_option maxRecDepth 15000 in
 set_option maxHeartbeats 8000000 in
@@ -831,9 +700,16 @@ def act : Vec →ₗ[ℤ] Vec where
   map_add' u v := by funext i; simp [advance, Finset.sum_add_distrib]
   map_smul' a v := by funext i; exact (Finset.mul_sum _ _ _).symm
 
-/-- The first thirteen vectors obtained from the terminal boundary. -/
-def sample : Fin 13 → Vec :=
-  ![![1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],![1,0,0,0,0,0,0,1,0,0,1,1,0,1,0,1,0,0,1,1],![4,2,2,0,1,0,0,4,1,0,6,8,0,3,0,4,0,0,5,4],![28,18,19,0,12,0,0,24,10,0,29,38,0,11,0,16,0,0,21,17],![178,104,116,0,79,0,0,141,60,0,146,184,0,55,0,76,0,0,106,90],![1008,550,629,0,439,0,0,788,323,0,780,976,0,309,0,415,0,0,591,515],![5493,2935,3374,0,2367,0,0,4314,1738,0,4276,5382,0,1732,0,2323,0,0,3317,2902],![29879,15967,18334,0,12861,0,0,23570,9487,0,23520,29739,0,9548,0,12865,0,0,18349,16026],![163357,87560,100421,0,70421,0,0,129056,52087,0,129121,163496,0,52292,0,70641,0,0,100689,87824],![895519,480598,551019,0,386425,0,0,707538,286004,0,707963,896476,0,286290,0,386979,0,0,551567,480926],![4911542,2636056,3022481,0,2119924,0,0,3879925,1568905,0,3880765,4913258,0,1568788,0,2120355,0,0,3022529,2635550],![26932856,14452560,16572484,0,11624568,0,0,21274319,8602087,0,21274633,26932712,0,8600685,0,11623214,0,0,16569901,14449546],![147666219,79232389,90856957,0,63731851,0,0,116641175,47159367,0,116638419,147657866,0,47156755,0,63726656,0,0,90849836,79226622]]
+/-- Periodic checkpoints keep the kernel computation of the transfer recurrence small. -/
+def checkpoint : Fin 5 → Vec :=
+  ![![1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    ![28,18,19,0,12,0,0,24,10,0,29,38,0,11,0,16,0,0,21,17],
+    ![5493,2935,3374,0,2367,0,0,4314,1738,0,4276,5382,0,1732,0,2323,0,0,3317,2902],
+    ![895519,480598,551019,0,386425,0,0,707538,286004,0,707963,896476,0,286290,0,386979,0,0,551567,480926],
+    ![147666219,79232389,90856957,0,63731851,0,0,116641175,47159367,0,116638419,147657866,0,47156755,0,63726656,0,0,90849836,79226622]]
+
+def sample (k : Fin 13) : Vec :=
+  advance^[k.val % 3] (checkpoint ⟨k.val / 3, by omega⟩)
 
 lemma total_zero : total 0 = sample 0 := by
   have h : ∀ i : Fin 20, (if profile i = [0] then (1 : ℤ) else 0) = sample 0 i := by decide
@@ -865,20 +741,8 @@ def mix (f : ℕ → Vec) (n : ℕ) : Vec :=
   -(f (n+0)) - 4 • (f (n+1)) + 12 • (f (n+2)) + 40 • (f (n+3)) - 69 • (f (n+4)) - 94 • (f (n+5)) + 175 • (f (n+6)) - 16 • (f (n+7)) - 133 • (f (n+8)) + 124 • (f (n+9)) - 54 • (f (n+10)) + 12 • (f (n+11))
 
 lemma base_relation : total 12 = mix total 0 := by
-  have h0 : total 0 = sample 0 := sample_total (0 : Fin 13)
-  have h1 : total 1 = sample 1 := sample_total (1 : Fin 13)
-  have h2 : total 2 = sample 2 := sample_total (2 : Fin 13)
-  have h3 : total 3 = sample 3 := sample_total (3 : Fin 13)
-  have h4 : total 4 = sample 4 := sample_total (4 : Fin 13)
-  have h5 : total 5 = sample 5 := sample_total (5 : Fin 13)
-  have h6 : total 6 = sample 6 := sample_total (6 : Fin 13)
-  have h7 : total 7 = sample 7 := sample_total (7 : Fin 13)
-  have h8 : total 8 = sample 8 := sample_total (8 : Fin 13)
-  have h9 : total 9 = sample 9 := sample_total (9 : Fin 13)
-  have h10 : total 10 = sample 10 := sample_total (10 : Fin 13)
-  have h11 : total 11 = sample 11 := sample_total (11 : Fin 13)
-  have h12 : total 12 = sample 12 := sample_total (12 : Fin 13)
-  simp only [mix, Nat.zero_add, h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12]
+  have h (k : ℕ) (hk : k < 13) : total k = sample ⟨k,hk⟩ := sample_total ⟨k,hk⟩
+  simp (disch := decide) only [mix, Nat.zero_add, h]
   funext i
   revert i
   decide
@@ -1357,6 +1221,10 @@ lemma initials (k : Fin 13) : count k.val = (if k.val = 0 then 0 else sample k 0
     rw [count_total]
     exact congrFun (sample_total ⟨j+1,hj⟩) 0
 
+set_option maxHeartbeats 4000000 in
+lemma initialColumn : ∀ k : Fin 13, sample k 0 =
+    ![1,1,4,28,178,1008,5493,29879,163357,895519,4911542,26932856,147666219] k := by decide
+
 open PowerSeries
 
 noncomputable def series := PowerSeries.mk count
@@ -1401,23 +1269,11 @@ lemma generating :
   simp only [zsmul_eq_mul, Int.cast_id]
   by_cases hk : k < 13
   · have init (j : ℕ) (hj : j < 13) : count j = (if j = 0 then 0 else sample ⟨j,hj⟩ 0) := initials ⟨j,hj⟩
-    interval_cases k <;> norm_num [init, sample]
+    interval_cases k <;> norm_num [init, initialColumn]
   · obtain ⟨m,rfl⟩ := Nat.exists_eq_add_of_le (by omega : 13 ≤ k)
     have hr := recurrence m
     simp (disch := omega) only [if_pos, if_neg]
-    rw [show 13 + m - 0 = m + 13 by omega,
-      show 13 + m - 1 = m + 12 by omega,
-      show 13 + m - 2 = m + 11 by omega,
-      show 13 + m - 3 = m + 10 by omega,
-      show 13 + m - 4 = m + 9 by omega,
-      show 13 + m - 5 = m + 8 by omega,
-      show 13 + m - 6 = m + 7 by omega,
-      show 13 + m - 7 = m + 6 by omega,
-      show 13 + m - 8 = m + 5 by omega,
-      show 13 + m - 9 = m + 4 by omega,
-      show 13 + m - 10 = m + 3 by omega,
-      show 13 + m - 11 = m + 2 by omega,
-      show 13 + m - 12 = m + 1 by omega]
+    simp (disch := decide) only [Nat.add_comm 13 m, Nat.add_sub_assoc, Nat.reduceSub]
     linarith only [hr]
 
 end FourColumn

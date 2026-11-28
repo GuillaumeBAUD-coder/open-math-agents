@@ -36,18 +36,8 @@ theorem key : mk g * ((2 * X - 1) * (3 * X - 1) * (4 * X - 1)) =
   rw [e1, e2]
   ext n
   simp only [map_add, map_sub, coeff_C_mul, coeff_mk, coeff_mul_X_pow', coeff_C]
-  rcases n with _ | _ | _ | _ | n
-  · simp [g]
-  · simp [g]; norm_num
-  · simp [g]; norm_num
-  · simp [g]; norm_num
-  · simp only [show 3 ≤ n + 4 by omega, show 2 ≤ n + 4 by omega, show 1 ≤ n + 4 by omega,
-      show n + 4 - 3 = n + 1 by omega, show n + 4 - 2 = n + 2 by omega,
-      show n + 4 - 1 = n + 3 by omega, if_true, g,
-      show ¬ (n + 4 = 0) by omega, show ¬ (n + 1 = 0) by omega, show ¬ (n + 2 = 0) by omega,
-      show ¬ (n + 3 = 0) by omega, if_false]
-    simp
-    ring
+  rcases n with _ | _ | _ | _ | n <;> simp [g] <;> norm_num
+  ring
 
 end OMAA223906Helpers
 

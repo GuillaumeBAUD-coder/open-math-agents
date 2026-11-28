@@ -1,28 +1,16 @@
 import OMAStatements.S_mo_219776
 import Mathlib
 
+-- Shorter disproof of mo-219776. First disproof: PR #12761. This version: @tylerpixel
+
 open Set
-
-open OMA.S_mo_219776
-
-
-
 theorem OMA.disproof : ¬ (type_of% @OMA.S_mo_219776.main) := by
   intro h
-  let H (y : ℝ) := 1 + y
-  let F (x : ℝ) := x ^ 2 + 2 * x
-  let G (y : ℝ) := (1 + y) ^ 2
-  have hH : ContinuousOn H (Icc 0 1) := by unfold H; fun_prop
-  have hF : ContinuousOn F (Icc 0 1) := by unfold F; fun_prop
-  have hMono : MonotoneOn F (Icc 0 1) := by
-    intro x hx y hy hxy
-    have hm := mul_nonneg (sub_nonneg.mpr hxy) (add_nonneg hx.1 hy.1)
-    dsimp [F]
-    nlinarith
-  obtain ⟨c, hc⟩ := h 1 zero_lt_one H F G hH
-    ⟨1, by norm_num, by norm_num [H]⟩ hF hMono (by norm_num [F])
-    (by intros; dsimp [F, G, H]; ring)
+  obtain ⟨c, hc⟩ := h 1 one_pos (1 + ·) (fun x => x ^ 2 + 2 * x) (fun y => (1 + y) ^ 2) (by fun_prop)
+    ⟨1, by norm_num⟩ (by fun_prop) (fun x hx y hy hxy => by
+      have := mul_nonneg (sub_nonneg.mpr hxy) (add_nonneg hx.1 hy.1); dsimp; nlinarith) (by norm_num)
+    (by intros; ring)
   have h₁ := hc 1 (by norm_num)
   have h₂ := hc (1 / 2) (by norm_num)
-  norm_num [F] at h₁ h₂
+  norm_num at h₁ h₂
   linarith

@@ -30,30 +30,6 @@ theorem prep_eq (n d k : ℕ) : prep n d k = d * R k * 10 ^ (Nat.digits 10 n).le
   rw [Nat.ofDigits_append, Nat.ofDigits_digits, ofDigits_replicate]
   ring
 
-/-- Control: a(17) = 317, the 18th listed term (117 = 9 * 13 and 217 = 7 * 31 are composite). -/
-theorem control_a17 :
-    IsLeast {p : ℕ | p.Prime ∧ ∃ d, 1 ≤ d ∧ d ≤ 9 ∧ ∃ k, 1 ≤ k ∧ p = prep 17 d k} 317 := by
-  have h17 : (Nat.digits 10 17).length = 2 := by norm_num
-  constructor
-  · refine ⟨by norm_num, 3, by norm_num, by norm_num, 1, le_refl _, ?_⟩
-    rw [prep_eq, h17]
-    simp [R]
-  · rintro p ⟨hp, d, hd1, hd9, k, hk, rfl⟩
-    rw [prep_eq, h17] at hp ⊢
-    by_contra hlt
-    push Not at hlt
-    have hk1 : k = 1 := by
-      by_contra hne
-      have h2 : 2 ≤ k := by omega
-      have hR : 11 ≤ R k := by
-        obtain ⟨j, rfl⟩ : ∃ j, k = j + 2 := ⟨k - 2, by omega⟩
-        simp only [R]
-        omega
-      nlinarith
-    subst hk1
-    simp only [R] at hp hlt
-    interval_cases d <;> revert hp hlt <;> norm_num
-
 def n0 : ℕ :=
   100259397339064294179584070876334750061911275910953649364205338689746815564846640916475011507401
 

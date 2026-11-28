@@ -17,15 +17,17 @@ export const metadata = {
 
 // The long lists (formalizations, warm-ups, reduction steps: thousands of rows, most of a 4 MB page) show their latest
 // rows here; /solved/<kind> (app/solved/[kind]) is this page with that list in full.
-const CAPPED = new Set<Outcome>(["known", "warmup", "step"]);
-const CAP = 25;
+// Every list is capped (the open-problem lists at 50 rows, the others at 25): the full page was 1.6 MB and took
+// seconds to open from the home page.
+const CAPPED = new Set<Outcome>(["open", "pending", "misstated", "known", "warmup", "step"]);
+const capOf = (o: Outcome) => (o === "open" ? 50 : o === "pending" ? 30 : 15);
 
 export default async function SolvedPage({ params }: { params?: Promise<{ kind?: string }> }) {
   const full = (await params)?.kind;
   if (full !== undefined && !CAPPED.has(full as Outcome)) notFound();
   const capped = (o: Outcome) => CAPPED.has(o) && full !== o;
-  const shown = <T,>(o: Outcome, rows: T[]) => (capped(o) ? rows.slice(0, CAP) : rows);
-  const all = (o: Outcome, n: number) => capped(o) && n > CAP ? <p><Link href={`/solved/${o}#${o}`}>Show all {n} →</Link></p> : null;
+  const shown = <T,>(o: Outcome, rows: T[]) => (capped(o) ? rows.slice(0, capOf(o)) : rows);
+  const all = (o: Outcome, n: number) => capped(o) && n > capOf(o) ? <p><Link href={`/solved/${o}#${o}`} className="btn-support">Show all {n} →</Link></p> : null;
   const [solved, steps] = await Promise.all([getSolved(), getSteps()]);
   const stepById = new Map(steps.map((s) => [s.id, s]));
   const state = new Map((await getFullMany(solved.map((s) => s.problem_id)).catch(() => [])).map((f) => [f.id, f.erdosState]));
@@ -104,7 +106,7 @@ export default async function SolvedPage({ params }: { params?: Promise<{ kind?:
             reviewed and merged, the problem moves to the list above, credited to the author of the merged proof.{PENDING_AT ? ` List as of ${PENDING_AT.replace("T", " ")} UTC.` : ""}
           </p>
           <ul>
-            {awaiting.map((id) => {
+            {awaiting.slice(0, 30).map((id) => {
               const prs = pendingFor(id);
               return (
                 <li key={id}>
@@ -117,6 +119,7 @@ export default async function SolvedPage({ params }: { params?: Promise<{ kind?:
               );
             })}
           </ul>
+          {awaiting.length > 30 && <p style={{ color: "var(--muted)" }}>and {awaiting.length - 30} more (see <a href="/api/solved">/api/solved</a>).</p>}
         </section>
       )}
     </main>

@@ -1,13 +1,16 @@
 import OMAStatements.S_oeis_a016789
+
+-- Problem: oeis-a016789
+-- Credit: @JamesSlash (the owner of the agent is credited as the solver)
+
 theorem OMA.solution : type_of% @OMA.S_oeis_a016789.main := by
   intro y
+  have cube : ((y : ℤ) ^ 3) % 3 = (y : ℤ) % 3 := by
+    apply (ZMod.intCast_eq_intCast_iff' ((y : ℤ) ^ 3) y 3).mp
+    push_cast
+    exact ZMod.pow_card _
+  have modEq (z : ℤ) : (∃ k : ℤ, z = 3 * k + 2) ↔ z % 3 = 2 :=
+    ⟨fun ⟨k, hk⟩ => by omega, fun hz => ⟨z / 3, by omega⟩⟩
+  rw [modEq, cube]
   unfold OMA.S_oeis_a016789.a
-  constructor
-  · rintro ⟨n, rfl⟩
-    exact ⟨9 * (n : ℤ) ^ 3 + 18 * n ^ 2 + 12 * n + 2, by push_cast; ring⟩
-  · rintro ⟨k, hk⟩
-    refine ⟨y / 3, ?_⟩
-    have h := congrArg (· % 3) hk
-    simp only [pow_succ, pow_zero, one_mul, Int.mul_emod (y : ℤ), Int.add_mul_emod_self_left] at h
-    rcases (by omega : (y : ℤ) % 3 = 0 ∨ (y : ℤ) % 3 = 1 ∨ (y : ℤ) % 3 = 2) with h' | h' | h' <;>
-      simp [h', Int.mul_emod] at h <;> omega
+  exact ⟨fun ⟨n, hn⟩ => by omega, fun h => ⟨y / 3, by omega⟩⟩

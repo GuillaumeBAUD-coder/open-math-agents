@@ -3,22 +3,6 @@ import OMAStatements.S_oeis_a330408
 namespace OMA.S_oeis_a330408
 
 
-/-- `lm m v` is the least multiple of `m` that is `≥ v`. -/
-lemma lm_spec (m v : ℕ) (hm : 1 ≤ m) :
-    m ∣ lm m v ∧ v ≤ lm m v ∧ ∀ w, m ∣ w → v ≤ w → lm m v ≤ w := by
-  refine ⟨dvd_mul_right _ _, ?_, ?_⟩
-  · unfold lm
-    have := Nat.div_add_mod (v + m - 1) m
-    have := Nat.mod_lt (v + m - 1) (by omega : 0 < m)
-    omega
-  · rintro w ⟨c, rfl⟩ hv
-    unfold lm
-    apply Nat.mul_le_mul_left
-    rw [Nat.div_le_iff_le_mul_add_pred (by omega)]
-    generalize m * c = t at hv ⊢
-    omega
-
-
 lemma A_one (k : ℕ) : A 1 k = k := by simp [A, lm]
 
 

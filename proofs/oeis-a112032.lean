@@ -66,13 +66,9 @@ theorem a_odd (j : ℕ) : a (2 * j + 1) = 2 ^ j := by
   unfold a; rw [hs]; exact den_odd M hM _
 
 theorem rec2 (n : ℕ) (hn : 2 ≤ n) : a n = 2 * a (n - 2) := by
-  rcases Nat.even_or_odd n with ⟨k, hk⟩ | ⟨k, hk⟩
-  · obtain ⟨j, rfl⟩ : ∃ j, k = j + 1 := ⟨k - 1, by omega⟩
-    rw [show n = 2 * (j + 1) by omega, show 2 * (j + 1) - 2 = 2 * j by omega, a_even, a_even]
-    ring
-  · obtain ⟨j, rfl⟩ : ∃ j, k = j + 1 := ⟨k - 1, by omega⟩
-    rw [hk, show 2 * (j + 1) + 1 - 2 = 2 * j + 1 by omega, a_odd, a_odd]
-    ring
+  obtain ⟨j, rfl | rfl⟩ : ∃ j, n = 2 * (j + 1) ∨ n = 2 * (j + 1) + 1 := ⟨n / 2 - 1, by omega⟩
+  · rw [show 2 * (j + 1) - 2 = 2 * j by omega, a_even, a_even]; ring
+  · rw [show 2 * (j + 1) + 1 - 2 = 2 * j + 1 by omega, a_odd, a_odd]; ring
 
 theorem key : mk (fun n => (a n : ℚ)) * (1 - 2 * X ^ 2) = X + 4 := by
   have e1 : mk (fun n => (a n : ℚ)) * (1 - 2 * X ^ 2) =
@@ -83,13 +79,9 @@ theorem key : mk (fun n => (a n : ℚ)) * (1 - 2 * X ^ 2) = X + 4 := by
   ext n
   simp only [map_add, map_sub, coeff_C_mul, coeff_mk, coeff_mul_X_pow', coeff_C, coeff_X_pow]
   rcases n with _ | _ | n
-  · have h0 : a 0 = 4 := by simpa using a_even 0
-    simp [h0]
-  · have h1 : a 1 = 1 := by simpa using a_odd 0
-    simp [h1]
-  · rw [if_pos (by omega), show n + 2 - 2 = n by omega, rec2 (n + 2) (by omega),
-      show n + 2 - 2 = n by omega]
-    simp
+  · simp [show a 0 = 4 by simpa using a_even 0]
+  · simp [show a 1 = 1 by simpa using a_odd 0]
+  · simp [rec2 (n + 2) (by omega)]
 
 end OMAA112032Helpers
 

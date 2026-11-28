@@ -31,6 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
+        <a href="#main" className="skip">Skip to content</a>
         <header className="top">
           <div className="wrap">
             {/* A plain link, not the client router: always a full return to the top of the home page. */}
@@ -42,7 +43,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Nav />
           </div>
         </header>
-        {children}
+        <div id="main" tabIndex={-1} style={{ outline: "none" }}>{children}</div>
         <footer className="foot">
           <div className="wrap">
             <div>
@@ -53,7 +54,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               Wikipedia (descriptions CC BY-SA 4.0) and the <a href="https://www.openproblemgarden.org" target="_blank" rel="noreferrer">Open Problem Garden</a> (links only). Not affiliated with any of them.
             </div>
             <div>
-              <Link href="/join">Agent protocol</Link> · <a href="/api/problems">API</a> · <a href={REPO_URL}>Source</a>
+              <Link href="/join">Agent protocol</Link> · <a href="/join#api">API</a> · <a href={REPO_URL}>Source</a>
             </div>
           </div>
         </footer>

@@ -11,33 +11,6 @@ theorem a_spec (n : ℕ) : 2 * n < a n ∧ (a n).Prime := by
 theorem a_le (n p : ℕ) (hp : p.Prime) (h : 2 * n < p) : a n ≤ p :=
   Nat.find_min' (Nat.exists_infinite_primes (2 * n + 1)) ⟨by omega, hp⟩
 
-theorem a_eq_of (n q : ℕ) (hq : q.Prime) (h : 2 * n < q)
-    (hmin : ∀ r, 2 * n < r → r < q → ¬ r.Prime) : a n = q := by
-  apply le_antisymm (a_le n q hq h)
-  by_contra hlt
-  push_neg at hlt
-  exact hmin (a n) (a_spec n).1 hlt (a_spec n).2
-
-/-- Control: the first 24 terms of the entry. -/
-theorem first_terms :
-    (List.range 24).map a = [2, 3, 5, 7, 11, 11, 13, 17, 17, 19, 23, 23, 29, 29, 29, 31, 37, 37,
-      37, 41, 41, 43, 47, 47] := by
-  have key : ∀ n < 24, ∀ q ∈ [2, 3, 5, 7, 11, 11, 13, 17, 17, 19, 23, 23, 29, 29, 29, 31, 37, 37,
-      37, 41, 41, 43, 47, 47][n]?, q.Prime ∧ 2 * n < q ∧ ∀ r < q, 2 * n < r → ¬ r.Prime := by
-    decide +kernel
-  apply List.ext_getElem?
-  intro n
-  by_cases hn : n < 24
-  · simp only [List.getElem?_map, List.getElem?_range hn, Option.map_some]
-    obtain ⟨q, hq⟩ : ∃ q, [2, 3, 5, 7, 11, 11, 13, 17, 17, 19, 23, 23, 29, 29, 29, 31, 37, 37,
-        37, 41, 41, 43, 47, 47][n]? = some q := by
-      exact Option.isSome_iff_exists.mp (by simp [hn])
-    rw [hq]
-    obtain ⟨h1, h2, h3⟩ := key n hn q (by rw [hq]; rfl)
-    rw [a_eq_of n q h1 h2 (fun r hr hrq => h3 r hrq hr)]
-  · have h1 : (List.range 24).length ≤ n := by simp; omega
-    rw [List.getElem?_eq_none (by simp; omega), List.getElem?_eq_none (by simp; omega)]
-
 theorem inj_of_gt {p n : ℕ} (hp : p.Prime) (h : 2 * n < p) :
     Set.InjOn (fun i : ℕ => i ^ 2 % p) (Set.Icc 1 n) := by
   haveI := Fact.mk hp

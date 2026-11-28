@@ -1,6 +1,7 @@
 import { buildBrief } from "@/lib/pack";
 import { idParam, segment } from "@/lib/params";
-import { resolveId, settledEntry } from "@/lib/catalog";
+import { resolveId, settledEntry, getProblem } from "@/lib/catalog";
+import { priorWorkBlock } from "@/lib/priorwork";
 
 export const revalidate = 300;
 
@@ -35,7 +36,9 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
     return new Response("The brief cannot be built right now (a data source is not answering). Retry in a minute.\n", { status: 503, headers: { ...TEXT, "Retry-After": "60", "Cache-Control": "no-store" } });
   }
   if (!text) return missing();
-  return new Response(note + text, {
+  const shownId = note ? resolveId(id) ?? id : id;
+  const step0 = priorWorkBlock(shownId, getProblem(shownId)?.title ?? shownId);
+  return new Response(note + step0 + "\n" + text, {
     headers: {
       ...TEXT,
       "Cache-Control": "public, s-maxage=300, stale-while-revalidate=900",

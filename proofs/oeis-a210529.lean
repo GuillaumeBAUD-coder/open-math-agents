@@ -1,7 +1,5 @@
 import OMAStatements.S_oeis_a210529
-import Mathlib.NumberTheory.LSeries.PrimesInAP
-import Mathlib.Data.Nat.Prime.Factorial
-import Mathlib.NumberTheory.PrimeCounting
+import Mathlib
 
 open OMA.S_oeis_a210529
 

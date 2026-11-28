@@ -118,84 +118,10 @@ structure Wire (I : Type*) where
 abbrev Wire.Leg (e : Wire I) (i : I) :=
   {_t : Fin e.width // i = e.left ∨ i = e.right} → Bool
 
-/-- The two endpoints see the same string. -/
-def Wire.basisTerm (e : Wire I) (s : Fin e.width → Bool) (i : I) : e.Leg i :=
-  fun t => s t.val
-
 /-- Coefficients of a tensor presented as a finite sum of coordinate basis tensors. -/
 def basisTensor {A : I → Type*} {S : Type*} [Fintype S]
     (term : S → ∀ i, A i) (x : ∀ i, A i) : F :=
   ∑ s, if x = term s then 1 else 0
-
-/-- On basis terms, a tensor direct sum tags every site's input by the same summand. -/
-def sumBasis {L : Type*} {S : L → Type*} {A : L → I → Type*}
-    (term : ∀ l, S l → ∀ i, A l i) (s : Σ l, S l) (i : I) : Σ l, A l i :=
-  ⟨s.1, term s.1 s.2 i⟩
-
-/-- A basis term of a grouped power chooses the terms of the factors independently. -/
-def powerBasis {S : Type*} {A : I → Type*}
-    (term : S → ∀ i, A i) (j : ℕ) (s : Fin j → S) (i : I) : Fin j → A i :=
-  fun t => term (s t) i
-
-/-- Direct sum of identical copies, recording the copy index at every site. -/
-def copiesBasis {S : Type*} {A : I → Type*}
-    (term : S → ∀ i, A i) (K : ℕ) (s : Fin K × S) (i : I) : Fin K × A i :=
-  (s.1, term s.2 i)
-
-/-- On the block tagged by one summand, the direct sum has precisely the coefficients
-of that summand. At least one site is needed to distinguish the tags. -/
-theorem basisTensor_sum_onBlock {L : Type*} [Fintype L] {S : L → Type*}
-    [∀ l, Fintype (S l)] {A : L → I → Type*} [Nonempty I]
-    (term : ∀ l, S l → ∀ i, A l i) (l : L) (x : ∀ i, A l i) :
-    basisTensor (F := F) (sumBasis term) (fun i => ⟨l, x i⟩) = basisTensor (term l) x := by
-  classical
-  unfold basisTensor
-  rw [Fintype.sum_sigma]
-  rw [Finset.sum_eq_single l]
-  · refine Finset.sum_congr rfl fun s _ => ?_
-    have h : (fun i => (⟨l, x i⟩ : Σ l, A l i)) = sumBasis term ⟨l, s⟩ ↔ x = term l s := by
-      constructor
-      · intro h
-        funext i
-        exact Sigma.mk.inj_iff.mp (congrFun h i) |>.2 |>.eq
-      · rintro rfl
-        rfl
-    simp [h]
-  · intro l' _ hne
-    refine Finset.sum_eq_zero fun s _ => if_neg fun h => hne ?_
-    let i := Classical.choice (inferInstance : Nonempty I)
-    exact (congrArg Sigma.fst (congrFun h i)).symm
-  · simp
-
-/-- Mixed tags have zero coefficient in a tensor direct sum. -/
-theorem basisTensor_sum_offBlock {L : Type*} [Fintype L] {S : L → Type*}
-    [∀ l, Fintype (S l)] {A : L → I → Type*} (term : ∀ l, S l → ∀ i, A l i)
-    (x : ∀ i, Σ l, A l i) (h : ¬ ∃ l, ∀ i, (x i).1 = l) :
-    basisTensor (F := F) (sumBasis term) x = 0 := by
-  apply Finset.sum_eq_zero
-  intro s _
-  apply if_neg
-  rintro rfl
-  exact h ⟨s.1, fun _ => rfl⟩
-
-/-- The grouped tensor power has the product of the original coefficients. -/
-theorem basisTensor_power {S : Type*} [Fintype S] {A : I → Type*}
-    (term : S → ∀ i, A i) (j : ℕ) (x : ∀ i, Fin j → A i) :
-    basisTensor (F := F) (powerBasis term j) x =
-      ∏ t, basisTensor (F := F) term (fun i => x i t) := by
-  classical
-  unfold basisTensor
-  rw [Fintype.prod_sum]
-  refine Finset.sum_congr rfl fun w _ => ?_
-  rw [Fintype.prod_boole]
-  have h : x = powerBasis term j w ↔ ∀ t, (fun i => x i t) = term (w t) := by
-    constructor
-    · rintro rfl t
-      rfl
-    · intro ht
-      funext i t
-      exact congrFun (ht t) i
-  simp [h]
 
 /-- The matrix-coefficient definition of restriction by local linear maps. -/
 def IsRestriction {A B : I → Type*} [∀ i, Fintype (A i)]
@@ -213,67 +139,6 @@ theorem restriction_basisTensor_iff {A B : I → Type*} [∀ i, Fintype (A i)]
   simp_rw [Finset.sum_mul, ite_mul, one_mul, zero_mul]
   rw [Finset.sum_comm]
   simp
-
-/-- The leaf matrices of a network may jointly read all strings on incident wires. -/
-abbrev LocalTables {B : I → Type*} {j : ℕ} (wires : Fin j → Wire I) (F : Type*) :=
-  ∀ i, B i → ((t : Fin j) → (wires t).Leg i) → F
-
-/-- Coefficients of a network, obtained by contracting one shared index for each wire. -/
-def network {B : I → Type*} {j : ℕ} (wires : Fin j → Wire I)
-    (T : LocalTables (B := B) wires F) (x : ∀ i, B i) : F :=
-  ∑ s : (t : Fin j) → (Fin (wires t).width → Bool),
-    ∏ i, T i (x i) (fun t => (wires t).basisTerm (s t) i)
-
-/-- Reindex a word of tagged strings by first choosing the word of tags. -/
-private def splitTags {J L : Type*} (S : L → Type*) :
-    (J → Σ l, S l) ≃ (Σ w : J → L, (t : J) → S (w t)) where
-  toFun s := ⟨fun t => (s t).1, fun t => (s t).2⟩
-  invFun s t := ⟨s.1 t, s.2 t⟩
-  left_inv := by intro s; rfl
-  right_inv := by rintro ⟨w, s⟩; rfl
-
-/-- The tensor in the strict comparison step, in the coordinate bases of its direct
-sums and grouped tensor powers. -/
-def copiesOfWirePower {E : Type*} [Fintype E] (wires : E → Wire I) (K j : ℕ) :=
-  basisTensor (F := F) (copiesBasis (powerBasis (sumBasis fun l => (wires l).basisTerm) j) K)
-
-/-- Ordinary local-matrix restriction from the tensor used in strict comparison. -/
-def RestrictsWirePower {B : I → Type*} {E : Type*} [Fintype E]
-    (X : (∀ i, B i) → F) (wires : E → Wire I) (K j : ℕ) : Prop :=
-  IsRestriction X (copiesOfWirePower wires K j)
-
-/-- Restricting the direct sum of `K` copies of `W^⊗j`, where `W` is a direct sum
-of `L` wires, gives an ordinary sum indexed by a copy and a word of `j` wire choices. -/
-theorem restriction_copiesOfWirePower {B : I → Type*} {E : Type*} [Fintype E] {K j : ℕ}
-    (wires : E → Wire I) (X : (∀ i, B i) → F)
-    (h : RestrictsWirePower X wires K j) :
-    ∃ T : (k : Fin K) → (w : Fin j → E) → LocalTables (B := B) (wires ∘ w) F,
-      ∀ x, X x = ∑ k, ∑ w, network (wires ∘ w) (T k w) x := by
-  obtain ⟨M, hM⟩ := (restriction_basisTensor_iff _ X).mp h
-  refine ⟨fun k w i y a => M i y (k, fun t => ⟨w t, a t⟩), ?_⟩
-  intro x
-  rw [hM, Fintype.sum_prod_type]
-  refine Finset.sum_congr rfl fun k _ => ?_
-  let e := splitTags (J := Fin j) (fun l => Fin (wires l).width → Bool)
-  simp only [network]
-  rw [← Fintype.sum_sigma']
-  exact Fintype.sum_equiv e _ _ fun _ => rfl
-
-/-- Number of network summands in the expansion. -/
-theorem card_networks (K L j : ℕ) :
-    Fintype.card (Fin K × (Fin j → Fin L)) = K * L ^ j := by simp
-
-/-- With sites placed in a metric space, supply its distance for `length`. -/
-def wireCost (length : I → I → ℝ) (e : Wire I) : ℝ :=
-  e.width * length e.left e.right
-
-omit [Fintype I] in
-/-- Absorbing arbitrary local matrices does not increase the cost of a word of wires. -/
-theorem network_cost_le {E : Type*} {j : ℕ} {bound : ℝ} (length : I → I → ℝ)
-    (wires : E → Wire I) (h : ∀ l, wireCost length (wires l) ≤ bound)
-    (w : Fin j → E) :
-    ∑ t, wireCost length (wires (w t)) ≤ bound * j := by
-  simpa [mul_comm] using Finset.sum_le_sum (s := Finset.univ) (fun t _ => h (w t))
 
 end
 end Crossing
@@ -999,26 +864,6 @@ instance : CommSemiring (TensorClass.{v} I K) where
   left_distrib := class_left_distrib
   right_distrib X Y Z := by rw [class_mul_comm, class_left_distrib, class_mul_comm Z X, class_mul_comm Z Y]
 
-omit [Nonempty I] in
-/-- Both arguments of block direct sum are monotone under restriction. -/
-theorem add_mono {X Y U V : TensorClass.{v} I K} (h : X ≤ Y) (g : U ≤ V) :
-    X + U ≤ Y + V := by
-  induction X using Quotient.inductionOn
-  induction Y using Quotient.inductionOn
-  induction U using Quotient.inductionOn
-  induction V using Quotient.inductionOn
-  exact restrict_sum h g
-
-omit [Nonempty I] in
-/-- Both arguments of tensor product are monotone under restriction. -/
-theorem mul_mono {X Y U V : TensorClass.{v} I K} (h : X ≤ Y) (g : U ≤ V) :
-    X * U ≤ Y * V := by
-  induction X using Quotient.inductionOn
-  induction Y using Quotient.inductionOn
-  induction U using Quotient.inductionOn
-  induction V using Quotient.inductionOn
-  exact Raw.mul_restricts h g
-
 end
 end SiteTensor
 
@@ -1086,20 +931,6 @@ theorem basisTensor_paired_eq_mul {K : Type*} [Field K]
       exact (e i).injective ((Prod.ext (congrFun ha i) (congrFun hb i)).trans (h s t i).symm)
   by_cases ha : (fun i ↦ (e i (x i)).1) = a s <;> simp [heq, ha]
 
-/-- A basis presentation with two independent labels factors into the partial
-diagonals on the supports where the labels are read. -/
-theorem basisTensor_eq_maskDiagonal_mul {K : Type*} [Field K]
-    {C : I → Type} [∀ i, Fintype (C i)] {J L : Type} [Fintype J] [Fintype L]
-    (S T : Finset I) (c : J × L → ∀ i, C i)
-    (e : ∀ i, C i ≃ MaskLeg S J i × MaskLeg T L i)
-    (h : ∀ s t i, e i (c (s,t) i) = (fun _ ↦ s, fun _ ↦ t)) :
-    ofRaw (I := I) (K := K) ⟨C, inferInstance, Crossing.basisTensor c⟩ =
-      ofRaw (Raw.maskDiagonal K S J) * ofRaw (Raw.maskDiagonal K T L) := by
-  let (i : I) : Fintype (MaskLeg S J i) := (Raw.maskDiagonal K S J).finiteLeg i
-  let (i : I) : Fintype (MaskLeg T L i) := (Raw.maskDiagonal K T L).finiteLeg i
-  exact basisTensor_paired_eq_mul (K := K) (A := MaskLeg S J) (B := MaskLeg T L)
-    (fun a _ _ ↦ a) (fun b _ _ ↦ b) c e h
-
 end SiteTensor
 
 end SpectralBooks
@@ -1118,34 +949,6 @@ namespace SpectralBooks
 
 open Filter
 open scoped Topology NNReal
-
-/-- A fixed polynomial overhead in a comparison of all positive powers
-disappears at the level of exponential growth rates. -/
-theorem le_of_pow_le_polynomial_mul_pow {x y : ℝ} (hy : 0 ≤ y) (L : ℕ)
-    (h : ∀ m : ℕ, 1 ≤ m → x ^ m ≤ ((m : ℝ) + 1) ^ L * y ^ m) : x ≤ y := by
-  by_contra! hxy
-  have hx := hy.trans_lt hxy
-  have hr := tendsto_pow_const_mul_const_pow_of_lt_one L (div_nonneg hy hx.le)
-    ((div_lt_one hx).2 hxy)
-  have hlim : Tendsto (fun m : ℕ => (2 : ℝ) ^ L * ((m : ℝ) ^ L * (y / x) ^ m))
-      atTop (𝓝 0) := by simpa using hr.const_mul ((2 : ℝ) ^ L)
-  have hone : (1 : ℝ) ≤ 0 := le_of_tendsto_of_tendsto tendsto_const_nhds hlim (by
-    filter_upwards [eventually_ge_atTop 1] with m hm
-    have hm' : (1 : ℝ) ≤ m := by exact_mod_cast hm
-    have hp : ((m : ℝ) + 1) ^ L ≤ (2 * (m : ℝ)) ^ L :=
-      pow_le_pow_left₀ (by positivity) (by linarith) L
-    rw [div_pow, ← mul_div_assoc, ← mul_div_assoc, le_div_iff₀ (pow_pos hx _), one_mul,
-      ← mul_assoc, ← mul_pow]
-    exact (h m hm).trans (mul_le_mul_of_nonneg_right hp (pow_nonneg hy _)))
-  norm_num at hone
-
-/-- The growth-rate comparison in nonnegative reals. -/
-theorem nnreal_le_of_pow_le_polynomial_mul_pow {x y : ℝ≥0} (L : ℕ)
-    (h : ∀ m : ℕ, 1 ≤ m → x ^ m ≤ ((m : ℝ≥0) + 1) ^ L * y ^ m) : x ≤ y := by
-  apply NNReal.coe_le_coe.mp
-  apply le_of_pow_le_polynomial_mul_pow y.2 L
-  intro m hm
-  exact_mod_cast h m hm
 
 /-- A uniformly bounded error between all natural multiples forces equality. -/
 theorem eq_of_nat_mul_close {a b C : ℝ}
@@ -1209,24 +1012,6 @@ theorem dimension_price_eq_logb {p : ℕ → ℝ} (hmono : ∀ i j, 0 < i → i 
   obtain ⟨hu, hl⟩ := happrox k
   constructor <;> linarith
 
-/-- Its multiplicative form applies to the normalized spectral value of a wire,
-or of square matrix multiplication as a function of its order. -/
-theorem dimension_value_eq_rpow {v : ℕ → ℝ} (hmono : Monotone v) (hone : v 1 = 1)
-    (hmul : ∀ m n, v (m * n) = v m * v n) {q : ℕ} (hq : 0 < q) :
-    v q = (q : ℝ) ^ (Real.logb 2 (v 2)) := by
-  have hpos (n : ℕ) (hn : 0 < n) : 0 < v n := by
-    have h := hmono (show 1 ≤ n from hn)
-    linarith
-  have h := dimension_price_eq_logb (p := fun n => Real.logb 2 (v n))
-    (fun i j hi hij => Real.logb_le_logb_of_le (by norm_num) (hpos i hi) (hmono hij))
-    (by simp [hone]) (fun i j hi hj => by rw [hmul, Real.logb_mul (hpos _ hi).ne' (hpos _ hj).ne']) hq
-  have hq' : 0 < (q : ℝ) := by exact_mod_cast hq
-  have hr := Real.rpow_logb (by norm_num : (0 : ℝ) < 2) (by norm_num : (2 : ℝ) ≠ 1) (hpos q hq)
-  have hR := Real.rpow_logb (by norm_num : (0 : ℝ) < 2) (by norm_num : (2 : ℝ) ≠ 1)
-    (Real.rpow_pos_of_pos hq' (Real.logb 2 (v 2)))
-  rw [Real.logb_rpow_eq_mul_logb_of_pos hq', ← h] at hR
-  exact hr.symm.trans hR
-
 end SpectralBooks
 end LinearAlgebra
 end OAI
@@ -1256,11 +1041,6 @@ theorem spectral_natCast_one_le (n : ℕ) (hn : 0 < n) : 1 ≤ v (n : A) := by
   simpa using hmono (a := 1) (b := n) (by decide) hn
 
 include hmono in
-/-- Positive integer diagonals have a nonnegative logarithmic price. -/
-theorem spectral_natCast_logb_nonneg (n : ℕ) (hn : 0 < n) : 0 ≤ logb 2 (v (n : A)) :=
-  logb_nonneg (by norm_num) (by exact_mod_cast spectral_natCast_one_le v hmono n hn)
-
-include hmono in
 private theorem spectral_natCast_logb_mono {a b : ℕ} (ha : 0 < a) (hab : a ≤ b) :
     logb 2 (v (a : A)) ≤ logb 2 (v (b : A)) :=
   logb_le_logb_of_le (by norm_num)
@@ -1278,20 +1058,6 @@ theorem spectral_natCast_logb (n : ℕ) (hn : 0 < n) :
   have hpos {k : ℕ} (hk : 0 < k) : (v (k : A) : ℝ) ≠ 0 := by
     exact_mod_cast (zero_lt_one.trans_le (spectral_natCast_one_le v hmono k hk)).ne'
   rw [Nat.cast_mul, map_mul, NNReal.coe_mul, logb_mul (hpos hi) (hpos hj)]
-
-include hmono in
-/-- The diagonal exponent is `log₂(v 2)` over every semiring carrying a
-monotone multiplicative evaluation on positive integer diagonals. -/
-theorem spectral_natCast_eq_rpow (n : ℕ) (hn : 0 < n) :
-    v (n : A) = (n : ℝ≥0) ^ logb 2 (v (2 : A)) := by
-  apply NNReal.eq
-  rw [NNReal.coe_rpow, NNReal.coe_natCast]
-  have hv : 0 < (v (n : A) : ℝ) := by
-    exact_mod_cast zero_lt_one.trans_le (spectral_natCast_one_le v hmono n hn)
-  apply (Real.strictMonoOn_logb (by norm_num : (1 : ℝ) < 2)).injOn
-      (show 0 < (v (n : A) : ℝ) from hv) (Real.rpow_pos_of_pos (by exact_mod_cast hn : 0 < (n : ℝ)) _)
-  rw [Real.logb_rpow_eq_mul_logb_of_pos (by positivity)]
-  exact spectral_natCast_logb v hmono n hn
 
 end SpectralBooks
 end LinearAlgebra
@@ -1321,120 +1087,7 @@ namespace SpectralBooks
 
 open Finset Set
 
-/-- Clear denominators in a strict comparison of two nonnegative ratios. -/
-private theorem exists_integral_cut {a b c d : ℝ} (ha : 0 ≤ a) (hb : 0 < b)
-    (hd : 0 < d) (hab : a / b < c / d) :
-    ∃ m n : ℕ, (n : ℝ) * a < m * b ∧ (m : ℝ) * d < n * c := by
-  obtain ⟨k, hk⟩ := exists_nat_one_div_lt (sub_pos.mpr hab)
-  let n := k + 1
-  have hn : (0 : ℝ) < n := by dsimp [n]; positivity
-  have hgap : 1 < (c / d - a / b) * n := by
-    apply (div_lt_iff₀ hn).mp
-    simpa [n] using hk
-  let m := ⌊a / b * n⌋₊ + 1
-  have hm₁ : a / b * n < m := by simpa [m] using Nat.lt_floor_add_one (a / b * n)
-  have hm₂ : (m : ℝ) < c / d * n := by
-    have hfloor := Nat.floor_le (mul_nonneg (div_nonneg ha hb.le) hn.le : 0 ≤ a / b * n)
-    dsimp [m]
-    push_cast
-    linarith only [hfloor, hgap]
-  refine ⟨m, n, ?_, ?_⟩
-  · calc
-      (n : ℝ) * a = (a / b * n) * b := by field_simp
-      _ < m * b := mul_lt_mul_of_pos_right hm₁ hb
-  · calc
-      (m : ℝ) * d < (c / d * n) * d := mul_lt_mul_of_pos_right hm₂ hd
-      _ = n * c := by field_simp
-
 variable {T : Type*} [AddCommMonoid T]
-
-/-- At a single normalized point, failure of every rescaling yields two actual
-tensor products in opposite strict order. The more expensive product for
-`h` belongs to the submonoid generated by the equality requirements. -/
-private theorem local_price_separator
-    (F h : T →+ ℝ) (G : AddSubmonoid T) {u : T} (hu : u ∈ G)
-    (hU : 0 < h u) (hF : ∀ t, 0 ≤ F t) (hh : ∀ t, 0 ≤ h t)
-    (hfull : ∃ t, 0 < F t)
-    (hfail : ¬ ∃ c : ℝ, 0 < c ∧ (∀ t, c * F t ≤ h t) ∧
-      ∀ t ∈ G, c * F t = h t) :
-    ∃ x ∈ G, ∃ y : T, F x < F y ∧ h y < h x := by
-  by_cases hzero : F u = 0
-  · obtain ⟨y, hpos⟩ := hfull
-    obtain ⟨n, hn⟩ := exists_nat_gt (h y / h u)
-    refine ⟨n • u, G.nsmul_mem hu n, y, ?_, ?_⟩
-    · simpa [hzero] using hpos
-    · simpa [nsmul_eq_mul] using (div_lt_iff₀ hU).mp hn
-  have hFu : 0 < F u := lt_of_le_of_ne (hF u) (Ne.symm hzero)
-  by_cases hover : ∃ t, h t / h u < F t / F u
-  · obtain ⟨t, ht⟩ := hover
-    obtain ⟨m, n, h₁, h₂⟩ := exists_integral_cut (hh t) hU hFu ht
-    refine ⟨m • u, G.nsmul_mem hu m, n • t, ?_, ?_⟩
-    · simpa [nsmul_eq_mul] using h₂
-    · simpa [nsmul_eq_mul] using h₁
-  by_cases hunder : ∃ t ∈ G, F t / F u < h t / h u
-  · obtain ⟨t, htG, ht⟩ := hunder
-    obtain ⟨m, n, h₁, h₂⟩ := exists_integral_cut (hF t) hFu hU ht
-    refine ⟨n • t, G.nsmul_mem htG n, m • u, ?_, ?_⟩
-    · simpa [nsmul_eq_mul] using h₁
-    · simpa [nsmul_eq_mul] using h₂
-  push Not at hover hunder
-  exfalso
-  apply hfail
-  refine ⟨h u / F u, div_pos hU hFu, ?_, ?_⟩
-  · intro t
-    have hle := (div_le_div_iff₀ hFu hU).mp (hover t)
-    rw [div_mul_eq_mul_div, div_le_iff₀ hFu]
-    linarith
-  · intro t ht
-    have heq := (div_eq_div_iff hFu.ne' hU.ne').mp
-      (le_antisymm (hover t) (hunder t ht))
-    rw [div_mul_eq_mul_div, div_eq_iff hFu.ne']
-    linarith
-
-/-- Given finite strict spectral comparison for stretched targets, a single
-rescaled point is bounded above by `h` everywhere and attains `h` on `G`.
-
-Take `G` to be the submonoid generated by the private tensors and `Δ`.
-In the doubling theorem `h = λ a + b + c` and `u` is the binary diagonal
-on the first private set. The estimate turning an ordinary sum into the
-finite comparison hypothesis is a separate input to this theorem. -/
-theorem select_spectral_price_of_finite_comparison
-    {S : Type*} [TopologicalSpace S] [CompactSpace S] [Nonempty S]
-    (F : S → T →+ ℝ) (h : T →+ ℝ) (G : AddSubmonoid T) (Δ u : T)
-    (hcont : ∀ t, Continuous (fun s => F s t)) (hF : ∀ s t, 0 ≤ F s t)
-    (hh : ∀ t, 0 ≤ h t) (hu : u ∈ G) (hU : 0 < h u)
-    (hfull : ∀ s, ∃ t, 0 < F s t)
-    (hcompare : ∀ (x : T), x ∈ G → ∀ (j : ℕ) (y : Fin j → T),
-      (∀ s, ∃ i, F s (Δ + x) < F s (y i)) → ∃ i, h (Δ + x) ≤ h (y i)) :
-    ∃ (s : S) (c : ℝ), 0 < c ∧ (∀ t, c * F s t ≤ h t) ∧
-      ∀ t ∈ G, c * F s t = h t := by
-  classical
-  by_contra hnone
-  have hlocal (s : S) := local_price_separator (F s) h G hu hU (hF s) hh (hfull s)
-    (fun he => hnone ⟨s, he⟩)
-  choose x hx y hxy hyx using hlocal
-  let U (s : S) := {q : S | F q (x s) < F q (y s)}
-  have hcover : (univ : Set S) ⊆ ⋃ s, U s := fun q _ => mem_iUnion.mpr ⟨q, hxy q⟩
-  obtain ⟨J, hJ⟩ := isCompact_univ.elim_finite_subcover U
-    (fun s => isOpen_lt (hcont _) (hcont _)) hcover
-  let E := Fintype.equivFin ↥J
-  let X := ∑ s ∈ J, x s
-  let Y (s : S) := Δ + (∑ q ∈ J.erase s, x q) + y s
-  have hX : X ∈ G := G.sum_mem fun s _ => hx s
-  have hrewrite (s : ↥J) : X = (∑ q ∈ J.erase s.val, x q) + x s :=
-    (Finset.sum_erase_add J x s.property).symm
-  have hdominates (q : S) : ∃ i, F q (Δ + X) < F q (Y ((E.symm i).val)) := by
-    obtain ⟨s, hs⟩ := mem_iUnion.mp (hJ (mem_univ q))
-    obtain ⟨hsJ, hqs⟩ := mem_iUnion.mp hs
-    let i : ↥J := ⟨s, hsJ⟩
-    refine ⟨E i, ?_⟩
-    rw [Equiv.symm_apply_apply, hrewrite i]
-    simpa [Y, i, add_assoc] using
-      add_lt_add_left (show F q (x s) < F q (y s) from hqs)
-        (F q Δ + F q (∑ a ∈ J.erase s, x a))
-  obtain ⟨i, hi⟩ := hcompare X hX _ (fun i => Y (E.symm i).val) hdominates
-  rw [hrewrite (E.symm i)] at hi
-  exact (not_le.mpr (hyx (E.symm i).val)) (by simpa only [Y, map_add, ← add_assoc, add_le_add_iff_left] using hi)
 
 end SpectralBooks
 end LinearAlgebra
@@ -1474,40 +1127,6 @@ def normalizedSpectrum.toRingHom {restricts : S → S → Prop}
   map_add' := f.2.2.2.1
   map_mul' := f.2.2.2.2.1
 
-/-- Pointwise limits preserve all the spectral axioms, including every restriction comparison. -/
-theorem isClosed_normalizedSpectrum (restricts : S → S → Prop) :
-    IsClosed (normalizedSpectrum restricts) := by
-  have hmono : IsClosed {f : S → ℝ≥0 | ∀ x y, restricts x y → f x ≤ f y} := by
-    simp only [Set.ofPred_forall]
-    exact isClosed_iInter fun x ↦ isClosed_iInter fun y ↦ isClosed_iInter fun _ ↦
-      isClosed_le (continuous_apply x) (continuous_apply y)
-  exact (isClosed_setOfPred_map_zero S ℝ≥0).inter <|
-    (isClosed_setOfPred_map_one S ℝ≥0).inter <|
-    (isClosed_setOfPred_map_add S ℝ≥0).inter ((isClosed_setOfPred_map_mul S ℝ≥0).inter hmono)
-
-/-- Finite tensor rank bounds every coordinate of the normalized spectrum. -/
-theorem isCompact_normalizedSpectrum (restricts : S → S → Prop)
-    (hfinite : ∀ x : S, ∃ r : ℕ, restricts x r) : IsCompact (normalizedSpectrum restricts) := by
-  choose r hr using hfinite
-  apply IsCompact.of_isClosed_subset
-    (isCompact_univ_pi (fun x ↦ isCompact_Icc (a := (0 : ℝ≥0)) (b := (r x : ℝ≥0))))
-    (isClosed_normalizedSpectrum restricts)
-  intro f hf x _
-  have hle := hf.2.2.2.2 x _ (hr x)
-  have hcast : f (r x : S) = (r x : ℝ≥0) := map_natCast (normalizedSpectrum.toRingHom ⟨f, hf⟩) _
-  exact ⟨bot_le, hle.trans_eq hcast⟩
-
-/-- On any tensor admitting a restriction to the unit, normalized logarithmic price is
-continuous on the entire spectrum. -/
-theorem continuous_log_price {restricts : S → S → Prop} {x : S} (hx : restricts 1 x) :
-    Continuous (fun f : normalizedSpectrum restricts ↦ Real.logb 2 (f.val x : ℝ)) := by
-  apply (continuous_subtype_val.comp ((continuous_apply x).comp continuous_subtype_val)).logb
-  intro f
-  have hone := f.2.2.2.2.2 1 x hx
-  rw [f.2.2.1] at hone
-  change (f.val x : ℝ) ≠ 0
-  exact_mod_cast (zero_lt_one.trans_le hone).ne'
-
 end SpectralBooks
 end LinearAlgebra
 end OAI
@@ -1533,71 +1152,6 @@ namespace SpectralBooks
 open scoped BigOperators
 
 variable {T : Type*} [AddCommMonoid T]
-
-/-- The expanded conclusion of strict spectral comparison for a finite direct sum.
-Every nonzero summand in the target is the image of a word of length `n` in the
-sources. Its price will be bounded using restriction monotonicity. -/
-def ExpandedStrictComparison (spectrum : Set (T →+ ℝ))
-    (restricts : T → T → Prop) (ordinarySum : T → (L : ℕ) → (Fin L → T) → Prop) : Prop :=
-  ∀ {J : ℕ} (X : T) (Y : Fin J → T), 0 < J →
-    (∀ f ∈ spectrum, ∃ i, f X < f (Y i)) →
-    ∃ K : ℕ, 0 < K ∧ ∀ n : ℕ, 0 < n →
-      ∃ L : ℕ, 0 < L ∧ L ≤ K * J ^ n ∧ ∃ Z : Fin L → T,
-        ordinarySum (n • X) L Z ∧
-        ∀ l, ∃ w : Fin n → Fin J, restricts (Z l) (∑ t, Y (w t))
-
-private theorem remove_constant {a b c : ℝ}
-    (h : ∀ n : ℕ, 0 < n → (n : ℝ) * a ≤ c + n * b) : a ≤ b := by
-  by_contra! hab
-  obtain ⟨m, hm⟩ := exists_lt_nsmul (sub_pos.mpr hab) c
-  have hh := h (m + 1) (Nat.succ_pos _)
-  simp only [nsmul_eq_mul, Nat.cast_add, Nat.cast_one] at hm hh
-  linarith
-
-/-- The finite alternative used in the proof of doubling. If each normalized
-point prefers some `Y i` to `X`, a monotone price satisfying the ordinary-sum
-estimate on all positive powers of `X` weakly prefers some `Y i` as well.
-The two amplifications absorb first the constant number of direct copies and
-then the cost of choosing one of the `J` sources. -/
-theorem finite_comparison_of_ordinary_sum
-    {spectrum : Set (T →+ ℝ)} {restricts : T → T → Prop}
-    {ordinarySum : T → (L : ℕ) → (Fin L → T) → Prop}
-    (compare : ExpandedStrictComparison spectrum restricts ordinarySum)
-    (h : T →+ ℝ) (mono : ∀ {x y}, restricts x y → h x ≤ h y)
-    {C : ℝ} (hC : 0 ≤ C) {X : T}
-    (stretch : ∀ (m L : ℕ) (Z : Fin L → T), 0 < m →
-      ordinarySum (m • X) L Z → ∃ l, h (m • X) ≤ h (Z l) + C * Real.logb 2 L)
-    {J : ℕ} (hJ : 0 < J) (Y : Fin J → T)
-    (cover : ∀ f ∈ spectrum, ∃ i, f X < f (Y i)) : ∃ i, h X ≤ h (Y i) := by
-  classical
-  have : Nonempty (Fin J) := ⟨⟨0, hJ⟩⟩
-  obtain ⟨i, _, hmax⟩ := Finset.univ.exists_max_image (fun j => h (Y j)) Finset.univ_nonempty
-  refine ⟨i, remove_constant (c := C * Real.logb 2 J) fun k hk => ?_⟩
-  have hlarge (f : T →+ ℝ) (hf : f ∈ spectrum) : ∃ j, f (k • X) < f (k • Y j) := by
-    obtain ⟨j, hj⟩ := cover f hf
-    refine ⟨j, ?_⟩
-    simpa only [map_nsmul, nsmul_eq_mul] using
-      mul_lt_mul_of_pos_left hj (show (0 : ℝ) < k by exact_mod_cast hk)
-  obtain ⟨K, hK, decompose⟩ := compare (k • X) (fun j => k • Y j) hJ hlarge
-  apply remove_constant (c := C * Real.logb 2 K)
-  intro n hn
-  obtain ⟨L, hL, hcount, Z, hZ, hword⟩ := decompose n hn
-  have hsum : ordinarySum ((n * k) • X) L Z := by rwa [Nat.mul_comm, mul_nsmul]
-  obtain ⟨l, hprice⟩ := stretch (n * k) L Z (Nat.mul_pos hn hk) hsum
-  obtain ⟨w, hw⟩ := hword l
-  have hfactor : h (Z l) ≤ n * (k * h (Y i)) := calc
-    h (Z l) ≤ h (∑ t, k • Y (w t)) := mono hw
-    _ = ∑ t, k * h (Y (w t)) := by simp
-    _ ≤ ∑ _t : Fin n, k * h (Y i) := Finset.sum_le_sum fun t _ =>
-      mul_le_mul_of_nonneg_left (hmax (w t) (Finset.mem_univ _)) (Nat.cast_nonneg _)
-    _ = n * (k * h (Y i)) := by simp
-  have hlog : Real.logb 2 L ≤ Real.logb 2 K + n * Real.logb 2 J := calc
-    Real.logb 2 L ≤ Real.logb 2 ((K * J ^ n : ℕ) : ℝ) :=
-      Real.logb_le_logb_of_le (by norm_num) (by exact_mod_cast hL) (by exact_mod_cast hcount)
-    _ = _ := by
-      rw [Nat.cast_mul, Nat.cast_pow, Real.logb_mul (by positivity) (by positivity), Real.logb_pow]
-  simp only [map_nsmul, nsmul_eq_mul, Nat.cast_mul] at hprice
-  linarith only [hprice, hfactor, mul_le_mul_of_nonneg_left hlog hC]
 
 end SpectralBooks
 end LinearAlgebra
@@ -1649,19 +1203,6 @@ theorem spectralLogHom_nonneg (hunit : ∀ t : P, res 1 t) (f : normalizedSpectr
   apply Real.logb_nonneg (by norm_num)
   exact_mod_cast one_le_spectral_value f (hunit x.toMul)
 
-theorem continuous_spectralLogHom (hunit : ∀ t : P, res 1 t) (x : Additive P) :
-    Continuous (fun f : normalizedSpectrum res => spectralLogHom hunit f x) :=
-  continuous_log_price (hunit x.toMul)
-
-/-- Every normalized point assigns log price one to the full binary diagonal. -/
-theorem spectralLogHom_two (hunit : ∀ t : P, res 1 t) (f : normalizedSpectrum res)
-    (h₂ : (2 : A) ∈ P) :
-    spectralLogHom hunit f (Additive.ofMul (⟨2, h₂⟩ : P)) = 1 := by
-  change Real.logb 2 (f.val 2 : ℝ) = 1
-  have htwo : f.val 2 = (2 : ℝ≥0) := map_ofNat (normalizedSpectrum.toRingHom f) 2
-  rw [htwo]
-  exact Real.logb_self_eq_one (by norm_num)
-
 /-- A spectral price is a common positive multiple of a normalized log
 evaluation, or the zero price of a collapsed placement. -/
 def IsSpectralPrice (hunit : ∀ t : P, res 1 t) (g : Additive P →+ ℝ) : Prop :=
@@ -1682,52 +1223,6 @@ theorem IsSpectralPrice.mono {hunit : ∀ t : P, res 1 t} {g : Additive P →+ �
     apply Real.logb_le_logb_of_le (by norm_num)
     · exact_mod_cast zero_lt_one.trans_le (one_le_spectral_value f (hunit x.toMul))
     · exact_mod_cast f.property.2.2.2.2 _ _ hxy
-
-/-- The price selected from the actual normalized spectrum. The inputs from
-tensor theory are finite rank, strict comparison and the ordinary-sum estimate
-on positive powers of a diagonal times private products; all numerical
-amplification, denominator clearing and compactness arguments are proved. -/
-theorem spectral_price_of_permutation_stretch
-    (hunit : ∀ t : P, res 1 t) (h₂ : (2 : A) ∈ P)
-    (hfinite : ∀ t : A, ∃ n : ℕ, res t n)
-    (hne : (normalizedSpectrum res).Nonempty)
-    (ordinarySum : Additive P → (L : ℕ) → (Fin L → Additive P) → Prop)
-    (compare : ExpandedStrictComparison (Set.range (spectralLogHom hunit))
-      (fun x y => res x.toMul.val y.toMul.val) ordinarySum)
-    (G : AddSubmonoid (Additive P)) (Δ u : Additive P) (hu : u ∈ G)
-    (a b c : Additive P →+ ℝ) (ha : IsSpectralPrice hunit a)
-    (hb : IsSpectralPrice hunit b) (hc : IsSpectralPrice hunit c)
-    (lam C : ℝ) (hlam : 0 ≤ lam) (hC : 0 ≤ C)
-    (hU : 0 < (lam • a + b + c) u)
-    (stretch : ∀ x ∈ G, ∀ (m L : ℕ) (Z : Fin L → Additive P), 0 < m →
-      ordinarySum (m • (Δ + x)) L Z → ∃ l,
-        (lam • a + b + c) (m • (Δ + x)) ≤
-          (lam • a + b + c) (Z l) + C * Real.logb 2 L) :
-    ∃ g : Additive P →+ ℝ, IsSpectralPrice hunit g ∧
-      (∀ t, g t ≤ (lam • a + b + c) t) ∧ ∀ t ∈ G, g t = (lam • a + b + c) t := by
-  classical
-  let h := lam • a + b + c
-  let : CompactSpace (normalizedSpectrum res) :=
-    isCompact_iff_compactSpace.mp (isCompact_normalizedSpectrum res hfinite)
-  let : Nonempty (normalizedSpectrum res) := hne.to_subtype
-  have hh (t : Additive P) : 0 ≤ h t :=
-    add_nonneg (add_nonneg (mul_nonneg hlam (ha.nonneg t)) (hb.nonneg t)) (hc.nonneg t)
-  have hmono {x y : Additive P} (hxy : res x.toMul.val y.toMul.val) : h x ≤ h y :=
-    add_le_add (add_le_add (mul_le_mul_of_nonneg_left (ha.mono hxy) hlam) (hb.mono hxy))
-      (hc.mono hxy)
-  have hfull (f : normalizedSpectrum res) : ∃ t, 0 < spectralLogHom hunit f t := by
-    refine ⟨Additive.ofMul (⟨2,h₂⟩ : P), ?_⟩
-    rw [spectralLogHom_two]
-    norm_num
-  obtain ⟨f, d, hd, hle, heq⟩ := select_spectral_price_of_finite_comparison
-    (spectralLogHom hunit) h G Δ u (continuous_spectralLogHom hunit)
-    (spectralLogHom_nonneg hunit) hh hu hU hfull (by
-      intro x hx J Y hcover
-      obtain ⟨i₀, _⟩ := hcover (Classical.choice inferInstance)
-      apply finite_comparison_of_ordinary_sum compare h hmono hC (stretch x hx) (Fin.pos i₀) Y
-      rintro _ ⟨q, rfl⟩
-      exact hcover q)
-  exact ⟨d • spectralLogHom hunit f, Or.inr ⟨f, d, hd, rfl⟩, hle, heq⟩
 
 end
 
@@ -1765,24 +1260,6 @@ namespace Crossing
 variable {I K : Type*} [Fintype I] [Nonempty I] [Field K]
 variable {B : I → Type*} [∀ i, Fintype (B i)]
 
-/-- Expand a tensor in the local coordinate bases. A common diagonal label
-selects the entire coordinate tuple. A distinguished site supplies its coefficient. -/
-theorem restricts_from_coordinate_diagonal_equiv {L : Type*} [Fintype L]
-    (e : L ≃ (∀ i, B i)) (T : (∀ i, B i) → K) :
-    IsRestriction T (basisTensor (I := I) (fun (l : L) _ ↦ l)) := by
-  classical
-  let o : I := Classical.choice inferInstance
-  let M (i : I) (b : B i) (a : ∀ i, B i) : K :=
-    (if b = a i then 1 else 0) * (if i = o then T a else 1)
-  apply (restriction_basisTensor_iff _ _).mpr
-  refine ⟨fun i b l ↦ M i b (e l), fun b ↦ ?_⟩
-  have hprod (a : ∀ i, B i) :
-      (∏ i, M i (b i) a) = if b = a then T a else 0 := by
-    simp only [M, Finset.prod_mul_distrib, Fintype.prod_boole, ← funext_iff]
-    simp
-  rw [e.sum_comp (fun a ↦ ∏ i, M i (b i) a)]
-  simp [hprod]
-
 /-- A single nonzero coefficient makes the scalar unit a local linear image. -/
 theorem unit_restricts_of_nonzero {T : (∀ i, B i) → K} (h : T ≠ 0) :
     IsRestriction (fun _ : I → PUnit ↦ (1 : K)) T := by
@@ -1806,23 +1283,6 @@ namespace SiteTensor.Raw
 
 universe v
 
-/-- A concrete diagonal of finite size supplies every coefficient array,
-even if the coordinate spaces and the set of sites use different universes. -/
-theorem restricts_diagonal (I : Type*) [Fintype I] [Nonempty I]
-    {K : Type*} [Field K] (X : Raw.{v} I K) :
-    X.Restricts (diagonal I K (ULift.{v} (Fin (Fintype.card (∀ i, X.Leg i))))) := by
-  classical
-  let e : ULift.{v} (Fin (Fintype.card (∀ i, X.Leg i))) ≃ (∀ i, X.Leg i) :=
-    Equiv.ulift.trans (Fintype.equivFin _).symm
-  have h := Crossing.restricts_from_coordinate_diagonal_equiv e X.coeff
-  unfold Crossing.basisTensor at h
-  convert! h using 1
-  funext x
-  simp only [diagonal]
-  congr 1
-  funext a
-  split_ifs <;> simp_all
-
 /-- Conversely the multiplicative unit is a restriction of every nonzero tensor. -/
 theorem one_restricts_of_nonzero {I : Type*} [Fintype I] [Nonempty I]
     {K : Type*} [Field K] (X : Raw.{v} I K) (h : X.coeff ≠ 0) :
@@ -1830,28 +1290,6 @@ theorem one_restricts_of_nonzero {I : Type*} [Fintype I] [Nonempty I]
   Crossing.unit_restricts_of_nonzero h
 
 end SiteTensor.Raw
-
-/-- On the enlarged site set, finite compatibility gives agreement on all
-old evaluations and retains any closed wire-distance constraint. This also
-allows prescribed values on uncountably many old tensors. -/
-theorem exists_matching_spectral_point {S A : Type*} [Semiring S]
-    (restricts : S → S → Prop) (hrank : ∀ x, ∃ n : ℕ, restricts x n)
-    (tensor : A → S) (target : A → ℝ≥0)
-    (wire : Set (normalizedSpectrum restricts)) (hclosed : IsClosed wire)
-    (hfinite : ∀ a : Finset A, ∃ f ∈ wire, ∀ i ∈ a, f.val (tensor i) = target i) :
-    ∃ f ∈ wire, ∀ i, f.val (tensor i) = target i := by
-  classical
-  let : CompactSpace (normalizedSpectrum restricts) :=
-    isCompact_iff_compactSpace.mp (isCompact_normalizedSpectrum restricts hrank)
-  let C (a : A) : Set (normalizedSpectrum restricts) := {f | f.val (tensor a) = target a}
-  have hc (a : A) : IsClosed (C a) :=
-    isClosed_eq ((continuous_apply (tensor a)).comp continuous_subtype_val) continuous_const
-  have hp : (wire ∩ ⋂ a, C a).Nonempty :=
-    hclosed.isCompact.inter_iInter_nonempty _ hc (fun a ↦ by
-      obtain ⟨f, hf, ha⟩ := hfinite a
-      exact ⟨f, hf, Set.mem_iInter₂.mpr ha⟩)
-  obtain ⟨f, hf, h⟩ := hp
-  exact ⟨f, hf, Set.mem_iInter.mp h⟩
 
 end
 
@@ -1880,14 +1318,6 @@ variable {I : Type u} [Fintype I] {K : Type w}
 section Semiring
 
 variable [CommSemiring K]
-
-/-- The zero tensor is a restriction of every tensor. -/
-theorem zero_le_tensor [Nonempty I] (X : TensorClass.{v} I K) : 0 ≤ X := by
-  induction X using Quotient.inductionOn with
-  | h x =>
-    change (Raw.zero I K).Restricts x
-    refine ⟨fun _ _ _ => 0, fun y => ?_⟩
-    exact (y (Classical.arbitrary I)).elim
 
 /-- A tensor represents zero precisely when every coefficient vanishes. -/
 theorem ofRaw_eq_zero_iff (X : Raw.{v} I K) : ofRaw X = 0 ↔ X.coeff = 0 := by
@@ -1926,13 +1356,6 @@ instance [Nonempty I] [NoZeroDivisors K] : NoZeroDivisors (TensorClass.{v} I K) 
       exact (mul_eq_zero.mp (congrFun h (fun i => (x i, y i)))).resolve_left hx
 
 end Semiring
-
-/-- A nonzero class dominates the unit, by contracting onto a nonzero coefficient. -/
-theorem one_le_of_ne_zero [Nonempty I] [Field K] {X : TensorClass.{v} I K}
-    (h : X ≠ 0) : 1 ≤ X := by
-  induction X using Quotient.inductionOn with
-  | h x =>
-    exact x.one_restricts_of_nonzero (fun h0 => h ((ofRaw_eq_zero_iff x).mpr h0))
 
 end SiteTensor
 
@@ -2163,52 +1586,6 @@ theorem Raw.maskDiagonal_restricts_of_subset {S T : Finset I} (h : S ⊆ T)
   refine ⟨fun i x y ↦ if x = (fun hi ↦ y (h hi)) then 1 else 0, fun x ↦ ?_⟩
   simp only [Raw.maskDiagonal, Crossing.basisTensor, Fintype.prod_boole, c, funext_iff]
 
-/-- One site's diagonal is the tensor class of the scalar unit. -/
-theorem ofRaw_maskDiagonal_singleton (i : I) (α : Type) [Fintype α] [Nonempty α] :
-    ofRaw (Raw.maskDiagonal K {i} α) = 1 := by
-  apply ofRaw_eq_iff.mpr
-  refine ⟨Raw.restrict_by_read (Y := Raw.one I K) (fun _ _ ↦ PUnit.unit) ?_,
-    Raw.one_restricts_of_nonzero _ (Raw.maskDiagonal_ne_zero _ (Finset.singleton_nonempty i) α)⟩
-  intro x
-  calc
-    _ = _ := Raw.maskDiagonal_coeff_at (K := K) {i} (Finset.mem_singleton_self i) x
-    _ = _ := if_pos (fun j hj ↦ by obtain rfl := Finset.mem_singleton.mp hj; rfl)
-
-omit [Nonempty I] in
-/-- Equating the common labels where two nonempty diagonals overlap supplies
-the diagonal on their union. -/
-theorem Raw.maskDiagonal_union_restricts_mul (A B : Finset I) (hI : (A ∩ B).Nonempty)
-    (α : Type) [Fintype α] :
-    (Raw.maskDiagonal K (A ∪ B) α).Restricts
-      ((Raw.maskDiagonal K A α).mul (Raw.maskDiagonal K B α)) := by
-  obtain ⟨i₀, hi₀⟩ := hI
-  obtain ⟨ha, hb⟩ := Finset.mem_inter.mp hi₀
-  let g₁ (i : I) (x : MaskLeg (A ∪ B) α i) (hi : i ∈ A) := x (Finset.mem_union_left _ hi)
-  let g₂ (i : I) (x : MaskLeg (A ∪ B) α i) (hi : i ∈ B) := x (Finset.mem_union_right _ hi)
-  apply Raw.restrict_by_read (fun i x ↦ (g₁ i x, g₂ i x))
-  intro x
-  change (maskDiagonal K (A ∪ B) α).coeff x =
-    (maskDiagonal K A α).coeff (fun i ↦ g₁ i (x i)) *
-      (maskDiagonal K B α).coeff (fun i ↦ g₂ i (x i))
-  rw [Raw.maskDiagonal_coeff_at (K := K) (A ∪ B) (Finset.mem_union_left _ ha) x,
-    Raw.maskDiagonal_coeff_at (K := K) A ha (fun i ↦ g₁ i (x i)),
-    Raw.maskDiagonal_coeff_at (K := K) B hb (fun i ↦ g₂ i (x i))]
-  let v := x i₀ (Finset.mem_union_left B ha)
-  have heq : (∀ (i : I) (hi : i ∈ A ∪ B), x i hi = v) ↔
-      (∀ (i : I) (hi : i ∈ A), g₁ i (x i) hi = v) ∧
-      ∀ (i : I) (hi : i ∈ B), g₂ i (x i) hi = v := by
-    constructor
-    · intro H
-      exact ⟨fun _ _ ↦ H _ _, fun _ _ ↦ H _ _⟩
-    · rintro ⟨H₁, H₂⟩ i hi
-      rcases Finset.mem_union.mp hi with h | h
-      · exact H₁ i h
-      · exact H₂ i h
-  change (if ∀ (i : I) (hi : i ∈ A ∪ B), x i hi = v then (1 : K) else 0) =
-    (if ∀ (i : I) (hi : i ∈ A), g₁ i (x i) hi = v then 1 else 0) *
-      (if ∀ (i : I) (hi : i ∈ B), g₂ i (x i) hi = v then 1 else 0)
-  split_ifs <;> simp_all
-
 variable (φ : normalizedSpectrum ((· ≤ ·) : TensorClass.{0} I K → _ → Prop))
 
 /-- The common binary label price at the chosen sites, evaluated at a single
@@ -2226,27 +1603,6 @@ theorem maskDiagonalPrice_mono {c : ℝ} (hc : 0 ≤ c) : Monotone (maskDiagonal
 omit [DecidableEq I] in
 theorem maskDiagonalPrice_nonneg {c : ℝ} (hc : 0 ≤ c) (S : Finset I) :
     0 ≤ maskDiagonalPrice φ c S := rawLogPrice_nonneg φ hc _
-
-theorem maskDiagonalPrice_singleton (c : ℝ) (i : I) : maskDiagonalPrice φ c {i} = 0 := by
-  simp [maskDiagonalPrice, rawLogPrice, ofRaw_maskDiagonal_singleton, φ.property.2.1]
-
-/-- Sending the independent labels on overlapping sets can supply one common
-label on their union. -/
-theorem maskDiagonalPrice_union_le {c : ℝ} (hc : 0 ≤ c) (A B : Finset I) (hAB : (A ∩ B).Nonempty) :
-    maskDiagonalPrice φ c (A ∪ B) ≤ maskDiagonalPrice φ c A + maskDiagonalPrice φ c B := by
-  have hm := rawLogPrice_mono φ hc (Raw.maskDiagonal_union_restricts_mul A B hAB (Fin 2))
-  rwa [rawLogPrice_mul φ c _ _
-    (Raw.maskDiagonal_ne_zero A (hAB.mono Finset.inter_subset_left) (Fin 2))
-    (Raw.maskDiagonal_ne_zero B (hAB.mono Finset.inter_subset_right) (Fin 2))] at hm
-
-/-- A wire from any occupied site suffices to append a common label at another site. -/
-theorem maskDiagonalPrice_insert_le_wire {c : ℝ} (hc : 0 ≤ c) (A : Finset I) {x : I}
-    (hx : x ∈ A) (z : I) :
-    maskDiagonalPrice φ c (insert z A) ≤ maskDiagonalPrice φ c A + maskDiagonalPrice φ c {x, z} := by
-  have hunion : A ∪ {x,z} = insert z A := by ext w; simp; grind
-  rw [← hunion]
-  apply maskDiagonalPrice_union_le φ hc
-  exact ⟨x, Finset.mem_inter.mpr ⟨hx, Finset.mem_insert_self _ _⟩⟩
 
 end SiteTensor
 
@@ -2414,11 +1770,6 @@ def contract [CommSemiring K] [∀ i, Fintype (A i)]
     (M : ∀ i, B i → A i → K) (T : (∀ i, A i) → K) (x : ∀ i, B i) : K :=
   ∑ a, T a * ∏ i, M i (x i) (a i)
 
-theorem restrict_iff_contract [CommSemiring K] [∀ i, Fintype (A i)]
-    (T : (∀ i, A i) → K) (U : (∀ i, B i) → K) :
-    Crossing.IsRestriction U T ↔ ∃ M : ∀ i, B i → A i → K, U = contract M T :=
-  exists_congr fun _ => funext_iff.symm
-
 /-- Expand a tensor given as a sum of coordinate basis tensors before applying local matrices. -/
 theorem contract_basisTensor [CommSemiring K] [∀ i, Fintype (A i)]
     {L : Type*} [Fintype L] (M : ∀ i, B i → A i → K) (f : L → ∀ i, A i) (x : ∀ i, B i) :
@@ -2435,22 +1786,6 @@ theorem contract_maskDiagonal [Field K] (P : Finset S) (L : Type) [Fintype L]
     contract M (Raw.maskDiagonal K P L).coeff x =
       ∑ l : L, ∏ i, M i (x i) (fun _ => l) :=
   contract_basisTensor M (fun (l : L) _ _ => l) x
-
-/-- The contraction of a basis label is a product of sitewise matrix entries. -/
-theorem contract_basis [CommSemiring K] [∀ i, Fintype (A i)]
-    (M : ∀ i, B i → A i → K) (a : ∀ i, A i) (x : ∀ i, B i) :
-    contract M (fun y => if y = a then 1 else 0) x = ∏ i, M i (x i) (a i) := by
-  simp [contract, ite_mul]
-
-/-- Successive restrictions multiply the local matrices. -/
-theorem contract_comp [CommSemiring K] [∀ i, Fintype (A i)] [∀ i, Fintype (B i)]
-    (N : ∀ i, C i → B i → K) (M : ∀ i, B i → A i → K) (T : (∀ i, A i) → K) :
-    contract N (contract M T) = contract (fun i c a => ∑ b, M i b a * N i c b) T := by
-  funext x
-  unfold contract
-  simp_rw [Finset.sum_mul, Fintype.prod_sum, Finset.mul_sum, Finset.prod_mul_distrib,
-    mul_assoc]
-  exact Finset.sum_comm
 
 /-- Independent resources transform under the Kronecker products of their local matrices. -/
 theorem contract_mul [CommSemiring K] [∀ i, Fintype (A i)] [∀ i, Fintype (C i)]
@@ -2592,27 +1927,6 @@ theorem eval_prodMap [Fintype I] {A' B' : I → Type*}
       eval M c X (fun i => (b i).1) * eval N c Y (fun i => (b i).2) :=
   contract_mul (fun i => M i (c i)) (fun i => N i (c i)) X Y b
 
-/-- Compose two local maps chosen by the same external control. -/
-def compMap [∀ i, Fintype (B i)] (N : Map C B E) (M : Map C A B) : Map C A E :=
-  fun i c e a => ∑ b, M i c b a * N i c e b
-
-theorem eval_compMap [Fintype I] [∀ i, Fintype (A i)] [∀ i, Fintype (B i)]
-    (N : Map C B E) (M : Map C A B) (c : ∀ i, C i) (X : (∀ i, A i) → ℂ) (e : ∀ i, E i) :
-    eval (compMap N M) c X e = eval N c (eval M c X) e :=
-  congrFun (contract_comp (fun i => N i (c i)) (fun i => M i (c i)) X).symm e
-
-/-- Local assembly of two block maps into a common output format. -/
-def sumMap {A' : I → Type*} (M : Map C A B) (N : Map C A' B) :
-    Map C (fun i => A i ⊕ A' i) B :=
-  fun i c b => Sum.elim (M i c b) (N i c b)
-
-theorem eval_sumMap [Fintype I] {A' : I → Type*}
-    [∀ i, Fintype (A i)] [∀ i, Fintype (A' i)]
-    (M : Map C A B) (N : Map C A' B) (c : ∀ i, C i)
-    (X : (∀ i, A i) → ℂ) (Y : (∀ i, A' i) → ℂ) (b : ∀ i, B i) :
-    eval (sumMap M N) c (sumCoeff X Y) b = eval M c X b + eval N c Y b :=
-  congrFun (contract_addBlocks (fun i => M i (c i)) (fun i => N i (c i)) X Y) b
-
 /-- The distinguished site's sign changes the second summand to its negative. -/
 def diffMap {A' : I → Type*} (j : I) (M : Map C A B) (N : Map C A' B) :
     Map C (fun i => A i ⊕ A' i) B :=
@@ -2624,11 +1938,6 @@ theorem eval_diffMap [Fintype I] {A' : I → Type*}
     (X : (∀ i, A i) → ℂ) (Y : (∀ i, A' i) → ℂ) (b : ∀ i, B i) :
     eval (diffMap j M N) c (sumCoeff X Y) b = eval M c X b - eval N c Y b :=
   contract_subBlocks j (fun i => M i (c i)) (fun i => N i (c i)) X Y b
-
-/-- Fixed controls give an ordinary restriction of the input tensor. -/
-theorem restricts_eval [Fintype I] {R Q : Raw I ℂ} (M : Map C R.Leg Q.Leg)
-    (c : ∀ i, C i) (h : ∀ b, eval M c R.coeff b = Q.coeff b) : Q.Restricts R :=
-  ⟨fun i => M i (c i), fun b => (h b).symm⟩
 
 end
 end Control
@@ -2663,57 +1972,6 @@ def WordAdmissible (w : ι → I → β) : Prop :=
 /-- Every admissible ordered tuple of words in the family repeats one word. -/
 def WordFree (r : ℕ) (W : Finset (I → β)) : Prop :=
   ∀ w : Fin r → I → β, (∀ i, w i ∈ W) → WordAdmissible w → IsConstant w
-
-theorem WordAdmissible.isConstant_of_repeat {w : ι → I → β} (h : WordAdmissible w)
-    {i j : ι} (hne : i ≠ j) (hw : w i = w j) : IsConstant w := by
-  intro a b
-  funext c
-  rcases h c with hc | hc
-  · exact hc a b
-  · exact (hne (hc (congrFun hw c))).elim
-
-theorem WordAdmissible.injective_of_not_isConstant {w : ι → I → β}
-    (h : WordAdmissible w) (hn : ¬ IsConstant w) : Function.Injective w := by
-  intro i j heq
-  by_contra hne
-  exact hn (h.isConstant_of_repeat hne heq)
-
-/-- A family contains a subfamily of size `r` whose distinct members intersect in one
-fixed core. The core can be empty. -/
-def HasSunflower [DecidableEq α] (r : ℕ) (F : Finset (Finset α)) : Prop :=
-  ∃ G ⊆ F, G.card = r ∧ ∃ K : Finset α, ∀ A ∈ G, ∀ B ∈ G, A ≠ B → A ∩ B = K
-
-theorem hasSunflower_of_indexed [DecidableEq α] {r : ℕ} {F : Finset (Finset α)}
-    {w : Fin r → Finset α} (hmem : ∀ i, w i ∈ F) (hinj : Function.Injective w)
-    {K : Finset α} (hcore : ∀ i j, i ≠ j → w i ∩ w j = K) : HasSunflower r F := by
-  let e : Fin r ↪ Finset α := ⟨w, hinj⟩
-  refine ⟨Finset.univ.map e, ?_, by simp, K, ?_⟩
-  · intro A hA
-    obtain ⟨i, _, rfl⟩ := Finset.mem_map.mp hA
-    exact hmem i
-  · intro A hA B hB hne
-    obtain ⟨i, _, rfl⟩ := Finset.mem_map.mp hA
-    obtain ⟨j, _, rfl⟩ := Finset.mem_map.mp hB
-    exact hcore i j (fun heq => hne (congrArg e heq))
-
-theorem hasSunflower_iff_indexed [DecidableEq α] {r : ℕ} {F : Finset (Finset α)} :
-    HasSunflower r F ↔ ∃ w : Fin r → Finset α, (∀ i, w i ∈ F) ∧
-      Function.Injective w ∧ ∃ K : Finset α, ∀ i j, i ≠ j → w i ∩ w j = K := by
-  constructor
-  · rintro ⟨G, hG, hcard, K, hK⟩
-    let e := (G.equivFinOfCardEq hcard).symm
-    have hinj : Function.Injective (fun i => (e i).val) :=
-      Subtype.val_injective.comp e.injective
-    exact ⟨_, fun i => hG (e i).property, hinj, K, fun i j hij =>
-      hK _ (e i).property _ (e j).property (fun heq => hij (hinj heq))⟩
-  · rintro ⟨w, hmem, hinj, K, hcore⟩
-    exact hasSunflower_of_indexed hmem hinj hcore
-
-/-- A zero-uniform family of distinct finite sets has at most one member. -/
-theorem zero_uniform_card_le_one {F : Finset (Finset α)} (hF : ∀ A ∈ F, A.card = 0) :
-    F.card ≤ 1 :=
-  Finset.card_le_one.mpr fun A hA B hB =>
-    (Finset.card_eq_zero.mp (hF A hA)).trans (Finset.card_eq_zero.mp (hF B hB)).symm
 
 end Sunflower
 end Combinatorics
@@ -3357,38 +2615,6 @@ theorem matrix_apply {P : Finset I} {z s₀ : I} (h₀ : s₀ ∈ P) {n : ℕ}
     (insert z P) (Bits (n+1)) (fun s ↦ matrix P z s₀ n s (control s)) x).trans
       (deleted_sum h₀ control i hc x)
 
-/-- A basis label at the target site, padded with scalar factors elsewhere. -/
-def labelAt (z : I) {n : ℕ} (i : Fin (n+1)) : Raw.{0} I ℂ :=
-  ⟨MaskLeg {z} (Fin (n+1)), fun _ ↦ Fintype.ofFinite _,
-    fun x ↦ if i = x z (Finset.mem_singleton_self z) then 1 else 0⟩
-
-/-- The copying matrix emits the chosen label at the target. Unlike the test matrix,
-its target row supplies the label being tested. -/
-def copyMatrix (P : Finset I) (z s₀ : I) (n : ℕ) (s : I) (label : Fin (n+1))
-    (x : (returned P n).Leg s × MaskLeg {z} (Fin (n+1)) s) (y : (input P z n).Leg s) : ℂ :=
-  matrix P z s₀ n s (if h : s = z then x.2 (Finset.mem_singleton.mpr h) else label) x.1 y
-
-/-- On the common-source promise the same local matrices for every `i` copy
-the source label as an output basis vector and return the fixed resource. -/
-theorem copyMatrix_apply {P : Finset I} {z s₀ : I} (h₀ : s₀ ∈ P) (hz : z ∉ P)
-    {n : ℕ} (control : I → Fin (n+1)) (i : Fin (n+1)) (hc : ∀ s ∈ P, control s = i)
-    (x : ∀ s, (returned P n).Leg s × MaskLeg {z} (Fin (n+1)) s) :
-    contract (fun s ↦ copyMatrix P z s₀ n s (control s)) (input P z n).coeff x =
-      ((returned P n).mul (labelAt z i)).coeff x := by
-  let u (s : I) := if h : s = z then (x s).2 (Finset.mem_singleton.mpr h) else control s
-  have hu (s : I) (hs : s ∈ P) : u s = i := by
-    have hsz : s ≠ z := fun e ↦ hz (e ▸ hs)
-    simp [u, hsz, hc s hs]
-  calc
-    _ = contract (fun s ↦ matrix P z s₀ n s (u s)) (input P z n).coeff
-      (fun s ↦ (x s).1) := rfl
-    _ = _ := by
-      rw [matrix_apply h₀ u i hu]
-      change (if i = u z then 1 else 0) * _ =
-        _ * (if i = (x z).2 (Finset.mem_singleton_self z) then 1 else 0)
-      rw [mul_comm]
-      simp [u]
-
 variable [Nonempty I]
 
 private theorem price_bits (φ : normalizedSpectrum ((· ≤ ·) : TensorClass.{0} I ℂ → _ → Prop))
@@ -3444,14 +2670,6 @@ def z (i : Fin n) : Site n := Sum.inr (Sum.inr i)
 def interior (i : Fin n) : Fin (n + 2) := i.succ.castSucc
 
 @[simp] theorem interior_val (i : Fin n) : (interior i).val = i.val + 1 := rfl
-
-theorem interior_pos (i : Fin n) : 0 < interior i := by
-  change 0 < i.val + 1
-  omega
-
-theorem interior_lt_last (i : Fin n) : interior i < Fin.last (n + 1) := by
-  change i.val + 1 < n + 1
-  omega
 
 /-- Group 0 is the first anchor, group 1 the second, and group `i+2` a satellite. -/
 def group : Site n → Fin (n + 2)
@@ -3513,21 +2731,6 @@ theorem fiber_nonempty (g : Fin (n + 2)) : (fiber g).Nonempty := by
 
 theorem group_surjective : Function.Surjective (@group n) :=
   fun g => let ⟨s, hs⟩ := fiber_nonempty g; ⟨s, mem_fiber.mp hs⟩
-
-/-- Every group other than the anchors is uniquely indexed by its satellite. -/
-theorem exists_satellite_index {g : Fin (n + 2)} (h0 : g ≠ 0) (h1 : g ≠ 1) :
-    ∃ i : Fin n, g = i.succ.succ := by
-  revert h0 h1
-  refine Fin.cases (by simp) (fun j => ?_) g
-  refine Fin.cases (by simp) (fun i _ _ => ⟨i, rfl⟩) j
-
-/-- Satellites are singletons, so only the two anchor terms contribute to any sum of
-group prices that vanishes on singletons. -/
-theorem sum_fibers_eq_add_of_zero_satellites {M : Type*} [AddCommMonoid M]
-    (v : Finset (Site n) → M) (hz : ∀ i : Fin n, v {z i} = 0) :
-    ∑ g : Fin (n + 2), v (fiber g) = v (fiber 0) + v (fiber 1) := by
-  rw [Fin.sum_univ_succ, Fin.sum_univ_succ]
-  simp [hz]
 
 end Placement
 end Sunflower
@@ -3634,43 +2837,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 def support (S : Finset E) (hS : S.Nonempty) (u : E) : ℝ :=
   S.sup' hS (fun x ↦ ⟪u, x⟫)
 
-theorem support_insert (S : Finset E) (hS : S.Nonempty) (v u : E) :
-    support (insert v S) (Finset.insert_nonempty v S) u =
-      max ⟪u, v⟫ (support S hS u) :=
-  Finset.sup'_insert hS _
-
-theorem support_smul (S : Finset E) (hS : S.Nonempty) (u : E) {a : ℝ} (ha : 0 ≤ a) :
-    support (S.image (a • ·)) (hS.image _) u = a * support S hS u := by
-  unfold support
-  rw [Finset.sup'_image]
-  simpa only [Function.comp_apply, real_inner_smul_right] using
-    (Finset.apply_sup'_eq_sup'_comp hS (a * ·)
-      (fun b c ↦ mul_max_of_nonneg b c ha) (f := fun x ↦ ⟪u, x⟫)).symm
-
-theorem support_nonneg_of_zero_mem {S : Finset E} (h0 : 0 ∈ S) (u : E) :
-    0 ≤ support S ⟨0, h0⟩ u := by
-  simpa only [support, inner_zero_right] using S.le_sup' (fun x ↦ ⟪u, x⟫) h0
-
-/-- Directions at which the origin supports the given configuration. -/
-def normalConeAtZero (S : Finset E) : Set E :=
-  {u | ∀ x ∈ S, ⟪u, x⟫ ≤ 0}
-
-theorem mem_normalConeAtZero_iff {S : Finset E} (h0 : 0 ∈ S) (u : E) :
-    u ∈ normalConeAtZero S ↔ support S ⟨0, h0⟩ u = 0 := by
-  change (∀ x ∈ S, ⟪u, x⟫ ≤ 0) ↔ _
-  rw [← Finset.sup'_le_iff ⟨0, h0⟩ (fun x ↦ ⟪u, x⟫)]
-  exact ⟨(le_antisymm · (support_nonneg_of_zero_mem h0 u)), Eq.le⟩
-
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
-
-omit [FiniteDimensional ℝ E] in
-theorem measurableSet_normalConeAtZero (S : Finset E) : MeasurableSet (normalConeAtZero S) := by
-  have heq : normalConeAtZero S = ⋂ x ∈ (S : Set E), {u : E | ⟪u, x⟫ ≤ 0} := by
-    ext
-    simp [normalConeAtZero]
-  rw [heq]
-  exact .biInter S.countable_toSet fun x _ ↦
-    measurableSet_le (f := fun u : E ↦ ⟪u, x⟫) (by fun_prop) measurable_const
 
 /-- Gaussian mean width, normalized to give a segment its Euclidean length. -/
 def meanWidth (S : Finset E) (hS : S.Nonempty) : ℝ :=
@@ -3685,84 +2852,6 @@ theorem integrable_support (S : Finset E) (hS : S.Nonempty) :
   refine Finset.sup'_induction hS _ (p := fun f : E → ℝ ↦ Integrable f (stdGaussian E))
     (fun _ hf _ hg ↦ hf.sup hg) (fun x _ ↦ ?_)
   exact (IsGaussian.integrable_fun_id (μ := stdGaussian E)).inner_const x
-
-omit [BorelSpace E] in
-theorem meanWidth_smul (S : Finset E) (hS : S.Nonempty) {a : ℝ} (ha : 0 ≤ a) :
-    meanWidth (S.image (a • ·)) (hS.image _) = a * meanWidth S hS := by
-  simp only [meanWidth, support_smul S hS _ ha, integral_const_mul, ← mul_assoc]
-  rw [mul_comm (Real.sqrt _)]
-
-/-- The exact width increment upon adjoining a site to a dilation. -/
-theorem meanWidth_insert_smul_sub (S : Finset E) (hS : S.Nonempty) (v : E)
-    {a : ℝ} (ha : 0 ≤ a) :
-    meanWidth (insert v (S.image (a • ·))) (Finset.insert_nonempty _ _) -
-      meanWidth (S.image (a • ·)) (hS.image _) =
-    Real.sqrt (2 * Real.pi) *
-      ∫ u, max (⟪u, v⟫ - a * support S hS u) 0 ∂stdGaussian E := by
-  unfold meanWidth
-  rw [← mul_sub, ← integral_sub (integrable_support _ _) (integrable_support _ _)]
-  congr 1
-  refine integral_congr_ae (ae_of_all _ fun u ↦ ?_)
-  simp only [support_insert _ (hS.image _), support_smul S hS u ha]
-  rcases le_total ⟪u, v⟫ (a * support S hS u) with h | h
-  · simp [max_eq_right h, max_eq_right (sub_nonpos.mpr h)]
-  · simp [max_eq_left h, max_eq_left (sub_nonneg.mpr h)]
-
-private theorem tendsto_max_sub_mul (b : ℝ) {s : ℝ} (hs : 0 ≤ s) :
-    Tendsto (fun a : ℝ ↦ max (b - a * s) 0) atTop
-      (𝓝 (if s = 0 then max b 0 else 0)) := by
-  by_cases h : s = 0
-  · simp [h]
-  · simp only [h, ite_false]
-    apply tendsto_const_nhds.congr'
-    filter_upwards [eventually_ge_atTop (b / s)] with a ha
-    exact (max_eq_right (sub_nonpos.mpr ((div_le_iff₀ (lt_of_le_of_ne hs (Ne.symm h))).mp ha))).symm
-
-/-- The large-dilation limit in the width-marginal formula, using the equivalent
-Gaussian integral of the support function. -/
-theorem tendsto_meanWidth_insert_smul_sub {S : Finset E} (h0 : 0 ∈ S) (v : E) :
-    Tendsto (fun a : ℝ ↦
-      meanWidth (insert v (S.image (a • ·))) (Finset.insert_nonempty _ _) -
-        meanWidth (S.image (a • ·)) (Finset.Nonempty.image ⟨0, h0⟩ _)) atTop
-      (𝓝 (Real.sqrt (2 * Real.pi) *
-        ∫ u in normalConeAtZero S, max ⟪u, v⟫ 0 ∂stdGaussian E)) := by
-  have hS : S.Nonempty := ⟨0, h0⟩
-  have hv : Integrable (fun u : E ↦ ⟪u, v⟫) (stdGaussian E) :=
-    (IsGaussian.integrable_fun_id (μ := stdGaussian E)).inner_const v
-  rw [← integral_indicator (measurableSet_normalConeAtZero S)]
-  apply Filter.Tendsto.congr' _ (tendsto_const_nhds.mul
-    (tendsto_integral_filter_of_dominated_convergence (fun u : E ↦ max ⟪u, v⟫ 0)
-      (μ := stdGaussian E) (F := fun (a : ℝ) u ↦ max (⟪u, v⟫ - a * support S hS u) 0)
-      ?_ ?_ (hv.sup (integrable_const 0)) ?_))
-  · filter_upwards [eventually_ge_atTop (0 : ℝ)] with a ha
-    exact (meanWidth_insert_smul_sub S hS v ha).symm
-  · exact .of_forall fun a ↦
-      ((hv.sub ((integrable_support S hS).const_mul a)).sup (integrable_const 0)).aestronglyMeasurable
-  · filter_upwards [eventually_ge_atTop (0 : ℝ)] with a ha
-    refine ae_of_all _ fun u ↦ ?_
-    rw [Real.norm_eq_abs, abs_of_nonneg (le_max_right _ _)]
-    exact max_le_max (sub_le_self _ (mul_nonneg ha (support_nonneg_of_zero_mem h0 u))) le_rfl
-  · refine ae_of_all _ fun u ↦ ?_
-    simpa only [Set.indicator_apply, mem_normalConeAtZero_iff h0] using
-      tendsto_max_sub_mul ⟪u, v⟫ (support_nonneg_of_zero_mem h0 u)
-
-/-- Right derivative at the instant when the added site separates from the origin. -/
-theorem hasDerivWithinAt_meanWidth_insert {S : Finset E} (h0 : 0 ∈ S) (v : E) :
-    HasDerivWithinAt
-      (fun h : ℝ ↦ meanWidth (insert (h • v) S) (Finset.insert_nonempty _ _))
-      (Real.sqrt (2 * Real.pi) *
-        ∫ u in normalConeAtZero S, max ⟪u, v⟫ 0 ∂stdGaussian E) (Set.Ioi 0) 0 := by
-  rw [hasDerivWithinAt_iff_tendsto_slope' Set.self_notMem_Ioi]
-  apply ((tendsto_meanWidth_insert_smul_sub h0 v).comp tendsto_inv_nhdsGT_zero).congr'
-  filter_upwards [self_mem_nhdsWithin] with h hh
-  have hp : (0 : ℝ) < h := hh
-  have hS : S.Nonempty := ⟨0, h0⟩
-  have hmove := meanWidth_smul (insert (h • v) S) (Finset.insert_nonempty _ _)
-    (inv_nonneg.mpr hp.le)
-  simp only [Finset.image_insert, inv_smul_smul₀ hp.ne'] at hmove
-  simp only [Function.comp_apply, slope_def_field, zero_smul, Finset.insert_eq_of_mem h0,
-    sub_zero, hmove, meanWidth_smul S hS (inv_nonneg.mpr hp.le)]
-  ring
 
 end
 
@@ -3803,33 +2892,6 @@ theorem support_add (S T : Finset E) (hS : S.Nonempty) (hT : T.Nonempty) (u : E)
     rw [ex, ey, ← inner_add_right]
     exact (S + T).le_sup' (fun v ↦ ⟪u, v⟫) (Finset.add_mem_add hx hy)
 
-/-- Support function restricted to the unit sphere, with its uniform topology. -/
-def sphereSupport (S : Finset E) (hS : S.Nonempty) : C(sphere (0 : E) 1, ℝ) where
-  toFun u := support S hS u
-  continuous_toFun := Continuous.finset_sup'_apply hS (fun _ _ ↦
-    continuous_subtype_val.inner continuous_const)
-
-/-- The continuous functions generating the triangle approximation space. -/
-def triangleSupports (E : Type*) [NormedAddCommGroup E] [InnerProductSpace ℝ E] :
-    Set C(sphere (0 : E) 1, ℝ) :=
-  {f | ∃ a b c : E, f = sphereSupport {a, b, c} (Finset.insert_nonempty _ _)}
-
-theorem sphereSupport_add (S T : Finset E) (hS : S.Nonempty) (hT : T.Nonempty) :
-    sphereSupport (S + T) (hS.add hT) = sphereSupport S hS + sphereSupport T hT := by
-  ext u
-  exact support_add S T hS hT u
-
-theorem sphereSupport_zero : sphereSupport ({0} : Finset E) (Finset.singleton_nonempty _) = 0 := by
-  ext u
-  simp [sphereSupport, support]
-
-theorem support_smul_direction (S : Finset E) (hS : S.Nonempty) (u : E) {a : ℝ} (ha : 0 ≤ a) :
-    support S hS (a • u) = a * support S hS u := by
-  unfold support
-  simpa only [real_inner_smul_left, Function.comp_def] using
-    (Finset.apply_sup'_eq_sup'_comp hS (a * ·)
-      (fun b c ↦ mul_max_of_nonneg b c ha) (f := fun x ↦ ⟪u, x⟫)).symm
-
 /-- Adjoining sites in the convex hull preserves the support function. -/
 theorem support_union_of_subset_convexHull {S T : Finset E} (hS : S.Nonempty)
     (hT : (T : Set E) ⊆ convexHull ℝ (S : Set E)) (u : E) :
@@ -3861,32 +2923,6 @@ theorem meanWidth_add (S T : Finset E) (hS : S.Nonempty) (hT : T.Nonempty) :
     meanWidth (S + T) (hS.add hT) = meanWidth S hS + meanWidth T hT := by
   simp only [meanWidth, support_add S T hS hT, integral_add (integrable_support S hS) (integrable_support T hT),
     mul_add]
-
-/-- Uniform error on unit directions bounds the error in Gaussian mean width. -/
-theorem abs_meanWidth_sub_le (S T : Finset E) (hS : S.Nonempty) (hT : T.Nonempty) {ε : ℝ}
-    (hclose : ∀ u ∈ sphere (0 : E) 1, |support S hS u - support T hT u| ≤ ε) :
-    |meanWidth S hS - meanWidth T hT| ≤
-      (Real.sqrt (2 * Real.pi) * ∫ u : E, ‖u‖ ∂stdGaussian E) * ε := by
-  have pointwise (u : E) : |support S hS u - support T hT u| ≤ ε * ‖u‖ := by
-    by_cases hu : u = 0
-    · simp [hu, support]
-    let w := NormedSpace.normalize u
-    have hw : w ∈ sphere (0 : E) 1 := by simp [w, NormedSpace.norm_normalize hu]
-    have heq : ‖u‖ • w = u := NormedSpace.norm_smul_normalize u
-    calc
-      _ = ‖u‖ * |support S hS w - support T hT w| := by
-        conv_lhs => rw [← heq]
-        rw [support_smul_direction _ _ _ (norm_nonneg u), support_smul_direction _ _ _ (norm_nonneg u),
-          ← mul_sub, abs_mul, abs_norm]
-      _ ≤ ε * ‖u‖ := (mul_le_mul_of_nonneg_left (hclose w hw) (norm_nonneg u)).trans_eq (mul_comm _ _)
-  have integralBound := norm_integral_le_of_norm_le
-    (f := fun u ↦ support S hS u - support T hT u)
-    ((IsGaussian.integrable_fun_id (μ := stdGaussian E)).norm.const_mul ε)
-    (Eventually.of_forall pointwise)
-  simp only [Real.norm_eq_abs, integral_const_mul] at integralBound
-  rw [meanWidth, meanWidth, ← mul_sub, ← integral_sub (integrable_support S hS) (integrable_support T hT),
-    abs_mul, abs_of_nonneg (Real.sqrt_nonneg _)]
-  exact (mul_le_mul_of_nonneg_left integralBound (Real.sqrt_nonneg _)).trans_eq (by ring)
 
 end
 
@@ -4613,22 +3649,6 @@ def difference {b : ℕ} (x y : Word b) (h : x ≠ y) : Direction b :=
 @[simp] theorem difference_val {b : ℕ} (x y : Word b) (h : x ≠ y) :
     (difference x y h).val = x + y := rfl
 
-theorem pairName_eq_iff_direction {b : ℕ} (p : Direction (b + 1)) (x y : Word (b + 1))
-    (h : x ≠ y) : pairName p x = pairName p y ↔ p = difference x y h := by
-  rw [pairName_eq_iff, or_iff_right h, Subtype.ext_iff]
-  rfl
-
-/-- Summing any coefficient over the directions whose pair names match keeps all
-directions on equal inputs and exactly the difference direction on unequal inputs. -/
-theorem matchingSum {b : ℕ} {M : Type*} [AddCommMonoid M] (x y : Word (b + 1))
-    (f : Direction (b + 1) → M) :
-    (∑ p, if pairName p x = pairName p y then f p else 0) =
-      if h : x = y then ∑ p, f p else f (difference x y h) := by
-  classical
-  by_cases h : x = y
-  · simp [h]
-  · simp [h, pairName_eq_iff_direction _ _ _ h]
-
 end Binary
 end Sunflower
 end Combinatorics
@@ -4861,19 +3881,8 @@ def power (T : Tensor K X Y Z) (n : ℕ) :
     directSum T (i, x) (i, y) (i, z) = T i x y z := by
   simp [directSum]
 
-theorem directSum_zero_of_left_ne {ι : Type*} [DecidableEq ι]
-    (T : ι → Tensor K X Y Z) (x : ι × X) (y : ι × Y) (z : ι × Z)
-    (h : x.1 ≠ y.1) : directSum T x y z = 0 := by
-  simp [directSum, h]
-
 @[simp] theorem rankAtMost_zero : RankAtMost (0 : Tensor K X Y Z) 0 := by
   refine ⟨fun i => Fin.elim0 i, fun i => Fin.elim0 i, fun i => Fin.elim0 i, ?_⟩
-  funext x y z
-  simp
-
-theorem rankOne_rankAtMost (a : X → K) (b : Y → K) (c : Z → K) :
-    RankAtMost (rankOne a b c) 1 := by
-  refine ⟨fun _ => a, fun _ => b, fun _ => c, ?_⟩
   funext x y z
   simp
 
@@ -5009,17 +4018,6 @@ def pullback (fx : X' → X) (fy : Y' → Y) (fz : Z' → Z)
     (T : Tensor K X Y Z) : Tensor K X' Y' Z' :=
   fun x y z => T (fx x) (fy y) (fz z)
 
-theorem pullback_eq_restrict [Fintype X] [Fintype Y] [Fintype Z]
-    [DecidableEq X] [DecidableEq Y] [DecidableEq Z]
-    (fx : X' → X) (fy : Y' → Y) (fz : Z' → Z) (T : Tensor K X Y Z) :
-    pullback fx fy fz T = restrict
-      (fun x' x => if x = fx x' then 1 else 0)
-      (fun y' y => if y = fy y' then 1 else 0)
-      (fun z' z => if z = fz z' then 1 else 0) T := by
-  classical
-  funext x y z
-  simp [pullback, restrict, ite_mul, mul_ite]
-
 theorem RankAtMost.pullback {T : Tensor K X Y Z} {r : ℕ}
     (h : RankAtMost T r) (fx : X' → X) (fy : Y' → Y) (fz : Z' → Z) :
     RankAtMost (pullback fx fy fz T) r := by
@@ -5036,16 +4034,6 @@ variable {X Y Z X' Y' Z' : Type*}
 def BorderRankAtMost [Fintype X] [Fintype Y] [Fintype Z]
     (T : Tensor ℂ X Y Z) (r : ℕ) : Prop :=
   T ∈ closure {S | RankAtMost S r}
-
-def restrictionOrbit [Fintype X] [Fintype Y] [Fintype Z]
-    (T : Tensor ℂ X Y Z) : Set (Tensor ℂ X' Y' Z') :=
-  {U | ∃ (A : X' → X → ℂ) (B : Y' → Y → ℂ) (C : Z' → Z → ℂ),
-    U = restrict A B C T}
-
-def DegeneratesTo [Fintype X] [Fintype Y] [Fintype Z]
-    [Fintype X'] [Fintype Y'] [Fintype Z']
-    (T : Tensor ℂ X Y Z) (U : Tensor ℂ X' Y' Z') : Prop :=
-  U ∈ closure (restrictionOrbit T)
 
 theorem RankAtMost.borderRankAtMost [Fintype X] [Fintype Y] [Fintype Z]
     {T : Tensor ℂ X Y Z} {r : ℕ} (h : RankAtMost T r) :
@@ -5101,17 +4089,6 @@ theorem BorderRankAtMost.product {U V W : Type*}
       BorderRankAtMost (Tensor.product T' S) (r * s)} :=
     isClosed_closure.preimage (continuous_product_left S)
   exact closure_minimal hexact hclosed hT
-
-theorem BorderRankAtMost.of_degeneration [Fintype X] [Fintype Y] [Fintype Z]
-    [Fintype X'] [Fintype Y'] [Fintype Z']
-    {T : Tensor ℂ X Y Z} {U : Tensor ℂ X' Y' Z'} {r : ℕ}
-    (hT : BorderRankAtMost T r) (hTU : DegeneratesTo T U) :
-    BorderRankAtMost U r := by
-  have hsubset : restrictionOrbit T ⊆
-      {S : Tensor ℂ X' Y' Z' | BorderRankAtMost S r} := by
-    rintro S ⟨A, B, C, rfl⟩
-    exact hT.restrict A B C
-  exact closure_minimal hsubset isClosed_closure hTU
 
 end ComplexTopology
 
@@ -5215,16 +4192,6 @@ def Correct {n : ℕ} (P : MatrixAlgorithm n) : Prop :=
 
 def cost {n : ℕ} (P : MatrixAlgorithm n) : ℕ := P.program.cost
 
-theorem correct_iff_entries {n : ℕ} (P : MatrixAlgorithm n) :
-    P.Correct ↔ ∀ (A B : Matrix (Fin n) (Fin n) ℂ) (i k : Fin n),
-      P.program.eval (matrixInputs A B) (P.output i k) = ∑ j, A i j * B j k := by
-  constructor
-  · intro h A B i k
-    exact congrFun (congrFun (h A B) i) k
-  · intro h A B
-    funext i k
-    exact h A B i k
-
 end MatrixAlgorithm
 
 def scalarAlgorithm : MatrixAlgorithm 1 where
@@ -5232,16 +4199,6 @@ def scalarAlgorithm : MatrixAlgorithm 1 where
   program := ((Program.nil.step (.input (.inl (0, 0)))).step
     (.input (.inr (0, 0)))).step (.mul 1 0)
   output := fun _ _ => 0
-
-theorem scalarAlgorithm_correct : scalarAlgorithm.Correct := by
-  intro A B
-  funext i k
-  have hi : i = 0 := Subsingleton.elim _ _
-  have hk : k = 0 := Subsingleton.elim _ _
-  subst i
-  subst k
-  change A 0 0 * B 0 0 = (A * B) 0 0
-  simp [Matrix.mul_apply]
 
 @[simp] theorem scalarAlgorithm_cost : scalarAlgorithm.cost = 1 := rfl
 
@@ -5290,83 +4247,6 @@ variable {K X Y Z U V W : Type*} [CommSemiring K]
 def diagonal (ι : Type*) [DecidableEq ι] : Tensor K ι ι ι :=
   fun i j k => if i = j ∧ i = k then 1 else 0
 
-theorem diagonal_rankAtMost (ι : Type*) [Fintype ι] [DecidableEq ι] :
-    RankAtMost (diagonal (K := K) ι) (Fintype.card ι) := by
-  let a : ι → ι → K := fun i j => if i = j then 1 else 0
-  have heq : diagonal (K := K) ι =
-      fun x y z => ∑ i, rankOne (a i) (a i) (a i) x y z := by
-    funext x y z
-    simp [diagonal, rankOne, a, mul_ite, ite_and]
-    split_ifs <;> simp_all
-  rw [heq]
-  exact rankAtMost_sum_rankOne a a a
-
-theorem RankAtMost.repeat_batch {S : Tensor K U V W} {k r R B : ℕ}
-    (hbatch : RankAtMost (directSum (fun _ : Fin k => S)) r) (hfit : R ≤ B * k) :
-    RankAtMost (directSum (fun _ : Fin R => S)) (B * r) := by
-  classical
-  let f : Fin R → Fin B × Fin k := fun i => finProdFinEquiv.symm (Fin.castLE hfit i)
-  have hf : Function.Injective f := finProdFinEquiv.symm.injective.comp (Fin.castLE_injective hfit)
-  have hbig := (diagonal_rankAtMost (K := K) (Fin B)).product hbatch
-  simp only [Fintype.card_fin] at hbig
-  rcases hbig with ⟨a, b, c, heq⟩
-  let liftU : (Fin R × U) → Fin B × (Fin k × U) := fun x => ((f x.1).1, (f x.1).2, x.2)
-  let liftV : (Fin R × V) → Fin B × (Fin k × V) := fun y => ((f y.1).1, (f y.1).2, y.2)
-  let liftW : (Fin R × W) → Fin B × (Fin k × W) := fun z => ((f z.1).1, (f z.1).2, z.2)
-  refine ⟨fun i x => a i (liftU x), fun i y => b i (liftV y),
-    fun i z => c i (liftW z), ?_⟩
-  funext x y z
-  change directSum (fun _ : Fin R => S) x y z =
-    ∑ i, rankOne (a i) (b i) (c i) (liftU x) (liftV y) (liftW z)
-  have hentry := congrFun (congrFun (congrFun heq (liftU x)) (liftV y)) (liftW z)
-  rw [← hentry]
-  by_cases hxy : x.1 = y.1
-  · by_cases hxz : x.1 = z.1
-    · have hyz : y.1 = z.1 := hxy.symm.trans hxz
-      simp [directSum, Tensor.product, diagonal, liftU, liftV, liftW, hxy, hyz]
-    · have hn : f x.1 ≠ f z.1 := fun h => hxz (hf h)
-      have hs : (f x.1).1 ≠ (f z.1).1 ∨ (f x.1).2 ≠ (f z.1).2 := by
-        by_cases hfirst : (f x.1).1 = (f z.1).1
-        · exact Or.inr (fun hsecond => hn (Prod.ext hfirst hsecond))
-        · exact Or.inl hfirst
-      rcases hs with hs | hs <;>
-        simp [directSum, Tensor.product, diagonal, liftU, liftV, liftW, hxz, hs]
-  · have hn : f x.1 ≠ f y.1 := fun h => hxy (hf h)
-    have hs : (f x.1).1 ≠ (f y.1).1 ∨ (f x.1).2 ≠ (f y.1).2 := by
-      by_cases hfirst : (f x.1).1 = (f y.1).1
-      · exact Or.inr (fun hsecond => hn (Prod.ext hfirst hsecond))
-      · exact Or.inl hfirst
-    rcases hs with hs | hs <;>
-      simp [directSum, Tensor.product, diagonal, liftU, liftV, liftW, hxy, hs]
-
-theorem RankAtMost.batch_substitute [Fintype U] [Fintype V] [Fintype W]
-    {T : Tensor K X Y Z} {S : Tensor K U V W} {r b : ℕ}
-    (hT : RankAtMost T r)
-    (hbatch : RankAtMost (directSum (fun _ : Fin r => S)) b) :
-    RankAtMost (Tensor.product T S) b := by
-  classical
-  rcases hT with ⟨a, c, e, rfl⟩
-  let A : (X × U) → (Fin r × U) → K :=
-    fun x i => if x.2 = i.2 then a i.1 x.1 else 0
-  let B : (Y × V) → (Fin r × V) → K :=
-    fun y i => if y.2 = i.2 then c i.1 y.1 else 0
-  let C : (Z × W) → (Fin r × W) → K :=
-    fun z i => if z.2 = i.2 then e i.1 z.1 else 0
-  have heq : Tensor.restrict A B C (directSum (fun _ : Fin r => S)) =
-      Tensor.product (fun x y z => ∑ i, rankOne (a i) (c i) (e i) x y z) S := by
-    funext x y z
-    simp [Tensor.restrict, directSum, Tensor.product, rankOne, A, B, C,
-      Fintype.sum_prod_type, ite_and, ite_mul, mul_ite, Finset.sum_mul]
-  rw [← heq]
-  exact hbatch.restrict A B C
-
-theorem RankAtMost.batch_product [Fintype U] [Fintype V] [Fintype W]
-    {T : Tensor K X Y Z} {S : Tensor K U V W} {R k r B : ℕ}
-    (hT : RankAtMost T R)
-    (hbatch : RankAtMost (directSum (fun _ : Fin k => S)) r)
-    (hfit : R ≤ B * k) : RankAtMost (Tensor.product T S) (B * r) :=
-  hT.batch_substitute (hbatch.repeat_batch hfit)
-
 end Tensor
 end MatrixMultiplication.Foundation
 
@@ -5391,27 +4271,6 @@ def matrixCoefficients (A B C : Type*) [DecidableEq A] [DecidableEq B] [Decidabl
     Tensor K (A × B) (B × C) (C × A) :=
   fun x y z => if x.2 = y.1 ∧ y.2 = z.1 ∧ z.2 = x.1 then 1 else 0
 
-theorem matrixMultiplication_eq_matrixCoefficients (a b c : ℕ) :
-    matrixMultiplication a b c = matrixCoefficients (K := ℂ) (Fin a) (Fin b) (Fin c) := rfl
-
-theorem contract_matrixCoefficients [Fintype A] [Fintype B] [Fintype C]
-    [DecidableEq A] [DecidableEq B] [DecidableEq C]
-    (left : A × B → K) (right : B × C → K) (i : A) (k : C) :
-    contract (matrixCoefficients A B C) left right (k, i) =
-      ∑ j, left (i, j) * right (j, k) := by
-  simp [contract, matrixCoefficients, Fintype.sum_prod_type, ite_and, ite_mul]
-
-theorem matrixCoefficients_product [DecidableEq A] [DecidableEq B] [DecidableEq C]
-    [DecidableEq D] [DecidableEq E] [DecidableEq F]
-    (x : (A × D) × (B × E)) (y : (B × E) × (C × F)) (z : (C × F) × (A × D)) :
-    product (matrixCoefficients (K := K) A B C) (matrixCoefficients D E F)
-      ((x.1.1, x.2.1), (x.1.2, x.2.2))
-      ((y.1.1, y.2.1), (y.1.2, y.2.2))
-      ((z.1.1, z.2.1), (z.1.2, z.2.2)) =
-      matrixCoefficients (A × D) (B × E) (C × F) x y z := by
-  simp only [product, matrixCoefficients, Prod.ext_iff]
-  split_ifs <;> simp_all
-
 theorem matrixCoefficients_cyclic [DecidableEq A] [DecidableEq B] [DecidableEq C]
     (x : B × C) (y : C × A) (z : A × B) :
     matrixCoefficients (K := K) A B C z x y = matrixCoefficients B C A x y z := by
@@ -5419,41 +4278,6 @@ theorem matrixCoefficients_cyclic [DecidableEq A] [DecidableEq B] [DecidableEq C
       (x.2 = y.1 ∧ y.2 = z.1 ∧ z.2 = x.1) :=
     ⟨fun h => ⟨h.2.1, h.2.2, h.1⟩, fun h => ⟨h.2.2, h.1, h.2.1⟩⟩
   simp only [matrixCoefficients, h]
-
-theorem matrixCoefficients_rank_of_product [DecidableEq A] [DecidableEq B] [DecidableEq C]
-    [DecidableEq D] [DecidableEq E] [DecidableEq F] {r : ℕ}
-    (hproduct : RankAtMost (product (matrixCoefficients (K := K) A B C)
-      (matrixCoefficients D E F)) r) :
-    RankAtMost (matrixCoefficients (K := K) (A × D) (B × E) (C × F)) r := by
-  have h := hproduct.pullback
-    (fun x : (A × D) × (B × E) => ((x.1.1, x.2.1), (x.1.2, x.2.2)))
-    (fun y : (B × E) × (C × F) => ((y.1.1, y.2.1), (y.1.2, y.2.2)))
-    (fun z : (C × F) × (A × D) => ((z.1.1, z.2.1), (z.1.2, z.2.2)))
-  have heq : pullback
-      (fun x : (A × D) × (B × E) => ((x.1.1, x.2.1), (x.1.2, x.2.2)))
-      (fun y : (B × E) × (C × F) => ((y.1.1, y.2.1), (y.1.2, y.2.2)))
-      (fun z : (C × F) × (A × D) => ((z.1.1, z.2.1), (z.1.2, z.2.2)))
-      (product (matrixCoefficients (K := K) A B C) (matrixCoefficients D E F)) =
-      matrixCoefficients (K := K) (A × D) (B × E) (C × F) := by
-    funext x y z
-    exact matrixCoefficients_product x y z
-  rw [heq] at h
-  exact h
-
-theorem matrixCoefficients_product_rank [DecidableEq A] [DecidableEq B] [DecidableEq C]
-    [DecidableEq D] [DecidableEq E] [DecidableEq F] {r s : ℕ}
-    (hT : RankAtMost (matrixCoefficients (K := K) A B C) r)
-    (hS : RankAtMost (matrixCoefficients (K := K) D E F) s) :
-    RankAtMost (matrixCoefficients (K := K) (A × D) (B × E) (C × F)) (r * s) :=
-  matrixCoefficients_rank_of_product (hT.product hS)
-
-theorem matrixCoefficients_batch_rank [DecidableEq A] [DecidableEq B] [Fintype B]
-    {R k r batches : ℕ}
-    (houter : RankAtMost (matrixCoefficients (K := K) A A A) R)
-    (hbatch : RankAtMost (directSum (fun _ : Fin k => matrixCoefficients (K := K) B B B)) r)
-    (hfit : R ≤ batches * k) :
-    RankAtMost (matrixCoefficients (K := K) (A × B) (A × B) (A × B)) (batches * r) :=
-  matrixCoefficients_rank_of_product (houter.batch_product hbatch hfit)
 
 theorem matrixCoefficients_power [DecidableEq A] [DecidableEq B] [DecidableEq C]
     (n : ℕ) (x : (Fin n → A) × (Fin n → B))
@@ -5518,33 +4342,6 @@ theorem RankAtMost.card_le_of_identity {ι : Type*} [Fintype ι] [DecidableEq ι
     exact (Matrix.rank_mul_le_left L R).trans (by
       simpa only [Fintype.card_fin] using Matrix.rank_le_card_width L)
   simpa only [Matrix.rank_one] using hle
-
-theorem directSum_matrixCoefficients_rank_lower
-    {Label A B C : Type*} [Fintype Label] [Fintype A] [Fintype C]
-    [DecidableEq Label] [DecidableEq A] [DecidableEq B] [DecidableEq C]
-    [Nonempty B] {r : ℕ}
-    (h : RankAtMost (directSum (fun _ : Label => matrixCoefficients (K := K) A B C)) r) :
-    Fintype.card Label * (Fintype.card C * Fintype.card A) ≤ r := by
-  classical
-  let b₀ : B := Classical.choice inferInstance
-  have hminor : ∀ i j : Label × (C × A),
-      directSum (fun _ : Label => matrixCoefficients (K := K) A B C)
-        (i.1, (i.2.2, b₀)) (i.1, (b₀, i.2.1)) j = if i = j then 1 else 0 := by
-    intro i j
-    simp only [directSum, matrixCoefficients]
-    split_ifs <;> simp_all [Prod.ext_iff]
-  have hlower := h.card_le_of_identity
-    (fun i : Label × (C × A) => (i.1, (i.2.2, b₀)))
-    (fun i : Label × (C × A) => (i.1, (b₀, i.2.1)))
-    (fun i : Label × (C × A) => i) hminor
-  simpa only [Fintype.card_prod] using hlower
-
-theorem directSum_square_rank_lower (k n r : ℕ) (hn : 0 < n)
-    (h : RankAtMost (directSum (fun _ : Fin k =>
-      matrixCoefficients (K := K) (Fin n) (Fin n) (Fin n))) r) :
-    k * n ^ 2 ≤ r := by
-  let : Nonempty (Fin n) := ⟨⟨0, hn⟩⟩
-  simpa only [Fintype.card_fin, pow_two] using directSum_matrixCoefficients_rank_lower h
 
 end Tensor
 end MatrixMultiplication.Foundation
@@ -5614,18 +4411,6 @@ theorem tensorRank_le_of_rankAtMost {T : Tensor F X Y Z} {r : ℕ}
 /-- The infimum of the positive tensor-power rank roots. -/
 def asymptoticRank (T : Tensor F X Y Z) : ℝ :=
   ⨅ n : ℕ, (tensorRank (Tensor.power T (n + 1)) : ℝ) ^ ((n + 1 : ℝ)⁻¹)
-
-theorem asymptoticRank_nonneg (T : Tensor F X Y Z) : 0 ≤ asymptoticRank T :=
-  le_ciInf (fun _ => Real.rpow_nonneg (Nat.cast_nonneg _) _)
-
-theorem asymptoticRank_le_tensorRank (T : Tensor F X Y Z) :
-    asymptoticRank T ≤ tensorRank T := by
-  have hu := ciInf_le ⟨(0 : ℝ), by rintro _ ⟨n, rfl⟩; positivity⟩ (0 : ℕ)
-    (f := fun n : ℕ => (tensorRank (Tensor.power T (n + 1)) : ℝ) ^ ((n + 1 : ℝ)⁻¹))
-  have h₁ := tensorRank_le_of_rankAtMost ((rankAtMost_tensorRank T).power 1)
-  simp only [pow_one] at h₁
-  apply le_trans _ (Nat.cast_le (α := ℝ) |>.mpr h₁)
-  simpa [asymptoticRank] using hu
 
 end Rank
 
@@ -5797,83 +4582,8 @@ open MatrixMultiplication.Foundation
 open scoped BigOperators Classical NNReal
 noncomputable section
 
-private def tuple {A : Fin 3 → Type*} (x : A 0) (y : A 1) (z : A 2) : ∀ i, A i :=
-  Fin.cons x (Fin.cons y (Fin.cons z (fun i => i.elim0)))
-
-private def coords (A : Fin 3 → Type*) : (∀ i, A i) ≃ A 0 × A 1 × A 2 :=
-  (Fin.consEquiv A).symm.trans ((Equiv.refl _).prodCongr (piFinTwoEquiv _))
-
 variable {F : Type*} [CommSemiring F] {X Y Z U V W : Type}
   [Fintype X] [Fintype Y] [Fintype Z] [Fintype U] [Fintype V] [Fintype W]
-
-/-- Regard a matrix-multiplication coefficient array as a tensor on three sites. -/
-def ofThree (T : Tensor F X Y Z) : Raw (Fin 3) F where
-  Leg := ![X, Y, Z]
-  finiteLeg := tuple (inferInstanceAs (Fintype X)) (inferInstanceAs (Fintype Y)) (inferInstanceAs (Fintype Z))
-  coeff := fun x => T (x 0) (x 1) (x 2)
-
-/-- Local restriction agrees in the curried and site-indexed conventions. -/
-theorem ofThree_restrict (T : Tensor F X Y Z) (A : U → X → F) (B : V → Y → F) (C : W → Z → F) :
-    (ofThree (Tensor.restrict A B C T)).Restricts (ofThree T) := by
-  let : DecidableEq (Fin 3) := fun i j => Classical.propDecidable (i = j)
-  let M : ∀ i, (ofThree (Tensor.restrict A B C T)).Leg i → (ofThree T).Leg i → F := tuple A B C
-  refine ⟨M, fun p => ?_⟩
-  change (∑ x, ∑ y, ∑ z, A (p 0) x * B (p 1) y * C (p 2) z * T x y z) =
-    ∑ q : (i : Fin 3) → (ofThree T).Leg i, T (q 0) (q 1) (q 2) * ∏ i, M i (p i) (q i)
-  let e := coords (ofThree T).Leg
-  calc
-    _ = ∑ q : X × Y × Z, A (p 0) q.1 * B (p 1) q.2.1 * C (p 2) q.2.2 * T q.1 q.2.1 q.2.2 := by
-      simp only [Fintype.sum_prod_type]
-    _ = _ := by
-      apply Fintype.sum_equiv e.symm
-      intro q
-      simp only [Fin.prod_univ_three]
-      change A (p 0) q.1 * B (p 1) q.2.1 * C (p 2) q.2.2 * T q.1 q.2.1 q.2.2 =
-        T q.1 q.2.1 q.2.2 * (A (p 0) q.1 * B (p 1) q.2.1 * C (p 2) q.2.2)
-      ac_rfl
-
-/-- The grouped tensor product in both coordinate conventions pairs the same three indices. -/
-theorem ofThree_product (T : Tensor F X Y Z) (S : Tensor F U V W) :
-    (ofThree (Tensor.product T S)).Equivalent ((ofThree T).mul (ofThree S)) := by
-  let e : ∀ i, (ofThree (Tensor.product T S)).Leg i ≃ ((ofThree T).mul (ofThree S)).Leg i :=
-    tuple (Equiv.refl _) (Equiv.refl _) (Equiv.refl _)
-  apply Raw.reindex_equivalent e
-  intro p
-  rfl
-
-private theorem diagonal_eq_sum {α : Type} [Fintype α] [DecidableEq α] (q : Fin 3 → α) :
-    (if q 0 = q 1 ∧ q 0 = q 2 then (1 : F) else 0) =
-      ∑ a : α, @ite F (q = fun _ => a) (Classical.propDecidable _) 1 0 := by
-  have eq (a : α) : q = (fun _ => a) ↔ q 0 = a ∧ q 1 = a ∧ q 2 = a := by
-    simp [funext_iff, Fin.forall_fin_succ]
-  simp_rw [eq]
-  rw [Finset.sum_eq_single (q 0)]
-  · simp [eq_comm]
-  · intro b _ hb
-    simp [Ne.symm hb]
-  · simp
-
-/-- The full diagonal in the rank model is the common-label site diagonal. -/
-theorem ofThree_diagonal (α : Type) [Fintype α] [DecidableEq α] :
-    (ofThree (Tensor.diagonal (K := F) α)).Equivalent (Raw.diagonal (Fin 3) F α) := by
-  let e : ∀ i, (ofThree (Tensor.diagonal (K := F) α)).Leg i ≃ α :=
-    tuple (Equiv.refl _) (Equiv.refl _) (Equiv.refl _)
-  apply Raw.reindex_equivalent e
-  intro x
-  exact diagonal_eq_sum (F := F) (fun i => e i (x i))
-
-/-- Evaluation at a normalized three-site spectral point gives the multiplicative,
-restriction-monotone functional used for the rectangular rank bounds. -/
-def rankFunctionalOfSpectrum {K : Type*} [Field K]
-    (f : normalizedSpectrum (fun x y : TensorClass.{0} (Fin 3) K => x ≤ y)) : RankFunctional K where
-  value T := f.1 (ofRaw (ofThree T))
-  diagonal r := by
-    rw [ofRaw_eq_iff.mpr (ofThree_diagonal (F := K) (Fin r)), ofRaw_diagonal_fin_eq_natCast]
-    exact map_natCast (normalizedSpectrum.toRingHom f) r
-  product T S := by
-    rw [ofRaw_eq_iff.mpr (ofThree_product T S), ofRaw_mul]
-    exact f.2.2.2.2.1 _ _
-  restrict_le T A B C := f.2.2.2.2.2 _ _ (ofRaw_le_iff.mpr (ofThree_restrict T A B C))
 
 end
 end SiteTensor
@@ -5975,75 +4685,7 @@ namespace SiteTensor
 
 open scoped Classical
 
-private def occupiedLeg {α : Type} {p : Prop} (h : p) : α ≃ (p → α) where
-  toFun a _ := a
-  invFun f := f h
-  left_inv _ := rfl
-  right_inv _ := rfl
-
-private def emptyLeg {α : Type} {p : Prop} (h : ¬ p) : Unit ≃ (p → α) where
-  toFun _ hp := (h hp).elim
-  invFun _ := ()
-  left_inv _ := rfl
-  right_inv _ := funext fun hp ↦ (h hp).elim
-
-private def threeLegs {A : Fin 3 → Type*} (x : A 0) (y : A 1) (z : A 2) : ∀ i, A i :=
-  Fin.cons x (Fin.cons y (Fin.cons z (fun i ↦ i.elim0)))
-
 variable (F : Type*) [Field F]
-
-private theorem coeff_pair {I α : Type} [Fintype I] [DecidableEq I] [Fintype α]
-    (i j : I) (x : ∀ k, MaskLeg {i, j} α k) :
-    (Raw.maskDiagonal F {i, j} α).coeff x =
-      if x i (by simp) = x j (by simp) then 1 else 0 := by
-  classical
-  rw [Raw.maskDiagonal_coeff_at (K := F) {i, j} (Finset.mem_insert_self _ _) x]
-  congr 1
-  apply propext
-  constructor
-  · intro h
-    exact (h j (by simp)).symm
-  · intro h k hk
-    rcases Finset.mem_insert.mp hk with rfl | hk
-    · rfl
-    · obtain rfl := Finset.mem_singleton.mp hk
-      exact h.symm
-
-/-- The first two factors of the curried wire carry its common label. -/
-theorem ofRaw_ofThree_wire12 (n : ℕ) :
-    ofRaw (ofThree (wire12 F n)) = ofRaw (Raw.maskDiagonal F ({0, 1} : Finset (Fin 3)) (Fin n)) := by
-  let S : Finset (Fin 3) := {0, 1}
-  let e : ∀ i, (ofThree (wire12 F n)).Leg i ≃ MaskLeg S (Fin n) i :=
-    threeLegs (occupiedLeg (by decide)) (occupiedLeg (by decide)) (emptyLeg (by decide))
-  apply ofRaw_eq_iff.mpr (Raw.reindex_equivalent e ?_)
-  intro x
-  refine Eq.trans ?_ (coeff_pair F (0 : Fin 3) 1 (fun i ↦ e i (x i))).symm
-  simp only [ofThree, wire12]
-  split_ifs <;> first | rfl | contradiction
-
-/-- The last two factors of the curried wire carry its common label. -/
-theorem ofRaw_ofThree_wire23 (n : ℕ) :
-    ofRaw (ofThree (wire23 F n)) = ofRaw (Raw.maskDiagonal F ({1, 2} : Finset (Fin 3)) (Fin n)) := by
-  let S : Finset (Fin 3) := {1, 2}
-  let e : ∀ i, (ofThree (wire23 F n)).Leg i ≃ MaskLeg S (Fin n) i :=
-    threeLegs (emptyLeg (by decide)) (occupiedLeg (by decide)) (occupiedLeg (by decide))
-  apply ofRaw_eq_iff.mpr (Raw.reindex_equivalent e ?_)
-  intro x
-  refine Eq.trans ?_ (coeff_pair F (1 : Fin 3) 2 (fun i ↦ e i (x i))).symm
-  simp only [ofThree, wire23]
-  split_ifs <;> first | rfl | contradiction
-
-/-- The third and first factors of the curried wire carry its common label. -/
-theorem ofRaw_ofThree_wire31 (n : ℕ) :
-    ofRaw (ofThree (wire31 F n)) = ofRaw (Raw.maskDiagonal F ({2, 0} : Finset (Fin 3)) (Fin n)) := by
-  let S : Finset (Fin 3) := {2, 0}
-  let e : ∀ i, (ofThree (wire31 F n)).Leg i ≃ MaskLeg S (Fin n) i :=
-    threeLegs (occupiedLeg (by decide)) (emptyLeg (by decide)) (occupiedLeg (by decide))
-  apply ofRaw_eq_iff.mpr (Raw.reindex_equivalent e ?_)
-  intro x
-  refine Eq.trans ?_ (coeff_pair F (2 : Fin 3) 0 (fun i ↦ e i (x i))).symm
-  simp only [ofThree, wire31]
-  split_ifs <;> first | rfl | contradiction
 
 end SiteTensor
 
@@ -6188,78 +4830,11 @@ theorem RadicalTest.heightTest {m : Fin 3 → ℝ} {L : ℝ} (h : RadicalTest m 
   rw [Finset.sum_add_distrib, ← Finset.mul_sum] at hsum
   linarith [h.2]
 
-theorem heightTest_iff_radicalTest {m : Fin 3 → ℝ} {L : ℝ} (hm : ∀ i, 0 ≤ m i) :
-    HeightTest m L ↔ RadicalTest m L := ⟨(·.radicalTest hm), (·.heightTest hm)⟩
-
 /-- Replacing log asymptotic rank by the logarithm of a larger rank measure
 preserves both inequalities. -/
 theorem RadicalTest.mono {m : Fin 3 → ℝ} {L U : ℝ} (h : RadicalTest m L)
     (hm : ∀ i, 0 ≤ m i) (hLU : L ≤ U) : RadicalTest m U :=
   ((h.heightTest hm).mono hLU).radicalTest hm
-
-/-- For three equal loads of size two the radical inequality gives the
-superquadratic exponent constant. -/
-theorem square_lower_bound {L : ℝ} (h : RadicalTest (fun _ => 2) L) :
-    3 / Real.sqrt 2 ≤ L := by
-  have hL : 2 ≤ L := h.1 0
-  have hrad := h.2
-  simp only [Fin.sum_univ_three] at hrad
-  have hsq := Real.sq_sqrt (show 0 ≤ L ^ 2 - 2 ^ 2 by nlinarith [sq_nonneg (L - 2)])
-  have h2 : Real.sqrt 2 ^ 2 = 2 := Real.sq_sqrt (by norm_num)
-  apply (div_le_iff₀ (Real.sqrt_pos.2 (by norm_num))).mpr
-  apply le_of_sq_le_sq _ (mul_nonneg (by linarith) (Real.sqrt_nonneg _))
-  rw [mul_pow, h2]
-  nlinarith [sq_le_sq' (by linarith [Real.sqrt_nonneg (L ^ 2 - 2 ^ 2)] :
-    -(3 * Real.sqrt (L ^ 2 - 2 ^ 2)) ≤ L) (by linarith : L ≤ 3 * Real.sqrt (L ^ 2 - 2 ^ 2))]
-
-theorem loads_nonneg {w12 w23 w31 : ℝ} (h12 : 0 ≤ w12) (h23 : 0 ≤ w23)
-    (h31 : 0 ≤ w31) (i : Fin 3) : 0 ≤ loads w12 w23 w31 i := by
-  fin_cases i <;> dsimp [loads] <;> positivity
-
-/-- The sum of the three wire weights always passes the radical test. -/
-theorem radicalTest_of_totalWireLoad_le {w12 w23 w31 L : ℝ}
-    (h12 : 0 ≤ w12) (h23 : 0 ≤ w23) (h31 : 0 ≤ w31) (htotal : w12 + w23 + w31 ≤ L) :
-    RadicalTest (loads w12 w23 w31) L := by
-  let m := loads w12 w23 w31
-  have hbound (i : Fin 3) : m i ≤ L := by fin_cases i <;> dsimp [m, loads] <;> linarith
-  have hterm (i : Fin 3) : L - m i ≤ Real.sqrt (L ^ 2 - m i ^ 2) := by
-    apply Real.le_sqrt_of_sq_le
-    have hprod : 0 ≤ m i * (L - m i) :=
-      mul_nonneg (loads_nonneg h12 h23 h31 i) (sub_nonneg.mpr (hbound i))
-    nlinarith
-  refine ⟨hbound, ?_⟩
-  have hsum := Finset.sum_le_sum (s := Finset.univ) (fun i _ => hterm i)
-  simp only [Fin.sum_univ_three] at hsum ⊢
-  dsimp [m, loads] at hsum ⊢
-  linarith
-
-/-- At square order the log-rank bound is proportional to the base-two
-logarithm of the order, including order one. -/
-theorem square_log_lower_bound {b L : ℝ} (h : HeightTest (loads b b b) L) :
-    3 / Real.sqrt 2 * b ≤ L := by
-  have h2 : Real.sqrt 2 ^ 2 = 2 := Real.sq_sqrt (by norm_num)
-  have hden : Real.sqrt (1 + (2 * Real.sqrt 2) ^ 2) = 3 := by
-    apply (Real.sqrt_eq_iff_eq_sq (by positivity) (by norm_num)).mpr
-    nlinarith
-  have hh := h (fun _ => 2 * Real.sqrt 2) (fun _ => by positivity)
-  simp only [Fin.sum_univ_three, loads, Matrix.cons_val_zero, Matrix.cons_val_one,
-    Matrix.cons_val_two, hden] at hh
-  change 2 * Real.sqrt 2 * (b + b) + 2 * Real.sqrt 2 * (b + b) +
-    2 * Real.sqrt 2 * (b + b) ≤ L * (3 + 3 + 3 - 1) at hh
-  have heq : 3 / Real.sqrt 2 = 3 * Real.sqrt 2 / 2 := by
-    field_simp
-    nlinarith
-  rw [heq]
-  linarith
-
-/-- A square tensor with the finite height bound at rank measure r has
-rank measure at least the stated power of its order. -/
-theorem square_rpow_lower_bound {n r : ℝ} (hn : 0 < n) (hr : 0 < r)
-    (h : let b := Real.logb 2 n; HeightTest (loads b b b) (Real.logb 2 r)) :
-    n ^ (3 / Real.sqrt 2) ≤ r := by
-  apply (Real.logb_le_logb (by norm_num : (1 : ℝ) < 2) (Real.rpow_pos_of_pos hn _) hr).mp
-  rw [Real.logb_rpow_eq_mul_logb_of_pos hn]
-  exact square_log_lower_bound h
 
 end
 
@@ -6300,40 +4875,6 @@ theorem dyadic_wireDimension_log_ge (k : ℕ) (w : ℝ) :
   push_cast at h
   rw [Real.logb_pow, Real.logb_self_eq_one (by norm_num), mul_one, mul_comm] at h
   exact h
-
-/-- For positive scales and nonnegative weights, rounding costs a factor of at most two. -/
-theorem wireDimension_le {N : ℕ} (hN : 1 ≤ N) {w : ℝ} (hw : 0 ≤ w) :
-    (wireDimension N w : ℝ) ≤ 2 * (N : ℝ) ^ w := by
-  have hp : 1 ≤ (N : ℝ) ^ w := Real.one_le_rpow (by exact_mod_cast hN) hw
-  unfold wireDimension
-  linarith [Nat.ceil_lt_add_one (zero_le_one.trans hp)]
-
-/-- Rounding a wire dimension up adds at most one bit for nonnegative weights. -/
-theorem wireDimension_log_le {N : ℕ} (hN : 0 < N) {w : ℝ} (hw : 0 ≤ w) :
-    Real.logb 2 (wireDimension N w) ≤ 1 + w * Real.logb 2 N := by
-  calc
-    _ ≤ Real.logb 2 (2 * (N : ℝ) ^ w) :=
-      Real.logb_le_logb_of_le (by norm_num) (by exact_mod_cast wireDimension_pos hN w) (wireDimension_le hN hw)
-    _ = _ := by rw [Real.logb_mul (by norm_num) (by positivity),
-      Real.logb_self_eq_one (by norm_num), Real.logb_rpow_eq_mul_logb_of_pos (by positivity)]
-
-/-- The normalized logarithmic dimension converges to the wire weight. -/
-theorem tendsto_log_wireDimension_div {w : ℝ} (hw : 0 ≤ w) :
-    Tendsto (fun N : ℕ ↦ Real.logb 2 (wireDimension N w) / Real.logb 2 N) atTop (𝓝 w) := by
-  have ht : Tendsto (fun N : ℕ ↦ (Real.logb 2 N)⁻¹) atTop (𝓝 0) :=
-    tendsto_inv_atTop_zero.comp ((Real.tendsto_logb_atTop (by norm_num)).comp
-      tendsto_natCast_atTop_atTop)
-  apply tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
-    (show Tendsto (fun N : ℕ ↦ (Real.logb 2 N)⁻¹ + w) atTop (𝓝 w) by
-      simpa using ht.add_const w)
-  · filter_upwards [eventually_gt_atTop 1] with N hN
-    have hd := Real.logb_pos (b := 2) (by norm_num) (x := (N : ℝ)) (by exact_mod_cast hN)
-    exact (le_div_iff₀ hd).mpr (wireDimension_log_ge (by omega) w)
-  · filter_upwards [eventually_gt_atTop 1] with N hN
-    have hd := Real.logb_pos (b := 2) (by norm_num) (x := (N : ℝ)) (by exact_mod_cast hN)
-    apply (div_le_iff₀ hd).mpr
-    rw [add_mul, inv_mul_cancel₀ hd.ne']
-    exact wireDimension_log_le (by omega) hw
 
 end
 
@@ -6389,40 +4930,6 @@ theorem le_of_dyadic_log_bound {u τ : ℝ}
     Real.logb_self_eq_one (by norm_num), mul_one] at hbound
   nlinarith only [hlarge, hbound]
 
-/-- A polynomial upper bound on the finite height-test parameter implies
-the corresponding test on exponent loads, with all positive slack removed. -/
-theorem heightTest_of_polynomial_bound {w12 w23 w31 τ : ℝ}
-    (h : ∀ ε : ℝ, 0 < ε → ∃ C : ℝ, 0 < C ∧ ∀ N : ℕ, 1 ≤ N →
-      HeightTest (scaledLoads N w12 w23 w31) (Real.logb 2 (C * (N : ℝ) ^ (τ + ε)))) :
-    HeightTest (loads w12 w23 w31) τ := by
-  intro a ha
-  let M := ∑ i, a i * loads w12 w23 w31 i
-  let D := ∑ i, Real.sqrt (1 + a i ^ 2) - 1
-  have hD : 0 < D := heightDenom_pos a
-  change M ≤ τ * D
-  apply (div_le_iff₀ hD).mp
-  apply le_of_dyadic_log_bound
-  intro ε hε
-  obtain ⟨C, hC, hN⟩ := h ε hε
-  refine ⟨C, hC, fun k => ?_⟩
-  rw [← mul_div_assoc, div_le_iff₀ hD]
-  have hstep : (k : ℝ) * M ≤ ∑ i, a i * scaledLoads (2 ^ k) w12 w23 w31 i := by
-    dsimp only [M]
-    rw [Finset.mul_sum]
-    apply Finset.sum_le_sum
-    intro i _
-    rw [mul_left_comm]
-    exact mul_le_mul_of_nonneg_left (dyadic_load_le k _ _ _ i) (ha i).le
-  exact hstep.trans (hN (2 ^ k) (Nat.one_le_pow _ _ (by decide)) a ha)
-
-/-- Height tests pass to the infimum of any nonempty set of admissible exponents. -/
-theorem heightTest_sInf {m : Fin 3 → ℝ} {S : Set ℝ} (hS : S.Nonempty)
-    (h : ∀ τ ∈ S, HeightTest m τ) : HeightTest m (sInf S) := by
-  intro a ha
-  have hD := heightDenom_pos a
-  apply (div_le_iff₀ hD).mp
-  exact le_csInf hS fun τ hτ => (div_le_iff₀ hD).mpr (h τ hτ a ha)
-
 end
 
 end SpectralBooks
@@ -6466,8 +4973,6 @@ def eval [Field F] (inputs : Input → F) (registers : Register → F) :
   | .add i j => registers i + registers j
   | .sub i j => registers i - registers j
   | .mul i j => registers i * registers j
-
-abbrev eval.match_1 := @cost.match_1
 
 end Gate
 
@@ -6530,18 +5035,6 @@ def omega (F : Type*) [Field F] : ℝ := sInf {τ : ℝ | AdmissibleExponent F �
 /-- The inner dimension of an `n × n^k` by `n^k × n` multiplication. -/
 def innerSize (n : ℕ) (k : ℝ) : ℕ := ⌈(n : ℝ) ^ k⌉₊
 
-def RectangularAdmissibleExponent (F : Type*) [Field F] (k τ : ℝ) : Prop :=
-  ∀ ε : ℝ, 0 < ε → ∃ C : ℝ, 0 < C ∧
-    ∀ n : ℕ, 1 ≤ n → ∃ P : MatrixAlgorithm F n (innerSize n k) n,
-      P.Correct ∧ (P.cost : ℝ) ≤ C * (n : ℝ) ^ (τ + ε)
-
-def rectangularOmega (F : Type*) [Field F] (k : ℝ) : ℝ :=
-  sInf {τ : ℝ | RectangularAdmissibleExponent F k τ}
-
-/-- The dual exponent is a supremum of exact exponent-two rectangular shapes. -/
-def complexAlpha : ℝ :=
-  sSup {k : ℝ | k ∈ Set.Icc 0 1 ∧ rectangularOmega ℂ k = 2}
-
 end MatrixMultiplication.Arithmetic
 
 end
@@ -6589,17 +5082,6 @@ namespace MatrixAlgorithm
 
 variable {F : Type*} [Field F] {a b c : ℕ}
 
-theorem correct_iff_entries (P : MatrixAlgorithm F a b c) :
-    P.Correct ↔ ∀ (A : Matrix (Fin a) (Fin b) F) (B : Matrix (Fin b) (Fin c) F)
-      (i : Fin a) (k : Fin c),
-      P.program.eval (matrixInputs A B) (P.output i k) = ∑ j, A i j * B j k := by
-  constructor
-  · intro h A B i k
-    exact congrFun (congrFun (h A B) i) k
-  · intro h A B
-    funext i k
-    exact h A B i k
-
 end MatrixAlgorithm
 
 def scalarAlgorithm (F : Type*) [Field F] : MatrixAlgorithm F 1 1 1 where
@@ -6608,49 +5090,13 @@ def scalarAlgorithm (F : Type*) [Field F] : MatrixAlgorithm F 1 1 1 where
     (.input (.inr (0, 0)))).step (.mul 1 0)
   output := fun _ _ => 0
 
-theorem scalarAlgorithm_correct (F : Type*) [Field F] : (scalarAlgorithm F).Correct := by
-  intro A B
-  funext i k
-  have hi : i = 0 := Subsingleton.elim _ _
-  have hk : k = 0 := Subsingleton.elim _ _
-  subst i
-  subst k
-  change A 0 0 * B 0 0 = (A * B) 0 0
-  simp [Matrix.mul_apply]
-
 @[simp] theorem scalarAlgorithm_cost (F : Type*) [Field F] : (scalarAlgorithm F).cost = 1 := rfl
-
-theorem one_le_innerSize {n : ℕ} (hn : 1 ≤ n) (k : ℝ) : 1 ≤ innerSize n k := by
-  apply Nat.one_le_ceil_iff.mpr
-  exact Real.rpow_pos_of_pos (by exact_mod_cast (lt_of_lt_of_le Nat.zero_lt_one hn)) k
 
 @[simp] theorem innerSize_zero (n : ℕ) : innerSize n 0 = 1 := by
   simp [innerSize]
 
 @[simp] theorem innerSize_one (n : ℕ) : innerSize n 1 = n := by
   simp [innerSize]
-
-theorem innerSize_mono {n : ℕ} (hn : 1 ≤ n) {k l : ℝ} (hkl : k ≤ l) :
-    innerSize n k ≤ innerSize n l := by
-  exact Nat.ceil_mono (Real.rpow_le_rpow_of_exponent_le (by exact_mod_cast hn) hkl)
-
-theorem innerSize_le_pow {a b n t : ℕ} {k : ℝ} (hk : 0 ≤ k)
-    (hn : n ≤ a ^ t) (hab : (a : ℝ) ^ k ≤ b) : innerSize n k ≤ b ^ t := by
-  apply Nat.ceil_le.mpr
-  calc
-    (n : ℝ) ^ k ≤ ((a ^ t : ℕ) : ℝ) ^ k :=
-      Real.rpow_le_rpow (Nat.cast_nonneg n) (by exact_mod_cast hn) hk
-    _ = ((a : ℝ) ^ k) ^ t := by
-      rw [Nat.cast_pow, ← Real.rpow_pow_comm (Nat.cast_nonneg a)]
-    _ ≤ (b : ℝ) ^ t := pow_le_pow_left₀ (Real.rpow_nonneg (Nat.cast_nonneg a) k) hab t
-    _ = ((b ^ t : ℕ) : ℝ) := by rw [Nat.cast_pow]
-
-theorem innerSize_cast_le {n : ℕ} (hn : 1 ≤ n) {k : ℝ} (hk : 0 ≤ k) :
-    (innerSize n k : ℝ) ≤ 2 * (n : ℝ) ^ k := by
-  have hpow : 1 ≤ (n : ℝ) ^ k := Real.one_le_rpow (by exact_mod_cast hn) hk
-  have hceil := (Nat.ceil_lt_add_one (Real.rpow_nonneg (Nat.cast_nonneg n) k)).le
-  change (⌈(n : ℝ) ^ k⌉₊ : ℝ) ≤ _
-  linarith
 
 end MatrixMultiplication.Arithmetic
 
@@ -6780,8 +5226,6 @@ def eval (inputs : Input → F) : Expression F Input → F
   | .mul e f => e.eval inputs * f.eval inputs
 
 -- Keep the matcher name referenced by existing compiled modules.
-abbrev eval.match_1 := @cost.match_1
-
 structure Compiled (e : Expression F Input) where
   registers : ℕ
   program : Program F Input registers
@@ -6850,15 +5294,6 @@ namespace LinearAlgebra.SpectralBooks
 open MatrixMultiplication.Arithmetic MvPolynomial
 
 variable {F I : Type*} [Field F]
-
-/-- The formal polynomial represented by an arithmetic expression. Kept with `Expression.cost`
-so Lean compiles the two recursions with the same matcher as the ArithmeticHierarchy challenge. -/
-def expressionPolynomial : Expression F I → MvPolynomial I F
-  | .constant z => C z
-  | .input i => X i
-  | .add e f => expressionPolynomial e + expressionPolynomial f
-  | .sub e f => expressionPolynomial e - expressionPolynomial f
-  | .mul e f => expressionPolynomial e * expressionPolynomial f
 
 end LinearAlgebra.SpectralBooks
 
@@ -6962,12 +5397,6 @@ def sumFin : {n : ℕ} → (Fin n → Expression F Input) → Expression F Input
   | 0, _ => .constant 0
   | n + 1, f => .add (f 0) (sumFin (fun i : Fin n => f i.succ))
 
-theorem sumFin_eval {n : ℕ} (f : Fin n → Expression F Input) (inputs : Input → F) :
-    (sumFin f).eval inputs = ∑ i, (f i).eval inputs := by
-  induction n with
-  | zero => simp [sumFin, eval]
-  | succ n ih => simp [sumFin, eval, ih, Fin.sum_univ_succ]
-
 theorem sumFin_cost {n : ℕ} (f : Fin n → Expression F Input) :
     (sumFin f).cost = (∑ i, (f i).cost) + n := by
   induction n with
@@ -6982,11 +5411,6 @@ def naiveEntry {a b c : ℕ} (i : Fin a) (k : Fin c) : Expression F (MatrixInput
   Expression.sumFin fun j : Fin b =>
     .mul (.input (.inl (i, j))) (.input (.inr (j, k)))
 
-theorem naiveEntry_eval {a b c : ℕ} (i : Fin a) (k : Fin c)
-    (A : Matrix (Fin a) (Fin b) F) (B : Matrix (Fin b) (Fin c) F) :
-    (naiveEntry i k).eval (matrixInputs A B) = ∑ j, A i j * B j k := by
-  simp [naiveEntry, Expression.sumFin_eval, Expression.eval, matrixInputs]
-
 @[simp] theorem naiveEntry_cost {a b c : ℕ} (i : Fin a) (k : Fin c) :
     (naiveEntry (F := F) (b := b) i k).cost = 2 * b := by
   simp [naiveEntry, Expression.sumFin_cost, Expression.cost, two_mul]
@@ -6997,14 +5421,6 @@ def naiveAlgorithm (a b c : ℕ) : MatrixAlgorithm F a b c :=
     program := p.program
     output := fun i k => p.output (i, k) }
 
-theorem naiveAlgorithm_correct (a b c : ℕ) : (naiveAlgorithm (F := F) a b c).Correct := by
-  apply (MatrixAlgorithm.correct_iff_entries _).2
-  intro A B i k
-  let p := Expression.compileFamily (fun ik : Fin a × Fin c => naiveEntry (F := F) (b := b) ik.1 ik.2)
-  change p.program.eval (matrixInputs A B) (p.output (i, k)) = _
-  rw [p.correct]
-  exact naiveEntry_eval i k A B
-
 @[simp] theorem naiveAlgorithm_cost (a b c : ℕ) :
     (naiveAlgorithm (F := F) a b c).cost = 2 * a * b * c := by
   let p := Expression.compileFamily (fun ik : Fin a × Fin c => naiveEntry (F := F) (b := b) ik.1 ik.2)
@@ -7013,32 +5429,6 @@ theorem naiveAlgorithm_correct (a b c : ℕ) : (naiveAlgorithm (F := F) a b c).C
   simp only [naiveEntry_cost, Finset.sum_const, Finset.card_univ,
     Fintype.card_prod, Fintype.card_fin, nsmul_eq_mul, Nat.cast_id]
   ring
-
-theorem naiveAlgorithm_cost_le (a b c : ℕ) :
-    (naiveAlgorithm (F := F) a b c).cost ≤ 2 * a * b * c :=
-  (naiveAlgorithm_cost a b c).le
-
-theorem admissibleExponent_three : AdmissibleExponent F 3 := by
-  intro ε hε
-  refine ⟨2, by norm_num, ?_⟩
-  intro n hn
-  refine ⟨naiveAlgorithm n n n, naiveAlgorithm_correct n n n, ?_⟩
-  rw [naiveAlgorithm_cost]
-  have hnR : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn
-  have hpow : (n : ℝ) ^ (3 : ℝ) ≤ (n : ℝ) ^ (3 + ε) :=
-    Real.rpow_le_rpow_of_exponent_le hnR (le_add_of_nonneg_right hε.le)
-  calc
-    ((2 * n * n * n : ℕ) : ℝ) = 2 * (n : ℝ) ^ (3 : ℝ) := by
-      calc
-        ((2 * n * n * n : ℕ) : ℝ) = 2 * (n : ℝ) ^ (3 : ℕ) := by
-          push_cast
-          ring
-        _ = 2 * (n : ℝ) ^ (3 : ℝ) :=
-          congrArg (fun t : ℝ => 2 * t) (Real.rpow_natCast (n : ℝ) 3).symm
-    _ ≤ 2 * (n : ℝ) ^ (3 + ε) := mul_le_mul_of_nonneg_left hpow (by norm_num)
-
-theorem admissibleExponent_nonempty : Set.Nonempty {τ : ℝ | AdmissibleExponent F τ} :=
-  ⟨3, admissibleExponent_three⟩
 
 end MatrixMultiplication.Arithmetic
 
@@ -7090,32 +5480,6 @@ def FormalCorrect {a b c : ℕ} (P : MatrixAlgorithm F a b c) : Prop :=
   ∀ i k, registerPolynomial P.program (P.output i k) =
     ∑ j : Fin b, X (Sum.inl (i, j)) * X (Sum.inr (j, k))
 
-private theorem gatePolynomial_mapRegister {S : Type*} (f : R → S)
-    (v : S → MvPolynomial I F) (g : Gate F I R) :
-    gatePolynomial (g.mapRegister f) v = gatePolynomial g (v ∘ f) := by
-  cases g <;> rfl
-
-theorem registerPolynomial_append_new {r s : ℕ} (p : Program F I r)
-    (q : Program F I s) (i : Fin s) :
-    registerPolynomial (p.append q) (Program.newIndex r s i) = registerPolynomial q i := by
-  induction q with
-  | nil => exact i.elim0
-  | @step s q g ih =>
-    refine Fin.cases ?_ (fun j => ?_) i
-    · simp only [Program.append, Program.newIndex_zero, registerPolynomial_zero,
-        gatePolynomial_mapRegister]
-      congr 1
-      exact funext ih
-    · simpa only [Program.append, Program.newIndex_succ, registerPolynomial_succ] using ih j
-
-theorem registerPolynomial_append_old {r s : ℕ} (p : Program F I r)
-    (q : Program F I s) (i : Fin r) :
-    registerPolynomial (p.append q) (Program.oldIndex r s i) = registerPolynomial p i := by
-  induction q with
-  | nil => simp [Program.append]
-  | @step s q g ih =>
-    simpa only [Program.append, Program.oldIndex_succ, registerPolynomial_succ] using ih
-
 end
 
 noncomputable section
@@ -7123,43 +5487,6 @@ noncomputable section
 variable {F I : Type*} [Field F]
 
 -- Keep the matcher name exported by earlier builds of this module.
-abbrev expressionPolynomial.match_1 := @Expression.cost.match_1
-
-theorem registerPolynomial_compile (e : Expression F I) :
-    registerPolynomial e.compile.program e.compile.output = expressionPolynomial e := by
-  induction e <;> simp_all [Expression.compile, expressionPolynomial, gatePolynomial,
-    registerPolynomial_append_old, registerPolynomial_append_new]
-
-private theorem registerPolynomial_compileFinFamily (n : ℕ) (f : Fin n → Expression F I)
-    (i : Fin n) :
-    registerPolynomial (Expression.compileFinFamily n f).program
-      ((Expression.compileFinFamily n f).output i) = expressionPolynomial (f i) := by
-  induction n with
-  | zero => exact i.elim0
-  | succ n ih =>
-    refine Fin.cases ?_ (fun j => ?_) i
-    · simp [Expression.compileFinFamily, registerPolynomial_append_old, registerPolynomial_compile]
-    · simp [Expression.compileFinFamily, registerPolynomial_append_new, ih]
-
-theorem registerPolynomial_compileFamily {O : Type*} [Fintype O]
-    (f : O → Expression F I) (i : O) :
-    registerPolynomial (Expression.compileFamily f).program ((Expression.compileFamily f).output i)
-      = expressionPolynomial (f i) := by
-  simp [Expression.compileFamily, registerPolynomial_compileFinFamily]
-
-theorem expressionPolynomial_sumFin {n : ℕ} (f : Fin n → Expression F I) :
-    expressionPolynomial (Expression.sumFin f) = ∑ i, expressionPolynomial (f i) := by
-  induction n with
-  | zero => simp [Expression.sumFin, expressionPolynomial]
-  | succ n ih => simp [Expression.sumFin, expressionPolynomial, ih, Fin.sum_univ_succ]
-
-/-- The usual entrywise algorithm computes the formal matrix product over every field. -/
-theorem formalCorrect_naiveAlgorithm (F : Type*) [Field F] (a b c : ℕ) :
-    FormalCorrect (naiveAlgorithm (F := F) a b c) := by
-  intro i k
-  simp [naiveAlgorithm, registerPolynomial_compileFamily, naiveEntry, expressionPolynomial_sumFin,
-    expressionPolynomial]
-
 end
 
 end SpectralBooks
@@ -7350,22 +5677,6 @@ open Foundation.Tensor
 
 variable {K A B C : Type*} [CommSemiring K] [DecidableEq A] [DecidableEq B] [DecidableEq C]
 
-/-- Fix the third wire and read off both indices of the first site. -/
-theorem matrixMinor₁ (k : C) :
-    Matrix.of (fun x x' : A × B =>
-      matrixCoefficients (K := K) A B C x (x'.2, k) (k, x'.1)) = 1 := by
-  ext x x'
-  simp only [Matrix.of_apply, matrixCoefficients, Matrix.one_apply, Prod.ext_iff]
-  by_cases ha : x.1 = x'.1 <;> by_cases hb : x.2 = x'.2 <;> simp_all [eq_comm]
-
-/-- Fix the first wire and read off both indices of the second site. -/
-theorem matrixMinor₂ (i : A) :
-    Matrix.of (fun y y' : B × C =>
-      matrixCoefficients (K := K) A B C (i, y'.1) y (y'.2, i)) = 1 := by
-  ext y y'
-  simp only [Matrix.of_apply, matrixCoefficients, Matrix.one_apply, Prod.ext_iff]
-  by_cases hb : y.1 = y'.1 <;> by_cases hc : y.2 = y'.2 <;> simp_all [eq_comm]
-
 /-- Fix the second wire and read off both indices of the third site. -/
 theorem matrixMinor₃ (j : B) :
     Matrix.of (fun z z' : C × A =>
@@ -7506,47 +5817,6 @@ def FormalAdmissibleExponent (F : Type*) [Field F] (w12 w23 w31 τ : ℝ) : Prop
     ∃ P : MatrixAlgorithm F (wireDimension N w31) (wireDimension N w12) (wireDimension N w23),
       FormalCorrect P ∧ (P.cost : ℝ) ≤ C * (N : ℝ) ^ (τ + ε)
 
-/-- The arithmetic exponent in base size `N` at three prescribed wire weights. -/
-def formalOmega (F : Type*) [Field F] (w12 w23 w31 : ℝ) : ℝ :=
-  sInf {τ : ℝ | FormalAdmissibleExponent F w12 w23 w31 τ}
-
-/-- The entrywise algorithm gives an admissible exponent in every weighted format. -/
-theorem formalAdmissibleExponent_naive (F : Type*) [Field F] {w12 w23 w31 : ℝ}
-    (h12 : 0 ≤ w12) (h23 : 0 ≤ w23) (h31 : 0 ≤ w31) :
-    FormalAdmissibleExponent F w12 w23 w31 (w12 + w23 + w31) := by
-  intro ε hε
-  refine ⟨16, by norm_num, ?_⟩
-  intro N hN
-  refine ⟨Arithmetic.naiveAlgorithm _ _ _, formalCorrect_naiveAlgorithm F _ _ _, ?_⟩
-  rw [Arithmetic.naiveAlgorithm_cost]
-  push_cast
-  have h : 1 ≤ (N : ℝ) := by exact_mod_cast hN
-  calc
-    _ ≤ 2 * (2 * (N : ℝ) ^ w31) * (2 * (N : ℝ) ^ w12) * (2 * (N : ℝ) ^ w23) := by
-      gcongr <;> apply wireDimension_le hN <;> assumption
-    _ = 16 * (N : ℝ) ^ (w12 + w23 + w31) := by
-      rw [Real.rpow_add (zero_lt_one.trans_le h), Real.rpow_add (zero_lt_one.trans_le h)]
-      ring
-    _ ≤ _ := mul_le_mul_of_nonneg_left
-      (Real.rpow_le_rpow_of_exponent_le h (le_add_of_nonneg_right hε.le)) (by norm_num)
-
-/-- Positive slack allows the infimum itself as an admissible exponent. -/
-theorem formalOmega_admissible (F : Type*) [Field F] {w12 w23 w31 : ℝ}
-    (h12 : 0 ≤ w12) (h23 : 0 ≤ w23) (h31 : 0 ≤ w31) :
-    FormalAdmissibleExponent F w12 w23 w31 (formalOmega F w12 w23 w31) := by
-  intro ε hε
-  let S := {τ : ℝ | FormalAdmissibleExponent F w12 w23 w31 τ}
-  have hS : S.Nonempty := ⟨_, formalAdmissibleExponent_naive F h12 h23 h31⟩
-  obtain ⟨τ, hτ, hclose⟩ := exists_lt_of_csInf_lt hS
-    (lt_add_of_pos_right (sInf S) (half_pos hε))
-  obtain ⟨C, hC, hbound⟩ := hτ (ε / 2) (half_pos hε)
-  refine ⟨C, hC, fun N hN => ?_⟩
-  obtain ⟨P, hP, hcost⟩ := hbound N hN
-  refine ⟨P, hP, hcost.trans (mul_le_mul_of_nonneg_left ?_ hC.le)⟩
-  apply Real.rpow_le_rpow_of_exponent_le (by exact_mod_cast hN)
-  change τ + ε / 2 ≤ sInf S + ε
-  linarith
-
 /-- A formal arithmetic cost bound also controls ordinary rank in each rounded format. -/
 theorem FormalAdmissibleExponent.rank_growth {F : Type*} [Field F] {w12 w23 w31 τ : ℝ}
     (hτ : FormalAdmissibleExponent F w12 w23 w31 τ) (ε : ℝ) (hε : 0 < ε) :
@@ -7598,19 +5868,9 @@ theorem FormalAdmissibleExponent.load_le {F : Type*} [Field F] {w12 w23 w31 τ :
     (by exact_mod_cast matrixTensor_rank_pos F (hdim w12) (hdim w23) (hdim w31))
     (hbound _ (Nat.one_le_pow _ _ (by decide)))
 
-theorem load_le_formalOmega (F : Type*) [Field F] {w12 w23 w31 : ℝ}
-    (h12 : 0 ≤ w12) (h23 : 0 ≤ w23) (h31 : 0 ≤ w31) (i : Fin 3) :
-    loads w12 w23 w31 i ≤ formalOmega F w12 w23 w31 :=
-  (formalOmega_admissible F h12 h23 h31).load_le i
-
 @[simp] theorem unit_weight_loads : loads 1 1 1 = fun _ => 2 := by
   funext i
   fin_cases i <;> norm_num [loads]
-
-private theorem loads_nonnegative {u v w : ℝ} (hu : 0 ≤ u) (hv : 0 ≤ v) (hw : 0 ≤ w) :
-    ∀ i, 0 ≤ loads u v w i := by
-  intro i
-  fin_cases i <;> dsimp [loads] <;> positivity
 
 section RankBound
 
@@ -7620,51 +5880,6 @@ variable (hfinite : ∀ (x y z : ℕ), 0 < x → 0 < y → 0 < z →
     (Real.logb 2 (tensorRank (matrixTensor F x y z))))
 
 include hfinite
-
-private theorem heightTest_of_matrix_rank_growth {w12 w23 w31 τ : ℝ}
-    (hgrowth : ∀ ε : ℝ, 0 < ε → ∃ C : ℝ, 0 < C ∧ ∀ N : ℕ, 1 ≤ N →
-      (tensorRank (matrixTensor F (wireDimension N w12) (wireDimension N w23)
-        (wireDimension N w31)) : ℝ) ≤ C * (N : ℝ) ^ (τ + ε)) :
-    HeightTest (loads w12 w23 w31) τ := by
-  apply heightTest_of_polynomial_bound
-  intro ε hε
-  obtain ⟨C, hC, hc⟩ := hgrowth ε hε
-  refine ⟨C, hC, ?_⟩
-  intro N hN
-  have hdim (w : ℝ) := wireDimension_pos (N := N) (by omega) w
-  have hlog (w : ℝ) : 0 ≤ Real.logb 2 (wireDimension N w) :=
-    Real.logb_nonneg (by norm_num) (by exact_mod_cast hdim w)
-  have htest := (hfinite _ _ _ (hdim w12) (hdim w23) (hdim w31)).heightTest
-    (loads_nonnegative (hlog _) (hlog _) (hlog _))
-  apply htest.mono
-  exact Real.logb_le_logb_of_le (by norm_num)
-    (by exact_mod_cast matrixTensor_rank_pos F (hdim w12) (hdim w23) (hdim w31)) (hc N hN)
-
-/-- Take the infimum over all polynomial growth bounds supplied by a circuit model.
-The rank may be measured over a common extension of its field of constants. -/
-theorem radicalTest_sInf_of_matrix_rank_growth {w12 w23 w31 : ℝ}
-    (h12 : 0 ≤ w12) (h23 : 0 ≤ w23) (h31 : 0 ≤ w31) {S : Set ℝ} (hS : S.Nonempty)
-    (hgrowth : ∀ τ ∈ S, ∀ ε : ℝ, 0 < ε → ∃ C : ℝ, 0 < C ∧ ∀ N : ℕ, 1 ≤ N →
-      (tensorRank (matrixTensor F (wireDimension N w12) (wireDimension N w23)
-        (wireDimension N w31)) : ℝ) ≤ C * (N : ℝ) ^ (τ + ε)) :
-    RadicalTest (loads w12 w23 w31) (sInf S) :=
-  (heightTest_sInf hS fun τ hτ => heightTest_of_matrix_rank_growth hfinite (hgrowth τ hτ)).radicalTest
-    (loads_nonnegative h12 h23 h31)
-
-/-- The finite ordinary-rank inequality gives the rectangular arithmetic exponent inequality. -/
-theorem formalOmega_radicalTest_of_rank_bound {w12 w23 w31 : ℝ}
-    (h12 : 0 ≤ w12) (h23 : 0 ≤ w23) (h31 : 0 ≤ w31) :
-    RadicalTest (loads w12 w23 w31) (formalOmega F w12 w23 w31) := by
-  apply radicalTest_sInf_of_matrix_rank_growth hfinite h12 h23 h31
-    (S := {τ | FormalAdmissibleExponent F w12 w23 w31 τ}) ⟨_, formalAdmissibleExponent_naive F h12 h23 h31⟩
-  exact fun _ hτ => hτ.rank_growth
-
-/-- The square exponent consequence of the finite ordinary-rank inequality. -/
-theorem formalOmega_square_lower_bound_of_rank_bound :
-    3 / Real.sqrt 2 ≤ formalOmega F 1 1 1 := by
-  apply square_lower_bound
-  simpa only [unit_weight_loads] using formalOmega_radicalTest_of_rank_bound hfinite
-    (show (0 : ℝ) ≤ 1 by norm_num) (show (0 : ℝ) ≤ 1 by norm_num) (show (0 : ℝ) ≤ 1 by norm_num)
 
 end RankBound
 end
@@ -7750,42 +5965,6 @@ end Increments
 section IntegerWeights
 
 variable {ι : Type*} [Fintype ι]
-
-/-- On the support selected by coefficient extraction, the first local
-weights sum to `(g - h)²`. Here `ι` indexes the sites other than site 1. -/
-theorem firstWeight_eq_sq (g h v₁ : ℤ) (v : ι → ℤ)
-    (hs : g = h + ∑ j, v j - Fintype.card ι * v₁) :
-    g ^ 2 + (-h ^ 2 + 2 * h * (Fintype.card ι * v₁)) +
-      ∑ j, -(2 * h * v j) = (g - h) ^ 2 := by
-  rw [Finset.sum_neg_distrib, ← Finset.mul_sum, hs]
-  ring
-
-/-- The first specialization retains precisely `g = h`. -/
-theorem firstWeight_eq_zero_iff (g h v₁ : ℤ) (v : ι → ℤ)
-    (hs : g = h + ∑ j, v j - Fintype.card ι * v₁) :
-    g ^ 2 + (-h ^ 2 + 2 * h * (Fintype.card ι * v₁)) +
-      ∑ j, -(2 * h * v j) = 0 ↔ g = h := by
-  rw [firstWeight_eq_sq g h v₁ v hs]
-  simp [sub_eq_zero]
-
-/-- On the remaining support, the second local weights also sum to a
-sum of squares in the integers. -/
-theorem secondWeight_eq_sum_sq (v₁ : ℤ) (v : ι → ℤ)
-    (hs : ∑ j, v j = Fintype.card ι * v₁) :
-    ∑ j, v j ^ 2 - Fintype.card ι * v₁ ^ 2 = ∑ j, (v j - v₁) ^ 2 := by
-  simp_rw [sub_sq]
-  rw [Finset.sum_add_distrib, Finset.sum_sub_distrib]
-  simp_rw [mul_right_comm (2 : ℤ) _ v₁]
-  rw [← Finset.mul_sum, hs]
-  simp
-  ring
-
-/-- The second specialization retains precisely the common choices of all labels. -/
-theorem secondWeight_eq_zero_iff (v₁ : ℤ) (v : ι → ℤ)
-    (hs : ∑ j, v j = Fintype.card ι * v₁) :
-    ∑ j, v j ^ 2 - Fintype.card ι * v₁ ^ 2 = 0 ↔ ∀ j, v j = v₁ := by
-  rw [secondWeight_eq_sum_sq v₁ v hs, Finset.sum_eq_zero_iff_of_nonneg (fun j _ => sq_nonneg (v j - v₁))]
-  simp [sub_eq_zero]
 
 end IntegerWeights
 
@@ -7952,40 +6131,6 @@ theorem book_triangle_half_perimeter (i : Fin 3) (r : ℝ≥0) :
   norm_num [add_comm]
   ring
 
-/-- The signed-height chart through pages `i` and `j`. Nonnegative heights
-belong to page `i`, and negative heights belong to page `j`. -/
-def bookPlane {E : Type*} (i j : Fin 3) (x : WithLp 2 (E × ℝ)) : Book E :=
-  if 0 ≤ x.snd then bookPoint i x.snd.toNNReal x.fst
-  else bookPoint j (-x.snd).toNNReal x.fst
-
-theorem bookPlane_nonneg {E : Type*} (i j : Fin 3) (p : E) (r : ℝ≥0) :
-    bookPlane i j (toLp 2 (p, (r : ℝ))) = bookPoint i r p := by
-  change (if 0 ≤ (r : ℝ) then _ else _) = _
-  simp
-
-theorem bookPlane_isometry {E : Type*} [SeminormedAddCommGroup E] {i j : Fin 3} (hij : i ≠ j) :
-    Isometry (bookPlane (E := E) i j) := by
-  apply Isometry.of_dist_eq
-  intro x y
-  rw [WithLp.prod_dist_eq_of_L2 x y, add_comm]
-  unfold bookPlane
-  split_ifs with hx hy hy <;> rw [book_dist]
-  · simp [Real.toNNReal_of_nonneg hx, Real.toNNReal_of_nonneg hy, Real.dist_eq]
-  · have hny : 0 ≤ -y.snd := by linarith
-    simp [hij, Real.toNNReal_of_nonneg hx, Real.toNNReal_of_nonneg hny,
-      Real.dist_eq, sq_abs, sub_eq_add_neg]
-  · have hnx : 0 ≤ -x.snd := by linarith
-    simp only [hij.symm, ite_false, Real.toNNReal_of_nonneg hy, Real.toNNReal_of_nonneg hnx,
-      Real.dist_eq, sq_abs, NNReal.coe_mk]
-    congr 2
-    ring
-  · have hnx : 0 ≤ -x.snd := by linarith
-    have hny : 0 ≤ -y.snd := by linarith
-    simp only [eq_self, ite_true, Real.toNNReal_of_nonneg hnx, Real.toNNReal_of_nonneg hny,
-      Real.dist_eq, sq_abs, NNReal.coe_mk]
-    congr 2
-    ring
-
 /-- A point on the spine of the two-dimensional book. -/
 def bookSpine (p : ℝ) : Book ℝ := bookPoint 0 0 p
 
@@ -7998,9 +6143,6 @@ def bookTip (r : Fin 3 → ℝ≥0) (i : Fin 3) : Book ℝ := bookPoint i (r i) 
 theorem bookTip_dist (r : Fin 3 → ℝ≥0) {i j : Fin 3} (hij : i ≠ j) :
     dist (bookTip r i) (bookTip r j) = (r i : ℝ) + r j :=
   book_dist_distinct_tips hij _ _ _
-
-theorem bookSpine_dist : dist (bookSpine (-1)) (bookSpine 1) = 2 := by
-  norm_num [bookSpine, book_dist, Real.dist_eq]
 
 /-- The diagonal price bound of the planar book test, from its metric and
 the planar half-perimeter law for each of the three triangles. -/
@@ -8018,54 +6160,6 @@ theorem bookTip_price_le_of_triangle_le {δ : Finset (Book ℝ) → ℝ} (hmono 
     simpa only [bookSpine, bookTip, bookPoint_zero i 0] using book_triangle_half_perimeter i (r i)
   simp only [hbase, Fin.sum_univ_three] at h ⊢
   linarith [htriangle 0, htriangle 1, htriangle 2]
-
-theorem bookTip_price_le {δ : Finset (Book ℝ) → ℝ} (hmono : Monotone δ)
-    (hsub : IntersectingSubmodular δ) (r : Fin 3 → ℝ≥0) (hbase : δ bookBase = 2)
-    (htri : ∀ i, δ (insert (bookTip r i) bookBase) =
-      (dist (bookSpine (-1)) (bookSpine 1) + dist (bookSpine 1) (bookTip r i) +
-        dist (bookTip r i) (bookSpine (-1))) / 2) :
-    δ (Finset.univ.image (bookTip r)) ≤ ∑ i, Real.sqrt (1 + (r i : ℝ) ^ 2) - 1 :=
-  bookTip_price_le_of_triangle_le hmono hsub r hbase (fun i => (htri i).le)
-
-private theorem sqrt_scaled_sum_sq (a b c : ℝ) (ha : 0 ≤ a) :
-    Real.sqrt ((a * b) ^ 2 + (a * c) ^ 2) = a * Real.sqrt (b ^ 2 + c ^ 2) := by
-  rw [show (a * b) ^ 2 + (a * c) ^ 2 = a ^ 2 * (b ^ 2 + c ^ 2) by ring,
-    Real.sqrt_mul (sq_nonneg a), Real.sqrt_sq ha]
-
-/-- Reflect one tip across the common facet. The Euclidean segment from the
-reflected tip to the other tip crosses the facet at a point between the feet.
-Only distances in each individual page enter this upper bound. -/
-theorem dist_le_reflected_path {E X : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [PseudoMetricSpace X] {x y : X} {p q : E} {r s : ℝ} (hr : 0 ≤ r) (hs : 0 ≤ s)
-    (facet : E → X)
-    (hx : ∀ z ∈ segment ℝ p q, dist x (facet z) = Real.sqrt (dist p z ^ 2 + r ^ 2))
-    (hy : ∀ z ∈ segment ℝ p q, dist (facet z) y = Real.sqrt (dist z q ^ 2 + s ^ 2)) :
-    dist x y ≤ Real.sqrt (dist p q ^ 2 + (r + s) ^ 2) := by
-  let t := r / (r + s)
-  have ht : 0 ≤ t := div_nonneg hr (add_nonneg hr hs)
-  have ht₁ : t ≤ 1 := by
-    rcases (add_nonneg hr hs).eq_or_lt with h | h
-    · simp [t, ← h]
-    · exact (div_le_one h).mpr (by linarith)
-  have hr' : t * (r + s) = r := by
-    rcases (add_nonneg hr hs).eq_or_lt with h | h
-    · rw [← h, mul_zero]
-      linarith
-    · exact div_mul_cancel₀ r h.ne'
-  have hs' : (1 - t) * (r + s) = s := by linarith
-  let z := AffineMap.lineMap p q t
-  have hz : z ∈ segment ℝ p q := lineMap_mem_segment ℝ p q ⟨ht, ht₁⟩
-  have hx' : dist x (facet z) = t * Real.sqrt (dist p q ^ 2 + (r + s) ^ 2) := by
-    rw [hx z hz, dist_left_lineMap, Real.norm_eq_abs, abs_of_nonneg ht]
-    conv_lhs => rw [← hr']
-    exact sqrt_scaled_sum_sq _ _ _ ht
-  have hy' : dist (facet z) y = (1 - t) * Real.sqrt (dist p q ^ 2 + (r + s) ^ 2) := by
-    rw [hy z hz, dist_lineMap_right, Real.norm_eq_abs, abs_of_nonneg (sub_nonneg.mpr ht₁)]
-    conv_lhs => rw [← hs']
-    exact sqrt_scaled_sum_sq _ _ _ (sub_nonneg.mpr ht₁)
-  calc
-    dist x y ≤ dist x (facet z) + dist (facet z) y := dist_triangle _ _ _
-    _ = _ := by rw [hx', hy']; ring
 
 end
 
@@ -8098,80 +6192,7 @@ noncomputable section
 
 variable {F X Y Z : Type*} [Field F]
 
-/-- The scalar extension of a tensor, entry by entry. -/
-def toAlgebraicClosure (T : Tensor F X Y Z) : Tensor (AlgebraicClosure F) X Y Z :=
-  fun x y z => algebraMap F (AlgebraicClosure F) (T x y z)
-
-/-- Evaluate a polynomial in the tensor entries. -/
-def tensorEval (T : Tensor F X Y Z) : MvPolynomial (X × Y × Z) F →+* F :=
-  MvPolynomial.eval (fun p => T p.1 p.2.1 p.2.2)
-
-/-- Membership in the Zariski closure of the rank-at-most-`r` locus after scalar extension. -/
-def GeometricBorderRankAtMost (T : Tensor F X Y Z) (r : ℕ) : Prop :=
-  ∀ p : MvPolynomial (X × Y × Z) (AlgebraicClosure F),
-    (∀ S : Tensor (AlgebraicClosure F) X Y Z, S.RankAtMost r → tensorEval S p = 0) →
-      tensorEval (toAlgebraicClosure T) p = 0
-
-theorem geometricBorderRankAtMost_of_rankAtMost {T : Tensor F X Y Z} {r : ℕ}
-    (h : T.RankAtMost r) : GeometricBorderRankAtMost T r := by
-  exact fun p hp => hp _ (h.map (algebraMap F (AlgebraicClosure F)))
-
-/-- A determinant of coordinate entries is a polynomial in the tensor. -/
-private theorem eval_minor {K I : Type*} [Field K] [Fintype I] [DecidableEq I]
-    (S : Tensor K X Y Z) (entry : I → I → X × Y × Z) :
-    tensorEval S (Matrix.of (fun i j =>
-      MvPolynomial.X (entry i j) : I → I → MvPolynomial (X × Y × Z) K)).det =
-    (Matrix.of fun i j => S (entry i j).1 (entry i j).2.1 (entry i j).2.2).det := by
-  rw [RingHom.map_det]
-  congr 1
-  ext i j
-  simp [tensorEval]
-
 variable [Fintype X] [Fintype Y]
-
-private theorem exists_geometricBorderRankAtMost (T : Tensor F X Y Z) :
-    ∃ r, GeometricBorderRankAtMost T r :=
-  ⟨_, geometricBorderRankAtMost_of_rankAtMost (rankAtMost_tensorRank T)⟩
-
-/-- The least rank whose locus has the scalar-extended tensor in its Zariski closure. -/
-def geometricBorderRank (T : Tensor F X Y Z) : ℕ := by
-  classical
-  exact Nat.find (exists_geometricBorderRankAtMost T)
-
-theorem geometricBorderRankAtMost_geometricBorderRank (T : Tensor F X Y Z) :
-    GeometricBorderRankAtMost T (geometricBorderRank T) := by
-  classical
-  exact Nat.find_spec (exists_geometricBorderRankAtMost T)
-
-theorem geometricBorderRank_le_of_atMost {T : Tensor F X Y Z} {r : ℕ}
-    (h : GeometricBorderRankAtMost T r) : geometricBorderRank T ≤ r := by
-  classical
-  exact Nat.find_min' (exists_geometricBorderRankAtMost T) h
-
-theorem geometricBorderRank_le_tensorRank (T : Tensor F X Y Z) :
-    geometricBorderRank T ≤ tensorRank T :=
-  geometricBorderRank_le_of_atMost (geometricBorderRankAtMost_of_rankAtMost (rankAtMost_tensorRank T))
-
-/-- A nonzero minor whose determinant vanishes on tensors of insufficient
-rank supplies a lower bound on geometric border rank. -/
-theorem card_le_geometricBorderRank_of_minor {I : Type*} [Fintype I] [DecidableEq I]
-    (T : Tensor F X Y Z) (entry : I → I → X × Y × Z)
-    (hne : (Matrix.of fun i j => T (entry i j).1 (entry i j).2.1 (entry i j).2.2).det ≠ 0)
-    (hvanish : ∀ (S : Tensor (AlgebraicClosure F) X Y Z) (r : ℕ), S.RankAtMost r →
-      r < Fintype.card I →
-      (Matrix.of fun i j => S (entry i j).1 (entry i j).2.1 (entry i j).2.2).det = 0) :
-    Fintype.card I ≤ geometricBorderRank T := by
-  by_contra! hlt
-  let p := (Matrix.of (fun i j => MvPolynomial.X (entry i j) :
-    I → I → MvPolynomial (X × Y × Z) (AlgebraicClosure F))).det
-  have he := geometricBorderRankAtMost_geometricBorderRank T p (fun S hS => by
-    rw [show tensorEval S p = _ from eval_minor S entry]
-    exact hvanish S _ hS hlt)
-  rw [show tensorEval (toAlgebraicClosure T) p = _ from eval_minor _ entry] at he
-  let A : Matrix I I F := Matrix.of fun i j => T (entry i j).1 (entry i j).2.1 (entry i j).2.2
-  change ((algebraMap F (AlgebraicClosure F)).mapMatrix A).det = 0 at he
-  rw [← RingHom.map_det] at he
-  exact hne ((map_eq_zero _).mp he)
 
 end
 
@@ -8199,43 +6220,6 @@ open OAI.MatrixMultiplication
 open Foundation
 
 variable {K X Y Z : Type*} [Field K] [Fintype X] [Fintype Y] [Fintype Z]
-
-private theorem power_dual_is_polynomial (n : ℕ)
-    (f : Module.Dual K (Tensor K (Fin n → X) (Fin n → Y) (Fin n → Z))) :
-    ∃ p : MvPolynomial (X × Y × Z) K, ∀ S : Tensor K X Y Z,
-      tensorEval S p = f (Tensor.power S n) := by
-  classical
-  let e (x : Fin n → X) (y : Fin n → Y) (z : Fin n → Z) :
-      Tensor K (Fin n → X) (Fin n → Y) (Fin n → Z) :=
-    fun x' y' z' => if x = x' ∧ y = y' ∧ z = z' then 1 else 0
-  refine ⟨∑ x, ∑ y, ∑ z, MvPolynomial.C (f (e x y z)) *
-    ∏ i : Fin n, MvPolynomial.X (x i, y i, z i), ?_⟩
-  intro S
-  have he : Tensor.power S n =
-      ∑ x, ∑ y, ∑ z, (Tensor.power S n x y z) • e x y z := by
-    funext x' y' z'
-    simp [e, Finset.sum_apply, Pi.smul_apply, ite_and]
-  rw [he]
-  simp [tensorEval, Tensor.power, mul_comm]
-
-/-- A linear span containing all powers of tensors of rank at most `r`
-contains the powers of tensors in the Zariski closure of that rank locus. -/
-theorem power_mem_span_of_closure {ι : Type*} {r n : ℕ} {T : Tensor K X Y Z}
-    (hT : ∀ p : MvPolynomial (X × Y × Z) K,
-      (∀ S : Tensor K X Y Z, S.RankAtMost r → tensorEval S p = 0) → tensorEval T p = 0)
-    (W : ι → Tensor K (Fin n → X) (Fin n → Y) (Fin n → Z))
-    (hW : ∀ S : Tensor K X Y Z, S.RankAtMost r →
-      Tensor.power S n ∈ Submodule.span K (Set.range W)) :
-    Tensor.power T n ∈ Submodule.span K (Set.range W) := by
-  by_contra hn
-  obtain ⟨f, hf, hker⟩ := Submodule.exists_dual_map_eq_bot_of_notMem hn inferInstance
-  obtain ⟨p, hp⟩ := power_dual_is_polynomial n f
-  apply hf
-  rw [← hp]
-  apply hT
-  intro S hS
-  rw [hp, ← Submodule.mem_bot K, ← hker]
-  exact ⟨_, hW S hS, rfl⟩
 
 end SpectralBooks
 end LinearAlgebra
@@ -8265,88 +6249,7 @@ open scoped Topology
 
 section
 
-/-- The positive-index root infimum is the limit for a natural-valued
-submultiplicative sequence, including sequences with a zero term. -/
-theorem tendsto_root_of_submultiplicative (r : ℕ → ℕ)
-    (hmul : ∀ m n, r (m + n) ≤ r m * r n) :
-    Tendsto (fun n : ℕ => (r (n + 1) : ℝ) ^ ((n + 1 : ℝ)⁻¹)) atTop
-      (𝓝 (⨅ n : ℕ, (r (n + 1) : ℝ) ^ ((n + 1 : ℝ)⁻¹))) := by
-  let root (n : ℕ) := (r (n + 1) : ℝ) ^ ((n + 1 : ℝ)⁻¹)
-  change Tendsto root atTop (𝓝 (⨅ n, root n))
-  have hnonneg n : 0 ≤ root n := Real.rpow_nonneg (Nat.cast_nonneg _) _
-  have hbdd : BddBelow (Set.range root) := by
-    refine ⟨0, ?_⟩
-    rintro _ ⟨n, rfl⟩
-    exact hnonneg n
-  by_cases hz : ∃ k, r k = 0
-  · obtain ⟨k, hk⟩ := hz
-    have heq (n : ℕ) (hn : k ≤ n) : root n = 0 := by
-      have h := hmul k (n + 1 - k)
-      rw [show k + (n + 1 - k) = n + 1 by omega, hk, zero_mul, Nat.le_zero] at h
-      simp [root, h, Real.zero_rpow (by positivity : ((n + 1 : ℝ)⁻¹) ≠ 0)]
-    have hinf : (⨅ n, root n) = 0 :=
-      le_antisymm ((ciInf_le hbdd k).trans_eq (heq k le_rfl)) (le_ciInf hnonneg)
-    rw [hinf]
-    exact tendsto_const_nhds.congr' (eventually_atTop.mpr ⟨k, fun n hn => (heq n hn).symm⟩)
-  · push Not at hz
-    have hpos (n : ℕ) : (0 : ℝ) < r n := by exact_mod_cast Nat.pos_of_ne_zero (hz n)
-    let u (n : ℕ) := Real.log (r n)
-    have hsub : Subadditive u := by
-      intro m n
-      dsimp [u]
-      rw [← Real.log_mul (hpos m).ne' (hpos n).ne']
-      apply Real.log_le_log (hpos _)
-      exact_mod_cast hmul m n
-    have hu : BddBelow (Set.range fun n : ℕ => u n / n) := by
-      refine ⟨0, ?_⟩
-      rintro _ ⟨n, rfl⟩
-      exact div_nonneg (Real.log_nonneg (by exact_mod_cast Nat.pos_of_ne_zero (hz n))) (Nat.cast_nonneg _)
-    have hroot n : root n = Real.exp (u (n + 1) / (n + 1)) := by
-      dsimp only [root]
-      rw [Real.rpow_def_of_pos (hpos _)]
-      rfl
-    have hlim : Tendsto root atTop (𝓝 (Real.exp hsub.lim)) := by
-      have h := (Real.continuous_exp.continuousAt.tendsto.comp
-        ((hsub.tendsto_lim hu).comp (tendsto_add_atTop_nat 1)))
-      simpa only [Function.comp_def, Nat.cast_add, Nat.cast_one, ← hroot] using h
-    have hinf : (⨅ n, root n) = Real.exp hsub.lim := by
-      refine le_antisymm (ge_of_tendsto' hlim (ciInf_le hbdd)) (le_ciInf fun n => ?_)
-      rw [hroot, Real.exp_le_exp]
-      simpa only [Nat.cast_succ] using
-        hsub.lim_le_div hu (Nat.succ_ne_zero n)
-    rwa [hinf]
-
 variable {F X Y Z : Type*} [Field F] [Fintype X] [Fintype Y]
-
-private def splitPowerWord {A : Type*} (m n : ℕ) (x : Fin (m + n) → A) :
-    (Fin m → A) × (Fin n → A) :=
-  (x ∘ Fin.castAdd n, x ∘ Fin.natAdd m)
-
-/-- Splitting each site's words into a prefix and suffix shows that the
-rank of Kronecker powers is submultiplicative. -/
-theorem tensorRank_power_add_le (T : Tensor F X Y Z) (m n : ℕ) :
-    tensorRank (Tensor.power T (m + n)) ≤
-      tensorRank (Tensor.power T m) * tensorRank (Tensor.power T n) := by
-  have h := ((rankAtMost_tensorRank (Tensor.power T m)).product
-    (rankAtMost_tensorRank (Tensor.power T n))).pullback
-    (splitPowerWord m n) (splitPowerWord m n) (splitPowerWord m n)
-  apply tensorRank_le_of_rankAtMost
-  have heq : Tensor.power T (m + n) = Tensor.pullback
-      (splitPowerWord m n) (splitPowerWord m n) (splitPowerWord m n)
-      (Tensor.product (Tensor.power T m) (Tensor.power T n)) := by
-    funext x y z
-    exact Fin.prod_univ_add (fun i => T (x i) (y i) (z i))
-  rw [heq]
-  exact h
-
-/-- The tensor-power rank roots converge to asymptotic rank. -/
-theorem tendsto_tensorRank_power_root (T : Tensor F X Y Z) :
-    Tendsto (fun n : ℕ => (tensorRank (Tensor.power T n) : ℝ) ^ ((n : ℝ)⁻¹)) atTop
-      (𝓝 (asymptoticRank T)) := by
-  apply (tendsto_add_atTop_iff_nat 1).mp
-  simpa only [Nat.cast_add, Nat.cast_one, asymptoticRank] using
-    tendsto_root_of_submultiplicative (fun n => tensorRank (Tensor.power T n))
-      (tensorRank_power_add_le T)
 
 end
 
@@ -8377,30 +6280,6 @@ section
 
 variable {F X Y Z : Type*} [Field F] [Fintype X] [Fintype Y]
 
-/-- A polynomial overhead in a uniform tensor-power algorithm disappears
-on taking the asymptotic rank. -/
-theorem asymptoticRank_le_of_polynomial_power_bound (T : Tensor F X Y Z) (r D : ℕ)
-    (h : ∀ n : ℕ, tensorRank (Tensor.power T n) ≤ (n + 1)^D * r^n) :
-    asymptoticRank T ≤ r := by
-  have hbase : Tendsto (fun n : ℕ => (n : ℝ) + 1) atTop atTop := by
-    simpa [Function.comp_def] using (tendsto_natCast_atTop_atTop (R := ℝ)).comp (tendsto_add_atTop_nat 1)
-  have hpoly : Tendsto (fun n : ℕ => ((n : ℝ) + 1) ^ ((D : ℝ) / n)) atTop (𝓝 1) := by
-    simpa [Function.comp_def] using
-      (tendsto_rpow_div_mul_add D 1 (-1) zero_ne_one).comp hbase
-  have hlim := hpoly.mul_const (r : ℝ)
-  rw [one_mul] at hlim
-  apply le_of_tendsto_of_tendsto (tendsto_tensorRank_power_root T) hlim
-  filter_upwards [eventually_gt_atTop (0 : ℕ)] with n hn
-  have hcast : (tensorRank (Tensor.power T n) : ℝ) ≤ ((n : ℝ) + 1)^D * (r : ℝ)^n := by
-    exact_mod_cast h n
-  calc
-    _ ≤ (((n : ℝ) + 1)^D * (r : ℝ)^n) ^ (n : ℝ)⁻¹ :=
-      Real.rpow_le_rpow (by positivity) hcast (by positivity)
-    _ = _ := by
-      rw [Real.mul_rpow (by positivity) (by positivity),
-        Real.pow_rpow_inv_natCast (by positivity) hn.ne',
-        ← Real.rpow_natCast_mul (by positivity), div_eq_mul_inv]
-
 end
 
 end
@@ -8420,26 +6299,6 @@ namespace LinearAlgebra
 namespace SpectralBooks
 
 open scoped BigOperators
-
-/-- Counts the positions bearing each pair of a summand index and a basis index. -/
-noncomputable def rankProfileHistogram {n r : ℕ} {X : Type*}
-    (s : Fin n → Fin r) (x : Fin n → X) (p : Fin r × X) : Fin (n + 1) := by
-  classical
-  refine ⟨(Finset.univ.filter fun k => (s k, x k) = p).card, Nat.lt_succ_of_le ?_⟩
-  simpa using Finset.card_filter_le Finset.univ (fun k => (s k, x k) = p)
-
-/-- The monomial with exponent vector given by the joint histogram. -/
-def rankProfileWeight {F X : Type*} [CommMonoid F] [Fintype X] {r n : ℕ}
-    (L : Fin r → X → F) (a : Fin r × X → Fin (n + 1)) : F :=
-  ∏ p, L p.1 p.2 ^ (a p : ℕ)
-
-/-- Grouping the factors in a tensor-power term by their pair of indices gives its weight. -/
-theorem rankProfileWeight_histogram {F X : Type*} [CommMonoid F] [Fintype X] {r n : ℕ}
-    (L : Fin r → X → F) (s : Fin n → Fin r) (x : Fin n → X) :
-    rankProfileWeight L (rankProfileHistogram s x) = ∏ k, L (s k) (x k) := by
-  classical
-  simpa only [rankProfileWeight, rankProfileHistogram, Finset.prod_const] using
-    Finset.prod_fiberwise' Finset.univ (fun k => (s k, x k)) (fun p => L p.1 p.2)
 
 end SpectralBooks
 end LinearAlgebra
@@ -8473,68 +6332,7 @@ noncomputable section
 
 variable {F X Y Z : Type*} [Field F] {r n : ℕ}
 
-/-- Joint multiplicities of a rank summand and a letter in a word of length `n`. -/
-abbrev RankProfile (r n : ℕ) (X : Type*) := Fin r × X → Fin (n + 1)
-
-/-- One local histogram at each site of a three-tensor. -/
-abbrev TripleRankProfile (r n : ℕ) (X Y Z : Type*) :=
-  RankProfile r n X × RankProfile r n Y × RankProfile r n Z
-
-/-- An indicator vector for words of a prescribed joint histogram with `s`. -/
-def rankProfileIndicator (s : Fin n → Fin r) (a : RankProfile r n X) (x : Fin n → X) : F := by
-  classical
-  exact if rankProfileHistogram s x = a then 1 else 0
-
-/-- The tensor counting all rank-summand words with the given three site histograms. -/
-def rankProfileTensor (a : RankProfile r n X) (b : RankProfile r n Y) (c : RankProfile r n Z) :
-    Tensor F (Fin n → X) (Fin n → Y) (Fin n → Z) :=
-  fun x y z => ∑ s : Fin n → Fin r, Tensor.rankOne
-    (rankProfileIndicator s a) (rankProfileIndicator s b) (rankProfileIndicator s c) x y z
-
-theorem rankProfileTensor_rankAtMost (a : RankProfile r n X) (b : RankProfile r n Y)
-    (c : RankProfile r n Z) : Tensor.RankAtMost (rankProfileTensor (F := F) a b c) (r ^ n) := by
-  unfold rankProfileTensor
-  simpa only [rankProfileTensor, Fintype.card_pi_const, Fintype.card_fin] using Tensor.rankAtMost_sum_rankOne
-    (fun s => rankProfileIndicator (F := F) s a) (fun s => rankProfileIndicator s b)
-    (fun s => rankProfileIndicator s c)
-
 variable [Fintype X] [Fintype Y] [Fintype Z]
-
-/-- The expansion of a rank formula as a linear combination of the profile tensors. -/
-theorem power_eq_sum_rankProfileTensors (n : ℕ) (L : Fin r → X → F) (M : Fin r → Y → F)
-    (N : Fin r → Z → F) :
-    Tensor.power (fun x y z => ∑ i, Tensor.rankOne (L i) (M i) (N i) x y z) n =
-      ∑ p : TripleRankProfile r n X Y Z,
-        (rankProfileWeight L p.1 * rankProfileWeight M p.2.1 * rankProfileWeight N p.2.2) •
-          rankProfileTensor p.1 p.2.1 p.2.2 := by
-  classical
-  funext x y z
-  simp only [Tensor.power, Fintype.prod_sum, Finset.sum_apply, Pi.smul_apply, smul_eq_mul,
-    rankProfileTensor, Finset.mul_sum]
-  rw [Finset.sum_comm (f := fun (p : TripleRankProfile r n X Y Z) (s : Fin n → Fin r) => _)]
-  apply Finset.sum_congr rfl
-  intro s _
-  let p : TripleRankProfile r n X Y Z :=
-    (rankProfileHistogram s x, rankProfileHistogram s y, rankProfileHistogram s z)
-  rw [Finset.sum_eq_single p]
-  · simp [p, rankProfileWeight_histogram, Tensor.rankOne, rankProfileIndicator,
-      Finset.prod_mul_distrib]
-  · rintro ⟨a, b, c⟩ _ hne
-    by_cases ha : rankProfileHistogram s x = a <;> by_cases hb : rankProfileHistogram s y = b
-    · have hc : rankProfileHistogram s z ≠ c := fun hc => hne (by simp [p, ha, hb, hc])
-      simp [Tensor.rankOne, rankProfileIndicator, hc]
-    all_goals simp [Tensor.rankOne, rankProfileIndicator, *]
-  · simp
-
-/-- Powers of all tensors of rank at most `r` lie in the same profile span. -/
-theorem power_mem_span_rankProfileTensors {U : Tensor F X Y Z} {r : ℕ}
-    (hU : Tensor.RankAtMost U r) (n : ℕ) : Tensor.power U n ∈ Submodule.span F
-      (Set.range (fun p : TripleRankProfile r n X Y Z =>
-        rankProfileTensor (F := F) p.1 p.2.1 p.2.2)) := by
-  classical
-  rcases hU with ⟨L, M, N, rfl⟩
-  rw [power_eq_sum_rankProfileTensors]
-  exact Submodule.sum_mem _ (fun p _ => Submodule.smul_mem _ _ (Submodule.subset_span ⟨p, rfl⟩))
 
 end
 
@@ -8557,25 +6355,6 @@ namespace SpectralBooks
 open OAI.MatrixMultiplication
 
 open Foundation
-
-/-- A linear combination of a finite family of tensors of rank at most
-`s` has rank at most `s` times the size of the family. -/
-theorem rankAtMost_of_mem_span {F X Y Z I : Type*} [CommSemiring F] [Fintype I]
-    (W : I → Tensor F X Y Z) {s : ℕ} (hW : ∀ i, (W i).RankAtMost s)
-    {T : Tensor F X Y Z} (hT : T ∈ Submodule.span F (Set.range W)) :
-    T.RankAtMost (Fintype.card I * s) := by
-  obtain ⟨d, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun F).mp hT
-  choose a b c h using fun i => (hW i).scale (d i)
-  let A (p : I × Fin s) := a p.1 p.2
-  let B (p : I × Fin s) := b p.1 p.2
-  let C (p : I × Fin s) := c p.1 p.2
-  have heq : ∑ i, d i • W i = fun x y z =>
-      ∑ p, Tensor.rankOne (A p) (B p) (C p) x y z := by
-    funext x y z
-    simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul, Fintype.sum_prod_type]
-    exact Finset.sum_congr rfl (fun i _ => congrFun (congrFun (congrFun (h i) x) y) z)
-  rw [heq]
-  simpa using Tensor.rankAtMost_sum_rankOne A B C
 
 end SpectralBooks
 end LinearAlgebra
@@ -8600,30 +6379,6 @@ open OAI.MatrixMultiplication
 open Foundation
 
 variable {F X Y Z I : Type*} [Field F] [Fintype I]
-
-/-- A linear dependence expressing a ground tensor in the span of ground
-tensors descends from the algebraic closure. -/
-theorem mem_span_of_toAlgebraicClosure_mem_span (T : Tensor F X Y Z)
-    (W : I → Tensor F X Y Z)
-    (h : toAlgebraicClosure T ∈
-      Submodule.span (AlgebraicClosure F) (Set.range (fun i => toAlgebraicClosure (W i)))) :
-    T ∈ Submodule.span F (Set.range W) := by
-  obtain ⟨l, hl⟩ := (Algebra.linearMap F (AlgebraicClosure F)).exists_leftInverse_of_injective
-    (LinearMap.ker_eq_bot.mpr (algebraMap F (AlgebraicClosure F)).injective)
-  have retract (t : F) : l (algebraMap F (AlgebraicClosure F) t) = t :=
-    LinearMap.congr_fun hl t
-  obtain ⟨a, ha⟩ := (Submodule.mem_span_range_iff_exists_fun _).mp h
-  refine (Submodule.mem_span_range_iff_exists_fun _).mpr ⟨fun i => l (a i), ?_⟩
-  funext x y z
-  have ha' := congrArg (fun S : Tensor (AlgebraicClosure F) X Y Z => S x y z) ha
-  simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul, toAlgebraicClosure] at ha' ⊢
-  obtain he := congrArg l ha'
-  rw [map_sum, retract] at he
-  convert he using 1
-  apply Finset.sum_congr rfl
-  intro i _
-  rw [mul_comm (a i), ← Algebra.smul_def, l.map_smul]
-  exact mul_comm _ _
 
 end SpectralBooks
 end LinearAlgebra
@@ -8652,43 +6407,7 @@ open Foundation
 
 variable {F X Y Z : Type*} [Field F]
 
-private theorem scalarExtension_rankProfileTensor {n r : ℕ}
-    (a : RankProfile r n X) (b : RankProfile r n Y) (c : RankProfile r n Z) :
-    toAlgebraicClosure (rankProfileTensor (F := F) a b c) =
-      rankProfileTensor (F := AlgebraicClosure F) a b c := by
-  classical
-  funext x y z
-  simp [toAlgebraicClosure, rankProfileTensor, Tensor.rankOne, rankProfileIndicator,
-    apply_ite (algebraMap F (AlgebraicClosure F))]
-
-private theorem scalarExtension_power (T : Tensor F X Y Z) (n : ℕ) :
-    toAlgebraicClosure (Tensor.power T n) = Tensor.power (toAlgebraicClosure T) n := by
-  funext x y z
-  simp [toAlgebraicClosure, Tensor.power]
-
 variable [Fintype X] [Fintype Y] [Fintype Z]
-
-/-- Uniform rank bound for powers of a tensor in the geometric rank-`r` closure. -/
-theorem tensorRank_power_le_of_geometricBorderRankAtMost {T : Tensor F X Y Z} {r : ℕ}
-    (hT : GeometricBorderRankAtMost T r) (n : ℕ) :
-    tensorRank (Tensor.power T n) ≤
-      (n + 1) ^ (r * Fintype.card X + r * Fintype.card Y + r * Fintype.card Z) * r ^ n := by
-  classical
-  let W := fun p : TripleRankProfile r n X Y Z => rankProfileTensor (F := F) p.1 p.2.1 p.2.2
-  have hW : Tensor.power T n ∈ Submodule.span F (Set.range W) := by
-    apply mem_span_of_toAlgebraicClosure_mem_span
-    simp only [W, scalarExtension_power, scalarExtension_rankProfileTensor]
-    exact power_mem_span_of_closure hT _ (fun _ hS => power_mem_span_rankProfileTensors hS n)
-  have hbound := tensorRank_le_of_rankAtMost (rankAtMost_of_mem_span W
-    (fun p => rankProfileTensor_rankAtMost p.1 p.2.1 p.2.2) hW)
-  simpa only [TripleRankProfile, RankProfile, Fintype.card_prod, Fintype.card_fun,
-    Fintype.card_fin, pow_add, Nat.mul_assoc] using hbound
-
-/-- The middle inequality of the paper's rank comparison, including finite ground fields. -/
-theorem asymptoticRank_le_geometricBorderRank (T : Tensor F X Y Z) :
-    asymptoticRank T ≤ geometricBorderRank T :=
-  asymptoticRank_le_of_polynomial_power_bound T (geometricBorderRank T) _
-    (tensorRank_power_le_of_geometricBorderRankAtMost (geometricBorderRankAtMost_geometricBorderRank T))
 
 end SpectralBooks
 end LinearAlgebra
@@ -8804,39 +6523,6 @@ theorem PlanarBookPrices.heightTest (B : PlanarBookPrices F) {x y z : ℕ}
     _ ≤ _ := h
     _ ≤ _ := by rw [mul_comm]; exact mul_le_mul_of_nonneg_left hb hL
 
-/-- The conclusion of the paper's rectangular rank theorem over a fixed field. -/
-def RectangularRankBound (F : Type*) [Field F] : Prop :=
-  ∀ x y z : ℕ, 0 < x → 0 < y → 0 < z →
-    let T := matrixTensor F x y z
-    let m := loads (Real.logb 2 x) (Real.logb 2 y) (Real.logb 2 z)
-    RadicalTest m (Real.logb 2 (asymptoticRank T)) ∧
-      RadicalTest m (Real.logb 2 (geometricBorderRank T)) ∧
-      RadicalTest m (Real.logb 2 (tensorRank T))
-
-theorem PlanarBookPrices.rectangularRankBound (B : PlanarBookPrices F) : RectangularRankBound F := by
-  intro x y z hx hy hz
-  dsimp only
-  have h := B.heightTest hx hy hz
-  have hlog (q : ℕ) (hq : 0 < q) := Real.logb_nonneg (by norm_num : (1 : ℝ) < 2)
-    (Nat.one_le_cast.mpr hq)
-  have hm := loads_nonneg (hlog x hx) (hlog y hy) (hlog z hz)
-  have hl := matrix_flattening_le_asymptoticRank F hx hy hz
-  have hn : 0 < max (z * x) (max (x * y) (y * z)) :=
-    lt_of_lt_of_le (Nat.mul_pos hz hx) (le_max_left _ _)
-  have hpos := lt_of_lt_of_le (Nat.cast_pos.mpr hn) hl
-  have cmp := asymptoticRank_le_geometricBorderRank (matrixTensor F x y z)
-  have hborder := h.mono (Real.logb_le_logb_of_le (by norm_num) hpos cmp)
-  exact ⟨h.radicalTest hm, hborder.radicalTest hm, (hborder.mono
-    (Real.logb_le_logb_of_le (by norm_num) (hpos.trans_le cmp)
-      (Nat.cast_le.mpr (geometricBorderRank_le_tensorRank _)))).radicalTest hm⟩
-
-/-- The stated square arithmetic bound follows over a field admitting the
-price data. All circuit equalities in `formalOmega` are formal identities. -/
-theorem PlanarBookPrices.square_exponent (B : PlanarBookPrices F) :
-    3 / Real.sqrt 2 ≤ formalOmega F 1 1 1 :=
-  formalOmega_square_lower_bound_of_rank_bound
-    (fun x y z hx hy hz => (B.rectangularRankBound x y z hx hy hz).2.2)
-
 end
 
 end
@@ -8869,100 +6555,6 @@ namespace RankFunctional
 
 variable {F : Type*} [Field F] (φ : RankFunctional F)
 
-/-- The normalized values of the three wires in cyclic order. -/
-def wireValue (e : Fin 3) (n : ℕ) : ℝ≥0 :=
-  ![φ.value (wire12 F n), φ.value (wire23 F n), φ.value (wire31 F n)] e
-
-theorem wireValue_mono (e : Fin 3) : Monotone (φ.wireValue e) := by
-  intro m n h
-  let f := Fin.castLE h
-  have hf : Function.Injective f := Fin.castLE_injective h
-  fin_cases e
-  · have hp : Tensor.pullback f f id (wire12 F n) = wire12 F m := by
-      funext i j k
-      simp [Tensor.pullback, wire12, hf.eq_iff]
-    change φ.value (wire12 F m) ≤ _
-    rw [← hp]
-    exact φ.pullback_le _ _ _ _
-  · have hp : Tensor.pullback id f f (wire23 F n) = wire23 F m := by
-      funext i j k
-      simp [Tensor.pullback, wire23, hf.eq_iff]
-    change φ.value (wire23 F m) ≤ _
-    rw [← hp]
-    exact φ.pullback_le _ _ _ _
-  · have hp : Tensor.pullback f id f (wire31 F n) = wire31 F m := by
-      funext i j k
-      simp [Tensor.pullback, wire31, hf.eq_iff]
-    change φ.value (wire31 F m) ≤ _
-    rw [← hp]
-    exact φ.pullback_le _ _ _ _
-
-theorem wireValue_one (e : Fin 3) : φ.wireValue e 1 = 1 := by
-  let f : Unit ≃ Fin 1 := Equiv.ofUnique _ _
-  let D := Tensor.diagonal (K := F) (Fin 1)
-  fin_cases e
-  · have hp : Tensor.pullback (Equiv.refl (Fin 1)) (Equiv.refl (Fin 1)) f D = wire12 F 1 := by
-      funext i j k
-      have heq : ∀ u v : Fin 1, u = v := fun _ _ => Subsingleton.elim _ _
-      simp [Tensor.pullback, wire12, D, Tensor.diagonal]
-      grind
-    change φ.value (wire12 F 1) = 1
-    rw [← hp, φ.pullback_equiv, φ.diagonal, Nat.cast_one]
-  · have hp : Tensor.pullback f (Equiv.refl (Fin 1)) (Equiv.refl (Fin 1)) D = wire23 F 1 := by
-      funext i j k
-      have heq : ∀ u v : Fin 1, u = v := fun _ _ => Subsingleton.elim _ _
-      simp [Tensor.pullback, wire23, D, Tensor.diagonal]
-      grind
-    change φ.value (wire23 F 1) = 1
-    rw [← hp, φ.pullback_equiv, φ.diagonal, Nat.cast_one]
-  · have hp : Tensor.pullback (Equiv.refl (Fin 1)) f (Equiv.refl (Fin 1)) D = wire31 F 1 := by
-      funext i j k
-      have heq : ∀ u v : Fin 1, u = v := fun _ _ => Subsingleton.elim _ _
-      simp [Tensor.pullback, wire31, D, Tensor.diagonal]
-      grind
-    change φ.value (wire31 F 1) = 1
-    rw [← hp, φ.pullback_equiv, φ.diagonal, Nat.cast_one]
-
-theorem wireValue_mul (e : Fin 3) (m n : ℕ) :
-    φ.wireValue e (m * n) = φ.wireValue e m * φ.wireValue e n := by
-  let f : Fin m × Fin n ≃ Fin (m * n) := finProdFinEquiv
-  let u : Unit × Unit ≃ Unit := Equiv.prodUnique Unit Unit
-  fin_cases e
-  · have hp : Tensor.pullback f f u (wire12 F (m * n)) =
-        Tensor.product (wire12 F m) (wire12 F n) := by
-      funext i j k
-      simp [Tensor.pullback, Tensor.product, wire12, Prod.ext_iff, ite_and, mul_ite]
-      grind
-    change φ.value (wire12 F (m * n)) = φ.value (wire12 F m) * φ.value (wire12 F n)
-    rw [← φ.product, ← hp, φ.pullback_equiv]
-  · have hp : Tensor.pullback u f f (wire23 F (m * n)) =
-        Tensor.product (wire23 F m) (wire23 F n) := by
-      funext i j k
-      simp [Tensor.pullback, Tensor.product, wire23, Prod.ext_iff, ite_and, mul_ite]
-      grind
-    change φ.value (wire23 F (m * n)) = φ.value (wire23 F m) * φ.value (wire23 F n)
-    rw [← φ.product, ← hp, φ.pullback_equiv]
-  · have hp : Tensor.pullback f u f (wire31 F (m * n)) =
-        Tensor.product (wire31 F m) (wire31 F n) := by
-      funext i j k
-      simp [Tensor.pullback, Tensor.product, wire31, Prod.ext_iff, ite_and, mul_ite]
-      grind
-    change φ.value (wire31 F (m * n)) = φ.value (wire31 F m) * φ.value (wire31 F n)
-    rw [← φ.product, ← hp, φ.pullback_equiv]
-
-/-- The value of a wire of arbitrary positive order is determined by its
-binary value at the same placement. -/
-theorem wireValue_eq_rpow (e : Fin 3) {n : ℕ} (hn : 0 < n) :
-    (φ.wireValue e n : ℝ) = (n : ℝ) ^ Real.logb 2 (φ.wireValue e 2) := by
-  exact dimension_value_eq_rpow (v := fun q => (φ.wireValue e q : ℝ))
-    (fun _ _ hij => by exact_mod_cast φ.wireValue_mono e hij)
-    (by simp [φ.wireValue_one]) (fun m q => by simp [φ.wireValue_mul]) hn
-
-/-- Formula for the logarithmic price of a wire on any of the three edges. -/
-theorem logb_wireValue (e : Fin 3) {n : ℕ} (hn : 0 < n) :
-    Real.logb 2 (φ.wireValue e n) = Real.logb 2 (φ.wireValue e 2) * Real.logb 2 n := by
-  rw [φ.wireValue_eq_rpow e hn, Real.logb_rpow_eq_mul_logb_of_pos (by positivity)]
-
 end RankFunctional
 
 end
@@ -8989,29 +6581,6 @@ open OAI.MatrixMultiplication
 
 noncomputable section
 section
-
-/-- It suffices to identify the three binary wire prices with the three
-distances in a placement. -/
-def PlacedWires.ofBinary {F : Type*} [Field F] {X : Type*} [PseudoMetricSpace X]
-    {p : Fin 3 → X} {d : ℝ} (φ : RankFunctional F) (hd : 0 ≤ d)
-    (h12 : d * Real.logb 2 (φ.value (wire12 F 2)) = dist (p 0) (p 1))
-    (h23 : d * Real.logb 2 (φ.value (wire23 F 2)) = dist (p 1) (p 2))
-    (h31 : d * Real.logb 2 (φ.value (wire31 F 2)) = dist (p 2) (p 0)) :
-    PlacedWires F p d where
-  point := φ
-  nonneg := hd
-  price12 n hn := by
-    have h := φ.logb_wireValue 0 hn
-    change Real.logb 2 (φ.value (wire12 F n)) = Real.logb 2 (φ.value (wire12 F 2)) * _ at h
-    rw [h, ← mul_assoc, h12]
-  price23 n hn := by
-    have h := φ.logb_wireValue 1 hn
-    change Real.logb 2 (φ.value (wire23 F n)) = Real.logb 2 (φ.value (wire23 F 2)) * _ at h
-    rw [h, ← mul_assoc, h23]
-  price31 n hn := by
-    have h := φ.logb_wireValue 2 hn
-    change Real.logb 2 (φ.value (wire31 F n)) = Real.logb 2 (φ.value (wire31 F 2)) * _ at h
-    rw [h, ← mul_assoc, h31]
 
 end
 
@@ -9050,16 +6619,6 @@ def group (T : SiteTensor.Raw I K) (σ : I → J) : SiteTensor.Raw J K where
   Leg := fun j => (i : {i : I // σ i = j}) → T.Leg i.1
   finiteLeg := fun _ => inferInstance
   coeff := fun x => T.coeff (fun i => x (σ i) ⟨i, rfl⟩)
-
-/-- Grouping sites preserves the underlying array of coefficients up to a bijection. -/
-theorem group_ne_zero_iff [Zero K] (T : SiteTensor.Raw I K) (σ : I → J) :
-    (T.group σ).coeff ≠ 0 ↔ T.coeff ≠ 0 := by
-  constructor
-  · intro h hzero
-    exact h (funext fun x => congrFun hzero _)
-  · intro h hzero
-    apply h
-    exact funext fun x => congrFun hzero (fun _ i => x i.1)
 
 end SiteTensor.Raw
 
@@ -9101,29 +6660,6 @@ def pullback {Y : Type*} [MetricSpace Y] (P : SpectralPlacementPrices K X) (f : 
   transport T x y := by simpa only [Function.comp_apply, hf.dist_eq] using P.transport T (f ∘ x) (f ∘ y)
   dist_le_diagonal x i j := by simpa only [Function.comp_apply, hf.dist_eq] using P.dist_le_diagonal (f ∘ x) i j
   normalized x := P.normalized (x.trans ⟨f, hf.injective⟩)
-
-/-- On an injective placement with at least two sites the diagonal normalization
-is strictly positive. -/
-theorem diagonal_pos {Y : Type*} [MetricSpace Y] (P : SpectralPlacementPrices K Y)
-    {I : Type} [Fintype I] [Nontrivial I] (x : I ↪ Y) :
-    0 < P.price (Raw.diagonal I K (Fin 2)) x := by
-  obtain ⟨i, j, hne⟩ := exists_pair_ne I
-  exact (dist_pos.mpr (x.injective.ne hne)).trans_le (P.dist_le_diagonal x i j)
-
-/-- For any map to a fixed finite set of distinct sites, a single spectral
-point computes the prices of every tensor after its indices are grouped at
-those sites. The number of tensor indices and their multiplicities can vary. -/
-theorem normalized_group {Y : Type*} [MetricSpace Y] (P : SpectralPlacementPrices K Y)
-    {J : Type} [Fintype J] [Nontrivial J] (y : J ↪ Y) :
-    ∃ φ : normalizedSpectrum (fun a b : TensorClass.{0} J K => a ≤ b),
-      0 < P.price (Raw.diagonal J K (Fin 2)) y ∧
-      ∀ {I : Type} [Fintype I] (σ : I → J) (T : Raw.{0} I K), T.coeff ≠ 0 →
-        P.price T (y ∘ σ) = P.price (Raw.diagonal J K (Fin 2)) y *
-          Real.logb 2 (φ.val (ofRaw (T.group σ)) : ℝ) := by
-  obtain ⟨φ, hφ⟩ := P.normalized y
-  refine ⟨φ, P.diagonal_pos y, ?_⟩
-  intro I _ σ T hT
-  exact (P.group T σ y).trans (hφ _ ((T.group_ne_zero_iff σ).2 hT))
 
 end SpectralPlacementPrices
 
@@ -9351,34 +6887,6 @@ universe u v w
 variable (I : Type u) (K : Type w) [Fintype I] [Nonempty I] [CommSemiring K]
 variable {α β : Type v} [Fintype α] [Fintype β]
 
-/-- Coordinate projections at every site restrict a diagonal to an embedded label set. -/
-theorem diagonal_restricts_of_embedding (e : α ↪ β) :
-    (diagonal I K α).Restricts (diagonal I K β) := by
-  classical
-  unfold Restricts diagonal
-  refine ⟨fun _ a b => if b = e a then 1 else 0, fun x => ?_⟩
-  simp_rw [Fintype.prod_boole]
-  have heq (y : I → β) : (∀ i, y i = e (x i)) ↔ y = fun i => e (x i) :=
-    funext_iff.symm
-  simp only [heq, mul_ite, mul_one, mul_zero, Finset.sum_ite_eq', Finset.mem_univ,
-    ite_true]
-  let i₀ : I := Classical.choice inferInstance
-  rw [Finset.sum_eq_single (x i₀), Finset.sum_eq_single (e (x i₀))]
-  · simp [funext_iff]
-  · intro b _ hb
-    exact if_neg fun h => (hb (congrFun h i₀).symm).elim
-  · simp
-  · intro a _ ha
-    exact if_neg fun h => (ha (congrFun h i₀).symm).elim
-  · simp
-
-/-- A larger diagonal restricts to every diagonal with at most as many labels. -/
-theorem diagonal_restricts_of_card_le (h : Fintype.card α ≤ Fintype.card β) :
-    (diagonal I K α).Restricts (diagonal I K β) := by
-  apply diagonal_restricts_of_embedding
-  exact (Fintype.equivFin α).toEmbedding.trans
-    ((Fin.castLEEmb h).trans (Fintype.equivFin β).symm.toEmbedding)
-
 end SiteTensor.Raw
 
 end SpectralBooks
@@ -9416,9 +6924,6 @@ def groupClass (σ : I → J) : TensorClass.{v} I K → TensorClass.{max u v} J 
 @[simp] theorem groupClass_ofRaw (σ : I → J) (X : Raw.{v} I K) :
     groupClass σ (ofRaw X) = ofRaw (X.group σ) := rfl
 
-theorem groupClass_mono (σ : I → J) : Monotone (groupClass (K := K) σ) :=
-  fun X Y => Quotient.inductionOn₂ X Y fun _ _ => Raw.group_restricts σ
-
 /-- Arbitrary (possibly colliding) placements preserve products and the scalar unit. -/
 def groupMulHom [Nonempty I] [Nonempty J] (σ : I → J) :
     TensorClass.{v} I K →* TensorClass.{max u v} J K where
@@ -9436,37 +6941,10 @@ def groupRingHom [Nonempty I] [Nonempty J] (σ : I → J) (hs : Function.Surject
   map_add' X Y := Quotient.inductionOn₂ X Y fun x y =>
     ofRaw_eq_iff.mpr (Raw.group_add_equivalent σ hs x y)
 
-/-- Pull back a normalized spectral point when sites have been identified. -/
-def groupSpectralPoint [Nonempty I] [Nonempty J] (σ : I → J) (hs : Function.Surjective σ)
-    (φ : normalizedSpectrum ((· ≤ ·) : TensorClass.{max u v} J K → _ → Prop)) :
-    normalizedSpectrum ((· ≤ ·) : TensorClass.{v} I K → _ → Prop) := by
-  let ψ := (normalizedSpectrum.toRingHom φ).comp (groupRingHom σ hs)
-  exact ⟨ψ, ψ.map_zero, ψ.map_one, ψ.map_add, ψ.map_mul,
-    fun x y h => φ.property.2.2.2.2 _ _ (groupClass_mono σ h)⟩
-
 section Logarithms
 
 variable {A B : Type} {F : Type*} [Fintype A] [Nonempty A] [Fintype B] [Nonempty B] [Field F]
 variable (φ : normalizedSpectrum ((· ≤ ·) : TensorClass.{0} B F → _ → Prop))
-
-/-- A grouped diagonal, including a wire with arbitrary endpoints, has log price
-equal to its binary price times the base-two logarithm of its dimension. -/
-theorem rawLogPrice_group_diagonal (σ : A → B) (c : ℝ) {α : Type} [Fintype α] [Nonempty α] :
-    rawLogPrice φ c ((Raw.diagonal A F α).group σ) =
-      rawLogPrice φ c ((Raw.diagonal A F (Fin 2)).group σ) * Real.logb 2 (Fintype.card α) := by
-  let v : TensorClass.{0} A F →* ℝ≥0 := (normalizedSpectrum.toRingHom φ).toMonoidHom.comp (groupMulHom σ)
-  have hv : ∀ {m n : ℕ}, 0 < m → m ≤ n → v m ≤ v n := by
-    intro m n _ h
-    apply φ.property.2.2.2.2
-    apply groupClass_mono σ
-    rw [← ofRaw_diagonal_fin_eq_natCast A F m, ← ofRaw_diagonal_fin_eq_natCast A F n]
-    exact Raw.diagonal_restricts_of_embedding A F (Fin.castLEEmb h)
-  have h := spectral_natCast_logb v hv (Fintype.card α) Fintype.card_pos
-  have eval (β : Type) [Fintype β] : φ.val (ofRaw ((Raw.diagonal A F β).group σ)) =
-      v (Fintype.card β : TensorClass.{0} A F) := by
-    rw [← ofRaw_diagonal_eq_natCast A F β]
-    rfl
-  rw [rawLogPrice, rawLogPrice, eval α, eval (Fin 2), Fintype.card_fin, Nat.cast_ofNat, h, mul_assoc]
 
 end Logarithms
 end
@@ -9552,42 +7030,6 @@ theorem price_binaryDiagonal_eq {I : Type} [Fintype I] [Nonempty I] (p : I → X
   rw [P.collapsed, Finset.image_const Finset.univ_nonempty] at h
   exact h.symm
 
-theorem diagonal_pair (x y : X) : P.diagonal {x, y} = dist x y := by
-  have h := P.price_binaryDiagonal_eq ![x, y]
-  rw [P.wire] at h
-  simpa [Finset.univ_fin2] using h.symm
-
-/-- The binary diagonal pays at most one unit of price per unit displacement
-of each index, including collisions at either endpoint. -/
-theorem diagonal_transport {I : Type} [Fintype I] (p q : I → X) :
-    dist (P.diagonal (Finset.univ.image p)) (P.diagonal (Finset.univ.image q)) ≤
-      ∑ i, dist (p i) (q i) := by
-  cases isEmpty_or_nonempty I with
-  | inl => simp
-  | inr =>
-    rw [← P.price_binaryDiagonal_eq, ← P.price_binaryDiagonal_eq]
-    have h := P.transport (Raw.diagonal I K (Fin 2)) p q
-    simpa [Raw.diagonal, Real.logb_self_eq_one (by norm_num : 1 < (2 : ℝ))] using h
-
-/-- Restricting tensor prices along an isometry restricts their finite-set
-diagonal to the isometric image. -/
-theorem diagonal_pullback {Y : Type*} [MetricSpace Y] (f : Y → X) (hf : Isometry f) (S : Finset Y) :
-    (P.pullback f hf).diagonal S = P.diagonal (S.image f) := by
-  rcases S.eq_empty_or_nonempty with rfl | hS
-  · simp
-  let z (i : Fin S.card) := (S.equivFin.symm i).val
-  have : Nonempty (Fin S.card) := Fin.pos_iff_nonempty.mp (Finset.card_pos.mpr hS)
-  have himage : Finset.univ.image (f ∘ z) = S.image f := by
-    ext x
-    simp only [Finset.mem_image, Finset.mem_univ, true_and, Function.comp_apply]
-    constructor
-    · rintro ⟨i, rfl⟩
-      exact ⟨_, (S.equivFin.symm i).prop, rfl⟩
-    · rintro ⟨y, hy, rfl⟩
-      exact ⟨S.equivFin ⟨y,hy⟩, by simp [z]⟩
-  rw [← himage, ← P.price_binaryDiagonal_eq, diagonal, if_pos hS]
-  rfl
-
 end SpectralPlacementPrices
 
 end
@@ -9620,92 +7062,11 @@ open SiteTensor
 
 namespace SiteTensor.Raw
 
-/-- Grouping by an injection produces the common diagonal on its image. -/
-theorem ofRaw_group_diagonal_eq_mask {J I : Type} {K : Type*} [Fintype I] [Nonempty I]
-    [Fintype J] [Field K] (σ : J ↪ I) (S : Finset I)
-    (hS : ∀ i, i ∈ S ↔ ∃ j, σ j = i) (α : Type) [Fintype α] :
-    ofRaw ((diagonal J K α).group σ) = ofRaw (maskDiagonal K S α) := by
-  classical
-  let fiber (i : I) (h : i ∈ S) : {j : J // σ j = i} :=
-    ⟨((hS i).mp h).choose, ((hS i).mp h).choose_spec⟩
-  have unique (i : I) (a b : {j : J // σ j = i}) : a = b :=
-    Subtype.ext (σ.injective (a.property.trans b.property.symm))
-  let e (i : I) : ((j : {j : J // σ j = i}) → α) ≃ (i ∈ S → α) :=
-    { toFun := fun x h ↦ x (fiber i h)
-      invFun := fun x j ↦ x ((hS i).mpr ⟨j, j.property⟩)
-      left_inv := fun x ↦ funext fun j ↦ congrArg x (unique i _ j)
-      right_inv := fun _ ↦ rfl }
-  apply ofRaw_eq_iff.mpr (reindex_equivalent e ?_)
-  intro x
-  simp only [Raw.group, Raw.diagonal, Raw.maskDiagonal, Crossing.basisTensor]
-  apply Finset.sum_congr rfl
-  intro a _
-  congr 1
-  apply propext
-  constructor
-  · intro hx
-    funext i hi
-    change x i (fiber i hi) = a
-    obtain ⟨j, hj⟩ := fiber i hi
-    subst i
-    exact congrFun hx j
-  · intro hx
-    funext j
-    have hj : σ j ∈ S := (hS _).mpr ⟨j,rfl⟩
-    exact (congrArg (x _) (unique _ _ (fiber _ hj))).trans (congrFun (congrFun hx _) hj)
-
 end SiteTensor.Raw
 
 namespace SpectralPlacementPrices
 
 variable {K X : Type*} [Field K] [PseudoMetricSpace X]
-
-theorem diagonal_nonneg (P : SpectralPlacementPrices K X) (S : Finset X) : 0 ≤ P.diagonal S := by
-  classical
-  by_cases h : S.Nonempty
-  · simp only [diagonal, h, ite_true]
-    let i : Fin S.card := ⟨0, Finset.card_pos.mpr h⟩
-    simpa only [dist_self] using P.dist_le_diagonal
-      (fun j : Fin S.card ↦ (S.equivFin.symm j).val) i i
-  · simp [diagonal, h]
-
-/-- At an injective placement one point evaluates the prices of all of its
-nonempty subsets. -/
-theorem exists_point_diagonal_map (P : SpectralPlacementPrices K X) {I : Type}
-    [Fintype I] [Nontrivial I] (x : I ↪ X) :
-    ∃ φ : normalizedSpectrum ((· ≤ ·) : TensorClass.{0} I K → _ → Prop),
-      ∃ c : ℝ, 0 ≤ c ∧ ∀ (S : Finset I), S.Nonempty →
-        P.diagonal (S.map x) =
-          c * Real.logb 2 (φ.val (ofRaw (Raw.maskDiagonal K S (Fin 2))) : ℝ) := by
-  classical
-  obtain ⟨φ, hφ⟩ := P.normalized x
-  let c := P.price (Raw.diagonal I K (Fin 2)) x
-  have hc : 0 ≤ c := by
-    let i := Classical.arbitrary I
-    simpa only [dist_self] using P.dist_le_diagonal x i i
-  refine ⟨φ, c, hc, ?_⟩
-  intro S hS
-  let σ : S ↪ I := ⟨Subtype.val, Subtype.val_injective⟩
-  have hs (i : I) : i ∈ S ↔ ∃ j, σ j = i := by
-    constructor
-    · intro hi
-      exact ⟨⟨i, hi⟩, rfl⟩
-    · rintro ⟨j, rfl⟩
-      exact j.property
-  have hocc : Finset.univ.image (x ∘ σ) = S.map x := by
-    ext y
-    simp [σ, Function.comp_def]
-  let _ : Nonempty S := hS.to_subtype
-  have hd : (Raw.diagonal S K (Fin 2)).coeff ≠ 0 := by
-    obtain ⟨s,hs'⟩ := hS
-    intro hz
-    have he (a : Fin 2) : ((fun _ : S ↦ (0 : Fin 2)) = fun _ ↦ a) ↔ a = 0 :=
-      ⟨fun h ↦ (congrFun h ⟨s,hs'⟩).symm, by rintro rfl; rfl⟩
-    have h : (Raw.diagonal S K (Fin 2)).coeff (fun _ ↦ (0 : Fin 2)) = 0 :=
-      congrFun hz _
-    simp [Raw.diagonal, he] at h
-  rw [← hocc, ← P.price_binaryDiagonal_eq, P.group, hφ _ ((Raw.group_ne_zero_iff _ _).mpr hd),
-    Raw.ofRaw_group_diagonal_eq_mask σ S hs]
 
 end SpectralPlacementPrices
 
@@ -9763,39 +7124,6 @@ theorem SiteTensor.ofRaw_maskDiagonal_univ {I F : Type*} [Fintype I] [Field F]
 
 section
 variable {F X : Type*} [Field F] [PseudoMetricSpace X]
-
-private theorem wire_scale {P : SpectralPlacementPrices F X} {e : Fin 3 ↪ X}
-    {φ : normalizedSpectrum ((· ≤ ·) : TensorClass.{0} (Fin 3) F → _ → Prop)} {c : ℝ}
-    (hm : ∀ S : Finset (Fin 3), S.Nonempty → P.diagonal (S.map e) =
-      c * Real.logb 2 (φ.val (ofRaw (Raw.maskDiagonal F S (Fin 2))) : ℝ)) :
-    P.diagonal (Finset.univ.image e) = c := by
-  have h := hm Finset.univ Finset.univ_nonempty
-  have he := map_natCast (normalizedSpectrum.toRingHom φ) 2
-  change φ.val (2 : TensorClass.{0} (Fin 3) F) = 2 at he
-  rw [ofRaw_maskDiagonal_univ, ofRaw_diagonal_fin_eq_natCast] at h
-  simpa [Finset.map_eq_image, he, Real.logb_self_eq_one (by norm_num : (1 : ℝ) < 2)] using h
-
-/-- The three binary wire distances in a spectral placement provide the
-normalized functional for all positive matrix multiplication wire sizes. -/
-def SpectralPlacementPrices.placedWires (P : SpectralPlacementPrices F X) (e : Fin 3 ↪ X) :
-    PlacedWires F e (P.diagonal (Finset.univ.image e)) := by
-  apply Classical.choice
-  let d := P.diagonal (Finset.univ.image e)
-  obtain ⟨φ, c, _, hm⟩ := P.exists_point_diagonal_map e
-  have hdc : d = c := wire_scale hm
-  have hpair (i j : Fin 3) : d * Real.logb 2
-      (φ.val (ofRaw (Raw.maskDiagonal F {i,j} (Fin 2))) : ℝ) = dist (e i) (e j) := by
-    rw [hdc, ← hm {i,j} (by simp), Finset.map_insert, Finset.map_singleton, P.diagonal_pair]
-  refine ⟨PlacedWires.ofBinary (rankFunctionalOfSpectrum φ) (P.diagonal_nonneg _) ?_ ?_ ?_⟩
-  · change d * Real.logb 2 (φ.val (ofRaw (ofThree (wire12 F 2))) : ℝ) = _
-    rw [ofRaw_ofThree_wire12]
-    exact hpair 0 1
-  · change d * Real.logb 2 (φ.val (ofRaw (ofThree (wire23 F 2))) : ℝ) = _
-    rw [ofRaw_ofThree_wire23]
-    exact hpair 1 2
-  · change d * Real.logb 2 (φ.val (ofRaw (ofThree (wire31 F 2))) : ℝ) = _
-    rw [ofRaw_ofThree_wire31]
-    exact hpair 2 0
 
 end
 end
@@ -9875,32 +7203,6 @@ theorem spectralValue_pos {X : Raw.{0} I F} (h : X.coeff ≠ 0) : 0 < spectralVa
 @[simp] theorem spectralValue_add (X Y : Raw.{0} I F) :
     spectralValue φ (X.add Y) = spectralValue φ X + spectralValue φ Y := by
   simp only [spectralValue, ofRaw_add, φ.property.2.2.1, NNReal.coe_add]
-
-theorem logb_spectralValue_div {U V : Raw.{0} I F} (hU : U.coeff ≠ 0)
-    (hV : V.coeff ≠ 0) :
-    Real.logb 2 (spectralValue φ U / spectralValue φ V) =
-      rawLogPrice φ 1 U - rawLogPrice φ 1 V := by
-  rw [Real.logb_div (spectralValue_pos φ hU).ne' (spectralValue_pos φ hV).ne']
-  simp only [rawLogPrice, spectralValue, one_mul]
-
-/-- A correction of known logarithmic cost, discounted by the matching labels. -/
-theorem spectralRatio_div_maskDiagonal_le {U V : Raw.{0} I F} (hU : U.coeff ≠ 0)
-    (hV : V.coeff ≠ 0) (S : Finset I) (hS : S.Nonempty)
-    (α : Type) [Fintype α] [Nonempty α] {c : ℝ}
-    (hc : rawLogPrice φ 1 U - rawLogPrice φ 1 V ≤ c) :
-    spectralValue φ U / (spectralValue φ V * spectralValue φ (Raw.maskDiagonal F S α)) ≤
-      (2 : ℝ) ^ (c - maskDiagonalPrice φ 1 S * Real.logb 2 (Fintype.card α)) := by
-  classical
-  have hD := spectralValue_pos φ (Raw.maskDiagonal_ne_zero (K := F) S hS α)
-  rw [← div_div]
-  apply (Real.logb_le_iff_le_rpow (by norm_num : (1 : ℝ) < 2)
-    (div_pos (div_pos (spectralValue_pos φ hU) (spectralValue_pos φ hV)) hD)).mp
-  rw [Real.logb_div (div_pos (spectralValue_pos φ hU) (spectralValue_pos φ hV)).ne' hD.ne',
-    logb_spectralValue_div φ hU hV]
-  have hprice := rawLogPrice_maskDiagonal_card φ 1 S hS α
-  simp only [rawLogPrice, one_mul] at hprice
-  rw [show Real.logb 2 (spectralValue φ (Raw.maskDiagonal F S α)) = _ from hprice]
-  exact sub_le_sub_right hc _
 
 /-- The exact ratio recurrence for one equality-filter step, with `D` the
 diagonal bearing the nonzero matching index. The direct sum is taken on the
@@ -10013,49 +7315,12 @@ namespace Sunflower
 
 variable {I α β : Type*}
 
-/-- Relabel all coordinates of a word by the same alphabet embedding. -/
-def wordEmbedding (e : α ↪ β) : (I → α) ↪ (I → β) where
-  toFun w c := e (w c)
-  inj' _ _ h := funext fun c => e.injective (congrFun h c)
-
-theorem admissible_relabel_iff {ι : Type*} (e : α ↪ β) {f : ι → α} :
-    Admissible (fun i => e (f i)) ↔ Admissible f := by
-  constructor
-  · rintro (h | h)
-    · exact Or.inl fun i j => e.injective (h i j)
-    · exact Or.inr fun _ _ he => h (congrArg e he)
-  · rintro (h | h)
-    · exact Or.inl fun i j => congrArg e (h i j)
-    · exact Or.inr (e.injective.comp h)
-
-theorem wordFree_map_iff {r : ℕ} (e : α ↪ β) (W : Finset (I → α)) :
-    WordFree r (W.map (wordEmbedding e)) ↔ WordFree r W := by
-  constructor
-  · intro h w hw hadm i j
-    apply (wordEmbedding e).injective
-    apply h (fun t => wordEmbedding e (w t))
-    · exact fun t => Finset.mem_map.mpr ⟨_, hw t, rfl⟩
-    · exact fun c => (admissible_relabel_iff e).mpr (hadm c)
-  · intro h w hw hadm i j
-    choose v hv heq using fun t => Finset.mem_map.mp (hw t)
-    have hword : WordAdmissible v := by
-      intro c
-      apply (admissible_relabel_iff e).mp
-      change Admissible (fun i => wordEmbedding e (v i) c)
-      simpa only [heq] using hadm c
-    rw [← heq i, ← heq j, h v hv hword i j]
-
 /-- A one-hot encoding into `n` bits works for every cardinal, including zero. -/
 def Binary.alphabetEmbedding (n : ℕ) : Fin n ↪ Binary.Word n where
   toFun x i := if x = i then 1 else 0
   inj' x y h := by
     by_contra hne
     exact hne (show y = x by simpa using congrFun h x).symm
-
-/-- Passing to a binary-word alphabet preserves both the cardinality and sunflower-freeness. -/
-theorem exists_binary_word_family {r n : ℕ} {W : Finset (I → Fin n)} (h : WordFree r W) :
-    ∃ B : Finset (I → Binary.Word n), B.card = W.card ∧ WordFree r B :=
-  ⟨_, Finset.card_map _, (wordFree_map_iff (Binary.alphabetEmbedding n) W).mpr h⟩
 
 end Sunflower
 end Combinatorics
@@ -10258,15 +7523,6 @@ theorem eval_fourierMatrix (K : Finset I) (i₀ : I) (phase : ∀ i, C i → B i
         (fourierMatrix K i₀ phase) c (Raw.maskDiagonal ℂ K (AddChar Γ ℂ)).coeff x =
       if (∑ i ∈ K, phase i (c i) (x i)) = 0 then (1 : ℂ) else 0 :=
   fourierMatrix_apply K i₀ phase c x
-
-/-- The zero-sum predicate for fixed local controls is an ordinary tensor
-restriction of the character-labeled partial diagonal. -/
-theorem zeroSum_restricts (K : Finset I) (i₀ : I)
-    (phase : ∀ i, C i → B i → Γ) (c : ∀ i, C i) :
-    Crossing.IsRestriction
-      (fun x : ∀ i, B i ↦ if (∑ i ∈ K, phase i (c i) (x i)) = 0 then (1 : ℂ) else 0)
-      (Raw.maskDiagonal ℂ K (AddChar Γ ℂ)).coeff :=
-  ⟨fun i ↦ fourierMatrix K i₀ phase i (c i), fun x ↦ (fourierMatrix_apply K i₀ phase c x).symm⟩
 
 end
 
@@ -11156,18 +8412,6 @@ section
 namespace OAI
 namespace Combinatorics
 namespace Sunflower
-
-/-- A uniformly random coloring with `k` colors is rainbow on a fixed `k`-set
-with probability at least `3⁻ᵏ`. -/
-theorem pow_self_le_three_pow_mul_factorial (k : ℕ) :
-    k ^ k ≤ 3 ^ k * k.factorial := by
-  have hk : 0 < (k.factorial : ℝ) := by exact_mod_cast k.factorial_pos
-  have hExp : Real.exp k ≤ (3 : ℝ) ^ k := by
-    calc
-      Real.exp k = (Real.exp 1) ^ k := by simp
-      _ ≤ 3 ^ k := pow_le_pow_left₀ (Real.exp_pos _).le Real.exp_one_lt_three.le _
-  have h := (div_le_iff₀ hk).mp ((Real.pow_div_factorial_le_exp k (Nat.cast_nonneg k) k).trans hExp)
-  exact_mod_cast h
 
 /-- A positive coefficient of `log₂ N` in a uniform word comparison gives a
 single natural base for every word length and alphabet. -/

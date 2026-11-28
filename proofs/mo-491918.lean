@@ -8,6 +8,9 @@ while he values the second player's bundle at 2. The proof: a one-shot deviation
 (spne_of_oneshot), then finite checks of the explicit profile sig by kernel evaluation.
 -/
 
+-- Original Lean proof by @tatashbar (PR #11264; statement #4758).
+-- List extension and finite-universe witness arguments now use Mathlib.
+
 namespace OMA.S_mo_491918
 
 /-! ### One-shot deviation principle for this game -/
@@ -44,13 +47,7 @@ theorem spne_of_oneshot {n m : ℕ} (hn : 0 < n) (P : Fin n → Fin m → ℝ) (
     by_cases hi : mover hn h = i
     · have ha : s h ∉ h := hs h hnd hlt
       have hnd' : (h ++ [s h]).Nodup := by
-        rw [List.nodup_append]
-        refine ⟨hnd, List.nodup_singleton _, ?_⟩
-        intro x hx y hy
-        rw [List.mem_singleton] at hy
-        subst hy
-        intro hxy
-        exact ha (hxy ▸ hx)
+        simpa using List.Nodup.concat ha hnd
       have hlen' : (h ++ [s h]).length ≤ m := by
         simp only [List.length_append, List.length_singleton]; omega
       have hk' : m - (h ++ [s h]).length = k := by
@@ -65,13 +62,7 @@ theorem spne_of_oneshot {n m : ℕ} (hn : 0 < n) (P : Fin n → Fin m → ℝ) (
       exact le_trans step1 step2
     · have ha : σ (mover hn h) h ∉ h := hleg _ h hnd hlt
       have hnd' : (h ++ [σ (mover hn h) h]).Nodup := by
-        rw [List.nodup_append]
-        refine ⟨hnd, List.nodup_singleton _, ?_⟩
-        intro x hx y hy
-        rw [List.mem_singleton] at hy
-        subst hy
-        intro hxy
-        exact ha (hxy ▸ hx)
+        simpa using List.Nodup.concat ha hnd
       have hlen' : (h ++ [σ (mover hn h) h]).length ≤ m := by
         simp only [List.length_append, List.length_singleton]; omega
       have hk' : m - (h ++ [σ (mover hn h) h]).length = k := by
@@ -120,20 +111,12 @@ theorem value_other (i : Fin 3) (hi : i ≠ 0) (S : Finset (Fin 5)) : value Pex 
   unfold value Pex
   simp [hi]
 
-theorem exists_free (h : List (Fin 5)) (hnd : h.Nodup) (hlt : h.length < 5) : ∃ j : Fin 5, j ∉ h := by
-  by_contra hcon
-  push_neg at hcon
-  have hsub : (Finset.univ : Finset (Fin 5)) ⊆ h.toFinset := by
-    intro j _
-    exact List.mem_toFinset.mpr (hcon j)
-  have hc := Finset.card_le_card hsub
-  rw [List.toFinset_card_of_nodup hnd] at hc
-  simp at hc
-  omega
+theorem exists_free (h : List (Fin 5)) (hlt : h.length < 5) : ∃ j : Fin 5, j ∉ h := by
+  exact Cardinal.exists_notMem_of_length_lt h (by simpa using hlt)
 
 theorem pick_free (order : List (Fin 5)) (hall : ∀ j : Fin 5, j ∈ order) (h : List (Fin 5))
     (hnd : h.Nodup) (hlt : h.length < 5) : pick order h ∉ h := by
-  obtain ⟨j, hj⟩ := exists_free h hnd hlt
+  obtain ⟨j, hj⟩ := exists_free h hlt
   unfold pick
   cases hf : order.find? (fun j => decide (j ∉ h)) with
   | none =>

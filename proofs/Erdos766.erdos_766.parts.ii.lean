@@ -1,185 +1,89 @@
 import FormalConjectures.ErdosProblems.«766»
 
-/-
-Problem: Erdős Problem 766, part ii
-Upstream: formal-conjectures FormalConjectures/ErdosProblems/766.lean
-(declaration Erdos766.erdos_766.parts.ii)
-
-Written with Claude Code (AI-assisted).
-
-Scope note. This proves the statement exactly as formalized, which is about
-Erdős's 1964 function f_1(n;k,l) (Erdos766.forcingNumber): the least m such
-that every graph with n vertices and m edges contains SOME graph with k
-vertices and l edges. It does not address the version on erdosproblems.com,
-which is about the minimum of ex(n;G) over graphs G with k vertices and l
-edges (Erdos766.erdos_766.variants.minExtremalNumber_strictMonoOn).
-
-Argument. Let l < l', l <= C(k,2), k <= n, and m' = f_1(n;k,l').
-* m' >= 1, because the empty graph contains no graph with l' >= 1 edges.
-* Every graph G with m' - 1 edges contains a graph with k vertices and l
-  edges, hence f_1(n;k,l) <= m' - 1 < m':
-  - if G is complete, it contains every graph on k <= n vertices, and there
-    is one with exactly l <= C(k,2) edges;
-  - otherwise add a missing edge e to get G' with m' edges. G' contains some
-    H' with k vertices and l' edges through an injective map f. At most one
-    edge of H' is mapped to e, so at least l' - 1 >= l edges of H' are mapped
-    into G; any l of them form the required graph.
-So f_1(n;k,.) is strictly increasing on [0, C(k,2)] for every n >= k, and
-floor(k^2/4) <= C(k,2) whenever the interval (k, floor(k^2/4)] is nonempty.
+/-!
+Erdős 766(ii) for the forcing number in the 1964 formulation.
+A graph one edge below the higher threshold can be extended by one edge.
+In any copy found in the extension, at most one edge is absent from the
+original graph, because the vertex embedding is injective on edges.
 -/
 
-namespace Erdos766Aux
-
-open Erdos766
+open Erdos766 SimpleGraph
 open scoped SimpleGraph
 
-/-- A graph with at least `l` edges has a subgraph with exactly `l` edges. -/
-theorem exists_le_edge_ncard {k l : ℕ} (K : SimpleGraph (Fin k))
-    (h : l ≤ K.edgeSet.ncard) :
-    ∃ H : SimpleGraph (Fin k), H ≤ K ∧ H.edgeSet.ncard = l := by
-  obtain ⟨s, hs, hcard⟩ := Set.exists_subset_card_eq h
-  refine ⟨SimpleGraph.fromEdgeSet s, ?_, ?_⟩
-  · intro a b hab
-    rw [SimpleGraph.fromEdgeSet_adj] at hab
-    exact hs hab.1
-  · have hE : (SimpleGraph.fromEdgeSet s).edgeSet = s := by
-      rw [SimpleGraph.edgeSet_fromEdgeSet]
-      ext e
-      constructor
-      · intro he
-        exact he.1
-      · intro he
-        exact ⟨he, K.not_isDiag_of_mem_edgeSet (hs he)⟩
-    rw [hE, hcard]
+namespace Erdos766Forcing
 
-theorem edge_ncard_le (n : ℕ) (G : SimpleGraph (Fin n)) :
-    G.edgeSet.ncard ≤ n.choose 2 := by
-  classical
-  have h := SimpleGraph.card_edgeFinset_le_card_choose_two (G := G)
-  rw [Fintype.card_fin, ← Set.ncard_coe_finset, SimpleGraph.coe_edgeFinset] at h
-  exact h
+private lemma edges_from_subset {V : Type*} {G : SimpleGraph V} {s : Set (Sym2 V)}
+    (hs : s ⊆ G.edgeSet) : (fromEdgeSet s).edgeSet = s := by
+  rw [edgeSet_fromEdgeSet, sdiff_eq_left]
+  exact Set.disjoint_left.mpr fun _ he hd => G.not_isDiag_of_mem_edgeSet (hs he) hd
 
-theorem top_edge_ncard (k : ℕ) :
-    (⊤ : SimpleGraph (Fin k)).edgeSet.ncard = k.choose 2 := by
-  classical
-  have h := SimpleGraph.card_edgeFinset_top_eq_card_choose_two (V := Fin k)
-  rw [Fintype.card_fin, ← Set.ncard_coe_finset, SimpleGraph.coe_edgeFinset] at h
-  exact h
+private lemma subgraph_with_edges {V : Type*} {G : SimpleGraph V} {l : ℕ}
+    (hl : l ≤ G.edgeSet.ncard) : ∃ H ≤ G, H.edgeSet.ncard = l := by
+  obtain ⟨s, hs, hcard⟩ := Set.exists_subset_card_eq hl
+  refine ⟨fromEdgeSet s, ?_, (congrArg Set.ncard (edges_from_subset hs)).trans hcard⟩
+  rwa [← edgeSet_subset_edgeSet, edges_from_subset hs]
 
-theorem forcingNumber_lt {n k l l' : ℕ} (hkn : k ≤ n) (hl : l ≤ k.choose 2)
-    (hll : l < l') : forcingNumber n k l < forcingNumber n k l' := by
+private lemma complete_edges (n : ℕ) : (⊤ : SimpleGraph (Fin n)).edgeSet.ncard = n.choose 2 := by
   classical
-  have hne : {m : ℕ | ∀ G : SimpleGraph (Fin n), G.edgeSet.ncard = m →
-      ∃ H : SimpleGraph (Fin k), H.edgeSet.ncard = l' ∧ H ⊑ G}.Nonempty := by
-    refine ⟨n.choose 2 + 1, ?_⟩
+  simpa [← Set.ncard_coe_finset] using card_edgeFinset_top_eq_card_choose_two (V := Fin n)
+
+private lemma edge_loss {V W : Type*} [Finite V] [Finite W] {G G' : SimpleGraph V}
+    {H : SimpleGraph W} (f : W ↪ V) (hH : H ≤ G'.comap f) :
+    H.edgeSet.ncard ≤ (G'.edgeSet \ G.edgeSet).ncard + (G.comap f).edgeSet.ncard := by
+  refine (Set.ncard_le_ncard_sdiff_add_ncard _ _).trans (Nat.add_le_add_right ?_ _)
+  refine Set.ncard_le_ncard_of_injOn f.sym2Map ?_ f.sym2Map.injective.injOn
+  intro e
+  induction e using Sym2.ind with
+  | _ a b => exact fun he => ⟨hH he.1, he.2⟩
+
+private lemma forcing_lt {n k l l' : ℕ} (hkn : k ≤ n) (hl' : l' ≤ k.choose 2)
+    (hll' : l < l') : forcingNumber n k l < forcingNumber n k l' := by
+  let forces (t : ℕ) : Prop := ∀ G : SimpleGraph (Fin n), G.edgeSet.ncard = t →
+    ∃ H : SimpleGraph (Fin k), H.edgeSet.ncard = l' ∧ H ⊑ G
+  have hcomplete : forces (n.choose 2) := by
     intro G hG
-    have := edge_ncard_le n G
+    have htop : G = ⊤ := edgeSet_injective <|
+      Set.eq_of_subset_of_ncard_le (edgeSet_mono le_top) (by rw [complete_edges, hG])
+    obtain ⟨H, _, hH⟩ := subgraph_with_edges (G := (⊤ : SimpleGraph (Fin k))) (l := l')
+      (by rwa [complete_edges])
+    exact ⟨H, hH, htop ▸ isContained_top_iff.mpr ⟨Fin.castLEEmb hkn⟩⟩
+  let m := forcingNumber n k l'
+  have hm : m ≤ n.choose 2 := forcingNumber_le hcomplete
+  have hforce : forces m := Nat.sInf_mem (s := {t | forces t}) ⟨n.choose 2, hcomplete⟩
+  have hmpos : 0 < m := by
+    by_contra! h
+    obtain ⟨H, hH, hcopy⟩ := hforce ⊥ (by simp; omega)
+    obtain ⟨f, hf⟩ := isContained_iff_exists_le_comap.mp hcopy
+    rw [comap_bot] at hf
+    simp [le_bot_iff.mp hf] at hH
     omega
-  have hmem : ∀ G : SimpleGraph (Fin n), G.edgeSet.ncard = forcingNumber n k l' →
-      ∃ H : SimpleGraph (Fin k), H.edgeSet.ncard = l' ∧ H ⊑ G := Nat.sInf_mem hne
-  -- the forcing number for `l'` is positive
-  have hpos : 0 < forcingNumber n k l' := by
-    rcases Nat.eq_zero_or_pos (forcingNumber n k l') with h0 | h
-    · exfalso
-      obtain ⟨H, hH, ⟨f⟩⟩ := hmem ⊥ (by rw [h0]; simp)
-      have hne' : H.edgeSet.Nonempty := by
-        apply Set.nonempty_of_ncard_ne_zero
-        omega
-      obtain ⟨e, he⟩ := hne'
-      induction e using Sym2.ind with
-      | _ x y =>
-        have hxy : H.Adj x y := he
-        exact f.toHom.map_adj hxy
-    · exact h
-  -- every graph with one edge less contains a graph with `l` edges
-  have hkey : ∀ G : SimpleGraph (Fin n), G.edgeSet.ncard = forcingNumber n k l' - 1 →
-      ∃ H : SimpleGraph (Fin k), H.edgeSet.ncard = l ∧ H ⊑ G := by
-    intro G hG
-    by_cases hGtop : G = ⊤
-    · obtain ⟨H, -, hH⟩ := exists_le_edge_ncard (⊤ : SimpleGraph (Fin k))
-        (le_of_le_of_eq hl (top_edge_ncard k).symm)
-      refine ⟨H, hH, ⟨⟨⟨Fin.castLE hkn, ?_⟩, Fin.castLE_injective hkn⟩⟩⟩
-      intro x y hxy
-      rw [hGtop, SimpleGraph.top_adj]
-      intro hc
-      exact hxy.ne (Fin.castLE_injective hkn hc)
-    · have hex : ∃ a b : Fin n, a ≠ b ∧ ¬ G.Adj a b := by
-        by_contra hcon
-        apply hGtop
-        ext x y
-        rw [SimpleGraph.top_adj]
-        constructor
-        · intro hxy
-          exact hxy.ne
-        · intro hxy
-          by_contra hna
-          exact hcon ⟨x, y, hxy, hna⟩
-      obtain ⟨a, b, hab, hnadj⟩ := hex
-      have hnotmem : s(a, b) ∉ G.edgeSet := hnadj
-      have hE : (SimpleGraph.fromEdgeSet (insert s(a, b) G.edgeSet)).edgeSet =
-          insert s(a, b) G.edgeSet := by
-        rw [SimpleGraph.edgeSet_fromEdgeSet]
-        ext e
-        constructor
-        · intro he
-          exact he.1
-        · intro he
-          refine ⟨he, ?_⟩
-          rcases he with he | he
-          · rw [he]
-            exact fun hd => hab (Sym2.mk_isDiag_iff.1 hd)
-          · exact G.not_isDiag_of_mem_edgeSet he
-      have hcard : (SimpleGraph.fromEdgeSet (insert s(a, b) G.edgeSet)).edgeSet.ncard =
-          forcingNumber n k l' := by
-        rw [hE, Set.ncard_insert_of_notMem hnotmem (Set.toFinite _), hG]
-        omega
-      obtain ⟨H', hH', ⟨f⟩⟩ := hmem _ hcard
-      have hsub : H'.edgeSet ⊆ (H' ⊓ G.comap (fun x => f x)).edgeSet ∪
-          {e | Sym2.map (fun x => f x) e = s(a, b)} := by
-        intro e he
-        induction e using Sym2.ind with
-        | _ x y =>
-          have hxy : H'.Adj x y := he
-          have hadj := f.toHom.map_adj hxy
-          rw [SimpleGraph.fromEdgeSet_adj] at hadj
-          rcases hadj.1 with h1 | h1
-          · right
-            exact h1
-          · left
-            exact ⟨hxy, h1⟩
-      have hT : ({e | Sym2.map (fun x => f x) e = s(a, b)} : Set (Sym2 (Fin k))).ncard ≤ 1 := by
-        apply (Set.ncard_le_one (Set.toFinite _)).2
-        intro e1 he1 e2 he2
-        exact Sym2.map.injective f.injective (he1.trans he2.symm)
-      have h1 : H'.edgeSet.ncard ≤ ((H' ⊓ G.comap (fun x => f x)).edgeSet ∪
-          {e | Sym2.map (fun x => f x) e = s(a, b)}).ncard :=
-        Set.ncard_le_ncard hsub (Set.toFinite _)
-      have h2 := Set.ncard_union_le (H' ⊓ G.comap (fun x => f x)).edgeSet
-          {e | Sym2.map (fun x => f x) e = s(a, b)}
-      obtain ⟨H, hHK, hH⟩ := exists_le_edge_ncard (l := l) (H' ⊓ G.comap (fun x => f x))
-        (by omega)
-      refine ⟨H, hH, ⟨⟨⟨fun x => f x, ?_⟩, f.injective⟩⟩⟩
-      intro x y hxy
-      exact (hHK hxy).2
-  have hle : forcingNumber n k l ≤ forcingNumber n k l' - 1 := Nat.sInf_le hkey
-  omega
+  suffices forcingNumber n k l ≤ m - 1 by omega
+  apply forcingNumber_le
+  intro G hG
+  obtain ⟨s, hGs, hstop, hs⟩ := Set.exists_subsuperset_card_eq (edgeSet_mono (G₂ := ⊤) le_top)
+    (show G.edgeSet.ncard ≤ m by omega) (by rwa [complete_edges])
+  have hs' : (fromEdgeSet s).edgeSet.ncard = m := by rwa [edges_from_subset hstop]
+  obtain ⟨H, hH, hcopy⟩ := hforce (fromEdgeSet s) hs'
+  obtain ⟨f, hf⟩ := isContained_iff_exists_le_comap.mp hcopy
+  have hsub : G ≤ fromEdgeSet s := by rwa [le_fromEdgeSet_iff]
+  have hcount := edge_loss (G := G) f hf
+  rw [Set.ncard_sdiff (edgeSet_mono hsub), hs', hG, hH] at hcount
+  obtain ⟨K, hK, hcard⟩ := subgraph_with_edges (G := G.comap f) (l := l) (by omega)
+  exact ⟨K, hcard, isContained_iff_exists_le_comap.mpr ⟨f, hK⟩⟩
 
-theorem sq_div_four_le_choose {k l : ℕ} (h1 : k < l) (h2 : l ≤ k ^ 2 / 4) :
-    k ^ 2 / 4 ≤ k.choose 2 := by
-  rw [Nat.choose_two_right]
-  have h4 : k ^ 2 / 4 * 4 ≤ k ^ 2 := Nat.div_mul_le_self _ _
-  rw [Nat.le_div_iff_mul_le (by norm_num)]
-  rcases k with _ | _ | j
-  · omega
-  · omega
+private lemma sq_div_four_le_choose (k : ℕ) : k ^ 2 / 4 ≤ k.choose 2 := by
+  rw [Nat.choose_two_right, Nat.le_div_iff_mul_le (by decide)]
+  have h := Nat.div_mul_le_self (k ^ 2) 4
+  rcases k with _ | _ | k
+  · decide
+  · decide
   · simp only [Nat.add_sub_cancel]
-    nlinarith [Nat.zero_le (j * j)]
+    nlinarith [Nat.zero_le (k * k)]
 
-end Erdos766Aux
+end Erdos766Forcing
 
 theorem OMA.solution : type_of% @Erdos766.erdos_766.parts.ii := by
   intro k
   filter_upwards [Filter.eventually_ge_atTop k] with n hn
-  intro l hl l' hl' hll
-  exact Erdos766Aux.forcingNumber_lt hn
-    (le_trans hl.2 (Erdos766Aux.sq_div_four_le_choose hl.1 hl.2)) hll
+  intro l _ l' hl' hll'
+  exact Erdos766Forcing.forcing_lt hn (hl'.2.trans (Erdos766Forcing.sq_div_four_le_choose k)) hll'

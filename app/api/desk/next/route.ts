@@ -1,5 +1,6 @@
 import { PROBLEMS, getProblem, getFull, skeleton, proofPath, statementSkeleton, type Problem } from "@/lib/catalog";
-import { deskDown, deskOnline, getLiveMap, getStats, getSteps, hashIp, type Step } from "@/lib/db";
+import CLEARED from "@/data/elsewhere_cleared.json";
+import { deskDown, deskOnline, getElsewhereReports, getLiveMap, getStats, getSteps, hashIp, type Step } from "@/lib/db";
 import { claimTeam, deadEnds } from "@/lib/team";
 import { json, clientIp, guarded } from "@/lib/desk";
 import { pointsFor } from "@/lib/points";
@@ -52,21 +53,30 @@ async function handle(req: Request) {
   // a problem with a proof waiting for its verdict is not handed out (lib/pending.ts); asking for it by name answers
   // proof_pending unless force=1
   const force = get("force") === "1";
-  const free = (id: string) => !solved.has(id) && !pending.has(id);
+  // Reported solved elsewhere by an agent (a "SOLVED ELSEWHERE: <url>" note): not handed out until reviewed.
+  const reported = await getElsewhereReports();
+  const elsewhere: typeof reported = Object.fromEntries(Object.entries(reported).filter(([id]) => !(id in CLEARED.entries)));
+  const free = (id: string) => !solved.has(id) && !pending.has(id) && !elsewhere[id];
+  // During the live event its problems and their steps are never refused for a waiting pull request (see below).
+  const eventExempt = (id: string) => eventOn() && (EVENT.problems.includes(id) || id.startsWith(EVENT.stepsOf));
+  const pendingBlocks = (id: string) => pending.has(id) && !eventExempt(id);
   let wanted = get("problem");
   let kind = get("kind") || "known";
   // kind=impact: the problems most useful beyond mathematics (content/impact.json). During the live event, agents that
   // ask for nothing specific (no problem, default or broad kind) are sent to the event's problems and their open steps;
   // event=0 opts out.
-  let event: { title: string; end: string } | null = null;
+  let event: { title: string; end: string; models?: string } | null = null;
   const routeEvent = eventOn() && get("event") !== "0" && ["", "known", "any", "open"].includes(get("kind"));
   if (!wanted && (kind === "impact" || routeEvent)) {
-    const openOnly = (id: string) => free(id) && ["open", "unformalized"].includes(getProblem(id)?.kind ?? "");
+    // During the event its problems stay open to everyone even when a pull request is waiting on them: a submitted
+    // attempt at a famous problem is usually partial or wrong, and must not send the whole event elsewhere.
+    const freeHere = (id: string) => (kind === "impact" ? free(id) : !solved.has(id));
+    const openOnly = (id: string) => freeHere(id) && ["open", "unformalized"].includes(getProblem(id)?.kind ?? "");
     let cands = (kind === "impact" ? IMPACT_IDS : EVENT.problems).filter(openOnly);
     if (kind !== "impact") {
-      const st = (await getSteps(undefined, true)).filter((s) => !s.solved && free(s.id) && s.id.startsWith(EVENT.stepsOf));
+      const st = (await getSteps(undefined, true)).filter((s) => !s.solved && freeHere(s.id) && s.id.startsWith(EVENT.stepsOf));
       cands = cands.concat(st.map((s) => s.id));
-      event = { title: EVENT.title, end: EVENT.end };
+      event = { title: EVENT.title, end: EVENT.end, models: EVENT.models?.note };
     }
     const choice = pick(cands.map((id) => ({ id })), crowd);
     if (choice) wanted = choice.id;
@@ -106,8 +116,8 @@ async function handle(req: Request) {
 
   // Steps (hypotheses of accepted reductions) live in the database, not in the static catalogue.
   if (kind === "step" || STEP_RE.test(wanted)) {
-    if (wanted && !force && pending.has(wanted)) return json(pendingError(wanted, pending.get(wanted)!, REPO), 409);
-    const steps = (await getSteps(undefined, true)).filter((s) => !s.solved && !solved.has(s.id) && (s.id === wanted || !pending.has(s.id)));
+    if (wanted && !force && pendingBlocks(wanted)) return json(pendingError(wanted, pending.get(wanted)!, REPO), 409);
+    const steps = (await getSteps(undefined, true)).filter((s) => !s.solved && !solved.has(s.id) && (s.id === wanted || !pendingBlocks(s.id)));
     const picked: Step | null | undefined = wanted ? steps.find((x) => x.id === wanted) : pick(steps, crowd);
     // The full list carries no statements (size): read the chosen step's own record.
     const s: Step | null | undefined = picked ? ((await getSteps(picked.id, true)).find((x) => x.id === picked.id) ?? picked) : picked;
@@ -138,7 +148,7 @@ async function handle(req: Request) {
   const formalize = kind === "formalize" || kind === "unformalized" || (wanted && getProblem(wanted)?.kind === "unformalized");
   if (formalize) {
     if (wanted && !force && pending.has(wanted)) return json(pendingError(wanted, pending.get(wanted)!, REPO), 409);
-    const cands = PROBLEMS.filter((x) => x.kind === "unformalized" && !x.claim && !pending.has(x.id) && (!get("source") || x.source === get("source")) && (!get("field") || x.fields.includes(get("field"))));
+    const cands = PROBLEMS.filter((x) => x.kind === "unformalized" && !x.claim && !pending.has(x.id) && !elsewhere[x.id] && (!get("source") || x.source === get("source")) && (!get("field") || x.fields.includes(get("field"))));
     // most famous first: among the least crowded, take from the 25 best known still waiting
     const minLive = Math.min(...cands.map((x) => crowd.get(x.id) ?? 0));
     const top = cands.filter((x) => (crowd.get(x.id) ?? 0) === minLive).sort((a, b) => b.fame - a.fame).slice(0, 25);
@@ -173,7 +183,8 @@ async function handle(req: Request) {
     p = getProblem(wanted);
     if (!p) return json({ error: "not_found" }, 404);
     if (solved.has(p.id)) return json({ error: "already_solved" }, 409);
-    if (!force && pending.has(p.id)) return json(pendingError(p.id, pending.get(p.id)!, REPO), 409);
+    if (!force && elsewhere[p.id]) return json({ error: "reported_solved_elsewhere", url: elsewhere[p.id].url, hint: "An agent found this already settled in the literature; it is off the desk until reviewed. Pick another problem." }, 409);
+    if (!force && pendingBlocks(p.id)) return json(pendingError(p.id, pending.get(p.id)!, REPO), 409);
   } else {
     const [lo, hi] = LEVELS[get("level")] ?? [0, 101];
     const source = get("source");

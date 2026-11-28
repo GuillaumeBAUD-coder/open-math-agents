@@ -8,11 +8,7 @@ import Mathlib
 -- give p = (2m-1)(2m+1), p = 2m^2 (both composite for m >= 2), or 4m^2 = p^2 + p, which lies
 -- strictly between p^2 and (p+1)^2.
 
-namespace OMA.P_oeis_a242932
-
-open OMA.S_oeis_a242932
-
-theorem main' : ∀ m : ℕ, 4 * m ^ 2 ≠ 4 → ¬ InSeq (4 * m ^ 2) := by
+theorem OMA.solution : type_of% @OMA.S_oeis_a242932.main := by
   intro m hm ⟨hn, k, hk, hdvd, hp⟩
   set n := 4 * m ^ 2 with hndef
   set p := k * n / (k + n) with hpdef
@@ -34,6 +30,10 @@ theorem main' : ∀ m : ℕ, 4 * m ^ 2 ≠ 4 → ¬ InSeq (4 * m ^ 2) := by
     zify [hpn.le, hpk.le]
     have : ((p : ℤ)) * ((k : ℤ) + n) = (k : ℤ) * n := by exact_mod_cast hkn
     nlinarith
+  have hm2 : 2 ≤ m := by
+    rcases Nat.lt_or_ge m 2 with h | h
+    · interval_cases m <;> simp_all
+    · exact h
   have hd : n - p ∣ p ^ 2 := ⟨k - p, by rw [← hkey]; ring⟩
   rw [Nat.dvd_prime_pow hp] at hd
   obtain ⟨i, hi, hi'⟩ := hd
@@ -41,10 +41,6 @@ theorem main' : ∀ m : ℕ, 4 * m ^ 2 ≠ 4 → ¬ InSeq (4 * m ^ 2) := by
   · -- n = p + 1
     simp at hi'
     have hp1 : p = 4 * m ^ 2 - 1 := by omega
-    have hm2 : 2 ≤ m := by
-      rcases Nat.lt_or_ge m 2 with h | h
-      · interval_cases m <;> simp_all
-      · exact h
     have hfac : p = (2 * m - 1) * (2 * m + 1) := by
       rw [hp1]
       zify [show 1 ≤ 2 * m by omega, show 1 ≤ 4 * m ^ 2 by nlinarith]
@@ -54,10 +50,6 @@ theorem main' : ∀ m : ℕ, 4 * m ^ 2 ≠ 4 → ¬ InSeq (4 * m ^ 2) := by
   · -- n = 2p
     simp at hi'
     have h2p : 2 * m ^ 2 = p := by omega
-    have hm2 : 2 ≤ m := by
-      rcases Nat.lt_or_ge m 2 with h | h
-      · interval_cases m <;> simp_all
-      · exact h
     have : ¬ (2 * m ^ 2).Prime := by
       rw [show 2 * m ^ 2 = (2 * m) * m by ring]
       exact Nat.not_prime_mul (by omega) (by omega)
@@ -70,6 +62,3 @@ theorem main' : ∀ m : ℕ, 4 * m ^ 2 ≠ 4 → ¬ InSeq (4 * m ^ 2) := by
       nlinarith
     · nlinarith
 
-end OMA.P_oeis_a242932
-
-theorem OMA.solution : type_of% @OMA.S_oeis_a242932.main := OMA.P_oeis_a242932.main'

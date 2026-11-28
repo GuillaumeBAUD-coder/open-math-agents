@@ -36,41 +36,41 @@ theorem rec (p : ℕ) (hp : 1 ≤ p) :
 
 end A259714Proof
 
-open PowerSeries in
+open PowerSeries OMA.S_oeis_a259714 A259714Proof in
 theorem OMA.solution : type_of% @OMA.S_oeis_a259714.main := by
-  have hrec : ∀ n : ℕ, 6 < n → OMA.S_oeis_a259714.a n = OMA.S_oeis_a259714.a (n - 1) +
-      2 * OMA.S_oeis_a259714.a (n - 2) + 3 * OMA.S_oeis_a259714.a (n - 3) +
-      4 * OMA.S_oeis_a259714.a (n - 4) + OMA.S_oeis_a259714.a (n - 5) := by
+  have hrec : ∀ n : ℕ, 6 < n → a n = a (n - 1) +
+      2 * a (n - 2) + 3 * a (n - 3) +
+      4 * a (n - 4) + a (n - 5) := by
     intro n hn
     obtain ⟨p, rfl⟩ : ∃ p, n = p + 6 := ⟨n - 6, by omega⟩
-    rw [A259714Proof.rec p (by omega)]
+    rw [rec p (by omega)]
     simp only [show p + 6 - 1 = p + 5 by omega, show p + 6 - 2 = p + 4 by omega,
       show p + 6 - 3 = p + 3 by omega, show p + 6 - 4 = p + 2 by omega,
       show p + 6 - 5 = p + 1 by omega]
   refine ⟨hrec, ?_⟩
-  have v1 : OMA.S_oeis_a259714.a 1 = 1 := by simp [OMA.S_oeis_a259714.a]
-  have v2 : OMA.S_oeis_a259714.a 2 = 1 := by
-    rw [A259714Proof.a_succ 1 (by omega)]; simp [v1]
-  have v3 : OMA.S_oeis_a259714.a 3 = 3 := by
-    rw [A259714Proof.a_succ 2 (by omega)]; simp [Finset.sum_range_succ, v1, v2]
-  have v4 : OMA.S_oeis_a259714.a 4 = 8 := by
-    rw [A259714Proof.a_succ 3 (by omega)]; simp [Finset.sum_range_succ, v1, v2, v3]
-  have v5 : OMA.S_oeis_a259714.a 5 = 21 := by
-    rw [A259714Proof.a_succ 4 (by omega)]; simp [Finset.sum_range_succ, v1, v2, v3, v4]
-  have v6 : OMA.S_oeis_a259714.a 6 = 50 := by
-    rw [A259714Proof.a_succ 5 (by omega)]; simp [Finset.sum_range_succ, v1, v2, v3, v4, v5]
-  have v0 : OMA.S_oeis_a259714.a 0 = 0 := by simp [OMA.S_oeis_a259714.a]
+  have v1 : a 1 = 1 := by simp [a]
+  have v2 : a 2 = 1 := by
+    rw [a_succ 1 (by omega)]; simp [v1]
+  have v3 : a 3 = 3 := by
+    rw [a_succ 2 (by omega)]; simp [Finset.sum_range_succ, v1, v2]
+  have v4 : a 4 = 8 := by
+    rw [a_succ 3 (by omega)]; simp [Finset.sum_range_succ, v1, v2, v3]
+  have v5 : a 5 = 21 := by
+    rw [a_succ 4 (by omega)]; simp [Finset.sum_range_succ, v1, v2, v3, v4]
+  have v6 : a 6 = 50 := by
+    rw [a_succ 5 (by omega)]; simp [Finset.sum_range_succ, v1, v2, v3, v4, v5]
+  have v0 : a 0 = 0 := by simp [a]
   have h4 : (C 4 : ℚ⟦X⟧) = 4 := map_ofNat C 4
   have h3 : (C 3 : ℚ⟦X⟧) = 3 := map_ofNat C 3
   have h2 : (C 2 : ℚ⟦X⟧) = 2 := map_ofNat C 2
-  have hexp : PowerSeries.mk (fun n => (OMA.S_oeis_a259714.a n : ℚ)) *
+  have hexp : PowerSeries.mk (fun n => (a n : ℚ)) *
       ((X + 1) * (X ^ 4 + 3 * X ^ 3 + 2 * X - 1)) =
-      X ^ 5 * PowerSeries.mk (fun n => (OMA.S_oeis_a259714.a n : ℚ)) +
-      C 4 * (X ^ 4 * PowerSeries.mk (fun n => (OMA.S_oeis_a259714.a n : ℚ))) +
-      C 3 * (X ^ 3 * PowerSeries.mk (fun n => (OMA.S_oeis_a259714.a n : ℚ))) +
-      C 2 * (X ^ 2 * PowerSeries.mk (fun n => (OMA.S_oeis_a259714.a n : ℚ))) +
-      X ^ 1 * PowerSeries.mk (fun n => (OMA.S_oeis_a259714.a n : ℚ)) -
-      PowerSeries.mk (fun n => (OMA.S_oeis_a259714.a n : ℚ)) := by
+      X ^ 5 * PowerSeries.mk (fun n => (a n : ℚ)) +
+      C 4 * (X ^ 4 * PowerSeries.mk (fun n => (a n : ℚ))) +
+      C 3 * (X ^ 3 * PowerSeries.mk (fun n => (a n : ℚ))) +
+      C 2 * (X ^ 2 * PowerSeries.mk (fun n => (a n : ℚ))) +
+      X ^ 1 * PowerSeries.mk (fun n => (a n : ℚ)) -
+      PowerSeries.mk (fun n => (a n : ℚ)) := by
     rw [h4, h3, h2]; ring
   have hrhs : (X * (X - 1) * (X ^ 4 + X ^ 3 + X ^ 2 + X + 1) : ℚ⟦X⟧) = X ^ 6 - X ^ 1 := by ring
   rw [hexp, hrhs]

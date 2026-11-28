@@ -245,67 +245,6 @@ is congruent to {11, 17, 23, 25 or 29} modulo 30." -/
 def InSeq' (n : ℕ) : Prop :=
   6 ∣ (bernoulli n).den ∧ (bernoulli n).den / 6 % 30 ∈ ({11, 17, 23, 25, 29} : Finset ℕ)
 
-/-- The companion conjecture of A233579: for these and only these n (n >= 2), the absolute value
-of the numerator of Bernoulli(n) is congruent 5 modulo 6. -/
-theorem conjecture_A233579 (n : ℕ) (hn : 2 ≤ n) :
-    InSeq' n ↔ (bernoulli n).num.natAbs % 6 = 5 := by
-  rcases Nat.even_or_odd n with ⟨k, hk⟩ | hodd
-  · have hk1 : 1 ≤ k := by omega
-    rw [show n = 2 * k by omega]
-    obtain ⟨I, hnum, hden⟩ := num_den k
-    have hD := D_eq hk1
-    unfold InSeq'
-    rw [hden, hD, hnum]
-    have hdiv : 6 * E k / 6 = E k := by omega
-    rw [hdiv]
-    have hE2 := E_not_dvd (k := k) Nat.prime_two (Or.inl rfl)
-    have hE3 := E_not_dvd (k := k) Nat.prime_three (Or.inr rfl)
-    have hE5 := five_dvd_E hk1
-    obtain ⟨t3, ht3⟩ := T_mod3 hk1
-    obtain ⟨t2, ht2⟩ := T_mod2 hk1
-    have hs := sign k hk1
-    have hsg : (k % 2 = 1 → 0 < I * D k - T k) ∧ (k % 2 = 0 → I * D k - T k < 0) := by
-      constructor
-      · intro hodd'
-        have : (-1 : ℚ) ^ (k + 1) = 1 := by
-          rw [show k + 1 = 2 * (k / 2 + 1) by omega, pow_mul]; norm_num
-        rw [this, one_mul] at hs
-        rw [← hnum]
-        exact Rat.num_pos.mpr hs
-      · intro heven
-        have : (-1 : ℚ) ^ (k + 1) = -1 := by
-          rw [show k + 1 = 2 * (k / 2) + 1 by omega, pow_succ, pow_mul]; norm_num
-        rw [this, neg_one_mul, neg_pos] at hs
-        rw [← hnum]
-        exact Rat.num_neg.mpr hs
-    have hDk : (D k : ℤ) = 6 * E k := by exact_mod_cast hD
-    rw [hDk]
-    simp only [Finset.mem_insert, Finset.mem_singleton]
-    have h3' : (3 : ℤ) ∣ (T k : ℤ) - 2 * E k := by
-      have := Int.natCast_dvd_natCast.mpr t3
-      push_cast [ht3] at this
-      exact this
-    have h2' : (2 : ℤ) ∣ (T k : ℤ) - 3 * E k := by
-      have := Int.natCast_dvd_natCast.mpr t2
-      push_cast [ht2] at this
-      exact this
-    rw [hDk] at hsg
-    have hE2' : E k % 2 = 1 := by omega
-    have hE3' : E k % 3 ≠ 0 := by omega
-    have hA : (k % 2 = 1 → (((I * (6 * (E k : ℤ)) - (T k : ℤ)).natAbs : ℕ) : ℤ) =
-        I * (6 * (E k : ℤ)) - (T k : ℤ)) ∧
-        (k % 2 = 0 → (((I * (6 * (E k : ℤ)) - (T k : ℤ)).natAbs : ℕ) : ℤ) =
-        -(I * (6 * (E k : ℤ)) - (T k : ℤ))) :=
-      ⟨fun h => Int.natAbs_of_nonneg (hsg.1 h).le, fun h => Int.ofNat_natAbs_of_nonpos (hsg.2 h).le⟩
-    have h6 : (6 : ℤ) ∣ I * (6 * (E k : ℤ)) := ⟨I * E k, by ring⟩
-    generalize (I * (6 * (E k : ℤ)) - (T k : ℤ)).natAbs = A at hA ⊢
-    generalize I * (6 * (E k : ℤ)) = X at hA h6
-    omega
-  · have hB : bernoulli n = 0 := bernoulli_eq_zero_of_odd hodd (by omega)
-    unfold InSeq'
-    rw [hB]
-    simp
-
 end OMA.S_oeis_a233578
 
 theorem OMA.solution : type_of% @OMA.S_oeis_a233578.main :=

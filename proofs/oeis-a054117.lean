@@ -15,10 +15,8 @@ lemma double_sum (f : ℕ → ℕ) (h : ℕ) :
     have : ∑ j ∈ range (h + 1), (h + 1 + 1 - j) * f j =
         ∑ j ∈ range (h + 1), (h + 1 - j) * f j + ∑ j ∈ range (h + 1), f j := by
       rw [← sum_add_distrib]
-      apply sum_congr rfl
-      intro j hj
-      have : j < h + 1 := mem_range.mp hj
-      rw [show h + 1 + 1 - j = (h + 1 - j) + 1 by omega]
+      refine sum_congr rfl fun j hj => ?_
+      rw [show h + 1 + 1 - j = (h + 1 - j) + 1 by simp at hj; omega]
       ring
     rw [this]
     ring
@@ -27,9 +25,7 @@ lemma sum_mul_fact (h : ℕ) : ∑ i ∈ range (h + 1), (i + 1) * (i + 1).factor
   induction h with
   | zero => simp [Nat.factorial]
   | succ h ih =>
-    rw [sum_range_succ, add_right_comm, ih]
-    rw [show h + 1 + 2 = (h + 2) + 1 by ring, Nat.factorial_succ (h + 2),
-      show h + 1 + 1 = h + 2 by ring]
+    rw [sum_range_succ, add_right_comm, ih, Nat.factorial_succ (h + 2)]
     ring
 
 lemma r_eq : ∀ h, r h = (h + 1).factorial := by
@@ -42,11 +38,7 @@ lemma r_eq : ∀ h, r h = (h + 1).factorial := by
       rw [r]
       have e : ∑ k ∈ range (h + 1), ∑ j ∈ range (k + 1), r (h - j) =
           ∑ k ∈ range (h + 1), ∑ j ∈ range (k + 1), (h - j + 1).factorial := by
-        apply sum_congr rfl
-        intro k hk
-        apply sum_congr rfl
-        intro j hj
-        exact ih _ (by omega)
+        exact sum_congr rfl fun k _ => sum_congr rfl fun j _ => ih _ (by omega)
       rw [e, double_sum (fun j => (h - j + 1).factorial) h]
       have e2 : ∑ j ∈ range (h + 1), (h + 1 - j) * (h - j + 1).factorial =
           ∑ i ∈ range (h + 1), (i + 1) * (i + 1).factorial := by
@@ -66,14 +58,10 @@ lemma a_diff (n : ℕ) (hn : 4 ≤ n) : a n = a (n - 1) + (n.factorial : ℤ) :=
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 4 := ⟨n - 4, by omega⟩
   have h1 : T (m + 4) (m + 2) = r (m + 3) + T (m + 3) (m + 1) := by
     simp only [T, show m + 2 ≠ 0 by omega, show m + 1 ≠ 0 by omega, if_false, icc_sum]
-    rw [sum_range_succ']
-    rw [add_comm]
+    rw [sum_range_succ', add_comm]
     congr 1
-    apply sum_congr rfl
-    intro i hi
-    congr 1
-    omega
-  simp only [a, show m + 4 - 2 = m + 2 by omega, show m + 4 - 1 - 2 = m + 1 by omega,
+    exact sum_congr rfl fun i _ => by congr 1; omega
+  simp only [a, show m + 4 - 2 = m + 2 by omega,
     show m + 4 - 1 = m + 3 by omega, h1, r_eq]
   push_cast
   ring
@@ -84,9 +72,9 @@ theorem solution_main : ∀ n : ℕ, 5 ≤ n →
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 5 := ⟨n - 5, by omega⟩
   have d1 := a_diff (m + 5) (by omega)
   have d2 := a_diff (m + 4) (by omega)
-  simp only [show m + 5 - 1 = m + 4 by omega, show m + 4 - 1 = m + 3 by omega] at d1 d2
-  rw [show m + 5 - 1 = m + 4 by omega, show m + 5 - 2 = m + 3 by omega, d1, d2]
-  rw [show m + 5 = (m + 4) + 1 by ring, Nat.factorial_succ (m + 4)]
+  simp only [show m + 5 - 1 = m + 4 by omega, show m + 4 - 1 = m + 3 by omega,
+    show m + 5 - 2 = m + 3 by omega] at d1 d2 ⊢
+  rw [d1, d2, Nat.factorial_succ (m + 4)]
   push_cast
   ring
 

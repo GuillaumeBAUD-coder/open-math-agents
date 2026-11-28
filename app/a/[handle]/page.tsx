@@ -46,17 +46,17 @@ function Timeline({ p }: { p: Profile }) {
   const ticks = [0, 1, 2, 3].map((i) => t0 + ((t1 - t0) * i) / 3);
   return (
     <svg viewBox={`0 0 ${W} 80`} className="timeline" role="img" aria-label="Activity over time">
-      <line x1="20" x2={W - 20} y1="34" y2="34" stroke="#000" strokeWidth="1.5" />
+      <line x1="20" x2={W - 20} y1="34" y2="34" style={{ stroke: "var(--text)" }} strokeWidth="1.5" />
       {ticks.map((t, i) => (
         <g key={i}>
-          <line x1={20 + (i / 3) * (W - 40)} x2={20 + (i / 3) * (W - 40)} y1="28" y2="40" stroke="#bbb" />
-          <text x={20 + (i / 3) * (W - 40)} y="66" fontSize="13" fill="#555" textAnchor={i === 0 ? "start" : i === 3 ? "end" : "middle"} fontFamily="var(--mono)">{new Date(t).toISOString().slice(5, 16).replace("T", " ")}</text>
+          <line x1={20 + (i / 3) * (W - 40)} x2={20 + (i / 3) * (W - 40)} y1="28" y2="40" style={{ stroke: "var(--line-2)" }} />
+          <text x={20 + (i / 3) * (W - 40)} y="66" fontSize="13" style={{ fill: "var(--muted)" }} textAnchor={i === 0 ? "start" : i === 3 ? "end" : "middle"} fontFamily="var(--mono)">{new Date(t).toISOString().slice(5, 16).replace("T", " ")}</text>
         </g>
       ))}
       {ev.map((e) => e.kind === "accepted"
         ? <circle key={e.id} cx={X(e.created_at)} cy="34" r="6" fill="#1a7f37" />
-        : <circle key={e.id} cx={X(e.created_at)} cy="34" r="3" fill="#000" opacity="0.45" />)}
-      {first && <circle cx={X(first.created_at)} cy="34" r="11" fill="none" stroke="#000" strokeWidth="2" />}
+        : <circle key={e.id} cx={X(e.created_at)} cy="34" r="3" style={{ fill: "var(--text)" }} opacity="0.45" />)}
+      {first && <circle cx={X(first.created_at)} cy="34" r="11" fill="none" style={{ stroke: "var(--text)" }} strokeWidth="2" />}
     </svg>
   );
 }
@@ -129,8 +129,8 @@ export default async function Person({ params }: Props) {
   const url = `${SITE}/a/${encodeURIComponent(h)}`;
   const summary = !active ? "No activity yet on this site."
     : proofs.length
-      ? `${proofs.length} Lean proof${proofs.length > 1 ? "s" : ""}${mainField ? ` in ${mainField}` : ""} between ${utc(proofs[0].created_at)} and ${utc(proofs[proofs.length - 1].created_at)}, each one passed the Lean checker: ${outcomeSummary(outcomeCounts(proofs.map((s) => prob(s.problem_id)?.kind)))}.`
-      : `Took ${p!.claims} problem${p!.claims === 1 ? "" : "s"}${mainField ? ` in ${mainField}` : ""} since ${p!.firstSeen ? utc(p!.firstSeen) : "—"}. No proof checked yet.`;
+      ? `${proofs.length} Lean proof${proofs.length > 1 ? "s" : ""}${mainField ? `, mostly in ${mainField},` : ""} between ${utc(proofs[0].created_at)} and ${utc(proofs[proofs.length - 1].created_at)}, each one passed the Lean checker: ${outcomeSummary(outcomeCounts(proofs.map((s) => prob(s.problem_id)?.kind), proofs.map((s) => s.problem_id)))}.`
+      : `Took ${p!.claims} problem${p!.claims === 1 ? "" : "s"}${mainField ? `, mostly in ${mainField},` : ""} since ${p!.firstSeen ? utc(p!.firstSeen) : "—"}. No proof checked yet.`;
 
   return (
     <main className="wrap profile">
@@ -158,10 +158,11 @@ export default async function Person({ params }: Props) {
             <svg viewBox="0 0 300 60" className="dist" role="img" aria-label="Points of everyone on the leaderboard, with this person marked">
               {ranked.map((r, i) => {
                 const x = (i / ranked.length) * 300, w = Math.max(300 / ranked.length, 0.6), hh = 4 + (r.points / maxPts) * 52;
-                return <rect key={r.handle} x={x} y={60 - hh} width={w} height={hh} fill={i === rankIdx ? "#000" : "#d6d6d6"} />;
+                return <rect key={r.handle} x={x} y={60 - hh} width={w} height={hh} className={i === rankIdx ? "me" : undefined}><title>{`#${i + 1} @${r.handle}: ${r.points.toLocaleString("en-US")} points`}</title></rect>;
               })}
             </svg>
           )}
+          {ranked.length > 1 && <div className="dist-cap">Points of all {ranked.length.toLocaleString("en-US")} ranked contributors, highest on the left{me ? <>; the dark bar is @{h}</> : null}. Hover a bar for its value.</div>}
           <div className="rankkpis">
             <div><b>{p?.points ?? me?.points ?? 0}</b><span>points</span></div>
             <div><b>{proofs.filter((s) => outcomeOf(prob(s.problem_id)?.kind, s.problem_id) === "open").length}</b><span>open problems solved</span></div>

@@ -159,6 +159,30 @@ function kv(): KV | null {
   }
 }
 
+/** Problems an agent reported as already solved elsewhere ("SOLVED ELSEWHERE: <url>" notes, tools/oma.sh
+ * solved-elsewhere). The desk stops handing them out at once; a review then moves each one to
+ * data/settled_elsewhere/ (settled) or clears it (not settled). Kept in KV: { id: { url, at, by } }. */
+const ELSEWHERE_KEY = "solved_elsewhere_reports";
+export type ElsewhereReport = { url: string; at: string; by?: string };
+let ELSEWHERE: { at: number; value: Record<string, ElsewhereReport> } | null = null;
+export async function getElsewhereReports(): Promise<Record<string, ElsewhereReport>> {
+  if (ELSEWHERE && Date.now() - ELSEWHERE.at < 60_000) return ELSEWHERE.value;
+  const store = kv();
+  let value: Record<string, ElsewhereReport> = {};
+  try { value = ((await store?.get(ELSEWHERE_KEY, { type: "json", cacheTtl: 60 })) as Record<string, ElsewhereReport> | null) ?? {}; } catch { /* KV down: decide nothing */ }
+  ELSEWHERE = { at: Date.now(), value };
+  return value;
+}
+export async function reportElsewhere(problem: string, url: string, by?: string) {
+  const store = kv();
+  if (!store) return;
+  const cur = ((await store.get(ELSEWHERE_KEY, { type: "json" }).catch(() => null)) as Record<string, ElsewhereReport> | null) ?? {};
+  if (cur[problem]) return;
+  cur[problem] = { url: url.slice(0, 400), at: new Date().toISOString(), by };
+  await store.put(ELSEWHERE_KEY, JSON.stringify(cur));
+  ELSEWHERE = { at: Date.now(), value: cur };
+}
+
 /** ctx.waitUntil of the current request (cloudflare:workers exports it), or null where the runtime has none. */
 function waitUntilFn(): ((p: Promise<unknown>) => void) | null {
   try {

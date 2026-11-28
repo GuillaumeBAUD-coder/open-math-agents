@@ -12,23 +12,20 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a165433.main := by
       d k = ((2 * k).factorial : ℚ) / ((k.factorial : ℚ) * 2 ^ k) := ⟨_, fun _ => rfl⟩
   have hds : ∀ k : ℕ, d (k + 1) = (2 * (k : ℚ) + 1) * d k := by
     intro k
-    rw [hd, hd, show 2 * (k + 1) = 2 * k + 1 + 1 by ring, Nat.factorial_succ (2 * k + 1),
-      Nat.factorial_succ (2 * k), Nat.factorial_succ k]
+    rw [hd, hd, show 2 * (k + 1) = 2 * k + 1 + 1 by ring]
+    simp only [Nat.factorial_succ]
     push_cast
     field
   have hext : ∀ n M : ℕ, n / 2 + 1 ≤ M →
       a n = ∑ k ∈ Finset.range M, ((n - k).choose k : ℚ) * d k := by
     intro n M hM
-    have e : a n = ∑ k ∈ Finset.range (n / 2 + 1), ((n - k).choose k : ℚ) * d k := by
-      unfold a
-      apply Finset.sum_congr rfl
-      intro k _
-      rw [hd, mul_div_assoc]
+    have e : a n = ∑ k ∈ Finset.range (n / 2 + 1), ((n - k).choose k : ℚ) * d k :=
+      Finset.sum_congr rfl fun k _ => by rw [hd, mul_div_assoc]
     rw [e]
     apply Finset.sum_subset (Finset.range_subset_range.mpr hM)
     intro k _ hk
-    rw [Finset.mem_range] at hk
-    rw [Nat.choose_eq_zero_of_lt (by omega : n - k < k), Nat.cast_zero, zero_mul]
+    simp at hk
+    simp [Nat.choose_eq_zero_of_lt (by omega : n - k < k)]
   obtain ⟨b, hb⟩ : ∃ b : ℕ → ℚ, ∀ n : ℕ,
       b n = ∑ k ∈ Finset.range (n + 1), (k : ℚ) * (((n - k).choose k : ℚ) * d k) :=
     ⟨_, fun _ => rfl⟩
@@ -42,7 +39,7 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a165433.main := by
           = ((n + 1 - (k + 1)).choose (k + 1) : ℚ) * d (k + 1) + ((n - k).choose k : ℚ) * d k
             + 2 * ((k : ℚ) * (((n - k).choose k : ℚ) * d k)) := by
       intro k hk
-      rw [Finset.mem_range] at hk
+      simp at hk
       rw [show n + 2 - (k + 1) = n - k + 1 by omega, show n + 1 - (k + 1) = n - k by omega,
         Nat.choose_succ_succ' (n - k) k, hds k]
       push_cast
@@ -61,7 +58,7 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a165433.main := by
       Finset.mul_sum, ← Finset.sum_sub_distrib, ← Finset.sum_sub_distrib, Finset.mul_sum]
     apply Finset.sum_congr rfl
     intro k hk
-    rw [Finset.mem_range] at hk
+    simp at hk
     rcases k with _ | j
     · simp
     rcases Nat.lt_or_ge j p with hj | hj
@@ -73,9 +70,7 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a165433.main := by
         exact_mod_cast Nat.add_one_mul_choose_eq N j
       push_cast
       linear_combination (-((N : ℚ) + 1) * d (j + 1)) * z1 - d (j + 1) * z2
-    · rw [show p + 1 - (j + 1) = 0 by omega, show p - (j + 1) = 0 by omega,
-        Nat.choose_eq_zero_of_lt (by omega : 0 < j + 1)]
-      simp
+    · simp [show p + 1 - (j + 1) = 0 by omega, show p - (j + 1) = 0 by omega]
   intro n hn
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 3 := ⟨n - 3, by omega⟩
   rw [show m + 3 - 1 = m + 2 by omega, show m + 3 - 2 = m + 1 by omega,

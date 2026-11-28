@@ -51,10 +51,32 @@ fi
 SUB="OMASubmission_$$.lean"
 # A problem that asks for a value: audit with the placeholder's value skipped (tools/oma_audit.lean).
 SKIP="$(python3 -I -c 'import json,sys;print(" ".join(json.loads(sys.argv[1]).get("skipAxiomsOf") or []))' "$LINT")"
+# Statement guard. `theorem OMA.solution : type_of% @X` elaborates with namespace OMA open, so a file that also
+# declared its own OMA.X (or, in a reduction, a lemma named X inside its namespace) would prove that instead of the
+# catalogue's statement and still pass the axiom audit. This line, appended after the file, re-states the expected
+# type with every name taken from the root namespace and checks the submitted theorem against it: if the file proved
+# anything else, the file does not compile. (Reported privately by Ryan of Sentria, 28 Nov 2026.)
+GUARD="$(python3 -I -c '
+import json, sys
+d = json.loads(sys.argv[1]); t = d.get("target") or ""; th = d.get("theorem") or ""; ty = d.get("type")
+if not t or not th or ty == "statement":
+    sys.exit()
+root = ("type_of% @_root_." + t[len("type_of% @"):]) if t.startswith("type_of% @") else ("_root_." + t)
+if ty == "reduction":
+    ns = th[: -len(".main")]
+    chain = "".join("_root_.%s.H%d → " % (ns, i) for i in range(1, len(d.get("hypotheses") or []) + 1))
+    print("example : %s%s := _root_.%s" % (chain, root, th))
+elif d.get("skipAxiomsOf"):
+    print("example : _root_.%s = _root_.OMA.answer → %s := _root_.%s" % (d["skipAxiomsOf"][0], root, th))
+elif th.endswith(".disproof"):
+    print("example : ¬ (%s) := _root_.%s" % (root, th))
+else:
+    print("example : %s := _root_.%s" % (root, th))
+' "$LINT")"
 if [ -n "$SKIP" ]; then
-  { cat "$ROOT/$FILE" 2>/dev/null || cat "$FILE"; printf '\n'; cat "$ROOT/tools/oma_audit.lean"; printf '\n#oma_axioms %s skipping %s\n' "$THM" "$SKIP"; } > "$SUB"
+  { cat "$ROOT/$FILE" 2>/dev/null || cat "$FILE"; printf '\n%s\n' "$GUARD"; cat "$ROOT/tools/oma_audit.lean"; printf '\n#oma_axioms %s skipping %s\n' "$THM" "$SKIP"; } > "$SUB"
 else
-  { cat "$ROOT/$FILE" 2>/dev/null || cat "$FILE"; printf '\n#print axioms %s\n' "$THM"; } > "$SUB"
+  { cat "$ROOT/$FILE" 2>/dev/null || cat "$FILE"; printf '\n%s\n#print axioms %s\n' "$GUARD" "$THM"; } > "$SUB"
 fi
 LOG="$(timeout 1800 lake env lean "$SUB" 2>&1)"; RC=$?
 rm -f "$SUB"

@@ -15,25 +15,53 @@ on:
     paths: [".github/workflows/batch-check.yml"]
 permissions:
   contents: read
-  actions: read   # the previous job's artifact: which pull requests already have a verdict
+  actions: read   # the census: the previous run's artifacts and check-proof's rejections
 concurrency:
   group: batch-check
   cancel-in-progress: false
 jobs:
-  check:
+  census:
+    # what the shards must not check again: heads this checker answered (every shard's artifact, whatever the shard
+    # count was) and heads check-proof rejected (tools/batch_census.sh)
     runs-on: ubuntu-latest
-    timeout-minutes: 165
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+          persist-credentials: false
+          sparse-checkout: tools
+      - name: Census
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          OUT: ${{ runner.temp }}/bcensus
+          MAX_SHARDS: "64"
+        run: bash tools/batch_census.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bcensus
+          path: ${{ runner.temp }}/bcensus/
+          retention-days: 7
+  check:
+    needs: census
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
-        shard: [0, 1, 2, 3, 4, 5, 6, 7]
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]
     env:
       ELAN_HOME: /mnt/oma/elan
       OMA_FC: /mnt/oma/fc
       BC: /mnt/oma/batch
       SHARD: ${{ matrix.shard }}
-      SHARDS: "8"
-      LANES: "3"
+      SHARDS: "64"
+      LANES: "2"
+      CHECK_MEM: "6G"
+      PUBLISH_EVERY: "180"   # each upload costs the merger one API call to read: 16 shards, one upload each 3 minutes at most
+      PUBLISH_WAIT: "240"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -71,34 +99,23 @@ jobs:
             /mnt/oma/fc/.lake
           key: lean-mnt-v1-${{ steps.fc.outputs.commit }}
           fail-on-cache-miss: true   # the prebuilt tree (warm-lean-cache.yml) or nothing: check-proof covers the gap
-      - name: Verdicts the previous job of this shard already gave
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: bcensus
+          path: /mnt/oma/census
+      - name: What is already answered
         run: |
-          # only an artifact of this workflow, run on main by a schedule, a dispatch or a push: an artifact of the same
-          # name uploaded by a pull request's run is ignored
-          # (no answer from the API: stop here rather than start afresh and check again what was already checked)
-          # A shard without an artifact yet (the shard count just grew) starts from the one that held its pull requests.
-          GOT=0
-          for NAME in "bv-$SHARD" "bv-$(( SHARD % 4 ))"; do
-            [ "$GOT" = 0 ] || break
-            A=$(gh api "repos/$REPO/actions/artifacts?name=$NAME&per_page=10" --jq '.artifacts[] | select(.expired | not) | [.id, .workflow_run.id] | @tsv') || { echo "cannot list artifacts"; exit 1; }
-            while IFS=$'\t' read -r AID RID; do
-              [ -n "$AID" ] || continue
-              OK=$(gh api "repos/$REPO/actions/runs/$RID" --jq 'select(.path == ".github/workflows/batch-check.yml" and .head_branch == "main" and (.event == "schedule" or .event == "workflow_dispatch" or .event == "push") and .repository.full_name == .head_repository.full_name) | .id' 2>/dev/null || true)
-              [ "$OK" = "$RID" ] || continue
-              mkdir -p /tmp/prev && gh api "repos/$REPO/actions/artifacts/$AID/zip" > /tmp/prev/a.zip && (cd /tmp/prev && unzip -o -q a.zip) || continue
-              cp /tmp/prev/done.tsv "$BC/done.tsv"; cp /tmp/prev/verdicts.jsonl "$BC/verdicts.jsonl"
-              [ -s /tmp/prev/since.txt ] && cp /tmp/prev/since.txt "$BC/since.txt"
-              echo "inherited $(wc -l < "$BC/done.tsv") verdicts of $NAME from run $RID"; GOT=1; break
-            done <<< "$A"
-          done
-          wc -l < "$BC/verdicts.jsonl" 2>/dev/null > "$BC/published.count" || echo 0 > "$BC/published.count"
+          cp /mnt/oma/census/done.tsv /mnt/oma/census/rej.tsv "$BC/"
+          # the recent verdicts are published again, each by one shard (they stay in reach of a merger that was away)
+          python3 -I -c 'import json,sys
+          for l in open(sys.argv[1], encoding="utf-8"):
+              if int(json.loads(l)["pr"]) % int(sys.argv[2]) == int(sys.argv[3]): sys.stdout.write(l)' /mnt/oma/census/verdicts.jsonl "$SHARDS" "$SHARD" > "$BC/verdicts.jsonl"
+          wc -l < "$BC/verdicts.jsonl" > "$BC/published.count"
+          echo "$(wc -l < "$BC/done.tsv") heads answered, $(wc -l < "$BC/rej.tsv") rejected by check-proof, $(wc -l < "$BC/verdicts.jsonl") verdicts to publish again"
       - name: Start the worker
         run: |
           export WS="$GITHUB_WORKSPACE"
-          export BATCH_DEADLINE=$(( $(date -u +%s) + 120 * 60 ))
+          export BATCH_DEADLINE=$(( $(date -u +%s) + 45 * 60 ))
           nohup setsid bash "$BC/batch_check.sh" worker > "$BC/worker.log" 2>&1 < /dev/null &
           echo "BV_STARTED=1" >> "$GITHUB_ENV"
           sleep 5; cat "$BC/worker.log"

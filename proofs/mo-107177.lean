@@ -4,6 +4,9 @@ import Mathlib.Probability.Independence.InfinitePi
 import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Topology.Instances.Nat
 
+/-! Probability infrastructure simplified using Mathlib; the original
+counterexample and strong-law argument are due to @Git-Tim1 (PR #11318). -/
+
 open MeasureTheory Filter ProbabilityTheory
 open scoped Topology ENNReal
 
@@ -28,97 +31,32 @@ private lemma measurableSet_of_mem_C {A : Set V} (hA : A ∈ C) : MeasurableSet 
 private lemma prob_eq_one_of_compl_eq_zero {Ω : Type*} [MeasurableSpace Ω]
     (P : Measure Ω) [IsProbabilityMeasure P] {E : Set Ω} (hE : MeasurableSet E)
     (hEc : P Eᶜ = 0) : P E = 1 := by
-  have h := measure_union (μ := P) disjoint_compl_right hE.compl
-  rw [Set.union_compl_self, measure_univ, hEc, add_zero] at h
-  exact h.symm
+  exact (prob_compl_eq_zero_iff hE).mp hEc
 
 private lemma prob_compl_eq_zero_of_eq_one {Ω : Type*} [MeasurableSpace Ω]
     (P : Measure Ω) [IsProbabilityMeasure P] {E : Set Ω} (hE : MeasurableSet E)
     (hE1 : P E = 1) : P Eᶜ = 0 := by
-  have h := measure_union (μ := P) disjoint_compl_right hE.compl
-  rw [Set.union_compl_self, measure_univ, hE1] at h
-  have h' : (1 : ℝ≥0∞) + 0 = 1 + P Eᶜ := by simpa using h
-  exact ((ENNReal.add_right_inj (by simp : (1 : ℝ≥0∞) ≠ ⊤)).mp h').symm
+  exact (prob_compl_eq_zero_iff hE).mpr hE1
 
 private lemma prob_inter_eq_one {Ω : Type*} [MeasurableSpace Ω]
     (P : Measure Ω) [IsProbabilityMeasure P] {E F : Set Ω}
     (hE : MeasurableSet E) (hF : MeasurableSet F) (hE1 : P E = 1) (hF1 : P F = 1) :
     P (E ∩ F) = 1 := by
-  refine prob_eq_one_of_compl_eq_zero P (hE.inter hF) ?_
-  rw [Set.compl_inter]
-  refine le_antisymm ?_ zero_le
-  calc
-    P (Eᶜ ∪ Fᶜ) ≤ P Eᶜ + P Fᶜ := measure_union_le _ _
-    _ = 0 + 0 := by
-      rw [prob_compl_eq_zero_of_eq_one P hE hE1, prob_compl_eq_zero_of_eq_one P hF hF1]
-    _ = 0 := add_zero 0
-
-private lemma measure_finset_eq_sum {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
-    (μ : Measure α) (F : Finset α) : μ (F : Set α) = ∑ a ∈ F, μ {a} := by
-  classical
-  induction F using Finset.induction_on with
-  | empty => simp
-  | insert a s ha ih =>
-    rw [Finset.coe_insert, Set.insert_eq,
-      measure_union (Set.disjoint_singleton_left.mpr (by simpa using ha))
-        s.finite_toSet.measurableSet,
-      ih, Finset.sum_insert ha]
+  exact (mem_ae_iff_prob_eq_one (hE.inter hF)).mp
+    (Filter.inter_mem ((mem_ae_iff_prob_eq_one hE).mpr hE1)
+      ((mem_ae_iff_prob_eq_one hF).mpr hF1))
 
 private lemma measureReal_finset_eq_sum {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
     (μ : Measure α) [IsFiniteMeasure μ] (F : Finset α) :
     μ.real (F : Set α) = ∑ a ∈ F, μ.real {a} := by
-  classical
-  induction F using Finset.induction_on with
-  | empty => simp
-  | insert a s ha ih =>
-    rw [Finset.coe_insert, Set.insert_eq,
-      measureReal_union (Set.disjoint_singleton_left.mpr (by simpa using ha))
-        s.finite_toSet.measurableSet,
-      ih, Finset.sum_insert ha]
+  exact (sum_measureReal_singleton (μ := μ) F).symm
 
 private lemma countable_atoms (μ : Measure V) [IsProbabilityMeasure μ] :
     {v : V | μ {v} ≠ 0}.Countable := by
-  have hEq : {v : V | μ {v} ≠ 0} = ⋃ m : ℕ, {v : V | (((m + 1 : ℕ) : ℝ≥0∞)⁻¹) ≤ μ {v}} := by
-    ext v
-    simp only [Set.mem_ofPred_eq, Set.mem_iUnion]
-    constructor
-    · intro hv
-      have hpos : 0 < μ {v} := pos_iff_ne_zero.mpr hv
-      by_cases htop : μ {v} = ⊤
-      · exact ⟨0, by simp [htop]⟩
-      · have hr : 0 < (μ {v}).toReal := ENNReal.toReal_pos hv htop
-        obtain ⟨m, hm⟩ := exists_nat_one_div_lt hr
-        refine ⟨m, ?_⟩
-        have h1 : ENNReal.ofReal (1 / ((m : ℝ) + 1)) ≤ ENNReal.ofReal (μ {v}).toReal :=
-          ENNReal.ofReal_le_ofReal hm.le
-        rw [ENNReal.ofReal_toReal htop] at h1
-        have h2 : (((m + 1 : ℕ) : ℝ≥0∞)⁻¹) = ENNReal.ofReal (1 / ((m : ℝ) + 1)) := by
-          rw [one_div, ENNReal.ofReal_inv_of_pos (by positivity), Nat.cast_add, Nat.cast_one,
-            ENNReal.ofReal_add (Nat.cast_nonneg m) zero_le_one, ENNReal.ofReal_natCast,
-            ENNReal.ofReal_one]
-        rwa [h2]
-    · rintro ⟨m, hm⟩ h0
-      rw [h0] at hm
-      have hpos : (0 : ℝ≥0∞) < (((m + 1 : ℕ) : ℝ≥0∞)⁻¹) := by
-        simp [ENNReal.inv_pos]
-      exact (lt_of_lt_of_le hpos hm).ne' rfl
-  rw [hEq]
-  refine Set.countable_iUnion fun m => Set.Finite.countable ?_
-  by_contra hinf
-  obtain ⟨F, hFsub, hFcard⟩ := (Set.not_finite.mp hinf).exists_subset_card_eq (m + 2)
-  have hsum : ((m + 2 : ℕ) : ℝ≥0∞) * (((m + 1 : ℕ) : ℝ≥0∞)⁻¹) ≤ μ (F : Set V) := by
-    rw [measure_finset_eq_sum]
-    calc
-      ((m + 2 : ℕ) : ℝ≥0∞) * (((m + 1 : ℕ) : ℝ≥0∞)⁻¹)
-          = ∑ _a ∈ F, (((m + 1 : ℕ) : ℝ≥0∞)⁻¹) := by
-            rw [Finset.sum_const, nsmul_eq_mul, hFcard]
-      _ ≤ ∑ a ∈ F, μ {a} := Finset.sum_le_sum fun a ha => hFsub ha
-  have hle1 : ((m + 2 : ℕ) : ℝ≥0∞) * (((m + 1 : ℕ) : ℝ≥0∞)⁻¹) ≤ 1 :=
-    hsum.trans ((measure_mono (Set.subset_univ _)).trans_eq measure_univ)
-  have hmul := mul_le_mul_left hle1 (((m + 1 : ℕ) : ℝ≥0∞))
-  rw [one_mul, mul_assoc, ENNReal.inv_mul_cancel (by simp) (by simp), mul_one] at hmul
-  have hnat : m + 2 ≤ m + 1 := by exact_mod_cast hmul
-  omega
+  simpa only [pos_iff_ne_zero] using
+    (Measure.countable_meas_pos_of_disjoint_iUnion (μ := μ)
+      (fun v : V => measurableSet_singleton v)
+      (fun _ _ h => Set.disjoint_singleton.mpr h))
 
 private lemma empirical_eq_sum_indicator {α : Type*} (x : ℕ → α) (A : Set α) (n : ℕ) :
     OMA.S_mo_107177.empirical x A n =
