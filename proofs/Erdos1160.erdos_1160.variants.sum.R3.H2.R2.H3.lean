@@ -27,95 +27,11 @@ over `ZMod 2` with fixed diagonal squares, then clearing denominators across the
 residue classes mod 3).
 -/
 
-/- Relating the canonical count of group isomorphism classes to finite
-multiplication tables modulo simultaneous relabeling of their entries. -/
-
-namespace Erdos1160.Tables
-
-open CategoryTheory
-
-/-- The group isomorphism classes counted by the upstream function. -/
-def orderClasses (n : ℕ) : Set (Quotient (isIsomorphicSetoid FiniteGrp.{0})) :=
-  Quotient.mk _ '' {G : FiniteGrp.{0} | Nat.card G = n}
-
-/-- A labeled multiplication table which is realized by a group law. -/
-def GroupTable (n : ℕ) :=
-  { t : Fin n → Fin n → Fin n // ∃ s : Group (Fin n), s.mul = t }
-
-instance {n : ℕ} : Finite (GroupTable n) := by
-  unfold GroupTable
-  infer_instance
-
-/-- Bundle a labeled table as a finite group. -/
-noncomputable abbrev model {n : ℕ} (t : GroupTable n) : FiniteGrp.{0} :=
-  @FiniteGrp.of (Fin n) t.property.choose inferInstance
-
-/-- Evaluate a product using the multiplication of the specified bundled group. -/
-def product (G : FiniteGrp) (a b : G) : G := a * b
-
-theorem model_mul {n : ℕ} (t : GroupTable n) (a b : Fin n) :
-    product (model t) a b = t.val a b :=
-  congrFun (congrFun t.property.choose_spec a) b
-
-/-- The isomorphism class of a labeled table. -/
-noncomputable def groupClass {n : ℕ} (t : GroupTable n) :
-    Quotient (isIsomorphicSetoid FiniteGrp.{0}) :=
-  Quotient.mk _ (model t)
-
-/-- A multiplication-preserving bijection gives an isomorphism in the category
-of finite groups. -/
-theorem iso_of_mul_equiv {G H : FiniteGrp} (e : G ≃ H)
-    (h : ∀ a b, e (product G a b) = product H (e a) (e b)) : Nonempty (G ≅ H) := by
-  let f : G ≃* H := { e with map_mul' := h }
-  exact ⟨InducedCategory.isoMk (F := FiniteGrp.toGrp) f.toGrpIso⟩
-
-/-- Every group of order n can be labeled with the elements of Fin n. -/
-theorem range_groupClass (n : ℕ) : Set.range (@groupClass n) = orderClasses n := by
-  ext c
-  constructor
-  · rintro ⟨t, rfl⟩
-    exact ⟨model t, Nat.card_fin n, rfl⟩
-  · rintro ⟨G, hG, rfl⟩
-    let e : Fin n ≃ G := ((Nat.equivFinOfCardPos (α := G) Nat.card_pos.ne').trans
-      (finCongr hG)).symm
-    let law : Group (Fin n) := e.group
-    let t : GroupTable n := ⟨law.mul, law, rfl⟩
-    refine ⟨t, Quotient.sound ?_⟩
-    apply iso_of_mul_equiv e
-    intro a b
-    exact (congrArg (fun z => e z) (model_mul t a b)).trans (e.apply_symm_apply (e a * e b))
-
-theorem orderClasses_finite (n : ℕ) : (orderClasses n).Finite := by
-  rw [← range_groupClass]
-  exact Set.finite_range _
-
-end Erdos1160.Tables
-
-/- Counting abstract groups using marked presentations. A finite family may
-contain several isomorphic groups. If an isomorphism preserving all marks
-determines the parameter, each class has at most as many parameters as
-there are ordered tuples of marks in one representative. -/
 
 namespace Erdos1160.PresentationCount
 
 open CategoryTheory
 
-/-- Count by the fibers of a map between finite types. -/
-theorem card_le_of_fiber_bound {A B : Type*} [Finite A] [Finite B] (f : A → B)
-    (M : ℕ) (h : ∀ b : B, Nat.card {a : A // f a = b} ≤ M) :
-    Nat.card A ≤ Nat.card B * M := by
-  classical
-  let : Fintype B := Fintype.ofFinite B
-  calc
-    Nat.card A = ∑ b : B, Nat.card {a : A // f a = b} := by
-      rw [← Nat.card_sigma]
-      exact (Nat.card_congr (Equiv.sigmaFiberEquiv f)).symm
-    _ ≤ ∑ _b : B, M := Finset.sum_le_sum (fun b _ => h b)
-    _ = Nat.card B * M := by simp [Nat.card_eq_fintype_card]
-
-/-- If comparisons with one fixed representative have finite codes, and a
-code determines the source parameter, the number of isomorphic parameters
-in each class is at most the size of the code space. -/
 theorem card_le_of_relative_codes {A C : Type*} [Finite A] [Finite C] {n : ℕ}
     (X : A → FiniteGrp.{0}) (hN : ∀ a, Nat.card (X a) = n)
     (code : ∀ a b : A, (X a ≃* X b) → C)
@@ -123,25 +39,51 @@ theorem card_le_of_relative_codes {A C : Type*} [Finite A] [Finite C] {n : ℕ}
       code a r e = code b r f → a = b) :
     Nat.card A ≤ Erdos1160.g n * Nat.card C := by
   classical
-  let classOf (a : A) : Tables.orderClasses n := ⟨Quotient.mk _ (X a), X a, hN a, rfl⟩
-  let : Finite (Tables.orderClasses n) := (Tables.orderClasses_finite n).to_subtype
-  apply card_le_of_fiber_bound classOf (Nat.card C)
-  intro c
-  let F := {a : A // classOf a = c}
-  by_cases hn : Nonempty F
-  · let r := Classical.choice hn
-    have sameClass (a : F) : Quotient.mk (isIsomorphicSetoid FiniteGrp.{0}) (X a.val)
-        = Quotient.mk _ (X r.val) :=
-      congrArg Subtype.val (a.property.trans r.property.symm)
-    let transport (a : F) : X a.val ≃* X r.val :=
-      ((inducedFunctor FiniteGrp.toGrp).mapIso
-        (Classical.choice (Quotient.exact (sameClass a)))).groupIsoToMulEquiv
-    let encode (a : F) : C := code a.val r.val (transport a)
-    exact Nat.card_le_card_of_injective encode (fun {a b} h =>
-      Subtype.ext (sep a.val b.val r.val (transport a) (transport b) h))
-  · have empty : IsEmpty F := not_nonempty_iff.mp hn
-    change Nat.card F ≤ Nat.card C
-    simp
+  let S := Quotient.mk (isIsomorphicSetoid FiniteGrp.{0}) ''
+    {G : FiniteGrp.{0} | Nat.card G = n}
+  let G (c : S) : FiniteGrp.{0} := c.property.choose
+  have rep (c : S) : Nat.card (G c) = n ∧ Quotient.mk _ (G c) = c.val :=
+    c.property.choose_spec
+  -- A labeled multiplication table determines the isomorphism class.
+  let label (c : S) : G c ≃ Fin n := (Finite.equivFin _).trans (finCongr (rep c).1)
+  let table (c : S) (x y : Fin n) := label c ((label c).symm x * (label c).symm y)
+  have table_inj : Function.Injective table := by
+    intro c d h
+    let e : G c ≃* G d :=
+      { (label c).trans (label d).symm with
+        map_mul' := fun x y => by
+          change (label d).symm (label c (x * y)) =
+            (label d).symm (label c x) * (label d).symm (label c y)
+          apply (label d).injective
+          simpa [table] using congrFun (congrFun h (label c x)) (label c y) }
+    apply Subtype.ext
+    rw [← (rep c).2, ← (rep d).2]
+    exact Quotient.sound ⟨InducedCategory.isoMk (F := FiniteGrp.toGrp) e.toGrpIso⟩
+  let : Finite S := Finite.of_injective table table_inj
+  let cls (a : A) : S := ⟨Quotient.mk _ (X a), X a, hN a, rfl⟩
+  -- Store the class and the code of a comparison with a representative in the family.
+  let representative (c : Set.range cls) : A := c.property.choose
+  let mark (c : Set.range cls) (a : A) (h : cls a = c.val) : C :=
+    code a (representative c) (((inducedFunctor FiniteGrp.toGrp).mapIso
+      (Classical.choice (Quotient.exact (congrArg Subtype.val
+        (h.trans c.property.choose_spec.symm))))).groupIsoToMulEquiv)
+  let encode (a : A) : S × C := (cls a, mark ⟨cls a, a, rfl⟩ a rfl)
+  have injective : Function.Injective encode := by
+    intro a b h
+    have hc : cls a = cls b := congrArg Prod.fst h
+    have hm := congrArg Prod.snd h
+    change mark ⟨cls a, a, rfl⟩ a rfl = mark ⟨cls b, b, rfl⟩ b rfl at hm
+    have hr : (⟨cls a, a, rfl⟩ : Set.range cls) = ⟨cls b, b, rfl⟩ := Subtype.ext hc
+    have hm' : mark ⟨cls a, a, rfl⟩ a rfl = mark ⟨cls a, a, rfl⟩ b hc.symm := by
+      have step (c : Set.range cls) (he : (⟨cls a, a, rfl⟩ : Set.range cls) = c)
+          (hb : cls b = c.val) : mark ⟨cls a, a, rfl⟩ b hc.symm = mark c b hb := by
+        subst c
+        rfl
+      exact hm.trans (step _ hr rfl).symm
+    exact sep _ _ _ _ _ hm'
+  change Nat.card A ≤ S.ncard * Nat.card C
+  simpa only [Nat.card_prod, Nat.card_coe_set_eq] using
+    Nat.card_le_card_of_injective encode injective
 
 end Erdos1160.PresentationCount
 
