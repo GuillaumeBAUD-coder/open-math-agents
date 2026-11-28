@@ -23108,6 +23108,47 @@
     "https://www.openproblemgarden.org/op/signing_a_graph_to_have_small_magnitude_eigenvalues"
    ],
    "reason": "The disproof exploits a formalization slip, as its own header says. The statement allows d=1, where the bound 2*sqrt(d-1)=0 fails for K_2 (eigenvalues +-1). The Bilu-Linial conjecture for d>=2 is untouched and remains open (Marcus-Spielman-Srivastava cover only bipartite graphs). The statement should require 2 <= d. This must not count as a disproof."
+  },
+  "wp-property-b": {
+   "date": "2026-11-28",
+   "pr": 34960,
+   "evidence": [
+    "https://en.wikipedia.org/wiki/Property_B"
+   ],
+   "reason": "The open question (the exact value of m(n) for all n) is not formalized. main only says that m(n) := sInf of the achievable sizes is attained and that smaller n-uniform families have Property B. That is the well-ordering of N once one family without Property B exists (all n-subsets of a 2n-set). It follows from the definition and says nothing about the unknown values."
+  },
+  "oeis-a282800": {
+   "date": "2026-11-28",
+   "pr": 34849,
+   "evidence": [
+    "https://oeis.org/A282800"
+   ],
+   "reason": "A disproof that exploits a printed range slip. The g.f. forces a(0..5)=1,1,111,100,11111,10100 (the true data), and the recurrence a(n)=101a(n-2)-100a(n-4) 'for n>3' fails only at n=5 (10000 vs 10100). It holds from n=6 on (my simulation through n=60), and Barker's closed forms for n>1 are true but left out of the statement. It refutes an off-by-two in the range, not the conjecture."
+  },
+  "oeis-a005810": {
+   "date": "2026-11-28",
+   "pr": 34895,
+   "evidence": [
+    "https://oeis.org/A005810"
+   ],
+   "reason": "A degenerate loophole. The disproof uses only n=1: binomial(4,1)=4 and everything is 0 mod 1^3, but 1 is not prime. Detlefs' conjecture (binomial(4n,n) = 4 mod n^3 iff n prime) is meant for n >= 2, and the composite direction is untouched. The statement should have had n >= 2."
+  },
+  "oeis-a238938": {
+   "date": "2026-11-28",
+   "pr": 34813,
+   "evidence": [
+    "https://oeis.org/A238938",
+    "https://oeis.org/A007377"
+   ],
+   "reason": "A placeholder or truncation slip. The statement says the zeroless powers of 2 are exactly the 31 terms in the entry's DATA field, but the data is only truncated (2^72, 2^76, 2^77, 2^81, 2^86 are zeroless, A007377; I checked up to 2^399). The disproof just exhibits 2^72. The real conjecture (finitely many, ending at 2^86) is the famous open problem and is untouched."
+  },
+  "mo-445819": {
+   "date": "2026-11-28",
+   "pr": 34881,
+   "evidence": [
+    "https://mathoverflow.net/questions/445819"
+   ],
+   "reason": "A degenerate loophole. The disproof takes n = N = 0: RP^0 -> S^0 is a constant map, and there is no unit tangent vector v orthogonal to x in R^1, so the existential claim fails vacuously. Petrunin's question (does every embedding RP^n -> S^N have normal curvature >= sqrt((n-1)/(n+1)) somewhere) is meaningful only for n >= 1 (really n >= 2), and that case is untouched."
   }
  },
  "known": {
@@ -42688,6 +42729,70 @@
     "https://oeis.org/A187162"
    ],
    "reason": "Second review: The parent table records the closed form as proved (Empirical tag removed in 2022), and Barker's g.f./recurrence is just that closed form rewritten. Known, and also very easy."
+  },
+  "mo-471674": {
+   "date": "2026-11-28",
+   "pr": 34936,
+   "evidence": [
+    "https://mathoverflow.net/questions/471674",
+    "https://doi.org/10.1016/0021-9045(81)90092-7",
+    "https://doi.org/10.1017/S000497270002863X"
+   ],
+   "reason": "The statement bundles classical facts that its own header cites. Some/every closest point bound; C=1 iff Birkhoff orthogonality is symmetric (the C=1 bound is Joly's rectangular constant equal to 1, Desbiens 1990; symmetric orthogonality forces an inner product in dim >= 3 by James). C=2 always; C<2 impossible iff the space contains an isometric l1-square, which is M. A. Smith, J. Approx. Theory 31 (1981) 224-229 (bound < 2 iff uniformly non-square). The MO question itself has no answers."
+  },
+  "oeis-a037096": {
+   "date": "2026-11-28",
+   "pr": 34822,
+   "evidence": [
+    "https://github.com/thatnealpatel/proofs/blob/main/Proofs/NumberComplexity/A037097SumBitFloor.lean",
+    "https://github.com/atuy1219/math/blob/main/Proofs/A037096.lean",
+    "https://oeis.org/A037096"
+   ],
+   "reason": "thatnealpatel/proofs (A037097SumBitFloor.lean, in our clone dated 2026-10-25, before the site PR on 2026-11-28) proves Karttunen's corrected A037097 conjecture and 'its A037096 companion'. It uses the same factorization P_n = (x+1)^(h-1)((x+1)Q+x^h) and gives the exact exponent 3*2^(n-2)-1 for A037096. atuy1219/math also has a Lean A037096 file on this exact multiplicity. The site statement is that divisibility plus the factorization."
+  },
+  "oeis-a064415": {
+   "date": "2026-11-28",
+   "pr": 34815,
+   "evidence": [
+    "https://oeis.org/A064415",
+    "https://portal.mardi4nfdi.de/wiki/Item:Q5838460",
+    "http://math.dartmouth.edu/~carlp/iterate.pdf"
+   ],
+   "reason": "The statement collects the entry's formula lines (complete additivity, a(p)=1+a((p-1)/2), a(2^k)=a(3^k)=k). This is Shapiro's classical theorem on the totient class function (Amer. Math. Monthly 50 (1943) 18-30), with iter(n)-[n odd] normalized to be completely additive. The entry also cites Erdős-Granville-Pomerance-Spiro for it. Correct, but settled long ago."
+  },
+  "oeis-a383423": {
+   "date": "2026-11-28",
+   "pr": 34806,
+   "evidence": [
+    "https://arxiv.org/abs/2610.04842",
+    "https://oeis.org/A383423"
+   ],
+   "reason": "Kimberling's gap-set conjecture {1,3,4,5,7} for positions where both the Fibonacci and Lucas words are 0 is proved in A. Ashburn, arXiv:2610.04842 (Oct 2026), which is linked from the entry and lists A383423 -> {1,3,4,5,7} in its table. The Lean formalization is faithful, but the result was already published."
+  },
+  "arxiv-2412.01494": {
+   "date": "2026-11-28",
+   "pr": 34904,
+   "evidence": [
+    "https://arxiv.org/abs/2412.01494"
+   ],
+   "reason": "The source paper itself (Kummer and Simonis, 'Nonuniqueness of lattice Boltzmann schemes derived from finite difference methods', 2024) gives counterexamples to the uniqueness conjecture. The site disproof uses a doubly stochastic C and its transpose; that works for any such C because charpoly(D C) = charpoly(D C^T). It is a degenerate but valid instance of a result the paper already published."
+  },
+  "arxiv-2307.15996": {
+   "date": "2026-11-28",
+   "pr": 34900,
+   "evidence": [
+    "https://arxiv.org/abs/2307.15996"
+   ],
+   "reason": "The statement is the ReCom irreducibility meta-conjecture, which its own docstring says is 'refuted by locked polyomino tilings in arXiv:2307.15996'. Tucker-Foltz's paper constructs locked t-omino tilings for t >= 3, and these are isolated ReCom states. The Lean disproof certifies a locked tromino tiling of the 4 X 6 grid, which is the published counterexample type."
+  },
+  "Erdos740.erdos_740": {
+   "date": "2026-11-28",
+   "pr": 34891,
+   "evidence": [
+    "https://www.erdosproblems.com/forum/thread/740/proof-claims",
+    "https://www.erdosproblems.com/740"
+   ],
+   "reason": "The proof header credits the erdosproblems forum proof claim for 740. Johan Land's claim (2026-09-06) is exactly this construction: the comparability graph of the tree of injective countable sequences with coinfinite range (after Bowler-Pitz) has chromatic number aleph_1, while every triangle-free subgraph is countably colorable. The Lean text formalizes that claim, and the refutation of the FC statement (r=3) is faithful to the unrestricted-cardinal question."
   }
  },
  "reviewed": "2026-11-28"
