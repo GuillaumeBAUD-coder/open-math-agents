@@ -1,13 +1,13 @@
 import Mathlib
 
 /-!
-# A126236: Maximum length of a codeword in Huffman encoding of n symbols, where the k-th symbol has frequency k.
+# A126235: Minimum length of a codeword in Huffman encoding of n symbols, where the k-th symbol has frequency k.
 
-Source: https://oeis.org/a126236
+Source: https://oeis.org/a126235
 Credit: @w601sxs
 
-OEIS a126236 (offset 2): a(n) is the maximum length of a codeword in a Huffman encoding of n symbols, where the k-th
-symbol has frequency k. Conjecture (OEIS, formula section): a(n) = floor(log_2(n)) + floor(log_2(2n/3)).
+OEIS a126235 (offset 2): a(n) is the minimum length of a codeword in a Huffman encoding of n symbols, where the k-th
+symbol has frequency k. Conjecture (OEIS, formula section): a(n) = A099396(n+1) = floor(log_2(2(n+1)/3)).
 
 Conventions, following the source and Wikipedia (Huffman coding):
 - Huffman's algorithm keeps a forest of weighted binary trees, starting from one leaf per symbol,
@@ -24,7 +24,7 @@ Conventions, following the source and Wikipedia (Huffman coding):
   are those of the source, taken over the reals.
 -/
 
-namespace OMA.S_oeis_a126236
+namespace OMA.S_oeis_a126235
 
 /-- A binary code tree whose leaves carry symbols (here: natural numbers). -/
 inductive CodeTree
@@ -72,7 +72,7 @@ theorem main :
     ∀ n : ℕ, 2 ≤ n →
       (∃ T : CodeTree, IsHuffmanTree n T) ∧
       ∀ T : CodeTree, IsHuffmanTree n T →
-        ((T.maxCodewordLength : ℕ) : ℤ) = ⌊Real.logb 2 n⌋ + ⌊Real.logb 2 (2 * n / 3)⌋ := by
+        ((T.minCodewordLength : ℕ) : ℤ) = ⌊Real.logb 2 (2 * (n + 1) / 3)⌋ := by
   sorry
 
-end OMA.S_oeis_a126236
+end OMA.S_oeis_a126235
