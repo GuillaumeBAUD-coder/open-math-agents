@@ -76,9 +76,7 @@ theorem OMA.disproof : ¬ (type_of% @OMA.S_mo_450451.main) := by
       apply lintegral_mono
       intro x
       by_cases hx : x ∈ A
-      · calc
-          _ ≤ (f x : ℝ≥0∞) * 1 := by gcongr <;> exact (hbounds x hx).2
-          _ = _ := mul_one _
+      · simpa only [mul_one] using mul_le_mul_right (hbounds x hx).2 (f x : ℝ≥0∞)
       · simp [f, hx]
     _ = 1 := hnorm
   have hl : (2 : ℝ≥0∞)⁻¹ ≤ value := calc
@@ -88,7 +86,7 @@ theorem OMA.disproof : ¬ (type_of% @OMA.S_mo_450451.main) := by
       apply lintegral_mono
       intro x
       by_cases hx : x ∈ A
-      · gcongr <;> exact (hbounds x hx).1
+      · exact mul_le_mul_right (hbounds x hx).1 (f x : ℝ≥0∞)
       · simp [f, hx]
   have hrange : (2 : ℝ)⁻¹ ≤ value.toReal := by
     simpa using ENNReal.toReal_mono (ne_top_of_le_ne_top (by simp) hu) hl
