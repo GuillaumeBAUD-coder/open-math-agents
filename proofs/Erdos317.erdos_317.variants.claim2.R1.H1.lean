@@ -51,3 +51,4 @@ theorem OMA.solution : OMA.R_Erdos317_erdos_317_variants_claim2_R1.H1 := by
       rw [hins, lcm_insert, ← ih (by omega)]
       exact Nat.dvd_antisymm (lcm_dvd hdvd dvd_rfl) (dvd_lcm_right _ _)
   exact (step (Nat.find hex - 1) (by omega) (by omega)).symm
+-- retrigger: counted length unchanged at 1827 vs main 2246.
