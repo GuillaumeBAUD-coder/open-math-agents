@@ -4,7 +4,7 @@ import Mathlib
 # OEIS A195986: the 2-adic valuation of 5^n - 3^n
 
 Source: https://oeis.org/A195986
-Credit: @SudharsanAnimations
+Credit: Sudharsan Rajendiran
 
 `A195986(n)` is the exponent of the largest power of `2` dividing `5^n - 3^n`, and `A090740(n)` is
 the exponent of `2` in `3^n - 1`. The entry conjectures that `a(n) = 1` if `A090740(n) = 1`, and
