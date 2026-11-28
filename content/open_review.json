@@ -22821,6 +22821,46 @@
     "https://mathoverflow.net/questions/426045"
    ],
    "reason": "The question asks, vaguely, for 'non-trivial conditions' on K and Y ensuring K_f inside Y. The formalization recasts it as a uniform guarantee over all admissible f and shows the asker's own sufficient condition (Y contains the open r-tube of K) is also necessary. Necessity uses the single test function max(d_K - delta, 0), so the result is elementary. It also drops compactness of X. This reinterpretation answers no non-trivial condition and largely restates the question's sufficient condition."
+  },
+  "mo-353710": {
+   "date": "2026-11-28",
+   "pr": 29717,
+   "evidence": [
+    "https://mathoverflow.net/questions/353710"
+   ],
+   "reason": "The question asks for an explicit formula for the sliced Bures-Wasserstein quantity S(A,B)^2, or failing that a non-trivial lower bound. It has no answers; a comment says the quadratic terms are trivial and crude bounds are easy. The formal statement fixes a self-chosen bound, ((tr C)^2+2 tr C^2) <= d(d+2)(sqrt||A||+sqrt||B||)^2 S^2. That bound is two lines: the fourth-moment formula plus |sqrt q_A - sqrt q_B| (sqrt q_A + sqrt q_B) = |q_C| and the operator-norm bound. No closed form is given. This is a weak, author-chosen version of an open-ended question, so it does not settle the question. The statement credit (@connoranderson) differs from the PR author (FrancoisCharroin)."
+  },
+  "oeis-a167440": {
+   "date": "2026-11-28",
+   "pr": 20207,
+   "evidence": [
+    "https://oeis.org/A167440"
+   ],
+   "reason": "Faithful to the Mathematica program: a(n)=5*GegenbauerC[5,2^(n-1)]=2*T_5(2^(n-1)), with GegenbauerC[n,x]=(2/n)T_n(x). But T_5(x)=16x^5-20x^3+5x, so a(n)=2^n(16^n-5*4^n+5) is a direct expansion of the definition. The recurrence and g.f. follow mechanically from the closed form. The statement is trivial from its definition and has no open content."
+  },
+  "mse-2390542": {
+   "date": "2026-11-28",
+   "pr": 17129,
+   "evidence": [
+    "https://math.stackexchange.com/questions/2390542"
+   ],
+   "reason": "The disproof uses only the degenerate prime 2 = 1^2+1^2. Then s+t=2 and u+v=4, and none of 16, 10 or 8 is prime. The asker's conjecture is clearly about odd sums a+b (tested for odd n=3..49,999, motivated by 'every odd number is a+b with a^2+b^2 prime'), and the only answer reformulates it for odd n>1. The formal statement lets the even prime 2 in, so the disproof exploits a range slip and does not refute the intended conjecture."
+  },
+  "oeis-a114278": {
+   "date": "2026-11-28",
+   "pr": 35724,
+   "evidence": [
+    "https://oeis.org/A114278"
+   ],
+   "reason": "Trivial from the definition. The triangle is unit lower triangular and its column 0 is all ones (entry(n,0)=1). So T*e_0 = 1, hence T_n^{-1} 1 = e_0 for every leading block, i.e. the inverse row sums are 0^n. The 'conjecture' is a one-line consequence of the first column."
+  },
+  "opg-signing-a-graph-to-have-small-magnitude-eigenvalues": {
+   "date": "2026-11-28",
+   "pr": 35715,
+   "evidence": [
+    "https://www.openproblemgarden.org/op/signing_a_graph_to_have_small_magnitude_eigenvalues"
+   ],
+   "reason": "The disproof exploits a formalization slip, as its own header says. The statement allows d=1, where the bound 2*sqrt(d-1)=0 fails for K_2 (eigenvalues +-1). The Bilu-Linial conjecture for d>=2 is untouched and remains open (Marcus-Spielman-Srivastava cover only bipartite graphs). The statement should require 2 <= d. This must not count as a disproof."
   }
  },
  "known": {
@@ -42207,6 +42247,158 @@
     "https://mathoverflow.net/questions/264107"
    ],
    "reason": "Faithful. The identity mu(a) = Sum_{I: meet of coatoms a_i = a} (-1)^|I| is Rota's Crosscut Theorem applied to [a,1] with its coatoms. Comments on the question point this out and cite Stanley, EC1 2nd ed., Corollary 3.9.4."
+  },
+  "oeis-a155543": {
+   "date": "2026-11-28",
+   "pr": 29719,
+   "evidence": [
+    "https://oeis.org/A155543",
+    "https://oeis.org/A090129"
+   ],
+   "reason": "Faithful: a(n)=2*A081294(n) is 2, 4, 16, 64, ..., and A090129(m) is the order of 3 mod 2^m. The companion entry A090129 already states and proves (W. Lang 2012, with a cited proof) that a(m)=2^(m-2) for m>=3, and a(2)=2. So A090129(2n+2)=4^n=a(n) for n>=1 and a(0)=2 follows at once. The site proof is the standard lifting-the-exponent argument."
+  },
+  "oeis-a269912": {
+   "date": "2026-11-28",
+   "pr": 29713,
+   "evidence": [
+    "https://oeis.org/A269912",
+    "https://oeis.org/A269910",
+    "https://github.com/lefttosolve2/open-math-agents/pull/15001",
+    "https://doi.org/10.5281/zenodo.24384895"
+   ],
+   "reason": "Faithful: partial sums of the 2D Rule 3 von Neumann ON count in the box [-k,k]^2, as in Price's program. All five Barker formulas follow by summation from the all-stage closed form of the count A269910. That closed form was proved on this site at 07:35Z (PR 15001, @jleguina), before this solve at 10:19Z by a different author. Cohen covers Rule 3 only at stages 2^n-1."
+  },
+  "mse-4439933": {
+   "date": "2026-11-28",
+   "pr": 29696,
+   "evidence": [
+    "https://math.stackexchange.com/questions/4439933"
+   ],
+   "reason": "The statement solves (A g)' = B g' for one extra factor g given the other n functions: g = C exp(int A'/(B-A)) on intervals where B != A. A question comment already says that the same steps as in the two-function case give a formula for f_n in terms of the other n-1 functions. That is exactly this statement. It is a first-order linear ODE, so the result is routine and was stated in the source thread. The formalization is faithful to that reading."
+  },
+  "oeis-a071685": {
+   "date": "2026-11-28",
+   "pr": 29699,
+   "evidence": [
+    "https://oeis.org/A071685",
+    "https://oeis.org/A031877",
+    "https://arxiv.org/abs/1307.0453"
+   ],
+   "reason": "Faithful. The entry itself says that the terms are the union of A008919 and A031877, with quotient 4 or 9. A031877 records Hoey's 1992 proof, cited again by Sloane in '2178 And All That' (Fib. Quart. 2014), that every palintiple has the form 87...12 or 98...01, with reversals 21...78 and 10...89. Dale's residues 12, 1, 78 and 89 mod 100 follow at once from this."
+  },
+  "oeis-a208548": {
+   "date": "2026-11-28",
+   "pr": 29698,
+   "evidence": [
+    "https://oeis.org/A208548",
+    "https://doi.org/10.3792/pja/1195570997"
+   ],
+   "reason": "Faithful: a(n) > 0 is equivalent to 3*prime(n+1) <= 4*prime(n)+5. This is an immediate corollary of Nagura's 1952 theorem that (x, 6x/5] contains a prime for x >= 25, plus a finite check of small primes. Weaker classical results of the 'prime in (3n,4n)' type also suffice. The site proof re-derives a Chebyshev/Nagura-type psi bound in Lean, so it gives a new formal proof of a classical consequence."
+  },
+  "oeis-a222835": {
+   "date": "2026-11-28",
+   "pr": 29685,
+   "evidence": [
+    "https://oeis.org/A222835",
+    "https://oeis.org/A222838",
+    "https://isitsolved.com/journal"
+   ],
+   "reason": "Faithful: n X 5 arrays over 0..3 with values introduced in row-major order and no equal pair at taxicab distance 2. The data are checked for n=1..10. isitsolved paper iis:2611.00284, filed 2026-11-28 09:48 UTC, already proves Barker's g.f. for this column by an exact transfer matrix, and the closed form follows from it. The site proof was committed at 12:40 UTC, later than that paper."
+  },
+  "oeis-a343917": {
+   "date": "2026-11-28",
+   "pr": 29686,
+   "evidence": [
+    "https://oeis.org/A343917",
+    "https://mathoverflow.net/questions/391894",
+    "https://oeis.org/A343913",
+    "https://github.com/lefttosolve2/open-math-agents/pull/20136"
+   ],
+   "reason": "Faithful: infinitely many m with 2m^2-16=x^4+y^4 and |x-y|>2 (Sun, MO 391894 Question 2). Scaling any solution of Question 1 by 2 gives one: from 2m^2-1=x^4+y^4 with |x-y|>1 we get 2(4m)^2-16=(2x)^4+(2y)^4 with |2x-2y|>=4. The proof header says so itself. Question 1 (A343913) was solved on this site at 04:40Z (PR 20136, @luciusacarr), before this 12:40Z solve. So this follows at once from an earlier site solve. The site proof gives a separate Pell-type family with odd roots."
+  },
+  "arxiv-2604.05395": {
+   "date": "2026-11-28",
+   "pr": 29677,
+   "evidence": [
+    "https://arxiv.org/abs/2604.05395"
+   ],
+   "reason": "The source paper itself settles the question. Its abstract reads 'The conjecture that every modular lattice is integral is disproved', and the statement docstring says 'disproved in arXiv:2604.05395'. The site disproof (the Fano-plane lattice PG(2,2) is not integral over any field) formalizes a counterexample to a conjecture that the source already refutes. It is a formalization of a known result, not a new solve."
+  },
+  "mo-223937": {
+   "date": "2026-11-28",
+   "pr": 29679,
+   "evidence": [
+    "https://mathoverflow.net/questions/223937",
+    "https://optimization-online.org/2006/10/1502/",
+    "https://doi.org/10.1007/s10107-008-0223-z"
+   ],
+   "reason": "The question (no answers) asks for a characterization of conv{P X P^T}, similar to majorization. The formal statement is the completely positive lifting: Y is in the hull iff Y = project(X,M) for a CP matrix M of order n^2+1 with linear 'defect' and complementarity constraints. This is Burer's 2009 copositive representation of binary QPs (linear equalities become squared-defect constraints) applied to the assignment polytope, i.e. the Povh-Rendl CP formulation of QAP that the docstring itself cites. So the characterization is a known theorem, and the CP cone gives no tractable 'majorization-like' answer."
+  },
+  "oeis-a273780": {
+   "date": "2026-11-28",
+   "pr": 27965,
+   "evidence": [
+    "https://oeis.org/A273780",
+    "https://oeis.org/A273781"
+   ],
+   "reason": "Faithful: ON count of the 2D Rule 929 CA in [-n,n]^2, with the background evolving (odd code). The partial-sums entry A273781 was solved on this site at 13:48Z, two hours before this 15:39Z solve. Its closed form (n-1)(4n^2+16n+27)/3 for n>=3, differenced, gives a(n)=(2n+1)^2 for n>=4 at once, and the recurrence and g.f. follow. Same author, but the earlier solve already settled this."
+  },
+  "oeis-a321790": {
+   "date": "2026-11-28",
+   "pr": 35360,
+   "evidence": [
+    "https://oeis.org/A321790",
+    "https://github.com/thatnealpatel/proofs/blob/main/Proofs/NumberComplexity/A321790BaseFermatPseudoprime.lean"
+   ],
+   "reason": "Faithful: for semiprime base-2 pseudoprimes k=pq (p<=q, Wieferich squares included), the least non-liar base a>2 is < lpf(k). thatnealpatel/proofs proved exactly this, sorry-free, on 2026-10-21. It uses the same two cases as the site proof: roots of X^(p-1)-1 in Z/q for p<q, and (p-1)^(p^2-1) = 1+p mod p^2 for p=q. The site proof (2026-11-28) is later."
+  },
+  "mo-453358": {
+   "date": "2026-11-28",
+   "pr": 35717,
+   "evidence": [
+    "https://mathoverflow.net/questions/453358",
+    "https://mathoverflow.net/a/507784",
+    "https://mathoverflow.net/a/507787"
+   ],
+   "reason": "Faithful to both claims (open balls; a cover by M half-balls gives packing constant M^2, and packing constant N gives at most N^k points in a 2^-k r-separated set). The thread has two answers from Feb 2026 (507784, 507787) that prove exactly these two claims. Standard textbook facts on doubling spaces."
+  },
+  "oeis-a102091": {
+   "date": "2026-11-28",
+   "pr": 35653,
+   "evidence": [
+    "https://oeis.org/A102091",
+    "https://github.com/thatnealpatel/proofs/blob/main/Proofs/NumberComplexity/A102091Refutation.lean"
+   ],
+   "reason": "Faithful to Lu's iff for n>6. The disproof is the term a(3)=108: the centered 108-gonal number 1+108*3 = 325 is divisible by 5 (5 = 5 mod 12). This is a genuine counterexample, not an index slip, but thatnealpatel/proofs published the same refutation (same term 108, same number 325) on 2026-10-21. The site disproof (2026-11-28) is later."
+  },
+  "oeis-a004485": {
+   "date": "2026-11-28",
+   "pr": 35677,
+   "evidence": [
+    "https://oeis.org/A004485",
+    "https://oeis.org/A046874",
+    "https://oeis.org/A046875",
+    "https://doi.org/10.1006/aama.1998.0632"
+   ],
+   "reason": "Faithful: row 4 of the Wythoff Sprague-Grundy table (A004481), with the Grundy function characterized axiomatically. Dress, Flammenkamp and Pink (1999, cited in the entry) proved that every row is additively periodic and computed the parameters. Their row 4 preperiod 9 and period 12 are recorded in A046874/A046875, i.e. a(n+12)=a(n)+12 for n>=9. Wu's recurrence for n>21 and the g.f. follow at once. The site proof is an independent finite certificate for rows 0-4."
+  },
+  "oeis-a088500": {
+   "date": "2026-11-28",
+   "pr": 35645,
+   "evidence": [
+    "https://oeis.org/A088500"
+   ],
+   "reason": "Faithful: a(n) is the n-th derivative at 0 of 1/(1+2 log(1-x)), and the integral is over (0,inf) of (2x)_n e^-x. Expand (2x)_n = sum_k |s(n,k)| 2^k x^k and use int x^k e^-x = k!. This gives sum_k |Stirling1(n,k)| k! 2^k, which is the entry's own first formula line. So the conjecture is a one-line consequence of a formula already in the entry. The site proof (a parametric integral) is correct but adds nothing new."
+  },
+  "oeis-a288622": {
+   "date": "2026-11-28",
+   "pr": 35613,
+   "evidence": [
+    "https://oeis.org/A288622",
+    "https://oeis.org/A288465",
+    "https://doi.org/10.5281/zenodo.23407381"
+   ],
+   "reason": "Faithful: the StringReplace map 00->0110, 1->01 (a lone 0 kept) from 00, and lengths = A288465. Ashburn, 'Iterated string replacements from 00' (Zenodo 23407380/23407381, 16 Oct 2026), Table 4, lists A288622 (map M35) with target A288465 as a proved length conjecture ('true'). That is six weeks before the site proof (2026-11-28)."
   }
  },
  "reviewed": "2026-11-28"
