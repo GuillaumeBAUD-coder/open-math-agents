@@ -1,214 +1,176 @@
 import OMAStatements.S_mo_319325
 
+-- Source: Ludwig, MathOverflow319325, CC BY-SA4.0.
+-- Credit: Cornelius Lytollis (@con123-gif), assisted by ChatGPT/Codex.
+-- First accepted disproof: Git-Tim1, upstream PR 10756; this independent witness is a shorter-proof proposal.
+-- Alternating positive shapes have a common singular limit before normalization.
+
+noncomputable section
 open Filter Topology
-open scoped MatrixOrder
+open scoped BigOperators Matrix MatrixOrder
 
-namespace OMA.Mo319325
+namespace OMA.MO319325Witness
 
-private def A : Matrix (Fin 2) (Fin 2) ℝ := !![(-1 : ℝ), 1; 0, -1]
+def A : Matrix (Fin 2) (Fin 2) ℝ := !![-1, 0; 0, -2]
+def S : Matrix (Fin 2) (Fin 2) ℝ := !![2, 1; 1, 2]
+def Q : Matrix (Fin 2) (Fin 2) ℝ := !![5, 4; 4, 5]
+def D : Matrix (Fin 2) (Fin 2) ℝ := !![2, 0; 0, 4]
+def T : Matrix (Fin 2) (Fin 2) ℝ := !![10, 12; 12, 20]
+def U : Matrix (Fin 2) (Fin 2) ℝ := !![2/3, -1/3; -1/3, 2/3]
+def N : Matrix (Fin 2) (Fin 2) ℝ := !![4/3, 0; 0, 14/3]
+def t (k : ℕ) : ℝ := (1 / 10 : ℝ) ^ k
+def P (k : ℕ) : Matrix (Fin 2) (Fin 2) ℝ :=
+  if k % 2 = 0 then (t k)^2 • 1 else (t k)^2 • Q
+def X (k : ℕ) : Matrix (Fin 2) (Fin 2) ℝ :=
+  if k % 2 = 0 then (t k)^2 • D else (t k)^2 • T
 
-private noncomputable def s (k : ℕ) : ℝ := (1 : ℝ) / ((k : ℝ) + 1)
+set_option maxHeartbeats 1000000 in
+lemma posDef_two (a b c : ℝ) (ha : 0 < a) (hd : 0 < a*c-b^2) :
+    ( !![a,b; b,c] : Matrix (Fin 2) (Fin 2) ℝ).PosDef := by
+  apply Matrix.PosDef.of_dotProduct_mulVec_pos
+  · unfold Matrix.IsHermitian
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp
+  · intro v hv
+    have hne : v 0 ≠ 0 ∨ v 1 ≠ 0 := by
+      by_contra hn
+      push_neg at hn
+      apply hv
+      ext i
+      fin_cases i <;> simp_all
+    simp only [Matrix.mulVec, dotProduct, Fin.sum_univ_two, Pi.star_apply, Matrix.of_apply,
+      star_trivial, Matrix.cons_val_zero, Matrix.cons_val_one,
+      Matrix.cons_val_fin_one]
+    by_cases hy : v 1 = 0
+    · have hx : v 0 ≠ 0 := hne.resolve_right (not_not.mpr hy)
+      have hp := mul_pos ha (sq_pos_of_ne_zero hx)
+      simpa [hy, pow_two, mul_assoc, mul_comm, mul_left_comm] using hp
+    · have hp := mul_pos hd (sq_pos_of_ne_zero hy)
+      have hs := sq_nonneg (a * v 0 + b * v 1)
+      have hid : a * (v 0 * (a*v 0+b*v 1) + v 1 * (b*v 0+c*v 1)) =
+          (a*v 0+b*v 1)^2 + (a*c-b^2)*(v 1)^2 := by ring
+      have hq : 0 < a * (v 0 * (a*v 0+b*v 1) + v 1 * (b*v 0+c*v 1)) := by
+        rw [hid]
+        linarith
+      exact (mul_pos_iff_of_pos_left ha).mp hq
 
-private noncomputable def t (k : ℕ) : ℝ :=
-  if Even k then s k else (3 / 2 : ℝ) * s k
+lemma S_pos : S.PosDef := posDef_two 2 1 2 (by norm_num) (by norm_num)
+lemma Q_pos : Q.PosDef := posDef_two 5 4 5 (by norm_num) (by norm_num)
+lemma D_pos : D.PosDef := posDef_two 2 0 4 (by norm_num) (by norm_num)
+lemma T_pos : T.PosDef := posDef_two 10 12 20 (by norm_num) (by norm_num)
 
-private noncomputable def S (k : ℕ) : Matrix (Fin 2) (Fin 2) ℝ :=
-  Matrix.diagonal ![s k, t k]
+lemma S_square : S * S = Q := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> norm_num [S,Q,Matrix.mul_apply,Fin.sum_univ_two]
 
-private noncomputable def P (k : ℕ) : Matrix (Fin 2) (Fin 2) ℝ :=
-  Matrix.diagonal ![s k ^ 2, t k ^ 2]
+lemma S_U : S * U = 1 := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> norm_num [S,U,Matrix.mul_apply,Fin.sum_univ_two]
 
-private noncomputable def X (k : ℕ) : Matrix (Fin 2) (Fin 2) ℝ :=
-  !![2 * s k ^ 2, -(t k ^ 2); -(t k ^ 2), 2 * t k ^ 2]
+lemma U_T_U : U * T * U = N := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> norm_num [U,T,N,Matrix.mul_apply,Fin.sum_univ_two]
 
-private lemma s_pos (k : ℕ) : 0 < s k := by
-  unfold s
-  positivity
+lemma t_pos (k : ℕ) : 0 < t k := by unfold t; positivity
 
-private lemma t_pos (k : ℕ) : 0 < t k := by
-  unfold t
+lemma P_pos (k : ℕ) : (P k).PosDef := by
+  unfold P
   split_ifs
-  · exact s_pos k
-  · have hs := s_pos k
-    linarith
+  · exact Matrix.PosDef.one.smul (pow_pos (t_pos k) 2)
+  · exact Q_pos.smul (pow_pos (t_pos k) 2)
 
-private lemma t_le (k : ℕ) : t k ≤ (3 / 2 : ℝ) * s k := by
-  unfold t
+lemma X_pos (k : ℕ) : (X k).PosDef := by
+  unfold X
   split_ifs
-  · have hs := s_pos k
-    linarith
-  · exact le_rfl
+  · exact D_pos.smul (pow_pos (t_pos k) 2)
+  · exact T_pos.smul (pow_pos (t_pos k) 2)
 
-private lemma A_hurwitz : OMA.S_mo_319325.hurwitz A := by
+lemma stable : OMA.S_mo_319325.hurwitz A := by
+  have heq : A.map Complex.ofReal = Matrix.diagonal (![-1,-2] : Fin 2 → ℂ) := by
+    ext i j
+    fin_cases i <;> fin_cases j <;> norm_num [A,Matrix.diagonal_apply]
   intro z hz
-  rw [spectrum.mem_iff] at hz
-  have hdet : (algebraMap ℂ (Matrix (Fin 2) (Fin 2) ℂ) z - A.map Complex.ofReal).det = 0 := by
-    by_contra hne
-    exact hz ((Matrix.isUnit_iff_isUnit_det _).mpr (isUnit_iff_ne_zero.mpr hne))
-  have hcalc :
-      (algebraMap ℂ (Matrix (Fin 2) (Fin 2) ℂ) z - A.map Complex.ofReal).det = (z + 1) ^ 2 := by
-    rw [Matrix.det_fin_two]
-    simp [A, Algebra.algebraMap_eq_smul_one]
-    ring
-  rw [hcalc, sq] at hdet
-  have hz1 : z + 1 = 0 := mul_self_eq_zero.mp hdet
-  have hz' : z = -1 := eq_neg_of_add_eq_zero_left hz1
-  simp [hz']
+  rw [heq, spectrum_diagonal] at hz
+  obtain ⟨i,rfl⟩ := hz
+  fin_cases i <;> norm_num
 
-private lemma P_posDef (k : ℕ) : (P k).PosDef := by
-  rw [P, Matrix.posDef_diagonal_iff]
-  intro i
-  fin_cases i
-  · exact pow_pos (s_pos k) 2
-  · exact pow_pos (t_pos k) 2
+lemma lyapunov (k : ℕ) : A * P k + P k * A.transpose = -(X k) := by
+  unfold P X
+  split_ifs
+  all_goals
+    ext i j
+    fin_cases i <;> fin_cases j <;>
+      simp [A,Q,D,T,Matrix.mul_apply,Matrix.vecMul,dotProduct,Matrix.transpose_apply,
+        Fin.sum_univ_two,Matrix.smul_apply,smul_eq_mul]
+    all_goals ring
 
-private lemma X_posDef (k : ℕ) : (X k).PosDef := by
-  refine ⟨?_, ?_⟩
-  · ext i j
-    fin_cases i <;> fin_cases j <;> simp [X]
-  · intro x hx
-    have hsum : (x.sum fun i xi => x.sum fun j xj => star xi * X k i j * xj) =
-        (2 * s k ^ 2 - t k ^ 2 / 2) * (x 0) ^ 2 + 2 * t k ^ 2 * (x 1 - x 0 / 2) ^ 2 := by
-      rw [Finsupp.sum_fintype _ _ (by simp)]
-      simp only [Fin.sum_univ_two]
-      rw [Finsupp.sum_fintype _ _ (by simp), Finsupp.sum_fintype _ _ (by simp)]
-      simp [Fin.sum_univ_two, X]
-      ring
-    rw [hsum]
-    have hs : 0 < s k := s_pos k
-    have ht : 0 < t k := t_pos k
-    have htle : t k ≤ (3 / 2 : ℝ) * s k := t_le k
-    have htsq : t k ^ 2 ≤ (9 / 4 : ℝ) * s k ^ 2 := by nlinarith
-    have hc1 : 0 < 2 * s k ^ 2 - t k ^ 2 / 2 := by nlinarith
-    have hc2 : 0 < 2 * t k ^ 2 := by positivity
-    by_cases h0 : x 0 = 0
-    · have h1 : x 1 ≠ 0 := by
-        intro h1
-        apply hx
-        ext i
-        fin_cases i
-        · exact h0
-        · exact h1
-      have h1sq : 0 < (x 1) ^ 2 := sq_pos_of_ne_zero h1
-      simp only [h0]
-      nlinarith
-    · have h0sq : 0 < (x 0) ^ 2 := sq_pos_of_ne_zero h0
-      have hsq2 : 0 ≤ (x 1 - x 0 / 2) ^ 2 := sq_nonneg _
-      nlinarith
+lemma normalized_scale (s : ℝ) (hs : 0 < s)
+    (H K V : Matrix (Fin 2) (Fin 2) ℝ) (hH : H.PosSemidef) (hHV : H*V=1) :
+    OMA.S_mo_319325.normalized (s^2 • (H*H)) (s^2 • K) = V*K*V := by
+  have hr : CFC.sqrt (s^2 • (H*H)) = s • H := by
+    have hm : (s • H) * (s • H) = s^2 • (H*H) := by
+      simp [Matrix.smul_mul,Matrix.mul_smul,smul_smul,pow_two]
+    rw [← hm]
+    exact CFC.sqrt_mul_self (s • H) (hH.smul hs.le).nonneg
+  have hi : (s • H)⁻¹ = s⁻¹ • V := by
+    apply Matrix.inv_eq_right_inv
+    simp [Matrix.smul_mul,Matrix.mul_smul,smul_smul,hHV,hs.ne']
+  unfold OMA.S_mo_319325.normalized
+  rw [hr,hi]
+  simp only [Matrix.smul_mul,Matrix.mul_smul,smul_smul]
+  have hc : s⁻¹ * (s^2 * s⁻¹) = 1 := by field_simp [hs.ne']
+  rw [hc,one_smul]
 
-private lemma lyapunov (k : ℕ) : A * P k + P k * A.transpose = -(X k) := by
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp only [Matrix.add_apply, Matrix.mul_apply, Matrix.transpose_apply, Matrix.neg_apply,
-      Fin.sum_univ_two, A, P, X, Matrix.diagonal_apply] <;>
-    simp <;> ring
+lemma normalized_sequence (k : ℕ) :
+    OMA.S_mo_319325.normalized (P k) (X k) = if k % 2 = 0 then D else N := by
+  unfold P X
+  split_ifs
+  · simpa using normalized_scale (t k) (t_pos k) 1 D 1 Matrix.PosSemidef.one (by simp)
+  · rw [← S_square]
+    simpa [U_T_U] using normalized_scale (t k) (t_pos k) S T U S_pos.posSemidef S_U
 
-private lemma S_nonneg (k : ℕ) : 0 ≤ S k := by
-  rw [Matrix.nonneg_iff_posSemidef, S, Matrix.posSemidef_diagonal_iff]
-  intro i
-  fin_cases i
-  · exact (s_pos k).le
-  · exact (t_pos k).le
+lemma t_limit : Tendsto t atTop (𝓝 0) := by
+  exact tendsto_pow_atTop_nhds_zero_of_abs_lt_one (r := (1/10 : ℝ)) (by norm_num)
 
-private lemma S_mul_S (k : ℕ) : S k * S k = P k := by
-  rw [S, P, Matrix.diagonal_mul_diagonal]
-  congr 1
-  ext i
-  fin_cases i <;> simp [sq]
+lemma scale_limit (M : Matrix (Fin 2) (Fin 2) ℝ) :
+    Tendsto (fun k => (t k)^2 • M) atTop (𝓝 0) := by
+  simpa using (t_limit.pow 2).smul (tendsto_const_nhds (x := M))
 
-private lemma sqrt_P (k : ℕ) : CFC.sqrt (P k) = S k :=
-  CFC.sqrt_unique (S_mul_S k) (S_nonneg k)
+lemma P_limit : Tendsto P atTop (𝓝 0) := by
+  exact (scale_limit 1).if' (scale_limit Q)
 
-private lemma S_inv (k : ℕ) : (S k)⁻¹ = Matrix.diagonal ![(s k)⁻¹, (t k)⁻¹] := by
-  apply Matrix.inv_eq_right_inv
-  rw [S, Matrix.diagonal_mul_diagonal]
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [(s_pos k).ne', (t_pos k).ne']
+lemma X_limit : Tendsto X atTop (𝓝 0) := by
+  exact (scale_limit D).if' (scale_limit T)
 
-private lemma normalized_01 (k : ℕ) :
-    OMA.S_mo_319325.normalized (P k) (X k) 0 1 = -(t k / s k) := by
-  rw [OMA.S_mo_319325.normalized, sqrt_P, S_inv]
-  simp [X, Matrix.mul_apply, Fin.sum_univ_two]
-  have ht : t k ≠ 0 := (t_pos k).ne'
-  have hs : s k ≠ 0 := (s_pos k).ne'
-  field_simp
+lemma no_limit : ¬ ∃ L : Matrix (Fin 2) (Fin 2) ℝ,
+    Tendsto (fun k => OMA.S_mo_319325.normalized (P k) (X k)) atTop (𝓝 L) := by
+  rintro ⟨L,hL⟩
+  have hc : Continuous (fun M : Matrix (Fin 2) (Fin 2) ℝ => M 0 0) :=
+    (continuous_apply 0).comp (continuous_apply 0)
+  have he := (hc.tendsto L).comp hL
+  have heven : Tendsto (fun k : ℕ => 2*k) atTop atTop := by
+    apply tendsto_atTop.2
+    intro b
+    exact eventually_atTop.2 ⟨b,by intro k hk; omega⟩
+  have hodd : Tendsto (fun k : ℕ => 2*k+1) atTop atTop := by
+    apply tendsto_atTop.2
+    intro b
+    exact eventually_atTop.2 ⟨b,by intro k hk; omega⟩
+  have h2 : Tendsto (fun _ : ℕ => (2:ℝ)) atTop (𝓝 (L 0 0)) := by
+    simpa [Function.comp_def,normalized_sequence,Nat.mul_mod,D] using he.comp heven
+  have h4 : Tendsto (fun _ : ℕ => (4/3:ℝ)) atTop (𝓝 (L 0 0)) := by
+    simpa [Function.comp_def,normalized_sequence,Nat.mul_mod,Nat.add_mod,N] using he.comp hodd
+  have hL2 : L 0 0 = 2 := tendsto_nhds_unique h2 tendsto_const_nhds
+  have hL4 : L 0 0 = 4/3 := tendsto_nhds_unique h4 tendsto_const_nhds
+  linarith
 
-private lemma tendsto_s : Tendsto s atTop (𝓝 0) :=
-  tendsto_one_div_add_atTop_nhds_zero_nat
-
-private lemma tendsto_s_sq : Tendsto (fun k => s k ^ 2) atTop (𝓝 0) := by
-  simpa using tendsto_s.pow 2
-
-private lemma tendsto_t_sq : Tendsto (fun k => t k ^ 2) atTop (𝓝 0) := by
-  refine squeeze_zero (g := fun k => (9 / 4 : ℝ) * s k ^ 2)
-    (fun k => sq_nonneg (t k)) (fun k => ?_) ?_
-  · have hs := s_pos k
-    have ht := t_pos k
-    have htle := t_le k
-    nlinarith
-  · simpa using tendsto_s_sq.const_mul (9 / 4 : ℝ)
-
-private lemma tendsto_P : Tendsto P atTop (𝓝 0) := by
-  refine tendsto_pi_nhds.mpr fun i => tendsto_pi_nhds.mpr fun j => ?_
-  fin_cases i <;> fin_cases j
-  · simpa [P] using tendsto_s_sq
-  · simp [P]
-  · simp [P]
-  · simpa [P] using tendsto_t_sq
-
-private lemma tendsto_X : Tendsto X atTop (𝓝 0) := by
-  refine tendsto_pi_nhds.mpr fun i => tendsto_pi_nhds.mpr fun j => ?_
-  fin_cases i <;> fin_cases j
-  · simpa [X] using tendsto_s_sq.const_mul (2 : ℝ)
-  · simpa [X] using tendsto_t_sq.neg
-  · simpa [X] using tendsto_t_sq.neg
-  · simpa [X] using tendsto_t_sq.const_mul (2 : ℝ)
-
-end OMA.Mo319325
+end OMA.MO319325Witness
 
 theorem OMA.disproof : ¬ (type_of% @OMA.S_mo_319325.main) := by
-  intro hmain
-  obtain ⟨L, hL⟩ :=
-    hmain 2 (by norm_num) OMA.Mo319325.A OMA.Mo319325.A_hurwitz
-      OMA.Mo319325.X OMA.Mo319325.P
-      OMA.Mo319325.X_posDef OMA.Mo319325.P_posDef OMA.Mo319325.lyapunov
-      0 0 Matrix.PosSemidef.zero Matrix.PosSemidef.zero
-      Matrix.det_zero
-      OMA.Mo319325.tendsto_X OMA.Mo319325.tendsto_P
-  have h01 : Tendsto (fun k => OMA.S_mo_319325.normalized (OMA.Mo319325.P k) (OMA.Mo319325.X k) 0 1)
-      atTop (𝓝 (L 0 1)) :=
-    (tendsto_pi_nhds.mp (tendsto_pi_nhds.mp hL 0) 1)
-  have heven_tendsto : Tendsto (fun m : ℕ => 2 * m) atTop atTop :=
-    Filter.tendsto_atTop_mono (fun m => Nat.le_mul_of_pos_left m (by norm_num)) tendsto_id
-  have hodd_tendsto : Tendsto (fun m : ℕ => 2 * m + 1) atTop atTop :=
-    Filter.tendsto_atTop_mono (fun m => show m ≤ 2 * m + 1 by omega) tendsto_id
-  have heven_val :
-      (fun m : ℕ => OMA.S_mo_319325.normalized (OMA.Mo319325.P (2 * m)) (OMA.Mo319325.X (2 * m)) 0 1) =
-        fun _ => (-1 : ℝ) := by
-    funext m
-    rw [OMA.Mo319325.normalized_01]
-    have hsm : OMA.Mo319325.s (2 * m) ≠ 0 := (OMA.Mo319325.s_pos (2 * m)).ne'
-    simp [OMA.Mo319325.t, hsm]
-  have hodd_val :
-      (fun m : ℕ => OMA.S_mo_319325.normalized (OMA.Mo319325.P (2 * m + 1)) (OMA.Mo319325.X (2 * m + 1)) 0 1) =
-        fun _ => (-(3 / 2 : ℝ)) := by
-    funext m
-    rw [OMA.Mo319325.normalized_01]
-    have hsm : OMA.Mo319325.s (2 * m + 1) ≠ 0 := (OMA.Mo319325.s_pos (2 * m + 1)).ne'
-    have hnot : ¬ Even (2 * m + 1) := by
-      rw [Nat.not_even_iff_odd]
-      exact ⟨m, rfl⟩
-    simp [OMA.Mo319325.t, hnot, hsm]
-  have hL1 : L 0 1 = (-1 : ℝ) := by
-    have h1 := h01.comp heven_tendsto
-    have h2 : Tendsto (fun _ : ℕ => (-1 : ℝ)) atTop (𝓝 (-1 : ℝ)) := tendsto_const_nhds
-    change Tendsto (fun m => OMA.S_mo_319325.normalized (OMA.Mo319325.P (2 * m)) (OMA.Mo319325.X (2 * m)) 0 1) atTop (𝓝 (L 0 1)) at h1
-    rw [heven_val] at h1
-    exact tendsto_nhds_unique h1 h2
-  have hL2 : L 0 1 = (-(3 / 2 : ℝ)) := by
-    have h1 := h01.comp hodd_tendsto
-    have h2 : Tendsto (fun _ : ℕ => (-(3 / 2 : ℝ))) atTop (𝓝 (-(3 / 2 : ℝ))) := tendsto_const_nhds
-    change Tendsto (fun m => OMA.S_mo_319325.normalized (OMA.Mo319325.P (2 * m + 1)) (OMA.Mo319325.X (2 * m + 1)) 0 1) atTop (𝓝 (L 0 1)) at h1
-    rw [hodd_val] at h1
-    exact tendsto_nhds_unique h1 h2
-  linarith
+  intro h
+  exact OMA.MO319325Witness.no_limit
+    (h 2 (by norm_num) OMA.MO319325Witness.A OMA.MO319325Witness.stable
+      OMA.MO319325Witness.X OMA.MO319325Witness.P OMA.MO319325Witness.X_pos
+      OMA.MO319325Witness.P_pos OMA.MO319325Witness.lyapunov 0 0
+      Matrix.PosSemidef.zero Matrix.PosSemidef.zero (by simp)
+      OMA.MO319325Witness.X_limit OMA.MO319325Witness.P_limit)

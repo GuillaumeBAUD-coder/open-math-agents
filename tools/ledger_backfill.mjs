@@ -6,8 +6,8 @@
 // history: git fetch --unshallow), the REST API gives the author, the body (Agent:/Model: lines) and merged_at.
 //
 // Usage: node tools/ledger_backfill.mjs OUT_DIR [--prs CACHE.jsonl] [--ref origin/main] [--repo OWNER/NAME]
-//   writes OUT_DIR/entries.jsonl, OUT_DIR/s<k>.json (Workers KV values "ledger:v1:s<k>", 1000 pull requests each) and
-//   OUT_DIR/meta.json ("ledger:v1:meta"). --prs reuses (or creates) a cache of the merged pull requests.
+//   writes OUT_DIR/entries.jsonl, OUT_DIR/s<k>.json (to import as the Workers KV values "ledger:v1:b<k>", 1000 pull
+//   requests each) and OUT_DIR/meta.json (as "ledger:v1:bmeta"; lib/ledger.ts). --prs reuses (or creates) a cache.
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";

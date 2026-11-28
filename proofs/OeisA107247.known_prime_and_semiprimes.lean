@@ -1,11 +1,10 @@
 import FormalConjectures.OEIS.«107247»
-import Mathlib.Tactic.NormNum.Prime
 
 open OeisA107247
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 5000000 in
-private theorem large_factor_prime : Nat.Prime 5045088967 := by norm_num
+lemma large_factor_prime : Nat.Prime 5045088967 := by norm_num
 
 /-- Each witness records the two prime factors of the nonacci sum of squares. -/
 theorem OMA.solution : type_of% @OeisA107247.known_prime_and_semiprimes := by

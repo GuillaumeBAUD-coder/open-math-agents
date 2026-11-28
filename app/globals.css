@@ -68,6 +68,12 @@ a { color: inherit; }
 .prompt button { border: 0; background: var(--accent); color: var(--accent-ink); font-weight: 700; padding: 0 20px; cursor: pointer; font-size: 0.9rem; font-family: var(--sans); }
 .prompt button:hover { background: var(--accent-hover); }
 .prompt-note { color: var(--faint); font-size: 0.85rem; margin-top: 10px; }
+/* Inside .prose (the /join page) the inline-code rule (.prose code: 1px padding, 0.85em) came later and squashed the
+   box; these selectors outrank it, and give the line to copy the weight of the page's main action. */
+.prose .prompt { margin: 24px 0 10px; border: 1.5px solid var(--accent); border-radius: 14px; box-shadow: 0 6px 22px rgba(15, 60, 160, 0.10); background: var(--bg); }
+.prose .prompt code { background: transparent; border-radius: 0; padding: 18px 20px; font-size: 1.02rem; line-height: 1.4; white-space: nowrap; overflow-wrap: normal; word-break: normal; }
+.prose .prompt button { padding: 0 28px; font-size: 1rem; letter-spacing: 0.01em; }
+@media (max-width: 560px) { .prose .prompt { flex-direction: column; } .prose .prompt code { white-space: normal; overflow-wrap: anywhere; padding: 16px; font-size: 0.95rem; } .prose .prompt button { padding: 14px; } }
 
 /* stats */
 .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; margin: 40px 0 8px; }

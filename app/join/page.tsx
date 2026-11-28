@@ -1,4 +1,5 @@
 import CopyPrompt from "@/components/CopyPrompt";
+import EventBanner from "@/components/EventBanner";
 import { joinText } from "@/lib/join";
 import { JOIN_PROMPT } from "@/lib/site";
 
@@ -8,6 +9,7 @@ export default function Join() {
   return (
     <main className="wrap prose">
       <h1>Connect your agent</h1>
+      <EventBanner />
       <p>Paste this line into Claude Code, Codex, Cursor or any agent that can run a shell on your machine. It reads the protocol below and starts working.</p>
       <CopyPrompt text={JOIN_PROMPT} label="Copy" />
       <h2>What happens</h2>

@@ -516,19 +516,6 @@ theorem mertens3 : ∃ c₁ c₂ : ℝ, 0 < c₁ ∧ 0 < c₂ ∧ ∀ z : ℝ, 2
   ⟨_, _, Real.exp_pos _, Real.exp_pos _, prod_one_sub_inv_bounds⟩
 
 
-/-- Upper half of Mertens' second theorem for any subset of the primes, for instance the primes
-in a residue class: `∑_{p ≤ x, P p} 1 / p ≤ log log x + mertens2Const` for real `x ≥ 2`. -/
-theorem sum_inv_filter_le (P : ℕ → Prop) [DecidablePred P] (x : ℝ) (hx : 2 ≤ x) :
-    ∑ p ∈ (Nat.primesLE ⌊x⌋₊).filter P, (1 : ℝ) / p ≤
-      Real.log (Real.log x) + mertens2Const := by
-  have h := abs_sum_inv_sub_log_log_le x hx
-  rw [abs_le] at h
-  have hsub : ∑ p ∈ (Nat.primesLE ⌊x⌋₊).filter P, (1 : ℝ) / p ≤
-      ∑ p ∈ Nat.primesLE ⌊x⌋₊, (1 : ℝ) / p :=
-    Finset.sum_le_sum_of_subset_of_nonneg (Finset.filter_subset _ _)
-      (fun p _ _ => by positivity)
-  linarith [h.2]
-
 end OMALib694.Mertens
 
 
@@ -1172,9 +1159,6 @@ theorem selbergG_congr {Q : Finset ℕ} {D : Finset (Finset ℕ)} (hDQ : ∀ S �
 
 /-! ## Prime pairs `p, p + d` -/
 
-/-- The local condition of the prime-pair sieve: `p ∣ n (n + d)`. -/
-def pairCond (d : ℕ) (p n : ℕ) : Prop := p ∣ n * (n + d)
-
 /-- The number of residues removed modulo `p` in the prime-pair sieve:
 `1` if `p ∣ d`, otherwise `2`. -/
 def pairOmega (d p : ℕ) : ℕ := if p ∣ d then 1 else 2
@@ -1185,60 +1169,6 @@ def pairOmega (d p : ℕ) : ℕ := if p ∣ d then 1 else 2
 noncomputable def pairG (d z : ℕ) : ℝ :=
   selbergG (fun p => (pairOmega d p : ℝ) / p) (levelFamily (Nat.primesBelow z) z)
 
-theorem pairCond_periodic (d p n : ℕ) : pairCond d p n ↔ pairCond d p (n % p) := by
-  unfold pairCond
-  simp only [Nat.dvd_iff_mod_eq_zero, Nat.mul_mod, Nat.add_mod, Nat.mod_mod]
-
-theorem pairCond_iff_of_lt {d p r : ℕ} (hp : p.Prime) (hr : r < p) :
-    pairCond d p r ↔ r = 0 ∨ r + d % p = p := by
-  unfold pairCond
-  rw [hp.dvd_mul]
-  have hk : d % p < p := Nat.mod_lt _ hp.pos
-  have e1 : p ∣ r ↔ r = 0 := ⟨fun h => Nat.eq_zero_of_dvd_of_lt h hr, fun h => h ▸ dvd_zero p⟩
-  have e2 : p ∣ r + d ↔ p ∣ r + d % p := by
-    have : r + d = (r + d % p) + p * (d / p) := by
-      have := Nat.mod_add_div d p; omega
-    rw [this, Nat.dvd_add_left (dvd_mul_right p _)]
-  have e3 : p ∣ r + d % p ↔ r + d % p = 0 ∨ r + d % p = p := by
-    constructor
-    · rintro ⟨m, hm⟩
-      have : m < 2 := by
-        by_contra h; push_neg at h
-        have : p * 2 ≤ p * m := Nat.mul_le_mul_left _ h
-        omega
-      interval_cases m <;> simp_all
-    · rintro (h | h) <;> rw [h]
-      · exact dvd_zero p
-  rw [e1, e2, e3]
-  omega
-
-theorem omega_pairCond {d p : ℕ} (hp : p.Prime) : omega (pairCond d) p = pairOmega d p := by
-  unfold omega pairOmega
-  have hk : d % p < p := Nat.mod_lt _ hp.pos
-  split_ifs with hd
-  · have : (range p).filter (pairCond d p) = {0} := by
-      ext r
-      simp only [mem_filter, mem_range, mem_singleton]
-      constructor
-      · rintro ⟨hr, h⟩
-        rw [pairCond_iff_of_lt hp hr, Nat.mod_eq_zero_of_dvd hd] at h
-        omega
-      · rintro rfl; exact ⟨hp.pos, (pairCond_iff_of_lt hp hp.pos).mpr (Or.inl rfl)⟩
-    rw [this, card_singleton]
-  · have hk0 : d % p ≠ 0 := fun h => hd (Nat.dvd_of_mod_eq_zero h)
-    have : (range p).filter (pairCond d p) = {0, p - d % p} := by
-      ext r
-      simp only [mem_filter, mem_range, mem_insert, mem_singleton]
-      constructor
-      · rintro ⟨hr, h⟩
-        rw [pairCond_iff_of_lt hp hr] at h
-        omega
-      · intro h
-        have hr : r < p := by omega
-        refine ⟨hr, (pairCond_iff_of_lt hp hr).mpr ?_⟩
-        omega
-    rw [this, card_insert_of_notMem (by simp; omega), card_singleton]
-
 theorem pairOmega_pos (d p : ℕ) : 0 < pairOmega d p := by
   unfold pairOmega; split_ifs <;> norm_num
 
@@ -1248,95 +1178,6 @@ theorem pairOmega_lt {d p : ℕ} (hd : Even d) (hp : p.Prime) : pairOmega d p < 
   · exact hp.one_lt
   · have h2 : p ≠ 2 := by rintro rfl; exact h (even_iff_two_dvd.mp hd)
     have := hp.two_le; omega
-
-/-- **Selberg upper bound for prime pairs, explicit form.** For even `d` and any level
-`z ≥ 2`, the number of primes `p ≤ x` with `p + d` prime is at most
-`z + (x + 1) / G_d(z) + z ^ 4`. -/
-theorem card_prime_pairs_le_sieve (d x z : ℕ) (hd : Even d) (hz : 2 ≤ z) :
-    (((range (x + 1)).filter (fun p => p.Prime ∧ (p + d).Prime)).card : ℝ)
-      ≤ z + (x + 1) / pairG d z + (z : ℝ) ^ 4 := by
-  set Q := Nat.primesBelow z
-  have hQ : ∀ p ∈ Q, p.Prime := fun p hp => (Nat.mem_primesBelow.mp hp).2
-  have hsub : (range (x + 1)).filter (fun p => p.Prime ∧ (p + d).Prime)
-      ⊆ range z ∪ (range (x + 1)).filter (fun n => ∀ p ∈ Q, ¬ pairCond d p n) := by
-    intro n hn
-    simp only [mem_filter, mem_range] at hn
-    simp only [mem_union, mem_range, mem_filter]
-    by_cases hnz : n < z
-    · exact Or.inl hnz
-    · right
-      refine ⟨hn.1, fun q hq hdiv => ?_⟩
-      have hq' := Nat.mem_primesBelow.mp hq
-      unfold pairCond at hdiv
-      rcases (hq'.2.dvd_mul).mp hdiv with h | h
-      · have := (Nat.prime_dvd_prime_iff_eq hq'.2 hn.2.1).mp h; omega
-      · have := (Nat.prime_dvd_prime_iff_eq hq'.2 hn.2.2).mp h; omega
-  have hω0 : ∀ p ∈ Q, 0 < omega (pairCond d) p := fun p hp => by
-    rw [omega_pairCond (hQ p hp)]; exact pairOmega_pos d p
-  have hω1 : ∀ p ∈ Q, omega (pairCond d) p < p := fun p hp => by
-    rw [omega_pairCond (hQ p hp)]; exact pairOmega_lt hd (hQ p hp)
-  have hsieve := selberg_residue_level (x + 1) z hz Q hQ (pairCond d) (pairCond_periodic d) hω0 hω1
-  have hG : selbergG (fun p => (omega (pairCond d) p : ℝ) / p) (levelFamily Q z) = pairG d z :=
-    selbergG_congr levelFamily_subset fun p hp => by rw [omega_pairCond (hQ p hp)]
-  rw [hG] at hsieve
-  push_cast at hsieve
-  have hcard := card_le_card hsub
-  have hu := card_union_le (range z) ((range (x + 1)).filter (fun n => ∀ p ∈ Q, ¬ pairCond d p n))
-  rw [card_range] at hu
-  have : (((range (x + 1)).filter (fun p => p.Prime ∧ (p + d).Prime)).card : ℝ)
-      ≤ z + (((range (x + 1)).filter (fun n => ∀ p ∈ Q, ¬ pairCond d p n)).card : ℝ) := by
-    exact_mod_cast hcard.trans hu
-  linarith
-
-/-- Choice of the sieve level: for `x ≥ 2^16` there is `z ≥ 2` with
-`(z + z^4) (log x)^2 ≤ 32 x` and `log x ≤ 16 log z` (take `z = ⌊x^{1/8}⌋`). -/
-theorem exists_level (x : ℕ) (hx : 65536 ≤ x) :
-    ∃ z : ℕ, 2 ≤ z ∧ ((z : ℝ) + (z : ℝ) ^ 4) * Real.log x ^ 2 ≤ 32 * x ∧
-      Real.log x ≤ 16 * Real.log z := by
-  set y : ℝ := (x : ℝ) ^ ((1 : ℝ) / 8) with hydef
-  have hx0 : (0 : ℝ) ≤ x := Nat.cast_nonneg x
-  have hy0 : 0 ≤ y := Real.rpow_nonneg hx0 _
-  have hy8 : y ^ 8 = x := by
-    rw [hydef, ← Real.rpow_natCast, ← Real.rpow_mul hx0]; norm_num
-  have hxR : (65536 : ℝ) ≤ x := by exact_mod_cast hx
-  have hy4 : 4 ≤ y := by
-    by_contra h; push_neg at h
-    have : y ^ 8 < 4 ^ 8 := pow_lt_pow_left₀ h hy0 (by norm_num)
-    rw [hy8] at this; norm_num at this; linarith
-  set z := ⌊y⌋₊
-  have hzle : (z : ℝ) ≤ y := Nat.floor_le hy0
-  have hzgt : y < z + 1 := Nat.lt_floor_add_one y
-  have hz3 : (3 : ℝ) < z := by linarith
-  have hz2 : 2 ≤ z := by
-    have : (2 : ℝ) < z := by linarith
-    exact_mod_cast this.le
-  have hzpos : (0 : ℝ) < z := by linarith
-  have hlogx : Real.log x = 8 * Real.log y := by
-    rw [← hy8, Real.log_pow]; norm_num
-  have hlogy : Real.log y ≤ y := (Real.log_le_sub_one_of_pos (by linarith)).trans (by linarith)
-  have hlogy0 : 0 ≤ Real.log y := Real.log_nonneg (by linarith)
-  refine ⟨z, hz2, ?_, ?_⟩
-  · have h1 : (z : ℝ) + (z : ℝ) ^ 4 ≤ 2 * y ^ 4 := by
-      have : (z : ℝ) ^ 4 ≤ y ^ 4 := pow_le_pow_left₀ hzpos.le hzle 4
-      have : y ≤ y ^ 4 := by nlinarith [pow_le_pow_left₀ (by norm_num : (0:ℝ) ≤ 1) (by linarith : (1:ℝ) ≤ y) 3]
-      linarith
-    have h2 : Real.log x ^ 2 ≤ 64 * y ^ 2 := by
-      rw [hlogx]; nlinarith
-    have h3 : (16 : ℝ) ≤ y ^ 2 := by nlinarith
-    have h4 : 0 ≤ Real.log x ^ 2 := sq_nonneg _
-    calc ((z : ℝ) + (z : ℝ) ^ 4) * Real.log x ^ 2 ≤ (2 * y ^ 4) * (64 * y ^ 2) := by
-          apply mul_le_mul h1 h2 h4 (by positivity)
-      _ = 128 * (y ^ 4 * y ^ 2) := by ring
-      _ ≤ 8 * (y ^ 4 * y ^ 2 * y ^ 2) := by nlinarith [pow_nonneg hy0 4, pow_nonneg hy0 2]
-      _ = 8 * y ^ 8 := by ring
-      _ ≤ 32 * x := by rw [hy8]; linarith
-  · have hzy : y / 2 ≤ z := by linarith
-    have h1 : Real.log (y / 2) ≤ Real.log z := Real.log_le_log (by linarith) hzy
-    rw [Real.log_div (by linarith) (by norm_num)] at h1
-    have h2 : Real.log 4 ≤ Real.log y := Real.log_le_log (by norm_num) hy4
-    have h3 : Real.log 4 = 2 * Real.log 2 := by
-      rw [show (4 : ℝ) = 2 ^ 2 by norm_num, Real.log_pow]; norm_num
-    rw [hlogx]; linarith
 
 /-- The singular-series factor `Π_{p ∣ d, p > 2} (1 + 1/p)` of the prime-pair bound. -/
 noncomputable def pairSingularProduct (d : ℕ) : ℝ :=
@@ -1358,163 +1199,7 @@ def PairGLowerBound (c : ℝ) : Prop :=
   ∀ d : ℕ, 0 < d → Even d → ∀ z : ℕ, 2 ≤ z →
     c * Real.log z ^ 2 ≤ pairG d z * pairSingularProduct d
 
-/-- **Upper bound for prime pairs with a given difference (Romanoff-ready).**
-Given the Mertens-type lower bound `PairGLowerBound c`, there is an absolute `C` such that for
-every even `d > 0` and every `x ≥ 2`,
-`#{p ≤ x : p and p + d prime} ≤ C · x / log² x · Π_{p ∣ d, p > 2} (1 + 1/p)`. -/
-theorem prime_pairs_upper_bound {c : ℝ} (hc : 0 < c) (hG : PairGLowerBound c) :
-    ∃ C : ℝ, 0 < C ∧ ∀ d : ℕ, 0 < d → Even d → ∀ x : ℕ, 2 ≤ x →
-      (((range (x + 1)).filter (fun p => p.Prime ∧ (p + d).Prime)).card : ℝ)
-        ≤ C * ((x : ℝ) / Real.log x ^ 2) * pairSingularProduct d := by
-  refine ⟨320 + 512 / c, by positivity, fun d hd0 hd x hx => ?_⟩
-  set PP := pairSingularProduct d
-  have hPP : 1 ≤ PP := one_le_pairSingularProduct d
-  have hxR : (2 : ℝ) ≤ x := by exact_mod_cast hx
-  have hL : 0 < Real.log x := Real.log_pos (by linarith)
-  have hL2 : 0 < Real.log x ^ 2 := by positivity
-  set cnt := (((range (x + 1)).filter (fun p => p.Prime ∧ (p + d).Prime)).card : ℝ)
-  have hcnt0 : cnt ≤ x + 1 := by
-    have := card_filter_le (range (x + 1)) (fun p => p.Prime ∧ (p + d).Prime)
-    rw [card_range] at this
-    simp only [cnt]; exact_mod_cast this
-  by_cases hbig : 65536 ≤ x
-  · obtain ⟨z, hz2, hzrem, hlogz⟩ := exists_level x hbig
-    have hs := card_prime_pairs_le_sieve d x z hd hz2
-    have hGz := hG d hd0 hd z hz2
-    have hGpos : 0 < pairG d z := by
-      have := one_le_selbergG (Q := Nat.primesBelow z)
-        (g := fun p => (pairOmega d p : ℝ) / p) (D := levelFamily (Nat.primesBelow z) z)
-        (fun p hp => div_pos (by exact_mod_cast pairOmega_pos d p)
-          (by exact_mod_cast (Nat.mem_primesBelow.mp hp).2.pos))
-        (fun p hp => by
-          have hp' := (Nat.mem_primesBelow.mp hp).2
-          rw [div_lt_one (by exact_mod_cast hp'.pos)]; exact_mod_cast pairOmega_lt hd hp')
-        levelFamily_subset (empty_mem_levelFamily hz2)
-      unfold pairG; linarith
-    have hlz : Real.log x ^ 2 ≤ 256 * Real.log z ^ 2 := by nlinarith
-    have hlz0 : 0 < Real.log z ^ 2 := by nlinarith
-    -- main term
-    have hmain : ((x : ℝ) + 1) / pairG d z ≤ (512 / c) * ((x : ℝ) / Real.log x ^ 2) * PP := by
-      rw [div_le_iff₀ hGpos]
-      have e : (512 / c) * ((x : ℝ) / Real.log x ^ 2) * PP * pairG d z
-          = (512 * x) / (c * Real.log x ^ 2) * (pairG d z * PP) := by
-        field_simp
-      rw [e]
-      have h1 : (512 * (x : ℝ)) / (c * Real.log x ^ 2) * (c * Real.log z ^ 2)
-          ≤ (512 * x) / (c * Real.log x ^ 2) * (pairG d z * PP) :=
-        mul_le_mul_of_nonneg_left hGz (by positivity)
-      refine le_trans ?_ h1
-      rw [div_mul_eq_mul_div, le_div_iff₀ (by positivity)]
-      have k1 : ((x : ℝ) + 1) * Real.log x ^ 2 ≤ (2 * x) * (256 * Real.log z ^ 2) :=
-        mul_le_mul (by linarith) hlz hL2.le (by linarith)
-      have k2 := mul_le_mul_of_nonneg_left k1 hc.le
-      nlinarith
-    have hrem : (z : ℝ) + (z : ℝ) ^ 4 ≤ 32 * ((x : ℝ) / Real.log x ^ 2) * PP := by
-      have : (z : ℝ) + (z : ℝ) ^ 4 ≤ 32 * ((x : ℝ) / Real.log x ^ 2) := by
-        rw [mul_div_assoc', le_div_iff₀ hL2]; exact hzrem
-      have h0 : 0 ≤ 32 * ((x : ℝ) / Real.log x ^ 2) := by positivity
-      nlinarith
-    have h0 : 0 ≤ ((x : ℝ) / Real.log x ^ 2) * PP := by positivity
-    calc cnt ≤ z + (x + 1) / pairG d z + (z : ℝ) ^ 4 := hs
-      _ ≤ 32 * ((x : ℝ) / Real.log x ^ 2) * PP + (512 / c) * ((x : ℝ) / Real.log x ^ 2) * PP := by
-        linarith
-      _ ≤ (320 + 512 / c) * ((x : ℝ) / Real.log x ^ 2) * PP := by nlinarith
-  · push_neg at hbig
-    have hxs : (x : ℝ) < 65536 := by exact_mod_cast hbig
-    have hlog : Real.log x < 12 := by
-      have h1 : Real.log x < Real.log 65536 := Real.log_lt_log (by linarith) hxs
-      have h2 : Real.log (65536 : ℝ) = 16 * Real.log 2 := by
-        rw [show (65536 : ℝ) = 2 ^ 16 by norm_num, Real.log_pow]; norm_num
-      have := Real.log_two_lt_d9
-      linarith
-    have hLsq : Real.log x ^ 2 ≤ 144 := by nlinarith
-    have h1 : cnt ≤ 288 * ((x : ℝ) / Real.log x ^ 2) := by
-      rw [mul_div_assoc', le_div_iff₀ hL2]; nlinarith
-    have h0 : 0 ≤ ((x : ℝ) / Real.log x ^ 2) := by positivity
-    have h2 : 0 ≤ 512 / c * ((x : ℝ) / Real.log x ^ 2) * PP := by positivity
-    nlinarith
-
 /-! ## Brun–Titchmarsh -/
-
-/-- The sieving primes for an arithmetic progression modulo `q`: primes `< z` not dividing `q`. -/
-noncomputable def apPrimes (q z : ℕ) : Finset ℕ := (Nat.primesBelow z).filter (fun p => ¬ p ∣ q)
-
-/-- Selberg's `G(z)` for an arithmetic progression modulo `q`:
-`Σ_{m < z, m ∣ P(z), (m, q) = 1} Π_{p ∣ m} 1/(p - 1)`. -/
-noncomputable def apG (q z : ℕ) : ℝ :=
-  selbergG (fun p : ℕ => (1 : ℝ) / p) (levelFamily (apPrimes q z) z)
-
-/-- The local condition of the progression sieve: `p ∣ b + q t`. -/
-def apCond (b q : ℕ) (p t : ℕ) : Prop := p ∣ b + q * t
-
-theorem apCond_periodic (b q p t : ℕ) : apCond b q p t ↔ apCond b q p (t % p) := by
-  unfold apCond
-  simp only [Nat.dvd_iff_mod_eq_zero, Nat.mul_mod, Nat.add_mod, Nat.mod_mod]
-
-theorem omega_apCond {b q p : ℕ} (hp : p.Prime) (hpq : ¬ p ∣ q) : omega (apCond b q) p = 1 := by
-  unfold omega apCond
-  have hcop : Nat.Coprime q p := ((Nat.Prime.coprime_iff_not_dvd hp).mpr hpq).symm
-  have := card_filter_range_shift (fun u => p ∣ u) hp.pos hcop
-    (fun n => by simp only [Nat.dvd_iff_mod_eq_zero, Nat.mod_mod]) b
-  have h0 : (range p).filter (fun u => p ∣ u) = {0} := by
-    ext u; simp only [mem_filter, mem_range, mem_singleton]
-    exact ⟨fun h => Nat.eq_zero_of_dvd_of_lt h.2 h.1, fun h => h ▸ ⟨hp.pos, dvd_zero p⟩⟩
-  have h2 : ((range p).filter (fun u => p ∣ u)).card = 1 := by rw [h0, card_singleton]
-  convert this.trans h2 using 2
-  ext t; simp
-
-/-- **Brun–Titchmarsh, explicit sieve form.** For `q ≥ 1`, any `a`, `x` and level `z ≥ 2`,
-the number of primes `p ≤ x` with `p ≡ a [MOD q]` is at most
-`z + (x / q + 1) / G_q(z) + z ^ 4`. -/
-theorem card_primes_ap_le_sieve (q a x z : ℕ) (hq : 0 < q) (hz : 2 ≤ z) :
-    (((range (x + 1)).filter (fun p => p.Prime ∧ p ≡ a [MOD q])).card : ℝ)
-      ≤ z + ((x / q + 1 : ℕ) : ℝ) / apG q z + (z : ℝ) ^ 4 := by
-  set b := a % q
-  set Q := apPrimes q z
-  have hQ : ∀ p ∈ Q, p.Prime := fun p hp =>
-    (Nat.mem_primesBelow.mp (mem_filter.mp hp).1).2
-  have hQq : ∀ p ∈ Q, ¬ p ∣ q := fun p hp => (mem_filter.mp hp).2
-  have hω0 : ∀ p ∈ Q, 0 < omega (apCond b q) p := fun p hp => by
-    rw [omega_apCond (hQ p hp) (hQq p hp)]; norm_num
-  have hω1 : ∀ p ∈ Q, omega (apCond b q) p < p := fun p hp => by
-    rw [omega_apCond (hQ p hp) (hQq p hp)]; exact (hQ p hp).one_lt
-  have hsieve := selberg_residue_level (x / q + 1) z hz Q hQ (apCond b q) (apCond_periodic b q)
-    hω0 hω1
-  have hG : selbergG (fun p => (omega (apCond b q) p : ℝ) / p) (levelFamily Q z) = apG q z := by
-    show _ = selbergG (fun p : ℕ => (1 : ℝ) / p) (levelFamily Q z)
-    refine selbergG_congr levelFamily_subset fun p hp => ?_
-    rw [omega_apCond (hQ p hp) (hQq p hp)]; norm_num
-  rw [hG] at hsieve
-  set P := (range (x + 1)).filter (fun p => p.Prime ∧ p ≡ a [MOD q])
-  have hsplit : P.card ≤ (P.filter (fun p => p < z)).card + (P.filter (fun p => ¬ p < z)).card := by
-    rw [card_filter_add_card_filter_not]
-  have h1 : (P.filter (fun p => p < z)).card ≤ z := by
-    have := card_le_card (s := P.filter (fun p => p < z)) (t := range z)
-      (fun p hp => mem_range.mpr (mem_filter.mp hp).2)
-    simpa using this
-  have h2 : (P.filter (fun p => ¬ p < z)).card
-      ≤ ((range (x / q + 1)).filter (fun t => ∀ p ∈ Q, ¬ apCond b q p t)).card := by
-    refine card_le_card_of_injOn (fun n => n / q) ?_ ?_
-    · intro n hn
-      simp only [P, coe_filter, mem_filter, mem_range, Set.mem_setOf_eq] at hn
-      simp only [coe_filter, mem_range, Set.mem_setOf_eq]
-      have hnb : n % q = b := hn.1.2.2
-      have hdecomp : b + q * (n / q) = n := by rw [← hnb]; exact Nat.mod_add_div n q
-      refine ⟨Nat.lt_succ_of_le (Nat.div_le_div_right (by omega)), fun p hp hdiv => ?_⟩
-      unfold apCond at hdiv
-      rw [hdecomp] at hdiv
-      have hp' := Nat.mem_primesBelow.mp (mem_filter.mp hp).1
-      have := (Nat.prime_dvd_prime_iff_eq hp'.2 hn.1.2.1).mp hdiv
-      omega
-    · intro n hn m hm h
-      simp only [P, coe_filter, mem_filter, mem_range, Set.mem_setOf_eq] at hn hm
-      simp only at h
-      have e1 : n % q = m % q := hn.1.2.2.trans hm.1.2.2.symm
-      rw [← Nat.mod_add_div n q, ← Nat.mod_add_div m q, e1, h]
-  have hcard : (P.card : ℝ) ≤ z
-      + (((range (x / q + 1)).filter (fun t => ∀ p ∈ Q, ¬ apCond b q p t)).card : ℝ) := by
-    exact_mod_cast hsplit.trans (Nat.add_le_add h1 h2)
-  linarith
 
 /-! ## A lower bound for `G` (Rankin's trick) -/
 
@@ -1957,16 +1642,6 @@ theorem exists_pairGLowerBound : ∃ c : ℝ, 0 < c ∧ PairGLowerBound c := by
   intro N hN
   have h := (OMALib694.Mertens.prod_one_sub_inv_bounds (N : ℝ) (by exact_mod_cast hN)).2
   rwa [Nat.floor_natCast] at h
-
-/-- **Upper bound for prime pairs with a given difference, unconditional (Romanoff-ready).**
-There is an absolute `C > 0` such that for every even `d > 0` and every `x ≥ 2`,
-`#{p ≤ x : p and p + d prime} ≤ C · x / log² x · Π_{p ∣ d, p > 2} (1 + 1/p)`. -/
-theorem prime_pairs_upper_bound' :
-    ∃ C : ℝ, 0 < C ∧ ∀ d : ℕ, 0 < d → Even d → ∀ x : ℕ, 2 ≤ x →
-      (((range (x + 1)).filter (fun p => p.Prime ∧ (p + d).Prime)).card : ℝ)
-        ≤ C * ((x : ℝ) / Real.log x ^ 2) * pairSingularProduct d := by
-  obtain ⟨c, hc, hG⟩ := exists_pairGLowerBound
-  exact prime_pairs_upper_bound hc hG
 
 end OMALib694.Sieve
 

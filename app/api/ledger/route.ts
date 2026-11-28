@@ -41,7 +41,7 @@ export async function POST(req: Request) {
     else rejected++;
   }
   try {
-    const r = valid.length ? await upsertLedger(valid) : { changed: 0, total: (await readLedger()).meta?.count ?? 0 };
+    const r = valid.length ? await upsertLedger(valid) : { changed: 0, total: (await readLedger()).list.length };
     return json({ ok: true, accepted: valid.length, rejected, ...r });
   } catch (e) {
     console.error("api/ledger", e);
@@ -60,5 +60,5 @@ export async function GET(req: Request) {
   const latest = led.list.reduce((a, e) => (e.merged_at > a ? e.merged_at : a), "");
   const kinds: Record<string, number> = {};
   for (const e of led.list) kinds[e.kind] = (kinds[e.kind] ?? 0) + 1;
-  return NextResponse.json({ count: led.list.length, kinds, latest_merge: latest || null, updated: led.meta?.at ?? null }, { headers });
+  return NextResponse.json({ count: led.list.length, kinds, latest_merge: latest || null, live_updated: led.meta?.at ?? null }, { headers });
 }

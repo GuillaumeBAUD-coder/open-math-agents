@@ -87,15 +87,6 @@ theorem no_square_ratio_divergence
     have hratio := ha x (hat.trans hx.le)
     linarith
 
-theorem no_simultaneous_divergence
-    {f : ℝ → ℝ} {x₀ : ℝ}
-    (hdiff : ∀ x : ℝ, x₀ < x → DifferentiableAt ℝ f x)
-    (hmono : MonotoneOn (fun x : ℝ => |f x|) (Ioi x₀)) :
-    ¬ (∀ n : ℕ, 0 < n →
-      Tendsto (fun x : ℝ => deriv f x / (f x) ^ n) atTop atTop) := by
-  intro h
-  exact no_square_ratio_divergence hdiff hmono (h 2 (by decide))
-
 end OMA.MSE4452078
 
 

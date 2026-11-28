@@ -88,14 +88,9 @@ private theorem expanded_formula : ((1-X-X^2 : ℤ⟦X⟧) * (1-C 2*X^2-C 2*X^4+
       simp only [map_add, map_sub, coeff_X, coeff_X_pow, coeff_C_mul] <;>
       norm_num [first_coeff, a, weightedSum, lucas, Finset.sum_range_succ]
   · obtain ⟨k, rfl⟩ : ∃ k : ℕ, n = k + 8 := ⟨n - 8, by omega⟩
-    rw [if_pos (by omega), if_pos (by omega), if_pos (by omega),
-      show k+8 = (k+6)+2 by omega, first_shifted,
-      show k+6+2-2 = (k+4)+2 by omega, first_shifted,
-      show k+6+2-4 = (k+2)+2 by omega, first_shifted,
-      show k+6+2-6 = k+2 by omega, first_shifted]
-    rw [d_recur]
     simp only [map_add, map_sub, coeff_X, coeff_C_mul, coeff_X_pow]
-    split_ifs <;> omega
+    simp [first_shifted, d_recur]
+    ring
 
 /-- Mathar's ordinary generating function, with numerator and denominator both negated. -/
 theorem main : ((1+X^2 : ℤ⟦X⟧) * (1+X-X^2) * (1-X-X^2)^2) * mk a =

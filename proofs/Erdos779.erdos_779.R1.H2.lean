@@ -12,20 +12,21 @@ open Finset Nat
 namespace P7E779H2
 
 
-lemma nthp {k p : ℕ} (hp : p.Prime) (hc : Nat.count Nat.Prime p = k) : nth Nat.Prime k = p :=
+lemma nthp {k p : ℕ} (hp : p.Prime := by norm_num) (hc : Nat.count Nat.Prime p = k := by decide) :
+    nth Nat.Prime k = p :=
   hc ▸ Nat.nth_count hp
 
-lemma c0 : nth Nat.Prime 0 = 2 := nthp (by norm_num) (by decide)
-lemma c1 : nth Nat.Prime 1 = 3 := nthp (by norm_num) (by decide)
-lemma c2 : nth Nat.Prime 2 = 5 := nthp (by norm_num) (by decide)
-lemma c3 : nth Nat.Prime 3 = 7 := nthp (by norm_num) (by decide)
-lemma c4 : nth Nat.Prime 4 = 11 := nthp (by norm_num) (by decide)
-lemma c5 : nth Nat.Prime 5 = 13 := nthp (by norm_num) (by decide)
-lemma c6 : nth Nat.Prime 6 = 17 := nthp (by norm_num) (by decide)
-lemma c7 : nth Nat.Prime 7 = 19 := nthp (by norm_num) (by decide)
-lemma c8 : nth Nat.Prime 8 = 23 := nthp (by norm_num) (by decide)
-lemma c9 : nth Nat.Prime 9 = 29 := nthp (by norm_num) (by decide)
-lemma c10 : nth Nat.Prime 10 = 31 := nthp (by norm_num) (by decide)
+lemma c0 : nth Nat.Prime 0 = 2 := nthp
+lemma c1 : nth Nat.Prime 1 = 3 := nthp
+lemma c2 : nth Nat.Prime 2 = 5 := nthp
+lemma c3 : nth Nat.Prime 3 = 7 := nthp
+lemma c4 : nth Nat.Prime 4 = 11 := nthp
+lemma c5 : nth Nat.Prime 5 = 13 := nthp
+lemma c6 : nth Nat.Prime 6 = 17 := nthp
+lemma c7 : nth Nat.Prime 7 = 19 := nthp
+lemma c8 : nth Nat.Prime 8 = 23 := nthp
+lemma c9 : nth Nat.Prime 9 = 29 := nthp
+lemma c10 : nth Nat.Prime 10 = 31 := nthp
 
 lemma prime_2 : Nat.Prime 2 := by norm_num
 
@@ -43,19 +44,11 @@ lemma prime_263 : Nat.Prime 263 := by norm_num
 
 lemma prime_311 : Nat.Prime 311 := by norm_num
 
-lemma prime_2333 : Nat.Prime 2333 := by norm_num
-
 lemma prime_2677 : Nat.Prime 2677 := by norm_num
 
 lemma prime_3821 : Nat.Prime 3821 := by norm_num
 
 lemma prime_8951 : Nat.Prime 8951 := by norm_num
-
-lemma prime_30047 : Nat.Prime 30047 := by norm_num
-
-lemma prime_510529 : Nat.Prime 510529 := by norm_num
-
-lemma prime_9699713 : Nat.Prime 9699713 := by norm_num
 
 lemma prime_4885523 : Nat.Prime 4885523 := by norm_num
 
@@ -161,6 +154,9 @@ lemma prime_200560490197 : Nat.Prime 200560490197 := by
       reduce_mod_char
       decide
 
+lemma W {P n : ℕ} (p : ℕ) (hP : (P + p).Prime) (hp : p.Prime := by norm_num) (h1 : n < p := by norm_num)
+    (h2 : p < P := by norm_num) : ∃ p : ℕ, p.Prime ∧ (P + p).Prime ∧ n < p ∧ p < P := ⟨p, hp, hP, h1, h2⟩
+
 end P7E779H2
 
 open P7E779H2
@@ -169,14 +165,14 @@ theorem OMA.solution : OMA.R_Erdos779_erdos_779_R1.H2 := by
   unfold OMA.R_Erdos779_erdos_779_R1.H2
   intro n h1 h10
   interval_cases n <;> simp only [prod_range_succ, prod_range_zero, c0, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10]
-  · exact ⟨5, by norm_num, by norm_num, by norm_num, by norm_num⟩
-  · exact ⟨7, by norm_num, by norm_num, by norm_num, by norm_num⟩
-  · exact ⟨13, by norm_num, by norm_num, by norm_num, by norm_num⟩
-  · exact ⟨23, by norm_num, (by convert prime_2333 using 1; norm_num), by norm_num, by norm_num⟩
-  · exact ⟨17, by norm_num, (by convert prime_30047 using 1; norm_num), by norm_num, by norm_num⟩
-  · exact ⟨19, by norm_num, (by convert prime_510529 using 1; norm_num), by norm_num, by norm_num⟩
-  · exact ⟨23, by norm_num, (by convert prime_9699713 using 1; norm_num), by norm_num, by norm_num⟩
-  · exact ⟨37, by norm_num, (by convert prime_223092907 using 1; norm_num), by norm_num, by norm_num⟩
-  · exact ⟨61, by norm_num, (by convert prime_6469693291 using 1; norm_num), by norm_num, by norm_num⟩
-  · exact ⟨67, by norm_num, (by convert prime_200560490197 using 1; norm_num), by norm_num, by norm_num⟩
+  · exact W 5 (by norm_num)
+  · exact W 7 (by norm_num)
+  · exact W 13 (by norm_num)
+  · exact W 23 (by norm_num)
+  · exact W 17 (by norm_num)
+  · exact W 19 (by norm_num)
+  · exact W 23 (by norm_num)
+  · exact W 37 (by convert prime_223092907 using 1; norm_num)
+  · exact W 61 (by convert prime_6469693291 using 1; norm_num)
+  · exact W 67 (by convert prime_200560490197 using 1; norm_num)
 

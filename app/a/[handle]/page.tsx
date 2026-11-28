@@ -73,16 +73,15 @@ function subDetail(s: Submission): string {
 }
 
 /** Each recent submission and where it stands (lib/submissions.ts): queued, being checked, accepted, rejected. */
-function Submissions({ h, items, list }: { h: string; items: Submission[]; list: PrList | null }) {
+function Submissions({ h, items, list, now }: { h: string; items: Submission[]; list: PrList | null; now: { waiting: number; minutes: number } | null }) {
   if (!items.length) return null;
   const q = list?.queue;
-  const eta = q && q.queued !== null ? Math.ceil((q.queued + 1) / Math.max(1, q.running || 1)) * 2 : null;
   return (
     <section className="panel" style={{ marginTop: 18 }} id="submissions">
       <h3 className="ph">Submissions and their status</h3>
       <p className="sub">
         {list ? <>Checker status as of {utc(list.at)} (refreshed every 15 minutes). </> : null}
-        {q ? <>GitHub&apos;s queue: {q.queued ?? "?"} checks waiting, {q.running} running at a time, about 2 minutes each{eta !== null ? <>: a proof sent now starts in roughly {minutes(eta)}</> : null}. </> : null}
+        {q && now ? <>About {now.waiting} submissions are waiting for their check{q.perHour ? <>, at {q.perHour} verdicts in the last hour</> : <>, {q.running} checked at a time</>}: one sent now is checked in roughly {minutes(now.minutes)} (estimate). </> : null}
         Accepted proofs are merged and credited; a rejected one stays open on GitHub with the reason in a comment. As JSON for an agent: <a href={`/api/pending?handle=${encodeURIComponent(h)}`}>/api/pending?handle={h}</a>
       </p>
       <div className="plist">
@@ -109,7 +108,7 @@ export default async function Person({ params }: Props) {
   const h = segment((await params).handle);
   if (!HANDLE.test(h)) notFound();
   const [p, board, supporters] = await Promise.all([getProfile(h), getLeaderboard2(), getSupporters()]);
-  const subs = await submissionsOf(h, p).catch(() => ({ items: [] as Submission[], list: null }));
+  const subs = await submissionsOf(h, p).catch(() => ({ items: [] as Submission[], list: null, now: null }));
   const prob = (id: string) => getProblem(id);
   const title = (id: string) => prob(id)?.title ?? id;
   const active = Boolean(p && (p.claims > 0 || p.solutions.length > 0 || p.events.length > 0));
@@ -173,7 +172,7 @@ export default async function Person({ params }: Props) {
         </aside>
       </section>
 
-      <Submissions h={h} items={subs.items} list={subs.list} />
+      <Submissions h={h} items={subs.items} list={subs.list} now={subs.now} />
 
       {active && p && (<>
         <div className="kpis">

@@ -28,6 +28,16 @@ const prizeUsd = (p) => { const m = (p ?? "").replace(/,/g, "").match(/[$£](\d+
 const SETTLED_STATE = /^(proved|disproved|solved)\b/;
 // A problem proved here stays an open problem solved here: erdosproblems.com then marks it solved because of our proof.
 const provedHere = (id) => fs.existsSync(path.join(ROOT, "proofs", `${id}.lean`));
+// formal-conjectures' "textbook" category means a known result found in textbooks (Kummer's criterion, the Poincaré
+// conjecture in dimension ≥ 5, BB(4) = 107, …), not an easy exercise: it is a known result to formalize, scored like
+// one (its upstream difficulty was computed from a lower base, 16 instead of 42). "test" and "API" stay warm-ups.
+// Exceptions: elementary facts that only look important because of their source (the Millennium bonus).
+const TEXTBOOK_EASY = new Set(["ComplexityTheory.coP_eq_P", "ComplexityTheory.P_subset_BPP"]);
+function textbookIsKnown(p) {
+  if (TEXTBOOK_EASY.has(p.id)) return { ...p, difficulty: Math.min(p.difficulty ?? 6, 6) };
+  if (p.kind !== "warmup" || p.category !== "textbook") return p;
+  return { ...p, kind: "known", category: "textbook result", difficulty: Math.min(100, (p.difficulty ?? 16) + 26) };
+}
 function settledUpstream(p) {
   if (p.kind !== "open" || !SETTLED_STATE.test(p.erdosState ?? "") || /\.variants?\./.test(p.id) || provedHere(p.id)) return p;
   return { ...p, kind: "known", category: "research solved (per erdosproblems.com)" };
@@ -54,7 +64,7 @@ const formalized = (p) => {
 };
 
 const core = [
-  ...catalog.problems.map((p) => ({ ...settledUpstream(p), fame: fameOf(p) })),
+  ...catalog.problems.map((p) => ({ ...settledUpstream(textbookIsKnown(p)), fame: fameOf(textbookIsKnown(p)) })),
   ...extra.problems.map((p) => formalized({ ...p, fame: fameOf(p) })),
   ...e2.rows.map(([id, title, si, fields, statement, ref, authors, fame, difficulty, tags, area, posts]) => formalized({
     id, title, source: e2.sources[si], kind: "unformalized", category: "unformalized", fields, tags, statement, ref, authors, fame, difficulty,
@@ -74,7 +84,30 @@ let mo = e3.rows.filter((r) => !seen.has(`mo-${r[0]}`)).map(([qid, title, fields
 // A MathOverflow question whose Lean statement has been merged becomes a provable problem: it moves to the core
 // tables, which hold Lean sources.
 for (let i = mo.length - 1; i >= 0; i--) if (statements[mo[i].id]) { const [p] = mo.splice(i, 1); delete p.qid; core.push(formalized(p)); }
-const all = [...core, ...mo];
+// Only unsolved problems are listed as open. A problem already settled elsewhere (found by the statement review,
+// content/open_review.json "known"; by the solved-elsewhere scan, data/settled_elsewhere.json; or marked solved in
+// data/status_overrides.json) is not an open problem: with a Lean statement it becomes a known result (formalize the
+// existing proof; work already merged on it keeps its page), without one it is not listed at all.
+const REVIEW_KNOWN = new Set(Object.keys(JSON.parse(fs.readFileSync(path.join(ROOT, "content", "open_review.json"), "utf8")).known ?? {}));
+// data/settled_elsewhere.json plus one file per scan in data/settled_elsewhere/ (each {"entries": {id: {reason, source, ...}}}).
+const ELSEWHERE = Object.assign(
+  {},
+  fs.existsSync(path.join(ROOT, "data", "settled_elsewhere.json")) ? D("settled_elsewhere.json").entries ?? {} : {},
+  ...(fs.existsSync(path.join(ROOT, "data", "settled_elsewhere"))
+    ? fs.readdirSync(path.join(ROOT, "data", "settled_elsewhere")).filter((f) => f.endsWith(".json")).sort()
+        .map((f) => JSON.parse(fs.readFileSync(path.join(ROOT, "data", "settled_elsewhere", f), "utf8")).entries ?? {})
+    : []),
+);
+const OVERRIDE_SOLVED = new Set(overrides.filter((o) => o.status === "solved").map((o) => o.id));
+const settledElsewhere = (id) => REVIEW_KNOWN.has(id) || id in ELSEWHERE || OVERRIDE_SOLVED.has(id);
+let dropped = 0, relabelled = 0;
+const all = [...core, ...mo].flatMap((p) => {
+  if (!settledElsewhere(p.id) || (p.kind !== "open" && p.kind !== "unformalized")) return [p];
+  if (p.kind === "unformalized") { dropped++; return []; }
+  relabelled++;
+  return [{ ...p, kind: "known", category: "already solved elsewhere", settledElsewhere: ELSEWHERE[p.id] ?? null }];
+});
+console.log(`solved elsewhere: ${relabelled} open problems relabelled known results, ${dropped} unformalized ones no longer listed`);
 
 // Same TeX → Unicode as lib/catalog.ts texPlain, for the one-line excerpt kept in memory.
 const TEX = {

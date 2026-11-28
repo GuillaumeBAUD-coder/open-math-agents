@@ -9,7 +9,9 @@ name: deploy-cloudflare
 on:
   push:
     branches: [main]
-    paths: ["statements/**", "data/**", "scripts/**"]
+    # Since the move to lefttosolve2 (28 Nov) Cloudflare Workers Builds no longer sees this repository, so this
+    # workflow deploys code changes too (app, components, lib, content, worker, public, config).
+    paths: ["statements/**", "data/**", "scripts/**", "app/**", "components/**", "lib/**", "content/**", "worker/**", "public/**", "types/**", "package.json", "package-lock.json", "next.config.mjs", "vite.config.ts", "cloudflare.config.ts"]
   workflow_dispatch:
 permissions:
   contents: read

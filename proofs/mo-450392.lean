@@ -1,6 +1,7 @@
 import OMAStatements.S_mo_450392
 import Mathlib
 
+open Finset
 -- Problem: mo-450392, the floor of sqrt(n^2) + sqrt(n^2+1) + ... + sqrt((n+1)^2) is the
 -- hexagonal number H(n+1) = 2n^2 + 3n + 1.
 -- Credit: @ivillar (the owner of the agent is credited as the solver)
@@ -13,11 +14,11 @@ namespace MO450392
 
 open OMA.S_mo_450392
 
-lemma gauss (m : ℕ) : (∑ h ∈ Finset.range (m + 1), (h : ℝ)) = (m : ℝ) * (m + 1) / 2 := by
+lemma gauss (m : ℕ) : (∑ h ∈ range (m + 1), (h : ℝ)) = (m : ℝ) * (m + 1) / 2 := by
   induction m with
   | zero => simp
   | succ k ih =>
-    rw [Finset.sum_range_succ, ih]
+    rw [sum_range_succ, ih]
     push_cast
     ring
 
@@ -43,7 +44,7 @@ lemma upper_term (x y : ℝ) (hx : 0 < x) (hy0 : 0 ≤ y) :
     _ = x + y / (2 * x) := Real.sqrt_sq (add_nonneg hx.le hw0)
 
 theorem main_proof : ∀ n : ℕ, 1 ≤ n →
-    ⌊∑ h ∈ Finset.range (2 * n + 2), Real.sqrt ((n : ℝ) ^ 2 + (h : ℝ))⌋₊
+    ⌊∑ h ∈ range (2 * n + 2), Real.sqrt ((n : ℝ) ^ 2 + (h : ℝ))⌋₊
       = hexagonal (n + 1) := by
   intro n hn
   have hx : (1 : ℝ) ≤ n := by exact_mod_cast hn
@@ -53,43 +54,43 @@ theorem main_proof : ∀ n : ℕ, 1 ≤ n →
     rw [h]
     ring
   have hlow : 2 * (n : ℝ) ^ 2 + 3 * n + 1
-      ≤ ∑ h ∈ Finset.range (2 * n + 2), Real.sqrt ((n : ℝ) ^ 2 + (h : ℝ)) := by
-    have h1 : ∑ h ∈ Finset.range (2 * n + 2), ((n : ℝ) + (h : ℝ) / (2 * (n : ℝ) + 1))
-        ≤ ∑ h ∈ Finset.range (2 * n + 2), Real.sqrt ((n : ℝ) ^ 2 + (h : ℝ)) := by
-      apply Finset.sum_le_sum
+      ≤ ∑ h ∈ range (2 * n + 2), Real.sqrt ((n : ℝ) ^ 2 + (h : ℝ)) := by
+    have h1 : ∑ h ∈ range (2 * n + 2), ((n : ℝ) + (h : ℝ) / (2 * (n : ℝ) + 1))
+        ≤ ∑ h ∈ range (2 * n + 2), Real.sqrt ((n : ℝ) ^ 2 + (h : ℝ)) := by
+      apply sum_le_sum
       intro h hh
-      rw [Finset.mem_range] at hh
+      rw [mem_range] at hh
       apply lower_term _ _ (by linarith) (Nat.cast_nonneg h)
       have h3 : (h : ℝ) ≤ ((2 * n + 1 : ℕ) : ℝ) := by exact_mod_cast (by omega : h ≤ 2 * n + 1)
       push_cast at h3
       linarith
-    have hg : ∑ h ∈ Finset.range (2 * n + 2), (h : ℝ)
+    have hg : ∑ h ∈ range (2 * n + 2), (h : ℝ)
         = ((2 * n + 1 : ℕ) : ℝ) * (((2 * n + 1 : ℕ) : ℝ) + 1) / 2 := gauss (2 * n + 1)
-    have h2 : ∑ h ∈ Finset.range (2 * n + 2), ((n : ℝ) + (h : ℝ) / (2 * (n : ℝ) + 1))
+    have h2 : ∑ h ∈ range (2 * n + 2), ((n : ℝ) + (h : ℝ) / (2 * (n : ℝ) + 1))
         = 2 * (n : ℝ) ^ 2 + 3 * n + 1 := by
-      rw [Finset.sum_add_distrib, ← Finset.sum_div, Finset.sum_const, Finset.card_range, hg,
+      rw [sum_add_distrib, ← sum_div, sum_const, card_range, hg,
         nsmul_eq_mul]
       have hd : (2 * (n : ℝ) + 1) ≠ 0 := by linarith
       push_cast
       field_simp
       ring
     linarith
-  have hup : ∑ h ∈ Finset.range (2 * n + 2), Real.sqrt ((n : ℝ) ^ 2 + (h : ℝ))
+  have hup : ∑ h ∈ range (2 * n + 2), Real.sqrt ((n : ℝ) ^ 2 + (h : ℝ))
       < 2 * (n : ℝ) ^ 2 + 3 * n + 1 + 1 := by
-    rw [Finset.sum_range_succ]
+    rw [sum_range_succ]
     have hlast : Real.sqrt ((n : ℝ) ^ 2 + ((2 * n + 1 : ℕ) : ℝ)) = n + 1 := by
       have h : (n : ℝ) ^ 2 + ((2 * n + 1 : ℕ) : ℝ) = ((n : ℝ) + 1) ^ 2 := by
         push_cast
         ring
       rw [h, Real.sqrt_sq (by linarith)]
-    have h1 : ∑ h ∈ Finset.range (2 * n + 1), Real.sqrt ((n : ℝ) ^ 2 + (h : ℝ))
-        ≤ ∑ h ∈ Finset.range (2 * n + 1), ((n : ℝ) + (h : ℝ) / (2 * (n : ℝ))) := by
-      apply Finset.sum_le_sum
+    have h1 : ∑ h ∈ range (2 * n + 1), Real.sqrt ((n : ℝ) ^ 2 + (h : ℝ))
+        ≤ ∑ h ∈ range (2 * n + 1), ((n : ℝ) + (h : ℝ) / (2 * (n : ℝ))) := by
+      apply sum_le_sum
       intro h _
       exact upper_term _ _ (by linarith) (Nat.cast_nonneg h)
-    have h2 : ∑ h ∈ Finset.range (2 * n + 1), ((n : ℝ) + (h : ℝ) / (2 * (n : ℝ)))
+    have h2 : ∑ h ∈ range (2 * n + 1), ((n : ℝ) + (h : ℝ) / (2 * (n : ℝ)))
         = 2 * (n : ℝ) ^ 2 + 2 * n + 1 / 2 := by
-      rw [Finset.sum_add_distrib, ← Finset.sum_div, Finset.sum_const, Finset.card_range,
+      rw [sum_add_distrib, ← sum_div, sum_const, card_range,
         gauss (2 * n), nsmul_eq_mul]
       have hd : (n : ℝ) ≠ 0 := by linarith
       push_cast
@@ -97,8 +98,8 @@ theorem main_proof : ∀ n : ℕ, 1 ≤ n →
       ring
     rw [hlast]
     linarith
-  have hnonneg : 0 ≤ ∑ h ∈ Finset.range (2 * n + 2), Real.sqrt ((n : ℝ) ^ 2 + (h : ℝ)) :=
-    Finset.sum_nonneg fun h _ => Real.sqrt_nonneg _
+  have hnonneg : 0 ≤ ∑ h ∈ range (2 * n + 2), Real.sqrt ((n : ℝ) ^ 2 + (h : ℝ)) :=
+    sum_nonneg fun h _ => Real.sqrt_nonneg _
   rw [hhex, Nat.floor_eq_iff hnonneg]
   push_cast
   exact ⟨hlow, hup⟩

@@ -1,5 +1,6 @@
 import FormalConjectures.Wikipedia.ButsonHadamardMatrix
 
+open Finset
 /-!
 # Proof of Butson's prime divisibility theorem
 
@@ -34,36 +35,36 @@ theorem OMA.solution : type_of% @ButsonHadamardMatrix.butson_prime_divisibility 
   have hex_exp : ∀ j : Fin n, ∃ r < p, ζ ^ r = a j :=
     fun j => hζ.eq_pow_of_pow_eq_one (ha_pow j)
   choose f hf_lt hf_eq using hex_exp
-  set c : ℕ → ℕ := fun r => (Finset.univ.filter (fun j : Fin n => f j = r)).card
-  have hcard_sum : ∑ r ∈ Finset.range p, c r = n := by
-    have h := Finset.sum_card_fiberwise_eq_card_filter (s := (Finset.univ : Finset (Fin n)))
-      (t := Finset.range p) (g := f)
-    have hfilter : (Finset.univ.filter (fun j : Fin n => f j ∈ Finset.range p)) = Finset.univ := by
+  set c : ℕ → ℕ := fun r => (univ.filter (fun j : Fin n => f j = r)).card
+  have hcard_sum : ∑ r ∈ range p, c r = n := by
+    have h := sum_card_fiberwise_eq_card_filter (s := (univ : Finset (Fin n)))
+      (t := range p) (g := f)
+    have hfilter : (univ.filter (fun j : Fin n => f j ∈ range p)) = univ := by
       ext j
       simp [hf_lt j]
-    rw [hfilter, Finset.card_univ, Fintype.card_fin] at h
+    rw [hfilter, card_univ, Fintype.card_fin] at h
     exact h
-  have hζ_sum : ∑ r ∈ Finset.range p, (c r : ℂ) * ζ ^ r = 0 := by
-    have hmaps : ∀ j ∈ (Finset.univ : Finset (Fin n)), f j ∈ Finset.range p :=
-      fun j _ => Finset.mem_range.mpr (hf_lt j)
-    have hfib := Finset.sum_fiberwise_of_maps_to (s := (Finset.univ : Finset (Fin n)))
-      (t := Finset.range p) (g := f) (f := a) hmaps
+  have hζ_sum : ∑ r ∈ range p, (c r : ℂ) * ζ ^ r = 0 := by
+    have hmaps : ∀ j ∈ (univ : Finset (Fin n)), f j ∈ range p :=
+      fun j _ => mem_range.mpr (hf_lt j)
+    have hfib := sum_fiberwise_of_maps_to (s := (univ : Finset (Fin n)))
+      (t := range p) (g := f) (f := a) hmaps
     rw [hsum_zero] at hfib
     rw [← hfib]
-    refine Finset.sum_congr rfl ?_
+    refine sum_congr rfl ?_
     intro r _
-    have hterm : ∑ j ∈ Finset.univ.filter (fun j : Fin n => f j = r), a j =
-        ∑ _j ∈ Finset.univ.filter (fun j : Fin n => f j = r), ζ ^ r := by
-      refine Finset.sum_congr rfl ?_
+    have hterm : ∑ j ∈ univ.filter (fun j : Fin n => f j = r), a j =
+        ∑ _j ∈ univ.filter (fun j : Fin n => f j = r), ζ ^ r := by
+      refine sum_congr rfl ?_
       intro j hj
-      rw [← hf_eq j, (Finset.mem_filter.mp hj).2]
-    rw [hterm, Finset.sum_const, nsmul_eq_mul]
-  set P : ℚ[X] := ∑ r ∈ Finset.range p, Polynomial.C (c r : ℚ) * Polynomial.X ^ r
+      rw [← hf_eq j, (mem_filter.mp hj).2]
+    rw [hterm, sum_const, nsmul_eq_mul]
+  set P : ℚ[X] := ∑ r ∈ range p, Polynomial.C (c r : ℚ) * Polynomial.X ^ r
   have hP_eval : Polynomial.aeval ζ P = 0 := by
     simp only [P, map_sum, map_mul, map_pow, Polynomial.aeval_X, map_natCast]
     exact hζ_sum
   have : Fact p.Prime := ⟨hp⟩
-  have hcycl_eq : Polynomial.cyclotomic p ℚ = ∑ i ∈ Finset.range p, Polynomial.X ^ i :=
+  have hcycl_eq : Polynomial.cyclotomic p ℚ = ∑ i ∈ range p, Polynomial.X ^ i :=
     Polynomial.cyclotomic_prime ℚ p
   have hcycl_eval : Polynomial.aeval ζ (Polynomial.cyclotomic p ℚ) = 0 := by
     rw [hcycl_eq, map_sum]
@@ -84,16 +85,16 @@ theorem OMA.solution : type_of% @ButsonHadamardMatrix.butson_prime_divisibility 
     simp only [P, Polynomial.finsetSum_coeff, Polynomial.coeff_C_mul, Polynomial.coeff_X_pow,
       mul_ite, mul_one, mul_zero]
     by_cases hk : k < p
-    · rw [if_pos hk, Finset.sum_eq_single k]
+    · rw [if_pos hk, sum_eq_single k]
       · simp
       · intro r _ hr
         simp [Ne.symm hr]
       · intro hnot
-        exact absurd (Finset.mem_range.mpr hk) hnot
+        exact absurd (mem_range.mpr hk) hnot
     · rw [if_neg hk]
-      refine Finset.sum_eq_zero ?_
+      refine sum_eq_zero ?_
       intro r hr
-      have hrlt : r < p := Finset.mem_range.mp hr
+      have hrlt : r < p := mem_range.mp hr
       have hkr : k ≠ r := by omega
       simp [hkr]
   have hP_deg : P.natDegree ≤ p - 1 := by
@@ -115,17 +116,17 @@ theorem OMA.solution : type_of% @ButsonHadamardMatrix.butson_prime_divisibility 
     have h2 : P.coeff r = Q.coeff 0 := by
       rw [hPQ, hcycl_eq, hQ_eq, Polynomial.coeff_mul_C, Polynomial.finsetSum_coeff]
       simp only [Polynomial.coeff_X_pow]
-      rw [Finset.sum_eq_single r]
+      rw [sum_eq_single r]
       · simp
       · intro i _ hi
         simp [Ne.symm hi]
       · intro hnot
-        exact absurd (Finset.mem_range.mpr hr) hnot
+        exact absurd (mem_range.mpr hr) hnot
     linarith
-  have hc_const : ∀ r ∈ Finset.range p, c r = c 0 := by
+  have hc_const : ∀ r ∈ range p, c r = c 0 := by
     intro r hr
     have hq : (c r : ℚ) = (c 0 : ℚ) := by
-      rw [hcoeff_eq r (Finset.mem_range.mp hr), hcoeff_eq 0 hp.pos]
+      rw [hcoeff_eq r (mem_range.mp hr), hcoeff_eq 0 hp.pos]
     exact Nat.cast_injective hq
   refine ⟨c 0, ?_⟩
-  rw [← hcard_sum, Finset.sum_congr rfl hc_const, Finset.sum_const, Finset.card_range, smul_eq_mul]
+  rw [← hcard_sum, sum_congr rfl hc_const, sum_const, card_range, smul_eq_mul]

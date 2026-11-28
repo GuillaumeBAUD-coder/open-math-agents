@@ -1,269 +1,185 @@
 import OMAReductions.R_Erdos692_erdos_692_variants_cambie_local_maxima_R1
 
--- Step Erdos692.erdos_692.variants.cambie_local_maxima.R1.H2: hypothesis H2 of reduction Erdos692.erdos_692.variants.cambie_local_maxima.R1
--- Credit: @luciusacarr
--- Moving the right end from 2q to 2q+1 adds only the divisor 2q, and every multiple of 2q
--- already has the divisor q in (n, 2q). So the new set sits inside the old one, and the old one
--- also contains the residue class 2q modulo 2q·(2q)!, which has positive density.
--- The two density lemmas are adapted from reductions/Erdos470...R1 (hasDensity_sdiff)
--- and proofs/Erdos786...selfridge (hasDensity_of_periodic).
+-- Periodic density lemmas adapted from the merged Erdős 1064 proof.
+open Filter Set Topology Erdos692
+namespace CambieDrop
+open scoped Classical
+noncomputable def cnt (S : Set ℕ) (b : ℕ) : ℕ := ((Finset.range b).filter (· ∈ S)).card
 
-namespace OMA.E692H2
+lemma pd_eq (S : Set ℕ) (b : ℕ) : S.partialDensity Set.univ b = (cnt S b : ℝ) / b := by
+  simp only [Set.partialDensity, Set.inter_univ, Set.univ_inter]
+  have h1 : S ∩ Iio b = ↑((Finset.range b).filter (· ∈ S)) := by
+    ext n; simp [and_comm]
+  rw [h1, Set.ncard_coe_finset, Nat.ncard_Iio]
+  simp [cnt]
 
-open Filter Topology Erdos692
+lemma hasDensity_iff (S : Set ℕ) (d : ℝ) :
+    S.HasDensity d ↔ Tendsto (fun b => (cnt S b : ℝ) / b) atTop (𝓝 d) := by
+  simp only [Set.HasDensity, pd_eq]
 
-lemma hasDensity_sdiff {S T : Set ℕ} {α β : ℝ} (hST : T ⊆ S)
-    (hS : S.HasDensity α) (hT : T.HasDensity β) : (S \ T).HasDensity (α - β) := by
-  rw [Set.HasDensity] at hS hT ⊢
-  have heq : ∀ b : ℕ, (S \ T).partialDensity Set.univ b =
-      S.partialDensity Set.univ b - T.partialDensity Set.univ b := by
-    intro b
-    simp only [Set.partialDensity, Set.inter_univ]
-    have hfinS : (S ∩ Set.Iio b).Finite := (Set.finite_Iio b).inter_of_right S
-    have hfinT : (T ∩ Set.Iio b).Finite := (Set.finite_Iio b).inter_of_right T
-    have hsub : T ∩ Set.Iio b ⊆ S ∩ Set.Iio b := Set.inter_subset_inter_left _ hST
-    have hdiff : (S \ T) ∩ Set.Iio b = (S ∩ Set.Iio b) \ (T ∩ Set.Iio b) := by
-      ext x
-      simp only [Set.mem_inter_iff, Set.mem_sdiff]
-      tauto
-    rw [hdiff, Set.ncard_sdiff hsub hfinT]
-    have hle : (T ∩ Set.Iio b).ncard ≤ (S ∩ Set.Iio b).ncard := Set.ncard_le_ncard hsub hfinS
-    rw [Nat.cast_sub hle, sub_div]
-  simp_rw [heq]
-  exact hS.sub hT
+lemma cnt_succ (S : Set ℕ) (n : ℕ) :
+    cnt S (n + 1) = cnt S n + (if n ∈ S then 1 else 0) := by
+  unfold cnt
+  rw [Finset.range_add_one, Finset.filter_insert]
+  split_ifs with h
+  · rw [Finset.card_insert_of_notMem (by simp)]
+  · simp
 
-lemma hasDensity_of_periodic {A : Set ℕ} [DecidablePred (· ∈ A)] {M : ℕ} (hM : 0 < M)
-    (hper : ∀ n : ℕ, n % M ∈ A ↔ n ∈ A) :
-    A.HasDensity ((((Finset.range M).filter (· ∈ A)).card : ℝ) / (M : ℝ)) := by
-  let c : ℕ := ((Finset.range M).filter (· ∈ A)).card
-  have hmul : ∀ q : ℕ, ((Finset.range (q * M)).filter (· ∈ A)).card = q * c := by
-    intro q
-    induction q with
-    | zero => simp
-    | succ q ih =>
-      have hsplit : (Finset.range ((q + 1) * M)).filter (· ∈ A) =
-          (Finset.range (q * M)).filter (· ∈ A) ∪
-            (Finset.Ico (q * M) ((q + 1) * M)).filter (· ∈ A) := by
-        ext n
-        simp only [Finset.mem_filter, Finset.mem_union, Finset.mem_range, Finset.mem_Ico]
-        constructor
-        · rintro ⟨hn, hA⟩
-          by_cases hlt : n < q * M
-          · exact Or.inl ⟨hlt, hA⟩
-          · exact Or.inr ⟨⟨Nat.le_of_not_lt hlt, hn⟩, hA⟩
-        · rintro (⟨hlt, hA⟩ | ⟨⟨_, hlt⟩, hA⟩)
-          · exact ⟨lt_of_lt_of_le hlt (by nlinarith), hA⟩
-          · exact ⟨hlt, hA⟩
-      have hdisj : Disjoint ((Finset.range (q * M)).filter (· ∈ A))
-          ((Finset.Ico (q * M) ((q + 1) * M)).filter (· ∈ A)) :=
-        Finset.disjoint_left.mpr fun n h1 h2 => by
-          have h1' := Finset.mem_range.mp (Finset.mem_filter.mp h1).1
-          have h2' := (Finset.mem_Ico.mp (Finset.mem_filter.mp h2).1).1
+lemma cnt_le (S : Set ℕ) (n : ℕ) : cnt S n ≤ n := by
+  unfold cnt
+  exact (Finset.card_filter_le _ _).trans (by simp)
+
+def Per (Y : Set ℕ) (N : ℕ) : Prop := ∀ n, n ∈ Y ↔ n + N ∈ Y
+
+lemma Per.mem_add_mul {Y : Set ℕ} {N : ℕ} (h : Per Y N) (n k : ℕ) :
+    n ∈ Y ↔ n + N * k ∈ Y := by
+  induction k with
+  | zero => simp
+  | succ k ih => rw [ih, h (n + N * k)]; ring_nf
+
+lemma Per.mem_mod {Y : Set ℕ} {N : ℕ} (h : Per Y N) (n : ℕ) : n ∈ Y ↔ n % N ∈ Y := by
+  rw [h.mem_add_mul (n % N) (n / N), Nat.mod_add_div]
+
+lemma Per.cnt_add {Y : Set ℕ} {N : ℕ} (h : Per Y N) (n : ℕ) :
+    cnt Y (n + N) = cnt Y n + cnt Y N := by
+  induction n with
+  | zero => simp [cnt]
+  | succ n ih =>
+    rw [show n + 1 + N = (n + N) + 1 by ring, cnt_succ, ih, cnt_succ]
+    have := h n
+    by_cases hn : n ∈ Y
+    · rw [if_pos hn, if_pos (this.1 hn)]; omega
+    · rw [if_neg hn, if_neg (fun h' => hn (this.2 h'))]; omega
+
+lemma Per.cnt_approx {Y : Set ℕ} {N : ℕ} (h : Per Y N) (hN : 0 < N) (n : ℕ) :
+    |(cnt Y n : ℝ) - n * (cnt Y N) / N| ≤ N := by
+  induction n using Nat.strong_induction_on with
+  | _ n ih =>
+    by_cases hn : n < N
+    · have h1 : (cnt Y n : ℝ) ≤ n := by exact_mod_cast cnt_le Y n
+      have h2 : (cnt Y N : ℝ) ≤ N := by exact_mod_cast cnt_le Y N
+      have hN' : (0 : ℝ) < N := by exact_mod_cast hN
+      have h3 : (n : ℝ) * cnt Y N / N ≤ n := by
+        rw [div_le_iff₀ hN']; exact mul_le_mul_of_nonneg_left h2 (by positivity)
+      have h4 : (0 : ℝ) ≤ n * cnt Y N / N := by positivity
+      have h5 : (n : ℝ) ≤ N := by exact_mod_cast hn.le
+      rw [abs_le]; constructor <;> nlinarith [Nat.cast_nonneg (α := ℝ) (cnt Y n)]
+    · obtain ⟨m, rfl⟩ : ∃ m, n = m + N := ⟨n - N, by omega⟩
+      have := ih m (by omega)
+      rw [h.cnt_add]
+      have hN' : (N : ℝ) ≠ 0 := by exact_mod_cast hN.ne'
+      have e : ((cnt Y m + cnt Y N : ℕ) : ℝ) - ((m + N : ℕ) : ℝ) * cnt Y N / N
+          = (cnt Y m : ℝ) - m * cnt Y N / N := by
+        push_cast; field_simp; ring
+      rw [e]; exact this
+
+lemma Per.hasDensity {Y : Set ℕ} {N : ℕ} (h : Per Y N) (hN : 0 < N) :
+    Y.HasDensity ((cnt Y N : ℝ) / N) := by
+  rw [hasDensity_iff, Metric.tendsto_atTop]
+  intro ε hε
+  obtain ⟨n0, hn0⟩ := exists_nat_gt ((N : ℝ) / ε)
+  refine ⟨n0 + 1, fun n hn => ?_⟩
+  have hnpos : (0 : ℝ) < n := by exact_mod_cast (show 0 < n by omega)
+  have hn' : (N : ℝ) / ε < n := lt_of_lt_of_le hn0 (by exact_mod_cast (show n0 ≤ n by omega))
+  rw [Real.dist_eq]
+  have e : (cnt Y n : ℝ) / n - cnt Y N / N = ((cnt Y n : ℝ) - n * cnt Y N / N) / n := by
+    field_simp
+  rw [e, abs_div, abs_of_pos hnpos, div_lt_iff₀ hnpos]
+  refine lt_of_le_of_lt (h.cnt_approx hN n) ?_
+  rwa [div_lt_iff₀ hε, mul_comm] at hn'
+
+lemma HasDensity.unique {S : Set ℕ} {a b : ℝ} (ha : S.HasDensity a) (hb : S.HasDensity b) :
+    a = b := tendsto_nhds_unique ha hb
+
+lemma factor_between {n q d : ℕ} (hn : 2 ≤ n) (hq : q.Prime)
+    (hd : n < d) (hlt : d < 2*q) (hdv : d ∣ 2*q) : d = q := by
+  obtain ⟨t, ht⟩ := hdv
+  have hqt : q ∣ d*t := ht ▸ dvd_mul_left q 2
+  rcases hq.dvd_mul.mp hqt with h | h
+  · obtain ⟨s, hs⟩ := h
+    have hs1 : s = 1 := by
+      by_contra hne
+      have hs2 : 2 ≤ s := by
+        by_cases hz : s = 0
+        · simp [hz] at hs
           omega
-      have hblock : ((Finset.Ico (q * M) ((q + 1) * M)).filter (· ∈ A)).card = c := by
-        refine Finset.card_bij (fun n _ => n - q * M) ?_ ?_ ?_
-        · intro n hn
-          rcases Finset.mem_filter.mp hn with ⟨hIco, hA⟩
-          rcases Finset.mem_Ico.mp hIco with ⟨hle, hlt⟩
-          refine Finset.mem_filter.mpr ⟨Finset.mem_range.mpr (by
-            have : (q + 1) * M = q * M + M := by ring
-            omega), ?_⟩
-          have hmod : (n - q * M) % M = n % M := by
-            have hadd : q * M + (n - q * M) = n := by omega
-            rw [← Nat.mul_add_mod_self_right q M (n - q * M), hadd]
-          exact (hper (n - q * M)).mp (hmod.symm ▸ (hper n).mpr hA)
-        · intro n₁ hn₁ n₂ hn₂ heq
-          have h1 := (Finset.mem_Ico.mp (Finset.mem_filter.mp hn₁).1).1
-          have h2 := (Finset.mem_Ico.mp (Finset.mem_filter.mp hn₂).1).1
-          omega
-        · intro r hr
-          rcases Finset.mem_filter.mp hr with ⟨hr_lt, hAr⟩
-          rw [Finset.mem_range] at hr_lt
-          have : (q + 1) * M = q * M + M := by ring
-          refine ⟨q * M + r, Finset.mem_filter.mpr ⟨Finset.mem_Ico.mpr ⟨by omega, by omega⟩, ?_⟩,
-            by omega⟩
-          have hmod : (q * M + r) % M = r % M := by rw [Nat.mul_add_mod_self_right]
-          exact (hper (q * M + r)).mp (hmod.symm ▸ (hper r).mpr hAr)
-      rw [hsplit, Finset.card_union_of_disjoint hdisj, ih, hblock]
-      ring
-  have hcard : ∀ n : ℕ, (A ∩ Set.Iio n).ncard = ((Finset.range n).filter (· ∈ A)).card := by
-    intro n
-    have hset : A ∩ Set.Iio n = ↑((Finset.range n).filter (· ∈ A)) := by
-      ext m
-      simp [Set.mem_Iio, and_comm]
-    rw [hset, Set.ncard_coe_finset]
-  rw [Set.HasDensity]
-  have hpd : ∀ n : ℕ, A.partialDensity Set.univ n =
-      (((Finset.range n).filter (· ∈ A)).card : ℝ) / (n : ℝ) := by
-    intro n
-    rw [Set.partialDensity, Set.inter_univ, Set.univ_inter, hcard, Nat.ncard_Iio]
-  simp only [hpd]
-  have hM_pos : (0 : ℝ) < (M : ℝ) := Nat.cast_pos.mpr hM
-  have hbdd : ∀ n : ℕ, 1 ≤ n →
-      (c : ℝ) / (M : ℝ) - (c : ℝ) * (1 / (n : ℝ)) ≤
-        (((Finset.range n).filter (· ∈ A)).card : ℝ) / (n : ℝ) ∧
-      (((Finset.range n).filter (· ∈ A)).card : ℝ) / (n : ℝ) ≤
-        (c : ℝ) / (M : ℝ) + (c : ℝ) * (1 / (n : ℝ)) := by
-    intro n hn
-    have hn_pos : (0 : ℝ) < (n : ℝ) := Nat.cast_pos.mpr hn
-    let q := n / M
-    have hq_le : q * M ≤ n := Nat.div_mul_le_self n M
-    have hq_lt : n < (q + 1) * M := by
-      have h1 : q * M + n % M = n := by
-        dsimp only [q]
-        rw [mul_comm]
-        exact Nat.div_add_mod n M
-      have h2 := Nat.mod_lt n hM
-      nlinarith
-    have hlo_nat : q * c ≤ ((Finset.range n).filter (· ∈ A)).card := by
-      rw [← hmul q]
-      exact Finset.card_le_card (Finset.filter_subset_filter _ (Finset.range_mono hq_le))
-    have hhi_nat : ((Finset.range n).filter (· ∈ A)).card ≤ (q + 1) * c := by
-      rw [← hmul (q + 1)]
-      exact Finset.card_le_card (Finset.filter_subset_filter _ (Finset.range_mono hq_lt.le))
-    have hlo : (q : ℝ) * (c : ℝ) ≤ (((Finset.range n).filter (· ∈ A)).card : ℝ) := by
-      exact_mod_cast hlo_nat
-    have hhi : (((Finset.range n).filter (· ∈ A)).card : ℝ) ≤ ((q : ℝ) + 1) * (c : ℝ) := by
-      exact_mod_cast hhi_nat
-    have hqM_le : (q : ℝ) * (M : ℝ) ≤ (n : ℝ) := by exact_mod_cast hq_le
-    have hqM_gt : (n : ℝ) < ((q : ℝ) + 1) * (M : ℝ) := by exact_mod_cast hq_lt
-    have hc_nonneg : (0 : ℝ) ≤ (c : ℝ) := Nat.cast_nonneg c
-    constructor
-    · rw [le_div_iff₀ hn_pos]
-      have h1 : ((c : ℝ) / (M : ℝ) - (c : ℝ) * (1 / (n : ℝ))) * (n : ℝ) * (M : ℝ) =
-          (c : ℝ) * ((n : ℝ) - (M : ℝ)) := by
-        field_simp [hM_pos.ne', hn_pos.ne']
-      have h2 : (c : ℝ) * ((n : ℝ) - (M : ℝ)) ≤ (q : ℝ) * (c : ℝ) * (M : ℝ) := by nlinarith
-      nlinarith
-    · rw [div_le_iff₀ hn_pos]
-      have h1 : ((c : ℝ) / (M : ℝ) + (c : ℝ) * (1 / (n : ℝ))) * (n : ℝ) * (M : ℝ) =
-          (c : ℝ) * ((n : ℝ) + (M : ℝ)) := by
-        field_simp [hM_pos.ne', hn_pos.ne']
-      have h2 : ((q : ℝ) + 1) * (c : ℝ) * (M : ℝ) ≤ (c : ℝ) * ((n : ℝ) + (M : ℝ)) := by
-        nlinarith
-      nlinarith
-  have hlim : ∀ s : ℝ, Tendsto (fun n : ℕ => (c : ℝ) / (M : ℝ) + s * (1 / (n : ℝ)))
-      atTop (𝓝 ((c : ℝ) / (M : ℝ))) := fun s => by
-    simpa using Tendsto.const_add ((c : ℝ) / (M : ℝ))
-      (Tendsto.const_mul s tendsto_one_div_atTop_nhds_zero_nat)
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le'
-    (by simpa [sub_eq_add_neg, neg_mul] using hlim (-(c : ℝ)))
-    (hlim (c : ℝ))
-    (eventually_atTop.mpr ⟨1, fun n hn => by simpa [sub_eq_add_neg, neg_mul] using (hbdd n hn).1⟩)
-    (eventually_atTop.mpr ⟨1, fun n hn => (hbdd n hn).2⟩)
+        · omega
+      nlinarith [Nat.mul_le_mul_left q hs2]
+    simpa [hs1] using hs
+  · obtain ⟨u, hu⟩ := h
+    have hprod : 2*q = (d*u)*q := by rw [ht, hu]; ring
+    have he : 2 = d*u := Nat.eq_of_mul_eq_mul_right hq.pos hprod
+    have hu1 : 1 ≤ u := by
+      cases u with
+      | zero => simp at he
+      | succ u => omega
+    nlinarith [Nat.mul_le_mul_left d hu1]
 
-/-- A multiple of `2q` has the two divisors `q` and `2q` in `(n, 2q+1)`. -/
-lemma not_mem_of_dvd {n q x : ℕ} (hnq : n < q) (hx : 2 * q ∣ x) :
-    x ∉ exactlyOneDivisorIn n (2 * q + 1) := by
-  intro hmem
-  have hfin : {d ∈ Set.Ioo n (2 * q + 1) | d ∣ x}.Finite :=
-    (Set.finite_Ioo n (2 * q + 1)).subset (fun d hd => hd.1)
-  have hsub : ({q, 2 * q} : Set ℕ) ⊆ {d ∈ Set.Ioo n (2 * q + 1) | d ∣ x} := by
-    intro d hd
-    rcases hd with rfl | rfl
-    · exact ⟨⟨hnq, by omega⟩, (Dvd.intro_left 2 rfl).trans hx⟩
-    · exact ⟨⟨by omega, by omega⟩, hx⟩
-  have h2 := Set.ncard_le_ncard hsub hfin
-  rw [Set.ncard_pair (by omega)] at h2
-  have h1 : {d ∈ Set.Ioo n (2 * q + 1) | d ∣ x}.ncard = 1 := hmem
-  omega
-
-lemma subset_old {n q : ℕ} (hnq : n < q) :
-    exactlyOneDivisorIn n (2 * q + 1) ⊆ exactlyOneDivisorIn n (2 * q) := by
-  intro x hx
-  by_cases hdx : 2 * q ∣ x
-  · exact absurd hx (not_mem_of_dvd hnq hdx)
-  · have hset : {d ∈ Set.Ioo n (2 * q) | d ∣ x} = {d ∈ Set.Ioo n (2 * q + 1) | d ∣ x} := by
-      ext d
-      simp only [Set.mem_setOf_eq, Set.mem_Ioo]
-      constructor
-      · rintro ⟨⟨h1, h2⟩, h3⟩
-        exact ⟨⟨h1, by omega⟩, h3⟩
-      · rintro ⟨⟨h1, h2⟩, h3⟩
-        refine ⟨⟨h1, ?_⟩, h3⟩
-        rcases Nat.lt_succ_iff_lt_or_eq.1 h2 with h | h
-        · exact h
-        · exact absurd (h ▸ h3) hdx
-    show {d ∈ Set.Ioo n (2 * q) | d ∣ x}.ncard = 1
-    rw [hset]
-    exact hx
-
-lemma class_mem {n q x : ℕ} (hn : 2 ≤ n) (hnq : n < q) (hq : q.Prime)
-    (hx : x % (2 * q * (2 * q).factorial) = 2 * q) :
-    x ∈ exactlyOneDivisorIn n (2 * q) \ exactlyOneDivisorIn n (2 * q + 1) := by
-  set F := (2 * q).factorial with hF
-  set u := 1 + x / (2 * q * F) * F with hu
-  have hxu : x = 2 * q * u := by
-    have := Nat.div_add_mod x (2 * q * F)
-    rw [hx] at this
-    rw [hu]
-    nlinarith
-  have hdx : 2 * q ∣ x := ⟨u, hxu⟩
-  refine ⟨?_, not_mem_of_dvd hnq hdx⟩
-  have hset : {d ∈ Set.Ioo n (2 * q) | d ∣ x} = {q} := by
+lemma periodic_set {n m L : ℕ} (hn : 0 < n)
+    (hL : ∀ d, n < d → d < m → d ∣ L) : Per (exactlyOneDivisorIn n m) L := by
+  intro x
+  unfold exactlyOneDivisorIn
+  have he : {d ∈ Set.Ioo n m | d ∣ x} = {d ∈ Set.Ioo n m | d ∣ x + L} := by
     ext d
-    simp only [Set.mem_setOf_eq, Set.mem_Ioo, Set.mem_singleton_iff]
+    change (_ ∧ _) ↔ (_ ∧ _)
     constructor
-    · rintro ⟨⟨h1, h2⟩, h3⟩
-      have hdF : d ∣ F := Nat.dvd_factorial (by omega) h2.le
-      have hcopF : Nat.Coprime F u := by
-        rw [hu, Nat.coprime_add_mul_right_right]
-        exact Nat.coprime_one_right F
-      have hcop : Nat.Coprime d u := Nat.Coprime.coprime_dvd_left hdF hcopF
-      have hd2q : d ∣ 2 * q := hcop.dvd_of_dvd_mul_right (hxu ▸ h3)
-      by_cases hqd : q ∣ d
-      · obtain ⟨e, rfl⟩ := hqd
-        have he : e ∣ 2 := by
-          have hq0 : 0 < q := hq.pos
-          rw [mul_comm 2 q] at hd2q
-          exact (Nat.mul_dvd_mul_iff_left hq0).1 hd2q
-        have he2 : e ≤ 2 := Nat.le_of_dvd (by norm_num) he
-        interval_cases e
-        · omega
-        · omega
-        · omega
-      · have hcq : Nat.Coprime q d := (Nat.Prime.coprime_iff_not_dvd hq).2 hqd
-        have : d ∣ 2 := hcq.symm.dvd_of_dvd_mul_right hd2q
-        have := Nat.le_of_dvd (by norm_num) this
-        omega
-    · rintro rfl
-      exact ⟨⟨hnq, by have := hq.pos; omega⟩, (Dvd.intro_left 2 rfl).trans hdx⟩
-  show {d ∈ Set.Ioo n (2 * q) | d ∣ x}.ncard = 1
-  rw [hset, Set.ncard_singleton]
+    · rintro ⟨h, hd⟩
+      exact ⟨h, dvd_add hd (hL d h.1 h.2)⟩
+    · rintro ⟨h, hd⟩
+      exact ⟨h, (Nat.dvd_add_iff_left (hL d h.1 h.2)).mpr hd⟩
+  change _ = 1 ↔ _ = 1
+  rw [he]
 
-end OMA.E692H2
-
-open Erdos692 in
-theorem OMA.solution :
-    OMA.R_Erdos692_erdos_692_variants_cambie_local_maxima_R1.H2 := by
+lemma drop (δ : ℕ → ℕ → ℝ) (hδ : ∀ a b, IsDelta₁ a b (δ a b))
+    (n q : ℕ) (hn : 2 ≤ n) (hq : n < q) (hp : q.Prime) :
+    δ n (2*q+1) < δ n (2*q) := by
   classical
-  intro δ hδ n q hn hnq hq
-  set M := 2 * q * (2 * q).factorial with hM
-  have hF : 0 < (2 * q).factorial := Nat.factorial_pos _
-  have hMpos : 0 < M := by have := hq.pos; positivity
-  have h2qM : 2 * q < M := by
-    have h2 : 2 ≤ (2 * q).factorial := by
-      calc 2 = (2 : ℕ).factorial := rfl
-        _ ≤ (2 * q).factorial := Nat.factorial_le (by have := hq.two_le; omega)
-    have := hq.pos
-    rw [hM]
-    nlinarith
-  set S : Set ℕ := {x | x % M = 2 * q} with hS
-  have hSd := OMA.E692H2.hasDensity_of_periodic (A := S) hMpos (by
-    intro x
-    simp only [hS, Set.mem_setOf_eq, Nat.mod_mod])
-  have hdiff := OMA.E692H2.hasDensity_sdiff (OMA.E692H2.subset_old hnq) (hδ n (2 * q))
-    (hδ n (2 * q + 1))
-  have hsub : S ⊆ exactlyOneDivisorIn n (2 * q) \ exactlyOneDivisorIn n (2 * q + 1) :=
-    fun x hx => OMA.E692H2.class_mem hn hnq hq hx
-  have hle := Set.HasDensity.mono hsub hSd hdiff
-  have hc : 1 ≤ ((Finset.range M).filter (· ∈ S)).card := by
-    apply Finset.card_pos.2
-    refine ⟨2 * q, Finset.mem_filter.2 ⟨Finset.mem_range.2 h2qM, ?_⟩⟩
-    show 2 * q % M = 2 * q
-    exact Nat.mod_eq_of_lt h2qM
-  have hpos : (0 : ℝ) < (((Finset.range M).filter (· ∈ S)).card : ℝ) / (M : ℝ) := by
-    apply div_pos
-    · exact_mod_cast hc
-    · exact_mod_cast hMpos
-  linarith
+  let L := (2*q+1).factorial
+  have hL : 2*q < L := lt_of_lt_of_le (Nat.lt_succ_self _) (Nat.self_le_factorial _)
+  have perd (m : ℕ) (hm : m ≤ 2*q+1) : Per (exactlyOneDivisorIn n m) L :=
+    periodic_set (by omega) fun d hnd hdm => Nat.dvd_factorial (by omega) (by omega)
+  have density (m : ℕ) (hm : m ≤ 2*q+1) : δ n m = (cnt (exactlyOneDivisorIn n m) L : ℝ) / L :=
+    HasDensity.unique (hδ n m) ((perd m hm).hasDensity (Nat.factorial_pos _))
+  rw [density _ le_rfl, density _ (by omega)]
+  apply div_lt_div_of_pos_right _ (by exact_mod_cast Nat.factorial_pos (2*q+1))
+  exact_mod_cast Finset.card_lt_card (show
+    (Finset.range L).filter (· ∈ exactlyOneDivisorIn n (2*q+1)) ⊂
+    (Finset.range L).filter (· ∈ exactlyOneDivisorIn n (2*q)) by
+      have hqmem : q ∈ Set.Ioo n (2*q+1) := ⟨hq, by omega⟩
+      have h2mem : 2*q ∈ Set.Ioo n (2*q+1) := ⟨by omega, by omega⟩
+      have nodiv (x : ℕ) (hx : x ∈ exactlyOneDivisorIn n (2*q+1)) : ¬ 2*q ∣ x := by
+        intro h
+        obtain ⟨a, ha⟩ := Set.ncard_eq_one.mp hx
+        have hxq : q ∈ ({a} : Set ℕ) := ha ▸ (show q ∈ {d ∈ Set.Ioo n (2*q+1) | d ∣ x} from ⟨hqmem, dvd_trans (dvd_mul_left q 2) h⟩)
+        have hx2 : 2*q ∈ ({a} : Set ℕ) := ha ▸ (show 2*q ∈ {d ∈ Set.Ioo n (2*q+1) | d ∣ x} from ⟨h2mem, h⟩)
+        simp only [Set.mem_singleton_iff] at hxq hx2
+        omega
+      constructor
+      · intro x hx
+        obtain ⟨hr,hx⟩ := Finset.mem_filter.mp hx
+        have he : {d ∈ Set.Ioo n (2*q) | d ∣ x} = {d ∈ Set.Ioo n (2*q+1) | d ∣ x} := by
+          ext d
+          change ((n < d ∧ d < 2*q) ∧ d ∣ x) ↔ ((n < d ∧ d < 2*q+1) ∧ d ∣ x)
+          have := nodiv x hx
+          constructor
+          · rintro ⟨⟨h₁,h₂⟩,h₃⟩; exact ⟨⟨h₁,by omega⟩,h₃⟩
+          · rintro ⟨⟨h₁,h₂⟩,h₃⟩
+            have hne : d ≠ 2*q := by rintro rfl; contradiction
+            exact ⟨⟨h₁,by omega⟩,h₃⟩
+        apply Finset.mem_filter.mpr
+        exact ⟨hr, show {d ∈ Set.Ioo n (2*q) | d ∣ x}.ncard = 1 by rw [he]; exact hx⟩
+      · intro hs
+        have hm : 2*q ∈ exactlyOneDivisorIn n (2*q) := by
+          apply Set.ncard_eq_one.mpr
+          refine ⟨q, ?_⟩
+          ext d
+          change ((n < d ∧ d < 2*q) ∧ d ∣ 2*q) ↔ d = q
+          constructor
+          · rintro ⟨⟨h₁,h₂⟩,h₃⟩; exact factor_between hn hp h₁ h₂ h₃
+          · rintro rfl; exact ⟨⟨hq,by omega⟩,dvd_mul_left _ _⟩
+        exact nodiv _ (Finset.mem_filter.mp (hs (Finset.mem_filter.mpr ⟨Finset.mem_range.mpr hL, hm⟩))).2 dvd_rfl)
+
+end CambieDrop
+
+theorem OMA.solution : OMA.R_Erdos692_erdos_692_variants_cambie_local_maxima_R1.H2 := CambieDrop.drop
+

@@ -13,19 +13,16 @@ theorem a229_count_zero (r : ZMod 4) : count 0 r = if r = 0 then 1 else 0 := by
 
 theorem a229_count_succ (n : ℕ) (r : ZMod 4) :
     count (n + 1) r = 2 * count n r + 2 * count n (r - 1) := by
-  rw [a229_count_eq_sum, a229_count_eq_sum, a229_count_eq_sum]
+  simp only [a229_count_eq_sum]
   rw [← (Fin.consEquiv fun _ : Fin (n + 1) => Fin 4).sum_comp]
   simp only [Fin.consEquiv_apply, Fin.sum_univ_succ, Fin.cons_zero, Fin.cons_succ]
   rw [Fintype.sum_prod_type]
   simp only [Fin.sum_univ_four]
-  have h0 : digitSquare 0 = 0 := by decide
-  have h1 : digitSquare 1 = 1 := by decide
-  have h2 : digitSquare 2 = 0 := by decide
-  have h3 : digitSquare 3 = 1 := by decide
-  simp only [h0, h1, h2, h3, zero_add]
+  simp only [show digitSquare 0 = 0 by decide, show digitSquare 1 = 1 by decide,
+    show digitSquare 2 = 0 by decide, show digitSquare 3 = 1 by decide, zero_add]
   have key : ∀ y : Fin n → Fin 4, ((1 : ZMod 4) + ∑ i, digitSquare (y i) = r) ↔
       (∑ i, digitSquare (y i) = r - 1) := by
-    intro y; constructor <;> intro h <;> [rw [← h]; rw [h]] <;> ring
+    intro y; rw [eq_sub_iff_add_eq, add_comm]
   simp only [key]
   ring
 
@@ -33,7 +30,7 @@ theorem a229_rec4 (n : ℕ) (r : ZMod 4) :
     (count (n + 4) r : ℤ) = 8 * count (n + 3) r - 24 * count (n + 2) r + 32 * count (n + 1) r := by
   simp only [a229_count_succ]
   push_cast
-  have e : ∀ s : ZMod 4, s - 1 - 1 - 1 - 1 = s := by intro s; ring_nf; decide +revert
+  have e : ∀ s : ZMod 4, s - 1 - 1 - 1 - 1 = s := by decide
   simp only [e]
   ring
 

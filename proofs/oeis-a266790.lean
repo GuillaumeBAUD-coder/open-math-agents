@@ -70,20 +70,6 @@ theorem center (t : ℕ) (ht : 11 ≤ t) : state t 0 = decide (t % 2 = 1) := by
     rw [(pattern s (by omega)).1]
     apply Bool.decide_congr; unfold Odd'; push_cast; omega
 
-theorem center_small : (List.range 11).map (fun t => state t 0) =
-    [true, true, true, false, true, false, true, false, false, true, true] := by
-  have c5 := stage5 0
-  have c6 := (pattern 2 le_rfl).2 0
-  have c7 := (pattern 3 (by norm_num)).1 0
-  have c8 := (pattern 3 (by norm_num)).2 0
-  have c9 := (pattern 4 (by norm_num)).1 0
-  have c10 := (pattern 4 (by norm_num)).2 0
-  simp only [List.range_succ, List.range_zero, List.nil_append, List.map_cons, List.map_nil,
-    List.map_append, stage1, stage2, stage3, stage4]
-  rw [c5, c6, c7, c8, c9, c10]
-  simp only [Odd', Even']
-  decide
-
 theorem a_succ (n : ℕ) : a (n + 1) = 10 * a n + (if state (n + 1) 0 then 1 else 0) := by
   unfold a
   rw [Finset.sum_range_succ, Finset.mul_sum, Nat.sub_self, pow_zero]
@@ -119,11 +105,6 @@ theorem a9 : a 9 = 1110101001 := by rw [a_succ, a8, c9]; rfl
 theorem a10 : a 10 = 11101010011 := by rw [a_succ, a9, c10]; rfl
 theorem a11 : a 11 = 111010100111 := by rw [a_succ, a10, center 11 le_rfl]; rfl
 theorem a12 : a 12 = 1110101001110 := by rw [a_succ, a11, center 12 (by norm_num)]; rfl
-
-/-- Control: the first eleven terms. -/
-theorem first_terms : (List.range 11).map a = [1, 11, 111, 1110, 11101, 111010, 1110101,
-    11101010, 111010100, 1110101001, 11101010011] := by
-  simp [List.range_succ, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10]
 
 /-- Barker's closed form for `n > 9`:
 `198 a(n) = -9(-1)^n + 1098999991099·2^(n-9)·5^(n-10) - 11`. -/

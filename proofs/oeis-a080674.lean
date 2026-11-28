@@ -1,5 +1,6 @@
 import OMAStatements.S_oeis_a080674
 
+open Finset
 -- Problem: A080674, numbers below 10^n whose decimal digits all lie in {6, 7, 8, 9}.
 -- Credit: @OrangeHeadz
 -- Original proof. Dropping the last digit is a bijection between the numbers counted for
@@ -26,15 +27,15 @@ theorem Q_step (q d : ℕ) (hd : d < 10) (hpos : 0 < 10 * q + d) :
   simp only [List.mem_cons, forall_eq_or_imp]
 
 /-- The numbers counted by the statement. -/
-def S (n : ℕ) : Finset ℕ := (Finset.range (10 ^ n)).filter fun m => m ≠ 0 ∧ Q m
+def S (n : ℕ) : Finset ℕ := (range (10 ^ n)).filter fun m => m ≠ 0 ∧ Q m
 
 /-- The same numbers together with 0. -/
-def T (n : ℕ) : Finset ℕ := (Finset.range (10 ^ n)).filter fun m => Q m
+def T (n : ℕ) : Finset ℕ := (range (10 ^ n)).filter fun m => Q m
 
 theorem card_T (n : ℕ) : (T n).card = (S n).card + 1 := by
   have h : T n = insert 0 (S n) := by
     ext m
-    simp only [T, S, Finset.mem_filter, Finset.mem_range, Finset.mem_insert]
+    simp only [T, S, mem_filter, mem_range, mem_insert]
     constructor
     · rintro ⟨hm, hq⟩
       by_cases h0 : m = 0
@@ -44,45 +45,45 @@ theorem card_T (n : ℕ) : (T n).card = (S n).card + 1 := by
       · subst h0
         exact ⟨Nat.pow_pos (by norm_num), Q_zero⟩
       · exact ⟨hm, hq⟩
-  rw [h, Finset.card_insert_of_notMem]
+  rw [h, card_insert_of_notMem]
   simp [S]
 
 theorem card_S_succ (n : ℕ) : (S (n + 1)).card = (T n).card * 4 := by
-  rw [← show ({6, 7, 8, 9} : Finset ℕ).card = 4 from rfl, ← Finset.card_product]
-  refine Finset.card_nbij' (fun m => (m / 10, m % 10)) (fun p => 10 * p.1 + p.2) ?_ ?_ ?_ ?_
+  rw [← show ({6, 7, 8, 9} : Finset ℕ).card = 4 from rfl, ← card_product]
+  refine card_nbij' (fun m => (m / 10, m % 10)) (fun p => 10 * p.1 + p.2) ?_ ?_ ?_ ?_
   · intro m hm
-    simp only [S, Finset.coe_filter, Finset.mem_range, Set.mem_ofPred_eq] at hm
+    simp only [S, coe_filter, mem_range, Set.mem_ofPred_eq] at hm
     obtain ⟨hlt, hne, hq⟩ := hm
     have hdecomp : 10 * (m / 10) + m % 10 = m := Nat.div_add_mod m 10
     have hpos : 0 < 10 * (m / 10) + m % 10 := by omega
     have hq' : Q (10 * (m / 10) + m % 10) := by rw [hdecomp]; exact hq
     obtain ⟨hd, hrest⟩ := (Q_step (m / 10) (m % 10) (Nat.mod_lt _ (by norm_num)) hpos).mp hq'
     have hmod : m % 10 < 10 := Nat.mod_lt _ (by norm_num)
-    simp only [Finset.coe_product, Set.mem_prod, Finset.mem_coe, T, Finset.mem_filter,
-      Finset.mem_range]
+    simp only [coe_product, Set.mem_prod, mem_coe, T, mem_filter,
+      mem_range]
     refine ⟨⟨?_, hrest⟩, ?_⟩
     · rw [pow_succ] at hlt
       omega
-    · simp only [Finset.mem_insert, Finset.mem_singleton] at hd ⊢
+    · simp only [mem_insert, mem_singleton] at hd ⊢
       omega
   · rintro ⟨q, d⟩ hp
-    simp only [Finset.coe_product, Set.mem_prod, Finset.mem_coe, T, Finset.mem_filter,
-      Finset.mem_range, Finset.mem_insert, Finset.mem_singleton] at hp
+    simp only [coe_product, Set.mem_prod, mem_coe, T, mem_filter,
+      mem_range, mem_insert, mem_singleton] at hp
     obtain ⟨⟨hq, hQ⟩, hd⟩ := hp
     have hd10 : d < 10 := by omega
     have hpos : 0 < 10 * q + d := by omega
-    simp only [S, Finset.coe_filter, Finset.mem_range, Set.mem_ofPred_eq]
+    simp only [S, coe_filter, mem_range, Set.mem_ofPred_eq]
     refine ⟨?_, by omega, ?_⟩
     · rw [pow_succ]
       omega
     · refine (Q_step q d hd10 hpos).mpr ⟨?_, hQ⟩
-      simp only [Finset.mem_insert, Finset.mem_singleton]
+      simp only [mem_insert, mem_singleton]
       omega
   · intro m _
     exact Nat.div_add_mod m 10
   · rintro ⟨q, d⟩ hp
-    simp only [Finset.coe_product, Set.mem_prod, Finset.mem_coe, Finset.mem_insert,
-      Finset.mem_singleton] at hp
+    simp only [coe_product, Set.mem_prod, mem_coe, mem_insert,
+      mem_singleton] at hp
     have hd10 : d < 10 := by omega
     refine Prod.ext ?_ ?_
     · show (10 * q + d) / 10 = q
@@ -95,7 +96,7 @@ theorem three_mul_card (n : ℕ) : 3 * (S n).card + 4 = 4 ^ (n + 1) := by
   | zero =>
     have h : S 0 = ∅ := by
       ext m
-      simp only [S, Finset.mem_filter, Finset.mem_range, pow_zero, Finset.notMem_empty,
+      simp only [S, mem_filter, mem_range, pow_zero, notMem_empty,
         iff_false]
       omega
     rw [h]
@@ -109,10 +110,10 @@ end OMA_A080674_Proof
 theorem OMA.solution : type_of% @OMA.S_oeis_a080674.main := by
   intro n
   have h := OMA_A080674_Proof.three_mul_card n
-  have hS : ((Finset.range (10 ^ n)).filter fun m : ℕ =>
+  have hS : ((range (10 ^ n)).filter fun m : ℕ =>
       m ≠ 0 ∧ ∀ d ∈ Nat.digits 10 m, d ∉ ({0, 1, 2, 3, 4, 5} : Finset ℕ)) =
       OMA_A080674_Proof.S n :=
-    Finset.filter_congr (fun m _ => Iff.rfl)
+    filter_congr (fun m _ => Iff.rfl)
   rw [hS]
   have hpos : 1 ≤ 4 ^ n := Nat.one_le_two_pow.trans (Nat.pow_le_pow_left (by norm_num) n)
   rw [pow_succ] at h

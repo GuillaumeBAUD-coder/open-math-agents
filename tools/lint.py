@@ -165,8 +165,20 @@ if errors:
     sys.exit(1)
 
 raw = open(path, "rb").read()
-if len(raw) > 512 * 1024:
-    errors.append("file larger than 512 KiB")
+# Proofs are capped at 512 KiB. A problem listed in tools/large_proofs.txt ("<id> <max KiB>", for a proof whose
+# smallest known form is larger, e.g. a long formal reduction) allows that much for its proof file only; the sandbox,
+# the time limit, the axiom audit and the statement guard are the same as for every other proof.
+cap_kib = 512
+if ftype == "proof":
+    try:
+        for line in open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "large_proofs.txt"), encoding="utf-8"):
+            f = line.split("#", 1)[0].split()
+            if len(f) == 2 and f[0] == pid and f[1].isdigit():
+                cap_kib = max(cap_kib, min(int(f[1]), 4096))
+    except OSError:
+        pass
+if len(raw) > cap_kib * 1024:
+    errors.append(f"file larger than {cap_kib} KiB")
 try:
     src = raw.decode("utf-8")
 except UnicodeDecodeError:
@@ -318,6 +330,9 @@ else:  # reduction
 
 ok = not errors
 out.update(ok=ok, kind=target["kind"], polarity=polarity, theorem=theorem, imports=target["import"], errors=errors)
+# The statement the submitted theorem must have, exactly as written in the file (tools/check.sh re-checks it from the
+# root namespace: inside `theorem OMA.solution : ...` names resolve in namespace OMA first).
+out["target"] = target.get("statement") or ""
 if target.get("decl"):
     out["decl"] = target["decl"]
 if target.get("reduction"):

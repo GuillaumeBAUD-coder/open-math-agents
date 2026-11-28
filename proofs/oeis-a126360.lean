@@ -11,18 +11,8 @@ lemma cube_ones : adjacency *ᵥ (adjacency *ᵥ (adjacency *ᵥ ones)) =
 lemma pow_step (n : ℕ) : adjacency ^ (n + 3) *ᵥ ones =
     (4 : ℤ) • (adjacency ^ (n + 2) *ᵥ ones) - (3 : ℤ) • (adjacency ^ (n + 1) *ᵥ ones) -
       adjacency ^ n *ᵥ ones := by
-  have e3 : adjacency ^ (n + 3) *ᵥ ones =
-      adjacency ^ n *ᵥ (adjacency *ᵥ (adjacency *ᵥ (adjacency *ᵥ ones))) := by
-    simp only [Matrix.mulVec_mulVec]
-    congr 1
-    simp [pow_succ, mul_assoc]
-  have e2 : adjacency ^ (n + 2) *ᵥ ones = adjacency ^ n *ᵥ (adjacency *ᵥ (adjacency *ᵥ ones)) := by
-    simp only [Matrix.mulVec_mulVec]
-    congr 1
-    simp [pow_succ, mul_assoc]
-  have e1 : adjacency ^ (n + 1) *ᵥ ones = adjacency ^ n *ᵥ (adjacency *ᵥ ones) := by
-    simp only [Matrix.mulVec_mulVec, pow_succ]
-  rw [e3, e2, e1, cube_ones, Matrix.mulVec_sub, Matrix.mulVec_sub, Matrix.mulVec_smul,
+  simp only [pow_succ, ← Matrix.mulVec_mulVec]
+  rw [cube_ones, Matrix.mulVec_sub, Matrix.mulVec_sub, Matrix.mulVec_smul,
     Matrix.mulVec_smul]
 
 lemma a_rec (m : ℕ) : a (m + 4) = 4 * a (m + 3) - 3 * a (m + 2) - a (m + 1) := by

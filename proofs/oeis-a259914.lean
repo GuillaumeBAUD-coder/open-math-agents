@@ -62,15 +62,13 @@ theorem OMA.solution : type_of% @OMA.S_oeis_a259914.main := by
   intro t
   dsimp only
   obtain ⟨k, rfl | rfl⟩ : ∃ k, t = 2*k ∨ t = 2*k+1 := ⟨t/2, by omega⟩
-  · rw [show 2*k+3 = 2*(k+1)+1 by omega, even_path,
+  rw [show 2*k+3 = 2*(k+1)+1 by omega, even_path,
       show 2*k+2 = 2*(k+1) by omega, odd_path, even_path, odd_path]
-    simp only [oddTerm, evenTerm, Nat.mul_add, Nat.mul_one, Nat.add_assoc, Nat.reduceAdd,
-      Nat.factorial_succ, Nat.cast_mul, Nat.cast_add, Nat.cast_ofNat, Nat.cast_one]
-    field_simp
-    ring
-  · rw [show 2*k+1+3 = 2*(k+2) by omega, odd_path,
+  pick_goal 2
+  rw [show 2*k+1+3 = 2*(k+2) by omega, odd_path,
       show 2*k+1+2 = 2*(k+1)+1 by omega, even_path,
       show 2*k+1+1 = 2*(k+1) by omega, odd_path, even_path]
+  all_goals
     simp only [oddTerm, evenTerm, Nat.mul_add, Nat.mul_one, Nat.reduceMul, Nat.add_assoc,
       Nat.reduceAdd, Nat.factorial_succ, Nat.cast_mul, Nat.cast_add, Nat.cast_ofNat, Nat.cast_one]
     field_simp

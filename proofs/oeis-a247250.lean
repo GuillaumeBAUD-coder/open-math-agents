@@ -1,974 +1,886 @@
 import OMAStatements.S_oeis_a247250
-import Mathlib
 
 /-!
 # Primitive prime divisors in the Pell sequence (OEIS A247250)
 
-We prove that every Pell number `pell n` for `n ≥ 2` has a primitive prime divisor.
-Using the companion sequence `H n` with `H n + pell n * √2 = (1 + √2) ^ n`, we establish:
-1. Strong divisibility `Nat.gcd (pell m) (pell n) = pell (Nat.gcd m n)`.
-2. Exact lifting of the exponent `v_p(pell (k * m)) = v_p(pell m) + v_p(k)` for every prime `p`
-   dividing `pell m` (including `p = 2`), via a linear recurrence modulo `(pell m) ^ 2`.
-3. If `pell n` has no primitive prime divisor, the Möbius alternating product `A / B` of `pell d`
-   over `d ∣ n` satisfies `A ∣ B * n`, hence `A ≤ B * n`.
-4. Via Binet's formula and the cyclotomic polynomial `Φ_n` over `ℂ`,
-   `A / B = α ^ φ(n) * ‖Φ_n(β / α)‖ ≥ 2 ^ φ(n)`, since `α - |β| = (1 + √2) - (√2 - 1) = 2`.
-5. Finally `n < 2 ^ φ(n)` for all `n ≥ 7` (from `n ≤ 2 * φ(n) ^ 2`), leaving `2 ≤ n ≤ 6`
-   which are handled by explicit prime witnesses.
+We prove Carmichael's theorem for Pell numbers: for every `n > 1`, `pell n` has a primitive prime
+divisor `p` (a prime dividing `pell n` that divides no `pell m` for `0 < m < n`).
 -/
 
-namespace PellPrimitive
+namespace PellPrimDiv
 
-open Finset OMA.S_oeis_a247250
-open scoped Classical
+open scoped BigOperators
 
-/-- Companion sequence `H n` satisfying `H n + pell n * √2 = (1 + √2)^n`. -/
-private def H : ℕ → ℕ
+abbrev P : ℕ → ℕ := OMA.S_oeis_a247250.pell
+
+def pellQ : ℕ → ℕ
   | 0 => 1
   | 1 => 1
-  | n + 2 => 2 * H (n + 1) + H n
+  | n + 2 => 2 * pellQ (n + 1) + pellQ n
 
-private lemma pell_H_succ (n : ℕ) :
-    pell (n + 1) = H n + pell n ∧ H (n + 1) = H n + 2 * pell n := by
+lemma pell_step : ∀ n : ℕ, P (n + 1) = pellQ n + P n ∧ pellQ (n + 1) = pellQ n + 2 * P n
+  | 0 => ⟨rfl, rfl⟩
+  | 1 => ⟨rfl, rfl⟩
+  | n + 2 => by
+    obtain ⟨hp1, hq1⟩ := pell_step n
+    obtain ⟨hp2, hq2⟩ := pell_step (n + 1)
+    have h2 : n + 1 + 1 = n + 2 := rfl
+    rw [h2] at hp2 hq2
+    change 2 * P (n + 2) + P (n + 1) = (2 * pellQ (n + 1) + pellQ n) + P (n + 2) ∧
+      2 * pellQ (n + 2) + pellQ (n + 1) = (2 * pellQ (n + 1) + pellQ n) + 2 * P (n + 2)
+    omega
+
+lemma pellQ_pos : ∀ n : ℕ, 0 < pellQ n
+  | 0 => by decide
+  | n + 1 => by
+    have h := (pell_step n).2
+    have ih := pellQ_pos n
+    omega
+
+lemma pell_pos : ∀ {n : ℕ}, 0 < n → 0 < P n
+  | 0, h => by omega
+  | n + 1, _ => by
+    have h := (pell_step n).1
+    have hq := pellQ_pos n
+    omega
+
+lemma pell_norm (n : ℕ) : (pellQ n : ℤ) ^ 2 - 2 * (P n : ℤ) ^ 2 = (-1 : ℤ) ^ n := by
   induction n with
-  | zero => decide
-  | succ k ih =>
-    constructor
-    · change 2 * pell (k + 1) + pell k = H (k + 1) + pell (k + 1)
-      omega
-    · change 2 * H (k + 1) + H k = H (k + 1) + 2 * pell (k + 1)
-      omega
+  | zero => rfl
+  | succ n ih =>
+    obtain ⟨hp, hq⟩ := pell_step n
+    rw [hp, hq]
+    push_cast
+    calc
+      ((pellQ n : ℤ) + 2 * (P n : ℤ)) ^ 2 - 2 * ((pellQ n : ℤ) + (P n : ℤ)) ^ 2
+        = -((pellQ n : ℤ) ^ 2 - 2 * (P n : ℤ) ^ 2) := by ring
+      _ = -((-1 : ℤ) ^ n) := by rw [ih]
+      _ = (-1 : ℤ) ^ (n + 1) := by rw [pow_succ]; ring
 
-private lemma pell_pos {n : ℕ} (hn : 0 < n) : 0 < pell n := by
-  induction n with
-  | zero => omega
-  | succ k ih =>
-    rcases k with _ | k
-    · decide
-    · have h1 := ih (by omega)
-      change 0 < 2 * pell (k + 1) + pell k
-      omega
-
-private lemma pell_ne_zero {n : ℕ} (hn : 0 < n) : pell n ≠ 0 :=
-  (pell_pos hn).ne'
-
-private lemma pell_H_add (m n : ℕ) :
-    pell (m + n) = pell m * H n + H m * pell n ∧
-    H (m + n) = H m * H n + 2 * pell m * pell n := by
-  induction n with
-  | zero =>
-    simp [pell, H]
-  | succ k ih =>
-    have h1 := pell_H_succ (m + k)
-    have h2 := pell_H_succ k
-    rw [Nat.add_succ]
-    constructor <;> nlinarith [ih.1, ih.2, h1.1, h1.2, h2.1, h2.2]
-
-private lemma pell_H_cassini (n : ℕ) :
-    (H n : ℤ) ^ 2 - 2 * (pell n : ℤ) ^ 2 = (-1 : ℤ) ^ n := by
-  induction n with
-  | zero => decide
-  | succ k ih =>
-    have h := pell_H_succ k
-    have hp : (pell (k + 1) : ℤ) = (H k : ℤ) + (pell k : ℤ) := by exact_mod_cast h.1
-    have hH : (H (k + 1) : ℤ) = (H k : ℤ) + 2 * (pell k : ℤ) := by exact_mod_cast h.2
-    rw [hp, hH, pow_succ (-1 : ℤ) k, ← ih]
-    ring
-
-private lemma pell_H_coprime (n : ℕ) : Nat.Coprime (pell n) (H n) := by
+lemma coprime_pellQ_pell (n : ℕ) : Nat.Coprime (pellQ n) (P n) := by
   rw [Nat.coprime_iff_gcd_eq_one]
-  set d := Nat.gcd (pell n) (H n)
-  have hd1 : (d : ℤ) ∣ (pell n : ℤ) := Int.ofNat_dvd.mpr (Nat.gcd_dvd_left _ _)
-  have hd2 : (d : ℤ) ∣ (H n : ℤ) := Int.ofNat_dvd.mpr (Nat.gcd_dvd_right _ _)
-  have hd3 : (d : ℤ) ∣ (-1 : ℤ) ^ n := by
-    rw [← pell_H_cassini n]
-    exact dvd_sub (dvd_pow hd2 (by decide)) (dvd_mul_of_dvd_right (dvd_pow hd1 (by decide)) 2)
-  have h1 : (d : ℤ) ∣ 1 := by
-    have : ((-1 : ℤ) ^ n) ∣ 1 := by
-      rcases Nat.even_or_odd n with ⟨k, rfl⟩ | ⟨k, rfl⟩
-      · rw [show k + k = 2 * k by omega, pow_mul]; norm_num
-      · rw [pow_succ, pow_mul]; norm_num
-    exact hd3.trans this
-  have h2 : d ∣ 1 := Int.ofNat_dvd.mp h1
-  exact Nat.eq_one_of_dvd_one h2
+  apply Nat.eq_one_of_dvd_one
+  let g := Nat.gcd (pellQ n) (P n)
+  have hgq : (g : ℤ) ∣ (pellQ n : ℤ) := Int.natCast_dvd_natCast.mpr (Nat.gcd_dvd_left _ _)
+  have hgp : (g : ℤ) ∣ (P n : ℤ) := Int.natCast_dvd_natCast.mpr (Nat.gcd_dvd_right _ _)
+  have hgn : (g : ℤ) ∣ (pellQ n : ℤ) ^ 2 - 2 * (P n : ℤ) ^ 2 := by
+    refine dvd_sub (dvd_pow hgq (by decide)) ?_
+    exact dvd_mul_of_dvd_right (dvd_pow hgp (by decide)) 2
+  rw [pell_norm] at hgn
+  have h1 : (-1 : ℤ) ^ n ∣ 1 := ⟨(-1 : ℤ) ^ n, by rw [← mul_pow]; norm_num⟩
+  have hg1 : (g : ℤ) ∣ (1 : ℤ) := dvd_trans hgn h1
+  exact Int.natCast_dvd_natCast.mp hg1
 
-private lemma pell_add_gcd (m n : ℕ) :
-    Nat.gcd (pell (m + n)) (pell m) = Nat.gcd (pell n) (pell m) := by
-  rw [(pell_H_add m n).1]
-  have h1 : Nat.gcd (pell m * H n + H m * pell n) (pell m) =
-      Nat.gcd (H m * pell n) (pell m) := by
-    rw [Nat.add_comm, Nat.mul_comm (pell m) (H n)]
-    exact Nat.gcd_add_mul_right_left (pell m) (H m * pell n) (H n)
-  rw [h1]
-  exact (pell_H_coprime m).symm.gcd_mul_left_cancel (pell n)
+lemma pell_add (m : ℕ) : ∀ n : ℕ,
+    P (m + n) = pellQ m * P n + P m * pellQ n ∧
+    pellQ (m + n) = pellQ m * pellQ n + 2 * P m * P n
+  | 0 => by simp [P, OMA.S_oeis_a247250.pell, pellQ]
+  | n + 1 => by
+    obtain ⟨ihp, ihq⟩ := pell_add m n
+    obtain ⟨hpmn, hqmn⟩ := pell_step (m + n)
+    obtain ⟨hpn, hqn⟩ := pell_step n
+    rw [← Nat.add_assoc, hpmn, hqmn, ihp, ihq, hpn, hqn]
+    constructor <;> ring
 
-private lemma pell_gcd (m n : ℕ) :
-    Nat.gcd (pell m) (pell n) = pell (Nat.gcd m n) := by
-  induction h : m + n using Nat.strong_induction_on generalizing m n with
-  | h s ih =>
-    rcases m with _ | m
-    · simp [pell]
-    rcases n with _ | n
-    · simp [pell]
-    rcases le_total (m + 1) (n + 1) with hle | hle
-    · obtain ⟨k, hk⟩ := Nat.exists_eq_add_of_le hle
-      rw [hk, Nat.gcd_comm, pell_add_gcd, Nat.gcd_comm,
-        Nat.gcd_comm (m + 1) (m + 1 + k), Nat.add_comm (m + 1) k,
-        Nat.gcd_add_self_left, Nat.gcd_comm]
-      exact ih (k + (m + 1)) (by omega) k (m + 1) rfl
-    · obtain ⟨k, hk⟩ := Nat.exists_eq_add_of_le hle
-      rw [hk, pell_add_gcd, Nat.add_comm (n + 1) k, Nat.gcd_add_self_left]
-      exact ih (k + (n + 1)) (by omega) k (n + 1) rfl
-
-private lemma pell_dvd_of_dvd {m n : ℕ} (h : m ∣ n) : pell m ∣ pell n := by
-  have hg : Nat.gcd m n = m := Nat.gcd_eq_left h
-  have h1 : Nat.gcd (pell m) (pell n) = pell m := by rw [pell_gcd, hg]
-  rw [← h1]
-  exact Nat.gcd_dvd_right _ _
-
-/-- Lifting the exponent via a linear recurrence modulo `(pell m)^2`. -/
-private lemma pell_mul_quot_mod (m k : ℕ) :
-    ∃ a : ℕ, pell (k * m) = pell m * a ∧
-      (k = 0 → a = 0) ∧
-      (0 < k → a ≡ k * (H m) ^ (k - 1) [MOD (pell m) ^ 2]) ∧
-      H (k * m) ≡ (H m) ^ k [MOD (pell m) ^ 2] := by
+lemma pell_dvd_pell {m n : ℕ} (h : m ∣ n) : P m ∣ P n := by
+  obtain ⟨k, rfl⟩ := h
   induction k with
-  | zero =>
-    refine ⟨0, by simp [pell], fun _ => rfl, fun h => (Nat.lt_irrefl 0 h).elim, ?_⟩
-    simpa [H] using Nat.ModEq.rfl
+  | zero => simp [P, OMA.S_oeis_a247250.pell]
   | succ k ih =>
-    obtain ⟨a, ha_eq, ha0, ha_mod, hH_mod⟩ := ih
-    refine ⟨a * H m + H (k * m), ?_, by omega, ?_, ?_⟩
-    · rw [Nat.succ_mul, (pell_H_add (k * m) m).1, ha_eq]
+    rw [Nat.mul_succ, (pell_add (m * k) m).1]
+    exact dvd_add (dvd_mul_left _ _) (dvd_mul_of_dvd_left ih _)
+
+lemma gcd_pell_add (m n : ℕ) : Nat.gcd (P (m + n)) (P m) = Nat.gcd (P n) (P m) := by
+  apply Nat.dvd_antisymm
+  · refine Nat.dvd_gcd ?_ (Nat.gcd_dvd_right _ _)
+    let g := Nat.gcd (P (m + n)) (P m)
+    have h1 : g ∣ P (m + n) := Nat.gcd_dvd_left _ _
+    have h2 : g ∣ P m * pellQ n :=
+      dvd_mul_of_dvd_left (Nat.gcd_dvd_right _ _) _
+    rw [(pell_add m n).1] at h1
+    have h3 : g ∣ pellQ m * P n :=
+      (Nat.dvd_add_iff_left h2).mpr h1
+    have hcop : Nat.Coprime g (pellQ m) :=
+      (coprime_pellQ_pell m).symm.coprime_dvd_left (Nat.gcd_dvd_right _ _)
+    exact hcop.dvd_of_dvd_mul_left h3
+  · refine Nat.dvd_gcd ?_ (Nat.gcd_dvd_right _ _)
+    rw [(pell_add m n).1]
+    exact dvd_add (dvd_mul_of_dvd_right (Nat.gcd_dvd_left _ _) _)
+      (dvd_mul_of_dvd_left (Nat.gcd_dvd_right _ _) _)
+
+lemma gcd_pell_add_mul (m n : ℕ) : ∀ q : ℕ, Nat.gcd (P (n + m * q)) (P m) = Nat.gcd (P n) (P m)
+  | 0 => by simp
+  | q + 1 => by
+    have heq : n + m * (q + 1) = m + (n + m * q) := by ring
+    rw [heq, gcd_pell_add, gcd_pell_add_mul m n q]
+
+lemma pell_gcd (m n : ℕ) : Nat.gcd (P m) (P n) = P (Nat.gcd m n) := by
+  induction m, n using Nat.gcd.induction with
+  | H0 n => simp [P, OMA.S_oeis_a247250.pell]
+  | H1 m n _ ih =>
+    rw [Nat.gcd_rec m n, ← ih, Nat.gcd_comm (P m) (P n)]
+    conv_lhs => rw [← Nat.mod_add_div n m]
+    rw [gcd_pell_add_mul m (n % m) (n / m), Nat.gcd_comm]
+
+lemma pell_mul_expansion (k : ℕ) : ∀ u : ℕ, 0 < u → ∃ a b : ℕ,
+    pellQ (u * k) = pellQ k ^ u + P k ^ 2 * a ∧
+    P (u * k) = u * pellQ k ^ (u - 1) * P k + P k ^ 3 * b
+  | 0, h => by omega
+  | 1, _ => ⟨0, 0, by simp, by simp⟩
+  | u + 2, _ => by
+    obtain ⟨a, b, hq, hp⟩ := pell_mul_expansion k (u + 1) (by omega)
+    have hmul : (u + 2) * k = (u + 1) * k + k := by ring
+    obtain ⟨hp_add, hq_add⟩ := pell_add ((u + 1) * k) k
+    refine ⟨a * pellQ k + 2 * (u + 1) * pellQ k ^ u + 2 * P k ^ 2 * b, a + b * pellQ k, ?_, ?_⟩
+    · rw [hmul, hq_add, hq, hp]
+      change (pellQ k ^ (u + 1) + P k ^ 2 * a) * pellQ k +
+          2 * ((u + 1) * pellQ k ^ u * P k + P k ^ 3 * b) * P k =
+        pellQ k ^ (u + 2) + P k ^ 2 * (a * pellQ k + 2 * (u + 1) * pellQ k ^ u + 2 * P k ^ 2 * b)
       ring
-    · intro _
-      rcases k with _ | k
-      · simpa [ha0 rfl, H] using Nat.ModEq.rfl
-      · have hkpos : 0 < k + 1 := Nat.succ_pos k
-        have h1 : a * H m ≡ ((k + 1) * H m ^ k) * H m [MOD (pell m) ^ 2] :=
-          (ha_mod hkpos).mul_right (H m)
-        have h2 : a * H m + H ((k + 1) * m) ≡
-            (k + 1) * H m ^ k * H m + H m ^ (k + 1) [MOD (pell m) ^ 2] :=
-          h1.add hH_mod
-        have h3 : (k + 1) * H m ^ k * H m + H m ^ (k + 1) =
-            (k + 2) * H m ^ (k + 1) := by ring
-        simpa only [Nat.add_sub_cancel, h3] using h2
-    · rw [Nat.succ_mul, (pell_H_add (k * m) m).2, ha_eq]
-      have h1 : H (k * m) * H m ≡ H m ^ k * H m [MOD (pell m) ^ 2] :=
-        hH_mod.mul_right (H m)
-      have h2 : 2 * (pell m * a) * pell m = (pell m) ^ 2 * (2 * a) := by ring
-      rw [h2, pow_succ]
-      have h3 : H (k * m) * H m + pell m ^ 2 * (2 * a) ≡ H (k * m) * H m [MOD (pell m) ^ 2] := by
-        rw [Nat.ModEq, Nat.add_mul_mod_self_left]
-      exact h3.trans h1
+    · rw [hmul, hp_add, hq, hp]
+      change (pellQ k ^ (u + 1) + P k ^ 2 * a) * P k +
+          ((u + 1) * pellQ k ^ u * P k + P k ^ 3 * b) * pellQ k =
+        (u + 2) * pellQ k ^ (u + 1) * P k + P k ^ 3 * (a + b * pellQ k)
+      ring
 
-private lemma factorization_pell_mul_coprime {p m k : ℕ} (hp : p.Prime)
-    (hm : 0 < m) (hpm : p ∣ pell m) (hk : 0 < k) (hpk : ¬ p ∣ k) :
-    (pell (k * m)).factorization p = (pell m).factorization p := by
-  obtain ⟨a, ha_eq, _, ha_mod, _⟩ := pell_mul_quot_mod m k
-  have hp2 : p ^ 2 ∣ (pell m) ^ 2 := pow_dvd_pow_of_dvd hpm 2
-  have ha_mod_p : a ≡ k * (H m) ^ (k - 1) [MOD p] :=
-    (ha_mod hk).of_dvd ((dvd_pow_self p (by decide : 2 ≠ 0)).trans hp2)
-  have hpa : ¬ p ∣ a := by
-    intro hd
-    have hd2 : p ∣ k * (H m) ^ (k - 1) := (Nat.ModEq.dvd_iff ha_mod_p dvd_rfl).mp hd
-    rcases hp.dvd_mul.mp hd2 with hk' | hH'
-    · exact hpk hk'
-    · have hH : p ∣ H m := hp.dvd_of_dvd_pow hH'
-      have hcop := pell_H_coprime m
-      have h1 : p ∣ Nat.gcd (pell m) (H m) := Nat.dvd_gcd hpm hH
-      rw [hcop.gcd_eq_one] at h1
-      exact hp.not_dvd_one h1
-  have ha_ne : a ≠ 0 := by rintro rfl; exact hpa (dvd_zero p)
-  rw [ha_eq, Nat.factorization_mul (pell_ne_zero hm) ha_ne, Finsupp.add_apply,
-    Nat.factorization_eq_zero_of_not_dvd hpa, add_zero]
-
-private lemma factorization_pell_mul_prime {p m : ℕ} (hp : p.Prime)
-    (hm : 0 < m) (hpm : p ∣ pell m) :
-    (pell (p * m)).factorization p = (pell m).factorization p + 1 := by
-  obtain ⟨a, ha_eq, _, ha_mod, _⟩ := pell_mul_quot_mod m p
-  have hp2 : p ^ 2 ∣ (pell m) ^ 2 := pow_dvd_pow_of_dvd hpm 2
-  have ha_mod_p2 : a ≡ p * (H m) ^ (p - 1) [MOD p ^ 2] :=
-    (ha_mod hp.pos).of_dvd hp2
-  have hpa : p ∣ a := by
-    have h1 : p ∣ p * (H m) ^ (p - 1) := dvd_mul_right p _
-    exact (Nat.ModEq.dvd_iff (ha_mod_p2.of_dvd (dvd_pow_self p (by decide : 2 ≠ 0))) dvd_rfl).mpr h1
-  have hp2a : ¬ p ^ 2 ∣ a := by
-    intro hd
-    have hd2 : p ^ 2 ∣ p * (H m) ^ (p - 1) := (Nat.ModEq.dvd_iff ha_mod_p2 dvd_rfl).mp hd
-    rw [sq] at hd2
-    have hH1 : p ∣ (H m) ^ (p - 1) := (Nat.mul_dvd_mul_iff_left hp.pos).mp hd2
-    have hH : p ∣ H m := hp.dvd_of_dvd_pow hH1
-    have h1 : p ∣ Nat.gcd (pell m) (H m) := Nat.dvd_gcd hpm hH
-    rw [(pell_H_coprime m).gcd_eq_one] at h1
-    exact hp.not_dvd_one h1
-  have ha_ne : a ≠ 0 := by rintro rfl; exact hp2a (dvd_zero _)
-  have hva : a.factorization p = 1 := by
-    have hge : 1 ≤ a.factorization p := (hp.pow_dvd_iff_le_factorization ha_ne).mp (by simpa using hpa)
-    have hlt : ¬ 2 ≤ a.factorization p := fun h => hp2a ((hp.pow_dvd_iff_le_factorization ha_ne).mpr h)
-    omega
-  rw [ha_eq, Nat.factorization_mul (pell_ne_zero hm) ha_ne, Finsupp.add_apply, hva]
-
-private lemma factorization_pell_mul {p m k : ℕ} (hp : p.Prime)
-    (hm : 0 < m) (hpm : p ∣ pell m) (hk : 0 < k) :
-    (pell (k * m)).factorization p = (pell m).factorization p + k.factorization p := by
-  induction k using Nat.strong_induction_on with
-  | h k ih =>
-    by_cases hpk : p ∣ k
-    · obtain ⟨k', rfl⟩ := hpk
-      have hk' : 0 < k' := Nat.pos_of_mul_pos_left hk
-      have hlt : k' < p * k' := lt_mul_of_one_lt_left hk' hp.one_lt
-      have hpm' : p ∣ pell (k' * m) := hpm.trans (pell_dvd_of_dvd (dvd_mul_left m k'))
-      rw [show p * k' * m = p * (k' * m) by ring]
-      rw [factorization_pell_mul_prime hp (Nat.mul_pos hk' hm) hpm']
-      rw [ih k' hlt hk']
-      rw [Nat.factorization_mul hp.ne_zero hk'.ne', Finsupp.add_apply, hp.factorization_self]
-      omega
-    · rw [factorization_pell_mul_coprime hp hm hpm hk hpk,
-        Nat.factorization_eq_zero_of_not_dvd hpk, add_zero]
-
-private lemma moebius_cases (k : ℕ) :
-    ArithmeticFunction.moebius k = 0 ∨
-    ArithmeticFunction.moebius k = 1 ∨
-    ArithmeticFunction.moebius k = -1 := by
-  by_cases hsq : Squarefree k
-  · rw [ArithmeticFunction.moebius_apply_of_squarefree hsq]
-    rcases neg_one_pow_eq_or ℤ (ArithmeticFunction.cardFactors k) with h | h
-    · exact Or.inr (Or.inl h)
-    · exact Or.inr (Or.inr h)
-  · exact Or.inl (ArithmeticFunction.moebius_eq_zero_of_not_squarefree hsq)
-
-private lemma sum_divisors_div_self {α : Type*} [AddCommMonoid α] (f : ℕ → α) (t : ℕ) :
-    ∑ d ∈ t.divisors, f (t / d) = ∑ d ∈ t.divisors, f d := by
-  rcases eq_or_ne t 0 with rfl | ht0
-  · simp
-  · refine Finset.sum_bij (fun d _ => t / d) ?_ ?_ ?_ ?_
-    · intro d hd
-      exact Nat.mem_divisors.mpr ⟨Nat.div_dvd_of_dvd (Nat.dvd_of_mem_divisors hd), ht0⟩
-    · intro d1 hd1 d2 hd2 heq
-      have h1 := Nat.mul_div_cancel' (Nat.dvd_of_mem_divisors hd1)
-      have h2 := Nat.mul_div_cancel' (Nat.dvd_of_mem_divisors hd2)
-      have hpos : 0 < t / d1 := Nat.div_pos (Nat.le_of_dvd (Nat.pos_of_ne_zero ht0)
-        (Nat.dvd_of_mem_divisors hd1)) (Nat.pos_of_mem_divisors hd1)
-      rw [heq] at h1
-      exact Nat.eq_of_mul_eq_mul_right (heq ▸ hpos) (h1.trans h2.symm)
-    · intro d hd
-      refine ⟨t / d, Nat.mem_divisors.mpr ⟨Nat.div_dvd_of_dvd (Nat.dvd_of_mem_divisors hd), ht0⟩, ?_⟩
-      exact Nat.div_div_self (Nat.dvd_of_mem_divisors hd) ht0
-    · intro _ _; rfl
-
-private lemma sum_moebius_div_eq_ite {t : ℕ} (ht : 0 < t) :
-    (∑ e ∈ t.divisors, (ArithmeticFunction.moebius (t / e) : ℤ)) =
-      if t = 1 then 1 else 0 := by
-  rw [sum_divisors_div_self]
-  have h1 := ArithmeticFunction.coe_moebius_mul_coe_zeta (R := ℤ)
-  have h2 := congrArg (fun f : ArithmeticFunction ℤ => f t) h1
-  simp only [ArithmeticFunction.mul_apply, ArithmeticFunction.natCoe_apply,
-    ArithmeticFunction.intCoe_apply, Int.cast_id, ArithmeticFunction.zeta_apply,
-    ArithmeticFunction.one_apply] at h2
-  have h3 : (∑ x ∈ t.divisorsAntidiagonal,
-      (ArithmeticFunction.moebius x.1 : ℤ) * ((if x.2 = 0 then 0 else 1 : ℕ) : ℤ)) =
-      ∑ x ∈ t.divisorsAntidiagonal, (ArithmeticFunction.moebius x.1 : ℤ) := by
-    apply Finset.sum_congr rfl
-    intro x hx
-    have hx2 : x.2 ≠ 0 := by
-      intro h0
-      have hm := (Nat.mem_divisorsAntidiagonal.mp hx).1
-      rw [h0, mul_zero] at hm
-      omega
-    simp [hx2]
-  rw [h3, Nat.sum_divisorsAntidiagonal (f := fun d _ => (ArithmeticFunction.moebius d : ℤ))] at h2
-  exact h2
-
-private lemma sum_moebius_div_eq_zero {t : ℕ} (ht : 1 < t) :
-    (∑ e ∈ t.divisors, (ArithmeticFunction.moebius (t / e) : ℤ)) = 0 := by
-  rw [sum_moebius_div_eq_ite (by omega), if_neg (by omega)]
-
-/-- Möbius sum of `p`-adic valuations over divisors of `t > 1`. -/
-private lemma sum_moebius_div_mul_factorization {p t : ℕ} (hp : p.Prime) (ht : 1 < t) :
-    (∑ e ∈ t.divisors, (ArithmeticFunction.moebius (t / e) : ℤ) * (e.factorization p : ℤ)) =
-      if ∃ a : ℕ, 0 < a ∧ t = p ^ a then 1 else 0 := by
-  have ht0 : t ≠ 0 := by omega
-  let a := t.factorization p
-  let s := t / p ^ a
-  have hpa_dvd : p ^ a ∣ t := Nat.ordProj_dvd t p
-  have ht_eq : t = p ^ a * s := (Nat.mul_div_cancel' hpa_dvd).symm
-  have hs_pos : 0 < s := Nat.pos_of_mul_pos_left (ht_eq ▸ (by omega : 0 < t))
-  have hps : ¬ p ∣ s := by
-    intro h
-    have h1 : p ^ (a + 1) ∣ t := by
-      rw [ht_eq, pow_succ]
-      exact Nat.mul_dvd_mul_left (p ^ a) h
-    have h2 := (hp.pow_dvd_iff_le_factorization ht0).mp h1
-    omega
-  have hcop : Nat.Coprime (p ^ a) s := (hp.coprime_iff_not_dvd.mpr hps).pow_left a
-  have hdiv : t.divisors = ((p ^ a).divisors ×ˢ s.divisors).image (fun q => q.1 * q.2) := by
-    rw [ht_eq, hcop.divisors_mul]
-    ext x
-    simp [Finset.mem_image, Finset.mem_product]
-  have hinj : Set.InjOn (fun q : ℕ × ℕ => q.1 * q.2)
-      (((p ^ a).divisors ×ˢ s.divisors : Finset (ℕ × ℕ)) : Set (ℕ × ℕ)) := by
-    intro q1 hq1 q2 hq2 heq
-    dsimp only at heq
-    have h1 := Finset.mem_product.mp hq1
-    have h2 := Finset.mem_product.mp hq2
-    have h11 := Nat.dvd_of_mem_divisors h1.1
-    have h12 := Nat.dvd_of_mem_divisors h1.2
-    have h21 := Nat.dvd_of_mem_divisors h2.1
-    have h22 := Nat.dvd_of_mem_divisors h2.2
-    have hc12 : Nat.Coprime q1.1 q2.2 := hcop.coprime_dvd_left h11 |>.coprime_dvd_right h22
-    have hc21 : Nat.Coprime q2.1 q1.2 := hcop.coprime_dvd_left h21 |>.coprime_dvd_right h12
-    have d1 : q1.1 ∣ q2.1 := hc12.dvd_of_dvd_mul_right (by rw [← heq]; exact dvd_mul_right q1.1 q1.2)
-    have d2 : q2.1 ∣ q1.1 := hc21.dvd_of_dvd_mul_right (by rw [heq]; exact dvd_mul_right q2.1 q2.2)
-    have eq1 : q1.1 = q2.1 := Nat.dvd_antisymm d1 d2
-    have hq1_pos : 0 < q1.1 := Nat.pos_of_mem_divisors h1.1
-    have heq' : q1.1 * q1.2 = q1.1 * q2.2 := by rw [← eq1] at heq; exact heq
-    have eq2 : q1.2 = q2.2 := Nat.eq_of_mul_eq_mul_left hq1_pos heq'
-    exact Prod.ext eq1 eq2
-  rw [hdiv, Finset.sum_image hinj, Finset.sum_product]
-  have hterm : ∀ x ∈ (p ^ a).divisors, ∀ y ∈ s.divisors,
-      (ArithmeticFunction.moebius (t / (x * y)) : ℤ) * ((x * y).factorization p : ℤ) =
-        ((ArithmeticFunction.moebius (p ^ a / x) : ℤ) * (x.factorization p : ℤ)) *
-          (ArithmeticFunction.moebius (s / y) : ℤ) := by
-    intro x hx y hy
-    have hx_dvd : x ∣ p ^ a := Nat.dvd_of_mem_divisors hx
-    have hy_dvd : y ∣ s := Nat.dvd_of_mem_divisors hy
-    have hx0 : x ≠ 0 := (Nat.pos_of_mem_divisors hx).ne'
-    have hy0 : y ≠ 0 := (Nat.pos_of_mem_divisors hy).ne'
-    have hdiv_eq : t / (x * y) = (p ^ a / x) * (s / y) := by
-      rw [ht_eq]
-      obtain ⟨u, hu⟩ := hx_dvd
-      obtain ⟨v, hv⟩ := hy_dvd
-      rw [hu, hv, Nat.mul_div_cancel_left _ (Nat.pos_of_ne_zero hx0),
-        Nat.mul_div_cancel_left _ (Nat.pos_of_ne_zero hy0)]
-      have hmul : x * u * (y * v) = (x * y) * (u * v) := by ring
-      rw [hmul, Nat.mul_div_cancel_left _ (Nat.mul_pos (Nat.pos_of_ne_zero hx0) (Nat.pos_of_ne_zero hy0))]
-    have hcop_q : Nat.Coprime (p ^ a / x) (s / y) :=
-      hcop.coprime_dvd_left (Nat.div_dvd_of_dvd hx_dvd) |>.coprime_dvd_right (Nat.div_dvd_of_dvd hy_dvd)
-    have hpy : ¬ p ∣ y := fun h => hps (h.trans hy_dvd)
-    rw [hdiv_eq, ArithmeticFunction.isMultiplicative_moebius.map_mul_of_coprime hcop_q,
-      Nat.factorization_mul hx0 hy0, Finsupp.add_apply,
-      Nat.factorization_eq_zero_of_not_dvd hpy, add_zero]
+lemma pell_factorization_mul_prime {k p q : ℕ} (hk : 0 < k) (hp : p.Prime) (hq : q.Prime)
+    (hdiv : p ∣ P k) :
+    (P (q * k)).factorization p = (P k).factorization p + if p = q then 1 else 0 := by
+  obtain ⟨_, b, _, hexp⟩ := pell_mul_expansion k q hq.pos
+  let M := q * pellQ k ^ (q - 1) + P k ^ 2 * b
+  have hfac_eq : P (q * k) = P k * M := by
+    rw [hexp]
+    dsimp [M]
     ring
-  have hsplit : (∑ x ∈ (p ^ a).divisors, ∑ y ∈ s.divisors,
-      (ArithmeticFunction.moebius (t / (x * y)) : ℤ) * ((x * y).factorization p : ℤ)) =
-      (∑ x ∈ (p ^ a).divisors, (ArithmeticFunction.moebius (p ^ a / x) : ℤ) * (x.factorization p : ℤ)) *
-        (∑ y ∈ s.divisors, (ArithmeticFunction.moebius (s / y) : ℤ)) := by
-    rw [Finset.sum_mul]
-    apply Finset.sum_congr rfl
-    intro x hx
-    rw [Finset.mul_sum]
-    exact Finset.sum_congr rfl fun y hy => hterm x hx y hy
-  rw [hsplit, sum_moebius_div_eq_ite hs_pos]
-  by_cases hs1 : s = 1
-  · have ha_pos : 0 < a := by
-      by_contra ha0
-      have ha0' : a = 0 := by omega
-      rw [ha0', hs1, pow_zero, mul_one] at ht_eq
-      omega
-    have hex : ∃ b : ℕ, 0 < b ∧ t = p ^ b := ⟨a, ha_pos, by rw [ht_eq, hs1, mul_one]⟩
-    rw [if_pos hs1, if_pos hex, mul_one]
-    rw [Nat.divisors_prime_pow hp, Finset.sum_map]
-    have hval : ∀ j ∈ Finset.range (a + 1),
-        (ArithmeticFunction.moebius (p ^ a / p ^ j) : ℤ) * ((p ^ j).factorization p : ℤ) =
-          if j = a then (a : ℤ) else if j = a - 1 then -((a - 1 : ℕ) : ℤ) else 0 := by
-      intro j hj
-      have hjle : j ≤ a := Nat.lt_succ_iff.mp (Finset.mem_range.mp hj)
-      rw [Nat.pow_div hjle hp.pos, Nat.Prime.factorization_pow hp, Finsupp.single_eq_same]
-      by_cases hja : j = a
-      · subst hja; simp
-      · by_cases hja1 : j = a - 1
-        · subst hja1
-          have hsub : a - (a - 1) = 1 := by omega
-          rw [hsub, pow_one, ArithmeticFunction.moebius_apply_prime hp, if_neg hja, if_pos rfl]
-          ring
-        · have hnsq : ¬ Squarefree (p ^ (a - j)) := by
-            rw [Nat.squarefree_pow_iff hp.ne_one (by omega)]
-            omega
-          rw [ArithmeticFunction.moebius_eq_zero_of_not_squarefree hnsq, if_neg hja, if_neg hja1]
-          simp
-    have hsum_eq : (∑ j ∈ Finset.range (a + 1),
-        (ArithmeticFunction.moebius (p ^ a / p ^ j) : ℤ) * ((p ^ j).factorization p : ℤ)) =
-        ∑ j ∈ Finset.range (a + 1),
-          if j = a then (a : ℤ) else if j = a - 1 then -((a - 1 : ℕ) : ℤ) else 0 :=
-      Finset.sum_congr rfl hval
-    change (∑ j ∈ Finset.range (a + 1),
-        (ArithmeticFunction.moebius (p ^ a / p ^ j) : ℤ) * ((p ^ j).factorization p : ℤ)) = 1
-    rw [hsum_eq]
-    have ha_mem : a ∈ Finset.range (a + 1) := Finset.mem_range.mpr (Nat.lt_succ_self a)
-    have ha1_mem : a - 1 ∈ Finset.range (a + 1) := Finset.mem_range.mpr (by omega)
-    have hne : a ≠ a - 1 := by omega
-    have hadd := Finset.add_sum_erase (Finset.range (a + 1))
-      (fun j => if j = a then (a : ℤ) else if j = a - 1 then -((a - 1 : ℕ) : ℤ) else 0) ha_mem
-    have hclean : (∑ j ∈ (Finset.range (a + 1)).erase a,
-        if j = a then (a : ℤ) else if j = a - 1 then -((a - 1 : ℕ) : ℤ) else 0) =
-        ∑ j ∈ (Finset.range (a + 1)).erase a,
-          if j = a - 1 then -((a - 1 : ℕ) : ℤ) else 0 := by
-      apply Finset.sum_congr rfl
-      intro j hj
-      rw [if_neg (Finset.mem_erase.mp hj).1]
-    have hrest : (∑ j ∈ (Finset.range (a + 1)).erase a,
-        if j = a - 1 then -((a - 1 : ℕ) : ℤ) else 0) = -((a - 1 : ℕ) : ℤ) := by
-      rw [Finset.sum_ite_eq', if_pos (Finset.mem_erase.mpr ⟨hne.symm, ha1_mem⟩)]
-    rw [hclean, hrest, if_pos rfl] at hadd
+  have hPk_ne : P k ≠ 0 := (pell_pos hk).ne'
+  have hM_pos : 0 < M := by
+    have h1 : 0 < q * pellQ k ^ (q - 1) := Nat.mul_pos hq.pos (pow_pos (pellQ_pos k) _)
+    dsimp [M]
     omega
-  · have hnex : ¬ ∃ b : ℕ, 0 < b ∧ t = p ^ b := by
-      rintro ⟨b, _, htb⟩
-      have hba : a = b := by
-        dsimp only [a]
-        rw [htb, Nat.Prime.factorization_pow hp, Finsupp.single_eq_same]
-      have hs_eq : s = 1 := by
-        dsimp only [s]
-        rw [htb, hba, Nat.div_self (pow_pos hp.pos b)]
-      exact hs1 hs_eq
-    rw [if_neg hs1, if_neg hnex, mul_zero]
+  rw [hfac_eq, Nat.factorization_mul hPk_ne hM_pos.ne', Finsupp.add_apply]
+  congr 1
+  have hnot_q : ¬ (p ∣ pellQ k) := by
+    intro hpq
+    have hg : p ∣ Nat.gcd (pellQ k) (P k) := Nat.dvd_gcd hpq hdiv
+    rw [coprime_pellQ_pell k] at hg
+    exact hp.ne_one (Nat.eq_one_of_dvd_one hg)
+  have hnot_qpow : ¬ (p ∣ pellQ k ^ (q - 1)) := fun h => hnot_q (hp.dvd_of_dvd_pow h)
+  have hp_sq_b : p ^ 2 ∣ P k ^ 2 * b := dvd_mul_of_dvd_left (pow_dvd_pow_of_dvd hdiv 2) b
+  have hp_b : p ∣ P k ^ 2 * b := dvd_trans (dvd_pow_self p (by decide)) hp_sq_b
+  by_cases hpq : p = q
+  · subst hpq
+    rw [if_pos rfl]
+    apply le_antisymm
+    · by_contra hgt
+      have hge2 : 2 ≤ M.factorization p := by omega
+      have hp2M : p ^ 2 ∣ M := (hp.pow_dvd_iff_le_factorization hM_pos.ne').mpr hge2
+      have hp2_term : p ^ 2 ∣ p * pellQ k ^ (p - 1) :=
+        (Nat.dvd_add_iff_left hp_sq_b).mpr hp2M
+      rw [sq] at hp2_term
+      have hp_pow : p ∣ pellQ k ^ (p - 1) := Nat.dvd_of_mul_dvd_mul_left hp.pos hp2_term
+      exact hnot_qpow hp_pow
+    · have hp1M : p ^ 1 ∣ M := by
+        rw [pow_one]
+        exact dvd_add (dvd_mul_right p _) hp_b
+      exact (hp.pow_dvd_iff_le_factorization hM_pos.ne').mp hp1M
+  · rw [if_neg hpq]
+    apply Nat.factorization_eq_zero_of_not_dvd
+    intro hpM
+    have hp_term : p ∣ q * pellQ k ^ (q - 1) := (Nat.dvd_add_iff_left hp_b).mpr hpM
+    rcases hp.dvd_mul.mp hp_term with hp_dvd_q | hp_pow
+    · rcases (Nat.dvd_prime hq).mp hp_dvd_q with rfl | rfl
+      · exact hp.ne_one rfl
+      · exact hpq rfl
+    · exact hnot_qpow hp_pow
 
-/-- If `pell n` has no primitive prime divisor, then the positive Möbius product divides `n` times
-the negative Möbius product. -/
-private lemma moebius_prod_dvd_of_no_prim {n : ℕ} (hn : 1 < n)
-    (hnoprim : ∀ p : ℕ, p.Prime → p ∣ pell n → ∃ m : ℕ, 0 < m ∧ m < n ∧ p ∣ pell m) :
-    let Dpos := n.divisors.filter (fun d => ArithmeticFunction.moebius (n / d) = 1)
-    let Dneg := n.divisors.filter (fun d => ArithmeticFunction.moebius (n / d) = -1)
-    (∏ d ∈ Dpos, pell d) ∣ (∏ d ∈ Dneg, pell d) * n := by
-  intro Dpos Dneg
-  set A := ∏ d ∈ Dpos, pell d
-  set B := ∏ d ∈ Dneg, pell d
-  have hA0 : A ≠ 0 := by
-    apply Finset.prod_ne_zero_iff.mpr
-    intro d hd
-    exact pell_ne_zero (Nat.pos_of_mem_divisors (Finset.mem_filter.mp hd).1)
-  have hB0 : B ≠ 0 := by
-    apply Finset.prod_ne_zero_iff.mpr
-    intro d hd
-    exact pell_ne_zero (Nat.pos_of_mem_divisors (Finset.mem_filter.mp hd).1)
-  have hn0 : n ≠ 0 := by omega
-  rw [← Nat.factorization_le_iff_dvd hA0 (mul_ne_zero hB0 hn0)]
+lemma pell_factorization_mul {k p : ℕ} (hk : 0 < k) (hp : p.Prime) (hdiv : p ∣ P k) :
+    ∀ u : ℕ, 0 < u → (P (k * u)).factorization p = (P k).factorization p + u.factorization p := by
+  intro u
+  induction u using Nat.strong_induction_on with
+  | h u ih =>
+    intro hu
+    by_cases hu1 : u = 1
+    · subst hu1
+      simp
+    · have hu2 : 2 ≤ u := by omega
+      let q := u.minFac
+      have hq : q.Prime := Nat.minFac_prime (by omega)
+      obtain ⟨v, huv⟩ := Nat.minFac_dvd u
+      have hv_pos : 0 < v := by
+        rcases eq_or_lt_of_le (Nat.zero_le v) with rfl | hv
+        · simp at huv; omega
+        · exact hv
+      have hv_lt : v < u := by
+        have hq2 : 2 ≤ q := hq.two_le
+        nlinarith
+      have hmul : k * u = q * (k * v) := by rw [huv]; ring
+      have hkv_pos : 0 < k * v := Nat.mul_pos hk hv_pos
+      have hp_kv : p ∣ P (k * v) := dvd_trans hdiv (pell_dvd_pell ⟨v, rfl⟩)
+      rw [hmul, pell_factorization_mul_prime hkv_pos hp hq hp_kv, ih v hv_lt hv_pos]
+      rw [huv, Nat.factorization_mul hq.ne_zero hv_pos.ne', Finsupp.add_apply]
+      have hq_fac : q.factorization p = if p = q then 1 else 0 := by
+        by_cases hpq : p = q
+        · subst hpq; simp [hp.factorization_self]
+        · rw [if_neg hpq]
+          apply Nat.factorization_eq_zero_of_not_dvd
+          intro hd
+          rcases (Nat.dvd_prime hq).mp hd with rfl | rfl
+          · exact hp.ne_one rfl
+          · exact hpq rfl
+      rw [hq_fac]
+      omega
+
+def Dpos (n : ℕ) : Finset (ℕ × ℕ) :=
+  n.divisorsAntidiagonal.filter (fun x => ArithmeticFunction.moebius x.1 = 1)
+
+def Dneg (n : ℕ) : Finset (ℕ × ℕ) :=
+  n.divisorsAntidiagonal.filter (fun x => ArithmeticFunction.moebius x.1 = -1)
+
+def A (n : ℕ) : ℕ := ∏ x ∈ Dpos n, P x.2
+def B (n : ℕ) : ℕ := ∏ x ∈ Dneg n, P x.2
+
+lemma neg_one_pow_trichotomy : ∀ k : ℕ, (-1 : ℤ) ^ k = 1 ∨ (-1 : ℤ) ^ k = -1
+  | 0 => Or.inl rfl
+  | k + 1 => by
+    rcases neg_one_pow_trichotomy k with h | h <;> rw [pow_succ, h] <;> simp
+
+lemma moebius_trichotomy (m : ℕ) :
+    ArithmeticFunction.moebius m = 1 ∨
+    ArithmeticFunction.moebius m = -1 ∨
+    ArithmeticFunction.moebius m = 0 := by
+  by_cases h : Squarefree m
+  · rw [ArithmeticFunction.moebius_apply_of_squarefree h]
+    rcases neg_one_pow_trichotomy (ArithmeticFunction.cardFactors m) with h1 | h1
+    · exact Or.inl h1
+    · exact Or.inr (Or.inl h1)
+  · exact Or.inr (Or.inr (ArithmeticFunction.moebius_eq_zero_of_not_squarefree h))
+
+lemma sum_moebius_antidiag (n : ℕ) (F : ℕ → ℤ) :
+    ∑ x ∈ n.divisorsAntidiagonal, ArithmeticFunction.moebius x.1 * F x.2 =
+      (∑ x ∈ Dpos n, F x.2) - (∑ x ∈ Dneg n, F x.2) := by
+  rw [Dpos, Dneg, Finset.sum_filter, Finset.sum_filter, ← Finset.sum_sub_distrib]
+  refine Finset.sum_congr rfl ?_
+  intro x _
+  rcases moebius_trichotomy x.1 with h | h | h <;> simp [h]
+
+lemma sum_moebius_const {n : ℕ} (hn : 2 ≤ n) :
+    ∑ x ∈ n.divisorsAntidiagonal, ArithmeticFunction.moebius x.1 * (1 : ℤ) = 0 := by
+  have hinv := (ArithmeticFunction.sum_eq_iff_sum_mul_moebius_eq
+    (f := fun i => if i = 1 then (1 : ℤ) else 0) (g := fun _ => (1 : ℤ))).mp
+  have hsum : ∀ (m : ℕ), 0 < m → ∑ i ∈ m.divisors, (if i = 1 then (1 : ℤ) else 0) = 1 := by
+    intro m hm
+    rw [Finset.sum_ite_eq']
+    have h1 : 1 ∈ m.divisors := Nat.mem_divisors.mpr ⟨one_dvd m, hm.ne'⟩
+    simp [h1]
+  have hn0 : 0 < n := by omega
+  have hres := hinv hsum n hn0
+  have hne1 : n ≠ 1 := by omega
+  simp only [Int.cast_id, hne1, ↓reduceIte] at hres
+  exact hres
+
+lemma card_Dpos_eq_card_Dneg {n : ℕ} (hn : 2 ≤ n) : (Dpos n).card = (Dneg n).card := by
+  have h := (sum_moebius_antidiag n (fun _ => (1 : ℤ))).symm.trans (sum_moebius_const hn)
+  simp only [Finset.sum_const, nsmul_eq_mul, mul_one] at h
+  omega
+
+lemma sum_Dpos_eq_sum_Dneg_add_totient {n : ℕ} (hn : 0 < n) :
+    ∑ x ∈ Dpos n, x.2 = ∑ x ∈ Dneg n, x.2 + Nat.totient n := by
+  have hinv := (ArithmeticFunction.sum_eq_iff_sum_mul_moebius_eq
+    (f := fun i => (Nat.totient i : ℤ)) (g := fun m => (m : ℤ))).mp
+  have hsum : ∀ (m : ℕ), 0 < m → ∑ i ∈ m.divisors, (Nat.totient i : ℤ) = (m : ℤ) := by
+    intro m _
+    exact_mod_cast Nat.sum_totient m
+  have hres := hinv hsum n hn
+  simp only [Int.cast_id] at hres
+  have hres' := (sum_moebius_antidiag n (fun d => (d : ℤ))).symm.trans hres
+  have hcast1 : ∑ x ∈ Dpos n, (x.2 : ℤ) = ((∑ x ∈ Dpos n, x.2 : ℕ) : ℤ) := by push_cast; rfl
+  have hcast2 : ∑ x ∈ Dneg n, (x.2 : ℤ) = ((∑ x ∈ Dneg n, x.2 : ℕ) : ℤ) := by push_cast; rfl
+  rw [hcast1, hcast2] at hres'
+  omega
+
+open Classical in
+lemma moebius_factorization_sum {t p : ℕ} (ht : 0 < t) (hp : p.Prime) :
+    ∑ x ∈ t.divisorsAntidiagonal, ArithmeticFunction.moebius x.1 * (x.2.factorization p : ℤ) =
+      if ∃ k ≥ 1, t = p ^ k then 1 else 0 := by
+  have hinv := (ArithmeticFunction.sum_eq_iff_sum_mul_moebius_eq
+    (f := fun w => if ∃ k ≥ 1, w = p ^ k then (1 : ℤ) else 0)
+    (g := fun u => (u.factorization p : ℤ))).mp
+  have hres := hinv ?_ t ht
+  · simpa only [Int.cast_id] using hres
+  intro u hu
+  rw [← Finset.sum_filter]
+  simp only [Finset.sum_const, nsmul_eq_mul, mul_one]
+  congr 1
+  have hset : u.divisors.filter (fun w => ∃ k ≥ 1, w = p ^ k) =
+      (Finset.Icc 1 (u.factorization p)).image (fun k => p ^ k) := by
+    ext w
+    simp only [Finset.mem_filter, Nat.mem_divisors, Finset.mem_image, Finset.mem_Icc]
+    constructor
+    · rintro ⟨⟨hwu, _⟩, ⟨k, hk1, rfl⟩⟩
+      refine ⟨k, ⟨hk1, ?_⟩, rfl⟩
+      exact (hp.pow_dvd_iff_le_factorization hu.ne').mp hwu
+    · rintro ⟨k, ⟨hk1, hkle⟩, rfl⟩
+      refine ⟨⟨?_, hu.ne'⟩, ⟨k, hk1, rfl⟩⟩
+      exact (hp.pow_dvd_iff_le_factorization hu.ne').mpr hkle
+  rw [hset, Finset.card_image_of_injective _ (Nat.pow_right_injective hp.two_le), Nat.card_Icc]
+  omega
+
+lemma antidiag_snd_pos {n : ℕ} (hn : 0 < n) {x : ℕ × ℕ} (hx : x ∈ n.divisorsAntidiagonal) :
+    0 < x.2 := by
+  have hmul : x.1 * x.2 = n := (Nat.mem_divisorsAntidiagonal.mp hx).1
+  rcases eq_or_lt_of_le (Nat.zero_le x.2) with h0 | hpos
+  · rw [← h0, mul_zero] at hmul; omega
+  · exact hpos
+
+lemma A_pos {n : ℕ} (hn : 0 < n) : 0 < A n := by
+  apply Finset.prod_pos
+  intro x hx
+  exact pell_pos (antidiag_snd_pos hn (Finset.mem_of_mem_filter x hx))
+
+lemma B_pos {n : ℕ} (hn : 0 < n) : 0 < B n := by
+  apply Finset.prod_pos
+  intro x hx
+  exact pell_pos (antidiag_snd_pos hn (Finset.mem_of_mem_filter x hx))
+
+lemma A_dvd_B_mul_of_no_prim {n : ℕ} (hn : 2 ≤ n)
+    (hno : ∀ p : ℕ, p.Prime → p ∣ P n → ∃ m : ℕ, 0 < m ∧ m < n ∧ p ∣ P m) :
+    A n ∣ B n * n := by
+  classical
+  have hn0 : 0 < n := by omega
+  have hA0 : A n ≠ 0 := (A_pos hn0).ne'
+  have hB0 : B n ≠ 0 := (B_pos hn0).ne'
+  have hBn0 : B n * n ≠ 0 := mul_ne_zero hB0 hn0.ne'
+  rw [← Nat.factorization_le_iff_dvd hA0 hBn0]
   intro p
   by_cases hp : p.Prime
-  swap
-  · simp [Nat.factorization_eq_zero_of_not_prime _ hp]
-  rw [Nat.factorization_mul hB0 hn0, Finsupp.add_apply]
-  have hA_fac : (A.factorization p : ℤ) =
-      ∑ d ∈ Dpos, ((pell d).factorization p : ℤ) := by
-    dsimp only [A]
-    rw [Nat.factorization_prod (fun d hd => pell_ne_zero (Nat.pos_of_mem_divisors (Finset.mem_filter.mp hd).1)),
-      Finsupp.finsetSum_apply, Nat.cast_sum]
-  have hB_fac : (B.factorization p : ℤ) =
-      ∑ d ∈ Dneg, ((pell d).factorization p : ℤ) := by
-    dsimp only [B]
-    rw [Nat.factorization_prod (fun d hd => pell_ne_zero (Nat.pos_of_mem_divisors (Finset.mem_filter.mp hd).1)),
-      Finsupp.finsetSum_apply, Nat.cast_sum]
-  have hdiff : (A.factorization p : ℤ) - (B.factorization p : ℤ) =
-      ∑ d ∈ n.divisors, (ArithmeticFunction.moebius (n / d) : ℤ) * ((pell d).factorization p : ℤ) := by
-    rw [hA_fac, hB_fac]
-    have hsplit : ∀ d ∈ n.divisors,
-        (ArithmeticFunction.moebius (n / d) : ℤ) * ((pell d).factorization p : ℤ) =
-          (if ArithmeticFunction.moebius (n / d) = 1 then ((pell d).factorization p : ℤ) else 0) -
-          (if ArithmeticFunction.moebius (n / d) = -1 then ((pell d).factorization p : ℤ) else 0) := by
-      intro d _
-      rcases moebius_cases (n / d) with h | h | h <;> simp [h]
-    rw [Finset.sum_congr rfl hsplit, Finset.sum_sub_distrib,
-      Finset.sum_filter, Finset.sum_filter]
-  suffices hle : (A.factorization p : ℤ) - (B.factorization p : ℤ) ≤ (n.factorization p : ℤ) by
-    omega
-  rw [hdiff]
-  by_cases hpn : p ∣ pell n
-  swap
-  · have hz : (∑ d ∈ n.divisors,
-        (ArithmeticFunction.moebius (n / d) : ℤ) * ((pell d).factorization p : ℤ)) = 0 := by
-      apply Finset.sum_eq_zero
-      intro d hd
-      have hnd : ¬ p ∣ pell d := fun h => hpn (h.trans (pell_dvd_of_dvd (Nat.dvd_of_mem_divisors hd)))
-      simp [Nat.factorization_eq_zero_of_not_dvd hnd]
-    rw [hz]
-    exact Nat.cast_nonneg _
-  · have hex : ∃ m : ℕ, 0 < m ∧ p ∣ pell m := ⟨n, by omega, hpn⟩
-    let r := Nat.find hex
-    have hr_pos : 0 < r := (Nat.find_spec hex).1
-    have hpr : p ∣ pell r := (Nat.find_spec hex).2
-    have hr_min : ∀ m : ℕ, 0 < m → p ∣ pell m → r ≤ m := fun m hm hpm => Nat.find_min' hex ⟨hm, hpm⟩
-    have hr_dvd_iff : ∀ m : ℕ, 0 < m → (p ∣ pell m ↔ r ∣ m) := by
-      intro m hm
-      constructor
-      · intro hpm
-        have hg_pos : 0 < Nat.gcd r m := Nat.gcd_pos_of_pos_left m hr_pos
-        have hpg : p ∣ pell (Nat.gcd r m) := by
-          rw [← pell_gcd]
-          exact Nat.dvd_gcd hpr hpm
-        have hle := hr_min (Nat.gcd r m) hg_pos hpg
-        have hge := Nat.gcd_le_left m hr_pos
-        have heq : Nat.gcd r m = r := le_antisymm hge hle
-        exact heq ▸ Nat.gcd_dvd_right r m
-      · intro hrm
-        exact hpr.trans (pell_dvd_of_dvd hrm)
-    have hr_dvd_n : r ∣ n := (hr_dvd_iff n (by omega)).mp hpn
-    have hr_lt_n : r < n := by
-      obtain ⟨m, hm0, hmn, hpm⟩ := hnoprim p hp hpn
-      exact lt_of_le_of_lt (hr_min m hm0 hpm) hmn
-    let t := n / r
-    have ht_eq : r * t = n := Nat.mul_div_cancel' hr_dvd_n
-    have ht1 : 1 < t := by
-      by_contra h
-      have hle : t ≤ 1 := by omega
-      have : n ≤ r := by nlinarith
-      omega
-    have hfilt : (∑ d ∈ n.divisors,
-        (ArithmeticFunction.moebius (n / d) : ℤ) * ((pell d).factorization p : ℤ)) =
-        ∑ d ∈ n.divisors.filter (fun d => r ∣ d),
-          (ArithmeticFunction.moebius (n / d) : ℤ) * ((pell d).factorization p : ℤ) := by
-      symm
-      apply Finset.sum_subset (Finset.filter_subset _ _)
-      intro d hd hnd
-      have hnr : ¬ r ∣ d := fun h => hnd (Finset.mem_filter.mpr ⟨hd, h⟩)
-      have hnpd : ¬ p ∣ pell d := fun h => hnr ((hr_dvd_iff d (Nat.pos_of_mem_divisors hd)).mp h)
-      simp [Nat.factorization_eq_zero_of_not_dvd hnpd]
-    rw [hfilt]
-    have hbij : n.divisors.filter (fun d => r ∣ d) = t.divisors.image (fun e => e * r) := by
-      ext d
-      simp only [Finset.mem_filter, Nat.mem_divisors, Finset.mem_image]
-      constructor
-      · rintro ⟨⟨hdn, _⟩, ⟨e, rfl⟩⟩
-        refine ⟨e, ⟨?_, by omega⟩, mul_comm e r⟩
-        rw [← ht_eq] at hdn
-        exact (Nat.mul_dvd_mul_iff_left hr_pos).mp hdn
-      · rintro ⟨e, ⟨het, _⟩, rfl⟩
-        refine ⟨⟨?_, hn0⟩, dvd_mul_left r e⟩
-        rw [← ht_eq, mul_comm e r]
-        exact Nat.mul_dvd_mul_left r het
-    rw [hbij, Finset.sum_image (fun e1 _ e2 _ h => Nat.eq_of_mul_eq_mul_right hr_pos h)]
-    have hre : ∀ e ∈ t.divisors,
-        (ArithmeticFunction.moebius (n / (e * r)) : ℤ) * ((pell (e * r)).factorization p : ℤ) =
-          (ArithmeticFunction.moebius (t / e) : ℤ) * ((pell r).factorization p : ℤ) +
-          (ArithmeticFunction.moebius (t / e) : ℤ) * (e.factorization p : ℤ) := by
-      intro e he
-      have he0 : 0 < e := Nat.pos_of_mem_divisors he
-      have hdiv_eq : n / (e * r) = t / e := by
-        rw [← ht_eq, mul_comm r t, Nat.mul_div_mul_right t e hr_pos]
-      rw [hdiv_eq, factorization_pell_mul hp hr_pos hpr he0, Nat.cast_add, mul_add]
-    rw [Finset.sum_congr rfl hre, Finset.sum_add_distrib, ← Finset.sum_mul,
-      sum_moebius_div_eq_zero ht1, zero_mul, zero_add,
-      sum_moebius_div_mul_factorization hp ht1]
-    split_ifs with hpow
-    · obtain ⟨a, ha0, hta⟩ := hpow
-      have hpn_dvd : p ∣ n := by
-        rw [← ht_eq, hta]
-        exact dvd_mul_of_dvd_right (dvd_pow_self p ha0.ne') r
-      have h1 : 1 ≤ n.factorization p :=
-        (hp.pow_dvd_iff_le_factorization hn0).mp (by simpa using hpn_dvd)
-      exact_mod_cast h1
-    · exact Nat.cast_nonneg _
-
-/-- Binet identity for `H` and `pell`. -/
-private lemma binet_real (d : ℕ) :
-    (H d : ℝ) + (pell d : ℝ) * Real.sqrt 2 = (1 + Real.sqrt 2) ^ d ∧
-    (H d : ℝ) - (pell d : ℝ) * Real.sqrt 2 = (1 - Real.sqrt 2) ^ d := by
-  induction d with
-  | zero => simp [H, pell]
-  | succ k ih =>
-    have hs := pell_H_succ k
-    have hp : (pell (k + 1) : ℝ) = (H k : ℝ) + (pell k : ℝ) := by exact_mod_cast hs.1
-    have hH : (H (k + 1) : ℝ) = (H k : ℝ) + 2 * (pell k : ℝ) := by exact_mod_cast hs.2
-    have hsq : Real.sqrt 2 ^ 2 = 2 := Real.sq_sqrt (by norm_num)
-    constructor
-    · rw [pow_succ, ← ih.1, hp, hH]
-      nlinarith [hsq]
-    · rw [pow_succ, ← ih.2, hp, hH]
-      nlinarith [hsq]
-
-private lemma pell_binet_complex (d : ℕ) :
-    ((2 * Real.sqrt 2 : ℝ) : ℂ) * (pell d : ℂ) =
-      ((1 + Real.sqrt 2 : ℝ) : ℂ) ^ d - ((1 - Real.sqrt 2 : ℝ) : ℂ) ^ d := by
-  have hr : 2 * Real.sqrt 2 * (pell d : ℝ) =
-      (1 + Real.sqrt 2) ^ d - (1 - Real.sqrt 2) ^ d := by
-    have h := binet_real d
-    linarith [h.1, h.2]
-  exact_mod_cast hr
-
-/-- Cyclotomic lower bound on the Möbius alternating product of Pell numbers. -/
-private lemma moebius_prod_lower_bound {n : ℕ} (hn : 1 < n) :
-    let Dpos := n.divisors.filter (fun d => ArithmeticFunction.moebius (n / d) = 1)
-    let Dneg := n.divisors.filter (fun d => ArithmeticFunction.moebius (n / d) = -1)
-    ((∏ d ∈ Dneg, pell d : ℕ) : ℝ) * (2 : ℝ) ^ n.totient ≤ ((∏ d ∈ Dpos, pell d : ℕ) : ℝ) := by
-  intro Dpos Dneg
-  set α : ℝ := 1 + Real.sqrt 2
-  set β : ℝ := 1 - Real.sqrt 2
-  set αc : ℂ := (α : ℂ)
-  set βc : ℂ := (β : ℂ)
-  have hsqrt_pos : (0 : ℝ) < Real.sqrt 2 := Real.sqrt_pos.mpr (by norm_num)
-  have hsqrt_gt1 : (1 : ℝ) < Real.sqrt 2 := by
-    have : (1 : ℝ) ^ 2 < Real.sqrt 2 ^ 2 := by rw [Real.sq_sqrt (by norm_num)]; norm_num
-    nlinarith [hsqrt_pos]
-  have hα_pos : 0 < α := by dsimp [α]; linarith
-  have hαc_ne : αc ≠ 0 := Complex.ofReal_ne_zero.mpr hα_pos.ne'
-  set z : ℂ := βc / αc
-  have hz_norm : ‖z‖ = (Real.sqrt 2 - 1) / α := by
-    dsimp only [z, αc, βc]
-    rw [norm_div, Complex.norm_real, Complex.norm_real, Real.norm_eq_abs, Real.norm_eq_abs,
-      abs_of_pos hα_pos, abs_of_neg (show β < 0 by dsimp [β]; linarith)]
-    dsimp [β]
-    ring
-  have hcyc_lower : ∀ k : ℕ, 0 < k →
-      ((2 : ℝ) / α) ^ k.totient ≤ ‖(Polynomial.cyclotomic k ℂ).eval z‖ := by
-    intro k hk
-    have hprim : IsPrimitiveRoot (Complex.exp (2 * Real.pi * Complex.I / k)) k :=
-      Complex.isPrimitiveRoot_exp k hk.ne'
-    have hfact := Polynomial.cyclotomic_eq_prod_X_sub_primitiveRoots hprim
-    rw [hfact, Polynomial.eval_prod, norm_prod]
-    have hcard : (primitiveRoots k ℂ).card = k.totient := hprim.card_primitiveRoots
-    rw [← hcard, ← Finset.prod_const]
-    apply Finset.prod_le_prod (fun _ _ => by positivity)
-    intro ζ hζ
-    rw [Polynomial.eval_sub, Polynomial.eval_X, Polynomial.eval_C]
-    have hζ_prim : IsPrimitiveRoot ζ k := (mem_primitiveRoots hk).mp hζ
-    have hζ_norm : ‖ζ‖ = 1 := hζ_prim.norm'_eq_one hk.ne'
-    have htri : ‖ζ‖ - ‖z‖ ≤ ‖z - ζ‖ := by
-      have := norm_sub_norm_le ζ z
-      rw [norm_sub_rev] at this
-      linarith
-    rw [hζ_norm, hz_norm] at htri
-    have heq : 1 - (Real.sqrt 2 - 1) / α = 2 / α := by
-      dsimp [α]
-      field_simp [hα_pos.ne']
-      ring
-    linarith
-  have hpell_norm : ∀ d : ℕ, 0 < d →
-      2 * Real.sqrt 2 * (pell d : ℝ) =
-        α ^ d * ∏ k ∈ d.divisors, ‖(Polynomial.cyclotomic k ℂ).eval z‖ := by
-    intro d hd
-    have h1 := pell_binet_complex d
-    have h2 : αc ^ d - βc ^ d = -(αc ^ d) * (z ^ d - 1) := by
-      dsimp only [z]
-      rw [div_pow]
-      field_simp [pow_ne_zero d hαc_ne]
-      ring
-    have h3 : z ^ d - 1 = ∏ k ∈ d.divisors, (Polynomial.cyclotomic k ℂ).eval z := by
-      have hpoly := Polynomial.prod_cyclotomic_eq_X_pow_sub_one hd ℂ
-      have hev := congrArg (Polynomial.eval z) hpoly
-      simp only [Polynomial.eval_prod, Polynomial.eval_sub, Polynomial.eval_pow,
-        Polynomial.eval_X, Polynomial.eval_one] at hev
-      exact hev.symm
-    have hnorm := congrArg norm h1
-    rw [h2, h3, norm_mul, norm_mul, norm_neg, norm_pow, norm_prod,
-      Complex.norm_real, Complex.norm_real, Complex.norm_natCast,
-      Real.norm_eq_abs, Real.norm_eq_abs, abs_of_pos (by positivity), abs_of_pos hα_pos] at hnorm
-    exact hnorm
-  set f : ℕ → ℝ := fun k => ‖(Polynomial.cyclotomic k ℂ).eval z‖
-  have hDpos_eq : (2 * Real.sqrt 2) ^ Dpos.card * ((∏ d ∈ Dpos, pell d : ℕ) : ℝ) =
-      α ^ (∑ d ∈ Dpos, d) * ∏ d ∈ Dpos, ∏ k ∈ d.divisors, f k := by
-    rw [Nat.cast_prod, ← Finset.prod_const, ← Finset.prod_mul_distrib,
-      ← Finset.prod_pow_eq_pow_sum, ← Finset.prod_mul_distrib]
-    apply Finset.prod_congr rfl
-    intro d hd
-    exact hpell_norm d (Nat.pos_of_mem_divisors (Finset.mem_filter.mp hd).1)
-  have hDneg_eq : (2 * Real.sqrt 2) ^ Dneg.card * ((∏ d ∈ Dneg, pell d : ℕ) : ℝ) =
-      α ^ (∑ d ∈ Dneg, d) * ∏ d ∈ Dneg, ∏ k ∈ d.divisors, f k := by
-    rw [Nat.cast_prod, ← Finset.prod_const, ← Finset.prod_mul_distrib,
-      ← Finset.prod_pow_eq_pow_sum, ← Finset.prod_mul_distrib]
-    apply Finset.prod_congr rfl
-    intro d hd
-    exact hpell_norm d (Nat.pos_of_mem_divisors (Finset.mem_filter.mp hd).1)
-  have hmob_sum : ∀ g : ℕ → ℤ,
-      (∑ d ∈ Dpos, g d) - (∑ d ∈ Dneg, g d) =
-        ∑ d ∈ n.divisors, (ArithmeticFunction.moebius (n / d) : ℤ) * g d := by
-    intro g
-    have hsplit : ∀ d ∈ n.divisors,
-        (ArithmeticFunction.moebius (n / d) : ℤ) * g d =
-          (if ArithmeticFunction.moebius (n / d) = 1 then g d else 0) -
-          (if ArithmeticFunction.moebius (n / d) = -1 then g d else 0) := by
-      intro d _
-      rcases moebius_cases (n / d) with h | h | h <;> simp [h]
-    rw [Finset.sum_congr rfl hsplit, Finset.sum_sub_distrib, Finset.sum_filter, Finset.sum_filter]
-  have hcard_eq : Dpos.card = Dneg.card := by
-    have h := hmob_sum (fun _ => (1 : ℤ))
-    simp only [Finset.sum_const, nsmul_eq_mul, mul_one] at h
-    rw [sum_moebius_div_eq_zero hn] at h
-    omega
-  have hfilter_mob : ∀ k ∈ n.divisors,
-      (∑ d ∈ n.divisors.filter (fun d => k ∣ d), (ArithmeticFunction.moebius (n / d) : ℤ)) =
-        if k = n then 1 else 0 := by
-    intro k hk
-    have hk0 : 0 < k := Nat.pos_of_mem_divisors hk
-    have hkn : k ∣ n := Nat.dvd_of_mem_divisors hk
-    let t := n / k
-    have hkt : k * t = n := Nat.mul_div_cancel' hkn
-    have ht0 : t ≠ 0 := by
-      intro h
-      rw [h, mul_zero] at hkt
-      omega
-    have hbij : n.divisors.filter (fun d => k ∣ d) = t.divisors.image (fun e => e * k) := by
-      ext d
-      simp only [Finset.mem_filter, Nat.mem_divisors, Finset.mem_image]
-      constructor
-      · rintro ⟨⟨hdn, _⟩, ⟨e, rfl⟩⟩
-        refine ⟨e, ⟨?_, ht0⟩, mul_comm e k⟩
-        rw [← hkt] at hdn
-        exact (Nat.mul_dvd_mul_iff_left hk0).mp hdn
-      · rintro ⟨e, ⟨het, _⟩, rfl⟩
-        refine ⟨⟨?_, by omega⟩, dvd_mul_left k e⟩
-        rw [← hkt, mul_comm e k]
-        exact Nat.mul_dvd_mul_left k het
-    rw [hbij, Finset.sum_image (fun e1 _ e2 _ h => Nat.eq_of_mul_eq_mul_right hk0 h)]
-    have hdiv : ∀ e ∈ t.divisors, (ArithmeticFunction.moebius (n / (e * k)) : ℤ) =
-        (ArithmeticFunction.moebius (t / e) : ℤ) := by
-      intro e _
-      rw [← hkt, mul_comm k t, Nat.mul_div_mul_right t e hk0]
-    rw [Finset.sum_congr rfl hdiv, sum_moebius_div_eq_ite (Nat.pos_of_ne_zero ht0)]
-    by_cases hkeq : k = n
-    · subst hkeq
-      have ht1 : t = 1 := Nat.div_self hk0
-      rw [if_pos ht1, if_pos rfl]
-    · have htne1 : t ≠ 1 := by
-        intro ht1
-        rw [ht1, mul_one] at hkt
-        exact hkeq hkt
-      rw [if_neg htne1, if_neg hkeq]
-  have hdeg_eq : (∑ d ∈ Dpos, d) = (∑ d ∈ Dneg, d) + n.totient := by
-    have h := hmob_sum (fun d => (d : ℤ))
-    have htot : (∑ d ∈ n.divisors, (ArithmeticFunction.moebius (n / d) : ℤ) * (d : ℤ)) =
-        (n.totient : ℤ) := by
-      have hphi : ∀ m : ℕ, ∑ k ∈ m.divisors, (k.totient : ℤ) = (m : ℤ) := by
-        intro m
-        exact_mod_cast Nat.sum_totient m
-      have hsub : (∑ d ∈ n.divisors, (ArithmeticFunction.moebius (n / d) : ℤ) * (d : ℤ)) =
-          ∑ d ∈ n.divisors, (ArithmeticFunction.moebius (n / d) : ℤ) *
-            ∑ k ∈ d.divisors, (k.totient : ℤ) :=
-        Finset.sum_congr rfl fun d _ => by rw [hphi d]
-      rw [hsub]
-      simp_rw [Finset.mul_sum]
-      have hswap : (∑ d ∈ n.divisors, ∑ k ∈ d.divisors,
-          (ArithmeticFunction.moebius (n / d) : ℤ) * (k.totient : ℤ)) =
-          ∑ k ∈ n.divisors, (k.totient : ℤ) *
-            ∑ d ∈ n.divisors.filter (fun d => k ∣ d), (ArithmeticFunction.moebius (n / d) : ℤ) := by
-        have h1 : ∀ d ∈ n.divisors,
-            (∑ k ∈ d.divisors, (ArithmeticFunction.moebius (n / d) : ℤ) * (k.totient : ℤ)) =
-            ∑ k ∈ n.divisors, if k ∣ d then (ArithmeticFunction.moebius (n / d) : ℤ) * (k.totient : ℤ) else 0 := by
-          intro d hd
-          rw [← Finset.sum_filter]
-          apply Finset.sum_congr _ (fun _ _ => rfl)
-          ext k
-          simp only [Finset.mem_filter, Nat.mem_divisors]
-          have hd0 : d ≠ 0 := (Nat.pos_of_mem_divisors hd).ne'
-          have hdn : d ∣ n := Nat.dvd_of_mem_divisors hd
-          exact ⟨fun h => ⟨⟨h.1.trans hdn, by omega⟩, h.1⟩, fun h => ⟨h.2, hd0⟩⟩
-        rw [Finset.sum_congr rfl h1, Finset.sum_comm]
-        apply Finset.sum_congr rfl
-        intro k _
-        rw [Finset.mul_sum, ← Finset.sum_filter]
-        exact Finset.sum_congr rfl fun d _ => mul_comm _ _
-      rw [hswap]
-      have hterm : ∀ k ∈ n.divisors,
-          (k.totient : ℤ) * (∑ d ∈ n.divisors.filter (fun d => k ∣ d),
-            (ArithmeticFunction.moebius (n / d) : ℤ)) = if k = n then (n.totient : ℤ) else 0 := by
-        intro k hk
-        rw [hfilter_mob k hk]
-        split_ifs with hkn
-        · subst hkn; simp
-        · simp
-      rw [Finset.sum_congr rfl hterm, Finset.sum_ite_eq',
-        if_pos (Nat.mem_divisors.mpr ⟨dvd_rfl, by omega⟩)]
-    rw [htot] at h
-    have hpos_cast : ((∑ d ∈ Dpos, d : ℕ) : ℤ) = ∑ d ∈ Dpos, (d : ℤ) := by push_cast; rfl
-    have hneg_cast : ((∑ d ∈ Dneg, d : ℕ) : ℤ) = ∑ d ∈ Dneg, (d : ℤ) := by push_cast; rfl
-    omega
-  have hprod_cyc : (∏ d ∈ Dpos, ∏ k ∈ d.divisors, f k) =
-      (∏ d ∈ Dneg, ∏ k ∈ d.divisors, f k) * f n := by
-    have hrewrite : ∀ S : Finset ℕ, S ⊆ n.divisors →
-        (∏ d ∈ S, ∏ k ∈ d.divisors, f k) =
-        ∏ k ∈ n.divisors, (f k) ^ ((S.filter (fun d => k ∣ d)).card) := by
-      intro S hS
-      have h1 : ∀ d ∈ S, (∏ k ∈ d.divisors, f k) =
-          ∏ k ∈ n.divisors, if k ∣ d then f k else 1 := by
+  · have hA_fac : (A n).factorization p = ∑ x ∈ Dpos n, (P x.2).factorization p := by
+      unfold A
+      rw [Nat.factorization_prod, Finsupp.finsetSum_apply]
+      intro x hx
+      exact (pell_pos (antidiag_snd_pos hn0 (Finset.mem_of_mem_filter x hx))).ne'
+    have hB_fac : (B n).factorization p = ∑ x ∈ Dneg n, (P x.2).factorization p := by
+      unfold B
+      rw [Nat.factorization_prod, Finsupp.finsetSum_apply]
+      intro x hx
+      exact (pell_pos (antidiag_snd_pos hn0 (Finset.mem_of_mem_filter x hx))).ne'
+    have hBn_fac : (B n * n).factorization p = (B n).factorization p + n.factorization p := by
+      rw [Nat.factorization_mul hB0 hn0.ne', Finsupp.add_apply]
+    rw [hBn_fac]
+    suffices hdiff : ((A n).factorization p : ℤ) - ((B n).factorization p : ℤ) ≤
+        (n.factorization p : ℤ) by omega
+    have hdiff_eq : ((A n).factorization p : ℤ) - ((B n).factorization p : ℤ) =
+        ∑ x ∈ n.divisorsAntidiagonal,
+          ArithmeticFunction.moebius x.1 * ((P x.2).factorization p : ℤ) := by
+      refine Eq.trans ?_ (sum_moebius_antidiag n (fun d => ((P d).factorization p : ℤ))).symm
+      rw [hA_fac, hB_fac]
+      push_cast
+      rfl
+    rw [hdiff_eq]
+    by_cases hpn : p ∣ P n
+    · have hex : ∃ m : ℕ, 0 < m ∧ p ∣ P m := ⟨n, hn0, hpn⟩
+      let m0 := Nat.find hex
+      obtain ⟨hm0_pos, hm0_dvd⟩ := Nat.find_spec hex
+      obtain ⟨m, hm_pos, hm_lt, hpm⟩ := hno p hp hpn
+      have hm0_le : m0 ≤ m := Nat.find_min' hex ⟨hm_pos, hpm⟩
+      have hm0_lt_n : m0 < n := lt_of_le_of_lt hm0_le hm_lt
+      have hdvd_iff : ∀ d : ℕ, 0 < d → (p ∣ P d ↔ m0 ∣ d) := by
         intro d hd
-        rw [← Finset.prod_filter]
-        apply Finset.prod_congr _ (fun _ _ => rfl)
-        ext k
-        simp only [Finset.mem_filter, Nat.mem_divisors]
-        have hd0 : d ≠ 0 := (Nat.pos_of_mem_divisors (hS hd)).ne'
-        have hdn : d ∣ n := Nat.dvd_of_mem_divisors (hS hd)
-        exact ⟨fun h => ⟨⟨h.1.trans hdn, by omega⟩, h.1⟩, fun h => ⟨h.2, hd0⟩⟩
-      rw [Finset.prod_congr rfl h1, Finset.prod_comm]
-      apply Finset.prod_congr rfl
-      intro k _
-      rw [← Finset.prod_filter, Finset.prod_const]
-    rw [hrewrite Dpos (Finset.filter_subset _ _), hrewrite Dneg (Finset.filter_subset _ _)]
-    have hcount : ∀ k ∈ n.divisors,
-        (Dpos.filter (fun d => k ∣ d)).card =
-          (Dneg.filter (fun d => k ∣ d)).card + if k = n then 1 else 0 := by
-      intro k hk
-      have h := hmob_sum (fun d => if k ∣ d then (1 : ℤ) else 0)
-      have hl : (∑ d ∈ Dpos, if k ∣ d then (1 : ℤ) else 0) = ((Dpos.filter (fun d => k ∣ d)).card : ℤ) := by
-        simp [Finset.sum_boole]
-      have hr : (∑ d ∈ Dneg, if k ∣ d then (1 : ℤ) else 0) = ((Dneg.filter (fun d => k ∣ d)).card : ℤ) := by
-        simp [Finset.sum_boole]
-      rw [hl, hr] at h
-      have hf : (∑ d ∈ n.divisors, (ArithmeticFunction.moebius (n / d) : ℤ) *
-          if k ∣ d then (1 : ℤ) else 0) =
-          ∑ d ∈ n.divisors.filter (fun d => k ∣ d), (ArithmeticFunction.moebius (n / d) : ℤ) := by
+        constructor
+        · intro hpd
+          have hpg : p ∣ Nat.gcd (P m0) (P d) := Nat.dvd_gcd hm0_dvd hpd
+          rw [pell_gcd] at hpg
+          have hg_pos : 0 < Nat.gcd m0 d := Nat.gcd_pos_of_pos_left d hm0_pos
+          have hm0_le_g : m0 ≤ Nat.gcd m0 d := Nat.find_min' hex ⟨hg_pos, hpg⟩
+          have hg_le_m0 : Nat.gcd m0 d ≤ m0 := Nat.le_of_dvd hm0_pos (Nat.gcd_dvd_left m0 d)
+          have hg_eq : Nat.gcd m0 d = m0 := le_antisymm hg_le_m0 hm0_le_g
+          have hgd : Nat.gcd m0 d ∣ d := Nat.gcd_dvd_right m0 d
+          rwa [hg_eq] at hgd
+        · intro hm0d
+          exact dvd_trans hm0_dvd (pell_dvd_pell hm0d)
+      have hm0_dvd_n : m0 ∣ n := (hdvd_iff n hn0).mp hpn
+      let t := n / m0
+      have hnt : m0 * t = n := Nat.mul_div_cancel' hm0_dvd_n
+      have ht2 : 2 ≤ t := by
+        by_contra hlt
+        have ht1 : t ≤ 1 := by omega
+        nlinarith
+      have ht_pos : 0 < t := by omega
+      have hfilter : ∑ x ∈ n.divisorsAntidiagonal,
+            ArithmeticFunction.moebius x.1 * ((P x.2).factorization p : ℤ) =
+          ∑ x ∈ n.divisorsAntidiagonal.filter (fun x => m0 ∣ x.2),
+            ArithmeticFunction.moebius x.1 * ((P x.2).factorization p : ℤ) := by
         rw [Finset.sum_filter]
-        apply Finset.sum_congr rfl
-        intro d _
-        split_ifs <;> simp
-      rw [hf, hfilter_mob k hk] at h
-      split_ifs at h ⊢ <;> omega
-    have hsplit_p : (∏ k ∈ n.divisors, f k ^ (Dpos.filter (fun d => k ∣ d)).card) =
-        ∏ k ∈ n.divisors, (f k ^ (Dneg.filter (fun d => k ∣ d)).card *
-          if k = n then f n else 1) := by
-      apply Finset.prod_congr rfl
-      intro k hk
-      rw [hcount k hk]
-      split_ifs with hkn
-      · subst hkn; rw [pow_add, pow_one]
-      · simp
-    rw [hsplit_p, Finset.prod_mul_distrib, Finset.prod_ite_eq',
-      if_pos (Nat.mem_divisors.mpr ⟨dvd_rfl, by omega⟩)]
-  have hmain_eq : ((∏ d ∈ Dpos, pell d : ℕ) : ℝ) =
-      ((∏ d ∈ Dneg, pell d : ℕ) : ℝ) * (α ^ n.totient * f n) := by
-    have hcpos : (0 : ℝ) < (2 * Real.sqrt 2) ^ Dneg.card := by positivity
-    apply mul_left_cancel₀ hcpos.ne'
-    calc (2 * Real.sqrt 2) ^ Dneg.card * ((∏ d ∈ Dpos, pell d : ℕ) : ℝ)
-        = (2 * Real.sqrt 2) ^ Dpos.card * ((∏ d ∈ Dpos, pell d : ℕ) : ℝ) := by rw [hcard_eq]
-      _ = α ^ (∑ d ∈ Dpos, d) * ∏ d ∈ Dpos, ∏ k ∈ d.divisors, f k := hDpos_eq
-      _ = (α ^ (∑ d ∈ Dneg, d) * ∏ d ∈ Dneg, ∏ k ∈ d.divisors, f k) *
-            (α ^ n.totient * f n) := by
-          rw [hdeg_eq, pow_add, hprod_cyc]; ring
-      _ = (2 * Real.sqrt 2) ^ Dneg.card *
-            (((∏ d ∈ Dneg, pell d : ℕ) : ℝ) * (α ^ n.totient * f n)) := by
-          rw [← hDneg_eq]; ring
-  rw [hmain_eq]
-  apply mul_le_mul_of_nonneg_left _ (Nat.cast_nonneg _)
-  have hlow := hcyc_lower n (by omega)
-  have hmul := mul_le_mul_of_nonneg_left hlow (pow_nonneg hα_pos.le n.totient)
-  have hsimp : α ^ n.totient * (2 / α) ^ n.totient = (2 : ℝ) ^ n.totient := by
-    rw [← mul_pow, mul_div_cancel₀ _ hα_pos.ne']
+        refine Finset.sum_congr rfl ?_
+        intro x hx
+        by_cases hmd : m0 ∣ x.2
+        · simp [hmd]
+        · rw [if_neg hmd]
+          have hx2 : 0 < x.2 := antidiag_snd_pos hn0 hx
+          have hnot_p : ¬ (p ∣ P x.2) := fun hp_d => hmd ((hdvd_iff x.2 hx2).mp hp_d)
+          rw [Nat.factorization_eq_zero_of_not_dvd hnot_p]
+          simp
+      have hbij : ∑ x ∈ n.divisorsAntidiagonal.filter (fun x => m0 ∣ x.2),
+            ArithmeticFunction.moebius x.1 * ((P x.2).factorization p : ℤ) =
+          ∑ y ∈ t.divisorsAntidiagonal,
+            ArithmeticFunction.moebius y.1 * ((P (m0 * y.2)).factorization p : ℤ) := by
+        symm
+        refine Finset.sum_bij' (fun y _ => (y.1, m0 * y.2)) (fun x _ => (x.1, x.2 / m0))
+          ?_ ?_ ?_ ?_ ?_
+        · intro y hy
+          rw [Finset.mem_filter, Nat.mem_divisorsAntidiagonal]
+          have hyt : y.1 * y.2 = t := (Nat.mem_divisorsAntidiagonal.mp hy).1
+          refine ⟨⟨?_, hn0.ne'⟩, dvd_mul_right m0 y.2⟩
+          calc y.1 * (m0 * y.2) = m0 * (y.1 * y.2) := by ring
+            _ = m0 * t := by rw [hyt]
+            _ = n := hnt
+        · intro x hx
+          rw [Finset.mem_filter, Nat.mem_divisorsAntidiagonal] at hx
+          rw [Nat.mem_divisorsAntidiagonal]
+          obtain ⟨u, hxu⟩ := hx.2
+          have hu_div : x.2 / m0 = u := by rw [hxu, Nat.mul_div_cancel_left u hm0_pos]
+          rw [hu_div]
+          have hmul : m0 * (x.1 * u) = m0 * t := by
+            calc m0 * (x.1 * u) = x.1 * (m0 * u) := by ring
+              _ = x.1 * x.2 := by rw [← hxu]
+              _ = n := hx.1.1
+              _ = m0 * t := hnt.symm
+          exact ⟨Nat.eq_of_mul_eq_mul_left hm0_pos hmul, ht_pos.ne'⟩
+        · intro y _
+          ext
+          · rfl
+          · exact Nat.mul_div_cancel_left y.2 hm0_pos
+        · intro x hx
+          rw [Finset.mem_filter] at hx
+          ext
+          · rfl
+          · exact Nat.mul_div_cancel' hx.2
+        · intro y _
+          rfl
+      rw [hfilter, hbij]
+      have hlte_sum : ∑ y ∈ t.divisorsAntidiagonal,
+            ArithmeticFunction.moebius y.1 * ((P (m0 * y.2)).factorization p : ℤ) =
+          ((P m0).factorization p : ℤ) *
+            (∑ y ∈ t.divisorsAntidiagonal, ArithmeticFunction.moebius y.1 * (1 : ℤ)) +
+          ∑ y ∈ t.divisorsAntidiagonal,
+            ArithmeticFunction.moebius y.1 * (y.2.factorization p : ℤ) := by
+        rw [Finset.mul_sum, ← Finset.sum_add_distrib]
+        refine Finset.sum_congr rfl ?_
+        intro y hy
+        have hy2 : 0 < y.2 := antidiag_snd_pos ht_pos hy
+        rw [pell_factorization_mul hm0_pos hp hm0_dvd y.2 hy2]
+        push_cast
+        ring
+      rw [hlte_sum, sum_moebius_const ht2, mul_zero, zero_add]
+      simp only [moebius_factorization_sum ht_pos hp]
+      split_ifs with hpk
+      · obtain ⟨k, hk1, htk⟩ := hpk
+        have hp_dvd_t : p ∣ t := by
+          rw [htk]
+          exact dvd_pow_self p (by omega)
+        have hp_dvd_n : p ^ 1 ∣ n := by
+          rw [pow_one, ← hnt]
+          exact dvd_mul_of_dvd_right hp_dvd_t m0
+        have h1le : 1 ≤ n.factorization p :=
+          (hp.pow_dvd_iff_le_factorization hn0.ne').mp hp_dvd_n
+        omega
+      · omega
+    · have hzero : ∑ x ∈ n.divisorsAntidiagonal,
+          ArithmeticFunction.moebius x.1 * ((P x.2).factorization p : ℤ) = 0 := by
+        apply Finset.sum_eq_zero
+        intro x hx
+        have hx_dvd : x.2 ∣ n := ⟨x.1, by rw [mul_comm, (Nat.mem_divisorsAntidiagonal.mp hx).1]⟩
+        have hnot_px : ¬ (p ∣ P x.2) := fun hpx => hpn (dvd_trans hpx (pell_dvd_pell hx_dvd))
+        rw [Nat.factorization_eq_zero_of_not_dvd hnot_px]
+        simp
+      rw [hzero]
+      omega
+  · simp [Nat.factorization_eq_zero_of_not_prime _ hp]
+
+noncomputable def alpha : ℝ := 1 + Real.sqrt 2
+noncomputable def beta : ℝ := 1 - Real.sqrt 2
+noncomputable def ratio : ℝ := 3 - 2 * Real.sqrt 2
+
+lemma sqrt2_bounds : (7 : ℝ) / 5 < Real.sqrt 2 ∧ Real.sqrt 2 < 3 / 2 := by
+  have hsq : Real.sqrt 2 ^ 2 = 2 := Real.sq_sqrt (by norm_num)
+  have hnn : 0 ≤ Real.sqrt 2 := Real.sqrt_nonneg 2
+  constructor <;> nlinarith
+
+lemma alpha_gt : (12 : ℝ) / 5 < alpha := by
+  unfold alpha
+  linarith [sqrt2_bounds.1]
+
+lemma ratio_bounds : 0 < ratio ∧ ratio < 1 / 5 := by
+  unfold ratio
+  obtain ⟨h1, h2⟩ := sqrt2_bounds
+  constructor <;> linarith
+
+lemma alpha_mul_ratio : alpha * ratio = -beta := by
+  unfold alpha ratio beta
+  have hsq : Real.sqrt 2 ^ 2 = 2 := Real.sq_sqrt (by norm_num)
+  nlinarith
+
+lemma pell_real : ∀ d : ℕ, (P d : ℝ) * (2 * Real.sqrt 2) = alpha ^ d - beta ^ d
+  | 0 => by simp [P, OMA.S_oeis_a247250.pell]
+  | 1 => by
+    unfold alpha beta
+    simp [P, OMA.S_oeis_a247250.pell]
+    ring
+  | d + 2 => by
+    have ih0 := pell_real d
+    have ih1 := pell_real (d + 1)
+    have hsq : Real.sqrt 2 ^ 2 = 2 := Real.sq_sqrt (by norm_num)
+    have ha2 : alpha ^ 2 = 2 * alpha + 1 := by unfold alpha; nlinarith
+    have hb2 : beta ^ 2 = 2 * beta + 1 := by unfold beta; nlinarith
+    have hap : alpha ^ (d + 2) = 2 * alpha ^ (d + 1) + alpha ^ d := by
+      calc alpha ^ (d + 2) = alpha ^ d * alpha ^ 2 := by ring
+        _ = alpha ^ d * (2 * alpha + 1) := by rw [ha2]
+        _ = 2 * alpha ^ (d + 1) + alpha ^ d := by ring
+    have hbp : beta ^ (d + 2) = 2 * beta ^ (d + 1) + beta ^ d := by
+      calc beta ^ (d + 2) = beta ^ d * beta ^ 2 := by ring
+        _ = beta ^ d * (2 * beta + 1) := by rw [hb2]
+        _ = 2 * beta ^ (d + 1) + beta ^ d := by ring
+    change ((2 * P (d + 1) + P d : ℕ) : ℝ) * (2 * Real.sqrt 2) = alpha ^ (d + 2) - beta ^ (d + 2)
+    push_cast
+    linarith
+
+lemma neg_one_real_pow : ∀ d : ℕ, (-1 : ℝ) ^ d = 1 ∨ (-1 : ℝ) ^ d = -1
+  | 0 => Or.inl rfl
+  | d + 1 => by
+    rcases neg_one_real_pow d with h | h <;> rw [pow_succ, h] <;> norm_num
+
+lemma pell_real_bounds (d : ℕ) :
+    alpha ^ d * (1 - ratio ^ d) ≤ (P d : ℝ) * (2 * Real.sqrt 2) ∧
+    (P d : ℝ) * (2 * Real.sqrt 2) ≤ alpha ^ d * (1 + ratio ^ d) := by
+  rw [pell_real]
+  have hbr : beta = (-1 : ℝ) * (alpha * ratio) := by linarith [alpha_mul_ratio]
+  have hbpow : beta ^ d = (-1 : ℝ) ^ d * (alpha ^ d * ratio ^ d) := by
+    rw [hbr, mul_pow, mul_pow]
+  have ha_pos : 0 ≤ alpha ^ d := pow_nonneg (by linarith [alpha_gt]) d
+  have hr_pos : 0 ≤ ratio ^ d := pow_nonneg (le_of_lt ratio_bounds.1) d
+  have har_pos : 0 ≤ alpha ^ d * ratio ^ d := mul_nonneg ha_pos hr_pos
+  rw [hbpow]
+  rcases neg_one_real_pow d with h | h <;> rw [h] <;> constructor <;> linarith
+
+lemma prod_one_sub_ge {α : Type*} (s : Finset α) (f : α → ℝ)
+    (hf0 : ∀ x ∈ s, 0 ≤ f x) (hf1 : ∀ x ∈ s, f x ≤ 1) :
+    1 - ∑ x ∈ s, f x ≤ ∏ x ∈ s, (1 - f x) := by
+  induction s using Finset.cons_induction with
+  | empty => norm_num
+  | cons a s ha ih =>
+    rw [Finset.sum_cons, Finset.prod_cons]
+    have ha0 : 0 ≤ f a := hf0 a (Finset.mem_cons_self a s)
+    have ha1 : 0 ≤ 1 - f a := sub_nonneg.mpr (hf1 a (Finset.mem_cons_self a s))
+    have hs0 : ∀ x ∈ s, 0 ≤ f x := fun x hx => hf0 x (Finset.mem_cons_of_mem hx)
+    have hs1 : ∀ x ∈ s, f x ≤ 1 := fun x hx => hf1 x (Finset.mem_cons_of_mem hx)
+    have ihs : 1 - ∑ x ∈ s, f x ≤ ∏ x ∈ s, (1 - f x) := ih hs0 hs1
+    have hsum_nn : 0 ≤ ∑ x ∈ s, f x := Finset.sum_nonneg hs0
+    have hmul : (1 - f a) * (1 - ∑ x ∈ s, f x) ≤ (1 - f a) * ∏ x ∈ s, (1 - f x) :=
+      mul_le_mul_of_nonneg_left ihs ha1
+    nlinarith
+
+lemma geom_fifth_sum : ∀ n : ℕ,
+    4 * (∑ d ∈ Finset.Icc 1 n, ((1 : ℝ) / 5) ^ d) = 1 - ((1 : ℝ) / 5) ^ n
+  | 0 => by simp
+  | n + 1 => by
+    rw [Finset.sum_Icc_succ_top (by omega : 1 ≤ n + 1)]
+    have ih := geom_fifth_sum n
+    rw [pow_succ]
+    linarith
+
+lemma sum_ratio_antidiag_lt {n : ℕ} (hn : 0 < n) {S : Finset (ℕ × ℕ)}
+    (hS : S ⊆ n.divisorsAntidiagonal) :
+    ∑ x ∈ S, ratio ^ x.2 < 1 / 4 := by
+  have hinj : Set.InjOn Prod.snd (S : Set (ℕ × ℕ)) := by
+    intro x hx y hy hxy
+    have hx_mem : x.1 * x.2 = n := (Nat.mem_divisorsAntidiagonal.mp (hS hx)).1
+    have hy_mem : y.1 * y.2 = n := (Nat.mem_divisorsAntidiagonal.mp (hS hy)).1
+    have hx2_pos : 0 < x.2 := antidiag_snd_pos hn (hS hx)
+    rw [← hxy] at hy_mem
+    have hx1 : x.1 = y.1 := Nat.eq_of_mul_eq_mul_right hx2_pos (hx_mem.trans hy_mem.symm)
+    exact Prod.ext hx1 hxy
+  have himg_sub : S.image Prod.snd ⊆ Finset.Icc 1 n := by
+    intro d hd
+    obtain ⟨x, hxS, rfl⟩ := Finset.mem_image.mp hd
+    rw [Finset.mem_Icc]
+    have hx2_pos : 0 < x.2 := antidiag_snd_pos hn (hS hxS)
+    have hx2_dvd : x.2 ∣ n := ⟨x.1, by rw [mul_comm, (Nat.mem_divisorsAntidiagonal.mp (hS hxS)).1]⟩
+    exact ⟨hx2_pos, Nat.le_of_dvd hn hx2_dvd⟩
+  have h1 : ∑ x ∈ S, ratio ^ x.2 = ∑ d ∈ S.image Prod.snd, ratio ^ d :=
+    (Finset.sum_image hinj).symm
+  have h2 : ∑ d ∈ S.image Prod.snd, ratio ^ d ≤ ∑ d ∈ Finset.Icc 1 n, ratio ^ d :=
+    Finset.sum_le_sum_of_subset_of_nonneg himg_sub
+      (fun d _ _ => pow_nonneg (le_of_lt ratio_bounds.1) d)
+  have h3 : ∑ d ∈ Finset.Icc 1 n, ratio ^ d ≤ ∑ d ∈ Finset.Icc 1 n, ((1 : ℝ) / 5) ^ d :=
+    Finset.sum_le_sum (fun d _ => pow_le_pow_left₀ (le_of_lt ratio_bounds.1)
+      (le_of_lt ratio_bounds.2) d)
+  have h4 : 0 < ((1 : ℝ) / 5) ^ n := pow_pos (by norm_num) n
+  have h5 := geom_fifth_sum n
   linarith
 
-private lemma totient_prod_pairwise_coprime {S : Finset ℕ} {g : ℕ → ℕ}
-    (hcop : Set.Pairwise (S : Set ℕ) fun a b => Nat.Coprime (g a) (g b)) :
-    (∏ a ∈ S, g a).totient = ∏ a ∈ S, (g a).totient := by
-  induction S using Finset.induction_on with
-  | empty => simp
-  | @insert x s hx ih =>
-    rw [Finset.prod_insert hx, Finset.prod_insert hx]
-    have hcop_x : Nat.Coprime (g x) (∏ a ∈ s, g a) :=
-      Nat.Coprime.prod_right fun a ha =>
-        hcop (Finset.mem_insert_self x s) (Finset.mem_insert_of_mem ha) (fun h => hx (h ▸ ha))
-    rw [Nat.totient_mul hcop_x, ih (hcop.mono (Finset.subset_insert x s))]
+lemma analytic_bound {n : ℕ} (hn : 2 ≤ n) :
+    (9 / 16 : ℝ) * alpha ^ (Nat.totient n) * (B n : ℝ) < (A n : ℝ) := by
+  have hn0 : 0 < n := by omega
+  let w : ℝ := 2 * Real.sqrt 2
+  have hw_pos : 0 < w := by unfold w; linarith [sqrt2_bounds.1]
+  have ha_pos : 0 < alpha := by linarith [alpha_gt]
+  obtain ⟨hr0, hr1⟩ := ratio_bounds
+  have hDpos_sub : Dpos n ⊆ n.divisorsAntidiagonal := Finset.filter_subset _ _
+  have hDneg_sub : Dneg n ⊆ n.divisorsAntidiagonal := Finset.filter_subset _ _
+  -- Lower bound on A n
+  have hA_prod : (A n : ℝ) * w ^ (Dpos n).card =
+      ∏ x ∈ Dpos n, ((P x.2 : ℝ) * w) := by
+    unfold A
+    rw [Nat.cast_prod, Finset.prod_mul_distrib, Finset.prod_const]
+  have hA_ge1 : (∏ x ∈ Dpos n, (alpha ^ x.2 * (1 - ratio ^ x.2))) ≤
+      (A n : ℝ) * w ^ (Dpos n).card := by
+    rw [hA_prod]
+    refine Finset.prod_le_prod (fun x _ => ?_) (fun x _ => (pell_real_bounds x.2).1)
+    have hrd : ratio ^ x.2 ≤ 1 := pow_le_one₀ (le_of_lt hr0) (by linarith)
+    exact mul_nonneg (pow_nonneg (le_of_lt ha_pos) _) (sub_nonneg.mpr hrd)
+  rw [Finset.prod_mul_distrib, Finset.prod_pow_eq_pow_sum] at hA_ge1
+  have hprod_pos_gt : (3 / 4 : ℝ) < ∏ x ∈ Dpos n, (1 - ratio ^ x.2) := by
+    have hw_ineq := prod_one_sub_ge (Dpos n) (fun x => ratio ^ x.2)
+      (fun x _ => pow_nonneg (le_of_lt hr0) _)
+      (fun x _ => pow_le_one₀ (le_of_lt hr0) (by linarith))
+    have hsum_lt := sum_ratio_antidiag_lt hn0 hDpos_sub
+    linarith
+  have hA_strict : alpha ^ (∑ x ∈ Dpos n, x.2) * (3 / 4 : ℝ) <
+      (A n : ℝ) * w ^ (Dpos n).card := by
+    have hlt : alpha ^ (∑ x ∈ Dpos n, x.2) * (3 / 4 : ℝ) <
+        alpha ^ (∑ x ∈ Dpos n, x.2) * ∏ x ∈ Dpos n, (1 - ratio ^ x.2) :=
+      mul_lt_mul_of_pos_left hprod_pos_gt (pow_pos ha_pos _)
+    linarith
+  -- Upper bound on B n
+  have hB_prod : (B n : ℝ) * w ^ (Dneg n).card =
+      ∏ x ∈ Dneg n, ((P x.2 : ℝ) * w) := by
+    unfold B
+    rw [Nat.cast_prod, Finset.prod_mul_distrib, Finset.prod_const]
+  have hB_le1 : (B n : ℝ) * w ^ (Dneg n).card ≤
+      ∏ x ∈ Dneg n, (alpha ^ x.2 * (1 + ratio ^ x.2)) := by
+    rw [hB_prod]
+    refine Finset.prod_le_prod (fun x _ => ?_) (fun x _ => (pell_real_bounds x.2).2)
+    exact mul_nonneg (Nat.cast_nonneg _) (le_of_lt hw_pos)
+  rw [Finset.prod_mul_distrib, Finset.prod_pow_eq_pow_sum] at hB_le1
+  have hprod_neg_sub_gt : (3 / 4 : ℝ) < ∏ x ∈ Dneg n, (1 - ratio ^ x.2) := by
+    have hw_ineq := prod_one_sub_ge (Dneg n) (fun x => ratio ^ x.2)
+      (fun x _ => pow_nonneg (le_of_lt hr0) _)
+      (fun x _ => pow_le_one₀ (le_of_lt hr0) (by linarith))
+    have hsum_lt := sum_ratio_antidiag_lt hn0 hDneg_sub
+    linarith
+  have hprod_sq_le1 : (∏ x ∈ Dneg n, (1 + ratio ^ x.2)) * (∏ x ∈ Dneg n, (1 - ratio ^ x.2)) ≤ 1 := by
+    rw [← Finset.prod_mul_distrib]
+    refine Finset.prod_le_one (fun x _ => ?_) (fun x _ => ?_)
+    · have hrd : ratio ^ x.2 ≤ 1 := pow_le_one₀ (le_of_lt hr0) (by linarith)
+      nlinarith [pow_nonneg (le_of_lt hr0) x.2]
+    · nlinarith [sq_nonneg (ratio ^ x.2)]
+  have hprod_neg_nn : 0 ≤ ∏ x ∈ Dneg n, (1 + ratio ^ x.2) :=
+    Finset.prod_nonneg (fun x _ => by linarith [pow_nonneg (le_of_lt hr0) x.2])
+  have hprod_neg_le : ∏ x ∈ Dneg n, (1 + ratio ^ x.2) ≤ 4 / 3 := by
+    nlinarith
+  have hB_le2 : (B n : ℝ) * w ^ (Dneg n).card ≤ alpha ^ (∑ x ∈ Dneg n, x.2) * (4 / 3 : ℝ) := by
+    have hle : alpha ^ (∑ x ∈ Dneg n, x.2) * ∏ x ∈ Dneg n, (1 + ratio ^ x.2) ≤
+        alpha ^ (∑ x ∈ Dneg n, x.2) * (4 / 3 : ℝ) :=
+      mul_le_mul_of_nonneg_left hprod_neg_le (pow_nonneg (le_of_lt ha_pos) _)
+    linarith
+  -- Combine using card equality and sum equality
+  rw [ ← card_Dpos_eq_card_Dneg hn ] at hB_le2
+  have hsum_eq := sum_Dpos_eq_sum_Dneg_add_totient hn0
+  rw [hsum_eq, pow_add] at hA_strict
+  have hcomb : (9 / 16 : ℝ) * alpha ^ (Nat.totient n) * ((B n : ℝ) * w ^ (Dpos n).card) <
+      (A n : ℝ) * w ^ (Dpos n).card := by
+    have hmul : (9 / 16 : ℝ) * alpha ^ (Nat.totient n) * ((B n : ℝ) * w ^ (Dpos n).card) ≤
+        (9 / 16 : ℝ) * alpha ^ (Nat.totient n) * (alpha ^ (∑ x ∈ Dneg n, x.2) * (4 / 3 : ℝ)) :=
+      mul_le_mul_of_nonneg_left hB_le2
+        (mul_nonneg (by norm_num) (pow_nonneg (le_of_lt ha_pos) _))
+    have hident : (9 / 16 : ℝ) * alpha ^ (Nat.totient n) *
+          (alpha ^ (∑ x ∈ Dneg n, x.2) * (4 / 3 : ℝ)) =
+        alpha ^ (∑ x ∈ Dneg n, x.2) * alpha ^ (Nat.totient n) * (3 / 4 : ℝ) := by ring
+    linarith
+  have hw_pow_pos : 0 < w ^ (Dpos n).card := pow_pos hw_pos _
+  have hcomb' : ((9 / 16 : ℝ) * alpha ^ (Nat.totient n) * (B n : ℝ)) * w ^ (Dpos n).card <
+      (A n : ℝ) * w ^ (Dpos n).card := by linarith
+  exact lt_of_mul_lt_mul_right hcomb' (le_of_lt hw_pow_pos)
 
-/-- Elementary multiplicative bound `n ≤ 2 * φ(n)^2` for all `n ≥ 1`. -/
-private lemma le_two_mul_totient_sq (n : ℕ) (hn : 0 < n) : n ≤ 2 * n.totient ^ 2 := by
-  have hprime : ∀ p k : ℕ, p.Prime → 1 ≤ k →
-      p ^ k ≤ (if p = 2 then 2 else 1) * ((p ^ k).totient) ^ 2 := by
-    intro p k hp hk
+lemma odd_le_totient_sq : ∀ m : ℕ, Odd m → m ≤ (Nat.totient m) ^ 2 := by
+  intro m
+  induction m using Nat.recOnPosPrimePosCoprime with
+  | zero => intro h; simp at h
+  | one => intro _; norm_num
+  | prime_pow p k hp hk =>
+    intro hodd
+    have hp_odd : Odd p := Odd.of_dvd_nat hodd (dvd_pow_self p hk.ne')
+    have hp_ne2 : p ≠ 2 := by
+      rintro rfl
+      rcases hp_odd with ⟨r, hr⟩
+      omega
+    have hp3 : 3 ≤ p := by
+      have h2 := hp.two_le
+      omega
     rw [Nat.totient_prime_pow hp hk]
-    by_cases hp2 : p = 2
-    · subst hp2
-      simp only [↓reduceIte]
-      have h2k : 2 ^ k = 2 * 2 ^ (k - 1) := by
-        conv_lhs => rw [show k = (k - 1) + 1 by omega, pow_succ, mul_comm]
-      have hpos : 1 ≤ 2 ^ (k - 1) := Nat.one_le_pow _ _ (by decide)
-      have hsub : 2 - 1 = 1 := rfl
-      rw [h2k, hsub, mul_one, sq]
-      nlinarith
-    · rw [if_neg hp2, one_mul]
-      have hp3 : 3 ≤ p := by
-        have := hp.two_le
-        omega
-      have h1 : p ≤ (p - 1) ^ 2 := by
-        obtain ⟨q, rfl⟩ := Nat.exists_eq_add_of_le hp3
-        rw [show 3 + q - 1 = q + 2 by omega]
+    have hpk : p ^ k = p ^ (k - 1) * p := by
+      conv_lhs => rw [← Nat.sub_add_cancel hk, pow_succ]
+    rw [hpk]
+    have hp_sq : p ≤ (p - 1) ^ 2 := by
+      rcases p with _ | _ | _ | p'
+      · omega
+      · omega
+      · omega
+      · change p' + 3 ≤ (p' + 2) ^ 2
         nlinarith
-      have h2 : p ^ (k - 1) ≤ (p ^ (k - 1)) ^ 2 := by
-        rw [sq]
-        exact Nat.le_mul_of_pos_right _ (Nat.one_le_pow _ _ hp.pos)
-      have hpk : p ^ k = p ^ (k - 1) * p := by
-        conv_lhs => rw [show k = (k - 1) + 1 by omega, pow_succ]
-      rw [hpk, mul_pow]
-      exact Nat.mul_le_mul h2 h1
-  have hprod : n = ∏ p ∈ n.primeFactors, p ^ n.factorization p :=
-    Nat.prod_primeFactors_pow_factorization hn.ne'
-  have htot : n.totient = ∏ p ∈ n.primeFactors, (p ^ n.factorization p).totient := by
-    conv_lhs => rw [hprod]
-    apply totient_prod_pairwise_coprime
-    intro p hp q hq hpq
-    exact ((Nat.coprime_primes (Nat.prime_of_mem_primeFactors hp)
-      (Nat.prime_of_mem_primeFactors hq)).mpr hpq).pow _ _
-  calc n = ∏ p ∈ n.primeFactors, p ^ n.factorization p := hprod
-    _ ≤ ∏ p ∈ n.primeFactors, ((if p = 2 then 2 else 1) * ((p ^ n.factorization p).totient) ^ 2) := by
-        apply Finset.prod_le_prod'
-        intro p hp
-        have hp' := Nat.prime_of_mem_primeFactors hp
-        have hk : 1 ≤ n.factorization p :=
-          (hp'.pow_dvd_iff_le_factorization hn.ne').mp (by simpa using Nat.dvd_of_mem_primeFactors hp)
-        exact hprime p (n.factorization p) hp' hk
-    _ = (∏ p ∈ n.primeFactors, if p = 2 then 2 else 1) *
-          (∏ p ∈ n.primeFactors, ((p ^ n.factorization p).totient) ^ 2) := Finset.prod_mul_distrib
-    _ ≤ 2 * (∏ p ∈ n.primeFactors, (p ^ n.factorization p).totient) ^ 2 := by
-        rw [Finset.prod_pow]
-        apply Nat.mul_le_mul_right
-        by_cases h2 : 2 ∈ n.primeFactors
-        · rw [Finset.prod_ite_eq', if_pos h2]
-        · rw [Finset.prod_ite_eq', if_neg h2]; decide
-    _ = 2 * n.totient ^ 2 := by rw [← htot]
+    have hpk1_pos : 1 ≤ p ^ (k - 1) := Nat.one_le_pow _ _ hp.pos
+    have hrhs : (p ^ (k - 1) * (p - 1)) ^ 2 = p ^ (k - 1) * (p ^ (k - 1) * (p - 1) ^ 2) := by ring
+    rw [hrhs]
+    refine Nat.mul_le_mul_left (p ^ (k - 1)) ?_
+    calc p = 1 * p := (one_mul p).symm
+      _ ≤ p ^ (k - 1) * (p - 1) ^ 2 := Nat.mul_le_mul hpk1_pos hp_sq
+  | coprime a b _ _ hcop iha ihb =>
+    intro hodd
+    obtain ⟨hodda, hoddb⟩ := Nat.odd_mul.mp hodd
+    rw [Nat.totient_mul hcop, mul_pow]
+    exact Nat.mul_le_mul (iha hodda) (ihb hoddb)
 
-private lemma two_mul_sq_lt_two_pow (k : ℕ) (hk : 7 ≤ k) : 2 * k ^ 2 < 2 ^ k := by
-  induction k, hk using Nat.le_induction with
-  | base => decide
-  | succ m hm ih =>
-    have hstep : 2 * (m + 1) ^ 2 ≤ 4 * m ^ 2 := by nlinarith
-    rw [pow_succ 2 m]
+lemma exists_two_pow_mul_odd : ∀ n : ℕ, 0 < n → ∃ k m : ℕ, Odd m ∧ n = 2 ^ k * m := by
+  intro n
+  induction n using Nat.strong_induction_on with
+  | h n ih =>
+    intro hn
+    by_cases h2 : 2 ∣ n
+    · obtain ⟨n', rfl⟩ := h2
+      have hn' : 0 < n' := by omega
+      have hlt : n' < 2 * n' := by omega
+      obtain ⟨k, m, hm, rfl⟩ := ih n' hlt hn'
+      exact ⟨k + 1, m, hm, by ring⟩
+    · refine ⟨0, n, ?_, by simp⟩
+      rw [← Nat.not_even_iff_odd, even_iff_two_dvd]
+      exact h2
+
+lemma two_pow_le_two_totient_sq : ∀ k : ℕ, 2 ^ k ≤ 2 * (Nat.totient (2 ^ k)) ^ 2
+  | 0 => by norm_num
+  | 1 => by norm_num
+  | k + 2 => by
+    rw [Nat.totient_prime_pow Nat.prime_two (by omega : 0 < k + 2)]
+    change 2 ^ (k + 2) ≤ 2 * (2 ^ (k + 1) * 1) ^ 2
+    have hpos : 1 ≤ 2 ^ (k + 1) := Nat.one_le_pow _ _ (by decide)
+    calc 2 ^ (k + 2) = 2 * (2 ^ (k + 1) * 1) := by ring
+      _ ≤ 2 * (2 ^ (k + 1) * 2 ^ (k + 1)) :=
+        Nat.mul_le_mul_left 2 (Nat.mul_le_mul_left _ hpos)
+      _ = 2 * (2 ^ (k + 1) * 1) ^ 2 := by ring
+
+lemma le_two_mul_totient_sq {n : ℕ} (hn : 0 < n) : n ≤ 2 * (Nat.totient n) ^ 2 := by
+  obtain ⟨k, m, hm_odd, rfl⟩ := exists_two_pow_mul_odd n hn
+  have hcop : Nat.Coprime (2 ^ k) m := by
+    apply Nat.Coprime.pow_left k
+    rw [Nat.prime_two.coprime_iff_not_dvd, ← even_iff_two_dvd, Nat.not_even_iff_odd]
+    exact hm_odd
+  rw [Nat.totient_mul hcop]
+  have h1 := two_pow_le_two_totient_sq k
+  have h2 := odd_le_totient_sq m hm_odd
+  exact le_of_le_of_eq (Nat.mul_le_mul h1 h2) (by ring)
+
+lemma totient_ge_six {n : ℕ} (hn : 13 ≤ n) : 6 ≤ Nat.totient n := by
+  by_cases h33 : 33 ≤ n
+  · have hbound := le_two_mul_totient_sq (by omega : 0 < n)
+    have hsq : 17 ≤ (Nat.totient n) ^ 2 := by omega
+    have h5 : 5 ≤ Nat.totient n := by nlinarith
+    have heven : Even (Nat.totient n) := Nat.totient_even (by omega : 2 < n)
+    rcases heven with ⟨r, hr⟩
     omega
+  · interval_cases n <;> decide
 
-private lemma lt_two_pow_totient {n : ℕ} (hn : 7 ≤ n) : n < 2 ^ n.totient := by
-  by_cases h7 : 7 ≤ n.totient
-  · exact lt_of_le_of_lt (le_two_mul_totient_sq n (by omega)) (two_mul_sq_lt_two_pow n.totient h7)
-  · have hle : n ≤ 72 := by
-      have h1 := le_two_mul_totient_sq n (by omega)
-      have h2 : n.totient ≤ 6 := by omega
-      nlinarith
-    have hfin : ∀ m ∈ Finset.Icc 7 72, m < 2 ^ m.totient := by decide +kernel
-    exact hfin n (Finset.mem_Icc.mpr ⟨hn, hle⟩)
+lemma two_mul_sq_lt_exp : ∀ k : ℕ, 6 ≤ k →
+    (2 * (k : ℝ) ^ 2) < (9 / 16 : ℝ) * ((12 : ℝ) / 5) ^ k := by
+  intro k hk
+  obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le hk
+  induction j with
+  | zero => norm_num
+  | succ j ih =>
+    let m : ℝ := (6 + j : ℕ)
+    have hm6 : 6 ≤ m := by
+      dsimp [m]
+      exact_mod_cast (by omega : 6 ≤ 6 + j)
+    have hstep : 2 * (m + 1) ^ 2 < (12 / 5 : ℝ) * (2 * m ^ 2) := by nlinarith
+    have hexp : (9 / 16 : ℝ) * ((12 : ℝ) / 5) ^ (6 + (j + 1)) =
+        (12 / 5 : ℝ) * ((9 / 16 : ℝ) * ((12 : ℝ) / 5) ^ (6 + j)) := by
+      have hadd : 6 + (j + 1) = (6 + j) + 1 := by omega
+      rw [hadd, pow_succ]
+      ring
+    have hcast : (2 * ((6 + (j + 1) : ℕ) : ℝ) ^ 2) = 2 * (m + 1) ^ 2 := by
+      dsimp [m]
+      push_cast
+      ring
+    rw [hcast, hexp]
+    have ih' : 2 * m ^ 2 < (9 / 16 : ℝ) * ((12 : ℝ) / 5) ^ (6 + j) := ih (by omega)
+    linarith
 
-private lemma small_cases {n : ℕ} (hn1 : 1 < n) (hn6 : n ≤ 6) :
-    ∃ p : ℕ, p.Prime ∧ p ∣ pell n ∧ ∀ m : ℕ, 0 < m → m < n → ¬ p ∣ pell m := by
+lemma prim_prime_ge_13 {n : ℕ} (hn : 13 ≤ n) :
+    ∃ p : ℕ, p.Prime ∧ p ∣ P n ∧ ∀ m : ℕ, 0 < m → m < n → ¬ p ∣ P m := by
+  by_contra hnot
+  have hno : ∀ p : ℕ, p.Prime → p ∣ P n → ∃ m : ℕ, 0 < m ∧ m < n ∧ p ∣ P m := by
+    intro p hp hpn
+    by_contra hnone
+    apply hnot
+    exact ⟨p, hp, hpn, fun m hm1 hm2 hpm => hnone ⟨m, hm1, hm2, hpm⟩⟩
+  have hdvd : A n ∣ B n * n := A_dvd_B_mul_of_no_prim (by omega) hno
+  have hBn_pos : 0 < B n * n := Nat.mul_pos (B_pos (by omega)) (by omega)
+  have hle : A n ≤ B n * n := Nat.le_of_dvd hBn_pos hdvd
+  have hk6 : 6 ≤ Nat.totient n := totient_ge_six hn
+  have hn_le_sq : (n : ℝ) ≤ 2 * (Nat.totient n : ℝ) ^ 2 := by
+    exact_mod_cast le_two_mul_totient_sq (by omega : 0 < n)
+  have hsq_lt : 2 * (Nat.totient n : ℝ) ^ 2 < (9 / 16 : ℝ) * ((12 : ℝ) / 5) ^ (Nat.totient n) :=
+    two_mul_sq_lt_exp (Nat.totient n) hk6
+  have hpow_le : ((12 : ℝ) / 5) ^ (Nat.totient n) ≤ alpha ^ (Nat.totient n) :=
+    pow_le_pow_left₀ (by norm_num) (le_of_lt alpha_gt) _
+  have hn_lt_coef : (n : ℝ) < (9 / 16 : ℝ) * alpha ^ (Nat.totient n) := by linarith
+  have hB_pos_real : (0 : ℝ) < (B n : ℝ) := Nat.cast_pos.mpr (B_pos (by omega))
+  have h1 : (B n : ℝ) * (n : ℝ) < (9 / 16 : ℝ) * alpha ^ (Nat.totient n) * (B n : ℝ) := by
+    have := mul_lt_mul_of_pos_right hn_lt_coef hB_pos_real
+    linarith
+  have h2 := analytic_bound (by omega : 2 ≤ n)
+  have hlt_real : ((B n * n : ℕ) : ℝ) < (A n : ℝ) := by
+    push_cast
+    linarith
+  have hlt_nat : B n * n < A n := Nat.cast_lt.mp hlt_real
+  omega
+
+lemma pell_small_vals :
+    P 1 = 1 ∧ P 2 = 2 ∧ P 3 = 5 ∧ P 4 = 12 ∧ P 5 = 29 ∧ P 6 = 70 ∧
+    P 7 = 169 ∧ P 8 = 408 ∧ P 9 = 985 ∧ P 10 = 2378 ∧ P 11 = 5741 ∧ P 12 = 13860 := by
+  refine ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
+
+lemma prim_prime_small {n : ℕ} (hn1 : 1 < n) (hn12 : n ≤ 12) :
+    ∃ p : ℕ, p.Prime ∧ p ∣ P n ∧ ∀ m : ℕ, 0 < m → m < n → ¬ p ∣ P m := by
+  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12⟩ := pell_small_vals
   interval_cases n
-  · refine ⟨2, by decide, by decide, fun m hm1 hm2 => ?_⟩
-    interval_cases m; decide
-  · refine ⟨5, by decide, by decide, fun m hm1 hm2 => ?_⟩
-    interval_cases m <;> decide
-  · refine ⟨3, by decide, by decide, fun m hm1 hm2 => ?_⟩
-    interval_cases m <;> decide
-  · refine ⟨29, by decide, by decide, fun m hm1 hm2 => ?_⟩
-    interval_cases m <;> decide
-  · refine ⟨7, by decide, by decide, fun m hm1 hm2 => ?_⟩
-    interval_cases m <;> decide
-
-theorem primitive_prime_divisor : ∀ n : ℕ, 1 < n → ∃ p : ℕ, p.Prime ∧ p ∣ pell n ∧
-    ∀ m : ℕ, 0 < m → m < n → ¬ p ∣ pell m := by
-  intro n hn
-  by_cases h6 : n ≤ 6
-  · exact small_cases hn h6
-  · have hn7 : 7 ≤ n := by omega
-    by_contra hno
-    push Not at hno
-    have hdvd := moebius_prod_dvd_of_no_prim hn hno
-    set Dpos := n.divisors.filter (fun d => ArithmeticFunction.moebius (n / d) = 1)
-    set Dneg := n.divisors.filter (fun d => ArithmeticFunction.moebius (n / d) = -1)
-    set A := ∏ d ∈ Dpos, pell d
-    set B := ∏ d ∈ Dneg, pell d
-    have hBpos : 0 < B :=
-      Finset.prod_pos fun d hd => pell_pos (Nat.pos_of_mem_divisors (Finset.mem_filter.mp hd).1)
-    have hABn : A ≤ B * n := Nat.le_of_dvd (Nat.mul_pos hBpos (by omega)) hdvd
-    have hlow := moebius_prod_lower_bound hn
-    have hABnR : (A : ℝ) ≤ (B : ℝ) * (n : ℝ) := by exact_mod_cast hABn
-    have hBposR : (0 : ℝ) < (B : ℝ) := by exact_mod_cast hBpos
-    have hpowR : (2 : ℝ) ^ n.totient ≤ (n : ℝ) := by
-      have : (B : ℝ) * (2 : ℝ) ^ n.totient ≤ (B : ℝ) * (n : ℝ) := hlow.trans hABnR
-      exact le_of_mul_le_mul_left this hBposR
-    have hpow : 2 ^ n.totient ≤ n := by exact_mod_cast hpowR
-    have hlt := lt_two_pow_totient hn7
+  · refine ⟨2, by norm_num, by rw [h2], ?_⟩
+    intro m hm1 hm2
+    have hm : m = 1 := by omega
+    subst hm
     omega
+  · refine ⟨5, by norm_num, by rw [h3], ?_⟩
+    intro m hm1 hm2; interval_cases m <;> omega
+  · refine ⟨3, by norm_num, by rw [h4]; norm_num, ?_⟩
+    intro m hm1 hm2; interval_cases m <;> omega
+  · refine ⟨29, by norm_num, by rw [h5], ?_⟩
+    intro m hm1 hm2; interval_cases m <;> omega
+  · refine ⟨7, by norm_num, by rw [h6]; norm_num, ?_⟩
+    intro m hm1 hm2; interval_cases m <;> omega
+  · refine ⟨13, by norm_num, by rw [h7]; norm_num, ?_⟩
+    intro m hm1 hm2; interval_cases m <;> omega
+  · refine ⟨17, by norm_num, by rw [h8]; norm_num, ?_⟩
+    intro m hm1 hm2; interval_cases m <;> omega
+  · refine ⟨197, by norm_num, by rw [h9]; norm_num, ?_⟩
+    intro m hm1 hm2; interval_cases m <;> omega
+  · refine ⟨41, by norm_num, by rw [h10]; norm_num, ?_⟩
+    intro m hm1 hm2; interval_cases m <;> omega
+  · refine ⟨5741, by norm_num, by rw [h11], ?_⟩
+    intro m hm1 hm2; interval_cases m <;> omega
+  · refine ⟨11, by norm_num, by rw [h12]; norm_num, ?_⟩
+    intro m hm1 hm2; interval_cases m <;> omega
 
-end PellPrimitive
+end PellPrimDiv
 
-theorem OMA.solution : type_of% @OMA.S_oeis_a247250.main :=
-  PellPrimitive.primitive_prime_divisor
+theorem OMA.solution : type_of% @OMA.S_oeis_a247250.main := by
+  intro n hn
+  by_cases h13 : 13 ≤ n
+  · exact PellPrimDiv.prim_prime_ge_13 h13
+  · exact PellPrimDiv.prim_prime_small hn (by omega)

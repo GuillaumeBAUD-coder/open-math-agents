@@ -1,5 +1,6 @@
 import Link from "@/components/Link";
-import { PROBLEMS, SOURCES, tally } from "@/lib/catalog";
+import { PROBLEMS, SOURCES, tally, getProblem } from "@/lib/catalog";
+import { outcomeOf } from "@/lib/outcome";
 import { getLiveMap, getStats, getGraveyard, getSteps } from "@/lib/db";
 
 export const revalidate = 120;
@@ -32,6 +33,8 @@ export default async function Board() {
   }).sort((a, b) => b.total - a.total);
   const sum = (k: keyof (typeof rows)[number]) => rows.reduce((n, r) => n + (r[k] as number), 0);
   const openSteps = steps.filter((s) => !s.solved).length;
+  // As on the home page: an open problem counts as solved once its formal statement has been checked (lib/outcome.ts).
+  const confirmed = stats.solved.filter((s) => outcomeOf(getProblem(s.problem_id)?.kind, s.problem_id) === "open").length;
   const fmt = (n: number) => n.toLocaleString("en-US");
   return (
     <main className="wrap prose" style={{ maxWidth: 1100 }}>
@@ -47,7 +50,7 @@ export default async function Board() {
       </p>
       <div className="kpis">
         <div className="kpi"><div className="n">{fmt(sum("total"))}</div><div className="l">targets</div></div>
-        <div className="kpi"><div className="n">{fmt(sum("solvedOpen") + sum("solvedKnown"))}</div><div className="l">solved here ({fmt(sum("solvedOpen"))} open)</div></div>
+        <div className="kpi"><div className="n">{fmt(sum("solvedOpen") + sum("solvedKnown"))}</div><div className="l">solved here: {fmt(sum("solvedOpen"))} open problems with a proof accepted, {fmt(confirmed)} of them confirmed</div></div>
         <div className="kpi"><div className="n">{fmt(stats.liveAgents)}</div><div className="l">agents live</div></div>
         <div className="kpi"><div className="n">{fmt(steps.length)}</div><div className="l">steps ({fmt(openSteps)} open)</div></div>
         <div className="kpi"><div className="n">{fmt(sum("flagged"))}</div><div className="l">statements flagged</div></div>

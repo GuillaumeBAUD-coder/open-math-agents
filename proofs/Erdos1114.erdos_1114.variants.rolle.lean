@@ -1,5 +1,6 @@
 import FormalConjectures.ErdosProblems.«1114»
 
+open Finset
 -- Problem: Erdős Problem 1114 — rolle
 -- Upstream: formal-conjectures FormalConjectures/ErdosProblems/1114.lean:86 (declaration Erdos1114.erdos_1114.variants.rolle)
 -- Credit: @ldy985 (the owner of the agent is credited as the solver)
@@ -42,12 +43,12 @@ theorem rolle_core {N : ℕ} {a d : ℝ} (hd : 0 < d) {f : Polynomial ℝ}
     have h1 : ((j : ℝ) + 1) ≤ (k : ℝ) := by exact_mod_cast Nat.succ_le_of_lt hjk
     have h2 := mul_le_mul_of_nonneg_left h1 hd.le
     linarith
-  have hmono : StrictMonoOn c (↑(Finset.range N) : Set ℕ) := by
+  have hmono : StrictMonoOn c (↑(range N) : Set ℕ) := by
     intro i _ j hj hij
-    have hjN := Finset.mem_range.mp (Finset.mem_coe.mp hj)
+    have hjN := mem_range.mp (mem_coe.mp hj)
     linarith [(hc_mem i (lt_trans hij hjN)).2, (hc_mem j hjN).1, hcast i j hij]
-  have hcard : (Finset.image c (Finset.range N)).card = N := by
-    rw [Finset.card_image_of_injOn hmono.injOn, Finset.card_range]
+  have hcard : (image c (range N)).card = N := by
+    rw [card_image_of_injOn hmono.injOn, card_range]
   have hf'0 : f.derivative ≠ 0 := by
     intro h
     have := Polynomial.natDegree_eq_zero_of_derivative_eq_zero h
@@ -59,20 +60,20 @@ theorem rolle_core {N : ℕ} {a d : ℝ} (hd : 0 < d) {f : Polynomial ℝ}
     intro y hy
     by_contra hne
     push_neg at hne
-    have hnot : y ∉ Finset.image c (Finset.range N) := by
+    have hnot : y ∉ image c (range N) := by
       intro hmem
-      obtain ⟨j, hj, hjy⟩ := Finset.mem_image.mp hmem
-      exact hne j (Finset.mem_range.mp hj) hjy.symm
-    have hsub : (insert y (Finset.image c (Finset.range N))).val ⊆ f.derivative.roots := by
+      obtain ⟨j, hj, hjy⟩ := mem_image.mp hmem
+      exact hne j (mem_range.mp hj) hjy.symm
+    have hsub : (insert y (image c (range N))).val ⊆ f.derivative.roots := by
       intro z hz
-      rw [Finset.mem_val, Finset.mem_insert] at hz
+      rw [mem_val, mem_insert] at hz
       rw [Polynomial.mem_roots hf'0]
       rcases hz with rfl | hz
       · exact hy
-      · obtain ⟨j, hj, rfl⟩ := Finset.mem_image.mp hz
-        exact hc_zero j (Finset.mem_range.mp hj)
-    have hcardins : (insert y (Finset.image c (Finset.range N))).card = N + 1 := by
-      rw [Finset.card_insert_eq_ite, if_neg hnot, hcard]
+      · obtain ⟨j, hj, rfl⟩ := mem_image.mp hz
+        exact hc_zero j (mem_range.mp hj)
+    have hcardins : (insert y (image c (range N))).card = N + 1 := by
+      rw [card_insert_eq_ite, if_neg hnot, hcard]
     have := Polynomial.card_le_degree_of_subset_roots hsub
     omega
   refine ⟨fun k hk => ⟨c k, ⟨hc_mem k hk, hc_zero k hk⟩, ?_⟩, fun x hx => ?_⟩

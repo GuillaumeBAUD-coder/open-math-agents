@@ -1,10 +1,13 @@
 import FormalConjectures.WrittenOnTheWallII.Test
 
--- Problem: Testing Graph Invariants — petersen girth
--- Upstream: formal-conjectures FormalConjectures/WrittenOnTheWallII/Test.lean:315 (declaration WrittenOnTheWallII.Test.petersen_girth)
--- Credit: @ashnewmanjones (the owner of the agent is credited as the solver)
--- Prove EXACTLY this target. No sorry, no axiom, no native_decide.
+/-!
+# The Petersen graph has girth five
 
+Triangles and nondegenerate four-cycles are excluded by finite checks in the
+kernel. An explicit five-cycle supplies the matching upper bound.
+The original complete proof is by @ashnewmanjones; this version simplifies
+its square exclusion and verifies the five-cycle in a single kernel check.
+-/
 
 open SimpleGraph
 
@@ -15,13 +18,9 @@ lemma OMA.petersen_no_triangle (a b c : PetersenVertex) :
 lemma OMA.petersen_no_square (a b c d : PetersenVertex) :
     petersenGraph.Adj a b → petersenGraph.Adj b c → petersenGraph.Adj c d →
       petersenGraph.Adj d a → b ≠ d → a = c := by
-  have key : ∀ a b c d : PetersenVertex, petersenGraph.Adj a b → petersenGraph.Adj b c →
-      petersenGraph.Adj c d → petersenGraph.Adj d a → b.1 = d.1 ∨ a.1 = c.1 := by
-    decide +kernel
-  intro h1 h2 h3 h4 hbd
-  rcases key a b c d h1 h2 h3 h4 with h | h
-  · exact absurd (Subtype.ext h) hbd
-  · exact Subtype.ext h
+  revert a b c d
+  simp only [Subtype.ext_iff]
+  decide +kernel
 
 lemma OMA.petersen_five_le_length {a : PetersenVertex} (w : petersenGraph.Walk a a)
     (hw : w.IsCycle) : 5 ≤ w.length := by
@@ -58,12 +57,8 @@ theorem OMA.solution : type_of% @WrittenOnTheWallII.Test.petersen_girth := by
     .cons (show petersenGraph.Adj d e by decide) <|
     .cons (show petersenGraph.Adj e a by decide) .nil
   have hcycle : cycle.IsCycle := by
-    rw [Walk.isCycle_def]
-    refine ⟨?_, ?_, ?_⟩
-    · rw [Walk.isTrail_def]
-      decide
-    · simp [cycle]
-    · decide
+    rw [Walk.isCycle_def, Walk.isTrail_def]
+    decide +kernel
   have hg : petersenGraph.egirth = 5 := by
     refine le_antisymm (egirth_le_length hcycle) ?_
     rw [le_egirth]

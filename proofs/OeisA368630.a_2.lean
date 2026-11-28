@@ -1,11 +1,4 @@
 import FormalConjectures.OEIS.«368630»
-import Mathlib.RingTheory.PowerSeries.Exp
-import Mathlib.RingTheory.PowerSeries.Substitution
-import Mathlib.Data.ZMod.Basic
-import Mathlib.Tactic.NormNum
-import Mathlib.Tactic.Ring
-import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.Push
 
 namespace OMA.A368630
 open PowerSeries
@@ -121,81 +114,6 @@ theorem auxiliary_original {r s : ℕ} {F B : ℚ⟦X⟧}
     X * F⁻¹ ^ r * (F ^ r * F ^ s) = X * ((F⁻¹ * F) ^ r) * F ^ s := by ring
     _ = X * F ^ s := by rw [hiF, one_pow, mul_one]
 
-namespace Hurwitz
-variable {R : Type*} [CommRing R]
-/-- Differentiation shifts an EGF coefficient sequence. -/
-def shift (a : ℕ → R) (n : ℕ) := a (n + 1)
-/-- The EGF product, recursively specified by its constant term and the product rule. -/
-def product (a b : ℕ → R) : ℕ → R
-  | 0 => a 0 * b 0
-  | n + 1 => product (shift a) b n + product a (shift b) n
-@[simp] lemma product_zero (a b : ℕ → R) : product a b 0 = a 0 * b 0 := rfl
-lemma product_succ (a b : ℕ → R) (n : ℕ) :
-    product a b (n + 1) = product (shift a) b n + product a (shift b) n := rfl
-lemma product_comm (a b : ℕ → R) : product a b = product b a := by
-  funext n
-  induction n generalizing a b with
-  | zero => simp [mul_comm]
-  | succ n ih => rw [product_succ, product_succ, ih (shift a) b, ih a (shift b), add_comm]
-lemma map_product {S : Type*} [CommRing S] (φ : R →+* S) (a b : ℕ → R) :
-    φ ∘ product a b = product (φ ∘ a) (φ ∘ b) := by
-  funext n
-  change φ (product a b n) = product (φ ∘ a) (φ ∘ b) n
-  induction n generalizing a b with
-  | zero => simp [Function.comp_apply]
-  | succ n ih =>
-    change φ (product (shift a) b n + product a (shift b) n) = _
-    rw [map_add, ih, ih]
-    rfl
-end Hurwitz
-
-namespace Hurwitz
-open PowerSeries
-/-- Derivatives at zero, rather than ordinary coefficients. -/
-noncomputable def jet (F : ℚ⟦X⟧) (n : ℕ) : ℚ := n.factorial * F.coeff n
-lemma jet_zero (F : ℚ⟦X⟧) : jet F 0 = F.constantCoeff := by simp [jet]
-lemma jet_derivative (F : ℚ⟦X⟧) : jet (derivative ℚ F) = shift (jet F) := by
-  funext n
-  simp only [jet, shift, coeff_derivative, Nat.factorial_succ, Nat.cast_mul]
-  push_cast
-  ring
-lemma jet_add (F G : ℚ⟦X⟧) : jet (F + G) = jet F + jet G := by
-  funext n
-  simp [jet, mul_add]
-lemma jet_product (F G : ℚ⟦X⟧) : jet (F * G) = product (jet F) (jet G) := by
-  funext n
-  induction n generalizing F G with
-  | zero => simp [jet_zero]
-  | succ n ih =>
-    change shift (jet (F * G)) n = _
-    rw [← jet_derivative, (derivative ℚ).leibniz]
-    simp only [smul_eq_mul]
-    rw [jet_add]
-    simp only [Pi.add_apply, product_succ]
-    rw [ih, ih, jet_derivative, jet_derivative]
-    rw [product_comm (jet G) (shift (jet F)), add_comm]
-end Hurwitz
-
-namespace Hurwitz
-open PowerSeries
-lemma jet_egf (a : ℕ → ℤ) : jet (egf a) = Int.castRingHom ℚ ∘ a := by
-  funext n
-  simp only [jet, egf, coeff_mk, Function.comp_apply, Int.coe_castRingHom]
-  have hn : (n.factorial : ℚ) ≠ 0 := by exact_mod_cast n.factorial_ne_zero
-  field_simp
-end Hurwitz
-
-namespace Hurwitz
-open PowerSeries
-variable {R : Type*} [CommRing R]
-def unitSequence : ℕ → R := fun n => if n = 0 then 1 else 0
-lemma jet_X_mul_succ (F : ℚ⟦X⟧) (n : ℕ) :
-    jet (X * F) (n + 1) = (n + 1) * jet F n := by
-  simp only [jet, coeff_succ_X_mul, Nat.factorial_succ, Nat.cast_mul]
-  push_cast
-  ring
-end Hurwitz
-
 namespace Causal
 variable {R : Type*}
 
@@ -233,8 +151,69 @@ theorem exists_unique_fixed_point (T : (ℕ → R) → ℕ → R) (hT : IsCausal
 end Causal
 
 namespace Hurwitz
-open PowerSeries Finset
+open Finset
 variable {R : Type*} [CommRing R]
+/-- Differentiation shifts an EGF coefficient sequence. -/
+def shift (a : ℕ → R) (n : ℕ) := a (n + 1)
+/-- The EGF product, recursively specified by its constant term and the product rule. -/
+def product (a b : ℕ → R) : ℕ → R
+  | 0 => a 0 * b 0
+  | n + 1 => product (shift a) b n + product a (shift b) n
+@[simp] lemma product_zero (a b : ℕ → R) : product a b 0 = a 0 * b 0 := rfl
+lemma product_succ (a b : ℕ → R) (n : ℕ) :
+    product a b (n + 1) = product (shift a) b n + product a (shift b) n := rfl
+lemma product_comm (a b : ℕ → R) : product a b = product b a := by
+  funext n
+  induction n generalizing a b with
+  | zero => simp [mul_comm]
+  | succ n ih => rw [product_succ, product_succ, ih (shift a) b, ih a (shift b), add_comm]
+lemma map_product {S : Type*} [CommRing S] (φ : R →+* S) (a b : ℕ → R) :
+    φ ∘ product a b = product (φ ∘ a) (φ ∘ b) := by
+  funext n
+  change φ (product a b n) = product (φ ∘ a) (φ ∘ b) n
+  induction n generalizing a b with
+  | zero => simp
+  | succ n ih =>
+    change φ (product (shift a) b n + product a (shift b) n) = _
+    rw [map_add, ih, ih]
+    rfl
+
+/-- Derivatives at zero, rather than ordinary coefficients. -/
+noncomputable def jet (F : ℚ⟦X⟧) (n : ℕ) : ℚ := n.factorial * F.coeff n
+lemma jet_zero (F : ℚ⟦X⟧) : jet F 0 = F.constantCoeff := by simp [jet]
+lemma jet_derivative (F : ℚ⟦X⟧) : jet (derivative ℚ F) = shift (jet F) := by
+  funext n
+  simp only [jet, shift, coeff_derivative, Nat.factorial_succ, Nat.cast_mul]
+  push_cast
+  ring
+lemma jet_add (F G : ℚ⟦X⟧) : jet (F + G) = jet F + jet G := by
+  funext n
+  simp [jet, mul_add]
+lemma jet_product (F G : ℚ⟦X⟧) : jet (F * G) = product (jet F) (jet G) := by
+  funext n
+  induction n generalizing F G with
+  | zero => simp [jet_zero]
+  | succ n ih =>
+    change shift (jet (F * G)) n = _
+    rw [← jet_derivative, (derivative ℚ).leibniz]
+    simp only [smul_eq_mul]
+    rw [jet_add]
+    simp only [Pi.add_apply, product_succ]
+    rw [ih, ih, jet_derivative, jet_derivative]
+    rw [product_comm (jet G) (shift (jet F)), add_comm]
+
+lemma jet_egf (a : ℕ → ℤ) : jet (egf a) = Int.castRingHom ℚ ∘ a := by
+  funext n
+  simp only [jet, egf, coeff_mk, Function.comp_apply, Int.coe_castRingHom]
+  have hn : (n.factorial : ℚ) ≠ 0 := by exact_mod_cast n.factorial_ne_zero
+  field_simp
+
+def unitSequence : ℕ → R := fun n => if n = 0 then 1 else 0
+lemma jet_X_mul_succ (F : ℚ⟦X⟧) (n : ℕ) :
+    jet (X * F) (n + 1) = (n + 1) * jet F n := by
+  simp only [jet, coeff_succ_X_mul, Nat.factorial_succ, Nat.cast_mul]
+  push_cast
+  ring
 
 lemma product_congr (a b c d : ℕ → R) (n : ℕ)
     (ha : ∀ k ≤ n, a k = c k) (hb : ∀ k ≤ n, b k = d k) :
@@ -245,11 +224,11 @@ lemma product_congr (a b c d : ℕ → R) (n : ℕ)
     rw [product_succ, product_succ]
     congr 1
     · apply ih
-      · intro k hk; exact ha (k + 1) (Nat.succ_le_succ hk)
-      · intro k hk; exact hb k (Nat.le_succ_of_le hk)
+      · exact fun k hk => ha _ (by omega)
+      · exact fun k hk => hb k (by omega)
     · apply ih
-      · intro k hk; exact ha k (Nat.le_succ_of_le hk)
-      · intro k hk; exact hb (k + 1) (Nat.succ_le_succ hk)
+      · exact fun k hk => ha k (by omega)
+      · exact fun k hk => hb _ (by omega)
 
 /-- Powers in the integer EGF algebra. -/
 def power (a : ℕ → R) : ℕ → ℕ → R
@@ -309,7 +288,7 @@ theorem coeff_subst_X_mul (F D : ℚ⟦X⟧) (n : ℕ) :
       (range (n + 1) : Set ℕ) := by
     intro k hk
     by_contra hkn
-    have hle : ¬k ≤ n := fun hk => hkn (mem_range.mpr (Nat.lt_succ_of_le hk))
+    have hle : ¬k ≤ n := fun hk => hkn (mem_range.mpr (by omega))
     exact hk (by simp [mul_pow, coeff_X_pow_mul', hle])
   rw [finsum_eq_sum_of_support_subset _ hs]
   apply sum_congr rfl
@@ -354,11 +333,7 @@ lemma map_composition {S : Type*} [CommRing S] (φ : R →+* S) (a d : ℕ → R
   rw [← map_power]
   rfl
 
-end Hurwitz
 
-namespace Hurwitz
-open PowerSeries
-variable {R : Type*} [CommRing R]
 
 /-- The EGF coefficients of the derivative of $xC(x)$. -/
 def logDerivative (c : ℕ → R) (n : ℕ) : R := (n + 1) * c n
@@ -373,7 +348,7 @@ lemma expOperator_causal (c : ℕ → R) : Causal.IsCausal (expOperator c) := by
   | zero => rfl
   | succ n =>
     apply product_congr
-    · intro k hk; exact h k (Nat.lt_succ_of_le hk)
+    · exact fun k hk => h k (by omega)
     · intro k hk; rfl
 
 /-- Integral EGF exponential $\exp(xC(x))$, defined without division. -/
@@ -397,12 +372,12 @@ lemma expSequence_congr (a b : ℕ → R) (n : ℕ) (h : ∀ k < n, a k = b k) :
       rw [expSequence_succ, expSequence_succ]
       apply product_congr
       · intro k hk
-        apply ih k (Nat.lt_succ_of_le hk)
+        apply ih k (by omega)
         intro j hj
-        exact h j (hj.trans (Nat.lt_succ_of_le hk))
+        exact h j (hj.trans (by omega))
       · intro k hk
         simp only [logDerivative]
-        rw [h k (Nat.lt_succ_of_le hk)]
+        rw [h k (by omega)]
 
 lemma map_expSequence {S : Type*} [CommRing S] (φ : R →+* S) (c : ℕ → R) :
     φ ∘ expSequence c = expSequence (φ ∘ c) := by
@@ -417,7 +392,7 @@ lemma map_expSequence {S : Type*} [CommRing S] (φ : R →+* S) (c : ℕ → R) 
       change (φ ∘ product (expSequence c) (logDerivative c)) n = _
       rw [map_product]
       apply product_congr
-      · intro k hk; exact ih k (Nat.lt_succ_of_le hk)
+      · exact fun k hk => ih k (by omega)
       · intro k hk
         simp [logDerivative, Function.comp_apply]
 
@@ -456,7 +431,7 @@ theorem jet_exp_X_qegf (c : ℕ → ℚ) :
     | succ n =>
       rw [hr, expSequence_succ]
       apply product_congr
-      · intro k hk; exact ih k (Nat.lt_succ_of_le hk)
+      · exact fun k hk => ih k (by omega)
       · intro k hk; rfl
 
 lemma qegf_expSequence (c : ℕ → ℚ) :
@@ -479,11 +454,7 @@ lemma egf_expSequence (c : ℕ → ℤ) :
   change qegf (Int.castRingHom ℚ ∘ expSequence c) =
     (exp ℚ).subst (X * qegf (Int.castRingHom ℚ ∘ c))
   rw [map_expSequence, qegf_expSequence]
-end Hurwitz
 
-namespace Hurwitz
-open PowerSeries Finset
-variable {R : Type*} [CommRing R]
 
 lemma composition_zero (a d : ℕ → R) : composition a d 0 = a 0 := by
   simp [composition, power, unitSequence]
@@ -592,33 +563,25 @@ theorem eq_egf {r s : ℕ} (hrs : r + s = 3) {F : ℚ⟦X⟧} (hF : Original r s
 end Source
 
 lemma isGeneratingSequence_iff (c : ℕ → ℤ) :
-    OeisA368630.IsGeneratingSequence c ↔ Original 2 1 (egf c) := by
-  simp only [OeisA368630.IsGeneratingSequence, Original, pow_one]
+    IsGeneratingSequence c ↔ Original 2 1 (egf c) := by
+  simp only [IsGeneratingSequence, Original, pow_one]
 
-lemma egf_injective : Function.Injective egf := by
-  intro c d h
-  have hj := congrArg Hurwitz.jet h
-  rw [Hurwitz.jet_egf, Hurwitz.jet_egf] at hj
+lemma egf_injective : Function.Injective egf := fun c d h => by
   funext n
-  have he := congrFun hj n
-  change (c n : ℚ) = (d n : ℚ) at he
+  have he := congrFun (congrArg Hurwitz.jet h) n
+  simp only [Hurwitz.jet_egf, Function.comp_apply, Int.coe_castRingHom] at he
   exact_mod_cast he
 
-lemma constructed_spec : OeisA368630.IsGeneratingSequence (Source.a 2) := by
-  rw [isGeneratingSequence_iff]
-  exact Source.original 2 1 rfl
+lemma constructed_spec : IsGeneratingSequence (Source.a 2) :=
+  (isGeneratingSequence_iff _).2 (Source.original 2 1 rfl)
 
-theorem exists_unique_sequence_proof : ∃! c : ℕ → ℤ, OeisA368630.IsGeneratingSequence c := by
-  refine ⟨Source.a 2, constructed_spec, ?_⟩
-  intro c hc
-  apply egf_injective
+theorem exists_unique_sequence_proof : ∃! c : ℕ → ℤ, IsGeneratingSequence c := by
+  refine ⟨Source.a 2, constructed_spec, fun c hc => egf_injective ?_⟩
   exact Source.eq_egf (r := 2) (s := 1) rfl ((isGeneratingSequence_iff c).mp hc)
 
-theorem a_spec_proof : OeisA368630.IsGeneratingSequence OeisA368630.a :=
-  Classical.epsilon_spec exists_unique_sequence_proof.exists
-
 lemma a_eq_constructed : OeisA368630.a = Source.a 2 :=
-  exists_unique_sequence_proof.unique a_spec_proof constructed_spec
+  exists_unique_sequence_proof.unique
+    (Classical.epsilon_spec exists_unique_sequence_proof.exists) constructed_spec
 
 open Hurwitz
 

@@ -2583,33 +2583,17 @@ private lemma grahamBound_of_card_le_ten (A : Finset ℕ) (h₀ : 0 ∉ A)
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 100000000 in
 private lemma pair_block (lo hi p q : ℕ)
-    (hlo10 : 10 ≤ lo) (hp : p.Prime) (hpN : hi < p)
-    (hupper : p < 2*lo) (hwin : (2*hi-p)*(2*hi-p) ≤ lo)
-    (hq : q.Prime) (hql : p-lo ≤ q) (hqu : q ≤ lo)
     (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : lo ≤ A.card) (hhi : A.card ≤ hi) : GrahamBound A := by
+    (hlo : lo ≤ A.card) (hhi : A.card ≤ hi)
+    (hlo10 : 10 ≤ lo := by omega) (hp : p.Prime := by norm_num) (hpN : hi < p := by omega)
+    (hupper : p < 2*lo := by omega) (hwin : (2*hi-p)*(2*hi-p) ≤ lo := by omega)
+    (hq : q.Prime := by norm_num) (hql : p-lo ≤ q := by omega) (hqu : q ≤ lo := by omega) : GrahamBound A := by
   apply grahamBound_of_short_prime_pair A h0 hg (by omega) hp (by omega) (by omega)
   · have hsub : 2*A.card-p ≤ 2*hi-p := Nat.sub_le_sub_right (by omega) p
     exact (Nat.mul_self_le_mul_self hsub).trans (hwin.trans hlo)
   · exact hq
   · omega
   · omega
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_0 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 11 ≤ A.card) (hhi : A.card ≤ 11) : GrahamBound A := by
-  exact pair_block 11 11 19 11 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_1 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 12 ≤ A.card) (hhi : A.card ≤ 13) : GrahamBound A := by
-  exact pair_block 12 13 23 11 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 100000000 in
@@ -2645,22 +2629,6 @@ private lemma block_3 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 100000000 in
-private lemma block_4 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 16 ≤ A.card) (hhi : A.card ≤ 16) : GrahamBound A := by
-  exact pair_block 16 16 29 13 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_5 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 17 ≤ A.card) (hhi : A.card ≤ 17) : GrahamBound A := by
-  exact pair_block 17 17 31 17 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
 private lemma block_6 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
     (hlo : 18 ≤ A.card) (hhi : A.card ≤ 18) : GrahamBound A := by
   have hn : A.card = 18 := by omega
@@ -2677,14 +2645,6 @@ private lemma block_6 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 100000000 in
-private lemma block_7 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 19 ≤ A.card) (hhi : A.card ≤ 20) : GrahamBound A := by
-  exact pair_block 19 20 37 19 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
 private lemma block_8 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
     (hlo : 21 ≤ A.card) (hhi : A.card ≤ 21) : GrahamBound A := by
   have hn : A.card = 21 := by omega
@@ -2698,38 +2658,6 @@ private lemma block_8 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
   · omega
   · rw [hn]; norm_num
   · rw [hn]; decide +kernel
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_9 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 22 ≤ A.card) (hhi : A.card ≤ 22) : GrahamBound A := by
-  exact pair_block 22 22 41 19 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_10 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 23 ≤ A.card) (hhi : A.card ≤ 23) : GrahamBound A := by
-  exact pair_block 23 23 43 23 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_11 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 24 ≤ A.card) (hhi : A.card ≤ 25) : GrahamBound A := by
-  exact pair_block 24 25 47 23 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_12 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 26 ≤ A.card) (hhi : A.card ≤ 26) : GrahamBound A := by
-  exact pair_block 26 26 47 23 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 100000000 in
@@ -2752,30 +2680,6 @@ private lemma block_14 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
   · omega
   · rw [hn]; norm_num
   · rw [hn]; decide +kernel
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_15 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 29 ≤ A.card) (hhi : A.card ≤ 29) : GrahamBound A := by
-  exact pair_block 29 29 53 29 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_16 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 30 ≤ A.card) (hhi : A.card ≤ 32) : GrahamBound A := by
-  exact pair_block 30 32 59 29 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_17 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 33 ≤ A.card) (hhi : A.card ≤ 33) : GrahamBound A := by
-  exact pair_block 33 33 61 29 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 100000000 in
@@ -2811,22 +2715,6 @@ private lemma block_19 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 100000000 in
-private lemma block_20 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 36 ≤ A.card) (hhi : A.card ≤ 36) : GrahamBound A := by
-  exact pair_block 36 36 67 31 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_21 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 37 ≤ A.card) (hhi : A.card ≤ 39) : GrahamBound A := by
-  exact pair_block 37 39 73 37 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
 private lemma block_22 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
     (hlo : 40 ≤ A.card) (hhi : A.card ≤ 40) : GrahamBound A := by
   have hn : A.card = 40 := by omega
@@ -2843,22 +2731,6 @@ private lemma block_22 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 100000000 in
-private lemma block_23 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 41 ≤ A.card) (hhi : A.card ≤ 42) : GrahamBound A := by
-  exact pair_block 41 42 79 41 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_24 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 43 ≤ A.card) (hhi : A.card ≤ 44) : GrahamBound A := by
-  exact pair_block 43 44 83 41 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
 private lemma block_25 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
     (hlo : 45 ≤ A.card) (hhi : A.card ≤ 45) : GrahamBound A := by
   have hn : A.card = 45 := by omega
@@ -2872,14 +2744,6 @@ private lemma block_25 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
   · omega
   · rw [hn]; norm_num
   · rw [hn]; decide +kernel
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_26 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 46 ≤ A.card) (hhi : A.card ≤ 47) : GrahamBound A := by
-  exact pair_block 46 47 89 43 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 100000000 in
@@ -2912,38 +2776,6 @@ private lemma block_28 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
   · omega
   · rw [hn]; norm_num
   · rw [hn]; decide +kernel
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_29 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 50 ≤ A.card) (hhi : A.card ≤ 52) : GrahamBound A := by
-  exact pair_block 50 52 97 47 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_30 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 53 ≤ A.card) (hhi : A.card ≤ 55) : GrahamBound A := by
-  exact pair_block 53 55 103 53 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_31 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 56 ≤ A.card) (hhi : A.card ≤ 58) : GrahamBound A := by
-  exact pair_block 56 58 109 53 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_32 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 59 ≤ A.card) (hhi : A.card ≤ 60) : GrahamBound A := by
-  exact pair_block 59 60 113 59 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 100000000 in
@@ -3017,38 +2849,6 @@ private lemma block_37 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 100000000 in
-private lemma block_38 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 66 ≤ A.card) (hhi : A.card ≤ 67) : GrahamBound A := by
-  exact pair_block 66 67 127 61 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_39 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 68 ≤ A.card) (hhi : A.card ≤ 69) : GrahamBound A := by
-  exact pair_block 68 69 131 67 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_40 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 70 ≤ A.card) (hhi : A.card ≤ 72) : GrahamBound A := by
-  exact pair_block 70 72 137 67 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_41 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 73 ≤ A.card) (hhi : A.card ≤ 73) : GrahamBound A := by
-  exact pair_block 73 73 139 67 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
 private lemma block_42 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
     (hlo : 74 ≤ A.card) (hhi : A.card ≤ 74) : GrahamBound A := by
   have hn : A.card = 74 := by omega
@@ -3081,54 +2881,6 @@ private lemma block_43 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 100000000 in
-private lemma block_44 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 76 ≤ A.card) (hhi : A.card ≤ 78) : GrahamBound A := by
-  exact pair_block 76 78 149 73 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_45 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 79 ≤ A.card) (hhi : A.card ≤ 82) : GrahamBound A := by
-  exact pair_block 79 82 157 79 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_46 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 83 ≤ A.card) (hhi : A.card ≤ 86) : GrahamBound A := by
-  exact pair_block 83 86 163 83 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_47 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 87 ≤ A.card) (hhi : A.card ≤ 88) : GrahamBound A := by
-  exact pair_block 87 88 167 83 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_48 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 89 ≤ A.card) (hhi : A.card ≤ 91) : GrahamBound A := by
-  exact pair_block 89 91 173 89 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_49 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 92 ≤ A.card) (hhi : A.card ≤ 95) : GrahamBound A := by
-  exact pair_block 92 95 181 89 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
 private lemma block_50 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
     (hlo : 96 ≤ A.card) (hhi : A.card ≤ 96) : GrahamBound A := by
   have hn : A.card = 96 := by omega
@@ -3142,22 +2894,6 @@ private lemma block_50 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
   · omega
   · rw [hn]; norm_num
   · rw [hn]; decide +kernel
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_51 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 97 ≤ A.card) (hhi : A.card ≤ 101) : GrahamBound A := by
-  exact pair_block 97 101 193 97 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_52 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 102 ≤ A.card) (hhi : A.card ≤ 104) : GrahamBound A := by
-  exact pair_block 102 104 199 97 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 100000000 in
@@ -3193,14 +2929,6 @@ private lemma block_54 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 100000000 in
-private lemma block_55 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 107 ≤ A.card) (hhi : A.card ≤ 110) : GrahamBound A := by
-  exact pair_block 107 110 211 107 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
 private lemma block_56 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
     (hlo : 111 ≤ A.card) (hhi : A.card ≤ 111) : GrahamBound A := by
   have hn : A.card = 111 := by omega
@@ -3230,38 +2958,6 @@ private lemma block_57 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
   · omega
   · rw [hn]; norm_num
   · rw [hn]; decide +kernel
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_58 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 113 ≤ A.card) (hhi : A.card ≤ 116) : GrahamBound A := by
-  exact pair_block 113 116 223 113 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_59 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 117 ≤ A.card) (hhi : A.card ≤ 119) : GrahamBound A := by
-  exact pair_block 117 119 229 113 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_60 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 120 ≤ A.card) (hhi : A.card ≤ 121) : GrahamBound A := by
-  exact pair_block 120 121 233 113 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_61 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 122 ≤ A.card) (hhi : A.card ≤ 122) : GrahamBound A := by
-  exact pair_block 122 122 233 113 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 100000000 in
@@ -3329,46 +3025,6 @@ private lemma block_65 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 100000000 in
-private lemma block_66 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 127 ≤ A.card) (hhi : A.card ≤ 131) : GrahamBound A := by
-  exact pair_block 127 131 251 127 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_67 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 132 ≤ A.card) (hhi : A.card ≤ 137) : GrahamBound A := by
-  exact pair_block 132 137 263 131 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_68 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 138 ≤ A.card) (hhi : A.card ≤ 141) : GrahamBound A := by
-  exact pair_block 138 141 271 137 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_69 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 142 ≤ A.card) (hhi : A.card ≤ 146) : GrahamBound A := by
-  exact pair_block 142 146 281 139 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_70 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 147 ≤ A.card) (hhi : A.card ≤ 147) : GrahamBound A := by
-  exact pair_block 147 147 283 137 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
 private lemma block_71 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
     (hlo : 148 ≤ A.card) (hhi : A.card ≤ 148) : GrahamBound A := by
   have hn : A.card = 148 := by omega
@@ -3382,14 +3038,6 @@ private lemma block_71 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
   · omega
   · rw [hn]; norm_num
   · rw [hn]; decide +kernel
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_72 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 149 ≤ A.card) (hhi : A.card ≤ 152) : GrahamBound A := by
-  exact pair_block 149 152 293 149 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 100000000 in
@@ -3441,22 +3089,6 @@ private lemma block_75 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 100000000 in
-private lemma block_76 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 156 ≤ A.card) (hhi : A.card ≤ 159) : GrahamBound A := by
-  exact pair_block 156 159 307 151 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_77 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 160 ≤ A.card) (hhi : A.card ≤ 164) : GrahamBound A := by
-  exact pair_block 160 164 317 157 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
 private lemma block_78 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
     (hlo : 165 ≤ A.card) (hhi : A.card ≤ 165) : GrahamBound A := by
   have hn : A.card = 165 := by omega
@@ -3486,70 +3118,6 @@ private lemma block_79 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
   · omega
   · rw [hn]; norm_num
   · rw [hn]; decide +kernel
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_80 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 167 ≤ A.card) (hhi : A.card ≤ 171) : GrahamBound A := by
-  exact pair_block 167 171 331 167 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_81 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 172 ≤ A.card) (hhi : A.card ≤ 175) : GrahamBound A := by
-  exact pair_block 172 175 337 167 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_82 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 176 ≤ A.card) (hhi : A.card ≤ 181) : GrahamBound A := by
-  exact pair_block 176 181 349 173 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_83 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 182 ≤ A.card) (hhi : A.card ≤ 186) : GrahamBound A := by
-  exact pair_block 182 186 359 179 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_84 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 187 ≤ A.card) (hhi : A.card ≤ 190) : GrahamBound A := by
-  exact pair_block 187 190 367 181 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_85 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 191 ≤ A.card) (hhi : A.card ≤ 196) : GrahamBound A := by
-  exact pair_block 191 196 379 191 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_86 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 197 ≤ A.card) (hhi : A.card ≤ 201) : GrahamBound A := by
-  exact pair_block 197 201 389 193 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_87 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 202 ≤ A.card) (hhi : A.card ≤ 207) : GrahamBound A := by
-  exact pair_block 202 207 401 199 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 100000000 in
@@ -3585,22 +3153,6 @@ private lemma block_89 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 100000000 in
-private lemma block_90 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 210 ≤ A.card) (hhi : A.card ≤ 211) : GrahamBound A := by
-  exact pair_block 210 211 409 199 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_91 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 212 ≤ A.card) (hhi : A.card ≤ 217) : GrahamBound A := by
-  exact pair_block 212 217 421 211 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
 private lemma block_92 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
     (hlo : 218 ≤ A.card) (hhi : A.card ≤ 218) : GrahamBound A := by
   have hn : A.card = 218 := by omega
@@ -3633,78 +3185,6 @@ private lemma block_93 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 100000000 in
-private lemma block_94 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 220 ≤ A.card) (hhi : A.card ≤ 222) : GrahamBound A := by
-  exact pair_block 220 222 431 211 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_95 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 223 ≤ A.card) (hhi : A.card ≤ 228) : GrahamBound A := by
-  exact pair_block 223 228 443 223 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_96 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 229 ≤ A.card) (hhi : A.card ≤ 236) : GrahamBound A := by
-  exact pair_block 229 236 457 229 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_97 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 237 ≤ A.card) (hhi : A.card ≤ 241) : GrahamBound A := by
-  exact pair_block 237 241 467 233 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_98 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 242 ≤ A.card) (hhi : A.card ≤ 247) : GrahamBound A := by
-  exact pair_block 242 247 479 239 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_99 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 248 ≤ A.card) (hhi : A.card ≤ 251) : GrahamBound A := by
-  exact pair_block 248 251 487 239 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_100 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 252 ≤ A.card) (hhi : A.card ≤ 259) : GrahamBound A := by
-  exact pair_block 252 259 503 251 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_101 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 260 ≤ A.card) (hhi : A.card ≤ 262) : GrahamBound A := by
-  exact pair_block 260 262 509 251 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_102 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 263 ≤ A.card) (hhi : A.card ≤ 269) : GrahamBound A := by
-  exact pair_block 263 269 523 263 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
 private lemma block_103 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
     (hlo : 270 ≤ A.card) (hhi : A.card ≤ 270) : GrahamBound A := by
   have hn : A.card = 270 := by omega
@@ -3721,214 +3201,6 @@ private lemma block_103 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 100000000 in
-private lemma block_104 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 271 ≤ A.card) (hhi : A.card ≤ 278) : GrahamBound A := by
-  exact pair_block 271 278 541 271 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_105 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 279 ≤ A.card) (hhi : A.card ≤ 281) : GrahamBound A := by
-  exact pair_block 279 281 547 269 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_106 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 282 ≤ A.card) (hhi : A.card ≤ 289) : GrahamBound A := by
-  exact pair_block 282 289 563 281 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_107 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 290 ≤ A.card) (hhi : A.card ≤ 294) : GrahamBound A := by
-  exact pair_block 290 294 571 281 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_108 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 295 ≤ A.card) (hhi : A.card ≤ 302) : GrahamBound A := by
-  exact pair_block 295 302 587 293 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_109 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 303 ≤ A.card) (hhi : A.card ≤ 305) : GrahamBound A := by
-  exact pair_block 303 305 593 293 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_110 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 306 ≤ A.card) (hhi : A.card ≤ 308) : GrahamBound A := by
-  exact pair_block 306 308 599 293 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_111 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 309 ≤ A.card) (hhi : A.card ≤ 315) : GrahamBound A := by
-  exact pair_block 309 315 613 307 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_112 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 316 ≤ A.card) (hhi : A.card ≤ 318) : GrahamBound A := by
-  exact pair_block 316 318 619 307 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_113 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 319 ≤ A.card) (hhi : A.card ≤ 324) : GrahamBound A := by
-  exact pair_block 319 324 631 313 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_114 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 325 ≤ A.card) (hhi : A.card ≤ 329) : GrahamBound A := by
-  exact pair_block 325 329 641 317 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_115 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 330 ≤ A.card) (hhi : A.card ≤ 332) : GrahamBound A := by
-  exact pair_block 330 332 647 317 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_116 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 333 ≤ A.card) (hhi : A.card ≤ 339) : GrahamBound A := by
-  exact pair_block 333 339 661 331 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_117 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 340 ≤ A.card) (hhi : A.card ≤ 347) : GrahamBound A := by
-  exact pair_block 340 347 677 337 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_118 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 348 ≤ A.card) (hhi : A.card ≤ 354) : GrahamBound A := by
-  exact pair_block 348 354 691 347 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_119 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 355 ≤ A.card) (hhi : A.card ≤ 359) : GrahamBound A := by
-  exact pair_block 355 359 701 347 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_120 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 360 ≤ A.card) (hhi : A.card ≤ 368) : GrahamBound A := by
-  exact pair_block 360 368 719 359 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_121 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 369 ≤ A.card) (hhi : A.card ≤ 376) : GrahamBound A := by
-  exact pair_block 369 376 733 367 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_122 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 377 ≤ A.card) (hhi : A.card ≤ 381) : GrahamBound A := by
-  exact pair_block 377 381 743 367 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_123 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 382 ≤ A.card) (hhi : A.card ≤ 390) : GrahamBound A := by
-  exact pair_block 382 390 761 379 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_124 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 391 ≤ A.card) (hhi : A.card ≤ 396) : GrahamBound A := by
-  exact pair_block 391 396 773 383 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_125 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 397 ≤ A.card) (hhi : A.card ≤ 403) : GrahamBound A := by
-  exact pair_block 397 403 787 397 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_126 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 404 ≤ A.card) (hhi : A.card ≤ 408) : GrahamBound A := by
-  exact pair_block 404 408 797 397 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_127 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 409 ≤ A.card) (hhi : A.card ≤ 415) : GrahamBound A := by
-  exact pair_block 409 415 811 409 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_128 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 416 ≤ A.card) (hhi : A.card ≤ 421) : GrahamBound A := by
-  exact pair_block 416 421 823 409 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_129 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 422 ≤ A.card) (hhi : A.card ≤ 429) : GrahamBound A := by
-  exact pair_block 422 429 839 419 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
 private lemma block_130 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
     (hlo : 430 ≤ A.card) (hhi : A.card ≤ 430) : GrahamBound A := by
   have hn : A.card = 430 := by omega
@@ -3942,30 +3214,6 @@ private lemma block_130 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
   · omega
   · rw [hn]; norm_num
   · rw [hn]; decide +kernel
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_131 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 431 ≤ A.card) (hhi : A.card ≤ 439) : GrahamBound A := by
-  exact pair_block 431 439 859 431 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_132 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 440 ≤ A.card) (hhi : A.card ≤ 448) : GrahamBound A := by
-  exact pair_block 440 448 877 439 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_133 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 449 ≤ A.card) (hhi : A.card ≤ 454) : GrahamBound A := by
-  exact pair_block 449 454 887 439 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 100000000 in
@@ -3998,206 +3246,6 @@ private lemma block_135 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
   · omega
   · rw [hn]; norm_num
   · rw [hn]; decide +kernel
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_136 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 457 ≤ A.card) (hhi : A.card ≤ 466) : GrahamBound A := by
-  exact pair_block 457 466 911 457 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_137 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 467 ≤ A.card) (hhi : A.card ≤ 475) : GrahamBound A := by
-  exact pair_block 467 475 929 463 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_138 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 476 ≤ A.card) (hhi : A.card ≤ 481) : GrahamBound A := by
-  exact pair_block 476 481 941 467 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_139 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 482 ≤ A.card) (hhi : A.card ≤ 487) : GrahamBound A := by
-  exact pair_block 482 487 953 479 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_140 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 488 ≤ A.card) (hhi : A.card ≤ 496) : GrahamBound A := by
-  exact pair_block 488 496 971 487 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_141 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 497 ≤ A.card) (hhi : A.card ≤ 502) : GrahamBound A := by
-  exact pair_block 497 502 983 487 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_142 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 503 ≤ A.card) (hhi : A.card ≤ 509) : GrahamBound A := by
-  exact pair_block 503 509 997 499 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_143 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 510 ≤ A.card) (hhi : A.card ≤ 520) : GrahamBound A := by
-  exact pair_block 510 520 1019 509 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_144 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 521 ≤ A.card) (hhi : A.card ≤ 530) : GrahamBound A := by
-  exact pair_block 521 530 1039 521 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_145 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 531 ≤ A.card) (hhi : A.card ≤ 537) : GrahamBound A := by
-  exact pair_block 531 537 1051 521 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_146 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 538 ≤ A.card) (hhi : A.card ≤ 542) : GrahamBound A := by
-  exact pair_block 538 542 1061 523 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_147 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 543 ≤ A.card) (hhi : A.card ≤ 546) : GrahamBound A := by
-  exact pair_block 543 546 1069 541 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_148 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 547 ≤ A.card) (hhi : A.card ≤ 558) : GrahamBound A := by
-  exact pair_block 547 558 1093 547 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_149 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 559 ≤ A.card) (hhi : A.card ≤ 566) : GrahamBound A := by
-  exact pair_block 559 566 1109 557 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_150 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 567 ≤ A.card) (hhi : A.card ≤ 576) : GrahamBound A := by
-  exact pair_block 567 576 1129 563 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_151 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 577 ≤ A.card) (hhi : A.card ≤ 588) : GrahamBound A := by
-  exact pair_block 577 588 1153 577 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_152 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 589 ≤ A.card) (hhi : A.card ≤ 597) : GrahamBound A := by
-  exact pair_block 589 597 1171 587 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_153 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 598 ≤ A.card) (hhi : A.card ≤ 605) : GrahamBound A := by
-  exact pair_block 598 605 1187 593 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_154 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 606 ≤ A.card) (hhi : A.card ≤ 612) : GrahamBound A := by
-  exact pair_block 606 612 1201 599 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_155 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 613 ≤ A.card) (hhi : A.card ≤ 623) : GrahamBound A := by
-  exact pair_block 613 623 1223 613 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_156 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 624 ≤ A.card) (hhi : A.card ≤ 630) : GrahamBound A := by
-  exact pair_block 624 630 1237 613 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_157 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 631 ≤ A.card) (hhi : A.card ≤ 642) : GrahamBound A := by
-  exact pair_block 631 642 1259 631 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_158 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 643 ≤ A.card) (hhi : A.card ≤ 654) : GrahamBound A := by
-  exact pair_block 643 654 1283 641 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_159 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 655 ≤ A.card) (hhi : A.card ≤ 666) : GrahamBound A := by
-  exact pair_block 655 666 1307 653 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_160 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 667 ≤ A.card) (hhi : A.card ≤ 676) : GrahamBound A := by
-  exact pair_block 667 676 1327 661 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 100000000 in
@@ -4297,142 +3345,6 @@ private lemma block_166 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 100000000 in
-private lemma block_167 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 683 ≤ A.card) (hhi : A.card ≤ 693) : GrahamBound A := by
-  exact pair_block 683 693 1361 683 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_168 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 694 ≤ A.card) (hhi : A.card ≤ 703) : GrahamBound A := by
-  exact pair_block 694 703 1381 691 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_169 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 704 ≤ A.card) (hhi : A.card ≤ 712) : GrahamBound A := by
-  exact pair_block 704 712 1399 701 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_170 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 713 ≤ A.card) (hhi : A.card ≤ 717) : GrahamBound A := by
-  exact pair_block 713 717 1409 701 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_171 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 718 ≤ A.card) (hhi : A.card ≤ 726) : GrahamBound A := by
-  exact pair_block 718 726 1427 709 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_172 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 727 ≤ A.card) (hhi : A.card ≤ 739) : GrahamBound A := by
-  exact pair_block 727 739 1453 727 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_173 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 740 ≤ A.card) (hhi : A.card ≤ 749) : GrahamBound A := by
-  exact pair_block 740 749 1471 733 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_174 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 750 ≤ A.card) (hhi : A.card ≤ 760) : GrahamBound A := by
-  exact pair_block 750 760 1493 743 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_175 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 761 ≤ A.card) (hhi : A.card ≤ 769) : GrahamBound A := by
-  exact pair_block 761 769 1511 751 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_176 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 770 ≤ A.card) (hhi : A.card ≤ 779) : GrahamBound A := by
-  exact pair_block 770 779 1531 761 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_177 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 780 ≤ A.card) (hhi : A.card ≤ 790) : GrahamBound A := by
-  exact pair_block 780 790 1553 773 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_178 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 791 ≤ A.card) (hhi : A.card ≤ 799) : GrahamBound A := by
-  exact pair_block 791 799 1571 787 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_179 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 800 ≤ A.card) (hhi : A.card ≤ 812) : GrahamBound A := by
-  exact pair_block 800 812 1597 797 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_180 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 813 ≤ A.card) (hhi : A.card ≤ 824) : GrahamBound A := by
-  exact pair_block 813 824 1621 809 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_181 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 825 ≤ A.card) (hhi : A.card ≤ 832) : GrahamBound A := by
-  exact pair_block 825 832 1637 821 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_182 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 833 ≤ A.card) (hhi : A.card ≤ 842) : GrahamBound A := by
-  exact pair_block 833 842 1657 827 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_183 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 843 ≤ A.card) (hhi : A.card ≤ 849) : GrahamBound A := by
-  exact pair_block 843 849 1669 827 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
 private lemma block_184 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
     (hlo : 850 ≤ A.card) (hhi : A.card ≤ 850) : GrahamBound A := by
   have hn : A.card = 850 := by omega
@@ -4481,534 +3393,6 @@ private lemma block_186 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 100000000 in
-private lemma block_187 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 853 ≤ A.card) (hhi : A.card ≤ 864) : GrahamBound A := by
-  exact pair_block 853 864 1699 853 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_188 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 865 ≤ A.card) (hhi : A.card ≤ 876) : GrahamBound A := by
-  exact pair_block 865 876 1723 859 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_189 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 877 ≤ A.card) (hhi : A.card ≤ 891) : GrahamBound A := by
-  exact pair_block 877 891 1753 877 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_190 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 892 ≤ A.card) (hhi : A.card ≤ 903) : GrahamBound A := by
-  exact pair_block 892 903 1777 887 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_191 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 904 ≤ A.card) (hhi : A.card ≤ 909) : GrahamBound A := by
-  exact pair_block 904 909 1789 887 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_192 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 910 ≤ A.card) (hhi : A.card ≤ 920) : GrahamBound A := by
-  exact pair_block 910 920 1811 907 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_193 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 921 ≤ A.card) (hhi : A.card ≤ 930) : GrahamBound A := by
-  exact pair_block 921 930 1831 911 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_194 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 931 ≤ A.card) (hhi : A.card ≤ 938) : GrahamBound A := by
-  exact pair_block 931 938 1847 919 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_195 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 939 ≤ A.card) (hhi : A.card ≤ 951) : GrahamBound A := by
-  exact pair_block 939 951 1873 937 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_196 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 952 ≤ A.card) (hhi : A.card ≤ 959) : GrahamBound A := by
-  exact pair_block 952 959 1889 937 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_197 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 960 ≤ A.card) (hhi : A.card ≤ 971) : GrahamBound A := by
-  exact pair_block 960 971 1913 953 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_198 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 972 ≤ A.card) (hhi : A.card ≤ 982) : GrahamBound A := by
-  exact pair_block 972 982 1933 967 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_199 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 983 ≤ A.card) (hhi : A.card ≤ 991) : GrahamBound A := by
-  exact pair_block 983 991 1951 971 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_200 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 992 ≤ A.card) (hhi : A.card ≤ 1005) : GrahamBound A := by
-  exact pair_block 992 1005 1979 991 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_201 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1006 ≤ A.card) (hhi : A.card ≤ 1017) : GrahamBound A := by
-  exact pair_block 1006 1017 2003 997 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_202 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1018 ≤ A.card) (hhi : A.card ≤ 1030) : GrahamBound A := by
-  exact pair_block 1018 1030 2029 1013 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_203 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1031 ≤ A.card) (hhi : A.card ≤ 1042) : GrahamBound A := by
-  exact pair_block 1031 1042 2053 1031 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_204 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1043 ≤ A.card) (hhi : A.card ≤ 1056) : GrahamBound A := by
-  exact pair_block 1043 1056 2081 1039 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_205 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1057 ≤ A.card) (hhi : A.card ≤ 1065) : GrahamBound A := by
-  exact pair_block 1057 1065 2099 1049 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_206 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1066 ≤ A.card) (hhi : A.card ≤ 1080) : GrahamBound A := by
-  exact pair_block 1066 1080 2129 1063 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_207 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1081 ≤ A.card) (hhi : A.card ≤ 1087) : GrahamBound A := by
-  exact pair_block 1081 1087 2143 1063 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_208 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1088 ≤ A.card) (hhi : A.card ≤ 1096) : GrahamBound A := by
-  exact pair_block 1088 1096 2161 1087 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_209 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1097 ≤ A.card) (hhi : A.card ≤ 1106) : GrahamBound A := by
-  exact pair_block 1097 1106 2179 1087 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_210 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1107 ≤ A.card) (hhi : A.card ≤ 1120) : GrahamBound A := by
-  exact pair_block 1107 1120 2207 1103 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_211 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1121 ≤ A.card) (hhi : A.card ≤ 1135) : GrahamBound A := by
-  exact pair_block 1121 1135 2237 1117 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_212 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1136 ≤ A.card) (hhi : A.card ≤ 1142) : GrahamBound A := by
-  exact pair_block 1136 1142 2251 1117 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_213 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1143 ≤ A.card) (hhi : A.card ≤ 1151) : GrahamBound A := by
-  exact pair_block 1143 1151 2269 1129 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_214 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1152 ≤ A.card) (hhi : A.card ≤ 1165) : GrahamBound A := by
-  exact pair_block 1152 1165 2297 1151 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_215 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1166 ≤ A.card) (hhi : A.card ≤ 1172) : GrahamBound A := by
-  exact pair_block 1166 1172 2311 1151 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_216 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1173 ≤ A.card) (hhi : A.card ≤ 1187) : GrahamBound A := by
-  exact pair_block 1173 1187 2341 1171 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_217 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1188 ≤ A.card) (hhi : A.card ≤ 1202) : GrahamBound A := by
-  exact pair_block 1188 1202 2371 1187 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_218 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1203 ≤ A.card) (hhi : A.card ≤ 1216) : GrahamBound A := by
-  exact pair_block 1203 1216 2399 1201 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_219 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1217 ≤ A.card) (hhi : A.card ≤ 1228) : GrahamBound A := by
-  exact pair_block 1217 1228 2423 1213 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_220 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1229 ≤ A.card) (hhi : A.card ≤ 1241) : GrahamBound A := by
-  exact pair_block 1229 1241 2447 1223 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_221 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1242 ≤ A.card) (hhi : A.card ≤ 1256) : GrahamBound A := by
-  exact pair_block 1242 1256 2477 1237 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_222 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1257 ≤ A.card) (hhi : A.card ≤ 1269) : GrahamBound A := by
-  exact pair_block 1257 1269 2503 1249 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_223 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1270 ≤ A.card) (hhi : A.card ≤ 1278) : GrahamBound A := by
-  exact pair_block 1270 1278 2521 1259 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_224 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1279 ≤ A.card) (hhi : A.card ≤ 1296) : GrahamBound A := by
-  exact pair_block 1279 1296 2557 1279 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_225 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1297 ≤ A.card) (hhi : A.card ≤ 1314) : GrahamBound A := by
-  exact pair_block 1297 1314 2593 1297 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_226 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1315 ≤ A.card) (hhi : A.card ≤ 1328) : GrahamBound A := by
-  exact pair_block 1315 1328 2621 1307 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_227 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1329 ≤ A.card) (hhi : A.card ≤ 1341) : GrahamBound A := by
-  exact pair_block 1329 1341 2647 1319 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_228 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1342 ≤ A.card) (hhi : A.card ≤ 1349) : GrahamBound A := by
-  exact pair_block 1342 1349 2663 1321 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_229 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1350 ≤ A.card) (hhi : A.card ≤ 1356) : GrahamBound A := by
-  exact pair_block 1350 1356 2677 1327 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_230 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1357 ≤ A.card) (hhi : A.card ≤ 1359) : GrahamBound A := by
-  exact pair_block 1357 1359 2683 1327 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_231 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1360 ≤ A.card) (hhi : A.card ≤ 1361) : GrahamBound A := by
-  exact pair_block 1360 1361 2687 1327 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_232 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1362 ≤ A.card) (hhi : A.card ≤ 1377) : GrahamBound A := by
-  exact pair_block 1362 1377 2719 1361 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_233 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1378 ≤ A.card) (hhi : A.card ≤ 1393) : GrahamBound A := by
-  exact pair_block 1378 1393 2749 1373 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_234 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1394 ≤ A.card) (hhi : A.card ≤ 1402) : GrahamBound A := by
-  exact pair_block 1394 1402 2767 1373 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_235 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1403 ≤ A.card) (hhi : A.card ≤ 1419) : GrahamBound A := by
-  exact pair_block 1403 1419 2801 1399 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_236 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1420 ≤ A.card) (hhi : A.card ≤ 1428) : GrahamBound A := by
-  exact pair_block 1420 1428 2819 1399 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_237 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1429 ≤ A.card) (hhi : A.card ≤ 1447) : GrahamBound A := by
-  exact pair_block 1429 1447 2857 1429 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_238 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1448 ≤ A.card) (hhi : A.card ≤ 1462) : GrahamBound A := by
-  exact pair_block 1448 1462 2887 1439 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_239 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1463 ≤ A.card) (hhi : A.card ≤ 1477) : GrahamBound A := by
-  exact pair_block 1463 1477 2917 1459 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_240 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1478 ≤ A.card) (hhi : A.card ≤ 1488) : GrahamBound A := by
-  exact pair_block 1478 1488 2939 1471 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_241 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1489 ≤ A.card) (hhi : A.card ≤ 1504) : GrahamBound A := by
-  exact pair_block 1489 1504 2971 1483 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_242 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1505 ≤ A.card) (hhi : A.card ≤ 1519) : GrahamBound A := by
-  exact pair_block 1505 1519 3001 1499 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_243 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1520 ≤ A.card) (hhi : A.card ≤ 1530) : GrahamBound A := by
-  exact pair_block 1520 1530 3023 1511 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_244 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1531 ≤ A.card) (hhi : A.card ≤ 1550) : GrahamBound A := by
-  exact pair_block 1531 1550 3061 1531 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_245 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1551 ≤ A.card) (hhi : A.card ≤ 1564) : GrahamBound A := by
-  exact pair_block 1551 1564 3089 1543 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_246 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1565 ≤ A.card) (hhi : A.card ≤ 1580) : GrahamBound A := by
-  exact pair_block 1565 1580 3121 1559 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_247 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1581 ≤ A.card) (hhi : A.card ≤ 1588) : GrahamBound A := by
-  exact pair_block 1581 1588 3137 1559 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_248 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1589 ≤ A.card) (hhi : A.card ≤ 1604) : GrahamBound A := by
-  exact pair_block 1589 1604 3169 1583 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_249 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1605 ≤ A.card) (hhi : A.card ≤ 1621) : GrahamBound A := by
-  exact pair_block 1605 1621 3203 1601 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_250 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1622 ≤ A.card) (hhi : A.card ≤ 1634) : GrahamBound A := by
-  exact pair_block 1622 1634 3229 1607 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_251 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1635 ≤ A.card) (hhi : A.card ≤ 1649) : GrahamBound A := by
-  exact pair_block 1635 1649 3259 1627 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_252 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1650 ≤ A.card) (hhi : A.card ≤ 1655) : GrahamBound A := by
-  exact pair_block 1650 1655 3271 1621 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
 private lemma block_253 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
     (hlo : 1656 ≤ A.card) (hhi : A.card ≤ 1656) : GrahamBound A := by
   have hn : A.card = 1656 := by omega
@@ -5025,1734 +3409,6 @@ private lemma block_253 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 100000000 in
-private lemma block_254 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1657 ≤ A.card) (hhi : A.card ≤ 1676) : GrahamBound A := by
-  exact pair_block 1657 1676 3313 1657 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_255 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1677 ≤ A.card) (hhi : A.card ≤ 1691) : GrahamBound A := by
-  exact pair_block 1677 1691 3343 1667 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_256 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1692 ≤ A.card) (hhi : A.card ≤ 1701) : GrahamBound A := by
-  exact pair_block 1692 1701 3361 1669 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_257 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1702 ≤ A.card) (hhi : A.card ≤ 1716) : GrahamBound A := by
-  exact pair_block 1702 1716 3391 1693 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_258 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1717 ≤ A.card) (hhi : A.card ≤ 1727) : GrahamBound A := by
-  exact pair_block 1717 1727 3413 1697 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_259 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1728 ≤ A.card) (hhi : A.card ≤ 1745) : GrahamBound A := by
-  exact pair_block 1728 1745 3449 1721 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_260 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1746 ≤ A.card) (hhi : A.card ≤ 1755) : GrahamBound A := by
-  exact pair_block 1746 1755 3469 1723 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_261 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1756 ≤ A.card) (hhi : A.card ≤ 1770) : GrahamBound A := by
-  exact pair_block 1756 1770 3499 1747 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_262 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1771 ≤ A.card) (hhi : A.card ≤ 1785) : GrahamBound A := by
-  exact pair_block 1771 1785 3529 1759 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_263 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1786 ≤ A.card) (hhi : A.card ≤ 1800) : GrahamBound A := by
-  exact pair_block 1786 1800 3559 1777 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_264 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1801 ≤ A.card) (hhi : A.card ≤ 1817) : GrahamBound A := by
-  exact pair_block 1801 1817 3593 1801 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_265 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1818 ≤ A.card) (hhi : A.card ≤ 1832) : GrahamBound A := by
-  exact pair_block 1818 1832 3623 1811 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_266 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1833 ≤ A.card) (hhi : A.card ≤ 1850) : GrahamBound A := by
-  exact pair_block 1833 1850 3659 1831 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_267 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1851 ≤ A.card) (hhi : A.card ≤ 1870) : GrahamBound A := by
-  exact pair_block 1851 1870 3697 1847 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_268 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1871 ≤ A.card) (hhi : A.card ≤ 1891) : GrahamBound A := by
-  exact pair_block 1871 1891 3739 1871 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_269 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1892 ≤ A.card) (hhi : A.card ≤ 1911) : GrahamBound A := by
-  exact pair_block 1892 1911 3779 1889 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_270 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1912 ≤ A.card) (hhi : A.card ≤ 1923) : GrahamBound A := by
-  exact pair_block 1912 1923 3803 1901 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_271 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1924 ≤ A.card) (hhi : A.card ≤ 1938) : GrahamBound A := by
-  exact pair_block 1924 1938 3833 1913 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_272 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1939 ≤ A.card) (hhi : A.card ≤ 1953) : GrahamBound A := by
-  exact pair_block 1939 1953 3863 1931 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_273 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1954 ≤ A.card) (hhi : A.card ≤ 1966) : GrahamBound A := by
-  exact pair_block 1954 1966 3889 1949 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_274 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1967 ≤ A.card) (hhi : A.card ≤ 1980) : GrahamBound A := by
-  exact pair_block 1967 1980 3917 1951 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_275 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1981 ≤ A.card) (hhi : A.card ≤ 1995) : GrahamBound A := by
-  exact pair_block 1981 1995 3947 1973 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_276 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 1996 ≤ A.card) (hhi : A.card ≤ 2016) : GrahamBound A := by
-  exact pair_block 1996 2016 3989 1993 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_277 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2017 ≤ A.card) (hhi : A.card ≤ 2035) : GrahamBound A := by
-  exact pair_block 2017 2035 4027 2011 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_278 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2036 ≤ A.card) (hhi : A.card ≤ 2051) : GrahamBound A := by
-  exact pair_block 2036 2051 4057 2027 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_279 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2052 ≤ A.card) (hhi : A.card ≤ 2068) : GrahamBound A := by
-  exact pair_block 2052 2068 4091 2039 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_280 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2069 ≤ A.card) (hhi : A.card ≤ 2089) : GrahamBound A := by
-  exact pair_block 2069 2089 4133 2069 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_281 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2090 ≤ A.card) (hhi : A.card ≤ 2111) : GrahamBound A := by
-  exact pair_block 2090 2111 4177 2087 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_282 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2112 ≤ A.card) (hhi : A.card ≤ 2132) : GrahamBound A := by
-  exact pair_block 2112 2132 4219 2111 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_283 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2133 ≤ A.card) (hhi : A.card ≤ 2153) : GrahamBound A := by
-  exact pair_block 2133 2153 4261 2129 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_284 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2154 ≤ A.card) (hhi : A.card ≤ 2171) : GrahamBound A := by
-  exact pair_block 2154 2171 4297 2143 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_285 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2172 ≤ A.card) (hhi : A.card ≤ 2186) : GrahamBound A := by
-  exact pair_block 2172 2186 4327 2161 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_286 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2187 ≤ A.card) (hhi : A.card ≤ 2204) : GrahamBound A := by
-  exact pair_block 2187 2204 4363 2179 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_287 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2205 ≤ A.card) (hhi : A.card ≤ 2221) : GrahamBound A := by
-  exact pair_block 2205 2221 4397 2203 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_288 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2222 ≤ A.card) (hhi : A.card ≤ 2244) : GrahamBound A := by
-  exact pair_block 2222 2244 4441 2221 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_289 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2245 ≤ A.card) (hhi : A.card ≤ 2265) : GrahamBound A := by
-  exact pair_block 2245 2265 4483 2239 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_290 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2266 ≤ A.card) (hhi : A.card ≤ 2282) : GrahamBound A := by
-  exact pair_block 2266 2282 4517 2251 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_291 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2283 ≤ A.card) (hhi : A.card ≤ 2304) : GrahamBound A := by
-  exact pair_block 2283 2304 4561 2281 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_292 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2305 ≤ A.card) (hhi : A.card ≤ 2322) : GrahamBound A := by
-  exact pair_block 2305 2322 4597 2293 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_293 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2323 ≤ A.card) (hhi : A.card ≤ 2334) : GrahamBound A := by
-  exact pair_block 2323 2334 4621 2309 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_294 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2335 ≤ A.card) (hhi : A.card ≤ 2355) : GrahamBound A := by
-  exact pair_block 2335 2355 4663 2333 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_295 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2356 ≤ A.card) (hhi : A.card ≤ 2375) : GrahamBound A := by
-  exact pair_block 2356 2375 4703 2347 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_296 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2376 ≤ A.card) (hhi : A.card ≤ 2390) : GrahamBound A := by
-  exact pair_block 2376 2390 4733 2357 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_297 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2391 ≤ A.card) (hhi : A.card ≤ 2403) : GrahamBound A := by
-  exact pair_block 2391 2403 4759 2371 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_298 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2404 ≤ A.card) (hhi : A.card ≤ 2425) : GrahamBound A := by
-  exact pair_block 2404 2425 4801 2399 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_299 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2426 ≤ A.card) (hhi : A.card ≤ 2440) : GrahamBound A := by
-  exact pair_block 2426 2440 4831 2411 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_300 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2441 ≤ A.card) (hhi : A.card ≤ 2463) : GrahamBound A := by
-  exact pair_block 2441 2463 4877 2437 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_301 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2464 ≤ A.card) (hhi : A.card ≤ 2484) : GrahamBound A := by
-  exact pair_block 2464 2484 4919 2459 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_302 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2485 ≤ A.card) (hhi : A.card ≤ 2503) : GrahamBound A := by
-  exact pair_block 2485 2503 4957 2473 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_303 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2504 ≤ A.card) (hhi : A.card ≤ 2526) : GrahamBound A := by
-  exact pair_block 2504 2526 5003 2503 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_304 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2527 ≤ A.card) (hhi : A.card ≤ 2544) : GrahamBound A := by
-  exact pair_block 2527 2544 5039 2521 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_305 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2545 ≤ A.card) (hhi : A.card ≤ 2568) : GrahamBound A := by
-  exact pair_block 2545 2568 5087 2543 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_306 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2569 ≤ A.card) (hhi : A.card ≤ 2584) : GrahamBound A := by
-  exact pair_block 2569 2584 5119 2551 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_307 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2585 ≤ A.card) (hhi : A.card ≤ 2601) : GrahamBound A := by
-  exact pair_block 2585 2601 5153 2579 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_308 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2602 ≤ A.card) (hhi : A.card ≤ 2620) : GrahamBound A := by
-  exact pair_block 2602 2620 5189 2591 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_309 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2621 ≤ A.card) (hhi : A.card ≤ 2644) : GrahamBound A := by
-  exact pair_block 2621 2644 5237 2617 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_310 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2645 ≤ A.card) (hhi : A.card ≤ 2662) : GrahamBound A := by
-  exact pair_block 2645 2662 5273 2633 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_311 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2663 ≤ A.card) (hhi : A.card ≤ 2687) : GrahamBound A := by
-  exact pair_block 2663 2687 5323 2663 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_312 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2688 ≤ A.card) (hhi : A.card ≤ 2701) : GrahamBound A := by
-  exact pair_block 2688 2701 5351 2663 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_313 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2702 ≤ A.card) (hhi : A.card ≤ 2725) : GrahamBound A := by
-  exact pair_block 2702 2725 5399 2699 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_314 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2726 ≤ A.card) (hhi : A.card ≤ 2747) : GrahamBound A := by
-  exact pair_block 2726 2747 5443 2719 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_315 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2748 ≤ A.card) (hhi : A.card ≤ 2767) : GrahamBound A := by
-  exact pair_block 2748 2767 5483 2741 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_316 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2768 ≤ A.card) (hhi : A.card ≤ 2791) : GrahamBound A := by
-  exact pair_block 2768 2791 5531 2767 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_317 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2792 ≤ A.card) (hhi : A.card ≤ 2816) : GrahamBound A := by
-  exact pair_block 2792 2816 5581 2789 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_318 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2817 ≤ A.card) (hhi : A.card ≤ 2822) : GrahamBound A := by
-  exact pair_block 2817 2822 5591 2777 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_319 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2823 ≤ A.card) (hhi : A.card ≤ 2847) : GrahamBound A := by
-  exact pair_block 2823 2847 5641 2819 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_320 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2848 ≤ A.card) (hhi : A.card ≤ 2871) : GrahamBound A := by
-  exact pair_block 2848 2871 5689 2843 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_321 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2872 ≤ A.card) (hhi : A.card ≤ 2885) : GrahamBound A := by
-  exact pair_block 2872 2885 5717 2851 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_322 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2886 ≤ A.card) (hhi : A.card ≤ 2901) : GrahamBound A := by
-  exact pair_block 2886 2901 5749 2879 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_323 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2902 ≤ A.card) (hhi : A.card ≤ 2922) : GrahamBound A := by
-  exact pair_block 2902 2922 5791 2897 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_324 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2923 ≤ A.card) (hhi : A.card ≤ 2946) : GrahamBound A := by
-  exact pair_block 2923 2946 5839 2917 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_325 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2947 ≤ A.card) (hhi : A.card ≤ 2967) : GrahamBound A := by
-  exact pair_block 2947 2967 5881 2939 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_326 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2968 ≤ A.card) (hhi : A.card ≤ 2990) : GrahamBound A := by
-  exact pair_block 2968 2990 5927 2963 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_327 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 2991 ≤ A.card) (hhi : A.card ≤ 3003) : GrahamBound A := by
-  exact pair_block 2991 3003 5953 2963 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_328 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 3004 ≤ A.card) (hhi : A.card ≤ 3020) : GrahamBound A := by
-  exact pair_block 3004 3020 5987 2999 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_329 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 3021 ≤ A.card) (hhi : A.card ≤ 3045) : GrahamBound A := by
-  exact pair_block 3021 3045 6037 3019 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_330 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 3046 ≤ A.card) (hhi : A.card ≤ 3067) : GrahamBound A := by
-  exact pair_block 3046 3067 6079 3037 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_331 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 3068 ≤ A.card) (hhi : A.card ≤ 3094) : GrahamBound A := by
-  exact pair_block 3068 3094 6133 3067 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_332 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 3095 ≤ A.card) (hhi : A.card ≤ 3114) : GrahamBound A := by
-  exact pair_block 3095 3114 6173 3079 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_333 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 3115 ≤ A.card) (hhi : A.card ≤ 3138) : GrahamBound A := by
-  exact pair_block 3115 3138 6221 3109 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_334 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 3139 ≤ A.card) (hhi : A.card ≤ 3163) : GrahamBound A := by
-  exact pair_block 3139 3163 6271 3137 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_335 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 3164 ≤ A.card) (hhi : A.card ≤ 3189) : GrahamBound A := by
-  exact pair_block 3164 3189 6323 3163 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_336 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 3190 ≤ A.card) (hhi : A.card ≤ 3214) : GrahamBound A := by
-  exact pair_block 3190 3214 6373 3187 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_337 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 3215 ≤ A.card) (hhi : A.card ≤ 3238) : GrahamBound A := by
-  exact pair_block 3215 3238 6421 3209 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_338 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 3239 ≤ A.card) (hhi : A.card ≤ 3253) : GrahamBound A := by
-  exact pair_block 3239 3253 6451 3217 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_339 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 3254 ≤ A.card) (hhi : A.card ≤ 3274) : GrahamBound A := by
-  exact pair_block 3254 3274 6491 3251 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_340 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 3275 ≤ A.card) (hhi : A.card ≤ 3293) : GrahamBound A := by
-  exact pair_block 3275 3293 6529 3257 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_341 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 3294 ≤ A.card) (hhi : A.card ≤ 3310) : GrahamBound A := by
-  exact pair_block 3294 3310 6563 3271 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_342 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 3311 ≤ A.card) (hhi : A.card ≤ 3332) : GrahamBound A := by
-  exact pair_block 3311 3332 6607 3299 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_343 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 3333 ≤ A.card) (hhi : A.card ≤ 3359) : GrahamBound A := by
-  exact pair_block 3333 3359 6661 3329 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_344 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 3360 ≤ A.card) (hhi : A.card ≤ 3388) : GrahamBound A := by
-  exact pair_block 3360 3388 6719 3359 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_345 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 3389 ≤ A.card) (hhi : A.card ≤ 3410) : GrahamBound A := by
-  exact pair_block 3389 3410 6763 3389 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_346 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 3411 ≤ A.card) (hhi : A.card ≤ 3430) : GrahamBound A := by
-  exact pair_block 3411 3430 6803 3407 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_347 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 3431 ≤ A.card) (hhi : A.card ≤ 3449) : GrahamBound A := by
-  exact pair_block 3431 3449 6841 3413 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_348 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 3450 ≤ A.card) (hhi : A.card ≤ 3478) : GrahamBound A := by
-  exact pair_block 3450 3478 6899 3449 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_349 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 3479 ≤ A.card) (hhi : A.card ≤ 3502) : GrahamBound A := by
-  exact pair_block 3479 3502 6947 3469 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_350 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 3503 ≤ A.card) (hhi : A.card ≤ 3530) : GrahamBound A := by
-  exact pair_block 3503 3530 7001 3499 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_351 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 3531 ≤ A.card) (hhi : A.card ≤ 3558) : GrahamBound A := by
-  exact pair_block 3531 3558 7057 3527 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_352 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 3559 ≤ A.card) (hhi : A.card ≤ 3584) : GrahamBound A := by
-  exact pair_block 3559 3584 7109 3557 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_353 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 3585 ≤ A.card) (hhi : A.card ≤ 3609) : GrahamBound A := by
-  exact pair_block 3585 3609 7159 3581 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_354 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 3610 ≤ A.card) (hhi : A.card ≤ 3636) : GrahamBound A := by
-  exact pair_block 3610 3636 7213 3607 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_355 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 3637 ≤ A.card) (hhi : A.card ≤ 3656) : GrahamBound A := by
-  exact pair_block 3637 3656 7253 3617 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_356 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 3657 ≤ A.card) (hhi : A.card ≤ 3678) : GrahamBound A := by
-  exact pair_block 3657 3678 7297 3643 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_357 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 3679 ≤ A.card) (hhi : A.card ≤ 3705) : GrahamBound A := by
-  exact pair_block 3679 3705 7351 3673 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_358 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 3706 ≤ A.card) (hhi : A.card ≤ 3726) : GrahamBound A := by
-  exact pair_block 3706 3726 7393 3691 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_359 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 3727 ≤ A.card) (hhi : A.card ≤ 3756) : GrahamBound A := by
-  exact pair_block 3727 3756 7451 3727 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_360 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 3757 ≤ A.card) (hhi : A.card ≤ 3775) : GrahamBound A := by
-  exact pair_block 3757 3775 7489 3733 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_361 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 3776 ≤ A.card) (hhi : A.card ≤ 3801) : GrahamBound A := by
-  exact pair_block 3776 3801 7541 3767 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_362 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 3802 ≤ A.card) (hhi : A.card ≤ 3826) : GrahamBound A := by
-  exact pair_block 3802 3826 7591 3793 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_363 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 3827 ≤ A.card) (hhi : A.card ≤ 3855) : GrahamBound A := by
-  exact pair_block 3827 3855 7649 3823 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_364 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 3856 ≤ A.card) (hhi : A.card ≤ 3882) : GrahamBound A := by
-  exact pair_block 3856 3882 7703 3847 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_365 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 3883 ≤ A.card) (hhi : A.card ≤ 3910) : GrahamBound A := by
-  exact pair_block 3883 3910 7759 3877 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_366 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 3911 ≤ A.card) (hhi : A.card ≤ 3939) : GrahamBound A := by
-  exact pair_block 3911 3939 7817 3907 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_367 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 3940 ≤ A.card) (hhi : A.card ≤ 3964) : GrahamBound A := by
-  exact pair_block 3940 3964 7867 3929 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_368 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 3965 ≤ A.card) (hhi : A.card ≤ 3984) : GrahamBound A := by
-  exact pair_block 3965 3984 7907 3943 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_369 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 3985 ≤ A.card) (hhi : A.card ≤ 4007) : GrahamBound A := by
-  exact pair_block 3985 4007 7951 3967 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_370 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 4008 ≤ A.card) (hhi : A.card ≤ 4037) : GrahamBound A := by
-  exact pair_block 4008 4037 8011 4003 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_371 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 4038 ≤ A.card) (hhi : A.card ≤ 4061) : GrahamBound A := by
-  exact pair_block 4038 4061 8059 4021 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_372 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 4062 ≤ A.card) (hhi : A.card ≤ 4090) : GrahamBound A := by
-  exact pair_block 4062 4090 8117 4057 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_373 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 4091 ≤ A.card) (hhi : A.card ≤ 4121) : GrahamBound A := by
-  exact pair_block 4091 4121 8179 4091 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_374 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 4122 ≤ A.card) (hhi : A.card ≤ 4148) : GrahamBound A := by
-  exact pair_block 4122 4148 8233 4111 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_375 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 4149 ≤ A.card) (hhi : A.card ≤ 4175) : GrahamBound A := by
-  exact pair_block 4149 4175 8287 4139 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_376 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 4176 ≤ A.card) (hhi : A.card ≤ 4196) : GrahamBound A := by
-  exact pair_block 4176 4196 8329 4153 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_377 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 4197 ≤ A.card) (hhi : A.card ≤ 4216) : GrahamBound A := by
-  exact pair_block 4197 4216 8369 4177 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_378 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 4217 ≤ A.card) (hhi : A.card ≤ 4247) : GrahamBound A := by
-  exact pair_block 4217 4247 8431 4217 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_379 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 4248 ≤ A.card) (hhi : A.card ≤ 4266) : GrahamBound A := by
-  exact pair_block 4248 4266 8467 4219 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_380 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 4267 ≤ A.card) (hhi : A.card ≤ 4296) : GrahamBound A := by
-  exact pair_block 4267 4296 8527 4261 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_381 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 4297 ≤ A.card) (hhi : A.card ≤ 4323) : GrahamBound A := by
-  exact pair_block 4297 4323 8581 4289 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_382 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 4324 ≤ A.card) (hhi : A.card ≤ 4337) : GrahamBound A := by
-  exact pair_block 4324 4337 8609 4289 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_383 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 4338 ≤ A.card) (hhi : A.card ≤ 4367) : GrahamBound A := by
-  exact pair_block 4338 4367 8669 4337 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_384 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 4368 ≤ A.card) (hhi : A.card ≤ 4398) : GrahamBound A := by
-  exact pair_block 4368 4398 8731 4363 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_385 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 4399 ≤ A.card) (hhi : A.card ≤ 4424) : GrahamBound A := by
-  exact pair_block 4399 4424 8783 4391 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_386 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 4425 ≤ A.card) (hhi : A.card ≤ 4452) : GrahamBound A := by
-  exact pair_block 4425 4452 8839 4421 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_387 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 4453 ≤ A.card) (hhi : A.card ≤ 4479) : GrahamBound A := by
-  exact pair_block 4453 4479 8893 4441 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_388 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 4480 ≤ A.card) (hhi : A.card ≤ 4503) : GrahamBound A := by
-  exact pair_block 4480 4503 8941 4463 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_389 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 4504 ≤ A.card) (hhi : A.card ≤ 4519) : GrahamBound A := by
-  exact pair_block 4504 4519 8971 4481 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_390 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 4520 ≤ A.card) (hhi : A.card ≤ 4548) : GrahamBound A := by
-  exact pair_block 4520 4548 9029 4513 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_391 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 4549 ≤ A.card) (hhi : A.card ≤ 4579) : GrahamBound A := by
-  exact pair_block 4549 4579 9091 4547 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_392 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 4580 ≤ A.card) (hhi : A.card ≤ 4602) : GrahamBound A := by
-  exact pair_block 4580 4602 9137 4561 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_393 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 4603 ≤ A.card) (hhi : A.card ≤ 4635) : GrahamBound A := by
-  exact pair_block 4603 4635 9203 4603 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_394 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 4636 ≤ A.card) (hhi : A.card ≤ 4662) : GrahamBound A := by
-  exact pair_block 4636 4662 9257 4621 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_395 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 4663 ≤ A.card) (hhi : A.card ≤ 4695) : GrahamBound A := by
-  exact pair_block 4663 4695 9323 4663 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_396 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 4696 ≤ A.card) (hhi : A.card ≤ 4722) : GrahamBound A := by
-  exact pair_block 4696 4722 9377 4691 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_397 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 4723 ≤ A.card) (hhi : A.card ≤ 4753) : GrahamBound A := by
-  exact pair_block 4723 4753 9439 4721 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_398 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 4754 ≤ A.card) (hhi : A.card ≤ 4782) : GrahamBound A := by
-  exact pair_block 4754 4782 9497 4751 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_399 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 4783 ≤ A.card) (hhi : A.card ≤ 4810) : GrahamBound A := by
-  exact pair_block 4783 4810 9551 4783 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_400 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 4811 ≤ A.card) (hhi : A.card ≤ 4835) : GrahamBound A := by
-  exact pair_block 4811 4835 9601 4793 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_401 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 4836 ≤ A.card) (hhi : A.card ≤ 4865) : GrahamBound A := by
-  exact pair_block 4836 4865 9661 4831 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_402 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 4866 ≤ A.card) (hhi : A.card ≤ 4895) : GrahamBound A := by
-  exact pair_block 4866 4895 9721 4861 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_403 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 4896 ≤ A.card) (hhi : A.card ≤ 4925) : GrahamBound A := by
-  exact pair_block 4896 4925 9781 4889 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_404 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 4926 ≤ A.card) (hhi : A.card ≤ 4954) : GrahamBound A := by
-  exact pair_block 4926 4954 9839 4919 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_405 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 4955 ≤ A.card) (hhi : A.card ≤ 4985) : GrahamBound A := by
-  exact pair_block 4955 4985 9901 4951 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_406 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 4986 ≤ A.card) (hhi : A.card ≤ 5009) : GrahamBound A := by
-  exact pair_block 4986 5009 9949 4967 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_407 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 5010 ≤ A.card) (hhi : A.card ≤ 5039) : GrahamBound A := by
-  exact pair_block 5010 5039 10009 4999 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_408 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 5040 ≤ A.card) (hhi : A.card ≤ 5074) : GrahamBound A := by
-  exact pair_block 5040 5074 10079 5039 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_409 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 5075 ≤ A.card) (hhi : A.card ≤ 5102) : GrahamBound A := by
-  exact pair_block 5075 5102 10133 5059 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_410 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 5103 ≤ A.card) (hhi : A.card ≤ 5132) : GrahamBound A := by
-  exact pair_block 5103 5132 10193 5099 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_411 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 5133 ≤ A.card) (hhi : A.card ≤ 5159) : GrahamBound A := by
-  exact pair_block 5133 5159 10247 5119 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_412 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 5160 ≤ A.card) (hhi : A.card ≤ 5192) : GrahamBound A := by
-  exact pair_block 5160 5192 10313 5153 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_413 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 5193 ≤ A.card) (hhi : A.card ≤ 5220) : GrahamBound A := by
-  exact pair_block 5193 5220 10369 5179 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_414 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 5221 ≤ A.card) (hhi : A.card ≤ 5250) : GrahamBound A := by
-  exact pair_block 5221 5250 10429 5209 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_415 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 5251 ≤ A.card) (hhi : A.card ≤ 5279) : GrahamBound A := by
-  exact pair_block 5251 5279 10487 5237 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_416 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 5280 ≤ A.card) (hhi : A.card ≤ 5315) : GrahamBound A := by
-  exact pair_block 5280 5315 10559 5279 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_417 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 5316 ≤ A.card) (hhi : A.card ≤ 5342) : GrahamBound A := by
-  exact pair_block 5316 5342 10613 5297 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_418 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 5343 ≤ A.card) (hhi : A.card ≤ 5370) : GrahamBound A := by
-  exact pair_block 5343 5370 10667 5333 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_419 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 5371 ≤ A.card) (hhi : A.card ≤ 5392) : GrahamBound A := by
-  exact pair_block 5371 5392 10711 5347 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_420 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 5393 ≤ A.card) (hhi : A.card ≤ 5427) : GrahamBound A := by
-  exact pair_block 5393 5427 10781 5393 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_421 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 5428 ≤ A.card) (hhi : A.card ≤ 5460) : GrahamBound A := by
-  exact pair_block 5428 5460 10847 5419 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_422 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 5461 ≤ A.card) (hhi : A.card ≤ 5491) : GrahamBound A := by
-  exact pair_block 5461 5491 10909 5449 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_423 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 5492 ≤ A.card) (hhi : A.card ≤ 5523) : GrahamBound A := by
-  exact pair_block 5492 5523 10973 5483 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_424 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 5524 ≤ A.card) (hhi : A.card ≤ 5550) : GrahamBound A := by
-  exact pair_block 5524 5550 11027 5503 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_425 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 5551 ≤ A.card) (hhi : A.card ≤ 5572) : GrahamBound A := by
-  exact pair_block 5551 5572 11071 5521 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_426 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 5573 ≤ A.card) (hhi : A.card ≤ 5602) : GrahamBound A := by
-  exact pair_block 5573 5602 11131 5563 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_427 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 5603 ≤ A.card) (hhi : A.card ≤ 5625) : GrahamBound A := by
-  exact pair_block 5603 5625 11177 5581 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_428 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 5626 ≤ A.card) (hhi : A.card ≤ 5659) : GrahamBound A := by
-  exact pair_block 5626 5659 11243 5623 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_429 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 5660 ≤ A.card) (hhi : A.card ≤ 5696) : GrahamBound A := by
-  exact pair_block 5660 5696 11317 5657 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_430 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 5697 ≤ A.card) (hhi : A.card ≤ 5729) : GrahamBound A := by
-  exact pair_block 5697 5729 11383 5689 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_431 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 5730 ≤ A.card) (hhi : A.card ≤ 5761) : GrahamBound A := by
-  exact pair_block 5730 5761 11447 5717 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_432 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 5762 ≤ A.card) (hhi : A.card ≤ 5789) : GrahamBound A := by
-  exact pair_block 5762 5789 11503 5741 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_433 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 5790 ≤ A.card) (hhi : A.card ≤ 5813) : GrahamBound A := by
-  exact pair_block 5790 5813 11551 5779 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_434 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 5814 ≤ A.card) (hhi : A.card ≤ 5848) : GrahamBound A := by
-  exact pair_block 5814 5848 11621 5807 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_435 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 5849 ≤ A.card) (hhi : A.card ≤ 5882) : GrahamBound A := by
-  exact pair_block 5849 5882 11689 5843 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_436 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 5883 ≤ A.card) (hhi : A.card ≤ 5909) : GrahamBound A := by
-  exact pair_block 5883 5909 11743 5861 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_437 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 5910 ≤ A.card) (hhi : A.card ≤ 5944) : GrahamBound A := by
-  exact pair_block 5910 5944 11813 5903 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_438 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 5945 ≤ A.card) (hhi : A.card ≤ 5972) : GrahamBound A := by
-  exact pair_block 5945 5972 11867 5923 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_439 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 5973 ≤ A.card) (hhi : A.card ≤ 6000) : GrahamBound A := by
-  exact pair_block 5973 6000 11923 5953 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_440 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 6001 ≤ A.card) (hhi : A.card ≤ 6032) : GrahamBound A := by
-  exact pair_block 6001 6032 11987 5987 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_441 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 6033 ≤ A.card) (hhi : A.card ≤ 6063) : GrahamBound A := by
-  exact pair_block 6033 6063 12049 6029 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_442 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 6064 ≤ A.card) (hhi : A.card ≤ 6095) : GrahamBound A := by
-  exact pair_block 6064 6095 12113 6053 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_443 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 6096 ≤ A.card) (hhi : A.card ≤ 6120) : GrahamBound A := by
-  exact pair_block 6096 6120 12163 6067 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_444 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 6121 ≤ A.card) (hhi : A.card ≤ 6159) : GrahamBound A := by
-  exact pair_block 6121 6159 12241 6121 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_445 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 6160 ≤ A.card) (hhi : A.card ≤ 6189) : GrahamBound A := by
-  exact pair_block 6160 6189 12301 6143 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_446 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 6190 ≤ A.card) (hhi : A.card ≤ 6212) : GrahamBound A := by
-  exact pair_block 6190 6212 12347 6163 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_447 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 6213 ≤ A.card) (hhi : A.card ≤ 6249) : GrahamBound A := by
-  exact pair_block 6213 6249 12421 6211 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_448 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 6250 ≤ A.card) (hhi : A.card ≤ 6288) : GrahamBound A := by
-  exact pair_block 6250 6288 12497 6247 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_449 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 6289 ≤ A.card) (hhi : A.card ≤ 6324) : GrahamBound A := by
-  exact pair_block 6289 6324 12569 6287 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_450 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 6325 ≤ A.card) (hhi : A.card ≤ 6363) : GrahamBound A := by
-  exact pair_block 6325 6363 12647 6323 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_451 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 6364 ≤ A.card) (hhi : A.card ≤ 6400) : GrahamBound A := by
-  exact pair_block 6364 6400 12721 6359 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_452 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 6401 ≤ A.card) (hhi : A.card ≤ 6435) : GrahamBound A := by
-  exact pair_block 6401 6435 12791 6397 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_453 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 6436 ≤ A.card) (hhi : A.card ≤ 6466) : GrahamBound A := by
-  exact pair_block 6436 6466 12853 6421 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_454 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 6467 ≤ A.card) (hhi : A.card ≤ 6498) : GrahamBound A := by
-  exact pair_block 6467 6498 12917 6451 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_455 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 6499 ≤ A.card) (hhi : A.card ≤ 6531) : GrahamBound A := by
-  exact pair_block 6499 6531 12983 6491 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_456 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 6532 ≤ A.card) (hhi : A.card ≤ 6564) : GrahamBound A := by
-  exact pair_block 6532 6564 13049 6521 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_457 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 6565 ≤ A.card) (hhi : A.card ≤ 6604) : GrahamBound A := by
-  exact pair_block 6565 6604 13127 6563 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_458 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 6605 ≤ A.card) (hhi : A.card ≤ 6634) : GrahamBound A := by
-  exact pair_block 6605 6634 13187 6599 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_459 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 6635 ≤ A.card) (hhi : A.card ≤ 6665) : GrahamBound A := by
-  exact pair_block 6635 6665 13249 6619 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_460 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 6666 ≤ A.card) (hhi : A.card ≤ 6704) : GrahamBound A := by
-  exact pair_block 6666 6704 13327 6661 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_461 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 6705 ≤ A.card) (hhi : A.card ≤ 6740) : GrahamBound A := by
-  exact pair_block 6705 6740 13399 6701 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_462 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 6741 ≤ A.card) (hhi : A.card ≤ 6779) : GrahamBound A := by
-  exact pair_block 6741 6779 13477 6737 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_463 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 6780 ≤ A.card) (hhi : A.card ≤ 6817) : GrahamBound A := by
-  exact pair_block 6780 6817 13553 6779 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_464 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 6818 ≤ A.card) (hhi : A.card ≤ 6850) : GrahamBound A := by
-  exact pair_block 6818 6850 13619 6803 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_465 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 6851 ≤ A.card) (hhi : A.card ≤ 6886) : GrahamBound A := by
-  exact pair_block 6851 6886 13691 6841 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_466 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 6887 ≤ A.card) (hhi : A.card ≤ 6922) : GrahamBound A := by
-  exact pair_block 6887 6922 13763 6883 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_467 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 6923 ≤ A.card) (hhi : A.card ≤ 6957) : GrahamBound A := by
-  exact pair_block 6923 6957 13831 6911 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_468 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 6958 ≤ A.card) (hhi : A.card ≤ 6995) : GrahamBound A := by
-  exact pair_block 6958 6995 13907 6949 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
-private lemma block_469 (A : Finset ℕ) (h0 : 0 ∉ A) (hg : A.gcd id=1)
-    (hlo : 6996 ≤ A.card) (hhi : A.card ≤ 7000) : GrahamBound A := by
-  exact pair_block 6996 7000 13967 6971 (by omega) (by norm_num)
-    (by omega) (by omega) (by omega) (by norm_num) (by omega) (by omega)
-    A h0 hg hlo hhi
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 100000000 in
 private lemma finite_normalized_core (A : Finset ℕ) (h0 : 0 ∉ A)
     (hg : A.gcd id=1) (hl : 11 ≤ A.card) (hu : A.card ≤ 7000) : GrahamBound A := by
   by_cases h235 : A.card ≤ 1402
@@ -6763,56 +3419,56 @@ private lemma finite_normalized_core (A : Finset ℕ) (h0 : 0 ∉ A)
           · by_cases h7 : A.card ≤ 18
             · by_cases h3 : A.card ≤ 14
               · by_cases h1 : A.card ≤ 11
-                · exact block_0 A h0 hg (by omega) (by omega)
+                · exact pair_block 11 11 19 11 A h0 hg (by omega) (by omega)
                 · by_cases h2 : A.card ≤ 13
-                  · exact block_1 A h0 hg (by omega) (by omega)
+                  · exact pair_block 12 13 23 11 A h0 hg (by omega) (by omega)
                   · exact block_2 A h0 hg (by omega) (by omega)
               · by_cases h5 : A.card ≤ 16
                 · by_cases h4 : A.card ≤ 15
                   · exact block_3 A h0 hg (by omega) (by omega)
-                  · exact block_4 A h0 hg (by omega) (by omega)
+                  · exact pair_block 16 16 29 13 A h0 hg (by omega) (by omega)
                 · by_cases h6 : A.card ≤ 17
-                  · exact block_5 A h0 hg (by omega) (by omega)
+                  · exact pair_block 17 17 31 17 A h0 hg (by omega) (by omega)
                   · exact block_6 A h0 hg (by omega) (by omega)
             · by_cases h10 : A.card ≤ 22
               · by_cases h8 : A.card ≤ 20
-                · exact block_7 A h0 hg (by omega) (by omega)
+                · exact pair_block 19 20 37 19 A h0 hg (by omega) (by omega)
                 · by_cases h9 : A.card ≤ 21
                   · exact block_8 A h0 hg (by omega) (by omega)
-                  · exact block_9 A h0 hg (by omega) (by omega)
+                  · exact pair_block 22 22 41 19 A h0 hg (by omega) (by omega)
               · by_cases h12 : A.card ≤ 25
                 · by_cases h11 : A.card ≤ 23
-                  · exact block_10 A h0 hg (by omega) (by omega)
-                  · exact block_11 A h0 hg (by omega) (by omega)
+                  · exact pair_block 23 23 43 23 A h0 hg (by omega) (by omega)
+                  · exact pair_block 24 25 47 23 A h0 hg (by omega) (by omega)
                 · by_cases h13 : A.card ≤ 26
-                  · exact block_12 A h0 hg (by omega) (by omega)
+                  · exact pair_block 26 26 47 23 A h0 hg (by omega) (by omega)
                   · exact block_13 A h0 hg (by omega) (by omega)
           · by_cases h21 : A.card ≤ 36
             · by_cases h17 : A.card ≤ 32
               · by_cases h15 : A.card ≤ 28
                 · exact block_14 A h0 hg (by omega) (by omega)
                 · by_cases h16 : A.card ≤ 29
-                  · exact block_15 A h0 hg (by omega) (by omega)
-                  · exact block_16 A h0 hg (by omega) (by omega)
+                  · exact pair_block 29 29 53 29 A h0 hg (by omega) (by omega)
+                  · exact pair_block 30 32 59 29 A h0 hg (by omega) (by omega)
               · by_cases h19 : A.card ≤ 34
                 · by_cases h18 : A.card ≤ 33
-                  · exact block_17 A h0 hg (by omega) (by omega)
+                  · exact pair_block 33 33 61 29 A h0 hg (by omega) (by omega)
                   · exact block_18 A h0 hg (by omega) (by omega)
                 · by_cases h20 : A.card ≤ 35
                   · exact block_19 A h0 hg (by omega) (by omega)
-                  · exact block_20 A h0 hg (by omega) (by omega)
+                  · exact pair_block 36 36 67 31 A h0 hg (by omega) (by omega)
             · by_cases h25 : A.card ≤ 44
               · by_cases h23 : A.card ≤ 40
                 · by_cases h22 : A.card ≤ 39
-                  · exact block_21 A h0 hg (by omega) (by omega)
+                  · exact pair_block 37 39 73 37 A h0 hg (by omega) (by omega)
                   · exact block_22 A h0 hg (by omega) (by omega)
                 · by_cases h24 : A.card ≤ 42
-                  · exact block_23 A h0 hg (by omega) (by omega)
-                  · exact block_24 A h0 hg (by omega) (by omega)
+                  · exact pair_block 41 42 79 41 A h0 hg (by omega) (by omega)
+                  · exact pair_block 43 44 83 41 A h0 hg (by omega) (by omega)
               · by_cases h27 : A.card ≤ 47
                 · by_cases h26 : A.card ≤ 45
                   · exact block_25 A h0 hg (by omega) (by omega)
-                  · exact block_26 A h0 hg (by omega) (by omega)
+                  · exact pair_block 46 47 89 43 A h0 hg (by omega) (by omega)
                 · by_cases h28 : A.card ≤ 48
                   · exact block_27 A h0 hg (by omega) (by omega)
                   · exact block_28 A h0 hg (by omega) (by omega)
@@ -6820,13 +3476,13 @@ private lemma finite_normalized_core (A : Finset ℕ) (h0 : 0 ∉ A)
           · by_cases h36 : A.card ≤ 63
             · by_cases h32 : A.card ≤ 58
               · by_cases h30 : A.card ≤ 52
-                · exact block_29 A h0 hg (by omega) (by omega)
+                · exact pair_block 50 52 97 47 A h0 hg (by omega) (by omega)
                 · by_cases h31 : A.card ≤ 55
-                  · exact block_30 A h0 hg (by omega) (by omega)
-                  · exact block_31 A h0 hg (by omega) (by omega)
+                  · exact pair_block 53 55 103 53 A h0 hg (by omega) (by omega)
+                  · exact pair_block 56 58 109 53 A h0 hg (by omega) (by omega)
               · by_cases h34 : A.card ≤ 61
                 · by_cases h33 : A.card ≤ 60
-                  · exact block_32 A h0 hg (by omega) (by omega)
+                  · exact pair_block 59 60 113 59 A h0 hg (by omega) (by omega)
                   · exact block_33 A h0 hg (by omega) (by omega)
                 · by_cases h35 : A.card ≤ 62
                   · exact block_34 A h0 hg (by omega) (by omega)
@@ -6836,40 +3492,40 @@ private lemma finite_normalized_core (A : Finset ℕ) (h0 : 0 ∉ A)
                 · exact block_36 A h0 hg (by omega) (by omega)
                 · by_cases h38 : A.card ≤ 65
                   · exact block_37 A h0 hg (by omega) (by omega)
-                  · exact block_38 A h0 hg (by omega) (by omega)
+                  · exact pair_block 66 67 127 61 A h0 hg (by omega) (by omega)
               · by_cases h41 : A.card ≤ 72
                 · by_cases h40 : A.card ≤ 69
-                  · exact block_39 A h0 hg (by omega) (by omega)
-                  · exact block_40 A h0 hg (by omega) (by omega)
+                  · exact pair_block 68 69 131 67 A h0 hg (by omega) (by omega)
+                  · exact pair_block 70 72 137 67 A h0 hg (by omega) (by omega)
                 · by_cases h42 : A.card ≤ 73
-                  · exact block_41 A h0 hg (by omega) (by omega)
+                  · exact pair_block 73 73 139 67 A h0 hg (by omega) (by omega)
                   · exact block_42 A h0 hg (by omega) (by omega)
           · by_cases h50 : A.card ≤ 95
             · by_cases h46 : A.card ≤ 82
               · by_cases h44 : A.card ≤ 75
                 · exact block_43 A h0 hg (by omega) (by omega)
                 · by_cases h45 : A.card ≤ 78
-                  · exact block_44 A h0 hg (by omega) (by omega)
-                  · exact block_45 A h0 hg (by omega) (by omega)
+                  · exact pair_block 76 78 149 73 A h0 hg (by omega) (by omega)
+                  · exact pair_block 79 82 157 79 A h0 hg (by omega) (by omega)
               · by_cases h48 : A.card ≤ 88
                 · by_cases h47 : A.card ≤ 86
-                  · exact block_46 A h0 hg (by omega) (by omega)
-                  · exact block_47 A h0 hg (by omega) (by omega)
+                  · exact pair_block 83 86 163 83 A h0 hg (by omega) (by omega)
+                  · exact pair_block 87 88 167 83 A h0 hg (by omega) (by omega)
                 · by_cases h49 : A.card ≤ 91
-                  · exact block_48 A h0 hg (by omega) (by omega)
-                  · exact block_49 A h0 hg (by omega) (by omega)
+                  · exact pair_block 89 91 173 89 A h0 hg (by omega) (by omega)
+                  · exact pair_block 92 95 181 89 A h0 hg (by omega) (by omega)
             · by_cases h54 : A.card ≤ 105
               · by_cases h52 : A.card ≤ 101
                 · by_cases h51 : A.card ≤ 96
                   · exact block_50 A h0 hg (by omega) (by omega)
-                  · exact block_51 A h0 hg (by omega) (by omega)
+                  · exact pair_block 97 101 193 97 A h0 hg (by omega) (by omega)
                 · by_cases h53 : A.card ≤ 104
-                  · exact block_52 A h0 hg (by omega) (by omega)
+                  · exact pair_block 102 104 199 97 A h0 hg (by omega) (by omega)
                   · exact block_53 A h0 hg (by omega) (by omega)
               · by_cases h56 : A.card ≤ 110
                 · by_cases h55 : A.card ≤ 106
                   · exact block_54 A h0 hg (by omega) (by omega)
-                  · exact block_55 A h0 hg (by omega) (by omega)
+                  · exact pair_block 107 110 211 107 A h0 hg (by omega) (by omega)
                 · by_cases h57 : A.card ≤ 111
                   · exact block_56 A h0 hg (by omega) (by omega)
                   · exact block_57 A h0 hg (by omega) (by omega)
@@ -6878,13 +3534,13 @@ private lemma finite_normalized_core (A : Finset ℕ) (h0 : 0 ∉ A)
           · by_cases h65 : A.card ≤ 125
             · by_cases h61 : A.card ≤ 121
               · by_cases h59 : A.card ≤ 116
-                · exact block_58 A h0 hg (by omega) (by omega)
+                · exact pair_block 113 116 223 113 A h0 hg (by omega) (by omega)
                 · by_cases h60 : A.card ≤ 119
-                  · exact block_59 A h0 hg (by omega) (by omega)
-                  · exact block_60 A h0 hg (by omega) (by omega)
+                  · exact pair_block 117 119 229 113 A h0 hg (by omega) (by omega)
+                  · exact pair_block 120 121 233 113 A h0 hg (by omega) (by omega)
               · by_cases h63 : A.card ≤ 123
                 · by_cases h62 : A.card ≤ 122
-                  · exact block_61 A h0 hg (by omega) (by omega)
+                  · exact pair_block 122 122 233 113 A h0 hg (by omega) (by omega)
                   · exact block_62 A h0 hg (by omega) (by omega)
                 · by_cases h64 : A.card ≤ 124
                   · exact block_63 A h0 hg (by omega) (by omega)
@@ -6893,192 +3549,192 @@ private lemma finite_normalized_core (A : Finset ℕ) (h0 : 0 ∉ A)
               · by_cases h66 : A.card ≤ 126
                 · exact block_65 A h0 hg (by omega) (by omega)
                 · by_cases h67 : A.card ≤ 131
-                  · exact block_66 A h0 hg (by omega) (by omega)
-                  · exact block_67 A h0 hg (by omega) (by omega)
+                  · exact pair_block 127 131 251 127 A h0 hg (by omega) (by omega)
+                  · exact pair_block 132 137 263 131 A h0 hg (by omega) (by omega)
               · by_cases h70 : A.card ≤ 146
                 · by_cases h69 : A.card ≤ 141
-                  · exact block_68 A h0 hg (by omega) (by omega)
-                  · exact block_69 A h0 hg (by omega) (by omega)
+                  · exact pair_block 138 141 271 137 A h0 hg (by omega) (by omega)
+                  · exact pair_block 142 146 281 139 A h0 hg (by omega) (by omega)
                 · by_cases h71 : A.card ≤ 147
-                  · exact block_70 A h0 hg (by omega) (by omega)
+                  · exact pair_block 147 147 283 137 A h0 hg (by omega) (by omega)
                   · exact block_71 A h0 hg (by omega) (by omega)
           · by_cases h79 : A.card ≤ 165
             · by_cases h75 : A.card ≤ 154
               · by_cases h73 : A.card ≤ 152
-                · exact block_72 A h0 hg (by omega) (by omega)
+                · exact pair_block 149 152 293 149 A h0 hg (by omega) (by omega)
                 · by_cases h74 : A.card ≤ 153
                   · exact block_73 A h0 hg (by omega) (by omega)
                   · exact block_74 A h0 hg (by omega) (by omega)
               · by_cases h77 : A.card ≤ 159
                 · by_cases h76 : A.card ≤ 155
                   · exact block_75 A h0 hg (by omega) (by omega)
-                  · exact block_76 A h0 hg (by omega) (by omega)
+                  · exact pair_block 156 159 307 151 A h0 hg (by omega) (by omega)
                 · by_cases h78 : A.card ≤ 164
-                  · exact block_77 A h0 hg (by omega) (by omega)
+                  · exact pair_block 160 164 317 157 A h0 hg (by omega) (by omega)
                   · exact block_78 A h0 hg (by omega) (by omega)
             · by_cases h83 : A.card ≤ 181
               · by_cases h81 : A.card ≤ 171
                 · by_cases h80 : A.card ≤ 166
                   · exact block_79 A h0 hg (by omega) (by omega)
-                  · exact block_80 A h0 hg (by omega) (by omega)
+                  · exact pair_block 167 171 331 167 A h0 hg (by omega) (by omega)
                 · by_cases h82 : A.card ≤ 175
-                  · exact block_81 A h0 hg (by omega) (by omega)
-                  · exact block_82 A h0 hg (by omega) (by omega)
+                  · exact pair_block 172 175 337 167 A h0 hg (by omega) (by omega)
+                  · exact pair_block 176 181 349 173 A h0 hg (by omega) (by omega)
               · by_cases h85 : A.card ≤ 190
                 · by_cases h84 : A.card ≤ 186
-                  · exact block_83 A h0 hg (by omega) (by omega)
-                  · exact block_84 A h0 hg (by omega) (by omega)
+                  · exact pair_block 182 186 359 179 A h0 hg (by omega) (by omega)
+                  · exact pair_block 187 190 367 181 A h0 hg (by omega) (by omega)
                 · by_cases h86 : A.card ≤ 196
-                  · exact block_85 A h0 hg (by omega) (by omega)
-                  · exact block_86 A h0 hg (by omega) (by omega)
+                  · exact pair_block 191 196 379 191 A h0 hg (by omega) (by omega)
+                  · exact pair_block 197 201 389 193 A h0 hg (by omega) (by omega)
         · by_cases h102 : A.card ≤ 262
           · by_cases h94 : A.card ≤ 219
             · by_cases h90 : A.card ≤ 209
               · by_cases h88 : A.card ≤ 207
-                · exact block_87 A h0 hg (by omega) (by omega)
+                · exact pair_block 202 207 401 199 A h0 hg (by omega) (by omega)
                 · by_cases h89 : A.card ≤ 208
                   · exact block_88 A h0 hg (by omega) (by omega)
                   · exact block_89 A h0 hg (by omega) (by omega)
               · by_cases h92 : A.card ≤ 217
                 · by_cases h91 : A.card ≤ 211
-                  · exact block_90 A h0 hg (by omega) (by omega)
-                  · exact block_91 A h0 hg (by omega) (by omega)
+                  · exact pair_block 210 211 409 199 A h0 hg (by omega) (by omega)
+                  · exact pair_block 212 217 421 211 A h0 hg (by omega) (by omega)
                 · by_cases h93 : A.card ≤ 218
                   · exact block_92 A h0 hg (by omega) (by omega)
                   · exact block_93 A h0 hg (by omega) (by omega)
             · by_cases h98 : A.card ≤ 241
               · by_cases h96 : A.card ≤ 228
                 · by_cases h95 : A.card ≤ 222
-                  · exact block_94 A h0 hg (by omega) (by omega)
-                  · exact block_95 A h0 hg (by omega) (by omega)
+                  · exact pair_block 220 222 431 211 A h0 hg (by omega) (by omega)
+                  · exact pair_block 223 228 443 223 A h0 hg (by omega) (by omega)
                 · by_cases h97 : A.card ≤ 236
-                  · exact block_96 A h0 hg (by omega) (by omega)
-                  · exact block_97 A h0 hg (by omega) (by omega)
+                  · exact pair_block 229 236 457 229 A h0 hg (by omega) (by omega)
+                  · exact pair_block 237 241 467 233 A h0 hg (by omega) (by omega)
               · by_cases h100 : A.card ≤ 251
                 · by_cases h99 : A.card ≤ 247
-                  · exact block_98 A h0 hg (by omega) (by omega)
-                  · exact block_99 A h0 hg (by omega) (by omega)
+                  · exact pair_block 242 247 479 239 A h0 hg (by omega) (by omega)
+                  · exact pair_block 248 251 487 239 A h0 hg (by omega) (by omega)
                 · by_cases h101 : A.card ≤ 259
-                  · exact block_100 A h0 hg (by omega) (by omega)
-                  · exact block_101 A h0 hg (by omega) (by omega)
+                  · exact pair_block 252 259 503 251 A h0 hg (by omega) (by omega)
+                  · exact pair_block 260 262 509 251 A h0 hg (by omega) (by omega)
           · by_cases h109 : A.card ≤ 302
             · by_cases h105 : A.card ≤ 278
               · by_cases h103 : A.card ≤ 269
-                · exact block_102 A h0 hg (by omega) (by omega)
+                · exact pair_block 263 269 523 263 A h0 hg (by omega) (by omega)
                 · by_cases h104 : A.card ≤ 270
                   · exact block_103 A h0 hg (by omega) (by omega)
-                  · exact block_104 A h0 hg (by omega) (by omega)
+                  · exact pair_block 271 278 541 271 A h0 hg (by omega) (by omega)
               · by_cases h107 : A.card ≤ 289
                 · by_cases h106 : A.card ≤ 281
-                  · exact block_105 A h0 hg (by omega) (by omega)
-                  · exact block_106 A h0 hg (by omega) (by omega)
+                  · exact pair_block 279 281 547 269 A h0 hg (by omega) (by omega)
+                  · exact pair_block 282 289 563 281 A h0 hg (by omega) (by omega)
                 · by_cases h108 : A.card ≤ 294
-                  · exact block_107 A h0 hg (by omega) (by omega)
-                  · exact block_108 A h0 hg (by omega) (by omega)
+                  · exact pair_block 290 294 571 281 A h0 hg (by omega) (by omega)
+                  · exact pair_block 295 302 587 293 A h0 hg (by omega) (by omega)
             · by_cases h113 : A.card ≤ 318
               · by_cases h111 : A.card ≤ 308
                 · by_cases h110 : A.card ≤ 305
-                  · exact block_109 A h0 hg (by omega) (by omega)
-                  · exact block_110 A h0 hg (by omega) (by omega)
+                  · exact pair_block 303 305 593 293 A h0 hg (by omega) (by omega)
+                  · exact pair_block 306 308 599 293 A h0 hg (by omega) (by omega)
                 · by_cases h112 : A.card ≤ 315
-                  · exact block_111 A h0 hg (by omega) (by omega)
-                  · exact block_112 A h0 hg (by omega) (by omega)
+                  · exact pair_block 309 315 613 307 A h0 hg (by omega) (by omega)
+                  · exact pair_block 316 318 619 307 A h0 hg (by omega) (by omega)
               · by_cases h115 : A.card ≤ 329
                 · by_cases h114 : A.card ≤ 324
-                  · exact block_113 A h0 hg (by omega) (by omega)
-                  · exact block_114 A h0 hg (by omega) (by omega)
+                  · exact pair_block 319 324 631 313 A h0 hg (by omega) (by omega)
+                  · exact pair_block 325 329 641 317 A h0 hg (by omega) (by omega)
                 · by_cases h116 : A.card ≤ 332
-                  · exact block_115 A h0 hg (by omega) (by omega)
-                  · exact block_116 A h0 hg (by omega) (by omega)
+                  · exact pair_block 330 332 647 317 A h0 hg (by omega) (by omega)
+                  · exact pair_block 333 339 661 331 A h0 hg (by omega) (by omega)
     · by_cases h176 : A.card ≤ 769
       · by_cases h146 : A.card ≤ 537
         · by_cases h131 : A.card ≤ 430
           · by_cases h124 : A.card ≤ 390
             · by_cases h120 : A.card ≤ 359
               · by_cases h118 : A.card ≤ 347
-                · exact block_117 A h0 hg (by omega) (by omega)
+                · exact pair_block 340 347 677 337 A h0 hg (by omega) (by omega)
                 · by_cases h119 : A.card ≤ 354
-                  · exact block_118 A h0 hg (by omega) (by omega)
-                  · exact block_119 A h0 hg (by omega) (by omega)
+                  · exact pair_block 348 354 691 347 A h0 hg (by omega) (by omega)
+                  · exact pair_block 355 359 701 347 A h0 hg (by omega) (by omega)
               · by_cases h122 : A.card ≤ 376
                 · by_cases h121 : A.card ≤ 368
-                  · exact block_120 A h0 hg (by omega) (by omega)
-                  · exact block_121 A h0 hg (by omega) (by omega)
+                  · exact pair_block 360 368 719 359 A h0 hg (by omega) (by omega)
+                  · exact pair_block 369 376 733 367 A h0 hg (by omega) (by omega)
                 · by_cases h123 : A.card ≤ 381
-                  · exact block_122 A h0 hg (by omega) (by omega)
-                  · exact block_123 A h0 hg (by omega) (by omega)
+                  · exact pair_block 377 381 743 367 A h0 hg (by omega) (by omega)
+                  · exact pair_block 382 390 761 379 A h0 hg (by omega) (by omega)
             · by_cases h127 : A.card ≤ 408
               · by_cases h125 : A.card ≤ 396
-                · exact block_124 A h0 hg (by omega) (by omega)
+                · exact pair_block 391 396 773 383 A h0 hg (by omega) (by omega)
                 · by_cases h126 : A.card ≤ 403
-                  · exact block_125 A h0 hg (by omega) (by omega)
-                  · exact block_126 A h0 hg (by omega) (by omega)
+                  · exact pair_block 397 403 787 397 A h0 hg (by omega) (by omega)
+                  · exact pair_block 404 408 797 397 A h0 hg (by omega) (by omega)
               · by_cases h129 : A.card ≤ 421
                 · by_cases h128 : A.card ≤ 415
-                  · exact block_127 A h0 hg (by omega) (by omega)
-                  · exact block_128 A h0 hg (by omega) (by omega)
+                  · exact pair_block 409 415 811 409 A h0 hg (by omega) (by omega)
+                  · exact pair_block 416 421 823 409 A h0 hg (by omega) (by omega)
                 · by_cases h130 : A.card ≤ 429
-                  · exact block_129 A h0 hg (by omega) (by omega)
+                  · exact pair_block 422 429 839 419 A h0 hg (by omega) (by omega)
                   · exact block_130 A h0 hg (by omega) (by omega)
           · by_cases h138 : A.card ≤ 475
             · by_cases h134 : A.card ≤ 454
               · by_cases h132 : A.card ≤ 439
-                · exact block_131 A h0 hg (by omega) (by omega)
+                · exact pair_block 431 439 859 431 A h0 hg (by omega) (by omega)
                 · by_cases h133 : A.card ≤ 448
-                  · exact block_132 A h0 hg (by omega) (by omega)
-                  · exact block_133 A h0 hg (by omega) (by omega)
+                  · exact pair_block 440 448 877 439 A h0 hg (by omega) (by omega)
+                  · exact pair_block 449 454 887 439 A h0 hg (by omega) (by omega)
               · by_cases h136 : A.card ≤ 456
                 · by_cases h135 : A.card ≤ 455
                   · exact block_134 A h0 hg (by omega) (by omega)
                   · exact block_135 A h0 hg (by omega) (by omega)
                 · by_cases h137 : A.card ≤ 466
-                  · exact block_136 A h0 hg (by omega) (by omega)
-                  · exact block_137 A h0 hg (by omega) (by omega)
+                  · exact pair_block 457 466 911 457 A h0 hg (by omega) (by omega)
+                  · exact pair_block 467 475 929 463 A h0 hg (by omega) (by omega)
             · by_cases h142 : A.card ≤ 502
               · by_cases h140 : A.card ≤ 487
                 · by_cases h139 : A.card ≤ 481
-                  · exact block_138 A h0 hg (by omega) (by omega)
-                  · exact block_139 A h0 hg (by omega) (by omega)
+                  · exact pair_block 476 481 941 467 A h0 hg (by omega) (by omega)
+                  · exact pair_block 482 487 953 479 A h0 hg (by omega) (by omega)
                 · by_cases h141 : A.card ≤ 496
-                  · exact block_140 A h0 hg (by omega) (by omega)
-                  · exact block_141 A h0 hg (by omega) (by omega)
+                  · exact pair_block 488 496 971 487 A h0 hg (by omega) (by omega)
+                  · exact pair_block 497 502 983 487 A h0 hg (by omega) (by omega)
               · by_cases h144 : A.card ≤ 520
                 · by_cases h143 : A.card ≤ 509
-                  · exact block_142 A h0 hg (by omega) (by omega)
-                  · exact block_143 A h0 hg (by omega) (by omega)
+                  · exact pair_block 503 509 997 499 A h0 hg (by omega) (by omega)
+                  · exact pair_block 510 520 1019 509 A h0 hg (by omega) (by omega)
                 · by_cases h145 : A.card ≤ 530
-                  · exact block_144 A h0 hg (by omega) (by omega)
-                  · exact block_145 A h0 hg (by omega) (by omega)
+                  · exact pair_block 521 530 1039 521 A h0 hg (by omega) (by omega)
+                  · exact pair_block 531 537 1051 521 A h0 hg (by omega) (by omega)
         · by_cases h161 : A.card ≤ 676
           · by_cases h153 : A.card ≤ 597
             · by_cases h149 : A.card ≤ 558
               · by_cases h147 : A.card ≤ 542
-                · exact block_146 A h0 hg (by omega) (by omega)
+                · exact pair_block 538 542 1061 523 A h0 hg (by omega) (by omega)
                 · by_cases h148 : A.card ≤ 546
-                  · exact block_147 A h0 hg (by omega) (by omega)
-                  · exact block_148 A h0 hg (by omega) (by omega)
+                  · exact pair_block 543 546 1069 541 A h0 hg (by omega) (by omega)
+                  · exact pair_block 547 558 1093 547 A h0 hg (by omega) (by omega)
               · by_cases h151 : A.card ≤ 576
                 · by_cases h150 : A.card ≤ 566
-                  · exact block_149 A h0 hg (by omega) (by omega)
-                  · exact block_150 A h0 hg (by omega) (by omega)
+                  · exact pair_block 559 566 1109 557 A h0 hg (by omega) (by omega)
+                  · exact pair_block 567 576 1129 563 A h0 hg (by omega) (by omega)
                 · by_cases h152 : A.card ≤ 588
-                  · exact block_151 A h0 hg (by omega) (by omega)
-                  · exact block_152 A h0 hg (by omega) (by omega)
+                  · exact pair_block 577 588 1153 577 A h0 hg (by omega) (by omega)
+                  · exact pair_block 589 597 1171 587 A h0 hg (by omega) (by omega)
             · by_cases h157 : A.card ≤ 630
               · by_cases h155 : A.card ≤ 612
                 · by_cases h154 : A.card ≤ 605
-                  · exact block_153 A h0 hg (by omega) (by omega)
-                  · exact block_154 A h0 hg (by omega) (by omega)
+                  · exact pair_block 598 605 1187 593 A h0 hg (by omega) (by omega)
+                  · exact pair_block 606 612 1201 599 A h0 hg (by omega) (by omega)
                 · by_cases h156 : A.card ≤ 623
-                  · exact block_155 A h0 hg (by omega) (by omega)
-                  · exact block_156 A h0 hg (by omega) (by omega)
+                  · exact pair_block 613 623 1223 613 A h0 hg (by omega) (by omega)
+                  · exact pair_block 624 630 1237 613 A h0 hg (by omega) (by omega)
               · by_cases h159 : A.card ≤ 654
                 · by_cases h158 : A.card ≤ 642
-                  · exact block_157 A h0 hg (by omega) (by omega)
-                  · exact block_158 A h0 hg (by omega) (by omega)
+                  · exact pair_block 631 642 1259 631 A h0 hg (by omega) (by omega)
+                  · exact pair_block 643 654 1283 641 A h0 hg (by omega) (by omega)
                 · by_cases h160 : A.card ≤ 666
-                  · exact block_159 A h0 hg (by omega) (by omega)
-                  · exact block_160 A h0 hg (by omega) (by omega)
+                  · exact pair_block 655 666 1307 653 A h0 hg (by omega) (by omega)
+                  · exact pair_block 667 676 1327 661 A h0 hg (by omega) (by omega)
           · by_cases h168 : A.card ≤ 693
             · by_cases h164 : A.card ≤ 679
               · by_cases h162 : A.card ≤ 677
@@ -7092,139 +3748,139 @@ private lemma finite_normalized_core (A : Finset ℕ) (h0 : 0 ∉ A)
                   · exact block_165 A h0 hg (by omega) (by omega)
                 · by_cases h167 : A.card ≤ 682
                   · exact block_166 A h0 hg (by omega) (by omega)
-                  · exact block_167 A h0 hg (by omega) (by omega)
+                  · exact pair_block 683 693 1361 683 A h0 hg (by omega) (by omega)
             · by_cases h172 : A.card ≤ 726
               · by_cases h170 : A.card ≤ 712
                 · by_cases h169 : A.card ≤ 703
-                  · exact block_168 A h0 hg (by omega) (by omega)
-                  · exact block_169 A h0 hg (by omega) (by omega)
+                  · exact pair_block 694 703 1381 691 A h0 hg (by omega) (by omega)
+                  · exact pair_block 704 712 1399 701 A h0 hg (by omega) (by omega)
                 · by_cases h171 : A.card ≤ 717
-                  · exact block_170 A h0 hg (by omega) (by omega)
-                  · exact block_171 A h0 hg (by omega) (by omega)
+                  · exact pair_block 713 717 1409 701 A h0 hg (by omega) (by omega)
+                  · exact pair_block 718 726 1427 709 A h0 hg (by omega) (by omega)
               · by_cases h174 : A.card ≤ 749
                 · by_cases h173 : A.card ≤ 739
-                  · exact block_172 A h0 hg (by omega) (by omega)
-                  · exact block_173 A h0 hg (by omega) (by omega)
+                  · exact pair_block 727 739 1453 727 A h0 hg (by omega) (by omega)
+                  · exact pair_block 740 749 1471 733 A h0 hg (by omega) (by omega)
                 · by_cases h175 : A.card ≤ 760
-                  · exact block_174 A h0 hg (by omega) (by omega)
-                  · exact block_175 A h0 hg (by omega) (by omega)
+                  · exact pair_block 750 760 1493 743 A h0 hg (by omega) (by omega)
+                  · exact pair_block 761 769 1511 751 A h0 hg (by omega) (by omega)
       · by_cases h205 : A.card ≤ 1056
         · by_cases h190 : A.card ≤ 891
           · by_cases h183 : A.card ≤ 842
             · by_cases h179 : A.card ≤ 799
               · by_cases h177 : A.card ≤ 779
-                · exact block_176 A h0 hg (by omega) (by omega)
+                · exact pair_block 770 779 1531 761 A h0 hg (by omega) (by omega)
                 · by_cases h178 : A.card ≤ 790
-                  · exact block_177 A h0 hg (by omega) (by omega)
-                  · exact block_178 A h0 hg (by omega) (by omega)
+                  · exact pair_block 780 790 1553 773 A h0 hg (by omega) (by omega)
+                  · exact pair_block 791 799 1571 787 A h0 hg (by omega) (by omega)
               · by_cases h181 : A.card ≤ 824
                 · by_cases h180 : A.card ≤ 812
-                  · exact block_179 A h0 hg (by omega) (by omega)
-                  · exact block_180 A h0 hg (by omega) (by omega)
+                  · exact pair_block 800 812 1597 797 A h0 hg (by omega) (by omega)
+                  · exact pair_block 813 824 1621 809 A h0 hg (by omega) (by omega)
                 · by_cases h182 : A.card ≤ 832
-                  · exact block_181 A h0 hg (by omega) (by omega)
-                  · exact block_182 A h0 hg (by omega) (by omega)
+                  · exact pair_block 825 832 1637 821 A h0 hg (by omega) (by omega)
+                  · exact pair_block 833 842 1657 827 A h0 hg (by omega) (by omega)
             · by_cases h186 : A.card ≤ 851
               · by_cases h184 : A.card ≤ 849
-                · exact block_183 A h0 hg (by omega) (by omega)
+                · exact pair_block 843 849 1669 827 A h0 hg (by omega) (by omega)
                 · by_cases h185 : A.card ≤ 850
                   · exact block_184 A h0 hg (by omega) (by omega)
                   · exact block_185 A h0 hg (by omega) (by omega)
               · by_cases h188 : A.card ≤ 864
                 · by_cases h187 : A.card ≤ 852
                   · exact block_186 A h0 hg (by omega) (by omega)
-                  · exact block_187 A h0 hg (by omega) (by omega)
+                  · exact pair_block 853 864 1699 853 A h0 hg (by omega) (by omega)
                 · by_cases h189 : A.card ≤ 876
-                  · exact block_188 A h0 hg (by omega) (by omega)
-                  · exact block_189 A h0 hg (by omega) (by omega)
+                  · exact pair_block 865 876 1723 859 A h0 hg (by omega) (by omega)
+                  · exact pair_block 877 891 1753 877 A h0 hg (by omega) (by omega)
           · by_cases h197 : A.card ≤ 959
             · by_cases h193 : A.card ≤ 920
               · by_cases h191 : A.card ≤ 903
-                · exact block_190 A h0 hg (by omega) (by omega)
+                · exact pair_block 892 903 1777 887 A h0 hg (by omega) (by omega)
                 · by_cases h192 : A.card ≤ 909
-                  · exact block_191 A h0 hg (by omega) (by omega)
-                  · exact block_192 A h0 hg (by omega) (by omega)
+                  · exact pair_block 904 909 1789 887 A h0 hg (by omega) (by omega)
+                  · exact pair_block 910 920 1811 907 A h0 hg (by omega) (by omega)
               · by_cases h195 : A.card ≤ 938
                 · by_cases h194 : A.card ≤ 930
-                  · exact block_193 A h0 hg (by omega) (by omega)
-                  · exact block_194 A h0 hg (by omega) (by omega)
+                  · exact pair_block 921 930 1831 911 A h0 hg (by omega) (by omega)
+                  · exact pair_block 931 938 1847 919 A h0 hg (by omega) (by omega)
                 · by_cases h196 : A.card ≤ 951
-                  · exact block_195 A h0 hg (by omega) (by omega)
-                  · exact block_196 A h0 hg (by omega) (by omega)
+                  · exact pair_block 939 951 1873 937 A h0 hg (by omega) (by omega)
+                  · exact pair_block 952 959 1889 937 A h0 hg (by omega) (by omega)
             · by_cases h201 : A.card ≤ 1005
               · by_cases h199 : A.card ≤ 982
                 · by_cases h198 : A.card ≤ 971
-                  · exact block_197 A h0 hg (by omega) (by omega)
-                  · exact block_198 A h0 hg (by omega) (by omega)
+                  · exact pair_block 960 971 1913 953 A h0 hg (by omega) (by omega)
+                  · exact pair_block 972 982 1933 967 A h0 hg (by omega) (by omega)
                 · by_cases h200 : A.card ≤ 991
-                  · exact block_199 A h0 hg (by omega) (by omega)
-                  · exact block_200 A h0 hg (by omega) (by omega)
+                  · exact pair_block 983 991 1951 971 A h0 hg (by omega) (by omega)
+                  · exact pair_block 992 1005 1979 991 A h0 hg (by omega) (by omega)
               · by_cases h203 : A.card ≤ 1030
                 · by_cases h202 : A.card ≤ 1017
-                  · exact block_201 A h0 hg (by omega) (by omega)
-                  · exact block_202 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1006 1017 2003 997 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1018 1030 2029 1013 A h0 hg (by omega) (by omega)
                 · by_cases h204 : A.card ≤ 1042
-                  · exact block_203 A h0 hg (by omega) (by omega)
-                  · exact block_204 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1031 1042 2053 1031 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1043 1056 2081 1039 A h0 hg (by omega) (by omega)
         · by_cases h220 : A.card ≤ 1228
           · by_cases h212 : A.card ≤ 1135
             · by_cases h208 : A.card ≤ 1087
               · by_cases h206 : A.card ≤ 1065
-                · exact block_205 A h0 hg (by omega) (by omega)
+                · exact pair_block 1057 1065 2099 1049 A h0 hg (by omega) (by omega)
                 · by_cases h207 : A.card ≤ 1080
-                  · exact block_206 A h0 hg (by omega) (by omega)
-                  · exact block_207 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1066 1080 2129 1063 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1081 1087 2143 1063 A h0 hg (by omega) (by omega)
               · by_cases h210 : A.card ≤ 1106
                 · by_cases h209 : A.card ≤ 1096
-                  · exact block_208 A h0 hg (by omega) (by omega)
-                  · exact block_209 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1088 1096 2161 1087 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1097 1106 2179 1087 A h0 hg (by omega) (by omega)
                 · by_cases h211 : A.card ≤ 1120
-                  · exact block_210 A h0 hg (by omega) (by omega)
-                  · exact block_211 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1107 1120 2207 1103 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1121 1135 2237 1117 A h0 hg (by omega) (by omega)
             · by_cases h216 : A.card ≤ 1172
               · by_cases h214 : A.card ≤ 1151
                 · by_cases h213 : A.card ≤ 1142
-                  · exact block_212 A h0 hg (by omega) (by omega)
-                  · exact block_213 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1136 1142 2251 1117 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1143 1151 2269 1129 A h0 hg (by omega) (by omega)
                 · by_cases h215 : A.card ≤ 1165
-                  · exact block_214 A h0 hg (by omega) (by omega)
-                  · exact block_215 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1152 1165 2297 1151 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1166 1172 2311 1151 A h0 hg (by omega) (by omega)
               · by_cases h218 : A.card ≤ 1202
                 · by_cases h217 : A.card ≤ 1187
-                  · exact block_216 A h0 hg (by omega) (by omega)
-                  · exact block_217 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1173 1187 2341 1171 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1188 1202 2371 1187 A h0 hg (by omega) (by omega)
                 · by_cases h219 : A.card ≤ 1216
-                  · exact block_218 A h0 hg (by omega) (by omega)
-                  · exact block_219 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1203 1216 2399 1201 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1217 1228 2423 1213 A h0 hg (by omega) (by omega)
           · by_cases h227 : A.card ≤ 1328
             · by_cases h223 : A.card ≤ 1269
               · by_cases h221 : A.card ≤ 1241
-                · exact block_220 A h0 hg (by omega) (by omega)
+                · exact pair_block 1229 1241 2447 1223 A h0 hg (by omega) (by omega)
                 · by_cases h222 : A.card ≤ 1256
-                  · exact block_221 A h0 hg (by omega) (by omega)
-                  · exact block_222 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1242 1256 2477 1237 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1257 1269 2503 1249 A h0 hg (by omega) (by omega)
               · by_cases h225 : A.card ≤ 1296
                 · by_cases h224 : A.card ≤ 1278
-                  · exact block_223 A h0 hg (by omega) (by omega)
-                  · exact block_224 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1270 1278 2521 1259 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1279 1296 2557 1279 A h0 hg (by omega) (by omega)
                 · by_cases h226 : A.card ≤ 1314
-                  · exact block_225 A h0 hg (by omega) (by omega)
-                  · exact block_226 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1297 1314 2593 1297 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1315 1328 2621 1307 A h0 hg (by omega) (by omega)
             · by_cases h231 : A.card ≤ 1359
               · by_cases h229 : A.card ≤ 1349
                 · by_cases h228 : A.card ≤ 1341
-                  · exact block_227 A h0 hg (by omega) (by omega)
-                  · exact block_228 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1329 1341 2647 1319 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1342 1349 2663 1321 A h0 hg (by omega) (by omega)
                 · by_cases h230 : A.card ≤ 1356
-                  · exact block_229 A h0 hg (by omega) (by omega)
-                  · exact block_230 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1350 1356 2677 1327 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1357 1359 2683 1327 A h0 hg (by omega) (by omega)
               · by_cases h233 : A.card ≤ 1377
                 · by_cases h232 : A.card ≤ 1361
-                  · exact block_231 A h0 hg (by omega) (by omega)
-                  · exact block_232 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1360 1361 2687 1327 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1362 1377 2719 1361 A h0 hg (by omega) (by omega)
                 · by_cases h234 : A.card ≤ 1393
-                  · exact block_233 A h0 hg (by omega) (by omega)
-                  · exact block_234 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1378 1393 2749 1373 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1394 1402 2767 1373 A h0 hg (by omega) (by omega)
   · by_cases h352 : A.card ≤ 3558
     · by_cases h293 : A.card ≤ 2322
       · by_cases h264 : A.card ≤ 1800
@@ -7232,468 +3888,468 @@ private lemma finite_normalized_core (A : Finset ℕ) (h0 : 0 ∉ A)
           · by_cases h242 : A.card ≤ 1504
             · by_cases h238 : A.card ≤ 1447
               · by_cases h236 : A.card ≤ 1419
-                · exact block_235 A h0 hg (by omega) (by omega)
+                · exact pair_block 1403 1419 2801 1399 A h0 hg (by omega) (by omega)
                 · by_cases h237 : A.card ≤ 1428
-                  · exact block_236 A h0 hg (by omega) (by omega)
-                  · exact block_237 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1420 1428 2819 1399 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1429 1447 2857 1429 A h0 hg (by omega) (by omega)
               · by_cases h240 : A.card ≤ 1477
                 · by_cases h239 : A.card ≤ 1462
-                  · exact block_238 A h0 hg (by omega) (by omega)
-                  · exact block_239 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1448 1462 2887 1439 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1463 1477 2917 1459 A h0 hg (by omega) (by omega)
                 · by_cases h241 : A.card ≤ 1488
-                  · exact block_240 A h0 hg (by omega) (by omega)
-                  · exact block_241 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1478 1488 2939 1471 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1489 1504 2971 1483 A h0 hg (by omega) (by omega)
             · by_cases h245 : A.card ≤ 1550
               · by_cases h243 : A.card ≤ 1519
-                · exact block_242 A h0 hg (by omega) (by omega)
+                · exact pair_block 1505 1519 3001 1499 A h0 hg (by omega) (by omega)
                 · by_cases h244 : A.card ≤ 1530
-                  · exact block_243 A h0 hg (by omega) (by omega)
-                  · exact block_244 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1520 1530 3023 1511 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1531 1550 3061 1531 A h0 hg (by omega) (by omega)
               · by_cases h247 : A.card ≤ 1580
                 · by_cases h246 : A.card ≤ 1564
-                  · exact block_245 A h0 hg (by omega) (by omega)
-                  · exact block_246 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1551 1564 3089 1543 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1565 1580 3121 1559 A h0 hg (by omega) (by omega)
                 · by_cases h248 : A.card ≤ 1588
-                  · exact block_247 A h0 hg (by omega) (by omega)
-                  · exact block_248 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1581 1588 3137 1559 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1589 1604 3169 1583 A h0 hg (by omega) (by omega)
           · by_cases h256 : A.card ≤ 1691
             · by_cases h252 : A.card ≤ 1649
               · by_cases h250 : A.card ≤ 1621
-                · exact block_249 A h0 hg (by omega) (by omega)
+                · exact pair_block 1605 1621 3203 1601 A h0 hg (by omega) (by omega)
                 · by_cases h251 : A.card ≤ 1634
-                  · exact block_250 A h0 hg (by omega) (by omega)
-                  · exact block_251 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1622 1634 3229 1607 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1635 1649 3259 1627 A h0 hg (by omega) (by omega)
               · by_cases h254 : A.card ≤ 1656
                 · by_cases h253 : A.card ≤ 1655
-                  · exact block_252 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1650 1655 3271 1621 A h0 hg (by omega) (by omega)
                   · exact block_253 A h0 hg (by omega) (by omega)
                 · by_cases h255 : A.card ≤ 1676
-                  · exact block_254 A h0 hg (by omega) (by omega)
-                  · exact block_255 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1657 1676 3313 1657 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1677 1691 3343 1667 A h0 hg (by omega) (by omega)
             · by_cases h260 : A.card ≤ 1745
               · by_cases h258 : A.card ≤ 1716
                 · by_cases h257 : A.card ≤ 1701
-                  · exact block_256 A h0 hg (by omega) (by omega)
-                  · exact block_257 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1692 1701 3361 1669 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1702 1716 3391 1693 A h0 hg (by omega) (by omega)
                 · by_cases h259 : A.card ≤ 1727
-                  · exact block_258 A h0 hg (by omega) (by omega)
-                  · exact block_259 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1717 1727 3413 1697 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1728 1745 3449 1721 A h0 hg (by omega) (by omega)
               · by_cases h262 : A.card ≤ 1770
                 · by_cases h261 : A.card ≤ 1755
-                  · exact block_260 A h0 hg (by omega) (by omega)
-                  · exact block_261 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1746 1755 3469 1723 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1756 1770 3499 1747 A h0 hg (by omega) (by omega)
                 · by_cases h263 : A.card ≤ 1785
-                  · exact block_262 A h0 hg (by omega) (by omega)
-                  · exact block_263 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1771 1785 3529 1759 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1786 1800 3559 1777 A h0 hg (by omega) (by omega)
         · by_cases h278 : A.card ≤ 2035
           · by_cases h271 : A.card ≤ 1923
             · by_cases h267 : A.card ≤ 1850
               · by_cases h265 : A.card ≤ 1817
-                · exact block_264 A h0 hg (by omega) (by omega)
+                · exact pair_block 1801 1817 3593 1801 A h0 hg (by omega) (by omega)
                 · by_cases h266 : A.card ≤ 1832
-                  · exact block_265 A h0 hg (by omega) (by omega)
-                  · exact block_266 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1818 1832 3623 1811 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1833 1850 3659 1831 A h0 hg (by omega) (by omega)
               · by_cases h269 : A.card ≤ 1891
                 · by_cases h268 : A.card ≤ 1870
-                  · exact block_267 A h0 hg (by omega) (by omega)
-                  · exact block_268 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1851 1870 3697 1847 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1871 1891 3739 1871 A h0 hg (by omega) (by omega)
                 · by_cases h270 : A.card ≤ 1911
-                  · exact block_269 A h0 hg (by omega) (by omega)
-                  · exact block_270 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1892 1911 3779 1889 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1912 1923 3803 1901 A h0 hg (by omega) (by omega)
             · by_cases h274 : A.card ≤ 1966
               · by_cases h272 : A.card ≤ 1938
-                · exact block_271 A h0 hg (by omega) (by omega)
+                · exact pair_block 1924 1938 3833 1913 A h0 hg (by omega) (by omega)
                 · by_cases h273 : A.card ≤ 1953
-                  · exact block_272 A h0 hg (by omega) (by omega)
-                  · exact block_273 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1939 1953 3863 1931 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1954 1966 3889 1949 A h0 hg (by omega) (by omega)
               · by_cases h276 : A.card ≤ 1995
                 · by_cases h275 : A.card ≤ 1980
-                  · exact block_274 A h0 hg (by omega) (by omega)
-                  · exact block_275 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1967 1980 3917 1951 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1981 1995 3947 1973 A h0 hg (by omega) (by omega)
                 · by_cases h277 : A.card ≤ 2016
-                  · exact block_276 A h0 hg (by omega) (by omega)
-                  · exact block_277 A h0 hg (by omega) (by omega)
+                  · exact pair_block 1996 2016 3989 1993 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2017 2035 4027 2011 A h0 hg (by omega) (by omega)
           · by_cases h285 : A.card ≤ 2171
             · by_cases h281 : A.card ≤ 2089
               · by_cases h279 : A.card ≤ 2051
-                · exact block_278 A h0 hg (by omega) (by omega)
+                · exact pair_block 2036 2051 4057 2027 A h0 hg (by omega) (by omega)
                 · by_cases h280 : A.card ≤ 2068
-                  · exact block_279 A h0 hg (by omega) (by omega)
-                  · exact block_280 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2052 2068 4091 2039 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2069 2089 4133 2069 A h0 hg (by omega) (by omega)
               · by_cases h283 : A.card ≤ 2132
                 · by_cases h282 : A.card ≤ 2111
-                  · exact block_281 A h0 hg (by omega) (by omega)
-                  · exact block_282 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2090 2111 4177 2087 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2112 2132 4219 2111 A h0 hg (by omega) (by omega)
                 · by_cases h284 : A.card ≤ 2153
-                  · exact block_283 A h0 hg (by omega) (by omega)
-                  · exact block_284 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2133 2153 4261 2129 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2154 2171 4297 2143 A h0 hg (by omega) (by omega)
             · by_cases h289 : A.card ≤ 2244
               · by_cases h287 : A.card ≤ 2204
                 · by_cases h286 : A.card ≤ 2186
-                  · exact block_285 A h0 hg (by omega) (by omega)
-                  · exact block_286 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2172 2186 4327 2161 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2187 2204 4363 2179 A h0 hg (by omega) (by omega)
                 · by_cases h288 : A.card ≤ 2221
-                  · exact block_287 A h0 hg (by omega) (by omega)
-                  · exact block_288 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2205 2221 4397 2203 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2222 2244 4441 2221 A h0 hg (by omega) (by omega)
               · by_cases h291 : A.card ≤ 2282
                 · by_cases h290 : A.card ≤ 2265
-                  · exact block_289 A h0 hg (by omega) (by omega)
-                  · exact block_290 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2245 2265 4483 2239 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2266 2282 4517 2251 A h0 hg (by omega) (by omega)
                 · by_cases h292 : A.card ≤ 2304
-                  · exact block_291 A h0 hg (by omega) (by omega)
-                  · exact block_292 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2283 2304 4561 2281 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2305 2322 4597 2293 A h0 hg (by omega) (by omega)
       · by_cases h322 : A.card ≤ 2885
         · by_cases h307 : A.card ≤ 2584
           · by_cases h300 : A.card ≤ 2440
             · by_cases h296 : A.card ≤ 2375
               · by_cases h294 : A.card ≤ 2334
-                · exact block_293 A h0 hg (by omega) (by omega)
+                · exact pair_block 2323 2334 4621 2309 A h0 hg (by omega) (by omega)
                 · by_cases h295 : A.card ≤ 2355
-                  · exact block_294 A h0 hg (by omega) (by omega)
-                  · exact block_295 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2335 2355 4663 2333 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2356 2375 4703 2347 A h0 hg (by omega) (by omega)
               · by_cases h298 : A.card ≤ 2403
                 · by_cases h297 : A.card ≤ 2390
-                  · exact block_296 A h0 hg (by omega) (by omega)
-                  · exact block_297 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2376 2390 4733 2357 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2391 2403 4759 2371 A h0 hg (by omega) (by omega)
                 · by_cases h299 : A.card ≤ 2425
-                  · exact block_298 A h0 hg (by omega) (by omega)
-                  · exact block_299 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2404 2425 4801 2399 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2426 2440 4831 2411 A h0 hg (by omega) (by omega)
             · by_cases h303 : A.card ≤ 2503
               · by_cases h301 : A.card ≤ 2463
-                · exact block_300 A h0 hg (by omega) (by omega)
+                · exact pair_block 2441 2463 4877 2437 A h0 hg (by omega) (by omega)
                 · by_cases h302 : A.card ≤ 2484
-                  · exact block_301 A h0 hg (by omega) (by omega)
-                  · exact block_302 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2464 2484 4919 2459 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2485 2503 4957 2473 A h0 hg (by omega) (by omega)
               · by_cases h305 : A.card ≤ 2544
                 · by_cases h304 : A.card ≤ 2526
-                  · exact block_303 A h0 hg (by omega) (by omega)
-                  · exact block_304 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2504 2526 5003 2503 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2527 2544 5039 2521 A h0 hg (by omega) (by omega)
                 · by_cases h306 : A.card ≤ 2568
-                  · exact block_305 A h0 hg (by omega) (by omega)
-                  · exact block_306 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2545 2568 5087 2543 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2569 2584 5119 2551 A h0 hg (by omega) (by omega)
           · by_cases h314 : A.card ≤ 2725
             · by_cases h310 : A.card ≤ 2644
               · by_cases h308 : A.card ≤ 2601
-                · exact block_307 A h0 hg (by omega) (by omega)
+                · exact pair_block 2585 2601 5153 2579 A h0 hg (by omega) (by omega)
                 · by_cases h309 : A.card ≤ 2620
-                  · exact block_308 A h0 hg (by omega) (by omega)
-                  · exact block_309 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2602 2620 5189 2591 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2621 2644 5237 2617 A h0 hg (by omega) (by omega)
               · by_cases h312 : A.card ≤ 2687
                 · by_cases h311 : A.card ≤ 2662
-                  · exact block_310 A h0 hg (by omega) (by omega)
-                  · exact block_311 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2645 2662 5273 2633 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2663 2687 5323 2663 A h0 hg (by omega) (by omega)
                 · by_cases h313 : A.card ≤ 2701
-                  · exact block_312 A h0 hg (by omega) (by omega)
-                  · exact block_313 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2688 2701 5351 2663 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2702 2725 5399 2699 A h0 hg (by omega) (by omega)
             · by_cases h318 : A.card ≤ 2816
               · by_cases h316 : A.card ≤ 2767
                 · by_cases h315 : A.card ≤ 2747
-                  · exact block_314 A h0 hg (by omega) (by omega)
-                  · exact block_315 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2726 2747 5443 2719 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2748 2767 5483 2741 A h0 hg (by omega) (by omega)
                 · by_cases h317 : A.card ≤ 2791
-                  · exact block_316 A h0 hg (by omega) (by omega)
-                  · exact block_317 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2768 2791 5531 2767 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2792 2816 5581 2789 A h0 hg (by omega) (by omega)
               · by_cases h320 : A.card ≤ 2847
                 · by_cases h319 : A.card ≤ 2822
-                  · exact block_318 A h0 hg (by omega) (by omega)
-                  · exact block_319 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2817 2822 5591 2777 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2823 2847 5641 2819 A h0 hg (by omega) (by omega)
                 · by_cases h321 : A.card ≤ 2871
-                  · exact block_320 A h0 hg (by omega) (by omega)
-                  · exact block_321 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2848 2871 5689 2843 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2872 2885 5717 2851 A h0 hg (by omega) (by omega)
         · by_cases h337 : A.card ≤ 3214
           · by_cases h329 : A.card ≤ 3020
             · by_cases h325 : A.card ≤ 2946
               · by_cases h323 : A.card ≤ 2901
-                · exact block_322 A h0 hg (by omega) (by omega)
+                · exact pair_block 2886 2901 5749 2879 A h0 hg (by omega) (by omega)
                 · by_cases h324 : A.card ≤ 2922
-                  · exact block_323 A h0 hg (by omega) (by omega)
-                  · exact block_324 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2902 2922 5791 2897 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2923 2946 5839 2917 A h0 hg (by omega) (by omega)
               · by_cases h327 : A.card ≤ 2990
                 · by_cases h326 : A.card ≤ 2967
-                  · exact block_325 A h0 hg (by omega) (by omega)
-                  · exact block_326 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2947 2967 5881 2939 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2968 2990 5927 2963 A h0 hg (by omega) (by omega)
                 · by_cases h328 : A.card ≤ 3003
-                  · exact block_327 A h0 hg (by omega) (by omega)
-                  · exact block_328 A h0 hg (by omega) (by omega)
+                  · exact pair_block 2991 3003 5953 2963 A h0 hg (by omega) (by omega)
+                  · exact pair_block 3004 3020 5987 2999 A h0 hg (by omega) (by omega)
             · by_cases h333 : A.card ≤ 3114
               · by_cases h331 : A.card ≤ 3067
                 · by_cases h330 : A.card ≤ 3045
-                  · exact block_329 A h0 hg (by omega) (by omega)
-                  · exact block_330 A h0 hg (by omega) (by omega)
+                  · exact pair_block 3021 3045 6037 3019 A h0 hg (by omega) (by omega)
+                  · exact pair_block 3046 3067 6079 3037 A h0 hg (by omega) (by omega)
                 · by_cases h332 : A.card ≤ 3094
-                  · exact block_331 A h0 hg (by omega) (by omega)
-                  · exact block_332 A h0 hg (by omega) (by omega)
+                  · exact pair_block 3068 3094 6133 3067 A h0 hg (by omega) (by omega)
+                  · exact pair_block 3095 3114 6173 3079 A h0 hg (by omega) (by omega)
               · by_cases h335 : A.card ≤ 3163
                 · by_cases h334 : A.card ≤ 3138
-                  · exact block_333 A h0 hg (by omega) (by omega)
-                  · exact block_334 A h0 hg (by omega) (by omega)
+                  · exact pair_block 3115 3138 6221 3109 A h0 hg (by omega) (by omega)
+                  · exact pair_block 3139 3163 6271 3137 A h0 hg (by omega) (by omega)
                 · by_cases h336 : A.card ≤ 3189
-                  · exact block_335 A h0 hg (by omega) (by omega)
-                  · exact block_336 A h0 hg (by omega) (by omega)
+                  · exact pair_block 3164 3189 6323 3163 A h0 hg (by omega) (by omega)
+                  · exact pair_block 3190 3214 6373 3187 A h0 hg (by omega) (by omega)
           · by_cases h344 : A.card ≤ 3359
             · by_cases h340 : A.card ≤ 3274
               · by_cases h338 : A.card ≤ 3238
-                · exact block_337 A h0 hg (by omega) (by omega)
+                · exact pair_block 3215 3238 6421 3209 A h0 hg (by omega) (by omega)
                 · by_cases h339 : A.card ≤ 3253
-                  · exact block_338 A h0 hg (by omega) (by omega)
-                  · exact block_339 A h0 hg (by omega) (by omega)
+                  · exact pair_block 3239 3253 6451 3217 A h0 hg (by omega) (by omega)
+                  · exact pair_block 3254 3274 6491 3251 A h0 hg (by omega) (by omega)
               · by_cases h342 : A.card ≤ 3310
                 · by_cases h341 : A.card ≤ 3293
-                  · exact block_340 A h0 hg (by omega) (by omega)
-                  · exact block_341 A h0 hg (by omega) (by omega)
+                  · exact pair_block 3275 3293 6529 3257 A h0 hg (by omega) (by omega)
+                  · exact pair_block 3294 3310 6563 3271 A h0 hg (by omega) (by omega)
                 · by_cases h343 : A.card ≤ 3332
-                  · exact block_342 A h0 hg (by omega) (by omega)
-                  · exact block_343 A h0 hg (by omega) (by omega)
+                  · exact pair_block 3311 3332 6607 3299 A h0 hg (by omega) (by omega)
+                  · exact pair_block 3333 3359 6661 3329 A h0 hg (by omega) (by omega)
             · by_cases h348 : A.card ≤ 3449
               · by_cases h346 : A.card ≤ 3410
                 · by_cases h345 : A.card ≤ 3388
-                  · exact block_344 A h0 hg (by omega) (by omega)
-                  · exact block_345 A h0 hg (by omega) (by omega)
+                  · exact pair_block 3360 3388 6719 3359 A h0 hg (by omega) (by omega)
+                  · exact pair_block 3389 3410 6763 3389 A h0 hg (by omega) (by omega)
                 · by_cases h347 : A.card ≤ 3430
-                  · exact block_346 A h0 hg (by omega) (by omega)
-                  · exact block_347 A h0 hg (by omega) (by omega)
+                  · exact pair_block 3411 3430 6803 3407 A h0 hg (by omega) (by omega)
+                  · exact pair_block 3431 3449 6841 3413 A h0 hg (by omega) (by omega)
               · by_cases h350 : A.card ≤ 3502
                 · by_cases h349 : A.card ≤ 3478
-                  · exact block_348 A h0 hg (by omega) (by omega)
-                  · exact block_349 A h0 hg (by omega) (by omega)
+                  · exact pair_block 3450 3478 6899 3449 A h0 hg (by omega) (by omega)
+                  · exact pair_block 3479 3502 6947 3469 A h0 hg (by omega) (by omega)
                 · by_cases h351 : A.card ≤ 3530
-                  · exact block_350 A h0 hg (by omega) (by omega)
-                  · exact block_351 A h0 hg (by omega) (by omega)
+                  · exact pair_block 3503 3530 7001 3499 A h0 hg (by omega) (by omega)
+                  · exact pair_block 3531 3558 7057 3527 A h0 hg (by omega) (by omega)
     · by_cases h411 : A.card ≤ 5132
       · by_cases h381 : A.card ≤ 4296
         · by_cases h366 : A.card ≤ 3910
           · by_cases h359 : A.card ≤ 3726
             · by_cases h355 : A.card ≤ 3636
               · by_cases h353 : A.card ≤ 3584
-                · exact block_352 A h0 hg (by omega) (by omega)
+                · exact pair_block 3559 3584 7109 3557 A h0 hg (by omega) (by omega)
                 · by_cases h354 : A.card ≤ 3609
-                  · exact block_353 A h0 hg (by omega) (by omega)
-                  · exact block_354 A h0 hg (by omega) (by omega)
+                  · exact pair_block 3585 3609 7159 3581 A h0 hg (by omega) (by omega)
+                  · exact pair_block 3610 3636 7213 3607 A h0 hg (by omega) (by omega)
               · by_cases h357 : A.card ≤ 3678
                 · by_cases h356 : A.card ≤ 3656
-                  · exact block_355 A h0 hg (by omega) (by omega)
-                  · exact block_356 A h0 hg (by omega) (by omega)
+                  · exact pair_block 3637 3656 7253 3617 A h0 hg (by omega) (by omega)
+                  · exact pair_block 3657 3678 7297 3643 A h0 hg (by omega) (by omega)
                 · by_cases h358 : A.card ≤ 3705
-                  · exact block_357 A h0 hg (by omega) (by omega)
-                  · exact block_358 A h0 hg (by omega) (by omega)
+                  · exact pair_block 3679 3705 7351 3673 A h0 hg (by omega) (by omega)
+                  · exact pair_block 3706 3726 7393 3691 A h0 hg (by omega) (by omega)
             · by_cases h362 : A.card ≤ 3801
               · by_cases h360 : A.card ≤ 3756
-                · exact block_359 A h0 hg (by omega) (by omega)
+                · exact pair_block 3727 3756 7451 3727 A h0 hg (by omega) (by omega)
                 · by_cases h361 : A.card ≤ 3775
-                  · exact block_360 A h0 hg (by omega) (by omega)
-                  · exact block_361 A h0 hg (by omega) (by omega)
+                  · exact pair_block 3757 3775 7489 3733 A h0 hg (by omega) (by omega)
+                  · exact pair_block 3776 3801 7541 3767 A h0 hg (by omega) (by omega)
               · by_cases h364 : A.card ≤ 3855
                 · by_cases h363 : A.card ≤ 3826
-                  · exact block_362 A h0 hg (by omega) (by omega)
-                  · exact block_363 A h0 hg (by omega) (by omega)
+                  · exact pair_block 3802 3826 7591 3793 A h0 hg (by omega) (by omega)
+                  · exact pair_block 3827 3855 7649 3823 A h0 hg (by omega) (by omega)
                 · by_cases h365 : A.card ≤ 3882
-                  · exact block_364 A h0 hg (by omega) (by omega)
-                  · exact block_365 A h0 hg (by omega) (by omega)
+                  · exact pair_block 3856 3882 7703 3847 A h0 hg (by omega) (by omega)
+                  · exact pair_block 3883 3910 7759 3877 A h0 hg (by omega) (by omega)
           · by_cases h373 : A.card ≤ 4090
             · by_cases h369 : A.card ≤ 3984
               · by_cases h367 : A.card ≤ 3939
-                · exact block_366 A h0 hg (by omega) (by omega)
+                · exact pair_block 3911 3939 7817 3907 A h0 hg (by omega) (by omega)
                 · by_cases h368 : A.card ≤ 3964
-                  · exact block_367 A h0 hg (by omega) (by omega)
-                  · exact block_368 A h0 hg (by omega) (by omega)
+                  · exact pair_block 3940 3964 7867 3929 A h0 hg (by omega) (by omega)
+                  · exact pair_block 3965 3984 7907 3943 A h0 hg (by omega) (by omega)
               · by_cases h371 : A.card ≤ 4037
                 · by_cases h370 : A.card ≤ 4007
-                  · exact block_369 A h0 hg (by omega) (by omega)
-                  · exact block_370 A h0 hg (by omega) (by omega)
+                  · exact pair_block 3985 4007 7951 3967 A h0 hg (by omega) (by omega)
+                  · exact pair_block 4008 4037 8011 4003 A h0 hg (by omega) (by omega)
                 · by_cases h372 : A.card ≤ 4061
-                  · exact block_371 A h0 hg (by omega) (by omega)
-                  · exact block_372 A h0 hg (by omega) (by omega)
+                  · exact pair_block 4038 4061 8059 4021 A h0 hg (by omega) (by omega)
+                  · exact pair_block 4062 4090 8117 4057 A h0 hg (by omega) (by omega)
             · by_cases h377 : A.card ≤ 4196
               · by_cases h375 : A.card ≤ 4148
                 · by_cases h374 : A.card ≤ 4121
-                  · exact block_373 A h0 hg (by omega) (by omega)
-                  · exact block_374 A h0 hg (by omega) (by omega)
+                  · exact pair_block 4091 4121 8179 4091 A h0 hg (by omega) (by omega)
+                  · exact pair_block 4122 4148 8233 4111 A h0 hg (by omega) (by omega)
                 · by_cases h376 : A.card ≤ 4175
-                  · exact block_375 A h0 hg (by omega) (by omega)
-                  · exact block_376 A h0 hg (by omega) (by omega)
+                  · exact pair_block 4149 4175 8287 4139 A h0 hg (by omega) (by omega)
+                  · exact pair_block 4176 4196 8329 4153 A h0 hg (by omega) (by omega)
               · by_cases h379 : A.card ≤ 4247
                 · by_cases h378 : A.card ≤ 4216
-                  · exact block_377 A h0 hg (by omega) (by omega)
-                  · exact block_378 A h0 hg (by omega) (by omega)
+                  · exact pair_block 4197 4216 8369 4177 A h0 hg (by omega) (by omega)
+                  · exact pair_block 4217 4247 8431 4217 A h0 hg (by omega) (by omega)
                 · by_cases h380 : A.card ≤ 4266
-                  · exact block_379 A h0 hg (by omega) (by omega)
-                  · exact block_380 A h0 hg (by omega) (by omega)
+                  · exact pair_block 4248 4266 8467 4219 A h0 hg (by omega) (by omega)
+                  · exact pair_block 4267 4296 8527 4261 A h0 hg (by omega) (by omega)
         · by_cases h396 : A.card ≤ 4695
           · by_cases h388 : A.card ≤ 4479
             · by_cases h384 : A.card ≤ 4367
               · by_cases h382 : A.card ≤ 4323
-                · exact block_381 A h0 hg (by omega) (by omega)
+                · exact pair_block 4297 4323 8581 4289 A h0 hg (by omega) (by omega)
                 · by_cases h383 : A.card ≤ 4337
-                  · exact block_382 A h0 hg (by omega) (by omega)
-                  · exact block_383 A h0 hg (by omega) (by omega)
+                  · exact pair_block 4324 4337 8609 4289 A h0 hg (by omega) (by omega)
+                  · exact pair_block 4338 4367 8669 4337 A h0 hg (by omega) (by omega)
               · by_cases h386 : A.card ≤ 4424
                 · by_cases h385 : A.card ≤ 4398
-                  · exact block_384 A h0 hg (by omega) (by omega)
-                  · exact block_385 A h0 hg (by omega) (by omega)
+                  · exact pair_block 4368 4398 8731 4363 A h0 hg (by omega) (by omega)
+                  · exact pair_block 4399 4424 8783 4391 A h0 hg (by omega) (by omega)
                 · by_cases h387 : A.card ≤ 4452
-                  · exact block_386 A h0 hg (by omega) (by omega)
-                  · exact block_387 A h0 hg (by omega) (by omega)
+                  · exact pair_block 4425 4452 8839 4421 A h0 hg (by omega) (by omega)
+                  · exact pair_block 4453 4479 8893 4441 A h0 hg (by omega) (by omega)
             · by_cases h392 : A.card ≤ 4579
               · by_cases h390 : A.card ≤ 4519
                 · by_cases h389 : A.card ≤ 4503
-                  · exact block_388 A h0 hg (by omega) (by omega)
-                  · exact block_389 A h0 hg (by omega) (by omega)
+                  · exact pair_block 4480 4503 8941 4463 A h0 hg (by omega) (by omega)
+                  · exact pair_block 4504 4519 8971 4481 A h0 hg (by omega) (by omega)
                 · by_cases h391 : A.card ≤ 4548
-                  · exact block_390 A h0 hg (by omega) (by omega)
-                  · exact block_391 A h0 hg (by omega) (by omega)
+                  · exact pair_block 4520 4548 9029 4513 A h0 hg (by omega) (by omega)
+                  · exact pair_block 4549 4579 9091 4547 A h0 hg (by omega) (by omega)
               · by_cases h394 : A.card ≤ 4635
                 · by_cases h393 : A.card ≤ 4602
-                  · exact block_392 A h0 hg (by omega) (by omega)
-                  · exact block_393 A h0 hg (by omega) (by omega)
+                  · exact pair_block 4580 4602 9137 4561 A h0 hg (by omega) (by omega)
+                  · exact pair_block 4603 4635 9203 4603 A h0 hg (by omega) (by omega)
                 · by_cases h395 : A.card ≤ 4662
-                  · exact block_394 A h0 hg (by omega) (by omega)
-                  · exact block_395 A h0 hg (by omega) (by omega)
+                  · exact pair_block 4636 4662 9257 4621 A h0 hg (by omega) (by omega)
+                  · exact pair_block 4663 4695 9323 4663 A h0 hg (by omega) (by omega)
           · by_cases h403 : A.card ≤ 4895
             · by_cases h399 : A.card ≤ 4782
               · by_cases h397 : A.card ≤ 4722
-                · exact block_396 A h0 hg (by omega) (by omega)
+                · exact pair_block 4696 4722 9377 4691 A h0 hg (by omega) (by omega)
                 · by_cases h398 : A.card ≤ 4753
-                  · exact block_397 A h0 hg (by omega) (by omega)
-                  · exact block_398 A h0 hg (by omega) (by omega)
+                  · exact pair_block 4723 4753 9439 4721 A h0 hg (by omega) (by omega)
+                  · exact pair_block 4754 4782 9497 4751 A h0 hg (by omega) (by omega)
               · by_cases h401 : A.card ≤ 4835
                 · by_cases h400 : A.card ≤ 4810
-                  · exact block_399 A h0 hg (by omega) (by omega)
-                  · exact block_400 A h0 hg (by omega) (by omega)
+                  · exact pair_block 4783 4810 9551 4783 A h0 hg (by omega) (by omega)
+                  · exact pair_block 4811 4835 9601 4793 A h0 hg (by omega) (by omega)
                 · by_cases h402 : A.card ≤ 4865
-                  · exact block_401 A h0 hg (by omega) (by omega)
-                  · exact block_402 A h0 hg (by omega) (by omega)
+                  · exact pair_block 4836 4865 9661 4831 A h0 hg (by omega) (by omega)
+                  · exact pair_block 4866 4895 9721 4861 A h0 hg (by omega) (by omega)
             · by_cases h407 : A.card ≤ 5009
               · by_cases h405 : A.card ≤ 4954
                 · by_cases h404 : A.card ≤ 4925
-                  · exact block_403 A h0 hg (by omega) (by omega)
-                  · exact block_404 A h0 hg (by omega) (by omega)
+                  · exact pair_block 4896 4925 9781 4889 A h0 hg (by omega) (by omega)
+                  · exact pair_block 4926 4954 9839 4919 A h0 hg (by omega) (by omega)
                 · by_cases h406 : A.card ≤ 4985
-                  · exact block_405 A h0 hg (by omega) (by omega)
-                  · exact block_406 A h0 hg (by omega) (by omega)
+                  · exact pair_block 4955 4985 9901 4951 A h0 hg (by omega) (by omega)
+                  · exact pair_block 4986 5009 9949 4967 A h0 hg (by omega) (by omega)
               · by_cases h409 : A.card ≤ 5074
                 · by_cases h408 : A.card ≤ 5039
-                  · exact block_407 A h0 hg (by omega) (by omega)
-                  · exact block_408 A h0 hg (by omega) (by omega)
+                  · exact pair_block 5010 5039 10009 4999 A h0 hg (by omega) (by omega)
+                  · exact pair_block 5040 5074 10079 5039 A h0 hg (by omega) (by omega)
                 · by_cases h410 : A.card ≤ 5102
-                  · exact block_409 A h0 hg (by omega) (by omega)
-                  · exact block_410 A h0 hg (by omega) (by omega)
+                  · exact pair_block 5075 5102 10133 5059 A h0 hg (by omega) (by omega)
+                  · exact pair_block 5103 5132 10193 5099 A h0 hg (by omega) (by omega)
       · by_cases h440 : A.card ≤ 6000
         · by_cases h425 : A.card ≤ 5550
           · by_cases h418 : A.card ≤ 5342
             · by_cases h414 : A.card ≤ 5220
               · by_cases h412 : A.card ≤ 5159
-                · exact block_411 A h0 hg (by omega) (by omega)
+                · exact pair_block 5133 5159 10247 5119 A h0 hg (by omega) (by omega)
                 · by_cases h413 : A.card ≤ 5192
-                  · exact block_412 A h0 hg (by omega) (by omega)
-                  · exact block_413 A h0 hg (by omega) (by omega)
+                  · exact pair_block 5160 5192 10313 5153 A h0 hg (by omega) (by omega)
+                  · exact pair_block 5193 5220 10369 5179 A h0 hg (by omega) (by omega)
               · by_cases h416 : A.card ≤ 5279
                 · by_cases h415 : A.card ≤ 5250
-                  · exact block_414 A h0 hg (by omega) (by omega)
-                  · exact block_415 A h0 hg (by omega) (by omega)
+                  · exact pair_block 5221 5250 10429 5209 A h0 hg (by omega) (by omega)
+                  · exact pair_block 5251 5279 10487 5237 A h0 hg (by omega) (by omega)
                 · by_cases h417 : A.card ≤ 5315
-                  · exact block_416 A h0 hg (by omega) (by omega)
-                  · exact block_417 A h0 hg (by omega) (by omega)
+                  · exact pair_block 5280 5315 10559 5279 A h0 hg (by omega) (by omega)
+                  · exact pair_block 5316 5342 10613 5297 A h0 hg (by omega) (by omega)
             · by_cases h421 : A.card ≤ 5427
               · by_cases h419 : A.card ≤ 5370
-                · exact block_418 A h0 hg (by omega) (by omega)
+                · exact pair_block 5343 5370 10667 5333 A h0 hg (by omega) (by omega)
                 · by_cases h420 : A.card ≤ 5392
-                  · exact block_419 A h0 hg (by omega) (by omega)
-                  · exact block_420 A h0 hg (by omega) (by omega)
+                  · exact pair_block 5371 5392 10711 5347 A h0 hg (by omega) (by omega)
+                  · exact pair_block 5393 5427 10781 5393 A h0 hg (by omega) (by omega)
               · by_cases h423 : A.card ≤ 5491
                 · by_cases h422 : A.card ≤ 5460
-                  · exact block_421 A h0 hg (by omega) (by omega)
-                  · exact block_422 A h0 hg (by omega) (by omega)
+                  · exact pair_block 5428 5460 10847 5419 A h0 hg (by omega) (by omega)
+                  · exact pair_block 5461 5491 10909 5449 A h0 hg (by omega) (by omega)
                 · by_cases h424 : A.card ≤ 5523
-                  · exact block_423 A h0 hg (by omega) (by omega)
-                  · exact block_424 A h0 hg (by omega) (by omega)
+                  · exact pair_block 5492 5523 10973 5483 A h0 hg (by omega) (by omega)
+                  · exact pair_block 5524 5550 11027 5503 A h0 hg (by omega) (by omega)
           · by_cases h432 : A.card ≤ 5761
             · by_cases h428 : A.card ≤ 5625
               · by_cases h426 : A.card ≤ 5572
-                · exact block_425 A h0 hg (by omega) (by omega)
+                · exact pair_block 5551 5572 11071 5521 A h0 hg (by omega) (by omega)
                 · by_cases h427 : A.card ≤ 5602
-                  · exact block_426 A h0 hg (by omega) (by omega)
-                  · exact block_427 A h0 hg (by omega) (by omega)
+                  · exact pair_block 5573 5602 11131 5563 A h0 hg (by omega) (by omega)
+                  · exact pair_block 5603 5625 11177 5581 A h0 hg (by omega) (by omega)
               · by_cases h430 : A.card ≤ 5696
                 · by_cases h429 : A.card ≤ 5659
-                  · exact block_428 A h0 hg (by omega) (by omega)
-                  · exact block_429 A h0 hg (by omega) (by omega)
+                  · exact pair_block 5626 5659 11243 5623 A h0 hg (by omega) (by omega)
+                  · exact pair_block 5660 5696 11317 5657 A h0 hg (by omega) (by omega)
                 · by_cases h431 : A.card ≤ 5729
-                  · exact block_430 A h0 hg (by omega) (by omega)
-                  · exact block_431 A h0 hg (by omega) (by omega)
+                  · exact pair_block 5697 5729 11383 5689 A h0 hg (by omega) (by omega)
+                  · exact pair_block 5730 5761 11447 5717 A h0 hg (by omega) (by omega)
             · by_cases h436 : A.card ≤ 5882
               · by_cases h434 : A.card ≤ 5813
                 · by_cases h433 : A.card ≤ 5789
-                  · exact block_432 A h0 hg (by omega) (by omega)
-                  · exact block_433 A h0 hg (by omega) (by omega)
+                  · exact pair_block 5762 5789 11503 5741 A h0 hg (by omega) (by omega)
+                  · exact pair_block 5790 5813 11551 5779 A h0 hg (by omega) (by omega)
                 · by_cases h435 : A.card ≤ 5848
-                  · exact block_434 A h0 hg (by omega) (by omega)
-                  · exact block_435 A h0 hg (by omega) (by omega)
+                  · exact pair_block 5814 5848 11621 5807 A h0 hg (by omega) (by omega)
+                  · exact pair_block 5849 5882 11689 5843 A h0 hg (by omega) (by omega)
               · by_cases h438 : A.card ≤ 5944
                 · by_cases h437 : A.card ≤ 5909
-                  · exact block_436 A h0 hg (by omega) (by omega)
-                  · exact block_437 A h0 hg (by omega) (by omega)
+                  · exact pair_block 5883 5909 11743 5861 A h0 hg (by omega) (by omega)
+                  · exact pair_block 5910 5944 11813 5903 A h0 hg (by omega) (by omega)
                 · by_cases h439 : A.card ≤ 5972
-                  · exact block_438 A h0 hg (by omega) (by omega)
-                  · exact block_439 A h0 hg (by omega) (by omega)
+                  · exact pair_block 5945 5972 11867 5923 A h0 hg (by omega) (by omega)
+                  · exact pair_block 5973 6000 11923 5953 A h0 hg (by omega) (by omega)
         · by_cases h455 : A.card ≤ 6498
           · by_cases h447 : A.card ≤ 6212
             · by_cases h443 : A.card ≤ 6095
               · by_cases h441 : A.card ≤ 6032
-                · exact block_440 A h0 hg (by omega) (by omega)
+                · exact pair_block 6001 6032 11987 5987 A h0 hg (by omega) (by omega)
                 · by_cases h442 : A.card ≤ 6063
-                  · exact block_441 A h0 hg (by omega) (by omega)
-                  · exact block_442 A h0 hg (by omega) (by omega)
+                  · exact pair_block 6033 6063 12049 6029 A h0 hg (by omega) (by omega)
+                  · exact pair_block 6064 6095 12113 6053 A h0 hg (by omega) (by omega)
               · by_cases h445 : A.card ≤ 6159
                 · by_cases h444 : A.card ≤ 6120
-                  · exact block_443 A h0 hg (by omega) (by omega)
-                  · exact block_444 A h0 hg (by omega) (by omega)
+                  · exact pair_block 6096 6120 12163 6067 A h0 hg (by omega) (by omega)
+                  · exact pair_block 6121 6159 12241 6121 A h0 hg (by omega) (by omega)
                 · by_cases h446 : A.card ≤ 6189
-                  · exact block_445 A h0 hg (by omega) (by omega)
-                  · exact block_446 A h0 hg (by omega) (by omega)
+                  · exact pair_block 6160 6189 12301 6143 A h0 hg (by omega) (by omega)
+                  · exact pair_block 6190 6212 12347 6163 A h0 hg (by omega) (by omega)
             · by_cases h451 : A.card ≤ 6363
               · by_cases h449 : A.card ≤ 6288
                 · by_cases h448 : A.card ≤ 6249
-                  · exact block_447 A h0 hg (by omega) (by omega)
-                  · exact block_448 A h0 hg (by omega) (by omega)
+                  · exact pair_block 6213 6249 12421 6211 A h0 hg (by omega) (by omega)
+                  · exact pair_block 6250 6288 12497 6247 A h0 hg (by omega) (by omega)
                 · by_cases h450 : A.card ≤ 6324
-                  · exact block_449 A h0 hg (by omega) (by omega)
-                  · exact block_450 A h0 hg (by omega) (by omega)
+                  · exact pair_block 6289 6324 12569 6287 A h0 hg (by omega) (by omega)
+                  · exact pair_block 6325 6363 12647 6323 A h0 hg (by omega) (by omega)
               · by_cases h453 : A.card ≤ 6435
                 · by_cases h452 : A.card ≤ 6400
-                  · exact block_451 A h0 hg (by omega) (by omega)
-                  · exact block_452 A h0 hg (by omega) (by omega)
+                  · exact pair_block 6364 6400 12721 6359 A h0 hg (by omega) (by omega)
+                  · exact pair_block 6401 6435 12791 6397 A h0 hg (by omega) (by omega)
                 · by_cases h454 : A.card ≤ 6466
-                  · exact block_453 A h0 hg (by omega) (by omega)
-                  · exact block_454 A h0 hg (by omega) (by omega)
+                  · exact pair_block 6436 6466 12853 6421 A h0 hg (by omega) (by omega)
+                  · exact pair_block 6467 6498 12917 6451 A h0 hg (by omega) (by omega)
           · by_cases h462 : A.card ≤ 6740
             · by_cases h458 : A.card ≤ 6604
               · by_cases h456 : A.card ≤ 6531
-                · exact block_455 A h0 hg (by omega) (by omega)
+                · exact pair_block 6499 6531 12983 6491 A h0 hg (by omega) (by omega)
                 · by_cases h457 : A.card ≤ 6564
-                  · exact block_456 A h0 hg (by omega) (by omega)
-                  · exact block_457 A h0 hg (by omega) (by omega)
+                  · exact pair_block 6532 6564 13049 6521 A h0 hg (by omega) (by omega)
+                  · exact pair_block 6565 6604 13127 6563 A h0 hg (by omega) (by omega)
               · by_cases h460 : A.card ≤ 6665
                 · by_cases h459 : A.card ≤ 6634
-                  · exact block_458 A h0 hg (by omega) (by omega)
-                  · exact block_459 A h0 hg (by omega) (by omega)
+                  · exact pair_block 6605 6634 13187 6599 A h0 hg (by omega) (by omega)
+                  · exact pair_block 6635 6665 13249 6619 A h0 hg (by omega) (by omega)
                 · by_cases h461 : A.card ≤ 6704
-                  · exact block_460 A h0 hg (by omega) (by omega)
-                  · exact block_461 A h0 hg (by omega) (by omega)
+                  · exact pair_block 6666 6704 13327 6661 A h0 hg (by omega) (by omega)
+                  · exact pair_block 6705 6740 13399 6701 A h0 hg (by omega) (by omega)
             · by_cases h466 : A.card ≤ 6886
               · by_cases h464 : A.card ≤ 6817
                 · by_cases h463 : A.card ≤ 6779
-                  · exact block_462 A h0 hg (by omega) (by omega)
-                  · exact block_463 A h0 hg (by omega) (by omega)
+                  · exact pair_block 6741 6779 13477 6737 A h0 hg (by omega) (by omega)
+                  · exact pair_block 6780 6817 13553 6779 A h0 hg (by omega) (by omega)
                 · by_cases h465 : A.card ≤ 6850
-                  · exact block_464 A h0 hg (by omega) (by omega)
-                  · exact block_465 A h0 hg (by omega) (by omega)
+                  · exact pair_block 6818 6850 13619 6803 A h0 hg (by omega) (by omega)
+                  · exact pair_block 6851 6886 13691 6841 A h0 hg (by omega) (by omega)
               · by_cases h468 : A.card ≤ 6957
                 · by_cases h467 : A.card ≤ 6922
-                  · exact block_466 A h0 hg (by omega) (by omega)
-                  · exact block_467 A h0 hg (by omega) (by omega)
+                  · exact pair_block 6887 6922 13763 6883 A h0 hg (by omega) (by omega)
+                  · exact pair_block 6923 6957 13831 6911 A h0 hg (by omega) (by omega)
                 · by_cases h469 : A.card ≤ 6995
-                  · exact block_468 A h0 hg (by omega) (by omega)
-                  · exact block_469 A h0 hg (by omega) (by omega)
+                  · exact pair_block 6958 6995 13907 6949 A h0 hg (by omega) (by omega)
+                  · exact pair_block 6996 7000 13967 6971 A h0 hg (by omega) (by omega)
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 100000000 in

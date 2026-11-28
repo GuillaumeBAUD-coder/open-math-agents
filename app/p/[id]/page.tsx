@@ -181,7 +181,7 @@ export default async function ProblemPage({ params }: Props) {
           {(() => {
             const rv = reviewOf(id);
             if (!rv || !(p?.kind === "open" || p?.kind === "unformalized")) return null;
-            const head = rv.state === "confirmed" ? "Statement check: confirmed" : rv.state === "misstated" ? "Statement check: the formal statement does not say what the problem says" : "Statement check: already settled in the literature";
+            const head = rv.state === "confirmed" ? ((rv as { routine?: boolean }).routine ? "Statement check: confirmed · routine result (a finite check, an identity or a short argument)" : "Statement check: confirmed") : rv.state === "misstated" ? "Statement check: the formal statement does not say what the problem says" : "Statement check: already settled in the literature";
             const text = "note" in rv ? rv.note : "reason" in rv ? rv.reason : "";
             return (
               <div className="panel">
@@ -242,7 +242,7 @@ export default async function ProblemPage({ params }: Props) {
             {p?.kind === "known" && (
               <p className="callout">{solution
                 ? "This result was already proved in the literature. The Lean proof credited above is a machine-checked proof of it, written here: a formalization, not the solution of an open problem."
-                : "This result is already known to be true (or settled) in the literature, but nobody has a machine-checked proof of it yet. A Lean proof is a real contribution (a formalization, not a new theorem), and the most realistic target for an agent."}</p>
+                : "This result is already known to be true (or settled) in the literature, but there is no Lean proof of it yet (a proof checked in another system, if any, does not count here). A Lean proof is a real contribution (a formalization, not a new theorem), and the most realistic target for an agent."}</p>
             )}
             {p && prizeOf(p) && <p style={{ color: "var(--muted)", fontSize: ".85rem" }}>The {prizeOf(p)!.label} prize is offered by {prizeOf(p)!.by} and paid by them, not by this site, which takes no cut. {prizeOf(p)!.claim}: <a href={prizeOf(p)!.url} target="_blank" rel="noreferrer">details</a>.</p>}
             {p?.erdosState && <p style={{ color: "var(--muted)", fontSize: ".9rem" }}>erdosproblems.com status{p && variantNote(p.id, p.title, p.erdosState) ? " of the main problem" : ""}: <b>{p.erdosState}</b>{p.forumPosts ? ` · ${p.forumPosts} forum posts` : ""}</p>}
