@@ -87,13 +87,17 @@ lemma erdos_1955_contradiction (k : ℕ) (hk : 100 < k)
   obtain ⟨u, hu_ge, hrun⟩ := h
   let t := ⌈(6 : ℝ) * ↑k / Real.log ↑k⌉₊
   have ht_pos : 0 < t := by
-    -- 6k / log k > 1 for k > 100
-    sorry -- elementary for k > 100
+    -- For k > 100, 6 * k / log k > 1, so the ceiling is positive
+    have : (1 : ℝ) < 6 * ↑k / Real.log ↑k := by
+      sorry -- true for k > 100
+    exact Nat.ceil_pos.mpr this
   have hu_large : 1 < u + t := by
     linarith [hu_ge, ht_pos]
   have ht_le_u : t ≤ u := by
-    -- 6k / log k ≤ k² for k > 100
-    sorry
+    -- 6k / log k ≤ k² for k > 100, and u ≥ k²
+    have : (6 : ℝ) * ↑k / Real.log ↑k ≤ ↑(k ^ 2) := by
+      sorry -- elementary
+    exact Nat.ceil_le.mpr (by linarith [this, hu_ge])
   -- Upper bound from smoothness + product_smooth_bound
   have hupper : Nat.choose (u + t) t ≤ (u + t) ^ Nat.primeCounting k := by
     -- every prime factor ≤ k by the run assumption, then apply the product lemma
