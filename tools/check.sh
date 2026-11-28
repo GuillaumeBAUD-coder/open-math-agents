@@ -3,6 +3,44 @@
 # Usage: tools/check.sh proofs/<id>.lean [verdict.json]
 # Needs OMA_FC = a formal-conjectures checkout at the commit in data/catalog.json, with the Mathlib cache.
 set -uo pipefail
+# `timeout` is GNU coreutils: always there on Linux (CI), missing on stock macOS, where the
+# unqualified call below fails with `timeout: command not found`, the build never runs, and the
+# verdict is a `fault` ("could not build imported module") — a perfectly good proof reads as a
+# checker problem, and a fault is retried instead of fixed. Use GNU timeout when it exists and
+# otherwise run the command under a watchdog that reproduces its contract: kill at the deadline,
+# exit status 124.
+TO=timeout
+if ! command -v timeout >/dev/null 2>&1; then
+  if command -v gtimeout >/dev/null 2>&1; then
+    TO=gtimeout   # coreutils installed but its gnubin directory is not on PATH
+  else
+    TO=oma_timeout
+    oma_timeout() {
+      local secs="$1"; shift
+      local marker pid watcher rc=0 i=0
+      marker="$(mktemp "${TMPDIR:-/tmp}/oma-timeout.XXXXXX")" || { "$@"; return; }
+      "$@" &
+      pid=$!
+      # The watchdog sleeps in one-second steps and keeps its own output on /dev/null: this function is
+      # called inside $( ), so anything still holding the pipe open (a long `sleep`, a stray child)
+      # would make the caller wait for the watchdog and not the command.
+      (
+        while [ "$i" -lt "$secs" ]; do sleep 1; i=$((i+1)); done
+        echo 1 > "$marker"
+        kill -TERM "$pid" 2>/dev/null
+        sleep "${OMA_TIMEOUT_KILL_AFTER:-5}"
+        kill -KILL "$pid" 2>/dev/null
+      ) >/dev/null 2>&1 &
+      watcher=$!
+      wait "$pid" || rc=$?
+      kill "$watcher" 2>/dev/null
+      wait "$watcher" 2>/dev/null
+      [ -s "$marker" ] && rc=124   # mktemp made it empty; only the watchdog writes to it
+      rm -f "$marker"
+      return "$rc"
+    }
+  fi
+fi
 FILE="$1"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 # The verdict path is made absolute now: the script later moves into the formal-conjectures checkout, and a relative
@@ -46,7 +84,7 @@ if [ "$MODULE" != "Mathlib" ]; then
   # Builds only what the submission imports: one problem file, or a chain of merged reductions (seconds to a few
   # minutes when formal-conjectures' libraries come prebuilt, as in CI). 20 minutes, so that with the 30 for the
   # submission itself a check ends with a verdict inside its job's 60-minute limit.
-  LOG="$(timeout 1200 lake build "$MODULE" 2>&1)" || { emit fault "could not build imported module $MODULE" "$LOG"; exit 2; }
+  LOG="$("$TO" 1200 lake build "$MODULE" 2>&1)" || { emit fault "could not build imported module $MODULE" "$LOG"; exit 2; }
 fi
 SUB="OMASubmission_$$.lean"
 # A problem that asks for a value: audit with the placeholder's value skipped (tools/oma_audit.lean).
@@ -78,7 +116,7 @@ if [ -n "$SKIP" ]; then
 else
   { cat "$ROOT/$FILE" 2>/dev/null || cat "$FILE"; printf '\n%s\n#print axioms %s\n' "$GUARD" "$THM"; } > "$SUB"
 fi
-LOG="$(timeout 1800 lake env lean "$SUB" 2>&1)"; RC=$?
+LOG="$("$TO" 1800 lake env lean "$SUB" 2>&1)"; RC=$?
 rm -f "$SUB"
 [ $RC -eq 124 ] && { emit rejected "timeout: over 30 minutes" "$LOG"; exit 1; }
 [ $RC -ne 0 ] && { emit rejected "does not compile" "$LOG"; exit 1; }
