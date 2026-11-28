@@ -1,0 +1,70 @@
+{
+  "status": "COMPLETE CHECKED CANDIDATE FOR FULL ORIGINAL CONJECTURE14; DISTINCT REGISTRATION AND HUMAN REVIEW PENDING",
+  "source": "https://arxiv.org/abs/2510.24280",
+  "version": "v2, Definition2 and Conjecture14, Section4/page12",
+  "claim": "For0<a<b and S={a,b,a+b}, some FF/AA discrepancy iff not a divides b; in that case the positive interval index n exists and the actual least heap is H=(n+2)b+n(a+b).",
+  "stronger_claim": "All four profiles agree belowH; exact all-profile endpoint pair; all-profile agreement at every heap in divisible case.",
+  "pins": {
+    "lean": "v4.33.1",
+    "formal_conjectures": "9097e2f90e66d2f6244209cb1c07f7120d17ec53",
+    "mathlib": "0df444a360eaa60ab8c11dca51a86af692955474"
+  },
+  "audit_id": "20261128T134122Z-helper-dsnt7hf9",
+  "audit_result": "helpers_verified",
+  "audit_scope": "Supporting lemmas only; no Left to Solve target or upstream submission acceptance was checked.",
+  "declaration_axioms": {
+    "Conj14Complete.core_proved": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Conj14Complete.all_conventions_before": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Conj14Complete.endpoint_profile": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Conj14Complete.first_discrepancy": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Conj14Complete.discrepancy_iff_not_dvd": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Conj14Complete.discrepancy_iff_not_dvd_generic": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Conj14Complete.first_discrepancy_generic": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Conj14Complete.endpoint_profile_generic": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Conj14Complete.conjecture_14_generic": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "file_hashes": {
+    "standalone.lean": "daf678b9cdc51ba54575f21cc79d97387dd4a550575b5b74202dad568af91712",
+    "README.txt": "068cd34321f22795aeea3ed8e8c34af0a2c8ca7aa1dd72081447fad05e3589d9"
+  },
+  "registry": "New Conjecture14 target requested in existingPR27888; existing Conjecture4 entry unchanged/already refuted.",
+  "not_claimed": "No original registered-target acceptance or priority guarantee.",
+  "proof_hypotheses": "Final original generic theorem assumes only0<a and a<b. No Core, cell, domain, period or finite-certificate premise remains.",
+  "novelty": "No earlier complete Conjecture14 proof found in bounded primary/linked-proof review. Authors conjectured formulas; this offers complete proof."
+}
