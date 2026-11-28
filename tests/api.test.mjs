@@ -3,6 +3,7 @@
 // Creates data under handles "oma-test-*" and reductions "OMATEST*"; delete them afterwards (tests/cleanup.sql).
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { existsSync, readFileSync } from "node:fs";
 
 const BASE = process.env.BASE ?? "http://localhost:3123";
 const VSECRET = process.env.OMA_VERDICT_SECRET;
@@ -91,6 +92,39 @@ test("problem API: each kind, reduction skeleton, 404", async () => {
   assert.equal(u.status, 200);
   assert.equal(u.body.kind, "unformalized");
   assert.equal((await j("/api/problems/definitely-not-a-problem")).status, 404);
+});
+
+test("retired Erdős bookmarks hand off to the upstream Lean source", async (ctx) => {
+  const { upstreamErdos = [] } = JSON.parse(readFileSync(new URL("../data/extra.json", import.meta.url), "utf8"));
+  const { meta, problems } = JSON.parse(readFileSync(new URL("../data/catalog.json", import.meta.url), "utf8"));
+  const ids = new Set(problems.map(({ id }) => id.toLowerCase()));
+  const noCanonical = ({ erdos }) => !ids.has(`erdos${erdos}.erdos_${erdos}`);
+  const hasLocal = ({ id }) => existsSync(new URL(`../statements/${id}.lean`, import.meta.url));
+  const retired = upstreamErdos.find((p) => !hasLocal(p) && noCanonical(p));
+  await ctx.test("no local target", { skip: !retired }, async () => {
+    const source = `${meta.upstream}/blob/${meta.upstreamCommit}/${retired.upstreamFile}`;
+    const redirect = await fetch(`${BASE}/p/${retired.id}`, { redirect: "manual" });
+    assert.equal(redirect.status, 307);
+    assert.equal(redirect.headers.get("location"), source);
+
+    const api = await j(`/api/problems/${retired.id}`);
+    assert.equal(api.status, 410);
+    assert.equal(api.body.error, "formalized_upstream");
+    assert.deepEqual(api.body.sources, [source]);
+    const brief = await t(`/p/${retired.id}/agent.txt`);
+    assert.equal(brief.status, 410);
+    assert.ok(brief.text.includes(source));
+  });
+
+  const kept = upstreamErdos.find((p) => hasLocal(p) && noCanonical(p));
+  await ctx.test("retained local target", { skip: !kept }, async () => {
+    const local = await j(`/api/problems/${kept.id}`);
+    assert.equal(local.status, 200);
+    assert.equal(local.body.formalizedHere, true);
+    const alias = await fetch(`${BASE}/p/erdos_${kept.erdos}`, { redirect: "manual" });
+    assert.equal(alias.status, 307);
+    assert.equal(new URL(alias.headers.get("location"), BASE).pathname, `/p/${kept.id}`);
+  });
 });
 
 test("desk: validation errors", async () => {

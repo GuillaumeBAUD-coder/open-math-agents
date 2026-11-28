@@ -61,7 +61,7 @@ const OV = new Map(OVERRIDES.map((o) => [o.id, o]));
 type CardRow = [string, string, number, number, string[], string[], number, number, string | null, number, number | null, string, number];
 const cards = cardsRaw as unknown as {
   meta: { upstream: string; upstreamCommit: string; license: string; counts: Record<"open" | "known" | "warmup", number>; total: number; extra: unknown; extra2: unknown; extra3: unknown; moBuckets: number };
-  sources: string[]; kinds: Kind[]; rows: CardRow[];
+  sources: string[]; kinds: Kind[]; rows: CardRow[]; retiredErdosFiles?: Record<string, string>;
 };
 
 // Identical field lists share one array (46k problems, a few hundred distinct lists): saves several MB of heap.
@@ -147,6 +147,7 @@ export function settledEntry(id: string): Override | null {
 }
 
 let LOWER: Map<string, string> | null = null;
+const ERDOS_BOOKMARK = /^erdos[-_]?(\d{1,4})$/i;
 /**
  * The catalogue id that a URL with a slightly wrong id most likely means, or null (then the page is a 404): the same
  * id in another case (erdos142.erdos_142), an Erdős problem by number written like the ids of the unformalized ones
@@ -162,7 +163,7 @@ export function resolveId(raw: string): string | null {
   const low = raw.toLowerCase();
   const same = LOWER.get(low);
   if (same) return same;
-  const erdos = /^erdos[-_]?(\d{1,4})$/.exec(low);
+  const erdos = ERDOS_BOOKMARK.exec(low);
   if (erdos) {
     const n = Number(erdos[1]);
     return LOWER.get(`erdos${n}.erdos_${n}`) ?? LOWER.get(`erdos-${n}`) ?? null;
@@ -176,6 +177,15 @@ export function resolveId(raw: string): string | null {
     }
   }
   return under[0] ?? null;
+}
+
+/** The pinned source for a retired Erdős bookmark without a local target. */
+export function retiredErdosSource(id: string): string | undefined {
+  const erdos = ERDOS_BOOKMARK.exec(id);
+  if (!erdos) return;
+  const file = cards.retiredErdosFiles?.[`erdos-${Number(erdos[1])}`];
+  if (!file || settledEntry(id) || resolveId(id)) return;
+  return `${META.upstream}/blob/${META.upstreamCommit}/${file}`;
 }
 
 /** The problem with its statement, Lean source and references (one D1 read). */

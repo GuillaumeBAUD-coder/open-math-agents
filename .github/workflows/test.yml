@@ -36,6 +36,7 @@ jobs:
           for i in $(seq 1 60); do curl -s -o /dev/null localhost:3123/cdn-cgi/local/explorer/api/d1/database && break; sleep 1; done
           node scripts/seed_d1.mjs --local http://localhost:3123
           node scripts/seed_d1.mjs --local http://localhost:3123 --part mo
+          BASE=http://localhost:3123 node --test --test-name-pattern="retired Erdős bookmarks" tests/api.test.mjs
       - name: Browser tests
         id: browser
         run: |

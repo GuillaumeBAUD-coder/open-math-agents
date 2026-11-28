@@ -15,6 +15,7 @@ const ROOT = path.join(path.dirname(new URL(import.meta.url).pathname), "..");
 const D = (f) => JSON.parse(fs.readFileSync(path.join(ROOT, "data", f), "utf8"));
 const catalog = D("catalog.json");
 const extra = D("extra.json");
+const upstreamErdos = extra.upstreamErdos ?? [];
 const e2 = D("extra2.json");
 const statements = D("statements.json");
 const overrides = D("status_overrides.json").entries;
@@ -55,7 +56,7 @@ const formalized = (p) => {
 
 const core = [
   ...catalog.problems.map((p) => ({ ...settledUpstream(p), fame: fameOf(p) })),
-  ...extra.problems.concat((extra.upstreamErdos ?? []).filter((p) => statements[p.id]))
+  ...extra.problems.concat(upstreamErdos.filter((p) => statements[p.id]))
     .map((p) => formalized({ ...p, fame: fameOf(p) })),
   ...e2.rows.map(([id, title, si, fields, statement, ref, authors, fame, difficulty, tags, area, posts]) => formalized({
     id, title, source: e2.sources[si], kind: "unformalized", category: "unformalized", fields, tags, statement, ref, authors, fame, difficulty,
@@ -109,9 +110,12 @@ const rows = all.map((p) => [
   p.id, p.title, sources.indexOf(p.source), KINDS.indexOf(p.kind), p.fields ?? [], [], p.difficulty, p.fame, // tags: searched in D1, not kept in memory
   p.prize ?? null, p.forumPosts ?? 0, p.erdos ?? null, p.decl ?? "", p.qid ? 1 : 0,
 ]);
+const retiredErdosFiles = Object.fromEntries(upstreamErdos.filter((p) => !statements[p.id])
+  .map((p) => [p.id, p.upstreamFile]));
 fs.mkdirSync(path.join(ROOT, "data", "gen"), { recursive: true });
 fs.writeFileSync(path.join(ROOT, "data", "gen", "cards.json"), JSON.stringify({
-  meta: { ...catalog.meta, extra: extra.meta, extra2: e2.meta, extra3: e3.meta, moBuckets: MO_BUCKETS }, sources, kinds: KINDS, rows,
+  meta: { ...catalog.meta, extra: extra.meta, extra2: e2.meta, extra3: e3.meta, moBuckets: MO_BUCKETS },
+  sources, kinds: KINDS, rows, retiredErdosFiles,
 }));
 
 // ---- public/map-data.json (static: the map's layout never depends on live data) -----------------------
