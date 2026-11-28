@@ -64,3 +64,4 @@ theorem OMA.solution : OMA.R_Erdos142_erdos_142_variants_lower_R1_H2_R3_H1_R2.H2
       by_contra h
       exact hxV (Finset.mem_sdiff.mpr ⟨hx, h⟩)
     exact (Finset.mem_filter.mp hxW).2
+
