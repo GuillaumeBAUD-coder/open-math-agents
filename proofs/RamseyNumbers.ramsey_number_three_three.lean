@@ -6,8 +6,6 @@ open RamseyNumbers SimpleGraph
 namespace RamseyThree
 
 -- The five-cycle and its complement both avoid triangles.
-set_option maxRecDepth 4000 in
-set_option maxHeartbeats 800000 in
 lemma five_fails : ¬ IsGraphRamsey 5 3 3 := by
   intro h
   apply h (cycleGraph 5)
