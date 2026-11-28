@@ -53,12 +53,18 @@ mapfile -t D < decision.txt
 VERDICT="${D[0]}"; FPATH="${D[1]}"; KIND="${D[2]}"; POL="${D[3]}"; REASON="${D[4]}"; MODE="${D[5]:-new}"
 [ "$VERDICT" = "stale" ] && exit 0
 PID="$(basename "$FPATH" .lean)"
+FILE_ON_MAIN=0
 # Defence in depth: re-run the linter from main (trusted code) on the exact file at the checked commit.
 # Its verdict on kind and polarity replaces whatever the untrusted artifact claimed.
 if [ "$VERDICT" = "accepted" ]; then
   # main moves every few seconds (merges): lint against its latest statements, reductions and catalogue, so a proof of a
   # problem whose statement was merged minutes ago is not refused for a missing statement
-  git -C base fetch -q --depth 1 origin main 2>/dev/null && git -C base checkout -q FETCH_HEAD -- statements reductions data 2>/dev/null || true
+  if git -C base fetch -q --depth 1 origin main 2>/dev/null; then
+    git -C base checkout -q FETCH_HEAD -- statements reductions data 2>/dev/null || true
+    if [ "$MODE" = new ] && git -C base cat-file -e "FETCH_HEAD:$FPATH" 2>/dev/null; then
+      FILE_ON_MAIN=1
+    fi
+  fi
   mkdir -p "base/$(dirname "$FPATH")"
   if [ "$MODE" = replace ]; then
     # Shortest-proof rule, re-checked here with trusted code: the proof on main right now against the checked one.
@@ -91,35 +97,49 @@ case "$VERDICT" in
     # on the site as "proof accepted, statement being verified" until its formal statement is checked against
     # the original problem (content/open_review.json); a statement merged here is checked the same way.
     if [ "$MODE" = replace ]; then
-      MSG="**ACCEPTED: shorter proof** of \`$PID\` ($NEWLEN characters against $OLDLEN, comments and spaces not counted). Merged: it replaces the previous proof, and you are credited with the shortest proof of this problem (the first solve stays with whoever proved it first). [Run]($RUN_URL)"
+      MSG="**ACCEPTED: shorter proof** of \`$PID\` ($NEWLEN characters against $OLDLEN, comments and spaces not counted). Merged as the shortest proof. The first-solve credit stays with the original solver."
     elif [ "$KIND" = "statement" ]; then
-      MSG="**ACCEPTED: the statement compiles.** Merged now: \`$PID\` becomes provable by everyone, and the formalization is credited to you. Its faithfulness to the source is checked separately; a statement found unfaithful is corrected and its proofs are labelled accordingly. [Run]($RUN_URL)"
+      MSG="**ACCEPTED: the statement compiles.** Merged. Anyone can now submit a proof of \`$PID\`. Its faithfulness to the source is checked separately. A statement found unfaithful is corrected and its proofs are labelled accordingly."
     elif [ "$KIND" = "open" ]; then
-      MSG="**ACCEPTED by the Lean checker** ($POL of \`$PID\`). Merged and credited now. On the site it shows as *proof accepted, statement being verified* until the formal statement is checked against the original problem (a mistranslated statement is the usual reason an open problem falls easily); then it counts as an open problem solved. [Run]($RUN_URL)"
+      MSG="**ACCEPTED by the Lean checker** ($POL of \`$PID\`). Merged. On the site it shows as *proof accepted, statement being verified* until the formal statement is checked against the original problem. It then counts as an open problem solved if the statement is confirmed."
     else
-      MSG="**ACCEPTED** ($POL of \`$PID\`): ${REASON:-the Lean kernel accepted it and its axioms passed the audit}. Merged and credited. [Run]($RUN_URL)"
+      MSG="**ACCEPTED** ($POL of \`$PID\`): ${REASON:-the Lean kernel accepted it and its axioms passed the audit}. Merged."
     fi
     if jq -e '.labels | map(.name) | index("needs-human-review")' pr.json >/dev/null; then
       gh api -X DELETE "repos/$REPO/issues/$PR/labels/needs-human-review" >/dev/null 2>&1 || true
     fi
     {
-      if [ "${REMERGE:-0}" = 0 ]; then comment "$MSG"; fi   # a merge retry does not repeat the verdict
       # Many verdicts merge at once: GitHub refuses a merge when main moved a moment before ("Base branch
       # was modified"). That is a race, not a rejection: retry with a random pause, a few times.
       MERGED=0
+      MERGE_PENDING=0
       # GitHub never merges a draft: an accepted draft is marked ready first.
-      if [ "$(jq -r .draft pr.json)" = "true" ]; then
+      if [ "$FILE_ON_MAIN" = 0 ] && [ "$(jq -r .draft pr.json)" = "true" ]; then
         gh pr ready "$PR" --repo "$REPO" || true
       fi
       for TRY in 1 2 3 4 5 6 7 8; do
-                # REST first (its answer carries the merge commit and it spares the small GraphQL budget); when it answers
-        # "Resource not accessible by integration", as it does for many of these pull requests, gh pr merge (GraphQL).
-        if OUT="$(gh api -X PUT "repos/$REPO/pulls/$PR/merge" -f merge_method=squash -f sha="$HEAD_SHA" 2>&1)"; then
-          MERGED=1; MERGE_SHA="$(printf '%s' "$OUT" | jq -r '.sha // empty' 2>/dev/null || true)"; break
-        elif printf '%s' "$OUT" | grep -q "not accessible by integration" && OUT="$(gh pr merge "$PR" --repo "$REPO" --squash --match-head-commit "$HEAD_SHA" 2>&1)"; then
+        [ "$FILE_ON_MAIN" = 0 ] || break
+        # REST first (its answer carries the merge commit and it spares the small GraphQL budget).
+        # Fall back to GraphQL when REST answers "Resource not accessible by integration".
+        if OUT="$(gh api -X PUT "repos/$REPO/pulls/$PR/merge" -f merge_method=squash -f sha="$HEAD_SHA" 2>&1)" \
+             && jq -e '.merged == true' <<< "$OUT" >/dev/null 2>&1; then
+          MERGED=1; MERGE_SHA="$(jq -r '.sha // empty' <<< "$OUT")"; break
+        elif grep -q "not accessible by integration" <<< "$OUT" && OUT="$(gh pr merge "$PR" --repo "$REPO" --squash --match-head-commit "$HEAD_SHA" 2>&1)"; then
           # the squash commit's sha from git (no API call; the REST answer can lag behind a GraphQL merge)
           MERGE_SHA="$(git -C base fetch -q --depth 100 origin main 2>/dev/null && git -C base log -100 --format='%H %s' FETCH_HEAD | grep -m1 -E " \(#$PR\)\$" | cut -d' ' -f1 || true)"
-          MERGED=1; break
+          if [ -n "$MERGE_SHA" ]; then
+            MERGED=1
+          elif PULL="$(gh api "repos/$REPO/pulls/$PR" 2>/dev/null)" \
+               && jq -e --arg sha "$HEAD_SHA" '.merged == true and .head.sha == $sha' <<< "$PULL" >/dev/null; then
+            MERGED=1; MERGE_SHA="$(jq -r '.merge_commit_sha // empty' <<< "$PULL")"
+          else
+            # GitHub can expose the file on main before the PR record catches up.
+            # The next verdict skips a closed PR, so leave credit recovery in its own queue.
+            MERGE_PENDING=1
+            echo "$PR" >> "${CREDIT_RETRY_FILE:-/dev/null}"
+            OUT="GitHub has not confirmed the merge"
+          fi
+          break
         fi
         echo "merge attempt $TRY: $OUT"
         echo "$OUT" | grep -qiE "base branch was modified|try the merge again|is not mergeable|still a draft|timeout|502|503" || break
@@ -128,14 +148,35 @@ case "$VERDICT" in
       if [ "$MERGED" = 1 ]; then
         # A merge made with GITHUB_TOKEN triggers no other workflow, so credit it here.
         CREDIT_FILES=files.json CREDIT_PR=pr.json MERGE_SHA="${MERGE_SHA:-}" bash base/tools/credit.sh "$PR" || true
-      elif [ "$MODE" = new ] && gh api "repos/$REPO/contents/$FPATH?ref=main" >/dev/null 2>&1; then
-        comment "Not merged: \`$FPATH\` is already on main (someone else's proof was merged first)."
-      elif [ "${REMERGE:-0}" -lt 6 ]; then
-        # a refused merge is retried by the merger a few minutes later (the check itself is not re-run)
+        echo "ACCEPTED: merged #$PR"
+        SITE="${OMA_SITE:-https://lefttosolve.com}"
+        PROFILE="$(jq -r '.user.login | if . then "/a/" + . else "/contributors" end' pr.json)"
+        comment "$MSG You can track credit on [Left to Solve]($SITE$PROFILE). [Run]($RUN_URL)"
+        exit 0
+      fi
+      STATUS="The Lean checker accepted this submission."
+      ACTION="merging this pull request"
+      if [ "$MERGE_PENDING" = 0 ] && [ "$MODE" = new ] && { [ "$FILE_ON_MAIN" = 1 ] || gh api "repos/$REPO/contents/$FPATH?ref=main" >/dev/null 2>&1; }; then
+        STATUS="\`$FPATH\` is already on main."
+        ACTION="closing this duplicate"
+        # The PR may have changed or been handled while this check was waiting to merge.
+        if OUT="$(gh api "repos/$REPO/pulls/$PR" 2>&1)"; then
+          jq -e --arg sha "$HEAD_SHA" '.state == "open" and .base.ref == "main" and .head.sha == $sha' <<< "$OUT" >/dev/null || exit 0
+          if OUT="$(gh api -X PATCH "repos/$REPO/pulls/$PR" -f state=closed 2>&1)"; then
+            echo "Closed #$PR: $FPATH is already on main"
+            comment "Closed because \`$FPATH\` is already on main. [Run]($RUN_URL)"
+            exit 0
+          fi
+        fi
+      fi
+      if [ "${REMERGE:-0}" -lt 6 ]; then
+        # The merger retries the pending action without re-running Lean.
         touch remerge.flag
-        if [ "${REMERGE:-0}" = 0 ]; then comment "Accepted. GitHub refused the merge for now (${OUT:0:160}); the merge is retried automatically in a few minutes, nothing for you to do."; fi
+        if [ "${REMERGE:-0}" = 0 ]; then
+          comment "$STATUS GitHub has yet to finish $ACTION. The merger will retry automatically. [Run]($RUN_URL)"
+        fi
       else
-        comment "Accepted, but GitHub kept refusing the merge (${OUT:0:200}). A maintainer will merge it; nothing for you to do."
+        comment "$STATUS GitHub has yet to finish $ACTION after several attempts (${OUT:0:200}). A maintainer can take a look. [Run]($RUN_URL)"
       fi
     } ;;
   rejected) comment "**REJECTED**: $REASON. Push a fixed file to this pull request, or move on. [Run]($RUN_URL)" ;;
