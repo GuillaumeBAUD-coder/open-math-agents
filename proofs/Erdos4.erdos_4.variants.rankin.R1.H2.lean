@@ -1,6 +1,7 @@
 import OMAReductions.R_Erdos4_erdos_4_variants_rankin_R1
 import Mathlib.NumberTheory.Chebyshev
 
+open Real
 -- Step Erdos4.erdos_4.variants.rankin.R1.H2: hypothesis H2 of reduction Erdos4.erdos_4.variants.rankin.R1
 -- Credit: @OrangeHeadz
 
@@ -20,52 +21,52 @@ theorem OMA.solution : OMA.R_Erdos4_erdos_4_variants_rankin_R1.H2 := by
   refine ⟨4096, fun x hx => ?_⟩
   have hX : (4096 : ℝ) ≤ (x : ℝ) := by exact_mod_cast hx
   have hX0 : (0 : ℝ) < (x : ℝ) := by linarith
-  obtain ⟨s, hs⟩ : ∃ s : ℝ, s = Real.sqrt (x : ℝ) := ⟨_, rfl⟩
-  obtain ⟨t, ht⟩ : ∃ t : ℝ, t = Real.sqrt s := ⟨_, rfl⟩
+  obtain ⟨s, hs⟩ : ∃ s : ℝ, s = sqrt (x : ℝ) := ⟨_, rfl⟩
+  obtain ⟨t, ht⟩ : ∃ t : ℝ, t = sqrt s := ⟨_, rfl⟩
   have hs64 : 64 ≤ s := by
-    rw [hs, Real.le_sqrt' (by norm_num)]
+    rw [hs, le_sqrt' (by norm_num)]
     have h : (64 : ℝ) ^ 2 = 4096 := by norm_num
     rw [h]
     exact hX
   have ht8 : 8 ≤ t := by
-    rw [ht, Real.le_sqrt' (by norm_num)]
+    rw [ht, le_sqrt' (by norm_num)]
     have h : (8 : ℝ) ^ 2 = 64 := by norm_num
     rw [h]
     exact hs64
   have ht0 : 0 ≤ t := by linarith
   have hs2 : s ^ 2 = x := by
     rw [hs]
-    exact Real.sq_sqrt hX0.le
+    exact sq_sqrt hX0.le
   have ht2 : t ^ 2 = s := by
     rw [ht]
-    exact Real.sq_sqrt (by linarith)
-  have hlogs : Real.log s = Real.log x / 2 := by
+    exact sq_sqrt (by linarith)
+  have hlogs : log s = log x / 2 := by
     rw [hs]
-    exact Real.log_sqrt hX0.le
-  have hlogt' : Real.log t = Real.log s / 2 := by
+    exact log_sqrt hX0.le
+  have hlogt' : log t = log s / 2 := by
     rw [ht]
-    exact Real.log_sqrt (by linarith)
-  have hlogt : Real.log t ≤ t - 1 := Real.log_le_sub_one_of_pos (by linarith)
-  have hlog_le : Real.log x ≤ 4 * t - 4 := by linarith
-  have hlogpos : 0 < Real.log x := Real.log_pos (by linarith)
-  have hlog1 : Real.log ((x : ℝ) + 1) ≤ Real.log 2 + Real.log x := by
-    rw [← Real.log_mul (by norm_num) hX0.ne']
-    exact Real.log_le_log (by linarith) (by linarith)
-  have hL : (0.69 : ℝ) < Real.log 2 := by
-    have h := Real.log_two_gt_d9
+    exact log_sqrt (by linarith)
+  have hlogt : log t ≤ t - 1 := log_le_sub_one_of_pos (by linarith)
+  have hlog_le : log x ≤ 4 * t - 4 := by linarith
+  have hlogpos : 0 < log x := log_pos (by linarith)
+  have hlog1 : log ((x : ℝ) + 1) ≤ log 2 + log x := by
+    rw [← log_mul (by norm_num) hX0.ne']
+    exact log_le_log (by linarith) (by linarith)
+  have hL : (0.69 : ℝ) < log 2 := by
+    have h := log_two_gt_d9
     linarith
-  have hL1 : Real.log 2 < (0.7 : ℝ) := by
-    have h := Real.log_two_lt_d9
+  have hL1 : log 2 < (0.7 : ℝ) := by
+    have h := log_two_lt_d9
     linarith
   have hx4 : (x : ℝ) = t ^ 4 := by
     rw [← hs2, ← ht2]
     ring
-  have h_a : s * Real.log x ≤ s * (4 * t - 4) :=
+  have h_a : s * log x ≤ s * (4 * t - 4) :=
     mul_le_mul_of_nonneg_left hlog_le (by linarith)
   have h_b : s * (4 * t - 4) = 4 * t ^ 3 - 4 * t ^ 2 := by
     rw [← ht2]
     ring
-  have h_c : (0.69 : ℝ) * t ^ 4 ≤ Real.log 2 * t ^ 4 :=
+  have h_c : (0.69 : ℝ) * t ^ 4 ≤ log 2 * t ^ 4 :=
     mul_le_mul_of_nonneg_right hL.le (by positivity)
   have h_d : (5.52 : ℝ) * t ^ 3 ≤ 0.69 * t ^ 4 := by
     have h := mul_nonneg (pow_nonneg ht0 3) (sub_nonneg.mpr ht8)
@@ -73,8 +74,8 @@ theorem OMA.solution : OMA.R_Erdos4_erdos_4_variants_rankin_R1.H2 := by
   have h_e : 4 * t ≤ t ^ 3 := by
     have h := mul_nonneg ht0 (show (0 : ℝ) ≤ t ^ 2 - 4 by nlinarith)
     nlinarith [h]
-  have key : s * Real.log x ≤ (x : ℝ) * Real.log 2 - Real.log ((x : ℝ) + 1) := by
-    have hxL : (x : ℝ) * Real.log 2 = Real.log 2 * t ^ 4 := by
+  have key : s * log x ≤ (x : ℝ) * log 2 - log ((x : ℝ) + 1) := by
+    have hxL : (x : ℝ) * log 2 = log 2 * t ^ 4 := by
       rw [hx4]
       ring
     have ht3 : 0 ≤ t ^ 3 := pow_nonneg ht0 3
