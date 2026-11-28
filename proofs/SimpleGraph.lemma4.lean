@@ -33,13 +33,11 @@ def blockGraph (n : ℕ) : SimpleGraph ((Fin 4 × Fin n) ⊕ (Fin 4 × Fin n)) w
 
 lemma card_le_index {n : ℕ} (i : Fin n) :
     (univ.filter fun j : Fin n ↦ j ≤ i).card = (i : ℕ) + 1 := by
-  have h : (univ.filter fun j : Fin n ↦ j ≤ i) = Iic i := by ext; simp
-  rw [h, Fin.card_Iic]
+  simpa only [filter_ge_eq_Iic] using Fin.card_Iic i
 
 lemma card_ge_index {n : ℕ} (i : Fin n) :
     (univ.filter fun j : Fin n ↦ i ≤ j).card = n - (i : ℕ) := by
-  have h : (univ.filter fun j : Fin n ↦ i ≤ j) = Ici i := by ext; simp
-  rw [h, Fin.card_Ici]
+  simpa only [filter_le_eq_Ici] using Fin.card_Ici i
 
 def leftBase (b : Fin 4) : ℕ :=
   if b < 2 then 1 else 3
@@ -73,25 +71,17 @@ lemma blockGraph_degree_right {n : ℕ} [DecidableRel (blockGraph n).Adj]
 lemma sum_degree_interval (n base d : ℕ) :
     (∑ i : Fin n, if base + (i : ℕ) + 1 = d then 1 else 0) =
       if base < d ∧ d ≤ base + n then 1 else 0 := by
-  split_ifs with h
-  · let i : Fin n := ⟨d - base - 1, by omega⟩
-    rw [Finset.sum_eq_single i]
-    · have hi : base + (i : ℕ) + 1 = d := by dsimp [i]; omega
-      simp [hi]
-    · intro j _ hj
-      have hne : base + (j : ℕ) + 1 ≠ d := by
-        intro he
-        apply hj
-        apply Fin.ext
-        dsimp [i]
-        omega
-      simp [hne]
-    · simp
-  · apply Finset.sum_eq_zero
-    intro i _
-    have hi := i.isLt
-    have hne : base + (i : ℕ) + 1 ≠ d := by omega
-    simp [hne]
+  rw [Fintype.sum_ite_eq_ite_exists _ (by
+    intro i j hi hj
+    exact Fin.ext (by omega))]
+  have range : (∃ i : Fin n, base + (i : ℕ) + 1 = d) ↔ base < d ∧ d ≤ base + n := by
+    constructor
+    · rintro ⟨i, hi⟩
+      have := i.isLt
+      omega
+    · intro h
+      exact ⟨⟨d - base - 1, by omega⟩, by dsimp; omega⟩
+  simp only [range]
 
 lemma sum_reverse_degree_interval (n base d : ℕ) :
     (∑ i : Fin n, if base + (n - (i : ℕ)) = d then 1 else 0) =
@@ -100,10 +90,8 @@ lemma sum_reverse_degree_interval (n base d : ℕ) :
   apply Fintype.sum_equiv Fin.revPerm
   intro i
   have hi := i.isLt
-  have h : base + (n - (i : ℕ)) = base + (↑(Fin.revPerm i) : ℕ) + 1 := by
-    rw [Fin.revPerm_apply, Fin.val_rev]
-    omega
-  simp [h]
+  simp only [Fin.revPerm_apply, Fin.val_rev]
+  congr 2 <;> omega
 
 lemma blockGraph_count {n : ℕ} [DecidableRel (blockGraph n).Adj] (d : ℕ) :
     countDegreeK (blockGraph n) d =
@@ -123,10 +111,8 @@ lemma multiplicity_eq_three {V : Type*} [Fintype V] [DecidableEq V]
     degreeSequenceMultiplicity G = 3 := by
   let ds := degreeSequence G
   have hCount (e : ℕ) : ds.count e = countDegreeK G e := by
-    have hSort : (↑ds : Multiset ℕ) = Finset.univ.val.map (G.degree ·) := by
-      simp [ds, degreeSequence]
-    rw [← Multiset.coe_count, hSort, Multiset.count_map]
-    simp only [countDegreeK, ← Finset.filter_val, Finset.card_val, eq_comm]
+    simp [ds, degreeSequence, ← Multiset.coe_count, Multiset.count_map,
+      countDegreeK, ← Finset.filter_val, Finset.card_val, eq_comm]
   have hdMem : d ∈ ds := List.count_pos_iff.mp (by rw [hCount, hd]; decide)
   have hMax : (ds.map (fun e ↦ ds.count e)).max? = some 3 := by
     refine List.max?_eq_some_iff.mpr ⟨List.mem_map.mpr ⟨d, hdMem, (hCount d).trans hd⟩, ?_⟩
@@ -135,6 +121,7 @@ lemma multiplicity_eq_three {V : Type*} [Fintype V] [DecidableEq V]
     simpa [hCount] using hBound a
   change ((ds.map (fun e ↦ ds.count e)).max?).getD 0 = 3
   simp [hMax]
+
 
 lemma cliqueFree_three_iff (G : SimpleGraph V) :
     G.CliqueFree 3 ↔ ∀ a b c : V, G.Adj a b → G.Adj b c → G.Adj c a → False := by
@@ -205,21 +192,10 @@ lemma bridgeGraph_degree_left {A B : Type*} [Fintype A] [Fintype B] [DecidableEq
     rw [degree_as_sum G]
     apply Finset.sum_congr rfl
     intro b _
-    by_cases hb : G.Adj a b
-    · have hb' : (bridgeGraph G J v w).Adj (.inl a) (.inl b) := hb
-      rw [if_pos hb', if_pos hb]
-    · have hb' : ¬ (bridgeGraph G J v w).Adj (.inl a) (.inl b) := hb
-      rw [if_neg hb', if_neg hb]
+    by_cases h : G.Adj a b <;> simp_all [bridgeGraph]
   rw [hSame]
-  by_cases h : a = v
-  · simp [bridgeGraph, h]
-  · simp [bridgeGraph, h]
+  by_cases h : a = v <;> simp [bridgeGraph, h]
 
-lemma degree_iso {A B : Type*} [Fintype A] [Fintype B] {G : SimpleGraph A} {J : SimpleGraph B}
-    [DecidableRel G.Adj] [DecidableRel J.Adj] (e : G ≃g J) (a : A) :
-    G.degree a = J.degree (e a) := by
-  rw [← card_neighborSet_eq_degree, ← card_neighborSet_eq_degree]
-  exact Fintype.card_congr (e.mapNeighborSet a)
 
 end OMA
 
@@ -261,9 +237,10 @@ lemma OMA.bridge_extension.{u, v} {A : Type u} [Fintype A] [DecidableEq A]
       change G.Adj (label.symm (label x)) (label.symm (label y)) ↔ G.Adj x y
       simp }
   have hDegree (b : A) : G'.degree (label b) = G.degree b := by
-    have h := OMA.degree_iso relabel (label b)
+    have h := (relabel.degree_eq (label b)).symm
     change G'.degree (label b) = G.degree (label.symm (label b)) at h
     rwa [label.symm_apply_apply] at h
+
   refine ⟨A' ⊕ B, inferInstance, H, hDecH, i, OMA.bridgeGraph_cliqueFree hG'
     (OMA.blockGraph_cliqueFree n) (label a) w, ?_, ?_, ?_⟩
   · change H.degree (.inl (label a)) = G.degree a + 1
@@ -287,7 +264,7 @@ lemma OMA.bridge_extension.{u, v} {A : Type u} [Fintype A] [DecidableEq A]
         simp
       · exact ⟨b, rfl⟩⟩
     let iso : J ≃g K := { toEquiv := e, map_rel_iff' := Iff.rfl }
-    have hDeg (a : B) : J.degree a = K.degree (e a) := OMA.degree_iso iso a
+    have hDeg (a : B) : J.degree a = K.degree (e a) := (iso.degree_eq a).symm
     have hCount (d : ℕ) : countDegreeK J d = countDegreeK K d := by
       simp only [countDegreeK, Finset.card_filter]
       apply Fintype.sum_equiv e

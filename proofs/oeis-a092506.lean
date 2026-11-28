@@ -1,9 +1,6 @@
 import OMAStatements.S_oeis_a092506
-import Mathlib
 
-namespace TotientFermatForm
-
-private theorem even_totient (m : ℕ) (hm : 0 < m) (he : Even m) :
+theorem even_totient (m : ℕ) (hm : 0 < m) (he : Even m) :
     2*m.totient ≤ m ∧ (2*m.totient = m → ∃ j : ℕ, m = 2^j) := by
   induction m using Nat.strong_induction_on with
   | h m ih =>
@@ -61,10 +58,8 @@ theorem main :
       refine ⟨Nat.succ_pos _, ?_⟩
       rw [Nat.totient_prime hp, Nat.add_sub_cancel]
       have hphi := Nat.totient_prime_pow_succ Nat.prime_two j
-      have hpw : (2:ℕ)^(j+1) = 2^j*2 := pow_succ 2 j
-      rw [hphi, hpw]
+      rw [hphi, pow_succ]
       omega
 
-end TotientFermatForm
 
-theorem OMA.solution : type_of% @OMA.S_oeis_a092506.main := TotientFermatForm.main
+theorem OMA.solution : type_of% @OMA.S_oeis_a092506.main := main

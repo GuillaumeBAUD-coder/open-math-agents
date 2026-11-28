@@ -1,18 +1,22 @@
 import type { Metadata } from "next";
 import Link from "@/components/Link";
-import { notFound } from "next/navigation";
+import Title from "@/components/Title";
+import { notFound, redirect } from "next/navigation";
 import CopyPrompt from "@/components/CopyPrompt";
 import { outcomeBadge, outcomeOf, outcomeText, variantNote, reviewOf } from "@/lib/outcome";
 import Credit from "@/components/Credit";
 import { Difficulty } from "@/components/ProblemRow";
-import { getProblem, getFull, skeleton, proofPath, statementSkeleton, prizeOf, META, KIND_LABEL, TASK, answerPlaceholder, type Problem } from "@/lib/catalog";
+import { getProblem, getFull, skeleton, proofPath, statementSkeleton, prizeOf, META, KIND_LABEL, TASK, answerPlaceholder, settledEntry, resolveId, type Problem } from "@/lib/catalog";
 import { getLiveMap, getActiveIds, getEvents, getSolved, getSteps, type Step, type Solved } from "@/lib/db";
 import { pointsFor } from "@/lib/points";
 import { renderStatement, plain } from "@/lib/render";
 import { STEP_RE, stepSkeleton, parseStep } from "@/lib/steps";
+import { findStep, rootProblem } from "@/lib/stepinfo";
 import { SITE, REPO_URL } from "@/lib/site";
 import { ago } from "@/lib/time";
 import { pendingFor } from "@/lib/pending";
+import { idParam } from "@/lib/params";
+import ShareX from "@/components/ShareX";
 
 export const revalidate = 120;
 export const dynamicParams = true;
@@ -21,12 +25,18 @@ export function generateStaticParams() { return []; }
 type Props = { params: Promise<{ id: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const id = decodeURIComponent((await params).id);
+  const id = idParam((await params).id);
+  if (!id) return {};
   const p = await getFull(id);
   if (p) return { title: p.title, description: plain(p.statement || p.lean || p.title, 180), alternates: { canonical: `/p/${encodeURIComponent(p.id)}` } };
   const st = parseStep(id);
   return st ? { title: `Step H${st.k} of ${getProblem(st.parent)?.title ?? st.parent}`, robots: { index: false } } : {};
 }
+
+/** Review evidence as links: web addresses as they are, files of this repository on GitHub, other local paths dropped
+ * (a reviewer's machine path is not a page anyone can open). */
+const evidenceLinks = (list: string[]) =>
+  list.flatMap((u) => /^https?:\/\//.test(u) ? [u] : /\/open-math-agents\/((?:proofs|statements|reductions|content|data)\/.+)$/.test(u) ? [`${REPO_URL}/blob/main/${u.match(/\/open-math-agents\/(.+)$/)![1]}`] : []);
 
 const VERB: Record<string, string> = { note: "left notes for the next agents", claim: "took it", release: "handed it back", submit: "sent a proof", accepted: "PROVED IT", rejected: "proof rejected", fault: "checker fault", reduced: "split it into steps", formalized: "stated it in Lean", shorter: "sent a shorter proof (now the shortest)" };
 
@@ -41,7 +51,7 @@ function Tree({ target, steps, solvedIds, live }: { target: string; steps: Step[
         return (
           <li key={r}>
             <span style={{ color: "var(--muted)" }}>reduction </span><a href={own[0]?.reduction_pr}>{r.slice(target.length + 1)}</a>
-            <span style={{ color: "var(--faint)" }}> by <Link href={`/a/${own[0]?.reduction_by}`}>@{own[0]?.reduction_by}</Link></span>
+            {own[0]?.reduction_by ? <span style={{ color: "var(--faint)" }}> by <Link href={`/a/${own[0].reduction_by}`}>@{own[0].reduction_by}</Link></span> : null}
             <ul style={{ paddingLeft: 18 }}>
               {own.map((s) => (
                 <li key={s.id}>
@@ -60,17 +70,32 @@ function Tree({ target, steps, solvedIds, live }: { target: string; steps: Step[
 }
 
 export default async function ProblemPage({ params }: Props) {
-  const id = decodeURIComponent((await params).id);
+  const id = idParam((await params).id);
+  if (!id) notFound();
   const p = await getFull(id);
   const isStep = !p && STEP_RE.test(id);
-  if (!p && !isStep) notFound();
+  if (!p && !isStep) {
+    // A reduction id (X.R1, as the feed lists "split it into steps"): its page is the page of what it splits.
+    const red = id.match(/^(.+)\.R\d{1,2}$/);
+    if (red && (getProblem(red[1]) || (STEP_RE.test(red[1]) && rootProblem(red[1])))) redirect(`/p/${encodeURIComponent(red[1])}`);
+    // Settled since (taken out of the catalogue): its old links lead to the entry that says how, not to a 404.
+    if (settledEntry(id)) redirect(`/status#${encodeURIComponent(id)}`);
+    // The same id in another case, an Erdős problem by number (erdos-142), a module with one statement (Erdos142).
+    const canonical = resolveId(id);
+    if (canonical && canonical !== id) redirect(`/p/${encodeURIComponent(canonical)}`);
+    notFound();
+  }
 
   // A problem nobody has touched (the vast majority) has no history, no solution and no steps: its page asks the
   // database nothing beyond the shared, cached list of active ids.
-  const touched = STEP_RE.test(id) || (await getActiveIds()).has(id);
-  const [live, events, solvedAll, steps] = touched
-    ? await Promise.all([getLiveMap(), getEvents(20, id), getSolved(), getSteps(id)])
-    : [new Map<string, number>(), [], [] as Solved[], [] as Step[]];
+  const touched = isStep || (await getActiveIds()).has(id);
+  // A step page is rendered whenever the step exists, from the database or else from the merged reduction file
+  // (lib/stepinfo.ts): a slow or failed database read no longer turns a published link into a 404.
+  const [live, events, solvedAll, found] = touched
+    ? await Promise.all([getLiveMap(), getEvents(20, id), getSolved(), isStep ? findStep(id) : getSteps(id).then((subtree) => ({ subtree, step: undefined }))])
+    : [new Map<string, number>(), [], [] as Solved[], { subtree: [] as Step[], step: undefined }];
+  if (isStep && !found) notFound();
+  const steps: Step[] = found?.subtree ?? [];
   // Before a problem had a Lean statement, what an agent sent was the statement itself, not a proof.
   const firstFormalized = events.filter((e) => e.kind === "formalized").map((e) => e.created_at).sort()[0];
   const statementPhase = (at: string) => (p?.kind === "unformalized" || !!firstFormalized) && (!firstFormalized || at < firstFormalized);
@@ -83,6 +108,9 @@ export default async function ProblemPage({ params }: Props) {
   let title: string, body: React.ReactNode, lean: string, file: string, sk: string, points: number, root: Problem | undefined;
   const unformal = p?.kind === "unformalized";
   const pending = solution ? [] : pendingFor(id);
+  // What the waiting pull requests submitted (a statement is not a proof); older entries without a kind fall back to the
+  // problem's kind.
+  const pendingStatement = pending.length > 0 && (pending.some((x) => x.kind) ? pending.every((x) => x.kind === "statement") : p?.kind === "unformalized");
   if (p && unformal) {
     title = p.title; lean = ""; file = `statements/${p.id}.lean`; sk = statementSkeleton(p); points = 0; root = p;
     body = (
@@ -106,18 +134,14 @@ export default async function ProblemPage({ params }: Props) {
       ? <div className="statement" dangerouslySetInnerHTML={{ __html: renderStatement(p.statement) }} />
       : <p className="statement">No informal statement upstream. The Lean statement below is the problem.</p>;
   } else {
-    step = steps.find((s) => s.id === id);
-    if (!step) notFound();
-    const st = parseStep(id)!;
-    let top = st.parent;
-    while (!getProblem(top) && parseStep(top)) top = parseStep(top)!.parent;
-    root = getProblem(top);
+    step = found!.step!;
+    root = rootProblem(id);
     title = `Step H${step.k} of ${getProblem(step.parent)?.title ?? step.parent}`;
-    lean = `def H${step.k} : Prop :=\n  ${step.statement}`;
+    lean = step.statement ? `def H${step.k} : Prop :=\n  ${step.statement}` : `-- The statement of H${step.k} is in the merged file reductions/${step.reduction}.lean`;
     file = `proofs/${id}.lean`; sk = stepSkeleton(step); points = step.points;
     body = (
       <p className="statement" style={{ fontSize: "1.05rem" }}>
-        One of the hypotheses of <a href={step.reduction_pr}>reduction {step.reduction}</a> by <Link href={`/a/${step.reduction_by}`}>@{step.reduction_by}</Link>.
+        One of the hypotheses of <a href={step.reduction_pr}>reduction {step.reduction}</a>{step.reduction_by ? <> by <Link href={`/a/${step.reduction_by}`}>@{step.reduction_by}</Link></> : null}.
         That reduction is already checked by Lean: proving every one of its hypotheses closes{" "}
         <Link href={`/p/${encodeURIComponent(step.parent)}`}>{getProblem(step.parent)?.title ?? step.parent}</Link>.
       </p>
@@ -133,9 +157,10 @@ export default async function ProblemPage({ params }: Props) {
         <Link href="/#problems">Problems</Link> / {root ? <Link href={`/programs/${encodeURIComponent(root.source)}`}>{root.source}</Link> : "Steps"}
         {step && <> / <Link href={`/p/${encodeURIComponent(step.parent)}`}>parent</Link></>}
       </div>
-      <h1 className="ptitle">{title}</h1>
+      <h1 className="ptitle"><Title id={id} title={title} /></h1>
       <div className="meta" style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
         {solution ? <span className="badge solved" title={outcomeText(outcomeOf(p?.kind, id)).explain}>{outcomeBadge(p?.kind, solution.polarity, id)} · checked by Lean here</span> : null}
+        {solution ? <ShareX small label="Post this result on X" url={`${SITE}/p/${encodeURIComponent(id)}`} text={`${solution.polarity === "disproof" ? "Disproved" : "Proved"} on Left to Solve: \u201c${title.slice(0, 140)}\u201d. The proof by @${solution.handle}'s AI agent passed the Lean proof checker.`} /> : null}
         {p ? <span className={`badge ${p.kind}`}>{solution && p.kind === "known" ? "Known result" : KIND_LABEL[p.kind]}</span> : <span className="badge known">Step of a reduction</span>}
         {root && <span className="badge">{root.source}</span>}
         {p?.fields.map((f) => <span key={f} className="badge">{f}</span>)}
@@ -153,19 +178,27 @@ export default async function ProblemPage({ params }: Props) {
         );
       })()}
 
+      {/* the main action, right under the title on phones (on wider screens it is in the right-hand column) */}
+      {!solution && (
+        <div className="cta-top">
+          <b>Put your agent on this problem</b>
+          <CopyPrompt text={prompt} label="Copy" />
+        </div>
+      )}
+
       <div className="pgrid">
         <div>
           {solution && <Credit c={solution} title={title} first={p?.kind === "open" || Boolean(p?.formalizedHere)} kind={p?.kind ?? null} />}
           {(() => {
             const rv = reviewOf(id);
             if (!rv || !(p?.kind === "open" || p?.kind === "unformalized")) return null;
-            const head = rv.state === "confirmed" ? "Statement check: confirmed" : rv.state === "misstated" ? "Statement check: the formal statement does not say what the problem says" : "Statement check: already settled in the literature";
+            const head = rv.state === "confirmed" ? ((rv as { routine?: boolean }).routine ? "Statement check: confirmed · routine result (a finite check, an identity or a short argument)" : "Statement check: confirmed") : rv.state === "misstated" ? "Statement check: the formal statement does not say what the problem says" : "Statement check: already settled in the literature";
             const text = "note" in rv ? rv.note : "reason" in rv ? rv.reason : "";
             return (
               <div className="panel">
                 <h4>{head}</h4>
                 <p style={{ margin: "0 0 6px" }}>{text}</p>
-                <p style={{ margin: 0, fontSize: ".85rem", color: "var(--muted)" }}>Reviewed {rv.date ?? ""}{"evidence" in rv && Array.isArray((rv as { evidence?: string[] }).evidence) ? (rv as { evidence: string[] }).evidence.map((u, i) => <span key={u}> · <a href={u} target="_blank" rel="noreferrer">source {i + 1}</a></span>) : null}. Disagree? Open an issue on GitHub with the reference.</p>
+                <p style={{ margin: 0, fontSize: ".85rem", color: "var(--muted)" }}>Reviewed {rv.date ?? ""}{"evidence" in rv && Array.isArray((rv as { evidence?: string[] }).evidence) ? evidenceLinks((rv as { evidence: string[] }).evidence).map((u, i) => <span key={u}> · <a href={u} target="_blank" rel="noreferrer">source {i + 1}</a></span>) : null}. Disagree? Open an issue on GitHub with the reference.</p>
               </div>
             );
           })()}
@@ -182,9 +215,9 @@ export default async function ProblemPage({ params }: Props) {
           )}
           {pending.length > 0 && (
             <div className="panel" style={{ borderColor: "#E8C547" }}>
-              <h4 style={{ color: "#a16207" }}>{unformal ? "Lean statement submitted · awaiting review" : "Proof accepted by the Lean checker · awaiting review"}</h4>
+              <h4 style={{ color: "#a16207" }}>{pendingStatement ? "Lean statement submitted · awaiting review" : "Proof accepted by the Lean checker · awaiting review"}</h4>
               <p style={{ margin: "0 0 8px" }}>
-                {unformal
+                {pendingStatement
                   ? "A formalization of this statement in Lean was submitted and compiles. A maintainer checks that it says exactly what the problem says before it is merged; then the problem becomes provable here."
                   : p?.kind === "open"
                     ? "A proof of this open problem passed the Lean checker. Before an open problem is marked solved, a maintainer checks that the Lean statement says exactly what the problem says (a mistranslated statement is the usual reason an \u201copen problem\u201d falls easily). Until then it stays listed as open; once the review is done, the proof is merged and credited to its author."
@@ -196,7 +229,7 @@ export default async function ProblemPage({ params }: Props) {
               </p>
             </div>
           )}
-          {p?.claim && (
+          {p?.claim && !p.claim.silent && (
             <div className="panel" style={{ borderColor: "var(--text)" }}>
               <h4 style={{ color: "var(--accent)" }}>A solution has been claimed · not verified</h4>
               <p style={{ margin: "0 0 8px" }}>{p.claim.summary}</p>
@@ -220,10 +253,10 @@ export default async function ProblemPage({ params }: Props) {
             {p?.kind === "known" && (
               <p className="callout">{solution
                 ? "This result was already proved in the literature. The Lean proof credited above is a machine-checked proof of it, written here: a formalization, not the solution of an open problem."
-                : "This result is already known to be true (or settled) in the literature, but nobody has a machine-checked proof of it yet. A Lean proof is a real contribution (a formalization, not a new theorem), and the most realistic target for an agent."}</p>
+                : "This result is already known to be true (or settled) in the literature, but there is no Lean proof of it yet (a proof checked in another system, if any, does not count here). A Lean proof is a real contribution (a formalization, not a new theorem), and the most realistic target for an agent."}</p>
             )}
             {p && prizeOf(p) && <p style={{ color: "var(--muted)", fontSize: ".85rem" }}>The {prizeOf(p)!.label} prize is offered by {prizeOf(p)!.by} and paid by them, not by this site, which takes no cut. {prizeOf(p)!.claim}: <a href={prizeOf(p)!.url} target="_blank" rel="noreferrer">details</a>.</p>}
-            {p?.erdosState && <p style={{ color: "var(--muted)", fontSize: ".9rem" }}>erdosproblems.com status{p && variantNote(p.id, p.title, p.erdosState) ? " of the main problem" : ""}: <b>{p.erdosState}</b>{p.forumPosts ? ` · ${p.forumPosts} forum posts` : ""}</p>}
+            {p?.erdosState && <p style={{ color: "var(--muted)", fontSize: ".9rem" }}>erdosproblems.com status{p && variantNote(p.id, p.title, p.erdosState) ? " of the main problem" : ""}: <b>{p.erdosState}</b>{p.forumPosts ? ` · ${p.forumPosts.toLocaleString("en-US")} forum ${p.forumPosts === 1 ? "post" : "posts"}` : ""}</p>}
           </div>
 
           {!unformal && (
@@ -281,13 +314,31 @@ export default async function ProblemPage({ params }: Props) {
           </div>
           <div className="panel">
             <h4>Activity</h4>
-            {events.length ? (
-              <ul className="feed">
-                {events.map((e) => (
-                  <li key={e.id}><time>{ago(e.created_at)}</time><span><Link href={`/a/${e.handle}`}>@{e.handle}</Link> · {e.kind === "accepted" ? (outcomeOf(p?.kind) === "open" ? "SOLVED IT" : "proved it in Lean") : e.kind === "submit" && statementPhase(e.created_at) ? "sent a Lean statement" : VERB[e.kind] ?? e.kind}{e.kind === "release" && e.detail ? ` (${e.detail.replace(/_/g, " ")})` : ""}</span></li>
-                ))}
-              </ul>
-            ) : <p style={{ color: "var(--faint)", margin: 0 }}>No activity yet.</p>}
+            {events.length ? (() => {
+              // Runs of the same action by the same person ("took it", "took it", "took it") read as one line "× 3";
+              // past five lines the rest folds away.
+              const line = (e: (typeof events)[number]) => `${e.kind === "accepted" ? (outcomeOf(p?.kind) === "open" ? "SOLVED IT" : "proved it in Lean") : e.kind === "submit" && statementPhase(e.created_at) ? "sent a Lean statement" : VERB[e.kind] ?? e.kind}${e.kind === "release" && e.detail ? ` (${e.detail.replace(/_/g, " ")})` : ""}`;
+              const runs: { e: (typeof events)[number]; text: string; n: number }[] = [];
+              for (const e of events) {
+                const text = line(e), last = runs[runs.length - 1];
+                if (last && last.e.handle === e.handle && last.text === text) last.n++;
+                else runs.push({ e, text, n: 1 });
+              }
+              const li = (r: (typeof runs)[number]) => (
+                <li key={r.e.id}><time>{ago(r.e.created_at)}</time><span><Link href={`/a/${r.e.handle}`}>@{r.e.handle}</Link> · {r.text}{r.n > 1 ? ` × ${r.n}` : ""}</span></li>
+              );
+              return (
+                <>
+                  <ul className="feed">{runs.slice(0, 5).map(li)}</ul>
+                  {runs.length > 5 && (
+                    <details className="more-feed">
+                      <summary>Show {runs.length - 5} older</summary>
+                      <ul className="feed">{runs.slice(5).map(li)}</ul>
+                    </details>
+                  )}
+                </>
+              );
+            })() : <p style={{ color: "var(--faint)", margin: 0 }}>No activity yet.</p>}
           </div>
           {upstream && (
             <p style={{ color: "var(--faint)", fontSize: ".82rem", padding: "0 4px" }}>

@@ -1,113 +1,56 @@
 import FormalConjectures.ErdosProblems.«1114»
 
--- Problem: Erdős Problem 1114 — rolle
--- Upstream: formal-conjectures FormalConjectures/ErdosProblems/1114.lean:86 (declaration Erdos1114.erdos_1114.variants.rolle)
--- Credit: @ldy985 (the owner of the agent is credited as the solver)
--- Prove EXACTLY this target. No sorry, no axiom, no native_decide.
+/-! Select one Rolle root in each gap and exhaust the derivative roots by a degree bound. -/
 
-namespace OMA.P4
-
-open scoped Polynomial
-
-theorem rolle_core {N : ℕ} {a d : ℝ} (hd : 0 < d) {f : Polynomial ℝ}
-    (hdegree : f.natDegree = N + 1)
-    (hroots : ∀ j : ℕ, j ≤ N → f.eval (a + d * j) = 0) :
-    (∀ k : ℕ, k < N →
-      ∃! x : ℝ, x ∈ Set.Ioo (a + d * k) (a + d * (k + 1)) ∧ f.derivative.eval x = 0) ∧
-    (∀ x : ℝ, f.derivative.eval x = 0 →
-      ∃ k : ℕ, k < N ∧ x ∈ Set.Ioo (a + d * k) (a + d * (k + 1))) := by
-  have hex : ∀ k : ℕ, ∃ x : ℝ, k < N →
-      (x ∈ Set.Ioo (a + d * k) (a + d * (k + 1)) ∧ f.derivative.eval x = 0) := by
-    intro k
-    by_cases hk : k < N
-    · have hlt : a + d * k < a + d * (k + 1) := by
-        have : d * ((k : ℝ) + 1) = d * k + d := by ring
-        linarith
-      have h0 : f.eval (a + d * k) = f.eval (a + d * (k + 1)) := by
-        rw [hroots k hk.le]
-        have h1 := hroots (k + 1) (Nat.succ_le_of_lt hk)
-        push_cast at h1
-        rw [h1]
-      obtain ⟨c, hc, hc0⟩ := exists_hasDerivAt_eq_zero hlt
-        (f.continuous.continuousOn) h0 (fun x _ => f.hasDerivAt x)
-      exact ⟨c, fun _ => ⟨hc, hc0⟩⟩
-    · exact ⟨0, fun h => absurd h hk⟩
-  choose c hc using hex
-  have hc_mem : ∀ k, k < N → c k ∈ Set.Ioo (a + d * k) (a + d * (k + 1)) :=
-    fun k hk => (hc k hk).1
-  have hc_zero : ∀ k, k < N → f.derivative.eval (c k) = 0 :=
-    fun k hk => (hc k hk).2
-  have hcast : ∀ j k : ℕ, j < k → a + d * ((j : ℝ) + 1) ≤ a + d * (k : ℝ) := by
-    intro j k hjk
-    have h1 : ((j : ℝ) + 1) ≤ (k : ℝ) := by exact_mod_cast Nat.succ_le_of_lt hjk
-    have h2 := mul_le_mul_of_nonneg_left h1 hd.le
-    linarith
-  have hlt_c : ∀ i j : ℕ, i < j → j < N → c i < c j := by
-    intro i j hij hjN
-    have h1 := (hc_mem i (lt_trans hij hjN)).2
-    have h2 := (hc_mem j hjN).1
-    have h3 := hcast i j hij
-    linarith
-  have hinj : Set.InjOn c (↑(Finset.range N) : Set ℕ) := by
-    intro i hi j hj hij
-    have hi' : i < N := Finset.mem_range.mp (Finset.mem_coe.mp hi)
-    have hj' : j < N := Finset.mem_range.mp (Finset.mem_coe.mp hj)
-    rcases lt_trichotomy i j with h | h | h
-    · exfalso
-      have := hlt_c i j h hj'
-      linarith
-    · exact h
-    · exfalso
-      have := hlt_c j i h hi'
-      linarith
-  have hcard : (Finset.image c (Finset.range N)).card = N := by
-    rw [Finset.card_image_of_injOn hinj, Finset.card_range]
-  have hf'0 : f.derivative ≠ 0 := by
-    intro h
-    have := Polynomial.natDegree_eq_zero_of_derivative_eq_zero h
-    omega
-  have hdeg : f.derivative.natDegree ≤ N := by
-    have := Polynomial.natDegree_derivative_le f
-    omega
-  have hkey : ∀ y : ℝ, f.derivative.eval y = 0 → ∃ j, j < N ∧ y = c j := by
-    intro y hy
-    by_contra hne
-    push_neg at hne
-    have hnot : y ∉ Finset.image c (Finset.range N) := by
-      intro hmem
-      obtain ⟨j, hj, hjy⟩ := Finset.mem_image.mp hmem
-      exact hne j (Finset.mem_range.mp hj) hjy.symm
-    have hsub : (insert y (Finset.image c (Finset.range N))).val ⊆ f.derivative.roots := by
-      intro z hz
-      rw [Finset.mem_val, Finset.mem_insert] at hz
-      rw [Polynomial.mem_roots hf'0]
-      rcases hz with rfl | hz
-      · exact hy
-      · obtain ⟨j, hj, rfl⟩ := Finset.mem_image.mp hz
-        exact hc_zero j (Finset.mem_range.mp hj)
-    have hcardins : (insert y (Finset.image c (Finset.range N))).card = N + 1 := by
-      rw [Finset.card_insert_eq_ite, if_neg hnot, hcard]
-    have := Polynomial.card_le_degree_of_subset_roots hsub
-    omega
-  refine ⟨fun k hk => ⟨c k, ⟨hc_mem k hk, hc_zero k hk⟩, ?_⟩, fun x hx => ?_⟩
-  · rintro y ⟨hy, hy0⟩
-    obtain ⟨j, hj, rfl⟩ := hkey y hy0
-    rcases lt_trichotomy j k with h | h | h
-    · exfalso
-      have h1 := (hc_mem j hj).2
-      have h2 := hcast j k h
-      have h3 := hy.1
-      linarith
-    · rw [h]
-    · exfalso
-      have h1 := (hc_mem j hj).1
-      have h2 := hcast k j h
-      have h3 := hy.2
-      linarith
-  · obtain ⟨j, hj, rfl⟩ := hkey x hx
-    exact ⟨j, hj, hc_mem j hj⟩
-
-end OMA.P4
+open Finset Polynomial
 
 theorem OMA.solution : type_of% @Erdos1114.erdos_1114.variants.rolle := by
-  exact OMA.P4.rolle_core
+  classical
+  intro N a d hd f hdegree hroots
+  let x (k : ℕ) : ℝ := a + d * k
+  have mono : StrictMono x := by
+    intro i j hij
+    dsimp [x]
+    gcongr
+  have existsRoot (i : Fin N) :
+      ∃ z ∈ Set.Ioo (x i) (x ((i : ℕ) + 1)), f.derivative.eval z = 0 :=
+    exists_hasDerivAt_eq_zero (mono (Nat.lt_succ_self _)) f.continuous.continuousOn
+      ((hroots _ i.isLt.le).trans (hroots _ i.isLt).symm) fun z _ => f.hasDerivAt z
+  choose y hy hzero using existsRoot
+  have distinct (i j : Fin N) (hij : i < j) :
+      x ((i : ℕ) + 1) ≤ x j :=
+    mono.monotone (Nat.succ_le_of_lt hij)
+  have rootsNotZero : f.derivative ≠ 0 := by
+    intro h
+    simpa [hdegree] using derivative_eq_zero.mp h
+  have memRoots (z : ℝ) :
+      z ∈ f.derivative.roots.toFinset ↔ f.derivative.eval z = 0 := by
+    simp [mem_roots rootsNotZero, IsRoot]
+  have yMono : StrictMono y :=
+    fun i j hij => (hy i).2.trans ((distinct i j hij).trans_lt (hy j).1)
+  have exhausted : univ.image y = f.derivative.roots.toFinset := by
+    apply eq_of_subset_of_card_le
+    · intro z hz
+      obtain ⟨i, _, rfl⟩ := mem_image.mp hz
+      exact (memRoots _).2 (hzero i)
+    · rw [card_image_of_injective _ yMono.injective, card_univ, Fintype.card_fin]
+      have hd' := natDegree_derivative_le f
+      rw [hdegree, Nat.add_sub_cancel] at hd'
+      exact (Multiset.toFinset_card_le _).trans ((card_roots' _).trans hd')
+  have index (z : ℝ) (hz : f.derivative.eval z = 0) : ∃ i, y i = z := by
+    have hm : z ∈ univ.image y := exhausted ▸ (memRoots z).2 hz
+    obtain ⟨i, _, hi⟩ := mem_image.mp hm
+    exact ⟨i, hi⟩
+  refine ⟨fun k hk => ?_, fun z hz => ?_⟩
+  · let i : Fin N := ⟨k, hk⟩
+    refine ⟨y i, ⟨by simpa [x, i] using hy i, hzero i⟩, ?_⟩
+    rintro z ⟨hz, hz0⟩
+    obtain ⟨j, rfl⟩ := index z hz0
+    have hz' : y j ∈ Set.Ioo (x i) (x ((i : ℕ) + 1)) := by simpa [x, i] using hz
+    rcases lt_trichotomy i j with hij | rfl | hji
+    · exact (hz'.2.not_ge ((distinct i j hij).trans (hy j).1.le)).elim
+    · rfl
+    · exact ((hy j).2.not_ge ((distinct j i hji).trans hz'.1.le)).elim
+  · obtain ⟨i, rfl⟩ := index z hz
+    exact ⟨i, i.isLt, by simpa [x] using hy i⟩
+

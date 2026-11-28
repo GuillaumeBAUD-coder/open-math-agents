@@ -18,7 +18,7 @@ export default function Sponsors() {
         and accepted proofs. They get visibility. They get <b>no say over what counts as a proof</b>: that is the Lean kernel&apos;s job.
       </p>
       <h2 id="tiers">Put your logo here</h2>
-      <p className="callout" style={{ fontSize: "1.05rem" }}><b>From {fmt(Math.min(...tiers.map((t) => t.price)), currency)}</b>, your logo and a link to your website go in the &quot;Made possible by&quot; band at the top of the home page and on this page, seen by everyone who backs and follows the attempt. <b>The bigger the contribution, the bigger the logo</b>: Backer, then Supporter, Sponsor and Lead sponsor, each tier shown larger than the one before.</p>
+      <p className="callout" style={{ fontSize: "1.05rem" }}><b>From {fmt(Math.min(...tiers.map((t) => t.price)), currency)}</b>, your logo and a link to your website go in the &quot;Made possible by&quot; band at the top of the home page and on this page, seen by everyone who backs and follows the attempt. <b>Each tier adds a lot more</b>: Supporters get a logo twice as large, a message on this page and a thank-you on X; Sponsors get their logo on every page and a challenge named after them; the Lead sponsor is presented at the top of the home page, gets four named challenges a year and is the only one in its industry.</p>
       <div className="recs" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))" }}>
         {tiers.map((t) => (
           <div key={t.id} className="rec">
@@ -31,7 +31,7 @@ export default function Sponsors() {
         ))}
       </div>
       {configured && (
-        <p className="callout">Payment goes through Ko-fi (card or PayPal). Enter the tier amount, and put your organisation&apos;s name, website and a link to your logo in the message. Your logo goes up within a few days. Ko-fi emails a payment receipt; we cannot issue VAT invoices for now.</p>
+        <p className="callout">Payment goes through Ko-fi (PayPal, or a card where Ko-fi offers it; if your card is refused, <a href={`${REPO_URL}/issues/new?title=Payment%20problem&labels=sponsor`}>tell us</a> and we send you another way to pay). Enter the tier amount, and put your organisation&apos;s name, website and a link to your logo in the message. Your logo goes up within a few days. Ko-fi emails a payment receipt; we cannot issue VAT invoices for now.</p>
       )}
       {!configured && (
         <p className="callout">Online payment is not switched on yet. To sponsor now, <a href={`${REPO_URL}/issues/new?title=Sponsoring&labels=sponsor`}>open an issue</a> and we will get back to you.</p>

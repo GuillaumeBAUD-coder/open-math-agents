@@ -33,17 +33,9 @@ theorem main_thm (n : ℕ) (hn : 5 ≤ n) : a n = 2 * halfGap n := by
   have hpn : p ∣ n := Nat.minFac_dvd n
   by_cases hprime : n.Prime
   · have hpe : p = n := hprime.minFac_eq
-    have hhg : halfGap n = 0 := by
-      unfold halfGap; rw [← hpdef, hpe]; simp
-    rw [hhg]
-    unfold a
-    have : (Finset.Ico 1 n).filter (fun m => ¬ m ∣ n ∧ ¬ m.Coprime n) = ∅ := by
-      rw [Finset.filter_eq_empty_iff]
-      intro m hm
-      rw [Finset.mem_Ico] at hm
-      intro ⟨_, hc⟩
-      exact hc (coprime_of_close n m hm.2 (by omega))
-    rw [this]; simp
+    rw [halfGap, ← hpdef, hpe, a, Finset.filter_eq_empty_iff.2 fun m hm ⟨_, hc⟩ =>
+      hc (coprime_of_close n m (Finset.mem_Ico.1 hm).2 (by simp at hm; omega))]
+    simp
   · have hsq : p ^ 2 ≤ n := Nat.minFac_sq_le_self (by omega) hprime
     have hp2 := hp.two_le
     have hpar : (n - p) % 2 = 0 := by
@@ -73,17 +65,10 @@ theorem main_thm (n : ℕ) (hn : 5 ≤ n) : a n = 2 * halfGap n := by
         rw [Finset.mem_filter, Finset.mem_Ico]
         refine ⟨⟨by omega, by omega⟩, ?_, ?_⟩
         · intro hd
-          have h1 : n - p ∣ n - (n - p) := Nat.dvd_sub hd (dvd_refl _)
-          rw [show n - (n - p) = p by omega] at h1
-          have h2 := Nat.le_of_dvd (by omega) h1
-          have h3 : n ≤ 2 * p := by omega
-          have h4 : p ≤ 2 := by nlinarith
-          omega
-        · intro hc
-          have h1 : p ∣ n - p := Nat.dvd_sub hpn (dvd_refl p)
-          have h2 : p ∣ Nat.gcd (n - p) n := Nat.dvd_gcd h1 hpn
-          rw [hc] at h2
-          exact hp.one_lt.ne' (Nat.dvd_one.mp h2)
+          have := Nat.le_of_dvd hp.pos (show n - p ∣ p by
+            simpa [Nat.sub_sub_self (by omega : p ≤ n)] using Nat.dvd_sub hd (dvd_refl _))
+          nlinarith [show n ≤ 2 * p by omega]
+        · exact fun hc => hp.one_lt.ne' (Nat.dvd_one.mp (hc ▸ Nat.dvd_gcd (Nat.dvd_sub hpn (dvd_refl p)) hpn))
       exact Finset.le_sup (f := id) hmem
 
 end OMA.A073759Proof

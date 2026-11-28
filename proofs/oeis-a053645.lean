@@ -1,29 +1,27 @@
 import OMAStatements.S_oeis_a053645
 
--- Problem: oeis-a053645
--- Credit: @LAPRAI (the owner of the agent is credited as the solver)
--- Prove EXACTLY this target. No sorry, no axiom, no native_decide.
+/-! The distance resets at powers of two, and otherwise increases by one.
+Original proof by @LAPRAI. -/
 
+open OMA.S_oeis_a053645 in
 theorem OMA.solution : type_of% @OMA.S_oeis_a053645.main := by
-  refine ⟨by simp [OMA.S_oeis_a053645.a], ?_⟩
-  intro n hn
-  have hL1 : 2 ^ Nat.log 2 (n - 1) ≤ n - 1 := Nat.pow_log_le_self 2 (by omega)
-  have hL2 : n - 1 < 2 ^ (Nat.log 2 (n - 1) + 1) := Nat.lt_pow_succ_log_self (by norm_num) _
-  unfold OMA.S_oeis_a053645.a OMA.S_oeis_a053645.a036987
-  by_cases hp : ∃ k ≤ n - 1 + 1, n - 1 + 1 = 2 ^ k
-  · rw [if_pos hp]
-    obtain ⟨k, -, hk⟩ := hp
-    have hn' : n = 2 ^ k := by omega
-    rw [hn', Nat.log_pow (by norm_num)]
+  refine ⟨by decide, fun n hn => ?_⟩
+  let k := Nat.log 2 (n - 1)
+  have hlo : 2 ^ k ≤ n - 1 := Nat.pow_log_le_self 2 (by omega)
+  have hhi : n ≤ 2 ^ (k + 1) := by
+    have : n - 1 < 2 ^ (k + 1) := Nat.lt_pow_succ_log_self (by decide) _
+    omega
+  unfold a a036987
+  split
+  · rename_i h
+    obtain ⟨j, -, hj⟩ := h
+    rw [show n = 2 ^ j by omega, Nat.log_pow (by decide)]
     simp
-  · rw [if_neg hp]
-    have hne : n ≠ 2 ^ (Nat.log 2 (n - 1) + 1) := by
-      intro h
-      apply hp
-      refine ⟨Nat.log 2 (n - 1) + 1, ?_, by omega⟩
-      have := @Nat.lt_two_pow_self (Nat.log 2 (n - 1) + 1)
+  · rename_i h
+    have hlt : n < 2 ^ (k + 1) := by
+      refine lt_of_le_of_ne hhi fun he => h ⟨k + 1, ?_, by omega⟩
+      have := Nat.lt_two_pow_self (n := k + 1)
       omega
-    have hlog : Nat.log 2 n = Nat.log 2 (n - 1) :=
-      Nat.log_eq_of_pow_le_of_lt_pow (by omega) (by omega)
-    rw [hlog]
+    rw [Nat.log_eq_of_pow_le_of_lt_pow (by omega) hlt]
+    change n - 2 ^ k = (1 - 0) * (1 + (n - 1 - 2 ^ k))
     omega

@@ -1,214 +1,44 @@
 import FormalConjectures.OEIS.«358684»
 import Mathlib.NumberTheory.LucasPrimality
-import Mathlib.Tactic.ReduceModChar
 
 namespace OMA
 
-lemma prime_2 : Nat.Prime 2 := by norm_num
+def pm (a m : ℕ) : ℕ → ℕ → ℕ
+  | 0, _ => 1
+  | f+1, e => (if e % 2 = 1 then a else 1) * pm a m f (e/2) ^ 2 % m
 
-lemma prime_7 : Nat.Prime 7 := by norm_num
+theorem pm_eq (a m : ℕ) : ∀ f e, e < 2^f → pm a m f e ≡ a^e [MOD m]
+  | 0, e, h => by
+    obtain rfl : e = 0 := by simpa using h
+    rfl
+  | f+1, e, h => by
+    have ih := pm_eq a m f (e/2) (by rw [pow_succ] at h; omega)
+    have hx : (if e % 2 = 1 then a else 1) ≡ a^(e%2) [MOD m] := by
+      rcases Nat.mod_two_eq_zero_or_one e with h | h <;> simp [h] <;> rfl
+    rw [show a^e = a^(e%2) * (a^(e/2))^2 by rw [← pow_mul, ← pow_add]; congr 1; omega]
+    exact (Nat.mod_modEq _ _).trans (hx.mul (ih.pow 2))
 
-lemma prime_449 : Nat.Prime 449 := by norm_num
+theorem L (p a : ℕ) (l : List ℕ) (hl : ∀ q ∈ l, q.Prime)
+    (h : 1 < p ∧ p < 2^99 ∧ l.prod ^ 99 % (p-1) = 0 ∧ pm a p 99 (p-1) = 1 ∧
+      l.all (fun q => pm a p 99 ((p-1)/q) ≠ 1) := by decide +kernel) : p.Prime := by
+  obtain ⟨h0, h1, h2, h3, h4⟩ := h
+  have k (e) (he : e ≤ p - 1) : (a : ZMod p)^e = 1 ↔ pm a p 99 e = 1 := by
+    rw [← Nat.cast_pow, ← Nat.cast_one, ZMod.natCast_eq_natCast_iff', ← pm_eq a p 99 e (by omega),
+      Nat.one_mod_eq_one.mpr (by omega), show pm a p 99 e % p = pm a p 99 e from Nat.mod_mod _ _]
+  refine lucas_primality p a ((k _ le_rfl).mpr h3) fun q hq hd => ?_
+  obtain ⟨r, hr, hqr⟩ := (Prime.dvd_prod_iff hq.prime).mp
+    (hq.dvd_of_dvd_pow (hd.trans (Nat.dvd_of_mod_eq_zero h2)))
+  rw [(Nat.prime_dvd_prime_iff_eq hq (hl r hr)).mp hqr, Ne, k _ (Nat.div_le_self _ _)]
+  simpa using List.all_eq_true.mp h4 r hr
 
-lemma prime_3 : Nat.Prime 3 := by norm_num
-
-lemma prime_181 : Nat.Prime 181 := by norm_num
-
-lemma prime_52673 : Nat.Prime 52673 := by norm_num
-
-lemma prime_1896229 : Nat.Prime 1896229 := by
-  apply lucas_primality 1896229 2
-  · change (2 : ZMod 1896229) ^ 1896228 = 1
-    reduce_mod_char
-  · intro r hr hd
-    rw [show (1896229 : ℕ) - 1 = 2 ^ 2 * (3 ^ 2 * (52673 ^ 1)) by decide] at hd
-    simp only [hr.dvd_mul] at hd
-    rcases hd with h | h | h
-    · have heq := Nat.prime_eq_prime_of_dvd_pow hr prime_2 h
-      subst r
-      change (2 : ZMod 1896229) ^ 948114 ≠ 1
-      reduce_mod_char <;> decide
-    · have heq := Nat.prime_eq_prime_of_dvd_pow hr prime_3 h
-      subst r
-      change (2 : ZMod 1896229) ^ 632076 ≠ 1
-      reduce_mod_char <;> decide
-    · have heq := Nat.prime_eq_prime_of_dvd_pow hr prime_52673 h
-      subst r
-      change (2 : ZMod 1896229) ^ 36 ≠ 1
-      reduce_mod_char <;> decide
-
-lemma prime_18533742247 : Nat.Prime 18533742247 := by
-  apply lucas_primality 18533742247 6
-  · change (6 : ZMod 18533742247) ^ 18533742246 = 1
-    reduce_mod_char
-  · intro r hr hd
-    rw [show (18533742247 : ℕ) - 1 = 2 ^ 1 * (3 ^ 3 * (181 ^ 1 * (1896229 ^ 1))) by decide] at hd
-    simp only [hr.dvd_mul] at hd
-    rcases hd with h | h | h | h
-    · have heq := Nat.prime_eq_prime_of_dvd_pow hr prime_2 h
-      subst r
-      change (6 : ZMod 18533742247) ^ 9266871123 ≠ 1
-      reduce_mod_char <;> decide
-    · have heq := Nat.prime_eq_prime_of_dvd_pow hr prime_3 h
-      subst r
-      change (6 : ZMod 18533742247) ^ 6177914082 ≠ 1
-      reduce_mod_char <;> decide
-    · have heq := Nat.prime_eq_prime_of_dvd_pow hr prime_181 h
-      subst r
-      change (6 : ZMod 18533742247) ^ 102396366 ≠ 1
-      reduce_mod_char <;> decide
-    · have heq := Nat.prime_eq_prime_of_dvd_pow hr prime_1896229 h
-      subst r
-      change (6 : ZMod 18533742247) ^ 9774 ≠ 1
-      reduce_mod_char <;> decide
-
-lemma prime_116503103764643 : Nat.Prime 116503103764643 := by
-  apply lucas_primality 116503103764643 2
-  · change (2 : ZMod 116503103764643) ^ 116503103764642 = 1
-    reduce_mod_char
-  · intro r hr hd
-    rw [show (116503103764643 : ℕ) - 1 = 2 ^ 1 * (7 ^ 1 * (449 ^ 1 * (18533742247 ^ 1))) by decide] at hd
-    simp only [hr.dvd_mul] at hd
-    rcases hd with h | h | h | h
-    · have heq := Nat.prime_eq_prime_of_dvd_pow hr prime_2 h
-      subst r
-      change (2 : ZMod 116503103764643) ^ 58251551882321 ≠ 1
-      reduce_mod_char <;> decide
-    · have heq := Nat.prime_eq_prime_of_dvd_pow hr prime_7 h
-      subst r
-      change (2 : ZMod 116503103764643) ^ 16643300537806 ≠ 1
-      reduce_mod_char <;> decide
-    · have heq := Nat.prime_eq_prime_of_dvd_pow hr prime_449 h
-      subst r
-      change (2 : ZMod 116503103764643) ^ 259472391458 ≠ 1
-      reduce_mod_char <;> decide
-    · have heq := Nat.prime_eq_prime_of_dvd_pow hr prime_18533742247 h
-      subst r
-      change (2 : ZMod 116503103764643) ^ 6286 ≠ 1
-      reduce_mod_char <;> decide
-
-lemma prime_59649589127497217 : Nat.Prime 59649589127497217 := by
-  apply lucas_primality 59649589127497217 3
-  · change (3 : ZMod 59649589127497217) ^ 59649589127497216 = 1
-    reduce_mod_char
-  · intro r hr hd
-    rw [show (59649589127497217 : ℕ) - 1 = 2 ^ 9 * (116503103764643 ^ 1) by decide] at hd
-    simp only [hr.dvd_mul] at hd
-    rcases hd with h | h
-    · have heq := Nat.prime_eq_prime_of_dvd_pow hr prime_2 h
-      subst r
-      change (3 : ZMod 59649589127497217) ^ 29824794563748608 ≠ 1
-      reduce_mod_char <;> decide
-    · have heq := Nat.prime_eq_prime_of_dvd_pow hr prime_116503103764643 h
-      subst r
-      change (3 : ZMod 59649589127497217) ^ 512 ≠ 1
-      reduce_mod_char <;> decide
-
-lemma prime_5 : Nat.Prime 5 := by norm_num
-
-lemma prime_12497 : Nat.Prime 12497 := by norm_num
-
-lemma prime_2203 : Nat.Prime 2203 := by norm_num
-
-lemma prime_139 : Nat.Prime 139 := by norm_num
-
-lemma prime_1783 : Nat.Prime 1783 := by norm_num
-
-lemma prime_6939437 : Nat.Prime 6939437 := by
-  apply lucas_primality 6939437 2
-  · change (2 : ZMod 6939437) ^ 6939436 = 1
-    reduce_mod_char
-  · intro r hr hd
-    rw [show (6939437 : ℕ) - 1 = 2 ^ 2 * (7 ^ 1 * (139 ^ 1 * (1783 ^ 1))) by decide] at hd
-    simp only [hr.dvd_mul] at hd
-    rcases hd with h | h | h | h
-    · have heq := Nat.prime_eq_prime_of_dvd_pow hr prime_2 h
-      subst r
-      change (2 : ZMod 6939437) ^ 3469718 ≠ 1
-      reduce_mod_char <;> decide
-    · have heq := Nat.prime_eq_prime_of_dvd_pow hr prime_7 h
-      subst r
-      change (2 : ZMod 6939437) ^ 991348 ≠ 1
-      reduce_mod_char <;> decide
-    · have heq := Nat.prime_eq_prime_of_dvd_pow hr prime_139 h
-      subst r
-      change (2 : ZMod 6939437) ^ 49924 ≠ 1
-      reduce_mod_char <;> decide
-    · have heq := Nat.prime_eq_prime_of_dvd_pow hr prime_1783 h
-      subst r
-      change (2 : ZMod 6939437) ^ 3892 ≠ 1
-      reduce_mod_char <;> decide
-
-lemma prime_55515497 : Nat.Prime 55515497 := by
-  apply lucas_primality 55515497 3
-  · change (3 : ZMod 55515497) ^ 55515496 = 1
-    reduce_mod_char
-  · intro r hr hd
-    rw [show (55515497 : ℕ) - 1 = 2 ^ 3 * (6939437 ^ 1) by decide] at hd
-    simp only [hr.dvd_mul] at hd
-    rcases hd with h | h
-    · have heq := Nat.prime_eq_prime_of_dvd_pow hr prime_2 h
-      subst r
-      change (3 : ZMod 55515497) ^ 27757748 ≠ 1
-      reduce_mod_char <;> decide
-    · have heq := Nat.prime_eq_prime_of_dvd_pow hr prime_6939437 h
-      subst r
-      change (3 : ZMod 55515497) ^ 8 ≠ 1
-      reduce_mod_char <;> decide
-
-lemma prime_733803839347 : Nat.Prime 733803839347 := by
-  apply lucas_primality 733803839347 2
-  · change (2 : ZMod 733803839347) ^ 733803839346 = 1
-    reduce_mod_char
-  · intro r hr hd
-    rw [show (733803839347 : ℕ) - 1 = 2 ^ 1 * (3 ^ 1 * (2203 ^ 1 * (55515497 ^ 1))) by decide] at hd
-    simp only [hr.dvd_mul] at hd
-    rcases hd with h | h | h | h
-    · have heq := Nat.prime_eq_prime_of_dvd_pow hr prime_2 h
-      subst r
-      change (2 : ZMod 733803839347) ^ 366901919673 ≠ 1
-      reduce_mod_char <;> decide
-    · have heq := Nat.prime_eq_prime_of_dvd_pow hr prime_3 h
-      subst r
-      change (2 : ZMod 733803839347) ^ 244601279782 ≠ 1
-      reduce_mod_char <;> decide
-    · have heq := Nat.prime_eq_prime_of_dvd_pow hr prime_2203 h
-      subst r
-      change (2 : ZMod 733803839347) ^ 333092982 ≠ 1
-      reduce_mod_char <;> decide
-    · have heq := Nat.prime_eq_prime_of_dvd_pow hr prime_55515497 h
-      subst r
-      change (2 : ZMod 733803839347) ^ 13218 ≠ 1
-      reduce_mod_char <;> decide
-
-lemma prime_5704689200685129054721 : Nat.Prime 5704689200685129054721 := by
-  apply lucas_primality 5704689200685129054721 21
-  · change (21 : ZMod 5704689200685129054721) ^ 5704689200685129054720 = 1
-    reduce_mod_char
-  · intro r hr hd
-    rw [show (5704689200685129054721 : ℕ) - 1 = 2 ^ 9 * (3 ^ 5 * (5 ^ 1 * (12497 ^ 1 * (733803839347 ^ 1)))) by decide] at hd
-    simp only [hr.dvd_mul] at hd
-    rcases hd with h | h | h | h | h
-    · have heq := Nat.prime_eq_prime_of_dvd_pow hr prime_2 h
-      subst r
-      change (21 : ZMod 5704689200685129054721) ^ 2852344600342564527360 ≠ 1
-      reduce_mod_char <;> decide
-    · have heq := Nat.prime_eq_prime_of_dvd_pow hr prime_3 h
-      subst r
-      change (21 : ZMod 5704689200685129054721) ^ 1901563066895043018240 ≠ 1
-      reduce_mod_char <;> decide
-    · have heq := Nat.prime_eq_prime_of_dvd_pow hr prime_5 h
-      subst r
-      change (21 : ZMod 5704689200685129054721) ^ 1140937840137025810944 ≠ 1
-      reduce_mod_char <;> decide
-    · have heq := Nat.prime_eq_prime_of_dvd_pow hr prime_12497 h
-      subst r
-      change (21 : ZMod 5704689200685129054721) ^ 456484692380981760 ≠ 1
-      reduce_mod_char <;> decide
-    · have heq := Nat.prime_eq_prime_of_dvd_pow hr prime_733803839347 h
-      subst r
-      change (21 : ZMod 5704689200685129054721) ^ 7774133760 ≠ 1
-      reduce_mod_char <;> decide
+lemma prime_18533742247 : Nat.Prime 18533742247 := L _ 6 [2,3,181,1896229] (by norm_num)
+lemma prime_116503103764643 : Nat.Prime 116503103764643 :=
+  L _ 2 [2,7,449,18533742247] (by simp [prime_18533742247]; norm_num)
+lemma prime_59649589127497217 : Nat.Prime 59649589127497217 :=
+  L _ 3 [2,116503103764643] (by simp [prime_116503103764643]; norm_num)
+lemma prime_733803839347 : Nat.Prime 733803839347 := L _ 2 [2,3,2203,55515497] (by norm_num)
+lemma prime_5704689200685129054721 : Nat.Prime 5704689200685129054721 :=
+  L _ 21 [2,3,5,12497,733803839347] (by simp [prime_733803839347]; norm_num)
 
 end OMA
 

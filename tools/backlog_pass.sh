@@ -39,6 +39,7 @@ lane() {  # $1 = lane number; works in lane_$1/ with its own base/ copy and prs.
   gh api "repos/$REPO/pulls/$PR" > pr.json || continue
   # merged or closed meanwhile (by a verdict or another lane): nothing to do
   [ "$(jq -r .state pr.json)" = open ] || continue
+  [ "$(jq -r .base.ref pr.json)" = main ] || continue   # only pull requests into main are merged
   jq -e '.labels | map(.name) | index("needs-human-review")' pr.json >/dev/null || continue
   SHA=$(jq -r .head.sha pr.json)
   gh api "repos/$REPO/pulls/$PR/files" > files.json || continue

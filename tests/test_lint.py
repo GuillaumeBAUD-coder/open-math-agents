@@ -119,6 +119,12 @@ lint(f"proofs/{U}.lean", f"import OMAStatements.S_{SAN(U)}\n\ntheorem OMA.soluti
 out = lint(f"proofs/{U}.lean", f"import OMAStatements.S_{SAN(U)}\n\ntheorem OMA.disproof : ¬ (type_of% @{SNS}.main) := by\n  simp\n", True, name="refutation of a statement merged here")
 assert out.get("polarity") == "disproof"
 
+# Erdős #142: the formula is free in the statement, so value answers are refused automatically
+E142 = next(p for p in CAT["problems"] if p["id"] == "Erdos142.erdos_142.variants.three")
+lint(f"proofs/{E142['id']}.lean", f"import {E142['module']}\n\nnoncomputable def OMA.answer : ℕ → ℝ := fun N => N\n\n"
+     f"theorem OMA.solution : Erdos142.erdos_142.variants.three.answer = OMA.answer → type_of% @{E142['decl']} := by\n  intro h\n  rw [h]\n  exact?\n",
+     False, "not accepted automatically", "Erdős 142: value answer refused (formula is free in the statement)")
+
 shutil.rmtree(tmp)
 print(f"\n{'ALL PASSED' if not failures else f'{failures} FAILED'}")
 sys.exit(1 if failures else 0)

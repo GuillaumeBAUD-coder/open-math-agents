@@ -67,48 +67,18 @@ theorem OMA.solution : type_of% @Erdos359.erdos_359.variants.isGoodFor_1_low_val
   intro A hA
   obtain ⟨h0, _, hL⟩ := hA
   have all : ∀ j ≤ 7, A j = OMA359.B j := by
-    have base : ∀ i ≤ 0, A i = OMA359.B i := by
-      intro i hi
-      have : i = 0 := by omega
-      subst this
-      rw [h0]; rfl
-    have s1 := fun h => OMA359.step A hL 0 (by omega) h
-    have s2 := fun h => OMA359.step A hL 1 (by omega) h
-    have s3 := fun h => OMA359.step A hL 2 (by omega) h
-    have s4 := fun h => OMA359.step A hL 3 (by omega) h
-    have s5 := fun h => OMA359.step A hL 4 (by omega) h
-    have s6 := fun h => OMA359.step A hL 5 (by omega) h
-    have s7 := fun h => OMA359.step A hL 6 (by omega) h
-    have ext : ∀ j, (∀ i ≤ j, A i = OMA359.B i) → A (j + 1) = OMA359.B (j + 1) →
-        ∀ i ≤ j + 1, A i = OMA359.B i := by
-      intro j hj hn i hi
-      rcases Nat.lt_or_ge i (j + 1) with h | h
-      · exact hj i (by omega)
-      · have : i = j + 1 := by omega
-        subst this; exact hn
-    have e1 := ext 0 base (s1 base)
-    have e2 := ext 1 e1 (s2 e1)
-    have e3 := ext 2 e2 (s3 e2)
-    have e4 := ext 3 e3 (s4 e3)
-    have e5 := ext 4 e4 (s5 e4)
-    have e6 := ext 5 e5 (s6 e5)
-    have e7 := ext 6 e6 (s7 e6)
-    exact e7
-  ext x
-  constructor
-  · rintro ⟨i, hi, rfl⟩
-    have hi' : i ≤ 7 := hi
-    rw [all i hi']
-    interval_cases i <;> simp [OMA359.B]
-  · intro hx
-    have hx' : x = 1 ∨ x = 2 ∨ x = 4 ∨ x = 5 ∨ x = 8 ∨ x = 10 ∨ x = 14 ∨ x = 15 := by
-      simpa using hx
-    rcases hx' with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    · exact ⟨0, by simp, by rw [all 0 (by omega)]; rfl⟩
-    · exact ⟨1, by simp, by rw [all 1 (by omega)]; rfl⟩
-    · exact ⟨2, by simp, by rw [all 2 (by omega)]; rfl⟩
-    · exact ⟨3, by simp, by rw [all 3 (by omega)]; rfl⟩
-    · exact ⟨4, by simp, by rw [all 4 (by omega)]; rfl⟩
-    · exact ⟨5, by simp, by rw [all 5 (by omega)]; rfl⟩
-    · exact ⟨6, by simp, by rw [all 6 (by omega)]; rfl⟩
-    · exact ⟨7, by simp, by rw [all 7 (by omega)]; rfl⟩
+    intro j
+    induction j using Nat.strongRecOn with
+    | ind j ih =>
+      intro hj
+      cases j with
+      | zero => exact h0
+      | succ j =>
+        exact OMA359.step A hL j (by omega)
+          (fun i hi => ih i (by omega) (by omega))
+  have indices : (Set.Iic 7 : Set ℕ) = {0, 1, 2, 3, 4, 5, 6, 7} := by
+    ext i
+    simp only [Set.mem_Iic, Set.mem_insert_iff, Set.mem_singleton_iff]
+    omega
+  rw [Set.image_congr (s := Set.Iic 7) all, indices]
+  simp [Set.image_insert_eq, OMA359.B]
