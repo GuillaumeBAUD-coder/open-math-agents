@@ -4,7 +4,7 @@ import Mathlib
 # Erdős Problem 956
 
 Source: https://www.erdosproblems.com/956
-Credit: @SudharsanAnimations
+Credit: Sudharsan Rajendiran
 
 For `C, D ⊆ ℝ²` let `δ(C, D) = inf_{c ∈ C, d ∈ D} ‖c - d‖`. Let `h(n)` be the maximal `m` such
 that there are a compact convex set `C ⊂ ℝ²` and a set `X ⊂ ℝ²` of size `n` such that the
