@@ -6,7 +6,8 @@ ROUNDS identical pairs of steps: "publish" (waits up to two minutes for new verd
 bv-<shard> (overwritten each time; the merger reads the newest). GitHub Actions has no loop over steps, hence the
 generated list. Usage: python3 tools/batch_check_yml.py > .github/workflows/batch-check.yml
 """
-SHARDS = 4          # parallel jobs; pull request n goes to shard n % SHARDS (tools/batch_verdicts.sh reads this line)
+SHARDS = 8          # parallel jobs; pull request n goes to shard n % SHARDS (tools/batch_verdicts.sh reads this line)
+PREV_SHARDS = 4     # the shard count before the last change: a new shard starts from the state of shard % PREV_SHARDS
 LANES = 3           # checks at once in a job (one Lean check uses ~1 of the 4 cores and ~0.5 GB of its own memory)
 ROUNDS = 100        # publish rounds per job: new verdicts go out at most once a minute, a round waits 2 minutes at most
 JOB_MINUTES = 120   # no new check starts after this; the job then publishes and ends (the next run takes over)
@@ -92,16 +93,21 @@ jobs:
           # only an artifact of this workflow, run on main by a schedule, a dispatch or a push: an artifact of the same
           # name uploaded by a pull request's run is ignored
           # (no answer from the API: stop here rather than start afresh and check again what was already checked)
-          A=$(gh api "repos/$REPO/actions/artifacts?name=bv-$SHARD&per_page=10" --jq '.artifacts[] | select(.expired | not) | [.id, .workflow_run.id] | @tsv') || {{ echo "cannot list artifacts"; exit 1; }}
-          while IFS=$'\\t' read -r AID RID; do
-            [ -n "$AID" ] || continue
-            OK=$(gh api "repos/$REPO/actions/runs/$RID" --jq 'select(.path == ".github/workflows/batch-check.yml" and .head_branch == "main" and (.event == "schedule" or .event == "workflow_dispatch" or .event == "push") and .repository.full_name == .head_repository.full_name) | .id' 2>/dev/null || true)
-            [ "$OK" = "$RID" ] || continue
-            mkdir -p /tmp/prev && gh api "repos/$REPO/actions/artifacts/$AID/zip" > /tmp/prev/a.zip && (cd /tmp/prev && unzip -o -q a.zip) || continue
-            cp /tmp/prev/done.tsv "$BC/done.tsv"; cp /tmp/prev/verdicts.jsonl "$BC/verdicts.jsonl"
-            [ -s /tmp/prev/since.txt ] && cp /tmp/prev/since.txt "$BC/since.txt"
-            echo "inherited $(wc -l < "$BC/done.tsv") verdicts from run $RID"; break
-          done <<< "$A"
+          # A shard without an artifact yet (the shard count just grew) starts from the one that held its pull requests.
+          GOT=0
+          for NAME in "bv-$SHARD" "bv-$(( SHARD % {PREV_SHARDS} ))"; do
+            [ "$GOT" = 0 ] || break
+            A=$(gh api "repos/$REPO/actions/artifacts?name=$NAME&per_page=10" --jq '.artifacts[] | select(.expired | not) | [.id, .workflow_run.id] | @tsv') || {{ echo "cannot list artifacts"; exit 1; }}
+            while IFS=$'\\t' read -r AID RID; do
+              [ -n "$AID" ] || continue
+              OK=$(gh api "repos/$REPO/actions/runs/$RID" --jq 'select(.path == ".github/workflows/batch-check.yml" and .head_branch == "main" and (.event == "schedule" or .event == "workflow_dispatch" or .event == "push") and .repository.full_name == .head_repository.full_name) | .id' 2>/dev/null || true)
+              [ "$OK" = "$RID" ] || continue
+              mkdir -p /tmp/prev && gh api "repos/$REPO/actions/artifacts/$AID/zip" > /tmp/prev/a.zip && (cd /tmp/prev && unzip -o -q a.zip) || continue
+              cp /tmp/prev/done.tsv "$BC/done.tsv"; cp /tmp/prev/verdicts.jsonl "$BC/verdicts.jsonl"
+              [ -s /tmp/prev/since.txt ] && cp /tmp/prev/since.txt "$BC/since.txt"
+              echo "inherited $(wc -l < "$BC/done.tsv") verdicts of $NAME from run $RID"; GOT=1; break
+            done <<< "$A"
+          done
           wc -l < "$BC/verdicts.jsonl" 2>/dev/null > "$BC/published.count" || echo 0 > "$BC/published.count"
       - name: Start the worker
         run: |

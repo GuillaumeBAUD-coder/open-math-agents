@@ -1,2716 +1,1158 @@
 import OMAReductions.R_opg_forcing_a_2_regular_minor_R1
-import Mathlib
+import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
+import Mathlib.Combinatorics.SimpleGraph.Finite
+import Mathlib.Combinatorics.SimpleGraph.Paths
+import Mathlib.Combinatorics.SimpleGraph.Maps
+import Mathlib.Order.Interval.Finset.Nat
+import Mathlib.Data.List.GetD
+import Mathlib.Data.Finset.Sym
 
 /-!
-Proof of `opg-forcing-a-2-regular-minor.R1.H1` (Erdos-Gallai theorem on longest cycles, 1959):
-Every nonempty finite simple graph `G` on `n` vertices with `k >= 3` and
-`(k - 1) * n <= 2 * |E(G)|` contains a cycle of length at least `k`.
-
-We prove the sharper bound `(k - 1) * (n - 1) < 2 * |E(G)|` by strong induction on `n`:
-1. Vertices of degree `<= (k - 1) / 2` are deleted by induction.
-2. Disconnected graphs and graphs with a cut-vertex split while preserving the edge-density
-   hypothesis on at least one side.
-3. For a 2-connected graph `G` with `n >= k` and `2 * delta(G) >= k`, we prove Kopylov/Dirac's
-   longest-path cycle bound: taking a longest simple path `P = v_0 ... v_L`, `G` contains a cycle
-   of length at least `min n (deg v_0 + deg v_L) >= k`, via:
-   - a Hamiltonian cycle when `N(v_0)` and `N(v_L)` have an adjacent crossing (`A ∩ B ≠ ∅`),
-   - a minimal-gap crossing cycle when `b < a`, and
-   - a minimal covering vine of internally-`P`-disjoint bridges stitched into two vertex-disjoint
-     paths closed by degree-preserving detours at both ends when `a <= b`.
+Dirac (1952): a 2-connected graph with minimum degree at least d has a cycle of length at least
+min(n, 2d). Take a longest path x 0, ..., x m; S and T index the chords at its two ends.
+A crossing pair of chords closes the path into a cycle through all vertices (this part and the
+list-cycle lemmas are adapted from philipsaint's proof of Dirac's Hamiltonicity theorem).
+If a neighbour of x m precedes a neighbour of x 0, a closest such pair gives a cycle of length at
+least |S| + |T|. Otherwise every neighbour of x 0 precedes every neighbour of x m, and a chain of
+bridges of the path, each chosen with maximal reach, gives such a cycle.
 -/
 
-namespace OMAP2RegH1
+namespace OMA.EG
 
+open SimpleGraph
+
+/-- Core (Dirac 1952): a 2-connected graph with minimum degree d has a cycle of length
+at least min(n, 2d). 2-connectivity is stated as: any two vertices other than v are joined by
+a walk avoiding v. -/
+def CoreStatement : Prop :=
+  ∀ {V : Type} [Fintype V] [DecidableEq V] (G : SimpleGraph V) [DecidableRel G.Adj] (d : ℕ),
+    2 ≤ d → 3 ≤ Fintype.card V → G.Connected →
+    (∀ v a b : V, a ≠ v → b ≠ v → ∃ p : G.Walk a b, v ∉ p.support) →
+    (∀ v, d ≤ G.degree v) →
+    ∃ (u : V) (c : G.Walk u u), c.IsCycle ∧ min (Fintype.card V) (2 * d) ≤ c.length
+
+namespace C1
+
+
+open SimpleGraph
+
+variable {V : Type} {G : SimpleGraph V}
+
+def PL (G : SimpleGraph V) (a : V) (L : List V) (b : V) : Prop :=
+  L.IsChain G.Adj ∧ L.head? = some a ∧ L.getLast? = some b
+
+lemma PL.eq_cons {a b : V} {L : List V} (h : PL G a L b) : L = a :: L.tail := by
+  obtain ⟨-, h2, -⟩ := h
+  cases L with
+  | nil => simp at h2
+  | cons y L => simp at h2; simp [h2]
+
+lemma PL.length_pos {a b : V} {L : List V} (h : PL G a L b) : 1 ≤ L.length := by
+  rw [h.eq_cons]; simp
+
+lemma PL.single (a : V) : PL G a [a] a := ⟨List.isChain_singleton _, rfl, rfl⟩
+
+lemma PL.cons {a b c : V} {L : List V} (hab : G.Adj a b) (h : PL G b L c) :
+    PL G a (a :: L) c := by
+  obtain ⟨c1, hd, hl⟩ := h
+  refine ⟨List.isChain_cons.2 ⟨?_, c1⟩, rfl, ?_⟩
+  · intro y hy; rw [hd] at hy; cases hy; exact hab
+  · rw [List.getLast?_cons, hl]; rfl
+
+lemma PL.edge {a b : V} (hab : G.Adj a b) : PL G a [a, b] b := PL.cons hab (PL.single b)
+
+lemma PL.append {a b c : V} {L M : List V} (h1 : PL G a L b) (h2 : PL G b M c) :
+    PL G a (L ++ M.tail) c := by
+  have hM := h2.eq_cons
+  have hL := h1.eq_cons
+  obtain ⟨c1, hd1, l1⟩ := h1
+  obtain ⟨c2, hd2, l2⟩ := h2
+  rw [hM] at c2 l2
+  rw [List.isChain_cons] at c2
+  refine ⟨?_, ?_, ?_⟩
+  · rw [List.isChain_append]
+    refine ⟨c1, c2.2, ?_⟩
+    intro x hx y hy
+    rw [l1] at hx; cases hx; exact c2.1 y hy
+  · rw [hL]; simp
+  · rw [List.getLast?_cons] at l2
+    rw [List.getLast?_append]
+    rcases h : M.tail.getLast? with _ | z
+    · rw [h] at l2; simp at l2; simp [l1, l2]
+    · rw [h] at l2; simp at l2; simp [l2]
+
+lemma PL.reverse {a b : V} {L : List V} (h : PL G a L b) : PL G b L.reverse a := by
+  obtain ⟨c1, hd, hl⟩ := h
+  refine ⟨?_, by rw [List.head?_reverse, hl], by rw [List.getLast?_reverse, hd]⟩
+  rw [List.isChain_reverse]
+  exact c1.imp (fun _ _ h => h.symm)
+
+lemma length_append_tail {L M : List V} (hM : 1 ≤ M.length) :
+    (L ++ M.tail).length = L.length + M.length - 1 := by
+  rw [List.length_append, List.length_tail]; omega
+
+lemma mem_append_tail {L M : List V} {v : V} (h : v ∈ L ++ M.tail) : v ∈ L ∨ v ∈ M := by
+  rcases List.mem_append.1 h with h | h
+  · exact Or.inl h
+  · exact Or.inr (List.mem_of_mem_tail h)
+
+lemma nodup_append_tail {b c : V} {L M : List V} (hL : L.Nodup) (hM : M.Nodup)
+    (h2 : PL G b M c) (hcap : ∀ v ∈ L, v ∈ M → v = b) : (L ++ M.tail).Nodup := by
+  have hMe := h2.eq_cons
+  rw [hMe, List.nodup_cons] at hM
+  rw [List.nodup_append]
+  refine ⟨hL, hM.2, ?_⟩
+  intro v hv w hw hvw
+  subst hvw
+  have := hcap v hv (by rw [hMe]; exact List.mem_cons_of_mem _ hw)
+  subst this
+  exact hM.1 hw
+
+/-! Closing a cyclic list into a cycle (adapted from philipsaint's Dirac proof). -/
+
+lemma edge_not_mem {u v : V} (p : G.Walk u v) (hp : p.IsPath) (hlen : 2 ≤ p.length) :
+    s(u, v) ∉ p.edges := by
+  cases p with
+  | nil => simp at hlen
+  | @cons _ w _ hadj p' =>
+    intro hmem
+    rw [Walk.edges_cons, List.mem_cons] at hmem
+    have hnd := hp.support_nodup
+    rw [Walk.support_cons, List.nodup_cons] at hnd
+    rcases hmem with h | h
+    · rcases Sym2.eq_iff.mp h with ⟨-, h2⟩ | ⟨h1, -⟩
+      · subst h2
+        have hp' : p'.IsPath := hp.of_cons
+        have : p'.length = 0 := by
+          rcases p' with _ | ⟨h'', p''⟩
+          · rfl
+          · exfalso
+            have := hp'.support_nodup
+            simp at this
+        simp [this] at hlen
+      · subst h1
+        exact hadj.ne rfl
+    · exact hnd.1 (Walk.fst_mem_support_of_mem_edges p' h)
+
+lemma cycle_of_PL {a b : V} {c : List V} (hc : PL G a c b) (hba : G.Adj b a) (hnd : c.Nodup)
+    (h3 : 3 ≤ c.length) : ∃ (u : V) (w : G.Walk u u), w.IsCycle ∧ w.length = c.length := by
+  have hne : c ≠ [] := by
+    rintro rfl
+    simp at h3
+  obtain ⟨hch, hhd, hlt⟩ := hc
+  set W := Walk.ofSupport c hne hch
+  have hW : W.support = c := Walk.support_ofSupport hne hch
+  have hWl : W.length = c.length - 1 := Walk.length_ofSupport hne hch
+  have hpath : W.IsPath := Walk.IsPath.mk' (by rw [hW]; exact hnd)
+  have hadj : G.Adj (c.head hne) (c.getLast hne) := by
+    have e1 : c.head hne = a := by
+      rw [List.head?_eq_some_head hne] at hhd; exact Option.some.inj hhd
+    have e2 : c.getLast hne = b := by
+      rw [List.getLast?_eq_some_getLast hne] at hlt; exact Option.some.inj hlt
+    rw [e1, e2]; exact hba.symm
+  refine ⟨c.head hne, Walk.cons hadj W.reverse, ?_, ?_⟩
+  · rw [Walk.cons_isCycle_iff]
+    refine ⟨hpath.reverse, ?_⟩
+    rw [Walk.edges_reverse, List.mem_reverse]
+    exact edge_not_mem W hpath (by omega)
+  · rw [Walk.length_cons, Walk.length_reverse, hWl]
+    omega
+
+/-! Segments of the path `x 0, x 1, ..., x m`. -/
+
+def seg (x : ℕ → V) (c d : ℕ) : List V := (List.range' c (d + 1 - c)).map x
+
+variable (x : ℕ → V) (m : ℕ)
+
+lemma mem_seg {c d : ℕ} {v : V} : v ∈ seg x c d ↔ ∃ k, c ≤ k ∧ k ≤ d ∧ x k = v := by
+  simp only [seg, List.mem_map, List.mem_range'_1]
+  constructor
+  · rintro ⟨k, ⟨h1, h2⟩, h3⟩; exact ⟨k, h1, by omega, h3⟩
+  · rintro ⟨k, h1, h2, h3⟩; exact ⟨k, ⟨h1, by omega⟩, h3⟩
+
+lemma length_seg (c d : ℕ) : (seg x c d).length = d + 1 - c := by simp [seg]
+
+lemma nodup_seg (hinj : ∀ i j, i ≤ m → j ≤ m → x i = x j → i = j) {c d : ℕ} (hd : d ≤ m) :
+    (seg x c d).Nodup := by
+  apply List.Nodup.map_on _ (List.nodup_range' _)
+  intro i hi j hj hij
+  rw [List.mem_range'_1] at hi hj
+  exact hinj i j (by omega) (by omega) hij
+
+lemma PL_range (hadj : ∀ i, i < m → G.Adj (x i) (x (i+1))) :
+    ∀ n c, c + n ≤ m → PL G (x c) ((List.range' c (n+1)).map x) (x (c+n)) := by
+  intro n
+  induction n with
+  | zero => intro c _; simpa using PL.single (G := G) (x c)
+  | succ n ih =>
+    intro c hc
+    rw [List.range'_succ, List.map_cons]
+    have := ih (c+1) (by omega)
+    rw [show c + 1 + n = c + (n+1) by omega] at this
+    exact PL.cons (hadj c (by omega)) this
+
+lemma PL_seg (hadj : ∀ i, i < m → G.Adj (x i) (x (i+1))) {c d : ℕ} (hcd : c ≤ d)
+    (hd : d ≤ m) : PL G (x c) (seg x c d) (x d) := by
+  have := PL_range x m hadj (d - c) c (by omega)
+  rw [show c + (d - c) = d by omega] at this
+  unfold seg
+  rw [show d + 1 - c = d - c + 1 by omega]
+  exact this
+
+
+/-! Bridges of the path. -/
+
+def OnP (v : V) : Prop := ∃ k, k ≤ m ∧ x k = v
+
+def Br (G : SimpleGraph V) (s t : ℕ) : Prop :=
+  s ≤ m ∧ t ≤ m ∧ ∃ q : G.Walk (x s) (x t), ∀ z ∈ q.support, z = x s ∨ z = x t ∨ ¬ OnP x m z
+
+def AT (G : SimpleGraph V) (p : ℕ) (v : V) : Prop :=
+  ∃ q : G.Walk (x p) v, ∀ z ∈ q.support, z = x p ∨ ¬ OnP x m z
+
+def AT' (G : SimpleGraph V) (v : V) (t : ℕ) : Prop :=
+  ∃ q : G.Walk v (x t), ∀ z ∈ q.support, z = x t ∨ ¬ OnP x m z
+
+lemma br_of_AT {p t : ℕ} {v : V} (h1 : AT x m G p v) (h2 : AT' x m G v t) (hp : p ≤ m)
+    (ht : t ≤ m) : Br x m G p t := by
+  obtain ⟨q1, hq1⟩ := h1
+  obtain ⟨q2, hq2⟩ := h2
+  refine ⟨hp, ht, q1.append q2, ?_⟩
+  intro z hz
+  rw [Walk.support_append] at hz
+  rcases List.mem_append.1 hz with hz | hz
+  · rcases hq1 z hz with h | h
+    · exact Or.inl h
+    · exact Or.inr (Or.inr h)
+  · rcases hq2 z (List.mem_of_mem_tail hz) with h | h
+    · exact Or.inr (Or.inl h)
+    · exact Or.inr (Or.inr h)
+
+lemma bridge_aux (w : ℕ) (hwm : w < m) :
+    ∀ (y y2 : V) (p : G.Walk y y2), y2 = x m → x w ∉ p.support →
+      (∃ s t, s < w ∧ w < t ∧ Br x m G s t) ∨
+      (∃ t, w < t ∧ t ≤ m ∧ ∃ q : G.Walk y (x t), ∀ z ∈ q.support, z = x t ∨ ¬ OnP x m z) := by
+  intro y y2 p
+  induction p with
+  | nil =>
+    intro he _
+    subst he
+    right
+    exact ⟨m, hwm, le_rfl, Walk.nil, by simp⟩
+  | @cons y y' _ hadj p ih =>
+    intro he hw
+    rw [Walk.support_cons, List.mem_cons, not_or] at hw
+    rcases ih he hw.2 with h | ⟨t, hwt, htm, q, hq⟩
+    · exact Or.inl h
+    · by_cases hy : OnP x m y
+      · obtain ⟨k, hkm, rfl⟩ := hy
+        rcases Nat.lt_or_ge k w with hk | hk
+        · left
+          refine ⟨k, t, hk, hwt, by omega, htm, Walk.cons hadj q, ?_⟩
+          intro z hz
+          rw [Walk.support_cons, List.mem_cons] at hz
+          rcases hz with hz | hz
+          · exact Or.inl hz
+          · exact Or.inr (hq z hz)
+        · right
+          have hkw : k ≠ w := by rintro rfl; exact hw.1 rfl
+          exact ⟨k, by omega, hkm, Walk.nil, by simp⟩
+      · right
+        refine ⟨t, hwt, htm, Walk.cons hadj q, ?_⟩
+        intro z hz
+        rw [Walk.support_cons, List.mem_cons] at hz
+        rcases hz with hz | hz
+        · subst hz; exact Or.inr hy
+        · exact hq z hz
+
+lemma bridge_exists (hinj : ∀ i j, i ≤ m → j ≤ m → x i = x j → i = j)
+    (hconn : ∀ v a b : V, a ≠ v → b ≠ v → ∃ p : G.Walk a b, v ∉ p.support)
+    {w : ℕ} (hw0 : 0 < w) (hwm : w < m) : ∃ s t, s < w ∧ w < t ∧ Br x m G s t := by
+  obtain ⟨p, hp⟩ := hconn (x w) (x 0) (x m)
+    (fun h => by have := hinj _ _ (by omega) (by omega) h; omega)
+    (fun h => by have := hinj _ _ (by omega) (by omega) h; omega)
+  rcases bridge_aux x m w hwm (x 0) _ p rfl hp with h | ⟨t, hwt, htm, q, hq⟩
+  · exact h
+  · exfalso
+    rcases hq (x 0) (Walk.start_mem_support q) with h | h
+    · have := hinj _ _ (by omega) htm h; omega
+    · exact h ⟨0, by omega, rfl⟩
+
+lemma max_bridge (hinj : ∀ i j, i ≤ m → j ≤ m → x i = x j → i = j)
+    (hconn : ∀ v a b : V, a ≠ v → b ≠ v → ∃ p : G.Walk a b, v ∉ p.support)
+    {w : ℕ} (hw0 : 0 < w) (hwm : w < m) :
+    ∃ s t, s < w ∧ w < t ∧ Br x m G s t ∧ ∀ p t', p < w → Br x m G p t' → t' ≤ t := by
+  classical
+  let P : ℕ → Prop := fun t => w < t ∧ ∃ s, s < w ∧ Br x m G s t
+  obtain ⟨s0, t0, hs0, ht0, hb0⟩ := bridge_exists x m hinj hconn hw0 hwm
+  have hP0 : P t0 := ⟨ht0, s0, hs0, hb0⟩
+  have hspec : P (Nat.findGreatest P m) := Nat.findGreatest_spec hb0.2.1 hP0
+  obtain ⟨h1, s, hs, hb⟩ := hspec
+  refine ⟨s, _, hs, h1, hb, ?_⟩
+  intro p t' hp hb'
+  rcases Nat.lt_or_ge w t' with h | h
+  · exact Nat.le_findGreatest hb'.2.1 ⟨h, p, hp, hb'⟩
+  · omega
+
+lemma path_of_br {s t : ℕ} (hb : Br x m G s t) :
+    ∃ Q : List V, PL G (x s) Q (x t) ∧ Q.Nodup ∧
+      (∀ v ∈ Q, v = x s ∨ v = x t ∨ ¬ OnP x m v) ∧
+      (∀ v ∈ Q, ¬ OnP x m v → AT x m G s v ∧ AT' x m G v t) := by
+  classical
+  obtain ⟨hs, ht, q, hq⟩ := hb
+  set q' := q.bypass with hq'
+  have hpath : q'.IsPath := Walk.bypass_isPath q
+  have hsub : q'.support ⊆ q.support := Walk.support_bypass_subset_support q
+  have hmem : ∀ z ∈ q'.support, z = x s ∨ z = x t ∨ ¬ OnP x m z := fun z hz => hq z (hsub hz)
+  refine ⟨q'.support, ⟨Walk.isChain_adj_support q', ?_, ?_⟩, hpath.support_nodup, hmem, ?_⟩
+  · rw [← Walk.cons_tail_support]; rfl
+  · rw [List.getLast?_eq_some_getLast (Walk.support_ne_nil q'), Walk.getLast_support]
+  · intro v hv hoff
+    have hvs : x s ≠ v := fun h => hoff ⟨s, hs, h⟩
+    have hvt : x t ≠ v := fun h => hoff ⟨t, ht, h⟩
+    constructor
+    · refine ⟨q'.takeUntil v hv, ?_⟩
+      intro z hz
+      have hz' := Walk.support_takeUntil_subset_support q' hv hz
+      rcases hmem z hz' with h | h | h
+      · exact Or.inl h
+      · subst h
+        exact absurd hz (Walk.endpoint_notMem_support_takeUntil hpath hv hvt)
+      · exact Or.inr h
+    · have hv' : v ∈ q'.reverse.support := by
+        rw [Walk.support_reverse]; exact List.mem_reverse.2 hv
+      refine ⟨(q'.reverse.takeUntil v hv').reverse, ?_⟩
+      intro z hz
+      rw [Walk.support_reverse, List.mem_reverse] at hz
+      have hz' := Walk.support_takeUntil_subset_support q'.reverse hv' hz
+      rw [Walk.support_reverse, List.mem_reverse] at hz'
+      rcases hmem z hz' with h | h | h
+      · subst h
+        exact absurd hz (Walk.endpoint_notMem_support_takeUntil hpath.reverse hv' hvs)
+      · exact Or.inl h
+      · exact Or.inr h
+
+
+/-! The chain of bridges (case where every neighbour of `x 0` precedes every neighbour of `x m`). -/
+
+def Inv (G : SimpleGraph V) (S T : Finset ℕ) (u w : ℕ) (L : List V) : Prop :=
+  u < w ∧ w ≤ m ∧ (∀ k ∈ T, u ≤ k) ∧ (∀ p t, p < u → Br x m G p t → t ≤ w) ∧
+  PL G (x u) L (x w) ∧ L.Nodup ∧
+  (∀ v ∈ L, (∃ k, k ≤ u ∧ x k = v) ∨ v = x w ∨ (¬ OnP x m v ∧ ∃ p, p < u ∧ AT x m G p v)) ∧
+  S.card + 1 ≤ L.length
+
+lemma close_cycle (hinj : ∀ i j, i ≤ m → j ≤ m → x i = x j → i = j)
+    (hadj : ∀ i, i < m → G.Adj (x i) (x (i+1)))
+    {S T : Finset ℕ} (hT : ∀ k ∈ T, k < m ∧ G.Adj (x k) (x m))
+    {u w : ℕ} {L : List V} (hI : Inv x m G S T u w L) (hk : ∃ k ∈ T, k < w)
+    (h3 : 3 ≤ S.card + T.card) :
+    ∃ (y : V) (c : G.Walk y y), c.IsCycle ∧ S.card + T.card ≤ c.length := by
+  classical
+  obtain ⟨huw, hwm, hTu, -, hPL, hnd, hmem, hlen⟩ := hI
+  obtain ⟨k0, hk0T, hk0w⟩ := hk
+  have hne : (T.filter (· < w)).Nonempty := ⟨k0, Finset.mem_filter.2 ⟨hk0T, hk0w⟩⟩
+  set j := (T.filter (· < w)).max' hne with hjdef
+  have hjT : j ∈ T ∧ j < w := Finset.mem_filter.1 (Finset.max'_mem _ _)
+  have hjmax : ∀ k ∈ T, k < w → k ≤ j := fun k hk hkw =>
+    Finset.le_max' _ k (Finset.mem_filter.2 ⟨hk, hkw⟩)
+  have huj : u ≤ j := hTu j hjT.1
+  have P1 : PL G (x j) (seg x u j).reverse (x u) := (PL_seg x m hadj huj (by omega)).reverse
+  have P3 : PL G (x w) (seg x w m) (x m) := PL_seg x m hadj hwm le_rfl
+  have Q1 := P1.append hPL
+  have Q2 := Q1.append P3
+  have hnd1 : ((seg x u j).reverse ++ L.tail).Nodup := by
+    refine nodup_append_tail (List.nodup_reverse.2 (nodup_seg x m hinj (by omega))) hnd hPL ?_
+    intro v hv hvL
+    obtain ⟨k, hk1, hk2, rfl⟩ := (mem_seg x).1 (List.mem_reverse.1 hv)
+    rcases hmem _ hvL with ⟨k', hk', he⟩ | he | ⟨hoff, -⟩
+    · have := hinj _ _ (by omega) (by omega) he
+      have : k = u := by omega
+      rw [this]
+    · have := hinj _ _ (by omega) (by omega) he; omega
+    · exact absurd ⟨k, by omega, rfl⟩ hoff
+  have hnd2 : ((seg x u j).reverse ++ L.tail ++ (seg x w m).tail).Nodup := by
+    refine nodup_append_tail hnd1 (nodup_seg x m hinj le_rfl) P3 ?_
+    intro v hv hvs
+    obtain ⟨k, hk1, hk2, rfl⟩ := (mem_seg x).1 hvs
+    rcases mem_append_tail hv with hv | hvL
+    · obtain ⟨k', hk1', hk2', he⟩ := (mem_seg x).1 (List.mem_reverse.1 hv)
+      have := hinj _ _ (by omega) (by omega) he; omega
+    · rcases hmem _ hvL with ⟨k', hk', he⟩ | he | ⟨hoff, -⟩
+      · have := hinj _ _ (by omega) (by omega) he; omega
+      · exact he
+      · exact absurd ⟨k, by omega, rfl⟩ hoff
+  have hTsub : T ⊆ Finset.Icc u j ∪ Finset.Ico w m := by
+    intro k hk
+    rw [Finset.mem_union, Finset.mem_Icc, Finset.mem_Ico]
+    have := hTu k hk
+    have := (hT k hk).1
+    rcases Nat.lt_or_ge k w with h | h
+    · have := hjmax k hk h; left; omega
+    · right; omega
+  have hTc := (Finset.card_le_card hTsub).trans (Finset.card_union_le _ _)
+  rw [Nat.card_Icc, Nat.card_Ico] at hTc
+  have hl1 := length_append_tail (L := (seg x u j).reverse) hPL.length_pos
+  have hl2 := length_append_tail (L := (seg x u j).reverse ++ L.tail) P3.length_pos
+  rw [List.length_reverse, length_seg] at hl1
+  rw [length_seg] at hl2
+  obtain ⟨y, c, hc, hcl⟩ := cycle_of_PL Q2 (hT j hjT.1).2.symm hnd2 (by omega)
+  exact ⟨y, c, hc, by omega⟩
+
+lemma chain_step (hinj : ∀ i j, i ≤ m → j ≤ m → x i = x j → i = j)
+    (hadj : ∀ i, i < m → G.Adj (x i) (x (i+1)))
+    (hconn : ∀ v a b : V, a ≠ v → b ≠ v → ∃ p : G.Walk a b, v ∉ p.support)
+    {S T : Finset ℕ} (hT : ∀ k ∈ T, k < m ∧ G.Adj (x k) (x m))
+    {u w : ℕ} {L : List V} (hI : Inv x m G S T u w L) (hk : ∀ k ∈ T, w ≤ k)
+    (hTne : T.Nonempty) : ∃ t L', w < t ∧ Inv x m G S T w t L' := by
+  obtain ⟨huw, hwm, hTu, hRB, hPL, hnd, hmem, hlen⟩ := hI
+  obtain ⟨k0, hk0⟩ := hTne
+  have hwm' : w < m := lt_of_le_of_lt (hk k0 hk0) (hT k0 hk0).1
+  obtain ⟨s, t, hsw, hwt, hb, hmax⟩ := max_bridge x m hinj hconn (by omega : 0 < w) hwm'
+  have hus : u ≤ s := by
+    by_contra h
+    have := hRB s t (by omega) hb
+    omega
+  have htm : t ≤ m := hb.2.1
+  obtain ⟨Q, hQPL, hQnd, hQmem, hQat⟩ := path_of_br x m hb
+  have P2 : PL G (x u) (seg x u s) (x s) := PL_seg x m hadj hus (by omega)
+  have D1 := hPL.reverse.append P2
+  have D := D1.append hQPL
+  have hnd1 : (L.reverse ++ (seg x u s).tail).Nodup := by
+    refine nodup_append_tail (List.nodup_reverse.2 hnd) (nodup_seg x m hinj (by omega)) P2 ?_
+    intro v hv hvs
+    obtain ⟨k, hk1, hk2, rfl⟩ := (mem_seg x).1 hvs
+    rcases hmem _ (List.mem_reverse.1 hv) with ⟨k', hk', he⟩ | he | ⟨hoff, -⟩
+    · have := hinj _ _ (by omega) (by omega) he
+      have : k = u := by omega
+      rw [this]
+    · have := hinj _ _ (by omega) (by omega) he; omega
+    · exact absurd ⟨k, by omega, rfl⟩ hoff
+  have hnd2 : (L.reverse ++ (seg x u s).tail ++ Q.tail).Nodup := by
+    refine nodup_append_tail hnd1 hQnd hQPL ?_
+    intro v hv hvQ
+    rcases hQmem v hvQ with he | he | hoff
+    · exact he
+    · exfalso
+      subst he
+      rcases mem_append_tail hv with hv | hv
+      · rcases hmem _ (List.mem_reverse.1 hv) with ⟨k', hk', he⟩ | he | ⟨hoff, -⟩
+        · have := hinj _ _ (by omega) (by omega) he; omega
+        · have := hinj _ _ (by omega) (by omega) he; omega
+        · exact hoff ⟨t, htm, rfl⟩
+      · obtain ⟨k, hk1, hk2, he⟩ := (mem_seg x).1 hv
+        have := hinj _ _ (by omega) (by omega) he; omega
+    · exfalso
+      rcases mem_append_tail hv with hv | hv
+      · rcases hmem _ (List.mem_reverse.1 hv) with ⟨k', hk', he⟩ | he | ⟨-, p, hp, hat⟩
+        · exact hoff ⟨k', by omega, he⟩
+        · exact hoff ⟨w, hwm, he.symm⟩
+        · have := hRB p t hp (br_of_AT x m hat (hQat v hvQ hoff).2 (by omega) htm)
+          omega
+      · obtain ⟨k, hk1, hk2, he⟩ := (mem_seg x).1 hv
+        exact hoff ⟨k, by omega, he⟩
+  refine ⟨t, _, hwt, hwt, htm, hk, hmax, D, hnd2, ?_, ?_⟩
+  · intro v hv
+    rcases mem_append_tail hv with hv | hvQ
+    · rcases mem_append_tail hv with hv | hv
+      · rcases hmem _ (List.mem_reverse.1 hv) with ⟨k', hk', he⟩ | he | ⟨hoff, p, hp, hat⟩
+        · exact Or.inl ⟨k', by omega, he⟩
+        · exact Or.inl ⟨w, le_rfl, he.symm⟩
+        · exact Or.inr (Or.inr ⟨hoff, p, by omega, hat⟩)
+      · obtain ⟨k, hk1, hk2, he⟩ := (mem_seg x).1 hv
+        exact Or.inl ⟨k, by omega, he⟩
+    · rcases hQmem v hvQ with he | he | hoff
+      · exact Or.inl ⟨s, by omega, he.symm⟩
+      · exact Or.inr (Or.inl he)
+      · exact Or.inr (Or.inr ⟨hoff, s, hsw, (hQat v hvQ hoff).1⟩)
+  · have hl1 := length_append_tail (L := L.reverse) P2.length_pos
+    have hl2 := length_append_tail (L := L.reverse ++ (seg x u s).tail) hQPL.length_pos
+    rw [List.length_reverse, length_seg] at hl1
+    have := hQPL.length_pos
+    omega
+
+lemma chain_base (hinj : ∀ i j, i ≤ m → j ≤ m → x i = x j → i = j)
+    (hadj : ∀ i, i < m → G.Adj (x i) (x (i+1)))
+    (hconn : ∀ v a b : V, a ≠ v → b ≠ v → ∃ p : G.Walk a b, v ∉ p.support)
+    {S T : Finset ℕ} (hS : ∀ k ∈ S, k < m ∧ G.Adj (x 0) (x (k+1)))
+    (hT : ∀ k ∈ T, k < m ∧ G.Adj (x k) (x m))
+    (hsep : ∀ i ∈ S, ∀ j ∈ T, i < j) (hSne : S.Nonempty) (hTne : T.Nonempty) :
+    ∃ u w L, Inv x m G S T u w L := by
+  classical
+  set a' := S.max' hSne with ha'def
+  have ha'S : a' ∈ S := Finset.max'_mem _ _
+  have ha'max : ∀ k ∈ S, k ≤ a' := fun k hk => Finset.le_max' _ k hk
+  obtain ⟨j0, hj0⟩ := hTne
+  have h1 := hsep a' ha'S j0 hj0
+  have h2 := (hT j0 hj0).1
+  obtain ⟨s, t, hsa, hat, hb, hmax⟩ :=
+    max_bridge x m hinj hconn (by omega : 0 < a' + 1) (by omega : a' + 1 < m)
+  have htm : t ≤ m := hb.2.1
+  obtain ⟨Q, hQPL, hQnd, hQmem, hQat⟩ := path_of_br x m hb
+  have hne : (S.filter (fun k => s ≤ k)).Nonempty := ⟨a', Finset.mem_filter.2 ⟨ha'S, by omega⟩⟩
+  set i' := (S.filter (fun k => s ≤ k)).min' hne with hi'def
+  have hi'S : i' ∈ S ∧ s ≤ i' := Finset.mem_filter.1 (Finset.min'_mem _ _)
+  have hi'min : ∀ k ∈ S, s ≤ k → i' ≤ k := fun k hk hsk =>
+    Finset.min'_le _ k (Finset.mem_filter.2 ⟨hk, hsk⟩)
+  have hi'a : i' ≤ a' := ha'max i' hi'S.1
+  have P1 : PL G (x (a'+1)) (seg x (i'+1) (a'+1)).reverse (x (i'+1)) :=
+    (PL_seg x m hadj (by omega) (by omega)).reverse
+  have P2 : PL G (x (i'+1)) [x (i'+1), x 0] (x 0) := PL.edge (hS i' hi'S.1).2.symm
+  have P3 : PL G (x 0) (seg x 0 s) (x s) := PL_seg x m hadj (Nat.zero_le _) (by omega)
+  have E1 := P1.append P2
+  have E2 := E1.append P3
+  have E := E2.append hQPL
+  have hx0 : ∀ k, k ≤ m → x k = x 0 → k = 0 := fun k hk he => hinj _ _ hk (by omega) he
+  have hnd1 : ((seg x (i'+1) (a'+1)).reverse ++ [x (i'+1), x 0].tail).Nodup := by
+    refine nodup_append_tail (List.nodup_reverse.2 (nodup_seg x m hinj (by omega))) ?_ P2 ?_
+    · simp only [List.nodup_cons, List.mem_singleton, List.not_mem_nil, not_false_eq_true,
+        List.nodup_nil, and_true]
+      intro he; have := hx0 _ (by omega) he; omega
+    · intro v hv hv2
+      obtain ⟨k, hk1, hk2, rfl⟩ := (mem_seg x).1 (List.mem_reverse.1 hv)
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hv2
+      rcases hv2 with he | he
+      · exact he
+      · have := hx0 _ (by omega) he; omega
+  have hmem1 : ∀ v ∈ (seg x (i'+1) (a'+1)).reverse ++ [x (i'+1), x 0].tail,
+      v = x 0 ∨ ∃ k, i' + 1 ≤ k ∧ k ≤ a' + 1 ∧ x k = v := by
+    intro v hv
+    rcases mem_append_tail hv with hv | hv
+    · exact Or.inr ((mem_seg x).1 (List.mem_reverse.1 hv))
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
+      rcases hv with rfl | rfl
+      · exact Or.inr ⟨i'+1, le_rfl, by omega, rfl⟩
+      · exact Or.inl rfl
+  have hnd2 : ((seg x (i'+1) (a'+1)).reverse ++ [x (i'+1), x 0].tail ++
+      (seg x 0 s).tail).Nodup := by
+    refine nodup_append_tail hnd1 (nodup_seg x m hinj (by omega)) P3 ?_
+    intro v hv hvs
+    obtain ⟨k, hk1, hk2, rfl⟩ := (mem_seg x).1 hvs
+    rcases hmem1 _ hv with he | ⟨k', hk1', hk2', he⟩
+    · exact he
+    · have := hinj _ _ (by omega) (by omega) he; omega
+  have hmem2 : ∀ v ∈ (seg x (i'+1) (a'+1)).reverse ++ [x (i'+1), x 0].tail ++
+      (seg x 0 s).tail, ∃ k, k ≤ a' + 1 ∧ x k = v := by
+    intro v hv
+    rcases mem_append_tail hv with hv | hv
+    · rcases hmem1 _ hv with he | ⟨k', hk1', hk2', he⟩
+      · exact ⟨0, by omega, he.symm⟩
+      · exact ⟨k', hk2', he⟩
+    · obtain ⟨k, hk1, hk2, he⟩ := (mem_seg x).1 hv
+      exact ⟨k, by omega, he⟩
+  have hnd3 : ((seg x (i'+1) (a'+1)).reverse ++ [x (i'+1), x 0].tail ++
+      (seg x 0 s).tail ++ Q.tail).Nodup := by
+    refine nodup_append_tail hnd2 hQnd hQPL ?_
+    intro v hv hvQ
+    obtain ⟨k, hk, rfl⟩ := hmem2 v hv
+    rcases hQmem _ hvQ with he | he | hoff
+    · exact he
+    · have := hinj _ _ (by omega) htm he; omega
+    · exact absurd ⟨k, by omega, rfl⟩ hoff
+  refine ⟨a' + 1, t, _, hat, htm, fun k hk => hsep a' ha'S k hk, hmax, E, hnd3, ?_, ?_⟩
+  · intro v hv
+    rcases mem_append_tail hv with hv | hvQ
+    · exact Or.inl (hmem2 v hv)
+    · rcases hQmem v hvQ with he | he | hoff
+      · exact Or.inl ⟨s, by omega, he.symm⟩
+      · exact Or.inr (Or.inl he)
+      · exact Or.inr (Or.inr ⟨hoff, s, hsa, (hQat v hvQ hoff).1⟩)
+  · have hSsub : S ⊆ Finset.range s ∪ Finset.Icc i' a' := by
+      intro k hk
+      rw [Finset.mem_union, Finset.mem_range, Finset.mem_Icc]
+      rcases Nat.lt_or_ge k s with h | h
+      · exact Or.inl h
+      · exact Or.inr ⟨hi'min k hk h, ha'max k hk⟩
+    have hSc := (Finset.card_le_card hSsub).trans (Finset.card_union_le _ _)
+    rw [Finset.card_range, Nat.card_Icc] at hSc
+    have hl1 := length_append_tail (L := (seg x (i'+1) (a'+1)).reverse) P2.length_pos
+    have hl2 := length_append_tail
+      (L := (seg x (i'+1) (a'+1)).reverse ++ [x (i'+1), x 0].tail) P3.length_pos
+    have hl3 := length_append_tail
+      (L := (seg x (i'+1) (a'+1)).reverse ++ [x (i'+1), x 0].tail ++ (seg x 0 s).tail)
+      hQPL.length_pos
+    rw [List.length_reverse, length_seg] at hl1
+    rw [length_seg] at hl2
+    simp only [List.length_cons, List.length_nil] at hl1
+    have := hQPL.length_pos
+    omega
+
+lemma chain_iter (hinj : ∀ i j, i ≤ m → j ≤ m → x i = x j → i = j)
+    (hadj : ∀ i, i < m → G.Adj (x i) (x (i+1)))
+    (hconn : ∀ v a b : V, a ≠ v → b ≠ v → ∃ p : G.Walk a b, v ∉ p.support)
+    {S T : Finset ℕ} (hT : ∀ k ∈ T, k < m ∧ G.Adj (x k) (x m))
+    (h3 : 3 ≤ S.card + T.card) (hTne : T.Nonempty) :
+    ∀ N u w L, m - w = N → Inv x m G S T u w L →
+      ∃ (y : V) (c : G.Walk y y), c.IsCycle ∧ S.card + T.card ≤ c.length := by
+  intro N
+  induction N using Nat.strong_induction_on with
+  | _ N ih =>
+    intro u w L hN hI
+    by_cases hk : ∃ k ∈ T, k < w
+    · exact close_cycle x m hinj hadj hT hI hk h3
+    · push Not at hk
+      obtain ⟨t, L', hwt, hI'⟩ := chain_step x m hinj hadj hconn hT hI hk hTne
+      have htm : t ≤ m := hI'.2.1
+      exact ih (m - t) (by omega) w t L' rfl hI'
+
+
+/-! Case of a neighbour of `x m` preceding a neighbour of `x 0`, and the combined lemma. -/
+
+lemma case_two (hinj : ∀ i j, i ≤ m → j ≤ m → x i = x j → i = j)
+    (hadj : ∀ i, i < m → G.Adj (x i) (x (i+1)))
+    {S T : Finset ℕ} (hS : ∀ k ∈ S, k < m ∧ G.Adj (x 0) (x (k+1)))
+    (hT : ∀ k ∈ T, k < m ∧ G.Adj (x k) (x m)) (hdisj : ∀ k ∈ S, k ∉ T)
+    (h : ∃ j ∈ T, ∃ i ∈ S, j < i) (h3 : 3 ≤ S.card + T.card) :
+    ∃ (y : V) (c : G.Walk y y), c.IsCycle ∧ S.card + T.card ≤ c.length := by
+  classical
+  obtain ⟨j0, hj0T, i0, hi0S, hji⟩ := h
+  have hne : (S.filter (fun k => j0 < k)).Nonempty := ⟨i0, Finset.mem_filter.2 ⟨hi0S, hji⟩⟩
+  set i1 := (S.filter (fun k => j0 < k)).min' hne with hi1def
+  have hi1 : i1 ∈ S ∧ j0 < i1 := Finset.mem_filter.1 (Finset.min'_mem _ _)
+  have hi1min : ∀ k ∈ S, j0 < k → i1 ≤ k := fun k hk h =>
+    Finset.min'_le _ k (Finset.mem_filter.2 ⟨hk, h⟩)
+  have hne2 : (T.filter (fun k => k < i1)).Nonempty := ⟨j0, Finset.mem_filter.2 ⟨hj0T, hi1.2⟩⟩
+  set j1 := (T.filter (fun k => k < i1)).max' hne2 with hj1def
+  have hj1 : j1 ∈ T ∧ j1 < i1 := Finset.mem_filter.1 (Finset.max'_mem _ _)
+  have hj1max : ∀ k ∈ T, k < i1 → k ≤ j1 := fun k hk h =>
+    Finset.le_max' _ k (Finset.mem_filter.2 ⟨hk, h⟩)
+  have hj0j1 : j0 ≤ j1 := hj1max j0 hj0T hi1.2
+  have hi1m := (hS i1 hi1.1).1
+  have P1 : PL G (x 0) (seg x 0 j1) (x j1) := PL_seg x m hadj (Nat.zero_le _) (by omega)
+  have P2 : PL G (x j1) [x j1, x m] (x m) := PL.edge (hT j1 hj1.1).2
+  have P3 : PL G (x m) (seg x (i1+1) m).reverse (x (i1+1)) :=
+    (PL_seg x m hadj (by omega) le_rfl).reverse
+  have F := (P1.append P2).append P3
+  have hnd1 : (seg x 0 j1 ++ [x j1, x m].tail).Nodup := by
+    refine nodup_append_tail (nodup_seg x m hinj (by omega)) ?_ P2 ?_
+    · simp only [List.nodup_cons, List.mem_singleton, List.not_mem_nil, not_false_eq_true,
+        List.nodup_nil, and_true]
+      intro he; have := hinj _ _ (by omega) le_rfl he; omega
+    · intro v hv hv2
+      obtain ⟨k, hk1, hk2, rfl⟩ := (mem_seg x).1 hv
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hv2
+      rcases hv2 with he | he
+      · exact he
+      · have := hinj _ _ (by omega) le_rfl he; omega
+  have hnd2 : (seg x 0 j1 ++ [x j1, x m].tail ++ (seg x (i1+1) m).reverse.tail).Nodup := by
+    refine nodup_append_tail hnd1 (List.nodup_reverse.2 (nodup_seg x m hinj le_rfl)) P3 ?_
+    intro v hv hvs
+    obtain ⟨k, hk1, hk2, rfl⟩ := (mem_seg x).1 (List.mem_reverse.1 hvs)
+    rcases mem_append_tail hv with hv | hv
+    · obtain ⟨k', hk1', hk2', he⟩ := (mem_seg x).1 hv
+      have := hinj _ _ (by omega) (by omega) he; omega
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
+      rcases hv with he | he
+      · have := hinj _ _ (by omega) (by omega) he; omega
+      · exact he
+  have hsub : S ∪ T ⊆ Finset.range (j1 + 1) ∪ Finset.Ico i1 m := by
+    intro k hk
+    rw [Finset.mem_union, Finset.mem_range, Finset.mem_Ico]
+    rcases Finset.mem_union.1 hk with hk | hk
+    · have := (hS k hk).1
+      rcases Nat.lt_or_ge j1 k with h | h
+      · have := hi1min k hk (by omega); right; omega
+      · left; omega
+    · have := (hT k hk).1
+      rcases Nat.lt_or_ge k i1 with h | h
+      · have := hj1max k hk h; left; omega
+      · right; omega
+  have hc := (Finset.card_le_card hsub).trans (Finset.card_union_le _ _)
+  rw [Finset.card_union_of_disjoint (Finset.disjoint_left.2 hdisj), Finset.card_range,
+    Nat.card_Ico] at hc
+  have hl1 := length_append_tail (L := seg x 0 j1) P2.length_pos
+  have hl2 := length_append_tail (L := seg x 0 j1 ++ [x j1, x m].tail) P3.length_pos
+  rw [length_seg] at hl1
+  rw [List.length_reverse, length_seg] at hl2
+  simp only [List.length_cons, List.length_nil] at hl1
+  obtain ⟨y, c, hcyc, hcl⟩ := cycle_of_PL F (hS i1 hi1.1).2.symm hnd2 (by omega)
+  exact ⟨y, c, hcyc, by omega⟩
+
+/-- Bondy-type lemma: a path `x 0, ..., x m` in a 2-connected graph, with no crossing pair of
+end chords, yields a cycle of length at least `|S| + |T|`. -/
+lemma long_cycle (hinj : ∀ i j, i ≤ m → j ≤ m → x i = x j → i = j)
+    (hadj : ∀ i, i < m → G.Adj (x i) (x (i+1)))
+    (hconn : ∀ v a b : V, a ≠ v → b ≠ v → ∃ p : G.Walk a b, v ∉ p.support)
+    {S T : Finset ℕ} (hS : ∀ k ∈ S, k < m ∧ G.Adj (x 0) (x (k+1)))
+    (hT : ∀ k ∈ T, k < m ∧ G.Adj (x k) (x m)) (hdisj : ∀ k ∈ S, k ∉ T)
+    (hS1 : 1 ≤ S.card) (hT1 : 1 ≤ T.card) (h3 : 3 ≤ S.card + T.card) :
+    ∃ (y : V) (c : G.Walk y y), c.IsCycle ∧ S.card + T.card ≤ c.length := by
+  by_cases h : ∃ j ∈ T, ∃ i ∈ S, j < i
+  · exact case_two x m hinj hadj hS hT hdisj h h3
+  · have hsep : ∀ i ∈ S, ∀ j ∈ T, i < j := by
+      intro i hi j hj
+      rcases Nat.lt_trichotomy i j with h' | h' | h'
+      · exact h'
+      · subst h'; exact absurd hj (hdisj i hi)
+      · exact absurd ⟨j, hj, i, hi, h'⟩ h
+    have hSne : S.Nonempty := Finset.card_pos.1 (by omega)
+    have hTne : T.Nonempty := Finset.card_pos.1 (by omega)
+    obtain ⟨u, w, L, hI⟩ := chain_base x m hinj hadj hconn hS hT hsep hSne hTne
+    exact chain_iter x m hinj hadj hconn hT h3 hTne _ u w L rfl hI
+
+
+/-! Longest paths (adapted from philipsaint's proof of Dirac's Hamiltonicity theorem). -/
+
+def Cyc (G : SimpleGraph V) (c : List V) : Prop :=
+  c.IsChain G.Adj ∧ ∀ a ∈ c.getLast?, ∀ b ∈ c.head?, G.Adj a b
+
+lemma rot {c : List V} (hc : Cyc G c) {q : V} (hq : q ∈ c) :
+    ∃ c' : List V, c'.Perm c ∧ c'.IsChain G.Adj ∧ c'.head? = some q := by
+  obtain ⟨A, B, rfl⟩ := List.append_of_mem hq
+  refine ⟨(q :: B) ++ A, List.perm_append_comm, ?_, by simp⟩
+  obtain ⟨hch, hcl⟩ := hc
+  rw [List.isChain_append] at hch
+  refine List.isChain_append.2 ⟨hch.2.1, hch.1, ?_⟩
+  intro x hx y hy
+  apply hcl
+  · rw [List.getLast?_append]
+    have : (q :: B).getLast? = some x := hx
+    simp [this]
+  · rw [List.head?_append, hy]
+    rfl
+
+lemma getD_zero (l : List V) (hl : l ≠ []) (d : V) : l.getD 0 d = l.head hl := by
+  cases l with
+  | nil => exact absurd rfl hl
+  | cons a t => rfl
+
+lemma getD_last (l : List V) (hl : l ≠ []) (d : V) : l.getD (l.length - 1) d = l.getLast hl := by
+  rw [List.getLast_eq_getElem, List.getD_eq_getElem]
+
+theorem dirac_core [Fintype V] [DecidableEq V] [DecidableRel G.Adj] (d : ℕ) (hd : 2 ≤ d)
+    (h3 : 3 ≤ Fintype.card V)
+    (hconn : ∀ v a b : V, a ≠ v → b ≠ v → ∃ p : G.Walk a b, v ∉ p.support)
+    (hreach : ∀ a b : V, G.Reachable a b) (hdeg : ∀ v, d ≤ G.degree v) :
+    ∃ (u : V) (c : G.Walk u u), c.IsCycle ∧ min (Fintype.card V) (2 * d) ≤ c.length := by
+  classical
+  set n := Fintype.card V with hn
+  obtain ⟨v0⟩ : Nonempty V := Fintype.card_pos_iff.mp (by omega)
+  let PP : ℕ → Prop := fun k => ∃ l : List V, (l.Nodup ∧ l.IsChain G.Adj) ∧ l.length = k
+  have h1 : PP 1 := ⟨[v0], ⟨by simp, List.isChain_singleton _⟩, rfl⟩
+  set M := Nat.findGreatest PP n
+  obtain ⟨l, ⟨hlnd, hlch⟩, hlM⟩ : PP M := Nat.findGreatest_spec (by omega) h1
+  have hmax : ∀ l' : List V, l'.Nodup → l'.IsChain G.Adj → l'.length ≤ M :=
+    fun l' h1 h2 => Nat.le_findGreatest h1.length_le_card ⟨l', ⟨h1, h2⟩, rfl⟩
+  have hM1 : 1 ≤ M := Nat.le_findGreatest (by omega) h1
+  have hl_ne : l ≠ [] := by
+    rintro rfl
+    simp at hlM
+    omega
+  set q0 := l.head hl_ne
+  set z := l.getLast hl_ne
+  have hmn : l.length ≤ n := hlnd.length_le_card
+  have ext_head : ∀ y, G.Adj q0 y → y ∈ l := by
+    intro y hy
+    by_contra hyl
+    have := hmax (y :: l) (List.nodup_cons.2 ⟨hyl, hlnd⟩)
+      (List.IsChain.cons_of_ne_nil hl_ne hlch ((hy).symm))
+    simp at this
+    omega
+  have ext_last : ∀ y, G.Adj z y → y ∈ l := by
+    intro y hy
+    by_contra hyl
+    have hch : (l ++ [y]).IsChain G.Adj := by
+      refine List.isChain_append.2 ⟨hlch, List.isChain_singleton _, ?_⟩
+      intro x hx y' hy'
+      rw [List.getLast?_eq_some_getLast hl_ne] at hx
+      simp at hx hy'
+      subst hx hy'
+      exact hy
+    have hnd : (l ++ [y]).Nodup := by
+      rw [List.nodup_append]
+      refine ⟨hlnd, List.nodup_singleton _, ?_⟩
+      intro a ha b hb
+      simp at hb
+      subst hb
+      rintro rfl
+      exact hyl ha
+    have := hmax _ hnd hch
+    simp at this
+    omega
+  set m := l.length with hm
+  have hq0 : l.getD 0 q0 = q0 := getD_zero l hl_ne q0
+  have hz : l.getD (m - 1) q0 = z := getD_last l hl_ne q0
+  let S := (Finset.range (m - 1)).filter (fun j => G.Adj q0 (l.getD (j + 1) q0))
+  let T := (Finset.range (m - 1)).filter (fun j => G.Adj (l.getD j q0) z)
+  have hS : G.degree q0 ≤ S.card := by
+    rw [← card_neighborFinset_eq_degree]
+    refine le_trans (Finset.card_le_card ?_) (Finset.card_image_le (s := S)
+      (f := fun j => l.getD (j + 1) q0))
+    intro y hy
+    rw [mem_neighborFinset] at hy
+    obtain ⟨k, hk, rfl⟩ := List.getElem_of_mem (ext_head y hy)
+    have hk0 : k ≠ 0 := by
+      rintro rfl
+      apply hy.ne
+      rw [← List.getD_eq_getElem (d := q0), hq0]
+    rw [Finset.mem_image]
+    refine ⟨k - 1, ?_, ?_⟩
+    · rw [Finset.mem_filter, Finset.mem_range]
+      refine ⟨by omega, ?_⟩
+      rw [show k - 1 + 1 = k by omega, List.getD_eq_getElem _ _ hk]
+      exact hy
+    · rw [show k - 1 + 1 = k by omega, List.getD_eq_getElem _ _ hk]
+  have hT : G.degree z ≤ T.card := by
+    rw [← card_neighborFinset_eq_degree]
+    refine le_trans (Finset.card_le_card ?_) (Finset.card_image_le (s := T)
+      (f := fun j => l.getD j q0))
+    intro y hy
+    rw [mem_neighborFinset] at hy
+    obtain ⟨k, hk, rfl⟩ := List.getElem_of_mem (ext_last y hy)
+    have hkm : k ≠ m - 1 := by
+      rintro rfl
+      apply hy.ne
+      rw [← List.getD_eq_getElem (d := q0), hz]
+    rw [Finset.mem_image]
+    refine ⟨k, ?_, List.getD_eq_getElem _ _ hk⟩
+    rw [Finset.mem_filter, Finset.mem_range]
+    refine ⟨by omega, ?_⟩
+    rw [List.getD_eq_getElem _ _ hk]
+    exact (hy).symm
+  have hdq := hdeg q0
+  have hdz := hdeg z
+  by_cases hcross : ∃ j, j ∈ S ∧ j ∈ T
+  · obtain ⟨j, hjS, hjT⟩ := hcross
+    rw [Finset.mem_filter, Finset.mem_range] at hjS hjT
+    obtain ⟨hjm, hA⟩ := hjS
+    obtain ⟨-, hB⟩ := hjT
+    set c := l.take (j + 1) ++ (l.drop (j + 1)).reverse with hcdef
+    have hperm : c.Perm l := by
+      have := (List.Perm.append_left (l.take (j + 1)) (List.reverse_perm (l.drop (j + 1))))
+      rw [List.take_append_drop] at this
+      exact this
+    have hcnd : c.Nodup := hperm.nodup_iff.mpr hlnd
+    have hj1 : j < m := by omega
+    have hj2 : j + 1 < m := by omega
+    have e1 : (l.take (j + 1)).getLast? = some (l.getD j q0) := by
+      rw [List.getLast?_take, List.getD_eq_getElem _ _ hj1]
+      simp [List.getElem?_eq_getElem hj1]
+    have e2 : (l.drop (j + 1)).reverse.head? = some z := by
+      rw [List.head?_reverse, List.getLast?_drop, if_neg (by omega),
+        List.getLast?_eq_some_getLast hl_ne]
+    have e3 : c.getLast? = some (l.getD (j + 1) q0) := by
+      rw [hcdef, List.getLast?_append, List.getLast?_reverse, List.head?_drop,
+        List.getElem?_eq_getElem hj2, List.getD_eq_getElem _ _ hj2]
+      rfl
+    have e4 : c.head? = some q0 := by
+      rw [hcdef, List.head?_append, List.head?_take]
+      simp [List.head?_eq_some_head hl_ne, q0]
+    have hchain : c.IsChain G.Adj := by
+      refine List.isChain_append.2 ⟨hlch.take _, ?_, ?_⟩
+      · rw [List.isChain_reverse]
+        exact (hlch.drop _).imp (fun a b h => h.symm)
+      · intro x hx y hy
+        rw [e1] at hx
+        rw [e2] at hy
+        simp at hx hy
+        subst hx hy
+        exact hB
+    have hcyc : Cyc G c := by
+      refine ⟨hchain, ?_⟩
+      intro a ha b hb
+      rw [e3] at ha
+      rw [e4] at hb
+      simp at ha hb
+      subst ha hb
+      exact (hA).symm
+    have hall : ∀ w, w ∈ l := by
+      intro w
+      by_contra hw
+      obtain ⟨p⟩ := hreach q0 w
+      obtain ⟨d, -, hd1, hd2⟩ := p.exists_boundary_dart {x | x ∈ l} (List.head_mem hl_ne) hw
+      have hqc : d.fst ∈ c := hperm.mem_iff.mpr hd1
+      obtain ⟨c', hc'p, hc'ch, hc'h⟩ := rot hcyc hqc
+      have hnd' : (d.snd :: c').Nodup := by
+        refine List.nodup_cons.2 ⟨?_, (hc'p.trans hperm).nodup_iff.mpr hlnd⟩
+        intro hmem
+        exact hd2 ((hc'p.trans hperm).mem_iff.mp hmem)
+      have hch' : (d.snd :: c').IsChain G.Adj := by
+        refine List.isChain_cons.2 ⟨?_, hc'ch⟩
+        intro y hy
+        rw [hc'h] at hy
+        simp at hy
+        subst hy
+        exact (d.adj).symm
+      have := hmax _ hnd' hch'
+      rw [List.length_cons, (hc'p.trans hperm).length_eq] at this
+      omega
+    have hmn' : m = n := by
+      have h1 : l.toFinset = Finset.univ := by
+        ext w
+        simp [hall w]
+      have h2 := List.toFinset_card_of_nodup hlnd
+      rw [h1, Finset.card_univ] at h2
+      omega
+    have hclen : c.length = n := by rw [hperm.length_eq]; exact hmn'
+    obtain ⟨y, w, hw, hwl⟩ := cycle_of_PL (G := G) ⟨hchain, e4, e3⟩ hA.symm hcnd (by omega)
+    exact ⟨y, w, hw, by rw [hwl, hclen]; exact min_le_left _ _⟩
+  · push Not at hcross
+    let x : ℕ → V := fun k => l.getD k q0
+    have hinj : ∀ i j, i ≤ m - 1 → j ≤ m - 1 → x i = x j → i = j := by
+      intro i j hi hj he
+      simp only [x] at he
+      rw [List.getD_eq_getElem _ _ (by omega), List.getD_eq_getElem _ _ (by omega)] at he
+      exact (hlnd.getElem_inj_iff).1 he
+    have hadj : ∀ i, i < m - 1 → G.Adj (x i) (x (i+1)) := by
+      intro i hi
+      simp only [x]
+      rw [List.getD_eq_getElem _ _ (by omega), List.getD_eq_getElem _ _ (by omega)]
+      exact List.isChain_iff_getElem.1 hlch i (by omega)
+    have hx0 : x 0 = q0 := hq0
+    have hxm : x (m - 1) = z := hz
+    have hS' : ∀ k ∈ S, k < m - 1 ∧ G.Adj (x 0) (x (k+1)) := by
+      intro k hk
+      rw [Finset.mem_filter, Finset.mem_range] at hk
+      exact ⟨hk.1, by rw [hx0]; exact hk.2⟩
+    have hT' : ∀ k ∈ T, k < m - 1 ∧ G.Adj (x k) (x (m - 1)) := by
+      intro k hk
+      rw [Finset.mem_filter, Finset.mem_range] at hk
+      exact ⟨hk.1, by rw [hxm]; exact hk.2⟩
+    obtain ⟨y, w, hw, hwl⟩ := long_cycle x (m - 1) hinj hadj hconn hS' hT'
+      (fun k hk hkT => hcross k hk hkT) (by omega) (by omega) (by omega)
+    exact ⟨y, w, hw, le_trans (min_le_right _ _) (by omega)⟩
+
+end C1
+
+theorem core : CoreStatement := by
+  intro V _ _ G _ d hd h3 hG hconn hdeg
+  exact C1.dirac_core d hd h3 hconn (fun a b => hG.preconnected a b) hdeg
+
+end OMA.EG
+
+
+namespace OMA.EG
 open SimpleGraph Finset
 
-/- ### Section 1: List helpers, slices, simple paths, and cycles -/
-
-private def slice {V : Type*} (l : List V) (a b : ℕ) : List V :=
-  (l.drop a).take (b - a)
-
-private lemma slice_length {V : Type*} (l : List V) (a b : ℕ) :
-    (slice l a b).length = min (b - a) (l.length - a) := by
-  simp [slice]
-
-private lemma slice_length_of_le {V : Type*} {l : List V} {a b : ℕ} (hb : b ≤ l.length) :
-    (slice l a b).length = b - a := by
-  rw [slice_length]; omega
-
-private lemma slice_getElem {V : Type*} {l : List V} {a b i : ℕ}
-    (hi : i < (slice l a b).length) :
-    (slice l a b)[i]'hi = l[a + i]'(by rw [slice_length] at hi; omega) := by
-  simp [slice]
-
-private lemma slice_sublist {V : Type*} (l : List V) (a b : ℕ) :
-    List.Sublist (slice l a b) l :=
-  (List.take_sublist _ _).trans (List.drop_sublist _ _)
-
-private lemma nodup_getElem_eq {V : Type*} {l : List V} (hnd : l.Nodup)
-    {i j : ℕ} (hi : i < l.length) (hj : j < l.length) (h : l[i] = l[j]) : i = j :=
-  congrArg Fin.val ((List.nodup_iff_injective_getElem.mp hnd) (a₁ := ⟨i, hi⟩) (a₂ := ⟨j, hj⟩) h)
-
-private lemma getLast_tail_eq {V : Type*} {l : List V} (hl : l ≠ []) (ht : l.tail ≠ []) :
-    l.tail.getLast ht = l.getLast hl := by
-  cases l with
-  | nil => exact absurd rfl hl
-  | cons a t => exact (List.getLast_cons ht).symm
-
-private lemma getLast_append_tail_eq {V : Type*} {l₁ l₂ : List V}
-    (h₁ : l₁ ≠ []) (h₂ : l₂ ≠ []) (h12 : l₁ ++ l₂.tail ≠ [])
-    (hmatch : l₁.getLast h₁ = l₂.head h₂) :
-    (l₁ ++ l₂.tail).getLast h12 = l₂.getLast h₂ := by
-  cases l₂ with
-  | nil => exact absurd rfl h₂
-  | cons a t =>
-    cases t with
-    | nil => simpa using hmatch
-    | cons b t' => simp [List.getLast_append_of_ne_nil]
-
-private lemma head_not_mem_tail {V : Type*} {l : List V} (hl : l ≠ []) (hnd : l.Nodup) :
-    l.head hl ∉ l.tail := by
-  cases l with
-  | nil => exact absurd rfl hl
-  | cons a t => exact (List.nodup_cons.mp hnd).1
-
-private lemma getElem_mem_eraseIdx {α : Type*} (l : List α) (idx j : ℕ)
-    (hidx : idx < l.length) (hj : j < l.length) (hne : j ≠ idx) :
-    l[j] ∈ l.eraseIdx idx := by
-  by_cases hlt : j < idx
-  · have h1 : j < (l.eraseIdx idx).length := by rw [List.length_eraseIdx_of_lt hidx]; omega
-    have : (l.eraseIdx idx)[j]'h1 = l[j] := List.getElem_eraseIdx_of_lt h1 hlt
-    rw [← this]; exact List.getElem_mem h1
-  · have h1 : j - 1 < (l.eraseIdx idx).length := by rw [List.length_eraseIdx_of_lt hidx]; omega
-    have : (l.eraseIdx idx)[j - 1]'h1 = l[j] := by
-      rw [List.getElem_eraseIdx_of_ge h1 (by omega)]; congr 1; omega
-    rw [← this]; exact List.getElem_mem h1
-
-private def IsAdjList {V : Type*} (G : SimpleGraph V) (l : List V) : Prop :=
-  ∀ i (hi : i + 1 < l.length), G.Adj l[i] l[i + 1]
-
-private lemma isAdjList_nil {V : Type*} (G : SimpleGraph V) : IsAdjList G [] := by
-  intro i hi; simp at hi
-
-private lemma isAdjList_singleton {V : Type*} (G : SimpleGraph V) (a : V) :
-    IsAdjList G [a] := by
-  intro i hi; simp at hi
-
-private lemma isAdjList_cons {V : Type*} {G : SimpleGraph V} {a : V} {l : List V}
-    (hl : IsAdjList G l) (ha : ∀ h : l ≠ [], G.Adj a (l.head h)) :
-    IsAdjList G (a :: l) := by
-  intro i hi
-  cases i with
-  | zero =>
-    cases l with
-    | nil => simp at hi
-    | cons b t => exact ha (by simp)
-  | succ i =>
-    exact hl i (by simpa using hi)
-
-private lemma isAdjList_tail {V : Type*} {G : SimpleGraph V} {l : List V}
-    (hl : IsAdjList G l) : IsAdjList G l.tail := by
-  cases l with
-  | nil => exact isAdjList_nil G
-  | cons a t =>
-    intro i hi
-    exact hl (i + 1) (by simpa using hi)
-
-private lemma isAdjList_reverse {V : Type*} {G : SimpleGraph V} {l : List V}
-    (hl : IsAdjList G l) : IsAdjList G l.reverse := by
-  intro i hi
-  rw [List.length_reverse] at hi
-  rw [List.getElem_reverse, List.getElem_reverse]
-  have hlt : l.length - 1 - (i + 1) + 1 < l.length := by omega
-  have hadj := hl (l.length - 1 - (i + 1)) hlt
-  have heq : l[l.length - 1 - (i + 1) + 1] = l[l.length - 1 - i] := by congr 1; omega
-  rw [heq] at hadj
-  exact hadj.symm
-
-private lemma isAdjList_take {V : Type*} {G : SimpleGraph V} {l : List V}
-    (hl : IsAdjList G l) (n : ℕ) : IsAdjList G (l.take n) := by
-  intro i hi
-  have hi' : i + 1 < l.length := lt_of_lt_of_le hi (by simp)
-  rw [List.getElem_take, List.getElem_take]
-  exact hl i hi'
-
-private lemma isAdjList_drop {V : Type*} {G : SimpleGraph V} {l : List V}
-    (hl : IsAdjList G l) (n : ℕ) : IsAdjList G (l.drop n) := by
-  intro i hi
-  have hi' : n + i + 1 < l.length := by simp at hi; omega
-  rw [List.getElem_drop, List.getElem_drop]
-  have heq : n + (i + 1) = n + i + 1 := by omega
-  simpa [heq] using hl (n + i) hi'
-
-private lemma isAdjList_slice {V : Type*} {G : SimpleGraph V} {l : List V}
-    (hl : IsAdjList G l) (a b : ℕ) : IsAdjList G (slice l a b) :=
-  isAdjList_take (isAdjList_drop hl a) (b - a)
-
-private lemma isAdjList_append {V : Type*} {G : SimpleGraph V} {l₁ l₂ : List V}
-    (h₁ : IsAdjList G l₁) (h₂ : IsAdjList G l₂)
-    (hjoin : ∀ (hne₁ : l₁ ≠ []) (hne₂ : l₂ ≠ []), G.Adj (l₁.getLast hne₁) (l₂.head hne₂)) :
-    IsAdjList G (l₁ ++ l₂) := by
-  intro i hi
-  rw [List.length_append] at hi
-  by_cases hlt : i + 1 < l₁.length
-  · rw [List.getElem_append_left (by omega), List.getElem_append_left hlt]
-    exact h₁ i hlt
-  · by_cases heq : i + 1 = l₁.length
-    · have hne₁ : l₁ ≠ [] := by intro h; subst h; simp at heq
-      have hne₂ : l₂ ≠ [] := by intro h; subst h; simp at hi; omega
-      rw [List.getElem_append_left (by omega), List.getElem_append_right (by omega)]
-      have h1 : l₁[i] = l₁.getLast hne₁ := by
-        rw [List.getLast_eq_getElem]; congr 1; omega
-      have h2 : l₂[i + 1 - l₁.length] = l₂.head hne₂ := by
-        rw [List.head_eq_getElem_zero]; congr 1; omega
-      rw [h1, h2]
-      exact hjoin hne₁ hne₂
-    · rw [List.getElem_append_right (by omega), List.getElem_append_right (by omega)]
-      have hidx : i + 1 - l₁.length = (i - l₁.length) + 1 := by omega
-      have hlt2 : (i - l₁.length) + 1 < l₂.length := by omega
-      simpa [hidx] using h₂ (i - l₁.length) hlt2
-
-private lemma isAdjList_append_tail {V : Type*} {G : SimpleGraph V} {l₁ l₂ : List V}
-    (h₁ : IsAdjList G l₁) (h₂ : IsAdjList G l₂)
-    (hne₁ : l₁ ≠ []) (hne₂ : l₂ ≠ [])
-    (hmatch : l₁.getLast hne₁ = l₂.head hne₂) :
-    IsAdjList G (l₁ ++ l₂.tail) := by
-  cases l₂ with
-  | nil => exact absurd rfl hne₂
-  | cons b t =>
-    simp only [List.tail_cons]
-    refine isAdjList_append h₁ (isAdjList_tail h₂) ?_
-    intro _ ht
-    cases t with
-    | nil => exact absurd rfl ht
-    | cons c t' =>
-      simp only [List.head_cons] at hmatch ⊢
-      rw [hmatch]
-      exact h₂ 0 (by simp)
-
-private lemma isAdjList_rotate {V : Type*} {G : SimpleGraph V} {l : List V}
-    (hl : IsAdjList G l) (hne : l ≠ [])
-    (hclose : G.Adj (l.getLast hne) (l.head hne)) (k : ℕ) :
-    IsAdjList G (l.rotate k) := by
-  have hstep : ∀ (m : List V) (hm : m ≠ []), IsAdjList G m →
-      G.Adj (m.getLast hm) (m.head hm) →
-      IsAdjList G (m.rotate 1) ∧
-      ∀ h' : m.rotate 1 ≠ [], G.Adj ((m.rotate 1).getLast h') ((m.rotate 1).head h') := by
-    intro m hm hadj hc
-    cases m with
-    | nil => exact absurd rfl hm
-    | cons a t =>
-      cases t with
-      | nil =>
-        simp only [List.rotate_singleton]
-        exact ⟨isAdjList_singleton G a, fun _ => hc⟩
-      | cons b t' =>
-        have hrot : (a :: b :: t').rotate 1 = (b :: t') ++ [a] := by
-          simp [List.rotate_cons_succ]
-        rw [hrot]
-        refine ⟨?_, ?_⟩
-        · refine isAdjList_append (isAdjList_tail hadj) (isAdjList_singleton G a) ?_
-          intro _ _
-          simpa using hc
-        · intro _
-          rw [List.getLast_append_singleton, List.head_append_of_ne_nil (by simp), List.head_cons]
-          exact hadj 0 (by simp)
-  have hcl : ∀ n, IsAdjList G (l.rotate n) ∧
-      ∀ h' : l.rotate n ≠ [], G.Adj ((l.rotate n).getLast h') ((l.rotate n).head h') := by
-    intro n
-    induction n with
-    | zero => simpa using ⟨hl, fun _ => hclose⟩
-    | succ n ihn =>
-      rw [← List.rotate_rotate]
-      have hne_n : l.rotate n ≠ [] := by simpa using hne
-      exact hstep (l.rotate n) hne_n ihn.1 (ihn.2 hne_n)
-  exact (hcl k).1
-
-private def listLast {V : Type*} : V → List V → V
-  | a, [] => a
-  | _, b :: t => listLast b t
-
-private lemma listLast_eq_getLast {V : Type*} :
-    ∀ (a : V) (t : List V), listLast a t = (a :: t).getLast (by simp)
-  | _, [] => rfl
-  | _, b :: t => by simp [listLast, listLast_eq_getLast b t]
-
-private def walkOfAdjListAux {V : Type*} (G : SimpleGraph V) :
-    ∀ (a : V) (t : List V), IsAdjList G (a :: t) → G.Walk a (listLast a t)
-  | _, [], _ => Walk.nil
-  | a, b :: t, hadj =>
-    Walk.cons (show G.Adj a b from hadj 0 (by simp))
-      (walkOfAdjListAux G b t (isAdjList_tail hadj))
-
-private lemma walkOfAdjListAux_support {V : Type*} (G : SimpleGraph V) :
-    ∀ (a : V) (t : List V) (hadj : IsAdjList G (a :: t)),
-      (walkOfAdjListAux G a t hadj).support = a :: t
-  | _, [], _ => rfl
-  | a, b :: t, hadj => by
-    change a :: (walkOfAdjListAux G b t (isAdjList_tail hadj)).support = a :: b :: t
-    rw [walkOfAdjListAux_support G b t (isAdjList_tail hadj)]
-
-private def walkOfAdjList {V : Type*} (G : SimpleGraph V) :
-    ∀ (l : List V) (hl : l ≠ []), IsAdjList G l → G.Walk (l.head hl) (l.getLast hl)
-  | [], hl, _ => absurd rfl hl
-  | a :: t, _, hadj => (walkOfAdjListAux G a t hadj).copy rfl (listLast_eq_getLast a t)
-
-private lemma walkOfAdjList_support {V : Type*} (G : SimpleGraph V) :
-    ∀ (l : List V) (hl : l ≠ []) (hadj : IsAdjList G l),
-      (walkOfAdjList G l hl hadj).support = l
-  | [], hl, _ => absurd rfl hl
-  | a :: t, _, hadj =>
-    (Walk.support_copy (walkOfAdjListAux G a t hadj) rfl (listLast_eq_getLast a t)).trans
-      (walkOfAdjListAux_support G a t hadj)
-
-private lemma walkOfAdjList_length {V : Type*} (G : SimpleGraph V)
-    (l : List V) (hl : l ≠ []) (hadj : IsAdjList G l) :
-    (walkOfAdjList G l hl hadj).length = l.length - 1 := by
-  have h := Walk.length_support (walkOfAdjList G l hl hadj)
-  rw [walkOfAdjList_support] at h
-  omega
-
-private lemma isAdjList_support {V : Type*} {G : SimpleGraph V} {u v : V}
-    (w : G.Walk u v) : IsAdjList G w.support := by
-  induction w with
-  | nil => exact isAdjList_singleton G _
-  | @cons a b c hadj p ih =>
-    rw [Walk.support_cons]
-    refine isAdjList_cons ih ?_
-    intro _
-    rw [Walk.head_support]
-    exact hadj
-
-private lemma exists_cycle_of_adjList {V : Type*} {G : SimpleGraph V} (l : List V)
-    (hlen : 3 ≤ l.length) (hnodup : l.Nodup) (hadj : IsAdjList G l)
-    (hclose : ∀ h : l ≠ [], G.Adj (l.getLast h) (l.head h)) :
-    ∃ (u : V) (c : G.Walk u u), c.IsCycle ∧ c.length = l.length := by
-  have hl : l ≠ [] := List.ne_nil_of_length_pos (by omega)
-  let w : G.Walk (l.head hl) (l.getLast hl) := walkOfAdjList G l hl hadj
-  let c : G.Walk (l.getLast hl) (l.getLast hl) := Walk.cons (hclose hl) w
-  refine ⟨l.getLast hl, c, ?_, ?_⟩
-  · rw [Walk.isCycle_iff_isPath_tail_and_le_length]
-    refine ⟨?_, ?_⟩
-    · have hwpath : w.IsPath := by
-        rw [Walk.isPath_def, walkOfAdjList_support]; exact hnodup
-      simpa [c] using hwpath
-    · simp only [c, Walk.length_cons, w, walkOfAdjList_length]
-      omega
-  · simp only [c, Walk.length_cons, w, walkOfAdjList_length]
-    omega
-
-private lemma nodup_shorten {V : Type*} [DecidableEq V] {G : SimpleGraph V}
-    (l : List V) (hl : l ≠ []) (hadj : IsAdjList G l) :
-    ∃ l' : List V, ∃ hl' : l' ≠ [],
-      l'.Nodup ∧ IsAdjList G l' ∧
-      l'.head hl' = l.head hl ∧
-      l'.getLast hl' = l.getLast hl ∧
-      ∀ x ∈ l', x ∈ l := by
-  let w := (walkOfAdjList G l hl hadj).bypass
-  refine ⟨w.support, Walk.support_ne_nil w, ?_, isAdjList_support w, ?_, ?_, ?_⟩
-  · exact (Walk.bypass_isPath _).support_nodup
-  · exact Walk.head_support w
-  · exact Walk.getLast_support w
-  · intro x hx
-    have hsub := Walk.support_bypass_subset_support (walkOfAdjList G l hl hadj) hx
-    rwa [walkOfAdjList_support] at hsub
-
-private lemma glue4_cycle {V : Type*} {G : SimpleGraph V}
-    (W1 W2 W3 W4 : List V)
-    (h1 : W1 ≠ []) (h2 : W2 ≠ []) (h3 : W3 ≠ []) (h4 : W4 ≠ [])
-    (nd1 : W1.Nodup) (nd2 : W2.Nodup) (nd3 : W3.Nodup) (nd4 : W4.Nodup)
-    (adj1 : IsAdjList G W1) (adj2 : IsAdjList G W2)
-    (adj3 : IsAdjList G W3) (adj4 : IsAdjList G W4)
-    (j12 : W1.getLast h1 = W2.head h2)
-    (j23 : W2.getLast h2 = W3.head h3)
-    (j34 : W3.getLast h3 = W4.head h4)
-    (j41 : W4.getLast h4 = W1.head h1)
-    (d12 : ∀ x ∈ W1, x ∈ W2.tail → False)
-    (d123 : ∀ x ∈ W1 ++ W2.tail, x ∈ W3.tail → False)
-    (d1234 : ∀ x ∈ (W1 ++ W2.tail) ++ W3.tail, x ∈ W4.tail.dropLast → False)
-    (hlen3 : 3 ≤ (W1 ++ W2.tail ++ W3.tail ++ W4.tail.dropLast).length) :
-    ∃ (u : V) (c : G.Walk u u), c.IsCycle ∧
-      c.length = (W1 ++ W2.tail ++ W3.tail ++ W4.tail.dropLast).length := by
-  let C := W1 ++ W2.tail ++ W3.tail ++ W4.tail.dropLast
-  have hnd12 : (W1 ++ W2.tail).Nodup := by
-    rw [List.nodup_append]; exact ⟨nd1, nd2.tail, fun x hx y hy hxy => d12 x hx (hxy ▸ hy)⟩
-  have hnd123 : (W1 ++ W2.tail ++ W3.tail).Nodup := by
-    rw [List.nodup_append]; exact ⟨hnd12, nd3.tail, fun x hx y hy hxy => d123 x hx (hxy ▸ hy)⟩
-  have hndC : C.Nodup := by
-    rw [List.nodup_append]
-    exact ⟨hnd123, nd4.tail.sublist (List.dropLast_sublist _),
-      fun x hx y hy hxy => d1234 x hx (hxy ▸ hy)⟩
-  have hadj12 : IsAdjList G (W1 ++ W2.tail) := isAdjList_append_tail adj1 adj2 h1 h2 j12
-  have hne12 : W1 ++ W2.tail ≠ [] := List.append_ne_nil_of_left_ne_nil h1 _
-  have hgl12 : (W1 ++ W2.tail).getLast hne12 = W2.getLast h2 :=
-    getLast_append_tail_eq h1 h2 hne12 j12
-  have hadj123 : IsAdjList G (W1 ++ W2.tail ++ W3.tail) :=
-    isAdjList_append_tail hadj12 adj3 hne12 h3 (hgl12.trans j23)
-  have hne123 : W1 ++ W2.tail ++ W3.tail ≠ [] := List.append_ne_nil_of_left_ne_nil hne12 _
-  have hgl123 : (W1 ++ W2.tail ++ W3.tail).getLast hne123 = W3.getLast h3 :=
-    getLast_append_tail_eq hne12 h3 hne123 (hgl12.trans j23)
-  have hW4_cases : IsAdjList G C ∧ ∀ hC : C ≠ [], G.Adj (C.getLast hC) (C.head hC) := by
-    cases hW4 : W4 with
-    | nil => exact absurd hW4 h4
-    | cons a t =>
-      cases t with
-      | nil =>
-        exfalso
-        have ha1 : W3.getLast h3 = W1.head h1 := by
-          simp [hW4] at j34 j41; exact j34.trans j41
-        have hhd_eq : (W1 ++ W2.tail ++ W3.tail).head hne123 = W1.head h1 := by
-          rw [List.head_append_of_ne_nil hne12, List.head_append_of_ne_nil h1]
-        have hgl_eq : (W1 ++ W2.tail ++ W3.tail).getLast hne123 = W1.head h1 :=
-          hgl123.trans ha1
-        have hlen123 : 2 ≤ (W1 ++ W2.tail ++ W3.tail).length := by
-          have : (W1 ++ W2.tail ++ W3.tail ++ W4.tail.dropLast).length =
-              (W1 ++ W2.tail ++ W3.tail).length := by simp [hW4]
-          omega
-        have h0 : (W1 ++ W2.tail ++ W3.tail)[0]'(by omega) =
-            (W1 ++ W2.tail ++ W3.tail)[(W1 ++ W2.tail ++ W3.tail).length - 1]'(by omega) := by
-          rw [← List.head_eq_getElem_zero hne123, ← List.getLast_eq_getElem hne123, hhd_eq, hgl_eq]
-        have := nodup_getElem_eq hnd123 (by omega) (by omega) h0
-        omega
-      | cons b t' =>
-        cases t' with
-        | nil =>
-          have hCeq : C = W1 ++ W2.tail ++ W3.tail := by simp [C, hW4]
-          rw [hCeq]
-          refine ⟨hadj123, fun _ => ?_⟩
-          rw [hgl123, List.head_append_of_ne_nil hne12, List.head_append_of_ne_nil h1]
-          have ha : W3.getLast h3 = a := by simpa [hW4] using j34
-          have hb : b = W1.head h1 := by simpa [hW4] using j41
-          rw [ha, ← hb]
-          have := adj4; rw [hW4] at this; exact this 0 (by simp)
-        | cons c t'' =>
-          have hdrop_ne : (b :: c :: t'').dropLast ≠ [] := by simp
-          have hW4_adj' : IsAdjList G (a :: b :: c :: t'') := by rwa [← hW4]
-          have hW4_drop : IsAdjList G ((a :: b :: c :: t'').dropLast) := by
-            rw [List.dropLast_eq_take]; exact isAdjList_take hW4_adj' _
-          have hCeq : C = (W1 ++ W2.tail ++ W3.tail) ++ (a :: b :: c :: t'').dropLast.tail := by
-            simp [C, hW4]
-          have hadjC : IsAdjList G C := by
-            rw [hCeq]
-            refine isAdjList_append_tail hadj123 hW4_drop hne123 (by simp) ?_
-            rw [hgl123]
-            simpa [hW4] using j34
-          refine ⟨hadjC, fun hC => ?_⟩
-          have hheadC : C.head hC = W1.head h1 := by
-            simp only [C, List.append_assoc]
-            rw [List.head_append_of_ne_nil h1]
-          have hlastC : C.getLast hC = (b :: c :: t'').dropLast.getLast hdrop_ne := by
-            simp only [C, hW4, List.tail_cons]
-            rw [List.getLast_append_of_ne_nil _ hdrop_ne]
-          rw [hheadC, hlastC]
-          have hgl4 : (b :: c :: t'').getLast (by simp) = W1.head h1 := by
-            simpa [hW4] using j41
-          rw [← hgl4]
-          have h1' : (b :: c :: t'').dropLast.getLast hdrop_ne =
-              (a :: b :: c :: t'')[t''.length + 1]'(by simp) := by
-            rw [List.getLast_eq_getElem, List.getElem_dropLast]
-            simp
-          have h2' : (b :: c :: t'').getLast (by simp) =
-              (a :: b :: c :: t'')[t''.length + 2]'(by simp) := by
-            rw [List.getLast_eq_getElem]
-            simp
-          rw [h1', h2']
-          exact hW4_adj' (t''.length + 1) (by simp)
-  exact exists_cycle_of_adjList C hlen3 hndC hW4_cases.1 hW4_cases.2
-
-/- ### Section 2: Bridges and bridge chains along a path `P` -/
-
-private structure PBridge {V : Type*} (G : SimpleGraph V) (P : List V) where
-  s : ℕ
-  t : ℕ
-  hs : s < P.length
-  ht : t < P.length
-  hst : s < t
-  verts : List V
-  hne : verts ≠ []
-  hlen : 2 ≤ verts.length
-  hnodup : verts.Nodup
-  hadj : IsAdjList G verts
-  hhead : verts.head hne = P[s]
-  hlast : verts.getLast hne = P[t]
-  hint : ∀ x ∈ verts, x ∈ P → x = P[s] ∨ x = P[t]
-
-private lemma pbridge_merge {V : Type*} [DecidableEq V] {G : SimpleGraph V} {P : List V}
-    (hPnd : P.Nodup) (q₁ q₂ : PBridge G P)
-    (_hs : q₁.s < q₂.s) (ht : q₁.t < q₂.t)
-    (z : V) (hzP : z ∉ P) (hz₁ : z ∈ q₁.verts) (hz₂ : z ∈ q₂.verts) :
-    ∃ q : PBridge G P, q.s = q₁.s ∧ q.t = q₂.t := by
-  let i₁ := q₁.verts.idxOf z
-  let i₂ := q₂.verts.idxOf z
-  have hi₁_lt : i₁ < q₁.verts.length := List.idxOf_lt_length_of_mem hz₁
-  have hi₂_lt : i₂ < q₂.verts.length := List.idxOf_lt_length_of_mem hz₂
-  have hi₁_get : q₁.verts[i₁] = z := List.getElem_idxOf hi₁_lt
-  have hi₂_get : q₂.verts[i₂] = z := List.getElem_idxOf hi₂_lt
-  have hi₁_pos : 0 < i₁ := by
-    by_contra h0
-    have hi0 : i₁ = 0 := by omega
-    have : q₁.verts[0]'(by omega) = z := by simpa [hi0] using hi₁_get
-    have hhead : q₁.verts[0]'(by omega) = P[q₁.s]'(q₁.hs) := by
-      rw [← List.head_eq_getElem_zero q₁.hne, q₁.hhead]
-    exact hzP (this ▸ hhead ▸ List.getElem_mem _)
-  have hi₁_last : i₁ < q₁.verts.length - 1 := by
-    by_contra hlast
-    have hil : i₁ = q₁.verts.length - 1 := by omega
-    have : q₁.verts[q₁.verts.length - 1]'(by omega) = z := by simpa [hil] using hi₁_get
-    have hgl : q₁.verts[q₁.verts.length - 1]'(by omega) = P[q₁.t]'(q₁.ht) := by
-      rw [← List.getLast_eq_getElem q₁.hne, q₁.hlast]
-    exact hzP (this ▸ hgl ▸ List.getElem_mem _)
-  have hi₂_pos : 0 < i₂ := by
-    by_contra h0
-    have hi0 : i₂ = 0 := by omega
-    have : q₂.verts[0]'(by omega) = z := by simpa [hi0] using hi₂_get
-    have hhead : q₂.verts[0]'(by omega) = P[q₂.s]'(q₂.hs) := by
-      rw [← List.head_eq_getElem_zero q₂.hne, q₂.hhead]
-    exact hzP (this ▸ hhead ▸ List.getElem_mem _)
-  have hi₂_last : i₂ < q₂.verts.length - 1 := by
-    by_contra hlast
-    have hil : i₂ = q₂.verts.length - 1 := by omega
-    have : q₂.verts[q₂.verts.length - 1]'(by omega) = z := by simpa [hil] using hi₂_get
-    have hgl : q₂.verts[q₂.verts.length - 1]'(by omega) = P[q₂.t]'(q₂.ht) := by
-      rw [← List.getLast_eq_getElem q₂.hne, q₂.hlast]
-    exact hzP (this ▸ hgl ▸ List.getElem_mem _)
-  let pref := q₁.verts.take i₁
-  let suff := q₂.verts.drop i₂
-  have hpref_len : pref.length = i₁ := by simp [pref]; omega
-  have hsuff_len : suff.length = q₂.verts.length - i₂ := by simp [suff]
-  have hpref_ne : pref ≠ [] := List.ne_nil_of_length_pos (by omega)
-  have hsuff_ne : suff ≠ [] := List.ne_nil_of_length_pos (by omega)
-  let raw := pref ++ suff
-  have hraw_ne : raw ≠ [] := List.append_ne_nil_of_left_ne_nil hpref_ne _
-  have hraw_adj : IsAdjList G raw := by
-    refine isAdjList_append (isAdjList_take q₁.hadj i₁) (isAdjList_drop q₂.hadj i₂) ?_
-    intro _ _
-    have h1 : pref.getLast hpref_ne = q₁.verts[i₁ - 1]'(by omega) := by
-      rw [List.getLast_eq_getElem]
-      simp only [pref, List.getElem_take]
-      congr 1
-      simpa [pref] using congrArg (· - 1) hpref_len
-    have h2 : suff.head hsuff_ne = q₂.verts[i₂] := by
-      rw [List.head_eq_getElem_zero]; simp [suff]
-    have hadj : G.Adj (q₁.verts[i₁ - 1]'(by omega)) (q₁.verts[i₁]'hi₁_lt) := by
-      have := q₁.hadj (i₁ - 1) (by omega)
-      have heq : i₁ - 1 + 1 = i₁ := by omega
-      simpa [heq] using this
-    rw [h1, h2, hi₂_get]
-    rwa [hi₁_get] at hadj
-  have hraw_head : raw.head hraw_ne = P[q₁.s]'(q₁.hs) := by
-    rw [List.head_append_of_ne_nil hpref_ne, List.head_eq_getElem_zero]
-    simp only [pref, List.getElem_take, ← List.head_eq_getElem_zero q₁.hne, q₁.hhead]
-  have hraw_last : raw.getLast hraw_ne = P[q₂.t]'(q₂.ht) := by
-    rw [List.getLast_append_of_ne_nil _ hsuff_ne, List.getLast_eq_getElem]
-    simp only [suff, List.getElem_drop]
-    have hidx : i₂ + (suff.length - 1) = q₂.verts.length - 1 := by omega
-    rw [← q₂.hlast, List.getLast_eq_getElem]
-    congr 1
-  have hraw_int : ∀ x ∈ raw, x ∈ P → x = P[q₁.s]'(q₁.hs) ∨ x = P[q₂.t]'(q₂.ht) := by
-    intro x hx hxP
-    rcases List.mem_append.mp hx with hx1 | hx2
-    · obtain ⟨j, hj, rfl⟩ := List.mem_iff_getElem.mp hx1
-      have hj_lt : j < i₁ := by omega
-      have hj_lt1 : j < q₁.verts.length := lt_trans hj_lt hi₁_lt
-      have hmem1 : q₁.verts[j]'hj_lt1 ∈ q₁.verts := List.getElem_mem _
-      have hget : pref[j]'hj = q₁.verts[j]'hj_lt1 := List.getElem_take
-      rw [hget] at hxP ⊢
-      rcases q₁.hint _ hmem1 hxP with heq | heq
-      · exact Or.inl heq
-      · exfalso
-        have hgl : q₁.verts[q₁.verts.length - 1]'(by omega) = P[q₁.t]'(q₁.ht) := by
-          rw [← List.getLast_eq_getElem q₁.hne, q₁.hlast]
-        have huniq := nodup_getElem_eq q₁.hnodup hj_lt1 (by omega) (heq.trans hgl.symm)
-        omega
-    · obtain ⟨j, hj, rfl⟩ := List.mem_iff_getElem.mp hx2
-      have hj_lt2 : i₂ + j < q₂.verts.length := by omega
-      have hget : suff[j]'hj = q₂.verts[i₂ + j]'hj_lt2 := List.getElem_drop
-      have hmem2 : q₂.verts[i₂ + j]'hj_lt2 ∈ q₂.verts := List.getElem_mem _
-      rw [hget] at hxP ⊢
-      rcases q₂.hint _ hmem2 hxP with heq | heq
-      · exfalso
-        have hhd : q₂.verts[0]'(by omega) = P[q₂.s]'(q₂.hs) := by
-          rw [← List.head_eq_getElem_zero q₂.hne, q₂.hhead]
-        have huniq := nodup_getElem_eq q₂.hnodup hj_lt2 (by omega) (heq.trans hhd.symm)
-        omega
-      · exact Or.inr heq
-  obtain ⟨l', hl', hnd', hadj', hhd', hgl', hsub'⟩ := nodup_shorten raw hraw_ne hraw_adj
-  have hst' : q₁.s < q₂.t := lt_trans q₁.hst ht
-  have hne_end : P[q₁.s]'(q₁.hs) ≠ P[q₂.t]'(q₂.ht) := by
-    intro h; have := nodup_getElem_eq hPnd q₁.hs q₂.ht h; omega
-  have hlen' : 2 ≤ l'.length := by
-    by_contra hlt
-    have hl1 : l'.length = 1 := by have := List.length_pos_iff.mpr hl'; omega
-    have heq : l'.head hl' = l'.getLast hl' := by
-      rw [List.head_eq_getElem_zero, List.getLast_eq_getElem]; congr 1; omega
-    rw [hhd', hraw_head, hgl', hraw_last] at heq
-    exact hne_end heq
-  refine ⟨⟨q₁.s, q₂.t, q₁.hs, q₂.ht, hst', l', hl', hlen', hnd', hadj',
-    hhd'.trans hraw_head, hgl'.trans hraw_last, ?_⟩, rfl, rfl⟩
-  intro x hx hxP
-  exact hraw_int x (hsub' x hx) hxP
-
-private lemma exists_bridge_covering {V : Type*} [DecidableEq V] {G : SimpleGraph V}
-    (P : List V) (hPnd : P.Nodup) (x : ℕ) (hx0 : 0 < x) (hxL : x + 1 < P.length)
-    (h2conn : (G.induce {w : V | w ≠ P[x]}).Connected) :
-    ∃ q : PBridge G P, q.s < x ∧ x < q.t := by
-  classical
-  have h0ne : P[0]'(by omega) ≠ P[x] := by
-    intro h; have := nodup_getElem_eq hPnd (by omega) (by omega) h; omega
-  have hLne : P[P.length - 1]'(by omega) ≠ P[x] := by
-    intro h; have := nodup_getElem_eq hPnd (by omega) (by omega) h; omega
-  obtain ⟨w⟩ := h2conn ⟨P[0]'(by omega), h0ne⟩ ⟨P[P.length - 1]'(by omega), hLne⟩
-  let l : List V := w.support.map Subtype.val
-  have hl_ne : l ≠ [] := List.ne_nil_of_length_pos (by simp [l])
-  have hl_adj : IsAdjList G l := by
-    intro i hi
-    have hi' : i + 1 < w.support.length := by simpa [l] using hi
-    have hadj := isAdjList_support w i hi'
-    simpa [l] using hadj
-  have hl_no_x : P[x] ∉ l := by
-    intro hmem
-    obtain ⟨⟨u, hu⟩, _, rfl⟩ := List.mem_map.mp hmem
-    exact hu rfl
-  have hl_head : l[0]'(List.length_pos_iff.mpr hl_ne) = P[0]'(by omega) := by
-    have : w.support.head (Walk.support_ne_nil w) = ⟨P[0]'(by omega), h0ne⟩ := Walk.head_support w
-    rw [List.head_eq_getElem_zero] at this
-    simp [l, this]
-  have hl_last : l[l.length - 1]'(by have := List.length_pos_iff.mpr hl_ne; omega) =
-      P[P.length - 1]'(by omega) := by
-    have : w.support.getLast (Walk.support_ne_nil w) = ⟨P[P.length - 1]'(by omega), hLne⟩ :=
-      Walk.getLast_support w
-    rw [List.getLast_eq_getElem] at this
-    simp [l]
-  let leftIdx : Finset (Fin l.length) :=
-    Finset.univ.filter fun i : Fin l.length => ∃ s < x, ∃ hs : s < P.length, l[i.val] = P[s]
-  have hleft_ne : leftIdx.Nonempty := by
-    refine ⟨⟨0, List.length_pos_iff.mpr hl_ne⟩, Finset.mem_filter.mpr ⟨Finset.mem_univ _, ?_⟩⟩
-    exact ⟨0, hx0, by omega, hl_head⟩
-  let iL := leftIdx.max' hleft_ne
-  obtain ⟨s, hsx, hsP, hiL_eq⟩ := (Finset.mem_filter.mp (Finset.max'_mem leftIdx hleft_ne)).2
-  have hiL_lt_last : iL.val < l.length - 1 := by
-    by_contra hge
-    have heq : iL.val = l.length - 1 := by omega
-    have h1 : l[iL.val]'iL.isLt = l[l.length - 1]'(by have := List.length_pos_iff.mpr hl_ne; omega) := by
-      congr 1
-    have hPs : P[P.length - 1]'(by omega) = P[s]'hsP := hl_last.symm.trans (h1.symm.trans hiL_eq)
-    have := nodup_getElem_eq hPnd (by omega) hsP hPs
-    omega
-  let rightIdx : Finset (Fin l.length) :=
-    Finset.univ.filter fun i : Fin l.length =>
-      iL.val < i.val ∧ ∃ t, x < t ∧ ∃ ht : t < P.length, l[i.val] = P[t]
-  have hright_ne : rightIdx.Nonempty := by
-    refine ⟨⟨l.length - 1, by have := List.length_pos_iff.mpr hl_ne; omega⟩,
-      Finset.mem_filter.mpr ⟨Finset.mem_univ _, hiL_lt_last, P.length - 1, by omega, by omega, hl_last⟩⟩
-  let iR := rightIdx.min' hright_ne
-  obtain ⟨hiLR, t, hxt, htP, hiR_eq⟩ := (Finset.mem_filter.mp (Finset.min'_mem rightIdx hright_ne)).2
-  let raw := slice l iL.val (iR.val + 1)
-  have hraw_len : raw.length = iR.val + 1 - iL.val := slice_length_of_le (by have := iR.isLt; omega)
-  have hraw_ne : raw ≠ [] := List.ne_nil_of_length_pos (by omega)
-  have hraw_head : raw.head hraw_ne = P[s] := by
-    rw [List.head_eq_getElem_zero, slice_getElem]; simpa using hiL_eq
-  have hraw_last : raw.getLast hraw_ne = P[t] := by
-    rw [List.getLast_eq_getElem, slice_getElem]
-    have hidx : iL.val + (raw.length - 1) = iR.val := by omega
-    simpa [hidx] using hiR_eq
-  have hraw_int : ∀ y ∈ raw, y ∈ P → y = P[s] ∨ y = P[t] := by
-    intro y hy hyP
-    obtain ⟨j, hj, rfl⟩ := List.mem_iff_getElem.mp hy
-    have hget : raw[j]'hj = l[iL.val + j]'(by have := iR.isLt; omega) := slice_getElem hj
-    rw [hget] at hyP ⊢
-    obtain ⟨k, hkP, hk_eq⟩ := List.mem_iff_getElem.mp hyP
-    by_cases hj0 : j = 0
-    · left; subst hj0; simpa using hiL_eq
-    · by_cases hjend : iL.val + j = iR.val
-      · right; simpa [hjend] using hiR_eq
-      · exfalso
-        have hlt_l : iL.val + j < l.length := by have := iR.isLt; omega
-        by_cases hkx : k < x
-        · have hmem : (⟨iL.val + j, hlt_l⟩ : Fin l.length) ∈ leftIdx :=
-            Finset.mem_filter.mpr ⟨Finset.mem_univ _, k, hkx, hkP, hk_eq.symm⟩
-          have hle : iL.val + j ≤ iL.val :=
-            Fin.le_iff_val_le_val.mp (Finset.le_max' leftIdx ⟨iL.val + j, hlt_l⟩ hmem)
-          omega
-        · by_cases hkx' : k = x
-          · subst hkx'; exact hl_no_x (hk_eq ▸ List.getElem_mem hlt_l)
-          · have hmem : (⟨iL.val + j, hlt_l⟩ : Fin l.length) ∈ rightIdx :=
-              Finset.mem_filter.mpr ⟨Finset.mem_univ _, by dsimp only; omega, k, by omega, hkP, hk_eq.symm⟩
-            have hle : iR.val ≤ iL.val + j := by
-              simpa using Fin.le_iff_val_le_val.mp (Finset.min'_le rightIdx ⟨iL.val + j, hlt_l⟩ hmem)
-            omega
-  obtain ⟨l', hl', hnd', hadj', hhd', hgl', hsub'⟩ :=
-    nodup_shorten raw hraw_ne (isAdjList_slice hl_adj _ _)
-  have hst : s < t := lt_trans hsx hxt
-  have hne_st : P[s] ≠ P[t] := by
-    intro h; have := nodup_getElem_eq hPnd hsP htP h; omega
-  have hlen' : 2 ≤ l'.length := by
-    by_contra hlt
-    have hl1 : l'.length = 1 := by have := List.length_pos_iff.mpr hl'; omega
-    have heq : l'.head hl' = l'.getLast hl' := by
-      rw [List.head_eq_getElem_zero, List.getLast_eq_getElem]; congr 1; omega
-    rw [hhd', hraw_head, hgl', hraw_last] at heq
-    exact hne_st heq
-  exact ⟨⟨s, t, hsP, htP, hst, l', hl', hlen', hnd', hadj',
-    hhd'.trans hraw_head, hgl'.trans hraw_last,
-    fun y hy hyP => hraw_int y (hsub' y hy) hyP⟩, hsx, hxt⟩
-
-/- Stitching a chain of monotonically non-overlapping bridges along `P` -/
-
-private def stitchChain {V : Type*} {G : SimpleGraph V} (P : List V) :
-    ℕ → ℕ → List (PBridge G P) → List V
-  | startIdx, endIdx, [] => slice P startIdx (endIdx + 1)
-  | startIdx, endIdx, q :: rest =>
-    slice P startIdx (q.s + 1) ++ q.verts.tail ++ (stitchChain P q.t endIdx rest).tail
-
-private def BridgeChainOK {V : Type*} {G : SimpleGraph V} {P : List V} :
-    ℕ → ℕ → List (PBridge G P) → Prop
-  | startIdx, endIdx, [] => startIdx ≤ endIdx ∧ endIdx < P.length
-  | startIdx, endIdx, q :: rest =>
-    startIdx ≤ q.s ∧ BridgeChainOK q.t endIdx rest
-
-private def ChainDisj {V : Type*} {G : SimpleGraph V} {P : List V} :
-    List (PBridge G P) → Prop
-  | [] => True
-  | q :: rest =>
-    (∀ q' ∈ rest, ∀ x ∈ q.verts, x ∈ q'.verts → x ∈ P) ∧ ChainDisj rest
-
-private lemma bridgeChainOK_le {V : Type*} {G : SimpleGraph V} {P : List V}
-    {s e : ℕ} {bs : List (PBridge G P)} (hok : BridgeChainOK s e bs) :
-    s ≤ e ∧ e < P.length := by
-  induction bs generalizing s with
-  | nil => exact hok
-  | cons q rest ih =>
-    have ⟨h1, h2⟩ := ih hok.2
-    exact ⟨le_trans hok.1 (le_trans (le_of_lt q.hst) h1), h2⟩
-
-private lemma stitchChain_ne_nil {V : Type*} {G : SimpleGraph V} {P : List V}
-    (s e : ℕ) (bs : List (PBridge G P)) (hok : BridgeChainOK s e bs) :
-    stitchChain P s e bs ≠ [] := by
-  cases bs with
-  | nil =>
-    have hlen : (stitchChain P s e ([] : List (PBridge G P))).length = e + 1 - s :=
-      slice_length_of_le (by have := hok.2; omega)
-    have := hok.1
-    exact List.ne_nil_of_length_pos (by omega)
-  | cons q rest =>
-    have hlen : (slice P s (q.s + 1)).length = q.s + 1 - s :=
-      slice_length_of_le (by have := q.hs; omega)
-    have := hok.1
-    exact List.append_ne_nil_of_left_ne_nil
-      (List.append_ne_nil_of_left_ne_nil (List.ne_nil_of_length_pos (by omega)) _) _
-
-private lemma stitchChain_head {V : Type*} {G : SimpleGraph V} {P : List V}
-    (s e : ℕ) (bs : List (PBridge G P)) (hok : BridgeChainOK s e bs) :
-    (stitchChain P s e bs).head (stitchChain_ne_nil s e bs hok) =
-      P[s]'(by have := bridgeChainOK_le hok; omega) := by
-  cases bs with
-  | nil =>
-    simp only [stitchChain]
-    generalize_proofs h1 h2
-    rw [List.head_eq_getElem_zero, slice_getElem]
-    simp
-  | cons q rest =>
-    have hlen1 : (slice P s (q.s + 1)).length = q.s + 1 - s :=
-      slice_length_of_le (by have := q.hs; omega)
-    have := hok.1
-    have hne1 : slice P s (q.s + 1) ≠ [] := List.ne_nil_of_length_pos (by omega)
-    simp only [stitchChain]
-    generalize_proofs h1 h2
-    rw [List.head_append_of_ne_nil (List.append_ne_nil_of_left_ne_nil hne1 _),
-        List.head_append_of_ne_nil hne1, List.head_eq_getElem_zero, slice_getElem]
-    simp
-
-private lemma stitchChain_last {V : Type*} {G : SimpleGraph V} {P : List V}
-    (s e : ℕ) (bs : List (PBridge G P)) (hok : BridgeChainOK s e bs) :
-    (stitchChain P s e bs).getLast (stitchChain_ne_nil s e bs hok) =
-      P[e]'(bridgeChainOK_le hok).2 := by
-  induction bs generalizing s with
-  | nil =>
-    simp only [stitchChain]
-    generalize_proofs h1 h2
-    rw [List.getLast_eq_getElem, slice_getElem]
-    have hlen : (slice P s (e + 1)).length = e + 1 - s :=
-      slice_length_of_le (by have := hok.2; omega)
-    have := hok.1
-    congr 1; omega
-  | cons q rest ih =>
-    simp only [stitchChain]
-    generalize_proofs h1 h2
-    by_cases htail : (stitchChain P q.t e rest).tail = []
-    · have hqt_ne : stitchChain P q.t e rest ≠ [] := stitchChain_ne_nil q.t e rest hok.2
-      have hqt_len1 : (stitchChain P q.t e rest).length = 1 := by
-        have hpos := List.length_pos_iff.mpr hqt_ne
-        have := congrArg List.length htail
-        simp at this; omega
-      have hqt_eq : (stitchChain P q.t e rest).head hqt_ne =
-          (stitchChain P q.t e rest).getLast hqt_ne := by
-        rw [List.head_eq_getElem_zero, List.getLast_eq_getElem]; congr 1; omega
-      rw [stitchChain_head q.t e rest hok.2, ih q.t hok.2] at hqt_eq
-      have hqtail_ne : q.verts.tail ≠ [] := by
-        have := q.hlen; exact List.ne_nil_of_length_pos (by simp; omega)
-      have hsub : slice P s (q.s + 1) ++ q.verts.tail ++ (stitchChain P q.t e rest).tail =
-          slice P s (q.s + 1) ++ q.verts.tail := by rw [htail, List.append_nil]
-      simp only [hsub]
-      rw [List.getLast_append_of_ne_nil _ hqtail_ne, getLast_tail_eq q.hne hqtail_ne, q.hlast, hqt_eq]
-    · have hqt_ne : stitchChain P q.t e rest ≠ [] := stitchChain_ne_nil q.t e rest hok.2
-      rw [List.getLast_append_of_ne_nil _ htail, getLast_tail_eq hqt_ne htail]
-      exact ih q.t hok.2
-
-private lemma stitchChain_isAdj {V : Type*} {G : SimpleGraph V} {P : List V}
-    (hPadj : IsAdjList G P) (s e : ℕ) (bs : List (PBridge G P)) (hok : BridgeChainOK s e bs) :
-    IsAdjList G (stitchChain P s e bs) := by
-  induction bs generalizing s with
-  | nil => exact isAdjList_slice hPadj s (e + 1)
-  | cons q rest ih =>
-    simp only [stitchChain]
-    have hlen1 : (slice P s (q.s + 1)).length = q.s + 1 - s :=
-      slice_length_of_le (by have := q.hs; omega)
-    have := hok.1
-    have hne1 : slice P s (q.s + 1) ≠ [] := List.ne_nil_of_length_pos (by omega)
-    have hgl1 : (slice P s (q.s + 1)).getLast hne1 = P[q.s]'(q.hs) := by
-      rw [List.getLast_eq_getElem, slice_getElem]; congr 1; omega
-    have hpart1 : IsAdjList G (slice P s (q.s + 1) ++ q.verts.tail) :=
-      isAdjList_append_tail (isAdjList_slice hPadj s (q.s + 1)) q.hadj hne1 q.hne
-        (hgl1.trans q.hhead.symm)
-    have hqtail_ne : q.verts.tail ≠ [] :=
-      List.ne_nil_of_length_pos (by simp; have := q.hlen; omega)
-    have hne12 : slice P s (q.s + 1) ++ q.verts.tail ≠ [] :=
-      List.append_ne_nil_of_left_ne_nil hne1 _
-    have hgl12 : (slice P s (q.s + 1) ++ q.verts.tail).getLast hne12 = P[q.t]'(q.ht) := by
-      rw [List.getLast_append_of_ne_nil _ hqtail_ne, getLast_tail_eq q.hne hqtail_ne, q.hlast]
-    exact isAdjList_append_tail hpart1 (ih q.t hok.2) hne12
-      (stitchChain_ne_nil q.t e rest hok.2)
-      (hgl12.trans (stitchChain_head q.t e rest hok.2).symm)
-
-private lemma stitchChain_mem_P_ge {V : Type*} {G : SimpleGraph V} {P : List V}
-    (hPnd : P.Nodup) (s e : ℕ) (bs : List (PBridge G P)) (hok : BridgeChainOK s e bs)
-    {k : ℕ} (hk : k < P.length) (hmem : P[k] ∈ stitchChain P s e bs) :
-    s ≤ k ∧ k ≤ e := by
-  induction bs generalizing s with
-  | nil =>
-    have hmem' : P[k] ∈ slice P s (e + 1) := hmem
-    obtain ⟨j, hj, heq⟩ := List.mem_iff_getElem.mp hmem'
-    rw [slice_getElem] at heq
-    have hlen : (slice P s (e + 1)).length = e + 1 - s :=
-      slice_length_of_le (by have := hok.2; omega)
-    have hidx := nodup_getElem_eq hPnd (by have := hok.2; omega) hk heq
-    have := hok.1; omega
-  | cons q rest ih =>
-    simp only [stitchChain, List.mem_append] at hmem
-    have hqe : q.t ≤ e := (bridgeChainOK_le hok.2).1
-    rcases hmem with (h1 | h2) | h3
-    · obtain ⟨j, hj, heq⟩ := List.mem_iff_getElem.mp h1
-      rw [slice_getElem] at heq
-      have hlen : (slice P s (q.s + 1)).length = q.s + 1 - s :=
-        slice_length_of_le (by have := q.hs; omega)
-      have hidx := nodup_getElem_eq hPnd (by have := q.hs; omega) hk heq
-      have := q.hst; have := hok.1; omega
-    · rcases q.hint _ (List.mem_of_mem_tail h2) (List.getElem_mem hk) with heq | heq
-      · have hidx := nodup_getElem_eq hPnd hk q.hs heq
-        have := q.hst; have := hok.1; omega
-      · have hidx := nodup_getElem_eq hPnd hk q.ht heq
-        have := q.hst; have := hok.1; omega
-    · have ⟨hlo, hhi⟩ := ih q.t hok.2 (List.mem_of_mem_tail h3)
-      have := q.hst; have := hok.1; omega
-
-private lemma stitchChain_mem_notP {V : Type*} {G : SimpleGraph V} {P : List V}
-    (s e : ℕ) (bs : List (PBridge G P)) {x : V} (hxP : x ∉ P)
-    (hmem : x ∈ stitchChain P s e bs) :
-    ∃ q ∈ bs, x ∈ q.verts := by
-  induction bs generalizing s with
-  | nil =>
-    exfalso
-    exact hxP ((slice_sublist P s (e + 1)).subset hmem)
-  | cons q rest ih =>
-    simp only [stitchChain, List.mem_append] at hmem
-    rcases hmem with (h1 | h2) | h3
-    · exfalso; exact hxP ((slice_sublist P s (q.s + 1)).subset h1)
-    · exact ⟨q, List.mem_cons_self, List.mem_of_mem_tail h2⟩
-    · obtain ⟨q', hq', hx'⟩ := ih q.t (List.mem_of_mem_tail h3)
-      exact ⟨q', List.mem_cons_of_mem q hq', hx'⟩
-
-private lemma stitchChain_nodup {V : Type*} {G : SimpleGraph V} {P : List V}
-    (hPnd : P.Nodup) (s e : ℕ) (bs : List (PBridge G P))
-    (hok : BridgeChainOK s e bs) (hdisj : ChainDisj bs) :
-    (stitchChain P s e bs).Nodup := by
-  induction bs generalizing s with
-  | nil => exact hPnd.sublist (slice_sublist P s (e + 1))
-  | cons q rest ih =>
-    simp only [stitchChain]
-    have hnd1 : (slice P s (q.s + 1)).Nodup := hPnd.sublist (slice_sublist P s (q.s + 1))
-    have hnd2 : q.verts.tail.Nodup := q.hnodup.tail
-    have hnd3 : (stitchChain P q.t e rest).tail.Nodup := (ih q.t hok.2 hdisj.2).tail
-    rw [List.nodup_append, List.nodup_append]
-    refine ⟨⟨hnd1, hnd2, ?_⟩, hnd3, ?_⟩
-    · intro x hx1 y hy2 hxy; subst hxy
-      obtain ⟨j, hj, rfl⟩ := List.mem_iff_getElem.mp hx1
-      have hlen : (slice P s (q.s + 1)).length = q.s + 1 - s :=
-        slice_length_of_le (by have := q.hs; omega)
-      have hget : (slice P s (q.s + 1))[j]'hj = P[s + j]'(by have := q.hs; omega) :=
-        slice_getElem hj
-      rw [hget] at hy2
-      rcases q.hint _ (List.mem_of_mem_tail hy2) (List.getElem_mem _) with heq | heq
-      · have hnot : q.verts.head q.hne ∉ q.verts.tail := head_not_mem_tail q.hne q.hnodup
-        rw [q.hhead] at hnot
-        exact hnot (heq ▸ hy2)
-      · have hidx := nodup_getElem_eq hPnd (by have := q.hs; omega) q.ht heq
-        have := q.hst; omega
-    · intro x hx12 y hy3 hxy; subst hxy
-      have hsc_ne : stitchChain P q.t e rest ≠ [] := stitchChain_ne_nil q.t e rest hok.2
-      have hnot_hd : x ≠ P[q.t]'(q.ht) := by
-        intro heq
-        have hnot := head_not_mem_tail hsc_ne (ih q.t hok.2 hdisj.2)
-        rw [stitchChain_head q.t e rest hok.2] at hnot
-        exact hnot (heq ▸ hy3)
-      have hy3' : x ∈ stitchChain P q.t e rest := List.mem_of_mem_tail hy3
-      rcases List.mem_append.mp hx12 with hx1 | hx2
-      · obtain ⟨j, hj, rfl⟩ := List.mem_iff_getElem.mp hx1
-        have hlen : (slice P s (q.s + 1)).length = q.s + 1 - s :=
-          slice_length_of_le (by have := q.hs; omega)
-        have hget : (slice P s (q.s + 1))[j]'hj = P[s + j]'(by have := q.hs; omega) :=
-          slice_getElem hj
-        rw [hget] at hy3'
-        have ⟨hlo, _⟩ := stitchChain_mem_P_ge hPnd q.t e rest hok.2 (by have := q.hs; omega) hy3'
-        have := q.hst; omega
-      · by_cases hxP : x ∈ P
-        · rcases q.hint x (List.mem_of_mem_tail hx2) hxP with rfl | rfl
-          · have ⟨hlo, _⟩ := stitchChain_mem_P_ge hPnd q.t e rest hok.2 q.hs hy3'
-            have := q.hst; omega
-          · exact hnot_hd rfl
-        · obtain ⟨q', hq', hxq'⟩ := stitchChain_mem_notP q.t e rest hxP hy3'
-          exact hxP (hdisj.1 q' hq' x (List.mem_of_mem_tail hx2) hxq')
-
-private lemma stitchChain_mem_P_interval {V : Type*} {G : SimpleGraph V} {P : List V}
-    (hPnd : P.Nodup) (s e : ℕ) (bs : List (PBridge G P)) (hok : BridgeChainOK s e bs)
-    {k : ℕ} (hk : k < P.length) (hmem : P[k] ∈ stitchChain P s e bs) :
-    (bs = [] ∧ s ≤ k ∧ k ≤ e) ∨
-    (∃ q : PBridge G P, bs.head? = some q ∧ s ≤ k ∧ k ≤ q.s) ∨
-    (∃ i : ℕ, ∃ hi : i + 1 < bs.length, bs[i].t ≤ k ∧ k ≤ bs[i + 1].s) ∨
-    (∃ q : PBridge G P, bs.getLast? = some q ∧ q.t ≤ k ∧ k ≤ e) := by
-  induction bs generalizing s with
-  | nil =>
-    left
-    exact ⟨rfl, stitchChain_mem_P_ge hPnd s e [] hok hk hmem⟩
-  | cons q rest ih =>
-    simp only [stitchChain, List.mem_append] at hmem
-    rcases hmem with (h1 | h2) | h3
-    · right; left
-      refine ⟨q, rfl, ?_⟩
-      obtain ⟨j, hj, heq⟩ := List.mem_iff_getElem.mp h1
-      rw [slice_getElem] at heq
-      have hlen : (slice P s (q.s + 1)).length = q.s + 1 - s :=
-        slice_length_of_le (by have := q.hs; omega)
-      have hidx := nodup_getElem_eq hPnd (by have := q.hs; omega) hk heq
-      have := hok.1; omega
-    · rcases q.hint _ (List.mem_of_mem_tail h2) (List.getElem_mem hk) with heq | heq
-      · right; left
-        have hidx := nodup_getElem_eq hPnd hk q.hs heq
-        exact ⟨q, rfl, by have := hok.1; omega, by omega⟩
-      · have hidx := nodup_getElem_eq hPnd hk q.ht heq
-        cases rest with
-        | nil =>
-          right; right; right
-          exact ⟨q, rfl, by omega, by have := hok.2.1; omega⟩
-        | cons q' rest' =>
-          right; right; left
-          exact ⟨0, by simp, by simp [hidx], by simpa [hidx] using hok.2.1⟩
-    · have h3' : P[k] ∈ stitchChain P q.t e rest := List.mem_of_mem_tail h3
-      rcases ih q.t hok.2 h3' with ⟨rfl, hlo, hhi⟩ | ⟨q', hhd, hlo, hhi⟩ | ⟨i, hi, hlo, hhi⟩ | ⟨q', hgl, hlo, hhi⟩
-      · right; right; right
-        exact ⟨q, rfl, hlo, hhi⟩
-      · cases rest with
-        | nil => simp at hhd
-        | cons q'' rest' =>
-          simp at hhd; subst hhd
-          right; right; left
-          exact ⟨0, by simp, hlo, hhi⟩
-      · right; right; left
-        exact ⟨i + 1, by simpa using hi, hlo, hhi⟩
-      · right; right; right
-        cases rest with
-        | nil => simp at hgl
-        | cons q'' rest' =>
-          exact ⟨q', by simpa using hgl, hlo, hhi⟩
-
-private lemma mk_bridgeChainOK {V : Type*} {G : SimpleGraph V} {P : List V}
-    (bs : List (PBridge G P)) (s e : ℕ)
-    (h0 : bs = [] → s ≤ e ∧ e < P.length)
-    (hne : ∀ h : bs ≠ [], s ≤ (bs.head h).s ∧ (bs.getLast h).t ≤ e ∧ e < P.length)
-    (hstep : ∀ r (hr : r + 1 < bs.length), bs[r].t ≤ bs[r + 1].s) :
-    BridgeChainOK s e bs := by
-  induction bs generalizing s with
-  | nil => exact h0 rfl
-  | cons q rest ih =>
-    refine ⟨(hne (by simp)).1, ih q.t ?_ ?_ ?_⟩
-    · intro hnil; subst hnil
-      exact ⟨(hne (by simp)).2.1, (hne (by simp)).2.2⟩
-    · intro hrest
-      have h01 : q.t ≤ (rest.head hrest).s := by
-        cases rest with
-        | nil => exact absurd rfl hrest
-        | cons r0 _ => simpa using hstep 0 (by simp)
-      have hgl : rest.getLast hrest = (q :: rest).getLast (by simp) := by
-        simp [List.getLast_cons hrest]
-      exact ⟨h01, hgl ▸ (hne (by simp)).2.1, (hne (by simp)).2.2⟩
-    · intro r hr
-      exact hstep (r + 1) (by simpa using hr)
-
-private lemma mk_chainDisj {V : Type*} {G : SimpleGraph V} {P : List V}
-    (bs : List (PBridge G P))
-    (h : ∀ i j (hi : i < bs.length) (hj : j < bs.length), i < j →
-      ∀ x ∈ bs[i].verts, x ∈ bs[j].verts → x ∈ P) :
-    ChainDisj bs := by
-  induction bs with
-  | nil => trivial
-  | cons q rest ih =>
-    refine ⟨?_, ih ?_⟩
-    · intro q' hq' x hxq hxq'
-      obtain ⟨j, hj, rfl⟩ := List.mem_iff_getElem.mp hq'
-      exact h 0 (j + 1) (by simp) (by simpa using hj) (by omega) x hxq hxq'
-    · intro i j hi hj hij
-      exact h (i + 1) (j + 1) (by simpa using hi) (by simpa using hj) (by omega)
-
-/- ### Section 3: Modular pieces of Kopylov/Dirac's longest-path theorem -/
-
-private lemma degree_ge_two_of_two_connected {V : Type*} [Fintype V] [DecidableEq V]
-    (G : SimpleGraph V) [DecidableRel G.Adj]
-    (hn : 3 ≤ Fintype.card V)
-    (hconn : G.Connected)
-    (h2conn : ∀ v : V, (G.induce {w : V | w ≠ v}).Connected) :
-    ∀ v : V, 2 ≤ G.degree v := by
-  intro v
-  by_contra hlt
-  by_cases h0 : G.degree v = 0
-  · have hne : (Finset.univ.erase v).Nonempty :=
-      Finset.card_pos.mp (by rw [Finset.card_erase_of_mem (Finset.mem_univ v), Finset.card_univ]; omega)
-    obtain ⟨w, hw⟩ := hne
-    have hwv : w ≠ v := Finset.ne_of_mem_erase hw
-    obtain ⟨p⟩ := hconn v w
-    cases p with
-    | nil => exact hwv rfl
-    | @cons _ b _ hadj _ =>
-      have : b ∈ G.neighborFinset v := (mem_neighborFinset G v b).mpr hadj
-      have hpos : 0 < (G.neighborFinset v).card := Finset.card_pos.mpr ⟨b, this⟩
-      rw [card_neighborFinset_eq_degree] at hpos
-      omega
-  · have h1 : (G.neighborFinset v).card = 1 := by rw [card_neighborFinset_eq_degree]; omega
-    obtain ⟨w, hw⟩ := Finset.card_eq_one.mp h1
-    have hvw : v ≠ w := by
-      intro h; subst h
-      have : v ∈ G.neighborFinset v := by rw [hw]; simp
-      exact ((mem_neighborFinset G v v).mp this).ne rfl
-    have hlt2 : ({v, w} : Finset V).card < (Finset.univ : Finset V).card := by
-      rw [Finset.card_pair hvw, Finset.card_univ]; omega
-    obtain ⟨z, _, hz⟩ := Finset.exists_mem_notMem_of_card_lt_card hlt2
-    have ⟨hzv, hzw⟩ : z ≠ v ∧ z ≠ w := by
-      simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hz; exact hz
-    obtain ⟨p⟩ := h2conn w ⟨v, hvw⟩ ⟨z, hzw⟩
-    cases p with
-    | nil => exact hzv rfl
-    | @cons _ b _ hadj _ =>
-      have hb : b.val ∈ G.neighborFinset v := (mem_neighborFinset G v b.val).mpr hadj
-      rw [hw, Finset.mem_singleton] at hb
-      exact b.property hb
-
-private lemma kopylov_case_inter {V : Type*} [Fintype V] [DecidableEq V]
-    (G : SimpleGraph V) [DecidableRel G.Adj]
-    (hconn : G.Connected)
-    (P : List V) (hPnd : P.Nodup) (hPadj : IsAdjList G P) (hP3 : 3 ≤ P.length)
-    (hPmax : ∀ Q : List V, Q.Nodup → IsAdjList G Q → Q.length ≤ P.length)
-    (r : ℕ) (hr : r + 1 < P.length)
-    (hrA : G.Adj (P[0]'(by omega)) (P[r + 1]'hr))
-    (hrB : G.Adj (P[P.length - 1]'(by omega)) (P[r]'(by omega))) :
-    ∃ (u : V) (c : G.Walk u u), c.IsCycle ∧ c.length = Fintype.card V := by
-  let p1 := slice P 0 (r + 1)
-  let p2 := (slice P (r + 1) P.length).reverse
-  let C := p1 ++ p2
-  have hp1_len : p1.length = r + 1 := by
-    dsimp only [p1]; rw [slice_length_of_le (by omega)]; omega
-  have hp2_len : p2.length = P.length - (r + 1) := by
-    dsimp only [p2]; rw [List.length_reverse, slice_length_of_le (le_refl P.length)]
-  have hClen : C.length = P.length := by simp [C, hp1_len, hp2_len]; omega
-  have hp1_ne : p1 ≠ [] := List.ne_nil_of_length_pos (by omega)
-  have hp2_ne : p2 ≠ [] := List.ne_nil_of_length_pos (by omega)
-  have hCne : C ≠ [] := List.append_ne_nil_of_left_ne_nil hp1_ne _
-  have hCnd : C.Nodup := by
-    rw [List.nodup_append]
-    refine ⟨hPnd.sublist (slice_sublist _ _ _),
-      List.nodup_reverse.mpr (hPnd.sublist (slice_sublist _ _ _)), ?_⟩
-    intro x hx y hy hxy; subst hxy
-    obtain ⟨j₁, hj₁, rfl⟩ := List.mem_iff_getElem.mp hx
-    rw [List.mem_reverse] at hy
-    obtain ⟨j₂, hj₂, heq⟩ := List.mem_iff_getElem.mp hy
-    rw [slice_getElem hj₁, slice_getElem hj₂] at heq
-    have hlen2 : (slice P (r + 1) P.length).length = P.length - (r + 1) :=
-      slice_length_of_le (le_refl P.length)
-    have hidx := nodup_getElem_eq hPnd (by omega) (by omega) heq
-    omega
-  have hCadj : IsAdjList G C := by
-    refine isAdjList_append (isAdjList_slice hPadj _ _)
-      (isAdjList_reverse (isAdjList_slice hPadj _ _)) ?_
-    intro _ _
-    have h1 : p1.getLast hp1_ne = P[r]'(by omega) := by
-      rw [List.getLast_eq_getElem, slice_getElem]; congr 1; omega
-    have h2 : p2.head hp2_ne = P[P.length - 1]'(by omega) := by
-      rw [List.head_eq_getElem_zero]
-      simp only [p2, List.getElem_reverse, slice_getElem]
-      have hlen2 : (slice P (r + 1) P.length).length = P.length - (r + 1) :=
-        slice_length_of_le (le_refl P.length)
-      congr 1; omega
-    rw [h1, h2]
-    exact hrB.symm
-  have hCclose : ∀ h : C ≠ [], G.Adj (C.getLast h) (C.head h) := by
-    intro _
-    have h1 : C.getLast hCne = P[r + 1]'hr := by
-      rw [List.getLast_append_of_ne_nil _ hp2_ne, List.getLast_eq_getElem]
-      simp only [p2, List.getElem_reverse, slice_getElem]
-      have hlen2 : (slice P (r + 1) P.length).length = P.length - (r + 1) :=
-        slice_length_of_le (le_refl P.length)
-      have hrev2 : (slice P (r + 1) P.length).reverse.length = P.length - (r + 1) := by
-        rw [List.length_reverse, hlen2]
-      congr 1; omega
-    have h2 : C.head hCne = P[0]'(by omega) := by
-      rw [List.head_append_of_ne_nil hp1_ne, List.head_eq_getElem_zero, slice_getElem]
-    rw [h1, h2]
-    exact hrA.symm
-  have hPfull : P.length = Fintype.card V := by
-    by_contra hne_full
-    have hPlt : P.length < Fintype.card V := by
-      have hle : P.length ≤ Fintype.card V := by
-        have := Finset.card_le_univ P.toFinset
-        rwa [List.toFinset_card_of_nodup hPnd] at this
-      omega
-    have hltC : C.toFinset.card < (Finset.univ : Finset V).card := by
-      rw [List.toFinset_card_of_nodup hCnd, hClen, Finset.card_univ]; exact hPlt
-    obtain ⟨w₀, _, hw₀'⟩ := Finset.exists_mem_notMem_of_card_lt_card hltC
-    have hw₀ : w₀ ∉ C := by simpa using hw₀'
-    obtain ⟨walk⟩ := hconn w₀ (C.head hCne)
-    let sl := walk.support
-    have hsl_adj : IsAdjList G sl := isAdjList_support walk
-    have hsl_ne : sl ≠ [] := Walk.support_ne_nil walk
-    let outIdx : Finset (Fin sl.length) :=
-      Finset.univ.filter fun i : Fin sl.length => sl[i.val] ∉ C
-    have hout_ne : outIdx.Nonempty := by
-      refine ⟨⟨0, List.length_pos_iff.mpr hsl_ne⟩, Finset.mem_filter.mpr ⟨Finset.mem_univ _, ?_⟩⟩
-      have : sl[0]'(List.length_pos_iff.mpr hsl_ne) = w₀ := by
-        rw [← List.head_eq_getElem_zero hsl_ne]; exact Walk.head_support walk
-      rwa [this]
-    let io := outIdx.max' hout_ne
-    have hio_out : sl[io.val] ∉ C := (Finset.mem_filter.mp (Finset.max'_mem outIdx hout_ne)).2
-    have hio_lt : io.val + 1 < sl.length := by
-      by_contra hge
-      have heq : io.val = sl.length - 1 := by omega
-      have h1 : sl[io.val]'io.isLt = sl[sl.length - 1]'(by have := List.length_pos_iff.mpr hsl_ne; omega) := by
-        congr 1
-      have hgl : sl[sl.length - 1]'(by have := List.length_pos_iff.mpr hsl_ne; omega) = C.head hCne := by
-        rw [← List.getLast_eq_getElem hsl_ne]; exact Walk.getLast_support walk
-      exact hio_out (by rw [h1, hgl]; exact List.head_mem hCne)
-    have hnext_in : sl[io.val + 1] ∈ C := by
-      by_contra hnot
-      have hmem : (⟨io.val + 1, hio_lt⟩ : Fin sl.length) ∈ outIdx :=
-        Finset.mem_filter.mpr ⟨Finset.mem_univ _, hnot⟩
-      have hle : io.val + 1 ≤ io.val :=
-        Fin.le_iff_val_le_val.mp (Finset.le_max' outIdx ⟨io.val + 1, hio_lt⟩ hmem)
-      omega
-    have hadj_w : G.Adj sl[io.val] sl[io.val + 1] := hsl_adj io.val hio_lt
-    let C' := C.rotate (C.idxOf sl[io.val + 1])
-    have hC'nd : C'.Nodup := List.nodup_rotate.mpr hCnd
-    have hC'adj : IsAdjList G C' := isAdjList_rotate hCadj hCne (hCclose hCne) _
-    have hC'ne : C' ≠ [] := by simpa [C'] using hCne
-    have hC'head : C'.head hC'ne = sl[io.val + 1] := by
-      rw [List.head_eq_getElem_zero]
-      have hlt : C.idxOf sl[io.val + 1] < C.length := List.idxOf_lt_length_of_mem hnext_in
-      simp only [C', List.getElem_rotate, Nat.zero_add, Nat.mod_eq_of_lt hlt]
-      exact List.getElem_idxOf hlt
-    have hnot_C' : sl[io.val] ∉ C' := by simpa [C', List.mem_rotate] using hio_out
-    have hlong := hPmax (sl[io.val] :: C') (List.nodup_cons.mpr ⟨hnot_C', hC'nd⟩)
-      (isAdjList_cons hC'adj (fun _ => by rw [hC'head]; exact hadj_w))
-    simp [C', hClen] at hlong
-  obtain ⟨u, c, hc, hclen⟩ := exists_cycle_of_adjList C (by omega) hCnd hCadj hCclose
-  exact ⟨u, c, hc, by omega⟩
-
-private lemma kopylov_case_crossing {V : Type*} [Fintype V] [DecidableEq V]
-    (G : SimpleGraph V) [DecidableRel G.Adj]
-    (P : List V) (hPnd : P.Nodup) (hPadj : IsAdjList G P) (hP3 : 3 ≤ P.length)
-    (A B : Finset (Fin (P.length - 1)))
-    (hAdef : ∀ r : Fin (P.length - 1), r ∈ A ↔ G.Adj (P[0]'(by omega)) (P[r.val + 1]'(by omega)))
-    (hBdef : ∀ r : Fin (P.length - 1), r ∈ B ↔ G.Adj (P[P.length - 1]'(by omega)) (P[r.val]'(by omega)))
-    (hAcard : A.card = G.degree (P[0]'(by omega)))
-    (hBcard : B.card = G.degree (P[P.length - 1]'(by omega)))
-    (hd0 : 2 ≤ G.degree (P[0]'(by omega)))
-    (hdL : 2 ≤ G.degree (P[P.length - 1]'(by omega)))
-    (hdisjAB : Disjoint A B)
-    (i0 j0 : Fin (P.length - 1)) (hi0 : i0 ∈ B) (hj0 : j0 ∈ A) (hcross : i0.val < j0.val + 1) :
-    ∃ (u : V) (c : G.Walk u u), c.IsCycle ∧
-      G.degree (P[0]'(by omega)) + G.degree (P[P.length - 1]'(by omega)) ≤ c.length := by
-  let L := P.length - 1
-  let S : Finset (Fin L × Fin L) := (B ×ˢ A).filter (fun p => p.1.val < p.2.val + 1)
-  have hSne : S.Nonempty := ⟨(i0, j0), Finset.mem_filter.mpr ⟨Finset.mem_product.mpr ⟨hi0, hj0⟩, hcross⟩⟩
-  obtain ⟨⟨i, j'⟩, hmemS, hminS⟩ :=
-    Finset.exists_min_image S (fun p => p.2.val + 1 - p.1.val) hSne
-  have hiB : i ∈ B := (Finset.mem_product.mp (Finset.mem_filter.mp hmemS).1).1
-  have hjA : j' ∈ A := (Finset.mem_product.mp (Finset.mem_filter.mp hmemS).1).2
-  have hij' : i.val < j'.val + 1 := (Finset.mem_filter.mp hmemS).2
-  have hij_ne : i ≠ j' := fun heq => Finset.disjoint_left.mp hdisjAB (heq ▸ hjA) hiB
-  have hij_lt : i.val < j'.val := by
-    have : i.val ≠ j'.val := fun h => hij_ne (Fin.ext h)
-    omega
-  let j : ℕ := j'.val + 1
-  let I : Finset (Fin L) := Finset.univ.filter (fun r : Fin L => i.val < r.val ∧ r.val < j'.val)
-  have hAB_disj_I : Disjoint (A ∪ B) I := by
-    rw [Finset.disjoint_left]
-    intro r hrAB hrI
-    obtain ⟨hri, hrj⟩ := (Finset.mem_filter.mp hrI).2
-    rcases Finset.mem_union.mp hrAB with hrA | hrB
-    · have hmem' : (i, r) ∈ S := Finset.mem_filter.mpr ⟨Finset.mem_product.mpr ⟨hiB, hrA⟩, by dsimp only; omega⟩
-      have hle := hminS (i, r) hmem'; dsimp only at hle; omega
-    · have hmem' : (r, j') ∈ S := Finset.mem_filter.mpr ⟨Finset.mem_product.mpr ⟨hrB, hjA⟩, by dsimp only; omega⟩
-      have hle := hminS (r, j') hmem'; dsimp only at hle; omega
-  have hIcard : I.card = j - i.val - 2 := by
-    have hbij : I.card = (Finset.Ioo i.val j'.val).card := by
-      refine Finset.card_bij (fun r _ => r.val) ?_ ?_ ?_
-      · intro r hr
-        obtain ⟨h1, h2⟩ := (Finset.mem_filter.mp hr).2
-        exact Finset.mem_Ioo.mpr ⟨h1, h2⟩
-      · intro r₁ _ r₂ _ h; exact Fin.ext h
-      · intro k hk
-        obtain ⟨h1, h2⟩ := Finset.mem_Ioo.mp hk
-        exact ⟨⟨k, by omega⟩, Finset.mem_filter.mpr ⟨Finset.mem_univ _, h1, h2⟩, rfl⟩
-    rw [hbij, Nat.card_Ioo]; omega
-  have hsum_le : G.degree (P[0]'(by omega)) + G.degree (P[P.length - 1]'(by omega)) ≤
-      L + 2 - (j - i.val) := by
-    have hcard_le : (A ∪ B).card + I.card ≤ (Finset.univ : Finset (Fin L)).card := by
-      rw [← Finset.card_union_of_disjoint hAB_disj_I]
-      exact Finset.card_le_univ _
-    rw [Finset.card_union_of_disjoint hdisjAB, hAcard, hBcard, hIcard, Finset.card_univ,
-      Fintype.card_fin] at hcard_le
-    omega
-  let p1 := slice P 0 (i.val + 1)
-  let p2 := (slice P j P.length).reverse
-  let C := p1 ++ p2
-  have hp1_len : p1.length = i.val + 1 := by
-    dsimp only [p1]; rw [slice_length_of_le (by omega)]; omega
-  have hp2_len : p2.length = P.length - j := by
-    dsimp only [p2]; rw [List.length_reverse, slice_length_of_le (le_refl P.length)]
-  have hClen : C.length = L + 2 - (j - i.val) := by simp [C, hp1_len, hp2_len]; omega
-  have hp1_ne : p1 ≠ [] := List.ne_nil_of_length_pos (by omega)
-  have hp2_ne : p2 ≠ [] := List.ne_nil_of_length_pos (by omega)
-  have hCne : C ≠ [] := List.append_ne_nil_of_left_ne_nil hp1_ne _
-  have hCnd : C.Nodup := by
-    rw [List.nodup_append]
-    refine ⟨hPnd.sublist (slice_sublist _ _ _),
-      List.nodup_reverse.mpr (hPnd.sublist (slice_sublist _ _ _)), ?_⟩
-    intro x hx y hy hxy; subst hxy
-    obtain ⟨k₁, hk₁, rfl⟩ := List.mem_iff_getElem.mp hx
-    rw [List.mem_reverse] at hy
-    obtain ⟨k₂, hk₂, heq⟩ := List.mem_iff_getElem.mp hy
-    rw [slice_getElem hk₁, slice_getElem hk₂] at heq
-    have hlen2 : (slice P j P.length).length = P.length - j :=
-      slice_length_of_le (le_refl P.length)
-    have hidx := nodup_getElem_eq hPnd (by omega) (by omega) heq
-    omega
-  have hCadj : IsAdjList G C := by
-    refine isAdjList_append (isAdjList_slice hPadj _ _)
-      (isAdjList_reverse (isAdjList_slice hPadj _ _)) ?_
-    intro _ _
-    have h1 : p1.getLast hp1_ne = P[i.val]'(by omega) := by
-      rw [List.getLast_eq_getElem, slice_getElem]; congr 1; omega
-    have h2 : p2.head hp2_ne = P[P.length - 1]'(by omega) := by
-      rw [List.head_eq_getElem_zero]
-      simp only [p2, List.getElem_reverse, slice_getElem]
-      have hlen2 : (slice P j P.length).length = P.length - j :=
-        slice_length_of_le (le_refl P.length)
-      congr 1; omega
-    rw [h1, h2]
-    exact ((hBdef i).mp hiB).symm
-  have hCclose : ∀ h : C ≠ [], G.Adj (C.getLast h) (C.head h) := by
-    intro _
-    have h1 : C.getLast hCne = P[j]'(by omega) := by
-      rw [List.getLast_append_of_ne_nil _ hp2_ne, List.getLast_eq_getElem]
-      simp only [p2, List.getElem_reverse, slice_getElem]
-      have hlen2 : (slice P j P.length).length = P.length - j :=
-        slice_length_of_le (le_refl P.length)
-      have hrev2 : (slice P j P.length).reverse.length = P.length - j := by
-        rw [List.length_reverse, hlen2]
-      congr 1; omega
-    have h2 : C.head hCne = P[0]'(by omega) := by
-      rw [List.head_append_of_ne_nil hp1_ne, List.head_eq_getElem_zero, slice_getElem]
-    rw [h1, h2]
-    exact ((hAdef j').mp hjA).symm
-  obtain ⟨u, c, hc, hclen⟩ := exists_cycle_of_adjList C (by omega) hCnd hCadj hCclose
-  exact ⟨u, c, hc, by omega⟩
-
-/- Structure holding a sorted minimal covering vine on `[a, b]` -/
-
-private structure VineData {V : Type*} (G : SimpleGraph V) (P : List V) (a b : ℕ) where
-  m : ℕ
-  qs : List (PBridge G P)
-  hlen : qs.length = m
-  hm_pos : 1 ≤ m
-  hs_strict : ∀ i j (hi : i < m) (hj : j < m), i < j → (qs[i]'(by omega)).s < (qs[j]'(by omega)).s
-  ht_strict : ∀ i j (hi : i < m) (hj : j < m), i < j → (qs[i]'(by omega)).t < (qs[j]'(by omega)).t
-  hs0_lt_a : (qs[0]'(by omega)).s < a
-  hb_lt_tm : b < (qs[m - 1]'(by omega)).t
-  ha_le_si : ∀ i (hi : i < m), 1 ≤ i → a ≤ (qs[i]'(by omega)).s
-  hti_le_b : ∀ i (hi : i + 1 < m), (qs[i]'(by omega)).t ≤ b
-  hstep_overlap : ∀ i (hi : i + 1 < m), (qs[i + 1]'(by omega)).s < (qs[i]'(by omega)).t
-  hskip_disj : ∀ i (hi : i + 2 < m), (qs[i]'(by omega)).t ≤ (qs[i + 2]'(by omega)).s
-  hpair_disj : ∀ i j (hi : i < m) (hj : j < m), i < j →
-    ∀ x ∈ (qs[i]'(by omega)).verts, x ∈ (qs[j]'(by omega)).verts → x ∈ P
-
-private lemma exists_vineData {V : Type*} [DecidableEq V] {G : SimpleGraph V}
-    (P : List V) (hPnd : P.Nodup) (a b : ℕ)
-    (ha0 : 0 < a) (hab : a ≤ b) (hbL : b + 1 < P.length)
-    (h2conn : ∀ v : V, (G.induce {w : V | w ≠ v}).Connected) :
-    Nonempty (VineData G P a b) := by
-  let Covers (qs : List (PBridge G P)) : Prop :=
-    ∀ x, a ≤ x → x ≤ b → ∃ q ∈ qs, q.s < x ∧ x < q.t
-  have hex_cov : ∃ m : ℕ, ∃ qs : List (PBridge G P), qs.length = m ∧ Covers qs := by
-    have hbuild : ∀ n : ℕ, a + n ≤ b + 1 →
-        ∃ qs : List (PBridge G P), ∀ x, a ≤ x → x < a + n → ∃ q ∈ qs, q.s < x ∧ x < q.t := by
-      intro n
-      induction n with
-      | zero => intro _; exact ⟨[], fun x h1 h2 => by omega⟩
-      | succ n ih =>
-        intro hle
-        obtain ⟨qs, hqs⟩ := ih (by omega)
-        obtain ⟨q, hqs', hqt'⟩ := exists_bridge_covering P hPnd (a + n) (by omega) (by omega)
-          (h2conn (P[a + n]'(by omega)))
-        refine ⟨q :: qs, fun x h1 h2 => ?_⟩
-        by_cases heq : x = a + n
-        · subst heq; exact ⟨q, List.mem_cons_self, hqs', hqt'⟩
-        · obtain ⟨q', hq', h1', h2'⟩ := hqs x h1 (by omega)
-          exact ⟨q', List.mem_cons_of_mem q hq', h1', h2'⟩
-    obtain ⟨qs, hqs⟩ := hbuild (b + 1 - a) (by omega)
-    exact ⟨qs.length, qs, rfl, fun x h1 h2 => hqs x h1 (by omega)⟩
-  classical
-  let m := Nat.find hex_cov
-  obtain ⟨qs₀, hqs₀_len, hqs₀_cov⟩ := Nat.find_spec hex_cov
-  have hmin_cov : ∀ qs' : List (PBridge G P), Covers qs' → m ≤ qs'.length :=
-    fun qs' hcov' => Nat.find_min' hex_cov ⟨qs', rfl, hcov'⟩
-  let qs := qs₀.mergeSort (fun q₁ q₂ => decide (q₁.s ≤ q₂.s))
-  have hqs_perm : qs.Perm qs₀ := List.mergeSort_perm qs₀ _
-  have hqs_len : qs.length = m := hqs_perm.length_eq.trans hqs₀_len
-  have hqs_cov : Covers qs := by
-    intro x h1 h2
-    obtain ⟨q, hq, h3, h4⟩ := hqs₀_cov x h1 h2
-    exact ⟨q, hqs_perm.mem_iff.mpr hq, h3, h4⟩
-  have hqs_sorted : ∀ i j (hi : i < m) (hj : j < m), i ≤ j →
-      (qs[i]'(by omega)).s ≤ (qs[j]'(by omega)).s := by
-    have hpair : qs.Pairwise (fun q₁ q₂ => decide (q₁.s ≤ q₂.s) = true) :=
-      List.pairwise_mergeSort (l := qs₀) (le := fun q₁ q₂ => decide (q₁.s ≤ q₂.s))
-        (by intro x y z hxy hyz; simp only [decide_eq_true_eq] at hxy hyz ⊢; omega)
-        (by intro x y; simp only [Bool.or_eq_true, decide_eq_true_eq]; omega)
-    intro i j hi hj hij
-    rcases eq_or_lt_of_le hij with rfl | hlt
-    · exact le_rfl
-    · have := List.pairwise_iff_getElem.mp hpair i j (by omega) (by omega) hlt
-      simpa using this
-  have hm_pos : 1 ≤ m := by
-    obtain ⟨q, hq, _, _⟩ := hqs_cov a le_rfl hab
-    have := List.length_pos_iff.mpr (List.ne_nil_of_mem hq)
-    omega
-  have hneed : ∀ idx (hidx : idx < m),
-      ∃ x, a ≤ x ∧ x ≤ b ∧ (qs[idx]'(by omega)).s < x ∧ x < (qs[idx]'(by omega)).t ∧
-        ∀ j (hj : j < m), j ≠ idx → ¬ ((qs[j]'(by omega)).s < x ∧ x < (qs[j]'(by omega)).t) := by
-    intro idx hidx
-    by_contra hall
-    push Not at hall
-    have hcov' : Covers (qs.eraseIdx idx) := by
-      intro x h1 h2
-      obtain ⟨q, hq, hsx, hxt⟩ := hqs_cov x h1 h2
-      obtain ⟨j, hj, rfl⟩ := List.mem_iff_getElem.mp hq
-      by_cases hji : j = idx
-      · subst hji
-        obtain ⟨j', hj', hne', hs', ht'⟩ := hall x h1 h2 hsx hxt
-        exact ⟨qs[j']'(by omega), getElem_mem_eraseIdx qs j j' (by omega) (by omega) hne', hs', ht'⟩
-      · exact ⟨qs[j], getElem_mem_eraseIdx qs idx j (by omega) hj hji, hsx, hxt⟩
-    have hle := hmin_cov (qs.eraseIdx idx) hcov'
-    rw [List.length_eraseIdx_of_lt (by omega)] at hle
-    omega
-  have hs_strict : ∀ i j (hi : i < m) (hj : j < m), i < j →
-      (qs[i]'(by omega)).s < (qs[j]'(by omega)).s := by
-    intro i j hi hj hij
-    have hle := hqs_sorted i j hi hj (le_of_lt hij)
-    by_contra hge
-    by_cases ht : (qs[i]'(by omega)).t ≤ (qs[j]'(by omega)).t
-    · obtain ⟨x, _, _, hsx, hxt, hnot⟩ := hneed i hi
-      exact hnot j hj (by omega) ⟨by omega, by omega⟩
-    · obtain ⟨x, _, _, hsx, hxt, hnot⟩ := hneed j hj
-      exact hnot i hi (by omega) ⟨by omega, by omega⟩
-  have ht_strict : ∀ i j (hi : i < m) (hj : j < m), i < j →
-      (qs[i]'(by omega)).t < (qs[j]'(by omega)).t := by
-    intro i j hi hj hij
-    have hlt_s := hs_strict i j hi hj hij
-    by_contra hge
-    obtain ⟨x, _, _, hsx, hxt, hnot⟩ := hneed j hj
-    exact hnot i hi (by omega) ⟨by omega, by omega⟩
-  have hs0_lt_a : (qs[0]'(by omega)).s < a := by
-    obtain ⟨q, hq, hsx, _⟩ := hqs_cov a le_rfl hab
-    obtain ⟨j, hj, rfl⟩ := List.mem_iff_getElem.mp hq
-    have := hqs_sorted 0 j (by omega) (by omega) (Nat.zero_le j)
-    omega
-  have hb_lt_tm : b < (qs[m - 1]'(by omega)).t := by
-    obtain ⟨q, hq, _, hxt⟩ := hqs_cov b hab le_rfl
-    obtain ⟨j, hj, rfl⟩ := List.mem_iff_getElem.mp hq
-    by_cases hjm : j = m - 1
-    · subst hjm; exact hxt
-    · have := ht_strict j (m - 1) (by omega) (by omega) (by omega); omega
-  have ha_le_si : ∀ i (hi : i < m), 1 ≤ i → a ≤ (qs[i]'(by omega)).s := by
-    intro i hi hi1
-    by_contra hlt
-    have ht0i := ht_strict 0 i (by omega) hi (by omega)
-    obtain ⟨x, hx1, _, hsx, hxt, hnot⟩ := hneed 0 (by omega)
-    exact hnot i hi (by omega) ⟨by omega, by omega⟩
-  have hti_le_b : ∀ i (hi : i + 1 < m), (qs[i]'(by omega)).t ≤ b := by
-    intro i hi
-    by_contra hgt
-    have hsim := hs_strict i (m - 1) (by omega) (by omega) (by omega)
-    obtain ⟨x, _, hx2, hsx, hxt, hnot⟩ := hneed (m - 1) (by omega)
-    exact hnot i (by omega) (by omega) ⟨by omega, by omega⟩
-  have hstep_overlap : ∀ i (hi : i + 1 < m),
-      (qs[i + 1]'(by omega)).s < (qs[i]'(by omega)).t := by
-    intro i hi
-    by_contra hge
-    have hti_ge_a : a < (qs[i]'(by omega)).t := by
-      obtain ⟨q, hq, hsx, hxt⟩ := hqs_cov a le_rfl hab
-      obtain ⟨j, hj, rfl⟩ := List.mem_iff_getElem.mp hq
-      have hj0 : j = 0 := by
-        by_contra hne0; have := ha_le_si j (by omega) (by omega); omega
-      subst hj0
-      by_cases hi0 : i = 0
-      · subst hi0; exact hxt
-      · have := ht_strict 0 i (by omega) (by omega) (by omega); omega
-    obtain ⟨q, hq, hsx, hxt⟩ := hqs_cov (qs[i]'(by omega)).t (by omega) (hti_le_b i hi)
-    obtain ⟨j, hj, rfl⟩ := List.mem_iff_getElem.mp hq
-    by_cases hji : j ≤ i
-    · rcases eq_or_lt_of_le hji with rfl | hlt
-      · omega
-      · have := ht_strict j i (by omega) (by omega) hlt; omega
-    · have := hqs_sorted (i + 1) j (by omega) (by omega) (by omega); omega
-  have hskip_disj : ∀ i (hi : i + 2 < m),
-      (qs[i]'(by omega)).t ≤ (qs[i + 2]'(by omega)).s := by
-    intro i hi
-    by_contra hgt
-    obtain ⟨x, _, _, hsx, hxt, hnot⟩ := hneed (i + 1) (by omega)
-    have hs01 := hs_strict i (i + 1) (by omega) (by omega) (by omega)
-    have ht12 := ht_strict (i + 1) (i + 2) (by omega) (by omega) (by omega)
-    by_cases hxt' : x < (qs[i]'(by omega)).t
-    · exact hnot i (by omega) (by omega) ⟨by omega, hxt'⟩
-    · exact hnot (i + 2) (by omega) (by omega) ⟨by omega, by omega⟩
-  have hpair_disj : ∀ i j (hi : i < m) (hj : j < m), i < j →
-      ∀ x ∈ (qs[i]'(by omega)).verts, x ∈ (qs[j]'(by omega)).verts → x ∈ P := by
-    intro i j hi hj hij x hxi hxj
-    by_contra hxP
-    obtain ⟨q', hq's, hq't⟩ := pbridge_merge hPnd (qs[i]'(by omega)) (qs[j]'(by omega))
-      (hs_strict i j hi hj hij) (ht_strict i j hi hj hij) x hxP hxi hxj
-    let qs' := q' :: (qs.eraseIdx j).eraseIdx i
-    have her_len : (qs.eraseIdx j).length = m - 1 := by
-      rw [List.length_eraseIdx_of_lt (by omega)]; omega
-    have hlen' : qs'.length = m - 1 := by
-      simp only [qs', List.length_cons]
-      rw [List.length_eraseIdx_of_lt (by omega), her_len]; omega
-    have hcov' : Covers qs' := by
-      intro y hy1 hy2
-      obtain ⟨q, hq, hsy, hyt⟩ := hqs_cov y hy1 hy2
-      obtain ⟨idx, hidx, rfl⟩ := List.mem_iff_getElem.mp hq
-      by_cases h1 : idx = i
-      · subst h1
-        have htij := ht_strict idx j (by omega) hj hij
-        exact ⟨q', List.mem_cons_self, by omega, by omega⟩
-      · by_cases h2 : idx = j
-        · subst h2
-          have hsij := hs_strict i idx hi (by omega) hij
-          exact ⟨q', List.mem_cons_self, by omega, by omega⟩
-        · refine ⟨qs[idx], List.mem_cons_of_mem q' ?_, hsy, hyt⟩
-          by_cases hlt : idx < j
-          · have hk_lt : idx < (qs.eraseIdx j).length := by omega
-            have hk_eq : (qs.eraseIdx j)[idx]'hk_lt = qs[idx] :=
-              List.getElem_eraseIdx_of_lt hk_lt hlt
-            rw [← hk_eq]
-            exact getElem_mem_eraseIdx (qs.eraseIdx j) i idx (by omega) hk_lt h1
-          · have hk_lt : idx - 1 < (qs.eraseIdx j).length := by omega
-            have hk_eq : (qs.eraseIdx j)[idx - 1]'hk_lt = qs[idx] := by
-              rw [List.getElem_eraseIdx_of_ge hk_lt (by omega)]; congr 1; omega
-            rw [← hk_eq]
-            exact getElem_mem_eraseIdx (qs.eraseIdx j) i (idx - 1) (by omega) hk_lt (by omega)
-    have hle := hmin_cov qs' hcov'
-    omega
-  exact ⟨⟨m, qs, hqs_len, hm_pos, hs_strict, ht_strict, hs0_lt_a, hb_lt_tm,
-    ha_le_si, hti_le_b, hstep_overlap, hskip_disj, hpair_disj⟩⟩
-
-/- Endpoint detours RL (from P[s0] to P[a]) and RR (from P[b] to P[tm]) -/
-
-private structure DetourLeft {V : Type*} [Fintype V] (G : SimpleGraph V) [DecidableRel G.Adj]
-    (P : List V) (s0 a : ℕ) where
-  verts : List V
-  hne : verts ≠ []
-  hnd : verts.Nodup
-  hadj : IsAdjList G verts
-  hhead : ∀ hs : s0 < P.length, verts.head hne = P[s0]'hs
-  hlast : ∀ ha : a < P.length, verts.getLast hne = P[a]'ha
-  hlen : ∀ h0 : 0 < P.length, G.degree (P[0]'h0) + 1 ≤ verts.length
-  hmem : ∀ x ∈ verts, ∃ k ≤ a, ∃ hk : k < P.length, x = P[k]'hk
-
-private lemma build_detourLeft {V : Type*} [Fintype V] [DecidableEq V]
-    (G : SimpleGraph V) [DecidableRel G.Adj]
-    (P : List V) (hPnd : P.Nodup) (hPadj : IsAdjList G P) (hP3 : 3 ≤ P.length)
-    (hP0_mem : ∀ w : V, G.Adj (P[0]'(by omega)) w → w ∈ P)
-    (s0 a : ℕ) (hs0a : s0 < a) (haL : a < P.length - 1)
-    (hmaxA : ∀ j (_hj0 : 0 < j) (hj : j < P.length), G.Adj (P[0]'(by omega)) (P[j]'hj) → j ≤ a)
-    (haAdj : G.Adj (P[0]'(by omega)) (P[a]'(by omega))) :
-    Nonempty (DetourLeft G P s0 a) := by
-  let Ahi : Finset (Fin P.length) :=
-    Finset.univ.filter fun j : Fin P.length => s0 < j.val ∧ G.Adj (P[0]'(by omega)) P[j.val]
-  have hAhi_ne : Ahi.Nonempty :=
-    ⟨⟨a, by omega⟩, Finset.mem_filter.mpr ⟨Finset.mem_univ _, hs0a, haAdj⟩⟩
-  let rLFin := Ahi.min' hAhi_ne
-  let rL := rLFin.val
-  have hrL_gt : s0 < rL := (Finset.mem_filter.mp (Finset.min'_mem Ahi hAhi_ne)).2.1
-  have hrL_adj : G.Adj (P[0]'(by omega)) (P[rL]'rLFin.isLt) :=
-    (Finset.mem_filter.mp (Finset.min'_mem Ahi hAhi_ne)).2.2
-  have hrL_le_a : rL ≤ a := hmaxA rL (by omega) rLFin.isLt hrL_adj
-  let RL := (slice P 0 (s0 + 1)).reverse ++ slice P rL (a + 1)
-  have h1_len : (slice P 0 (s0 + 1)).reverse.length = s0 + 1 := by
-    rw [List.length_reverse, slice_length_of_le (by omega)]; omega
-  have h2_len : (slice P rL (a + 1)).length = a + 1 - rL := slice_length_of_le (by omega)
-  have h1_ne : (slice P 0 (s0 + 1)).reverse ≠ [] := List.ne_nil_of_length_pos (by omega)
-  have h2_ne : slice P rL (a + 1) ≠ [] := List.ne_nil_of_length_pos (by omega)
-  have hRL_ne : RL ≠ [] := List.append_ne_nil_of_left_ne_nil h1_ne _
-  have hRL_nd : RL.Nodup := by
-    rw [List.nodup_append]
-    refine ⟨List.nodup_reverse.mpr (hPnd.sublist (slice_sublist _ _ _)),
-      hPnd.sublist (slice_sublist _ _ _), ?_⟩
-    intro x hx y hy hxy; subst hxy
-    rw [List.mem_reverse] at hx
-    obtain ⟨j₁, hj₁, rfl⟩ := List.mem_iff_getElem.mp hx
-    obtain ⟨j₂, hj₂, heq⟩ := List.mem_iff_getElem.mp hy
-    rw [slice_getElem hj₁, slice_getElem hj₂] at heq
-    have := slice_length_of_le (l := P) (a := 0) (b := s0 + 1) (by omega)
-    have hidx := nodup_getElem_eq hPnd (by omega) (by omega) heq
-    omega
-  have hRL_adj : IsAdjList G RL := by
-    refine isAdjList_append (isAdjList_reverse (isAdjList_slice hPadj _ _))
-      (isAdjList_slice hPadj _ _) ?_
-    intro _ _
-    have h1 : (slice P 0 (s0 + 1)).reverse.getLast h1_ne = P[0]'(by omega) := by
-      rw [List.getLast_eq_getElem, List.getElem_reverse, slice_getElem]
-      have := slice_length_of_le (l := P) (a := 0) (b := s0 + 1) (by omega)
-      congr 1; omega
-    have h2 : (slice P rL (a + 1)).head h2_ne = P[rL]'rLFin.isLt := by
-      rw [List.head_eq_getElem_zero, slice_getElem]; simp
-    rw [h1, h2]; exact hrL_adj
-  have hRL_head : ∀ hs : s0 < P.length, RL.head hRL_ne = P[s0]'hs := by
-    intro hs
-    rw [List.head_append_of_ne_nil h1_ne, List.head_eq_getElem_zero, List.getElem_reverse, slice_getElem]
-    have := slice_length_of_le (l := P) (a := 0) (b := s0 + 1) (by omega)
-    congr 1; omega
-  have hRL_last : ∀ ha : a < P.length, RL.getLast hRL_ne = P[a]'ha := by
-    intro ha
-    rw [List.getLast_append_of_ne_nil _ h2_ne, List.getLast_eq_getElem, slice_getElem]
-    congr 1; omega
-  have hRL_len : ∀ h0 : 0 < P.length, G.degree (P[0]'h0) + 1 ≤ RL.length := by
-    intro h0
-    have hsub : insert (P[0]'h0) (G.neighborFinset (P[0]'h0)) ⊆ RL.toFinset := by
-      intro w hw
-      simp only [Finset.mem_insert, mem_neighborFinset, List.mem_toFinset] at hw ⊢
-      rcases hw with rfl | hadj
-      · apply List.mem_append_left
-        rw [List.mem_reverse]
-        have hlt : 0 < (slice P 0 (s0 + 1)).length := by
-          rw [slice_length_of_le (by omega)]; omega
-        have heq : (slice P 0 (s0 + 1))[0]'hlt = P[0]'h0 := by rw [slice_getElem]
-        rw [← heq]; exact List.getElem_mem hlt
-      · obtain ⟨j, hj, rfl⟩ := List.mem_iff_getElem.mp (hP0_mem w hadj)
-        have hj0 : 0 < j := by
-          by_contra h
-          have hj_eq : j = 0 := by omega
-          subst hj_eq
-          exact hadj.ne rfl
-        have hja : j ≤ a := hmaxA j hj0 hj hadj
-        by_cases hjs0 : j ≤ s0
-        · apply List.mem_append_left
-          rw [List.mem_reverse]
-          have hlt : j < (slice P 0 (s0 + 1)).length := by
-            rw [slice_length_of_le (by omega)]; omega
-          have heq : (slice P 0 (s0 + 1))[j]'hlt = P[j]'hj := by rw [slice_getElem]; simp
-          rw [← heq]; exact List.getElem_mem hlt
-        · apply List.mem_append_right
-          have hmemAhi : (⟨j, hj⟩ : Fin P.length) ∈ Ahi :=
-            Finset.mem_filter.mpr ⟨Finset.mem_univ _, by dsimp only; omega, hadj⟩
-          have hrL_le_j : rL ≤ j := by
-            simpa [rL] using Fin.le_iff_val_le_val.mp (Finset.min'_le Ahi ⟨j, hj⟩ hmemAhi)
-          have hlt : j - rL < (slice P rL (a + 1)).length := by
-            rw [slice_length_of_le (by omega)]; omega
-          have heq : (slice P rL (a + 1))[j - rL]'hlt = P[j]'hj := by
-            rw [slice_getElem]; congr 1; omega
-          rw [← heq]; exact List.getElem_mem hlt
-    have hc := Finset.card_le_card hsub
-    rw [Finset.card_insert_of_notMem (by simp), card_neighborFinset_eq_degree,
-      List.toFinset_card_of_nodup hRL_nd] at hc
-    exact hc
-  have hRL_mem : ∀ x ∈ RL, ∃ k ≤ a, ∃ hk : k < P.length, x = P[k]'hk := by
-    intro x hx
-    rcases List.mem_append.mp hx with h1 | h2
-    · rw [List.mem_reverse] at h1
-      obtain ⟨j, hj, rfl⟩ := List.mem_iff_getElem.mp h1
-      have := slice_length_of_le (l := P) (a := 0) (b := s0 + 1) (by omega)
-      exact ⟨j, by omega, by omega, by rw [slice_getElem]; simp⟩
-    · obtain ⟨j, hj, rfl⟩ := List.mem_iff_getElem.mp h2
-      exact ⟨rL + j, by omega, by omega, slice_getElem hj⟩
-  exact ⟨⟨RL, hRL_ne, hRL_nd, hRL_adj, hRL_head, hRL_last, hRL_len, hRL_mem⟩⟩
-
-private structure DetourRight {V : Type*} [Fintype V] (G : SimpleGraph V) [DecidableRel G.Adj]
-    (P : List V) (b tm : ℕ) where
-  verts : List V
-  hne : verts ≠ []
-  hnd : verts.Nodup
-  hadj : IsAdjList G verts
-  hhead : ∀ hb : b < P.length, verts.head hne = P[b]'hb
-  hlast : ∀ htm : tm < P.length, verts.getLast hne = P[tm]'htm
-  hlen : ∀ hL : P.length - 1 < P.length, G.degree (P[P.length - 1]'hL) + 1 ≤ verts.length
-  hmem : ∀ x ∈ verts, ∃ k ≥ b, ∃ hk : k < P.length, x = P[k]'hk
-
-private lemma build_detourRight {V : Type*} [Fintype V] [DecidableEq V]
-    (G : SimpleGraph V) [DecidableRel G.Adj]
-    (P : List V) (hPnd : P.Nodup) (hPadj : IsAdjList G P) (hP3 : 3 ≤ P.length)
-    (hPL_mem : ∀ w : V, G.Adj (P[P.length - 1]'(by omega)) w → w ∈ P)
-    (b tm : ℕ) (_hb0 : 0 < b) (hbtm : b < tm) (htmP : tm < P.length)
-    (hminB : ∀ j (hj : j < P.length - 1), G.Adj (P[P.length - 1]'(by omega)) (P[j]'(by omega)) → b ≤ j)
-    (hbAdj : G.Adj (P[P.length - 1]'(by omega)) (P[b]'(by omega))) :
-    Nonempty (DetourRight G P b tm) := by
-  let Blo : Finset (Fin P.length) :=
-    Finset.univ.filter fun j : Fin P.length => j.val < tm ∧ G.Adj (P[P.length - 1]'(by omega)) P[j.val]
-  have hBlo_ne : Blo.Nonempty :=
-    ⟨⟨b, by omega⟩, Finset.mem_filter.mpr ⟨Finset.mem_univ _, hbtm, hbAdj⟩⟩
-  let rRFin := Blo.max' hBlo_ne
-  let rR := rRFin.val
-  have hrR_lt : rR < tm := (Finset.mem_filter.mp (Finset.max'_mem Blo hBlo_ne)).2.1
-  have hrR_adj : G.Adj (P[P.length - 1]'(by omega)) (P[rR]'rRFin.isLt) :=
-    (Finset.mem_filter.mp (Finset.max'_mem Blo hBlo_ne)).2.2
-  have hb_le_rR : b ≤ rR := hminB rR (by omega) hrR_adj
-  let RR := slice P b (rR + 1) ++ (slice P tm P.length).reverse
-  have h1_len : (slice P b (rR + 1)).length = rR + 1 - b := slice_length_of_le (by omega)
-  have h2_len : (slice P tm P.length).reverse.length = P.length - tm := by
-    rw [List.length_reverse, slice_length_of_le (le_refl P.length)]
-  have h1_ne : slice P b (rR + 1) ≠ [] := List.ne_nil_of_length_pos (by omega)
-  have h2_ne : (slice P tm P.length).reverse ≠ [] := List.ne_nil_of_length_pos (by omega)
-  have hRR_ne : RR ≠ [] := List.append_ne_nil_of_left_ne_nil h1_ne _
-  have hRR_nd : RR.Nodup := by
-    rw [List.nodup_append]
-    refine ⟨hPnd.sublist (slice_sublist _ _ _),
-      List.nodup_reverse.mpr (hPnd.sublist (slice_sublist _ _ _)), ?_⟩
-    intro x hx y hy hxy; subst hxy
-    rw [List.mem_reverse] at hy
-    obtain ⟨j₁, hj₁, rfl⟩ := List.mem_iff_getElem.mp hx
-    obtain ⟨j₂, hj₂, heq⟩ := List.mem_iff_getElem.mp hy
-    rw [slice_getElem hj₁, slice_getElem hj₂] at heq
-    have := slice_length_of_le (l := P) (a := tm) (b := P.length) (le_refl P.length)
-    have hidx := nodup_getElem_eq hPnd (by omega) (by omega) heq
-    omega
-  have hRR_adj : IsAdjList G RR := by
-    refine isAdjList_append (isAdjList_slice hPadj _ _)
-      (isAdjList_reverse (isAdjList_slice hPadj _ _)) ?_
-    intro _ _
-    have h1 : (slice P b (rR + 1)).getLast h1_ne = P[rR]'rRFin.isLt := by
-      rw [List.getLast_eq_getElem, slice_getElem]; congr 1; omega
-    have h2 : (slice P tm P.length).reverse.head h2_ne = P[P.length - 1]'(by omega) := by
-      rw [List.head_eq_getElem_zero, List.getElem_reverse, slice_getElem]
-      have := slice_length_of_le (l := P) (a := tm) (b := P.length) (le_refl P.length)
-      congr 1; omega
-    rw [h1, h2]; exact hrR_adj.symm
-  have hRR_head : ∀ hb : b < P.length, RR.head hRR_ne = P[b]'hb := by
-    intro hb
-    rw [List.head_append_of_ne_nil h1_ne, List.head_eq_getElem_zero, slice_getElem]; simp
-  have hRR_last : ∀ htm : tm < P.length, RR.getLast hRR_ne = P[tm]'htm := by
-    intro htm
-    rw [List.getLast_append_of_ne_nil _ h2_ne, List.getLast_eq_getElem,
-      List.getElem_reverse, slice_getElem]
-    have := slice_length_of_le (l := P) (a := tm) (b := P.length) (le_refl P.length)
-    congr 1; omega
-  have hRR_len : ∀ hL : P.length - 1 < P.length, G.degree (P[P.length - 1]'hL) + 1 ≤ RR.length := by
-    intro hL
-    have hsub : insert (P[P.length - 1]'hL) (G.neighborFinset (P[P.length - 1]'hL)) ⊆ RR.toFinset := by
-      intro w hw
-      simp only [Finset.mem_insert, mem_neighborFinset, List.mem_toFinset] at hw ⊢
-      rcases hw with rfl | hadj
-      · apply List.mem_append_right
-        rw [List.mem_reverse]
-        have hlt : P.length - 1 - tm < (slice P tm P.length).length := by
-          rw [slice_length_of_le (le_refl P.length)]; omega
-        have heq : (slice P tm P.length)[P.length - 1 - tm]'hlt = P[P.length - 1]'hL := by
-          rw [slice_getElem]; congr 1; omega
-        rw [← heq]; exact List.getElem_mem hlt
-      · obtain ⟨j, hj, rfl⟩ := List.mem_iff_getElem.mp (hPL_mem w hadj)
-        have hjL : j < P.length - 1 := by
-          by_contra h
-          have hj_eq : j = P.length - 1 := by omega
-          subst hj_eq
-          exact hadj.ne rfl
-        have hbj : b ≤ j := hminB j hjL hadj
-        by_cases hjtm : tm ≤ j
-        · apply List.mem_append_right
-          rw [List.mem_reverse]
-          have hlt : j - tm < (slice P tm P.length).length := by
-            rw [slice_length_of_le (le_refl P.length)]; omega
-          have heq : (slice P tm P.length)[j - tm]'hlt = P[j]'hj := by
-            rw [slice_getElem]; congr 1; omega
-          rw [← heq]; exact List.getElem_mem hlt
-        · apply List.mem_append_left
-          have hmemBlo : (⟨j, hj⟩ : Fin P.length) ∈ Blo :=
-            Finset.mem_filter.mpr ⟨Finset.mem_univ _, by dsimp only; omega, hadj⟩
-          have hj_le_rR : j ≤ rR := by
-            simpa [rR] using Fin.le_iff_val_le_val.mp (Finset.le_max' Blo ⟨j, hj⟩ hmemBlo)
-          have hlt : j - b < (slice P b (rR + 1)).length := by
-            rw [slice_length_of_le (by omega)]; omega
-          have heq : (slice P b (rR + 1))[j - b]'hlt = P[j]'hj := by
-            rw [slice_getElem]; congr 1; omega
-          rw [← heq]; exact List.getElem_mem hlt
-    have hc := Finset.card_le_card hsub
-    rw [Finset.card_insert_of_notMem (by simp), card_neighborFinset_eq_degree,
-      List.toFinset_card_of_nodup hRR_nd] at hc
-    exact hc
-  have hRR_mem : ∀ x ∈ RR, ∃ k ≥ b, ∃ hk : k < P.length, x = P[k]'hk := by
-    intro x hx
-    rcases List.mem_append.mp hx with h1 | h2
-    · obtain ⟨j, hj, rfl⟩ := List.mem_iff_getElem.mp h1
-      exact ⟨b + j, by omega, by omega, slice_getElem hj⟩
-    · rw [List.mem_reverse] at h2
-      obtain ⟨j, hj, rfl⟩ := List.mem_iff_getElem.mp h2
-      have := slice_length_of_le (l := P) (a := tm) (b := P.length) (le_refl P.length)
-      exact ⟨tm + j, by omega, by omega, slice_getElem hj⟩
-  exact ⟨⟨RR, hRR_ne, hRR_nd, hRR_adj, hRR_head, hRR_last, hRR_len, hRR_mem⟩⟩
-
-/- Closing the vine when `m` is odd vs even -/
-
-private lemma kopylov_case_vine {V : Type*} [Fintype V] [DecidableEq V]
-    (G : SimpleGraph V) [DecidableRel G.Adj]
-    (P : List V) (hPnd : P.Nodup) (hPadj : IsAdjList G P) (hP3 : 3 ≤ P.length)
-    (a b : ℕ) (_ha0 : 0 < a) (hab : a ≤ b) (hbL : b + 1 < P.length)
-    (hd0 : 2 ≤ G.degree (P[0]'(by omega)))
-    (hdL : 2 ≤ G.degree (P[P.length - 1]'(by omega)))
-    (Vdata : VineData G P a b)
-    (dL : DetourLeft G P (Vdata.qs[0]'(by have := Vdata.hlen; have := Vdata.hm_pos; omega)).s a)
-    (dR : DetourRight G P b (Vdata.qs[Vdata.m - 1]'(by have := Vdata.hlen; have := Vdata.hm_pos; omega)).t) :
-    ∃ (u : V) (c : G.Walk u u), c.IsCycle ∧
-      G.degree (P[0]'(by omega)) + G.degree (P[P.length - 1]'(by omega)) ≤ c.length := by
-  rcases Vdata with ⟨m, qs, hqs_len, hm_pos, hs_strict, ht_strict, hs0_lt_a, hb_lt_tm,
-    ha_le_si, hti_le_b, hstep_overlap, hskip_disj, hpair_disj⟩
-  let s0 := (qs[0]'(by omega)).s
-  let tm := (qs[m - 1]'(by omega)).t
-  have hs0_lt_P : s0 < P.length := (qs[0]'(by omega)).hs
-  have htm_lt_P : tm < P.length := (qs[m - 1]'(by omega)).ht
-  have hqs_idx : ∀ {i j : ℕ} (hi : i < qs.length) (hj : j < qs.length), i = j → qs[i] = qs[j] := by
-    intro i j hi hj h; subst h; rfl
-  have hqs_sorted : ∀ i j (hi : i < m) (hj : j < m), i ≤ j →
-      (qs[i]'(by omega)).s ≤ (qs[j]'(by omega)).s := by
-    intro i j hi hj hij
-    rcases eq_or_lt_of_le hij with rfl | hlt
-    · exact le_rfl
-    · exact le_of_lt (hs_strict i j hi hj hlt)
-  let oddList : List (PBridge G P) :=
-    (List.range ((m + 1) / 2)).attach.map fun ⟨r, hr⟩ =>
-      qs[2 * r]'(by simp only [List.mem_range] at hr; omega)
-  let evenList : List (PBridge G P) :=
-    (List.range (m / 2)).attach.map fun ⟨r, hr⟩ =>
-      qs[2 * r + 1]'(by simp only [List.mem_range] at hr; omega)
-  have hodd_len : oddList.length = (m + 1) / 2 := by simp [oddList]
-  have heven_len : evenList.length = m / 2 := by simp [evenList]
-  have hodd_get : ∀ r (hr : r < (m + 1) / 2), oddList[r]'(by omega) = qs[2 * r]'(by omega) := by
-    intro r hr; simp [oddList]
-  have heven_get : ∀ r (hr : r < m / 2), evenList[r]'(by omega) = qs[2 * r + 1]'(by omega) := by
-    intro r hr; simp [evenList]
-  have hodd_disj : ChainDisj oddList := mk_chainDisj oddList fun i j hi hj hij => by
-    rw [hodd_get i (by omega), hodd_get j (by omega)]
-    exact hpair_disj (2 * i) (2 * j) (by omega) (by omega) (by omega)
-  have heven_disj : ChainDisj evenList := mk_chainDisj evenList fun i j hi hj hij => by
-    rw [heven_get i (by omega), heven_get j (by omega)]
-    exact hpair_disj (2 * i + 1) (2 * j + 1) (by omega) (by omega) (by omega)
-  have hdL_int : ∀ x ∈ dL.verts.tail.dropLast,
-      ∃ k, k < a ∧ k ≠ s0 ∧ ∃ hk : k < P.length, x = P[k]'hk := by
-    intro x hxl
-    have hxl_t : x ∈ dL.verts.tail := List.mem_of_mem_dropLast hxl
-    obtain ⟨k, hka, hkP, rfl⟩ := dL.hmem x (List.mem_of_mem_tail hxl_t)
-    have hk_ne_s0 : k ≠ s0 := by
-      intro hks
-      have hnot := head_not_mem_tail dL.hne dL.hnd
-      rw [dL.hhead hs0_lt_P] at hnot
-      have hPeq : P[k]'hkP = P[s0]'hs0_lt_P := by congr 1
-      exact hnot (hPeq ▸ hxl_t)
-    have hk_ne_a : k ≠ a := by
-      intro hka_eq
-      have ht_ne : dL.verts.tail ≠ [] := List.ne_nil_of_mem hxl_t
-      have ht_nd : dL.verts.tail.Nodup := dL.hnd.tail
-      have hgl : dL.verts.tail.getLast ht_ne = P[a]'(by omega) := by
-        rw [getLast_tail_eq dL.hne ht_ne, dL.hlast (by omega)]
-      have hdrop : dL.verts.tail.dropLast ++ [P[a]'(by omega)] = dL.verts.tail := by
-        rw [← hgl]; exact List.dropLast_append_getLast ht_ne
-      rw [← hdrop, List.nodup_append] at ht_nd
-      have hPeq : P[k]'hkP = P[a]'(by omega) := by congr 1
-      exact ht_nd.2.2 _ hxl _ (List.mem_singleton_self _) hPeq
-    exact ⟨k, by omega, hk_ne_s0, hkP, rfl⟩
-  have hodd_ne : oddList ≠ [] := List.ne_nil_of_length_pos (by omega)
-  have hodd_hd_eq : ∀ q, oddList.head? = some q → q = qs[0]'(by omega) := by
-    intro q hhd
-    rw [List.head?_eq_some_head hodd_ne] at hhd
-    rw [← Option.some.inj hhd, List.head_eq_getElem_zero]; exact hodd_get 0 (by omega)
-  have heven_hd_eq : ∀ q, evenList.head? = some q → ∃ _hm2 : 2 ≤ m, q = qs[1]'(by omega) := by
-    intro q hhd
-    have hne : evenList ≠ [] := by intro h; rw [h] at hhd; simp at hhd
-    have hpos := List.length_pos_iff.mpr hne
-    rw [heven_len] at hpos
-    have hm2 : 2 ≤ m := by omega
-    refine ⟨hm2, ?_⟩
-    rw [List.head?_eq_some_head hne] at hhd
-    rw [← Option.some.inj hhd, List.head_eq_getElem_zero]; exact heven_get 0 (by omega)
-  have hnotP_disj : ∀ (se1 ee1 se2 ee2 : ℕ) {x : V}, x ∉ P →
-      x ∈ stitchChain P se1 ee1 evenList → x ∈ stitchChain P se2 ee2 oddList → False := by
-    intro se1 ee1 se2 ee2 x hxP hxe hxo
-    obtain ⟨q₁, hq₁, hx₁⟩ := stitchChain_mem_notP se1 ee1 evenList hxP hxe
-    obtain ⟨q₂, hq₂, hx₂⟩ := stitchChain_mem_notP se2 ee2 oddList hxP hxo
-    obtain ⟨p, hp, rfl⟩ := List.mem_iff_getElem.mp hq₁
-    obtain ⟨r, hr, rfl⟩ := List.mem_iff_getElem.mp hq₂
-    have hp' : p < m / 2 := by omega
-    have hr' : r < (m + 1) / 2 := by omega
-    rw [heven_get p hp'] at hx₁
-    rw [hodd_get r hr'] at hx₂
-    by_cases hlt : 2 * p + 1 < 2 * r
-    · exact hxP (hpair_disj (2 * p + 1) (2 * r) (by omega) (by omega) hlt x hx₁ hx₂)
-    · exact hxP (hpair_disj (2 * r) (2 * p + 1) (by omega) (by omega) (by omega) x hx₂ hx₁)
-  by_cases hm_odd : m % 2 = 1
-  · have hodd_gl_eq : ∀ q, oddList.getLast? = some q → q = qs[m - 1]'(by omega) := by
-      intro q hgl
-      rw [List.getLast?_eq_some_getLast hodd_ne] at hgl
-      rw [← Option.some.inj hgl, List.getLast_eq_getElem]
-      have hidx : 2 * (oddList.length - 1) = m - 1 := by omega
-      simpa [hidx] using hodd_get (oddList.length - 1) (by omega)
-    have heven_gl_eq : ∀ q, evenList.getLast? = some q → 2 ≤ m ∧ q = qs[m - 2]'(by omega) := by
-      intro q hgl
-      have hne : evenList ≠ [] := by intro h; rw [h] at hgl; simp at hgl
-      have hm2 : 2 ≤ m := by have := List.length_pos_iff.mpr hne; omega
-      refine ⟨hm2, ?_⟩
-      rw [List.getLast?_eq_some_getLast hne] at hgl
-      rw [← Option.some.inj hgl, List.getLast_eq_getElem]
-      have hidx : 2 * (evenList.length - 1) + 1 = m - 2 := by omega
-      simpa [hidx] using heven_get (evenList.length - 1) (by omega)
-    have hodd_ok : BridgeChainOK s0 tm oddList :=
-      mk_bridgeChainOK oddList s0 tm (fun h => absurd h hodd_ne)
-        (fun hne => by
-          have h1 := hodd_hd_eq _ (List.head?_eq_some_head hne)
-          have h2 := hodd_gl_eq _ (List.getLast?_eq_some_getLast hne)
-          rw [h1, h2]; exact ⟨le_rfl, le_rfl, htm_lt_P⟩)
-        (fun r hr => by
-          rw [hodd_get r (by omega), hodd_get (r + 1) (by omega)]
-          rw [hqs_idx (by omega) (by omega) (show 2 * (r + 1) = 2 * r + 2 by omega)]
-          exact hskip_disj (2 * r) (by omega))
-    have heven_ok : BridgeChainOK a b evenList :=
-      mk_bridgeChainOK evenList a b (fun _ => ⟨hab, by omega⟩)
-        (fun hne => by
-          have ⟨hm2, h1⟩ := heven_hd_eq _ (List.head?_eq_some_head hne)
-          have ⟨_, h2⟩ := heven_gl_eq _ (List.getLast?_eq_some_getLast hne)
-          rw [h1, h2]
-          exact ⟨ha_le_si 1 (by omega) le_rfl, hti_le_b (m - 2) (by omega), by omega⟩)
-        (fun r hr => by
-          rw [heven_get r (by omega), heven_get (r + 1) (by omega)]
-          rw [hqs_idx (by omega) (by omega) (show 2 * (r + 1) + 1 = (2 * r + 1) + 2 by omega)]
-          exact hskip_disj (2 * r + 1) (by omega))
-    let Weven := stitchChain P a b evenList
-    let Wodd := stitchChain P s0 tm oddList
-    have hWeven_ne : Weven ≠ [] := stitchChain_ne_nil a b evenList heven_ok
-    have hWodd_ne : Wodd ≠ [] := stitchChain_ne_nil s0 tm oddList hodd_ok
-    have hWodd_rev_ne : Wodd.reverse ≠ [] := by simpa using hWodd_ne
-    have hWeven_nd : Weven.Nodup := stitchChain_nodup hPnd a b evenList heven_ok heven_disj
-    have hWodd_nd : Wodd.Nodup := stitchChain_nodup hPnd s0 tm oddList hodd_ok hodd_disj
-    have hWeven_hd : Weven.head hWeven_ne = P[a]'(by omega) := stitchChain_head a b evenList heven_ok
-    have hWeven_gl : Weven.getLast hWeven_ne = P[b]'(by omega) := stitchChain_last a b evenList heven_ok
-    have hWodd_hd : Wodd.head hWodd_ne = P[s0]'hs0_lt_P := stitchChain_head s0 tm oddList hodd_ok
-    have hWodd_gl : Wodd.getLast hWodd_ne = P[tm]'htm_lt_P := stitchChain_last s0 tm oddList hodd_ok
-    have hWodd_rev_hd : Wodd.reverse.head hWodd_rev_ne = P[tm]'htm_lt_P := by
-      rw [List.head_reverse]; exact hWodd_gl
-    have hWodd_rev_gl : Wodd.reverse.getLast hWodd_rev_ne = P[s0]'hs0_lt_P := by
-      rw [List.getLast_reverse]; exact hWodd_hd
-    have hdisj_eo : ∀ x ∈ Weven, x ∉ Wodd := by
-      intro x hxe hxo
-      by_cases hxP : x ∈ P
-      · obtain ⟨k, hk, rfl⟩ := List.mem_iff_getElem.mp hxP
-        have ⟨hka, hkb⟩ := stitchChain_mem_P_ge hPnd a b evenList heven_ok hk hxe
-        have h1 := stitchChain_mem_P_interval hPnd s0 tm oddList hodd_ok hk hxo
-        have h2 := stitchChain_mem_P_interval hPnd a b evenList heven_ok hk hxe
-        rcases h1 with ⟨hnil, _, _⟩ | ⟨q, hhd, _, hhi⟩ | ⟨r, hr, hlo_o, hhi_o⟩ | ⟨q, hgl, hlo, _⟩
-        · exact absurd hnil hodd_ne
-        · have := hodd_hd_eq q hhd; subst this; omega
-        · rw [hodd_get r (by omega)] at hlo_o
-          rw [hodd_get (r + 1) (by omega)] at hhi_o
-          have hhi_o' : k ≤ (qs[2 * r + 2]'(by omega)).s := by
-            rw [← hqs_idx (by omega) (by omega) (show 2 * (r + 1) = 2 * r + 2 by omega)]
-            exact hhi_o
-          rcases h2 with ⟨hnil, _, _⟩ | ⟨q, hhd, _, hhi_e⟩ | ⟨p, hp, hlo_e, hhi_e⟩ | ⟨q, hgl, hlo_e, _⟩
-          · have : m / 2 = 0 := by rw [← heven_len, hnil]; rfl
-            omega
-          · have ⟨hm2, hq⟩ := heven_hd_eq q hhd; subst hq
-            have h01 := hstep_overlap 0 (by omega)
-            simp only [Nat.zero_add] at h01
-            by_cases hr0 : r = 0
-            · have hq0 : qs[2 * r]'(by omega) = qs[0]'(by omega) := hqs_idx (by omega) (by omega) (by omega)
-              rw [hq0] at hlo_o; omega
-            · have := ht_strict 0 (2 * r) (by omega) (by omega) (by omega); omega
-          · rw [heven_get p (by omega)] at hlo_e
-            rw [heven_get (p + 1) (by omega)] at hhi_e
-            have hhi_e' : k ≤ (qs[2 * p + 3]'(by omega)).s := by
-              rw [← hqs_idx (by omega) (by omega) (show 2 * (p + 1) + 1 = 2 * p + 3 by omega)]
-              exact hhi_e
-            by_cases hpr : 2 * p + 1 < 2 * r
-            · have hsort := hqs_sorted (2 * p + 3) (2 * r + 1) (by omega) (by omega) (by omega)
-              have hov := hstep_overlap (2 * r) (by omega); omega
-            · have hsort := hqs_sorted (2 * r + 2) (2 * p + 2) (by omega) (by omega) (by omega)
-              have hov := hstep_overlap (2 * p + 1) (by omega)
-              have hqeq : qs[2 * p + 1 + 1]'(by omega) = qs[2 * p + 2]'(by omega) :=
-                hqs_idx (by omega) (by omega) (by omega)
-              rw [hqeq] at hov; omega
-          · have ⟨hm2, hq⟩ := heven_gl_eq q hgl; subst hq
-            by_cases heq : 2 * r + 2 = m - 1
-            · have h1 := hstep_overlap (m - 2) (by omega)
-              have hqeq : qs[m - 2 + 1]'(by omega) = qs[2 * r + 2]'(by omega) :=
-                hqs_idx (by omega) (by omega) (by omega)
-              rw [hqeq] at h1; omega
-            · have := hqs_sorted (2 * r + 2) (m - 2) (by omega) (by omega) (by omega)
-              have := (qs[m - 2]'(by omega)).hst; omega
-        · have := hodd_gl_eq q hgl; subst this; omega
-      · exact hnotP_disj a b s0 tm hxP hxe hxo
-    have hd12 : ∀ x ∈ Weven, x ∈ dR.verts.tail → False := by
-      intro x hxe hxr
-      obtain ⟨k, hkb, hkP, rfl⟩ := dR.hmem x (List.mem_of_mem_tail hxr)
-      have ⟨_, hkb'⟩ := stitchChain_mem_P_ge hPnd a b evenList heven_ok hkP hxe
-      have hnot := head_not_mem_tail dR.hne dR.hnd
-      rw [dR.hhead (by omega)] at hnot
-      have hPeq : P[k]'hkP = P[b]'(by omega) := by congr 1; omega
-      exact hnot (hPeq ▸ hxr)
-    have hd123 : ∀ x ∈ Weven ++ dR.verts.tail, x ∈ Wodd.reverse.tail → False := by
-      intro x hx12 hxo
-      have hxo' : x ∈ Wodd := List.mem_reverse.mp (List.mem_of_mem_tail hxo)
-      rcases List.mem_append.mp hx12 with hxe | hxr
-      · exact hdisj_eo x hxe hxo'
-      · obtain ⟨k, hkb, hkP, rfl⟩ := dR.hmem x (List.mem_of_mem_tail hxr)
-        have hnot_tm : k ≠ tm := by
-          intro hktm
-          have hnot := head_not_mem_tail hWodd_rev_ne (List.nodup_reverse.mpr hWodd_nd)
-          rw [hWodd_rev_hd] at hnot
-          have hPeq : P[k]'hkP = P[tm]'htm_lt_P := by congr 1
-          exact hnot (hPeq ▸ hxo)
-        rcases stitchChain_mem_P_interval hPnd s0 tm oddList hodd_ok hkP hxo' with
-          ⟨hnil, _, _⟩ | ⟨q, hhd, _, hhi⟩ | ⟨r, hr, _, hhi⟩ | ⟨q, hgl, hlo, hhi⟩
-        · exact absurd hnil hodd_ne
-        · have := hodd_hd_eq q hhd; subst this; omega
-        · rw [hodd_get (r + 1) (by omega)] at hhi
-          have := hti_le_b (2 * r + 1) (by omega)
-          have h3 := hstep_overlap (2 * r + 1) (by omega)
-          have hqeq : qs[2 * r + 1 + 1]'(by omega) = qs[2 * (r + 1)]'(by omega) :=
-            hqs_idx (by omega) (by omega) (by omega)
-          rw [hqeq] at h3; omega
-        · have := hodd_gl_eq q hgl; subst this; omega
-    have hd1234 : ∀ x ∈ (Weven ++ dR.verts.tail) ++ Wodd.reverse.tail,
-        x ∈ dL.verts.tail.dropLast → False := by
-      intro x hx123 hxl
-      obtain ⟨k, hka, hks0, hkP, rfl⟩ := hdL_int x hxl
-      rcases List.mem_append.mp hx123 with hx12 | hxo
-      · rcases List.mem_append.mp hx12 with hxe | hxr
-        · have ⟨hlo, _⟩ := stitchChain_mem_P_ge hPnd a b evenList heven_ok hkP hxe; omega
-        · obtain ⟨k', hk'b, hk'P, heq⟩ := dR.hmem _ (List.mem_of_mem_tail hxr)
-          have := nodup_getElem_eq hPnd hkP hk'P heq; omega
-      · have hxo' : P[k] ∈ Wodd := List.mem_reverse.mp (List.mem_of_mem_tail hxo)
-        rcases stitchChain_mem_P_interval hPnd s0 tm oddList hodd_ok hkP hxo' with
-          ⟨hnil, _, _⟩ | ⟨q, hhd, _, hhi⟩ | ⟨r, hr, hlo, _⟩ | ⟨q, hgl, hlo, _⟩
-        · exact absurd hnil hodd_ne
-        · have := hodd_hd_eq q hhd; subst this; omega
-        · rw [hodd_get r (by omega)] at hlo
-          have h01 := hstep_overlap 0 (by omega)
-          simp only [Nat.zero_add] at h01
-          have := ha_le_si 1 (by omega) le_rfl
-          by_cases hr0 : r = 0
-          · have hq0 : qs[2 * r]'(by omega) = qs[0]'(by omega) := hqs_idx (by omega) (by omega) (by omega)
-            rw [hq0] at hlo; omega
-          · have := ht_strict 0 (2 * r) (by omega) (by omega) (by omega); omega
-        · have := hodd_gl_eq q hgl; subst this; omega
-    have hWodd_len2 : 2 ≤ Wodd.length := by
-      by_contra hlt
-      have hlen1 : Wodd.length = 1 := by have := List.length_pos_iff.mpr hWodd_ne; omega
-      have heq : Wodd.head hWodd_ne = Wodd.getLast hWodd_ne := by
-        rw [List.head_eq_getElem_zero, List.getLast_eq_getElem]; congr 1; omega
-      rw [hWodd_hd, hWodd_gl] at heq
-      have := nodup_getElem_eq hPnd hs0_lt_P htm_lt_P heq; omega
-    have hlen_bound : G.degree (P[0]'(by omega)) + G.degree (P[P.length - 1]'(by omega)) ≤
-        (Weven ++ dR.verts.tail ++ Wodd.reverse.tail ++ dL.verts.tail.dropLast).length := by
-      simp only [List.length_append, List.length_tail, List.length_dropLast, List.length_reverse]
-      have h1 : 1 ≤ Weven.length := List.length_pos_iff.mpr hWeven_ne
-      have := dL.hlen (by omega); have := dR.hlen (by omega); omega
-    obtain ⟨u, c, hc, hclen⟩ := glue4_cycle Weven dR.verts Wodd.reverse dL.verts
-      hWeven_ne dR.hne hWodd_rev_ne dL.hne
-      hWeven_nd dR.hnd (List.nodup_reverse.mpr hWodd_nd) dL.hnd
-      (stitchChain_isAdj hPadj a b evenList heven_ok) dR.hadj
-      (isAdjList_reverse (stitchChain_isAdj hPadj s0 tm oddList hodd_ok)) dL.hadj
-      (hWeven_gl.trans (dR.hhead (by omega)).symm)
-      ((dR.hlast htm_lt_P).trans hWodd_rev_hd.symm)
-      (hWodd_rev_gl.trans (dL.hhead hs0_lt_P).symm)
-      ((dL.hlast (by omega)).trans hWeven_hd.symm)
-      hd12 hd123 hd1234 (by omega)
-    exact ⟨u, c, hc, by omega⟩
-  · have hm2 : 2 ≤ m := by omega
-    have heven_ne : evenList ≠ [] := List.ne_nil_of_length_pos (by omega)
-    have hodd_gl_eq : ∀ q, oddList.getLast? = some q → q = qs[m - 2]'(by omega) := by
-      intro q hgl
-      rw [List.getLast?_eq_some_getLast hodd_ne] at hgl
-      rw [← Option.some.inj hgl, List.getLast_eq_getElem]
-      have hidx : 2 * (oddList.length - 1) = m - 2 := by omega
-      simpa [hidx] using hodd_get (oddList.length - 1) (by omega)
-    have heven_gl_eq : ∀ q, evenList.getLast? = some q → q = qs[m - 1]'(by omega) := by
-      intro q hgl
-      rw [List.getLast?_eq_some_getLast heven_ne] at hgl
-      rw [← Option.some.inj hgl, List.getLast_eq_getElem]
-      have hidx : 2 * (evenList.length - 1) + 1 = m - 1 := by omega
-      simpa [hidx] using heven_get (evenList.length - 1) (by omega)
-    have hodd_ok : BridgeChainOK s0 b oddList :=
-      mk_bridgeChainOK oddList s0 b (fun h => absurd h hodd_ne)
-        (fun hne => by
-          have h1 := hodd_hd_eq _ (List.head?_eq_some_head hne)
-          have h2 := hodd_gl_eq _ (List.getLast?_eq_some_getLast hne)
-          rw [h1, h2]; exact ⟨le_rfl, hti_le_b (m - 2) (by omega), by omega⟩)
-        (fun r hr => by
-          rw [hodd_get r (by omega), hodd_get (r + 1) (by omega)]
-          rw [hqs_idx (by omega) (by omega) (show 2 * (r + 1) = 2 * r + 2 by omega)]
-          exact hskip_disj (2 * r) (by omega))
-    have heven_ok : BridgeChainOK a tm evenList :=
-      mk_bridgeChainOK evenList a tm (fun h => absurd h heven_ne)
-        (fun hne => by
-          have ⟨_, h1⟩ := heven_hd_eq _ (List.head?_eq_some_head hne)
-          have h2 := heven_gl_eq _ (List.getLast?_eq_some_getLast hne)
-          rw [h1, h2]; exact ⟨ha_le_si 1 (by omega) le_rfl, le_rfl, htm_lt_P⟩)
-        (fun r hr => by
-          rw [heven_get r (by omega), heven_get (r + 1) (by omega)]
-          rw [hqs_idx (by omega) (by omega) (show 2 * (r + 1) + 1 = (2 * r + 1) + 2 by omega)]
-          exact hskip_disj (2 * r + 1) (by omega))
-    let Weven := stitchChain P a tm evenList
-    let Wodd := stitchChain P s0 b oddList
-    have hWeven_ne : Weven ≠ [] := stitchChain_ne_nil a tm evenList heven_ok
-    have hWodd_ne : Wodd ≠ [] := stitchChain_ne_nil s0 b oddList hodd_ok
-    have hWodd_rev_ne : Wodd.reverse ≠ [] := by simpa using hWodd_ne
-    have hRR_rev_ne : dR.verts.reverse ≠ [] := by simpa using dR.hne
-    have hWeven_nd : Weven.Nodup := stitchChain_nodup hPnd a tm evenList heven_ok heven_disj
-    have hWodd_nd : Wodd.Nodup := stitchChain_nodup hPnd s0 b oddList hodd_ok hodd_disj
-    have hWeven_hd : Weven.head hWeven_ne = P[a]'(by omega) := stitchChain_head a tm evenList heven_ok
-    have hWeven_gl : Weven.getLast hWeven_ne = P[tm]'htm_lt_P := stitchChain_last a tm evenList heven_ok
-    have hWodd_hd : Wodd.head hWodd_ne = P[s0]'hs0_lt_P := stitchChain_head s0 b oddList hodd_ok
-    have hWodd_gl : Wodd.getLast hWodd_ne = P[b]'(by omega) := stitchChain_last s0 b oddList hodd_ok
-    have hRR_rev_hd : dR.verts.reverse.head hRR_rev_ne = P[tm]'htm_lt_P := by
-      rw [List.head_reverse]; exact dR.hlast htm_lt_P
-    have hRR_rev_gl : dR.verts.reverse.getLast hRR_rev_ne = P[b]'(by omega) := by
-      rw [List.getLast_reverse]; exact dR.hhead (by omega)
-    have hWodd_rev_hd : Wodd.reverse.head hWodd_rev_ne = P[b]'(by omega) := by
-      rw [List.head_reverse]; exact hWodd_gl
-    have hWodd_rev_gl : Wodd.reverse.getLast hWodd_rev_ne = P[s0]'hs0_lt_P := by
-      rw [List.getLast_reverse]; exact hWodd_hd
-    have hdisj_eo : ∀ x ∈ Weven, x ∉ Wodd := by
-      intro x hxe hxo
-      by_cases hxP : x ∈ P
-      · obtain ⟨k, hk, rfl⟩ := List.mem_iff_getElem.mp hxP
-        have ⟨hka, _⟩ := stitchChain_mem_P_ge hPnd a tm evenList heven_ok hk hxe
-        have ⟨_, hkb⟩ := stitchChain_mem_P_ge hPnd s0 b oddList hodd_ok hk hxo
-        have h1 := stitchChain_mem_P_interval hPnd s0 b oddList hodd_ok hk hxo
-        have h2 := stitchChain_mem_P_interval hPnd a tm evenList heven_ok hk hxe
-        rcases h1 with ⟨hnil, _, _⟩ | ⟨q, hhd, _, hhi⟩ | ⟨r, hr, hlo_o, hhi_o⟩ | ⟨q, hgl, hlo_o, _⟩
-        · exact absurd hnil hodd_ne
-        · have := hodd_hd_eq q hhd; subst this; omega
-        · rw [hodd_get r (by omega)] at hlo_o
-          rw [hodd_get (r + 1) (by omega)] at hhi_o
-          have hhi_o' : k ≤ (qs[2 * r + 2]'(by omega)).s := by
-            rw [← hqs_idx (by omega) (by omega) (show 2 * (r + 1) = 2 * r + 2 by omega)]
-            exact hhi_o
-          rcases h2 with ⟨hnil, _, _⟩ | ⟨q, hhd, _, hhi_e⟩ | ⟨p, hp, hlo_e, hhi_e⟩ | ⟨q, hgl, hlo_e, _⟩
-          · exact absurd hnil heven_ne
-          · have ⟨_, hq⟩ := heven_hd_eq q hhd; subst hq
-            have h01 := hstep_overlap 0 (by omega)
-            simp only [Nat.zero_add] at h01
-            by_cases hr0 : r = 0
-            · have hq0 : qs[2 * r]'(by omega) = qs[0]'(by omega) := hqs_idx (by omega) (by omega) (by omega)
-              rw [hq0] at hlo_o; omega
-            · have := ht_strict 0 (2 * r) (by omega) (by omega) (by omega); omega
-          · rw [heven_get p (by omega)] at hlo_e
-            rw [heven_get (p + 1) (by omega)] at hhi_e
-            have hhi_e' : k ≤ (qs[2 * p + 3]'(by omega)).s := by
-              rw [← hqs_idx (by omega) (by omega) (show 2 * (p + 1) + 1 = 2 * p + 3 by omega)]
-              exact hhi_e
-            by_cases hpr : 2 * p + 1 < 2 * r
-            · have hsort := hqs_sorted (2 * p + 3) (2 * r + 1) (by omega) (by omega) (by omega)
-              have hov := hstep_overlap (2 * r) (by omega); omega
-            · have hsort := hqs_sorted (2 * r + 2) (2 * p + 2) (by omega) (by omega) (by omega)
-              have hov := hstep_overlap (2 * p + 1) (by omega)
-              have hqeq : qs[2 * p + 1 + 1]'(by omega) = qs[2 * p + 2]'(by omega) :=
-                hqs_idx (by omega) (by omega) (by omega)
-              rw [hqeq] at hov; omega
-          · have := heven_gl_eq q hgl; subst this; omega
-        · have := hodd_gl_eq q hgl; subst this
-          rcases h2 with ⟨hnil, _, _⟩ | ⟨q, hhd, _, hhi_e⟩ | ⟨p, hp, _, hhi_e⟩ | ⟨q, hgl', hlo_e, _⟩
-          · exact absurd hnil heven_ne
-          · have ⟨_, hq⟩ := heven_hd_eq q hhd; subst hq
-            have h01 := hstep_overlap 0 (by omega)
-            simp only [Nat.zero_add] at h01
-            by_cases hm2' : m = 2
-            · have hq0 : qs[m - 2]'(by omega) = qs[0]'(by omega) := hqs_idx (by omega) (by omega) (by omega)
-              rw [hq0] at hlo_o; omega
-            · have := ht_strict 0 (m - 2) (by omega) (by omega) (by omega); omega
-          · rw [heven_get (p + 1) (by omega)] at hhi_e
-            have hhi_e' : k ≤ (qs[2 * p + 3]'(by omega)).s := by
-              rw [← hqs_idx (by omega) (by omega) (show 2 * (p + 1) + 1 = 2 * p + 3 by omega)]
-              exact hhi_e
-            have := hqs_sorted (2 * p + 3) (m - 1) (by omega) (by omega) (by omega)
-            have h2 := hstep_overlap (m - 2) (by omega)
-            have hqeq : qs[m - 2 + 1]'(by omega) = qs[m - 1]'(by omega) :=
-              hqs_idx (by omega) (by omega) (by omega)
-            rw [hqeq] at h2; omega
-          · have := heven_gl_eq q hgl'; subst this; omega
-      · exact hnotP_disj a tm s0 b hxP hxe hxo
-    have hd12 : ∀ x ∈ Weven, x ∈ dR.verts.reverse.tail → False := by
-      intro x hxe hxr
-      obtain ⟨k, hkb, hkP, rfl⟩ := dR.hmem x (List.mem_reverse.mp (List.mem_of_mem_tail hxr))
-      have hnot_tm : k ≠ tm := by
-        intro hktm
-        have hnot := head_not_mem_tail hRR_rev_ne (List.nodup_reverse.mpr dR.hnd)
-        rw [hRR_rev_hd] at hnot
-        have hPeq : P[k]'hkP = P[tm]'htm_lt_P := by congr 1
-        exact hnot (hPeq ▸ hxr)
-      rcases stitchChain_mem_P_interval hPnd a tm evenList heven_ok hkP hxe with
-        ⟨hnil, _, _⟩ | ⟨q, hhd, _, hhi⟩ | ⟨p, hp, _, hhi⟩ | ⟨q, hgl, hlo, hhi⟩
-      · exact absurd hnil heven_ne
-      · have ⟨_, hq⟩ := heven_hd_eq q hhd; subst hq
-        have h01 := hstep_overlap 0 (by omega)
-        simp only [Nat.zero_add] at h01
-        have := hti_le_b 0 (by omega); omega
-      · rw [heven_get (p + 1) (by omega)] at hhi
-        have := hti_le_b (2 * p + 2) (by omega)
-        have h3 := hstep_overlap (2 * p + 2) (by omega)
-        have hqeq : qs[2 * p + 2 + 1]'(by omega) = qs[2 * (p + 1) + 1]'(by omega) :=
-          hqs_idx (by omega) (by omega) (by omega)
-        rw [hqeq] at h3; omega
-      · have := heven_gl_eq q hgl; subst this; omega
-    have hd123 : ∀ x ∈ Weven ++ dR.verts.reverse.tail, x ∈ Wodd.reverse.tail → False := by
-      intro x hx12 hxo
-      have hxo' : x ∈ Wodd := List.mem_reverse.mp (List.mem_of_mem_tail hxo)
-      rcases List.mem_append.mp hx12 with hxe | hxr
-      · exact hdisj_eo x hxe hxo'
-      · obtain ⟨k, hkb, hkP, rfl⟩ := dR.hmem x (List.mem_reverse.mp (List.mem_of_mem_tail hxr))
-        have ⟨_, hkb'⟩ := stitchChain_mem_P_ge hPnd s0 b oddList hodd_ok hkP hxo'
-        have hnot := head_not_mem_tail hWodd_rev_ne (List.nodup_reverse.mpr hWodd_nd)
-        rw [hWodd_rev_hd] at hnot
-        have hPeq : P[k]'hkP = P[b]'(by omega) := by congr 1; omega
-        exact hnot (hPeq ▸ hxo)
-    have hd1234 : ∀ x ∈ (Weven ++ dR.verts.reverse.tail) ++ Wodd.reverse.tail,
-        x ∈ dL.verts.tail.dropLast → False := by
-      intro x hx123 hxl
-      obtain ⟨k, hka, hks0, hkP, rfl⟩ := hdL_int x hxl
-      rcases List.mem_append.mp hx123 with hx12 | hxo
-      · rcases List.mem_append.mp hx12 with hxe | hxr
-        · have ⟨hlo, _⟩ := stitchChain_mem_P_ge hPnd a tm evenList heven_ok hkP hxe; omega
-        · obtain ⟨k', hk'b, hk'P, heq⟩ := dR.hmem _ (List.mem_reverse.mp (List.mem_of_mem_tail hxr))
-          have := nodup_getElem_eq hPnd hkP hk'P heq; omega
-      · have hxo' : P[k] ∈ Wodd := List.mem_reverse.mp (List.mem_of_mem_tail hxo)
-        rcases stitchChain_mem_P_interval hPnd s0 b oddList hodd_ok hkP hxo' with
-          ⟨hnil, _, _⟩ | ⟨q, hhd, _, hhi⟩ | ⟨r, hr, hlo, _⟩ | ⟨q, hgl, hlo, _⟩
-        · exact absurd hnil hodd_ne
-        · have := hodd_hd_eq q hhd; subst this; omega
-        · rw [hodd_get r (by omega)] at hlo
-          have h01 := hstep_overlap 0 (by omega)
-          simp only [Nat.zero_add] at h01
-          have := ha_le_si 1 (by omega) le_rfl
-          by_cases hr0 : r = 0
-          · have hq0 : qs[2 * r]'(by omega) = qs[0]'(by omega) := hqs_idx (by omega) (by omega) (by omega)
-            rw [hq0] at hlo; omega
-          · have := ht_strict 0 (2 * r) (by omega) (by omega) (by omega); omega
-        · have := hodd_gl_eq q hgl; subst this
-          have h01 := hstep_overlap 0 (by omega)
-          simp only [Nat.zero_add] at h01
-          have := ha_le_si 1 (by omega) le_rfl
-          by_cases hm2' : m = 2
-          · have hq0 : qs[m - 2]'(by omega) = qs[0]'(by omega) := hqs_idx (by omega) (by omega) (by omega)
-            rw [hq0] at hlo; omega
-          · have := ht_strict 0 (m - 2) (by omega) (by omega) (by omega); omega
-    have hWeven_len2 : 2 ≤ Weven.length := by
-      by_contra hlt
-      have hlen1 : Weven.length = 1 := by have := List.length_pos_iff.mpr hWeven_ne; omega
-      have heq : Weven.head hWeven_ne = Weven.getLast hWeven_ne := by
-        rw [List.head_eq_getElem_zero, List.getLast_eq_getElem]; congr 1; omega
-      rw [hWeven_hd, hWeven_gl] at heq
-      have := nodup_getElem_eq hPnd (by omega) htm_lt_P heq; omega
-    have hWodd_len2 : 2 ≤ Wodd.length := by
-      by_contra hlt
-      have hlen1 : Wodd.length = 1 := by have := List.length_pos_iff.mpr hWodd_ne; omega
-      have heq : Wodd.head hWodd_ne = Wodd.getLast hWodd_ne := by
-        rw [List.head_eq_getElem_zero, List.getLast_eq_getElem]; congr 1; omega
-      rw [hWodd_hd, hWodd_gl] at heq
-      have := nodup_getElem_eq hPnd hs0_lt_P (by omega) heq; omega
-    have hlen_bound : G.degree (P[0]'(by omega)) + G.degree (P[P.length - 1]'(by omega)) ≤
-        (Weven ++ dR.verts.reverse.tail ++ Wodd.reverse.tail ++ dL.verts.tail.dropLast).length := by
-      simp only [List.length_append, List.length_tail, List.length_dropLast, List.length_reverse]
-      have := dL.hlen (by omega); have := dR.hlen (by omega); omega
-    obtain ⟨u, c, hc, hclen⟩ := glue4_cycle Weven dR.verts.reverse Wodd.reverse dL.verts
-      hWeven_ne hRR_rev_ne hWodd_rev_ne dL.hne
-      hWeven_nd (List.nodup_reverse.mpr dR.hnd) (List.nodup_reverse.mpr hWodd_nd) dL.hnd
-      (stitchChain_isAdj hPadj a tm evenList heven_ok) (isAdjList_reverse dR.hadj)
-      (isAdjList_reverse (stitchChain_isAdj hPadj s0 b oddList hodd_ok)) dL.hadj
-      (hWeven_gl.trans hRR_rev_hd.symm)
-      (hRR_rev_gl.trans hWodd_rev_hd.symm)
-      (hWodd_rev_gl.trans (dL.hhead hs0_lt_P).symm)
-      ((dL.hlast (by omega)).trans hWeven_hd.symm)
-      hd12 hd123 hd1234 (by omega)
-    exact ⟨u, c, hc, by omega⟩
-
-private theorem kopylov_cycle {V : Type*} [Fintype V] [DecidableEq V]
-    (G : SimpleGraph V) [DecidableRel G.Adj]
-    (hn : 3 ≤ Fintype.card V)
-    (hconn : G.Connected)
-    (h2conn : ∀ v : V, (G.induce {w : V | w ≠ v}).Connected) :
-    ∃ (u : V) (c : G.Walk u u), c.IsCycle ∧
-      ∃ (x y : V), min (Fintype.card V) (G.degree x + G.degree y) ≤ c.length := by
-  classical
-  have hdeg2 := degree_ge_two_of_two_connected G hn hconn h2conn
-  let PPred (m : ℕ) : Prop := ∃ l : List V, l.length = m ∧ l.Nodup ∧ IsAdjList G l
-  let M := Nat.findGreatest PPred (Fintype.card V)
-  have hM_spec : PPred M := by
-    obtain ⟨v₀⟩ : Nonempty V := Fintype.card_pos_iff.mp (by omega)
-    exact Nat.findGreatest_spec (m := 1) (by omega)
-      ⟨[v₀], rfl, List.nodup_singleton v₀, isAdjList_singleton G v₀⟩
-  obtain ⟨P, hPlen, hPnd, hPadj⟩ := hM_spec
-  have hPmax : ∀ Q : List V, Q.Nodup → IsAdjList G Q → Q.length ≤ P.length := by
-    intro Q hQnd hQadj
-    have hQle : Q.length ≤ Fintype.card V := by
-      have := Finset.card_le_univ Q.toFinset
-      rwa [List.toFinset_card_of_nodup hQnd] at this
-    rw [hPlen]
-    exact Nat.le_findGreatest hQle ⟨Q, rfl, hQnd, hQadj⟩
-  have hPne : P ≠ [] := by
-    obtain ⟨v₀⟩ : Nonempty V := Fintype.card_pos_iff.mp (by omega)
-    have h1 : 1 ≤ P.length := hPmax [v₀] (List.nodup_singleton v₀) (isAdjList_singleton G v₀)
-    exact List.ne_nil_of_length_pos (by omega)
-  have hP0_mem : ∀ w : V, G.Adj (P[0]'(List.length_pos_iff.mpr hPne)) w → w ∈ P := by
-    intro w hadj
-    by_contra hnot
-    have hnd' : (w :: P).Nodup := List.nodup_cons.mpr ⟨hnot, hPnd⟩
-    have hadj' : IsAdjList G (w :: P) := isAdjList_cons hPadj (fun _ => by
-      rw [List.head_eq_getElem_zero]; exact hadj.symm)
-    have := hPmax (w :: P) hnd' hadj'
-    simp at this
-  have hPL_mem : ∀ w : V, G.Adj (P[P.length - 1]'(by have := List.length_pos_iff.mpr hPne; omega)) w → w ∈ P := by
-    intro w hadj
-    by_contra hnot
-    have hnd' : (P ++ [w]).Nodup := by
-      rw [List.nodup_append]
-      exact ⟨hPnd, List.nodup_singleton w, fun x hx y hy hxy => by
-        simp at hy; subst hy; subst hxy; exact hnot hx⟩
-    have hadj' : IsAdjList G (P ++ [w]) :=
-      isAdjList_append hPadj (isAdjList_singleton G w) (fun _ _ => by
-        rw [List.getLast_eq_getElem, List.head_cons]; exact hadj)
-    have := hPmax (P ++ [w]) hnd' hadj'
-    simp at this
-  have hP3 : 3 ≤ P.length := by
-    let u₀ := P[0]'(List.length_pos_iff.mpr hPne)
-    have hsub : insert u₀ (G.neighborFinset u₀) ⊆ P.toFinset := by
-      intro w hw
-      simp only [Finset.mem_insert, mem_neighborFinset, List.mem_toFinset] at hw ⊢
-      rcases hw with rfl | hadj
-      · exact List.getElem_mem _
-      · exact hP0_mem w hadj
-    have hcard := Finset.card_le_card hsub
-    rw [Finset.card_insert_of_notMem (by simp), card_neighborFinset_eq_degree,
-      List.toFinset_card_of_nodup hPnd] at hcard
-    have := hdeg2 u₀; omega
-  let L := P.length - 1
-  let v0 : V := P[0]'(by omega)
-  let vL : V := P[L]'(by omega)
-  let A : Finset (Fin L) :=
-    Finset.univ.filter fun r : Fin L => G.Adj v0 (P[r.val + 1]'(by omega))
-  let B : Finset (Fin L) :=
-    Finset.univ.filter fun r : Fin L => G.Adj vL (P[r.val]'(by omega))
-  have hAcard : A.card = G.degree v0 := by
-    rw [← card_neighborFinset_eq_degree]
-    refine Finset.card_bij (fun r _ => P[r.val + 1]'(by omega)) ?_ ?_ ?_
-    · intro r hr; exact (mem_neighborFinset G v0 _).mpr (Finset.mem_filter.mp hr).2
-    · intro r₁ _ r₂ _ heq
-      have := nodup_getElem_eq hPnd (by omega) (by omega) heq; exact Fin.ext (by omega)
-    · intro w hw
-      have hadj : G.Adj v0 w := (mem_neighborFinset G v0 w).mp hw
-      obtain ⟨j, hj, rfl⟩ := List.mem_iff_getElem.mp (hP0_mem w hadj)
-      have hj0 : 0 < j := by
-        by_contra h
-        have hj_eq : j = 0 := by omega
-        subst hj_eq
-        exact hadj.ne rfl
-      refine ⟨⟨j - 1, by omega⟩, Finset.mem_filter.mpr ⟨Finset.mem_univ _, ?_⟩, ?_⟩
-      · dsimp only
-        have heq : j - 1 + 1 = j := by omega
-        simpa [heq] using hadj
-      · dsimp only; congr 1; omega
-  have hBcard : B.card = G.degree vL := by
-    rw [← card_neighborFinset_eq_degree]
-    refine Finset.card_bij (fun r _ => P[r.val]'(by omega)) ?_ ?_ ?_
-    · intro r hr; exact (mem_neighborFinset G vL _).mpr (Finset.mem_filter.mp hr).2
-    · intro r₁ _ r₂ _ heq
-      exact Fin.ext (nodup_getElem_eq hPnd (by omega) (by omega) heq)
-    · intro w hw
-      have hadj : G.Adj vL w := (mem_neighborFinset G vL w).mp hw
-      obtain ⟨j, hj, rfl⟩ := List.mem_iff_getElem.mp (hPL_mem w hadj)
-      have hjL : j < L := by
-        by_contra h
-        have hj_eq : j = L := by omega
-        subst hj_eq
-        exact hadj.ne rfl
-      exact ⟨⟨j, hjL⟩, Finset.mem_filter.mpr ⟨Finset.mem_univ _, hadj⟩, rfl⟩
-  have h0A : (⟨0, by omega⟩ : Fin L) ∈ A :=
-    Finset.mem_filter.mpr ⟨Finset.mem_univ _, hPadj 0 (by omega)⟩
-  have hLB : (⟨L - 1, by omega⟩ : Fin L) ∈ B := by
-    refine Finset.mem_filter.mpr ⟨Finset.mem_univ _, ?_⟩
-    have hadj := hPadj (L - 1) (by omega)
-    have heq : L - 1 + 1 = L := by omega
-    have hadj' : G.Adj (P[L - 1]'(by omega)) vL := by simpa [vL, heq] using hadj
-    exact hadj'.symm
-  by_cases hAB : (A ∩ B).Nonempty
-  · obtain ⟨r, hr⟩ := hAB
-    have hrA : G.Adj v0 (P[r.val + 1]'(by omega)) :=
-      (Finset.mem_filter.mp (Finset.mem_inter.mp hr).1).2
-    have hrB : G.Adj vL (P[r.val]'(by omega)) :=
-      (Finset.mem_filter.mp (Finset.mem_inter.mp hr).2).2
-    obtain ⟨u, c, hc, hclen⟩ :=
-      kopylov_case_inter G hconn P hPnd hPadj hP3 hPmax r.val (by omega) hrA hrB
-    exact ⟨u, c, hc, v0, vL, by rw [hclen]; exact Nat.min_le_left _ _⟩
-  · have hdisjAB : Disjoint A B :=
-      Finset.disjoint_iff_inter_eq_empty.mpr (Finset.not_nonempty_iff_eq_empty.mp hAB)
-    have hAne : A.Nonempty := ⟨⟨0, by omega⟩, h0A⟩
-    have hBne : B.Nonempty := ⟨⟨L - 1, by omega⟩, hLB⟩
-    let aMax := A.max' hAne
-    let bMin := B.min' hBne
-    let a : ℕ := aMax.val + 1
-    let b : ℕ := bMin.val
-    have ha_lt_L : a < L := by
-      by_contra hge
-      have haL : aMax.val = L - 1 := by omega
-      have : (⟨L - 1, by omega⟩ : Fin L) ∈ A := by
-        have hm := Finset.max'_mem A hAne
-        have heq : aMax = ⟨L - 1, by omega⟩ := Fin.ext haL
-        rwa [← heq]
-      exact Finset.disjoint_left.mp hdisjAB this hLB
-    have hb_pos : 0 < b := by
-      by_contra h0
-      have hb0 : bMin.val = 0 := by omega
-      have : (⟨0, by omega⟩ : Fin L) ∈ B := by
-        have hm := Finset.min'_mem B hBne
-        have heq : bMin = ⟨0, by omega⟩ := Fin.ext hb0
-        rwa [← heq]
-      exact Finset.disjoint_left.mp hdisjAB h0A this
-    by_cases hba : b < a
-    · obtain ⟨u, c, hc, hclen⟩ := kopylov_case_crossing G P hPnd hPadj hP3 A B
-        (fun r => by simp [A, v0]) (fun r => by simp [B, vL, L])
-        hAcard hBcard (hdeg2 v0) (hdeg2 vL) hdisjAB
-        bMin aMax (Finset.min'_mem B hBne) (Finset.max'_mem A hAne) hba
-      exact ⟨u, c, hc, v0, vL, le_trans (Nat.min_le_right _ _) hclen⟩
-    · have hab : a ≤ b := by omega
-      obtain ⟨Vdata⟩ := exists_vineData P hPnd a b (by omega) hab (by omega) h2conn
-      have hmaxA : ∀ j (hj0 : 0 < j) (hj : j < P.length), G.Adj (P[0]'(by omega)) (P[j]'hj) → j ≤ a := by
-        intro j hj0 hjP hadj
-        have hjL : j - 1 < L := by
-          by_contra hge
-          have hjeq : j = L := by omega
-          subst hjeq
-          have hmemA : (⟨L - 1, by omega⟩ : Fin L) ∈ A :=
-            Finset.mem_filter.mpr ⟨Finset.mem_univ _, by
-              dsimp only
-              have heq : L - 1 + 1 = L := by omega
-              simpa [heq] using hadj⟩
-          exact Finset.disjoint_left.mp hdisjAB hmemA hLB
-        have hmemA : (⟨j - 1, hjL⟩ : Fin L) ∈ A :=
-          Finset.mem_filter.mpr ⟨Finset.mem_univ _, by
-            dsimp only
-            have heq : j - 1 + 1 = j := by omega
-            simpa [heq] using hadj⟩
-        have hle : j - 1 ≤ aMax.val :=
-          Fin.le_iff_val_le_val.mp (Finset.le_max' A ⟨j - 1, hjL⟩ hmemA)
-        omega
-      have hminB : ∀ j (hj : j < P.length - 1), G.Adj (P[P.length - 1]'(by omega)) (P[j]'(by omega)) → b ≤ j := by
-        intro j hjL hadj
-        have hmemB : (⟨j, hjL⟩ : Fin L) ∈ B := Finset.mem_filter.mpr ⟨Finset.mem_univ _, hadj⟩
-        exact Fin.le_iff_val_le_val.mp (Finset.min'_le B ⟨j, hjL⟩ hmemB)
-      obtain ⟨dL⟩ := build_detourLeft G P hPnd hPadj hP3 hP0_mem
-        (Vdata.qs[0]'(by have := Vdata.hlen; have := Vdata.hm_pos; omega)).s a
-        Vdata.hs0_lt_a ha_lt_L hmaxA (Finset.mem_filter.mp (Finset.max'_mem A hAne)).2
-      obtain ⟨dR⟩ := build_detourRight G P hPnd hPadj hP3 hPL_mem
-        b (Vdata.qs[Vdata.m - 1]'(by have := Vdata.hlen; have := Vdata.hm_pos; omega)).t
-        hb_pos Vdata.hb_lt_tm (Vdata.qs[Vdata.m - 1]'(by have := Vdata.hlen; have := Vdata.hm_pos; omega)).ht
-        hminB (Finset.mem_filter.mp (Finset.min'_mem B hBne)).2
-      obtain ⟨u, c, hc, hclen⟩ := kopylov_case_vine G P hPnd hPadj hP3 a b
-        (by omega) hab (by omega) (hdeg2 v0) (hdeg2 vL) Vdata dL dR
-      exact ⟨u, c, hc, v0, vL, le_trans (Nat.min_le_right _ _) hclen⟩
-
-/- ### Section 4: Strong induction reduction to 2-connected graphs -/
-
-private lemma lift_cycle_induce {V : Type*} {G : SimpleGraph V} {S : Set V} {k : ℕ}
+/-- The target step H1 (copied verbatim from reductions/opg-forcing-a-2-regular-minor.R1.lean). -/
+def H1Statement : Prop :=
+  ∀ (V : Type) [Fintype V] [Nonempty V] (G : SimpleGraph V) [DecidableRel G.Adj] (k : ℕ),
+    3 ≤ k → (k - 1) * Fintype.card V ≤ 2 * G.edgeFinset.card →
+      ∃ (u : V) (c : G.Walk u u), c.IsCycle ∧ k ≤ c.length
+
+lemma lift_cycle {V : Type} (G : SimpleGraph V) (S : Set V) {k : ℕ}
     (h : ∃ (u : S) (c : (G.induce S).Walk u u), c.IsCycle ∧ k ≤ c.length) :
     ∃ (u : V) (c : G.Walk u u), c.IsCycle ∧ k ≤ c.length := by
-  obtain ⟨u, c, hc, hlen⟩ := h
-  let f : G.induce S ↪g G := SimpleGraph.Embedding.induce S
-  refine ⟨f.toHom u, c.map f.toHom, hc.map f.injective, ?_⟩
-  rw [Walk.length_map]; exact hlen
+  obtain ⟨u, c, hc, hk⟩ := h
+  refine ⟨_, c.map (Embedding.induce (G := G) S).toHom, ?_, ?_⟩
+  · exact (Walk.isCycle_map_iff_of_injective (Embedding.induce (G := G) S).injective).2 hc
+  · rw [Walk.length_map]; exact hk
 
-private lemma degree_induce_eq {V : Type*} [Fintype V] [DecidableEq V]
-    (G : SimpleGraph V) [DecidableRel G.Adj] (S : Set V) [DecidablePred (· ∈ S)]
-    (u : S) :
-    (G.induce S).degree u = ((G.neighborFinset u.val).filter (· ∈ S)).card := by
-  rw [← card_neighborFinset_eq_degree]
-  refine Finset.card_bij (fun w _ => w.val) ?_ ?_ ?_
-  · intro w hw
-    exact Finset.mem_filter.mpr ⟨(mem_neighborFinset G u.val w.val).mpr
-      ((mem_neighborFinset (G.induce S) u w).mp hw), w.property⟩
-  · intro w₁ _ w₂ _ heq; exact Subtype.ext heq
-  · intro w hw
-    obtain ⟨hadj, hwS⟩ := Finset.mem_filter.mp hw
-    exact ⟨⟨w, hwS⟩, (mem_neighborFinset (G.induce S) u ⟨w, hwS⟩).mpr
-      ((mem_neighborFinset G u.val w).mp hadj), rfl⟩
+lemma edges_le {V : Type} [Fintype V] [DecidableEq V] (G : SimpleGraph V) [DecidableRel G.Adj]
+    (s : Finset V) [Fintype (G.induce (s : Set V)).edgeSet] :
+    #(G.edgeFinset ∩ s.sym2) ≤ #(G.induce (s : Set V)).edgeFinset := by
+  let f : Sym2 (s : Set V) ↪ Sym2 V :=
+    ⟨Sym2.map Subtype.val, Sym2.map.injective Subtype.val_injective⟩
+  rw [← Finset.card_map f]
+  apply Finset.card_le_card
+  intro e he
+  induction e using Sym2.ind with
+  | h x y =>
+    rw [Finset.mem_inter, mem_edgeFinset, mem_edgeSet, Finset.mem_sym2_iff] at he
+    obtain ⟨hxy, hs⟩ := he
+    have hx : x ∈ (s : Set V) := hs x (Sym2.mem_mk_left x y)
+    have hy : y ∈ (s : Set V) := hs y (Sym2.mem_mk_right x y)
+    rw [Finset.mem_map]
+    refine ⟨s(⟨x, hx⟩, ⟨y, hy⟩), ?_, ?_⟩
+    · rw [mem_edgeFinset, mem_edgeSet]; exact hxy
+    · rfl
 
-private theorem erdos_gallai_aux : ∀ (n : ℕ) (V : Type) [Fintype V] [DecidableEq V]
-    (G : SimpleGraph V) [DecidableRel G.Adj] (k : ℕ),
-    Fintype.card V = n → 3 ≤ k → (k - 1) * (n - 1) < 2 * G.edgeFinset.card →
+lemma card_sub {V : Type} [Fintype V] (s : Finset V) [Fintype (s : Set V)] :
+    Fintype.card (s : Set V) = #s := by simp
+
+def EGP (n : ℕ) : Prop :=
+  ∀ (V : Type) [Fintype V] [DecidableEq V] (G : SimpleGraph V) [DecidableRel G.Adj] (k : ℕ),
+    Fintype.card V = n → 3 ≤ k → (k - 1) * (n - 1) < 2 * #G.edgeFinset →
+      ∃ (u : V) (c : G.Walk u u), c.IsCycle ∧ k ≤ c.length
+
+lemma apply_sub {n : ℕ} (ih : ∀ m < n, EGP m) {V : Type} [Fintype V] [DecidableEq V]
+    (G : SimpleGraph V) [DecidableRel G.Adj] {k : ℕ} (hk : 3 ≤ k) (s : Finset V) (hs : #s < n)
+    (he : (k - 1) * (#s - 1) < 2 * #(G.edgeFinset ∩ s.sym2)) :
     ∃ (u : V) (c : G.Walk u u), c.IsCycle ∧ k ≤ c.length := by
-  intro n
-  induction n using Nat.strong_induction_on with
-  | h n ih =>
-    classical
-    intro V _ _ G _ k hcard hk hedge
-    have h2e_le : 2 * G.edgeFinset.card ≤ n * (n - 1) := by
-      rw [← G.sum_degrees_eq_twice_card_edges]
-      calc ∑ v : V, G.degree v ≤ ∑ _v : V, (n - 1) := by
-            refine Finset.sum_le_sum fun v _ => ?_
-            have hle := G.degree_lt_card_verts v
-            omega
-        _ = n * (n - 1) := by rw [Finset.sum_const, Finset.card_univ, hcard, smul_eq_mul]
-    have hkn : k ≤ n := by
-      have hlt : (k - 1) * (n - 1) < n * (n - 1) := lt_of_lt_of_le hedge h2e_le
-      have hn1 : 0 < n - 1 := by
-        by_contra h0; have : n - 1 = 0 := by omega
-        rw [this] at hlt; simp at hlt
-      have : k - 1 < n := (Nat.mul_lt_mul_right hn1).mp hlt
-      omega
-    have hn3 : 3 ≤ n := by omega
-    by_cases hlow : ∃ v : V, 2 * G.degree v ≤ k - 1
-    · obtain ⟨v, hv⟩ := hlow
-      let S : Set V := {w | w ≠ v}
-      let G' := G.induce S
-      have hcard' : Fintype.card S = n - 1 := by
-        rw [Fintype.card_of_subtype (Finset.univ.erase v) (by intro x; simp [S]),
-          Finset.card_erase_of_mem (Finset.mem_univ v), Finset.card_univ, hcard]
-      have hedge' : 2 * G'.edgeFinset.card + 2 * G.degree v = 2 * G.edgeFinset.card := by
-        rw [← G'.sum_degrees_eq_twice_card_edges, ← G.sum_degrees_eq_twice_card_edges]
-        have hsum1 : ∑ u : S, G'.degree u =
-            ∑ u ∈ Finset.univ.erase v, ((G.neighborFinset u).filter (· ≠ v)).card := by
-          refine Finset.sum_bij (fun (u : S) _ => u.val) ?_ ?_ ?_ ?_
-          · intro u _; exact Finset.mem_erase.mpr ⟨u.property, Finset.mem_univ _⟩
-          · intro u₁ _ u₂ _ h; exact Subtype.ext h
-          · intro u hu; exact ⟨⟨u, (Finset.mem_erase.mp hu).1⟩, Finset.mem_univ _, rfl⟩
-          · intro u _; exact degree_induce_eq G S u
-        have hsum2 : ∑ u ∈ Finset.univ.erase v,
-            (((G.neighborFinset u).filter (· ≠ v)).card + if G.Adj u v then 1 else 0) =
-            ∑ u ∈ Finset.univ.erase v, G.degree u := by
-          refine Finset.sum_congr rfl fun u _ => ?_
-          rw [← card_neighborFinset_eq_degree]
-          by_cases hadj : G.Adj u v
-          · have hmem : v ∈ G.neighborFinset u := (mem_neighborFinset G u v).mpr hadj
-            have hfilt : (G.neighborFinset u).filter (· ≠ v) = (G.neighborFinset u).erase v := by
-              ext w; simp [and_comm]
-            rw [if_pos hadj, hfilt, Finset.card_erase_add_one hmem]
-          · have hnot : v ∉ G.neighborFinset u := by simpa [mem_neighborFinset] using hadj
-            have hfilt : (G.neighborFinset u).filter (· ≠ v) = G.neighborFinset u := by
-              ext w; simp only [Finset.mem_filter, and_iff_left_iff_imp]
-              intro hw heq; subst heq; exact hnot hw
-            rw [if_neg hadj, hfilt, Nat.add_zero]
-        have hsum3 : ∑ u ∈ Finset.univ.erase v, (if G.Adj u v then 1 else 0) = G.degree v := by
-          rw [← Finset.sum_filter, Finset.sum_const, smul_eq_mul, mul_one,
-            ← card_neighborFinset_eq_degree]
-          congr 1; ext u
-          simp only [Finset.mem_filter, Finset.mem_erase, Finset.mem_univ, and_true,
-            mem_neighborFinset]
-          exact ⟨fun h => h.2.symm, fun h => ⟨G.ne_of_adj h.symm, h.symm⟩⟩
-        have hsum4 : G.degree v + ∑ u ∈ Finset.univ.erase v, G.degree u = ∑ u : V, G.degree u :=
-          Finset.add_sum_erase Finset.univ (fun u => G.degree u) (Finset.mem_univ v)
-        rw [Finset.sum_add_distrib, hsum3] at hsum2
-        omega
-      have hedge_lt' : (k - 1) * (n - 1 - 1) < 2 * G'.edgeFinset.card := by
-        have hmul : (k - 1) * (n - 1) = (k - 1) * (n - 1 - 1) + (k - 1) := by
-          have : n - 1 = (n - 1 - 1) + 1 := by omega
-          conv_lhs => rw [this]
-          rw [Nat.mul_add, Nat.mul_one]
-        omega
-      exact lift_cycle_induce (ih (n - 1) (by omega) S G' k hcard' hk hedge_lt')
-    push Not at hlow
-    by_cases hconn : G.Connected
-    · by_cases h2conn : ∀ v : V, (G.induce {w : V | w ≠ v}).Connected
-      · obtain ⟨u, c, hc, x, y, hlen⟩ := kopylov_cycle G (by omega) hconn h2conn
-        have hx : k ≤ 2 * G.degree x := by have := hlow x; omega
-        have hy : k ≤ 2 * G.degree y := by have := hlow y; omega
-        have hxy : k ≤ G.degree x + G.degree y := by omega
-        exact ⟨u, c, hc, le_trans (le_min (by omega) hxy) hlen⟩
-      · push Not at h2conn
-        obtain ⟨v, hv_disc⟩ := h2conn
-        let S := {w : V | w ≠ v}
-        let Gv := G.induce S
-        have hSne : Nonempty S := by
-          have hcardS : Fintype.card S = n - 1 := by
-            rw [Fintype.card_of_subtype (Finset.univ.erase v) (by intro x; simp [S]),
-              Finset.card_erase_of_mem (Finset.mem_univ v), Finset.card_univ, hcard]
-          exact Fintype.card_pos_iff.mp (by omega)
-        obtain ⟨u₀⟩ := hSne
-        have hex_unreach : ∃ w₀ : S, ¬ Gv.Reachable u₀ w₀ := by
-          by_contra hall; push Not at hall
-          apply hv_disc
-          have : Nonempty S := ⟨u₀⟩
-          exact Connected.mk fun a b => (hall a).symm.trans (hall b)
-        obtain ⟨w₀, hw₀⟩ := hex_unreach
-        let A : Set V := {w | w = v ∨ ∃ h : w ≠ v, Gv.Reachable u₀ ⟨w, h⟩}
-        let B : Set V := {w | w = v ∨ ∃ h : w ≠ v, ¬ Gv.Reachable u₀ ⟨w, h⟩}
-        have hAcard_ge : 2 ≤ Fintype.card A := by
-          have hne : (⟨v, Or.inl rfl⟩ : A) ≠ ⟨u₀.val, Or.inr ⟨u₀.property, Reachable.refl _⟩⟩ := by
-            intro h; exact u₀.property (congrArg Subtype.val h).symm
-          have hle := Finset.card_le_univ ({⟨v, Or.inl rfl⟩,
-            ⟨u₀.val, Or.inr ⟨u₀.property, Reachable.refl _⟩⟩} : Finset A)
-          rw [Finset.card_pair hne] at hle; exact hle
-        have hBcard_ge : 2 ≤ Fintype.card B := by
-          have hne : (⟨v, Or.inl rfl⟩ : B) ≠ ⟨w₀.val, Or.inr ⟨w₀.property, hw₀⟩⟩ := by
-            intro h; exact w₀.property (congrArg Subtype.val h).symm
-          have hle := Finset.card_le_univ ({⟨v, Or.inl rfl⟩,
-            ⟨w₀.val, Or.inr ⟨w₀.property, hw₀⟩⟩} : Finset B)
-          rw [Finset.card_pair hne] at hle; exact hle
-        have hAB_sum : Fintype.card A + Fintype.card B = n + 1 := by
-          let fA : Finset V := Finset.univ.filter (· ∈ A)
-          let fB : Finset V := Finset.univ.filter (· ∈ B)
-          have h1 : Fintype.card A = fA.card :=
-            Fintype.card_of_subtype fA (by intro x; simp [fA])
-          have h2 : Fintype.card B = fB.card :=
-            Fintype.card_of_subtype fB (by intro x; simp [fB])
-          have hunion : fA ∪ fB = Finset.univ := by
-            ext x
-            simp only [fA, fB, Finset.mem_union, Finset.mem_filter, Finset.mem_univ, true_and,
-              iff_true]
-            by_cases hxv : x = v
-            · left; exact Or.inl hxv
-            · by_cases hr : Gv.Reachable u₀ ⟨x, hxv⟩
-              · left; exact Or.inr ⟨hxv, hr⟩
-              · right; exact Or.inr ⟨hxv, hr⟩
-          have hinter : fA ∩ fB = {v} := by
-            ext x
-            simp only [fA, fB, Finset.mem_inter, Finset.mem_filter, Finset.mem_univ, true_and,
-              Finset.mem_singleton]
-            constructor
-            · rintro ⟨hA, hB⟩
-              rcases hA with rfl | ⟨_, hr⟩
-              · rfl
-              · rcases hB with rfl | ⟨_, hnr⟩
-                · rfl
-                · exact absurd hr hnr
-            · rintro rfl; exact ⟨Or.inl rfl, Or.inl rfl⟩
-          have hcu := Finset.card_union_add_card_inter fA fB
-          rw [hunion, hinter, Finset.card_univ, hcard, Finset.card_singleton] at hcu
-          omega
-        have hAlt : Fintype.card A < n := by omega
-        have hBlt : Fintype.card B < n := by omega
-        have hedge_split : 2 * (G.induce A).edgeFinset.card + 2 * (G.induce B).edgeFinset.card =
-            2 * G.edgeFinset.card := by
-          rw [← (G.induce A).sum_degrees_eq_twice_card_edges,
-              ← (G.induce B).sum_degrees_eq_twice_card_edges,
-              ← G.sum_degrees_eq_twice_card_edges]
-          have hdegA_ne : ∀ u : A, u.val ≠ v → (G.induce A).degree u = G.degree u.val := by
-            intro u huv
-            rw [degree_induce_eq, ← card_neighborFinset_eq_degree]
-            congr 1; ext w
-            simp only [Finset.mem_filter, and_iff_left_iff_imp, mem_neighborFinset]
-            intro hadj
-            by_cases hwv : w = v
-            · exact Or.inl hwv
-            · right; refine ⟨hwv, ?_⟩
-              rcases u.property with h | ⟨_, hr⟩
-              · exact absurd h huv
-              · exact hr.trans (Adj.reachable (show Gv.Adj ⟨u.val, huv⟩ ⟨w, hwv⟩ from hadj))
-          have hdegB_ne : ∀ u : B, u.val ≠ v → (G.induce B).degree u = G.degree u.val := by
-            intro u huv
-            rw [degree_induce_eq, ← card_neighborFinset_eq_degree]
-            congr 1; ext w
-            simp only [Finset.mem_filter, and_iff_left_iff_imp, mem_neighborFinset]
-            intro hadj
-            by_cases hwv : w = v
-            · exact Or.inl hwv
-            · right; refine ⟨hwv, ?_⟩
-              rcases u.property with h | ⟨_, hnr⟩
-              · exact absurd h huv
-              · intro hr
-                exact hnr (hr.trans (Adj.reachable (show Gv.Adj ⟨w, hwv⟩ ⟨u.val, huv⟩ from hadj.symm)))
-          let vA : A := ⟨v, Or.inl rfl⟩
-          let vB : B := ⟨v, Or.inl rfl⟩
-          have hdegv : (G.induce A).degree vA + (G.induce B).degree vB =
-              G.degree v := by
-            rw [degree_induce_eq, degree_induce_eq, ← card_neighborFinset_eq_degree]
-            have hdisj : Disjoint ((G.neighborFinset v).filter (· ∈ A))
-                ((G.neighborFinset v).filter (· ∈ B)) := by
-              rw [Finset.disjoint_left]
-              intro w hwA hwB
-              obtain ⟨hadj, hA⟩ := Finset.mem_filter.mp hwA
-              obtain ⟨_, hB⟩ := Finset.mem_filter.mp hwB
-              have hwv : w ≠ v := (G.ne_of_adj ((mem_neighborFinset G v w).mp hadj)).symm
-              rcases hA with rfl | ⟨_, hr⟩
-              · exact hwv rfl
-              · rcases hB with rfl | ⟨_, hnr⟩
-                · exact hwv rfl
-                · exact hnr hr
-            rw [← Finset.card_union_of_disjoint hdisj]
-            congr 1; ext w
-            simp only [Finset.mem_union, Finset.mem_filter, mem_neighborFinset]
-            constructor
-            · rintro (⟨h, _⟩ | ⟨h, _⟩) <;> exact h
-            · intro h
-              have hwv : w ≠ v := (G.ne_of_adj h).symm
-              by_cases hr : Gv.Reachable u₀ ⟨w, hwv⟩
-              · left; exact ⟨h, Or.inr ⟨hwv, hr⟩⟩
-              · right; exact ⟨h, Or.inr ⟨hwv, hr⟩⟩
-          have hsumA := (Finset.add_sum_erase Finset.univ (fun u => (G.induce A).degree u) (Finset.mem_univ vA)).symm
-          have hsumB := (Finset.add_sum_erase Finset.univ (fun u => (G.induce B).degree u) (Finset.mem_univ vB)).symm
-          have hsumV := (Finset.add_sum_erase Finset.univ (fun u => G.degree u) (Finset.mem_univ v)).symm
-          let sA : Finset V := (Finset.univ.erase v).filter (fun w => ∃ h : w ≠ v, Gv.Reachable u₀ ⟨w, h⟩)
-          let sB : Finset V := (Finset.univ.erase v).filter (fun w => ∃ h : w ≠ v, ¬ Gv.Reachable u₀ ⟨w, h⟩)
-          have hEA : ∑ u ∈ Finset.univ.erase vA, (G.induce A).degree u = ∑ w ∈ sA, G.degree w := by
-            refine Finset.sum_bij (fun u _ => u.val) ?_ ?_ ?_ ?_
-            · intro u hu
-              have huv : u.val ≠ v := fun h => (Finset.ne_of_mem_erase hu) (Subtype.ext h)
-              rcases u.property with h | h
-              · exact absurd h huv
-              · exact Finset.mem_filter.mpr ⟨Finset.mem_erase.mpr ⟨huv, Finset.mem_univ _⟩, h⟩
-            · intro u₁ _ u₂ _ h; exact Subtype.ext h
-            · intro w hw
-              obtain ⟨hwv, hr⟩ := Finset.mem_filter.mp hw
-              exact ⟨⟨w, Or.inr hr⟩, Finset.mem_erase.mpr
-                ⟨fun h => (Finset.ne_of_mem_erase hwv) (congrArg Subtype.val h), Finset.mem_univ _⟩, rfl⟩
-            · intro u hu
-              exact hdegA_ne u (fun h => (Finset.ne_of_mem_erase hu) (Subtype.ext h))
-          have hEB : ∑ u ∈ Finset.univ.erase vB, (G.induce B).degree u = ∑ w ∈ sB, G.degree w := by
-            refine Finset.sum_bij (fun u _ => u.val) ?_ ?_ ?_ ?_
-            · intro u hu
-              have huv : u.val ≠ v := fun h => (Finset.ne_of_mem_erase hu) (Subtype.ext h)
-              rcases u.property with h | h
-              · exact absurd h huv
-              · exact Finset.mem_filter.mpr ⟨Finset.mem_erase.mpr ⟨huv, Finset.mem_univ _⟩, h⟩
-            · intro u₁ _ u₂ _ h; exact Subtype.ext h
-            · intro w hw
-              obtain ⟨hwv, hnr⟩ := Finset.mem_filter.mp hw
-              exact ⟨⟨w, Or.inr hnr⟩, Finset.mem_erase.mpr
-                ⟨fun h => (Finset.ne_of_mem_erase hwv) (congrArg Subtype.val h), Finset.mem_univ _⟩, rfl⟩
-            · intro u hu
-              exact hdegB_ne u (fun h => (Finset.ne_of_mem_erase hu) (Subtype.ext h))
-          have hsAB_disj : Disjoint sA sB := by
-            rw [Finset.disjoint_left]
-            intro w hwA hwB
-            obtain ⟨_, ⟨_, hr⟩⟩ := Finset.mem_filter.mp hwA
-            obtain ⟨_, ⟨_, hnr⟩⟩ := Finset.mem_filter.mp hwB
-            exact hnr hr
-          have hsAB_union : sA ∪ sB = Finset.univ.erase v := by
-            ext w
-            simp only [Finset.mem_union, sA, sB, Finset.mem_filter, Finset.mem_erase, Finset.mem_univ,
-              and_true]
-            constructor
-            · rintro (⟨h, _⟩ | ⟨h, _⟩) <;> exact h
-            · intro hwv
-              by_cases hr : Gv.Reachable u₀ ⟨w, hwv⟩
-              · left; exact ⟨hwv, hwv, hr⟩
-              · right; exact ⟨hwv, hwv, hr⟩
-          have hsum_er : ∑ w ∈ sA, G.degree w + ∑ w ∈ sB, G.degree w =
-              ∑ w ∈ Finset.univ.erase v, G.degree w := by
-            rw [← Finset.sum_union hsAB_disj, hsAB_union]
-          omega
-        have hmul_sum : (k - 1) * (Fintype.card A - 1) + (k - 1) * (Fintype.card B - 1) =
-            (k - 1) * (n - 1) := by
-          rw [← Nat.mul_add]; congr 1; omega
-        by_cases hA_good : (k - 1) * (Fintype.card A - 1) < 2 * (G.induce A).edgeFinset.card
-        · exact lift_cycle_induce (ih (Fintype.card A) hAlt A (G.induce A) k rfl hk hA_good)
-        · have hB_good : (k - 1) * (Fintype.card B - 1) < 2 * (G.induce B).edgeFinset.card := by omega
-          exact lift_cycle_induce (ih (Fintype.card B) hBlt B (G.induce B) k rfl hk hB_good)
-    · obtain ⟨u₀⟩ : Nonempty V := Fintype.card_pos_iff.mp (by omega)
-      have hex_unreach : ∃ w₀ : V, ¬ G.Reachable u₀ w₀ := by
-        by_contra hall; push Not at hall
-        have : Nonempty V := ⟨u₀⟩
-        exact hconn (Connected.mk fun a b => (hall a).symm.trans (hall b))
-      obtain ⟨w₀, hw₀⟩ := hex_unreach
-      let A : Set V := {w | G.Reachable u₀ w}
-      let B : Set V := {w | ¬ G.Reachable u₀ w}
-      have hApos : 1 ≤ Fintype.card A := Fintype.card_pos_iff.mpr ⟨⟨u₀, Reachable.refl u₀⟩⟩
-      have hBpos : 1 ≤ Fintype.card B := Fintype.card_pos_iff.mpr ⟨⟨w₀, hw₀⟩⟩
-      have hAB_sum : Fintype.card A + Fintype.card B = n := by
-        let fA : Finset V := Finset.univ.filter (· ∈ A)
-        let fB : Finset V := Finset.univ.filter (· ∈ B)
-        have h1 : Fintype.card A = fA.card := Fintype.card_of_subtype fA (by intro x; simp [fA])
-        have h2 : Fintype.card B = fB.card := Fintype.card_of_subtype fB (by intro x; simp [fB])
-        have hdisj : Disjoint fA fB := by
-          rw [Finset.disjoint_left]
-          intro w hwA hwB
-          exact (Finset.mem_filter.mp hwB).2 (Finset.mem_filter.mp hwA).2
-        have hunion : fA ∪ fB = Finset.univ := by
-          ext w
-          simp only [fA, fB, Finset.mem_union, Finset.mem_filter, Finset.mem_univ, true_and, iff_true]
-          exact em (G.Reachable u₀ w)
-        rw [h1, h2, ← Finset.card_union_of_disjoint hdisj, hunion, Finset.card_univ, hcard]
-      have hAlt : Fintype.card A < n := by omega
-      have hBlt : Fintype.card B < n := by omega
-      have hedge_split : 2 * (G.induce A).edgeFinset.card + 2 * (G.induce B).edgeFinset.card =
-          2 * G.edgeFinset.card := by
-        rw [← (G.induce A).sum_degrees_eq_twice_card_edges,
-            ← (G.induce B).sum_degrees_eq_twice_card_edges,
-            ← G.sum_degrees_eq_twice_card_edges]
-        let sA : Finset V := Finset.univ.filter (· ∈ A)
-        let sB : Finset V := Finset.univ.filter (· ∈ B)
-        have hEA : ∑ u : A, (G.induce A).degree u = ∑ w ∈ sA, G.degree w := by
-          refine Finset.sum_bij (fun u _ => u.val) ?_ ?_ ?_ ?_
-          · intro u _; exact Finset.mem_filter.mpr ⟨Finset.mem_univ _, u.property⟩
-          · intro u₁ _ u₂ _ h; exact Subtype.ext h
-          · intro w hw; exact ⟨⟨w, (Finset.mem_filter.mp hw).2⟩, Finset.mem_univ _, rfl⟩
-          · intro u _
-            rw [degree_induce_eq, ← card_neighborFinset_eq_degree]
-            congr 1; ext w
-            simp only [Finset.mem_filter, and_iff_left_iff_imp, mem_neighborFinset]
-            intro hadj; exact u.property.trans (Adj.reachable hadj)
-        have hEB : ∑ u : B, (G.induce B).degree u = ∑ w ∈ sB, G.degree w := by
-          refine Finset.sum_bij (fun u _ => u.val) ?_ ?_ ?_ ?_
-          · intro u _; exact Finset.mem_filter.mpr ⟨Finset.mem_univ _, u.property⟩
-          · intro u₁ _ u₂ _ h; exact Subtype.ext h
-          · intro w hw; exact ⟨⟨w, (Finset.mem_filter.mp hw).2⟩, Finset.mem_univ _, rfl⟩
-          · intro u _
-            rw [degree_induce_eq, ← card_neighborFinset_eq_degree]
-            congr 1; ext w
-            simp only [Finset.mem_filter, and_iff_left_iff_imp, mem_neighborFinset]
-            intro hadj hr; exact u.property (hr.trans (Adj.reachable hadj.symm))
-        have hdisj : Disjoint sA sB := by
-          rw [Finset.disjoint_left]
-          intro w hwA hwB
-          exact (Finset.mem_filter.mp hwB).2 (Finset.mem_filter.mp hwA).2
-        have hunion : sA ∪ sB = Finset.univ := by
-          ext w
-          simp only [Finset.mem_union, sA, sB, Finset.mem_filter, Finset.mem_univ, true_and, iff_true]
-          exact em (G.Reachable u₀ w)
-        rw [hEA, hEB, ← Finset.sum_union hdisj, hunion]
-      have hmul_le : (k - 1) * (Fintype.card A - 1) + (k - 1) * (Fintype.card B - 1) ≤
-          (k - 1) * (n - 1) := by
-        rw [← Nat.mul_add]
-        exact Nat.mul_le_mul_left (k - 1) (by omega)
-      by_cases hA_good : (k - 1) * (Fintype.card A - 1) < 2 * (G.induce A).edgeFinset.card
-      · exact lift_cycle_induce (ih (Fintype.card A) hAlt A (G.induce A) k rfl hk hA_good)
-      · have hB_good : (k - 1) * (Fintype.card B - 1) < 2 * (G.induce B).edgeFinset.card := by omega
-        exact lift_cycle_induce (ih (Fintype.card B) hBlt B (G.induce B) k rfl hk hB_good)
-
-end OMAP2RegH1
-
-theorem OMA.solution : OMA.R_opg_forcing_a_2_regular_minor_R1.H1 := by
   classical
-  intro V _ _ G _ k hk hedge
-  have hn : 1 ≤ Fintype.card V := Fintype.card_pos
-  have hlt : (k - 1) * (Fintype.card V - 1) < 2 * G.edgeFinset.card := by
-    have hmul : (k - 1) * Fintype.card V = (k - 1) * (Fintype.card V - 1) + (k - 1) := by
-      have : Fintype.card V = (Fintype.card V - 1) + 1 := by omega
-      conv_lhs => rw [this]
-      rw [Nat.mul_add, Nat.mul_one]
+  apply lift_cycle G (s : Set V)
+  apply ih #s hs (s : Set V) (G.induce (s : Set V)) k (card_sub s) hk
+  have := edges_le G s
+  omega
+
+lemma sep_case {n : ℕ} (ih : ∀ m < n, EGP m) {V : Type} [Fintype V] [DecidableEq V]
+    (G : SimpleGraph V) [DecidableRel G.Adj] {k : ℕ} (hk : 3 ≤ k) (hn : Fintype.card V = n)
+    (he : (k - 1) * (n - 1) < 2 * #G.edgeFinset) (V1 V2 : Finset V) (hU : V1 ∪ V2 = univ)
+    (hI : #(V1 ∩ V2) ≤ 1) (h1 : #V1 < n) (h2 : #V2 < n)
+    (hE : ∀ x y, G.Adj x y → (x ∈ V1 ∧ y ∈ V1) ∨ (x ∈ V2 ∧ y ∈ V2)) :
+    ∃ (u : V) (c : G.Walk u u), c.IsCycle ∧ k ≤ c.length := by
+  have hsub : G.edgeFinset ⊆ (G.edgeFinset ∩ V1.sym2) ∪ (G.edgeFinset ∩ V2.sym2) := by
+    intro e he'
+    induction e using Sym2.ind with
+    | h x y =>
+      have hxy : G.Adj x y := by rwa [mem_edgeFinset, mem_edgeSet] at he'
+      rw [Finset.mem_union, Finset.mem_inter, Finset.mem_inter, Finset.mem_sym2_iff,
+        Finset.mem_sym2_iff]
+      rcases hE x y hxy with ⟨hx, hy⟩ | ⟨hx, hy⟩
+      · left
+        refine ⟨he', fun a ha => ?_⟩
+        rcases Sym2.mem_iff.1 ha with rfl | rfl <;> assumption
+      · right
+        refine ⟨he', fun a ha => ?_⟩
+        rcases Sym2.mem_iff.1 ha with rfl | rfl <;> assumption
+  have hc := (Finset.card_le_card hsub).trans (Finset.card_union_le _ _)
+  have hUI := Finset.card_union_add_card_inter V1 V2
+  rw [hU, Finset.card_univ, hn] at hUI
+  by_cases c1 : (k - 1) * (#V1 - 1) < 2 * #(G.edgeFinset ∩ V1.sym2)
+  · exact apply_sub ih G hk V1 h1 c1
+  by_cases c2 : (k - 1) * (#V2 - 1) < 2 * #(G.edgeFinset ∩ V2.sym2)
+  · exact apply_sub ih G hk V2 h2 c2
+  exfalso
+  have h3 : (#V1 - 1) + (#V2 - 1) ≤ n - 1 := by omega
+  have h4 := Nat.mul_le_mul_left (k - 1) h3
+  rw [Nat.mul_add] at h4
+  omega
+
+lemma del_case {n : ℕ} (ih : ∀ m < n, EGP m) {V : Type} [Fintype V] [DecidableEq V]
+    (G : SimpleGraph V) [DecidableRel G.Adj] {k : ℕ} (hk : 3 ≤ k) (hn : Fintype.card V = n)
+    (hkn : k ≤ n) (he : (k - 1) * (n - 1) < 2 * #G.edgeFinset) (v : V)
+    (hv : 2 * G.degree v ≤ k - 1) :
+    ∃ (u : V) (c : G.Walk u u), c.IsCycle ∧ k ≤ c.length := by
+  have hsub : G.edgeFinset ⊆ (G.edgeFinset ∩ (univ.erase v).sym2) ∪ G.incidenceFinset v := by
+    intro e he'
+    rw [Finset.mem_union, Finset.mem_inter, Finset.mem_sym2_iff, mem_incidenceFinset]
+    by_cases hve : v ∈ e
+    · right
+      exact ⟨by rwa [mem_edgeFinset] at he', hve⟩
+    · left
+      refine ⟨he', fun a ha => ?_⟩
+      rw [Finset.mem_erase]
+      refine ⟨?_, Finset.mem_univ a⟩
+      rintro rfl
+      exact hve ha
+  have hc := (Finset.card_le_card hsub).trans (Finset.card_union_le _ _)
+  rw [card_incidenceFinset_eq_degree] at hc
+  have hs : #(univ.erase v) = n - 1 := by
+    rw [Finset.card_erase_of_mem (Finset.mem_univ v), Finset.card_univ, hn]
+  apply apply_sub ih G hk (univ.erase v) (by omega)
+  rw [hs]
+  have h5 : (k - 1) * (n - 1) = (k - 1) * (n - 1 - 1) + (k - 1) := by
+    conv_lhs => rw [show n - 1 = (n - 1 - 1) + 1 by omega]
+    rw [Nat.mul_add, Nat.mul_one]
+  omega
+
+lemma cut_sep {V : Type} [Fintype V] [DecidableEq V] (G : SimpleGraph V) (v a b : V)
+    (ha : a ≠ v) (hb : b ≠ v) (hcut : ∀ p : G.Walk a b, v ∈ p.support) :
+    ∃ V1 V2 : Finset V, V1 ∪ V2 = univ ∧ #(V1 ∩ V2) ≤ 1 ∧ #V1 < Fintype.card V ∧
+      #V2 < Fintype.card V ∧ ∀ x y, G.Adj x y → (x ∈ V1 ∧ y ∈ V1) ∨ (x ∈ V2 ∧ y ∈ V2) := by
+  classical
+  obtain ⟨R, hR⟩ : ∃ R : Finset V, ∀ w, w ∈ R ↔ ∃ p : G.Walk a w, v ∉ p.support :=
+    ⟨univ.filter (fun w => ∃ p : G.Walk a w, v ∉ p.support), fun w => by simp⟩
+  have hext : ∀ x y, G.Adj x y → x ∈ R → y ≠ v → y ∈ R := by
+    intro x y hxy hx hy
+    obtain ⟨p, hp⟩ := (hR x).1 hx
+    refine (hR y).2 ⟨p.concat hxy, ?_⟩
+    rw [Walk.support_concat, List.mem_append, List.mem_singleton]
+    rintro (h | h)
+    · exact hp h
+    · exact hy h.symm
+  refine ⟨insert v R, univ \ R, ?_, ?_, ?_, ?_, ?_⟩
+  · apply Finset.eq_univ_iff_forall.2
+    intro x
+    by_cases hx : x ∈ R
+    · exact Finset.mem_union_left _ (Finset.mem_insert_of_mem hx)
+    · exact Finset.mem_union_right _ (Finset.mem_sdiff.2 ⟨Finset.mem_univ x, hx⟩)
+  · have : insert v R ∩ (univ \ R) ⊆ {v} := by
+      intro x hx
+      rw [Finset.mem_inter, Finset.mem_insert, Finset.mem_sdiff] at hx
+      rw [Finset.mem_singleton]
+      rcases hx with ⟨h | h, -, h'⟩
+      · exact h
+      · exact absurd h h'
+    exact (Finset.card_le_card this).trans (Finset.card_singleton v).le
+  · apply Finset.card_lt_univ_of_notMem (x := b)
+    rw [Finset.mem_insert, not_or]
+    refine ⟨hb, fun h => ?_⟩
+    obtain ⟨p, hp⟩ := (hR b).1 h
+    exact hp (hcut p)
+  · apply Finset.card_lt_univ_of_notMem (x := a)
+    rw [Finset.mem_sdiff, not_and, not_not]
+    intro _
+    refine (hR a).2 ⟨Walk.nil, ?_⟩
+    rw [Walk.support_nil, List.mem_singleton]
+    exact fun h => ha h.symm
+  · intro x y hxy
+    by_cases hx : x ∈ R
+    · left
+      refine ⟨Finset.mem_insert_of_mem hx, ?_⟩
+      by_cases hyv : y = v
+      · rw [hyv]; exact Finset.mem_insert_self _ _
+      · exact Finset.mem_insert_of_mem (hext x y hxy hx hyv)
+    · by_cases hy : y ∈ R
+      · left
+        refine ⟨?_, Finset.mem_insert_of_mem hy⟩
+        by_cases hxv : x = v
+        · rw [hxv]; exact Finset.mem_insert_self _ _
+        · exact absurd (hext y x hxy.symm hy hxv) hx
+      · right
+        exact ⟨Finset.mem_sdiff.2 ⟨Finset.mem_univ x, hx⟩,
+          Finset.mem_sdiff.2 ⟨Finset.mem_univ y, hy⟩⟩
+
+lemma conn_of {V : Type} [Fintype V] [DecidableEq V] (G : SimpleGraph V)
+    (h3 : 3 ≤ Fintype.card V)
+    (h2c : ∀ v a b : V, a ≠ v → b ≠ v → ∃ p : G.Walk a b, v ∉ p.support) : G.Connected := by
+  have hne : Nonempty V := Fintype.card_pos_iff.1 (by omega)
+  refine { preconnected := fun a b => ?_, nonempty := hne }
+  by_cases hab : a = b
+  · rw [hab]
+  · have hcard : 1 < #(univ.erase a) := by
+      rw [Finset.card_erase_of_mem (Finset.mem_univ a), Finset.card_univ]
+      omega
+    obtain ⟨v, hv, hvb⟩ := Finset.exists_mem_ne hcard b
+    obtain ⟨p, -⟩ := h2c v a b (Finset.ne_of_mem_erase hv).symm hvb.symm
+    exact ⟨p⟩
+
+lemma two_e_le {V : Type} [Fintype V] [DecidableEq V] (G : SimpleGraph V) [DecidableRel G.Adj] :
+    2 * #G.edgeFinset ≤ Fintype.card V * (Fintype.card V - 1) := by
+  have h := G.card_edgeFinset_le_card_choose_two
+  rw [Nat.choose_two_right] at h
+  have := Nat.mul_div_le (Fintype.card V * (Fintype.card V - 1)) 2
+  omega
+
+theorem main_ind (core : CoreStatement) (n : ℕ) : EGP n := by
+  induction n using Nat.strong_induction_on with
+  | _ n ih =>
+  intro V _ _ G _ k hn hk he
+  have hkn : k ≤ n := by
+    have h := two_e_le G
+    rw [hn] at h
+    have h' : (k - 1) * (n - 1) < n * (n - 1) := lt_of_lt_of_le he h
+    have := Nat.lt_of_mul_lt_mul_right h'
     omega
-  exact OMAP2RegH1.erdos_gallai_aux (Fintype.card V) V G k rfl hk hlt
+  by_cases hA : ∃ v, 2 * G.degree v ≤ k - 1
+  · obtain ⟨v, hv⟩ := hA
+    exact del_case ih G hk hn hkn he v hv
+  push Not at hA
+  by_cases h2c : ∀ v a b : V, a ≠ v → b ≠ v → ∃ p : G.Walk a b, v ∉ p.support
+  · have h3 : 3 ≤ Fintype.card V := by omega
+    obtain ⟨u, c, hc, hlen⟩ := core G ((k + 1) / 2) (by omega) h3 (conn_of G h3 h2c) h2c
+      (fun v => by have := hA v; omega)
+    refine ⟨u, c, hc, le_trans ?_ hlen⟩
+    rw [hn]
+    exact Nat.le_min.2 ⟨hkn, by omega⟩
+  · push Not at h2c
+    obtain ⟨v, a, b, ha, hb, hcut⟩ := h2c
+    obtain ⟨V1, V2, hU, hI, h1, h2, hE⟩ := cut_sep G v a b ha hb hcut
+    rw [hn] at h1 h2
+    exact sep_case ih G hk hn he V1 V2 hU hI h1 h2 hE
+
+theorem frame : CoreStatement → H1Statement := by
+  intro core V _ _ G _ k hk he
+  classical
+  have hpos : 0 < Fintype.card V := Fintype.card_pos
+  apply main_ind core (Fintype.card V) V G k rfl hk
+  obtain ⟨m, hm⟩ : ∃ m, Fintype.card V = m + 1 := ⟨Fintype.card V - 1, by omega⟩
+  rw [hm] at he ⊢
+  rw [Nat.add_sub_cancel]
+  rw [Nat.mul_add, Nat.mul_one] at he
+  convert (show (k - 1) * m < 2 * #G.edgeFinset by omega) using 4
+
+end OMA.EG
+
+
+theorem OMA.solution : OMA.R_opg_forcing_a_2_regular_minor_R1.H1 :=
+  OMA.EG.frame OMA.EG.core

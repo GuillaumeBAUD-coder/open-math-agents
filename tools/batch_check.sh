@@ -133,7 +133,7 @@ sys.exit(0 if d.get("verdict") in ("rejected", "fault") and (r.startswith("does 
 
 # ---- the worker loop -------------------------------------------------------------------------------------------------
 worker() {
-  declare -A DONE=() SKIP=() LANE_ITEM=() LANE_PID=() LANE_T0=()
+  declare -A DONE=() SKIP=() STALE=() FETCHED=() LANE_ITEM=() LANE_PID=() LANE_T0=()
   while IFS=$'\t' read -r P H _; do [ -n "$H" ] && DONE["$P.$H"]=1; done < "$BC/done.tsv"
   while read -r K; do [ -n "$K" ] && SKIP["$K"]=1; done < "$BC/skip.txt"
   local LAST_MAIN=0 LAST_REFS=0 BATCH_FROM_PR BATCH_SINCE SOLO="" L
@@ -189,11 +189,16 @@ worker() {
       awk '$2=="head"{h[$1]=$3} $2=="merge"{m[$1]=$3} END{for (p in m) if (p in h) print p, h[p], m[p]}' "$BC/mine.txt" | sort -n > "$BC/open.txt"
       : > "$BC/todo.txt"
       while read -r P H M; do
-        [ -n "${DONE[$P.$H]:-}" ] || [ -n "${SKIP[$P.$H]:-}" ] || echo "$P $H $M" >> "$BC/todo.txt"
+        [ -n "${DONE[$P.$H]:-}" ] || [ -n "${SKIP[$P.$H]:-}" ] || [ -n "${STALE[$P.$M]:-}" ] || echo "$P $H $M" >> "$BC/todo.txt"
       done < "$BC/open.txt"
-      # merge commits of the new ones (one fetch per hundred)
+      # merge commits not fetched yet (one fetch per hundred; those already here are not asked for again)
+      # (refs, not objects, are compared: asking a partial clone for a missing object makes it fetch that object)
       if [ -s "$BC/todo.txt" ]; then
-        awk '{print "+refs/pull/" $1 "/merge:refs/oma/m/" $1}' "$BC/todo.txt" | xargs -r -n 100 git -C "$WS" fetch -q --no-tags --depth 2 origin 2>/dev/null || true
+        git -C "$WS" for-each-ref --format='%(refname:lstrip=3) %(objectname)' refs/oma/m/ > "$BC/fetched.txt"
+        awk 'NR == FNR {f[$1] = $2; next} f[$1] != $3 {print "+refs/pull/" $1 "/merge:refs/oma/m/" $1}' "$BC/fetched.txt" "$BC/todo.txt" \
+          | xargs -r -n 100 git -C "$WS" fetch -q --no-tags --depth 2 origin 2>/dev/null || true
+        git -C "$WS" for-each-ref --format='%(refname:lstrip=3) %(objectname)' refs/oma/m/ > "$BC/fetched.txt"
+        FETCHED=(); while read -r P M; do FETCHED["$P"]=$M; done < "$BC/fetched.txt"
       fi
     fi
     local PICK="" P H M
@@ -201,8 +206,9 @@ worker() {
       [ -n "${DONE[$P.$H]:-}" ] || [ -n "${SKIP[$P.$H]:-}" ] && continue
       local RUNNING=0 IT; for IT in "${LANE_ITEM[@]}"; do [ "${IT%% *}" = "$P" ] && RUNNING=1; done
       [ "$RUNNING" = 0 ] || continue
-      [ "$(git -C "$WS" rev-parse -q --verify "refs/oma/m/$P" 2>/dev/null)" = "$M" ] || continue   # not fetched yet
-      [ "$(git -C "$WS" rev-parse -q --verify "$M^2" 2>/dev/null)" = "$H" ] || continue            # GitHub still updating
+      [ "${FETCHED[$P]:-}" = "$M" ] || continue                                                   # not fetched yet
+      # a merge ref that GitHub has not recomputed for the newest head: skipped until it changes
+      [ "$(git -C "$WS" rev-parse -q --verify "$M^2" 2>/dev/null)" = "$H" ] || { STALE["$P.$M"]=1; continue; }
       # left to check-proof.yml: pull requests filed before the batch path existed (number below BATCH_FROM_PR) unless
       # their head was committed after it started, and pull requests that touch none of proofs/, reductions/,
       # statements/ (check-proof does not run for them either)
