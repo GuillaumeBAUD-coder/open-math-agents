@@ -80,13 +80,8 @@ end OMAAux
 theorem OMA.solution : type_of% @Arxiv.«2607.05739».x_succ := by
   intro n _
   have hA : (A n : ℚ) ≠ 0 := by exact_mod_cast OMAAux.A_ne_zero n
-  have h1 : (B n : ℚ) / (A n : ℚ) + ((n : ℚ) + 1)
-      = ((B n : ℚ) + ((n : ℚ) + 1) * (A n : ℚ)) / (A n : ℚ) := by
-    field_simp
-  have h2 : (1 : ℚ) - ((n : ℚ) + 1) * ((B n : ℚ) / (A n : ℚ))
-      = ((A n : ℚ) - ((n : ℚ) + 1) * (B n : ℚ)) / (A n : ℚ) := by
-    field_simp
   unfold x
   rw [OMAAux.A_succ, OMAAux.B_succ]
   push_cast
-  rw [h1, h2, div_div_div_cancel_right₀ hA]
+  -- Rewrite over the common denominator A n before cancelling it.
+  rw [← mul_div_assoc, one_sub_div hA, div_add' _ _ _ hA, div_div_div_cancel_right₀ hA]

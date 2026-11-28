@@ -21,6 +21,8 @@ gh() { timeout 90 "$GH_BIN" "$@"; }
 export -f gh
 ROOT="$PWD"; mkdir -p "$ROOT/done" "$ROOT/remerge"
 export CREDIT_RETRY_FILE="$ROOT/credit_retry.txt"; touch "$CREDIT_RETRY_FILE"
+# Credit ledger: credit.sh appends a line per merge (tools/ledger_entry.py), tools/ledger_post.sh sends them to the site.
+export LEDGER_FILE="$ROOT/ledger.jsonl"; touch "$LEDGER_FILE"
 SELF="$ROOT/base/tools/merger_loop.sh"; SELF_SHA=$(sha1sum "$SELF" | cut -d' ' -f1)
 # Hand-over without a gap: a job lasts at most 6 hours and a new one waits in GitHub's runner queue (behind hundreds of
 # proof checks) before it starts, so the next merger is started early (every 20 minutes, no concurrency group) and
@@ -138,6 +140,7 @@ verdict() {  # $1 run id, $2 head sha, $3 attempt, $4 url, $5 old (1/0), $6 slot
   git -C "$B" clean -fdq -- proofs reductions statements 2>/dev/null || true
 }
 refresh
+LLID="$$-$(date +%s%N)"; echo "$LLID" > "$ROOT/ledger_loop.id"; bash "$ROOT/base/tools/ledger_post.sh" loop "$LLID" & LLOOP=$!
 while [ "$(date -u +%s)" -lt "$END" ]; do
   NOW=$(date -u +%s); budget
   : > cand.tsv
@@ -222,5 +225,6 @@ while [ "$(date -u +%s)" -lt "$END" ]; do
   fi
   [ -s queue.tsv ] || sleep 30
 done
+echo stop > "$ROOT/ledger_loop.id"; kill "$LLOOP" 2>/dev/null; bash "$ROOT/base/tools/ledger_post.sh" once   # last lines
 wait
 echo "merger: time is up; the next scheduled run takes over"
