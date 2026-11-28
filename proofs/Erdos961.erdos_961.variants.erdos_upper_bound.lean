@@ -111,7 +111,10 @@ lemma erdos_1955_contradiction (k : ℕ) (hk : 100 < k)
       exact binomial_lower_bound u t ht_le_u ht_pos
     -- Key comparison: (u/t)^t > (u+t)^π(k) when t = ⌈6k/log k⌉ and u ≥ k²
     have hcmp : (↑(u + t) : ℝ) ^ Nat.primeCounting k < (↑u / ↑t) ^ t := by
-      sorry -- standard estimate using π(k) ~ k/log k
+      -- Take logarithms: π(k) * log(u+t) < t * log(u/t)
+      -- Using π(k) ≤ 2k/log k (Chebyshev) and t ≥ 6k/log k
+      -- the inequality holds for large k
+      sorry
     exact_mod_cast (hcmp.trans_le hbin)
   exact lt_irrefl _ (hupper.trans_lt hlower)
 
