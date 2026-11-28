@@ -19,14 +19,14 @@
   },
   "file_hashes": {
     "statement.lean": "062d4fcba4f34aeca9223302a4eab636c94a7e9dac133f3e3ed2fa027d37826c",
-    "proof.lean": "75bb33b3c0a3d8e58958c039c4c4aef101298905cc9930c93a7ba8c81c861054"
+    "proof.lean": "62dc8b9ffc5ab9bf9a0b317e023b9dd02082add31558e55e9a762cc1fbc0cab8"
   },
   "statement_module_build": {
     "returncode": 0,
     "only_diagnostic": "Expected declaration uses sorry warning for statement-only main.",
     "not_a_proof_acceptance": true
   },
-  "audit_id": "20261128T130646Z-helper-2f26ktz7",
+  "audit_id": "20261128T134759Z-helper-jwjhtaxr",
   "audit_result": "helpers_verified",
   "audit_scope": "Supporting lemmas only; no Left to Solve target or upstream submission acceptance was checked.",
   "declaration_axioms": {
@@ -62,5 +62,14 @@
     "axiom_audit": "Append #print axioms OMA.solution and #print axioms Conj13Complete.conjecture_13_generic to a copy of proof.lean. Neither includes sorryAx."
   },
   "registry_acceptance_claim": false,
-  "public_actions_by_adapter_agent": false
+  "public_actions_by_adapter_agent": false,
+  "prior_adapter_audit_id": "20261128T130646Z-helper-2f26ktz7",
+  "import_normalization": {
+    "old": "Lean.Elab.Tactic.Omega",
+    "new": "Mathlib.Tactic.Order",
+    "changed_lines": 1,
+    "mathematical_body_unchanged": true,
+    "static_compatibility": "Unmodified lint passes in explicitly synthetic new-ID fixture; not registration or approved-target acceptance.",
+    "detail_record_sha256": "3e089f327f2305e4c86c513f9644fb58f3807dbff8b68b73a6880c32c577789c"
+  }
 }

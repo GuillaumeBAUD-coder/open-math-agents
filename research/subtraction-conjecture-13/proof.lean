@@ -20,7 +20,7 @@ import Mathlib.Data.Finset.Filter
 import Mathlib.Tactic.Ring
 import Mathlib.Data.Nat.Basic
 import Mathlib.Data.Prod.Basic
-import Lean.Elab.Tactic.Omega
+import Mathlib.Tactic.Order
 import Mathlib.Tactic.SplitIfs
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Linarith

@@ -1,0 +1,81 @@
+{
+  "status": "COMPLETE EXACT-TYPE PROPOSED CONJECTURE14 ADAPTER VERIFIED; NEW REGISTRATION AND HUMAN STATEMENT REVIEW REQUIRED",
+  "recorded_at": "2026-11-28T13:46:27.321404+00:00",
+  "paper": "https://arxiv.org/abs/2510.24280",
+  "version_and_scope": "v2, Definition 2; complete Conjecture 14 (iff and least heap)",
+  "proposed_namespace": "OMA.S_arxiv_2510_24280_conjecture14",
+  "proposed_module": "OMAStatements.S_arxiv_2510_24280_conjecture14",
+  "claim": "For 0 < a < b and third move a + b, a discrepancy exists iff a does not divide b. In the nondivisible case, n > 0 satisfies n*a < b < (n+1)*a, and the least distinguishing heap is (n+2)*b + n*(a+b).",
+  "pins": {
+    "lean": "v4.33.1",
+    "formal_conjectures": "9097e2f90e66d2f6244209cb1c07f7120d17ec53",
+    "mathlib": "0df444a360eaa60ab8c11dca51a86af692955474"
+  },
+  "complete_source_sha256": "daf678b9cdc51ba54575f21cc79d97387dd4a550575b5b74202dad568af91712",
+  "transformation": {
+    "approved_generic_step_outcome_bodies_exact": true,
+    "namespace_from": "OMA.S_arxiv_2510_24280",
+    "namespace_to": "OMA.S_arxiv_2510_24280_conjecture14",
+    "omitted_duplicate_model_block_sha256": "e0f7430c4a94b84852b32b248b145b511682e012dc07ce065adfbcbca4319f16",
+    "all_retained_mathematical_bodies_unchanged": true,
+    "normalized_imports": {
+      "Lean.Elab.Tactic.Omega": "Mathlib.Tactic.Order"
+    },
+    "proof_import_policy": "Required OMA statement first; every remaining import is a Mathlib module."
+  },
+  "file_hashes": {
+    "statement.lean": "aaafa845a2889968f0ce2320a9efac4ea86abe02ca7029ccb845536549311172",
+    "proof.lean": "e70bb3f16c49bad641325d6e6a67211985c69a2638807a7086e61dc1c26c52c5"
+  },
+  "statement_module_build": {
+    "returncode": 0,
+    "only_diagnostic": "Expected statement-only main declaration uses sorry warning.",
+    "peak_rss_kb": 2418324
+  },
+  "audit_id": "20261128T134508Z-helper-kxsfmdgn",
+  "audit_result": "helpers_verified",
+  "audit_scope": "Supporting lemmas only; no Left to Solve target or upstream submission acceptance was checked.",
+  "declaration_axioms": {
+    "OMA.solution": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Conj14Complete.conjecture_14_generic": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "independent_source_review": {
+    "result": "PASS",
+    "report_sha256": "e227d118871176cadfe08884b6aad1c09f4fff1133fc28b27575864a54ecc62b",
+    "scope": "Exact full target, model bodies, preserved mathematical proof, import normalization, discharged auxiliary hypotheses, and no invocation of the statement placeholder; read-only, no duplicate Lean job."
+  },
+  "local_static_compatibility": {
+    "result": "Statement and proof both passed the unchanged tools/lint.py rules.",
+    "scope": "LOCAL STATIC COMPATIBILITY ONLY using a synthetic registration fixture; real catalog and repository were not modified; NOT registration, statement acceptance, target proof acceptance, or CI verdict.",
+    "checker_sha256": "0bb0ee4532ce85e1549f192d048623ccf562af545a140f5f517b61c5444f93f3",
+    "report_sha256": "cebfddae503b27d0f3ab2e30c911c3ba019af08dcc874aa23c7430b69678aa31",
+    "real_catalog_modified": false,
+    "not_upstream_CI_or_registration": true
+  },
+  "preserved_existing_release_files": {
+    "standalone.lean": "daf678b9cdc51ba54575f21cc79d97387dd4a550575b5b74202dad568af91712",
+    "README.txt": "068cd34321f22795aeea3ed8e8c34af0a2c8ca7aa1dd72081447fad05e3589d9",
+    "verification.json": "97b4dac89151bd0c95637df0444fd0ac6a2e683f34c349330a609586c9ef867c"
+  },
+  "reproduce": {
+    "workspace": "Use pinned formal-conjectures Lake workspace from pins.",
+    "stage_statement": "Copy statement.lean to OMAStatements/S_arxiv_2510_24280_conjecture14.lean.",
+    "commands": [
+      "mkdir -p .lake/build/lib/lean/OMAStatements",
+      "lake env lean -j1 -o .lake/build/lib/lean/OMAStatements/S_arxiv_2510_24280_conjecture14.olean OMAStatements/S_arxiv_2510_24280_conjecture14.lean",
+      "lake env lean -j1 /absolute/path/to/proof.lean"
+    ],
+    "axiom_check": "Append #print axioms OMA.solution and #print axioms Conj14Complete.conjecture_14_generic to a copy. Only propext, Classical.choice and Quot.sound occur; sorryAx is excluded."
+  },
+  "upstream_original_target_acceptance_checked": false,
+  "registration_note": "This is a new Conjecture 14 target proposal. The existing arxiv-2510.24280 catalog target is the distinct Conjecture 4, already refuted; it is not replaced or solved by this adapter.",
+  "public_actions_by_adapter_agent": false
+}
