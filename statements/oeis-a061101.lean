@@ -4,7 +4,7 @@ import Mathlib
 # OEIS A061101: Squares with digital root 7
 
 Source: https://oeis.org/A061101
-Credit: @SudharsanAnimations
+Credit: Sudharsan Rajendiran
 
 Colin Barker (Feb 2013) conjectured the closed form a(n) = (9n-8)^2/4 for n even and
 a(n) = (9n-1)^2/4 for n odd (and the equivalent rational g.f.
