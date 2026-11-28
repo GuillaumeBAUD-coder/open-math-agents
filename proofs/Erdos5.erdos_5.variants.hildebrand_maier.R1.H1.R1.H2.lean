@@ -1,6 +1,7 @@
 import OMAReductions.R_Erdos5_erdos_5_variants_hildebrand_maier_R1_H1_R1
 import Mathlib
 
+open Real
 /-! The n-th prime is at most 5 n log n for large n: at x = 5 n log n the Chebyshev bound
 theta(x) >= x/2 gives pi(x) >= x/(2 log x) >= n + 1. Same argument as the merged proof of
 Erdos5.erdos_5.variants.merikoski_measure.R1.H2 (PR #4060, this author). Credit: the lemma
@@ -13,80 +14,80 @@ open scoped Topology
 namespace OMA.P2bErdos5HM
 
 lemma eventually_theta_ge_half : ∀ᶠ x : ℝ in atTop, x / 2 ≤ Chebyshev.theta x := by
-  have hsqrt : Real.sqrt =o[atTop] (id : ℝ → ℝ) := by
+  have hsqrt : sqrt =o[atTop] (id : ℝ → ℝ) := by
     refine Asymptotics.isLittleO_iff.mpr fun ε hε => ?_
     filter_upwards [eventually_ge_atTop ((1 / ε) ^ 2)] with x hx
     have hx0 : 0 ≤ x := (sq_nonneg _).trans hx
-    have hh : 1 / ε ≤ Real.sqrt x := Real.le_sqrt_of_sq_le hx
-    have he : 1 ≤ ε * Real.sqrt x := by
+    have hh : 1 / ε ≤ sqrt x := le_sqrt_of_sq_le hx
+    have he : 1 ≤ ε * sqrt x := by
       rw [div_le_iff₀ hε] at hh
       simpa [mul_comm] using hh
-    simp only [id_eq, Real.norm_eq_abs, abs_of_nonneg hx0,
-      abs_of_nonneg (Real.sqrt_nonneg x)]
+    simp only [id_eq, norm_eq_abs, abs_of_nonneg hx0,
+      abs_of_nonneg (sqrt_nonneg x)]
     calc
-      Real.sqrt x = 1 * Real.sqrt x := (one_mul _).symm
-      _ ≤ (ε * Real.sqrt x) * Real.sqrt x :=
-        mul_le_mul_of_nonneg_right he (Real.sqrt_nonneg x)
-      _ = ε * x := by rw [mul_assoc, Real.mul_self_sqrt hx0]
+      sqrt x = 1 * sqrt x := (one_mul _).symm
+      _ ≤ (ε * sqrt x) * sqrt x :=
+        mul_le_mul_of_nonneg_right he (sqrt_nonneg x)
+      _ = ε * x := by rw [mul_assoc, mul_self_sqrt hx0]
   have herr := (Chebyshev.isBigO_psi_sub_theta_sqrt.trans_isLittleO hsqrt).bound
     (show (0 : ℝ) < 1 / 16 by norm_num)
-  have hlog := Real.isLittleO_log_id_atTop.bound (show (0 : ℝ) < 1 / 32 by norm_num)
+  have hlog := isLittleO_log_id_atTop.bound (show (0 : ℝ) < 1 / 32 by norm_num)
   filter_upwards [herr, hlog, eventually_ge_atTop (32 : ℝ)] with x he hl hx
   have hx0 : 0 ≤ x := by linarith
-  simp only [id_eq, Real.norm_eq_abs, abs_of_nonneg hx0] at he hl
-  have hl' := (le_abs_self (Real.log x)).trans hl
-  have hlogadd : Real.log (x + 2) ≤ Real.log 2 + Real.log x := by
-    rw [← Real.log_mul (by norm_num) (by positivity)]
-    exact Real.log_le_log (by positivity) (by linarith)
+  simp only [id_eq, norm_eq_abs, abs_of_nonneg hx0] at he hl
+  have hl' := (le_abs_self (log x)).trans hl
+  have hlogadd : log (x + 2) ≤ log 2 + log x := by
+    rw [← log_mul (by norm_num) (by positivity)]
+    exact log_le_log (by positivity) (by linarith)
   have hpsi := Chebyshev.psi_ge' hx0
   have hdiff := (le_abs_self (Chebyshev.psi x - Chebyshev.theta x)).trans he
   have hprod := mul_le_mul_of_nonneg_left
-    (show (2 / 3 : ℝ) ≤ Real.log 2 by linarith [Real.log_two_gt_d9]) (show 0 ≤ x - 1 by linarith)
-  linarith [Real.log_two_lt_d9]
+    (show (2 / 3 : ℝ) ≤ log 2 by linarith [log_two_gt_d9]) (show 0 ≤ x - 1 by linarith)
+  linarith [log_two_lt_d9]
 
-lemma pi_lower : ∀ᶠ x : ℝ in atTop, x / (2 * Real.log x) ≤ (Nat.primeCounting ⌊x⌋₊ : ℝ) := by
+lemma pi_lower : ∀ᶠ x : ℝ in atTop, x / (2 * log x) ≤ (Nat.primeCounting ⌊x⌋₊ : ℝ) := by
   filter_upwards [eventually_theta_ge_half, eventually_ge_atTop (3 : ℝ)] with x hx hx3
-  have hlog : 0 < Real.log x := Real.log_pos (by linarith)
+  have hlog : 0 < log x := log_pos (by linarith)
   have h1 := Chebyshev.theta_le_psi x
   have h2 := Chebyshev.psi_le_primeCounting_mul_log' x
   rw [div_le_iff₀ (by positivity)]
   nlinarith
 
-lemma tendsto_x : Tendsto (fun n : ℕ => 5 * (n : ℝ) * Real.log n) atTop atTop := by
+lemma tendsto_x : Tendsto (fun n : ℕ => 5 * (n : ℝ) * log n) atTop atTop := by
   have h1 : Tendsto (fun n : ℕ => (n : ℝ)) atTop atTop := tendsto_natCast_atTop_atTop
-  have h2 : Tendsto (fun n : ℕ => Real.log n) atTop atTop := Real.tendsto_log_atTop.comp h1
+  have h2 : Tendsto (fun n : ℕ => log n) atTop atTop := tendsto_log_atTop.comp h1
   have h3 := h1.atTop_mul_atTop₀ h2
   have h4 := h3.const_mul_atTop (show (0:ℝ) < 5 by norm_num)
   refine h4.congr fun n => ?_
   ring
 
-lemma nth_le : ∀ᶠ n : ℕ in atTop, (Nat.nth Nat.Prime n : ℝ) ≤ 5 * n * Real.log n := by
+lemma nth_le : ∀ᶠ n : ℕ in atTop, (Nat.nth Nat.Prime n : ℝ) ≤ 5 * n * log n := by
   have hA := tendsto_x.eventually pi_lower
-  have hB : ∀ᶠ n : ℕ in atTop, Real.log n ≤ 1 / 5 * n := by
-    have := Real.isLittleO_log_id_atTop.bound (show (0 : ℝ) < 1 / 5 by norm_num)
+  have hB : ∀ᶠ n : ℕ in atTop, log n ≤ 1 / 5 * n := by
+    have := isLittleO_log_id_atTop.bound (show (0 : ℝ) < 1 / 5 by norm_num)
     filter_upwards [tendsto_natCast_atTop_atTop.eventually this] with n hn
-    simp only [id_eq, Real.norm_eq_abs] at hn
+    simp only [id_eq, norm_eq_abs] at hn
     have h0 : (0:ℝ) ≤ n := Nat.cast_nonneg n
     rw [abs_of_nonneg h0] at hn
     exact (le_abs_self _).trans hn
   filter_upwards [hA, hB, eventually_ge_atTop 4] with n hA hB hn4
   have hn : (4 : ℝ) ≤ n := by exact_mod_cast hn4
-  have hlogn : 1 < Real.log n := by
-    rw [Real.lt_log_iff_exp_lt (by linarith)]
-    linarith [Real.exp_one_lt_d9]
-  set x := 5 * (n : ℝ) * Real.log n with hxdef
+  have hlogn : 1 < log n := by
+    rw [lt_log_iff_exp_lt (by linarith)]
+    linarith [exp_one_lt_d9]
+  set x := 5 * (n : ℝ) * log n with hxdef
   have hxpos : 0 < x := by positivity
   have hx2 : x ≤ (n : ℝ) ^ 2 := by
     rw [hxdef, sq]; nlinarith
-  have hlogx : Real.log x ≤ 2 * Real.log n := by
-    have := Real.log_le_log hxpos hx2
-    rwa [Real.log_pow, Nat.cast_ofNat] at this
-  have hlogxpos : 0 < Real.log x := Real.log_pos (by nlinarith)
+  have hlogx : log x ≤ 2 * log n := by
+    have := log_le_log hxpos hx2
+    rwa [log_pow, Nat.cast_ofNat] at this
+  have hlogxpos : 0 < log x := log_pos (by nlinarith)
   have hcount : (n : ℝ) + 1 ≤ (Nat.primeCounting ⌊x⌋₊ : ℝ) := by
     refine le_trans ?_ hA
     rw [le_div_iff₀ (by positivity)]
-    have : 2 * Real.log x ≤ 4 * Real.log n := by linarith
-    calc ((n:ℝ) + 1) * (2 * Real.log x) ≤ ((n:ℝ) + 1) * (4 * Real.log n) := by
+    have : 2 * log x ≤ 4 * log n := by linarith
+    calc ((n:ℝ) + 1) * (2 * log x) ≤ ((n:ℝ) + 1) * (4 * log n) := by
           apply mul_le_mul_of_nonneg_left this; positivity
       _ ≤ x := by rw [hxdef]; nlinarith
   have hlt : n < Nat.count Nat.Prime (⌊x⌋₊ + 1) := by
