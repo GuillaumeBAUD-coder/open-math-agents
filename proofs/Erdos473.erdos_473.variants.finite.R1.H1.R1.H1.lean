@@ -8,6 +8,8 @@ import OMAReductions.R_Erdos473_erdos_473_variants_finite_R1_H1_R1
 theorem OMA.solution : OMA.R_Erdos473_erdos_473_variants_finite_R1_H1_R1.H1 := by
   intro m h10 h5000 he
   obtain ⟨k, rfl⟩ : ∃ k, m = 2 * k := ⟨m / 2, by omega⟩
+  have hk1 : 5 ≤ k := by omega
+  have hk2 : k ≤ 2500 := by omega
   interval_cases k
   · exact ⟨4, 7, by decide, by decide, by decide, by decide, fun _ => by decide, by decide, fun _ => by decide⟩
   · exact ⟨1, 2, by decide, by decide, by decide, by decide, fun _ => by decide, by decide, fun _ => by decide⟩
